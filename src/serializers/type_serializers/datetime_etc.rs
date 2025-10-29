@@ -5,8 +5,7 @@ use pyo3::prelude::*;
 use pyo3::types::{PyDate, PyDateTime, PyDict, PyTime};
 
 use super::{
-    infer_json_key, infer_serialize, infer_to_python, BuildSerializer, CombinedSerializer, Extra, SerMode,
-    TypeSerializer,
+    infer_json_key, infer_serialize, infer_to_python, BuildSerializer, CombinedSerializer, SerMode, TypeSerializer,
 };
 use crate::definitions::DefinitionsBuilder;
 use crate::input::{pydate_as_date, pydatetime_as_datetime, pytime_as_time};
@@ -116,17 +115,16 @@ macro_rules! build_temporal_serializer {
             fn to_python<'py>(
                 &self,
                 value: &Bound<'py, PyAny>,
-                state: &mut SerializationState<'py>,
-                extra: &Extra<'_, 'py>,
+                state: &mut SerializationState<'_, 'py>,
             ) -> PyResult<Py<PyAny>> {
                 match $downcast(value) {
-                    Ok(py_value) => match extra.mode {
+                    Ok(py_value) => match state.extra.mode {
                         SerMode::Json => Ok(self.temporal_mode.$to_json(value.py(), py_value)?),
                         _ => Ok(value.clone().unbind()),
                     },
                     _ => {
                         state.warn_fallback_py(self.get_name(), value)?;
-                        infer_to_python(value, state, extra)
+                        infer_to_python(value, state)
                     }
                 }
             }
@@ -134,14 +132,13 @@ macro_rules! build_temporal_serializer {
             fn json_key<'a, 'py>(
                 &self,
                 key: &'a Bound<'py, PyAny>,
-                state: &mut SerializationState<'py>,
-                extra: &Extra<'_, 'py>,
+                state: &mut SerializationState<'_, 'py>,
             ) -> PyResult<Cow<'a, str>> {
                 match $downcast(key) {
                     Ok(py_value) => Ok(self.temporal_mode.$json_key_fn(py_value)?),
                     Err(_) => {
                         state.warn_fallback_py(self.get_name(), key)?;
-                        infer_json_key(key, state, extra)
+                        infer_json_key(key, state)
                     }
                 }
             }
@@ -150,14 +147,13 @@ macro_rules! build_temporal_serializer {
                 &self,
                 value: &Bound<'py, PyAny>,
                 serializer: S,
-                state: &mut SerializationState<'py>,
-                extra: &Extra<'_, 'py>,
+                state: &mut SerializationState<'_, 'py>,
             ) -> Result<S::Ok, S::Error> {
                 match $downcast(value) {
                     Ok(py_value) => self.temporal_mode.$serialize_fn(py_value, serializer),
                     Err(_) => {
                         state.warn_fallback_ser::<S>(self.get_name(), value)?;
-                        infer_serialize(value, serializer, state, extra)
+                        infer_serialize(value, serializer, state)
                     }
                 }
             }

@@ -10,8 +10,7 @@ use crate::serializers::config::{BytesMode, FromConfig};
 use crate::serializers::SerializationState;
 
 use super::{
-    infer_json_key, infer_serialize, infer_to_python, BuildSerializer, CombinedSerializer, Extra, SerMode,
-    TypeSerializer,
+    infer_json_key, infer_serialize, infer_to_python, BuildSerializer, CombinedSerializer, SerMode, TypeSerializer,
 };
 
 #[derive(Debug)]
@@ -69,12 +68,11 @@ impl TypeSerializer for BytesSerializer {
     fn to_python<'py>(
         &self,
         value: &Bound<'py, PyAny>,
-        state: &mut SerializationState<'py>,
-        extra: &Extra<'_, 'py>,
+        state: &mut SerializationState<'_, 'py>,
     ) -> PyResult<Py<PyAny>> {
         let py = value.py();
         match value.downcast::<PyBytes>() {
-            Ok(py_bytes) => match extra.mode {
+            Ok(py_bytes) => match state.extra.mode {
                 SerMode::Json => self
                     .bytes_mode
                     .bytes_to_string(py, py_bytes.as_bytes())?
@@ -83,7 +81,7 @@ impl TypeSerializer for BytesSerializer {
             },
             Err(_) => {
                 state.warn_fallback_py(self.get_name(), value)?;
-                infer_to_python(value, state, extra)
+                infer_to_python(value, state)
             }
         }
     }
@@ -91,14 +89,13 @@ impl TypeSerializer for BytesSerializer {
     fn json_key<'a, 'py>(
         &self,
         key: &'a Bound<'py, PyAny>,
-        state: &mut SerializationState<'py>,
-        extra: &Extra<'_, 'py>,
+        state: &mut SerializationState<'_, 'py>,
     ) -> PyResult<Cow<'a, str>> {
         match key.downcast::<PyBytes>() {
             Ok(py_bytes) => self.bytes_mode.bytes_to_string(key.py(), py_bytes.as_bytes()),
             Err(_) => {
                 state.warn_fallback_py(self.get_name(), key)?;
-                infer_json_key(key, state, extra)
+                infer_json_key(key, state)
             }
         }
     }
@@ -107,14 +104,13 @@ impl TypeSerializer for BytesSerializer {
         &self,
         value: &Bound<'py, PyAny>,
         serializer: S,
-        state: &mut SerializationState<'py>,
-        extra: &Extra<'_, 'py>,
+        state: &mut SerializationState<'_, 'py>,
     ) -> Result<S::Ok, S::Error> {
         match value.downcast::<PyBytes>() {
             Ok(py_bytes) => self.bytes_mode.serialize_bytes(py_bytes.as_bytes(), serializer),
             Err(_) => {
                 state.warn_fallback_ser::<S>(self.get_name(), value)?;
-                infer_serialize(value, serializer, state, extra)
+                infer_serialize(value, serializer, state)
             }
         }
     }

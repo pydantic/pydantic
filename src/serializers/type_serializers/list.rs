@@ -14,7 +14,7 @@ use crate::tools::SchemaDict;
 
 use super::any::AnySerializer;
 use super::{
-    infer_serialize, infer_to_python, py_err_se_err, BuildSerializer, CombinedSerializer, Extra, PydanticSerializer,
+    infer_serialize, infer_to_python, py_err_se_err, BuildSerializer, CombinedSerializer, PydanticSerializer,
     SchemaFilter, TypeSerializer,
 };
 
@@ -56,8 +56,7 @@ impl TypeSerializer for ListSerializer {
     fn to_python<'py>(
         &self,
         value: &Bound<'py, PyAny>,
-        state: &mut SerializationState<'py>,
-        extra: &Extra<'_, 'py>,
+        state: &mut SerializationState<'_, 'py>,
     ) -> PyResult<Py<PyAny>> {
         match value.downcast::<PyList>() {
             Ok(py_list) => {
@@ -69,14 +68,14 @@ impl TypeSerializer for ListSerializer {
                     let op_next = self.filter.index_filter(index, state, value.len().ok())?;
                     if let Some((next_include, next_exclude)) = op_next {
                         let state = &mut state.scoped_include_exclude(next_include, next_exclude);
-                        items.push(item_serializer.to_python(&element, state, extra)?);
+                        items.push(item_serializer.to_python(&element, state)?);
                     }
                 }
                 items.into_py_any(py)
             }
             Err(_) => {
                 state.warn_fallback_py(self.get_name(), value)?;
-                infer_to_python(value, state, extra)
+                infer_to_python(value, state)
             }
         }
     }
@@ -84,18 +83,16 @@ impl TypeSerializer for ListSerializer {
     fn json_key<'a, 'py>(
         &self,
         key: &'a Bound<'py, PyAny>,
-        state: &mut SerializationState<'py>,
-        extra: &Extra<'_, 'py>,
+        state: &mut SerializationState<'_, 'py>,
     ) -> PyResult<Cow<'a, str>> {
-        self.invalid_as_json_key(key, state, extra, Self::EXPECTED_TYPE)
+        self.invalid_as_json_key(key, state, Self::EXPECTED_TYPE)
     }
 
     fn serde_serialize<'py, S: serde::ser::Serializer>(
         &self,
         value: &Bound<'py, PyAny>,
         serializer: S,
-        state: &mut SerializationState<'py>,
-        extra: &Extra<'_, 'py>,
+        state: &mut SerializationState<'_, 'py>,
     ) -> Result<S::Ok, S::Error> {
         match value.downcast::<PyList>() {
             Ok(py_list) => {
@@ -109,7 +106,7 @@ impl TypeSerializer for ListSerializer {
                         .map_err(py_err_se_err)?;
                     if let Some((next_include, next_exclude)) = op_next {
                         let state = &mut state.scoped_include_exclude(next_include, next_exclude);
-                        let item_serialize = PydanticSerializer::new(&element, item_serializer, state, extra);
+                        let item_serialize = PydanticSerializer::new(&element, item_serializer, state);
                         seq.serialize_element(&item_serialize)?;
                     }
                 }
@@ -117,7 +114,7 @@ impl TypeSerializer for ListSerializer {
             }
             Err(_) => {
                 state.warn_fallback_ser::<S>(self.get_name(), value)?;
-                infer_serialize(value, serializer, state, extra)
+                infer_serialize(value, serializer, state)
             }
         }
     }

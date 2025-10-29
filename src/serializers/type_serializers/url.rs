@@ -11,8 +11,7 @@ use crate::serializers::SerializationState;
 use crate::url::{PyMultiHostUrl, PyUrl};
 
 use super::{
-    infer_json_key, infer_serialize, infer_to_python, BuildSerializer, CombinedSerializer, Extra, SerMode,
-    TypeSerializer,
+    infer_json_key, infer_serialize, infer_to_python, BuildSerializer, CombinedSerializer, SerMode, TypeSerializer,
 };
 
 macro_rules! build_serializer {
@@ -40,18 +39,17 @@ macro_rules! build_serializer {
             fn to_python<'py>(
                 &self,
                 value: &Bound<'py, PyAny>,
-                state: &mut SerializationState<'py>,
-                extra: &Extra<'_, 'py>,
+                state: &mut SerializationState<'_, 'py>,
             ) -> PyResult<Py<PyAny>> {
                 let py = value.py();
                 match value.extract::<$extract>() {
-                    Ok(py_url) => match extra.mode {
+                    Ok(py_url) => match state.extra.mode {
                         SerMode::Json => py_url.__str__(value.py()).into_py_any(py),
                         _ => Ok(value.clone().unbind()),
                     },
                     Err(_) => {
                         state.warn_fallback_py(self.get_name(), value)?;
-                        infer_to_python(value, state, extra)
+                        infer_to_python(value, state)
                     }
                 }
             }
@@ -59,14 +57,13 @@ macro_rules! build_serializer {
             fn json_key<'a, 'py>(
                 &self,
                 key: &'a Bound<'py, PyAny>,
-                state: &mut SerializationState<'py>,
-                extra: &Extra<'_, 'py>,
+                state: &mut SerializationState<'_, 'py>,
             ) -> PyResult<Cow<'a, str>> {
                 match key.extract::<$extract>() {
                     Ok(py_url) => Ok(Cow::Owned(py_url.__str__(key.py()).to_string())),
                     Err(_) => {
                         state.warn_fallback_py(self.get_name(), key)?;
-                        infer_json_key(key, state, extra)
+                        infer_json_key(key, state)
                     }
                 }
             }
@@ -75,14 +72,13 @@ macro_rules! build_serializer {
                 &self,
                 value: &Bound<'py, PyAny>,
                 serializer: S,
-                state: &mut SerializationState<'py>,
-                extra: &Extra<'_, 'py>,
+                state: &mut SerializationState<'_, 'py>,
             ) -> Result<S::Ok, S::Error> {
                 match value.extract::<$extract>() {
                     Ok(py_url) => serializer.serialize_str(&py_url.__str__(value.py())),
                     Err(_) => {
                         state.warn_fallback_ser::<S>(self.get_name(), value)?;
-                        infer_serialize(value, serializer, state, extra)
+                        infer_serialize(value, serializer, state)
                     }
                 }
             }

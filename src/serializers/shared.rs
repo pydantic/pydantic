@@ -24,7 +24,7 @@ use crate::serializers::type_serializers::any::AnySerializer;
 use crate::tools::{py_err, SchemaDict};
 
 use super::errors::se_err_py_err;
-use super::extra::{Extra, SerializationState};
+use super::extra::SerializationState;
 use super::infer::{infer_json_key, infer_serialize, infer_to_python};
 use super::ob_type::{IsType, ObType};
 
@@ -233,13 +233,12 @@ impl CombinedSerializer {
     pub fn to_python<'py>(
         &self,
         value: &Bound<'py, PyAny>,
-        state: &mut SerializationState<'py>,
-        extra: &Extra<'_, 'py>,
+        state: &mut SerializationState<'_, 'py>,
     ) -> PyResult<Py<PyAny>> {
-        if extra.serialize_as_any {
-            infer_to_python(value, state, extra)
+        if state.extra.serialize_as_any {
+            infer_to_python(value, state)
         } else {
-            self.to_python_no_infer(value, state, extra)
+            self.to_python_no_infer(value, state)
         }
     }
 
@@ -248,22 +247,20 @@ impl CombinedSerializer {
     pub fn to_python_no_infer<'py>(
         &self,
         value: &Bound<'py, PyAny>,
-        state: &mut SerializationState<'py>,
-        extra: &Extra<'_, 'py>,
+        state: &mut SerializationState<'_, 'py>,
     ) -> PyResult<Py<PyAny>> {
-        TypeSerializer::to_python(self, value, state, extra)
+        TypeSerializer::to_python(self, value, state)
     }
 
     pub fn json_key<'a, 'py>(
         &self,
         key: &'a Bound<'py, PyAny>,
-        state: &mut SerializationState<'py>,
-        extra: &Extra<'_, 'py>,
+        state: &mut SerializationState<'_, 'py>,
     ) -> PyResult<Cow<'a, str>> {
-        if extra.serialize_as_any {
-            infer_json_key(key, state, extra)
+        if state.extra.serialize_as_any {
+            infer_json_key(key, state)
         } else {
-            self.json_key_no_infer(key, state, extra)
+            self.json_key_no_infer(key, state)
         }
     }
 
@@ -271,23 +268,21 @@ impl CombinedSerializer {
     pub fn json_key_no_infer<'a, 'py>(
         &self,
         key: &'a Bound<'py, PyAny>,
-        state: &mut SerializationState<'py>,
-        extra: &Extra<'_, 'py>,
+        state: &mut SerializationState<'_, 'py>,
     ) -> PyResult<Cow<'a, str>> {
-        TypeSerializer::json_key(self, key, state, extra)
+        TypeSerializer::json_key(self, key, state)
     }
 
     pub fn serde_serialize<'py, S: serde::ser::Serializer>(
         &self,
         value: &Bound<'py, PyAny>,
         serializer: S,
-        state: &mut SerializationState<'py>,
-        extra: &Extra<'_, 'py>,
+        state: &mut SerializationState<'_, 'py>,
     ) -> Result<S::Ok, S::Error> {
-        if extra.serialize_as_any {
-            infer_serialize(value, serializer, state, extra)
+        if state.extra.serialize_as_any {
+            infer_serialize(value, serializer, state)
         } else {
-            self.serde_serialize_no_infer(value, serializer, state, extra)
+            self.serde_serialize_no_infer(value, serializer, state)
         }
     }
 
@@ -296,10 +291,9 @@ impl CombinedSerializer {
         &self,
         value: &Bound<'py, PyAny>,
         serializer: S,
-        state: &mut SerializationState<'py>,
-        extra: &Extra<'_, 'py>,
+        state: &mut SerializationState<'_, 'py>,
     ) -> Result<S::Ok, S::Error> {
-        TypeSerializer::serde_serialize(self, value, serializer, state, extra)
+        TypeSerializer::serde_serialize(self, value, serializer, state)
     }
 }
 
@@ -366,32 +360,26 @@ impl PyGcTraverse for CombinedSerializer {
 
 #[enum_dispatch(CombinedSerializer)]
 pub(crate) trait TypeSerializer: Send + Sync + Debug {
-    fn to_python<'py>(
-        &self,
-        value: &Bound<'py, PyAny>,
-        state: &mut SerializationState<'py>,
-        extra: &Extra<'_, 'py>,
-    ) -> PyResult<Py<PyAny>>;
+    fn to_python<'py>(&self, value: &Bound<'py, PyAny>, state: &mut SerializationState<'_, 'py>)
+        -> PyResult<Py<PyAny>>;
 
     fn json_key<'a, 'py>(
         &self,
         key: &'a Bound<'py, PyAny>,
-        state: &mut SerializationState<'py>,
-        extra: &Extra<'_, 'py>,
+        state: &mut SerializationState<'_, 'py>,
     ) -> PyResult<Cow<'a, str>>;
 
     fn invalid_as_json_key<'a, 'py>(
         &self,
         key: &'a Bound<'py, PyAny>,
-        state: &mut SerializationState<'py>,
-        extra: &Extra<'_, 'py>,
+        state: &mut SerializationState<'_, 'py>,
         expected_type: &'static str,
     ) -> PyResult<Cow<'a, str>> {
-        match extra.ob_type_lookup.is_type(key, ObType::None) {
+        match state.extra.ob_type_lookup.is_type(key, ObType::None) {
             IsType::Exact | IsType::Subclass => py_err!(PyTypeError; "`{}` not valid as object key", expected_type),
             IsType::False => {
                 state.warn_fallback_py(self.get_name(), key)?;
-                infer_json_key(key, state, extra)
+                infer_json_key(key, state)
             }
         }
     }
@@ -400,8 +388,7 @@ pub(crate) trait TypeSerializer: Send + Sync + Debug {
         &self,
         value: &Bound<'py, PyAny>,
         serializer: S,
-        state: &mut SerializationState<'py>,
-        extra: &Extra<'_, 'py>,
+        state: &mut SerializationState<'_, 'py>,
     ) -> Result<S::Ok, S::Error>;
 
     fn get_name(&self) -> &str;
@@ -416,31 +403,28 @@ pub(crate) trait TypeSerializer: Send + Sync + Debug {
     }
 }
 
-pub(crate) struct PydanticSerializer<'slf, 'py> {
+pub(crate) struct PydanticSerializer<'slf, 'a, 'py> {
     value: &'slf Bound<'py, PyAny>,
     serializer: &'slf CombinedSerializer,
     /// RefCell to allow mutable access to the state during serialization, we expect it
     /// to only ever be borrowed mutably once at a time.
-    state: RefCell<&'slf mut SerializationState<'py>>,
-    extra: &'slf Extra<'slf, 'py>,
+    state: RefCell<&'slf mut SerializationState<'a, 'py>>,
 }
 
-impl<'slf, 'py> PydanticSerializer<'slf, 'py> {
+impl<'slf, 'a, 'py> PydanticSerializer<'slf, 'a, 'py> {
     pub(crate) fn new(
         value: &'slf Bound<'py, PyAny>,
         serializer: &'slf CombinedSerializer,
-        state: &'slf mut SerializationState<'py>,
-        extra: &'slf Extra<'_, 'py>,
+        state: &'slf mut SerializationState<'a, 'py>,
     ) -> Self {
         Self {
             value,
-            serializer: if extra.serialize_as_any {
+            serializer: if state.extra.serialize_as_any {
                 AnySerializer::get()
             } else {
                 serializer
             },
             state: RefCell::new(state),
-            extra,
         }
     }
 
@@ -448,23 +432,21 @@ impl<'slf, 'py> PydanticSerializer<'slf, 'py> {
     pub(crate) fn new_no_infer(
         value: &'slf Bound<'py, PyAny>,
         serializer: &'slf CombinedSerializer,
-        state: &'slf mut SerializationState<'py>,
-        extra: &'slf Extra<'_, 'py>,
+        state: &'slf mut SerializationState<'a, 'py>,
     ) -> Self {
         Self {
             value,
             serializer,
             state: RefCell::new(state),
-            extra,
         }
     }
 }
 
-impl Serialize for PydanticSerializer<'_, '_> {
+impl Serialize for PydanticSerializer<'_, '_, '_> {
     fn serialize<S: serde::ser::Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
         // inference is handled in the constructor
         self.serializer
-            .serde_serialize_no_infer(self.value, serializer, &mut self.state.borrow_mut(), self.extra)
+            .serde_serialize_no_infer(self.value, serializer, &mut self.state.borrow_mut())
     }
 }
 
@@ -553,13 +535,12 @@ impl Formatter for EscapeNonAsciiPrettyFormatter<'_> {
 pub(crate) fn to_json_bytes<'py>(
     value: &Bound<'py, PyAny>,
     serializer: &CombinedSerializer,
-    state: &mut SerializationState<'py>,
-    extra: &Extra<'_, 'py>,
+    state: &mut SerializationState<'_, 'py>,
     indent: Option<usize>,
     ensure_ascii: bool,
     expected_json_size: usize,
 ) -> PyResult<Vec<u8>> {
-    let serializer = PydanticSerializer::new(value, serializer, state, extra);
+    let serializer = PydanticSerializer::new(value, serializer, state);
 
     let writer: Vec<u8> = Vec::with_capacity(expected_json_size);
 
@@ -635,16 +616,14 @@ pub trait DoSerialize<'py, OutputT, ErrorT> {
         self,
         serializer: &CombinedSerializer,
         value: &Bound<'py, PyAny>,
-        state: &mut SerializationState<'py>,
-        extra: &Extra<'_, 'py>,
+        state: &mut SerializationState<'_, 'py>,
     ) -> Result<OutputT, ErrorT>;
 
     fn serialize_fallback(
         self,
         name: &str,
         value: &Bound<'py, PyAny>,
-        state: &mut SerializationState<'py>,
-        extra: &Extra<'_, 'py>,
+        state: &mut SerializationState<'_, 'py>,
     ) -> Result<OutputT, ErrorT>;
 }
 
@@ -667,21 +646,19 @@ impl<'py> DoSerialize<'py, Py<PyAny>, PyErr> for SerializeToPython {
         self,
         serializer: &CombinedSerializer,
         value: &Bound<'py, PyAny>,
-        state: &mut SerializationState<'py>,
-        extra: &Extra<'_, 'py>,
+        state: &mut SerializationState<'_, 'py>,
     ) -> PyResult<Py<PyAny>> {
-        serializer.to_python_no_infer(value, state, extra)
+        serializer.to_python_no_infer(value, state)
     }
 
     fn serialize_fallback(
         self,
         name: &str,
         value: &Bound<'py, PyAny>,
-        state: &mut SerializationState<'py>,
-        extra: &Extra<'_, 'py>,
+        state: &mut SerializationState<'_, 'py>,
     ) -> PyResult<Py<PyAny>> {
         state.warn_fallback_py(name, value)?;
-        infer_to_python(value, state, extra)
+        infer_to_python(value, state)
     }
 }
 
@@ -694,11 +671,10 @@ impl<'py, S: Serializer> DoSerialize<'py, S::Ok, WrappedSerError<S::Error>> for 
         self,
         serializer: &CombinedSerializer,
         value: &Bound<'py, PyAny>,
-        state: &mut SerializationState<'py>,
-        extra: &Extra<'_, 'py>,
+        state: &mut SerializationState<'_, 'py>,
     ) -> Result<S::Ok, WrappedSerError<S::Error>> {
         serializer
-            .serde_serialize_no_infer(value, self.serializer, state, extra)
+            .serde_serialize_no_infer(value, self.serializer, state)
             .map_err(WrappedSerError)
     }
 
@@ -706,10 +682,9 @@ impl<'py, S: Serializer> DoSerialize<'py, S::Ok, WrappedSerError<S::Error>> for 
         self,
         name: &str,
         value: &Bound<'py, PyAny>,
-        state: &mut SerializationState<'py>,
-        extra: &Extra<'_, 'py>,
+        state: &mut SerializationState<'_, 'py>,
     ) -> Result<S::Ok, WrappedSerError<S::Error>> {
         state.warn_fallback_ser::<S>(name, value).map_err(WrappedSerError)?;
-        infer_serialize(value, self.serializer, state, extra).map_err(WrappedSerError)
+        infer_serialize(value, self.serializer, state).map_err(WrappedSerError)
     }
 }

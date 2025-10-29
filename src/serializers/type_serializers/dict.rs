@@ -14,7 +14,7 @@ use crate::tools::SchemaDict;
 
 use super::any::AnySerializer;
 use super::{
-    infer_serialize, infer_to_python, py_err_se_err, BuildSerializer, CombinedSerializer, Extra, PydanticSerializer,
+    infer_serialize, infer_to_python, py_err_se_err, BuildSerializer, CombinedSerializer, PydanticSerializer,
     SchemaFilter, SerMode, TypeSerializer,
 };
 
@@ -77,8 +77,7 @@ impl TypeSerializer for DictSerializer {
     fn to_python<'py>(
         &self,
         value: &Bound<'py, PyAny>,
-        state: &mut SerializationState<'py>,
-        extra: &Extra<'_, 'py>,
+        state: &mut SerializationState<'_, 'py>,
     ) -> PyResult<Py<PyAny>> {
         let py = value.py();
         match value.downcast::<PyDict>() {
@@ -92,13 +91,13 @@ impl TypeSerializer for DictSerializer {
                         let key = {
                             // disable include/exclude for keys
                             let state = &mut state.scoped_include_exclude(None, None);
-                            match extra.mode {
-                                SerMode::Json => self.key_serializer.json_key(&key, state, extra)?.into_py_any(py)?,
-                                _ => self.key_serializer.to_python(&key, state, extra)?,
+                            match state.extra.mode {
+                                SerMode::Json => self.key_serializer.json_key(&key, state)?.into_py_any(py)?,
+                                _ => self.key_serializer.to_python(&key, state)?,
                             }
                         };
                         let state = &mut state.scoped_include_exclude(next_include, next_exclude);
-                        let value = value_serializer.to_python(&value, state, extra)?;
+                        let value = value_serializer.to_python(&value, state)?;
                         new_dict.set_item(key, value)?;
                     }
                 }
@@ -106,7 +105,7 @@ impl TypeSerializer for DictSerializer {
             }
             Err(_) => {
                 state.warn_fallback_py(self.get_name(), value)?;
-                infer_to_python(value, state, extra)
+                infer_to_python(value, state)
             }
         }
     }
@@ -114,18 +113,16 @@ impl TypeSerializer for DictSerializer {
     fn json_key<'a, 'py>(
         &self,
         key: &'a Bound<'py, PyAny>,
-        state: &mut SerializationState<'py>,
-        extra: &Extra<'_, 'py>,
+        state: &mut SerializationState<'_, 'py>,
     ) -> PyResult<Cow<'a, str>> {
-        self.invalid_as_json_key(key, state, extra, Self::EXPECTED_TYPE)
+        self.invalid_as_json_key(key, state, Self::EXPECTED_TYPE)
     }
 
     fn serde_serialize<'py, S: serde::ser::Serializer>(
         &self,
         value: &Bound<'py, PyAny>,
         serializer: S,
-        state: &mut SerializationState<'py>,
-        extra: &Extra<'_, 'py>,
+        state: &mut SerializationState<'_, 'py>,
     ) -> Result<S::Ok, S::Error> {
         match value.downcast::<PyDict>() {
             Ok(py_dict) => {
@@ -137,8 +134,8 @@ impl TypeSerializer for DictSerializer {
                     let op_next = self.filter.key_filter(&key, state).map_err(py_err_se_err)?;
                     if let Some((next_include, next_exclude)) = op_next {
                         let state = &mut state.scoped_include_exclude(next_include, next_exclude);
-                        let key = key_serializer.json_key(&key, state, extra).map_err(py_err_se_err)?;
-                        let value_serialize = PydanticSerializer::new(&value, value_serializer, state, extra);
+                        let key = key_serializer.json_key(&key, state).map_err(py_err_se_err)?;
+                        let value_serialize = PydanticSerializer::new(&value, value_serializer, state);
                         map.serialize_entry(&key, &value_serialize)?;
                     }
                 }
@@ -146,7 +143,7 @@ impl TypeSerializer for DictSerializer {
             }
             Err(_) => {
                 state.warn_fallback_ser::<S>(self.get_name(), value)?;
-                infer_serialize(value, serializer, state, extra)
+                infer_serialize(value, serializer, state)
             }
         }
     }

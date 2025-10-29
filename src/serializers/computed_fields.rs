@@ -16,7 +16,6 @@ use crate::serializers::SerializationState;
 use crate::tools::SchemaDict;
 
 use super::errors::py_err_se_err;
-use super::Extra;
 
 #[derive(Debug)]
 pub(super) struct ComputedFields(Vec<ComputedField>);
@@ -48,26 +47,23 @@ impl ComputedFields {
         model: &Bound<'py, PyAny>,
         output_dict: &Bound<'py, PyDict>,
         filter: &SchemaFilter<isize>,
-        state: &mut SerializationState<'py>,
-        extra: &Extra<'_, 'py>,
+        state: &mut SerializationState<'_, 'py>,
     ) -> PyResult<()> {
         self.serialize_fields(
             model,
             filter,
             state,
-            extra,
             |e| e,
             |ComputedFieldToSerialize {
                  computed_field,
                  value,
                  state,
-                 field_extra,
              }| {
-                let key = match field_extra.serialize_by_alias_or(computed_field.serialize_by_alias) {
+                let key = match state.extra.serialize_by_alias_or(computed_field.serialize_by_alias) {
                     true => computed_field.alias_py.bind(model.py()),
                     false => computed_field.property_name_py.bind(model.py()),
                 };
-                let value = computed_field.serializer.to_python(&value, state, field_extra)?;
+                let value = computed_field.serializer.to_python(&value, state)?;
                 output_dict.set_item(key, value)
             },
         )
@@ -78,26 +74,23 @@ impl ComputedFields {
         model: &Bound<'py, PyAny>,
         map: &mut S::SerializeMap,
         filter: &SchemaFilter<isize>,
-        state: &mut SerializationState<'py>,
-        extra: &Extra<'_, 'py>,
+        state: &mut SerializationState<'_, 'py>,
     ) -> Result<(), S::Error> {
         self.serialize_fields(
             model,
             filter,
             state,
-            extra,
             py_err_se_err,
             |ComputedFieldToSerialize {
                  computed_field,
                  value,
                  state,
-                 field_extra,
              }| {
-                let key = match field_extra.serialize_by_alias_or(computed_field.serialize_by_alias) {
+                let key = match state.extra.serialize_by_alias_or(computed_field.serialize_by_alias) {
                     true => &computed_field.alias,
                     false => &computed_field.property_name,
                 };
-                let s = PydanticSerializer::new(&value, &computed_field.serializer, state, field_extra);
+                let s = PydanticSerializer::new(&value, &computed_field.serializer, state);
                 map.serialize_entry(key, &s)
             },
         )
@@ -105,17 +98,16 @@ impl ComputedFields {
 
     /// Iterate each field for serialization, filtering on
     /// `include` and `exclude` if provided.
-    fn serialize_fields<'a, 'py, E>(
-        &'a self,
-        model: &'a Bound<'py, PyAny>,
-        filter: &'a SchemaFilter<isize>,
-        state: &mut SerializationState<'py>,
-        extra: &'a Extra<'_, 'py>,
+    fn serialize_fields<'py, E>(
+        &self,
+        model: &Bound<'py, PyAny>,
+        filter: &SchemaFilter<isize>,
+        state: &mut SerializationState<'_, 'py>,
         convert_error: impl FnOnce(PyErr) -> E,
-        mut serialize: impl for<'slf> FnMut(ComputedFieldToSerialize<'a, 'slf, 'py>) -> Result<(), E>,
+        mut serialize: impl for<'slf, 'a> FnMut(ComputedFieldToSerialize<'slf, 'a, 'py>) -> Result<(), E>,
     ) -> Result<(), E> {
         // In round trip mode, exclude computed fields:
-        if extra.round_trip || extra.exclude_computed_fields {
+        if state.extra.round_trip || state.extra.exclude_computed_fields {
             return Ok(());
         }
 
@@ -133,7 +125,7 @@ impl ComputedFields {
                     return Err(convert_error(e));
                 }
             };
-            if extra.exclude_none && value.is_none() {
+            if state.extra.exclude_none && value.is_none() {
                 continue;
             }
             let missing_sentinel = get_missing_sentinel_object(model.py());
@@ -148,18 +140,16 @@ impl ComputedFields {
                 computed_field,
                 value,
                 state,
-                field_extra: extra,
             })?;
         }
         Ok(())
     }
 }
 
-struct ComputedFieldToSerialize<'a, 'slf, 'py> {
-    computed_field: &'a ComputedField,
+struct ComputedFieldToSerialize<'slf, 'a, 'py> {
+    computed_field: &'slf ComputedField,
     value: Bound<'py, PyAny>,
-    state: &'slf mut SerializationState<'py>,
-    field_extra: &'slf Extra<'a, 'py>,
+    state: &'slf mut SerializationState<'a, 'py>,
 }
 
 #[derive(Debug)]

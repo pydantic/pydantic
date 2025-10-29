@@ -12,7 +12,7 @@ use crate::definitions::{DefinitionRef, RecursionSafeCache};
 use crate::serializers::SerializationState;
 use crate::tools::SchemaDict;
 
-use super::{py_err_se_err, BuildSerializer, CombinedSerializer, Extra, TypeSerializer};
+use super::{py_err_se_err, BuildSerializer, CombinedSerializer, TypeSerializer};
 
 #[derive(Debug)]
 pub struct DefinitionsSerializerBuilder;
@@ -79,39 +79,35 @@ impl TypeSerializer for DefinitionRefSerializer {
     fn to_python<'py>(
         &self,
         value: &Bound<'py, PyAny>,
-        state: &mut SerializationState<'py>,
-        extra: &Extra<'_, 'py>,
+        state: &mut SerializationState<'_, 'py>,
     ) -> PyResult<Py<PyAny>> {
         self.definition.read(|comb_serializer| {
             let comb_serializer = comb_serializer.unwrap();
             let mut guard = state.recursion_guard(value, self.definition.id())?;
-            comb_serializer.to_python_no_infer(value, guard.state(), extra)
+            comb_serializer.to_python_no_infer(value, guard.state())
         })
     }
 
     fn json_key<'a, 'py>(
         &self,
         key: &'a Bound<'py, PyAny>,
-        state: &mut SerializationState<'py>,
-        extra: &Extra<'_, 'py>,
+        state: &mut SerializationState<'_, 'py>,
     ) -> PyResult<Cow<'a, str>> {
-        self.definition
-            .read(|s| s.unwrap().json_key_no_infer(key, state, extra))
+        self.definition.read(|s| s.unwrap().json_key_no_infer(key, state))
     }
 
     fn serde_serialize<'py, S: serde::ser::Serializer>(
         &self,
         value: &Bound<'py, PyAny>,
         serializer: S,
-        state: &mut SerializationState<'py>,
-        extra: &Extra<'_, 'py>,
+        state: &mut SerializationState<'_, 'py>,
     ) -> Result<S::Ok, S::Error> {
         self.definition.read(|comb_serializer| {
             let comb_serializer = comb_serializer.unwrap();
             let mut guard = state
                 .recursion_guard(value, self.definition.id())
                 .map_err(py_err_se_err)?;
-            comb_serializer.serde_serialize_no_infer(value, serializer, guard.state(), extra)
+            comb_serializer.serde_serialize_no_infer(value, serializer, guard.state())
         })
     }
 

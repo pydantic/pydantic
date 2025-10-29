@@ -22,7 +22,7 @@ use crate::PydanticSerializationError;
 
 /// this is ugly, would be much better if extra could be stored in `SerializationState`
 /// then `SerializationState` got a `serialize_infer` method, but I couldn't get it to work
-pub(crate) struct SerializationState<'py> {
+pub(crate) struct SerializationState<'a, 'py> {
     pub warnings: CollectWarnings,
     pub rec_guard: RecursionState,
     pub config: SerializationConfig,
@@ -33,6 +33,8 @@ pub(crate) struct SerializationState<'py> {
     /// Inside unions, checks are applied to attempt to select a preferred branch
     pub check: SerCheck,
     pub include_exclude: (Option<Bound<'py, PyAny>>, Option<Bound<'py, PyAny>>),
+    /// Global settings for the serialization process
+    pub extra: Extra<'a, 'py>,
 }
 
 #[derive(Clone)]
@@ -56,12 +58,13 @@ impl fmt::Display for FieldName<'_> {
     }
 }
 
-impl<'py> SerializationState<'py> {
+impl<'a, 'py> SerializationState<'a, 'py> {
     pub fn new(
         config: SerializationConfig,
         warnings_mode: WarningsMode,
         include: Option<Bound<'py, PyAny>>,
         exclude: Option<Bound<'py, PyAny>>,
+        extra: Extra<'a, 'py>,
     ) -> PyResult<Self> {
         let warnings = CollectWarnings::new(warnings_mode);
         let rec_guard = RecursionState::default();
@@ -73,11 +76,12 @@ impl<'py> SerializationState<'py> {
             field_name: None,
             check: SerCheck::None,
             include_exclude: (include, exclude),
+            extra,
         })
     }
 }
 
-impl SerializationState<'_> {
+impl SerializationState<'_, '_> {
     pub fn recursion_guard(
         &mut self,
         value: &Bound<'_, PyAny>,
@@ -108,14 +112,18 @@ impl SerializationState<'_> {
     }
 }
 
-impl<'py> SerializationState<'py> {
+impl<'a, 'py> SerializationState<'a, 'py> {
     /// Temporarily rebinds a field of the state by calling `projector` to get a mutable reference to the field,
     /// and setting that field to `value`.
     ///
     /// When `ScopedSetState` drops, the field is restored to its original value.
-    pub fn scoped_set<'state, P, T>(&'state mut self, projector: P, new_value: T) -> ScopedSetState<'state, 'py, P, T>
+    pub fn scoped_set<'state, P, T>(
+        &'state mut self,
+        projector: P,
+        new_value: T,
+    ) -> ScopedSetState<'state, 'a, 'py, P, T>
     where
-        P: for<'p> Fn(&'p mut SerializationState<'py>) -> &'p mut T,
+        P: for<'p> Fn(&'p mut SerializationState<'a, 'py>) -> &'p mut T,
     {
         let value = std::mem::replace((projector)(self), new_value);
         ScopedSetState {
@@ -129,7 +137,7 @@ impl<'py> SerializationState<'py> {
         &'scope mut self,
         next_include: Option<Bound<'py, PyAny>>,
         next_exclude: Option<Bound<'py, PyAny>>,
-    ) -> ScopedIncludeExcludeState<'scope, 'py> {
+    ) -> ScopedIncludeExcludeState<'scope, 'a, 'py> {
         self.scoped_set(SerializationState::include_exclude_mut, (next_include, next_exclude))
     }
 
@@ -145,12 +153,19 @@ impl<'py> SerializationState<'py> {
         self.model.as_ref().and_then(|model| model.get_type().name().ok())
     }
 
+    pub fn serialize_infer<'slf>(
+        &'slf mut self,
+        value: &'slf Bound<'py, PyAny>,
+    ) -> super::infer::SerializeInfer<'slf, 'a, 'py> {
+        super::infer::SerializeInfer::new(value, self)
+    }
+
     fn include_exclude_mut(&mut self) -> &mut (Option<Bound<'py, PyAny>>, Option<Bound<'py, PyAny>>) {
         &mut self.include_exclude
     }
 }
 
-/// Useful things which are passed around by type_serializers
+/// Constants for a serialization process
 #[derive(Clone)]
 #[cfg_attr(debug_assertions, derive(Debug))]
 pub(crate) struct Extra<'a, 'py> {
@@ -198,14 +213,6 @@ impl<'a, 'py> Extra<'a, 'py> {
             serialize_as_any,
             context,
         }
-    }
-
-    pub fn serialize_infer<'slf>(
-        &'slf self,
-        value: &'slf Bound<'py, PyAny>,
-        state: &'slf mut SerializationState<'py>,
-    ) -> super::infer::SerializeInfer<'slf, 'py> {
-        super::infer::SerializeInfer::new(value, state, self)
     }
 
     pub fn serialize_by_alias_or(&self, serialize_by_alias: Option<bool>) -> bool {
@@ -270,7 +277,8 @@ impl fmt::Debug for FieldNameOwned {
 }
 
 impl ExtraOwned {
-    pub fn new<'py>(extra: &Extra<'_, 'py>, state: &SerializationState<'py>) -> Self {
+    pub fn new(state: &SerializationState<'_, '_>) -> Self {
+        let extra = &state.extra;
         Self {
             mode: extra.mode.clone(),
             warnings: state.warnings.clone(),
@@ -314,7 +322,8 @@ impl ExtraOwned {
         }
     }
 
-    pub fn to_state<'py>(&self, py: Python<'py>) -> SerializationState<'py> {
+    pub fn to_state<'py>(&self, py: Python<'py>) -> SerializationState<'_, 'py> {
+        let extra = self.to_extra(py);
         SerializationState {
             warnings: self.warnings.clone(),
             rec_guard: self.rec_guard.clone(),
@@ -330,6 +339,7 @@ impl ExtraOwned {
                 self.include.as_ref().map(|m| m.bind(py).clone()),
                 self.exclude.as_ref().map(|m| m.bind(py).clone()),
             ),
+            extra,
         }
     }
 }
@@ -517,56 +527,57 @@ impl CollectWarnings {
     }
 }
 
-impl ContainsRecursionState for SerializationState<'_> {
+impl ContainsRecursionState for SerializationState<'_, '_> {
     fn access_recursion_state<R>(&mut self, f: impl FnOnce(&mut RecursionState) -> R) -> R {
         f(&mut self.rec_guard)
     }
 }
 
-pub(crate) struct ScopedSetState<'scope, 'py, P, T>
+pub(crate) struct ScopedSetState<'scope, 'a, 'py, P, T>
 where
-    P: for<'p> Fn(&'p mut SerializationState<'py>) -> &'p mut T,
+    P: for<'p> Fn(&'p mut SerializationState<'a, 'py>) -> &'p mut T,
 {
     /// The state which has been set for the scope.
-    state: &'scope mut SerializationState<'py>,
+    state: &'scope mut SerializationState<'a, 'py>,
     /// A function that projects from the state to the field that has been set.
     projector: P,
     /// The previous value of the field that has been set.
     value: T,
 }
 
-impl<'py, P, T> Drop for ScopedSetState<'_, 'py, P, T>
+impl<'a, 'py, P, T> Drop for ScopedSetState<'_, 'a, 'py, P, T>
 where
-    P: for<'drop> Fn(&'drop mut SerializationState<'py>) -> &'drop mut T,
+    P: for<'drop> Fn(&'drop mut SerializationState<'a, 'py>) -> &'drop mut T,
 {
     fn drop(&mut self) {
         std::mem::swap((self.projector)(self.state), &mut self.value);
     }
 }
 
-impl<'py, P, T> Deref for ScopedSetState<'_, 'py, P, T>
+impl<'a, 'py, P, T> Deref for ScopedSetState<'_, 'a, 'py, P, T>
 where
-    P: for<'p> Fn(&'p mut SerializationState<'py>) -> &'p mut T,
+    P: for<'p> Fn(&'p mut SerializationState<'a, 'py>) -> &'p mut T,
 {
-    type Target = SerializationState<'py>;
+    type Target = SerializationState<'a, 'py>;
 
     fn deref(&self) -> &Self::Target {
         self.state
     }
 }
 
-impl<'py, P, T> DerefMut for ScopedSetState<'_, 'py, P, T>
+impl<'a, 'py, P, T> DerefMut for ScopedSetState<'_, 'a, 'py, P, T>
 where
-    P: for<'p> Fn(&'p mut SerializationState<'py>) -> &'p mut T,
+    P: for<'p> Fn(&'p mut SerializationState<'a, 'py>) -> &'p mut T,
 {
-    fn deref_mut(&mut self) -> &mut SerializationState<'py> {
+    fn deref_mut(&mut self) -> &mut SerializationState<'a, 'py> {
         self.state
     }
 }
 
-type ScopedIncludeExcludeState<'scope, 'py> = ScopedSetState<
+type ScopedIncludeExcludeState<'scope, 'a, 'py> = ScopedSetState<
     'scope,
+    'a,
     'py,
-    for<'s> fn(&'s mut SerializationState<'py>) -> &'s mut (Option<Bound<'py, PyAny>>, Option<Bound<'py, PyAny>>),
+    for<'s> fn(&'s mut SerializationState<'a, 'py>) -> &'s mut (Option<Bound<'py, PyAny>>, Option<Bound<'py, PyAny>>),
     (Option<Bound<'py, PyAny>>, Option<Bound<'py, PyAny>>),
 >;

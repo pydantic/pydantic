@@ -10,9 +10,7 @@ use crate::serializers::infer::{infer_json_key_known, infer_serialize_known, inf
 use crate::serializers::ob_type::{IsType, ObType};
 use crate::serializers::SerializationState;
 
-use super::{
-    infer_json_key, infer_serialize, infer_to_python, BuildSerializer, CombinedSerializer, Extra, TypeSerializer,
-};
+use super::{infer_json_key, infer_serialize, infer_to_python, BuildSerializer, CombinedSerializer, TypeSerializer};
 
 #[derive(Debug)]
 pub struct DecimalSerializer {}
@@ -37,15 +35,14 @@ impl TypeSerializer for DecimalSerializer {
     fn to_python<'py>(
         &self,
         value: &Bound<'py, PyAny>,
-        state: &mut SerializationState<'py>,
-        extra: &Extra<'_, 'py>,
+        state: &mut SerializationState<'_, 'py>,
     ) -> PyResult<Py<PyAny>> {
         let _py = value.py();
-        match extra.ob_type_lookup.is_type(value, ObType::Decimal) {
-            IsType::Exact | IsType::Subclass => infer_to_python_known(ObType::Decimal, value, state, extra),
+        match state.extra.ob_type_lookup.is_type(value, ObType::Decimal) {
+            IsType::Exact | IsType::Subclass => infer_to_python_known(ObType::Decimal, value, state),
             IsType::False => {
                 state.warn_fallback_py(self.get_name(), value)?;
-                infer_to_python(value, state, extra)
+                infer_to_python(value, state)
             }
         }
     }
@@ -53,14 +50,13 @@ impl TypeSerializer for DecimalSerializer {
     fn json_key<'a, 'py>(
         &self,
         key: &'a Bound<'py, PyAny>,
-        state: &mut SerializationState<'py>,
-        extra: &Extra<'_, 'py>,
+        state: &mut SerializationState<'_, 'py>,
     ) -> PyResult<Cow<'a, str>> {
-        match extra.ob_type_lookup.is_type(key, ObType::Decimal) {
-            IsType::Exact | IsType::Subclass => infer_json_key_known(ObType::Decimal, key, state, extra),
+        match state.extra.ob_type_lookup.is_type(key, ObType::Decimal) {
+            IsType::Exact | IsType::Subclass => infer_json_key_known(ObType::Decimal, key, state),
             IsType::False => {
                 state.warn_fallback_py(self.get_name(), key)?;
-                infer_json_key(key, state, extra)
+                infer_json_key(key, state)
             }
         }
     }
@@ -69,14 +65,13 @@ impl TypeSerializer for DecimalSerializer {
         &self,
         value: &Bound<'py, PyAny>,
         serializer: S,
-        state: &mut SerializationState<'py>,
-        extra: &Extra<'_, 'py>,
+        state: &mut SerializationState<'_, 'py>,
     ) -> Result<S::Ok, S::Error> {
-        match extra.ob_type_lookup.is_type(value, ObType::Decimal) {
-            IsType::Exact | IsType::Subclass => infer_serialize_known(ObType::Decimal, value, serializer, state, extra),
+        match state.extra.ob_type_lookup.is_type(value, ObType::Decimal) {
+            IsType::Exact | IsType::Subclass => infer_serialize_known(ObType::Decimal, value, serializer, state),
             IsType::False => {
                 state.warn_fallback_ser::<S>(self.get_name(), value)?;
-                infer_serialize(value, serializer, state, extra)
+                infer_serialize(value, serializer, state)
             }
         }
     }

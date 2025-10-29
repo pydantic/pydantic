@@ -16,7 +16,7 @@ use crate::tools::SchemaDict;
 
 use super::any::AnySerializer;
 use super::{
-    infer_serialize, infer_to_python, py_err_se_err, BuildSerializer, CombinedSerializer, Extra, ExtraOwned,
+    infer_serialize, infer_to_python, py_err_se_err, BuildSerializer, CombinedSerializer, ExtraOwned,
     PydanticSerializer, SchemaFilter, SerMode, TypeSerializer,
 };
 
@@ -53,13 +53,12 @@ impl TypeSerializer for GeneratorSerializer {
     fn to_python<'py>(
         &self,
         value: &Bound<'py, PyAny>,
-        state: &mut SerializationState<'py>,
-        extra: &Extra<'_, 'py>,
+        state: &mut SerializationState<'_, 'py>,
     ) -> PyResult<Py<PyAny>> {
         match value.downcast::<PyIterator>() {
             Ok(py_iter) => {
                 let py = value.py();
-                match extra.mode {
+                match state.extra.mode {
                     SerMode::Json => {
                         let item_serializer = self.item_serializer.as_ref();
 
@@ -72,26 +71,21 @@ impl TypeSerializer for GeneratorSerializer {
                             let op_next = self.filter.index_filter(index, state, None)?;
                             if let Some((next_include, next_exclude)) = op_next {
                                 let state = &mut state.scoped_include_exclude(next_include, next_exclude);
-                                items.push(item_serializer.to_python(&element, state, extra)?);
+                                items.push(item_serializer.to_python(&element, state)?);
                             }
                         }
                         items.into_py_any(py)
                     }
                     _ => {
-                        let iter = SerializationIterator::new(
-                            py_iter,
-                            &self.item_serializer,
-                            self.filter.clone(),
-                            state,
-                            extra,
-                        );
+                        let iter =
+                            SerializationIterator::new(py_iter, &self.item_serializer, self.filter.clone(), state);
                         iter.into_py_any(py)
                     }
                 }
             }
             Err(_) => {
                 state.warn_fallback_py(self.get_name(), value)?;
-                infer_to_python(value, state, extra)
+                infer_to_python(value, state)
             }
         }
     }
@@ -99,18 +93,16 @@ impl TypeSerializer for GeneratorSerializer {
     fn json_key<'a, 'py>(
         &self,
         key: &'a Bound<'py, PyAny>,
-        state: &mut SerializationState<'py>,
-        extra: &Extra<'_, 'py>,
+        state: &mut SerializationState<'_, 'py>,
     ) -> PyResult<Cow<'a, str>> {
-        self.invalid_as_json_key(key, state, extra, Self::EXPECTED_TYPE)
+        self.invalid_as_json_key(key, state, Self::EXPECTED_TYPE)
     }
 
     fn serde_serialize<'py, S: serde::ser::Serializer>(
         &self,
         value: &Bound<'py, PyAny>,
         serializer: S,
-        state: &mut SerializationState<'py>,
-        extra: &Extra<'_, 'py>,
+        state: &mut SerializationState<'_, 'py>,
     ) -> Result<S::Ok, S::Error> {
         match value.downcast::<PyIterator>() {
             Ok(py_iter) => {
@@ -123,7 +115,7 @@ impl TypeSerializer for GeneratorSerializer {
                     let op_next = self.filter.index_filter(index, state, None).map_err(py_err_se_err)?;
                     if let Some((next_include, next_exclude)) = op_next {
                         let state = &mut state.scoped_include_exclude(next_include, next_exclude);
-                        let item_serialize = PydanticSerializer::new(&element, item_serializer, state, extra);
+                        let item_serialize = PydanticSerializer::new(&element, item_serializer, state);
                         seq.serialize_element(&item_serialize)?;
                     }
                 }
@@ -131,7 +123,7 @@ impl TypeSerializer for GeneratorSerializer {
             }
             Err(_) => {
                 state.warn_fallback_ser::<S>(self.get_name(), value)?;
-                infer_serialize(value, serializer, state, extra)
+                infer_serialize(value, serializer, state)
             }
         }
     }
@@ -157,14 +149,13 @@ impl SerializationIterator {
         py_iter: &Bound<'_, PyIterator>,
         item_serializer: &Arc<CombinedSerializer>,
         filter: SchemaFilter<usize>,
-        state: &mut SerializationState<'_>,
-        extra: &Extra<'_, '_>,
+        state: &mut SerializationState<'_, '_>,
     ) -> Self {
         Self {
             iterator: py_iter.clone().into(),
             index: 0,
             item_serializer: item_serializer.clone(),
-            extra_owned: ExtraOwned::new(extra, state),
+            extra_owned: ExtraOwned::new(state),
             filter,
         }
     }
@@ -197,7 +188,6 @@ impl SerializationIterator {
 
     fn __next__(&mut self, py: Python) -> PyResult<Option<Py<PyAny>>> {
         let iterator = self.iterator.bind(py);
-        let extra = self.extra_owned.to_extra(py);
         let state = &mut self.extra_owned.to_state(py);
 
         for iter_result in iterator.clone() {
@@ -206,10 +196,7 @@ impl SerializationIterator {
             self.index += 1;
             if let Some((next_include, next_exclude)) = filter {
                 let state = &mut state.scoped_include_exclude(next_include, next_exclude);
-                let v = self
-                    .item_serializer
-                    // TODO do we need error_on_fallback to be customizable?
-                    .to_python(&element, state, &extra)?;
+                let v = self.item_serializer.to_python(&element, state)?;
                 state.warnings.final_check(py)?;
                 return Ok(Some(v));
             }

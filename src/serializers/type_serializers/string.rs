@@ -9,8 +9,8 @@ use crate::definitions::DefinitionsBuilder;
 use crate::serializers::SerializationState;
 
 use super::{
-    infer_json_key, infer_serialize, infer_to_python, py_err_se_err, BuildSerializer, CombinedSerializer, Extra,
-    IsType, ObType, SerMode, TypeSerializer,
+    infer_json_key, infer_serialize, infer_to_python, py_err_se_err, BuildSerializer, CombinedSerializer, IsType,
+    ObType, SerMode, TypeSerializer,
 };
 
 #[derive(Debug)]
@@ -42,19 +42,18 @@ impl TypeSerializer for StrSerializer {
     fn to_python<'py>(
         &self,
         value: &Bound<'py, PyAny>,
-        state: &mut SerializationState<'py>,
-        extra: &Extra<'_, 'py>,
+        state: &mut SerializationState<'_, 'py>,
     ) -> PyResult<Py<PyAny>> {
         let py = value.py();
-        match extra.ob_type_lookup.is_type(value, ObType::Str) {
+        match state.extra.ob_type_lookup.is_type(value, ObType::Str) {
             IsType::Exact => Ok(value.clone().unbind()),
-            IsType::Subclass => match extra.mode {
+            IsType::Subclass => match state.extra.mode {
                 SerMode::Json => value.downcast::<PyString>()?.to_str()?.into_py_any(py),
                 _ => Ok(value.clone().unbind()),
             },
             IsType::False => {
                 state.warn_fallback_py(self.get_name(), value)?;
-                infer_to_python(value, state, extra)
+                infer_to_python(value, state)
             }
         }
     }
@@ -62,15 +61,14 @@ impl TypeSerializer for StrSerializer {
     fn json_key<'a, 'py>(
         &self,
         key: &'a Bound<'py, PyAny>,
-        state: &mut SerializationState<'py>,
-        extra: &Extra<'_, 'py>,
+        state: &mut SerializationState<'_, 'py>,
     ) -> PyResult<Cow<'a, str>> {
         if let Ok(py_str) = key.downcast::<PyString>() {
             // FIXME py cow to avoid the copy
             Ok(Cow::Owned(py_str.to_string_lossy().into_owned()))
         } else {
             state.warn_fallback_py(self.get_name(), key)?;
-            infer_json_key(key, state, extra)
+            infer_json_key(key, state)
         }
     }
 
@@ -78,14 +76,13 @@ impl TypeSerializer for StrSerializer {
         &self,
         value: &Bound<'py, PyAny>,
         serializer: S,
-        state: &mut SerializationState<'py>,
-        extra: &Extra<'_, 'py>,
+        state: &mut SerializationState<'_, 'py>,
     ) -> Result<S::Ok, S::Error> {
         match value.downcast::<PyString>() {
             Ok(py_str) => serialize_py_str(py_str, serializer),
             Err(_) => {
                 state.warn_fallback_ser::<S>(self.get_name(), value)?;
-                infer_serialize(value, serializer, state, extra)
+                infer_serialize(value, serializer, state)
             }
         }
     }

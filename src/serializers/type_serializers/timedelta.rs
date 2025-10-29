@@ -10,8 +10,7 @@ use crate::serializers::config::{FromConfig, TemporalMode, TimedeltaMode};
 use crate::serializers::SerializationState;
 
 use super::{
-    infer_json_key, infer_serialize, infer_to_python, BuildSerializer, CombinedSerializer, Extra, SerMode,
-    TypeSerializer,
+    infer_json_key, infer_serialize, infer_to_python, BuildSerializer, CombinedSerializer, SerMode, TypeSerializer,
 };
 
 #[derive(Debug)]
@@ -47,17 +46,16 @@ impl TypeSerializer for TimeDeltaSerializer {
     fn to_python<'py>(
         &self,
         value: &Bound<'py, PyAny>,
-        state: &mut SerializationState<'py>,
-        extra: &Extra<'_, 'py>,
+        state: &mut SerializationState<'_, 'py>,
     ) -> PyResult<Py<PyAny>> {
         match EitherTimedelta::try_from(value) {
-            Ok(either_timedelta) => match extra.mode {
+            Ok(either_timedelta) => match state.extra.mode {
                 SerMode::Json => Ok(self.temporal_mode.timedelta_to_json(value.py(), either_timedelta)?),
                 _ => Ok(value.clone().unbind()),
             },
             _ => {
                 state.warn_fallback_py(self.get_name(), value)?;
-                infer_to_python(value, state, extra)
+                infer_to_python(value, state)
             }
         }
     }
@@ -65,14 +63,13 @@ impl TypeSerializer for TimeDeltaSerializer {
     fn json_key<'a, 'py>(
         &self,
         key: &'a Bound<'py, PyAny>,
-        state: &mut SerializationState<'py>,
-        extra: &Extra<'_, 'py>,
+        state: &mut SerializationState<'_, 'py>,
     ) -> PyResult<Cow<'a, str>> {
         match EitherTimedelta::try_from(key) {
             Ok(either_timedelta) => self.temporal_mode.timedelta_json_key(&either_timedelta),
             Err(_) => {
                 state.warn_fallback_py(self.get_name(), key)?;
-                infer_json_key(key, state, extra)
+                infer_json_key(key, state)
             }
         }
     }
@@ -81,14 +78,13 @@ impl TypeSerializer for TimeDeltaSerializer {
         &self,
         value: &Bound<'py, PyAny>,
         serializer: S,
-        state: &mut SerializationState<'py>,
-        extra: &Extra<'_, 'py>,
+        state: &mut SerializationState<'_, 'py>,
     ) -> Result<S::Ok, S::Error> {
         match EitherTimedelta::try_from(value) {
             Ok(either_timedelta) => self.temporal_mode.timedelta_serialize(either_timedelta, serializer),
             Err(_) => {
                 state.warn_fallback_ser::<S>(self.get_name(), value)?;
-                infer_serialize(value, serializer, state, extra)
+                infer_serialize(value, serializer, state)
             }
         }
     }

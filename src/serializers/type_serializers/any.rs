@@ -10,9 +10,7 @@ use serde::ser::Serializer;
 
 use crate::{definitions::DefinitionsBuilder, serializers::SerializationState};
 
-use super::{
-    infer_json_key, infer_serialize, infer_to_python, BuildSerializer, CombinedSerializer, Extra, TypeSerializer,
-};
+use super::{infer_json_key, infer_serialize, infer_to_python, BuildSerializer, CombinedSerializer, TypeSerializer};
 
 #[derive(Debug, Clone, Default)]
 pub struct AnySerializer;
@@ -42,29 +40,26 @@ impl TypeSerializer for AnySerializer {
     fn to_python<'py>(
         &self,
         value: &Bound<'py, PyAny>,
-        state: &mut SerializationState<'py>,
-        extra: &Extra<'_, 'py>,
+        state: &mut SerializationState<'_, 'py>,
     ) -> PyResult<Py<PyAny>> {
-        infer_to_python(value, state, extra)
+        infer_to_python(value, state)
     }
 
     fn json_key<'a, 'py>(
         &self,
         key: &'a Bound<'py, PyAny>,
-        state: &mut SerializationState<'py>,
-        extra: &Extra<'_, 'py>,
+        state: &mut SerializationState<'_, 'py>,
     ) -> PyResult<Cow<'a, str>> {
-        infer_json_key(key, state, extra)
+        infer_json_key(key, state)
     }
 
     fn serde_serialize<'py, S: Serializer>(
         &self,
         value: &Bound<'py, PyAny>,
         serializer: S,
-        state: &mut SerializationState<'py>,
-        extra: &Extra<'_, 'py>,
+        state: &mut SerializationState<'_, 'py>,
     ) -> Result<S::Ok, S::Error> {
-        infer_serialize(value, serializer, state, extra)
+        infer_serialize(value, serializer, state)
     }
 
     fn get_name(&self) -> &str {

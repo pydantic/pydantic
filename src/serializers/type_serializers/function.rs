@@ -21,7 +21,7 @@ use super::format::WhenUsed;
 use super::any::AnySerializer;
 use super::{
     infer_json_key, infer_serialize, infer_to_python, py_err_se_err, AnyFilter, BuildSerializer, CombinedSerializer,
-    Extra, ExtraOwned, PydanticSerializationError, SerMode, TypeSerializer,
+    ExtraOwned, PydanticSerializationError, SerMode, TypeSerializer,
 };
 
 pub struct FunctionBeforeSerializerBuilder;
@@ -145,15 +145,14 @@ impl FunctionPlainSerializer {
     fn call<'py>(
         &self,
         value: &Bound<'py, PyAny>,
-        state: &mut SerializationState<'py>,
-        extra: &Extra<'_, 'py>,
+        state: &mut SerializationState<'_, 'py>,
     ) -> PyResult<(bool, Py<PyAny>)> {
         let py = value.py();
-        if self.when_used.should_use(value, extra) {
+        if self.when_used.should_use(value, &state.extra) {
             let v = if self.is_field_serializer {
                 if let Some(model) = state.model.as_ref() {
                     if self.info_arg {
-                        let info = SerializationInfo::new(state, extra, self.is_field_serializer)?;
+                        let info = SerializationInfo::new(state, self.is_field_serializer)?;
                         self.func.call1(py, (model, value, info))?
                     } else {
                         self.func.call1(py, (model, value))?
@@ -162,7 +161,7 @@ impl FunctionPlainSerializer {
                     return Err(PyRuntimeError::new_err("Function plain serializer expected to be run inside the context of a model field but no model was found"));
                 }
             } else if self.info_arg {
-                let info = SerializationInfo::new(state, extra, self.is_field_serializer)?;
+                let info = SerializationInfo::new(state, self.is_field_serializer)?;
                 self.func.call1(py, (value, info))?
             } else {
                 self.func.call1(py, (value,))?
@@ -188,7 +187,7 @@ impl FunctionPlainSerializer {
     }
 }
 
-fn on_error(py: Python, err: PyErr, function_name: &str, state: &mut SerializationState<'_>) -> PyResult<()> {
+fn on_error(py: Python, err: PyErr, function_name: &str, state: &mut SerializationState<'_, '_>) -> PyResult<()> {
     let exception = err.value(py);
     if let Ok(ser_err) = exception.extract::<PydanticSerializationUnexpectedValue>() {
         if state.check.enabled() {
@@ -214,43 +213,41 @@ macro_rules! function_type_serializer {
             fn to_python<'py>(
                 &self,
                 value: &Bound<'py, PyAny>,
-                state: &mut SerializationState<'py>,
-                extra: &Extra<'_, 'py>,
+                state: &mut SerializationState<'_, 'py>,
             ) -> PyResult<Py<PyAny>> {
                 let py = value.py();
-                let (ret_serializer, v) = match self.call(value, state, extra) {
+                let (ret_serializer, v) = match self.call(value, state) {
                     Ok((true, v)) => (&*self.return_serializer, v),
                     Ok((false, v)) => (self.get_fallback_serializer(), v),
                     Err(err) => {
                         on_error(py, err, &self.function_name, state)?;
-                        return infer_to_python(value, state, extra);
+                        return infer_to_python(value, state);
                     }
                 };
                 // None for include/exclude here, as filtering should be done
                 let state = &mut state.scoped_include_exclude(None, None);
-                ret_serializer.to_python(v.bind(py), state, extra)
+                ret_serializer.to_python(v.bind(py), state)
             }
 
             fn json_key<'a, 'py>(
                 &self,
                 key: &'a Bound<'py, PyAny>,
-                state: &mut SerializationState<'py>,
-                extra: &Extra<'_, 'py>,
+                state: &mut SerializationState<'_, 'py>,
             ) -> PyResult<Cow<'a, str>> {
                 let py = key.py();
                 let state = &mut state.scoped_include_exclude(None, None);
-                match self.call(key, state, extra) {
+                match self.call(key, state) {
                     Ok((true, v)) => self
                         .return_serializer
-                        .json_key(v.bind(py), state, extra)
+                        .json_key(v.bind(py), state)
                         .map(|cow| Cow::Owned(cow.into_owned())),
                     Ok((false, v)) => self
                         .get_fallback_serializer()
-                        .json_key(v.bind(py), state, extra)
+                        .json_key(v.bind(py), state)
                         .map(|cow| Cow::Owned(cow.into_owned())),
                     Err(err) => {
                         on_error(py, err, &self.function_name, state)?;
-                        infer_json_key(key, state, extra)
+                        infer_json_key(key, state)
                     }
                 }
             }
@@ -259,21 +256,20 @@ macro_rules! function_type_serializer {
                 &self,
                 value: &Bound<'py, PyAny>,
                 serializer: S,
-                state: &mut SerializationState<'py>,
-                extra: &Extra<'_, 'py>,
+                state: &mut SerializationState<'_, 'py>,
             ) -> Result<S::Ok, S::Error> {
                 let py = value.py();
-                let (ret_serializer, v) = match self.call(value, state, extra) {
+                let (ret_serializer, v) = match self.call(value, state) {
                     Ok((true, v)) => (&*self.return_serializer, v),
                     Ok((false, v)) => (self.get_fallback_serializer(), v),
                     Err(err) => {
                         on_error(py, err, &self.function_name, state).map_err(py_err_se_err)?;
-                        return infer_serialize(value, serializer, state, extra);
+                        return infer_serialize(value, serializer, state);
                     }
                 };
                 // None for include/exclude here, as filtering should be done
                 let mut state = state.scoped_include_exclude(None, None);
-                ret_serializer.serde_serialize(v.bind(py), serializer, &mut state, extra)
+                ret_serializer.serde_serialize(v.bind(py), serializer, &mut state)
             }
 
             fn get_name(&self) -> &str {
@@ -388,16 +384,15 @@ impl FunctionWrapSerializer {
     fn call<'py>(
         &self,
         value: &Bound<'py, PyAny>,
-        state: &mut SerializationState<'py>,
-        extra: &Extra<'_, 'py>,
+        state: &mut SerializationState<'_, 'py>,
     ) -> PyResult<(bool, Py<PyAny>)> {
         let py = value.py();
-        if self.when_used.should_use(value, extra) {
-            let serialize = SerializationCallable::new(&self.serializer, extra, state);
+        if self.when_used.should_use(value, &state.extra) {
+            let serialize = SerializationCallable::new(&self.serializer, state);
             let v = if self.is_field_serializer {
                 if let Some(model) = state.model.as_ref() {
                     if self.info_arg {
-                        let info = SerializationInfo::new(state, extra, self.is_field_serializer)?;
+                        let info = SerializationInfo::new(state, self.is_field_serializer)?;
                         self.func.call1(py, (model, value, serialize, info))?
                     } else {
                         self.func.call1(py, (model, value, serialize))?
@@ -406,7 +401,7 @@ impl FunctionWrapSerializer {
                     return Err(PyRuntimeError::new_err("Function wrap serializer expected to be run inside the context of a model field but no model was found"));
                 }
             } else if self.info_arg {
-                let info = SerializationInfo::new(state, extra, self.is_field_serializer)?;
+                let info = SerializationInfo::new(state, self.is_field_serializer)?;
                 self.func.call1(py, (value, serialize, info))?
             } else {
                 self.func.call1(py, (value, serialize))?
@@ -443,14 +438,10 @@ pub(crate) struct SerializationCallable {
 }
 
 impl SerializationCallable {
-    pub fn new(
-        serializer: &Arc<CombinedSerializer>,
-        extra: &Extra<'_, '_>,
-        state: &mut SerializationState<'_>,
-    ) -> Self {
+    pub fn new(serializer: &Arc<CombinedSerializer>, state: &SerializationState<'_, '_>) -> Self {
         Self {
             serializer: serializer.clone(),
-            extra_owned: ExtraOwned::new(extra, state),
+            extra_owned: ExtraOwned::new(state),
             filter: AnyFilter::new(),
         }
     }
@@ -488,7 +479,6 @@ impl SerializationCallable {
         // so use to_python_no_infer so that type inference can't apply
         // at this layer
 
-        let extra = self.extra_owned.to_extra(py);
         let state = &mut self.extra_owned.to_state(py);
 
         if let Some(index_key) = index_key {
@@ -499,14 +489,14 @@ impl SerializationCallable {
             };
             if let Some((next_include, next_exclude)) = filter {
                 let state = &mut state.scoped_include_exclude(next_include, next_exclude);
-                let v = self.serializer.to_python_no_infer(value, state, &extra)?;
+                let v = self.serializer.to_python_no_infer(value, state)?;
                 state.warnings.final_check(py)?;
                 Ok(Some(v))
             } else {
                 Err(PydanticOmit::new_err())
             }
         } else {
-            let v = self.serializer.to_python_no_infer(value, state, &extra)?;
+            let v = self.serializer.to_python_no_infer(value, state)?;
             state.warnings.final_check(py)?;
             Ok(Some(v))
         }
@@ -553,7 +543,8 @@ struct SerializationInfo {
 }
 
 impl SerializationInfo {
-    fn new(state: &SerializationState<'_>, extra: &Extra<'_, '_>, is_field_serializer: bool) -> PyResult<Self> {
+    fn new(state: &SerializationState<'_, '_>, is_field_serializer: bool) -> PyResult<Self> {
+        let extra = &state.extra;
         if is_field_serializer {
             match state.field_name.as_ref() {
                 Some(field_name) => Ok(Self {

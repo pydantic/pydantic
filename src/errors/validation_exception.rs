@@ -339,7 +339,6 @@ impl ValidationError {
         include_input: bool,
     ) -> PyResult<Bound<'py, PyString>> {
         let config = SerializationConfig::from_args("iso8601", "iso8601", "utf8", "constants")?;
-        let mut state = SerializationState::new(config, WarningsMode::None, None, None)?;
         let extra = Extra::new(
             py,
             &SerMode::Json,
@@ -354,13 +353,13 @@ impl ValidationError {
             false,
             None,
         );
+        let mut state = SerializationState::new(config, WarningsMode::None, None, None, extra)?;
         let mut serializer = ValidationErrorSerializer {
             py,
             line_errors: &self.line_errors,
             url_prefix: get_url_prefix(py, include_url),
             include_context,
             include_input,
-            extra: &extra,
             state: &mut state,
             input_type: &self.input_type,
         };
@@ -584,18 +583,17 @@ where
     S::Error::custom(error.to_string())
 }
 
-struct ValidationErrorSerializer<'slf, 'py> {
+struct ValidationErrorSerializer<'slf, 'a, 'py> {
     py: Python<'py>,
     line_errors: &'py [PyLineError],
     url_prefix: Option<&'py str>,
     include_context: bool,
     include_input: bool,
-    state: &'slf mut SerializationState<'py>,
-    extra: &'slf Extra<'slf, 'py>,
+    state: &'slf mut SerializationState<'a, 'py>,
     input_type: &'py InputType,
 }
 
-impl ValidationErrorSerializer<'_, '_> {
+impl ValidationErrorSerializer<'_, '_, '_> {
     fn serialize<S>(&mut self, serializer: S) -> Result<S::Ok, S::Error>
     where
         S: Serializer,
@@ -609,7 +607,6 @@ impl ValidationErrorSerializer<'_, '_> {
                 include_context: self.include_context,
                 include_input: self.include_input,
                 state: RefCell::new(self.state),
-                extra: self.extra,
                 input_type: self.input_type,
             };
             seq.serialize_element(&line_s)?;
@@ -618,18 +615,17 @@ impl ValidationErrorSerializer<'_, '_> {
     }
 }
 
-struct PyLineErrorSerializer<'slf, 'py> {
+struct PyLineErrorSerializer<'slf, 'a, 'py> {
     py: Python<'py>,
     line_error: &'py PyLineError,
     url_prefix: Option<&'py str>,
     include_context: bool,
     include_input: bool,
-    extra: &'slf Extra<'slf, 'py>,
-    state: RefCell<&'slf mut SerializationState<'py>>,
+    state: RefCell<&'slf mut SerializationState<'a, 'py>>,
     input_type: &'py InputType,
 }
 
-impl Serialize for PyLineErrorSerializer<'_, '_> {
+impl Serialize for PyLineErrorSerializer<'_, '_, '_> {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
         S: Serializer,
@@ -654,17 +650,12 @@ impl Serialize for PyLineErrorSerializer<'_, '_> {
         map.serialize_entry("msg", &msg)?;
 
         if self.include_input {
-            map.serialize_entry(
-                "input",
-                &self
-                    .extra
-                    .serialize_infer(self.line_error.input_value.bind(py), &mut state),
-            )?;
+            map.serialize_entry("input", &state.serialize_infer(self.line_error.input_value.bind(py)))?;
         }
 
         if self.include_context {
             if let Some(context) = self.line_error.error_type.py_dict(py).map_err(py_err_json::<S>)? {
-                map.serialize_entry("ctx", &self.extra.serialize_infer(context.bind(py), &mut state))?;
+                map.serialize_entry("ctx", &state.serialize_infer(context.bind(py)))?;
             }
         }
         if let Some(url_prefix) = self.url_prefix {

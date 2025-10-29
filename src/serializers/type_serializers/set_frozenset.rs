@@ -13,8 +13,7 @@ use crate::tools::SchemaDict;
 
 use super::any::AnySerializer;
 use super::{
-    infer_serialize, infer_to_python, BuildSerializer, CombinedSerializer, Extra, PydanticSerializer, SerMode,
-    TypeSerializer,
+    infer_serialize, infer_to_python, BuildSerializer, CombinedSerializer, PydanticSerializer, SerMode, TypeSerializer,
 };
 
 macro_rules! build_serializer {
@@ -55,8 +54,7 @@ macro_rules! build_serializer {
             fn to_python<'py>(
                 &self,
                 value: &Bound<'py, PyAny>,
-                state: &mut SerializationState<'py>,
-                extra: &Extra<'_, 'py>,
+                state: &mut SerializationState<'_, 'py>,
             ) -> PyResult<Py<PyAny>> {
                 let py = value.py();
                 match value.downcast::<$py_type>() {
@@ -65,16 +63,16 @@ macro_rules! build_serializer {
 
                         let mut items = Vec::with_capacity(py_set.len());
                         for element in py_set.iter() {
-                            items.push(item_serializer.to_python(&element, state, extra)?);
+                            items.push(item_serializer.to_python(&element, state)?);
                         }
-                        match extra.mode {
+                        match state.extra.mode {
                             SerMode::Json => Ok(PyList::new(py, items)?.into()),
                             _ => <$py_type>::new(py, &items)?.into_py_any(py),
                         }
                     }
                     Err(_) => {
                         state.warn_fallback_py(self.get_name(), value)?;
-                        infer_to_python(value, state, extra)
+                        infer_to_python(value, state)
                     }
                 }
             }
@@ -82,18 +80,16 @@ macro_rules! build_serializer {
             fn json_key<'a, 'py>(
                 &self,
                 key: &'a Bound<'py, PyAny>,
-                state: &mut SerializationState<'py>,
-                extra: &Extra<'_, 'py>,
+                state: &mut SerializationState<'_, 'py>,
             ) -> PyResult<Cow<'a, str>> {
-                self.invalid_as_json_key(key, state, extra, Self::EXPECTED_TYPE)
+                self.invalid_as_json_key(key, state, Self::EXPECTED_TYPE)
             }
 
             fn serde_serialize<'py, S: serde::ser::Serializer>(
                 &self,
                 value: &Bound<'py, PyAny>,
                 serializer: S,
-                state: &mut SerializationState<'py>,
-                extra: &Extra<'_, 'py>,
+                state: &mut SerializationState<'_, 'py>,
             ) -> Result<S::Ok, S::Error> {
                 match value.downcast::<$py_type>() {
                     Ok(py_set) => {
@@ -101,14 +97,14 @@ macro_rules! build_serializer {
                         let item_serializer = self.item_serializer.as_ref();
 
                         for value in py_set.iter() {
-                            let item_serialize = PydanticSerializer::new(&value, item_serializer, state, extra);
+                            let item_serialize = PydanticSerializer::new(&value, item_serializer, state);
                             seq.serialize_element(&item_serialize)?;
                         }
                         seq.end()
                     }
                     Err(_) => {
                         state.warn_fallback_ser::<S>(self.get_name(), value)?;
-                        infer_serialize(value, serializer, state, extra)
+                        infer_serialize(value, serializer, state)
                     }
                 }
             }

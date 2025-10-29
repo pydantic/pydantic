@@ -9,7 +9,7 @@ use crate::definitions::DefinitionsBuilder;
 use crate::serializers::SerializationState;
 use crate::tools::SchemaDict;
 
-use super::{infer_json_key_known, BuildSerializer, CombinedSerializer, Extra, IsType, ObType, TypeSerializer};
+use super::{infer_json_key_known, BuildSerializer, CombinedSerializer, IsType, ObType, TypeSerializer};
 
 #[derive(Debug)]
 pub struct NullableSerializer {
@@ -38,26 +38,24 @@ impl TypeSerializer for NullableSerializer {
     fn to_python<'py>(
         &self,
         value: &Bound<'py, PyAny>,
-        state: &mut SerializationState<'py>,
-        extra: &Extra<'_, 'py>,
+        state: &mut SerializationState<'_, 'py>,
     ) -> PyResult<Py<PyAny>> {
         let py = value.py();
-        match extra.ob_type_lookup.is_type(value, ObType::None) {
+        match state.extra.ob_type_lookup.is_type(value, ObType::None) {
             IsType::Exact => Ok(py.None()),
             // I don't think subclasses of None can exist
-            _ => self.serializer.to_python(value, state, extra),
+            _ => self.serializer.to_python(value, state),
         }
     }
 
     fn json_key<'a, 'py>(
         &self,
         key: &'a Bound<'py, PyAny>,
-        state: &mut SerializationState<'py>,
-        extra: &Extra<'_, 'py>,
+        state: &mut SerializationState<'_, 'py>,
     ) -> PyResult<Cow<'a, str>> {
-        match extra.ob_type_lookup.is_type(key, ObType::None) {
-            IsType::Exact => infer_json_key_known(ObType::None, key, state, extra),
-            _ => self.serializer.json_key(key, state, extra),
+        match state.extra.ob_type_lookup.is_type(key, ObType::None) {
+            IsType::Exact => infer_json_key_known(ObType::None, key, state),
+            _ => self.serializer.json_key(key, state),
         }
     }
 
@@ -65,12 +63,11 @@ impl TypeSerializer for NullableSerializer {
         &self,
         value: &Bound<'py, PyAny>,
         serializer: S,
-        state: &mut SerializationState<'py>,
-        extra: &Extra<'_, 'py>,
+        state: &mut SerializationState<'_, 'py>,
     ) -> Result<S::Ok, S::Error> {
-        match extra.ob_type_lookup.is_type(value, ObType::None) {
+        match state.extra.ob_type_lookup.is_type(value, ObType::None) {
             IsType::Exact => serializer.serialize_none(),
-            _ => self.serializer.serde_serialize(value, serializer, state, extra),
+            _ => self.serializer.serde_serialize(value, serializer, state),
         }
     }
 

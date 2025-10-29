@@ -95,7 +95,6 @@ impl SchemaSerializer {
             WarningsArg::Bool(b) => b.into(),
             WarningsArg::Literal(mode) => mode,
         };
-        let mut state = SerializationState::new(self.config, warnings_mode, include, exclude)?;
         let extra = Extra::new(
             py,
             &mode,
@@ -110,7 +109,8 @@ impl SchemaSerializer {
             serialize_as_any,
             context,
         );
-        let v = self.serializer.to_python(value, &mut state, &extra)?;
+        let mut state = SerializationState::new(self.config, warnings_mode, include, exclude, extra)?;
+        let v = self.serializer.to_python(value, &mut state)?;
         state.warnings.final_check(py)?;
         Ok(v)
     }
@@ -142,7 +142,6 @@ impl SchemaSerializer {
             WarningsArg::Bool(b) => b.into(),
             WarningsArg::Literal(mode) => mode,
         };
-        let mut state = SerializationState::new(self.config, warnings_mode, include, exclude)?;
         let extra = Extra::new(
             py,
             &SerMode::Json,
@@ -157,11 +156,11 @@ impl SchemaSerializer {
             serialize_as_any,
             context,
         );
+        let mut state = SerializationState::new(self.config, warnings_mode, include, exclude, extra)?;
         let bytes = to_json_bytes(
             value,
             &self.serializer,
             &mut state,
-            &extra,
             indent,
             ensure_ascii.unwrap_or(false),
             self.expected_json_size.load(Ordering::Relaxed),
@@ -223,7 +222,6 @@ pub fn to_json(
     context: Option<&Bound<'_, PyAny>>,
 ) -> PyResult<Py<PyAny>> {
     let config = SerializationConfig::from_args(timedelta_mode, temporal_mode, bytes_mode, inf_nan_mode)?;
-    let mut state = SerializationState::new(config, WarningsMode::None, include, exclude)?;
     let extra = Extra::new(
         py,
         &SerMode::Json,
@@ -238,11 +236,11 @@ pub fn to_json(
         serialize_as_any,
         context,
     );
+    let mut state = SerializationState::new(config, WarningsMode::None, include, exclude, extra)?;
     let bytes = to_json_bytes(
         value,
         AnySerializer::get(),
         &mut state,
-        &extra,
         indent,
         ensure_ascii.unwrap_or(false),
         1024,
@@ -275,7 +273,6 @@ pub fn to_jsonable_python(
     context: Option<&Bound<'_, PyAny>>,
 ) -> PyResult<Py<PyAny>> {
     let config = SerializationConfig::from_args(timedelta_mode, temporal_mode, bytes_mode, inf_nan_mode)?;
-    let mut state = SerializationState::new(config, WarningsMode::None, include, exclude)?;
     let extra = Extra::new(
         py,
         &SerMode::Json,
@@ -290,7 +287,8 @@ pub fn to_jsonable_python(
         serialize_as_any,
         context,
     );
-    let v = infer::infer_to_python(value, &mut state, &extra)?;
+    let mut state = SerializationState::new(config, WarningsMode::None, include, exclude, extra)?;
+    let v = infer::infer_to_python(value, &mut state)?;
     state.final_check(py)?;
     Ok(v)
 }

@@ -10,7 +10,7 @@ use crate::serializers::SerializationState;
 use crate::tools::SchemaDict;
 use crate::validators::DefaultType;
 
-use super::{BuildSerializer, CombinedSerializer, Extra, TypeSerializer};
+use super::{BuildSerializer, CombinedSerializer, TypeSerializer};
 
 #[derive(Debug)]
 pub struct WithDefaultSerializer {
@@ -42,29 +42,26 @@ impl TypeSerializer for WithDefaultSerializer {
     fn to_python<'py>(
         &self,
         value: &Bound<'py, PyAny>,
-        state: &mut SerializationState<'py>,
-        extra: &Extra<'_, 'py>,
+        state: &mut SerializationState<'_, 'py>,
     ) -> PyResult<Py<PyAny>> {
-        self.serializer.to_python(value, state, extra)
+        self.serializer.to_python(value, state)
     }
 
     fn json_key<'a, 'py>(
         &self,
         key: &'a Bound<'py, PyAny>,
-        state: &mut SerializationState<'py>,
-        extra: &Extra<'_, 'py>,
+        state: &mut SerializationState<'_, 'py>,
     ) -> PyResult<Cow<'a, str>> {
-        self.serializer.json_key(key, state, extra)
+        self.serializer.json_key(key, state)
     }
 
     fn serde_serialize<'py, S: serde::ser::Serializer>(
         &self,
         value: &Bound<'py, PyAny>,
         serializer: S,
-        state: &mut SerializationState<'py>,
-        extra: &Extra<'_, 'py>,
+        state: &mut SerializationState<'_, 'py>,
     ) -> Result<S::Ok, S::Error> {
-        self.serializer.serde_serialize(value, serializer, state, extra)
+        self.serializer.serde_serialize(value, serializer, state)
     }
 
     fn get_name(&self) -> &str {

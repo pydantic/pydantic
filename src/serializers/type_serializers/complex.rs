@@ -8,7 +8,7 @@ use crate::build_tools::LazyLock;
 use crate::definitions::DefinitionsBuilder;
 use crate::serializers::SerializationState;
 
-use super::{infer_serialize, infer_to_python, BuildSerializer, CombinedSerializer, Extra, SerMode, TypeSerializer};
+use super::{infer_serialize, infer_to_python, BuildSerializer, CombinedSerializer, SerMode, TypeSerializer};
 
 #[derive(Debug, Clone)]
 pub struct ComplexSerializer {}
@@ -32,18 +32,17 @@ impl TypeSerializer for ComplexSerializer {
     fn to_python<'py>(
         &self,
         value: &Bound<'py, PyAny>,
-        state: &mut SerializationState<'py>,
-        extra: &Extra<'_, 'py>,
+        state: &mut SerializationState<'_, 'py>,
     ) -> PyResult<Py<PyAny>> {
         let py = value.py();
         match value.downcast::<PyComplex>() {
-            Ok(py_complex) => match extra.mode {
+            Ok(py_complex) => match state.extra.mode {
                 SerMode::Json => complex_to_str(py_complex).into_py_any(py),
                 _ => Ok(value.clone().unbind()),
             },
             Err(_) => {
                 state.warn_fallback_py(self.get_name(), value)?;
-                infer_to_python(value, state, extra)
+                infer_to_python(value, state)
             }
         }
     }
@@ -51,18 +50,16 @@ impl TypeSerializer for ComplexSerializer {
     fn json_key<'a, 'py>(
         &self,
         key: &'a Bound<'py, PyAny>,
-        state: &mut SerializationState<'py>,
-        extra: &Extra<'_, 'py>,
+        state: &mut SerializationState<'_, 'py>,
     ) -> PyResult<Cow<'a, str>> {
-        self.invalid_as_json_key(key, state, extra, "complex")
+        self.invalid_as_json_key(key, state, "complex")
     }
 
     fn serde_serialize<'py, S: serde::ser::Serializer>(
         &self,
         value: &Bound<'py, PyAny>,
         serializer: S,
-        state: &mut SerializationState<'py>,
-        extra: &Extra<'_, 'py>,
+        state: &mut SerializationState<'_, 'py>,
     ) -> Result<S::Ok, S::Error> {
         match value.downcast::<PyComplex>() {
             Ok(py_complex) => {
@@ -71,7 +68,7 @@ impl TypeSerializer for ComplexSerializer {
             }
             Err(_) => {
                 state.warn_fallback_ser::<S>(self.get_name(), value)?;
-                infer_serialize(value, serializer, state, extra)
+                infer_serialize(value, serializer, state)
             }
         }
     }
