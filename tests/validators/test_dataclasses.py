@@ -1845,3 +1845,46 @@ def test_by_alias_and_name_config_interaction(
         assert dataclasses.asdict(
             s.validate_python({'my_field': 1}, by_alias=runtime_by_alias, by_name=runtime_by_name)
         ) == {'my_field': 1}
+
+
+def test_dataclass_json_duplicate_keys():
+    """Test that duplicate keys in JSON are handled correctly (last value wins).
+
+    We want to ensure that:
+    1. The last value for a duplicate key is used (standard JSON behavior)
+    2. We don't waste work creating Python objects for values that get overwritten
+    """
+
+    @dataclasses.dataclass
+    class MyDataclass:
+        name: str
+        age: int
+
+    schema = core_schema.dataclass_schema(
+        MyDataclass,
+        core_schema.dataclass_args_schema(
+            'MyDataclass',
+            [
+                core_schema.dataclass_field(name='name', schema=core_schema.str_schema()),
+                core_schema.dataclass_field(name='age', schema=core_schema.int_schema()),
+            ],
+        ),
+        ['name', 'age'],
+    )
+    v = SchemaValidator(schema)
+
+    # json with duplicate keys - the last value should win
+    json_with_duplicates = '{"name": "Alice", "age": 30, "name": "Bob", "age": 25}'
+    result = v.validate_json(json_with_duplicates)
+
+    assert result.name == 'Bob', "Last value for 'name' should win"
+    assert result.age == 25, "Last value for 'age' should win"
+    assert dataclasses.asdict(result) == {'name': 'Bob', 'age': 25}
+
+    # test with multiple duplicates of the same key
+    json_multiple_duplicates = '{"name": "First", "age": 1, "name": "Second", "name": "Third", "age": 3}'
+    result2 = v.validate_json(json_multiple_duplicates)
+
+    assert result2.name == 'Third', 'Last value among multiple duplicates should win'
+    assert result2.age == 3
+    assert dataclasses.asdict(result2) == {'name': 'Third', 'age': 3}

@@ -1,4 +1,5 @@
 use std::borrow::Cow;
+use std::collections::HashSet;
 
 use jiter::{JsonArray, JsonObject, JsonValue};
 use num_traits::cast::ToPrimitive;
@@ -59,18 +60,35 @@ impl<'py, 'data> Input<'py> for JsonValue<'data> {
     }
 
     fn as_kwargs(&self, py: Python<'py>) -> Option<Bound<'py, PyDict>> {
-        match self {
-            JsonValue::Object(object) => {
-                let dict = PyDict::new(py);
-                for (k, v) in object.as_slice() {
-                    // TODO: jiter doesn't deduplicate keys, so we should probably do that here to
-                    // avoid potential wasted work creating Python objects.
-                    dict.set_item(k, v).unwrap();
+        let JsonValue::Object(object) = self else {
+            return None;
+        };
+
+        // deduplicate keys before creating objects to avoid wasted work
+        // jiter doesn't deduplicate keys, so duplicate keys in JSON will appear multiple times
+        // in the slice. We iterate backwards to keep only the last value for each key while preserving order
+        let unique_indices_reversed = {
+            let mut seen = HashSet::with_capacity(object.len());
+            let mut unique = Vec::with_capacity(object.len());
+
+            for (i, (k, _)) in object.as_slice().iter().enumerate().rev() {
+                if seen.insert(k) {
+                    unique.push(i);
                 }
-                Some(dict)
             }
-            _ => None,
+
+            unique
+        };
+
+        let object = object.as_slice();
+
+        let dict = PyDict::new(py);
+        for &i in unique_indices_reversed.iter().rev() {
+            let (k, v) = &object[i];
+            dict.set_item(k, v).unwrap();
         }
+
+        Some(dict)
     }
 
     type Arguments<'a>
