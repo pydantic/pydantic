@@ -9,11 +9,14 @@ use serde::ser::Error;
 
 use crate::build_tools::py_schema_err;
 use crate::definitions::DefinitionsBuilder;
+use crate::serializers::errors::unwrap_ser_error;
+use crate::serializers::shared::serialize_to_json;
+use crate::serializers::shared::serialize_to_python;
+use crate::serializers::shared::DoSerialize;
 use crate::serializers::SerializationState;
 use crate::tools::SchemaDict;
 
 use super::simple::none_json_key;
-use super::string::serialize_py_str;
 use super::{py_err_se_err, BuildSerializer, CombinedSerializer, Extra, PydanticSerializationError, TypeSerializer};
 
 #[derive(Debug, Clone, Eq, PartialEq)]
@@ -144,7 +147,9 @@ impl TypeSerializer for FormatSerializer {
             match self.call(value) {
                 Ok(v) => {
                     let py_str = v.bind(value.py()).downcast().map_err(py_err_se_err)?;
-                    serialize_py_str(py_str, serializer)
+                    serialize_to_json(serializer)
+                        .serialize_str(py_str)
+                        .map_err(unwrap_ser_error)
                 }
                 Err(e) => Err(S::Error::custom(e)),
             }
@@ -183,7 +188,7 @@ impl_py_gc_traverse!(ToStringSerializer {});
 impl TypeSerializer for ToStringSerializer {
     fn to_python(&self, value: &Bound<'_, PyAny>, state: &mut SerializationState<'_, '_>) -> PyResult<Py<PyAny>> {
         if self.when_used.should_use(value, &state.extra) {
-            value.str().map(Into::into)
+            serialize_via_str(value, serialize_to_python())
         } else {
             Ok(value.clone().unbind())
         }
@@ -208,8 +213,7 @@ impl TypeSerializer for ToStringSerializer {
         _state: &mut SerializationState<'_, '_>,
     ) -> Result<S::Ok, S::Error> {
         if self.when_used.should_use_json(value) {
-            let s = value.str().map_err(py_err_se_err)?;
-            serialize_py_str(&s, serializer)
+            serialize_via_str(value, serialize_to_json(serializer)).map_err(|e| e.0)
         } else {
             serializer.serialize_none()
         }
@@ -218,4 +222,13 @@ impl TypeSerializer for ToStringSerializer {
     fn get_name(&self) -> &str {
         Self::EXPECTED_TYPE
     }
+}
+
+/// Serialize a value by calling `str()` on it
+pub fn serialize_via_str<'py, T, E: From<PyErr>>(
+    value: &Bound<'py, PyAny>,
+    do_serialize: impl DoSerialize<'py, T, E>,
+) -> Result<T, E> {
+    let s = value.str()?;
+    do_serialize.serialize_str(&s)
 }

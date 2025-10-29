@@ -6,11 +6,13 @@ use pyo3::{prelude::*, IntoPyObjectExt};
 
 use crate::build_tools::LazyLock;
 use crate::definitions::DefinitionsBuilder;
+use crate::serializers::errors::unwrap_ser_error;
+use crate::serializers::shared::{serialize_to_json, DoSerialize};
 use crate::serializers::SerializationState;
 
 use super::{
-    infer_json_key, infer_serialize, infer_to_python, py_err_se_err, BuildSerializer, CombinedSerializer, IsType,
-    ObType, SerMode, TypeSerializer,
+    infer_json_key, infer_serialize, infer_to_python, BuildSerializer, CombinedSerializer, IsType, ObType, SerMode,
+    TypeSerializer,
 };
 
 #[derive(Debug)]
@@ -79,7 +81,9 @@ impl TypeSerializer for StrSerializer {
         state: &mut SerializationState<'_, 'py>,
     ) -> Result<S::Ok, S::Error> {
         match value.downcast::<PyString>() {
-            Ok(py_str) => serialize_py_str(py_str, serializer),
+            Ok(py_str) => serialize_to_json(serializer)
+                .serialize_str(py_str)
+                .map_err(unwrap_ser_error),
             Err(_) => {
                 state.warn_fallback_ser::<S>(self.get_name(), value)?;
                 infer_serialize(value, serializer, state)
@@ -90,12 +94,4 @@ impl TypeSerializer for StrSerializer {
     fn get_name(&self) -> &str {
         Self::EXPECTED_TYPE
     }
-}
-
-pub fn serialize_py_str<S: serde::ser::Serializer>(
-    py_str: &Bound<'_, PyString>,
-    serializer: S,
-) -> Result<S::Ok, S::Error> {
-    let s = py_str.to_str().map_err(py_err_se_err)?;
-    serializer.serialize_str(s)
 }

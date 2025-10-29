@@ -48,6 +48,7 @@ pub struct ObTypeLookup {
     pattern_object: Py<PyAny>,
     // uuid type
     uuid_object: Py<PyAny>,
+    // `complex` builtin
     complex: usize,
 }
 
@@ -155,10 +156,10 @@ impl ObTypeLookup {
             ObType::Enum => self.enum_object.as_ptr() as usize == ob_type,
             ObType::Generator => self.generator_object.as_ptr() as usize == ob_type,
             ObType::Path => self.path_object.as_ptr() as usize == ob_type,
-            ObType::Pattern => self.path_object.as_ptr() as usize == ob_type,
+            ObType::Pattern => self.pattern_object.as_ptr() as usize == ob_type,
             ObType::Uuid => self.uuid_object.as_ptr() as usize == ob_type,
-            ObType::Unknown => false,
             ObType::Complex => self.complex == ob_type,
+            ObType::Unknown => false,
         };
 
         if ans {
@@ -414,9 +415,10 @@ pub enum ObType {
     Pattern,
     // Uuid
     Uuid,
+    // complex builtin
+    Complex,
     // unknown type
     Unknown,
-    Complex,
 }
 
 impl PartialEq for ObType {
@@ -427,12 +429,12 @@ impl PartialEq for ObType {
         } else {
             match (self, other) {
                 // special cases for subclasses
-                (Self::IntSubclass, Self::Int) => true,
-                (Self::Int, Self::IntSubclass) => true,
-                (Self::FloatSubclass, Self::Float) => true,
-                (Self::Float, Self::FloatSubclass) => true,
-                (Self::StrSubclass, Self::Str) => true,
-                (Self::Str, Self::StrSubclass) => true,
+                (Self::IntSubclass, Self::Int)
+                | (Self::Int, Self::IntSubclass)
+                | (Self::FloatSubclass, Self::Float)
+                | (Self::Float, Self::FloatSubclass)
+                | (Self::StrSubclass, Self::Str)
+                | (Self::Str, Self::StrSubclass) => true,
                 _ => false,
             }
         }

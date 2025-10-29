@@ -372,9 +372,8 @@ impl From<Option<&str>> for SerMode {
     fn from(s: Option<&str>) -> Self {
         match s {
             Some("json") => SerMode::Json,
-            Some("python") => SerMode::Python,
+            Some("python") | None => SerMode::Python,
             Some(other) => SerMode::Other(other.to_string()),
-            None => SerMode::Python,
         }
     }
 }

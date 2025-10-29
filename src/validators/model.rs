@@ -34,9 +34,8 @@ pub(super) enum Revalidate {
 impl Revalidate {
     pub fn from_str(s: Option<&str>) -> PyResult<Self> {
         match s {
-            None => Ok(Self::Never),
             Some("always") => Ok(Self::Always),
-            Some("never") => Ok(Self::Never),
+            Some("never") | None => Ok(Self::Never),
             Some("subclass-instances") => Ok(Self::SubclassInstances),
             Some(s) => py_schema_err!("Invalid revalidate_instances value: {}", s),
         }

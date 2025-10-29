@@ -113,7 +113,7 @@ impl BuildValidator for WithDefaultValidator {
             .map(|s| s.to_str())
             .transpose()?
         {
-            Some("raise") => OnError::Raise,
+            Some("raise") | None => OnError::Raise,
             Some("omit") => OnError::Omit,
             Some("default") => {
                 if matches!(default, DefaultType::None) {
@@ -121,7 +121,6 @@ impl BuildValidator for WithDefaultValidator {
                 }
                 OnError::Default
             }
-            None => OnError::Raise,
             // schema validation means other values are impossible
             _ => unreachable!(),
         };

@@ -21,6 +21,10 @@ pub(super) fn py_err_se_err<T: ser::Error, E: fmt::Display>(py_error: E) -> T {
 /// Wrapper type which allows convenient conversion between `PyErr` and `ser::Error` in `?` expressions.
 pub(super) struct WrappedSerError<T: ser::Error>(pub T);
 
+pub fn unwrap_ser_error<T: ser::Error>(wrapped: WrappedSerError<T>) -> T {
+    wrapped.0
+}
+
 impl<T: ser::Error> From<PyErr> for WrappedSerError<T> {
     fn from(py_err: PyErr) -> Self {
         WrappedSerError(T::custom(py_err.to_string()))

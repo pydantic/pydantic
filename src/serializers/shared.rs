@@ -5,10 +5,10 @@ use std::io::{self, Write};
 use std::sync::Arc;
 
 use pyo3::exceptions::PyTypeError;
-use pyo3::prelude::*;
 use pyo3::sync::PyOnceLock;
 use pyo3::types::{PyDict, PyString};
 use pyo3::{intern, PyTraverseError, PyVisit};
+use pyo3::{prelude::*, IntoPyObjectExt};
 
 use enum_dispatch::enum_dispatch;
 use serde::{Serialize, Serializer};
@@ -199,17 +199,19 @@ impl CombinedSerializer {
                     )
                     .map_err(|err| py_schema_error_type!("Error building `function-wrap` serializer:\n  {}", err));
                 }
-                // applies to lists tuples and dicts, does not override the main schema `type`
-                Some("include-exclude-sequence" | "include-exclude-dict") => (),
-                // applies specifically to bytes, does not override the main schema `type`
-                Some("base64") => (),
+                Some(
+                    // applies to lists tuples and dicts, does not override the main schema `type`
+                    "include-exclude-sequence" | "include-exclude-dict"
+                    // applies specifically to bytes, does not override the main schema `type`
+                    | "base64"
+                )
+                // if `schema.serialization.type` is None, fall back to `schema.type`
+                | None => (),
                 Some(ser_type) => {
                     // otherwise if `schema.serialization.type` is defined, use that with `find_serializer`
                     // instead of `schema.type`. In this case it's an error if a serializer isn't found.
                     return Self::find_serializer(ser_type, &ser_schema, config, definitions);
                 }
-                // if `schema.serialization.type` is None, fall back to `schema.type`
-                None => (),
             };
         }
 
@@ -625,6 +627,8 @@ pub trait DoSerialize<'py, OutputT, ErrorT> {
         value: &Bound<'py, PyAny>,
         state: &mut SerializationState<'_, 'py>,
     ) -> Result<OutputT, ErrorT>;
+
+    fn serialize_str(self, value: &Bound<'py, PyString>) -> Result<OutputT, ErrorT>;
 }
 
 /// Helper to create a `SerializeToPython` instance
@@ -660,6 +664,10 @@ impl<'py> DoSerialize<'py, Py<PyAny>, PyErr> for SerializeToPython {
         state.warn_fallback_py(name, value)?;
         infer_to_python(value, state)
     }
+
+    fn serialize_str(self, value: &Bound<'py, PyString>) -> Result<Py<PyAny>, PyErr> {
+        value.into_py_any(value.py())
+    }
 }
 
 pub struct SerializeToJson<S> {
@@ -686,5 +694,10 @@ impl<'py, S: Serializer> DoSerialize<'py, S::Ok, WrappedSerError<S::Error>> for 
     ) -> Result<S::Ok, WrappedSerError<S::Error>> {
         state.warn_fallback_ser::<S>(name, value).map_err(WrappedSerError)?;
         infer_serialize(value, self.serializer, state).map_err(WrappedSerError)
+    }
+
+    fn serialize_str(self, value: &Bound<'py, PyString>) -> Result<S::Ok, WrappedSerError<S::Error>> {
+        let s = value.to_str()?;
+        self.serializer.serialize_str(s).map_err(WrappedSerError)
     }
 }

@@ -113,8 +113,7 @@ impl<'py> IntoPyObject<'py> for EitherTimedelta<'py> {
     fn into_pyobject(self, py: Python<'py>) -> PyResult<Self::Output> {
         match self {
             Self::Raw(duration) => duration_as_pytimedelta(py, &duration),
-            Self::PyExact(py_timedelta) => Ok(py_timedelta),
-            Self::PySubclass(py_timedelta) => Ok(py_timedelta),
+            Self::PyExact(py_timedelta) | Self::PySubclass(py_timedelta) => Ok(py_timedelta),
         }
     }
 }

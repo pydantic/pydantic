@@ -480,6 +480,7 @@ impl ErrorType {
     }
 
     pub fn message_template_python(&self) -> &'static str {
+        #[allow(clippy::match_same_arms)]  // much nicer to have the messages explicitly listed
         match self {
             Self::NoSuchAttribute {..} => "Object has no attribute '{attribute}'",
             Self::JsonInvalid {..} => "Invalid JSON: {error}",
@@ -636,12 +637,24 @@ impl ErrorType {
         };
         match self {
             Self::NoSuchAttribute { attribute, .. } => render!(tmpl, attribute),
-            Self::JsonInvalid { error, .. } => render!(tmpl, error),
+            Self::JsonInvalid { error, .. }
+            | Self::GetAttributeError { error, .. }
+            | Self::IterationError { error, .. }
+            | Self::DatetimeObjectInvalid { error, .. }
+            | Self::UrlParsing { error, .. }
+            | Self::UuidParsing { error, .. } => render!(tmpl, error),
+            Self::MappingType { error, .. }
+            | Self::DateParsing { error, .. }
+            | Self::DateFromDatetimeParsing { error, .. }
+            | Self::TimeParsing { error, .. }
+            | Self::DatetimeParsing { error, .. }
+            | Self::DatetimeFromDateParsing { error, .. }
+            | Self::TimeDeltaParsing { error, .. }
+            | Self::UrlSyntaxViolation { error, .. } => render!(tmpl, error),
             Self::NeedsPythonObject { method_name, .. } => render!(tmpl, method_name),
-            Self::GetAttributeError { error, .. } => render!(tmpl, error),
-            Self::ModelType { class_name, .. } => render!(tmpl, class_name),
-            Self::DataclassType { class_name, .. } => render!(tmpl, class_name),
-            Self::DataclassExactType { class_name, .. } => render!(tmpl, class_name),
+            Self::ModelType { class_name, .. }
+            | Self::DataclassType { class_name, .. }
+            | Self::DataclassExactType { class_name, .. } => render!(tmpl, class_name),
             Self::GreaterThan { gt, .. } => to_string_render!(tmpl, gt),
             Self::GreaterThanEqual { ge, .. } => to_string_render!(tmpl, ge),
             Self::LessThan { lt, .. } => to_string_render!(tmpl, lt),
@@ -666,26 +679,18 @@ impl ErrorType {
                 let actual_length = actual_length.map_or(Cow::Borrowed("more"), |v| Cow::Owned(v.to_string()));
                 to_string_render!(tmpl, field_type, max_length, actual_length, expected_plural,)
             }
-            Self::IterationError { error, .. } => render!(tmpl, error),
-            Self::StringTooShort { min_length, .. } => {
+            Self::StringTooShort { min_length, .. } | Self::BytesTooShort { min_length, .. } => {
                 let expected_plural = plural_s(*min_length);
                 to_string_render!(tmpl, min_length, expected_plural)
             }
-            Self::StringTooLong { max_length, .. } => {
+            Self::StringTooLong { max_length, .. }
+            | Self::BytesTooLong { max_length, .. }
+            | Self::UrlTooLong { max_length, .. } => {
                 let expected_plural = plural_s(*max_length);
                 to_string_render!(tmpl, max_length, expected_plural)
             }
             Self::StringPatternMismatch { pattern, .. } => render!(tmpl, pattern),
             Self::Enum { expected, .. } => to_string_render!(tmpl, expected),
-            Self::MappingType { error, .. } => render!(tmpl, error),
-            Self::BytesTooShort { min_length, .. } => {
-                let expected_plural = plural_s(*min_length);
-                to_string_render!(tmpl, min_length, expected_plural)
-            }
-            Self::BytesTooLong { max_length, .. } => {
-                let expected_plural = plural_s(*max_length);
-                to_string_render!(tmpl, max_length, expected_plural)
-            }
             Self::BytesInvalidEncoding {
                 encoding,
                 encoding_error,
@@ -709,18 +714,10 @@ impl ErrorType {
                 ..
             } => PydanticCustomError::format_message(message_template, context.as_ref().map(|c| c.bind(py))),
             Self::LiteralError { expected, .. } => render!(tmpl, expected),
-            Self::DateParsing { error, .. } => render!(tmpl, error),
-            Self::DateFromDatetimeParsing { error, .. } => render!(tmpl, error),
-            Self::TimeParsing { error, .. } => render!(tmpl, error),
-            Self::DatetimeParsing { error, .. } => render!(tmpl, error),
-            Self::DatetimeFromDateParsing { error, .. } => render!(tmpl, error),
-            Self::DatetimeObjectInvalid { error, .. } => render!(tmpl, error),
             Self::TimezoneOffset {
                 tz_expected, tz_actual, ..
             } => to_string_render!(tmpl, tz_expected, tz_actual),
-            Self::TimeDeltaParsing { error, .. } => render!(tmpl, error),
-            Self::IsInstanceOf { class, .. } => render!(tmpl, class),
-            Self::IsSubclassOf { class, .. } => render!(tmpl, class),
+            Self::IsInstanceOf { class, .. } | Self::IsSubclassOf { class, .. } => render!(tmpl, class),
             Self::UnionTagInvalid {
                 discriminator,
                 tag,
@@ -728,14 +725,7 @@ impl ErrorType {
                 ..
             } => render!(tmpl, discriminator, tag, expected_tags),
             Self::UnionTagNotFound { discriminator, .. } => render!(tmpl, discriminator),
-            Self::UrlParsing { error, .. } => render!(tmpl, error),
-            Self::UrlSyntaxViolation { error, .. } => render!(tmpl, error),
-            Self::UrlTooLong { max_length, .. } => {
-                let expected_plural = plural_s(*max_length);
-                to_string_render!(tmpl, max_length, expected_plural)
-            }
             Self::UrlScheme { expected_schemes, .. } => render!(tmpl, expected_schemes),
-            Self::UuidParsing { error, .. } => render!(tmpl, error),
             Self::UuidVersion { expected_version, .. } => to_string_render!(tmpl, expected_version),
             Self::DecimalMaxDigits { max_digits, .. } => {
                 let expected_plural = plural_s(*max_digits);

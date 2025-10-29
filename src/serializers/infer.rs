@@ -4,7 +4,6 @@ use std::cell::RefCell;
 use pyo3::exceptions::PyTypeError;
 use pyo3::intern;
 use pyo3::prelude::*;
-use pyo3::pybacked::PyBackedStr;
 use pyo3::types::PyComplex;
 use pyo3::types::{PyByteArray, PyBytes, PyDict, PyFrozenSet, PyIterator, PyList, PySet, PyString, PyTuple};
 
@@ -12,10 +11,12 @@ use pyo3::IntoPyObjectExt;
 use serde::ser::{Error, Serialize, SerializeMap, SerializeSeq, Serializer};
 
 use crate::input::{EitherTimedelta, Int};
+use crate::serializers::errors::unwrap_ser_error;
 use crate::serializers::shared::serialize_to_json;
 use crate::serializers::shared::serialize_to_python;
 use crate::serializers::shared::DoSerialize;
 use crate::serializers::type_serializers;
+use crate::serializers::type_serializers::format::serialize_via_str;
 use crate::serializers::SerializationState;
 use crate::tools::{extract_int, py_err, safe_repr};
 use crate::url::{PyMultiHostUrl, PyUrl};
@@ -167,14 +168,7 @@ pub(crate) fn infer_to_python_known<'py>(
                 let either_delta = EitherTimedelta::try_from(value)?;
                 state.config.temporal_mode.timedelta_to_json(value.py(), either_delta)?
             }
-            ObType::Url => {
-                let py_url: PyUrl = value.extract()?;
-                py_url.__str__(py).into_py_any(py)?
-            }
-            ObType::MultiHostUrl => {
-                let py_url: PyMultiHostUrl = value.extract()?;
-                py_url.__str__(py).into_py_any(py)?
-            }
+            ObType::Url | ObType::MultiHostUrl | ObType::Path => serialize_via_str(value, serialize_to_python())?,
             ObType::Uuid => {
                 let uuid = super::type_serializers::uuid::uuid_to_string(value)?;
                 uuid.into_py_any(py)?
@@ -207,8 +201,7 @@ pub(crate) fn infer_to_python_known<'py>(
                 let complex_str = type_serializers::complex::complex_to_str(v);
                 complex_str.into_py_any(py)?
             }
-            ObType::Path => value.str()?.into_py_any(py)?,
-            ObType::Pattern => value.getattr(intern!(py, "pattern"))?.unbind(),
+            ObType::Pattern => serialize_pattern(value, serialize_to_python())?,
             ObType::Unknown => {
                 if let Some(fallback) = state.extra.fallback {
                     let next_value = fallback.call1((value,))?;
@@ -377,7 +370,9 @@ pub(crate) fn infer_serialize_known<'py, S: Serializer>(
         ObType::Decimal => value.to_string().serialize(serializer),
         ObType::Str | ObType::StrSubclass => {
             let py_str = value.downcast::<PyString>().map_err(py_err_se_err)?;
-            super::type_serializers::string::serialize_py_str(py_str, serializer)
+            serialize_to_json(serializer)
+                .serialize_str(py_str)
+                .map_err(unwrap_ser_error)
         }
         ObType::Bytes => {
             let py_bytes = value.downcast::<PyBytes>().map_err(py_err_se_err)?;
@@ -418,16 +413,11 @@ pub(crate) fn infer_serialize_known<'py, S: Serializer>(
             let either_delta = EitherTimedelta::try_from(value).map_err(py_err_se_err)?;
             state.config.temporal_mode.timedelta_serialize(either_delta, serializer)
         }
-        ObType::Url => {
-            let py_url: PyUrl = value.extract().map_err(py_err_se_err)?;
-            serializer.serialize_str(py_url.__str__(value.py()))
-        }
-        ObType::MultiHostUrl => {
-            let py_url: PyMultiHostUrl = value.extract().map_err(py_err_se_err)?;
-            serializer.serialize_str(&py_url.__str__(value.py()))
+        ObType::Url | ObType::MultiHostUrl | ObType::Path => {
+            serialize_via_str(value, serialize_to_json(serializer)).map_err(unwrap_ser_error)
         }
         ObType::PydanticSerializable => {
-            call_pydantic_serializer(value, state, serialize_to_json(serializer)).map_err(|e| e.0)
+            call_pydantic_serializer(value, state, serialize_to_json(serializer)).map_err(unwrap_ser_error)
         }
         ObType::Dataclass => {
             let (pairs_iter, fields_dict) = any_dataclass_iter(value).map_err(py_err_se_err)?;
@@ -456,20 +446,7 @@ pub(crate) fn infer_serialize_known<'py, S: Serializer>(
             }
             seq.end()
         }
-        ObType::Path => {
-            let s: PyBackedStr = value
-                .str()
-                .and_then(|value_str| value_str.extract())
-                .map_err(py_err_se_err)?;
-            serializer.serialize_str(&s)
-        }
-        ObType::Pattern => {
-            let s: PyBackedStr = value
-                .getattr(intern!(value.py(), "pattern"))
-                .and_then(|pattern| pattern.str()?.extract())
-                .map_err(py_err_se_err)?;
-            serializer.serialize_str(&s)
-        }
+        ObType::Pattern => serialize_pattern(value, serialize_to_json(serializer)).map_err(unwrap_ser_error),
         ObType::Unknown => {
             if let Some(fallback) = state.extra.fallback {
                 let next_value = fallback.call1((value,)).map_err(py_err_se_err)?;
@@ -495,6 +472,14 @@ fn unknown_type_error(value: &Bound<'_, PyAny>) -> PyErr {
         "Unable to serialize unknown type: {}",
         safe_repr(&value.get_type())
     ))
+}
+
+fn serialize_pattern<'py, T, E: From<PyErr>>(
+    value: &Bound<'py, PyAny>,
+    do_serialize: impl DoSerialize<'py, T, E>,
+) -> Result<T, E> {
+    let pattern = value.getattr(intern!(value.py(), "pattern"))?;
+    serialize_via_str(&pattern, do_serialize)
 }
 
 fn serialize_unknown<'py>(value: &Bound<'py, PyAny>) -> Cow<'py, str> {
