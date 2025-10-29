@@ -24,7 +24,7 @@ jobs:
     steps:
       - uses: actions/checkout@v5
 
-      - uses: astral-sh/setup-uv@v6
+      - uses: astral-sh/setup-uv@v7
         with:
           python-version: ${{ matrix.python-version }}
 
@@ -44,7 +44,7 @@ jobs:
     steps:
     - uses: actions/checkout@v5
 
-    - uses: astral-sh/setup-uv@v6
+    - uses: astral-sh/setup-uv@v7
       with:
         python-version: '3.12'
 
@@ -71,7 +71,7 @@ jobs:
     steps:
       - uses: actions/checkout@v5
 
-      - uses: astral-sh/setup-uv@v6
+      - uses: astral-sh/setup-uv@v7
         with:
           python-version: '3.12'
 
@@ -92,8 +92,6 @@ jobs:
           # no pydantic-core binaries for pypy on windows, so tests take absolute ages
           # macos tests with pypy take ages (>10mins) since pypy is very slow
           # so we only test pypy on ubuntu
-          - os: ubuntu-latest
-            python-version: 'pypy3.9'
           - os: ubuntu-latest
             python-version: 'pypy3.10'
           - os: ubuntu-latest
@@ -120,7 +118,7 @@ jobs:
     steps:
     - uses: actions/checkout@v5
 
-    - uses: astral-sh/setup-uv@v6
+    - uses: astral-sh/setup-uv@v7
       with:
         python-version: ${{ matrix.python-version }}
 
@@ -166,7 +164,7 @@ jobs:
     steps:
       - uses: actions/checkout@v5
 
-      - uses: astral-sh/setup-uv@v6
+      - uses: astral-sh/setup-uv@v7
         with:
           python-version: '3.12'
 
@@ -186,7 +184,7 @@ jobs:
     steps:
     - uses: actions/checkout@v5
 
-    - uses: astral-sh/setup-uv@v6
+    - uses: astral-sh/setup-uv@v7
       with:
         python-version: '3.13'
 
@@ -214,7 +212,7 @@ jobs:
     steps:
     - uses: actions/checkout@v5
 
-    - uses: astral-sh/setup-uv@v6
+    - uses: astral-sh/setup-uv@v7
       with:
         python-version: '3.12'
 
@@ -307,7 +305,7 @@ jobs:
     steps:
     - uses: actions/checkout@v5
 
-    - uses: astral-sh/setup-uv@v6
+    - uses: astral-sh/setup-uv@v7
       with:
         python-version: ${{ matrix.python-version }}
 
