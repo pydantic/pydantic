@@ -419,20 +419,16 @@ jobs:
             target: i686
           - os: linux
             manylinux: auto
-            target: aarch64
-            interpreter: 3.9 3.10 3.11 3.12 3.13 3.14
-          - os: linux
-            manylinux: auto
             target: armv7
-            interpreter: 3.9 3.10 3.11 3.12 3.13 3.14
+            interpreter: 3.9 3.10 3.11 3.12 3.13 3.14 3.14t
           - os: linux
             manylinux: auto
             target: ppc64le
-            interpreter: 3.9 3.10 3.11 3.12 3.13 3.14
+            interpreter: 3.9 3.10 3.11 3.12 3.13 3.14 3.14t
           - os: linux
             manylinux: auto
             target: s390x
-            interpreter: 3.9 3.10 3.11 3.12 3.13 3.14
+            interpreter: 3.9 3.10 3.11 3.12 3.13 3.14 3.14t
           - os: linux
             manylinux: auto
             target: x86_64
@@ -464,7 +460,7 @@ jobs:
           # arm pypy and older pythons which can't be run on the arm hardware for PGO
           - os: macos
             target: x86_64
-            interpreter: 3.9 3.10 3.11 3.12 3.13 3.14 pypy3.10 pypy3.11 graalpy3.11 graalpy3.12
+            interpreter: 3.9 3.10 3.11 3.12 3.13 3.14 3.14t pypy3.10 pypy3.11 graalpy3.11 graalpy3.12
           - os: macos
             target: aarch64
             interpreter: 3.9 pypy3.10 pypy3.11 graalpy3.11 graalpy3.12
@@ -479,11 +475,11 @@ jobs:
           - os: windows
             target: i686
             python-architecture: x86
-            interpreter: 3.9 3.10 3.11 3.12 3.13 3.14
+            interpreter: 3.9 3.10 3.11 3.12 3.13 3.14 3.14t
           - os: windows
             target: aarch64
             runs-on: windows-11-arm
-            interpreter: "3.11 3.12 3.13 3.13t 3.14 3.14t"
+            interpreter: "3.11 3.12 3.13 3.14 3.14t"
 
         exclude:
           # was just a dummy variable to set a default value for target
@@ -506,7 +502,7 @@ jobs:
         with:
           target: ${{ matrix.target }}
           manylinux: ${{ matrix.manylinux }}
-          args: --release --out dist --interpreter ${{ matrix.interpreter || '3.9 3.10 3.11 3.12 3.13 3.14 pypy3.10 pypy3.11' }}
+          args: --release --out dist --interpreter ${{ matrix.interpreter || '3.9 3.10 3.11 3.12 3.13 3.14 3.14t pypy3.10 pypy3.11' }}
           rust-toolchain: stable
           docker-options: -e CI
 
@@ -533,8 +529,7 @@ jobs:
             { os: windows, runs-on: windows-latest },
             { os: macos, runs-on: macos-latest },
           ]
-        interpreter:
-          ["3.9", "3.10", "3.11", "3.12", "3.13", "3.13t", "3.14", "3.14t"]
+        interpreter: ["3.9", "3.10", "3.11", "3.12", "3.13", "3.14", "3.14t"]
         exclude:
           # macos arm only supported from 3.10 and up
           - platform:
