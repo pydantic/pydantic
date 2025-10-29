@@ -1318,31 +1318,38 @@ def test_multi_url_build() -> None:
     assert str(url) == 'postgresql://testuser:testpassword@127.0.0.1:5432/database?sslmode=require#test'
 
 
-def test_multi_url_build_encodes_credentials() -> None:
-    url = MultiHostUrl.build(
+@pytest.mark.parametrize('url_type', [Url, MultiHostUrl])
+def test_url_build_encodes_credentials(url_type: type[Union[Url, MultiHostUrl]]) -> None:
+    url = url_type.build(
         scheme='postgresql',
         username='user name',
-        password='p@ss/word?#',
+        password='p@ss/word?#__',
         host='example.com',
         port=5432,
     )
-    assert url == MultiHostUrl('postgresql://user%20name:p%40ss%2Fword%3F%23@example.com:5432')
-    assert str(url) == 'postgresql://user%20name:p%40ss%2Fword%3F%23@example.com:5432'
-    assert url.hosts() == [
-        {'username': 'user%20name', 'password': 'p%40ss%2Fword%3F%23', 'host': 'example.com', 'port': 5432}
-    ]
+    assert url == url_type('postgresql://user%20name:p%40ss%2Fword%3F%23__@example.com:5432')
+    assert str(url) == 'postgresql://user%20name:p%40ss%2Fword%3F%23__@example.com:5432'
+    if url_type is Url:
+        assert url.username == 'user%20name'
+        assert url.password == 'p%40ss%2Fword%3F%23__'
+    else:
+        assert url.hosts() == [
+            {'username': 'user%20name', 'password': 'p%40ss%2Fword%3F%23__', 'host': 'example.com', 'port': 5432}
+        ]
 
 
 def test_multi_url_build_hosts_encodes_credentials() -> None:
     hosts = [
-        {'host': 'example.com', 'password': 'p@ss/word?#', 'username': 'user name', 'port': 5431},
-        {'host': 'example.org', 'password': 'pa%ss', 'username': 'other', 'port': 5432},
+        {'host': 'example.com', 'password': 'p@ss/word?#__', 'username': 'user name', 'port': 5431},
+        {'host': 'example.org', 'password': 'p@%ss__', 'username': 'other', 'port': 5432},
     ]
     url = MultiHostUrl.build(scheme='postgresql', hosts=hosts)
-    assert str(url) == 'postgresql://user%20name:p%40ss%2Fword%3F%23@example.com:5431,other:pa%25ss@example.org:5432'
+    assert (
+        str(url) == 'postgresql://user%20name:p%40ss%2Fword%3F%23__@example.com:5431,other:p%40%25ss__@example.org:5432'
+    )
     assert url.hosts() == [
-        {'username': 'user%20name', 'password': 'p%40ss%2Fword%3F%23', 'host': 'example.com', 'port': 5431},
-        {'username': 'other', 'password': 'pa%25ss', 'host': 'example.org', 'port': 5432},
+        {'username': 'user%20name', 'password': 'p%40ss%2Fword%3F%23__', 'host': 'example.com', 'port': 5431},
+        {'username': 'other', 'password': 'p%40%25ss__', 'host': 'example.org', 'port': 5432},
     ]
 
 

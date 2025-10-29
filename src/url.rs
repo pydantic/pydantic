@@ -7,7 +7,7 @@ use std::sync::OnceLock;
 
 use idna::punycode::decode_to_string;
 use jiter::{PartialMode, StringCacheMode};
-use percent_encoding::{percent_encode, NON_ALPHANUMERIC};
+use percent_encoding::{percent_encode, AsciiSet, CONTROLS};
 use pyo3::exceptions::PyValueError;
 use pyo3::pyclass::CompareOp;
 use pyo3::sync::OnceLockExt;
@@ -602,8 +602,36 @@ fn is_punnycode_domain(lib_url: &Url, domain: &str) -> bool {
     scheme_is_special(lib_url.scheme()) && domain.split('.').any(|part| part.starts_with(PUNYCODE_PREFIX))
 }
 
+/// See <https://url.spec.whatwg.org/#userinfo-percent-encode-set>
+const USERINFO_ENCODE_SET: &AsciiSet = &CONTROLS
+    // query percent-encodes is controls plus the below
+    .add(b' ')
+    .add(b'"')
+    .add(b'#')
+    .add(b'<')
+    .add(b'>')
+    // path percent-encodes is query percent-encodes plus the below
+    .add(b'?')
+    .add(b'^')
+    .add(b'`')
+    .add(b'{')
+    .add(b'}')
+    // userinfo percent-encodes is path percent-encodes plus the below
+    .add(b'/')
+    .add(b':')
+    .add(b';')
+    .add(b'=')
+    .add(b'@')
+    .add(b'[')
+    .add(b'\\')
+    .add(b']')
+    .add(b'|')
+    // https://datatracker.ietf.org/doc/html/rfc3986.html#section-2.4
+    // we must also percent-encode '%'
+    .add(b'%');
+
 fn encode_userinfo_component(value: &str) -> Cow<'_, str> {
-    let encoded = percent_encode(value.as_bytes(), NON_ALPHANUMERIC).to_string();
+    let encoded = percent_encode(value.as_bytes(), USERINFO_ENCODE_SET).to_string();
     if encoded == value {
         Cow::Borrowed(value)
     } else {
