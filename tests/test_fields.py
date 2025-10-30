@@ -1,5 +1,5 @@
 import copy
-from typing import Annotated, Any, Final, Union
+from typing import Annotated, Any, Final, Generic, TypeVar, Union
 
 import pytest
 from annotated_types import Gt
@@ -370,6 +370,26 @@ def test_parent_field_info_not_mutated() -> None:
     Sub.model_fields['a'].metadata.append(object())
 
     assert len(Parent.model_fields['a'].metadata) == 1
+
+
+def test_parametrized_with_annotated_unpacked() -> None:
+    T = TypeVar('T')
+
+    class Parent(BaseModel, Generic[T]):
+        a: T
+        b: Annotated[T, 1]
+        c: Annotated[T, 2] = Field(gt=2)
+
+    Sub = Parent[Annotated[int, 3]]
+
+    assert Sub.model_fields['a'].annotation is int
+    assert Sub.model_fields['b'].annotation is int
+    assert Sub.model_fields['c'].annotation is int
+
+    assert Sub.model_fields['a'].metadata == [3]
+    assert Sub.model_fields['b'].metadata == [3, 1]
+    # Might look unexpected, but it is until v3 (https://github.com/pydantic/pydantic/issues/10507):
+    assert Sub.model_fields['c'].metadata == [Gt(2), 3, 2]
 
 
 def test_field_info_mutation_create_model() -> None:

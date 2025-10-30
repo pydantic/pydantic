@@ -3,9 +3,10 @@ import platform
 import re
 import sys
 import typing
-from typing import Any, Generic, Optional, TypeVar
+from typing import Annotated, Any, Generic, Optional, TypeVar
 
 import pytest
+from annotated_types import Gt
 
 from pydantic import BaseModel, Field, PydanticUserError, TypeAdapter, ValidationError
 
@@ -1564,3 +1565,73 @@ class Sub(Base):
     ta = TypeAdapter(mod_2.Sub)
 
     assert ta.validate_python({'f': '1'}) == {'f': 1}
+
+
+def test_parameterized_with_annotated_forward_refs() -> None:
+    T = TypeVar('T')
+
+    class Parent(BaseModel, Generic[T]):
+        a: T
+        b: 'MyAnnotated[T, 1]'
+        c: Annotated[T, 2] = Field(gt=2)
+
+    M = Parent[Annotated['MyInt', 3]]
+
+    assert not M.__pydantic_fields_complete__
+
+    MyAnnotated = Annotated
+    MyInt = int
+
+    M.model_rebuild()
+
+    assert M.__pydantic_fields_complete__
+
+    assert M.model_fields['a'].annotation is int
+    assert M.model_fields['b'].annotation is int
+    assert M.model_fields['c'].annotation is int
+
+    assert M.model_fields['a'].metadata == [3]
+    assert M.model_fields['b'].metadata == [3, 1]
+    assert M.model_fields['c'].metadata == [Gt(2), 3, 2]
+
+
+@pytest.mark.xfail(
+    reason=(
+        'Similar to `test_uses_the_correct_globals_to_resolve_model_forward_refs()`,'
+        "the NsResolver used for the `M.model_rebuild()` call doesn't make use of `Parent`, "
+        "so its `__type_params__` aren't available (they contain `T`)."
+    )
+)
+@pytest.mark.skipif(sys.version_info < (3, 12), reason='Test related to PEP 695 syntax.')
+def test_parameterized_pep695_generic_with_annotated_forward_refs(create_module) -> None:
+    mod = create_module(
+        """
+        from typing import Annotated
+
+        from pydantic import BaseModel
+
+        class Parent[T](BaseModel):
+            a: T
+            b: 'MyAnnotated[T, 1]'
+            c: Annotated[T, 2] = Field(gt=2)
+
+        M = Parent[Annotated['MyInt', 3]]
+
+        MyAnnotated = Annotated
+        MyInt = int
+
+        M.model_rebuild()
+        """
+    )
+
+    M = mod.M
+
+    assert M.__pydantic_fields_complete__
+
+    assert M.model_fields['a'].annotation is int
+    assert M.model_fields['b'].annotation is int
+    assert M.model_fields['c'].annotation is int
+
+    assert M.model_fields['a'].metadata == [3]
+    assert M.model_fields['b'].metadata == [3, 1]
+    assert M.model_fields['c'].metadata == [Gt(2), 3, 2]
