@@ -339,15 +339,25 @@ def collect_model_fields(  # noqa: C901
                 #   generated due to models not being fully defined while initializing recursive models.
                 #   Nothing stops us from just creating a `FieldInfo` for this type hint, so we do this.
                 field_info = FieldInfo_.from_annotation(ann_type, _source=AnnotationSource.CLASS)
+                field_info._original_annotation = ann_type
                 if not evaluated:
                     field_info._complete = False
                     # Store the original annotation that should be used to rebuild
                     # the field info later:
-                    field_info._original_annotation = ann_type
             else:
-                # The field was present on one of the (possibly multiple) base classes
-                # copy the field to make sure typevar substitutions don't cause issues with the base classes
-                field_info = parent_fields_lookup[ann_name]._copy()
+                # The field was present on one of the (possibly multiple) base classes, we make a copy directly from it.
+                parent_field_info = parent_fields_lookup[ann_name]._copy()
+
+                # The only case where substituting the type variables is relevant (i.e. when `typevars_map` is not empty)
+                # is when a generic class is parameterized (e.g. `MyGenericModel[int, str]`), which creates a new class object
+                # (unlike the stdlib genercis that create a generic alias). In this case, we are guaranteed to only have to copy
+                # from the origin/parent model (e.g. `MyGenericModel`).
+                if typevars_map:
+                    field_info = _recreate_field_info(
+                        parent_field_info, ns_resolver=ns_resolver, typevars_map=typevars_map, lenient=True
+                    )
+                else:
+                    field_info = parent_field_info
 
         else:  # An assigned value is present (either the default value, or a `Field()` function)
             if isinstance(assigned_value, FieldInfo_) and ismethoddescriptor(assigned_value.default):
@@ -361,13 +371,12 @@ def collect_model_fields(  # noqa: C901
                 assigned_value._attributes_set['default'] = default
 
             field_info = FieldInfo_.from_annotated_attribute(ann_type, assigned_value, _source=AnnotationSource.CLASS)
-            # Store the original annotation and assignment value that should be used to rebuild the field info later.
-            # Note that the assignment is always stored as the annotation might contain a type var that is later
-            #  parameterized with an unknown forward reference (and we'll need it to rebuild the field info):
+
+            # Store the original annotation and assignment value that could be used to rebuild the field info later.
             field_info._original_assignment = assigned_value
+            field_info._original_annotation = ann_type
             if not evaluated:
                 field_info._complete = False
-                field_info._original_annotation = ann_type
             elif 'final' in field_info._qualifiers and not field_info.is_required():
                 warnings.warn(
                     f'Annotation {ann_name!r} is marked as final and has a default value. Pydantic treats {ann_name!r} as a '
@@ -401,11 +410,6 @@ def collect_model_fields(  # noqa: C901
         if field_info._complete:
             # If not complete, this will be called in `rebuild_model_fields()`:
             update_field_from_config(config_wrapper, ann_name, field_info)
-
-    if typevars_map:
-        for field in fields.values():
-            if field._complete:
-                field.apply_typevars_map(typevars_map)
 
     if config_wrapper.use_attribute_docstrings:
         _update_fields_from_docstrings(cls, fields)
