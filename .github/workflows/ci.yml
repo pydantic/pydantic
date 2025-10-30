@@ -394,7 +394,12 @@ jobs:
           import os
           import tweepy
 
-          client = tweepy.Client(os.getenv("TWITTER_ACCESS_TOKEN"))
+          client = tweepy.Client(
+              access_token=os.getenv("TWITTER_ACCESS_TOKEN"),
+              access_token_secret=os.getenv("TWITTER_ACCESS_TOKEN_SECRET"),
+              consumer_key=os.getenv("TWITTER_CONSUMER_KEY"),
+              consumer_secret=os.getenv("TWITTER_CONSUMER_SECRET"),
+          )
           version = os.getenv("VERSION").strip('"')
 
           if "b" in version:
@@ -417,4 +422,7 @@ jobs:
             and let us know if you encounter any issues!
 
             https://github.com/pydantic/pydantic/releases/tag/v{version}
+          TWITTER_CONSUMER_KEY: ${{ secrets.TWITTER_CONSUMER_KEY }}
+          TWITTER_CONSUMER_SECRET: ${{ secrets.TWITTER_CONSUMER_SECRET }}
           TWITTER_ACCESS_TOKEN: ${{ secrets.TWITTER_ACCESS_TOKEN }}
+          TWITTER_ACCESS_TOKEN_SECRET: ${{ secrets.TWITTER_ACCESS_TOKEN_SECRET }}
