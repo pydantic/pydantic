@@ -216,7 +216,7 @@ _deprecated_classmethod_names = {
 def collect_model_fields(  # noqa: C901
     cls: type[BaseModel],
     config_wrapper: ConfigWrapper,
-    ns_resolver: NsResolver | None,
+    ns_resolver: NsResolver,
     *,
     typevars_map: Mapping[TypeVar, Any] | None = None,
 ) -> tuple[dict[str, FieldInfo], set[str]]:
