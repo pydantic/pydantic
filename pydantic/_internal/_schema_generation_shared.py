@@ -2,14 +2,15 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, Callable, Literal
+from copy import deepcopy
+from typing import TYPE_CHECKING, Any, Callable, Literal, cast
 
 from pydantic_core import core_schema
 
 from ..annotated_handlers import GetCoreSchemaHandler, GetJsonSchemaHandler
 
 if TYPE_CHECKING:
-    from ..json_schema import GenerateJsonSchema, JsonSchemaValue
+    from ..json_schema import GenerateJsonSchema, JsonRef, JsonSchemaValue
     from ._core_utils import CoreSchemaOrField
     from ._generate_schema import GenerateSchema
     from ._namespace_utils import NamespacesTuple
@@ -28,10 +29,17 @@ class GenerateJsonSchemaHandler(GetJsonSchemaHandler):
     See `GetJsonSchemaHandler` for the handler API.
     """
 
-    def __init__(self, generate_json_schema: GenerateJsonSchema, handler_override: HandlerOverride | None) -> None:
+    def __init__(
+        self,
+        generate_json_schema: GenerateJsonSchema,
+        handler_override: HandlerOverride | None,
+        *,
+        mark_user_definition: bool = False,
+    ) -> None:
         self.generate_json_schema = generate_json_schema
         self.handler = handler_override or generate_json_schema.generate_inner
         self.mode = generate_json_schema.mode
+        self.mark_user_definition = mark_user_definition
 
     def __call__(self, core_schema: CoreSchemaOrField, /) -> JsonSchemaValue:
         return self.handler(core_schema)
@@ -50,15 +58,52 @@ class GenerateJsonSchemaHandler(GetJsonSchemaHandler):
         Raises:
             LookupError: If it can't find the definition for `$ref`.
         """
+        mark_user_definition = self.mark_user_definition
         if '$ref' not in maybe_ref_json_schema:
+            if mark_user_definition:
+                state_info = self.generate_json_schema._find_state_for_canonical_schema(maybe_ref_json_schema)
+                if state_info is not None:
+                    defs_ref, state = state_info
+                    state.pending = True
+                    state.schema = maybe_ref_json_schema
             return maybe_ref_json_schema
         ref = maybe_ref_json_schema['$ref']
-        json_schema = self.generate_json_schema.get_schema_from_definitions(ref)
+        json_ref = cast('JsonRef', ref)
+        defs_ref = self.generate_json_schema.json_to_defs_refs.get(json_ref)
+        json_schema = self.generate_json_schema.get_schema_from_definitions(ref, root=maybe_ref_json_schema)
         if json_schema is None:
             raise LookupError(
                 f'Could not find a ref for {ref}.'
                 ' Maybe you tried to call resolve_ref_schema from within a recursive model?'
             )
+        if mark_user_definition:
+            wrapper_schema = deepcopy(maybe_ref_json_schema)
+            if defs_ref is not None:
+                state = self.generate_json_schema._get_user_definition_state(defs_ref)
+                state.pending = True
+                state.schema = json_schema
+                state.wrappers.setdefault(json_ref, wrapper_schema)
+                tokens = self.generate_json_schema._json_pointer_tokens(json_ref)
+                if len(tokens) >= 2:
+                    parent_tokens: tuple[str, ...] | None = None
+                    for index in range(len(tokens) - 1):
+                        if tokens[index] == '$defs':
+                            name_index = index + 1
+                            if name_index < len(tokens):
+                                parent_tokens = tuple(tokens[: name_index + 1])
+                            break
+                    if parent_tokens is not None:
+                        parent_ref = self.generate_json_schema._json_pointer_from_tokens(parent_tokens)
+                        parent_defs_ref = self.generate_json_schema.json_to_defs_refs.get(parent_ref)
+                        if parent_defs_ref is not None and wrapper_schema.get('$ref') == parent_ref:
+                            parent_state = self.generate_json_schema._get_user_definition_state(parent_defs_ref)
+                            parent_state.wrappers.setdefault(parent_ref, wrapper_schema)
+            else:
+                state_info = self.generate_json_schema._find_state_for_canonical_schema(json_schema)
+                if state_info is not None:
+                    defs_ref, state = state_info
+                    state.pending = True
+                    state.schema = json_schema
         return json_schema
 
 
