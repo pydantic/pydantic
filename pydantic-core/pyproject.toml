@@ -1,0 +1,171 @@
+[build-system]
+requires = ['maturin>=1.9.4,<2']
+build-backend = 'maturin'
+
+[project]
+name = 'pydantic_core'
+description = "Core functionality for Pydantic validation and serialization"
+requires-python = '>=3.9'
+license = 'MIT'
+license-files = ['LICENSE']
+authors = [
+    { name = 'Samuel Colvin', email = 's@muelcolvin.com' },
+    { name = 'Adrian Garcia Badaracco', email = '1755071+adriangb@users.noreply.github.com' },
+    { name = 'David Montague', email = 'david@pydantic.dev' },
+    { name = 'David Hewitt', email = 'mail@davidhewitt.dev' },
+    { name = 'Sydney Runkle', email = 'sydneymarierunkle@gmail.com' },
+    { name = 'Victorien Plot', email = 'contact@vctrn.dev' },
+]
+classifiers = [
+    'Development Status :: 3 - Alpha',
+    'Programming Language :: Python',
+    'Programming Language :: Python :: 3',
+    'Programming Language :: Python :: 3 :: Only',
+    'Programming Language :: Python :: 3.9',
+    'Programming Language :: Python :: 3.10',
+    'Programming Language :: Python :: 3.11',
+    'Programming Language :: Python :: 3.12',
+    'Programming Language :: Python :: 3.13',
+    'Programming Language :: Python :: 3.14',
+    'Programming Language :: Python :: Implementation :: CPython',
+    'Programming Language :: Python :: Implementation :: PyPy',
+    'Programming Language :: Python :: Implementation :: GraalPy',
+    'Programming Language :: Rust',
+    'Framework :: Pydantic',
+    'Intended Audience :: Developers',
+    'Intended Audience :: Information Technology',
+    'Operating System :: POSIX :: Linux',
+    'Operating System :: Microsoft :: Windows',
+    'Operating System :: MacOS',
+    'Typing :: Typed',
+]
+dependencies = ['typing-extensions>=4.14.1']
+dynamic = ['readme', 'version']
+
+[project.urls]
+Homepage = 'https://github.com/pydantic/pydantic-core'
+Funding = 'https://github.com/sponsors/samuelcolvin'
+Source = 'https://github.com/pydantic/pydantic-core'
+
+[dependency-groups]
+dev = ["maturin"]
+testing = [
+    { include-group = "dev" },
+    'coverage',
+    'dirty-equals',
+    'exceptiongroup; python_version < "3.11"',
+    'hypothesis',
+    'inline-snapshot',
+    # numpy doesn't offer prebuilt wheels for all versions and platforms we test in CI e.g. aarch64 musllinux
+    'numpy; python_version < "3.13" and implementation_name == "cpython" and platform_machine == "x86_64"',
+    # pandas doesn't offer prebuilt wheels for all versions and platforms we test in CI e.g. aarch64 musllinux
+    'pandas; python_version < "3.13" and implementation_name == "cpython" and platform_machine == "x86_64"',
+    'pytest',
+    # pytest-examples currently depends on aiohttp via black; we don't want to build it on platforms like aarch64 musllinux in CI
+    'pytest-examples; implementation_name == "cpython" and platform_machine == "x86_64"',
+    'pytest-mock',
+    'pytest-pretty',
+    'pytest-run-parallel',
+    'pytest-speed',
+    'pytest-timeout',
+    'python-dateutil',
+    'typing-inspection>=0.4.1',
+    'tzdata',
+]
+linting = [
+    { include-group = "dev" },
+    'griffe',
+    'mypy',
+    'pre-commit',
+    'pyright',
+    'ruff',
+]
+wasm = [{ include-group = "dev" }, 'ruff']
+codspeed = [
+    # codspeed is only run on CI, with latest version of CPython
+    'pytest-codspeed; python_version == "3.13" and implementation_name == "cpython"',
+]
+
+all = [
+    { include-group = "dev" },
+    { include-group = 'testing' },
+    { include-group = 'linting' },
+    { include-group = 'wasm' },
+]
+
+[tool.maturin]
+python-source = "python"
+module-name = "pydantic_core._pydantic_core"
+bindings = 'pyo3'
+
+[tool.ruff]
+line-length = 120
+target-version = 'py39'
+
+[tool.ruff.lint]
+extend-select = ['Q', 'RUF100', 'C90', 'I', 'UP']
+extend-ignore = [
+    'E721', # using type() instead of isinstance() - we use this in tests
+]
+flake8-quotes = { inline-quotes = 'single', multiline-quotes = 'double' }
+mccabe = { max-complexity = 13 }
+isort = { known-first-party = ['pydantic_core', 'tests'] }
+
+[tool.ruff.lint.pyupgrade]
+keep-runtime-typing = true
+
+[tool.ruff.format]
+quote-style = 'single'
+
+[tool.pytest.ini_options]
+testpaths = 'tests'
+log_format = '%(name)s %(levelname)s: %(message)s'
+filterwarnings = [
+    'error',
+    # Python 3.9 and below allowed truncation of float to integers in some
+    # cases, by not making this an error we can test for this behaviour
+    'ignore:(.+)Implicit conversion to integers using __int__ is deprecated',
+]
+timeout = 30
+xfail_strict = true
+# min, max, mean, stddev, median, iqr, outliers, ops, rounds, iterations
+addopts = [
+    '--benchmark-columns',
+    'min,mean,stddev,outliers,rounds,iterations',
+    '--benchmark-group-by',
+    'group',
+    '--benchmark-warmup',
+    'on',
+    '--benchmark-disable',                        # this is enable by `make benchmark` when you actually want to run benchmarks
+]
+
+[tool.coverage.run]
+source = ['pydantic_core']
+branch = true
+
+[tool.coverage.report]
+precision = 2
+exclude_lines = [
+    'pragma: no cover',
+    'raise NotImplementedError',
+    'if TYPE_CHECKING:',
+    '@overload',
+]
+
+# configuring https://github.com/pydantic/hooky
+[tool.hooky]
+reviewers = ['Viicos', 'davidhewitt']
+require_change_file = false
+
+[tool.pyright]
+include = ['python/pydantic_core', 'tests/test_typing.py']
+reportUnnecessaryTypeIgnoreComment = true
+
+[tool.inline-snapshot.shortcuts]
+fix = ["create", "fix"]
+
+[tool.uv]
+# this ensures that `uv run` doesn't actually build the package; a `make`
+# command is needed to build
+package = false
+required-version = '>=0.7.2'
