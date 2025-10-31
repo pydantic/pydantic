@@ -514,7 +514,7 @@ impl CollectWarnings {
             return Ok(());
         }
 
-        let formatted_warnings: Vec<String> = self.warnings.iter().map(|w| w.__repr__(py).to_string()).collect();
+        let formatted_warnings: Vec<String> = self.warnings.iter().map(|w| w.__repr__(py)).collect();
 
         let message = format!("Pydantic serializer warnings:\n  {}", formatted_warnings.join("\n  "));
         if self.mode == WarningsMode::Warn {

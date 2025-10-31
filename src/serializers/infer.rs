@@ -552,7 +552,7 @@ pub(crate) fn infer_json_key_known<'a, 'py>(
         }
         ObType::MultiHostUrl => {
             let py_url: PyMultiHostUrl = key.extract()?;
-            Ok(Cow::Owned(py_url.__str__(key.py()).to_string()))
+            Ok(Cow::Owned(py_url.__str__(key.py())))
         }
         ObType::Tuple => {
             let mut key_build = super::type_serializers::tuple::KeyBuilder::new();

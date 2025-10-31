@@ -403,7 +403,7 @@ impl Validator for DataclassArgsValidator {
                 return Err(ValError::new_with_loc(
                     ErrorTypeDefaults::FrozenField,
                     field_value,
-                    field.name.to_string(),
+                    &field.name,
                 ));
             }
             // by using dict but removing the field in question, we match V1 behaviour

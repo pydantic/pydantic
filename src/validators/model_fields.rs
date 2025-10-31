@@ -433,7 +433,7 @@ impl Validator for ModelFieldsValidator {
                     return Err(ValError::new_with_loc(
                         ErrorTypeDefaults::FrozenField,
                         field_value,
-                        field.name.to_string(),
+                        &field.name,
                     ));
                 }
 

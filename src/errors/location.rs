@@ -41,7 +41,7 @@ impl From<String> for LocItem {
 
 impl From<&String> for LocItem {
     fn from(s: &String) -> Self {
-        s.to_string().into()
+        s.clone().into()
     }
 }
 
@@ -87,20 +87,15 @@ impl Serialize for LocItem {
 /// Note: location in List is stored in **REVERSE** so adding an "outer" item to location involves
 /// pushing to the vec which is faster than inserting and shifting everything along.
 /// Then when "using" location in `Display` and `ToPyObject` order has to be reversed
-#[derive(Clone)]
+#[derive(Clone, Default)]
 #[cfg_attr(debug_assertions, derive(Debug))]
 pub enum Location {
     // no location, avoid creating an unnecessary vec
+    #[default]
     Empty,
     // store the in a vec of LocItems, Note: this is the REVERSE of location, see above
     // we could perhaps use a smallvec or similar here, probably only worth it if we store a Cow in LocItem
     List(Vec<LocItem>),
-}
-
-impl Default for Location {
-    fn default() -> Self {
-        Self::Empty
-    }
 }
 
 static EMPTY_TUPLE: PyOnceLock<Py<PyTuple>> = PyOnceLock::new();
