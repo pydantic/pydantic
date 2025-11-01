@@ -58,7 +58,7 @@ jobs:
       with:
         path: pydantic-latest
 
-    - uses: astral-sh/setup-uv@v6
+    - uses: astral-sh/setup-uv@v7
       with:
         python-version: ${{ matrix.python-version }}
 
@@ -98,7 +98,7 @@ jobs:
       with:
         path: pydantic-latest
 
-    - uses: astral-sh/setup-uv@v6
+    - uses: astral-sh/setup-uv@v7
       with:
         python-version: ${{ matrix.python-version }}
 
@@ -491,7 +491,7 @@ jobs:
           path: pydantic-latest
 
       - name: Install uv
-        uses: astral-sh/setup-uv@v6
+        uses: astral-sh/setup-uv@v7
         with:
           python-version: ${{ matrix.python-version }}
           working-directory: python
@@ -536,7 +536,7 @@ jobs:
           path: pydantic-latest
 
       - name: Install uv
-        uses: astral-sh/setup-uv@v6
+        uses: astral-sh/setup-uv@v7
         with:
             python-version: ${{ matrix.python-version }}
 
@@ -641,7 +641,7 @@ jobs:
       with:
         path: pydantic-latest
 
-    - uses: astral-sh/setup-uv@v6
+    - uses: astral-sh/setup-uv@v7
       with:
         python-version: ${{ matrix.python-version }}
         activate-environment: true
