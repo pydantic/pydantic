@@ -240,7 +240,7 @@ jobs:
           python-version: '3.12'
 
       - name: Get coverage files
-        uses: actions/download-artifact@v5
+        uses: actions/download-artifact@v6
         with:
           merge-multiple: true
           pattern: coverage-*
@@ -278,7 +278,7 @@ jobs:
       - uses: actions/checkout@v5
 
       - name: Download coverage data
-        uses: actions/download-artifact@v5
+        uses: actions/download-artifact@v6
         with:
           name: coverage-data
 
