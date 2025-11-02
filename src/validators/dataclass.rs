@@ -680,7 +680,7 @@ impl DataclassValidator {
                 dc.call_method0(post_init)
             } else {
                 let args = post_init_kwargs.downcast::<PyTuple>()?;
-                dc.call_method1(post_init, args.clone()) // FIXME should not need clone here
+                dc.call_method1(post_init, args)
             };
             r.map_err(|e| convert_err(py, e, input))?;
         }
