@@ -376,3 +376,35 @@ def test_by_alias_and_name_config_interaction(config, runtime, expected) -> None
     )
     s = SchemaSerializer(schema, config=core_schema.CoreConfig(serialize_by_alias=config or False))
     assert s.to_python(Model(my_field=1), by_alias=runtime) == expected
+
+
+def test_nested_typed_dict_field_serializers():
+    class Model(TypedDict):
+        x: Any
+
+    class OuterModel(TypedDict):
+        model: Model
+
+    schema = core_schema.typed_dict_schema(
+        {
+            'x': core_schema.typed_dict_field(
+                core_schema.any_schema(
+                    serialization=core_schema.wrap_serializer_function_ser_schema(
+                        # in an incorrect core implementation, self could be OuterModel here
+                        lambda self, v, serializer: f'{list(self.keys())}',
+                        is_field_serializer=True,
+                        schema=core_schema.any_schema(),
+                    )
+                )
+            )
+        }
+    )
+    outer_schema = core_schema.typed_dict_schema({'model': core_schema.typed_dict_field(schema)})
+
+    s = SchemaSerializer(schema)
+    assert s.to_python(Model(x=None)) == {'x': "['x']"}
+
+    outer_s = SchemaSerializer(outer_schema)
+    # if the inner field serializer incorrectly receives OuterModel as self, the keys
+    # will be ['model'] instead of ['x']
+    assert outer_s.to_python(OuterModel(model=Model(x=None))) == {'model': {'x': "['x']"}}

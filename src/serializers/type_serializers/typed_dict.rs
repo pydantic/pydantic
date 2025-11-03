@@ -1,3 +1,4 @@
+use std::borrow::Cow;
 use std::sync::Arc;
 
 use pyo3::intern;
@@ -9,14 +10,20 @@ use ahash::AHashMap;
 use crate::build_tools::py_schema_err;
 use crate::build_tools::{py_schema_error_type, schema_or_config, ExtraBehavior};
 use crate::definitions::DefinitionsBuilder;
+use crate::serializers::shared::TypeSerializer;
+use crate::serializers::SerializationState;
 use crate::tools::SchemaDict;
 
 use super::{BuildSerializer, CombinedSerializer, ComputedFields, FieldsMode, GeneralFieldsSerializer, SerField};
 
 #[derive(Debug)]
-pub struct TypedDictBuilder;
+pub struct TypedDictSerializer {
+    serializer: GeneralFieldsSerializer,
+}
 
-impl BuildSerializer for TypedDictBuilder {
+impl_py_gc_traverse!(TypedDictSerializer { serializer });
+
+impl BuildSerializer for TypedDictSerializer {
     const EXPECTED_TYPE: &'static str = "typed-dict";
 
     fn build(
@@ -82,10 +89,51 @@ impl BuildSerializer for TypedDictBuilder {
             }
         }
 
+        // FIXME: computed fields do not work for TypedDict, and may never
+        // see the closed https://github.com/pydantic/pydantic-core/pull/1018
         let computed_fields = ComputedFields::new(schema, config, definitions)?;
 
         Ok(Arc::new(
-            GeneralFieldsSerializer::new(fields, fields_mode, extra_serializer, computed_fields).into(),
+            Self {
+                serializer: GeneralFieldsSerializer::new(fields, fields_mode, extra_serializer, computed_fields),
+            }
+            .into(),
         ))
+    }
+}
+
+impl TypeSerializer for TypedDictSerializer {
+    fn to_python<'py>(
+        &self,
+        value: &Bound<'py, PyAny>,
+        state: &mut SerializationState<'_, 'py>,
+    ) -> PyResult<Py<PyAny>> {
+        self.serializer
+            .to_python(value, &mut state.scoped_set(|s| &mut s.model, Some(value.clone())))
+    }
+
+    fn json_key<'a, 'py>(
+        &self,
+        key: &'a Bound<'py, PyAny>,
+        state: &mut SerializationState<'_, 'py>,
+    ) -> PyResult<Cow<'a, str>> {
+        self.invalid_as_json_key(key, state, "typed-dict")
+    }
+
+    fn serde_serialize<'py, S: serde::ser::Serializer>(
+        &self,
+        value: &Bound<'py, PyAny>,
+        serializer: S,
+        state: &mut SerializationState<'_, 'py>,
+    ) -> Result<S::Ok, S::Error> {
+        self.serializer.serde_serialize(
+            value,
+            serializer,
+            &mut state.scoped_set(|s| &mut s.model, Some(value.clone())),
+        )
+    }
+
+    fn get_name(&self) -> &'static str {
+        "typed-dict"
     }
 }

@@ -110,7 +110,6 @@ combined_serializer! {
         super::type_serializers::function::FunctionPlainSerializerBuilder;
         super::type_serializers::function::FunctionWrapSerializerBuilder;
         super::type_serializers::model::ModelFieldsBuilder;
-        super::type_serializers::typed_dict::TypedDictBuilder;
     }
     // `both` means the struct is added to both the `CombinedSerializer` enum and the match statement in
     // `find_serializer` so they can be used via a `type` str.
@@ -151,6 +150,7 @@ combined_serializer! {
         Recursive: super::type_serializers::definitions::DefinitionRefSerializer;
         Tuple: super::type_serializers::tuple::TupleSerializer;
         Complex: super::type_serializers::complex::ComplexSerializer;
+        TypedDict: super::type_serializers::typed_dict::TypedDictSerializer;
     }
 }
 
@@ -356,6 +356,7 @@ impl PyGcTraverse for CombinedSerializer {
             CombinedSerializer::Tuple(inner) => inner.py_gc_traverse(visit),
             CombinedSerializer::Uuid(inner) => inner.py_gc_traverse(visit),
             CombinedSerializer::Complex(inner) => inner.py_gc_traverse(visit),
+            CombinedSerializer::TypedDict(inner) => inner.py_gc_traverse(visit),
         }
     }
 }
