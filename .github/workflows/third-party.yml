@@ -807,6 +807,48 @@ jobs:
       - name: Run Django Ninja tests
         run: pytest
 
+  test-fastdepends:
+    name: Test FastDepends (main branch) on Python ${{ matrix.python-version }}
+    if: |
+      github.event_name == 'workflow_dispatch' ||
+      (github.event_name == 'schedule' && github.repository == 'pydantic/pydantic') ||
+      (github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'third-party-tests'))
+
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: [ '3.9', '3.10', '3.11', '3.12', '3.13' ]
+    steps:
+      - name: Checkout FastDepends
+        uses: actions/checkout@v5
+        with:
+          repository: Lancetnik/FastDepends
+
+      - name: Checkout Pydantic
+        uses: actions/checkout@v5
+        with:
+          path: pydantic-latest
+
+      - uses: astral-sh/setup-uv@v7
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install FastDepends dependencies
+        run: |
+          uv venv --python ${{ matrix.python-version }}
+          uv pip install --no-progress -e .[test]
+          uv pip uninstall pydantic
+          uv pip install -e ./pydantic-latest
+
+      - name: List installed dependencies
+        run: uv pip list
+
+      - name: Run FastDepends tests
+        run: uv run --no-project --no-sync pytest
+
+
+
   create-issue-on-failure:
     name: Create an issue if tests failed
     runs-on: ubuntu-latest
@@ -826,6 +868,7 @@ jobs:
       - test-pydantic-xml
       - test-redis-om
       - test-django-ninja
+      - test-fastdepends
     # Issue report disabled for now due to flakiness:
     if: |
       always() &&
@@ -847,7 +890,8 @@ jobs:
         needs.test-cadwyn.result == 'failure' ||
         needs.test-pydantic-xml.result == 'failure' ||
         needs.test-redis-om.result == 'failure' ||
-        needs.test-django-ninja.result == 'failure'
+        needs.test-django-ninja.result == 'failure' ||
+        needs.test-fastdepends.result == 'failure'
       )
     permissions:
       issues: write
