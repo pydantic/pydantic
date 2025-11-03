@@ -7,10 +7,11 @@ import types
 from collections import deque
 from collections.abc import Iterable
 from dataclasses import dataclass, field
-from functools import cached_property, partial, partialmethod
+from functools import cached_property, partial, partialmethod, wraps
 from inspect import Parameter, Signature, isdatadescriptor, ismethoddescriptor, signature
 from itertools import islice
 from typing import TYPE_CHECKING, Any, Callable, ClassVar, Generic, Literal, TypeVar, Union
+from weakref import WeakKeyDictionary
 
 from pydantic_core import PydanticUndefined, PydanticUndefinedType, core_schema
 from typing_extensions import TypeAlias, is_typeddict
@@ -26,6 +27,39 @@ if TYPE_CHECKING:
     from ..fields import ComputedFieldInfo
     from ..functional_validators import FieldValidatorModes
     from ._config import ConfigWrapper
+
+
+_T_Key = TypeVar('_T_Key')
+_T_Value = TypeVar('_T_Value')
+
+
+def _unary_weak_cache(func: Callable[[_T_Key], _T_Value]) -> Callable[[_T_Key], _T_Value]:
+    """Cache unary function results using weak references to class keys.
+
+    This decorator caches function results for functions that accept exactly one
+    argument (typically a class type). When the key is garbage collected, the cache
+    entry is automatically removed.
+
+    Args:
+        func: Unary function to cache (must take exactly one argument)
+
+    Returns:
+        Cached version of the function
+
+    Example:
+        >>> @_unary_weak_cache
+        ... def expensive_class_operation(cls: type) -> dict:
+        ...     return compute_something(cls)
+    """
+    cache = WeakKeyDictionary[_T_Key, _T_Value]()
+
+    @wraps(func)
+    def wrapper(key: _T_Key) -> _T_Value:
+        if key not in cache:
+            cache[key] = func(key)
+        return cache[key]
+
+    return wrapper
 
 
 @dataclass(**slots_true)
@@ -428,6 +462,7 @@ class DecoratorInfos:
     computed_fields: dict[str, Decorator[ComputedFieldInfo]] = field(default_factory=dict)
 
     @staticmethod
+    @_unary_weak_cache
     def build(model_dc: type[Any]) -> DecoratorInfos:  # noqa: C901 (ignore complexity)
         """We want to collect all DecFunc instances that exist as
         attributes in the namespace of the class (a BaseModel or dataclass)
