@@ -384,53 +384,49 @@ impl PyMultiHostUrl {
             let host_offset = scheme.len() + 3;
 
             let mut full_url = self.ref_url.unicode_string(py).into_owned();
-            full_url.insert(host_offset, ',');
+            let mut extra_hosts = String::new();
 
             // special urls will have had a trailing slash added, non-special urls will not
             // hence we need to remove the last char if the scheme is special
             #[allow(clippy::bool_to_int_with_if)]
             let sub = if scheme_is_special(scheme) { 1 } else { 0 };
 
-            let hosts = extra_urls
-                .iter()
-                .map(|url| {
-                    let str = unicode_url(url.as_str(), url);
-                    str[host_offset..str.len() - sub].to_string()
-                })
-                .collect::<Vec<String>>()
-                .join(",");
-            full_url.insert_str(host_offset, &hosts);
+            for url in extra_urls {
+                let str = unicode_url(url.as_str(), url);
+                extra_hosts.push_str(&str[host_offset..str.len() - sub]);
+                extra_hosts.push(',');
+            }
+
+            full_url.insert_str(host_offset, &extra_hosts);
             Cow::Owned(full_url)
         } else {
             self.ref_url.unicode_string(py)
         }
     }
 
-    pub fn __str__(&self, py: Python<'_>) -> String {
+    pub fn __str__(&self, py: Python<'_>) -> Cow<'_, str> {
         if let Some(extra_urls) = &self.extra_urls {
             let scheme = self.ref_url.lib_url.scheme();
             let host_offset = scheme.len() + 3;
 
             let mut full_url = self.ref_url.serialized(py).to_string();
-            full_url.insert(host_offset, ',');
+            let mut extra_hosts = String::new();
 
             // special urls will have had a trailing slash added, non-special urls will not
             // hence we need to remove the last char if the scheme is special
             #[allow(clippy::bool_to_int_with_if)]
             let sub = if scheme_is_special(scheme) { 1 } else { 0 };
 
-            let hosts = extra_urls
-                .iter()
-                .map(|url| {
-                    let str = url.as_str();
-                    &str[host_offset..str.len() - sub]
-                })
-                .collect::<Vec<&str>>()
-                .join(",");
-            full_url.insert_str(host_offset, &hosts);
-            full_url
+            for url in extra_urls {
+                let str = url.as_str();
+                extra_hosts.push_str(&str[host_offset..str.len() - sub]);
+                extra_hosts.push(',');
+            }
+
+            full_url.insert_str(host_offset, &extra_hosts);
+            Cow::Owned(full_url)
         } else {
-            self.ref_url.__str__(py).to_string()
+            Cow::Borrowed(self.ref_url.__str__(py))
         }
     }
 
@@ -463,7 +459,7 @@ impl PyMultiHostUrl {
         self.clone().into_py_any(py)
     }
 
-    fn __getnewargs__(&self, py: Python<'_>) -> (String,) {
+    fn __getnewargs__(&self, py: Python<'_>) -> (Cow<'_, str>,) {
         (self.__str__(py),)
     }
 

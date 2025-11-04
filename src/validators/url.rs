@@ -1,4 +1,3 @@
-use std::borrow::Cow;
 use std::cell::RefCell;
 use std::iter::Peekable;
 use std::str::Chars;
@@ -214,7 +213,7 @@ impl UrlValidator {
 
         let either_str_owned;
         let url_str = if let Some(multi_host_url) = downcast_python_input::<PyMultiHostUrl>(input) {
-            Cow::Owned(multi_host_url.get().__str__(py))
+            multi_host_url.get().__str__(py)
         } else if let Ok(either_str) = input.validate_str(strict, false).map(ValidationMatch::into_inner) {
             either_str_owned = either_str; // to extend the lifetime outside the if let
             either_str_owned.as_cow()?
