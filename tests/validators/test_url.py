@@ -1319,13 +1319,64 @@ def test_multi_url_build() -> None:
 
 
 @pytest.mark.parametrize('url_type', [Url, MultiHostUrl])
-def test_url_build_encodes_credentials(url_type: type[Union[Url, MultiHostUrl]]) -> None:
+@pytest.mark.parametrize(
+    'include_kwarg',
+    [
+        pytest.param(
+            True,
+            marks=pytest.mark.xfail(
+                reason='semantics of `encode_credentials` need to be fully decided, not enabled yet'
+            ),
+        ),
+        False,
+    ],
+)
+def test_url_build_not_encode_credentials(url_type: type[Union[Url, MultiHostUrl]], include_kwarg: bool) -> None:
+    kwargs = {}
+    if include_kwarg:
+        kwargs['encode_credentials'] = False
     url = url_type.build(
         scheme='postgresql',
         username='user name',
         password='p@ss/word?#__',
         host='example.com',
         port=5432,
+        **kwargs,
+    )
+    assert url == url_type('postgresql://user%20name:p@ss/word?#__@example.com:5432')
+    assert str(url) == 'postgresql://user%20name:p@ss/word?#__@example.com:5432'
+
+    # NB without encoding, the special characters can seriously affect the URL
+    # parts, probably not what users want.
+    #
+    # TODO: in v3, probably should set `encode_credentials=True` by default
+    #
+    # FIXME: I guess there are similar issues with query containing #, for
+    # example? Potentially for all of these cases we could just raise an error?
+
+    if url_type is Url:
+        assert url.host == 'ss'
+        assert url.username == 'user%20name'
+        assert url.password == 'p'
+        assert url.port is None
+    else:
+        assert url.hosts() == [{'username': 'user%20name', 'password': 'p', 'host': 'ss', 'port': None}]
+
+    assert url.path == '/word'
+    assert url.query == ''
+    assert url.fragment == '__@example.com:5432'
+
+
+@pytest.mark.xfail(reason='semantics of `encode_credentials` need to be fully decided, not enabled yet')
+@pytest.mark.parametrize('url_type', [Url, MultiHostUrl])
+def test_url_build_encode_credentials(url_type: type[Union[Url, MultiHostUrl]]) -> None:
+    url = url_type.build(
+        scheme='postgresql',
+        username='user name',
+        password='p@ss/word?#__',
+        host='example.com',
+        port=5432,
+        encode_credentials=True,
     )
     assert url == url_type('postgresql://user%20name:p%40ss%2Fword%3F%23__@example.com:5432')
     assert str(url) == 'postgresql://user%20name:p%40ss%2Fword%3F%23__@example.com:5432'
@@ -1338,12 +1389,47 @@ def test_url_build_encodes_credentials(url_type: type[Union[Url, MultiHostUrl]])
         ]
 
 
-def test_multi_url_build_hosts_encodes_credentials() -> None:
+@pytest.mark.parametrize(
+    'include_kwarg',
+    [
+        pytest.param(
+            True,
+            marks=pytest.mark.xfail(
+                reason='semantics of `encode_credentials` need to be fully decided, not enabled yet'
+            ),
+        ),
+        False,
+    ],
+)
+def test_multi_url_build_hosts_not_encode_credentials(include_kwarg: bool) -> None:
+    kwargs = {}
+    if include_kwarg:
+        kwargs['encode_credentials'] = False
     hosts = [
         {'host': 'example.com', 'password': 'p@ss/word?#__', 'username': 'user name', 'port': 5431},
         {'host': 'example.org', 'password': 'p@%ss__', 'username': 'other', 'port': 5432},
     ]
-    url = MultiHostUrl.build(scheme='postgresql', hosts=hosts)
+    url = MultiHostUrl.build(scheme='postgresql', hosts=hosts, **kwargs)
+
+    # NB: see comment in `test_url_build_not_encode_credentials` about not
+    # encoding credentials leading to VERY broken results
+
+    assert str(url) == 'postgresql://user%20name:p@ss/word?#__@example.com:5431,other:p@%ss__@example.org:5432'
+    assert url.hosts() == [
+        {'username': 'user%20name', 'password': 'p', 'host': 'ss', 'port': None},
+    ]
+    assert url.path == '/word'
+    assert url.query == ''
+    assert url.fragment == '__@example.com:5431,other:p@%ss__@example.org:5432'
+
+
+@pytest.mark.xfail(reason='semantics of `encode_credentials` need to be fully decided, not enabled yet')
+def test_multi_url_build_hosts_encode_credentials() -> None:
+    hosts = [
+        {'host': 'example.com', 'password': 'p@ss/word?#__', 'username': 'user name', 'port': 5431},
+        {'host': 'example.org', 'password': 'p@%ss__', 'username': 'other', 'port': 5432},
+    ]
+    url = MultiHostUrl.build(scheme='postgresql', hosts=hosts, encode_credentials=True)
     assert (
         str(url) == 'postgresql://user%20name:p%40ss%2Fword%3F%23__@example.com:5431,other:p%40%25ss__@example.org:5432'
     )

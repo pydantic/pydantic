@@ -1,7 +1,7 @@
 use std::borrow::Cow;
 use std::collections::hash_map::DefaultHasher;
-use std::fmt;
-use std::fmt::Formatter;
+use std::fmt::{self, Display};
+use std::fmt::{Formatter, Write};
 use std::hash::{Hash, Hasher};
 use std::sync::OnceLock;
 
@@ -229,6 +229,27 @@ impl PyUrl {
         path: Option<&str>,
         query: Option<&str>,
         fragment: Option<&str>,
+        // encode_credentials: bool, // TODO: re-enable this
+    ) -> PyResult<Bound<'py, PyAny>> {
+        Self::build_inner(
+            cls, scheme, host, username, password, port, path, query, fragment, false,
+        )
+    }
+}
+
+impl PyUrl {
+    #[allow(clippy::too_many_arguments)]
+    fn build_inner<'py>(
+        cls: &Bound<'py, PyType>,
+        scheme: &str,
+        host: &str,
+        username: Option<&str>,
+        password: Option<&str>,
+        port: Option<u16>,
+        path: Option<&str>,
+        query: Option<&str>,
+        fragment: Option<&str>,
+        encode_credentials: bool,
     ) -> PyResult<Bound<'py, PyAny>> {
         let url_host = UrlHostParts {
             username: username.map(Into::into),
@@ -236,7 +257,10 @@ impl PyUrl {
             host: Some(host.into()),
             port,
         };
-        let mut url = format!("{scheme}://{url_host}");
+        let mut url = format!("{scheme}://");
+        url_host
+            .to_writer(&mut url, encode_credentials)
+            .expect("writing to string should not fail");
         if let Some(path) = path {
             url.push('/');
             url.push_str(path);
@@ -446,7 +470,7 @@ impl PyMultiHostUrl {
     #[classmethod]
     #[pyo3(signature=(*, scheme, hosts=None, path=None, query=None, fragment=None, host=None, username=None, password=None, port=None))]
     #[allow(clippy::too_many_arguments)]
-    pub fn build<'py>(
+    fn build<'py>(
         cls: &Bound<'py, PyType>,
         scheme: &str,
         hosts: Option<Vec<UrlHostParts>>,
@@ -458,39 +482,67 @@ impl PyMultiHostUrl {
         username: Option<&str>,
         password: Option<&str>,
         port: Option<u16>,
+        // encode_credentials: bool, // TODO: re-enable this
     ) -> PyResult<Bound<'py, PyAny>> {
-        let mut url =
-            if hosts.is_some() && (host.is_some() || username.is_some() || password.is_some() || port.is_some()) {
-                return Err(PyValueError::new_err(
-                    "expected one of `hosts` or singular values to be set.",
-                ));
-            } else if let Some(hosts) = hosts {
-                // check all of host / user / password / port empty
-                // build multi-host url
-                let mut multi_url = format!("{scheme}://");
-                for (index, single_host) in hosts.iter().enumerate() {
-                    if single_host.is_empty() {
-                        return Err(PyValueError::new_err(
-                            "expected one of 'host', 'username', 'password' or 'port' to be set",
-                        ));
-                    }
-                    multi_url.push_str(&single_host.to_string());
-                    if index != hosts.len() - 1 {
-                        multi_url.push(',');
-                    }
+        Self::build_inner(
+            cls, scheme, hosts, path, query, fragment, host, username, password, port,
+            false, // TODO: re-enable this
+        )
+    }
+}
+
+impl PyMultiHostUrl {
+    #[allow(clippy::too_many_arguments)]
+    fn build_inner<'py>(
+        cls: &Bound<'py, PyType>,
+        scheme: &str,
+        hosts: Option<Vec<UrlHostParts>>,
+        path: Option<&str>,
+        query: Option<&str>,
+        fragment: Option<&str>,
+        // convenience parameters to build with a single host
+        host: Option<&str>,
+        username: Option<&str>,
+        password: Option<&str>,
+        port: Option<u16>,
+        encode_credentials: bool,
+    ) -> PyResult<Bound<'py, PyAny>> {
+        let mut url = format!("{scheme}://");
+
+        if hosts.is_some() && (host.is_some() || username.is_some() || password.is_some() || port.is_some()) {
+            return Err(PyValueError::new_err(
+                "expected one of `hosts` or singular values to be set.",
+            ));
+        } else if let Some(hosts) = hosts {
+            // check all of host / user / password / port empty
+            // build multi-host url
+            let len = hosts.len();
+            for (index, single_host) in hosts.into_iter().enumerate() {
+                if single_host.is_empty() {
+                    return Err(PyValueError::new_err(
+                        "expected one of 'host', 'username', 'password' or 'port' to be set",
+                    ));
                 }
-                multi_url
-            } else if host.is_some() {
-                let url_host = UrlHostParts {
-                    username: username.map(Into::into),
-                    password: password.map(Into::into),
-                    host: host.map(Into::into),
-                    port,
-                };
-                format!("{scheme}://{url_host}")
-            } else {
-                return Err(PyValueError::new_err("expected either `host` or `hosts` to be set"));
+                single_host
+                    .to_writer(&mut url, encode_credentials)
+                    .expect("writing to string should not fail");
+                if index != len - 1 {
+                    url.push(',');
+                }
+            }
+        } else if host.is_some() {
+            let url_host = UrlHostParts {
+                username: username.map(Into::into),
+                password: password.map(Into::into),
+                host: host.map(Into::into),
+                port,
             };
+            url_host
+                .to_writer(&mut url, encode_credentials)
+                .expect("writing to string should not fail");
+        } else {
+            return Err(PyValueError::new_err("expected either `host` or `hosts` to be set"));
+        }
 
         if let Some(path) = path {
             url.push('/');
@@ -508,16 +560,49 @@ impl PyMultiHostUrl {
     }
 }
 
-pub struct UrlHostParts {
+struct UrlHostParts {
     username: Option<String>,
     password: Option<String>,
     host: Option<String>,
     port: Option<u16>,
 }
 
+struct MaybeEncoded<'a>(&'a str, bool);
+
+impl fmt::Display for MaybeEncoded<'_> {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        if self.1 {
+            write!(f, "{}", encode_userinfo_component(self.0))
+        } else {
+            write!(f, "{}", self.0)
+        }
+    }
+}
+
 impl UrlHostParts {
     fn is_empty(&self) -> bool {
         self.host.is_none() && self.password.is_none() && self.host.is_none() && self.port.is_none()
+    }
+
+    fn to_writer(&self, mut w: impl Write, encode_credentials: bool) -> fmt::Result {
+        match (&self.username, &self.password) {
+            (Some(username), None) => write!(w, "{}@", MaybeEncoded(username, encode_credentials))?,
+            (None, Some(password)) => write!(w, ":{}@", MaybeEncoded(password, encode_credentials))?,
+            (Some(username), Some(password)) => write!(
+                w,
+                "{}:{}@",
+                MaybeEncoded(username, encode_credentials),
+                MaybeEncoded(password, encode_credentials)
+            )?,
+            (None, None) => {}
+        }
+        if let Some(host) = &self.host {
+            write!(w, "{host}")?;
+        }
+        if let Some(port) = self.port {
+            write!(w, ":{port}")?;
+        }
+        Ok(())
     }
 }
 
@@ -531,29 +616,6 @@ impl FromPyObject<'_> for UrlHostParts {
             host: dict.get_as(intern!(py, "host"))?,
             port: dict.get_as(intern!(py, "port"))?,
         })
-    }
-}
-
-impl fmt::Display for UrlHostParts {
-    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-        match (&self.username, &self.password) {
-            (Some(username), None) => write!(f, "{}@", encode_userinfo_component(username))?,
-            (None, Some(password)) => write!(f, ":{}@", encode_userinfo_component(password))?,
-            (Some(username), Some(password)) => write!(
-                f,
-                "{}:{}@",
-                encode_userinfo_component(username),
-                encode_userinfo_component(password)
-            )?,
-            (None, None) => {}
-        }
-        if let Some(host) = &self.host {
-            write!(f, "{host}")?;
-        }
-        if let Some(port) = self.port {
-            write!(f, ":{port}")?;
-        }
-        Ok(())
     }
 }
 
@@ -630,14 +692,10 @@ const USERINFO_ENCODE_SET: &AsciiSet = &CONTROLS
     // we must also percent-encode '%'
     .add(b'%');
 
-fn encode_userinfo_component(value: &str) -> Cow<'_, str> {
-    let encoded = percent_encode(value.as_bytes(), USERINFO_ENCODE_SET).to_string();
-    if encoded == value {
-        Cow::Borrowed(value)
-    } else {
-        Cow::Owned(encoded)
-    }
+fn encode_userinfo_component(value: &str) -> impl Display + '_ {
+    percent_encode(value.as_bytes(), USERINFO_ENCODE_SET)
 }
+
 // based on https://github.com/servo/rust-url/blob/1c1e406874b3d2aa6f36c5d2f3a5c2ea74af9efb/url/src/parser.rs#L161-L167
 pub fn scheme_is_special(scheme: &str) -> bool {
     matches!(scheme, "http" | "https" | "ws" | "wss" | "ftp" | "file")
