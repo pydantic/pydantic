@@ -1,4 +1,5 @@
 import dataclasses
+import ipaddress
 import json
 import platform
 import re
@@ -722,3 +723,56 @@ def test_simple_any_ser_schema():
     assert v.to_json({MyEnum.A: 'x'}) == b'{"1":"x"}'
     assert v.to_python(1) == 1
     assert v.to_json(1) == b'1'
+
+
+class SubIpV4(ipaddress.IPv4Address):
+    def __str__(self):
+        return super().__str__() + '_subclassed'
+
+
+class SubIpV6(ipaddress.IPv6Address):
+    def __str__(self):
+        return super().__str__() + '_subclassed'
+
+
+class SubNetV4(ipaddress.IPv4Network):
+    def __str__(self):
+        return super().__str__() + '_subclassed'
+
+
+class SubNetV6(ipaddress.IPv6Network):
+    def __str__(self):
+        return super().__str__() + '_subclassed'
+
+
+class SubInterfaceV4(ipaddress.IPv4Interface):
+    def __str__(self):
+        return super().__str__() + '_subclassed'
+
+
+class SubInterfaceV6(ipaddress.IPv6Interface):
+    def __str__(self):
+        return super().__str__() + '_subclassed'
+
+
+@pytest.mark.parametrize(
+    ('value', 'expected_json'),
+    [
+        (ipaddress.IPv4Address('192.168.1.1'), '192.168.1.1'),
+        (ipaddress.IPv6Address('2001:0db8:85a3:0000:0000:8a2e:0370:7334'), '2001:db8:85a3::8a2e:370:7334'),
+        (SubIpV4('192.168.1.1'), '192.168.1.1_subclassed'),
+        (SubIpV6('2001:0db8:85a3:0000:0000:8a2e:0370:7334'), '2001:db8:85a3::8a2e:370:7334_subclassed'),
+        (ipaddress.IPv4Network('192.168.1.0/24'), '192.168.1.0/24'),
+        (ipaddress.IPv6Network('2001:0db8:85a3:0000:0000:8a2e:0370:7334'), '2001:db8:85a3::8a2e:370:7334/128'),
+        (SubNetV4('192.168.1.0/24'), '192.168.1.0/24_subclassed'),
+        (SubNetV6('2001:0db8:85a3:0000:0000:8a2e:0370:7334'), '2001:db8:85a3::8a2e:370:7334/128_subclassed'),
+        (ipaddress.IPv4Interface('192.168.1.1/24'), '192.168.1.1/24'),
+        (ipaddress.IPv6Interface('2001:0db8:85a3:0000:0000:8a2e:0370:7334'), '2001:db8:85a3::8a2e:370:7334/128'),
+        (SubInterfaceV4('192.168.1.1/24'), '192.168.1.1/24_subclassed'),
+        (SubInterfaceV6('2001:0db8:85a3:0000:0000:8a2e:0370:7334'), '2001:db8:85a3::8a2e:370:7334/128_subclassed'),
+    ],
+)
+def test_ipaddress_type_inference(any_serializer, value, expected_json):
+    assert any_serializer.to_python(value) == value
+    assert any_serializer.to_python(value, mode='json') == expected_json
+    assert any_serializer.to_json(value) == f'"{expected_json}"'.encode()

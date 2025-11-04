@@ -19,7 +19,6 @@ use crate::serializers::type_serializers;
 use crate::serializers::type_serializers::format::serialize_via_str;
 use crate::serializers::SerializationState;
 use crate::tools::{extract_int, py_err, safe_repr};
-use crate::url::{PyMultiHostUrl, PyUrl};
 
 use super::config::InfNanMode;
 use super::errors::SERIALIZATION_ERR_MARKER;
@@ -168,7 +167,13 @@ pub(crate) fn infer_to_python_known<'py>(
                 let either_delta = EitherTimedelta::try_from(value)?;
                 state.config.temporal_mode.timedelta_to_json(value.py(), either_delta)?
             }
-            ObType::Url | ObType::MultiHostUrl | ObType::Path => serialize_via_str(value, serialize_to_python())?,
+            ObType::Url
+            | ObType::MultiHostUrl
+            | ObType::Path
+            | ObType::Ipv4Address
+            | ObType::Ipv6Address
+            | ObType::Ipv4Network
+            | ObType::Ipv6Network => serialize_via_str(value, serialize_to_python())?,
             ObType::Uuid => {
                 let uuid = super::type_serializers::uuid::uuid_to_string(value)?;
                 uuid.into_py_any(py)?
@@ -413,9 +418,13 @@ pub(crate) fn infer_serialize_known<'py, S: Serializer>(
             let either_delta = EitherTimedelta::try_from(value).map_err(py_err_se_err)?;
             state.config.temporal_mode.timedelta_serialize(either_delta, serializer)
         }
-        ObType::Url | ObType::MultiHostUrl | ObType::Path => {
-            serialize_via_str(value, serialize_to_json(serializer)).map_err(unwrap_ser_error)
-        }
+        ObType::Url
+        | ObType::MultiHostUrl
+        | ObType::Path
+        | ObType::Ipv4Address
+        | ObType::Ipv6Address
+        | ObType::Ipv4Network
+        | ObType::Ipv6Network => serialize_via_str(value, serialize_to_json(serializer)).map_err(unwrap_ser_error),
         ObType::PydanticSerializable => {
             call_pydantic_serializer(value, state, serialize_to_json(serializer)).map_err(unwrap_ser_error)
         }
@@ -546,13 +555,15 @@ pub(crate) fn infer_json_key_known<'a, 'py>(
             let either_delta = EitherTimedelta::try_from(key)?;
             state.config.temporal_mode.timedelta_json_key(&either_delta)
         }
-        ObType::Url => {
-            let py_url: PyUrl = key.extract()?;
-            Ok(Cow::Owned(py_url.__str__(key.py()).to_string()))
-        }
-        ObType::MultiHostUrl => {
-            let py_url: PyMultiHostUrl = key.extract()?;
-            Ok(Cow::Owned(py_url.__str__(key.py())))
+        ObType::Url
+        | ObType::MultiHostUrl
+        | ObType::Path
+        | ObType::Ipv4Address
+        | ObType::Ipv6Address
+        | ObType::Ipv4Network
+        | ObType::Ipv6Network => {
+            // FIXME it would be nice to have a "PyCow" which carries ownership of the Python type too
+            Ok(Cow::Owned(key.str()?.to_string_lossy().into_owned()))
         }
         ObType::Tuple => {
             let mut key_build = super::type_serializers::tuple::KeyBuilder::new();
@@ -573,10 +584,6 @@ pub(crate) fn infer_json_key_known<'a, 'py>(
         ObType::Enum => {
             let k = key.getattr(intern!(key.py(), "value"))?;
             infer_json_key(&k, state).map(|cow| Cow::Owned(cow.into_owned()))
-        }
-        ObType::Path => {
-            // FIXME it would be nice to have a "PyCow" which carries ownership of the Python type too
-            Ok(Cow::Owned(key.str()?.to_string_lossy().into_owned()))
         }
         ObType::Complex => {
             let v = key.downcast::<PyComplex>()?;
