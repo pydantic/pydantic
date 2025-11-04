@@ -64,7 +64,7 @@ macro_rules! impl_py_gc_traverse {
             }
         }
     };
-    ($name:ty { $($fields:ident),* }) => {
+    ($name:ty { $($fields:ident),* $(,)? }) => {
         impl crate::py_gc::PyGcTraverse for $name {
             fn py_gc_traverse(&self, visit: &pyo3::PyVisit<'_>) -> Result<(), pyo3::PyTraverseError> {
                 $(self.$fields.py_gc_traverse(visit)?;)*

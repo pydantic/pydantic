@@ -11,6 +11,7 @@ use pyo3::PyTraverseError;
 use pyo3::types::PyString;
 
 use crate::definitions::DefinitionsBuilder;
+use crate::py_gc::PyGcTraverse;
 use crate::serializers::SerializationState;
 use crate::tools::SchemaDict;
 use crate::tools::{function_name, py_err, py_error_type};
@@ -437,6 +438,11 @@ pub(crate) struct SerializationCallable {
     filter: AnyFilter,
 }
 
+impl_py_gc_traverse!(SerializationCallable {
+    serializer,
+    extra_owned
+});
+
 impl SerializationCallable {
     pub fn new(serializer: &Arc<CombinedSerializer>, state: &SerializationState<'_, '_>) -> Self {
         Self {
@@ -447,16 +453,7 @@ impl SerializationCallable {
     }
 
     fn __traverse__(&self, visit: PyVisit<'_>) -> Result<(), PyTraverseError> {
-        if let Some(model) = &self.extra_owned.model {
-            visit.call(model)?;
-        }
-        if let Some(fallback) = &self.extra_owned.fallback {
-            visit.call(fallback)?;
-        }
-        if let Some(context) = &self.extra_owned.context {
-            visit.call(context)?;
-        }
-        Ok(())
+        self.py_gc_traverse(&visit)
     }
 
     fn __clear__(&mut self) {
@@ -542,6 +539,12 @@ struct SerializationInfo {
     serialize_as_any: bool,
 }
 
+impl_py_gc_traverse!(SerializationInfo {
+    include,
+    exclude,
+    context
+});
+
 impl SerializationInfo {
     fn new(state: &SerializationState<'_, '_>, is_field_serializer: bool) -> PyResult<Self> {
         let extra = &state.extra;
@@ -584,16 +587,7 @@ impl SerializationInfo {
     }
 
     fn __traverse__(&self, visit: PyVisit<'_>) -> Result<(), PyTraverseError> {
-        if let Some(include) = &self.include {
-            visit.call(include)?;
-        }
-        if let Some(exclude) = &self.exclude {
-            visit.call(exclude)?;
-        }
-        if let Some(context) = &self.context {
-            visit.call(context)?;
-        }
-        Ok(())
+        self.py_gc_traverse(&visit)
     }
 
     fn __clear__(&mut self) {

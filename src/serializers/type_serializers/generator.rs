@@ -11,6 +11,7 @@ use pyo3::PyTraverseError;
 use serde::ser::SerializeSeq;
 
 use crate::definitions::DefinitionsBuilder;
+use crate::py_gc::PyGcTraverse;
 use crate::serializers::SerializationState;
 use crate::tools::SchemaDict;
 
@@ -144,6 +145,12 @@ pub(crate) struct SerializationIterator {
     filter: SchemaFilter<usize>,
 }
 
+impl_py_gc_traverse!(SerializationIterator {
+    iterator,
+    item_serializer,
+    extra_owned,
+});
+
 impl SerializationIterator {
     pub fn new(
         py_iter: &Bound<'_, PyIterator>,
@@ -161,16 +168,7 @@ impl SerializationIterator {
     }
 
     fn __traverse__(&self, visit: PyVisit<'_>) -> Result<(), PyTraverseError> {
-        if let Some(model) = &self.extra_owned.model {
-            visit.call(model)?;
-        }
-        if let Some(fallback) = &self.extra_owned.fallback {
-            visit.call(fallback)?;
-        }
-        if let Some(context) = &self.extra_owned.context {
-            visit.call(context)?;
-        }
-        Ok(())
+        self.py_gc_traverse(&visit)
     }
 
     fn __clear__(&mut self) {

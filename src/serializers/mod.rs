@@ -48,6 +48,13 @@ pub struct SchemaSerializer {
     py_config: Option<Py<PyDict>>,
 }
 
+impl_py_gc_traverse!(SchemaSerializer {
+    serializer,
+    definitions,
+    py_schema,
+    py_config,
+});
+
 #[pymethods]
 impl SchemaSerializer {
     #[new]
@@ -186,13 +193,7 @@ impl SchemaSerializer {
     }
 
     fn __traverse__(&self, visit: PyVisit<'_>) -> Result<(), PyTraverseError> {
-        visit.call(&self.py_schema)?;
-        if let Some(ref py_config) = self.py_config {
-            visit.call(py_config)?;
-        }
-        self.serializer.py_gc_traverse(&visit)?;
-        self.definitions.py_gc_traverse(&visit)?;
-        Ok(())
+        self.py_gc_traverse(&visit)
     }
 }
 

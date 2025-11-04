@@ -257,6 +257,14 @@ pub(crate) struct ExtraOwned {
     exclude: Option<Py<PyAny>>,
 }
 
+impl_py_gc_traverse!(ExtraOwned {
+    model,
+    fallback,
+    context,
+    include,
+    exclude,
+});
+
 #[derive(Clone)]
 enum FieldNameOwned {
     Root,

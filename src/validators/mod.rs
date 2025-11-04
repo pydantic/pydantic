@@ -121,6 +121,13 @@ pub struct SchemaValidator {
     cache_str: StringCacheMode,
 }
 
+impl_py_gc_traverse!(SchemaValidator {
+    validator,
+    definitions,
+    py_schema,
+    py_config,
+});
+
 #[pymethods]
 impl SchemaValidator {
     #[new]
@@ -403,12 +410,7 @@ impl SchemaValidator {
     }
 
     fn __traverse__(&self, visit: PyVisit<'_>) -> Result<(), PyTraverseError> {
-        self.validator.py_gc_traverse(&visit)?;
-        visit.call(&self.py_schema)?;
-        if let Some(ref py_config) = self.py_config {
-            visit.call(py_config)?;
-        }
-        Ok(())
+        self.py_gc_traverse(&visit)
     }
 }
 
