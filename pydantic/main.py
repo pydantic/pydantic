@@ -52,6 +52,7 @@ from .annotated_handlers import GetCoreSchemaHandler, GetJsonSchemaHandler
 from .config import ConfigDict, ExtraValues
 from .errors import PydanticUndefinedAnnotation, PydanticUserError
 from .json_schema import DEFAULT_REF_TEMPLATE, GenerateJsonSchema, JsonSchemaMode, JsonSchemaValue, model_json_schema
+from .toon import ToonParseError, parse_toon
 from .plugin._schema_validator import PluggableSchemaValidator
 
 if TYPE_CHECKING:
@@ -765,6 +766,70 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
 
         return cls.__pydantic_validator__.validate_json(
             json_data, strict=strict, extra=extra, context=context, by_alias=by_alias, by_name=by_name
+        )
+
+    @classmethod
+    def model_validate_toon(
+        cls,
+        toon_data: str | bytes | bytearray,
+        *,
+        strict: bool | None = None,
+        extra: ExtraValues | None = None,
+        context: Any | None = None,
+        by_alias: bool | None = None,
+        by_name: bool | None = None,
+    ) -> Self:
+        """Validate the given TOON (Token-Oriented Object Notation) data against the Pydantic model.
+
+        TOON is a token-efficient data format designed for LLM applications that reduces
+        token usage by 30-60% compared to JSON. This method parses TOON format and validates
+        it against the model.
+
+        Args:
+            toon_data: The TOON format string, bytes, or bytearray to validate.
+            strict: Whether to enforce types strictly.
+            extra: Whether to ignore, allow, or forbid extra data during model validation.
+                See the [`extra` configuration value][pydantic.ConfigDict.extra] for details.
+            context: Extra variables to pass to the validator.
+            by_alias: Whether to use the field's alias when validating against the provided input data.
+            by_name: Whether to use the field's name when validating against the provided input data.
+
+        Returns:
+            The validated Pydantic model.
+
+        Raises:
+            ToonParseError: If the TOON data cannot be parsed.
+            ValidationError: If the parsed data could not be validated against the model.
+
+        Examples:
+            >>> from pydantic import BaseModel
+            >>> class User(BaseModel):
+            ...     id: int
+            ...     name: str
+            >>> toon_data = 'id: 1\\nname: Alice'
+            >>> User.model_validate_toon(toon_data)
+            User(id=1, name='Alice')
+        """
+        # `__tracebackhide__` tells pytest and some other tools to omit this function from tracebacks
+        __tracebackhide__ = True
+
+        if by_alias is False and by_name is not True:
+            raise PydanticUserError(
+                'At least one of `by_alias` or `by_name` must be set to True.',
+                code='validate-by-alias-and-name-false',
+            )
+
+        try:
+            parsed_data = parse_toon(toon_data)
+        except ToonParseError as e:
+            # Convert ToonParseError to ValidationError for consistency
+            raise ValidationError.from_exception_data(
+                cls.__name__,
+                [{'type': 'toon_parse_error', 'loc': (), 'input': toon_data, 'ctx': {'error': str(e)}}],
+            ) from e
+
+        return cls.model_validate(
+            parsed_data, strict=strict, extra=extra, context=context, by_alias=by_alias, by_name=by_name
         )
 
     @classmethod

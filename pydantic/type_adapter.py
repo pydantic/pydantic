@@ -22,6 +22,7 @@ from typing_extensions import ParamSpec, is_typeddict
 
 from pydantic.errors import PydanticUserError
 from pydantic.main import BaseModel, IncEx
+from pydantic.toon import ToonParseError, parse_toon
 
 from ._internal import _config, _generate_schema, _mock_val_ser, _namespace_utils, _repr, _typing_extra, _utils
 from .config import ConfigDict, ExtraValues
@@ -495,6 +496,72 @@ class TypeAdapter(Generic[T]):
             extra=extra,
             context=context,
             allow_partial=experimental_allow_partial,
+            by_alias=by_alias,
+            by_name=by_name,
+        )
+
+    def validate_toon(
+        self,
+        data: str | bytes | bytearray,
+        /,
+        *,
+        strict: bool | None = None,
+        extra: ExtraValues | None = None,
+        context: Any | None = None,
+        experimental_allow_partial: bool | Literal['off', 'on', 'trailing-strings'] = False,
+        by_alias: bool | None = None,
+        by_name: bool | None = None,
+    ) -> T:
+        """Validate a TOON (Token-Oriented Object Notation) string or bytes against the model.
+
+        TOON is a token-efficient data format designed for LLM applications that reduces
+        token usage by 30-60% compared to JSON. This method parses TOON format and validates
+        it against the adapted type.
+
+        Args:
+            data: The TOON data to validate against the model.
+            strict: Whether to strictly check types.
+            extra: Whether to ignore, allow, or forbid extra data during model validation.
+                See the [`extra` configuration value][pydantic.config.ConfigDict.extra] for details.
+            context: Additional context to use during validation.
+            experimental_allow_partial: **Experimental** whether to enable
+                [partial validation](../concepts/experimental.md#partial-validation), e.g. to process streams.
+                * False / 'off': Default behavior, no partial validation.
+                * True / 'on': Enable partial validation.
+                * 'trailing-strings': Enable partial validation and allow trailing strings in the input.
+            by_alias: Whether to use the field's alias when validating against the provided input data.
+            by_name: Whether to use the field's name when validating against the provided input data.
+
+        Returns:
+            The validated object.
+
+        Raises:
+            ToonParseError: If the TOON data cannot be parsed.
+            ValidationError: If the parsed data could not be validated against the model.
+        """
+        if by_alias is False and by_name is not True:
+            raise PydanticUserError(
+                'At least one of `by_alias` or `by_name` must be set to True.',
+                code='validate-by-alias-and-name-false',
+            )
+
+        try:
+            parsed_data = parse_toon(data)
+        except ToonParseError as e:
+            # Convert ToonParseError to ValidationError for consistency
+            from pydantic_core import ValidationError
+
+            raise ValidationError.from_exception_data(
+                str(self._type),
+                [{'type': 'toon_parse_error', 'loc': (), 'input': data, 'ctx': {'error': str(e)}}],
+            ) from e
+
+        return self.validate_python(
+            parsed_data,
+            strict=strict,
+            extra=extra,
+            context=context,
+            experimental_allow_partial=experimental_allow_partial,
             by_alias=by_alias,
             by_name=by_name,
         )

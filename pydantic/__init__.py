@@ -220,6 +220,9 @@ __all__ = (
     'FailFast',
     # type_adapter
     'TypeAdapter',
+    # toon
+    'parse_toon',
+    'ToonParseError',
     # version
     '__version__',
     'VERSION',
@@ -386,6 +389,9 @@ _dynamic_imports: 'dict[str, tuple[str, str]]' = {
     'FailFast': (__spec__.parent, '.types'),
     # type_adapter
     'TypeAdapter': (__spec__.parent, '.type_adapter'),
+    # toon
+    'parse_toon': (__spec__.parent, '.toon'),
+    'ToonParseError': (__spec__.parent, '.toon'),
     # warnings
     'PydanticDeprecatedSince20': (__spec__.parent, '.warnings'),
     'PydanticDeprecatedSince26': (__spec__.parent, '.warnings'),

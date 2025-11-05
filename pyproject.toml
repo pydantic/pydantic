@@ -186,7 +186,7 @@ markers = [
 
 [tool.uv]
 default-groups = ['dev']
-required-version = '>=0.8.4'
+required-version = '>=0.7.0'
 
 # configuring https://github.com/pydantic/hooky
 [tool.hooky]
