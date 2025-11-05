@@ -1,6 +1,6 @@
 # Demonstration of pydantic-core unit tests running in the browser
 
-To run tests in your browser, go [here](https://githubproxy.samuelcolvin.workers.dev/pydantic/pydantic-core/blob/main/wasm-preview/index.html).
+[Run tests in your browser at this web link](https://githubproxy.samuelcolvin.workers.dev/pydantic/pydantic-core/blob/main/wasm-preview/index.html).
 
 To test with a specific version of pydantic-core, add a query parameter `?pydantic_core_version=...` to the URL, e.g. `?pydantic_core_version=v2.4.0`, defaults to latest release.
 
