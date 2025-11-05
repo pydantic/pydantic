@@ -780,24 +780,24 @@ def multi_host_url_validator_fixture():
             },
         ),
         (
-            'https://foo:bar@example.com,fo%20o:bar@example.com',
+            'https://foo:bar@example.com,foo%20o:bar@example.com',
             {
-                'str()': 'https://foo:bar@example.com,fo%20o:bar@example.com/',
+                'str()': 'https://foo:bar@example.com,foo%20o:bar@example.com/',
                 'scheme': 'https',
                 'hosts()': [
                     {'host': 'example.com', 'password': 'bar', 'port': 443, 'username': 'foo'},
-                    {'host': 'example.com', 'password': 'bar', 'port': 443, 'username': 'fo%20o'},
+                    {'host': 'example.com', 'password': 'bar', 'port': 443, 'username': 'foo%20o'},
                 ],
             },
         ),
         (
-            'postgres://foo:bar@example.com,fo%20o:bar@example.com',
+            'postgres://foo:bar@example.com,foo%20o:bar@example.com',
             {
-                'str()': 'postgres://foo:bar@example.com,fo%20o:bar@example.com',
+                'str()': 'postgres://foo:bar@example.com,foo%20o:bar@example.com',
                 'scheme': 'postgres',
                 'hosts()': [
                     {'host': 'example.com', 'password': 'bar', 'port': None, 'username': 'foo'},
-                    {'host': 'example.com', 'password': 'bar', 'port': None, 'username': 'fo%20o'},
+                    {'host': 'example.com', 'password': 'bar', 'port': None, 'username': 'foo%20o'},
                 ],
             },
         ),

@@ -849,7 +849,7 @@ class PydanticOmit(Exception):
 class PydanticUseDefault(Exception):
     """An exception to signal that standard validation either failed or should be skipped, and the default value should be used instead.
 
-    This warning can be raised in custom valiation functions to redirect the flow of validation.
+    This warning can be raised in custom validation functions to redirect the flow of validation.
 
     Example:
         ```py

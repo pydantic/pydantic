@@ -166,7 +166,7 @@ class TestTzInfo(unittest.TestCase):
         self.assertFalse(tz <= SMALLEST)
         self.assertTrue(tz >= SMALLEST)
 
-        # offset based comparion tests for tzinfo derived classes like datetime.timezone.
+        # offset based comparison tests for tzinfo derived classes like datetime.timezone.
         utcdatetime = self.DT.replace(tzinfo=timezone.utc)
         self.assertTrue(tz == utcdatetime.tzinfo)
         estdatetime = self.DT.replace(tzinfo=timezone(-timedelta(hours=5)))

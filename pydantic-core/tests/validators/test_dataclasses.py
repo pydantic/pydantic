@@ -1609,7 +1609,7 @@ init_test_cases = [
     ({'a': 'hello'}, 'ignore', {'a': 'hello', 'b': 'HELLO'}),
     # note, for the case below, we don't actually support this case in Pydantic
     # it's disallowed in Pydantic to have a model with extra='allow' and a field
-    # with init=False, so this case isn't really possible at the momment
+    # with init=False, so this case isn't really possible at the moment
     # however, no conflict arises here because we don't pass in the value for b
     # to __init__
     ({'a': 'hello'}, 'allow', {'a': 'hello', 'b': 'HELLO'}),
@@ -1638,7 +1638,7 @@ init_test_cases = [
         *init_test_cases,
         # special case - when init=False, extra='allow', and the value is provided
         # currently, it's disallowed in Pydantic to have a model with extra='allow'
-        # and a field with init=False, so this case isn't really possible at the momment
+        # and a field with init=False, so this case isn't really possible at the moment
         # TODO: open to changing this behavior, and changes won't be significantly breaking
         # because we currently don't support this case
         ({'a': 'hello', 'b': 'bye'}, 'allow', {'a': 'hello', 'b': 'HELLO'}),
@@ -1686,7 +1686,7 @@ def test_dataclass_args_init(input_value, extra_behavior, expected):
         # special case - allow override of default, even when init=False, if extra='allow'
         # TODO: we haven't really decided if this should be allowed or not
         # currently, it's disallowed in Pydantic to have a model with extra='allow'
-        # and a field with init=False, so this case isn't really possible at the momment
+        # and a field with init=False, so this case isn't really possible at the moment
         ({'a': 'hello', 'b': 'bye'}, 'allow', {'a': 'hello', 'b': 'bye'}),
     ],
 )

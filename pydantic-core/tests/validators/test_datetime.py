@@ -360,7 +360,7 @@ def test_datetime_past_timezone():
     assert not v.isinstance_python(soon_utc.astimezone(zoneinfo.ZoneInfo('America/Los_Angeles')))
 
     # input value is timezone naive, so we do a dumb comparison in these terms the istanbul time is later so fails
-    # wile the LA time is earlier so passes
+    # while the LA time is earlier so passes
     assert not v.isinstance_python(soon_utc.astimezone(zoneinfo.ZoneInfo('Europe/Istanbul')).replace(tzinfo=None))
     assert v.isinstance_python(soon_utc.astimezone(zoneinfo.ZoneInfo('America/Los_Angeles')).replace(tzinfo=None))
 

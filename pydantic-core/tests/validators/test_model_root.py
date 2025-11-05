@@ -90,9 +90,9 @@ def test_init():
     )
 
     m = RootModel()
-    ans = v.validate_python('foobar', self_instance=m)
-    assert ans is m
-    assert ans.root == 'foobar'
+    validated = v.validate_python('foobar', self_instance=m)
+    assert validated is m
+    assert validated.root == 'foobar'
 
 
 def test_assignment():
