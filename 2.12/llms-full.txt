@@ -41,16 +41,18 @@ from pydantic import BaseModel, Field, AliasPath
 class User(BaseModel):
     first_name: str = Field(validation_alias=AliasPath('names', 0))
     last_name: str = Field(validation_alias=AliasPath('names', 1))
+    address: str = Field(validation_alias=AliasPath('contact', 'address'))
 
-user = User.model_validate({'names': ['John', 'Doe']})  # (1)!
+user = User.model_validate({  # (1)!
+    'names': ['John', 'Doe'],
+    'contact': {'address': '221B Baker Street'}
+})
 print(user)
-#> first_name='John' last_name='Doe'
+#> first_name='John' last_name='Doe' address='221B Baker Street'
 
 ```
 
-1. We are using `model_validate` to validate a dictionary using the field aliases.
-
-   You can see more details about model_validate in the API reference.
+1. We are using model_validate() to validate a dictionary using the field aliases. Refer to documentation about [validating data](../models/#validating-data) for more details.
 
 In the `'first_name'` field, we are using the alias `'names'` and the index `0` to specify the path to the first name. In the `'last_name'` field, we are using the alias `'names'` and the index `1` to specify the path to the last name.
 
@@ -25559,13 +25561,19 @@ def field_is_required(
     Returns:
         `True` if the field should be marked as required in the generated JSON schema, `False` otherwise.
     """
-    if self.mode == 'serialization' and self._config.json_schema_serialization_defaults_required:
-        return not field.get('serialization_exclude')
+    if field['type'] == 'typed-dict-field':
+        required = field.get('required', total)
     else:
-        if field['type'] == 'typed-dict-field':
-            return field.get('required', total)
+        required = field['schema']['type'] != 'default'
+
+    if self.mode == 'serialization':
+        has_exclude_if = field.get('serialization_exclude_if') is not None
+        if self._config.json_schema_serialization_defaults_required:
+            return not has_exclude_if
         else:
-            return field['schema']['type'] != 'default'
+            return required and not has_exclude_if
+    else:
+        return required
 
 ```
 
@@ -27633,6 +27641,23 @@ A type that will accept any MongoDB DSN.
 - Database name not required
 - Port not required
 - User info may be passed without user part (e.g., `mongodb://mongodb0.example.com:27017`).
+
+Warning
+
+If a port isn't specified, the default MongoDB port `27017` will be used. If this behavior is undesirable, you can use the following:
+
+```python
+from typing import Annotated
+
+from pydantic import UrlConstraints
+from pydantic_core import MultiHostUrl
+
+MongoDsnNoDefaultPort = Annotated[
+    MultiHostUrl,
+    UrlConstraints(allowed_schemes=['mongodb', 'mongodb+srv']),
+]
+
+```
 
 Source code in `pydantic/networks.py`
 
@@ -49070,7 +49095,7 @@ This error is also raised for strict fields when the input value is not an insta
 
 ## `bytes_invalid_encoding`
 
-This error is raised when a `bytes` value is invalid under the configured encoding. In the following example, `b'a'` is invalid hex (odd number of digits).
+This error is raised when a `bytes` value is invalid under the configured encoding. In the following example, `'a'` is invalid hex (odd number of digits).
 
 ```python
 from pydantic import BaseModel, ValidationError
@@ -49082,7 +49107,7 @@ class Model(BaseModel):
 
 
 try:
-    Model(x=b'a')
+    Model(x='a')
 except ValidationError as exc:
     print(repr(exc.errors()[0]['type']))
     #> 'bytes_invalid_encoding'
