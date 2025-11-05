@@ -2,6 +2,37 @@
 <!-- markdownlint-disable descriptive-link-text -->
 <!-- markdownlint-disable-next-line first-line-heading -->
 
+## v2.12.4 (2025-11-05)
+
+[GitHub release](https://github.com/pydantic/pydantic/releases/tag/v2.12.4)
+
+This is the fourth 2.12 patch release, fixing more regressions, and reverting a change in the `build()` method
+of the [`AnyUrl` and Dsn types](https://docs.pydantic.dev/latest/api/networks/).
+
+This patch release also fixes an issue with the serialization of IP address types, when `serialize_as_any` is used. The next patch release
+will try to address the remaining issues with *serialize as any* behavior by introducing a new *polymorphic serialization* feature, that
+should be used in most cases in place of *serialize as any*.
+
+* Fix issue with forward references in parent `TypedDict` classes by @Viicos in [#12427](https://github.com/pydantic/pydantic/pull/12427).
+
+    This issue is only relevant on Python 3.14 and greater.
+* Exclude fields with `exclude_if` from JSON Schema required fields by @Viicos in [#12430](https://github.com/pydantic/pydantic/pull/12430)
+* Revert URL percent-encoding of credentials in the `build()` method
+  of the [`AnyUrl` and Dsn types](https://docs.pydantic.dev/latest/api/networks/) by @davidhewitt in
+  [pydantic-core#1833](https://github.com/pydantic/pydantic-core/pull/1833).
+
+    This was initially considered as a bugfix, but caused regressions and as such was fully reverted. The next release will include
+    an opt-in option to percent-encode components of the URL.
+* Add type inference for IP address types by @davidhewitt in [pydantic-core#1868](https://github.com/pydantic/pydantic-core/pull/1868).
+
+    The 2.12 changes to the `serialize_as_any` behavior made it so that IP address types could not properly serialize to JSON.
+* Avoid getting default values from defaultdict by @davidhewitt in [pydantic-core#1853](https://github.com/pydantic/pydantic-core/pull/1853).
+
+    This fixes a subtle regression in the validation behavior of the [`collections.defaultdict`](https://docs.python.org/3/library/collections.html#collections.defaultdict)
+    type.
+* Fix issue with field serializers on nested typed dictionaries by @davidhewitt in [pydantic-core#1879](https://github.com/pydantic/pydantic-core/pull/1879).
+* Add more `pydantic-core` builds for the three-threaded version of Python 3.14 by @davidhewitt in [pydantic-core#1864](https://github.com/pydantic/pydantic-core/pull/1864).
+
 ## v2.12.3 (2025-10-17)
 
 [GitHub release](https://github.com/pydantic/pydantic/releases/tag/v2.12.3)
