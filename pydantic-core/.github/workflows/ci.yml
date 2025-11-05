@@ -1,0 +1,729 @@
+name: ci
+
+on:
+  push:
+    branches:
+      - main
+    tags:
+      - "**"
+  pull_request: {}
+
+env:
+  COLUMNS: 150
+  UV_PYTHON: 3.13
+
+jobs:
+  coverage:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v5
+
+      # rust-nightly used for `#[coverage(off)]`
+      - uses: dtolnay/rust-toolchain@nightly
+      - uses: Swatinem/rust-cache@v2
+      - uses: taiki-e/install-action@cargo-llvm-cov
+
+      - name: install uv
+        uses: astral-sh/setup-uv@v7
+
+      - name: install deps
+        run: uv sync --group testing
+
+      - run: rustc --version --verbose
+
+      - run: |
+          source <(cargo llvm-cov show-env --export-prefix)
+          cargo llvm-cov clean --workspace --profraw-only
+          make build-dev
+        env:
+          RUST_BACKTRACE: 1
+          RUSTFLAGS: "-C instrument-coverage"
+
+      - run: uv pip freeze
+
+      - run: uv run coverage run -m pytest --junitxml=junit.xml -o junit_family=legacy
+
+      - run: ls -lha
+      - run: uv run coverage xml
+
+      - run: |
+          source <(cargo llvm-cov show-env --export-prefix)
+          cargo llvm-cov --codecov --output-path=codecov.json
+
+      - uses: codecov/codecov-action@v5
+        with:
+          files: codecov.json
+
+      - uses: codecov/test-results-action@v1
+
+  test-python:
+    name: test ${{ matrix.python-version }}
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version:
+          - "3.9"
+          - "3.10"
+          - "3.11"
+          - "3.12"
+          - "3.13"
+          - "3.14"
+          - "3.14t"
+          - "pypy3.10"
+          - "pypy3.11"
+          - "graalpy-3.11"
+          - "graalpy-3.12"
+
+    runs-on: ubuntu-latest
+
+    # TODO: get test suite stable with free-threaded python
+    continue-on-error: ${{ endsWith(matrix.python-version, 't') }}
+
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: install rust stable
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: cache rust
+        uses: Swatinem/rust-cache@v2
+        with:
+          key: test-v3
+
+      - name: install uv
+        uses: astral-sh/setup-uv@v7
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: install deps
+        run: uv sync --group testing
+
+      - run: uv pip install -e .
+        env:
+          RUST_BACKTRACE: 1
+
+      - run: uv pip freeze
+
+      - run: uv run pytest
+        env:
+          HYPOTHESIS_PROFILE: slow
+          # TODO: remove --inline-snapshot=disable after https://github.com/15r10nk/inline-snapshot/issues/192
+          PYTEST_ADDOPTS: ${{ endsWith(matrix.python-version, 't') && '--parallel-threads=2 --inline-snapshot=disable' || '' }}
+
+  test-os:
+    name: test on ${{ matrix.os }}
+
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu, macos, windows]
+
+    runs-on: ${{ matrix.os }}-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: install rust stable
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: cache rust
+        uses: Swatinem/rust-cache@v2
+
+      - name: install uv
+        uses: astral-sh/setup-uv@v7
+
+      - name: install deps
+        run: uv sync --group testing
+
+      - run: uv pip install -e .
+        env:
+          RUST_BACKTRACE: 1
+
+      - run: uv pip freeze
+
+      - run: uv run pytest
+
+      - run: cargo test
+
+  test-msrv:
+    name: test MSRV
+
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: install uv
+        uses: astral-sh/setup-uv@v7
+
+      - name: install deps
+        run: uv sync --group testing
+
+      - name: resolve MSRV
+        id: resolve-msrv
+        run: echo MSRV=`uv run python -c 'import tomllib; print(tomllib.load(open("Cargo.toml", "rb"))["package"]["rust-version"])'` >> $GITHUB_OUTPUT
+
+      - name: install rust MSRV
+        uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: ${{ steps.resolve-msrv.outputs.MSRV }}
+
+      - name: cache rust
+        uses: Swatinem/rust-cache@v2
+
+      - run: uv pip install -e .
+        env:
+          RUST_BACKTRACE: 1
+
+      - run: uv pip freeze
+
+      - run: uv run pytest
+
+      - run: cargo test
+
+  # test with a debug build as it picks up errors which optimised release builds do not
+  test-debug:
+    name: test-debug ${{ matrix.python-version }}
+    runs-on: ubuntu-latest
+
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version:
+          - "3.13"
+          - "pypy3.10"
+
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: install uv
+        uses: astral-sh/setup-uv@v7
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: install rust stable
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: cache rust
+        uses: Swatinem/rust-cache@v2
+
+      - name: install deps
+        run: uv sync --group testing
+
+      - run: make build-dev
+
+      - run: uv pip freeze
+      - run: uv run pytest
+
+  test-pydantic-integration:
+    runs-on: ubuntu-latest
+    continue-on-error: true
+
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          repository: pydantic/pydantic
+          path: pydantic
+
+      - uses: actions/checkout@v5
+        with:
+          path: pydantic-core
+
+      - name: install rust stable
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: cache rust
+        uses: Swatinem/rust-cache@v2
+
+      - name: install uv
+        uses: astral-sh/setup-uv@v7
+
+      - name: install deps
+        run: |
+          uv sync --extra timezone
+          uv pip install maturin pip
+          uv run bash -c 'cd ../pydantic-core && maturin develop'
+        working-directory: pydantic
+
+      - run: uv --version && uv pip list
+        working-directory: pydantic
+
+      # Run pytest with lax xfail because we often add tests to pydantic
+      # which xfail on a pending release of pydantic-core
+      - run: uv run --no-sync pytest --override-ini=xfail_strict=False -k 'not test_check_pydantic_core_version'
+        working-directory: pydantic
+        env:
+          PYDANTIC_PRIVATE_ALLOW_UNHANDLED_SCHEMA_TYPES: 1
+
+    env:
+      UV_PROJECT_ENVIRONMENT: ${{ github.workspace }}/.venv
+
+  lint:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: install rust stable
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt, clippy
+
+      - name: cache rust
+        uses: Swatinem/rust-cache@v2
+
+      # used to lint js code
+      - uses: actions/setup-node@v6
+        with:
+          node-version: "18"
+
+      - name: install uv
+        uses: astral-sh/setup-uv@v7
+
+      - name: install deps
+        run: |
+          uv sync --group linting
+          make build-dev
+          uv pip freeze
+
+      - run: make lint
+      - run: make pyright
+
+      - run: npm install
+      - run: npm run lint
+
+  bench:
+    name: rust benchmarks
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: install rust nightly
+        uses: dtolnay/rust-toolchain@nightly
+
+      - name: cache rust
+        uses: Swatinem/rust-cache@v2
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.13"
+
+      - run: pip install typing_extensions
+
+      - run: cargo bench
+
+  build-wasm-emscripten:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: install rust nightly
+        uses: dtolnay/rust-toolchain@master
+        with:
+          components: rust-src
+          targets: wasm32-unknown-emscripten
+          # might be able to unpin when pydodide uses emscripten 4, see below
+          toolchain: nightly-2025-02-17
+
+      - name: cache rust
+        uses: Swatinem/rust-cache@v2
+
+      - uses: mymindstorm/setup-emsdk@v14
+        with:
+          # NOTE!: as per https://github.com/pydantic/pydantic-core/pull/149 this version needs to match the version
+          # in node_modules/pyodide/pyodide-lock.json, to get the version, run:
+          # `cat node_modules/pyodide/pyodide-lock.json | jq .info.platform`
+          version: "3.1.58"
+          actions-cache-folder: emsdk-cache
+
+      - name: install uv
+        uses: astral-sh/setup-uv@v7
+
+      - name: install deps
+        run: uv sync --group wasm
+
+      - name: build wheels
+        run: make build-wasm
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: "18"
+
+      - run: npm install
+
+      - run: npm run test
+
+      - run: |
+          ls -lh dist/
+          ls -l dist/
+
+      - uses: actions/upload-artifact@v5
+        with:
+          name: wasm_wheels
+          path: dist
+
+  # https://github.com/marketplace/actions/alls-green#why used for branch protection checks
+  check:
+    if: always()
+    needs:
+      [
+        coverage,
+        test-python,
+        test-os,
+        test-debug,
+        lint,
+        bench,
+        build-wasm-emscripten,
+      ]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Decide whether the needed jobs succeeded or failed
+        uses: re-actors/alls-green@release/v1
+        with:
+          jobs: ${{ toJSON(needs) }}
+          allowed-failures: coverage
+
+  build-sdist:
+    name: build sdist
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.13"
+      - uses: PyO3/maturin-action@v1
+        with:
+          command: sdist
+          args: --out dist
+          rust-toolchain: stable
+      - uses: actions/upload-artifact@v5
+        with:
+          name: pypi_files_sdist
+          path: dist
+
+  build:
+    name: build on ${{ matrix.os }} (${{ matrix.target }} - ${{ matrix.interpreter || 'all' }}${{ matrix.os == 'linux' && format(' - {0}', matrix.manylinux == 'auto' && 'manylinux' || matrix.manylinux) || '' }})
+    # only run on push to main and on release
+    if: startsWith(github.ref, 'refs/tags/') || github.ref == 'refs/heads/main' || contains(github.event.pull_request.labels.*.name, 'Full Build')
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [linux, macos, windows]
+        target: [undefined]
+        manylinux: [auto]
+        include:
+          # manylinux for various platforms
+          # x86_64 and aarch64 are PGO optimized below
+          - os: linux
+            manylinux: auto
+            target: i686
+          - os: linux
+            manylinux: auto
+            target: armv7
+            interpreter: 3.9 3.10 3.11 3.12 3.13 3.14 3.14t
+          - os: linux
+            manylinux: auto
+            target: ppc64le
+            interpreter: 3.9 3.10 3.11 3.12 3.13 3.14 3.14t
+          - os: linux
+            manylinux: auto
+            target: s390x
+            interpreter: 3.9 3.10 3.11 3.12 3.13 3.14 3.14t
+          - os: linux
+            manylinux: auto
+            target: x86_64
+            interpreter: pypy3.10 pypy3.11 graalpy3.11 graalpy3.12
+
+            # manylinux pypy and graalpy on major architectures
+          - os: linux
+            manylinux: auto
+            target: x86_64
+            interpreter: graalpy3.11 graalpy3.12
+          - os: linux
+            manylinux: auto
+            target: aarch64
+            interpreter: graalpy3.11 graalpy3.12
+
+          # musllinux
+          - os: linux
+            manylinux: musllinux_1_1
+            target: x86_64
+          - os: linux
+            manylinux: musllinux_1_1
+            target: aarch64
+          - os: linux
+            manylinux: musllinux_1_1
+            target: armv7
+
+          # macos;
+          # all versions x86_64
+          # arm pypy and older pythons which can't be run on the arm hardware for PGO
+          - os: macos
+            target: x86_64
+            interpreter: 3.9 3.10 3.11 3.12 3.13 3.14 3.14t pypy3.10 pypy3.11 graalpy3.11 graalpy3.12
+          - os: macos
+            target: aarch64
+            interpreter: 3.9 pypy3.10 pypy3.11 graalpy3.11 graalpy3.12
+
+          # windows;
+          # x86_64 pypy builds are not PGO optimized
+          # i686 not supported by pypy
+          # windows 11 arm supports 3.11 and up, not PGO optimized for now
+          - os: windows
+            target: x86_64
+            interpreter: pypy3.10 pypy3.11
+          - os: windows
+            target: i686
+            python-architecture: x86
+            interpreter: 3.9 3.10 3.11 3.12 3.13 3.14 3.14t
+          - os: windows
+            target: aarch64
+            runs-on: windows-11-arm
+            interpreter: "3.11 3.12 3.13 3.14 3.14t"
+
+        exclude:
+          # was just a dummy variable to set a default value for target
+          - target: undefined
+
+    runs-on: ${{ matrix.runs-on || format('{0}-latest', (matrix.os == 'linux' && 'ubuntu') || matrix.os) }}
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: set up python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.13"
+          architecture: ${{ matrix.python-architecture || 'x64' }}
+
+      - run: pip install -U twine 'ruff==0.5.0' typing_extensions
+
+      - name: build wheels
+        uses: PyO3/maturin-action@v1
+        with:
+          target: ${{ matrix.target }}
+          manylinux: ${{ matrix.manylinux }}
+          args: --release --out dist --interpreter ${{ matrix.interpreter || '3.9 3.10 3.11 3.12 3.13 3.14 3.14t pypy3.10 pypy3.11' }}
+          rust-toolchain: stable
+          docker-options: -e CI
+
+      - run: ${{ (matrix.os == 'windows' && 'dir') || 'ls -lh' }} dist/
+
+      - run: twine check --strict dist/*
+
+      - uses: actions/upload-artifact@v5
+        with:
+          name: pypi_files_${{ matrix.os }}_${{ matrix.target }}_${{ matrix.interpreter || 'all' }}_${{ matrix.manylinux }}
+          path: dist
+
+  build-pgo:
+    name: build pgo-optimized on ${{ matrix.platform.os }} / ${{ matrix.interpreter }}
+    # only run on push to main and on release
+    if: startsWith(github.ref, 'refs/tags/') || github.ref == 'refs/heads/main' || contains(github.event.pull_request.labels.*.name, 'Full Build')
+    strategy:
+      fail-fast: false
+      matrix:
+        platform:
+          [
+            { os: linux, runs-on: ubuntu-latest },
+            { os: linux_aarch64, runs-on: ubuntu-24.04-arm },
+            { os: windows, runs-on: windows-latest },
+            { os: macos, runs-on: macos-latest },
+          ]
+        interpreter: ["3.9", "3.10", "3.11", "3.12", "3.13", "3.14", "3.14t"]
+        exclude:
+          # macos arm only supported from 3.10 and up
+          - platform:
+              os: macos
+            interpreter: "3.9"
+
+    runs-on: ${{ matrix.platform.runs-on }}
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: install uv
+        uses: astral-sh/setup-uv@v7
+        with:
+          python-version: ${{ matrix.interpreter }}
+
+      - name: install rust stable
+        id: rust-toolchain
+        uses: dtolnay/rust-toolchain@master
+        with:
+          components: llvm-tools
+          toolchain: stable
+
+      - name: Build PGO wheel
+        id: pgo-wheel
+        uses: ./.github/actions/build-pgo-wheel
+        with:
+          interpreter: ${{ matrix.interpreter }}
+          rust-toolchain: ${{ steps.rust-toolchain.outputs.name }}
+
+      - run: ${{ (startsWith(matrix.platform.os, 'windows') && 'dir') || 'ls -lh' }} dist/
+
+      - uses: actions/upload-artifact@v5
+        with:
+          name: pypi_files_${{ matrix.platform.os }}_${{ matrix.interpreter }}
+          path: dist
+
+  inspect-pypi-assets:
+    needs: [build, build-sdist, build-pgo]
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: get dist artifacts
+        uses: actions/download-artifact@v6
+        with:
+          pattern: pypi_files_*
+          merge-multiple: true
+          path: dist
+
+      - name: list dist files
+        run: |
+          ls -lh dist/
+          ls -l dist/
+          echo "`ls dist | wc -l` files"
+
+      - name: extract and list sdist file
+        run: |
+          mkdir sdist-files
+          tar -xvf dist/*.tar.gz -C sdist-files
+          tree -a sdist-files
+
+      - name: extract and list wheel file
+        run: |
+          ls dist/*cp310-manylinux*x86_64.whl | head -n 1
+          python -m zipfile --list `ls dist/*cp310-manylinux*x86_64.whl | head -n 1`
+
+  test-builds-arch:
+    name: test build on ${{ matrix.target }}-${{ matrix.distro }}
+    needs: [build]
+    runs-on: ubuntu-latest
+
+    strategy:
+      fail-fast: false
+      matrix:
+        target: [armv7, s390x, ppc64le]
+        distro: ["ubuntu22.04"]
+        include:
+          - target: aarch64
+            distro: alpine_latest
+
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: get dist artifacts
+        uses: actions/download-artifact@v6
+        with:
+          pattern: pypi_files_linux_*
+          merge-multiple: true
+          path: dist
+
+      - uses: uraimo/run-on-arch-action@v3.0.1
+        name: install & test
+        with:
+          arch: ${{ matrix.target }}
+          distro: ${{ matrix.distro }}
+          githubToken: ${{ github.token }}
+          install: |
+            set -x
+            if command -v apt-get &> /dev/null; then
+              echo "installing python & pip with apt-get..."
+              apt-get update
+              apt-get install -y --no-install-recommends python3 python3-pip python3-venv git curl
+            else
+              echo "installing python & pip with apk..."
+              apk update
+              apk add python3 py3-pip git curl
+            fi
+          env: |
+            UV_NO_PROGRESS: '1'
+          run: |
+            set -x
+            curl -LsSf https://astral.sh/uv/install.sh | sh
+            source $HOME/.local/bin/env
+            uv sync --frozen --group testing --no-install-project
+            uv pip install pydantic-core --no-index --no-deps --find-links dist --force-reinstall
+            uv run --no-sync pytest --ignore=tests/test_docstrings.py
+            uv run --no-sync python -c 'import pydantic_core._pydantic_core; print(pydantic_core._pydantic_core.__version__)'
+
+  test-builds-os:
+    name: test build on ${{ matrix.platform.os }}
+    needs: [build, build-pgo]
+
+    strategy:
+      fail-fast: false
+      matrix:
+        platform:
+          [
+            { os: linux, runs-on: ubuntu-latest },
+            { os: linux_aarch64, runs-on: ubuntu-24.04-arm },
+            { os: windows, runs-on: windows-latest },
+            { os: windows_aarch64, runs-on: windows-11-arm },
+            { os: macos, runs-on: macos-latest },
+          ]
+
+    runs-on: ${{ matrix.platform.runs-on }}
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: install uv
+        uses: astral-sh/setup-uv@v7
+
+      - name: get dist artifacts
+        uses: actions/download-artifact@v6
+        with:
+          pattern: pypi_files_*
+          merge-multiple: true
+          path: dist
+
+      - run: uv sync --group testing
+      - run: uv pip install pydantic-core --no-index --no-deps --find-links dist --force-reinstall
+      - run: uv run pytest --ignore=tests/test_docstrings.py
+
+  release:
+    needs: [test-builds-arch, test-builds-os, build-sdist, check]
+    if: always() && startsWith(github.ref, 'refs/tags/')
+    runs-on: ubuntu-latest
+
+    environment:
+      name: release
+
+    permissions:
+      id-token: write
+      contents: write
+
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: astral-sh/setup-uv@v7
+
+      - name: check package version
+        run: uv run .github/check_version.py
+
+      - name: get dist artifacts
+        uses: actions/download-artifact@v6
+        with:
+          pattern: pypi_files_*
+          merge-multiple: true
+          path: dist
+
+      - name: Test wheels integrity
+        run: for whl in dist/*.whl; do unzip -qt "$whl"; done
+
+      - run: uv publish --trusted-publishing always
+
+      - name: get wasm dist artifacts
+        uses: actions/download-artifact@v6
+        with:
+          name: wasm_wheels
+          path: wasm
+
+      - name: upload to github release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            wasm/*.whl
+          prerelease: ${{ contains(github.ref, 'alpha') || contains(github.ref, 'beta') }}
