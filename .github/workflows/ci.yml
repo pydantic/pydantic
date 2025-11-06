@@ -86,27 +86,14 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, macos-15-intel, macos-latest, windows-latest]
-        python-version: ['3.9', '3.10', '3.11', '3.12', '3.13', '3.14', '3.14t']
+        os: [ubuntu-latest, macos-latest, windows-latest]
+        python-version: ['3.9', '3.10', '3.11', '3.12', '3.13', '3.14', '3.14t', 'pypy3.11']
         include:
-          # no pydantic-core binaries for pypy on windows, so tests take absolute ages
-          # macos tests with pypy take ages (>10mins) since pypy is very slow
-          # so we only test pypy on ubuntu
-          - os: ubuntu-latest
-            python-version: 'pypy3.10'
-          - os: ubuntu-latest
-            python-version: 'pypy3.11'
-        exclude:
+          # test macos intel just with latest python version
           - os: macos-15-intel
-            python-version: '3.10'
+            python-version: '3.14'
           - os: macos-15-intel
-            python-version: '3.11'
-          - os: macos-15-intel
-            python-version: '3.12'
-          - os: macos-latest
-            python-version: '3.13'
-          - os: macos-latest
-            python-version: '3.9'
+            python-version: '3.14t'
 
     env:
       OS: ${{ matrix.os }}
@@ -123,33 +110,19 @@ jobs:
         python-version: ${{ matrix.python-version }}
 
     - name: Install dependencies
-      run: uv sync --extra timezone
+      run: uv sync --group testing-extra --all-extras
 
     - run: 'uv run python -c "import pydantic.version; print(pydantic.version.version_info())"'
 
     - run: mkdir coverage
 
-    - name: Test without email-validator
-      # speed up by skipping this step on pypy
-      if: ${{ !startsWith(matrix.python-version, 'pypy') }}
+    - name: Run pytest
       run: make test NUM_THREADS=${{ endsWith(matrix.python-version, 't') && '4' || '1' }}
       # Free threaded is flaky, allow failures for now:
       continue-on-error: ${{ endsWith(matrix.python-version, 't') }}
       env:
-        COVERAGE_FILE: coverage/.coverage.${{ runner.os }}-py${{ matrix.python-version }}-without-deps
+        COVERAGE_FILE: coverage/.coverage.${{ runner.os }}-py${{ matrix.python-version }}
         CONTEXT: ${{ runner.os }}-py${{ matrix.python-version }}-without-deps
-
-    - name: Install extra dependencies
-      # Skip free threaded, we can't install memray
-      if: ${{ !endsWith(matrix.python-version, 't') }}
-      run: uv sync --group testing-extra --all-extras
-
-    - name: Test with all extra dependencies
-      if: ${{ !endsWith(matrix.python-version, 't') }}
-      run: make test
-      env:
-        COVERAGE_FILE: coverage/.coverage.${{ runner.os }}-py${{ matrix.python-version }}-with-deps
-        CONTEXT: ${{ runner.os }}-py${{ matrix.python-version }}-with-deps
 
     - name: Store coverage files
       uses: actions/upload-artifact@v5
