@@ -27,32 +27,8 @@ jobs:
         with:
           python-version: ${{ env.UV_PYTHON }}
 
-      - id: core-version
-        name: resolve pydantic-core tag
-        run: |
-          set -uex -o pipefail
-          echo core-ref=$(python -c "
-          import re
-          import tomllib
-          pyproject_toml = tomllib.loads(open('pyproject.toml').read())
-          core = next(d for d in pyproject_toml['project']['dependencies'] if d.startswith('pydantic-core'))
-          if (result := re.search(r'==(.+)', core)) is not None:
-            print(f'v{result.group(1)}')
-          elif (result := re.search(r'@ git\+https://github\.com/pydantic/pydantic-core\.git@(.+)', core)) is not None:
-            print(result.group(1))
-          else:
-            raise RuntimeError('Could not resolve pydantic-core ref')
-          ") >> $GITHUB_OUTPUT
-
       - name: install deps
         run: uv sync --group testing-extra --extra email --frozen
-
-      - name: checkout pydantic-core
-        uses: actions/checkout@v5
-        with:
-          repository: pydantic/pydantic-core
-          ref: ${{ steps.core-version.outputs.core-ref }}
-          path: pydantic-core
 
       - name: install rust stable
         uses: dtolnay/rust-toolchain@stable
