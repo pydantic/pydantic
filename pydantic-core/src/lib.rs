@@ -101,7 +101,7 @@ pub fn build_info() -> String {
         env!("PROFILE"),
         // We use a `cfg!` here not `env!`/`option_env!` as those would
         // embed `RUSTFLAGS` into the generated binary which causes problems
-        // with reproducable builds.
+        // with reproducible builds.
         cfg!(specified_profile_use),
     )
 }

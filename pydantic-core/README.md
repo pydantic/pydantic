@@ -13,7 +13,7 @@ See [`tests/benchmarks/`](./tests/benchmarks/) for details.
 
 ## Example of direct usage
 
-_NOTE: You should not need to use pydantic-core directly; instead, use pydantic, which in turn uses pydantic-core._
+*NOTE: You should not need to use pydantic-core directly; instead, use pydantic, which in turn uses pydantic-core.*
 
 ```py
 from pydantic_core import SchemaValidator, ValidationError
@@ -72,6 +72,7 @@ except ValidationError as e:
 ### Prerequisites
 
 You'll need:
+
 1. **[Rust](https://rustup.rs/)** - Rust stable (or nightly for coverage)
 2. **[uv](https://docs.astral.sh/uv/getting-started/installation/)** - Fast Python package manager (will install Python 3.9+ automatically)
 3. **[git](https://git-scm.com/)** - For version control
@@ -127,17 +128,9 @@ Once that is built, you can profile pytest benchmarks with (e.g.):
 ```bash
 flamegraph -- pytest tests/benchmarks/test_micro_benchmarks.py -k test_list_of_ints_core_py --benchmark-enable
 ```
+
 The `flamegraph` command will produce an interactive SVG at `flamegraph.svg`.
 
 ## Releasing
 
-1. Bump package version locally. Do not just edit `Cargo.toml` on Github, you need both `Cargo.toml` and `Cargo.lock` to be updated.
-2. Make a PR for the version bump and merge it.
-3. Go to https://github.com/pydantic/pydantic-core/releases and click "Draft a new release"
-4. In the "Choose a tag" dropdown enter the new tag `v<the.new.version>` and select "Create new tag on publish" when the option appears.
-5. Enter the release title in the form "v<the.new.version> <YYYY-MM-DD>"
-6. Click Generate release notes button
-7. Click Publish release
-8. Go to https://github.com/pydantic/pydantic-core/actions and ensure that all build for release are done successfully.
-9. Go to https://pypi.org/project/pydantic-core/ and ensure that the latest release is published.
-10. Done 🎉
+TBC (needs to be integrated into `pydantic` repository release process).

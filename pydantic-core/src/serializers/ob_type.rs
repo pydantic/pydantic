@@ -126,7 +126,7 @@ impl ObTypeLookup {
     ) -> IsType {
         let type_ptr = py_type.as_ptr();
         let ob_type = type_ptr as usize;
-        let ans = match expected_ob_type {
+        let is_type = match expected_ob_type {
             ObType::None => self.none == ob_type,
             ObType::Int => self.int == ob_type,
             // op_value is None on recursive calls
@@ -175,7 +175,7 @@ impl ObTypeLookup {
             ObType::Unknown => false,
         };
 
-        if ans {
+        if is_type {
             IsType::Exact
         } else {
             // this allows for subtypes of the supported class types,
