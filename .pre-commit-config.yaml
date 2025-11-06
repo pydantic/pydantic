@@ -1,38 +1,43 @@
 repos:
-- repo: https://github.com/pre-commit/pre-commit-hooks
-  rev: v6.0.0
-  hooks:
-  - id: no-commit-to-branch  # prevent direct commits to main branch
-  - id: check-yaml
-    args: ['--unsafe']
-  - id: check-toml
-  - id: end-of-file-fixer
-  - id: trailing-whitespace
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v6.0.0
+    hooks:
+      - id: no-commit-to-branch # prevent direct commits to main branch
+      - id: check-yaml
+        args: ['--unsafe']
+      - id: check-toml
+      - id: end-of-file-fixer
+      - id: trailing-whitespace
 
-- repo: https://github.com/codespell-project/codespell
-  rev: v2.4.1
-  hooks:
-  - id: codespell
-    additional_dependencies:
-      - tomli
-    exclude: '^uv\.lock$'
+  - repo: https://github.com/codespell-project/codespell
+    rev: v2.4.1
+    hooks:
+      - id: codespell
+        additional_dependencies:
+          - tomli
+        exclude: '^uv\.lock$'
 
-- repo: https://github.com/DavidAnson/markdownlint-cli2
-  rev: v0.18.1
-  hooks:
-  - id: markdownlint-cli2
+  - repo: https://github.com/DavidAnson/markdownlint-cli2
+    rev: v0.18.1
+    hooks:
+      - id: markdownlint-cli2
 
-- repo: local
-  hooks:
-  - id: lint
-    name: Lint
-    entry: make lint
-    types: [python]
-    language: system
-    pass_filenames: false
-  - id: typecheck
-    name: Typecheck
-    entry: uv run pyright pydantic
-    types: [python]
-    language: system
-    pass_filenames: false
+  - repo: https://github.com/google/yamlfmt
+    rev: v0.20.0
+    hooks:
+      - id: yamlfmt
+
+  - repo: local
+    hooks:
+      - id: lint
+        name: Lint
+        entry: make lint
+        types: [python]
+        language: system
+        pass_filenames: false
+      - id: typecheck
+        name: Typecheck
+        entry: uv run pyright pydantic
+        types: [python]
+        language: system
+        pass_filenames: false

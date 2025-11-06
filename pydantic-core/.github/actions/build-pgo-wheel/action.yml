@@ -48,7 +48,7 @@ runs:
 
     - name: merge pgo data
       run: ${{ env.LLVM_PROFDATA }} merge -o ${{ github.workspace }}/merged.profdata ${{ github.workspace }}/profdata
-      shell: pwsh  # because it handles paths on windows better, and works well enough on unix for this step
+      shell: pwsh # because it handles paths on windows better, and works well enough on unix for this step
 
     - name: build pgo-optimized wheel
       uses: PyO3/maturin-action@v1
