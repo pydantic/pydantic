@@ -52,14 +52,16 @@ jobs:
         # Unlike the docs build, we don't use mkdocs_material-insiders
         # Because the secret for accessing the library is not accessible from forks, but we still want to run
         # this job on public CI runs.
-        run: uv sync --group docs
+        run: |
+          uv sync --group docs
+          uv tool run maturin develop -m pydantic-core/Cargo.toml
 
       - run: uv run python -c 'import docs.plugins.main'
 
       # Taken from docs-build.sh
       - name: prepare shortcuts for extra modules
         run: |
-          ln -s .venv/lib/python*/site-packages/pydantic_core pydantic_core
+          ln -s pydantic-core/python/pydantic_core pydantic_core
           ln -s .venv/lib/python*/site-packages/pydantic_settings pydantic_settings
           ln -s .venv/lib/python*/site-packages/pydantic_extra_types pydantic_extra_types
 
