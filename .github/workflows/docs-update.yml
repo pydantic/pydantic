@@ -72,7 +72,9 @@ jobs:
         with:
           python-version: '3.13'
 
-      - run: uv sync --group docs --group docs-upload
+      - run: |
+          uv sync --group docs --group docs-upload
+          uv tool run maturin develop -m pydantic-core/Cargo.toml
 
       - run: uv pip install --default-index https://pydantic:${PPPR_TOKEN}@pppr.pydantic.dev/simple/ mkdocs-material
         env:
@@ -83,7 +85,7 @@ jobs:
       # Taken from docs-build.sh
       - name: Prepare shortcuts for extra modules
         run: |
-          ln -s .venv/lib/python*/site-packages/pydantic_core pydantic_core
+          ln -s pydantic-core/python/pydantic_core pydantic_core
           ln -s .venv/lib/python*/site-packages/pydantic_settings pydantic_settings
           ln -s .venv/lib/python*/site-packages/pydantic_extra_types pydantic_extra_types
 

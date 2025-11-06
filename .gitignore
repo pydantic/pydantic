@@ -53,3 +53,6 @@ pydantic/*.so
 .auto-format
 /sandbox/
 /worktrees/
+
+# Rust build files
+/target/
