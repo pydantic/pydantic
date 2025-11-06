@@ -39,7 +39,7 @@ runs:
 
     - name: generate pgo data
       run: |
-        uv sync --group testing
+        uv sync --group testing-extra
         uv pip install pydantic-core --no-index --no-deps --find-links pgo-wheel --force-reinstall
         uv run pytest tests/benchmarks
         RUST_HOST=$(rustc -Vv | grep host | cut -d ' ' -f 2)
