@@ -42,28 +42,28 @@ jobs:
   docs-build:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v5
+      - uses: actions/checkout@v5
 
-    - uses: astral-sh/setup-uv@v7
-      with:
-        python-version: '3.12'
+      - uses: astral-sh/setup-uv@v7
+        with:
+          python-version: '3.12'
 
-    - name: Install dependencies
-      # Unlike the docs build, we don't use mkdocs_material-insiders
-      # Because the secret for accessing the library is not accessible from forks, but we still want to run
-      # this job on public CI runs.
-      run: uv sync --group docs
+      - name: Install dependencies
+        # Unlike the docs build, we don't use mkdocs_material-insiders
+        # Because the secret for accessing the library is not accessible from forks, but we still want to run
+        # this job on public CI runs.
+        run: uv sync --group docs
 
-    - run: uv run python -c 'import docs.plugins.main'
+      - run: uv run python -c 'import docs.plugins.main'
 
-    # Taken from docs-build.sh
-    - name: prepare shortcuts for extra modules
-      run: |
-        ln -s .venv/lib/python*/site-packages/pydantic_core pydantic_core
-        ln -s .venv/lib/python*/site-packages/pydantic_settings pydantic_settings
-        ln -s .venv/lib/python*/site-packages/pydantic_extra_types pydantic_extra_types
+      # Taken from docs-build.sh
+      - name: prepare shortcuts for extra modules
+        run: |
+          ln -s .venv/lib/python*/site-packages/pydantic_core pydantic_core
+          ln -s .venv/lib/python*/site-packages/pydantic_settings pydantic_settings
+          ln -s .venv/lib/python*/site-packages/pydantic_extra_types pydantic_extra_types
 
-    - run: PYTHONPATH="$PWD${PYTHONPATH:+:${PYTHONPATH}}" uv run mkdocs build
+      - run: PYTHONPATH="$PWD${PYTHONPATH:+:${PYTHONPATH}}" uv run mkdocs build
 
   test-memray:
     name: Test memray
@@ -103,33 +103,33 @@ jobs:
     runs-on: ${{ matrix.os }}
 
     steps:
-    - uses: actions/checkout@v5
+      - uses: actions/checkout@v5
 
-    - uses: astral-sh/setup-uv@v7
-      with:
-        python-version: ${{ matrix.python-version }}
+      - uses: astral-sh/setup-uv@v7
+        with:
+          python-version: ${{ matrix.python-version }}
 
-    - name: Install dependencies
-      run: uv sync --group testing-extra --all-extras
+      - name: Install dependencies
+        run: uv sync --group testing-extra --all-extras
 
-    - run: 'uv run python -c "import pydantic.version; print(pydantic.version.version_info())"'
+      - run: 'uv run python -c "import pydantic.version; print(pydantic.version.version_info())"'
 
-    - run: mkdir coverage
+      - run: mkdir coverage
 
-    - name: Run pytest
-      run: make test NUM_THREADS=${{ endsWith(matrix.python-version, 't') && '4' || '1' }}
-      # Free threaded is flaky, allow failures for now:
-      continue-on-error: ${{ endsWith(matrix.python-version, 't') }}
-      env:
-        COVERAGE_FILE: coverage/.coverage.${{ runner.os }}-py${{ matrix.python-version }}
-        CONTEXT: ${{ runner.os }}-py${{ matrix.python-version }}-without-deps
+      - name: Run pytest
+        run: make test NUM_THREADS=${{ endsWith(matrix.python-version, 't') && '4' || '1' }}
+        # Free threaded is flaky, allow failures for now:
+        continue-on-error: ${{ endsWith(matrix.python-version, 't') }}
+        env:
+          COVERAGE_FILE: coverage/.coverage.${{ runner.os }}-py${{ matrix.python-version }}
+          CONTEXT: ${{ runner.os }}-py${{ matrix.python-version }}-without-deps
 
-    - name: Store coverage files
-      uses: actions/upload-artifact@v5
-      with:
-        name: coverage-${{ matrix.os }}-${{ matrix.python-version }}
-        path: coverage
-        include-hidden-files: true
+      - name: Store coverage files
+        uses: actions/upload-artifact@v5
+        with:
+          name: coverage-${{ matrix.os }}-${{ matrix.python-version }}
+          path: coverage
+          include-hidden-files: true
 
   test-plugin:
     name: Test Pydantic plugin
@@ -155,51 +155,51 @@ jobs:
     name: Mypy typechecking tests
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v5
+      - uses: actions/checkout@v5
 
-    - uses: astral-sh/setup-uv@v7
-      with:
-        python-version: '3.13'
+      - uses: astral-sh/setup-uv@v7
+        with:
+          python-version: '3.13'
 
-    - name: Install dependencies
-      run: uv sync --group typechecking --all-extras
+      - name: Install dependencies
+        run: uv sync --group typechecking --all-extras
 
-    - run: mkdir coverage
+      - run: mkdir coverage
 
-    - name: Run mypy tests
-      run: uv run coverage run -m pytest tests/mypy --test-mypy
-      env:
-        COVERAGE_FILE: coverage/.coverage.linux-mypy
-        CONTEXT: linux-mypy
+      - name: Run mypy tests
+        run: uv run coverage run -m pytest tests/mypy --test-mypy
+        env:
+          COVERAGE_FILE: coverage/.coverage.linux-mypy
+          CONTEXT: linux-mypy
 
-    - name: Store coverage files
-      uses: actions/upload-artifact@v5
-      with:
-        name: coverage-mypy
-        path: coverage
-        include-hidden-files: true
+      - name: Store coverage files
+        uses: actions/upload-artifact@v5
+        with:
+          name: coverage-mypy
+          path: coverage
+          include-hidden-files: true
 
   test-typechecking-integration:
     name: Typechecking integration tests
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v5
+      - uses: actions/checkout@v5
 
-    - uses: astral-sh/setup-uv@v7
-      with:
-        python-version: '3.12'
+      - uses: astral-sh/setup-uv@v7
+        with:
+          python-version: '3.12'
 
-    - name: Install dependencies
-      run: uv sync --group typechecking
+      - name: Install dependencies
+        run: uv sync --group typechecking
 
-    - name: Run typechecking integration tests (Pyright)
-      run: make test-typechecking-pyright
+      - name: Run typechecking integration tests (Pyright)
+        run: make test-typechecking-pyright
 
-    - name: Run typechecking integration tests (Mypy)
-      run: make test-typechecking-mypy
+      - name: Run typechecking integration tests (Mypy)
+        run: make test-typechecking-mypy
 
-    - name: Run typechecking integration tests (Pyrefly)
-      run: make test-typechecking-pyrefly
+      - name: Run typechecking integration tests (Pyrefly)
+        run: make test-typechecking-pyrefly
 
   coverage-combine:
     needs: [test, test-mypy]
@@ -276,23 +276,23 @@ jobs:
       matrix:
         python-version: ['3.9', '3.10', '3.11', '3.12', '3.13', '3.14']
     steps:
-    - uses: actions/checkout@v5
+      - uses: actions/checkout@v5
 
-    - uses: astral-sh/setup-uv@v7
-      with:
-        python-version: ${{ matrix.python-version }}
+      - uses: astral-sh/setup-uv@v7
+        with:
+          python-version: ${{ matrix.python-version }}
 
-    - name: Install dependencies
-      run: uv sync
+      - name: Install dependencies
+        run: uv sync
 
-    - name: Install typing-extensions
-      run: uv pip install 'typing-extensions @ git+https://github.com/python/typing_extensions.git'
+      - name: Install typing-extensions
+        run: uv pip install 'typing-extensions @ git+https://github.com/python/typing_extensions.git'
 
-    - name: Run tests
-      run: make test
+      - name: Run tests
+        run: make test
 
   # https://github.com/marketplace/actions/alls-green
-  check:  # This job does nothing and is only used for the branch protection
+  check: # This job does nothing and is only used for the branch protection
     if: always()
 
     outputs:

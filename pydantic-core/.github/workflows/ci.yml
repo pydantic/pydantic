@@ -365,16 +365,7 @@ jobs:
   # https://github.com/marketplace/actions/alls-green#why used for branch protection checks
   check:
     if: always()
-    needs:
-      [
-        coverage,
-        test-python,
-        test-os,
-        test-debug,
-        lint,
-        bench,
-        build-wasm-emscripten,
-      ]
+    needs: [coverage, test-python, test-os, test-debug, lint, bench, build-wasm-emscripten]
     runs-on: ubuntu-latest
     steps:
       - name: Decide whether the needed jobs succeeded or failed
@@ -522,13 +513,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        platform:
-          [
-            { os: linux, runs-on: ubuntu-latest },
-            { os: linux_aarch64, runs-on: ubuntu-24.04-arm },
-            { os: windows, runs-on: windows-latest },
-            { os: macos, runs-on: macos-latest },
-          ]
+        platform: [{os: linux, runs-on: ubuntu-latest}, {os: linux_aarch64, runs-on: ubuntu-24.04-arm}, {os: windows, runs-on: windows-latest}, {os: macos, runs-on: macos-latest}]
         interpreter: ["3.9", "3.10", "3.11", "3.12", "3.13", "3.14", "3.14t"]
         exclude:
           # macos arm only supported from 3.10 and up
@@ -656,14 +641,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        platform:
-          [
-            { os: linux, runs-on: ubuntu-latest },
-            { os: linux_aarch64, runs-on: ubuntu-24.04-arm },
-            { os: windows, runs-on: windows-latest },
-            { os: windows_aarch64, runs-on: windows-11-arm },
-            { os: macos, runs-on: macos-latest },
-          ]
+        platform: [{os: linux, runs-on: ubuntu-latest}, {os: linux_aarch64, runs-on: ubuntu-24.04-arm}, {os: windows, runs-on: windows-latest}, {os: windows_aarch64, runs-on: windows-11-arm}, {os: macos, runs-on: macos-latest}]
 
     runs-on: ${{ matrix.platform.runs-on }}
     steps:
