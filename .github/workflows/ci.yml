@@ -283,7 +283,7 @@ jobs:
           python-version: ${{ matrix.python-version }}
 
       - name: Install dependencies
-        run: uv sync
+        run: uv sync --all-packages --group testing-extra --all-extras
 
       - name: Install typing-extensions
         run: uv pip install 'typing-extensions @ git+https://github.com/python/typing_extensions.git'
