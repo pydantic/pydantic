@@ -176,7 +176,12 @@ class _DefinitionsRemapping:
                 # Pick the first alternative that has only one schema, since that means there is no collision
                 remapped_defs_ref = next(x for x in alternatives if len(schemas_for_alternatives[x]) == 1)
                 defs_remapping[original_defs_ref] = remapped_defs_ref
-                json_remapping[defs_to_json[original_defs_ref]] = defs_to_json[remapped_defs_ref]
+
+                # Map all alternatives after the remapped one to the remapped one
+                # This ensures that intermediate simplifications are also remapped
+                remapped_index = alternatives.index(remapped_defs_ref)
+                for alt in alternatives[remapped_index:]:
+                    json_remapping[defs_to_json[alt]] = defs_to_json[remapped_defs_ref]
             remapping = _DefinitionsRemapping(defs_remapping, json_remapping)
             new_definitions_schema = remapping.remap_json_schema({'$defs': copied_definitions})
             if definitions_schema == new_definitions_schema:
