@@ -7195,7 +7195,9 @@ def test_union_format_primitive_type_array_deduplicated() -> None:
     ) == {'anyOf': [{'type': 'integer'}, {'type': 'string'}, {'type': 'string', 'maxLength': 1}]}
 
 
-def test_nested_model_deduplication():
+def test_nested_model_deduplication() -> None:
+    """https://github.com/pydantic/pydantic/issues/12492"""
+
     class Level3(BaseModel):
         level_4: str
 
