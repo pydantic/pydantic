@@ -703,7 +703,7 @@ def test_initvar_pydantic_field() -> None:
 
 
 @pytest.mark.xfail(reason='Ideally we should raise an attribute error, like stdlib dataclasses')
-def test_initvar_pydantic_field() -> None:
+def test_initvar_pydantic_field_attribute_access() -> None:
     @pydantic.dataclasses.dataclass
     class TestInitVar:
         x: InitVar[int] = Field(title='X')
