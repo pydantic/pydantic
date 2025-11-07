@@ -58,9 +58,8 @@ build-coverage:
 build-pgo:
 	@rm -f python/pydantic_core/*.so
 	$(eval PROFDATA := $(shell mktemp -d))
-	# --no-sync avoids uv automatically rebuilding pydantic-core
 	RUSTFLAGS='-Cprofile-generate=$(PROFDATA)' $(uv-run-no-sync) maturin develop --uv --release
-	pytest tests/benchmarks
+	$(uv-run-no-sync) pytest tests/benchmarks
 	$(eval LLVM_PROFDATA := $(shell rustup run stable bash -c 'echo $$RUSTUP_HOME/toolchains/$$RUSTUP_TOOLCHAIN/lib/rustlib/$$(rustc -Vv | grep host | cut -d " " -f 2)/bin/llvm-profdata'))
 	$(LLVM_PROFDATA) merge -o $(PROFDATA)/merged.profdata $(PROFDATA)
 	RUSTFLAGS='-Cprofile-use=$(PROFDATA)/merged.profdata' $(uv-run-no-sync) maturin develop --uv --release
