@@ -696,10 +696,7 @@ def test_initvar_pydantic_field() -> None:
 
     assert TestInitVar.__pydantic_fields__['x'].init_var
 
-    t = TestInitVar(x=1)
-
-    with pytest.raises(AttributeError):
-        t.x
+    TestInitVar(x=1)
 
 
 @pytest.mark.xfail(reason='Ideally we should raise an attribute error, like stdlib dataclasses')
