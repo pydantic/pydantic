@@ -450,6 +450,10 @@ class FieldInfo(_repr.Representation):
             prepend_metadata = default_copy.metadata
             default_copy.metadata = []
             metadata = metadata + [default_copy]
+            if 'init_var' in inspected_ann.qualifiers:
+                # Only relevant for dataclasses, when `f: InitVar[<type>] = Field(...)`
+                # is used:
+                attr_overrides['init_var'] = True
         elif isinstance(default, dataclasses.Field):
             from_field = FieldInfo._from_dataclass_field(default)
             prepend_metadata = from_field.metadata  # Unnecessary when we remove HACK 1.

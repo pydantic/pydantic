@@ -686,6 +686,35 @@ def test_initvar():
         TestInitVar(1, 2, 0)
 
 
+def test_initvar_pydantic_field() -> None:
+    @pydantic.dataclasses.dataclass
+    class TestInitVar:
+        x: InitVar[int] = Field(title='X')
+
+        def __post_init__(self, x: int):
+            assert x == 1
+
+    assert TestInitVar.__pydantic_fields__['x'].init_var
+
+    t = TestInitVar(x=1)
+
+    with pytest.raises(AttributeError):
+        t.x
+
+
+@pytest.mark.xfail(reason='Ideally we should raise an attribute error, like stdlib dataclasses')
+def test_initvar_pydantic_field() -> None:
+    @pydantic.dataclasses.dataclass
+    class TestInitVar:
+        x: InitVar[int] = Field(title='X')
+
+    t = TestInitVar(x=1)
+
+    # Currently this returns the `FieldInfo` instance:
+    with pytest.raises(AttributeError):
+        t.x
+
+
 def test_derived_field_from_initvar():
     @pydantic.dataclasses.dataclass
     class DerivedWithInitVar:
