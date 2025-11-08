@@ -282,8 +282,36 @@ Standard library type: [`decimal.Decimal`][].
 <h4>Validation</h4>
 
 * [`Decimal`][decimal.Decimal] instances are validated as is.
-* Any value accepted by the [`Decimal`][decimal.Decimal] constructor (apart from the
-  three-tuple input) will validate.
+* Any value accepted by the [`Decimal`][decimal.Decimal] constructor will validate, including:
+    * Strings, integers, and floats (converted to Decimal)
+    * Three-tuple format: `(sign, digits_tuple, exponent)` where:
+        * `sign` is `0` for positive or `1` for negative
+        * `digits_tuple` is a tuple of digits (integers 0-9)
+        * `exponent` is an integer exponent
+    * For example: `Decimal((0, (1, 4, 1, 4), -3))` returns `Decimal('1.414')`
+
+<h4>Example</h4>
+
+```python
+from decimal import Decimal
+
+from pydantic import BaseModel
+
+
+class Model(BaseModel):
+    value: Decimal
+
+
+# Various input formats are accepted
+print(Model(value='123.456').value)
+#> 123.456
+print(Model(value=123.456).value)
+#> 123.456
+print(Model(value=(0, (1, 4, 1, 4), -3)).value)  # Three-tuple constructor
+#> 1.414
+print(Model(value=(1, (1, 2, 3), -2)).value)  # Negative number
+#> -1.23
+```
 
 <h4>Constraints</h4>
 
