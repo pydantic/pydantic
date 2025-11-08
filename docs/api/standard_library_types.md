@@ -354,8 +354,8 @@ Built-in type: [`complex`][].
 * [`complex`][] instances are validated as-is.
 * Strings are validated using the [`complex()`][complex] constructor.
 * Numbers (integers and floats) are used as the real part.
-* Objects defining [`__complex__()`][object.__complex__], [`__float__()`][object.__float__].
-  or [`__index__()`][object.__index__] are currently *not* accepted.
+* Objects defining [`__complex__()`][object.__complex__], [`__float__()`][object.__float__],
+  or [`__index__()`][object.__index__] are accepted and converted using Python's [`complex()`][complex] constructor.
 
 <h4>Strictness</h4>
 
