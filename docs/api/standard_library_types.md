@@ -290,29 +290,6 @@ Standard library type: [`decimal.Decimal`][].
         * `exponent` is an integer exponent
     * For example: `Decimal((0, (1, 4, 1, 4), -3))` returns `Decimal('1.414')`
 
-<h4>Example</h4>
-
-```python
-from decimal import Decimal
-
-from pydantic import BaseModel
-
-
-class Model(BaseModel):
-    value: Decimal
-
-
-# Various input formats are accepted
-print(Model(value='123.456').value)
-#> 123.456
-print(Model(value=123.456).value)
-#> 123.456
-print(Model(value=(0, (1, 4, 1, 4), -3)).value)  # Three-tuple constructor
-#> 1.414
-print(Model(value=(1, (1, 2, 3), -2)).value)  # Negative number
-#> -1.23
-```
-
 <h4>Constraints</h4>
 
 Decimals support the following constraints (numbers must be coercible to decimals):
