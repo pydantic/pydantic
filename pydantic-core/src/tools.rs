@@ -1,13 +1,10 @@
 use core::fmt;
 
-use num_bigint::BigInt;
-
 use pyo3::exceptions::PyKeyError;
 use pyo3::intern;
 use pyo3::prelude::*;
 use pyo3::types::{PyDict, PyMapping, PyString};
 
-use crate::input::Int;
 use crate::PydanticUndefinedType;
 use jiter::{cached_py_string, StringCacheMode};
 
@@ -131,12 +128,6 @@ pub fn truncate_safe_repr(v: &Bound<'_, PyAny>, max_len: Option<usize>) -> Strin
 
 pub fn extract_i64(v: &Bound<'_, PyAny>) -> Option<i64> {
     v.extract().ok()
-}
-
-pub fn extract_int(v: &Bound<'_, PyAny>) -> Option<Int> {
-    extract_i64(v)
-        .map(Int::I64)
-        .or_else(|| v.extract::<BigInt>().ok().map(Int::Big))
 }
 
 pub(crate) fn new_py_string<'py>(py: Python<'py>, s: &str, cache_str: StringCacheMode) -> Bound<'py, PyString> {

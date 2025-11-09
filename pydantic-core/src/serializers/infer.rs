@@ -18,7 +18,7 @@ use crate::serializers::shared::DoSerialize;
 use crate::serializers::type_serializers;
 use crate::serializers::type_serializers::format::serialize_via_str;
 use crate::serializers::SerializationState;
-use crate::tools::{extract_int, py_err, safe_repr};
+use crate::tools::{py_err, safe_repr};
 
 use super::config::InfNanMode;
 use super::errors::SERIALIZATION_ERR_MARKER;
@@ -95,7 +95,7 @@ pub(crate) fn infer_to_python_known<'py>(
             ObType::None | ObType::Bool | ObType::Int | ObType::Str => value.clone().unbind(),
             // have to do this to make sure subclasses of for example str are upcast to `str`
             ObType::IntSubclass => {
-                if let Some(i) = extract_int(value) {
+                if let Ok(i) = value.extract::<Int>() {
                     i.into_py_any(py)?
                 } else {
                     return py_err!(PyTypeError; "Expected int, got {}", safe_repr(value));

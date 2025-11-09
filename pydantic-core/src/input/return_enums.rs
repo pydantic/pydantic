@@ -21,7 +21,7 @@ use crate::errors::{
     py_err_string, ErrorType, ErrorTypeDefaults, InputValue, ToErrorValue, ValError, ValLineError, ValResult,
 };
 use crate::py_gc::PyGcTraverse;
-use crate::tools::{extract_i64, new_py_string, py_err};
+use crate::tools::{extract_i64, new_py_string};
 use crate::validators::{CombinedValidator, Exactness, ValidationState, Validator};
 
 use super::{py_error_on_minusone, BorrowInput, Input};
@@ -709,9 +709,12 @@ impl Rem for &Int {
 impl FromPyObject<'_, '_> for Int {
     type Error = PyErr;
     fn extract(obj: Borrowed<'_, '_, PyAny>) -> PyResult<Self> {
-        match obj.extract() {
-            Ok(i) => Ok(i),
-            Err(_) => py_err!(PyTypeError; "Expected int, got {}", obj.get_type()),
+        if let Ok(i) = obj.extract() {
+            Ok(Int::I64(i))
+        } else if let Ok(b) = obj.extract() {
+            Ok(Int::Big(b))
+        } else {
+            Err(PyTypeError::new_err(format!("Expected int, got {}", obj.get_type())))
         }
     }
 }
