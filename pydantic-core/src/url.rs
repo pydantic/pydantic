@@ -602,8 +602,9 @@ impl UrlHostParts {
     }
 }
 
-impl FromPyObject<'_> for UrlHostParts {
-    fn extract_bound(ob: &Bound<'_, PyAny>) -> PyResult<Self> {
+impl FromPyObject<'_, '_> for UrlHostParts {
+    type Error = PyErr;
+    fn extract(ob: Borrowed<'_, '_, PyAny>) -> PyResult<Self> {
         let py = ob.py();
         let dict = ob.cast::<PyDict>()?;
         Ok(UrlHostParts {

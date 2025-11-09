@@ -13,7 +13,7 @@ use strum::{Display, EnumMessage, IntoEnumIterator};
 use strum_macros::EnumIter;
 
 use crate::input::{InputType, Int};
-use crate::tools::{extract_i64, py_err, py_error_type};
+use crate::tools::{py_err, py_error_type};
 
 use super::PydanticCustomError;
 
@@ -42,7 +42,7 @@ pub fn list_all_errors(py: Python<'_>) -> PyResult<Bound<'_, PyList>> {
     PyList::new(py, errors)
 }
 
-fn field_from_context<'py, T: FromPyObject<'py>>(
+fn field_from_context<'py, T: FromPyObjectOwned<'py>>(
     context: Option<&Bound<'py, PyDict>>,
     field_name: &str,
     enum_name: &str,
@@ -56,7 +56,7 @@ fn field_from_context<'py, T: FromPyObject<'py>>(
         .map_err(|_| py_error_type!(PyTypeError; "{}: '{}' context value must be a {}", enum_name, field_name, type_name_fn()))
 }
 
-fn cow_field_from_context<'py, T: FromPyObject<'py>, B: ToOwned<Owned = T> + ?Sized + 'static>(
+fn cow_field_from_context<'py, T: FromPyObjectOwned<'py>, B: ToOwned<Owned = T> + ?Sized + 'static>(
     context: Option<&Bound<'py, PyDict>>,
     field_name: &str,
     enum_name: &str,
@@ -799,13 +799,14 @@ impl From<Int> for Number {
     }
 }
 
-impl FromPyObject<'_> for Number {
-    fn extract_bound(obj: &Bound<'_, PyAny>) -> PyResult<Self> {
-        if let Some(int) = extract_i64(obj) {
+impl FromPyObject<'_, '_> for Number {
+    type Error = PyErr;
+    fn extract(obj: Borrowed<'_, '_, PyAny>) -> PyResult<Self> {
+        if let Ok(int) = obj.extract() {
             Ok(Number::Int(int))
-        } else if let Ok(float) = obj.extract::<f64>() {
+        } else if let Ok(float) = obj.extract() {
             Ok(Number::Float(float))
-        } else if let Ok(string) = obj.extract::<String>() {
+        } else if let Ok(string) = obj.extract() {
             Ok(Number::String(string))
         } else {
             py_err!(PyTypeError; "Expected int or float or String, got {}", obj.get_type())

@@ -615,7 +615,7 @@ pub(crate) fn call_pydantic_serializer<'py, T, E: From<PyErr>>(
 ) -> Result<T, E> {
     let py = value.py();
     let py_serializer = value.getattr(intern!(py, "__pydantic_serializer__"))?;
-    let extracted_serializer: PyRef<SchemaSerializer> = py_serializer.extract()?;
+    let extracted_serializer: PyRef<SchemaSerializer> = py_serializer.extract().map_err(Into::into)?;
     let mut state = SerializationState {
         warnings: state.warnings.clone(),
         rec_guard: state.rec_guard.clone(),

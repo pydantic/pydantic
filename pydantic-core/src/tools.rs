@@ -3,9 +3,9 @@ use core::fmt;
 use num_bigint::BigInt;
 
 use pyo3::exceptions::PyKeyError;
+use pyo3::intern;
 use pyo3::prelude::*;
 use pyo3::types::{PyDict, PyMapping, PyString};
-use pyo3::{intern, FromPyObject};
 
 use crate::input::Int;
 use crate::PydanticUndefinedType;
@@ -14,30 +14,30 @@ use jiter::{cached_py_string, StringCacheMode};
 pub trait SchemaDict<'py> {
     fn get_as<T>(&self, key: &Bound<'py, PyString>) -> PyResult<Option<T>>
     where
-        T: FromPyObject<'py>;
+        T: FromPyObjectOwned<'py>;
 
     fn get_as_req<T>(&self, key: &Bound<'py, PyString>) -> PyResult<T>
     where
-        T: FromPyObject<'py>;
+        T: FromPyObjectOwned<'py>;
 }
 
 impl<'py> SchemaDict<'py> for Bound<'py, PyDict> {
     fn get_as<T>(&self, key: &Bound<'py, PyString>) -> PyResult<Option<T>>
     where
-        T: FromPyObject<'py>,
+        T: FromPyObjectOwned<'py>,
     {
         match self.get_item(key)? {
-            Some(t) => t.extract().map(Some),
+            Some(t) => t.extract().map(Some).map_err(Into::into),
             None => Ok(None),
         }
     }
 
     fn get_as_req<T>(&self, key: &Bound<'py, PyString>) -> PyResult<T>
     where
-        T: FromPyObject<'py>,
+        T: FromPyObjectOwned<'py>,
     {
         match self.get_item(key)? {
-            Some(t) => t.extract(),
+            Some(t) => t.extract().map_err(Into::into),
             None => py_err!(PyKeyError; "{}", key),
         }
     }
@@ -46,7 +46,7 @@ impl<'py> SchemaDict<'py> for Bound<'py, PyDict> {
 impl<'py> SchemaDict<'py> for Option<&Bound<'py, PyDict>> {
     fn get_as<T>(&self, key: &Bound<'py, PyString>) -> PyResult<Option<T>>
     where
-        T: FromPyObject<'py>,
+        T: FromPyObjectOwned<'py>,
     {
         match self {
             Some(d) => d.get_as(key),
@@ -57,7 +57,7 @@ impl<'py> SchemaDict<'py> for Option<&Bound<'py, PyDict>> {
     #[cfg_attr(has_coverage_attribute, coverage(off))]
     fn get_as_req<T>(&self, key: &Bound<'py, PyString>) -> PyResult<T>
     where
-        T: FromPyObject<'py>,
+        T: FromPyObjectOwned<'py>,
     {
         match self {
             Some(d) => d.get_as_req(key),
