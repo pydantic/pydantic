@@ -11,7 +11,7 @@ on:
 
 env:
   UV_FROZEN: true
-  UV_PYTHON: 3.13
+  UV_PYTHON: 3.14
 
 jobs:
   codspeed-profiling:
