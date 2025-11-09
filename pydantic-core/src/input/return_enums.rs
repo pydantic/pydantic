@@ -334,7 +334,7 @@ pub(crate) fn iterate_attributes<'a, 'py>(
         // or we get to the end of the list of attributes
         let name = attributes_iterator.next()?;
         // from benchmarks this is 14x faster than using the python `startswith` method
-        let name_cow = match name.downcast::<PyString>() {
+        let name_cow = match name.cast::<PyString>() {
             Ok(name) => name.to_string_lossy(),
             Err(e) => return Some(Err(e.into())),
         };

@@ -405,7 +405,7 @@ pub enum WarningsMode {
 
 impl<'py> FromPyObject<'py> for WarningsMode {
     fn extract_bound(ob: &Bound<'py, PyAny>) -> PyResult<WarningsMode> {
-        if let Ok(bool_mode) = ob.downcast::<PyBool>() {
+        if let Ok(bool_mode) = ob.cast::<PyBool>() {
             Ok(bool_mode.is_true().into())
         } else if let Ok(str_mode) = ob.extract::<&str>() {
             match str_mode {

@@ -349,6 +349,6 @@ pub fn utf8_py_error(py: Python, err: Utf8Error, data: &[u8]) -> PyErr {
 
 impl FromPyObject<'_> for InfNanMode {
     fn extract_bound(ob: &Bound<'_, PyAny>) -> PyResult<Self> {
-        Self::from_str(ob.downcast::<PyString>()?.to_str()?)
+        Self::from_str(ob.cast::<PyString>()?.to_str()?)
     }
 }

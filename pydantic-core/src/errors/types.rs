@@ -127,7 +127,7 @@ macro_rules! error_types {
                                 dict.set_item(stringify!($key), $key)?;
                             )*
                             if let Some(ctx) = context {
-                                dict.update(ctx.bind(py).downcast::<PyMapping>()?)?;
+                                dict.update(ctx.bind(py).cast::<PyMapping>()?)?;
                                 Ok(true)
                             } else {
                                 Ok(false)

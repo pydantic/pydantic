@@ -133,7 +133,7 @@ dump_json_input_2 = {'a': 'something'}
                 .get_item("schema")
                 .unwrap()
                 .unwrap()
-                .downcast_into::<PyDict>()
+                .cast_into::<PyDict>()
                 .unwrap();
             let dump_json_input_1 = locals.get_item("dump_json_input_1").unwrap().unwrap();
             let dump_json_input_2 = locals.get_item("dump_json_input_2").unwrap().unwrap();

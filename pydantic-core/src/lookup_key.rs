@@ -47,7 +47,7 @@ impl fmt::Display for LookupKey {
 
 impl LookupKey {
     pub fn from_py(py: Python, value: &Bound<'_, PyAny>, alt_alias: Option<&str>) -> PyResult<Self> {
-        if let Ok(alias_py) = value.downcast::<PyString>() {
+        if let Ok(alias_py) = value.cast::<PyString>() {
             let alias: String = alias_py.extract()?;
             let path1 = LookupPath::from_str(py, &alias, Some(alias_py.clone()));
             match alt_alias {
@@ -58,11 +58,11 @@ impl LookupKey {
                 None => Ok(Self::Simple(path1)),
             }
         } else {
-            let list = value.downcast::<PyList>()?;
+            let list = value.cast::<PyList>()?;
             let Ok(first) = list.get_item(0) else {
                 return py_schema_err!("Lookup paths should have at least one element");
             };
-            let mut locs: Vec<LookupPath> = if first.downcast::<PyString>().is_ok() {
+            let mut locs: Vec<LookupPath> = if first.cast::<PyString>().is_ok() {
                 // list of strings rather than list of lists
                 vec![LookupPath::from_list(list)?]
             } else {
@@ -333,13 +333,13 @@ impl LookupPath {
     }
 
     fn from_list(obj: &Bound<'_, PyAny>) -> PyResult<LookupPath> {
-        let mut iter = obj.downcast::<PyList>()?.iter();
+        let mut iter = obj.cast::<PyList>()?.iter();
 
         let Some(first_item) = iter.next() else {
             return py_schema_err!("Each alias path should have at least one element");
         };
 
-        let Ok(first_item_py_str) = first_item.downcast_into::<PyString>() else {
+        let Ok(first_item_py_str) = first_item.cast_into::<PyString>() else {
             return py_err!(PyTypeError; "The first item in an alias path should be a string");
         };
 
@@ -433,7 +433,7 @@ impl<'a, 'py> IntoPyObject<'py> for &'a PathItemString {
 
 impl PathItem {
     pub fn from_py(obj: Bound<'_, PyAny>) -> PyResult<Self> {
-        let obj = match obj.downcast_into::<PyString>() {
+        let obj = match obj.cast_into::<PyString>() {
             Ok(py_str_key) => {
                 let str_key = py_str_key.to_str()?.to_string();
                 return Ok(Self::S(PathItemString {
@@ -455,7 +455,7 @@ impl PathItem {
 
     pub fn py_get_item<'py>(&self, py_any: &Bound<'py, PyAny>) -> Option<Bound<'py, PyAny>> {
         // we definitely don't want to index strings, so explicitly omit this case
-        if py_any.downcast::<PyString>().is_ok() {
+        if py_any.cast::<PyString>().is_ok() {
             None
         } else {
             // otherwise, blindly try getitem on v since no better logic is realistic
@@ -508,7 +508,7 @@ impl PathItem {
 impl PathItemString {
     fn py_get_attrs<'py>(&self, obj: &Bound<'py, PyAny>) -> PyResult<Option<Bound<'py, PyAny>>> {
         // if obj is a dict, we want to use get_item, not getattr
-        if obj.downcast::<PyDict>().is_ok() {
+        if obj.cast::<PyDict>().is_ok() {
             Ok(py_get_item(obj, self))
         } else {
             py_get_attrs(obj, &self.py_key)
