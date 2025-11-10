@@ -23,6 +23,7 @@ mod input;
 mod lookup_key;
 mod recursion_guard;
 mod serializers;
+mod structs;
 mod tools;
 mod url;
 mod validators;
@@ -118,6 +119,9 @@ pub mod _pydantic_core {
         PydanticSerializationUnexpectedValue, PydanticUndefinedType, PydanticUseDefault, SchemaError, SchemaSerializer,
         SchemaValidator, TzInfo, ValidationError,
     };
+
+    #[pymodule_export]
+    use crate::structs::create_struct_type;
 
     #[pymodule_init]
     fn module_init(m: &Bound<'_, PyModule>) -> PyResult<()> {

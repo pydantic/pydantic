@@ -13,3 +13,7 @@
     options:
         members:
             - generate_arguments_schema
+
+## `struct` type
+
+::: pydantic.experimental.structs
