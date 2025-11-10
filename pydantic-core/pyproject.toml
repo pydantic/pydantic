@@ -86,13 +86,6 @@ codspeed = [
     'pytest-codspeed; python_version == "3.13" and implementation_name == "cpython"',
 ]
 
-all = [
-    { include-group = "dev" },
-    { include-group = 'testing-extra' },
-    { include-group = 'linting' },
-    { include-group = 'wasm' },
-]
-
 [tool.maturin]
 python-source = "python"
 module-name = "pydantic_core._pydantic_core"
