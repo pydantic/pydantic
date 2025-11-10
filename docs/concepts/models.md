@@ -380,14 +380,14 @@ whole model (nested models and all), so all types at all levels need to be ready
 
 ## Arbitrary class instances
 
-(Formerly known as "ORM Mode"/`from_orm`).
+(Formerly known as "ORM Mode"/`from_orm()`).
 
-Pydantic models can also be created from arbitrary class instances by reading the instance attributes corresponding
-to the model field names. One common application of this functionality is integration with object-relational mappings
-(ORMs).
+When using the [`model_validate()`][pydantic.main.BaseModel.model_validate] method, Pydantic can also validate arbitrary objects,
+by getting attributes on the object corresponding the field names. One common application of this functionality is integration with
+object-relational mappings (ORMs).
 
-To do this, set the [`from_attributes`][pydantic.config.ConfigDict.from_attributes] config value to `True`
-(see the documentation on [Configuration](./config.md) for more details).
+This feature need to be manually enabled, either by setting the [`from_attributes`][pydantic.config.ConfigDict.from_attributes]
+configuration value, or by using the `from_attributes` parameter on [`model_validate()`][pydantic.main.BaseModel.model_validate].
 
 The example here uses [SQLAlchemy](https://www.sqlalchemy.org/), but the same approach should work for any ORM.
 
@@ -436,7 +436,7 @@ print(co_model)
 
 ### Nested attributes
 
-When using attributes to parse models, model instances will be created from both top-level attributes and
+When using attributes to validate models, model instances will be created from both top-level attributes and
 deeper-nested attributes as appropriate.
 
 Here is an example demonstrating the principle:
@@ -446,15 +446,13 @@ from pydantic import BaseModel, ConfigDict
 
 
 class PetCls:
-    def __init__(self, *, name: str, species: str):
+    def __init__(self, *, name: str) -> None:
         self.name = name
-        self.species = species
 
 
 class PersonCls:
-    def __init__(self, *, name: str, age: float = None, pets: list[PetCls]):
+    def __init__(self, *, name: str, pets: list[PetCls]) -> None:
         self.name = name
-        self.age = age
         self.pets = pets
 
 
@@ -462,24 +460,22 @@ class Pet(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
     name: str
-    species: str
 
 
 class Person(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
     name: str
-    age: float = None
     pets: list[Pet]
 
 
-bones = PetCls(name='Bones', species='dog')
-orion = PetCls(name='Orion', species='cat')
-anna = PersonCls(name='Anna', age=20, pets=[bones, orion])
+bones = PetCls(name='Bones')
+orion = PetCls(name='Orion')
+anna = PersonCls(name='Anna', pets=[bones, orion])
 anna_model = Person.model_validate(anna)
 print(anna_model)
 """
-name='Anna' age=20.0 pets=[Pet(name='Bones', species='dog'), Pet(name='Orion', species='cat')]
+name='Anna' pets=[Pet(name='Bones'), Pet(name='Orion')]
 """
 ```
 
