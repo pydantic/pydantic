@@ -149,7 +149,7 @@ assert user.id == 321
 ### Model methods and properties
 
 The example above only shows the tip of the iceberg of what models can do.
-Models possess the following methods and attributes:
+Model classes possess the following methods and attributes:
 
 * [`model_validate()`][pydantic.main.BaseModel.model_validate]: Validates the given object against the Pydantic model. See [Validating data](#validating-data).
 * [`model_validate_json()`][pydantic.main.BaseModel.model_validate_json]: Validates the given JSON data against the Pydantic model. See
@@ -164,12 +164,15 @@ Models possess the following methods and attributes:
 * [`model_json_schema()`][pydantic.main.BaseModel.model_json_schema]: Returns a jsonable dictionary representing the model's JSON Schema. See [JSON Schema](json_schema.md).
 * [`model_fields`][pydantic.main.BaseModel.model_fields]: A mapping between field names and their definitions ([`FieldInfo`][pydantic.fields.FieldInfo] instances).
 * [`model_computed_fields`][pydantic.main.BaseModel.model_computed_fields]: A mapping between computed field names and their definitions ([`ComputedFieldInfo`][pydantic.fields.ComputedFieldInfo] instances).
-* [`model_extra`][pydantic.main.BaseModel.model_extra]: The extra fields set during validation.
-* [`model_fields_set`][pydantic.main.BaseModel.model_fields_set]: The set of fields which were explicitly provided when the model was initialized.
 * [`model_parametrized_name()`][pydantic.main.BaseModel.model_parametrized_name]: Computes the class name for parametrizations of generic classes.
 * [`model_post_init()`][pydantic.main.BaseModel.model_post_init]: Performs additional actions after the model is instantiated and all field validators are applied.
 * [`model_rebuild()`][pydantic.main.BaseModel.model_rebuild]: Rebuilds the model schema, which also supports building recursive generic models.
     See [Rebuilding model schema](#rebuilding-model-schema).
+
+On model instances, the following attributes are available:
+
+* [`model_extra`][pydantic.main.BaseModel.model_extra]: The extra fields set during validation.
+* [`model_fields_set`][pydantic.main.BaseModel.model_fields_set]: The set of fields which were explicitly provided when the model was initialized.
 
 !!! note
     See the API documentation of [`BaseModel`][pydantic.main.BaseModel] for the class definition including a full list of methods and attributes.
@@ -500,10 +503,10 @@ class Model(BaseModel):
     a_float: float
 
 
-data = dict(
-    list_of_ints=['1', 2, 'bad'],
-    a_float='not a float',
-)
+data = {
+    'list_of_ints': ['1', 2, 'bad'],
+    'a_float': 'not a float',
+}
 
 try:
     Model(**data)
@@ -520,15 +523,32 @@ except ValidationError as e:
 
 ## Validating data
 
-Pydantic provides three methods on models classes for parsing data:
+Pydantic can validate data in three differents modes: *Python*, *JSON* and *strings*.
 
-* [`model_validate()`][pydantic.main.BaseModel.model_validate]: this is very similar to the `__init__` method of the model,
-  except it takes a dictionary or an object rather than keyword arguments. If the object passed cannot be validated,
-  or if it's not a dictionary or instance of the model in question, a [`ValidationError`][pydantic_core.ValidationError] will be raised.
-* [`model_validate_json()`][pydantic.main.BaseModel.model_validate_json]: this validates the provided data as a JSON string or `bytes` object.
+The *Python* mode gets used when using:
+
+* The `__init__()` model constructor. Field values must be provided using keyword arguments.
+* [`model_validate()`][pydantic.main.BaseModel.model_validate]: data can be provided either as a dictionary,
+  or as a model instance (by default, instances are assumed to be valid; see the [`revalidate_instances`][pydantic.ConfigDict.revalidate_instances]
+  setting). [Arbitrary objects](#arbitrary-class-instances) can also be provided if explicitly enabled.
+
+The *JSON* and *strings* modes can be used with:
+
+* [`model_validate_json()`][pydantic.main.BaseModel.model_validate_json]: data is validated as a JSON string or `bytes` object.
   If your incoming data is a JSON payload, this is generally considered faster (instead of manually parsing the data as a dictionary).
-  Learn more about JSON parsing in the [JSON](../concepts/json.md) section of the docs.
-* [`model_validate_strings()`][pydantic.main.BaseModel.model_validate_strings]: this takes a dictionary (can be nested) with string keys and values and validates the data in JSON mode so that said strings can be coerced into the correct types.
+  Learn more about JSON parsing in the [JSON](../concepts/json.md) documentation.
+* [`model_validate_strings()`][pydantic.main.BaseModel.model_validate_strings]: data is validated as a dictionary (can be nested) with
+  string keys and values and validates the data in JSON mode so that said strings can be coerced into the correct types.
+
+Compared to using the model constructor, it is possible to control several validation parameters when using the `model_validate_*()` methods
+([strictness](./strict_mode.md), [extra data](#extra-data), [validation context](./validators.md#validation-context), etc.).
+
+!!! note
+    Depending on the types and model configuration involved, the *Python* and *JSON* modes may have different validation behavior (e.g. with [strictness](./strict_mode.md)).
+    If you have data coming from a non-JSON source, but want the same validation behavior and errors you'd get from the *JSON* mode, our recommendation for now is to
+    either dump your data to JSON (e.g. using [`json.dumps()`][json.dumps]), or use [`model_validate_strings()`][pydantic.main.BaseModel.model_validate_strings]
+    if the data takes the form of a (potentially nested) dictionary with string keys and values. Progress for this feature can be tracked in
+    [this issue](https://github.com/pydantic/pydantic/issues/11154).
 
 ```python
 from datetime import datetime
@@ -548,19 +568,6 @@ print(m)
 #> id=123 name='James' signup_ts=None
 
 try:
-    User.model_validate(['not', 'a', 'dict'])
-except ValidationError as e:
-    print(e)
-    """
-    1 validation error for User
-      Input should be a valid dictionary or instance of User [type=model_type, input_value=['not', 'a', 'dict'], input_type=list]
-    """
-
-m = User.model_validate_json('{"id": 123, "name": "James"}')
-print(m)
-#> id=123 name='James' signup_ts=None
-
-try:
     m = User.model_validate_json('{"id": 123, "name": 123}')
 except ValidationError as e:
     print(e)
@@ -568,15 +575,6 @@ except ValidationError as e:
     1 validation error for User
     name
       Input should be a valid string [type=string_type, input_value=123, input_type=int]
-    """
-
-try:
-    m = User.model_validate_json('invalid JSON')
-except ValidationError as e:
-    print(e)
-    """
-    1 validation error for User
-      Invalid JSON: expected value at line 1 column 1 [type=json_invalid, input_value='invalid JSON', input_type=str]
     """
 
 m = User.model_validate_strings({'id': '123', 'name': 'James'})
@@ -601,64 +599,6 @@ except ValidationError as e:
       Input should be a valid datetime, invalid datetime separator, expected `T`, `t`, `_` or space [type=datetime_parsing, input_value='2024-04-01', input_type=str]
     """
 ```
-
-If you want to validate serialized data in a format other than JSON, you should load the data into a dictionary yourself and
-then pass it to [`model_validate`][pydantic.main.BaseModel.model_validate].
-
-!!! note
-    Depending on the types and model configs involved, [`model_validate`][pydantic.main.BaseModel.model_validate]
-    and [`model_validate_json`][pydantic.main.BaseModel.model_validate_json] may have different validation behavior.
-    If you have data coming from a non-JSON source, but want the same validation
-    behavior and errors you'd get from [`model_validate_json`][pydantic.main.BaseModel.model_validate_json],
-    our recommendation for now is to use either use `model_validate_json(json.dumps(data))`, or use [`model_validate_strings`][pydantic.main.BaseModel.model_validate_strings] if the data takes the form of a (potentially nested) dictionary with string keys and values.
-
-!!! note
-    If you're passing in an instance of a model to [`model_validate`][pydantic.main.BaseModel.model_validate], you will want to consider setting
-    [`revalidate_instances`][pydantic.ConfigDict.revalidate_instances] in the model's config.
-    If you don't set this value, then validation will be skipped on model instances. See the below example:
-
-    === ":x: `revalidate_instances='never'`"
-        ```python
-        from pydantic import BaseModel
-
-
-        class Model(BaseModel):
-            a: int
-
-
-        m = Model(a=0)
-        # note: setting `validate_assignment` to `True` in the config can prevent this kind of misbehavior.
-        m.a = 'not an int'
-
-        # doesn't raise a validation error even though m is invalid
-        m2 = Model.model_validate(m)
-        ```
-
-    === ":white_check_mark: `revalidate_instances='always'`"
-        ```python
-        from pydantic import BaseModel, ConfigDict, ValidationError
-
-
-        class Model(BaseModel):
-            a: int
-
-            model_config = ConfigDict(revalidate_instances='always')
-
-
-        m = Model(a=0)
-        # note: setting `validate_assignment` to `True` in the config can prevent this kind of misbehavior.
-        m.a = 'not an int'
-
-        try:
-            m2 = Model.model_validate(m)
-        except ValidationError as e:
-            print(e)
-            """
-            1 validation error for Model
-            a
-              Input should be a valid integer, unable to parse string as an integer [type=int_parsing, input_value='not an int', input_type=str]
-            """
-        ```
 
 ### Creating models without validation
 
