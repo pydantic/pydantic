@@ -1,4 +1,5 @@
 import math
+import os
 import re
 import sys
 from collections.abc import Mapping
@@ -8,7 +9,6 @@ from typing import Any, Union
 
 import pytest
 from dirty_equals import FunctionCheck, HasRepr, IsStr
-
 from pydantic_core import CoreConfig, SchemaError, SchemaValidator, ValidationError, core_schema
 from pydantic_core.core_schema import ExtraBehavior
 
@@ -117,11 +117,15 @@ def test_missing_error(pydantic_version):
         v.validate_python({'field_a': b'abc'})
     assert (
         str(exc_info.value)
-        == f"""\
+        == """\
 1 validation error for model-fields
 field_b
-  Field required [type=missing, input_value={{'field_a': b'abc'}}, input_type=dict]
-    For further information visit https://errors.pydantic.dev/{pydantic_version}/v/missing"""
+  Field required [type=missing, input_value={'field_a': b'abc'}, input_type=dict]"""
+        + (
+            f'\n    For further information visit https://errors.pydantic.dev/{pydantic_version}/v/missing'
+            if os.environ.get('PYDANTIC_ERRORS_INCLUDE_URL', '1') != 'false'
+            else ''
+        )
     )
 
 

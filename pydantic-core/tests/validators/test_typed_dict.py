@@ -1,4 +1,5 @@
 import math
+import os
 import platform
 import re
 import weakref
@@ -7,7 +8,6 @@ from typing import Any, Union
 
 import pytest
 from dirty_equals import FunctionCheck
-
 from pydantic_core import CoreConfig, SchemaError, SchemaValidator, ValidationError, core_schema
 from pydantic_core.core_schema import ExtraBehavior
 
@@ -106,8 +106,12 @@ def test_missing_error(pydantic_version):
     assert str(exc_info.value) == (
         '1 validation error for typed-dict\n'
         'field_b\n'
-        "  Field required [type=missing, input_value={'field_a': b'abc'}, input_type=dict]\n"
-        f'    For further information visit https://errors.pydantic.dev/{pydantic_version}/v/missing'
+        "  Field required [type=missing, input_value={'field_a': b'abc'}, input_type=dict]"
+        + (
+            f'\n    For further information visit https://errors.pydantic.dev/{pydantic_version}/v/missing'
+            if os.environ.get('PYDANTIC_ERRORS_INCLUDE_URL', '1') != 'false'
+            else ''
+        )
     )
 
 

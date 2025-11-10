@@ -1,7 +1,7 @@
+import os
 import re
 
 import pytest
-
 from pydantic_core import SchemaValidator, ValidationError, core_schema
 from pydantic_core import core_schema as cs
 
@@ -63,8 +63,12 @@ def test_bool_error(pydantic_version):
     assert str(exc_info.value) == (
         '1 validation error for bool\n'
         '  Input should be a valid boolean, '
-        "unable to interpret input [type=bool_parsing, input_value='wrong', input_type=str]\n"
-        f'    For further information visit https://errors.pydantic.dev/{pydantic_version}/v/bool_parsing'
+        "unable to interpret input [type=bool_parsing, input_value='wrong', input_type=str]"
+        + (
+            f'\n    For further information visit https://errors.pydantic.dev/{pydantic_version}/v/bool_parsing'
+            if os.environ.get('PYDANTIC_ERRORS_INCLUDE_URL', '1') != 'false'
+            else ''
+        )
     )
     assert exc_info.value.errors(include_url=False) == [
         {
