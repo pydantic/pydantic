@@ -378,148 +378,9 @@ In V2, [`model_rebuild()`][pydantic.main.BaseModel.model_rebuild] replaced `upda
 The biggest change is that when calling [`model_rebuild()`][pydantic.main.BaseModel.model_rebuild] on the outermost model, it builds a core schema used for validation of the
 whole model (nested models and all), so all types at all levels need to be ready before [`model_rebuild()`][pydantic.main.BaseModel.model_rebuild] is called.
 
-## Arbitrary class instances
-
-(Formerly known as "ORM Mode"/`from_orm()`).
-
-When using the [`model_validate()`][pydantic.main.BaseModel.model_validate] method, Pydantic can also validate arbitrary objects,
-by getting attributes on the object corresponding the field names. One common application of this functionality is integration with
-object-relational mappings (ORMs).
-
-This feature need to be manually enabled, either by setting the [`from_attributes`][pydantic.config.ConfigDict.from_attributes]
-configuration value, or by using the `from_attributes` parameter on [`model_validate()`][pydantic.main.BaseModel.model_validate].
-
-The example here uses [SQLAlchemy](https://www.sqlalchemy.org/), but the same approach should work for any ORM.
-
-```python
-from typing import Annotated
-
-from sqlalchemy import ARRAY, String
-from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
-
-from pydantic import BaseModel, ConfigDict, StringConstraints
-
-
-class Base(DeclarativeBase):
-    pass
-
-
-class CompanyOrm(Base):
-    __tablename__ = 'companies'
-
-    id: Mapped[int] = mapped_column(primary_key=True, nullable=False)
-    public_key: Mapped[str] = mapped_column(
-        String(20), index=True, nullable=False, unique=True
-    )
-    domains: Mapped[list[str]] = mapped_column(ARRAY(String(255)))
-
-
-class CompanyModel(BaseModel):
-    model_config = ConfigDict(from_attributes=True)
-
-    id: int
-    public_key: Annotated[str, StringConstraints(max_length=20)]
-    domains: list[Annotated[str, StringConstraints(max_length=255)]]
-
-
-co_orm = CompanyOrm(
-    id=123,
-    public_key='foobar',
-    domains=['example.com', 'foobar.com'],
-)
-print(co_orm)
-#> <__main__.CompanyOrm object at 0x0123456789ab>
-co_model = CompanyModel.model_validate(co_orm)
-print(co_model)
-#> id=123 public_key='foobar' domains=['example.com', 'foobar.com']
-```
-
-### Nested attributes
-
-When using attributes to validate models, model instances will be created from both top-level attributes and
-deeper-nested attributes as appropriate.
-
-Here is an example demonstrating the principle:
-
-```python
-from pydantic import BaseModel, ConfigDict
-
-
-class PetCls:
-    def __init__(self, *, name: str) -> None:
-        self.name = name
-
-
-class PersonCls:
-    def __init__(self, *, name: str, pets: list[PetCls]) -> None:
-        self.name = name
-        self.pets = pets
-
-
-class Pet(BaseModel):
-    model_config = ConfigDict(from_attributes=True)
-
-    name: str
-
-
-class Person(BaseModel):
-    model_config = ConfigDict(from_attributes=True)
-
-    name: str
-    pets: list[Pet]
-
-
-bones = PetCls(name='Bones')
-orion = PetCls(name='Orion')
-anna = PersonCls(name='Anna', pets=[bones, orion])
-anna_model = Person.model_validate(anna)
-print(anna_model)
-"""
-name='Anna' pets=[Pet(name='Bones'), Pet(name='Orion')]
-"""
-```
-
-## Error handling
-
-Pydantic will raise a [`ValidationError`][pydantic_core.ValidationError] exception whenever it finds an error in the data it's validating.
-
-A single exception will be raised regardless of the number of errors found, and that validation error
-will contain information about all of the errors and how they happened.
-
-See [Error Handling](../errors/errors.md) for details on standard and custom errors.
-
-As a demonstration:
-
-```python
-from pydantic import BaseModel, ValidationError
-
-
-class Model(BaseModel):
-    list_of_ints: list[int]
-    a_float: float
-
-
-data = {
-    'list_of_ints': ['1', 2, 'bad'],
-    'a_float': 'not a float',
-}
-
-try:
-    Model(**data)
-except ValidationError as e:
-    print(e)
-    """
-    2 validation errors for Model
-    list_of_ints.2
-      Input should be a valid integer, unable to parse string as an integer [type=int_parsing, input_value='bad', input_type=str]
-    a_float
-      Input should be a valid number, unable to parse string as a number [type=float_parsing, input_value='not a float', input_type=str]
-    """
-```
-
 ## Validating data
 
-Pydantic can validate data in three differents modes: *Python*, *JSON* and *strings*.
+Pydantic can validate data in three different modes: *Python*, *JSON* and *strings*.
 
 The *Python* mode gets used when using:
 
@@ -635,6 +496,143 @@ Here are some additional notes on the behavior of [`model_construct()`][pydantic
     * For models with [`extra`][pydantic.ConfigDict.extra] set to `'ignore'`, data not corresponding to fields will be ignored — that is,
     not stored in `__pydantic_extra__` or `__dict__` on the instance.
     * Unlike when instantiating the model with validation, a call to [`model_construct()`][pydantic.main.BaseModel.model_construct] with [`extra`][pydantic.ConfigDict.extra] set to `'forbid'` doesn't raise an error in the presence of data not corresponding to fields. Rather, said input data is simply ignored.
+
+## Error handling
+
+Pydantic will raise a [`ValidationError`][pydantic_core.ValidationError] exception whenever it finds an error in the data it's validating.
+
+A single exception will be raised regardless of the number of errors found, and that validation error
+will contain information about all of the errors and how they happened.
+
+See [Error Handling](../errors/errors.md) for details on standard and custom errors.
+
+As a demonstration:
+
+```python
+from pydantic import BaseModel, ValidationError
+
+
+class Model(BaseModel):
+    list_of_ints: list[int]
+    a_float: float
+
+
+data = {
+    'list_of_ints': ['1', 2, 'bad'],
+    'a_float': 'not a float',
+}
+
+try:
+    Model(**data)
+except ValidationError as e:
+    print(e)
+    """
+    2 validation errors for Model
+    list_of_ints.2
+      Input should be a valid integer, unable to parse string as an integer [type=int_parsing, input_value='bad', input_type=str]
+    a_float
+      Input should be a valid number, unable to parse string as a number [type=float_parsing, input_value='not a float', input_type=str]
+    """
+```
+
+## Arbitrary class instances
+
+(Formerly known as "ORM Mode"/`from_orm()`).
+
+When using the [`model_validate()`][pydantic.main.BaseModel.model_validate] method, Pydantic can also validate arbitrary objects,
+by getting attributes on the object corresponding the field names. One common application of this functionality is integration with
+object-relational mappings (ORMs).
+
+This feature need to be manually enabled, either by setting the [`from_attributes`][pydantic.config.ConfigDict.from_attributes]
+configuration value, or by using the `from_attributes` parameter on [`model_validate()`][pydantic.main.BaseModel.model_validate].
+
+The example here uses [SQLAlchemy](https://www.sqlalchemy.org/), but the same approach should work for any ORM.
+
+```python
+from typing import Annotated
+
+from sqlalchemy import ARRAY, String
+from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
+
+from pydantic import BaseModel, ConfigDict, StringConstraints
+
+
+class Base(DeclarativeBase):
+    pass
+
+
+class CompanyOrm(Base):
+    __tablename__ = 'companies'
+
+    id: Mapped[int] = mapped_column(primary_key=True, nullable=False)
+    public_key: Mapped[str] = mapped_column(
+        String(20), index=True, nullable=False, unique=True
+    )
+    domains: Mapped[list[str]] = mapped_column(ARRAY(String(255)))
+
+
+class CompanyModel(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    public_key: Annotated[str, StringConstraints(max_length=20)]
+    domains: list[Annotated[str, StringConstraints(max_length=255)]]
+
+
+co_orm = CompanyOrm(
+    id=123,
+    public_key='foobar',
+    domains=['example.com', 'foobar.com'],
+)
+print(co_orm)
+#> <__main__.CompanyOrm object at 0x0123456789ab>
+co_model = CompanyModel.model_validate(co_orm)
+print(co_model)
+#> id=123 public_key='foobar' domains=['example.com', 'foobar.com']
+```
+
+### Nested attributes
+
+When using attributes to validate models, model instances will be created from both top-level attributes and
+deeper-nested attributes as appropriate.
+
+Here is an example demonstrating the principle:
+
+```python
+from pydantic import BaseModel, ConfigDict
+
+
+class PetCls:
+    def __init__(self, *, name: str) -> None:
+        self.name = name
+
+
+class PersonCls:
+    def __init__(self, *, name: str, pets: list[PetCls]) -> None:
+        self.name = name
+        self.pets = pets
+
+
+class Pet(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    name: str
+
+
+class Person(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    name: str
+    pets: list[Pet]
+
+
+bones = PetCls(name='Bones')
+orion = PetCls(name='Orion')
+anna = PersonCls(name='Anna', pets=[bones, orion])
+anna_model = Person.model_validate(anna)
+print(anna_model)
+#> name='Anna' pets=[Pet(name='Bones'), Pet(name='Orion')]
+```
 
 ## Model copy
 
