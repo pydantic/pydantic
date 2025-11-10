@@ -296,10 +296,3 @@ skip = '.git,env*,pydantic/v1/*,uv.lock'
 # `ser` - abbreviation for "ser"ialisation
 # `crate` - a rust crate
 ignore-words-list = 'gir,ser,crate,deques'
-
-[tool.codeflash]
-module-root = "pydantic"
-tests-root = "tests"
-test-framework = "pytest"
-ignore-paths = []
-formatter-cmd = ["ruff check --exit-zero --fix $file", "ruff format $file"]
