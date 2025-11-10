@@ -38,6 +38,7 @@ jobs:
           extra_args: --all-files --verbose
         env:
           SKIP: no-commit-to-branch
+          UV_NO_PROGRESS: '1'
 
   docs-build:
     runs-on: ubuntu-latest
