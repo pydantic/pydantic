@@ -72,9 +72,7 @@ jobs:
         with:
           python-version: '3.13'
 
-      - run: |
-          uv sync --group docs --group docs-upload
-          uv tool run maturin develop -m pydantic-core/Cargo.toml
+      - run: uv sync --group docs --group docs-upload
 
       - run: uv pip install --default-index https://pydantic:${PPPR_TOKEN}@pppr.pydantic.dev/simple/ mkdocs-material
         env:

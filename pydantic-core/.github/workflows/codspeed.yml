@@ -32,7 +32,7 @@ jobs:
 
       - name: Install deps
         run: |
-          uv sync --group testing
+          uv sync --group testing-extra
           uv pip uninstall pytest-speed
           uv pip install pytest-benchmark==4.0.0 pytest-codspeed
 

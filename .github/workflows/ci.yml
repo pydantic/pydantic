@@ -31,7 +31,7 @@ jobs:
       - name: Install dependencies
         # Installing pip is required for the pre-commit action:
         run: |
-          uv sync --group linting --all-extras
+          uv sync --all-packages --group linting --all-extras
           uv pip install pip
       - uses: pre-commit/action@v3.0.1
         with:
@@ -52,9 +52,7 @@ jobs:
         # Unlike the docs build, we don't use mkdocs_material-insiders
         # Because the secret for accessing the library is not accessible from forks, but we still want to run
         # this job on public CI runs.
-        run: |
-          uv sync --group docs
-          uv tool run maturin develop -m pydantic-core/Cargo.toml
+        run: uv sync --group docs
 
       - run: uv run python -c 'import docs.plugins.main'
 
