@@ -1110,6 +1110,10 @@ class GenerateSchema:
             return self._literal_schema(obj)
         elif is_typeddict(obj):
             return self._typed_dict_schema(obj, None)
+        elif inspect.isclass(obj) and issubclass(obj, Enum):
+            # NOTE: this must come before the `is_namedtuple()` check as enums values
+            # can be namedtuples:
+            return self._enum_schema(obj)
         elif _typing_extra.is_namedtuple(obj):
             return self._namedtuple_schema(obj, None)
         elif typing_objects.is_newtype(obj):
@@ -1128,9 +1132,7 @@ class GenerateSchema:
                 self._get_first_arg_or_any(obj),
             )
         elif isinstance(obj, VALIDATE_CALL_SUPPORTED_TYPES):
-            return self._call_schema(obj)
-        elif inspect.isclass(obj) and issubclass(obj, Enum):
-            return self._enum_schema(obj)
+            return self._call_schema(obj)  # pyright: ignore[reportArgumentType]
         elif obj is ZoneInfo:
             return self._zoneinfo_schema()
 
