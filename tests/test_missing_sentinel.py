@@ -69,3 +69,14 @@ def test_missing_sentinel_json_schema() -> None:
     assert Model.model_json_schema()['properties'] == {
         'f': {'title': 'F', 'type': 'integer'},
     }
+
+
+def test_model_construct_with_missing_default_does_not_crash():
+    class M(BaseModel):
+        a: Union[int, MISSING] = MISSING
+
+    # Should not raise
+    m = M.model_construct()
+    assert hasattr(m, 'a')
+    # Keep sentinel by identity
+    assert getattr(m, 'a') is MISSING
