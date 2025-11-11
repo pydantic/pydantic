@@ -48,18 +48,12 @@ impl PolymorphismTrampoline {
         do_serialize: impl DoSerialize<'py, T, E>,
     ) -> Result<T, E> {
         let runtime_polymorphic = state.extra.polymorphic_serialization;
-        println!(
-            "PolymorphismTrampoline: enabled_from_config={}, runtime_polymorphic={:?}",
-            self.enabled_from_config, runtime_polymorphic
-        );
         if state.check != SerCheck::Strict // strict disables polymorphism
             && runtime_polymorphic.unwrap_or(self.enabled_from_config)
             && self.is_subclass(value)?
         {
-            println!("using polymorphic serializer");
             call_pydantic_serializer(value, state, do_serialize)
         } else {
-            println!("not using polymorphic serializer");
             do_serialize.serialize_no_infer(&self.serializer, value, state)
         }
     }
