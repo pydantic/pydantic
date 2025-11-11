@@ -28,7 +28,7 @@ jobs:
       - name: Install dependencies
         # Installing pip is required for the pre-commit action:
         run: |
-          uv sync --group linting --all-extras
+          uv sync --all-packages --group linting --all-extras
           uv pip install pip
 
       - uses: pre-commit/action@v3.0.1
@@ -47,7 +47,7 @@ jobs:
           python-version: '3.13'
 
       - name: Install dependencies
-        run: uv sync --group testing-extra --all-extras
+        run: uv sync --all-packages --group testing-extra --all-extras
 
       - run: 'uv run python -c "import pydantic.version; print(pydantic.version.version_info())"'
 
@@ -72,7 +72,7 @@ jobs:
         with:
           python-version: '3.13'
 
-      - run: uv sync --group docs --group docs-upload
+      - run: uv sync --all-packages --group docs --group docs-upload
 
       - run: uv pip install --default-index https://pydantic:${PPPR_TOKEN}@pppr.pydantic.dev/simple/ mkdocs-material
         env:
