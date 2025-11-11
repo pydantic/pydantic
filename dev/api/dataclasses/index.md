@@ -392,7 +392,7 @@ def rebuild_dataclass(
         return None
 
     for attr in ('__pydantic_core_schema__', '__pydantic_validator__', '__pydantic_serializer__'):
-        if attr in cls.__dict__:
+        if attr in cls.__dict__ and not isinstance(getattr(cls, attr), _mock_val_ser.MockValSer):
             # Deleting the validator/serializer is necessary as otherwise they can get reused in
             # pydantic-core. Same applies for the core schema that can be reused in schema generation.
             delattr(cls, attr)
