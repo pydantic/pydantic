@@ -602,27 +602,129 @@ print(m.model_dump())  # (1)!
     when adding sensitive information like secrets as fields of subclasses. To enable the old V1 behavior, refer
     to the next section.
 
-### Serializing with duck typing 🦆
+### Polymorphic serialization
 
-Duck typing serialization is the behavior of serializing a model instance based on the actual field values, rather
-than the field definitions. This means that for a field annotated with a model-like class, all the fields present
-in subclasses of such class will be included in the serialized output.
+<!-- old anchor added for backwards compatibility -->
+<!-- markdownlint-disable-next-line no-empty-links -->
+[](){#serializing-with-duck-typing-}
 
-To achieve duck typing serialization, Pydantic can apply *serialize as any* behavior. In this mode, Pydantic does
-*not* make use of the type annotation (more precisely, the serialization schema derived from the type) to infer
-how the value should be serialized, but instead inspects the actual type of the value at runtime to do so.
+Polymorphic serialization is the behavior of allowing a subclass of a model (or Pydantic dataclass) to override
+serialization so that the subclass' serialization is used, rather than the original model types's serialization.
+This will expose all the data defined on the subclass in the serialized payload.
 
-When a subclass of a model is used as a value, Pydantic will *not* serialize it according to the schema of the
-parent class, but rather use the value itself and preserve all of its fields.
+This behavior can be configured in the following ways:
+
+* Type level: use the [`polymorphic_serialization`][pydantic.config.ConfigDict.polymorphic_serialization] setting
+  in the type config.
+* Runtime level: use the [`polymorphic_serialization`] argument when calling the [serialization methods](#serializing-data).
+  This will apply to all types, overriding any settings they have on config.
+
+!!! note "Duck-typed serialization"
+    This behavior (and the ["any" serialization](#serializing-as-any) discussed below) was previously referred
+    to as duck-typed serialization. This was a misnomer; it did not function like
+    [duck typing](https://en.wikipedia.org/wiki/Duck_typing) in the conventional programming language sense.
+
+The example below defines a type `User` and a subclass of it, `UserLogin`. A second pair of types, `PolymorphicUser`
+and `PolymorphicUserLogin` are defined as equivalents with `polymorphic_serialization` enabled.
+
+We can then see the effect of serializing each of these types, and the interaction of this config with the runtime
+`polymorphic_serialization` setting:
+
+```python
+from pydantic import BaseModel, ConfigDict
+
+
+class User(BaseModel):
+    model_config = ConfigDict(
+        polymorphic_serialization=False,  # `False` is the default
+    )
+
+    name: str
+
+
+class UserLogin(User):
+    password: str
+
+
+class PolymorphicUser(BaseModel):
+    model_config = ConfigDict(polymorphic_serialization=True)
+
+    name: str
+
+
+class PolymorphicUserLogin(PolymorphicUser):
+    password: str
+
+
+class OuterModel(BaseModel):
+    user1: User
+    user2: PolymorphicUser
+
+
+user = UserLogin(name='pydantic', password='password')
+polymorphic_user = PolymorphicUserLogin(name='pydantic', password='password')
+
+outer_model = OuterModel(user1=user, user2=polymorphic_user)
+
+print(outer_model.model_dump())  # (1)!
+"""
+{
+    'user1': {'name': 'pydantic'},
+    'user2': {'name': 'pydantic', 'password': 'password'},
+}
+"""
+
+print(outer_model.model_dump(polymorphic_serialization=True))  # (2)!
+"""
+{
+    'user1': {'name': 'pydantic', 'password': 'password'},
+    'user2': {'name': 'pydantic', 'password': 'password'},
+}
+"""
+
+print(outer_model.model_dump(polymorphic_serialization=False))  # (3)!
+#> {'user1': {'name': 'pydantic'}, 'user2': {'name': 'pydantic'}}
+```
+
+1. With no runtime setting, we see `user2` serialize as the subclass due to polymorphism being enabled.
+2. With the runtime setting set to `True`, both values serialize as their actual runtime subclasses.
+3. With the runtime setting set to `False`, both values serialize as the base type.
+
+As seen in the example, by having polymorphic serialization enabled, the `User.model_dump` method will by respect the value
+of the `UserLogin` subclass when it is provided instead of a `User` value, and serialize the full `UserLogin` type. This
+behavior can be globally overridden with the `polymorphic_serialization` runtime setting; in this case setting it to false
+causes the `UserLogin` value to serialize just as a `User` value, ignoring the subclass' `password` field.
+
+### `polymorphic_serialization` runtime setting
+
+The `polymorphic_serialization` runtime setting can be used to globally enable or disable polymorphic serialization
+via a keyword argument to the various [serialization methods](#serializing-data).
+
+When used in this way, any `polymorphic_serialization` config set on individual types will be ignored, and all types
+will have polymorphic serialization either enabled or disabled accordingly
+
+## Serializing "as Any"
+
+A more extreme form of [polymorphic serialization](#polymorphic-serialization) is "any" serialization. In this
+mode, Pydantic does *not* make use of any type annotation (more precisely, the serialization schema derived from
+the type) to infer how the value should be serialized, but instead inspects the actual type of the value at runtime
+to do so.
+
+This means that every value will be serialized exactly based on its runtime type and any knowledge Pydantic has
+of how to serialize the type. Pydantic can infer how to serialize the following types:
+
+* Many Python standard library types (exact set may be expanded depending on Pydantic version).
+* Types with a `__pydantic_serializer__` attribute.
+* Any type serializable with the `fallback` function passed as an argument to [serialization methods](#serializing-data).
 
 This behavior can be configured at the field level and at runtime, for a specific serialization call:
 
 * Field level: use the [`SerializeAsAny`][pydantic.functional_serializers.SerializeAsAny] annotation.
 * Runtime level: use the `serialize_as_any` argument when calling the [serialization methods](#serializing-data).
 
-We discuss these options below in more detail:
+These options are discussed below in more detail.
 
-#### `SerializeAsAny` annotation
+### `SerializeAsAny` annotation
 
 If you want duck typing serialization behavior, this can be done using the
 [`SerializeAsAny`][pydantic.functional_serializers.SerializeAsAny] annotation
@@ -661,7 +763,7 @@ annotated as `<type>`, and static type checkers will treat the annotation as if 
 When serializing, the field will be serialized as though the type hint for the field was [`Any`][typing.Any],
 which is where the name comes from.
 
-#### `serialize_as_any` runtime setting
+### `serialize_as_any` runtime setting
 
 The `serialize_as_any` runtime setting can be used to serialize model data with or without duck typed serialization behavior.
 `serialize_as_any` can be passed as a keyword argument to the various [serialization methods](#serializing-data) (such as

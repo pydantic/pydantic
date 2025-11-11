@@ -243,6 +243,11 @@ impl CombinedSerializer {
         let type_: Bound<'_, PyString> = schema.get_as_req(intern!(py, "type"))?;
         let type_ = type_.to_str()?;
 
+        // Note: it could make sense to generalize this behavior for any type that may have subclasses,
+        // but apart from models and dataclasses, that would be for arbitrary types where custom serialization
+        // has to be defined already.
+        //
+        // FIXME: this probably won't work for stdlib dataclasses which don't have a `__pydantic_serializer__`?
         if type_ == "model" || type_ == "dataclass" {
             // Get polymorphic serialization from config
             let config = schema.get_as::<Bound<'_, PyDict>>(intern!(py, "config"))?;
