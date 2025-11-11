@@ -165,8 +165,8 @@ impl Validator for ModelValidator {
                     let inner_input = if PyAnyMethods::is_none(&model_extra) {
                         dict
                     } else {
-                        let full_model_dict = dict.downcast::<PyDict>()?.copy()?;
-                        full_model_dict.update(model_extra.downcast()?)?;
+                        let full_model_dict = dict.cast::<PyDict>()?.copy()?;
+                        full_model_dict.update(model_extra.cast()?)?;
                         full_model_dict.into_any()
                     };
                     self.validate_construct(py, &inner_input, Some(&fields_set), state)
@@ -209,10 +209,10 @@ impl Validator for ModelValidator {
                 Ok(model.into_py_any(py)?)
             };
         }
-        let old_dict = model.getattr(intern!(py, DUNDER_DICT))?.downcast_into::<PyDict>()?;
+        let old_dict = model.getattr(intern!(py, DUNDER_DICT))?.cast_into::<PyDict>()?;
 
         let input_dict = old_dict.copy()?;
-        if let Ok(old_extra) = model.getattr(intern!(py, DUNDER_MODEL_EXTRA_KEY))?.downcast::<PyDict>() {
+        if let Ok(old_extra) = model.getattr(intern!(py, DUNDER_MODEL_EXTRA_KEY))?.cast::<PyDict>() {
             input_dict.update(old_extra.as_mapping())?;
         }
         input_dict.set_item(field_name, field_value)?;
@@ -228,7 +228,7 @@ impl Validator for ModelValidator {
         ) = output.extract(py)?;
 
         if let Ok(fields_set) = model.getattr(intern!(py, DUNDER_FIELDS_SET_KEY)) {
-            let fields_set = fields_set.downcast::<PySet>()?;
+            let fields_set = fields_set.cast::<PySet>()?;
             for field_name in validated_fields_set {
                 fields_set.add(field_name)?;
             }

@@ -130,7 +130,7 @@ impl TypeSerializer for FormatSerializer {
                 .call(key)
                 .map_err(PydanticSerializationError::new_err)?
                 .into_bound(key.py())
-                .downcast_into::<PyString>()?;
+                .cast_into::<PyString>()?;
             Ok(Cow::Owned(py_str.to_str()?.to_owned()))
         } else {
             none_json_key()
@@ -146,7 +146,7 @@ impl TypeSerializer for FormatSerializer {
         if self.when_used.should_use_json(value) {
             match self.call(value) {
                 Ok(v) => {
-                    let py_str = v.bind(value.py()).downcast().map_err(py_err_se_err)?;
+                    let py_str = v.bind(value.py()).cast().map_err(py_err_se_err)?;
                     serialize_to_json(serializer)
                         .serialize_str(py_str)
                         .map_err(unwrap_ser_error)

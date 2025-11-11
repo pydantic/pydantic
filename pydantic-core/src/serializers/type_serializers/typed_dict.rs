@@ -55,9 +55,9 @@ impl BuildSerializer for TypedDictSerializer {
         };
 
         for (key, value) in fields_dict {
-            let key_py = key.downcast_into::<PyString>()?;
+            let key_py = key.cast_into::<PyString>()?;
             let key: String = key_py.extract()?;
-            let field_info = value.downcast()?;
+            let field_info = value.cast()?;
 
             let key_py: Py<PyString> = key_py.into();
             let required = field_info.get_as(intern!(py, "required"))?.unwrap_or(total);

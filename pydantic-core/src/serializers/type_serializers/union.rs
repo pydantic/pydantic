@@ -36,11 +36,11 @@ impl BuildSerializer for UnionSerializer {
             .get_as_req::<Bound<'_, PyList>>(intern!(py, "choices"))?
             .iter()
             .map(|choice| {
-                let choice = match choice.downcast::<PyTuple>() {
+                let choice = match choice.cast::<PyTuple>() {
                     Ok(py_tuple) => py_tuple.get_item(0)?,
                     Err(_) => choice,
                 };
-                CombinedSerializer::build(choice.downcast()?, config, definitions)
+                CombinedSerializer::build(choice.cast()?, config, definitions)
             })
             .collect::<PyResult<_>>()?;
 
@@ -212,7 +212,7 @@ impl BuildSerializer for TaggedUnionSerializer {
         let mut choices = Vec::with_capacity(choices_map.len());
 
         for (idx, (choice_key, choice_schema)) in choices_map.into_iter().enumerate() {
-            let serializer = CombinedSerializer::build(choice_schema.downcast()?, config, definitions)?;
+            let serializer = CombinedSerializer::build(choice_schema.cast()?, config, definitions)?;
             choices.push(serializer);
             lookup.insert(choice_key.to_string(), idx);
         }
@@ -295,7 +295,7 @@ impl TaggedUnionSerializer {
                 // we're pretty lax here, we allow either dict[key] or object.key, as we very well could
                 // be doing a discriminator lookup on a typed dict, and there's no good way to check that
                 // at this point. we could be more strict and only do this in lax mode...
-                if let Ok(value_dict) = value.downcast::<PyDict>() {
+                if let Ok(value_dict) = value.cast::<PyDict>() {
                     lookup_key.py_get_dict_item(value_dict).ok().flatten()
                 } else {
                     lookup_key.simple_py_get_attr(value).ok().flatten()

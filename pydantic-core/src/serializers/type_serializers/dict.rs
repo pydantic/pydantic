@@ -80,7 +80,7 @@ impl TypeSerializer for DictSerializer {
         state: &mut SerializationState<'_, 'py>,
     ) -> PyResult<Py<PyAny>> {
         let py = value.py();
-        match value.downcast::<PyDict>() {
+        match value.cast::<PyDict>() {
             Ok(py_dict) => {
                 let value_serializer = self.value_serializer.as_ref();
 
@@ -124,7 +124,7 @@ impl TypeSerializer for DictSerializer {
         serializer: S,
         state: &mut SerializationState<'_, 'py>,
     ) -> Result<S::Ok, S::Error> {
-        match value.downcast::<PyDict>() {
+        match value.cast::<PyDict>() {
             Ok(py_dict) => {
                 let mut map = serializer.serialize_map(Some(py_dict.len()))?;
                 let key_serializer = self.key_serializer.as_ref();

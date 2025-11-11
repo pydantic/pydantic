@@ -39,7 +39,7 @@ impl BuildSerializer for TupleSerializer {
         let items: Bound<'_, PyList> = schema.get_as_req(intern!(py, "items_schema"))?;
         let serializers: Vec<Arc<CombinedSerializer>> = items
             .iter()
-            .map(|item| CombinedSerializer::build(item.downcast()?, config, definitions))
+            .map(|item| CombinedSerializer::build(item.cast()?, config, definitions))
             .collect::<PyResult<_>>()?;
 
         let mut serializer_names = serializers.iter().map(|v| v.get_name()).collect::<Vec<_>>();
@@ -67,7 +67,7 @@ impl TypeSerializer for TupleSerializer {
         value: &Bound<'py, PyAny>,
         state: &mut SerializationState<'_, 'py>,
     ) -> PyResult<Py<PyAny>> {
-        match value.downcast::<PyTuple>() {
+        match value.cast::<PyTuple>() {
             Ok(py_tuple) => {
                 let py = value.py();
 
@@ -98,7 +98,7 @@ impl TypeSerializer for TupleSerializer {
         key: &'a Bound<'py, PyAny>,
         state: &mut SerializationState<'_, 'py>,
     ) -> PyResult<Cow<'a, str>> {
-        match key.downcast::<PyTuple>() {
+        match key.cast::<PyTuple>() {
             Ok(py_tuple) => {
                 let mut key_builder = KeyBuilder::new();
 
@@ -125,9 +125,9 @@ impl TypeSerializer for TupleSerializer {
         serializer: S,
         state: &mut SerializationState<'_, 'py>,
     ) -> Result<S::Ok, S::Error> {
-        match value.downcast::<PyTuple>() {
+        match value.cast::<PyTuple>() {
             Ok(py_tuple) => {
-                let py_tuple = py_tuple.downcast::<PyTuple>().map_err(py_err_se_err)?;
+                let py_tuple = py_tuple.cast::<PyTuple>().map_err(py_err_se_err)?;
 
                 let n_items = py_tuple.len();
                 let mut seq = serializer.serialize_seq(Some(n_items))?;

@@ -71,7 +71,7 @@ impl TypeSerializer for BytesSerializer {
         state: &mut SerializationState<'_, 'py>,
     ) -> PyResult<Py<PyAny>> {
         let py = value.py();
-        match value.downcast::<PyBytes>() {
+        match value.cast::<PyBytes>() {
             Ok(py_bytes) => match state.extra.mode {
                 SerMode::Json => self
                     .bytes_mode
@@ -91,7 +91,7 @@ impl TypeSerializer for BytesSerializer {
         key: &'a Bound<'py, PyAny>,
         state: &mut SerializationState<'_, 'py>,
     ) -> PyResult<Cow<'a, str>> {
-        match key.downcast::<PyBytes>() {
+        match key.cast::<PyBytes>() {
             Ok(py_bytes) => self.bytes_mode.bytes_to_string(key.py(), py_bytes.as_bytes()),
             Err(_) => {
                 state.warn_fallback_py(self.get_name(), key)?;
@@ -106,7 +106,7 @@ impl TypeSerializer for BytesSerializer {
         serializer: S,
         state: &mut SerializationState<'_, 'py>,
     ) -> Result<S::Ok, S::Error> {
-        match value.downcast::<PyBytes>() {
+        match value.cast::<PyBytes>() {
             Ok(py_bytes) => self.bytes_mode.serialize_bytes(py_bytes.as_bytes(), serializer),
             Err(_) => {
                 state.warn_fallback_ser::<S>(self.get_name(), value)?;

@@ -21,7 +21,7 @@ use crate::errors::{
     py_err_string, ErrorType, ErrorTypeDefaults, InputValue, ToErrorValue, ValError, ValLineError, ValResult,
 };
 use crate::py_gc::PyGcTraverse;
-use crate::tools::{extract_i64, extract_int, new_py_string, py_err};
+use crate::tools::{extract_i64, new_py_string};
 use crate::validators::{CombinedValidator, Exactness, ValidationState, Validator};
 
 use super::{py_error_on_minusone, BorrowInput, Input};
@@ -334,7 +334,7 @@ pub(crate) fn iterate_attributes<'a, 'py>(
         // or we get to the end of the list of attributes
         let name = attributes_iterator.next()?;
         // from benchmarks this is 14x faster than using the python `startswith` method
-        let name_cow = match name.downcast::<PyString>() {
+        let name_cow = match name.cast::<PyString>() {
             Ok(name) => name.to_string_lossy(),
             Err(e) => return Some(Err(e.into())),
         };
@@ -706,11 +706,15 @@ impl Rem for &Int {
     }
 }
 
-impl FromPyObject<'_> for Int {
-    fn extract_bound(obj: &Bound<'_, PyAny>) -> PyResult<Self> {
-        match extract_int(obj) {
-            Some(i) => Ok(i),
-            None => py_err!(PyTypeError; "Expected int, got {}", obj.get_type()),
+impl FromPyObject<'_, '_> for Int {
+    type Error = PyErr;
+    fn extract(obj: Borrowed<'_, '_, PyAny>) -> PyResult<Self> {
+        if let Ok(i) = obj.extract() {
+            Ok(Int::I64(i))
+        } else if let Ok(b) = obj.extract() {
+            Ok(Int::Big(b))
+        } else {
+            Err(PyTypeError::new_err(format!("Expected int, got {}", obj.get_type())))
         }
     }
 }

@@ -79,6 +79,6 @@ pub(crate) fn string_to_complex<'py>(
                 ValError::InternalErr(err)
             }
         })?
-        .downcast::<PyComplex>()?
+        .cast::<PyComplex>()?
         .to_owned())
 }

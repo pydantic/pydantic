@@ -30,7 +30,7 @@ pub enum StringMapping<'py> {
 
 impl<'py> StringMapping<'py> {
     pub fn new_key(py_key: Bound<'py, PyAny>) -> ValResult<Self> {
-        match py_key.downcast_into::<PyString>() {
+        match py_key.cast_into::<PyString>() {
             Ok(value) => Ok(Self::String(value)),
             Err(downcast_error) => Err(ValError::new(
                 ErrorTypeDefaults::StringType,
@@ -40,9 +40,9 @@ impl<'py> StringMapping<'py> {
     }
 
     pub fn new_value(py_value: Bound<'py, PyAny>) -> ValResult<Self> {
-        match py_value.downcast_into::<PyString>() {
+        match py_value.cast_into::<PyString>() {
             Ok(py_str) => Ok(Self::String(py_str)),
-            Err(downcast_error) => match downcast_error.into_inner().downcast_into::<PyDict>() {
+            Err(downcast_error) => match downcast_error.into_inner().cast_into::<PyDict>() {
                 Ok(value) => Ok(Self::Mapping(value)),
                 Err(downcast_error) => Err(ValError::new(
                     ErrorTypeDefaults::StringType,

@@ -7,7 +7,7 @@ use std::sync::OnceLock;
 use pyo3::exceptions::PyException;
 use pyo3::prelude::*;
 use pyo3::types::{PyDict, PyList, PyString};
-use pyo3::{intern, FromPyObject, PyErrArguments};
+use pyo3::{intern, PyErrArguments};
 
 use crate::errors::{PyLineError, ValError};
 use crate::input::InputType;
@@ -21,7 +21,7 @@ pub fn schema_or_config<'py, T>(
     config_key: &Bound<'py, PyString>,
 ) -> PyResult<Option<T>>
 where
-    T: FromPyObject<'py>,
+    T: FromPyObjectOwned<'py>,
 {
     match schema.get_as(schema_key)? {
         Some(v) => Ok(Some(v)),
@@ -38,7 +38,7 @@ pub fn schema_or_config_same<'py, T>(
     key: &Bound<'py, PyString>,
 ) -> PyResult<Option<T>>
 where
-    T: FromPyObject<'py>,
+    T: FromPyObjectOwned<'py>,
 {
     schema_or_config(schema, config, key, key)
 }

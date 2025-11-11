@@ -554,7 +554,7 @@ fn build_validator_inner(
     definitions: &mut DefinitionsBuilder<Arc<CombinedValidator>>,
     use_prebuilt: bool,
 ) -> PyResult<Arc<CombinedValidator>> {
-    let dict = schema.downcast::<PyDict>()?;
+    let dict = schema.cast::<PyDict>()?;
     let py = schema.py();
     let type_: Bound<'_, PyString> = dict.get_as_req(intern!(py, "type"))?;
     let type_ = type_.to_str()?;
