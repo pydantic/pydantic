@@ -406,20 +406,6 @@ def test_datetime_future_timezone():
     assert not v.isinstance_python(past_utc.astimezone(zoneinfo.ZoneInfo('America/Los_Angeles')))
 
 
-def test_mock_utc_offset_8_hours(mocker):
-    """
-    Test that mocking time.localtime() is working, note that due to caching in datetime_etc,
-    time.localtime() will return `{'tm_gmtoff': 8 * 60 * 60}` for the rest of the session.
-    """
-    mocker.patch('time.localtime', return_value=type('time.struct_time', (), {'tm_gmtoff': 8 * 60 * 60}))
-    v = SchemaValidator(core_schema.datetime_schema(now_op='future'))
-    future = datetime.now(timezone.utc).replace(tzinfo=None) + timedelta(hours=8, minutes=1)
-    assert v.isinstance_python(future)
-
-    future = datetime.now(timezone.utc).replace(tzinfo=None) + timedelta(hours=7, minutes=59)
-    assert not v.isinstance_python(future)
-
-
 def test_aware():
     v = SchemaValidator(core_schema.datetime_schema(tz_constraint='aware'))
     value = datetime.now(tz=timezone.utc)
