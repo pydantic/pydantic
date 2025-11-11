@@ -71,7 +71,7 @@ def test_missing_sentinel_json_schema() -> None:
     }
 
 
-def test_model_construct_with_missing_default_does_not_crash():
+def test_model_construct_with_missing_default_does_not_crash() -> None:
     class M(BaseModel):
         a: Union[int, MISSING] = MISSING
 
