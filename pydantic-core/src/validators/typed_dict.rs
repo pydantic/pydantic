@@ -81,8 +81,8 @@ impl BuildValidator for TypedDictValidator {
         };
 
         for (key, value) in fields_dict {
-            let field_info = value.downcast::<PyDict>()?;
-            let field_name_py = key.downcast_into::<PyString>()?;
+            let field_info = value.cast::<PyDict>()?;
+            let field_name_py = key.cast_into::<PyString>()?;
             let field_name = field_name_py.to_str()?;
 
             let schema = field_info.get_as_req(intern!(py, "schema"))?;

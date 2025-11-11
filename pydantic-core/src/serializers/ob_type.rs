@@ -391,7 +391,7 @@ fn is_pydantic_serializable(op_value: Option<&Bound<'_, PyAny>>) -> bool {
 
 fn is_generator(op_value: Option<&Bound<'_, PyAny>>) -> bool {
     if let Some(value) = op_value {
-        value.downcast::<PyIterator>().is_ok()
+        value.cast::<PyIterator>().is_ok()
     } else {
         false
     }

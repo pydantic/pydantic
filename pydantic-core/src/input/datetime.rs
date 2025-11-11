@@ -225,10 +225,10 @@ impl<'py> TryFrom<&'_ Bound<'py, PyAny>> for EitherTimedelta<'py> {
     type Error = PyErr;
 
     fn try_from(value: &Bound<'py, PyAny>) -> PyResult<Self> {
-        if let Ok(dt) = value.downcast_exact() {
+        if let Ok(dt) = value.cast_exact() {
             Ok(EitherTimedelta::PyExact(dt.clone()))
         } else {
-            let dt = value.downcast()?;
+            let dt = value.cast()?;
             Ok(EitherTimedelta::PySubclass(dt.clone()))
         }
     }
@@ -343,7 +343,7 @@ fn time_as_tzinfo<'py>(py: Python<'py>, time: &Time) -> PyResult<Option<Bound<'p
     match time.tz_offset {
         Some(offset) => {
             let tz_info: TzInfo = offset.try_into()?;
-            Ok(Some(Bound::new(py, tz_info)?.into_any().downcast_into()?))
+            Ok(Some(Bound::new(py, tz_info)?.into_any().cast_into()?))
         }
         None => Ok(None),
     }

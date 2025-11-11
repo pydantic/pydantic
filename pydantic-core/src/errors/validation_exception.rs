@@ -445,14 +445,14 @@ impl TryFrom<&Bound<'_, PyAny>> for PyLineError {
     type Error = PyErr;
 
     fn try_from(value: &Bound<'_, PyAny>) -> PyResult<Self> {
-        let dict = value.downcast::<PyDict>()?;
+        let dict = value.cast::<PyDict>()?;
         let py = value.py();
 
         let type_raw = dict
             .get_item(intern!(py, "type"))?
             .ok_or_else(|| PyKeyError::new_err("type"))?;
 
-        let error_type = if let Ok(type_str) = type_raw.downcast::<PyString>() {
+        let error_type = if let Ok(type_str) = type_raw.cast::<PyString>() {
             let context: Option<Bound<'_, PyDict>> = dict.get_as(intern!(py, "ctx"))?;
             ErrorType::new(py, type_str.to_str()?, context)?
         } else if let Ok(custom_error) = type_raw.extract::<PydanticCustomError>() {

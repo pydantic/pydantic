@@ -120,8 +120,8 @@ impl PydanticCustomError {
         let mut message = message_template.to_string();
         if let Some(ctx) = context {
             for (key, value) in ctx.iter() {
-                let key = key.downcast::<PyString>()?;
-                if let Ok(py_str) = value.downcast::<PyString>() {
+                let key = key.cast::<PyString>()?;
+                if let Ok(py_str) = value.cast::<PyString>() {
                     message = message.replace(&format!("{{{}}}", key.to_str()?), py_str.to_str()?);
                 } else if let Some(value_int) = extract_i64(&value) {
                     message = message.replace(&format!("{{{}}}", key.to_str()?), &value_int.to_string());

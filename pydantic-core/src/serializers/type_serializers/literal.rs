@@ -47,11 +47,11 @@ impl BuildSerializer for LiteralSerializer {
         let mut repr_args: Vec<String> = Vec::new();
         for item in expected {
             repr_args.push(item.repr()?.extract()?);
-            if let Ok(bool) = item.downcast::<PyBool>() {
+            if let Ok(bool) = item.cast::<PyBool>() {
                 expected_py.append(bool)?;
             } else if let Some(int) = extract_i64(&item) {
                 expected_int.insert(int);
-            } else if let Ok(py_str) = item.downcast::<PyString>() {
+            } else if let Ok(py_str) = item.cast::<PyString>() {
                 expected_str.insert(py_str.to_str()?.to_string());
             } else {
                 expected_py.append(item)?;
@@ -91,7 +91,7 @@ impl LiteralSerializer {
                 }
             }
             if !self.expected_str.is_empty() {
-                if let Ok(py_str) = value.downcast::<PyString>() {
+                if let Ok(py_str) = value.cast::<PyString>() {
                     let s = py_str.to_str()?;
                     if self.expected_str.contains(s) {
                         return Ok(OutputValue::OkStr(PyString::new(value.py(), s)));

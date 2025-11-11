@@ -58,7 +58,7 @@ def test_not_parent():
 
 
 def test_invalid_type():
-    with pytest.raises(SchemaError, match="TypeError: 'Foo' object cannot be converted to 'PyType"):
+    with pytest.raises(SchemaError, match="TypeError: 'Foo' object cannot be cast as 'type"):
         SchemaValidator(core_schema.is_subclass_schema(Foo()))
 
 

@@ -80,7 +80,7 @@ impl BuildValidator for ArgumentsValidator {
         let mut had_keyword_only = false;
 
         for (arg_index, arg) in arguments_schema.iter().enumerate() {
-            let arg = arg.downcast::<PyDict>()?;
+            let arg = arg.cast::<PyDict>()?;
 
             let py_name: Bound<PyString> = arg.get_as_req(intern!(py, "name"))?;
             let name = py_name.to_string();
@@ -385,7 +385,7 @@ impl Validator for ArgumentsValidator {
                 .validate(py, remaining_kwargs.as_any(), state)
             {
                 Ok(value) => {
-                    output_kwargs.update(value.downcast_bound::<PyDict>(py).unwrap().as_mapping())?;
+                    output_kwargs.update(value.cast_bound::<PyDict>(py).unwrap().as_mapping())?;
                 }
                 Err(ValError::LineErrors(line_errors)) => {
                     errors.extend(line_errors);

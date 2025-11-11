@@ -590,13 +590,13 @@ where
     let py = dataclass.py();
     let fields = dataclass
         .getattr(intern!(py, "__dataclass_fields__"))?
-        .downcast_into::<PyDict>()?;
+        .cast_into::<PyDict>()?;
     let field_type_marker = get_field_marker(py)?;
 
     let next = move |(field_name, field): (Bound<'py, PyAny>, Bound<'py, PyAny>)| -> PyResult<Option<(Bound<'py, PyAny>, Bound<'py, PyAny>)>> {
         let field_type = field.getattr(intern!(py, "_field_type"))?;
         if field_type.is(field_type_marker) {
-            let value = dataclass.getattr(field_name.downcast::<PyString>()?)?;
+            let value = dataclass.getattr(field_name.cast::<PyString>()?)?;
             Ok(Some((field_name, value)))
         } else {
             Ok(None)
