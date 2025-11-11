@@ -533,6 +533,8 @@ struct SerializationInfo {
     field_name: Option<String>,
     #[pyo3(get)]
     serialize_as_any: bool,
+    #[pyo3(get)]
+    polymorphic_serialization: Option<bool>,
 }
 
 impl_py_gc_traverse!(SerializationInfo {
@@ -544,42 +546,33 @@ impl_py_gc_traverse!(SerializationInfo {
 impl SerializationInfo {
     fn new(state: &SerializationState<'_>, is_field_serializer: bool) -> PyResult<Self> {
         let extra = &state.extra;
-        if is_field_serializer {
-            match state.field_name.as_ref() {
-                Some(field_name) => Ok(Self {
-                    include: state.include().map(|i| i.clone().unbind()),
-                    exclude: state.exclude().map(|e| e.clone().unbind()),
-                    context: extra.context.clone().map(Bound::unbind),
-                    _mode: extra.mode.clone(),
-                    by_alias: extra.by_alias,
-                    exclude_unset: extra.exclude_unset,
-                    exclude_defaults: extra.exclude_defaults,
-                    exclude_none: extra.exclude_none,
-                    exclude_computed_fields: extra.exclude_none,
-                    round_trip: extra.round_trip,
-                    field_name: Some(field_name.to_string()),
-                    serialize_as_any: extra.serialize_as_any,
-                }),
-                _ => Err(PyRuntimeError::new_err(
+
+        let field_name = if is_field_serializer {
+            let Some(field_name) = state.field_name.as_ref() else {
+                return Err(PyRuntimeError::new_err(
                     "Model field context expected for field serialization info but no model field was found",
-                )),
-            }
+                ));
+            };
+            Some(field_name.to_string())
         } else {
-            Ok(Self {
-                include: state.include().map(|i| i.clone().unbind()),
-                exclude: state.exclude().map(|e| e.clone().unbind()),
-                context: extra.context.clone().map(Bound::unbind),
-                _mode: extra.mode.clone(),
-                by_alias: extra.by_alias,
-                exclude_unset: extra.exclude_unset,
-                exclude_defaults: extra.exclude_defaults,
-                exclude_none: extra.exclude_none,
-                exclude_computed_fields: extra.exclude_computed_fields,
-                round_trip: extra.round_trip,
-                field_name: None,
-                serialize_as_any: extra.serialize_as_any,
-            })
-        }
+            None
+        };
+
+        Ok(Self {
+            include: state.include().map(|i| i.clone().unbind()),
+            exclude: state.exclude().map(|e| e.clone().unbind()),
+            context: extra.context.clone().map(Bound::unbind),
+            _mode: extra.mode.clone(),
+            by_alias: extra.by_alias,
+            exclude_unset: extra.exclude_unset,
+            exclude_defaults: extra.exclude_defaults,
+            exclude_none: extra.exclude_none,
+            exclude_computed_fields: extra.exclude_computed_fields,
+            round_trip: extra.round_trip,
+            field_name,
+            serialize_as_any: extra.serialize_as_any,
+            polymorphic_serialization: extra.polymorphic_serialization,
+        })
     }
 
     fn __traverse__(&self, visit: PyVisit<'_>) -> Result<(), PyTraverseError> {

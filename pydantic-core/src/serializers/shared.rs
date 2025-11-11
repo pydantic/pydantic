@@ -19,6 +19,7 @@ use crate::build_tools::py_schema_error_type;
 use crate::definitions::DefinitionsBuilder;
 use crate::py_gc::PyGcTraverse;
 use crate::serializers::errors::WrappedSerError;
+use crate::serializers::polymorphism_trampoline::PolymorphismTrampoline;
 use crate::serializers::ser::PythonSerializer;
 use crate::serializers::type_serializers::any::AnySerializer;
 use crate::tools::{SchemaDict, py_err};
@@ -91,6 +92,9 @@ combined_serializer! {
         Fields: super::fields::GeneralFieldsSerializer;
         // prebuilt serializers are manually constructed, and thus manually added to the `CombinedSerializer` enum
         Prebuilt: super::prebuilt::PrebuiltSerializer;
+        // polymorphism trampoline is manually constructed to wrap models and dataclasses with
+        // polymorphic serialization
+        PolymorphismTrampoline: super::polymorphism_trampoline::PolymorphismTrampoline;
     }
     // `find_only` is for type_serializers which are built directly via the `type` key and `find_serializer`
     // but aren't actually used for serialization, e.g. their `build` method must return another serializer
@@ -162,7 +166,8 @@ impl CombinedSerializer {
         config: Option<&Bound<'_, PyDict>>,
         definitions: &mut DefinitionsBuilder<Arc<CombinedSerializer>>,
     ) -> PyResult<Arc<CombinedSerializer>> {
-        Self::_build(schema, config, definitions, false)
+        let serializer = Self::_build(schema, config, definitions, false)?;
+        Self::maybe_wrap_in_polymorphism_trampoline(serializer, schema)
     }
 
     fn _build(
@@ -219,7 +224,7 @@ impl CombinedSerializer {
         let type_ = type_.to_str()?;
 
         if use_prebuilt {
-            // if we have a SchemaValidator on the type already, use it
+            // if we have a SchemaSerializer on the type already, use it
             if let Ok(Some(prebuilt_serializer)) =
                 super::prebuilt::PrebuiltSerializer::try_get_from_schema(type_, schema)
             {
@@ -228,6 +233,35 @@ impl CombinedSerializer {
         }
 
         Self::find_serializer(type_, schema, config, definitions)
+    }
+
+    fn maybe_wrap_in_polymorphism_trampoline(
+        serializer: Arc<CombinedSerializer>,
+        schema: &Bound<'_, PyDict>,
+    ) -> PyResult<Arc<CombinedSerializer>> {
+        let py = schema.py();
+        let type_: Bound<'_, PyString> = schema.get_as_req(intern!(py, "type"))?;
+        let type_ = type_.to_str()?;
+
+        if type_ == "model" || type_ == "dataclass" {
+            // Get polymorphic serialization from config
+            let config = schema.get_as::<Bound<'_, PyDict>>(intern!(py, "config"))?;
+            let polymorphic_serialization: bool = config
+                .and_then(|cfg| cfg.get_as(intern!(py, "polymorphic_serialization")).transpose())
+                .unwrap_or(Ok(false))?;
+
+            // Unconditionally wrap in PolymorphismTrampoline, because runtime flag might still enable it
+            Ok(Arc::new(
+                PolymorphismTrampoline::new(
+                    schema.get_as_req(intern!(py, "cls"))?,
+                    serializer,
+                    polymorphic_serialization,
+                )
+                .into(),
+            ))
+        } else {
+            Ok(serializer)
+        }
     }
 
     /// Main recursive way to call serializers, supports possible recursive type inference by
@@ -308,7 +342,8 @@ impl BuildSerializer for CombinedSerializer {
         config: Option<&Bound<'_, PyDict>>,
         definitions: &mut DefinitionsBuilder<Arc<CombinedSerializer>>,
     ) -> PyResult<Arc<CombinedSerializer>> {
-        Self::_build(schema, config, definitions, true)
+        let serializer = Self::_build(schema, config, definitions, true)?;
+        Self::maybe_wrap_in_polymorphism_trampoline(serializer, schema)
     }
 }
 
@@ -357,6 +392,7 @@ impl PyGcTraverse for CombinedSerializer {
             CombinedSerializer::Uuid(inner) => inner.py_gc_traverse(visit),
             CombinedSerializer::Complex(inner) => inner.py_gc_traverse(visit),
             CombinedSerializer::TypedDict(inner) => inner.py_gc_traverse(visit),
+            CombinedSerializer::PolymorphismTrampoline(inner) => inner.py_gc_traverse(visit),
         }
     }
 }
