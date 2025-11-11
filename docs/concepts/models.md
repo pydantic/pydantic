@@ -169,7 +169,7 @@ Model classes possess the following methods and attributes:
 * [`model_rebuild()`][pydantic.main.BaseModel.model_rebuild]: Rebuilds the model schema, which also supports building recursive generic models.
     See [Rebuilding model schema](#rebuilding-model-schema).
 
-On model instances, the following attributes are available:
+Model instances possess the following attributes:
 
 * [`model_extra`][pydantic.main.BaseModel.model_extra]: The extra fields set during validation.
 * [`model_fields_set`][pydantic.main.BaseModel.model_fields_set]: The set of fields which were explicitly provided when the model was initialized.
@@ -389,7 +389,7 @@ The *Python* mode gets used when using:
   or as a model instance (by default, instances are assumed to be valid; see the [`revalidate_instances`][pydantic.ConfigDict.revalidate_instances]
   setting). [Arbitrary objects](#arbitrary-class-instances) can also be provided if explicitly enabled.
 
-The *JSON* and *strings* modes can be used with:
+The *JSON* and *strings* modes can be used with dedicated methods:
 
 * [`model_validate_json()`][pydantic.main.BaseModel.model_validate_json]: data is validated as a JSON string or `bytes` object.
   If your incoming data is a JSON payload, this is generally considered faster (instead of manually parsing the data as a dictionary).

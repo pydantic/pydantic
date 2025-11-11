@@ -552,7 +552,8 @@ class ConfigDict(TypedDict, total=False):
     ```
 
     1. The assignment is *not* validated, unless you set [`validate_assignment`][pydantic.ConfigDict.validate_assignment] in the configuration.
-    2. Because `my_user` is a "direct" instance of `User`, it is *not* being revalidated.
+    2. Because `my_user` is a "direct" instance of `User`, it is *not* being revalidated. It would have been the case if
+      `revalidate_instances` was set to `'always'`.
     3. Because `my_sub_user` is an instance of a `User` subclass, it is being revalidated. In this case, Pydantic coerces `my_sub_user` to the defined
        `User` class defined on `Transaction`. If one of its fields had an invalid value, a validation error would have been raised.
     """
