@@ -305,7 +305,7 @@ impl TZConstraint {
         let Some(tz_constraint) = schema.get_item(intern!(py, "tz_constraint"))? else {
             return Ok(None);
         };
-        if let Ok(s) = tz_constraint.downcast::<PyString>() {
+        if let Ok(s) = tz_constraint.cast::<PyString>() {
             let s = s.to_str()?;
             Ok(Some(Self::from_str(s)?))
         } else {

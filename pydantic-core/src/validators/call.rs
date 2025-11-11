@@ -87,7 +87,7 @@ impl Validator for CallValidator {
 
         let return_value = if let Ok((args, kwargs)) = args.extract::<(Bound<PyTuple>, Bound<PyDict>)>() {
             self.function.call(py, args, Some(&kwargs))?
-        } else if let Ok(kwargs) = args.downcast::<PyDict>() {
+        } else if let Ok(kwargs) = args.cast::<PyDict>() {
             self.function.call(py, (), Some(kwargs))?
         } else {
             let msg = "Arguments validator should return a tuple of (args, kwargs) or a dict of kwargs";

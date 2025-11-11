@@ -11,7 +11,7 @@ on:
 
 env:
   UV_FROZEN: true
-  UV_PYTHON: 3.13
+  UV_PYTHON: 3.14
 
 jobs:
   codspeed-profiling:
@@ -28,7 +28,7 @@ jobs:
           python-version: ${{ env.UV_PYTHON }}
 
       - name: install deps
-        run: uv sync --group testing-extra --extra email --frozen
+        run: uv sync --all-packages --group testing-extra --extra email --frozen
 
       - name: install rust stable
         uses: dtolnay/rust-toolchain@stable
@@ -43,10 +43,8 @@ jobs:
       - name: install pydantic-core with profiling symbols
         run: |
           cd pydantic-core
-          ln -s ../.venv .venv
-          uv sync --group all --inexact
           uv pip uninstall pytest-speed
-          uv run make build-pgo
+          make build-pgo
         env:
           CARGO_PROFILE_RELEASE_DEBUG: "line-tables-only"
           CARGO_PROFILE_RELEASE_STRIP: "false"
@@ -55,4 +53,4 @@ jobs:
         uses: CodSpeedHQ/action@v4
         with:
           mode: instrumentation
-          run: uv run --no-sync pytest ./tests/benchmarks --codspeed
+          run: uv run --no-sync pytest ./tests/benchmarks ./tests/pydantic_core/benchmarks --codspeed

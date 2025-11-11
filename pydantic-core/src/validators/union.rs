@@ -61,7 +61,7 @@ impl BuildValidator for UnionValidator {
             .iter()
             .map(|choice| {
                 let mut label: Option<String> = None;
-                let choice = match choice.downcast::<PyTuple>() {
+                let choice = match choice.cast::<PyTuple>() {
                     Ok(py_tuple) => {
                         let choice = py_tuple.get_item(0)?;
                         label = Some(py_tuple.get_item(1)?.to_string());

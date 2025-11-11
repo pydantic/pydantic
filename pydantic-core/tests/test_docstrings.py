@@ -1,4 +1,5 @@
 import sys
+from pathlib import Path
 
 import pytest
 
@@ -12,8 +13,13 @@ except ImportError:
         return []
 
 
+PYDANTIC_CORE_DIR = Path(__file__).resolve().parent.parent
+
+
 @pytest.mark.skipif(CodeExample is None or sys.platform not in {'linux', 'darwin'}, reason='Only on linux and macos')
-@pytest.mark.parametrize('example', find_examples('python/pydantic_core/core_schema.py'), ids=str)
+@pytest.mark.parametrize(
+    'example', find_examples(str(PYDANTIC_CORE_DIR / 'python/pydantic_core/core_schema.py')), ids=str
+)
 @pytest.mark.thread_unsafe  # TODO investigate why pytest_examples seems to be thread unsafe here
 def test_docstrings(example: CodeExample, eval_example: EvalExample):
     eval_example.set_config(quotes='single')
@@ -27,7 +33,7 @@ def test_docstrings(example: CodeExample, eval_example: EvalExample):
 
 
 @pytest.mark.skipif(CodeExample is None or sys.platform not in {'linux', 'darwin'}, reason='Only on linux and macos')
-@pytest.mark.parametrize('example', find_examples('README.md'), ids=str)
+@pytest.mark.parametrize('example', find_examples(str(PYDANTIC_CORE_DIR / 'README.md')), ids=str)
 @pytest.mark.thread_unsafe  # TODO investigate why pytest_examples seems to be thread unsafe here
 def test_readme(example: CodeExample, eval_example: EvalExample):
     eval_example.set_config(line_length=100, quotes='single')

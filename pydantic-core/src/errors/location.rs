@@ -171,9 +171,9 @@ impl TryFrom<Option<&Bound<'_, PyAny>>> for Location {
     /// Thus this expects the location to *not* be reversed and reverses it before storing it.
     fn try_from(location: Option<&Bound<'_, PyAny>>) -> PyResult<Self> {
         if let Some(location) = location {
-            let mut loc_vec: Vec<LocItem> = if let Ok(tuple) = location.downcast::<PyTuple>() {
+            let mut loc_vec: Vec<LocItem> = if let Ok(tuple) = location.cast::<PyTuple>() {
                 tuple.iter().map(Into::into).collect()
-            } else if let Ok(list) = location.downcast::<PyList>() {
+            } else if let Ok(list) = location.cast::<PyList>() {
                 list.iter().map(Into::into).collect()
             } else {
                 return Err(PyTypeError::new_err(

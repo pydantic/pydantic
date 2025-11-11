@@ -159,7 +159,7 @@ impl GeneralFieldsSerializer {
         match self.mode {
             FieldsMode::ModelExtra => value.extract().ok(),
             _ => {
-                if let Ok(main_dict) = value.downcast::<PyDict>() {
+                if let Ok(main_dict) = value.cast::<PyDict>() {
                     Some((main_dict.clone(), None))
                 } else {
                     None
@@ -479,7 +479,7 @@ impl TypeSerializer for GeneralFieldsSerializer {
 }
 
 fn key_str<'a>(key: &'a Bound<'_, PyAny>) -> PyResult<&'a str> {
-    key.downcast::<PyString>()?.to_str()
+    key.cast::<PyString>()?.to_str()
 }
 
 fn dict_items<'py>(

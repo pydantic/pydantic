@@ -63,7 +63,7 @@ pub fn get_fraction_type(py: Python<'_>) -> &Bound<'_, PyType> {
 }
 
 pub(crate) fn downcast_python_input<'py, T: PyTypeCheck>(input: &(impl Input<'py> + ?Sized)) -> Option<&Bound<'py, T>> {
-    input.as_python().and_then(|any| any.downcast::<T>().ok())
+    input.as_python().and_then(|any| any.cast::<T>().ok())
 }
 
 pub(crate) fn input_as_python_instance<'a, 'py>(
@@ -75,7 +75,7 @@ pub(crate) fn input_as_python_instance<'a, 'py>(
 
 impl From<&Bound<'_, PyAny>> for LocItem {
     fn from(py_any: &Bound<'_, PyAny>) -> Self {
-        if let Ok(py_str) = py_any.downcast::<PyString>() {
+        if let Ok(py_str) = py_any.cast::<PyString>() {
             py_str.to_string_lossy().as_ref().into()
         } else if let Some(key_int) = extract_i64(py_any) {
             key_int.into()
@@ -110,7 +110,7 @@ impl<'py> Input<'py> for Bound<'py, PyAny> {
     }
 
     fn as_kwargs(&self, _py: Python<'py>) -> Option<Bound<'py, PyDict>> {
-        self.downcast::<PyDict>().ok().map(Bound::to_owned)
+        self.cast::<PyDict>().ok().map(Bound::to_owned)
     }
 
     type Arguments<'a>
@@ -119,15 +119,15 @@ impl<'py> Input<'py> for Bound<'py, PyAny> {
         Self: 'a;
 
     fn validate_args(&self) -> ValResult<PyArgs<'py>> {
-        if let Ok(dict) = self.downcast::<PyDict>() {
+        if let Ok(dict) = self.cast::<PyDict>() {
             Ok(PyArgs::new(None, Some(dict.clone())))
         } else if let Ok(args_kwargs) = self.extract::<ArgsKwargs>() {
             let args = args_kwargs.args.into_bound(self.py());
             let kwargs = args_kwargs.kwargs.map(|d| d.into_bound(self.py()));
             Ok(PyArgs::new(Some(args), kwargs))
-        } else if let Ok(tuple) = self.downcast::<PyTuple>() {
+        } else if let Ok(tuple) = self.cast::<PyTuple>() {
             Ok(PyArgs::new(Some(tuple.clone()), None))
-        } else if let Ok(list) = self.downcast::<PyList>() {
+        } else if let Ok(list) = self.cast::<PyList>() {
             Ok(PyArgs::new(Some(list.to_tuple()), None))
         } else {
             Err(ValError::new(ErrorTypeDefaults::ArgumentsType, self))
@@ -145,7 +145,7 @@ impl<'py> Input<'py> for Bound<'py, PyAny> {
     }
 
     fn validate_dataclass_args<'a>(&'a self, class_name: &str) -> ValResult<PyArgs<'py>> {
-        if let Ok(dict) = self.downcast::<PyDict>() {
+        if let Ok(dict) = self.cast::<PyDict>() {
             Ok(PyArgs::new(None, Some(dict.clone())))
         } else if let Ok(args_kwargs) = self.extract::<ArgsKwargs>() {
             let args = args_kwargs.args.into_bound(self.py());
@@ -168,9 +168,9 @@ impl<'py> Input<'py> for Bound<'py, PyAny> {
         strict: bool,
         coerce_numbers_to_str: bool,
     ) -> ValResult<ValidationMatch<EitherString<'_, 'py>>> {
-        if let Ok(py_str) = self.downcast_exact::<PyString>() {
+        if let Ok(py_str) = self.cast_exact::<PyString>() {
             return Ok(ValidationMatch::exact(py_str.clone().into()));
-        } else if let Ok(py_str) = self.downcast::<PyString>() {
+        } else if let Ok(py_str) = self.cast::<PyString>() {
             // force to a rust string to make sure behavior is consistent whether or not we go via a
             // rust string in StrConstrainedValidator - e.g. to_lower
             return Ok(ValidationMatch::strict(py_string_str(py_str)?.into()));
@@ -178,12 +178,12 @@ impl<'py> Input<'py> for Bound<'py, PyAny> {
 
         'lax: {
             if !strict {
-                return if let Ok(bytes) = self.downcast::<PyBytes>() {
+                return if let Ok(bytes) = self.cast::<PyBytes>() {
                     match from_utf8(bytes.as_bytes()) {
                         Ok(str) => Ok(str.into()),
                         Err(_) => Err(ValError::new(ErrorTypeDefaults::StringUnicode, self)),
                     }
-                } else if let Ok(py_byte_array) = self.downcast::<PyByteArray>() {
+                } else if let Ok(py_byte_array) = self.cast::<PyByteArray>() {
                     match bytearray_to_str(py_byte_array) {
                         Ok(py_str) => Ok(py_str.into()),
                         Err(_) => Err(ValError::new(ErrorTypeDefaults::StringUnicode, self)),
@@ -215,21 +215,21 @@ impl<'py> Input<'py> for Bound<'py, PyAny> {
         strict: bool,
         mode: ValBytesMode,
     ) -> ValResult<ValidationMatch<EitherBytes<'a, 'py>>> {
-        if let Ok(py_bytes) = self.downcast_exact::<PyBytes>() {
+        if let Ok(py_bytes) = self.cast_exact::<PyBytes>() {
             return Ok(ValidationMatch::exact(py_bytes.into()));
-        } else if let Ok(py_bytes) = self.downcast::<PyBytes>() {
+        } else if let Ok(py_bytes) = self.cast::<PyBytes>() {
             return Ok(ValidationMatch::strict(py_bytes.into()));
         }
 
         'lax: {
             if !strict {
-                return if let Ok(py_str) = self.downcast::<PyString>() {
+                return if let Ok(py_str) = self.cast::<PyString>() {
                     let str = py_string_str(py_str)?;
                     match mode.deserialize_string(str) {
                         Ok(b) => Ok(b),
                         Err(e) => Err(ValError::new(e, self)),
                     }
-                } else if let Ok(py_byte_array) = self.downcast::<PyByteArray>() {
+                } else if let Ok(py_byte_array) = self.cast::<PyByteArray>() {
                     Ok(py_byte_array.to_vec().into())
                 } else {
                     break 'lax;
@@ -242,7 +242,7 @@ impl<'py> Input<'py> for Bound<'py, PyAny> {
     }
 
     fn validate_bool(&self, strict: bool) -> ValResult<ValidationMatch<bool>> {
-        if let Ok(bool) = self.downcast::<PyBool>() {
+        if let Ok(bool) = self.cast::<PyBool>() {
             return Ok(ValidationMatch::exact(bool.is_true()));
         }
 
@@ -315,7 +315,7 @@ impl<'py> Input<'py> for Bound<'py, PyAny> {
     }
 
     fn exact_str(&self) -> ValResult<EitherString<'_, 'py>> {
-        if let Ok(py_str) = self.downcast_exact() {
+        if let Ok(py_str) = self.cast_exact() {
             Ok(EitherString::Py(py_str.clone()))
         } else {
             Err(ValError::new(ErrorTypeDefaults::IntType, self))
@@ -323,7 +323,7 @@ impl<'py> Input<'py> for Bound<'py, PyAny> {
     }
 
     fn validate_float(&self, strict: bool) -> ValResult<ValidationMatch<EitherFloat<'_>>> {
-        if let Ok(float) = self.downcast_exact::<PyFloat>() {
+        if let Ok(float) = self.cast_exact::<PyFloat>() {
             return Ok(ValidationMatch::exact(EitherFloat::Py(float.clone())));
         }
 
@@ -395,19 +395,19 @@ impl<'py> Input<'py> for Bound<'py, PyAny> {
         Self: 'a;
 
     fn strict_dict<'a>(&'a self) -> ValResult<GenericPyMapping<'a, 'py>> {
-        if let Ok(dict) = self.downcast_exact::<PyDict>() {
+        if let Ok(dict) = self.cast_exact::<PyDict>() {
             Ok(GenericPyMapping::Dict(dict))
         } else if self.is_instance_of::<PyDict>() {
-            Ok(GenericPyMapping::Mapping(self.downcast::<PyMapping>()?))
+            Ok(GenericPyMapping::Mapping(self.cast::<PyMapping>()?))
         } else {
             Err(ValError::new(ErrorTypeDefaults::DictType, self))
         }
     }
 
     fn lax_dict<'a>(&'a self) -> ValResult<GenericPyMapping<'a, 'py>> {
-        if let Ok(dict) = self.downcast_exact::<PyDict>() {
+        if let Ok(dict) = self.cast_exact::<PyDict>() {
             Ok(GenericPyMapping::Dict(dict))
-        } else if let Ok(mapping) = self.downcast::<PyMapping>() {
+        } else if let Ok(mapping) = self.cast::<PyMapping>() {
             Ok(GenericPyMapping::Mapping(mapping))
         } else {
             Err(ValError::new(ErrorTypeDefaults::DictType, self))
@@ -421,10 +421,10 @@ impl<'py> Input<'py> for Bound<'py, PyAny> {
     ) -> ValResult<GenericPyMapping<'a, 'py>> {
         if from_attributes {
             // if from_attributes, first try a dict, then mapping then from_attributes
-            if let Ok(dict) = self.downcast::<PyDict>() {
+            if let Ok(dict) = self.cast::<PyDict>() {
                 return Ok(GenericPyMapping::Dict(dict));
             } else if !strict {
-                if let Ok(mapping) = self.downcast::<PyMapping>() {
+                if let Ok(mapping) = self.cast::<PyMapping>() {
                     return Ok(GenericPyMapping::Mapping(mapping));
                 }
             }
@@ -454,7 +454,7 @@ impl<'py> Input<'py> for Bound<'py, PyAny> {
         Self: 'a;
 
     fn validate_list<'a>(&'a self, strict: bool) -> ValMatch<PySequenceIterable<'a, 'py>> {
-        if let Ok(list) = self.downcast::<PyList>() {
+        if let Ok(list) = self.cast::<PyList>() {
             return Ok(ValidationMatch::exact(PySequenceIterable::List(list)));
         } else if !strict {
             if let Ok(other) = extract_sequence_iterable(self) {
@@ -471,7 +471,7 @@ impl<'py> Input<'py> for Bound<'py, PyAny> {
         Self: 'a;
 
     fn validate_tuple<'a>(&'a self, strict: bool) -> ValMatch<PySequenceIterable<'a, 'py>> {
-        if let Ok(tup) = self.downcast::<PyTuple>() {
+        if let Ok(tup) = self.cast::<PyTuple>() {
             return Ok(ValidationMatch::exact(PySequenceIterable::Tuple(tup)));
         } else if !strict {
             if let Ok(other) = extract_sequence_iterable(self) {
@@ -488,7 +488,7 @@ impl<'py> Input<'py> for Bound<'py, PyAny> {
         Self: 'a;
 
     fn validate_set<'a>(&'a self, strict: bool) -> ValMatch<PySequenceIterable<'a, 'py>> {
-        if let Ok(set) = self.downcast::<PySet>() {
+        if let Ok(set) = self.cast::<PySet>() {
             return Ok(ValidationMatch::exact(PySequenceIterable::Set(set)));
         } else if !strict {
             if let Ok(other) = extract_sequence_iterable(self) {
@@ -500,7 +500,7 @@ impl<'py> Input<'py> for Bound<'py, PyAny> {
     }
 
     fn validate_frozenset<'a>(&'a self, strict: bool) -> ValMatch<PySequenceIterable<'a, 'py>> {
-        if let Ok(frozenset) = self.downcast::<PyFrozenSet>() {
+        if let Ok(frozenset) = self.cast::<PyFrozenSet>() {
             return Ok(ValidationMatch::exact(PySequenceIterable::FrozenSet(frozenset)));
         } else if !strict {
             if let Ok(other) = extract_sequence_iterable(self) {
@@ -520,21 +520,21 @@ impl<'py> Input<'py> for Bound<'py, PyAny> {
     }
 
     fn validate_date(&self, strict: bool, mode: TemporalUnitMode) -> ValResult<ValidationMatch<EitherDate<'py>>> {
-        if let Ok(date) = self.downcast_exact::<PyDate>() {
+        if let Ok(date) = self.cast_exact::<PyDate>() {
             Ok(ValidationMatch::exact(date.clone().into()))
         } else if self.is_instance_of::<PyDateTime>() {
             // have to check if it's a datetime first, otherwise the line below converts to a date
             // even if we later try coercion from a datetime, we don't want to return a datetime now
             Err(ValError::new(ErrorTypeDefaults::DateType, self))
-        } else if let Ok(date) = self.downcast::<PyDate>() {
+        } else if let Ok(date) = self.cast::<PyDate>() {
             Ok(ValidationMatch::strict(date.clone().into()))
         } else if let Some(bytes) = {
             if strict {
                 None
-            } else if let Ok(py_str) = self.downcast::<PyString>() {
+            } else if let Ok(py_str) = self.cast::<PyString>() {
                 let str = py_string_str(py_str)?;
                 Some(str.as_bytes())
-            } else if let Ok(py_bytes) = self.downcast::<PyBytes>() {
+            } else if let Ok(py_bytes) = self.cast::<PyBytes>() {
                 Some(py_bytes.as_bytes())
             } else {
                 None
@@ -551,18 +551,18 @@ impl<'py> Input<'py> for Bound<'py, PyAny> {
         strict: bool,
         microseconds_overflow_behavior: MicrosecondsPrecisionOverflowBehavior,
     ) -> ValResult<ValidationMatch<EitherTime<'py>>> {
-        if let Ok(time) = self.downcast_exact::<PyTime>() {
+        if let Ok(time) = self.cast_exact::<PyTime>() {
             return Ok(ValidationMatch::exact(time.clone().into()));
-        } else if let Ok(time) = self.downcast::<PyTime>() {
+        } else if let Ok(time) = self.cast::<PyTime>() {
             return Ok(ValidationMatch::strict(time.clone().into()));
         }
 
         'lax: {
             if !strict {
-                return if let Ok(py_str) = self.downcast::<PyString>() {
+                return if let Ok(py_str) = self.cast::<PyString>() {
                     let str = py_string_str(py_str)?;
                     bytes_as_time(self, str.as_bytes(), microseconds_overflow_behavior)
-                } else if let Ok(py_bytes) = self.downcast::<PyBytes>() {
+                } else if let Ok(py_bytes) = self.cast::<PyBytes>() {
                     bytes_as_time(self, py_bytes.as_bytes(), microseconds_overflow_behavior)
                 } else if self.is_exact_instance_of::<PyBool>() {
                     Err(ValError::new(ErrorTypeDefaults::TimeType, self))
@@ -586,18 +586,18 @@ impl<'py> Input<'py> for Bound<'py, PyAny> {
         microseconds_overflow_behavior: MicrosecondsPrecisionOverflowBehavior,
         mode: TemporalUnitMode,
     ) -> ValResult<ValidationMatch<EitherDateTime<'py>>> {
-        if let Ok(dt) = self.downcast_exact::<PyDateTime>() {
+        if let Ok(dt) = self.cast_exact::<PyDateTime>() {
             return Ok(ValidationMatch::exact(dt.clone().into()));
-        } else if let Ok(dt) = self.downcast::<PyDateTime>() {
+        } else if let Ok(dt) = self.cast::<PyDateTime>() {
             return Ok(ValidationMatch::strict(dt.clone().into()));
         }
 
         'lax: {
             if !strict {
-                return if let Ok(py_str) = self.downcast::<PyString>() {
+                return if let Ok(py_str) = self.cast::<PyString>() {
                     let str = py_string_str(py_str)?;
                     bytes_as_datetime(self, str.as_bytes(), microseconds_overflow_behavior, mode)
-                } else if let Ok(py_bytes) = self.downcast::<PyBytes>() {
+                } else if let Ok(py_bytes) = self.cast::<PyBytes>() {
                     bytes_as_datetime(self, py_bytes.as_bytes(), microseconds_overflow_behavior, mode)
                 } else if self.is_exact_instance_of::<PyBool>() {
                     Err(ValError::new(ErrorTypeDefaults::DatetimeType, self))
@@ -605,7 +605,7 @@ impl<'py> Input<'py> for Bound<'py, PyAny> {
                     int_as_datetime(self, int, 0, mode)
                 } else if let Ok(float) = self.extract::<f64>() {
                     float_as_datetime(self, float, mode)
-                } else if let Ok(date) = self.downcast::<PyDate>() {
+                } else if let Ok(date) = self.cast::<PyDate>() {
                     Ok(date_as_datetime(date)?)
                 } else {
                     break 'lax;
@@ -633,10 +633,10 @@ impl<'py> Input<'py> for Bound<'py, PyAny> {
 
         'lax: {
             if !strict {
-                return if let Ok(py_str) = self.downcast::<PyString>() {
+                return if let Ok(py_str) = self.cast::<PyString>() {
                     let str = py_string_str(py_str)?;
                     bytes_as_timedelta(self, str.as_bytes(), microseconds_overflow_behavior)
-                } else if let Ok(py_bytes) = self.downcast::<PyBytes>() {
+                } else if let Ok(py_bytes) = self.cast::<PyBytes>() {
                     bytes_as_timedelta(self, py_bytes.as_bytes(), microseconds_overflow_behavior)
                 } else if let Some(int) = extract_i64(self) {
                     Ok(int_as_duration(self, int)?.into())
@@ -653,7 +653,7 @@ impl<'py> Input<'py> for Bound<'py, PyAny> {
     }
 
     fn validate_complex<'a>(&'a self, strict: bool, py: Python<'py>) -> ValResult<ValidationMatch<EitherComplex<'py>>> {
-        if let Ok(complex) = self.downcast::<PyComplex>() {
+        if let Ok(complex) = self.cast::<PyComplex>() {
             return Ok(ValidationMatch::strict(EitherComplex::Py(complex.to_owned())));
         }
         if strict {
@@ -669,7 +669,7 @@ impl<'py> Input<'py> for Bound<'py, PyAny> {
             ));
         }
 
-        if let Ok(s) = self.downcast::<PyString>() {
+        if let Ok(s) = self.cast::<PyString>() {
             // If input is not a valid complex string, instead of telling users to correct
             // the string, it makes more sense to tell them to provide any acceptable value
             // since they might have just given values of some incorrect types instead
@@ -711,7 +711,7 @@ fn from_attributes_applicable(obj: &Bound<'_, PyAny>) -> bool {
         .get_type()
         .getattr(intern!(obj.py(), "__module__"))
         .ok()
-        .and_then(|module_name| module_name.downcast_into::<PyString>().ok())
+        .and_then(|module_name| module_name.cast_into::<PyString>().ok())
     else {
         return false;
     };
@@ -724,9 +724,9 @@ fn from_attributes_applicable(obj: &Bound<'_, PyAny>) -> bool {
 
 /// Utility for extracting a string from a PyAny, if possible.
 fn maybe_as_string<'a>(v: &'a Bound<'_, PyAny>, unicode_error: ErrorType) -> ValResult<Option<&'a str>> {
-    if let Ok(py_string) = v.downcast::<PyString>() {
+    if let Ok(py_string) = v.cast::<PyString>() {
         py_string_str(py_string).map(Some)
-    } else if let Ok(bytes) = v.downcast::<PyBytes>() {
+    } else if let Ok(bytes) = v.cast::<PyBytes>() {
         match from_utf8(bytes.as_bytes()) {
             Ok(s) => Ok(Some(s)),
             Err(_) => Err(ValError::new(unicode_error, v)),
@@ -744,7 +744,7 @@ fn bytearray_to_str<'py>(bytearray: &Bound<'py, PyByteArray>) -> PyResult<Bound<
     let py = bytearray.py();
     let py_string = bytearray
         .call_method1(intern!(py, "decode"), (intern!(py, "utf-8"),))?
-        .downcast_into()?;
+        .cast_into()?;
     Ok(py_string)
 }
 
@@ -914,13 +914,13 @@ pub enum PySequenceIterable<'a, 'py> {
 /// or frozenset
 fn extract_sequence_iterable<'a, 'py>(obj: &'a Bound<'py, PyAny>) -> ValResult<PySequenceIterable<'a, 'py>> {
     // Handle concrete non-overlapping types first, then abstract types
-    if let Ok(iterable) = obj.downcast::<PyList>() {
+    if let Ok(iterable) = obj.cast::<PyList>() {
         Ok(PySequenceIterable::List(iterable))
-    } else if let Ok(iterable) = obj.downcast::<PyTuple>() {
+    } else if let Ok(iterable) = obj.cast::<PyTuple>() {
         Ok(PySequenceIterable::Tuple(iterable))
-    } else if let Ok(iterable) = obj.downcast::<PySet>() {
+    } else if let Ok(iterable) = obj.cast::<PySet>() {
         Ok(PySequenceIterable::Set(iterable))
-    } else if let Ok(iterable) = obj.downcast::<PyFrozenSet>() {
+    } else if let Ok(iterable) = obj.cast::<PyFrozenSet>() {
         Ok(PySequenceIterable::FrozenSet(iterable))
     } else {
         // Try to get this as a generable iterable thing, but exclude string and mapping types
@@ -928,7 +928,7 @@ fn extract_sequence_iterable<'a, 'py>(obj: &'a Bound<'py, PyAny>) -> ValResult<P
             || obj.is_instance_of::<PyBytes>()
             || obj.is_instance_of::<PyByteArray>()
             || obj.is_instance_of::<PyDict>()
-            || obj.downcast::<PyMapping>().is_ok())
+            || obj.cast::<PyMapping>().is_ok())
         {
             if let Ok(iter) = obj.try_iter() {
                 return Ok(PySequenceIterable::Iterator(iter));

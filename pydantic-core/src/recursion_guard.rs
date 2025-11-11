@@ -72,7 +72,16 @@ pub struct RecursionState {
 }
 
 // with debug_assertions enabled, function stacks are a bit bigger so need to be a bit more restricted
-const GUARD_OFFSET: u8 = if cfg!(debug_assertions) { 20 } else { 0 };
+const GUARD_OFFSET: u8 = if cfg!(debug_assertions) {
+    // on macos 3.14 the stack size seems to be a bit smaller again
+    if cfg!(all(target_os = "macos", Py_3_14)) {
+        100
+    } else {
+        20
+    }
+} else {
+    0
+};
 
 // A hard limit to avoid stack overflows when rampant recursion occurs
 pub const RECURSION_GUARD_LIMIT: u8 = (if cfg!(any(target_family = "wasm", all(windows, PyPy))) {

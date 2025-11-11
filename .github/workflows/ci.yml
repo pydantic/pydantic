@@ -31,13 +31,14 @@ jobs:
       - name: Install dependencies
         # Installing pip is required for the pre-commit action:
         run: |
-          uv sync --group linting --all-extras
+          uv sync --all-packages --group linting --all-extras
           uv pip install pip
       - uses: pre-commit/action@v3.0.1
         with:
           extra_args: --all-files --verbose
         env:
           SKIP: no-commit-to-branch
+          UV_NO_PROGRESS: '1'
 
   docs-build:
     runs-on: ubuntu-latest
@@ -52,9 +53,7 @@ jobs:
         # Unlike the docs build, we don't use mkdocs_material-insiders
         # Because the secret for accessing the library is not accessible from forks, but we still want to run
         # this job on public CI runs.
-        run: |
-          uv sync --group docs
-          uv tool run maturin develop -m pydantic-core/Cargo.toml
+        run: uv sync --all-packages --group docs
 
       - run: uv run python -c 'import docs.plugins.main'
 
@@ -78,7 +77,7 @@ jobs:
           python-version: '3.12'
 
       - name: install deps
-        run: uv sync --group testing-extra
+        run: uv sync --all-packages --group testing-extra
 
       - name: Run tests
         run: uv run pytest --ignore=tests/mypy/ --ignore=tests/test_docs.py --memray
@@ -112,7 +111,7 @@ jobs:
           python-version: ${{ matrix.python-version }}
 
       - name: Install dependencies
-        run: uv sync --group testing-extra --all-extras
+        run: uv sync --all-packages --group testing-extra --all-extras
 
       - run: 'uv run python -c "import pydantic.version; print(pydantic.version.version_info())"'
 
@@ -285,7 +284,7 @@ jobs:
           python-version: ${{ matrix.python-version }}
 
       - name: Install dependencies
-        run: uv sync
+        run: uv sync --all-packages --group testing-extra --all-extras
 
       - name: Install typing-extensions
         run: uv pip install 'typing-extensions @ git+https://github.com/python/typing_extensions.git'

@@ -1,4 +1,5 @@
 import math
+import os
 import re
 import sys
 from collections.abc import Mapping
@@ -8,7 +9,6 @@ from typing import Any, Union
 
 import pytest
 from dirty_equals import FunctionCheck, HasRepr, IsStr
-
 from pydantic_core import CoreConfig, SchemaError, SchemaValidator, ValidationError, core_schema
 from pydantic_core.core_schema import ExtraBehavior
 
@@ -117,11 +117,15 @@ def test_missing_error(pydantic_version):
         v.validate_python({'field_a': b'abc'})
     assert (
         str(exc_info.value)
-        == f"""\
+        == """\
 1 validation error for model-fields
 field_b
-  Field required [type=missing, input_value={{'field_a': b'abc'}}, input_type=dict]
-    For further information visit https://errors.pydantic.dev/{pydantic_version}/v/missing"""
+  Field required [type=missing, input_value={'field_a': b'abc'}, input_type=dict]"""
+        + (
+            f'\n    For further information visit https://errors.pydantic.dev/{pydantic_version}/v/missing'
+            if os.environ.get('PYDANTIC_ERRORS_INCLUDE_URL', '1') != 'false'
+            else ''
+        )
     )
 
 
@@ -743,7 +747,7 @@ def test_paths_allow_by_name(py_and_json: PyAndJson, input_value):
     [
         ({'validation_alias': []}, 'Lookup paths should have at least one element'),
         ({'validation_alias': [[]]}, 'Each alias path should have at least one element'),
-        ({'validation_alias': [123]}, "TypeError: 'int' object cannot be converted to 'PyList'"),
+        ({'validation_alias': [123]}, "TypeError: 'int' object cannot be cast as 'list'"),
         ({'validation_alias': [[1, 'foo']]}, 'TypeError: The first item in an alias path should be a string'),
     ],
     ids=repr,

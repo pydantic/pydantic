@@ -112,7 +112,7 @@ jobs:
         run: uv pip list
 
       - name: Run SQLModel tests
-        run: uv run --no-project --no-sync pytest tests
+        run: uv run --no-sync pytest tests
 
   test-beanie:
     name: Test Beanie (main branch) on Python ${{ matrix.python-version }}
@@ -655,7 +655,7 @@ jobs:
         run: uv pip list
 
       - name: Run Cadwyn tests
-        run: uv run --no-project --no-sync pytest tests docs_src
+        run: uv run --no-sync pytest tests docs_src
 
   test-pydantic-xml:
     name: Test pydantic-xml (main branch) on Python ${{ matrix.python-version }}
@@ -818,7 +818,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python-version: ['3.9', '3.10', '3.11', '3.12', '3.13']
+        python-version: ['3.10', '3.11', '3.12', '3.13']
     steps:
       - name: Checkout FastDepends
         uses: actions/checkout@v5
@@ -837,7 +837,7 @@ jobs:
       - name: Install FastDepends dependencies
         run: |
           uv venv --python ${{ matrix.python-version }}
-          uv pip install --no-progress -e .[test]
+          uv sync --group test
           uv pip uninstall pydantic
           uv pip install -e ./pydantic-latest
 
@@ -845,7 +845,7 @@ jobs:
         run: uv pip list
 
       - name: Run FastDepends tests
-        run: uv run --no-project --no-sync pytest
+        run: uv run --no-sync pytest
 
   create-issue-on-failure:
     name: Create an issue if tests failed

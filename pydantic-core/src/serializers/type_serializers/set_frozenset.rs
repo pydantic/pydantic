@@ -57,7 +57,7 @@ macro_rules! build_serializer {
                 state: &mut SerializationState<'_, 'py>,
             ) -> PyResult<Py<PyAny>> {
                 let py = value.py();
-                match value.downcast::<$py_type>() {
+                match value.cast::<$py_type>() {
                     Ok(py_set) => {
                         let item_serializer = self.item_serializer.as_ref();
 
@@ -91,7 +91,7 @@ macro_rules! build_serializer {
                 serializer: S,
                 state: &mut SerializationState<'_, 'py>,
             ) -> Result<S::Ok, S::Error> {
-                match value.downcast::<$py_type>() {
+                match value.cast::<$py_type>() {
                     Ok(py_set) => {
                         let mut seq = serializer.serialize_seq(Some(py_set.len()))?;
                         let item_serializer = self.item_serializer.as_ref();

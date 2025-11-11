@@ -56,9 +56,9 @@ impl BuildSerializer for ModelFieldsBuilder {
         let serialize_by_alias = config.get_as(intern!(py, "serialize_by_alias"))?;
 
         for (key, value) in fields_dict {
-            let key_py = key.downcast_into::<PyString>()?;
+            let key_py = key.cast_into::<PyString>()?;
             let key: String = key_py.extract()?;
-            let field_info = value.downcast()?;
+            let field_info = value.cast()?;
 
             let key_py: Py<PyString> = key_py.into();
 
@@ -222,12 +222,12 @@ impl ModelSerializer {
 
     fn get_inner_value<'py>(&self, model: &Bound<'py, PyAny>, extra: &Extra) -> PyResult<Bound<'py, PyAny>> {
         let py: Python<'_> = model.py();
-        let mut attrs = model.getattr(intern!(py, "__dict__"))?.downcast_into::<PyDict>()?;
+        let mut attrs = model.getattr(intern!(py, "__dict__"))?.cast_into::<PyDict>()?;
 
         if extra.exclude_unset {
             let fields_set = model
                 .getattr(intern!(py, "__pydantic_fields_set__"))?
-                .downcast_into::<PySet>()?;
+                .cast_into::<PySet>()?;
 
             let new_attrs = attrs.copy()?;
             for key in new_attrs.keys() {

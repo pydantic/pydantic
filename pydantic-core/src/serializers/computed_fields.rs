@@ -169,7 +169,7 @@ impl ComputedField {
         definitions: &mut DefinitionsBuilder<Arc<CombinedSerializer>>,
     ) -> PyResult<Self> {
         let py = schema.py();
-        let schema: &Bound<'_, PyDict> = schema.downcast()?;
+        let schema: &Bound<'_, PyDict> = schema.cast()?;
         let property_name: Bound<'_, PyString> = schema.get_as_req(intern!(py, "property_name"))?;
         let return_schema = schema.get_as_req(intern!(py, "return_schema"))?;
         let serializer = CombinedSerializer::build(&return_schema, config, definitions)
