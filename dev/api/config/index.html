@@ -5094,117 +5094,66 @@ strict and lax modes.</p>
 
     <div class="doc doc-contents ">
 
-        <p>When and how to revalidate models and dataclasses during validation. Accepts the string
-values of <code>'never'</code>, <code>'always'</code> and <code>'subclass-instances'</code>. Defaults to <code>'never'</code>.</p>
+        <p>When and how to revalidate models and dataclasses during validation. Can be one of:</p>
 <ul>
-<li><code>'never'</code> will not revalidate models and dataclasses during validation</li>
-<li><code>'always'</code> will revalidate models and dataclasses during validation</li>
-<li><code>'subclass-instances'</code> will revalidate models and dataclasses during validation if the instance is a
+<li><code>'never'</code>: will <em>not</em> revalidate models and dataclasses during validation</li>
+<li><code>'always'</code>: will revalidate models and dataclasses during validation</li>
+<li><code>'subclass-instances'</code>: will revalidate models and dataclasses during validation if the instance is a
     subclass of the model or dataclass</li>
 </ul>
-<p>By default, model and dataclass instances are not revalidated during validation.</p>
+<p>The default is <code>'never'</code> (no revalidation).</p>
+<p>This configuration only affects <em>the current model</em> it is applied on, and does <em>not</em> populate to the models
+referenced in fields.</p>
 <div class="language-python highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">pydantic</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseModel</span>
 
 <span class="k">class</span><span class="w"> </span><span class="nc">User</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">,</span> <span class="n">revalidate_instances</span><span class="o">=</span><span class="s1">&#39;never&#39;</span><span class="p">):</span>  <span class="c1"># (1)!</span>
-    <span class="n">hobbies</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span>
-
-<span class="k">class</span><span class="w"> </span><span class="nc">SubUser</span><span class="p">(</span><span class="n">User</span><span class="p">):</span>
-    <span class="n">sins</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span>
+    <span class="n">name</span><span class="p">:</span> <span class="nb">str</span>
 
 <span class="k">class</span><span class="w"> </span><span class="nc">Transaction</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
     <span class="n">user</span><span class="p">:</span> <span class="n">User</span>
 
-<span class="n">my_user</span> <span class="o">=</span> <span class="n">User</span><span class="p">(</span><span class="n">hobbies</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;reading&#39;</span><span class="p">])</span>
+<span class="n">my_user</span> <span class="o">=</span> <span class="n">User</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;John&#39;</span><span class="p">)</span>
 <span class="n">t</span> <span class="o">=</span> <span class="n">Transaction</span><span class="p">(</span><span class="n">user</span><span class="o">=</span><span class="n">my_user</span><span class="p">)</span>
-<span class="nb">print</span><span class="p">(</span><span class="n">t</span><span class="p">)</span>
-<span class="c1">#&gt; user=User(hobbies=[&#39;reading&#39;])</span>
 
-<span class="n">my_user</span><span class="o">.</span><span class="n">hobbies</span> <span class="o">=</span> <span class="p">[</span><span class="mi">1</span><span class="p">]</span>  <span class="c1"># (2)!</span>
+<span class="n">my_user</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="mi">1</span>  <span class="c1"># (2)!</span>
 <span class="n">t</span> <span class="o">=</span> <span class="n">Transaction</span><span class="p">(</span><span class="n">user</span><span class="o">=</span><span class="n">my_user</span><span class="p">)</span>  <span class="c1"># (3)!</span>
 <span class="nb">print</span><span class="p">(</span><span class="n">t</span><span class="p">)</span>
-<span class="c1">#&gt; user=User(hobbies=[1])</span>
-
-<span class="n">my_sub_user</span> <span class="o">=</span> <span class="n">SubUser</span><span class="p">(</span><span class="n">hobbies</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;scuba diving&#39;</span><span class="p">],</span> <span class="n">sins</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;lying&#39;</span><span class="p">])</span>
-<span class="n">t</span> <span class="o">=</span> <span class="n">Transaction</span><span class="p">(</span><span class="n">user</span><span class="o">=</span><span class="n">my_sub_user</span><span class="p">)</span>
-<span class="nb">print</span><span class="p">(</span><span class="n">t</span><span class="p">)</span>
-<span class="c1">#&gt; user=SubUser(hobbies=[&#39;scuba diving&#39;], sins=[&#39;lying&#39;])</span>
+<span class="c1">#&gt; user=User(name=1)</span>
 </code></pre></div>
 <ol>
-<li><code>revalidate_instances</code> is set to <code>'never'</code> by **default.</li>
-<li>The assignment is not validated, unless you set <code>validate_assignment</code> to <code>True</code> in the model's config.</li>
-<li>Since <code>revalidate_instances</code> is set to <code>never</code>, this is not revalidated.</li>
+<li>This is the default behavior.</li>
+<li>The assignment is <em>not</em> validated, unless you set <a class="autorefs autorefs-internal" href="#pydantic.config.ConfigDict.validate_assignment"><code>validate_assignment</code></a> in the configuration.</li>
+<li>Since <code>revalidate_instances</code> is set to <code>'never'</code>, the user instance is not revalidated.</li>
 </ol>
-<p>If you want to revalidate instances during validation, you can set <code>revalidate_instances</code> to <code>'always'</code>
-in the model's config.</p>
-<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">pydantic</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ValidationError</span>
-
-<span class="k">class</span><span class="w"> </span><span class="nc">User</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">,</span> <span class="n">revalidate_instances</span><span class="o">=</span><span class="s1">&#39;always&#39;</span><span class="p">):</span>  <span class="c1"># (1)!</span>
-    <span class="n">hobbies</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span>
-
-<span class="k">class</span><span class="w"> </span><span class="nc">SubUser</span><span class="p">(</span><span class="n">User</span><span class="p">):</span>
-    <span class="n">sins</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span>
-
-<span class="k">class</span><span class="w"> </span><span class="nc">Transaction</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
-    <span class="n">user</span><span class="p">:</span> <span class="n">User</span>
-
-<span class="n">my_user</span> <span class="o">=</span> <span class="n">User</span><span class="p">(</span><span class="n">hobbies</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;reading&#39;</span><span class="p">])</span>
-<span class="n">t</span> <span class="o">=</span> <span class="n">Transaction</span><span class="p">(</span><span class="n">user</span><span class="o">=</span><span class="n">my_user</span><span class="p">)</span>
-<span class="nb">print</span><span class="p">(</span><span class="n">t</span><span class="p">)</span>
-<span class="c1">#&gt; user=User(hobbies=[&#39;reading&#39;])</span>
-
-<span class="n">my_user</span><span class="o">.</span><span class="n">hobbies</span> <span class="o">=</span> <span class="p">[</span><span class="mi">1</span><span class="p">]</span>
-<span class="k">try</span><span class="p">:</span>
-    <span class="n">t</span> <span class="o">=</span> <span class="n">Transaction</span><span class="p">(</span><span class="n">user</span><span class="o">=</span><span class="n">my_user</span><span class="p">)</span>  <span class="c1"># (2)!</span>
-<span class="k">except</span> <span class="n">ValidationError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
-    <span class="nb">print</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
-<span class="w">    </span><span class="sd">&#39;&#39;&#39;</span>
-<span class="sd">    1 validation error for Transaction</span>
-<span class="sd">    user.hobbies.0</span>
-<span class="sd">      Input should be a valid string [type=string_type, input_value=1, input_type=int]</span>
-<span class="sd">    &#39;&#39;&#39;</span>
-
-<span class="n">my_sub_user</span> <span class="o">=</span> <span class="n">SubUser</span><span class="p">(</span><span class="n">hobbies</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;scuba diving&#39;</span><span class="p">],</span> <span class="n">sins</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;lying&#39;</span><span class="p">])</span>
-<span class="n">t</span> <span class="o">=</span> <span class="n">Transaction</span><span class="p">(</span><span class="n">user</span><span class="o">=</span><span class="n">my_sub_user</span><span class="p">)</span>
-<span class="nb">print</span><span class="p">(</span><span class="n">t</span><span class="p">)</span>  <span class="c1"># (3)!</span>
-<span class="c1">#&gt; user=User(hobbies=[&#39;scuba diving&#39;])</span>
-</code></pre></div>
-<ol>
-<li><code>revalidate_instances</code> is set to <code>'always'</code>.</li>
-<li>The model is revalidated, since <code>revalidate_instances</code> is set to <code>'always'</code>.</li>
-<li>Using <code>'never'</code> we would have gotten <code>user=SubUser(hobbies=['scuba diving'], sins=['lying'])</code>.</li>
-</ol>
-<p>It's also possible to set <code>revalidate_instances</code> to <code>'subclass-instances'</code> to only revalidate instances
-of subclasses of the model.</p>
+<p>Here is an example demonstrating the behavior of <code>'subclass-instances'</code>:</p>
 <div class="language-python highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">pydantic</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseModel</span>
 
-<span class="k">class</span><span class="w"> </span><span class="nc">User</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">,</span> <span class="n">revalidate_instances</span><span class="o">=</span><span class="s1">&#39;subclass-instances&#39;</span><span class="p">):</span>  <span class="c1"># (1)!</span>
-    <span class="n">hobbies</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">User</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">,</span> <span class="n">revalidate_instances</span><span class="o">=</span><span class="s1">&#39;subclass-instances&#39;</span><span class="p">):</span>
+    <span class="n">name</span><span class="p">:</span> <span class="nb">str</span>
 
 <span class="k">class</span><span class="w"> </span><span class="nc">SubUser</span><span class="p">(</span><span class="n">User</span><span class="p">):</span>
-    <span class="n">sins</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span>
+    <span class="n">age</span><span class="p">:</span> <span class="nb">int</span>
 
 <span class="k">class</span><span class="w"> </span><span class="nc">Transaction</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
     <span class="n">user</span><span class="p">:</span> <span class="n">User</span>
 
-<span class="n">my_user</span> <span class="o">=</span> <span class="n">User</span><span class="p">(</span><span class="n">hobbies</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;reading&#39;</span><span class="p">])</span>
-<span class="n">t</span> <span class="o">=</span> <span class="n">Transaction</span><span class="p">(</span><span class="n">user</span><span class="o">=</span><span class="n">my_user</span><span class="p">)</span>
-<span class="nb">print</span><span class="p">(</span><span class="n">t</span><span class="p">)</span>
-<span class="c1">#&gt; user=User(hobbies=[&#39;reading&#39;])</span>
-
-<span class="n">my_user</span><span class="o">.</span><span class="n">hobbies</span> <span class="o">=</span> <span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+<span class="n">my_user</span> <span class="o">=</span> <span class="n">User</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;John&#39;</span><span class="p">)</span>
+<span class="n">my_user</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="mi">1</span>  <span class="c1"># (1)!</span>
 <span class="n">t</span> <span class="o">=</span> <span class="n">Transaction</span><span class="p">(</span><span class="n">user</span><span class="o">=</span><span class="n">my_user</span><span class="p">)</span>  <span class="c1"># (2)!</span>
 <span class="nb">print</span><span class="p">(</span><span class="n">t</span><span class="p">)</span>
-<span class="c1">#&gt; user=User(hobbies=[1])</span>
+<span class="c1">#&gt; user=User(name=1)</span>
 
-<span class="n">my_sub_user</span> <span class="o">=</span> <span class="n">SubUser</span><span class="p">(</span><span class="n">hobbies</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;scuba diving&#39;</span><span class="p">],</span> <span class="n">sins</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;lying&#39;</span><span class="p">])</span>
+<span class="n">my_sub_user</span> <span class="o">=</span> <span class="n">SubUser</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;John&#39;</span><span class="p">,</span> <span class="n">age</span><span class="o">=</span><span class="mi">20</span><span class="p">)</span>
 <span class="n">t</span> <span class="o">=</span> <span class="n">Transaction</span><span class="p">(</span><span class="n">user</span><span class="o">=</span><span class="n">my_sub_user</span><span class="p">)</span>
 <span class="nb">print</span><span class="p">(</span><span class="n">t</span><span class="p">)</span>  <span class="c1"># (3)!</span>
-<span class="c1">#&gt; user=User(hobbies=[&#39;scuba diving&#39;])</span>
+<span class="c1">#&gt; user=User(name=&#39;John&#39;)</span>
 </code></pre></div>
 <ol>
-<li><code>revalidate_instances</code> is set to <code>'subclass-instances'</code>.</li>
-<li>This is not revalidated, since <code>my_user</code> is not a subclass of <code>User</code>.</li>
-<li>Using <code>'never'</code> we would have gotten <code>user=SubUser(hobbies=['scuba diving'], sins=['lying'])</code>.</li>
+<li>The assignment is <em>not</em> validated, unless you set <a class="autorefs autorefs-internal" href="#pydantic.config.ConfigDict.validate_assignment"><code>validate_assignment</code></a> in the configuration.</li>
+<li>Because <code>my_user</code> is a "direct" instance of <code>User</code>, it is <em>not</em> being revalidated. It would have been the case if
+  <code>revalidate_instances</code> was set to <code>'always'</code>.</li>
+<li>Because <code>my_sub_user</code> is an instance of a <code>User</code> subclass, it is being revalidated. In this case, Pydantic coerces <code>my_sub_user</code> to the defined
+   <code>User</code> class defined on <code>Transaction</code>. If one of its fields had an invalid value, a validation error would have been raised.</li>
 </ol>
     </div>
 
@@ -6399,60 +6348,60 @@ especially with <code>TypedDict</code>.</p>
 
             <details class="quote">
               <summary>Source code in <code>pydantic/config.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1238</span>
-<span class="normal">1239</span>
-<span class="normal">1240</span>
-<span class="normal">1241</span>
-<span class="normal">1242</span>
-<span class="normal">1243</span>
-<span class="normal">1244</span>
-<span class="normal">1245</span>
-<span class="normal">1246</span>
-<span class="normal">1247</span>
-<span class="normal">1248</span>
-<span class="normal">1249</span>
-<span class="normal">1250</span>
-<span class="normal">1251</span>
-<span class="normal">1252</span>
-<span class="normal">1253</span>
-<span class="normal">1254</span>
-<span class="normal">1255</span>
-<span class="normal">1256</span>
-<span class="normal">1257</span>
-<span class="normal">1258</span>
-<span class="normal">1259</span>
-<span class="normal">1260</span>
-<span class="normal">1261</span>
-<span class="normal">1262</span>
-<span class="normal">1263</span>
-<span class="normal">1264</span>
-<span class="normal">1265</span>
-<span class="normal">1266</span>
-<span class="normal">1267</span>
-<span class="normal">1268</span>
-<span class="normal">1269</span>
-<span class="normal">1270</span>
-<span class="normal">1271</span>
-<span class="normal">1272</span>
-<span class="normal">1273</span>
-<span class="normal">1274</span>
-<span class="normal">1275</span>
-<span class="normal">1276</span>
-<span class="normal">1277</span>
-<span class="normal">1278</span>
-<span class="normal">1279</span>
-<span class="normal">1280</span>
-<span class="normal">1281</span>
-<span class="normal">1282</span>
-<span class="normal">1283</span>
-<span class="normal">1284</span>
-<span class="normal">1285</span>
-<span class="normal">1286</span>
-<span class="normal">1287</span>
-<span class="normal">1288</span>
-<span class="normal">1289</span>
-<span class="normal">1290</span>
-<span class="normal">1291</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">with_config</span><span class="p">(</span><span class="n">config</span><span class="p">:</span> <span class="n">ConfigDict</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="o">/</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Callable</span><span class="p">[[</span><span class="n">_TypeT</span><span class="p">],</span> <span class="n">_TypeT</span><span class="p">]:</span>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1186</span>
+<span class="normal">1187</span>
+<span class="normal">1188</span>
+<span class="normal">1189</span>
+<span class="normal">1190</span>
+<span class="normal">1191</span>
+<span class="normal">1192</span>
+<span class="normal">1193</span>
+<span class="normal">1194</span>
+<span class="normal">1195</span>
+<span class="normal">1196</span>
+<span class="normal">1197</span>
+<span class="normal">1198</span>
+<span class="normal">1199</span>
+<span class="normal">1200</span>
+<span class="normal">1201</span>
+<span class="normal">1202</span>
+<span class="normal">1203</span>
+<span class="normal">1204</span>
+<span class="normal">1205</span>
+<span class="normal">1206</span>
+<span class="normal">1207</span>
+<span class="normal">1208</span>
+<span class="normal">1209</span>
+<span class="normal">1210</span>
+<span class="normal">1211</span>
+<span class="normal">1212</span>
+<span class="normal">1213</span>
+<span class="normal">1214</span>
+<span class="normal">1215</span>
+<span class="normal">1216</span>
+<span class="normal">1217</span>
+<span class="normal">1218</span>
+<span class="normal">1219</span>
+<span class="normal">1220</span>
+<span class="normal">1221</span>
+<span class="normal">1222</span>
+<span class="normal">1223</span>
+<span class="normal">1224</span>
+<span class="normal">1225</span>
+<span class="normal">1226</span>
+<span class="normal">1227</span>
+<span class="normal">1228</span>
+<span class="normal">1229</span>
+<span class="normal">1230</span>
+<span class="normal">1231</span>
+<span class="normal">1232</span>
+<span class="normal">1233</span>
+<span class="normal">1234</span>
+<span class="normal">1235</span>
+<span class="normal">1236</span>
+<span class="normal">1237</span>
+<span class="normal">1238</span>
+<span class="normal">1239</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">with_config</span><span class="p">(</span><span class="n">config</span><span class="p">:</span> <span class="n">ConfigDict</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="o">/</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Callable</span><span class="p">[[</span><span class="n">_TypeT</span><span class="p">],</span> <span class="n">_TypeT</span><span class="p">]:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;!!! abstract &quot;Usage Documentation&quot;</span>
 <span class="sd">        [Configuration with other types](../concepts/config.md#configuration-on-other-supported-types)</span>
 

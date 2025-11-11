@@ -580,122 +580,69 @@ revalidate_instances: Literal[
 
 ```
 
-When and how to revalidate models and dataclasses during validation. Accepts the string values of `'never'`, `'always'` and `'subclass-instances'`. Defaults to `'never'`.
+When and how to revalidate models and dataclasses during validation. Can be one of:
 
-- `'never'` will not revalidate models and dataclasses during validation
-- `'always'` will revalidate models and dataclasses during validation
-- `'subclass-instances'` will revalidate models and dataclasses during validation if the instance is a subclass of the model or dataclass
+- `'never'`: will *not* revalidate models and dataclasses during validation
+- `'always'`: will revalidate models and dataclasses during validation
+- `'subclass-instances'`: will revalidate models and dataclasses during validation if the instance is a subclass of the model or dataclass
 
-By default, model and dataclass instances are not revalidated during validation.
+The default is `'never'` (no revalidation).
+
+This configuration only affects *the current model* it is applied on, and does *not* populate to the models referenced in fields.
 
 ```python
 from pydantic import BaseModel
 
 class User(BaseModel, revalidate_instances='never'):  # (1)!
-    hobbies: list[str]
-
-class SubUser(User):
-    sins: list[str]
+    name: str
 
 class Transaction(BaseModel):
     user: User
 
-my_user = User(hobbies=['reading'])
+my_user = User(name='John')
 t = Transaction(user=my_user)
-print(t)
-#> user=User(hobbies=['reading'])
 
-my_user.hobbies = [1]  # (2)!
+my_user.name = 1  # (2)!
 t = Transaction(user=my_user)  # (3)!
 print(t)
-#> user=User(hobbies=[1])
-
-my_sub_user = SubUser(hobbies=['scuba diving'], sins=['lying'])
-t = Transaction(user=my_sub_user)
-print(t)
-#> user=SubUser(hobbies=['scuba diving'], sins=['lying'])
+#> user=User(name=1)
 
 ```
 
-1. `revalidate_instances` is set to `'never'` by \*\*default.
-1. The assignment is not validated, unless you set `validate_assignment` to `True` in the model's config.
-1. Since `revalidate_instances` is set to `never`, this is not revalidated.
+1. This is the default behavior.
+1. The assignment is *not* validated, unless you set validate_assignment in the configuration.
+1. Since `revalidate_instances` is set to `'never'`, the user instance is not revalidated.
 
-If you want to revalidate instances during validation, you can set `revalidate_instances` to `'always'` in the model's config.
-
-```python
-from pydantic import BaseModel, ValidationError
-
-class User(BaseModel, revalidate_instances='always'):  # (1)!
-    hobbies: list[str]
-
-class SubUser(User):
-    sins: list[str]
-
-class Transaction(BaseModel):
-    user: User
-
-my_user = User(hobbies=['reading'])
-t = Transaction(user=my_user)
-print(t)
-#> user=User(hobbies=['reading'])
-
-my_user.hobbies = [1]
-try:
-    t = Transaction(user=my_user)  # (2)!
-except ValidationError as e:
-    print(e)
-    '''
-    1 validation error for Transaction
-    user.hobbies.0
-      Input should be a valid string [type=string_type, input_value=1, input_type=int]
-    '''
-
-my_sub_user = SubUser(hobbies=['scuba diving'], sins=['lying'])
-t = Transaction(user=my_sub_user)
-print(t)  # (3)!
-#> user=User(hobbies=['scuba diving'])
-
-```
-
-1. `revalidate_instances` is set to `'always'`.
-1. The model is revalidated, since `revalidate_instances` is set to `'always'`.
-1. Using `'never'` we would have gotten `user=SubUser(hobbies=['scuba diving'], sins=['lying'])`.
-
-It's also possible to set `revalidate_instances` to `'subclass-instances'` to only revalidate instances of subclasses of the model.
+Here is an example demonstrating the behavior of `'subclass-instances'`:
 
 ```python
 from pydantic import BaseModel
 
-class User(BaseModel, revalidate_instances='subclass-instances'):  # (1)!
-    hobbies: list[str]
+class User(BaseModel, revalidate_instances='subclass-instances'):
+    name: str
 
 class SubUser(User):
-    sins: list[str]
+    age: int
 
 class Transaction(BaseModel):
     user: User
 
-my_user = User(hobbies=['reading'])
-t = Transaction(user=my_user)
-print(t)
-#> user=User(hobbies=['reading'])
-
-my_user.hobbies = [1]
+my_user = User(name='John')
+my_user.name = 1  # (1)!
 t = Transaction(user=my_user)  # (2)!
 print(t)
-#> user=User(hobbies=[1])
+#> user=User(name=1)
 
-my_sub_user = SubUser(hobbies=['scuba diving'], sins=['lying'])
+my_sub_user = SubUser(name='John', age=20)
 t = Transaction(user=my_sub_user)
 print(t)  # (3)!
-#> user=User(hobbies=['scuba diving'])
+#> user=User(name='John')
 
 ```
 
-1. `revalidate_instances` is set to `'subclass-instances'`.
-1. This is not revalidated, since `my_user` is not a subclass of `User`.
-1. Using `'never'` we would have gotten `user=SubUser(hobbies=['scuba diving'], sins=['lying'])`.
+1. The assignment is *not* validated, unless you set validate_assignment in the configuration.
+1. Because `my_user` is a "direct" instance of `User`, it is *not* being revalidated. It would have been the case if `revalidate_instances` was set to `'always'`.
+1. Because `my_sub_user` is an instance of a `User` subclass, it is being revalidated. In this case, Pydantic coerces `my_sub_user` to the defined `User` class defined on `Transaction`. If one of its fields had an invalid value, a validation error would have been raised.
 
 ### ser_json_timedelta
 

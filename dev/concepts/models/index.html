@@ -868,19 +868,19 @@ to help you monitor and understand your
 </li>
       
         <li class="md-nav__item">
-  <a href="#arbitrary-class-instances" class="md-nav__link">
+  <a href="#validating-data" class="md-nav__link">
     <span class="md-ellipsis">
-      Arbitrary class instances
+      Validating data
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="Arbitrary class instances">
+    <nav class="md-nav" aria-label="Validating data">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#nested-attributes" class="md-nav__link">
+  <a href="#creating-models-without-validation" class="md-nav__link">
     <span class="md-ellipsis">
-      Nested attributes
+      Creating models without validation
     </span>
   </a>
   
@@ -901,19 +901,19 @@ to help you monitor and understand your
 </li>
       
         <li class="md-nav__item">
-  <a href="#validating-data" class="md-nav__link">
+  <a href="#arbitrary-class-instances" class="md-nav__link">
     <span class="md-ellipsis">
-      Validating data
+      Arbitrary class instances
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="Validating data">
+    <nav class="md-nav" aria-label="Arbitrary class instances">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#creating-models-without-validation" class="md-nav__link">
+  <a href="#nested-attributes" class="md-nav__link">
     <span class="md-ellipsis">
-      Creating models without validation
+      Nested attributes
     </span>
   </a>
   
@@ -3327,19 +3327,19 @@ to help you monitor and understand your
 </li>
       
         <li class="md-nav__item">
-  <a href="#arbitrary-class-instances" class="md-nav__link">
+  <a href="#validating-data" class="md-nav__link">
     <span class="md-ellipsis">
-      Arbitrary class instances
+      Validating data
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="Arbitrary class instances">
+    <nav class="md-nav" aria-label="Validating data">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#nested-attributes" class="md-nav__link">
+  <a href="#creating-models-without-validation" class="md-nav__link">
     <span class="md-ellipsis">
-      Nested attributes
+      Creating models without validation
     </span>
   </a>
   
@@ -3360,19 +3360,19 @@ to help you monitor and understand your
 </li>
       
         <li class="md-nav__item">
-  <a href="#validating-data" class="md-nav__link">
+  <a href="#arbitrary-class-instances" class="md-nav__link">
     <span class="md-ellipsis">
-      Validating data
+      Arbitrary class instances
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="Validating data">
+    <nav class="md-nav" aria-label="Arbitrary class instances">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#creating-models-without-validation" class="md-nav__link">
+  <a href="#nested-attributes" class="md-nav__link">
     <span class="md-ellipsis">
-      Creating models without validation
+      Nested attributes
     </span>
   </a>
   
@@ -3673,7 +3673,7 @@ leading to a validation error.</p>
 </div>
 <h3 id="model-methods-and-properties">Model methods and properties<a class="headerlink" href="#model-methods-and-properties" title="Permanent link">&para;</a></h3>
 <p>The example above only shows the tip of the iceberg of what models can do.
-Models possess the following methods and attributes:</p>
+Model classes possess the following methods and attributes:</p>
 <ul>
 <li><a class="autorefs autorefs-internal" href="../../api/base_model/#pydantic.BaseModel.model_validate"><code>model_validate()</code></a>: Validates the given object against the Pydantic model. See <a href="#validating-data">Validating data</a>.</li>
 <li><a class="autorefs autorefs-internal" href="../../api/base_model/#pydantic.BaseModel.model_validate_json"><code>model_validate_json()</code></a>: Validates the given JSON data against the Pydantic model. See
@@ -3688,12 +3688,15 @@ Models possess the following methods and attributes:</p>
 <li><a class="autorefs autorefs-internal" href="../../api/base_model/#pydantic.BaseModel.model_json_schema"><code>model_json_schema()</code></a>: Returns a jsonable dictionary representing the model's JSON Schema. See <a href="../json_schema/">JSON Schema</a>.</li>
 <li><a class="autorefs autorefs-internal" href="../../api/base_model/#pydantic.BaseModel.model_fields"><code>model_fields</code></a>: A mapping between field names and their definitions (<a class="autorefs autorefs-internal" href="../../api/fields/#pydantic.fields.FieldInfo"><code>FieldInfo</code></a> instances).</li>
 <li><a class="autorefs autorefs-internal" href="../../api/base_model/#pydantic.BaseModel.model_computed_fields"><code>model_computed_fields</code></a>: A mapping between computed field names and their definitions (<a class="autorefs autorefs-internal" href="../../api/fields/#pydantic.fields.ComputedFieldInfo"><code>ComputedFieldInfo</code></a> instances).</li>
-<li><a class="autorefs autorefs-internal" href="../../api/base_model/#pydantic.BaseModel.model_extra"><code>model_extra</code></a>: The extra fields set during validation.</li>
-<li><a class="autorefs autorefs-internal" href="../../api/base_model/#pydantic.BaseModel.model_fields_set"><code>model_fields_set</code></a>: The set of fields which were explicitly provided when the model was initialized.</li>
 <li><a class="autorefs autorefs-internal" href="../../api/base_model/#pydantic.BaseModel.model_parametrized_name"><code>model_parametrized_name()</code></a>: Computes the class name for parametrizations of generic classes.</li>
 <li><a class="autorefs autorefs-internal" href="../../api/base_model/#pydantic.BaseModel.model_post_init"><code>model_post_init()</code></a>: Performs additional actions after the model is instantiated and all field validators are applied.</li>
 <li><a class="autorefs autorefs-internal" href="../../api/base_model/#pydantic.BaseModel.model_rebuild"><code>model_rebuild()</code></a>: Rebuilds the model schema, which also supports building recursive generic models.
     See <a href="#rebuilding-model-schema">Rebuilding model schema</a>.</li>
+</ul>
+<p>Model instances possess the following attributes:</p>
+<ul>
+<li><a class="autorefs autorefs-internal" href="../../api/base_model/#pydantic.BaseModel.model_extra"><code>model_extra</code></a>: The extra fields set during validation.</li>
+<li><a class="autorefs autorefs-internal" href="../../api/base_model/#pydantic.BaseModel.model_fields_set"><code>model_fields_set</code></a>: The set of fields which were explicitly provided when the model was initialized.</li>
 </ul>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
@@ -3911,141 +3914,33 @@ call <a class="autorefs autorefs-internal" href="../../api/base_model/#pydantic.
 <p>In V2, <a class="autorefs autorefs-internal" href="../../api/base_model/#pydantic.BaseModel.model_rebuild"><code>model_rebuild()</code></a> replaced <code>update_forward_refs()</code> from V1. There are some slight differences with the new behavior.
 The biggest change is that when calling <a class="autorefs autorefs-internal" href="../../api/base_model/#pydantic.BaseModel.model_rebuild"><code>model_rebuild()</code></a> on the outermost model, it builds a core schema used for validation of the
 whole model (nested models and all), so all types at all levels need to be ready before <a class="autorefs autorefs-internal" href="../../api/base_model/#pydantic.BaseModel.model_rebuild"><code>model_rebuild()</code></a> is called.</p>
-<h2 id="arbitrary-class-instances">Arbitrary class instances<a class="headerlink" href="#arbitrary-class-instances" title="Permanent link">&para;</a></h2>
-<p>(Formerly known as "ORM Mode"/<code>from_orm</code>).</p>
-<p>Pydantic models can also be created from arbitrary class instances by reading the instance attributes corresponding
-to the model field names. One common application of this functionality is integration with object-relational mappings
-(ORMs).</p>
-<p>To do this, set the <a class="autorefs autorefs-internal" href="../../api/config/#pydantic.config.ConfigDict.from_attributes"><code>from_attributes</code></a> config value to <code>True</code>
-(see the documentation on <a href="../config/">Configuration</a> for more details).</p>
-<p>The example here uses <a href="https://www.sqlalchemy.org/">SQLAlchemy</a>, but the same approach should work for any ORM.</p>
-<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Annotated</span>
-
-<span class="kn">from</span><span class="w"> </span><span class="nn">sqlalchemy</span><span class="w"> </span><span class="kn">import</span> <span class="n">ARRAY</span><span class="p">,</span> <span class="n">String</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">sqlalchemy.orm</span><span class="w"> </span><span class="kn">import</span> <span class="n">DeclarativeBase</span><span class="p">,</span> <span class="n">Mapped</span><span class="p">,</span> <span class="n">mapped_column</span>
-
-<span class="kn">from</span><span class="w"> </span><span class="nn">pydantic</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ConfigDict</span><span class="p">,</span> <span class="n">StringConstraints</span>
-
-
-<span class="k">class</span><span class="w"> </span><span class="nc">Base</span><span class="p">(</span><span class="n">DeclarativeBase</span><span class="p">):</span>
-    <span class="k">pass</span>
-
-
-<span class="k">class</span><span class="w"> </span><span class="nc">CompanyOrm</span><span class="p">(</span><span class="n">Base</span><span class="p">):</span>
-    <span class="n">__tablename__</span> <span class="o">=</span> <span class="s1">&#39;companies&#39;</span>
-
-    <span class="nb">id</span><span class="p">:</span> <span class="n">Mapped</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="n">mapped_column</span><span class="p">(</span><span class="n">primary_key</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">nullable</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
-    <span class="n">public_key</span><span class="p">:</span> <span class="n">Mapped</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="n">mapped_column</span><span class="p">(</span>
-        <span class="n">String</span><span class="p">(</span><span class="mi">20</span><span class="p">),</span> <span class="n">index</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">nullable</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">unique</span><span class="o">=</span><span class="kc">True</span>
-    <span class="p">)</span>
-    <span class="n">domains</span><span class="p">:</span> <span class="n">Mapped</span><span class="p">[</span><span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="n">mapped_column</span><span class="p">(</span><span class="n">ARRAY</span><span class="p">(</span><span class="n">String</span><span class="p">(</span><span class="mi">255</span><span class="p">)))</span>
-
-
-<span class="k">class</span><span class="w"> </span><span class="nc">CompanyModel</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
-    <span class="n">model_config</span> <span class="o">=</span> <span class="n">ConfigDict</span><span class="p">(</span><span class="n">from_attributes</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-
-    <span class="nb">id</span><span class="p">:</span> <span class="nb">int</span>
-    <span class="n">public_key</span><span class="p">:</span> <span class="n">Annotated</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">StringConstraints</span><span class="p">(</span><span class="n">max_length</span><span class="o">=</span><span class="mi">20</span><span class="p">)]</span>
-    <span class="n">domains</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">Annotated</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">StringConstraints</span><span class="p">(</span><span class="n">max_length</span><span class="o">=</span><span class="mi">255</span><span class="p">)]]</span>
-
-
-<span class="n">co_orm</span> <span class="o">=</span> <span class="n">CompanyOrm</span><span class="p">(</span>
-    <span class="nb">id</span><span class="o">=</span><span class="mi">123</span><span class="p">,</span>
-    <span class="n">public_key</span><span class="o">=</span><span class="s1">&#39;foobar&#39;</span><span class="p">,</span>
-    <span class="n">domains</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;example.com&#39;</span><span class="p">,</span> <span class="s1">&#39;foobar.com&#39;</span><span class="p">],</span>
-<span class="p">)</span>
-<span class="nb">print</span><span class="p">(</span><span class="n">co_orm</span><span class="p">)</span>
-<span class="c1">#&gt; &lt;__main__.CompanyOrm object at 0x0123456789ab&gt;</span>
-<span class="n">co_model</span> <span class="o">=</span> <span class="n">CompanyModel</span><span class="o">.</span><span class="n">model_validate</span><span class="p">(</span><span class="n">co_orm</span><span class="p">)</span>
-<span class="nb">print</span><span class="p">(</span><span class="n">co_model</span><span class="p">)</span>
-<span class="c1">#&gt; id=123 public_key=&#39;foobar&#39; domains=[&#39;example.com&#39;, &#39;foobar.com&#39;]</span>
-</code></pre></div>
-<h3 id="nested-attributes">Nested attributes<a class="headerlink" href="#nested-attributes" title="Permanent link">&para;</a></h3>
-<p>When using attributes to parse models, model instances will be created from both top-level attributes and
-deeper-nested attributes as appropriate.</p>
-<p>Here is an example demonstrating the principle:</p>
-<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">pydantic</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ConfigDict</span>
-
-
-<span class="k">class</span><span class="w"> </span><span class="nc">PetCls</span><span class="p">:</span>
-    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">species</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="n">name</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">species</span> <span class="o">=</span> <span class="n">species</span>
-
-
-<span class="k">class</span><span class="w"> </span><span class="nc">PersonCls</span><span class="p">:</span>
-    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">age</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">pets</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">PetCls</span><span class="p">]):</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="n">name</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">age</span> <span class="o">=</span> <span class="n">age</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">pets</span> <span class="o">=</span> <span class="n">pets</span>
-
-
-<span class="k">class</span><span class="w"> </span><span class="nc">Pet</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
-    <span class="n">model_config</span> <span class="o">=</span> <span class="n">ConfigDict</span><span class="p">(</span><span class="n">from_attributes</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-
-    <span class="n">name</span><span class="p">:</span> <span class="nb">str</span>
-    <span class="n">species</span><span class="p">:</span> <span class="nb">str</span>
-
-
-<span class="k">class</span><span class="w"> </span><span class="nc">Person</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
-    <span class="n">model_config</span> <span class="o">=</span> <span class="n">ConfigDict</span><span class="p">(</span><span class="n">from_attributes</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-
-    <span class="n">name</span><span class="p">:</span> <span class="nb">str</span>
-    <span class="n">age</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="kc">None</span>
-    <span class="n">pets</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">Pet</span><span class="p">]</span>
-
-
-<span class="n">bones</span> <span class="o">=</span> <span class="n">PetCls</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;Bones&#39;</span><span class="p">,</span> <span class="n">species</span><span class="o">=</span><span class="s1">&#39;dog&#39;</span><span class="p">)</span>
-<span class="n">orion</span> <span class="o">=</span> <span class="n">PetCls</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;Orion&#39;</span><span class="p">,</span> <span class="n">species</span><span class="o">=</span><span class="s1">&#39;cat&#39;</span><span class="p">)</span>
-<span class="n">anna</span> <span class="o">=</span> <span class="n">PersonCls</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;Anna&#39;</span><span class="p">,</span> <span class="n">age</span><span class="o">=</span><span class="mi">20</span><span class="p">,</span> <span class="n">pets</span><span class="o">=</span><span class="p">[</span><span class="n">bones</span><span class="p">,</span> <span class="n">orion</span><span class="p">])</span>
-<span class="n">anna_model</span> <span class="o">=</span> <span class="n">Person</span><span class="o">.</span><span class="n">model_validate</span><span class="p">(</span><span class="n">anna</span><span class="p">)</span>
-<span class="nb">print</span><span class="p">(</span><span class="n">anna_model</span><span class="p">)</span>
-<span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">name=&#39;Anna&#39; age=20.0 pets=[Pet(name=&#39;Bones&#39;, species=&#39;dog&#39;), Pet(name=&#39;Orion&#39;, species=&#39;cat&#39;)]</span>
-<span class="sd">&quot;&quot;&quot;</span>
-</code></pre></div>
-<h2 id="error-handling">Error handling<a class="headerlink" href="#error-handling" title="Permanent link">&para;</a></h2>
-<p>Pydantic will raise a <a class="autorefs autorefs-internal" href="../../api/pydantic_core/#pydantic_core.ValidationError"><code>ValidationError</code></a> exception whenever it finds an error in the data it's validating.</p>
-<p>A single exception will be raised regardless of the number of errors found, and that validation error
-will contain information about all of the errors and how they happened.</p>
-<p>See <a href="../../errors/errors/">Error Handling</a> for details on standard and custom errors.</p>
-<p>As a demonstration:</p>
-<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">pydantic</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ValidationError</span>
-
-
-<span class="k">class</span><span class="w"> </span><span class="nc">Model</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
-    <span class="n">list_of_ints</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span>
-    <span class="n">a_float</span><span class="p">:</span> <span class="nb">float</span>
-
-
-<span class="n">data</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span>
-    <span class="n">list_of_ints</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;1&#39;</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="s1">&#39;bad&#39;</span><span class="p">],</span>
-    <span class="n">a_float</span><span class="o">=</span><span class="s1">&#39;not a float&#39;</span><span class="p">,</span>
-<span class="p">)</span>
-
-<span class="k">try</span><span class="p">:</span>
-    <span class="n">Model</span><span class="p">(</span><span class="o">**</span><span class="n">data</span><span class="p">)</span>
-<span class="k">except</span> <span class="n">ValidationError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
-    <span class="nb">print</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    2 validation errors for Model</span>
-<span class="sd">    list_of_ints.2</span>
-<span class="sd">      Input should be a valid integer, unable to parse string as an integer [type=int_parsing, input_value=&#39;bad&#39;, input_type=str]</span>
-<span class="sd">    a_float</span>
-<span class="sd">      Input should be a valid number, unable to parse string as a number [type=float_parsing, input_value=&#39;not a float&#39;, input_type=str]</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-</code></pre></div>
 <h2 id="validating-data">Validating data<a class="headerlink" href="#validating-data" title="Permanent link">&para;</a></h2>
-<p>Pydantic provides three methods on models classes for parsing data:</p>
+<p>Pydantic can validate data in three different modes: <em>Python</em>, <em>JSON</em> and <em>strings</em>.</p>
+<p>The <em>Python</em> mode gets used when using:</p>
 <ul>
-<li><a class="autorefs autorefs-internal" href="../../api/base_model/#pydantic.BaseModel.model_validate"><code>model_validate()</code></a>: this is very similar to the <code>__init__</code> method of the model,
-  except it takes a dictionary or an object rather than keyword arguments. If the object passed cannot be validated,
-  or if it's not a dictionary or instance of the model in question, a <a class="autorefs autorefs-internal" href="../../api/pydantic_core/#pydantic_core.ValidationError"><code>ValidationError</code></a> will be raised.</li>
-<li><a class="autorefs autorefs-internal" href="../../api/base_model/#pydantic.BaseModel.model_validate_json"><code>model_validate_json()</code></a>: this validates the provided data as a JSON string or <code>bytes</code> object.
-  If your incoming data is a JSON payload, this is generally considered faster (instead of manually parsing the data as a dictionary).
-  Learn more about JSON parsing in the <a href="../json/">JSON</a> section of the docs.</li>
-<li><a class="autorefs autorefs-internal" href="../../api/base_model/#pydantic.BaseModel.model_validate_strings"><code>model_validate_strings()</code></a>: this takes a dictionary (can be nested) with string keys and values and validates the data in JSON mode so that said strings can be coerced into the correct types.</li>
+<li>The <code>__init__()</code> model constructor. Field values must be provided using keyword arguments.</li>
+<li><a class="autorefs autorefs-internal" href="../../api/base_model/#pydantic.BaseModel.model_validate"><code>model_validate()</code></a>: data can be provided either as a dictionary,
+  or as a model instance (by default, instances are assumed to be valid; see the <a class="autorefs autorefs-internal" href="../../api/config/#pydantic.config.ConfigDict.revalidate_instances"><code>revalidate_instances</code></a>
+  setting). <a href="#arbitrary-class-instances">Arbitrary objects</a> can also be provided if explicitly enabled.</li>
 </ul>
+<p>The <em>JSON</em> and <em>strings</em> modes can be used with dedicated methods:</p>
+<ul>
+<li><a class="autorefs autorefs-internal" href="../../api/base_model/#pydantic.BaseModel.model_validate_json"><code>model_validate_json()</code></a>: data is validated as a JSON string or <code>bytes</code> object.
+  If your incoming data is a JSON payload, this is generally considered faster (instead of manually parsing the data as a dictionary).
+  Learn more about JSON parsing in the <a href="../json/">JSON</a> documentation.</li>
+<li><a class="autorefs autorefs-internal" href="../../api/base_model/#pydantic.BaseModel.model_validate_strings"><code>model_validate_strings()</code></a>: data is validated as a dictionary (can be nested) with
+  string keys and values and validates the data in JSON mode so that said strings can be coerced into the correct types.</li>
+</ul>
+<p>Compared to using the model constructor, it is possible to control several validation parameters when using the <code>model_validate_*()</code> methods
+(<a href="../strict_mode/">strictness</a>, <a href="#extra-data">extra data</a>, <a href="../validators/#validation-context">validation context</a>, etc.).</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Depending on the types and model configuration involved, the <em>Python</em> and <em>JSON</em> modes may have different validation behavior (e.g. with <a href="../strict_mode/">strictness</a>).
+If you have data coming from a non-JSON source, but want the same validation behavior and errors you'd get from the <em>JSON</em> mode, our recommendation for now is to
+either dump your data to JSON (e.g. using <a class="autorefs autorefs-external" href="https://docs.python.org/3/library/json.html#json.dumps"><code>json.dumps()</code></a>), or use <a class="autorefs autorefs-internal" href="../../api/base_model/#pydantic.BaseModel.model_validate_strings"><code>model_validate_strings()</code></a>
+if the data takes the form of a (potentially nested) dictionary with string keys and values. Progress for this feature can be tracked in
+<a href="https://github.com/pydantic/pydantic/issues/11154">this issue</a>.</p>
+</div>
 <div class="tabbed-set tabbed-alternate" data-tabs="2:2"><input checked="checked" id="__tabbed_2_1" name="__tabbed_2" type="radio" /><input id="__tabbed_2_2" name="__tabbed_2" type="radio" /><div class="tabbed-labels"><label for="__tabbed_2_1">Python 3.9 and above</label><label for="__tabbed_2_2">Python 3.10 and above</label></div>
 <div class="tabbed-content">
 <div class="tabbed-block">
@@ -4066,19 +3961,6 @@ will contain information about all of the errors and how they happened.</p>
 <span class="c1">#&gt; id=123 name=&#39;James&#39; signup_ts=None</span>
 
 <span class="k">try</span><span class="p">:</span>
-    <span class="n">User</span><span class="o">.</span><span class="n">model_validate</span><span class="p">([</span><span class="s1">&#39;not&#39;</span><span class="p">,</span> <span class="s1">&#39;a&#39;</span><span class="p">,</span> <span class="s1">&#39;dict&#39;</span><span class="p">])</span>
-<span class="k">except</span> <span class="n">ValidationError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
-    <span class="nb">print</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    1 validation error for User</span>
-<span class="sd">      Input should be a valid dictionary or instance of User [type=model_type, input_value=[&#39;not&#39;, &#39;a&#39;, &#39;dict&#39;], input_type=list]</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-
-<span class="n">m</span> <span class="o">=</span> <span class="n">User</span><span class="o">.</span><span class="n">model_validate_json</span><span class="p">(</span><span class="s1">&#39;{&quot;id&quot;: 123, &quot;name&quot;: &quot;James&quot;}&#39;</span><span class="p">)</span>
-<span class="nb">print</span><span class="p">(</span><span class="n">m</span><span class="p">)</span>
-<span class="c1">#&gt; id=123 name=&#39;James&#39; signup_ts=None</span>
-
-<span class="k">try</span><span class="p">:</span>
     <span class="n">m</span> <span class="o">=</span> <span class="n">User</span><span class="o">.</span><span class="n">model_validate_json</span><span class="p">(</span><span class="s1">&#39;{&quot;id&quot;: 123, &quot;name&quot;: 123}&#39;</span><span class="p">)</span>
 <span class="k">except</span> <span class="n">ValidationError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
     <span class="nb">print</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
@@ -4086,15 +3968,6 @@ will contain information about all of the errors and how they happened.</p>
 <span class="sd">    1 validation error for User</span>
 <span class="sd">    name</span>
 <span class="sd">      Input should be a valid string [type=string_type, input_value=123, input_type=int]</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-
-<span class="k">try</span><span class="p">:</span>
-    <span class="n">m</span> <span class="o">=</span> <span class="n">User</span><span class="o">.</span><span class="n">model_validate_json</span><span class="p">(</span><span class="s1">&#39;invalid JSON&#39;</span><span class="p">)</span>
-<span class="k">except</span> <span class="n">ValidationError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
-    <span class="nb">print</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    1 validation error for User</span>
-<span class="sd">      Invalid JSON: expected value at line 1 column 1 [type=json_invalid, input_value=&#39;invalid JSON&#39;, input_type=str]</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
 <span class="n">m</span> <span class="o">=</span> <span class="n">User</span><span class="o">.</span><span class="n">model_validate_strings</span><span class="p">({</span><span class="s1">&#39;id&#39;</span><span class="p">:</span> <span class="s1">&#39;123&#39;</span><span class="p">,</span> <span class="s1">&#39;name&#39;</span><span class="p">:</span> <span class="s1">&#39;James&#39;</span><span class="p">})</span>
@@ -4137,19 +4010,6 @@ will contain information about all of the errors and how they happened.</p>
 <span class="c1">#&gt; id=123 name=&#39;James&#39; signup_ts=None</span>
 
 <span class="k">try</span><span class="p">:</span>
-    <span class="n">User</span><span class="o">.</span><span class="n">model_validate</span><span class="p">([</span><span class="s1">&#39;not&#39;</span><span class="p">,</span> <span class="s1">&#39;a&#39;</span><span class="p">,</span> <span class="s1">&#39;dict&#39;</span><span class="p">])</span>
-<span class="k">except</span> <span class="n">ValidationError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
-    <span class="nb">print</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    1 validation error for User</span>
-<span class="sd">      Input should be a valid dictionary or instance of User [type=model_type, input_value=[&#39;not&#39;, &#39;a&#39;, &#39;dict&#39;], input_type=list]</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-
-<span class="n">m</span> <span class="o">=</span> <span class="n">User</span><span class="o">.</span><span class="n">model_validate_json</span><span class="p">(</span><span class="s1">&#39;{&quot;id&quot;: 123, &quot;name&quot;: &quot;James&quot;}&#39;</span><span class="p">)</span>
-<span class="nb">print</span><span class="p">(</span><span class="n">m</span><span class="p">)</span>
-<span class="c1">#&gt; id=123 name=&#39;James&#39; signup_ts=None</span>
-
-<span class="k">try</span><span class="p">:</span>
     <span class="n">m</span> <span class="o">=</span> <span class="n">User</span><span class="o">.</span><span class="n">model_validate_json</span><span class="p">(</span><span class="s1">&#39;{&quot;id&quot;: 123, &quot;name&quot;: 123}&#39;</span><span class="p">)</span>
 <span class="k">except</span> <span class="n">ValidationError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
     <span class="nb">print</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
@@ -4157,15 +4017,6 @@ will contain information about all of the errors and how they happened.</p>
 <span class="sd">    1 validation error for User</span>
 <span class="sd">    name</span>
 <span class="sd">      Input should be a valid string [type=string_type, input_value=123, input_type=int]</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-
-<span class="k">try</span><span class="p">:</span>
-    <span class="n">m</span> <span class="o">=</span> <span class="n">User</span><span class="o">.</span><span class="n">model_validate_json</span><span class="p">(</span><span class="s1">&#39;invalid JSON&#39;</span><span class="p">)</span>
-<span class="k">except</span> <span class="n">ValidationError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
-    <span class="nb">print</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    1 validation error for User</span>
-<span class="sd">      Invalid JSON: expected value at line 1 column 1 [type=json_invalid, input_value=&#39;invalid JSON&#39;, input_type=str]</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
 <span class="n">m</span> <span class="o">=</span> <span class="n">User</span><span class="o">.</span><span class="n">model_validate_strings</span><span class="p">({</span><span class="s1">&#39;id&#39;</span><span class="p">:</span> <span class="s1">&#39;123&#39;</span><span class="p">,</span> <span class="s1">&#39;name&#39;</span><span class="p">:</span> <span class="s1">&#39;James&#39;</span><span class="p">})</span>
@@ -4190,67 +4041,6 @@ will contain information about all of the errors and how they happened.</p>
 <span class="sd">      Input should be a valid datetime, invalid datetime separator, expected `T`, `t`, `_` or space [type=datetime_parsing, input_value=&#39;2024-04-01&#39;, input_type=str]</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 </code></pre></div>
-</div>
-</div>
-</div>
-<p>If you want to validate serialized data in a format other than JSON, you should load the data into a dictionary yourself and
-then pass it to <a class="autorefs autorefs-internal" href="../../api/base_model/#pydantic.BaseModel.model_validate"><code>model_validate</code></a>.</p>
-<div class="admonition note">
-<p class="admonition-title">Note</p>
-<p>Depending on the types and model configs involved, <a class="autorefs autorefs-internal" href="../../api/base_model/#pydantic.BaseModel.model_validate"><code>model_validate</code></a>
-and <a class="autorefs autorefs-internal" href="../../api/base_model/#pydantic.BaseModel.model_validate_json"><code>model_validate_json</code></a> may have different validation behavior.
-If you have data coming from a non-JSON source, but want the same validation
-behavior and errors you'd get from <a class="autorefs autorefs-internal" href="../../api/base_model/#pydantic.BaseModel.model_validate_json"><code>model_validate_json</code></a>,
-our recommendation for now is to use either use <code>model_validate_json(json.dumps(data))</code>, or use <a class="autorefs autorefs-internal" href="../../api/base_model/#pydantic.BaseModel.model_validate_strings"><code>model_validate_strings</code></a> if the data takes the form of a (potentially nested) dictionary with string keys and values.</p>
-</div>
-<div class="admonition note">
-<p class="admonition-title">Note</p>
-<p>If you're passing in an instance of a model to <a class="autorefs autorefs-internal" href="../../api/base_model/#pydantic.BaseModel.model_validate"><code>model_validate</code></a>, you will want to consider setting
-<a class="autorefs autorefs-internal" href="../../api/config/#pydantic.config.ConfigDict.revalidate_instances"><code>revalidate_instances</code></a> in the model's config.
-If you don't set this value, then validation will be skipped on model instances. See the below example:</p>
-<div class="tabbed-set tabbed-alternate" data-tabs="3:2"><input checked="checked" id="__tabbed_3_1" name="__tabbed_3" type="radio" /><input id="__tabbed_3_2" name="__tabbed_3" type="radio" /><div class="tabbed-labels"><label for="__tabbed_3_1"><img alt="❌" class="twemoji" src="https://cdn.jsdelivr.net/gh/jdecked/twemoji@15.1.0/assets/svg/274c.svg" title=":x:" /> <code>revalidate_instances='never'</code></label><label for="__tabbed_3_2"><img alt="✅" class="twemoji" src="https://cdn.jsdelivr.net/gh/jdecked/twemoji@15.1.0/assets/svg/2705.svg" title=":white_check_mark:" /> <code>revalidate_instances='always'</code></label></div>
-<div class="tabbed-content">
-<div class="tabbed-block">
-<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">pydantic</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseModel</span>
-
-
-<span class="k">class</span><span class="w"> </span><span class="nc">Model</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
-    <span class="n">a</span><span class="p">:</span> <span class="nb">int</span>
-
-
-<span class="n">m</span> <span class="o">=</span> <span class="n">Model</span><span class="p">(</span><span class="n">a</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
-<span class="c1"># note: setting `validate_assignment` to `True` in the config can prevent this kind of misbehavior.</span>
-<span class="n">m</span><span class="o">.</span><span class="n">a</span> <span class="o">=</span> <span class="s1">&#39;not an int&#39;</span>
-
-<span class="c1"># doesn&#39;t raise a validation error even though m is invalid</span>
-<span class="n">m2</span> <span class="o">=</span> <span class="n">Model</span><span class="o">.</span><span class="n">model_validate</span><span class="p">(</span><span class="n">m</span><span class="p">)</span>
-</code></pre></div>
-</div>
-<div class="tabbed-block">
-<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">pydantic</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ConfigDict</span><span class="p">,</span> <span class="n">ValidationError</span>
-
-
-<span class="k">class</span><span class="w"> </span><span class="nc">Model</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
-    <span class="n">a</span><span class="p">:</span> <span class="nb">int</span>
-
-    <span class="n">model_config</span> <span class="o">=</span> <span class="n">ConfigDict</span><span class="p">(</span><span class="n">revalidate_instances</span><span class="o">=</span><span class="s1">&#39;always&#39;</span><span class="p">)</span>
-
-
-<span class="n">m</span> <span class="o">=</span> <span class="n">Model</span><span class="p">(</span><span class="n">a</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
-<span class="c1"># note: setting `validate_assignment` to `True` in the config can prevent this kind of misbehavior.</span>
-<span class="n">m</span><span class="o">.</span><span class="n">a</span> <span class="o">=</span> <span class="s1">&#39;not an int&#39;</span>
-
-<span class="k">try</span><span class="p">:</span>
-    <span class="n">m2</span> <span class="o">=</span> <span class="n">Model</span><span class="o">.</span><span class="n">model_validate</span><span class="p">(</span><span class="n">m</span><span class="p">)</span>
-<span class="k">except</span> <span class="n">ValidationError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
-    <span class="nb">print</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    1 validation error for Model</span>
-<span class="sd">    a</span>
-<span class="sd">      Input should be a valid integer, unable to parse string as an integer [type=int_parsing, input_value=&#39;not an int&#39;, input_type=str]</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-</code></pre></div>
-</div>
 </div>
 </div>
 </div>
@@ -4296,6 +4086,124 @@ not stored in <code>__pydantic_extra__</code> or <code>__dict__</code> on the in
 <li>Unlike when instantiating the model with validation, a call to <a class="autorefs autorefs-internal" href="../../api/base_model/#pydantic.BaseModel.model_construct"><code>model_construct()</code></a> with <a class="autorefs autorefs-internal" href="../../api/config/#pydantic.config.ConfigDict.extra"><code>extra</code></a> set to <code>'forbid'</code> doesn't raise an error in the presence of data not corresponding to fields. Rather, said input data is simply ignored.</li>
 </ul>
 </div>
+<h2 id="error-handling">Error handling<a class="headerlink" href="#error-handling" title="Permanent link">&para;</a></h2>
+<p>Pydantic will raise a <a class="autorefs autorefs-internal" href="../../api/pydantic_core/#pydantic_core.ValidationError"><code>ValidationError</code></a> exception whenever it finds an error in the data it's validating.</p>
+<p>A single exception will be raised regardless of the number of errors found, and that validation error
+will contain information about all of the errors and how they happened.</p>
+<p>See <a href="../../errors/errors/">Error Handling</a> for details on standard and custom errors.</p>
+<p>As a demonstration:</p>
+<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">pydantic</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ValidationError</span>
+
+
+<span class="k">class</span><span class="w"> </span><span class="nc">Model</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="n">list_of_ints</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span>
+    <span class="n">a_float</span><span class="p">:</span> <span class="nb">float</span>
+
+
+<span class="n">data</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s1">&#39;list_of_ints&#39;</span><span class="p">:</span> <span class="p">[</span><span class="s1">&#39;1&#39;</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="s1">&#39;bad&#39;</span><span class="p">],</span>
+    <span class="s1">&#39;a_float&#39;</span><span class="p">:</span> <span class="s1">&#39;not a float&#39;</span><span class="p">,</span>
+<span class="p">}</span>
+
+<span class="k">try</span><span class="p">:</span>
+    <span class="n">Model</span><span class="p">(</span><span class="o">**</span><span class="n">data</span><span class="p">)</span>
+<span class="k">except</span> <span class="n">ValidationError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    2 validation errors for Model</span>
+<span class="sd">    list_of_ints.2</span>
+<span class="sd">      Input should be a valid integer, unable to parse string as an integer [type=int_parsing, input_value=&#39;bad&#39;, input_type=str]</span>
+<span class="sd">    a_float</span>
+<span class="sd">      Input should be a valid number, unable to parse string as a number [type=float_parsing, input_value=&#39;not a float&#39;, input_type=str]</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+</code></pre></div>
+<h2 id="arbitrary-class-instances">Arbitrary class instances<a class="headerlink" href="#arbitrary-class-instances" title="Permanent link">&para;</a></h2>
+<p>(Formerly known as "ORM Mode"/<code>from_orm()</code>).</p>
+<p>When using the <a class="autorefs autorefs-internal" href="../../api/base_model/#pydantic.BaseModel.model_validate"><code>model_validate()</code></a> method, Pydantic can also validate arbitrary objects,
+by getting attributes on the object corresponding the field names. One common application of this functionality is integration with
+object-relational mappings (ORMs).</p>
+<p>This feature need to be manually enabled, either by setting the <a class="autorefs autorefs-internal" href="../../api/config/#pydantic.config.ConfigDict.from_attributes"><code>from_attributes</code></a>
+configuration value, or by using the <code>from_attributes</code> parameter on <a class="autorefs autorefs-internal" href="../../api/base_model/#pydantic.BaseModel.model_validate"><code>model_validate()</code></a>.</p>
+<p>The example here uses <a href="https://www.sqlalchemy.org/">SQLAlchemy</a>, but the same approach should work for any ORM.</p>
+<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Annotated</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">sqlalchemy</span><span class="w"> </span><span class="kn">import</span> <span class="n">ARRAY</span><span class="p">,</span> <span class="n">String</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">sqlalchemy.orm</span><span class="w"> </span><span class="kn">import</span> <span class="n">DeclarativeBase</span><span class="p">,</span> <span class="n">Mapped</span><span class="p">,</span> <span class="n">mapped_column</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">pydantic</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ConfigDict</span><span class="p">,</span> <span class="n">StringConstraints</span>
+
+
+<span class="k">class</span><span class="w"> </span><span class="nc">Base</span><span class="p">(</span><span class="n">DeclarativeBase</span><span class="p">):</span>
+    <span class="k">pass</span>
+
+
+<span class="k">class</span><span class="w"> </span><span class="nc">CompanyOrm</span><span class="p">(</span><span class="n">Base</span><span class="p">):</span>
+    <span class="n">__tablename__</span> <span class="o">=</span> <span class="s1">&#39;companies&#39;</span>
+
+    <span class="nb">id</span><span class="p">:</span> <span class="n">Mapped</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="n">mapped_column</span><span class="p">(</span><span class="n">primary_key</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">nullable</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+    <span class="n">public_key</span><span class="p">:</span> <span class="n">Mapped</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="n">mapped_column</span><span class="p">(</span>
+        <span class="n">String</span><span class="p">(</span><span class="mi">20</span><span class="p">),</span> <span class="n">index</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">nullable</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">unique</span><span class="o">=</span><span class="kc">True</span>
+    <span class="p">)</span>
+    <span class="n">domains</span><span class="p">:</span> <span class="n">Mapped</span><span class="p">[</span><span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="n">mapped_column</span><span class="p">(</span><span class="n">ARRAY</span><span class="p">(</span><span class="n">String</span><span class="p">(</span><span class="mi">255</span><span class="p">)))</span>
+
+
+<span class="k">class</span><span class="w"> </span><span class="nc">CompanyModel</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="n">model_config</span> <span class="o">=</span> <span class="n">ConfigDict</span><span class="p">(</span><span class="n">from_attributes</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+    <span class="nb">id</span><span class="p">:</span> <span class="nb">int</span>
+    <span class="n">public_key</span><span class="p">:</span> <span class="n">Annotated</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">StringConstraints</span><span class="p">(</span><span class="n">max_length</span><span class="o">=</span><span class="mi">20</span><span class="p">)]</span>
+    <span class="n">domains</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">Annotated</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">StringConstraints</span><span class="p">(</span><span class="n">max_length</span><span class="o">=</span><span class="mi">255</span><span class="p">)]]</span>
+
+
+<span class="n">co_orm</span> <span class="o">=</span> <span class="n">CompanyOrm</span><span class="p">(</span>
+    <span class="nb">id</span><span class="o">=</span><span class="mi">123</span><span class="p">,</span>
+    <span class="n">public_key</span><span class="o">=</span><span class="s1">&#39;foobar&#39;</span><span class="p">,</span>
+    <span class="n">domains</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;example.com&#39;</span><span class="p">,</span> <span class="s1">&#39;foobar.com&#39;</span><span class="p">],</span>
+<span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">co_orm</span><span class="p">)</span>
+<span class="c1">#&gt; &lt;__main__.CompanyOrm object at 0x0123456789ab&gt;</span>
+<span class="n">co_model</span> <span class="o">=</span> <span class="n">CompanyModel</span><span class="o">.</span><span class="n">model_validate</span><span class="p">(</span><span class="n">co_orm</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">co_model</span><span class="p">)</span>
+<span class="c1">#&gt; id=123 public_key=&#39;foobar&#39; domains=[&#39;example.com&#39;, &#39;foobar.com&#39;]</span>
+</code></pre></div>
+<h3 id="nested-attributes">Nested attributes<a class="headerlink" href="#nested-attributes" title="Permanent link">&para;</a></h3>
+<p>When using attributes to validate models, model instances will be created from both top-level attributes and
+deeper-nested attributes as appropriate.</p>
+<p>Here is an example demonstrating the principle:</p>
+<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">pydantic</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ConfigDict</span>
+
+
+<span class="k">class</span><span class="w"> </span><span class="nc">PetCls</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="n">name</span>
+
+
+<span class="k">class</span><span class="w"> </span><span class="nc">PersonCls</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">pets</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">PetCls</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="n">name</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">pets</span> <span class="o">=</span> <span class="n">pets</span>
+
+
+<span class="k">class</span><span class="w"> </span><span class="nc">Pet</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="n">model_config</span> <span class="o">=</span> <span class="n">ConfigDict</span><span class="p">(</span><span class="n">from_attributes</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+    <span class="n">name</span><span class="p">:</span> <span class="nb">str</span>
+
+
+<span class="k">class</span><span class="w"> </span><span class="nc">Person</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="n">model_config</span> <span class="o">=</span> <span class="n">ConfigDict</span><span class="p">(</span><span class="n">from_attributes</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+    <span class="n">name</span><span class="p">:</span> <span class="nb">str</span>
+    <span class="n">pets</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">Pet</span><span class="p">]</span>
+
+
+<span class="n">bones</span> <span class="o">=</span> <span class="n">PetCls</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;Bones&#39;</span><span class="p">)</span>
+<span class="n">orion</span> <span class="o">=</span> <span class="n">PetCls</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;Orion&#39;</span><span class="p">)</span>
+<span class="n">anna</span> <span class="o">=</span> <span class="n">PersonCls</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;Anna&#39;</span><span class="p">,</span> <span class="n">pets</span><span class="o">=</span><span class="p">[</span><span class="n">bones</span><span class="p">,</span> <span class="n">orion</span><span class="p">])</span>
+<span class="n">anna_model</span> <span class="o">=</span> <span class="n">Person</span><span class="o">.</span><span class="n">model_validate</span><span class="p">(</span><span class="n">anna</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">anna_model</span><span class="p">)</span>
+<span class="c1">#&gt; name=&#39;Anna&#39; pets=[Pet(name=&#39;Bones&#39;), Pet(name=&#39;Orion&#39;)]</span>
+</code></pre></div>
 <h2 id="model-copy">Model copy<a class="headerlink" href="#model-copy" title="Permanent link">&para;</a></h2>
 <details class="api">
 <summary>API Documentation</summary>
@@ -4337,7 +4245,7 @@ for more details).</p>
 <p>Here is an example using a generic Pydantic model to create an easily-reused HTTP response payload wrapper:</p>
 <!-- TODO: tabs should be auto-generated if using Ruff (https://github.com/pydantic/pydantic/issues/10083) -->
 
-<div class="tabbed-set tabbed-alternate" data-tabs="4:2"><input checked="checked" id="__tabbed_4_1" name="__tabbed_4" type="radio" /><input id="__tabbed_4_2" name="__tabbed_4" type="radio" /><div class="tabbed-labels"><label for="__tabbed_4_1">Python 3.9 and above</label><label for="__tabbed_4_2">Python 3.12 and above (new syntax)</label></div>
+<div class="tabbed-set tabbed-alternate" data-tabs="3:2"><input checked="checked" id="__tabbed_3_1" name="__tabbed_3" type="radio" /><input id="__tabbed_3_2" name="__tabbed_3" type="radio" /><div class="tabbed-labels"><label for="__tabbed_3_1">Python 3.9 and above</label><label for="__tabbed_3_2">Python 3.12 and above (new syntax)</label></div>
 <div class="tabbed-content">
 <div class="tabbed-block">
 <div class="language-python highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Generic</span><span class="p">,</span> <span class="n">TypeVar</span>
@@ -4796,7 +4704,7 @@ types like <a class="autorefs autorefs-external" href="https://docs.python.org/3
 or a default value (as per <a href="https://peps.python.org/pep-0696/">PEP 696</a>) is being used, then the default type or constraints
 will be used for both validation and serialization if the type variable is not parametrized. You can override this behavior
 using <a href="../serialization/#serializeasany-annotation"><code>SerializeAsAny</code></a>:</p>
-<div class="tabbed-set tabbed-alternate" data-tabs="5:2"><input checked="checked" id="__tabbed_5_1" name="__tabbed_5" type="radio" /><input id="__tabbed_5_2" name="__tabbed_5" type="radio" /><div class="tabbed-labels"><label for="__tabbed_5_1">Python 3.9 and above</label><label for="__tabbed_5_2">Python 3.13 and above</label></div>
+<div class="tabbed-set tabbed-alternate" data-tabs="4:2"><input checked="checked" id="__tabbed_4_1" name="__tabbed_4" type="radio" /><input id="__tabbed_4_2" name="__tabbed_4" type="radio" /><div class="tabbed-labels"><label for="__tabbed_4_1">Python 3.9 and above</label><label for="__tabbed_4_2">Python 3.13 and above</label></div>
 <div class="tabbed-content">
 <div class="tabbed-block">
 <div class="language-python highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Generic</span>
