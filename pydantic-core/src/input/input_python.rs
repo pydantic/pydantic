@@ -678,10 +678,10 @@ impl<'py> Input<'py> for Bound<'py, PyAny> {
                 return Ok(ValidationMatch::lax(EitherComplex::Py(c)));
             }
         } else {
-            // Try calling Python's complex() constructor directly, which handles
-            // objects with __complex__(), __float__(), or __index__() methods
+            // Delegate to the constructor directly
+            // (see https://docs.python.org/3/library/functions.html#complex):
             if let Ok(complex_obj) = get_complex_type(py).call1((self,)) {
-                if let Ok(complex) = complex_obj.downcast::<PyComplex>() {
+                if let Ok(complex) = complex_obj.cast::<PyComplex>() {
                     return Ok(ValidationMatch::lax(EitherComplex::Py(complex.to_owned())));
                 }
             }
