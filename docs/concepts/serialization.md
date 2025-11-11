@@ -606,7 +606,7 @@ print(m.model_dump())  # (1)!
 
 <!-- old anchor added for backwards compatibility -->
 <!-- markdownlint-disable-next-line no-empty-links -->
-[](){#serializing-with-duck-typing-}
+[](){#serializing-with-duck-typing}
 
 Polymorphic serialization is the behavior of allowing a subclass of a model (or Pydantic dataclass) to override
 serialization so that the subclass' serialization is used, rather than the original model types's serialization.

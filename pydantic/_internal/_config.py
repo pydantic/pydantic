@@ -88,6 +88,7 @@ class ConfigWrapper:
     validate_by_name: bool
     serialize_by_alias: bool
     url_preserve_empty_path: bool
+    polymorphic_serialization: bool
 
     def __init__(self, config: ConfigDict | dict[str, Any] | type[Any] | None, *, check: bool = True):
         if check:
