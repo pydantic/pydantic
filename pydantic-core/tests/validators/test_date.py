@@ -259,8 +259,7 @@ def test_union():
     ],
 )
 def test_date_past(py_and_json: PyAndJson, input_value, expected):
-    # now_utc_offset must be set for all these tests to allow mocking in test_datetime.py!
-    v = py_and_json(core_schema.date_schema(now_op='past', now_utc_offset=0))
+    v = py_and_json(core_schema.date_schema(now_op='past'))
     if isinstance(expected, Err):
         with pytest.raises(ValidationError, match=re.escape(expected.message)):
             v.validate_test(input_value)
@@ -281,7 +280,7 @@ def test_date_past(py_and_json: PyAndJson, input_value, expected):
     ],
 )
 def test_date_future(py_and_json: PyAndJson, input_value, expected):
-    v = py_and_json(core_schema.date_schema(now_op='future', now_utc_offset=0))
+    v = py_and_json(core_schema.date_schema(now_op='future'))
     if isinstance(expected, Err):
         with pytest.raises(ValidationError, match=re.escape(expected.message)):
             v.validate_test(input_value)
@@ -293,13 +292,13 @@ def test_date_future(py_and_json: PyAndJson, input_value, expected):
 
 
 def test_date_past_future_today():
-    v = SchemaValidator(core_schema.date_schema(now_op='past', now_utc_offset=0))
+    v = SchemaValidator(core_schema.date_schema(now_op='past'))
     today = datetime.now(timezone.utc).date()
     assert v.isinstance_python(today) is False
     assert v.isinstance_python(today - timedelta(days=1)) is True
     assert v.isinstance_python(today + timedelta(days=1)) is False
 
-    v = SchemaValidator(core_schema.date_schema(now_op='future', now_utc_offset=0))
+    v = SchemaValidator(core_schema.date_schema(now_op='future'))
     assert v.isinstance_python(today) is False
     assert v.isinstance_python(today - timedelta(days=1)) is False
     assert v.isinstance_python(today + timedelta(days=1)) is True
