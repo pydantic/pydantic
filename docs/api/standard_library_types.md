@@ -352,10 +352,9 @@ Built-in type: [`complex`][].
 <h4>Validation</h4>
 
 * [`complex`][] instances are validated as-is.
-* Strings are validated using the [`complex()`][complex] constructor.
-* Numbers (integers and floats) are used as the real part.
-* Objects defining [`__complex__()`][object.__complex__], [`__float__()`][object.__float__].
-  or [`__index__()`][object.__index__] are currently *not* accepted.
+* In Python mode, data is validated using the [`complex()`][complex] constructor.
+* In JSON mode, string are validated using the [`complex()`][complex] constructor,
+   numbers (integers and floats) are used as the real part.
 
 <h4>Strictness</h4>
 

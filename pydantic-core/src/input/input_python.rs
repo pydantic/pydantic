@@ -16,7 +16,7 @@ use speedate::MicrosecondsPrecisionOverflowBehavior;
 
 use crate::errors::{ErrorType, ErrorTypeDefaults, InputValue, LocItem, ValError, ValResult};
 use crate::tools::{extract_i64, safe_repr};
-use crate::validators::complex::string_to_complex;
+use crate::validators::complex::{get_complex_type, string_to_complex};
 use crate::validators::decimal::{create_decimal, get_decimal_type};
 use crate::validators::Exactness;
 use crate::validators::TemporalUnitMode;
@@ -677,16 +677,14 @@ impl<'py> Input<'py> for Bound<'py, PyAny> {
             if let Ok(c) = string_to_complex(s, self) {
                 return Ok(ValidationMatch::lax(EitherComplex::Py(c)));
             }
-        } else if self.is_exact_instance_of::<PyFloat>() {
-            return Ok(ValidationMatch::lax(EitherComplex::Complex([
-                self.extract::<f64>().unwrap(),
-                0.0,
-            ])));
-        } else if self.is_exact_instance_of::<PyInt>() {
-            return Ok(ValidationMatch::lax(EitherComplex::Complex([
-                self.extract::<i64>().unwrap() as f64,
-                0.0,
-            ])));
+        } else {
+            // Delegate to the constructor directly
+            // (see https://docs.python.org/3/library/functions.html#complex):
+            if let Ok(complex_obj) = get_complex_type(py).call1((self,)) {
+                if let Ok(complex) = complex_obj.cast::<PyComplex>() {
+                    return Ok(ValidationMatch::lax(EitherComplex::Py(complex.to_owned())));
+                }
+            }
         }
         Err(ValError::new(ErrorTypeDefaults::ComplexType, self))
     }
