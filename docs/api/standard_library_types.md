@@ -282,13 +282,7 @@ Standard library type: [`decimal.Decimal`][].
 <h4>Validation</h4>
 
 * [`Decimal`][decimal.Decimal] instances are validated as is.
-* Any value accepted by the [`Decimal`][decimal.Decimal] constructor will validate, including:
-    * Strings, integers, and floats (converted to Decimal)
-    * Three-tuple format: `(sign, digits_tuple, exponent)` where:
-        * `sign` is `0` for positive or `1` for negative
-        * `digits_tuple` is a tuple of digits (integers 0-9)
-        * `exponent` is an integer exponent
-    * For example: `Decimal((0, (1, 4, 1, 4), -3))` returns `Decimal('1.414')`
+* Any value accepted by the [`Decimal`][decimal.Decimal] constructor.
 
 <h4>Constraints</h4>
 

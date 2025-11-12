@@ -95,10 +95,6 @@ def test_decimal(py_and_json: PyAndJson, input_value, expected):
 @pytest.mark.parametrize(
     'input_value,expected',
     [
-        # Three-tuple constructor: (sign, (digits...), exponent)
-        # sign: 0 for positive, 1 for negative
-        # digits: tuple of digits
-        # exponent: integer exponent
         ((0, (1, 4, 1, 4), -3), Decimal('1.414')),
         ((0, (1, 2, 3), 0), Decimal('123')),
         ((0, (1, 2, 3), 2), Decimal('12300')),
