@@ -259,9 +259,8 @@ Built-in type: complex.
 #### Validation
 
 - complex instances are validated as-is.
-- Strings are validated using the complex() constructor.
-- Numbers (integers and floats) are used as the real part.
-- Objects defining __complex__(), __float__(). or __index__() are currently *not* accepted.
+- In Python mode, data is validated using the complex() constructor.
+- In JSON mode, string are validated using the complex() constructor, numbers (integers and floats) are used as the real part.
 
 #### Strictness
 

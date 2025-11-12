@@ -4173,10 +4173,9 @@ A <a href="../../concepts/serialization/#field-plain-serializer">serializer</a> 
 
 <ul>
 <li><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#complex"><code>complex</code></a> instances are validated as-is.</li>
-<li>Strings are validated using the <a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#complex"><code>complex()</code></a> constructor.</li>
-<li>Numbers (integers and floats) are used as the real part.</li>
-<li>Objects defining <a class="autorefs autorefs-external" href="https://docs.python.org/3/reference/datamodel.html#object.__complex__"><code>__complex__()</code></a>, <a class="autorefs autorefs-external" href="https://docs.python.org/3/reference/datamodel.html#object.__float__"><code>__float__()</code></a>.
-  or <a class="autorefs autorefs-external" href="https://docs.python.org/3/reference/datamodel.html#object.__index__"><code>__index__()</code></a> are currently <em>not</em> accepted.</li>
+<li>In Python mode, data is validated using the <a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#complex"><code>complex()</code></a> constructor.</li>
+<li>In JSON mode, string are validated using the <a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#complex"><code>complex()</code></a> constructor,
+   numbers (integers and floats) are used as the real part.</li>
 </ul>
 <h4>Strictness</h4>
 
