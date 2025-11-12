@@ -113,11 +113,7 @@ def test_decimal(py_and_json: PyAndJson, input_value, expected):
 )
 def test_decimal_three_tuple_constructor(py_and_json: PyAndJson, input_value, expected):
     """Test that Decimal can be constructed from a three-tuple (sign, digits, exponent)."""
-    v = py_and_json({'type': 'decimal'})
-    # Three-tuple constructor is only valid for Python input, not JSON
-    if v.validator_type == 'json':
-        # For JSON, we skip this test as tuples aren't JSON serializable
-        pytest.skip('Three-tuple constructor is only valid for Python input')
+    v = py_and_json(cs.decimal_schema())
     output = v.validate_test(input_value)
     assert output == expected
     assert isinstance(output, Decimal)
