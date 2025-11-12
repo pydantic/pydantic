@@ -340,7 +340,7 @@ class ModelMetaclass(ABCMeta):
 
         This is a private attribute, not meant to be used outside Pydantic.
         """
-        if not hasattr(self, '__pydantic_fields__'):
+        if '__pydantic_fields__' not in self.__dict__:
             return False
 
         field_infos = cast('dict[str, FieldInfo]', self.__pydantic_fields__)  # pyright: ignore[reportAttributeAccessIssue]
@@ -553,7 +553,7 @@ def make_hash_func(cls: type[BaseModel]) -> Any:
 def set_model_fields(
     cls: type[BaseModel],
     config_wrapper: ConfigWrapper,
-    ns_resolver: NsResolver | None,
+    ns_resolver: NsResolver,
 ) -> None:
     """Collect and set `cls.__pydantic_fields__` and `cls.__class_vars__`.
 

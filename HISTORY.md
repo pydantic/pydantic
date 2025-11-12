@@ -2,6 +2,58 @@
 <!-- markdownlint-disable descriptive-link-text -->
 <!-- markdownlint-disable-next-line first-line-heading -->
 
+## v2.12.3 (2025-10-17)
+
+[GitHub release](https://github.com/pydantic/pydantic/releases/tag/v2.12.3)
+
+### What's Changed
+
+This is the third 2.12 patch release, fixing issues related to the `FieldInfo` class, and reverting a change to the supported
+[*after* model validator](https://docs.pydantic.dev/latest/concepts/validators/#model-validators) function signatures.
+
+* Raise a warning when an invalid after model validator function signature is raised by @Viicos in [#12414](https://github.com/pydantic/pydantic/pull/12414).
+  Starting in 2.12.0, using class methods for *after* model validators raised an error, but the error wasn't raised concistently. We decided
+  to emit a deprecation warning instead.
+* Add [`FieldInfo.asdict()`](https://docs.pydantic.dev/latest/api/fields/#pydantic.fields.FieldInfo.asdict) method, improve documentation around `FieldInfo` by @Viicos in [#12411](https://github.com/pydantic/pydantic/pull/12411).
+  This also add back support for mutations on `FieldInfo` classes, that are reused as `Annotated` metadata. **However**, note that this is still
+  *not* a supported pattern. Instead, please refer to the [added example](https://docs.pydantic.dev/latest/examples/dynamic_models/) in the documentation.
+
+The [blog post](https://pydantic.dev/articles/pydantic-v2-12-release#changes) section on changes was also updated to document the changes related to `serialize_as_any`.
+
+## v2.12.2 (2025-10-14)
+
+[GitHub release](https://github.com/pydantic/pydantic/releases/tag/v2.12.2)
+
+### What's Changed
+
+#### Fixes
+
+* Release a new `pydantic-core` version, as a corrupted CPython 3.10 `manylinux2014_aarch64` wheel got uploaded ([pydantic-core#1843](https://github.com/pydantic/pydantic-core/pull/1843)).
+* Fix issue with recursive generic models with a parent model class by @Viicos in [#12398](https://github.com/pydantic/pydantic/pull/12398)
+
+## v2.12.1 (2025-10-13)
+
+[GitHub release](https://github.com/pydantic/pydantic/releases/tag/v2.12.1)
+
+### What's Changed
+
+This is the first 2.12 patch release, addressing most (but not all yet) regressions from the initial 2.12.0 release.
+
+#### Fixes
+
+* Do not evaluate annotations when inspecting validators and serializers by @Viicos in [#12355](https://github.com/pydantic/pydantic/pull/12355)
+* Make sure `None` is converted as `NoneType` in Python 3.14 by @Viicos in [#12370](https://github.com/pydantic/pydantic/pull/12370)
+* Backport V1 runtime warning when using Python 3.14 by @Viicos in [#12367](https://github.com/pydantic/pydantic/pull/12367)
+* Fix error message for invalid validator signatures by @Viicos in [#12366](https://github.com/pydantic/pydantic/pull/12366)
+* Populate field name in `ValidationInfo` for validation of default value by @Viicos in [pydantic-core#1826](https://github.com/pydantic/pydantic-core/pull/1826)
+* Encode credentials in `MultiHostUrl` builder by @willswire in [pydantic-core#1829](https://github.com/pydantic/pydantic-core/pull/1829)
+* Respect field serializers when using `serialize_as_any` serialization flag by @davidhewitt in [pydantic-core#1829](https://github.com/pydantic/pydantic-core/pull/1829)
+* Fix various `RootModel` serialization issues by @davidhewitt in [pydantic-core#1836](https://github.com/pydantic/pydantic-core/pull/1836)
+
+### New Contributors
+
+* @willswire made their first contribution in [pydantic-core#1829](https://github.com/pydantic/pydantic-core/pull/1829)
+
 ## v2.12.0 (2025-10-07)
 
 [GitHub release](https://github.com/pydantic/pydantic/releases/tag/v2.12.0)
@@ -11,6 +63,8 @@
 This is the final 2.12 release. It features the work of 20 external contributors and provides useful new features, along with initial Python 3.14 support.
 Several minor changes (considered non-breaking changes according to our [versioning policy](https://docs.pydantic.dev/2.12/version-policy/#pydantic-v2))
 are also included in this release. Make sure to look into them before upgrading.
+
+**Note that Pydantic V1 is not compatible with Python 3.14 and greater**.
 
 Changes (see the alpha and beta releases for additional changes since 2.11):
 

@@ -18,7 +18,6 @@ authors = [
     {name = 'David Hewitt', email = 'mail@davidhewitt.io'},
     {name = 'Alex Hall', email = 'alex.mojaki@gmail.com'},
     {name = 'Victorien Plot', email = 'contact@vctrn.dev'},
-    {name = 'Douwe Maan', email = 'hi@douwe.me'},
 ]
 license = 'MIT'
 license-files = ['LICENSE']
@@ -48,7 +47,7 @@ dependencies = [
     'typing-extensions>=4.14.1',
     'annotated-types>=0.6.0',
     # Keep this in sync with the version in the `check_pydantic_core_version()` function:
-    'pydantic-core==2.41.1',
+    'pydantic-core==2.41.5',
     'typing-inspection>=0.4.2',
 ]
 dynamic = ['version', 'readme']
@@ -96,11 +95,10 @@ docs = [
     'pyupgrade',
     'mike',
     'pydantic-settings',
-    # remove once docs issue is fixed in pydantic-extra-types
-    'pydantic-extra-types==2.10',
     'requests',
     # To build pydantic wheel for run code feature on dev docs:
     'build>=1.3.0',
+    "pydantic-extra-types>=2.10.6",
 ]
 docs-upload = [
     'algoliasearch>=4.12.0',
@@ -174,6 +172,7 @@ xfail_strict = true
 filterwarnings = [
     'error',
     'ignore:path is deprecated.*:DeprecationWarning:',
+    "ignore:Core Pydantic V1 functionality isn't compatible with Python 3.14 or greater:UserWarning",
 ]
 addopts = [
     '--benchmark-columns', 'min,mean,stddev,outliers,rounds,iterations',
@@ -189,9 +188,17 @@ markers = [
 default-groups = ['dev']
 required-version = '>=0.8.4'
 
+[tool.uv.sources]
+pydantic-core = { workspace = true }
+
+[tool.uv.workspace]
+members = [
+    "pydantic-core",
+]
+
 # configuring https://github.com/pydantic/hooky
 [tool.hooky]
-reviewers = ['Viicos', 'DouweM']
+reviewers = ['Viicos']
 require_change_file = false
 unconfirmed_label = 'pending'
 
@@ -289,10 +296,3 @@ skip = '.git,env*,pydantic/v1/*,uv.lock'
 # `ser` - abbreviation for "ser"ialisation
 # `crate` - a rust crate
 ignore-words-list = 'gir,ser,crate,deques'
-
-[tool.codeflash]
-module-root = "pydantic"
-tests-root = "tests"
-test-framework = "pytest"
-ignore-paths = []
-formatter-cmd = ["ruff check --exit-zero --fix $file", "ruff format $file"]

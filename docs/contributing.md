@@ -52,8 +52,9 @@ You'll need the following prerequisites:
 
 * Any Python version between **Python 3.9 and 3.12**
 * [**uv**](https://docs.astral.sh/uv/getting-started/installation/) or other virtual environment tool
-* **git**
-* **make**
+* [**git**](https://git-scm.com/) - For version control
+* [**make**](https://www.gnu.org/software/make/) - For running development commands (or use `nmake` on Windows)
+* [**Rust**](https://rustup.rs/) - Rust stable (or nightly for coverage)
 
 ### Installation and setup
 
@@ -190,7 +191,7 @@ def bar(self, baz: int) -> str:
     return 'bar'
 ```
 
-You may include example code in docstrings. This code should be complete, self-contained, and runnable. Docstring examples are tested, so make sure they are correct and complete. See [`FieldInfo.from_annotated_attribute`][pydantic.fields.FieldInfo.from_annotated_attribute] for an example.
+You may include example code in docstrings. This code should be complete, self-contained, and runnable. Docstring examples are tested, so make sure they are correct and complete. See [`BeforeValidator`][pydantic.functional_validators.AfterValidator] for an example.
 
 !!! note "Class and instance attributes"
     Class attributes should be documented in the class docstring.

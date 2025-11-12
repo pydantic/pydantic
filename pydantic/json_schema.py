@@ -176,7 +176,12 @@ class _DefinitionsRemapping:
                 # Pick the first alternative that has only one schema, since that means there is no collision
                 remapped_defs_ref = next(x for x in alternatives if len(schemas_for_alternatives[x]) == 1)
                 defs_remapping[original_defs_ref] = remapped_defs_ref
-                json_remapping[defs_to_json[original_defs_ref]] = defs_to_json[remapped_defs_ref]
+
+                # Map all alternatives after the remapped one to the remapped one
+                # This ensures that intermediate simplifications are also remapped
+                remapped_index = alternatives.index(remapped_defs_ref)
+                for alt in alternatives[remapped_index:]:
+                    json_remapping[defs_to_json[alt]] = defs_to_json[remapped_defs_ref]
             remapping = _DefinitionsRemapping(defs_remapping, json_remapping)
             new_definitions_schema = remapping.remap_json_schema({'$defs': copied_definitions})
             if definitions_schema == new_definitions_schema:
@@ -1756,13 +1761,19 @@ class GenerateJsonSchema:
         Returns:
             `True` if the field should be marked as required in the generated JSON schema, `False` otherwise.
         """
-        if self.mode == 'serialization' and self._config.json_schema_serialization_defaults_required:
-            return not field.get('serialization_exclude')
+        if field['type'] == 'typed-dict-field':
+            required = field.get('required', total)
         else:
-            if field['type'] == 'typed-dict-field':
-                return field.get('required', total)
+            required = field['schema']['type'] != 'default'
+
+        if self.mode == 'serialization':
+            has_exclude_if = field.get('serialization_exclude_if') is not None
+            if self._config.json_schema_serialization_defaults_required:
+                return not has_exclude_if
             else:
-                return field['schema']['type'] != 'default'
+                return required and not has_exclude_if
+        else:
+            return required
 
     def dataclass_args_schema(self, schema: core_schema.DataclassArgsSchema) -> JsonSchemaValue:
         """Generates a JSON schema that matches a schema that defines a dataclass's constructor arguments.

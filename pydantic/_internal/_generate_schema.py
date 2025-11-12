@@ -764,7 +764,7 @@ class GenerateSchema:
                 if cls.__pydantic_fields_complete__ or cls is BaseModel_:
                     fields = getattr(cls, '__pydantic_fields__', {})
                 else:
-                    if not hasattr(cls, '__pydantic_fields__'):
+                    if '__pydantic_fields__' not in cls.__dict__:
                         # This happens when we have a loop in the schema generation:
                         # class Base[T](BaseModel):
                         #     t: T
@@ -1110,6 +1110,10 @@ class GenerateSchema:
             return self._literal_schema(obj)
         elif is_typeddict(obj):
             return self._typed_dict_schema(obj, None)
+        elif inspect.isclass(obj) and issubclass(obj, Enum):
+            # NOTE: this must come before the `is_namedtuple()` check as enums values
+            # can be namedtuples:
+            return self._enum_schema(obj)
         elif _typing_extra.is_namedtuple(obj):
             return self._namedtuple_schema(obj, None)
         elif typing_objects.is_newtype(obj):
@@ -1128,9 +1132,7 @@ class GenerateSchema:
                 self._get_first_arg_or_any(obj),
             )
         elif isinstance(obj, VALIDATE_CALL_SUPPORTED_TYPES):
-            return self._call_schema(obj)
-        elif inspect.isclass(obj) and issubclass(obj, Enum):
-            return self._enum_schema(obj)
+            return self._call_schema(obj)  # pyright: ignore[reportArgumentType]
         elif obj is ZoneInfo:
             return self._zoneinfo_schema()
 
@@ -2508,7 +2510,9 @@ def apply_validators(
         The updated schema.
     """
     for validator in validators:
-        info_arg = inspect_validator(validator.func, validator.info.mode)
+        # Actually, type could be 'field' or 'model', but this is only used for deprecated
+        # decorators, so let's not worry about it.
+        info_arg = inspect_validator(validator.func, mode=validator.info.mode, type='field')
         val_type = 'with-info' if info_arg else 'no-info'
 
         schema = _VALIDATOR_F_MATCH[(validator.info.mode, val_type)](validator.func, schema)
@@ -2565,7 +2569,7 @@ def apply_model_validators(
             continue
         if mode == 'outer' and validator.info.mode == 'before':
             continue
-        info_arg = inspect_validator(validator.func, validator.info.mode)
+        info_arg = inspect_validator(validator.func, mode=validator.info.mode, type='model')
         if validator.info.mode == 'wrap':
             if info_arg:
                 schema = core_schema.with_info_wrap_validator_function(function=validator.func, schema=schema)

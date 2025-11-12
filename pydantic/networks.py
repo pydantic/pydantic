@@ -834,6 +834,22 @@ class MongoDsn(_BaseMultiHostUrl):
     * Database name not required
     * Port not required
     * User info may be passed without user part (e.g., `mongodb://mongodb0.example.com:27017`).
+
+    !!! warning
+        If a port isn't specified, the default MongoDB port `27017` will be used. If this behavior is
+        undesirable, you can use the following:
+
+        ```python
+        from typing import Annotated
+
+        from pydantic import UrlConstraints
+        from pydantic_core import MultiHostUrl
+
+        MongoDsnNoDefaultPort = Annotated[
+            MultiHostUrl,
+            UrlConstraints(allowed_schemes=['mongodb', 'mongodb+srv']),
+        ]
+        ```
     """
 
     _constraints = UrlConstraints(allowed_schemes=['mongodb', 'mongodb+srv'], default_port=27017)
