@@ -35,13 +35,13 @@ from typing import (
     overload,
 )
 
-import pydantic_core
-from pydantic_core import MISSING, CoreSchema, PydanticOmit, core_schema, to_jsonable_python
-from pydantic_core.core_schema import ComputedField
 from typing_extensions import TypeAlias, assert_never, deprecated, final
 from typing_inspection.introspection import get_literal_values
 
+import pydantic_core
 from pydantic.warnings import PydanticDeprecatedSince26, PydanticDeprecatedSince29
+from pydantic_core import MISSING, CoreSchema, PydanticOmit, core_schema, to_jsonable_python
+from pydantic_core.core_schema import ComputedField
 
 from ._internal import (
     _config,

@@ -10,14 +10,14 @@ from typing import Any, Union
 
 import pytest
 from dirty_equals import Contains, IsPartialDict
-from pydantic_core import CoreSchema
-from pydantic_core import core_schema as cs
 
 from pydantic import BaseModel, TypeAdapter
 from pydantic._internal._config import ConfigWrapper
 from pydantic._internal._generate_schema import GenerateSchema
 from pydantic._internal._repr import Representation
 from pydantic._internal._validators import _extract_decimal_digits_info
+from pydantic_core import CoreSchema
+from pydantic_core import core_schema as cs
 
 
 def init_schema_and_cleaned_schema(type_: Any) -> tuple[CoreSchema, CoreSchema]:

@@ -1,10 +1,10 @@
 from datetime import datetime
 
 import pytest
-from pydantic_core import PydanticCustomError
 
 from pydantic import BaseModel, ValidationError
 from pydantic.color import Color
+from pydantic_core import PydanticCustomError
 
 pytestmark = pytest.mark.filterwarnings(
     'ignore:The `Color` class is deprecated, use `pydantic_extra_types` instead.*:DeprecationWarning'

@@ -4,9 +4,10 @@ import inspect
 from collections.abc import Mapping, Sequence
 from typing import TYPE_CHECKING, Any, Union
 
-from pydantic_core import CoreSchema, core_schema
 from typing_extensions import TypeGuard, get_args, get_origin
 from typing_inspection import typing_objects
+
+from pydantic_core import CoreSchema, core_schema
 
 from . import _repr
 from ._typing_extra import is_generic_alias

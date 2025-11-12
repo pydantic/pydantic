@@ -1,9 +1,9 @@
 import pytest
-from pydantic_core import CoreSchema
 
 from pydantic import BaseModel, GetJsonSchemaHandler, ValidationError, model_validator, parse_obj_as
 from pydantic.functional_serializers import model_serializer
 from pydantic.json_schema import JsonSchemaValue
+from pydantic_core import CoreSchema
 
 
 class Model(BaseModel):

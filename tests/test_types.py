@@ -38,12 +38,6 @@ import annotated_types
 import dirty_equals
 import pytest
 from dirty_equals import HasRepr, IsFloatNan, IsOneOf, IsStr
-from pydantic_core import (
-    CoreSchema,
-    PydanticCustomError,
-    SchemaError,
-    core_schema,
-)
 from typing_extensions import NotRequired, TypedDict, get_args
 
 from pydantic import (
@@ -124,6 +118,12 @@ from pydantic import (
     validate_call,
 )
 from pydantic.dataclasses import dataclass as pydantic_dataclass
+from pydantic_core import (
+    CoreSchema,
+    PydanticCustomError,
+    SchemaError,
+    core_schema,
+)
 
 try:
     import email_validator

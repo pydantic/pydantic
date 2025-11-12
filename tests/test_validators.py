@@ -20,7 +20,6 @@ from unittest.mock import MagicMock
 
 import pytest
 from dirty_equals import HasRepr, IsInstance
-from pydantic_core import core_schema
 from typing_extensions import TypeAliasType, TypedDict
 
 from pydantic import (
@@ -44,6 +43,7 @@ from pydantic import (
 )
 from pydantic.dataclasses import dataclass as pydantic_dataclass
 from pydantic.functional_validators import AfterValidator, BeforeValidator, PlainValidator, WrapValidator
+from pydantic_core import core_schema
 
 V1_VALIDATOR_DEPRECATION_MATCH = r'Pydantic V1 style `@validator` validators are deprecated'
 

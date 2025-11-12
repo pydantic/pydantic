@@ -5,10 +5,9 @@ from __future__ import annotations
 from collections.abc import Callable
 from typing import Any, Literal
 
-from pydantic_core import CoreSchema
-
 from pydantic import ConfigDict
 from pydantic._internal import _config, _generate_schema, _namespace_utils
+from pydantic_core import CoreSchema
 
 
 def generate_arguments_schema(

@@ -2,7 +2,6 @@ import json
 from typing import Annotated, Any, Union
 
 import pytest
-from pydantic_core import PydanticCustomError, PydanticSerializationError, Url
 
 from pydantic import (
     AfterValidator,
@@ -32,6 +31,7 @@ from pydantic import (
     WebsocketUrl,
 )
 from pydantic.networks import import_email_validator, validate_email
+from pydantic_core import PydanticCustomError, PydanticSerializationError, Url
 
 try:
     import email_validator

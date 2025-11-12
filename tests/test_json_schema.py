@@ -29,8 +29,6 @@ from uuid import UUID
 
 import pytest
 from dirty_equals import HasRepr
-from pydantic_core import CoreSchema, SchemaValidator, core_schema, to_jsonable_python
-from pydantic_core.core_schema import ValidatorFunctionWrapHandler
 from typing_extensions import TypeAliasType, TypedDict, deprecated
 
 import pydantic
@@ -111,6 +109,8 @@ from pydantic.types import (
     conint,
     constr,
 )
+from pydantic_core import CoreSchema, SchemaValidator, core_schema, to_jsonable_python
+from pydantic_core.core_schema import ValidatorFunctionWrapHandler
 
 try:
     import email_validator

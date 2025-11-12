@@ -12,8 +12,9 @@ from inspect import Parameter, Signature, isdatadescriptor, ismethoddescriptor, 
 from itertools import islice
 from typing import TYPE_CHECKING, Any, Callable, ClassVar, Generic, Literal, TypeVar, Union
 
-from pydantic_core import PydanticUndefined, PydanticUndefinedType, core_schema
 from typing_extensions import TypeAlias, is_typeddict
+
+from pydantic_core import PydanticUndefined, PydanticUndefinedType, core_schema
 
 from ..errors import PydanticUserError
 from ._core_utils import get_type_ref

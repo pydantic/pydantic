@@ -7,7 +7,6 @@ from copy import copy, deepcopy
 from typing import Annotated, Callable, Generic, TypeVar, Union
 
 import pytest
-from pydantic_core import PydanticCustomError, PydanticUndefined
 
 from pydantic import BaseModel
 from pydantic._internal import _repr
@@ -25,6 +24,7 @@ from pydantic._internal._utils import (
 from pydantic._internal._validators import import_string
 from pydantic.alias_generators import to_camel, to_pascal, to_snake
 from pydantic.color import Color
+from pydantic_core import PydanticCustomError, PydanticUndefined
 
 try:
     import devtools

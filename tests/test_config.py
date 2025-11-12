@@ -10,7 +10,6 @@ from typing import Annotated, Any, NamedTuple, Optional, Union
 
 import pytest
 from dirty_equals import HasRepr, IsPartialDict
-from pydantic_core import SchemaError, SchemaSerializer, SchemaValidator
 from typing_extensions import TypedDict
 
 from pydantic import (
@@ -37,6 +36,7 @@ from pydantic.errors import PydanticUserError
 from pydantic.fields import ComputedFieldInfo, FieldInfo
 from pydantic.type_adapter import TypeAdapter
 from pydantic.warnings import PydanticDeprecatedSince210, PydanticDeprecatedSince211, PydanticDeprecationWarning
+from pydantic_core import SchemaError, SchemaSerializer, SchemaValidator
 
 from .conftest import CallCounter
 

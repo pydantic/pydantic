@@ -7,6 +7,7 @@ from dataclasses import dataclass
 from typing import Any, Callable, Union, cast
 
 import pytest
+
 from pydantic_core import (
     ArgsKwargs,
     PydanticUndefined,

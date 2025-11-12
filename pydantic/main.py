@@ -27,10 +27,11 @@ from typing import (
     overload,
 )
 
-import pydantic_core
 import typing_extensions
-from pydantic_core import PydanticUndefined, ValidationError
 from typing_extensions import Self, TypeAlias, Unpack
+
+import pydantic_core
+from pydantic_core import PydanticUndefined, ValidationError
 
 from . import PydanticDeprecatedSince20, PydanticDeprecatedSince211
 from ._internal import (

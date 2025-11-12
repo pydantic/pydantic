@@ -17,12 +17,12 @@ from typing import Any, Callable, TypeVar, Union, cast
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 import typing_extensions
-from pydantic_core import PydanticCustomError, PydanticKnownError, core_schema
 from typing_extensions import get_args, get_origin
 from typing_inspection import typing_objects
 
 from pydantic._internal._import_utils import import_cached_field_info
 from pydantic.errors import PydanticSchemaGenerationError
+from pydantic_core import PydanticCustomError, PydanticKnownError, core_schema
 
 
 def sequence_validator(

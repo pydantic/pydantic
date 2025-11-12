@@ -14,7 +14,6 @@ from typing import Annotated, Any, Optional, Union
 from uuid import UUID
 
 import pytest
-from pydantic_core import CoreSchema, SchemaSerializer, core_schema
 
 from pydantic import (
     AfterValidator,
@@ -37,6 +36,7 @@ from pydantic.functional_serializers import (
 )
 from pydantic.json_schema import JsonSchemaValue
 from pydantic.types import DirectoryPath, FilePath, SecretBytes, SecretStr, condecimal
+from pydantic_core import CoreSchema, SchemaSerializer, core_schema
 
 try:
     import email_validator

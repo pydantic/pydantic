@@ -5,7 +5,6 @@ from functools import cached_property, lru_cache, singledispatchmethod
 from typing import Any, Callable, ClassVar, Generic, TypeVar
 
 import pytest
-from pydantic_core import ValidationError, core_schema
 from typing_extensions import TypedDict
 
 from pydantic import (
@@ -22,6 +21,7 @@ from pydantic import (
 )
 from pydantic.alias_generators import to_camel
 from pydantic.errors import PydanticUserError
+from pydantic_core import ValidationError, core_schema
 
 
 def test_computed_fields_get():

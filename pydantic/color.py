@@ -17,8 +17,9 @@ import re
 from colorsys import hls_to_rgb, rgb_to_hls
 from typing import Any, Callable, Optional, Union, cast
 
-from pydantic_core import CoreSchema, PydanticCustomError, core_schema
 from typing_extensions import deprecated
+
+from pydantic_core import CoreSchema, PydanticCustomError, core_schema
 
 from ._internal import _repr
 from ._internal._schema_generation_shared import GetJsonSchemaHandler as _GetJsonSchemaHandler

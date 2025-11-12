@@ -8,7 +8,6 @@ from typing import Annotated, Any, Callable, Generic, Optional, TypeVar
 import pytest
 import pytz
 from annotated_types import BaseMetadata, GroupedMetadata, Gt, Lt, Not, Predicate
-from pydantic_core import CoreSchema, PydanticUndefined, core_schema
 
 from pydantic import (
     BaseModel,
@@ -22,6 +21,7 @@ from pydantic import (
 from pydantic.errors import PydanticSchemaGenerationError
 from pydantic.fields import PrivateAttr
 from pydantic.functional_validators import AfterValidator
+from pydantic_core import CoreSchema, PydanticUndefined, core_schema
 
 NO_VALUE = object()
 

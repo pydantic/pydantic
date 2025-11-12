@@ -2,9 +2,9 @@ import pickle
 from typing import Union
 
 import pytest
-from pydantic_core import MISSING, PydanticSerializationUnexpectedValue
 
 from pydantic import BaseModel, TypeAdapter, ValidationError
+from pydantic_core import MISSING, PydanticSerializationUnexpectedValue
 
 
 def test_missing_sentinel_model() -> None:

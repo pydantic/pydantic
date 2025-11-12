@@ -2,10 +2,10 @@ from collections import namedtuple
 from typing import Any
 
 import pytest
-from pydantic_core import PydanticCustomError
 
 from pydantic import BaseModel, ValidationError
 from pydantic.types import PaymentCardBrand, PaymentCardNumber
+from pydantic_core import PydanticCustomError
 
 pytestmark = pytest.mark.filterwarnings(
     'ignore:The `PaymentCardNumber` class is deprecated, use `pydantic_extra_types` instead.*:DeprecationWarning'

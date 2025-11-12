@@ -11,10 +11,10 @@ from tempfile import NamedTemporaryFile
 from typing import Any
 
 import pytest
-from pydantic_core import core_schema
 from pytest_examples import CodeExample, EvalExample, find_examples
 
 from pydantic.errors import PydanticErrorCodes
+from pydantic_core import core_schema
 
 INDEX_MAIN = None
 DOCS_ROOT = Path(__file__).parent.parent / 'docs'

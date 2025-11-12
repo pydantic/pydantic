@@ -12,9 +12,10 @@ from functools import cache, partial, wraps
 from types import FunctionType
 from typing import TYPE_CHECKING, Any, Callable, Generic, Literal, NoReturn, TypeVar, cast
 
-from pydantic_core import PydanticUndefined, SchemaSerializer
 from typing_extensions import TypeAliasType, dataclass_transform, deprecated, get_args, get_origin
 from typing_inspection import typing_objects
+
+from pydantic_core import PydanticUndefined, SchemaSerializer
 
 from ..errors import PydanticUndefinedAnnotation, PydanticUserError
 from ..plugin._schema_validator import create_schema_validator

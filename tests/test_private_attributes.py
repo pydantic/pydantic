@@ -3,10 +3,10 @@ from enum import Enum
 from typing import ClassVar, Generic, Optional, TypeVar
 
 import pytest
-from pydantic_core import PydanticUndefined
 
 from pydantic import BaseModel, ConfigDict, PrivateAttr, computed_field
 from pydantic.fields import ModelPrivateAttr
+from pydantic_core import PydanticUndefined
 
 
 def test_private_attribute():

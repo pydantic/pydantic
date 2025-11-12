@@ -6,9 +6,10 @@ import dataclasses
 from functools import partial, partialmethod
 from typing import TYPE_CHECKING, Annotated, Any, Callable, Literal, TypeVar, overload
 
+from typing_extensions import TypeAlias
+
 from pydantic_core import PydanticUndefined, core_schema
 from pydantic_core.core_schema import SerializationInfo, SerializerFunctionWrapHandler, WhenUsed
-from typing_extensions import TypeAlias
 
 from . import PydanticUndefinedAnnotation
 from ._internal import _decorators, _internal_dataclass

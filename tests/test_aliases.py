@@ -5,7 +5,6 @@ from typing import Any, Optional, Union
 
 import pytest
 from dirty_equals import IsStr
-from pydantic_core import PydanticUndefined
 
 from pydantic import (
     AliasChoices,
@@ -18,6 +17,7 @@ from pydantic import (
     ValidationError,
     computed_field,
 )
+from pydantic_core import PydanticUndefined
 
 
 def test_alias_generator():

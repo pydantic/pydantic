@@ -21,7 +21,6 @@ from typing import (
 
 import pytest
 from dirty_equals import HasRepr, IsStr
-from pydantic_core import CoreSchema, core_schema
 from typing_extensions import (
     Literal,
     Never,
@@ -63,6 +62,7 @@ from pydantic._internal._generics import (
     replace_types,
 )
 from pydantic.warnings import GenericBeforeBaseModelWarning
+from pydantic_core import CoreSchema, core_schema
 
 
 # Note: this isn't implemented as a fixture, as pytest fixtures

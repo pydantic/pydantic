@@ -17,11 +17,11 @@ from typing import (
     overload,
 )
 
-from pydantic_core import CoreSchema, SchemaSerializer, SchemaValidator, Some
 from typing_extensions import ParamSpec, is_typeddict
 
 from pydantic.errors import PydanticUserError
 from pydantic.main import BaseModel, IncEx
+from pydantic_core import CoreSchema, SchemaSerializer, SchemaValidator, Some
 
 from ._internal import _config, _generate_schema, _mock_val_ser, _namespace_utils, _repr, _typing_extra, _utils
 from .config import ConfigDict, ExtraValues

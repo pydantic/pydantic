@@ -3,8 +3,6 @@ from datetime import date, datetime
 from typing import Annotated, Any, Generic, Literal, Optional, TypeVar, Union
 
 import pytest
-from pydantic_core import CoreSchema
-from pydantic_core.core_schema import SerializerFunctionWrapHandler
 
 from pydantic import (
     Base64Str,
@@ -19,6 +17,8 @@ from pydantic import (
     field_serializer,
     model_validator,
 )
+from pydantic_core import CoreSchema
+from pydantic_core.core_schema import SerializerFunctionWrapHandler
 
 
 def parametrize_root_model():
