@@ -21,7 +21,7 @@ from typing_inspection import typing_objects
 from typing_inspection.introspection import UNKNOWN, AnnotationSource, ForbiddenQualifier, Qualifier, inspect_annotation
 
 from . import types
-from ._internal import _decorators, _fields, _generics, _internal_dataclass, _repr, _typing_extra, _utils
+from ._internal import _decorators, _fields, _generics, _repr, _typing_extra, _utils
 from ._internal._namespace_utils import GlobalsNamespace, MappingNamespace
 from .aliases import AliasChoices, AliasGenerator, AliasPath
 from .config import JsonDict
@@ -1519,7 +1519,7 @@ def PrivateAttr(
     )
 
 
-@dataclasses.dataclass(**_internal_dataclass.slots_true)
+@dataclasses.dataclass
 class ComputedFieldInfo:
     """A container for data from `@computed_field` so that we can access it while building the pydantic-core schema.
 
@@ -1551,6 +1551,15 @@ class ComputedFieldInfo:
     examples: list[Any] | None
     json_schema_extra: JsonDict | Callable[[JsonDict], None] | None
     repr: bool
+
+    def __copy__(self) -> Self:
+        copied = self.__dict__.copy()
+        if isinstance(copied['examples'], list):
+            copied['examples'] = copied['examples'].copy()
+        if isinstance(copied['json_schema_extra'], dict):
+            copied['examples'] = copied['examples'].copy()
+
+        return type(self)(**copied)
 
     @property
     def deprecation_message(self) -> str | None:
