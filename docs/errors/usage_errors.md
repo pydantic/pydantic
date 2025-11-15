@@ -101,9 +101,8 @@ below:
 ```python {title="New way"}
 from typing import Any
 
-from pydantic_core import CoreSchema
-
 from pydantic import BaseModel, GetJsonSchemaHandler
+from pydantic_core import CoreSchema
 
 
 class Model(BaseModel):

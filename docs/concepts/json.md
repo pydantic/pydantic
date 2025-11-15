@@ -102,9 +102,8 @@ In future versions of Pydantic, we expect to expand support for this feature thr
 For now, you can use [`pydantic_core.from_json`][pydantic_core.from_json] in combination with [`pydantic.main.BaseModel.model_validate`][pydantic.main.BaseModel.model_validate] to achieve the same result. Here's an example:
 
 ```python
-from pydantic_core import from_json
-
 from pydantic import BaseModel
+from pydantic_core import from_json
 
 
 class Dog(BaseModel):
@@ -130,7 +129,6 @@ Check out the following example for a more in-depth look at how to use default v
     from typing import Annotated, Any, Optional
 
     import pydantic_core
-
     from pydantic import BaseModel, ValidationError, WrapValidator
 
 

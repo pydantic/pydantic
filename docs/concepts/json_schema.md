@@ -747,9 +747,8 @@ Here is an example of a custom type that *overrides* the generated `core_schema`
 from dataclasses import dataclass
 from typing import Any
 
-from pydantic_core import core_schema
-
 from pydantic import BaseModel, GetCoreSchemaHandler
+from pydantic_core import core_schema
 
 
 @dataclass
@@ -826,9 +825,8 @@ from collections.abc import Sequence
 from dataclasses import dataclass
 from typing import Annotated, Any
 
-from pydantic_core import core_schema
-
 from pydantic import BaseModel, GetCoreSchemaHandler, ValidationError
+from pydantic_core import core_schema
 
 
 @dataclass
@@ -892,9 +890,8 @@ To modify the schema, first call the handler, then mutate the result:
 ```python
 from typing import Annotated, Any
 
-from pydantic_core import ValidationError, core_schema
-
 from pydantic import BaseModel, GetCoreSchemaHandler
+from pydantic_core import ValidationError, core_schema
 
 
 class SmallString:
@@ -933,9 +930,8 @@ To override the schema completely, do not call the handler and return your own
 ```python
 from typing import Annotated, Any
 
-from pydantic_core import ValidationError, core_schema
-
 from pydantic import BaseModel, GetCoreSchemaHandler
+from pydantic_core import ValidationError, core_schema
 
 
 class AllowAnySubclass:
@@ -990,10 +986,9 @@ Here's an example of modifying the generated JSON schema:
 import json
 from typing import Any
 
-from pydantic_core import core_schema as cs
-
 from pydantic import GetCoreSchemaHandler, GetJsonSchemaHandler, TypeAdapter
 from pydantic.json_schema import JsonSchemaValue
+from pydantic_core import core_schema as cs
 
 
 class Person:
@@ -1285,10 +1280,9 @@ Below is an approach you can use to exclude any fields from the schema that don'
 ```python
 from typing import Callable
 
-from pydantic_core import PydanticOmit, core_schema
-
 from pydantic import BaseModel
 from pydantic.json_schema import GenerateJsonSchema, JsonSchemaValue
+from pydantic_core import PydanticOmit, core_schema
 
 
 class MyGenerateJsonSchema(GenerateJsonSchema):

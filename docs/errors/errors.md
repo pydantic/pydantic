@@ -149,9 +149,8 @@ Pydantic attempts to provide useful default error messages for validation and us
 You can customize error messages by creating a custom error handler.
 
 ```python
-from pydantic_core import ErrorDetails
-
 from pydantic import BaseModel, HttpUrl, ValidationError
+from pydantic_core import ErrorDetails
 
 CUSTOM_MESSAGES = {
     'int_parsing': 'This is not an integer! 🤦',

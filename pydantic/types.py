@@ -2689,9 +2689,8 @@ Warning:
     import base64
     from typing import Annotated, Literal
 
-    from pydantic_core import PydanticCustomError
-
     from pydantic import EncodedBytes, EncoderProtocol
+    from pydantic_core import PydanticCustomError
 
     class LegacyBase64Encoder(EncoderProtocol):
         @classmethod

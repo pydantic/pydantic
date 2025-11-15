@@ -18,7 +18,6 @@ from pprint import pprint
 from typing import Annotated, Any, Callable, Optional
 
 import pytz
-from pydantic_core import CoreSchema, core_schema
 
 from pydantic import (
     GetCoreSchemaHandler,
@@ -26,6 +25,7 @@ from pydantic import (
     TypeAdapter,
     ValidationError,
 )
+from pydantic_core import CoreSchema, core_schema
 
 
 @dataclass(frozen=True)
@@ -105,9 +105,9 @@ from pprint import pprint
 from typing import Annotated, Any, Callable
 
 import pytz
-from pydantic_core import CoreSchema, core_schema
 
 from pydantic import GetCoreSchemaHandler, TypeAdapter, ValidationError
+from pydantic_core import CoreSchema, core_schema
 
 
 @dataclass(frozen=True)

@@ -427,9 +427,8 @@ For this reason, the experimental [`generate_arguments_schema()`][pydantic.exper
 function can be used to construct a core schema, which can later be used with a [`SchemaValidator`][pydantic_core.SchemaValidator].
 
 ```python
-from pydantic_core import SchemaValidator
-
 from pydantic.experimental.arguments_schema import generate_arguments_schema
+from pydantic_core import SchemaValidator
 
 
 def func(p: bool, *args: str, **kwargs: int) -> None: ...
@@ -465,9 +464,8 @@ Additionally, you can ignore specific parameters by providing a callback, which 
 ```python
 from typing import Any
 
-from pydantic_core import SchemaValidator
-
 from pydantic.experimental.arguments_schema import generate_arguments_schema
+from pydantic_core import SchemaValidator
 
 
 def func(p: bool, *args: str, **kwargs: int) -> None: ...
