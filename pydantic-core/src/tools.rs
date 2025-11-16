@@ -126,10 +126,6 @@ pub fn truncate_safe_repr(v: &Bound<'_, PyAny>, max_len: Option<usize>) -> Strin
     limited_str
 }
 
-pub fn extract_i64(v: &Bound<'_, PyAny>) -> Option<i64> {
-    v.extract().ok()
-}
-
 pub(crate) fn new_py_string<'py>(py: Python<'py>, s: &str, cache_str: StringCacheMode) -> Bound<'py, PyString> {
     // we could use `bytecount::num_chars(s.as_bytes()) == s.len()` as orjson does, but it doesn't appear to be faster
     if matches!(cache_str, StringCacheMode::All) {

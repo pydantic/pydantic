@@ -15,7 +15,7 @@ use pyo3::PyTypeInfo;
 use speedate::MicrosecondsPrecisionOverflowBehavior;
 
 use crate::errors::{ErrorType, ErrorTypeDefaults, InputValue, LocItem, ValError, ValResult};
-use crate::tools::{extract_i64, safe_repr};
+use crate::tools::safe_repr;
 use crate::validators::complex::{get_complex_type, string_to_complex};
 use crate::validators::decimal::{create_decimal, get_decimal_type};
 use crate::validators::Exactness;
@@ -77,7 +77,7 @@ impl From<&Bound<'_, PyAny>> for LocItem {
     fn from(py_any: &Bound<'_, PyAny>) -> Self {
         if let Ok(py_str) = py_any.cast::<PyString>() {
             py_str.to_string_lossy().as_ref().into()
-        } else if let Some(key_int) = extract_i64(py_any) {
+        } else if let Ok(key_int) = py_any.extract::<i64>() {
             key_int.into()
         } else {
             safe_repr(py_any).to_string().into()
@@ -249,7 +249,7 @@ impl<'py> Input<'py> for Bound<'py, PyAny> {
         if !strict {
             if let Some(s) = maybe_as_string(self, ErrorTypeDefaults::BoolParsing)? {
                 return str_as_bool(self, s).map(ValidationMatch::lax);
-            } else if let Some(int) = extract_i64(self) {
+            } else if let Ok(int) = self.extract() {
                 return int_as_bool(self, int).map(ValidationMatch::lax);
             } else if let Ok(float) = self.extract::<f64>() {
                 if let Ok(int) = float_as_int(self, float) {
@@ -566,7 +566,7 @@ impl<'py> Input<'py> for Bound<'py, PyAny> {
                     bytes_as_time(self, py_bytes.as_bytes(), microseconds_overflow_behavior)
                 } else if self.is_exact_instance_of::<PyBool>() {
                     Err(ValError::new(ErrorTypeDefaults::TimeType, self))
-                } else if let Some(int) = extract_i64(self) {
+                } else if let Ok(int) = self.extract() {
                     int_as_time(self, int, 0)
                 } else if let Ok(float) = self.extract::<f64>() {
                     float_as_time(self, float)
@@ -601,7 +601,7 @@ impl<'py> Input<'py> for Bound<'py, PyAny> {
                     bytes_as_datetime(self, py_bytes.as_bytes(), microseconds_overflow_behavior, mode)
                 } else if self.is_exact_instance_of::<PyBool>() {
                     Err(ValError::new(ErrorTypeDefaults::DatetimeType, self))
-                } else if let Some(int) = extract_i64(self) {
+                } else if let Ok(int) = self.extract() {
                     int_as_datetime(self, int, 0, mode)
                 } else if let Ok(float) = self.extract::<f64>() {
                     float_as_datetime(self, float, mode)
@@ -638,7 +638,7 @@ impl<'py> Input<'py> for Bound<'py, PyAny> {
                     bytes_as_timedelta(self, str.as_bytes(), microseconds_overflow_behavior)
                 } else if let Ok(py_bytes) = self.cast::<PyBytes>() {
                     bytes_as_timedelta(self, py_bytes.as_bytes(), microseconds_overflow_behavior)
-                } else if let Some(int) = extract_i64(self) {
+                } else if let Ok(int) = self.extract() {
                     Ok(int_as_duration(self, int)?.into())
                 } else if let Ok(float) = self.extract::<f64>() {
                     Ok(float_as_duration(self, float)?.into())
