@@ -9200,14 +9200,7 @@ Other settings sources are available for common configuration files:
 - `TomlConfigSettingsSource` using `toml_file` argument
 - `YamlConfigSettingsSource` using `yaml_file` and yaml_file_encoding arguments
 
-You can also provide multiple files by providing a list of path:
-
-```py
-toml_file = ['config.default.toml', 'config.custom.toml']
-
-```
-
-To use them, you can use the same mechanism described [here](#customise-settings-sources)
+To use them, you can use the same mechanism described [here](#customise-settings-sources).
 
 ```py
 from pydantic import BaseModel
@@ -9248,6 +9241,145 @@ This will be able to read the following "config.toml" file, located in your work
 foobar = "Hello"
 [nested]
 nested_field = "world!"
+
+```
+
+You can also provide multiple files by providing a list of paths.
+
+```py
+from pydantic import BaseModel
+
+from pydantic_settings import (
+    BaseSettings,
+    PydanticBaseSettingsSource,
+    SettingsConfigDict,
+    TomlConfigSettingsSource,
+)
+
+
+class Nested(BaseModel):
+    foo: int
+    bar: int = 0
+
+
+class Settings(BaseSettings):
+    hello: str
+    nested: Nested
+    model_config = SettingsConfigDict(
+        toml_file=['config.default.toml', 'config.custom.toml']
+    )
+
+    @classmethod
+    def settings_customise_sources(
+        cls,
+        settings_cls: type[BaseSettings],
+        init_settings: PydanticBaseSettingsSource,
+        env_settings: PydanticBaseSettingsSource,
+        dotenv_settings: PydanticBaseSettingsSource,
+        file_secret_settings: PydanticBaseSettingsSource,
+    ) -> tuple[PydanticBaseSettingsSource, ...]:
+        return (TomlConfigSettingsSource(settings_cls),)
+
+```
+
+The following two configuration files
+
+```toml
+# config.default.toml
+hello = "World"
+
+[nested]
+foo = 1
+bar = 2
+
+```
+
+```toml
+# config.custom.toml
+[nested]
+foo = 3
+
+```
+
+are equivalent to
+
+```toml
+hello = "world"
+
+[nested]
+foo = 3
+
+```
+
+The files are merged shallowly in increasing order of priority. To enable deep merging, set `deep_merge=True` on the source directly.
+
+Warning
+
+The `deep_merge` option is **not available** through the `SettingsConfigDict`.
+
+```py
+from pydantic import BaseModel
+
+from pydantic_settings import (
+    BaseSettings,
+    PydanticBaseSettingsSource,
+    SettingsConfigDict,
+    TomlConfigSettingsSource,
+)
+
+
+class Nested(BaseModel):
+    foo: int
+    bar: int = 0
+
+
+class Settings(BaseSettings):
+    hello: str
+    nested: Nested
+    model_config = SettingsConfigDict(
+        toml_file=['config.default.toml', 'config.custom.toml']
+    )
+
+    @classmethod
+    def settings_customise_sources(
+        cls,
+        settings_cls: type[BaseSettings],
+        init_settings: PydanticBaseSettingsSource,
+        env_settings: PydanticBaseSettingsSource,
+        dotenv_settings: PydanticBaseSettingsSource,
+        file_secret_settings: PydanticBaseSettingsSource,
+    ) -> tuple[PydanticBaseSettingsSource, ...]:
+        return (TomlConfigSettingsSource(settings_cls, deep_merge=True),)
+
+```
+
+With deep merge enabled, the following two configuration files
+
+```toml
+# config.default.toml
+hello = "World"
+
+[nested]
+foo = 1
+bar = 2
+
+```
+
+```toml
+# config.custom.toml
+[nested]
+foo = 3
+
+```
+
+are equivalent to
+
+```toml
+hello = "world"
+
+[nested]
+foo = 3
+bar = 2
 
 ```
 
