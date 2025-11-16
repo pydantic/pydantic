@@ -5,9 +5,8 @@ from __future__ import annotations as _annotations
 from copy import copy, deepcopy
 from typing import TYPE_CHECKING, Any, Generic, Literal, TypeVar
 
-from typing_extensions import Self, dataclass_transform
-
 from pydantic_core import PydanticUndefined
+from typing_extensions import Self, dataclass_transform
 
 from . import PydanticUserError
 from ._internal import _model_construction, _repr

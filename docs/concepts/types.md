@@ -428,8 +428,9 @@ This is equivalent to implementing `__get_validators__` in Pydantic V1.
 ```python
 from typing import Any
 
-from pydantic import GetCoreSchemaHandler, TypeAdapter
 from pydantic_core import CoreSchema, core_schema
+
+from pydantic import GetCoreSchemaHandler, TypeAdapter
 
 
 class Username(str):
@@ -458,8 +459,9 @@ For example, if you were to implement `pydantic.AfterValidator` (see [Adding val
 from dataclasses import dataclass
 from typing import Annotated, Any, Callable
 
-from pydantic import BaseModel, GetCoreSchemaHandler
 from pydantic_core import CoreSchema, core_schema
+
+from pydantic import BaseModel, GetCoreSchemaHandler
 
 
 @dataclass(frozen=True)  # (1)!
@@ -494,6 +496,8 @@ Another use case for the pattern in the previous section is to handle third part
 ```python
 from typing import Annotated, Any
 
+from pydantic_core import core_schema
+
 from pydantic import (
     BaseModel,
     GetCoreSchemaHandler,
@@ -501,7 +505,6 @@ from pydantic import (
     ValidationError,
 )
 from pydantic.json_schema import JsonSchemaValue
-from pydantic_core import core_schema
 
 
 class ThirdPartyType:
@@ -631,8 +634,9 @@ For many simple cases you can greatly minimize this by using `pydantic.GetPydant
 ```python
 from typing import Annotated
 
-from pydantic import BaseModel, GetPydanticSchema
 from pydantic_core import core_schema
+
+from pydantic import BaseModel, GetPydanticSchema
 
 
 class Model(BaseModel):
@@ -682,6 +686,7 @@ This is less important for custom types, but crucial for annotated metadata that
 from dataclasses import dataclass
 from typing import Any, Generic, TypeVar
 
+from pydantic_core import CoreSchema, core_schema
 from typing_extensions import get_args, get_origin
 
 from pydantic import (
@@ -690,7 +695,6 @@ from pydantic import (
     ValidationError,
     ValidatorFunctionWrapHandler,
 )
-from pydantic_core import CoreSchema, core_schema
 
 ItemType = TypeVar('ItemType')
 
@@ -829,10 +833,10 @@ The same idea can be applied to create generic container types, like a custom `S
 from collections.abc import Sequence
 from typing import Any, TypeVar
 
+from pydantic_core import ValidationError, core_schema
 from typing_extensions import get_args
 
 from pydantic import BaseModel, GetCoreSchemaHandler
-from pydantic_core import ValidationError, core_schema
 
 T = TypeVar('T')
 
@@ -909,8 +913,9 @@ and thereby set the field name which will be available from `info.field_name`.
 ```python
 from typing import Any
 
-from pydantic import BaseModel, GetCoreSchemaHandler, ValidationInfo
 from pydantic_core import core_schema
+
+from pydantic import BaseModel, GetCoreSchemaHandler, ValidationInfo
 
 
 class CustomType:

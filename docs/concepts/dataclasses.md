@@ -357,11 +357,11 @@ be called between the calls to *before* and *after* model validators.
 ??? example
 
     ```python
+    from pydantic_core import ArgsKwargs
     from typing_extensions import Self
 
     from pydantic import model_validator
     from pydantic.dataclasses import dataclass
-    from pydantic_core import ArgsKwargs
 
 
     @dataclass

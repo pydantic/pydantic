@@ -19,10 +19,11 @@ import annotated_types
 if TYPE_CHECKING:
     from pydantic import GetCoreSchemaHandler
 
-from pydantic import Strict
-from pydantic._internal._internal_dataclass import slots_true as _slots_true
 from pydantic_core import PydanticCustomError
 from pydantic_core import core_schema as cs
+
+from pydantic import Strict
+from pydantic._internal._internal_dataclass import slots_true as _slots_true
 
 if sys.version_info < (3, 10):
     EllipsisType = type(Ellipsis)

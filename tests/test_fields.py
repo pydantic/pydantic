@@ -3,6 +3,7 @@ from typing import Annotated, Any, Final, Generic, TypeVar, Union
 
 import pytest
 from annotated_types import Gt
+from pydantic_core import PydanticUndefined
 from typing_extensions import TypeAliasType
 
 import pydantic.dataclasses
@@ -21,7 +22,6 @@ from pydantic import (
 )
 from pydantic.fields import FieldInfo
 from pydantic.warnings import UnsupportedFieldAttributeWarning
-from pydantic_core import PydanticUndefined
 
 
 def test_field_info_annotation_keyword_argument():

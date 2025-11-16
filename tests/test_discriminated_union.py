@@ -9,6 +9,7 @@ from typing import Annotated, Any, Callable, Generic, Literal, Optional, TypeVar
 
 import pytest
 from dirty_equals import HasRepr, IsStr
+from pydantic_core import SchemaValidator, core_schema
 from typing_extensions import TypeAliasType, TypedDict
 
 from pydantic import (
@@ -31,7 +32,6 @@ from pydantic.fields import FieldInfo
 from pydantic.functional_validators import model_validator
 from pydantic.json_schema import GenerateJsonSchema
 from pydantic.types import Tag
-from pydantic_core import SchemaValidator, core_schema
 
 
 def test_discriminated_union_type_invalid_single_variant():

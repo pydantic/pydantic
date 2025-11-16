@@ -10,12 +10,12 @@ from inspect import Parameter, ismethoddescriptor, signature
 from re import Pattern
 from typing import TYPE_CHECKING, Any, Callable, TypeVar
 
+from pydantic_core import PydanticUndefined
 from typing_extensions import TypeIs
 from typing_inspection.introspection import AnnotationSource
 
 from pydantic import PydanticDeprecatedSince211
 from pydantic.errors import PydanticUserError
-from pydantic_core import PydanticUndefined
 
 from ..aliases import AliasGenerator
 from . import _generics, _typing_extra

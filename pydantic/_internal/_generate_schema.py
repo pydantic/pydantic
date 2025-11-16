@@ -40,10 +40,6 @@ from uuid import UUID
 from zoneinfo import ZoneInfo
 
 import typing_extensions
-from typing_extensions import TypeAlias, TypeAliasType, get_args, get_origin, is_typeddict
-from typing_inspection import typing_objects
-from typing_inspection.introspection import AnnotationSource, get_literal_values, is_union_origin
-
 from pydantic_core import (
     MISSING,
     CoreSchema,
@@ -55,6 +51,9 @@ from pydantic_core import (
     core_schema,
     to_jsonable_python,
 )
+from typing_extensions import TypeAlias, TypeAliasType, get_args, get_origin, is_typeddict
+from typing_inspection import typing_objects
+from typing_inspection.introspection import AnnotationSource, get_literal_values, is_union_origin
 
 from ..aliases import AliasChoices, AliasPath
 from ..annotated_handlers import GetCoreSchemaHandler, GetJsonSchemaHandler

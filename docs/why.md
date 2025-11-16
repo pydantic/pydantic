@@ -341,8 +341,9 @@ Functional validators and serializers, as well as a powerful protocol for custom
     from datetime import datetime, timezone
     from typing import Any
 
-    from pydantic import BaseModel, field_validator
     from pydantic_core.core_schema import ValidatorFunctionWrapHandler
+
+    from pydantic import BaseModel, field_validator
 
 
     class Meeting(BaseModel):

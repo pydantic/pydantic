@@ -561,8 +561,9 @@ To raise a validation error, three types of exceptions can be used:
 * [`PydanticCustomError`][pydantic_core.PydanticCustomError]: a bit more verbose, but provides extra flexibility:
 
     ```python
-    from pydantic import BaseModel, ValidationError, field_validator
     from pydantic_core import PydanticCustomError
+
+    from pydantic import BaseModel, ValidationError, field_validator
 
 
     class Model(BaseModel):
@@ -835,8 +836,9 @@ Pydantic provides a few special utilities that can be used to customize validati
     ```python
     from typing import Annotated, Any
 
-    from pydantic import BaseModel, BeforeValidator
     from pydantic_core import PydanticUseDefault
+
+    from pydantic import BaseModel, BeforeValidator
 
 
     def default_if_none(value: Any) -> Any:

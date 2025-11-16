@@ -9,9 +9,8 @@ from functools import partialmethod
 from types import FunctionType
 from typing import TYPE_CHECKING, Annotated, Any, Callable, Literal, TypeVar, Union, cast, overload
 
-from typing_extensions import Self, TypeAlias
-
 from pydantic_core import PydanticUndefined, core_schema
+from typing_extensions import Self, TypeAlias
 
 from ._internal import _decorators, _generics, _internal_dataclass
 from .annotated_handlers import GetCoreSchemaHandler

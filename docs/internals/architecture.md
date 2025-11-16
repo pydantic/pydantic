@@ -149,8 +149,9 @@ where the `__get_pydantic_core_schema__` method can be used:
 ```python
 from typing import Annotated, Any
 
-from pydantic import GetCoreSchemaHandler, TypeAdapter
 from pydantic_core import CoreSchema
+
+from pydantic import GetCoreSchemaHandler, TypeAdapter
 
 
 class MyStrict:

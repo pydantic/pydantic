@@ -20,10 +20,10 @@ from itertools import zip_longest
 from types import BuiltinFunctionType, CodeType, FunctionType, GeneratorType, LambdaType, ModuleType
 from typing import TYPE_CHECKING, Any, Generic, TypeVar, overload
 
+from pydantic_core import MISSING
 from typing_extensions import TypeAlias, TypeGuard, deprecated
 
 from pydantic import PydanticDeprecatedSince211
-from pydantic_core import MISSING
 
 from . import _repr, _typing_extra
 from ._import_utils import import_cached_base_model

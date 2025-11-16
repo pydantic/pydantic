@@ -7,6 +7,7 @@ from functools import partial
 from typing import Annotated, Any, Generic, Literal, TypeVar, Union
 
 import pytest
+from pydantic_core import ArgsKwargs
 from typing_extensions import Required, TypedDict, Unpack
 
 from pydantic import (
@@ -23,7 +24,6 @@ from pydantic import (
     validate_call,
     with_config,
 )
-from pydantic_core import ArgsKwargs
 
 
 def test_wrap() -> None:

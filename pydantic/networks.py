@@ -10,9 +10,6 @@ from importlib.metadata import version
 from ipaddress import IPv4Address, IPv4Interface, IPv4Network, IPv6Address, IPv6Interface, IPv6Network
 from typing import TYPE_CHECKING, Annotated, Any, ClassVar
 
-from typing_extensions import Self, TypeAlias
-
-from pydantic.errors import PydanticUserError
 from pydantic_core import (
     MultiHostHost,
     PydanticCustomError,
@@ -22,6 +19,9 @@ from pydantic_core import (
 )
 from pydantic_core import MultiHostUrl as _CoreMultiHostUrl
 from pydantic_core import Url as _CoreUrl
+from typing_extensions import Self, TypeAlias
+
+from pydantic.errors import PydanticUserError
 
 from ._internal import _repr, _schema_generation_shared
 from ._migration import getattr_migration
@@ -842,8 +842,9 @@ class MongoDsn(_BaseMultiHostUrl):
         ```python
         from typing import Annotated
 
-        from pydantic import UrlConstraints
         from pydantic_core import MultiHostUrl
+
+        from pydantic import UrlConstraints
 
         MongoDsnNoDefaultPort = Annotated[
             MultiHostUrl,

@@ -11,14 +11,13 @@ from contextlib import contextmanager
 from functools import partial
 from typing import TYPE_CHECKING, Any, ClassVar, Protocol, cast
 
-from typing_extensions import TypeAlias, TypeIs
-
 from pydantic_core import (
     ArgsKwargs,
     SchemaSerializer,
     SchemaValidator,
     core_schema,
 )
+from typing_extensions import TypeAlias, TypeIs
 
 from ..errors import PydanticUndefinedAnnotation
 from ..fields import FieldInfo

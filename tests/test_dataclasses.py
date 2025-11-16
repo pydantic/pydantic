@@ -24,6 +24,7 @@ from typing import (
 import pytest
 from annotated_types import Gt
 from dirty_equals import HasRepr
+from pydantic_core import ArgsKwargs, SchemaValidator
 
 import pydantic
 from pydantic import (
@@ -47,7 +48,6 @@ from pydantic import (
 from pydantic._internal._mock_val_ser import MockValSer
 from pydantic.dataclasses import is_pydantic_dataclass, rebuild_dataclass
 from pydantic.json_schema import model_json_schema
-from pydantic_core import ArgsKwargs, SchemaValidator
 
 
 def test_cannot_create_dataclass_from_basemodel_subclass():

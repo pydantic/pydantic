@@ -1,11 +1,11 @@
 from typing import Annotated, Any, Generic, Literal, TypeVar
 
 import pytest
+from pydantic_core import ArgsKwargs, SchemaValidator
 from typing_extensions import TypedDict, Unpack
 
 from pydantic import AliasGenerator, Field, PydanticUserError, ValidationError
 from pydantic.experimental.arguments_schema import generate_arguments_schema
-from pydantic_core import ArgsKwargs, SchemaValidator
 
 
 def func(p: bool, *args: str, **kwargs: int) -> None: ...

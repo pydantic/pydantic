@@ -5,6 +5,7 @@ This file is used to test pyright's ability to check Pydantic decorators used in
 from functools import partial, partialmethod
 from typing import Any
 
+from pydantic_core.core_schema import ValidatorFunctionWrapHandler
 from typing_extensions import Self, assert_type
 
 from pydantic import (
@@ -19,7 +20,6 @@ from pydantic import (
     model_validator,
 )
 from pydantic.functional_validators import ModelWrapValidatorHandler
-from pydantic_core.core_schema import ValidatorFunctionWrapHandler
 
 
 def validate_before_func(value: Any) -> Any: ...

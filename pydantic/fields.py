@@ -15,11 +15,10 @@ from warnings import warn
 
 import annotated_types
 import typing_extensions
+from pydantic_core import MISSING, PydanticUndefined
 from typing_extensions import Self, TypeAlias, TypedDict, Unpack, deprecated
 from typing_inspection import typing_objects
 from typing_inspection.introspection import UNKNOWN, AnnotationSource, ForbiddenQualifier, Qualifier, inspect_annotation
-
-from pydantic_core import MISSING, PydanticUndefined
 
 from . import types
 from ._internal import _decorators, _fields, _generics, _internal_dataclass, _repr, _typing_extra, _utils

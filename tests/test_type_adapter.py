@@ -4,6 +4,7 @@ from datetime import date, datetime
 from typing import Annotated, Any, ForwardRef, Generic, NamedTuple, Optional, TypeVar, Union
 
 import pytest
+from pydantic_core import ValidationError
 from typing_extensions import TypeAlias, TypedDict
 
 from pydantic import BaseModel, Field, TypeAdapter, ValidationInfo, create_model, field_validator
@@ -13,7 +14,6 @@ from pydantic.config import ConfigDict
 from pydantic.dataclasses import dataclass as pydantic_dataclass
 from pydantic.errors import PydanticUndefinedAnnotation, PydanticUserError
 from pydantic.type_adapter import _type_has_config
-from pydantic_core import ValidationError
 
 ItemType = TypeVar('ItemType')
 

@@ -4,9 +4,8 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import TypedDict
 
-from typing_extensions import TypeAlias
-
 from pydantic_core.core_schema import ComputedField, CoreSchema, DefinitionReferenceSchema, SerSchema
+from typing_extensions import TypeAlias
 
 AllSchemas: TypeAlias = 'CoreSchema | SerSchema | ComputedField'
 

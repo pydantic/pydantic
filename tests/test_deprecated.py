@@ -7,6 +7,7 @@ from types import SimpleNamespace
 from typing import Any, Literal
 
 import pytest
+from pydantic_core import CoreSchema, core_schema
 
 from pydantic import (
     BaseModel,
@@ -30,7 +31,6 @@ from pydantic.deprecated.tools import parse_obj_as, schema_json_of, schema_of
 from pydantic.functional_serializers import model_serializer
 from pydantic.json_schema import JsonSchemaValue
 from pydantic.type_adapter import TypeAdapter
-from pydantic_core import CoreSchema, core_schema
 
 # `pytest.warns/raises()` is thread unsafe. As these tests are meant to be
 # removed in V3, we just mark all tests as thread unsafe

@@ -2,9 +2,9 @@ import pickle
 from typing import Any, Optional
 
 import pytest
+from pydantic_core import PydanticUndefined, ValidationError
 
 from pydantic import AliasChoices, AliasPath, BaseModel, ConfigDict, Field, PrivateAttr, PydanticDeprecatedSince20
-from pydantic_core import PydanticUndefined, ValidationError
 
 
 class Model(BaseModel):

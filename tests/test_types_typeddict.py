@@ -9,6 +9,7 @@ from typing import Annotated, Any, Generic, Optional, TypeVar
 import pytest
 import typing_extensions
 from annotated_types import Lt
+from pydantic_core import core_schema
 from typing_extensions import NotRequired, ReadOnly, Required, TypedDict
 
 from pydantic import (
@@ -27,7 +28,6 @@ from pydantic.functional_validators import field_validator, model_validator
 from pydantic.json_schema import GenerateJsonSchema
 from pydantic.type_adapter import TypeAdapter
 from pydantic.warnings import TypedDictExtraConfigWarning
-from pydantic_core import core_schema
 
 from .conftest import Err
 

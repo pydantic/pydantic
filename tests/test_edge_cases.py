@@ -21,6 +21,14 @@ from typing import (
 
 import pytest
 from dirty_equals import HasRepr, IsStr
+from pydantic_core import (
+    CoreSchema,
+    ErrorDetails,
+    InitErrorDetails,
+    PydanticSerializationError,
+    PydanticUndefined,
+    core_schema,
+)
 from typing_extensions import Self, TypeAliasType, TypedDict, get_args
 
 from pydantic import (
@@ -48,14 +56,6 @@ from pydantic.fields import Field, computed_field
 from pydantic.functional_serializers import (
     field_serializer,
     model_serializer,
-)
-from pydantic_core import (
-    CoreSchema,
-    ErrorDetails,
-    InitErrorDetails,
-    PydanticSerializationError,
-    PydanticUndefined,
-    core_schema,
 )
 
 

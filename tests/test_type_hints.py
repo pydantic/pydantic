@@ -64,10 +64,11 @@ def get_type_checking_only_ns():
 
     from inspect import Signature
 
+    from pydantic_core import CoreSchema, SchemaSerializer, SchemaValidator
+
     from pydantic.deprecated.parse import Protocol as DeprecatedParseProtocol
     from pydantic.fields import ComputedFieldInfo, FieldInfo, ModelPrivateAttr
     from pydantic.fields import PrivateAttr as _PrivateAttr
-    from pydantic_core import CoreSchema, SchemaSerializer, SchemaValidator
 
     return {
         'Signature': Signature,

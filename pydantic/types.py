@@ -28,10 +28,9 @@ from uuid import UUID
 
 import annotated_types
 from annotated_types import BaseMetadata, MaxLen, MinLen
+from pydantic_core import CoreSchema, PydanticCustomError, SchemaSerializer, core_schema
 from typing_extensions import Protocol, TypeAlias, TypeAliasType, deprecated, get_args, get_origin
 from typing_inspection.introspection import is_union_origin
-
-from pydantic_core import CoreSchema, PydanticCustomError, SchemaSerializer, core_schema
 
 from ._internal import _fields, _internal_dataclass, _utils, _validators
 from ._migration import getattr_migration
@@ -2689,8 +2688,9 @@ Warning:
     import base64
     from typing import Annotated, Literal
 
-    from pydantic import EncodedBytes, EncoderProtocol
     from pydantic_core import PydanticCustomError
+
+    from pydantic import EncodedBytes, EncoderProtocol
 
     class LegacyBase64Encoder(EncoderProtocol):
         @classmethod

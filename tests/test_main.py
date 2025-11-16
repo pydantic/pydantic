@@ -26,6 +26,7 @@ from typing import (
 from uuid import UUID, uuid4
 
 import pytest
+from pydantic_core import CoreSchema, core_schema
 
 from pydantic import (
     AfterValidator,
@@ -50,7 +51,6 @@ from pydantic._internal._generate_schema import GenerateSchema
 from pydantic._internal._mock_val_ser import MockCoreSchema
 from pydantic.dataclasses import dataclass as pydantic_dataclass
 from pydantic.v1 import BaseModel as BaseModelV1
-from pydantic_core import CoreSchema, core_schema
 
 
 def test_success():

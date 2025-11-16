@@ -11,6 +11,7 @@ from re import Pattern
 from typing import Annotated, Any, Callable, ClassVar, Optional, Union
 
 import pytest
+from pydantic_core import PydanticSerializationError, core_schema, to_jsonable_python
 from typing_extensions import TypedDict
 
 from pydantic import (
@@ -27,7 +28,6 @@ from pydantic import (
 )
 from pydantic.config import ConfigDict
 from pydantic.functional_serializers import PlainSerializer, WrapSerializer
-from pydantic_core import PydanticSerializationError, core_schema, to_jsonable_python
 
 
 def test_serialize_extra_allow() -> None:
