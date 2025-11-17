@@ -15,7 +15,7 @@ authors = [
     {name = 'Serge Matveenko', email = 'lig@countzero.co'},
     {name = 'Marcelo Trylesinski', email = 'marcelotryle@gmail.com'},
     {name = 'Sydney Runkle', email = 'sydneymarierunkle@gmail.com'},
-    {name = 'David Hewitt', email = 'mail@davidhewitt.io'},
+    {name = 'David Hewitt', email = 'mail@davidhewitt.dev'},
     {name = 'Alex Hall', email = 'alex.mojaki@gmail.com'},
     {name = 'Victorien Plot', email = 'contact@vctrn.dev'},
 ]
@@ -47,7 +47,7 @@ dependencies = [
     'typing-extensions>=4.14.1',
     'annotated-types>=0.6.0',
     # Keep this in sync with the version in the `check_pydantic_core_version()` function:
-    'pydantic-core==2.41.4',
+    'pydantic-core==2.41.5',
     'typing-inspection>=0.4.2',
 ]
 dynamic = ['version', 'readme']
@@ -188,6 +188,14 @@ markers = [
 default-groups = ['dev']
 required-version = '>=0.8.4'
 
+[tool.uv.sources]
+pydantic-core = { workspace = true }
+
+[tool.uv.workspace]
+members = [
+    "pydantic-core",
+]
+
 # configuring https://github.com/pydantic/hooky
 [tool.hooky]
 reviewers = ['Viicos']
@@ -288,10 +296,3 @@ skip = '.git,env*,pydantic/v1/*,uv.lock'
 # `ser` - abbreviation for "ser"ialisation
 # `crate` - a rust crate
 ignore-words-list = 'gir,ser,crate,deques'
-
-[tool.codeflash]
-module-root = "pydantic"
-tests-root = "tests"
-test-framework = "pytest"
-ignore-paths = []
-formatter-cmd = ["ruff check --exit-zero --fix $file", "ruff format $file"]

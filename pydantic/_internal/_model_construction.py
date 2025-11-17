@@ -553,7 +553,7 @@ def make_hash_func(cls: type[BaseModel]) -> Any:
 def set_model_fields(
     cls: type[BaseModel],
     config_wrapper: ConfigWrapper,
-    ns_resolver: NsResolver | None,
+    ns_resolver: NsResolver,
 ) -> None:
     """Collect and set `cls.__pydantic_fields__` and `cls.__class_vars__`.
 
