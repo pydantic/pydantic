@@ -890,21 +890,6 @@ to help you monitor and understand your
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="Field-Level Customization">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#unenforced-field-constraints" class="md-nav__link">
-    <span class="md-ellipsis">
-      Unenforced Field constraints
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
 </li>
         
           <li class="md-nav__item">
@@ -3280,21 +3265,6 @@ to help you monitor and understand your
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="Field-Level Customization">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#unenforced-field-constraints" class="md-nav__link">
-    <span class="md-ellipsis">
-      Unenforced Field constraints
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
 </li>
         
           <li class="md-nav__item">
@@ -3922,13 +3892,8 @@ and <a class="autorefs autorefs-internal" href="../../api/type_adapter/#pydantic
 <span class="sd">&quot;&quot;&quot;</span>
 </code></pre></div>
 <h2 id="customizing-json-schema">Customizing JSON Schema<a class="headerlink" href="#customizing-json-schema" title="Permanent link">&para;</a></h2>
-<p>The generated JSON schema can be customized at both the field level and model level via:</p>
-<ol>
-<li><a href="#field-level-customization">Field-level customization</a> with the <a class="autorefs autorefs-internal" href="../../api/fields/#pydantic.fields.Field"><code>Field</code></a> constructor</li>
-<li><a href="#model-level-customization">Model-level customization</a> with <a class="autorefs autorefs-internal" href="../../api/config/#pydantic.config.ConfigDict"><code>model_config</code></a></li>
-</ol>
-<p>At both the field and model levels, you can use the <code>json_schema_extra</code> option to add extra information to the JSON schema.
-The <a href="#using-json_schema_extra">Using <code>json_schema_extra</code></a> section below provides more details on this option.</p>
+<p>The generated JSON schema can be customized at both the <a href="#field-level-customization">field level</a> and <a href="#model-level-customization">model level</a>.</p>
+<p>At both the field and model levels, you can use the <a href="#using-json_schema_extra"><code>json_schema_extra</code> option</a> to add extra information to the JSON schema.</p>
 <p>For custom types, Pydantic offers other tools for customizing JSON schema generation:</p>
 <ol>
 <li><a href="#withjsonschema-annotation"><code>WithJsonSchema</code> annotation</a></li>
@@ -3937,25 +3902,26 @@ The <a href="#using-json_schema_extra">Using <code>json_schema_extra</code></a> 
 <li><a href="#implementing_get_pydantic_json_schema">Implementing <code>__get_pydantic_json_schema__</code></a></li>
 </ol>
 <h3 id="field-level-customization">Field-Level Customization<a class="headerlink" href="#field-level-customization" title="Permanent link">&para;</a></h3>
-<p>Optionally, the <a class="autorefs autorefs-internal" href="../../api/fields/#pydantic.fields.Field"><code>Field</code></a> function can be used to provide extra information about the field
-and validations.</p>
+<p><a href="../fields/">Fields</a> can have their JSON Schema customized. This is usually done using the <a class="autorefs autorefs-internal" href="../../api/fields/#pydantic.fields.Field"><code>Field()</code></a>
+function.</p>
 <p>Some field parameters are used exclusively to customize the generated JSON Schema:</p>
 <ul>
 <li><code>title</code>: The title of the field.</li>
 <li><code>description</code>: The description of the field.</li>
 <li><code>examples</code>: The examples of the field.</li>
-<li><code>json_schema_extra</code>: Extra JSON Schema properties to be added to the field.</li>
+<li><code>json_schema_extra</code>: Extra JSON Schema properties to be added to the field (see the <a href="#using-json_schema_extra">dedicated documentation</a>).</li>
 <li><code>field_title_generator</code>: A function that programmatically sets the field's title, based on its name and info.</li>
 </ul>
 <p>Here's an example:</p>
 <div class="language-python highlight"><pre><span></span><code><span class="kn">import</span><span class="w"> </span><span class="nn">json</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Annotated</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">pydantic</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">EmailStr</span><span class="p">,</span> <span class="n">Field</span><span class="p">,</span> <span class="n">SecretStr</span>
 
 
 <span class="k">class</span><span class="w"> </span><span class="nc">User</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
     <span class="n">age</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="n">description</span><span class="o">=</span><span class="s1">&#39;Age of the user&#39;</span><span class="p">)</span>
-    <span class="n">email</span><span class="p">:</span> <span class="n">EmailStr</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="n">examples</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;marcelo@mail.com&#39;</span><span class="p">])</span>
+    <span class="n">email</span><span class="p">:</span> <span class="n">Annotated</span><span class="p">[</span><span class="n">EmailStr</span><span class="p">,</span> <span class="n">Field</span><span class="p">(</span><span class="n">examples</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;marcelo@mail.com&#39;</span><span class="p">])]</span>  <span class="c1"># (1)!</span>
     <span class="n">name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="n">title</span><span class="o">=</span><span class="s1">&#39;Username&#39;</span><span class="p">)</span>
     <span class="n">password</span><span class="p">:</span> <span class="n">SecretStr</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span>
         <span class="n">json_schema_extra</span><span class="o">=</span><span class="p">{</span>
@@ -4009,83 +3975,9 @@ and validations.</p>
 <span class="w">  </span><span class="nt">&quot;type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;object&quot;</span>
 <span class="p">}</span>
 </code></pre></div>
-<h4 id="unenforced-field-constraints">Unenforced <code>Field</code> constraints<a class="headerlink" href="#unenforced-field-constraints" title="Permanent link">&para;</a></h4>
-<p>If Pydantic finds constraints which are not being enforced, an error will be raised. If you want to force the
-constraint to appear in the schema, even though it's not being checked upon parsing, you can use variadic arguments
-to <a class="autorefs autorefs-internal" href="../../api/fields/#pydantic.fields.Field"><code>Field</code></a> with the raw schema attribute name:</p>
-<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">pydantic</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">Field</span><span class="p">,</span> <span class="n">PositiveInt</span>
-
-<span class="k">try</span><span class="p">:</span>
-    <span class="c1"># this won&#39;t work since `PositiveInt` takes precedence over the</span>
-    <span class="c1"># constraints defined in `Field`, meaning they&#39;re ignored</span>
-    <span class="k">class</span><span class="w"> </span><span class="nc">Model</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
-        <span class="n">foo</span><span class="p">:</span> <span class="n">PositiveInt</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="n">lt</span><span class="o">=</span><span class="mi">10</span><span class="p">)</span>
-
-<span class="k">except</span> <span class="ne">ValueError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
-    <span class="nb">print</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
-
-
-<span class="c1"># if you find yourself needing this, an alternative is to declare</span>
-<span class="c1"># the constraints in `Field` (or you could use `conint()`)</span>
-<span class="c1"># here both constraints will be enforced:</span>
-<span class="k">class</span><span class="w"> </span><span class="nc">ModelB</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
-    <span class="c1"># Here both constraints will be applied and the schema</span>
-    <span class="c1"># will be generated correctly</span>
-    <span class="n">foo</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="n">gt</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">lt</span><span class="o">=</span><span class="mi">10</span><span class="p">)</span>
-
-
-<span class="nb">print</span><span class="p">(</span><span class="n">ModelB</span><span class="o">.</span><span class="n">model_json_schema</span><span class="p">())</span>
-<span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">{</span>
-<span class="sd">    &#39;properties&#39;: {</span>
-<span class="sd">        &#39;foo&#39;: {</span>
-<span class="sd">            &#39;exclusiveMaximum&#39;: 10,</span>
-<span class="sd">            &#39;exclusiveMinimum&#39;: 0,</span>
-<span class="sd">            &#39;title&#39;: &#39;Foo&#39;,</span>
-<span class="sd">            &#39;type&#39;: &#39;integer&#39;,</span>
-<span class="sd">        }</span>
-<span class="sd">    },</span>
-<span class="sd">    &#39;required&#39;: [&#39;foo&#39;],</span>
-<span class="sd">    &#39;title&#39;: &#39;ModelB&#39;,</span>
-<span class="sd">    &#39;type&#39;: &#39;object&#39;,</span>
-<span class="sd">}</span>
-<span class="sd">&quot;&quot;&quot;</span>
-</code></pre></div>
-<p>You can specify JSON schema modifications via the <a class="autorefs autorefs-internal" href="../../api/fields/#pydantic.fields.Field"><code>Field</code></a> constructor via <a class="autorefs autorefs-external" href="https://docs.python.org/3/library/typing.html#typing.Annotated"><code>typing.Annotated</code></a> as well:</p>
-<div class="language-python highlight"><pre><span></span><code><span class="kn">import</span><span class="w"> </span><span class="nn">json</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Annotated</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">uuid</span><span class="w"> </span><span class="kn">import</span> <span class="n">uuid4</span>
-
-<span class="kn">from</span><span class="w"> </span><span class="nn">pydantic</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">Field</span>
-
-
-<span class="k">class</span><span class="w"> </span><span class="nc">Foo</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
-    <span class="nb">id</span><span class="p">:</span> <span class="n">Annotated</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Field</span><span class="p">(</span><span class="n">default_factory</span><span class="o">=</span><span class="k">lambda</span><span class="p">:</span> <span class="n">uuid4</span><span class="p">()</span><span class="o">.</span><span class="n">hex</span><span class="p">)]</span>
-    <span class="n">name</span><span class="p">:</span> <span class="n">Annotated</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Field</span><span class="p">(</span><span class="n">max_length</span><span class="o">=</span><span class="mi">256</span><span class="p">)]</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span>
-        <span class="s1">&#39;Bar&#39;</span><span class="p">,</span> <span class="n">title</span><span class="o">=</span><span class="s1">&#39;CustomName&#39;</span>
-    <span class="p">)</span>
-
-
-<span class="nb">print</span><span class="p">(</span><span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">Foo</span><span class="o">.</span><span class="n">model_json_schema</span><span class="p">(),</span> <span class="n">indent</span><span class="o">=</span><span class="mi">2</span><span class="p">))</span>
-</code></pre></div>
-<p>JSON output:</p>
-<div class="language-json highlight"><pre><span></span><code><span class="p">{</span>
-<span class="w">  </span><span class="nt">&quot;properties&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
-<span class="w">    </span><span class="nt">&quot;id&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
-<span class="w">      </span><span class="nt">&quot;title&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Id&quot;</span><span class="p">,</span>
-<span class="w">      </span><span class="nt">&quot;type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;string&quot;</span>
-<span class="w">    </span><span class="p">},</span>
-<span class="w">    </span><span class="nt">&quot;name&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
-<span class="w">      </span><span class="nt">&quot;default&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Bar&quot;</span><span class="p">,</span>
-<span class="w">      </span><span class="nt">&quot;maxLength&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">256</span><span class="p">,</span>
-<span class="w">      </span><span class="nt">&quot;title&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;CustomName&quot;</span><span class="p">,</span>
-<span class="w">      </span><span class="nt">&quot;type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;string&quot;</span>
-<span class="w">    </span><span class="p">}</span>
-<span class="w">  </span><span class="p">},</span>
-<span class="w">  </span><span class="nt">&quot;title&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Foo&quot;</span><span class="p">,</span>
-<span class="w">  </span><span class="nt">&quot;type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;object&quot;</span>
-<span class="p">}</span>
-</code></pre></div>
+<ol>
+<li>The <a href="../fields/#the-annotated-pattern">annotated pattern</a> can also be used.</li>
+</ol>
 <h3 id="programmatic-field-title-generation">Programmatic field title generation<a class="headerlink" href="#programmatic-field-title-generation" title="Permanent link">&para;</a></h3>
 <p>The <code>field_title_generator</code> parameter can be used to programmatically generate the title for a field based on its name and info.</p>
 <p>See the following example:</p>

@@ -207,7 +207,7 @@ Standard library type: decimal.Decimal.
 #### Validation
 
 - Decimal instances are validated as is.
-- Any value accepted by the Decimal constructor (apart from the three-tuple input) will validate.
+- Any value accepted by the Decimal constructor.
 
 #### Constraints
 

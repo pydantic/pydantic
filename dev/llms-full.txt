@@ -3562,12 +3562,9 @@ print(Model.model_json_schema(mode='serialization'))
 
 ## Customizing JSON Schema
 
-The generated JSON schema can be customized at both the field level and model level via:
+The generated JSON schema can be customized at both the [field level](#field-level-customization) and [model level](#model-level-customization).
 
-1. [Field-level customization](#field-level-customization) with the Field constructor
-1. [Model-level customization](#model-level-customization) with model_config
-
-At both the field and model levels, you can use the `json_schema_extra` option to add extra information to the JSON schema. The [Using `json_schema_extra`](#using-json_schema_extra) section below provides more details on this option.
+At both the field and model levels, you can use the [`json_schema_extra` option](#using-json_schema_extra) to add extra information to the JSON schema.
 
 For custom types, Pydantic offers other tools for customizing JSON schema generation:
 
@@ -3578,27 +3575,28 @@ For custom types, Pydantic offers other tools for customizing JSON schema genera
 
 ### Field-Level Customization
 
-Optionally, the Field function can be used to provide extra information about the field and validations.
+[Fields](../fields/) can have their JSON Schema customized. This is usually done using the Field() function.
 
 Some field parameters are used exclusively to customize the generated JSON Schema:
 
 - `title`: The title of the field.
 - `description`: The description of the field.
 - `examples`: The examples of the field.
-- `json_schema_extra`: Extra JSON Schema properties to be added to the field.
+- `json_schema_extra`: Extra JSON Schema properties to be added to the field (see the [dedicated documentation](#using-json_schema_extra)).
 - `field_title_generator`: A function that programmatically sets the field's title, based on its name and info.
 
 Here's an example:
 
 ```python
 import json
+from typing import Annotated
 
 from pydantic import BaseModel, EmailStr, Field, SecretStr
 
 
 class User(BaseModel):
     age: int = Field(description='Age of the user')
-    email: EmailStr = Field(examples=['marcelo@mail.com'])
+    email: Annotated[EmailStr, Field(examples=['marcelo@mail.com'])]  # (1)!
     name: str = Field(title='Username')
     password: SecretStr = Field(
         json_schema_extra={
@@ -3658,93 +3656,7 @@ JSON output:
 
 ```
 
-#### Unenforced `Field` constraints
-
-If Pydantic finds constraints which are not being enforced, an error will be raised. If you want to force the constraint to appear in the schema, even though it's not being checked upon parsing, you can use variadic arguments to Field with the raw schema attribute name:
-
-```python
-from pydantic import BaseModel, Field, PositiveInt
-
-try:
-    # this won't work since `PositiveInt` takes precedence over the
-    # constraints defined in `Field`, meaning they're ignored
-    class Model(BaseModel):
-        foo: PositiveInt = Field(lt=10)
-
-except ValueError as e:
-    print(e)
-
-
-# if you find yourself needing this, an alternative is to declare
-# the constraints in `Field` (or you could use `conint()`)
-# here both constraints will be enforced:
-class ModelB(BaseModel):
-    # Here both constraints will be applied and the schema
-    # will be generated correctly
-    foo: int = Field(gt=0, lt=10)
-
-
-print(ModelB.model_json_schema())
-"""
-{
-    'properties': {
-        'foo': {
-            'exclusiveMaximum': 10,
-            'exclusiveMinimum': 0,
-            'title': 'Foo',
-            'type': 'integer',
-        }
-    },
-    'required': ['foo'],
-    'title': 'ModelB',
-    'type': 'object',
-}
-"""
-
-```
-
-You can specify JSON schema modifications via the Field constructor via typing.Annotated as well:
-
-```python
-import json
-from typing import Annotated
-from uuid import uuid4
-
-from pydantic import BaseModel, Field
-
-
-class Foo(BaseModel):
-    id: Annotated[str, Field(default_factory=lambda: uuid4().hex)]
-    name: Annotated[str, Field(max_length=256)] = Field(
-        'Bar', title='CustomName'
-    )
-
-
-print(json.dumps(Foo.model_json_schema(), indent=2))
-
-```
-
-JSON output:
-
-```json
-{
-  "properties": {
-    "id": {
-      "title": "Id",
-      "type": "string"
-    },
-    "name": {
-      "default": "Bar",
-      "maxLength": 256,
-      "title": "CustomName",
-      "type": "string"
-    }
-  },
-  "title": "Foo",
-  "type": "object"
-}
-
-```
+1. The [annotated pattern](../fields/#the-annotated-pattern) can also be used.
 
 ### Programmatic field title generation
 
@@ -39157,7 +39069,7 @@ Standard library type: decimal.Decimal.
 #### Validation
 
 - Decimal instances are validated as is.
-- Any value accepted by the Decimal constructor (apart from the three-tuple input) will validate.
+- Any value accepted by the Decimal constructor.
 
 #### Constraints
 
