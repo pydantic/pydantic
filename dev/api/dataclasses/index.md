@@ -200,7 +200,7 @@ def dataclass(
         # if config is not explicitly provided, try to read it from the type
         config_dict = config if config is not None else getattr(cls, '__pydantic_config__', None)
         config_wrapper = _config.ConfigWrapper(config_dict)
-        decorators = _decorators.DecoratorInfos.build(cls)
+        decorators = _decorators.DecoratorInfos.build(cls, replace_wrapped_methods=True)
         decorators.update_from_config(config_wrapper)
 
         # Keep track of the original __doc__ so that we can restore it after applying the dataclasses decorator
