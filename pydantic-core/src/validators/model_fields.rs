@@ -22,7 +22,7 @@ use super::{build_validator, BuildValidator, CombinedValidator, DefinitionsBuild
 #[derive(Debug)]
 struct Field {
     name: String,
-    lookup_key_collection: LookupKeyCollection,
+    lookup_key_collection: Arc<LookupKeyCollection>,
     name_py: Py<PyString>,
     validator: Arc<CombinedValidator>,
     frozen: bool,
@@ -90,7 +90,7 @@ impl BuildValidator for ModelFieldsValidator {
             };
 
             let validation_alias = field_info.get_item(intern!(py, "validation_alias"))?;
-            let lookup_key_collection = LookupKeyCollection::new(py, validation_alias, field_name)?;
+            let lookup_key_collection = Arc::new(LookupKeyCollection::new(py, validation_alias, field_name)?);
 
             fields.push(Field {
                 name: field_name.to_string(),
@@ -492,5 +492,63 @@ impl Validator for ModelFieldsValidator {
 
     fn get_name(&self) -> &str {
         Self::EXPECTED_TYPE
+    }
+
+    fn children(&self) -> Vec<&Arc<CombinedValidator>> {
+        let mut children = Vec::with_capacity(self.fields.len() + 2);
+        for field in &self.fields {
+            children.push(&field.validator);
+        }
+        if let Some(ref v) = self.extras_validator {
+            children.push(v);
+        }
+        if let Some(ref v) = self.extras_keys_validator {
+            children.push(v);
+        }
+        children
+    }
+
+    fn with_new_children(&self, children: Vec<Arc<CombinedValidator>>) -> PyResult<Arc<CombinedValidator>> {
+        let expected_len = self.fields.len()
+            + usize::from(self.extras_validator.is_some())
+            + usize::from(self.extras_keys_validator.is_some());
+        if children.len() != expected_len {
+            return py_schema_err!("ModelFields must have exactly {} children", expected_len);
+        }
+        let mut iter = children.into_iter();
+        let new_fields = self
+            .fields
+            .iter()
+            .map(|field| Field {
+                name: field.name.clone(),
+                lookup_key_collection: field.lookup_key_collection.clone(),
+                name_py: field.name_py.clone(),
+                validator: iter.next().unwrap(),
+                frozen: field.frozen,
+            })
+            .collect();
+        let extras_validator = if self.extras_validator.is_some() {
+            Some(iter.next().unwrap())
+        } else {
+            None
+        };
+        let extras_keys_validator = if self.extras_keys_validator.is_some() {
+            Some(iter.next().unwrap())
+        } else {
+            None
+        };
+        Ok(CombinedValidator::ModelFields(Self {
+            fields: new_fields,
+            model_name: self.model_name.clone(),
+            extra_behavior: self.extra_behavior,
+            extras_validator,
+            extras_keys_validator,
+            strict: self.strict,
+            from_attributes: self.from_attributes,
+            loc_by_alias: self.loc_by_alias,
+            validate_by_alias: self.validate_by_alias,
+            validate_by_name: self.validate_by_name,
+        })
+        .into())
     }
 }

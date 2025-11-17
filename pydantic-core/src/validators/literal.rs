@@ -302,6 +302,10 @@ impl Validator for LiteralValidator {
     fn get_name(&self) -> &str {
         &self.name
     }
+
+    fn children(&self) -> Vec<&Arc<CombinedValidator>> {
+        vec![]
+    }
 }
 
 pub fn expected_repr_name(mut repr_args: Vec<String>, base_name: &'static str) -> (String, String) {

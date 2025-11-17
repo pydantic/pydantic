@@ -4,7 +4,7 @@ use std::sync::Arc;
 use pyo3::types::{PyDict, PyString};
 use pyo3::{prelude::*, IntoPyObjectExt, PyTraverseError, PyVisit};
 
-use crate::build_tools::ExtraBehavior;
+use crate::build_tools::{py_schema_err, ExtraBehavior};
 use crate::errors::{ErrorType, LocItem, ValError, ValResult};
 use crate::input::{BorrowInput, GenericIterator, Input};
 use crate::py_gc::PyGcTraverse;
@@ -94,6 +94,35 @@ impl Validator for GeneratorValidator {
 
     fn get_name(&self) -> &str {
         &self.name
+    }
+
+    fn children(&self) -> Vec<&Arc<CombinedValidator>> {
+        match &self.item_validator {
+            Some(v) => vec![v],
+            None => vec![],
+        }
+    }
+
+    fn with_new_children(&self, children: Vec<Arc<CombinedValidator>>) -> PyResult<Arc<CombinedValidator>> {
+        if self.item_validator.is_none() {
+            if !children.is_empty() {
+                return py_schema_err!("GeneratorValidator expected 0 children, got {}", children.len());
+            }
+            Ok(CombinedValidator::Generator(self.clone()).into())
+        } else {
+            if children.len() != 1 {
+                return py_schema_err!("GeneratorValidator expected 1 child, got {}", children.len());
+            }
+            Ok(CombinedValidator::Generator(Self {
+                item_validator: Some(children.into_iter().next().unwrap()),
+                min_length: self.min_length,
+                max_length: self.max_length,
+                name: self.name.clone(),
+                hide_input_in_errors: self.hide_input_in_errors,
+                validation_error_cause: self.validation_error_cause,
+            })
+            .into())
+        }
     }
 }
 

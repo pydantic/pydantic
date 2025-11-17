@@ -177,6 +177,28 @@ impl Validator for ListValidator {
             }
         }
     }
+
+    fn children(&self) -> Vec<&Arc<CombinedValidator>> {
+        match &self.item_validator {
+            Some(v) => vec![v],
+            None => vec![],
+        }
+    }
+
+    fn with_new_children(&self, children: Vec<Arc<CombinedValidator>>) -> PyResult<Arc<CombinedValidator>> {
+        if children.len() > 1 {
+            return crate::build_tools::py_schema_err!("List must have zero or one child");
+        }
+        Ok(CombinedValidator::List(Self {
+            strict: self.strict,
+            item_validator: children.into_iter().next(),
+            min_length: self.min_length,
+            max_length: self.max_length,
+            name: OnceLock::new(),
+            fail_fast: self.fail_fast,
+        })
+        .into())
+    }
 }
 
 struct ValidateToVec<'a, 's, 'py, I: Input<'py> + ?Sized> {
