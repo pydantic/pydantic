@@ -20,6 +20,7 @@ from itertools import zip_longest
 from types import BuiltinFunctionType, CodeType, FunctionType, GeneratorType, LambdaType, ModuleType
 from typing import TYPE_CHECKING, Any, Generic, TypeVar, overload
 
+from pydantic_core import MISSING
 from typing_extensions import TypeAlias, TypeGuard, deprecated
 
 from pydantic import PydanticDeprecatedSince211
@@ -28,8 +29,9 @@ from . import _repr, _typing_extra
 from ._import_utils import import_cached_base_model
 
 if TYPE_CHECKING:
-    MappingIntStrAny: TypeAlias = Mapping[int, Any] | Mapping[str, Any]
-    AbstractSetIntStr: TypeAlias = AbstractSet[int] | AbstractSet[str]
+    # TODO remove type error comments when we drop support for Python 3.9
+    MappingIntStrAny: TypeAlias = Mapping[int, Any] | Mapping[str, Any]  # pyright: ignore[reportGeneralTypeIssues]
+    AbstractSetIntStr: TypeAlias = AbstractSet[int] | AbstractSet[str]  # pyright: ignore[reportGeneralTypeIssues]
     from ..main import BaseModel
 
 
@@ -336,6 +338,8 @@ def smart_deepcopy(obj: Obj) -> Obj:
     Use obj.copy() for built-in empty collections
     Use copy.deepcopy() for non-empty collections and unknown objects.
     """
+    if obj is MISSING:
+        return obj  # pyright: ignore[reportReturnType]
     obj_type = obj.__class__
     if obj_type in IMMUTABLE_NON_COLLECTIONS_TYPES:
         return obj  # fastest case: obj is immutable and not collection therefore will not be copied anyway
@@ -426,7 +430,13 @@ class deprecated_instance_property(Generic[_ModelT, _RT]):
     def __get__(self, instance: _ModelT, objtype: type[_ModelT]) -> _RT: ...
     def __get__(self, instance: _ModelT | None, objtype: type[_ModelT]) -> _RT:
         if instance is not None:
-            attr_name = self.fget.__name__ if sys.version_info >= (3, 10) else self.fget.__func__.__name__
+            # fmt: off
+            attr_name = (
+                self.fget.__name__
+                if sys.version_info >= (3, 10)
+                else self.fget.__func__.__name__  # pyright: ignore[reportFunctionMemberAccess]
+            )
+            # fmt: on
             warnings.warn(
                 f'Accessing the {attr_name!r} attribute on the instance is deprecated. '
                 'Instead, you should access this attribute from the model class.',

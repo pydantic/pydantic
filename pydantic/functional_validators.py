@@ -15,7 +15,8 @@ from typing_extensions import Self, TypeAlias
 from ._internal import _decorators, _generics, _internal_dataclass
 from .annotated_handlers import GetCoreSchemaHandler
 from .errors import PydanticUserError
-from .warnings import ArbitraryTypeWarning
+from .version import version_short
+from .warnings import ArbitraryTypeWarning, PydanticDeprecatedSince212
 
 if sys.version_info < (3, 11):
     from typing_extensions import Protocol
@@ -73,7 +74,7 @@ class AfterValidator:
 
     def __get_pydantic_core_schema__(self, source_type: Any, handler: GetCoreSchemaHandler) -> core_schema.CoreSchema:
         schema = handler(source_type)
-        info_arg = _inspect_validator(self.func, 'after')
+        info_arg = _inspect_validator(self.func, mode='after', type='field')
         if info_arg:
             func = cast(core_schema.WithInfoValidatorFunction, self.func)
             return core_schema.with_info_after_validator_function(func, schema=schema)
@@ -131,7 +132,7 @@ class BeforeValidator:
             else handler.generate_schema(self.json_schema_input_type)
         )
 
-        info_arg = _inspect_validator(self.func, 'before')
+        info_arg = _inspect_validator(self.func, mode='before', type='field')
         if info_arg:
             func = cast(core_schema.WithInfoValidatorFunction, self.func)
             return core_schema.with_info_before_validator_function(
@@ -229,7 +230,7 @@ class PlainValidator:
 
         input_schema = handler.generate_schema(self.json_schema_input_type)
 
-        info_arg = _inspect_validator(self.func, 'plain')
+        info_arg = _inspect_validator(self.func, mode='plain', type='field')
         if info_arg:
             func = cast(core_schema.WithInfoValidatorFunction, self.func)
             return core_schema.with_info_plain_validator_function(
@@ -304,7 +305,7 @@ class WrapValidator:
             else handler.generate_schema(self.json_schema_input_type)
         )
 
-        info_arg = _inspect_validator(self.func, 'wrap')
+        info_arg = _inspect_validator(self.func, mode='wrap', type='field')
         if info_arg:
             func = cast(core_schema.WithInfoWrapValidatorFunction, self.func)
             return core_schema.with_info_wrap_validator_function(
@@ -718,9 +719,18 @@ def model_validator(
     """
 
     def dec(f: Any) -> _decorators.PydanticDescriptorProxy[Any]:
-        # auto apply the @classmethod decorator (except for *after* validators, which should be instance methods):
-        if mode != 'after':
-            f = _decorators.ensure_classmethod_based_on_signature(f)
+        # auto apply the @classmethod decorator. NOTE: in V3, do not apply the conversion for 'after' validators:
+        f = _decorators.ensure_classmethod_based_on_signature(f)
+        if mode == 'after' and isinstance(f, classmethod):
+            warnings.warn(
+                category=PydanticDeprecatedSince212,
+                message=(
+                    "Using `@model_validator` with mode='after' on a classmethod is deprecated. Instead, use an instance method. "
+                    f'See the documentation at https://docs.pydantic.dev/{version_short()}/concepts/validators/#model-after-validator.'
+                ),
+                stacklevel=2,
+            )
+
         dec_info = _decorators.ModelValidatorDecoratorInfo(mode=mode)
         return _decorators.PydanticDescriptorProxy(f, dec_info)
 

@@ -153,6 +153,27 @@ class ConfigDict(TypedDict, total=False):
 
         1. The `= Field(init=False)` does not have any effect at runtime, but prevents the `__pydantic_extra__` field from
            being included as a parameter to the model's `__init__` method by type checkers.
+
+    As well as specifying an `extra` configuration value on the model, you can also provide it as an argument to the validation methods.
+    This will override any `extra` configuration value set on the model:
+    ```python
+    from pydantic import BaseModel, ConfigDict, ValidationError
+
+    class Model(BaseModel):
+        x: int
+        model_config = ConfigDict(extra="allow")
+
+    try:
+        # Override model config and forbid extra fields just this time
+        Model.model_validate({"x": 1, "y": 2}, extra="forbid")
+    except ValidationError as exc:
+        print(exc)
+        """
+        1 validation error for Model
+        y
+          Extra inputs are not permitted [type=extra_forbidden, input_value=2, input_type=int]
+        """
+    ```
     '''
 
     frozen: bool
@@ -470,123 +491,71 @@ class ConfigDict(TypedDict, total=False):
     # whether instances of models and dataclasses (including subclass instances) should re-validate, default 'never'
     revalidate_instances: Literal['always', 'never', 'subclass-instances']
     """
-    When and how to revalidate models and dataclasses during validation. Accepts the string
-    values of `'never'`, `'always'` and `'subclass-instances'`. Defaults to `'never'`.
+    When and how to revalidate models and dataclasses during validation. Can be one of:
 
-    - `'never'` will not revalidate models and dataclasses during validation
-    - `'always'` will revalidate models and dataclasses during validation
-    - `'subclass-instances'` will revalidate models and dataclasses during validation if the instance is a
+    - `'never'`: will *not* revalidate models and dataclasses during validation
+    - `'always'`: will revalidate models and dataclasses during validation
+    - `'subclass-instances'`: will revalidate models and dataclasses during validation if the instance is a
         subclass of the model or dataclass
 
-    By default, model and dataclass instances are not revalidated during validation.
+    The default is `'never'` (no revalidation).
+
+    This configuration only affects *the current model* it is applied on, and does *not* populate to the models
+    referenced in fields.
 
     ```python
     from pydantic import BaseModel
 
     class User(BaseModel, revalidate_instances='never'):  # (1)!
-        hobbies: list[str]
-
-    class SubUser(User):
-        sins: list[str]
+        name: str
 
     class Transaction(BaseModel):
         user: User
 
-    my_user = User(hobbies=['reading'])
+    my_user = User(name='John')
     t = Transaction(user=my_user)
-    print(t)
-    #> user=User(hobbies=['reading'])
 
-    my_user.hobbies = [1]  # (2)!
+    my_user.name = 1  # (2)!
     t = Transaction(user=my_user)  # (3)!
     print(t)
-    #> user=User(hobbies=[1])
-
-    my_sub_user = SubUser(hobbies=['scuba diving'], sins=['lying'])
-    t = Transaction(user=my_sub_user)
-    print(t)
-    #> user=SubUser(hobbies=['scuba diving'], sins=['lying'])
+    #> user=User(name=1)
     ```
 
-    1. `revalidate_instances` is set to `'never'` by **default.
-    2. The assignment is not validated, unless you set `validate_assignment` to `True` in the model's config.
-    3. Since `revalidate_instances` is set to `never`, this is not revalidated.
+    1. This is the default behavior.
+    2. The assignment is *not* validated, unless you set [`validate_assignment`][pydantic.ConfigDict.validate_assignment] in the configuration.
+    3. Since `revalidate_instances` is set to `'never'`, the user instance is not revalidated.
 
-    If you want to revalidate instances during validation, you can set `revalidate_instances` to `'always'`
-    in the model's config.
-
-    ```python
-    from pydantic import BaseModel, ValidationError
-
-    class User(BaseModel, revalidate_instances='always'):  # (1)!
-        hobbies: list[str]
-
-    class SubUser(User):
-        sins: list[str]
-
-    class Transaction(BaseModel):
-        user: User
-
-    my_user = User(hobbies=['reading'])
-    t = Transaction(user=my_user)
-    print(t)
-    #> user=User(hobbies=['reading'])
-
-    my_user.hobbies = [1]
-    try:
-        t = Transaction(user=my_user)  # (2)!
-    except ValidationError as e:
-        print(e)
-        '''
-        1 validation error for Transaction
-        user.hobbies.0
-          Input should be a valid string [type=string_type, input_value=1, input_type=int]
-        '''
-
-    my_sub_user = SubUser(hobbies=['scuba diving'], sins=['lying'])
-    t = Transaction(user=my_sub_user)
-    print(t)  # (3)!
-    #> user=User(hobbies=['scuba diving'])
-    ```
-
-    1. `revalidate_instances` is set to `'always'`.
-    2. The model is revalidated, since `revalidate_instances` is set to `'always'`.
-    3. Using `'never'` we would have gotten `user=SubUser(hobbies=['scuba diving'], sins=['lying'])`.
-
-    It's also possible to set `revalidate_instances` to `'subclass-instances'` to only revalidate instances
-    of subclasses of the model.
+    Here is an example demonstrating the behavior of `'subclass-instances'`:
 
     ```python
     from pydantic import BaseModel
 
-    class User(BaseModel, revalidate_instances='subclass-instances'):  # (1)!
-        hobbies: list[str]
+    class User(BaseModel, revalidate_instances='subclass-instances'):
+        name: str
 
     class SubUser(User):
-        sins: list[str]
+        age: int
 
     class Transaction(BaseModel):
         user: User
 
-    my_user = User(hobbies=['reading'])
-    t = Transaction(user=my_user)
-    print(t)
-    #> user=User(hobbies=['reading'])
-
-    my_user.hobbies = [1]
+    my_user = User(name='John')
+    my_user.name = 1  # (1)!
     t = Transaction(user=my_user)  # (2)!
     print(t)
-    #> user=User(hobbies=[1])
+    #> user=User(name=1)
 
-    my_sub_user = SubUser(hobbies=['scuba diving'], sins=['lying'])
+    my_sub_user = SubUser(name='John', age=20)
     t = Transaction(user=my_sub_user)
     print(t)  # (3)!
-    #> user=User(hobbies=['scuba diving'])
+    #> user=User(name='John')
     ```
 
-    1. `revalidate_instances` is set to `'subclass-instances'`.
-    2. This is not revalidated, since `my_user` is not a subclass of `User`.
-    3. Using `'never'` we would have gotten `user=SubUser(hobbies=['scuba diving'], sins=['lying'])`.
+    1. The assignment is *not* validated, unless you set [`validate_assignment`][pydantic.ConfigDict.validate_assignment] in the configuration.
+    2. Because `my_user` is a "direct" instance of `User`, it is *not* being revalidated. It would have been the case if
+      `revalidate_instances` was set to `'always'`.
+    3. Because `my_sub_user` is an instance of a `User` subclass, it is being revalidated. In this case, Pydantic coerces `my_sub_user` to the defined
+       `User` class defined on `Transaction`. If one of its fields had an invalid value, a validation error would have been raised.
     """
 
     ser_json_timedelta: Literal['iso8601', 'float']
@@ -598,7 +567,7 @@ class ConfigDict(TypedDict, total=False):
     - `'float'` will serialize timedeltas to the total number of seconds.
 
     !!! warning
-        Starting in v2.11, it is recommended to use the [`ser_json_temporal`][pydantic.config.ConfigDict.ser_json_temporal]
+        Starting in v2.12, it is recommended to use the [`ser_json_temporal`][pydantic.config.ConfigDict.ser_json_temporal]
         setting instead of `ser_json_timedelta`. This setting will be deprecated in v3.
     """
 
@@ -620,7 +589,7 @@ class ConfigDict(TypedDict, total=False):
     Defaults to `'iso8601'`.
 
     !!! note
-        This setting was introduced in v2.11. It overlaps with the [`ser_json_timedelta`][pydantic.config.ConfigDict.ser_json_timedelta]
+        This setting was introduced in v2.12. It overlaps with the [`ser_json_timedelta`][pydantic.config.ConfigDict.ser_json_timedelta]
         setting which will be deprecated in v3. It also adds more configurability for
         the other temporal types.
     """
@@ -976,14 +945,13 @@ class ConfigDict(TypedDict, total=False):
     The regex engine to be used for pattern validation.
     Defaults to `'rust-regex'`.
 
-    - `rust-regex` uses the [`regex`](https://docs.rs/regex) Rust crate,
+    - `'rust-regex'` uses the [`regex`](https://docs.rs/regex) Rust crate,
       which is non-backtracking and therefore more DDoS resistant, but does not support all regex features.
-    - `python-re` use the [`re`](https://docs.python.org/3/library/re.html) module,
-      which supports all regex features, but may be slower.
+    - `'python-re'` use the [`re`][] module, which supports all regex features, but may be slower.
 
     !!! note
-        If you use a compiled regex pattern, the python-re engine will be used regardless of this setting.
-        This is so that flags such as `re.IGNORECASE` are respected.
+        If you use a compiled regex pattern, the `'python-re'` engine will be used regardless of this setting.
+        This is so that flags such as [`re.IGNORECASE`][] are respected.
 
     ```python
     from pydantic import BaseModel, ConfigDict, Field, ValidationError
@@ -1178,6 +1146,24 @@ class ConfigDict(TypedDict, total=False):
 
     1. The field `'my_field'` has an alias `'my_alias'`.
     2. The model is serialized using the alias `'my_alias'` for the `'my_field'` attribute.
+    """
+
+    url_preserve_empty_path: bool
+    """
+    Whether to preserve empty URL paths when validating values for a URL type. Defaults to `False`.
+
+    ```python
+    from pydantic import AnyUrl, BaseModel, ConfigDict
+
+    class Model(BaseModel):
+        model_config = ConfigDict(url_preserve_empty_path=True)
+
+        url: AnyUrl
+
+    m = Model(url='http://example.com')
+    print(m.url)
+    #> http://example.com
+    ```
     """
 
 

@@ -195,7 +195,8 @@ def test_construct_nested():
     # an actual root model instance:
     v = Base64RootProperty.model_construct(data='test')
     assert isinstance(v.data, str)  # should be RootModel[Base64Str], but model_construct skipped validation
-    with pytest.raises(AttributeError, match="'str' object has no attribute 'root'"):
+
+    with pytest.warns(UserWarning):
         v.model_dump()
 
 

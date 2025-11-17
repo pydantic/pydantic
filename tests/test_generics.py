@@ -22,6 +22,7 @@ from typing import (
 import pytest
 from dirty_equals import HasRepr, IsStr
 from pydantic_core import CoreSchema, core_schema
+from pytest_mock import MockerFixture
 from typing_extensions import (
     Literal,
     Never,
@@ -53,7 +54,6 @@ from pydantic import (
     model_validator,
 )
 from pydantic._internal._generics import (
-    _GENERIC_TYPES_CACHE,
     _LIMITED_DICT_SIZE,
     GenericTypesCache,
     LimitedDict,
@@ -63,21 +63,6 @@ from pydantic._internal._generics import (
     replace_types,
 )
 from pydantic.warnings import GenericBeforeBaseModelWarning
-
-
-# Note: this isn't implemented as a fixture, as pytest fixtures
-# are shared between threads by pytest-run-parallel:
-def get_clean_cache() -> GenericTypesCache:
-    generic_types_cache = _GENERIC_TYPES_CACHE.get()
-    if generic_types_cache is None:
-        generic_types_cache = GenericTypesCache()
-        _GENERIC_TYPES_CACHE.set(generic_types_cache)
-    # cleans up _GENERIC_TYPES_CACHE for checking item counts in the cache
-    generic_types_cache.clear()
-    gc.collect(0)
-    gc.collect(1)
-    gc.collect(2)
-    return generic_types_cache
 
 
 def test_generic_name():
@@ -349,8 +334,9 @@ def test_arguments_count_validation() -> None:
     assert Model[int, int, str].__pydantic_generic_metadata__['args'] == (int, int, str)
 
 
-def test_cover_cache():
-    cache = get_clean_cache()
+@pytest.mark.thread_unsafe(reason='testing behaviour of global cache')
+def test_cover_cache(mocker: MockerFixture):
+    cache = mocker.patch('pydantic._internal._generics._GENERIC_TYPES_CACHE', GenericTypesCache())
     cache_size = len(cache)
     T = TypeVar('T')
 
@@ -366,8 +352,8 @@ def test_cover_cache():
     del models
 
 
-def test_cache_keys_are_hashable():
-    cache = get_clean_cache()
+def test_cache_keys_are_hashable(mocker: MockerFixture):
+    cache = mocker.patch('pydantic._internal._generics._GENERIC_TYPES_CACHE', GenericTypesCache())
     cache_size = len(cache)
     T = TypeVar('T')
     C = Callable[[str, dict[str, Any]], Iterable[str]]
@@ -400,8 +386,8 @@ def test_cache_keys_are_hashable():
 
 @pytest.mark.thread_unsafe(reason='GC is flaky')
 @pytest.mark.skipif(platform.python_implementation() == 'PyPy', reason='PyPy does not play nice with PyO3 gc')
-def test_caches_get_cleaned_up():
-    cache = get_clean_cache()
+def test_caches_get_cleaned_up(mocker: MockerFixture):
+    cache = mocker.patch('pydantic._internal._generics._GENERIC_TYPES_CACHE', GenericTypesCache())
     initial_types_cache_size = len(cache)
     T = TypeVar('T')
 
@@ -428,8 +414,8 @@ def test_caches_get_cleaned_up():
 
 
 @pytest.mark.skipif(platform.python_implementation() == 'PyPy', reason='PyPy does not play nice with PyO3 gc')
-def test_caches_get_cleaned_up_with_aliased_parametrized_bases():
-    cache = get_clean_cache()
+def test_caches_get_cleaned_up_with_aliased_parametrized_bases(mocker: MockerFixture):
+    cache = mocker.patch('pydantic._internal._generics._GENERIC_TYPES_CACHE', GenericTypesCache())
     types_cache_size = len(cache)
 
     def run() -> None:  # Run inside nested function to get classes in local vars cleaned also
@@ -458,8 +444,8 @@ def test_caches_get_cleaned_up_with_aliased_parametrized_bases():
 @pytest.mark.thread_unsafe(reason='GC is flaky')
 @pytest.mark.skipif(platform.python_implementation() == 'PyPy', reason='PyPy does not play nice with PyO3 gc')
 @pytest.mark.skipif(sys.version_info[:2] == (3, 9), reason='The test randomly fails on Python 3.9')
-def test_circular_generic_refs_get_cleaned_up():
-    cache = get_clean_cache()
+def test_circular_generic_refs_get_cleaned_up(mocker: MockerFixture):
+    cache = mocker.patch('pydantic._internal._generics._GENERIC_TYPES_CACHE', GenericTypesCache())
     initial_cache_size = len(cache)
 
     def fn():
@@ -486,8 +472,8 @@ def test_circular_generic_refs_get_cleaned_up():
     assert len(cache) == initial_cache_size
 
 
-def test_generics_work_with_many_parametrized_base_models():
-    cache = get_clean_cache()
+def test_generics_work_with_many_parametrized_base_models(mocker: MockerFixture):
+    cache = mocker.patch('pydantic._internal._generics._GENERIC_TYPES_CACHE', GenericTypesCache())
     cache_size = len(cache)
     count_create_models = 1000
     T = TypeVar('T')
@@ -1055,7 +1041,7 @@ def test_generic_model_redefined_without_cache_fail(create_module, monkeypatch):
         class Model(BaseModel): ...
 
         concrete = MyGeneric[Model]
-        _GENERIC_TYPES_CACHE.get().clear()  # pyright: ignore[reportOptionalMemberAccess], guaranteed to be set
+        _GENERIC_TYPES_CACHE.clear()  # pyright: ignore[reportOptionalMemberAccess], guaranteed to be set
         second_concrete = MyGeneric[Model]
 
         class Model(BaseModel):  # same name, but type different, so it's not in cache
@@ -1719,6 +1705,31 @@ def test_generic_recursive_models_parametrized_with_model() -> None:
         # In v2.0-2.10, this unexpectedly validated fine (The core schema of Base[Other].t was an empty model).
         # Since v2.11, building `Other` raised an unhandled exception.
         # Now, it works as expected.
+        Base[Other].model_validate({'t': {}})
+
+    Base[Other].model_validate({'t': {'child': {'t': {'child': None}}}})
+
+
+def test_generic_recursive_models_parametrized_with_model_subclass() -> None:
+    """https://github.com/pydantic/pydantic/issues/12396.
+
+    Follow up on `test_generic_recursive_models_parametrized_with_model()`.
+    """
+
+    # The code to check if `__pydantic_fields__` was set was wrongly
+    # checking for parent classes as well (and not in the class' `__dict__`):
+    class MyBaseModel(BaseModel):
+        pass
+
+    T = TypeVar('T')
+
+    class Base(MyBaseModel, Generic[T]):
+        t: T
+
+    class Other(MyBaseModel):
+        child: 'Optional[Base[Other]]'
+
+    with pytest.raises(ValidationError):
         Base[Other].model_validate({'t': {}})
 
     Base[Other].model_validate({'t': {'child': {'t': {'child': None}}}})

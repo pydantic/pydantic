@@ -398,7 +398,7 @@ def test_predicate_error_python() -> None:
         {
             'type': 'predicate_failed',
             'loc': (),
-            'msg': 'Predicate test_predicate_error_python.<locals>.<lambda> failed',
+            'msg': "Predicate 'test_predicate_error_python.<locals>.<lambda>' failed",
             'input': -1,
         }
     ]
@@ -415,7 +415,7 @@ def test_not_operation_error_python() -> None:
         {
             'type': 'not_operation_failed',
             'loc': (),
-            'msg': 'Not of test_not_operation_error_python.<locals>.<lambda> failed',
+            'msg': "Not of 'test_not_operation_error_python.<locals>.<lambda>' failed",
             'input': 6,
         }
     ]

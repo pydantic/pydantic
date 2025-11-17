@@ -15,7 +15,7 @@ class Model2(TypedDict):
     pass
 
 
-@with_config(config=ConfigDict(str_to_lower=True))  # pyright: ignore[reportDeprecated]
+@with_config(config=ConfigDict(str_to_lower=True))  # type: ignore[deprecated]  # pyright: ignore[reportDeprecated]
 class Model3(TypedDict):
     pass
 

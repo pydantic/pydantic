@@ -12,7 +12,7 @@ NUM_THREADS?=1
 
 .PHONY: install  ## Install the package, dependencies, and pre-commit for local development
 install: .uv
-	uv sync --frozen --group all --all-extras
+	uv sync --frozen --all-groups --all-packages --all-extras
 	uv pip install pre-commit
 	uv run pre-commit install --install-hooks
 
@@ -24,11 +24,19 @@ rebuild-lockfiles: .uv
 format: .uv
 	uv run ruff check --fix $(sources)
 	uv run ruff format $(sources)
+	cargo fmt --manifest-path pydantic-core/Cargo.toml
 
-.PHONY: lint  ## Lint python source files
-lint: .uv
+.PHONY: lint-python  ## Lint python source files
+lint-python: .uv
 	uv run ruff check $(sources)
 	uv run ruff format --check $(sources)
+
+.PHONY: lint-rust  ## Lint Rust source files
+lint-rust:
+	$(MAKE) -C pydantic-core lint-rust
+
+.PHONY: lint  ## Lint all source files
+lint: lint-python lint-rust
 
 .PHONY: codespell  ## Use Codespell to do spellchecking
 codespell: .pre-commit

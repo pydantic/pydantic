@@ -955,15 +955,9 @@ class PydanticModelTransformer:
                 elif isinstance(var, PlaceholderNode) and not self._api.final_iteration:
                     # See https://github.com/pydantic/pydantic/issues/5191 to hit this branch for test coverage
                     self._api.defer()
-                else:  # pragma: no cover
-                    # I don't know whether it's possible to hit this branch, but I've added it for safety
-                    try:
-                        var_str = str(var)
-                    except TypeError:
-                        # This happens for PlaceholderNode; perhaps it will happen for other types in the future..
-                        var_str = repr(var)
-                    detail = f'sym_node.node: {var_str} (of type {var.__class__})'
-                    error_unexpected_behavior(detail, self._api, self._cls)
+                # `var` can also be a FuncDef or Decorator node (e.g. when overriding a field with a function or property).
+                # In that case, we don't want to do anything. Mypy will already raise an error that a field was not properly
+                # overridden.
             else:
                 var = field.to_var(info, api, use_alias=False)
                 var.info = info
@@ -1373,7 +1367,7 @@ def parse_toml(config_file: str) -> dict[str, Any] | None:
         except ImportError:  # pragma: no cover
             import warnings
 
-            warnings.warn('No TOML parser installed, cannot read configuration from `pyproject.toml`.')
+            warnings.warn('No TOML parser installed, cannot read configuration from `pyproject.toml`.', stacklevel=2)
             return None
 
     with open(config_file, 'rb') as rf:

@@ -182,7 +182,8 @@ def apply_known_metadata(annotation: Any, schema: CoreSchema) -> CoreSchema | No
         An updated schema with annotation if it is an annotation we know about, `None` otherwise.
 
     Raises:
-        PydanticCustomError: If `Predicate` fails.
+        RuntimeError: If a constraint can't be applied to a specific schema type.
+        ValueError: If an unknown constraint is encountered.
     """
     import annotated_types as at
 
@@ -296,26 +297,33 @@ def apply_known_metadata(annotation: Any, schema: CoreSchema) -> CoreSchema | No
             )
             continue
         elif isinstance(annotation, (at.Predicate, at.Not)):
-            predicate_name = f'{annotation.func.__qualname__}' if hasattr(annotation.func, '__qualname__') else ''
+            predicate_name = f'{annotation.func.__qualname__!r} ' if hasattr(annotation.func, '__qualname__') else ''
 
-            def val_func(v: Any) -> Any:
-                predicate_satisfied = annotation.func(v)  # noqa: B023
+            # Note: B023 is ignored because even though we iterate over `other_metadata`, it is guaranteed
+            # to be of length 1. `apply_known_metadata()` is called from `GenerateSchema`, where annotations
+            # were already expanded via `expand_grouped_metadata()`. Confusing, but this falls into the annotations
+            # refactor.
+            if isinstance(annotation, at.Predicate):
 
-                # annotation.func may also raise an exception, let it pass through
-                if isinstance(annotation, at.Predicate):  # noqa: B023
+                def val_func(v: Any) -> Any:
+                    predicate_satisfied = annotation.func(v)  # noqa: B023
                     if not predicate_satisfied:
                         raise PydanticCustomError(
                             'predicate_failed',
-                            f'Predicate {predicate_name} failed',  # type: ignore  # noqa: B023
+                            f'Predicate {predicate_name}failed',  # pyright: ignore[reportArgumentType]  # noqa: B023
                         )
-                else:
+                    return v
+
+            else:
+
+                def val_func(v: Any) -> Any:
+                    predicate_satisfied = annotation.func(v)  # noqa: B023
                     if predicate_satisfied:
                         raise PydanticCustomError(
                             'not_operation_failed',
-                            f'Not of {predicate_name} failed',  # type: ignore  # noqa: B023
+                            f'Not of {predicate_name}failed',  # pyright: ignore[reportArgumentType]  # noqa: B023
                         )
-
-                return v
+                    return v
 
             schema = cs.no_info_after_validator_function(val_func, schema)
         else:

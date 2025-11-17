@@ -10,6 +10,7 @@ import sys
 import typing
 import uuid
 import warnings
+from abc import ABC, abstractmethod
 from collections import Counter, OrderedDict, UserDict, defaultdict, deque
 from collections.abc import Iterable, Mapping, MutableMapping, Sequence
 from dataclasses import dataclass
@@ -25,6 +26,7 @@ from typing import (
     Any,
     Callable,
     Literal,
+    NamedTuple,
     NewType,
     Optional,
     TypeVar,
@@ -6438,13 +6440,13 @@ def test_constraints_arbitrary_type() -> None:
         {
             'type': 'predicate_failed',
             'loc': ('predicate',),
-            'msg': 'Predicate test_constraints_arbitrary_type.<locals>.Model.<lambda> failed',
+            'msg': "Predicate 'test_constraints_arbitrary_type.<locals>.Model.<lambda>' failed",
             'input': CustomType(-1),
         },
         {
             'type': 'not_operation_failed',
             'loc': ('not_multiple_of_3',),
-            'msg': 'Not of test_constraints_arbitrary_type.<locals>.Model.<lambda> failed',
+            'msg': "Not of 'test_constraints_arbitrary_type.<locals>.Model.<lambda>' failed",
             'input': CustomType(6),
         },
     ]
@@ -6833,6 +6835,29 @@ def test_strict_enum_with_use_enum_values() -> None:
         Foo(foo='1')
 
 
+def test_enum_with_namedtuple_values() -> None:
+    """https://github.com/pydantic/pydantic/issues/12503"""
+
+    class NT(NamedTuple):
+        f: str
+
+    class SomeEnum(NT, Enum):
+        FOO = 'foo'
+
+    class Model1(BaseModel):
+        value: SomeEnum
+
+    assert Model1(value=SomeEnum.FOO).value is SomeEnum.FOO
+
+    class Model2(BaseModel, use_enum_values=True):
+        value: SomeEnum
+
+    assert Model2(value=NT('foo')).value == NT('foo')
+
+    with pytest.raises(ValidationError):
+        Model2(value=NT('bar'))
+
+
 @pytest.mark.skipif(
     platform.python_implementation() == 'PyPy',
     reason='PyPy has a bug in complex string parsing. A fix is implemented but not yet released.',
@@ -7167,3 +7192,34 @@ def test_union_respects_local_strict() -> None:
 
     m = Model(a=[1, 2])
     assert m.a == (1, 2)
+
+
+def test_union_abc() -> None:
+    """https://github.com/pydantic/pydantic/issues/12230"""
+
+    class ABC_1(BaseModel, ABC):
+        @abstractmethod
+        def do_something(self):
+            pass
+
+    class ABC_2(BaseModel, ABC):
+        @abstractmethod
+        def do_something_else(self):
+            pass
+
+    class A1(ABC_1):
+        def do_something(self):
+            print('Doing something in A1')
+
+    class A2(ABC_2):
+        def do_something_else(self):
+            print('Doing something else in A2')
+
+    class X(BaseModel):
+        x: Union[ABC_1, ABC_2]
+
+    a1 = A1()
+    a2 = A2()
+
+    X(x=a1)
+    X(x=a2)

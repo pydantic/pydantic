@@ -280,7 +280,7 @@ Pydantic provides four ways to create schemas and perform validation and seriali
 1. [`BaseModel`](concepts/models.md) &mdash; Pydantic's own super class with many common utilities available via instance methods.
 2. [Pydantic dataclasses](concepts/dataclasses.md) &mdash; a wrapper around standard dataclasses with additional validation performed.
 3. [`TypeAdapter`][pydantic.type_adapter.TypeAdapter] &mdash; a general way to adapt any type for validation and serialization.
-   This allows types like [`TypedDict`](api/standard_library_types.md#typeddict) and [`NamedTuple`](api/standard_library_types.md#typingnamedtuple)
+   This allows types like [`TypedDict`](api/standard_library_types.md#typeddict) and [`NamedTuple`](api/standard_library_types.md#named-tuples)
    to be validated as well as simple types (like [`int`][] or [`timedelta`][datetime.timedelta]) &mdash; [all types](concepts/types.md) supported
    can be used with [`TypeAdapter`][pydantic.type_adapter.TypeAdapter].
 4. [`validate_call`](concepts/validation_decorator.md) &mdash; a decorator to perform validation when calling a function.

@@ -98,7 +98,7 @@ This error is also raised for strict fields when the input value is not an insta
 ## `bytes_invalid_encoding`
 
 This error is raised when a `bytes` value is invalid under the configured encoding.
-In the following example, `b'a'` is invalid hex (odd number of digits).
+In the following example, `'a'` is invalid hex (odd number of digits).
 
 ```python
 from pydantic import BaseModel, ValidationError
@@ -110,7 +110,7 @@ class Model(BaseModel):
 
 
 try:
-    Model(x=b'a')
+    Model(x='a')
 except ValidationError as exc:
     print(repr(exc.errors()[0]['type']))
     #> 'bytes_invalid_encoding'
@@ -669,6 +669,35 @@ try:
 except ValidationError as exc:
     print(repr(exc.errors()[0]['type']))
     #> 'decimal_whole_digits'
+```
+
+## `default_factory_not_called`
+
+This error is raised when a [default factory taking validated data](../concepts/fields.md#default-factory-validated-data)
+can't be called, because validation failed on previous fields:
+
+```python
+from pydantic import BaseModel, Field, ValidationError
+
+
+class Model(BaseModel):
+    a: int = Field(gt=10)
+    b: int = Field(default_factory=lambda data: data['a'])
+
+
+try:
+    Model(a=1)
+except ValidationError as exc:
+    print(exc)
+    """
+    2 validation errors for Model
+    a
+      Input should be greater than 10 [type=greater_than, input_value=1, input_type=int]
+    b
+      The default factory uses validated data, but at least one validation error occurred [type=default_factory_not_called]
+    """
+    print(repr(exc.errors()[1]['type']))
+    #> 'default_factory_not_called'
 ```
 
 ## `dict_type`
