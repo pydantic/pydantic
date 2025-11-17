@@ -282,8 +282,7 @@ Standard library type: [`decimal.Decimal`][].
 <h4>Validation</h4>
 
 * [`Decimal`][decimal.Decimal] instances are validated as is.
-* Any value accepted by the [`Decimal`][decimal.Decimal] constructor (apart from the
-  three-tuple input) will validate.
+* Any value accepted by the [`Decimal`][decimal.Decimal] constructor.
 
 <h4>Constraints</h4>
 
