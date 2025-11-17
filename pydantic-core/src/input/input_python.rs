@@ -369,7 +369,7 @@ impl<'py> Input<'py> for Bound<'py, PyAny> {
             }
 
             // Handle three-tuple constructor: (sign, digits_tuple, exponent)
-            if let Ok(tuple) = self.downcast_exact::<PyTuple>() {
+            if let Ok(tuple) = self.cast_exact::<PyTuple>() {
                 if tuple.len() == 3 {
                     if let Ok(decimal) = create_decimal(self, self) {
                         return Ok(ValidationMatch::lax(decimal));
