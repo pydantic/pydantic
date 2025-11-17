@@ -3,7 +3,7 @@
 from __future__ import annotations as _annotations
 
 from copy import copy, deepcopy
-from typing import TYPE_CHECKING, Any, Generic, Literal, TypeVar
+from typing import TYPE_CHECKING, Any, Callable, Generic, Literal, TypeVar
 
 from pydantic_core import PydanticUndefined
 from typing_extensions import Self, dataclass_transform
@@ -113,36 +113,139 @@ class RootModel(BaseModel, Generic[RootModelRootType], metaclass=_RootModelMetac
         _object_setattr(m, '__pydantic_fields_set__', copy(self.__pydantic_fields_set__))
         return m
 
-    if TYPE_CHECKING:
+    @staticmethod
+    def _process_include_exclude(param: Any) -> Any:
+        """Transform `__root__` key to apply to root value's items.
 
-        def model_dump(  # type: ignore
-            self,
-            *,
-            mode: Literal['json', 'python'] | str = 'python',
-            include: Any = None,
-            exclude: Any = None,
-            context: dict[str, Any] | None = None,
-            by_alias: bool | None = None,
-            exclude_unset: bool = False,
-            exclude_defaults: bool = False,
-            exclude_none: bool = False,
-            exclude_computed_fields: bool = False,
-            round_trip: bool = False,
-            warnings: bool | Literal['none', 'warn', 'error'] = True,
-            serialize_as_any: bool = False,
-        ) -> Any:
-            """This method is included just to get a more accurate return type for type checkers.
-            It is included in this `if TYPE_CHECKING:` block since no override is actually necessary.
+        For RootModel, when the user specifies `__root__` in the
+        include/exclude dict, they want to filter items within the root
+        value. Since RootModel serializes directly to its root value,
+        we extract the value of `__root__` and use it as the top-level
+        include/exclude parameter.
 
-            See the documentation of `BaseModel.model_dump` for more details about the arguments.
+        Args:
+            param: The include or exclude parameter that may contain
+                a `__root__` key.
 
-            Generally, this method will have a return type of `RootModelRootType`, assuming that `RootModelRootType` is
-            not a `BaseModel` subclass. If `RootModelRootType` is a `BaseModel` subclass, then the return
-            type will likely be `dict[str, Any]`, as `model_dump` calls are recursive. The return type could
-            even be something different, in the case of a custom serializer.
-            Thus, `Any` is used here to catch all of these cases.
-            """
-            ...
+        Returns:
+            The transformed parameter with `__root__` value extracted.
+        """
+        if param is None:
+            return None
+
+        # Handle dict-like parameters
+        if isinstance(param, dict):
+            if '__root__' in param:
+                # If __root__ is the only key, return its value directly
+                # This allows {'__root__': {'__all__': {'b'}}} to become
+                # {'__all__': {'b'}}, which filters all items in the list
+                if len(param) == 1:
+                    return param['__root__']
+                # If there are other keys too, keep them but use root's
+                # value for the 'root' field
+                else:
+                    root_value = param['__root__']
+                    new_param = {
+                        k: v for k, v in param.items() if k != '__root__'
+                    }
+                    new_param['root'] = root_value
+                    return new_param
+
+        return param
+
+    def model_dump(
+        self,
+        *,
+        mode: Literal['json', 'python'] | str = 'python',
+        include: Any = None,
+        exclude: Any = None,
+        context: Any | None = None,
+        by_alias: bool | None = None,
+        exclude_unset: bool = False,
+        exclude_defaults: bool = False,
+        exclude_none: bool = False,
+        exclude_computed_fields: bool = False,
+        round_trip: bool = False,
+        warnings: bool | Literal['none', 'warn', 'error'] = True,
+        fallback: Callable[[Any], Any] | None = None,
+        serialize_as_any: bool = False,
+    ) -> Any:
+        """Generate a dictionary representation of the model.
+
+        For `RootModel`, the `__root__` key can be used in `include` and
+        `exclude` parameters to apply filtering to items within the root
+        value (e.g., elements in a list or dict).
+
+        See the documentation of `BaseModel.model_dump` for more details
+        about the arguments.
+        """
+        # Transform __root__ to root in include/exclude parameters
+        include = self._process_include_exclude(include)
+        exclude = self._process_include_exclude(exclude)
+
+        return super().model_dump(
+            mode=mode,
+            include=include,
+            exclude=exclude,
+            context=context,
+            by_alias=by_alias,
+            exclude_unset=exclude_unset,
+            exclude_defaults=exclude_defaults,
+            exclude_none=exclude_none,
+            exclude_computed_fields=exclude_computed_fields,
+            round_trip=round_trip,
+            warnings=warnings,
+            fallback=fallback,
+            serialize_as_any=serialize_as_any,
+        )
+
+    def model_dump_json(
+        self,
+        *,
+        indent: int | None = None,
+        ensure_ascii: bool = False,
+        include: Any = None,
+        exclude: Any = None,
+        context: Any | None = None,
+        by_alias: bool | None = None,
+        exclude_unset: bool = False,
+        exclude_defaults: bool = False,
+        exclude_none: bool = False,
+        exclude_computed_fields: bool = False,
+        round_trip: bool = False,
+        warnings: bool | Literal['none', 'warn', 'error'] = True,
+        fallback: Callable[[Any], Any] | None = None,
+        serialize_as_any: bool = False,
+    ) -> str:
+        """Generate a JSON representation of the model.
+
+        For `RootModel`, the `__root__` key can be used in `include` and
+        `exclude` parameters to apply filtering to items within the root
+        value (e.g., elements in a list or dict).
+
+        See the documentation of `BaseModel.model_dump_json` for more
+        details about the arguments.
+        """
+        # Transform __root__ to root in include/exclude parameters
+        include = self._process_include_exclude(include)
+        exclude = self._process_include_exclude(exclude)
+
+        return super().model_dump_json(
+            indent=indent,
+            ensure_ascii=ensure_ascii,
+            include=include,
+            exclude=exclude,
+            context=context,
+            by_alias=by_alias,
+            exclude_unset=exclude_unset,
+            exclude_defaults=exclude_defaults,
+            exclude_none=exclude_none,
+            exclude_computed_fields=exclude_computed_fields,
+            round_trip=round_trip,
+            warnings=warnings,
+            fallback=fallback,
+            serialize_as_any=serialize_as_any,
+        )
 
     def __eq__(self, other: Any) -> bool:
         if not isinstance(other, RootModel):

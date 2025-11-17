@@ -688,3 +688,117 @@ def test_model_with_both_docstring_and_field_description() -> None:
         'type': 'integer',
         'description': 'More detailed description',
     }
+
+
+def test_rootmodel_list_exclude_with_root_key():
+    """Test excluding fields from list items using __root__ key."""
+
+    class Foo(BaseModel):
+        a: int
+        b: int | None = None
+
+    TestModel = RootModel[list[Foo]]
+    test = TestModel([Foo(a=1, b=2), Foo(a=3, b=4)])
+
+    # Test basic serialization
+    assert test.model_dump() == [{'a': 1, 'b': 2}, {'a': 3, 'b': 4}]
+
+    # Test excluding field 'b' from all items using __root__
+    result = test.model_dump(exclude={'__root__': {'__all__': {'b'}}})
+    assert result == [{'a': 1}, {'a': 3}]
+
+    # Test JSON serialization with __root__ exclude
+    json_result = test.model_dump_json(
+        indent=2, exclude={'__root__': {'__all__': {'b'}}}
+    )
+    expected_json = '[\n  {\n    "a": 1\n  },\n  {\n    "a": 3\n  }\n]'
+    assert json_result == expected_json
+
+
+def test_rootmodel_list_include_with_root_key():
+    """Test including specific fields from list items using __root__ key."""
+
+    class Foo(BaseModel):
+        a: int
+        b: int | None = None
+
+    TestModel = RootModel[list[Foo]]
+    test = TestModel([Foo(a=1, b=2), Foo(a=3)])
+
+    # Test including only field 'a' from all items
+    result = test.model_dump(include={'__root__': {'__all__': {'a'}}})
+    assert result == [{'a': 1}, {'a': 3}]
+
+
+def test_rootmodel_list_exclude_specific_index():
+    """Test excluding field from specific index using __root__ key."""
+
+    class Foo(BaseModel):
+        a: int
+        b: int | None = None
+
+    TestModel = RootModel[list[Foo]]
+    test = TestModel([Foo(a=1, b=2), Foo(a=3, b=4)])
+
+    # Exclude 'b' from first item only
+    result = test.model_dump(exclude={'__root__': {0: {'b'}}})
+    assert result == [{'a': 1}, {'a': 3, 'b': 4}]
+
+
+def test_rootmodel_dict_exclude_with_root_key():
+    """Test excluding fields from dict values using __root__ key."""
+
+    class Foo(BaseModel):
+        a: int
+        b: int | None = None
+
+    TestModel = RootModel[dict[str, Foo]]
+    test = TestModel({'first': Foo(a=1, b=2), 'second': Foo(a=3, b=4)})
+
+    # Test basic serialization
+    assert test.model_dump() == {
+        'first': {'a': 1, 'b': 2},
+        'second': {'a': 3, 'b': 4},
+    }
+
+    # Exclude 'b' from all dict values
+    result = test.model_dump(exclude={'__root__': {'__all__': {'b'}}})
+    assert result == {'first': {'a': 1}, 'second': {'a': 3}}
+
+
+def test_original_example_from_discussion():
+    """Test the original example from GitHub discussion #11383."""
+
+    class Foo(BaseModel):
+        a: int
+        b: int | None = None
+
+    test = RootModel[list[Foo]]
+
+    # Create instance
+    instance = test([Foo(a=1, b=2), Foo(a=3)])
+
+    # Test excluding 'b' field from all items
+    json_string = instance.model_dump_json(
+        indent=2, exclude={'__root__': {'__all__': {'b'}}}
+    )
+
+    # Verify 'b' is excluded
+    assert '"b"' not in json_string
+    assert '"a": 1' in json_string or '"a":1' in json_string
+    assert '"a": 3' in json_string or '"a":3' in json_string
+
+
+def test_rootmodel_exclude_without_root_key():
+    """Ensure regular exclude still works without __root__ key."""
+
+    class Foo(BaseModel):
+        a: int
+        b: int | None = None
+
+    TestModel = RootModel[list[Foo]]
+    test = TestModel([Foo(a=1, b=2), Foo(a=3)])
+
+    # Regular serialization should work as before
+    result = test.model_dump()
+    assert result == [{'a': 1, 'b': 2}, {'a': 3, 'b': None}]
