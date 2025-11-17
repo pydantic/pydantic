@@ -1422,7 +1422,7 @@ class GenerateSchema:
 
                 fields: dict[str, core_schema.TypedDictField] = {}
 
-                decorators = DecoratorInfos.build(typed_dict_cls)
+                decorators = DecoratorInfos.build(typed_dict_cls, replace_wrapped_methods=False)
                 decorators.update_from_config(self._config_wrapper)
 
                 if self._config_wrapper.use_attribute_docstrings:
@@ -1892,7 +1892,7 @@ class GenerateSchema:
 
                 decorators = dataclass.__dict__.get('__pydantic_decorators__')
                 if decorators is None:
-                    decorators = DecoratorInfos.build(dataclass)
+                    decorators = DecoratorInfos.build(dataclass, replace_wrapped_methods=False)
                     decorators.update_from_config(self._config_wrapper)
                 # Move kw_only=False args to the start of the list, as this is how vanilla dataclasses work.
                 # Note that when kw_only is missing or None, it is treated as equivalent to kw_only=True
