@@ -707,6 +707,8 @@ impl Rem for &Int {
 
 impl FromPyObject<'_, '_> for Int {
     type Error = PyErr;
+
+    #[allow(clippy::same_functions_in_if_condition)] // https://github.com/rust-lang/rust-clippy/issues/10928
     fn extract(obj: Borrowed<'_, '_, PyAny>) -> PyResult<Self> {
         if let Ok(i) = obj.extract() {
             Ok(Int::I64(i))
