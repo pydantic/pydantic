@@ -1,40 +1,121 @@
-from __future__ import annotations as _annotations
+from __future__ import annotations
 
-import functools
-import gc
 import importlib.util
-import json
+import inspect
 import os
 import re
+import secrets
+import subprocess
 import sys
+import textwrap
 from dataclasses import dataclass
 from pathlib import Path
-from time import sleep, time
-from typing import Any, Callable, Literal
+from types import FunctionType, ModuleType
+from typing import Any, Callable
 
-import hypothesis
 import pytest
+from _pytest.assertion.rewrite import AssertionRewritingHook
+from _pytest.nodes import Item
+from jsonschema import Draft202012Validator, SchemaError
 
-from pydantic_core import ArgsKwargs, CoreSchema, SchemaValidator, ValidationError
-from pydantic_core.core_schema import CoreConfig, ExtraBehavior
-
-__all__ = 'Err', 'PyAndJson', 'assert_gc', 'is_free_threaded', 'plain_repr', 'infinite_generator'
-
-hypothesis.settings.register_profile('fast', max_examples=2)
-hypothesis.settings.register_profile('slow', max_examples=1_000)
-hypothesis.settings.load_profile(os.getenv('HYPOTHESIS_PROFILE', 'fast'))
-
-try:
-    is_free_threaded = not sys._is_gil_enabled()
-except AttributeError:
-    is_free_threaded = False
+from pydantic._internal._generate_schema import GenerateSchema
+from pydantic.json_schema import GenerateJsonSchema
 
 
-def plain_repr(obj):
-    r = repr(obj)
-    r = re.sub(r',\s*([)}])', r'\1', r)
-    r = re.sub(r'\s+', '', r)
-    return r
+def pytest_addoption(parser: pytest.Parser):
+    parser.addoption('--test-mypy', action='store_true', help='run mypy tests')
+    parser.addoption('--update-mypy', action='store_true', help='update mypy tests')
+
+
+def _extract_source_code_from_function(function: FunctionType):
+    if function.__code__.co_argcount:
+        raise RuntimeError(f'function {function.__qualname__} cannot have any arguments')
+
+    code_lines = ''
+    body_started = False
+    for line in textwrap.dedent(inspect.getsource(function)).split('\n'):
+        if line.startswith('def '):
+            body_started = True
+            continue
+        elif body_started:
+            code_lines += f'{line}\n'
+
+    return textwrap.dedent(code_lines)
+
+
+def _create_module_file(code: str, tmp_path: Path, name: str) -> tuple[str, str]:
+    # Max path length in Windows is 260. Leaving some buffer here
+    max_name_len = 240 - len(str(tmp_path))
+    # Windows does not allow these characters in paths. Linux bans slashes only.
+    sanitized_name = re.sub('[' + re.escape('<>:"/\\|?*') + ']', '-', name)[:max_name_len]
+    name = f'{sanitized_name}_{secrets.token_hex(5)}'
+    path = tmp_path / f'{name}.py'
+    path.write_text(code)
+    return name, str(path)
+
+
+@pytest.fixture(scope='session', autouse=True)
+def disable_error_urls():
+    # Don't add URLs during docs tests when printing
+    # Otherwise we'll get version numbers in the URLs that will update frequently
+    os.environ['PYDANTIC_ERRORS_INCLUDE_URL'] = 'false'
+
+
+@pytest.fixture
+def create_module(
+    tmp_path: Path, request: pytest.FixtureRequest
+) -> Callable[[FunctionType | str, bool, str | None], ModuleType]:
+    def run(
+        source_code_or_function: FunctionType | str,
+        rewrite_assertions: bool = True,
+        module_name_prefix: str | None = None,
+    ) -> ModuleType:
+        """
+        Create module object, execute it and return
+        Can be used as a decorator of the function from the source code of which the module will be constructed
+
+        :param source_code_or_function string or function with body as a source code for created module
+        :param rewrite_assertions: whether to rewrite assertions in module or not
+        :param module_name_prefix: string prefix to use in the name of the module, does not affect the name of the file.
+
+        """
+        if isinstance(source_code_or_function, FunctionType):
+            source_code = _extract_source_code_from_function(source_code_or_function)
+        else:
+            source_code = source_code_or_function
+
+        module_name, filename = _create_module_file(source_code, tmp_path, request.node.name)
+        if module_name_prefix:
+            module_name = module_name_prefix + module_name
+
+        if rewrite_assertions:
+            loader = AssertionRewritingHook(config=request.config)
+            loader.mark_rewrite(module_name)
+        else:
+            loader = None
+
+        spec = importlib.util.spec_from_file_location(module_name, filename, loader=loader)
+        sys.modules[module_name] = module = importlib.util.module_from_spec(spec)  # pyright: ignore[reportArgumentType]
+        spec.loader.exec_module(module)  # pyright: ignore[reportOptionalMemberAccess]
+        return module
+
+    return run
+
+
+@pytest.fixture
+def subprocess_run_code(tmp_path: Path):
+    def run_code(source_code_or_function) -> str:
+        if isinstance(source_code_or_function, FunctionType):
+            source_code = _extract_source_code_from_function(source_code_or_function)
+        else:
+            source_code = source_code_or_function
+
+        py_file = tmp_path / 'test.py'
+        py_file.write_text(source_code)
+
+        return subprocess.check_output([sys.executable, str(py_file)], cwd=tmp_path, encoding='utf8')
+
+    return run_code
 
 
 @dataclass
@@ -48,149 +129,74 @@ class Err:
         else:
             return f'Err({self.message!r})'
 
-
-def json_default(obj):
-    if isinstance(obj, ArgsKwargs):
-        raise pytest.skip('JSON skipping ArgsKwargs')
-    else:
-        raise TypeError(f'Object of type {type(obj).__name__} is not JSON serializable')
+    def message_escaped(self):
+        return re.escape(self.message)
 
 
-class PyAndJsonValidator:
-    def __init__(
-        self,
-        schema: CoreSchema,
-        config: CoreConfig | None = None,
-        *,
-        validator_type: Literal['json', 'python'] | None = None,
-    ):
-        self.validator = SchemaValidator(schema, config)
-        self.validator_type = validator_type
+@dataclass
+class CallCounter:
+    count: int = 0
 
-    def validate_python(self, py_input, strict: bool | None = None, context: Any = None):
-        return self.validator.validate_python(py_input, strict=strict, context=context)
-
-    def validate_json(self, json_str: str, strict: bool | None = None, context: Any = None):
-        return self.validator.validate_json(json_str, strict=strict, context=context)
-
-    def validate_test(
-        self, py_input, strict: bool | None = None, context: Any = None, extra: ExtraBehavior | None = None
-    ):
-        if self.validator_type == 'json':
-            return self.validator.validate_json(
-                json.dumps(py_input, default=json_default),
-                strict=strict,
-                extra=extra,
-                context=context,
-            )
-        else:
-            assert self.validator_type == 'python', self.validator_type
-            return self.validator.validate_python(py_input, strict=strict, context=context, extra=extra)
-
-    def isinstance_test(self, py_input, strict: bool | None = None, context: Any = None):
-        if self.validator_type == 'json':
-            try:
-                self.validator.validate_json(json.dumps(py_input), strict=strict, context=context)
-                return True
-            except ValidationError:
-                return False
-        else:
-            assert self.validator_type == 'python', self.validator_type
-            return self.validator.isinstance_python(py_input, strict=strict, context=context)
-
-
-PyAndJson = type[PyAndJsonValidator]
-
-
-@pytest.fixture(params=['python', 'json'])
-def py_and_json(request) -> PyAndJson:
-    class ChosenPyAndJsonValidator(PyAndJsonValidator):
-        __init__ = functools.partialmethod(PyAndJsonValidator.__init__, validator_type=request.param)
-
-    return ChosenPyAndJsonValidator
-
-
-class StrictModeType:
-    def __init__(self, schema: bool, extra: bool):
-        assert schema or extra
-        self.schema = schema
-        self.validator_args = {'strict': True} if extra else {}
-
-
-@pytest.fixture(
-    params=[
-        StrictModeType(schema=True, extra=False),
-        StrictModeType(schema=False, extra=True),
-        StrictModeType(schema=True, extra=True),
-    ],
-    ids=['strict-schema', 'strict-extra', 'strict-both'],
-)
-def strict_mode_type(request) -> StrictModeType:
-    return request.param
+    def reset(self) -> None:
+        self.count = 0
 
 
 @pytest.fixture
-def tmp_work_path(tmp_path: Path):
-    """
-    Create a temporary working directory.
-    """
-    previous_cwd = Path.cwd()
-    os.chdir(tmp_path)
+def generate_schema_calls(monkeypatch: pytest.MonkeyPatch) -> CallCounter:
+    orig_generate_schema = GenerateSchema.generate_schema
+    counter = CallCounter()
+    depth = 0  # generate_schema can be called recursively
 
-    yield tmp_path
-
-    os.chdir(previous_cwd)
-
-
-@pytest.fixture
-def import_execute(request, tmp_work_path: Path):
-    def _import_execute(source: str, *, custom_module_name: str | None = None):
-        module_name = custom_module_name or request.node.name
-
-        module_path = tmp_work_path / f'{module_name}.py'
-        module_path.write_text(source)
-        spec = importlib.util.spec_from_file_location('__main__', str(module_path))
-        module = importlib.util.module_from_spec(spec)
+    def generate_schema_call_counter(*args: Any, **kwargs: Any) -> Any:
+        nonlocal depth
+        counter.count += 1 if depth == 0 else 0
+        depth += 1
         try:
-            spec.loader.exec_module(module)
-        except KeyboardInterrupt:
-            print('KeyboardInterrupt')
-        else:
-            return module
+            return orig_generate_schema(*args, **kwargs)
+        finally:
+            depth -= 1
 
-    return _import_execute
-
-
-@pytest.fixture
-def pydantic_version():
-    try:
-        import pydantic
-
-        # include major and minor version only
-        return '.'.join(pydantic.__version__.split('.')[:2])
-    except ImportError:
-        return 'latest'
+    monkeypatch.setattr(GenerateSchema, 'generate_schema', generate_schema_call_counter)
+    return counter
 
 
-def infinite_generator():
-    i = 0
-    while True:
-        yield i
-        i += 1
+@pytest.fixture(scope='function', autouse=True)
+def validate_json_schemas(monkeypatch: pytest.MonkeyPatch, request: pytest.FixtureRequest) -> None:
+    orig_generate = GenerateJsonSchema.generate
+
+    def generate(*args: Any, **kwargs: Any) -> Any:
+        json_schema = orig_generate(*args, **kwargs)
+        if not request.node.get_closest_marker('skip_json_schema_validation'):
+            try:
+                Draft202012Validator.check_schema(json_schema)
+            except SchemaError:
+                pytest.fail(
+                    'Failed to validate the JSON Schema against the Draft 2020-12 spec. '
+                    'If this is expected, you can mark the test function with the `skip_json_schema_validation` '
+                    'marker. Note that this validation only takes place during tests, and is not active at runtime.'
+                )
+
+        return json_schema
+
+    monkeypatch.setattr(GenerateJsonSchema, 'generate', generate)
 
 
-def assert_gc(test: Callable[[], bool], timeout: float = 10) -> None:
-    """Helper to retry garbage collection until the test passes or timeout is
-    reached.
+_thread_unsafe_fixtures = (
+    'generate_schema_calls',  # Monkeypatches Pydantic code
+    'benchmark',  # Fixture can't be reused
+    'tmp_path',  # Duplicate paths
+    'tmpdir',  # Duplicate dirs
+    'copy_method',  # Uses `pytest.warns()`
+    'reset_plugins',  # Monkeypatching
+)
 
-    This is useful on free-threading where the GC collect call finishes before
-    all cleanup is done.
-    """
-    start = now = time()
-    while now - start < timeout:
-        if test():
-            return
-        gc.collect()
-        sleep(0.1)
-        now = time()
-    raise AssertionError('Timeout waiting for GC')
+
+# Note: it is important to add the marker in the `pytest_itemcollected` hook.
+# `pytest-run-parallel` also implements this hook (and ours is running before),
+# and this wouldn't work if we were to add the "thread_unsafe" marker in say
+# `pytest_collection_modifyitems` (which is the last collection hook to be run).
+def pytest_itemcollected(item: Item) -> None:
+    """Mark tests as thread unsafe if they make use of fixtures that doesn't play well across threads."""
+    fixtures: tuple[str, ...] = getattr(item, 'fixturenames', ())
+    if any(fixture in fixtures for fixture in _thread_unsafe_fixtures):
+        item.add_marker('thread_unsafe')

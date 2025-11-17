@@ -1,0 +1,44 @@
+[build-system]
+requires = ["poetry>=0.12"]
+build_backend = "poetry.masonry.api"
+
+[tool.poetry]
+name = "test"
+version = "0.0.1"
+readme = "README.md"
+authors = [
+    "author@example.com"
+]
+
+[tool.poetry.dependencies]
+python = "*"
+
+[tool.pytest.ini_options]
+addopts = "-v -p no:warnings"
+
+[tool.mypy]
+plugins = [
+    "pydantic.mypy"
+]
+follow_imports = "silent"
+strict_optional = true
+warn_redundant_casts = true
+warn_unused_ignores = true
+disallow_any_generics = true
+check_untyped_defs = true
+no_implicit_reexport = true
+disallow_untyped_defs = true
+
+python_version = '3.10'
+
+# TODO: when we drop 3.9, drop the following line:
+force_union_syntax = true
+
+[tool.pydantic-mypy]
+init_forbid_extra = "foo"  # this will raise a ValueError for the config
+
+[[tool.mypy.overrides]]
+module = [
+    'pydantic_core.*',
+]
+follow_imports = "skip"

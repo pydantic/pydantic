@@ -1,0 +1,590 @@
+[None]
+py_type = "None"
+json_type = "null"
+additional = ""
+defined_in = "JSON Schema Core"
+notes = "Same for `type(None)` or `Literal[None]`"
+
+[bool]
+py_type = "bool"
+json_type = "boolean"
+additional = ""
+defined_in = "JSON Schema Core"
+notes = ""
+
+[str]
+py_type = "str"
+json_type = "string"
+additional = ""
+defined_in = "JSON Schema Core"
+notes = ""
+
+[float]
+py_type = "float"
+json_type = "number"
+additional = ""
+defined_in = "JSON Schema Core"
+notes = ""
+
+[int]
+py_type = "int"
+json_type = "integer"
+additional = ""
+defined_in = "JSON Schema Validation"
+notes = ""
+
+[dict]
+py_type = "dict"
+json_type = "object"
+additional = ""
+defined_in = "JSON Schema Core"
+notes = ""
+
+[list]
+py_type = "list"
+json_type = "array"
+defined_in = "JSON Schema Core"
+notes = ""
+[list.additional.items]
+
+[tuple-positional]
+py_type = "tuple-positional"
+json_type = "array"
+defined_in = "JSON Schema Core"
+notes = ""
+[tuple-positional.additional.items]
+
+[tuple-variable]
+py_type = "tuple-variable"
+json_type = "array"
+defined_in = "JSON Schema Core"
+notes = ""
+[tuple-variable.additional.items]
+
+[set]
+py_type = "set"
+json_type = "array"
+defined_in = "JSON Schema Validation"
+notes = ""
+
+[set.additional]
+uniqueItems = true
+
+[set.additional.items]
+
+[frozenset]
+py_type = "frozenset"
+json_type = "array"
+defined_in = "JSON Schema Validation"
+notes = ""
+
+[frozenset.additional]
+uniqueItems = true
+
+[frozenset.additional.items]
+
+["List[str]"]
+py_type = "List[str]"
+json_type = "array"
+defined_in = "JSON Schema Validation"
+notes = "And equivalently for any other sub type, e.g. `List[int]`."
+["List[str]".additional.items]
+type = "string"
+
+["Tuple[str, ...]"]
+py_type = "Tuple[str, ...]"
+json_type = "array"
+defined_in = "JSON Schema Validation"
+notes = "And equivalently for any other sub type, e.g. `Tuple[int, ...]`."
+["Tuple[str, ...]".additional.items]
+type = "string"
+
+["Tuple[str, int]"]
+py_type = "Tuple[str, int]"
+json_type = "array"
+defined_in = "JSON Schema Validation"
+notes = "And equivalently for any other set of subtypes. Note: If using schemas for OpenAPI, you shouldn't use this declaration, as it would not be valid in OpenAPI (although it is valid in JSON Schema)."
+
+["Tuple[str, int]".additional]
+minItems = 2
+maxItems = 2
+
+[["Tuple[str, int]".additional.items]]
+type = "string"
+
+[["Tuple[str, int]".additional.items]]
+type = "integer"
+
+["Dict[str, int]"]
+py_type = "Dict[str, int]"
+json_type = "object"
+defined_in = "JSON Schema Validation"
+notes = "And equivalently for any other subfields for dicts. Have in mind that although you can use other types as keys for dicts with Pydantic, only strings are valid keys for JSON, and so, only str is valid as JSON Schema key types."
+["Dict[str, int]".additional.additionalProperties]
+type = "integer"
+
+["Union[str, int]"]
+py_type = "Union[str, int]"
+json_type = "anyOf"
+defined_in = "JSON Schema Validation"
+notes = "And equivalently for any other subfields for unions."
+[["Union[str, int]".additional.anyOf]]
+type = "string"
+
+[["Union[str, int]".additional.anyOf]]
+type = "integer"
+
+[Enum]
+py_type = "Enum"
+json_type = "enum"
+additional = "{\"enum\": [...]}"
+defined_in = "JSON Schema Validation"
+notes = "All the literal values in the enum are included in the definition."
+
+[SecretStr]
+py_type = "SecretStr"
+json_type = "string"
+defined_in = "JSON Schema Validation"
+notes = ""
+
+[SecretStr.additional]
+writeOnly = true
+
+[SecretBytes]
+py_type = "SecretBytes"
+json_type = "string"
+defined_in = "JSON Schema Validation"
+notes = ""
+
+[SecretBytes.additional]
+writeOnly = true
+
+[EmailStr]
+py_type = "EmailStr"
+json_type = "string"
+defined_in = "JSON Schema Validation"
+notes = ""
+
+[EmailStr.additional]
+format = "email"
+
+[NameEmail]
+py_type = "NameEmail"
+json_type = "string"
+defined_in = "Pydantic standard \"format\" extension"
+notes = ""
+
+[NameEmail.additional]
+format = "name-email"
+
+[AnyUrl]
+py_type = "AnyUrl"
+json_type = "string"
+defined_in = "JSON Schema Validation"
+notes = ""
+
+[AnyUrl.additional]
+format = "uri"
+
+[Pattern]
+py_type = "Pattern"
+json_type = "string"
+defined_in = "JSON Schema Validation"
+notes = ""
+
+[Pattern.additional]
+format = "regex"
+
+[bytes]
+py_type = "bytes"
+json_type = "string"
+defined_in = "OpenAPI"
+notes = ""
+
+[bytes.additional]
+format = "binary"
+
+[Decimal]
+py_type = "Decimal"
+json_type = "number"
+additional = ""
+defined_in = "JSON Schema Core"
+notes = ""
+
+[UUID1]
+py_type = "UUID1"
+json_type = "string"
+defined_in = "Pydantic standard \"format\" extension"
+notes = ""
+
+[UUID1.additional]
+format = "uuid1"
+
+[UUID3]
+py_type = "UUID3"
+json_type = "string"
+defined_in = "Pydantic standard \"format\" extension"
+notes = ""
+
+[UUID3.additional]
+format = "uuid3"
+
+[UUID4]
+py_type = "UUID4"
+json_type = "string"
+defined_in = "Pydantic standard \"format\" extension"
+notes = ""
+
+[UUID4.additional]
+format = "uuid4"
+
+[UUID5]
+py_type = "UUID5"
+json_type = "string"
+defined_in = "Pydantic standard \"format\" extension"
+notes = ""
+
+[UUID5.additional]
+format = "uuid5"
+
+[UUID]
+py_type = "UUID"
+json_type = "string"
+defined_in = "Pydantic standard \"format\" extension"
+notes = "Suggested in OpenAPI."
+
+[UUID.additional]
+format = "uuid"
+
+[FilePath]
+py_type = "FilePath"
+json_type = "string"
+defined_in = "Pydantic standard \"format\" extension"
+notes = ""
+
+[FilePath.additional]
+format = "file-path"
+
+[DirectoryPath]
+py_type = "DirectoryPath"
+json_type = "string"
+defined_in = "Pydantic standard \"format\" extension"
+notes = ""
+
+[DirectoryPath.additional]
+format = "directory-path"
+
+[Path]
+py_type = "Path"
+json_type = "string"
+defined_in = "Pydantic standard \"format\" extension"
+notes = ""
+
+[Path.additional]
+format = "path"
+
+[datetime]
+py_type = "datetime"
+json_type = "string"
+defined_in = "JSON Schema Validation"
+notes = ""
+
+[datetime.additional]
+format = "date-time"
+
+[date]
+py_type = "date"
+json_type = "string"
+defined_in = "JSON Schema Validation"
+notes = ""
+
+[date.additional]
+format = "date"
+
+[time]
+py_type = "time"
+json_type = "string"
+defined_in = "JSON Schema Validation"
+notes = ""
+
+[time.additional]
+format = "time"
+
+[timedelta]
+py_type = "timedelta"
+json_type = "number"
+defined_in = "Difference in seconds (a `float`), with Pydantic standard \"format\" extension"
+notes = "Suggested in JSON Schema repository's issues by maintainer."
+
+[timedelta.additional]
+format = "time-delta"
+
+[Json]
+py_type = "Json"
+json_type = "string"
+defined_in = "Pydantic standard \"format\" extension"
+notes = ""
+
+[Json.additional]
+format = "json-string"
+
+[IPv4Address]
+py_type = "IPv4Address"
+json_type = "string"
+defined_in = "JSON Schema Validation"
+notes = ""
+
+[IPv4Address.additional]
+format = "ipv4"
+
+[IPv6Address]
+py_type = "IPv6Address"
+json_type = "string"
+defined_in = "JSON Schema Validation"
+notes = ""
+
+[IPv6Address.additional]
+format = "ipv6"
+
+[IPvAnyAddress]
+py_type = "IPvAnyAddress"
+json_type = "string"
+defined_in = "Pydantic standard \"format\" extension"
+notes = "IPv4 or IPv6 address as used in `ipaddress` module"
+
+[IPvAnyAddress.additional]
+format = "ipvanyaddress"
+
+[IPv4Interface]
+py_type = "IPv4Interface"
+json_type = "string"
+defined_in = "Pydantic standard \"format\" extension"
+notes = "IPv4 interface as used in `ipaddress` module"
+
+[IPv4Interface.additional]
+format = "ipv4interface"
+
+[IPv6Interface]
+py_type = "IPv6Interface"
+json_type = "string"
+defined_in = "Pydantic standard \"format\" extension"
+notes = "IPv6 interface as used in `ipaddress` module"
+
+[IPv6Interface.additional]
+format = "ipv6interface"
+
+[IPvAnyInterface]
+py_type = "IPvAnyInterface"
+json_type = "string"
+defined_in = "Pydantic standard \"format\" extension"
+notes = "IPv4 or IPv6 interface as used in `ipaddress` module"
+
+[IPvAnyInterface.additional]
+format = "ipvanyinterface"
+
+[IPv4Network]
+py_type = "IPv4Network"
+json_type = "string"
+defined_in = "Pydantic standard \"format\" extension"
+notes = "IPv4 network as used in `ipaddress` module"
+
+[IPv4Network.additional]
+format = "ipv4network"
+
+[IPv6Network]
+py_type = "IPv6Network"
+json_type = "string"
+defined_in = "Pydantic standard \"format\" extension"
+notes = "IPv6 network as used in `ipaddress` module"
+
+[IPv6Network.additional]
+format = "ipv6network"
+
+[IPvAnyNetwork]
+py_type = "IPvAnyNetwork"
+json_type = "string"
+defined_in = "Pydantic standard \"format\" extension"
+notes = "IPv4 or IPv6 network as used in `ipaddress` module"
+
+[IPvAnyNetwork.additional]
+format = "ipvanynetwork"
+
+[StrictBool]
+py_type = "StrictBool"
+json_type = "boolean"
+additional = ""
+defined_in = "JSON Schema Core"
+notes = ""
+
+[StrictStr]
+py_type = "StrictStr"
+json_type = "string"
+additional = ""
+defined_in = "JSON Schema Core"
+notes = ""
+
+[ConstrainedStr]
+py_type = "ConstrainedStr"
+json_type = "string"
+additional = ""
+defined_in = "JSON Schema Core"
+notes = "If the type has values declared for the constraints, they are included as validations. See the mapping for `constr` below."
+
+["constr(pattern='^text$', min_length=2, max_length=10)"]
+py_type = "constr(pattern='^text$', min_length=2, max_length=10)"
+json_type = "string"
+defined_in = "JSON Schema Validation"
+notes = "Any argument not passed to the function (not defined) will not be included in the schema."
+
+["constr(regex='^text$', min_length=2, max_length=10)".additional]
+pattern = "^text$"
+minLength = 2
+maxLength = 10
+
+[ConstrainedInt]
+py_type = "ConstrainedInt"
+json_type = "integer"
+additional = ""
+defined_in = "JSON Schema Core"
+notes = "If the type has values declared for the constraints, they are included as validations. See the mapping for `conint` below."
+
+["conint(gt=1, ge=2, lt=6, le=5, multiple_of=2)"]
+py_type = "conint(gt=1, ge=2, lt=6, le=5, multiple_of=2)"
+json_type = "integer"
+defined_in = ""
+notes = "Any argument not passed to the function (not defined) will not be included in the schema."
+
+["conint(gt=1, ge=2, lt=6, le=5, multiple_of=2)".additional]
+maximum = 5
+exclusiveMaximum = 6
+minimum = 2
+exclusiveMinimum = 1
+multipleOf = 2
+
+[PositiveInt]
+py_type = "PositiveInt"
+json_type = "integer"
+defined_in = "JSON Schema Validation"
+notes = ""
+
+[PositiveInt.additional]
+exclusiveMinimum = 0
+
+[NegativeInt]
+py_type = "NegativeInt"
+json_type = "integer"
+defined_in = "JSON Schema Validation"
+notes = ""
+
+[NegativeInt.additional]
+exclusiveMaximum = 0
+
+[NonNegativeInt]
+py_type = "NonNegativeInt"
+json_type = "integer"
+defined_in = "JSON Schema Validation"
+notes = ""
+
+[NonNegativeInt.additional]
+minimum = 0
+
+[NonPositiveInt]
+py_type = "NonPositiveInt"
+json_type = "integer"
+defined_in = "JSON Schema Validation"
+notes = ""
+
+[NonPositiveInt.additional]
+maximum = 0
+
+[ConstrainedFloat]
+py_type = "ConstrainedFloat"
+json_type = "number"
+additional = ""
+defined_in = "JSON Schema Core"
+notes = "If the type has values declared for the constraints, they are included as validations. See the mapping for `confloat` below."
+
+["confloat(gt=1, ge=2, lt=6, le=5, multiple_of=2)"]
+py_type = "confloat(gt=1, ge=2, lt=6, le=5, multiple_of=2)"
+json_type = "number"
+defined_in = "JSON Schema Validation"
+notes = "Any argument not passed to the function (not defined) will not be included in the schema."
+
+["confloat(gt=1, ge=2, lt=6, le=5, multiple_of=2)".additional]
+maximum = 5
+exclusiveMaximum = 6
+minimum = 2
+exclusiveMinimum = 1
+multipleOf = 2
+
+[PositiveFloat]
+py_type = "PositiveFloat"
+json_type = "number"
+defined_in = "JSON Schema Validation"
+notes = ""
+
+[PositiveFloat.additional]
+exclusiveMinimum = 0
+
+[NegativeFloat]
+py_type = "NegativeFloat"
+json_type = "number"
+defined_in = "JSON Schema Validation"
+notes = ""
+
+[NegativeFloat.additional]
+exclusiveMaximum = 0
+
+[NonNegativeFloat]
+py_type = "NonNegativeFloat"
+json_type = "number"
+defined_in = "JSON Schema Validation"
+notes = ""
+
+[NonNegativeFloat.additional]
+minimum = 0
+
+[NonPositiveFloat]
+py_type = "NonPositiveFloat"
+json_type = "number"
+defined_in = "JSON Schema Validation"
+notes = ""
+
+[NonPositiveFloat.additional]
+maximum = 0
+
+[ConstrainedDecimal]
+py_type = "ConstrainedDecimal"
+json_type = "number"
+additional = ""
+defined_in = "JSON Schema Core"
+notes = "If the type has values declared for the constraints, they are included as validations. See the mapping for `condecimal` below."
+
+["condecimal(gt=1, ge=2, lt=6, le=5, multiple_of=2)"]
+py_type = "condecimal(gt=1, ge=2, lt=6, le=5, multiple_of=2)"
+json_type = "number"
+defined_in = "JSON Schema Validation"
+notes = "Any argument not passed to the function (not defined) will not be included in the schema."
+
+["condecimal(gt=1, ge=2, lt=6, le=5, multiple_of=2)".additional]
+maximum = 5
+exclusiveMaximum = 6
+minimum = 2
+exclusiveMinimum = 1
+multipleOf = 2
+
+[BaseModel]
+py_type = "BaseModel"
+json_type = "object"
+additional = ""
+defined_in = "JSON Schema Core"
+notes = "All the properties defined will be defined with standard JSON Schema, including submodels."
+
+[Color]
+py_type = "Color"
+json_type = "string"
+defined_in = "Pydantic standard \"format\" extension"
+notes = ""
+
+[Color.additional]
+format = "color"

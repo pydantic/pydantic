@@ -1,24 +1,31 @@
 [build-system]
-requires = ['maturin>=1.9.4,<2']
-build-backend = 'maturin'
+requires = ['hatchling', 'hatch-fancy-pypi-readme>=22.5.0']
+build-backend = 'hatchling.build'
 
 [project]
-name = 'pydantic_core'
-description = "Core functionality for Pydantic validation and serialization"
-requires-python = '>=3.9'
+name = 'pydantic'
+description = 'Data validation using Python type hints'
+authors = [
+    {name = 'Samuel Colvin', email = 's@muelcolvin.com'},
+    {name = 'Eric Jolibois', email = 'em.jolibois@gmail.com'},
+    {name = 'Hasan Ramezani', email = 'hasan.r67@gmail.com'},
+    {name = 'Adrian Garcia Badaracco', email = '1755071+adriangb@users.noreply.github.com'},
+    {name = 'Terrence Dorsey', email = 'terry@pydantic.dev'},
+    {name = 'David Montague', email = 'david@pydantic.dev'},
+    {name = 'Serge Matveenko', email = 'lig@countzero.co'},
+    {name = 'Marcelo Trylesinski', email = 'marcelotryle@gmail.com'},
+    {name = 'Sydney Runkle', email = 'sydneymarierunkle@gmail.com'},
+    {name = 'David Hewitt', email = 'mail@davidhewitt.dev'},
+    {name = 'Alex Hall', email = 'alex.mojaki@gmail.com'},
+    {name = 'Victorien Plot', email = 'contact@vctrn.dev'},
+]
 license = 'MIT'
 license-files = ['LICENSE']
-authors = [
-    { name = 'Samuel Colvin', email = 's@muelcolvin.com' },
-    { name = 'Adrian Garcia Badaracco', email = '1755071+adriangb@users.noreply.github.com' },
-    { name = 'David Montague', email = 'david@pydantic.dev' },
-    { name = 'David Hewitt', email = 'mail@davidhewitt.dev' },
-    { name = 'Sydney Runkle', email = 'sydneymarierunkle@gmail.com' },
-    { name = 'Victorien Plot', email = 'contact@vctrn.dev' },
-]
 classifiers = [
-    'Development Status :: 3 - Alpha',
+    'Development Status :: 5 - Production/Stable',
     'Programming Language :: Python',
+    'Programming Language :: Python :: Implementation :: CPython',
+    'Programming Language :: Python :: Implementation :: PyPy',
     'Programming Language :: Python :: 3',
     'Programming Language :: Python :: 3 :: Only',
     'Programming Language :: Python :: 3.9',
@@ -27,121 +34,233 @@ classifiers = [
     'Programming Language :: Python :: 3.12',
     'Programming Language :: Python :: 3.13',
     'Programming Language :: Python :: 3.14',
-    'Programming Language :: Python :: Implementation :: CPython',
-    'Programming Language :: Python :: Implementation :: PyPy',
-    'Programming Language :: Python :: Implementation :: GraalPy',
-    'Programming Language :: Rust',
-    'Framework :: Pydantic',
     'Intended Audience :: Developers',
     'Intended Audience :: Information Technology',
-    'Operating System :: POSIX :: Linux',
-    'Operating System :: Microsoft :: Windows',
-    'Operating System :: MacOS',
-    'Typing :: Typed',
+    'Operating System :: OS Independent',
+    'Framework :: Hypothesis',
+    'Framework :: Pydantic',
+    'Topic :: Software Development :: Libraries :: Python Modules',
+    'Topic :: Internet',
 ]
-dependencies = ['typing-extensions>=4.14.1']
-dynamic = ['readme', 'version']
+requires-python = '>=3.9'
+dependencies = [
+    'typing-extensions>=4.14.1',
+    'annotated-types>=0.6.0',
+    # Keep this in sync with the version in the `check_pydantic_core_version()` function:
+    'pydantic-core==2.41.5',
+    'typing-inspection>=0.4.2',
+]
+dynamic = ['version', 'readme']
+
+[project.optional-dependencies]
+email = ['email-validator>=2.0.0']
+timezone = [
+    # See: https://docs.python.org/3/library/zoneinfo.html#data-sources
+    'tzdata; python_version >= "3.9" and platform_system == "Windows"',
+]
 
 [project.urls]
-Homepage = 'https://github.com/pydantic/pydantic-core'
+Homepage = 'https://github.com/pydantic/pydantic'
+Documentation = 'https://docs.pydantic.dev'
 Funding = 'https://github.com/sponsors/samuelcolvin'
-Source = 'https://github.com/pydantic/pydantic-core'
+Source = 'https://github.com/pydantic/pydantic'
+Changelog = 'https://docs.pydantic.dev/latest/changelog/'
 
 [dependency-groups]
-dev = ["maturin"]
-testing = [
-    { include-group = "dev" },
-    'coverage',
+dev = [
+    'coverage[toml]',
+    'pytz',
     'dirty-equals',
-    'exceptiongroup; python_version < "3.11"',
-    'hypothesis',
-    'inline-snapshot',
-    # numpy doesn't offer prebuilt wheels for all versions and platforms we test in CI e.g. aarch64 musllinux
-    'numpy; python_version < "3.13" and implementation_name == "cpython" and platform_machine == "x86_64"',
-    # pandas doesn't offer prebuilt wheels for all versions and platforms we test in CI e.g. aarch64 musllinux
-    'pandas; python_version < "3.13" and implementation_name == "cpython" and platform_machine == "x86_64"',
+    'eval-type-backport',
     'pytest',
-    # pytest-examples currently depends on aiohttp via black; we don't want to build it on platforms like aarch64 musllinux in CI
-    'pytest-examples; implementation_name == "cpython" and platform_machine == "x86_64"',
     'pytest-mock',
     'pytest-pretty',
-    'pytest-run-parallel',
-    'pytest-speed',
-    'pytest-timeout',
-    'python-dateutil',
-    'typing-inspection>=0.4.1',
-    'tzdata',
+    'pytest-examples',
+    'faker',
+    'pytest-benchmark',
+    'pytest-codspeed',
+    'pytest-run-parallel>=0.3.1',
+    'packaging',
+    'jsonschema',
+]
+docs = [
+    'autoflake',
+    'mkdocs',
+    'mkdocs-exclude',
+    'mkdocs-llmstxt',
+    'mkdocs-material[imaging]',
+    'mkdocs-redirects',
+    'mkdocstrings-python',
+    'tomli',
+    'pyupgrade',
+    'mike',
+    'pydantic-settings',
+    'requests',
+    # To build pydantic wheel for run code feature on dev docs:
+    'build>=1.3.0',
+    "pydantic-extra-types>=2.10.6",
+]
+docs-upload = [
+    'algoliasearch>=4.12.0',
+    'beautifulsoup4>=4.13.3',
 ]
 linting = [
-    { include-group = "dev" },
-    'griffe',
-    'mypy',
-    'pre-commit',
-    'pyright',
+    'eval-type-backport',
     'ruff',
+    'pyright',
 ]
-wasm = [{ include-group = "dev" }, 'ruff']
-codspeed = [
-    # codspeed is only run on CI, with latest version of CPython
-    'pytest-codspeed; python_version == "3.13" and implementation_name == "cpython"',
+testing-extra = [
+    'cloudpickle',
+    # used when generate devtools docs example
+    'ansi2html',
+    'devtools',
+    # used in docs tests
+    'sqlalchemy',
+    'pytest-memray; platform_python_implementation == "CPython" and platform_system != "Windows"',
+]
+typechecking = [
+    'mypy',
+    'pyright',
+    'pyrefly',
+    'pydantic-settings',
 ]
 
 all = [
-    { include-group = "dev" },
-    { include-group = 'testing' },
-    { include-group = 'linting' },
-    { include-group = 'wasm' },
+  { include-group = 'dev' },
+  { include-group = 'docs' },
+  { include-group = 'linting' },
+  { include-group = 'testing-extra' },
+  { include-group = 'typechecking' },
 ]
 
-[tool.maturin]
-python-source = "python"
-module-name = "pydantic_core._pydantic_core"
-bindings = 'pyo3'
+[tool.hatch.version]
+path = 'pydantic/version.py'
+
+[tool.hatch.metadata]
+allow-direct-references = true
+
+[tool.hatch.build.targets.sdist]
+# limit which files are included in the sdist (.tar.gz) asset,
+# see https://github.com/pydantic/pydantic/pull/4542
+include = [
+    '/README.md',
+    '/HISTORY.md',
+    '/Makefile',
+    '/pydantic',
+    '/tests',
+]
+
+[tool.hatch.metadata.hooks.fancy-pypi-readme]
+content-type = 'text/markdown'
+# construct the PyPI readme from README.md and HISTORY.md
+fragments = [
+    {path = 'README.md'},
+    {text = "\n## Changelog\n\n"},
+    {path = 'HISTORY.md', pattern = '(.+?)<!-- package description limit -->'},
+    {text = "\n... see [here](https://docs.pydantic.dev/changelog/#v0322-2019-08-17) for earlier changes.\n"},
+]
+# convert GitHub issue/PR numbers and handles to links
+substitutions = [
+    {pattern = '(\s+)#(\d+)', replacement = '\1[#\2](https://github.com/pydantic/pydantic/issues/\2)'},
+    {pattern = '(\s+)@([\w\-]+)', replacement = '\1[@\2](https://github.com/\2)'},
+    {pattern = '@@', replacement = '@'},
+]
+
+[tool.pytest.ini_options]
+testpaths = 'tests'
+xfail_strict = true
+filterwarnings = [
+    'error',
+    'ignore:path is deprecated.*:DeprecationWarning:',
+    "ignore:Core Pydantic V1 functionality isn't compatible with Python 3.14 or greater:UserWarning",
+]
+addopts = [
+    '--benchmark-columns', 'min,mean,stddev,outliers,rounds,iterations',
+    '--benchmark-group-by', 'group',
+    '--benchmark-warmup', 'on',
+    '--benchmark-disable',  # this is enabled by `make benchmark` when you actually want to run benchmarks
+]
+markers = [
+    'skip_json_schema_validation: Disable JSON Schema validation.',
+]
+
+[tool.uv]
+default-groups = ['dev']
+required-version = '>=0.8.4'
+
+[tool.uv.sources]
+pydantic-core = { workspace = true }
+
+[tool.uv.workspace]
+members = [
+    "pydantic-core",
+]
+
+# configuring https://github.com/pydantic/hooky
+[tool.hooky]
+reviewers = ['Viicos']
+require_change_file = false
+unconfirmed_label = 'pending'
 
 [tool.ruff]
 line-length = 120
 target-version = 'py39'
+extend-exclude = ['pydantic/v1', 'tests/mypy/']
 
 [tool.ruff.lint]
-extend-select = ['Q', 'RUF100', 'C90', 'I', 'UP']
-extend-ignore = [
-    'E721', # using type() instead of isinstance() - we use this in tests
+select = [
+    'F',      # Pyflakes
+    'E',      # pycodestyle (Error)
+    'I',      # isort
+    'D',      # pydocstyle
+    'UP',     # pyupgrade
+    'YTT',    # flake8-2020
+    'B',      # flake8-bugbear
+    'T10',    # flake8-debugger
+    'T20',    # flake8-print
+    'C4',     # flake8-comprehensions
+    'PERF',   # Perflint
+    'PIE',    # flake8-pie
+    'PYI006', # flake8-pyi
+    'PYI062', # flake8-pyi
+    'PYI063', # flake8-pyi
+    'PYI066', # flake8-pyi
 ]
-flake8-quotes = { inline-quotes = 'single', multiline-quotes = 'double' }
-mccabe = { max-complexity = 13 }
-isort = { known-first-party = ['pydantic_core', 'tests'] }
+ignore = ['D105', 'D107', 'D205', 'D415', 'E501', 'B011', 'B028', 'B904', 'PIE804']
+flake8-quotes = {inline-quotes = 'single', multiline-quotes = 'double'}
+isort = { known-first-party = ['pydantic', 'tests'] }
+mccabe = { max-complexity = 14 }
+pydocstyle = { convention = 'google' }
 
-[tool.ruff.lint.pyupgrade]
-keep-runtime-typing = true
+[tool.ruff.lint.per-file-ignores]
+'docs/*' = ['D']
+'pydantic/__init__.py' = ['F405', 'F403', 'D']
+'tests/test_forward_ref.py' = ['F821']
+# We can't configure a specific Python version per file (this one only supports 3.14+):
+'tests/test_deferred_annotations.py' = ['F821', 'F841']
+'tests/test_main.py' = ['PIE807']
+'tests/*' = ['D', 'B', 'C4']
+'pydantic/_internal/_known_annotated_metadata.py' = ['PIE800']
+'pydantic/deprecated/*' = ['D', 'PYI']
+'pydantic/color.py' = ['PYI']
+'pydantic/_internal/_decorators_v1.py' = ['PYI']
+'pydantic/json_schema.py' = ['D']
+"release/*.py" = ["T201"]  # print statements in release scripts
+
+[tool.ruff.lint.extend-per-file-ignores]
+"docs/**/*.py" = ['T']
+"tests/**/*.py" = ['T', 'E721', 'F811']
+"tests/benchmarks/**/*.py" = ['UP006', 'UP007']
 
 [tool.ruff.format]
 quote-style = 'single'
 
-[tool.pytest.ini_options]
-testpaths = 'tests'
-log_format = '%(name)s %(levelname)s: %(message)s'
-filterwarnings = [
-    'error',
-    # Python 3.9 and below allowed truncation of float to integers in some
-    # cases, by not making this an error we can test for this behaviour
-    'ignore:(.+)Implicit conversion to integers using __int__ is deprecated',
-]
-timeout = 30
-xfail_strict = true
-# min, max, mean, stddev, median, iqr, outliers, ops, rounds, iterations
-addopts = [
-    '--benchmark-columns',
-    'min,mean,stddev,outliers,rounds,iterations',
-    '--benchmark-group-by',
-    'group',
-    '--benchmark-warmup',
-    'on',
-    '--benchmark-disable',                        # this is enable by `make benchmark` when you actually want to run benchmarks
-]
-
 [tool.coverage.run]
-source = ['pydantic_core']
+source = ['pydantic']
+omit = ['pydantic/deprecated/*', 'pydantic/v1/*']
 branch = true
+relative_files = true
+context = '${CONTEXT}'
 
 [tool.coverage.report]
 precision = 2
@@ -149,23 +268,31 @@ exclude_lines = [
     'pragma: no cover',
     'raise NotImplementedError',
     'if TYPE_CHECKING:',
+    'if typing.TYPE_CHECKING:',
     '@overload',
+    '@typing.overload',
+    '\(Protocol\):$',
+    'typing.assert_never',
+    'assert_never',
 ]
 
-# configuring https://github.com/pydantic/hooky
-[tool.hooky]
-reviewers = ['Viicos', 'davidhewitt']
-require_change_file = false
+[tool.coverage.paths]
+source = [
+    'pydantic/',
+    '/Users/runner/work/pydantic/pydantic/pydantic/',
+    'D:\a\pydantic\pydantic\pydantic',
+]
 
 [tool.pyright]
-include = ['python/pydantic_core', 'tests/test_typing.py']
-reportUnnecessaryTypeIgnoreComment = true
+include = ['pydantic', 'tests/test_pipeline.py']
+exclude = ['pydantic/_hypothesis_plugin.py', 'pydantic/mypy.py', 'pydantic/v1']
+# reportUnnecessaryTypeIgnoreComment can't be set since we run pyright with multiple python versions
+# reportUnnecessaryTypeIgnoreComment = true
+strict = ['tests/test_pipeline.py']
+enableExperimentalFeatures = true
 
-[tool.inline-snapshot.shortcuts]
-fix = ["create", "fix"]
-
-[tool.uv]
-# this ensures that `uv run` doesn't actually build the package; a `make`
-# command is needed to build
-package = false
-required-version = '>=0.7.2'
+[tool.codespell]
+skip = '.git,env*,pydantic/v1/*,uv.lock'
+# `ser` - abbreviation for "ser"ialisation
+# `crate` - a rust crate
+ignore-words-list = 'gir,ser,crate,deques'

@@ -1,272 +1,138 @@
-from __future__ import annotations as _annotations
+import sys
+from collections import namedtuple
+from typing import Annotated, Callable, ClassVar, ForwardRef, Literal, NamedTuple
 
-from datetime import date, datetime, time
-from typing import Any, Callable
+import pytest
 
-from pydantic_core import (
-    CoreSchema,
-    ErrorDetails,
-    PydanticKnownError,
-    SchemaError,
-    SchemaSerializer,
-    SchemaValidator,
-    ValidationError,
-    core_schema,
+from pydantic import BaseModel, Field  # noqa: F401
+from pydantic._internal._typing_extra import (
+    NoneType,
+    get_function_type_hints,
+    is_classvar_annotation,
+    is_namedtuple,
+    is_none_type,
+    parent_frame_namespace,
 )
 
+try:
+    from typing import TypedDict as typing_TypedDict
+except ImportError:
+    typing_TypedDict = None
 
-class Foo:
-    bar: str
+try:
+    from typing_extensions import TypedDict as typing_extensions_TypedDict
+except ImportError:
+    typing_extensions_TypedDict = None
 
-
-def foo(bar: str) -> None: ...
-
-
-def validator_deprecated(value: Any, info: core_schema.FieldValidationInfo) -> None: ...
-
-
-def validator(value: Any, info: core_schema.ValidationInfo) -> None: ...
-
-
-def wrap_validator(value: Any, call_next: Callable[[Any], Any], info: core_schema.ValidationInfo) -> None: ...
+ALL_TYPEDDICT_KINDS = (typing_TypedDict, typing_extensions_TypedDict)
 
 
-def test_schema_typing() -> None:
-    # this gets run by pyright, but we also check that it executes
-    schema: CoreSchema = {
-        'type': 'union',
-        'choices': [{'type': 'int'}, {'type': 'int', 'ge': 1}, {'type': 'float', 'lt': 1.0}],
-    }
-    SchemaValidator(schema)
-    schema: CoreSchema = {
-        'type': 'tagged-union',
-        'discriminator': 'type',
-        'choices': {
-            'apple': {
-                'type': 'typed-dict',
-                'fields': {'pips': {'type': 'typed-dict-field', 'schema': {'type': 'int'}}},
-            },
-            'banana': {
-                'type': 'typed-dict',
-                'fields': {'curvature': {'type': 'typed-dict-field', 'schema': {'type': 'float'}}},
-            },
-        },
-    }
-    SchemaValidator(schema)
-    schema: CoreSchema = {'type': 'int', 'ge': 1}
-    SchemaValidator(schema)
-    schema: CoreSchema = {'type': 'float', 'lt': 1.0}
-    SchemaValidator(schema)
-    schema: CoreSchema = {'type': 'str', 'pattern': r'http://.*'}
-    SchemaValidator(schema)
-    schema: CoreSchema = {'type': 'bool', 'strict': False}
-    SchemaValidator(schema)
-    schema: CoreSchema = {'type': 'literal', 'expected': [1, '1']}
-    SchemaValidator(schema)
-    schema: CoreSchema = {'type': 'any'}
-    SchemaValidator(schema)
-    schema: CoreSchema = {'type': 'none'}
-    SchemaValidator(schema)
-    schema: CoreSchema = {'type': 'bytes'}
-    SchemaValidator(schema)
-    schema: CoreSchema = {'type': 'list', 'items_schema': {'type': 'str'}, 'min_length': 3}
-    SchemaValidator(schema)
-    schema: CoreSchema = {'type': 'set', 'items_schema': {'type': 'str'}, 'max_length': 3}
-    SchemaValidator(schema)
-    schema: CoreSchema = {'type': 'tuple', 'items_schema': [{'type': 'str'}], 'variadic_item_index': 0, 'max_length': 3}
-    SchemaValidator(schema)
-    schema: CoreSchema = {'type': 'tuple', 'items_schema': [{'type': 'str'}, {'type': 'int'}]}
-    SchemaValidator(schema)
-    schema: CoreSchema = {'type': 'frozenset', 'items_schema': {'type': 'str'}, 'max_length': 3}
-    SchemaValidator(schema)
-    schema: CoreSchema = {'type': 'dict', 'keys_schema': {'type': 'str'}, 'values_schema': {'type': 'any'}}
-    SchemaValidator(schema)
-    schema: CoreSchema = {
-        'type': 'typed-dict',
-        'fields': {'bar': {'type': 'typed-dict-field', 'schema': {'type': 'str'}}},
-    }
-    SchemaValidator(schema)
-    schema: CoreSchema = {
-        'type': 'model',
-        'cls': Foo,
-        'schema': {'type': 'model-fields', 'fields': {'bar': {'type': 'model-field', 'schema': {'type': 'str'}}}},
-    }
-    SchemaValidator(schema)
-    schema: CoreSchema = {
-        'type': 'typed-dict',
-        'fields': {
-            'a': {'type': 'typed-dict-field', 'schema': {'type': 'str'}},
-            'b': {'type': 'typed-dict-field', 'schema': {'type': 'str'}, 'validation_alias': 'foobar'},
-            'c': {
-                'type': 'typed-dict-field',
-                'schema': {'type': 'str'},
-                'validation_alias': [['foobar', 0, 'bar'], ['foo']],
-            },
-            'd': {
-                'type': 'typed-dict-field',
-                'schema': {'type': 'default', 'schema': {'type': 'str'}, 'default': 'spam'},
-            },
-        },
-    }
-    SchemaValidator(schema)
-    schema: CoreSchema = {
-        'type': 'function-wrap',
-        'function': {'type': 'with-info', 'function': wrap_validator, 'field_name': 'foobar'},
-        'schema': {'type': 'str'},
-    }
-    SchemaValidator(schema)
-    schema: CoreSchema = core_schema.with_info_plain_validator_function(validator)
-    SchemaValidator(schema)
-    schema: CoreSchema = {
-        'type': 'definitions',
-        'schema': {'type': 'definition-ref', 'schema_ref': 'Branch'},
-        'definitions': [
-            {
-                'type': 'typed-dict',
-                'fields': {
-                    'name': {'type': 'typed-dict-field', 'schema': {'type': 'str'}},
-                    'sub_branch': {
-                        'type': 'typed-dict-field',
-                        'schema': {
-                            'type': 'default',
-                            'schema': {
-                                'type': 'nullable',
-                                'schema': {'type': 'definition-ref', 'schema_ref': 'Branch'},
-                            },
-                            'default': None,
-                        },
-                    },
-                },
-                'ref': 'Branch',
-            }
-        ],
-    }
-    SchemaValidator(schema)
-    schema: CoreSchema = {'type': 'date', 'le': date.today()}
-    SchemaValidator(schema)
-    schema: CoreSchema = {'type': 'time', 'lt': time(12, 13, 14)}
-    SchemaValidator(schema)
-    schema: CoreSchema = {'type': 'datetime', 'ge': datetime.now()}
-    SchemaValidator(schema)
-    schema: CoreSchema = {'type': 'is-instance', 'cls': Foo}
-    SchemaValidator(schema)
-    schema: CoreSchema = {'type': 'callable'}
-    SchemaValidator(schema)
+def test_is_namedtuple():
+    class Employee(NamedTuple):
+        name: str
+        id: int = 3
 
-    schema: CoreSchema = {
-        'type': 'arguments',
-        'arguments_schema': [
-            {'name': 'a', 'mode': 'positional_only', 'schema': {'type': 'int'}},
-            {'name': 'b', 'schema': {'type': 'str'}},
-            {'name': 'c', 'mode': 'keyword_only', 'schema': {'type': 'bool'}},
-        ],
-    }
-    SchemaValidator(schema)
+    assert is_namedtuple(namedtuple('Point', 'x y')) is True
+    assert is_namedtuple(Employee) is True
+    assert is_namedtuple(NamedTuple('Employee', [('name', str), ('id', int)])) is True
 
-    schema: CoreSchema = {'type': 'call', 'arguments_schema': {'type': 'any'}, 'function': foo}
-    SchemaValidator(schema)
+    class Other(tuple):
+        name: str
+        id: int
+
+    assert is_namedtuple(Other) is False
 
 
-def test_schema_typing_error() -> None:
-    _: CoreSchema = {'type': 'wrong'}  # type: ignore
+def test_is_none_type():
+    assert is_none_type(Literal[None]) is True
+    assert is_none_type(None) is True
+    assert is_none_type(type(None)) is True
+    assert is_none_type(6) is False
+    assert is_none_type({}) is False
+    # WARNING: It's important to test `typing.Callable` not
+    # `collections.abc.Callable` (even with python >= 3.9) as they behave
+    # differently
+    assert is_none_type(Callable) is False
 
 
-def test_schema_validator() -> None:
-    SchemaValidator({'type': 'int'})
+@pytest.mark.parametrize(
+    ['ann_type', 'expected'],
+    (
+        (None, False),
+        (ForwardRef('Other[int]'), False),
+        (ForwardRef('Other[ClassVar[int]]'), False),
+        (ForwardRef('ClassVar[int]'), True),
+        (ForwardRef('t.ClassVar[int]'), True),
+        (ForwardRef('typing.ClassVar[int]'), True),
+        (ForwardRef('Annotated[ClassVar[int], ...]'), True),
+        (ForwardRef('Annotated[t.ClassVar[int], ...]'), True),
+        (ForwardRef('t.Annotated[t.ClassVar[int], ...]'), True),
+        (ClassVar[int], True),
+        (Annotated[ClassVar[int], ...], True),
+    ),
+)
+def test_is_classvar_annotation(ann_type, expected):
+    assert is_classvar_annotation(ann_type) is expected
 
 
-def test_schema_validator_wrong() -> None:
-    # use this instead of pytest.raises since pyright complains about input when pytest isn't installed
+def test_get_function_type_hints_none_type():
+    def f(x: int, y: None) -> int:
+        return x
+
+    assert get_function_type_hints(f) == {'return': int, 'x': int, 'y': NoneType}
+
+
+@pytest.mark.skipif(sys.version_info >= (3, 10), reason='testing using a feature not supported by older Python')
+def test_eval_type_backport_not_installed():
+    sys.modules['eval_type_backport'] = None
     try:
-        SchemaValidator({'type': 'bad'})  # type: ignore
-    except SchemaError:
-        pass
-    else:
-        raise AssertionError('SchemaValidator did not raise SchemaError')
+        with pytest.raises(TypeError) as exc_info:
 
+            class _Model(BaseModel):
+                foo: 'int | str'
 
-def test_correct_function_signature() -> None:
-    def my_validator(value: Any, info: Any) -> str:
-        return str(value)
-
-    v = SchemaValidator(core_schema.with_info_plain_validator_function(my_validator))
-    assert v.validate_python(1) == '1'
-
-
-def test_wrong_function_signature() -> None:
-    def wrong_validator(value: Any) -> Any:
-        return value
-
-    v = SchemaValidator(core_schema.with_info_plain_validator_function(wrong_validator))  # type: ignore
-
-    # use this instead of pytest.raises since pyright complains about input when pytest isn't installed
-    try:
-        v.validate_python(1)
-    except TypeError as exc:
-        assert 'takes 1 positional argument but 2 were given' in str(exc)
-    else:
-        raise AssertionError('v.validate_python(1) did not raise TypeError')
-
-
-def test_type_error():
-    try:
-        PydanticKnownError('foobar')  # type: ignore
-    except KeyError as exc:
-        assert str(exc) == '"Invalid error type: \'foobar\'"'
-    else:
-        raise AssertionError("PydanticKnownError('foobar') did not raise KeyError")
-
-    e = PydanticKnownError('recursion_loop')
-    assert isinstance(e, PydanticKnownError)
-
-
-def test_ser_function_plain():
-    def f(input: Any, info: core_schema.SerializationInfo, /) -> str:
-        return str(info)
-
-    s = SchemaSerializer(
-        core_schema.any_schema(
-            serialization=core_schema.plain_serializer_function_ser_schema(
-                f, info_arg=True, return_schema=core_schema.str_schema()
-            )
+        assert str(exc_info.value) == (
+            "Unable to evaluate type annotation 'int | str'. If you are making use "
+            'of the new typing syntax (unions using `|` since Python 3.10 or builtins subscripting '
+            'since Python 3.9), you should either replace the use of new syntax with the existing '
+            '`typing` constructs or install the `eval_type_backport` package.'
         )
-    )
-    assert s.to_python(123) == (
-        "SerializationInfo(include=None, exclude=None, context=None, mode='python', by_alias=False, exclude_unset=False, "
-        'exclude_defaults=False, exclude_none=False, exclude_computed_fields=False, round_trip=False, serialize_as_any=False)'
-    )
+
+    finally:
+        del sys.modules['eval_type_backport']
 
 
-def test_ser_function_wrap():
-    def f(
-        input: Any, serialize: core_schema.SerializerFunctionWrapHandler, info: core_schema.SerializationInfo, /
-    ) -> str:
-        return f'{serialize} {info}'
+def test_func_ns_excludes_default_globals() -> None:
+    foo = 'foo'
 
-    s = SchemaSerializer(
-        core_schema.any_schema(
-            serialization=core_schema.wrap_serializer_function_ser_schema(
-                f, info_arg=True, schema=core_schema.str_schema(), when_used='json'
-            )
-        )
-    )
-    # insert_assert(s.to_python(123, mode='json'))
-    assert s.to_python(123, mode='json') == (
-        'SerializationCallable(serializer=str) '
-        "SerializationInfo(include=None, exclude=None, context=None, mode='json', by_alias=False, exclude_unset=False, "
-        'exclude_defaults=False, exclude_none=False, exclude_computed_fields=False, round_trip=False, serialize_as_any=False)'
-    )
+    func_ns = parent_frame_namespace(parent_depth=1)
+    assert func_ns is not None
+    assert func_ns['foo'] == foo
+
+    # there are more default global variables, but these are examples of well known ones
+    for default_global_var in ['__name__', '__doc__', '__package__', '__builtins__']:
+        assert default_global_var not in func_ns
 
 
-def test_error_details() -> None:
-    # Test that the ErrorDetails type is correctly exported.
-    def act_on_error_details(_: ErrorDetails) -> None:
-        pass
+def test_parent_frame_namespace(create_module) -> None:
+    """Parent frame namespace should be `None` because we skip fetching data from the top module level."""
 
-    v = SchemaValidator({'type': 'int'})
+    @create_module
+    def mod1() -> None:
+        from pydantic._internal._typing_extra import parent_frame_namespace
 
-    try:
-        v.validate_python('not an int')
-    except ValidationError as err:
-        for details in err.errors(include_url=False):
-            act_on_error_details(details)
+        module_foo = 'global_foo'  # noqa: F841
+        module_ns = parent_frame_namespace(parent_depth=1)  # noqa: F841
+        module_ns_force = parent_frame_namespace(parent_depth=1, force=True)  # noqa: F841
+
+    assert mod1.module_ns is None
+    assert mod1.module_ns_force is not None
+
+
+def test_exotic_localns() -> None:
+    __foo_annotation__ = str
+
+    class Model(BaseModel):
+        foo: __foo_annotation__
+
+    assert Model.model_fields['foo'].annotation == str

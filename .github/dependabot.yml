@@ -1,20 +1,19 @@
 version: 2
-updates:
-  - package-ecosystem: "cargo"
-    directory: "/"
-    schedule:
-      interval: "monthly"
 
-  - package-ecosystem: "pip"
-    directory: "/"
+updates:
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: monthly
+
+  - package-ecosystem: "cargo"
+    directory: "/pydantic-core/"
     schedule:
       interval: "monthly"
     groups:
-      python-packages:
+      rust-deps:
         patterns:
           - "*"
-
-  - package-ecosystem: "github-actions"
-    directory: "/"
-    schedule:
-      interval: "monthly"
+        # pyo3 updates will require jiter updates, we'll handle them manually anyway
+        exclude-patterns:
+          - "pyo3*"

@@ -1,0 +1,246 @@
+[[orgs]]
+key = "adobe"
+name = "Adobe"
+description = """
+[`adobe/dy-sql`](https://github.com/adobe/dy-sql) uses Pydantic.
+"""
+
+[[orgs]]
+key = "amazon"
+name = "Amazon and AWS"
+description = """
+* [powertools-lambda-python](https://github.com/aws-powertools/powertools-lambda-python)
+* [awslabs/gluonts](https://github.com/awslabs/gluonts)
+* AWS [sponsored Samuel Colvin $5,000](https://twitter.com/samuel_colvin/status/1549383169006239745) to work on Pydantic in 2022
+"""
+
+[[orgs]]
+key = "anthropic"
+name = "Anthropic"
+description = """
+[`anthropics/anthropic-sdk-python`](https://github.com/anthropics/anthropic-sdk-python) uses Pydantic.
+"""
+
+[[orgs]]
+key = "apple"
+name = "Apple"
+
+[[orgs]]
+key = "asml"
+name = "ASML"
+
+[[orgs]]
+key = "astrazeneca"
+name = "AstraZeneca"
+description = """
+[Multiple repos](https://github.com/search?q=org%3AAstraZeneca+pydantic&type=code) in the `AstraZeneca`
+GitHub org depend on Pydantic.
+"""
+
+[[orgs]]
+key = "cisco"
+name = "Cisco Systems"
+description = """
+* Pydantic is listed in their report of [Open Source Used In RADKit](https://www.cisco.com/c/dam/en_us/about/doing_business/open_source/docs/RADKit-149-1687424532.pdf).
+* [`cisco/webex-assistant-sdk`](https://github.com/cisco/webex-assistant-sdk)
+"""
+
+[[orgs]]
+key = "comcast"
+name = "Comcast"
+
+[[orgs]]
+key = "datadog"
+name = "Datadog"
+description = """
+* Extensive use of Pydantic in [`DataDog/integrations-core`](https://github.com/DataDog/integrations-core) and other repos
+* Communication with engineers from Datadog about how they use Pydantic.
+"""
+
+[[orgs]]
+key = "facebook"
+name = "Facebook"
+description = """
+[Multiple repos](https://github.com/search?q=org%3Afacebookresearch+pydantic&type=code) in the `facebookresearch`
+GitHub org depend on Pydantic.
+"""
+
+
+[[orgs]]
+key = "github"
+name = "GitHub"
+description = """
+GitHub sponsored Pydantic $750 in 2022
+"""
+
+[[orgs]]
+key = "google"
+name = "Google"
+description = """
+Extensive use of Pydantic in [`google/turbinia`](https://github.com/google/turbinia) and other repos.
+"""
+
+[[orgs]]
+key = "hsbc"
+name = "HSBC"
+
+[[orgs]]
+key = "ibm"
+name = "IBM"
+description = """
+[Multiple repos](https://github.com/search?q=org%3AIBM+pydantic&type=code) in the `IBM` GitHub org depend on Pydantic.
+"""
+
+[[orgs]]
+key = "intel"
+name = "Intel"
+
+[[orgs]]
+key = "intuit"
+name = "Intuit"
+
+[[orgs]]
+key = "ipcc"
+name = "Intergovernmental Panel on Climate Change"
+description = """
+[Tweet](https://twitter.com/daniel_huppmann/status/1563461797973110785) explaining how the IPCC use Pydantic.
+"""
+
+[[orgs]]
+key = "jpmorgan"
+name = "JPMorgan"
+
+[[orgs]]
+key = "jupyter"
+name = "Jupyter"
+description = """
+* The developers of the Jupyter notebook are using Pydantic [for subprojects](https://github.com/pydantic/pydantic/issues/773)
+* Through the FastAPI-based Jupyter server [Jupyverse](https://github.com/jupyter-server/jupyverse)
+* [FPS](https://github.com/jupyter-server/fps)'s configuration management.
+"""
+
+[[orgs]]
+key = "microsoft"
+name = "Microsoft"
+description = """
+* [DeepSpeed](https://github.com/microsoft/DeepSpeed) deep learning optimisation library uses Pydantic extensively
+* [Multiple repos](https://github.com/search?q=org%3Amicrosoft%20pydantic&type=code) in the `microsoft` GitHub org depend on Pydantic, in particular their
+* Pydantic is also [used](https://github.com/search?q=org%3AAzure%20pydantic&type=code) in the `Azure` GitHub org
+* [Comments](https://github.com/tiangolo/fastapi/pull/26) on GitHub show Microsoft engineers using Pydantic as part of Windows and Office
+"""
+
+[[orgs]]
+key = "molssi"
+name = "Molecular Science Software Institute"
+description = """
+[Multiple repos](https://github.com/search?q=org%3AMolSSI%20pydantic&type=code) in the `MolSSI`
+GitHub org depend on Pydantic.
+"""
+
+[[orgs]]
+key = "nasa"
+name = "NASA"
+description = """
+[Multiple repos](https://github.com/search?q=org%3Anasa%20pydantic&type=code) in the `NASA`
+GitHub org depend on Pydantic.
+
+NASA are also using Pydantic via FastAPI in their JWST project to process images from the James Webb Space Telescope,
+see [this tweet](https://twitter.com/benjamin_falk/status/1546947039363305472).
+"""
+
+[[orgs]]
+key = "netflix"
+name = "Netflix"
+description = """
+[Multiple repos](https://github.com/search?q=org%3Anetflix%20pydantic&type=code) in the `Netflix`
+GitHub org depend on Pydantic.
+"""
+
+[[orgs]]
+key = "nsa"
+name = "NSA"
+description = """
+The [`nsacyber/WALKOFF`](https://github.com/nsacyber/WALKOFF) repo depends on Pydantic.
+"""
+
+[[orgs]]
+key = "nvidia"
+name = "NVIDIA"
+description = """
+[Multiple repositories](https://github.com/search?q=org%3ANVIDIA%20pydantic&type=code) in the `NVIDIA`
+GitHub org depend on Pydantic.
+
+Their "Omniverse Services" depends on Pydantic according to
+[their documentation](https://web.archive.org/web/20220628161919/https://docs.omniverse.nvidia.com/prod_services/prod_services/core/index.html).
+"""
+
+[[orgs]]
+key = "openai"
+name = "OpenAI"
+description = """
+OpenAI use Pydantic for their ChatCompletions API, as per [this](https://github.com/pydantic/pydantic/discussions/6372) discussion on GitHub.
+
+Anecdotally, OpenAI use Pydantic extensively for their internal services.
+"""
+
+[[orgs]]
+key = "oracle"
+name = "Oracle"
+
+[[orgs]]
+key = "palantir"
+name = "Palantir"
+
+[[orgs]]
+key = "qualcomm"
+name = "Qualcomm"
+
+[[orgs]]
+key = "redhat"
+name = "Red Hat"
+
+[[orgs]]
+key = "revolut"
+name = "Revolut"
+description = """
+Anecdotally, all internal services at Revolut are built with FastAPI and therefore Pydantic.
+"""
+
+[[orgs]]
+key = "robusta"
+name = "Robusta"
+description = """
+The [`robusta-dev/robusta`](https://github.com/robusta-dev/robusta) repo depends on Pydantic.
+"""
+
+[[orgs]]
+key = "salesforce"
+name = "Salesforce"
+description = """
+Salesforce [sponsored Samuel Colvin $10,000](https://twitter.com/samuel_colvin/status/1501288247670063104) to work on Pydantic in 2022.
+"""
+
+[[orgs]]
+key = "starbucks"
+name = "Starbucks"
+
+[[orgs]]
+key = "ti"
+name = "Texas Instruments"
+
+[[orgs]]
+key = "twilio"
+name = "Twilio"
+
+[[orgs]]
+key = "twitter"
+name = "Twitter"
+description = """
+Twitter's [`the-algorithm`](https://github.com/twitter/the-algorithm) repo where they
+[open sourced](https://blog.twitter.com/engineering/en_us/topics/open-source/2023/twitter-recommendation-algorithm)
+their recommendation engine uses Pydantic.
+"""
+
+[[orgs]]
+key = "ukhomeoffice"
+name = "UK Home Office"

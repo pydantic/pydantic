@@ -1,0 +1,60 @@
+name: 🐛 Pydantic V2 Bug
+description: Report a bug or unexpected behavior in Pydantic V2
+labels: [bug V2, pending]
+
+body:
+  - type: markdown
+    attributes:
+      value: Thank you for contributing to pydantic! ✊
+
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Initial Checks
+      description: Just making sure you're really using Pydantic V2
+      options:
+        - label: I confirm that I'm using Pydantic V2
+          required: true
+
+  - type: textarea
+    id: description
+    attributes:
+      label: Description
+      description: |
+        Please explain what you're seeing and what you would expect to see.
+
+        Please provide as much detail as possible to make understanding and solving your problem as quick as possible. 🙏
+    validations:
+      required: true
+
+  - type: textarea
+    id: example
+    attributes:
+      label: Example Code
+      description: >
+        If applicable, please add a self-contained,
+        [minimal, reproducible, example](https://stackoverflow.com/help/minimal-reproducible-example)
+        demonstrating the bug.
+
+      placeholder: |
+        import pydantic
+
+        ...
+      render: Python
+
+  - type: textarea
+    id: version
+    attributes:
+      label: Python, Pydantic & OS Version
+      description: |
+        Which version of Python & Pydantic are you using, and which Operating System?
+
+        Please run the following command and copy the output below:
+
+        ```bash
+        python -c "import pydantic.version; print(pydantic.version.version_info())"
+        ```
+
+      render: Text
+    validations:
+      required: true

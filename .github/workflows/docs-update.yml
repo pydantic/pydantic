@@ -1,0 +1,112 @@
+name: Publish Documentation
+
+on:
+  push:
+    branches:
+      - main
+      - docs-update
+    tags:
+      - '**'
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  COLUMNS: 150
+  UV_FROZEN: true
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: astral-sh/setup-uv@v7
+        with:
+          python-version: '3.13'
+
+      - name: Install dependencies
+        # Installing pip is required for the pre-commit action:
+        run: |
+          uv sync --all-packages --group linting --all-extras
+          uv pip install pip
+
+      - uses: pre-commit/action@v3.0.1
+        with:
+          extra_args: --all-files --verbose
+        env:
+          SKIP: no-commit-to-branch
+
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: astral-sh/setup-uv@v7
+        with:
+          python-version: '3.13'
+
+      - name: Install dependencies
+        run: uv sync --all-packages --group testing-extra --all-extras
+
+      - run: 'uv run python -c "import pydantic.version; print(pydantic.version.version_info())"'
+
+      - run: make test
+
+  publish:
+    # Compare with the docs-build job in .github/workflows/ci.yml
+    needs: [lint, test]
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout docs-site
+        uses: actions/checkout@v5
+        with:
+          ref: docs-site
+
+      - name: Checkout current branch
+        uses: actions/checkout@v5
+
+      - uses: astral-sh/setup-uv@v7
+        with:
+          python-version: '3.13'
+
+      - run: uv sync --all-packages --group docs --group docs-upload
+
+      - run: uv pip install --default-index https://pydantic:${PPPR_TOKEN}@pppr.pydantic.dev/simple/ mkdocs-material
+        env:
+          PPPR_TOKEN: ${{ secrets.PPPR_TOKEN }}
+
+      - run: uv run python -c 'import docs.plugins.main'
+
+      # Taken from docs-build.sh
+      - name: Prepare shortcuts for extra modules
+        run: |
+          ln -s pydantic-core/python/pydantic_core pydantic_core
+          ln -s .venv/lib/python*/site-packages/pydantic_settings pydantic_settings
+          ln -s .venv/lib/python*/site-packages/pydantic_extra_types pydantic_extra_types
+
+      - name: Set git credentials
+        run: |
+          git config --global user.name "${{ github.actor }}"
+          git config --global user.email "${{ github.actor }}@users.noreply.github.com"
+
+      - run: PYTHONPATH="$PWD${PYTHONPATH:+:${PYTHONPATH}}" uv run mike deploy -b docs-site dev --push
+        if: github.ref == 'refs/heads/main'
+
+      - if: github.ref == 'refs/heads/docs-update' || startsWith(github.ref, 'refs/tags/')
+        id: check-version
+        uses: samuelcolvin/check-python-version@v5
+        with:
+          version_file_path: 'pydantic/version.py'
+          skip_env_check: true
+
+      - run: PYTHONPATH="$PWD${PYTHONPATH:+:${PYTHONPATH}}" uv run mike deploy -b docs-site ${{ steps.check-version.outputs.VERSION_MAJOR_MINOR }} latest --update-aliases --push
+        if: ${{ (github.ref == 'refs/heads/docs-update' || startsWith(github.ref, 'refs/tags/')) && !fromJSON(steps.check-version.outputs.IS_PRERELEASE) }}
+        env:
+          PYDANTIC_VERSION: v${{ steps.check-version.outputs.VERSION }}
+
+      - run: uv run python docs/plugins/algolia.py upload
+        env:
+          ALGOLIA_WRITE_API_KEY: ${{ secrets.ALGOLIA_WRITE_API_KEY }}

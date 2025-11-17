@@ -1,32 +1,49 @@
-fail_fast: true
-
 repos:
-- repo: https://github.com/pre-commit/pre-commit-hooks
-  rev: v4.0.1
-  hooks:
-  - id: check-yaml
-  - id: check-toml
-  - id: end-of-file-fixer
-  - id: trailing-whitespace
-  - id: check-added-large-files
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v6.0.0
+    hooks:
+      - id: no-commit-to-branch # prevent direct commits to main branch
+      - id: check-yaml
+        args: ['--unsafe']
+      - id: check-toml
+      - id: end-of-file-fixer
+      - id: trailing-whitespace
 
-- repo: local
-  hooks:
-  - id: lint-python
-    name: Lint Python
-    entry: make lint-python
-    types: [python]
-    language: system
-    pass_filenames: false
-  - id: typecheck-python
-    name: Typecheck Python
-    entry: make pyright
-    types: [python]
-    language: system
-    pass_filenames: false
-  - id: lint-rust
-    name: Lint Rust
-    entry: make lint-rust
-    types: [rust]
-    language: system
-    pass_filenames: false
+  - repo: https://github.com/codespell-project/codespell
+    rev: v2.4.1
+    hooks:
+      - id: codespell
+        additional_dependencies:
+          - tomli
+        exclude: '^uv\.lock$'
+
+  - repo: https://github.com/DavidAnson/markdownlint-cli2
+    rev: v0.18.1
+    hooks:
+      - id: markdownlint-cli2
+
+  - repo: https://github.com/google/yamlfmt
+    rev: v0.20.0
+    hooks:
+      - id: yamlfmt
+
+  - repo: local
+    hooks:
+      - id: lint
+        name: Lint
+        entry: make lint-python
+        types: [python]
+        language: system
+        pass_filenames: false
+      - id: lint rust
+        name: Lint Rust
+        entry: make lint-rust
+        types: [rust]
+        language: system
+        pass_filenames: false
+      - id: typecheck
+        name: Typecheck
+        entry: uv run pyright pydantic
+        types: [python]
+        language: system
+        pass_filenames: false

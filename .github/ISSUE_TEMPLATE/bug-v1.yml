@@ -1,0 +1,91 @@
+name: 🐛 Pydantic V1.X Bug
+description: Report a bug or unexpected behavior in Pydantic V1.X, e.g. all releases prior to V2
+labels: [bug V1, pending]
+
+body:
+  - type: markdown
+    attributes:
+      value: Thank you for contributing to pydantic! ✊
+
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Initial Checks
+      description: |
+        Just a few checks to make sure you need to create a bug report.
+
+        _Sorry to sound so draconian 👿; but every second spent replying to issues is time not spent improving pydantic 🙇._
+      options:
+        - label: I have searched GitHub for a duplicate issue and I'm sure this is something new
+          required: true
+        - label: I have searched Google & StackOverflow for a solution and couldn't find anything
+          required: true
+        - label: I have read and followed [the docs](https://docs.pydantic.dev) and still think this is a bug
+          required: true
+        - label: >
+            I am confident that the issue is with pydantic
+            (not my code, or another library in the ecosystem like [FastAPI](https://fastapi.tiangolo.com) or
+            [mypy](https://mypy.readthedocs.io/en/stable))
+          required: true
+
+  - type: textarea
+    id: description
+    attributes:
+      label: Description
+      description: |
+        Please explain what you're seeing and what you would expect to see.
+
+        Please provide as much detail as possible to make understanding and solving your problem as quick as possible. 🙏
+    validations:
+      required: true
+
+  - type: textarea
+    id: example
+    attributes:
+      label: Example Code
+      description: >
+        If applicable, please add a self-contained,
+        [minimal, reproducible, example](https://stackoverflow.com/help/minimal-reproducible-example)
+        demonstrating the bug.
+
+      placeholder: |
+        import pydantic
+
+        ...
+      render: Python
+
+  - type: textarea
+    id: version
+    attributes:
+      label: Python, Pydantic & OS Version
+      description: |
+        Which version of Python & Pydantic are you using, and which Operating System?
+
+        Please run the following command and copy the output below:
+
+        ```bash
+        python -c "import pydantic.utils; print(pydantic.utils.version_info())"
+        ```
+
+      render: Text
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: affected-components
+    attributes:
+      label: Affected Components
+      description: Which of the following parts of pydantic does this bug affect?
+      # keep this lis in sync with feature_request.yml
+      options:
+        - label: '[Compatibility between releases](https://docs.pydantic.dev/changelog/)'
+        - label: '[Data validation/parsing](https://docs.pydantic.dev/concepts/models/#basic-model-usage)'
+        - label: '[Data serialization](https://docs.pydantic.dev/concepts/serialization/) - `.model_dump()` and `.model_dump_json()`'
+        - label: '[JSON Schema](https://docs.pydantic.dev/concepts/json_schema/)'
+        - label: '[Dataclasses](https://docs.pydantic.dev/concepts/dataclasses/)'
+        - label: '[Model Config](https://docs.pydantic.dev/concepts/config/)'
+        - label: '[Field Types](https://docs.pydantic.dev/api/types/) - adding or changing a particular data type'
+        - label: '[Function validation decorator](https://docs.pydantic.dev/concepts/validation_decorator/)'
+        - label: '[Generic Models](https://docs.pydantic.dev/concepts/models/#generic-models)'
+        - label: '[Other Model behaviour](https://docs.pydantic.dev/concepts/models/) - `model_construct()`, pickling, private attributes, ORM mode'
+        - label: '[Plugins](https://docs.pydantic.dev/) and integration with other tools - mypy, FastAPI, python-devtools, Hypothesis, VS Code, PyCharm, etc.'

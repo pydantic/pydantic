@@ -1,0 +1,1 @@
+::: pydantic.root_model

@@ -1,39 +1,58 @@
-*.py[cod]
+# Virtual environments
+env/
+env3*/
+venv/
+.venv/
+__pypackages__/
+
+# IDEs and editors
+.idea/
+.vscode/
+
+# Package distribution and build files
 *.egg-info/
-
-.coverage
-.python-version
-package-lock.json
-test.py
-
-.cache/
-.hypothesis/
-build/
 dist/
-docs/_build/
-htmlcov/
-node_modules/
+/build/
+_build/
 
-/.benchmarks/
-/.idea/
-/.pytest_cache/
-/.vscode/
-/env*/
-/env/
-/flame/
-/pytest-speed/
-/sandbox/
-/sandbox/
+# Python bytecode and cache files
+*.py[cod]
+.cache/
+/.ghtopdep_cache/
+.hypothesis
+.mypy_cache/
+.pytest_cache/
+/.ruff_cache/
+
+# Benchmark and test files
+/benchmarks/*.json
+/tests/benchmarks/*.json
+/htmlcov/
+/codecov.sh
+/coverage.lcov
+.coverage
+/test*.py
+run_mypy_on_file.py
+
+# Documentation files
+/docs/changelog.md
+/docs/*.whl
+/docs/theme/mkdocs_run_deps.html
 /site/
+/site.zip
+
+# Project-specific files
+pydantic/*.c
+pydantic/*.so
+/fastapi/
+.mypy-configs/
+
+# Other files and folders
+.python-version
+.DS_Store
+.auto-format
+/sandbox/
+/worktrees/
+
+# Rust build files
 /target/
-/worktree/
-
-/.editorconfig
-/*.lcov
-/*.profdata
-/*.profraw
-/foobar.py
-/python/pydantic_core/*.so
-
-# samply
-/profile.json

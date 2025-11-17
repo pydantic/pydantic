@@ -1,0 +1,48 @@
+cff-version: 1.2.0
+title: Pydantic Validation
+message: 'If you use this software, please cite it as below.'
+type: software
+authors:
+  - family-names: Colvin
+    given-names: Samuel
+  - family-names: Jolibois
+    given-names: Eric
+  - family-names: Ramezani
+    given-names: Hasan
+  - family-names: Garcia Badaracco
+    given-names: Adrian
+  - family-names: Dorsey
+    given-names: Terrence
+  - family-names: Montague
+    given-names: David
+  - family-names: Matveenko
+    given-names: Serge
+  - family-names: Trylesinski
+    given-names: Marcelo
+  - family-names: Runkle
+    given-names: Sydney
+  - family-names: Hewitt
+    given-names: David
+  - family-names: Hall
+    given-names: Alex
+  - family-names: Plot
+    given-names: Victorien
+repository-code: 'https://github.com/pydantic/pydantic'
+url: 'https://docs.pydantic.dev/latest/'
+abstract: >-
+  Pydantic Validation is the most widely used data validation library
+  for Python.
+
+  Fast and extensible, Pydantic Validation plays nicely with your
+  linters/IDE/brain. Define how data should be in pure,
+  canonical Python 3.9+; validate it with Pydantic Validation.
+keywords:
+  - python
+  - validation
+  - parsing
+  - json-schema
+  - hints
+  - typing
+license: MIT
+version: v2.13.0a0+dev
+date-released: 2025-10-07

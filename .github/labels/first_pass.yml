@@ -1,0 +1,17 @@
+relnotes-fix:
+  - head-branch: ['^fix', 'fix']
+
+relnotes-feature:
+  - head-branch: ['^feature', 'feature']
+
+documentation:
+  - head-branch: ['^documentation', 'documentation', '^docs', 'docs']
+
+relnotes-change:
+  - head-branch: ['^change', 'change']
+
+relnotes-performance:
+  - head-branch: ['^performance', 'performance']
+
+relnotes-packaging:
+  - head-branch: ['^bump', 'bump', '^version', 'version', '^packaging', 'packaging']

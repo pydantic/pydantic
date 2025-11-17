@@ -1,0 +1,26 @@
+name: Release notes
+
+on:
+  pull_request_target:
+    types: [opened]
+
+jobs:
+  auto-labeler:
+    name: auto-labeler
+    permissions:
+      contents: read
+      pull-requests: write
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - id: label-PR-by-branch-name
+        uses: actions/labeler@v6
+        with:
+          configuration-path: '.github/labels/first_pass.yml'
+
+      - id: add-default-if-no-labels
+        if: ${{ !contains(steps.label-PR-by-branch-name.outputs.all-labels, 'relnotes') && !contains(steps.label-PR-by-branch-name.outputs.all-labels, 'documentation') }}
+        uses: actions/labeler@v6
+        with:
+          configuration-path: '.github/labels/default_pass.yml'
