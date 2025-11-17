@@ -261,6 +261,7 @@ class Decorator(Generic[DecoratorInfoType]):
             func = shim(func)
         func = unwrap_wrapped_function(func, unwrap_partial=False)
         if not callable(func):
+            # TODO most likely this branch can be removed when we drop support for Python 3.12:
             # This branch will get hit for classmethod properties
             attribute = get_attribute_from_base_dicts(cls_, cls_var_name)  # prevents the binding call to `__get__`
             if isinstance(attribute, PydanticDescriptorProxy):
