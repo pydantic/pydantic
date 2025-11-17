@@ -886,6 +886,15 @@ to help you monitor and understand your
   
 </li>
         
+          <li class="md-nav__item">
+  <a href="#defining-a-custom-__init__" class="md-nav__link">
+    <span class="md-ellipsis">
+      Defining a custom __init__()
+    </span>
+  </a>
+  
+</li>
+        
       </ul>
     </nav>
   
@@ -3345,6 +3354,15 @@ to help you monitor and understand your
   
 </li>
         
+          <li class="md-nav__item">
+  <a href="#defining-a-custom-__init__" class="md-nav__link">
+    <span class="md-ellipsis">
+      Defining a custom __init__()
+    </span>
+  </a>
+  
+</li>
+        
       </ul>
     </nav>
   
@@ -4086,6 +4104,27 @@ not stored in <code>__pydantic_extra__</code> or <code>__dict__</code> on the in
 <li>Unlike when instantiating the model with validation, a call to <a class="autorefs autorefs-internal" href="../../api/base_model/#pydantic.BaseModel.model_construct"><code>model_construct()</code></a> with <a class="autorefs autorefs-internal" href="../../api/config/#pydantic.config.ConfigDict.extra"><code>extra</code></a> set to <code>'forbid'</code> doesn't raise an error in the presence of data not corresponding to fields. Rather, said input data is simply ignored.</li>
 </ul>
 </div>
+<h3 id="defining-a-custom-__init__">Defining a custom <code>__init__()</code><a class="headerlink" href="#defining-a-custom-__init__" title="Permanent link">&para;</a></h3>
+<p>Pydantic provides a default <code>__init__()</code> implementation for Pydantic models, that is called <em>only</em> when using the model constructor
+(and not with the <code>model_validate_*()</code> methods). This implementation delegates validation to <code>pydantic-core</code>.</p>
+<p>However, it is possible to define a custom <code>__init__()</code> on your models. In this case, it will be called unconditionally from all the
+<a href="#validating-data">validation methods</a>, without performing validation (and so you should call <code>super().__init__(**kwargs)</code> in your implementation).</p>
+<p>Defining a custom <code>__init__()</code> is not recommended, as all the validation parameters (<a href="../strict_mode/">strictness</a>,
+<a href="#extra-data">extra data behavior</a>, <a href="../validators/#validation-context">validation context</a>) will be lost. If you need to perform
+actions after the model was initialized, you can make use of <em>after</em> <a href="../validators/#field-after-validator">field</a> or
+<a href="../validators/#model-after-validator">model</a> validators, or define a <a class="autorefs autorefs-internal" href="../../api/base_model/#pydantic.BaseModel.model_post_init"><code>model_post_init()</code></a> implementation:</p>
+<div class="language-python highlight"><pre><span></span><code><span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Any</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">pydantic</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseModel</span>
+
+
+<span class="k">class</span><span class="w"> </span><span class="nc">MyModel</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="nb">id</span><span class="p">:</span> <span class="nb">int</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">model_post_init</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">context</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Model initialized with id </span><span class="si">%d</span><span class="s2">&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">id</span><span class="p">)</span>
+</code></pre></div>
 <h2 id="error-handling">Error handling<a class="headerlink" href="#error-handling" title="Permanent link">&para;</a></h2>
 <p>Pydantic will raise a <a class="autorefs autorefs-internal" href="../../api/pydantic_core/#pydantic_core.ValidationError"><code>ValidationError</code></a> exception whenever it finds an error in the data it's validating.</p>
 <p>A single exception will be raised regardless of the number of errors found, and that validation error

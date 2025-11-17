@@ -522,6 +522,29 @@ On [extra data](#extra-data) behavior with model_construct()
 - For models with extra set to `'ignore'`, data not corresponding to fields will be ignored — that is, not stored in `__pydantic_extra__` or `__dict__` on the instance.
 - Unlike when instantiating the model with validation, a call to model_construct() with extra set to `'forbid'` doesn't raise an error in the presence of data not corresponding to fields. Rather, said input data is simply ignored.
 
+### Defining a custom `__init__()`
+
+Pydantic provides a default `__init__()` implementation for Pydantic models, that is called *only* when using the model constructor (and not with the `model_validate_*()` methods). This implementation delegates validation to `pydantic-core`.
+
+However, it is possible to define a custom `__init__()` on your models. In this case, it will be called unconditionally from all the [validation methods](#validating-data), without performing validation (and so you should call `super().__init__(**kwargs)` in your implementation).
+
+Defining a custom `__init__()` is not recommended, as all the validation parameters ([strictness](../strict_mode/), [extra data behavior](#extra-data), [validation context](../validators/#validation-context)) will be lost. If you need to perform actions after the model was initialized, you can make use of *after* [field](../validators/#field-after-validator) or [model](../validators/#model-after-validator) validators, or define a model_post_init() implementation:
+
+```python
+import logging
+from typing import Any
+
+from pydantic import BaseModel
+
+
+class MyModel(BaseModel):
+    id: int
+
+    def model_post_init(self, context: Any) -> None:
+        logging.info("Model initialized with id %d", self.id)
+
+```
+
 ## Error handling
 
 Pydantic will raise a ValidationError exception whenever it finds an error in the data it's validating.
