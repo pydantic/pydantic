@@ -11,7 +11,7 @@ use jiter::{JsonObject, JsonValue};
 use crate::build_tools::py_schema_err;
 use crate::errors::{py_err_string, ErrorType, LocItem, Location, ToErrorValue, ValError, ValLineError, ValResult};
 use crate::input::StringMapping;
-use crate::tools::{extract_i64, mapping_get, py_err};
+use crate::tools::{mapping_get, py_err};
 
 /// Used for getting items from python dicts, python objects, or JSON objects, in different ways
 #[derive(Debug)]
@@ -446,8 +446,9 @@ impl PathItem {
 
         if let Ok(usize_key) = obj.extract::<usize>() {
             Ok(Self::Pos(usize_key))
-        } else if let Some(int_key) = extract_i64(&obj) {
-            Ok(Self::Neg(int_key.unsigned_abs() as usize))
+        } else if let Ok(int_key) = obj.extract::<isize>() {
+            // usize has more possible positive values than isize, so guaranteed negative here
+            Ok(Self::Neg(int_key.unsigned_abs()))
         } else {
             py_err!(PyTypeError; "Item in an alias path should be a string or int")
         }

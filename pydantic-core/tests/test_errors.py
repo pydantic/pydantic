@@ -6,10 +6,10 @@ import subprocess
 import sys
 from decimal import Decimal
 from typing import Any, Optional
-from unittest.mock import patch
 
 import pytest
 from dirty_equals import HasRepr, IsInstance, IsJson, IsStr
+from pytest_mock import MockerFixture
 
 from pydantic_core import (
     CoreConfig,
@@ -696,32 +696,34 @@ class CauseResult(enum.Enum):
         ('Disabled implicitly', {}, CauseResult.NO_CAUSE),
     ],
 )
-def test_validation_error_cause_config_variants(desc: str, config: CoreConfig, expected_result: CauseResult):
+def test_validation_error_cause_config_variants(
+    desc: str, config: CoreConfig, expected_result: CauseResult, mocker: MockerFixture
+):
     # Simulate the package being missing:
-    with patch.dict('sys.modules', {'exceptiongroup': None}):
+    mocker.patch.dict('sys.modules', {'exceptiongroup': None})
 
-        def singular_raise_py_error(v: Any) -> Any:
-            raise ValueError('Oh no!')
+    def singular_raise_py_error(v: Any) -> Any:
+        raise ValueError('Oh no!')
 
-        s = SchemaValidator(core_schema.no_info_plain_validator_function(singular_raise_py_error), config=config)
+    s = SchemaValidator(core_schema.no_info_plain_validator_function(singular_raise_py_error), config=config)
 
-        if expected_result is CauseResult.IMPORT_ERROR:
-            # Confirm error message contains "requires the exceptiongroup module" in the middle of the string:
-            with pytest.raises(ImportError, match='requires the exceptiongroup module'):
-                s.validate_python('anything')
-        elif expected_result is CauseResult.CAUSE:
-            with pytest.raises(ValidationError) as exc_info:
-                s.validate_python('anything')
-            assert exc_info.value.__cause__ is not None
-            assert hasattr(exc_info.value.__cause__, 'exceptions')
-            assert len(exc_info.value.__cause__.exceptions) == 1
-            assert repr(exc_info.value.__cause__.exceptions[0]) == repr(ValueError('Oh no!'))
-        elif expected_result is CauseResult.NO_CAUSE:
-            with pytest.raises(ValidationError) as exc_info:
-                s.validate_python('anything')
-            assert exc_info.value.__cause__ is None
-        else:
-            raise AssertionError(f'Unhandled result: {expected_result}')
+    if expected_result is CauseResult.IMPORT_ERROR:
+        # Confirm error message contains "requires the exceptiongroup module" in the middle of the string:
+        with pytest.raises(ImportError, match='requires the exceptiongroup module'):
+            s.validate_python('anything')
+    elif expected_result is CauseResult.CAUSE:
+        with pytest.raises(ValidationError) as exc_info:
+            s.validate_python('anything')
+        assert exc_info.value.__cause__ is not None
+        assert hasattr(exc_info.value.__cause__, 'exceptions')
+        assert len(exc_info.value.__cause__.exceptions) == 1
+        assert repr(exc_info.value.__cause__.exceptions[0]) == repr(ValueError('Oh no!'))
+    elif expected_result is CauseResult.NO_CAUSE:
+        with pytest.raises(ValidationError) as exc_info:
+            s.validate_python('anything')
+        assert exc_info.value.__cause__ is None
+    else:
+        raise AssertionError(f'Unhandled result: {expected_result}')
 
 
 def test_validation_error_cause_traceback_preserved():

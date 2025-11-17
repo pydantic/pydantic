@@ -21,7 +21,7 @@ use crate::errors::{
     py_err_string, ErrorType, ErrorTypeDefaults, InputValue, ToErrorValue, ValError, ValLineError, ValResult,
 };
 use crate::py_gc::PyGcTraverse;
-use crate::tools::{extract_i64, new_py_string};
+use crate::tools::new_py_string;
 use crate::validators::{CombinedValidator, Exactness, ValidationState, Validator};
 
 use super::{py_error_on_minusone, BorrowInput, Input};
@@ -568,8 +568,7 @@ pub enum EitherInt<'py> {
 
 impl<'py> EitherInt<'py> {
     pub fn upcast(py_any: &Bound<'py, PyAny>) -> ValResult<Self> {
-        // Safety: we know that py_any is a python int
-        if let Some(int_64) = extract_i64(py_any) {
+        if let Ok(int_64) = py_any.extract() {
             Ok(Self::I64(int_64))
         } else {
             let big_int: BigInt = py_any.extract()?;
@@ -708,6 +707,8 @@ impl Rem for &Int {
 
 impl FromPyObject<'_, '_> for Int {
     type Error = PyErr;
+
+    #[allow(clippy::same_functions_in_if_condition)] // https://github.com/rust-lang/rust-clippy/issues/10928
     fn extract(obj: Borrowed<'_, '_, PyAny>) -> PyResult<Self> {
         if let Ok(i) = obj.extract() {
             Ok(Int::I64(i))
