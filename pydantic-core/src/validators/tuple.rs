@@ -6,6 +6,7 @@ use pyo3::prelude::*;
 use pyo3::types::{PyDict, PyList, PyTuple};
 
 use crate::build_tools::is_strict;
+use crate::build_tools::py_schema_err;
 use crate::errors::{py_err_string, ErrorType, ErrorTypeDefaults, ValError, ValLineError, ValResult};
 use crate::input::ConsumeIterator;
 use crate::input::{BorrowInput, Input, ValidatedTuple};
@@ -315,6 +316,26 @@ impl Validator for TupleValidator {
 
     fn get_name(&self) -> &str {
         &self.name
+    }
+
+    fn children(&self) -> Vec<&Arc<CombinedValidator>> {
+        self.validators.iter().collect()
+    }
+
+    fn with_new_children(&self, children: Vec<Arc<CombinedValidator>>) -> PyResult<Arc<CombinedValidator>> {
+        if children.len() != self.validators.len() {
+            return py_schema_err!("Tuple must have exactly {} children", self.validators.len());
+        }
+        Ok(CombinedValidator::Tuple(Self {
+            strict: self.strict,
+            validators: children,
+            variadic_item_index: self.variadic_item_index,
+            min_length: self.min_length,
+            max_length: self.max_length,
+            name: self.name.clone(),
+            fail_fast: self.fail_fast,
+        })
+        .into())
     }
 }
 

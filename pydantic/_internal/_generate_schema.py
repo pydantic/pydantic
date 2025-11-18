@@ -342,6 +342,7 @@ class GenerateSchema:
         'field_name_stack',
         'model_type_stack',
         'defs',
+        'needs_apply_deferred_discriminators',
     )
 
     def __init__(
@@ -357,6 +358,7 @@ class GenerateSchema:
         self.field_name_stack = _FieldNameStack()
         self.model_type_stack = _ModelTypeStack()
         self.defs = _Definitions()
+        self.needs_apply_deferred_discriminators = False
 
     def __init_subclass__(cls) -> None:
         super().__init_subclass__()
@@ -679,6 +681,7 @@ class GenerateSchema:
             )
         except _discriminated_union.MissingDefinitionForUnionRef:
             # defer until defs are resolved
+            self.needs_apply_deferred_discriminators = True
             _discriminated_union.set_discriminator_in_metadata(
                 schema,
                 discriminator,
@@ -686,7 +689,15 @@ class GenerateSchema:
             return schema
 
     def clean_schema(self, schema: CoreSchema) -> CoreSchema:
-        return self.defs.finalize_schema(schema)
+        if self.needs_apply_deferred_discriminators:
+            # run full cleaning pass to apply any deferred discriminators
+            return self.defs.finalize_schema(schema)
+
+        elif self.defs._definitions:
+            # if there are definitions, we need to wrap in a definitions schema
+            return core_schema.definitions_schema(schema, definitions=list(self.defs._definitions.values()))
+
+        return schema
 
     def _add_js_function(self, metadata_schema: CoreSchema, js_function: Callable[..., Any]) -> None:
         metadata = metadata_schema.get('metadata', {})

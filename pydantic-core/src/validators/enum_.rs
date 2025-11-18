@@ -164,6 +164,10 @@ impl<T: EnumValidateValue> Validator for EnumValidator<T> {
     fn get_name(&self) -> &str {
         &self.name
     }
+
+    fn children(&self) -> Vec<&Arc<CombinedValidator>> {
+        vec![]
+    }
 }
 
 #[derive(Debug, Clone)]

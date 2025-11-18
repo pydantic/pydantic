@@ -21,7 +21,7 @@ use super::{
     build_validator, BuildValidator, CombinedValidator, DefinitionsBuilder, Exactness, ValidationState, Validator,
 };
 
-#[derive(Debug)]
+#[derive(Debug, Clone, Copy)]
 enum UnionMode {
     Smart,
     LeftToRight,
@@ -224,6 +224,31 @@ impl Validator for UnionValidator {
     fn get_name(&self) -> &str {
         &self.name
     }
+
+    fn children(&self) -> Vec<&Arc<CombinedValidator>> {
+        self.choices.iter().map(|(v, _)| v).collect()
+    }
+
+    fn with_new_children(&self, children: Vec<Arc<CombinedValidator>>) -> PyResult<Arc<CombinedValidator>> {
+        if children.len() != self.choices.len() {
+            return py_schema_err!(
+                "Number of children for union must be the same as the existing number of choices ({})",
+                self.choices.len()
+            );
+        }
+        let new_choices = children
+            .into_iter()
+            .zip(self.choices.iter().map(|(_, label)| label.clone()))
+            .collect();
+
+        Ok(CombinedValidator::Union(Self {
+            mode: self.mode,
+            choices: new_choices,
+            custom_error: self.custom_error.clone(),
+            name: self.name.clone(),
+        })
+        .into())
+    }
 }
 
 struct ChoiceLineErrors<'a> {
@@ -282,7 +307,7 @@ impl<'a> MaybeErrors<'a> {
 
 #[derive(Debug)]
 pub struct TaggedUnionValidator {
-    discriminator: Discriminator,
+    discriminator: Arc<Discriminator>,
     lookup: LiteralLookup<Arc<CombinedValidator>>,
     from_attributes: bool,
     custom_error: Option<CustomError>,
@@ -300,7 +325,10 @@ impl BuildValidator for TaggedUnionValidator {
         definitions: &mut DefinitionsBuilder<Arc<CombinedValidator>>,
     ) -> PyResult<Arc<CombinedValidator>> {
         let py = schema.py();
-        let discriminator = Discriminator::new(py, &schema.get_as_req(intern!(py, "discriminator"))?)?;
+        let discriminator = Arc::new(Discriminator::new(
+            py,
+            &schema.get_as_req(intern!(py, "discriminator"))?,
+        )?);
         let discriminator_repr = discriminator.to_string_py(py)?;
 
         let choices = PyDict::new(py);
@@ -351,7 +379,7 @@ impl Validator for TaggedUnionValidator {
         input: &(impl Input<'py> + ?Sized),
         state: &mut ValidationState<'_, 'py>,
     ) -> ValResult<Py<PyAny>> {
-        match &self.discriminator {
+        match self.discriminator.as_ref() {
             Discriminator::LookupKey(lookup_key) => {
                 let from_attributes = state.extra().from_attributes.unwrap_or(self.from_attributes);
                 let dict = input.validate_model_fields(state.strict_or(false), from_attributes)?;
@@ -375,6 +403,33 @@ impl Validator for TaggedUnionValidator {
 
     fn get_name(&self) -> &str {
         &self.name
+    }
+
+    fn children(&self) -> Vec<&Arc<CombinedValidator>> {
+        self.lookup.values.iter().collect()
+    }
+
+    fn with_new_children(&self, children: Vec<Arc<CombinedValidator>>) -> PyResult<Arc<CombinedValidator>> {
+        if children.len() != self.lookup.values.len() {
+            return py_schema_err!(
+                "Number of children for tagged-union must be the same as the existing number of choices ({})",
+                self.lookup.values.len()
+            );
+        }
+
+        let mut new_lookup = self.lookup.clone();
+        new_lookup.values = children;
+
+        Ok(CombinedValidator::TaggedUnion(Self {
+            discriminator: self.discriminator.clone(),
+            lookup: new_lookup,
+            from_attributes: self.from_attributes,
+            custom_error: self.custom_error.clone(),
+            tags_repr: self.tags_repr.clone(),
+            discriminator_repr: self.discriminator_repr.clone(),
+            name: self.name.clone(),
+        })
+        .into())
     }
 }
 

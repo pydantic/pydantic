@@ -51,6 +51,10 @@ impl DefinitionRefValidator {
     pub fn new(definition: DefinitionRef<Arc<CombinedValidator>>) -> Self {
         Self { definition }
     }
+
+    pub fn definition(&self) -> &DefinitionRef<Arc<CombinedValidator>> {
+        &self.definition
+    }
 }
 
 impl BuildValidator for DefinitionRefValidator {
@@ -125,6 +129,12 @@ impl Validator for DefinitionRefValidator {
 
     fn get_name(&self) -> &str {
         self.definition.get_or_init_name(|v| v.get_name().into())
+    }
+
+    fn children(&self) -> Vec<&Arc<CombinedValidator>> {
+        // deliberately return empty to avoid circular walk during optimization passes
+        // TODO this may not be correct
+        vec![]
     }
 }
 

@@ -24,7 +24,7 @@ const DUNDER_FIELDS_SET_KEY: &str = "__pydantic_fields_set__";
 const DUNDER_MODEL_EXTRA_KEY: &str = "__pydantic_extra__";
 const DUNDER_MODEL_PRIVATE_KEY: &str = "__pydantic_private__";
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Copy)]
 pub(super) enum Revalidate {
     Always,
     Never,
@@ -41,7 +41,7 @@ impl Revalidate {
         }
     }
 
-    pub fn should_revalidate(&self, input: &Bound<'_, PyAny>, class: &Bound<'_, PyType>) -> bool {
+    pub fn should_revalidate(self, input: &Bound<'_, PyAny>, class: &Bound<'_, PyType>) -> bool {
         match self {
             Revalidate::Always => true,
             Revalidate::Never => false,
@@ -241,6 +241,29 @@ impl Validator for ModelValidator {
 
     fn get_name(&self) -> &str {
         &self.name
+    }
+
+    fn children(&self) -> Vec<&Arc<CombinedValidator>> {
+        vec![&self.validator]
+    }
+
+    fn with_new_children(&self, children: Vec<Arc<CombinedValidator>>) -> PyResult<Arc<CombinedValidator>> {
+        if children.len() != 1 {
+            return py_schema_err!("Model must have exactly one child: the inner validator");
+        }
+
+        Ok(Arc::new(CombinedValidator::Model(ModelValidator {
+            revalidate: self.revalidate,
+            validator: children.into_iter().next().unwrap(),
+            class: self.class.clone(),
+            generic_origin: self.generic_origin.clone(),
+            post_init: self.post_init.clone(),
+            frozen: self.frozen,
+            custom_init: self.custom_init,
+            root_model: self.root_model,
+            undefined: self.undefined.clone(),
+            name: self.name.clone(),
+        })))
     }
 }
 

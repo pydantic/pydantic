@@ -18,7 +18,7 @@ use crate::tools::SchemaDict;
 use super::validation_state::ValidationState;
 use super::{build_validator, BuildValidator, CombinedValidator, DefinitionsBuilder, Validator};
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone, Copy)]
 enum VarKwargsMode {
     Uniform,
     UnpackedTypedDict,
@@ -45,7 +45,7 @@ struct Parameter {
     name: String,
     kwarg_key: Option<Py<PyString>>,
     validator: Arc<CombinedValidator>,
-    lookup_key_collection: LookupKeyCollection,
+    lookup_key_collection: Arc<LookupKeyCollection>,
     mode: String,
 }
 
@@ -129,7 +129,7 @@ impl BuildValidator for ArgumentsValidator {
             }
 
             let validation_alias = arg.get_item(intern!(py, "alias"))?;
-            let lookup_key_collection = LookupKeyCollection::new(py, validation_alias, name.as_str())?;
+            let lookup_key_collection = Arc::new(LookupKeyCollection::new(py, validation_alias, name.as_str())?);
 
             parameters.push(Parameter {
                 positional,
@@ -403,5 +403,59 @@ impl Validator for ArgumentsValidator {
 
     fn get_name(&self) -> &str {
         Self::EXPECTED_TYPE
+    }
+
+    fn children(&self) -> Vec<&Arc<CombinedValidator>> {
+        let mut children: Vec<&Arc<CombinedValidator>> = self.parameters.iter().map(|param| &param.validator).collect();
+        if let Some(var_args_validator) = &self.var_args_validator {
+            children.push(var_args_validator);
+        }
+        if let Some(var_kwargs_validator) = &self.var_kwargs_validator {
+            children.push(var_kwargs_validator);
+        }
+        children
+    }
+
+    fn with_new_children(&self, children: Vec<Arc<CombinedValidator>>) -> PyResult<Arc<CombinedValidator>> {
+        let expected_len = self.parameters.len()
+            + self.var_args_validator.as_ref().map_or(0, |_| 1)
+            + self.var_kwargs_validator.as_ref().map_or(0, |_| 1);
+
+        if children.len() != expected_len {
+            return py_schema_err!("Expected {} children, got {}", expected_len, children.len());
+        }
+
+        let mut child_iter = children.into_iter();
+        Ok(CombinedValidator::Arguments(Self {
+            parameters: self
+                .parameters
+                .iter()
+                .map(|param| Parameter {
+                    positional: param.positional,
+                    name: param.name.clone(),
+                    kwarg_key: param.kwarg_key.clone(),
+                    validator: child_iter.next().unwrap(),
+                    lookup_key_collection: param.lookup_key_collection.clone(),
+                    mode: param.mode.clone(),
+                })
+                .collect(),
+            positional_params_count: self.positional_params_count,
+            var_args_validator: if self.var_args_validator.is_some() {
+                Some(child_iter.next().unwrap())
+            } else {
+                None
+            },
+            var_kwargs_mode: self.var_kwargs_mode,
+            var_kwargs_validator: if self.var_kwargs_validator.is_some() {
+                Some(child_iter.next().unwrap())
+            } else {
+                None
+            },
+            loc_by_alias: self.loc_by_alias,
+            extra: self.extra,
+            validate_by_alias: self.validate_by_alias,
+            validate_by_name: self.validate_by_name,
+        })
+        .into())
     }
 }
