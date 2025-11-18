@@ -2291,3 +2291,25 @@ except ValidationError as exc:
     print(repr(exc.errors()[0]['type']))
     #> 'value_error'
 ```
+## Additional Example: Handling `ValueError` during validation
+
+Pydantic automatically captures Python `ValueError` exceptions raised inside
+validators and converts them into structured validation errors. This makes
+the source of the problem clear to the user.
+
+```python
+from pydantic import BaseModel, field_validator
+
+class Temperature(BaseModel):
+    celsius: float
+
+    @field_validator("celsius")
+    def check_temperature(cls, v):
+        if v < -273.15:
+            raise ValueError("Temperature cannot be below absolute zero")
+        return v
+
+try:
+    Temperature(celsius=-500)
+except Exception as e:
+    print(e)
