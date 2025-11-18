@@ -9,6 +9,7 @@ from typing import Any, Union
 
 import pytest
 from dirty_equals import FunctionCheck, HasRepr, IsStr
+
 from pydantic_core import CoreConfig, SchemaError, SchemaValidator, ValidationError, core_schema
 from pydantic_core.core_schema import ExtraBehavior
 

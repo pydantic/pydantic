@@ -842,8 +842,9 @@ class MongoDsn(_BaseMultiHostUrl):
         ```python
         from typing import Annotated
 
-        from pydantic import UrlConstraints
         from pydantic_core import MultiHostUrl
+
+        from pydantic import UrlConstraints
 
         MongoDsnNoDefaultPort = Annotated[
             MultiHostUrl,

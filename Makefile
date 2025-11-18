@@ -1,5 +1,5 @@
 .DEFAULT_GOAL := all
-sources = pydantic tests docs/plugins release/
+sources = pydantic tests docs/plugins release pydantic-core/python pydantic-core/tests pydantic-core/wasm-preview/run_tests.py
 NUM_THREADS?=1
 
 .PHONY: .uv  ## Check that uv is installed
