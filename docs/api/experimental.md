@@ -14,6 +14,9 @@
         members:
             - generate_arguments_schema
 
-## `struct` type
+## `BaseStruct` type
 
 ::: pydantic.experimental.structs
+    options:
+        members:
+            - BaseStruct
