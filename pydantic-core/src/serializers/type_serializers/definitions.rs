@@ -12,7 +12,7 @@ use crate::definitions::{DefinitionRef, RecursionSafeCache};
 use crate::serializers::SerializationState;
 use crate::tools::SchemaDict;
 
-use super::{py_err_se_err, BuildSerializer, CombinedSerializer, TypeSerializer};
+use super::{BuildSerializer, CombinedSerializer, TypeSerializer, py_err_se_err};
 
 #[derive(Debug)]
 pub struct DefinitionsSerializerBuilder;

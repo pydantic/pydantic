@@ -5,13 +5,13 @@ use pyo3::prelude::*;
 use pyo3::types::{PyDate, PyDateTime, PyDict, PyTime};
 
 use super::{
-    infer_json_key, infer_serialize, infer_to_python, BuildSerializer, CombinedSerializer, SerMode, TypeSerializer,
+    BuildSerializer, CombinedSerializer, SerMode, TypeSerializer, infer_json_key, infer_serialize, infer_to_python,
 };
+use crate::PydanticSerializationUnexpectedValue;
 use crate::definitions::DefinitionsBuilder;
 use crate::input::{pydate_as_date, pydatetime_as_datetime, pytime_as_time};
-use crate::serializers::config::{FromConfig, TemporalMode};
 use crate::serializers::SerializationState;
-use crate::PydanticSerializationUnexpectedValue;
+use crate::serializers::config::{FromConfig, TemporalMode};
 
 pub(crate) fn datetime_to_string(py_dt: &Bound<'_, PyDateTime>) -> PyResult<String> {
     pydatetime_as_datetime(py_dt).map(|dt| dt.to_string())

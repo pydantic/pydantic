@@ -1,9 +1,9 @@
 use std::sync::Arc;
 
+use pyo3::IntoPyObjectExt;
 use pyo3::intern;
 use pyo3::prelude::*;
 use pyo3::types::{PyDict, PyString};
-use pyo3::IntoPyObjectExt;
 use regex::Regex;
 
 use crate::build_tools::LazyLock;

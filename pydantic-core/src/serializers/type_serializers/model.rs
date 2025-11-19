@@ -9,20 +9,20 @@ use ahash::AHashMap;
 use pyo3::IntoPyObjectExt;
 
 use super::{
-    infer_json_key, infer_json_key_known, BuildSerializer, CombinedSerializer, ComputedFields, Extra, FieldsMode,
-    GeneralFieldsSerializer, ObType, SerCheck, SerField, TypeSerializer,
+    BuildSerializer, CombinedSerializer, ComputedFields, Extra, FieldsMode, GeneralFieldsSerializer, ObType, SerCheck,
+    SerField, TypeSerializer, infer_json_key, infer_json_key_known,
 };
 use crate::build_tools::py_schema_err;
-use crate::build_tools::{py_schema_error_type, ExtraBehavior};
+use crate::build_tools::{ExtraBehavior, py_schema_error_type};
 use crate::definitions::DefinitionsBuilder;
+use crate::serializers::SerializationState;
 use crate::serializers::extra::FieldName;
+use crate::serializers::shared::DoSerialize;
 use crate::serializers::shared::serialize_to_json;
 use crate::serializers::shared::serialize_to_python;
-use crate::serializers::shared::DoSerialize;
 use crate::serializers::type_serializers::any::AnySerializer;
 use crate::serializers::type_serializers::function::FunctionPlainSerializer;
 use crate::serializers::type_serializers::function::FunctionWrapSerializer;
-use crate::serializers::SerializationState;
 use crate::tools::SchemaDict;
 
 const ROOT_FIELD: &str = "root";

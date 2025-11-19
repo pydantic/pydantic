@@ -7,8 +7,8 @@ use std::sync::Arc;
 use pyo3::exceptions::PyTypeError;
 use pyo3::sync::PyOnceLock;
 use pyo3::types::{PyDict, PyString};
-use pyo3::{intern, PyTraverseError, PyVisit};
-use pyo3::{prelude::*, IntoPyObjectExt};
+use pyo3::{IntoPyObjectExt, prelude::*};
+use pyo3::{PyTraverseError, PyVisit, intern};
 
 use enum_dispatch::enum_dispatch;
 use serde::{Serialize, Serializer};
@@ -21,7 +21,7 @@ use crate::py_gc::PyGcTraverse;
 use crate::serializers::errors::WrappedSerError;
 use crate::serializers::ser::PythonSerializer;
 use crate::serializers::type_serializers::any::AnySerializer;
-use crate::tools::{py_err, SchemaDict};
+use crate::tools::{SchemaDict, py_err};
 
 use super::errors::se_err_py_err;
 use super::extra::SerializationState;
@@ -212,7 +212,7 @@ impl CombinedSerializer {
                     // instead of `schema.type`. In this case it's an error if a serializer isn't found.
                     return Self::find_serializer(ser_type, &ser_schema, config, definitions);
                 }
-            };
+            }
         }
 
         let type_: Bound<'_, PyString> = schema.get_as_req(type_key)?;
@@ -364,7 +364,7 @@ impl PyGcTraverse for CombinedSerializer {
 #[enum_dispatch(CombinedSerializer)]
 pub(crate) trait TypeSerializer: Send + Sync + Debug {
     fn to_python<'py>(&self, value: &Bound<'py, PyAny>, state: &mut SerializationState<'_, 'py>)
-        -> PyResult<Py<PyAny>>;
+    -> PyResult<Py<PyAny>>;
 
     fn json_key<'a, 'py>(
         &self,

@@ -16,8 +16,8 @@ use crate::validators::decimal::create_decimal;
 use crate::validators::{TemporalUnitMode, ValBytesMode};
 
 use super::datetime::{
-    bytes_as_date, bytes_as_datetime, bytes_as_time, bytes_as_timedelta, float_as_datetime, float_as_duration,
-    float_as_time, int_as_datetime, int_as_duration, int_as_time, EitherDate, EitherDateTime, EitherTime,
+    EitherDate, EitherDateTime, EitherTime, bytes_as_date, bytes_as_datetime, bytes_as_time, bytes_as_timedelta,
+    float_as_datetime, float_as_duration, float_as_time, int_as_datetime, int_as_duration, int_as_time,
 };
 use super::input_abstract::{ConsumeIterator, Never, ValMatch};
 use super::return_enums::ValidationMatch;

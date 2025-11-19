@@ -12,7 +12,7 @@ use crate::validators::decimal::create_decimal;
 use crate::validators::{TemporalUnitMode, ValBytesMode};
 
 use super::datetime::{
-    bytes_as_date, bytes_as_datetime, bytes_as_time, bytes_as_timedelta, EitherDate, EitherDateTime, EitherTime,
+    EitherDate, EitherDateTime, EitherTime, bytes_as_date, bytes_as_datetime, bytes_as_time, bytes_as_timedelta,
 };
 use super::input_abstract::{Never, ValMatch};
 use super::return_enums::EitherComplex;

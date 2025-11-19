@@ -7,20 +7,20 @@ use std::sync::OnceLock;
 
 use idna::punycode::decode_to_string;
 use jiter::{PartialMode, StringCacheMode};
-use percent_encoding::{percent_encode, AsciiSet, CONTROLS};
+use percent_encoding::{AsciiSet, CONTROLS, percent_encode};
 use pyo3::exceptions::PyValueError;
 use pyo3::pyclass::CompareOp;
 use pyo3::sync::OnceLockExt;
 use pyo3::types::{PyDict, PyType};
-use pyo3::{intern, prelude::*, IntoPyObjectExt};
+use pyo3::{IntoPyObjectExt, intern, prelude::*};
 use url::Url;
 
+use crate::ValidationError;
 use crate::input::InputType;
 use crate::recursion_guard::RecursionState;
 use crate::tools::SchemaDict;
 use crate::validators::url::{MultiHostUrlValidator, UrlValidator};
 use crate::validators::{Extra, ValidationState, Validator};
-use crate::ValidationError;
 
 #[pyclass(name = "Url", module = "pydantic_core._pydantic_core", subclass, frozen)]
 #[derive(Clone)]

@@ -11,7 +11,7 @@ use strum::EnumMessage;
 use crate::build_tools::{is_strict, py_schema_error_type};
 use crate::build_tools::{py_schema_err, schema_or_config_same};
 use crate::errors::ToErrorValue;
-use crate::errors::{py_err_string, ErrorType, ErrorTypeDefaults, ValError, ValResult};
+use crate::errors::{ErrorType, ErrorTypeDefaults, ValError, ValResult, py_err_string};
 use crate::input::{EitherDateTime, Input};
 
 use super::Exactness;

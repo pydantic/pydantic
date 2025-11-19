@@ -14,7 +14,7 @@ use crate::tools::SchemaDict;
 
 use super::any::AnyValidator;
 use super::list::length_check;
-use super::{build_validator, BuildValidator, CombinedValidator, DefinitionsBuilder, ValidationState, Validator};
+use super::{BuildValidator, CombinedValidator, DefinitionsBuilder, ValidationState, Validator, build_validator};
 
 #[derive(Debug)]
 pub struct DictValidator {

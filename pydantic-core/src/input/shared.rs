@@ -2,7 +2,7 @@ use std::borrow::Cow;
 
 use pyo3::prelude::*;
 use pyo3::sync::PyOnceLock;
-use pyo3::{intern, Py, PyAny, Python};
+use pyo3::{Py, PyAny, Python, intern};
 
 use jiter::{JsonErrorType, NumberInt};
 

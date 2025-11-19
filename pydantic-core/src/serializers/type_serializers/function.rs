@@ -1,12 +1,12 @@
 use std::borrow::Cow;
 use std::sync::Arc;
 
+use pyo3::PyTraverseError;
 use pyo3::exceptions::{PyAttributeError, PyRecursionError, PyRuntimeError};
 use pyo3::gc::PyVisit;
 use pyo3::intern;
 use pyo3::prelude::*;
 use pyo3::types::PyDict;
-use pyo3::PyTraverseError;
 
 use pyo3::types::PyString;
 
@@ -21,8 +21,8 @@ use super::format::WhenUsed;
 
 use super::any::AnySerializer;
 use super::{
-    infer_json_key, infer_serialize, infer_to_python, py_err_se_err, AnyFilter, BuildSerializer, CombinedSerializer,
-    ExtraOwned, PydanticSerializationError, SerMode, TypeSerializer,
+    AnyFilter, BuildSerializer, CombinedSerializer, ExtraOwned, PydanticSerializationError, SerMode, TypeSerializer,
+    infer_json_key, infer_serialize, infer_to_python, py_err_se_err,
 };
 
 pub struct FunctionBeforeSerializerBuilder;
@@ -159,7 +159,9 @@ impl FunctionPlainSerializer {
                         self.func.call1(py, (model, value))?
                     }
                 } else {
-                    return Err(PyRuntimeError::new_err("Function plain serializer expected to be run inside the context of a model field but no model was found"));
+                    return Err(PyRuntimeError::new_err(
+                        "Function plain serializer expected to be run inside the context of a model field but no model was found",
+                    ));
                 }
             } else if self.info_arg {
                 let info = SerializationInfo::new(state, self.is_field_serializer)?;
@@ -399,7 +401,9 @@ impl FunctionWrapSerializer {
                         self.func.call1(py, (model, value, serialize))?
                     }
                 } else {
-                    return Err(PyRuntimeError::new_err("Function wrap serializer expected to be run inside the context of a model field but no model was found"));
+                    return Err(PyRuntimeError::new_err(
+                        "Function wrap serializer expected to be run inside the context of a model field but no model was found",
+                    ));
                 }
             } else if self.info_arg {
                 let info = SerializationInfo::new(state, self.is_field_serializer)?;
@@ -665,9 +669,5 @@ impl SerializationInfo {
 }
 
 fn py_bool(value: bool) -> &'static str {
-    if value {
-        "True"
-    } else {
-        "False"
-    }
+    if value { "True" } else { "False" }
 }

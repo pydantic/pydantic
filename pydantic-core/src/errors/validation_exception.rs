@@ -20,7 +20,7 @@ use crate::errors::LocItem;
 use crate::get_pydantic_version;
 use crate::input::InputType;
 use crate::serializers::{Extra, SerMode, SerializationConfig, SerializationState, WarningsMode};
-use crate::tools::{safe_repr, write_truncated_to_limited_bytes, SchemaDict};
+use crate::tools::{SchemaDict, safe_repr, write_truncated_to_limited_bytes};
 
 use super::line_error::ValLineError;
 use super::location::Location;
@@ -111,7 +111,9 @@ impl ValidationError {
     }
 
     pub fn use_default_error() -> PyErr {
-        py_schema_error_type!("Uncaught `PydanticUseDefault` exception: the error was raised in a field validator and no default value is available for that field.")
+        py_schema_error_type!(
+            "Uncaught `PydanticUseDefault` exception: the error was raised in a field validator and no default value is available for that field."
+        )
     }
 
     fn maybe_add_cause(self_: PyRef<'_, Self>, py: Python) -> Option<PyErr> {
@@ -180,7 +182,11 @@ impl ValidationError {
                         Ok(group_cls) => group_cls.call1((title, user_py_errs)).ok(),
                         Err(_) => None,
                     },
-                    Err(_) => return Some(PyImportError::new_err("validation_error_cause flag requires the exceptiongroup module backport to be installed when used on Python <3.11.")),
+                    Err(_) => {
+                        return Some(PyImportError::new_err(
+                            "validation_error_cause flag requires the exceptiongroup module backport to be installed when used on Python <3.11.",
+                        ));
+                    }
                 }
             };
 
@@ -237,11 +243,7 @@ fn get_formated_url(py: Python) -> &'static str {
 }
 
 fn get_url_prefix(py: Python<'_>, include_url: bool) -> Option<&str> {
-    if include_url {
-        Some(get_formated_url(py))
-    } else {
-        None
-    }
+    if include_url { Some(get_formated_url(py)) } else { None }
 }
 
 // used to convert a validation error back to ValError for wrap functions
