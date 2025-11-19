@@ -256,7 +256,7 @@ pydocstyle = { convention = 'google' }
 quote-style = 'single'
 
 [tool.coverage.run]
-source = ['pydantic']
+source = ['pydantic', 'pydantic_core']
 omit = ['pydantic/deprecated/*', 'pydantic/v1/*']
 branch = true
 relative_files = true
