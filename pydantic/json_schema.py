@@ -61,6 +61,7 @@ if TYPE_CHECKING:
     from ._internal._core_utils import CoreSchemaField, CoreSchemaOrField
     from ._internal._dataclasses import PydanticDataclass
     from ._internal._schema_generation_shared import GetJsonSchemaFunction
+    from .experimental.structs import BaseStruct
     from .main import BaseModel
 
 
@@ -2506,7 +2507,7 @@ class GenerateJsonSchema:
 
 
 def model_json_schema(
-    cls: type[BaseModel] | type[PydanticDataclass],
+    cls: type[BaseModel] | type[PydanticDataclass] | type[BaseStruct],
     by_alias: bool = True,
     ref_template: str = DEFAULT_REF_TEMPLATE,
     union_format: Literal['any_of', 'primitive_type_array'] = 'any_of',
