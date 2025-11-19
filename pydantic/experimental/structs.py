@@ -6,7 +6,7 @@ import warnings
 from abc import ABCMeta
 from collections.abc import Mapping
 from copy import copy, deepcopy
-from functools import wraps
+from functools import cached_property, wraps
 from inspect import Signature
 from typing import TYPE_CHECKING, Any, Callable, ClassVar, Generic, Literal, TypeVar, cast, dataclass_transform
 
@@ -34,7 +34,6 @@ from .._internal import (
 from .._internal._config import ConfigWrapper
 from .._internal._decorators import DecoratorInfos
 from .._internal._generics import PydanticGenericMetadata
-from .._internal._import_utils import import_cached_base_model
 from .._internal._mock_val_ser import set_model_mocks
 from .._internal._model_construction import (
     NoInitField,
@@ -60,7 +59,7 @@ from ..fields import PrivateAttr as PydanticModelPrivateAttr
 from ..json_schema import DEFAULT_REF_TEMPLATE, GenerateJsonSchema, JsonSchemaMode, JsonSchemaValue, model_json_schema
 
 # from pydantic_core._structs import create_struct_type
-from ..main import BaseModel, IncEx, TupleGenerator
+from ..main import _SIMPLE_SETATTR_HANDLERS, BaseModel, IncEx, TupleGenerator, _check_frozen
 from ..warnings import GenericBeforeBaseModelWarning, PydanticDeprecatedSince20
 
 # TODO this is a basic skeleton implementation, to be replaced with a real one
@@ -144,11 +143,12 @@ class StructMetaclass(ABCMeta):
             namespace['__class_vars__'] = class_vars
             namespace['__private_attributes__'] = {**base_private_attributes, **private_attributes}
 
-            cls = cast('type[BaseModel]', super().__new__(mcs, cls_name, bases, namespace, **kwargs))
-            BaseModel_ = import_cached_base_model()
+            cls = cast('type[BaseStruct]', super().__new__(mcs, cls_name, bases, namespace, **kwargs))
+            # BaseStruct_ = import_cached_base_struct()
+            BaseStruct_ = BaseStruct
 
             mro = cls.__mro__
-            if Generic in mro and mro.index(Generic) < mro.index(BaseModel_):
+            if Generic in mro and mro.index(Generic) < mro.index(BaseStruct_):
                 warnings.warn(
                     GenericBeforeBaseModelWarning(
                         'Classes should inherit from `BaseModel` before generic classes (e.g. `typing.Generic[T]`) '
@@ -159,7 +159,7 @@ class StructMetaclass(ABCMeta):
 
             cls.__pydantic_custom_init__ = not getattr(cls.__init__, '__pydantic_base_init__', False)
             cls.__pydantic_post_init__ = (
-                None if cls.model_post_init is BaseModel_.model_post_init else 'model_post_init'
+                None if cls.model_post_init is BaseStruct_.model_post_init else 'model_post_init'
             )
 
             cls.__pydantic_setattr_handlers__ = {}
@@ -265,9 +265,9 @@ class StructMetaclass(ABCMeta):
             for instance_slot in '__pydantic_fields_set__', '__pydantic_extra__', '__pydantic_private__':
                 namespace.pop(
                     instance_slot,
-                    None,  # In case the metaclass is used with a class other than `BaseModel`.
+                    None,  # In case the metaclass is used with a class other than `BaseStruct`.
                 )
-            namespace.get('__annotations__', {}).clear()
+            namespace.setdefault('__annotations__', {}).clear()
             return super().__new__(mcs, cls_name, bases, namespace, **kwargs)
 
     if not TYPE_CHECKING:  # pragma: no branch
@@ -301,13 +301,13 @@ class StructMetaclass(ABCMeta):
 
     @staticmethod
     def _collect_bases_data(bases: tuple[type[Any], ...]) -> tuple[set[str], set[str], dict[str, ModelPrivateAttr]]:
-        BaseModel = import_cached_base_model()
+        # BaseStruct = import_cached_base_struct()
 
         field_names: set[str] = set()
         class_vars: set[str] = set()
         private_attributes: dict[str, ModelPrivateAttr] = {}
         for base in bases:
-            if issubclass(base, BaseModel) and base is not BaseModel:
+            if issubclass(base, BaseStruct) and base is not BaseStruct:
                 # model_fields might not be defined yet in the case of generics, so we use getattr here:
                 field_names.update(getattr(base, '__pydantic_fields__', {}).keys())
                 class_vars.update(base.__class_vars__)
@@ -624,134 +624,6 @@ class BaseStruct(metaclass=StructMetaclass):
             copied.__pydantic_fields_set__.update(update.keys())
         return copied
 
-    def model_dump(
-        self,
-        *,
-        mode: Literal['json', 'python'] | str = 'python',
-        include: IncEx | None = None,
-        exclude: IncEx | None = None,
-        context: Any | None = None,
-        by_alias: bool | None = None,
-        exclude_unset: bool = False,
-        exclude_defaults: bool = False,
-        exclude_none: bool = False,
-        exclude_computed_fields: bool = False,
-        round_trip: bool = False,
-        warnings: bool | Literal['none', 'warn', 'error'] = True,
-        fallback: Callable[[Any], Any] | None = None,
-        serialize_as_any: bool = False,
-    ) -> dict[str, Any]:
-        """!!! abstract "Usage Documentation"
-            [`model_dump`](../concepts/serialization.md#python-mode)
-
-        Generate a dictionary representation of the model, optionally specifying which fields to include or exclude.
-
-        Args:
-            mode: The mode in which `to_python` should run.
-                If mode is 'json', the output will only contain JSON serializable types.
-                If mode is 'python', the output may contain non-JSON-serializable Python objects.
-            include: A set of fields to include in the output.
-            exclude: A set of fields to exclude from the output.
-            context: Additional context to pass to the serializer.
-            by_alias: Whether to use the field's alias in the dictionary key if defined.
-            exclude_unset: Whether to exclude fields that have not been explicitly set.
-            exclude_defaults: Whether to exclude fields that are set to their default value.
-            exclude_none: Whether to exclude fields that have a value of `None`.
-            exclude_computed_fields: Whether to exclude computed fields.
-                While this can be useful for round-tripping, it is usually recommended to use the dedicated
-                `round_trip` parameter instead.
-            round_trip: If True, dumped values should be valid as input for non-idempotent types such as Json[T].
-            warnings: How to handle serialization errors. False/"none" ignores them, True/"warn" logs errors,
-                "error" raises a [`PydanticSerializationError`][pydantic_core.PydanticSerializationError].
-            fallback: A function to call when an unknown value is encountered. If not provided,
-                a [`PydanticSerializationError`][pydantic_core.PydanticSerializationError] error is raised.
-            serialize_as_any: Whether to serialize fields with duck-typing serialization behavior.
-
-        Returns:
-            A dictionary representation of the model.
-        """
-        return self.__pydantic_serializer__.to_python(
-            self,
-            mode=mode,
-            by_alias=by_alias,
-            include=include,
-            exclude=exclude,
-            context=context,
-            exclude_unset=exclude_unset,
-            exclude_defaults=exclude_defaults,
-            exclude_none=exclude_none,
-            exclude_computed_fields=exclude_computed_fields,
-            round_trip=round_trip,
-            warnings=warnings,
-            fallback=fallback,
-            serialize_as_any=serialize_as_any,
-        )
-
-    def model_dump_json(
-        self,
-        *,
-        indent: int | None = None,
-        ensure_ascii: bool = False,
-        include: IncEx | None = None,
-        exclude: IncEx | None = None,
-        context: Any | None = None,
-        by_alias: bool | None = None,
-        exclude_unset: bool = False,
-        exclude_defaults: bool = False,
-        exclude_none: bool = False,
-        exclude_computed_fields: bool = False,
-        round_trip: bool = False,
-        warnings: bool | Literal['none', 'warn', 'error'] = True,
-        fallback: Callable[[Any], Any] | None = None,
-        serialize_as_any: bool = False,
-    ) -> str:
-        """!!! abstract "Usage Documentation"
-            [`model_dump_json`](../concepts/serialization.md#json-mode)
-
-        Generates a JSON representation of the model using Pydantic's `to_json` method.
-
-        Args:
-            indent: Indentation to use in the JSON output. If None is passed, the output will be compact.
-            ensure_ascii: If `True`, the output is guaranteed to have all incoming non-ASCII characters escaped.
-                If `False` (the default), these characters will be output as-is.
-            include: Field(s) to include in the JSON output.
-            exclude: Field(s) to exclude from the JSON output.
-            context: Additional context to pass to the serializer.
-            by_alias: Whether to serialize using field aliases.
-            exclude_unset: Whether to exclude fields that have not been explicitly set.
-            exclude_defaults: Whether to exclude fields that are set to their default value.
-            exclude_none: Whether to exclude fields that have a value of `None`.
-            exclude_computed_fields: Whether to exclude computed fields.
-                While this can be useful for round-tripping, it is usually recommended to use the dedicated
-                `round_trip` parameter instead.
-            round_trip: If True, dumped values should be valid as input for non-idempotent types such as Json[T].
-            warnings: How to handle serialization errors. False/"none" ignores them, True/"warn" logs errors,
-                "error" raises a [`PydanticSerializationError`][pydantic_core.PydanticSerializationError].
-            fallback: A function to call when an unknown value is encountered. If not provided,
-                a [`PydanticSerializationError`][pydantic_core.PydanticSerializationError] error is raised.
-            serialize_as_any: Whether to serialize fields with duck-typing serialization behavior.
-
-        Returns:
-            A JSON string representation of the model.
-        """
-        return self.__pydantic_serializer__.to_json(
-            self,
-            indent=indent,
-            ensure_ascii=ensure_ascii,
-            include=include,
-            exclude=exclude,
-            context=context,
-            by_alias=by_alias,
-            exclude_unset=exclude_unset,
-            exclude_defaults=exclude_defaults,
-            exclude_none=exclude_none,
-            exclude_computed_fields=exclude_computed_fields,
-            round_trip=round_trip,
-            warnings=warnings,
-            fallback=fallback,
-            serialize_as_any=serialize_as_any,
-        ).decode()
-
     @classmethod
     def model_json_schema(
         cls,
@@ -881,137 +753,6 @@ class BaseStruct(metaclass=StructMetaclass):
             raise_errors=raise_errors,
             # If the model was already complete, we don't need to call the hook again.
             call_on_complete_hook=not already_complete,
-        )
-
-    @classmethod
-    def model_validate(
-        cls,
-        obj: Any,
-        *,
-        strict: bool | None = None,
-        extra: ExtraValues | None = None,
-        from_attributes: bool | None = None,
-        context: Any | None = None,
-        by_alias: bool | None = None,
-        by_name: bool | None = None,
-    ) -> Self:
-        """Validate a pydantic model instance.
-
-        Args:
-            obj: The object to validate.
-            strict: Whether to enforce types strictly.
-            extra: Whether to ignore, allow, or forbid extra data during model validation.
-                See the [`extra` configuration value][pydantic.ConfigDict.extra] for details.
-            from_attributes: Whether to extract data from object attributes.
-            context: Additional context to pass to the validator.
-            by_alias: Whether to use the field's alias when validating against the provided input data.
-            by_name: Whether to use the field's name when validating against the provided input data.
-
-        Raises:
-            ValidationError: If the object could not be validated.
-
-        Returns:
-            The validated model instance.
-        """
-        # `__tracebackhide__` tells pytest and some other tools to omit this function from tracebacks
-        __tracebackhide__ = True
-
-        if by_alias is False and by_name is not True:
-            raise PydanticUserError(
-                'At least one of `by_alias` or `by_name` must be set to True.',
-                code='validate-by-alias-and-name-false',
-            )
-
-        return cls.__pydantic_validator__.validate_python(
-            obj,
-            strict=strict,
-            extra=extra,
-            from_attributes=from_attributes,
-            context=context,
-            by_alias=by_alias,
-            by_name=by_name,
-        )
-
-    @classmethod
-    def model_validate_json(
-        cls,
-        json_data: str | bytes | bytearray,
-        *,
-        strict: bool | None = None,
-        extra: ExtraValues | None = None,
-        context: Any | None = None,
-        by_alias: bool | None = None,
-        by_name: bool | None = None,
-    ) -> Self:
-        """!!! abstract "Usage Documentation"
-            [JSON Parsing](../concepts/json.md#json-parsing)
-
-        Validate the given JSON data against the Pydantic model.
-
-        Args:
-            json_data: The JSON data to validate.
-            strict: Whether to enforce types strictly.
-            extra: Whether to ignore, allow, or forbid extra data during model validation.
-                See the [`extra` configuration value][pydantic.ConfigDict.extra] for details.
-            context: Extra variables to pass to the validator.
-            by_alias: Whether to use the field's alias when validating against the provided input data.
-            by_name: Whether to use the field's name when validating against the provided input data.
-
-        Returns:
-            The validated Pydantic model.
-
-        Raises:
-            ValidationError: If `json_data` is not a JSON string or the object could not be validated.
-        """
-        # `__tracebackhide__` tells pytest and some other tools to omit this function from tracebacks
-        __tracebackhide__ = True
-
-        if by_alias is False and by_name is not True:
-            raise PydanticUserError(
-                'At least one of `by_alias` or `by_name` must be set to True.',
-                code='validate-by-alias-and-name-false',
-            )
-
-        return cls.__pydantic_validator__.validate_json(
-            json_data, strict=strict, extra=extra, context=context, by_alias=by_alias, by_name=by_name
-        )
-
-    @classmethod
-    def model_validate_strings(
-        cls,
-        obj: Any,
-        *,
-        strict: bool | None = None,
-        extra: ExtraValues | None = None,
-        context: Any | None = None,
-        by_alias: bool | None = None,
-        by_name: bool | None = None,
-    ) -> Self:
-        """Validate the given object with string data against the Pydantic model.
-
-        Args:
-            obj: The object containing string data to validate.
-            strict: Whether to enforce types strictly.
-            extra: Whether to ignore, allow, or forbid extra data during model validation.
-                See the [`extra` configuration value][pydantic.ConfigDict.extra] for details.
-            context: Extra variables to pass to the validator.
-            by_alias: Whether to use the field's alias when validating against the provided input data.
-            by_name: Whether to use the field's name when validating against the provided input data.
-
-        Returns:
-            The validated Pydantic model.
-        """
-        # `__tracebackhide__` tells pytest and some other tools to omit this function from tracebacks
-        __tracebackhide__ = True
-
-        if by_alias is False and by_name is not True:
-            raise PydanticUserError(
-                'At least one of `by_alias` or `by_name` must be set to True.',
-                code='validate-by-alias-and-name-false',
-            )
-
-        return cls.__pydantic_validator__.validate_strings(
-            obj, strict=strict, extra=extra, context=context, by_alias=by_alias, by_name=by_name
         )
 
     @classmethod
@@ -1334,7 +1075,7 @@ class BaseStruct(metaclass=StructMetaclass):
     if not TYPE_CHECKING:
 
         def __eq__(self, other: Any) -> bool:
-            if isinstance(other, BaseModel):
+            if isinstance(other, BaseStruct):
                 # When comparing instances of generic types for equality, as long as all field values are equal,
                 # only require their generic origin types to be equal, rather than exact type equality.
                 # This prevents headaches like MyGeneric(x=1) != MyGeneric[Any](x=1).
@@ -1475,7 +1216,13 @@ def validate(
     by_alias: bool | None = None,
     by_name: bool | None = None,
 ) -> BaseStruct:
-    return type_.model_validate(
+    if by_alias is False and by_name is not True:
+        raise PydanticUserError(
+            'At least one of `by_alias` or `by_name` must be set to True.',
+            code='validate-by-alias-and-name-false',
+        )
+
+    return type_.__pydantic_validator__.validate_python(
         data,
         strict=strict,
         extra=extra,
@@ -1496,7 +1243,12 @@ def validate_json(
     by_alias: bool | None = None,
     by_name: bool | None = None,
 ) -> BaseStruct:
-    return type_.model_validate_json(
+    if by_alias is False and by_name is not True:
+        raise PydanticUserError(
+            'At least one of `by_alias` or `by_name` must be set to True.',
+            code='validate-by-alias-and-name-false',
+        )
+    return type_.__pydantic_validator__.validate_json(
         data,
         strict=strict,
         extra=extra,
@@ -1516,7 +1268,12 @@ def validate_strings(
     by_alias: bool | None = None,
     by_name: bool | None = None,
 ) -> BaseStruct:
-    return type_.model_validate_strings(
+    if by_alias is False and by_name is not True:
+        raise PydanticUserError(
+            'At least one of `by_alias` or `by_name` must be set to True.',
+            code='validate-by-alias-and-name-false',
+        )
+    return type_.__pydantic_validator__.validate_strings(
         data,
         strict=strict,
         extra=extra,
@@ -1543,7 +1300,8 @@ def to_python(
     fallback: Callable[[Any], Any] | None = None,
     serialize_as_any: bool = False,
 ) -> Any:
-    return data.model_dump(
+    return data.__pydantic_serializer__.to_python(
+        data,
         mode=mode,
         include=include,
         exclude=exclude,
@@ -1577,8 +1335,9 @@ def to_json(
     warnings: bool | Literal['none', 'warn', 'error'] = True,
     fallback: Callable[[Any], Any] | None = None,
     serialize_as_any: bool = False,
-) -> Any:
-    return data.model_dump_json(
+) -> bytes:  # TBC: what about `str` return values? Should there be a choice / separate function?
+    return data.__pydantic_serializer__.to_json(
+        data,
         indent=indent,
         ensure_ascii=ensure_ascii,
         include=include,
@@ -1594,3 +1353,11 @@ def to_json(
         fallback=fallback,
         serialize_as_any=serialize_as_any,
     )
+
+
+def struct_fields(
+    type_: type[BaseStruct],
+    /,
+) -> dict[str, FieldInfo]:
+    # TODO: should this return a view? Possibly use `frozendict`?
+    return type_.__pydantic_fields__

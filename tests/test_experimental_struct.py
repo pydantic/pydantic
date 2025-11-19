@@ -49,7 +49,15 @@ from pydantic import (
 from pydantic._internal._generate_schema import GenerateSchema
 from pydantic._internal._mock_val_ser import MockCoreSchema
 from pydantic.dataclasses import dataclass as pydantic_dataclass
-from pydantic.experimental.structs import BaseStruct, to_json, to_python, validate, validate_json, validate_strings
+from pydantic.experimental.structs import (
+    BaseStruct,
+    struct_fields,
+    to_json,
+    to_python,
+    validate,
+    validate_json,
+    validate_strings,
+)
 
 
 def test_success():
@@ -106,11 +114,11 @@ def test_ultra_simple_repr(UltraSimpleStruct):
     m = UltraSimpleStruct(a=10.2)
     assert str(m) == 'a=10.2 b=10'
     assert repr(m) == 'UltraSimpleStruct(a=10.2, b=10)'
-    assert repr(UltraSimpleStruct.model_fields['a']) == 'FieldInfo(annotation=float, required=True)'
-    assert repr(UltraSimpleStruct.model_fields['b']) == 'FieldInfo(annotation=int, required=False, default=10)'
+    assert repr(struct_fields(UltraSimpleStruct)['a']) == 'FieldInfo(annotation=float, required=True)'
+    assert repr(struct_fields(UltraSimpleStruct)['b']) == 'FieldInfo(annotation=int, required=False, default=10)'
     assert dict(m) == {'a': 10.2, 'b': 10}
     assert to_python(m) == {'a': 10.2, 'b': 10}
-    assert to_json(m) == '{"a":10.2,"b":10}'
+    assert to_json(m) == b'{"a":10.2,"b":10}'
     assert str(m) == 'a=10.2 b=10'
 
 
@@ -159,9 +167,9 @@ def test_default_factory_field():
 
     m = Struct()
     assert str(m) == 'a=1'
-    assert repr(Struct.model_fields['a']) == 'FieldInfo(annotation=int, required=False, default_factory=myfunc)'
+    assert repr(struct_fields(Struct)['a']) == 'FieldInfo(annotation=int, required=False, default_factory=myfunc)'
     assert dict(m) == {'a': 1}
-    assert to_json(m) == '{"a":1}'
+    assert to_json(m) == b'{"a":1}'
 
 
 def test_comparing(UltraSimpleStruct):
@@ -512,7 +520,7 @@ def test_field_order():
         a: str
         d: dict = {}
 
-    assert list(Struct.model_fields.keys()) == ['c', 'b', 'a', 'd']
+    assert list(struct_fields(Struct).keys()) == ['c', 'b', 'a', 'd']
 
 
 def test_required():
@@ -1069,13 +1077,13 @@ def test_class_var():
         b: ClassVar[int] = 1
         c: int = 2
 
-    assert list(MyStruct.model_fields.keys()) == ['c']
+    assert list(struct_fields(MyStruct).keys()) == ['c']
 
     class MyOtherStruct(MyStruct):
         a = ''
         b = 2
 
-    assert list(MyOtherStruct.model_fields.keys()) == ['c']
+    assert list(struct_fields(MyOtherStruct).keys()) == ['c']
 
 
 def test_fields_set():
@@ -1616,9 +1624,9 @@ def test_struct_export_inclusion():
         b: Sub = Field(Sub(), include={'s1'})
         c: Sub = Field(Sub(), include={'s1', 's2'})
 
-    assert Struct.model_fields['a'].field_info.include == {'s1': ..., 's2': ..., 's3': ...}
-    assert Struct.model_fields['b'].field_info.include == {'s1': ...}
-    assert Struct.model_fields['c'].field_info.include == {'s1': ..., 's2': ...}
+    assert struct_fields(Struct)['a'].field_info.include == {'s1': ..., 's2': ..., 's3': ...}
+    assert struct_fields(Struct)['b'].field_info.include == {'s1': ...}
+    assert struct_fields(Struct)['c'].field_info.include == {'s1': ..., 's2': ...}
 
     actual = to_python(Struct(), include={'a': {'s3', 's4'}, 'b': ..., 'c': ...})
     # s1 included via field, s2 via config and s3 via .dict call:
@@ -1919,9 +1927,9 @@ def test_repr_field():
 
     m = Struct(a=1, b=2.5, c=True)
     assert repr(m) == 'Struct(a=1, b=2.5)'
-    assert repr(Struct.model_fields['a']) == 'FieldInfo(annotation=int, required=True)'
-    assert repr(Struct.model_fields['b']) == 'FieldInfo(annotation=float, required=True)'
-    assert repr(Struct.model_fields['c']) == 'FieldInfo(annotation=bool, required=True, repr=False)'
+    assert repr(struct_fields(Struct)['a']) == 'FieldInfo(annotation=int, required=True)'
+    assert repr(struct_fields(Struct)['b']) == 'FieldInfo(annotation=float, required=True)'
+    assert repr(struct_fields(Struct)['c']) == 'FieldInfo(annotation=bool, required=True, repr=False)'
 
 
 def test_inherited_struct_field_copy():
@@ -1990,14 +1998,14 @@ def test_class_kwargs_config():
 
     assert Base.model_config['extra'] == 'forbid'
     assert Base.model_config['alias_generator'] is str.upper
-    # assert Base.model_fields['a'].alias == 'A'
+    # assert struct_fields(Base)['a'].alias == 'A'
 
     class Struct(Base, extra='allow'):
         b: int
 
     assert Struct.model_config['extra'] == 'allow'  # overwritten as intended
     assert Struct.model_config['alias_generator'] is str.upper  # inherited as intended
-    # assert Struct.model_fields['b'].alias == 'B'  # alias_generator still works
+    # assert struct_fields(Struct)['b'].alias == 'B'  # alias_generator still works
 
 
 def test_class_kwargs_config_and_attr_conflict():
@@ -2056,9 +2064,9 @@ def test_frozen_field_decl_without_default_val(ann, value):
             a = value
 
     assert 'a' not in Struct.__class_vars__
-    assert 'a' in Struct.model_fields
+    assert 'a' in struct_fields(Struct)
 
-    assert Struct.model_fields['a'].frozen
+    assert struct_fields(Struct)['a'].frozen
 
 
 @pytest.mark.parametrize(
@@ -2073,7 +2081,7 @@ def test_deprecated_final_field_decl_with_default_val(ann):
             a: ann = 10
 
     assert 'a' in Struct.__class_vars__
-    assert 'a' not in Struct.model_fields
+    assert 'a' not in struct_fields(Struct)
 
 
 @pytest.mark.parametrize(
@@ -2088,7 +2096,7 @@ def test_deprecated_annotated_final_field_decl_with_default_val(ann):
             a: Annotated[ann, ...] = 10
 
     assert 'a' in Struct.__class_vars__
-    assert 'a' not in Struct.model_fields
+    assert 'a' not in struct_fields(Struct)
 
 
 @pytest.mark.xfail(reason="When rebuilding fields, we don't consider the field as a class variable")
@@ -2101,7 +2109,7 @@ def test_deprecated_final_field_with_default_val_rebuild():
     Struct.model_rebuild()
 
     assert 'a' in Struct.__class_vars__
-    assert 'a' not in Struct.model_fields
+    assert 'a' not in struct_fields(Struct)
 
 
 def test_final_field_reassignment():
@@ -2123,21 +2131,21 @@ def test_field_by_default_is_not_frozen():
     class Struct(BaseStruct):
         a: int
 
-    assert not Struct.model_fields['a'].frozen
+    assert not struct_fields(Struct)['a'].frozen
 
 
 def test_annotated_final():
     class Struct(BaseStruct):
         a: Annotated[Final[int], Field(title='abc')]
 
-    assert Struct.model_fields['a'].frozen
-    assert Struct.model_fields['a'].title == 'abc'
+    assert struct_fields(Struct)['a'].frozen
+    assert struct_fields(Struct)['a'].title == 'abc'
 
     class Struct2(BaseStruct):
         a: Final[Annotated[int, Field(title='def')]]
 
-    assert Struct2.model_fields['a'].frozen
-    assert Struct2.model_fields['a'].title == 'def'
+    assert struct_fields(Struct2)['a'].frozen
+    assert struct_fields(Struct2)['a'].title == 'def'
 
 
 def test_post_init():
@@ -3500,7 +3508,7 @@ def test_shadow_attribute() -> None:
         @classmethod
         def __pydantic_init_subclass__(cls, **kwargs: Any):
             super().__pydantic_init_subclass__(**kwargs)
-            for key in cls.model_fields.keys():
+            for key in struct_fields(cls).keys():
                 setattr(cls, key, getattr(cls, key, '') + ' edited!')
 
     class One(Struct):
@@ -3568,8 +3576,8 @@ def test_field_name_deprecated_method_name() -> None:
             dict: int
             schema: str
 
-        assert Struct.model_fields['dict'].is_required()
-        assert Struct.model_fields['schema'].is_required()
+        assert struct_fields(Struct)['dict'].is_required()
+        assert struct_fields(Struct)['schema'].is_required()
 
 
 def test_eval_type_backport():
