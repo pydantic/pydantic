@@ -532,7 +532,6 @@ def _eval_type(
             # infer it from the `ForwardRef.__forward_module__` attribute instead (`typing.get_type_hints()`
             # does the same). Note that this would probably be unnecessary if we properly iterated over the
             # `__orig_bases__` for TypedDicts in `get_cls_type_hints()`:
-            prefer_fwd_module=True,
         )
         if evaluated is None:
             evaluated = type(None)
