@@ -1,6 +1,7 @@
 use std::convert::Infallible;
 use std::fmt;
 
+use jiter::JsonValue;
 use pyo3::exceptions::PyValueError;
 use pyo3::types::{PyDict, PyList, PyString};
 use pyo3::{intern, prelude::*, IntoPyObjectExt};
@@ -70,6 +71,10 @@ pub trait Input<'py>: fmt::Debug {
     }
 
     fn as_python(&self) -> Option<&Bound<'py, PyAny>> {
+        None
+    }
+
+    fn as_json(&self) -> Option<&JsonValue<'_>> {
         None
     }
 
@@ -243,6 +248,7 @@ pub trait ValidatedDict<'py> {
     type Item<'a>: BorrowInput<'py>
     where
         Self: 'a;
+
     fn get_item<'k>(&self, key: &'k LookupKey) -> ValResult<Option<(&'k LookupPath, Self::Item<'_>)>>;
     // FIXME this is a bit of a leaky abstraction
     fn is_py_get_attr(&self) -> bool {

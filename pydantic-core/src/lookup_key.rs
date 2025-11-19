@@ -370,6 +370,10 @@ impl LookupPath {
     pub fn first_key(&self) -> &str {
         &self.first_item.key
     }
+
+    pub fn rest(&self) -> &[PathItem] {
+        &self.rest
+    }
 }
 
 #[derive(Debug, Clone)]
@@ -384,8 +388,8 @@ pub(crate) enum PathItem {
 /// we store both the string and pystring to save creating the pystring for python
 #[derive(Debug, Clone)]
 pub(crate) struct PathItemString {
-    key: String,
-    py_key: Py<PyString>,
+    pub key: String,
+    pub py_key: Py<PyString>,
 }
 
 impl fmt::Display for PathItem {
@@ -546,9 +550,9 @@ fn py_get_attrs<'py>(obj: &Bound<'py, PyAny>, attr_name: &Py<PyString>) -> PyRes
 #[derive(Debug)]
 #[allow(clippy::struct_field_names)]
 pub struct LookupKeyCollection {
-    by_name: LookupKey,
-    by_alias: Option<LookupKey>,
-    by_alias_then_name: Option<LookupKey>,
+    pub by_name: LookupKey,
+    pub by_alias: Option<LookupKey>,
+    pub by_alias_then_name: Option<LookupKey>,
 }
 
 impl LookupKeyCollection {
