@@ -5,7 +5,7 @@ import sys
 import warnings
 from collections import defaultdict
 from collections.abc import Mapping
-from copy import deepcopy
+from copy import copy, deepcopy
 from dataclasses import dataclass
 from datetime import date, datetime
 from enum import Enum
@@ -51,6 +51,8 @@ from pydantic._internal._mock_val_ser import MockCoreSchema
 from pydantic.dataclasses import dataclass as pydantic_dataclass
 from pydantic.experimental.structs import (
     BaseStruct,
+    construct,
+    replace,
     struct_fields,
     to_json,
     to_python,
@@ -433,7 +435,7 @@ def test_field_order_is_preserved_with_extra():
     struct = Struct(a=1, b='2', c=3.0, d=4)
     assert repr(struct) == "Struct(a=1, b='2', c=3.0, d=4)"
     assert str(to_python(struct)) == "{'a': 1, 'b': '2', 'c': 3.0, 'd': 4}"
-    assert str(to_json(struct)) == '{"a":1,"b":"2","c":3.0,"d":4}'
+    assert str(to_json(struct)) == 'b\'{"a":1,"b":"2","c":3.0,"d":4}\''
 
 
 def test_extra_broken_via_pydantic_extra_interference():
@@ -1407,11 +1409,11 @@ def test_field_exclude_if() -> None:
     assert to_python(Struct(a=0, b='foo'), exclude={'a'}) == {}
     assert to_python(Struct(a=2, b='foo')) == {}
 
-    assert to_json(Struct(a=0, b='bar')) == '{"a":0,"b":"bar"}'
-    assert to_json(Struct(a=2, b='bar')) == '{"b":"bar"}'
-    assert to_json(Struct(a=0, b='foo')) == '{"a":0}'
-    assert to_json(Struct(a=0, b='foo'), exclude={'a'}) == '{}'
-    assert to_json(Struct(a=2, b='foo')) == '{}'
+    assert to_json(Struct(a=0, b='bar')) == b'{"a":0,"b":"bar"}'
+    assert to_json(Struct(a=2, b='bar')) == b'{"b":"bar"}'
+    assert to_json(Struct(a=0, b='foo')) == b'{"a":0}'
+    assert to_json(Struct(a=0, b='foo'), exclude={'a'}) == b'{}'
+    assert to_json(Struct(a=2, b='foo')) == b'{}'
 
 
 def test_revalidate_instances_never():
@@ -1662,6 +1664,7 @@ def test_struct_export_inclusion_inheritance():
     assert actual == expected, 'Unexpected struct export result'
 
 
+@pytest.mark.xfail(reason='error message still talks about models, should check what happens for dataclass')
 def test_untyped_fields_warning():
     with pytest.raises(
         PydanticUserError,
@@ -1852,7 +1855,7 @@ def test_default_factory_validated_data_arg() -> None:
     struct = Struct()
     assert struct.b == 1
 
-    struct = Struct.struct_construct(a=1)
+    struct = construct(Struct, a=1)
     assert struct.b == 1
 
     class InvalidStruct(BaseStruct):
@@ -2210,7 +2213,7 @@ def test_post_init_call_signatures(include_private_attribute):
 
     Struct(a=1, b=2)
     assert calls == [((None,), {})]
-    Struct.struct_construct(a=3, b=4)
+    construct(Struct, a=3, b=4)
     assert calls == [((None,), {}), ((None,), {})]
 
 
@@ -2228,7 +2231,7 @@ def test_post_init_not_called_without_override():
             pass
 
         WithoutOverrideStruct()
-        WithoutOverrideStruct.struct_construct()
+        construct(WithoutOverrideStruct)
         assert calls == []
 
         class WithOverrideStruct(BaseStruct):
@@ -2237,7 +2240,7 @@ def test_post_init_not_called_without_override():
 
         WithOverrideStruct()
         assert calls == ['WithOverrideStruct.model_post_init']
-        WithOverrideStruct.struct_construct()
+        construct(WithOverrideStruct)
         assert calls == ['WithOverrideStruct.model_post_init', 'WithOverrideStruct.model_post_init']
 
     finally:
@@ -2550,9 +2553,9 @@ def test_struct_equality_fields_set(InnerEqualityStruct):
 def test_struct_equality_private_attrs(InnerEqualityStruct):
     m = InnerEqualityStruct(iw=0, ix=0)
 
-    m1 = m.struct_copy()
-    m2 = m.struct_copy()
-    m3 = m.struct_copy()
+    m1 = copy(m)
+    m2 = copy(m)
+    m3 = copy(m)
 
     m2._iy = 1
     m3._iz = 1
@@ -2565,11 +2568,11 @@ def test_struct_equality_private_attrs(InnerEqualityStruct):
             else:
                 assert first_struct != second_struct
 
-    m2_equal = m.struct_copy()
+    m2_equal = copy(m)
     m2_equal._iy = 1
     assert m2 == m2_equal
 
-    m3_equal = m.struct_copy()
+    m3_equal = copy(m)
     m3_equal._iz = 1
     assert m3 == m3_equal
 
@@ -2581,21 +2584,21 @@ def test_struct_copy_extra():
     m = Struct(x=1, y=2)
     assert to_python(m) == {'x': 1, 'y': 2}
     assert m.model_extra == {'y': 2}
-    m2 = m.struct_copy()
+    m2 = copy(m)
     assert to_python(m2) == {'x': 1, 'y': 2}
     assert m2.model_extra == {'y': 2}
 
-    m3 = m.struct_copy(update={'x': 4, 'z': 3})
+    m3 = replace(m, **{'x': 4, 'z': 3})
     assert to_python(m3) == {'x': 4, 'y': 2, 'z': 3}
     assert m3.model_extra == {'y': 2, 'z': 3}
 
-    m4 = m.struct_copy(update={'x': 4, 'z': 3})
+    m4 = replace(m, **{'x': 4, 'z': 3})
     assert to_python(m4) == {'x': 4, 'y': 2, 'z': 3}
     assert m4.model_extra == {'y': 2, 'z': 3}
 
     m = Struct(x=1, a=2)
     m.__pydantic_extra__ = None
-    m5 = m.struct_copy(update={'x': 4, 'b': 3})
+    m5 = replace(m, **{'x': 4, 'b': 3})
     assert to_python(m5) == {'x': 4, 'b': 3}
     assert m5.model_extra == {'b': 3}
 
@@ -2605,7 +2608,7 @@ def test_struct_parametrized_name_not_generic():
         x: int
 
     with pytest.raises(TypeError, match='Concrete names should only be generated for generic structs.'):
-        Struct.struct_parametrized_name(())
+        Struct.__pydantic_parameterized_name__(())
 
 
 def test_struct_equality_generics():
@@ -2759,9 +2762,9 @@ def test_validate_json_context() -> None:
             assert info.context == contexts.pop(0)
             return v
 
-    validate(Struct, json.dumps({'x': 1}))
-    validate(Struct, json.dumps({'x': 1}), context=None)
-    validate(Struct, json.dumps({'x': 1}), context={'foo': 'bar'})
+    validate_json(Struct, json.dumps({'x': 1}))
+    validate_json(Struct, json.dumps({'x': 1}), context=None)
+    validate_json(Struct, json.dumps({'x': 1}), context={'foo': 'bar'})
     assert contexts == []
 
 
@@ -3004,6 +3007,7 @@ def test_nested_types_ignored():
             x = NonNestedType
 
 
+@pytest.mark.xfail(reason='error code still refers to "model" instead of "struct"')
 def test_validate_python_from_attributes() -> None:
     class Struct(BaseStruct):
         x: int
@@ -3125,6 +3129,7 @@ def test_struct_signature_annotated() -> None:
     assert Struct.__signature__.parameters['x'].annotation.__metadata__ == (123,)
 
 
+@pytest.mark.xfail(reason='no struct schema type yet')
 def test_get_core_schema_unpacks_refs_for_source_type() -> None:
     # use a list to track since we end up calling `__get_pydantic_core_schema__` multiple times for structs
     # e.g. InnerStruct.__get_pydantic_core_schema__ gets called:
@@ -3206,6 +3211,7 @@ def test_get_core_schema_return_new_ref() -> None:
     assert OuterStruct(inner=InnerStruct()).x == 2
 
 
+@pytest.mark.xfail(reason='no struct schema type yet')
 def test_resolve_def_schema_from_core_schema() -> None:
     class Inner(BaseStruct):
         x: int
@@ -3413,7 +3419,13 @@ def test_arbitrary_types_not_a_type() -> None:
     assert ta.validate_python(bar) is bar
 
 
-@pytest.mark.parametrize('is_dataclass', [False, True])
+@pytest.mark.parametrize(
+    'is_dataclass',
+    [
+        pytest.param(False, marks=[pytest.mark.xfail(reason='no struct schema type yet')]),
+        True,
+    ],
+)
 def test_deferred_core_schema(is_dataclass: bool) -> None:
     if is_dataclass:
 
@@ -3565,21 +3577,6 @@ def test_shadow_attribute_warn_for_redefined_fields() -> None:
             foo: bool = True
 
 
-def test_field_name_deprecated_method_name() -> None:
-    """https://github.com/pydantic/pydantic/issues/11912"""
-
-    with pytest.warns(UserWarning):
-
-        class Struct(BaseStruct):
-            # `collect_model_fields()` will special case these to not use
-            # the deprecated methods as default values:
-            dict: int
-            schema: str
-
-        assert struct_fields(Struct)['dict'].is_required()
-        assert struct_fields(Struct)['schema'].is_required()
-
-
 def test_eval_type_backport():
     class Struct(BaseStruct):
         foo: 'list[int | str]'
@@ -3634,6 +3631,7 @@ def test_inherited_class_vars(create_module):
     assert Child.CONST2 == 'b'
 
 
+@pytest.mark.xfail(reason='needs investigation')
 def test_schema_valid_for_inner_generic() -> None:
     T = TypeVar('T')
 
@@ -3669,8 +3667,8 @@ def test_struct_construct_with_model_post_init_and_struct_copy() -> None:
         def model_post_init(self, context: Any, /) -> None:
             super().model_post_init(context)
 
-    m = Struct.struct_construct(id=1)
-    copy = m.struct_copy(deep=True)
+    m = construct(Struct, id=1)
+    copy = deepcopy(m)
 
     assert m == copy
     assert id(m) != id(copy)

@@ -4,7 +4,6 @@ import operator
 import sys
 import warnings
 from abc import ABCMeta
-from collections.abc import Mapping
 from copy import copy, deepcopy
 from functools import cached_property, wraps
 from inspect import Signature
@@ -510,121 +509,6 @@ class BaseStruct(metaclass=StructMetaclass):
         return self.__pydantic_fields_set__
 
     @classmethod
-    def model_construct(cls, _fields_set: set[str] | None = None, **values: Any) -> Self:  # noqa: C901
-        """Creates a new instance of the `Model` class with validated data.
-
-        Creates a new model setting `__dict__` and `__pydantic_fields_set__` from trusted or pre-validated data.
-        Default values are respected, but no other validation is performed.
-
-        !!! note
-            `model_construct()` generally respects the `model_config.extra` setting on the provided model.
-            That is, if `model_config.extra == 'allow'`, then all extra passed values are added to the model instance's `__dict__`
-            and `__pydantic_extra__` fields. If `model_config.extra == 'ignore'` (the default), then all extra passed values are ignored.
-            Because no validation is performed with a call to `model_construct()`, having `model_config.extra == 'forbid'` does not result in
-            an error if extra values are passed, but they will be ignored.
-
-        Args:
-            _fields_set: A set of field names that were originally explicitly set during instantiation. If provided,
-                this is directly used for the [`model_fields_set`][pydantic.BaseModel.model_fields_set] attribute.
-                Otherwise, the field names from the `values` argument will be used.
-            values: Trusted or pre-validated data dictionary.
-
-        Returns:
-            A new instance of the `Model` class with validated data.
-        """
-        m = cls.__new__(cls)
-        fields_values: dict[str, Any] = {}
-        fields_set = set()
-
-        for name, field in cls.__pydantic_fields__.items():
-            if field.alias is not None and field.alias in values:
-                fields_values[name] = values.pop(field.alias)
-                fields_set.add(name)
-
-            if (name not in fields_set) and (field.validation_alias is not None):
-                validation_aliases: list[str | AliasPath] = (
-                    field.validation_alias.choices
-                    if isinstance(field.validation_alias, AliasChoices)
-                    else [field.validation_alias]
-                )
-
-                for alias in validation_aliases:
-                    if isinstance(alias, str) and alias in values:
-                        fields_values[name] = values.pop(alias)
-                        fields_set.add(name)
-                        break
-                    elif isinstance(alias, AliasPath):
-                        value = alias.search_dict_for_path(values)
-                        if value is not PydanticUndefined:
-                            fields_values[name] = value
-                            fields_set.add(name)
-                            break
-
-            if name not in fields_set:
-                if name in values:
-                    fields_values[name] = values.pop(name)
-                    fields_set.add(name)
-                elif not field.is_required():
-                    fields_values[name] = field.get_default(call_default_factory=True, validated_data=fields_values)
-        if _fields_set is None:
-            _fields_set = fields_set
-
-        _extra: dict[str, Any] | None = values if cls.model_config.get('extra') == 'allow' else None
-        _object_setattr(m, '__dict__', fields_values)
-        _object_setattr(m, '__pydantic_fields_set__', _fields_set)
-        if not cls.__pydantic_root_model__:
-            _object_setattr(m, '__pydantic_extra__', _extra)
-
-        if cls.__pydantic_post_init__:
-            m.model_post_init(None)
-            # update private attributes with values set
-            if hasattr(m, '__pydantic_private__') and m.__pydantic_private__ is not None:
-                for k, v in values.items():
-                    if k in m.__private_attributes__:
-                        m.__pydantic_private__[k] = v
-
-        elif not cls.__pydantic_root_model__:
-            # Note: if there are any private attributes, cls.__pydantic_post_init__ would exist
-            # Since it doesn't, that means that `__pydantic_private__` should be set to None
-            _object_setattr(m, '__pydantic_private__', None)
-
-        return m
-
-    def model_copy(self, *, update: Mapping[str, Any] | None = None, deep: bool = False) -> Self:
-        """!!! abstract "Usage Documentation"
-            [`model_copy`](../concepts/models.md#model-copy)
-
-        Returns a copy of the model.
-
-        !!! note
-            The underlying instance's [`__dict__`][object.__dict__] attribute is copied. This
-            might have unexpected side effects if you store anything in it, on top of the model
-            fields (e.g. the value of [cached properties][functools.cached_property]).
-
-        Args:
-            update: Values to change/add in the new model. Note: the data is not validated
-                before creating the new model. You should trust this data.
-            deep: Set to `True` to make a deep copy of the model.
-
-        Returns:
-            New model instance.
-        """
-        copied = self.__deepcopy__() if deep else self.__copy__()
-        if update:
-            if self.model_config.get('extra') == 'allow':
-                for k, v in update.items():
-                    if k in self.__pydantic_fields__:
-                        copied.__dict__[k] = v
-                    else:
-                        if copied.__pydantic_extra__ is None:
-                            copied.__pydantic_extra__ = {}
-                        copied.__pydantic_extra__[k] = v
-            else:
-                copied.__dict__.update(update)
-            copied.__pydantic_fields_set__.update(update.keys())
-        return copied
-
-    @classmethod
     def model_json_schema(
         cls,
         by_alias: bool = True,
@@ -664,24 +548,24 @@ class BaseStruct(metaclass=StructMetaclass):
         )
 
     @classmethod
-    def model_parametrized_name(cls, params: tuple[type[Any], ...]) -> str:
+    def __pydantic_parameterized_name__(cls, params: tuple[type[Any], ...]) -> str:
         """Compute the class name for parametrizations of generic classes.
 
-        This method can be overridden to achieve a custom naming scheme for generic BaseModels.
+        This method can be overridden to achieve a custom naming scheme for generic BaseStructs.
 
         Args:
             params: Tuple of types of the class. Given a generic class
-                `Model` with 2 type variables and a concrete model `Model[str, int]`,
+                `Struct` with 2 type variables and a concrete model `Struct[str, int]`,
                 the value `(str, int)` would be passed to `params`.
 
         Returns:
             String representing the new class where `params` are passed to `cls` as type variables.
 
         Raises:
-            TypeError: Raised when trying to generate concrete names for non-generic models.
+            TypeError: Raised when trying to generate concrete names for non-generic structs.
         """
         if not issubclass(cls, Generic):
-            raise TypeError('Concrete names should only be generated for generic models.')
+            raise TypeError('Concrete names should only be generated for generic structs.')
 
         # Any strings received should represent forward references, so we handle them specially below.
         # If we eventually move toward wrapping them in a ForwardRef in __class_getitem__ in the future,
@@ -849,7 +733,7 @@ class BaseStruct(metaclass=StructMetaclass):
                 args = tuple(_generics.replace_types(arg, typevars_map) for arg in parent_args)
 
             origin = cls.__pydantic_generic_metadata__['origin'] or cls
-            model_name = origin.model_parametrized_name(args)
+            model_name = origin.__pydantic_parameterized_name__(args)
             params = tuple(
                 dict.fromkeys(_generics.iter_contained_typevars(typevars_map.values()))
             )  # use dict as ordered set
@@ -1053,7 +937,7 @@ class BaseStruct(metaclass=StructMetaclass):
         # Because we make use of `@dataclass_transform()`, `__replace__` is already synthesized by
         # type checkers, so we define the implementation in this `if not TYPE_CHECKING:` block:
         def __replace__(self, **changes: Any) -> Self:
-            return self.model_copy(update=changes)
+            return replace(self, **changes)
 
     def __getstate__(self) -> dict[Any, Any]:
         private = self.__pydantic_private__
@@ -1205,8 +1089,11 @@ class BaseStruct(metaclass=StructMetaclass):
         return self.__repr_str__(' ')
 
 
+_StructT = TypeVar('_StructT', bound='BaseStruct')
+
+
 def validate(
-    type_: type[BaseStruct],
+    type_: type[_StructT],
     data: object,
     /,
     strict: bool | None = None,
@@ -1215,7 +1102,7 @@ def validate(
     context: Any | None = None,
     by_alias: bool | None = None,
     by_name: bool | None = None,
-) -> BaseStruct:
+) -> _StructT:
     if by_alias is False and by_name is not True:
         raise PydanticUserError(
             'At least one of `by_alias` or `by_name` must be set to True.',
@@ -1234,7 +1121,7 @@ def validate(
 
 
 def validate_json(
-    type_: type[BaseStruct],
+    type_: type[_StructT],
     data: str | bytes | bytearray,
     /,
     strict: bool | None = None,
@@ -1242,7 +1129,7 @@ def validate_json(
     context: Any | None = None,
     by_alias: bool | None = None,
     by_name: bool | None = None,
-) -> BaseStruct:
+) -> _StructT:
     if by_alias is False and by_name is not True:
         raise PydanticUserError(
             'At least one of `by_alias` or `by_name` must be set to True.',
@@ -1259,7 +1146,7 @@ def validate_json(
 
 
 def validate_strings(
-    type_: type[BaseStruct],
+    type_: type[_StructT],
     data: Any,
     /,
     strict: bool | None = None,
@@ -1267,7 +1154,7 @@ def validate_strings(
     context: Any | None = None,
     by_alias: bool | None = None,
     by_name: bool | None = None,
-) -> BaseStruct:
+) -> _StructT:
     if by_alias is False and by_name is not True:
         raise PydanticUserError(
             'At least one of `by_alias` or `by_name` must be set to True.',
@@ -1361,3 +1248,121 @@ def struct_fields(
 ) -> dict[str, FieldInfo]:
     # TODO: should this return a view? Possibly use `frozendict`?
     return type_.__pydantic_fields__
+
+
+# TODO: should this even exist?
+def construct(type_: type[_StructT], /, _fields_set: set[str] | None = None, **values: Any) -> _StructT:
+    """Creates a new instance of the `Struct` class with validated data.
+
+    Creates a new struct setting `__dict__` and `__pydantic_fields_set__` from trusted or pre-validated data.
+    Default values are respected, but no other validation is performed.
+
+    !!! note
+        `model_construct()` generally respects the `model_config.extra` setting on the provided model.
+        That is, if `model_config.extra == 'allow'`, then all extra passed values are added to the model instance's `__dict__`
+        and `__pydantic_extra__` fields. If `model_config.extra == 'ignore'` (the default), then all extra passed values are ignored.
+        Because no validation is performed with a call to `model_construct()`, having `model_config.extra == 'forbid'` does not result in
+        an error if extra values are passed, but they will be ignored.
+
+    Args:
+        type_: The `Struct` class to create an instance of.
+        _fields_set: A set of field names that were originally explicitly set during instantiation. If provided,
+            this is directly used for the [`model_fields_set`][pydantic.BaseModel.model_fields_set] attribute.
+            Otherwise, the field names from the `values` argument will be used.
+        values: Trusted or pre-validated data dictionary.
+
+    Returns:
+        A new instance of the `Model` class with validated data.
+    """
+    m = type_.__new__(type_)
+    fields_values: dict[str, Any] = {}
+    fields_set = set()
+
+    for name, field in type_.__pydantic_fields__.items():
+        if field.alias is not None and field.alias in values:
+            fields_values[name] = values.pop(field.alias)
+            fields_set.add(name)
+
+        if (name not in fields_set) and (field.validation_alias is not None):
+            validation_aliases: list[str | AliasPath] = (
+                field.validation_alias.choices
+                if isinstance(field.validation_alias, AliasChoices)
+                else [field.validation_alias]
+            )
+
+            for alias in validation_aliases:
+                if isinstance(alias, str) and alias in values:
+                    fields_values[name] = values.pop(alias)
+                    fields_set.add(name)
+                    break
+                elif isinstance(alias, AliasPath):
+                    value = alias.search_dict_for_path(values)
+                    if value is not PydanticUndefined:
+                        fields_values[name] = value
+                        fields_set.add(name)
+                        break
+
+        if name not in fields_set:
+            if name in values:
+                fields_values[name] = values.pop(name)
+                fields_set.add(name)
+            elif not field.is_required():
+                fields_values[name] = field.get_default(call_default_factory=True, validated_data=fields_values)
+    if _fields_set is None:
+        _fields_set = fields_set
+
+    _extra: dict[str, Any] | None = values if type_.model_config.get('extra') == 'allow' else None
+    _object_setattr(m, '__dict__', fields_values)
+    _object_setattr(m, '__pydantic_fields_set__', _fields_set)
+    if not type_.__pydantic_root_model__:
+        _object_setattr(m, '__pydantic_extra__', _extra)
+
+    if type_.__pydantic_post_init__:
+        m.model_post_init(None)
+        # update private attributes with values set
+        if hasattr(m, '__pydantic_private__') and m.__pydantic_private__ is not None:
+            for k, v in values.items():
+                if k in m.__private_attributes__:
+                    m.__pydantic_private__[k] = v
+
+    elif not type_.__pydantic_root_model__:
+        # Note: if there are any private attributes, cls.__pydantic_post_init__ would exist
+        # Since it doesn't, that means that `__pydantic_private__` should be set to None
+        _object_setattr(m, '__pydantic_private__', None)
+
+    return m
+
+
+# TODO: should this even exist?
+def replace(value: _StructT, /, **update: Any) -> _StructT:
+    """!!! abstract "Usage Documentation"
+        [`model_copy`](../concepts/models.md#model-copy)
+
+    Returns a shallow copy of the struct with the given updates applied.
+
+    !!! note
+        The underlying instance's [`__dict__`][object.__dict__] attribute is copied. This
+        might have unexpected side effects if you store anything in it, on top of the struct
+        fields (e.g. the value of [cached properties][functools.cached_property]).
+
+    Args:
+        update: Values to change/add in the new struct. Note: the data is not validated
+            before creating the new struct. You should trust this data.
+
+    Returns:
+        New model instance.
+    """
+    copied = copy(value)
+    if update:
+        if value.model_config.get('extra') == 'allow':
+            for k, v in update.items():
+                if k in value.__pydantic_fields__:
+                    copied.__dict__[k] = v
+                else:
+                    if copied.__pydantic_extra__ is None:
+                        copied.__pydantic_extra__ = {}
+                    copied.__pydantic_extra__[k] = v
+        else:
+            copied.__dict__.update(update)
+        copied.__pydantic_fields_set__.update(update.keys())
+    return copied
