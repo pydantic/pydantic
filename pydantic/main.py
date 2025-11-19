@@ -18,7 +18,6 @@ from typing import (
     Any,
     Callable,
     ClassVar,
-    Dict,
     Generic,
     Literal,
     TypeVar,
@@ -158,7 +157,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
     __class_vars__: ClassVar[set[str]]
     """The names of the class variables defined on the model."""
 
-    __private_attributes__: ClassVar[Dict[str, ModelPrivateAttr]]  # noqa: UP006
+    __private_attributes__: ClassVar[dict[str, ModelPrivateAttr]]
     """Metadata about the private attributes of the model."""
 
     __signature__: ClassVar[Signature]
@@ -182,7 +181,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
     """Metadata for generic models; contains data used for a similar purpose to
     __args__, __origin__, __parameters__ in typing-module generics. May eventually be replaced by these."""
 
-    __pydantic_parent_namespace__: ClassVar[Dict[str, Any] | None] = None  # noqa: UP006
+    __pydantic_parent_namespace__: ClassVar[dict[str, Any] | None] = None
     """Parent namespace of the model, used for automatic rebuilding of models."""
 
     __pydantic_post_init__: ClassVar[None | Literal['model_post_init']]
@@ -197,24 +196,24 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
     __pydantic_validator__: ClassVar[SchemaValidator | PluggableSchemaValidator]
     """The `pydantic-core` `SchemaValidator` used to validate instances of the model."""
 
-    __pydantic_fields__: ClassVar[Dict[str, FieldInfo]]  # noqa: UP006
+    __pydantic_fields__: ClassVar[dict[str, FieldInfo]]
     """A dictionary of field names and their corresponding [`FieldInfo`][pydantic.fields.FieldInfo] objects.
     This replaces `Model.__fields__` from Pydantic V1.
     """
 
-    __pydantic_setattr_handlers__: ClassVar[Dict[str, Callable[[BaseModel, str, Any], None]]]  # noqa: UP006
+    __pydantic_setattr_handlers__: ClassVar[dict[str, Callable[[BaseModel, str, Any], None]]]
     """`__setattr__` handlers. Memoizing the handlers leads to a dramatic performance improvement in `__setattr__`"""
 
-    __pydantic_computed_fields__: ClassVar[Dict[str, ComputedFieldInfo]]  # noqa: UP006
+    __pydantic_computed_fields__: ClassVar[dict[str, ComputedFieldInfo]]
     """A dictionary of computed field names and their corresponding [`ComputedFieldInfo`][pydantic.fields.ComputedFieldInfo] objects."""
 
-    __pydantic_extra__: Dict[str, Any] | None = _model_construction.NoInitField(init=False)  # noqa: UP006
+    __pydantic_extra__: dict[str, Any] | None = _model_construction.NoInitField(init=False)
     """A dictionary containing extra values, if [`extra`][pydantic.config.ConfigDict.extra] is set to `'allow'`."""
 
     __pydantic_fields_set__: set[str] = _model_construction.NoInitField(init=False)
     """The names of fields explicitly set during instantiation."""
 
-    __pydantic_private__: Dict[str, Any] | None = _model_construction.NoInitField(init=False)  # noqa: UP006
+    __pydantic_private__: dict[str, Any] | None = _model_construction.NoInitField(init=False)
     """Values of private attributes set on the model instance."""
 
     if not TYPE_CHECKING:
@@ -1310,7 +1309,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
         exclude_unset: bool = False,
         exclude_defaults: bool = False,
         exclude_none: bool = False,
-    ) -> Dict[str, Any]:  # noqa UP006
+    ) -> dict[str, Any]:
         warnings.warn(
             'The `dict` method is deprecated; use `model_dump` instead.',
             category=PydanticDeprecatedSince20,
@@ -1494,7 +1493,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
         *,
         include: AbstractSetIntStr | MappingIntStrAny | None = None,
         exclude: AbstractSetIntStr | MappingIntStrAny | None = None,
-        update: Dict[str, Any] | None = None,  # noqa UP006
+        update: dict[str, Any] | None = None,
         deep: bool = False,
     ) -> Self:  # pragma: no cover
         """Returns a copy of the model.
@@ -1565,7 +1564,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
     @typing_extensions.deprecated('The `schema` method is deprecated; use `model_json_schema` instead.', category=None)
     def schema(  # noqa: D102
         cls, by_alias: bool = True, ref_template: str = DEFAULT_REF_TEMPLATE
-    ) -> Dict[str, Any]:  # noqa UP006
+    ) -> dict[str, Any]:
         warnings.warn(
             'The `schema` method is deprecated; use `model_json_schema` instead.',
             category=PydanticDeprecatedSince20,

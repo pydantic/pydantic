@@ -102,7 +102,7 @@ def _copy_and_set_values(
     extra: dict[str, Any] | None = None,
     private: dict[str, Any] | None = None,
     *,
-    deep: bool,  # UP006
+    deep: bool,
 ) -> Model:
     if deep:
         # chances of having empty dict here are quite low for using smart_deepcopy
@@ -200,7 +200,7 @@ def _calculate_keys(
     include: MappingIntStrAny | None,
     exclude: MappingIntStrAny | None,
     exclude_unset: bool,
-    update: dict[str, Any] | None = None,  # noqa UP006
+    update: dict[str, Any] | None = None,
 ) -> typing.AbstractSet[str] | None:
     if include is None and exclude is None and exclude_unset is False:
         return None
