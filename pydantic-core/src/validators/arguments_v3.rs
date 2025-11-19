@@ -9,7 +9,7 @@ use ahash::AHashSet;
 use pyo3::IntoPyObjectExt;
 
 use crate::build_tools::py_schema_err;
-use crate::build_tools::{schema_or_config_same, ExtraBehavior};
+use crate::build_tools::{ExtraBehavior, schema_or_config_same};
 use crate::errors::LocItem;
 use crate::errors::{ErrorTypeDefaults, ValError, ValLineError, ValResult};
 use crate::input::ConsumeIterator;
@@ -20,7 +20,7 @@ use crate::lookup_key::LookupKeyCollection;
 use crate::tools::SchemaDict;
 
 use super::validation_state::ValidationState;
-use super::{build_validator, BuildValidator, CombinedValidator, DefinitionsBuilder, Validator};
+use super::{BuildValidator, CombinedValidator, DefinitionsBuilder, Validator, build_validator};
 
 #[derive(Debug, PartialEq)]
 enum ParameterMode {

@@ -14,27 +14,15 @@ use pyo3::PyTypeCheck;
 use pyo3::PyTypeInfo;
 use speedate::MicrosecondsPrecisionOverflowBehavior;
 
+use crate::ArgsKwargs;
 use crate::errors::{ErrorType, ErrorTypeDefaults, InputValue, LocItem, ValError, ValResult};
 use crate::tools::safe_repr;
-use crate::validators::complex::{get_complex_type, string_to_complex};
-use crate::validators::decimal::{create_decimal, get_decimal_type};
 use crate::validators::Exactness;
 use crate::validators::TemporalUnitMode;
 use crate::validators::ValBytesMode;
-use crate::ArgsKwargs;
+use crate::validators::complex::{get_complex_type, string_to_complex};
+use crate::validators::decimal::{create_decimal, get_decimal_type};
 
-use super::datetime::{
-    bytes_as_date, bytes_as_datetime, bytes_as_time, bytes_as_timedelta, date_as_datetime, float_as_datetime,
-    float_as_duration, float_as_time, int_as_datetime, int_as_duration, int_as_time, EitherDate, EitherDateTime,
-    EitherTime,
-};
-use super::input_abstract::ValMatch;
-use super::return_enums::EitherComplex;
-use super::return_enums::{iterate_attributes, iterate_mapping_items, ValidationMatch};
-use super::shared::{
-    decimal_as_int, float_as_int, fraction_as_int, get_enum_meta_object, int_as_bool, str_as_bool, str_as_float,
-    str_as_int,
-};
 use super::Arguments;
 use super::ConsumeIterator;
 use super::KeywordArgs;
@@ -43,9 +31,21 @@ use super::ValidatedDict;
 use super::ValidatedList;
 use super::ValidatedSet;
 use super::ValidatedTuple;
+use super::datetime::{
+    EitherDate, EitherDateTime, EitherTime, bytes_as_date, bytes_as_datetime, bytes_as_time, bytes_as_timedelta,
+    date_as_datetime, float_as_datetime, float_as_duration, float_as_time, int_as_datetime, int_as_duration,
+    int_as_time,
+};
+use super::input_abstract::ValMatch;
+use super::return_enums::EitherComplex;
+use super::return_enums::{ValidationMatch, iterate_attributes, iterate_mapping_items};
+use super::shared::{
+    decimal_as_int, float_as_int, fraction_as_int, get_enum_meta_object, int_as_bool, str_as_bool, str_as_float,
+    str_as_int,
+};
 use super::{
-    py_string_str, BorrowInput, EitherBytes, EitherFloat, EitherInt, EitherString, EitherTimedelta, GenericIterator,
-    Input,
+    BorrowInput, EitherBytes, EitherFloat, EitherInt, EitherString, EitherTimedelta, GenericIterator, Input,
+    py_string_str,
 };
 
 static FRACTION_TYPE: PyOnceLock<Py<PyType>> = PyOnceLock::new();
@@ -257,7 +257,7 @@ impl<'py> Input<'py> for Bound<'py, PyAny> {
                         .as_bool()
                         .ok_or_else(|| ValError::new(ErrorTypeDefaults::BoolParsing, self))
                         .map(ValidationMatch::lax);
-                };
+                }
             }
         }
 

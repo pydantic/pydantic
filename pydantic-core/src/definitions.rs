@@ -8,12 +8,12 @@ use std::{
     collections::hash_map::Entry,
     fmt::Debug,
     sync::{
-        atomic::{AtomicBool, Ordering},
         Arc, OnceLock, Weak,
+        atomic::{AtomicBool, Ordering},
     },
 };
 
-use pyo3::{prelude::*, PyTraverseError, PyVisit};
+use pyo3::{PyTraverseError, PyVisit, prelude::*};
 
 use ahash::AHashMap;
 

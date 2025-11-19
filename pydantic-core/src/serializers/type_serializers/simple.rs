@@ -1,21 +1,21 @@
+use pyo3::IntoPyObjectExt;
 use pyo3::prelude::*;
 use pyo3::types::PyDict;
-use pyo3::IntoPyObjectExt;
 
 use std::borrow::Cow;
 use std::sync::Arc;
 
 use serde::Serialize;
 
-use crate::build_tools::LazyLock;
 use crate::PydanticSerializationUnexpectedValue;
+use crate::build_tools::LazyLock;
 use crate::{definitions::DefinitionsBuilder, input::Int};
 
 use crate::serializers::SerializationState;
 
 use super::{
-    infer_json_key, infer_serialize, infer_to_python, BuildSerializer, CombinedSerializer, IsType, ObType, SerCheck,
-    SerMode, TypeSerializer,
+    BuildSerializer, CombinedSerializer, IsType, ObType, SerCheck, SerMode, TypeSerializer, infer_json_key,
+    infer_serialize, infer_to_python,
 };
 
 #[derive(Debug)]

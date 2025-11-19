@@ -9,18 +9,18 @@ use ahash::AHashSet;
 use pyo3::IntoPyObjectExt;
 
 use crate::build_tools::py_schema_err;
-use crate::build_tools::{is_strict, schema_or_config_same, ExtraBehavior};
+use crate::build_tools::{ExtraBehavior, is_strict, schema_or_config_same};
 use crate::errors::{ErrorType, ErrorTypeDefaults, ValError, ValLineError, ValResult};
 use crate::input::{
-    input_as_python_instance, Arguments, BorrowInput, Input, InputType, KeywordArgs, PositionalArgs, ValidationMatch,
+    Arguments, BorrowInput, Input, InputType, KeywordArgs, PositionalArgs, ValidationMatch, input_as_python_instance,
 };
 use crate::lookup_key::LookupKeyCollection;
 use crate::tools::SchemaDict;
 use crate::validators::function::convert_err;
 
-use super::model::{create_class, force_setattr, Revalidate};
+use super::model::{Revalidate, create_class, force_setattr};
 use super::validation_state::Exactness;
-use super::{build_validator, BuildValidator, CombinedValidator, DefinitionsBuilder, ValidationState, Validator};
+use super::{BuildValidator, CombinedValidator, DefinitionsBuilder, ValidationState, Validator, build_validator};
 
 #[derive(Debug)]
 struct Field {
@@ -360,7 +360,7 @@ impl Validator for DataclassArgsValidator {
                             }
                         }
                         Err(err) => return Err(err),
-                    };
+                    }
                 }
             }
         }

@@ -10,10 +10,10 @@ use pyo3::types::{PyDict, PyFloat, PyInt, PyList, PyString, PyType};
 use crate::build_tools::{is_strict, py_schema_err};
 use crate::errors::{ErrorType, ValError, ValResult};
 use crate::input::{Input, InputType};
-use crate::tools::{safe_repr, SchemaDict};
+use crate::tools::{SchemaDict, safe_repr};
 
 use super::is_instance::class_repr;
-use super::literal::{expected_repr_name, LiteralLookup};
+use super::literal::{LiteralLookup, expected_repr_name};
 use super::{BuildValidator, CombinedValidator, DefinitionsBuilder, Exactness, ValidationState, Validator};
 
 #[derive(Debug, Clone)]

@@ -9,7 +9,7 @@ use ahash::AHashSet;
 use pyo3::IntoPyObjectExt;
 
 use crate::build_tools::py_schema_err;
-use crate::build_tools::{is_strict, schema_or_config_same, ExtraBehavior};
+use crate::build_tools::{ExtraBehavior, is_strict, schema_or_config_same};
 use crate::errors::LocItem;
 use crate::errors::{ErrorType, ErrorTypeDefaults, ValError, ValLineError, ValResult};
 use crate::input::ConsumeIterator;
@@ -17,7 +17,7 @@ use crate::input::{BorrowInput, Input, ValidatedDict, ValidationMatch};
 use crate::lookup_key::LookupKeyCollection;
 use crate::tools::SchemaDict;
 
-use super::{build_validator, BuildValidator, CombinedValidator, DefinitionsBuilder, ValidationState, Validator};
+use super::{BuildValidator, CombinedValidator, DefinitionsBuilder, ValidationState, Validator, build_validator};
 
 #[derive(Debug)]
 struct Field {
@@ -459,7 +459,7 @@ impl Validator for ModelFieldsValidator {
                             },
                             field_value,
                             field_name.to_string(),
-                        ))
+                        ));
                     }
                 }
             }

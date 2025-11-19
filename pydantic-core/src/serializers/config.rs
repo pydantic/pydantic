@@ -1,10 +1,10 @@
 use std::borrow::Cow;
-use std::str::{from_utf8, FromStr, Utf8Error};
+use std::str::{FromStr, Utf8Error, from_utf8};
 
 use base64::Engine;
 use pyo3::prelude::*;
 use pyo3::types::{PyDate, PyDateTime, PyDict, PyString, PyTime};
-use pyo3::{intern, IntoPyObjectExt};
+use pyo3::{IntoPyObjectExt, intern};
 
 use serde::ser::Error;
 

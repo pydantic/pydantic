@@ -2,17 +2,17 @@ use std::borrow::Cow;
 use std::sync::Arc;
 
 use pyo3::types::{PyDict, PyString};
-use pyo3::{prelude::*, IntoPyObjectExt};
+use pyo3::{IntoPyObjectExt, prelude::*};
 
 use crate::build_tools::LazyLock;
 use crate::definitions::DefinitionsBuilder;
-use crate::serializers::errors::unwrap_ser_error;
-use crate::serializers::shared::{serialize_to_json, DoSerialize};
 use crate::serializers::SerializationState;
+use crate::serializers::errors::unwrap_ser_error;
+use crate::serializers::shared::{DoSerialize, serialize_to_json};
 
 use super::{
-    infer_json_key, infer_serialize, infer_to_python, BuildSerializer, CombinedSerializer, IsType, ObType, SerMode,
-    TypeSerializer,
+    BuildSerializer, CombinedSerializer, IsType, ObType, SerMode, TypeSerializer, infer_json_key, infer_serialize,
+    infer_to_python,
 };
 
 #[derive(Debug)]

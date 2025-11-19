@@ -7,10 +7,10 @@ use jiter::{PartialMode, StringCacheMode};
 
 use pyo3::exceptions::{PyTypeError, PyValueError};
 use pyo3::types::{PyAny, PyDict, PyString, PyTuple, PyType};
-use pyo3::{intern, PyTraverseError, PyVisit};
-use pyo3::{prelude::*, IntoPyObjectExt};
+use pyo3::{IntoPyObjectExt, prelude::*};
+use pyo3::{PyTraverseError, PyVisit, intern};
 
-use crate::build_tools::{py_schema_err, py_schema_error_type, ExtraBehavior};
+use crate::build_tools::{ExtraBehavior, py_schema_err, py_schema_error_type};
 use crate::definitions::{Definitions, DefinitionsBuilder};
 use crate::errors::{LocItem, ValError, ValResult, ValidationError};
 use crate::input::{Input, InputType, StringMapping};

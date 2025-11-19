@@ -2,15 +2,15 @@ use std::fmt;
 use std::sync::Arc;
 
 use pyo3::types::{PyDict, PyString};
-use pyo3::{prelude::*, IntoPyObjectExt, PyTraverseError, PyVisit};
+use pyo3::{IntoPyObjectExt, PyTraverseError, PyVisit, prelude::*};
 
+use crate::ValidationError;
 use crate::build_tools::ExtraBehavior;
 use crate::errors::{ErrorType, LocItem, ValError, ValResult};
 use crate::input::{BorrowInput, GenericIterator, Input};
 use crate::py_gc::PyGcTraverse;
 use crate::recursion_guard::RecursionState;
 use crate::tools::SchemaDict;
-use crate::ValidationError;
 
 use super::list::get_items_schema;
 use super::{
@@ -185,8 +185,8 @@ impl ValidatorIterator {
         }
 
         match iterator {
-            GenericIterator::PyIterator(ref mut iter) => next!(iter),
-            GenericIterator::JsonArray(ref mut iter) => next!(iter),
+            GenericIterator::PyIterator(iter) => next!(iter),
+            GenericIterator::JsonArray(iter) => next!(iter),
         }
     }
 

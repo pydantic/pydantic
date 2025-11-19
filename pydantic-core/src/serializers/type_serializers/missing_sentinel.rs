@@ -12,9 +12,9 @@ use pyo3::types::PyDict;
 
 use serde::ser::Error;
 
+use crate::PydanticSerializationUnexpectedValue;
 use crate::definitions::DefinitionsBuilder;
 use crate::serializers::SerializationState;
-use crate::PydanticSerializationUnexpectedValue;
 use crate::{build_tools::LazyLock, common::missing_sentinel::get_missing_sentinel_object};
 
 use super::{BuildSerializer, CombinedSerializer, TypeSerializer};
