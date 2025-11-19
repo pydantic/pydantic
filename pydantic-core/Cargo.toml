@@ -29,6 +29,7 @@ rust-version = "1.85"
 # but needs a bit of work to make sure it's not used in the codebase
 pyo3 = { version = "0.27", features = ["generate-import-lib", "num-bigint", "py-clone"] }
 regex = "1.12.2"
+lru = "0.16.2"
 strum = { version = "0.27", features = ["derive"] }
 strum_macros = "0.27"
 serde_json = { version = "1.0.145", features = ["arbitrary_precision"] }
