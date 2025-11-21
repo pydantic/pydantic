@@ -208,6 +208,7 @@ markdown_extensions:
     alternate_style: true
 - pymdownx.arithmatex:
     generic: true
+- pydantic_docs.mdext
 
 watch:
 - pydantic

@@ -455,16 +455,16 @@ class ConfigDict(TypedDict, total=False):
     """
     A `dict` of custom JSON encoders for specific types. Defaults to `None`.
 
-    !!! warning "Deprecated"
-        This config option is a carryover from v1.
-        We originally planned to remove it in v2 but didn't have a 1:1 replacement so we are keeping it for now.
-        It is still deprecated and will likely be removed in the future.
+    /// version-deprecated | v2
+    This configuration option is a carryover from v1. We originally planned to remove it in v2 but didn't have a 1:1 replacement
+    so we are keeping it for now. It is still deprecated and will likely be removed in the future.
+    ///
     """
 
     # new in V2
     strict: bool
     """
-    _(new in V2)_ If `True`, strict validation is applied to all fields on the model.
+    Whether strict validation is applied to all fields on the model.
 
     By default, Pydantic attempts to coerce values to the correct type, when possible.
 
@@ -487,6 +487,9 @@ class ConfigDict(TypedDict, total=False):
 
     See the [Conversion Table](../concepts/conversion_table.md) for more details on how Pydantic converts data in both
     strict and lax modes.
+
+    /// version-added | v2
+    ///
     """
     # whether instances of models and dataclasses (including subclass instances) should re-validate, default 'never'
     revalidate_instances: Literal['always', 'never', 'subclass-instances']
@@ -556,6 +559,9 @@ class ConfigDict(TypedDict, total=False):
       `revalidate_instances` was set to `'always'`.
     3. Because `my_sub_user` is an instance of a `User` subclass, it is being revalidated. In this case, Pydantic coerces `my_sub_user` to the defined
        `User` class defined on `Transaction`. If one of its fields had an invalid value, a validation error would have been raised.
+
+    /// version-added | v2
+    ///
     """
 
     ser_json_timedelta: Literal['iso8601', 'float']
@@ -566,9 +572,10 @@ class ConfigDict(TypedDict, total=False):
     - `'iso8601'` will serialize timedeltas to [ISO 8601 text format](https://en.wikipedia.org/wiki/ISO_8601#Durations).
     - `'float'` will serialize timedeltas to the total number of seconds.
 
-    !!! warning
-        Starting in v2.12, it is recommended to use the [`ser_json_temporal`][pydantic.config.ConfigDict.ser_json_temporal]
-        setting instead of `ser_json_timedelta`. This setting will be deprecated in v3.
+    /// version-changed | v2.12
+    It is now recommended to use the [`ser_json_temporal`][pydantic.config.ConfigDict.ser_json_temporal]
+    setting. `ser_json_timedelta` will be deprecated in v3.
+    ///
     """
 
     ser_json_temporal: Literal['iso8601', 'seconds', 'milliseconds']
@@ -588,10 +595,10 @@ class ConfigDict(TypedDict, total=False):
 
     Defaults to `'iso8601'`.
 
-    !!! note
-        This setting was introduced in v2.12. It overlaps with the [`ser_json_timedelta`][pydantic.config.ConfigDict.ser_json_timedelta]
-        setting which will be deprecated in v3. It also adds more configurability for
-        the other temporal types.
+    /// version-added | v2.12
+    This setting replaces [`ser_json_timedelta`][pydantic.config.ConfigDict.ser_json_timedelta],
+    which will be deprecated in v3. `ser_json_temporal` adds more configurability for the other temporal types.
+    ///
     """
 
     val_temporal_unit: Literal['seconds', 'milliseconds', 'infer']
@@ -606,6 +613,9 @@ class ConfigDict(TypedDict, total=False):
         * milliseconds since the [epoch] (if $v < -2^{10}$ or $v > 2^{10}$).
 
     Defaults to `'infer'`.
+
+    /// version-added | v2.12
+    ///
 
     [epoch]: https://en.wikipedia.org/wiki/Unix_time
     """
@@ -648,20 +658,15 @@ class ConfigDict(TypedDict, total=False):
 
     protected_namespaces: tuple[str | Pattern[str], ...]
     """
-    A `tuple` of strings and/or patterns that prevent models from having fields with names that conflict with them.
-    For strings, we match on a prefix basis. Ex, if 'dog' is in the protected namespace, 'dog_name' will be protected.
-    For patterns, we match on the entire field name. Ex, if `re.compile(r'^dog$')` is in the protected namespace, 'dog' will be protected, but 'dog_name' will not be.
-    Defaults to `('model_validate', 'model_dump',)`.
+    A tuple of strings and/or regex patterns that prevent models from having fields with names that conflict with its existing members/methods.
 
-    The reason we've selected these is to prevent collisions with other validation / dumping formats
-    in the future - ex, `model_validate_{some_newly_supported_format}`.
+    Strings are matched on a prefix basis. For instance, with `'dog'`, having a field named `'dog_name'` will be disallowed.
 
-    Before v2.10, Pydantic used `('model_',)` as the default value for this setting to
-    prevent collisions between model attributes and `BaseModel`'s own methods. This was changed
-    in v2.10 given feedback that this restriction was limiting in AI and data science contexts,
-    where it is common to have fields with names like `model_id`, `model_input`, `model_output`, etc.
+    Regex patterns are matched on the entire field name. For instance, with the pattern `'^dog$'`, having a field named `'dog'` will be disallowed,
+    but `'dog_name'` will be accepted.
 
-    For more details, see https://github.com/pydantic/pydantic/issues/10315.
+    Defaults to `('model_validate', 'model_dump')`. This default is used to prevent collisions with the existing (and possibly future)
+    [validation](../concepts/models.md#validating-data) and [serialization](../concepts/serialization.md#serializing-data) methods.
 
     ```python
     import warnings
@@ -738,6 +743,11 @@ class ConfigDict(TypedDict, total=False):
         Field 'model_validate' conflicts with member <bound method BaseModel.model_validate of <class 'pydantic.main.BaseModel'>> of protected namespace 'model_'.
         '''
     ```
+
+    /// version-changed | v2.10
+    The default protected namespaces was changed from `('model_',)` to `('model_validate', 'model_dump')`, to allow
+    for fields like `model_id`, `model_name` to be used.
+    ///
     """
 
     hide_input_in_errors: bool
@@ -792,7 +802,9 @@ class ConfigDict(TypedDict, total=False):
     used nested within other models, or when you want to manually define type namespace via
     [`Model.model_rebuild(_types_namespace=...)`][pydantic.BaseModel.model_rebuild].
 
-    Since v2.10, this setting also applies to pydantic dataclasses and TypeAdapter instances.
+    /// version-changed | v2.10
+    The setting also applies to [Pydantic dataclasses](../concepts/dataclasses.md) and [type adapters](../concepts/type_adapter.md).
+    ///
     """
 
     plugin_settings: dict[str, object] | None
@@ -800,12 +812,11 @@ class ConfigDict(TypedDict, total=False):
 
     schema_generator: type[_GenerateSchema] | None
     """
-    !!! warning
-        `schema_generator` is deprecated in v2.10.
+    The `GenerateSchema` class to use during core schema generation.
 
-        Prior to v2.10, this setting was advertised as highly subject to change.
-        It's possible that this interface may once again become public once the internal core schema generation
-        API is more stable, but that will likely come after significant performance improvements have been made.
+    /// version-deprecated | v2.10
+    The `GenerateSchema` class is private and highly subject to change.
+    ///
     """
 
     json_schema_serialization_defaults_required: bool
@@ -845,6 +856,9 @@ class ConfigDict(TypedDict, total=False):
     }
     '''
     ```
+
+    /// version-added | v2.4
+    ///
     """
 
     json_schema_mode_override: Literal['validation', 'serialization', None]
@@ -900,6 +914,9 @@ class ConfigDict(TypedDict, total=False):
     }
     '''
     ```
+
+    /// version-added | v2.4
+    ///
     """
 
     coerce_numbers_to_str: bool
@@ -974,6 +991,9 @@ class ConfigDict(TypedDict, total=False):
           String should match pattern '^abc(?=def)' [type=string_pattern_mismatch, input_value='abxyzcdef', input_type=str]
         '''
     ```
+
+    /// version-added | v2.5
+    ///
     """
 
     validation_error_cause: bool
@@ -985,14 +1005,15 @@ class ConfigDict(TypedDict, total=False):
 
     Note:
         The structure of validation errors are likely to change in future Pydantic versions. Pydantic offers no guarantees about their structure. Should be used for visual traceback debugging only.
+
+    /// version-added | v2.5
+    ///
     """
 
     use_attribute_docstrings: bool
     '''
     Whether docstrings of attributes (bare string literals immediately following the attribute declaration)
     should be used for field descriptions. Defaults to `False`.
-
-    Available in Pydantic v2.7+.
 
     ```python
     from pydantic import BaseModel, ConfigDict, Field
@@ -1025,6 +1046,9 @@ class ConfigDict(TypedDict, total=False):
 
         - inheritance is being used.
         - multiple classes have the same name in the same source file (unless Python 3.13 or greater is used).
+
+    /// version-added | v2.7
+    ///
     '''
 
     cache_strings: bool | Literal['all', 'keys', 'none']
@@ -1044,15 +1068,14 @@ class ConfigDict(TypedDict, total=False):
     !!! tip
         If repeated strings are rare, it's recommended to use `'keys'` or `'none'` to reduce memory usage,
         as the performance difference is minimal if repeated strings are rare.
+
+    /// version-added | v2.7
+    ///
     """
 
     validate_by_alias: bool
     """
     Whether an aliased field may be populated by its alias. Defaults to `True`.
-
-    !!! note
-        In v2.11, `validate_by_alias` was introduced in conjunction with [`validate_by_name`][pydantic.ConfigDict.validate_by_name]
-        to empower users with more fine grained validation control. In <v2.11, disabling validation by alias was not possible.
 
     Here's an example of disabling validation by alias:
 
@@ -1080,19 +1103,17 @@ class ConfigDict(TypedDict, total=False):
 
         If you set `validate_by_alias` to `False`, under the hood, Pydantic dynamically sets
         `validate_by_name` to `True` to ensure that validation can still occur.
+
+    /// version-added | v2.11
+    This setting was introduced in conjunction with [`validate_by_name`][pydantic.ConfigDict.validate_by_name]
+    to empower users with more fine grained validation control.
+    ///
     """
 
     validate_by_name: bool
     """
     Whether an aliased field may be populated by its name as given by the model
     attribute. Defaults to `False`.
-
-    !!! note
-        In v2.0-v2.10, the `populate_by_name` configuration setting was used to specify
-        whether or not a field could be populated by its name **and** alias.
-
-        In v2.11, `validate_by_name` was introduced in conjunction with [`validate_by_alias`][pydantic.ConfigDict.validate_by_alias]
-        to empower users with more fine grained validation behavior control.
 
     ```python
     from pydantic import BaseModel, ConfigDict, Field
@@ -1120,6 +1141,12 @@ class ConfigDict(TypedDict, total=False):
         This would make it impossible to populate an attribute.
 
         See [usage errors](../errors/usage_errors.md#validate-by-alias-and-name-false) for an example.
+
+    /// version-added | v2.11
+    This setting was introduced in conjunction with [`validate_by_alias`][pydantic.ConfigDict.validate_by_alias]
+    to empower users with more fine grained validation control. It is an alternative to [`populate_by_name`][pydantic.ConfigDict.populate_by_name],
+    that enables validation by name **and** by alias.
+    ///
     """
 
     serialize_by_alias: bool
@@ -1146,6 +1173,14 @@ class ConfigDict(TypedDict, total=False):
 
     1. The field `'my_field'` has an alias `'my_alias'`.
     2. The model is serialized using the alias `'my_alias'` for the `'my_field'` attribute.
+
+
+    /// version-added | v2.11
+    This setting was introduced to address the [popular request](https://github.com/pydantic/pydantic/issues/8379)
+    for consistency with alias behavior for validation and serialization.
+
+    In v3, the default value is expected to change to `True` for consistency with the validation default.
+    ///
     """
 
     url_preserve_empty_path: bool
@@ -1164,6 +1199,9 @@ class ConfigDict(TypedDict, total=False):
     print(m.url)
     #> http://example.com
     ```
+
+    /// version-added | v2.12
+    ///
     """
 
 
@@ -1208,6 +1246,14 @@ def with_config(config: ConfigDict | None = None, /, **kwargs: Any) -> Callable[
         print(ta.validate_python({'x': 'ABC'}))
         #> {'x': 'abc'}
         ```
+
+    /// deprecated-removed | v2.11 v3
+    Passing `config` as a keyword argument.
+    ///
+
+    /// version-changed | v2.11
+    Keyword arguments can be provided directly instead of a config dictionary.
+    ///
     """
     if config is not None and kwargs:
         raise ValueError('Cannot specify both `config` and keyword arguments')
