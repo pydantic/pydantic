@@ -7,15 +7,14 @@ use std::sync::Arc;
 use ahash::AHashMap;
 use serde::ser::SerializeMap;
 
-use crate::build_tools::{py_schema_error_type, ExtraBehavior};
+use crate::build_tools::{ExtraBehavior, py_schema_error_type};
 use crate::definitions::DefinitionsBuilder;
 use crate::serializers::SerializationState;
 use crate::tools::SchemaDict;
 
 use super::{
-    infer_json_key, infer_json_key_known, infer_serialize, infer_to_python, py_err_se_err, BuildSerializer,
-    CombinedSerializer, ComputedFields, FieldsMode, GeneralFieldsSerializer, ObType, SerCheck, SerField,
-    TypeSerializer,
+    BuildSerializer, CombinedSerializer, ComputedFields, FieldsMode, GeneralFieldsSerializer, ObType, SerCheck,
+    SerField, TypeSerializer, infer_json_key, infer_json_key_known, infer_serialize, infer_to_python, py_err_se_err,
 };
 
 pub struct DataclassArgsBuilder;

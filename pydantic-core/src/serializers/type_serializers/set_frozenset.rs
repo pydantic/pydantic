@@ -3,7 +3,7 @@ use std::sync::Arc;
 
 use pyo3::prelude::*;
 use pyo3::types::{PyDict, PyFrozenSet, PyList, PySet};
-use pyo3::{intern, IntoPyObjectExt};
+use pyo3::{IntoPyObjectExt, intern};
 
 use serde::ser::SerializeSeq;
 
@@ -13,7 +13,7 @@ use crate::tools::SchemaDict;
 
 use super::any::AnySerializer;
 use super::{
-    infer_serialize, infer_to_python, BuildSerializer, CombinedSerializer, PydanticSerializer, SerMode, TypeSerializer,
+    BuildSerializer, CombinedSerializer, PydanticSerializer, SerMode, TypeSerializer, infer_serialize, infer_to_python,
 };
 
 macro_rules! build_serializer {

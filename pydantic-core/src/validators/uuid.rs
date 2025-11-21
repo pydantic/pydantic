@@ -10,10 +10,10 @@ use uuid::Variant;
 
 use crate::build_tools::is_strict;
 use crate::errors::{ErrorType, ErrorTypeDefaults, ValError, ValResult};
-use crate::input::input_as_python_instance;
 use crate::input::Input;
 use crate::input::InputType;
 use crate::input::ValidationMatch;
+use crate::input::input_as_python_instance;
 use crate::serializers::BytesMode;
 use crate::tools::SchemaDict;
 

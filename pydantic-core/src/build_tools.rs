@@ -7,12 +7,12 @@ use std::sync::OnceLock;
 use pyo3::exceptions::PyException;
 use pyo3::prelude::*;
 use pyo3::types::{PyDict, PyList, PyString};
-use pyo3::{intern, PyErrArguments};
+use pyo3::{PyErrArguments, intern};
 
+use crate::ValidationError;
 use crate::errors::{PyLineError, ValError};
 use crate::input::InputType;
 use crate::tools::SchemaDict;
-use crate::ValidationError;
 
 pub fn schema_or_config<'py, T>(
     schema: &Bound<'py, PyDict>,

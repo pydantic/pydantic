@@ -6,7 +6,7 @@ use pyo3::prelude::*;
 use pyo3::types::{PyDict, PyMapping, PyString};
 
 use crate::PydanticUndefinedType;
-use jiter::{cached_py_string, StringCacheMode};
+use jiter::{StringCacheMode, cached_py_string};
 
 pub trait SchemaDict<'py> {
     fn get_as<T>(&self, key: &Bound<'py, PyString>) -> PyResult<Option<T>>

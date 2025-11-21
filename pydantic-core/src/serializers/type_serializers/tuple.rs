@@ -7,16 +7,16 @@ use std::sync::Arc;
 
 use serde::ser::SerializeSeq;
 
+use crate::PydanticSerializationUnexpectedValue;
 use crate::definitions::DefinitionsBuilder;
+use crate::serializers::SerializationState;
 use crate::serializers::extra::SerCheck;
 use crate::serializers::type_serializers::any::AnySerializer;
-use crate::serializers::SerializationState;
 use crate::tools::SchemaDict;
-use crate::PydanticSerializationUnexpectedValue;
 
 use super::{
-    infer_json_key, infer_serialize, infer_to_python, py_err_se_err, BuildSerializer, CombinedSerializer,
-    PydanticSerializer, SchemaFilter, SerMode, TypeSerializer,
+    BuildSerializer, CombinedSerializer, PydanticSerializer, SchemaFilter, SerMode, TypeSerializer, infer_json_key,
+    infer_serialize, infer_to_python, py_err_se_err,
 };
 
 #[derive(Debug)]
@@ -203,7 +203,7 @@ impl TupleSerializer {
             let n_variadic_items = (n_items + 1).saturating_sub(self.serializers.len());
             let serializers_iter = self.serializers[..variadic_item_index]
                 .iter()
-                .chain(iter::repeat(&self.serializers[variadic_item_index]).take(n_variadic_items))
+                .chain(iter::repeat_n(&self.serializers[variadic_item_index], n_variadic_items))
                 .chain(self.serializers[variadic_item_index + 1..].iter());
             use_serializers!(serializers_iter);
         } else if state.check == SerCheck::Strict && n_items != self.serializers.len() {

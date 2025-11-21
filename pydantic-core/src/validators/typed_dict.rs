@@ -5,7 +5,7 @@ use pyo3::prelude::*;
 use pyo3::types::{PyDict, PyString, PyType};
 
 use crate::build_tools::py_schema_err;
-use crate::build_tools::{is_strict, schema_or_config, ExtraBehavior};
+use crate::build_tools::{ExtraBehavior, is_strict, schema_or_config};
 use crate::errors::LocItem;
 use crate::errors::{ErrorTypeDefaults, ValError, ValLineError, ValResult};
 use crate::input::BorrowInput;
@@ -17,7 +17,7 @@ use crate::tools::SchemaDict;
 use ahash::AHashSet;
 use jiter::PartialMode;
 
-use super::{build_validator, BuildValidator, CombinedValidator, DefinitionsBuilder, ValidationState, Validator};
+use super::{BuildValidator, CombinedValidator, DefinitionsBuilder, ValidationState, Validator, build_validator};
 
 #[derive(Debug)]
 struct TypedDictField {
@@ -95,7 +95,7 @@ impl BuildValidator for TypedDictValidator {
             let required = match field_info.get_as::<bool>(intern!(py, "required"))? {
                 Some(required) => {
                     if required {
-                        if let CombinedValidator::WithDefault(ref val) = validator.as_ref() {
+                        if let CombinedValidator::WithDefault(val) = validator.as_ref() {
                             if val.has_default() {
                                 return py_schema_err!(
                                     "Field '{}': a required field cannot have a default value",
@@ -110,7 +110,7 @@ impl BuildValidator for TypedDictValidator {
             };
 
             if required {
-                if let CombinedValidator::WithDefault(ref val) = validator.as_ref() {
+                if let CombinedValidator::WithDefault(val) = validator.as_ref() {
                     if val.omit_on_error() {
                         return py_schema_err!(
                             "Field '{}': 'on_error = omit' cannot be set for required fields",

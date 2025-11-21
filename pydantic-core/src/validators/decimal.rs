@@ -4,7 +4,7 @@ use pyo3::exceptions::{PyTypeError, PyValueError};
 use pyo3::intern;
 use pyo3::sync::PyOnceLock;
 use pyo3::types::{IntoPyDict, PyDict, PyString, PyTuple, PyType};
-use pyo3::{prelude::*, PyTypeInfo};
+use pyo3::{PyTypeInfo, prelude::*};
 
 use crate::build_tools::{is_strict, schema_or_config_same};
 use crate::errors::ErrorType;

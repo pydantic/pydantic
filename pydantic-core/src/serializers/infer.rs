@@ -11,23 +11,23 @@ use pyo3::IntoPyObjectExt;
 use serde::ser::{Error, Serialize, SerializeMap, SerializeSeq, Serializer};
 
 use crate::input::{EitherTimedelta, Int};
+use crate::serializers::SerializationState;
 use crate::serializers::errors::unwrap_ser_error;
+use crate::serializers::shared::DoSerialize;
 use crate::serializers::shared::serialize_to_json;
 use crate::serializers::shared::serialize_to_python;
-use crate::serializers::shared::DoSerialize;
 use crate::serializers::type_serializers;
 use crate::serializers::type_serializers::format::serialize_via_str;
-use crate::serializers::SerializationState;
 use crate::tools::{py_err, safe_repr};
 
+use super::SchemaSerializer;
 use super::config::InfNanMode;
 use super::errors::SERIALIZATION_ERR_MARKER;
-use super::errors::{py_err_se_err, PydanticSerializationError};
+use super::errors::{PydanticSerializationError, py_err_se_err};
 use super::extra::SerMode;
 use super::filter::{AnyFilter, SchemaFilter};
 use super::ob_type::ObType;
 use super::shared::any_dataclass_iter;
-use super::SchemaSerializer;
 
 pub(crate) fn infer_to_python<'py>(
     value: &Bound<'py, PyAny>,
@@ -356,7 +356,7 @@ pub(crate) fn infer_serialize_known<'py, S: Serializer>(
         }};
     }
 
-    let ser_result = match ob_type {
+    match ob_type {
         ObType::None => serializer.serialize_none(),
         ObType::Int | ObType::IntSubclass => serialize!(Int),
         ObType::Bool => serialize!(bool),
@@ -456,8 +456,7 @@ pub(crate) fn infer_serialize_known<'py, S: Serializer>(
         ObType::Unknown => {
             if let Some(fallback) = state.extra.fallback {
                 let next_value = fallback.call1((value,)).map_err(py_err_se_err)?;
-                let next_result = infer_serialize(&next_value, serializer, state);
-                return next_result;
+                infer_serialize(&next_value, serializer, state)
             } else if state.extra.serialize_unknown {
                 serializer.serialize_str(&serialize_unknown(value))
             } else {
@@ -466,11 +465,10 @@ pub(crate) fn infer_serialize_known<'py, S: Serializer>(
                     SERIALIZATION_ERR_MARKER,
                     safe_repr(&value.get_type()),
                 );
-                return Err(S::Error::custom(msg));
+                Err(S::Error::custom(msg))
             }
         }
-    };
-    ser_result
+    }
 }
 
 fn unknown_type_error(value: &Bound<'_, PyAny>) -> PyErr {

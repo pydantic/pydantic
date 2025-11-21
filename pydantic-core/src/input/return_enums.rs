@@ -15,16 +15,16 @@ use pyo3::types::PyFunction;
 use pyo3::types::{PyBytes, PyComplex, PyFloat, PyFrozenSet, PyIterator, PyMapping, PySet, PyString};
 
 use pyo3::IntoPyObjectExt;
-use serde::{ser::Error, Serialize, Serializer};
+use serde::{Serialize, Serializer, ser::Error};
 
 use crate::errors::{
-    py_err_string, ErrorType, ErrorTypeDefaults, InputValue, ToErrorValue, ValError, ValLineError, ValResult,
+    ErrorType, ErrorTypeDefaults, InputValue, ToErrorValue, ValError, ValLineError, ValResult, py_err_string,
 };
 use crate::py_gc::PyGcTraverse;
 use crate::tools::new_py_string;
 use crate::validators::{CombinedValidator, Exactness, ValidationState, Validator};
 
-use super::{py_error_on_minusone, BorrowInput, Input};
+use super::{BorrowInput, Input, py_error_on_minusone};
 
 pub struct ValidationMatch<T>(T, Exactness);
 

@@ -1,9 +1,9 @@
 use std::convert::Infallible;
 
-use pyo3::exceptions::PyTypeError;
-use pyo3::prelude::*;
 use pyo3::CastError;
 use pyo3::CastIntoError;
+use pyo3::exceptions::PyTypeError;
+use pyo3::prelude::*;
 
 use jiter::JsonValue;
 

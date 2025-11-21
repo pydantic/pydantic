@@ -6,11 +6,11 @@ use pyo3::types::PyDict;
 
 use crate::build_tools::LazyLock;
 use crate::definitions::DefinitionsBuilder;
+use crate::serializers::SerializationState;
 use crate::serializers::infer::{infer_json_key_known, infer_serialize_known, infer_to_python_known};
 use crate::serializers::ob_type::{IsType, ObType};
-use crate::serializers::SerializationState;
 
-use super::{infer_json_key, infer_serialize, infer_to_python, BuildSerializer, CombinedSerializer, TypeSerializer};
+use super::{BuildSerializer, CombinedSerializer, TypeSerializer, infer_json_key, infer_serialize, infer_to_python};
 
 #[derive(Debug)]
 pub struct DecimalSerializer {}

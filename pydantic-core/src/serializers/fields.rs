@@ -9,18 +9,18 @@ use ahash::AHashMap;
 use serde::ser::SerializeMap;
 use smallvec::SmallVec;
 
+use crate::PydanticSerializationUnexpectedValue;
 use crate::common::missing_sentinel::get_missing_sentinel_object;
+use crate::serializers::SerializationState;
 use crate::serializers::extra::{FieldName, SerCheck};
 use crate::serializers::type_serializers::any::AnySerializer;
 use crate::serializers::type_serializers::function::{FunctionPlainSerializer, FunctionWrapSerializer};
-use crate::serializers::SerializationState;
-use crate::PydanticSerializationUnexpectedValue;
 
 use super::computed_fields::ComputedFields;
 use super::errors::py_err_se_err;
 use super::extra::Extra;
 use super::filter::SchemaFilter;
-use super::infer::{infer_json_key, infer_serialize, infer_to_python, SerializeInfer};
+use super::infer::{SerializeInfer, infer_json_key, infer_serialize, infer_to_python};
 use super::shared::{CombinedSerializer, PydanticSerializer, TypeSerializer};
 
 /// representation of a field for serialization

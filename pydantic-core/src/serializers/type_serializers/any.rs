@@ -10,7 +10,7 @@ use serde::ser::Serializer;
 
 use crate::{definitions::DefinitionsBuilder, serializers::SerializationState};
 
-use super::{infer_json_key, infer_serialize, infer_to_python, BuildSerializer, CombinedSerializer, TypeSerializer};
+use super::{BuildSerializer, CombinedSerializer, TypeSerializer, infer_json_key, infer_serialize, infer_to_python};
 
 #[derive(Debug, Clone, Default)]
 pub struct AnySerializer;

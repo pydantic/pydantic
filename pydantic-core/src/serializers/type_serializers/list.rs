@@ -14,8 +14,8 @@ use crate::tools::SchemaDict;
 
 use super::any::AnySerializer;
 use super::{
-    infer_serialize, infer_to_python, py_err_se_err, BuildSerializer, CombinedSerializer, PydanticSerializer,
-    SchemaFilter, TypeSerializer,
+    BuildSerializer, CombinedSerializer, PydanticSerializer, SchemaFilter, TypeSerializer, infer_serialize,
+    infer_to_python, py_err_se_err,
 };
 
 #[derive(Debug)]

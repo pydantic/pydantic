@@ -3,9 +3,9 @@ use std::borrow::Cow;
 use pyo3::prelude::*;
 use pyo3::types::PyDict;
 
+use crate::SchemaSerializer;
 use crate::common::prebuilt::get_prebuilt;
 use crate::serializers::SerializationState;
-use crate::SchemaSerializer;
 
 use super::shared::{CombinedSerializer, TypeSerializer};
 

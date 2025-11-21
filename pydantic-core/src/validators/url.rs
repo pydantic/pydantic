@@ -11,18 +11,18 @@ use ahash::AHashSet;
 use pyo3::IntoPyObjectExt;
 use url::{ParseError, SyntaxViolation, Url};
 
-use crate::build_tools::schema_or_config;
 use crate::build_tools::LazyLock;
+use crate::build_tools::schema_or_config;
 use crate::build_tools::{is_strict, py_schema_err};
 use crate::errors::{ErrorType, ErrorTypeDefaults, ValError, ValResult};
-use crate::input::downcast_python_input;
 use crate::input::Input;
 use crate::input::ValidationMatch;
+use crate::input::downcast_python_input;
 use crate::tools::SchemaDict;
-use crate::url::{scheme_is_special, PyMultiHostUrl, PyUrl};
+use crate::url::{PyMultiHostUrl, PyUrl, scheme_is_special};
 
-use super::literal::expected_repr_name;
 use super::Exactness;
+use super::literal::expected_repr_name;
 use super::{BuildValidator, CombinedValidator, DefinitionsBuilder, ValidationState, Validator};
 
 type AllowedSchemes = Option<(AHashSet<String>, String)>;
