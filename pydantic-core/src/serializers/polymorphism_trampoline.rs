@@ -6,7 +6,7 @@ use crate::serializers::{
     CombinedSerializer, SerializationState,
     errors::unwrap_ser_error,
     extra::SerCheck,
-    infer::call_pydantic_serializer,
+    infer::{call_pydantic_serializer, get_pydantic_serializer},
     shared::{DoSerialize, TypeSerializer, serialize_to_json, serialize_to_python},
 };
 
@@ -51,8 +51,12 @@ impl PolymorphismTrampoline {
         if state.check != SerCheck::Strict // strict disables polymorphism
             && runtime_polymorphic.unwrap_or(self.enabled_from_config)
             && self.is_subclass(value)?
+            // stdlib dataclasses do not have a `__pydantic_serializer__`
+            // FIXME: interaction between pydantic and stdlib dataclasses in the same hierarchy
+            // needs more thought (e.g. stdlib inheriting from pydantic dataclass)
+            && let Ok(serializer) = get_pydantic_serializer(value)
         {
-            call_pydantic_serializer(value, state, do_serialize)
+            call_pydantic_serializer(&serializer, value, state, do_serialize)
         } else {
             do_serialize.serialize_no_infer(&self.serializer, value, state)
         }
