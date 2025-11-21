@@ -120,8 +120,7 @@ jobs:
       - run: |
           source <(cargo llvm-cov show-env --export-prefix)
           cargo llvm-cov clean --workspace --profraw-only
-        with:
-          working-directory: ./pydantic-core
+        working-directory: ./pydantic-core
 
       - name: Install dependencies
         run: uv sync --all-packages --group testing-extra --all-extras
@@ -139,8 +138,7 @@ jobs:
       - run: |
           source <(cargo llvm-cov show-env --export-prefix)
           cargo llvm-cov report
-        with:
-          working-directory: ./pydantic-core
+        working-directory: ./pydantic-core
 
       - name: Store coverage files
         uses: actions/upload-artifact@v5
