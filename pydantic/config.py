@@ -596,7 +596,7 @@ class ConfigDict(TypedDict, total=False):
     Defaults to `'iso8601'`.
 
     /// version-added | v2.12
-    This setting is meant to be a replacement for [`ser_json_timedelta`][pydantic.config.ConfigDict.ser_json_timedelta],
+    This setting replaces [`ser_json_timedelta`][pydantic.config.ConfigDict.ser_json_timedelta],
     which will be deprecated in v3. `ser_json_temporal` adds more configurability for the other temporal types.
     ///
     """
@@ -1145,7 +1145,7 @@ class ConfigDict(TypedDict, total=False):
     /// version-added | v2.11
     This setting was introduced in conjunction with [`validate_by_alias`][pydantic.ConfigDict.validate_by_alias]
     to empower users with more fine grained validation control. It is an alternative to [`populate_by_name`][pydantic.ConfigDict.populate_by_name],
-    thas enames validation by name **and** by alias.
+    that enables validation by name **and** by alias.
     ///
     """
 
