@@ -4,7 +4,6 @@ use std::sync::Arc;
 
 use ahash::AHashMap;
 use ahash::AHashSet;
-use jiter::JsonArray;
 use jiter::JsonObject;
 use jiter::JsonValue;
 use pyo3::IntoPyObjectExt;
@@ -664,9 +663,12 @@ impl ModelFieldsValidator {
                     Ok(None) => {
                         // This means there was no default value
                         let error = match &field.alias {
-                            Some(alias) => {
-                                alias.error(ErrorTypeDefaults::Missing, input, self.loc_by_alias, &field.name)
-                            }
+                            Some(alias) => alias.error(
+                                ErrorTypeDefaults::Missing,
+                                input,
+                                self.loc_by_alias && validate_by_alias,
+                                &field.name,
+                            ),
                             None => ValLineError::new_with_loc(ErrorTypeDefaults::Missing, input, &field.name),
                         };
                         errors.push(error);
@@ -846,11 +848,16 @@ impl ModelFieldsValidator {
                 let field_result = &mut field_results[i];
 
                 // handle the possibility of a result already existing
-                if field_result
-                    .as_ref()
-                    .is_some_and(|(_, found_lookup_type)| found_lookup_type.matches(FieldLookupType::Alias))
+                if let Some((_, existing_lookup_type)) = &field_result
+                    && field_lookup_type == FieldLookupType::Name
+                    && existing_lookup_type.matches(FieldLookupType::Alias)
                 {
-                    // already have an alias result, which takes precedence over anything else
+                    // later results are typically preferred (standard JSON duplicate handling) BUT aliases
+                    // are preferred over names, so only return early if the new value is a name lookup
+                    // and the existing one is an alias lookup
+                    //
+                    // in all cases we're not super worried about efficiency of duplicate inputs, as
+                    // the data has provided those duplicates and the user can always clean them up if desired
                     return;
                 }
 
@@ -878,103 +885,69 @@ impl ModelFieldsValidator {
             }
         }
 
-        fn consume_json_array<'py>(
+        fn fill_lookup_value<'py>(
             py: Python<'py>,
             fields: &[Field],
             field_results: &mut [Option<(ValResult<Py<PyAny>>, FieldLookupType)>],
-            array_lookup: &AHashMap<i64, LookupValue>,
-            json_array: &JsonArray<'_>,
-            state: &mut ValidationState<'_, 'py>,
-            lookup_type: FieldLookupType,
-        ) -> ValResult<()> {
-            for (list_item, value) in array_lookup {
-                let index = if *list_item < 0 {
-                    list_item + json_array.len() as i64
-                } else {
-                    *list_item
-                };
-                if let Some(json_value) = json_array.get(index as usize) {
-                    match value {
-                        LookupValue::Field(info) => {
-                            set_field_value(py, json_value, state, field_results, fields, *info, lookup_type);
-                        }
-                        LookupValue::Complex {
-                            fields: complex_lookup_fields,
-                            lookup_map,
-                        } => perform_complex_lookup(
-                            py,
-                            fields,
-                            field_results,
-                            complex_lookup_fields,
-                            lookup_map,
-                            json_value,
-                            state,
-                            lookup_type,
-                        )?,
-                    }
-                }
-            }
-            Ok(())
-        }
-
-        #[expect(clippy::too_many_arguments)]
-        fn perform_complex_lookup<'py>(
-            py: Python<'py>,
-            fields: &[Field],
-            field_results: &mut [Option<(ValResult<Py<PyAny>>, FieldLookupType)>],
-            complex_lookup_fields: &[LookupFieldInfo],
-            complex_lookup_map: &LookupMap,
+            lookup_value: &LookupValue,
             json_value: &JsonValue<'_>,
             state: &mut ValidationState<'_, 'py>,
             lookup_type: FieldLookupType,
-        ) -> ValResult<()> {
-            // this is a possibly recursive lookup with some complicated alias logic,
-            // not much we can do except recurse
-            for info in complex_lookup_fields {
-                set_field_value(py, json_value, state, field_results, fields, *info, lookup_type);
-            }
-            if !complex_lookup_map.map.is_empty() {
-                if let JsonValue::Object(nested_object) = json_value {
-                    for (key, value) in &**nested_object {
-                        if let Some(lookup_value) = complex_lookup_map.map.get(key.as_ref()) {
-                            match lookup_value {
-                                LookupValue::Field(info) => {
-                                    set_field_value(py, json_value, state, field_results, fields, *info, lookup_type);
-                                }
-                                LookupValue::Complex {
-                                    fields: complex_lookup_fields,
-                                    lookup_map,
-                                } => {
-                                    perform_complex_lookup(
+        ) {
+            match lookup_value {
+                LookupValue::Field(info) => {
+                    set_field_value(py, json_value, state, field_results, fields, *info, lookup_type);
+                }
+                LookupValue::Complex {
+                    fields: lookup_fields,
+                    lookup_map,
+                } => {
+                    // this is a possibly recursive lookup with some complicated alias logic,
+                    // not much we can do except recurse
+                    for info in lookup_fields {
+                        set_field_value(py, json_value, state, field_results, fields, *info, lookup_type);
+                    }
+                    if !lookup_map.map.is_empty() {
+                        if let JsonValue::Object(nested_object) = json_value {
+                            for (key, value) in &**nested_object {
+                                if let Some(lookup_value) = lookup_map.map.get(key.as_ref()) {
+                                    fill_lookup_value(
                                         py,
                                         fields,
                                         field_results,
-                                        complex_lookup_fields,
-                                        lookup_map,
+                                        lookup_value,
                                         value,
                                         state,
                                         lookup_type,
-                                    )?;
+                                    );
+                                }
+                            }
+                        }
+                    }
+                    if !lookup_map.list.is_empty() {
+                        if let JsonValue::Array(nested_array) = json_value {
+                            for (list_item, lookup_value) in &lookup_map.list {
+                                let index = if *list_item < 0 {
+                                    list_item + nested_array.len() as i64
+                                } else {
+                                    *list_item
+                                };
+                                if let Some(value) = nested_array.get(index as usize) {
+                                    fill_lookup_value(
+                                        py,
+                                        fields,
+                                        field_results,
+                                        lookup_value,
+                                        value,
+                                        state,
+                                        lookup_type,
+                                    );
                                 }
                             }
                         }
                     }
                 }
             }
-            if !complex_lookup_map.list.is_empty() {
-                if let JsonValue::Array(nested_array) = json_value {
-                    consume_json_array(
-                        py,
-                        fields,
-                        field_results,
-                        &complex_lookup_map.list,
-                        nested_array,
-                        state,
-                        lookup_type,
-                    )?;
-                }
-            }
-            Ok(())
         }
 
         // expect json_input and json_object to be the same thing, just projected
@@ -997,23 +970,15 @@ impl ModelFieldsValidator {
             let key = key.as_ref();
             // FIXME: root lookup map can never have list entries
             if let Some(lookup_value) = self.lookup.map.get(key) {
-                match lookup_value {
-                    LookupValue::Field(info) => {
-                        set_field_value(py, value, state, &mut field_results, &self.fields, *info, lookup_type);
-                    }
-                    LookupValue::Complex { fields, lookup_map } => {
-                        perform_complex_lookup(
-                            py,
-                            &self.fields,
-                            &mut field_results,
-                            fields,
-                            lookup_map,
-                            value,
-                            state,
-                            lookup_type,
-                        )?;
-                    }
-                }
+                fill_lookup_value(
+                    py,
+                    &self.fields,
+                    &mut field_results,
+                    lookup_value,
+                    value,
+                    state,
+                    lookup_type,
+                );
                 continue;
             }
 
