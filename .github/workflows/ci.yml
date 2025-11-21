@@ -117,9 +117,8 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
 
-      - run: |
-          cargo llvm-cov clean --workspace --profraw-only --manifest-path ./pydantic-core/Cargo.toml
-          cargo llvm-cov show-env --manifest-path ./pydantic-core/Cargo.toml >> $GITHUB_ENV
+      - name: Set env for coverage collection
+        run: cargo llvm-cov show-env --manifest-path ./pydantic-core/Cargo.toml | xargs -n1 sh -c 'eval echo "$0"' >> $GITHUB_ENV
 
       - name: Install dependencies
         run: uv sync --all-packages --group testing-extra --all-extras
@@ -142,6 +141,9 @@ jobs:
           name: coverage-${{ matrix.os }}-${{ matrix.python-version }}
           path: coverage
           include-hidden-files: true
+
+      - name: Clean rust coverage files (to avoid caching them)
+        run: cargo llvm-cov clean --workspace --profraw-only --manifest-path ./pydantic-core/Cargo.toml
 
   test-plugin:
     name: Test Pydantic plugin
