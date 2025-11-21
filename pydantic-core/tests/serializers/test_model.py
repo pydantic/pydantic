@@ -1284,3 +1284,111 @@ def test_by_alias_and_name_config_interaction(config, runtime, expected) -> None
     )
     s = SchemaSerializer(schema)
     assert s.to_python(Model(1), by_alias=runtime) == expected
+
+
+@pytest.mark.parametrize('config', [True, False, None])
+@pytest.mark.parametrize('runtime', [True, False, None])
+def test_polymorphic_serialization(config: bool, runtime: bool) -> None:
+    class ModelA:
+        def __init__(self, a: int) -> None:
+            self.a = a
+
+    class ModelB(ModelA):
+        def __init__(self, a: int, b: str) -> None:
+            super().__init__(a)
+            self.b = b
+
+    model_config = core_schema.CoreConfig(polymorphic_serialization=config) if config is not None else None
+
+    schema_a = core_schema.model_schema(
+        ModelA,
+        core_schema.model_fields_schema({'a': core_schema.model_field(core_schema.int_schema())}),
+        config=model_config,
+    )
+
+    schema_b = core_schema.model_schema(
+        ModelB,
+        core_schema.model_fields_schema(
+            {
+                'a': core_schema.model_field(core_schema.int_schema()),
+                'b': core_schema.model_field(core_schema.str_schema()),
+            }
+        ),
+    )
+
+    ModelA.__pydantic_serializer__ = SchemaSerializer(schema_a)
+    ModelB.__pydantic_serializer__ = SchemaSerializer(schema_b)
+
+    kwargs = {}
+    if runtime is not None:
+        kwargs['polymorphic_serialization'] = runtime
+
+    assert ModelA.__pydantic_serializer__.to_python(ModelA(123), **kwargs) == {'a': 123}
+    assert ModelA.__pydantic_serializer__.to_json(ModelA(123), **kwargs) == b'{"a":123}'
+
+    polymorphism_enabled = runtime if runtime is not None else config
+    if polymorphism_enabled:
+        assert ModelA.__pydantic_serializer__.to_python(ModelB(123, 'test'), **kwargs) == {'a': 123, 'b': 'test'}
+        assert ModelA.__pydantic_serializer__.to_json(ModelB(123, 'test'), **kwargs) == b'{"a":123,"b":"test"}'
+    else:
+        assert ModelA.__pydantic_serializer__.to_python(ModelB(123, 'test'), **kwargs) == {'a': 123}
+        assert ModelA.__pydantic_serializer__.to_json(ModelB(123, 'test'), **kwargs) == b'{"a":123}'
+
+
+@pytest.mark.parametrize('config', [True, False, None])
+@pytest.mark.parametrize('runtime', [True, False, None])
+def test_polymorphic_serialization_with_model_serializer(config: bool, runtime: bool) -> None:
+    class ModelA:
+        def __init__(self, a: int) -> None:
+            self.a = a
+
+        def serialize(value, info: core_schema.SerializationInfo) -> str:
+            assert info.polymorphic_serialization is runtime
+            return 'ModelA'
+
+    class ModelB(ModelA):
+        def __init__(self, a: int, b: str) -> None:
+            super().__init__(a)
+            self.b = b
+
+        def serialize(value, info: core_schema.SerializationInfo) -> str:
+            assert info.polymorphic_serialization is runtime
+            return 'ModelB'
+
+    model_config = core_schema.CoreConfig(polymorphic_serialization=config) if config is not None else None
+
+    schema_a = core_schema.model_schema(
+        ModelA,
+        core_schema.model_fields_schema({'a': core_schema.model_field(core_schema.int_schema())}),
+        config=model_config,
+        serialization=core_schema.plain_serializer_function_ser_schema(ModelA.serialize, info_arg=True),
+    )
+
+    schema_b = core_schema.model_schema(
+        ModelB,
+        core_schema.model_fields_schema(
+            {
+                'a': core_schema.model_field(core_schema.int_schema()),
+                'b': core_schema.model_field(core_schema.str_schema()),
+            }
+        ),
+        serialization=core_schema.plain_serializer_function_ser_schema(ModelB.serialize, info_arg=True),
+    )
+
+    ModelA.__pydantic_serializer__ = SchemaSerializer(schema_a)
+    ModelB.__pydantic_serializer__ = SchemaSerializer(schema_b)
+
+    kwargs = {}
+    if runtime is not None:
+        kwargs['polymorphic_serialization'] = runtime
+
+    assert ModelA.__pydantic_serializer__.to_python(ModelA(123), **kwargs) == 'ModelA'
+    assert ModelA.__pydantic_serializer__.to_json(ModelA(123), **kwargs) == b'"ModelA"'
+
+    polymorphism_enabled = runtime if runtime is not None else config
+    if polymorphism_enabled:
+        assert ModelA.__pydantic_serializer__.to_python(ModelB(123, 'test'), **kwargs) == 'ModelB'
+        assert ModelA.__pydantic_serializer__.to_json(ModelB(123, 'test'), **kwargs) == b'"ModelB"'
+    else:
+        assert ModelA.__pydantic_serializer__.to_python(ModelB(123, 'test'), **kwargs) == 'ModelA'
+        assert ModelA.__pydantic_serializer__.to_json(ModelB(123, 'test'), **kwargs) == b'"ModelA"'

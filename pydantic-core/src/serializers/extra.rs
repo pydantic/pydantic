@@ -176,6 +176,8 @@ pub(crate) struct Extra<'a, 'py> {
     pub serialize_unknown: bool,
     pub fallback: Option<&'a Bound<'py, PyAny>>,
     pub serialize_as_any: bool,
+    /// Whether `polymorphic_serialization` is globally enabled / disabled for this serialization process
+    pub polymorphic_serialization: Option<bool>,
     pub context: Option<&'a Bound<'py, PyAny>>,
 }
 
@@ -193,6 +195,7 @@ impl<'a, 'py> Extra<'a, 'py> {
         serialize_unknown: bool,
         fallback: Option<&'a Bound<'py, PyAny>>,
         serialize_as_any: bool,
+        polymorphic_serialization: Option<bool>,
         context: Option<&'a Bound<'py, PyAny>>,
     ) -> Self {
         Self {
@@ -207,6 +210,7 @@ impl<'a, 'py> Extra<'a, 'py> {
             serialize_unknown,
             fallback,
             serialize_as_any,
+            polymorphic_serialization,
             context,
         }
     }
@@ -252,6 +256,7 @@ pub(crate) struct ExtraOwned {
     serialize_unknown: bool,
     pub fallback: Option<Py<PyAny>>,
     serialize_as_any: bool,
+    polymorphic_serialization: Option<bool>,
     pub context: Option<Py<PyAny>>,
     include: Option<Py<PyAny>>,
     exclude: Option<Py<PyAny>>,
@@ -303,6 +308,7 @@ impl ExtraOwned {
             serialize_unknown: extra.serialize_unknown,
             fallback: extra.fallback.map(|model| model.clone().into()),
             serialize_as_any: extra.serialize_as_any,
+            polymorphic_serialization: extra.polymorphic_serialization,
             context: extra.context.map(|model| model.clone().into()),
             include: state.include().map(|m| m.clone().into()),
             exclude: state.exclude().map(|m| m.clone().into()),
@@ -322,6 +328,7 @@ impl ExtraOwned {
             serialize_unknown: self.serialize_unknown,
             fallback: self.fallback.as_ref().map(|m| m.bind(py)),
             serialize_as_any: self.serialize_as_any,
+            polymorphic_serialization: self.polymorphic_serialization,
             context: self.context.as_ref().map(|m| m.bind(py)),
         }
     }
