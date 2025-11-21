@@ -1,15 +1,15 @@
 use std::convert::Infallible;
 use std::fmt;
 
+use pyo3::IntoPyObjectExt;
 use pyo3::exceptions::{PyAttributeError, PyTypeError};
 use pyo3::prelude::*;
 use pyo3::types::{PyDict, PyList, PyMapping, PyString};
-use pyo3::IntoPyObjectExt;
 
 use jiter::{JsonObject, JsonValue};
 
 use crate::build_tools::py_schema_err;
-use crate::errors::{py_err_string, ErrorType, LocItem, Location, ToErrorValue, ValError, ValLineError, ValResult};
+use crate::errors::{ErrorType, LocItem, Location, ToErrorValue, ValError, ValLineError, ValResult, py_err_string};
 use crate::input::StringMapping;
 use crate::tools::{mapping_get, py_err};
 

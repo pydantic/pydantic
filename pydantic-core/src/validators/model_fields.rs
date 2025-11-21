@@ -7,15 +7,15 @@ use ahash::AHashSet;
 use jiter::JsonArray;
 use jiter::JsonObject;
 use jiter::JsonValue;
+use pyo3::IntoPyObjectExt;
 use pyo3::exceptions::PyKeyError;
 use pyo3::exceptions::PyValueError;
 use pyo3::intern;
 use pyo3::prelude::*;
 use pyo3::types::{PyDict, PySet, PyString, PyType};
-use pyo3::IntoPyObjectExt;
 
 use crate::build_tools::py_schema_err;
-use crate::build_tools::{is_strict, schema_or_config_same, ExtraBehavior};
+use crate::build_tools::{ExtraBehavior, is_strict, schema_or_config_same};
 use crate::errors::LocItem;
 use crate::errors::{ErrorType, ErrorTypeDefaults, ValError, ValLineError, ValResult};
 use crate::input::ConsumeIterator;
@@ -24,10 +24,10 @@ use crate::lookup_key::LookupKey;
 use crate::lookup_key::LookupKeyCollection;
 use crate::lookup_key::LookupPath;
 use crate::lookup_key::PathItem;
-use crate::tools::new_py_string;
 use crate::tools::SchemaDict;
+use crate::tools::new_py_string;
 
-use super::{build_validator, BuildValidator, CombinedValidator, DefinitionsBuilder, ValidationState, Validator};
+use super::{BuildValidator, CombinedValidator, DefinitionsBuilder, ValidationState, Validator, build_validator};
 
 #[derive(Debug)]
 struct Field {
@@ -166,22 +166,19 @@ impl BuildValidator for ModelFieldsValidator {
                             };
                             match entry {
                                 LookupValue::Complex {
-                                    lookup_map: ref mut nested_map,
-                                    ..
+                                    lookup_map: nested_map, ..
                                 } => nested_map,
                                 LookupValue::Field(_) => unreachable!("just created complex"),
                             }
                         }
                         LookupValue::Complex {
-                            lookup_map: ref mut nested_map,
-                            ..
+                            lookup_map: nested_map, ..
                         } => nested_map,
                     }
                 }
                 Entry::Vacant(entry) => {
                     let LookupValue::Complex {
-                        lookup_map: ref mut nested_map,
-                        ..
+                        lookup_map: nested_map, ..
                     } = entry.insert(LookupValue::Complex {
                         fields: Vec::new(),
                         lookup_map: LookupMap {
@@ -217,8 +214,7 @@ impl BuildValidator for ModelFieldsValidator {
                                             },
                                         };
                                         let LookupValue::Complex {
-                                            lookup_map: ref mut nested_map,
-                                            ..
+                                            lookup_map: nested_map, ..
                                         } = entry
                                         else {
                                             unreachable!()
@@ -226,15 +222,13 @@ impl BuildValidator for ModelFieldsValidator {
                                         nested_map
                                     }
                                     LookupValue::Complex {
-                                        lookup_map: ref mut nested_map,
-                                        ..
+                                        lookup_map: nested_map, ..
                                     } => nested_map,
                                 }
                             }
                             Entry::Vacant(entry) => {
                                 let LookupValue::Complex {
-                                    lookup_map: ref mut nested_map,
-                                    ..
+                                    lookup_map: nested_map, ..
                                 } = entry.insert(LookupValue::Complex {
                                     fields: vec![],
                                     lookup_map: LookupMap {
@@ -262,8 +256,7 @@ impl BuildValidator for ModelFieldsValidator {
                                         },
                                     };
                                     let LookupValue::Complex {
-                                        lookup_map: ref mut nested_map,
-                                        ..
+                                        lookup_map: nested_map, ..
                                     } = entry
                                     else {
                                         unreachable!()
@@ -271,15 +264,13 @@ impl BuildValidator for ModelFieldsValidator {
                                     nested_map
                                 }
                                 LookupValue::Complex {
-                                    lookup_map: ref mut nested_map,
-                                    ..
+                                    lookup_map: nested_map, ..
                                 } => nested_map,
                             }
                         }
                         Entry::Vacant(entry) => {
                             let LookupValue::Complex {
-                                lookup_map: ref mut nested_map,
-                                ..
+                                lookup_map: nested_map, ..
                             } = entry.insert(LookupValue::Complex {
                                 fields: vec![],
                                 lookup_map: LookupMap {
@@ -293,7 +284,6 @@ impl BuildValidator for ModelFieldsValidator {
                             nested_map
                         }
                     },
-                    // FIXME: handle integer cases
                     PathItem::Neg(i) => match nested_map.list.entry(-(*i as i64)) {
                         Entry::Occupied(entry) => {
                             let entry = entry.into_mut();
@@ -307,8 +297,7 @@ impl BuildValidator for ModelFieldsValidator {
                                         },
                                     };
                                     let LookupValue::Complex {
-                                        lookup_map: ref mut nested_map,
-                                        ..
+                                        lookup_map: nested_map, ..
                                     } = entry
                                     else {
                                         unreachable!()
@@ -316,15 +305,13 @@ impl BuildValidator for ModelFieldsValidator {
                                     nested_map
                                 }
                                 LookupValue::Complex {
-                                    lookup_map: ref mut nested_map,
-                                    ..
+                                    lookup_map: nested_map, ..
                                 } => nested_map,
                             }
                         }
                         Entry::Vacant(entry) => {
                             let LookupValue::Complex {
-                                lookup_map: ref mut nested_map,
-                                ..
+                                lookup_map: nested_map, ..
                             } = entry.insert(LookupValue::Complex {
                                 fields: vec![],
                                 lookup_map: LookupMap {
@@ -554,7 +541,7 @@ impl Validator for ModelFieldsValidator {
                             },
                             field_value,
                             field_name.to_string(),
-                        ))
+                        ));
                     }
                 }
             }

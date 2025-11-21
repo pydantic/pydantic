@@ -5,7 +5,7 @@ use std::sync::Arc;
 use crate::py_gc::PyGcTraverse;
 use pyo3::prelude::*;
 use pyo3::types::{PyDict, PyList, PyString, PyTuple};
-use pyo3::{intern, PyTraverseError, PyVisit};
+use pyo3::{PyTraverseError, PyVisit, intern};
 use smallvec::SmallVec;
 
 use crate::build_tools::py_schema_err;
@@ -18,7 +18,7 @@ use crate::tools::SchemaDict;
 use super::custom_error::CustomError;
 use super::literal::LiteralLookup;
 use super::{
-    build_validator, BuildValidator, CombinedValidator, DefinitionsBuilder, Exactness, ValidationState, Validator,
+    BuildValidator, CombinedValidator, DefinitionsBuilder, Exactness, ValidationState, Validator, build_validator,
 };
 
 #[derive(Debug)]
@@ -144,7 +144,7 @@ impl UnionValidator {
                         let new_success_is_best_match: bool =
                             best_match
                                 .as_ref()
-                                .map_or(true, |(_, cur_exactness, cur_fields_set_count)| {
+                                .is_none_or(|(_, cur_exactness, cur_fields_set_count)| {
                                     match (*cur_fields_set_count, new_fields_set_count) {
                                         (Some(cur), Some(new)) if cur != new => cur < new,
                                         _ => *cur_exactness < new_exactness,

@@ -9,15 +9,15 @@ use serde::ser::Error;
 
 use crate::build_tools::py_schema_err;
 use crate::definitions::DefinitionsBuilder;
+use crate::serializers::SerializationState;
 use crate::serializers::errors::unwrap_ser_error;
+use crate::serializers::shared::DoSerialize;
 use crate::serializers::shared::serialize_to_json;
 use crate::serializers::shared::serialize_to_python;
-use crate::serializers::shared::DoSerialize;
-use crate::serializers::SerializationState;
 use crate::tools::SchemaDict;
 
 use super::simple::none_json_key;
-use super::{py_err_se_err, BuildSerializer, CombinedSerializer, Extra, PydanticSerializationError, TypeSerializer};
+use super::{BuildSerializer, CombinedSerializer, Extra, PydanticSerializationError, TypeSerializer, py_err_se_err};
 
 #[derive(Debug, Clone, Eq, PartialEq)]
 pub(super) enum WhenUsed {

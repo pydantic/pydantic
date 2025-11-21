@@ -461,11 +461,7 @@ macro_rules! to_string_render {
 }
 
 fn plural_s<T: From<u8> + PartialEq>(value: T) -> &'static str {
-    if value == 1.into() {
-        ""
-    } else {
-        "s"
-    }
+    if value == 1.into() { "" } else { "s" }
 }
 
 static ERROR_TYPE_LOOKUP: PyOnceLock<AHashMap<String, ErrorType>> = PyOnceLock::new();
@@ -480,112 +476,136 @@ impl ErrorType {
     }
 
     pub fn message_template_python(&self) -> &'static str {
-        #[allow(clippy::match_same_arms)]  // much nicer to have the messages explicitly listed
+        #[allow(clippy::match_same_arms)] // much nicer to have the messages explicitly listed
         match self {
-            Self::NoSuchAttribute {..} => "Object has no attribute '{attribute}'",
-            Self::JsonInvalid {..} => "Invalid JSON: {error}",
-            Self::JsonType {..} => "JSON input should be string, bytes or bytearray",
-            Self::NeedsPythonObject {..} => "Cannot check `{method_name}` when validating from json, use a JsonOrPython validator instead",
-            Self::RecursionLoop {..} => "Recursion error - cyclic reference detected",
-            Self::Missing {..} => "Field required",
-            Self::FrozenField {..} => "Field is frozen",
-            Self::FrozenInstance {..} => "Instance is frozen",
-            Self::ExtraForbidden {..} => "Extra inputs are not permitted",
-            Self::InvalidKey {..} => "Keys should be strings",
-            Self::GetAttributeError {..} => "Error extracting attribute: {error}",
-            Self::ModelType {..} => "Input should be a valid dictionary or instance of {class_name}",
-            Self::ModelAttributesType {..} => "Input should be a valid dictionary or object to extract fields from",
-            Self::DataclassType {..} => "Input should be a dictionary or an instance of {class_name}",
-            Self::DataclassExactType {..} => "Input should be an instance of {class_name}",
-            Self::DefaultFactoryNotCalled {..} => "The default factory uses validated data, but at least one validation error occurred",
-            Self::NoneRequired {..} => "Input should be None",
-            Self::GreaterThan {..} => "Input should be greater than {gt}",
-            Self::GreaterThanEqual {..} => "Input should be greater than or equal to {ge}",
-            Self::LessThan {..} => "Input should be less than {lt}",
-            Self::LessThanEqual {..} => "Input should be less than or equal to {le}",
-            Self::MultipleOf {..} => "Input should be a multiple of {multiple_of}",
-            Self::FiniteNumber {..} => "Input should be a finite number",
-            Self::TooShort {..} => "{field_type} should have at least {min_length} item{expected_plural} after validation, not {actual_length}",
-            Self::TooLong {..} => "{field_type} should have at most {max_length} item{expected_plural} after validation, not {actual_length}",
-            Self::IterableType {..} => "Input should be iterable",
-            Self::IterationError {..} => "Error iterating over object, error: {error}",
-            Self::StringType {..} => "Input should be a valid string",
-            Self::StringSubType {..} => "Input should be a string, not an instance of a subclass of str",
-            Self::StringUnicode {..} => "Input should be a valid string, unable to parse raw data as a unicode string",
-            Self::StringTooShort {..} => "String should have at least {min_length} character{expected_plural}",
-            Self::StringTooLong {..} => "String should have at most {max_length} character{expected_plural}",
-            Self::StringPatternMismatch {..} => "String should match pattern '{pattern}'",
-            Self::Enum {..} => "Input should be {expected}",
-            Self::DictType {..} => "Input should be a valid dictionary",
-            Self::MappingType {..} => "Input should be a valid mapping, error: {error}",
-            Self::ListType {..} => "Input should be a valid list",
-            Self::TupleType {..} => "Input should be a valid tuple",
-            Self::SetType {..} => "Input should be a valid set",
-            Self::SetItemNotHashable {..} => "Set items should be hashable",
-            Self::BoolType {..} => "Input should be a valid boolean",
-            Self::BoolParsing {..} => "Input should be a valid boolean, unable to interpret input",
-            Self::IntType {..} => "Input should be a valid integer",
-            Self::IntParsing {..} => "Input should be a valid integer, unable to parse string as an integer",
-            Self::IntFromFloat {..} => "Input should be a valid integer, got a number with a fractional part",
-            Self::IntParsingSize {..} => "Unable to parse input string as an integer, exceeded maximum size",
-            Self::FloatType {..} => "Input should be a valid number",
-            Self::FloatParsing {..} => "Input should be a valid number, unable to parse string as a number",
-            Self::BytesType {..} => "Input should be a valid bytes",
-            Self::BytesTooShort {..} => "Data should have at least {min_length} byte{expected_plural}",
-            Self::BytesTooLong {..} => "Data should have at most {max_length} byte{expected_plural}",
+            Self::NoSuchAttribute { .. } => "Object has no attribute '{attribute}'",
+            Self::JsonInvalid { .. } => "Invalid JSON: {error}",
+            Self::JsonType { .. } => "JSON input should be string, bytes or bytearray",
+            Self::NeedsPythonObject { .. } => {
+                "Cannot check `{method_name}` when validating from json, use a JsonOrPython validator instead"
+            }
+            Self::RecursionLoop { .. } => "Recursion error - cyclic reference detected",
+            Self::Missing { .. } => "Field required",
+            Self::FrozenField { .. } => "Field is frozen",
+            Self::FrozenInstance { .. } => "Instance is frozen",
+            Self::ExtraForbidden { .. } => "Extra inputs are not permitted",
+            Self::InvalidKey { .. } => "Keys should be strings",
+            Self::GetAttributeError { .. } => "Error extracting attribute: {error}",
+            Self::ModelType { .. } => "Input should be a valid dictionary or instance of {class_name}",
+            Self::ModelAttributesType { .. } => "Input should be a valid dictionary or object to extract fields from",
+            Self::DataclassType { .. } => "Input should be a dictionary or an instance of {class_name}",
+            Self::DataclassExactType { .. } => "Input should be an instance of {class_name}",
+            Self::DefaultFactoryNotCalled { .. } => {
+                "The default factory uses validated data, but at least one validation error occurred"
+            }
+            Self::NoneRequired { .. } => "Input should be None",
+            Self::GreaterThan { .. } => "Input should be greater than {gt}",
+            Self::GreaterThanEqual { .. } => "Input should be greater than or equal to {ge}",
+            Self::LessThan { .. } => "Input should be less than {lt}",
+            Self::LessThanEqual { .. } => "Input should be less than or equal to {le}",
+            Self::MultipleOf { .. } => "Input should be a multiple of {multiple_of}",
+            Self::FiniteNumber { .. } => "Input should be a finite number",
+            Self::TooShort { .. } => {
+                "{field_type} should have at least {min_length} item{expected_plural} after validation, not {actual_length}"
+            }
+            Self::TooLong { .. } => {
+                "{field_type} should have at most {max_length} item{expected_plural} after validation, not {actual_length}"
+            }
+            Self::IterableType { .. } => "Input should be iterable",
+            Self::IterationError { .. } => "Error iterating over object, error: {error}",
+            Self::StringType { .. } => "Input should be a valid string",
+            Self::StringSubType { .. } => "Input should be a string, not an instance of a subclass of str",
+            Self::StringUnicode { .. } => {
+                "Input should be a valid string, unable to parse raw data as a unicode string"
+            }
+            Self::StringTooShort { .. } => "String should have at least {min_length} character{expected_plural}",
+            Self::StringTooLong { .. } => "String should have at most {max_length} character{expected_plural}",
+            Self::StringPatternMismatch { .. } => "String should match pattern '{pattern}'",
+            Self::Enum { .. } => "Input should be {expected}",
+            Self::DictType { .. } => "Input should be a valid dictionary",
+            Self::MappingType { .. } => "Input should be a valid mapping, error: {error}",
+            Self::ListType { .. } => "Input should be a valid list",
+            Self::TupleType { .. } => "Input should be a valid tuple",
+            Self::SetType { .. } => "Input should be a valid set",
+            Self::SetItemNotHashable { .. } => "Set items should be hashable",
+            Self::BoolType { .. } => "Input should be a valid boolean",
+            Self::BoolParsing { .. } => "Input should be a valid boolean, unable to interpret input",
+            Self::IntType { .. } => "Input should be a valid integer",
+            Self::IntParsing { .. } => "Input should be a valid integer, unable to parse string as an integer",
+            Self::IntFromFloat { .. } => "Input should be a valid integer, got a number with a fractional part",
+            Self::IntParsingSize { .. } => "Unable to parse input string as an integer, exceeded maximum size",
+            Self::FloatType { .. } => "Input should be a valid number",
+            Self::FloatParsing { .. } => "Input should be a valid number, unable to parse string as a number",
+            Self::BytesType { .. } => "Input should be a valid bytes",
+            Self::BytesTooShort { .. } => "Data should have at least {min_length} byte{expected_plural}",
+            Self::BytesTooLong { .. } => "Data should have at most {max_length} byte{expected_plural}",
             Self::BytesInvalidEncoding { .. } => "Data should be valid {encoding}: {encoding_error}",
-            Self::ValueError {..} => "Value error, {error}",
-            Self::AssertionError {..} => "Assertion failed, {error}",
-            Self::CustomError {..} => "",  // custom errors are handled separately
-            Self::LiteralError {..} => "Input should be {expected}",
+            Self::ValueError { .. } => "Value error, {error}",
+            Self::AssertionError { .. } => "Assertion failed, {error}",
+            Self::CustomError { .. } => "", // custom errors are handled separately
+            Self::LiteralError { .. } => "Input should be {expected}",
             Self::MissingSentinelError { .. } => "Input should be the 'MISSING' sentinel",
-            Self::DateType {..} => "Input should be a valid date",
-            Self::DateParsing {..} => "Input should be a valid date in the format YYYY-MM-DD, {error}",
-            Self::DateFromDatetimeParsing {..} => "Input should be a valid date or datetime, {error}",
-            Self::DateFromDatetimeInexact {..} => "Datetimes provided to dates should have zero time - e.g. be exact dates",
-            Self::DatePast {..} => "Date should be in the past",
-            Self::DateFuture {..} => "Date should be in the future",
-            Self::TimeType {..} => "Input should be a valid time",
-            Self::TimeParsing {..} => "Input should be in a valid time format, {error}",
-            Self::DatetimeType {..} => "Input should be a valid datetime",
-            Self::DatetimeParsing {..} => "Input should be a valid datetime, {error}",
-            Self::DatetimeObjectInvalid {..} => "Invalid datetime object, got {error}",
-            Self::DatetimeFromDateParsing {..} => "Input should be a valid datetime or date, {error}",
-            Self::DatetimePast {..} => "Input should be in the past",
-            Self::DatetimeFuture {..} => "Input should be in the future",
-            Self::TimezoneNaive {..} => "Input should not have timezone info",
-            Self::TimezoneAware {..} => "Input should have timezone info",
-            Self::TimezoneOffset {..} => "Timezone offset of {tz_expected} required, got {tz_actual}",
-            Self::TimeDeltaType {..} => "Input should be a valid timedelta",
-            Self::TimeDeltaParsing {..} => "Input should be a valid timedelta, {error}",
-            Self::FrozenSetType {..} => "Input should be a valid frozenset",
-            Self::IsInstanceOf {..} => "Input should be an instance of {class}",
-            Self::IsSubclassOf {..} => "Input should be a subclass of {class}",
-            Self::CallableType {..} => "Input should be callable",
-            Self::UnionTagInvalid {..} => "Input tag '{tag}' found using {discriminator} does not match any of the expected tags: {expected_tags}",
-            Self::UnionTagNotFound {..} => "Unable to extract tag using discriminator {discriminator}",
-            Self::ArgumentsType {..} => "Arguments must be a tuple, list or a dictionary",
-            Self::MissingArgument {..} => "Missing required argument",
-            Self::UnexpectedKeywordArgument {..} => "Unexpected keyword argument",
-            Self::MissingKeywordOnlyArgument {..} => "Missing required keyword only argument",
-            Self::UnexpectedPositionalArgument {..} => "Unexpected positional argument",
-            Self::MissingPositionalOnlyArgument {..} => "Missing required positional only argument",
-            Self::MultipleArgumentValues {..} => "Got multiple values for argument",
-            Self::UrlType {..} => "URL input should be a string or URL",
-            Self::UrlParsing {..} => "Input should be a valid URL, {error}",
-            Self::UrlSyntaxViolation {..} => "Input violated strict URL syntax rules, {error}",
-            Self::UrlTooLong {..} => "URL should have at most {max_length} character{expected_plural}",
-            Self::UrlScheme {..} => "URL scheme should be {expected_schemes}",
-            Self::UuidType {..} => "UUID input should be a string, bytes or UUID object",
-            Self::UuidParsing {..} => "Input should be a valid UUID, {error}",
-            Self::UuidVersion {..} => "UUID version {expected_version} expected",
-            Self::DecimalType {..} => "Decimal input should be an integer, float, string or Decimal object",
-            Self::DecimalParsing {..} => "Input should be a valid decimal",
-            Self::DecimalMaxDigits {..} => "Decimal input should have no more than {max_digits} digit{expected_plural} in total",
-            Self::DecimalMaxPlaces {..} => "Decimal input should have no more than {decimal_places} decimal place{expected_plural}",
-            Self::DecimalWholeDigits {..} => "Decimal input should have no more than {whole_digits} digit{expected_plural} before the decimal point",
-            Self::ComplexType {..} => "Input should be a valid python complex object, a number, or a valid complex string following the rules at https://docs.python.org/3/library/functions.html#complex",
-            Self::ComplexStrParsing {..} => "Input should be a valid complex string following the rules at https://docs.python.org/3/library/functions.html#complex",
+            Self::DateType { .. } => "Input should be a valid date",
+            Self::DateParsing { .. } => "Input should be a valid date in the format YYYY-MM-DD, {error}",
+            Self::DateFromDatetimeParsing { .. } => "Input should be a valid date or datetime, {error}",
+            Self::DateFromDatetimeInexact { .. } => {
+                "Datetimes provided to dates should have zero time - e.g. be exact dates"
+            }
+            Self::DatePast { .. } => "Date should be in the past",
+            Self::DateFuture { .. } => "Date should be in the future",
+            Self::TimeType { .. } => "Input should be a valid time",
+            Self::TimeParsing { .. } => "Input should be in a valid time format, {error}",
+            Self::DatetimeType { .. } => "Input should be a valid datetime",
+            Self::DatetimeParsing { .. } => "Input should be a valid datetime, {error}",
+            Self::DatetimeObjectInvalid { .. } => "Invalid datetime object, got {error}",
+            Self::DatetimeFromDateParsing { .. } => "Input should be a valid datetime or date, {error}",
+            Self::DatetimePast { .. } => "Input should be in the past",
+            Self::DatetimeFuture { .. } => "Input should be in the future",
+            Self::TimezoneNaive { .. } => "Input should not have timezone info",
+            Self::TimezoneAware { .. } => "Input should have timezone info",
+            Self::TimezoneOffset { .. } => "Timezone offset of {tz_expected} required, got {tz_actual}",
+            Self::TimeDeltaType { .. } => "Input should be a valid timedelta",
+            Self::TimeDeltaParsing { .. } => "Input should be a valid timedelta, {error}",
+            Self::FrozenSetType { .. } => "Input should be a valid frozenset",
+            Self::IsInstanceOf { .. } => "Input should be an instance of {class}",
+            Self::IsSubclassOf { .. } => "Input should be a subclass of {class}",
+            Self::CallableType { .. } => "Input should be callable",
+            Self::UnionTagInvalid { .. } => {
+                "Input tag '{tag}' found using {discriminator} does not match any of the expected tags: {expected_tags}"
+            }
+            Self::UnionTagNotFound { .. } => "Unable to extract tag using discriminator {discriminator}",
+            Self::ArgumentsType { .. } => "Arguments must be a tuple, list or a dictionary",
+            Self::MissingArgument { .. } => "Missing required argument",
+            Self::UnexpectedKeywordArgument { .. } => "Unexpected keyword argument",
+            Self::MissingKeywordOnlyArgument { .. } => "Missing required keyword only argument",
+            Self::UnexpectedPositionalArgument { .. } => "Unexpected positional argument",
+            Self::MissingPositionalOnlyArgument { .. } => "Missing required positional only argument",
+            Self::MultipleArgumentValues { .. } => "Got multiple values for argument",
+            Self::UrlType { .. } => "URL input should be a string or URL",
+            Self::UrlParsing { .. } => "Input should be a valid URL, {error}",
+            Self::UrlSyntaxViolation { .. } => "Input violated strict URL syntax rules, {error}",
+            Self::UrlTooLong { .. } => "URL should have at most {max_length} character{expected_plural}",
+            Self::UrlScheme { .. } => "URL scheme should be {expected_schemes}",
+            Self::UuidType { .. } => "UUID input should be a string, bytes or UUID object",
+            Self::UuidParsing { .. } => "Input should be a valid UUID, {error}",
+            Self::UuidVersion { .. } => "UUID version {expected_version} expected",
+            Self::DecimalType { .. } => "Decimal input should be an integer, float, string or Decimal object",
+            Self::DecimalParsing { .. } => "Input should be a valid decimal",
+            Self::DecimalMaxDigits { .. } => {
+                "Decimal input should have no more than {max_digits} digit{expected_plural} in total"
+            }
+            Self::DecimalMaxPlaces { .. } => {
+                "Decimal input should have no more than {decimal_places} decimal place{expected_plural}"
+            }
+            Self::DecimalWholeDigits { .. } => {
+                "Decimal input should have no more than {whole_digits} digit{expected_plural} before the decimal point"
+            }
+            Self::ComplexType { .. } => {
+                "Input should be a valid python complex object, a number, or a valid complex string following the rules at https://docs.python.org/3/library/functions.html#complex"
+            }
+            Self::ComplexStrParsing { .. } => {
+                "Input should be a valid complex string following the rules at https://docs.python.org/3/library/functions.html#complex"
+            }
         }
     }
 

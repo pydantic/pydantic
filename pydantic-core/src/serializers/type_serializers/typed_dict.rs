@@ -8,10 +8,10 @@ use pyo3::types::{PyDict, PyString};
 use ahash::AHashMap;
 
 use crate::build_tools::py_schema_err;
-use crate::build_tools::{py_schema_error_type, schema_or_config, ExtraBehavior};
+use crate::build_tools::{ExtraBehavior, py_schema_error_type, schema_or_config};
 use crate::definitions::DefinitionsBuilder;
-use crate::serializers::shared::TypeSerializer;
 use crate::serializers::SerializationState;
+use crate::serializers::shared::TypeSerializer;
 use crate::tools::SchemaDict;
 
 use super::{BuildSerializer, CombinedSerializer, ComputedFields, FieldsMode, GeneralFieldsSerializer, SerField};

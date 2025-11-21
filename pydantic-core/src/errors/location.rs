@@ -138,7 +138,7 @@ impl Location {
 
     pub fn with_outer(&mut self, loc_item: LocItem) {
         match self {
-            Self::List(ref mut loc) => loc.push(loc_item),
+            Self::List(loc) => loc.push(loc_item),
             Self::Empty => {
                 *self = Self::new_some(loc_item);
             }

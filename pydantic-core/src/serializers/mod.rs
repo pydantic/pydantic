@@ -1,6 +1,6 @@
 use std::fmt::Debug;
-use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::Arc;
+use std::sync::atomic::{AtomicUsize, Ordering};
 
 use pyo3::prelude::*;
 use pyo3::types::{PyBytes, PyDict, PyTuple, PyType};
@@ -13,8 +13,8 @@ use crate::py_gc::PyGcTraverse;
 pub(crate) use config::{BytesMode, SerializationConfig};
 pub use errors::{PydanticSerializationError, PydanticSerializationUnexpectedValue};
 pub(crate) use extra::{Extra, SerMode, SerializationState, WarningsMode};
-use shared::to_json_bytes;
 pub use shared::CombinedSerializer;
+use shared::to_json_bytes;
 
 mod computed_fields;
 mod config;

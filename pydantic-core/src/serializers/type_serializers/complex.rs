@@ -2,13 +2,13 @@ use std::borrow::Cow;
 use std::sync::Arc;
 
 use pyo3::types::{PyComplex, PyDict};
-use pyo3::{prelude::*, IntoPyObjectExt};
+use pyo3::{IntoPyObjectExt, prelude::*};
 
 use crate::build_tools::LazyLock;
 use crate::definitions::DefinitionsBuilder;
 use crate::serializers::SerializationState;
 
-use super::{infer_serialize, infer_to_python, BuildSerializer, CombinedSerializer, SerMode, TypeSerializer};
+use super::{BuildSerializer, CombinedSerializer, SerMode, TypeSerializer, infer_serialize, infer_to_python};
 
 #[derive(Debug, Clone)]
 pub struct ComplexSerializer {}

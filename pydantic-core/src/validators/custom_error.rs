@@ -11,7 +11,7 @@ use crate::input::Input;
 use crate::tools::SchemaDict;
 
 use super::validation_state::ValidationState;
-use super::{build_validator, BuildValidator, CombinedValidator, DefinitionsBuilder, Validator};
+use super::{BuildValidator, CombinedValidator, DefinitionsBuilder, Validator, build_validator};
 
 #[derive(Debug, Clone)]
 pub enum CustomError {
@@ -53,8 +53,8 @@ impl CustomError {
 
     pub fn as_val_error(&self, input: impl ToErrorValue) -> ValError {
         match self {
-            CustomError::KnownError(ref known_error) => known_error.clone().into_val_error(input),
-            CustomError::Custom(ref custom_error) => custom_error.clone().into_val_error(input),
+            CustomError::KnownError(known_error) => known_error.clone().into_val_error(input),
+            CustomError::Custom(custom_error) => custom_error.clone().into_val_error(input),
         }
     }
 }

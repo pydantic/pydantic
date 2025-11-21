@@ -3,20 +3,20 @@ use std::sync::Arc;
 
 use pyo3::exceptions::PyTypeError;
 use pyo3::types::{PyDict, PySet, PyString, PyTuple, PyType};
-use pyo3::{ffi, BoundObject, IntoPyObjectExt};
+use pyo3::{BoundObject, IntoPyObjectExt, ffi};
 use pyo3::{intern, prelude::*};
 
 use super::function::convert_err;
 use super::validation_state::Exactness;
 use super::{
-    build_validator, BuildValidator, CombinedValidator, DefinitionsBuilder, Extra, ValidationState, Validator,
+    BuildValidator, CombinedValidator, DefinitionsBuilder, Extra, ValidationState, Validator, build_validator,
 };
+use crate::PydanticUndefinedType;
 use crate::build_tools::py_schema_err;
 use crate::build_tools::schema_or_config_same;
 use crate::errors::{ErrorType, ErrorTypeDefaults, ValError, ValResult};
-use crate::input::{input_as_python_instance, py_error_on_minusone, Input};
-use crate::tools::{py_err, SchemaDict};
-use crate::PydanticUndefinedType;
+use crate::input::{Input, input_as_python_instance, py_error_on_minusone};
+use crate::tools::{SchemaDict, py_err};
 
 const ROOT_FIELD: &str = "root";
 const DUNDER_DICT: &str = "__dict__";
