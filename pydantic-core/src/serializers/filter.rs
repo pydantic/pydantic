@@ -40,13 +40,13 @@ fn map_negative_indices<'py>(
     len: Option<usize>,
 ) -> PyResult<Bound<'py, PyAny>> {
     let py = include_or_exclude.py();
-    if let Ok(exclude_dict) = include_or_exclude.downcast::<PyDict>() {
+    if let Ok(exclude_dict) = include_or_exclude.cast::<PyDict>() {
         let out = PyDict::new(py);
         for (k, v) in exclude_dict.iter() {
             out.set_item(map_negative_index(&k, len)?, v)?;
         }
         Ok(out.into_any())
-    } else if let Ok(exclude_set) = include_or_exclude.downcast::<PySet>() {
+    } else if let Ok(exclude_set) = include_or_exclude.cast::<PySet>() {
         let mut values = Vec::with_capacity(exclude_set.len());
         for v in exclude_set.iter() {
             values.push(map_negative_index(&v, len)?);
@@ -79,7 +79,7 @@ impl SchemaFilter<usize> {
                 if value.is_none() {
                     Ok(None)
                 } else {
-                    let py_set = value.downcast::<PySet>()?;
+                    let py_set = value.cast::<PySet>()?;
                     let mut set: AHashSet<usize> = AHashSet::with_capacity(py_set.len());
 
                     for item in py_set {
@@ -117,7 +117,7 @@ impl SchemaFilter<isize> {
                 if value.is_none() {
                     Ok(None)
                 } else {
-                    let py_set = value.downcast::<PySet>()?;
+                    let py_set = value.cast::<PySet>()?;
                     let mut set: AHashSet<isize> = AHashSet::with_capacity(py_set.len());
 
                     for item in py_set.iter() {
@@ -160,7 +160,7 @@ trait FilterLogic<T: Eq + Copy> {
         if let Some(exclude) = exclude {
             if exclude.is_none() {
                 // Do nothing; place this check at the top for performance in the common case
-            } else if let Ok(exclude_dict) = exclude.downcast::<PyDict>() {
+            } else if let Ok(exclude_dict) = exclude.cast::<PyDict>() {
                 let op_exc_value = merge_all_value(exclude_dict, py_key)?;
                 if let Some(exc_value) = op_exc_value {
                     if is_ellipsis_like(&exc_value) {
@@ -171,7 +171,7 @@ trait FilterLogic<T: Eq + Copy> {
                     // we want to return `Some((..., Some(next_exclude))`
                     next_exclude = Some(exc_value);
                 }
-            } else if let Ok(exclude_set) = exclude.downcast::<PySet>() {
+            } else if let Ok(exclude_set) = exclude.cast::<PySet>() {
                 if exclude_set.contains(py_key)? || exclude_set.contains(intern!(exclude_set.py(), "__all__"))? {
                     // index is in the exclude set, we return Ok(None) to omit this index
                     return Ok(None);
@@ -188,7 +188,7 @@ trait FilterLogic<T: Eq + Copy> {
         if let Some(include) = include {
             if include.is_none() {
                 // Do nothing; place this check at the top for performance in the common case
-            } else if let Ok(include_dict) = include.downcast::<PyDict>() {
+            } else if let Ok(include_dict) = include.cast::<PyDict>() {
                 let op_inc_value = merge_all_value(include_dict, py_key)?;
 
                 if let Some(inc_value) = op_inc_value {
@@ -203,7 +203,7 @@ trait FilterLogic<T: Eq + Copy> {
                     // this index should be omitted
                     return Ok(None);
                 }
-            } else if let Ok(include_set) = include.downcast::<PySet>() {
+            } else if let Ok(include_set) = include.cast::<PySet>() {
                 if include_set.contains(py_key)? || include_set.contains(intern!(include_set.py(), "__all__"))? {
                     return Ok(Some((None, next_exclude)));
                 } else if !self.explicit_include(int_key) {
@@ -318,7 +318,7 @@ where
 /// detect both ellipsis and `True` to be compatible with pydantic V1
 fn is_ellipsis_like(v: &Bound<'_, PyAny>) -> bool {
     v.is(v.py().Ellipsis())
-        || match v.downcast::<PyBool>() {
+        || match v.cast::<PyBool>() {
             Ok(b) => b.is_true(),
             Err(_) => false,
         }
@@ -349,9 +349,9 @@ fn merge_all_value<'py>(
 }
 
 fn as_dict<'py>(value: &Bound<'py, PyAny>) -> PyResult<Bound<'py, PyDict>> {
-    if let Ok(dict) = value.downcast::<PyDict>() {
+    if let Ok(dict) = value.cast::<PyDict>() {
         dict.copy()
-    } else if let Ok(set) = value.downcast::<PySet>() {
+    } else if let Ok(set) = value.cast::<PySet>() {
         let py = value.py();
         let dict = PyDict::new(py);
         for item in set.iter() {
@@ -367,7 +367,7 @@ fn as_dict<'py>(value: &Bound<'py, PyAny>) -> PyResult<Bound<'py, PyDict>> {
 
 fn merge_dicts<'py>(item_dict: &Bound<'py, PyDict>, all_value: &Bound<'py, PyAny>) -> PyResult<Bound<'py, PyDict>> {
     let item_dict = item_dict.copy()?;
-    if let Ok(all_dict) = all_value.downcast::<PyDict>() {
+    if let Ok(all_dict) = all_value.cast::<PyDict>() {
         for (all_key, all_value) in all_dict.iter() {
             if let Some(item_value) = item_dict.get_item(&all_key)? {
                 if is_ellipsis_like(&item_value) {
@@ -382,7 +382,7 @@ fn merge_dicts<'py>(item_dict: &Bound<'py, PyDict>, all_value: &Bound<'py, PyAny
                 item_dict.set_item(all_key, all_value)?;
             }
         }
-    } else if let Ok(set) = all_value.downcast::<PySet>() {
+    } else if let Ok(set) = all_value.cast::<PySet>() {
         for item in set.iter() {
             if !item_dict.contains(&item)? {
                 item_dict.set_item(item, set.py().Ellipsis())?;

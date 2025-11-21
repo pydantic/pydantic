@@ -3,6 +3,14 @@ import os
 import pickle
 
 import pytest
+from typing_extensions import (
+    get_args,
+    get_origin,
+    get_type_hints,
+)
+from typing_inspection import typing_objects
+from typing_inspection.introspection import UNKNOWN, AnnotationSource, inspect_annotation
+
 from pydantic_core import CoreConfig, CoreSchema, CoreSchemaType, PydanticUndefined, core_schema
 from pydantic_core._pydantic_core import (
     SchemaError,
@@ -12,13 +20,6 @@ from pydantic_core._pydantic_core import (
     build_info,
     build_profile,
 )
-from typing_extensions import (  # noqa: UP035 (https://github.com/astral-sh/ruff/pull/18476)
-    get_args,
-    get_origin,
-    get_type_hints,
-)
-from typing_inspection import typing_objects
-from typing_inspection.introspection import UNKNOWN, AnnotationSource, inspect_annotation
 
 
 @pytest.mark.parametrize('obj', [ValidationError, SchemaValidator, SchemaError])

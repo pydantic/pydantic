@@ -154,3 +154,70 @@ def test_string_complex():
     assert v.validate_strings('+1.23e-4-5.67e+8J') == complex(1.23e-4, -5.67e8)
     with pytest.raises(ValidationError, match=re.escape(EXPECTED_PARSE_ERROR_MESSAGE)):
         v.validate_strings("{'real': 1, 'imag': 0}")
+
+
+class ComplexWithComplex:
+    """Object that defines __complex__() method"""
+
+    def __init__(self, value):
+        self.value = value
+
+    def __complex__(self):
+        return complex(self.value, 0)
+
+
+class ComplexWithFloat:
+    """Object that defines __float__() method"""
+
+    def __init__(self, value):
+        self.value = value
+
+    def __float__(self):
+        return float(self.value)
+
+
+class ComplexWithIndex:
+    """Object that defines __index__() method"""
+
+    def __init__(self, value):
+        self.value = value
+
+    def __index__(self):
+        return int(self.value)
+
+
+@pytest.mark.parametrize(
+    'input_value,expected',
+    [
+        (ComplexWithComplex(5), complex(5, 0)),
+        (ComplexWithComplex(3.14), complex(3.14, 0)),
+        (ComplexWithFloat(7), complex(7, 0)),
+        (ComplexWithFloat(2.5), complex(2.5, 0)),
+        (ComplexWithIndex(10), complex(10, 0)),
+        (ComplexWithIndex(42), complex(42, 0)),
+    ],
+    ids=repr,
+)
+def test_complex_with_special_methods(input_value, expected):
+    """Test that objects with __complex__(), __float__(), or __index__() are accepted"""
+    v = SchemaValidator(cs.complex_schema())
+    assert v.validate_python(input_value) == expected
+
+
+@pytest.mark.parametrize(
+    'input_value,expected',
+    [
+        (ComplexWithComplex(5), Err(EXPECTED_TYPE_ERROR_PY_STRICT_MESSAGE)),
+        (ComplexWithFloat(7), Err(EXPECTED_TYPE_ERROR_PY_STRICT_MESSAGE)),
+        (ComplexWithIndex(10), Err(EXPECTED_TYPE_ERROR_PY_STRICT_MESSAGE)),
+    ],
+    ids=repr,
+)
+def test_complex_with_special_methods_strict(input_value, expected):
+    """Test that objects with __complex__(), __float__(), or __index__() are rejected in strict mode"""
+    v = SchemaValidator(cs.complex_schema(strict=True))
+    if isinstance(expected, Err):
+        with pytest.raises(ValidationError, match=re.escape(expected.message)):
+            v.validate_python(input_value)
+    else:
+        assert v.validate_python(input_value) == expected

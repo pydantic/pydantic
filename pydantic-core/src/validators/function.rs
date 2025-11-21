@@ -3,21 +3,21 @@ use std::sync::Arc;
 use pyo3::exceptions::{PyAssertionError, PyValueError};
 use pyo3::prelude::*;
 use pyo3::types::{PyAny, PyDict, PyString};
-use pyo3::{intern, PyTraverseError, PyVisit};
+use pyo3::{PyTraverseError, PyVisit, intern};
 
+use crate::PydanticUseDefault;
 use crate::errors::{
     ErrorType, PydanticCustomError, PydanticKnownError, PydanticOmit, ToErrorValue, ValError, ValResult,
     ValidationError,
 };
 use crate::input::Input;
 use crate::py_gc::PyGcTraverse;
-use crate::tools::{function_name, safe_repr, SchemaDict};
-use crate::PydanticUseDefault;
+use crate::tools::{SchemaDict, function_name, safe_repr};
 
 use super::generator::InternalValidator;
 use super::{
-    build_validator, BuildValidator, CombinedValidator, DefinitionsBuilder, Extra, InputType, ValidationState,
-    Validator,
+    BuildValidator, CombinedValidator, DefinitionsBuilder, Extra, InputType, ValidationState, Validator,
+    build_validator,
 };
 
 struct FunctionInfo {

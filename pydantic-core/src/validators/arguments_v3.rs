@@ -9,7 +9,7 @@ use ahash::AHashSet;
 use pyo3::IntoPyObjectExt;
 
 use crate::build_tools::py_schema_err;
-use crate::build_tools::{schema_or_config_same, ExtraBehavior};
+use crate::build_tools::{ExtraBehavior, schema_or_config_same};
 use crate::errors::LocItem;
 use crate::errors::{ErrorTypeDefaults, ValError, ValLineError, ValResult};
 use crate::input::ConsumeIterator;
@@ -20,7 +20,7 @@ use crate::lookup_key::LookupKeyCollection;
 use crate::tools::SchemaDict;
 
 use super::validation_state::ValidationState;
-use super::{build_validator, BuildValidator, CombinedValidator, DefinitionsBuilder, Validator};
+use super::{BuildValidator, CombinedValidator, DefinitionsBuilder, Validator, build_validator};
 
 #[derive(Debug, PartialEq)]
 enum ParameterMode {
@@ -97,7 +97,7 @@ impl BuildValidator for ArgumentsV3Validator {
         let mut names: AHashSet<String> = AHashSet::with_capacity(arguments_schema.len());
 
         for arg in arguments_schema.iter() {
-            let arg = arg.downcast::<PyDict>()?;
+            let arg = arg.cast::<PyDict>()?;
 
             let py_name: Bound<PyString> = arg.get_as_req(intern!(py, "name"))?;
             let name = py_name.to_string();
@@ -370,7 +370,7 @@ impl ArgumentsV3Validator {
                     ParameterMode::VarKwargsUnpackedTypedDict => {
                         match parameter.validator.validate(py, dict_value.borrow_input(), state) {
                             Ok(value) => {
-                                output_kwargs.update(value.downcast_bound::<PyDict>(py).unwrap().as_mapping())?;
+                                output_kwargs.update(value.cast_bound::<PyDict>(py).unwrap().as_mapping())?;
                             }
                             Err(ValError::LineErrors(line_errors)) => {
                                 errors.extend(
@@ -421,7 +421,7 @@ impl ArgumentsV3Validator {
                     ParameterMode::VarKwargsUnpackedTypedDict => {
                         match parameter.validator.validate(py, PyDict::new(py).borrow_input(), state) {
                             Ok(value) => {
-                                output_kwargs.update(value.downcast_bound::<PyDict>(py).unwrap().as_mapping())?;
+                                output_kwargs.update(value.cast_bound::<PyDict>(py).unwrap().as_mapping())?;
                             }
                             Err(ValError::LineErrors(line_errors)) => {
                                 errors.extend(
@@ -742,7 +742,7 @@ impl ArgumentsV3Validator {
                 .validate(py, remaining_kwargs.as_any(), state)
             {
                 Ok(value) => {
-                    output_kwargs.update(value.downcast_bound::<PyDict>(py).unwrap().as_mapping())?;
+                    output_kwargs.update(value.cast_bound::<PyDict>(py).unwrap().as_mapping())?;
                 }
                 Err(ValError::LineErrors(line_errors)) => {
                     errors.extend(line_errors);

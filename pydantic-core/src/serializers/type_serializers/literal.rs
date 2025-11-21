@@ -12,11 +12,11 @@ use serde::Serialize;
 use crate::build_tools::py_schema_err;
 use crate::definitions::DefinitionsBuilder;
 use crate::serializers::SerializationState;
-use crate::tools::{extract_i64, SchemaDict};
+use crate::tools::SchemaDict;
 
 use super::{
-    infer_json_key, infer_serialize, infer_to_python, py_err_se_err, BuildSerializer, CombinedSerializer, SerMode,
-    TypeSerializer,
+    BuildSerializer, CombinedSerializer, SerMode, TypeSerializer, infer_json_key, infer_serialize, infer_to_python,
+    py_err_se_err,
 };
 
 #[derive(Debug)]
@@ -47,11 +47,11 @@ impl BuildSerializer for LiteralSerializer {
         let mut repr_args: Vec<String> = Vec::new();
         for item in expected {
             repr_args.push(item.repr()?.extract()?);
-            if let Ok(bool) = item.downcast::<PyBool>() {
+            if let Ok(bool) = item.cast::<PyBool>() {
                 expected_py.append(bool)?;
-            } else if let Some(int) = extract_i64(&item) {
+            } else if let Ok(int) = item.extract() {
                 expected_int.insert(int);
-            } else if let Ok(py_str) = item.downcast::<PyString>() {
+            } else if let Ok(py_str) = item.cast::<PyString>() {
                 expected_str.insert(py_str.to_str()?.to_string());
             } else {
                 expected_py.append(item)?;
@@ -84,14 +84,14 @@ impl LiteralSerializer {
     fn check<'py>(&self, value: &Bound<'py, PyAny>, state: &SerializationState<'_, 'py>) -> PyResult<OutputValue<'py>> {
         if state.check.enabled() {
             if !self.expected_int.is_empty() && !value.is_instance_of::<PyBool>() {
-                if let Some(int) = extract_i64(value) {
+                if let Ok(int) = value.extract() {
                     if self.expected_int.contains(&int) {
                         return Ok(OutputValue::OkInt(int));
                     }
                 }
             }
             if !self.expected_str.is_empty() {
-                if let Ok(py_str) = value.downcast::<PyString>() {
+                if let Ok(py_str) = value.cast::<PyString>() {
                     let s = py_str.to_str()?;
                     if self.expected_str.contains(s) {
                         return Ok(OutputValue::OkStr(PyString::new(value.py(), s)));

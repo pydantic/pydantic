@@ -1,9 +1,13 @@
+use std::num::NonZeroUsize;
 use std::sync::Arc;
+use std::sync::{Mutex, PoisonError};
 
+use lru::LruCache;
+use pyo3::IntoPyObjectExt;
 use pyo3::intern;
 use pyo3::prelude::*;
+use pyo3::sync::MutexExt;
 use pyo3::types::{PyDict, PyString};
-use pyo3::IntoPyObjectExt;
 use regex::Regex;
 
 use crate::build_tools::LazyLock;
@@ -242,6 +246,12 @@ impl StrConstrainedValidator {
     }
 }
 
+// A shared LRU cache for compiled regex objects.
+// NOTE: We could push things even further by using an Arc over the `Regex` instances, but this is largely sufficient to avoid
+// memory consumption issues.
+static REGEX_CACHE: LazyLock<Mutex<LruCache<String, Regex>>> =
+    LazyLock::new(|| Mutex::new(LruCache::new(NonZeroUsize::new(50).unwrap())));
+
 #[derive(Debug, Clone)]
 struct Pattern {
     pattern: String,
@@ -290,7 +300,17 @@ impl Pattern {
         } else {
             let engine = match engine {
                 RegexEngine::RUST_REGEX => {
-                    RegexEngine::RustRegex(Regex::new(&pattern_str).map_err(|e| py_schema_error_type!("{}", e))?)
+                    let lock_cache = || REGEX_CACHE.lock_py_attached(py).unwrap_or_else(PoisonError::into_inner);
+                    let re_pattern = if let Some(re_pattern) = lock_cache().get(&pattern_str) {
+                        re_pattern.clone()
+                    } else {
+                        // compile the pattern outside of the lock so that other threads can use the cache while we compile
+                        let pattern = Regex::new(&pattern_str).map_err(|e| py_schema_error_type!("{}", e))?;
+                        // use get_or_insert to allow the possibility another thread raced to compile the same pattern
+                        lock_cache().get_or_insert(pattern_str.clone(), || pattern).clone()
+                    };
+
+                    RegexEngine::RustRegex(re_pattern)
                 }
                 RegexEngine::PYTHON_RE => RegexEngine::PythonRe(re_compile.call1((pattern,))?.into()),
                 _ => return Err(py_schema_error_type!("Invalid regex engine: {}", engine)),

@@ -172,7 +172,7 @@ class ModelMetaclass(ABCMeta):
 
             cls.__pydantic_setattr_handlers__ = {}
 
-            cls.__pydantic_decorators__ = DecoratorInfos.build(cls)
+            cls.__pydantic_decorators__ = DecoratorInfos.build(cls, replace_wrapped_methods=True)
             cls.__pydantic_decorators__.update_from_config(config_wrapper)
 
             # Use the getattr below to grab the __parameters__ from the `typing.Generic` parent class

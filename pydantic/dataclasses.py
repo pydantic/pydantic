@@ -11,7 +11,7 @@ from warnings import warn
 
 from typing_extensions import TypeGuard, dataclass_transform
 
-from ._internal import _config, _decorators, _namespace_utils, _typing_extra
+from ._internal import _config, _decorators, _mock_val_ser, _namespace_utils, _typing_extra
 from ._internal import _dataclasses as _pydantic_dataclasses
 from ._migration import getattr_migration
 from .config import ConfigDict
@@ -183,7 +183,7 @@ def dataclass(
         # if config is not explicitly provided, try to read it from the type
         config_dict = config if config is not None else getattr(cls, '__pydantic_config__', None)
         config_wrapper = _config.ConfigWrapper(config_dict)
-        decorators = _decorators.DecoratorInfos.build(cls)
+        decorators = _decorators.DecoratorInfos.build(cls, replace_wrapped_methods=True)
         decorators.update_from_config(config_wrapper)
 
         # Keep track of the original __doc__ so that we can restore it after applying the dataclasses decorator
@@ -367,7 +367,7 @@ def rebuild_dataclass(
         return None
 
     for attr in ('__pydantic_core_schema__', '__pydantic_validator__', '__pydantic_serializer__'):
-        if attr in cls.__dict__:
+        if attr in cls.__dict__ and not isinstance(getattr(cls, attr), _mock_val_ser.MockValSer):
             # Deleting the validator/serializer is necessary as otherwise they can get reused in
             # pydantic-core. Same applies for the core schema that can be reused in schema generation.
             delattr(cls, attr)

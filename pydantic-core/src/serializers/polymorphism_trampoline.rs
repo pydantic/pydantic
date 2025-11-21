@@ -3,11 +3,11 @@ use std::{borrow::Cow, sync::Arc};
 use pyo3::{prelude::*, types::PyType};
 
 use crate::serializers::{
+    CombinedSerializer, SerializationState,
     errors::unwrap_ser_error,
     extra::SerCheck,
     infer::call_pydantic_serializer,
-    shared::{serialize_to_json, serialize_to_python, DoSerialize, TypeSerializer},
-    CombinedSerializer, SerializationState,
+    shared::{DoSerialize, TypeSerializer, serialize_to_json, serialize_to_python},
 };
 
 /// The polymorphism trampoline detects subclasses of its target type and dispatches to their
@@ -36,8 +36,6 @@ impl PolymorphismTrampoline {
     }
 
     fn is_subclass(&self, value: &Bound<'_, PyAny>) -> PyResult<bool> {
-        println!("PolymorphismTrampoline: checking subclass for {:?}", value);
-        println!("PolymorphismTrampoline: target class {:?}", self.class.bind(value.py()));
         Ok(!value.get_type().is(&self.class) && value.is_instance(self.class.bind(value.py()))?)
     }
 

@@ -15,7 +15,7 @@ use crate::tools::SchemaDict;
 
 use super::any::AnySerializer;
 use super::{
-    infer_json_key, py_err_se_err, to_json_bytes, utf8_py_error, BuildSerializer, CombinedSerializer, TypeSerializer,
+    BuildSerializer, CombinedSerializer, TypeSerializer, infer_json_key, py_err_se_err, to_json_bytes, utf8_py_error,
 };
 
 #[derive(Debug)]

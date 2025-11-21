@@ -15,16 +15,16 @@ use pyo3::types::PyFunction;
 use pyo3::types::{PyBytes, PyComplex, PyFloat, PyFrozenSet, PyIterator, PyMapping, PySet, PyString};
 
 use pyo3::IntoPyObjectExt;
-use serde::{ser::Error, Serialize, Serializer};
+use serde::{Serialize, Serializer, ser::Error};
 
 use crate::errors::{
-    py_err_string, ErrorType, ErrorTypeDefaults, InputValue, ToErrorValue, ValError, ValLineError, ValResult,
+    ErrorType, ErrorTypeDefaults, InputValue, ToErrorValue, ValError, ValLineError, ValResult, py_err_string,
 };
 use crate::py_gc::PyGcTraverse;
-use crate::tools::{extract_i64, extract_int, new_py_string, py_err};
+use crate::tools::new_py_string;
 use crate::validators::{CombinedValidator, Exactness, ValidationState, Validator};
 
-use super::{py_error_on_minusone, BorrowInput, Input};
+use super::{BorrowInput, Input, py_error_on_minusone};
 
 pub struct ValidationMatch<T>(T, Exactness);
 
@@ -334,7 +334,7 @@ pub(crate) fn iterate_attributes<'a, 'py>(
         // or we get to the end of the list of attributes
         let name = attributes_iterator.next()?;
         // from benchmarks this is 14x faster than using the python `startswith` method
-        let name_cow = match name.downcast::<PyString>() {
+        let name_cow = match name.cast::<PyString>() {
             Ok(name) => name.to_string_lossy(),
             Err(e) => return Some(Err(e.into())),
         };
@@ -568,8 +568,7 @@ pub enum EitherInt<'py> {
 
 impl<'py> EitherInt<'py> {
     pub fn upcast(py_any: &Bound<'py, PyAny>) -> ValResult<Self> {
-        // Safety: we know that py_any is a python int
-        if let Some(int_64) = extract_i64(py_any) {
+        if let Ok(int_64) = py_any.extract() {
             Ok(Self::I64(int_64))
         } else {
             let big_int: BigInt = py_any.extract()?;
@@ -706,11 +705,17 @@ impl Rem for &Int {
     }
 }
 
-impl FromPyObject<'_> for Int {
-    fn extract_bound(obj: &Bound<'_, PyAny>) -> PyResult<Self> {
-        match extract_int(obj) {
-            Some(i) => Ok(i),
-            None => py_err!(PyTypeError; "Expected int, got {}", obj.get_type()),
+impl FromPyObject<'_, '_> for Int {
+    type Error = PyErr;
+
+    #[allow(clippy::same_functions_in_if_condition)] // https://github.com/rust-lang/rust-clippy/issues/10928
+    fn extract(obj: Borrowed<'_, '_, PyAny>) -> PyResult<Self> {
+        if let Ok(i) = obj.extract() {
+            Ok(Int::I64(i))
+        } else if let Ok(b) = obj.extract() {
+            Ok(Int::Big(b))
+        } else {
+            Err(PyTypeError::new_err(format!("Expected int, got {}", obj.get_type())))
         }
     }
 }

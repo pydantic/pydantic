@@ -7,20 +7,20 @@ use std::sync::OnceLock;
 
 use idna::punycode::decode_to_string;
 use jiter::{PartialMode, StringCacheMode};
-use percent_encoding::{percent_encode, AsciiSet, CONTROLS};
+use percent_encoding::{AsciiSet, CONTROLS, percent_encode};
 use pyo3::exceptions::PyValueError;
 use pyo3::pyclass::CompareOp;
 use pyo3::sync::OnceLockExt;
 use pyo3::types::{PyDict, PyType};
-use pyo3::{intern, prelude::*, IntoPyObjectExt};
+use pyo3::{IntoPyObjectExt, intern, prelude::*};
 use url::Url;
 
+use crate::ValidationError;
 use crate::input::InputType;
 use crate::recursion_guard::RecursionState;
 use crate::tools::SchemaDict;
 use crate::validators::url::{MultiHostUrlValidator, UrlValidator};
 use crate::validators::{Extra, ValidationState, Validator};
-use crate::ValidationError;
 
 #[pyclass(name = "Url", module = "pydantic_core._pydantic_core", subclass, frozen)]
 #[derive(Clone)]
@@ -103,7 +103,7 @@ impl PyUrl {
                 };
                 ValidationError::from_val_error(py, name, InputType::Python, e, None, false, false)
             })?
-            .downcast_bound::<Self>(py)?
+            .cast_bound::<Self>(py)?
             .get()
             .clone(); // FIXME: avoid the clone, would need to make `validate` be aware of what URL subclass to create
         Ok(url_obj)
@@ -332,7 +332,7 @@ impl PyMultiHostUrl {
                 };
                 ValidationError::from_val_error(py, name, InputType::Python, e, None, false, false)
             })?
-            .downcast_bound::<Self>(py)?
+            .cast_bound::<Self>(py)?
             .get()
             .clone(); // FIXME: avoid the clone, would need to make `validate` be aware of what URL subclass to create
         Ok(url_obj)
@@ -602,10 +602,11 @@ impl UrlHostParts {
     }
 }
 
-impl FromPyObject<'_> for UrlHostParts {
-    fn extract_bound(ob: &Bound<'_, PyAny>) -> PyResult<Self> {
+impl FromPyObject<'_, '_> for UrlHostParts {
+    type Error = PyErr;
+    fn extract(ob: Borrowed<'_, '_, PyAny>) -> PyResult<Self> {
         let py = ob.py();
-        let dict = ob.downcast::<PyDict>()?;
+        let dict = ob.cast::<PyDict>()?;
         Ok(UrlHostParts {
             username: dict.get_as(intern!(py, "username"))?,
             password: dict.get_as(intern!(py, "password"))?,

@@ -7,16 +7,16 @@ use std::sync::Arc;
 
 use serde::ser::SerializeSeq;
 
+use crate::PydanticSerializationUnexpectedValue;
 use crate::definitions::DefinitionsBuilder;
+use crate::serializers::SerializationState;
 use crate::serializers::extra::SerCheck;
 use crate::serializers::type_serializers::any::AnySerializer;
-use crate::serializers::SerializationState;
 use crate::tools::SchemaDict;
-use crate::PydanticSerializationUnexpectedValue;
 
 use super::{
-    infer_json_key, infer_serialize, infer_to_python, py_err_se_err, BuildSerializer, CombinedSerializer,
-    PydanticSerializer, SchemaFilter, SerMode, TypeSerializer,
+    BuildSerializer, CombinedSerializer, PydanticSerializer, SchemaFilter, SerMode, TypeSerializer, infer_json_key,
+    infer_serialize, infer_to_python, py_err_se_err,
 };
 
 #[derive(Debug)]
@@ -39,7 +39,7 @@ impl BuildSerializer for TupleSerializer {
         let items: Bound<'_, PyList> = schema.get_as_req(intern!(py, "items_schema"))?;
         let serializers: Vec<Arc<CombinedSerializer>> = items
             .iter()
-            .map(|item| CombinedSerializer::build(item.downcast()?, config, definitions))
+            .map(|item| CombinedSerializer::build(item.cast()?, config, definitions))
             .collect::<PyResult<_>>()?;
 
         let mut serializer_names = serializers.iter().map(|v| v.get_name()).collect::<Vec<_>>();
@@ -67,7 +67,7 @@ impl TypeSerializer for TupleSerializer {
         value: &Bound<'py, PyAny>,
         state: &mut SerializationState<'_, 'py>,
     ) -> PyResult<Py<PyAny>> {
-        match value.downcast::<PyTuple>() {
+        match value.cast::<PyTuple>() {
             Ok(py_tuple) => {
                 let py = value.py();
 
@@ -98,7 +98,7 @@ impl TypeSerializer for TupleSerializer {
         key: &'a Bound<'py, PyAny>,
         state: &mut SerializationState<'_, 'py>,
     ) -> PyResult<Cow<'a, str>> {
-        match key.downcast::<PyTuple>() {
+        match key.cast::<PyTuple>() {
             Ok(py_tuple) => {
                 let mut key_builder = KeyBuilder::new();
 
@@ -125,9 +125,9 @@ impl TypeSerializer for TupleSerializer {
         serializer: S,
         state: &mut SerializationState<'_, 'py>,
     ) -> Result<S::Ok, S::Error> {
-        match value.downcast::<PyTuple>() {
+        match value.cast::<PyTuple>() {
             Ok(py_tuple) => {
-                let py_tuple = py_tuple.downcast::<PyTuple>().map_err(py_err_se_err)?;
+                let py_tuple = py_tuple.cast::<PyTuple>().map_err(py_err_se_err)?;
 
                 let n_items = py_tuple.len();
                 let mut seq = serializer.serialize_seq(Some(n_items))?;
@@ -203,7 +203,7 @@ impl TupleSerializer {
             let n_variadic_items = (n_items + 1).saturating_sub(self.serializers.len());
             let serializers_iter = self.serializers[..variadic_item_index]
                 .iter()
-                .chain(iter::repeat(&self.serializers[variadic_item_index]).take(n_variadic_items))
+                .chain(iter::repeat_n(&self.serializers[variadic_item_index], n_variadic_items))
                 .chain(self.serializers[variadic_item_index + 1..].iter());
             use_serializers!(serializers_iter);
         } else if state.check == SerCheck::Strict && n_items != self.serializers.len() {

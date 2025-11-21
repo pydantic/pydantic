@@ -1,10 +1,10 @@
 use std::borrow::Cow;
-use std::str::{from_utf8, FromStr, Utf8Error};
+use std::str::{FromStr, Utf8Error, from_utf8};
 
 use base64::Engine;
 use pyo3::prelude::*;
 use pyo3::types::{PyDate, PyDateTime, PyDict, PyString, PyTime};
-use pyo3::{intern, IntoPyObjectExt};
+use pyo3::{IntoPyObjectExt, intern};
 
 use serde::ser::Error;
 
@@ -347,8 +347,9 @@ pub fn utf8_py_error(py: Python, err: Utf8Error, data: &[u8]) -> PyErr {
     }
 }
 
-impl FromPyObject<'_> for InfNanMode {
-    fn extract_bound(ob: &Bound<'_, PyAny>) -> PyResult<Self> {
-        Self::from_str(ob.downcast::<PyString>()?.to_str()?)
+impl FromPyObject<'_, '_> for InfNanMode {
+    type Error = PyErr;
+    fn extract(ob: Borrowed<'_, '_, PyAny>) -> PyResult<Self> {
+        Self::from_str(ob.cast::<PyString>()?.to_str()?)
     }
 }

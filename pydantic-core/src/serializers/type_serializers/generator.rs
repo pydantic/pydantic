@@ -1,12 +1,12 @@
 use std::borrow::Cow;
 use std::sync::Arc;
 
+use pyo3::IntoPyObjectExt;
+use pyo3::PyTraverseError;
 use pyo3::gc::PyVisit;
 use pyo3::intern;
 use pyo3::prelude::*;
 use pyo3::types::{PyDict, PyIterator};
-use pyo3::IntoPyObjectExt;
-use pyo3::PyTraverseError;
 
 use serde::ser::SerializeSeq;
 
@@ -17,8 +17,8 @@ use crate::tools::SchemaDict;
 
 use super::any::AnySerializer;
 use super::{
-    infer_serialize, infer_to_python, py_err_se_err, BuildSerializer, CombinedSerializer, ExtraOwned,
-    PydanticSerializer, SchemaFilter, SerMode, TypeSerializer,
+    BuildSerializer, CombinedSerializer, ExtraOwned, PydanticSerializer, SchemaFilter, SerMode, TypeSerializer,
+    infer_serialize, infer_to_python, py_err_se_err,
 };
 
 #[derive(Debug)]
@@ -56,7 +56,7 @@ impl TypeSerializer for GeneratorSerializer {
         value: &Bound<'py, PyAny>,
         state: &mut SerializationState<'_, 'py>,
     ) -> PyResult<Py<PyAny>> {
-        match value.downcast::<PyIterator>() {
+        match value.cast::<PyIterator>() {
             Ok(py_iter) => {
                 let py = value.py();
                 match state.extra.mode {
@@ -105,7 +105,7 @@ impl TypeSerializer for GeneratorSerializer {
         serializer: S,
         state: &mut SerializationState<'_, 'py>,
     ) -> Result<S::Ok, S::Error> {
-        match value.downcast::<PyIterator>() {
+        match value.cast::<PyIterator>() {
             Ok(py_iter) => {
                 let len = value.len().ok();
                 let mut seq = serializer.serialize_seq(len)?;

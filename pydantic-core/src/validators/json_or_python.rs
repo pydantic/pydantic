@@ -9,7 +9,7 @@ use crate::errors::ValResult;
 use crate::input::Input;
 use crate::tools::SchemaDict;
 
-use super::{build_validator, BuildValidator, CombinedValidator, InputType, ValidationState, Validator};
+use super::{BuildValidator, CombinedValidator, InputType, ValidationState, Validator, build_validator};
 
 #[derive(Debug)]
 pub struct JsonOrPython {

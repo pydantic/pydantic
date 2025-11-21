@@ -7,15 +7,14 @@ use std::sync::Arc;
 use ahash::AHashMap;
 use serde::ser::SerializeMap;
 
-use crate::build_tools::{py_schema_error_type, ExtraBehavior};
+use crate::build_tools::{ExtraBehavior, py_schema_error_type};
 use crate::definitions::DefinitionsBuilder;
 use crate::serializers::SerializationState;
 use crate::tools::SchemaDict;
 
 use super::{
-    infer_json_key, infer_json_key_known, infer_serialize, infer_to_python, py_err_se_err, BuildSerializer,
-    CombinedSerializer, ComputedFields, FieldsMode, GeneralFieldsSerializer, ObType, SerCheck, SerField,
-    TypeSerializer,
+    BuildSerializer, CombinedSerializer, ComputedFields, FieldsMode, GeneralFieldsSerializer, ObType, SerCheck,
+    SerField, TypeSerializer, infer_json_key, infer_json_key_known, infer_serialize, infer_to_python, py_err_se_err,
 };
 
 pub struct DataclassArgsBuilder;
@@ -41,7 +40,7 @@ impl BuildSerializer for DataclassArgsBuilder {
         let serialize_by_alias = config.get_as(intern!(py, "serialize_by_alias"))?;
 
         for (index, item) in fields_list.iter().enumerate() {
-            let field_info = item.downcast::<PyDict>()?;
+            let field_info = item.cast::<PyDict>()?;
             let name: String = field_info.get_as_req(intern!(py, "name"))?;
 
             let key_py: Py<PyString> = PyString::new(py, &name).into();
@@ -108,7 +107,7 @@ impl BuildSerializer for DataclassSerializer {
         let fields = schema
             .get_as_req::<Bound<'_, PyList>>(intern!(py, "fields"))?
             .iter()
-            .map(|s| Ok(s.downcast_into::<PyString>()?.unbind()))
+            .map(|s| Ok(s.cast_into::<PyString>()?.unbind()))
             .collect::<PyResult<Vec<_>>>()?;
 
         Ok(CombinedSerializer::Dataclass(Self {

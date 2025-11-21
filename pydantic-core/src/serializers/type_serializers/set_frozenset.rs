@@ -3,7 +3,7 @@ use std::sync::Arc;
 
 use pyo3::prelude::*;
 use pyo3::types::{PyDict, PyFrozenSet, PyList, PySet};
-use pyo3::{intern, IntoPyObjectExt};
+use pyo3::{IntoPyObjectExt, intern};
 
 use serde::ser::SerializeSeq;
 
@@ -13,7 +13,7 @@ use crate::tools::SchemaDict;
 
 use super::any::AnySerializer;
 use super::{
-    infer_serialize, infer_to_python, BuildSerializer, CombinedSerializer, PydanticSerializer, SerMode, TypeSerializer,
+    BuildSerializer, CombinedSerializer, PydanticSerializer, SerMode, TypeSerializer, infer_serialize, infer_to_python,
 };
 
 macro_rules! build_serializer {
@@ -57,7 +57,7 @@ macro_rules! build_serializer {
                 state: &mut SerializationState<'_, 'py>,
             ) -> PyResult<Py<PyAny>> {
                 let py = value.py();
-                match value.downcast::<$py_type>() {
+                match value.cast::<$py_type>() {
                     Ok(py_set) => {
                         let item_serializer = self.item_serializer.as_ref();
 
@@ -91,7 +91,7 @@ macro_rules! build_serializer {
                 serializer: S,
                 state: &mut SerializationState<'_, 'py>,
             ) -> Result<S::Ok, S::Error> {
-                match value.downcast::<$py_type>() {
+                match value.cast::<$py_type>() {
                     Ok(py_set) => {
                         let mut seq = serializer.serialize_seq(Some(py_set.len()))?;
                         let item_serializer = self.item_serializer.as_ref();

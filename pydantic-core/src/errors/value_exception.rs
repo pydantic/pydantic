@@ -3,7 +3,6 @@ use pyo3::prelude::*;
 use pyo3::types::{PyDict, PyString};
 
 use crate::input::InputType;
-use crate::tools::extract_i64;
 
 use super::line_error::ToErrorValue;
 use super::{ErrorType, ValError};
@@ -120,10 +119,10 @@ impl PydanticCustomError {
         let mut message = message_template.to_string();
         if let Some(ctx) = context {
             for (key, value) in ctx.iter() {
-                let key = key.downcast::<PyString>()?;
-                if let Ok(py_str) = value.downcast::<PyString>() {
+                let key = key.cast::<PyString>()?;
+                if let Ok(py_str) = value.cast::<PyString>() {
                     message = message.replace(&format!("{{{}}}", key.to_str()?), py_str.to_str()?);
-                } else if let Some(value_int) = extract_i64(&value) {
+                } else if let Ok(value_int) = value.extract::<i64>() {
                     message = message.replace(&format!("{{{}}}", key.to_str()?), &value_int.to_string());
                 } else {
                     // fallback for anything else just in case

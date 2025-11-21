@@ -12,7 +12,7 @@ use crate::definitions::{DefinitionRef, RecursionSafeCache};
 use crate::serializers::SerializationState;
 use crate::tools::SchemaDict;
 
-use super::{py_err_se_err, BuildSerializer, CombinedSerializer, TypeSerializer};
+use super::{BuildSerializer, CombinedSerializer, TypeSerializer, py_err_se_err};
 
 #[derive(Debug)]
 pub struct DefinitionsSerializerBuilder;
@@ -30,7 +30,7 @@ impl BuildSerializer for DefinitionsSerializerBuilder {
         let schema_definitions: Bound<'_, PyList> = schema.get_as_req(intern!(py, "definitions"))?;
 
         for schema_definition in schema_definitions {
-            let schema = schema_definition.downcast()?;
+            let schema = schema_definition.cast()?;
             let reference = schema.get_as_req::<String>(intern!(py, "ref"))?;
             let serializer = CombinedSerializer::build(schema, config, definitions)?;
             definitions.add_definition(reference, serializer)?;

@@ -93,7 +93,7 @@ else:
 # and discover later on that we need to re-add all this infrastructure...
 # _GENERIC_TYPES_CACHE = DeepChainMap(GenericTypesCache(), LimitedDict())
 
-_GENERIC_TYPES_CACHE: ContextVar[GenericTypesCache | None] = ContextVar('_GENERIC_TYPES_CACHE', default=None)
+_GENERIC_TYPES_CACHE = GenericTypesCache()
 
 
 class PydanticGenericMetadata(TypedDict):
@@ -452,24 +452,14 @@ def get_cached_generic_type_early(parent: type[BaseModel], typevar_values: Any) 
     during validation, I think it is worthwhile to ensure that types that are functionally equivalent are actually
     equal.
     """
-    generic_types_cache = _GENERIC_TYPES_CACHE.get()
-    if generic_types_cache is None:
-        generic_types_cache = GenericTypesCache()
-        _GENERIC_TYPES_CACHE.set(generic_types_cache)
-    return generic_types_cache.get(_early_cache_key(parent, typevar_values))
+    return _GENERIC_TYPES_CACHE.get(_early_cache_key(parent, typevar_values))
 
 
 def get_cached_generic_type_late(
     parent: type[BaseModel], typevar_values: Any, origin: type[BaseModel], args: tuple[Any, ...]
 ) -> type[BaseModel] | None:
     """See the docstring of `get_cached_generic_type_early` for more information about the two-stage cache lookup."""
-    generic_types_cache = _GENERIC_TYPES_CACHE.get()
-    if (
-        generic_types_cache is None
-    ):  # pragma: no cover (early cache is guaranteed to run first and initialize the cache)
-        generic_types_cache = GenericTypesCache()
-        _GENERIC_TYPES_CACHE.set(generic_types_cache)
-    cached = generic_types_cache.get(_late_cache_key(origin, args, typevar_values))
+    cached = _GENERIC_TYPES_CACHE.get(_late_cache_key(origin, args, typevar_values))
     if cached is not None:
         set_cached_generic_type(parent, typevar_values, cached, origin, args)
     return cached
@@ -485,17 +475,11 @@ def set_cached_generic_type(
     """See the docstring of `get_cached_generic_type_early` for more information about why items are cached with
     two different keys.
     """
-    generic_types_cache = _GENERIC_TYPES_CACHE.get()
-    if (
-        generic_types_cache is None
-    ):  # pragma: no cover (cache lookup is guaranteed to run first and initialize the cache)
-        generic_types_cache = GenericTypesCache()
-        _GENERIC_TYPES_CACHE.set(generic_types_cache)
-    generic_types_cache[_early_cache_key(parent, typevar_values)] = type_
+    _GENERIC_TYPES_CACHE[_early_cache_key(parent, typevar_values)] = type_
     if len(typevar_values) == 1:
-        generic_types_cache[_early_cache_key(parent, typevar_values[0])] = type_
+        _GENERIC_TYPES_CACHE[_early_cache_key(parent, typevar_values[0])] = type_
     if origin and args:
-        generic_types_cache[_late_cache_key(origin, args, typevar_values)] = type_
+        _GENERIC_TYPES_CACHE[_late_cache_key(origin, args, typevar_values)] = type_
 
 
 def _union_orderings_key(typevar_values: Any) -> Any:

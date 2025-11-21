@@ -149,7 +149,7 @@ assert user.id == 321
 ### Model methods and properties
 
 The example above only shows the tip of the iceberg of what models can do.
-Models possess the following methods and attributes:
+Model classes possess the following methods and attributes:
 
 * [`model_validate()`][pydantic.main.BaseModel.model_validate]: Validates the given object against the Pydantic model. See [Validating data](#validating-data).
 * [`model_validate_json()`][pydantic.main.BaseModel.model_validate_json]: Validates the given JSON data against the Pydantic model. See
@@ -164,12 +164,15 @@ Models possess the following methods and attributes:
 * [`model_json_schema()`][pydantic.main.BaseModel.model_json_schema]: Returns a jsonable dictionary representing the model's JSON Schema. See [JSON Schema](json_schema.md).
 * [`model_fields`][pydantic.main.BaseModel.model_fields]: A mapping between field names and their definitions ([`FieldInfo`][pydantic.fields.FieldInfo] instances).
 * [`model_computed_fields`][pydantic.main.BaseModel.model_computed_fields]: A mapping between computed field names and their definitions ([`ComputedFieldInfo`][pydantic.fields.ComputedFieldInfo] instances).
-* [`model_extra`][pydantic.main.BaseModel.model_extra]: The extra fields set during validation.
-* [`model_fields_set`][pydantic.main.BaseModel.model_fields_set]: The set of fields which were explicitly provided when the model was initialized.
 * [`model_parametrized_name()`][pydantic.main.BaseModel.model_parametrized_name]: Computes the class name for parametrizations of generic classes.
 * [`model_post_init()`][pydantic.main.BaseModel.model_post_init]: Performs additional actions after the model is instantiated and all field validators are applied.
 * [`model_rebuild()`][pydantic.main.BaseModel.model_rebuild]: Rebuilds the model schema, which also supports building recursive generic models.
     See [Rebuilding model schema](#rebuilding-model-schema).
+
+Model instances possess the following attributes:
+
+* [`model_extra`][pydantic.main.BaseModel.model_extra]: The extra fields set during validation.
+* [`model_fields_set`][pydantic.main.BaseModel.model_fields_set]: The set of fields which were explicitly provided when the model was initialized.
 
 !!! note
     See the API documentation of [`BaseModel`][pydantic.main.BaseModel] for the class definition including a full list of methods and attributes.
@@ -375,16 +378,200 @@ In V2, [`model_rebuild()`][pydantic.main.BaseModel.model_rebuild] replaced `upda
 The biggest change is that when calling [`model_rebuild()`][pydantic.main.BaseModel.model_rebuild] on the outermost model, it builds a core schema used for validation of the
 whole model (nested models and all), so all types at all levels need to be ready before [`model_rebuild()`][pydantic.main.BaseModel.model_rebuild] is called.
 
+## Validating data
+
+Pydantic can validate data in three different modes: *Python*, *JSON* and *strings*.
+
+The *Python* mode gets used when using:
+
+* The `__init__()` model constructor. Field values must be provided using keyword arguments.
+* [`model_validate()`][pydantic.main.BaseModel.model_validate]: data can be provided either as a dictionary,
+  or as a model instance (by default, instances are assumed to be valid; see the [`revalidate_instances`][pydantic.ConfigDict.revalidate_instances]
+  setting). [Arbitrary objects](#arbitrary-class-instances) can also be provided if explicitly enabled.
+
+The *JSON* and *strings* modes can be used with dedicated methods:
+
+* [`model_validate_json()`][pydantic.main.BaseModel.model_validate_json]: data is validated as a JSON string or `bytes` object.
+  If your incoming data is a JSON payload, this is generally considered faster (instead of manually parsing the data as a dictionary).
+  Learn more about JSON parsing in the [JSON](../concepts/json.md) documentation.
+* [`model_validate_strings()`][pydantic.main.BaseModel.model_validate_strings]: data is validated as a dictionary (can be nested) with
+  string keys and values and validates the data in JSON mode so that said strings can be coerced into the correct types.
+
+Compared to using the model constructor, it is possible to control several validation parameters when using the `model_validate_*()` methods
+([strictness](./strict_mode.md), [extra data](#extra-data), [validation context](./validators.md#validation-context), etc.).
+
+!!! note
+    Depending on the types and model configuration involved, the *Python* and *JSON* modes may have different validation behavior (e.g. with [strictness](./strict_mode.md)).
+    If you have data coming from a non-JSON source, but want the same validation behavior and errors you'd get from the *JSON* mode, our recommendation for now is to
+    either dump your data to JSON (e.g. using [`json.dumps()`][json.dumps]), or use [`model_validate_strings()`][pydantic.main.BaseModel.model_validate_strings]
+    if the data takes the form of a (potentially nested) dictionary with string keys and values. Progress for this feature can be tracked in
+    [this issue](https://github.com/pydantic/pydantic/issues/11154).
+
+```python
+from datetime import datetime
+from typing import Optional
+
+from pydantic import BaseModel, ValidationError
+
+
+class User(BaseModel):
+    id: int
+    name: str = 'John Doe'
+    signup_ts: Optional[datetime] = None
+
+
+m = User.model_validate({'id': 123, 'name': 'James'})
+print(m)
+#> id=123 name='James' signup_ts=None
+
+try:
+    m = User.model_validate_json('{"id": 123, "name": 123}')
+except ValidationError as e:
+    print(e)
+    """
+    1 validation error for User
+    name
+      Input should be a valid string [type=string_type, input_value=123, input_type=int]
+    """
+
+m = User.model_validate_strings({'id': '123', 'name': 'James'})
+print(m)
+#> id=123 name='James' signup_ts=None
+
+m = User.model_validate_strings(
+    {'id': '123', 'name': 'James', 'signup_ts': '2024-04-01T12:00:00'}
+)
+print(m)
+#> id=123 name='James' signup_ts=datetime.datetime(2024, 4, 1, 12, 0)
+
+try:
+    m = User.model_validate_strings(
+        {'id': '123', 'name': 'James', 'signup_ts': '2024-04-01'}, strict=True
+    )
+except ValidationError as e:
+    print(e)
+    """
+    1 validation error for User
+    signup_ts
+      Input should be a valid datetime, invalid datetime separator, expected `T`, `t`, `_` or space [type=datetime_parsing, input_value='2024-04-01', input_type=str]
+    """
+```
+
+### Creating models without validation
+
+Pydantic also provides the [`model_construct()`][pydantic.main.BaseModel.model_construct] method, which allows models to be created **without validation**.
+This can be useful in at least a few cases:
+
+* when working with complex data that is already known to be valid (for performance reasons)
+* when one or more of the validator functions are non-idempotent
+* when one or more of the validator functions have side effects that you don't want to be triggered.
+
+!!! warning
+    [`model_construct()`][pydantic.main.BaseModel.model_construct] does not do any validation, meaning it can create
+    models which are invalid. **You should only ever use the [`model_construct()`][pydantic.main.BaseModel.model_construct]
+    method with data which has already been validated, or that you definitely trust.**
+
+!!! note
+    In Pydantic V2, the performance gap between validation (either with direct instantiation or the `model_validate*` methods)
+    and [`model_construct()`][pydantic.main.BaseModel.model_construct] has been narrowed
+    considerably. For simple models, going with validation may even be faster. If you are using [`model_construct()`][pydantic.main.BaseModel.model_construct]
+    for performance reasons, you may want to profile your use case before assuming it is actually faster.
+
+Note that for [root models](#rootmodel-and-custom-root-types), the root value can be passed to
+[`model_construct()`][pydantic.main.BaseModel.model_construct] positionally, instead of using a keyword argument.
+
+Here are some additional notes on the behavior of [`model_construct()`][pydantic.main.BaseModel.model_construct]:
+
+* When we say "no validation is performed" — this includes converting dictionaries to model instances. So if you have a field
+  referring to a model type, you will need to convert the inner dictionary to a model yourself.
+* If you do not pass keyword arguments for fields with defaults, the default values will still be used.
+* For models with private attributes, the `__pydantic_private__` dictionary will be populated the same as it would be when
+  creating the model with validation.
+* No `__init__` method from the model or any of its parent classes will be called, even when a custom `__init__` method is defined.
+
+!!! note "On [extra data](#extra-data) behavior with [`model_construct()`][pydantic.main.BaseModel.model_construct]"
+
+    * For models with [`extra`][pydantic.ConfigDict.extra] set to `'allow'`, data not corresponding to fields will be correctly stored in
+    the `__pydantic_extra__` dictionary and saved to the model's `__dict__` attribute.
+    * For models with [`extra`][pydantic.ConfigDict.extra] set to `'ignore'`, data not corresponding to fields will be ignored — that is,
+    not stored in `__pydantic_extra__` or `__dict__` on the instance.
+    * Unlike when instantiating the model with validation, a call to [`model_construct()`][pydantic.main.BaseModel.model_construct] with [`extra`][pydantic.ConfigDict.extra] set to `'forbid'` doesn't raise an error in the presence of data not corresponding to fields. Rather, said input data is simply ignored.
+
+### Defining a custom `__init__()`
+
+Pydantic provides a default `__init__()` implementation for Pydantic models, that is called *only* when using the model constructor
+(and not with the `model_validate_*()` methods). This implementation delegates validation to `pydantic-core`.
+
+However, it is possible to define a custom `__init__()` on your models. In this case, it will be called unconditionally from all the
+[validation methods](#validating-data), without performing validation (and so you should call `super().__init__(**kwargs)` in your implementation).
+
+Defining a custom `__init__()` is not recommended, as all the validation parameters ([strictness](./strict_mode.md),
+[extra data behavior](#extra-data), [validation context](./validators.md#validation-context)) will be lost. If you need to perform
+actions after the model was initialized, you can make use of *after* [field](./validators.md#field-after-validator) or
+[model](./validators.md#model-after-validator) validators, or define a [`model_post_init()`][pydantic.main.BaseModel.model_post_init] implementation:
+
+```python
+import logging
+from typing import Any
+
+from pydantic import BaseModel
+
+
+class MyModel(BaseModel):
+    id: int
+
+    def model_post_init(self, context: Any) -> None:
+        logging.info("Model initialized with id %d", self.id)
+```
+
+## Error handling
+
+Pydantic will raise a [`ValidationError`][pydantic_core.ValidationError] exception whenever it finds an error in the data it's validating.
+
+A single exception will be raised regardless of the number of errors found, and that validation error
+will contain information about all of the errors and how they happened.
+
+See [Error Handling](../errors/errors.md) for details on standard and custom errors.
+
+As a demonstration:
+
+```python
+from pydantic import BaseModel, ValidationError
+
+
+class Model(BaseModel):
+    list_of_ints: list[int]
+    a_float: float
+
+
+data = {
+    'list_of_ints': ['1', 2, 'bad'],
+    'a_float': 'not a float',
+}
+
+try:
+    Model(**data)
+except ValidationError as e:
+    print(e)
+    """
+    2 validation errors for Model
+    list_of_ints.2
+      Input should be a valid integer, unable to parse string as an integer [type=int_parsing, input_value='bad', input_type=str]
+    a_float
+      Input should be a valid number, unable to parse string as a number [type=float_parsing, input_value='not a float', input_type=str]
+    """
+```
+
 ## Arbitrary class instances
 
-(Formerly known as "ORM Mode"/`from_orm`).
+(Formerly known as "ORM Mode"/`from_orm()`).
 
-Pydantic models can also be created from arbitrary class instances by reading the instance attributes corresponding
-to the model field names. One common application of this functionality is integration with object-relational mappings
-(ORMs).
+When using the [`model_validate()`][pydantic.main.BaseModel.model_validate] method, Pydantic can also validate arbitrary objects,
+by getting attributes on the object corresponding the field names. One common application of this functionality is integration with
+object-relational mappings (ORMs).
 
-To do this, set the [`from_attributes`][pydantic.config.ConfigDict.from_attributes] config value to `True`
-(see the documentation on [Configuration](./config.md) for more details).
+This feature need to be manually enabled, either by setting the [`from_attributes`][pydantic.config.ConfigDict.from_attributes]
+configuration value, or by using the `from_attributes` parameter on [`model_validate()`][pydantic.main.BaseModel.model_validate].
 
 The example here uses [SQLAlchemy](https://www.sqlalchemy.org/), but the same approach should work for any ORM.
 
@@ -433,7 +620,7 @@ print(co_model)
 
 ### Nested attributes
 
-When using attributes to parse models, model instances will be created from both top-level attributes and
+When using attributes to validate models, model instances will be created from both top-level attributes and
 deeper-nested attributes as appropriate.
 
 Here is an example demonstrating the principle:
@@ -443,15 +630,13 @@ from pydantic import BaseModel, ConfigDict
 
 
 class PetCls:
-    def __init__(self, *, name: str, species: str):
+    def __init__(self, *, name: str) -> None:
         self.name = name
-        self.species = species
 
 
 class PersonCls:
-    def __init__(self, *, name: str, age: float = None, pets: list[PetCls]):
+    def __init__(self, *, name: str, pets: list[PetCls]) -> None:
         self.name = name
-        self.age = age
         self.pets = pets
 
 
@@ -459,246 +644,22 @@ class Pet(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
     name: str
-    species: str
 
 
 class Person(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
     name: str
-    age: float = None
     pets: list[Pet]
 
 
-bones = PetCls(name='Bones', species='dog')
-orion = PetCls(name='Orion', species='cat')
-anna = PersonCls(name='Anna', age=20, pets=[bones, orion])
+bones = PetCls(name='Bones')
+orion = PetCls(name='Orion')
+anna = PersonCls(name='Anna', pets=[bones, orion])
 anna_model = Person.model_validate(anna)
 print(anna_model)
-"""
-name='Anna' age=20.0 pets=[Pet(name='Bones', species='dog'), Pet(name='Orion', species='cat')]
-"""
+#> name='Anna' pets=[Pet(name='Bones'), Pet(name='Orion')]
 ```
-
-## Error handling
-
-Pydantic will raise a [`ValidationError`][pydantic_core.ValidationError] exception whenever it finds an error in the data it's validating.
-
-A single exception will be raised regardless of the number of errors found, and that validation error
-will contain information about all of the errors and how they happened.
-
-See [Error Handling](../errors/errors.md) for details on standard and custom errors.
-
-As a demonstration:
-
-```python
-from pydantic import BaseModel, ValidationError
-
-
-class Model(BaseModel):
-    list_of_ints: list[int]
-    a_float: float
-
-
-data = dict(
-    list_of_ints=['1', 2, 'bad'],
-    a_float='not a float',
-)
-
-try:
-    Model(**data)
-except ValidationError as e:
-    print(e)
-    """
-    2 validation errors for Model
-    list_of_ints.2
-      Input should be a valid integer, unable to parse string as an integer [type=int_parsing, input_value='bad', input_type=str]
-    a_float
-      Input should be a valid number, unable to parse string as a number [type=float_parsing, input_value='not a float', input_type=str]
-    """
-```
-
-## Validating data
-
-Pydantic provides three methods on models classes for parsing data:
-
-* [`model_validate()`][pydantic.main.BaseModel.model_validate]: this is very similar to the `__init__` method of the model,
-  except it takes a dictionary or an object rather than keyword arguments. If the object passed cannot be validated,
-  or if it's not a dictionary or instance of the model in question, a [`ValidationError`][pydantic_core.ValidationError] will be raised.
-* [`model_validate_json()`][pydantic.main.BaseModel.model_validate_json]: this validates the provided data as a JSON string or `bytes` object.
-  If your incoming data is a JSON payload, this is generally considered faster (instead of manually parsing the data as a dictionary).
-  Learn more about JSON parsing in the [JSON](../concepts/json.md) section of the docs.
-* [`model_validate_strings()`][pydantic.main.BaseModel.model_validate_strings]: this takes a dictionary (can be nested) with string keys and values and validates the data in JSON mode so that said strings can be coerced into the correct types.
-
-```python
-from datetime import datetime
-from typing import Optional
-
-from pydantic import BaseModel, ValidationError
-
-
-class User(BaseModel):
-    id: int
-    name: str = 'John Doe'
-    signup_ts: Optional[datetime] = None
-
-
-m = User.model_validate({'id': 123, 'name': 'James'})
-print(m)
-#> id=123 name='James' signup_ts=None
-
-try:
-    User.model_validate(['not', 'a', 'dict'])
-except ValidationError as e:
-    print(e)
-    """
-    1 validation error for User
-      Input should be a valid dictionary or instance of User [type=model_type, input_value=['not', 'a', 'dict'], input_type=list]
-    """
-
-m = User.model_validate_json('{"id": 123, "name": "James"}')
-print(m)
-#> id=123 name='James' signup_ts=None
-
-try:
-    m = User.model_validate_json('{"id": 123, "name": 123}')
-except ValidationError as e:
-    print(e)
-    """
-    1 validation error for User
-    name
-      Input should be a valid string [type=string_type, input_value=123, input_type=int]
-    """
-
-try:
-    m = User.model_validate_json('invalid JSON')
-except ValidationError as e:
-    print(e)
-    """
-    1 validation error for User
-      Invalid JSON: expected value at line 1 column 1 [type=json_invalid, input_value='invalid JSON', input_type=str]
-    """
-
-m = User.model_validate_strings({'id': '123', 'name': 'James'})
-print(m)
-#> id=123 name='James' signup_ts=None
-
-m = User.model_validate_strings(
-    {'id': '123', 'name': 'James', 'signup_ts': '2024-04-01T12:00:00'}
-)
-print(m)
-#> id=123 name='James' signup_ts=datetime.datetime(2024, 4, 1, 12, 0)
-
-try:
-    m = User.model_validate_strings(
-        {'id': '123', 'name': 'James', 'signup_ts': '2024-04-01'}, strict=True
-    )
-except ValidationError as e:
-    print(e)
-    """
-    1 validation error for User
-    signup_ts
-      Input should be a valid datetime, invalid datetime separator, expected `T`, `t`, `_` or space [type=datetime_parsing, input_value='2024-04-01', input_type=str]
-    """
-```
-
-If you want to validate serialized data in a format other than JSON, you should load the data into a dictionary yourself and
-then pass it to [`model_validate`][pydantic.main.BaseModel.model_validate].
-
-!!! note
-    Depending on the types and model configs involved, [`model_validate`][pydantic.main.BaseModel.model_validate]
-    and [`model_validate_json`][pydantic.main.BaseModel.model_validate_json] may have different validation behavior.
-    If you have data coming from a non-JSON source, but want the same validation
-    behavior and errors you'd get from [`model_validate_json`][pydantic.main.BaseModel.model_validate_json],
-    our recommendation for now is to use either use `model_validate_json(json.dumps(data))`, or use [`model_validate_strings`][pydantic.main.BaseModel.model_validate_strings] if the data takes the form of a (potentially nested) dictionary with string keys and values.
-
-!!! note
-    If you're passing in an instance of a model to [`model_validate`][pydantic.main.BaseModel.model_validate], you will want to consider setting
-    [`revalidate_instances`][pydantic.ConfigDict.revalidate_instances] in the model's config.
-    If you don't set this value, then validation will be skipped on model instances. See the below example:
-
-    === ":x: `revalidate_instances='never'`"
-        ```python
-        from pydantic import BaseModel
-
-
-        class Model(BaseModel):
-            a: int
-
-
-        m = Model(a=0)
-        # note: setting `validate_assignment` to `True` in the config can prevent this kind of misbehavior.
-        m.a = 'not an int'
-
-        # doesn't raise a validation error even though m is invalid
-        m2 = Model.model_validate(m)
-        ```
-
-    === ":white_check_mark: `revalidate_instances='always'`"
-        ```python
-        from pydantic import BaseModel, ConfigDict, ValidationError
-
-
-        class Model(BaseModel):
-            a: int
-
-            model_config = ConfigDict(revalidate_instances='always')
-
-
-        m = Model(a=0)
-        # note: setting `validate_assignment` to `True` in the config can prevent this kind of misbehavior.
-        m.a = 'not an int'
-
-        try:
-            m2 = Model.model_validate(m)
-        except ValidationError as e:
-            print(e)
-            """
-            1 validation error for Model
-            a
-              Input should be a valid integer, unable to parse string as an integer [type=int_parsing, input_value='not an int', input_type=str]
-            """
-        ```
-
-### Creating models without validation
-
-Pydantic also provides the [`model_construct()`][pydantic.main.BaseModel.model_construct] method, which allows models to be created **without validation**.
-This can be useful in at least a few cases:
-
-* when working with complex data that is already known to be valid (for performance reasons)
-* when one or more of the validator functions are non-idempotent
-* when one or more of the validator functions have side effects that you don't want to be triggered.
-
-!!! warning
-    [`model_construct()`][pydantic.main.BaseModel.model_construct] does not do any validation, meaning it can create
-    models which are invalid. **You should only ever use the [`model_construct()`][pydantic.main.BaseModel.model_construct]
-    method with data which has already been validated, or that you definitely trust.**
-
-!!! note
-    In Pydantic V2, the performance gap between validation (either with direct instantiation or the `model_validate*` methods)
-    and [`model_construct()`][pydantic.main.BaseModel.model_construct] has been narrowed
-    considerably. For simple models, going with validation may even be faster. If you are using [`model_construct()`][pydantic.main.BaseModel.model_construct]
-    for performance reasons, you may want to profile your use case before assuming it is actually faster.
-
-Note that for [root models](#rootmodel-and-custom-root-types), the root value can be passed to
-[`model_construct()`][pydantic.main.BaseModel.model_construct] positionally, instead of using a keyword argument.
-
-Here are some additional notes on the behavior of [`model_construct()`][pydantic.main.BaseModel.model_construct]:
-
-* When we say "no validation is performed" — this includes converting dictionaries to model instances. So if you have a field
-  referring to a model type, you will need to convert the inner dictionary to a model yourself.
-* If you do not pass keyword arguments for fields with defaults, the default values will still be used.
-* For models with private attributes, the `__pydantic_private__` dictionary will be populated the same as it would be when
-  creating the model with validation.
-* No `__init__` method from the model or any of its parent classes will be called, even when a custom `__init__` method is defined.
-
-!!! note "On [extra data](#extra-data) behavior with [`model_construct()`][pydantic.main.BaseModel.model_construct]"
-
-    * For models with [`extra`][pydantic.ConfigDict.extra] set to `'allow'`, data not corresponding to fields will be correctly stored in
-    the `__pydantic_extra__` dictionary and saved to the model's `__dict__` attribute.
-    * For models with [`extra`][pydantic.ConfigDict.extra] set to `'ignore'`, data not corresponding to fields will be ignored — that is,
-    not stored in `__pydantic_extra__` or `__dict__` on the instance.
-    * Unlike when instantiating the model with validation, a call to [`model_construct()`][pydantic.main.BaseModel.model_construct] with [`extra`][pydantic.ConfigDict.extra] set to `'forbid'` doesn't raise an error in the presence of data not corresponding to fields. Rather, said input data is simply ignored.
 
 ## Model copy
 

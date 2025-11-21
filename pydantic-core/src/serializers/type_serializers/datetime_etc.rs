@@ -5,13 +5,13 @@ use pyo3::prelude::*;
 use pyo3::types::{PyDate, PyDateTime, PyDict, PyTime};
 
 use super::{
-    infer_json_key, infer_serialize, infer_to_python, BuildSerializer, CombinedSerializer, SerMode, TypeSerializer,
+    BuildSerializer, CombinedSerializer, SerMode, TypeSerializer, infer_json_key, infer_serialize, infer_to_python,
 };
+use crate::PydanticSerializationUnexpectedValue;
 use crate::definitions::DefinitionsBuilder;
 use crate::input::{pydate_as_date, pydatetime_as_datetime, pytime_as_time};
-use crate::serializers::config::{FromConfig, TemporalMode};
 use crate::serializers::SerializationState;
-use crate::PydanticSerializationUnexpectedValue;
+use crate::serializers::config::{FromConfig, TemporalMode};
 
 pub(crate) fn datetime_to_string(py_dt: &Bound<'_, PyDateTime>) -> PyResult<String> {
     pydatetime_as_datetime(py_dt).map(|dt| dt.to_string())
@@ -71,7 +71,7 @@ pub(crate) fn time_to_milliseconds(py_time: &Bound<'_, PyTime>) -> PyResult<f64>
 }
 
 fn downcast_date_reject_datetime<'a, 'py>(py_date: &'a Bound<'py, PyAny>) -> PyResult<&'a Bound<'py, PyDate>> {
-    if let Ok(py_date) = py_date.downcast::<PyDate>() {
+    if let Ok(py_date) = py_date.cast::<PyDate>() {
         // because `datetime` is a subclass of `date` we have to check that the value is not a
         // `datetime` to avoid lossy serialization
         if !py_date.is_instance_of::<PyDateTime>() {
@@ -168,7 +168,7 @@ macro_rules! build_temporal_serializer {
 build_temporal_serializer!(
     DatetimeSerializer,
     "datetime",
-    PyAnyMethods::downcast::<PyDateTime>,
+    Bound::cast::<PyDateTime>,
     datetime_to_json,
     datetime_json_key,
     datetime_serialize
@@ -186,7 +186,7 @@ build_temporal_serializer!(
 build_temporal_serializer!(
     TimeSerializer,
     "time",
-    PyAnyMethods::downcast::<PyTime>,
+    Bound::cast::<PyTime>,
     time_to_json,
     time_json_key,
     time_serialize

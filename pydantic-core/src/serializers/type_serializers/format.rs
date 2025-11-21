@@ -9,15 +9,15 @@ use serde::ser::Error;
 
 use crate::build_tools::py_schema_err;
 use crate::definitions::DefinitionsBuilder;
+use crate::serializers::SerializationState;
 use crate::serializers::errors::unwrap_ser_error;
+use crate::serializers::shared::DoSerialize;
 use crate::serializers::shared::serialize_to_json;
 use crate::serializers::shared::serialize_to_python;
-use crate::serializers::shared::DoSerialize;
-use crate::serializers::SerializationState;
 use crate::tools::SchemaDict;
 
 use super::simple::none_json_key;
-use super::{py_err_se_err, BuildSerializer, CombinedSerializer, Extra, PydanticSerializationError, TypeSerializer};
+use super::{BuildSerializer, CombinedSerializer, Extra, PydanticSerializationError, TypeSerializer, py_err_se_err};
 
 #[derive(Debug, Clone, Eq, PartialEq)]
 pub(super) enum WhenUsed {
@@ -130,7 +130,7 @@ impl TypeSerializer for FormatSerializer {
                 .call(key)
                 .map_err(PydanticSerializationError::new_err)?
                 .into_bound(key.py())
-                .downcast_into::<PyString>()?;
+                .cast_into::<PyString>()?;
             Ok(Cow::Owned(py_str.to_str()?.to_owned()))
         } else {
             none_json_key()
@@ -146,7 +146,7 @@ impl TypeSerializer for FormatSerializer {
         if self.when_used.should_use_json(value) {
             match self.call(value) {
                 Ok(v) => {
-                    let py_str = v.bind(value.py()).downcast().map_err(py_err_se_err)?;
+                    let py_str = v.bind(value.py()).cast().map_err(py_err_se_err)?;
                     serialize_to_json(serializer)
                         .serialize_str(py_str)
                         .map_err(unwrap_ser_error)

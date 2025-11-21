@@ -12,7 +12,7 @@ use crate::serializers::BytesMode;
 use crate::tools::SchemaDict;
 
 use super::config::ValBytesMode;
-use super::{build_validator, BuildValidator, CombinedValidator, DefinitionsBuilder, ValidationState, Validator};
+use super::{BuildValidator, CombinedValidator, DefinitionsBuilder, ValidationState, Validator, build_validator};
 
 #[derive(Debug)]
 pub struct JsonValidator {

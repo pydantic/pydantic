@@ -1,9 +1,9 @@
 use std::borrow::Cow;
 use std::sync::Arc;
 
+use pyo3::IntoPyObjectExt;
 use pyo3::prelude::*;
 use pyo3::types::PyDict;
-use pyo3::IntoPyObjectExt;
 
 use crate::build_tools::LazyLock;
 use crate::definitions::DefinitionsBuilder;
@@ -11,7 +11,7 @@ use crate::serializers::SerializationState;
 use crate::url::{PyMultiHostUrl, PyUrl};
 
 use super::{
-    infer_json_key, infer_serialize, infer_to_python, BuildSerializer, CombinedSerializer, SerMode, TypeSerializer,
+    BuildSerializer, CombinedSerializer, SerMode, TypeSerializer, infer_json_key, infer_serialize, infer_to_python,
 };
 
 macro_rules! build_serializer {

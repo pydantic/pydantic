@@ -1551,6 +1551,24 @@ class ComputedFieldInfo:
     examples: list[Any] | None
     json_schema_extra: JsonDict | Callable[[JsonDict], None] | None
     repr: bool
+    # NOTE: if you add a new field, add it to the `__copy__()` implementation.
+
+    def __copy__(self) -> Self:
+        return type(self)(
+            wrapped_property=self.wrapped_property,
+            return_type=self.return_type,
+            alias=self.alias,
+            alias_priority=self.alias_priority,
+            title=self.title,
+            field_title_generator=self.field_title_generator,
+            description=self.description,
+            deprecated=self.deprecated,
+            examples=self.examples.copy() if isinstance(self.examples, list) else self.examples,
+            json_schema_extra=self.json_schema_extra.copy()
+            if isinstance(self.json_schema_extra, dict)
+            else self.json_schema_extra,
+            repr=self.repr,
+        )
 
     @property
     def deprecation_message(self) -> str | None:

@@ -87,7 +87,7 @@ impl<'a, 'py> ValidationState<'a, 'py> {
         &self.extra
     }
 
-    pub fn enumerate_last_partial<I>(&self, iter: impl Iterator<Item = I>) -> impl Iterator<Item = (usize, bool, I)> {
+    pub fn enumerate_last_partial<I: Iterator>(&self, iter: I) -> EnumerateLastPartial<I> {
         EnumerateLastPartial::new(iter, self.allow_partial)
     }
 

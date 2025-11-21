@@ -1,5 +1,5 @@
 use pyo3::types::PyDict;
-use pyo3::{intern, prelude::*, IntoPyObjectExt};
+use pyo3::{IntoPyObjectExt, intern, prelude::*};
 
 use std::borrow::Cow;
 use std::sync::Arc;
@@ -8,14 +8,14 @@ use serde::Serializer;
 
 use crate::build_tools::LazyLock;
 use crate::definitions::DefinitionsBuilder;
-use crate::serializers::config::InfNanMode;
 use crate::serializers::SerializationState;
+use crate::serializers::config::InfNanMode;
 use crate::tools::SchemaDict;
 
 use super::simple::to_str_json_key;
 use super::{
-    infer_json_key, infer_serialize, infer_to_python, BuildSerializer, CombinedSerializer, IsType, ObType, SerCheck,
-    SerMode, TypeSerializer,
+    BuildSerializer, CombinedSerializer, IsType, ObType, SerCheck, SerMode, TypeSerializer, infer_json_key,
+    infer_serialize, infer_to_python,
 };
 use crate::serializers::errors::PydanticSerializationUnexpectedValue;
 

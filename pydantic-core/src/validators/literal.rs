@@ -6,7 +6,7 @@ use std::sync::Arc;
 
 use pyo3::prelude::*;
 use pyo3::types::{PyDict, PyInt, PyList};
-use pyo3::{intern, PyTraverseError, PyVisit};
+use pyo3::{PyTraverseError, PyVisit, intern};
 
 use ahash::AHashMap;
 

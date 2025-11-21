@@ -12,7 +12,7 @@ use crate::input::Input;
 use crate::tools::SchemaDict;
 
 use super::validation_state::ValidationState;
-use super::{build_validator, BuildValidator, CombinedValidator, DefinitionsBuilder, Validator};
+use super::{BuildValidator, CombinedValidator, DefinitionsBuilder, Validator, build_validator};
 
 #[derive(Debug)]
 pub struct CallValidator {
@@ -87,7 +87,7 @@ impl Validator for CallValidator {
 
         let return_value = if let Ok((args, kwargs)) = args.extract::<(Bound<PyTuple>, Bound<PyDict>)>() {
             self.function.call(py, args, Some(&kwargs))?
-        } else if let Ok(kwargs) = args.downcast::<PyDict>() {
+        } else if let Ok(kwargs) = args.cast::<PyDict>() {
             self.function.call(py, (), Some(kwargs))?
         } else {
             let msg = "Arguments validator should return a tuple of (args, kwargs) or a dict of kwargs";

@@ -4,7 +4,7 @@ use pyo3::types::{
     PyBool, PyByteArray, PyBytes, PyComplex, PyDate, PyDateTime, PyDelta, PyDict, PyFloat, PyFrozenSet, PyInt,
     PyIterator, PyList, PyNone, PySet, PyString, PyTime, PyTuple, PyType,
 };
-use pyo3::{intern, PyTypeInfo};
+use pyo3::{PyTypeInfo, intern};
 
 use strum::Display;
 use strum_macros::EnumString;
@@ -391,7 +391,7 @@ fn is_pydantic_serializable(op_value: Option<&Bound<'_, PyAny>>) -> bool {
 
 fn is_generator(op_value: Option<&Bound<'_, PyAny>>) -> bool {
     if let Some(value) = op_value {
-        value.downcast::<PyIterator>().is_ok()
+        value.cast::<PyIterator>().is_ok()
     } else {
         false
     }

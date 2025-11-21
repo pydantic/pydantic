@@ -2,17 +2,17 @@ use std::sync::Arc;
 
 use pyo3::prelude::*;
 use pyo3::types::{PyDict, PyList, PyString};
-use pyo3::{intern, PyTraverseError, PyVisit};
+use pyo3::{PyTraverseError, PyVisit, intern};
 use serde::ser::SerializeMap;
 
 use crate::build_tools::py_schema_error_type;
 use crate::common::missing_sentinel::get_missing_sentinel_object;
 use crate::definitions::DefinitionsBuilder;
 use crate::py_gc::PyGcTraverse;
+use crate::serializers::SerializationState;
 use crate::serializers::extra::FieldName;
 use crate::serializers::filter::SchemaFilter;
 use crate::serializers::shared::{BuildSerializer, CombinedSerializer, PydanticSerializer};
-use crate::serializers::SerializationState;
 use crate::tools::SchemaDict;
 
 use super::errors::py_err_se_err;
@@ -169,7 +169,7 @@ impl ComputedField {
         definitions: &mut DefinitionsBuilder<Arc<CombinedSerializer>>,
     ) -> PyResult<Self> {
         let py = schema.py();
-        let schema: &Bound<'_, PyDict> = schema.downcast()?;
+        let schema: &Bound<'_, PyDict> = schema.cast()?;
         let property_name: Bound<'_, PyString> = schema.get_as_req(intern!(py, "property_name"))?;
         let return_schema = schema.get_as_req(intern!(py, "return_schema"))?;
         let serializer = CombinedSerializer::build(&return_schema, config, definitions)

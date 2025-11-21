@@ -1,9 +1,9 @@
 use std::sync::Arc;
 
+use pyo3::IntoPyObjectExt;
 use pyo3::intern;
 use pyo3::prelude::*;
 use pyo3::types::PyDict;
-use pyo3::IntoPyObjectExt;
 
 use crate::build_tools::is_strict;
 use crate::errors::{ErrorType, ValError, ValResult};

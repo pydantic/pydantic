@@ -14,8 +14,8 @@ use crate::tools::SchemaDict;
 
 use super::any::AnySerializer;
 use super::{
-    infer_serialize, infer_to_python, py_err_se_err, BuildSerializer, CombinedSerializer, PydanticSerializer,
-    SchemaFilter, TypeSerializer,
+    BuildSerializer, CombinedSerializer, PydanticSerializer, SchemaFilter, TypeSerializer, infer_serialize,
+    infer_to_python, py_err_se_err,
 };
 
 #[derive(Debug)]
@@ -58,7 +58,7 @@ impl TypeSerializer for ListSerializer {
         value: &Bound<'py, PyAny>,
         state: &mut SerializationState<'_, 'py>,
     ) -> PyResult<Py<PyAny>> {
-        match value.downcast::<PyList>() {
+        match value.cast::<PyList>() {
             Ok(py_list) => {
                 let py = value.py();
                 let item_serializer = self.item_serializer.as_ref();
@@ -94,7 +94,7 @@ impl TypeSerializer for ListSerializer {
         serializer: S,
         state: &mut SerializationState<'_, 'py>,
     ) -> Result<S::Ok, S::Error> {
-        match value.downcast::<PyList>() {
+        match value.cast::<PyList>() {
             Ok(py_list) => {
                 let mut seq = serializer.serialize_seq(Some(py_list.len()))?;
                 let item_serializer = self.item_serializer.as_ref();

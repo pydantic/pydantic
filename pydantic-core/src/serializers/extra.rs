@@ -7,18 +7,18 @@ use std::string::ToString;
 use pyo3::exceptions::{PyTypeError, PyUserWarning, PyValueError};
 use pyo3::prelude::*;
 use pyo3::types::{PyBool, PyString};
-use pyo3::{intern, PyTypeInfo};
+use pyo3::{PyTypeInfo, intern};
 
 use serde::ser::Error;
 
 use super::config::SerializationConfig;
 use super::errors::{PydanticSerializationUnexpectedValue, UNEXPECTED_TYPE_SER_MARKER};
 use super::ob_type::ObTypeLookup;
+use crate::PydanticSerializationError;
 use crate::recursion_guard::ContainsRecursionState;
 use crate::recursion_guard::RecursionError;
 use crate::recursion_guard::RecursionGuard;
 use crate::recursion_guard::RecursionState;
-use crate::PydanticSerializationError;
 
 /// this is ugly, would be much better if extra could be stored in `SerializationState`
 /// then `SerializationState` got a `serialize_infer` method, but I couldn't get it to work
@@ -410,9 +410,10 @@ pub enum WarningsMode {
     Error,
 }
 
-impl<'py> FromPyObject<'py> for WarningsMode {
-    fn extract_bound(ob: &Bound<'py, PyAny>) -> PyResult<WarningsMode> {
-        if let Ok(bool_mode) = ob.downcast::<PyBool>() {
+impl FromPyObject<'_, '_> for WarningsMode {
+    type Error = PyErr;
+    fn extract(ob: Borrowed<'_, '_, PyAny>) -> PyResult<WarningsMode> {
+        if let Ok(bool_mode) = ob.cast::<PyBool>() {
             Ok(bool_mode.is_true().into())
         } else if let Ok(str_mode) = ob.extract::<&str>() {
             match str_mode {
@@ -433,11 +434,7 @@ impl<'py> FromPyObject<'py> for WarningsMode {
 
 impl From<bool> for WarningsMode {
     fn from(mode: bool) -> Self {
-        if mode {
-            Self::Warn
-        } else {
-            Self::None
-        }
+        if mode { Self::Warn } else { Self::None }
     }
 }
 

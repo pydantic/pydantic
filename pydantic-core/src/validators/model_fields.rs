@@ -9,7 +9,7 @@ use ahash::AHashSet;
 use pyo3::IntoPyObjectExt;
 
 use crate::build_tools::py_schema_err;
-use crate::build_tools::{is_strict, schema_or_config_same, ExtraBehavior};
+use crate::build_tools::{ExtraBehavior, is_strict, schema_or_config_same};
 use crate::errors::LocItem;
 use crate::errors::{ErrorType, ErrorTypeDefaults, ValError, ValLineError, ValResult};
 use crate::input::ConsumeIterator;
@@ -17,7 +17,7 @@ use crate::input::{BorrowInput, Input, ValidatedDict, ValidationMatch};
 use crate::lookup_key::LookupKeyCollection;
 use crate::tools::SchemaDict;
 
-use super::{build_validator, BuildValidator, CombinedValidator, DefinitionsBuilder, ValidationState, Validator};
+use super::{BuildValidator, CombinedValidator, DefinitionsBuilder, ValidationState, Validator, build_validator};
 
 #[derive(Debug)]
 struct Field {
@@ -78,7 +78,7 @@ impl BuildValidator for ModelFieldsValidator {
         let mut fields: Vec<Field> = Vec::with_capacity(fields_dict.len());
 
         for (key, value) in fields_dict {
-            let field_info = value.downcast::<PyDict>()?;
+            let field_info = value.cast::<PyDict>()?;
             let field_name_py: Bound<'_, PyString> = key.extract()?;
             let field_name = field_name_py.to_str()?;
 
@@ -319,7 +319,7 @@ impl Validator for ModelFieldsValidator {
                                 let py_key = match self.extras_keys_validator {
                                     Some(validator) => {
                                         match validator.validate(self.py, raw_key.borrow_input(), self.state) {
-                                            Ok(value) => value.downcast_bound::<PyString>(self.py)?.clone(),
+                                            Ok(value) => value.cast_bound::<PyString>(self.py)?.clone(),
                                             Err(ValError::LineErrors(line_errors)) => {
                                                 for err in line_errors {
                                                     self.errors.push(err.with_outer_location(raw_key.clone()));
@@ -396,7 +396,7 @@ impl Validator for ModelFieldsValidator {
         field_value: &Bound<'py, PyAny>,
         state: &mut ValidationState<'_, 'py>,
     ) -> ValResult<Py<PyAny>> {
-        let dict = obj.downcast::<PyDict>()?;
+        let dict = obj.cast::<PyDict>()?;
         let extra_behavior = state.extra_behavior_or(self.extra_behavior);
 
         let get_updated_dict = |output: &Bound<'py, PyAny>| {
@@ -459,7 +459,7 @@ impl Validator for ModelFieldsValidator {
                             },
                             field_value,
                             field_name.to_string(),
-                        ))
+                        ));
                     }
                 }
             }

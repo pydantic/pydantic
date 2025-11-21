@@ -10,10 +10,10 @@ use uuid::Variant;
 
 use crate::build_tools::is_strict;
 use crate::errors::{ErrorType, ErrorTypeDefaults, ValError, ValResult};
-use crate::input::input_as_python_instance;
 use crate::input::Input;
 use crate::input::InputType;
 use crate::input::ValidationMatch;
+use crate::input::input_as_python_instance;
 use crate::serializers::BytesMode;
 use crate::tools::SchemaDict;
 
@@ -27,14 +27,8 @@ const UUID_IS_SAFE: &str = "is_safe";
 
 static UUID_TYPE: PyOnceLock<Py<PyType>> = PyOnceLock::new();
 
-fn import_type(py: Python, module: &str, attr: &str) -> PyResult<Py<PyType>> {
-    py.import(module)?.getattr(attr)?.extract()
-}
-
 fn get_uuid_type(py: Python<'_>) -> PyResult<&Bound<'_, PyType>> {
-    Ok(UUID_TYPE
-        .get_or_init(py, || import_type(py, "uuid", "UUID").unwrap())
-        .bind(py))
+    UUID_TYPE.import(py, "uuid", "UUID")
 }
 
 #[derive(Debug, Clone, Copy)]

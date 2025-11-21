@@ -5,7 +5,7 @@ use pyo3::prelude::*;
 use pyo3::sync::PyOnceLock;
 use pyo3::types::{PyComplex, PyDict, PyString, PyType};
 
-use crate::build_tools::{is_strict, LazyLock};
+use crate::build_tools::{LazyLock, is_strict};
 use crate::errors::{ErrorTypeDefaults, ToErrorValue, ValError, ValResult};
 use crate::input::Input;
 
@@ -79,6 +79,6 @@ pub(crate) fn string_to_complex<'py>(
                 ValError::InternalErr(err)
             }
         })?
-        .downcast::<PyComplex>()?
+        .cast::<PyComplex>()?
         .to_owned())
 }

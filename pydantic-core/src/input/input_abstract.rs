@@ -3,7 +3,7 @@ use std::fmt;
 
 use pyo3::exceptions::PyValueError;
 use pyo3::types::{PyDict, PyList, PyString};
-use pyo3::{intern, prelude::*, IntoPyObjectExt};
+use pyo3::{IntoPyObjectExt, intern, prelude::*};
 
 use crate::errors::{ErrorTypeDefaults, InputValue, LocItem, ValError, ValResult};
 use crate::lookup_key::{LookupKey, LookupPath};
@@ -120,11 +120,7 @@ pub trait Input<'py>: fmt::Debug {
         Self: 'a;
 
     fn validate_dict(&self, strict: bool) -> ValResult<Self::Dict<'_>> {
-        if strict {
-            self.strict_dict()
-        } else {
-            self.lax_dict()
-        }
+        if strict { self.strict_dict() } else { self.lax_dict() }
     }
     fn strict_dict(&self) -> ValResult<Self::Dict<'_>>;
     #[cfg_attr(has_coverage_attribute, coverage(off))]

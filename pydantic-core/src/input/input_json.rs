@@ -16,8 +16,8 @@ use crate::validators::decimal::create_decimal;
 use crate::validators::{TemporalUnitMode, ValBytesMode};
 
 use super::datetime::{
-    bytes_as_date, bytes_as_datetime, bytes_as_time, bytes_as_timedelta, float_as_datetime, float_as_duration,
-    float_as_time, int_as_datetime, int_as_duration, int_as_time, EitherDate, EitherDateTime, EitherTime,
+    EitherDate, EitherDateTime, EitherTime, bytes_as_date, bytes_as_datetime, bytes_as_time, bytes_as_timedelta,
+    float_as_datetime, float_as_duration, float_as_time, int_as_datetime, int_as_duration, int_as_time,
 };
 use super::input_abstract::{ConsumeIterator, Never, ValMatch};
 use super::return_enums::ValidationMatch;
@@ -205,13 +205,16 @@ impl<'py, 'data> Input<'py> for JsonValue<'data> {
         }
     }
 
-    fn validate_decimal(&self, _strict: bool, py: Python<'py>) -> ValMatch<Bound<'py, PyAny>> {
+    fn validate_decimal(&self, strict: bool, py: Python<'py>) -> ValMatch<Bound<'py, PyAny>> {
         match self {
             JsonValue::Float(f) => {
                 create_decimal(&PyString::new(py, &f.to_string()), self).map(ValidationMatch::strict)
             }
             JsonValue::Str(..) | JsonValue::Int(..) | JsonValue::BigInt(..) => {
                 create_decimal(&self.into_pyobject(py)?, self).map(ValidationMatch::strict)
+            }
+            JsonValue::Array(array) if !strict && ValidatedTuple::len(&array) == Some(3) => {
+                create_decimal(&self.into_pyobject(py)?, self).map(ValidationMatch::lax)
             }
             _ => Err(ValError::new(ErrorTypeDefaults::DecimalType, self)),
         }

@@ -9,18 +9,18 @@ use ahash::AHashSet;
 use pyo3::IntoPyObjectExt;
 
 use crate::build_tools::py_schema_err;
-use crate::build_tools::{is_strict, schema_or_config_same, ExtraBehavior};
+use crate::build_tools::{ExtraBehavior, is_strict, schema_or_config_same};
 use crate::errors::{ErrorType, ErrorTypeDefaults, ValError, ValLineError, ValResult};
 use crate::input::{
-    input_as_python_instance, Arguments, BorrowInput, Input, InputType, KeywordArgs, PositionalArgs, ValidationMatch,
+    Arguments, BorrowInput, Input, InputType, KeywordArgs, PositionalArgs, ValidationMatch, input_as_python_instance,
 };
 use crate::lookup_key::LookupKeyCollection;
 use crate::tools::SchemaDict;
 use crate::validators::function::convert_err;
 
-use super::model::{create_class, force_setattr, Revalidate};
+use super::model::{Revalidate, create_class, force_setattr};
 use super::validation_state::Exactness;
-use super::{build_validator, BuildValidator, CombinedValidator, DefinitionsBuilder, ValidationState, Validator};
+use super::{BuildValidator, CombinedValidator, DefinitionsBuilder, ValidationState, Validator, build_validator};
 
 #[derive(Debug)]
 struct Field {
@@ -72,7 +72,7 @@ impl BuildValidator for DataclassArgsValidator {
         let mut positional_count = 0;
 
         for field in fields_schema {
-            let field = field.downcast::<PyDict>()?;
+            let field = field.cast::<PyDict>()?;
 
             let name_py: Bound<'_, PyString> = field.get_as_req(intern!(py, "name"))?;
             let name: String = name_py.extract()?;
@@ -360,7 +360,7 @@ impl Validator for DataclassArgsValidator {
                             }
                         }
                         Err(err) => return Err(err),
-                    };
+                    }
                 }
             }
         }
@@ -386,7 +386,7 @@ impl Validator for DataclassArgsValidator {
         field_value: &Bound<'py, PyAny>,
         state: &mut ValidationState<'_, 'py>,
     ) -> ValResult<Py<PyAny>> {
-        let dict = obj.downcast::<PyDict>()?;
+        let dict = obj.cast::<PyDict>()?;
         let extra_behavior = state.extra_behavior_or(self.extra_behavior);
 
         let ok = |output: Py<PyAny>| {
@@ -666,7 +666,7 @@ impl DataclassValidator {
     ) -> ValResult<()> {
         let (dc_dict, post_init_kwargs): (Bound<'_, PyAny>, Bound<'_, PyAny>) = val_output.extract(py)?;
         if self.slots {
-            let dc_dict = dc_dict.downcast::<PyDict>()?;
+            let dc_dict = dc_dict.cast::<PyDict>()?;
             for (key, value) in dc_dict.iter() {
                 force_setattr(py, dc, key, value)?;
             }
@@ -679,7 +679,7 @@ impl DataclassValidator {
             let r = if PyAnyMethods::is_none(&post_init_kwargs) {
                 dc.call_method0(post_init)
             } else {
-                let args = post_init_kwargs.downcast::<PyTuple>()?;
+                let args = post_init_kwargs.cast::<PyTuple>()?;
                 dc.call_method1(post_init, args)
             };
             r.map_err(|e| convert_err(py, e, input))?;

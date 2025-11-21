@@ -119,8 +119,6 @@ jobs:
 
       - name: Run pytest
         run: make test NUM_THREADS=${{ endsWith(matrix.python-version, 't') && '4' || '1' }}
-        # Free threaded is flaky, allow failures for now:
-        continue-on-error: ${{ endsWith(matrix.python-version, 't') }}
         env:
           COVERAGE_FILE: coverage/.coverage.${{ runner.os }}-py${{ matrix.python-version }}
           CONTEXT: ${{ runner.os }}-py${{ matrix.python-version }}-without-deps

@@ -26,6 +26,7 @@ from typing import (
     Any,
     Callable,
     Literal,
+    NamedTuple,
     NewType,
     Optional,
     TypeVar,
@@ -6832,6 +6833,29 @@ def test_strict_enum_with_use_enum_values() -> None:
     # validation error raised bc foo field uses strict mode
     with pytest.raises(ValidationError):
         Foo(foo='1')
+
+
+def test_enum_with_namedtuple_values() -> None:
+    """https://github.com/pydantic/pydantic/issues/12503"""
+
+    class NT(NamedTuple):
+        f: str
+
+    class SomeEnum(NT, Enum):
+        FOO = 'foo'
+
+    class Model1(BaseModel):
+        value: SomeEnum
+
+    assert Model1(value=SomeEnum.FOO).value is SomeEnum.FOO
+
+    class Model2(BaseModel, use_enum_values=True):
+        value: SomeEnum
+
+    assert Model2(value=NT('foo')).value == NT('foo')
+
+    with pytest.raises(ValidationError):
+        Model2(value=NT('bar'))
 
 
 @pytest.mark.skipif(

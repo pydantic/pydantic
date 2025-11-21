@@ -2,17 +2,17 @@ use std::borrow::Cow;
 use std::sync::Arc;
 
 use pyo3::types::{PyDict, PyString};
-use pyo3::{prelude::*, IntoPyObjectExt};
+use pyo3::{IntoPyObjectExt, prelude::*};
 
 use crate::build_tools::LazyLock;
 use crate::definitions::DefinitionsBuilder;
-use crate::serializers::errors::unwrap_ser_error;
-use crate::serializers::shared::{serialize_to_json, DoSerialize};
 use crate::serializers::SerializationState;
+use crate::serializers::errors::unwrap_ser_error;
+use crate::serializers::shared::{DoSerialize, serialize_to_json};
 
 use super::{
-    infer_json_key, infer_serialize, infer_to_python, BuildSerializer, CombinedSerializer, IsType, ObType, SerMode,
-    TypeSerializer,
+    BuildSerializer, CombinedSerializer, IsType, ObType, SerMode, TypeSerializer, infer_json_key, infer_serialize,
+    infer_to_python,
 };
 
 #[derive(Debug)]
@@ -50,7 +50,7 @@ impl TypeSerializer for StrSerializer {
         match state.extra.ob_type_lookup.is_type(value, ObType::Str) {
             IsType::Exact => Ok(value.clone().unbind()),
             IsType::Subclass => match state.extra.mode {
-                SerMode::Json => value.downcast::<PyString>()?.to_str()?.into_py_any(py),
+                SerMode::Json => value.cast::<PyString>()?.to_str()?.into_py_any(py),
                 _ => Ok(value.clone().unbind()),
             },
             IsType::False => {
@@ -65,7 +65,7 @@ impl TypeSerializer for StrSerializer {
         key: &'a Bound<'py, PyAny>,
         state: &mut SerializationState<'_, 'py>,
     ) -> PyResult<Cow<'a, str>> {
-        if let Ok(py_str) = key.downcast::<PyString>() {
+        if let Ok(py_str) = key.cast::<PyString>() {
             // FIXME py cow to avoid the copy
             Ok(Cow::Owned(py_str.to_string_lossy().into_owned()))
         } else {
@@ -80,7 +80,7 @@ impl TypeSerializer for StrSerializer {
         serializer: S,
         state: &mut SerializationState<'_, 'py>,
     ) -> Result<S::Ok, S::Error> {
-        match value.downcast::<PyString>() {
+        match value.cast::<PyString>() {
             Ok(py_str) => serialize_to_json(serializer)
                 .serialize_str(py_str)
                 .map_err(unwrap_ser_error),

@@ -2,7 +2,7 @@ use std::borrow::Cow;
 use std::sync::Arc;
 
 use pyo3::types::PyDict;
-use pyo3::{intern, prelude::*, IntoPyObjectExt};
+use pyo3::{IntoPyObjectExt, intern, prelude::*};
 use uuid::Uuid;
 
 use crate::build_tools::LazyLock;
@@ -10,8 +10,8 @@ use crate::definitions::DefinitionsBuilder;
 use crate::serializers::SerializationState;
 
 use super::{
-    infer_json_key, infer_serialize, infer_to_python, py_err_se_err, BuildSerializer, CombinedSerializer, IsType,
-    ObType, SerMode, TypeSerializer,
+    BuildSerializer, CombinedSerializer, IsType, ObType, SerMode, TypeSerializer, infer_json_key, infer_serialize,
+    infer_to_python, py_err_se_err,
 };
 
 pub(crate) fn uuid_to_string(py_uuid: &Bound<'_, PyAny>) -> PyResult<String> {

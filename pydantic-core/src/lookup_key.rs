@@ -1,17 +1,17 @@
 use std::convert::Infallible;
 use std::fmt;
 
+use pyo3::IntoPyObjectExt;
 use pyo3::exceptions::{PyAttributeError, PyTypeError};
 use pyo3::prelude::*;
 use pyo3::types::{PyDict, PyList, PyMapping, PyString};
-use pyo3::IntoPyObjectExt;
 
 use jiter::{JsonObject, JsonValue};
 
 use crate::build_tools::py_schema_err;
-use crate::errors::{py_err_string, ErrorType, LocItem, Location, ToErrorValue, ValError, ValLineError, ValResult};
+use crate::errors::{ErrorType, LocItem, Location, ToErrorValue, ValError, ValLineError, ValResult, py_err_string};
 use crate::input::StringMapping;
-use crate::tools::{extract_i64, mapping_get, py_err};
+use crate::tools::{mapping_get, py_err};
 
 /// Used for getting items from python dicts, python objects, or JSON objects, in different ways
 #[derive(Debug)]
@@ -47,7 +47,7 @@ impl fmt::Display for LookupKey {
 
 impl LookupKey {
     pub fn from_py(py: Python, value: &Bound<'_, PyAny>, alt_alias: Option<&str>) -> PyResult<Self> {
-        if let Ok(alias_py) = value.downcast::<PyString>() {
+        if let Ok(alias_py) = value.cast::<PyString>() {
             let alias: String = alias_py.extract()?;
             let path1 = LookupPath::from_str(py, &alias, Some(alias_py.clone()));
             match alt_alias {
@@ -58,11 +58,11 @@ impl LookupKey {
                 None => Ok(Self::Simple(path1)),
             }
         } else {
-            let list = value.downcast::<PyList>()?;
+            let list = value.cast::<PyList>()?;
             let Ok(first) = list.get_item(0) else {
                 return py_schema_err!("Lookup paths should have at least one element");
             };
-            let mut locs: Vec<LookupPath> = if first.downcast::<PyString>().is_ok() {
+            let mut locs: Vec<LookupPath> = if first.cast::<PyString>().is_ok() {
                 // list of strings rather than list of lists
                 vec![LookupPath::from_list(list)?]
             } else {
@@ -333,13 +333,13 @@ impl LookupPath {
     }
 
     fn from_list(obj: &Bound<'_, PyAny>) -> PyResult<LookupPath> {
-        let mut iter = obj.downcast::<PyList>()?.iter();
+        let mut iter = obj.cast::<PyList>()?.iter();
 
         let Some(first_item) = iter.next() else {
             return py_schema_err!("Each alias path should have at least one element");
         };
 
-        let Ok(first_item_py_str) = first_item.downcast_into::<PyString>() else {
+        let Ok(first_item_py_str) = first_item.cast_into::<PyString>() else {
             return py_err!(PyTypeError; "The first item in an alias path should be a string");
         };
 
@@ -433,7 +433,7 @@ impl<'a, 'py> IntoPyObject<'py> for &'a PathItemString {
 
 impl PathItem {
     pub fn from_py(obj: Bound<'_, PyAny>) -> PyResult<Self> {
-        let obj = match obj.downcast_into::<PyString>() {
+        let obj = match obj.cast_into::<PyString>() {
             Ok(py_str_key) => {
                 let str_key = py_str_key.to_str()?.to_string();
                 return Ok(Self::S(PathItemString {
@@ -446,8 +446,9 @@ impl PathItem {
 
         if let Ok(usize_key) = obj.extract::<usize>() {
             Ok(Self::Pos(usize_key))
-        } else if let Some(int_key) = extract_i64(&obj) {
-            Ok(Self::Neg(int_key.unsigned_abs() as usize))
+        } else if let Ok(int_key) = obj.extract::<isize>() {
+            // usize has more possible positive values than isize, so guaranteed negative here
+            Ok(Self::Neg(int_key.unsigned_abs()))
         } else {
             py_err!(PyTypeError; "Item in an alias path should be a string or int")
         }
@@ -455,7 +456,7 @@ impl PathItem {
 
     pub fn py_get_item<'py>(&self, py_any: &Bound<'py, PyAny>) -> Option<Bound<'py, PyAny>> {
         // we definitely don't want to index strings, so explicitly omit this case
-        if py_any.downcast::<PyString>().is_ok() {
+        if py_any.cast::<PyString>().is_ok() {
             None
         } else {
             // otherwise, blindly try getitem on v since no better logic is realistic
@@ -508,7 +509,7 @@ impl PathItem {
 impl PathItemString {
     fn py_get_attrs<'py>(&self, obj: &Bound<'py, PyAny>) -> PyResult<Option<Bound<'py, PyAny>>> {
         // if obj is a dict, we want to use get_item, not getattr
-        if obj.downcast::<PyDict>().is_ok() {
+        if obj.cast::<PyDict>().is_ok() {
             Ok(py_get_item(obj, self))
         } else {
             py_get_attrs(obj, &self.py_key)

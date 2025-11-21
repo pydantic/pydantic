@@ -6,11 +6,11 @@ use std::sync::Arc;
 
 use crate::definitions::DefinitionsBuilder;
 use crate::input::EitherTimedelta;
-use crate::serializers::config::{FromConfig, TemporalMode, TimedeltaMode};
 use crate::serializers::SerializationState;
+use crate::serializers::config::{FromConfig, TemporalMode, TimedeltaMode};
 
 use super::{
-    infer_json_key, infer_serialize, infer_to_python, BuildSerializer, CombinedSerializer, SerMode, TypeSerializer,
+    BuildSerializer, CombinedSerializer, SerMode, TypeSerializer, infer_json_key, infer_serialize, infer_to_python,
 };
 
 #[derive(Debug)]

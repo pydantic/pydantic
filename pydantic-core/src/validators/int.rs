@@ -1,14 +1,14 @@
 use std::sync::Arc;
 
 use num_bigint::BigInt;
+use pyo3::IntoPyObjectExt;
 use pyo3::exceptions::PyValueError;
 use pyo3::intern;
 use pyo3::prelude::*;
 use pyo3::types::{PyDict, PyString};
-use pyo3::IntoPyObjectExt;
 
-use crate::build_tools::is_strict;
 use crate::build_tools::LazyLock;
+use crate::build_tools::is_strict;
 use crate::errors::{ErrorType, ValError, ValResult};
 use crate::input::{Input, Int};
 

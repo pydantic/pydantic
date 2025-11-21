@@ -1,6 +1,6 @@
 use std::fmt::Debug;
-use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::Arc;
+use std::sync::atomic::{AtomicUsize, Ordering};
 
 use pyo3::prelude::*;
 use pyo3::types::{PyBytes, PyDict, PyTuple, PyType};
@@ -13,8 +13,8 @@ use crate::py_gc::PyGcTraverse;
 pub(crate) use config::{BytesMode, SerializationConfig};
 pub use errors::{PydanticSerializationError, PydanticSerializationUnexpectedValue};
 pub(crate) use extra::{Extra, SerMode, SerializationState, WarningsMode};
-use shared::to_json_bytes;
 pub use shared::CombinedSerializer;
+use shared::to_json_bytes;
 
 mod computed_fields;
 mod config;
@@ -62,7 +62,7 @@ impl SchemaSerializer {
     #[pyo3(signature = (schema, config=None))]
     pub fn py_new(schema: Bound<'_, PyDict>, config: Option<&Bound<'_, PyDict>>) -> PyResult<Self> {
         let mut definitions_builder = DefinitionsBuilder::new();
-        let serializer = CombinedSerializer::build_base(schema.downcast()?, config, &mut definitions_builder)?;
+        let serializer = CombinedSerializer::build_base(schema.cast()?, config, &mut definitions_builder)?;
         Ok(Self {
             serializer,
             definitions: definitions_builder.finish()?,

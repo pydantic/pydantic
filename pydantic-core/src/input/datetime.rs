@@ -1,11 +1,11 @@
 use pyo3::intern;
 use pyo3::prelude::*;
 
+use pyo3::IntoPyObjectExt;
 use pyo3::exceptions::PyValueError;
 use pyo3::pyclass::CompareOp;
 use pyo3::types::PyTuple;
 use pyo3::types::{PyDate, PyDateTime, PyDelta, PyDeltaAccess, PyDict, PyTime, PyTzInfo};
-use pyo3::IntoPyObjectExt;
 use speedate::DateConfig;
 use speedate::{
     Date, DateTime, DateTimeConfig, Duration, MicrosecondsPrecisionOverflowBehavior, ParseError, Time, TimeConfig,
@@ -225,10 +225,10 @@ impl<'py> TryFrom<&'_ Bound<'py, PyAny>> for EitherTimedelta<'py> {
     type Error = PyErr;
 
     fn try_from(value: &Bound<'py, PyAny>) -> PyResult<Self> {
-        if let Ok(dt) = value.downcast_exact() {
+        if let Ok(dt) = value.cast_exact() {
             Ok(EitherTimedelta::PyExact(dt.clone()))
         } else {
-            let dt = value.downcast()?;
+            let dt = value.cast()?;
             Ok(EitherTimedelta::PySubclass(dt.clone()))
         }
     }
@@ -343,7 +343,7 @@ fn time_as_tzinfo<'py>(py: Python<'py>, time: &Time) -> PyResult<Option<Bound<'p
     match time.tz_offset {
         Some(offset) => {
             let tz_info: TzInfo = offset.try_into()?;
-            Ok(Some(Bound::new(py, tz_info)?.into_any().downcast_into()?))
+            Ok(Some(Bound::new(py, tz_info)?.into_any().cast_into()?))
         }
         None => Ok(None),
     }

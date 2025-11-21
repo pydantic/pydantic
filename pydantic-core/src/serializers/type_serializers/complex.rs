@@ -2,13 +2,13 @@ use std::borrow::Cow;
 use std::sync::Arc;
 
 use pyo3::types::{PyComplex, PyDict};
-use pyo3::{prelude::*, IntoPyObjectExt};
+use pyo3::{IntoPyObjectExt, prelude::*};
 
 use crate::build_tools::LazyLock;
 use crate::definitions::DefinitionsBuilder;
 use crate::serializers::SerializationState;
 
-use super::{infer_serialize, infer_to_python, BuildSerializer, CombinedSerializer, SerMode, TypeSerializer};
+use super::{BuildSerializer, CombinedSerializer, SerMode, TypeSerializer, infer_serialize, infer_to_python};
 
 #[derive(Debug, Clone)]
 pub struct ComplexSerializer {}
@@ -35,7 +35,7 @@ impl TypeSerializer for ComplexSerializer {
         state: &mut SerializationState<'_, 'py>,
     ) -> PyResult<Py<PyAny>> {
         let py = value.py();
-        match value.downcast::<PyComplex>() {
+        match value.cast::<PyComplex>() {
             Ok(py_complex) => match state.extra.mode {
                 SerMode::Json => complex_to_str(py_complex).into_py_any(py),
                 _ => Ok(value.clone().unbind()),
@@ -61,7 +61,7 @@ impl TypeSerializer for ComplexSerializer {
         serializer: S,
         state: &mut SerializationState<'_, 'py>,
     ) -> Result<S::Ok, S::Error> {
-        match value.downcast::<PyComplex>() {
+        match value.cast::<PyComplex>() {
             Ok(py_complex) => {
                 let s = complex_to_str(py_complex);
                 Ok(serializer.collect_str::<String>(&s)?)

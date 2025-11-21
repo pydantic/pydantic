@@ -3,8 +3,8 @@ use std::borrow::Cow;
 use pyo3::prelude::*;
 use pyo3::types::PyDict;
 
-use crate::serializers::SerializationState;
 use crate::SchemaSerializer;
+use crate::serializers::SerializationState;
 use crate::{common::prebuilt::get_prebuilt, serializers::polymorphism_trampoline::PolymorphismTrampoline};
 
 use super::shared::{CombinedSerializer, TypeSerializer};

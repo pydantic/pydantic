@@ -8,10 +8,10 @@ use pyo3::types::{PyDict, PyString};
 use ahash::AHashMap;
 
 use crate::build_tools::py_schema_err;
-use crate::build_tools::{py_schema_error_type, schema_or_config, ExtraBehavior};
+use crate::build_tools::{ExtraBehavior, py_schema_error_type, schema_or_config};
 use crate::definitions::DefinitionsBuilder;
-use crate::serializers::shared::TypeSerializer;
 use crate::serializers::SerializationState;
+use crate::serializers::shared::TypeSerializer;
 use crate::tools::SchemaDict;
 
 use super::{BuildSerializer, CombinedSerializer, ComputedFields, FieldsMode, GeneralFieldsSerializer, SerField};
@@ -55,9 +55,9 @@ impl BuildSerializer for TypedDictSerializer {
         };
 
         for (key, value) in fields_dict {
-            let key_py = key.downcast_into::<PyString>()?;
+            let key_py = key.cast_into::<PyString>()?;
             let key: String = key_py.extract()?;
-            let field_info = value.downcast()?;
+            let field_info = value.cast()?;
 
             let key_py: Py<PyString> = key_py.into();
             let required = field_info.get_as(intern!(py, "required"))?.unwrap_or(total);

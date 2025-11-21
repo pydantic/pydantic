@@ -1,10 +1,10 @@
 use std::cmp::Ordering;
 use std::sync::Arc;
 
+use pyo3::IntoPyObjectExt;
 use pyo3::intern;
 use pyo3::prelude::*;
 use pyo3::types::PyDict;
-use pyo3::IntoPyObjectExt;
 
 use crate::build_tools::{is_strict, schema_or_config_same};
 use crate::errors::{ErrorType, ErrorTypeDefaults, ValError, ValResult};

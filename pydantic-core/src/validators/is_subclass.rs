@@ -61,7 +61,7 @@ impl Validator for IsSubclassValidator {
                 input,
             ));
         };
-        match obj.downcast::<PyType>() {
+        match obj.cast::<PyType>() {
             Ok(py_type) if py_type.is_subclass(self.class.bind(py))? => Ok(obj.clone().unbind()),
             _ => Err(ValError::new(
                 ErrorType::IsSubclassOf {
