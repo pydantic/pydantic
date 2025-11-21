@@ -12,6 +12,7 @@ use pyo3::exceptions::PyValueError;
 use pyo3::intern;
 use pyo3::prelude::*;
 use pyo3::types::{PyDict, PySet, PyString, PyType};
+use smallvec::SmallVec;
 
 use crate::build_tools::py_schema_err;
 use crate::build_tools::{ExtraBehavior, is_strict, schema_or_config_same};
@@ -832,6 +833,7 @@ impl ModelFieldsValidator {
         /// the desired lookup type
         ///
         /// This also handles the property that aliases are always preferred over names
+        #[expect(clippy::too_many_arguments)]
         fn set_field_value<'py>(
             py: Python<'py>,
             input: &JsonValue<'_>,
@@ -843,6 +845,7 @@ impl ModelFieldsValidator {
                 field_lookup_type,
             }: LookupFieldInfo,
             lookup_type: FieldLookupType,
+            lookup_path: Option<&[LookupPathItem<'_>]>,
         ) {
             if field_lookup_type.matches(lookup_type) {
                 let field_result = &mut field_results[i];
@@ -867,13 +870,18 @@ impl ModelFieldsValidator {
                         ValError::LineErrors(
                             line_errors
                                 .into_iter()
-                                .map(|err| {
-                                    if field_lookup_type == FieldLookupType::Alias {
-                                        // FIXME: should apply full alias path here
-                                        err.with_outer_location(&fields[i].name)
+                                .map(|mut err| {
+                                    if let Some(p) = lookup_path {
+                                        for path in p.iter().rev() {
+                                            err = match path {
+                                                LookupPathItem::Key(k) => err.with_outer_location(*k),
+                                                LookupPathItem::Index(i) => err.with_outer_location(*i),
+                                            };
+                                        }
                                     } else {
-                                        err.with_outer_location(&fields[i].name)
+                                        err = err.with_outer_location(&fields[i].name);
                                     }
+                                    err
                                 })
                                 .collect(),
                         )
@@ -885,18 +893,34 @@ impl ModelFieldsValidator {
             }
         }
 
-        fn fill_lookup_value<'py>(
+        enum LookupPathItem<'a> {
+            Key(&'a str),
+            Index(i64),
+        }
+
+        #[expect(clippy::too_many_arguments)]
+        fn fill_lookup_value<'py, 'a>(
             py: Python<'py>,
             fields: &[Field],
             field_results: &mut [Option<(ValResult<Py<PyAny>>, FieldLookupType)>],
             lookup_value: &LookupValue,
-            json_value: &JsonValue<'_>,
+            json_value: &'a JsonValue<'a>,
             state: &mut ValidationState<'_, 'py>,
             lookup_type: FieldLookupType,
+            lookup_path: &mut Option<SmallVec<[LookupPathItem<'a>; 1]>>,
         ) {
             match lookup_value {
                 LookupValue::Field(info) => {
-                    set_field_value(py, json_value, state, field_results, fields, *info, lookup_type);
+                    set_field_value(
+                        py,
+                        json_value,
+                        state,
+                        field_results,
+                        fields,
+                        *info,
+                        lookup_type,
+                        lookup_path.as_deref(),
+                    );
                 }
                 LookupValue::Complex {
                     fields: lookup_fields,
@@ -905,12 +929,24 @@ impl ModelFieldsValidator {
                     // this is a possibly recursive lookup with some complicated alias logic,
                     // not much we can do except recurse
                     for info in lookup_fields {
-                        set_field_value(py, json_value, state, field_results, fields, *info, lookup_type);
+                        set_field_value(
+                            py,
+                            json_value,
+                            state,
+                            field_results,
+                            fields,
+                            *info,
+                            lookup_type,
+                            lookup_path.as_deref(),
+                        );
                     }
                     if !lookup_map.map.is_empty() {
                         if let JsonValue::Object(nested_object) = json_value {
                             for (key, value) in &**nested_object {
                                 if let Some(lookup_value) = lookup_map.map.get(key.as_ref()) {
+                                    if let Some(p) = lookup_path {
+                                        p.push(LookupPathItem::Key(key.as_ref()));
+                                    }
                                     fill_lookup_value(
                                         py,
                                         fields,
@@ -919,7 +955,11 @@ impl ModelFieldsValidator {
                                         value,
                                         state,
                                         lookup_type,
+                                        lookup_path,
                                     );
+                                    if let Some(p) = lookup_path {
+                                        p.pop();
+                                    }
                                 }
                             }
                         }
@@ -933,6 +973,9 @@ impl ModelFieldsValidator {
                                     *list_item
                                 };
                                 if let Some(value) = nested_array.get(index as usize) {
+                                    if let Some(p) = lookup_path {
+                                        p.push(LookupPathItem::Index(*list_item));
+                                    }
                                     fill_lookup_value(
                                         py,
                                         fields,
@@ -941,7 +984,11 @@ impl ModelFieldsValidator {
                                         value,
                                         state,
                                         lookup_type,
+                                        lookup_path,
                                     );
+                                    if let Some(p) = lookup_path {
+                                        p.pop();
+                                    }
                                 }
                             }
                         }
@@ -966,10 +1013,14 @@ impl ModelFieldsValidator {
         let fields_set = PySet::empty(py)?;
 
         let model_extra_dict = PyDict::new(py);
+        let mut lookup_path: Option<SmallVec<[_; 1]>> = Some(SmallVec::new()).filter(|_| self.loc_by_alias);
         for (key, value) in &**json_object {
             let key = key.as_ref();
             // FIXME: root lookup map can never have list entries
             if let Some(lookup_value) = self.lookup.map.get(key) {
+                if let Some(p) = &mut lookup_path {
+                    p.push(LookupPathItem::Key(key));
+                }
                 fill_lookup_value(
                     py,
                     &self.fields,
@@ -978,7 +1029,11 @@ impl ModelFieldsValidator {
                     value,
                     state,
                     lookup_type,
+                    &mut lookup_path,
                 );
+                if let Some(p) = &mut lookup_path {
+                    p.pop();
+                }
                 continue;
             }
 
