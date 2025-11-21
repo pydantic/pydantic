@@ -118,9 +118,8 @@ jobs:
           python-version: ${{ matrix.python-version }}
 
       - run: |
-          source <(cargo llvm-cov show-env --export-prefix)
-          cargo llvm-cov clean --workspace --profraw-only
-        working-directory: ./pydantic-core
+          cargo llvm-cov clean --workspace --profraw-only --manifest-path ./pydantic-core/Cargo.toml
+          cargo llvm-cov show-env --manifest-path ./pydantic-core/Cargo.toml >> $GITHUB_ENV
 
       - name: Install dependencies
         run: uv sync --all-packages --group testing-extra --all-extras
@@ -135,10 +134,7 @@ jobs:
           COVERAGE_FILE: coverage/.coverage.${{ runner.os }}-py${{ matrix.python-version }}
           CONTEXT: ${{ runner.os }}-py${{ matrix.python-version }}-without-deps
 
-      - run: |
-          source <(cargo llvm-cov show-env --export-prefix)
-          cargo llvm-cov report
-        working-directory: ./pydantic-core
+      - run: cargo llvm-cov report --manifest-path ./pydantic-core/Cargo.toml
 
       - name: Store coverage files
         uses: actions/upload-artifact@v5
