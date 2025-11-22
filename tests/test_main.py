@@ -36,6 +36,7 @@ from pydantic import (
     GetCoreSchemaHandler,
     PrivateAttr,
     PydanticDeprecatedSince211,
+    PydanticSchemaGenerationError,
     PydanticUndefinedAnnotation,
     PydanticUserError,
     SecretStr,
@@ -3315,6 +3316,13 @@ def test_extra_validator_named() -> None:
         'title': 'Child',
         'type': 'object',
     }
+
+
+def test_extra_behavior_not_a_dict() -> None:
+    with pytest.raises(PydanticSchemaGenerationError):
+
+        class Model(BaseModel, extra='allow'):
+            __pydantic_extra__: int
 
 
 def test_super_getattr_extra():

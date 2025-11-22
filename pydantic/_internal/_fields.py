@@ -22,6 +22,7 @@ from . import _generics, _typing_extra
 from ._config import ConfigWrapper
 from ._docs_extraction import extract_docstrings_from_cls
 from ._import_utils import import_cached_base_model, import_cached_field_info
+from ._internal_dataclass import slots_true
 from ._namespace_utils import NsResolver
 from ._repr import Representation
 from ._utils import can_be_positional, get_first_not_none
@@ -39,6 +40,13 @@ class PydanticMetadata(Representation):
     """Base class for annotation markers like `Strict`."""
 
     __slots__ = ()
+
+
+@dataclasses.dataclass(**slots_true)  # TODO: make kw_only when we drop support for 3.9.
+class PydanticExtraInfo:
+    # TODO: make use of PEP 747:
+    annotation: Any
+    complete: bool
 
 
 def pydantic_general_metadata(**metadata: Any) -> BaseMetadata:
@@ -219,7 +227,7 @@ def collect_model_fields(  # noqa: C901
     ns_resolver: NsResolver,
     *,
     typevars_map: Mapping[TypeVar, Any] | None = None,
-) -> tuple[dict[str, FieldInfo], set[str]]:
+) -> tuple[dict[str, FieldInfo], PydanticExtraInfo | None, set[str]]:
     """Collect the fields and class variables names of a nascent Pydantic model.
 
     The fields collection process is *lenient*, meaning it won't error if string annotations
@@ -236,7 +244,8 @@ def collect_model_fields(  # noqa: C901
         typevars_map: A dictionary mapping type variables to their concrete types.
 
     Returns:
-        A two-tuple containing model fields and class variables names.
+        A three-tuple containing the model fields, the `PydanticExtraInfo` instance if the `__pydantic_extra__` annotation is set,
+        and class variables names.
 
     Raises:
         NameError:
@@ -413,7 +422,16 @@ def collect_model_fields(  # noqa: C901
 
     if config_wrapper.use_attribute_docstrings:
         _update_fields_from_docstrings(cls, fields)
-    return fields, class_vars
+
+    pydantic_extra_info: PydanticExtraInfo | None = None
+    if '__pydantic_extra__' in type_hints:
+        ann, complete = type_hints['__pydantic_extra__']
+        pydantic_extra_info = PydanticExtraInfo(
+            annotation=ann,
+            complete=complete,
+        )
+
+    return fields, pydantic_extra_info, class_vars
 
 
 def rebuild_model_fields(
@@ -422,10 +440,14 @@ def rebuild_model_fields(
     config_wrapper: ConfigWrapper,
     ns_resolver: NsResolver,
     typevars_map: Mapping[TypeVar, Any],
-) -> dict[str, FieldInfo]:
+) -> tuple[dict[str, FieldInfo], PydanticExtraInfo | None]:
     """Rebuild the (already present) model fields by trying to reevaluate annotations.
 
     This function should be called whenever a model with incomplete fields is encountered.
+
+    Returns:
+        A two-tuple, the first element being the rebuilt fields, the second element being
+        the rebuild `PydanticExtraInfo` instance, if available.
 
     Raises:
         NameError: If one of the annotations failed to evaluate.
@@ -446,7 +468,17 @@ def rebuild_model_fields(
                 update_field_from_config(config_wrapper, f_name, new_field)
                 rebuilt_fields[f_name] = new_field
 
-    return rebuilt_fields
+        if cls.__pydantic_extra_info__ is not None and not cls.__pydantic_extra_info__.complete:
+            rebuilt_extra_info = PydanticExtraInfo(
+                annotation=_typing_extra.eval_type(
+                    cls.__pydantic_extra_info__.annotation, *ns_resolver.types_namespace
+                ),
+                complete=True,
+            )
+        else:
+            rebuilt_extra_info = cls.__pydantic_extra_info__
+
+    return rebuilt_fields, rebuilt_extra_info
 
 
 def _recreate_field_info(

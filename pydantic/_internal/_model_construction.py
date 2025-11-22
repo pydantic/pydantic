@@ -41,6 +41,7 @@ if TYPE_CHECKING:
     from ..fields import FieldInfo, ModelPrivateAttr
     from ..fields import PrivateAttr as PydanticModelPrivateAttr
     from ..main import BaseModel
+    from ._fields import PydanticExtraInfo
 else:
     PydanticModelField = object()
     PydanticModelPrivateAttr = object()
@@ -345,7 +346,13 @@ class ModelMetaclass(ABCMeta):
 
         field_infos = cast('dict[str, FieldInfo]', self.__pydantic_fields__)  # pyright: ignore[reportAttributeAccessIssue]
 
-        return all(field_info._complete for field_info in field_infos.values())
+        pydantic_extra_info = cast('PydanticExtraInfo | None', self.__pydantic_extra_info__)  # pyright: ignore[reportAttributeAccessIssue]
+        if pydantic_extra_info is not None:
+            extra_complete = pydantic_extra_info.complete
+        else:
+            extra_complete = True
+
+        return all(field_info._complete for field_info in field_infos.values()) and extra_complete
 
     def __dir__(self) -> list[str]:
         attributes = list(super().__dir__())
@@ -563,9 +570,12 @@ def set_model_fields(
         ns_resolver: Namespace resolver to use when getting model annotations.
     """
     typevars_map = get_model_typevars_map(cls)
-    fields, class_vars = collect_model_fields(cls, config_wrapper, ns_resolver, typevars_map=typevars_map)
+    fields, pydantic_extra_info, class_vars = collect_model_fields(
+        cls, config_wrapper, ns_resolver, typevars_map=typevars_map
+    )
 
     cls.__pydantic_fields__ = fields
+    cls.__pydantic_extra_info__ = pydantic_extra_info
     cls.__class_vars__.update(class_vars)
 
     for k in class_vars:
@@ -620,7 +630,7 @@ def complete_model_class(
         # generate schema process. As we want to avoid having `__pydantic_fields_complete__` set to `False`
         # when `__pydantic_complete__` is `True`, we rebuild here:
         try:
-            cls.__pydantic_fields__ = rebuild_model_fields(
+            cls.__pydantic_fields__, cls.__pydantic_extra_info__ = rebuild_model_fields(
                 cls,
                 config_wrapper=config_wrapper,
                 ns_resolver=ns_resolver,
