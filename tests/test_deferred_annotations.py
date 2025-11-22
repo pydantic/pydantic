@@ -116,3 +116,20 @@ def test_deferred_annotations_return_values() -> None:
 
     MyDict = dict
     MyInt = int
+
+
+def test_deferred_annotations_pydantic_extra() -> None:
+    """https://github.com/pydantic/pydantic/issues/12393"""
+
+    class Foo(BaseModel, extra='allow'):
+        a: MyInt
+
+        __pydantic_extra__: MyDict[str, int]
+
+    MyInt = int
+    MyDict = dict
+
+    f = Foo(a='1', extra='1')
+
+    assert f.a == 1
+    assert f.extra == 1
