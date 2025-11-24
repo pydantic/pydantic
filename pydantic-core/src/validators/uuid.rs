@@ -222,15 +222,18 @@ impl UuidValidator {
     /// This implementation does not use the Python `__init__` function to speed up the process,
     /// as the `__init__` function in the Python `uuid` module performs extensive checks.
     fn create_py_uuid(&self, py_type: &Bound<'_, PyType>, uuid: &Uuid) -> ValResult<Py<PyAny>> {
+        static UUID_SAFE_UNKNOWN: PyOnceLock<Py<PyAny>> = PyOnceLock::new();
         let py = py_type.py();
-        let dc = create_class(py_type)?;
-        let int = uuid.as_u128();
-        let safe = py
-            .import(intern!(py, "uuid"))?
-            .getattr(intern!(py, "SafeUUID"))?
-            .get_item("safe")?;
-        force_setattr(py, &dc, intern!(py, UUID_INT), int)?;
-        force_setattr(py, &dc, intern!(py, UUID_IS_SAFE), safe)?;
-        Ok(dc.into())
+        let safe_unknown = UUID_SAFE_UNKNOWN.get_or_try_init(py, || {
+            py.import("uuid")?
+                .getattr("SafeUUID")?
+                .get_item("unknown")
+                .map(Bound::unbind)
+        })?;
+
+        let uuid_instance = create_class(py_type)?;
+        force_setattr(py, &uuid_instance, intern!(py, UUID_INT), uuid.as_u128())?;
+        force_setattr(py, &uuid_instance, intern!(py, UUID_IS_SAFE), safe_unknown)?;
+        Ok(uuid_instance.into())
     }
 }

@@ -1,6 +1,6 @@
 import copy
 import re
-from uuid import UUID
+from uuid import UUID, SafeUUID
 
 import pytest
 
@@ -234,3 +234,8 @@ def test_uuid_wrap_json():
     assert v.validate_json('"a6cc5730-2261-11ee-9c43-2eb5a363657c"', strict=True) == UUID(
         'a6cc5730-2261-11ee-9c43-2eb5a363657c'
     )
+
+
+def uuid_safety_unknown():
+    output = SchemaValidator(core_schema.uuid_schema()).validate_python('a6cc5730-2261-11ee-9c43-2eb5a363657c')
+    assert output.is_safe is SafeUUID.unknown
