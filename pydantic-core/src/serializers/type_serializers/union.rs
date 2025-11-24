@@ -204,7 +204,7 @@ impl BuildSerializer for TaggedUnionSerializer {
         definitions: &mut DefinitionsBuilder<Arc<CombinedSerializer>>,
     ) -> PyResult<Arc<CombinedSerializer>> {
         let py = schema.py();
-        let discriminator = Discriminator::new(py, &schema.get_as_req(intern!(py, "discriminator"))?)?;
+        let discriminator = Discriminator::new(&schema.get_as_req(intern!(py, "discriminator"))?)?;
 
         // TODO: guarantee at least 1 choice
         let choices_map: Bound<PyDict> = schema.get_as_req(intern!(py, "choices"))?;

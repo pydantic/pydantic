@@ -185,7 +185,7 @@ impl BuildValidator for ArgumentsV3Validator {
             }
 
             let validation_alias = arg.get_item(intern!(py, "alias"))?;
-            let lookup_key_collection = LookupKeyCollection::new(py, validation_alias, name.as_str())?;
+            let lookup_key_collection = LookupKeyCollection::new(validation_alias, &py_name)?;
 
             parameters.push(Parameter {
                 name,

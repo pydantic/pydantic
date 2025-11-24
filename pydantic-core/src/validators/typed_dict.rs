@@ -121,7 +121,7 @@ impl BuildValidator for TypedDictValidator {
             }
 
             let validation_alias = field_info.get_item(intern!(py, "validation_alias"))?;
-            let lookup_key_collection = LookupKeyCollection::new(py, validation_alias, field_name)?;
+            let lookup_key_collection = LookupKeyCollection::new(validation_alias, &field_name_py)?;
 
             fields.push(TypedDictField {
                 name: field_name.to_string(),

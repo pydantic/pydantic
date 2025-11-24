@@ -99,6 +99,9 @@ impl BuildValidator for ArgumentsValidator {
                 had_keyword_only = true;
             }
 
+            let validation_alias = arg.get_item(intern!(py, "alias"))?;
+            let lookup_key_collection = LookupKeyCollection::new(validation_alias, &py_name)?;
+
             let kwarg_key = if matches!(mode, "keyword_only" | "positional_or_keyword") {
                 Some(py_name.unbind())
             } else {
@@ -127,9 +130,6 @@ impl BuildValidator for ArgumentsValidator {
             } else if has_default {
                 had_default_arg = true;
             }
-
-            let validation_alias = arg.get_item(intern!(py, "alias"))?;
-            let lookup_key_collection = LookupKeyCollection::new(py, validation_alias, name.as_str())?;
 
             parameters.push(Parameter {
                 positional,
