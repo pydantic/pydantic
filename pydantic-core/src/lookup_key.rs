@@ -2,7 +2,7 @@ use std::convert::Infallible;
 use std::fmt;
 
 use pyo3::IntoPyObjectExt;
-use pyo3::exceptions::{PyAttributeError, PyTypeError};
+use pyo3::exceptions::PyTypeError;
 use pyo3::prelude::*;
 use pyo3::types::{PyDict, PyList, PyMapping, PyString};
 
@@ -126,7 +126,7 @@ impl LookupKey {
     ) -> PyResult<Option<(&'s LookupPath, Bound<'py, PyAny>)>> {
         self.get_impl(
             obj,
-            |obj, path| py_get_attrs(obj, &path.py_key),
+            |obj, path| obj.getattr_opt(&path.py_key),
             |d, loc| loc.py_get_attrs(&d),
         )
     }
@@ -509,36 +509,14 @@ impl PathItem {
 impl PathItemString {
     fn py_get_attrs<'py>(&self, obj: &Bound<'py, PyAny>) -> PyResult<Option<Bound<'py, PyAny>>> {
         // if obj is a dict, we want to use get_item, not getattr
-        if obj.cast::<PyDict>().is_ok() {
-            Ok(py_get_item(obj, self))
+        if let Ok(d) = obj.cast_exact::<PyDict>() {
+            d.get_item(&self.py_key)
+        } else if obj.is_instance_of::<PyDict>() {
+            // NB this deliberately goes through PyAnyMethods::get_item to allow subclasses of dict to override getitem
+            // FIXME: should this instance check be for Mapping instead of Dict?
+            Ok(obj.get_item(&self.py_key).ok())
         } else {
-            py_get_attrs(obj, &self.py_key)
-        }
-    }
-}
-
-/// wrapper around `getitem` that excludes string indexing `None` for strings
-fn py_get_item<'py>(py_any: &Bound<'py, PyAny>, index: impl IntoPyObject<'py>) -> Option<Bound<'py, PyAny>> {
-    // we definitely don't want to index strings, so explicitly omit this case
-    if py_any.is_instance_of::<PyString>() {
-        None
-    } else {
-        // otherwise, blindly try getitem on v since no better logic is realistic
-        py_any.get_item(index).ok()
-    }
-}
-
-/// wrapper around `getattr` that returns `Ok(None)` for attribute errors, but returns other errors
-/// We don't check `try_from_attributes` because that check was performed on the top level object before we got here
-fn py_get_attrs<'py>(obj: &Bound<'py, PyAny>, attr_name: &Py<PyString>) -> PyResult<Option<Bound<'py, PyAny>>> {
-    match obj.getattr(attr_name) {
-        Ok(attr) => Ok(Some(attr)),
-        Err(err) => {
-            if err.get_type(obj.py()).is_subclass_of::<PyAttributeError>()? {
-                Ok(None)
-            } else {
-                Err(err)
-            }
+            obj.getattr_opt(&self.py_key)
         }
     }
 }
