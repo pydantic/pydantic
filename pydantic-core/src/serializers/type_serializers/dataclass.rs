@@ -85,6 +85,7 @@ pub struct DataclassSerializer {
     serializer: Arc<CombinedSerializer>,
     fields: Vec<Py<PyString>>,
     name: String,
+    extra_behavior: ExtraBehavior,
 }
 
 impl BuildSerializer for DataclassSerializer {
@@ -103,6 +104,8 @@ impl BuildSerializer for DataclassSerializer {
         let class: Bound<'_, PyType> = schema.get_as_req(intern!(py, "cls"))?;
         let sub_schema = schema.get_as_req(intern!(py, "schema"))?;
         let serializer = CombinedSerializer::build(&sub_schema, config.as_ref(), definitions)?;
+        let extra_behavior =
+            ExtraBehavior::from_schema_or_config(py, &sub_schema, config.as_ref(), ExtraBehavior::Ignore)?;
 
         let fields = schema
             .get_as_req::<Bound<'_, PyList>>(intern!(py, "fields"))?
@@ -115,6 +118,7 @@ impl BuildSerializer for DataclassSerializer {
             serializer,
             fields,
             name: class.getattr(intern!(py, "__name__"))?.extract()?,
+            extra_behavior,
         })
         .into())
     }
@@ -154,8 +158,15 @@ impl TypeSerializer for DataclassSerializer {
             let state = &mut state.scoped_set(|s| &mut s.model, Some(value.clone()));
             let py = value.py();
             if let CombinedSerializer::Fields(ref fields_serializer) = *self.serializer {
-                let output_dict: Bound<PyDict> =
-                    fields_serializer.main_to_python(py, model, known_dataclass_iter(&self.fields, model), state)?;
+                let output_dict: Bound<PyDict> = if self.extra_behavior == ExtraBehavior::Allow {
+                    if let Some(items) = dataclass_dict_items(model) {
+                        fields_serializer.main_to_python(py, model, items.into_iter().map(Ok), state)?
+                    } else {
+                        fields_serializer.main_to_python(py, model, known_dataclass_iter(&self.fields, model), state)?
+                    }
+                } else {
+                    fields_serializer.main_to_python(py, model, known_dataclass_iter(&self.fields, model), state)?
+                };
 
                 fields_serializer.add_computed_fields_python(model, &output_dict, state)?;
                 Ok(output_dict.into())
@@ -191,13 +202,33 @@ impl TypeSerializer for DataclassSerializer {
         if self.allow_value(value, state).map_err(py_err_se_err)? {
             let state = &mut state.scoped_set(|s| &mut s.model, Some(value.clone()));
             if let CombinedSerializer::Fields(ref fields_serializer) = *self.serializer {
-                let expected_len = self.fields.len() + fields_serializer.computed_field_count();
-                let mut map = fields_serializer.main_serde_serialize(
-                    known_dataclass_iter(&self.fields, value),
-                    expected_len,
-                    serializer,
-                    state,
-                )?;
+                let mut map = if self.extra_behavior == ExtraBehavior::Allow {
+                    if let Some(items) = dataclass_dict_items(value) {
+                        let expected_len = items.len() + fields_serializer.computed_field_count();
+                        fields_serializer.main_serde_serialize(
+                            items.into_iter().map(Ok),
+                            expected_len,
+                            serializer,
+                            state,
+                        )?
+                    } else {
+                        let expected_len = self.fields.len() + fields_serializer.computed_field_count();
+                        fields_serializer.main_serde_serialize(
+                            known_dataclass_iter(&self.fields, value),
+                            expected_len,
+                            serializer,
+                            state,
+                        )?
+                    }
+                } else {
+                    let expected_len = self.fields.len() + fields_serializer.computed_field_count();
+                    fields_serializer.main_serde_serialize(
+                        known_dataclass_iter(&self.fields, value),
+                        expected_len,
+                        serializer,
+                        state,
+                    )?
+                };
                 fields_serializer.add_computed_fields_json::<S>(value, &mut map, state)?;
                 map.end()
             } else {
@@ -231,4 +262,13 @@ where
         let value = dataclass.getattr(field)?;
         Ok((field.bind(py).clone().into_any(), value))
     })
+}
+
+fn dataclass_dict_items<'py>(dataclass: &Bound<'py, PyAny>) -> Option<Vec<(Bound<'py, PyAny>, Bound<'py, PyAny>)>> {
+    if let Ok(dict_any) = dataclass.getattr(intern!(dataclass.py(), "__dict__")) {
+        if let Ok(dict) = dict_any.cast::<PyDict>() {
+            return Some(dict.iter().collect());
+        }
+    }
+    None
 }

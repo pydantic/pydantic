@@ -6,7 +6,7 @@ from typing import ClassVar
 
 import pytest
 
-from pydantic_core import SchemaSerializer, SchemaValidator, core_schema
+from pydantic_core import SchemaSerializer, SchemaValidator, ValidationError, core_schema
 
 on_pypy = platform.python_implementation() == 'PyPy'
 # pypy doesn't seem to maintain order of `__dict__`
@@ -136,6 +136,98 @@ def test_properties():
 
     assert s.to_python(FooProp(a='hello', b=b'more'), exclude={'b'}) == IsStrictDict(a='hello', c='hello more')
     assert s.to_json(FooProp(a='hello', b=b'more'), include={'a'}) == b'{"a":"hello"}'
+
+
+def test_dataclass_extra_allow_serialization():
+    @dataclasses.dataclass
+    class Model:
+        x: int
+
+    schema = core_schema.dataclass_schema(
+        Model,
+        core_schema.dataclass_args_schema(
+            'Model',
+            [core_schema.dataclass_field(name='x', schema=core_schema.int_schema())],
+            extra_behavior='allow',
+        ),
+        ['x'],
+    )
+    v = SchemaValidator(schema)
+    s = SchemaSerializer(schema)
+
+    m = v.validate_python({'x': 1, 'extra': 'allowed'})
+    assert m.x == 1
+    assert getattr(m, 'extra') == 'allowed'
+    assert s.to_python(m) == IsStrictDict(x=1, extra='allowed')
+    assert s.to_python(m, mode='json') == IsStrictDict(x=1, extra='allowed')
+
+    if on_pypy:
+        assert json.loads(s.to_json(m)) == {'x': 1, 'extra': 'allowed'}
+    else:
+        assert s.to_json(m) == b'{"x":1,"extra":"allowed"}'
+
+
+def test_dataclass_extra_ignore_and_forbid_serialization():
+    @dataclasses.dataclass
+    class Model:
+        x: int
+
+    ignore_schema = core_schema.dataclass_schema(
+        Model,
+        core_schema.dataclass_args_schema(
+            'Model',
+            [core_schema.dataclass_field(name='x', schema=core_schema.int_schema())],
+            extra_behavior='ignore',
+        ),
+        ['x'],
+    )
+    s_ignore = SchemaSerializer(ignore_schema)
+    v_ignore = SchemaValidator(ignore_schema)
+    m_ignore = v_ignore.validate_python({'x': 1, 'extra': 'ignored'})
+    assert not hasattr(m_ignore, 'extra')
+    assert s_ignore.to_python(m_ignore) == IsStrictDict(x=1)
+    assert s_ignore.to_python(m_ignore, mode='json') == IsStrictDict(x=1)
+
+    forbid_schema = core_schema.dataclass_schema(
+        Model,
+        core_schema.dataclass_args_schema(
+            'Model',
+            [core_schema.dataclass_field(name='x', schema=core_schema.int_schema())],
+            extra_behavior='forbid',
+        ),
+        ['x'],
+    )
+    v_forbid = SchemaValidator(forbid_schema)
+    with pytest.raises(ValidationError):
+        v_forbid.validate_python({'x': 1, 'extra': 'boom'})
+
+
+def test_dataclass_extra_allow_include_exclude():
+    @dataclasses.dataclass
+    class Model:
+        x: int
+
+    schema = core_schema.dataclass_schema(
+        Model,
+        core_schema.dataclass_args_schema(
+            'Model',
+            [core_schema.dataclass_field(name='x', schema=core_schema.int_schema())],
+            extra_behavior='allow',
+        ),
+        ['x'],
+    )
+    s = SchemaSerializer(schema)
+    v = SchemaValidator(schema)
+
+    m = v.validate_python({'x': 1, 'extra': 'allowed'})
+    assert s.to_python(m, exclude={'extra'}) == IsStrictDict(x=1)
+    assert s.to_python(m, include={'extra'}) == IsStrictDict(extra='allowed')
+    if on_pypy:
+        assert json.loads(s.to_json(m, exclude={'extra'})) == {'x': 1}
+        assert json.loads(s.to_json(m, include={'extra'})) == {'extra': 'allowed'}
+    else:
+        assert s.to_json(m, exclude={'extra'}) == b'{"x":1}'
+        assert s.to_json(m, include={'extra'}) == b'{"extra":"allowed"}'
 
 
 @pytest.mark.skipif(sys.version_info < (3, 10), reason='slots are only supported for dataclasses in Python > 3.10')
