@@ -332,6 +332,9 @@ pub fn expected_name(repr_args: &[Bound<'_, PyString>], base_name: &'static str)
     // close the name bracket
     name.push(']');
 
+    // Should have used all the allocated capacity
+    debug_assert_eq!(name_capacity, name.len());
+
     Ok(name)
 }
 
@@ -369,6 +372,9 @@ pub fn expected_repr(repr_args: &[Bound<'_, PyString>]) -> PyResult<String> {
         repr.push_str(" or ");
     }
     repr.push_str(last_arg.to_str()?);
+
+    // Should have used all the allocated capacity
+    debug_assert_eq!(repr_capacity, repr.len());
 
     Ok(repr)
 }
