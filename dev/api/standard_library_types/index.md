@@ -196,7 +196,7 @@ Standard library type: enum.IntEnum.
 #### Validation
 
 - If the enum.IntEnum type is used directly, any enum.IntEnum instance is validated as-is
-- Id an enum.IntEnum subclass is used as a type, any enum member or value that correspond to the enum members values is validated as-is.
+- If an enum.IntEnum subclass is used as a type, any enum member or value that correspond to the enum members values is validated as-is.
 
 See [Enums](#enums) for more details.
 
@@ -524,7 +524,7 @@ Standard library type: enum.Enum.
 ### Validation
 
 - If the enum.Enum type is used directly, any enum.Enum instance is validated as-is.
-- Id an enum.Enum subclass is used as a type, any enum member or value that correspond to the enum members values is validated as-is.
+- If an enum.Enum subclass is used as a type, any enum member or value that correspond to the enum members values is validated as-is.
 
 ### Serialization
 
