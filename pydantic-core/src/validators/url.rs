@@ -20,9 +20,10 @@ use crate::input::ValidationMatch;
 use crate::input::downcast_python_input;
 use crate::tools::SchemaDict;
 use crate::url::{PyMultiHostUrl, PyUrl, scheme_is_special};
+use crate::validators::literal::expected_name;
+use crate::validators::literal::expected_repr;
 
 use super::Exactness;
-use super::literal::expected_repr_name;
 use super::{BuildValidator, CombinedValidator, DefinitionsBuilder, ValidationState, Validator};
 
 type AllowedSchemes = Option<(AHashSet<String>, String)>;
@@ -798,10 +799,11 @@ fn get_allowed_schemes(schema: &Bound<'_, PyDict>, name: &'static str) -> PyResu
             let mut repr_args = Vec::new();
             for item in list {
                 let str = item.extract()?;
-                repr_args.push(format!("'{str}'"));
+                repr_args.push(item.repr()?);
                 expected.insert(str);
             }
-            let (repr, name) = expected_repr_name(repr_args, name);
+            let repr = expected_repr(&repr_args)?;
+            let name = expected_name(&repr_args, name)?;
             Ok((Some((expected, repr)), name))
         }
         None => Ok((None, name.to_string())),

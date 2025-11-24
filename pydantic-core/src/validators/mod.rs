@@ -10,7 +10,7 @@ use pyo3::types::{PyAny, PyDict, PyString, PyTuple, PyType};
 use pyo3::{IntoPyObjectExt, prelude::*};
 use pyo3::{PyTraverseError, PyVisit, intern};
 
-use crate::build_tools::{ExtraBehavior, py_schema_err, py_schema_error_type};
+use crate::build_tools::{ExtraBehavior, py_schema_error_type};
 use crate::definitions::{Definitions, DefinitionsBuilder};
 use crate::errors::{LocItem, ValError, ValResult, ValidationError};
 use crate::input::{Input, InputType, StringMapping};
@@ -506,30 +506,6 @@ pub trait BuildValidator: Sized {
     ) -> PyResult<Arc<CombinedValidator>>;
 }
 
-/// Logic to create a particular validator, called in the `validator_match` macro, then in turn by `build_validator`
-fn build_specific_validator<T: BuildValidator>(
-    val_type: &str,
-    schema_dict: &Bound<'_, PyDict>,
-    config: Option<&Bound<'_, PyDict>>,
-    definitions: &mut DefinitionsBuilder<Arc<CombinedValidator>>,
-) -> PyResult<Arc<CombinedValidator>> {
-    T::build(schema_dict, config, definitions)
-        .map_err(|err| py_schema_error_type!("Error building \"{}\" validator:\n  {}", val_type, err))
-}
-
-// macro to build the match statement for validator selection
-macro_rules! validator_match {
-    ($type:ident, $dict:ident, $config:ident, $definitions:ident, $($validator:path,)+) => {
-        match $type {
-            $(
-                <$validator>::EXPECTED_TYPE => build_specific_validator::<$validator>($type, $dict, $config, $definitions),
-            )+
-            "invalid" => return py_schema_err!("Cannot construct schema with `InvalidSchema` member."),
-            _ => return py_schema_err!(r#"Unknown schema type: "{}""#, $type),
-        }
-    };
-}
-
 // Used when creating the base validator instance, to avoid reusing the instance
 // when unpickling:
 pub fn build_validator_base(
@@ -566,7 +542,20 @@ fn build_validator_inner(
         }
     }
 
-    validator_match!(
+    // macro to build the match statement for validator selection
+    macro_rules! validator_match {
+        ($type:ident, $dict:ident, $config:ident, $definitions:ident, $($validator:path,)+) => {
+            match $type {
+                $(
+                    <$validator>::EXPECTED_TYPE => <$validator>::build($dict, $config, $definitions),
+                )+
+                "invalid" => return Err(invalid_schema_type()),
+                _ => return Err(unknown_schema_type($type)),
+            }
+        };
+    }
+
+    let result = validator_match!(
         type_,
         dict,
         config,
@@ -661,7 +650,24 @@ fn build_validator_inner(
         definitions::DefinitionRefValidator,
         definitions::DefinitionsValidatorBuilder,
         complex::ComplexValidator,
-    )
+    );
+
+    result.map_err(|e| failed_to_build_validator(type_, e))
+}
+
+#[cold]
+fn failed_to_build_validator(val_type: &str, err: PyErr) -> PyErr {
+    py_schema_error_type!("Error building \"{}\" validator:\n  {}", val_type, err)
+}
+
+#[cold]
+fn invalid_schema_type() -> PyErr {
+    py_schema_error_type!("Cannot construct schema with `InvalidSchema` member.")
+}
+
+#[cold]
+fn unknown_schema_type(val_type: &str) -> PyErr {
+    py_schema_error_type!("Unknown schema type: \"{}\"", val_type)
 }
 
 /// More (mostly immutable) data to pass between validators, should probably be class `Context`,
