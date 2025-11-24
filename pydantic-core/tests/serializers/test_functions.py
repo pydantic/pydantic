@@ -665,6 +665,12 @@ def test_function_wrap_preserves_wrapped_serialization():
     ):
         assert s.to_python('abc') == 'abc'
 
+# import sys; sys.setrecursionlimit(745)
+
+def test_tmp():
+    print(sys.getrecursionlimit())
+    raise Exception
+
 
 @pytest.mark.skipif(
     platform.python_implementation() in ('PyPy', 'GraalVM') or sys.platform in {'emscripten', 'win32'},
