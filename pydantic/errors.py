@@ -98,7 +98,7 @@ class PydanticErrorMixin:
             return f'{self.message}\n\nFor further information visit {DEV_ERROR_DOCS_URL}{self.code}'
 
 
-class PydanticUserError(PydanticErrorMixin, TypeError):
+class PydanticUserError(PydanticErrorMixin, Exception):
     """An error raised due to incorrect use of Pydantic."""
 
 
