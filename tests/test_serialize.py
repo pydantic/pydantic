@@ -18,6 +18,7 @@ from pydantic import (
     BaseModel,
     Field,
     FieldSerializationInfo,
+    PydanticUserError,
     SerializationInfo,
     SerializerFunctionWrapHandler,
     TypeAdapter,
@@ -143,6 +144,59 @@ def test_serializer_annotated_typing_cache(serializer, func):
         x: Optional[FancyInt]
 
     assert FancyIntModel(x=1234).model_dump() == {'x': '1,235'}
+
+
+def test_use_bare_field_serializer():
+    with pytest.raises(PydanticUserError) as exc:
+
+        class Model(BaseModel):
+            a: str
+
+            @field_serializer
+            def checker(cls, v):
+                return v
+
+    assert exc.value.code == 'decorator-missing-arguments'
+
+
+def test_use_no_fields_field_serializer():
+    with pytest.raises(
+        TypeError, match=re.escape("field_serializer() missing 1 required positional argument: 'field'")
+    ):
+
+        class Model(BaseModel):
+            a: str
+
+            @field_serializer()
+            def checker(cls, v):
+                return v
+
+
+def test_field_serializer_bad_fields_throws_configerror():
+    with pytest.raises(PydanticUserError) as exc:
+
+        class Model1(BaseModel):
+            a: str
+            b: str
+
+            @field_serializer(['a', 'b'])
+            def check_fields(cls, v):
+                return v
+
+    assert exc.value.code == 'decorator-invalid-fields'
+
+    with pytest.raises(PydanticUserError) as exc:
+
+        class Model2(BaseModel):
+            a: str
+            b: str
+
+            @field_serializer(['a', 'b'])
+            @classmethod
+            def check_fields(cls, v):
+                return v
+
+    assert exc.value.code == 'decorator-invalid-fields'
 
 
 def test_serialize_decorator_always():
