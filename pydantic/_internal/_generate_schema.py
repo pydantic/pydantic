@@ -107,6 +107,8 @@ from ._schema_gather import MissingDefinitionError, gather_schemas_for_cleaning
 from ._schema_generation_shared import CallbackGetCoreSchemaHandler
 from ._utils import lenient_issubclass, smart_deepcopy
 
+from ._schema_gen._type_registry import TypeRegistry
+
 if TYPE_CHECKING:
     from ..fields import ComputedFieldInfo, FieldInfo
     from ..main import BaseModel
@@ -336,6 +338,7 @@ class GenerateSchema:
     """Generate core schema for a Pydantic model, dataclass and types like `str`, `datetime`, ... ."""
 
     __slots__ = (
+        '_type_registry',
         '_config_wrapper_stack',
         '_ns_resolver',
         '_typevars_map',
@@ -346,10 +349,12 @@ class GenerateSchema:
 
     def __init__(
         self,
+        type_registry: TypeRegistry,
         config_wrapper: ConfigWrapper,
         ns_resolver: NsResolver | None = None,
         typevars_map: Mapping[TypeVar, Any] | None = None,
     ) -> None:
+        self._type_registry = type_registry
         # we need a stack for recursing into nested models
         self._config_wrapper_stack = ConfigWrapperStack(config_wrapper)
         self._ns_resolver = ns_resolver or NsResolver()
@@ -725,10 +730,12 @@ class GenerateSchema:
         """
         schema = self._generate_schema_from_get_schema_method(obj, obj)
 
-        if schema is None:
-            schema = self._generate_schema_inner(obj)
+        origin = get_origin(obj)
 
-        metadata_js_function = _extract_get_pydantic_json_schema(obj)
+        if schema is None:
+            schema = self._generate_schema_inner(obj, _origin=origin)
+
+        metadata_js_function = _extract_get_pydantic_json_schema(obj, _origin=origin)
         if metadata_js_function is not None:
             metadata_schema = resolve_original_schema(schema, self.defs)
             if metadata_schema:
@@ -895,7 +902,7 @@ class GenerateSchema:
             # as these types are already recognized by the `GenerateSchema` class and isn't ideal
             # as we might end up calling `get_schema_or_ref` (expensive) on types that are actually
             # not referenceable:
-            with self.defs.get_schema_or_ref(obj) as (_, maybe_schema):
+            with self.defs.get_schema_or_ref_for_obj(obj) as (_, maybe_schema):
                 if maybe_schema is not None:
                     return maybe_schema
 
@@ -989,11 +996,13 @@ class GenerateSchema:
             raise TypeError(f'Expected two type arguments for {origin}, got 1')
         return args[0], args[1]
 
-    def _generate_schema_inner(self, obj: Any) -> core_schema.CoreSchema:
+    def _generate_schema_inner(self, obj: Any, _origin: Any = PydanticUndefined) -> core_schema.CoreSchema:
         if typing_objects.is_self(obj):
             obj = self._resolve_self_type(obj)
 
-        if typing_objects.is_annotated(get_origin(obj)):
+        origin = _origin if _origin is not PydanticUndefined else get_origin(obj)
+
+        if typing_objects.is_annotated(origin):
             return self._annotated_schema(obj)
 
         if isinstance(obj, dict):
@@ -1006,18 +1015,12 @@ class GenerateSchema:
         if isinstance(obj, ForwardRef):
             return self.generate_schema(self._resolve_forward_ref(obj))
 
-        BaseModel = import_cached_base_model()
-
-        if lenient_issubclass(obj, BaseModel):
-            with self.model_type_stack.push(obj):
-                return self._model_schema(obj)
-
         if isinstance(obj, PydanticRecursiveRef):
             return core_schema.definition_reference_schema(schema_ref=obj.type_ref)
 
-        return self.match_type(obj)
+        return self.match_type(obj, _origin=origin)
 
-    def match_type(self, obj: Any) -> core_schema.CoreSchema:  # noqa: C901
+    def match_type(self, obj: Any, _origin: Any = PydanticUndefined) -> core_schema.CoreSchema:  # noqa: C901
         """Main mapping of types to schemas.
 
         The general structure is a series of if statements starting with the simple cases
@@ -1030,6 +1033,38 @@ class GenerateSchema:
         The idea is that we'll evolve this into adding more and more user facing methods over time
         as they get requested and we figure out what the right API for them is.
         """
+        origin = _origin if _origin is not PydanticUndefined else get_origin(obj)
+
+        if is_union_origin(origin):
+            return self._union_schema(obj)
+
+        if typing_objects.is_literal(origin):
+            return self._literal_schema(obj)
+
+        if origin is not None and (aliased_obj := typing_objects.DEPRECATED_ALIASES.get(obj)):
+            obj = aliased_obj
+            origin = None
+
+        type_handler_class = self._type_registry.get_type_handler(origin if origin is not None else obj)
+        if type_handler_class is None:
+            if self._arbitrary_types:
+                return self._arbitrary_type_schema(origin if origin is not None else obj)
+            return self._unknown_type_schema(obj)
+
+        type_handler = type_handler_class(self)
+
+        ref = type_handler.get_reference(origin, obj)
+        if ref is not None:
+            with self.defs.get_schema_or_ref(ref) as maybe_schema:
+                if maybe_schema is not None:
+                    return maybe_schema
+
+                core_schema = type_handler._generate_schema(origin, obj)
+                return core_schema
+        else:
+            core_schema = type_handler._generate_schema(origin, obj)
+            return core_schema
+
         if obj is str:
             return core_schema.str_schema()
         elif obj is bytes:
@@ -2606,20 +2641,17 @@ def wrap_default(field_info: FieldInfo, schema: core_schema.CoreSchema) -> core_
         return schema
 
 
-def _extract_get_pydantic_json_schema(tp: Any) -> GetJsonSchemaFunction | None:
-    """Extract `__get_pydantic_json_schema__` from a type, handling the deprecated `__modify_schema__`."""
+def _extract_get_pydantic_json_schema(tp: Any, _origin: Any | None = None) -> GetJsonSchemaFunction | None:
     js_modify_function = getattr(tp, '__get_pydantic_json_schema__', None)
 
-    if hasattr(tp, '__modify_schema__'):
-        BaseModel = import_cached_base_model()
+    if js_modify_function is not None and hasattr(tp, '__modify_schema__'):
+        from pydantic import BaseModel
 
-        has_custom_v2_modify_js_func = (
-            js_modify_function is not None
-            and BaseModel.__get_pydantic_json_schema__.__func__  # type: ignore
-            not in (js_modify_function, getattr(js_modify_function, '__func__', None))
+        is_base_model_get_json_schema = (
+            getattr(js_modify_function, '__func__', None) is BaseModel.__get_pydantic_json_schema__.__func__
         )
 
-        if not has_custom_v2_modify_js_func:
+        if is_base_model_get_json_schema:
             cls_name = getattr(tp, '__name__', None)
             raise PydanticUserError(
                 f'The `__modify_schema__` method is not supported in Pydantic v2. '
@@ -2627,15 +2659,13 @@ def _extract_get_pydantic_json_schema(tp: Any) -> GetJsonSchemaFunction | None:
                 code='custom-json-schema',
             )
 
-    if (origin := get_origin(tp)) is not None:
-        # Generic aliases proxy attribute access to the origin, *except* dunder attributes,
-        # such as `__get_pydantic_json_schema__`, hence the explicit check.
-        return _extract_get_pydantic_json_schema(origin)
+    origin = _origin if _origin is not None else get_origin(tp)
 
-    if js_modify_function is None:
-        return None
+    if origin is not None:
+        return _extract_get_pydantic_json_schema(origin, None)
 
     return js_modify_function
+
 
 
 def resolve_original_schema(schema: CoreSchema, definitions: _Definitions) -> CoreSchema | None:
@@ -2693,7 +2723,7 @@ class _Definitions:
         self._definitions = {}
 
     @contextmanager
-    def get_schema_or_ref(self, tp: Any, /) -> Generator[tuple[str, core_schema.DefinitionReferenceSchema | None]]:
+    def get_schema_or_ref_for_obj(self, tp: Any, /) -> Generator[tuple[str, core_schema.DefinitionReferenceSchema | None]]:
         """Get a definition for `tp` if one exists.
 
         If a definition exists, a tuple of `(ref_string, CoreSchema)` is returned.
@@ -2722,6 +2752,38 @@ class _Definitions:
             self._recursively_seen.add(ref)
             try:
                 yield (ref, None)
+            finally:
+                self._recursively_seen.discard(ref)
+
+    @contextmanager
+    def get_schema_or_ref(self, ref: str, /) -> Generator[core_schema.DefinitionReferenceSchema | None]:
+        """Get a definition for `ref` if one exists.
+
+        If a definition exists, a tuple of `(ref_string, CoreSchema)` is returned.
+        If no definition exists yet, a tuple of `(ref_string, None)` is returned.
+
+        Note that the returned `CoreSchema` will always be a `DefinitionReferenceSchema`,
+        not the actual definition itself.
+
+        This should be called for any type that can be identified by reference.
+        This includes any recursive types.
+
+        At present the following types can be named/recursive:
+
+        - Pydantic model
+        - Pydantic and stdlib dataclasses
+        - Typed dictionaries
+        - Named tuples
+        - `TypeAliasType` instances
+        - Enums
+        """
+        # return the reference if we're either (1) in a cycle or (2) it the reference was already encountered:
+        if ref in self._recursively_seen or ref in self._definitions:
+            yield core_schema.definition_reference_schema(ref)
+        else:
+            self._recursively_seen.add(ref)
+            try:
+                yield
             finally:
                 self._recursively_seen.discard(ref)
 

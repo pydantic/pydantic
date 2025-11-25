@@ -648,7 +648,11 @@ def complete_model_class(
 
         assert cls.__pydantic_fields_complete__
 
+    from ._schema_gen._type_registry import pydantic_registry
+    from ._schema_gen._types import _builtins, _base_model, _generic_builtins, _stdlib
+
     gen_schema = GenerateSchema(
+        pydantic_registry,
         config_wrapper,
         ns_resolver,
         typevars_map,
