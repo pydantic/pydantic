@@ -1376,6 +1376,11 @@ except ValidationError as e:
     * the model must be defined globally
     * the `__module__` argument must be provided
 
+!!! warning
+    This function may execute arbitrary code contained in field annotations, if string references need to be evaluated.
+
+    See [Security implications of introspecting annotations](https://docs.python.org/3/library/annotationlib.html#annotationlib-security) for more information.
+
 See also: the [dynamic model example](../examples/dynamic_models.md), providing guidelines to derive an optional model from another one.
 
 ## `RootModel` and custom root types
