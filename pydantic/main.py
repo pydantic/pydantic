@@ -1733,6 +1733,11 @@ def create_model(  # noqa: C901
     Dynamically creates and returns a new Pydantic model, in other words, `create_model` dynamically creates a
     subclass of [`BaseModel`][pydantic.BaseModel].
 
+    !!! warning
+        This function may execute arbitrary code contained in field annotations, if string references need to be evaluated.
+
+        See [Security implications of introspecting annotations](https://docs.python.org/3/library/annotationlib.html#annotationlib-security) for more information.
+
     Args:
         model_name: The name of the newly created model.
         __config__: The configuration of the new model.
