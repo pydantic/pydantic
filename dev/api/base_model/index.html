@@ -11011,6 +11011,11 @@ See the <a class="autorefs autorefs-internal" href="../config/#pydantic.config.C
 </div>
 <p>Dynamically creates and returns a new Pydantic model, in other words, <code>create_model</code> dynamically creates a
 subclass of <a class="autorefs autorefs-internal" href="#pydantic.BaseModel"><code>BaseModel</code></a>.</p>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>This function may execute arbitrary code contained in field annotations, if string references need to be evaluated.</p>
+<p>See <a href="https://docs.python.org/3/library/annotationlib.html#annotationlib-security">Security implications of introspecting annotations</a> for more information.</p>
+</div>
 
 
 <p><span class="doc-section-title">Parameters:</span></p>
@@ -11322,7 +11327,12 @@ validators <a href="https://docs.pydantic.dev/2.9/concepts/validators/#field-val
 <span class="normal">1815</span>
 <span class="normal">1816</span>
 <span class="normal">1817</span>
-<span class="normal">1818</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">create_model</span><span class="p">(</span>  <span class="c1"># noqa: C901</span>
+<span class="normal">1818</span>
+<span class="normal">1819</span>
+<span class="normal">1820</span>
+<span class="normal">1821</span>
+<span class="normal">1822</span>
+<span class="normal">1823</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">create_model</span><span class="p">(</span>  <span class="c1"># noqa: C901</span>
     <span class="n">model_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
     <span class="o">/</span><span class="p">,</span>
     <span class="o">*</span><span class="p">,</span>
@@ -11341,6 +11351,11 @@ validators <a href="https://docs.pydantic.dev/2.9/concepts/validators/#field-val
 
 <span class="sd">    Dynamically creates and returns a new Pydantic model, in other words, `create_model` dynamically creates a</span>
 <span class="sd">    subclass of [`BaseModel`][pydantic.BaseModel].</span>
+
+<span class="sd">    !!! warning</span>
+<span class="sd">        This function may execute arbitrary code contained in field annotations, if string references need to be evaluated.</span>
+
+<span class="sd">        See [Security implications of introspecting annotations](https://docs.python.org/3/library/annotationlib.html#annotationlib-security) for more information.</span>
 
 <span class="sd">    Args:</span>
 <span class="sd">        model_name: The name of the newly created model.</span>
