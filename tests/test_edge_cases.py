@@ -974,7 +974,7 @@ def test_inheritance():
         a: float = ...
 
     with pytest.raises(
-        TypeError,
+        PydanticUserError,
         match=(
             "Field 'a' defined on a base class was overridden by a non-annotated attribute. "
             'All field definitions, including overrides, require a type annotation.'
@@ -1139,7 +1139,7 @@ def test_annotation_inheritance():
     assert C.model_fields['integer'].annotation == str
 
     with pytest.raises(
-        TypeError,
+        PydanticUserError,
         match=(
             "Field 'integer' defined on a base class was overridden by a non-annotated attribute. "
             'All field definitions, including overrides, require a type annotation.'
@@ -2155,7 +2155,7 @@ def test_custom_generic_disallowed():
         r'Unable to generate pydantic-core schema for (.*)MyGen\[str, bool\](.*). '
         r'Set `arbitrary_types_allowed=True` in the model_config to ignore this error'
     )
-    with pytest.raises(TypeError, match=match):
+    with pytest.raises(PydanticUserError, match=match):
 
         class Model(BaseModel):
             a: str

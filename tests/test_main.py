@@ -982,7 +982,7 @@ def test_arbitrary_type_allowed_validation_fails():
 
 
 def test_arbitrary_types_not_allowed():
-    with pytest.raises(TypeError, match='Unable to generate pydantic-core schema for <class'):
+    with pytest.raises(PydanticUserError, match='Unable to generate pydantic-core schema for <class'):
 
         class ArbitraryTypeNotAllowedModel(BaseModel):
             t: ArbitraryType
@@ -1672,7 +1672,7 @@ def test_untyped_fields_warning():
 
 
 def test_untyped_fields_error():
-    with pytest.raises(TypeError, match="Field 'a' requires a type annotation"):
+    with pytest.raises(PydanticUserError, match="Field 'a' requires a type annotation"):
 
         class Model(BaseModel):
             a = Field('foobar')

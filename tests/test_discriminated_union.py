@@ -453,7 +453,9 @@ def test_alias_different():
         pet_type: Literal['dog'] = Field(alias='T')
         d: str
 
-    with pytest.raises(TypeError, match=re.escape("Aliases for discriminator 'pet_type' must be the same (got T, U)")):
+    with pytest.raises(
+        PydanticUserError, match=re.escape("Aliases for discriminator 'pet_type' must be the same (got T, U)")
+    ):
 
         class Model(BaseModel):
             pet: Union[Cat, Dog] = Field(discriminator='pet_type')
@@ -886,7 +888,9 @@ def test_invalid_alias() -> None:
     dog = core_schema.typed_dict_schema(dog_fields)
     schema = core_schema.union_schema([cat, dog])
 
-    with pytest.raises(TypeError, match=re.escape("Alias ['cat', 'CAT'] is not supported in a discriminated union")):
+    with pytest.raises(
+        PydanticUserError, match=re.escape("Alias ['cat', 'CAT'] is not supported in a discriminated union")
+    ):
         apply_discriminator(schema, 'kind')
 
 
@@ -896,7 +900,7 @@ def test_invalid_discriminator_type() -> None:
     cat = core_schema.typed_dict_schema(cat_fields)
     dog = core_schema.typed_dict_schema(dog_fields)
 
-    with pytest.raises(TypeError, match=re.escape("TypedDict needs field 'kind' to be of type `Literal`")):
+    with pytest.raises(PydanticUserError, match=re.escape("TypedDict needs field 'kind' to be of type `Literal`")):
         apply_discriminator(core_schema.union_schema([cat, dog]), 'kind')
 
 
@@ -906,7 +910,7 @@ def test_missing_discriminator_field() -> None:
     cat = core_schema.typed_dict_schema(cat_fields)
     dog = core_schema.typed_dict_schema(dog_fields)
 
-    with pytest.raises(TypeError, match=re.escape("TypedDict needs a discriminator field for key 'kind'")):
+    with pytest.raises(PydanticUserError, match=re.escape("TypedDict needs a discriminator field for key 'kind'")):
         apply_discriminator(core_schema.union_schema([dog, cat]), 'kind')
 
 
