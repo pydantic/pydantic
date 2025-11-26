@@ -540,7 +540,7 @@ Both the field and model validators callables (in all modes) can optionally take
 
 - [already validated data](#validation-data)
 - [user defined context](#validation-context)
-- the current validation mode: either `'python'` or `'json'` (see the mode property)
+- the current [validation mode](../models/#validating-data): either `'python'`, `'json'` or `'strings'` (see the mode property)
 - the current field name, if using a [field validator](#field-validators) (see the field_name property).
 
 ### Validation data

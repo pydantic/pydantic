@@ -537,9 +537,7 @@ json_encoders: dict[type[object], JsonEncoder] | None
 
 A `dict` of custom JSON encoders for specific types. Defaults to `None`.
 
-Deprecated
-
-This config option is a carryover from v1. We originally planned to remove it in v2 but didn't have a 1:1 replacement so we are keeping it for now. It is still deprecated and will likely be removed in the future.
+Deprecated in v2: This configuration option is a carryover from v1. We originally planned to remove it in v2 but didn't have a 1:1 replacement so we are keeping it for now. It is still deprecated and will likely be removed in the future.
 
 ### strict
 
@@ -548,7 +546,7 @@ strict: bool
 
 ```
 
-*(new in V2)* If `True`, strict validation is applied to all fields on the model.
+Whether strict validation is applied to all fields on the model.
 
 By default, Pydantic attempts to coerce values to the correct type, when possible.
 
@@ -571,6 +569,8 @@ See [Strict Mode](../../concepts/strict_mode/) for more details.
 
 See the [Conversion Table](../../concepts/conversion_table/) for more details on how Pydantic converts data in both strict and lax modes.
 
+Added in v2.
+
 ### revalidate_instances
 
 ```python
@@ -580,122 +580,71 @@ revalidate_instances: Literal[
 
 ```
 
-When and how to revalidate models and dataclasses during validation. Accepts the string values of `'never'`, `'always'` and `'subclass-instances'`. Defaults to `'never'`.
+When and how to revalidate models and dataclasses during validation. Can be one of:
 
-- `'never'` will not revalidate models and dataclasses during validation
-- `'always'` will revalidate models and dataclasses during validation
-- `'subclass-instances'` will revalidate models and dataclasses during validation if the instance is a subclass of the model or dataclass
+- `'never'`: will *not* revalidate models and dataclasses during validation
+- `'always'`: will revalidate models and dataclasses during validation
+- `'subclass-instances'`: will revalidate models and dataclasses during validation if the instance is a subclass of the model or dataclass
 
-By default, model and dataclass instances are not revalidated during validation.
+The default is `'never'` (no revalidation).
+
+This configuration only affects *the current model* it is applied on, and does *not* populate to the models referenced in fields.
 
 ```python
 from pydantic import BaseModel
 
 class User(BaseModel, revalidate_instances='never'):  # (1)!
-    hobbies: list[str]
-
-class SubUser(User):
-    sins: list[str]
+    name: str
 
 class Transaction(BaseModel):
     user: User
 
-my_user = User(hobbies=['reading'])
+my_user = User(name='John')
 t = Transaction(user=my_user)
-print(t)
-#> user=User(hobbies=['reading'])
 
-my_user.hobbies = [1]  # (2)!
+my_user.name = 1  # (2)!
 t = Transaction(user=my_user)  # (3)!
 print(t)
-#> user=User(hobbies=[1])
-
-my_sub_user = SubUser(hobbies=['scuba diving'], sins=['lying'])
-t = Transaction(user=my_sub_user)
-print(t)
-#> user=SubUser(hobbies=['scuba diving'], sins=['lying'])
+#> user=User(name=1)
 
 ```
 
-1. `revalidate_instances` is set to `'never'` by \*\*default.
-1. The assignment is not validated, unless you set `validate_assignment` to `True` in the model's config.
-1. Since `revalidate_instances` is set to `never`, this is not revalidated.
+1. This is the default behavior.
+1. The assignment is *not* validated, unless you set validate_assignment in the configuration.
+1. Since `revalidate_instances` is set to `'never'`, the user instance is not revalidated.
 
-If you want to revalidate instances during validation, you can set `revalidate_instances` to `'always'` in the model's config.
-
-```python
-from pydantic import BaseModel, ValidationError
-
-class User(BaseModel, revalidate_instances='always'):  # (1)!
-    hobbies: list[str]
-
-class SubUser(User):
-    sins: list[str]
-
-class Transaction(BaseModel):
-    user: User
-
-my_user = User(hobbies=['reading'])
-t = Transaction(user=my_user)
-print(t)
-#> user=User(hobbies=['reading'])
-
-my_user.hobbies = [1]
-try:
-    t = Transaction(user=my_user)  # (2)!
-except ValidationError as e:
-    print(e)
-    '''
-    1 validation error for Transaction
-    user.hobbies.0
-      Input should be a valid string [type=string_type, input_value=1, input_type=int]
-    '''
-
-my_sub_user = SubUser(hobbies=['scuba diving'], sins=['lying'])
-t = Transaction(user=my_sub_user)
-print(t)  # (3)!
-#> user=User(hobbies=['scuba diving'])
-
-```
-
-1. `revalidate_instances` is set to `'always'`.
-1. The model is revalidated, since `revalidate_instances` is set to `'always'`.
-1. Using `'never'` we would have gotten `user=SubUser(hobbies=['scuba diving'], sins=['lying'])`.
-
-It's also possible to set `revalidate_instances` to `'subclass-instances'` to only revalidate instances of subclasses of the model.
+Here is an example demonstrating the behavior of `'subclass-instances'`:
 
 ```python
 from pydantic import BaseModel
 
-class User(BaseModel, revalidate_instances='subclass-instances'):  # (1)!
-    hobbies: list[str]
+class User(BaseModel, revalidate_instances='subclass-instances'):
+    name: str
 
 class SubUser(User):
-    sins: list[str]
+    age: int
 
 class Transaction(BaseModel):
     user: User
 
-my_user = User(hobbies=['reading'])
-t = Transaction(user=my_user)
-print(t)
-#> user=User(hobbies=['reading'])
-
-my_user.hobbies = [1]
+my_user = User(name='John')
+my_user.name = 1  # (1)!
 t = Transaction(user=my_user)  # (2)!
 print(t)
-#> user=User(hobbies=[1])
+#> user=User(name=1)
 
-my_sub_user = SubUser(hobbies=['scuba diving'], sins=['lying'])
+my_sub_user = SubUser(name='John', age=20)
 t = Transaction(user=my_sub_user)
 print(t)  # (3)!
-#> user=User(hobbies=['scuba diving'])
+#> user=User(name='John')
 
 ```
 
-1. `revalidate_instances` is set to `'subclass-instances'`.
-1. This is not revalidated, since `my_user` is not a subclass of `User`.
-1. Using `'never'` we would have gotten `user=SubUser(hobbies=['scuba diving'], sins=['lying'])`.
+1. The assignment is *not* validated, unless you set validate_assignment in the configuration.
+1. Because `my_user` is a "direct" instance of `User`, it is *not* being revalidated. It would have been the case if `revalidate_instances` was set to `'always'`.
+1. Because `my_sub_user` is an instance of a `User` subclass, it is being revalidated. In this case, Pydantic coerces `my_sub_user` to the defined `User` class defined on `Transaction`. If one of its fields had an invalid value, a validation error would have been raised.
+
+Added in v2.
 
 ### ser_json_timedelta
 
@@ -709,9 +658,7 @@ The format of JSON serialized timedeltas. Accepts the string values of `'iso8601
 - `'iso8601'` will serialize timedeltas to [ISO 8601 text format](https://en.wikipedia.org/wiki/ISO_8601#Durations).
 - `'float'` will serialize timedeltas to the total number of seconds.
 
-Warning
-
-Starting in v2.12, it is recommended to use the ser_json_temporal setting instead of `ser_json_timedelta`. This setting will be deprecated in v3.
+Changed in v2.12: It is now recommended to use the ser_json_temporal setting. `ser_json_timedelta` will be deprecated in v3.
 
 ### ser_json_temporal
 
@@ -737,9 +684,7 @@ Can be one of:
 
 Defaults to `'iso8601'`.
 
-Note
-
-This setting was introduced in v2.12. It overlaps with the ser_json_timedelta setting which will be deprecated in v3. It also adds more configurability for the other temporal types.
+Added in v2.12: This setting replaces ser_json_timedelta, which will be deprecated in v3. `ser_json_temporal` adds more configurability for the other temporal types.
 
 ### val_temporal_unit
 
@@ -762,6 +707,8 @@ The unit to assume for validating numeric input for datetime-like types (datetim
   - milliseconds since the [epoch](https://en.wikipedia.org/wiki/Unix_time) (if (v < -2^{10}) or (v > 2^{10})).
 
 Defaults to `'infer'`.
+
+Added in v2.12.
 
 ### ser_json_bytes
 
@@ -827,13 +774,13 @@ protected_namespaces: tuple[str | Pattern[str], ...]
 
 ```
 
-A `tuple` of strings and/or patterns that prevent models from having fields with names that conflict with them. For strings, we match on a prefix basis. Ex, if 'dog' is in the protected namespace, 'dog_name' will be protected. For patterns, we match on the entire field name. Ex, if `re.compile(r'^dog$')` is in the protected namespace, 'dog' will be protected, but 'dog_name' will not be. Defaults to `('model_validate', 'model_dump',)`.
+A tuple of strings and/or regex patterns that prevent models from having fields with names that conflict with its existing members/methods.
 
-The reason we've selected these is to prevent collisions with other validation / dumping formats in the future - ex, `model_validate_{some_newly_supported_format}`.
+Strings are matched on a prefix basis. For instance, with `'dog'`, having a field named `'dog_name'` will be disallowed.
 
-Before v2.10, Pydantic used `('model_',)` as the default value for this setting to prevent collisions between model attributes and `BaseModel`'s own methods. This was changed in v2.10 given feedback that this restriction was limiting in AI and data science contexts, where it is common to have fields with names like `model_id`, `model_input`, `model_output`, etc.
+Regex patterns are matched on the entire field name. For instance, with the pattern `'^dog$'`, having a field named `'dog'` will be disallowed, but `'dog_name'` will be accepted.
 
-For more details, see https://github.com/pydantic/pydantic/issues/10315.
+Defaults to `('model_validate', 'model_dump')`. This default is used to prevent collisions with the existing (and possibly future) [validation](../../concepts/models/#validating-data) and [serialization](../../concepts/serialization/#serializing-data) methods.
 
 ```python
 import warnings
@@ -913,6 +860,8 @@ except ValueError as e:
 
 ```
 
+Changed in v2.10: The default protected namespaces was changed from `('model_',)` to `('model_validate', 'model_dump')`, to allow for fields like `model_id`, `model_name` to be used.
+
 ### hide_input_in_errors
 
 ```python
@@ -974,7 +923,7 @@ Whether to defer model validator and serializer construction until the first mod
 
 This can be useful to avoid the overhead of building models which are only used nested within other models, or when you want to manually define type namespace via Model.model_rebuild(\_types_namespace=...).
 
-Since v2.10, this setting also applies to pydantic dataclasses and TypeAdapter instances.
+Changed in v2.10: The setting also applies to [Pydantic dataclasses](../../concepts/dataclasses/) and [type adapters](../../concepts/type_adapter/).
 
 ### plugin_settings
 
@@ -992,11 +941,9 @@ schema_generator: type[GenerateSchema] | None
 
 ```
 
-Warning
+The `GenerateSchema` class to use during core schema generation.
 
-`schema_generator` is deprecated in v2.10.
-
-Prior to v2.10, this setting was advertised as highly subject to change. It's possible that this interface may once again become public once the internal core schema generation API is more stable, but that will likely come after significant performance improvements have been made.
+Deprecated in v2.10: The `GenerateSchema` class is private and highly subject to change.
 
 ### json_schema_serialization_defaults_required
 
@@ -1038,6 +985,8 @@ print(Model.model_json_schema(mode='serialization'))
 '''
 
 ```
+
+Added in v2.4.
 
 ### json_schema_mode_override
 
@@ -1093,6 +1042,8 @@ print(ForceInputModel.model_json_schema(mode='serialization'))
 '''
 
 ```
+
+Added in v2.4.
 
 ### coerce_numbers_to_str
 
@@ -1176,6 +1127,8 @@ except ValidationError as e:
 
 ```
 
+Added in v2.5.
+
 ### validation_error_cause
 
 ```python
@@ -1193,6 +1146,8 @@ Note
 
 The structure of validation errors are likely to change in future Pydantic versions. Pydantic offers no guarantees about their structure. Should be used for visual traceback debugging only.
 
+Added in v2.5.
+
 ### use_attribute_docstrings
 
 ```python
@@ -1201,8 +1156,6 @@ use_attribute_docstrings: bool
 ```
 
 Whether docstrings of attributes (bare string literals immediately following the attribute declaration) should be used for field descriptions. Defaults to `False`.
-
-Available in Pydantic v2.7+.
 
 ```python
 from pydantic import BaseModel, ConfigDict, Field
@@ -1238,6 +1191,8 @@ Due to current limitations, attribute docstrings detection may not work as expec
 - inheritance is being used.
 - multiple classes have the same name in the same source file (unless Python 3.13 or greater is used).
 
+Added in v2.7.
+
 ### cache_strings
 
 ```python
@@ -1261,6 +1216,8 @@ Tip
 
 If repeated strings are rare, it's recommended to use `'keys'` or `'none'` to reduce memory usage, as the performance difference is minimal if repeated strings are rare.
 
+Added in v2.7.
+
 ### validate_by_alias
 
 ```python
@@ -1270,9 +1227,34 @@ validate_by_alias: bool
 
 Whether an aliased field may be populated by its alias. Defaults to `True`.
 
-Note
+Here's an example of disabling validation by alias:
 
-In v2.11, `validate_by_alias` was introduced in conjunction with validate_by_name to empower users with more fine grained validation control. In
+```py
+from pydantic import BaseModel, ConfigDict, Field
+
+class Model(BaseModel):
+    model_config = ConfigDict(validate_by_name=True, validate_by_alias=False)
+
+    my_field: str = Field(validation_alias='my_alias')  # (1)!
+
+m = Model(my_field='foo')  # (2)!
+print(m)
+#> my_field='foo'
+
+```
+
+1. The field `'my_field'` has an alias `'my_alias'`.
+1. The model can only be populated by the attribute name `'my_field'`.
+
+Warning
+
+You cannot set both `validate_by_alias` and `validate_by_name` to `False`. This would make it impossible to populate an attribute.
+
+See [usage errors](../../errors/usage_errors/#validate-by-alias-and-name-false) for an example.
+
+If you set `validate_by_alias` to `False`, under the hood, Pydantic dynamically sets `validate_by_name` to `True` to ensure that validation can still occur.
+
+Added in v2.11: This setting was introduced in conjunction with validate_by_name to empower users with more fine grained validation control.
 
 ### validate_by_name
 
@@ -1282,12 +1264,6 @@ validate_by_name: bool
 ```
 
 Whether an aliased field may be populated by its name as given by the model attribute. Defaults to `False`.
-
-Note
-
-In v2.0-v2.10, the `populate_by_name` configuration setting was used to specify whether or not a field could be populated by its name **and** alias.
-
-In v2.11, `validate_by_name` was introduced in conjunction with validate_by_alias to empower users with more fine grained validation behavior control.
 
 ```python
 from pydantic import BaseModel, ConfigDict, Field
@@ -1317,6 +1293,8 @@ You cannot set both `validate_by_alias` and `validate_by_name` to `False`. This 
 
 See [usage errors](../../errors/usage_errors/#validate-by-alias-and-name-false) for an example.
 
+Added in v2.11: This setting was introduced in conjunction with validate_by_alias to empower users with more fine grained validation control. It is an alternative to populate_by_name, that enables validation by name **and** by alias.
+
 ### serialize_by_alias
 
 ```python
@@ -1345,6 +1323,10 @@ print(m.model_dump())  # (2)!
 1. The field `'my_field'` has an alias `'my_alias'`.
 1. The model is serialized using the alias `'my_alias'` for the `'my_field'` attribute.
 
+Added in v2.11: This setting was introduced to address the [popular request](https://github.com/pydantic/pydantic/issues/8379) for consistency with alias behavior for validation and serialization.
+
+In v3, the default value is expected to change to `True` for consistency with the validation default.
+
 ### url_preserve_empty_path
 
 ```python
@@ -1367,6 +1349,8 @@ print(m.url)
 #> http://example.com
 
 ```
+
+Added in v2.12.
 
 ## with_config
 
@@ -1424,6 +1408,10 @@ print(ta.validate_python({'x': 'ABC'}))
 
 ```
 
+Deprecated in v2.11, will be removed in version v3: Passing `config` as a keyword argument.
+
+Changed in v2.11: Keyword arguments can be provided directly instead of a config dictionary.
+
 Source code in `pydantic/config.py`
 
 ````python
@@ -1452,6 +1440,14 @@ def with_config(config: ConfigDict | None = None, /, **kwargs: Any) -> Callable[
         print(ta.validate_python({'x': 'ABC'}))
         #> {'x': 'abc'}
         ```
+
+    /// deprecated-removed | v2.11 v3
+    Passing `config` as a keyword argument.
+    ///
+
+    /// version-changed | v2.11
+    Keyword arguments can be provided directly instead of a config dictionary.
+    ///
     """
     if config is not None and kwargs:
         raise ValueError('Cannot specify both `config` and keyword arguments')
