@@ -2,6 +2,18 @@
 <!-- markdownlint-disable descriptive-link-text -->
 <!-- markdownlint-disable-next-line first-line-heading -->
 
+## v2.12.5 (2025-11-26)
+
+[GitHub release](https://github.com/pydantic/pydantic/releases/tag/v2.12.5)
+
+This is the fifth 2.12 patch release, addressing an issue with the `MISSING` sentinel and providing several documentation improvements.
+
+The next 2.13 minor release will be published in a couple weeks, and will include a new *polymorphic serialization* feature addressing
+the remaining unexpected changes to the *serialize as any* behavior.
+
+* Fix pickle error when using `model_construct()` on a model with `MISSING` as a default value by @ornariece in [#12522](https://github.com/pydantic/pydantic/pull/12522).
+* Several updates to the documentation by @Viicos.
+
 ## v2.12.4 (2025-11-05)
 
 [GitHub release](https://github.com/pydantic/pydantic/releases/tag/v2.12.4)

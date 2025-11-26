@@ -8,7 +8,7 @@ from pydantic_core import __version__ as __pydantic_core_version__
 
 __all__ = 'VERSION', 'version_info'
 
-VERSION = '2.12.4'
+VERSION = '2.12.5'
 """The version of Pydantic.
 
 This version specifier is guaranteed to be compliant with the [specification],
