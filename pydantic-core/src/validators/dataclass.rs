@@ -96,7 +96,7 @@ impl BuildValidator for DataclassArgsValidator {
             }
 
             let validation_alias = field.get_item(intern!(py, "validation_alias"))?;
-            let lookup_key_collection = LookupKeyCollection::new(py, validation_alias, name.as_str())?;
+            let lookup_key_collection = LookupKeyCollection::new(validation_alias, &name_py)?;
 
             fields.push(Field {
                 kw_only,

@@ -2,8 +2,9 @@ use std::convert::Infallible;
 use std::fmt;
 
 use pyo3::IntoPyObjectExt;
-use pyo3::exceptions::{PyAttributeError, PyTypeError};
+use pyo3::exceptions::PyTypeError;
 use pyo3::prelude::*;
+use pyo3::pybacked::PyBackedStr;
 use pyo3::types::{PyDict, PyList, PyMapping, PyString};
 
 use jiter::{JsonObject, JsonValue};
@@ -46,14 +47,13 @@ impl fmt::Display for LookupKey {
 }
 
 impl LookupKey {
-    pub fn from_py(py: Python, value: &Bound<'_, PyAny>, alt_alias: Option<&str>) -> PyResult<Self> {
+    pub fn from_py(value: &Bound<'_, PyAny>, alt_alias: Option<&Bound<'_, PyString>>) -> PyResult<Self> {
         if let Ok(alias_py) = value.cast::<PyString>() {
-            let alias: String = alias_py.extract()?;
-            let path1 = LookupPath::from_str(py, &alias, Some(alias_py.clone()));
+            let path1 = LookupPath::from_str(alias_py.clone())?;
             match alt_alias {
                 Some(alt_alias) => Ok(Self::Choice {
                     path1,
-                    path2: LookupPath::from_str(py, alt_alias, None),
+                    path2: LookupPath::from_str(alt_alias.clone())?,
                 }),
                 None => Ok(Self::Simple(path1)),
             }
@@ -72,29 +72,17 @@ impl LookupKey {
             };
 
             if let Some(alt_alias) = alt_alias {
-                locs.push(LookupPath::from_str(py, alt_alias, None));
+                locs.push(LookupPath::from_str(alt_alias.clone())?);
             }
             Ok(Self::PathChoices(locs))
         }
-    }
-
-    pub fn from_string(py: Python, key: &str) -> Self {
-        Self::simple(py, key, None)
-    }
-
-    fn simple(py: Python, key: &str, opt_py_key: Option<Bound<'_, PyString>>) -> Self {
-        Self::Simple(LookupPath::from_str(py, key, opt_py_key))
     }
 
     pub fn py_get_dict_item<'py, 's>(
         &'s self,
         dict: &Bound<'py, PyDict>,
     ) -> PyResult<Option<(&'s LookupPath, Bound<'py, PyAny>)>> {
-        self.get_impl(
-            dict,
-            |dict, path| dict.get_item(&path.py_key),
-            |d, loc| Ok(loc.py_get_item(&d)),
-        )
+        self.get_impl(dict, PyDictMethods::get_item, |d, loc| Ok(loc.py_get_item(&d)))
     }
 
     pub fn py_get_string_mapping_item<'py, 's>(
@@ -113,22 +101,14 @@ impl LookupKey {
         &'s self,
         dict: &Bound<'py, PyMapping>,
     ) -> PyResult<Option<(&'s LookupPath, Bound<'py, PyAny>)>> {
-        self.get_impl(
-            dict,
-            |dict, path| mapping_get(dict, &path.py_key),
-            |d, loc| Ok(loc.py_get_item(&d)),
-        )
+        self.get_impl(dict, mapping_get, |d, loc| Ok(loc.py_get_item(&d)))
     }
 
     pub fn simple_py_get_attr<'py, 's>(
         &'s self,
         obj: &Bound<'py, PyAny>,
     ) -> PyResult<Option<(&'s LookupPath, Bound<'py, PyAny>)>> {
-        self.get_impl(
-            obj,
-            |obj, path| py_get_attrs(obj, &path.py_key),
-            |d, loc| loc.py_get_attrs(&d),
-        )
+        self.get_impl(obj, PyAnyMethods::getattr_opt, |d, loc| loc.py_get_attrs(&d))
     }
 
     pub fn py_get_attr<'py, 's>(
@@ -290,7 +270,7 @@ impl LookupKey {
             for item in lookup_path.rest.iter().rev() {
                 location.push(item.to_loc_item());
             }
-            location.push(LocItem::from(&lookup_path.first_item.key));
+            location.push(LocItem::from(lookup_path.first_item.0.clone()));
 
             ValLineError::new_with_full_loc(error_type, input, Location::List(location))
         } else {
@@ -318,18 +298,11 @@ impl fmt::Display for LookupPath {
 }
 
 impl LookupPath {
-    fn from_str(py: Python, key: &str, py_key: Option<Bound<'_, PyString>>) -> Self {
-        let py_key = match py_key {
-            Some(py_key) => py_key,
-            None => PyString::new(py, key),
-        };
-        Self {
-            first_item: PathItemString {
-                key: key.to_string(),
-                py_key: py_key.clone().unbind(),
-            },
+    fn from_str(py_key: Bound<'_, PyString>) -> PyResult<Self> {
+        Ok(Self {
+            first_item: PathItemString(py_key.try_into()?),
             rest: Vec::new(),
-        }
+        })
     }
 
     fn from_list(obj: &Bound<'_, PyAny>) -> PyResult<LookupPath> {
@@ -343,10 +316,7 @@ impl LookupPath {
             return py_err!(PyTypeError; "The first item in an alias path should be a string");
         };
 
-        let first_item = PathItemString {
-            key: first_item_py_str.to_str()?.to_owned(),
-            py_key: first_item_py_str.clone().unbind(),
-        };
+        let first_item = PathItemString(first_item_py_str.try_into()?);
 
         let rest = iter.map(PathItem::from_py).collect::<PyResult<_>>()?;
 
@@ -358,7 +328,7 @@ impl LookupPath {
             for path_item in self.rest.iter().rev() {
                 line_error = line_error.with_outer_location(path_item.to_loc_item());
             }
-            line_error = line_error.with_outer_location(&self.first_item.key);
+            line_error = line_error.with_outer_location(self.first_item.0.clone());
             line_error
         } else {
             line_error.with_outer_location(field_name)
@@ -368,7 +338,7 @@ impl LookupPath {
     /// get the `str` from the first item in the path, note paths always have length > 0, and the first item
     /// is always a string
     pub fn first_key(&self) -> &str {
-        &self.first_item.key
+        &self.first_item
     }
 }
 
@@ -380,12 +350,25 @@ pub(crate) enum PathItem {
     Neg(usize),
 }
 
-/// string type key, used to get or identify items from a dict or anything that implements `__getitem__`
-/// we store both the string and pystring to save creating the pystring for python
+/// String type key, used to get or identify items from a dict or anything that implements `__getitem__`
 #[derive(Debug, Clone)]
-pub(crate) struct PathItemString {
-    key: String,
-    py_key: Py<PyString>,
+pub(crate) struct PathItemString(
+    // stores the original Python value, easily accessible as a Rust &str
+    PyBackedStr,
+);
+
+impl fmt::Display for PathItemString {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "'{key}'", key = &self.0)
+    }
+}
+
+impl std::ops::Deref for PathItemString {
+    type Target = str;
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
 }
 
 impl fmt::Display for PathItem {
@@ -395,12 +378,6 @@ impl fmt::Display for PathItem {
             Self::Pos(key) => write!(f, "{key}"),
             Self::Neg(key) => write!(f, "-{key}"),
         }
-    }
-}
-
-impl fmt::Display for PathItemString {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "'{key}'", key = &self.key)
     }
 }
 
@@ -421,13 +398,16 @@ impl<'py> IntoPyObject<'py> for &'_ PathItem {
     }
 }
 
-impl<'a, 'py> IntoPyObject<'py> for &'a PathItemString {
+impl<'py> IntoPyObject<'py> for &'_ PathItemString {
     type Target = PyString;
-    type Output = Borrowed<'a, 'py, PyString>;
+    type Output = Bound<'py, PyString>;
     type Error = Infallible;
 
     fn into_pyobject(self, py: Python<'py>) -> Result<Self::Output, Self::Error> {
-        Ok(self.py_key.bind_borrowed(py))
+        (&self.0).into_pyobject(py).map(|obj|
+            // SAFETY: `PyBackedStr` always returns a `PyString`, should open a PyO3 issue to not
+            // need this unsafe cast
+            unsafe { obj.cast_into_unchecked() })
     }
 }
 
@@ -435,11 +415,7 @@ impl PathItem {
     pub fn from_py(obj: Bound<'_, PyAny>) -> PyResult<Self> {
         let obj = match obj.cast_into::<PyString>() {
             Ok(py_str_key) => {
-                let str_key = py_str_key.to_str()?.to_string();
-                return Ok(Self::S(PathItemString {
-                    key: str_key,
-                    py_key: py_str_key.unbind(),
-                }));
+                return Ok(Self::S(PathItemString(py_str_key.try_into()?)));
             }
             Err(e) => e.into_inner(),
         };
@@ -492,14 +468,14 @@ impl PathItem {
 
     pub fn json_obj_get<'a, 'data>(&self, json_obj: &'a JsonObject<'data>) -> Option<&'a JsonValue<'data>> {
         match self {
-            Self::S(PathItemString { key, .. }) => json_obj.iter().rev().find_map(|(k, v)| (k == key).then_some(v)),
+            Self::S(PathItemString(key)) => json_obj.iter().rev().find_map(|(k, v)| (k == &**key).then_some(v)),
             _ => None,
         }
     }
 
     fn to_loc_item(&self) -> LocItem {
         match self {
-            Self::S(PathItemString { key, .. }) => LocItem::from(key),
+            Self::S(PathItemString(key)) => LocItem::from(key.clone()),
             Self::Pos(index) => LocItem::from(*index),
             Self::Neg(index) => LocItem::from(-(*index as i64)),
         }
@@ -509,36 +485,14 @@ impl PathItem {
 impl PathItemString {
     fn py_get_attrs<'py>(&self, obj: &Bound<'py, PyAny>) -> PyResult<Option<Bound<'py, PyAny>>> {
         // if obj is a dict, we want to use get_item, not getattr
-        if obj.cast::<PyDict>().is_ok() {
-            Ok(py_get_item(obj, self))
+        if let Ok(d) = obj.cast_exact::<PyDict>() {
+            d.get_item(self)
+        } else if obj.is_instance_of::<PyDict>() {
+            // NB this deliberately goes through PyAnyMethods::get_item to allow subclasses of dict to override getitem
+            // FIXME: should this instance check be for Mapping instead of Dict, and use `mapping_get`?
+            Ok(obj.get_item(self).ok())
         } else {
-            py_get_attrs(obj, &self.py_key)
-        }
-    }
-}
-
-/// wrapper around `getitem` that excludes string indexing `None` for strings
-fn py_get_item<'py>(py_any: &Bound<'py, PyAny>, index: impl IntoPyObject<'py>) -> Option<Bound<'py, PyAny>> {
-    // we definitely don't want to index strings, so explicitly omit this case
-    if py_any.is_instance_of::<PyString>() {
-        None
-    } else {
-        // otherwise, blindly try getitem on v since no better logic is realistic
-        py_any.get_item(index).ok()
-    }
-}
-
-/// wrapper around `getattr` that returns `Ok(None)` for attribute errors, but returns other errors
-/// We don't check `try_from_attributes` because that check was performed on the top level object before we got here
-fn py_get_attrs<'py>(obj: &Bound<'py, PyAny>, attr_name: &Py<PyString>) -> PyResult<Option<Bound<'py, PyAny>>> {
-    match obj.getattr(attr_name) {
-        Ok(attr) => Ok(Some(attr)),
-        Err(err) => {
-            if err.get_type(obj.py()).is_subclass_of::<PyAttributeError>()? {
-                Ok(None)
-            } else {
-                Err(err)
-            }
+            obj.getattr_opt(self)
         }
     }
 }
@@ -552,12 +506,12 @@ pub struct LookupKeyCollection {
 }
 
 impl LookupKeyCollection {
-    pub fn new(py: Python, validation_alias: Option<Bound<'_, PyAny>>, field_name: &str) -> PyResult<Self> {
-        let by_name = LookupKey::from_string(py, field_name);
+    pub fn new(validation_alias: Option<Bound<'_, PyAny>>, field_name: &Bound<'_, PyString>) -> PyResult<Self> {
+        let by_name = LookupKey::from_py(field_name, None)?;
 
         if let Some(va) = validation_alias {
-            let by_alias = Some(LookupKey::from_py(py, &va, None)?);
-            let by_alias_then_name = Some(LookupKey::from_py(py, &va, Some(field_name))?);
+            let by_alias = Some(LookupKey::from_py(&va, None)?);
+            let by_alias_then_name = Some(LookupKey::from_py(&va, Some(field_name))?);
             Ok(Self {
                 by_name,
                 by_alias,
