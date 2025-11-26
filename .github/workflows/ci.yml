@@ -118,7 +118,8 @@ jobs:
           python-version: ${{ matrix.python-version }}
 
       - name: Set env for coverage collection
-        run: cargo llvm-cov show-env --manifest-path ./pydantic-core/Cargo.toml | xargs -n1 sh -c 'eval echo "$0"' >> $GITHUB_ENV
+        # sed is to escape backslashes for paths on Windows
+        run: cargo llvm-cov show-env --manifest-path ./pydantic-core/Cargo.toml | sed 's/\\/\\\\/g' |xargs -n1 sh -c 'eval echo "$0"' >> $GITHUB_ENV
         shell: bash
 
       - name: Install dependencies
