@@ -127,42 +127,14 @@ impl ValidatorIterator {
                 match $iter.next(py)? {
                     Some((next, index)) => match validator {
                         Some(validator) => {
-                            if let Some(max_length) = max_length {
-                                if index >= max_length {
-                                    let val_error = ValError::new_custom_input(
-                                        ErrorType::TooLong {
-                                            field_type: "Generator".to_string(),
-                                            max_length,
-                                            actual_length: None,
-                                            context: None,
-                                        },
-                                        $iter.input_as_error_value(py),
-                                    );
-                                    return Err(ValidationError::from_val_error(
-                                        py,
-                                        "ValidatorIterator".into_pyobject(py)?.into(),
-                                        InputType::Python,
-                                        val_error,
-                                        None,
-                                        hide_input_in_errors,
-                                        validation_error_cause,
-                                    ));
-                                }
-                            }
-                            validator
-                                .validate(py, next.borrow_input(), Some(index.into()))
-                                .map(Some)
-                        }
-                        None => Ok(Some(next.into_pyobject(py)?.unbind())),
-                    },
-                    None => {
-                        if let Some(min_length) = min_length {
-                            if $iter.index() < min_length {
+                            if let Some(max_length) = max_length
+                                && index >= max_length
+                            {
                                 let val_error = ValError::new_custom_input(
-                                    ErrorType::TooShort {
+                                    ErrorType::TooLong {
                                         field_type: "Generator".to_string(),
-                                        min_length,
-                                        actual_length: $iter.index(),
+                                        max_length,
+                                        actual_length: None,
                                         context: None,
                                     },
                                     $iter.input_as_error_value(py),
@@ -177,6 +149,34 @@ impl ValidatorIterator {
                                     validation_error_cause,
                                 ));
                             }
+                            validator
+                                .validate(py, next.borrow_input(), Some(index.into()))
+                                .map(Some)
+                        }
+                        None => Ok(Some(next.into_pyobject(py)?.unbind())),
+                    },
+                    None => {
+                        if let Some(min_length) = min_length
+                            && $iter.index() < min_length
+                        {
+                            let val_error = ValError::new_custom_input(
+                                ErrorType::TooShort {
+                                    field_type: "Generator".to_string(),
+                                    min_length,
+                                    actual_length: $iter.index(),
+                                    context: None,
+                                },
+                                $iter.input_as_error_value(py),
+                            );
+                            return Err(ValidationError::from_val_error(
+                                py,
+                                "ValidatorIterator".into_pyobject(py)?.into(),
+                                InputType::Python,
+                                val_error,
+                                None,
+                                hide_input_in_errors,
+                                validation_error_cause,
+                            ));
                         }
                         Ok(None)
                     }

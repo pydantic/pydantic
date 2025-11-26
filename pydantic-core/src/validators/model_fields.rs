@@ -418,11 +418,11 @@ impl Validator for ModelFieldsValidator {
 
         // by using dict but removing the field in question, we match V1 behaviour
         let data_dict = dict.copy()?;
-        if let Err(err) = data_dict.del_item(field_name) {
+        if let Err(err) = data_dict.del_item(field_name)
             // KeyError is fine here as the field might not be in the dict
-            if !err.get_type(py).is(PyType::new::<PyKeyError>(py)) {
-                return Err(err.into());
-            }
+             && !err.get_type(py).is(PyType::new::<PyKeyError>(py))
+        {
+            return Err(err.into());
         }
 
         let new_data = {

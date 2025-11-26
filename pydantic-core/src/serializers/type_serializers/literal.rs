@@ -83,26 +83,26 @@ enum OutputValue<'py> {
 impl LiteralSerializer {
     fn check<'py>(&self, value: &Bound<'py, PyAny>, state: &SerializationState<'_, 'py>) -> PyResult<OutputValue<'py>> {
         if state.check.enabled() {
-            if !self.expected_int.is_empty() && !value.is_instance_of::<PyBool>() {
-                if let Ok(int) = value.extract() {
-                    if self.expected_int.contains(&int) {
-                        return Ok(OutputValue::OkInt(int));
-                    }
-                }
+            if !self.expected_int.is_empty()
+                && !value.is_instance_of::<PyBool>()
+                && let Ok(int) = value.extract()
+                && self.expected_int.contains(&int)
+            {
+                return Ok(OutputValue::OkInt(int));
             }
-            if !self.expected_str.is_empty() {
-                if let Ok(py_str) = value.cast::<PyString>() {
-                    let s = py_str.to_str()?;
-                    if self.expected_str.contains(s) {
-                        return Ok(OutputValue::OkStr(PyString::new(value.py(), s)));
-                    }
+            if !self.expected_str.is_empty()
+                && let Ok(py_str) = value.cast::<PyString>()
+            {
+                let s = py_str.to_str()?;
+                if self.expected_str.contains(s) {
+                    return Ok(OutputValue::OkStr(PyString::new(value.py(), s)));
                 }
             }
 
-            if let Some(ref expected_py) = self.expected_py {
-                if expected_py.bind(value.py()).contains(value)? {
-                    return Ok(OutputValue::Ok);
-                }
+            if let Some(ref expected_py) = self.expected_py
+                && expected_py.bind(value.py()).contains(value)?
+            {
+                return Ok(OutputValue::Ok);
             }
             Ok(OutputValue::Fallback)
         } else {

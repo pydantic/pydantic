@@ -155,17 +155,17 @@ impl Validator for UrlValidator {
     ) -> ValResult<Py<PyAny>> {
         let mut either_url = self.get_url(py, input, state.strict_or(self.strict))?;
 
-        if let Some((ref allowed_schemes, ref expected_schemes_repr)) = self.allowed_schemes {
-            if !allowed_schemes.contains(either_url.url().scheme()) {
-                let expected_schemes = expected_schemes_repr.clone();
-                return Err(ValError::new(
-                    ErrorType::UrlScheme {
-                        expected_schemes,
-                        context: None,
-                    },
-                    input,
-                ));
-            }
+        if let Some((ref allowed_schemes, ref expected_schemes_repr)) = self.allowed_schemes
+            && !allowed_schemes.contains(either_url.url().scheme())
+        {
+            let expected_schemes = expected_schemes_repr.clone();
+            return Err(ValError::new(
+                ErrorType::UrlScheme {
+                    expected_schemes,
+                    context: None,
+                },
+                input,
+            ));
         }
 
         match check_sub_defaults(
@@ -230,16 +230,16 @@ impl UrlValidator {
     }
 
     fn check_length<'py>(&self, input: &(impl Input<'py> + ?Sized), url_str: &str) -> ValResult<()> {
-        if let Some(max_length) = self.max_length {
-            if url_str.len() > max_length {
-                return Err(ValError::new(
-                    ErrorType::UrlTooLong {
-                        max_length,
-                        context: None,
-                    },
-                    input,
-                ));
-            }
+        if let Some(max_length) = self.max_length
+            && url_str.len() > max_length
+        {
+            return Err(ValError::new(
+                ErrorType::UrlTooLong {
+                    max_length,
+                    context: None,
+                },
+                input,
+            ));
         }
         Ok(())
     }
@@ -363,10 +363,10 @@ impl BuildValidator for MultiHostUrlValidator {
         let (allowed_schemes, name) = get_allowed_schemes(schema, Self::EXPECTED_TYPE)?;
 
         let default_host: Option<String> = schema.get_as(intern!(schema.py(), "default_host"))?;
-        if let Some(ref default_host) = default_host {
-            if default_host.contains(',') {
-                return py_schema_err!("default_host cannot contain a comma, see pydantic-core#326");
-            }
+        if let Some(ref default_host) = default_host
+            && default_host.contains(',')
+        {
+            return py_schema_err!("default_host cannot contain a comma, see pydantic-core#326");
         }
 
         let validator = Self {
@@ -406,17 +406,17 @@ impl Validator for MultiHostUrlValidator {
     ) -> ValResult<Py<PyAny>> {
         let mut multi_url = self.get_url(py, input, state.strict_or(self.strict))?;
 
-        if let Some((ref allowed_schemes, ref expected_schemes_repr)) = self.allowed_schemes {
-            if !allowed_schemes.contains(multi_url.url().scheme()) {
-                let expected_schemes = expected_schemes_repr.clone();
-                return Err(ValError::new(
-                    ErrorType::UrlScheme {
-                        expected_schemes,
-                        context: None,
-                    },
-                    input,
-                ));
-            }
+        if let Some((ref allowed_schemes, ref expected_schemes_repr)) = self.allowed_schemes
+            && !allowed_schemes.contains(multi_url.url().scheme())
+        {
+            let expected_schemes = expected_schemes_repr.clone();
+            return Err(ValError::new(
+                ErrorType::UrlScheme {
+                    expected_schemes,
+                    context: None,
+                },
+                input,
+            ));
         }
         match check_sub_defaults(
             &mut multi_url,
@@ -482,16 +482,16 @@ impl MultiHostUrlValidator {
     where
         F: FnOnce() -> usize,
     {
-        if let Some(max_length) = self.max_length {
-            if func() > max_length {
-                return Err(ValError::new(
-                    ErrorType::UrlTooLong {
-                        max_length,
-                        context: None,
-                    },
-                    input,
-                ));
-            }
+        if let Some(max_length) = self.max_length
+            && func() > max_length
+        {
+            return Err(ValError::new(
+                ErrorType::UrlTooLong {
+                    max_length,
+                    context: None,
+                },
+                input,
+            ));
         }
         Ok(())
     }
@@ -765,12 +765,12 @@ fn check_sub_defaults(
             });
         }
     }
-    if let Some(default_port) = default_port {
-        if url.url().port().is_none() {
-            url.url_mut()
-                .set_port(Some(default_port))
-                .map_err(|()| map_parse_err(ParseError::EmptyHost))?;
-        }
+    if let Some(default_port) = default_port
+        && url.url().port().is_none()
+    {
+        url.url_mut()
+            .set_port(Some(default_port))
+            .map_err(|()| map_parse_err(ParseError::EmptyHost))?;
     }
     if let Some(default_path) = default_path {
         let path = url.url().path();

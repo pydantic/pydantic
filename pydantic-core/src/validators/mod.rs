@@ -535,11 +535,10 @@ fn build_validator_inner(
     let type_: Bound<'_, PyString> = dict.get_as_req(intern!(py, "type"))?;
     let type_ = type_.to_str()?;
 
-    if use_prebuilt {
-        // if we have a SchemaValidator on the type already, use it
-        if let Ok(Some(prebuilt_validator)) = prebuilt::PrebuiltValidator::try_get_from_schema(type_, dict) {
-            return Ok(Arc::new(prebuilt_validator));
-        }
+    // if we have a SchemaValidator on the type already, use it
+    if use_prebuilt && let Ok(Some(prebuilt_validator)) = prebuilt::PrebuiltValidator::try_get_from_schema(type_, dict)
+    {
+        return Ok(Arc::new(prebuilt_validator));
     }
 
     // macro to build the match statement for validator selection

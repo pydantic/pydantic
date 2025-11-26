@@ -128,39 +128,39 @@ impl Validator for StrConstrainedValidator {
         } else {
             None
         };
-        if let Some(min_length) = self.min_length {
-            if str_len.unwrap() < min_length {
-                return Err(ValError::new(
-                    ErrorType::StringTooShort {
-                        min_length,
-                        context: None,
-                    },
-                    input,
-                ));
-            }
+        if let Some(min_length) = self.min_length
+            && str_len.unwrap() < min_length
+        {
+            return Err(ValError::new(
+                ErrorType::StringTooShort {
+                    min_length,
+                    context: None,
+                },
+                input,
+            ));
         }
-        if let Some(max_length) = self.max_length {
-            if str_len.unwrap() > max_length {
-                return Err(ValError::new(
-                    ErrorType::StringTooLong {
-                        max_length,
-                        context: None,
-                    },
-                    input,
-                ));
-            }
+        if let Some(max_length) = self.max_length
+            && str_len.unwrap() > max_length
+        {
+            return Err(ValError::new(
+                ErrorType::StringTooLong {
+                    max_length,
+                    context: None,
+                },
+                input,
+            ));
         }
 
-        if let Some(pattern) = &self.pattern {
-            if !pattern.is_match(py, str)? {
-                return Err(ValError::new(
-                    ErrorType::StringPatternMismatch {
-                        pattern: pattern.pattern.clone(),
-                        context: None,
-                    },
-                    input,
-                ));
-            }
+        if let Some(pattern) = &self.pattern
+            && !pattern.is_match(py, str)?
+        {
+            return Err(ValError::new(
+                ErrorType::StringPatternMismatch {
+                    pattern: pattern.pattern.clone(),
+                    context: None,
+                },
+                input,
+            ));
         }
 
         let py_string = if self.to_lower {
