@@ -732,6 +732,20 @@ class GenerateSchema:
 
         origin = get_origin(obj)
 
+        type_handler_class = self._type_registry.get_type_handler(origin if origin is not None else obj, fast=True)
+        if type_handler_class is not None:
+            type_handler = type_handler_class(self)
+
+            ref = type_handler.get_reference(origin, obj)
+            if ref is not None:
+                with self.defs.get_schema_or_ref(ref) as maybe_schema:
+                    if maybe_schema is not None:
+                        return maybe_schema
+
+                    schema = type_handler._generate_schema(origin, obj)
+            else:
+                schema = type_handler._generate_schema(origin, obj)
+
         if schema is None:
             schema = self._generate_schema_inner(obj, _origin=origin)
 

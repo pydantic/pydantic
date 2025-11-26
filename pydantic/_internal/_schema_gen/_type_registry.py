@@ -22,13 +22,13 @@ class TypeRegistry:
 
         return _inner
 
-    def get_type_handler(self, typ: Any) -> type[BaseTypeHandler] | None:
+    def get_type_handler(self, typ: Any, fast: bool = False) -> type[BaseTypeHandler] | None:
         try:
-            if typ in self.type_is_list:
-                return self.type_is_list[typ]
-        except TypeError:
-            # typ is unhashable
-            pass
+            return self.type_is_list[typ]
+        except (TypeError, KeyError):
+            # `TypeError` if type is unhashable.
+            if fast:
+                return None
         for pred, type_handler in self.predicates.items():
             if pred(typ):
                 return type_handler
