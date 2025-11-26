@@ -123,7 +123,7 @@ print(Model.model_json_schema())
 """
 ```
 
-## Invalid validator fields {#decorator-invalid-fields}
+## Invalid decorator fields {#decorator-invalid-fields}
 
 This error is raised when the field names provided to the [`@field_validator`][pydantic.field_validator]
 or [`@field_serializer`][pydantic.field_serializer] decorators are not strings.
@@ -162,7 +162,7 @@ class Model(BaseModel):
         return v
 ```
 
-## Validator with no fields {#decorator-missing-arguments}
+## Decorator with no fields {#decorator-missing-arguments}
 
 This error is raised when the [`@field_validator`][pydantic.field_validator] or [`@field_serializer`][pydantic.field_serializer]
 decorators are used bare, without any arguments.
