@@ -236,21 +236,21 @@ pub(crate) fn validate_iter_to_set<'py>(
         let item = item_result.map_err(|e| any_next_error!(py, e, input, index))?;
         match validate_add(py, set, item, state, validator) {
             Ok(()) => {
-                if let Some(max_length) = max_length {
-                    if set.build_len() > max_length {
-                        return Err(ValError::new(
-                            ErrorType::TooLong {
-                                field_type: field_type.to_string(),
-                                max_length,
-                                // The logic here is that it doesn't matter how many elements the
-                                // input actually had; all we know is it had more than the allowed
-                                // number of deduplicated elements.
-                                actual_length: None,
-                                context: None,
-                            },
-                            input,
-                        ));
-                    }
+                if let Some(max_length) = max_length
+                    && set.build_len() > max_length
+                {
+                    return Err(ValError::new(
+                        ErrorType::TooLong {
+                            field_type: field_type.to_string(),
+                            max_length,
+                            // The logic here is that it doesn't matter how many elements the
+                            // input actually had; all we know is it had more than the allowed
+                            // number of deduplicated elements.
+                            actual_length: None,
+                            context: None,
+                        },
+                        input,
+                    ));
                 }
             }
             Err(ValError::LineErrors(line_errors)) => {
@@ -327,31 +327,28 @@ const MAPPING_TUPLE_ERROR: &str = "Mapping items must be tuples of (key, value) 
 pub(crate) fn iterate_attributes<'a, 'py>(
     object: &'a Bound<'py, PyAny>,
 ) -> PyResult<impl Iterator<Item = ValResult<(Bound<'py, PyAny>, Bound<'py, PyAny>)>> + 'a> {
-    let mut attributes_iterator = object.dir()?.into_iter();
-
-    Ok(std::iter::from_fn(move || {
-        // loop until we find an attribute who's name does not start with underscore,
-        // or we get to the end of the list of attributes
-        let name = attributes_iterator.next()?;
-        // from benchmarks this is 14x faster than using the python `startswith` method
-        let name_cow = match name.cast::<PyString>() {
-            Ok(name) => name.to_string_lossy(),
+    Ok(object.dir()?.into_iter().filter_map(|attr| {
+        let name = match attr.cast_into::<PyString>() {
+            Ok(name) => name,
             Err(e) => return Some(Err(e.into())),
         };
-        if !name_cow.as_ref().starts_with('_') {
-            // getattr is most likely to fail due to an exception in a @property, skip
-            if let Ok(attr) = object.getattr(name_cow.as_ref()) {
+
+        // skip private attributes
+        // from benchmarks this is 14x faster than using the python `startswith` method
+        if !name.to_string_lossy().starts_with('_')
+                // getattr is most likely to fail due to an exception in a @property, skip
+                && let Ok(attr) = object.getattr(&name)
                 // we don't want bound methods to be included, is there a better way to check?
                 // ref https://stackoverflow.com/a/18955425/949890
-                let is_bound = matches!(attr.hasattr(intern!(attr.py(), "__self__")), Ok(true));
+                && matches!(attr.hasattr(intern!(attr.py(), "__self__")), Ok(true))
                 // the PyFunction::is_type_of(attr) catches `staticmethod`, but also any other function,
                 // I think that's better than including static methods in the yielded attributes,
                 // if someone really wants fields, they can use an explicit field, or a function to modify input
-                if !is_bound && !attr.is_instance_of::<PyFunction>() {
-                    return Some(Ok((name, attr)));
-                }
-            }
+                && !attr.is_instance_of::<PyFunction>()
+        {
+            return Some(Ok((name.into_any(), attr)));
         }
+
         None
     }))
 }

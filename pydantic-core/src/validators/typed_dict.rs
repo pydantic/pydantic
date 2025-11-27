@@ -94,30 +94,25 @@ impl BuildValidator for TypedDictValidator {
 
             let required = match field_info.get_as::<bool>(intern!(py, "required"))? {
                 Some(required) => {
-                    if required {
-                        if let CombinedValidator::WithDefault(val) = validator.as_ref() {
-                            if val.has_default() {
-                                return py_schema_err!(
-                                    "Field '{}': a required field cannot have a default value",
-                                    field_name
-                                );
-                            }
-                        }
+                    if required
+                        && let CombinedValidator::WithDefault(val) = validator.as_ref()
+                        && val.has_default()
+                    {
+                        return py_schema_err!("Field '{}': a required field cannot have a default value", field_name);
                     }
                     required
                 }
                 None => total,
             };
 
-            if required {
-                if let CombinedValidator::WithDefault(val) = validator.as_ref() {
-                    if val.omit_on_error() {
-                        return py_schema_err!(
-                            "Field '{}': 'on_error = omit' cannot be set for required fields",
-                            field_name
-                        );
-                    }
-                }
+            if required
+                && let CombinedValidator::WithDefault(val) = validator.as_ref()
+                && val.omit_on_error()
+            {
+                return py_schema_err!(
+                    "Field '{}': 'on_error = omit' cannot be set for required fields",
+                    field_name
+                );
             }
 
             let validation_alias = field_info.get_item(intern!(py, "validation_alias"))?;

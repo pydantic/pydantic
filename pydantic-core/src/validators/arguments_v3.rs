@@ -536,26 +536,25 @@ impl ArgumentsV3Validator {
                 .select(validate_by_alias, validate_by_name)?;
 
             let mut pos_value = None;
-            if let Some(args) = args_kwargs.args() {
-                if matches!(
+            if let Some(args) = args_kwargs.args()
+                && matches!(
                     parameter.mode,
                     ParameterMode::PositionalOnly | ParameterMode::PositionalOrKeyword
-                ) {
-                    pos_value = args.get_item(index);
-                }
+                )
+            {
+                pos_value = args.get_item(index);
             }
 
             let mut kw_value = None;
-            if let Some(kwargs) = args_kwargs.kwargs() {
-                if matches!(
+            if let Some(kwargs) = args_kwargs.kwargs()
+                && matches!(
                     parameter.mode,
                     ParameterMode::PositionalOrKeyword | ParameterMode::KeywordOnly
-                ) {
-                    if let Some((lookup_path, value)) = kwargs.get_item(lookup_key)? {
-                        used_kwargs.insert(lookup_path.first_key());
-                        kw_value = Some((lookup_path, value));
-                    }
-                }
+                )
+                && let Some((lookup_path, value)) = kwargs.get_item(lookup_key)?
+            {
+                used_kwargs.insert(lookup_path.first_key());
+                kw_value = Some((lookup_path, value));
             }
 
             match (pos_value, kw_value) {
@@ -632,27 +631,26 @@ impl ArgumentsV3Validator {
         }
 
         // if there are args check any where index > positional_params_count since they won't have been checked yet
-        if let Some(args) = args_kwargs.args() {
-            let len = args.len();
-            if len > self.positional_params_count {
-                if let Some(var_args_param) = self.parameters.iter().find(|p| p.mode == ParameterMode::VarArgs) {
-                    for (index, item) in args.iter().enumerate().skip(self.positional_params_count) {
-                        match var_args_param.validator.validate(py, item.borrow_input(), state) {
-                            Ok(value) => output_args.push(value),
-                            Err(ValError::LineErrors(line_errors)) => {
-                                errors.extend(line_errors.into_iter().map(|err| err.with_outer_location(index)));
-                            }
-                            Err(err) => return Err(err),
+        if let Some(args) = args_kwargs.args()
+            && args.len() > self.positional_params_count
+        {
+            if let Some(var_args_param) = self.parameters.iter().find(|p| p.mode == ParameterMode::VarArgs) {
+                for (index, item) in args.iter().enumerate().skip(self.positional_params_count) {
+                    match var_args_param.validator.validate(py, item.borrow_input(), state) {
+                        Ok(value) => output_args.push(value),
+                        Err(ValError::LineErrors(line_errors)) => {
+                            errors.extend(line_errors.into_iter().map(|err| err.with_outer_location(index)));
                         }
+                        Err(err) => return Err(err),
                     }
-                } else {
-                    for (index, item) in args.iter().enumerate().skip(self.positional_params_count) {
-                        errors.push(ValLineError::new_with_loc(
-                            ErrorTypeDefaults::UnexpectedPositionalArgument,
-                            item,
-                            index,
-                        ));
-                    }
+                }
+            } else {
+                for (index, item) in args.iter().enumerate().skip(self.positional_params_count) {
+                    errors.push(ValLineError::new_with_loc(
+                        ErrorTypeDefaults::UnexpectedPositionalArgument,
+                        item,
+                        index,
+                    ));
                 }
             }
         }
@@ -660,70 +658,70 @@ impl ArgumentsV3Validator {
         let remaining_kwargs = PyDict::new(py);
 
         // if there are kwargs check any that haven't been processed yet
-        if let Some(kwargs) = args_kwargs.kwargs() {
-            if kwargs.len() > used_kwargs.len() {
-                for result in kwargs.iter() {
-                    let (raw_key, value) = result?;
-                    let either_str = match raw_key
-                        .borrow_input()
-                        .validate_str(true, false)
-                        .map(ValidationMatch::into_inner)
-                    {
-                        Ok(k) => k,
-                        Err(ValError::LineErrors(line_errors)) => {
-                            for err in line_errors {
-                                errors.push(
-                                    err.with_outer_location(raw_key.clone())
-                                        .with_type(ErrorTypeDefaults::InvalidKey),
-                                );
-                            }
-                            continue;
+        if let Some(kwargs) = args_kwargs.kwargs()
+            && kwargs.len() > used_kwargs.len()
+        {
+            for result in kwargs.iter() {
+                let (raw_key, value) = result?;
+                let either_str = match raw_key
+                    .borrow_input()
+                    .validate_str(true, false)
+                    .map(ValidationMatch::into_inner)
+                {
+                    Ok(k) => k,
+                    Err(ValError::LineErrors(line_errors)) => {
+                        for err in line_errors {
+                            errors.push(
+                                err.with_outer_location(raw_key.clone())
+                                    .with_type(ErrorTypeDefaults::InvalidKey),
+                            );
                         }
-                        Err(err) => return Err(err),
-                    };
-                    if !used_kwargs.contains(either_str.as_cow()?.as_ref()) {
-                        let maybe_var_kwargs_parameter = self.parameters.iter().find(|p| {
-                            matches!(
-                                p.mode,
-                                ParameterMode::VarKwargsUniform | ParameterMode::VarKwargsUnpackedTypedDict
-                            )
-                        });
+                        continue;
+                    }
+                    Err(err) => return Err(err),
+                };
+                if !used_kwargs.contains(either_str.as_cow()?.as_ref()) {
+                    let maybe_var_kwargs_parameter = self.parameters.iter().find(|p| {
+                        matches!(
+                            p.mode,
+                            ParameterMode::VarKwargsUniform | ParameterMode::VarKwargsUnpackedTypedDict
+                        )
+                    });
 
-                        match maybe_var_kwargs_parameter {
-                            None => {
-                                if extra_behavior == ExtraBehavior::Forbid {
-                                    errors.push(ValLineError::new_with_loc(
-                                        ErrorTypeDefaults::UnexpectedKeywordArgument,
-                                        value,
-                                        raw_key.clone(),
-                                    ));
-                                }
+                    match maybe_var_kwargs_parameter {
+                        None => {
+                            if extra_behavior == ExtraBehavior::Forbid {
+                                errors.push(ValLineError::new_with_loc(
+                                    ErrorTypeDefaults::UnexpectedKeywordArgument,
+                                    value,
+                                    raw_key.clone(),
+                                ));
                             }
-                            Some(var_kwargs_parameter) => {
-                                match var_kwargs_parameter.mode {
-                                    ParameterMode::VarKwargsUniform => {
-                                        match var_kwargs_parameter.validator.validate(py, value.borrow_input(), state) {
-                                            Ok(value) => {
-                                                output_kwargs
-                                                    .set_item(either_str.as_py_string(py, state.cache_str()), value)?;
-                                            }
-                                            Err(ValError::LineErrors(line_errors)) => {
-                                                for err in line_errors {
-                                                    errors.push(err.with_outer_location(raw_key.clone()));
-                                                }
-                                            }
-                                            Err(err) => return Err(err),
+                        }
+                        Some(var_kwargs_parameter) => {
+                            match var_kwargs_parameter.mode {
+                                ParameterMode::VarKwargsUniform => {
+                                    match var_kwargs_parameter.validator.validate(py, value.borrow_input(), state) {
+                                        Ok(value) => {
+                                            output_kwargs
+                                                .set_item(either_str.as_py_string(py, state.cache_str()), value)?;
                                         }
+                                        Err(ValError::LineErrors(line_errors)) => {
+                                            for err in line_errors {
+                                                errors.push(err.with_outer_location(raw_key.clone()));
+                                            }
+                                        }
+                                        Err(err) => return Err(err),
                                     }
-                                    ParameterMode::VarKwargsUnpackedTypedDict => {
-                                        // Save to the remaining kwargs, we will validate as a single dict:
-                                        remaining_kwargs.set_item(
-                                            either_str.as_py_string(py, state.cache_str()),
-                                            value.borrow_input().to_object(py)?,
-                                        )?;
-                                    }
-                                    _ => unreachable!(),
                                 }
+                                ParameterMode::VarKwargsUnpackedTypedDict => {
+                                    // Save to the remaining kwargs, we will validate as a single dict:
+                                    remaining_kwargs.set_item(
+                                        either_str.as_py_string(py, state.cache_str()),
+                                        value.borrow_input().to_object(py)?,
+                                    )?;
+                                }
+                                _ => unreachable!(),
                             }
                         }
                     }

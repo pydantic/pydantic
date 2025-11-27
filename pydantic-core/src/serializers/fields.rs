@@ -96,12 +96,11 @@ fn exclude_default<'py>(
     extra: &Extra<'_, 'py>,
     serializer: &CombinedSerializer,
 ) -> PyResult<bool> {
-    if extra.exclude_defaults {
-        if let Some(default) = serializer.get_default(value.py())? {
-            if value.eq(default)? {
-                return Ok(true);
-            }
-        }
+    if extra.exclude_defaults
+        && let Some(default) = serializer.get_default(value.py())?
+        && value.eq(default)?
+    {
+        return Ok(true);
     }
     Ok(false)
 }

@@ -93,16 +93,16 @@ impl Validator for DateTimeValidator {
             };
             macro_rules! check_constraint {
                 ($constraint:ident, $error:ident) => {
-                    if let Some(constraint) = &constraints.$constraint {
-                        if !speedate_dt.$constraint(constraint) {
-                            return Err(ValError::new(
-                                ErrorType::$error {
-                                    $constraint: constraint.to_string().into(),
-                                    context: None,
-                                },
-                                input,
-                            ));
-                        }
+                    if let Some(constraint) = &constraints.$constraint
+                        && !speedate_dt.$constraint(constraint)
+                    {
+                        return Err(ValError::new(
+                            ErrorType::$error {
+                                $constraint: constraint.to_string().into(),
+                                context: None,
+                            },
+                            input,
+                        ));
                     }
                 };
             }

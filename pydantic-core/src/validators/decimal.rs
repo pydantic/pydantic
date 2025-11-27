@@ -149,51 +149,49 @@ impl Validator for DecimalValidator {
                 return Err(ValError::new(ErrorTypeDefaults::FiniteNumber, input));
             }
 
-            if self.check_digits {
-                if let Ok((normalized_decimals, normalized_digits)) = extract_decimal_digits_info(&decimal, true) {
-                    if let Ok((decimals, digits)) = extract_decimal_digits_info(&decimal, false) {
-                        if let Some(max_digits) = self.max_digits {
-                            if (digits > max_digits) & (normalized_digits > max_digits) {
-                                return Err(ValError::new(
-                                    ErrorType::DecimalMaxDigits {
-                                        max_digits,
-                                        context: None,
-                                    },
-                                    input,
-                                ));
-                            }
-                        }
+            if self.check_digits
+                // TODO: should errors be raised if extract_decimal_digits_info fails?
+                && let Ok((normalized_decimals, normalized_digits)) = extract_decimal_digits_info(&decimal, true)
+                && let Ok((decimals, digits)) = extract_decimal_digits_info(&decimal, false)
+            {
+                if let Some(max_digits) = self.max_digits
+                    && (digits > max_digits) & (normalized_digits > max_digits)
+                {
+                    return Err(ValError::new(
+                        ErrorType::DecimalMaxDigits {
+                            max_digits,
+                            context: None,
+                        },
+                        input,
+                    ));
+                }
 
-                        if let Some(decimal_places) = self.decimal_places {
-                            if (decimals > decimal_places) & (normalized_decimals > decimal_places) {
-                                return Err(ValError::new(
-                                    ErrorType::DecimalMaxPlaces {
-                                        decimal_places,
-                                        context: None,
-                                    },
-                                    input,
-                                ));
-                            }
+                if let Some(decimal_places) = self.decimal_places {
+                    if (decimals > decimal_places) & (normalized_decimals > decimal_places) {
+                        return Err(ValError::new(
+                            ErrorType::DecimalMaxPlaces {
+                                decimal_places,
+                                context: None,
+                            },
+                            input,
+                        ));
+                    }
 
-                            if let Some(max_digits) = self.max_digits {
-                                let whole_digits = digits.saturating_sub(decimals);
-                                let max_whole_digits = max_digits.saturating_sub(decimal_places);
+                    if let Some(max_digits) = self.max_digits {
+                        let whole_digits = digits.saturating_sub(decimals);
+                        let max_whole_digits = max_digits.saturating_sub(decimal_places);
 
-                                let normalized_whole_digits = normalized_digits.saturating_sub(normalized_decimals);
-                                let normalized_max_whole_digits = max_digits.saturating_sub(decimal_places);
+                        let normalized_whole_digits = normalized_digits.saturating_sub(normalized_decimals);
+                        let normalized_max_whole_digits = max_digits.saturating_sub(decimal_places);
 
-                                if (whole_digits > max_whole_digits)
-                                    & (normalized_whole_digits > normalized_max_whole_digits)
-                                {
-                                    return Err(ValError::new(
-                                        ErrorType::DecimalWholeDigits {
-                                            whole_digits: max_whole_digits,
-                                            context: None,
-                                        },
-                                        input,
-                                    ));
-                                }
-                            }
+                        if (whole_digits > max_whole_digits) & (normalized_whole_digits > normalized_max_whole_digits) {
+                            return Err(ValError::new(
+                                ErrorType::DecimalWholeDigits {
+                                    whole_digits: max_whole_digits,
+                                    context: None,
+                                },
+                                input,
+                            ));
                         }
                     }
                 }
@@ -226,49 +224,49 @@ impl Validator for DecimalValidator {
             }
         };
 
-        if let Some(le) = &self.le {
-            if is_nan()? || !decimal.le(le)? {
-                return Err(ValError::new(
-                    ErrorType::LessThanEqual {
-                        le: Number::String(le.to_string()),
-                        context: Some([("le", le)].into_py_dict(py)?.into()),
-                    },
-                    input,
-                ));
-            }
+        if let Some(le) = &self.le
+            && (is_nan()? || !decimal.le(le)?)
+        {
+            return Err(ValError::new(
+                ErrorType::LessThanEqual {
+                    le: Number::String(le.to_string()),
+                    context: Some([("le", le)].into_py_dict(py)?.into()),
+                },
+                input,
+            ));
         }
-        if let Some(lt) = &self.lt {
-            if is_nan()? || !decimal.lt(lt)? {
-                return Err(ValError::new(
-                    ErrorType::LessThan {
-                        lt: Number::String(lt.to_string()),
-                        context: Some([("lt", lt)].into_py_dict(py)?.into()),
-                    },
-                    input,
-                ));
-            }
+        if let Some(lt) = &self.lt
+            && (is_nan()? || !decimal.lt(lt)?)
+        {
+            return Err(ValError::new(
+                ErrorType::LessThan {
+                    lt: Number::String(lt.to_string()),
+                    context: Some([("lt", lt)].into_py_dict(py)?.into()),
+                },
+                input,
+            ));
         }
-        if let Some(ge) = &self.ge {
-            if is_nan()? || !decimal.ge(ge)? {
-                return Err(ValError::new(
-                    ErrorType::GreaterThanEqual {
-                        ge: Number::String(ge.to_string()),
-                        context: Some([("ge", ge)].into_py_dict(py)?.into()),
-                    },
-                    input,
-                ));
-            }
+        if let Some(ge) = &self.ge
+            && (is_nan()? || !decimal.ge(ge)?)
+        {
+            return Err(ValError::new(
+                ErrorType::GreaterThanEqual {
+                    ge: Number::String(ge.to_string()),
+                    context: Some([("ge", ge)].into_py_dict(py)?.into()),
+                },
+                input,
+            ));
         }
-        if let Some(gt) = &self.gt {
-            if is_nan()? || !decimal.gt(gt)? {
-                return Err(ValError::new(
-                    ErrorType::GreaterThan {
-                        gt: Number::String(gt.to_string()),
-                        context: Some([("gt", gt)].into_py_dict(py)?.into()),
-                    },
-                    input,
-                ));
-            }
+        if let Some(gt) = &self.gt
+            && (is_nan()? || !decimal.gt(gt)?)
+        {
+            return Err(ValError::new(
+                ErrorType::GreaterThan {
+                    gt: Number::String(gt.to_string()),
+                    context: Some([("gt", gt)].into_py_dict(py)?.into()),
+                },
+                input,
+            ));
         }
 
         Ok(decimal.into())

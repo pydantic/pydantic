@@ -123,49 +123,49 @@ impl Validator for ConstrainedFloatValidator {
                 ));
             }
         }
-        if let Some(le) = self.le {
-            if !matches!(float.partial_cmp(&le), Some(Ordering::Less | Ordering::Equal)) {
-                return Err(ValError::new(
-                    ErrorType::LessThanEqual {
-                        le: le.into(),
-                        context: None,
-                    },
-                    input,
-                ));
-            }
+        if let Some(le) = self.le
+            && !matches!(float.partial_cmp(&le), Some(Ordering::Less | Ordering::Equal))
+        {
+            return Err(ValError::new(
+                ErrorType::LessThanEqual {
+                    le: le.into(),
+                    context: None,
+                },
+                input,
+            ));
         }
-        if let Some(lt) = self.lt {
-            if !matches!(float.partial_cmp(&lt), Some(Ordering::Less)) {
-                return Err(ValError::new(
-                    ErrorType::LessThan {
-                        lt: lt.into(),
-                        context: None,
-                    },
-                    input,
-                ));
-            }
+        if let Some(lt) = self.lt
+            && !matches!(float.partial_cmp(&lt), Some(Ordering::Less))
+        {
+            return Err(ValError::new(
+                ErrorType::LessThan {
+                    lt: lt.into(),
+                    context: None,
+                },
+                input,
+            ));
         }
-        if let Some(ge) = self.ge {
-            if !matches!(float.partial_cmp(&ge), Some(Ordering::Greater | Ordering::Equal)) {
-                return Err(ValError::new(
-                    ErrorType::GreaterThanEqual {
-                        ge: ge.into(),
-                        context: None,
-                    },
-                    input,
-                ));
-            }
+        if let Some(ge) = self.ge
+            && !matches!(float.partial_cmp(&ge), Some(Ordering::Greater | Ordering::Equal))
+        {
+            return Err(ValError::new(
+                ErrorType::GreaterThanEqual {
+                    ge: ge.into(),
+                    context: None,
+                },
+                input,
+            ));
         }
-        if let Some(gt) = self.gt {
-            if !matches!(float.partial_cmp(&gt), Some(Ordering::Greater)) {
-                return Err(ValError::new(
-                    ErrorType::GreaterThan {
-                        gt: gt.into(),
-                        context: None,
-                    },
-                    input,
-                ));
-            }
+        if let Some(gt) = self.gt
+            && !matches!(float.partial_cmp(&gt), Some(Ordering::Greater))
+        {
+            return Err(ValError::new(
+                ErrorType::GreaterThan {
+                    gt: gt.into(),
+                    context: None,
+                },
+                input,
+            ));
         }
         Ok(either_float.into_py_any(py)?)
     }

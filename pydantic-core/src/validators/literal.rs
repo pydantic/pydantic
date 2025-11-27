@@ -102,23 +102,23 @@ impl<T: Debug> LiteralLookup<T> {
         py: Python<'py>,
         input: &'a I,
     ) -> ValResult<Option<(&'a I, &T)>> {
-        if let Some(expected_bool) = &self.expected_bool {
-            if let Ok(bool_value) = input.validate_bool(true) {
-                if bool_value.into_inner() {
-                    if let Some(true_value) = &expected_bool.true_id {
-                        return Ok(Some((input, &self.values[*true_value])));
-                    }
-                } else if let Some(false_value) = &expected_bool.false_id {
-                    return Ok(Some((input, &self.values[*false_value])));
+        if let Some(expected_bool) = &self.expected_bool
+            && let Ok(bool_value) = input.validate_bool(true)
+        {
+            if bool_value.into_inner() {
+                if let Some(true_value) = &expected_bool.true_id {
+                    return Ok(Some((input, &self.values[*true_value])));
                 }
+            } else if let Some(false_value) = &expected_bool.false_id {
+                return Ok(Some((input, &self.values[*false_value])));
             }
         }
-        if let Some(expected_ints) = &self.expected_int {
-            if let Ok(either_int) = input.exact_int() {
-                let int = either_int.into_i64(py)?;
-                if let Some(id) = expected_ints.get(&int) {
-                    return Ok(Some((input, &self.values[*id])));
-                }
+        if let Some(expected_ints) = &self.expected_int
+            && let Ok(either_int) = input.exact_int()
+        {
+            let int = either_int.into_i64(py)?;
+            if let Some(id) = expected_ints.get(&int) {
+                return Ok(Some((input, &self.values[*id])));
             }
         }
         if let Some(expected_strings) = &self.expected_str {
@@ -150,15 +150,14 @@ impl<T: Debug> LiteralLookup<T> {
             }
         };
 
-        if let Some(expected_py_dict) = &self.expected_py_dict {
-            let py_input = get_py_input()?;
+        if let Some(expected_py_dict) = &self.expected_py_dict &&
             // We don't use ? to unpack the result of `get_item` in the next line because unhashable
             // inputs will produce a TypeError, which in this case we just want to treat equivalently
             // to a failed lookup
-            if let Ok(Some(v)) = expected_py_dict.bind(py).get_item(py_input) {
-                let id: usize = v.extract().unwrap();
-                return Ok(Some((input, &self.values[id])));
-            }
+             let Ok(Some(v)) = expected_py_dict.bind(py).get_item(get_py_input()?)
+        {
+            let id: usize = v.extract().unwrap();
+            return Ok(Some((input, &self.values[id])));
         }
         if let Some(expected_py_values) = &self.expected_py_values {
             let py_input = get_py_input()?;
@@ -171,15 +170,14 @@ impl<T: Debug> LiteralLookup<T> {
 
         // this one must be last to avoid conflicts with the other lookups, think of this
         // almost as a lax fallback
-        if let Some(expected_py_primitives) = &self.expected_py_primitives {
-            let py_input = get_py_input()?;
+        if let Some(expected_py_primitives) = &self.expected_py_primitives
             // We don't use ? to unpack the result of `get_item` in the next line because unhashable
             // inputs will produce a TypeError, which in this case we just want to treat equivalently
             // to a failed lookup
-            if let Ok(Some(v)) = expected_py_primitives.bind(py).get_item(py_input) {
-                let id: usize = v.extract().unwrap();
-                return Ok(Some((input, &self.values[id])));
-            }
+            && let Ok(Some(v)) = expected_py_primitives.bind(py).get_item(get_py_input()?)
+        {
+            let id: usize = v.extract().unwrap();
+            return Ok(Some((input, &self.values[id])));
         }
         Ok(None)
     }
@@ -191,26 +189,22 @@ impl<T: Debug> LiteralLookup<T> {
         input: &'a I,
         strict: bool,
     ) -> ValResult<Option<&T>> {
-        if let Some(expected_ints) = &self.expected_int {
-            if let Ok(either_int) = input.validate_int(strict) {
-                let int = either_int.into_inner().into_i64(py)?;
-                if let Some(id) = expected_ints.get(&int) {
-                    return Ok(Some(&self.values[*id]));
-                }
-            }
+        if let Some(expected_ints) = &self.expected_int
+            && let Ok(either_int) = input.validate_int(strict)
+            && let Some(id) = expected_ints.get(&either_int.into_inner().into_i64(py)?)
+        {
+            return Ok(Some(&self.values[*id]));
         }
         Ok(None)
     }
 
     /// Used by str enums
     pub fn validate_str<'a, 'py, I: Input<'py> + ?Sized>(&self, input: &'a I, strict: bool) -> ValResult<Option<&T>> {
-        if let Some(expected_strings) = &self.expected_str {
-            if let Ok(either_str) = input.validate_str(strict, false) {
-                let s = either_str.into_inner();
-                if let Some(id) = expected_strings.get(s.as_cow()?.as_ref()) {
-                    return Ok(Some(&self.values[*id]));
-                }
-            }
+        if let Some(expected_strings) = &self.expected_str
+            && let Ok(either_str) = input.validate_str(strict, false)
+            && let Some(id) = expected_strings.get(either_str.into_inner().as_cow()?.as_ref())
+        {
+            return Ok(Some(&self.values[*id]));
         }
         Ok(None)
     }
@@ -222,14 +216,12 @@ impl<T: Debug> LiteralLookup<T> {
         input: &'a I,
         strict: bool,
     ) -> ValResult<Option<&T>> {
-        if let Some(expected_py) = &self.expected_py_dict {
-            if let Ok(either_float) = input.validate_float(strict) {
-                let f = either_float.into_inner().as_f64();
-                if let Ok(Some(v)) = expected_py.bind(py).get_item(f) {
-                    let id: usize = v.extract().unwrap();
-                    return Ok(Some(&self.values[id]));
-                }
-            }
+        if let Some(expected_py) = &self.expected_py_dict
+            && let Ok(either_float) = input.validate_float(strict)
+            && let Ok(Some(v)) = expected_py.bind(py).get_item(either_float.into_inner().as_f64())
+        {
+            let id: usize = v.extract().unwrap();
+            return Ok(Some(&self.values[id]));
         }
         Ok(None)
     }

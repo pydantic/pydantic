@@ -206,10 +206,10 @@ impl Validator for ArgumentsValidator {
         // go through arguments getting the value from args or kwargs and validating it
         for (index, parameter) in self.parameters.iter().enumerate() {
             let mut pos_value = None;
-            if let Some(args) = args.args() {
-                if parameter.positional {
-                    pos_value = args.get_item(index);
-                }
+            if let Some(args) = args.args()
+                && parameter.positional
+            {
+                pos_value = args.get_item(index);
             }
             let mut kw_value = None;
             let mut kw_lookup_key = None;
@@ -221,13 +221,12 @@ impl Validator for ArgumentsValidator {
                 );
             }
 
-            if let Some(kwargs) = args.kwargs() {
-                if let Some(lookup_key) = kw_lookup_key {
-                    if let Some((lookup_path, value)) = kwargs.get_item(lookup_key)? {
-                        used_kwargs.insert(lookup_path.first_key());
-                        kw_value = Some((lookup_path, value));
-                    }
-                }
+            if let Some(kwargs) = args.kwargs()
+                && let Some(lookup_key) = kw_lookup_key
+                && let Some((lookup_path, value)) = kwargs.get_item(lookup_key)?
+            {
+                used_kwargs.insert(lookup_path.first_key());
+                kw_value = Some((lookup_path, value));
             }
 
             let state =
@@ -317,59 +316,58 @@ impl Validator for ArgumentsValidator {
         let remaining_kwargs = PyDict::new(py);
 
         // if there are kwargs check any that haven't been processed yet
-        if let Some(kwargs) = args.kwargs() {
-            if kwargs.len() > used_kwargs.len() {
-                for result in kwargs.iter() {
-                    let (raw_key, value) = result?;
-                    let either_str = match raw_key
-                        .borrow_input()
-                        .validate_str(true, false)
-                        .map(ValidationMatch::into_inner)
-                    {
-                        Ok(k) => k,
-                        Err(ValError::LineErrors(line_errors)) => {
-                            for err in line_errors {
-                                errors.push(
-                                    err.with_outer_location(raw_key.clone())
-                                        .with_type(ErrorTypeDefaults::InvalidKey),
-                                );
-                            }
-                            continue;
+        if let Some(kwargs) = args.kwargs()
+            && kwargs.len() > used_kwargs.len()
+        {
+            for result in kwargs.iter() {
+                let (raw_key, value) = result?;
+                let either_str = match raw_key
+                    .borrow_input()
+                    .validate_str(true, false)
+                    .map(ValidationMatch::into_inner)
+                {
+                    Ok(k) => k,
+                    Err(ValError::LineErrors(line_errors)) => {
+                        for err in line_errors {
+                            errors.push(
+                                err.with_outer_location(raw_key.clone())
+                                    .with_type(ErrorTypeDefaults::InvalidKey),
+                            );
                         }
-                        Err(err) => return Err(err),
-                    };
-                    if !used_kwargs.contains(either_str.as_cow()?.as_ref()) {
-                        match self.var_kwargs_mode {
-                            VarKwargsMode::Uniform => match &self.var_kwargs_validator {
-                                Some(validator) => match validator.validate(py, value.borrow_input(), state) {
-                                    Ok(value) => {
-                                        output_kwargs
-                                            .set_item(either_str.as_py_string(py, state.cache_str()), value)?;
-                                    }
-                                    Err(ValError::LineErrors(line_errors)) => {
-                                        for err in line_errors {
-                                            errors.push(err.with_outer_location(raw_key.clone()));
-                                        }
-                                    }
-                                    Err(err) => return Err(err),
-                                },
-                                None => {
-                                    if let ExtraBehavior::Forbid = self.extra {
-                                        errors.push(ValLineError::new_with_loc(
-                                            ErrorTypeDefaults::UnexpectedKeywordArgument,
-                                            value,
-                                            raw_key.clone(),
-                                        ));
+                        continue;
+                    }
+                    Err(err) => return Err(err),
+                };
+                if !used_kwargs.contains(either_str.as_cow()?.as_ref()) {
+                    match self.var_kwargs_mode {
+                        VarKwargsMode::Uniform => match &self.var_kwargs_validator {
+                            Some(validator) => match validator.validate(py, value.borrow_input(), state) {
+                                Ok(value) => {
+                                    output_kwargs.set_item(either_str.as_py_string(py, state.cache_str()), value)?;
+                                }
+                                Err(ValError::LineErrors(line_errors)) => {
+                                    for err in line_errors {
+                                        errors.push(err.with_outer_location(raw_key.clone()));
                                     }
                                 }
+                                Err(err) => return Err(err),
                             },
-                            VarKwargsMode::UnpackedTypedDict => {
-                                // Save to the remaining kwargs, we will validate as a single dict:
-                                remaining_kwargs.set_item(
-                                    either_str.as_py_string(py, state.cache_str()),
-                                    value.borrow_input().to_object(py)?,
-                                )?;
+                            None => {
+                                if let ExtraBehavior::Forbid = self.extra {
+                                    errors.push(ValLineError::new_with_loc(
+                                        ErrorTypeDefaults::UnexpectedKeywordArgument,
+                                        value,
+                                        raw_key.clone(),
+                                    ));
+                                }
                             }
+                        },
+                        VarKwargsMode::UnpackedTypedDict => {
+                            // Save to the remaining kwargs, we will validate as a single dict:
+                            remaining_kwargs.set_item(
+                                either_str.as_py_string(py, state.cache_str()),
+                                value.borrow_input().to_object(py)?,
+                            )?;
                         }
                     }
                 }

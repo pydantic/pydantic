@@ -137,16 +137,16 @@ impl Validator for UuidValidator {
             // This block checks if the UUID version matches the expected version and
             // if the UUID variant conforms to RFC 9562 (superseding RFC 4122).
             // When dealing with Python inputs, UUIDs must adhere to RFC 9562 standards.
-            if let Some(expected_version) = self.version {
-                if uuid.get_version_num() != expected_version || uuid.get_variant() != Variant::RFC4122 {
-                    return Err(ValError::new(
-                        ErrorType::UuidVersion {
-                            expected_version,
-                            context: None,
-                        },
-                        input,
-                    ));
-                }
+            if let Some(expected_version) = self.version
+                && (uuid.get_version_num() != expected_version || uuid.get_variant() != Variant::RFC4122)
+            {
+                return Err(ValError::new(
+                    ErrorType::UuidVersion {
+                        expected_version,
+                        context: None,
+                    },
+                    input,
+                ));
             }
             self.create_py_uuid(class, &uuid)
         }
@@ -179,13 +179,13 @@ impl UuidValidator {
                     .map_err(|_| ValError::new(ErrorTypeDefaults::UuidType, input))?
                     .into_inner();
                 let bytes_slice = either_bytes.as_slice();
-                'parse: {
-                    // Try parsing as utf8, but don't care if it fails
-                    if let Ok(utf8_str) = from_utf8(bytes_slice) {
-                        if let Ok(uuid) = Uuid::parse_str(utf8_str) {
-                            break 'parse uuid;
-                        }
-                    }
+
+                // Try parsing as utf8, if it fails fall back to bytes
+                if let Ok(utf8_str) = from_utf8(bytes_slice)
+                    && let Ok(uuid) = Uuid::parse_str(utf8_str)
+                {
+                    uuid
+                } else {
                     Uuid::from_slice(bytes_slice).map_err(|e| {
                         ValError::new(
                             ErrorType::UuidParsing {
@@ -199,17 +199,16 @@ impl UuidValidator {
             }
         };
 
-        if let Some(expected_version) = self.version {
-            let v1 = uuid.get_version_num();
-            if v1 != expected_version {
-                return Err(ValError::new(
-                    ErrorType::UuidVersion {
-                        expected_version,
-                        context: None,
-                    },
-                    input,
-                ));
-            }
+        if let Some(expected_version) = self.version
+            && uuid.get_version_num() != expected_version
+        {
+            return Err(ValError::new(
+                ErrorType::UuidVersion {
+                    expected_version,
+                    context: None,
+                },
+                input,
+            ));
         }
         Ok(uuid)
     }
