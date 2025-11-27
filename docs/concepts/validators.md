@@ -41,7 +41,7 @@ In its simplest form, a field validator is a callable taking the value to be val
 
 **Four** different types of validators can be used. They can all be defined using the
 [annotated pattern](./fields.md#the-annotated-pattern) or using the
-[`field_validator()`][pydantic.field_validator] decorator, applied on a [class method][classmethod]:
+[`@field_validator`][pydantic.field_validator] decorator, applied on a [class method][classmethod]:
 
 * ***After* validators**: run after Pydantic's internal validation. They are generally more type safe and thus easier to implement.
 {#field-after-validator}

@@ -534,7 +534,7 @@ def test_classmethod():
 
 
 def test_use_bare():
-    with pytest.raises(TypeError, match='`@validator` should be used with fields'):
+    with pytest.raises(PydanticUserError) as exc:
 
         class Model(BaseModel):
             a: str
@@ -545,9 +545,11 @@ def test_use_bare():
                 def checker(cls, v):
                     return v
 
+    assert exc.value.code == 'decorator-missing-arguments'
+
 
 def test_use_bare_field_validator():
-    with pytest.raises(TypeError, match='`@field_validator` should be used with fields'):
+    with pytest.raises(PydanticUserError) as exc:
 
         class Model(BaseModel):
             a: str
@@ -555,6 +557,8 @@ def test_use_bare_field_validator():
             @field_validator
             def checker(cls, v):
                 return v
+
+    assert exc.value.code == 'decorator-missing-arguments'
 
 
 def test_use_no_fields():
@@ -580,11 +584,7 @@ def test_use_no_fields_field_validator():
 
 
 def test_validator_bad_fields_throws_configerror():
-    """
-    Attempts to create a validator with fields set as a list of strings,
-    rather than just multiple string args. Expects ConfigError to be raised.
-    """
-    with pytest.raises(TypeError, match='`@validator` fields should be passed as separate string args.'):
+    with pytest.raises(PydanticUserError) as exc:
 
         class Model(BaseModel):
             a: str
@@ -596,21 +596,34 @@ def test_validator_bad_fields_throws_configerror():
                 def check_fields(cls, v):
                     return v
 
+    assert exc.value.code == 'decorator-invalid-fields'
+
 
 def test_field_validator_bad_fields_throws_configerror():
-    """
-    Attempts to create a validator with fields set as a list of strings,
-    rather than just multiple string args. Expects ConfigError to be raised.
-    """
-    with pytest.raises(TypeError, match='`@field_validator` fields should be passed as separate string args.'):
+    with pytest.raises(PydanticUserError) as exc:
 
-        class Model(BaseModel):
+        class Model1(BaseModel):
             a: str
             b: str
 
             @field_validator(['a', 'b'])
             def check_fields(cls, v):
                 return v
+
+    assert exc.value.code == 'decorator-invalid-fields'
+
+    with pytest.raises(PydanticUserError) as exc:
+
+        class Model2(BaseModel):
+            a: str
+            b: str
+
+            @field_validator(['a', 'b'])
+            @classmethod
+            def check_fields(cls, v):
+                return v
+
+    assert exc.value.code == 'decorator-invalid-fields'
 
 
 def test_validate_always():
@@ -2071,7 +2084,7 @@ def test_validator_self():
 
 
 def test_field_validator_self():
-    with pytest.raises(TypeError, match=r'`@field_validator` cannot be applied to instance methods'):
+    with pytest.raises(PydanticUserError) as exc:
 
         class Model(BaseModel):
             a: int = 1
@@ -2079,6 +2092,8 @@ def test_field_validator_self():
             @field_validator('a')
             def check_a(self, values: Any) -> Any:
                 return values
+
+    assert exc.value.code == 'validator-instance-method'
 
 
 def test_v1_validator_signature_kwargs_not_allowed() -> None:
