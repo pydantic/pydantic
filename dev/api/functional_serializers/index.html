@@ -4812,11 +4812,13 @@ logic, and can modify the resulting value before returning it as the final outpu
 <span class="p">]</span>
 </code></pre></div>          </div>
 <div class="language-python doc-signature highlight"><pre><span></span><code><span class="nf">field_serializer</span><span class="p">(</span>
+    <span class="n">field</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span><span class="p">,</span>
+    <span class="o">/</span><span class="p">,</span>
     <span class="o">*</span><span class="n">fields</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span><span class="p">,</span>
     <span class="n">mode</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" title="typing.Literal" href="https://docs.python.org/3/library/typing.html#typing.Literal">Literal</a></span><span class="p">[</span><span class="s2">&quot;plain&quot;</span><span class="p">,</span> <span class="s2">&quot;wrap&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;plain&quot;</span><span class="p">,</span>
     <span class="n">return_type</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" title="typing.Any" href="https://docs.python.org/3/library/typing.html#typing.Any">Any</a></span> <span class="o">=</span> <span class="n"><span title="pydantic_core.PydanticUndefined">PydanticUndefined</span></span><span class="p">,</span>
     <span class="n">when_used</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-internal" title="pydantic_core.core_schema.WhenUsed" href="../pydantic_core_schema/#pydantic_core.core_schema.WhenUsed">WhenUsed</a></span> <span class="o">=</span> <span class="s2">&quot;always&quot;</span><span class="p">,</span>
-    <span class="n">check_fields</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a></span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">check_fields</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a></span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="p">(</span>
     <span class="n"><a class="autorefs autorefs-external" title="typing.Callable" href="https://docs.python.org/3/library/typing.html#typing.Callable">Callable</a></span><span class="p">[[</span><span class="n"><span title="pydantic.functional_serializers._FieldWrapSerializerT">_FieldWrapSerializerT</span></span><span class="p">],</span> <span class="n"><span title="pydantic.functional_serializers._FieldWrapSerializerT">_FieldWrapSerializerT</span></span><span class="p">]</span>
     <span class="o">|</span> <span class="n"><a class="autorefs autorefs-external" title="typing.Callable" href="https://docs.python.org/3/library/typing.html#typing.Callable">Callable</a></span><span class="p">[</span>
@@ -4844,7 +4846,7 @@ logic, and can modify the resulting value before returning it as the final outpu
 <span class="c1">#&gt; {&quot;name&quot;:&quot;Jane&quot;,&quot;courses&quot;:[&quot;Chemistry&quot;,&quot;English&quot;,&quot;Math&quot;]}</span>
 </code></pre></div>
 <p>See <a href="../../concepts/serialization/#serializers">the usage documentation</a> for more information.</p>
-<p>Four signatures are supported:</p>
+<p>Four signatures are supported for the decorated serializer:</p>
 <ul>
 <li><code>(self, value: Any, info: FieldSerializationInfo)</code></li>
 <li><code>(self, value: Any, nxt: SerializerFunctionWrapHandler, info: FieldSerializationInfo)</code></li>
@@ -4866,14 +4868,14 @@ logic, and can modify the resulting value before returning it as the final outpu
       <tbody>
           <tr class="doc-section-item">
             <td>
-                <code>fields</code>
+                <code>*fields</code>
             </td>
             <td>
                   <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></code>
             </td>
             <td>
               <div class="doc-md-description">
-                <p>Which field(s) the method should be called on.</p>
+                <p>The field names the serializer should apply to.</p>
               </div>
             </td>
             <td>
@@ -4953,7 +4955,7 @@ logic, and can modify the resulting value before returning it as the final outpu
     </table>
 
 
-    <p><span class="doc-section-title">Returns:</span></p>
+<p><span class="doc-section-title">Raises:</span></p>
     <table>
       <thead>
         <tr>
@@ -4964,11 +4966,14 @@ logic, and can modify the resulting value before returning it as the final outpu
       <tbody>
           <tr class="doc-section-item">
             <td>
-                  <code><a class="autorefs autorefs-external" title="typing.Callable" href="https://docs.python.org/3/library/typing.html#typing.Callable">Callable</a>[[<span title="pydantic.functional_serializers._FieldWrapSerializerT">_FieldWrapSerializerT</span>], <span title="pydantic.functional_serializers._FieldWrapSerializerT">_FieldWrapSerializerT</span>] | <a class="autorefs autorefs-external" title="typing.Callable" href="https://docs.python.org/3/library/typing.html#typing.Callable">Callable</a>[[<span title="pydantic.functional_serializers._FieldPlainSerializerT">_FieldPlainSerializerT</span>], <span title="pydantic.functional_serializers._FieldPlainSerializerT">_FieldPlainSerializerT</span>]</code>
+                  <code><a class="autorefs autorefs-internal" title="pydantic.errors.PydanticUserError" href="../errors/#pydantic.errors.PydanticUserError">PydanticUserError</a></code>
             </td>
             <td>
               <div class="doc-md-description">
-                <p>The decorator function.</p>
+                <ul>
+<li>If the decorator is used without any arguments (at least one field name must be provided).</li>
+<li>If the provided field names are not strings.</li>
+</ul>
               </div>
             </td>
           </tr>
@@ -4977,8 +4982,7 @@ logic, and can modify the resulting value before returning it as the final outpu
 
             <details class="quote">
               <summary>Source code in <code>pydantic/functional_serializers.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">231</span>
-<span class="normal">232</span>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">232</span>
 <span class="normal">233</span>
 <span class="normal">234</span>
 <span class="normal">235</span>
@@ -5042,7 +5046,28 @@ logic, and can modify the resulting value before returning it as the final outpu
 <span class="normal">293</span>
 <span class="normal">294</span>
 <span class="normal">295</span>
-<span class="normal">296</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">field_serializer</span><span class="p">(</span>
+<span class="normal">296</span>
+<span class="normal">297</span>
+<span class="normal">298</span>
+<span class="normal">299</span>
+<span class="normal">300</span>
+<span class="normal">301</span>
+<span class="normal">302</span>
+<span class="normal">303</span>
+<span class="normal">304</span>
+<span class="normal">305</span>
+<span class="normal">306</span>
+<span class="normal">307</span>
+<span class="normal">308</span>
+<span class="normal">309</span>
+<span class="normal">310</span>
+<span class="normal">311</span>
+<span class="normal">312</span>
+<span class="normal">313</span>
+<span class="normal">314</span>
+<span class="normal">315</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">field_serializer</span><span class="p">(</span>  <span class="c1"># noqa: D417</span>
+    <span class="n">field</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+    <span class="o">/</span><span class="p">,</span>
     <span class="o">*</span><span class="n">fields</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
     <span class="n">mode</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s1">&#39;plain&#39;</span><span class="p">,</span> <span class="s1">&#39;wrap&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;plain&#39;</span><span class="p">,</span>
     <span class="c1"># TODO PEP 747 (grep for &#39;return_type&#39; on the whole code base):</span>
@@ -5075,7 +5100,7 @@ logic, and can modify the resulting value before returning it as the final outpu
 
 <span class="sd">    See [the usage documentation](../concepts/serialization.md#serializers) for more information.</span>
 
-<span class="sd">    Four signatures are supported:</span>
+<span class="sd">    Four signatures are supported for the decorated serializer:</span>
 
 <span class="sd">    - `(self, value: Any, info: FieldSerializationInfo)`</span>
 <span class="sd">    - `(self, value: Any, nxt: SerializerFunctionWrapHandler, info: FieldSerializationInfo)`</span>
@@ -5083,7 +5108,7 @@ logic, and can modify the resulting value before returning it as the final outpu
 <span class="sd">    - `(value: Any, nxt: SerializerFunctionWrapHandler, info: SerializationInfo)`</span>
 
 <span class="sd">    Args:</span>
-<span class="sd">        fields: Which field(s) the method should be called on.</span>
+<span class="sd">        *fields: The field names the serializer should apply to.</span>
 <span class="sd">        mode: The serialization mode.</span>
 
 <span class="sd">            - `plain` means the function will be called instead of the default serialization logic,</span>
@@ -5093,9 +5118,25 @@ logic, and can modify the resulting value before returning it as the final outpu
 <span class="sd">        when_used: Determines the serializer will be used for serialization.</span>
 <span class="sd">        check_fields: Whether to check that the fields actually exist on the model.</span>
 
-<span class="sd">    Returns:</span>
-<span class="sd">        The decorator function.</span>
+<span class="sd">    Raises:</span>
+<span class="sd">        PydanticUserError:</span>
+<span class="sd">            - If the decorator is used without any arguments (at least one field name must be provided).</span>
+<span class="sd">            - If the provided field names are not strings.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="nb">callable</span><span class="p">(</span><span class="n">field</span><span class="p">)</span> <span class="ow">or</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">field</span><span class="p">,</span> <span class="nb">classmethod</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="n">PydanticUserError</span><span class="p">(</span>
+            <span class="s1">&#39;The `@field_serializer` decorator cannot be used without arguments, at least one field must be provided. &#39;</span>
+            <span class="s2">&quot;For example: `@field_serializer(&#39;&lt;field_name&gt;&#39;, ...)`.&quot;</span><span class="p">,</span>
+            <span class="n">code</span><span class="o">=</span><span class="s1">&#39;decorator-missing-arguments&#39;</span><span class="p">,</span>
+        <span class="p">)</span>
+
+    <span class="n">fields</span> <span class="o">=</span> <span class="n">field</span><span class="p">,</span> <span class="o">*</span><span class="n">fields</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">all</span><span class="p">(</span><span class="nb">isinstance</span><span class="p">(</span><span class="n">field</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span> <span class="k">for</span> <span class="n">field</span> <span class="ow">in</span> <span class="n">fields</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="n">PydanticUserError</span><span class="p">(</span>
+            <span class="s1">&#39;The provided field names to the `@field_serializer` decorator should be strings. &#39;</span>
+            <span class="s2">&quot;For example: `@field_serializer(&#39;&lt;field_name_1&gt;&#39;, &#39;&lt;field_name_2&gt;&#39;, ...).`&quot;</span><span class="p">,</span>
+            <span class="n">code</span><span class="o">=</span><span class="s1">&#39;decorator-invalid-fields&#39;</span><span class="p">,</span>
+        <span class="p">)</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">dec</span><span class="p">(</span><span class="n">f</span><span class="p">:</span> <span class="n">FieldSerializer</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">_decorators</span><span class="o">.</span><span class="n">PydanticDescriptorProxy</span><span class="p">[</span><span class="n">Any</span><span class="p">]:</span>
         <span class="n">dec_info</span> <span class="o">=</span> <span class="n">_decorators</span><span class="o">.</span><span class="n">FieldSerializerDecoratorInfo</span><span class="p">(</span>
@@ -5311,26 +5352,7 @@ logic, and can modify the resulting value before returning it as the final outpu
 
             <details class="quote">
               <summary>Source code in <code>pydantic/functional_serializers.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">345</span>
-<span class="normal">346</span>
-<span class="normal">347</span>
-<span class="normal">348</span>
-<span class="normal">349</span>
-<span class="normal">350</span>
-<span class="normal">351</span>
-<span class="normal">352</span>
-<span class="normal">353</span>
-<span class="normal">354</span>
-<span class="normal">355</span>
-<span class="normal">356</span>
-<span class="normal">357</span>
-<span class="normal">358</span>
-<span class="normal">359</span>
-<span class="normal">360</span>
-<span class="normal">361</span>
-<span class="normal">362</span>
-<span class="normal">363</span>
-<span class="normal">364</span>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">364</span>
 <span class="normal">365</span>
 <span class="normal">366</span>
 <span class="normal">367</span>
@@ -5382,7 +5404,26 @@ logic, and can modify the resulting value before returning it as the final outpu
 <span class="normal">413</span>
 <span class="normal">414</span>
 <span class="normal">415</span>
-<span class="normal">416</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">model_serializer</span><span class="p">(</span>
+<span class="normal">416</span>
+<span class="normal">417</span>
+<span class="normal">418</span>
+<span class="normal">419</span>
+<span class="normal">420</span>
+<span class="normal">421</span>
+<span class="normal">422</span>
+<span class="normal">423</span>
+<span class="normal">424</span>
+<span class="normal">425</span>
+<span class="normal">426</span>
+<span class="normal">427</span>
+<span class="normal">428</span>
+<span class="normal">429</span>
+<span class="normal">430</span>
+<span class="normal">431</span>
+<span class="normal">432</span>
+<span class="normal">433</span>
+<span class="normal">434</span>
+<span class="normal">435</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">model_serializer</span><span class="p">(</span>
     <span class="n">f</span><span class="p">:</span> <span class="n">_ModelPlainSerializerT</span> <span class="o">|</span> <span class="n">_ModelWrapSerializerT</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="o">/</span><span class="p">,</span>
     <span class="o">*</span><span class="p">,</span>

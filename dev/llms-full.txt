@@ -13277,7 +13277,7 @@ pydantic.functional_validators.field_validator
 
 In its simplest form, a field validator is a callable taking the value to be validated as an argument and **returning the validated value**. The callable can perform checks for specific conditions (see [raising validation errors](#raising-validation-errors)) and make changes to the validated value (coercion or mutation).
 
-**Four** different types of validators can be used. They can all be defined using the [annotated pattern](../fields/#the-annotated-pattern) or using the field_validator() decorator, applied on a class method:
+**Four** different types of validators can be used. They can all be defined using the [annotated pattern](../fields/#the-annotated-pattern) or using the @field_validator decorator, applied on a class method:
 
 - ***After* validators**: run after Pydantic's internal validation. They are generally more type safe and thus easier to implement.
 
@@ -20929,7 +20929,7 @@ PrivateAttr(
 ```python
 PrivateAttr(
     *,
-    default_factory: Callable[[], _T],
+    default_factory: Callable[[], _T" optional hover>_T],
     init: Literal[False] = False
 ) -> _T
 
@@ -21808,11 +21808,13 @@ field_serializer(
 
 ```python
 field_serializer(
+    field: str,
+    /,
     *fields: str,
     mode: Literal["plain", "wrap"] = "plain",
     return_type: Any = PydanticUndefined,
     when_used: WhenUsed = "always",
-    check_fields: bool | None = None
+    check_fields: bool | None = None,
 ) -> (
     Callable[[_FieldWrapSerializerT], _FieldWrapSerializerT]
     | Callable[
@@ -21845,7 +21847,7 @@ print(student.model_dump_json())
 
 See [the usage documentation](../../concepts/serialization/#serializers) for more information.
 
-Four signatures are supported:
+Four signatures are supported for the decorated serializer:
 
 - `(self, value: Any, info: FieldSerializationInfo)`
 - `(self, value: Any, nxt: SerializerFunctionWrapHandler, info: FieldSerializationInfo)`
@@ -21854,16 +21856,18 @@ Four signatures are supported:
 
 Parameters:
 
-| Name | Type | Description | Default | | --- | --- | --- | --- | | `fields` | `str` | Which field(s) the method should be called on. | `()` | | `mode` | `Literal['plain', 'wrap']` | The serialization mode. plain means the function will be called instead of the default serialization logic, wrap means the function will be called with an argument to optionally call the default serialization logic. | `'plain'` | | `return_type` | `Any` | Optional return type for the function, if omitted it will be inferred from the type annotation. | `PydanticUndefined` | | `when_used` | `WhenUsed` | Determines the serializer will be used for serialization. | `'always'` | | `check_fields` | `bool | None` | Whether to check that the fields actually exist on the model. | `None` |
+| Name | Type | Description | Default | | --- | --- | --- | --- | | `*fields` | `str` | The field names the serializer should apply to. | `()` | | `mode` | `Literal['plain', 'wrap']` | The serialization mode. plain means the function will be called instead of the default serialization logic, wrap means the function will be called with an argument to optionally call the default serialization logic. | `'plain'` | | `return_type` | `Any` | Optional return type for the function, if omitted it will be inferred from the type annotation. | `PydanticUndefined` | | `when_used` | `WhenUsed` | Determines the serializer will be used for serialization. | `'always'` | | `check_fields` | `bool | None` | Whether to check that the fields actually exist on the model. | `None` |
 
-Returns:
+Raises:
 
-| Type | Description | | --- | --- | | `Callable[[_FieldWrapSerializerT], _FieldWrapSerializerT] | Callable[[_FieldPlainSerializerT], _FieldPlainSerializerT]` | The decorator function. |
+| Type | Description | | --- | --- | | `PydanticUserError` | If the decorator is used without any arguments (at least one field name must be provided). If the provided field names are not strings. |
 
 Source code in `pydantic/functional_serializers.py`
 
 ````python
-def field_serializer(
+def field_serializer(  # noqa: D417
+    field: str,
+    /,
     *fields: str,
     mode: Literal['plain', 'wrap'] = 'plain',
     # TODO PEP 747 (grep for 'return_type' on the whole code base):
@@ -21896,7 +21900,7 @@ def field_serializer(
 
     See [the usage documentation](../concepts/serialization.md#serializers) for more information.
 
-    Four signatures are supported:
+    Four signatures are supported for the decorated serializer:
 
     - `(self, value: Any, info: FieldSerializationInfo)`
     - `(self, value: Any, nxt: SerializerFunctionWrapHandler, info: FieldSerializationInfo)`
@@ -21904,7 +21908,7 @@ def field_serializer(
     - `(value: Any, nxt: SerializerFunctionWrapHandler, info: SerializationInfo)`
 
     Args:
-        fields: Which field(s) the method should be called on.
+        *fields: The field names the serializer should apply to.
         mode: The serialization mode.
 
             - `plain` means the function will be called instead of the default serialization logic,
@@ -21914,9 +21918,25 @@ def field_serializer(
         when_used: Determines the serializer will be used for serialization.
         check_fields: Whether to check that the fields actually exist on the model.
 
-    Returns:
-        The decorator function.
+    Raises:
+        PydanticUserError:
+            - If the decorator is used without any arguments (at least one field name must be provided).
+            - If the provided field names are not strings.
     """
+    if callable(field) or isinstance(field, classmethod):
+        raise PydanticUserError(
+            'The `@field_serializer` decorator cannot be used without arguments, at least one field must be provided. '
+            "For example: `@field_serializer('<field_name>', ...)`.",
+            code='decorator-missing-arguments',
+        )
+
+    fields = field, *fields
+    if not all(isinstance(field, str) for field in fields):
+        raise PydanticUserError(
+            'The provided field names to the `@field_serializer` decorator should be strings. '
+            "For example: `@field_serializer('<field_name_1>', '<field_name_2>', ...).`",
+            code='decorator-invalid-fields',
+        )
 
     def dec(f: FieldSerializer) -> _decorators.PydanticDescriptorProxy[Any]:
         dec_info = _decorators.FieldSerializerDecoratorInfo(
@@ -22597,20 +22617,16 @@ For more in depth examples, see [Field Validators](../../concepts/validators/#fi
 
 Parameters:
 
-| Name | Type | Description | Default | | --- | --- | --- | --- | | `field` | `str` | The first field the field_validator should be called on; this is separate from fields to ensure an error is raised if you don't pass at least one. | *required* | | `*fields` | `str` | Additional field(s) the field_validator should be called on. | `()` | | `mode` | `FieldValidatorModes` | Specifies whether to validate the fields before or after validation. | `'after'` | | `check_fields` | `bool | None` | Whether to check that the fields actually exist on the model. | `None` | | `json_schema_input_type` | `Any` | The input type of the function. This is only used to generate the appropriate JSON Schema (in validation mode) and can only specified when mode is either 'before', 'plain' or 'wrap'. | `PydanticUndefined` |
-
-Returns:
-
-| Type | Description | | --- | --- | | `Callable[[Any], Any]` | A decorator that can be used to decorate a function to be used as a field_validator. |
+| Name | Type | Description | Default | | --- | --- | --- | --- | | `*fields` | `str` | The field names the validator should apply to. | `()` | | `mode` | `FieldValidatorModes` | Specifies whether to validate the fields before or after validation. | `'after'` | | `check_fields` | `bool | None` | Whether to check that the fields actually exist on the model. | `None` | | `json_schema_input_type` | `Any` | The input type of the function. This is only used to generate the appropriate JSON Schema (in validation mode) and can only specified when mode is either 'before', 'plain' or 'wrap'. | `PydanticUndefined` |
 
 Raises:
 
-| Type | Description | | --- | --- | | `PydanticUserError` | If @field_validator is used bare (with no fields). If the args passed to @field_validator as fields are not strings. If @field_validator applied to instance methods. |
+| Type | Description | | --- | --- | | `PydanticUserError` | If the decorator is used without any arguments (at least one field name must be provided). If the provided field names are not strings. If json_schema_input_type is provided with an unsupported mode. If the decorator is applied to an instance method. |
 
 Source code in `pydantic/functional_validators.py`
 
 ````python
-def field_validator(
+def field_validator(  # noqa: D417
     field: str,
     /,
     *fields: str,
@@ -22660,29 +22676,25 @@ def field_validator(
     For more in depth examples, see [Field Validators](../concepts/validators.md#field-validators).
 
     Args:
-        field: The first field the `field_validator` should be called on; this is separate
-            from `fields` to ensure an error is raised if you don't pass at least one.
-        *fields: Additional field(s) the `field_validator` should be called on.
+        *fields: The field names the validator should apply to.
         mode: Specifies whether to validate the fields before or after validation.
         check_fields: Whether to check that the fields actually exist on the model.
         json_schema_input_type: The input type of the function. This is only used to generate
             the appropriate JSON Schema (in validation mode) and can only specified
             when `mode` is either `'before'`, `'plain'` or `'wrap'`.
 
-    Returns:
-        A decorator that can be used to decorate a function to be used as a field_validator.
-
     Raises:
         PydanticUserError:
-            - If `@field_validator` is used bare (with no fields).
-            - If the args passed to `@field_validator` as fields are not strings.
-            - If `@field_validator` applied to instance methods.
+            - If the decorator is used without any arguments (at least one field name must be provided).
+            - If the provided field names are not strings.
+            - If `json_schema_input_type` is provided with an unsupported `mode`.
+            - If the decorator is applied to an instance method.
     """
-    if isinstance(field, FunctionType):
+    if callable(field) or isinstance(field, classmethod):
         raise PydanticUserError(
-            '`@field_validator` should be used with fields and keyword arguments, not bare. '
-            "E.g. usage should be `@validator('<field_name>', ...)`",
-            code='validator-no-fields',
+            'The `@field_validator` decorator cannot be used without arguments, at least one field must be provided. '
+            "For example: `@field_validator('<field_name>', ...)`.",
+            code='decorator-missing-arguments',
         )
 
     if mode not in ('before', 'plain', 'wrap') and json_schema_input_type is not PydanticUndefined:
@@ -22697,9 +22709,9 @@ def field_validator(
     fields = field, *fields
     if not all(isinstance(field, str) for field in fields):
         raise PydanticUserError(
-            '`@field_validator` fields should be passed as separate string args. '
-            "E.g. usage should be `@validator('<field_name_1>', '<field_name_2>', ...)`",
-            code='validator-invalid-fields',
+            'The provided field names to the `@field_validator` decorator should be strings. '
+            "For example: `@field_validator('<field_name_1>', '<field_name_2>', ...).`",
+            code='decorator-invalid-fields',
         )
 
     def dec(
@@ -22707,7 +22719,8 @@ def field_validator(
     ) -> _decorators.PydanticDescriptorProxy[Any]:
         if _decorators.is_instance_method_from_sig(f):
             raise PydanticUserError(
-                '`@field_validator` cannot be applied to instance methods', code='validator-instance-method'
+                'The `@field_validator` decorator cannot be applied to instance methods',
+                code='validator-instance-method',
             )
 
         # auto apply the @classmethod decorator
@@ -47349,6 +47362,84 @@ print(Model.model_json_schema())
 
 ```
 
+## Invalid decorator fields
+
+This error is raised when the field names provided to the @field_validator or @field_serializer decorators are not strings.
+
+```python
+from pydantic import BaseModel, PydanticUserError, field_validator
+
+try:
+
+    class Model(BaseModel):
+        a: str
+        b: str
+
+        @field_validator(['a', 'b'])
+        @classmethod
+        def check_fields(cls, v):
+            return v
+
+except PydanticUserError as exc_info:
+    assert exc_info.code == 'decorator-invalid-fields'
+
+```
+
+Fields should be provided as separate string arguments:
+
+```python
+from pydantic import BaseModel, field_validator
+
+
+class Model(BaseModel):
+    a: str
+    b: str
+
+    @field_validator('a', 'b')
+    @classmethod
+    def check_fields(cls, v):
+        return v
+
+```
+
+## Decorator with no fields
+
+This error is raised when the @field_validator or @field_serializer decorators are used bare, without any arguments.
+
+```python
+from pydantic import BaseModel, PydanticUserError, field_validator
+
+try:
+
+    class Model(BaseModel):
+        a: str
+
+        @field_validator
+        @classmethod
+        def checker(cls, v):
+            return v
+
+except PydanticUserError as exc_info:
+    assert exc_info.code == 'decorator-missing-arguments'
+
+```
+
+At least one field name (and optionally other field names and keyword arguments) should be provided.
+
+```python
+from pydantic import BaseModel, field_validator
+
+
+class Model(BaseModel):
+    a: str
+
+    @field_validator('a')
+    @classmethod
+    def checker(cls, v):
+        return v
+
+```
+
 ## Decorator on missing field
 
 This error is raised when you define a decorator with a field that is not valid.
@@ -48094,80 +48185,6 @@ except PydanticUserError as exc_info:
 ```
 
 The fields definition syntax can be found in the [dynamic model creation](../../concepts/models/#dynamic-model-creation) documentation.
-
-## Validator with no fields
-
-This error is raised when you use validator bare (with no fields).
-
-```python
-from pydantic import BaseModel, PydanticUserError, field_validator
-
-try:
-
-    class Model(BaseModel):
-        a: str
-
-        @field_validator
-        def checker(cls, v):
-            return v
-
-except PydanticUserError as exc_info:
-    assert exc_info.code == 'validator-no-fields'
-
-```
-
-Validators should be used with fields and keyword arguments.
-
-```python
-from pydantic import BaseModel, field_validator
-
-
-class Model(BaseModel):
-    a: str
-
-    @field_validator('a')
-    def checker(cls, v):
-        return v
-
-```
-
-## Invalid validator fields
-
-This error is raised when you use a validator with non-string fields.
-
-```python
-from pydantic import BaseModel, PydanticUserError, field_validator
-
-try:
-
-    class Model(BaseModel):
-        a: str
-        b: str
-
-        @field_validator(['a', 'b'])
-        def check_fields(cls, v):
-            return v
-
-except PydanticUserError as exc_info:
-    assert exc_info.code == 'validator-invalid-fields'
-
-```
-
-Fields should be passed as separate string arguments:
-
-```python
-from pydantic import BaseModel, field_validator
-
-
-class Model(BaseModel):
-    a: str
-    b: str
-
-    @field_validator('a', 'b')
-    def check_fields(cls, v):
-        return v
-
-```
 
 ## Validator on instance method
 

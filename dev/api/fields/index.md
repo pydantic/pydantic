@@ -864,7 +864,7 @@ PrivateAttr(
 ```python
 PrivateAttr(
     *,
-    default_factory: Callable[[], _T],
+    default_factory: Callable[[], _T" optional hover>_T],
     init: Literal[False] = False
 ) -> _T
 

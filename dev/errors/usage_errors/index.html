@@ -3171,6 +3171,28 @@ to help you monitor and understand your
 </li>
       
         <li class="md-nav__item">
+  <a href="#decorator-invalid-fields" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Invalid decorator fields
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#decorator-missing-arguments" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Decorator with no fields
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#decorator-missing-field" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -3384,28 +3406,6 @@ to help you monitor and understand your
     <span class="md-ellipsis">
       
         create_model field definitions
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#validator-no-fields" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Validator with no fields
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#validator-invalid-fields" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Invalid validator fields
       
     </span>
   </a>
@@ -4388,6 +4388,28 @@ to help you monitor and understand your
 </li>
       
         <li class="md-nav__item">
+  <a href="#decorator-invalid-fields" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Invalid decorator fields
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#decorator-missing-arguments" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Decorator with no fields
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#decorator-missing-field" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -4601,28 +4623,6 @@ to help you monitor and understand your
     <span class="md-ellipsis">
       
         create_model field definitions
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#validator-no-fields" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Validator with no fields
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#validator-invalid-fields" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Invalid validator fields
       
     </span>
   </a>
@@ -5076,6 +5076,68 @@ below:</p>
 <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">{&#39;examples&#39;: [&#39;example&#39;], &#39;properties&#39;: {}, &#39;title&#39;: &#39;Model&#39;, &#39;type&#39;: &#39;object&#39;}</span>
 <span class="sd">&quot;&quot;&quot;</span>
+</code></pre></div>
+<h2 id="decorator-invalid-fields">Invalid decorator fields<a class="headerlink" href="#decorator-invalid-fields" title="Permanent link">&para;</a></h2>
+<p>This error is raised when the field names provided to the <a class="autorefs autorefs-internal" href="../../api/functional_validators/#pydantic.functional_validators.field_validator"><code>@field_validator</code></a>
+or <a class="autorefs autorefs-internal" href="../../api/functional_serializers/#pydantic.functional_serializers.field_serializer"><code>@field_serializer</code></a> decorators are not strings.</p>
+<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">pydantic</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">PydanticUserError</span><span class="p">,</span> <span class="n">field_validator</span>
+
+<span class="k">try</span><span class="p">:</span>
+
+    <span class="k">class</span><span class="w"> </span><span class="nc">Model</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+        <span class="n">a</span><span class="p">:</span> <span class="nb">str</span>
+        <span class="n">b</span><span class="p">:</span> <span class="nb">str</span>
+
+        <span class="nd">@field_validator</span><span class="p">([</span><span class="s1">&#39;a&#39;</span><span class="p">,</span> <span class="s1">&#39;b&#39;</span><span class="p">])</span>
+        <span class="nd">@classmethod</span>
+        <span class="k">def</span><span class="w"> </span><span class="nf">check_fields</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">v</span><span class="p">):</span>
+            <span class="k">return</span> <span class="n">v</span>
+
+<span class="k">except</span> <span class="n">PydanticUserError</span> <span class="k">as</span> <span class="n">exc_info</span><span class="p">:</span>
+    <span class="k">assert</span> <span class="n">exc_info</span><span class="o">.</span><span class="n">code</span> <span class="o">==</span> <span class="s1">&#39;decorator-invalid-fields&#39;</span>
+</code></pre></div>
+<p>Fields should be provided as separate string arguments:</p>
+<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">pydantic</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">field_validator</span>
+
+
+<span class="k">class</span><span class="w"> </span><span class="nc">Model</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="n">a</span><span class="p">:</span> <span class="nb">str</span>
+    <span class="n">b</span><span class="p">:</span> <span class="nb">str</span>
+
+    <span class="nd">@field_validator</span><span class="p">(</span><span class="s1">&#39;a&#39;</span><span class="p">,</span> <span class="s1">&#39;b&#39;</span><span class="p">)</span>
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">check_fields</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">v</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">v</span>
+</code></pre></div>
+<h2 id="decorator-missing-arguments">Decorator with no fields<a class="headerlink" href="#decorator-missing-arguments" title="Permanent link">&para;</a></h2>
+<p>This error is raised when the <a class="autorefs autorefs-internal" href="../../api/functional_validators/#pydantic.functional_validators.field_validator"><code>@field_validator</code></a> or <a class="autorefs autorefs-internal" href="../../api/functional_serializers/#pydantic.functional_serializers.field_serializer"><code>@field_serializer</code></a>
+decorators are used bare, without any arguments.</p>
+<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">pydantic</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">PydanticUserError</span><span class="p">,</span> <span class="n">field_validator</span>
+
+<span class="k">try</span><span class="p">:</span>
+
+    <span class="k">class</span><span class="w"> </span><span class="nc">Model</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+        <span class="n">a</span><span class="p">:</span> <span class="nb">str</span>
+
+        <span class="nd">@field_validator</span>
+        <span class="nd">@classmethod</span>
+        <span class="k">def</span><span class="w"> </span><span class="nf">checker</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">v</span><span class="p">):</span>
+            <span class="k">return</span> <span class="n">v</span>
+
+<span class="k">except</span> <span class="n">PydanticUserError</span> <span class="k">as</span> <span class="n">exc_info</span><span class="p">:</span>
+    <span class="k">assert</span> <span class="n">exc_info</span><span class="o">.</span><span class="n">code</span> <span class="o">==</span> <span class="s1">&#39;decorator-missing-arguments&#39;</span>
+</code></pre></div>
+<p>At least one field name (and optionally other field names and keyword arguments) should be provided.</p>
+<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">pydantic</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">field_validator</span>
+
+
+<span class="k">class</span><span class="w"> </span><span class="nc">Model</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="n">a</span><span class="p">:</span> <span class="nb">str</span>
+
+    <span class="nd">@field_validator</span><span class="p">(</span><span class="s1">&#39;a&#39;</span><span class="p">)</span>
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">checker</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">v</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">v</span>
 </code></pre></div>
 <h2 id="decorator-missing-field">Decorator on missing field<a class="headerlink" href="#decorator-missing-field" title="Permanent link">&para;</a></h2>
 <p>This error is raised when you define a decorator with a field that is not valid.</p>
@@ -5747,62 +5809,6 @@ Pydantic V2.</p>
     <span class="k">assert</span> <span class="n">exc_info</span><span class="o">.</span><span class="n">code</span> <span class="o">==</span> <span class="s1">&#39;create-model-field-definitions&#39;</span>
 </code></pre></div>
 <p>The fields definition syntax can be found in the <a href="../../concepts/models/#dynamic-model-creation">dynamic model creation</a> documentation.</p>
-<h2 id="validator-no-fields">Validator with no fields<a class="headerlink" href="#validator-no-fields" title="Permanent link">&para;</a></h2>
-<p>This error is raised when you use validator bare (with no fields).</p>
-<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">pydantic</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">PydanticUserError</span><span class="p">,</span> <span class="n">field_validator</span>
-
-<span class="k">try</span><span class="p">:</span>
-
-    <span class="k">class</span><span class="w"> </span><span class="nc">Model</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
-        <span class="n">a</span><span class="p">:</span> <span class="nb">str</span>
-
-        <span class="nd">@field_validator</span>
-        <span class="k">def</span><span class="w"> </span><span class="nf">checker</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">v</span><span class="p">):</span>
-            <span class="k">return</span> <span class="n">v</span>
-
-<span class="k">except</span> <span class="n">PydanticUserError</span> <span class="k">as</span> <span class="n">exc_info</span><span class="p">:</span>
-    <span class="k">assert</span> <span class="n">exc_info</span><span class="o">.</span><span class="n">code</span> <span class="o">==</span> <span class="s1">&#39;validator-no-fields&#39;</span>
-</code></pre></div>
-<p>Validators should be used with fields and keyword arguments.</p>
-<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">pydantic</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">field_validator</span>
-
-
-<span class="k">class</span><span class="w"> </span><span class="nc">Model</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
-    <span class="n">a</span><span class="p">:</span> <span class="nb">str</span>
-
-    <span class="nd">@field_validator</span><span class="p">(</span><span class="s1">&#39;a&#39;</span><span class="p">)</span>
-    <span class="k">def</span><span class="w"> </span><span class="nf">checker</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">v</span><span class="p">):</span>
-        <span class="k">return</span> <span class="n">v</span>
-</code></pre></div>
-<h2 id="validator-invalid-fields">Invalid validator fields<a class="headerlink" href="#validator-invalid-fields" title="Permanent link">&para;</a></h2>
-<p>This error is raised when you use a validator with non-string fields.</p>
-<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">pydantic</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">PydanticUserError</span><span class="p">,</span> <span class="n">field_validator</span>
-
-<span class="k">try</span><span class="p">:</span>
-
-    <span class="k">class</span><span class="w"> </span><span class="nc">Model</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
-        <span class="n">a</span><span class="p">:</span> <span class="nb">str</span>
-        <span class="n">b</span><span class="p">:</span> <span class="nb">str</span>
-
-        <span class="nd">@field_validator</span><span class="p">([</span><span class="s1">&#39;a&#39;</span><span class="p">,</span> <span class="s1">&#39;b&#39;</span><span class="p">])</span>
-        <span class="k">def</span><span class="w"> </span><span class="nf">check_fields</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">v</span><span class="p">):</span>
-            <span class="k">return</span> <span class="n">v</span>
-
-<span class="k">except</span> <span class="n">PydanticUserError</span> <span class="k">as</span> <span class="n">exc_info</span><span class="p">:</span>
-    <span class="k">assert</span> <span class="n">exc_info</span><span class="o">.</span><span class="n">code</span> <span class="o">==</span> <span class="s1">&#39;validator-invalid-fields&#39;</span>
-</code></pre></div>
-<p>Fields should be passed as separate string arguments:</p>
-<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">pydantic</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">field_validator</span>
-
-
-<span class="k">class</span><span class="w"> </span><span class="nc">Model</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
-    <span class="n">a</span><span class="p">:</span> <span class="nb">str</span>
-    <span class="n">b</span><span class="p">:</span> <span class="nb">str</span>
-
-    <span class="nd">@field_validator</span><span class="p">(</span><span class="s1">&#39;a&#39;</span><span class="p">,</span> <span class="s1">&#39;b&#39;</span><span class="p">)</span>
-    <span class="k">def</span><span class="w"> </span><span class="nf">check_fields</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">v</span><span class="p">):</span>
-        <span class="k">return</span> <span class="n">v</span>
-</code></pre></div>
 <h2 id="validator-instance-method">Validator on instance method<a class="headerlink" href="#validator-instance-method" title="Permanent link">&para;</a></h2>
 <p>This error is raised when you apply a validator on an instance method.</p>
 <div class="language-python highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">pydantic</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">PydanticUserError</span><span class="p">,</span> <span class="n">field_validator</span>

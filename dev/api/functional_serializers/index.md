@@ -256,11 +256,13 @@ field_serializer(
 
 ```python
 field_serializer(
+    field: str,
+    /,
     *fields: str,
     mode: Literal["plain", "wrap"] = "plain",
     return_type: Any = PydanticUndefined,
     when_used: WhenUsed = "always",
-    check_fields: bool | None = None
+    check_fields: bool | None = None,
 ) -> (
     Callable[[_FieldWrapSerializerT], _FieldWrapSerializerT]
     | Callable[
@@ -293,7 +295,7 @@ print(student.model_dump_json())
 
 See [the usage documentation](../../concepts/serialization/#serializers) for more information.
 
-Four signatures are supported:
+Four signatures are supported for the decorated serializer:
 
 - `(self, value: Any, info: FieldSerializationInfo)`
 - `(self, value: Any, nxt: SerializerFunctionWrapHandler, info: FieldSerializationInfo)`
@@ -302,16 +304,18 @@ Four signatures are supported:
 
 Parameters:
 
-| Name | Type | Description | Default | | --- | --- | --- | --- | | `fields` | `str` | Which field(s) the method should be called on. | `()` | | `mode` | `Literal['plain', 'wrap']` | The serialization mode. plain means the function will be called instead of the default serialization logic, wrap means the function will be called with an argument to optionally call the default serialization logic. | `'plain'` | | `return_type` | `Any` | Optional return type for the function, if omitted it will be inferred from the type annotation. | `PydanticUndefined` | | `when_used` | `WhenUsed` | Determines the serializer will be used for serialization. | `'always'` | | `check_fields` | `bool | None` | Whether to check that the fields actually exist on the model. | `None` |
+| Name | Type | Description | Default | | --- | --- | --- | --- | | `*fields` | `str` | The field names the serializer should apply to. | `()` | | `mode` | `Literal['plain', 'wrap']` | The serialization mode. plain means the function will be called instead of the default serialization logic, wrap means the function will be called with an argument to optionally call the default serialization logic. | `'plain'` | | `return_type` | `Any` | Optional return type for the function, if omitted it will be inferred from the type annotation. | `PydanticUndefined` | | `when_used` | `WhenUsed` | Determines the serializer will be used for serialization. | `'always'` | | `check_fields` | `bool | None` | Whether to check that the fields actually exist on the model. | `None` |
 
-Returns:
+Raises:
 
-| Type | Description | | --- | --- | | `Callable[[_FieldWrapSerializerT], _FieldWrapSerializerT] | Callable[[_FieldPlainSerializerT], _FieldPlainSerializerT]` | The decorator function. |
+| Type | Description | | --- | --- | | `PydanticUserError` | If the decorator is used without any arguments (at least one field name must be provided). If the provided field names are not strings. |
 
 Source code in `pydantic/functional_serializers.py`
 
 ````python
-def field_serializer(
+def field_serializer(  # noqa: D417
+    field: str,
+    /,
     *fields: str,
     mode: Literal['plain', 'wrap'] = 'plain',
     # TODO PEP 747 (grep for 'return_type' on the whole code base):
@@ -344,7 +348,7 @@ def field_serializer(
 
     See [the usage documentation](../concepts/serialization.md#serializers) for more information.
 
-    Four signatures are supported:
+    Four signatures are supported for the decorated serializer:
 
     - `(self, value: Any, info: FieldSerializationInfo)`
     - `(self, value: Any, nxt: SerializerFunctionWrapHandler, info: FieldSerializationInfo)`
@@ -352,7 +356,7 @@ def field_serializer(
     - `(value: Any, nxt: SerializerFunctionWrapHandler, info: SerializationInfo)`
 
     Args:
-        fields: Which field(s) the method should be called on.
+        *fields: The field names the serializer should apply to.
         mode: The serialization mode.
 
             - `plain` means the function will be called instead of the default serialization logic,
@@ -362,9 +366,25 @@ def field_serializer(
         when_used: Determines the serializer will be used for serialization.
         check_fields: Whether to check that the fields actually exist on the model.
 
-    Returns:
-        The decorator function.
+    Raises:
+        PydanticUserError:
+            - If the decorator is used without any arguments (at least one field name must be provided).
+            - If the provided field names are not strings.
     """
+    if callable(field) or isinstance(field, classmethod):
+        raise PydanticUserError(
+            'The `@field_serializer` decorator cannot be used without arguments, at least one field must be provided. '
+            "For example: `@field_serializer('<field_name>', ...)`.",
+            code='decorator-missing-arguments',
+        )
+
+    fields = field, *fields
+    if not all(isinstance(field, str) for field in fields):
+        raise PydanticUserError(
+            'The provided field names to the `@field_serializer` decorator should be strings. '
+            "For example: `@field_serializer('<field_name_1>', '<field_name_2>', ...).`",
+            code='decorator-invalid-fields',
+        )
 
     def dec(f: FieldSerializer) -> _decorators.PydanticDescriptorProxy[Any]:
         dec_info = _decorators.FieldSerializerDecoratorInfo(

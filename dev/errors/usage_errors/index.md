@@ -128,6 +128,84 @@ print(Model.model_json_schema())
 
 ```
 
+## Invalid decorator fields
+
+This error is raised when the field names provided to the @field_validator or @field_serializer decorators are not strings.
+
+```python
+from pydantic import BaseModel, PydanticUserError, field_validator
+
+try:
+
+    class Model(BaseModel):
+        a: str
+        b: str
+
+        @field_validator(['a', 'b'])
+        @classmethod
+        def check_fields(cls, v):
+            return v
+
+except PydanticUserError as exc_info:
+    assert exc_info.code == 'decorator-invalid-fields'
+
+```
+
+Fields should be provided as separate string arguments:
+
+```python
+from pydantic import BaseModel, field_validator
+
+
+class Model(BaseModel):
+    a: str
+    b: str
+
+    @field_validator('a', 'b')
+    @classmethod
+    def check_fields(cls, v):
+        return v
+
+```
+
+## Decorator with no fields
+
+This error is raised when the @field_validator or @field_serializer decorators are used bare, without any arguments.
+
+```python
+from pydantic import BaseModel, PydanticUserError, field_validator
+
+try:
+
+    class Model(BaseModel):
+        a: str
+
+        @field_validator
+        @classmethod
+        def checker(cls, v):
+            return v
+
+except PydanticUserError as exc_info:
+    assert exc_info.code == 'decorator-missing-arguments'
+
+```
+
+At least one field name (and optionally other field names and keyword arguments) should be provided.
+
+```python
+from pydantic import BaseModel, field_validator
+
+
+class Model(BaseModel):
+    a: str
+
+    @field_validator('a')
+    @classmethod
+    def checker(cls, v):
+        return v
+
+```
+
 ## Decorator on missing field
 
 This error is raised when you define a decorator with a field that is not valid.
@@ -873,80 +951,6 @@ except PydanticUserError as exc_info:
 ```
 
 The fields definition syntax can be found in the [dynamic model creation](../../concepts/models/#dynamic-model-creation) documentation.
-
-## Validator with no fields
-
-This error is raised when you use validator bare (with no fields).
-
-```python
-from pydantic import BaseModel, PydanticUserError, field_validator
-
-try:
-
-    class Model(BaseModel):
-        a: str
-
-        @field_validator
-        def checker(cls, v):
-            return v
-
-except PydanticUserError as exc_info:
-    assert exc_info.code == 'validator-no-fields'
-
-```
-
-Validators should be used with fields and keyword arguments.
-
-```python
-from pydantic import BaseModel, field_validator
-
-
-class Model(BaseModel):
-    a: str
-
-    @field_validator('a')
-    def checker(cls, v):
-        return v
-
-```
-
-## Invalid validator fields
-
-This error is raised when you use a validator with non-string fields.
-
-```python
-from pydantic import BaseModel, PydanticUserError, field_validator
-
-try:
-
-    class Model(BaseModel):
-        a: str
-        b: str
-
-        @field_validator(['a', 'b'])
-        def check_fields(cls, v):
-            return v
-
-except PydanticUserError as exc_info:
-    assert exc_info.code == 'validator-invalid-fields'
-
-```
-
-Fields should be passed as separate string arguments:
-
-```python
-from pydantic import BaseModel, field_validator
-
-
-class Model(BaseModel):
-    a: str
-    b: str
-
-    @field_validator('a', 'b')
-    def check_fields(cls, v):
-        return v
-
-```
 
 ## Validator on instance method
 

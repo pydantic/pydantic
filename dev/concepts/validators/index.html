@@ -4160,7 +4160,7 @@ and ensure the integrity of your data.</p>
 <a href="#raising-validation-errors">raising validation errors</a>) and make changes to the validated value (coercion or mutation).</p>
 <p><strong>Four</strong> different types of validators can be used. They can all be defined using the
 <a href="../fields/#the-annotated-pattern">annotated pattern</a> or using the
-<a class="autorefs autorefs-internal" href="../../api/functional_validators/#pydantic.functional_validators.field_validator"><code>field_validator()</code></a> decorator, applied on a <a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#classmethod">class method</a>:</p>
+<a class="autorefs autorefs-internal" href="../../api/functional_validators/#pydantic.functional_validators.field_validator"><code>@field_validator</code></a> decorator, applied on a <a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#classmethod">class method</a>:</p>
 <ul>
 <li>
 <p id="field-after-validator"><strong><em>After</em> validators</strong>: run after Pydantic's internal validation. They are generally more type safe and thus easier to implement.</p>

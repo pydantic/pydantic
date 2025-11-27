@@ -5396,9 +5396,9 @@ the populated custom type.</p>
 
                   <details class="quote">
                     <summary>Source code in <code>pydantic/functional_validators.py</code></summary>
-                    <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">884</span>
-<span class="normal">885</span>
-<span class="normal">886</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">from_type</span><span class="p">:</span> <span class="nb">type</span><span class="p">[</span><span class="n">_FromTypeT</span><span class="p">],</span> <span class="o">/</span><span class="p">,</span> <span class="n">instantiation_hook</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[[</span><span class="n">_FromTypeT</span><span class="p">],</span> <span class="n">Any</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+                    <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">880</span>
+<span class="normal">881</span>
+<span class="normal">882</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">from_type</span><span class="p">:</span> <span class="nb">type</span><span class="p">[</span><span class="n">_FromTypeT</span><span class="p">],</span> <span class="o">/</span><span class="p">,</span> <span class="n">instantiation_hook</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[[</span><span class="n">_FromTypeT</span><span class="p">],</span> <span class="n">Any</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
     <span class="bp">self</span><span class="o">.</span><span class="n">from_type</span> <span class="o">=</span> <span class="n">from_type</span>
     <span class="bp">self</span><span class="o">.</span><span class="n">instantiation_hook</span> <span class="o">=</span> <span class="n">instantiation_hook</span>
 </code></pre></div></td></tr></table></div>
@@ -5529,23 +5529,6 @@ the populated custom type.</p>
       <tbody>
           <tr class="doc-section-item">
             <td>
-                <code>field</code>
-            </td>
-            <td>
-                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></code>
-            </td>
-            <td>
-              <div class="doc-md-description">
-                <p>The first field the <code>field_validator</code> should be called on; this is separate
-from <code>fields</code> to ensure an error is raised if you don't pass at least one.</p>
-              </div>
-            </td>
-            <td>
-                <em>required</em>
-            </td>
-          </tr>
-          <tr class="doc-section-item">
-            <td>
                 <code>*fields</code>
             </td>
             <td>
@@ -5553,7 +5536,7 @@ from <code>fields</code> to ensure an error is raised if you don't pass at least
             </td>
             <td>
               <div class="doc-md-description">
-                <p>Additional field(s) the <code>field_validator</code> should be called on.</p>
+                <p>The field names the validator should apply to.</p>
               </div>
             </td>
             <td>
@@ -5614,29 +5597,6 @@ when <code>mode</code> is either <code>'before'</code>, <code>'plain'</code> or 
     </table>
 
 
-    <p><span class="doc-section-title">Returns:</span></p>
-    <table>
-      <thead>
-        <tr>
-          <th>Type</th>
-          <th>Description</th>
-        </tr>
-      </thead>
-      <tbody>
-          <tr class="doc-section-item">
-            <td>
-                  <code><a class="autorefs autorefs-external" title="typing.Callable" href="https://docs.python.org/3/library/typing.html#typing.Callable">Callable</a>[[<a class="autorefs autorefs-external" title="typing.Any" href="https://docs.python.org/3/library/typing.html#typing.Any">Any</a>], <a class="autorefs autorefs-external" title="typing.Any" href="https://docs.python.org/3/library/typing.html#typing.Any">Any</a>]</code>
-            </td>
-            <td>
-              <div class="doc-md-description">
-                <p>A decorator that can be used to decorate a function to be used as a field_validator.</p>
-              </div>
-            </td>
-          </tr>
-      </tbody>
-    </table>
-
-
 <p><span class="doc-section-title">Raises:</span></p>
     <table>
       <thead>
@@ -5653,9 +5613,10 @@ when <code>mode</code> is either <code>'before'</code>, <code>'plain'</code> or 
             <td>
               <div class="doc-md-description">
                 <ul>
-<li>If <code>@field_validator</code> is used bare (with no fields).</li>
-<li>If the args passed to <code>@field_validator</code> as fields are not strings.</li>
-<li>If <code>@field_validator</code> applied to instance methods.</li>
+<li>If the decorator is used without any arguments (at least one field name must be provided).</li>
+<li>If the provided field names are not strings.</li>
+<li>If <code>json_schema_input_type</code> is provided with an unsupported <code>mode</code>.</li>
+<li>If the decorator is applied to an instance method.</li>
 </ul>
               </div>
             </td>
@@ -5665,7 +5626,8 @@ when <code>mode</code> is either <code>'before'</code>, <code>'plain'</code> or 
 
             <details class="quote">
               <summary>Source code in <code>pydantic/functional_validators.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">410</span>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">409</span>
+<span class="normal">410</span>
 <span class="normal">411</span>
 <span class="normal">412</span>
 <span class="normal">413</span>
@@ -5769,11 +5731,7 @@ when <code>mode</code> is either <code>'before'</code>, <code>'plain'</code> or 
 <span class="normal">511</span>
 <span class="normal">512</span>
 <span class="normal">513</span>
-<span class="normal">514</span>
-<span class="normal">515</span>
-<span class="normal">516</span>
-<span class="normal">517</span>
-<span class="normal">518</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">field_validator</span><span class="p">(</span>
+<span class="normal">514</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">field_validator</span><span class="p">(</span>  <span class="c1"># noqa: D417</span>
     <span class="n">field</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
     <span class="o">/</span><span class="p">,</span>
     <span class="o">*</span><span class="n">fields</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
@@ -5823,29 +5781,25 @@ when <code>mode</code> is either <code>'before'</code>, <code>'plain'</code> or 
 <span class="sd">    For more in depth examples, see [Field Validators](../concepts/validators.md#field-validators).</span>
 
 <span class="sd">    Args:</span>
-<span class="sd">        field: The first field the `field_validator` should be called on; this is separate</span>
-<span class="sd">            from `fields` to ensure an error is raised if you don&#39;t pass at least one.</span>
-<span class="sd">        *fields: Additional field(s) the `field_validator` should be called on.</span>
+<span class="sd">        *fields: The field names the validator should apply to.</span>
 <span class="sd">        mode: Specifies whether to validate the fields before or after validation.</span>
 <span class="sd">        check_fields: Whether to check that the fields actually exist on the model.</span>
 <span class="sd">        json_schema_input_type: The input type of the function. This is only used to generate</span>
 <span class="sd">            the appropriate JSON Schema (in validation mode) and can only specified</span>
 <span class="sd">            when `mode` is either `&#39;before&#39;`, `&#39;plain&#39;` or `&#39;wrap&#39;`.</span>
 
-<span class="sd">    Returns:</span>
-<span class="sd">        A decorator that can be used to decorate a function to be used as a field_validator.</span>
-
 <span class="sd">    Raises:</span>
 <span class="sd">        PydanticUserError:</span>
-<span class="sd">            - If `@field_validator` is used bare (with no fields).</span>
-<span class="sd">            - If the args passed to `@field_validator` as fields are not strings.</span>
-<span class="sd">            - If `@field_validator` applied to instance methods.</span>
+<span class="sd">            - If the decorator is used without any arguments (at least one field name must be provided).</span>
+<span class="sd">            - If the provided field names are not strings.</span>
+<span class="sd">            - If `json_schema_input_type` is provided with an unsupported `mode`.</span>
+<span class="sd">            - If the decorator is applied to an instance method.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">field</span><span class="p">,</span> <span class="n">FunctionType</span><span class="p">):</span>
+    <span class="k">if</span> <span class="nb">callable</span><span class="p">(</span><span class="n">field</span><span class="p">)</span> <span class="ow">or</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">field</span><span class="p">,</span> <span class="nb">classmethod</span><span class="p">):</span>
         <span class="k">raise</span> <span class="n">PydanticUserError</span><span class="p">(</span>
-            <span class="s1">&#39;`@field_validator` should be used with fields and keyword arguments, not bare. &#39;</span>
-            <span class="s2">&quot;E.g. usage should be `@validator(&#39;&lt;field_name&gt;&#39;, ...)`&quot;</span><span class="p">,</span>
-            <span class="n">code</span><span class="o">=</span><span class="s1">&#39;validator-no-fields&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;The `@field_validator` decorator cannot be used without arguments, at least one field must be provided. &#39;</span>
+            <span class="s2">&quot;For example: `@field_validator(&#39;&lt;field_name&gt;&#39;, ...)`.&quot;</span><span class="p">,</span>
+            <span class="n">code</span><span class="o">=</span><span class="s1">&#39;decorator-missing-arguments&#39;</span><span class="p">,</span>
         <span class="p">)</span>
 
     <span class="k">if</span> <span class="n">mode</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">(</span><span class="s1">&#39;before&#39;</span><span class="p">,</span> <span class="s1">&#39;plain&#39;</span><span class="p">,</span> <span class="s1">&#39;wrap&#39;</span><span class="p">)</span> <span class="ow">and</span> <span class="n">json_schema_input_type</span> <span class="ow">is</span> <span class="ow">not</span> <span class="n">PydanticUndefined</span><span class="p">:</span>
@@ -5860,9 +5814,9 @@ when <code>mode</code> is either <code>'before'</code>, <code>'plain'</code> or 
     <span class="n">fields</span> <span class="o">=</span> <span class="n">field</span><span class="p">,</span> <span class="o">*</span><span class="n">fields</span>
     <span class="k">if</span> <span class="ow">not</span> <span class="nb">all</span><span class="p">(</span><span class="nb">isinstance</span><span class="p">(</span><span class="n">field</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span> <span class="k">for</span> <span class="n">field</span> <span class="ow">in</span> <span class="n">fields</span><span class="p">):</span>
         <span class="k">raise</span> <span class="n">PydanticUserError</span><span class="p">(</span>
-            <span class="s1">&#39;`@field_validator` fields should be passed as separate string args. &#39;</span>
-            <span class="s2">&quot;E.g. usage should be `@validator(&#39;&lt;field_name_1&gt;&#39;, &#39;&lt;field_name_2&gt;&#39;, ...)`&quot;</span><span class="p">,</span>
-            <span class="n">code</span><span class="o">=</span><span class="s1">&#39;validator-invalid-fields&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;The provided field names to the `@field_validator` decorator should be strings. &#39;</span>
+            <span class="s2">&quot;For example: `@field_validator(&#39;&lt;field_name_1&gt;&#39;, &#39;&lt;field_name_2&gt;&#39;, ...).`&quot;</span><span class="p">,</span>
+            <span class="n">code</span><span class="o">=</span><span class="s1">&#39;decorator-invalid-fields&#39;</span><span class="p">,</span>
         <span class="p">)</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">dec</span><span class="p">(</span>
@@ -5870,7 +5824,8 @@ when <code>mode</code> is either <code>'before'</code>, <code>'plain'</code> or 
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">_decorators</span><span class="o">.</span><span class="n">PydanticDescriptorProxy</span><span class="p">[</span><span class="n">Any</span><span class="p">]:</span>
         <span class="k">if</span> <span class="n">_decorators</span><span class="o">.</span><span class="n">is_instance_method_from_sig</span><span class="p">(</span><span class="n">f</span><span class="p">):</span>
             <span class="k">raise</span> <span class="n">PydanticUserError</span><span class="p">(</span>
-                <span class="s1">&#39;`@field_validator` cannot be applied to instance methods&#39;</span><span class="p">,</span> <span class="n">code</span><span class="o">=</span><span class="s1">&#39;validator-instance-method&#39;</span>
+                <span class="s1">&#39;The `@field_validator` decorator cannot be applied to instance methods&#39;</span><span class="p">,</span>
+                <span class="n">code</span><span class="o">=</span><span class="s1">&#39;validator-instance-method&#39;</span><span class="p">,</span>
             <span class="p">)</span>
 
         <span class="c1"># auto apply the @classmethod decorator</span>
@@ -6009,7 +5964,11 @@ It can be one of the following: 'wrap', 'before', or 'after'.</p>
 
             <details class="quote">
               <summary>Source code in <code>pydantic/functional_validators.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">672</span>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">668</span>
+<span class="normal">669</span>
+<span class="normal">670</span>
+<span class="normal">671</span>
+<span class="normal">672</span>
 <span class="normal">673</span>
 <span class="normal">674</span>
 <span class="normal">675</span>
@@ -6070,11 +6029,7 @@ It can be one of the following: 'wrap', 'before', or 'after'.</p>
 <span class="normal">730</span>
 <span class="normal">731</span>
 <span class="normal">732</span>
-<span class="normal">733</span>
-<span class="normal">734</span>
-<span class="normal">735</span>
-<span class="normal">736</span>
-<span class="normal">737</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">model_validator</span><span class="p">(</span>
+<span class="normal">733</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">model_validator</span><span class="p">(</span>
     <span class="o">*</span><span class="p">,</span>
     <span class="n">mode</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s1">&#39;wrap&#39;</span><span class="p">,</span> <span class="s1">&#39;before&#39;</span><span class="p">,</span> <span class="s1">&#39;after&#39;</span><span class="p">],</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Any</span><span class="p">:</span>
