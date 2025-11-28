@@ -15,6 +15,7 @@ use crate::input::{
     Arguments, BorrowInput, Input, InputType, KeywordArgs, PositionalArgs, ValidationMatch, input_as_python_instance,
 };
 use crate::lookup_key::LookupKeyCollection;
+use crate::lookup_key::LookupType;
 use crate::tools::SchemaDict;
 use crate::validators::function::convert_err;
 
@@ -163,6 +164,7 @@ impl Validator for DataclassArgsValidator {
 
         let validate_by_alias = state.validate_by_alias_or(self.validate_by_alias);
         let validate_by_name = state.validate_by_name_or(self.validate_by_name);
+        let lookup_type = LookupType::from_bools(validate_by_alias, validate_by_name)?;
 
         let mut fields_set_count: usize = 0;
 
@@ -206,13 +208,13 @@ impl Validator for DataclassArgsValidator {
                 pos_value = args.get_item(index);
             }
 
-            let lookup_key = field
-                .lookup_key_collection
-                .select(validate_by_alias, validate_by_name)?;
-
             let mut kw_value = None;
             if let Some(kwargs) = args.kwargs()
-                && let Some((lookup_path, value)) = kwargs.get_item(lookup_key)?
+                && let Some((lookup_path, value)) = field
+                    .lookup_key_collection
+                    .lookup_keys(lookup_type)
+                    .find_map(|lookup_key| kwargs.get_item(lookup_key).transpose())
+                    .transpose()?
             {
                 used_keys.insert(lookup_path.first_key());
                 kw_value = Some((lookup_path, value));
@@ -266,6 +268,7 @@ impl Validator for DataclassArgsValidator {
                             set_item!(field, value);
                         }
                         Ok(None) => {
+                            let lookup_key = field.lookup_key_collection.first_key_matching(lookup_type);
                             // This means there was no default value
                             errors.push(lookup_key.error(
                                 ErrorTypeDefaults::Missing,

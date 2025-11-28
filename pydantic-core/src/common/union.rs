@@ -18,7 +18,7 @@ impl Discriminator {
             return Ok(Self::Function(raw.clone().unbind()));
         }
 
-        let lookup_key = LookupKey::from_py(raw, None)?;
+        let lookup_key = LookupKey::from_py(raw)?;
         Ok(Self::LookupKey(lookup_key))
     }
 
