@@ -44,7 +44,7 @@ impl TryFrom<&str> for InputType {
             "python" => Ok(Self::Python),
             "json" => Ok(Self::Json),
             "string" => Ok(Self::String),
-            s => py_err!(PyValueError; "Invalid error mode: {}", s),
+            s => py_err!(PyValueError; "Invalid error mode: {s}"),
         }
     }
 }

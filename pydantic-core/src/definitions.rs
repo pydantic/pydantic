@@ -169,7 +169,7 @@ impl<T: std::fmt::Debug> DefinitionsBuilder<T> {
                 let definition = entry.into_mut();
                 match definition.value.set(value) {
                     Ok(()) => definition,
-                    Err(_) => return py_schema_err!("Duplicate ref: `{}`", reference),
+                    Err(_) => return py_schema_err!("Duplicate ref: `{reference}`"),
                 }
             }
             Entry::Vacant(entry) => entry.insert(Definition {
@@ -188,7 +188,7 @@ impl<T: std::fmt::Debug> DefinitionsBuilder<T> {
     pub fn finish(self) -> PyResult<Definitions<T>> {
         for (reference, def) in &self.definitions.0 {
             if def.value.get().is_none() {
-                return py_schema_err!("Definitions error: definition `{}` was never filled", reference);
+                return py_schema_err!("Definitions error: definition `{reference}` was never filled");
             }
         }
         Ok(self.definitions)

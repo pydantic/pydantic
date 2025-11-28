@@ -37,7 +37,7 @@ impl Revalidate {
             Some("always") => Ok(Self::Always),
             Some("never") | None => Ok(Self::Never),
             Some("subclass-instances") => Ok(Self::SubclassInstances),
-            Some(s) => py_schema_err!("Invalid revalidate_instances value: {}", s),
+            Some(s) => py_schema_err!("Invalid revalidate_instances value: {s}"),
         }
     }
 

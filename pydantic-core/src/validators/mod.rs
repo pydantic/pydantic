@@ -656,7 +656,7 @@ fn build_validator_inner(
 
 #[cold]
 fn failed_to_build_validator(val_type: &str, err: PyErr) -> PyErr {
-    py_schema_error_type!("Error building \"{}\" validator:\n  {}", val_type, err)
+    py_schema_error_type!("Error building \"{val_type}\" validator:\n  {err}")
 }
 
 #[cold]
@@ -666,7 +666,7 @@ fn invalid_schema_type() -> PyErr {
 
 #[cold]
 fn unknown_schema_type(val_type: &str) -> PyErr {
-    py_schema_error_type!("Unknown schema type: \"{}\"", val_type)
+    py_schema_error_type!("Unknown schema type: \"{val_type}\"")
 }
 
 /// More (mostly immutable) data to pass between validators, should probably be class `Context`,

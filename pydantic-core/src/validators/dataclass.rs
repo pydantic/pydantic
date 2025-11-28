@@ -81,13 +81,13 @@ impl BuildValidator for DataclassArgsValidator {
 
             let validator = match build_validator(&schema, config, definitions) {
                 Ok(v) => v,
-                Err(err) => return py_schema_err!("Field '{}':\n  {}", name, err),
+                Err(err) => return py_schema_err!("Field '{name}':\n  {err}"),
             };
 
             if let CombinedValidator::WithDefault(v) = validator.as_ref()
                 && v.omit_on_error()
             {
-                return py_schema_err!("Field `{}`: omit_on_error cannot be used with arguments", name);
+                return py_schema_err!("Field `{name}`: omit_on_error cannot be used with arguments");
             }
 
             let kw_only = field.get_as(intern!(py, "kw_only"))?.unwrap_or(true);

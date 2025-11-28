@@ -35,7 +35,7 @@ impl<'py> SchemaDict<'py> for Bound<'py, PyDict> {
     {
         match self.get_item(key)? {
             Some(t) => t.extract().map_err(Into::into),
-            None => py_err!(PyKeyError; "{}", key),
+            None => py_err!(PyKeyError; "{key}"),
         }
     }
 }
@@ -58,18 +58,26 @@ impl<'py> SchemaDict<'py> for Option<&Bound<'py, PyDict>> {
     {
         match self {
             Some(d) => d.get_as_req(key),
-            None => py_err!(PyKeyError; "{}", key),
+            None => py_err!(PyKeyError; "{key}"),
         }
     }
 }
 
-macro_rules! py_error_type {
-    ($error_type:ty; $msg:expr) => {
-        <$error_type>::new_err($msg)
-    };
+/// Builds a new PyErr of type T, avoiding an allocation if the message is a constant.
+pub(crate) fn fmt_py_err<T>(msg: fmt::Arguments<'_>) -> PyErr
+where
+    T: pyo3::PyTypeInfo,
+{
+    if let Some(s) = msg.as_str() {
+        PyErr::new::<T, _>(s)
+    } else {
+        PyErr::new::<T, _>(msg.to_string())
+    }
+}
 
-    ($error_type:ty; $msg:expr, $( $msg_args:expr ),+ ) => {
-        <$error_type>::new_err(format!($msg, $( $msg_args ),+))
+macro_rules! py_error_type {
+    ($error_type:ty; $( $msg_args:expr ),+ ) => {
+        $crate::tools::fmt_py_err::<$error_type>(format_args!($( $msg_args ),+))
     };
 }
 pub(crate) use py_error_type;

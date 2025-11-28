@@ -173,7 +173,7 @@ impl ComputedField {
         let property_name: Bound<'_, PyString> = schema.get_as_req(intern!(py, "property_name"))?;
         let return_schema = schema.get_as_req(intern!(py, "return_schema"))?;
         let serializer = CombinedSerializer::build(&return_schema, config, definitions)
-            .map_err(|e| py_schema_error_type!("Computed field `{}`:\n  {}", property_name, e))?;
+            .map_err(|e| py_schema_error_type!("Computed field `{property_name}`:\n  {e}"))?;
         let alias_py = schema
             .get_as(intern!(py, "alias"))?
             .unwrap_or_else(|| property_name.clone());

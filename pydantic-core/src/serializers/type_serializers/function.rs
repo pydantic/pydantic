@@ -200,11 +200,11 @@ fn on_error(py: Python, err: PyErr, function_name: &str, state: &mut Serializati
             Ok(())
         }
     } else if let Ok(err) = exception.extract::<PydanticSerializationError>() {
-        py_err!(PydanticSerializationError; "{}", err)
+        py_err!(PydanticSerializationError; "{err}")
     } else if exception.is_instance_of::<PyRecursionError>() {
-        py_err!(PydanticSerializationError; "Error calling function `{}`: RecursionError", function_name)
+        py_err!(PydanticSerializationError; "Error calling function `{function_name}`: RecursionError")
     } else {
-        let new_err = py_error_type!(PydanticSerializationError; "Error calling function `{}`: {}", function_name, err);
+        let new_err = py_error_type!(PydanticSerializationError; "Error calling function `{function_name}`: {err}");
         new_err.set_cause(py, Some(err));
         Err(new_err)
     }
