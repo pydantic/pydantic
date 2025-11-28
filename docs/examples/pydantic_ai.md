@@ -1,4 +1,4 @@
-[Pydantic AI](https://ai.pydantic.dev/output/#structured-output) is a Python agent framework that uses Pydantic for structured output validation.
+[Pydantic AI](https://ai.pydantic.dev/) is a Python agent framework built by the Pydantic team that uses Pydantic validation for [structured output](https://ai.pydantic.dev/output/#structured-output) schema generation and validation.
 By specifying an `output_type` on an Agent, you can constrain the LLM to return data that matches your Pydantic model schema.
 
 ## LLM Structured Output
