@@ -1303,6 +1303,70 @@ class ImplicitSettings(BaseSettings, cli_parse_args=True, cli_implicit_flags=Tru
 
 ```
 
+Implicit flag behavior can be further refined using the "toggle" or "dual" mode settings. Similarly, the provided `CliToggleFlag` and `CliDualFlag` annotations can be used for more granular control.
+
+For "toggle" flags, if default=`False`, `--flag` will store `True`. Otherwise, if default=`True`, `--no-flag` will store `False`.
+
+```py
+from pydantic_settings import BaseSettings, CliDualFlag, CliToggleFlag
+
+
+class ImplicitDualSettings(
+    BaseSettings, cli_parse_args=True, cli_implicit_flags='dual'
+):
+    """With cli_implicit_flags='dual', implicit flags are dual by default."""
+
+    implicit_req: bool
+    """
+    --implicit_req, --no-implicit_req (required)
+    """
+
+    implicit_dual_opt: bool = False
+    """
+    --implicit_dual_opt, --no-implicit_dual_opt (default: False)
+    """
+
+    # Implicit flags are dual by default, so must override toggle flags with annotation
+    flag_a: CliToggleFlag[bool] = False
+    """
+    --flag_a (default: False)
+    """
+
+    # Implicit flags are dual by default, so must override toggle flags with annotation
+    flag_b: CliToggleFlag[bool] = True
+    """
+    --no-flag_b (default: True)
+    """
+
+
+class ImplicitToggleSettings(
+    BaseSettings, cli_parse_args=True, cli_implicit_flags='toggle'
+):
+    """With cli_implicit_flags='toggle', implicit flags are toggle by default."""
+
+    implicit_req: bool
+    """
+    --implicit_req, --no-implicit_req (required)
+    """
+
+    # Implicit flags are toggle by default, so must override dual flags with annotation
+    implicit_dual_opt: CliDualFlag[bool] = False
+    """
+    --implicit_dual_opt, --no-implicit_dual_opt (default: False)
+    """
+
+    flag_a: bool = False
+    """
+    --flag_a (default: False)
+    """
+
+    flag_b: bool = True
+    """
+    --no-flag_b (default: True)
+    """
+
+```
+
 #### Ignore and Retrieve Unknown Arguments
 
 Change whether to ignore unknown CLI arguments and only parse known ones using `cli_ignore_unknown_args`. By default, the CLI does not ignore any args. Ignored arguments can then be retrieved using the `CliUnknownArgs` annotation.

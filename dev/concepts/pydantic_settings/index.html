@@ -6704,6 +6704,67 @@ when necessary.</p>
 <span class="sd">    --implicit_opt, --no-implicit_opt (default: False)</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 </code></pre></div>
+<p>Implicit flag behavior can be further refined using the "toggle" or "dual" mode settings. Similarly, the provided
+<code>CliToggleFlag</code> and <code>CliDualFlag</code> annotations can be used for more granular control.</p>
+<p>For "toggle" flags, if default=<code>False</code>, <code>--flag</code> will store <code>True</code>. Otherwise, if default=<code>True</code>, <code>--no-flag</code> will store
+<code>False</code>.</p>
+<div class="language-py highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">pydantic_settings</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseSettings</span><span class="p">,</span> <span class="n">CliDualFlag</span><span class="p">,</span> <span class="n">CliToggleFlag</span>
+
+
+<span class="k">class</span><span class="w"> </span><span class="nc">ImplicitDualSettings</span><span class="p">(</span>
+    <span class="n">BaseSettings</span><span class="p">,</span> <span class="n">cli_parse_args</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">cli_implicit_flags</span><span class="o">=</span><span class="s1">&#39;dual&#39;</span>
+<span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;With cli_implicit_flags=&#39;dual&#39;, implicit flags are dual by default.&quot;&quot;&quot;</span>
+
+    <span class="n">implicit_req</span><span class="p">:</span> <span class="nb">bool</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    --implicit_req, --no-implicit_req (required)</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">implicit_dual_opt</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    --implicit_dual_opt, --no-implicit_dual_opt (default: False)</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="c1"># Implicit flags are dual by default, so must override toggle flags with annotation</span>
+    <span class="n">flag_a</span><span class="p">:</span> <span class="n">CliToggleFlag</span><span class="p">[</span><span class="nb">bool</span><span class="p">]</span> <span class="o">=</span> <span class="kc">False</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    --flag_a (default: False)</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="c1"># Implicit flags are dual by default, so must override toggle flags with annotation</span>
+    <span class="n">flag_b</span><span class="p">:</span> <span class="n">CliToggleFlag</span><span class="p">[</span><span class="nb">bool</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    --no-flag_b (default: True)</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+
+<span class="k">class</span><span class="w"> </span><span class="nc">ImplicitToggleSettings</span><span class="p">(</span>
+    <span class="n">BaseSettings</span><span class="p">,</span> <span class="n">cli_parse_args</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">cli_implicit_flags</span><span class="o">=</span><span class="s1">&#39;toggle&#39;</span>
+<span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;With cli_implicit_flags=&#39;toggle&#39;, implicit flags are toggle by default.&quot;&quot;&quot;</span>
+
+    <span class="n">implicit_req</span><span class="p">:</span> <span class="nb">bool</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    --implicit_req, --no-implicit_req (required)</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="c1"># Implicit flags are toggle by default, so must override dual flags with annotation</span>
+    <span class="n">implicit_dual_opt</span><span class="p">:</span> <span class="n">CliDualFlag</span><span class="p">[</span><span class="nb">bool</span><span class="p">]</span> <span class="o">=</span> <span class="kc">False</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    --implicit_dual_opt, --no-implicit_dual_opt (default: False)</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">flag_a</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    --flag_a (default: False)</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">flag_b</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    --no-flag_b (default: True)</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+</code></pre></div>
 <h4 id="ignore-and-retrieve-unknown-arguments">Ignore and Retrieve Unknown Arguments<a class="headerlink" href="#ignore-and-retrieve-unknown-arguments" title="Permanent link">&para;</a></h4>
 <p>Change whether to ignore unknown CLI arguments and only parse known ones using <code>cli_ignore_unknown_args</code>. By default, the CLI
 does not ignore any args. Ignored arguments can then be retrieved using the <code>CliUnknownArgs</code> annotation.</p>

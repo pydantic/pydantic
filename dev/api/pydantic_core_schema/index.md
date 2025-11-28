@@ -452,11 +452,6 @@ invalid_schema(
 
 Returns an invalid schema, used to indicate that a schema is invalid.
 
-```text
-Returns a schema that matches any value, e.g.:
-
-```
-
 Parameters:
 
 | Name | Type | Description | Default | | --- | --- | --- | --- | | `ref` | `str | None` | optional unique identifier of the schema, used to reference the schema in other places | `None` | | `metadata` | `dict[str, Any] | None` | Any other information you want to include with the schema, not used by pydantic-core | `None` |
@@ -467,8 +462,6 @@ Source code in `pydantic_core/core_schema.py`
 def invalid_schema(ref: str | None = None, metadata: dict[str, Any] | None = None) -> InvalidSchema:
     """
     Returns an invalid schema, used to indicate that a schema is invalid.
-
-        Returns a schema that matches any value, e.g.:
 
     Args:
         ref: optional unique identifier of the schema, used to reference the schema in other places
