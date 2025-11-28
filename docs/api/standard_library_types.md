@@ -81,8 +81,9 @@ Strings support the following constraints:
 | `to_lower`         | Whether to convert the string to lowercase        | N/A                                                                                                                                           |
 
 These constraints can be provided using the [`StringConstraints`][pydantic.types.StringConstraints] metadata type, or using the [`Field()`][pydantic.Field] function (except for `to_upper` and `to_lower`).
-The `MinLen`, `MaxLen`, `Len`, `LowerCase`, `UpperCase` metadata types from the [`annotated-types`](https://github.com/annotated-types/annotated-types)
-library can also be used.
+
+The [`annotated-types`](https://github.com/annotated-types/annotated-types) library also provides the `MinLen`, `MaxLen` and `Len` metadata types, as well
+as the `LowerCase`, `UpperCase`, `IsDigit` and `IsAscii` predicates (must be parameterized with `str`, e.g. `LowerCase[str]`).
 
 <!-- markdownlint-disable-next-line no-empty-links -->
 [](){#pattern-constraint-note}
@@ -237,8 +238,10 @@ Floats support the following constraints:
 | `allow_inf_nan` | Whether to allow NaN (not-a-number) and infinite values | N/A                                                                                                     |
 
 These constraints can be provided using the [`Field()`][pydantic.Field] function.
-The `Le`, `Ge`, `Lt`, `Gt` and `MultipleOf` metadata types from the [`annotated-types`](https://github.com/annotated-types/annotated-types)
-library and the [`AllowInfNan`][pydantic.types.AllowInfNan] type can also be used.
+
+The [`annotated-types`](https://github.com/annotated-types/annotated-types) library also provides the `Le`, `Ge`, `Lt`, `Gt` and `MultipleOf` metadata types,
+as well as the `IsFinite`, `IsNotFinite`, `IsNan`, `IsNotNan`, `IsAscii`, `IsInfinite` and `IsNotInfinite` predicates
+(must be parameterized with `float`, e.g. `IsFinite[float]`). The [`AllowInfNan`][pydantic.types.AllowInfNan] type can also be used.
 
 Pydantic also provides the following types as convenience aliases:
 
