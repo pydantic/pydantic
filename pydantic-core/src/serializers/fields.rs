@@ -93,7 +93,7 @@ fn serialization_exclude_if(exclude_if_callable: Option<&Py<PyAny>>, value: &Bou
 
 fn exclude_default<'py>(
     value: &Bound<'py, PyAny>,
-    extra: &Extra<'_, 'py>,
+    extra: &Extra<'py>,
     serializer: &CombinedSerializer,
 ) -> PyResult<bool> {
     if extra.exclude_defaults
@@ -172,7 +172,7 @@ impl GeneralFieldsSerializer {
         py: Python<'py>,
         model: &Bound<'py, PyAny>,
         main_iter: impl Iterator<Item = PyResult<(Bound<'py, PyAny>, Bound<'py, PyAny>)>>,
-        state: &mut SerializationState<'_, 'py>,
+        state: &mut SerializationState<'py>,
     ) -> PyResult<Bound<'py, PyDict>> {
         let output_dict = PyDict::new(py);
         let mut used_req_fields: usize = 0;
@@ -258,7 +258,7 @@ impl GeneralFieldsSerializer {
         main_iter: impl Iterator<Item = PyResult<(Bound<'py, PyAny>, Bound<'py, PyAny>)>>,
         expected_len: usize,
         serializer: S,
-        state: &mut SerializationState<'_, 'py>,
+        state: &mut SerializationState<'py>,
     ) -> Result<S::SerializeMap, S::Error> {
         // NOTE! As above, we maintain the order of the input dict assuming that's right
         // we don't both with `used_req_fields` here because on unions, `to_python(..., mode='json')` is used
@@ -308,7 +308,7 @@ impl GeneralFieldsSerializer {
     fn prepare_value<'s>(
         value: &Bound<'_, PyAny>,
         field: &'s SerField,
-        field_extra: &Extra<'_, '_>,
+        field_extra: &Extra<'_>,
     ) -> PyResult<Option<&'s Arc<CombinedSerializer>>> {
         let Some(serializer) = field.serializer.as_ref() else {
             // field excluded at schema level
@@ -350,7 +350,7 @@ impl GeneralFieldsSerializer {
         &self,
         model: &Bound<'py, PyAny>,
         output_dict: &Bound<'py, PyDict>,
-        state: &mut SerializationState<'_, 'py>,
+        state: &mut SerializationState<'py>,
     ) -> PyResult<()> {
         if let Some(ref computed_fields) = self.computed_fields {
             computed_fields.to_python(model, output_dict, &self.filter, state)?;
@@ -362,7 +362,7 @@ impl GeneralFieldsSerializer {
         &self,
         model: &Bound<'py, PyAny>,
         map: &mut S::SerializeMap,
-        state: &mut SerializationState<'_, 'py>,
+        state: &mut SerializationState<'py>,
     ) -> Result<(), S::Error> {
         if let Some(ref computed_fields) = self.computed_fields {
             computed_fields.serde_serialize::<S>(model, map, &self.filter, state)?;
@@ -381,11 +381,7 @@ impl_py_gc_traverse!(GeneralFieldsSerializer {
 });
 
 impl TypeSerializer for GeneralFieldsSerializer {
-    fn to_python<'py>(
-        &self,
-        value: &Bound<'py, PyAny>,
-        state: &mut SerializationState<'_, 'py>,
-    ) -> PyResult<Py<PyAny>> {
+    fn to_python<'py>(&self, value: &Bound<'py, PyAny>, state: &mut SerializationState<'py>) -> PyResult<Py<PyAny>> {
         let py = value.py();
         let missing_sentinel = get_missing_sentinel_object(py);
 
@@ -423,7 +419,7 @@ impl TypeSerializer for GeneralFieldsSerializer {
     fn json_key<'a, 'py>(
         &self,
         key: &'a Bound<'py, PyAny>,
-        state: &mut SerializationState<'_, 'py>,
+        state: &mut SerializationState<'py>,
     ) -> PyResult<Cow<'a, str>> {
         self.invalid_as_json_key(key, state, "fields")
     }
@@ -432,7 +428,7 @@ impl TypeSerializer for GeneralFieldsSerializer {
         &self,
         value: &Bound<'py, PyAny>,
         serializer: S,
-        state: &mut SerializationState<'_, 'py>,
+        state: &mut SerializationState<'py>,
     ) -> Result<S::Ok, S::Error> {
         let Some((main_dict, extra_dict)) = self.extract_dicts(value) else {
             state.warn_fallback_ser::<S>(self.get_name(), value)?;
@@ -490,7 +486,7 @@ fn dict_items<'py>(
     main_items.into_iter().map(Ok)
 }
 
-fn get_model<'py>(state: &mut SerializationState<'_, 'py>) -> PyResult<Bound<'py, PyAny>> {
+fn get_model<'py>(state: &mut SerializationState<'py>) -> PyResult<Bound<'py, PyAny>> {
     state.model.clone().ok_or_else(|| {
         PydanticSerializationUnexpectedValue::new(
             Some("No model found for fields serialization".to_string()),

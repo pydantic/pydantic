@@ -169,7 +169,7 @@ impl ModelSerializer {
     fn serialize<'py, T, E: From<PyErr>>(
         &self,
         value: &Bound<'py, PyAny>,
-        state: &mut SerializationState<'_, 'py>,
+        state: &mut SerializationState<'py>,
         do_serialize: impl DoSerialize<'py, T, E>,
     ) -> Result<T, E> {
         if self.root_model {
@@ -189,7 +189,7 @@ impl ModelSerializer {
     fn serialize_root_model<'py, T, E: From<PyErr>>(
         &self,
         value: &Bound<'py, PyAny>,
-        state: &mut SerializationState<'_, 'py>,
+        state: &mut SerializationState<'py>,
         do_serialize: impl DoSerialize<'py, T, E>,
     ) -> Result<T, E> {
         if !self.allow_value_root_model(value, state.check)? {
@@ -250,18 +250,14 @@ impl ModelSerializer {
 impl_py_gc_traverse!(ModelSerializer { class, serializer });
 
 impl TypeSerializer for ModelSerializer {
-    fn to_python<'py>(
-        &self,
-        value: &Bound<'py, PyAny>,
-        state: &mut SerializationState<'_, 'py>,
-    ) -> PyResult<Py<PyAny>> {
+    fn to_python<'py>(&self, value: &Bound<'py, PyAny>, state: &mut SerializationState<'py>) -> PyResult<Py<PyAny>> {
         self.serialize(value, state, serialize_to_python())
     }
 
     fn json_key<'a, 'py>(
         &self,
         key: &'a Bound<'py, PyAny>,
-        state: &mut SerializationState<'_, 'py>,
+        state: &mut SerializationState<'py>,
     ) -> PyResult<Cow<'a, str>> {
         // FIXME: root model in json key position should serialize as inner value?
         if self.allow_value(key, state.check)? {
@@ -276,7 +272,7 @@ impl TypeSerializer for ModelSerializer {
         &self,
         value: &Bound<'py, PyAny>,
         serializer: S,
-        state: &mut SerializationState<'_, 'py>,
+        state: &mut SerializationState<'py>,
     ) -> Result<S::Ok, S::Error> {
         self.serialize(value, state, serialize_to_json(serializer))
             .map_err(|e| e.0)

@@ -32,11 +32,7 @@ impl BuildSerializer for DecimalSerializer {
 impl_py_gc_traverse!(DecimalSerializer {});
 
 impl TypeSerializer for DecimalSerializer {
-    fn to_python<'py>(
-        &self,
-        value: &Bound<'py, PyAny>,
-        state: &mut SerializationState<'_, 'py>,
-    ) -> PyResult<Py<PyAny>> {
+    fn to_python<'py>(&self, value: &Bound<'py, PyAny>, state: &mut SerializationState<'py>) -> PyResult<Py<PyAny>> {
         let _py = value.py();
         match state.extra.ob_type_lookup.is_type(value, ObType::Decimal) {
             IsType::Exact | IsType::Subclass => infer_to_python_known(ObType::Decimal, value, state),
@@ -50,7 +46,7 @@ impl TypeSerializer for DecimalSerializer {
     fn json_key<'a, 'py>(
         &self,
         key: &'a Bound<'py, PyAny>,
-        state: &mut SerializationState<'_, 'py>,
+        state: &mut SerializationState<'py>,
     ) -> PyResult<Cow<'a, str>> {
         match state.extra.ob_type_lookup.is_type(key, ObType::Decimal) {
             IsType::Exact | IsType::Subclass => infer_json_key_known(ObType::Decimal, key, state),
@@ -65,7 +61,7 @@ impl TypeSerializer for DecimalSerializer {
         &self,
         value: &Bound<'py, PyAny>,
         serializer: S,
-        state: &mut SerializationState<'_, 'py>,
+        state: &mut SerializationState<'py>,
     ) -> Result<S::Ok, S::Error> {
         match state.extra.ob_type_lookup.is_type(value, ObType::Decimal) {
             IsType::Exact | IsType::Subclass => infer_serialize_known(ObType::Decimal, value, serializer, state),

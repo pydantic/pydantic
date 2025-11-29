@@ -76,11 +76,7 @@ impl BuildSerializer for DefinitionRefSerializer {
 impl_py_gc_traverse!(DefinitionRefSerializer {});
 
 impl TypeSerializer for DefinitionRefSerializer {
-    fn to_python<'py>(
-        &self,
-        value: &Bound<'py, PyAny>,
-        state: &mut SerializationState<'_, 'py>,
-    ) -> PyResult<Py<PyAny>> {
+    fn to_python<'py>(&self, value: &Bound<'py, PyAny>, state: &mut SerializationState<'py>) -> PyResult<Py<PyAny>> {
         self.definition.read(|comb_serializer| {
             let comb_serializer = comb_serializer.unwrap();
             let mut guard = state.recursion_guard(value, self.definition.id())?;
@@ -91,7 +87,7 @@ impl TypeSerializer for DefinitionRefSerializer {
     fn json_key<'a, 'py>(
         &self,
         key: &'a Bound<'py, PyAny>,
-        state: &mut SerializationState<'_, 'py>,
+        state: &mut SerializationState<'py>,
     ) -> PyResult<Cow<'a, str>> {
         self.definition.read(|s| s.unwrap().json_key_no_infer(key, state))
     }
@@ -100,7 +96,7 @@ impl TypeSerializer for DefinitionRefSerializer {
         &self,
         value: &Bound<'py, PyAny>,
         serializer: S,
-        state: &mut SerializationState<'_, 'py>,
+        state: &mut SerializationState<'py>,
     ) -> Result<S::Ok, S::Error> {
         self.definition.read(|comb_serializer| {
             let comb_serializer = comb_serializer.unwrap();

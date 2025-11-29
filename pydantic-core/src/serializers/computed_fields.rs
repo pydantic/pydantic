@@ -47,7 +47,7 @@ impl ComputedFields {
         model: &Bound<'py, PyAny>,
         output_dict: &Bound<'py, PyDict>,
         filter: &SchemaFilter<isize>,
-        state: &mut SerializationState<'_, 'py>,
+        state: &mut SerializationState<'py>,
     ) -> PyResult<()> {
         self.serialize_fields(
             model,
@@ -74,7 +74,7 @@ impl ComputedFields {
         model: &Bound<'py, PyAny>,
         map: &mut S::SerializeMap,
         filter: &SchemaFilter<isize>,
-        state: &mut SerializationState<'_, 'py>,
+        state: &mut SerializationState<'py>,
     ) -> Result<(), S::Error> {
         self.serialize_fields(
             model,
@@ -102,9 +102,9 @@ impl ComputedFields {
         &self,
         model: &Bound<'py, PyAny>,
         filter: &SchemaFilter<isize>,
-        state: &mut SerializationState<'_, 'py>,
+        state: &mut SerializationState<'py>,
         convert_error: impl FnOnce(PyErr) -> E,
-        mut serialize: impl for<'slf, 'a> FnMut(ComputedFieldToSerialize<'slf, 'a, 'py>) -> Result<(), E>,
+        mut serialize: impl for<'slf, 'a> FnMut(ComputedFieldToSerialize<'slf, 'py>) -> Result<(), E>,
     ) -> Result<(), E> {
         // In round trip mode, exclude computed fields:
         if state.extra.round_trip || state.extra.exclude_computed_fields {
@@ -146,10 +146,10 @@ impl ComputedFields {
     }
 }
 
-struct ComputedFieldToSerialize<'slf, 'a, 'py> {
+struct ComputedFieldToSerialize<'slf, 'py> {
     computed_field: &'slf ComputedField,
     value: Bound<'py, PyAny>,
-    state: &'slf mut SerializationState<'a, 'py>,
+    state: &'slf mut SerializationState<'py>,
 }
 
 #[derive(Debug)]

@@ -26,6 +26,16 @@ pub(crate) struct SerializationConfig {
     pub inf_nan_mode: InfNanMode,
 }
 
+impl Default for SerializationConfig {
+    fn default() -> Self {
+        Self {
+            temporal_mode: TemporalMode::default(),
+            bytes_mode: BytesMode::default(),
+            inf_nan_mode: InfNanMode::Constants,
+        }
+    }
+}
+
 impl SerializationConfig {
     pub fn from_config(config: Option<&Bound<'_, PyDict>>) -> PyResult<Self> {
         let temporal_set = config

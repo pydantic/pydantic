@@ -95,7 +95,7 @@ impl SchemaFilter<usize> {
     pub fn index_filter<'py>(
         &self,
         index: usize,
-        state: &SerializationState<'_, 'py>,
+        state: &SerializationState<'py>,
         len: Option<usize>,
     ) -> PyResult<NextFilters<'py>> {
         let include = state.include().map(|v| map_negative_indices(v, len)).transpose()?;
@@ -133,7 +133,7 @@ impl SchemaFilter<isize> {
     pub fn key_filter<'py>(
         &self,
         key: &Bound<'py, PyAny>,
-        state: &SerializationState<'_, 'py>,
+        state: &SerializationState<'py>,
     ) -> PyResult<NextFilters<'py>> {
         let hash = key.hash()?;
         self.filter(key, hash, state.include(), state.exclude())
@@ -266,7 +266,7 @@ impl AnyFilter {
     pub fn key_filter<'py>(
         &self,
         key: &Bound<'py, PyAny>,
-        state: &SerializationState<'_, 'py>,
+        state: &SerializationState<'py>,
     ) -> PyResult<NextFilters<'py>> {
         // just use 0 for the int_key, it's always ignored in the implementation here
         self.filter(key, 0, state.include(), state.exclude())
@@ -275,7 +275,7 @@ impl AnyFilter {
     pub fn index_filter<'py>(
         &self,
         index: usize,
-        state: &SerializationState<'_, 'py>,
+        state: &SerializationState<'py>,
         len: Option<usize>,
     ) -> PyResult<NextFilters<'py>> {
         let include = state.include().map(|v| map_negative_indices(v, len)).transpose()?;
