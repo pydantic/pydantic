@@ -1,16 +1,17 @@
-use ahash::AHashMap as HashMap;
 use pyo3::intern;
 use pyo3::prelude::*;
 use pyo3::types::{PyDict, PyList, PyTuple};
 use smallvec::SmallVec;
 use std::borrow::Cow;
 use std::sync::Arc;
+use std::sync::OnceLock;
 
 use crate::build_tools::py_schema_err;
 use crate::common::union::{Discriminator, SMALL_UNION_THRESHOLD};
 use crate::definitions::DefinitionsBuilder;
 use crate::serializers::PydanticSerializationUnexpectedValue;
 use crate::serializers::SerializationState;
+use crate::tools::PyHashTable;
 use crate::tools::SchemaDict;
 
 use super::{
@@ -190,9 +191,9 @@ impl TypeSerializer for UnionSerializer {
 #[derive(Debug)]
 pub struct TaggedUnionSerializer {
     discriminator: Discriminator,
-    lookup: HashMap<String, usize>,
+    lookup: PyHashTable<usize>,
     choices: Vec<Arc<CombinedSerializer>>,
-    name: String,
+    name: OnceLock<String>,
 }
 
 impl BuildSerializer for TaggedUnionSerializer {
@@ -208,28 +209,32 @@ impl BuildSerializer for TaggedUnionSerializer {
 
         // TODO: guarantee at least 1 choice
         let choices_map: Bound<PyDict> = schema.get_as_req(intern!(py, "choices"))?;
-        let mut lookup = HashMap::with_capacity(choices_map.len());
+        let mut lookup = PyHashTable::with_capacity(choices_map.len());
         let mut choices = Vec::with_capacity(choices_map.len());
 
         for (idx, (choice_key, choice_schema)) in choices_map.into_iter().enumerate() {
             let serializer = CombinedSerializer::build(choice_schema.cast()?, config, definitions)?;
             choices.push(serializer);
-            lookup.insert(choice_key.to_string(), idx);
-        }
 
-        let descr = choices.iter().map(|s| s.get_name()).collect::<Vec<_>>().join(", ");
+            // Keys should be unique, because they came from a dict
+            lookup.insert_unique(choice_key, idx)?;
+        }
 
         Ok(CombinedSerializer::TaggedUnion(Self {
             discriminator,
             lookup,
             choices,
-            name: format!("TaggedUnion[{descr}]"),
+            name: OnceLock::new(),
         })
         .into())
     }
 }
 
-impl_py_gc_traverse!(TaggedUnionSerializer { discriminator, choices });
+impl_py_gc_traverse!(TaggedUnionSerializer {
+    discriminator,
+    lookup,
+    choices
+});
 
 impl TypeSerializer for TaggedUnionSerializer {
     fn to_python<'py>(
@@ -279,7 +284,22 @@ impl TypeSerializer for TaggedUnionSerializer {
     }
 
     fn get_name(&self) -> &str {
-        &self.name
+        self.name.get_or_init(|| {
+            let mut descr = String::new();
+            descr.push_str("TaggedUnion[");
+            // TODO: there's probably a "joined" wrapper we could add to make this kind of pattern cleaner
+            let mut first = true;
+            for s in &self.choices {
+                if first {
+                    first = false;
+                } else {
+                    descr.push_str(", ");
+                }
+                descr.push_str(s.get_name());
+            }
+            descr.push(']');
+            descr
+        })
     }
 
     fn retry_with_lax_check(&self) -> bool {
@@ -314,24 +334,24 @@ impl TaggedUnionSerializer {
         mut selector: impl FnMut(&CombinedSerializer, &mut SerializationState<'_, 'py>) -> PyResult<S>,
         state: &mut SerializationState<'_, 'py>,
     ) -> PyResult<Option<S>> {
-        if let Some(tag) = self.get_discriminator_value(value) {
-            let state = &mut state.scoped_set(|s| &mut s.check, SerCheck::Strict);
+        if let Some(tag) = self.get_discriminator_value(value)
+            && let Some(&serializer_index) = self.lookup.get(&tag)?
+        {
+            let selected_serializer = &self.choices[serializer_index];
+            if let Ok(v) = selector(
+                selected_serializer,
+                &mut state.scoped_set(|s| &mut s.check, SerCheck::Strict),
+            ) {
+                return Ok(Some(v));
+            }
 
-            let tag_str = tag.to_string();
-            if let Some(&serializer_index) = self.lookup.get(&tag_str) {
-                let selected_serializer = &self.choices[serializer_index];
-
-                match selector(selected_serializer, state) {
-                    Ok(v) => return Ok(Some(v)),
-                    Err(_) => {
-                        if self.retry_with_lax_check() {
-                            let state = &mut state.scoped_set(|s| &mut s.check, SerCheck::Lax);
-                            if let Ok(v) = selector(selected_serializer, state) {
-                                return Ok(Some(v));
-                            }
-                        }
-                    }
-                }
+            if self.retry_with_lax_check()
+                && let Ok(v) = selector(
+                    selected_serializer,
+                    &mut state.scoped_set(|s| &mut s.check, SerCheck::Lax),
+                )
+            {
+                return Ok(Some(v));
             }
         } else if state.check == SerCheck::None {
             // If state.check is SerCheck::None, we're in a top-level union. We should thus raise
