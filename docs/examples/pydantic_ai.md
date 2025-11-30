@@ -22,13 +22,20 @@ By specifying an `output_type` on an Agent, you can constrain the LLM to return 
 
 === "Advanced"
     ```python {test="skip"}
-    from pydantic import BaseModel, Field
+    from pydantic import BaseModel, Field, field_validator
     from pydantic_ai import Agent
 
     class City(BaseModel):
         name: str
         country: str
-        population: int = Field(description='Estimated population')
+        population: int = Field(description='Estimated population', gt=0)
+
+        @field_validator('country')
+        @classmethod
+        def population_must_be_positive(cls, v: str) -> str:
+            if v == 'Narnia':
+                raise ValueError('not a real country!')
+            return v
 
 
     agent = Agent('openai:gpt-5-mini', output_type=list[City])
