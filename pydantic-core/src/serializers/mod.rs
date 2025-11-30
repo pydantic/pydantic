@@ -75,95 +75,30 @@ impl SchemaSerializer {
         })
     }
 
-    #[allow(clippy::too_many_arguments)]
-    #[pyo3(signature = (value, *, mode = None, include = None, exclude = None, by_alias = None,
-        exclude_unset = false, exclude_defaults = false, exclude_none = false, exclude_computed_fields = false,
-        round_trip = false, warnings = WarningsArg::Bool(true), fallback = None, serialize_as_any = false, context = None))]
+    #[pyo3(signature = (value, *, mode = None, **kwargs))]
     pub fn to_python(
         &self,
-        py: Python,
         value: &Bound<'_, PyAny>,
-        mode: Option<&str>,
-        include: Option<Bound<'_, PyAny>>,
-        exclude: Option<Bound<'_, PyAny>>,
-        by_alias: Option<bool>,
-        exclude_unset: bool,
-        exclude_defaults: bool,
-        exclude_none: bool,
-        exclude_computed_fields: bool,
-        round_trip: bool,
-        warnings: WarningsArg,
-        fallback: Option<Bound<'_, PyAny>>,
-        serialize_as_any: bool,
-        context: Option<Bound<'_, PyAny>>,
+        mode: Option<SerMode>,
+        kwargs: Option<&Bound<'_, PyDict>>,
     ) -> PyResult<Py<PyAny>> {
-        let mode: SerMode = mode.into();
-        let warnings_mode = match warnings {
-            WarningsArg::Bool(b) => b.into(),
-            WarningsArg::Literal(mode) => mode,
-        };
-        let extra = Extra::new(
-            py,
-            mode,
-            by_alias,
-            exclude_unset,
-            exclude_defaults,
-            exclude_none,
-            exclude_computed_fields,
-            round_trip,
-            false,
-            fallback,
-            serialize_as_any,
-            context,
-        );
-        let mut state = SerializationState::new(self.config, warnings_mode, include, exclude, extra)?;
+        let py = value.py();
+        let mut state = SerializationState::from_kwargs(py, mode.unwrap_or(SerMode::Python), self.config, kwargs)?;
         let v = self.serializer.to_python(value, &mut state)?;
         state.warnings.final_check(py)?;
         Ok(v)
     }
 
-    #[allow(clippy::too_many_arguments)]
-    #[pyo3(signature = (value, *, indent = None, ensure_ascii = false, include = None, exclude = None, by_alias = None,
-        exclude_unset = false, exclude_defaults = false, exclude_none = false, exclude_computed_fields = false,
-        round_trip = false, warnings = WarningsArg::Bool(true), fallback = None, serialize_as_any = false, context = None))]
+    #[pyo3(signature = (value, *, indent = None, ensure_ascii = false, **kwargs))]
     pub fn to_json(
         &self,
-        py: Python,
         value: &Bound<'_, PyAny>,
         indent: Option<usize>,
         ensure_ascii: Option<bool>,
-        include: Option<Bound<'_, PyAny>>,
-        exclude: Option<Bound<'_, PyAny>>,
-        by_alias: Option<bool>,
-        exclude_unset: bool,
-        exclude_defaults: bool,
-        exclude_none: bool,
-        exclude_computed_fields: bool,
-        round_trip: bool,
-        warnings: WarningsArg,
-        fallback: Option<Bound<'_, PyAny>>,
-        serialize_as_any: bool,
-        context: Option<Bound<'_, PyAny>>,
+        kwargs: Option<&Bound<'_, PyDict>>,
     ) -> PyResult<Py<PyAny>> {
-        let warnings_mode = match warnings {
-            WarningsArg::Bool(b) => b.into(),
-            WarningsArg::Literal(mode) => mode,
-        };
-        let extra = Extra::new(
-            py,
-            SerMode::Json,
-            by_alias,
-            exclude_unset,
-            exclude_defaults,
-            exclude_none,
-            exclude_computed_fields,
-            round_trip,
-            false,
-            fallback,
-            serialize_as_any,
-            context,
-        );
-        let mut state = SerializationState::new(self.config, warnings_mode, include, exclude, extra)?;
+        let py = value.py();
+        let mut state = SerializationState::from_kwargs(py, SerMode::Json, self.config, kwargs)?;
         let bytes = to_json_bytes(
             value,
             &self.serializer,
@@ -197,47 +132,16 @@ impl SchemaSerializer {
     }
 }
 
-#[allow(clippy::too_many_arguments)]
 #[pyfunction]
-#[pyo3(signature = (value, *, indent = None, ensure_ascii = false, include = None, exclude = None, by_alias = true,
-    exclude_none = false, round_trip = false, timedelta_mode = "iso8601", temporal_mode = "iso8601",
-    bytes_mode = "utf8",  inf_nan_mode = "constants", serialize_unknown = false, fallback = None,
-    serialize_as_any = false, context = None))]
+#[pyo3(signature = (value, *, indent = None, ensure_ascii = false, **kwargs))]
 pub fn to_json(
-    py: Python,
     value: &Bound<'_, PyAny>,
     indent: Option<usize>,
     ensure_ascii: Option<bool>,
-    include: Option<Bound<'_, PyAny>>,
-    exclude: Option<Bound<'_, PyAny>>,
-    by_alias: bool,
-    exclude_none: bool,
-    round_trip: bool,
-    timedelta_mode: &str,
-    temporal_mode: &str,
-    bytes_mode: &str,
-    inf_nan_mode: &str,
-    serialize_unknown: bool,
-    fallback: Option<Bound<'_, PyAny>>,
-    serialize_as_any: bool,
-    context: Option<Bound<'_, PyAny>>,
+    kwargs: Option<&Bound<'_, PyDict>>,
 ) -> PyResult<Py<PyAny>> {
-    let config = SerializationConfig::from_args(timedelta_mode, temporal_mode, bytes_mode, inf_nan_mode)?;
-    let extra = Extra::new(
-        py,
-        SerMode::Json,
-        Some(by_alias),
-        false,
-        false,
-        exclude_none,
-        false,
-        round_trip,
-        serialize_unknown,
-        fallback,
-        serialize_as_any,
-        context,
-    );
-    let mut state = SerializationState::new(config, WarningsMode::None, include, exclude, extra)?;
+    let py = value.py();
+    let mut state = SerializationState::from_extended_kwargs(py, SerMode::Json, kwargs)?;
     let bytes = to_json_bytes(
         value,
         AnySerializer::get(),
@@ -251,44 +155,11 @@ pub fn to_json(
     Ok(py_bytes.into())
 }
 
-#[allow(clippy::too_many_arguments)]
 #[pyfunction]
-#[pyo3(signature = (value, *, include = None, exclude = None, by_alias = true, exclude_none = false, round_trip = false,
-    timedelta_mode = "iso8601", temporal_mode = "iso8601", bytes_mode = "utf8", inf_nan_mode = "constants",
-    serialize_unknown = false, fallback = None, serialize_as_any = false, context = None))]
-pub fn to_jsonable_python(
-    py: Python,
-    value: &Bound<'_, PyAny>,
-    include: Option<Bound<'_, PyAny>>,
-    exclude: Option<Bound<'_, PyAny>>,
-    by_alias: bool,
-    exclude_none: bool,
-    round_trip: bool,
-    timedelta_mode: &str,
-    temporal_mode: &str,
-    bytes_mode: &str,
-    inf_nan_mode: &str,
-    serialize_unknown: bool,
-    fallback: Option<Bound<'_, PyAny>>,
-    serialize_as_any: bool,
-    context: Option<Bound<'_, PyAny>>,
-) -> PyResult<Py<PyAny>> {
-    let config = SerializationConfig::from_args(timedelta_mode, temporal_mode, bytes_mode, inf_nan_mode)?;
-    let extra = Extra::new(
-        py,
-        SerMode::Json,
-        Some(by_alias),
-        false,
-        false,
-        exclude_none,
-        false,
-        round_trip,
-        serialize_unknown,
-        fallback,
-        serialize_as_any,
-        context,
-    );
-    let mut state = SerializationState::new(config, WarningsMode::None, include, exclude, extra)?;
+#[pyo3(signature = (value, *, **kwargs))]
+pub fn to_jsonable_python(value: &Bound<'_, PyAny>, kwargs: Option<&Bound<'_, PyDict>>) -> PyResult<Py<PyAny>> {
+    let py = value.py();
+    let mut state = SerializationState::from_extended_kwargs(py, SerMode::Json, kwargs)?;
     let v = infer::infer_to_python(value, &mut state)?;
     state.final_check(py)?;
     Ok(v)

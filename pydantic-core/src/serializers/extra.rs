@@ -6,7 +6,7 @@ use std::string::ToString;
 
 use pyo3::exceptions::{PyTypeError, PyUserWarning, PyValueError};
 use pyo3::prelude::*;
-use pyo3::types::{PyBool, PyString};
+use pyo3::types::{PyBool, PyDict, PyString};
 use pyo3::{PyTypeInfo, intern};
 
 use serde::ser::Error;
@@ -58,7 +58,206 @@ impl fmt::Display for FieldName<'_> {
     }
 }
 
+/// Represents the keyword arguments passed to a `SchemaSerializer` serialization function.
+struct SerializationKwargs<'py> {
+    warnings: WarningsMode,
+    include: Option<Bound<'py, PyAny>>,
+    exclude: Option<Bound<'py, PyAny>>,
+    by_alias: Option<bool>,
+    exclude_unset: bool,
+    exclude_defaults: bool,
+    exclude_none: bool,
+    exclude_computed_fields: bool,
+    round_trip: bool,
+    fallback: Option<Bound<'py, PyAny>>,
+    serialize_as_any: bool,
+    context: Option<Bound<'py, PyAny>>,
+}
+
+impl<'py> SerializationKwargs<'py> {
+    fn new() -> Self {
+        Self {
+            warnings: WarningsMode::Warn,
+            include: None,
+            exclude: None,
+            by_alias: None,
+            exclude_unset: false,
+            exclude_defaults: false,
+            exclude_none: false,
+            exclude_computed_fields: false,
+            round_trip: false,
+            fallback: None,
+            serialize_as_any: false,
+            context: None,
+        }
+    }
+
+    fn from_python(kwargs: Option<&Bound<'py, PyDict>>) -> PyResult<Self> {
+        let mut extracted_kwargs = Self::new();
+
+        if let Some(kwargs) = kwargs {
+            let py = kwargs.py();
+            for (key, value) in kwargs {
+                let key: &str = key.extract()?;
+
+                match extracted_kwargs.consume_kwarg(key, value) {
+                    Ok(true) => {}
+                    Ok(false) => {
+                        return Err(PyTypeError::new_err(format!("Unexpected keyword argument '{key}'")));
+                    }
+                    Err(e) => {
+                        e.add_note(py, format!("error occurred for keyword argument '{key}'"))?;
+                        return Err(e);
+                    }
+                }
+            }
+        }
+
+        Ok(extracted_kwargs)
+    }
+
+    /// Consumes a kwarg if it matches one of the known keys, setting the corresponding field.
+    /// Returns `Ok(true)` if the kwarg was consumed, `Ok(false)` if
+    /// it was not recognized, and `Err` if there was an error extracting the value.
+    fn consume_kwarg(&mut self, key: &str, value: Bound<'py, PyAny>) -> PyResult<bool> {
+        macro_rules! extract_arms {
+            ($($var:ident),* $(,)?) => {
+                match key {
+                    $(
+                        stringify!($var) => {
+                            self.$var = value.extract()?;
+                        }
+                    )*
+                    _ => {
+                        return Ok(false);
+                    }
+                }
+            }
+        }
+
+        extract_arms! {
+            warnings,
+            include,
+            exclude,
+            by_alias,
+            exclude_unset,
+            exclude_defaults,
+            exclude_none,
+            exclude_computed_fields,
+            round_trip,
+            fallback,
+            serialize_as_any,
+            context,
+        };
+
+        Ok(true)
+    }
+}
+
+/// Represents the keyword arguments passed to a freestanding serialization function,
+struct ExtendedSerializationKwargs<'py> {
+    config: SerializationConfig,
+    serialize_unknown: bool,
+    inner: SerializationKwargs<'py>,
+}
+
+impl<'py> ExtendedSerializationKwargs<'py> {
+    fn from_python(kwargs: Option<&Bound<'py, PyDict>>) -> PyResult<Self> {
+        let mut extracted_kwargs = Self {
+            serialize_unknown: false,
+            config: SerializationConfig::from_kwargs(kwargs)?,
+            inner: SerializationKwargs::new(),
+        };
+
+        if let Some(kwargs) = kwargs {
+            let py = kwargs.py();
+            for (key, value) in kwargs {
+                let key: &str = key.extract()?;
+
+                match extracted_kwargs.consume_kwarg(key, value) {
+                    Ok(true) => {}
+                    Ok(false) => {
+                        return Err(PyTypeError::new_err(format!("Unexpected keyword argument '{key}'")));
+                    }
+                    Err(e) => {
+                        e.add_note(py, format!("error occurred for keyword argument '{key}'"))?;
+                        return Err(e);
+                    }
+                }
+            }
+        }
+
+        Ok(extracted_kwargs)
+    }
+
+    fn consume_kwarg(&mut self, key: &str, value: Bound<'py, PyAny>) -> PyResult<bool> {
+        match key {
+            "serialize_unknown" => {
+                self.serialize_unknown = value.extract()?;
+            }
+            // these keys are extracted by SerializationConfig
+            "timedelta_mode" | "temporal_mode" | "bytes_mode" | "inf_nan_mode" => {}
+            _ => {
+                return self.inner.consume_kwarg(key, value);
+            }
+        }
+
+        Ok(true)
+    }
+}
+
 impl<'py> SerializationState<'py> {
+    pub fn from_kwargs(
+        py: Python<'py>,
+        mode: SerMode,
+        config: SerializationConfig,
+        kwargs: Option<&Bound<'py, PyDict>>,
+    ) -> PyResult<Self> {
+        let kwargs = SerializationKwargs::from_python(kwargs)?;
+
+        let extra = Extra::new(
+            py,
+            mode,
+            kwargs.by_alias,
+            kwargs.exclude_unset,
+            kwargs.exclude_defaults,
+            kwargs.exclude_none,
+            kwargs.exclude_computed_fields,
+            kwargs.round_trip,
+            false,
+            kwargs.fallback,
+            kwargs.serialize_as_any,
+            kwargs.context,
+        );
+        Self::new(config, kwargs.warnings, kwargs.include, kwargs.exclude, extra)
+    }
+
+    pub fn from_extended_kwargs(py: Python<'py>, mode: SerMode, kwargs: Option<&Bound<'py, PyDict>>) -> PyResult<Self> {
+        let kwargs = ExtendedSerializationKwargs::from_python(kwargs)?;
+
+        let extra = Extra::new(
+            py,
+            mode,
+            kwargs.inner.by_alias,
+            kwargs.inner.exclude_unset,
+            kwargs.inner.exclude_defaults,
+            kwargs.inner.exclude_none,
+            kwargs.inner.exclude_computed_fields,
+            kwargs.inner.round_trip,
+            kwargs.serialize_unknown,
+            kwargs.inner.fallback,
+            kwargs.inner.serialize_as_any,
+            kwargs.inner.context,
+        );
+        Self::new(
+            kwargs.config,
+            kwargs.inner.warnings,
+            kwargs.inner.include,
+            kwargs.inner.exclude,
+            extra,
+        )
+    }
+
     pub fn new(
         config: SerializationConfig,
         warnings_mode: WarningsMode,
@@ -346,7 +545,7 @@ impl ExtraOwned {
 
 #[derive(Clone)]
 #[cfg_attr(debug_assertions, derive(Debug))]
-pub(crate) enum SerMode {
+pub enum SerMode {
     Python,
     Json,
     Other(String),
@@ -368,12 +567,14 @@ impl SerMode {
     }
 }
 
-impl From<Option<&str>> for SerMode {
-    fn from(s: Option<&str>) -> Self {
-        match s {
-            Some("json") => SerMode::Json,
-            Some("python") | None => SerMode::Python,
-            Some(other) => SerMode::Other(other.to_string()),
+impl<'py> FromPyObject<'_, 'py> for SerMode {
+    type Error = PyErr;
+    fn extract(ob: Borrowed<'_, 'py, PyAny>) -> PyResult<SerMode> {
+        let mode_str: &str = ob.extract()?;
+        match mode_str {
+            "python" => Ok(SerMode::Python),
+            "json" => Ok(SerMode::Json),
+            other => Ok(SerMode::Other(other.to_string())),
         }
     }
 }

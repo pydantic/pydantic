@@ -55,21 +55,32 @@ impl SerializationConfig {
         })
     }
 
-    pub fn from_args(
-        timedelta_mode: &str,
-        temporal_mode: &str,
-        bytes_mode: &str,
-        inf_nan_mode: &str,
-    ) -> PyResult<Self> {
-        let resolved_temporal_mode = if temporal_mode != "iso8601" {
-            TemporalMode::from_str(temporal_mode)?
-        } else {
-            TimedeltaMode::from_str(timedelta_mode)?.into()
-        };
+    pub fn from_kwargs(kwargs: Option<&Bound<'_, PyDict>>) -> PyResult<Self> {
+        let mut temporal_mode = TemporalMode::default();
+        let mut bytes_mode = BytesMode::default();
+        // NB: this is NOT the default use in from_config, should unify in pydantic v3
+        let mut inf_nan_mode = InfNanMode::Constants;
+
+        if let Some(kwargs) = kwargs {
+            if let Some(kwarg) = kwargs.get_item(intern!(kwargs.py(), "temporal_mode"))? {
+                temporal_mode = TemporalMode::from_str(kwarg.extract()?)?;
+            } else if let Some(kwarg) = kwargs.get_item(intern!(kwargs.py(), "timedelta_mode"))? {
+                temporal_mode = TimedeltaMode::from_str(kwarg.extract()?)?.into();
+            }
+
+            if let Some(kwarg) = kwargs.get_item(intern!(kwargs.py(), "bytes_mode"))? {
+                bytes_mode = BytesMode::from_str(kwarg.extract()?)?;
+            }
+
+            if let Some(kwarg) = kwargs.get_item(intern!(kwargs.py(), "inf_nan_mode"))? {
+                inf_nan_mode = InfNanMode::from_str(kwarg.extract()?)?;
+            }
+        }
+
         Ok(Self {
-            temporal_mode: resolved_temporal_mode,
-            bytes_mode: BytesMode::from_str(bytes_mode)?,
-            inf_nan_mode: InfNanMode::from_str(inf_nan_mode)?,
+            temporal_mode,
+            bytes_mode,
+            inf_nan_mode,
         })
     }
 }
