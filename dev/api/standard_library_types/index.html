@@ -4811,9 +4811,9 @@ type as a convenience to <a href="../../concepts/strict_mode/#using-the-strict-m
 </tr>
 </tbody>
 </table>
-<p>These constraints can be provided using the <a class="autorefs autorefs-internal" href="../types/#pydantic.types.StringConstraints"><code>StringConstraints</code></a> metadata type, or using the <a class="autorefs autorefs-internal" href="../fields/#pydantic.fields.Field"><code>Field()</code></a> function (except for <code>to_upper</code> and <code>to_lower</code>).
-The <code>MinLen</code>, <code>MaxLen</code>, <code>Len</code>, <code>LowerCase</code>, <code>UpperCase</code> metadata types from the <a href="https://github.com/annotated-types/annotated-types"><code>annotated-types</code></a>
-library can also be used.</p>
+<p>These constraints can be provided using the <a class="autorefs autorefs-internal" href="../types/#pydantic.types.StringConstraints"><code>StringConstraints</code></a> metadata type, or using the <a class="autorefs autorefs-internal" href="../fields/#pydantic.fields.Field"><code>Field()</code></a> function (except for <code>to_upper</code> and <code>to_lower</code>).</p>
+<p>The <a href="https://github.com/annotated-types/annotated-types"><code>annotated-types</code></a> library also provides the <code>MinLen</code>, <code>MaxLen</code> and <code>Len</code> metadata types, as well
+as the <code>LowerCase</code>, <code>UpperCase</code>, <code>IsDigit</code> and <code>IsAscii</code> predicates (must be parameterized with <code>str</code>, e.g. <code>LowerCase[str]</code>).</p>
 <!-- markdownlint-disable-next-line no-empty-links -->
 <p><a href="" id="pattern-constraint-note"></a></p>
 <div class="admonition note">
@@ -5021,9 +5021,10 @@ type as a convenience to <a href="../../concepts/strict_mode/#using-the-strict-m
 </tr>
 </tbody>
 </table>
-<p>These constraints can be provided using the <a class="autorefs autorefs-internal" href="../fields/#pydantic.fields.Field"><code>Field()</code></a> function.
-The <code>Le</code>, <code>Ge</code>, <code>Lt</code>, <code>Gt</code> and <code>MultipleOf</code> metadata types from the <a href="https://github.com/annotated-types/annotated-types"><code>annotated-types</code></a>
-library and the <a class="autorefs autorefs-internal" href="../types/#pydantic.types.AllowInfNan"><code>AllowInfNan</code></a> type can also be used.</p>
+<p>These constraints can be provided using the <a class="autorefs autorefs-internal" href="../fields/#pydantic.fields.Field"><code>Field()</code></a> function.</p>
+<p>The <a href="https://github.com/annotated-types/annotated-types"><code>annotated-types</code></a> library also provides the <code>Le</code>, <code>Ge</code>, <code>Lt</code>, <code>Gt</code> and <code>MultipleOf</code> metadata types,
+as well as the <code>IsFinite</code>, <code>IsNotFinite</code>, <code>IsNan</code>, <code>IsNotNan</code>, <code>IsAscii</code>, <code>IsInfinite</code> and <code>IsNotInfinite</code> predicates
+(must be parameterized with <code>float</code>, e.g. <code>IsFinite[float]</code>). The <a class="autorefs autorefs-internal" href="../types/#pydantic.types.AllowInfNan"><code>AllowInfNan</code></a> type can also be used.</p>
 <p>Pydantic also provides the following types as convenience aliases:</p>
 <ul>
 <li><a class="autorefs autorefs-internal" href="../types/#pydantic.types.PositiveFloat"><code>PositiveFloat</code></a>: Requires the input to be greater than zero.</li>

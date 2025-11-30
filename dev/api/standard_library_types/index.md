@@ -66,7 +66,9 @@ Strings support the following constraints:
 
 | Constraint | Description | JSON Schema | | --- | --- | --- | | `pattern` | A regex pattern that the string must match | [`pattern`](https://json-schema.org/understanding-json-schema/reference/string#regexp) keyword (see [note](#pattern-constraint-note) below). | | `min_length` | The minimum length of the string | [`minLength`](https://json-schema.org/understanding-json-schema/reference/string#length) keyword | | `max_length` | The maximum length of the string | [`maxLength`](https://json-schema.org/understanding-json-schema/reference/string#length) keyword | | `strip_whitespace` | Whether to remove leading and trailing whitespace | N/A | | `to_upper` | Whether to convert the string to uppercase | N/A | | `to_lower` | Whether to convert the string to lowercase | N/A |
 
-These constraints can be provided using the StringConstraints metadata type, or using the Field() function (except for `to_upper` and `to_lower`). The `MinLen`, `MaxLen`, `Len`, `LowerCase`, `UpperCase` metadata types from the [`annotated-types`](https://github.com/annotated-types/annotated-types) library can also be used.
+These constraints can be provided using the StringConstraints metadata type, or using the Field() function (except for `to_upper` and `to_lower`).
+
+The [`annotated-types`](https://github.com/annotated-types/annotated-types) library also provides the `MinLen`, `MaxLen` and `Len` metadata types, as well as the `LowerCase`, `UpperCase`, `IsDigit` and `IsAscii` predicates (must be parameterized with `str`, e.g. `LowerCase[str]`).
 
 `pattern` constraint
 
@@ -175,7 +177,9 @@ Floats support the following constraints:
 
 | Constraint | Description | JSON Schema | | --- | --- | --- | | `le` | The value must be less than or equal to this number | [`maximum`](https://json-schema.org/understanding-json-schema/reference/numeric#range) keyword | | `ge` | The value must be greater than or equal to this number | [`minimum`](https://json-schema.org/understanding-json-schema/reference/numeric#range) keyword | | `lt` | The value must be strictly less than this number | [`exclusiveMaximum`](https://json-schema.org/understanding-json-schema/reference/numeric#range) keyword | | `gt` | The value must be strictly greater than this number | [`exclusiveMinimum`](https://json-schema.org/understanding-json-schema/reference/numeric#range) keyword | | `multiple_of` | The value must be a multiple of this number | [`multipleOf`](https://json-schema.org/understanding-json-schema/reference/numeric#multiples) keyword | | `allow_inf_nan` | Whether to allow NaN (not-a-number) and infinite values | N/A |
 
-These constraints can be provided using the Field() function. The `Le`, `Ge`, `Lt`, `Gt` and `MultipleOf` metadata types from the [`annotated-types`](https://github.com/annotated-types/annotated-types) library and the AllowInfNan type can also be used.
+These constraints can be provided using the Field() function.
+
+The [`annotated-types`](https://github.com/annotated-types/annotated-types) library also provides the `Le`, `Ge`, `Lt`, `Gt` and `MultipleOf` metadata types, as well as the `IsFinite`, `IsNotFinite`, `IsNan`, `IsNotNan`, `IsAscii`, `IsInfinite` and `IsNotInfinite` predicates (must be parameterized with `float`, e.g. `IsFinite[float]`). The AllowInfNan type can also be used.
 
 Pydantic also provides the following types as convenience aliases:
 
