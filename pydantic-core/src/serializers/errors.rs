@@ -86,8 +86,8 @@ impl fmt::Display for PydanticSerializationError {
 }
 
 impl PydanticSerializationError {
-    pub(crate) fn new_err(msg: String) -> PyErr {
-        PyErr::new::<Self, String>(msg)
+    pub(crate) fn new_err<T: Into<String>>(msg: T) -> PyErr {
+        PyErr::new::<Self, String>(msg.into())
     }
 }
 

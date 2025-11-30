@@ -569,7 +569,7 @@ pub(crate) fn infer_json_key_known<'a, 'py>(
             Ok(Cow::Owned(key_build.finish()))
         }
         ObType::List | ObType::Set | ObType::Frozenset | ObType::Dict | ObType::Generator => {
-            py_err!(PyTypeError; "`{}` not valid as object key", ob_type)
+            py_err!(PyTypeError; "`{ob_type}` not valid as object key")
         }
         ObType::Dataclass | ObType::PydanticSerializable => {
             // check that the instance is hashable

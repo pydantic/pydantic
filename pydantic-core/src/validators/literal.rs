@@ -77,7 +77,7 @@ impl<T: Debug> LiteralLookup<T> {
             } else if let Ok(either_str) = k.exact_str() {
                 let str = either_str
                     .as_cow()
-                    .map_err(|_| py_schema_error_type!("error extracting str {:?}", k))?;
+                    .map_err(|_| py_schema_error_type!("error extracting str {k:?}"))?;
                 expected_str.insert(str.to_string(), id);
                 expected_py_primitives.set_item(&k, id)?;
             } else if expected_py_dict.set_item(&k, id).is_err() {

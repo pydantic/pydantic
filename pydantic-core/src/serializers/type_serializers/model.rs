@@ -73,7 +73,7 @@ impl BuildSerializer for ModelFieldsBuilder {
                     field_info.get_as(intern!(py, "serialization_exclude_if"))?;
                 let schema = field_info.get_as_req(intern!(py, "schema"))?;
                 let serializer = CombinedSerializer::build(&schema, config, definitions)
-                    .map_err(|e| py_schema_error_type!("Field `{}`:\n  {}", key, e))?;
+                    .map_err(|e| py_schema_error_type!("Field `{key}`:\n  {e}"))?;
 
                 fields.insert(
                     key,

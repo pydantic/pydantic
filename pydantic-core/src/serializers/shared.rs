@@ -63,16 +63,16 @@ macro_rules! combined_serializer {
                     $(
                         <$b_serializer>::EXPECTED_TYPE => match <$b_serializer>::build(schema, config, definitions) {
                             Ok(serializer) => Ok(serializer),
-                            Err(err) => py_schema_err!("Error building `{}` serializer:\n  {}", lookup_type, err),
+                            Err(err) => py_schema_err!("Error building `{lookup_type}` serializer:\n  {err}"),
                         },
                     )*
                     $(
                         <$builder>::EXPECTED_TYPE => match <$builder>::build(schema, config, definitions) {
                             Ok(serializer) => Ok(serializer),
-                            Err(err) => py_schema_err!("Error building `{}` serializer:\n  {}", lookup_type, err),
+                            Err(err) => py_schema_err!("Error building `{lookup_type}` serializer:\n  {err}"),
                         },
                     )*
-                    _ => py_schema_err!("Unknown serialization schema type: `{}`", lookup_type),
+                    _ => py_schema_err!("Unknown serialization schema type: `{lookup_type}`"),
                 }
             }
         }
@@ -186,7 +186,7 @@ impl CombinedSerializer {
                         config,
                         definitions,
                     )
-                    .map_err(|err| py_schema_error_type!("Error building `function-plain` serializer:\n  {}", err));
+                    .map_err(|err| py_schema_error_type!("Error building `function-plain` serializer:\n  {err}"));
                 }
                 Some("function-wrap") => {
                     // `function-wrap` is also a special case, not included in `find_serializer` since it mean
@@ -197,7 +197,7 @@ impl CombinedSerializer {
                         config,
                         definitions,
                     )
-                    .map_err(|err| py_schema_error_type!("Error building `function-wrap` serializer:\n  {}", err));
+                    .map_err(|err| py_schema_error_type!("Error building `function-wrap` serializer:\n  {err}"));
                 }
                 Some(
                     // applies to lists tuples and dicts, does not override the main schema `type`
@@ -378,7 +378,7 @@ pub(crate) trait TypeSerializer: Send + Sync + Debug {
         expected_type: &'static str,
     ) -> PyResult<Cow<'a, str>> {
         match state.extra.ob_type_lookup.is_type(key, ObType::None) {
-            IsType::Exact | IsType::Subclass => py_err!(PyTypeError; "`{}` not valid as object key", expected_type),
+            IsType::Exact | IsType::Subclass => py_err!(PyTypeError; "`{expected_type}` not valid as object key"),
             IsType::False => {
                 state.warn_fallback_py(self.get_name(), key)?;
                 infer_json_key(key, state)

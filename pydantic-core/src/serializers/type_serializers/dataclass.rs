@@ -53,7 +53,7 @@ impl BuildSerializer for DataclassArgsBuilder {
                 } else {
                     let schema = field_info.get_as_req(intern!(py, "schema"))?;
                     let serializer = CombinedSerializer::build(&schema, config, definitions)
-                        .map_err(|e| py_schema_error_type!("Field `{}`:\n  {}", index, e))?;
+                        .map_err(|e| py_schema_error_type!("Field `{index}`:\n  {e}"))?;
 
                     let alias = field_info.get_as(intern!(py, "serialization_alias"))?;
                     let serialization_exclude_if: Option<Py<PyAny>> =
