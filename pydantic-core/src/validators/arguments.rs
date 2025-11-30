@@ -114,13 +114,13 @@ impl BuildValidator for ArgumentsValidator {
 
             let validator = match build_validator(&schema, config, definitions) {
                 Ok(v) => v,
-                Err(err) => return py_schema_err!("Parameter '{}':\n  {}", name, err),
+                Err(err) => return py_schema_err!("Parameter '{name}':\n  {err}"),
             };
 
             let has_default = match validator.as_ref() {
                 CombinedValidator::WithDefault(v) => {
                     if v.omit_on_error() {
-                        return py_schema_err!("Parameter '{}': omit_on_error cannot be used with arguments", name);
+                        return py_schema_err!("Parameter '{name}': omit_on_error cannot be used with arguments");
                     }
                     v.has_default()
                 }
@@ -128,7 +128,7 @@ impl BuildValidator for ArgumentsValidator {
             };
 
             if had_default_arg && !has_default && !had_keyword_only {
-                return py_schema_err!("Non-default argument '{}' follows default argument", name);
+                return py_schema_err!("Non-default argument '{name}' follows default argument");
             } else if has_default {
                 had_default_arg = true;
             }

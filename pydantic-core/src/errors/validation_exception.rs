@@ -341,10 +341,10 @@ impl ValidationError {
         include_context: bool,
         include_input: bool,
     ) -> PyResult<Bound<'py, PyString>> {
-        let config = SerializationConfig::from_args("iso8601", "iso8601", "utf8", "constants")?;
+        let config = SerializationConfig::default();
         let extra = Extra::new(
             py,
-            &SerMode::Json,
+            SerMode::Json,
             None,
             false,
             false,
@@ -574,17 +574,17 @@ where
     S::Error::custom(error.to_string())
 }
 
-struct ValidationErrorSerializer<'slf, 'a, 'py> {
+struct ValidationErrorSerializer<'slf, 'py> {
     py: Python<'py>,
     line_errors: &'py [PyLineError],
     url_prefix: Option<&'py str>,
     include_context: bool,
     include_input: bool,
-    state: &'slf mut SerializationState<'a, 'py>,
+    state: &'slf mut SerializationState<'py>,
     input_type: &'py InputType,
 }
 
-impl ValidationErrorSerializer<'_, '_, '_> {
+impl ValidationErrorSerializer<'_, '_> {
     fn serialize<S>(&mut self, serializer: S) -> Result<S::Ok, S::Error>
     where
         S: Serializer,
@@ -606,17 +606,17 @@ impl ValidationErrorSerializer<'_, '_, '_> {
     }
 }
 
-struct PyLineErrorSerializer<'slf, 'a, 'py> {
+struct PyLineErrorSerializer<'slf, 'py> {
     py: Python<'py>,
     line_error: &'py PyLineError,
     url_prefix: Option<&'py str>,
     include_context: bool,
     include_input: bool,
-    state: RefCell<&'slf mut SerializationState<'a, 'py>>,
+    state: RefCell<&'slf mut SerializationState<'py>>,
     input_type: &'py InputType,
 }
 
-impl Serialize for PyLineErrorSerializer<'_, '_, '_> {
+impl Serialize for PyLineErrorSerializer<'_, '_> {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
         S: Serializer,

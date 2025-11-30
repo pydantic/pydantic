@@ -53,7 +53,7 @@ impl BuildSerializer for DataclassArgsBuilder {
                 } else {
                     let schema = field_info.get_as_req(intern!(py, "schema"))?;
                     let serializer = CombinedSerializer::build(&schema, config, definitions)
-                        .map_err(|e| py_schema_error_type!("Field `{}`:\n  {}", index, e))?;
+                        .map_err(|e| py_schema_error_type!("Field `{index}`:\n  {e}"))?;
 
                     let alias = field_info.get_as(intern!(py, "serialization_alias"))?;
                     let serialization_exclude_if: Option<Py<PyAny>> =
@@ -121,7 +121,7 @@ impl BuildSerializer for DataclassSerializer {
 }
 
 impl DataclassSerializer {
-    fn allow_value(&self, value: &Bound<'_, PyAny>, state: &SerializationState<'_, '_>) -> PyResult<bool> {
+    fn allow_value(&self, value: &Bound<'_, PyAny>, state: &SerializationState<'_>) -> PyResult<bool> {
         match state.check {
             SerCheck::Strict => Ok(value.get_type().is(self.class.bind(value.py()))),
             SerCheck::Lax => value.is_instance(self.class.bind(value.py())),
@@ -144,11 +144,7 @@ impl DataclassSerializer {
 impl_py_gc_traverse!(DataclassSerializer { class, serializer });
 
 impl TypeSerializer for DataclassSerializer {
-    fn to_python<'py>(
-        &self,
-        value: &Bound<'py, PyAny>,
-        state: &mut SerializationState<'_, 'py>,
-    ) -> PyResult<Py<PyAny>> {
+    fn to_python<'py>(&self, value: &Bound<'py, PyAny>, state: &mut SerializationState<'py>) -> PyResult<Py<PyAny>> {
         if self.allow_value(value, state)? {
             let model = value;
             let state = &mut state.scoped_set(|s| &mut s.model, Some(value.clone()));
@@ -172,7 +168,7 @@ impl TypeSerializer for DataclassSerializer {
     fn json_key<'a, 'py>(
         &self,
         key: &'a Bound<'py, PyAny>,
-        state: &mut SerializationState<'_, 'py>,
+        state: &mut SerializationState<'py>,
     ) -> PyResult<Cow<'a, str>> {
         if self.allow_value(key, state)? {
             infer_json_key_known(ObType::Dataclass, key, state)
@@ -186,7 +182,7 @@ impl TypeSerializer for DataclassSerializer {
         &self,
         value: &Bound<'py, PyAny>,
         serializer: S,
-        state: &mut SerializationState<'_, 'py>,
+        state: &mut SerializationState<'py>,
     ) -> Result<S::Ok, S::Error> {
         if self.allow_value(value, state).map_err(py_err_se_err)? {
             let state = &mut state.scoped_set(|s| &mut s.model, Some(value.clone()));

@@ -87,7 +87,7 @@ impl BuildValidator for ModelFieldsValidator {
 
             let validator = match build_validator(&schema, config, definitions) {
                 Ok(v) => v,
-                Err(err) => return py_schema_err!("Field \"{}\":\n  {}", field_name, err),
+                Err(err) => return py_schema_err!("Field \"{field_name}\":\n  {err}"),
             };
 
             let validation_alias = field_info.get_item(intern!(py, "validation_alias"))?;

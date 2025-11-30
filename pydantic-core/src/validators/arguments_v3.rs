@@ -44,7 +44,7 @@ impl FromStr for ParameterMode {
             "keyword_only" => Ok(Self::KeywordOnly),
             "var_kwargs_uniform" => Ok(Self::VarKwargsUniform),
             "var_kwargs_unpacked_typed_dict" => Ok(Self::VarKwargsUnpackedTypedDict),
-            s => py_schema_err!("Invalid var_kwargs mode: `{}`", s),
+            s => py_schema_err!("Invalid var_kwargs mode: `{s}`"),
         }
     }
 }
@@ -103,7 +103,7 @@ impl BuildValidator for ArgumentsV3Validator {
             let py_name: Bound<PyString> = arg.get_as_req(intern!(py, "name"))?;
             let name = py_name.to_string();
             if !names.insert(name.clone()) {
-                return py_schema_err!("Duplicate parameter '{}'", name);
+                return py_schema_err!("Duplicate parameter '{name}'");
             }
 
             let py_mode = arg.get_as::<Bound<'_, PyString>>(intern!(py, "mode"))?;
@@ -119,28 +119,25 @@ impl BuildValidator for ArgumentsV3Validator {
                 ParameterMode::PositionalOnly => {
                     if had_positional_or_keyword || had_var_args || had_keyword_only || had_var_kwargs {
                         return py_schema_err!(
-                            "Positional only parameter '{}' cannot follow other parameter kinds",
-                            name
+                            "Positional only parameter '{name}' cannot follow other parameter kinds"
                         );
                     }
                 }
                 ParameterMode::PositionalOrKeyword => {
                     if had_var_args || had_keyword_only || had_var_kwargs {
                         return py_schema_err!(
-                            "Positional or keyword parameter '{}' cannot follow variadic or keyword only parameters",
-                            name
+                            "Positional or keyword parameter '{name}' cannot follow variadic or keyword only parameters"
                         );
                     }
                     had_positional_or_keyword = true;
                 }
                 ParameterMode::VarArgs => {
                     if had_var_args {
-                        return py_schema_err!("Duplicate variadic positional parameter '{}'", name);
+                        return py_schema_err!("Duplicate variadic positional parameter '{name}'");
                     }
                     if had_keyword_only || had_var_kwargs {
                         return py_schema_err!(
-                            "Variadic positional parameter '{}' cannot follow variadic or keyword only parameters",
-                            name
+                            "Variadic positional parameter '{name}' cannot follow variadic or keyword only parameters"
                         );
                     }
                     had_var_args = true;
@@ -148,15 +145,14 @@ impl BuildValidator for ArgumentsV3Validator {
                 ParameterMode::KeywordOnly => {
                     if had_var_kwargs {
                         return py_schema_err!(
-                            "Keyword only parameter '{}' cannot follow variadic keyword only parameter",
-                            name
+                            "Keyword only parameter '{name}' cannot follow variadic keyword only parameter"
                         );
                     }
                     had_keyword_only = true;
                 }
                 ParameterMode::VarKwargsUniform | ParameterMode::VarKwargsUnpackedTypedDict => {
                     if had_var_kwargs {
-                        return py_schema_err!("Duplicate variadic keyword parameter '{}'", name);
+                        return py_schema_err!("Duplicate variadic keyword parameter '{name}'");
                     }
                     had_var_kwargs = true;
                 }
@@ -166,13 +162,13 @@ impl BuildValidator for ArgumentsV3Validator {
 
             let validator = match build_validator(&schema, config, definitions) {
                 Ok(v) => v,
-                Err(err) => return py_schema_err!("Parameter '{}':\n  {}", name, err),
+                Err(err) => return py_schema_err!("Parameter '{name}':\n  {err}"),
             };
 
             let has_default = match validator.as_ref() {
                 CombinedValidator::WithDefault(v) => {
                     if v.omit_on_error() {
-                        return py_schema_err!("Parameter '{}': omit_on_error cannot be used with arguments", name);
+                        return py_schema_err!("Parameter '{name}': omit_on_error cannot be used with arguments");
                     }
                     v.has_default()
                 }
@@ -180,7 +176,7 @@ impl BuildValidator for ArgumentsV3Validator {
             };
 
             if had_default_arg && !has_default && !had_keyword_only {
-                return py_schema_err!("Required parameter '{}' follows parameter with default", name);
+                return py_schema_err!("Required parameter '{name}' follows parameter with default");
             } else if has_default {
                 had_default_arg = true;
             }

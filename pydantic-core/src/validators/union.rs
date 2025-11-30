@@ -34,7 +34,7 @@ impl FromStr for UnionMode {
         match s {
             "smart" => Ok(Self::Smart),
             "left_to_right" => Ok(Self::LeftToRight),
-            s => py_schema_err!("Invalid union mode: `{}`, expected `smart` or `left_to_right`", s),
+            s => py_schema_err!("Invalid union mode: `{s}`, expected `smart` or `left_to_right`"),
         }
     }
 }

@@ -62,11 +62,7 @@ impl BuildSerializer for TupleSerializer {
 impl_py_gc_traverse!(TupleSerializer { serializers });
 
 impl TypeSerializer for TupleSerializer {
-    fn to_python<'py>(
-        &self,
-        value: &Bound<'py, PyAny>,
-        state: &mut SerializationState<'_, 'py>,
-    ) -> PyResult<Py<PyAny>> {
+    fn to_python<'py>(&self, value: &Bound<'py, PyAny>, state: &mut SerializationState<'py>) -> PyResult<Py<PyAny>> {
         match value.cast::<PyTuple>() {
             Ok(py_tuple) => {
                 let py = value.py();
@@ -96,7 +92,7 @@ impl TypeSerializer for TupleSerializer {
     fn json_key<'a, 'py>(
         &self,
         key: &'a Bound<'py, PyAny>,
-        state: &mut SerializationState<'_, 'py>,
+        state: &mut SerializationState<'py>,
     ) -> PyResult<Cow<'a, str>> {
         match key.cast::<PyTuple>() {
             Ok(py_tuple) => {
@@ -123,7 +119,7 @@ impl TypeSerializer for TupleSerializer {
         &self,
         value: &Bound<'py, PyAny>,
         serializer: S,
-        state: &mut SerializationState<'_, 'py>,
+        state: &mut SerializationState<'py>,
     ) -> Result<S::Ok, S::Error> {
         match value.cast::<PyTuple>() {
             Ok(py_tuple) => {
@@ -155,10 +151,10 @@ impl TypeSerializer for TupleSerializer {
     }
 }
 
-struct TupleSerializerEntry<'a, 'b, 'py> {
+struct TupleSerializerEntry<'a, 'py> {
     item: Bound<'py, PyAny>,
     serializer: &'a CombinedSerializer,
-    state: &'a mut SerializationState<'b, 'py>,
+    state: &'a mut SerializationState<'py>,
 }
 
 impl TupleSerializer {
@@ -171,8 +167,8 @@ impl TupleSerializer {
     fn for_each_tuple_item_and_serializer<'py, E>(
         &self,
         tuple: &Bound<'py, PyTuple>,
-        state: &mut SerializationState<'_, 'py>,
-        mut f: impl for<'a, 'b> FnMut(TupleSerializerEntry<'a, 'b, 'py>) -> Result<(), E>,
+        state: &mut SerializationState<'py>,
+        mut f: impl for<'a> FnMut(TupleSerializerEntry<'a, 'py>) -> Result<(), E>,
     ) -> PyResult<Result<(), E>> {
         let n_items = tuple.len();
         let mut py_tuple_iter = tuple.iter();
