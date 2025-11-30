@@ -99,7 +99,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#v2123-2025-10-17" class="md-skip">
+        <a href="#v2125-2025-11-26" class="md-skip">
           Skip to content
         </a>
       
@@ -824,6 +824,28 @@ to help you monitor and understand your
       Page contents
     </label>
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#v2125-2025-11-26" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        v2.12.5 (2025-11-26)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#v2124-2025-11-05" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        v2.12.4 (2025-11-05)
+      
+    </span>
+  </a>
+  
+</li>
       
         <li class="md-nav__item">
   <a href="#v2123-2025-10-17" class="md-nav__link">
@@ -8699,6 +8721,28 @@ to help you monitor and understand your
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
+  <a href="#v2125-2025-11-26" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        v2.12.5 (2025-11-26)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#v2124-2025-11-05" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        v2.12.4 (2025-11-05)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#v2123-2025-10-17" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -13642,6 +13686,51 @@ to help you monitor and understand your
 <!-- markdownlint-disable descriptive-link-text -->
 <!-- markdownlint-disable-next-line first-line-heading -->
 
+<h2 id="v2125-2025-11-26">v2.12.5 (2025-11-26)<a class="headerlink" href="#v2125-2025-11-26" title="Permanent link">&para;</a></h2>
+<p><a href="https://github.com/pydantic/pydantic/releases/tag/v2.12.5"><span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 .297c-6.63 0-12 5.373-12 12 0 5.303 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61C4.422 18.07 3.633 17.7 3.633 17.7c-1.087-.744.084-.729.084-.729 1.205.084 1.838 1.236 1.838 1.236 1.07 1.835 2.809 1.305 3.495.998.108-.776.417-1.305.76-1.605-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.465-2.38 1.235-3.22-.135-.303-.54-1.523.105-3.176 0 0 1.005-.322 3.3 1.23.96-.267 1.98-.399 3-.405 1.02.006 2.04.138 3 .405 2.28-1.552 3.285-1.23 3.285-1.23.645 1.653.24 2.873.12 3.176.765.84 1.23 1.91 1.23 3.22 0 4.61-2.805 5.625-5.475 5.92.42.36.81 1.096.81 2.22 0 1.606-.015 2.896-.015 3.286 0 .315.21.69.825.57C20.565 22.092 24 17.592 24 12.297c0-6.627-5.373-12-12-12"/></svg></span> GitHub release</a></p>
+<p>This is the fifth 2.12 patch release, addressing an issue with the <code>MISSING</code> sentinel and providing several documentation improvements.</p>
+<p>The next 2.13 minor release will be published in a couple weeks, and will include a new <em>polymorphic serialization</em> feature addressing
+the remaining unexpected changes to the <em>serialize as any</em> behavior.</p>
+<ul>
+<li>Fix pickle error when using <code>model_construct()</code> on a model with <code>MISSING</code> as a default value by <a href="https://github.com/ornariece">@ornariece</a> in <a href="https://github.com/pydantic/pydantic/pull/12522">#12522</a>.</li>
+<li>Several updates to the documentation by <a href="https://github.com/Viicos">@Viicos</a>.</li>
+</ul>
+<h2 id="v2124-2025-11-05">v2.12.4 (2025-11-05)<a class="headerlink" href="#v2124-2025-11-05" title="Permanent link">&para;</a></h2>
+<p><a href="https://github.com/pydantic/pydantic/releases/tag/v2.12.4"><span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 .297c-6.63 0-12 5.373-12 12 0 5.303 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61C4.422 18.07 3.633 17.7 3.633 17.7c-1.087-.744.084-.729.084-.729 1.205.084 1.838 1.236 1.838 1.236 1.07 1.835 2.809 1.305 3.495.998.108-.776.417-1.305.76-1.605-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.465-2.38 1.235-3.22-.135-.303-.54-1.523.105-3.176 0 0 1.005-.322 3.3 1.23.96-.267 1.98-.399 3-.405 1.02.006 2.04.138 3 .405 2.28-1.552 3.285-1.23 3.285-1.23.645 1.653.24 2.873.12 3.176.765.84 1.23 1.91 1.23 3.22 0 4.61-2.805 5.625-5.475 5.92.42.36.81 1.096.81 2.22 0 1.606-.015 2.896-.015 3.286 0 .315.21.69.825.57C20.565 22.092 24 17.592 24 12.297c0-6.627-5.373-12-12-12"/></svg></span> GitHub release</a></p>
+<p>This is the fourth 2.12 patch release, fixing more regressions, and reverting a change in the <code>build()</code> method
+of the <a href="https://docs.pydantic.dev/latest/api/networks/"><code>AnyUrl</code> and Dsn types</a>.</p>
+<p>This patch release also fixes an issue with the serialization of IP address types, when <code>serialize_as_any</code> is used. The next patch release
+will try to address the remaining issues with <em>serialize as any</em> behavior by introducing a new <em>polymorphic serialization</em> feature, that
+should be used in most cases in place of <em>serialize as any</em>.</p>
+<ul>
+<li>
+<p>Fix issue with forward references in parent <code>TypedDict</code> classes by <a href="https://github.com/Viicos">@Viicos</a> in <a href="https://github.com/pydantic/pydantic/pull/12427">#12427</a>.</p>
+<p>This issue is only relevant on Python 3.14 and greater.</p>
+</li>
+<li>
+<p>Exclude fields with <code>exclude_if</code> from JSON Schema required fields by <a href="https://github.com/Viicos">@Viicos</a> in <a href="https://github.com/pydantic/pydantic/pull/12430">#12430</a></p>
+</li>
+<li>
+<p>Revert URL percent-encoding of credentials in the <code>build()</code> method
+  of the <a href="https://docs.pydantic.dev/latest/api/networks/"><code>AnyUrl</code> and Dsn types</a> by <a href="https://github.com/davidhewitt">@davidhewitt</a> in
+  <a href="https://github.com/pydantic/pydantic-core/pull/1833">pydantic-core#1833</a>.</p>
+<p>This was initially considered as a bugfix, but caused regressions and as such was fully reverted. The next release will include
+an opt-in option to percent-encode components of the URL.</p>
+</li>
+<li>
+<p>Add type inference for IP address types by <a href="https://github.com/davidhewitt">@davidhewitt</a> in <a href="https://github.com/pydantic/pydantic-core/pull/1868">pydantic-core#1868</a>.</p>
+<p>The 2.12 changes to the <code>serialize_as_any</code> behavior made it so that IP address types could not properly serialize to JSON.</p>
+</li>
+<li>
+<p>Avoid getting default values from defaultdict by <a href="https://github.com/davidhewitt">@davidhewitt</a> in <a href="https://github.com/pydantic/pydantic-core/pull/1853">pydantic-core#1853</a>.</p>
+<p>This fixes a subtle regression in the validation behavior of the <a href="https://docs.python.org/3/library/collections.html#collections.defaultdict"><code>collections.defaultdict</code></a>
+type.</p>
+</li>
+<li>
+<p>Fix issue with field serializers on nested typed dictionaries by <a href="https://github.com/davidhewitt">@davidhewitt</a> in <a href="https://github.com/pydantic/pydantic-core/pull/1879">pydantic-core#1879</a>.</p>
+</li>
+<li>Add more <code>pydantic-core</code> builds for the three-threaded version of Python 3.14 by <a href="https://github.com/davidhewitt">@davidhewitt</a> in <a href="https://github.com/pydantic/pydantic-core/pull/1864">pydantic-core#1864</a>.</li>
+</ul>
 <h2 id="v2123-2025-10-17">v2.12.3 (2025-10-17)<a class="headerlink" href="#v2123-2025-10-17" title="Permanent link">&para;</a></h2>
 <p><a href="https://github.com/pydantic/pydantic/releases/tag/v2.12.3"><span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 .297c-6.63 0-12 5.373-12 12 0 5.303 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61C4.422 18.07 3.633 17.7 3.633 17.7c-1.087-.744.084-.729.084-.729 1.205.084 1.838 1.236 1.838 1.236 1.07 1.835 2.809 1.305 3.495.998.108-.776.417-1.305.76-1.605-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.465-2.38 1.235-3.22-.135-.303-.54-1.523.105-3.176 0 0 1.005-.322 3.3 1.23.96-.267 1.98-.399 3-.405 1.02.006 2.04.138 3 .405 2.28-1.552 3.285-1.23 3.285-1.23.645 1.653.24 2.873.12 3.176.765.84 1.23 1.91 1.23 3.22 0 4.61-2.805 5.625-5.475 5.92.42.36.81 1.096.81 2.22 0 1.606-.015 2.896-.015 3.286 0 .315.21.69.825.57C20.565 22.092 24 17.592 24 12.297c0-6.627-5.373-12-12-12"/></svg></span> GitHub release</a></p>
 <h3 id="whats-changed">What's Changed<a class="headerlink" href="#whats-changed" title="Permanent link">&para;</a></h3>
