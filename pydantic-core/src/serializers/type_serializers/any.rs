@@ -37,18 +37,14 @@ impl BuildSerializer for AnySerializer {
 impl_py_gc_traverse!(AnySerializer {});
 
 impl TypeSerializer for AnySerializer {
-    fn to_python<'py>(
-        &self,
-        value: &Bound<'py, PyAny>,
-        state: &mut SerializationState<'_, 'py>,
-    ) -> PyResult<Py<PyAny>> {
+    fn to_python<'py>(&self, value: &Bound<'py, PyAny>, state: &mut SerializationState<'py>) -> PyResult<Py<PyAny>> {
         infer_to_python(value, state)
     }
 
     fn json_key<'a, 'py>(
         &self,
         key: &'a Bound<'py, PyAny>,
-        state: &mut SerializationState<'_, 'py>,
+        state: &mut SerializationState<'py>,
     ) -> PyResult<Cow<'a, str>> {
         infer_json_key(key, state)
     }
@@ -57,7 +53,7 @@ impl TypeSerializer for AnySerializer {
         &self,
         value: &Bound<'py, PyAny>,
         serializer: S,
-        state: &mut SerializationState<'_, 'py>,
+        state: &mut SerializationState<'py>,
     ) -> Result<S::Ok, S::Error> {
         infer_serialize(value, serializer, state)
     }

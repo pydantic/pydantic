@@ -51,11 +51,7 @@ impl BuildSerializer for GeneratorSerializer {
 impl_py_gc_traverse!(GeneratorSerializer { item_serializer });
 
 impl TypeSerializer for GeneratorSerializer {
-    fn to_python<'py>(
-        &self,
-        value: &Bound<'py, PyAny>,
-        state: &mut SerializationState<'_, 'py>,
-    ) -> PyResult<Py<PyAny>> {
+    fn to_python<'py>(&self, value: &Bound<'py, PyAny>, state: &mut SerializationState<'py>) -> PyResult<Py<PyAny>> {
         match value.cast::<PyIterator>() {
             Ok(py_iter) => {
                 let py = value.py();
@@ -94,7 +90,7 @@ impl TypeSerializer for GeneratorSerializer {
     fn json_key<'a, 'py>(
         &self,
         key: &'a Bound<'py, PyAny>,
-        state: &mut SerializationState<'_, 'py>,
+        state: &mut SerializationState<'py>,
     ) -> PyResult<Cow<'a, str>> {
         self.invalid_as_json_key(key, state, Self::EXPECTED_TYPE)
     }
@@ -103,7 +99,7 @@ impl TypeSerializer for GeneratorSerializer {
         &self,
         value: &Bound<'py, PyAny>,
         serializer: S,
-        state: &mut SerializationState<'_, 'py>,
+        state: &mut SerializationState<'py>,
     ) -> Result<S::Ok, S::Error> {
         match value.cast::<PyIterator>() {
             Ok(py_iter) => {
@@ -156,7 +152,7 @@ impl SerializationIterator {
         py_iter: &Bound<'_, PyIterator>,
         item_serializer: &Arc<CombinedSerializer>,
         filter: SchemaFilter<usize>,
-        state: &mut SerializationState<'_, '_>,
+        state: &mut SerializationState<'_>,
     ) -> Self {
         Self {
             iterator: py_iter.clone().into(),

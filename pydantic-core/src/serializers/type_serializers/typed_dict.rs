@@ -103,11 +103,7 @@ impl BuildSerializer for TypedDictSerializer {
 }
 
 impl TypeSerializer for TypedDictSerializer {
-    fn to_python<'py>(
-        &self,
-        value: &Bound<'py, PyAny>,
-        state: &mut SerializationState<'_, 'py>,
-    ) -> PyResult<Py<PyAny>> {
+    fn to_python<'py>(&self, value: &Bound<'py, PyAny>, state: &mut SerializationState<'py>) -> PyResult<Py<PyAny>> {
         self.serializer
             .to_python(value, &mut state.scoped_set(|s| &mut s.model, Some(value.clone())))
     }
@@ -115,7 +111,7 @@ impl TypeSerializer for TypedDictSerializer {
     fn json_key<'a, 'py>(
         &self,
         key: &'a Bound<'py, PyAny>,
-        state: &mut SerializationState<'_, 'py>,
+        state: &mut SerializationState<'py>,
     ) -> PyResult<Cow<'a, str>> {
         self.invalid_as_json_key(key, state, "typed-dict")
     }
@@ -124,7 +120,7 @@ impl TypeSerializer for TypedDictSerializer {
         &self,
         value: &Bound<'py, PyAny>,
         serializer: S,
-        state: &mut SerializationState<'_, 'py>,
+        state: &mut SerializationState<'py>,
     ) -> Result<S::Ok, S::Error> {
         self.serializer.serde_serialize(
             value,

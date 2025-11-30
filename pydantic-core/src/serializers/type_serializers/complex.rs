@@ -29,11 +29,7 @@ impl BuildSerializer for ComplexSerializer {
 impl_py_gc_traverse!(ComplexSerializer {});
 
 impl TypeSerializer for ComplexSerializer {
-    fn to_python<'py>(
-        &self,
-        value: &Bound<'py, PyAny>,
-        state: &mut SerializationState<'_, 'py>,
-    ) -> PyResult<Py<PyAny>> {
+    fn to_python<'py>(&self, value: &Bound<'py, PyAny>, state: &mut SerializationState<'py>) -> PyResult<Py<PyAny>> {
         let py = value.py();
         match value.cast::<PyComplex>() {
             Ok(py_complex) => match state.extra.mode {
@@ -50,7 +46,7 @@ impl TypeSerializer for ComplexSerializer {
     fn json_key<'a, 'py>(
         &self,
         key: &'a Bound<'py, PyAny>,
-        state: &mut SerializationState<'_, 'py>,
+        state: &mut SerializationState<'py>,
     ) -> PyResult<Cow<'a, str>> {
         self.invalid_as_json_key(key, state, "complex")
     }
@@ -59,7 +55,7 @@ impl TypeSerializer for ComplexSerializer {
         &self,
         value: &Bound<'py, PyAny>,
         serializer: S,
-        state: &mut SerializationState<'_, 'py>,
+        state: &mut SerializationState<'py>,
     ) -> Result<S::Ok, S::Error> {
         match value.cast::<PyComplex>() {
             Ok(py_complex) => {
