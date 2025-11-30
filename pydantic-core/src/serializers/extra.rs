@@ -106,7 +106,10 @@ impl<'py> SerializationKwargs<'py> {
                         return Err(PyTypeError::new_err(format!("Unexpected keyword argument '{key}'")));
                     }
                     Err(e) => {
-                        e.add_note(py, format!("error occurred for keyword argument '{key}'"))?;
+                        #[cfg(Py_3_11)]
+                        {
+                            e.add_note(py, format!("error occurred for keyword argument '{key}'"))?;
+                        }
                         return Err(e);
                     }
                 }
@@ -180,7 +183,10 @@ impl<'py> ExtendedSerializationKwargs<'py> {
                         return Err(PyTypeError::new_err(format!("Unexpected keyword argument '{key}'")));
                     }
                     Err(e) => {
-                        e.add_note(py, format!("error occurred for keyword argument '{key}'"))?;
+                        #[cfg(Py_3_11)]
+                        {
+                            e.add_note(py, format!("error occurred for keyword argument '{key}'"))?;
+                        }
                         return Err(e);
                     }
                 }
