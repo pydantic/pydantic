@@ -17,6 +17,7 @@ use crate::input::{
     Arguments, BorrowInput, Input, KeywordArgs, PositionalArgs, ValidatedDict, ValidatedTuple, ValidationMatch,
 };
 use crate::lookup_key::LookupKeyCollection;
+use crate::lookup_key::LookupType;
 use crate::tools::SchemaDict;
 
 use super::validation_state::ValidationState;
@@ -238,6 +239,7 @@ impl ArgumentsV3Validator {
 
         let validate_by_alias = state.validate_by_alias_or(self.validate_by_alias);
         let validate_by_name = state.validate_by_name_or(self.validate_by_name);
+        let lookup_type = LookupType::from_bools(validate_by_alias, validate_by_name)?;
         let extra_behavior = state.extra_behavior_or(self.extra);
 
         // Keep track of used keys for extra behavior:
@@ -249,12 +251,13 @@ impl ArgumentsV3Validator {
             };
 
         for parameter in &self.parameters {
-            let lookup_key = parameter
-                .lookup_key_collection
-                .select(validate_by_alias, validate_by_name)?;
-
             // A value is present in the mapping:
-            if let Some((lookup_path, dict_value)) = mapping.get_item(lookup_key)? {
+            if let Some((lookup_path, dict_value)) = parameter
+                .lookup_key_collection
+                .lookup_keys(lookup_type)
+                .find_map(|lookup_key| mapping.get_item(lookup_key).transpose())
+                .transpose()?
+            {
                 if let Some(ref mut used_keys) = used_keys {
                     // key is "used" whether or not validation passes, since we want to skip this key in
                     // extra logic either way
@@ -405,6 +408,7 @@ impl ArgumentsV3Validator {
                                 _ => unreachable!(),
                             };
 
+                            let lookup_key = parameter.lookup_key_collection.first_key_matching(lookup_type);
                             errors.push(lookup_key.error(
                                 error_type,
                                 original_input,
@@ -523,14 +527,11 @@ impl ArgumentsV3Validator {
 
         let validate_by_alias = state.validate_by_alias_or(self.validate_by_alias);
         let validate_by_name = state.validate_by_name_or(self.validate_by_name);
+        let lookup_type = LookupType::from_bools(validate_by_alias, validate_by_name)?;
         let extra_behavior = state.extra_behavior_or(self.extra);
 
         // go through non variadic parameters, getting the value from args or kwargs and validating it
         for (index, parameter) in self.parameters.iter().filter(|p| !p.is_variadic()).enumerate() {
-            let lookup_key = parameter
-                .lookup_key_collection
-                .select(validate_by_alias, validate_by_name)?;
-
             let mut pos_value = None;
             if let Some(args) = args_kwargs.args()
                 && matches!(
@@ -547,7 +548,11 @@ impl ArgumentsV3Validator {
                     parameter.mode,
                     ParameterMode::PositionalOrKeyword | ParameterMode::KeywordOnly
                 )
-                && let Some((lookup_path, value)) = kwargs.get_item(lookup_key)?
+                && let Some((lookup_path, value)) = parameter
+                    .lookup_key_collection
+                    .lookup_keys(lookup_type)
+                    .find_map(|lookup_key| kwargs.get_item(lookup_key).transpose())
+                    .transpose()?
             {
                 used_kwargs.insert(lookup_path.first_key());
                 kw_value = Some((lookup_path, value));
@@ -594,32 +599,23 @@ impl ArgumentsV3Validator {
                             output_kwargs.set_item(PyString::new(py, parameter.name.as_str()).unbind(), value)?;
                         }
                     } else {
-                        // Required and no default, error:
-                        match parameter.mode {
-                            ParameterMode::PositionalOnly => {
-                                errors.push(ValLineError::new_with_loc(
-                                    ErrorTypeDefaults::MissingPositionalOnlyArgument,
-                                    original_input,
-                                    index,
-                                ));
-                            }
-                            ParameterMode::PositionalOrKeyword => {
-                                errors.push(lookup_key.error(
-                                    ErrorTypeDefaults::MissingArgument,
-                                    original_input,
-                                    self.loc_by_alias,
-                                    &parameter.name,
-                                ));
-                            }
-                            ParameterMode::KeywordOnly => {
-                                errors.push(lookup_key.error(
-                                    ErrorTypeDefaults::MissingKeywordOnlyArgument,
-                                    original_input,
-                                    self.loc_by_alias,
-                                    &parameter.name,
-                                ));
-                            }
+                        let error_type = match parameter.mode {
+                            ParameterMode::PositionalOnly => ErrorTypeDefaults::MissingPositionalOnlyArgument,
+                            ParameterMode::PositionalOrKeyword => ErrorTypeDefaults::MissingArgument,
+                            ParameterMode::KeywordOnly => ErrorTypeDefaults::MissingKeywordOnlyArgument,
                             _ => unreachable!(),
+                        };
+
+                        if parameter.mode == ParameterMode::PositionalOnly {
+                            errors.push(ValLineError::new_with_loc(error_type, original_input, index));
+                        } else {
+                            let lookup_key = parameter.lookup_key_collection.first_key_matching(lookup_type);
+                            errors.push(lookup_key.error(
+                                error_type,
+                                original_input,
+                                self.loc_by_alias,
+                                &parameter.name,
+                            ));
                         }
                     }
                 }

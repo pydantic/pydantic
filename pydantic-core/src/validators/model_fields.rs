@@ -15,6 +15,7 @@ use crate::errors::{ErrorType, ErrorTypeDefaults, ValError, ValLineError, ValRes
 use crate::input::ConsumeIterator;
 use crate::input::{BorrowInput, Input, ValidatedDict, ValidationMatch};
 use crate::lookup_key::LookupKeyCollection;
+use crate::lookup_key::LookupType;
 use crate::tools::SchemaDict;
 
 use super::{BuildValidator, CombinedValidator, DefinitionsBuilder, ValidationState, Validator, build_validator};
@@ -167,6 +168,7 @@ impl Validator for ModelFieldsValidator {
 
         let validate_by_alias = state.validate_by_alias_or(self.validate_by_alias);
         let validate_by_name = state.validate_by_name_or(self.validate_by_name);
+        let lookup_type = LookupType::from_bools(validate_by_alias, validate_by_name)?;
 
         // we only care about which keys have been used if we're iterating over the object for extra after
         // the first pass
@@ -182,10 +184,12 @@ impl Validator for ModelFieldsValidator {
             let state = &mut state.scoped_set(|state| &mut state.has_field_error, false);
 
             for field in &self.fields {
-                let lookup_key = field
+                let op_key_value = match field
                     .lookup_key_collection
-                    .select(validate_by_alias, validate_by_name)?;
-                let op_key_value = match dict.get_item(lookup_key) {
+                    .lookup_keys(lookup_type)
+                    .find_map(|lookup_key| dict.get_item(lookup_key).transpose())
+                    .transpose()
+                {
                     Ok(v) => v,
                     Err(ValError::LineErrors(line_errors)) => {
                         for err in line_errors {
@@ -233,6 +237,7 @@ impl Validator for ModelFieldsValidator {
                         model_dict.set_item(&field.name_py, value)?;
                     }
                     Ok(None) => {
+                        let lookup_key = field.lookup_key_collection.first_key_matching(lookup_type);
                         // This means there was no default value
                         errors.push(lookup_key.error(
                             ErrorTypeDefaults::Missing,

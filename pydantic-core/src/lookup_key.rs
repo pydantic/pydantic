@@ -2,7 +2,7 @@ use std::convert::Infallible;
 use std::fmt;
 
 use pyo3::IntoPyObjectExt;
-use pyo3::exceptions::PyTypeError;
+use pyo3::exceptions::{PyTypeError, PyValueError};
 use pyo3::prelude::*;
 use pyo3::pybacked::PyBackedStr;
 use pyo3::types::{PyDict, PyList, PyMapping, PyString};
@@ -19,8 +19,6 @@ use crate::tools::{mapping_get, py_err};
 pub(crate) enum LookupKey {
     /// simply look up a key in a dict, equivalent to `d.get(key)`
     Simple(LookupPath),
-    /// look up a key by either string, equivalent to `d.get(choice1, d.get(choice2))`
-    Choice { path1: LookupPath, path2: LookupPath },
     /// look up keys by one or more "paths" a path might be `['foo', 'bar']` to get `d.?foo.?bar`
     /// ints are also supported to index arrays/lists/tuples and dicts with int keys
     /// we reuse Location as the enum is the same, and the meaning is the same
@@ -31,12 +29,6 @@ impl fmt::Display for LookupKey {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             Self::Simple(path) => write!(f, "'{key}'", key = path.first_key()),
-            Self::Choice { path1, path2 } => write!(
-                f,
-                "'{key1}' | '{key2}'",
-                key1 = path1.first_key(),
-                key2 = path2.first_key()
-            ),
             Self::PathChoices(paths) => write!(
                 f,
                 "{}",
@@ -47,22 +39,16 @@ impl fmt::Display for LookupKey {
 }
 
 impl LookupKey {
-    pub fn from_py(value: &Bound<'_, PyAny>, alt_alias: Option<&Bound<'_, PyString>>) -> PyResult<Self> {
+    pub fn from_py(value: &Bound<'_, PyAny>) -> PyResult<Self> {
         if let Ok(alias_py) = value.cast::<PyString>() {
             let path1 = LookupPath::from_str(alias_py.clone())?;
-            match alt_alias {
-                Some(alt_alias) => Ok(Self::Choice {
-                    path1,
-                    path2: LookupPath::from_str(alt_alias.clone())?,
-                }),
-                None => Ok(Self::Simple(path1)),
-            }
+            Ok(Self::Simple(path1))
         } else {
             let list = value.cast::<PyList>()?;
             let Ok(first) = list.get_item(0) else {
                 return py_schema_err!("Lookup paths should have at least one element");
             };
-            let mut locs: Vec<LookupPath> = if first.cast::<PyString>().is_ok() {
+            let locs: Vec<LookupPath> = if first.cast::<PyString>().is_ok() {
                 // list of strings rather than list of lists
                 vec![LookupPath::from_list(list)?]
             } else {
@@ -70,10 +56,6 @@ impl LookupKey {
                     .map(|elem| LookupPath::from_list(&elem))
                     .collect::<PyResult<_>>()?
             };
-
-            if let Some(alt_alias) = alt_alias {
-                locs.push(LookupPath::from_str(alt_alias.clone())?);
-            }
             Ok(Self::PathChoices(locs))
         }
     }
@@ -151,27 +133,6 @@ impl LookupKey {
                 }
                 None => Ok(None),
             },
-            Self::Choice { path1, path2 } => match dict
-                .iter()
-                .rev()
-                .find_map(|(k, v)| (k == path1.first_key()).then_some(v))
-            {
-                Some(value) => {
-                    debug_assert!(path1.rest.is_empty());
-                    Ok(Some((path1, value)))
-                }
-                None => match dict
-                    .iter()
-                    .rev()
-                    .find_map(|(k, v)| (k == path2.first_key()).then_some(v))
-                {
-                    Some(value) => {
-                        debug_assert!(path2.rest.is_empty());
-                        Ok(Some((path2, value)))
-                    }
-                    None => Ok(None),
-                },
-            },
             Self::PathChoices(path_choices) => {
                 for path in path_choices {
                     // first step is different from the rest as we already know dict is JsonObject
@@ -215,19 +176,6 @@ impl LookupKey {
                 }
                 None => Ok(None),
             },
-            Self::Choice { path1, path2, .. } => match lookup(source, &path1.first_item)? {
-                Some(value) => {
-                    debug_assert!(path1.rest.is_empty());
-                    Ok(Some((path1, value)))
-                }
-                None => match lookup(source, &path2.first_item)? {
-                    Some(value) => {
-                        debug_assert!(path2.rest.is_empty());
-                        Ok(Some((path2, value)))
-                    }
-                    None => Ok(None),
-                },
-            },
             Self::PathChoices(path_choices) => {
                 'choices: for path in path_choices {
                     let Some(mut value) = lookup(source, &path.first_item)? else {
@@ -262,7 +210,6 @@ impl LookupKey {
         if loc_by_alias {
             let lookup_path = match self {
                 Self::Simple(path, ..) => path,
-                Self::Choice { path1, .. } => path1,
                 Self::PathChoices(paths) => paths.first().unwrap(),
             };
 
@@ -502,41 +449,63 @@ impl PathItemString {
 pub struct LookupKeyCollection {
     by_name: LookupKey,
     by_alias: Option<LookupKey>,
-    by_alias_then_name: Option<LookupKey>,
 }
 
 impl LookupKeyCollection {
     pub fn new(validation_alias: Option<Bound<'_, PyAny>>, field_name: &Bound<'_, PyString>) -> PyResult<Self> {
-        let by_name = LookupKey::from_py(field_name, None)?;
+        let by_name = LookupKey::from_py(field_name)?;
+        let by_alias = validation_alias.map(|va| LookupKey::from_py(&va)).transpose()?;
+        Ok(Self { by_name, by_alias })
+    }
 
-        if let Some(va) = validation_alias {
-            let by_alias = Some(LookupKey::from_py(&va, None)?);
-            let by_alias_then_name = Some(LookupKey::from_py(&va, Some(field_name))?);
-            Ok(Self {
-                by_name,
-                by_alias,
-                by_alias_then_name,
-            })
-        } else {
-            Ok(Self {
-                by_name,
-                by_alias: None,
-                by_alias_then_name: None,
-            })
+    /// Returns the lookup keys to use based on the provided `lookup_type`. At least one key will always be returned.
+    pub fn lookup_keys(&self, lookup_type: LookupType) -> impl Iterator<Item = &LookupKey> + use<'_> {
+        let by_alias = self
+            .by_alias
+            .as_ref()
+            .filter(|_| lookup_type.matches(LookupType::Alias));
+
+        let by_name = Some(&self.by_name).filter(
+            // always use the name if no alias is defined
+            |_| self.by_alias.is_none() || lookup_type.matches(LookupType::Name),
+        );
+
+        by_alias.into_iter().chain(by_name)
+    }
+
+    /// Returns the first lookup key that matches the provided `lookup_type`.
+    pub fn first_key_matching(&self, lookup_type: LookupType) -> &LookupKey {
+        if lookup_type.matches(LookupType::Alias) {
+            if let Some(by_alias) = &self.by_alias {
+                return by_alias;
+            }
+        }
+        &self.by_name
+    }
+}
+
+/// Whether this lookup represents a name or an alias
+#[derive(Debug, Clone, Copy, Eq, PartialEq)]
+#[repr(u8)]
+pub enum LookupType {
+    Name = 1,
+    Alias = 2,
+    Both = 3,
+}
+
+impl LookupType {
+    pub fn from_bools(validate_by_alias: bool, validate_by_name: bool) -> PyResult<LookupType> {
+        match (validate_by_alias, validate_by_name) {
+            (true, true) => Ok(LookupType::Both),
+            (true, false) => Ok(LookupType::Alias),
+            (false, true) => Ok(LookupType::Name),
+            (false, false) => Err(PyValueError::new_err(
+                "`validate_by_name` and `validate_by_alias` cannot both be set to `False`.",
+            )),
         }
     }
 
-    pub fn select(&self, validate_by_alias: bool, validate_by_name: bool) -> PyResult<&LookupKey> {
-        let lookup_key_selection = match (validate_by_alias, validate_by_name) {
-            (true, true) => self.by_alias_then_name.as_ref().unwrap_or(&self.by_name),
-            (true, false) => self.by_alias.as_ref().unwrap_or(&self.by_name),
-            (false, true) => &self.by_name,
-            (false, false) => {
-                // Note: we shouldn't hit this branch much, as this is enforced in `pydantic` with a `PydanticUserError`
-                // at config creation time / validation function call time.
-                return py_schema_err!("`validate_by_name` and `validate_by_alias` cannot both be set to `False`.");
-            }
-        };
-        Ok(lookup_key_selection)
+    pub fn matches(self, other: LookupType) -> bool {
+        (self as u8 & other as u8) != 0
     }
 }
