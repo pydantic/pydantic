@@ -19406,7 +19406,7 @@ PydanticUserError(
 
 ```
 
-Bases: `PydanticErrorMixin`, `TypeError`
+Bases: `PydanticErrorMixin`, `RuntimeError`
 
 An error raised due to incorrect use of Pydantic.
 
@@ -20333,7 +20333,7 @@ Field(
 Field(
     *,
     default_factory: (
-        Callable[[], _T" optional hover>_T] | Callable[[dict[str, Any]], _T]
+        Callable[[], _T] | Callable[[dict[str, Any]], _T]
     ),
     alias: str | None = _Unset,
     alias_priority: int | None = _Unset,

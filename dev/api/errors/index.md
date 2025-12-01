@@ -33,7 +33,7 @@ PydanticUserError(
 
 ```
 
-Bases: `PydanticErrorMixin`, `TypeError`
+Bases: `PydanticErrorMixin`, `RuntimeError`
 
 An error raised due to incorrect use of Pydantic.
 
