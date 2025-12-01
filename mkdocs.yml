@@ -167,7 +167,7 @@ nav:
       - Databases: examples/orms.md
       - Custom Validators: examples/custom_validators.md
       - Dynamic models: examples/dynamic_models.md
-      - Pydantic AI: examples/pydantic_ai.md
+      - Agent libraries – Pydantic AI: examples/pydantic_ai.md
   - Error Messages:
       - Error Handling: errors/errors.md
       - Validation Errors: errors/validation_errors.md
