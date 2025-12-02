@@ -626,7 +626,7 @@ fn serialize_pydantic_serializable<'py, T, E: From<PyErr>>(
 pub(crate) fn call_pydantic_serializer<'py, T, E: From<PyErr>>(
     serializer: &Bound<'py, SchemaSerializer>,
     value: &Bound<'py, PyAny>,
-    state: &mut SerializationState<'_, 'py>,
+    state: &mut SerializationState<'py>,
     do_serialize: impl DoSerialize<'py, T, E>,
 ) -> Result<T, E> {
     let state = &mut state.scoped_set(|s| &mut s.config, serializer.get().config);
