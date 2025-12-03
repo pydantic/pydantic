@@ -11,6 +11,7 @@ use crate::common::union::{Discriminator, SMALL_UNION_THRESHOLD};
 use crate::definitions::DefinitionsBuilder;
 use crate::serializers::PydanticSerializationUnexpectedValue;
 use crate::serializers::SerializationState;
+use crate::serializers::extra::ScopedSetState;
 use crate::tools::PyHashTable;
 use crate::tools::SchemaDict;
 
@@ -75,14 +76,16 @@ fn union_serialize<'py, S>(
     mut selector: impl FnMut(&CombinedSerializer, &mut SerializationState<'py>) -> PyResult<S>,
     state: &mut SerializationState<'py>,
     choices: &[Arc<CombinedSerializer>],
-    retry_with_lax_check: bool,
-    py: Python<'_>,
+    retry_with_lax_check: impl FnOnce() -> bool,
 ) -> PyResult<Option<S>> {
     // try the serializers in left to right order with strict checking
     let mut errors: SmallVec<[PyErr; SMALL_UNION_THRESHOLD]> = SmallVec::new();
 
+    // First try left-to-right with checks enabled, collecting errors
+    // - at strict level if we're in a top-level union (state.check == None)
+    // - otherwise, use the current check level
     {
-        let state = &mut state.scoped_set(|s| &mut s.check, SerCheck::Strict);
+        let state = &mut scoped_check_level(state, initial_check_level(state));
         for comb_serializer in choices {
             match selector(comb_serializer, state) {
                 Ok(v) => return Ok(Some(v)),
@@ -91,9 +94,15 @@ fn union_serialize<'py, S>(
         }
     }
 
-    // If state.check is SerCheck::Strict, we're in a nested union
-    if state.check != SerCheck::Strict && retry_with_lax_check {
-        let state = &mut state.scoped_set(|s| &mut s.check, SerCheck::Lax);
+    // in a nested union, we immediately bail out with the collected errors
+    if !in_top_level_union(state) {
+        debug_assert_eq!(errors.len(), choices.len());
+        return Err(union_serialization_unexpected_value(&errors));
+    }
+
+    // otherwise, in a top level union, we retry with lax checking if any choice supports it
+    if retry_with_lax_check() {
+        let state = &mut scoped_check_level(state, SerCheck::Lax);
         for comb_serializer in choices {
             if let Ok(v) = selector(comb_serializer, state) {
                 return Ok(Some(v));
@@ -101,28 +110,10 @@ fn union_serialize<'py, S>(
         }
     }
 
-    // If state.check is SerCheck::None, we're in a top-level union. We should thus raise the warnings
-    if state.check == SerCheck::None {
-        for err in &errors {
-            if err.is_instance_of::<PydanticSerializationUnexpectedValue>(py) {
-                let pydantic_err: PydanticSerializationUnexpectedValue = err.value(py).extract()?;
-                state.warnings.register_warning(pydantic_err);
-            } else {
-                state
-                    .warnings
-                    .register_warning(PydanticSerializationUnexpectedValue::new_from_msg(Some(
-                        err.to_string(),
-                    )));
-            }
-        }
-    }
-    // Otherwise, if we've encountered errors, return them to the parent union, which should take
-    // care of the formatting for us
-    else if !errors.is_empty() {
-        let message = errors.iter().map(ToString::to_string).collect::<Vec<_>>().join("\n");
-        return Err(PydanticSerializationUnexpectedValue::new_from_msg(Some(message)).to_py_err());
-    }
+    // ... and if that still didn't work, we register all collected errors as warnings
+    register_union_serialization_warnings(state, &errors);
 
+    // ... before falling back to inference
     Ok(None)
 }
 
@@ -132,8 +123,7 @@ impl TypeSerializer for UnionSerializer {
             |comb_serializer, state| comb_serializer.to_python(value, state),
             state,
             &self.choices,
-            self.retry_with_lax_check(),
-            value.py(),
+            || self.retry_with_lax_check(),
         )?
         .map_or_else(|| infer_to_python(value, state), Ok)
     }
@@ -147,8 +137,7 @@ impl TypeSerializer for UnionSerializer {
             |comb_serializer, state| comb_serializer.json_key(key, state),
             state,
             &self.choices,
-            self.retry_with_lax_check(),
-            key.py(),
+            || self.retry_with_lax_check(),
         )?
         .map_or_else(|| infer_json_key(key, state), Ok)
     }
@@ -163,8 +152,7 @@ impl TypeSerializer for UnionSerializer {
             |comb_serializer, state| comb_serializer.to_python(value, state),
             state,
             &self.choices,
-            self.retry_with_lax_check(),
-            value.py(),
+            || self.retry_with_lax_check(),
         ) {
             Ok(Some(v)) => {
                 let state = &mut state.scoped_include_exclude(None, None);
@@ -329,38 +317,89 @@ impl TaggedUnionSerializer {
         if let Some(tag) = self.get_discriminator_value(value)
             && let Some(&serializer_index) = self.lookup.get(&tag)?
         {
-            let selected_serializer = &self.choices[serializer_index];
-            if let Ok(v) = selector(
-                selected_serializer,
-                &mut state.scoped_set(|s| &mut s.check, SerCheck::Strict),
-            ) {
+            let choice = &self.choices[serializer_index];
+
+            // Try a first pass with the appropriate checking level
+            if let Ok(v) = selector(choice, &mut scoped_check_level(state, initial_check_level(state))) {
                 return Ok(Some(v));
             }
 
-            if self.retry_with_lax_check()
-                && let Ok(v) = selector(
-                    selected_serializer,
-                    &mut state.scoped_set(|s| &mut s.check, SerCheck::Lax),
-                )
+            // if not in a nested union, we can try a second pass with lax checking if needed
+            if in_top_level_union(state)
+                && self.retry_with_lax_check()
+                && let Ok(v) = selector(choice, &mut scoped_check_level(state, SerCheck::Lax))
             {
                 return Ok(Some(v));
             }
-        } else if state.check == SerCheck::None {
-            // If state.check is SerCheck::None, we're in a top-level union. We should thus raise
-            // this warning
-            state.warnings.register_warning(
-                PydanticSerializationUnexpectedValue::new(
-                    Some("Defaulting to left to right union serialization - failed to get discriminator value for tagged union serialization".to_string()),
-                    None,
-                    None,
-                    Some(value.clone().unbind()),
-                )
-            );
+        } else if in_top_level_union(state) {
+            // Only register a warning if we're in a top-level union
+            register_tagged_union_fallback_warning(value, state);
         }
 
         // if we haven't returned at this point, we should fallback to the union serializer
         // which preserves the historical expectation that we do our best with serialization
         // even if that means we resort to inference
-        union_serialize(selector, state, &self.choices, self.retry_with_lax_check(), value.py())
+        union_serialize(selector, state, &self.choices, || self.retry_with_lax_check())
     }
+}
+
+/// Whether currently in a top-level union serialization
+fn in_top_level_union(state: &SerializationState<'_>) -> bool {
+    state.check == SerCheck::None
+}
+
+/// Check level to use for the first pass of union serialization
+/// - If we're in a nested union (state.check != None), we use the current check level
+/// - If we're in a top-level union (state.check == None), we use strict checking
+fn initial_check_level(state: &SerializationState<'_>) -> SerCheck {
+    if in_top_level_union(state) {
+        SerCheck::Strict
+    } else {
+        state.check
+    }
+}
+
+/// Set the serialization check level for the duration of the scoped state, helper just to reduce boilerplate
+fn scoped_check_level<'scope, 'py>(
+    state: &'scope mut SerializationState<'py>,
+    check_level: SerCheck,
+) -> ScopedSetState<'scope, 'py, impl for<'s> Fn(&'s mut SerializationState<'py>) -> &'s mut SerCheck, SerCheck> {
+    state.scoped_set(|s| &mut s.check, check_level)
+}
+
+/// Produce an unexpected value error from errors encountered during union serialization
+#[cold]
+fn union_serialization_unexpected_value(errors: &[PyErr]) -> PyErr {
+    // FIXME: used "joined" helper
+    let message = errors.iter().map(ToString::to_string).collect::<Vec<_>>().join("\n");
+    PydanticSerializationUnexpectedValue::new_from_msg(Some(message)).to_py_err()
+}
+
+/// Register warnings from errors encountered during union serialization
+#[cold]
+fn register_union_serialization_warnings(state: &mut SerializationState<'_>, errors: &[PyErr]) {
+    let py = state.py();
+    for err in errors {
+        if let Ok(unexpected_value) = err.value(py).cast::<PydanticSerializationUnexpectedValue>() {
+            state.warnings.register_warning(unexpected_value.borrow().clone());
+        } else {
+            state
+                .warnings
+                .register_warning(PydanticSerializationUnexpectedValue::new_from_msg(Some(
+                    err.to_string(),
+                )));
+        }
+    }
+}
+
+#[cold]
+fn register_tagged_union_fallback_warning<'py>(value: &Bound<'py, PyAny>, state: &mut SerializationState<'py>) {
+    state.warnings.register_warning(
+        PydanticSerializationUnexpectedValue::new(
+            Some("Defaulting to left to right union serialization - failed to get discriminator value for tagged union serialization".to_string()),
+            None,
+            None,
+            Some(value.clone().unbind()),
+        )
+    );
 }
