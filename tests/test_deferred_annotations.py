@@ -36,12 +36,6 @@ def test_deferred_annotations_model() -> None:
     assert inst.b == 'test'
 
 
-@pytest.mark.xfail(
-    reason=(
-        'When rebuilding model fields, we individually re-evaluate all fields (using `_eval_type()`) '
-        "and as such we don't benefit from PEP 649's capabilities."
-    ),
-)
 def test_deferred_annotations_nested_model() -> None:
     def outer():
         def inner():
