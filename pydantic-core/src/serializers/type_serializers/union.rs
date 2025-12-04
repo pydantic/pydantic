@@ -383,12 +383,12 @@ impl UnionChoices {
             }
         }
 
+        if let Some((index, tag_err)) = skip {
+            errors.insert(index, tag_err);
+        }
+
         // in a nested union, we immediately bail out with the collected errors
         if !in_top_level_union(state) {
-            if let Some((index, tag_err)) = skip {
-                errors.insert(index, tag_err);
-            }
-
             debug_assert_eq!(errors.len(), self.choices.len());
             return Err(union_serialization_unexpected_value(&errors));
         }

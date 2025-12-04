@@ -1,4 +1,6 @@
-from typing import ClassVar, Literal, TypedDict
+from typing import ClassVar, Literal
+
+from typing_extensions import TypedDict
 
 import pydantic
 
