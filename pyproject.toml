@@ -47,7 +47,9 @@ dependencies = [
     'typing-extensions>=4.14.1',
     'annotated-types>=0.6.0',
     # Keep this in sync with the version in the `check_pydantic_core_version()` function:
-    'pydantic-core==2.41.5',
+    # 'pydantic-core==2.41.5',
+    # override for external testing of this branch
+    'pydantic-core @ git+https://github.com/pydantic/pydantic.git@dh/polymorphic-serialization#subdirectory=pydantic-core',
     'typing-inspection>=0.4.2',
 ]
 dynamic = ['version', 'readme']
