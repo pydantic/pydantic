@@ -1,4 +1,4 @@
-from typing import ClassVar, Literal
+from typing import ClassVar, Literal, Union
 
 from typing_extensions import TypedDict
 
@@ -18,16 +18,16 @@ def test_field_serializer_in_nested_union_called_only_twice():
             return str(value)
 
     class Container(TypedDict):
-        u: MyModel | int
+        u: Union[MyModel, int]
 
     class Container2(TypedDict):
-        u: Container | int
+        u: Union[Container, int]
 
     # forcibly construct model with a False value
     value = MyModel.model_construct(a=1, b=False)
     assert value.b is False
 
-    ta = pydantic.TypeAdapter(Container2 | int)
+    ta = pydantic.TypeAdapter(Union[Container2, int])
     ta.dump_json(Container2(u=Container(u=value)), warnings=False)
 
     # Historical implementations of pydantic would call the field serializer many times
@@ -58,16 +58,16 @@ def test_field_serializer_in_nested_tagged_union_called_only_twice():
 
     class Container(pydantic.BaseModel):
         type_: Literal['a'] = 'a'
-        u: MyModel | ModelB = pydantic.Field(..., discriminator='type_')
+        u: Union[MyModel, ModelB] = pydantic.Field(..., discriminator='type_')
 
     class Container2(pydantic.BaseModel):
-        u: Container | ModelB = pydantic.Field(..., discriminator='type_')
+        u: Union[Container, ModelB] = pydantic.Field(..., discriminator='type_')
 
     # forcibly construct model with a False value
     value = MyModel.model_construct(a=1, b=False)
     assert value.b is False
 
-    ta = pydantic.TypeAdapter(Container2 | int)
+    ta = pydantic.TypeAdapter(Union[Container2, int])
     ta.dump_json(Container2(u=Container(u=value)), warnings=False)
 
     # Historical implementations of pydantic would call the field serializer many times
