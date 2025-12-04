@@ -21,7 +21,8 @@ def test_field_serializer_in_nested_union_called_only_twice():
     class Container2(TypedDict):
         u: Container | int
 
-    value = MyModel(a=1, b=False)
+    # forcibly construct model with a False value
+    value = MyModel.model_construct(a=1, b=False)
     assert value.b is False
 
     ta = pydantic.TypeAdapter(Container2 | int)
@@ -60,16 +61,14 @@ def test_field_serializer_in_nested_tagged_union_called_only_twice():
     class Container2(pydantic.BaseModel):
         u: Container | ModelB = pydantic.Field(..., discriminator='type_')
 
-    ta = pydantic.TypeAdapter(Container2 | int)
-    ta.dump_json(Container2(u=Container(u=MyModel.model_construct(a=1, b=False))), warnings=False)
+    # forcibly construct model with a False value
+    value = MyModel.model_construct(a=1, b=False)
+    assert value.b is False
 
-    # Historical implementations of pydantic would call the field serializer many MANY times
-    # as nested unions were individually attempted with each of strict and lax checking.
-    #
-    # 5 comes from:
-    # - tagged discriminator in outer union at strict mode
-    # - fall back to left to right in outer union at strict mode
-    # - tagged discriminator in inner union at strict mode
-    # - fall back to left to right in inner union still at strict mode
-    # - tagged discriminator in outer union at lax mode, which calls tagged discriminator in inner union at lax mode, which finally succeeds
-    assert MyModel.field_a_serializer_calls == 5
+    ta = pydantic.TypeAdapter(Container2 | int)
+    ta.dump_json(Container2(u=Container(u=value)), warnings=False)
+
+    # Historical implementations of pydantic would call the field serializer many times
+    # as nested unions were individually attempted with each of strict and lax checking,
+    # and the discriminators also incurred an extra attempt at each check level too.
+    assert MyModel.field_a_serializer_calls == 2

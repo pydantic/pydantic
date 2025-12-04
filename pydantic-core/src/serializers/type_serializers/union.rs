@@ -21,7 +21,7 @@ use super::{
 
 #[derive(Debug)]
 pub struct UnionSerializer {
-    choices: Vec<Arc<CombinedSerializer>>,
+    choices: UnionChoices,
     name: String,
 }
 
@@ -45,87 +45,37 @@ impl BuildSerializer for UnionSerializer {
                 CombinedSerializer::build(choice.cast()?, config, definitions)
             })
             .collect::<PyResult<_>>()?;
+        let choices = match UnionChoices::from_choices(choices)? {
+            FromChoicesOutput::Single(s) => return Ok(s),
+            FromChoicesOutput::Multiple(m) => m,
+        };
 
-        Self::from_choices(choices)
-    }
-}
+        let descr = choices
+            .choices
+            .iter()
+            .map(|v| v.get_name())
+            .collect::<Vec<_>>()
+            .join(", ");
 
-impl UnionSerializer {
-    fn from_choices(choices: Vec<Arc<CombinedSerializer>>) -> PyResult<Arc<CombinedSerializer>> {
-        match choices.len() {
-            0 => py_schema_err!("One or more union choices required"),
-            1 => Ok(choices.into_iter().next().unwrap()),
-            _ => {
-                let descr = choices.iter().map(|v| v.get_name()).collect::<Vec<_>>().join(", ");
-                Ok(CombinedSerializer::Union(Self {
-                    choices,
-                    name: format!("Union[{descr}]"),
-                })
-                .into())
-            }
-        }
+        Ok(CombinedSerializer::Union(Self {
+            choices,
+            name: format!("Union[{descr}]"),
+        })
+        .into())
     }
 }
 
 impl_py_gc_traverse!(UnionSerializer { choices });
 
-fn union_serialize<'py, S>(
-    // if this returns `Ok(Some(v))`, we picked a union variant to serialize,
-    // Or `Ok(None)` if we couldn't find a suitable variant to serialize
-    // Finally, `Err(err)` if we encountered errors while trying to serialize
-    mut selector: impl FnMut(&CombinedSerializer, &mut SerializationState<'py>) -> PyResult<S>,
-    state: &mut SerializationState<'py>,
-    choices: &[Arc<CombinedSerializer>],
-    retry_with_lax_check: impl FnOnce() -> bool,
-) -> PyResult<Option<S>> {
-    // try the serializers in left to right order with strict checking
-    let mut errors: SmallVec<[PyErr; SMALL_UNION_THRESHOLD]> = SmallVec::new();
-
-    // First try left-to-right with checks enabled, collecting errors
-    // - at strict level if we're in a top-level union (state.check == None)
-    // - otherwise, use the current check level
-    {
-        let state = &mut scoped_check_level(state, initial_check_level(state));
-        for comb_serializer in choices {
-            match selector(comb_serializer, state) {
-                Ok(v) => return Ok(Some(v)),
-                Err(err) => errors.push(err),
-            }
-        }
-    }
-
-    // in a nested union, we immediately bail out with the collected errors
-    if !in_top_level_union(state) {
-        debug_assert_eq!(errors.len(), choices.len());
-        return Err(union_serialization_unexpected_value(&errors));
-    }
-
-    // otherwise, in a top level union, we retry with lax checking if any choice supports it
-    if retry_with_lax_check() {
-        let state = &mut scoped_check_level(state, SerCheck::Lax);
-        for comb_serializer in choices {
-            if let Ok(v) = selector(comb_serializer, state) {
-                return Ok(Some(v));
-            }
-        }
-    }
-
-    // ... and if that still didn't work, we register all collected errors as warnings
-    register_union_serialization_warnings(state, &errors);
-
-    // ... before falling back to inference
-    Ok(None)
-}
-
 impl TypeSerializer for UnionSerializer {
     fn to_python<'py>(&self, value: &Bound<'py, PyAny>, state: &mut SerializationState<'py>) -> PyResult<Py<PyAny>> {
-        union_serialize(
-            |comb_serializer, state| comb_serializer.to_python(value, state),
-            state,
-            &self.choices,
-            || self.retry_with_lax_check(),
-        )?
-        .map_or_else(|| infer_to_python(value, state), Ok)
+        self.choices
+            .serialize(
+                |comb_serializer, state| comb_serializer.to_python(value, state),
+                state,
+                None,
+            )?
+            .map_or_else(|| infer_to_python(value, state), Ok)
     }
 
     fn json_key<'a, 'py>(
@@ -133,13 +83,13 @@ impl TypeSerializer for UnionSerializer {
         key: &'a Bound<'py, PyAny>,
         state: &mut SerializationState<'py>,
     ) -> PyResult<Cow<'a, str>> {
-        union_serialize(
-            |comb_serializer, state| comb_serializer.json_key(key, state),
-            state,
-            &self.choices,
-            || self.retry_with_lax_check(),
-        )?
-        .map_or_else(|| infer_json_key(key, state), Ok)
+        self.choices
+            .serialize(
+                |comb_serializer, state| comb_serializer.json_key(key, state),
+                state,
+                None,
+            )?
+            .map_or_else(|| infer_json_key(key, state), Ok)
     }
 
     fn serde_serialize<'py, S: serde::ser::Serializer>(
@@ -148,11 +98,10 @@ impl TypeSerializer for UnionSerializer {
         serializer: S,
         state: &mut SerializationState<'py>,
     ) -> Result<S::Ok, S::Error> {
-        match union_serialize(
+        match self.choices.serialize(
             |comb_serializer, state| comb_serializer.to_python(value, state),
             state,
-            &self.choices,
-            || self.retry_with_lax_check(),
+            None,
         ) {
             Ok(Some(v)) => {
                 let state = &mut state.scoped_include_exclude(None, None);
@@ -168,7 +117,7 @@ impl TypeSerializer for UnionSerializer {
     }
 
     fn retry_with_lax_check(&self) -> bool {
-        self.choices.iter().any(|c| c.retry_with_lax_check())
+        self.choices.retry_with_lax_check()
     }
 }
 
@@ -176,7 +125,7 @@ impl TypeSerializer for UnionSerializer {
 pub struct TaggedUnionSerializer {
     discriminator: Discriminator,
     lookup: PyHashTable<usize>,
-    choices: Vec<Arc<CombinedSerializer>>,
+    choices: UnionChoices,
     name: OnceLock<String>,
 }
 
@@ -191,7 +140,6 @@ impl BuildSerializer for TaggedUnionSerializer {
         let py = schema.py();
         let discriminator = Discriminator::new(&schema.get_as_req(intern!(py, "discriminator"))?)?;
 
-        // TODO: guarantee at least 1 choice
         let choices_map: Bound<PyDict> = schema.get_as_req(intern!(py, "choices"))?;
         let mut lookup = PyHashTable::with_capacity(choices_map.len());
         let mut choices = Vec::with_capacity(choices_map.len());
@@ -203,6 +151,13 @@ impl BuildSerializer for TaggedUnionSerializer {
             // Keys should be unique, because they came from a dict
             lookup.insert_unique(choice_key, idx)?;
         }
+
+        let choices = match UnionChoices::from_choices(choices)? {
+            FromChoicesOutput::Single(s) => {
+                return Ok(s);
+            }
+            FromChoicesOutput::Multiple(m) => m,
+        };
 
         Ok(CombinedSerializer::TaggedUnion(Self {
             discriminator,
@@ -269,7 +224,7 @@ impl TypeSerializer for TaggedUnionSerializer {
             descr.push_str("TaggedUnion[");
             // TODO: there's probably a "joined" wrapper we could add to make this kind of pattern cleaner
             let mut first = true;
-            for s in &self.choices {
+            for s in &self.choices.choices {
                 if first {
                     first = false;
                 } else {
@@ -283,7 +238,7 @@ impl TypeSerializer for TaggedUnionSerializer {
     }
 
     fn retry_with_lax_check(&self) -> bool {
-        self.choices.iter().any(|c| c.retry_with_lax_check())
+        self.choices.retry_with_lax_check()
     }
 }
 
@@ -314,14 +269,20 @@ impl TaggedUnionSerializer {
         mut selector: impl FnMut(&CombinedSerializer, &mut SerializationState<'py>) -> PyResult<S>,
         state: &mut SerializationState<'py>,
     ) -> PyResult<Option<S>> {
+        let mut skip = None;
+
         if let Some(tag) = self.get_discriminator_value(value)
             && let Some(&serializer_index) = self.lookup.get(&tag)?
         {
-            let choice = &self.choices[serializer_index];
+            let choice = &self.choices.choices[serializer_index];
 
             // Try a first pass with the appropriate checking level
-            if let Ok(v) = selector(choice, &mut scoped_check_level(state, initial_check_level(state))) {
-                return Ok(Some(v));
+            match selector(choice, &mut scoped_check_level(state, initial_check_level(state))) {
+                Ok(v) => return Ok(Some(v)),
+                Err(err) => {
+                    // if it fails, we record the error to skip this choice in the left to right pass
+                    skip = Some((serializer_index, err));
+                }
             }
 
             // if not in a nested union, we can try a second pass with lax checking if needed
@@ -339,7 +300,7 @@ impl TaggedUnionSerializer {
         // if we haven't returned at this point, we should fallback to the union serializer
         // which preserves the historical expectation that we do our best with serialization
         // even if that means we resort to inference
-        union_serialize(selector, state, &self.choices, || self.retry_with_lax_check())
+        self.choices.serialize(selector, state, skip)
     }
 }
 
@@ -356,6 +317,97 @@ fn initial_check_level(state: &SerializationState<'_>) -> SerCheck {
         SerCheck::Strict
     } else {
         state.check
+    }
+}
+
+#[derive(Debug)]
+struct UnionChoices {
+    choices: Vec<Arc<CombinedSerializer>>,
+}
+
+impl_py_gc_traverse!(UnionChoices { choices });
+
+enum FromChoicesOutput {
+    Single(Arc<CombinedSerializer>),
+    Multiple(UnionChoices),
+}
+
+impl UnionChoices {
+    fn from_choices(choices: Vec<Arc<CombinedSerializer>>) -> PyResult<FromChoicesOutput> {
+        match choices.len() {
+            0 => py_schema_err!("One or more union choices required"),
+            1 => Ok(FromChoicesOutput::Single(choices.into_iter().next().unwrap())),
+            _ => Ok(FromChoicesOutput::Multiple(Self { choices })),
+        }
+    }
+
+    fn retry_with_lax_check(&self) -> bool {
+        self.choices.iter().any(|c| c.retry_with_lax_check())
+    }
+
+    /// Try to serialize using the union choices from left to right
+    fn serialize<'py, S>(
+        &self,
+        mut selector: impl FnMut(&CombinedSerializer, &mut SerializationState<'py>) -> PyResult<S>,
+        state: &mut SerializationState<'py>,
+        // If some, skip the choice at this index (used to avoid retrying the same choice), the
+        // error is the error from trying this as a tag
+        skip: Option<(usize, PyErr)>,
+    ) -> PyResult<Option<S>> {
+        // try the serializers in left to right order with strict checking
+        let mut errors: SmallVec<[PyErr; SMALL_UNION_THRESHOLD]> = SmallVec::new();
+
+        let (left, right) = match &skip {
+            Some((skip_index, _)) => {
+                let (left, rest) = self.choices.split_at(*skip_index);
+                let right = rest
+                    .get(1..) // skip the skipped index
+                    .unwrap_or(&[][..]);
+                (left, right)
+            }
+            None => (&self.choices[..], &[][..]),
+        };
+
+        let choices_iter = left.iter().chain(right.iter());
+
+        // First try left-to-right with checks enabled, collecting errors
+        // - at strict level if we're in a top-level union (state.check == None)
+        // - otherwise, use the current check level
+        {
+            let state = &mut scoped_check_level(state, initial_check_level(state));
+            for comb_serializer in choices_iter.clone() {
+                match selector(comb_serializer, state) {
+                    Ok(v) => return Ok(Some(v)),
+                    Err(err) => errors.push(err),
+                }
+            }
+        }
+
+        // in a nested union, we immediately bail out with the collected errors
+        if !in_top_level_union(state) {
+            if let Some((index, tag_err)) = skip {
+                errors.insert(index, tag_err);
+            }
+
+            debug_assert_eq!(errors.len(), self.choices.len());
+            return Err(union_serialization_unexpected_value(&errors));
+        }
+
+        // otherwise, in a top level union, we retry with lax checking if any choice supports it
+        if self.retry_with_lax_check() {
+            let state = &mut scoped_check_level(state, SerCheck::Lax);
+            for comb_serializer in choices_iter {
+                if let Ok(v) = selector(comb_serializer, state) {
+                    return Ok(Some(v));
+                }
+            }
+        }
+
+        // ... and if that still didn't work, we register all collected errors as warnings
+        register_union_serialization_warnings(state, &errors);
+
+        // ... before falling back to inference
+        Ok(None)
     }
 }
 
