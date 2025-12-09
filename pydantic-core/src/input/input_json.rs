@@ -136,7 +136,7 @@ impl<'py, 'data> Input<'py> for JsonValue<'data> {
         // TODO: in V3 we may want to make JSON str always win if in union, for consistency,
         // see https://github.com/pydantic/pydantic-core/pull/867#discussion_r1386582501
         match self {
-            JsonValue::Str(s) => Ok(ValidationMatch::strict(s.as_ref().into())),
+            JsonValue::Str(s) => Ok(ValidationMatch::exact(s.as_ref().into())),
             JsonValue::Int(i) if !strict && coerce_numbers_to_str => Ok(ValidationMatch::lax(i.to_string().into())),
             JsonValue::BigInt(b) if !strict && coerce_numbers_to_str => Ok(ValidationMatch::lax(b.to_string().into())),
             JsonValue::Float(f) if !strict && coerce_numbers_to_str => Ok(ValidationMatch::lax(f.to_string().into())),
