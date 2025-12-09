@@ -586,3 +586,34 @@ def test_json_ensure_ascii() -> None:
         f: str
 
     assert Model(f='à').model_dump_json(ensure_ascii=True) == '{"f":"\\u00e0"}'
+
+
+
+def test_model_validate_json():
+    from typing import Iterable
+    from typing_extensions import Required, TypedDict
+
+    class Message(TypedDict):
+        msg: Required[str]
+
+    class MessageList(BaseModel):
+        content: str | Iterable[Message]
+
+    model = MessageList(content="sri")
+
+    json_txt = model.model_dump_json()
+
+    res1 = MessageList.model_validate(json.loads(json_txt))
+
+    assert isinstance(res1.content, str)
+    assert res1.content == "sri"
+
+    res2 = MessageList.model_validate_json(json_txt)
+    
+    assert isinstance(res2.content, str), (
+        f"issues: model_validate_json returned {type(res2.content).__name__} ",
+         f"printing the content: {res2.content}",
+        f"instead of str. Union validation picked wrong branch!",
+       
+    )
+    assert res2.content == "sri"
