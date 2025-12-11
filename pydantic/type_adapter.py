@@ -575,6 +575,7 @@ class TypeAdapter(Generic[T]):
         warnings: bool | Literal['none', 'warn', 'error'] = True,
         fallback: Callable[[Any], Any] | None = None,
         serialize_as_any: bool = False,
+        polymorphic_serialization: bool | None = None,
         context: Any | None = None,
     ) -> Any:
         """Dump an instance of the adapted type to a Python object.
@@ -597,6 +598,7 @@ class TypeAdapter(Generic[T]):
             fallback: A function to call when an unknown value is encountered. If not provided,
                 a [`PydanticSerializationError`][pydantic_core.PydanticSerializationError] error is raised.
             serialize_as_any: Whether to serialize fields with duck-typing serialization behavior.
+            polymorphic_serialization: Whether to use model and dataclass polymorphic serialization for this call.
             context: Additional context to pass to the serializer.
 
         Returns:
@@ -616,6 +618,7 @@ class TypeAdapter(Generic[T]):
             warnings=warnings,
             fallback=fallback,
             serialize_as_any=serialize_as_any,
+            polymorphic_serialization=polymorphic_serialization,
             context=context,
         )
 
@@ -637,6 +640,7 @@ class TypeAdapter(Generic[T]):
         warnings: bool | Literal['none', 'warn', 'error'] = True,
         fallback: Callable[[Any], Any] | None = None,
         serialize_as_any: bool = False,
+        polymorphic_serialization: bool | None = None,
         context: Any | None = None,
     ) -> bytes:
         """!!! abstract "Usage Documentation"
@@ -664,6 +668,7 @@ class TypeAdapter(Generic[T]):
             fallback: A function to call when an unknown value is encountered. If not provided,
                 a [`PydanticSerializationError`][pydantic_core.PydanticSerializationError] error is raised.
             serialize_as_any: Whether to serialize fields with duck-typing serialization behavior.
+            polymorphic_serialization: Whether to use model and dataclass polymorphic serialization for this call.
             context: Additional context to pass to the serializer.
 
         Returns:
@@ -684,6 +689,7 @@ class TypeAdapter(Generic[T]):
             warnings=warnings,
             fallback=fallback,
             serialize_as_any=serialize_as_any,
+            polymorphic_serialization=polymorphic_serialization,
             context=context,
         )
 
