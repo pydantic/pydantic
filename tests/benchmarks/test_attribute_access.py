@@ -53,6 +53,7 @@ def test_setattr(benchmark):
 
     inner = {'inner_field1': 'test inner', 'inner_field2': 420}
     model = Model(field1='test', field2=42, field3=3.14, inner1=inner, inner2=inner)
+    set_attrs(model)
     benchmark(set_attrs, model)
 
     model.field2 = 'bad'  # check benchmark setup
