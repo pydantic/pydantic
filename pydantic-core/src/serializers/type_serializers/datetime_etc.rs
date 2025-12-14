@@ -3,71 +3,44 @@ use std::sync::Arc;
 
 use pyo3::prelude::*;
 use pyo3::types::{PyDate, PyDateTime, PyDict, PyTime};
+use speedate::{Date, DateTime, Time};
 
 use super::{
     BuildSerializer, CombinedSerializer, SerMode, TypeSerializer, infer_json_key, infer_serialize, infer_to_python,
 };
 use crate::PydanticSerializationUnexpectedValue;
 use crate::definitions::DefinitionsBuilder;
-use crate::input::{pydate_as_date, pydatetime_as_datetime, pytime_as_time};
 use crate::serializers::SerializationState;
 use crate::serializers::config::{FromConfig, TemporalMode};
 
-pub(crate) fn datetime_to_string(py_dt: &Bound<'_, PyDateTime>) -> PyResult<String> {
-    pydatetime_as_datetime(py_dt).map(|dt| dt.to_string())
+pub(crate) fn datetime_to_seconds(dt: DateTime) -> f64 {
+    dt.date.timestamp() as f64 + time_to_seconds(dt.time)
 }
 
-pub(crate) fn datetime_to_seconds(py_dt: &Bound<'_, PyDateTime>) -> PyResult<f64> {
-    pydatetime_as_datetime(py_dt).map(|dt| {
-        dt.date.timestamp() as f64
-            + f64::from(dt.time.hour) * 3600.0
-            + f64::from(dt.time.minute) * 60.0
-            + f64::from(dt.time.second)
-            + f64::from(dt.time.microsecond) / 1_000_000.0
-    })
+pub(crate) fn datetime_to_milliseconds(dt: DateTime) -> f64 {
+    dt.date.timestamp_ms() as f64 + time_to_milliseconds(dt.time)
 }
 
-pub(crate) fn datetime_to_milliseconds(py_dt: &Bound<'_, PyDateTime>) -> PyResult<f64> {
-    pydatetime_as_datetime(py_dt).map(|dt| {
-        dt.date.timestamp_ms() as f64
-            + f64::from(dt.time.hour) * 3_600_000.0
-            + f64::from(dt.time.minute) * 60_000.0
-            + f64::from(dt.time.second) * 1_000.0
-            + f64::from(dt.time.microsecond) / 1_000.0
-    })
+pub(crate) fn date_to_seconds(date: Date) -> f64 {
+    date.timestamp() as f64
 }
 
-pub(crate) fn date_to_seconds(py_date: &Bound<'_, PyDate>) -> PyResult<f64> {
-    pydate_as_date(py_date).map(|dt| dt.timestamp() as f64)
-}
-pub(crate) fn date_to_milliseconds(py_date: &Bound<'_, PyDate>) -> PyResult<f64> {
-    pydate_as_date(py_date).map(|dt| dt.timestamp_ms() as f64)
+pub(crate) fn date_to_milliseconds(date: Date) -> f64 {
+    date.timestamp_ms() as f64
 }
 
-pub(crate) fn date_to_string(py_date: &Bound<'_, PyDate>) -> PyResult<String> {
-    pydate_as_date(py_date).map(|dt| dt.to_string())
+pub(crate) fn time_to_seconds(time: Time) -> f64 {
+    f64::from(time.hour) * 3600.0
+        + f64::from(time.minute) * 60.0
+        + f64::from(time.second)
+        + f64::from(time.microsecond) / 1_000_000.0
 }
 
-pub(crate) fn time_to_string(py_time: &Bound<'_, PyTime>) -> PyResult<String> {
-    pytime_as_time(py_time, None).map(|dt| dt.to_string())
-}
-
-pub(crate) fn time_to_seconds(py_time: &Bound<'_, PyTime>) -> PyResult<f64> {
-    pytime_as_time(py_time, None).map(|t| {
-        f64::from(t.hour) * 3600.0
-            + f64::from(t.minute) * 60.0
-            + f64::from(t.second)
-            + f64::from(t.microsecond) / 1_000_000.0
-    })
-}
-
-pub(crate) fn time_to_milliseconds(py_time: &Bound<'_, PyTime>) -> PyResult<f64> {
-    pytime_as_time(py_time, None).map(|t| {
-        f64::from(t.hour) * 3_600_000.0
-            + f64::from(t.minute) * 60_000.0
-            + f64::from(t.second) * 1_000.0
-            + f64::from(t.microsecond) / 1_000.0
-    })
+pub(crate) fn time_to_milliseconds(time: Time) -> f64 {
+    f64::from(time.hour) * 3_600_000.0
+        + f64::from(time.minute) * 60_000.0
+        + f64::from(time.second) * 1_000.0
+        + f64::from(time.microsecond) / 1_000.0
 }
 
 fn downcast_date_reject_datetime<'a, 'py>(py_date: &'a Bound<'py, PyAny>) -> PyResult<&'a Bound<'py, PyDate>> {
