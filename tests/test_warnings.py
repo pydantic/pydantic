@@ -1,4 +1,4 @@
-from pydantic import PydanticDeprecatedSince20, PydanticDeprecatedSince26, PydanticDeprecationWarning
+from pydantic import PydanticDeprecatedSince20, PydanticDeprecationWarning
 from pydantic.version import version_short
 
 
@@ -38,13 +38,4 @@ def test_pydantic_deprecated_since_2_0_warning():
     assert isinstance(warning, PydanticDeprecationWarning)
     assert warning.message == 'Warning message'
     assert warning.since == (2, 0)
-    assert warning.expected_removal == (3, 0)
-
-
-def test_pydantic_deprecated_since_2_6_warning():
-    warning = PydanticDeprecatedSince26('Warning message')
-
-    assert isinstance(warning, PydanticDeprecationWarning)
-    assert warning.message == 'Warning message'
-    assert warning.since == (2, 6)
     assert warning.expected_removal == (3, 0)

@@ -1,5 +1,4 @@
 import importlib.metadata as importlib_metadata
-import os
 import warnings
 from unittest.mock import patch
 
@@ -62,59 +61,59 @@ def test_loader(reset_plugins):
     assert list(res) == ['test_plugin:plugin1', 'test_plugin:plugin2', 'test_plugin:plugin3']
 
 
-def test_disable_all(reset_plugins):
-    os.environ['PYDANTIC_DISABLE_PLUGINS'] = '__all__'
+def test_disable_all(reset_plugins, monkeypatch):
+    monkeypatch.setenv('PYDANTIC_DISABLE_PLUGINS', '__all__')
     res = loader.get_plugins()
     assert res == ()
 
 
-def test_disable_all_1(reset_plugins):
-    os.environ['PYDANTIC_DISABLE_PLUGINS'] = '1'
+def test_disable_all_1(reset_plugins, monkeypatch):
+    monkeypatch.setenv('PYDANTIC_DISABLE_PLUGINS', '1')
     res = loader.get_plugins()
     assert res == ()
 
 
-def test_disable_true(reset_plugins):
-    os.environ['PYDANTIC_DISABLE_PLUGINS'] = 'true'
+def test_disable_true(reset_plugins, monkeypatch):
+    monkeypatch.setenv('PYDANTIC_DISABLE_PLUGINS', 'true')
     res = loader.get_plugins()
     assert res == ()
 
 
-def test_disable_one(reset_plugins):
-    os.environ['PYDANTIC_DISABLE_PLUGINS'] = 'test_plugin1'
+def test_disable_one(reset_plugins, monkeypatch):
+    monkeypatch.setenv('PYDANTIC_DISABLE_PLUGINS', 'test_plugin1')
     res = loader.get_plugins()
     assert len(list(res)) == 2
     assert 'test_plugin:plugin1' not in list(res)
 
 
-def test_disable_multiple(reset_plugins):
-    os.environ['PYDANTIC_DISABLE_PLUGINS'] = 'test_plugin1,test_plugin2'
+def test_disable_multiple(reset_plugins, monkeypatch):
+    monkeypatch.setenv('PYDANTIC_DISABLE_PLUGINS', 'test_plugin1,test_plugin2')
     res = loader.get_plugins()
     assert len(list(res)) == 1
     assert 'test_plugin:plugin1' not in list(res)
     assert 'test_plugin:plugin2' not in list(res)
 
 
-def test_caching_of_loaded_plugins(reset_plugins):
-    os.environ['PYDANTIC_DISABLE_PLUGINS'] = 'test_plugin1,test_plugin2'
+def test_caching_of_loaded_plugins(reset_plugins, monkeypatch):
+    monkeypatch.setenv('PYDANTIC_DISABLE_PLUGINS', 'test_plugin1,test_plugin2')
     res = loader.get_plugins()
     assert list(res) == ['test_plugin:plugin3']
     res = loader.get_plugins()
     assert list(res) == ['test_plugin:plugin3']
 
 
-def test_load_same_plugin_multiple_times(reset_plugins):
+def test_load_same_plugin_multiple_times(reset_plugins, monkeypatch):
     mock_entry_1 = EntryPoint(name='test_plugin1', value='test_plugin:plugin1', group='pydantic')
     mock_dist = Dist([mock_entry_1, mock_entry_1])
 
-    os.environ.pop('PYDANTIC_DISABLE_PLUGINS', None)
+    monkeypatch.delenv('PYDANTIC_DISABLE_PLUGINS', raising=False)
 
     with patch.object(importlib_metadata, 'distributions', return_value=[mock_dist]):
         res = loader.get_plugins()
         assert list(res) == ['test_plugin:plugin1']
 
 
-def test_loader_with_failing_plugin(reset_plugins):
+def test_loader_with_failing_plugin(reset_plugins, monkeypatch):
     """
     Test that one failing plugin doesn't prevent others from loading.
     """
@@ -123,7 +122,7 @@ def test_loader_with_failing_plugin(reset_plugins):
     mock_entry_2 = EntryPoint(name='test_plugin2', value='test_plugin:plugin2', group='pydantic')
     mock_dist = Dist([mock_entry_1, mock_entry_error, mock_entry_2])
 
-    os.environ.pop('PYDANTIC_DISABLE_PLUGINS', None)
+    monkeypatch.delenv('PYDANTIC_DISABLE_PLUGINS', raising=False)
 
     with patch.object(importlib_metadata, 'distributions', return_value=[mock_dist]):
         with warnings.catch_warnings(record=True) as wrn:

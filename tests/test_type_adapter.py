@@ -687,24 +687,24 @@ def test_validate_python_with_incorrect_configuration():
     ta = TypeAdapter(int)
 
     with pytest.raises(PydanticUserError) as exc_info:
-        ta.validate_python({'foo': [1, '2']}, by_alias=False, by_name=False)
+        ta.validate_python(1, by_alias=False, by_name=False)
 
-    assert 'At least one of `by_alias` or `by_name` must be set to True.' in str(exc_info.value)
+    assert exc_info.value.code == 'validate-by-alias-and-name-false'
 
 
 def test_validate_json_with_incorrect_configuration():
     ta = TypeAdapter(int)
 
     with pytest.raises(PydanticUserError) as exc_info:
-        ta.validate_json(json.dumps({'x': '1'}), by_alias=False, by_name=False)
+        ta.validate_json(1, by_alias=False, by_name=False)
 
-    assert 'At least one of `by_alias` or `by_name` must be set to True.' in str(exc_info.value)
+    assert exc_info.value.code == 'validate-by-alias-and-name-false'
 
 
 def test_validate_strings_with_incorrect_configuration():
     ta = TypeAdapter(int)
 
     with pytest.raises(PydanticUserError) as exc_info:
-        ta.validate_strings({'x': 'true', 'y': 'true'}, by_alias=False, by_name=False)
+        ta.validate_strings(1, by_alias=False, by_name=False)
 
-    assert 'At least one of `by_alias` or `by_name` must be set to True.' in str(exc_info.value)
+    assert exc_info.value.code == 'validate-by-alias-and-name-false'
