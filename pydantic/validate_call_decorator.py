@@ -3,6 +3,7 @@
 from __future__ import annotations as _annotations
 
 import inspect
+import sys
 from functools import partial
 from types import BuiltinFunctionType
 from typing import TYPE_CHECKING, Any, Callable, TypeVar, cast, overload
@@ -11,6 +12,9 @@ from ._internal import _generate_schema, _typing_extra, _validate_call
 from .errors import PydanticUserError
 
 __all__ = ('validate_call',)
+
+if sys.version_info >= (3, 14):
+    import annotationlib
 
 if TYPE_CHECKING:
     from .config import ConfigDict
@@ -25,7 +29,14 @@ def _check_function_type(function: object) -> None:
     """Check if the input function is a supported type for `validate_call`."""
     if isinstance(function, _generate_schema.VALIDATE_CALL_SUPPORTED_TYPES):
         try:
-            inspect.signature(cast(_generate_schema.ValidateCallSupportedTypes, function))
+            if sys.version_info >= (3, 14):
+                # Use FORWARDREF format to avoid evaluating deferred annotations
+                inspect.signature(
+                    cast(_generate_schema.ValidateCallSupportedTypes, function),
+                    annotation_format=annotationlib.Format.FORWARDREF,
+                )
+            else:
+                inspect.signature(cast(_generate_schema.ValidateCallSupportedTypes, function))
         except ValueError:
             raise PydanticUserError(
                 f"Input function `{function}` doesn't have a valid signature", code=_INVALID_TYPE_ERROR_CODE

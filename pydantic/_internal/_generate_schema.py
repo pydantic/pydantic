@@ -55,6 +55,9 @@ from typing_extensions import TypeAlias, TypeAliasType, get_args, get_origin, is
 from typing_inspection import typing_objects
 from typing_inspection.introspection import AnnotationSource, get_literal_values, is_union_origin
 
+if sys.version_info >= (3, 14):
+    import annotationlib
+
 from ..aliases import AliasChoices, AliasPath
 from ..annotated_handlers import GetCoreSchemaHandler, GetJsonSchemaHandler
 from ..config import ConfigDict, JsonDict, JsonEncoder, JsonSchemaExtraCallable
@@ -1962,7 +1965,11 @@ class GenerateSchema:
             Parameter.KEYWORD_ONLY: 'keyword_only',
         }
 
-        sig = signature(function)
+        if sys.version_info >= (3, 14):
+            # Use FORWARDREF format to avoid evaluating deferred annotations
+            sig = signature(function, annotation_format=annotationlib.Format.FORWARDREF)
+        else:
+            sig = signature(function)
         globalns, localns = self._types_namespace
         type_hints = _typing_extra.get_function_type_hints(function, globalns=globalns, localns=localns)
 

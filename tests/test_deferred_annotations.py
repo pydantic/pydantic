@@ -1,5 +1,6 @@
 """Tests related to deferred evaluation of annotations introduced in Python 3.14 by PEP 649 and 749."""
 
+import functools
 import sys
 from dataclasses import field
 from typing import Annotated
@@ -15,6 +16,7 @@ from pydantic import (
     field_validator,
     model_serializer,
     model_validator,
+    validate_call,
 )
 from pydantic.dataclasses import dataclass
 
@@ -127,3 +129,26 @@ def test_deferred_annotations_pydantic_extra() -> None:
 
     assert f.a == 1
     assert f.extra == 1
+
+
+def test_deferred_annotations_validate_call_wrapped_function() -> None:
+    """https://github.com/pydantic/pydantic/issues/12620
+
+    In Python 3.14, `functools.update_wrapper` copies `__annotate__` instead of
+    `__annotations__`. This test ensures that `validate_call` works with wrapped
+    functions (e.g. those decorated with `sync_to_async` or similar).
+    """
+
+    def decorator(func):
+        @functools.wraps(func)
+        def wrapper(*args, **kwargs):
+            return func(*args, **kwargs)
+
+        return wrapper
+
+    @validate_call
+    @decorator
+    def foo(a: int, b: str) -> float:
+        return float(a)
+
+    assert foo('1', b'test') == 1.0
