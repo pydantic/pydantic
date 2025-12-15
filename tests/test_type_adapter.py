@@ -681,3 +681,103 @@ def test_correct_frame_used_parametrized(create_module) -> None:
 
     with pytest.raises(ValidationError):
         module_1.ta.validate_python('a')
+
+
+def test_rebuild_returns_none_when_adapter_already_completed():
+    ta = TypeAdapter(int)
+    assert ta.pydantic_complete is True
+
+    result = ta.rebuild()
+    assert result is None
+
+
+def test_rebuild_deferred_schema(generate_schema_calls):
+    # Use a type without fwd refs to ensure deferral is due to config
+    config = ConfigDict(defer_build=True)
+    ta = TypeAdapter(int, config=config)
+
+    # Check initial state - should be deferred
+    assert ta.pydantic_complete is False
+    assert generate_schema_calls.count == 0
+
+    result = ta.rebuild(force=True)
+
+    assert result is True
+    assert ta.pydantic_complete is True
+    assert generate_schema_calls.count == 1
+
+    assert ta.validate_python(123) == 123
+
+
+def test_rebuild_unsuccessful_resolution():
+    config = ConfigDict(defer_build=True)
+    # The target 'MissingClass' never gets defined in the test scope
+    fwdref = ForwardRef('MissingClass')
+    ta = TypeAdapter(fwdref, config=config)
+
+    result = ta.rebuild(raise_errors=False)
+
+    assert result is False
+    assert ta.pydantic_complete is False
+
+
+def test_rebuild_with_explicit_namespace():
+    # Simulate a target type defined in a different scope
+    class ExplicitTarget(BaseModel):
+        id: int
+
+    ta = TypeAdapter(ForwardRef('ExplicitTarget'), config=ConfigDict(defer_build=True))
+
+    namespace = {'ExplicitTarget': ExplicitTarget}
+    result = ta.rebuild(_types_namespace=namespace)
+
+    assert result is True
+    validated = ta.validate_python({'id': 42})
+    assert validated == ExplicitTarget(id=42)
+
+
+def test_rebuild_zero_depth_prevents_local_resolution():
+    """
+    Tests that when _parent_namespace_depth is 0, local variables in the
+    calling function's scope are ignored during resolution.
+    """
+
+    # Define the target type locally inside this test function
+    class LocalTarget(BaseModel):
+        id: int
+
+    fwdref = ForwardRef('LocalTarget')
+    ta = TypeAdapter(fwdref, config=ConfigDict(defer_build=True))
+    assert ta.pydantic_complete is False
+
+    result_failed = ta.rebuild(_parent_namespace_depth=0, raise_errors=False)
+
+    # Rebuild must fail because the local scope was skipped
+    assert result_failed is False
+
+
+def test_validate_python_with_incorrect_configuration():
+    ta = TypeAdapter(int)
+
+    with pytest.raises(PydanticUserError) as exc_info:
+        ta.validate_python({'foo': [1, '2']}, by_alias=False, by_name=False)
+
+    assert 'At least one of `by_alias` or `by_name` must be set to True.' in str(exc_info.value)
+
+
+def test_validate_json_with_incorrect_configuration():
+    ta = TypeAdapter(int)
+
+    with pytest.raises(PydanticUserError) as exc_info:
+        ta.validate_json(json.dumps({'x': '1'}), by_alias=False, by_name=False)
+
+    assert 'At least one of `by_alias` or `by_name` must be set to True.' in str(exc_info.value)
+
+
+def test_validate_strings_with_incorrect_configuration():
+    ta = TypeAdapter(int)
+
+    with pytest.raises(PydanticUserError) as exc_info:
+        ta.validate_strings({'x': 'true', 'y': 'true'}, by_alias=False, by_name=False)
+
+    assert 'At least one of `by_alias` or `by_name` must be set to True.' in str(exc_info.value)

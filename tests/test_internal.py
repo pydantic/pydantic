@@ -15,9 +15,12 @@ from pydantic_core import core_schema as cs
 
 from pydantic import BaseModel, TypeAdapter
 from pydantic._internal._config import ConfigWrapper
+from pydantic._internal._core_metadata import update_core_metadata
 from pydantic._internal._generate_schema import GenerateSchema
 from pydantic._internal._repr import Representation
 from pydantic._internal._validators import _extract_decimal_digits_info
+from pydantic.config import JsonDict
+from pydantic.json_schema import GetJsonSchemaHandler, JsonSchemaValue
 
 
 def init_schema_and_cleaned_schema(type_: Any) -> tuple[CoreSchema, CoreSchema]:
@@ -188,3 +191,128 @@ def test_decimal_digits_calculation(decimal: Decimal, decimal_places: int, digit
 def test_decimal_digits_calculation_type_error(value) -> None:
     with pytest.raises(TypeError, match=f'Unable to extract decimal digits info from supplied value {value}'):
         _extract_decimal_digits_info(value)
+
+
+class TestCoreMetadata:
+    def test_update_adds_key_to_existing_metadata(self):
+        metadata = {'pydantic_js_prefer_positional_arguments': True}
+        update_core_metadata(metadata, pydantic_js_updates={'title': 'Test'})
+        assert metadata['pydantic_js_prefer_positional_arguments']
+        assert metadata['pydantic_js_updates'] == {'title': 'Test'}
+
+    def test_multiple_updates_merge_js_updates_dict(self):
+        metadata: dict[str, Any] = {}
+        update_core_metadata(metadata, pydantic_js_updates={'title': 'Test'})
+        update_core_metadata(metadata, pydantic_js_updates={'description': 'A test field'})
+
+        assert metadata['pydantic_js_updates']['title'] == 'Test'
+        assert metadata['pydantic_js_updates']['description'] == 'A test field'
+
+    def test_update_override_earlier_values_for_existing_keys(self):
+        metadata: dict[str, Any] = {}
+        update_core_metadata(metadata, pydantic_js_updates={'title': 'First'})
+        update_core_metadata(metadata, pydantic_js_updates={'title': 'Second'})
+        assert metadata['pydantic_js_updates']['title'] == 'Second'
+
+    def test_update_js_extra_as_callable_when_existing_js_extra_is_none(self):
+        metadata: dict[str, Any] = {}
+
+        def extra_func(schema: JsonDict) -> None:
+            schema['testKey'] = 'testValue'
+
+        update_core_metadata(metadata, pydantic_js_extra=extra_func)
+        assert metadata['pydantic_js_extra'] is extra_func
+
+    def test_update_js_extra_as_callable_when_existing_js_extra_is_dict_type(self):
+        """
+        It should ignore the callable with a warning.
+        """
+        metadata: dict[str, Any] = {}
+
+        extra_dict: JsonDict = {'testKey': 'testValue'}
+
+        def extra_func(schema: JsonDict) -> None:
+            schema['testKey'] = 'testValue'
+
+        update_core_metadata(metadata, pydantic_js_extra=extra_dict)
+        from pydantic.json_schema import PydanticJsonSchemaWarning
+
+        with pytest.warns(PydanticJsonSchemaWarning):
+            update_core_metadata(metadata, pydantic_js_extra=extra_func)
+        assert metadata['pydantic_js_extra'] is extra_dict
+
+    def test_update_js_extra_as_callable_when_existing_js_extra_is_callable_type(self):
+        """
+        It should overwrite existing js_extra with the new callable.
+        """
+        metadata: dict[str, Any] = {}
+
+        def extra_func1(schema: JsonDict) -> None:
+            schema['testKey1'] = 'testValue1'
+
+        def extra_func2(schema: JsonDict) -> None:
+            schema['testKey2'] = 'testValue2'
+
+        update_core_metadata(metadata, pydantic_js_extra=extra_func1)
+        update_core_metadata(metadata, pydantic_js_extra=extra_func2)
+        assert metadata['pydantic_js_extra'] is extra_func2
+
+    def test_update_js_extra_as_dict_when_existing_js_extra_is_none(self):
+        metadata: dict[str, Any] = {}
+
+        extra: JsonDict = {'testKey': 'testValue'}
+
+        update_core_metadata(metadata, pydantic_js_extra=extra)
+        assert metadata['pydantic_js_extra'] is extra
+
+    def test_update_js_extra_as_dict_when_existing_js_extra_is_callable_type(self):
+        """
+        It should overwrite existing js_extra with the new dictionary.
+        """
+        metadata: dict[str, Any] = {}
+        extra_dict: JsonDict = {'testKey': 'testValue'}
+
+        def extra_func(schema: JsonDict) -> None:
+            schema['testKey'] = 'testValue'
+
+        update_core_metadata(metadata, pydantic_js_extra=extra_func)
+        update_core_metadata(metadata, pydantic_js_extra=extra_dict)
+        assert metadata['pydantic_js_extra'] is extra_dict
+
+    def test_update_js_annotation_functions(self):
+        metadata: dict[str, Any] = {}
+
+        def func1(schema: CoreSchema, handler: GetJsonSchemaHandler) -> JsonSchemaValue:
+            return {'type': 'string'}
+
+        def func2(schema: CoreSchema, handler: GetJsonSchemaHandler) -> JsonSchemaValue:
+            return {'format': 'email'}
+
+        update_core_metadata(metadata, pydantic_js_annotation_functions=[func1])
+        assert func1 in metadata['pydantic_js_annotation_functions']
+
+        update_core_metadata(metadata, pydantic_js_annotation_functions=[func2])
+        assert func2 in metadata['pydantic_js_annotation_functions']
+        assert len(metadata['pydantic_js_annotation_functions']) == 2
+
+    def test_update_all_parameters(self):
+        metadata: dict[str, Any] = {}
+
+        def func(schema: CoreSchema, handler: GetJsonSchemaHandler) -> JsonSchemaValue:
+            return {'type': 'string'}
+
+        def extra(schema: JsonDict) -> None:
+            schema['testKey'] = 'testValue'
+
+        update_core_metadata(
+            metadata,
+            pydantic_js_updates={'title': 'Test'},
+            pydantic_js_extra=extra,
+            pydantic_js_annotation_functions=[func],
+            pydantic_js_functions=[func],
+        )
+
+        assert 'pydantic_js_updates' in metadata
+        assert 'pydantic_js_extra' in metadata
+        assert 'pydantic_js_annotation_functions' in metadata
+        assert 'pydantic_js_functions' in metadata
