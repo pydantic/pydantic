@@ -2418,6 +2418,9 @@ For nested models, Secret Manager supports the `env_nested_delimiter` setting as
 ### Important Notes
 
 1. **Case Sensitivity**: By default, secret names are case-sensitive.
+   - If you set `case_sensitive=False`, `pydantic-settings` will attempt to resolve secrets in a case-insensitive manner. It prioritizes exact matches over case-insensitive matches. For some examples of this, imagine `case_sensitive=False` and the model attribute is named `my_secret`:
+     - If Google Secret Manager has both `MY_SECRET` and `my_secret` defined - the value of `my_secret` will be returned.
+     - If Google Secret Manager has `MY_SECRET`, `My_Secret`, and `my_Secret` defined - a warning will be raised and the value of `my_Secret` will be returned - as the secret names are first sorted in ASCII sort order (where lowercased letters are greater than upper case letters) and the last one is chosen (which would be `my_Secret` in this case).
 1. **Secret Naming**: Create secrets in Google Secret Manager with names that match your field names (including any prefix). According the [Secret Manager documentation](https://cloud.google.com/secret-manager/docs/creating-and-accessing-secrets#create-a-secret), a secret name can contain uppercase and lowercase letters, numerals, hyphens, and underscores. The maximum allowed length for a name is 255 characters.
 1. **Secret Versions**: The GoogleSecretManagerSettingsSource uses the "latest" version of secrets.
 
