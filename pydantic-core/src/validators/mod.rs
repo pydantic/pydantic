@@ -6,6 +6,7 @@ use enum_dispatch::enum_dispatch;
 use jiter::{PartialMode, StringCacheMode};
 
 use pyo3::exceptions::{PyTypeError, PyValueError};
+use pyo3::pybacked::PyBackedStr;
 use pyo3::types::{PyAny, PyDict, PyString, PyTuple, PyType};
 use pyo3::{IntoPyObjectExt, prelude::*};
 use pyo3::{PyTraverseError, PyVisit, intern};
@@ -324,7 +325,7 @@ impl SchemaValidator {
         &self,
         py: Python,
         obj: Bound<'_, PyAny>,
-        field_name: &str,
+        field_name: PyBackedStr,
         field_value: Bound<'_, PyAny>,
         strict: Option<bool>,
         extra: Option<&Bound<'_, PyString>>,
@@ -343,7 +344,7 @@ impl SchemaValidator {
             strict,
             extra_behavior,
             from_attributes,
-            field_name: Some(PyString::new(py, field_name)),
+            field_name: Some(field_name.clone()),
             context,
             self_instance: None,
             cache_str: self.cache_str,
@@ -354,7 +355,7 @@ impl SchemaValidator {
         let guard = &mut RecursionState::default();
         let mut state = ValidationState::new(extra, guard, false.into());
         self.validator
-            .validate_assignment(py, &obj, field_name, &field_value, &mut state)
+            .validate_assignment(py, &obj, &field_name, &field_value, &mut state)
             .map_err(|e| self.prepare_validation_err(py, e, InputType::Python))
     }
 
@@ -687,7 +688,7 @@ pub struct Extra<'a, 'py> {
     /// context used in validator functions
     pub context: Option<&'a Bound<'py, PyAny>>,
     /// The name of the field being validated, if applicable
-    pub field_name: Option<Bound<'py, PyString>>,
+    pub field_name: Option<PyBackedStr>, // FIXME: can this be &'a PyBackedStr?
     /// This is an instance of the model or dataclass being validated, when validation is performed from `__init__`
     self_instance: Option<&'a Bound<'py, PyAny>>,
     /// Whether to use a cache of short strings to accelerate python string construction
@@ -876,7 +877,7 @@ pub trait Validator: Send + Sync + Debug {
         &self,
         _py: Python<'py>,
         _obj: &Bound<'py, PyAny>,
-        _field_name: &str,
+        _field_name: &PyBackedStr,
         _field_value: &Bound<'py, PyAny>,
         _state: &mut ValidationState<'_, 'py>,
     ) -> ValResult<Py<PyAny>> {

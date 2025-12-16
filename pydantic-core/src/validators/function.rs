@@ -1,8 +1,9 @@
 use std::sync::Arc;
 
 use pyo3::exceptions::{PyAssertionError, PyValueError};
-use pyo3::prelude::*;
+use pyo3::pybacked::PyBackedStr;
 use pyo3::types::{PyAny, PyDict, PyString};
+use pyo3::{IntoPyObjectExt, prelude::*};
 use pyo3::{PyTraverseError, PyVisit, intern};
 
 use crate::PydanticUseDefault;
@@ -23,7 +24,7 @@ use super::{
 struct FunctionInfo {
     /// The actual function object that will get called
     pub function: Py<PyAny>,
-    pub field_name: Option<Py<PyString>>,
+    pub field_name: Option<PyBackedStr>,
     pub info_arg: bool,
 }
 
@@ -87,7 +88,7 @@ pub struct FunctionBeforeValidator {
     func: Py<PyAny>,
     config: Py<PyAny>,
     name: String,
-    field_name: Option<Py<PyString>>,
+    field_name: Option<PyBackedStr>,
     info_arg: bool,
 }
 
@@ -102,12 +103,7 @@ impl FunctionBeforeValidator {
         state: &'s mut ValidationState<'_, 'py>,
     ) -> ValResult<Py<PyAny>> {
         let r = if self.info_arg {
-            let field_name = state
-                .extra()
-                .field_name
-                .clone()
-                .map(Bound::unbind)
-                .or_else(|| self.field_name.clone());
+            let field_name = state.extra().field_name.clone().or_else(|| self.field_name.clone());
             let info = ValidationInfo::new(py, state.extra(), &self.config, field_name);
             self.func.call1(py, (input.to_object(py)?, info))
         } else {
@@ -139,7 +135,7 @@ impl Validator for FunctionBeforeValidator {
         &self,
         py: Python<'py>,
         obj: &Bound<'py, PyAny>,
-        field_name: &str,
+        field_name: &PyBackedStr,
         field_value: &Bound<'py, PyAny>,
         state: &mut ValidationState<'_, 'py>,
     ) -> ValResult<Py<PyAny>> {
@@ -161,7 +157,7 @@ pub struct FunctionAfterValidator {
     func: Py<PyAny>,
     config: Py<PyAny>,
     name: String,
-    field_name: Option<Py<PyString>>,
+    field_name: Option<PyBackedStr>,
     info_arg: bool,
 }
 
@@ -177,12 +173,7 @@ impl FunctionAfterValidator {
     ) -> ValResult<Py<PyAny>> {
         let v = call(input, state)?;
         let r = if self.info_arg {
-            let field_name = state
-                .extra()
-                .field_name
-                .clone()
-                .map(Bound::unbind)
-                .or_else(|| self.field_name.clone());
+            let field_name = state.extra().field_name.clone().or_else(|| self.field_name.clone());
             let info = ValidationInfo::new(py, state.extra(), &self.config, field_name);
             self.func.call1(py, (v, info))
         } else {
@@ -213,7 +204,7 @@ impl Validator for FunctionAfterValidator {
         &self,
         py: Python<'py>,
         obj: &Bound<'py, PyAny>,
-        field_name: &str,
+        field_name: &PyBackedStr,
         field_value: &Bound<'py, PyAny>,
         state: &mut ValidationState<'_, 'py>,
     ) -> ValResult<Py<PyAny>> {
@@ -234,7 +225,7 @@ pub struct FunctionPlainValidator {
     func: Py<PyAny>,
     config: Py<PyAny>,
     name: String,
-    field_name: Option<Py<PyString>>,
+    field_name: Option<PyBackedStr>,
     info_arg: bool,
 }
 
@@ -272,12 +263,7 @@ impl Validator for FunctionPlainValidator {
         state: &mut ValidationState<'_, 'py>,
     ) -> ValResult<Py<PyAny>> {
         let r = if self.info_arg {
-            let field_name = state
-                .extra()
-                .field_name
-                .clone()
-                .map(Bound::unbind)
-                .or_else(|| self.field_name.clone());
+            let field_name = state.extra().field_name.clone().or_else(|| self.field_name.clone());
             let info = ValidationInfo::new(py, state.extra(), &self.config, field_name);
             self.func.call1(py, (input.to_object(py)?, info))
         } else {
@@ -297,7 +283,7 @@ pub struct FunctionWrapValidator {
     func: Py<PyAny>,
     config: Py<PyAny>,
     name: String,
-    field_name: Option<Py<PyString>>,
+    field_name: Option<PyBackedStr>,
     info_arg: bool,
     hide_input_in_errors: bool,
     validation_error_cause: bool,
@@ -342,12 +328,7 @@ impl FunctionWrapValidator {
         state: &mut ValidationState<'_, 'py>,
     ) -> ValResult<Py<PyAny>> {
         let r = if self.info_arg {
-            let field_name = state
-                .extra()
-                .field_name
-                .clone()
-                .map(Bound::unbind)
-                .or_else(|| self.field_name.clone());
+            let field_name = state.extra().field_name.clone().or_else(|| self.field_name.clone());
             let info = ValidationInfo::new(py, state.extra(), &self.config, field_name);
             self.func.call1(py, (input.to_object(py)?, handler, info))
         } else {
@@ -392,7 +373,7 @@ impl Validator for FunctionWrapValidator {
         &self,
         py: Python<'py>,
         obj: &Bound<'py, PyAny>,
-        field_name: &str,
+        field_name: &PyBackedStr,
         field_value: &Bound<'py, PyAny>,
         state: &mut ValidationState<'_, 'py>,
     ) -> ValResult<Py<PyAny>> {
@@ -404,7 +385,7 @@ impl Validator for FunctionWrapValidator {
                 self.hide_input_in_errors,
                 self.validation_error_cause,
             ),
-            updated_field_name: field_name.to_string(),
+            updated_field_name: field_name.clone(),
             updated_field_value: field_value.clone().into(),
         };
         #[allow(clippy::used_underscore_items)]
@@ -451,7 +432,7 @@ impl ValidatorCallable {
 #[pyclass(module = "pydantic_core._pydantic_core")]
 #[derive(Debug)]
 struct AssignmentValidatorCallable {
-    updated_field_name: String,
+    updated_field_name: PyBackedStr,
     updated_field_value: Py<PyAny>,
     validator: InternalValidator,
 }
@@ -469,7 +450,7 @@ impl AssignmentValidatorCallable {
         self.validator.validate_assignment(
             py,
             input_value,
-            self.updated_field_name.as_str(),
+            &self.updated_field_name,
             self.updated_field_value.bind(py),
             outer_location,
         )
@@ -532,19 +513,14 @@ pub struct ValidationInfo {
     config: Py<PyAny>,
     context: Option<Py<PyAny>>,
     data: Option<Py<PyDict>>,
-    field_name: Option<Py<PyString>>,
+    field_name: Option<PyBackedStr>,
     mode: InputType,
 }
 
-impl_py_gc_traverse!(ValidationInfo {
-    config,
-    context,
-    data,
-    field_name
-});
+impl_py_gc_traverse!(ValidationInfo { config, context, data });
 
 impl ValidationInfo {
-    fn new(py: Python, extra: &Extra<'_, '_>, config: &Py<PyAny>, field_name: Option<Py<PyString>>) -> Self {
+    fn new(py: Python, extra: &Extra<'_, '_>, config: &Py<PyAny>, field_name: Option<PyBackedStr>) -> Self {
         Self {
             config: config.clone_ref(py),
             context: extra.context.map(|ctx| ctx.clone().into()),
@@ -576,7 +552,7 @@ impl ValidationInfo {
             None => "None".into(),
         };
         let field_name = match self.field_name {
-            Some(ref field_name) => safe_repr(field_name.bind(py)).to_string(),
+            Some(ref field_name) => safe_repr(&field_name.clone().into_bound_py_any(py)?).to_string(),
             None => "None".into(),
         };
         Ok(format!(

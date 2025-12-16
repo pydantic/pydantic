@@ -3,6 +3,7 @@ use std::sync::Arc;
 
 use pyo3::intern;
 use pyo3::prelude::*;
+use pyo3::pybacked::PyBackedStr;
 use pyo3::types::{PyDict, PyList, PyString, PyTuple};
 
 use ahash::AHashSet;
@@ -43,7 +44,7 @@ impl FromStr for VarKwargsMode {
 #[derive(Debug)]
 struct Parameter {
     positional: bool,
-    name: String,
+    name: PyBackedStr,
     kwarg_key: Option<Py<PyString>>,
     validator: Arc<CombinedValidator>,
     // lookup keys, only populated for keyword or positional_or_keyword parameters
@@ -84,7 +85,7 @@ impl BuildValidator for ArgumentsValidator {
             let arg = arg.cast::<PyDict>()?;
 
             let py_name: Bound<PyString> = arg.get_as_req(intern!(py, "name"))?;
-            let name = py_name.to_string();
+            let name = PyBackedStr::try_from(py_name.clone())?;
             let mode = arg.get_as::<Bound<'_, PyString>>(intern!(py, "mode"))?;
             let mode = mode
                 .as_ref()
@@ -228,8 +229,7 @@ impl Validator for ArgumentsValidator {
                 kw_value = Some((lookup_path, value));
             }
 
-            let state =
-                &mut state.rebind_extra(|extra| extra.field_name = Some(PyString::new(py, parameter.name.as_str())));
+            let state = &mut state.rebind_extra(|extra| extra.field_name = Some(parameter.name.clone()));
 
             match (pos_value, kw_value) {
                 (Some(_), Some((_, kw_value))) => {
@@ -262,7 +262,7 @@ impl Validator for ArgumentsValidator {
                 (None, None) => {
                     if let Some(value) = parameter
                         .validator
-                        .default_value(py, Some(parameter.name.as_str()), state)?
+                        .default_value(py, Some(parameter.name.clone()), state)?
                     {
                         if let Some(ref kwarg_key) = parameter.kwarg_key {
                             output_kwargs.set_item(kwarg_key, value)?;

@@ -2,6 +2,8 @@ use std::ptr::null_mut;
 use std::sync::Arc;
 
 use pyo3::exceptions::PyTypeError;
+use pyo3::pybacked::PyBackedStr;
+use pyo3::sync::PyOnceLock;
 use pyo3::types::{PyDict, PySet, PyString, PyTuple, PyType};
 use pyo3::{BoundObject, IntoPyObjectExt, ffi};
 use pyo3::{intern, prelude::*};
@@ -185,7 +187,7 @@ impl Validator for ModelValidator {
         &self,
         py: Python<'py>,
         model: &Bound<'py, PyAny>,
-        field_name: &str,
+        field_name: &PyBackedStr,
         field_value: &Bound<'py, PyAny>,
         state: &mut ValidationState<'_, 'py>,
     ) -> ValResult<Py<PyAny>> {
@@ -202,7 +204,7 @@ impl Validator for ModelValidator {
                     field_name.to_string(),
                 ))
             } else {
-                let state = &mut state.rebind_extra(|extra| extra.field_name = Some(PyString::new(py, ROOT_FIELD)));
+                let state = &mut state.rebind_extra(|extra| extra.field_name = Some(root_field_py_backed_str(py)));
                 let output = self.validator.validate(py, field_value, state)?;
 
                 force_setattr(py, model, intern!(py, ROOT_FIELD), output)?;
@@ -258,7 +260,7 @@ impl ModelValidator {
         let state = &mut state.rebind_extra(|extra| extra.self_instance = None);
 
         if self.root_model {
-            let state = &mut state.rebind_extra(|extra| extra.field_name = Some(PyString::new(py, ROOT_FIELD)));
+            let state = &mut state.rebind_extra(|extra| extra.field_name = Some(root_field_py_backed_str(py)));
             let output = self.validator.validate(py, input, state)?;
 
             let fields_set = if input.as_python().is_some_and(|py_input| py_input.is(&self.undefined)) {
@@ -302,7 +304,7 @@ impl ModelValidator {
         let instance;
 
         if self.root_model {
-            let state = &mut state.rebind_extra(|extra| extra.field_name = Some(PyString::new(py, ROOT_FIELD)));
+            let state = &mut state.rebind_extra(|extra| extra.field_name = Some(root_field_py_backed_str(py)));
             let output = self.validator.validate(py, input, state)?;
             instance = create_class(self.class.bind(py))?;
 
@@ -389,4 +391,11 @@ where
             ffi::PyObject_GenericSetAttr(obj.as_ptr(), attr_name.as_ptr(), value.as_ptr()),
         )
     }
+}
+
+fn root_field_py_backed_str(py: Python<'_>) -> PyBackedStr {
+    static ROOT_FIELD_PY_STR: PyOnceLock<PyBackedStr> = PyOnceLock::new();
+    ROOT_FIELD_PY_STR
+        .get_or_init(py, || PyString::new(py, ROOT_FIELD).try_into().expect("valid utf8"))
+        .clone()
 }
