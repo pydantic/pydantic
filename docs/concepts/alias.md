@@ -47,6 +47,49 @@ print(user)
 In the `'first_name'` field, we are using the alias `'names'` and the index `0` to specify the path to the first name.
 In the `'last_name'` field, we are using the alias `'names'` and the index `1` to specify the path to the last name.
 
+### `AliasPath` with `model_construct`
+
+When using `model_construct`, `AliasPath` supports both dictionary-like access (using keys/indices) and attribute access on objects. This is particularly useful when working with nested objects or Pydantic models:
+
+```python {lint="skip"}
+from pydantic import BaseModel, Field, AliasPath
+
+
+class Address(BaseModel):
+    street: str
+    city: str
+
+
+class ContactInfo(BaseModel):
+    address: Address
+
+
+class User(BaseModel):
+    name: str = Field(validation_alias=AliasPath('contact', 'address', 'city'))
+
+
+# The AliasPath can traverse through object attributes with model_construct
+contact_data = {
+    'contact': ContactInfo(
+        address=Address(street='221B Baker St', city='London')
+    )
+}
+
+user = User.model_construct(**contact_data)
+print(user)
+#> name='London'
+```
+
+In this example, `AliasPath('contact', 'address', 'city')` traverses:
+
+1. The dictionary key `'contact'` (returns a `ContactInfo` object)
+2. The attribute `address` on the `ContactInfo` object (returns an `Address` object)
+3. The attribute `city` on the `Address` object (returns the string `'London'`)
+
+The path resolution tries dictionary/index access first, then falls back to attribute access if the key is a string.
+
+### `AliasChoices`
+
 `AliasChoices` is used to specify a choice of aliases. For example:
 
 ```python {lint="skip"}

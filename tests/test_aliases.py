@@ -607,8 +607,99 @@ def test_validation_alias_path(value):
 
 def test_search_dict_for_alias_path():
     ap = AliasPath('a', 1)
-    assert ap.search_dict_for_path({'a': ['hello', 'world']}) == 'world'
-    assert ap.search_dict_for_path({'a': 'hello'}) is PydanticUndefined
+    assert ap.resolve_path({'a': ['hello', 'world']}) == 'world'
+    assert ap.resolve_path({'a': 'hello'}) is PydanticUndefined
+
+    alias_with_model = AliasPath('a', 'b')
+
+    class BModel(BaseModel):
+        b: str
+
+    class CModel(BaseModel):
+        c: str
+
+    assert alias_with_model.resolve_path({'a': BModel(b='test')}) == 'test'
+    assert alias_with_model.resolve_path({'a': CModel(c='test')}) is PydanticUndefined
+
+
+def test_resolve_path_mixed_access():
+    """Test mixed dict and attribute access in nested paths"""
+
+    class InnerModel(BaseModel):
+        value: str
+
+    data = {'outer': {'inner': InnerModel(value='test')}}
+    ap = AliasPath('outer', 'inner', 'value')
+    assert ap.resolve_path(data) == 'test'
+
+    class RegularObject:
+        def __init__(self):
+            self.name = 'test'
+            self.nested = {'key': 'value'}
+
+    obj = RegularObject()
+    ap = AliasPath('name')
+    assert ap.resolve_path(obj) == 'test'
+
+    ap = AliasPath('nested', 'key')
+    assert ap.resolve_path(obj) == 'value'
+
+
+def test_resolve_path_multiple_levels():
+    """Test deeply nested paths with multiple levels"""
+    data = {'level1': {'level2': {'level3': {'level4': [0, 1, {'final': 'found'}]}}}}
+    ap = AliasPath('level1', 'level2', 'level3', 'level4', 2, 'final')
+    assert ap.resolve_path(data) == 'found'
+
+
+def test_resolve_path_error_cases():
+    """Test various error scenarios that should return PydanticUndefined"""
+
+    ap = AliasPath('missing', 'key')
+    assert ap.resolve_path({'other': 'value'}) is PydanticUndefined
+
+    ap = AliasPath('a', 'b')
+    assert ap.resolve_path({'a': None}) is PydanticUndefined
+
+    ap = AliasPath('a')
+    assert ap.resolve_path(None) is PydanticUndefined
+
+    ap = AliasPath('key')
+    assert ap.resolve_path({}) is PydanticUndefined
+
+    ap = AliasPath('list', 0)
+    assert ap.resolve_path({'list': []}) is PydanticUndefined
+
+    ap = AliasPath('list', 10)
+    assert ap.resolve_path({'list': [1, 2, 3]}) is PydanticUndefined
+
+    ap = AliasPath('value', 0)
+    assert ap.resolve_path({'value': 123}) is PydanticUndefined
+
+    class SimpleObj:
+        x: int = 1
+
+    obj = SimpleObj()
+    ap = AliasPath('y')
+    assert ap.resolve_path(obj) is PydanticUndefined
+
+    ap = AliasPath('text', 0)
+    assert ap.resolve_path({'text': 'hello'}) is PydanticUndefined
+
+    ap = AliasPath('outer', 'inner', 0)
+    assert ap.resolve_path({'outer': {'inner': 'string'}}) is PydanticUndefined
+
+
+def test_resolve_path_list_indexing():
+    """Test various list indexing scenarios"""
+    ap = AliasPath('items', 0)
+    assert ap.resolve_path({'items': ['first', 'second']}) == 'first'
+
+    ap = AliasPath('items', -1)
+    assert ap.resolve_path({'items': ['first', 'second']}) == 'second'
+
+    ap = AliasPath('matrix', 0, 1)
+    assert ap.resolve_path({'matrix': [[1, 2], [3, 4]]}) == 2
 
 
 def test_validation_alias_invalid_value_type():

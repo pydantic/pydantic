@@ -352,7 +352,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
                         fields_set.add(name)
                         break
                     elif isinstance(alias, AliasPath):
-                        value = alias.search_dict_for_path(values)
+                        value = alias.resolve_path(values)
                         if value is not PydanticUndefined:
                             fields_values[name] = value
                             fields_set.add(name)

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import dataclasses
+from collections.abc import Mapping
 from typing import Any, Callable, Literal
 
 from pydantic_core import PydanticUndefined
@@ -36,8 +37,11 @@ class AliasPath:
         """
         return self.path
 
-    def search_dict_for_path(self, d: dict) -> Any:
-        """Searches a dictionary for the path specified by the alias.
+    def resolve_path(self, d: Mapping[str, Any] | Any) -> Any:
+        """Resolves the path specified by the alias in a dictionary or object.
+
+        Supports both dict-like access (e.g., obj['key']) and attribute access (e.g., obj.key)
+        for nested paths.
 
         Returns:
             The value at the specified path, or `PydanticUndefined` if the path is not found.
@@ -47,10 +51,23 @@ class AliasPath:
             if isinstance(v, str):
                 # disallow indexing into a str, like for AliasPath('x', 0) and x='abc'
                 return PydanticUndefined
+
             try:
-                v = v[k]
+                # k can be str or int
+                v = v[k]  # type: ignore[index]
+                continue
             except (KeyError, IndexError, TypeError):
-                return PydanticUndefined
+                pass
+
+            if isinstance(k, str) and hasattr(v, k):
+                try:
+                    v = getattr(v, k)
+                    continue
+                except AttributeError:
+                    return PydanticUndefined
+
+            return PydanticUndefined
+
         return v
 
 
