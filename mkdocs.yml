@@ -218,7 +218,8 @@ hooks:
   - 'docs/plugins/algolia.py'
 
 plugins:
-  - social
+  - social:
+      enabled: !ENV [CI, false]
   - mike:
       alias_type: symlink
       canonical_version: latest
