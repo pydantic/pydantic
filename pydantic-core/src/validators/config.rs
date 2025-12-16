@@ -40,8 +40,7 @@ impl FromStr for TemporalUnitMode {
             "infer" => Ok(Self::Infer),
 
             s => py_schema_err!(
-                "Invalid temporal_unit_mode serialization mode: `{}`, expected seconds, milliseconds or infer",
-                s
+                "Invalid temporal_unit_mode serialization mode: `{s}`, expected seconds, milliseconds or infer"
             ),
         }
     }

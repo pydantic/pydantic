@@ -13,12 +13,12 @@ pub enum Discriminator {
 }
 
 impl Discriminator {
-    pub fn new(py: Python, raw: &Bound<'_, PyAny>) -> PyResult<Self> {
+    pub fn new(raw: &Bound<'_, PyAny>) -> PyResult<Self> {
         if raw.is_callable() {
             return Ok(Self::Function(raw.clone().unbind()));
         }
 
-        let lookup_key = LookupKey::from_py(py, raw, None)?;
+        let lookup_key = LookupKey::from_py(raw)?;
         Ok(Self::LookupKey(lookup_key))
     }
 

@@ -369,12 +369,11 @@ impl<'py> Input<'py> for Bound<'py, PyAny> {
             }
 
             // Handle three-tuple constructor: (sign, digits_tuple, exponent)
-            if let Ok(tuple) = self.cast_exact::<PyTuple>() {
-                if tuple.len() == 3 {
-                    if let Ok(decimal) = create_decimal(self, self) {
-                        return Ok(ValidationMatch::lax(decimal));
-                    }
-                }
+            if let Ok(tuple) = self.cast_exact::<PyTuple>()
+                && tuple.len() == 3
+                && let Ok(decimal) = create_decimal(self, self)
+            {
+                return Ok(ValidationMatch::lax(decimal));
             }
         }
 
@@ -465,10 +464,8 @@ impl<'py> Input<'py> for Bound<'py, PyAny> {
     fn validate_list<'a>(&'a self, strict: bool) -> ValMatch<PySequenceIterable<'a, 'py>> {
         if let Ok(list) = self.cast::<PyList>() {
             return Ok(ValidationMatch::exact(PySequenceIterable::List(list)));
-        } else if !strict {
-            if let Ok(other) = extract_sequence_iterable(self) {
-                return Ok(ValidationMatch::lax(other));
-            }
+        } else if !strict && let Ok(other) = extract_sequence_iterable(self) {
+            return Ok(ValidationMatch::lax(other));
         }
 
         Err(ValError::new(ErrorTypeDefaults::ListType, self))
@@ -482,10 +479,8 @@ impl<'py> Input<'py> for Bound<'py, PyAny> {
     fn validate_tuple<'a>(&'a self, strict: bool) -> ValMatch<PySequenceIterable<'a, 'py>> {
         if let Ok(tup) = self.cast::<PyTuple>() {
             return Ok(ValidationMatch::exact(PySequenceIterable::Tuple(tup)));
-        } else if !strict {
-            if let Ok(other) = extract_sequence_iterable(self) {
-                return Ok(ValidationMatch::lax(other));
-            }
+        } else if !strict && let Ok(other) = extract_sequence_iterable(self) {
+            return Ok(ValidationMatch::lax(other));
         }
 
         Err(ValError::new(ErrorTypeDefaults::TupleType, self))
@@ -499,10 +494,8 @@ impl<'py> Input<'py> for Bound<'py, PyAny> {
     fn validate_set<'a>(&'a self, strict: bool) -> ValMatch<PySequenceIterable<'a, 'py>> {
         if let Ok(set) = self.cast::<PySet>() {
             return Ok(ValidationMatch::exact(PySequenceIterable::Set(set)));
-        } else if !strict {
-            if let Ok(other) = extract_sequence_iterable(self) {
-                return Ok(ValidationMatch::lax(other));
-            }
+        } else if !strict && let Ok(other) = extract_sequence_iterable(self) {
+            return Ok(ValidationMatch::lax(other));
         }
 
         Err(ValError::new(ErrorTypeDefaults::SetType, self))
@@ -511,10 +504,8 @@ impl<'py> Input<'py> for Bound<'py, PyAny> {
     fn validate_frozenset<'a>(&'a self, strict: bool) -> ValMatch<PySequenceIterable<'a, 'py>> {
         if let Ok(frozenset) = self.cast::<PyFrozenSet>() {
             return Ok(ValidationMatch::exact(PySequenceIterable::FrozenSet(frozenset)));
-        } else if !strict {
-            if let Ok(other) = extract_sequence_iterable(self) {
-                return Ok(ValidationMatch::lax(other));
-            }
+        } else if !strict && let Ok(other) = extract_sequence_iterable(self) {
+            return Ok(ValidationMatch::lax(other));
         }
 
         Err(ValError::new(ErrorTypeDefaults::FrozenSetType, self))
@@ -678,23 +669,24 @@ impl<'py> Input<'py> for Bound<'py, PyAny> {
             ));
         }
 
-        if let Ok(s) = self.cast::<PyString>() {
+        if let Ok(s) = self.cast::<PyString>()
+            && let Ok(c) = string_to_complex(s, self)
+        {
             // If input is not a valid complex string, instead of telling users to correct
             // the string, it makes more sense to tell them to provide any acceptable value
             // since they might have just given values of some incorrect types instead
             // of actually trying some complex strings.
-            if let Ok(c) = string_to_complex(s, self) {
-                return Ok(ValidationMatch::lax(EitherComplex::Py(c)));
-            }
-        } else {
-            // Delegate to the constructor directly
-            // (see https://docs.python.org/3/library/functions.html#complex):
-            if let Ok(complex_obj) = get_complex_type(py).call1((self,)) {
-                if let Ok(complex) = complex_obj.cast::<PyComplex>() {
-                    return Ok(ValidationMatch::lax(EitherComplex::Py(complex.to_owned())));
-                }
-            }
+            return Ok(ValidationMatch::lax(EitherComplex::Py(c)));
         }
+
+        // Delegate to the constructor directly
+        // (see https://docs.python.org/3/library/functions.html#complex):
+        if let Ok(complex_obj) = get_complex_type(py).call1((self,))
+            && let Ok(complex) = complex_obj.cast_into()
+        {
+            return Ok(ValidationMatch::lax(EitherComplex::Py(complex)));
+        }
+
         Err(ValError::new(ErrorTypeDefaults::ComplexType, self))
     }
 }
@@ -938,10 +930,9 @@ fn extract_sequence_iterable<'a, 'py>(obj: &'a Bound<'py, PyAny>) -> ValResult<P
             || obj.is_instance_of::<PyByteArray>()
             || obj.is_instance_of::<PyDict>()
             || obj.cast::<PyMapping>().is_ok())
+            && let Ok(iter) = obj.try_iter()
         {
-            if let Ok(iter) = obj.try_iter() {
-                return Ok(PySequenceIterable::Iterator(iter));
-            }
+            return Ok(PySequenceIterable::Iterator(iter));
         }
 
         Err(ValError::new(ErrorTypeDefaults::IterableType, obj))

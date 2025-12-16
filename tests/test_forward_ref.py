@@ -1090,10 +1090,12 @@ def test_pydantic_extra_forward_ref_separate_module(create_module: Any) -> None:
     def module_1():
         from pydantic import BaseModel, ConfigDict
 
+        MyDict = dict
+
         class Bar(BaseModel):
             model_config = ConfigDict(defer_build=True, extra='allow')
 
-            __pydantic_extra__: 'dict[str, int]'
+            __pydantic_extra__: 'MyDict[str, int]'
 
     module_2 = create_module(
         f"""
@@ -1111,6 +1113,42 @@ class Foo(BaseModel):
     ]
 
     assert extras_schema == {'type': 'int'}
+
+
+def test_pydantic_extra_forward_ref_separate_module_subclass(create_module: Any) -> None:
+    @create_module
+    def module_1():
+        from pydantic import BaseModel
+
+        MyDict = dict
+
+        class Bar(BaseModel, extra='allow'):
+            __pydantic_extra__: 'MyDict[str, int]'
+
+    module_2 = create_module(
+        f"""
+from pydantic import BaseModel
+
+from {module_1.__name__} import Bar
+
+class Foo(Bar):
+    pass
+        """
+    )
+
+    assert module_2.Foo.__pydantic_core_schema__['schema']['extras_schema'] == {'type': 'int'}
+
+
+# TODO remove when we drop support for Python 3.10, in 3.11+ string annotations are properly evaluated
+# in PEP 585 generics.
+def test_pydantic_extra_forward_ref_evaluated_pep585() -> None:
+    class Bar(BaseModel, extra='allow'):
+        __pydantic_extra__: dict['str', int]
+
+    # This is a way to test that `'str'` is properly evaluated (for Python <3.11, see comments in
+    # `GenerateSchema._get_args_resolving_forward_refs()`) and as such `extra_keys_schema` isn't
+    # set because `str` is the default.
+    assert 'extras_keys_schema' not in Bar.__pydantic_core_schema__['schema']
 
 
 @pytest.mark.xfail(

@@ -49,11 +49,13 @@ fn field_from_context<'py, T: FromPyObjectOwned<'py>>(
     type_name_fn: fn() -> &'static str,
 ) -> PyResult<T> {
     context
-        .ok_or_else(|| py_error_type!(PyTypeError; "{}: '{}' required in context", enum_name, field_name))?
+        .ok_or_else(|| py_error_type!(PyTypeError; "{enum_name}: '{field_name}' required in context"))?
         .get_item(field_name)?
-        .ok_or_else(|| py_error_type!(PyTypeError; "{}: '{}' required in context", enum_name, field_name))?
+        .ok_or_else(|| py_error_type!(PyTypeError; "{enum_name}: '{field_name}' required in context"))?
         .extract::<T>()
-        .map_err(|_| py_error_type!(PyTypeError; "{}: '{}' context value must be a {}", enum_name, field_name, type_name_fn()))
+        .map_err(
+            |_| py_error_type!(PyTypeError; "{enum_name}: '{field_name}' context value must be a {}", type_name_fn()),
+        )
 }
 
 fn cow_field_from_context<'py, T: FromPyObjectOwned<'py>, B: ToOwned<Owned = T> + ?Sized + 'static>(
@@ -102,7 +104,7 @@ macro_rules! error_types {
                 let lookup = ERROR_TYPE_LOOKUP.get_or_init(py, Self::build_lookup);
                 let error_type = match lookup.get(value) {
                     Some(error_type) => error_type.clone(),
-                    None => return py_err!(PyKeyError; "Invalid error type: '{}'", value),
+                    None => return py_err!(PyKeyError; "Invalid error type: '{value}'"),
                 };
                 match error_type {
                     $(

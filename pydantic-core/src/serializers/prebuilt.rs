@@ -32,18 +32,14 @@ impl PrebuiltSerializer {
 impl_py_gc_traverse!(PrebuiltSerializer { schema_serializer });
 
 impl TypeSerializer for PrebuiltSerializer {
-    fn to_python<'py>(
-        &self,
-        value: &Bound<'py, PyAny>,
-        state: &mut SerializationState<'_, 'py>,
-    ) -> PyResult<Py<PyAny>> {
+    fn to_python<'py>(&self, value: &Bound<'py, PyAny>, state: &mut SerializationState<'py>) -> PyResult<Py<PyAny>> {
         self.schema_serializer.get().serializer.to_python_no_infer(value, state)
     }
 
     fn json_key<'a, 'py>(
         &self,
         key: &'a Bound<'py, PyAny>,
-        state: &mut SerializationState<'_, 'py>,
+        state: &mut SerializationState<'py>,
     ) -> PyResult<Cow<'a, str>> {
         self.schema_serializer.get().serializer.json_key_no_infer(key, state)
     }
@@ -52,7 +48,7 @@ impl TypeSerializer for PrebuiltSerializer {
         &self,
         value: &Bound<'py, PyAny>,
         serializer: S,
-        state: &mut SerializationState<'_, 'py>,
+        state: &mut SerializationState<'py>,
     ) -> Result<S::Ok, S::Error> {
         self.schema_serializer
             .get()

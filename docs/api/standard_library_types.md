@@ -81,8 +81,9 @@ Strings support the following constraints:
 | `to_lower`         | Whether to convert the string to lowercase        | N/A                                                                                                                                           |
 
 These constraints can be provided using the [`StringConstraints`][pydantic.types.StringConstraints] metadata type, or using the [`Field()`][pydantic.Field] function (except for `to_upper` and `to_lower`).
-The `MinLen`, `MaxLen`, `Len`, `LowerCase`, `UpperCase` metadata types from the [`annotated-types`](https://github.com/annotated-types/annotated-types)
-library can also be used.
+
+The [`annotated-types`](https://github.com/annotated-types/annotated-types) library also provides the `MinLen`, `MaxLen` and `Len` metadata types, as well
+as the `LowerCase`, `UpperCase`, `IsDigit` and `IsAscii` predicates (must be parameterized with `str`, e.g. `LowerCase[str]`).
 
 <!-- markdownlint-disable-next-line no-empty-links -->
 [](){#pattern-constraint-note}
@@ -237,8 +238,10 @@ Floats support the following constraints:
 | `allow_inf_nan` | Whether to allow NaN (not-a-number) and infinite values | N/A                                                                                                     |
 
 These constraints can be provided using the [`Field()`][pydantic.Field] function.
-The `Le`, `Ge`, `Lt`, `Gt` and `MultipleOf` metadata types from the [`annotated-types`](https://github.com/annotated-types/annotated-types)
-library and the [`AllowInfNan`][pydantic.types.AllowInfNan] type can also be used.
+
+The [`annotated-types`](https://github.com/annotated-types/annotated-types) library also provides the `Le`, `Ge`, `Lt`, `Gt` and `MultipleOf` metadata types,
+as well as the `IsFinite`, `IsNotFinite`, `IsNan`, `IsNotNan`, `IsAscii`, `IsInfinite` and `IsNotInfinite` predicates
+(must be parameterized with `float`, e.g. `IsFinite[float]`). The [`AllowInfNan`][pydantic.types.AllowInfNan] type can also be used.
 
 Pydantic also provides the following types as convenience aliases:
 
@@ -266,7 +269,7 @@ Standard library type: [`enum.IntEnum`][].
 <h4>Validation</h4>
 
 * If the [`enum.IntEnum`][] type is used directly, any [`enum.IntEnum`][] instance is validated as-is
-* Id an [`enum.IntEnum`][] subclass is used as a type, any enum member or value that correspond to the
+* If an [`enum.IntEnum`][] subclass is used as a type, any enum member or value that correspond to the
   enum members values is validated as-is.
 
 See [Enums](#enums) for more details.
@@ -690,7 +693,7 @@ Standard library type: [`enum.Enum`][].
 <h3>Validation</h3>
 
 * If the [`enum.Enum`][] type is used directly, any [`enum.Enum`][] instance is validated as-is.
-* Id an [`enum.Enum`][] subclass is used as a type, any enum member or value that correspond to the
+* If an [`enum.Enum`][] subclass is used as a type, any enum member or value that correspond to the
   enum members [values][enum.Enum.value] is validated as-is.
 
 <h3>Serialization</h3>

@@ -81,28 +81,28 @@ enum OutputValue<'py> {
 }
 
 impl LiteralSerializer {
-    fn check<'py>(&self, value: &Bound<'py, PyAny>, state: &SerializationState<'_, 'py>) -> PyResult<OutputValue<'py>> {
+    fn check<'py>(&self, value: &Bound<'py, PyAny>, state: &SerializationState<'py>) -> PyResult<OutputValue<'py>> {
         if state.check.enabled() {
-            if !self.expected_int.is_empty() && !value.is_instance_of::<PyBool>() {
-                if let Ok(int) = value.extract() {
-                    if self.expected_int.contains(&int) {
-                        return Ok(OutputValue::OkInt(int));
-                    }
-                }
+            if !self.expected_int.is_empty()
+                && !value.is_instance_of::<PyBool>()
+                && let Ok(int) = value.extract()
+                && self.expected_int.contains(&int)
+            {
+                return Ok(OutputValue::OkInt(int));
             }
-            if !self.expected_str.is_empty() {
-                if let Ok(py_str) = value.cast::<PyString>() {
-                    let s = py_str.to_str()?;
-                    if self.expected_str.contains(s) {
-                        return Ok(OutputValue::OkStr(PyString::new(value.py(), s)));
-                    }
+            if !self.expected_str.is_empty()
+                && let Ok(py_str) = value.cast::<PyString>()
+            {
+                let s = py_str.to_str()?;
+                if self.expected_str.contains(s) {
+                    return Ok(OutputValue::OkStr(PyString::new(value.py(), s)));
                 }
             }
 
-            if let Some(ref expected_py) = self.expected_py {
-                if expected_py.bind(value.py()).contains(value)? {
-                    return Ok(OutputValue::Ok);
-                }
+            if let Some(ref expected_py) = self.expected_py
+                && expected_py.bind(value.py()).contains(value)?
+            {
+                return Ok(OutputValue::Ok);
             }
             Ok(OutputValue::Fallback)
         } else {
@@ -114,11 +114,7 @@ impl LiteralSerializer {
 impl_py_gc_traverse!(LiteralSerializer { expected_py });
 
 impl TypeSerializer for LiteralSerializer {
-    fn to_python<'py>(
-        &self,
-        value: &Bound<'py, PyAny>,
-        state: &mut SerializationState<'_, 'py>,
-    ) -> PyResult<Py<PyAny>> {
+    fn to_python<'py>(&self, value: &Bound<'py, PyAny>, state: &mut SerializationState<'py>) -> PyResult<Py<PyAny>> {
         let py = value.py();
         match self.check(value, state)? {
             OutputValue::OkInt(int) => match state.extra.mode {
@@ -140,7 +136,7 @@ impl TypeSerializer for LiteralSerializer {
     fn json_key<'a, 'py>(
         &self,
         key: &'a Bound<'py, PyAny>,
-        state: &mut SerializationState<'_, 'py>,
+        state: &mut SerializationState<'py>,
     ) -> PyResult<Cow<'a, str>> {
         match self.check(key, state)? {
             OutputValue::OkInt(int) => Ok(Cow::Owned(int.to_string())),
@@ -157,7 +153,7 @@ impl TypeSerializer for LiteralSerializer {
         &self,
         value: &Bound<'py, PyAny>,
         serializer: S,
-        state: &mut SerializationState<'_, 'py>,
+        state: &mut SerializationState<'py>,
     ) -> Result<S::Ok, S::Error> {
         match self.check(value, state).map_err(py_err_se_err)? {
             OutputValue::OkInt(int) => int.serialize(serializer),

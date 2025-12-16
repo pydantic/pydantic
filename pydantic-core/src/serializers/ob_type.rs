@@ -101,7 +101,7 @@ impl ObTypeLookup {
         }
     }
 
-    pub fn cached(py: Python<'_>) -> &Self {
+    pub fn cached(py: Python<'_>) -> &'static Self {
         TYPE_LOOKUP.get_or_init(py, || Self::new(py))
     }
 

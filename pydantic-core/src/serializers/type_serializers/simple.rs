@@ -42,11 +42,7 @@ pub(crate) fn none_json_key() -> PyResult<Cow<'static, str>> {
 impl_py_gc_traverse!(NoneSerializer {});
 
 impl TypeSerializer for NoneSerializer {
-    fn to_python<'py>(
-        &self,
-        value: &Bound<'py, PyAny>,
-        state: &mut SerializationState<'_, 'py>,
-    ) -> PyResult<Py<PyAny>> {
+    fn to_python<'py>(&self, value: &Bound<'py, PyAny>, state: &mut SerializationState<'py>) -> PyResult<Py<PyAny>> {
         let py = value.py();
         match state.extra.ob_type_lookup.is_type(value, ObType::None) {
             IsType::Exact => Ok(py.None()),
@@ -61,7 +57,7 @@ impl TypeSerializer for NoneSerializer {
     fn json_key<'a, 'py>(
         &self,
         key: &'a Bound<'py, PyAny>,
-        state: &mut SerializationState<'_, 'py>,
+        state: &mut SerializationState<'py>,
     ) -> PyResult<Cow<'a, str>> {
         match state.extra.ob_type_lookup.is_type(key, ObType::None) {
             IsType::Exact => none_json_key(),
@@ -76,7 +72,7 @@ impl TypeSerializer for NoneSerializer {
         &self,
         value: &Bound<'py, PyAny>,
         serializer: S,
-        state: &mut SerializationState<'_, 'py>,
+        state: &mut SerializationState<'py>,
     ) -> Result<S::Ok, S::Error> {
         match state.extra.ob_type_lookup.is_type(value, ObType::None) {
             IsType::Exact => serializer.serialize_none(),
@@ -123,7 +119,7 @@ macro_rules! build_simple_serializer {
             fn to_python<'py>(
                 &self,
                 value: &Bound<'py, PyAny>,
-                state: &mut SerializationState<'_, 'py>,
+                state: &mut SerializationState<'py>,
             ) -> PyResult<Py<PyAny>> {
                 let py = value.py();
                 match state.extra.ob_type_lookup.is_type(value, $ob_type) {
@@ -145,7 +141,7 @@ macro_rules! build_simple_serializer {
             fn json_key<'a, 'py>(
                 &self,
                 key: &'a Bound<'py, PyAny>,
-                state: &mut SerializationState<'_, 'py>,
+                state: &mut SerializationState<'py>,
             ) -> PyResult<Cow<'a, str>> {
                 match state.extra.ob_type_lookup.is_type(key, $ob_type) {
                     IsType::Exact | IsType::Subclass => $key_method(key),
@@ -160,7 +156,7 @@ macro_rules! build_simple_serializer {
                 &self,
                 value: &Bound<'py, PyAny>,
                 serializer: S,
-                state: &mut SerializationState<'_, 'py>,
+                state: &mut SerializationState<'py>,
             ) -> Result<S::Ok, S::Error> {
                 match value.extract::<$rust_type>() {
                     Ok(v) => v.serialize(serializer),

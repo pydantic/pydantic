@@ -18,6 +18,7 @@ from pydantic import (
     BaseModel,
     Field,
     FieldSerializationInfo,
+    PydanticUserError,
     SerializationInfo,
     SerializerFunctionWrapHandler,
     TypeAdapter,
@@ -143,6 +144,59 @@ def test_serializer_annotated_typing_cache(serializer, func):
         x: Optional[FancyInt]
 
     assert FancyIntModel(x=1234).model_dump() == {'x': '1,235'}
+
+
+def test_use_bare_field_serializer():
+    with pytest.raises(PydanticUserError) as exc:
+
+        class Model(BaseModel):
+            a: str
+
+            @field_serializer
+            def checker(cls, v):
+                return v
+
+    assert exc.value.code == 'decorator-missing-arguments'
+
+
+def test_use_no_fields_field_serializer():
+    with pytest.raises(
+        TypeError, match=re.escape("field_serializer() missing 1 required positional argument: 'field'")
+    ):
+
+        class Model(BaseModel):
+            a: str
+
+            @field_serializer()
+            def checker(cls, v):
+                return v
+
+
+def test_field_serializer_bad_fields_throws_configerror():
+    with pytest.raises(PydanticUserError) as exc:
+
+        class Model1(BaseModel):
+            a: str
+            b: str
+
+            @field_serializer(['a', 'b'])
+            def check_fields(cls, v):
+                return v
+
+    assert exc.value.code == 'decorator-invalid-fields'
+
+    with pytest.raises(PydanticUserError) as exc:
+
+        class Model2(BaseModel):
+            a: str
+            b: str
+
+            @field_serializer(['a', 'b'])
+            @classmethod
+            def check_fields(cls, v):
+                return v
+
+    assert exc.value.code == 'decorator-invalid-fields'
 
 
 def test_serialize_decorator_always():
@@ -271,7 +325,7 @@ def test_serialize_valid_signatures():
 
 
 def test_invalid_signature_no_params() -> None:
-    with pytest.raises(TypeError, match='Unrecognized field_serializer function signature'):
+    with pytest.raises(PydanticUserError, match='Unrecognized field_serializer function signature'):
 
         class _(BaseModel):
             x: int
@@ -282,7 +336,7 @@ def test_invalid_signature_no_params() -> None:
 
 
 def test_invalid_signature_single_params() -> None:
-    with pytest.raises(TypeError, match='Unrecognized field_serializer function signature'):
+    with pytest.raises(PydanticUserError, match='Unrecognized field_serializer function signature'):
 
         class _(BaseModel):
             x: int
@@ -293,7 +347,7 @@ def test_invalid_signature_single_params() -> None:
 
 
 def test_invalid_signature_too_many_params_1() -> None:
-    with pytest.raises(TypeError, match='Unrecognized field_serializer function signature'):
+    with pytest.raises(PydanticUserError, match='Unrecognized field_serializer function signature'):
 
         class _(BaseModel):
             x: int
@@ -304,7 +358,7 @@ def test_invalid_signature_too_many_params_1() -> None:
 
 
 def test_invalid_signature_too_many_params_2() -> None:
-    with pytest.raises(TypeError, match='Unrecognized field_serializer function signature'):
+    with pytest.raises(PydanticUserError, match='Unrecognized field_serializer function signature'):
 
         class _(BaseModel):
             x: int
@@ -316,7 +370,7 @@ def test_invalid_signature_too_many_params_2() -> None:
 
 
 def test_invalid_signature_bad_plain_signature() -> None:
-    with pytest.raises(TypeError, match='Unrecognized field_serializer function signature for'):
+    with pytest.raises(PydanticUserError, match='Unrecognized field_serializer function signature for'):
 
         class _(BaseModel):
             x: int
@@ -500,7 +554,7 @@ def test_model_serializer_wrong_args():
         r'Unrecognized model_serializer function signature for '
         r'<.+MyModel._serialize at 0x\w+> with `mode=plain`:\(self, x, y, z\)'
     )
-    with pytest.raises(TypeError, match=m):
+    with pytest.raises(PydanticUserError, match=m):
 
         class MyModel(BaseModel):
             a: int
@@ -511,7 +565,7 @@ def test_model_serializer_wrong_args():
 
 
 def test_model_serializer_no_self():
-    with pytest.raises(TypeError, match='`@model_serializer` must be applied to instance methods'):
+    with pytest.raises(PydanticUserError, match='`@model_serializer` must be applied to instance methods'):
 
         class MyModel(BaseModel):
             a: int
@@ -522,7 +576,7 @@ def test_model_serializer_no_self():
 
 
 def test_model_serializer_classmethod():
-    with pytest.raises(TypeError, match='`@model_serializer` must be applied to instance methods'):
+    with pytest.raises(PydanticUserError, match='`@model_serializer` must be applied to instance methods'):
 
         class MyModel(BaseModel):
             a: int
@@ -535,7 +589,7 @@ def test_model_serializer_classmethod():
 
 def test_field_multiple_serializer():
     m = "Multiple field serializer functions were defined for field 'x', this is not allowed."
-    with pytest.raises(TypeError, match=m):
+    with pytest.raises(PydanticUserError, match=m):
 
         class MyModel(BaseModel):
             x: int
@@ -688,7 +742,7 @@ def test_serializer_allow_reuse_inheritance_override():
     # because they would both "exist" thus causing confusion
     # since it's not clear if both or just one will run
     msg = "Multiple field serializer functions were defined for field 'x', this is not allowed."
-    with pytest.raises(TypeError, match=msg):
+    with pytest.raises(PydanticUserError, match=msg):
 
         class _(Parent):
             @field_serializer('x')
@@ -696,7 +750,7 @@ def test_serializer_allow_reuse_inheritance_override():
                 return 'err'
 
     # the same thing applies if defined on the same class
-    with pytest.raises(TypeError, match=msg):
+    with pytest.raises(PydanticUserError, match=msg):
 
         class _(BaseModel):
             x: int

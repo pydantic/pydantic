@@ -13,6 +13,7 @@ from typing_extensions import TypeAlias
 from . import PydanticUndefinedAnnotation
 from ._internal import _decorators, _internal_dataclass
 from .annotated_handlers import GetCoreSchemaHandler
+from .errors import PydanticUserError
 
 
 @dataclasses.dataclass(**_internal_dataclass.slots_true, frozen=True)
@@ -228,7 +229,9 @@ def field_serializer(
 ) -> Callable[[_FieldPlainSerializerT], _FieldPlainSerializerT]: ...
 
 
-def field_serializer(
+def field_serializer(  # noqa: D417
+    field: str,
+    /,
     *fields: str,
     mode: Literal['plain', 'wrap'] = 'plain',
     # TODO PEP 747 (grep for 'return_type' on the whole code base):
@@ -261,7 +264,7 @@ def field_serializer(
 
     See [the usage documentation](../concepts/serialization.md#serializers) for more information.
 
-    Four signatures are supported:
+    Four signatures are supported for the decorated serializer:
 
     - `(self, value: Any, info: FieldSerializationInfo)`
     - `(self, value: Any, nxt: SerializerFunctionWrapHandler, info: FieldSerializationInfo)`
@@ -269,7 +272,7 @@ def field_serializer(
     - `(value: Any, nxt: SerializerFunctionWrapHandler, info: SerializationInfo)`
 
     Args:
-        fields: Which field(s) the method should be called on.
+        *fields: The field names the serializer should apply to.
         mode: The serialization mode.
 
             - `plain` means the function will be called instead of the default serialization logic,
@@ -279,9 +282,25 @@ def field_serializer(
         when_used: Determines the serializer will be used for serialization.
         check_fields: Whether to check that the fields actually exist on the model.
 
-    Returns:
-        The decorator function.
+    Raises:
+        PydanticUserError:
+            - If the decorator is used without any arguments (at least one field name must be provided).
+            - If the provided field names are not strings.
     """
+    if callable(field) or isinstance(field, classmethod):
+        raise PydanticUserError(
+            'The `@field_serializer` decorator cannot be used without arguments, at least one field must be provided. '
+            "For example: `@field_serializer('<field_name>', ...)`.",
+            code='decorator-missing-arguments',
+        )
+
+    fields = field, *fields
+    if not all(isinstance(field, str) for field in fields):
+        raise PydanticUserError(
+            'The provided field names to the `@field_serializer` decorator should be strings. '
+            "For example: `@field_serializer('<field_name_1>', '<field_name_2>', ...).`",
+            code='decorator-invalid-fields',
+        )
 
     def dec(f: FieldSerializer) -> _decorators.PydanticDescriptorProxy[Any]:
         dec_info = _decorators.FieldSerializerDecoratorInfo(

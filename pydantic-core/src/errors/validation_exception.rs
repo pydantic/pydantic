@@ -76,12 +76,13 @@ impl ValidationError {
                 let validation_error = Self::new(line_errors, title, input_type, hide_input);
                 match Bound::new(py, validation_error) {
                     Ok(err) => {
-                        if validation_error_cause {
-                            // Will return an import error if the backport was needed and not installed:
-                            if let Some(cause_problem) = ValidationError::maybe_add_cause(err.borrow(), py) {
-                                return cause_problem;
-                            }
+                        // Will return an import error if the backport was needed and not installed:
+                        if validation_error_cause
+                            && let Some(cause_problem) = ValidationError::maybe_add_cause(err.borrow(), py)
+                        {
+                            return cause_problem;
                         }
+
                         PyErr::from_value(err.into_any())
                     }
                     Err(err) => err,
@@ -340,10 +341,10 @@ impl ValidationError {
         include_context: bool,
         include_input: bool,
     ) -> PyResult<Bound<'py, PyString>> {
-        let config = SerializationConfig::from_args("iso8601", "iso8601", "utf8", "constants")?;
+        let config = SerializationConfig::default();
         let extra = Extra::new(
             py,
-            &SerMode::Json,
+            SerMode::Json,
             None,
             false,
             false,
@@ -508,20 +509,14 @@ impl PyLineError {
         if include_input {
             dict.set_item("input", &self.input_value)?;
         }
-        if include_context {
-            if let Some(context) = self.error_type.py_dict(py)? {
-                dict.set_item("ctx", context)?;
-            }
+        if include_context && let Some(context) = self.error_type.py_dict(py)? {
+            dict.set_item("ctx", context)?;
         }
-        if let Some(url_prefix) = url_prefix {
-            match self.error_type {
-                ErrorType::CustomError { .. } => {
-                    // Don't add URLs for custom errors
-                }
-                _ => {
-                    dict.set_item("url", self.get_error_url(url_prefix))?;
-                }
-            }
+        if let Some(url_prefix) = url_prefix
+            // Don't add URLs for custom errors
+            && !matches!(self.error_type, ErrorType::CustomError { .. })
+        {
+            dict.set_item("url", self.get_error_url(url_prefix))?;
         }
         Ok(dict)
     }
@@ -553,22 +548,16 @@ impl PyLineError {
                 write!(output, ", input_type={type_}")?;
             }
         }
-        if let Some(url_prefix) = url_prefix {
-            match self.error_type {
-                ErrorType::CustomError { .. } => {
-                    // Don't display URLs for custom errors
-                    output.push(']');
-                }
-                _ => {
-                    write!(
-                        output,
-                        "]\n    For further information visit {}",
-                        self.get_error_url(url_prefix)
-                    )?;
-                }
-            }
-        } else {
-            output.push(']');
+        output.push(']');
+        if let Some(url_prefix) = url_prefix
+            // Don't display URLs for custom errors
+            && !matches!(self.error_type, ErrorType::CustomError { .. })
+        {
+            write!(
+                output,
+                "\n    For further information visit {}",
+                self.get_error_url(url_prefix)
+            )?;
         }
         Ok(output)
     }
@@ -585,17 +574,17 @@ where
     S::Error::custom(error.to_string())
 }
 
-struct ValidationErrorSerializer<'slf, 'a, 'py> {
+struct ValidationErrorSerializer<'slf, 'py> {
     py: Python<'py>,
     line_errors: &'py [PyLineError],
     url_prefix: Option<&'py str>,
     include_context: bool,
     include_input: bool,
-    state: &'slf mut SerializationState<'a, 'py>,
+    state: &'slf mut SerializationState<'py>,
     input_type: &'py InputType,
 }
 
-impl ValidationErrorSerializer<'_, '_, '_> {
+impl ValidationErrorSerializer<'_, '_> {
     fn serialize<S>(&mut self, serializer: S) -> Result<S::Ok, S::Error>
     where
         S: Serializer,
@@ -617,17 +606,17 @@ impl ValidationErrorSerializer<'_, '_, '_> {
     }
 }
 
-struct PyLineErrorSerializer<'slf, 'a, 'py> {
+struct PyLineErrorSerializer<'slf, 'py> {
     py: Python<'py>,
     line_error: &'py PyLineError,
     url_prefix: Option<&'py str>,
     include_context: bool,
     include_input: bool,
-    state: RefCell<&'slf mut SerializationState<'a, 'py>>,
+    state: RefCell<&'slf mut SerializationState<'py>>,
     input_type: &'py InputType,
 }
 
-impl Serialize for PyLineErrorSerializer<'_, '_, '_> {
+impl Serialize for PyLineErrorSerializer<'_, '_> {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
         S: Serializer,
@@ -655,10 +644,10 @@ impl Serialize for PyLineErrorSerializer<'_, '_, '_> {
             map.serialize_entry("input", &state.serialize_infer(self.line_error.input_value.bind(py)))?;
         }
 
-        if self.include_context {
-            if let Some(context) = self.line_error.error_type.py_dict(py).map_err(py_err_json::<S>)? {
-                map.serialize_entry("ctx", &state.serialize_infer(context.bind(py)))?;
-            }
+        if self.include_context
+            && let Some(context) = self.line_error.error_type.py_dict(py).map_err(py_err_json::<S>)?
+        {
+            map.serialize_entry("ctx", &state.serialize_infer(context.bind(py)))?;
         }
         if let Some(url_prefix) = self.url_prefix {
             map.serialize_entry("url", &self.line_error.get_error_url(url_prefix))?;

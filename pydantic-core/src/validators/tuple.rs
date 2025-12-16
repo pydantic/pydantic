@@ -250,18 +250,18 @@ impl TupleValidator {
         actual_length: Option<usize>,
     ) -> ValResult<()> {
         output.push(item);
-        if let Some(max_length) = self.max_length {
-            if output.len() > max_length {
-                return Err(ValError::new(
-                    ErrorType::TooLong {
-                        field_type: "Tuple".to_string(),
-                        max_length,
-                        actual_length,
-                        context: None,
-                    },
-                    input,
-                ));
-            }
+        if let Some(max_length) = self.max_length
+            && output.len() > max_length
+        {
+            return Err(ValError::new(
+                ErrorType::TooLong {
+                    field_type: "Tuple".to_string(),
+                    max_length,
+                    actual_length,
+                    context: None,
+                },
+                input,
+            ));
         }
         Ok(())
     }

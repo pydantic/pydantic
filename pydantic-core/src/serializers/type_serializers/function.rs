@@ -143,11 +143,7 @@ impl BuildSerializer for FunctionPlainSerializer {
 }
 
 impl FunctionPlainSerializer {
-    fn call<'py>(
-        &self,
-        value: &Bound<'py, PyAny>,
-        state: &mut SerializationState<'_, 'py>,
-    ) -> PyResult<(bool, Py<PyAny>)> {
+    fn call<'py>(&self, value: &Bound<'py, PyAny>, state: &mut SerializationState<'py>) -> PyResult<(bool, Py<PyAny>)> {
         let py = value.py();
         if self.when_used.should_use(value, &state.extra) {
             let v = if self.is_field_serializer {
@@ -190,7 +186,7 @@ impl FunctionPlainSerializer {
     }
 }
 
-fn on_error(py: Python, err: PyErr, function_name: &str, state: &mut SerializationState<'_, '_>) -> PyResult<()> {
+fn on_error(py: Python, err: PyErr, function_name: &str, state: &mut SerializationState<'_>) -> PyResult<()> {
     let exception = err.value(py);
     if let Ok(ser_err) = exception.extract::<PydanticSerializationUnexpectedValue>() {
         if state.check.enabled() {
@@ -200,11 +196,11 @@ fn on_error(py: Python, err: PyErr, function_name: &str, state: &mut Serializati
             Ok(())
         }
     } else if let Ok(err) = exception.extract::<PydanticSerializationError>() {
-        py_err!(PydanticSerializationError; "{}", err)
+        py_err!(PydanticSerializationError; "{err}")
     } else if exception.is_instance_of::<PyRecursionError>() {
-        py_err!(PydanticSerializationError; "Error calling function `{}`: RecursionError", function_name)
+        py_err!(PydanticSerializationError; "Error calling function `{function_name}`: RecursionError")
     } else {
-        let new_err = py_error_type!(PydanticSerializationError; "Error calling function `{}`: {}", function_name, err);
+        let new_err = py_error_type!(PydanticSerializationError; "Error calling function `{function_name}`: {err}");
         new_err.set_cause(py, Some(err));
         Err(new_err)
     }
@@ -216,7 +212,7 @@ macro_rules! function_type_serializer {
             fn to_python<'py>(
                 &self,
                 value: &Bound<'py, PyAny>,
-                state: &mut SerializationState<'_, 'py>,
+                state: &mut SerializationState<'py>,
             ) -> PyResult<Py<PyAny>> {
                 let py = value.py();
                 let (ret_serializer, v) = match self.call(value, state) {
@@ -235,7 +231,7 @@ macro_rules! function_type_serializer {
             fn json_key<'a, 'py>(
                 &self,
                 key: &'a Bound<'py, PyAny>,
-                state: &mut SerializationState<'_, 'py>,
+                state: &mut SerializationState<'py>,
             ) -> PyResult<Cow<'a, str>> {
                 let py = key.py();
                 let state = &mut state.scoped_include_exclude(None, None);
@@ -259,7 +255,7 @@ macro_rules! function_type_serializer {
                 &self,
                 value: &Bound<'py, PyAny>,
                 serializer: S,
-                state: &mut SerializationState<'_, 'py>,
+                state: &mut SerializationState<'py>,
             ) -> Result<S::Ok, S::Error> {
                 let py = value.py();
                 let (ret_serializer, v) = match self.call(value, state) {
@@ -384,11 +380,7 @@ impl BuildSerializer for FunctionWrapSerializer {
 }
 
 impl FunctionWrapSerializer {
-    fn call<'py>(
-        &self,
-        value: &Bound<'py, PyAny>,
-        state: &mut SerializationState<'_, 'py>,
-    ) -> PyResult<(bool, Py<PyAny>)> {
+    fn call<'py>(&self, value: &Bound<'py, PyAny>, state: &mut SerializationState<'py>) -> PyResult<(bool, Py<PyAny>)> {
         let py = value.py();
         if self.when_used.should_use(value, &state.extra) {
             let serialize = SerializationCallable::new(&self.serializer, state);
@@ -448,7 +440,7 @@ impl_py_gc_traverse!(SerializationCallable {
 });
 
 impl SerializationCallable {
-    pub fn new(serializer: &Arc<CombinedSerializer>, state: &SerializationState<'_, '_>) -> Self {
+    pub fn new(serializer: &Arc<CombinedSerializer>, state: &SerializationState<'_>) -> Self {
         Self {
             serializer: serializer.clone(),
             extra_owned: ExtraOwned::new(state),
@@ -550,14 +542,14 @@ impl_py_gc_traverse!(SerializationInfo {
 });
 
 impl SerializationInfo {
-    fn new(state: &SerializationState<'_, '_>, is_field_serializer: bool) -> PyResult<Self> {
+    fn new(state: &SerializationState<'_>, is_field_serializer: bool) -> PyResult<Self> {
         let extra = &state.extra;
         if is_field_serializer {
             match state.field_name.as_ref() {
                 Some(field_name) => Ok(Self {
                     include: state.include().map(|i| i.clone().unbind()),
                     exclude: state.exclude().map(|e| e.clone().unbind()),
-                    context: extra.context.map(|c| c.clone().unbind()),
+                    context: extra.context.clone().map(Bound::unbind),
                     _mode: extra.mode.clone(),
                     by_alias: extra.by_alias,
                     exclude_unset: extra.exclude_unset,
@@ -576,7 +568,7 @@ impl SerializationInfo {
             Ok(Self {
                 include: state.include().map(|i| i.clone().unbind()),
                 exclude: state.exclude().map(|e| e.clone().unbind()),
-                context: extra.context.map(|c| c.clone().unbind()),
+                context: extra.context.clone().map(Bound::unbind),
                 _mode: extra.mode.clone(),
                 by_alias: extra.by_alias,
                 exclude_unset: extra.exclude_unset,

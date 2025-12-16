@@ -763,6 +763,7 @@ class GenerateSchema:
 
                 if cls.__pydantic_fields_complete__ or cls is BaseModel_:
                     fields = getattr(cls, '__pydantic_fields__', {})
+                    extra_info = getattr(cls, '__pydantic_extra_info__', None)
                 else:
                     if '__pydantic_fields__' not in cls.__dict__:
                         # This happens when we have a loop in the schema generation:
@@ -780,7 +781,7 @@ class GenerateSchema:
                             message=f'Class {cls.__name__!r} is not defined',
                         )
                     try:
-                        fields = rebuild_model_fields(
+                        fields, extra_info = rebuild_model_fields(
                             cls,
                             config_wrapper=self._config_wrapper,
                             ns_resolver=self._ns_resolver,
@@ -804,36 +805,22 @@ class GenerateSchema:
 
                 extras_schema = None
                 extras_keys_schema = None
-                if core_config.get('extra_fields_behavior') == 'allow':
-                    assert cls.__mro__[0] is cls
-                    assert cls.__mro__[-1] is object
-                    for candidate_cls in cls.__mro__[:-1]:
-                        extras_annotation = getattr(candidate_cls, '__annotations__', {}).get(
-                            '__pydantic_extra__', None
+                if core_config.get('extra_fields_behavior') == 'allow' and extra_info is not None:
+                    tp = get_origin(extra_info.annotation)
+                    if tp not in DICT_TYPES:
+                        raise PydanticSchemaGenerationError(
+                            'The type annotation for `__pydantic_extra__` must be `dict[str, ...]`'
                         )
-                        if extras_annotation is not None:
-                            if isinstance(extras_annotation, str):
-                                extras_annotation = _typing_extra.eval_type_backport(
-                                    _typing_extra._make_forward_ref(
-                                        extras_annotation, is_argument=False, is_class=True
-                                    ),
-                                    *self._types_namespace,
-                                )
-                            tp = get_origin(extras_annotation)
-                            if tp not in DICT_TYPES:
-                                raise PydanticSchemaGenerationError(
-                                    'The type annotation for `__pydantic_extra__` must be `dict[str, ...]`'
-                                )
-                            extra_keys_type, extra_items_type = self._get_args_resolving_forward_refs(
-                                extras_annotation,
-                                required=True,
-                            )
-                            if extra_keys_type is not str:
-                                extras_keys_schema = self.generate_schema(extra_keys_type)
-                            if not typing_objects.is_any(extra_items_type):
-                                extras_schema = self.generate_schema(extra_items_type)
-                            if extras_keys_schema is not None or extras_schema is not None:
-                                break
+                    # See the comments in `_get_args_resolving_forward_refs()` for why we need
+                    # to re-evaluate the annotation:
+                    extra_keys_type, extra_items_type = self._get_args_resolving_forward_refs(
+                        extra_info.annotation,
+                        required=True,
+                    )
+                    if extra_keys_type is not str:
+                        extras_keys_schema = self.generate_schema(extra_keys_type)
+                    if not typing_objects.is_any(extra_items_type):
+                        extras_schema = self.generate_schema(extra_items_type)
 
                 generic_origin: type[BaseModel] | None = getattr(cls, '__pydantic_generic_metadata__', {}).get('origin')
 
@@ -978,6 +965,9 @@ class GenerateSchema:
         if args:
             if isinstance(obj, GenericAlias):
                 # PEP 585 generic aliases don't convert args to ForwardRefs, unlike `typing.List/Dict` etc.
+                # This was fixed in https://github.com/python/cpython/pull/30900 (Python 3.11).
+                # TODO: this shouldn't be necessary (probably even this `_get_args_resolving_forward_refs()` function)
+                # once we drop support for Python 3.10 *or* if we implement our own `typing._eval_type()` implementation.
                 args = (_typing_extra._make_forward_ref(a) if isinstance(a, str) else a for a in args)
             args = tuple(self._resolve_forward_ref(a) if isinstance(a, ForwardRef) else a for a in args)
         elif required:  # pragma: no cover

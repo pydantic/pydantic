@@ -93,16 +93,16 @@ impl Validator for DateTimeValidator {
             };
             macro_rules! check_constraint {
                 ($constraint:ident, $error:ident) => {
-                    if let Some(constraint) = &constraints.$constraint {
-                        if !speedate_dt.$constraint(constraint) {
-                            return Err(ValError::new(
-                                ErrorType::$error {
-                                    $constraint: constraint.to_string().into(),
-                                    context: None,
-                                },
-                                input,
-                            ));
-                        }
+                    if let Some(constraint) = &constraints.$constraint
+                        && !speedate_dt.$constraint(constraint)
+                    {
+                        return Err(ValError::new(
+                            ErrorType::$error {
+                                $constraint: constraint.to_string().into(),
+                                context: None,
+                            },
+                            input,
+                        ));
                     }
                 };
             }
@@ -247,7 +247,7 @@ impl NowOp {
         match s {
             "past" => Ok(NowOp::Past),
             "future" => Ok(NowOp::Future),
-            _ => py_schema_err!("Invalid now_op {:?}", s),
+            _ => py_schema_err!("Invalid now_op {s:?}"),
         }
     }
 }
@@ -296,7 +296,7 @@ impl TZConstraint {
         match s {
             "naive" => Ok(TZConstraint::Naive),
             "aware" => Ok(TZConstraint::Aware(None)),
-            _ => py_schema_err!("Invalid tz_constraint {:?}", s),
+            _ => py_schema_err!("Invalid tz_constraint {s:?}"),
         }
     }
 

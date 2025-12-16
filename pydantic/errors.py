@@ -30,6 +30,8 @@ DEV_ERROR_DOCS_URL = f'https://errors.pydantic.dev/{version_short()}/u/'
 PydanticErrorCodes = Literal[
     'class-not-fully-defined',
     'custom-json-schema',
+    'decorator-invalid-fields',
+    'decorator-missing-arguments',
     'decorator-missing-field',
     'discriminator-no-field',
     'discriminator-alias-type',
@@ -50,8 +52,6 @@ PydanticErrorCodes = Literal[
     'schema-for-unknown-type',
     'import-error',
     'create-model-field-definitions',
-    'validator-no-fields',
-    'validator-invalid-fields',
     'validator-instance-method',
     'validator-input-type',
     'root-validator-pre-skip',
@@ -98,7 +98,7 @@ class PydanticErrorMixin:
             return f'{self.message}\n\nFor further information visit {DEV_ERROR_DOCS_URL}{self.code}'
 
 
-class PydanticUserError(PydanticErrorMixin, TypeError):
+class PydanticUserError(PydanticErrorMixin, RuntimeError):
     """An error raised due to incorrect use of Pydantic."""
 
 

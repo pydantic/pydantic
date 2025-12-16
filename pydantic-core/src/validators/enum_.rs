@@ -11,9 +11,10 @@ use crate::build_tools::{is_strict, py_schema_err};
 use crate::errors::{ErrorType, ValError, ValResult};
 use crate::input::{Input, InputType};
 use crate::tools::{SchemaDict, safe_repr};
+use crate::validators::literal::expected_repr;
 
 use super::is_instance::class_repr;
-use super::literal::{LiteralLookup, expected_repr_name};
+use super::literal::LiteralLookup;
 use super::{BuildValidator, CombinedValidator, DefinitionsBuilder, Exactness, ValidationState, Validator};
 
 #[derive(Debug, Clone)]
@@ -39,10 +40,8 @@ impl BuildValidator for BuildEnumValidator {
             .map(|v| Ok((v.getattr(value_str)?, v.into())))
             .collect::<PyResult<_>>()?;
 
-        let repr_args: Vec<String> = expected
-            .iter()
-            .map(|(k, _)| k.repr()?.extract())
-            .collect::<PyResult<_>>()?;
+        let repr_args: Vec<_> = expected.iter().map(|(k, _)| k.repr()).collect::<PyResult<_>>()?;
+        let expected_repr = expected_repr(&repr_args)?;
 
         let class: Bound<PyType> = schema.get_as_req(intern!(py, "cls"))?;
         let class_repr = class_repr(schema, &class)?;
@@ -56,7 +55,7 @@ impl BuildValidator for BuildEnumValidator {
                     class: class.clone().into(),
                     lookup,
                     missing: schema.get_as(intern!(py, "missing"))?,
-                    expected_repr: expected_repr_name(repr_args, "").0,
+                    expected_repr,
                     strict: is_strict(schema, config)?,
                     class_repr: class_repr.clone(),
                     name: format!("{}[{class_repr}]", $name_prefix),

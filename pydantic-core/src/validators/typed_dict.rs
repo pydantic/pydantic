@@ -13,6 +13,7 @@ use crate::input::ConsumeIterator;
 use crate::input::ValidationMatch;
 use crate::input::{Input, ValidatedDict};
 use crate::lookup_key::LookupKeyCollection;
+use crate::lookup_key::LookupType;
 use crate::tools::SchemaDict;
 use ahash::AHashSet;
 use jiter::PartialMode;
@@ -89,39 +90,31 @@ impl BuildValidator for TypedDictValidator {
 
             let validator = match build_validator(&schema, config, definitions) {
                 Ok(v) => v,
-                Err(err) => return py_schema_err!("Field \"{}\":\n  {}", field_name, err),
+                Err(err) => return py_schema_err!("Field \"{field_name}\":\n  {err}"),
             };
 
             let required = match field_info.get_as::<bool>(intern!(py, "required"))? {
                 Some(required) => {
-                    if required {
-                        if let CombinedValidator::WithDefault(val) = validator.as_ref() {
-                            if val.has_default() {
-                                return py_schema_err!(
-                                    "Field '{}': a required field cannot have a default value",
-                                    field_name
-                                );
-                            }
-                        }
+                    if required
+                        && let CombinedValidator::WithDefault(val) = validator.as_ref()
+                        && val.has_default()
+                    {
+                        return py_schema_err!("Field '{field_name}': a required field cannot have a default value");
                     }
                     required
                 }
                 None => total,
             };
 
-            if required {
-                if let CombinedValidator::WithDefault(val) = validator.as_ref() {
-                    if val.omit_on_error() {
-                        return py_schema_err!(
-                            "Field '{}': 'on_error = omit' cannot be set for required fields",
-                            field_name
-                        );
-                    }
-                }
+            if required
+                && let CombinedValidator::WithDefault(val) = validator.as_ref()
+                && val.omit_on_error()
+            {
+                return py_schema_err!("Field '{field_name}': 'on_error = omit' cannot be set for required fields");
             }
 
             let validation_alias = field_info.get_item(intern!(py, "validation_alias"))?;
-            let lookup_key_collection = LookupKeyCollection::new(py, validation_alias, field_name)?;
+            let lookup_key_collection = LookupKeyCollection::new(validation_alias, &field_name_py)?;
 
             fields.push(TypedDictField {
                 name: field_name.to_string(),
@@ -173,6 +166,7 @@ impl Validator for TypedDictValidator {
 
         let validate_by_alias = state.validate_by_alias_or(self.validate_by_alias);
         let validate_by_name = state.validate_by_name_or(self.validate_by_name);
+        let lookup_type = LookupType::from_bools(validate_by_alias, validate_by_name)?;
 
         // we only care about which keys have been used if we're iterating over the object for extra after
         // the first pass
@@ -190,10 +184,12 @@ impl Validator for TypedDictValidator {
             let mut fields_set_count: usize = 0;
 
             for field in &self.fields {
-                let lookup_key = field
+                let op_key_value = match field
                     .lookup_key_collection
-                    .select(validate_by_alias, validate_by_name)?;
-                let op_key_value = match dict.get_item(lookup_key) {
+                    .lookup_keys(lookup_type)
+                    .find_map(|lookup_key| dict.get_item(lookup_key).transpose())
+                    .transpose()
+                {
                     Ok(v) => v,
                     Err(ValError::LineErrors(line_errors)) => {
                         let field_loc: LocItem = field.name.clone().into();
@@ -260,6 +256,7 @@ impl Validator for TypedDictValidator {
                     Ok(None) => {
                         // This means there was no default value
                         if field.required {
+                            let lookup_key = field.lookup_key_collection.first_key_matching(lookup_type);
                             errors.push(lookup_key.error(
                                 ErrorTypeDefaults::Missing,
                                 input,

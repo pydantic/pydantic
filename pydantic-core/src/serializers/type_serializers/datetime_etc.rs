@@ -115,7 +115,7 @@ macro_rules! build_temporal_serializer {
             fn to_python<'py>(
                 &self,
                 value: &Bound<'py, PyAny>,
-                state: &mut SerializationState<'_, 'py>,
+                state: &mut SerializationState<'py>,
             ) -> PyResult<Py<PyAny>> {
                 match $downcast(value) {
                     Ok(py_value) => match state.extra.mode {
@@ -132,7 +132,7 @@ macro_rules! build_temporal_serializer {
             fn json_key<'a, 'py>(
                 &self,
                 key: &'a Bound<'py, PyAny>,
-                state: &mut SerializationState<'_, 'py>,
+                state: &mut SerializationState<'py>,
             ) -> PyResult<Cow<'a, str>> {
                 match $downcast(key) {
                     Ok(py_value) => Ok(self.temporal_mode.$json_key_fn(py_value)?),
@@ -147,7 +147,7 @@ macro_rules! build_temporal_serializer {
                 &self,
                 value: &Bound<'py, PyAny>,
                 serializer: S,
-                state: &mut SerializationState<'_, 'py>,
+                state: &mut SerializationState<'py>,
             ) -> Result<S::Ok, S::Error> {
                 match $downcast(value) {
                     Ok(py_value) => self.temporal_mode.$serialize_fn(py_value, serializer),
