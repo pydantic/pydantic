@@ -204,7 +204,7 @@ impl Validator for ModelValidator {
                     field_name.to_string(),
                 ))
             } else {
-                let state = &mut state.rebind_extra(|extra| extra.field_name = Some(root_field_py_backed_str(py)));
+                let state = &mut state.rebind_extra(|extra| extra.field_name = Some(root_field_py_str(py)));
                 let output = self.validator.validate(py, field_value, state)?;
 
                 force_setattr(py, model, intern!(py, ROOT_FIELD), output)?;
@@ -260,7 +260,7 @@ impl ModelValidator {
         let state = &mut state.rebind_extra(|extra| extra.self_instance = None);
 
         if self.root_model {
-            let state = &mut state.rebind_extra(|extra| extra.field_name = Some(root_field_py_backed_str(py)));
+            let state = &mut state.rebind_extra(|extra| extra.field_name = Some(root_field_py_str(py)));
             let output = self.validator.validate(py, input, state)?;
 
             let fields_set = if input.as_python().is_some_and(|py_input| py_input.is(&self.undefined)) {
@@ -304,7 +304,7 @@ impl ModelValidator {
         let instance;
 
         if self.root_model {
-            let state = &mut state.rebind_extra(|extra| extra.field_name = Some(root_field_py_backed_str(py)));
+            let state = &mut state.rebind_extra(|extra| extra.field_name = Some(root_field_py_str(py)));
             let output = self.validator.validate(py, input, state)?;
             instance = create_class(self.class.bind(py))?;
 
@@ -393,9 +393,10 @@ where
     }
 }
 
-fn root_field_py_backed_str(py: Python<'_>) -> PyBackedStr {
-    static ROOT_FIELD_PY_STR: PyOnceLock<PyBackedStr> = PyOnceLock::new();
+fn root_field_py_str(py: Python<'_>) -> Bound<'_, PyString> {
+    static ROOT_FIELD_PY_STR: PyOnceLock<Py<PyString>> = PyOnceLock::new();
     ROOT_FIELD_PY_STR
-        .get_or_init(py, || PyString::new(py, ROOT_FIELD).try_into().expect("valid utf8"))
+        .get_or_init(py, || PyString::new(py, ROOT_FIELD).unbind())
+        .bind(py)
         .clone()
 }

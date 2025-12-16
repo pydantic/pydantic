@@ -11,7 +11,7 @@ use crate::errors::{ErrorType, LocItem, ValError, ValResult};
 use crate::input::{BorrowInput, GenericIterator, Input};
 use crate::py_gc::PyGcTraverse;
 use crate::recursion_guard::RecursionState;
-use crate::tools::SchemaDict;
+use crate::tools::{SchemaDict, pybackedstr_to_pystring};
 
 use super::list::get_items_schema;
 use super::{
@@ -225,7 +225,7 @@ pub struct InternalValidator {
     extra_behavior: Option<ExtraBehavior>,
     from_attributes: Option<bool>,
     context: Option<Py<PyAny>>,
-    field_name: Option<PyBackedStr>,
+    field_name: Option<Py<PyString>>,
     self_instance: Option<Py<PyAny>>,
     recursion_guard: RecursionState,
     pub(crate) exactness: Option<Exactness>,
@@ -259,7 +259,7 @@ impl InternalValidator {
             extra_behavior: extra.extra_behavior,
             from_attributes: extra.from_attributes,
             context: extra.context.map(|d| d.clone().unbind()),
-            field_name: extra.field_name.clone(),
+            field_name: extra.field_name.as_ref().map(|d| d.clone().unbind()),
             self_instance: extra.self_instance.map(|d| d.clone().unbind()),
             recursion_guard: state.recursion_guard.clone(),
             exactness: state.exactness,
@@ -285,7 +285,7 @@ impl InternalValidator {
             strict: self.strict,
             extra_behavior: self.extra_behavior,
             from_attributes: self.from_attributes,
-            field_name: Some(field_name.clone()),
+            field_name: Some(pybackedstr_to_pystring(py, field_name)),
             context: self.context.as_ref().map(|data| data.bind(py)),
             self_instance: self.self_instance.as_ref().map(|data| data.bind(py)),
             cache_str: self.cache_str,
@@ -324,7 +324,7 @@ impl InternalValidator {
             strict: self.strict,
             extra_behavior: self.extra_behavior,
             from_attributes: self.from_attributes,
-            field_name: self.field_name.clone(),
+            field_name: self.field_name.as_ref().map(|name| name.bind(py).clone()),
             context: self.context.as_ref().map(|data| data.bind(py)),
             self_instance: self.self_instance.as_ref().map(|data| data.bind(py)),
             cache_str: self.cache_str,

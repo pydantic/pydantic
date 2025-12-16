@@ -16,6 +16,7 @@ use crate::input::{Arguments, BorrowInput, Input, KeywordArgs, PositionalArgs, V
 use crate::lookup_key::LookupKeyCollection;
 use crate::lookup_key::LookupType;
 use crate::tools::SchemaDict;
+use crate::tools::pybackedstr_to_pystring;
 
 use super::validation_state::ValidationState;
 use super::{BuildValidator, CombinedValidator, DefinitionsBuilder, Validator, build_validator};
@@ -229,7 +230,8 @@ impl Validator for ArgumentsValidator {
                 kw_value = Some((lookup_path, value));
             }
 
-            let state = &mut state.rebind_extra(|extra| extra.field_name = Some(parameter.name.clone()));
+            let state =
+                &mut state.rebind_extra(|extra| extra.field_name = Some(pybackedstr_to_pystring(py, &parameter.name)));
 
             match (pos_value, kw_value) {
                 (Some(_), Some((_, kw_value))) => {

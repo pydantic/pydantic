@@ -17,7 +17,7 @@ use crate::errors::{LocItem, ValError, ValResult, ValidationError};
 use crate::input::{Input, InputType, StringMapping};
 use crate::py_gc::PyGcTraverse;
 use crate::recursion_guard::RecursionState;
-use crate::tools::SchemaDict;
+use crate::tools::{SchemaDict, pybackedstr_to_pystring};
 pub(crate) use config::{TemporalUnitMode, ValBytesMode};
 
 mod any;
@@ -344,7 +344,7 @@ impl SchemaValidator {
             strict,
             extra_behavior,
             from_attributes,
-            field_name: Some(field_name.clone()),
+            field_name: Some(pybackedstr_to_pystring(py, &field_name)),
             context,
             self_instance: None,
             cache_str: self.cache_str,
@@ -688,7 +688,7 @@ pub struct Extra<'a, 'py> {
     /// context used in validator functions
     pub context: Option<&'a Bound<'py, PyAny>>,
     /// The name of the field being validated, if applicable
-    pub field_name: Option<PyBackedStr>, // FIXME: can this be &'a PyBackedStr?
+    pub field_name: Option<Bound<'py, PyString>>,
     /// This is an instance of the model or dataclass being validated, when validation is performed from `__init__`
     self_instance: Option<&'a Bound<'py, PyAny>>,
     /// Whether to use a cache of short strings to accelerate python string construction

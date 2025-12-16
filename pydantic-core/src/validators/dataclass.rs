@@ -18,6 +18,7 @@ use crate::input::{
 use crate::lookup_key::LookupKeyCollection;
 use crate::lookup_key::LookupType;
 use crate::tools::SchemaDict;
+use crate::tools::pybackedstr_to_pystring;
 use crate::validators::function::convert_err;
 
 use super::model::{Revalidate, create_class, force_setattr};
@@ -219,7 +220,8 @@ impl Validator for DataclassArgsValidator {
             }
             let kw_value = kw_value.as_ref().map(|(path, value)| (path, value.borrow_input()));
 
-            let state = &mut state.rebind_extra(|extra| extra.field_name = Some(field.name.clone()));
+            let state =
+                &mut state.rebind_extra(|extra| extra.field_name = Some(pybackedstr_to_pystring(py, &field.name)));
 
             match (pos_value, kw_value) {
                 // found both positional and keyword arguments, error
@@ -415,7 +417,7 @@ impl Validator for DataclassArgsValidator {
 
             let state = &mut state.rebind_extra(|extra| {
                 extra.data = Some(data_dict.clone());
-                extra.field_name = Some(field.name.clone());
+                extra.field_name = Some(pybackedstr_to_pystring(py, &field.name));
             });
 
             match field.validator.validate(py, field_value, state) {

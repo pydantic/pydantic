@@ -18,6 +18,7 @@ use crate::input::{BorrowInput, Input, ValidatedDict, ValidationMatch};
 use crate::lookup_key::LookupKeyCollection;
 use crate::lookup_key::LookupType;
 use crate::tools::SchemaDict;
+use crate::tools::pybackedstr_to_pystring;
 
 use super::{BuildValidator, CombinedValidator, DefinitionsBuilder, ValidationState, Validator, build_validator};
 
@@ -199,7 +200,8 @@ impl Validator for ModelFieldsValidator {
                     Err(err) => return Err(err),
                 };
 
-                let state = &mut state.rebind_extra(|extra| extra.field_name = Some(field.name.clone()));
+                let state =
+                    &mut state.rebind_extra(|extra| extra.field_name = Some(pybackedstr_to_pystring(py, &field.name)));
 
                 if let Some((lookup_path, value)) = op_key_value {
                     if let Some(ref mut used_keys) = used_keys {
@@ -441,7 +443,8 @@ impl Validator for ModelFieldsValidator {
                     ));
                 }
 
-                let state = &mut state.rebind_extra(|extra| extra.field_name = Some(field.name.clone()));
+                let state =
+                    &mut state.rebind_extra(|extra| extra.field_name = Some(pybackedstr_to_pystring(py, &field.name)));
 
                 prepare_result(field.validator.validate(py, field_value, state))?
             } else {
