@@ -5,7 +5,7 @@ importlib-metadata==3.6.0;python_version<"3.8"
 mypy==0.971
 # Pinning as '1.1.0' deprecated `mypy_extensions.TypedDict`, used by mypy up until 1.9.0:
 mypy-extensions==1.0.0
-pytest==7.2.1
+pytest==7.4.3
 pytest-cov==4.0.0
 pytest-mock==3.10.0
 pytest-sugar==0.9.6

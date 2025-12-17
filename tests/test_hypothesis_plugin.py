@@ -1,3 +1,4 @@
+import sys
 import typing
 from datetime import date
 
@@ -116,6 +117,10 @@ def gen_models():
         yield EmailsModel
 
 
+@pytest.mark.skipif(
+    sys.version_info >= (3, 14),
+    reason='Not supported on 3.14+',
+)
 @pytest.mark.parametrize('model', gen_models())
 @settings(suppress_health_check={HealthCheck.too_slow}, deadline=None)
 @given(data=st.data())

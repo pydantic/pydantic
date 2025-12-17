@@ -69,12 +69,25 @@ elif sys.version_info < (3, 12, 4):
         # TypeError: ForwardRef._evaluate() missing 1 required keyword-only argument: 'recursive_guard'
         return cast(Any, type_)._evaluate(globalns, localns, recursive_guard=set())
 
-else:
+elif sys.version_info < (3, 14):
 
     def evaluate_forwardref(type_: ForwardRef, globalns: Any, localns: Any) -> Any:
         # Pydantic 1.x will not support PEP 695 syntax, but provide `type_params` to avoid
         # warnings:
         return cast(Any, type_)._evaluate(globalns, localns, type_params=(), recursive_guard=set())
+
+else:
+
+    def evaluate_forwardref(type_: ForwardRef, globalns: Any, localns: Any) -> Any:
+        # Pydantic 1.x will not support PEP 695 syntax, but provide `type_params` to avoid
+        # warnings:
+        return typing.evaluate_forward_ref(
+            type_,
+            globals=globalns,
+            locals=localns,
+            type_params=(),
+            _recursive_guard=set(),  # type: ignore
+        )
 
 
 if sys.version_info < (3, 9):
