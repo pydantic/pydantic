@@ -253,13 +253,10 @@ impl ArgumentsV3Validator {
 
         for parameter in &self.parameters {
             // A value is present in the mapping:
-            if let Some((lookup_path, lookup_result)) = parameter
+            if let Some((lookup_path, dict_value)) = parameter
                 .lookup_path_collection
-                .lookup_paths(lookup_type)
-                .find_map(|path| Some((path, mapping.get_item(path).transpose()?)))
+                .try_lookup(lookup_type, |path| mapping.get_item(path))?
             {
-                let dict_value = lookup_result?;
-
                 if let Some(ref mut used_keys) = used_keys {
                     // key is "used" whether or not validation passes, since we want to skip this key in
                     // extra logic either way
@@ -546,12 +543,10 @@ impl ArgumentsV3Validator {
                     parameter.mode,
                     ParameterMode::PositionalOrKeyword | ParameterMode::KeywordOnly
                 )
-                && let Some((lookup_path, lookup_result)) = parameter
+                && let Some((lookup_path, value)) = parameter
                     .lookup_path_collection
-                    .lookup_paths(lookup_type)
-                    .find_map(|path| Some((path, kwargs.get_item(path).transpose()?)))
+                    .try_lookup(lookup_type, |path| kwargs.get_item(path))?
             {
-                let value = lookup_result?;
                 used_kwargs.insert(lookup_path.first_key());
                 kw_value = Some((lookup_path, value));
             }

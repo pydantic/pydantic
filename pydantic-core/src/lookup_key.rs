@@ -389,6 +389,21 @@ impl LookupPathCollection {
         by_alias.into_iter().chain(by_name)
     }
 
+    /// Attempts lookups in order based on the provided `lookup_type`, returning the first successful lookup, or the first error encountered.
+    pub fn try_lookup<T, E>(
+        &self,
+        lookup_type: LookupType,
+        mut lookup_fn: impl FnMut(&LookupPath) -> Result<Option<T>, E>,
+    ) -> Result<Option<(&LookupPath, T)>, E> {
+        self.lookup_paths(lookup_type)
+            .find_map(|path| match lookup_fn(path) {
+                Ok(Some(value)) => Some(Ok((path, value))),
+                Ok(None) => None,
+                Err(err) => Some(Err(err)),
+            })
+            .transpose()
+    }
+
     /// Returns the error location to use based on the provided `lookup_type` and `loc_by_alias`.
     pub fn error_loc(&self, lookup_type: LookupType, loc_by_alias: bool) -> Location {
         if loc_by_alias

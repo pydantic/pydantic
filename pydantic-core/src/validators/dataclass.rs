@@ -209,12 +209,10 @@ impl Validator for DataclassArgsValidator {
 
             let mut kw_value = None;
             if let Some(kwargs) = args.kwargs()
-                && let Some((lookup_path, lookup_result)) = field
+                && let Some((lookup_path, value)) = field
                     .lookup_path_collection
-                    .lookup_paths(lookup_type)
-                    .find_map(|path| Some((path, kwargs.get_item(path).transpose()?)))
+                    .try_lookup(lookup_type, |path| kwargs.get_item(path))?
             {
-                let value = lookup_result?;
                 used_keys.insert(lookup_path.first_key());
                 kw_value = Some((lookup_path, value));
             }

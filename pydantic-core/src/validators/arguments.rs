@@ -221,11 +221,9 @@ impl Validator for ArgumentsValidator {
             let mut kw_value = None;
             if let Some(kwargs) = kw_args
                 && let Some(lookup_path_collection) = &parameter.lookup_path_collection
-                && let Some((lookup_path, lookup_result)) = lookup_path_collection
-                    .lookup_paths(lookup_type)
-                    .find_map(|path| Some((path, kwargs.get_item(path).transpose()?)))
+                && let Some((lookup_path, value)) =
+                    lookup_path_collection.try_lookup(lookup_type, |path| kwargs.get_item(path))?
             {
-                let value = lookup_result?;
                 used_kwargs.insert(lookup_path.first_key());
                 kw_value = Some((lookup_path, value));
             }
