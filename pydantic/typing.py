@@ -86,7 +86,7 @@ else:
             globals=globalns,
             locals=localns,
             type_params=(),
-            _recursive_guard=set(),  # type: ignore
+            _recursive_guard=set(),
         )
 
 
