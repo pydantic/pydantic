@@ -142,7 +142,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python-version: ['3.7', '3.8', '3.9', '3.10', '3.11']
+        python-version: ['3.8', '3.9', '3.10', '3.11']
         enable-trace: [true]
         include:
           # We cannot use tracing on 3.12+, which makes the coverage useless.
@@ -223,13 +223,11 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-22.04, macos-13, macos-latest, windows-latest]
-        python-version: ['3.7', '3.8', '3.9', '3.10', '3.11', '3.12', '3.13', '3.14']
+        python-version: ['3.8', '3.9', '3.10', '3.11', '3.12', '3.13', '3.14']
         exclude:
-          # Python 3.7, 3.8, and 3.9 are not available on macOS 14
+          # Python 3.8, and 3.9 are not available on macOS 14
           - os: macos-13
             python-version: '3.10'
-          - os: macos-latest
-            python-version: '3.7'
           - os: macos-latest
             python-version: '3.8'
           - os: macos-latest
