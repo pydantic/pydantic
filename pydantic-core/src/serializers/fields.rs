@@ -176,6 +176,7 @@ impl GeneralFieldsSerializer {
     ) -> PyResult<Bound<'py, PyDict>> {
         let output_dict = PyDict::new(py);
         let mut used_req_fields: usize = 0;
+        let mut has_missing_value = false;
         let missing_sentinel = get_missing_sentinel_object(py);
 
         // NOTE! we maintain the order of the input dict assuming that's right
@@ -187,6 +188,7 @@ impl GeneralFieldsSerializer {
                 continue;
             }
             if value.is(missing_sentinel) {
+                has_missing_value = true;
                 continue;
             }
 
@@ -235,7 +237,7 @@ impl GeneralFieldsSerializer {
         let extra = &state.extra;
         if state.check.enabled()
             // If any of these are true we can't count fields
-            && !(extra.exclude_defaults || extra.exclude_unset || extra.exclude_none || extra.exclude_computed_fields || state.exclude().is_some())
+            && !(extra.exclude_defaults || extra.exclude_unset || extra.exclude_none || extra.exclude_computed_fields || state.exclude().is_some() || has_missing_value)
             // Check for missing fields, we can't have extra fields here
             && self.required_fields > used_req_fields
         {
