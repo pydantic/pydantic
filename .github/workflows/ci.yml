@@ -391,7 +391,7 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu , macos , windows]
-        python-version: ['7', '8', '9', '10', '11', '12', '13', '14']
+        python-version: ['8', '9', '10', '11', '12', '13', '14']
         include:
         - os: ubuntu
           platform: linux
@@ -408,7 +408,7 @@ jobs:
         python-version: '3.11'
 
     - name: install
-      run: pip install -U twine build cibuildwheel==2.22.0
+      run: pip install -U twine build cibuildwheel==3.3.0
 
     - name: build sdist and non cythonized wheel
       if: matrix.os == 'ubuntu' && matrix.python-version == '10'
