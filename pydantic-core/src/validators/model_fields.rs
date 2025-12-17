@@ -1,8 +1,5 @@
-use std::collections::hash_map::Entry;
-use std::hash::Hash;
 use std::sync::Arc;
 
-use ahash::AHashMap;
 use ahash::AHashSet;
 use jiter::JsonObject;
 use jiter::JsonValue;
@@ -20,22 +17,20 @@ use crate::errors::LocItem;
 use crate::errors::{ErrorType, ErrorTypeDefaults, ValError, ValLineError, ValResult};
 use crate::input::ConsumeIterator;
 use crate::input::{BorrowInput, Input, ValidatedDict, ValidationMatch};
-use crate::lookup_key::LookupKey;
 use crate::lookup_key::LookupKeyCollection;
-use crate::lookup_key::LookupPath;
 use crate::lookup_key::LookupType;
-use crate::lookup_key::PathItem;
-use crate::lookup_key::PathItemString;
 use crate::tools::SchemaDict;
 use crate::tools::new_py_string;
 use crate::tools::pybackedstr_to_pystring;
+use crate::validators::shared::lookup_tree::LookupFieldInfo;
+use crate::validators::shared::lookup_tree::LookupTree;
+use crate::validators::shared::lookup_tree::LookupTreeNode;
 
 use super::{BuildValidator, CombinedValidator, DefinitionsBuilder, ValidationState, Validator, build_validator};
 
 #[derive(Debug)]
 struct Field {
     name: PyBackedStr,
-    alias: Option<LookupKey>,
     lookup_key_collection: LookupKeyCollection,
     validator: Arc<CombinedValidator>,
     frozen: bool,
@@ -53,7 +48,7 @@ pub struct ModelFieldsValidator {
     strict: bool,
     from_attributes: bool,
     loc_by_alias: bool,
-    lookup: LookupMap,
+    lookup: LookupTree,
     validate_by_alias: Option<bool>,
     validate_by_name: Option<bool>,
 }
@@ -61,7 +56,6 @@ pub struct ModelFieldsValidator {
 impl BuildValidator for ModelFieldsValidator {
     const EXPECTED_TYPE: &'static str = "model-fields";
 
-    #[expect(clippy::items_after_statements, reason = "FIXME: refactor")]
     fn build(
         schema: &Bound<'_, PyDict>,
         config: Option<&Bound<'_, PyDict>>,
@@ -105,274 +99,20 @@ impl BuildValidator for ModelFieldsValidator {
             };
 
             let validation_alias = field_info.get_item(intern!(py, "validation_alias"))?;
-            let alias = validation_alias.as_ref().map(LookupKey::from_py).transpose()?;
-
-            // FIXME probably can deduplicate this with name / alias
             let lookup_key_collection = LookupKeyCollection::new(validation_alias, &field_name_py)?;
 
             fields.push(Field {
                 name: field_name_py.try_into()?,
-                alias,
                 lookup_key_collection,
                 validator,
                 frozen: field_info.get_as::<bool>(intern!(py, "frozen"))?.unwrap_or(false),
             });
         }
 
-        let mut map = AHashMap::new();
-
-        fn add_field_to_map<K: Eq + Hash>(map: &mut AHashMap<K, LookupValue>, key: K, info: LookupFieldInfo) {
-            match map.entry(key) {
-                Entry::Occupied(mut entry) => match entry.get_mut() {
-                    &mut LookupValue::Field(existing) => {
-                        entry.insert(LookupValue::Complex {
-                            fields: vec![existing, info],
-                            lookup_map: LookupMap {
-                                map: AHashMap::new(),
-                                list: AHashMap::new(),
-                            },
-                        });
-                    }
-                    LookupValue::Complex { fields, .. } => {
-                        fields.push(info);
-                    }
-                },
-                Entry::Vacant(entry) => {
-                    entry.insert(LookupValue::Field(info));
-                }
-            }
-        }
-
-        fn add_path_to_map(map: &mut AHashMap<PathItemString, LookupValue>, path: &LookupPath, info: LookupFieldInfo) {
-            if path.rest().is_empty() {
-                // terminal value
-                add_field_to_map(map, path.first_item().to_owned(), info);
-                return;
-            }
-
-            let mut nested_map = match map.entry(path.first_item().to_owned()) {
-                Entry::Occupied(entry) => {
-                    let entry = entry.into_mut();
-                    match entry {
-                        &mut LookupValue::Field(i) => {
-                            *entry = LookupValue::Complex {
-                                fields: vec![i],
-                                lookup_map: LookupMap {
-                                    map: AHashMap::new(),
-                                    list: AHashMap::new(),
-                                },
-                            };
-                            match entry {
-                                LookupValue::Complex {
-                                    lookup_map: nested_map, ..
-                                } => nested_map,
-                                LookupValue::Field(_) => unreachable!("just created complex"),
-                            }
-                        }
-                        LookupValue::Complex {
-                            lookup_map: nested_map, ..
-                        } => nested_map,
-                    }
-                }
-                Entry::Vacant(entry) => {
-                    let LookupValue::Complex {
-                        lookup_map: nested_map, ..
-                    } = entry.insert(LookupValue::Complex {
-                        fields: Vec::new(),
-                        lookup_map: LookupMap {
-                            map: AHashMap::new(),
-                            list: AHashMap::new(),
-                        },
-                    })
-                    else {
-                        unreachable!()
-                    };
-                    nested_map
-                }
-            };
-
-            let mut path_iter = path.rest().iter();
-
-            let mut current = path_iter.next().expect("rest is non-empty");
-
-            for next in path_iter {
-                nested_map = match current {
-                    PathItem::S(s) => {
-                        let str_key = s.clone();
-                        match nested_map.map.entry(str_key) {
-                            Entry::Occupied(entry) => {
-                                let entry = entry.into_mut();
-                                match entry {
-                                    &mut LookupValue::Field(i) => {
-                                        *entry = LookupValue::Complex {
-                                            fields: vec![i],
-                                            lookup_map: LookupMap {
-                                                map: AHashMap::new(),
-                                                list: AHashMap::new(),
-                                            },
-                                        };
-                                        let LookupValue::Complex {
-                                            lookup_map: nested_map, ..
-                                        } = entry
-                                        else {
-                                            unreachable!()
-                                        };
-                                        nested_map
-                                    }
-                                    LookupValue::Complex {
-                                        lookup_map: nested_map, ..
-                                    } => nested_map,
-                                }
-                            }
-                            Entry::Vacant(entry) => {
-                                let LookupValue::Complex {
-                                    lookup_map: nested_map, ..
-                                } = entry.insert(LookupValue::Complex {
-                                    fields: vec![],
-                                    lookup_map: LookupMap {
-                                        map: AHashMap::new(),
-                                        list: AHashMap::new(),
-                                    },
-                                })
-                                else {
-                                    unreachable!()
-                                };
-                                nested_map
-                            }
-                        }
-                    }
-                    PathItem::Pos(i) => match nested_map.list.entry(*i as i64) {
-                        Entry::Occupied(entry) => {
-                            let entry = entry.into_mut();
-                            match entry {
-                                &mut LookupValue::Field(i) => {
-                                    *entry = LookupValue::Complex {
-                                        fields: vec![i],
-                                        lookup_map: LookupMap {
-                                            map: AHashMap::new(),
-                                            list: AHashMap::new(),
-                                        },
-                                    };
-                                    let LookupValue::Complex {
-                                        lookup_map: nested_map, ..
-                                    } = entry
-                                    else {
-                                        unreachable!()
-                                    };
-                                    nested_map
-                                }
-                                LookupValue::Complex {
-                                    lookup_map: nested_map, ..
-                                } => nested_map,
-                            }
-                        }
-                        Entry::Vacant(entry) => {
-                            let LookupValue::Complex {
-                                lookup_map: nested_map, ..
-                            } = entry.insert(LookupValue::Complex {
-                                fields: vec![],
-                                lookup_map: LookupMap {
-                                    map: AHashMap::new(),
-                                    list: AHashMap::new(),
-                                },
-                            })
-                            else {
-                                unreachable!()
-                            };
-                            nested_map
-                        }
-                    },
-                    PathItem::Neg(i) => match nested_map.list.entry(-(*i as i64)) {
-                        Entry::Occupied(entry) => {
-                            let entry = entry.into_mut();
-                            match entry {
-                                &mut LookupValue::Field(i) => {
-                                    *entry = LookupValue::Complex {
-                                        fields: vec![i],
-                                        lookup_map: LookupMap {
-                                            map: AHashMap::new(),
-                                            list: AHashMap::new(),
-                                        },
-                                    };
-                                    let LookupValue::Complex {
-                                        lookup_map: nested_map, ..
-                                    } = entry
-                                    else {
-                                        unreachable!()
-                                    };
-                                    nested_map
-                                }
-                                LookupValue::Complex {
-                                    lookup_map: nested_map, ..
-                                } => nested_map,
-                            }
-                        }
-                        Entry::Vacant(entry) => {
-                            let LookupValue::Complex {
-                                lookup_map: nested_map, ..
-                            } = entry.insert(LookupValue::Complex {
-                                fields: vec![],
-                                lookup_map: LookupMap {
-                                    map: AHashMap::new(),
-                                    list: AHashMap::new(),
-                                },
-                            })
-                            else {
-                                unreachable!()
-                            };
-                            nested_map
-                        }
-                    },
-                };
-
-                current = next;
-            }
-
-            // now have a terminal value
-            match current {
-                PathItem::S(s) => {
-                    add_field_to_map(&mut nested_map.map, s.clone(), info);
-                }
-                PathItem::Pos(i) => {
-                    add_field_to_map(&mut nested_map.list, *i as i64, info);
-                }
-                PathItem::Neg(i) => {
-                    add_field_to_map(&mut nested_map.list, -(*i as i64), info);
-                }
-            }
-        }
+        let mut lookup = LookupTree::new();
 
         for (field_index, field) in fields.iter().enumerate() {
-            add_field_to_map(
-                &mut map,
-                PathItemString(field.name.clone()),
-                LookupFieldInfo {
-                    field_index,
-                    field_lookup_type: if field.alias.is_some() {
-                        LookupType::Name
-                    } else {
-                        LookupType::Both
-                    },
-                },
-            );
-            if let Some(alias) = &field.alias {
-                let info = LookupFieldInfo {
-                    field_index,
-                    field_lookup_type: LookupType::Alias,
-                };
-                match alias {
-                    LookupKey::Simple(path) => {
-                        // should be a single string key
-                        debug_assert!(path.rest().is_empty());
-                        add_field_to_map(&mut map, path.first_item().to_owned(), info);
-                    }
-                    LookupKey::PathChoices(paths) => {
-                        for path in paths {
-                            add_path_to_map(&mut map, path, info);
-                        }
-                    }
-                }
-            }
+            lookup.add_lookup_collection_for_field(&field.lookup_key_collection, field_index);
         }
 
         Ok(CombinedValidator::ModelFields(Self {
@@ -384,10 +124,7 @@ impl BuildValidator for ModelFieldsValidator {
             strict,
             from_attributes,
             loc_by_alias: config.get_as(intern!(py, "loc_by_alias"))?.unwrap_or(true),
-            lookup: LookupMap {
-                map,
-                list: AHashMap::new(),
-            },
+            lookup,
             validate_by_alias: config.get_as(intern!(py, "validate_by_alias"))?,
             validate_by_name: config.get_as(intern!(py, "validate_by_name"))?,
         })
@@ -895,14 +632,14 @@ impl ModelFieldsValidator {
             py: Python<'py>,
             fields: &[Field],
             field_results: &mut [Option<(ValResult<Py<PyAny>>, LookupType)>],
-            lookup_value: &LookupValue,
+            lookup_value: &LookupTreeNode,
             json_value: &'a JsonValue<'a>,
             state: &mut ValidationState<'_, 'py>,
             lookup_type: LookupType,
             lookup_path: &mut Option<SmallVec<[LookupPathItem<'a>; 1]>>,
         ) {
             match lookup_value {
-                LookupValue::Field(info) => {
+                LookupTreeNode::Field(info) => {
                     set_field_value(
                         py,
                         json_value,
@@ -914,7 +651,7 @@ impl ModelFieldsValidator {
                         lookup_path.as_deref(),
                     );
                 }
-                LookupValue::Complex {
+                LookupTreeNode::Complex {
                     fields: lookup_fields,
                     lookup_map,
                 } => {
@@ -1008,8 +745,7 @@ impl ModelFieldsValidator {
         let mut lookup_path: Option<SmallVec<[_; 1]>> = Some(SmallVec::new()).filter(|_| self.loc_by_alias);
         for (key, value) in &**json_object {
             let key = key.as_ref();
-            // FIXME: root lookup map can never have list entries
-            if let Some(lookup_value) = self.lookup.map.get(key) {
+            if let Some(lookup_value) = self.lookup.inner.get(key) {
                 if let Some(p) = &mut lookup_path {
                     p.push(LookupPathItem::Key(key));
                 }
@@ -1120,29 +856,4 @@ impl ModelFieldsValidator {
 
         Ok((model_dict, model_extra_dict_op, fields_set))
     }
-}
-
-#[derive(Debug, Clone, Copy)]
-struct LookupFieldInfo {
-    field_index: usize,
-    field_lookup_type: LookupType,
-}
-
-#[derive(Debug)]
-enum LookupValue {
-    /// This lookup hits an actual field
-    Field(LookupFieldInfo),
-    /// This lookup might applicable to multiple fields
-    Complex {
-        /// All fields which wanted _exactly_ this key
-        fields: Vec<LookupFieldInfo>,
-        /// Fields which use this key as path prefix
-        lookup_map: LookupMap,
-    },
-}
-
-#[derive(Debug)]
-struct LookupMap {
-    map: AHashMap<PathItemString, LookupValue>,
-    list: AHashMap<i64, LookupValue>,
 }

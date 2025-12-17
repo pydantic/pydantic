@@ -463,8 +463,8 @@ impl PathItemString {
 #[derive(Debug)]
 #[allow(clippy::struct_field_names)]
 pub struct LookupKeyCollection {
-    by_name: LookupKey,
-    by_alias: Option<LookupKey>,
+    pub by_name: LookupKey,
+    pub by_alias: Option<LookupKey>,
 }
 
 impl LookupKeyCollection {
