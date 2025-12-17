@@ -427,7 +427,6 @@ impl_py_gc_traverse!(FunctionWrapSerializer {
 function_type_serializer!(FunctionWrapSerializer);
 
 #[pyclass(module = "pydantic_core._pydantic_core")]
-#[cfg_attr(debug_assertions, derive(Debug))]
 pub(crate) struct SerializationCallable {
     serializer: Arc<CombinedSerializer>,
     extra_owned: ExtraOwned,

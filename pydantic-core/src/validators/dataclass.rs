@@ -3,6 +3,7 @@ use std::sync::Arc;
 use pyo3::exceptions::PyKeyError;
 use pyo3::intern;
 use pyo3::prelude::*;
+use pyo3::pybacked::PyBackedStr;
 use pyo3::types::{PyDict, PyList, PyString, PyTuple, PyType};
 
 use ahash::AHashSet;
@@ -17,6 +18,7 @@ use crate::input::{
 use crate::lookup_key::LookupKeyCollection;
 use crate::lookup_key::LookupType;
 use crate::tools::SchemaDict;
+use crate::tools::pybackedstr_to_pystring;
 use crate::validators::function::convert_err;
 
 use super::model::{Revalidate, create_class, force_setattr};
@@ -26,8 +28,7 @@ use super::{BuildValidator, CombinedValidator, DefinitionsBuilder, ValidationSta
 #[derive(Debug)]
 struct Field {
     kw_only: bool,
-    name: String,
-    name_py: Py<PyString>,
+    name: PyBackedStr,
     init: bool,
     init_only: bool,
     lookup_key_collection: LookupKeyCollection,
@@ -76,7 +77,7 @@ impl BuildValidator for DataclassArgsValidator {
             let field = field.cast::<PyDict>()?;
 
             let name_py: Bound<'_, PyString> = field.get_as_req(intern!(py, "name"))?;
-            let name: String = name_py.extract()?;
+            let name = PyBackedStr::try_from(name_py.clone())?;
 
             let schema = field.get_as_req(intern!(py, "schema"))?;
 
@@ -102,7 +103,6 @@ impl BuildValidator for DataclassArgsValidator {
             fields.push(Field {
                 kw_only,
                 name,
-                name_py: name_py.into(),
                 lookup_key_collection,
                 validator,
                 init: field.get_as(intern!(py, "init"))?.unwrap_or(true),
@@ -170,13 +170,12 @@ impl Validator for DataclassArgsValidator {
 
         macro_rules! set_item {
             ($field:ident, $value:expr) => {{
-                let name_py = $field.name_py.bind(py);
                 if $field.init_only {
                     if let Some(ref mut init_only_args) = init_only_args {
                         init_only_args.push($value);
                     }
                 } else {
-                    output_dict.set_item(name_py, $value)?;
+                    output_dict.set_item(&$field.name, $value)?;
                 }
             }};
         }
@@ -184,7 +183,7 @@ impl Validator for DataclassArgsValidator {
         // go through fields getting the value from args or kwargs and validating it
         for (index, field) in self.fields.iter().enumerate() {
             if !field.init {
-                match field.validator.default_value(py, Some(field.name.as_str()), state) {
+                match field.validator.default_value(py, Some(field.name.clone()), state) {
                     Ok(Some(value)) => {
                         // Default value exists, and passed validation if required
                         set_item!(field, value);
@@ -221,7 +220,8 @@ impl Validator for DataclassArgsValidator {
             }
             let kw_value = kw_value.as_ref().map(|(path, value)| (path, value.borrow_input()));
 
-            let state = &mut state.rebind_extra(|extra| extra.field_name = Some(field.name_py.bind(py).clone()));
+            let state =
+                &mut state.rebind_extra(|extra| extra.field_name = Some(pybackedstr_to_pystring(py, &field.name)));
 
             match (pos_value, kw_value) {
                 // found both positional and keyword arguments, error
@@ -262,7 +262,7 @@ impl Validator for DataclassArgsValidator {
                 },
                 // found neither, check if there is a default value, otherwise error
                 (None, None) => {
-                    match field.validator.default_value(py, Some(field.name.as_str()), state) {
+                    match field.validator.default_value(py, Some(field.name.clone()), state) {
                         Ok(Some(value)) => {
                             // Default value exists, and passed validation if required
                             set_item!(field, value);
@@ -382,7 +382,7 @@ impl Validator for DataclassArgsValidator {
         &self,
         py: Python<'py>,
         obj: &Bound<'py, PyAny>,
-        field_name: &str,
+        field_name: &PyBackedStr,
         field_value: &Bound<'py, PyAny>,
         state: &mut ValidationState<'_, 'py>,
     ) -> ValResult<Py<PyAny>> {
@@ -398,12 +398,12 @@ impl Validator for DataclassArgsValidator {
             Ok(PyTuple::new(py, [Some(dict), None])?.into())
         };
 
-        if let Some(field) = self.fields.iter().find(|f| f.name == field_name) {
+        if let Some(field) = self.fields.iter().find(|f| &f.name == field_name) {
             if field.frozen {
                 return Err(ValError::new_with_loc(
                     ErrorTypeDefaults::FrozenField,
                     field_value,
-                    &field.name,
+                    field.name.clone(),
                 ));
             }
             // by using dict but removing the field in question, we match V1 behaviour
@@ -417,7 +417,7 @@ impl Validator for DataclassArgsValidator {
 
             let state = &mut state.rebind_extra(|extra| {
                 extra.data = Some(data_dict.clone());
-                extra.field_name = Some(field.name_py.bind(py).clone());
+                extra.field_name = Some(pybackedstr_to_pystring(py, &field.name));
             });
 
             match field.validator.validate(py, field_value, state) {
@@ -425,7 +425,7 @@ impl Validator for DataclassArgsValidator {
                 Err(ValError::LineErrors(line_errors)) => {
                     let errors = line_errors
                         .into_iter()
-                        .map(|e| e.with_outer_location(field_name))
+                        .map(|e| e.with_outer_location(field_name.clone()))
                         .collect();
                     Err(ValError::LineErrors(errors))
                 }
@@ -593,7 +593,7 @@ impl Validator for DataclassValidator {
         &self,
         py: Python<'py>,
         obj: &Bound<'py, PyAny>,
-        field_name: &str,
+        field_name: &PyBackedStr,
         field_value: &Bound<'py, PyAny>,
         state: &mut ValidationState<'_, 'py>,
     ) -> ValResult<Py<PyAny>> {

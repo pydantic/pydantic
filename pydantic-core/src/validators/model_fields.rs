@@ -8,7 +8,6 @@ use jiter::JsonObject;
 use jiter::JsonValue;
 use pyo3::IntoPyObjectExt;
 use pyo3::exceptions::PyKeyError;
-use pyo3::exceptions::PyValueError;
 use pyo3::intern;
 use pyo3::prelude::*;
 use pyo3::pybacked::PyBackedStr;
@@ -29,13 +28,13 @@ use crate::lookup_key::PathItem;
 use crate::lookup_key::PathItemString;
 use crate::tools::SchemaDict;
 use crate::tools::new_py_string;
+use crate::tools::pybackedstr_to_pystring;
 
 use super::{BuildValidator, CombinedValidator, DefinitionsBuilder, ValidationState, Validator, build_validator};
 
 #[derive(Debug)]
 struct Field {
-    // FIXME: should just use `PyBackedStr` directly here, needs `Borrow<str>` implementation
-    name: PathItemString,
+    name: PyBackedStr,
     alias: Option<LookupKey>,
     lookup_key_collection: LookupKeyCollection,
     validator: Arc<CombinedValidator>,
@@ -112,7 +111,7 @@ impl BuildValidator for ModelFieldsValidator {
             let lookup_key_collection = LookupKeyCollection::new(validation_alias, &field_name_py)?;
 
             fields.push(Field {
-                name: PathItemString(name),
+                name: field_name_py.try_into()?,
                 alias,
                 lookup_key_collection,
                 validator,
@@ -346,20 +345,20 @@ impl BuildValidator for ModelFieldsValidator {
         for (field_index, field) in fields.iter().enumerate() {
             add_field_to_map(
                 &mut map,
-                field.name.clone(),
+                PathItemString(field.name.clone()),
                 LookupFieldInfo {
                     field_index,
                     field_lookup_type: if field.alias.is_some() {
-                        FieldLookupType::Name
+                        LookupType::Name
                     } else {
-                        FieldLookupType::Both
+                        LookupType::Both
                     },
                 },
             );
             if let Some(alias) = &field.alias {
                 let info = LookupFieldInfo {
                     field_index,
-                    field_lookup_type: FieldLookupType::Alias,
+                    field_lookup_type: LookupType::Alias,
                 };
                 match alias {
                     LookupKey::Simple(path) => {
@@ -466,7 +465,7 @@ impl Validator for ModelFieldsValidator {
         &self,
         py: Python<'py>,
         obj: &Bound<'py, PyAny>,
-        field_name: &str,
+        field_name: &PyBackedStr,
         field_value: &Bound<'py, PyAny>,
         state: &mut ValidationState<'_, 'py>,
     ) -> ValResult<Py<PyAny>> {
@@ -483,7 +482,7 @@ impl Validator for ModelFieldsValidator {
             Err(ValError::LineErrors(line_errors)) => {
                 let errors = line_errors
                     .into_iter()
-                    .map(|e| e.with_outer_location(field_name))
+                    .map(|e| e.with_outer_location(field_name.clone()))
                     .collect();
                 Err(ValError::LineErrors(errors))
             }
@@ -511,8 +510,8 @@ impl Validator for ModelFieldsValidator {
                     ));
                 }
 
-                let field_name_py = (&field.name).into_pyobject(py)?;
-                let state = &mut state.rebind_extra(|extra| extra.field_name = Some(field_name_py));
+                let state =
+                    &mut state.rebind_extra(|extra| extra.field_name = Some(pybackedstr_to_pystring(py, &field.name)));
 
                 prepare_result(field.validator.validate(py, field_value, state))?
             } else {
@@ -584,7 +583,7 @@ impl ModelFieldsValidator {
         let model_dict = PyDict::new(py);
         let mut model_extra_dict_op: Option<Bound<PyDict>> = None;
         let mut errors: Vec<ValLineError> = Vec::with_capacity(self.fields.len());
-        let mut fields_set_vec: Vec<PyBackedStr> = Vec::with_capacity(self.fields.len());
+        let mut fields_set_vec = Vec::with_capacity(self.fields.len());
         let mut fields_set_count: usize = 0;
 
         let validate_by_alias = state.validate_by_alias_or(self.validate_by_alias);
@@ -614,15 +613,15 @@ impl ModelFieldsValidator {
                     Ok(v) => v,
                     Err(ValError::LineErrors(line_errors)) => {
                         for err in line_errors {
-                            errors.push(err.with_outer_location(&*field.name));
+                            errors.push(err.with_outer_location(field.name.clone()));
                         }
                         continue;
                     }
                     Err(err) => return Err(err),
                 };
 
-                let field_name_py = (&field.name).into_pyobject(py)?;
-                let state = &mut state.rebind_extra(|extra| extra.field_name = Some(field_name_py));
+                let state =
+                    &mut state.rebind_extra(|extra| extra.field_name = Some(pybackedstr_to_pystring(py, &field.name)));
 
                 if let Some((lookup_path, value)) = op_key_value {
                     if let Some(ref mut used_keys) = used_keys {
@@ -634,7 +633,7 @@ impl ModelFieldsValidator {
                     match field.validator.validate(py, value.borrow_input(), state) {
                         Ok(value) => {
                             model_dict.set_item(&field.name, value)?;
-                            fields_set_vec.push(field.name.0.clone());
+                            fields_set_vec.push(field.name.clone());
                             fields_set_count += 1;
                         }
                         Err(e) => {
@@ -653,24 +652,19 @@ impl ModelFieldsValidator {
                     continue;
                 }
 
-                match field.validator.default_value(py, Some(&*field.name), state) {
+                match field.validator.default_value(py, Some(field.name.clone()), state) {
                     Ok(Some(value)) => {
                         // Default value exists, and passed validation if required
                         model_dict.set_item(&field.name, value)?;
                     }
                     Ok(None) => {
                         let lookup_key = field.lookup_key_collection.first_key_matching(lookup_type);
-                        // This means there was no default value
-                        let error = match &field.alias {
-                            Some(alias) => alias.error(
-                                ErrorTypeDefaults::Missing,
-                                input,
-                                self.loc_by_alias && validate_by_alias,
-                                &field.name,
-                            ),
-                            None => ValLineError::new_with_loc(ErrorTypeDefaults::Missing, input, &*field.name),
-                        };
-                        errors.push(error);
+                        errors.push(lookup_key.error(
+                            ErrorTypeDefaults::Missing,
+                            input,
+                            self.loc_by_alias && validate_by_alias,
+                            &field.name,
+                        ));
                     }
                     Err(ValError::Omit) => {}
                     Err(ValError::LineErrors(line_errors)) => {
@@ -836,13 +830,13 @@ impl ModelFieldsValidator {
             py: Python<'py>,
             input: &JsonValue<'_>,
             state: &mut ValidationState<'_, 'py>,
-            field_results: &mut [Option<(ValResult<Py<PyAny>>, FieldLookupType)>],
+            field_results: &mut [Option<(ValResult<Py<PyAny>>, LookupType)>],
             fields: &[Field],
             LookupFieldInfo {
                 field_index: i,
                 field_lookup_type,
             }: LookupFieldInfo,
-            lookup_type: FieldLookupType,
+            lookup_type: LookupType,
             lookup_path: Option<&[LookupPathItem<'_>]>,
         ) {
             if field_lookup_type.matches(lookup_type) {
@@ -850,8 +844,8 @@ impl ModelFieldsValidator {
 
                 // handle the possibility of a result already existing
                 if let Some((_, existing_lookup_type)) = &field_result
-                    && field_lookup_type == FieldLookupType::Name
-                    && existing_lookup_type.matches(FieldLookupType::Alias)
+                    && field_lookup_type == LookupType::Name
+                    && existing_lookup_type.matches(LookupType::Alias)
                 {
                     // later results are typically preferred (standard JSON duplicate handling) BUT aliases
                     // are preferred over names, so only return early if the new value is a name lookup
@@ -900,11 +894,11 @@ impl ModelFieldsValidator {
         fn fill_lookup_value<'py, 'a>(
             py: Python<'py>,
             fields: &[Field],
-            field_results: &mut [Option<(ValResult<Py<PyAny>>, FieldLookupType)>],
+            field_results: &mut [Option<(ValResult<Py<PyAny>>, LookupType)>],
             lookup_value: &LookupValue,
             json_value: &'a JsonValue<'a>,
             state: &mut ValidationState<'_, 'py>,
-            lookup_type: FieldLookupType,
+            lookup_type: LookupType,
             lookup_path: &mut Option<SmallVec<[LookupPathItem<'a>; 1]>>,
         ) {
             match lookup_value {
@@ -1001,11 +995,11 @@ impl ModelFieldsValidator {
         let extra_behavior = state.extra_behavior_or(self.extra_behavior);
         let validate_by_alias = state.validate_by_alias_or(self.validate_by_alias);
         let validate_by_name = state.validate_by_name_or(self.validate_by_name);
-        let lookup_type = FieldLookupType::from_bools(validate_by_alias, validate_by_name)?;
+        let lookup_type = LookupType::from_bools(validate_by_alias, validate_by_name)?;
 
         let model_dict = PyDict::new(py);
         let mut model_extra_dict_op: Option<Bound<PyDict>> = None;
-        let mut field_results: Vec<Option<(ValResult<Py<PyAny>>, FieldLookupType)>> =
+        let mut field_results: Vec<Option<(ValResult<Py<PyAny>>, LookupType)>> =
             (0..self.fields.len()).map(|_| None).collect();
         let mut errors: Vec<ValLineError> = Vec::new();
         let fields_set = PySet::empty(py)?;
@@ -1089,16 +1083,13 @@ impl ModelFieldsValidator {
                 match field.validator.default_value(py, Some(&*field.name), state) {
                     Ok(Some(default_value)) => default_value,
                     Ok(None) => {
-                        let error = match &field.alias {
-                            Some(alias) => alias.error(
-                                ErrorTypeDefaults::Missing,
-                                json_input,
-                                self.loc_by_alias && validate_by_alias,
-                                &field.name,
-                            ),
-                            None => ValLineError::new_with_loc(ErrorTypeDefaults::Missing, json_input, &*field.name),
-                        };
-                        errors.push(error);
+                        let lookup_key = field.lookup_key_collection.first_key_matching(lookup_type);
+                        errors.push(lookup_key.error(
+                            ErrorTypeDefaults::Missing,
+                            json_input,
+                            self.loc_by_alias && validate_by_alias,
+                            &field.name,
+                        ));
                         continue;
                     }
                     Err(ValError::Omit) => continue,
@@ -1131,36 +1122,10 @@ impl ModelFieldsValidator {
     }
 }
 
-/// Whether this lookup represents a name or an alias
-#[derive(Debug, Clone, Copy, Eq, PartialEq)]
-#[repr(u8)]
-enum FieldLookupType {
-    Name = 1,
-    Alias = 2,
-    Both = 3,
-}
-
-impl FieldLookupType {
-    fn from_bools(validate_by_alias: bool, validate_by_name: bool) -> PyResult<FieldLookupType> {
-        match (validate_by_alias, validate_by_name) {
-            (true, true) => Ok(FieldLookupType::Both),
-            (true, false) => Ok(FieldLookupType::Alias),
-            (false, true) => Ok(FieldLookupType::Name),
-            (false, false) => Err(PyValueError::new_err(
-                "`validate_by_name` and `validate_by_alias` cannot both be set to `False`.",
-            )),
-        }
-    }
-
-    fn matches(self, other: FieldLookupType) -> bool {
-        (self as u8 & other as u8) != 0
-    }
-}
-
 #[derive(Debug, Clone, Copy)]
 struct LookupFieldInfo {
     field_index: usize,
-    field_lookup_type: FieldLookupType,
+    field_lookup_type: LookupType,
 }
 
 #[derive(Debug)]

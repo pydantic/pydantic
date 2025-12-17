@@ -2,6 +2,7 @@ use std::sync::Arc;
 
 use pyo3::intern;
 use pyo3::prelude::*;
+use pyo3::pybacked::PyBackedStr;
 use pyo3::types::PyString;
 use pyo3::types::{PyDict, PyList};
 
@@ -110,7 +111,7 @@ impl Validator for DefinitionRefValidator {
         &self,
         py: Python<'py>,
         obj: &Bound<'py, PyAny>,
-        field_name: &str,
+        field_name: &PyBackedStr,
         field_value: &Bound<'py, PyAny>,
         state: &mut ValidationState<'_, 'py>,
     ) -> ValResult<Py<PyAny>> {
