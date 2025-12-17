@@ -8,221 +8,42 @@ use pyo3::pybacked::PyBackedStr;
 use pyo3::types::{PyDict, PyList, PyMapping, PyString};
 
 use jiter::{JsonObject, JsonValue};
+use smallvec::SmallVec;
 
 use crate::build_tools::py_schema_err;
-use crate::errors::{ErrorType, LocItem, Location, ToErrorValue, ValError, ValLineError, ValResult, py_err_string};
+use crate::errors::{ErrorType, LocItem, Location, ValError, ValLineError, ValResult, py_err_string};
 use crate::input::StringMapping;
 use crate::tools::{mapping_get, py_err};
 
-/// Used for getting items from python dicts, python objects, or JSON objects, in different ways
-#[derive(Debug)]
-pub(crate) enum LookupKey {
-    /// simply look up a key in a dict, equivalent to `d.get(key)`
-    Simple(LookupPath),
-    /// look up keys by one or more "paths" a path might be `['foo', 'bar']` to get `d.?foo.?bar`
-    /// ints are also supported to index arrays/lists/tuples and dicts with int keys
-    /// we reuse Location as the enum is the same, and the meaning is the same
-    PathChoices(Vec<LookupPath>),
+/// The possible choices for an alias value in Python
+#[derive(FromPyObject)]
+pub(crate) enum ValidationAlias {
+    /// `str`
+    Str(PyBackedStr),
+    /// `list[int | str]`
+    AliasPath(LookupPath),
+    /// `list[list[int | str]]`
+    AliasChoices(#[pyo3(from_py_with = LookupPath::from_mulitiple_list)] SmallVec<[LookupPath; 1]>),
 }
 
-impl fmt::Display for LookupKey {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+impl ValidationAlias {
+    pub fn into_paths(self) -> SmallVec<[LookupPath; 1]> {
         match self {
-            Self::Simple(path) => write!(f, "'{key}'", key = path.first_key()),
-            Self::PathChoices(paths) => write!(
-                f,
-                "{}",
-                paths.iter().map(ToString::to_string).collect::<Vec<_>>().join(" | ")
-            ),
+            Self::Str(py_str) => SmallVec::from_buf([LookupPath {
+                first_item: PathItemString(py_str),
+                rest: Vec::new(),
+            }]),
+            Self::AliasPath(path) => SmallVec::from_buf([path]),
+            Self::AliasChoices(paths) => paths,
         }
     }
 }
 
-impl LookupKey {
-    pub fn from_py(value: &Bound<'_, PyAny>) -> PyResult<Self> {
-        if let Ok(alias_py) = value.cast::<PyString>() {
-            let path1 = LookupPath::from_str(alias_py.clone())?;
-            Ok(Self::Simple(path1))
-        } else {
-            let list = value.cast::<PyList>()?;
-            let Ok(first) = list.get_item(0) else {
-                return py_schema_err!("Lookup paths should have at least one element");
-            };
-            let locs: Vec<LookupPath> = if first.cast::<PyString>().is_ok() {
-                // list of strings rather than list of lists
-                vec![LookupPath::from_list(list)?]
-            } else {
-                list.iter()
-                    .map(|elem| LookupPath::from_list(&elem))
-                    .collect::<PyResult<_>>()?
-            };
-            Ok(Self::PathChoices(locs))
-        }
-    }
+impl FromPyObject<'_, '_> for LookupPath {
+    type Error = PyErr;
 
-    pub fn py_get_dict_item<'py, 's>(
-        &'s self,
-        dict: &Bound<'py, PyDict>,
-    ) -> PyResult<Option<(&'s LookupPath, Bound<'py, PyAny>)>> {
-        self.get_impl(dict, PyDictMethods::get_item, |d, loc| Ok(loc.py_get_item(&d)))
-    }
-
-    pub fn py_get_string_mapping_item<'py, 's>(
-        &'s self,
-        dict: &Bound<'py, PyDict>,
-    ) -> ValResult<Option<(&'s LookupPath, StringMapping<'py>)>> {
-        if let Some((path, py_any)) = self.py_get_dict_item(dict)? {
-            let value = StringMapping::new_value(py_any)?;
-            Ok(Some((path, value)))
-        } else {
-            Ok(None)
-        }
-    }
-
-    pub fn py_get_mapping_item<'py, 's>(
-        &'s self,
-        dict: &Bound<'py, PyMapping>,
-    ) -> PyResult<Option<(&'s LookupPath, Bound<'py, PyAny>)>> {
-        self.get_impl(dict, mapping_get, |d, loc| Ok(loc.py_get_item(&d)))
-    }
-
-    pub fn simple_py_get_attr<'py, 's>(
-        &'s self,
-        obj: &Bound<'py, PyAny>,
-    ) -> PyResult<Option<(&'s LookupPath, Bound<'py, PyAny>)>> {
-        self.get_impl(obj, PyAnyMethods::getattr_opt, |d, loc| loc.py_get_attrs(&d))
-    }
-
-    pub fn py_get_attr<'py, 's>(
-        &'s self,
-        obj: &Bound<'py, PyAny>,
-        kwargs: Option<&Bound<'py, PyDict>>,
-    ) -> ValResult<Option<(&'s LookupPath, Bound<'py, PyAny>)>> {
-        if let Some(dict) = kwargs
-            && let Ok(Some(item)) = self.py_get_dict_item(dict)
-        {
-            return Ok(Some(item));
-        }
-
-        match self.simple_py_get_attr(obj) {
-            Ok(v) => Ok(v),
-            Err(err) => {
-                let error = py_err_string(obj.py(), err);
-                Err(ValError::new(
-                    ErrorType::GetAttributeError { error, context: None },
-                    obj,
-                ))
-            }
-        }
-    }
-
-    pub fn json_get<'a, 'data, 's>(
-        &'s self,
-        dict: &'a JsonObject<'data>,
-    ) -> ValResult<Option<(&'s LookupPath, &'a JsonValue<'data>)>> {
-        // FIXME: use of find_map in here probably leads to quadratic complexity
-        match self {
-            Self::Simple(path) => match dict
-                .iter()
-                .rev()
-                .find_map(|(k, v)| (k == path.first_key()).then_some(v))
-            {
-                Some(value) => {
-                    debug_assert!(path.rest.is_empty());
-                    Ok(Some((path, value)))
-                }
-                None => Ok(None),
-            },
-            Self::PathChoices(path_choices) => {
-                for path in path_choices {
-                    // first step is different from the rest as we already know dict is JsonObject
-                    // because of above checks, we know that path should have at least one element, hence unwrap
-                    let v: &JsonValue = match dict
-                        .iter()
-                        .rev()
-                        .find_map(|(k, v)| (k == path.first_key()).then_some(v))
-                    {
-                        Some(v) => v,
-                        None => continue,
-                    };
-
-                    let mut path_iter = path.rest.iter();
-
-                    // similar to above
-                    // iterate over the path and plug each value into the JsonValue from the last step, starting with v
-                    // from the first step, this could just be a loop but should be somewhat faster with a functional design
-                    if let Some(v) = path_iter.try_fold(v, |d, loc| loc.json_get(d)) {
-                        // Successfully found an item, return it
-                        return Ok(Some((path, v)));
-                    }
-                }
-                // got to the end of path_choices, without a match, return None
-                Ok(None)
-            }
-        }
-    }
-
-    fn get_impl<'s, 'a, SourceT, OutputT: 'a>(
-        &'s self,
-        source: &'a SourceT,
-        lookup: impl Fn(&'a SourceT, &'s PathItemString) -> PyResult<Option<OutputT>>,
-        nested_lookup: impl Fn(OutputT, &'s PathItem) -> PyResult<Option<OutputT>>,
-    ) -> PyResult<Option<(&'s LookupPath, OutputT)>> {
-        match self {
-            Self::Simple(path) => match lookup(source, &path.first_item)? {
-                Some(value) => {
-                    debug_assert!(path.rest.is_empty());
-                    Ok(Some((path, value)))
-                }
-                None => Ok(None),
-            },
-            Self::PathChoices(path_choices) => {
-                'choices: for path in path_choices {
-                    let Some(mut value) = lookup(source, &path.first_item)? else {
-                        continue;
-                    };
-
-                    // iterate over the path and plug each value into the value from the last step
-                    for loc in &path.rest {
-                        value = match nested_lookup(value, loc) {
-                            Ok(Some(v)) => v,
-                            // this choice did not match, try the next one
-                            Ok(None) => continue 'choices,
-                            Err(e) => return Err(e),
-                        }
-                    }
-                    // Successfully found an item, return it
-                    return Ok(Some((path, value)));
-                }
-                // got to the end of path_choices, without a match, return None
-                Ok(None)
-            }
-        }
-    }
-
-    pub fn error(
-        &self,
-        error_type: ErrorType,
-        input: impl ToErrorValue,
-        loc_by_alias: bool,
-        field_name: &str,
-    ) -> ValLineError {
-        if loc_by_alias {
-            let lookup_path = match self {
-                Self::Simple(path, ..) => path,
-                Self::PathChoices(paths) => paths.first().unwrap(),
-            };
-
-            let mut location = Vec::with_capacity(1 + lookup_path.rest.len());
-            for item in lookup_path.rest.iter().rev() {
-                location.push(item.to_loc_item());
-            }
-            location.push(LocItem::from(lookup_path.first_item.0.clone()));
-
-            ValLineError::new_with_full_loc(error_type, input, Location::List(location))
-        } else {
-            ValLineError::new_with_loc(error_type, input, field_name.to_string())
-        }
+    fn extract(obj: Borrowed<'_, '_, PyAny>) -> Result<Self, Self::Error> {
+        LookupPath::from_list(&obj)
     }
 }
 
@@ -245,13 +66,6 @@ impl fmt::Display for LookupPath {
 }
 
 impl LookupPath {
-    fn from_str(py_key: Bound<'_, PyString>) -> PyResult<Self> {
-        Ok(Self {
-            first_item: PathItemString(py_key.try_into()?),
-            rest: Vec::new(),
-        })
-    }
-
     fn from_list(obj: &Bound<'_, PyAny>) -> PyResult<LookupPath> {
         let mut iter = obj.cast::<PyList>()?.iter();
 
@@ -268,6 +82,106 @@ impl LookupPath {
         let rest = iter.map(PathItem::from_py).collect::<PyResult<_>>()?;
 
         Ok(Self { first_item, rest })
+    }
+
+    fn from_mulitiple_list(obj: &Bound<'_, PyAny>) -> PyResult<SmallVec<[LookupPath; 1]>> {
+        let list = obj.cast::<PyList>()?;
+        if list.is_empty() {
+            return py_schema_err!("Lookup paths should have at least one element");
+        }
+        list.extract()
+    }
+
+    pub fn py_get_dict_item<'py>(&self, dict: &Bound<'py, PyDict>) -> PyResult<Option<Bound<'py, PyAny>>> {
+        self.get_impl(dict, PyDictMethods::get_item, |d, loc| Ok(loc.py_get_item(&d)))
+    }
+
+    pub fn py_get_string_mapping_item<'py>(&self, dict: &Bound<'py, PyDict>) -> ValResult<Option<StringMapping<'py>>> {
+        if let Some(py_any) = self.py_get_dict_item(dict)? {
+            let value = StringMapping::new_value(py_any)?;
+            Ok(Some(value))
+        } else {
+            Ok(None)
+        }
+    }
+
+    pub fn py_get_mapping_item<'py>(&self, dict: &Bound<'py, PyMapping>) -> PyResult<Option<Bound<'py, PyAny>>> {
+        self.get_impl(dict, mapping_get, |d, loc| Ok(loc.py_get_item(&d)))
+    }
+
+    pub fn simple_py_get_attr<'py>(&self, obj: &Bound<'py, PyAny>) -> PyResult<Option<Bound<'py, PyAny>>> {
+        self.get_impl(obj, PyAnyMethods::getattr_opt, |d, loc| loc.py_get_attrs(&d))
+    }
+
+    pub fn py_get_attr<'py>(
+        &self,
+        obj: &Bound<'py, PyAny>,
+        kwargs: Option<&Bound<'py, PyDict>>,
+    ) -> ValResult<Option<Bound<'py, PyAny>>> {
+        if let Some(dict) = kwargs
+            && let Ok(Some(item)) = self.py_get_dict_item(dict)
+        {
+            return Ok(Some(item));
+        }
+
+        match self.simple_py_get_attr(obj) {
+            Ok(v) => Ok(v),
+            Err(err) => {
+                let error = py_err_string(obj.py(), err);
+                Err(ValError::new(
+                    ErrorType::GetAttributeError { error, context: None },
+                    obj,
+                ))
+            }
+        }
+    }
+
+    pub fn json_get<'a, 'data>(&self, dict: &'a JsonObject<'data>) -> ValResult<Option<&'a JsonValue<'data>>> {
+        // FIXME: use of find_map in here probably leads to quadratic complexity
+
+        // first step is different as the first step is a key lookup
+        if let Some(v) = dict
+            .iter()
+            .rev()
+            .find_map(|(k, v)| (k == self.first_key()).then_some(v))
+        // fold the rest of the path over the found value
+            && let Some(v) = self.rest.iter().try_fold(v, |d, loc| loc.json_get(d))
+        {
+            return Ok(Some(v));
+        }
+
+        Ok(None)
+    }
+
+    fn get_impl<'s, 'a, SourceT, OutputT: 'a>(
+        &'s self,
+        source: &'a SourceT,
+        lookup: impl Fn(&'a SourceT, &'s PathItemString) -> PyResult<Option<OutputT>>,
+        nested_lookup: impl Fn(OutputT, &'s PathItem) -> PyResult<Option<OutputT>>,
+    ) -> PyResult<Option<OutputT>> {
+        let Some(mut value) = lookup(source, &self.first_item)? else {
+            return Ok(None);
+        };
+
+        // iterate over the path and plug each value into the value from the last step
+        for loc in &self.rest {
+            value = match nested_lookup(value, loc)? {
+                Some(v) => v,
+                None => return Ok(None),
+            }
+        }
+
+        // Successfully found an item, return it
+        Ok(Some(value))
+    }
+
+    pub fn loc(&self) -> Location {
+        let mut location = Vec::with_capacity(1 + self.rest.len());
+        for item in self.rest.iter().rev() {
+            location.push(item.to_loc_item());
+        }
+        location.push(LocItem::from(self.first_item.0.clone()));
+        Location::List(location)
     }
 
     pub fn apply_error_loc(&self, mut line_error: ValLineError, loc_by_alias: bool, field_name: &str) -> ValLineError {
@@ -446,41 +360,44 @@ impl PathItemString {
 
 #[derive(Debug)]
 #[allow(clippy::struct_field_names)]
-pub struct LookupKeyCollection {
-    by_name: LookupKey,
-    by_alias: Option<LookupKey>,
+pub struct LookupPathCollection {
+    by_name: LookupPath,
+    by_alias: SmallVec<[LookupPath; 1]>,
 }
 
-impl LookupKeyCollection {
-    pub fn new(validation_alias: Option<Bound<'_, PyAny>>, field_name: &Bound<'_, PyString>) -> PyResult<Self> {
-        let by_name = LookupKey::from_py(field_name)?;
-        let by_alias = validation_alias.map(|va| LookupKey::from_py(&va)).transpose()?;
+impl LookupPathCollection {
+    pub fn new(validation_alias: Option<ValidationAlias>, field_name: PyBackedStr) -> PyResult<Self> {
+        let by_name = LookupPath {
+            first_item: PathItemString(field_name),
+            rest: Vec::new(),
+        };
+        let by_alias = validation_alias.map(ValidationAlias::into_paths).unwrap_or_default();
         Ok(Self { by_name, by_alias })
     }
 
-    /// Returns the lookup keys to use based on the provided `lookup_type`. At least one key will always be returned.
-    pub fn lookup_keys(&self, lookup_type: LookupType) -> impl Iterator<Item = &LookupKey> + use<'_> {
-        let by_alias = self
-            .by_alias
-            .as_ref()
-            .filter(|_| lookup_type.matches(LookupType::Alias));
+    /// Returns the lookup paths to use based on the provided `lookup_type`. At least one path will always be returned.
+    pub fn lookup_paths(&self, lookup_type: LookupType) -> impl Iterator<Item = &LookupPath> + use<'_> {
+        let by_alias = lookup_type
+            .matches(LookupType::Alias)
+            .then_some(&self.by_alias)
+            .into_iter()
+            .flatten();
 
-        let by_name = Some(&self.by_name).filter(
-            // always use the name if no alias is defined
-            |_| self.by_alias.is_none() || lookup_type.matches(LookupType::Name),
-        );
+        // always use the name if no alias is defined
+        let by_name = (self.by_alias.is_empty() || lookup_type.matches(LookupType::Name)).then_some(&self.by_name);
 
         by_alias.into_iter().chain(by_name)
     }
 
-    /// Returns the first lookup key that matches the provided `lookup_type`.
-    pub fn first_key_matching(&self, lookup_type: LookupType) -> &LookupKey {
-        if lookup_type.matches(LookupType::Alias) {
-            if let Some(by_alias) = &self.by_alias {
-                return by_alias;
-            }
+    /// Returns the error location to use based on the provided `lookup_type` and `loc_by_alias`.
+    pub fn error_loc(&self, lookup_type: LookupType, loc_by_alias: bool) -> Location {
+        if loc_by_alias
+            && lookup_type.matches(LookupType::Alias)
+            && let Some(first_alias) = &self.by_alias.first()
+        {
+            return first_alias.loc();
         }
-        &self.by_name
+        self.by_name.loc()
     }
 }
 

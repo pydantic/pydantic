@@ -17,7 +17,7 @@ use crate::input::ConsumeIterator;
 use crate::input::{
     Arguments, BorrowInput, Input, KeywordArgs, PositionalArgs, ValidatedDict, ValidatedTuple, ValidationMatch,
 };
-use crate::lookup_key::LookupKeyCollection;
+use crate::lookup_key::LookupPathCollection;
 use crate::lookup_key::LookupType;
 use crate::tools::SchemaDict;
 
@@ -54,7 +54,7 @@ impl FromStr for ParameterMode {
 struct Parameter {
     name: PyBackedStr,
     mode: ParameterMode,
-    lookup_key_collection: LookupKeyCollection,
+    lookup_path_collection: LookupPathCollection,
     validator: Arc<CombinedValidator>,
 }
 
@@ -182,13 +182,13 @@ impl BuildValidator for ArgumentsV3Validator {
                 had_default_arg = true;
             }
 
-            let validation_alias = arg.get_item(intern!(py, "alias"))?;
-            let lookup_key_collection = LookupKeyCollection::new(validation_alias, &py_name)?;
+            let validation_alias = arg.get_as(intern!(py, "alias"))?;
+            let lookup_path_collection = LookupPathCollection::new(validation_alias, name.clone())?;
 
             parameters.push(Parameter {
                 name,
                 mode,
-                lookup_key_collection,
+                lookup_path_collection,
                 validator,
             });
         }
@@ -253,12 +253,13 @@ impl ArgumentsV3Validator {
 
         for parameter in &self.parameters {
             // A value is present in the mapping:
-            if let Some((lookup_path, dict_value)) = parameter
-                .lookup_key_collection
-                .lookup_keys(lookup_type)
-                .find_map(|lookup_key| mapping.get_item(lookup_key).transpose())
-                .transpose()?
+            if let Some((lookup_path, lookup_result)) = parameter
+                .lookup_path_collection
+                .lookup_paths(lookup_type)
+                .find_map(|path| Some((path, mapping.get_item(path).transpose()?)))
             {
+                let dict_value = lookup_result?;
+
                 if let Some(ref mut used_keys) = used_keys {
                     // key is "used" whether or not validation passes, since we want to skip this key in
                     // extra logic either way
@@ -408,14 +409,10 @@ impl ArgumentsV3Validator {
                                 ParameterMode::KeywordOnly => ErrorTypeDefaults::MissingKeywordOnlyArgument,
                                 _ => unreachable!(),
                             };
-
-                            let lookup_key = parameter.lookup_key_collection.first_key_matching(lookup_type);
-                            errors.push(lookup_key.error(
-                                error_type,
-                                original_input,
-                                self.loc_by_alias,
-                                &parameter.name,
-                            ));
+                            let error_loc = parameter
+                                .lookup_path_collection
+                                .error_loc(lookup_type, self.loc_by_alias);
+                            errors.push(ValLineError::new_with_full_loc(error_type, original_input, error_loc));
                         }
                     }
                     // ... validate the unpacked kwargs against an empty dict:
@@ -549,12 +546,12 @@ impl ArgumentsV3Validator {
                     parameter.mode,
                     ParameterMode::PositionalOrKeyword | ParameterMode::KeywordOnly
                 )
-                && let Some((lookup_path, value)) = parameter
-                    .lookup_key_collection
-                    .lookup_keys(lookup_type)
-                    .find_map(|lookup_key| kwargs.get_item(lookup_key).transpose())
-                    .transpose()?
+                && let Some((lookup_path, lookup_result)) = parameter
+                    .lookup_path_collection
+                    .lookup_paths(lookup_type)
+                    .find_map(|path| Some((path, kwargs.get_item(path).transpose()?)))
             {
+                let value = lookup_result?;
                 used_kwargs.insert(lookup_path.first_key());
                 kw_value = Some((lookup_path, value));
             }
@@ -610,13 +607,10 @@ impl ArgumentsV3Validator {
                         if parameter.mode == ParameterMode::PositionalOnly {
                             errors.push(ValLineError::new_with_loc(error_type, original_input, index));
                         } else {
-                            let lookup_key = parameter.lookup_key_collection.first_key_matching(lookup_type);
-                            errors.push(lookup_key.error(
-                                error_type,
-                                original_input,
-                                self.loc_by_alias,
-                                &parameter.name,
-                            ));
+                            let error_loc = parameter
+                                .lookup_path_collection
+                                .error_loc(lookup_type, self.loc_by_alias);
+                            errors.push(ValLineError::new_with_full_loc(error_type, original_input, error_loc));
                         }
                     }
                 }

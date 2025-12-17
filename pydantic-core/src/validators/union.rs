@@ -352,14 +352,15 @@ impl Validator for TaggedUnionValidator {
         state: &mut ValidationState<'_, 'py>,
     ) -> ValResult<Py<PyAny>> {
         match &self.discriminator {
-            Discriminator::LookupKey(lookup_key) => {
+            Discriminator::LookupPaths(lookup_paths) => {
                 let from_attributes = state.extra().from_attributes.unwrap_or(self.from_attributes);
                 let dict = input.validate_model_fields(state.strict_or(false), from_attributes)?;
                 // note this methods returns PyResult<Option<(data, data)>>, the outer Err is just for
                 // errors when getting attributes which should be "raised"
-                let Some((_, tag)) = dict.get_item(lookup_key)? else {
+                let Some(tag_result) = lookup_paths.iter().find_map(|path| dict.get_item(path).transpose()) else {
                     return Err(self.tag_not_found(input));
                 };
+                let tag = tag_result?;
                 self.find_call_validator(py, &tag.borrow_input().to_object(py)?, input, state)
             }
             Discriminator::Function(func) => {

@@ -246,16 +246,21 @@ impl TaggedUnionSerializer {
     fn get_discriminator_value<'py>(&self, value: &Bound<'py, PyAny>) -> Option<Bound<'py, PyAny>> {
         let py = value.py();
         match &self.discriminator {
-            Discriminator::LookupKey(lookup_key) => {
+            Discriminator::LookupPaths(lookup_paths) => {
+                // FIXME: should we be emitting warnings for failed discriminator lookups?
+
                 // we're pretty lax here, we allow either dict[key] or object.key, as we very well could
                 // be doing a discriminator lookup on a typed dict, and there's no good way to check that
                 // at this point. we could be more strict and only do this in lax mode...
                 if let Ok(value_dict) = value.cast::<PyDict>() {
-                    lookup_key.py_get_dict_item(value_dict).ok().flatten()
+                    lookup_paths
+                        .iter()
+                        .find_map(|lookup_key| lookup_key.py_get_dict_item(value_dict).ok().flatten())
                 } else {
-                    lookup_key.simple_py_get_attr(value).ok().flatten()
+                    lookup_paths
+                        .iter()
+                        .find_map(|lookup_key| lookup_key.simple_py_get_attr(value).ok().flatten())
                 }
-                .map(|(_, tag)| tag)
             }
             Discriminator::Function(func) => func.bind(py).call1((value,)).ok(),
         }
