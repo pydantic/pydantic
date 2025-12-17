@@ -1,3 +1,4 @@
+import sys
 import warnings
 from abc import ABCMeta
 from copy import deepcopy
@@ -175,7 +176,22 @@ class ModelMetaclass(ABCMeta):
             return isinstance(v, untouched_types) or v.__class__.__name__ == 'cython_function_or_method'
 
         if (namespace.get('__module__'), namespace.get('__qualname__')) != ('pydantic.main', 'BaseModel'):
-            annotations = resolve_annotations(namespace.get('__annotations__', {}), namespace.get('__module__', None))
+            if sys.version_info >= (3, 14):
+                if '__annotations__' in namespace:
+                    # `from __future__ import annotations` was used in the model's module
+                    raw_annotations = namespace['__annotations__']
+                else:
+                    # See https://docs.python.org/3/library/annotationlib.html#using-annotations-in-a-metaclass:
+                    from annotationlib import Format, call_annotate_function, get_annotate_from_class_namespace
+
+                    if annotate := get_annotate_from_class_namespace(namespace):
+                        raw_annotations = call_annotate_function(annotate, format=Format.FORWARDREF)
+                    else:
+                        raw_annotations = {}
+            else:
+                raw_annotations = namespace.get('__annotations__', {})
+
+            annotations = resolve_annotations(raw_annotations, namespace.get('__module__', None))
             # annotation only fields need to come first in fields
             for ann_name, ann_type in annotations.items():
                 if is_classvar(ann_type):
