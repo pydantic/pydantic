@@ -1,6 +1,7 @@
 use std::fmt;
 use std::sync::Arc;
 
+use pyo3::pybacked::PyBackedStr;
 use pyo3::types::{PyDict, PyString};
 use pyo3::{IntoPyObjectExt, PyTraverseError, PyVisit, prelude::*};
 
@@ -10,7 +11,7 @@ use crate::errors::{ErrorType, LocItem, ValError, ValResult};
 use crate::input::{BorrowInput, GenericIterator, Input};
 use crate::py_gc::PyGcTraverse;
 use crate::recursion_guard::RecursionState;
-use crate::tools::SchemaDict;
+use crate::tools::{SchemaDict, pybackedstr_to_pystring};
 
 use super::list::get_items_schema;
 use super::{
@@ -274,7 +275,7 @@ impl InternalValidator {
         &mut self,
         py: Python<'py>,
         model: &Bound<'py, PyAny>,
-        field_name: &str,
+        field_name: &PyBackedStr,
         field_value: &Bound<'py, PyAny>,
         outer_location: Option<LocItem>,
     ) -> PyResult<Py<PyAny>> {
@@ -284,7 +285,7 @@ impl InternalValidator {
             strict: self.strict,
             extra_behavior: self.extra_behavior,
             from_attributes: self.from_attributes,
-            field_name: Some(PyString::new(py, field_name)),
+            field_name: Some(pybackedstr_to_pystring(py, field_name)),
             context: self.context.as_ref().map(|data| data.bind(py)),
             self_instance: self.self_instance.as_ref().map(|data| data.bind(py)),
             cache_str: self.cache_str,
@@ -323,7 +324,7 @@ impl InternalValidator {
             strict: self.strict,
             extra_behavior: self.extra_behavior,
             from_attributes: self.from_attributes,
-            field_name: self.field_name.as_ref().map(|d| d.bind(py).clone()),
+            field_name: self.field_name.as_ref().map(|name| name.bind(py).clone()),
             context: self.context.as_ref().map(|data| data.bind(py)),
             self_instance: self.self_instance.as_ref().map(|data| data.bind(py)),
             cache_str: self.cache_str,

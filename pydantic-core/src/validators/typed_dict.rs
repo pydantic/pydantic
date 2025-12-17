@@ -2,6 +2,7 @@ use std::sync::Arc;
 
 use pyo3::intern;
 use pyo3::prelude::*;
+use pyo3::pybacked::PyBackedStr;
 use pyo3::types::{PyDict, PyString, PyType};
 
 use crate::build_tools::py_schema_err;
@@ -15,6 +16,7 @@ use crate::input::{Input, ValidatedDict};
 use crate::lookup_key::LookupKeyCollection;
 use crate::lookup_key::LookupType;
 use crate::tools::SchemaDict;
+use crate::tools::pybackedstr_to_pystring;
 use ahash::AHashSet;
 use jiter::PartialMode;
 
@@ -22,9 +24,8 @@ use super::{BuildValidator, CombinedValidator, DefinitionsBuilder, ValidationSta
 
 #[derive(Debug)]
 struct TypedDictField {
-    name: String,
+    name: PyBackedStr,
     lookup_key_collection: LookupKeyCollection,
-    name_py: Py<PyString>,
     required: bool,
     validator: Arc<CombinedValidator>,
 }
@@ -117,9 +118,8 @@ impl BuildValidator for TypedDictValidator {
             let lookup_key_collection = LookupKeyCollection::new(validation_alias, &field_name_py)?;
 
             fields.push(TypedDictField {
-                name: field_name.to_string(),
+                name: field_name_py.try_into()?,
                 lookup_key_collection,
-                name_py: field_name_py.into(),
                 validator,
                 required,
             });
@@ -218,12 +218,12 @@ impl Validator for TypedDictValidator {
                         true => allow_partial,
                         false => false.into(),
                     };
-                    let state =
-                        &mut state.rebind_extra(|extra| extra.field_name = Some(field.name_py.bind(py).clone()));
+                    let state = &mut state
+                        .rebind_extra(|extra| extra.field_name = Some(pybackedstr_to_pystring(py, &field.name)));
 
                     match field.validator.validate(py, value.borrow_input(), state) {
                         Ok(value) => {
-                            output_dict.set_item(&field.name_py, value)?;
+                            output_dict.set_item(&field.name, value)?;
                             fields_set_count += 1;
                         }
                         Err(e) => {
@@ -248,10 +248,10 @@ impl Validator for TypedDictValidator {
                     continue;
                 }
 
-                match field.validator.default_value(py, Some(field.name.as_str()), state) {
+                match field.validator.default_value(py, Some(field.name.clone()), state) {
                     Ok(Some(value)) => {
                         // Default value exists, and passed validation if required
-                        output_dict.set_item(&field.name_py, value)?;
+                        output_dict.set_item(&field.name, value)?;
                     }
                     Ok(None) => {
                         // This means there was no default value

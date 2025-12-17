@@ -2,6 +2,7 @@ use std::sync::Arc;
 
 use pyo3::exceptions::{PyAssertionError, PyValueError};
 use pyo3::prelude::*;
+use pyo3::pybacked::PyBackedStr;
 use pyo3::types::{PyAny, PyDict, PyString};
 use pyo3::{PyTraverseError, PyVisit, intern};
 
@@ -139,7 +140,7 @@ impl Validator for FunctionBeforeValidator {
         &self,
         py: Python<'py>,
         obj: &Bound<'py, PyAny>,
-        field_name: &str,
+        field_name: &PyBackedStr,
         field_value: &Bound<'py, PyAny>,
         state: &mut ValidationState<'_, 'py>,
     ) -> ValResult<Py<PyAny>> {
@@ -213,7 +214,7 @@ impl Validator for FunctionAfterValidator {
         &self,
         py: Python<'py>,
         obj: &Bound<'py, PyAny>,
-        field_name: &str,
+        field_name: &PyBackedStr,
         field_value: &Bound<'py, PyAny>,
         state: &mut ValidationState<'_, 'py>,
     ) -> ValResult<Py<PyAny>> {
@@ -392,7 +393,7 @@ impl Validator for FunctionWrapValidator {
         &self,
         py: Python<'py>,
         obj: &Bound<'py, PyAny>,
-        field_name: &str,
+        field_name: &PyBackedStr,
         field_value: &Bound<'py, PyAny>,
         state: &mut ValidationState<'_, 'py>,
     ) -> ValResult<Py<PyAny>> {
@@ -404,7 +405,7 @@ impl Validator for FunctionWrapValidator {
                 self.hide_input_in_errors,
                 self.validation_error_cause,
             ),
-            updated_field_name: field_name.to_string(),
+            updated_field_name: field_name.clone(),
             updated_field_value: field_value.clone().into(),
         };
         #[allow(clippy::used_underscore_items)]
@@ -451,7 +452,7 @@ impl ValidatorCallable {
 #[pyclass(module = "pydantic_core._pydantic_core")]
 #[derive(Debug)]
 struct AssignmentValidatorCallable {
-    updated_field_name: String,
+    updated_field_name: PyBackedStr,
     updated_field_value: Py<PyAny>,
     validator: InternalValidator,
 }
@@ -469,7 +470,7 @@ impl AssignmentValidatorCallable {
         self.validator.validate_assignment(
             py,
             input_value,
-            self.updated_field_name.as_str(),
+            &self.updated_field_name,
             self.updated_field_value.bind(py),
             outer_location,
         )

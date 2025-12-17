@@ -3,6 +3,7 @@ use std::sync::Arc;
 
 use pyo3::intern;
 use pyo3::prelude::*;
+use pyo3::pybacked::PyBackedStr;
 use pyo3::types::{PyDict, PyList, PyString, PyTuple};
 
 use ahash::AHashSet;
@@ -51,7 +52,7 @@ impl FromStr for ParameterMode {
 
 #[derive(Debug)]
 struct Parameter {
-    name: String,
+    name: PyBackedStr,
     mode: ParameterMode,
     lookup_key_collection: LookupKeyCollection,
     validator: Arc<CombinedValidator>,
@@ -95,13 +96,13 @@ impl BuildValidator for ArgumentsV3Validator {
         let mut had_keyword_only = false;
         let mut had_var_kwargs = false;
 
-        let mut names: AHashSet<String> = AHashSet::with_capacity(arguments_schema.len());
+        let mut names = AHashSet::with_capacity(arguments_schema.len());
 
         for arg in arguments_schema.iter() {
             let arg = arg.cast::<PyDict>()?;
 
             let py_name: Bound<PyString> = arg.get_as_req(intern!(py, "name"))?;
-            let name = py_name.to_string();
+            let name = PyBackedStr::try_from(py_name.clone())?;
             if !names.insert(name.clone()) {
                 return py_schema_err!("Duplicate parameter '{name}'");
             }
@@ -314,7 +315,7 @@ impl ArgumentsV3Validator {
                     ParameterMode::KeywordOnly => {
                         match parameter.validator.validate(py, dict_value.borrow_input(), state) {
                             Ok(value) => {
-                                output_kwargs.set_item(PyString::new(py, parameter.name.as_str()).unbind(), value)?;
+                                output_kwargs.set_item(&parameter.name, value)?;
                             }
                             Err(ValError::LineErrors(line_errors)) => {
                                 errors.extend(
@@ -337,7 +338,7 @@ impl ArgumentsV3Validator {
                                         for err in line_errors {
                                             errors.push(
                                                 err.with_outer_location(dict_key.clone())
-                                                    .with_outer_location(&parameter.name)
+                                                    .with_outer_location(parameter.name.clone())
                                                     .with_type(ErrorTypeDefaults::InvalidKey),
                                             );
                                         }
@@ -390,7 +391,7 @@ impl ArgumentsV3Validator {
                         if let Some(value) =
                             parameter
                                 .validator
-                                .default_value(py, Some(parameter.name.as_str()), state)?
+                                .default_value(py, Some(parameter.name.clone()), state)?
                         {
                             if matches!(
                                 parameter.mode,
@@ -398,7 +399,7 @@ impl ArgumentsV3Validator {
                             ) {
                                 output_args.push(value);
                             } else {
-                                output_kwargs.set_item(PyString::new(py, parameter.name.as_str()).unbind(), value)?;
+                                output_kwargs.set_item(&parameter.name, value)?;
                             }
                         } else {
                             let error_type = match parameter.mode {
@@ -427,7 +428,7 @@ impl ArgumentsV3Validator {
                                 errors.extend(
                                     line_errors
                                         .into_iter()
-                                        .map(|err| err.with_outer_location(&parameter.name)),
+                                        .map(|err| err.with_outer_location(parameter.name.clone())),
                                 );
                             }
                             Err(err) => return Err(err),
@@ -576,7 +577,7 @@ impl ArgumentsV3Validator {
                 (None, Some((lookup_path, kw_value))) => {
                     match parameter.validator.validate(py, kw_value.borrow_input(), state) {
                         Ok(value) => {
-                            output_kwargs.set_item(PyString::new(py, parameter.name.as_str()).unbind(), value)?;
+                            output_kwargs.set_item(&parameter.name, value)?;
                         }
                         Err(ValError::LineErrors(line_errors)) => {
                             errors.extend(
@@ -591,12 +592,12 @@ impl ArgumentsV3Validator {
                 (None, None) => {
                     if let Some(value) = parameter
                         .validator
-                        .default_value(py, Some(parameter.name.as_str()), state)?
+                        .default_value(py, Some(parameter.name.clone()), state)?
                     {
                         if parameter.mode == ParameterMode::PositionalOnly {
                             output_args.push(value);
                         } else {
-                            output_kwargs.set_item(PyString::new(py, parameter.name.as_str()).unbind(), value)?;
+                            output_kwargs.set_item(&parameter.name, value)?;
                         }
                     } else {
                         let error_type = match parameter.mode {
