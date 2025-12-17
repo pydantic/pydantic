@@ -13,53 +13,52 @@ pub struct LookupTree {
 }
 
 impl LookupTree {
-    pub fn new() -> Self {
-        Self { inner: AHashMap::new() }
-    }
-
-    pub fn add_lookup_collection_for_field(&mut self, collection: &LookupKeyCollection, field_index: usize) {
-        let LookupKey::Simple(path) = &collection.by_name else {
-            panic!("name lookup is always simple");
+    /// Construct a `LookupTree` from a slice of fields and a function to get the `LookupKeyCollection` for each field.
+    pub fn from_fields<T>(fields: &[T], get_field_collection: impl Fn(&T) -> &LookupKeyCollection) -> Self {
+        let mut tree = Self {
+            inner: AHashMap::with_capacity(fields.len()),
         };
 
-        self.add_field(
-            path.first_item().clone(),
-            LookupFieldInfo {
-                field_index,
-                field_lookup_type: if collection.by_alias.is_some() {
-                    LookupType::Name
-                } else {
-                    LookupType::Both
-                },
-            },
-        );
+        for (field_index, field) in fields.iter().enumerate() {
+            let collection = get_field_collection(field);
 
-        if let Some(alias_key) = &collection.by_alias {
-            let info = LookupFieldInfo {
-                field_index,
-                field_lookup_type: LookupType::Alias,
+            let LookupKey::Simple(path) = &collection.by_name else {
+                panic!("name lookup is always simple");
             };
-            match alias_key {
-                LookupKey::Simple(path) => {
-                    // should be a single string key
-                    debug_assert!(path.rest().is_empty());
-                    self.add_field(path.first_item().to_owned(), info);
-                }
-                LookupKey::PathChoices(paths) => {
-                    for path in paths {
-                        self.add_path(path, info);
+
+            add_field_to_map(
+                &mut tree.inner,
+                path.first_item().to_owned(),
+                LookupFieldInfo {
+                    field_index,
+                    field_lookup_type: if collection.by_alias.is_some() {
+                        LookupType::Name
+                    } else {
+                        LookupType::Both
+                    },
+                },
+            );
+
+            if let Some(alias_key) = &collection.by_alias {
+                let info = LookupFieldInfo {
+                    field_index,
+                    field_lookup_type: LookupType::Alias,
+                };
+                match alias_key {
+                    LookupKey::Simple(path) => {
+                        // should be a single string key
+                        debug_assert!(path.rest().is_empty());
+                        add_field_to_map(&mut tree.inner, path.first_item().to_owned(), info);
+                    }
+                    LookupKey::PathChoices(paths) => {
+                        for path in paths {
+                            add_path_to_map(&mut tree.inner, path, info);
+                        }
                     }
                 }
             }
         }
-    }
-
-    pub fn add_field(&mut self, key: PathItemString, info: LookupFieldInfo) {
-        add_field_to_map(&mut self.inner, key, info);
-    }
-
-    pub fn add_path(&mut self, path: &LookupPath, info: LookupFieldInfo) {
-        add_path_to_map(&mut self.inner, path, info);
+        tree
     }
 }
 

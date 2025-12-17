@@ -109,11 +109,7 @@ impl BuildValidator for ModelFieldsValidator {
             });
         }
 
-        let mut lookup = LookupTree::new();
-
-        for (field_index, field) in fields.iter().enumerate() {
-            lookup.add_lookup_collection_for_field(&field.lookup_key_collection, field_index);
-        }
+        let lookup = LookupTree::from_fields(&fields, |field| &field.lookup_key_collection);
 
         Ok(CombinedValidator::ModelFields(Self {
             fields,
