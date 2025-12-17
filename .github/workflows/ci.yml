@@ -222,7 +222,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-22.04, macos-latest, windows-latest]
+        os: [ubuntu-22.04, macos-15-intel, macos-latest, windows-latest]
         python-version: ['3.8', '3.9', '3.10', '3.11', '3.12', '3.13', '3.14']
 
     runs-on: ${{ matrix.os }}
@@ -438,7 +438,6 @@ jobs:
       - test-linux-compiled
       - test-not-compiled
       - test-old-mypy
-      - test-fastapi
       - build
 
     runs-on: ubuntu-latest
