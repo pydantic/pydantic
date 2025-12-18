@@ -1,3 +1,4 @@
+use std::borrow::Borrow;
 use std::convert::Infallible;
 use std::fmt;
 
@@ -287,6 +288,15 @@ impl LookupPath {
     pub fn first_key(&self) -> &str {
         &self.first_item
     }
+
+    /// get the first item in the path
+    pub fn first_item(&self) -> &PathItemString {
+        &self.first_item
+    }
+
+    pub fn rest(&self) -> &[PathItem] {
+        &self.rest
+    }
 }
 
 #[derive(Debug, Clone)]
@@ -298,11 +308,17 @@ pub(crate) enum PathItem {
 }
 
 /// String type key, used to get or identify items from a dict or anything that implements `__getitem__`
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Eq, PartialEq, Hash)]
 pub(crate) struct PathItemString(
     // stores the original Python value, easily accessible as a Rust &str
-    PyBackedStr,
+    pub PyBackedStr,
 );
+
+impl Borrow<str> for PathItemString {
+    fn borrow(&self) -> &str {
+        &self.0
+    }
+}
 
 impl fmt::Display for PathItemString {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
@@ -447,8 +463,8 @@ impl PathItemString {
 #[derive(Debug)]
 #[allow(clippy::struct_field_names)]
 pub struct LookupKeyCollection {
-    by_name: LookupKey,
-    by_alias: Option<LookupKey>,
+    pub by_name: LookupKey,
+    pub by_alias: Option<LookupKey>,
 }
 
 impl LookupKeyCollection {

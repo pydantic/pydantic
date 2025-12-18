@@ -526,7 +526,21 @@ def test_alias_allow_pop(py_and_json: PyAndJson):
     )
     assert v.validate_test({'FieldA': '123'}) == ({'field_a': 123}, None, {'field_a'})
     assert v.validate_test({'field_a': '123'}) == ({'field_a': 123}, None, {'field_a'})
+
+    # alias always wins if both are present
     assert v.validate_test({'FieldA': '1', 'field_a': '2'}) == ({'field_a': 1}, None, {'field_a'})
+    assert v.validate_test({'field_a': '1', 'FieldA': '2'}) == ({'field_a': 2}, None, {'field_a'})
+
+    # even invalid values are ignored if alias is present
+    assert v.validate_test({'FieldA': '1', 'field_a': 'q'}) == ({'field_a': 1}, None, {'field_a'})
+    assert v.validate_test({'field_a': 'q', 'FieldA': '2'}) == ({'field_a': 2}, None, {'field_a'})
+
+    # but if the alias is invalid, those errors are raised
+    with pytest.raises(ValidationError, match=r'FieldA\n +Input should be a valid integer.+\[type=int_parsing,'):
+        assert v.validate_test({'FieldA': 'q', 'field_a': '2'}) == ({'field_a': 1}, None, {'field_a'})
+    with pytest.raises(ValidationError, match=r'FieldA\n +Input should be a valid integer.+\[type=int_parsing,'):
+        assert v.validate_test({'field_a': 'q', 'FieldA': 'q'}) == ({'field_a': 2}, None, {'field_a'})
+
     with pytest.raises(ValidationError, match=r'FieldA\n +Field required \[type=missing,'):
         assert v.validate_test({'foobar': '123'})
 
