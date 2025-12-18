@@ -1,3 +1,7 @@
+## v1.10.26 (2025-12-18)
+
+* Fix syntax error under Python 3.7 by @Viicos in https://github.com/pydantic/pydantic/pull/12643
+
 ## v1.10.25 (2025-12-18)
 
 * Add minimal support for Python 3.14 by @Viicos in https://github.com/pydantic/pydantic/pull/12636
