@@ -13,7 +13,7 @@ use crate::build_tools::py_schema_err;
 use crate::build_tools::{ExtraBehavior, schema_or_config_same};
 use crate::errors::{ErrorTypeDefaults, ValError, ValLineError, ValResult};
 use crate::input::{Arguments, BorrowInput, Input, KeywordArgs, PositionalArgs, ValidationMatch};
-use crate::lookup_key::LookupKeyCollection;
+use crate::lookup_key::LookupPathCollection;
 use crate::lookup_key::LookupType;
 use crate::tools::SchemaDict;
 use crate::tools::pybackedstr_to_pystring;
@@ -49,7 +49,7 @@ struct Parameter {
     kwarg_key: Option<Py<PyString>>,
     validator: Arc<CombinedValidator>,
     // lookup keys, only populated for keyword or positional_or_keyword parameters
-    lookup_key_collection: Option<LookupKeyCollection>,
+    lookup_path_collection: Option<LookupPathCollection>,
 }
 
 #[derive(Debug)]
@@ -102,10 +102,10 @@ impl BuildValidator for ArgumentsValidator {
                 had_keyword_only = true;
             }
 
-            let (lookup_key_collection, kwarg_key) = if matches!(mode, "keyword_only" | "positional_or_keyword") {
-                let validation_alias = arg.get_item(intern!(py, "alias"))?;
+            let (lookup_path_collection, kwarg_key) = if matches!(mode, "keyword_only" | "positional_or_keyword") {
+                let validation_alias = arg.get_as(intern!(py, "alias"))?;
                 (
-                    Some(LookupKeyCollection::new(validation_alias, &py_name)?),
+                    Some(LookupPathCollection::new(validation_alias, name.clone())?),
                     Some(py_name.unbind()),
                 )
             } else {
@@ -140,7 +140,7 @@ impl BuildValidator for ArgumentsValidator {
                 name,
                 kwarg_key,
                 validator,
-                lookup_key_collection,
+                lookup_path_collection,
             });
         }
 
@@ -220,11 +220,9 @@ impl Validator for ArgumentsValidator {
             }
             let mut kw_value = None;
             if let Some(kwargs) = kw_args
-                && let Some(lookup_key_collection) = &parameter.lookup_key_collection
-                && let Some((lookup_path, value)) = lookup_key_collection
-                    .lookup_keys(lookup_type)
-                    .find_map(|lookup_key| kwargs.get_item(lookup_key).transpose())
-                    .transpose()?
+                && let Some(lookup_path_collection) = &parameter.lookup_path_collection
+                && let Some((lookup_path, value)) =
+                    lookup_path_collection.try_lookup(lookup_type, |path| kwargs.get_item(path))?
             {
                 used_kwargs.insert(lookup_path.first_key());
                 kw_value = Some((lookup_path, value));
@@ -271,14 +269,14 @@ impl Validator for ArgumentsValidator {
                         } else {
                             output_args.push(value);
                         }
-                    } else if let Some(lookup_key_collection) = &parameter.lookup_key_collection {
-                        let lookup_key = lookup_key_collection.first_key_matching(lookup_type);
+                    } else if let Some(lookup_path_collection) = &parameter.lookup_path_collection {
                         let error_type = if parameter.positional {
                             ErrorTypeDefaults::MissingArgument
                         } else {
                             ErrorTypeDefaults::MissingKeywordOnlyArgument
                         };
-                        errors.push(lookup_key.error(error_type, input, self.loc_by_alias, &parameter.name));
+                        let error_loc = lookup_path_collection.error_loc(lookup_type, self.loc_by_alias);
+                        errors.push(ValLineError::new_with_full_loc(error_type, input, error_loc));
                     } else {
                         errors.push(ValLineError::new_with_loc(
                             ErrorTypeDefaults::MissingPositionalOnlyArgument,

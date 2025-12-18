@@ -15,7 +15,7 @@ use crate::errors::{ErrorType, ErrorTypeDefaults, ValError, ValLineError, ValRes
 use crate::input::{
     Arguments, BorrowInput, Input, InputType, KeywordArgs, PositionalArgs, ValidationMatch, input_as_python_instance,
 };
-use crate::lookup_key::LookupKeyCollection;
+use crate::lookup_key::LookupPathCollection;
 use crate::lookup_key::LookupType;
 use crate::tools::SchemaDict;
 use crate::tools::pybackedstr_to_pystring;
@@ -31,7 +31,7 @@ struct Field {
     name: PyBackedStr,
     init: bool,
     init_only: bool,
-    lookup_key_collection: LookupKeyCollection,
+    lookup_path_collection: LookupPathCollection,
     validator: Arc<CombinedValidator>,
     frozen: bool,
 }
@@ -97,13 +97,13 @@ impl BuildValidator for DataclassArgsValidator {
                 positional_count += 1;
             }
 
-            let validation_alias = field.get_item(intern!(py, "validation_alias"))?;
-            let lookup_key_collection = LookupKeyCollection::new(validation_alias, &name_py)?;
+            let validation_alias = field.get_as(intern!(py, "validation_alias"))?;
+            let lookup_path_collection = LookupPathCollection::new(validation_alias, name.clone())?;
 
             fields.push(Field {
                 kw_only,
                 name,
-                lookup_key_collection,
+                lookup_path_collection,
                 validator,
                 init: field.get_as(intern!(py, "init"))?.unwrap_or(true),
                 init_only: field.get_as(intern!(py, "init_only"))?.unwrap_or(false),
@@ -210,10 +210,8 @@ impl Validator for DataclassArgsValidator {
             let mut kw_value = None;
             if let Some(kwargs) = args.kwargs()
                 && let Some((lookup_path, value)) = field
-                    .lookup_key_collection
-                    .lookup_keys(lookup_type)
-                    .find_map(|lookup_key| kwargs.get_item(lookup_key).transpose())
-                    .transpose()?
+                    .lookup_path_collection
+                    .try_lookup(lookup_type, |path| kwargs.get_item(path))?
             {
                 used_keys.insert(lookup_path.first_key());
                 kw_value = Some((lookup_path, value));
@@ -268,14 +266,10 @@ impl Validator for DataclassArgsValidator {
                             set_item!(field, value);
                         }
                         Ok(None) => {
-                            let lookup_key = field.lookup_key_collection.first_key_matching(lookup_type);
+                            let error_type = ErrorTypeDefaults::Missing;
+                            let error_loc = field.lookup_path_collection.error_loc(lookup_type, self.loc_by_alias);
                             // This means there was no default value
-                            errors.push(lookup_key.error(
-                                ErrorTypeDefaults::Missing,
-                                input,
-                                self.loc_by_alias,
-                                &field.name,
-                            ));
+                            errors.push(ValLineError::new_with_full_loc(error_type, input, error_loc));
                         }
                         Err(ValError::Omit) => {}
                         Err(ValError::LineErrors(line_errors)) => {
