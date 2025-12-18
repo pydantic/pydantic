@@ -1,3 +1,7 @@
+## v1.10.25 (2025-12-18)
+
+* Add minimal support for Python 3.14 by @Viicos in https://github.com/pydantic/pydantic/pull/12636
+
 ## v1.10.24 (2025-09-25)
 
 * Add user warning when using Python 3.14 by @Viicos in https://github.com/pydantic/pydantic/pull/12263
