@@ -184,7 +184,8 @@ class ModelMetaclass(ABCMeta):
                     # See https://docs.python.org/3/library/annotationlib.html#using-annotations-in-a-metaclass:
                     from annotationlib import Format, call_annotate_function, get_annotate_from_class_namespace
 
-                    if annotate := get_annotate_from_class_namespace(namespace):
+                    annotate = get_annotate_from_class_namespace(namespace)
+                    if annotate is not None:
                         raw_annotations = call_annotate_function(annotate, format=Format.FORWARDREF)
                     else:
                         raw_annotations = {}
