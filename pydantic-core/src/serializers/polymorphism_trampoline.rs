@@ -36,8 +36,6 @@ impl PolymorphismTrampoline {
     }
 
     fn is_subclass(&self, value: &Bound<'_, PyAny>) -> PyResult<bool> {
-        println!("PolymorphismTrampoline: checking subclass for {:?}", value);
-        println!("PolymorphismTrampoline: target class {:?}", self.class.bind(value.py()));
         Ok(!value.get_type().is(&self.class) && value.is_instance(self.class.bind(value.py()))?)
     }
 
