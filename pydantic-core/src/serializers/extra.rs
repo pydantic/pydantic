@@ -79,6 +79,11 @@ impl<'py> SerializationState<'py> {
             extra,
         })
     }
+
+    #[inline]
+    pub fn py(&self) -> Python<'py> {
+        self.extra.py
+    }
 }
 
 impl SerializationState<'_> {
@@ -159,8 +164,8 @@ impl<'py> SerializationState<'py> {
 
 /// Constants for a serialization process
 #[derive(Clone)]
-#[cfg_attr(debug_assertions, derive(Debug))]
 pub(crate) struct Extra<'py> {
+    pub py: Python<'py>,
     pub mode: SerMode,
     pub ob_type_lookup: &'static ObTypeLookup,
     pub by_alias: Option<bool>,
@@ -195,6 +200,7 @@ impl<'py> Extra<'py> {
         context: Option<Bound<'py, PyAny>>,
     ) -> Self {
         Self {
+            py,
             mode,
             ob_type_lookup: ObTypeLookup::cached(py),
             by_alias,
@@ -217,7 +223,6 @@ impl<'py> Extra<'py> {
 }
 
 #[derive(Clone, Copy, PartialEq, Eq)]
-#[cfg_attr(debug_assertions, derive(Debug))]
 pub(crate) enum SerCheck {
     // no checks, used everywhere except in union choices
     None,
@@ -234,7 +239,6 @@ impl SerCheck {
 }
 
 #[derive(Clone)]
-#[cfg_attr(debug_assertions, derive(Debug))]
 pub(crate) struct ExtraOwned {
     mode: SerMode,
     warnings: CollectWarnings,
@@ -313,6 +317,7 @@ impl ExtraOwned {
 
     pub fn to_extra<'py>(&self, py: Python<'py>) -> Extra<'py> {
         Extra {
+            py,
             mode: self.mode.clone(),
             ob_type_lookup: ObTypeLookup::cached(py),
             by_alias: self.by_alias,

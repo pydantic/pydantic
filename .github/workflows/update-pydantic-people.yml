@@ -9,7 +9,7 @@ jobs:
   pydantic-people:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
       - uses: ./.github/actions/people
         with:
           token: ${{ secrets.GITHUB_TOKEN }}

@@ -1923,7 +1923,7 @@ def test_validating_assignment_model_validator_before_fail():
     ],
 )
 def test_root_validator_skip_on_failure_invalid(kwargs: dict[str, Any]):
-    with pytest.raises(TypeError, match='MUST specify `skip_on_failure=True`'):
+    with pytest.raises(PydanticUserError, match='MUST specify `skip_on_failure=True`'):
         with pytest.warns(
             PydanticDeprecatedSince20, match='Pydantic V1 style `@root_validator` validators are deprecated.'
         ):
@@ -2073,7 +2073,7 @@ def test_root_validator_self():
 
 def test_validator_self():
     with pytest.warns(PydanticDeprecatedSince20, match=V1_VALIDATOR_DEPRECATION_MATCH):
-        with pytest.raises(TypeError, match=r'`@validator` cannot be applied to instance methods'):
+        with pytest.raises(PydanticUserError, match=r'`@validator` cannot be applied to instance methods'):
 
             class Model(BaseModel):
                 a: int = 1
@@ -2098,7 +2098,7 @@ def test_field_validator_self():
 
 def test_v1_validator_signature_kwargs_not_allowed() -> None:
     with pytest.warns(PydanticDeprecatedSince20, match=V1_VALIDATOR_DEPRECATION_MATCH):
-        with pytest.raises(TypeError, match=r'Unsupported signature for V1 style validator'):
+        with pytest.raises(PydanticUserError, match=r'Unsupported signature for V1 style validator'):
 
             class Model(BaseModel):
                 a: int
@@ -2174,7 +2174,9 @@ def test_v1_validator_signature_with_values_kw_only() -> None:
 
 def test_v1_validator_signature_with_field() -> None:
     with pytest.warns(PydanticDeprecatedSince20, match=V1_VALIDATOR_DEPRECATION_MATCH):
-        with pytest.raises(TypeError, match=r'The `field` and `config` parameters are not available in Pydantic V2'):
+        with pytest.raises(
+            PydanticUserError, match=r'The `field` and `config` parameters are not available in Pydantic V2'
+        ):
 
             class Model(BaseModel):
                 a: int
@@ -2186,7 +2188,9 @@ def test_v1_validator_signature_with_field() -> None:
 
 def test_v1_validator_signature_with_config() -> None:
     with pytest.warns(PydanticDeprecatedSince20, match=V1_VALIDATOR_DEPRECATION_MATCH):
-        with pytest.raises(TypeError, match=r'The `field` and `config` parameters are not available in Pydantic V2'):
+        with pytest.raises(
+            PydanticUserError, match=r'The `field` and `config` parameters are not available in Pydantic V2'
+        ):
 
             class Model(BaseModel):
                 a: int

@@ -1,7 +1,6 @@
 use pyo3::exceptions::PyTypeError;
 use pyo3::pybacked::PyBackedStr;
 use pyo3::sync::PyOnceLock;
-use std::borrow::Cow;
 use std::fmt;
 
 use pyo3::prelude::*;
@@ -16,7 +15,7 @@ use serde::{Serialize, Serializer};
 pub enum LocItem {
     /// string type key, used to identify items from a dict or anything that implements `__getitem__`
     S(String),
-    /// Python-owned variant of the above, TODO probably should always use this
+    /// Python-owned variant of the above
     PyS(PyBackedStr),
     /// integer key, used to get:
     ///   * items from a list
@@ -44,21 +43,9 @@ impl From<String> for LocItem {
     }
 }
 
-impl From<&String> for LocItem {
-    fn from(s: &String) -> Self {
-        s.clone().into()
-    }
-}
-
 impl From<&str> for LocItem {
     fn from(s: &str) -> Self {
         Self::S(s.to_string())
-    }
-}
-
-impl From<Cow<'_, str>> for LocItem {
-    fn from(s: Cow<'_, str>) -> Self {
-        Self::S(s.into_owned())
     }
 }
 
