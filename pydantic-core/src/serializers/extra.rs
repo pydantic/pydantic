@@ -177,6 +177,8 @@ pub(crate) struct Extra<'py> {
     pub serialize_unknown: bool,
     pub fallback: Option<Bound<'py, PyAny>>,
     pub serialize_as_any: bool,
+    /// Whether `polymorphic_serialization` is globally enabled / disabled for this serialization process
+    pub polymorphic_serialization: Option<bool>,
     pub context: Option<Bound<'py, PyAny>>,
 }
 
@@ -194,6 +196,7 @@ impl<'py> Extra<'py> {
         serialize_unknown: bool,
         fallback: Option<Bound<'py, PyAny>>,
         serialize_as_any: bool,
+        polymorphic_serialization: Option<bool>,
         context: Option<Bound<'py, PyAny>>,
     ) -> Self {
         Self {
@@ -209,6 +212,7 @@ impl<'py> Extra<'py> {
             serialize_unknown,
             fallback,
             serialize_as_any,
+            polymorphic_serialization,
             context,
         }
     }
@@ -252,6 +256,7 @@ pub(crate) struct ExtraOwned {
     serialize_unknown: bool,
     pub fallback: Option<Py<PyAny>>,
     serialize_as_any: bool,
+    polymorphic_serialization: Option<bool>,
     pub context: Option<Py<PyAny>>,
     include: Option<Py<PyAny>>,
     exclude: Option<Py<PyAny>>,
@@ -304,6 +309,7 @@ impl ExtraOwned {
             fallback: extra.fallback.clone().map(Bound::unbind),
             serialize_as_any: extra.serialize_as_any,
             context: extra.context.clone().map(Bound::unbind),
+            polymorphic_serialization: extra.polymorphic_serialization,
             include: state.include().map(|m| m.clone().into()),
             exclude: state.exclude().map(|m| m.clone().into()),
         }
@@ -324,6 +330,7 @@ impl ExtraOwned {
             fallback: self.fallback.as_ref().map(|m| m.bind(py).clone()),
             serialize_as_any: self.serialize_as_any,
             context: self.context.as_ref().map(|m| m.bind(py).clone()),
+            polymorphic_serialization: self.polymorphic_serialization,
         }
     }
 
