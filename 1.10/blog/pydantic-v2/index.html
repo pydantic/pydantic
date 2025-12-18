@@ -1495,7 +1495,7 @@ will be posted on that issue.</p>
 <li>What we will remove</li>
 <li>What we will change</li>
 <li>How I'm intending to go about completing it and getting it released</li>
-<li>Some idea of timeframe <img alt="😨" class="twemoji" src="https://cdn.jsdelivr.net/gh/jdecked/twemoji@15.1.0/assets/svg/1f628.svg" title=":fearful:" /></li>
+<li>Some idea of timeframe <img alt="😨" class="twemoji" src="https://cdn.jsdelivr.net/gh/jdecked/twemoji@16.0.1/assets/svg/1f628.svg" title=":fearful:" /></li>
 </ul>
 <p>Here goes...</p>
 <hr />
@@ -1530,16 +1530,16 @@ the capabilities they implemented.</p>
 <li>Work on getting pydantic V1.10 out - basically merge all open PRs that are finished</li>
 <li>Release pydantic V1.10</li>
 <li>Delete all stale PRs which didn't make it into V1.10, apologise profusely to their authors who put their valuable
-   time into pydantic only to have their PRs closed <img alt="🙏" class="twemoji" src="https://cdn.jsdelivr.net/gh/jdecked/twemoji@15.1.0/assets/svg/1f64f.svg" title=":pray:" />
+   time into pydantic only to have their PRs closed <img alt="🙏" class="twemoji" src="https://cdn.jsdelivr.net/gh/jdecked/twemoji@16.0.1/assets/svg/1f64f.svg" title=":pray:" />
    (and explain when and how they can rebase and recreate the PR)</li>
 <li>Rename <code>master</code> to <code>main</code>, seems like a good time to do this</li>
 <li>Change the main branch of pydantic to target V2</li>
 <li>Start tearing pydantic code apart and see how many existing tests can be made to pass</li>
 <li>Rinse, repeat</li>
-<li>Release pydantic V2 <img alt="🎉" class="twemoji" src="https://cdn.jsdelivr.net/gh/jdecked/twemoji@15.1.0/assets/svg/1f389.svg" title=":tada:" /></li>
+<li>Release pydantic V2 <img alt="🎉" class="twemoji" src="https://cdn.jsdelivr.net/gh/jdecked/twemoji@16.0.1/assets/svg/1f389.svg" title=":tada:" /></li>
 </ol>
 <p>Plan is to have all this done by the end of October, definitely by the end of the year.</p>
-<h3 id="breaking-changes-compatibility">Breaking Changes &amp; Compatibility <img alt="🙏" class="twemoji" src="https://cdn.jsdelivr.net/gh/jdecked/twemoji@15.1.0/assets/svg/1f64f.svg" title=":pray:" /><a class="headerlink" href="#breaking-changes-compatibility" title="Permanent link">&para;</a></h3>
+<h3 id="breaking-changes-compatibility">Breaking Changes &amp; Compatibility <img alt="🙏" class="twemoji" src="https://cdn.jsdelivr.net/gh/jdecked/twemoji@16.0.1/assets/svg/1f64f.svg" title=":pray:" /><a class="headerlink" href="#breaking-changes-compatibility" title="Permanent link">&para;</a></h3>
 <p>While we'll do our best to avoid breaking changes, some things will break.</p>
 <p>As per the <a href="https://youtu.be/ezAlySFluEk">greatest pun in modern TV history</a>.</p>
 <blockquote>
@@ -1555,7 +1555,7 @@ changes are obvious to developers.</p>
 The core logic however has remained mostly unchanged since the initial experiment.
 It's old, it smells, it needs to be rebuilt.</p>
 <p>The release of version 2 is an opportunity to rebuild pydantic and correct many things that don't make sense -
-<strong>to make pydantic amazing <img alt="🚀" class="twemoji" src="https://cdn.jsdelivr.net/gh/jdecked/twemoji@15.1.0/assets/svg/1f680.svg" title=":rocket:" /></strong>.</p>
+<strong>to make pydantic amazing <img alt="🚀" class="twemoji" src="https://cdn.jsdelivr.net/gh/jdecked/twemoji@16.0.1/assets/svg/1f680.svg" title=":rocket:" /></strong>.</p>
 <p>The core validation logic of pydantic V2 will be performed by a separate package
 <a href="https://github.com/pydantic/pydantic-core">pydantic-core</a> which I've been building over the last few months.
 <em>pydantic-core</em> is written in Rust using the excellent <a href="https://pyo3.rs">pyo3</a> library which provides rust bindings
@@ -1568,7 +1568,7 @@ for python.</p>
    making code easier to understand and extend without harming performance</li>
 <li><strong>Safety and complexity</strong> - pydantic-core is a fairly complex piece of code which has to draw distinctions
    between many different errors, Rust is great in situations like this,
-   it should minimise bugs (<img alt="🤞" class="twemoji" src="https://cdn.jsdelivr.net/gh/jdecked/twemoji@15.1.0/assets/svg/1f91e.svg" title=":fingers_crossed:" />) and allow the codebase to be extended for a long time to come</li>
+   it should minimise bugs (<img alt="🤞" class="twemoji" src="https://cdn.jsdelivr.net/gh/jdecked/twemoji@16.0.1/assets/svg/1f91e.svg" title=":fingers_crossed:" />) and allow the codebase to be extended for a long time to come</li>
 </ol>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
@@ -1583,14 +1583,14 @@ Other, less commonly used data types will be supported via validator functions i
 for a summary of what needs to be completed before its first release.</p>
 <h2 id="headlines">Headlines<a class="headerlink" href="#headlines" title="Permanent link">&para;</a></h2>
 <p>Here are some of the biggest changes expected in V2.</p>
-<h3 id="performance">Performance <img alt="👍" class="twemoji" src="https://cdn.jsdelivr.net/gh/jdecked/twemoji@15.1.0/assets/svg/1f44d.svg" title=":thumbsup:" /><a class="headerlink" href="#performance" title="Permanent link">&para;</a></h3>
+<h3 id="performance">Performance <img alt="👍" class="twemoji" src="https://cdn.jsdelivr.net/gh/jdecked/twemoji@16.0.1/assets/svg/1f44d.svg" title=":thumbsup:" /><a class="headerlink" href="#performance" title="Permanent link">&para;</a></h3>
 <p>As a result of the move to Rust for the validation logic
 (and significant improvements in how validation objects are structured) pydantic V2 will be significantly faster
 than pydantic V1.</p>
 <p>Looking at the pydantic-core <a href="https://github.com/pydantic/pydantic-core/tree/main/tests/benchmarks">benchmarks</a>
 today, pydantic V2 is between 4x and 50x faster than pydantic V1.9.1.</p>
 <p>In general, pydantic V2 is about 17x faster than V1 when validating a model containing a range of common fields.</p>
-<h3 id="strict-mode">Strict Mode <img alt="👍" class="twemoji" src="https://cdn.jsdelivr.net/gh/jdecked/twemoji@15.1.0/assets/svg/1f44d.svg" title=":thumbsup:" /><a class="headerlink" href="#strict-mode" title="Permanent link">&para;</a></h3>
+<h3 id="strict-mode">Strict Mode <img alt="👍" class="twemoji" src="https://cdn.jsdelivr.net/gh/jdecked/twemoji@16.0.1/assets/svg/1f44d.svg" title=":thumbsup:" /><a class="headerlink" href="#strict-mode" title="Permanent link">&para;</a></h3>
 <p>People have long complained about pydantic for coercing data instead of throwing an error.
 E.g. input to an <code>int</code> field could be <code>123</code> or the string <code>"123"</code> which would be converted to <code>123</code>
 While this is very useful in many scenarios (think: URL parameters, environment variables, user input),
@@ -1598,7 +1598,7 @@ there are some situations where it's not desirable.</p>
 <p>pydantic-core comes with "strict mode" built in. With this, only the exact data type is allowed, e.g. passing
 <code>"123"</code> to an <code>int</code> field would result in a validation error.</p>
 <p>This will allow pydantic V2 to offer a <code>strict</code> switch which can be set on either a model or a field.</p>
-<h3 id="formalised-conversion-table">Formalised Conversion Table <img alt="👍" class="twemoji" src="https://cdn.jsdelivr.net/gh/jdecked/twemoji@15.1.0/assets/svg/1f44d.svg" title=":thumbsup:" /><a class="headerlink" href="#formalised-conversion-table" title="Permanent link">&para;</a></h3>
+<h3 id="formalised-conversion-table">Formalised Conversion Table <img alt="👍" class="twemoji" src="https://cdn.jsdelivr.net/gh/jdecked/twemoji@16.0.1/assets/svg/1f44d.svg" title=":thumbsup:" /><a class="headerlink" href="#formalised-conversion-table" title="Permanent link">&para;</a></h3>
 <p>As well as complaints about coercion, another legitimate complaint was inconsistency around data conversion.</p>
 <p>In pydantic V2, the following principle will govern when data should be converted in "lax mode" (<code>strict=False</code>):</p>
 <blockquote>
@@ -1675,7 +1675,7 @@ a custom rule is required: only <code>str</code>, <code>bytes</code> and <code>b
 <code>int.from_bytes(b'1', 'big/little')</code>, hence an error)</p>
 <p>In addition to the general rule, we'll provide a conversion table which defines exactly what data will be allowed
 to which field types. See <a href="#conversion-table">the table below</a> for a start on this.</p>
-<h3 id="built-in-json-support">Built in JSON support <img alt="👍" class="twemoji" src="https://cdn.jsdelivr.net/gh/jdecked/twemoji@15.1.0/assets/svg/1f44d.svg" title=":thumbsup:" /><a class="headerlink" href="#built-in-json-support" title="Permanent link">&para;</a></h3>
+<h3 id="built-in-json-support">Built in JSON support <img alt="👍" class="twemoji" src="https://cdn.jsdelivr.net/gh/jdecked/twemoji@16.0.1/assets/svg/1f44d.svg" title=":thumbsup:" /><a class="headerlink" href="#built-in-json-support" title="Permanent link">&para;</a></h3>
 <p>pydantic-core can parse JSON directly into a model or output type, this both improves performance and avoids
 issue with strictness - e.g. if you have a strict model with a <code>datetime</code> field, the input must be a
 <code>datetime</code> object, but clearly that makes no sense when parsing JSON which has no <code>datatime</code> type.
@@ -1698,7 +1698,7 @@ used widely enough to be worth specific logic. Other formats can be parsed to py
 when serialising, data can be exported to a python object, then serialised,
 see <a href="#improvements-to-dumpingserializationexport">below</a>.</p>
 </div>
-<h3 id="validation-without-a-model">Validation without a Model <img alt="👍" class="twemoji" src="https://cdn.jsdelivr.net/gh/jdecked/twemoji@15.1.0/assets/svg/1f44d.svg" title=":thumbsup:" /><a class="headerlink" href="#validation-without-a-model" title="Permanent link">&para;</a></h3>
+<h3 id="validation-without-a-model">Validation without a Model <img alt="👍" class="twemoji" src="https://cdn.jsdelivr.net/gh/jdecked/twemoji@16.0.1/assets/svg/1f44d.svg" title=":thumbsup:" /><a class="headerlink" href="#validation-without-a-model" title="Permanent link">&para;</a></h3>
 <p>In pydantic V1 the core of all validation was a pydantic model, this led to a significant performance penalty 
 and extra complexity when the output data type was not a model.</p>
 <p>pydantic-core operates on a tree of validators with no "model" type required at the base of that tree.
@@ -1713,7 +1713,7 @@ It can therefore validate a single <code>string</code> or <code>datetime</code> 
 </ul>
 <p>In effect - anywhere where you don't care about a traditional model class instance.</p>
 <p>We'll need to add standalone methods for generating JSON Schema and dumping these objects to JSON, etc.</p>
-<h3 id="required-vs-nullable-cleanup">Required vs. Nullable Cleanup <img alt="👍" class="twemoji" src="https://cdn.jsdelivr.net/gh/jdecked/twemoji@15.1.0/assets/svg/1f44d.svg" title=":thumbsup:" /><a class="headerlink" href="#required-vs-nullable-cleanup" title="Permanent link">&para;</a></h3>
+<h3 id="required-vs-nullable-cleanup">Required vs. Nullable Cleanup <img alt="👍" class="twemoji" src="https://cdn.jsdelivr.net/gh/jdecked/twemoji@16.0.1/assets/svg/1f44d.svg" title=":thumbsup:" /><a class="headerlink" href="#required-vs-nullable-cleanup" title="Permanent link">&para;</a></h3>
 <p>Pydantic previously had a somewhat confused idea about "required" vs. "nullable". This mostly resulted from
 my misgivings about marking a field as <code>Optional[int]</code> but requiring a value to be provided but allowing it to be
 <code>None</code> - I didn't like using the word "optional" in relation to a field which was not optional.</p>
@@ -1726,7 +1726,7 @@ my misgivings about marking a field as <code>Optional[int]</code> but requiring 
     <span class="n">f3</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>  <span class="c1"># not required, can be None</span>
     <span class="n">f4</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;Foobar&#39;</span>  <span class="c1"># not required, but cannot be None</span>
 </code></pre></div>
-<h3 id="validator-function-improvements">Validator Function Improvements <img alt="👍" class="twemoji" src="https://cdn.jsdelivr.net/gh/jdecked/twemoji@15.1.0/assets/svg/1f44d.svg" title=":thumbsup:" /> <img alt="👍" class="twemoji" src="https://cdn.jsdelivr.net/gh/jdecked/twemoji@15.1.0/assets/svg/1f44d.svg" title=":thumbsup:" /> <img alt="👍" class="twemoji" src="https://cdn.jsdelivr.net/gh/jdecked/twemoji@15.1.0/assets/svg/1f44d.svg" title=":thumbsup:" /><a class="headerlink" href="#validator-function-improvements" title="Permanent link">&para;</a></h3>
+<h3 id="validator-function-improvements">Validator Function Improvements <img alt="👍" class="twemoji" src="https://cdn.jsdelivr.net/gh/jdecked/twemoji@16.0.1/assets/svg/1f44d.svg" title=":thumbsup:" /> <img alt="👍" class="twemoji" src="https://cdn.jsdelivr.net/gh/jdecked/twemoji@16.0.1/assets/svg/1f44d.svg" title=":thumbsup:" /> <img alt="👍" class="twemoji" src="https://cdn.jsdelivr.net/gh/jdecked/twemoji@16.0.1/assets/svg/1f44d.svg" title=":thumbsup:" /><a class="headerlink" href="#validator-function-improvements" title="Permanent link">&para;</a></h3>
 <p>This is one of the changes in pydantic V2 that I'm most excited about, I've been talking about something
 like this for a long time, see <a href="https://github.com/pydantic/pydantic/issues/1984">pydantic#1984</a>, but couldn't
 find a way to do this until now.</p>
@@ -1760,7 +1760,7 @@ find a way to do this until now.</p>
             <span class="k">return</span> <span class="n">datetime</span><span class="p">(</span><span class="mi">2000</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
 </code></pre></div>
 <p>As well as being powerful, this provides a great "escape hatch" when pydantic validation doesn't do what you need.</p>
-<h3 id="more-powerful-aliases">More powerful alias(es) <img alt="👍" class="twemoji" src="https://cdn.jsdelivr.net/gh/jdecked/twemoji@15.1.0/assets/svg/1f44d.svg" title=":thumbsup:" /><a class="headerlink" href="#more-powerful-aliases" title="Permanent link">&para;</a></h3>
+<h3 id="more-powerful-aliases">More powerful alias(es) <img alt="👍" class="twemoji" src="https://cdn.jsdelivr.net/gh/jdecked/twemoji@16.0.1/assets/svg/1f44d.svg" title=":thumbsup:" /><a class="headerlink" href="#more-powerful-aliases" title="Permanent link">&para;</a></h3>
 <p>pydantic-core can support alias "paths" as well as simple string aliases to flatten data as it's validated.</p>
 <p>Best demonstrated with an example:</p>
 <div class="highlight"><span class="filename">Alias paths</span><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">pydantic</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">Field</span>
@@ -1785,7 +1785,7 @@ find a way to do this until now.</p>
 <p><code>aliases</code> is a list of lists because multiple paths can be provided, if so they're tried in turn until a value is found.</p>
 <p>Tagged unions will use the same logic as <code>aliases</code> meaning nested attributes can be used to select a schema
 to validate against.</p>
-<h3 id="improvements-to-dumpingserializationexport">Improvements to Dumping/Serialization/Export <img alt="👍" class="twemoji" src="https://cdn.jsdelivr.net/gh/jdecked/twemoji@15.1.0/assets/svg/1f44d.svg" title=":thumbsup:" /> <img alt="😕" class="twemoji" src="https://cdn.jsdelivr.net/gh/jdecked/twemoji@15.1.0/assets/svg/1f615.svg" title=":confused:" /><a class="headerlink" href="#improvements-to-dumpingserializationexport" title="Permanent link">&para;</a></h3>
+<h3 id="improvements-to-dumpingserializationexport">Improvements to Dumping/Serialization/Export <img alt="👍" class="twemoji" src="https://cdn.jsdelivr.net/gh/jdecked/twemoji@16.0.1/assets/svg/1f44d.svg" title=":thumbsup:" /> <img alt="😕" class="twemoji" src="https://cdn.jsdelivr.net/gh/jdecked/twemoji@16.0.1/assets/svg/1f615.svg" title=":confused:" /><a class="headerlink" href="#improvements-to-dumpingserializationexport" title="Permanent link">&para;</a></h3>
 <p>(I haven't worked on this yet, so these ideas are only provisional)</p>
 <p>There has long been a debate about how to handle converting data when extracting it from a model.
 One of the features people have long requested is the ability to convert data to JSON compliant types while
@@ -1807,7 +1807,7 @@ is used to convert the data as the user wishes.</p>
 translate it to Rust.</p>
 <p>We should also add support for <code>validate_alias</code> and <code>dump_alias</code> as well as the standard <code>alias</code>
 to allow for customising field keys.</p>
-<h3 id="validation-context">Validation Context <img alt="👍" class="twemoji" src="https://cdn.jsdelivr.net/gh/jdecked/twemoji@15.1.0/assets/svg/1f44d.svg" title=":thumbsup:" /><a class="headerlink" href="#validation-context" title="Permanent link">&para;</a></h3>
+<h3 id="validation-context">Validation Context <img alt="👍" class="twemoji" src="https://cdn.jsdelivr.net/gh/jdecked/twemoji@16.0.1/assets/svg/1f44d.svg" title=":thumbsup:" /><a class="headerlink" href="#validation-context" title="Permanent link">&para;</a></h3>
 <p>Pydantic V2 will add a new optional <code>context</code> argument to <code>model_validate</code> and <code>model_validate_json</code>
 which will allow you to pass information not available when creating a model to validators.
 See <a href="https://github.com/pydantic/pydantic/issues/1549">pydantic#1549</a> for motivation.</p>
@@ -1831,7 +1831,7 @@ See <a href="https://github.com/pydantic/pydantic/issues/1549">pydantic#1549</a>
 </code></pre></div>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
-<p>We (actually mostly Sebastián <img alt="😉" class="twemoji" src="https://cdn.jsdelivr.net/gh/jdecked/twemoji@15.1.0/assets/svg/1f609.svg" title=":wink:" />) will have to make some changes to FastAPI to fully leverage <code>context</code>
+<p>We (actually mostly Sebastián <img alt="😉" class="twemoji" src="https://cdn.jsdelivr.net/gh/jdecked/twemoji@16.0.1/assets/svg/1f609.svg" title=":wink:" />) will have to make some changes to FastAPI to fully leverage <code>context</code>
 as we'd need some kind of dependency injection to build context before validation so models can still be passed as
 arguments to views. I'm sure he'll be game.</p>
 </div>
@@ -1841,7 +1841,7 @@ arguments to views. I'm sure he'll be game.</p>
 from within validators, I strongly advise you keep IO separate from validation - do it before and use context,
 do it afterwards, avoid where possible making queries inside validation.</p>
 </div>
-<h3 id="model-namespace-cleanup">Model Namespace Cleanup <img alt="👍" class="twemoji" src="https://cdn.jsdelivr.net/gh/jdecked/twemoji@15.1.0/assets/svg/1f44d.svg" title=":thumbsup:" /><a class="headerlink" href="#model-namespace-cleanup" title="Permanent link">&para;</a></h3>
+<h3 id="model-namespace-cleanup">Model Namespace Cleanup <img alt="👍" class="twemoji" src="https://cdn.jsdelivr.net/gh/jdecked/twemoji@16.0.1/assets/svg/1f44d.svg" title=":thumbsup:" /><a class="headerlink" href="#model-namespace-cleanup" title="Permanent link">&para;</a></h3>
 <p>For years I've wanted to clean up the model namespace,
 see <a href="https://github.com/pydantic/pydantic/issues/1001">pydantic#1001</a>. This would avoid confusing gotchas when field
 names clash with methods on a model, it would also make it safer to add more methods to a model without risking
@@ -1953,7 +1953,7 @@ I've decided to go with the simplest and clearest approach, at the expense of a 
 <li><code>.copy()</code> instead we'll implement <code>__copy__</code> and let people use the <code>copy</code> module
   (this removes some functionality) from <code>copy()</code> but there are bugs and ambiguities with the functionality anyway</li>
 </ul>
-<h3 id="strict-api-api-documentation">Strict API &amp; API documentation <img alt="👍" class="twemoji" src="https://cdn.jsdelivr.net/gh/jdecked/twemoji@15.1.0/assets/svg/1f44d.svg" title=":thumbsup:" /><a class="headerlink" href="#strict-api-api-documentation" title="Permanent link">&para;</a></h3>
+<h3 id="strict-api-api-documentation">Strict API &amp; API documentation <img alt="👍" class="twemoji" src="https://cdn.jsdelivr.net/gh/jdecked/twemoji@16.0.1/assets/svg/1f44d.svg" title=":thumbsup:" /><a class="headerlink" href="#strict-api-api-documentation" title="Permanent link">&para;</a></h3>
 <p>When preparing for pydantic V2, we'll make a strict distinction between the public API and private functions &amp; classes.
 Private objects will be clearly identified as private via a <code>_internal</code> sub package to discourage use.</p>
 <p>The public API will have API documentation. I've recently been working with the wonderful
@@ -1962,7 +1962,7 @@ Private objects will be clearly identified as private via a <code>_internal</cod
 <a href="https://watchfiles.helpmanual.io/">watchfiles</a> documentation. I intend to use <code>mkdocstrings</code> to generate complete
 API documentation for V2.</p>
 <p>This wouldn't replace the current example-based somewhat informal documentation style but instead will augment it.</p>
-<h3 id="error-descriptions">Error descriptions <img alt="👍" class="twemoji" src="https://cdn.jsdelivr.net/gh/jdecked/twemoji@15.1.0/assets/svg/1f44d.svg" title=":thumbsup:" /><a class="headerlink" href="#error-descriptions" title="Permanent link">&para;</a></h3>
+<h3 id="error-descriptions">Error descriptions <img alt="👍" class="twemoji" src="https://cdn.jsdelivr.net/gh/jdecked/twemoji@16.0.1/assets/svg/1f44d.svg" title=":thumbsup:" /><a class="headerlink" href="#error-descriptions" title="Permanent link">&para;</a></h3>
 <p>The way line errors (the individual errors within a <code>ValidationError</code>) are built has become much more sophisticated
 in pydantic-core.</p>
 <p>There's a well-defined
@@ -1993,7 +1993,7 @@ docs.</p>
 <p>I own the <code>pydantic.dev</code> domain and will use it for at least these errors so that even if the docs URL
 changes, the error will still link to the correct documentation. If developers don't want to show these errors to users,
 they can always process the errors list and filter out items from each error they don't need or want.</p>
-<h3 id="no-pure-python-implementation">No pure python implementation <img alt="😦" class="twemoji" src="https://cdn.jsdelivr.net/gh/jdecked/twemoji@15.1.0/assets/svg/1f626.svg" title=":frowning:" /><a class="headerlink" href="#no-pure-python-implementation" title="Permanent link">&para;</a></h3>
+<h3 id="no-pure-python-implementation">No pure python implementation <img alt="😦" class="twemoji" src="https://cdn.jsdelivr.net/gh/jdecked/twemoji@16.0.1/assets/svg/1f626.svg" title=":frowning:" /><a class="headerlink" href="#no-pure-python-implementation" title="Permanent link">&para;</a></h3>
 <p>Since pydantic-core is written in Rust, and I have absolutely no intention of rewriting it in python,
 pydantic V2 will only work where a binary package can be installed.</p>
 <p>pydantic-core will provide binaries in PyPI for (at least):</p>
@@ -2014,7 +2014,7 @@ If no binary is available from PyPI, pydantic-core can be compiled from source i
 <a href="https://github.com/piwheels/packages/issues/254">mess</a> when it comes to packages written in Rust for Python.
 Effectively, until that's fixed you'll likely have to install pydantic with
 <code>pip install -i https://pypi.org/simple/ pydantic</code>.</p>
-<h3 id="pydantic-becomes-a-pure-python-package">Pydantic becomes a pure python package <img alt="👍" class="twemoji" src="https://cdn.jsdelivr.net/gh/jdecked/twemoji@15.1.0/assets/svg/1f44d.svg" title=":thumbsup:" /><a class="headerlink" href="#pydantic-becomes-a-pure-python-package" title="Permanent link">&para;</a></h3>
+<h3 id="pydantic-becomes-a-pure-python-package">Pydantic becomes a pure python package <img alt="👍" class="twemoji" src="https://cdn.jsdelivr.net/gh/jdecked/twemoji@16.0.1/assets/svg/1f44d.svg" title=":thumbsup:" /><a class="headerlink" href="#pydantic-becomes-a-pure-python-package" title="Permanent link">&para;</a></h3>
 <p>Pydantic V1.X is a pure python code base but is compiled with cython to provide some performance improvements.
 Since the "hot" code is moved to pydantic-core, pydantic itself can go back to being a pure python package.</p>
 <p>This should significantly reduce the size of the pydantic package and make unit tests of pydantic much faster.
@@ -2025,7 +2025,7 @@ In addition:</p>
   pure python packages</li>
 </ul>
 <p>Some pieces of edge logic could get a little slower as they're no longer compiled.</p>
-<h3 id="is_instance-like-checks"><code>is_instance</code> like checks <img alt="👍" class="twemoji" src="https://cdn.jsdelivr.net/gh/jdecked/twemoji@15.1.0/assets/svg/1f44d.svg" title=":thumbsup:" /><a class="headerlink" href="#is_instance-like-checks" title="Permanent link">&para;</a></h3>
+<h3 id="is_instance-like-checks"><code>is_instance</code> like checks <img alt="👍" class="twemoji" src="https://cdn.jsdelivr.net/gh/jdecked/twemoji@16.0.1/assets/svg/1f44d.svg" title=":thumbsup:" /><a class="headerlink" href="#is_instance-like-checks" title="Permanent link">&para;</a></h3>
 <p>Strict mode also means it makes sense to provide an <code>is_instance</code> method on models which effectively run
 validation then throws away the result while avoiding the (admittedly small) overhead of creating and raising
 an error or returning the validation result.</p>
@@ -2041,7 +2041,7 @@ an error or returning the validation result.</p>
         <span class="k">else</span><span class="p">:</span>
             <span class="k">return</span> <span class="kc">True</span>
 </code></pre></div>
-<h3 id="im-dropping-the-word-parse-and-just-using-validate">I'm dropping the word "parse" and just using "validate" <img alt="😐" class="twemoji" src="https://cdn.jsdelivr.net/gh/jdecked/twemoji@15.1.0/assets/svg/1f610.svg" title=":neutral_face:" /><a class="headerlink" href="#im-dropping-the-word-parse-and-just-using-validate" title="Permanent link">&para;</a></h3>
+<h3 id="im-dropping-the-word-parse-and-just-using-validate">I'm dropping the word "parse" and just using "validate" <img alt="😐" class="twemoji" src="https://cdn.jsdelivr.net/gh/jdecked/twemoji@16.0.1/assets/svg/1f610.svg" title=":neutral_face:" /><a class="headerlink" href="#im-dropping-the-word-parse-and-just-using-validate" title="Permanent link">&para;</a></h3>
 <p>Partly due to the issues with the lack of strict mode,
 I've gone back and forth between using the terms "parse" and "validate" for what pydantic does.</p>
 <p>While pydantic is not simply a validation library (and I'm sure some would argue validation is not strictly what it does),
@@ -2049,7 +2049,7 @@ most people use the word <strong>"validation"</strong>.</p>
 <p>It's time to stop fighting that, and use consistent names.</p>
 <p>The word "parse" will no longer be used except when talking about JSON parsing, see
 <a href="#model-namespace-cleanup">model methods</a> above.</p>
-<h3 id="changes-to-custom-field-types">Changes to custom field types <img alt="😐" class="twemoji" src="https://cdn.jsdelivr.net/gh/jdecked/twemoji@15.1.0/assets/svg/1f610.svg" title=":neutral_face:" /><a class="headerlink" href="#changes-to-custom-field-types" title="Permanent link">&para;</a></h3>
+<h3 id="changes-to-custom-field-types">Changes to custom field types <img alt="😐" class="twemoji" src="https://cdn.jsdelivr.net/gh/jdecked/twemoji@16.0.1/assets/svg/1f610.svg" title=":neutral_face:" /><a class="headerlink" href="#changes-to-custom-field-types" title="Permanent link">&para;</a></h3>
 <p>Since the core structure of validators has changed from "a list of validators to call one after another" to
 "a tree of validators which call each other", the
 <a href="https://docs.pydantic.dev/usage/types/#classes-with-__get_validators__"><code>__get_validators__</code></a>
@@ -2092,7 +2092,7 @@ which is a type defining the schema for validation schemas.</p>
 mypy can't provide static type analysis, pyright however can.</p>
 </div>
 <p>We can probably provide one or more helper functions to make <code>__pydantic_validation_schema__</code> easier to generate.</p>
-<h2 id="other-improvements">Other Improvements <img alt="👍" class="twemoji" src="https://cdn.jsdelivr.net/gh/jdecked/twemoji@15.1.0/assets/svg/1f44d.svg" title=":thumbsup:" /><a class="headerlink" href="#other-improvements" title="Permanent link">&para;</a></h2>
+<h2 id="other-improvements">Other Improvements <img alt="👍" class="twemoji" src="https://cdn.jsdelivr.net/gh/jdecked/twemoji@16.0.1/assets/svg/1f44d.svg" title=":thumbsup:" /><a class="headerlink" href="#other-improvements" title="Permanent link">&para;</a></h2>
 <p>Some other things which will also change, IMHO for the better:</p>
 <ol>
 <li>Recursive models with cyclic references - although recursive models were supported by pydantic V1,
@@ -2136,7 +2136,7 @@ mypy can't provide static type analysis, pyright however can.</p>
 <li>Improve generics to use <code>M(Basemodel, Generic[T])</code> instead of <code>M(GenericModel, Generic[T])</code> - e.g. <code>GenericModel</code>
     can be removed; this results from no-longer needing to compile pydantic code with cython</li>
 </ol>
-<h2 id="removed-features-limitations">Removed Features &amp; Limitations <img alt="😦" class="twemoji" src="https://cdn.jsdelivr.net/gh/jdecked/twemoji@15.1.0/assets/svg/1f626.svg" title=":frowning:" /><a class="headerlink" href="#removed-features-limitations" title="Permanent link">&para;</a></h2>
+<h2 id="removed-features-limitations">Removed Features &amp; Limitations <img alt="😦" class="twemoji" src="https://cdn.jsdelivr.net/gh/jdecked/twemoji@16.0.1/assets/svg/1f626.svg" title=":frowning:" /><a class="headerlink" href="#removed-features-limitations" title="Permanent link">&para;</a></h2>
 <p>The emoji here is just for variation, I'm not frowning about any of this, these changes are either good IMHO
 (will make pydantic cleaner, easier to learn and easier to maintain) or irrelevant to 99.9+% of users.</p>
 <ol>
@@ -2171,7 +2171,7 @@ mypy can't provide static type analysis, pyright however can.</p>
 <li><code>dict(model)</code> functionality should be removed, there's a much clearer distinction now that in 2017 when I 
    implemented this between a model and a dict</li>
 </ol>
-<h2 id="features-remaining">Features Remaining <img alt="😐" class="twemoji" src="https://cdn.jsdelivr.net/gh/jdecked/twemoji@15.1.0/assets/svg/1f610.svg" title=":neutral_face:" /><a class="headerlink" href="#features-remaining" title="Permanent link">&para;</a></h2>
+<h2 id="features-remaining">Features Remaining <img alt="😐" class="twemoji" src="https://cdn.jsdelivr.net/gh/jdecked/twemoji@16.0.1/assets/svg/1f610.svg" title=":neutral_face:" /><a class="headerlink" href="#features-remaining" title="Permanent link">&para;</a></h2>
 <p>The following features will remain (mostly) unchanged:</p>
 <ul>
 <li>JSONSchema, internally this will need to change a lot, but hopefully the external interface will remain unchanged</li>
@@ -2179,15 +2179,15 @@ mypy can't provide static type analysis, pyright however can.</p>
 <li><code>validate_arguments</code>, might be renamed, but otherwise remain</li>
 <li>hypothesis plugin, might be able to improve this as part of the general cleanup</li>
 </ul>
-<h2 id="questions">Questions <img alt="❓" class="twemoji" src="https://cdn.jsdelivr.net/gh/jdecked/twemoji@15.1.0/assets/svg/2753.svg" title=":question:" /><a class="headerlink" href="#questions" title="Permanent link">&para;</a></h2>
+<h2 id="questions">Questions <img alt="❓" class="twemoji" src="https://cdn.jsdelivr.net/gh/jdecked/twemoji@16.0.1/assets/svg/2753.svg" title=":question:" /><a class="headerlink" href="#questions" title="Permanent link">&para;</a></h2>
 <p>I hope the explanation above is useful. I'm sure people will have questions and feedback; I'm aware
-I've skipped over some features with limited detail (this post is already fairly long <img alt="😴" class="twemoji" src="https://cdn.jsdelivr.net/gh/jdecked/twemoji@15.1.0/assets/svg/1f634.svg" title=":sleeping:" />).</p>
+I've skipped over some features with limited detail (this post is already fairly long <img alt="😴" class="twemoji" src="https://cdn.jsdelivr.net/gh/jdecked/twemoji@16.0.1/assets/svg/1f634.svg" title=":sleeping:" />).</p>
 <p>To allow feedback without being overwhelmed, I've created a "Pydantic V2" category for
 <a href="https://github.com/pydantic/pydantic/discussions/categories/pydantic-v2">discussions on github</a> - please
 feel free to create a discussion if you have any questions or suggestions.
 We will endeavour to read and respond to everyone.</p>
 <hr />
-<h2 id="implementation-details">Implementation Details <img alt="🤓" class="twemoji" src="https://cdn.jsdelivr.net/gh/jdecked/twemoji@15.1.0/assets/svg/1f913.svg" title=":nerd:" /><a class="headerlink" href="#implementation-details" title="Permanent link">&para;</a></h2>
+<h2 id="implementation-details">Implementation Details <img alt="🤓" class="twemoji" src="https://cdn.jsdelivr.net/gh/jdecked/twemoji@16.0.1/assets/svg/1f913.svg" title=":nerd:" /><a class="headerlink" href="#implementation-details" title="Permanent link">&para;</a></h2>
 <p>(This is yet to be built, so these are nascent ideas which might change)</p>
 <p>At the center of pydantic v2 will be a <code>PydanticValidator</code> class which looks roughly like this
 (note: this is just pseudo-code, it's not even valid python and is only supposed to be used to demonstrate the idea):</p>
