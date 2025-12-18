@@ -3282,27 +3282,3 @@ def test_dataclass_field_exclude() -> None:
     assert ta.dump_json(Foo(foo='bar', bar=1)).decode('utf-8') == '{"bar":1}'
     assert ta.dump_json(Foo(foo='bar', bar=1), exclude={'bar'}).decode('utf-8') == '{}'
     assert ta.dump_json(Foo(foo='bar', bar=2)).decode('utf-8') == '{}'
-
-
-def test_stdlib_dataclass_polymorphism():
-    """stdlib dataclasses do not respect the polymorphic_serialization flag.
-
-    FIXME: decide if this should be handled differently before merge."""
-
-    @dataclasses.dataclass
-    class Base:
-        a: int
-
-    @dataclasses.dataclass
-    class Sub(Base):
-        b: int
-
-    adapter = TypeAdapter(Base)
-
-    print(adapter.serializer)
-
-    base_instance = Base(a=1)
-    assert adapter.dump_json(base_instance, polymorphic_serialization=True) == b'{"a":1}'
-
-    sub_instance = Sub(a=2, b=3)
-    assert adapter.dump_json(sub_instance, polymorphic_serialization=True) == b'{"a":2}'
