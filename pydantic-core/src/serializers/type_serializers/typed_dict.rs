@@ -3,7 +3,8 @@ use std::sync::Arc;
 
 use pyo3::intern;
 use pyo3::prelude::*;
-use pyo3::types::{PyDict, PyString};
+use pyo3::pybacked::PyBackedStr;
+use pyo3::types::PyDict;
 
 use ahash::AHashMap;
 
@@ -55,20 +56,19 @@ impl BuildSerializer for TypedDictSerializer {
         };
 
         for (key, value) in fields_dict {
-            let key_py = key.cast_into::<PyString>()?;
-            let key: String = key_py.extract()?;
+            let key_py: PyBackedStr = key.extract()?;
+            let key: String = key_py.to_string();
             let field_info = value.cast()?;
 
-            let key_py: Py<PyString> = key_py.into();
             let required = field_info.get_as(intern!(py, "required"))?.unwrap_or(total);
 
             if field_info.get_as(intern!(py, "serialization_exclude"))? == Some(true) {
                 fields.insert(
                     key,
-                    SerField::new(py, key_py, None, None, required, serialize_by_alias, None),
+                    SerField::new(key_py, None, None, required, serialize_by_alias, None),
                 );
             } else {
-                let alias: Option<String> = field_info.get_as(intern!(py, "serialization_alias"))?;
+                let alias = field_info.get_as(intern!(py, "serialization_alias"))?;
                 let serialization_exclude_if: Option<Py<PyAny>> =
                     field_info.get_as(intern!(py, "serialization_exclude_if"))?;
                 let schema = field_info.get_as_req(intern!(py, "schema"))?;
@@ -77,7 +77,6 @@ impl BuildSerializer for TypedDictSerializer {
                 fields.insert(
                     key,
                     SerField::new(
-                        py,
                         key_py,
                         alias,
                         Some(serializer),
