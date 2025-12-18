@@ -3,43 +3,33 @@ By specifying an `output_type` on an Agent, you can constrain the LLM to return 
 
 ## LLM Structured Output
 
-=== "Simple"
-    ```python {test="skip"}
-    from pydantic import BaseModel
-    from pydantic_ai import Agent
-
-    class Person(BaseModel):
-        name: str
-        age: int
-        occupation: str
+```python {test="skip"}
+from pydantic import BaseModel, Field, ValidationInfo, field_validator
+from pydantic_ai import Agent
 
 
-    agent = Agent('openai:gpt-5-mini', output_type=Person)
-    result = agent.run_sync('Extract: John is a 30 year old software engineer')
-    print(result.output)
-    #> name='John' age=30 occupation='software engineer'
-    ```
+class City(BaseModel):
+    name: str
+    country: str
+    population: int = Field(description='Estimated population', gt=0)
 
-=== "Advanced"
-    ```python {test="skip"}
-    from pydantic import BaseModel, Field, field_validator
-    from pydantic_ai import Agent
-
-    class City(BaseModel):
-        name: str
-        country: str
-        population: int = Field(description='Estimated population', gt=0)
-
-        @field_validator('country')
-        @classmethod
-        def population_must_be_positive(cls, v: str) -> str:
-            if v == 'Narnia':
-                raise ValueError('not a real country!')
-            return v
+    @field_validator('country')
+    @classmethod
+    def country_must_be_valid(cls, v: str, info: ValidationInfo) -> str:
+        valid_countries: list[str] = info.context or []
+        if v not in valid_countries:
+            raise ValueError(f'Unknown country: {v!r}')
+        return v
 
 
-    agent = Agent('openai:gpt-5-mini', output_type=list[City])
-    result = agent.run_sync('List the 3 largest cities in Japan')
-    print(result.output)
-    #> [City(name='Tokyo', country='Japan', population=13960000), ...]
-    ```
+agent = Agent(
+    'openai:gpt-5-mini',
+    output_type=list[City],
+    # Pydantic validation context (not sent to the model)
+    validation_context=['Japan', 'United States', 'Germany'],
+)
+
+result = agent.run_sync('List the 3 largest cities in Japan')
+print(result.output)
+#> [City(name='Tokyo', country='Japan', population=13960000), ...]
+```
