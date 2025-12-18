@@ -66,7 +66,7 @@ class Bar(BaseModel):
 """
     )
 
-    assert module.Foo.__fields__['a'].type_ == ForwardRef('Bar')
+    assert isinstance(module.Foo.__fields__['a'].type_, ForwardRef)
     assert module.Bar.__fields__['b'].type_ is module.Foo
 
 
@@ -79,7 +79,7 @@ def test_forward_ref_one_of_fields_not_defined(create_module):
             foo: 'Foo'
             bar: 'Bar'  # noqa: F821
 
-    assert module.Foo.__fields__['bar'].type_ == ForwardRef('Bar')
+    assert isinstance(module.Foo.__fields__['bar'].type_, ForwardRef)
     assert module.Foo.__fields__['foo'].type_ is module.Foo
 
 

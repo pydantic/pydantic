@@ -132,9 +132,3 @@ __all__ = [
     'compiled',
     'VERSION',
 ]
-
-if sys.version_info >= (3, 14):
-    warnings.warn(
-        "Core Pydantic V1 functionality isn't compatible with Python 3.14 or greater.",
-        UserWarning,
-    )

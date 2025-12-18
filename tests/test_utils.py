@@ -71,7 +71,10 @@ def test_display_as_type(value, expected):
 
 @pytest.mark.skipif(sys.version_info < (3, 9), reason='generic aliases are not available in python < 3.9')
 def test_display_as_type_generic_alias():
-    assert display_as_type(list[[Union[str, int]]]) == 'list[[Union[str, int]]]'
+    if sys.version_info >= (3, 14):
+        assert display_as_type(list[[Union[str, int]]]) == 'list[[str | int]]'
+    else:
+        assert display_as_type(list[[Union[str, int]]]) == 'list[[Union[str, int]]]'
 
 
 def test_lenient_issubclass():

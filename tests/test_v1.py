@@ -1,16 +1,22 @@
 import importlib
 import os
+import sys
 
 import pytest
 
 import pydantic
 
-try:
-    from mypy import api as mypy_api
-    from mypy.version import __version__ as mypy_version
+if sys.version_info < (3, 14):
+    try:
+        from mypy import api as mypy_api
+        from mypy.version import __version__ as mypy_version
 
-    from pydantic.mypy import parse_mypy_version
-except ImportError:
+        from pydantic.mypy import parse_mypy_version
+    except ImportError:
+        mypy_api = None
+        mypy_version = None
+        parse_mypy_version = lambda _: (0,)  # noqa: E731
+else:
     mypy_api = None
     mypy_version = None
     parse_mypy_version = lambda _: (0,)  # noqa: E731

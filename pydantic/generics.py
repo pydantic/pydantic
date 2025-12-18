@@ -1,3 +1,5 @@
+import functools
+import operator
 import sys
 import types
 import typing
@@ -29,8 +31,6 @@ from pydantic.types import JsonWrapper
 from pydantic.typing import display_as_type, get_all_type_hints, get_args, get_origin, typing_base
 from pydantic.utils import all_identical, lenient_issubclass
 
-if sys.version_info >= (3, 10):
-    from typing import _UnionGenericAlias
 if sys.version_info >= (3, 8):
     from typing import Literal
 
@@ -294,7 +294,7 @@ def replace_types(type_: Any, type_map: Mapping[Any, Any]) -> Any:
         # PEP-604 syntax (Ex.: list | str) is represented with a types.UnionType object that does not have __getitem__.
         # We also cannot use isinstance() since we have to compare types.
         if sys.version_info >= (3, 10) and origin_type is types.UnionType:  # noqa: E721
-            return _UnionGenericAlias(origin_type, resolved_type_args)
+            return functools.reduce(operator.or_, resolved_type_args)
         return origin_type[resolved_type_args]
 
     # We handle pydantic generic models separately as they don't have the same

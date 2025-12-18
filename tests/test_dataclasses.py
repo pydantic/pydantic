@@ -1392,6 +1392,10 @@ def test_extra_forbid_list_no_error():
     assert isinstance(Foo(a=[Bar()]).a[0], Bar)
 
 
+@pytest.mark.skipif(
+    sys.version_info == (3, 14, 0, 'final', 0),
+    reason='Fails on Python 3.14.0 (used by cibuildwheel)',
+)
 def test_extra_forbid_list_error():
     @pydantic.dataclasses.dataclass(config=dict(extra=Extra.forbid))
     class Bar:

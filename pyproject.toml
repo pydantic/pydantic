@@ -21,6 +21,7 @@ classifiers=[
     'Programming Language :: Python :: 3.11',
     'Programming Language :: Python :: 3.12',
     'Programming Language :: Python :: 3.13',
+    'Programming Language :: Python :: 3.14',
     'Intended Audience :: Developers',
     'Intended Audience :: Information Technology',
     'Intended Audience :: System Administrators',
@@ -70,7 +71,7 @@ version = {attr = 'pydantic.version.VERSION'}
 [tool.cibuildwheel]
 build-frontend = 'build'
 skip = '*-win32'
-test-requires = 'pytest==6.2.5 pytest-mock==3.6.1'
+test-requires = 'pytest==7.4.3 pytest-mock==3.10.0'
 test-command = 'pytest {project}/tests'
 # see https://cibuildwheel.readthedocs.io/en/stable/faq/#universal2:
 test-skip = '*-macosx_arm64'
