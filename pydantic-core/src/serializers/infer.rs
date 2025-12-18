@@ -31,7 +31,7 @@ use super::shared::any_dataclass_iter;
 
 pub(crate) fn infer_to_python<'py>(
     value: &Bound<'py, PyAny>,
-    state: &mut SerializationState<'_, 'py>,
+    state: &mut SerializationState<'py>,
 ) -> PyResult<Py<PyAny>> {
     infer_to_python_known(state.extra.ob_type_lookup.get_type(value), value, state)
 }
@@ -43,18 +43,19 @@ const INFER_DEF_REF_ID: usize = usize::MAX;
 pub(crate) fn infer_to_python_known<'py>(
     ob_type: ObType,
     value: &Bound<'py, PyAny>,
-    state: &mut SerializationState<'_, 'py>,
+    state: &mut SerializationState<'py>,
 ) -> PyResult<Py<PyAny>> {
     let py = value.py();
 
-    let mode = state.extra.mode;
+    let is_json = matches!(state.extra.mode, SerMode::Json);
     let mut guard = match state.recursion_guard(value, INFER_DEF_REF_ID) {
         Ok(v) => v,
         Err(e) => {
-            return match mode {
-                SerMode::Json => Err(e),
+            return if is_json {
+                Err(e)
+            } else {
                 // if recursion is detected by we're serializing to python, we just return the value
-                _ => Ok(value.clone().unbind()),
+                Ok(value.clone().unbind())
             };
         }
     };
@@ -205,7 +206,7 @@ pub(crate) fn infer_to_python_known<'py>(
             }
             ObType::Pattern => serialize_pattern(value, serialize_to_python())?,
             ObType::Unknown => {
-                if let Some(fallback) = state.extra.fallback {
+                if let Some(fallback) = &state.extra.fallback {
                     let next_value = fallback.call1((value,))?;
                     let next_result = infer_to_python(&next_value, state);
                     return next_result;
@@ -253,7 +254,7 @@ pub(crate) fn infer_to_python_known<'py>(
                 v.into_py_any(py)?
             }
             ObType::Unknown => {
-                if let Some(fallback) = state.extra.fallback {
+                if let Some(fallback) = &state.extra.fallback {
                     let next_value = fallback.call1((value,))?;
                     let next_result = infer_to_python(&next_value, state);
                     return next_result;
@@ -266,13 +267,13 @@ pub(crate) fn infer_to_python_known<'py>(
     Ok(value)
 }
 
-pub(crate) struct SerializeInfer<'slf, 'a, 'py> {
+pub(crate) struct SerializeInfer<'slf, 'py> {
     value: &'slf Bound<'py, PyAny>,
-    state: RefCell<&'slf mut SerializationState<'a, 'py>>,
+    state: RefCell<&'slf mut SerializationState<'py>>,
 }
 
-impl<'slf, 'a, 'py> SerializeInfer<'slf, 'a, 'py> {
-    pub(crate) fn new(value: &'slf Bound<'py, PyAny>, state: &'slf mut SerializationState<'a, 'py>) -> Self {
+impl<'slf, 'py> SerializeInfer<'slf, 'py> {
+    pub(crate) fn new(value: &'slf Bound<'py, PyAny>, state: &'slf mut SerializationState<'py>) -> Self {
         Self {
             value,
             state: RefCell::new(state),
@@ -280,7 +281,7 @@ impl<'slf, 'a, 'py> SerializeInfer<'slf, 'a, 'py> {
     }
 }
 
-impl Serialize for SerializeInfer<'_, '_, '_> {
+impl Serialize for SerializeInfer<'_, '_> {
     fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
         let state = &mut self.state.borrow_mut();
         let ob_type = state.extra.ob_type_lookup.get_type(self.value);
@@ -291,7 +292,7 @@ impl Serialize for SerializeInfer<'_, '_, '_> {
 pub(crate) fn infer_serialize<'py, S: Serializer>(
     value: &Bound<'py, PyAny>,
     serializer: S,
-    state: &mut SerializationState<'_, 'py>,
+    state: &mut SerializationState<'py>,
 ) -> Result<S::Ok, S::Error> {
     infer_serialize_known(state.extra.ob_type_lookup.get_type(value), value, serializer, state)
 }
@@ -300,7 +301,7 @@ pub(crate) fn infer_serialize_known<'py, S: Serializer>(
     ob_type: ObType,
     value: &Bound<'py, PyAny>,
     serializer: S,
-    state: &mut SerializationState<'_, 'py>,
+    state: &mut SerializationState<'py>,
 ) -> Result<S::Ok, S::Error> {
     let extra_serialize_unknown = state.extra.serialize_unknown;
     let mut guard = match state.recursion_guard(value, INFER_DEF_REF_ID) {
@@ -454,7 +455,7 @@ pub(crate) fn infer_serialize_known<'py, S: Serializer>(
         }
         ObType::Pattern => serialize_pattern(value, serialize_to_json(serializer)).map_err(unwrap_ser_error),
         ObType::Unknown => {
-            if let Some(fallback) = state.extra.fallback {
+            if let Some(fallback) = &state.extra.fallback {
                 let next_value = fallback.call1((value,)).map_err(py_err_se_err)?;
                 infer_serialize(&next_value, serializer, state)
             } else if state.extra.serialize_unknown {
@@ -498,7 +499,7 @@ fn serialize_unknown<'py>(value: &Bound<'py, PyAny>) -> Cow<'py, str> {
 
 pub(crate) fn infer_json_key<'a, 'py>(
     key: &'a Bound<'py, PyAny>,
-    state: &mut SerializationState<'_, 'py>,
+    state: &mut SerializationState<'py>,
 ) -> PyResult<Cow<'a, str>> {
     let ob_type = state.extra.ob_type_lookup.get_type(key);
     infer_json_key_known(ob_type, key, state)
@@ -507,7 +508,7 @@ pub(crate) fn infer_json_key<'a, 'py>(
 pub(crate) fn infer_json_key_known<'a, 'py>(
     ob_type: ObType,
     key: &'a Bound<'py, PyAny>,
-    state: &mut SerializationState<'_, 'py>,
+    state: &mut SerializationState<'py>,
 ) -> PyResult<Cow<'a, str>> {
     match ob_type {
         ObType::None => super::type_serializers::simple::none_json_key(),
@@ -568,7 +569,7 @@ pub(crate) fn infer_json_key_known<'a, 'py>(
             Ok(Cow::Owned(key_build.finish()))
         }
         ObType::List | ObType::Set | ObType::Frozenset | ObType::Dict | ObType::Generator => {
-            py_err!(PyTypeError; "`{}` not valid as object key", ob_type)
+            py_err!(PyTypeError; "`{ob_type}` not valid as object key")
         }
         ObType::Dataclass | ObType::PydanticSerializable => {
             // check that the instance is hashable
@@ -591,7 +592,7 @@ pub(crate) fn infer_json_key_known<'a, 'py>(
                 .into_owned(),
         )),
         ObType::Unknown => {
-            if let Some(fallback) = state.extra.fallback {
+            if let Some(fallback) = &state.extra.fallback {
                 let next_key = fallback.call1((key,))?;
                 infer_json_key(&next_key, state).map(|cow| Cow::Owned(cow.into_owned()))
             } else if state.extra.serialize_unknown {
@@ -608,7 +609,7 @@ pub(crate) fn infer_json_key_known<'a, 'py>(
 /// `do_serialize` should be a closure which performs serialization without type inference
 pub(crate) fn call_pydantic_serializer<'py, T, E: From<PyErr>>(
     value: &Bound<'py, PyAny>,
-    state: &mut SerializationState<'_, 'py>,
+    state: &mut SerializationState<'py>,
     do_serialize: impl DoSerialize<'py, T, E>,
 ) -> Result<T, E> {
     let py = value.py();
@@ -633,8 +634,8 @@ pub(crate) fn call_pydantic_serializer<'py, T, E: From<PyErr>>(
 fn serialize_pairs_python<'py>(
     py: Python,
     pairs_iter: impl Iterator<Item = PyResult<(Bound<'py, PyAny>, Bound<'py, PyAny>)>>,
-    state: &mut SerializationState<'_, 'py>,
-    key_transform: impl Fn(Bound<'py, PyAny>, &mut SerializationState<'_, 'py>) -> PyResult<Bound<'py, PyAny>>,
+    state: &mut SerializationState<'py>,
+    key_transform: impl Fn(Bound<'py, PyAny>, &mut SerializationState<'py>) -> PyResult<Bound<'py, PyAny>>,
 ) -> PyResult<Py<PyAny>> {
     let new_dict = PyDict::new(py);
     let filter = AnyFilter::new();
@@ -656,7 +657,7 @@ fn serialize_pairs_json<'py, S: Serializer>(
     pairs_iter: impl Iterator<Item = PyResult<(Bound<'py, PyAny>, Bound<'py, PyAny>)>>,
     iter_size: usize,
     serializer: S,
-    state: &mut SerializationState<'_, 'py>,
+    state: &mut SerializationState<'py>,
 ) -> Result<S::Ok, S::Error> {
     let mut map = serializer.serialize_map(Some(iter_size))?;
     let filter = AnyFilter::new();

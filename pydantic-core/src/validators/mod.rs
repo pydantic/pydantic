@@ -6,6 +6,7 @@ use enum_dispatch::enum_dispatch;
 use jiter::{PartialMode, StringCacheMode};
 
 use pyo3::exceptions::{PyTypeError, PyValueError};
+use pyo3::pybacked::PyBackedStr;
 use pyo3::types::{PyAny, PyDict, PyString, PyTuple, PyType};
 use pyo3::{IntoPyObjectExt, prelude::*};
 use pyo3::{PyTraverseError, PyVisit, intern};
@@ -16,7 +17,7 @@ use crate::errors::{LocItem, ValError, ValResult, ValidationError};
 use crate::input::{Input, InputType, StringMapping};
 use crate::py_gc::PyGcTraverse;
 use crate::recursion_guard::RecursionState;
-use crate::tools::SchemaDict;
+use crate::tools::{SchemaDict, pybackedstr_to_pystring};
 pub(crate) use config::{TemporalUnitMode, ValBytesMode};
 
 mod any;
@@ -324,7 +325,7 @@ impl SchemaValidator {
         &self,
         py: Python,
         obj: Bound<'_, PyAny>,
-        field_name: &str,
+        field_name: PyBackedStr,
         field_value: Bound<'_, PyAny>,
         strict: Option<bool>,
         extra: Option<&Bound<'_, PyString>>,
@@ -343,7 +344,7 @@ impl SchemaValidator {
             strict,
             extra_behavior,
             from_attributes,
-            field_name: Some(PyString::new(py, field_name)),
+            field_name: Some(pybackedstr_to_pystring(py, &field_name)),
             context,
             self_instance: None,
             cache_str: self.cache_str,
@@ -354,7 +355,7 @@ impl SchemaValidator {
         let guard = &mut RecursionState::default();
         let mut state = ValidationState::new(extra, guard, false.into());
         self.validator
-            .validate_assignment(py, &obj, field_name, &field_value, &mut state)
+            .validate_assignment(py, &obj, &field_name, &field_value, &mut state)
             .map_err(|e| self.prepare_validation_err(py, e, InputType::Python))
     }
 
@@ -656,7 +657,7 @@ fn build_validator_inner(
 
 #[cold]
 fn failed_to_build_validator(val_type: &str, err: PyErr) -> PyErr {
-    py_schema_error_type!("Error building \"{}\" validator:\n  {}", val_type, err)
+    py_schema_error_type!("Error building \"{val_type}\" validator:\n  {err}")
 }
 
 #[cold]
@@ -666,7 +667,7 @@ fn invalid_schema_type() -> PyErr {
 
 #[cold]
 fn unknown_schema_type(val_type: &str) -> PyErr {
-    py_schema_error_type!("Unknown schema type: \"{}\"", val_type)
+    py_schema_error_type!("Unknown schema type: \"{val_type}\"")
 }
 
 /// More (mostly immutable) data to pass between validators, should probably be class `Context`,
@@ -876,7 +877,7 @@ pub trait Validator: Send + Sync + Debug {
         &self,
         _py: Python<'py>,
         _obj: &Bound<'py, PyAny>,
-        _field_name: &str,
+        _field_name: &PyBackedStr,
         _field_value: &Bound<'py, PyAny>,
         _state: &mut ValidationState<'_, 'py>,
     ) -> ValResult<Py<PyAny>> {

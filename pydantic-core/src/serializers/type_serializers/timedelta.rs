@@ -43,11 +43,7 @@ impl BuildSerializer for TimeDeltaSerializer {
 impl_py_gc_traverse!(TimeDeltaSerializer {});
 
 impl TypeSerializer for TimeDeltaSerializer {
-    fn to_python<'py>(
-        &self,
-        value: &Bound<'py, PyAny>,
-        state: &mut SerializationState<'_, 'py>,
-    ) -> PyResult<Py<PyAny>> {
+    fn to_python<'py>(&self, value: &Bound<'py, PyAny>, state: &mut SerializationState<'py>) -> PyResult<Py<PyAny>> {
         match EitherTimedelta::try_from(value) {
             Ok(either_timedelta) => match state.extra.mode {
                 SerMode::Json => Ok(self.temporal_mode.timedelta_to_json(value.py(), either_timedelta)?),
@@ -63,7 +59,7 @@ impl TypeSerializer for TimeDeltaSerializer {
     fn json_key<'a, 'py>(
         &self,
         key: &'a Bound<'py, PyAny>,
-        state: &mut SerializationState<'_, 'py>,
+        state: &mut SerializationState<'py>,
     ) -> PyResult<Cow<'a, str>> {
         match EitherTimedelta::try_from(key) {
             Ok(either_timedelta) => self.temporal_mode.timedelta_json_key(&either_timedelta),
@@ -78,7 +74,7 @@ impl TypeSerializer for TimeDeltaSerializer {
         &self,
         value: &Bound<'py, PyAny>,
         serializer: S,
-        state: &mut SerializationState<'_, 'py>,
+        state: &mut SerializationState<'py>,
     ) -> Result<S::Ok, S::Error> {
         match EitherTimedelta::try_from(value) {
             Ok(either_timedelta) => self.temporal_mode.timedelta_serialize(either_timedelta, serializer),

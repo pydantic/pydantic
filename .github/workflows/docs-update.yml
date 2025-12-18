@@ -19,7 +19,7 @@ jobs:
   lint:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
 
       - uses: astral-sh/setup-uv@v7
         with:
@@ -40,7 +40,7 @@ jobs:
   test:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
 
       - uses: astral-sh/setup-uv@v7
         with:
@@ -61,12 +61,12 @@ jobs:
 
     steps:
       - name: Checkout docs-site
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
         with:
           ref: docs-site
 
       - name: Checkout current branch
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
 
       - uses: astral-sh/setup-uv@v7
         with:

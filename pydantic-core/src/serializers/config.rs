@@ -9,10 +9,10 @@ use pyo3::{IntoPyObjectExt, intern};
 use serde::ser::Error;
 
 use crate::build_tools::py_schema_err;
-use crate::input::EitherTimedelta;
+use crate::input::{EitherTimedelta, pydate_as_date, pydatetime_as_datetime, pytime_as_time};
 use crate::serializers::type_serializers::datetime_etc::{
-    date_to_milliseconds, date_to_seconds, date_to_string, datetime_to_milliseconds, datetime_to_seconds,
-    datetime_to_string, time_to_milliseconds, time_to_seconds, time_to_string,
+    date_to_milliseconds, date_to_seconds, datetime_to_milliseconds, datetime_to_seconds, time_to_milliseconds,
+    time_to_seconds,
 };
 use crate::tools::SchemaDict;
 
@@ -24,6 +24,16 @@ pub(crate) struct SerializationConfig {
     pub temporal_mode: TemporalMode,
     pub bytes_mode: BytesMode,
     pub inf_nan_mode: InfNanMode,
+}
+
+impl Default for SerializationConfig {
+    fn default() -> Self {
+        Self {
+            temporal_mode: TemporalMode::default(),
+            bytes_mode: BytesMode::default(),
+            inf_nan_mode: InfNanMode::Constants,
+        }
+    }
 }
 
 impl SerializationConfig {
@@ -149,26 +159,29 @@ impl From<TimedeltaMode> for TemporalMode {
 
 impl TemporalMode {
     pub fn datetime_to_json(self, py: Python, datetime: &Bound<'_, PyDateTime>) -> PyResult<Py<PyAny>> {
+        let dt = pydatetime_as_datetime(datetime)?;
         match self {
-            Self::Iso8601 => datetime_to_string(datetime)?.into_py_any(py),
-            Self::Seconds => datetime_to_seconds(datetime)?.into_py_any(py),
-            Self::Milliseconds => datetime_to_milliseconds(datetime)?.into_py_any(py),
+            Self::Iso8601 => dt.to_string().into_py_any(py),
+            Self::Seconds => datetime_to_seconds(dt).into_py_any(py),
+            Self::Milliseconds => datetime_to_milliseconds(dt).into_py_any(py),
         }
     }
 
     pub fn date_to_json(self, py: Python, date: &Bound<'_, PyDate>) -> PyResult<Py<PyAny>> {
+        let date = pydate_as_date(date)?;
         match self {
-            Self::Iso8601 => date_to_string(date)?.into_py_any(py),
-            Self::Seconds => date_to_seconds(date)?.into_py_any(py),
-            Self::Milliseconds => date_to_milliseconds(date)?.into_py_any(py),
+            Self::Iso8601 => date.to_string().into_py_any(py),
+            Self::Seconds => date_to_seconds(date).into_py_any(py),
+            Self::Milliseconds => date_to_milliseconds(date).into_py_any(py),
         }
     }
 
     pub fn time_to_json(self, py: Python, time: &Bound<'_, PyTime>) -> PyResult<Py<PyAny>> {
+        let time = pytime_as_time(time)?;
         match self {
-            Self::Iso8601 => time_to_string(time)?.into_py_any(py),
-            Self::Seconds => time_to_seconds(time)?.into_py_any(py),
-            Self::Milliseconds => time_to_milliseconds(time)?.into_py_any(py),
+            Self::Iso8601 => time.to_string().into_py_any(py),
+            Self::Seconds => time_to_seconds(time).into_py_any(py),
+            Self::Milliseconds => time_to_milliseconds(time).into_py_any(py),
         }
     }
 
@@ -190,26 +203,29 @@ impl TemporalMode {
     }
 
     pub fn datetime_json_key<'py>(self, datetime: &Bound<'_, PyDateTime>) -> PyResult<Cow<'py, str>> {
+        let dt = pydatetime_as_datetime(datetime)?;
         match self {
-            Self::Iso8601 => Ok(datetime_to_string(datetime)?.into()),
-            Self::Seconds => Ok(datetime_to_seconds(datetime)?.to_string().into()),
-            Self::Milliseconds => Ok(datetime_to_milliseconds(datetime)?.to_string().into()),
+            Self::Iso8601 => Ok(dt.to_string().into()),
+            Self::Seconds => Ok(datetime_to_seconds(dt).to_string().into()),
+            Self::Milliseconds => Ok(datetime_to_milliseconds(dt).to_string().into()),
         }
     }
 
     pub fn date_json_key<'py>(self, date: &Bound<'_, PyDate>) -> PyResult<Cow<'py, str>> {
+        let date = pydate_as_date(date)?;
         match self {
-            Self::Iso8601 => Ok(date_to_string(date)?.into()),
-            Self::Seconds => Ok(date_to_seconds(date)?.to_string().into()),
-            Self::Milliseconds => Ok(date_to_milliseconds(date)?.to_string().into()),
+            Self::Iso8601 => Ok(date.to_string().into()),
+            Self::Seconds => Ok(date_to_seconds(date).to_string().into()),
+            Self::Milliseconds => Ok(date_to_milliseconds(date).to_string().into()),
         }
     }
 
     pub fn time_json_key<'py>(self, time: &Bound<'_, PyTime>) -> PyResult<Cow<'py, str>> {
+        let time = pytime_as_time(time)?;
         match self {
-            Self::Iso8601 => Ok(time_to_string(time)?.into()),
-            Self::Seconds => Ok(time_to_seconds(time)?.to_string().into()),
-            Self::Milliseconds => Ok(time_to_milliseconds(time)?.to_string().into()),
+            Self::Iso8601 => Ok(time.to_string().into()),
+            Self::Seconds => Ok(time_to_seconds(time).to_string().into()),
+            Self::Milliseconds => Ok(time_to_milliseconds(time).to_string().into()),
         }
     }
 
@@ -235,19 +251,11 @@ impl TemporalMode {
         datetime: &Bound<'_, PyDateTime>,
         serializer: S,
     ) -> Result<S::Ok, S::Error> {
+        let dt = pydatetime_as_datetime(datetime).map_err(py_err_se_err)?;
         match self {
-            Self::Iso8601 => {
-                let s = datetime_to_string(datetime).map_err(py_err_se_err)?;
-                serializer.serialize_str(&s)
-            }
-            Self::Seconds => {
-                let s = datetime_to_seconds(datetime).map_err(py_err_se_err)?;
-                serializer.serialize_f64(s)
-            }
-            Self::Milliseconds => {
-                let s = datetime_to_milliseconds(datetime).map_err(py_err_se_err)?;
-                serializer.serialize_f64(s)
-            }
+            Self::Iso8601 => serializer.collect_str(&dt),
+            Self::Seconds => serializer.serialize_f64(datetime_to_seconds(dt)),
+            Self::Milliseconds => serializer.serialize_f64(datetime_to_milliseconds(dt)),
         }
     }
 
@@ -256,19 +264,11 @@ impl TemporalMode {
         date: &Bound<'_, PyDate>,
         serializer: S,
     ) -> Result<S::Ok, S::Error> {
+        let date = pydate_as_date(date).map_err(py_err_se_err)?;
         match self {
-            Self::Iso8601 => {
-                let s = date_to_string(date).map_err(py_err_se_err)?;
-                serializer.serialize_str(&s)
-            }
-            Self::Seconds => {
-                let s = date_to_seconds(date).map_err(py_err_se_err)?;
-                serializer.serialize_f64(s)
-            }
-            Self::Milliseconds => {
-                let s = date_to_milliseconds(date).map_err(py_err_se_err)?;
-                serializer.serialize_f64(s)
-            }
+            Self::Iso8601 => serializer.collect_str(&date),
+            Self::Seconds => serializer.serialize_f64(date_to_seconds(date)),
+            Self::Milliseconds => serializer.serialize_f64(date_to_milliseconds(date)),
         }
     }
 
@@ -277,19 +277,11 @@ impl TemporalMode {
         time: &Bound<'_, PyTime>,
         serializer: S,
     ) -> Result<S::Ok, S::Error> {
+        let time = pytime_as_time(time).map_err(py_err_se_err)?;
         match self {
-            Self::Iso8601 => {
-                let s = time_to_string(time).map_err(py_err_se_err)?;
-                serializer.serialize_str(&s)
-            }
-            Self::Seconds => {
-                let s = time_to_seconds(time).map_err(py_err_se_err)?;
-                serializer.serialize_f64(s)
-            }
-            Self::Milliseconds => {
-                let s = time_to_milliseconds(time).map_err(py_err_se_err)?;
-                serializer.serialize_f64(s)
-            }
+            Self::Iso8601 => serializer.collect_str(&time),
+            Self::Seconds => serializer.serialize_f64(time_to_seconds(time)),
+            Self::Milliseconds => serializer.serialize_f64(time_to_milliseconds(time)),
         }
     }
 
@@ -301,7 +293,7 @@ impl TemporalMode {
         match self {
             Self::Iso8601 => {
                 let d = either_delta.to_duration().map_err(py_err_se_err)?;
-                serializer.serialize_str(&d.to_string())
+                serializer.collect_str(&d)
             }
             Self::Seconds => {
                 let seconds: f64 = either_delta.total_seconds().map_err(py_err_se_err)?;

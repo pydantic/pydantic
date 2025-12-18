@@ -1,11 +1,16 @@
 use core::fmt;
 
+use hashbrown::HashTable;
+use pyo3::PyTraverseError;
+use pyo3::PyVisit;
 use pyo3::exceptions::PyKeyError;
 use pyo3::intern;
 use pyo3::prelude::*;
+use pyo3::pybacked::PyBackedStr;
 use pyo3::types::{PyDict, PyMapping, PyString};
 
 use crate::PydanticUndefinedType;
+use crate::py_gc::PyGcTraverse;
 use jiter::{StringCacheMode, cached_py_string};
 
 pub trait SchemaDict<'py> {
@@ -35,7 +40,7 @@ impl<'py> SchemaDict<'py> for Bound<'py, PyDict> {
     {
         match self.get_item(key)? {
             Some(t) => t.extract().map_err(Into::into),
-            None => py_err!(PyKeyError; "{}", key),
+            None => py_err!(PyKeyError; "{key}"),
         }
     }
 }
@@ -58,18 +63,26 @@ impl<'py> SchemaDict<'py> for Option<&Bound<'py, PyDict>> {
     {
         match self {
             Some(d) => d.get_as_req(key),
-            None => py_err!(PyKeyError; "{}", key),
+            None => py_err!(PyKeyError; "{key}"),
         }
     }
 }
 
-macro_rules! py_error_type {
-    ($error_type:ty; $msg:expr) => {
-        <$error_type>::new_err($msg)
-    };
+/// Builds a new PyErr of type T, avoiding an allocation if the message is a constant.
+pub(crate) fn fmt_py_err<T>(msg: fmt::Arguments<'_>) -> PyErr
+where
+    T: pyo3::PyTypeInfo,
+{
+    if let Some(s) = msg.as_str() {
+        PyErr::new::<T, _>(s)
+    } else {
+        PyErr::new::<T, _>(msg.to_string())
+    }
+}
 
-    ($error_type:ty; $msg:expr, $( $msg_args:expr ),+ ) => {
-        <$error_type>::new_err(format!($msg, $( $msg_args ),+))
+macro_rules! py_error_type {
+    ($error_type:ty; $( $msg_args:expr ),+ ) => {
+        $crate::tools::fmt_py_err::<$error_type>(format_args!($( $msg_args ),+))
     };
 }
 pub(crate) use py_error_type;
@@ -188,4 +201,129 @@ pub fn mapping_get<'py>(
     mapping
         .call_method1(intern!(mapping.py(), "get"), (key, undefined))
         .map(|value| if value.is(undefined) { None } else { Some(value) })
+}
+
+/// A hash table which uses (hashable) Python objects as keys
+#[derive(Debug)]
+pub struct PyHashTable<T>(HashTable<PyHashTableEntry<T>>);
+
+#[derive(Debug)]
+struct PyHashTableEntry<T> {
+    key: Py<PyAny>,
+    /// Precomputed hash value (from Python hash) - this avoids possibility of Python
+    /// dynamic nature causing rehashing to fail
+    hash: u64,
+    value: T,
+}
+
+impl PyGcTraverse for PyHashTable<usize> {
+    fn py_gc_traverse(&self, visit: &PyVisit<'_>) -> Result<(), PyTraverseError> {
+        // traverse only the keys, as the values are just usize indices
+        self.0.iter().try_for_each(|entry| entry.key.py_gc_traverse(visit))
+    }
+}
+
+impl<T> PyHashTable<T> {
+    /// Create a new empty hash table with the specified capacity
+    pub fn with_capacity(capacity: usize) -> Self {
+        Self(HashTable::with_capacity(capacity))
+    }
+
+    /// Insert a value into the hash table without checking for duplicates
+    ///
+    /// Errors if the key is unhashable
+    pub fn insert_unique(&mut self, key: Bound<'_, PyAny>, value: T) -> PyResult<()> {
+        let hash = hash_object(&key)?;
+        let entry = PyHashTableEntry {
+            key: key.unbind(),
+            hash,
+            value,
+        };
+        self.0.insert_unique(hash, entry, Self::get_hash);
+        Ok(())
+    }
+
+    /// Find a value in the hash table by Python object key
+    pub fn get(&self, value: &Bound<'_, PyAny>) -> PyResult<Option<&T>> {
+        let mut searcher = HashTableSearcher::new(value);
+        let hash = hash_object(value)?;
+        let result = self.0.find(hash, |entry| searcher.is_equal(&entry.key));
+        searcher.ensure_no_error()?;
+        Ok(result.map(|entry| &entry.value))
+    }
+
+    #[inline]
+    fn get_hash(entry: &PyHashTableEntry<T>) -> u64 {
+        entry.hash
+    }
+}
+
+/// Helper for `PyHashTable` which works around possible errors during equality checks
+struct HashTableSearcher<'a, 'py> {
+    target: &'a Bound<'py, PyAny>,
+    eq_error: Option<PyErr>,
+}
+
+impl<'a, 'py> HashTableSearcher<'a, 'py> {
+    /// Create a new searcher for the specified target
+    fn new(target: &'a Bound<'py, PyAny>) -> Self {
+        Self { target, eq_error: None }
+    }
+
+    /// Compare the target with another Python object for equality
+    ///
+    /// On error, returns true and stores the error internally to short-circuit the search
+    fn is_equal(&mut self, other: &Py<PyAny>) -> bool {
+        self.target.eq(other).unwrap_or_else(|e| {
+            self.eq_error = Some(e);
+            true
+        })
+    }
+
+    /// Consumes the searcher, returning any error encountered during equality checks
+    fn ensure_no_error(self) -> PyResult<()> {
+        match self.eq_error {
+            Some(err) => Err(err),
+            None => Ok(()),
+        }
+    }
+}
+
+fn hash_object(value: &Bound<'_, PyAny>) -> PyResult<u64> {
+    let hash_value = cast_unsigned(value.hash()?).try_into()?;
+    Ok(hash_value)
+}
+
+// TODO: replace with isize::cast_unsigned on MSRV 1.87
+fn cast_unsigned(x: isize) -> usize {
+    x as usize
+}
+
+impl<T: PyGcTraverse> PyGcTraverse for PyHashTableEntry<T> {
+    fn py_gc_traverse(&self, visit: &PyVisit<'_>) -> Result<(), PyTraverseError> {
+        self.key.py_gc_traverse(visit)?;
+        self.value.py_gc_traverse(visit)?;
+        Ok(())
+    }
+}
+
+impl PyGcTraverse for usize {
+    #[inline]
+    fn py_gc_traverse(&self, _visit: &PyVisit<'_>) -> Result<(), PyTraverseError> {
+        Ok(())
+    }
+}
+
+/// Convert a `PyBackedStr` to a `PyString`.
+///
+/// This is essentially a zero cost conversion (just a reference counting op on `PyBackedStr`).
+///
+/// The difference is that `PyBackedStr` is cheaper for formatting operations (guaranteed to be
+/// UTF8 data accessible as `&str`), whereas `Bound<'py, PyString>` is smaller & cheaper for refcounting
+/// so slightly more efficient to have on the stack etc.
+pub fn pybackedstr_to_pystring<'py>(py: Python<'py>, s: &PyBackedStr) -> Bound<'py, PyString> {
+    let Ok(out) = s.into_pyobject(py);
+    // SAFETY: `PyBackedStr` always returns a `PyString`, TODO PyO3 0.28 will not
+    // need this cast
+    unsafe { out.cast_into_unchecked() }
 }

@@ -277,7 +277,7 @@ impl Pattern {
             pattern
                 .getattr("pattern")
                 .and_then(|attr| attr.extract::<String>())
-                .map_err(|_| py_schema_error_type!("Invalid pattern, must be str or re.Pattern: {}", pattern))
+                .map_err(|_| py_schema_error_type!("Invalid pattern, must be str or re.Pattern: {pattern}"))
         }
     }
 
@@ -313,7 +313,7 @@ impl Pattern {
                     RegexEngine::RustRegex(re_pattern)
                 }
                 RegexEngine::PYTHON_RE => RegexEngine::PythonRe(re_compile.call1((pattern,))?.into()),
-                _ => return Err(py_schema_error_type!("Invalid regex engine: {}", engine)),
+                _ => return Err(py_schema_error_type!("Invalid regex engine: {engine}")),
             };
 
             Ok(Self {

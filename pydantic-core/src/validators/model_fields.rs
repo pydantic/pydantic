@@ -3,6 +3,7 @@ use std::sync::Arc;
 use pyo3::exceptions::PyKeyError;
 use pyo3::intern;
 use pyo3::prelude::*;
+use pyo3::pybacked::PyBackedStr;
 use pyo3::types::{PyDict, PySet, PyString, PyType};
 
 use ahash::AHashSet;
@@ -15,15 +16,16 @@ use crate::errors::{ErrorType, ErrorTypeDefaults, ValError, ValLineError, ValRes
 use crate::input::ConsumeIterator;
 use crate::input::{BorrowInput, Input, ValidatedDict, ValidationMatch};
 use crate::lookup_key::LookupKeyCollection;
+use crate::lookup_key::LookupType;
 use crate::tools::SchemaDict;
+use crate::tools::pybackedstr_to_pystring;
 
 use super::{BuildValidator, CombinedValidator, DefinitionsBuilder, ValidationState, Validator, build_validator};
 
 #[derive(Debug)]
 struct Field {
-    name: String,
+    name: PyBackedStr,
     lookup_key_collection: LookupKeyCollection,
-    name_py: Py<PyString>,
     validator: Arc<CombinedValidator>,
     frozen: bool,
 }
@@ -86,16 +88,15 @@ impl BuildValidator for ModelFieldsValidator {
 
             let validator = match build_validator(&schema, config, definitions) {
                 Ok(v) => v,
-                Err(err) => return py_schema_err!("Field \"{}\":\n  {}", field_name, err),
+                Err(err) => return py_schema_err!("Field \"{field_name}\":\n  {err}"),
             };
 
             let validation_alias = field_info.get_item(intern!(py, "validation_alias"))?;
             let lookup_key_collection = LookupKeyCollection::new(validation_alias, &field_name_py)?;
 
             fields.push(Field {
-                name: field_name.to_string(),
+                name: field_name_py.try_into()?,
                 lookup_key_collection,
-                name_py: field_name_py.into(),
                 validator,
                 frozen: field_info.get_as::<bool>(intern!(py, "frozen"))?.unwrap_or(false),
             });
@@ -162,11 +163,12 @@ impl Validator for ModelFieldsValidator {
         let model_dict = PyDict::new(py);
         let mut model_extra_dict_op: Option<Bound<PyDict>> = None;
         let mut errors: Vec<ValLineError> = Vec::with_capacity(self.fields.len());
-        let mut fields_set_vec: Vec<Py<PyString>> = Vec::with_capacity(self.fields.len());
+        let mut fields_set_vec = Vec::with_capacity(self.fields.len());
         let mut fields_set_count: usize = 0;
 
         let validate_by_alias = state.validate_by_alias_or(self.validate_by_alias);
         let validate_by_name = state.validate_by_name_or(self.validate_by_name);
+        let lookup_type = LookupType::from_bools(validate_by_alias, validate_by_name)?;
 
         // we only care about which keys have been used if we're iterating over the object for extra after
         // the first pass
@@ -182,21 +184,24 @@ impl Validator for ModelFieldsValidator {
             let state = &mut state.scoped_set(|state| &mut state.has_field_error, false);
 
             for field in &self.fields {
-                let lookup_key = field
+                let op_key_value = match field
                     .lookup_key_collection
-                    .select(validate_by_alias, validate_by_name)?;
-                let op_key_value = match dict.get_item(lookup_key) {
+                    .lookup_keys(lookup_type)
+                    .find_map(|lookup_key| dict.get_item(lookup_key).transpose())
+                    .transpose()
+                {
                     Ok(v) => v,
                     Err(ValError::LineErrors(line_errors)) => {
                         for err in line_errors {
-                            errors.push(err.with_outer_location(&field.name));
+                            errors.push(err.with_outer_location(field.name.clone()));
                         }
                         continue;
                     }
                     Err(err) => return Err(err),
                 };
 
-                let state = &mut state.rebind_extra(|extra| extra.field_name = Some(field.name_py.bind(py).clone()));
+                let state =
+                    &mut state.rebind_extra(|extra| extra.field_name = Some(pybackedstr_to_pystring(py, &field.name)));
 
                 if let Some((lookup_path, value)) = op_key_value {
                     if let Some(ref mut used_keys) = used_keys {
@@ -207,8 +212,8 @@ impl Validator for ModelFieldsValidator {
 
                     match field.validator.validate(py, value.borrow_input(), state) {
                         Ok(value) => {
-                            model_dict.set_item(&field.name_py, value)?;
-                            fields_set_vec.push(field.name_py.clone_ref(py));
+                            model_dict.set_item(&field.name, value)?;
+                            fields_set_vec.push(field.name.clone());
                             fields_set_count += 1;
                         }
                         Err(e) => {
@@ -227,12 +232,13 @@ impl Validator for ModelFieldsValidator {
                     continue;
                 }
 
-                match field.validator.default_value(py, Some(field.name.as_str()), state) {
+                match field.validator.default_value(py, Some(field.name.clone()), state) {
                     Ok(Some(value)) => {
                         // Default value exists, and passed validation if required
-                        model_dict.set_item(&field.name_py, value)?;
+                        model_dict.set_item(&field.name, value)?;
                     }
                     Ok(None) => {
+                        let lookup_key = field.lookup_key_collection.first_key_matching(lookup_type);
                         // This means there was no default value
                         errors.push(lookup_key.error(
                             ErrorTypeDefaults::Missing,
@@ -262,7 +268,7 @@ impl Validator for ModelFieldsValidator {
                 py: Python<'py>,
                 used_keys: AHashSet<&'a str>,
                 errors: &'a mut Vec<ValLineError>,
-                fields_set_vec: &'a mut Vec<Py<PyString>>,
+                fields_set_vec: &'a mut Vec<PyBackedStr>,
                 extra_behavior: ExtraBehavior,
                 extras_validator: Option<&'a CombinedValidator>,
                 extras_keys_validator: Option<&'a CombinedValidator>,
@@ -336,7 +342,7 @@ impl Validator for ModelFieldsValidator {
                                     match validator.validate(self.py, value, self.state) {
                                         Ok(value) => {
                                             model_extra_dict.set_item(&py_key, value)?;
-                                            self.fields_set_vec.push(py_key.into());
+                                            self.fields_set_vec.push(py_key.try_into()?);
                                         }
                                         Err(ValError::LineErrors(line_errors)) => {
                                             for err in line_errors {
@@ -347,7 +353,7 @@ impl Validator for ModelFieldsValidator {
                                     }
                                 } else {
                                     model_extra_dict.set_item(&py_key, value.to_object(self.py)?)?;
-                                    self.fields_set_vec.push(py_key.into());
+                                    self.fields_set_vec.push(py_key.try_into()?);
                                 }
                             }
                         }
@@ -392,7 +398,7 @@ impl Validator for ModelFieldsValidator {
         &self,
         py: Python<'py>,
         obj: &Bound<'py, PyAny>,
-        field_name: &str,
+        field_name: &PyBackedStr,
         field_value: &Bound<'py, PyAny>,
         state: &mut ValidationState<'_, 'py>,
     ) -> ValResult<Py<PyAny>> {
@@ -409,7 +415,7 @@ impl Validator for ModelFieldsValidator {
             Err(ValError::LineErrors(line_errors)) => {
                 let errors = line_errors
                     .into_iter()
-                    .map(|e| e.with_outer_location(field_name))
+                    .map(|e| e.with_outer_location(field_name.clone()))
                     .collect();
                 Err(ValError::LineErrors(errors))
             }
@@ -428,16 +434,17 @@ impl Validator for ModelFieldsValidator {
         let new_data = {
             let state = &mut state.rebind_extra(move |extra| extra.data = Some(data_dict));
 
-            if let Some(field) = self.fields.iter().find(|f| f.name == field_name) {
+            if let Some(field) = self.fields.iter().find(|f| &f.name == field_name) {
                 if field.frozen {
                     return Err(ValError::new_with_loc(
                         ErrorTypeDefaults::FrozenField,
                         field_value,
-                        &field.name,
+                        field.name.clone(),
                     ));
                 }
 
-                let state = &mut state.rebind_extra(|extra| extra.field_name = Some(field.name_py.bind(py).clone()));
+                let state =
+                    &mut state.rebind_extra(|extra| extra.field_name = Some(pybackedstr_to_pystring(py, &field.name)));
 
                 prepare_result(field.validator.validate(py, field_value, state))?
             } else {

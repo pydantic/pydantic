@@ -39,18 +39,14 @@ impl BuildSerializer for WithDefaultSerializer {
 impl_py_gc_traverse!(WithDefaultSerializer { default, serializer });
 
 impl TypeSerializer for WithDefaultSerializer {
-    fn to_python<'py>(
-        &self,
-        value: &Bound<'py, PyAny>,
-        state: &mut SerializationState<'_, 'py>,
-    ) -> PyResult<Py<PyAny>> {
+    fn to_python<'py>(&self, value: &Bound<'py, PyAny>, state: &mut SerializationState<'py>) -> PyResult<Py<PyAny>> {
         self.serializer.to_python(value, state)
     }
 
     fn json_key<'a, 'py>(
         &self,
         key: &'a Bound<'py, PyAny>,
-        state: &mut SerializationState<'_, 'py>,
+        state: &mut SerializationState<'py>,
     ) -> PyResult<Cow<'a, str>> {
         self.serializer.json_key(key, state)
     }
@@ -59,7 +55,7 @@ impl TypeSerializer for WithDefaultSerializer {
         &self,
         value: &Bound<'py, PyAny>,
         serializer: S,
-        state: &mut SerializationState<'_, 'py>,
+        state: &mut SerializationState<'py>,
     ) -> Result<S::Ok, S::Error> {
         self.serializer.serde_serialize(value, serializer, state)
     }
