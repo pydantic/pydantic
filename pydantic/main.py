@@ -79,7 +79,13 @@ IncEx: TypeAlias = Union[set[int], set[str], Mapping[int, Union['IncEx', bool]],
 
 _object_setattr = _model_construction.object_setattr
 
-_recursion_ignore = threading.local()
+
+class _RecursionState(threading.local):
+    def __init__(self) -> None:
+        self.seen: set[tuple[int, int]] = set()
+
+
+_recursion_ignore = _RecursionState()
 
 
 def _check_frozen(model_cls: type[BaseModel], name: str, value: Any) -> None:
@@ -1157,11 +1163,9 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
         def __eq__(self, other: Any) -> bool:
             if isinstance(other, BaseModel):
                 # Cycle detection
-                try:
-                    recursion_ignore = _recursion_ignore.seen
-                except AttributeError:
-                    recursion_ignore = _recursion_ignore.seen = set()
-
+                recursion_ignore = _recursion_ignore.seen
+                # optimization: we don't want to create the tuple if not needed
+                # but we need the id(self) and id(other) anyway
                 self_id = id(self)
                 other_id = id(other)
                 pair = (self_id, other_id)
