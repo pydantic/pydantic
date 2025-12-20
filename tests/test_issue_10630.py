@@ -1,13 +1,12 @@
+from __future__ import annotations
+
 from pydantic import BaseModel
 
+
 def test_issue_10630_recursion_error():
-    class A(BaseModel):
-        a: 'A | None' = None
+    class Model(BaseModel):
+        x: Model | None = None
 
-    a = A()
-    a.a = a
-    a2 = A()
-    a2.a = a2
-
-    # Should not raise RecursionError
-    assert a == a2
+    m = Model()
+    m.x = m
+    assert m == m
