@@ -11,17 +11,18 @@ use ahash::AHashSet;
 use pyo3::IntoPyObjectExt;
 use url::{ParseError, SyntaxViolation, Url};
 
-use crate::build_tools::schema_or_config;
 use crate::build_tools::LazyLock;
+use crate::build_tools::schema_or_config;
 use crate::build_tools::{is_strict, py_schema_err};
 use crate::errors::{ErrorType, ErrorTypeDefaults, ValError, ValResult};
-use crate::input::downcast_python_input;
 use crate::input::Input;
 use crate::input::ValidationMatch;
+use crate::input::downcast_python_input;
 use crate::tools::SchemaDict;
-use crate::url::{scheme_is_special, PyMultiHostUrl, PyUrl};
+use crate::url::{PyMultiHostUrl, PyUrl, scheme_is_special};
+use crate::validators::literal::expected_name;
+use crate::validators::literal::expected_repr;
 
-use super::literal::expected_repr_name;
 use super::Exactness;
 use super::{BuildValidator, CombinedValidator, DefinitionsBuilder, ValidationState, Validator};
 
@@ -154,17 +155,17 @@ impl Validator for UrlValidator {
     ) -> ValResult<Py<PyAny>> {
         let mut either_url = self.get_url(py, input, state.strict_or(self.strict))?;
 
-        if let Some((ref allowed_schemes, ref expected_schemes_repr)) = self.allowed_schemes {
-            if !allowed_schemes.contains(either_url.url().scheme()) {
-                let expected_schemes = expected_schemes_repr.clone();
-                return Err(ValError::new(
-                    ErrorType::UrlScheme {
-                        expected_schemes,
-                        context: None,
-                    },
-                    input,
-                ));
-            }
+        if let Some((ref allowed_schemes, ref expected_schemes_repr)) = self.allowed_schemes
+            && !allowed_schemes.contains(either_url.url().scheme())
+        {
+            let expected_schemes = expected_schemes_repr.clone();
+            return Err(ValError::new(
+                ErrorType::UrlScheme {
+                    expected_schemes,
+                    context: None,
+                },
+                input,
+            ));
         }
 
         match check_sub_defaults(
@@ -229,16 +230,16 @@ impl UrlValidator {
     }
 
     fn check_length<'py>(&self, input: &(impl Input<'py> + ?Sized), url_str: &str) -> ValResult<()> {
-        if let Some(max_length) = self.max_length {
-            if url_str.len() > max_length {
-                return Err(ValError::new(
-                    ErrorType::UrlTooLong {
-                        max_length,
-                        context: None,
-                    },
-                    input,
-                ));
-            }
+        if let Some(max_length) = self.max_length
+            && url_str.len() > max_length
+        {
+            return Err(ValError::new(
+                ErrorType::UrlTooLong {
+                    max_length,
+                    context: None,
+                },
+                input,
+            ));
         }
         Ok(())
     }
@@ -362,10 +363,10 @@ impl BuildValidator for MultiHostUrlValidator {
         let (allowed_schemes, name) = get_allowed_schemes(schema, Self::EXPECTED_TYPE)?;
 
         let default_host: Option<String> = schema.get_as(intern!(schema.py(), "default_host"))?;
-        if let Some(ref default_host) = default_host {
-            if default_host.contains(',') {
-                return py_schema_err!("default_host cannot contain a comma, see pydantic-core#326");
-            }
+        if let Some(ref default_host) = default_host
+            && default_host.contains(',')
+        {
+            return py_schema_err!("default_host cannot contain a comma, see pydantic-core#326");
         }
 
         let validator = Self {
@@ -405,17 +406,17 @@ impl Validator for MultiHostUrlValidator {
     ) -> ValResult<Py<PyAny>> {
         let mut multi_url = self.get_url(py, input, state.strict_or(self.strict))?;
 
-        if let Some((ref allowed_schemes, ref expected_schemes_repr)) = self.allowed_schemes {
-            if !allowed_schemes.contains(multi_url.url().scheme()) {
-                let expected_schemes = expected_schemes_repr.clone();
-                return Err(ValError::new(
-                    ErrorType::UrlScheme {
-                        expected_schemes,
-                        context: None,
-                    },
-                    input,
-                ));
-            }
+        if let Some((ref allowed_schemes, ref expected_schemes_repr)) = self.allowed_schemes
+            && !allowed_schemes.contains(multi_url.url().scheme())
+        {
+            let expected_schemes = expected_schemes_repr.clone();
+            return Err(ValError::new(
+                ErrorType::UrlScheme {
+                    expected_schemes,
+                    context: None,
+                },
+                input,
+            ));
         }
         match check_sub_defaults(
             &mut multi_url,
@@ -481,16 +482,16 @@ impl MultiHostUrlValidator {
     where
         F: FnOnce() -> usize,
     {
-        if let Some(max_length) = self.max_length {
-            if func() > max_length {
-                return Err(ValError::new(
-                    ErrorType::UrlTooLong {
-                        max_length,
-                        context: None,
-                    },
-                    input,
-                ));
-            }
+        if let Some(max_length) = self.max_length
+            && func() > max_length
+        {
+            return Err(ValError::new(
+                ErrorType::UrlTooLong {
+                    max_length,
+                    context: None,
+                },
+                input,
+            ));
         }
         Ok(())
     }
@@ -764,12 +765,12 @@ fn check_sub_defaults(
             });
         }
     }
-    if let Some(default_port) = default_port {
-        if url.url().port().is_none() {
-            url.url_mut()
-                .set_port(Some(default_port))
-                .map_err(|()| map_parse_err(ParseError::EmptyHost))?;
-        }
+    if let Some(default_port) = default_port
+        && url.url().port().is_none()
+    {
+        url.url_mut()
+            .set_port(Some(default_port))
+            .map_err(|()| map_parse_err(ParseError::EmptyHost))?;
     }
     if let Some(default_path) = default_path {
         let path = url.url().path();
@@ -798,10 +799,11 @@ fn get_allowed_schemes(schema: &Bound<'_, PyDict>, name: &'static str) -> PyResu
             let mut repr_args = Vec::new();
             for item in list {
                 let str = item.extract()?;
-                repr_args.push(format!("'{str}'"));
+                repr_args.push(item.repr()?);
                 expected.insert(str);
             }
-            let (repr, name) = expected_repr_name(repr_args, name);
+            let repr = expected_repr(&repr_args)?;
+            let name = expected_name(&repr_args, name)?;
             Ok((Some((expected, repr)), name))
         }
         None => Ok((None, name.to_string())),

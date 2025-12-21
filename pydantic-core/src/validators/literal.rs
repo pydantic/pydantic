@@ -5,8 +5,8 @@ use std::cell::OnceCell;
 use std::sync::Arc;
 
 use pyo3::prelude::*;
-use pyo3::types::{PyDict, PyInt, PyList};
-use pyo3::{intern, PyTraverseError, PyVisit};
+use pyo3::types::{PyDict, PyInt, PyList, PyString};
+use pyo3::{PyTraverseError, PyVisit, intern};
 
 use ahash::AHashMap;
 
@@ -77,7 +77,7 @@ impl<T: Debug> LiteralLookup<T> {
             } else if let Ok(either_str) = k.exact_str() {
                 let str = either_str
                     .as_cow()
-                    .map_err(|_| py_schema_error_type!("error extracting str {:?}", k))?;
+                    .map_err(|_| py_schema_error_type!("error extracting str {k:?}"))?;
                 expected_str.insert(str.to_string(), id);
                 expected_py_primitives.set_item(&k, id)?;
             } else if expected_py_dict.set_item(&k, id).is_err() {
@@ -102,23 +102,23 @@ impl<T: Debug> LiteralLookup<T> {
         py: Python<'py>,
         input: &'a I,
     ) -> ValResult<Option<(&'a I, &T)>> {
-        if let Some(expected_bool) = &self.expected_bool {
-            if let Ok(bool_value) = input.validate_bool(true) {
-                if bool_value.into_inner() {
-                    if let Some(true_value) = &expected_bool.true_id {
-                        return Ok(Some((input, &self.values[*true_value])));
-                    }
-                } else if let Some(false_value) = &expected_bool.false_id {
-                    return Ok(Some((input, &self.values[*false_value])));
+        if let Some(expected_bool) = &self.expected_bool
+            && let Ok(bool_value) = input.validate_bool(true)
+        {
+            if bool_value.into_inner() {
+                if let Some(true_value) = &expected_bool.true_id {
+                    return Ok(Some((input, &self.values[*true_value])));
                 }
+            } else if let Some(false_value) = &expected_bool.false_id {
+                return Ok(Some((input, &self.values[*false_value])));
             }
         }
-        if let Some(expected_ints) = &self.expected_int {
-            if let Ok(either_int) = input.exact_int() {
-                let int = either_int.into_i64(py)?;
-                if let Some(id) = expected_ints.get(&int) {
-                    return Ok(Some((input, &self.values[*id])));
-                }
+        if let Some(expected_ints) = &self.expected_int
+            && let Ok(either_int) = input.exact_int()
+        {
+            let int = either_int.into_i64(py)?;
+            if let Some(id) = expected_ints.get(&int) {
+                return Ok(Some((input, &self.values[*id])));
             }
         }
         if let Some(expected_strings) = &self.expected_str {
@@ -150,15 +150,14 @@ impl<T: Debug> LiteralLookup<T> {
             }
         };
 
-        if let Some(expected_py_dict) = &self.expected_py_dict {
-            let py_input = get_py_input()?;
+        if let Some(expected_py_dict) = &self.expected_py_dict &&
             // We don't use ? to unpack the result of `get_item` in the next line because unhashable
             // inputs will produce a TypeError, which in this case we just want to treat equivalently
             // to a failed lookup
-            if let Ok(Some(v)) = expected_py_dict.bind(py).get_item(py_input) {
-                let id: usize = v.extract().unwrap();
-                return Ok(Some((input, &self.values[id])));
-            }
+             let Ok(Some(v)) = expected_py_dict.bind(py).get_item(get_py_input()?)
+        {
+            let id: usize = v.extract().unwrap();
+            return Ok(Some((input, &self.values[id])));
         }
         if let Some(expected_py_values) = &self.expected_py_values {
             let py_input = get_py_input()?;
@@ -171,15 +170,14 @@ impl<T: Debug> LiteralLookup<T> {
 
         // this one must be last to avoid conflicts with the other lookups, think of this
         // almost as a lax fallback
-        if let Some(expected_py_primitives) = &self.expected_py_primitives {
-            let py_input = get_py_input()?;
+        if let Some(expected_py_primitives) = &self.expected_py_primitives
             // We don't use ? to unpack the result of `get_item` in the next line because unhashable
             // inputs will produce a TypeError, which in this case we just want to treat equivalently
             // to a failed lookup
-            if let Ok(Some(v)) = expected_py_primitives.bind(py).get_item(py_input) {
-                let id: usize = v.extract().unwrap();
-                return Ok(Some((input, &self.values[id])));
-            }
+            && let Ok(Some(v)) = expected_py_primitives.bind(py).get_item(get_py_input()?)
+        {
+            let id: usize = v.extract().unwrap();
+            return Ok(Some((input, &self.values[id])));
         }
         Ok(None)
     }
@@ -191,26 +189,22 @@ impl<T: Debug> LiteralLookup<T> {
         input: &'a I,
         strict: bool,
     ) -> ValResult<Option<&T>> {
-        if let Some(expected_ints) = &self.expected_int {
-            if let Ok(either_int) = input.validate_int(strict) {
-                let int = either_int.into_inner().into_i64(py)?;
-                if let Some(id) = expected_ints.get(&int) {
-                    return Ok(Some(&self.values[*id]));
-                }
-            }
+        if let Some(expected_ints) = &self.expected_int
+            && let Ok(either_int) = input.validate_int(strict)
+            && let Some(id) = expected_ints.get(&either_int.into_inner().into_i64(py)?)
+        {
+            return Ok(Some(&self.values[*id]));
         }
         Ok(None)
     }
 
     /// Used by str enums
     pub fn validate_str<'a, 'py, I: Input<'py> + ?Sized>(&self, input: &'a I, strict: bool) -> ValResult<Option<&T>> {
-        if let Some(expected_strings) = &self.expected_str {
-            if let Ok(either_str) = input.validate_str(strict, false) {
-                let s = either_str.into_inner();
-                if let Some(id) = expected_strings.get(s.as_cow()?.as_ref()) {
-                    return Ok(Some(&self.values[*id]));
-                }
-            }
+        if let Some(expected_strings) = &self.expected_str
+            && let Ok(either_str) = input.validate_str(strict, false)
+            && let Some(id) = expected_strings.get(either_str.into_inner().as_cow()?.as_ref())
+        {
+            return Ok(Some(&self.values[*id]));
         }
         Ok(None)
     }
@@ -222,14 +216,12 @@ impl<T: Debug> LiteralLookup<T> {
         input: &'a I,
         strict: bool,
     ) -> ValResult<Option<&T>> {
-        if let Some(expected_py) = &self.expected_py_dict {
-            if let Ok(either_float) = input.validate_float(strict) {
-                let f = either_float.into_inner().as_f64();
-                if let Ok(Some(v)) = expected_py.bind(py).get_item(f) {
-                    let id: usize = v.extract().unwrap();
-                    return Ok(Some(&self.values[id]));
-                }
-            }
+        if let Some(expected_py) = &self.expected_py_dict
+            && let Ok(either_float) = input.validate_float(strict)
+            && let Ok(Some(v)) = expected_py.bind(py).get_item(either_float.into_inner().as_f64())
+        {
+            let id: usize = v.extract().unwrap();
+            return Ok(Some(&self.values[id]));
         }
         Ok(None)
     }
@@ -263,11 +255,9 @@ impl BuildValidator for LiteralValidator {
             return py_schema_err!("`expected` should have length > 0");
         }
         let py = expected.py();
-        let mut repr_args: Vec<String> = Vec::new();
-        for item in expected.iter() {
-            repr_args.push(item.repr()?.extract()?);
-        }
-        let (expected_repr, name) = expected_repr_name(repr_args, "literal");
+        let repr_args = expected.iter().map(|item| item.repr()).collect::<PyResult<Vec<_>>>()?;
+        let expected_repr = expected_repr(&repr_args)?;
+        let name = expected_name(&repr_args, Self::EXPECTED_TYPE)?;
         let lookup = LiteralLookup::new(py, expected.into_iter().map(|v| (v.clone(), v.into())))?;
         Ok(CombinedValidator::Literal(Self {
             lookup,
@@ -304,14 +294,79 @@ impl Validator for LiteralValidator {
     }
 }
 
-pub fn expected_repr_name(mut repr_args: Vec<String>, base_name: &'static str) -> (String, String) {
-    let name = format!("{base_name}[{}]", repr_args.join(","));
-    // unwrap is okay since we check the length in build at the top of this file
-    let last_repr = repr_args.pop().unwrap();
-    let repr = if repr_args.is_empty() {
-        last_repr
-    } else {
-        format!("{} or {last_repr}", repr_args.join(", "))
-    };
-    (repr, name)
+/// Formats strings according to (`base_name[arg1,arg2,...,argN]`)
+pub fn expected_name(repr_args: &[Bound<'_, PyString>], base_name: &'static str) -> PyResult<String> {
+    let mut args_len = 0;
+    for arg in repr_args {
+        args_len += arg.to_str()?.len();
+    }
+
+    let name_capacity = base_name.len()
+        + 2 // for the brackets
+        + args_len
+        + repr_args.len().saturating_sub(1); // for commas
+
+    let mut name = String::with_capacity(name_capacity);
+    name.push_str(base_name);
+    name.push('[');
+
+    let mut first = true;
+    for arg in repr_args {
+        if first {
+            first = false;
+        } else {
+            name.push(',');
+        }
+        let s = arg.to_str()?;
+        name.push_str(s);
+    }
+
+    // close the name bracket
+    name.push(']');
+
+    // Should have used all the allocated capacity
+    debug_assert_eq!(name_capacity, name.len());
+
+    Ok(name)
+}
+
+/// Formats strings according to (`arg1, arg2, ... or argN]`)
+pub fn expected_repr(repr_args: &[Bound<'_, PyString>]) -> PyResult<String> {
+    let mut args_len = 0;
+    for arg in repr_args {
+        args_len += arg.to_str()?.len();
+    }
+
+    let repr_capacity = args_len
+        + if repr_args.len() > 1 {
+            // for the " or "
+            4
+        } else {
+            0
+        }
+        + repr_args.len().saturating_sub(2) * 2; // for the commas
+
+    let mut repr = String::with_capacity(repr_capacity);
+
+    let (last_arg, repr_args) = repr_args.split_last().unwrap();
+    let mut first = true;
+    for arg in repr_args {
+        if first {
+            first = false;
+        } else {
+            repr.push_str(", ");
+        }
+        let s = arg.to_str()?;
+        repr.push_str(s);
+    }
+
+    if !repr_args.is_empty() {
+        repr.push_str(" or ");
+    }
+    repr.push_str(last_arg.to_str()?);
+
+    // Should have used all the allocated capacity
+    debug_assert_eq!(repr_capacity, repr.len());
+
+    Ok(repr)
 }

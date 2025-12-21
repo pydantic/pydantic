@@ -1,6 +1,6 @@
 use std::fmt::Debug;
-use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::Arc;
+use std::sync::atomic::{AtomicUsize, Ordering};
 
 use pyo3::prelude::*;
 use pyo3::types::{PyBytes, PyDict, PyTuple, PyType};
@@ -13,8 +13,8 @@ use crate::py_gc::PyGcTraverse;
 pub(crate) use config::{BytesMode, SerializationConfig};
 pub use errors::{PydanticSerializationError, PydanticSerializationUnexpectedValue};
 pub(crate) use extra::{Extra, SerMode, SerializationState, WarningsMode};
-use shared::to_json_bytes;
 pub use shared::CombinedSerializer;
+use shared::to_json_bytes;
 
 mod computed_fields;
 mod config;
@@ -93,9 +93,9 @@ impl SchemaSerializer {
         exclude_computed_fields: bool,
         round_trip: bool,
         warnings: WarningsArg,
-        fallback: Option<&Bound<'_, PyAny>>,
+        fallback: Option<Bound<'_, PyAny>>,
         serialize_as_any: bool,
-        context: Option<&Bound<'_, PyAny>>,
+        context: Option<Bound<'_, PyAny>>,
     ) -> PyResult<Py<PyAny>> {
         let mode: SerMode = mode.into();
         let warnings_mode = match warnings {
@@ -104,7 +104,7 @@ impl SchemaSerializer {
         };
         let extra = Extra::new(
             py,
-            &mode,
+            mode,
             by_alias,
             exclude_unset,
             exclude_defaults,
@@ -141,9 +141,9 @@ impl SchemaSerializer {
         exclude_computed_fields: bool,
         round_trip: bool,
         warnings: WarningsArg,
-        fallback: Option<&Bound<'_, PyAny>>,
+        fallback: Option<Bound<'_, PyAny>>,
         serialize_as_any: bool,
-        context: Option<&Bound<'_, PyAny>>,
+        context: Option<Bound<'_, PyAny>>,
     ) -> PyResult<Py<PyAny>> {
         let warnings_mode = match warnings {
             WarningsArg::Bool(b) => b.into(),
@@ -151,7 +151,7 @@ impl SchemaSerializer {
         };
         let extra = Extra::new(
             py,
-            &SerMode::Json,
+            SerMode::Json,
             by_alias,
             exclude_unset,
             exclude_defaults,
@@ -218,14 +218,14 @@ pub fn to_json(
     bytes_mode: &str,
     inf_nan_mode: &str,
     serialize_unknown: bool,
-    fallback: Option<&Bound<'_, PyAny>>,
+    fallback: Option<Bound<'_, PyAny>>,
     serialize_as_any: bool,
-    context: Option<&Bound<'_, PyAny>>,
+    context: Option<Bound<'_, PyAny>>,
 ) -> PyResult<Py<PyAny>> {
     let config = SerializationConfig::from_args(timedelta_mode, temporal_mode, bytes_mode, inf_nan_mode)?;
     let extra = Extra::new(
         py,
-        &SerMode::Json,
+        SerMode::Json,
         Some(by_alias),
         false,
         false,
@@ -269,14 +269,14 @@ pub fn to_jsonable_python(
     bytes_mode: &str,
     inf_nan_mode: &str,
     serialize_unknown: bool,
-    fallback: Option<&Bound<'_, PyAny>>,
+    fallback: Option<Bound<'_, PyAny>>,
     serialize_as_any: bool,
-    context: Option<&Bound<'_, PyAny>>,
+    context: Option<Bound<'_, PyAny>>,
 ) -> PyResult<Py<PyAny>> {
     let config = SerializationConfig::from_args(timedelta_mode, temporal_mode, bytes_mode, inf_nan_mode)?;
     let extra = Extra::new(
         py,
-        &SerMode::Json,
+        SerMode::Json,
         Some(by_alias),
         false,
         false,

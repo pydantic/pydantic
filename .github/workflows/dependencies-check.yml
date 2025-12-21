@@ -16,7 +16,7 @@ jobs:
       PYTHON_DEPENDENCY_CASES: ${{ steps.list-python-dependencies.outputs.PYTHON_DEPENDENCY_CASES }}
 
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
       - uses: samuelcolvin/list-python-dependencies@main
         id: list-python-dependencies
         with:
@@ -37,7 +37,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
 
       - uses: actions/setup-python@v6
         with:

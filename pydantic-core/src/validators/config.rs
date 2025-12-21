@@ -8,7 +8,7 @@ use crate::serializers::BytesMode;
 use crate::tools::SchemaDict;
 use base64::engine::general_purpose::GeneralPurpose;
 use base64::engine::{DecodePaddingMode, GeneralPurposeConfig};
-use base64::{alphabet, DecodeError, Engine};
+use base64::{DecodeError, Engine, alphabet};
 use pyo3::types::{PyDict, PyString};
 use pyo3::{intern, prelude::*};
 use speedate::TimestampUnit;
@@ -40,8 +40,7 @@ impl FromStr for TemporalUnitMode {
             "infer" => Ok(Self::Infer),
 
             s => py_schema_err!(
-                "Invalid temporal_unit_mode serialization mode: `{}`, expected seconds, milliseconds or infer",
-                s
+                "Invalid temporal_unit_mode serialization mode: `{s}`, expected seconds, milliseconds or infer"
             ),
         }
     }

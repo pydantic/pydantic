@@ -6,12 +6,12 @@ use pyo3::prelude::*;
 use pyo3::types::{PyDict, PyList, PyTuple};
 
 use crate::build_tools::is_strict;
-use crate::errors::{py_err_string, ErrorType, ErrorTypeDefaults, ValError, ValLineError, ValResult};
+use crate::errors::{ErrorType, ErrorTypeDefaults, ValError, ValLineError, ValResult, py_err_string};
 use crate::input::ConsumeIterator;
 use crate::input::{BorrowInput, Input, ValidatedTuple};
 use crate::tools::SchemaDict;
 
-use super::{build_validator, BuildValidator, CombinedValidator, DefinitionsBuilder, ValidationState, Validator};
+use super::{BuildValidator, CombinedValidator, DefinitionsBuilder, ValidationState, Validator, build_validator};
 
 #[derive(Debug)]
 pub struct TupleValidator {
@@ -250,18 +250,18 @@ impl TupleValidator {
         actual_length: Option<usize>,
     ) -> ValResult<()> {
         output.push(item);
-        if let Some(max_length) = self.max_length {
-            if output.len() > max_length {
-                return Err(ValError::new(
-                    ErrorType::TooLong {
-                        field_type: "Tuple".to_string(),
-                        max_length,
-                        actual_length,
-                        context: None,
-                    },
-                    input,
-                ));
-            }
+        if let Some(max_length) = self.max_length
+            && output.len() > max_length
+        {
+            return Err(ValError::new(
+                ErrorType::TooLong {
+                    field_type: "Tuple".to_string(),
+                    max_length,
+                    actual_length,
+                    context: None,
+                },
+                input,
+            ));
         }
         Ok(())
     }

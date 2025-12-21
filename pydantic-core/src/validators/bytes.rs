@@ -1,9 +1,9 @@
 use std::sync::Arc;
 
+use pyo3::IntoPyObjectExt;
 use pyo3::intern;
 use pyo3::prelude::*;
 use pyo3::types::PyDict;
-use pyo3::IntoPyObjectExt;
 
 use crate::build_tools::is_strict;
 use crate::errors::{ErrorType, ValError, ValResult};
@@ -84,27 +84,27 @@ impl Validator for BytesConstrainedValidator {
             .unpack(state);
         let len = either_bytes.len()?;
 
-        if let Some(min_length) = self.min_length {
-            if len < min_length {
-                return Err(ValError::new(
-                    ErrorType::BytesTooShort {
-                        min_length,
-                        context: None,
-                    },
-                    input,
-                ));
-            }
+        if let Some(min_length) = self.min_length
+            && len < min_length
+        {
+            return Err(ValError::new(
+                ErrorType::BytesTooShort {
+                    min_length,
+                    context: None,
+                },
+                input,
+            ));
         }
-        if let Some(max_length) = self.max_length {
-            if len > max_length {
-                return Err(ValError::new(
-                    ErrorType::BytesTooLong {
-                        max_length,
-                        context: None,
-                    },
-                    input,
-                ));
-            }
+        if let Some(max_length) = self.max_length
+            && len > max_length
+        {
+            return Err(ValError::new(
+                ErrorType::BytesTooLong {
+                    max_length,
+                    context: None,
+                },
+                input,
+            ));
         }
         Ok(either_bytes.into_py_any(py)?)
     }

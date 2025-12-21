@@ -2,17 +2,17 @@ use std::borrow::Cow;
 use std::sync::Arc;
 
 use pyo3::types::{PyDict, PyString};
-use pyo3::{prelude::*, IntoPyObjectExt};
+use pyo3::{IntoPyObjectExt, prelude::*};
 
 use crate::build_tools::LazyLock;
 use crate::definitions::DefinitionsBuilder;
-use crate::serializers::errors::unwrap_ser_error;
-use crate::serializers::shared::{serialize_to_json, DoSerialize};
 use crate::serializers::SerializationState;
+use crate::serializers::errors::unwrap_ser_error;
+use crate::serializers::shared::{DoSerialize, serialize_to_json};
 
 use super::{
-    infer_json_key, infer_serialize, infer_to_python, BuildSerializer, CombinedSerializer, IsType, ObType, SerMode,
-    TypeSerializer,
+    BuildSerializer, CombinedSerializer, IsType, ObType, SerMode, TypeSerializer, infer_json_key, infer_serialize,
+    infer_to_python,
 };
 
 #[derive(Debug)]
@@ -41,11 +41,7 @@ impl BuildSerializer for StrSerializer {
 impl_py_gc_traverse!(StrSerializer {});
 
 impl TypeSerializer for StrSerializer {
-    fn to_python<'py>(
-        &self,
-        value: &Bound<'py, PyAny>,
-        state: &mut SerializationState<'_, 'py>,
-    ) -> PyResult<Py<PyAny>> {
+    fn to_python<'py>(&self, value: &Bound<'py, PyAny>, state: &mut SerializationState<'py>) -> PyResult<Py<PyAny>> {
         let py = value.py();
         match state.extra.ob_type_lookup.is_type(value, ObType::Str) {
             IsType::Exact => Ok(value.clone().unbind()),
@@ -63,7 +59,7 @@ impl TypeSerializer for StrSerializer {
     fn json_key<'a, 'py>(
         &self,
         key: &'a Bound<'py, PyAny>,
-        state: &mut SerializationState<'_, 'py>,
+        state: &mut SerializationState<'py>,
     ) -> PyResult<Cow<'a, str>> {
         if let Ok(py_str) = key.cast::<PyString>() {
             // FIXME py cow to avoid the copy
@@ -78,7 +74,7 @@ impl TypeSerializer for StrSerializer {
         &self,
         value: &Bound<'py, PyAny>,
         serializer: S,
-        state: &mut SerializationState<'_, 'py>,
+        state: &mut SerializationState<'py>,
     ) -> Result<S::Ok, S::Error> {
         match value.cast::<PyString>() {
             Ok(py_str) => serialize_to_json(serializer)

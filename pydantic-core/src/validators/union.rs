@@ -5,7 +5,7 @@ use std::sync::Arc;
 use crate::py_gc::PyGcTraverse;
 use pyo3::prelude::*;
 use pyo3::types::{PyDict, PyList, PyString, PyTuple};
-use pyo3::{intern, PyTraverseError, PyVisit};
+use pyo3::{PyTraverseError, PyVisit, intern};
 use smallvec::SmallVec;
 
 use crate::build_tools::py_schema_err;
@@ -18,7 +18,7 @@ use crate::tools::SchemaDict;
 use super::custom_error::CustomError;
 use super::literal::LiteralLookup;
 use super::{
-    build_validator, BuildValidator, CombinedValidator, DefinitionsBuilder, Exactness, ValidationState, Validator,
+    BuildValidator, CombinedValidator, DefinitionsBuilder, Exactness, ValidationState, Validator, build_validator,
 };
 
 #[derive(Debug)]
@@ -34,7 +34,7 @@ impl FromStr for UnionMode {
         match s {
             "smart" => Ok(Self::Smart),
             "left_to_right" => Ok(Self::LeftToRight),
-            s => py_schema_err!("Invalid union mode: `{}`, expected `smart` or `left_to_right`", s),
+            s => py_schema_err!("Invalid union mode: `{s}`, expected `smart` or `left_to_right`"),
         }
     }
 }
@@ -144,7 +144,7 @@ impl UnionValidator {
                         let new_success_is_best_match: bool =
                             best_match
                                 .as_ref()
-                                .map_or(true, |(_, cur_exactness, cur_fields_set_count)| {
+                                .is_none_or(|(_, cur_exactness, cur_fields_set_count)| {
                                     match (*cur_fields_set_count, new_fields_set_count) {
                                         (Some(cur), Some(new)) if cur != new => cur < new,
                                         _ => *cur_exactness < new_exactness,
@@ -300,7 +300,7 @@ impl BuildValidator for TaggedUnionValidator {
         definitions: &mut DefinitionsBuilder<Arc<CombinedValidator>>,
     ) -> PyResult<Arc<CombinedValidator>> {
         let py = schema.py();
-        let discriminator = Discriminator::new(py, &schema.get_as_req(intern!(py, "discriminator"))?)?;
+        let discriminator = Discriminator::new(&schema.get_as_req(intern!(py, "discriminator"))?)?;
         let discriminator_repr = discriminator.to_string_py(py)?;
 
         let choices = PyDict::new(py);
@@ -352,14 +352,15 @@ impl Validator for TaggedUnionValidator {
         state: &mut ValidationState<'_, 'py>,
     ) -> ValResult<Py<PyAny>> {
         match &self.discriminator {
-            Discriminator::LookupKey(lookup_key) => {
+            Discriminator::LookupPaths(lookup_paths) => {
                 let from_attributes = state.extra().from_attributes.unwrap_or(self.from_attributes);
                 let dict = input.validate_model_fields(state.strict_or(false), from_attributes)?;
                 // note this methods returns PyResult<Option<(data, data)>>, the outer Err is just for
                 // errors when getting attributes which should be "raised"
-                let Some((_, tag)) = dict.get_item(lookup_key)? else {
+                let Some(tag_result) = lookup_paths.iter().find_map(|path| dict.get_item(path).transpose()) else {
                     return Err(self.tag_not_found(input));
                 };
+                let tag = tag_result?;
                 self.find_call_validator(py, &tag.borrow_input().to_object(py)?, input, state)
             }
             Discriminator::Function(func) => {

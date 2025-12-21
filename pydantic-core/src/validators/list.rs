@@ -1,15 +1,15 @@
 use std::sync::{Arc, OnceLock};
 
 use pyo3::types::PyDict;
-use pyo3::{prelude::*, IntoPyObjectExt};
+use pyo3::{IntoPyObjectExt, prelude::*};
 
 use crate::errors::ValResult;
 use crate::input::{
-    no_validator_iter_to_vec, validate_iter_to_vec, BorrowInput, ConsumeIterator, Input, MaxLengthCheck, ValidatedList,
+    BorrowInput, ConsumeIterator, Input, MaxLengthCheck, ValidatedList, no_validator_iter_to_vec, validate_iter_to_vec,
 };
 use crate::tools::SchemaDict;
 
-use super::{build_validator, BuildValidator, CombinedValidator, DefinitionsBuilder, ValidationState, Validator};
+use super::{BuildValidator, CombinedValidator, DefinitionsBuilder, ValidationState, Validator, build_validator};
 
 #[derive(Debug)]
 pub struct ListValidator {

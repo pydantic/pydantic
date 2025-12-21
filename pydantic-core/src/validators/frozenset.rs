@@ -1,10 +1,10 @@
 use std::sync::Arc;
 
 use pyo3::types::{PyDict, PyFrozenSet};
-use pyo3::{prelude::*, IntoPyObjectExt};
+use pyo3::{IntoPyObjectExt, prelude::*};
 
 use crate::errors::ValResult;
-use crate::input::{validate_iter_to_set, BorrowInput, ConsumeIterator, Input, ValidatedSet};
+use crate::input::{BorrowInput, ConsumeIterator, Input, ValidatedSet, validate_iter_to_set};
 use crate::tools::SchemaDict;
 
 use super::list::min_length_check;

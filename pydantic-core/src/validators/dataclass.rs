@@ -3,33 +3,35 @@ use std::sync::Arc;
 use pyo3::exceptions::PyKeyError;
 use pyo3::intern;
 use pyo3::prelude::*;
+use pyo3::pybacked::PyBackedStr;
 use pyo3::types::{PyDict, PyList, PyString, PyTuple, PyType};
 
 use ahash::AHashSet;
 use pyo3::IntoPyObjectExt;
 
 use crate::build_tools::py_schema_err;
-use crate::build_tools::{is_strict, schema_or_config_same, ExtraBehavior};
+use crate::build_tools::{ExtraBehavior, is_strict, schema_or_config_same};
 use crate::errors::{ErrorType, ErrorTypeDefaults, ValError, ValLineError, ValResult};
 use crate::input::{
-    input_as_python_instance, Arguments, BorrowInput, Input, InputType, KeywordArgs, PositionalArgs, ValidationMatch,
+    Arguments, BorrowInput, Input, InputType, KeywordArgs, PositionalArgs, ValidationMatch, input_as_python_instance,
 };
-use crate::lookup_key::LookupKeyCollection;
+use crate::lookup_key::LookupPathCollection;
+use crate::lookup_key::LookupType;
 use crate::tools::SchemaDict;
+use crate::tools::pybackedstr_to_pystring;
 use crate::validators::function::convert_err;
 
-use super::model::{create_class, force_setattr, Revalidate};
+use super::model::{Revalidate, create_class, force_setattr};
 use super::validation_state::Exactness;
-use super::{build_validator, BuildValidator, CombinedValidator, DefinitionsBuilder, ValidationState, Validator};
+use super::{BuildValidator, CombinedValidator, DefinitionsBuilder, ValidationState, Validator, build_validator};
 
 #[derive(Debug)]
 struct Field {
     kw_only: bool,
-    name: String,
-    name_py: Py<PyString>,
+    name: PyBackedStr,
     init: bool,
     init_only: bool,
-    lookup_key_collection: LookupKeyCollection,
+    lookup_path_collection: LookupPathCollection,
     validator: Arc<CombinedValidator>,
     frozen: bool,
 }
@@ -75,19 +77,19 @@ impl BuildValidator for DataclassArgsValidator {
             let field = field.cast::<PyDict>()?;
 
             let name_py: Bound<'_, PyString> = field.get_as_req(intern!(py, "name"))?;
-            let name: String = name_py.extract()?;
+            let name = PyBackedStr::try_from(name_py.clone())?;
 
             let schema = field.get_as_req(intern!(py, "schema"))?;
 
             let validator = match build_validator(&schema, config, definitions) {
                 Ok(v) => v,
-                Err(err) => return py_schema_err!("Field '{}':\n  {}", name, err),
+                Err(err) => return py_schema_err!("Field '{name}':\n  {err}"),
             };
 
-            if let CombinedValidator::WithDefault(v) = validator.as_ref() {
-                if v.omit_on_error() {
-                    return py_schema_err!("Field `{}`: omit_on_error cannot be used with arguments", name);
-                }
+            if let CombinedValidator::WithDefault(v) = validator.as_ref()
+                && v.omit_on_error()
+            {
+                return py_schema_err!("Field `{name}`: omit_on_error cannot be used with arguments");
             }
 
             let kw_only = field.get_as(intern!(py, "kw_only"))?.unwrap_or(true);
@@ -95,14 +97,13 @@ impl BuildValidator for DataclassArgsValidator {
                 positional_count += 1;
             }
 
-            let validation_alias = field.get_item(intern!(py, "validation_alias"))?;
-            let lookup_key_collection = LookupKeyCollection::new(py, validation_alias, name.as_str())?;
+            let validation_alias = field.get_as(intern!(py, "validation_alias"))?;
+            let lookup_path_collection = LookupPathCollection::new(validation_alias, name.clone())?;
 
             fields.push(Field {
                 kw_only,
                 name,
-                name_py: name_py.into(),
-                lookup_key_collection,
+                lookup_path_collection,
                 validator,
                 init: field.get_as(intern!(py, "init"))?.unwrap_or(true),
                 init_only: field.get_as(intern!(py, "init_only"))?.unwrap_or(false),
@@ -163,18 +164,18 @@ impl Validator for DataclassArgsValidator {
 
         let validate_by_alias = state.validate_by_alias_or(self.validate_by_alias);
         let validate_by_name = state.validate_by_name_or(self.validate_by_name);
+        let lookup_type = LookupType::from_bools(validate_by_alias, validate_by_name)?;
 
         let mut fields_set_count: usize = 0;
 
         macro_rules! set_item {
             ($field:ident, $value:expr) => {{
-                let name_py = $field.name_py.bind(py);
                 if $field.init_only {
                     if let Some(ref mut init_only_args) = init_only_args {
                         init_only_args.push($value);
                     }
                 } else {
-                    output_dict.set_item(name_py, $value)?;
+                    output_dict.set_item(&$field.name, $value)?;
                 }
             }};
         }
@@ -182,7 +183,7 @@ impl Validator for DataclassArgsValidator {
         // go through fields getting the value from args or kwargs and validating it
         for (index, field) in self.fields.iter().enumerate() {
             if !field.init {
-                match field.validator.default_value(py, Some(field.name.as_str()), state) {
+                match field.validator.default_value(py, Some(field.name.clone()), state) {
                     Ok(Some(value)) => {
                         // Default value exists, and passed validation if required
                         set_item!(field, value);
@@ -200,26 +201,25 @@ impl Validator for DataclassArgsValidator {
             }
 
             let mut pos_value = None;
-            if let Some(args) = args.args() {
-                if !field.kw_only {
-                    pos_value = args.get_item(index);
-                }
+            if let Some(args) = args.args()
+                && !field.kw_only
+            {
+                pos_value = args.get_item(index);
             }
 
-            let lookup_key = field
-                .lookup_key_collection
-                .select(validate_by_alias, validate_by_name)?;
-
             let mut kw_value = None;
-            if let Some(kwargs) = args.kwargs() {
-                if let Some((lookup_path, value)) = kwargs.get_item(lookup_key)? {
-                    used_keys.insert(lookup_path.first_key());
-                    kw_value = Some((lookup_path, value));
-                }
+            if let Some(kwargs) = args.kwargs()
+                && let Some((lookup_path, value)) = field
+                    .lookup_path_collection
+                    .try_lookup(lookup_type, |path| kwargs.get_item(path))?
+            {
+                used_keys.insert(lookup_path.first_key());
+                kw_value = Some((lookup_path, value));
             }
             let kw_value = kw_value.as_ref().map(|(path, value)| (path, value.borrow_input()));
 
-            let state = &mut state.rebind_extra(|extra| extra.field_name = Some(field.name_py.bind(py).clone()));
+            let state =
+                &mut state.rebind_extra(|extra| extra.field_name = Some(pybackedstr_to_pystring(py, &field.name)));
 
             match (pos_value, kw_value) {
                 // found both positional and keyword arguments, error
@@ -260,19 +260,16 @@ impl Validator for DataclassArgsValidator {
                 },
                 // found neither, check if there is a default value, otherwise error
                 (None, None) => {
-                    match field.validator.default_value(py, Some(field.name.as_str()), state) {
+                    match field.validator.default_value(py, Some(field.name.clone()), state) {
                         Ok(Some(value)) => {
                             // Default value exists, and passed validation if required
                             set_item!(field, value);
                         }
                         Ok(None) => {
+                            let error_type = ErrorTypeDefaults::Missing;
+                            let error_loc = field.lookup_path_collection.error_loc(lookup_type, self.loc_by_alias);
                             // This means there was no default value
-                            errors.push(lookup_key.error(
-                                ErrorTypeDefaults::Missing,
-                                input,
-                                self.loc_by_alias,
-                                &field.name,
-                            ));
+                            errors.push(ValLineError::new_with_full_loc(error_type, input, error_loc));
                         }
                         Err(ValError::Omit) => {}
                         Err(ValError::LineErrors(line_errors)) => {
@@ -291,76 +288,73 @@ impl Validator for DataclassArgsValidator {
             }
         }
         // if there are more args than positional_count, add an error for each one
-        if let Some(args) = args.args() {
-            let len = args.len();
-            if len > self.positional_count {
-                for (index, item) in args.iter().enumerate().skip(self.positional_count) {
-                    errors.push(ValLineError::new_with_loc(
-                        ErrorTypeDefaults::UnexpectedPositionalArgument,
-                        item,
-                        index,
-                    ));
-                }
+        if let Some(args) = args.args()
+            && args.len() > self.positional_count
+        {
+            for (index, item) in args.iter().enumerate().skip(self.positional_count) {
+                errors.push(ValLineError::new_with_loc(
+                    ErrorTypeDefaults::UnexpectedPositionalArgument,
+                    item,
+                    index,
+                ));
             }
         }
         // if there are kwargs check any that haven't been processed yet
-        if let Some(kwargs) = args.kwargs() {
-            if kwargs.len() != used_keys.len() {
-                for result in kwargs.iter() {
-                    let (raw_key, value) = result?;
-                    match raw_key
-                        .borrow_input()
-                        .validate_str(true, false)
-                        .map(ValidationMatch::into_inner)
-                    {
-                        Ok(either_str) => {
-                            if !used_keys.contains(either_str.as_cow()?.as_ref()) {
-                                // Unknown / extra field
-                                match extra_behavior {
-                                    ExtraBehavior::Forbid => {
-                                        errors.push(ValLineError::new_with_loc(
-                                            ErrorTypeDefaults::UnexpectedKeywordArgument,
-                                            value,
-                                            raw_key.clone(),
-                                        ));
-                                    }
-                                    ExtraBehavior::Ignore => {}
-                                    ExtraBehavior::Allow => {
-                                        if let Some(ref validator) = self.extras_validator {
-                                            match validator.validate(py, value.borrow_input(), state) {
-                                                Ok(value) => {
-                                                    output_dict.set_item(
-                                                        either_str.as_py_string(py, state.cache_str()),
-                                                        value,
-                                                    )?;
-                                                }
-                                                Err(ValError::LineErrors(line_errors)) => {
-                                                    for err in line_errors {
-                                                        errors.push(err.with_outer_location(raw_key.clone()));
-                                                    }
-                                                }
-                                                Err(err) => return Err(err),
+        if let Some(kwargs) = args.kwargs()
+            && kwargs.len() != used_keys.len()
+        {
+            for result in kwargs.iter() {
+                let (raw_key, value) = result?;
+                match raw_key
+                    .borrow_input()
+                    .validate_str(true, false)
+                    .map(ValidationMatch::into_inner)
+                {
+                    Ok(either_str) => {
+                        if !used_keys.contains(either_str.as_cow()?.as_ref()) {
+                            // Unknown / extra field
+                            match extra_behavior {
+                                ExtraBehavior::Forbid => {
+                                    errors.push(ValLineError::new_with_loc(
+                                        ErrorTypeDefaults::UnexpectedKeywordArgument,
+                                        value,
+                                        raw_key.clone(),
+                                    ));
+                                }
+                                ExtraBehavior::Ignore => {}
+                                ExtraBehavior::Allow => {
+                                    if let Some(ref validator) = self.extras_validator {
+                                        match validator.validate(py, value.borrow_input(), state) {
+                                            Ok(value) => {
+                                                output_dict
+                                                    .set_item(either_str.as_py_string(py, state.cache_str()), value)?;
                                             }
-                                        } else {
-                                            output_dict.set_item(
-                                                either_str.as_py_string(py, state.cache_str()),
-                                                value.borrow_input().to_object(py)?,
-                                            )?;
+                                            Err(ValError::LineErrors(line_errors)) => {
+                                                for err in line_errors {
+                                                    errors.push(err.with_outer_location(raw_key.clone()));
+                                                }
+                                            }
+                                            Err(err) => return Err(err),
                                         }
+                                    } else {
+                                        output_dict.set_item(
+                                            either_str.as_py_string(py, state.cache_str()),
+                                            value.borrow_input().to_object(py)?,
+                                        )?;
                                     }
                                 }
                             }
                         }
-                        Err(ValError::LineErrors(line_errors)) => {
-                            for err in line_errors {
-                                errors.push(
-                                    err.with_outer_location(raw_key.clone())
-                                        .with_type(ErrorTypeDefaults::InvalidKey),
-                                );
-                            }
+                    }
+                    Err(ValError::LineErrors(line_errors)) => {
+                        for err in line_errors {
+                            errors.push(
+                                err.with_outer_location(raw_key.clone())
+                                    .with_type(ErrorTypeDefaults::InvalidKey),
+                            );
                         }
-                        Err(err) => return Err(err),
-                    };
+                    }
+                    Err(err) => return Err(err),
                 }
             }
         }
@@ -382,7 +376,7 @@ impl Validator for DataclassArgsValidator {
         &self,
         py: Python<'py>,
         obj: &Bound<'py, PyAny>,
-        field_name: &str,
+        field_name: &PyBackedStr,
         field_value: &Bound<'py, PyAny>,
         state: &mut ValidationState<'_, 'py>,
     ) -> ValResult<Py<PyAny>> {
@@ -398,12 +392,12 @@ impl Validator for DataclassArgsValidator {
             Ok(PyTuple::new(py, [Some(dict), None])?.into())
         };
 
-        if let Some(field) = self.fields.iter().find(|f| f.name == field_name) {
+        if let Some(field) = self.fields.iter().find(|f| &f.name == field_name) {
             if field.frozen {
                 return Err(ValError::new_with_loc(
                     ErrorTypeDefaults::FrozenField,
                     field_value,
-                    &field.name,
+                    field.name.clone(),
                 ));
             }
             // by using dict but removing the field in question, we match V1 behaviour
@@ -417,7 +411,7 @@ impl Validator for DataclassArgsValidator {
 
             let state = &mut state.rebind_extra(|extra| {
                 extra.data = Some(data_dict.clone());
-                extra.field_name = Some(field.name_py.bind(py).clone());
+                extra.field_name = Some(pybackedstr_to_pystring(py, &field.name));
             });
 
             match field.validator.validate(py, field_value, state) {
@@ -425,7 +419,7 @@ impl Validator for DataclassArgsValidator {
                 Err(ValError::LineErrors(line_errors)) => {
                     let errors = line_errors
                         .into_iter()
-                        .map(|e| e.with_outer_location(field_name))
+                        .map(|e| e.with_outer_location(field_name.clone()))
                         .collect();
                     Err(ValError::LineErrors(errors))
                 }
@@ -593,7 +587,7 @@ impl Validator for DataclassValidator {
         &self,
         py: Python<'py>,
         obj: &Bound<'py, PyAny>,
-        field_name: &str,
+        field_name: &PyBackedStr,
         field_value: &Bound<'py, PyAny>,
         state: &mut ValidationState<'_, 'py>,
     ) -> ValResult<Py<PyAny>> {

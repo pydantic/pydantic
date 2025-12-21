@@ -7,12 +7,12 @@ use std::sync::OnceLock;
 use pyo3::exceptions::PyException;
 use pyo3::prelude::*;
 use pyo3::types::{PyDict, PyList, PyString};
-use pyo3::{intern, PyErrArguments};
+use pyo3::{PyErrArguments, intern};
 
+use crate::ValidationError;
 use crate::errors::{PyLineError, ValError};
 use crate::input::InputType;
 use crate::tools::SchemaDict;
-use crate::ValidationError;
 
 pub fn schema_or_config<'py, T>(
     schema: &Bound<'py, PyDict>,
@@ -159,21 +159,15 @@ impl SchemaError {
 }
 
 macro_rules! py_schema_error_type {
-    ($msg:expr) => {
-        crate::tools::py_error_type!(crate::build_tools::SchemaError; $msg)
-    };
-    ($msg:expr, $( $msg_args:expr ),+ ) => {
-        crate::tools::py_error_type!(crate::build_tools::SchemaError; $msg, $( $msg_args ),+)
+    ($( $msg_args:expr ),+ ) => {
+        crate::tools::py_error_type!(crate::build_tools::SchemaError; $( $msg_args ),+)
     };
 }
 pub(crate) use py_schema_error_type;
 
 macro_rules! py_schema_err {
-    ($msg:expr) => {
-        Err(crate::build_tools::py_schema_error_type!($msg))
-    };
-    ($msg:expr, $( $msg_args:expr ),+ ) => {
-        Err(crate::build_tools::py_schema_error_type!($msg, $( $msg_args ),+))
+    ($( $msg_args:expr ),+ ) => {
+        Err(crate::build_tools::py_schema_error_type!($( $msg_args ),+))
     };
 }
 pub(crate) use py_schema_err;
@@ -215,7 +209,7 @@ impl FromStr for ExtraBehavior {
             "allow" => Ok(Self::Allow),
             "forbid" => Ok(Self::Forbid),
             "ignore" => Ok(Self::Ignore),
-            s => py_schema_err!("Invalid extra_behavior: `{}`", s),
+            s => py_schema_err!("Invalid extra_behavior: `{s}`"),
         }
     }
 }

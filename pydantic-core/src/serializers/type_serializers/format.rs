@@ -9,15 +9,15 @@ use serde::ser::Error;
 
 use crate::build_tools::py_schema_err;
 use crate::definitions::DefinitionsBuilder;
+use crate::serializers::SerializationState;
 use crate::serializers::errors::unwrap_ser_error;
+use crate::serializers::shared::DoSerialize;
 use crate::serializers::shared::serialize_to_json;
 use crate::serializers::shared::serialize_to_python;
-use crate::serializers::shared::DoSerialize;
-use crate::serializers::SerializationState;
 use crate::tools::SchemaDict;
 
 use super::simple::none_json_key;
-use super::{py_err_se_err, BuildSerializer, CombinedSerializer, Extra, PydanticSerializationError, TypeSerializer};
+use super::{BuildSerializer, CombinedSerializer, Extra, PydanticSerializationError, TypeSerializer, py_err_se_err};
 
 #[derive(Debug, Clone, Eq, PartialEq)]
 pub(super) enum WhenUsed {
@@ -112,7 +112,7 @@ impl FormatSerializer {
 impl_py_gc_traverse!(FormatSerializer { format_func });
 
 impl TypeSerializer for FormatSerializer {
-    fn to_python(&self, value: &Bound<'_, PyAny>, state: &mut SerializationState<'_, '_>) -> PyResult<Py<PyAny>> {
+    fn to_python(&self, value: &Bound<'_, PyAny>, state: &mut SerializationState<'_>) -> PyResult<Py<PyAny>> {
         if self.when_used.should_use(value, &state.extra) {
             self.call(value).map_err(PydanticSerializationError::new_err)
         } else {
@@ -120,11 +120,7 @@ impl TypeSerializer for FormatSerializer {
         }
     }
 
-    fn json_key<'a>(
-        &self,
-        key: &'a Bound<'_, PyAny>,
-        _state: &mut SerializationState<'_, '_>,
-    ) -> PyResult<Cow<'a, str>> {
+    fn json_key<'a>(&self, key: &'a Bound<'_, PyAny>, _state: &mut SerializationState<'_>) -> PyResult<Cow<'a, str>> {
         if self.when_used.should_use_json(key) {
             let py_str = self
                 .call(key)
@@ -141,7 +137,7 @@ impl TypeSerializer for FormatSerializer {
         &self,
         value: &Bound<'_, PyAny>,
         serializer: S,
-        _state: &mut SerializationState<'_, '_>,
+        _state: &mut SerializationState<'_>,
     ) -> Result<S::Ok, S::Error> {
         if self.when_used.should_use_json(value) {
             match self.call(value) {
@@ -186,9 +182,9 @@ impl BuildSerializer for ToStringSerializer {
 impl_py_gc_traverse!(ToStringSerializer {});
 
 impl TypeSerializer for ToStringSerializer {
-    fn to_python(&self, value: &Bound<'_, PyAny>, state: &mut SerializationState<'_, '_>) -> PyResult<Py<PyAny>> {
+    fn to_python(&self, value: &Bound<'_, PyAny>, state: &mut SerializationState<'_>) -> PyResult<Py<PyAny>> {
         if self.when_used.should_use(value, &state.extra) {
-            serialize_via_str(value, serialize_to_python())
+            serialize_via_str(value, serialize_to_python(value.py()))
         } else {
             Ok(value.clone().unbind())
         }
@@ -197,7 +193,7 @@ impl TypeSerializer for ToStringSerializer {
     fn json_key<'a, 'py>(
         &self,
         key: &'a Bound<'py, PyAny>,
-        _state: &mut SerializationState<'_, 'py>,
+        _state: &mut SerializationState<'py>,
     ) -> PyResult<Cow<'a, str>> {
         if self.when_used.should_use_json(key) {
             Ok(Cow::Owned(key.str()?.to_string_lossy().into_owned()))
@@ -210,7 +206,7 @@ impl TypeSerializer for ToStringSerializer {
         &self,
         value: &Bound<'_, PyAny>,
         serializer: S,
-        _state: &mut SerializationState<'_, '_>,
+        _state: &mut SerializationState<'_>,
     ) -> Result<S::Ok, S::Error> {
         if self.when_used.should_use_json(value) {
             serialize_via_str(value, serialize_to_json(serializer)).map_err(|e| e.0)
@@ -225,10 +221,7 @@ impl TypeSerializer for ToStringSerializer {
 }
 
 /// Serialize a value by calling `str()` on it
-pub fn serialize_via_str<'py, T, E: From<PyErr>>(
-    value: &Bound<'py, PyAny>,
-    do_serialize: impl DoSerialize<'py, T, E>,
-) -> Result<T, E> {
+pub fn serialize_via_str<S: DoSerialize>(value: &Bound<'_, PyAny>, do_serialize: S) -> Result<S::Ok, S::Error> {
     let s = value.str()?;
     do_serialize.serialize_str(&s)
 }

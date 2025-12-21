@@ -681,3 +681,30 @@ def test_correct_frame_used_parametrized(create_module) -> None:
 
     with pytest.raises(ValidationError):
         module_1.ta.validate_python('a')
+
+
+def test_validate_python_with_incorrect_configuration():
+    ta = TypeAdapter(int)
+
+    with pytest.raises(PydanticUserError) as exc_info:
+        ta.validate_python(1, by_alias=False, by_name=False)
+
+    assert exc_info.value.code == 'validate-by-alias-and-name-false'
+
+
+def test_validate_json_with_incorrect_configuration():
+    ta = TypeAdapter(int)
+
+    with pytest.raises(PydanticUserError) as exc_info:
+        ta.validate_json(1, by_alias=False, by_name=False)
+
+    assert exc_info.value.code == 'validate-by-alias-and-name-false'
+
+
+def test_validate_strings_with_incorrect_configuration():
+    ta = TypeAdapter(int)
+
+    with pytest.raises(PydanticUserError) as exc_info:
+        ta.validate_strings(1, by_alias=False, by_name=False)
+
+    assert exc_info.value.code == 'validate-by-alias-and-name-false'

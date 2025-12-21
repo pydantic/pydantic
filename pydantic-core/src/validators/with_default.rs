@@ -1,21 +1,21 @@
 use std::sync::Arc;
 
+use pyo3::PyTraverseError;
+use pyo3::PyVisit;
 use pyo3::intern;
 use pyo3::prelude::*;
 use pyo3::sync::PyOnceLock;
 use pyo3::types::PyDict;
 use pyo3::types::PyString;
-use pyo3::PyTraverseError;
-use pyo3::PyVisit;
 
-use super::{build_validator, BuildValidator, CombinedValidator, DefinitionsBuilder, ValidationState, Validator};
+use super::{BuildValidator, CombinedValidator, DefinitionsBuilder, ValidationState, Validator, build_validator};
+use crate::PydanticUndefinedType;
 use crate::build_tools::py_schema_err;
 use crate::build_tools::schema_or_config_same;
 use crate::errors::{ErrorTypeDefaults, LocItem, ValError, ValResult};
 use crate::input::Input;
 use crate::py_gc::PyGcTraverse;
 use crate::tools::SchemaDict;
-use crate::PydanticUndefinedType;
 
 static COPY_DEEPCOPY: PyOnceLock<Py<PyAny>> = PyOnceLock::new();
 
@@ -51,8 +51,8 @@ impl DefaultType {
 
     pub fn default_value(&self, py: Python, validated_data: Option<&Bound<PyDict>>) -> PyResult<Option<Py<PyAny>>> {
         match self {
-            Self::Default(ref default) => Ok(Some(default.clone_ref(py))),
-            Self::DefaultFactory(ref default_factory, ref takes_data) => {
+            Self::Default(default) => Ok(Some(default.clone_ref(py))),
+            Self::DefaultFactory(default_factory, takes_data) => {
                 let result = if *takes_data {
                     if let Some(data) = validated_data {
                         default_factory.call1(py, (data,))

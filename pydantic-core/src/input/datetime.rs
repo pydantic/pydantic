@@ -1,11 +1,14 @@
 use pyo3::intern;
 use pyo3::prelude::*;
 
+use pyo3::IntoPyObjectExt;
 use pyo3::exceptions::PyValueError;
 use pyo3::pyclass::CompareOp;
+use pyo3::types::PyDateAccess;
+use pyo3::types::PyTimeAccess;
 use pyo3::types::PyTuple;
+use pyo3::types::PyTzInfoAccess;
 use pyo3::types::{PyDate, PyDateTime, PyDelta, PyDeltaAccess, PyDict, PyTime, PyTzInfo};
-use pyo3::IntoPyObjectExt;
 use speedate::DateConfig;
 use speedate::{
     Date, DateTime, DateTimeConfig, Duration, MicrosecondsPrecisionOverflowBehavior, ParseError, Time, TimeConfig,
@@ -43,6 +46,25 @@ impl<'py> From<Bound<'py, PyDate>> for EitherDate<'py> {
 }
 
 pub fn pydate_as_date(py_date: &Bound<'_, PyAny>) -> PyResult<Date> {
+    if let Ok(py_date) = py_date.cast_exact::<PyDate>() {
+        return pydateaccess_as_date(py_date);
+    }
+    py_any_date_as_date(py_date)
+}
+
+/// Fast path for reading date information from `datetime.date` and `datetime.datetime` objects
+#[inline]
+fn pydateaccess_as_date(py_date: &impl PyDateAccess) -> PyResult<Date> {
+    Ok(Date {
+        year: py_date.get_year().try_into()?,
+        month: py_date.get_month(),
+        day: py_date.get_day(),
+    })
+}
+
+/// Slow path for reading date information from subclasses of the builtin datetime types
+#[cold]
+fn py_any_date_as_date(py_date: &Bound<'_, PyAny>) -> PyResult<Date> {
     let py = py_date.py();
     Ok(Date {
         year: py_date.getattr(intern!(py, "year"))?.extract()?,
@@ -284,21 +306,47 @@ pub fn duration_as_pytimedelta<'py>(py: Python<'py>, duration: &Duration) -> PyR
     )
 }
 
-pub fn pytime_as_time(py_time: &Bound<'_, PyAny>, py_dt: Option<&Bound<'_, PyAny>>) -> PyResult<Time> {
+pub fn pytime_as_time(py_time: &Bound<'_, PyAny>) -> PyResult<Time> {
+    if let Ok(py_time) = py_time.cast_exact::<PyTime>() {
+        return pytimeaccess_as_time(py_time, None);
+    }
+
+    py_any_time_as_time(py_time, None)
+}
+
+trait PyTimeAndTzAccess<'py>: PyTimeAccess + PyTzInfoAccess<'py> {}
+impl<'py, T: PyTimeAccess + PyTzInfoAccess<'py>> PyTimeAndTzAccess<'py> for T {}
+
+/// Fast path for reading time information from exact `dt.time` and `dt.datetime` instances
+#[inline]
+fn pytimeaccess_as_time<'py>(
+    py_time: &impl PyTimeAndTzAccess<'py>,
+    py_dt: Option<&Bound<'_, PyAny>>,
+) -> PyResult<Time> {
+    let tz_offset = py_time
+        .get_tzinfo()
+        .and_then(|tzinfo| tz_offset_from_tzinfo(&tzinfo, py_dt).transpose())
+        .transpose()?;
+
+    Ok(Time {
+        hour: py_time.get_hour(),
+        minute: py_time.get_minute(),
+        second: py_time.get_second(),
+        microsecond: py_time.get_microsecond(),
+        tz_offset,
+    })
+}
+
+/// Slow path for reading time information from subclasses of `dt.time` and `dt.datetime`
+#[cold]
+pub fn py_any_time_as_time(py_time: &Bound<'_, PyAny>, py_dt: Option<&Bound<'_, PyAny>>) -> PyResult<Time> {
     let py = py_time.py();
 
     let tzinfo = py_time.getattr(intern!(py, "tzinfo"))?;
-    let tz_offset: Option<i32> = if PyAnyMethods::is_none(&tzinfo) {
+    let tz_offset = if PyAnyMethods::is_none(&tzinfo) {
         None
     } else {
-        let offset_delta = tzinfo.call_method1(intern!(py, "utcoffset"), (py_dt,))?;
-        // as per the docs, utcoffset() can return None
-        if PyAnyMethods::is_none(&offset_delta) {
-            None
-        } else {
-            let offset_seconds: f64 = offset_delta.call_method0(intern!(py, "total_seconds"))?.extract()?;
-            Some(offset_seconds.round() as i32)
-        }
+        tz_offset_from_tzinfo(&tzinfo, py_dt)?
     };
 
     Ok(Time {
@@ -308,6 +356,18 @@ pub fn pytime_as_time(py_time: &Bound<'_, PyAny>, py_dt: Option<&Bound<'_, PyAny
         microsecond: py_time.getattr(intern!(py, "microsecond"))?.extract()?,
         tz_offset,
     })
+}
+
+fn tz_offset_from_tzinfo(tzinfo: &Bound<'_, PyAny>, py_dt: Option<&Bound<'_, PyAny>>) -> PyResult<Option<i32>> {
+    let py = tzinfo.py();
+    let offset_delta = tzinfo.call_method1(intern!(py, "utcoffset"), (py_dt,))?;
+    // as per the docs, utcoffset() can return None
+    if PyAnyMethods::is_none(&offset_delta) {
+        return Ok(None);
+    }
+
+    let offset_seconds: f64 = offset_delta.call_method0(intern!(py, "total_seconds"))?.extract()?;
+    Ok(Some(offset_seconds.round() as i32))
 }
 
 impl<'py> IntoPyObject<'py> for EitherTime<'py> {
@@ -334,7 +394,7 @@ impl EitherTime<'_> {
     pub fn as_raw(&self) -> PyResult<Time> {
         match self {
             Self::Raw(time) => Ok(*time),
-            Self::Py(py_time) => pytime_as_time(py_time, None),
+            Self::Py(py_time) => pytime_as_time(py_time),
         }
     }
 }
@@ -368,9 +428,16 @@ impl<'a> From<Bound<'a, PyDateTime>> for EitherDateTime<'a> {
 }
 
 pub fn pydatetime_as_datetime(py_dt: &Bound<'_, PyAny>) -> PyResult<DateTime> {
+    if let Ok(py_dt) = py_dt.cast_exact::<PyDateTime>() {
+        return Ok(DateTime {
+            date: pydateaccess_as_date(py_dt)?,
+            time: pytimeaccess_as_time(py_dt, Some(py_dt))?,
+        });
+    }
+
     Ok(DateTime {
-        date: pydate_as_date(py_dt)?,
-        time: pytime_as_time(py_dt, Some(py_dt))?,
+        date: py_any_date_as_date(py_dt)?,
+        time: py_any_time_as_time(py_dt, Some(py_dt))?,
     })
 }
 

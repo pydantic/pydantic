@@ -8,16 +8,16 @@ use pyo3::types::{PyDict, PyList, PyString};
 use speedate::MicrosecondsPrecisionOverflowBehavior;
 use strum::EnumMessage;
 
-use crate::errors::{ErrorType, ErrorTypeDefaults, InputValue, LocItem, ValError, ValResult};
+use crate::errors::{ErrorType, ErrorTypeDefaults, InputValue, ValError, ValResult};
 use crate::input::return_enums::EitherComplex;
-use crate::lookup_key::{LookupKey, LookupPath};
+use crate::lookup_key::LookupPath;
 use crate::validators::complex::string_to_complex;
 use crate::validators::decimal::create_decimal;
 use crate::validators::{TemporalUnitMode, ValBytesMode};
 
 use super::datetime::{
-    bytes_as_date, bytes_as_datetime, bytes_as_time, bytes_as_timedelta, float_as_datetime, float_as_duration,
-    float_as_time, int_as_datetime, int_as_duration, int_as_time, EitherDate, EitherDateTime, EitherTime,
+    EitherDate, EitherDateTime, EitherTime, bytes_as_date, bytes_as_datetime, bytes_as_time, bytes_as_timedelta,
+    float_as_datetime, float_as_duration, float_as_time, int_as_datetime, int_as_duration, int_as_time,
 };
 use super::input_abstract::{ConsumeIterator, Never, ValMatch};
 use super::return_enums::ValidationMatch;
@@ -26,23 +26,6 @@ use super::{
     Arguments, BorrowInput, EitherBytes, EitherFloat, EitherInt, EitherString, EitherTimedelta, GenericIterator, Input,
     KeywordArgs, PositionalArgs, ValidatedDict, ValidatedList, ValidatedSet, ValidatedTuple,
 };
-
-/// This is required but since JSON object keys are always strings, I don't think it can be called
-impl From<&JsonValue<'_>> for LocItem {
-    fn from(json_value: &JsonValue) -> Self {
-        match json_value {
-            JsonValue::Int(i) => (*i).into(),
-            JsonValue::Str(s) => s.clone().into(),
-            v => format!("{v:?}").into(),
-        }
-    }
-}
-
-impl From<JsonValue<'_>> for LocItem {
-    fn from(json_value: JsonValue) -> Self {
-        (&json_value).into()
-    }
-}
 
 impl<'py, 'data> Input<'py> for JsonValue<'data> {
     #[inline]
@@ -205,13 +188,16 @@ impl<'py, 'data> Input<'py> for JsonValue<'data> {
         }
     }
 
-    fn validate_decimal(&self, _strict: bool, py: Python<'py>) -> ValMatch<Bound<'py, PyAny>> {
+    fn validate_decimal(&self, strict: bool, py: Python<'py>) -> ValMatch<Bound<'py, PyAny>> {
         match self {
             JsonValue::Float(f) => {
                 create_decimal(&PyString::new(py, &f.to_string()), self).map(ValidationMatch::strict)
             }
             JsonValue::Str(..) | JsonValue::Int(..) | JsonValue::BigInt(..) => {
                 create_decimal(&self.into_pyobject(py)?, self).map(ValidationMatch::strict)
+            }
+            JsonValue::Array(array) if !strict && ValidatedTuple::len(&array) == Some(3) => {
+                create_decimal(&self.into_pyobject(py)?, self).map(ValidationMatch::lax)
             }
             _ => Err(ValError::new(ErrorTypeDefaults::DecimalType, self)),
         }
@@ -581,7 +567,7 @@ impl<'data> ValidatedDict<'_> for &'_ JsonObject<'data> {
     where
         Self: 'a;
 
-    fn get_item<'k>(&self, key: &'k LookupKey) -> ValResult<Option<(&'k LookupPath, Self::Item<'_>)>> {
+    fn get_item(&self, key: &LookupPath) -> ValResult<Option<Self::Item<'_>>> {
         key.json_get(self)
     }
 
@@ -691,7 +677,7 @@ impl<'data> KeywordArgs<'_> for JsonObject<'data> {
     fn len(&self) -> usize {
         Vec::len(self)
     }
-    fn get_item<'k>(&self, key: &'k LookupKey) -> ValResult<Option<(&'k LookupPath, Self::Item<'_>)>> {
+    fn get_item<'k>(&self, key: &LookupPath) -> ValResult<Option<Self::Item<'_>>> {
         key.json_get(self)
     }
     fn iter(&self) -> impl Iterator<Item = ValResult<(Self::Key<'_>, Self::Item<'_>)>> {

@@ -95,6 +95,33 @@ def test_decimal(py_and_json: PyAndJson, input_value, expected):
 @pytest.mark.parametrize(
     'input_value,expected',
     [
+        ((0, (1, 4, 1, 4), -3), Decimal('1.414')),
+        ((0, (1, 2, 3), 0), Decimal('123')),
+        ((0, (1, 2, 3), 2), Decimal('12300')),
+        ((0, (1, 2, 3), -2), Decimal('1.23')),
+        ((1, (1, 4, 1, 4), -3), Decimal('-1.414')),
+        ((1, (1, 2, 3), 0), Decimal('-123')),
+        ((1, (1, 2, 3), 2), Decimal('-12300')),
+        ((1, (1, 2, 3), -2), Decimal('-1.23')),
+        ((0, (0,), 0), Decimal('0')),
+        ((0, (5,), -1), Decimal('0.5')),
+        ((1, (5,), -1), Decimal('-0.5')),
+        ((0, (1, 0, 0), -2), Decimal('1.00')),
+        ((0, (9, 9, 9), 3), Decimal('999000')),
+    ],
+    ids=repr,
+)
+def test_decimal_three_tuple_constructor(py_and_json: PyAndJson, input_value, expected):
+    """Test that Decimal can be constructed from a three-tuple (sign, digits, exponent)."""
+    v = py_and_json(cs.decimal_schema())
+    output = v.validate_test(input_value)
+    assert output == expected
+    assert isinstance(output, Decimal)
+
+
+@pytest.mark.parametrize(
+    'input_value,expected',
+    [
         (Decimal(0), Decimal(0)),
         (Decimal(1), Decimal(1)),
         (Decimal(42), Decimal(42)),

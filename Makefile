@@ -1,5 +1,5 @@
 .DEFAULT_GOAL := all
-sources = pydantic tests docs/plugins release/
+sources = pydantic tests docs/plugins release pydantic-core/python pydantic-core/tests pydantic-core/wasm-preview/run_tests.py
 NUM_THREADS?=1
 
 .PHONY: .uv  ## Check that uv is installed
@@ -24,11 +24,19 @@ rebuild-lockfiles: .uv
 format: .uv
 	uv run ruff check --fix $(sources)
 	uv run ruff format $(sources)
+	cargo fmt --manifest-path pydantic-core/Cargo.toml
 
-.PHONY: lint  ## Lint python source files
-lint: .uv
+.PHONY: lint-python  ## Lint python source files
+lint-python: .uv
 	uv run ruff check $(sources)
 	uv run ruff format --check $(sources)
+
+.PHONY: lint-rust  ## Lint Rust source files
+lint-rust:
+	$(MAKE) -C pydantic-core lint-rust
+
+.PHONY: lint  ## Lint all source files
+lint: lint-python lint-rust
 
 .PHONY: codespell  ## Use Codespell to do spellchecking
 codespell: .pre-commit

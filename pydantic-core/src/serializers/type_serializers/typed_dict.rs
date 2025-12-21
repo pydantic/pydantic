@@ -3,15 +3,16 @@ use std::sync::Arc;
 
 use pyo3::intern;
 use pyo3::prelude::*;
-use pyo3::types::{PyDict, PyString};
+use pyo3::pybacked::PyBackedStr;
+use pyo3::types::PyDict;
 
 use ahash::AHashMap;
 
 use crate::build_tools::py_schema_err;
-use crate::build_tools::{py_schema_error_type, schema_or_config, ExtraBehavior};
+use crate::build_tools::{ExtraBehavior, py_schema_error_type, schema_or_config};
 use crate::definitions::DefinitionsBuilder;
-use crate::serializers::shared::TypeSerializer;
 use crate::serializers::SerializationState;
+use crate::serializers::shared::TypeSerializer;
 use crate::tools::SchemaDict;
 
 use super::{BuildSerializer, CombinedSerializer, ComputedFields, FieldsMode, GeneralFieldsSerializer, SerField};
@@ -55,29 +56,27 @@ impl BuildSerializer for TypedDictSerializer {
         };
 
         for (key, value) in fields_dict {
-            let key_py = key.cast_into::<PyString>()?;
-            let key: String = key_py.extract()?;
+            let key_py: PyBackedStr = key.extract()?;
+            let key: String = key_py.to_string();
             let field_info = value.cast()?;
 
-            let key_py: Py<PyString> = key_py.into();
             let required = field_info.get_as(intern!(py, "required"))?.unwrap_or(total);
 
             if field_info.get_as(intern!(py, "serialization_exclude"))? == Some(true) {
                 fields.insert(
                     key,
-                    SerField::new(py, key_py, None, None, required, serialize_by_alias, None),
+                    SerField::new(key_py, None, None, required, serialize_by_alias, None),
                 );
             } else {
-                let alias: Option<String> = field_info.get_as(intern!(py, "serialization_alias"))?;
+                let alias = field_info.get_as(intern!(py, "serialization_alias"))?;
                 let serialization_exclude_if: Option<Py<PyAny>> =
                     field_info.get_as(intern!(py, "serialization_exclude_if"))?;
                 let schema = field_info.get_as_req(intern!(py, "schema"))?;
                 let serializer = CombinedSerializer::build(&schema, config, definitions)
-                    .map_err(|e| py_schema_error_type!("Field `{}`:\n  {}", key, e))?;
+                    .map_err(|e| py_schema_error_type!("Field `{key}`:\n  {e}"))?;
                 fields.insert(
                     key,
                     SerField::new(
-                        py,
                         key_py,
                         alias,
                         Some(serializer),
@@ -103,11 +102,7 @@ impl BuildSerializer for TypedDictSerializer {
 }
 
 impl TypeSerializer for TypedDictSerializer {
-    fn to_python<'py>(
-        &self,
-        value: &Bound<'py, PyAny>,
-        state: &mut SerializationState<'_, 'py>,
-    ) -> PyResult<Py<PyAny>> {
+    fn to_python<'py>(&self, value: &Bound<'py, PyAny>, state: &mut SerializationState<'py>) -> PyResult<Py<PyAny>> {
         self.serializer
             .to_python(value, &mut state.scoped_set(|s| &mut s.model, Some(value.clone())))
     }
@@ -115,7 +110,7 @@ impl TypeSerializer for TypedDictSerializer {
     fn json_key<'a, 'py>(
         &self,
         key: &'a Bound<'py, PyAny>,
-        state: &mut SerializationState<'_, 'py>,
+        state: &mut SerializationState<'py>,
     ) -> PyResult<Cow<'a, str>> {
         self.invalid_as_json_key(key, state, "typed-dict")
     }
@@ -124,7 +119,7 @@ impl TypeSerializer for TypedDictSerializer {
         &self,
         value: &Bound<'py, PyAny>,
         serializer: S,
-        state: &mut SerializationState<'_, 'py>,
+        state: &mut SerializationState<'py>,
     ) -> Result<S::Ok, S::Error> {
         self.serializer.serde_serialize(
             value,

@@ -3,7 +3,7 @@
 extern crate test;
 
 use std::ffi::{CStr, CString};
-use test::{black_box, Bencher};
+use test::{Bencher, black_box};
 
 use pyo3::prelude::*;
 use pyo3::types::{PyDict, PyString};

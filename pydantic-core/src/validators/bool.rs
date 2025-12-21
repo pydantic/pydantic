@@ -1,9 +1,9 @@
 use std::sync::Arc;
 
 use pyo3::types::PyDict;
-use pyo3::{prelude::*, IntoPyObjectExt};
+use pyo3::{IntoPyObjectExt, prelude::*};
 
-use crate::build_tools::{is_strict, LazyLock};
+use crate::build_tools::{LazyLock, is_strict};
 use crate::errors::ValResult;
 use crate::input::Input;
 

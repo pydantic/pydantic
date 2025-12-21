@@ -1,5 +1,5 @@
 use pyo3::types::PyDict;
-use pyo3::{intern, prelude::*, IntoPyObjectExt};
+use pyo3::{IntoPyObjectExt, intern, prelude::*};
 
 use std::borrow::Cow;
 use std::sync::Arc;
@@ -8,14 +8,14 @@ use serde::Serializer;
 
 use crate::build_tools::LazyLock;
 use crate::definitions::DefinitionsBuilder;
-use crate::serializers::config::InfNanMode;
 use crate::serializers::SerializationState;
+use crate::serializers::config::InfNanMode;
 use crate::tools::SchemaDict;
 
 use super::simple::to_str_json_key;
 use super::{
-    infer_json_key, infer_serialize, infer_to_python, BuildSerializer, CombinedSerializer, IsType, ObType, SerCheck,
-    SerMode, TypeSerializer,
+    BuildSerializer, CombinedSerializer, IsType, ObType, SerCheck, SerMode, TypeSerializer, infer_json_key,
+    infer_serialize, infer_to_python,
 };
 use crate::serializers::errors::PydanticSerializationUnexpectedValue;
 
@@ -90,11 +90,7 @@ impl BuildSerializer for FloatSerializer {
 impl_py_gc_traverse!(FloatSerializer {});
 
 impl TypeSerializer for FloatSerializer {
-    fn to_python<'py>(
-        &self,
-        value: &Bound<'py, PyAny>,
-        state: &mut SerializationState<'_, 'py>,
-    ) -> PyResult<Py<PyAny>> {
+    fn to_python<'py>(&self, value: &Bound<'py, PyAny>, state: &mut SerializationState<'py>) -> PyResult<Py<PyAny>> {
         let py = value.py();
         match state.extra.ob_type_lookup.is_type(value, ObType::Float) {
             IsType::Exact => Ok(value.clone().unbind()),
@@ -115,7 +111,7 @@ impl TypeSerializer for FloatSerializer {
     fn json_key<'a, 'py>(
         &self,
         key: &'a Bound<'py, PyAny>,
-        state: &mut SerializationState<'_, 'py>,
+        state: &mut SerializationState<'py>,
     ) -> PyResult<Cow<'a, str>> {
         match state.extra.ob_type_lookup.is_type(key, ObType::Float) {
             IsType::Exact | IsType::Subclass => to_str_json_key(key),
@@ -130,7 +126,7 @@ impl TypeSerializer for FloatSerializer {
         &self,
         value: &Bound<'py, PyAny>,
         serializer: S,
-        state: &mut SerializationState<'_, 'py>,
+        state: &mut SerializationState<'py>,
     ) -> Result<S::Ok, S::Error> {
         match value.extract::<f64>() {
             Ok(v) => serialize_f64(v, serializer, self.inf_nan_mode),

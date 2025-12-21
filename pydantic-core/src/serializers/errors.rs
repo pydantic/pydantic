@@ -19,7 +19,7 @@ pub(super) fn py_err_se_err<T: ser::Error, E: fmt::Display>(py_error: E) -> T {
 }
 
 /// Wrapper type which allows convenient conversion between `PyErr` and `ser::Error` in `?` expressions.
-pub(super) struct WrappedSerError<T: ser::Error>(pub T);
+pub(crate) struct WrappedSerError<T: ser::Error>(pub T);
 
 pub fn unwrap_ser_error<T: ser::Error>(wrapped: WrappedSerError<T>) -> T {
     wrapped.0
@@ -86,8 +86,8 @@ impl fmt::Display for PydanticSerializationError {
 }
 
 impl PydanticSerializationError {
-    pub(crate) fn new_err(msg: String) -> PyErr {
-        PyErr::new::<Self, String>(msg)
+    pub(crate) fn new_err<T: Into<String>>(msg: T) -> PyErr {
+        PyErr::new::<Self, String>(msg.into())
     }
 }
 

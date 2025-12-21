@@ -7,16 +7,16 @@ use std::sync::Arc;
 
 use serde::ser::SerializeSeq;
 
+use crate::PydanticSerializationUnexpectedValue;
 use crate::definitions::DefinitionsBuilder;
+use crate::serializers::SerializationState;
 use crate::serializers::extra::SerCheck;
 use crate::serializers::type_serializers::any::AnySerializer;
-use crate::serializers::SerializationState;
 use crate::tools::SchemaDict;
-use crate::PydanticSerializationUnexpectedValue;
 
 use super::{
-    infer_json_key, infer_serialize, infer_to_python, py_err_se_err, BuildSerializer, CombinedSerializer,
-    PydanticSerializer, SchemaFilter, SerMode, TypeSerializer,
+    BuildSerializer, CombinedSerializer, PydanticSerializer, SchemaFilter, SerMode, TypeSerializer, infer_json_key,
+    infer_serialize, infer_to_python, py_err_se_err,
 };
 
 #[derive(Debug)]
@@ -62,11 +62,7 @@ impl BuildSerializer for TupleSerializer {
 impl_py_gc_traverse!(TupleSerializer { serializers });
 
 impl TypeSerializer for TupleSerializer {
-    fn to_python<'py>(
-        &self,
-        value: &Bound<'py, PyAny>,
-        state: &mut SerializationState<'_, 'py>,
-    ) -> PyResult<Py<PyAny>> {
+    fn to_python<'py>(&self, value: &Bound<'py, PyAny>, state: &mut SerializationState<'py>) -> PyResult<Py<PyAny>> {
         match value.cast::<PyTuple>() {
             Ok(py_tuple) => {
                 let py = value.py();
@@ -96,7 +92,7 @@ impl TypeSerializer for TupleSerializer {
     fn json_key<'a, 'py>(
         &self,
         key: &'a Bound<'py, PyAny>,
-        state: &mut SerializationState<'_, 'py>,
+        state: &mut SerializationState<'py>,
     ) -> PyResult<Cow<'a, str>> {
         match key.cast::<PyTuple>() {
             Ok(py_tuple) => {
@@ -123,7 +119,7 @@ impl TypeSerializer for TupleSerializer {
         &self,
         value: &Bound<'py, PyAny>,
         serializer: S,
-        state: &mut SerializationState<'_, 'py>,
+        state: &mut SerializationState<'py>,
     ) -> Result<S::Ok, S::Error> {
         match value.cast::<PyTuple>() {
             Ok(py_tuple) => {
@@ -155,10 +151,10 @@ impl TypeSerializer for TupleSerializer {
     }
 }
 
-struct TupleSerializerEntry<'a, 'b, 'py> {
+struct TupleSerializerEntry<'a, 'py> {
     item: Bound<'py, PyAny>,
     serializer: &'a CombinedSerializer,
-    state: &'a mut SerializationState<'b, 'py>,
+    state: &'a mut SerializationState<'py>,
 }
 
 impl TupleSerializer {
@@ -171,8 +167,8 @@ impl TupleSerializer {
     fn for_each_tuple_item_and_serializer<'py, E>(
         &self,
         tuple: &Bound<'py, PyTuple>,
-        state: &mut SerializationState<'_, 'py>,
-        mut f: impl for<'a, 'b> FnMut(TupleSerializerEntry<'a, 'b, 'py>) -> Result<(), E>,
+        state: &mut SerializationState<'py>,
+        mut f: impl for<'a> FnMut(TupleSerializerEntry<'a, 'py>) -> Result<(), E>,
     ) -> PyResult<Result<(), E>> {
         let n_items = tuple.len();
         let mut py_tuple_iter = tuple.iter();
@@ -203,7 +199,7 @@ impl TupleSerializer {
             let n_variadic_items = (n_items + 1).saturating_sub(self.serializers.len());
             let serializers_iter = self.serializers[..variadic_item_index]
                 .iter()
-                .chain(iter::repeat(&self.serializers[variadic_item_index]).take(n_variadic_items))
+                .chain(iter::repeat_n(&self.serializers[variadic_item_index], n_variadic_items))
                 .chain(self.serializers[variadic_item_index + 1..].iter());
             use_serializers!(serializers_iter);
         } else if state.check == SerCheck::Strict && n_items != self.serializers.len() {

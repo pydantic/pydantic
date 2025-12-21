@@ -4,7 +4,7 @@ from enum import Enum
 from typing import Any
 
 import pytest
-from typing_extensions import get_args, get_type_hints  # noqa: UP035 (https://github.com/astral-sh/ruff/pull/18476)
+from typing_extensions import get_args, get_type_hints
 from typing_inspection.introspection import UNKNOWN, AnnotationSource, inspect_annotation
 
 from pydantic_core import SchemaError, SchemaSerializer, SchemaValidator, ValidationError, core_schema
@@ -384,3 +384,10 @@ def test_expected_serialization_types(return_schema):
 def test_err_on_invalid() -> None:
     with pytest.raises(SchemaError, match='Cannot construct schema with `InvalidSchema` member.'):
         SchemaValidator(core_schema.invalid_schema())
+
+
+def test_deprecation_warning() -> None:
+    with pytest.deprecated_call(
+        match='The `field_name` argument on `with_info_before_validator_function` is deprecated'
+    ):
+        core_schema.with_info_before_validator_function(val_function, schema={'type': 'int'}, field_name='foo')

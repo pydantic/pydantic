@@ -4,7 +4,7 @@ use pyo3::types::{
     PyBool, PyByteArray, PyBytes, PyComplex, PyDate, PyDateTime, PyDelta, PyDict, PyFloat, PyFrozenSet, PyInt,
     PyIterator, PyList, PyNone, PySet, PyString, PyTime, PyTuple, PyType,
 };
-use pyo3::{intern, PyTypeInfo};
+use pyo3::{PyTypeInfo, intern};
 
 use strum::Display;
 use strum_macros::EnumString;
@@ -101,7 +101,7 @@ impl ObTypeLookup {
         }
     }
 
-    pub fn cached(py: Python<'_>) -> &Self {
+    pub fn cached(py: Python<'_>) -> &'static Self {
         TYPE_LOOKUP.get_or_init(py, || Self::new(py))
     }
 

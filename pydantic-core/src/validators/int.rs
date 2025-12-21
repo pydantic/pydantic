@@ -1,14 +1,14 @@
 use std::sync::Arc;
 
 use num_bigint::BigInt;
+use pyo3::IntoPyObjectExt;
 use pyo3::exceptions::PyValueError;
 use pyo3::intern;
 use pyo3::prelude::*;
 use pyo3::types::{PyDict, PyString};
-use pyo3::IntoPyObjectExt;
 
-use crate::build_tools::is_strict;
 use crate::build_tools::LazyLock;
+use crate::build_tools::is_strict;
 use crate::errors::{ErrorType, ValError, ValResult};
 use crate::input::{Input, Int};
 
@@ -123,60 +123,61 @@ impl Validator for ConstrainedIntValidator {
         let either_int = input.validate_int(state.strict_or(self.strict))?.unpack(state);
         let int_value = either_int.as_int()?;
 
-        if let Some(ref multiple_of) = self.multiple_of {
-            if &int_value % multiple_of != Int::Big(BigInt::from(0)) {
-                return Err(ValError::new(
-                    ErrorType::MultipleOf {
-                        multiple_of: multiple_of.clone().into(),
-                        context: None,
-                    },
-                    input,
-                ));
-            }
+        if let Some(ref multiple_of) = self.multiple_of
+            && (&int_value % multiple_of != Int::Big(BigInt::from(0)))
+        {
+            return Err(ValError::new(
+                ErrorType::MultipleOf {
+                    multiple_of: multiple_of.clone().into(),
+                    context: None,
+                },
+                input,
+            ));
         }
-        if let Some(ref le) = self.le {
-            if &int_value > le {
-                return Err(ValError::new(
-                    ErrorType::LessThanEqual {
-                        le: le.clone().into(),
-                        context: None,
-                    },
-                    input,
-                ));
-            }
+        if let Some(ref le) = self.le
+            && (&int_value > le)
+        {
+            return Err(ValError::new(
+                ErrorType::LessThanEqual {
+                    le: le.clone().into(),
+                    context: None,
+                },
+                input,
+            ));
         }
-        if let Some(ref lt) = self.lt {
-            if &int_value >= lt {
-                return Err(ValError::new(
-                    ErrorType::LessThan {
-                        lt: lt.clone().into(),
-                        context: None,
-                    },
-                    input,
-                ));
-            }
+        if let Some(ref lt) = self.lt
+            && (&int_value >= lt)
+        {
+            return Err(ValError::new(
+                ErrorType::LessThan {
+                    lt: lt.clone().into(),
+                    context: None,
+                },
+                input,
+            ));
         }
-        if let Some(ref ge) = self.ge {
-            if &int_value < ge {
-                return Err(ValError::new(
-                    ErrorType::GreaterThanEqual {
-                        ge: ge.clone().into(),
-                        context: None,
-                    },
-                    input,
-                ));
-            }
+        if let Some(ref ge) = self.ge
+            && (&int_value < ge)
+        {
+            return Err(ValError::new(
+                ErrorType::GreaterThanEqual {
+                    ge: ge.clone().into(),
+                    context: None,
+                },
+                input,
+            ));
         }
-        if let Some(ref gt) = self.gt {
-            if &int_value <= gt {
-                return Err(ValError::new(
-                    ErrorType::GreaterThan {
-                        gt: gt.clone().into(),
-                        context: None,
-                    },
-                    input,
-                ));
-            }
+
+        if let Some(ref gt) = self.gt
+            && (&int_value <= gt)
+        {
+            return Err(ValError::new(
+                ErrorType::GreaterThan {
+                    gt: gt.clone().into(),
+                    context: None,
+                },
+                input,
+            ));
         }
         Ok(either_int.into_py_any(py)?)
     }

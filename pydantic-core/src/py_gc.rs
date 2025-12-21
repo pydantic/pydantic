@@ -2,6 +2,7 @@ use std::sync::Arc;
 
 use ahash::AHashMap;
 use enum_dispatch::enum_dispatch;
+use hashbrown::HashTable;
 use pyo3::{Py, PyTraverseError, PyVisit};
 
 /// Trait implemented by types which can be traversed by the Python GC.
@@ -52,6 +53,12 @@ impl<T: PyGcTraverse> PyGcTraverse for Option<T> {
             Some(item) => T::py_gc_traverse(item, visit),
             None => Ok(()),
         }
+    }
+}
+
+impl<T: PyGcTraverse> PyGcTraverse for HashTable<T> {
+    fn py_gc_traverse(&self, visit: &PyVisit<'_>) -> Result<(), PyTraverseError> {
+        self.iter().try_for_each(|item| item.py_gc_traverse(visit))
     }
 }
 

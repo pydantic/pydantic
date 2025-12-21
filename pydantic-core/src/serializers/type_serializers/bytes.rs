@@ -2,15 +2,15 @@ use std::borrow::Cow;
 use std::sync::Arc;
 
 use pyo3::types::{PyBytes, PyDict};
-use pyo3::{prelude::*, IntoPyObjectExt};
+use pyo3::{IntoPyObjectExt, prelude::*};
 
 use crate::build_tools::LazyLock;
 use crate::definitions::DefinitionsBuilder;
-use crate::serializers::config::{BytesMode, FromConfig};
 use crate::serializers::SerializationState;
+use crate::serializers::config::{BytesMode, FromConfig};
 
 use super::{
-    infer_json_key, infer_serialize, infer_to_python, BuildSerializer, CombinedSerializer, SerMode, TypeSerializer,
+    BuildSerializer, CombinedSerializer, SerMode, TypeSerializer, infer_json_key, infer_serialize, infer_to_python,
 };
 
 #[derive(Debug)]
@@ -65,11 +65,7 @@ impl BuildSerializer for BytesSerializer {
 impl_py_gc_traverse!(BytesSerializer {});
 
 impl TypeSerializer for BytesSerializer {
-    fn to_python<'py>(
-        &self,
-        value: &Bound<'py, PyAny>,
-        state: &mut SerializationState<'_, 'py>,
-    ) -> PyResult<Py<PyAny>> {
+    fn to_python<'py>(&self, value: &Bound<'py, PyAny>, state: &mut SerializationState<'py>) -> PyResult<Py<PyAny>> {
         let py = value.py();
         match value.cast::<PyBytes>() {
             Ok(py_bytes) => match state.extra.mode {
@@ -89,7 +85,7 @@ impl TypeSerializer for BytesSerializer {
     fn json_key<'a, 'py>(
         &self,
         key: &'a Bound<'py, PyAny>,
-        state: &mut SerializationState<'_, 'py>,
+        state: &mut SerializationState<'py>,
     ) -> PyResult<Cow<'a, str>> {
         match key.cast::<PyBytes>() {
             Ok(py_bytes) => self.bytes_mode.bytes_to_string(key.py(), py_bytes.as_bytes()),
@@ -104,7 +100,7 @@ impl TypeSerializer for BytesSerializer {
         &self,
         value: &Bound<'py, PyAny>,
         serializer: S,
-        state: &mut SerializationState<'_, 'py>,
+        state: &mut SerializationState<'py>,
     ) -> Result<S::Ok, S::Error> {
         match value.cast::<PyBytes>() {
             Ok(py_bytes) => self.bytes_mode.serialize_bytes(py_bytes.as_bytes(), serializer),

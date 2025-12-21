@@ -9,6 +9,7 @@ from typing import Any, Union
 
 import pytest
 from dirty_equals import FunctionCheck, HasRepr, IsStr
+
 from pydantic_core import CoreConfig, SchemaError, SchemaValidator, ValidationError, core_schema
 from pydantic_core.core_schema import ExtraBehavior
 
@@ -692,7 +693,8 @@ def test_aliases_debug():
     )
     print(repr(v))
     assert repr(v).startswith('SchemaValidator(title="model-fields", validator=ModelFields(')
-    assert 'PathChoices(' in repr(v)
+    # check that aliases with non-empty "rest" are present, i.e. non-trivial paths
+    assert 'rest: [\n' in repr(v)
 
 
 def get_int_key():

@@ -3,10 +3,10 @@ use std::fmt;
 
 use pyo3::exceptions::PyValueError;
 use pyo3::types::{PyDict, PyList, PyString};
-use pyo3::{intern, prelude::*, IntoPyObjectExt};
+use pyo3::{IntoPyObjectExt, intern, prelude::*};
 
 use crate::errors::{ErrorTypeDefaults, InputValue, LocItem, ValError, ValResult};
-use crate::lookup_key::{LookupKey, LookupPath};
+use crate::lookup_key::LookupPath;
 use crate::tools::py_err;
 use crate::validators::{TemporalUnitMode, ValBytesMode};
 
@@ -44,7 +44,7 @@ impl TryFrom<&str> for InputType {
             "python" => Ok(Self::Python),
             "json" => Ok(Self::Json),
             "string" => Ok(Self::String),
-            s => py_err!(PyValueError; "Invalid error mode: {}", s),
+            s => py_err!(PyValueError; "Invalid error mode: {s}"),
         }
     }
 }
@@ -120,11 +120,7 @@ pub trait Input<'py>: fmt::Debug {
         Self: 'a;
 
     fn validate_dict(&self, strict: bool) -> ValResult<Self::Dict<'_>> {
-        if strict {
-            self.strict_dict()
-        } else {
-            self.lax_dict()
-        }
+        if strict { self.strict_dict() } else { self.lax_dict() }
     }
     fn strict_dict(&self) -> ValResult<Self::Dict<'_>>;
     #[cfg_attr(has_coverage_attribute, coverage(off))]
@@ -223,7 +219,7 @@ pub trait KeywordArgs<'py> {
     where
         Self: 'a;
     fn len(&self) -> usize;
-    fn get_item<'k>(&self, key: &'k LookupKey) -> ValResult<Option<(&'k LookupPath, Self::Item<'_>)>>;
+    fn get_item(&self, key: &LookupPath) -> ValResult<Option<Self::Item<'_>>>;
     fn iter(&self) -> impl Iterator<Item = ValResult<(Self::Key<'_>, Self::Item<'_>)>>;
 }
 
@@ -243,7 +239,7 @@ pub trait ValidatedDict<'py> {
     type Item<'a>: BorrowInput<'py>
     where
         Self: 'a;
-    fn get_item<'k>(&self, key: &'k LookupKey) -> ValResult<Option<(&'k LookupPath, Self::Item<'_>)>>;
+    fn get_item(&self, key: &LookupPath) -> ValResult<Option<Self::Item<'_>>>;
     // FIXME this is a bit of a leaky abstraction
     fn is_py_get_attr(&self) -> bool {
         false
@@ -285,7 +281,7 @@ pub enum Never {}
 impl<'py> ValidatedDict<'py> for Never {
     type Key<'a> = Bound<'py, PyAny>;
     type Item<'a> = Bound<'py, PyAny>;
-    fn get_item<'k>(&self, _key: &'k LookupKey) -> ValResult<Option<(&'k LookupPath, Self::Item<'_>)>> {
+    fn get_item<'k>(&self, _key: &LookupPath) -> ValResult<Option<Self::Item<'_>>> {
         unreachable!()
     }
     fn iterate<'a, R>(
@@ -371,7 +367,7 @@ impl<'py> KeywordArgs<'py> for Never {
     fn len(&self) -> usize {
         unreachable!()
     }
-    fn get_item<'k>(&self, _key: &'k LookupKey) -> ValResult<Option<(&'k LookupPath, Self::Item<'_>)>> {
+    fn get_item<'k>(&self, _key: &LookupPath) -> ValResult<Option<Self::Item<'_>>> {
         unreachable!()
     }
     fn iter(&self) -> impl Iterator<Item = ValResult<(Self::Key<'_>, Self::Item<'_>)>> {

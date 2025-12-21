@@ -6,17 +6,18 @@ use enum_dispatch::enum_dispatch;
 use jiter::{PartialMode, StringCacheMode};
 
 use pyo3::exceptions::{PyTypeError, PyValueError};
+use pyo3::pybacked::PyBackedStr;
 use pyo3::types::{PyAny, PyDict, PyString, PyTuple, PyType};
-use pyo3::{intern, PyTraverseError, PyVisit};
-use pyo3::{prelude::*, IntoPyObjectExt};
+use pyo3::{IntoPyObjectExt, prelude::*};
+use pyo3::{PyTraverseError, PyVisit, intern};
 
-use crate::build_tools::{py_schema_err, py_schema_error_type, ExtraBehavior};
+use crate::build_tools::{ExtraBehavior, py_schema_error_type};
 use crate::definitions::{Definitions, DefinitionsBuilder};
 use crate::errors::{LocItem, ValError, ValResult, ValidationError};
 use crate::input::{Input, InputType, StringMapping};
 use crate::py_gc::PyGcTraverse;
 use crate::recursion_guard::RecursionState;
-use crate::tools::SchemaDict;
+use crate::tools::{SchemaDict, pybackedstr_to_pystring};
 pub(crate) use config::{TemporalUnitMode, ValBytesMode};
 
 mod any;
@@ -324,7 +325,7 @@ impl SchemaValidator {
         &self,
         py: Python,
         obj: Bound<'_, PyAny>,
-        field_name: &str,
+        field_name: PyBackedStr,
         field_value: Bound<'_, PyAny>,
         strict: Option<bool>,
         extra: Option<&Bound<'_, PyString>>,
@@ -343,7 +344,7 @@ impl SchemaValidator {
             strict,
             extra_behavior,
             from_attributes,
-            field_name: Some(PyString::new(py, field_name)),
+            field_name: Some(pybackedstr_to_pystring(py, &field_name)),
             context,
             self_instance: None,
             cache_str: self.cache_str,
@@ -354,7 +355,7 @@ impl SchemaValidator {
         let guard = &mut RecursionState::default();
         let mut state = ValidationState::new(extra, guard, false.into());
         self.validator
-            .validate_assignment(py, &obj, field_name, &field_value, &mut state)
+            .validate_assignment(py, &obj, &field_name, &field_value, &mut state)
             .map_err(|e| self.prepare_validation_err(py, e, InputType::Python))
     }
 
@@ -506,30 +507,6 @@ pub trait BuildValidator: Sized {
     ) -> PyResult<Arc<CombinedValidator>>;
 }
 
-/// Logic to create a particular validator, called in the `validator_match` macro, then in turn by `build_validator`
-fn build_specific_validator<T: BuildValidator>(
-    val_type: &str,
-    schema_dict: &Bound<'_, PyDict>,
-    config: Option<&Bound<'_, PyDict>>,
-    definitions: &mut DefinitionsBuilder<Arc<CombinedValidator>>,
-) -> PyResult<Arc<CombinedValidator>> {
-    T::build(schema_dict, config, definitions)
-        .map_err(|err| py_schema_error_type!("Error building \"{}\" validator:\n  {}", val_type, err))
-}
-
-// macro to build the match statement for validator selection
-macro_rules! validator_match {
-    ($type:ident, $dict:ident, $config:ident, $definitions:ident, $($validator:path,)+) => {
-        match $type {
-            $(
-                <$validator>::EXPECTED_TYPE => build_specific_validator::<$validator>($type, $dict, $config, $definitions),
-            )+
-            "invalid" => return py_schema_err!("Cannot construct schema with `InvalidSchema` member."),
-            _ => return py_schema_err!(r#"Unknown schema type: "{}""#, $type),
-        }
-    };
-}
-
 // Used when creating the base validator instance, to avoid reusing the instance
 // when unpickling:
 pub fn build_validator_base(
@@ -559,14 +536,26 @@ fn build_validator_inner(
     let type_: Bound<'_, PyString> = dict.get_as_req(intern!(py, "type"))?;
     let type_ = type_.to_str()?;
 
-    if use_prebuilt {
-        // if we have a SchemaValidator on the type already, use it
-        if let Ok(Some(prebuilt_validator)) = prebuilt::PrebuiltValidator::try_get_from_schema(type_, dict) {
-            return Ok(Arc::new(prebuilt_validator));
-        }
+    // if we have a SchemaValidator on the type already, use it
+    if use_prebuilt && let Ok(Some(prebuilt_validator)) = prebuilt::PrebuiltValidator::try_get_from_schema(type_, dict)
+    {
+        return Ok(Arc::new(prebuilt_validator));
     }
 
-    validator_match!(
+    // macro to build the match statement for validator selection
+    macro_rules! validator_match {
+        ($type:ident, $dict:ident, $config:ident, $definitions:ident, $($validator:path,)+) => {
+            match $type {
+                $(
+                    <$validator>::EXPECTED_TYPE => <$validator>::build($dict, $config, $definitions),
+                )+
+                "invalid" => return Err(invalid_schema_type()),
+                _ => return Err(unknown_schema_type($type)),
+            }
+        };
+    }
+
+    let result = validator_match!(
         type_,
         dict,
         config,
@@ -661,7 +650,24 @@ fn build_validator_inner(
         definitions::DefinitionRefValidator,
         definitions::DefinitionsValidatorBuilder,
         complex::ComplexValidator,
-    )
+    );
+
+    result.map_err(|e| failed_to_build_validator(type_, e))
+}
+
+#[cold]
+fn failed_to_build_validator(val_type: &str, err: PyErr) -> PyErr {
+    py_schema_error_type!("Error building \"{val_type}\" validator:\n  {err}")
+}
+
+#[cold]
+fn invalid_schema_type() -> PyErr {
+    py_schema_error_type!("Cannot construct schema with `InvalidSchema` member.")
+}
+
+#[cold]
+fn unknown_schema_type(val_type: &str) -> PyErr {
+    py_schema_error_type!("Unknown schema type: \"{val_type}\"")
 }
 
 /// More (mostly immutable) data to pass between validators, should probably be class `Context`,
@@ -871,7 +877,7 @@ pub trait Validator: Send + Sync + Debug {
         &self,
         _py: Python<'py>,
         _obj: &Bound<'py, PyAny>,
-        _field_name: &str,
+        _field_name: &PyBackedStr,
         _field_value: &Bound<'py, PyAny>,
         _state: &mut ValidationState<'_, 'py>,
     ) -> ValResult<Py<PyAny>> {
