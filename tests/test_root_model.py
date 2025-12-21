@@ -802,3 +802,67 @@ def test_rootmodel_exclude_without_root_key():
     # Regular serialization should work as before
     result = test.model_dump()
     assert result == [{'a': 1, 'b': 2}, {'a': 3, 'b': None}]
+
+
+def test_rootmodel_list_include_specific_index():
+    """Test including specific fields from specific index using __root__."""
+
+    class Foo(BaseModel):
+        a: int
+        b: int | None = None
+        c: int = 10
+
+    TestModel = RootModel[list[Foo]]
+    test = TestModel([Foo(a=1, b=2, c=3), Foo(a=4, b=5, c=6)])
+
+    # Include only 'a' and 'b' from first item
+    result = test.model_dump(include={'__root__': {0: {'a', 'b'}}})
+    assert result == [{'a': 1, 'b': 2}]
+
+    # Include only 'c' from second item (index 1)
+    result = test.model_dump(include={'__root__': {1: {'c'}}})
+    assert result == [{'c': 6}]
+
+
+def test_rootmodel_dict_include_with_root_key():
+    """Test including specific fields from dict values using __root__."""
+
+    class Foo(BaseModel):
+        a: int
+        b: int | None = None
+        c: int = 10
+
+    DictModel = RootModel[dict[str, Foo]]
+    test = DictModel({
+        'first': Foo(a=1, b=2, c=3),
+        'second': Foo(a=4, b=5, c=6),
+    })
+
+    # Include only 'a' from all dict values
+    result = test.model_dump(include={'__root__': {'__all__': {'a'}}})
+    assert result == {'first': {'a': 1}, 'second': {'a': 4}}
+
+    # Include 'a' and 'b' from specific key
+    result = test.model_dump(include={'__root__': {'first': {'a', 'b'}}})
+    assert result == {'first': {'a': 1, 'b': 2}}
+
+
+def test_rootmodel_include_json_serialization():
+    """Test JSON serialization with include using __root__ key."""
+
+    class Foo(BaseModel):
+        a: int
+        b: int | None = None
+
+    TestModel = RootModel[list[Foo]]
+    test = TestModel([Foo(a=1, b=2), Foo(a=3, b=4)])
+
+    # Test JSON with include
+    json_result = test.model_dump_json(
+        indent=2, include={'__root__': {'__all__': {'a'}}}
+    )
+    expected = '[\n  {\n    "a": 1\n  },\n  {\n    "a": 3\n  }\n]'
+    assert json_result == expected
+
+    # Verify 'b' is not in the output
+    assert '"b"' not in json_result
