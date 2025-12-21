@@ -695,7 +695,7 @@ def test_rootmodel_list_exclude_with_root_key():
 
     class Foo(BaseModel):
         a: int
-        b: int | None = None
+        b: Optional[int] = None
 
     TestModel = RootModel[list[Foo]]
     test = TestModel([Foo(a=1, b=2), Foo(a=3, b=4)])
@@ -718,7 +718,7 @@ def test_rootmodel_list_include_with_root_key():
 
     class Foo(BaseModel):
         a: int
-        b: int | None = None
+        b: Optional[int] = None
 
     TestModel = RootModel[list[Foo]]
     test = TestModel([Foo(a=1, b=2), Foo(a=3)])
@@ -733,7 +733,7 @@ def test_rootmodel_list_exclude_specific_index():
 
     class Foo(BaseModel):
         a: int
-        b: int | None = None
+        b: Optional[int] = None
 
     TestModel = RootModel[list[Foo]]
     test = TestModel([Foo(a=1, b=2), Foo(a=3, b=4)])
@@ -748,7 +748,7 @@ def test_rootmodel_dict_exclude_with_root_key():
 
     class Foo(BaseModel):
         a: int
-        b: int | None = None
+        b: Optional[int] = None
 
     TestModel = RootModel[dict[str, Foo]]
     test = TestModel({'first': Foo(a=1, b=2), 'second': Foo(a=3, b=4)})
@@ -769,7 +769,7 @@ def test_original_example_from_discussion():
 
     class Foo(BaseModel):
         a: int
-        b: int | None = None
+        b: Optional[int] = None
 
     test = RootModel[list[Foo]]
 
@@ -790,7 +790,7 @@ def test_rootmodel_exclude_without_root_key():
 
     class Foo(BaseModel):
         a: int
-        b: int | None = None
+        b: Optional[int] = None
 
     TestModel = RootModel[list[Foo]]
     test = TestModel([Foo(a=1, b=2), Foo(a=3)])
@@ -805,7 +805,7 @@ def test_rootmodel_list_include_specific_index():
 
     class Foo(BaseModel):
         a: int
-        b: int | None = None
+        b: Optional[int] = None
         c: int = 10
 
     TestModel = RootModel[list[Foo]]
@@ -825,7 +825,7 @@ def test_rootmodel_dict_include_with_root_key():
 
     class Foo(BaseModel):
         a: int
-        b: int | None = None
+        b: Optional[int] = None
         c: int = 10
 
     DictModel = RootModel[dict[str, Foo]]
@@ -850,7 +850,7 @@ def test_rootmodel_include_json_serialization():
 
     class Foo(BaseModel):
         a: int
-        b: int | None = None
+        b: Optional[int] = None
 
     TestModel = RootModel[list[Foo]]
     test = TestModel([Foo(a=1, b=2), Foo(a=3, b=4)])
