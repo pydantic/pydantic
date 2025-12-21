@@ -2902,6 +2902,51 @@ def test_equality_delegation():
     assert MyModel(foo='bar') == ANY
 
 
+def test_self_referential_equality():
+    """Comparing models with circular self-references should not raise RecursionError."""
+    class SelfRef(BaseModel):
+        value: int = 0
+        ref: Optional['SelfRef'] = None
+
+    a = SelfRef()
+    a.ref = a
+
+    a2 = SelfRef()
+    a2.ref = a2
+
+    assert a == a2
+
+    b = SelfRef(value=1)
+    b.ref = b
+    assert a != b
+
+
+def test_mutual_reference_equality():
+    """Comparing models with mutual circular references should be stable and correct."""
+    class Node(BaseModel):
+        name: str
+        next: Optional['Node'] = None
+
+    n1a = Node(name='a')
+    n1b = Node(name='b')
+    n1a.next = n1b
+    n1b.next = n1a
+
+    n2a = Node(name='a')
+    n2b = Node(name='b')
+    n2a.next = n2b
+    n2b.next = n2a
+
+    assert n1a == n2a
+
+    n3a = Node(name='a')
+    n3b = Node(name='c')
+    n3a.next = n3b
+    n3b.next = n3a
+
+    assert n1a != n3a
+
+
 def test_recursion_loop_error():
     class Model(BaseModel):
         x: list['Model']
