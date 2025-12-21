@@ -708,9 +708,7 @@ def test_rootmodel_list_exclude_with_root_key():
     assert result == [{'a': 1}, {'a': 3}]
 
     # Test JSON serialization with __root__ exclude
-    json_result = test.model_dump_json(
-        indent=2, exclude={'__root__': {'__all__': {'b'}}}
-    )
+    json_result = test.model_dump_json(indent=2, exclude={'__root__': {'__all__': {'b'}}})
     expected_json = '[\n  {\n    "a": 1\n  },\n  {\n    "a": 3\n  }\n]'
     assert json_result == expected_json
 
@@ -779,9 +777,7 @@ def test_original_example_from_discussion():
     instance = test([Foo(a=1, b=2), Foo(a=3)])
 
     # Test excluding 'b' field from all items
-    json_string = instance.model_dump_json(
-        indent=2, exclude={'__root__': {'__all__': {'b'}}}
-    )
+    json_string = instance.model_dump_json(indent=2, exclude={'__root__': {'__all__': {'b'}}})
 
     # Verify 'b' is excluded
     assert '"b"' not in json_string
@@ -833,10 +829,12 @@ def test_rootmodel_dict_include_with_root_key():
         c: int = 10
 
     DictModel = RootModel[dict[str, Foo]]
-    test = DictModel({
-        'first': Foo(a=1, b=2, c=3),
-        'second': Foo(a=4, b=5, c=6),
-    })
+    test = DictModel(
+        {
+            'first': Foo(a=1, b=2, c=3),
+            'second': Foo(a=4, b=5, c=6),
+        }
+    )
 
     # Include only 'a' from all dict values
     result = test.model_dump(include={'__root__': {'__all__': {'a'}}})
@@ -858,9 +856,7 @@ def test_rootmodel_include_json_serialization():
     test = TestModel([Foo(a=1, b=2), Foo(a=3, b=4)])
 
     # Test JSON with include
-    json_result = test.model_dump_json(
-        indent=2, include={'__root__': {'__all__': {'a'}}}
-    )
+    json_result = test.model_dump_json(indent=2, include={'__root__': {'__all__': {'a'}}})
     expected = '[\n  {\n    "a": 1\n  },\n  {\n    "a": 3\n  }\n]'
     assert json_result == expected
 

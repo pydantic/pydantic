@@ -145,9 +145,7 @@ class RootModel(BaseModel, Generic[RootModelRootType], metaclass=_RootModelMetac
                 # value for the 'root' field
                 else:
                     root_value = param['__root__']
-                    new_param = {
-                        k: v for k, v in param.items() if k != '__root__'
-                    }
+                    new_param = {k: v for k, v in param.items() if k != '__root__'}
                     new_param['root'] = root_value
                     return new_param
 
