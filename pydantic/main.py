@@ -1207,12 +1207,23 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
                 else:
                     return NotImplemented  # delegate to the other item in the comparison
             except RecursionError:
+                # When RecursionError is caught, the stack is very deep.
+                # We need to temporarily increase the recursion limit to have
+                # enough headroom to execute the safe comparison logic.
+                import sys
+
+                old_limit = sys.getrecursionlimit()
+                sys.setrecursionlimit(old_limit + 200)
                 try:
                     if not isinstance(other, BaseModel):
                         return NotImplemented
+                    return _safe_deep_base_model_eq(self, other)
                 except RecursionError:
-                    return NotImplemented
-                return _safe_deep_base_model_eq(self, other)
+                    # If we still get RecursionError even with increased limit,
+                    # fall back to identity comparison
+                    return self is other
+                finally:
+                    sys.setrecursionlimit(old_limit)
 
     if TYPE_CHECKING:
         # We put `__init_subclass__` in a TYPE_CHECKING block because, even though we want the type-checking benefits
