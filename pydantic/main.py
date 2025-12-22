@@ -11,6 +11,7 @@ import sys
 import types
 import warnings
 from collections.abc import Generator, Mapping
+from contextvars import ContextVar
 from copy import copy, deepcopy
 from functools import cached_property
 from typing import (
@@ -77,6 +78,10 @@ TupleGenerator: TypeAlias = Generator[tuple[str, Any], None, None]
 IncEx: TypeAlias = Union[set[int], set[str], Mapping[int, Union['IncEx', bool]], Mapping[str, Union['IncEx', bool]]]
 
 _object_setattr = _model_construction.object_setattr
+
+# ContextVar for tracking pairs of BaseModel instances currently being compared.
+# Used to detect circular references in __eq__ comparisons.
+_model_eq_comparing: ContextVar[set[tuple[int, int]] | None] = ContextVar('_model_eq_comparing', default=None)
 
 
 def _check_frozen(model_cls: type[BaseModel], name: str, value: Any) -> None:
@@ -1152,78 +1157,84 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
     if not TYPE_CHECKING:
 
         def __eq__(self, other: Any) -> bool:
-            try:
-                if isinstance(other, BaseModel):
-                    # When comparing instances of generic types for equality, as long as all field values are equal,
-                    # only require their generic origin types to be equal, rather than exact type equality.
-                    # This prevents headaches like MyGeneric(x=1) != MyGeneric[Any](x=1).
-                    self_type = self.__pydantic_generic_metadata__['origin'] or self.__class__
-                    other_type = other.__pydantic_generic_metadata__['origin'] or other.__class__
+            if self is other:
+                return True
+            if not isinstance(other, BaseModel):
+                return NotImplemented
 
-                    # Perform common checks first
-                    if not (
-                        self_type == other_type
-                        and getattr(self, '__pydantic_private__', None) == getattr(other, '__pydantic_private__', None)
-                        and self.__pydantic_extra__ == other.__pydantic_extra__
-                    ):
-                        return False
+            # Check for circular reference using context tracking
+            comparing = _model_eq_comparing.get()
+            pair = (id(self), id(other))
 
-                    # We only want to compare pydantic fields but ignoring fields is costly.
-                    # We'll perform a fast check first, and fallback only when needed
-                    # See GH-7444 and GH-7825 for rationale and a performance benchmark
-
-                    # First, do the fast (and sometimes faulty) __dict__ comparison
-                    if self.__dict__ == other.__dict__:
-                        # If the check above passes, then pydantic fields are equal, we can return early
-                        return True
-
-                    # We don't want to trigger unnecessary costly filtering of __dict__ on all unequal objects, so we return
-                    # early if there are no keys to ignore (we would just return False later on anyway)
-                    model_fields = type(self).__pydantic_fields__.keys()
-                    if self.__dict__.keys() <= model_fields and other.__dict__.keys() <= model_fields:
-                        return False
-
-                    # If we reach here, there are non-pydantic-fields keys, mapped to unequal values, that we need to ignore
-                    # Resort to costly filtering of the __dict__ objects
-                    # We use operator.itemgetter because it is much faster than dict comprehensions
-                    # NOTE: Contrary to standard python class and instances, when the Model class has a default value for an
-                    # attribute and the model instance doesn't have a corresponding attribute, accessing the missing attribute
-                    # raises an error in BaseModel.__getattr__ instead of returning the class attribute
-                    # So we can use operator.itemgetter() instead of operator.attrgetter()
-                    getter = operator.itemgetter(*model_fields) if model_fields else lambda _: _utils._SENTINEL
-                    try:
-                        return getter(self.__dict__) == getter(other.__dict__)
-                    except KeyError:
-                        # In rare cases (such as when using the deprecated BaseModel.copy() method),
-                        # the __dict__ may not contain all model fields, which is how we can get here.
-                        # getter(self.__dict__) is much faster than any 'safe' method that accounts
-                        # for missing keys, and wrapping it in a `try` doesn't slow things down much
-                        # in the common case.
-                        self_fields_proxy = _utils.SafeGetItemProxy(self.__dict__)
-                        other_fields_proxy = _utils.SafeGetItemProxy(other.__dict__)
-                        return getter(self_fields_proxy) == getter(other_fields_proxy)
-
-                # other instance is not a BaseModel
-                else:
-                    return NotImplemented  # delegate to the other item in the comparison
-            except RecursionError:
-                # When RecursionError is caught, the stack is very deep.
-                # We need to temporarily increase the recursion limit to have
-                # enough headroom to execute the safe comparison logic.
-                import sys
-
-                old_limit = sys.getrecursionlimit()
-                sys.setrecursionlimit(old_limit + 200)
+            if comparing is not None:
+                # We're in a nested comparison - check if we've seen this pair
+                if pair in comparing:
+                    # Circular reference detected, assume equal
+                    return True
+                comparing.add(pair)
                 try:
-                    if not isinstance(other, BaseModel):
-                        return NotImplemented
-                    return _safe_deep_base_model_eq(self, other)
-                except RecursionError:
-                    # If we still get RecursionError even with increased limit,
-                    # fall back to identity comparison
-                    return self is other
+                    return self.__eq_impl__(other)
                 finally:
-                    sys.setrecursionlimit(old_limit)
+                    comparing.discard(pair)
+            else:
+                # Top-level comparison - set up tracking
+                comparing = {pair}
+                token = _model_eq_comparing.set(comparing)
+                try:
+                    return self.__eq_impl__(other)
+                finally:
+                    _model_eq_comparing.reset(token)
+
+        def __eq_impl__(self, other: BaseModel) -> bool:
+            """Internal equality implementation, assumes other is a BaseModel."""
+            # When comparing instances of generic types for equality, as long as all field values are equal,
+            # only require their generic origin types to be equal, rather than exact type equality.
+            # This prevents headaches like MyGeneric(x=1) != MyGeneric[Any](x=1).
+            self_type = self.__pydantic_generic_metadata__['origin'] or self.__class__
+            other_type = other.__pydantic_generic_metadata__['origin'] or other.__class__
+
+            # Perform common checks first
+            if not (
+                self_type == other_type
+                and getattr(self, '__pydantic_private__', None) == getattr(other, '__pydantic_private__', None)
+                and self.__pydantic_extra__ == other.__pydantic_extra__
+            ):
+                return False
+
+            # We only want to compare pydantic fields but ignoring fields is costly.
+            # We'll perform a fast check first, and fallback only when needed
+            # See GH-7444 and GH-7825 for rationale and a performance benchmark
+
+            # First, do the fast (and sometimes faulty) __dict__ comparison
+            if self.__dict__ == other.__dict__:
+                # If the check above passes, then pydantic fields are equal, we can return early
+                return True
+
+            # We don't want to trigger unnecessary costly filtering of __dict__ on all unequal objects, so we return
+            # early if there are no keys to ignore (we would just return False later on anyway)
+            model_fields = type(self).__pydantic_fields__.keys()
+            if self.__dict__.keys() <= model_fields and other.__dict__.keys() <= model_fields:
+                return False
+
+            # If we reach here, there are non-pydantic-fields keys, mapped to unequal values, that we need to ignore
+            # Resort to costly filtering of the __dict__ objects
+            # We use operator.itemgetter because it is much faster than dict comprehensions
+            # NOTE: Contrary to standard python class and instances, when the Model class has a default value for an
+            # attribute and the model instance doesn't have a corresponding attribute, accessing the missing attribute
+            # raises an error in BaseModel.__getattr__ instead of returning the class attribute
+            # So we can use operator.itemgetter() instead of operator.attrgetter()
+            getter = operator.itemgetter(*model_fields) if model_fields else lambda _: _utils._SENTINEL
+            try:
+                return getter(self.__dict__) == getter(other.__dict__)
+            except KeyError:
+                # In rare cases (such as when using the deprecated BaseModel.copy() method),
+                # the __dict__ may not contain all model fields, which is how we can get here.
+                # getter(self.__dict__) is much faster than any 'safe' method that accounts
+                # for missing keys, and wrapping it in a `try` doesn't slow things down much
+                # in the common case.
+                self_fields_proxy = _utils.SafeGetItemProxy(self.__dict__)
+                other_fields_proxy = _utils.SafeGetItemProxy(other.__dict__)
+                return getter(self_fields_proxy) == getter(other_fields_proxy)
 
     if TYPE_CHECKING:
         # We put `__init_subclass__` in a TYPE_CHECKING block because, even though we want the type-checking benefits
@@ -1702,67 +1713,6 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
         from .deprecated import copy_internals
 
         return copy_internals._calculate_keys(self, *args, **kwargs)
-
-
-def _safe_deep_base_model_eq(left: BaseModel, right: BaseModel) -> bool:
-    return _safe_deep_compare(left, right, set())
-
-
-def _safe_deep_compare(left: Any, right: Any, seen: set[tuple[int, int]]) -> bool:
-    if left is right:
-        return True
-    if type(left) is not type(right):
-        return False
-    pair = (id(left), id(right))
-    if pair in seen:
-        return True
-    seen.add(pair)
-
-    if isinstance(left, BaseModel):
-        left_type = left.__pydantic_generic_metadata__['origin'] or left.__class__
-        right_type = right.__pydantic_generic_metadata__['origin'] or right.__class__
-        if left_type != right_type:
-            return False
-
-        if not _safe_deep_compare(
-            getattr(left, '__pydantic_private__', None),
-            getattr(right, '__pydantic_private__', None),
-            seen,
-        ):
-            return False
-        if not _safe_deep_compare(left.__pydantic_extra__, right.__pydantic_extra__, seen):
-            return False
-
-        model_fields = type(left).__pydantic_fields__.keys()
-        getter = operator.itemgetter(*model_fields) if model_fields else lambda _: _utils._SENTINEL
-        try:
-            left_fields = getter(left.__dict__)
-            right_fields = getter(right.__dict__)
-        except KeyError:
-            left_fields = getter(_utils.SafeGetItemProxy(left.__dict__))
-            right_fields = getter(_utils.SafeGetItemProxy(right.__dict__))
-        return _safe_deep_compare(left_fields, right_fields, seen)
-
-    if isinstance(left, dict):
-        if left.keys() != right.keys():
-            return False
-        for key in left:
-            if not _safe_deep_compare(left[key], right[key], seen):
-                return False
-        return True
-
-    if isinstance(left, (list, tuple)):
-        if len(left) != len(right):
-            return False
-        for left_item, right_item in zip(left, right):
-            if not _safe_deep_compare(left_item, right_item, seen):
-                return False
-        return True
-
-    try:
-        return left == right
-    except RecursionError:
-        return False
 
 
 ModelT = TypeVar('ModelT', bound=BaseModel)
