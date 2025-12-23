@@ -1182,7 +1182,7 @@ print(Model.model_fields["y"].description)
 
 ```
 
-This requires the source code of the class to be available at runtime.
+This requires the source code of the class to be available at runtime (and so won't work in the interactive interpreter shell).
 
 Usage with `TypedDict` and stdlib dataclasses
 

@@ -7120,7 +7120,7 @@ should be used for field descriptions. Defaults to <code>False</code>.</p>
 <span class="nb">print</span><span class="p">(</span><span class="n">Model</span><span class="o">.</span><span class="n">model_fields</span><span class="p">[</span><span class="s2">&quot;y&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">description</span><span class="p">)</span>
 <span class="c1"># &gt; Description in Field</span>
 </code></pre></div>
-This requires the source code of the class to be available at runtime.</p>
+This requires the source code of the class to be available at runtime (and so won't work in the interactive interpreter shell).</p>
 <div class="admonition warning">
 <p class="admonition-title">Usage with <code>TypedDict</code> and stdlib dataclasses</p>
 <p>Due to current limitations, attribute docstrings detection may not work as expected when using
