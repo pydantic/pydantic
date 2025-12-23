@@ -1038,7 +1038,7 @@ class ConfigDict(TypedDict, total=False):
     print(Model.model_fields["y"].description)
     # > Description in Field
     ```
-    This requires the source code of the class to be available at runtime.
+    This requires the source code of the class to be available at runtime (and so won't work in the interactive interpreter shell).
 
     !!! warning "Usage with `TypedDict` and stdlib dataclasses"
         Due to current limitations, attribute docstrings detection may not work as expected when using
