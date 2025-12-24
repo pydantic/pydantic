@@ -1110,7 +1110,7 @@ class Foo(BaseModel):
 
     extras_schema = module_2.Foo.__pydantic_core_schema__['schema']['fields']['bar']['schema']['schema'][
         'extras_schema'
-    ]
+    ]['schema']
 
     assert extras_schema == {'type': 'int'}
 
@@ -1136,7 +1136,7 @@ class Foo(Bar):
         """
     )
 
-    assert module_2.Foo.__pydantic_core_schema__['schema']['extras_schema'] == {'type': 'int'}
+    assert module_2.Foo.__pydantic_core_schema__['schema']['extras_schema']['schema'] == {'type': 'int'}
 
 
 # TODO remove when we drop support for Python 3.10, in 3.11+ string annotations are properly evaluated

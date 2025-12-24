@@ -102,13 +102,29 @@ pub(super) enum FieldsMode {
     TypedDictAllow,
 }
 
+/// representation of a extra field for serialization
+#[derive(Debug)]
+pub(super) struct ExtraSerFields {
+    pub extra_serializer: Option<Arc<CombinedSerializer>>,
+    pub serialization_exclude_if: Option<Py<PyAny>>,
+}
+
+impl ExtraSerFields {
+    pub fn new(extra_serializer: Option<Arc<CombinedSerializer>>, serialization_exclude_if: Option<Py<PyAny>>) -> Self {
+        Self {
+            extra_serializer,
+            serialization_exclude_if,
+        }
+    }
+}
+
 /// General purpose serializer for fields - used by dataclasses, models and typed_dicts
 #[derive(Debug)]
 pub struct GeneralFieldsSerializer {
     fields: AHashMap<String, SerField>,
     computed_fields: Option<ComputedFields>,
     mode: FieldsMode,
-    extra_serializer: Option<Arc<CombinedSerializer>>,
+    extra_fields: Option<ExtraSerFields>,
     // isize because we look up filter via `.hash()` which returns an isize
     filter: SchemaFilter<isize>,
     required_fields: usize,
@@ -118,14 +134,14 @@ impl GeneralFieldsSerializer {
     pub(super) fn new(
         fields: AHashMap<String, SerField>,
         mode: FieldsMode,
-        extra_serializer: Option<Arc<CombinedSerializer>>,
+        extra_fields: Option<ExtraSerFields>,
         computed_fields: Option<ComputedFields>,
     ) -> Self {
         let required_fields = fields.values().filter(|f| f.required).count();
         Self {
             fields,
             mode,
-            extra_serializer,
+            extra_fields,
             filter: SchemaFilter::default(),
             computed_fields,
             required_fields,
@@ -168,6 +184,14 @@ impl GeneralFieldsSerializer {
                 if state.extra.exclude_none && value.is_none() {
                     continue;
                 }
+                if serialization_exclude_if(
+                    self.extra_fields
+                        .as_ref()
+                        .and_then(|ef| ef.serialization_exclude_if.as_ref()),
+                    &value,
+                )? {
+                    continue;
+                }
                 if value.is(missing_sentinel) {
                     continue;
                 }
@@ -177,7 +201,10 @@ impl GeneralFieldsSerializer {
                         &key,
                         AnySerializer::get(),
                         &value,
-                        self.extra_serializer.as_ref().unwrap_or(AnySerializer::get()),
+                        self.extra_fields
+                            .as_ref()
+                            .and_then(|ef| ef.extra_serializer.as_ref())
+                            .unwrap_or(AnySerializer::get()),
                         state,
                     )?;
                 }
@@ -229,9 +256,18 @@ impl GeneralFieldsSerializer {
 
                     map.serialize_entry_string_key(field.get_key(&state.extra), &value, serializer, state)?;
                 } else if self.mode == FieldsMode::TypedDictAllow {
+                    if serialization_exclude_if(
+                        self.extra_fields
+                            .as_ref()
+                            .and_then(|ef| ef.serialization_exclude_if.as_ref()),
+                        &value,
+                    )? {
+                        continue;
+                    }
                     let serializer = self
-                        .extra_serializer
+                        .extra_fields
                         .as_ref()
+                        .and_then(|ef| ef.extra_serializer.as_ref())
                         // If using `serialize_as_any`, extras are always inferred
                         .filter(|_| !state.extra.serialize_as_any)
                         .unwrap_or_else(|| AnySerializer::get());
