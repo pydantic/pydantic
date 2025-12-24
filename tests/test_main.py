@@ -381,6 +381,20 @@ def test_extra_allowed():
     assert model.c == 1
 
 
+def test_model_with_extra_serialization_exclude_if():
+    IntExcludeZero = Annotated[int, Field(exclude_if=lambda v: v == 0)]
+
+    class Model(BaseModel):
+        model_config = ConfigDict(extra='allow')
+        __pydantic_extra__: dict[str, IntExcludeZero]
+
+        a: IntExcludeZero
+
+    m = Model(a=0, b=0, c=1)
+
+    assert m.model_dump() == {'c': 1}
+
+
 def test_reassign_instance_method_with_extra_allow():
     class Model(BaseModel):
         model_config = ConfigDict(extra='allow')

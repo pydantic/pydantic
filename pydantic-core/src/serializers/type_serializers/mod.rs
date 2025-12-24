@@ -34,7 +34,7 @@ use super::computed_fields::ComputedFields;
 use super::config::utf8_py_error;
 use super::errors::{PydanticSerializationError, py_err_se_err};
 use super::extra::{Extra, ExtraOwned, SerCheck, SerMode};
-use super::fields::{FieldsMode, GeneralFieldsSerializer, SerField};
+use super::fields::{ExtraSerFields, FieldsMode, GeneralFieldsSerializer, SerField};
 use super::filter::{AnyFilter, SchemaFilter};
 use super::infer::{infer_json_key, infer_json_key_known, infer_serialize, infer_to_python};
 use super::ob_type::{IsType, ObType};
