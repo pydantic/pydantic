@@ -853,3 +853,32 @@ def test_computed_fields_exclude() -> None:
     assert m.model_dump(mode='json', exclude_computed_fields=True) == {}
     assert m.model_dump_json() == '{"prop":1}'
     assert m.model_dump_json(exclude_computed_fields=True) == '{}'
+
+
+def test_computed_field_custom_descriptor():
+    class UpperCaseDescriptor:
+        def __init__(self, func):
+            self.func = func
+
+        def __get__(self, obj, objtype=None):
+            if obj is None:
+                return self
+            return self.func(obj).upper()
+
+    class MyModel(BaseModel):
+        name: str
+
+        @computed_field
+        @UpperCaseDescriptor
+        def shout(self) -> str:
+            return self.name
+
+        @computed_field
+        @UpperCaseDescriptor
+        def _secret(self) -> str:
+            return self.name
+
+    m = MyModel(name='pydantic')
+    assert m.shout == 'PYDANTIC'
+    assert m.model_dump() == {'name': 'pydantic', 'shout': 'PYDANTIC', '_secret': 'PYDANTIC'}
+    assert repr(m) == "MyModel(name='pydantic', shout='PYDANTIC')"

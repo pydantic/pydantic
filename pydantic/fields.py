@@ -1540,7 +1540,7 @@ class ComputedFieldInfo:
     """
 
     decorator_repr: ClassVar[str] = '@computed_field'
-    wrapped_property: property
+    wrapped_property: Any
     return_type: Any
     alias: str | None
     alias_priority: int | None
@@ -1619,7 +1619,7 @@ class ComputedFieldInfo:
                 self.alias = _utils.get_first_not_none(serialization_alias, alias)
 
 
-def _wrapped_property_is_private(property_: cached_property | property) -> bool:  # type: ignore
+def _wrapped_property_is_private(property_: Any) -> bool:
     """Returns true if provided property is private, False otherwise."""
     wrapped_name: str = ''
 
@@ -1627,6 +1627,9 @@ def _wrapped_property_is_private(property_: cached_property | property) -> bool:
         wrapped_name = getattr(property_.fget, '__name__', '')
     elif isinstance(property_, cached_property):  # type: ignore
         wrapped_name = getattr(property_.func, '__name__', '')  # type: ignore
+    else:
+        inner = getattr(property_, 'func', None) or getattr(property_, 'fget', None)
+        wrapped_name = getattr(inner, '__name__', '') if inner is not None else getattr(property_, '__name__', '')
 
     return wrapped_name.startswith('_') and not wrapped_name.startswith('__')
 
