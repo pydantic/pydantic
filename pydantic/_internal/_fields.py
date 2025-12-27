@@ -6,7 +6,7 @@ import dataclasses
 import warnings
 from collections.abc import Mapping
 from functools import cache
-from inspect import Parameter, ismethoddescriptor, signature
+from inspect import Parameter, ismethoddescriptor
 from re import Pattern
 from typing import TYPE_CHECKING, Any, Callable, TypeVar
 
@@ -692,7 +692,7 @@ def takes_validated_data_argument(
 ) -> TypeIs[Callable[[dict[str, Any]], Any]]:
     """Whether the provided default factory callable has a validated data parameter."""
     try:
-        sig = signature(default_factory)
+        sig = _typing_extra.signature_no_eval(default_factory)
     except (ValueError, TypeError):
         # `inspect.signature` might not be able to infer a signature, e.g. with C objects.
         # In this case, we assume no data argument is present:
