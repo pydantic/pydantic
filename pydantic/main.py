@@ -46,6 +46,7 @@ from ._internal import (
     _typing_extra,
     _utils,
 )
+from .type_adapter import _wrap_serialization_error
 from ._migration import getattr_migration
 from .aliases import AliasChoices, AliasPath
 from .annotated_handlers import GetCoreSchemaHandler, GetJsonSchemaHandler
@@ -468,22 +469,27 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
         Returns:
             A dictionary representation of the model.
         """
-        return self.__pydantic_serializer__.to_python(
-            self,
-            mode=mode,
-            by_alias=by_alias,
-            include=include,
-            exclude=exclude,
-            context=context,
-            exclude_unset=exclude_unset,
-            exclude_defaults=exclude_defaults,
-            exclude_none=exclude_none,
-            exclude_computed_fields=exclude_computed_fields,
-            round_trip=round_trip,
-            warnings=warnings,
-            fallback=fallback,
-            serialize_as_any=serialize_as_any,
-        )
+        try:
+            return self.__pydantic_serializer__.to_python(
+                self,
+                mode=mode,
+                by_alias=by_alias,
+                include=include,
+                exclude=exclude,
+                context=context,
+                exclude_unset=exclude_unset,
+                exclude_defaults=exclude_defaults,
+                exclude_none=exclude_none,
+                exclude_computed_fields=exclude_computed_fields,
+                round_trip=round_trip,
+                warnings=warnings,
+                fallback=fallback,
+                serialize_as_any=serialize_as_any,
+            )
+        except Exception as e:
+            # Wrap the error with location information for better debugging
+            wrapped_error = _wrap_serialization_error(e, self, self.__class__)
+            raise wrapped_error
 
     def model_dump_json(
         self,
@@ -532,23 +538,28 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
         Returns:
             A JSON string representation of the model.
         """
-        return self.__pydantic_serializer__.to_json(
-            self,
-            indent=indent,
-            ensure_ascii=ensure_ascii,
-            include=include,
-            exclude=exclude,
-            context=context,
-            by_alias=by_alias,
-            exclude_unset=exclude_unset,
-            exclude_defaults=exclude_defaults,
-            exclude_none=exclude_none,
-            exclude_computed_fields=exclude_computed_fields,
-            round_trip=round_trip,
-            warnings=warnings,
-            fallback=fallback,
-            serialize_as_any=serialize_as_any,
-        ).decode()
+        try:
+            return self.__pydantic_serializer__.to_json(
+                self,
+                indent=indent,
+                ensure_ascii=ensure_ascii,
+                include=include,
+                exclude=exclude,
+                context=context,
+                by_alias=by_alias,
+                exclude_unset=exclude_unset,
+                exclude_defaults=exclude_defaults,
+                exclude_none=exclude_none,
+                exclude_computed_fields=exclude_computed_fields,
+                round_trip=round_trip,
+                warnings=warnings,
+                fallback=fallback,
+                serialize_as_any=serialize_as_any,
+            )
+        except Exception as e:
+            # Wrap the error with location information for better debugging
+            wrapped_error = _wrap_serialization_error(e, self, self.__class__)
+            raise wrapped_error.decode()
 
     @classmethod
     def model_json_schema(
