@@ -21,7 +21,7 @@ from pydantic_core import CoreSchema, SchemaSerializer, SchemaValidator, Some
 from typing_extensions import ParamSpec, is_typeddict
 
 from pydantic.errors import PydanticUserError
-from pydantic.main import BaseModel, IncEx
+from pydantic.main import IncEx
 
 from ._internal import _config, _generate_schema, _mock_val_ser, _namespace_utils, _repr, _typing_extra, _utils
 from .config import ConfigDict, ExtraValues
@@ -65,6 +65,9 @@ def _wrap_serialization_error(
     
     # Try to determine location from the instance
     if location is None:
+        # Lazy import to avoid circular import
+        from pydantic.main import BaseModel
+        
         if isinstance(instance, BaseModel):
             location = f"model '{instance.__class__.__name__}'"
         else:
@@ -104,6 +107,9 @@ def _getattr_no_parents(obj: Any, attribute: str) -> Any:
 
 def _type_has_config(type_: Any) -> bool:
     """Returns whether the type has config."""
+    # Lazy import to avoid circular import
+    from pydantic.main import BaseModel
+    
     type_ = _typing_extra.annotated_type(type_) or type_
     try:
         return issubclass(type_, BaseModel) or is_dataclass(type_) or is_typeddict(type_)
@@ -387,6 +393,9 @@ class TypeAdapter(Generic[T]):
 
     @property
     def _model_config(self) -> ConfigDict | None:
+        # Lazy import to avoid circular import
+        from pydantic.main import BaseModel
+        
         type_: Any = _typing_extra.annotated_type(self._type) or self._type  # Eg FastAPI heavily uses Annotated
         if _utils.lenient_issubclass(type_, BaseModel):
             return type_.model_config
