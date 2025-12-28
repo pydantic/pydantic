@@ -46,7 +46,6 @@ from ._internal import (
     _typing_extra,
     _utils,
 )
-from .type_adapter import _wrap_serialization_error
 from ._migration import getattr_migration
 from .aliases import AliasChoices, AliasPath
 from .annotated_handlers import GetCoreSchemaHandler, GetJsonSchemaHandler
@@ -54,6 +53,7 @@ from .config import ConfigDict, ExtraValues
 from .errors import PydanticUndefinedAnnotation, PydanticUserError
 from .json_schema import DEFAULT_REF_TEMPLATE, GenerateJsonSchema, JsonSchemaMode, JsonSchemaValue, model_json_schema
 from .plugin._schema_validator import PluggableSchemaValidator
+from .type_adapter import _wrap_serialization_error
 
 if TYPE_CHECKING:
     from inspect import Signature

@@ -41,48 +41,46 @@ P = ParamSpec('P')
 TypeAdapterT = TypeVar('TypeAdapterT', bound='TypeAdapter')
 
 
-def _wrap_serialization_error(
-    error: Exception, instance: Any, location: str | None = None
-) -> Exception:
+def _wrap_serialization_error(error: Exception, instance: Any, location: str | None = None) -> Exception:
     """Wrap a serialization error with location information.
-    
+
     Args:
         error: The original exception that occurred during serialization.
         instance: The instance being serialized.
         location: Optional location string (e.g., field name).
-    
+
     Returns:
         A RuntimeError with enhanced context, or the original error if it's already informative.
     """
     # If it's already a PydanticSerializationError, it might have location info
     from pydantic_core import PydanticSerializationError
-    
+
     if isinstance(error, PydanticSerializationError):
         # Check if the error message already contains location information
         error_msg = str(error)
         if 'field_name' in error_msg or 'location' in error_msg.lower():
             return error
-    
+
     # Try to determine location from the instance
     if location is None:
         # Lazy import to avoid circular import
         from pydantic.main import BaseModel
-        
+
         if isinstance(instance, BaseModel):
             location = f"model '{instance.__class__.__name__}'"
         else:
             location = f"value of type '{type(instance).__name__}'"
-    
+
     # Create a more informative error message
     error_type = type(error).__name__
     error_msg = str(error)
-    
-    new_msg = f"Failed to serialize value at location `{location}`"
+
+    new_msg = f'Failed to serialize value at location `{location}`'
     if error_msg:
-        new_msg += f"\n  Caused by: {error_type}: {error_msg}"
+        new_msg += f'\n  Caused by: {error_type}: {error_msg}'
     else:
-        new_msg += f"\n  Caused by: {error_type}"
-    
+        new_msg += f'\n  Caused by: {error_type}'
+
     # Create a new RuntimeError with the enhanced message
     new_error = RuntimeError(new_msg)
     # Preserve the original exception as __cause__ for better traceback
@@ -109,7 +107,7 @@ def _type_has_config(type_: Any) -> bool:
     """Returns whether the type has config."""
     # Lazy import to avoid circular import
     from pydantic.main import BaseModel
-    
+
     type_ = _typing_extra.annotated_type(type_) or type_
     try:
         return issubclass(type_, BaseModel) or is_dataclass(type_) or is_typeddict(type_)
@@ -395,7 +393,7 @@ class TypeAdapter(Generic[T]):
     def _model_config(self) -> ConfigDict | None:
         # Lazy import to avoid circular import
         from pydantic.main import BaseModel
-        
+
         type_: Any = _typing_extra.annotated_type(self._type) or self._type  # Eg FastAPI heavily uses Annotated
         if _utils.lenient_issubclass(type_, BaseModel):
             return type_.model_config

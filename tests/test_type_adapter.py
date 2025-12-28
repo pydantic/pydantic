@@ -734,4 +734,4 @@ def test_serialization_error_with_location():
         or 'model' in error_msg.lower()
         or 'serialize' in error_msg.lower()
         or 'location' in error_msg.lower()
-    ), f"Error message should include location information, got: {error_msg}"
+    ), f'Error message should include location information, got: {error_msg}'
