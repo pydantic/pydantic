@@ -708,3 +708,30 @@ def test_validate_strings_with_incorrect_configuration():
         ta.validate_strings(1, by_alias=False, by_name=False)
 
     assert exc_info.value.code == 'validate-by-alias-and-name-false'
+
+
+def test_serialization_error_with_location():
+    """Test that serialization errors include location information."""
+    try:
+        from pandas import NaT
+    except ImportError:
+        pytest.skip('pandas not available')
+
+    class Model(BaseModel):
+        timestamp: datetime
+
+    model = Model(timestamp=NaT)
+
+    # The serializer should raise an error with location information
+    ta = TypeAdapter(Model)
+    with pytest.raises((TypeError, RuntimeError)) as exc_info:
+        ta.dump_python(model, mode='json')
+
+    error_msg = str(exc_info.value)
+    # The error should mention location information (model name, serialize, or location)
+    assert (
+        'Model' in error_msg
+        or 'model' in error_msg.lower()
+        or 'serialize' in error_msg.lower()
+        or 'location' in error_msg.lower()
+    ), f"Error message should include location information, got: {error_msg}"

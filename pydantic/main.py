@@ -488,7 +488,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
             )
         except Exception as e:
             # Wrap the error with location information for better debugging
-            wrapped_error = _wrap_serialization_error(e, self, self.__class__)
+            wrapped_error = _wrap_serialization_error(e, self)
             raise wrapped_error
 
     def model_dump_json(
@@ -555,11 +555,11 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
                 warnings=warnings,
                 fallback=fallback,
                 serialize_as_any=serialize_as_any,
-            )
+            ).decode()
         except Exception as e:
             # Wrap the error with location information for better debugging
-            wrapped_error = _wrap_serialization_error(e, self, self.__class__)
-            raise wrapped_error.decode()
+            wrapped_error = _wrap_serialization_error(e, self)
+            raise wrapped_error
 
     @classmethod
     def model_json_schema(
