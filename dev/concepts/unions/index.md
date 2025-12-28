@@ -376,7 +376,7 @@ But wait! You ask, I only anticipate passing in `dict` types, why do I need to a
 In the following examples, you'll see that the callable discriminators are designed to handle both `dict` and model inputs. If you don't follow this practice, it's likely that you'll, in the best case, get warnings during serialization, and in the worst case, get runtime errors during validation.
 
 ```python
-from typing import Annotated, Any, Literal, Union
+from typing import Annotated, Any, Literal, Optional, Union
 
 from pydantic import BaseModel, Discriminator, Tag
 
@@ -394,7 +394,7 @@ class PumpkinPie(Pie):
     filling: Literal['pumpkin'] = 'pumpkin'
 
 
-def get_discriminator_value(v: Any) -> str:
+def get_discriminator_value(v: Any) -> Optional[str]:
     if isinstance(v, dict):
         return v.get('fruit', v.get('filling'))
     return getattr(v, 'fruit', getattr(v, 'filling', None))
@@ -453,7 +453,7 @@ class PumpkinPie(Pie):
     filling: Literal['pumpkin'] = 'pumpkin'
 
 
-def get_discriminator_value(v: Any) -> str:
+def get_discriminator_value(v: Any) -> str | None:
     if isinstance(v, dict):
         return v.get('fruit', v.get('filling'))
     return getattr(v, 'fruit', getattr(v, 'filling', None))
@@ -498,12 +498,12 @@ ThanksgivingDinner(dessert=PumpkinPie(time_to_cook=40, num_ingredients=6, fillin
 For example:
 
 ```python
-from typing import Annotated, Any, Union
+from typing import Annotated, Any, Optional, Union
 
 from pydantic import BaseModel, Discriminator, Tag, ValidationError
 
 
-def model_x_discriminator(v: Any) -> str:
+def model_x_discriminator(v: Any) -> Optional[str]:
     if isinstance(v, int):
         return 'int'
     if isinstance(v, (dict, BaseModel)):
@@ -557,7 +557,7 @@ from typing import Annotated, Any
 from pydantic import BaseModel, Discriminator, Tag, ValidationError
 
 
-def model_x_discriminator(v: Any) -> str:
+def model_x_discriminator(v: Any) -> str | None:
     if isinstance(v, int):
         return 'int'
     if isinstance(v, (dict, BaseModel)):
