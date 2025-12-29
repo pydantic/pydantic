@@ -4,9 +4,9 @@ By specifying an `output_type` on an Agent, you can constrain the LLM to return 
 ## LLM Structured Output
 
 ```python {test="skip"}
-from pydantic import BaseModel, Field, ValidationInfo, field_validator
-
 from pydantic_ai import Agent
+
+from pydantic import BaseModel, Field, ValidationInfo, field_validator
 
 
 class City(BaseModel):
