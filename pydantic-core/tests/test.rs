@@ -1,7 +1,6 @@
 #[cfg(test)]
 mod tests {
-    use _pydantic_core::{SchemaSerializer, SchemaValidator, WarningsArg};
-    use pyo3::ffi::c_str; // can switch to c"" literals on MSRV >= 1.77
+    use _pydantic_core::{SchemaSerializer, SchemaValidator};
     use pyo3::prelude::*;
     use pyo3::types::PyDict;
 
@@ -23,8 +22,7 @@ mod tests {
             //         'type': 'function-wrap',
             //         'function': lambda: None,
             //     },
-            let code = c_str!(
-                r"{
+            let code = cr"{
                 'type': 'definitions',
                 'schema': {'type': 'definition-ref', 'schema_ref': 'C-ref'},
                 'definitions': [
@@ -46,8 +44,7 @@ mod tests {
                         },
                     },
                 ]
-            }"
-            );
+            }";
             let schema: Bound<'_, PyDict> = py.eval(code, None, None).unwrap().extract().unwrap();
             SchemaSerializer::py_new(schema, None).unwrap();
         });
@@ -56,8 +53,7 @@ mod tests {
     #[test]
     fn test_literal_schema() {
         Python::attach(|py| {
-            let code = c_str!(
-                r#"
+            let code = cr#"
 schema = {
     "type": "dict",
     "keys_schema": {
@@ -70,8 +66,7 @@ schema = {
     "strict": False,
 }
 json_input = '{"a": "something"}'
-            "#
-            );
+            "#;
             let locals = PyDict::new(py);
             py.run(code, None, Some(&locals)).unwrap();
             let schema = locals.get_item("schema").unwrap().unwrap();
@@ -89,8 +84,7 @@ json_input = '{"a": "something"}'
     #[test]
     fn test_segfault_for_recursive_schemas() {
         Python::attach(|py| {
-            let code = c_str!(
-                r"
+            let code = cr"
 schema = {
     'type': 'definitions',
     'schema': {
@@ -125,8 +119,7 @@ schema = {
 }
 dump_json_input_1 = 1
 dump_json_input_2 = {'a': 'something'}
-            "
-            );
+            ";
             let locals = PyDict::new(py);
             py.run(code, None, Some(&locals)).unwrap();
             let schema = locals
@@ -138,49 +131,11 @@ dump_json_input_2 = {'a': 'something'}
             let dump_json_input_1 = locals.get_item("dump_json_input_1").unwrap().unwrap();
             let dump_json_input_2 = locals.get_item("dump_json_input_2").unwrap().unwrap();
             let serializer = SchemaSerializer::py_new(schema, None).unwrap();
-            let serialization_result = serializer
-                .to_json(
-                    py,
-                    &dump_json_input_1,
-                    None,
-                    Some(false),
-                    None,
-                    None,
-                    Some(false),
-                    false,
-                    false,
-                    false,
-                    false,
-                    false,
-                    WarningsArg::Bool(false),
-                    None,
-                    false,
-                    None,
-                )
-                .unwrap();
+            let serialization_result = serializer.to_json(&dump_json_input_1, None, Some(false), None).unwrap();
             let repr = format!("{}", serialization_result.bind(py).repr().unwrap());
             assert_eq!(repr, "b'1'");
 
-            let serialization_result = serializer
-                .to_json(
-                    py,
-                    &dump_json_input_2,
-                    None,
-                    Some(false),
-                    None,
-                    None,
-                    Some(false),
-                    false,
-                    false,
-                    false,
-                    false,
-                    false,
-                    WarningsArg::Bool(false),
-                    None,
-                    false,
-                    None,
-                )
-                .unwrap();
+            let serialization_result = serializer.to_json(&dump_json_input_2, None, Some(false), None).unwrap();
             let repr = format!("{}", serialization_result.bind(py).repr().unwrap());
             assert_eq!(repr, "b'{\"a\":\"something\"}'");
         });
