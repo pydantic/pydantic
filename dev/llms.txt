@@ -81,6 +81,7 @@ Define how data should be in pure, canonical Python 3.9+; validate it with Pydan
 - [Dynamic models](https://docs.pydantic.dev/latest/examples/dynamic_models/index.md)
 - [Validating File Data](https://docs.pydantic.dev/latest/examples/files/index.md)
 - [Databases](https://docs.pydantic.dev/latest/examples/orms/index.md)
+- [Agent libraries – Pydantic AI](https://docs.pydantic.dev/latest/examples/pydantic_ai/index.md)
 - [Queues](https://docs.pydantic.dev/latest/examples/queues/index.md)
 - [Web and API Requests](https://docs.pydantic.dev/latest/examples/requests/index.md)
 - [AWS Lambda](https://docs.pydantic.dev/latest/integrations/aws_lambda/index.md)
