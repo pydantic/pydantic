@@ -10,6 +10,7 @@ from annotated_types import MaxLen
 from pydantic import (
     BaseModel,
     Field,
+    TypeAdapter,
     ValidationError,
     field_serializer,
     field_validator,
@@ -127,3 +128,29 @@ def test_deferred_annotations_pydantic_extra() -> None:
 
     assert f.a == 1
     assert f.extra == 1
+
+
+def test_deferred_annotations_json_schema_extra() -> None:
+    def json_schema_extra(js_schema: Anything):
+        return js_schema
+
+    ta = TypeAdapter(int, config={'json_schema_extra': json_schema_extra})
+
+    assert ta.json_schema() == {'type': 'integer'}
+
+
+def test_deferred_annotations_default_factory() -> None:
+    def def_factory(validated_data: Anything):
+        return 1
+
+    class Model(BaseModel):
+        f: int = Field(default_factory=def_factory)
+
+    assert Model().f == 1
+
+
+def test_deferred_annotations_custom_init() -> None:
+    class Model(BaseModel):
+        def __init__(self, a: Anything) -> None: ...
+
+    assert len(Model.__signature__.parameters) == 1

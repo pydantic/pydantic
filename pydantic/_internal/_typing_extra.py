@@ -8,6 +8,7 @@ import sys
 import types
 import typing
 from functools import partial
+from inspect import Signature, signature
 from typing import TYPE_CHECKING, Any, Callable, cast
 
 import typing_extensions
@@ -292,17 +293,21 @@ def _type_convert(arg: Any) -> Any:
     return arg
 
 
-def safe_get_annotations(cls: type[Any]) -> dict[str, Any]:
-    """Get the annotations for the provided class, accounting for potential deferred forward references.
+def safe_get_annotations(obj: Any) -> dict[str, Any]:
+    """Get the annotations for the provided object, accounting for potential deferred forward references.
 
     Starting with Python 3.14, accessing the `__annotations__` attribute might raise a `NameError` if
     a referenced symbol isn't defined yet. In this case, we return the annotation in the *forward ref*
     format.
     """
     if sys.version_info >= (3, 14):
-        return annotationlib.get_annotations(cls, format=annotationlib.Format.FORWARDREF)
+        return annotationlib.get_annotations(obj, format=annotationlib.Format.FORWARDREF)
     else:
-        return cls.__dict__.get('__annotations__', {})
+        # TODO just do getattr(obj, '__annotations__', {}) when dropping support for Python 3.9:
+        if isinstance(obj, type):
+            return obj.__dict__.get('__annotations__', {})
+        else:
+            return getattr(obj, '__annotations__', {})
 
 
 def get_model_type_hints(
@@ -553,6 +558,16 @@ def is_backport_fixable_error(e: TypeError) -> bool:
     return sys.version_info < (3, 10) and msg.startswith('unsupported operand type(s) for |: ')
 
 
+def signature_no_eval(f: Callable[..., Any]) -> Signature:
+    """Get the signature of a callable without evaluating any annotations."""
+    if sys.version_info >= (3, 14):
+        from annotationlib import Format
+
+        return signature(f, annotation_format=Format.FORWARDREF)
+    else:
+        return signature(f)
+
+
 def get_function_type_hints(
     function: Callable[..., Any],
     *,
@@ -569,11 +584,13 @@ def get_function_type_hints(
     """
     try:
         if isinstance(function, partial):
-            annotations = function.func.__annotations__
+            annotations = safe_get_annotations(function.func)
         else:
-            annotations = function.__annotations__
+            annotations = safe_get_annotations(function)
     except AttributeError:
-        # Some functions (e.g. builtins) don't have annotations:
+        # Some functions (e.g. builtins) don't have annotations.
+        # TODO revisit this when we drop support for Python 3.13, as
+        # we will unconditionally use `annotationlib.get_annotations()`:
         return {}
 
     if globalns is None:
