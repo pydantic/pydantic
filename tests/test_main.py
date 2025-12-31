@@ -2902,6 +2902,88 @@ def test_equality_delegation():
     assert MyModel(foo='bar') == ANY
 
 
+def test_equality_self_referential():
+    """Test that self-referential models can be compared without RecursionError.
+
+    Regression test for https://github.com/pydantic/pydantic/issues/10630
+    """
+
+    class SelfRef(BaseModel):
+        a: 'SelfRef' = None
+
+    # Test 1: Self-reference self-equality (a == a where a.a = a)
+    a = SelfRef()
+    a.a = a
+    assert a == a
+
+    # Test 2: Two self-referential objects should be equal
+    a1 = SelfRef()
+    a1.a = a1
+    a2 = SelfRef()
+    a2.a = a2
+    assert a1 == a2
+
+    # Test 3: Different structures should not be equal
+    e1 = SelfRef()
+    e1.a = e1  # self-reference
+    e2 = SelfRef()
+    e2.a = SelfRef()  # points to different object (not self-reference)
+    assert e1 != e2
+
+
+def test_equality_mutual_references():
+    """Test that mutually referential models can be compared without RecursionError.
+
+    Regression test for https://github.com/pydantic/pydantic/issues/10630
+    """
+
+    class Node(BaseModel):
+        next: 'Node' = None
+
+    # Mutual references: a -> b -> a
+    a = Node()
+    b = Node()
+    a.next = b
+    b.next = a
+
+    # Same structure: c -> d -> c
+    c = Node()
+    d = Node()
+    c.next = d
+    d.next = c
+
+    assert a == c
+
+
+def test_equality_cyclic_graph():
+    """Test that cyclic graph structures can be compared without RecursionError.
+
+    Regression test for https://github.com/pydantic/pydantic/issues/10630
+    """
+
+    class GraphNode(BaseModel):
+        name: str
+        next: 'GraphNode' = None
+
+    # Create cycle: n1 -> n2 -> n3 -> n1
+    n1 = GraphNode(name='A')
+    n2 = GraphNode(name='B')
+    n3 = GraphNode(name='C')
+    n1.next = n2
+    n2.next = n3
+    n3.next = n1
+
+    # Create same structure: m1 -> m2 -> m3 -> m1
+    m1 = GraphNode(name='A')
+    m2 = GraphNode(name='B')
+    m3 = GraphNode(name='C')
+    m1.next = m2
+    m2.next = m3
+    m3.next = m1
+
+    assert n1 == m1
+
+
 def test_recursion_loop_error():
     class Model(BaseModel):
         x: list['Model']
