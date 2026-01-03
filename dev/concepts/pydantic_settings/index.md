@@ -843,10 +843,10 @@ from pydantic_settings import BaseSettings
 
 class User(BaseSettings, cli_parse_args=True):
     first_name: str = Field(
-        validation_alias=AliasChoices('f', 'fname', AliasPath('name', 0))
+        validation_alias=AliasChoices('f', 'fname', AliasPath('fullname', 0))
     )
     last_name: str = Field(
-        validation_alias=AliasChoices('l', 'lname', AliasPath('name', 1))
+        validation_alias=AliasChoices('l', 'lname', AliasPath('fullname', 1))
     )
 
 
@@ -858,11 +858,11 @@ sys.argv = ['example.py', '-f', 'John', '-l', 'Doe']
 print(User().model_dump())
 #> {'first_name': 'John', 'last_name': 'Doe'}
 
-sys.argv = ['example.py', '--name', 'John,Doe']
+sys.argv = ['example.py', '--fullname', 'John,Doe']
 print(User().model_dump())
 #> {'first_name': 'John', 'last_name': 'Doe'}
 
-sys.argv = ['example.py', '--name', 'John', '--lname', 'Doe']
+sys.argv = ['example.py', '--fullname', 'John', '--lname', 'Doe']
 print(User().model_dump())
 #> {'first_name': 'John', 'last_name': 'Doe'}
 
