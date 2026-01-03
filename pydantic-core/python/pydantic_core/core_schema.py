@@ -2975,7 +2975,7 @@ class TypedDictSchema(TypedDict, total=False):
     cls_name: str
     computed_fields: list[ComputedField]
     strict: bool
-    extras_schema: CoreSchema
+    extras_schema: ExtrasSchema
     # all these values can be set via config, equivalent fields have `typed_dict_` prefix
     extra_behavior: ExtraBehavior
     total: bool  # default: True
@@ -2992,7 +2992,7 @@ def typed_dict_schema(
     cls_name: str | None = None,
     computed_fields: list[ComputedField] | None = None,
     strict: bool | None = None,
-    extras_schema: CoreSchema | None = None,
+    extras_schema: ExtrasSchema | None = None,
     extra_behavior: ExtraBehavior | None = None,
     total: bool | None = None,
     ref: str | None = None,
@@ -3100,14 +3100,24 @@ def model_field(
     )
 
 
+class ExtrasSchema(TypedDict, total=False):
+    type: Required[Literal['extras']]
+    schema: CoreSchema
+    serialization_exclude_if: Callable[[Any], bool]
+
+
+def extras_schema(schema: CoreSchema | None = None, *, serialization_exclude_if: Callable[[Any], bool] | None = None):
+    return _dict_not_none(type='extras', schema=schema, serialization_exclude_if=serialization_exclude_if)
+
+
 class ModelFieldsSchema(TypedDict, total=False):
     type: Required[Literal['model-fields']]
     fields: Required[dict[str, ModelField]]
     model_name: str
     computed_fields: list[ComputedField]
     strict: bool
-    extras_schema: CoreSchema
     extras_keys_schema: CoreSchema
+    extras_schema: ExtrasSchema
     extra_behavior: ExtraBehavior
     from_attributes: bool
     ref: str
@@ -3121,7 +3131,7 @@ def model_fields_schema(
     model_name: str | None = None,
     computed_fields: list[ComputedField] | None = None,
     strict: bool | None = None,
-    extras_schema: CoreSchema | None = None,
+    extras_schema: ExtrasSchema | None = None,
     extras_keys_schema: CoreSchema | None = None,
     extra_behavior: ExtraBehavior | None = None,
     from_attributes: bool | None = None,

@@ -1477,10 +1477,11 @@ class GenerateJsonSchema:
         if schema.get('extra_behavior') == 'forbid':
             json_schema['additionalProperties'] = False
         elif schema.get('extra_behavior') == 'allow':
-            if 'extras_schema' in schema and schema['extras_schema'] != {'type': 'any'}:
-                json_schema['additionalProperties'] = self.generate_inner(schema['extras_schema'])
-            else:
-                json_schema['additionalProperties'] = True
+            json_schema['additionalProperties'] = True
+            if 'extras_schema' in schema:
+                if 'schema' in schema['extras_schema']:
+                    if schema['extras_schema']['schema'] != {'type': 'any'}:
+                        json_schema['additionalProperties'] = self.generate_inner(schema['extras_schema']['schema'])
 
         if cls is not None:
             # `_update_class_schema()` will not override
@@ -1722,8 +1723,9 @@ class GenerateJsonSchema:
         json_schema = self._named_required_fields_schema(named_required_fields)
         extras_schema = schema.get('extras_schema', None)
         if extras_schema is not None:
-            schema_to_update = self.resolve_ref_schema(json_schema)
-            schema_to_update['additionalProperties'] = self.generate_inner(extras_schema)
+            if 'schema' in extras_schema:
+                schema_to_update = self.resolve_ref_schema(json_schema)
+                schema_to_update['additionalProperties'] = self.generate_inner(extras_schema['schema'])
         return json_schema
 
     def field_is_present(self, field: CoreSchemaField) -> bool:

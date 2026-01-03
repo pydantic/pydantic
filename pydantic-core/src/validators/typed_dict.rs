@@ -65,10 +65,17 @@ impl BuildValidator for TypedDictValidator {
 
         let extra_behavior = ExtraBehavior::from_schema_or_config(py, schema, config, ExtraBehavior::Ignore)?;
 
-        let extras_validator = match (schema.get_item(intern!(py, "extras_schema"))?, &extra_behavior) {
-            (Some(v), ExtraBehavior::Allow) => Some(build_validator(&v, config, definitions)?),
-            (Some(_), _) => return py_schema_err!("extras_schema can only be used if extra_behavior=allow"),
-            (_, _) => None,
+        let extras: Option<Bound<'_, PyDict>> = schema.get_as(intern!(py, "extras_schema"))?;
+        let extras_validator = if let Some(extras) = extras {
+            if extra_behavior != ExtraBehavior::Allow {
+                return py_schema_err!("extras_schema can only be used if extra_behavior=allow");
+            }
+            extras
+                .get_item(intern!(py, "schema"))?
+                .map(|v| build_validator(&v.extract()?, config, definitions))
+                .transpose()?
+        } else {
+            None
         };
 
         let fields_dict: Bound<'_, PyDict> = schema.get_as_req(intern!(py, "fields"))?;
