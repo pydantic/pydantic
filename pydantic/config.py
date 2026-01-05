@@ -503,7 +503,7 @@ class ConfigDict(TypedDict, total=False):
 
     The default is `'never'` (no revalidation).
 
-    This configuration only affects *the current model* it is applied on, and does *not* populate to the models
+    This configuration only affects *the current model* it is applied on, and does *not* propagate to the models
     referenced in fields.
 
     ```python
