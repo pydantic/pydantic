@@ -6940,18 +6940,66 @@ There are two ways to do this:
 
 Check the [`Field` aliases documentation](../fields/#field-aliases) for more information about aliases.
 
-`env_prefix` does not apply to fields with alias. It means the environment variable name is the same as field alias:
+To apply `env_prefix` not only to variable names but also to aliases, set `env_prefix_target='all'`. To apply `env_prefix` only to aliases and not to variable names, set `env_prefix_target='alias'`. To apply `env_prefix` only to variable names (the default behavior), set `env_prefix_target='variable'`.
 
 ```py
+import os
+
 from pydantic import Field
 
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
-class Settings(BaseSettings):
-    model_config = SettingsConfigDict(env_prefix='my_prefix_')
+class FooBarSettings(BaseSettings):
+    # default
+    model_config = SettingsConfigDict(env_prefix='TARGET_')
+    foo: str = Field(alias='FooAlias')
+    bar: str
 
-    foo: str = Field('xxx', alias='FooAlias')  # (1)!
+
+os.environ['FooAlias'] = 'TARGET_FOO_VALUE'  # (1)!
+os.environ['TARGET_BAR'] = 'TARGET_BAR_VALUE'
+print(FooBarSettings().model_dump())
+#> {'foo': 'TARGET_FOO_VALUE', 'bar': 'TARGET_BAR_VALUE'}
+
+
+class TargetAllSettings(FooBarSettings):
+    model_config = SettingsConfigDict(
+        env_prefix='TARGET_ALL_',
+        env_prefix_target='all',
+    )
+
+
+os.environ['TARGET_ALL_FooAlias'] = 'TARGET_ALL_FOO_VALUE'
+os.environ['TARGET_ALL_BAR'] = 'TARGET_ALL_BAR_VALUE'
+print(TargetAllSettings().model_dump())
+#> {'foo': 'TARGET_ALL_FOO_VALUE', 'bar': 'TARGET_ALL_BAR_VALUE'}
+
+
+class TargetAliasSettings(FooBarSettings):
+    model_config = SettingsConfigDict(
+        env_prefix='TARGET_ALIAS_',
+        env_prefix_target='alias',
+    )
+
+
+os.environ['TARGET_ALIAS_FooAlias'] = 'TARGET_ALIAS_FOO_VALUE'
+os.environ['BAR'] = 'TARGET_ALL_BAR_VALUE'
+print(TargetAliasSettings().model_dump())
+#> {'foo': 'TARGET_ALIAS_FOO_VALUE', 'bar': 'TARGET_ALL_BAR_VALUE'}
+
+
+class TargetVarSettings(FooBarSettings):
+    model_config = SettingsConfigDict(
+        env_prefix='TARGET_VAR_',
+        env_prefix_target='variable',
+    )
+
+
+os.environ['FooAlias'] = 'TARGET_VAR_FOO_VALUE'  # (1)!
+os.environ['TARGET_VAR_BAR'] = 'TARGET_VAR_BAR_VALUE'
+print(TargetVarSettings().model_dump())
+#> {'foo': 'TARGET_VAR_FOO_VALUE', 'bar': 'TARGET_VAR_BAR_VALUE'}
 
 ```
 
@@ -17891,7 +17939,7 @@ When and how to revalidate models and dataclasses during validation. Can be one 
 
 The default is `'never'` (no revalidation).
 
-This configuration only affects *the current model* it is applied on, and does *not* populate to the models referenced in fields.
+This configuration only affects *the current model* it is applied on, and does *not* propagate to the models referenced in fields.
 
 ```python
 from pydantic import BaseModel

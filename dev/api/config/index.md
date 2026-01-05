@@ -588,7 +588,7 @@ When and how to revalidate models and dataclasses during validation. Can be one 
 
 The default is `'never'` (no revalidation).
 
-This configuration only affects *the current model* it is applied on, and does *not* populate to the models referenced in fields.
+This configuration only affects *the current model* it is applied on, and does *not* propagate to the models referenced in fields.
 
 ```python
 from pydantic import BaseModel

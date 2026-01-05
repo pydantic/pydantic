@@ -5689,17 +5689,66 @@ dotenv files, secrets, and other sources.</p>
 <li>Using <code>Field(validation_alias=...)</code> (see <code>auth_key</code> above)</li>
 </ul>
 <p>Check the <a href="../fields/#field-aliases"><code>Field</code> aliases documentation</a> for more information about aliases.</p>
-<p><code>env_prefix</code> does not apply to fields with alias. It means the environment variable name is the same
-as field alias:</p>
-<div class="language-py highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">pydantic</span><span class="w"> </span><span class="kn">import</span> <span class="n">Field</span>
+<p>To apply <code>env_prefix</code> not only to variable names but also to aliases, set <code>env_prefix_target='all'</code>.
+To apply <code>env_prefix</code> only to aliases and not to variable names, set <code>env_prefix_target='alias'</code>.
+To apply <code>env_prefix</code> only to variable names (the default behavior), set <code>env_prefix_target='variable'</code>.</p>
+<div class="language-py highlight"><pre><span></span><code><span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">pydantic</span><span class="w"> </span><span class="kn">import</span> <span class="n">Field</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">pydantic_settings</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseSettings</span><span class="p">,</span> <span class="n">SettingsConfigDict</span>
 
 
-<span class="k">class</span><span class="w"> </span><span class="nc">Settings</span><span class="p">(</span><span class="n">BaseSettings</span><span class="p">):</span>
-    <span class="n">model_config</span> <span class="o">=</span> <span class="n">SettingsConfigDict</span><span class="p">(</span><span class="n">env_prefix</span><span class="o">=</span><span class="s1">&#39;my_prefix_&#39;</span><span class="p">)</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">FooBarSettings</span><span class="p">(</span><span class="n">BaseSettings</span><span class="p">):</span>
+    <span class="c1"># default</span>
+    <span class="n">model_config</span> <span class="o">=</span> <span class="n">SettingsConfigDict</span><span class="p">(</span><span class="n">env_prefix</span><span class="o">=</span><span class="s1">&#39;TARGET_&#39;</span><span class="p">)</span>
+    <span class="n">foo</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="n">alias</span><span class="o">=</span><span class="s1">&#39;FooAlias&#39;</span><span class="p">)</span>
+    <span class="n">bar</span><span class="p">:</span> <span class="nb">str</span>
 
-    <span class="n">foo</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="s1">&#39;xxx&#39;</span><span class="p">,</span> <span class="n">alias</span><span class="o">=</span><span class="s1">&#39;FooAlias&#39;</span><span class="p">)</span>  <span class="c1"># (1)!</span>
+
+<span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">[</span><span class="s1">&#39;FooAlias&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;TARGET_FOO_VALUE&#39;</span>  <span class="c1"># (1)!</span>
+<span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">[</span><span class="s1">&#39;TARGET_BAR&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;TARGET_BAR_VALUE&#39;</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">FooBarSettings</span><span class="p">()</span><span class="o">.</span><span class="n">model_dump</span><span class="p">())</span>
+<span class="c1">#&gt; {&#39;foo&#39;: &#39;TARGET_FOO_VALUE&#39;, &#39;bar&#39;: &#39;TARGET_BAR_VALUE&#39;}</span>
+
+
+<span class="k">class</span><span class="w"> </span><span class="nc">TargetAllSettings</span><span class="p">(</span><span class="n">FooBarSettings</span><span class="p">):</span>
+    <span class="n">model_config</span> <span class="o">=</span> <span class="n">SettingsConfigDict</span><span class="p">(</span>
+        <span class="n">env_prefix</span><span class="o">=</span><span class="s1">&#39;TARGET_ALL_&#39;</span><span class="p">,</span>
+        <span class="n">env_prefix_target</span><span class="o">=</span><span class="s1">&#39;all&#39;</span><span class="p">,</span>
+    <span class="p">)</span>
+
+
+<span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">[</span><span class="s1">&#39;TARGET_ALL_FooAlias&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;TARGET_ALL_FOO_VALUE&#39;</span>
+<span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">[</span><span class="s1">&#39;TARGET_ALL_BAR&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;TARGET_ALL_BAR_VALUE&#39;</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">TargetAllSettings</span><span class="p">()</span><span class="o">.</span><span class="n">model_dump</span><span class="p">())</span>
+<span class="c1">#&gt; {&#39;foo&#39;: &#39;TARGET_ALL_FOO_VALUE&#39;, &#39;bar&#39;: &#39;TARGET_ALL_BAR_VALUE&#39;}</span>
+
+
+<span class="k">class</span><span class="w"> </span><span class="nc">TargetAliasSettings</span><span class="p">(</span><span class="n">FooBarSettings</span><span class="p">):</span>
+    <span class="n">model_config</span> <span class="o">=</span> <span class="n">SettingsConfigDict</span><span class="p">(</span>
+        <span class="n">env_prefix</span><span class="o">=</span><span class="s1">&#39;TARGET_ALIAS_&#39;</span><span class="p">,</span>
+        <span class="n">env_prefix_target</span><span class="o">=</span><span class="s1">&#39;alias&#39;</span><span class="p">,</span>
+    <span class="p">)</span>
+
+
+<span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">[</span><span class="s1">&#39;TARGET_ALIAS_FooAlias&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;TARGET_ALIAS_FOO_VALUE&#39;</span>
+<span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">[</span><span class="s1">&#39;BAR&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;TARGET_ALL_BAR_VALUE&#39;</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">TargetAliasSettings</span><span class="p">()</span><span class="o">.</span><span class="n">model_dump</span><span class="p">())</span>
+<span class="c1">#&gt; {&#39;foo&#39;: &#39;TARGET_ALIAS_FOO_VALUE&#39;, &#39;bar&#39;: &#39;TARGET_ALL_BAR_VALUE&#39;}</span>
+
+
+<span class="k">class</span><span class="w"> </span><span class="nc">TargetVarSettings</span><span class="p">(</span><span class="n">FooBarSettings</span><span class="p">):</span>
+    <span class="n">model_config</span> <span class="o">=</span> <span class="n">SettingsConfigDict</span><span class="p">(</span>
+        <span class="n">env_prefix</span><span class="o">=</span><span class="s1">&#39;TARGET_VAR_&#39;</span><span class="p">,</span>
+        <span class="n">env_prefix_target</span><span class="o">=</span><span class="s1">&#39;variable&#39;</span><span class="p">,</span>
+    <span class="p">)</span>
+
+
+<span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">[</span><span class="s1">&#39;FooAlias&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;TARGET_VAR_FOO_VALUE&#39;</span>  <span class="c1"># (1)!</span>
+<span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">[</span><span class="s1">&#39;TARGET_VAR_BAR&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;TARGET_VAR_BAR_VALUE&#39;</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">TargetVarSettings</span><span class="p">()</span><span class="o">.</span><span class="n">model_dump</span><span class="p">())</span>
+<span class="c1">#&gt; {&#39;foo&#39;: &#39;TARGET_VAR_FOO_VALUE&#39;, &#39;bar&#39;: &#39;TARGET_VAR_BAR_VALUE&#39;}</span>
 </code></pre></div>
 <ol>
 <li><code>env_prefix</code> will be ignored and the value will be read from <code>FooAlias</code> environment variable.</li>
