@@ -9,7 +9,6 @@ use pyo3::intern;
 use pyo3::prelude::*;
 use pyo3::pybacked::PyBackedStr;
 use pyo3::types::{PyDict, PySet, PyString, PyType};
-use smallvec::SmallVec;
 
 use crate::build_tools::py_schema_err;
 use crate::build_tools::{ExtraBehavior, is_strict, schema_or_config_same};
@@ -22,9 +21,8 @@ use crate::lookup_key::LookupType;
 use crate::tools::SchemaDict;
 use crate::tools::new_py_string;
 use crate::tools::pybackedstr_to_pystring;
-use crate::validators::shared::lookup_tree::LookupFieldInfo;
+use crate::validators::shared::lookup_tree::LookupPathItem;
 use crate::validators::shared::lookup_tree::LookupTree;
-use crate::validators::shared::lookup_tree::LookupTreeNode;
 
 use super::{BuildValidator, CombinedValidator, DefinitionsBuilder, ValidationState, Validator, build_validator};
 
@@ -543,7 +541,6 @@ impl ModelFieldsValidator {
         }
     }
 
-    #[expect(clippy::type_complexity, reason = "FIXME: make the field results simpler type")]
     fn validate_json_by_iteration<'py>(
         &self,
         py: Python<'py>,
@@ -551,154 +548,6 @@ impl ModelFieldsValidator {
         json_object: &JsonObject<'_>,
         state: &mut ValidationState<'_, 'py>,
     ) -> ValResult<ValidatedModelFields<'py>> {
-        /// Sets the result of a field validation if the current lookup type matches
-        /// the desired lookup type
-        ///
-        /// This also handles the property that aliases are always preferred over names
-        #[expect(clippy::too_many_arguments)]
-        fn set_field_value<'py>(
-            py: Python<'py>,
-            input: &JsonValue<'_>,
-            state: &mut ValidationState<'_, 'py>,
-            field_results: &mut [Option<(ValResult<Py<PyAny>>, LookupType)>],
-            fields: &[Field],
-            LookupFieldInfo {
-                field_index: i,
-                field_lookup_type,
-            }: LookupFieldInfo,
-            lookup_type: LookupType,
-            lookup_path: Option<&[LookupPathItem<'_>]>,
-        ) {
-            if field_lookup_type.matches(lookup_type) {
-                let field_result = &mut field_results[i];
-
-                // handle the possibility of a result already existing
-                if let Some((_, existing_lookup_type)) = &field_result
-                    && field_lookup_type == LookupType::Name
-                    && existing_lookup_type.matches(LookupType::Alias)
-                {
-                    // later results are typically preferred (standard JSON duplicate handling) BUT aliases
-                    // are preferred over names, so only return early if the new value is a name lookup
-                    // and the existing one is an alias lookup
-                    //
-                    // in all cases we're not super worried about efficiency of duplicate inputs, as
-                    // the data has provided those duplicates and the user can always clean them up if desired
-                    return;
-                }
-
-                let result = fields[i].validator.validate(py, input, state).map_err(|e| match e {
-                    ValError::LineErrors(line_errors) => {
-                        // for line errors, apply the actual lookup path used
-                        ValError::LineErrors(
-                            line_errors
-                                .into_iter()
-                                .map(|mut err| {
-                                    if let Some(p) = lookup_path {
-                                        for path in p.iter().rev() {
-                                            err = match path {
-                                                LookupPathItem::Key(k) => err.with_outer_location(*k),
-                                                LookupPathItem::Index(i) => err.with_outer_location(*i),
-                                            };
-                                        }
-                                    } else {
-                                        err = err.with_outer_location(&*fields[i].name);
-                                    }
-                                    err
-                                })
-                                .collect(),
-                        )
-                    }
-                    other => other,
-                });
-
-                *field_result = Some((result, field_lookup_type));
-            }
-        }
-
-        enum LookupPathItem<'a> {
-            Key(&'a str),
-            Index(i64),
-        }
-
-        #[expect(clippy::too_many_arguments)]
-        fn fill_lookup_value<'py, 'a>(
-            py: Python<'py>,
-            fields: &[Field],
-            field_results: &mut [Option<(ValResult<Py<PyAny>>, LookupType)>],
-            lookup_value: &LookupTreeNode,
-            json_value: &'a JsonValue<'a>,
-            state: &mut ValidationState<'_, 'py>,
-            lookup_type: LookupType,
-            lookup_path: &mut Option<SmallVec<[LookupPathItem<'a>; 1]>>,
-        ) {
-            for info in lookup_value.fields() {
-                set_field_value(
-                    py,
-                    json_value,
-                    state,
-                    field_results,
-                    fields,
-                    *info,
-                    lookup_type,
-                    lookup_path.as_deref(),
-                );
-            }
-            let lookup_map = lookup_value.lookup_map();
-            if !lookup_map.map.is_empty() {
-                if let JsonValue::Object(nested_object) = json_value {
-                    for (key, value) in &**nested_object {
-                        if let Some(lookup_value) = lookup_map.map.get(key.as_ref()) {
-                            if let Some(p) = lookup_path {
-                                p.push(LookupPathItem::Key(key.as_ref()));
-                            }
-                            fill_lookup_value(
-                                py,
-                                fields,
-                                field_results,
-                                lookup_value,
-                                value,
-                                state,
-                                lookup_type,
-                                lookup_path,
-                            );
-                            if let Some(p) = lookup_path {
-                                p.pop();
-                            }
-                        }
-                    }
-                }
-            }
-            if !lookup_map.list.is_empty() {
-                if let JsonValue::Array(nested_array) = json_value {
-                    for (list_item, lookup_value) in &lookup_map.list {
-                        let index = if *list_item < 0 {
-                            list_item + nested_array.len() as i64
-                        } else {
-                            *list_item
-                        };
-                        if let Some(value) = nested_array.get(index as usize) {
-                            if let Some(p) = lookup_path {
-                                p.push(LookupPathItem::Index(*list_item));
-                            }
-                            fill_lookup_value(
-                                py,
-                                fields,
-                                field_results,
-                                lookup_value,
-                                value,
-                                state,
-                                lookup_type,
-                                lookup_path,
-                            );
-                            if let Some(p) = lookup_path {
-                                p.pop();
-                            }
-                        }
-                    }
-                }
-            }
-        }
-
         // expect json_input and json_object to be the same thing, just projected
         debug_assert!(matches!(&json_input, JsonValue::Object(j) if Arc::ptr_eq(j, json_object)));
 
@@ -715,26 +564,64 @@ impl ModelFieldsValidator {
         let fields_set = PySet::empty(py)?;
 
         let model_extra_dict = PyDict::new(py);
-        let mut lookup_path: Option<SmallVec<[_; 1]>> = Some(SmallVec::new()).filter(|_| self.loc_by_alias);
         for (key, value) in &**json_object {
+            let mut handled = false;
             let key = key.as_ref();
-            if let Some(lookup_value) = self.lookup.inner.get(key) {
-                if let Some(p) = &mut lookup_path {
-                    p.push(LookupPathItem::Key(key));
+            let mut matches = self.lookup.iter_matches(key, value);
+            while let Some((field_info, field_value, lookup_path)) = matches.next_match() {
+                handled = true;
+
+                if !field_info.field_lookup_type.matches(lookup_type) {
+                    continue;
                 }
-                fill_lookup_value(
-                    py,
-                    &self.fields,
-                    &mut field_results,
-                    lookup_value,
-                    value,
-                    state,
-                    lookup_type,
-                    &mut lookup_path,
-                );
-                if let Some(p) = &mut lookup_path {
-                    p.pop();
+
+                let field_result = &mut field_results[field_info.field_index];
+
+                // handle the possibility of a result already existing
+                if let Some((_, existing_lookup_type)) = &field_result
+                    && field_info.field_lookup_type == LookupType::Name
+                    && existing_lookup_type.matches(LookupType::Alias)
+                {
+                    // later results are typically preferred (standard JSON duplicate handling) BUT aliases
+                    // are preferred over names, so only return early if the new value is a name lookup
+                    // and the existing one is an alias lookup
+                    //
+                    // in all cases we're not super worried about efficiency of duplicate inputs, as
+                    // the data has provided those duplicates and the user can always clean them up if desired
+                    continue;
                 }
+
+                let field = &self.fields[field_info.field_index];
+
+                let result = field.validator.validate(py, field_value, state).map_err(|e| match e {
+                    ValError::LineErrors(line_errors) => {
+                        // for line errors, apply the actual lookup path used
+                        ValError::LineErrors(
+                            line_errors
+                                .into_iter()
+                                .map(|mut err| {
+                                    if self.loc_by_alias {
+                                        for path in lookup_path.iter_paths_bottom_up() {
+                                            err = match path {
+                                                LookupPathItem::Key(k) => err.with_outer_location(k),
+                                                LookupPathItem::Index(i) => err.with_outer_location(i),
+                                            };
+                                        }
+                                    } else {
+                                        err = err.with_outer_location(field.name.clone());
+                                    }
+                                    err
+                                })
+                                .collect(),
+                        )
+                    }
+                    other => other,
+                });
+
+                *field_result = Some((result, field_info.field_lookup_type));
+            }
+
+            if handled {
                 continue;
             }
 
