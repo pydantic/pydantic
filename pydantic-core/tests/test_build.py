@@ -36,7 +36,7 @@ def test_not_schema_definition_error():
 def test_try_self_schema_discriminator():
     """Trying to use self-schema when it shouldn't be used"""
     v = SchemaValidator(cs.tagged_union_schema(choices={'int': cs.int_schema()}, discriminator='self-schema'))
-    assert 'discriminator: LookupKey' in repr(v)
+    assert 'discriminator: LookupPaths' in repr(v)
 
 
 def test_build_recursive_schema_from_defs() -> None:

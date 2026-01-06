@@ -5,7 +5,7 @@ use speedate::MicrosecondsPrecisionOverflowBehavior;
 
 use crate::errors::{ErrorTypeDefaults, InputValue, LocItem, ValError, ValResult};
 use crate::input::py_string_str;
-use crate::lookup_key::{LookupKey, LookupPath};
+use crate::lookup_key::LookupPath;
 use crate::tools::safe_repr;
 use crate::validators::complex::string_to_complex;
 use crate::validators::decimal::create_decimal;
@@ -292,7 +292,7 @@ impl<'py> KeywordArgs<'py> for StringMappingDict<'py> {
         self.0.len()
     }
 
-    fn get_item<'k>(&self, key: &'k LookupKey) -> ValResult<Option<(&'k LookupPath, Self::Item<'_>)>> {
+    fn get_item(&self, key: &LookupPath) -> ValResult<Option<Self::Item<'_>>> {
         key.py_get_string_mapping_item(&self.0)
     }
 
@@ -313,8 +313,7 @@ impl<'py> ValidatedDict<'py> for StringMappingDict<'py> {
         = StringMapping<'py>
     where
         Self: 'a;
-
-    fn get_item<'k>(&self, key: &'k LookupKey) -> ValResult<Option<(&'k LookupPath, Self::Item<'_>)>> {
+    fn get_item(&self, key: &LookupPath) -> ValResult<Option<Self::Item<'_>>> {
         key.py_get_string_mapping_item(&self.0)
     }
     fn iterate<'a, R>(

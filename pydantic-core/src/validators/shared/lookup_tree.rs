@@ -3,7 +3,7 @@ use std::hash::Hash;
 
 use ahash::AHashMap;
 
-use crate::lookup_key::{LookupKey, LookupKeyCollection, LookupPath, LookupType, PathItem, PathItemString};
+use crate::lookup_key::{LookupPath, LookupPathCollection, LookupType, PathItem, PathItemString};
 
 /// A tree of paths for lookups when trying to find fields from input names.
 #[derive(Debug)]
@@ -14,7 +14,7 @@ pub struct LookupTree {
 
 impl LookupTree {
     /// Construct a `LookupTree` from a slice of fields and a function to get the `LookupKeyCollection` for each field.
-    pub fn from_fields<T>(fields: &[T], get_field_collection: impl Fn(&T) -> &LookupKeyCollection) -> Self {
+    pub fn from_fields<T>(fields: &[T], get_field_collection: impl Fn(&T) -> &LookupPathCollection) -> Self {
         let mut tree = Self {
             inner: AHashMap::with_capacity(fields.len()),
         };
@@ -22,40 +22,28 @@ impl LookupTree {
         for (field_index, field) in fields.iter().enumerate() {
             let collection = get_field_collection(field);
 
-            let LookupKey::Simple(path) = &collection.by_name else {
-                panic!("name lookup is always simple");
-            };
-
-            add_field_to_map(
+            add_path_to_map(
                 &mut tree.inner,
-                path.first_item().to_owned(),
+                &collection.by_name,
                 LookupFieldInfo {
                     field_index,
-                    field_lookup_type: if collection.by_alias.is_some() {
-                        LookupType::Name
-                    } else {
+                    field_lookup_type: if collection.by_alias.is_empty() {
                         LookupType::Both
+                    } else {
+                        LookupType::Name
                     },
                 },
             );
 
-            if let Some(alias_key) = &collection.by_alias {
-                let info = LookupFieldInfo {
-                    field_index,
-                    field_lookup_type: LookupType::Alias,
-                };
-                match alias_key {
-                    LookupKey::Simple(path) => {
-                        // should be a single string key
-                        debug_assert!(path.rest().is_empty());
-                        add_field_to_map(&mut tree.inner, path.first_item().to_owned(), info);
-                    }
-                    LookupKey::PathChoices(paths) => {
-                        for path in paths {
-                            add_path_to_map(&mut tree.inner, path, info);
-                        }
-                    }
-                }
+            for alias in &collection.by_alias {
+                add_path_to_map(
+                    &mut tree.inner,
+                    alias,
+                    LookupFieldInfo {
+                        field_index,
+                        field_lookup_type: LookupType::Alias,
+                    },
+                );
             }
         }
         tree

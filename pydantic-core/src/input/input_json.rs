@@ -10,7 +10,7 @@ use strum::EnumMessage;
 
 use crate::errors::{ErrorType, ErrorTypeDefaults, InputValue, ValError, ValResult};
 use crate::input::return_enums::EitherComplex;
-use crate::lookup_key::{LookupKey, LookupPath};
+use crate::lookup_key::LookupPath;
 use crate::validators::complex::string_to_complex;
 use crate::validators::decimal::create_decimal;
 use crate::validators::{TemporalUnitMode, ValBytesMode};
@@ -571,7 +571,7 @@ impl<'data> ValidatedDict<'_> for &'_ JsonObject<'data> {
     where
         Self: 'a;
 
-    fn get_item<'k>(&self, key: &'k LookupKey) -> ValResult<Option<(&'k LookupPath, Self::Item<'_>)>> {
+    fn get_item(&self, key: &LookupPath) -> ValResult<Option<Self::Item<'_>>> {
         key.json_get(self)
     }
 
@@ -681,7 +681,7 @@ impl<'data> KeywordArgs<'_> for JsonObject<'data> {
     fn len(&self) -> usize {
         Vec::len(self)
     }
-    fn get_item<'k>(&self, key: &'k LookupKey) -> ValResult<Option<(&'k LookupPath, Self::Item<'_>)>> {
+    fn get_item<'k>(&self, key: &LookupPath) -> ValResult<Option<Self::Item<'_>>> {
         key.json_get(self)
     }
     fn iter(&self) -> impl Iterator<Item = ValResult<(Self::Key<'_>, Self::Item<'_>)>> {
