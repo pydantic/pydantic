@@ -631,87 +631,67 @@ impl ModelFieldsValidator {
             lookup_type: LookupType,
             lookup_path: &mut Option<SmallVec<[LookupPathItem<'a>; 1]>>,
         ) {
-            match lookup_value {
-                LookupTreeNode::Field(info) => {
-                    set_field_value(
-                        py,
-                        json_value,
-                        state,
-                        field_results,
-                        fields,
-                        *info,
-                        lookup_type,
-                        lookup_path.as_deref(),
-                    );
-                }
-                LookupTreeNode::Complex {
-                    fields: lookup_fields,
-                    lookup_map,
-                } => {
-                    // this is a possibly recursive lookup with some complicated alias logic,
-                    // not much we can do except recurse
-                    for info in lookup_fields {
-                        set_field_value(
-                            py,
-                            json_value,
-                            state,
-                            field_results,
-                            fields,
-                            *info,
-                            lookup_type,
-                            lookup_path.as_deref(),
-                        );
-                    }
-                    if !lookup_map.map.is_empty() {
-                        if let JsonValue::Object(nested_object) = json_value {
-                            for (key, value) in &**nested_object {
-                                if let Some(lookup_value) = lookup_map.map.get(key.as_ref()) {
-                                    if let Some(p) = lookup_path {
-                                        p.push(LookupPathItem::Key(key.as_ref()));
-                                    }
-                                    fill_lookup_value(
-                                        py,
-                                        fields,
-                                        field_results,
-                                        lookup_value,
-                                        value,
-                                        state,
-                                        lookup_type,
-                                        lookup_path,
-                                    );
-                                    if let Some(p) = lookup_path {
-                                        p.pop();
-                                    }
-                                }
+            for info in lookup_value.fields() {
+                set_field_value(
+                    py,
+                    json_value,
+                    state,
+                    field_results,
+                    fields,
+                    *info,
+                    lookup_type,
+                    lookup_path.as_deref(),
+                );
+            }
+            let lookup_map = lookup_value.lookup_map();
+            if !lookup_map.map.is_empty() {
+                if let JsonValue::Object(nested_object) = json_value {
+                    for (key, value) in &**nested_object {
+                        if let Some(lookup_value) = lookup_map.map.get(key.as_ref()) {
+                            if let Some(p) = lookup_path {
+                                p.push(LookupPathItem::Key(key.as_ref()));
+                            }
+                            fill_lookup_value(
+                                py,
+                                fields,
+                                field_results,
+                                lookup_value,
+                                value,
+                                state,
+                                lookup_type,
+                                lookup_path,
+                            );
+                            if let Some(p) = lookup_path {
+                                p.pop();
                             }
                         }
                     }
-                    if !lookup_map.list.is_empty() {
-                        if let JsonValue::Array(nested_array) = json_value {
-                            for (list_item, lookup_value) in &lookup_map.list {
-                                let index = if *list_item < 0 {
-                                    list_item + nested_array.len() as i64
-                                } else {
-                                    *list_item
-                                };
-                                if let Some(value) = nested_array.get(index as usize) {
-                                    if let Some(p) = lookup_path {
-                                        p.push(LookupPathItem::Index(*list_item));
-                                    }
-                                    fill_lookup_value(
-                                        py,
-                                        fields,
-                                        field_results,
-                                        lookup_value,
-                                        value,
-                                        state,
-                                        lookup_type,
-                                        lookup_path,
-                                    );
-                                    if let Some(p) = lookup_path {
-                                        p.pop();
-                                    }
-                                }
+                }
+            }
+            if !lookup_map.list.is_empty() {
+                if let JsonValue::Array(nested_array) = json_value {
+                    for (list_item, lookup_value) in &lookup_map.list {
+                        let index = if *list_item < 0 {
+                            list_item + nested_array.len() as i64
+                        } else {
+                            *list_item
+                        };
+                        if let Some(value) = nested_array.get(index as usize) {
+                            if let Some(p) = lookup_path {
+                                p.push(LookupPathItem::Index(*list_item));
+                            }
+                            fill_lookup_value(
+                                py,
+                                fields,
+                                field_results,
+                                lookup_value,
+                                value,
+                                state,
+                                lookup_type,
+                                lookup_path,
+                            );
+                            if let Some(p) = lookup_path {
+                                p.pop();
                             }
                         }
                     }

@@ -2,6 +2,7 @@ use std::collections::hash_map::Entry;
 use std::hash::Hash;
 
 use ahash::AHashMap;
+use smallvec::SmallVec;
 
 use crate::lookup_key::{LookupPath, LookupPathCollection, LookupType, PathItem, PathItemString};
 
@@ -56,20 +57,27 @@ pub struct LookupFieldInfo {
     pub field_lookup_type: LookupType,
 }
 
-#[derive(Debug)]
-pub enum LookupTreeNode {
-    /// This lookup hits an actual field
-    Field(LookupFieldInfo),
-    /// This lookup might applicable to multiple fields
-    Complex {
-        /// All fields which wanted _exactly_ this key
-        fields: Vec<LookupFieldInfo>,
-        /// Fields which use this key as path prefix
-        lookup_map: LookupMap,
-    },
+#[derive(Debug, Default)]
+pub struct LookupTreeNode {
+    /// All fields which wanted _exactly_ this key, typically this is just a single entry
+    fields: SmallVec<[LookupFieldInfo; 1]>,
+    /// Fields which use this key as path prefix (often empty)
+    lookup_map: LookupMap,
 }
 
-#[derive(Debug)]
+impl LookupTreeNode {
+    /// Get all fields which wanted _exactly_ this key
+    pub fn fields(&self) -> &[LookupFieldInfo] {
+        &self.fields
+    }
+
+    /// Get the nested lookup map for further path items
+    pub fn lookup_map(&self) -> &LookupMap {
+        &self.lookup_map
+    }
+}
+
+#[derive(Debug, Default)]
 pub struct LookupMap {
     /// For lookups by name, e.g. `['foo', 'bar']`
     pub map: AHashMap<PathItemString, LookupTreeNode>,
@@ -79,22 +87,14 @@ pub struct LookupMap {
 
 fn add_field_to_map<K: Hash + Eq>(map: &mut AHashMap<K, LookupTreeNode>, key: K, info: LookupFieldInfo) {
     match map.entry(key) {
-        Entry::Occupied(mut entry) => match entry.get_mut() {
-            &mut LookupTreeNode::Field(existing) => {
-                entry.insert(LookupTreeNode::Complex {
-                    fields: vec![existing, info],
-                    lookup_map: LookupMap {
-                        map: AHashMap::new(),
-                        list: AHashMap::new(),
-                    },
-                });
-            }
-            LookupTreeNode::Complex { fields, .. } => {
-                fields.push(info);
-            }
-        },
+        Entry::Occupied(entry) => {
+            entry.into_mut().fields.push(info);
+        }
         Entry::Vacant(entry) => {
-            entry.insert(LookupTreeNode::Field(info));
+            entry.insert(LookupTreeNode {
+                fields: SmallVec::from_buf([info]),
+                lookup_map: LookupMap::default(),
+            });
         }
     }
 }
@@ -106,46 +106,7 @@ fn add_path_to_map(map: &mut AHashMap<PathItemString, LookupTreeNode>, path: &Lo
         return;
     }
 
-    let mut nested_map = match map.entry(path.first_item().to_owned()) {
-        Entry::Occupied(entry) => {
-            let entry = entry.into_mut();
-            match entry {
-                &mut LookupTreeNode::Field(i) => {
-                    *entry = LookupTreeNode::Complex {
-                        fields: vec![i],
-                        lookup_map: LookupMap {
-                            map: AHashMap::new(),
-                            list: AHashMap::new(),
-                        },
-                    };
-                    match entry {
-                        LookupTreeNode::Complex {
-                            lookup_map: nested_map, ..
-                        } => nested_map,
-                        LookupTreeNode::Field(_) => unreachable!("just created complex"),
-                    }
-                }
-                LookupTreeNode::Complex {
-                    lookup_map: nested_map, ..
-                } => nested_map,
-            }
-        }
-        Entry::Vacant(entry) => {
-            let LookupTreeNode::Complex {
-                lookup_map: nested_map, ..
-            } = entry.insert(LookupTreeNode::Complex {
-                fields: Vec::new(),
-                lookup_map: LookupMap {
-                    map: AHashMap::new(),
-                    list: AHashMap::new(),
-                },
-            })
-            else {
-                unreachable!()
-            };
-            nested_map
-        }
-    };
+    let mut nested_map = &mut map.entry(path.first_item().to_owned()).or_default().lookup_map;
 
     let mut path_iter = path.rest().iter();
 
@@ -155,130 +116,10 @@ fn add_path_to_map(map: &mut AHashMap<PathItemString, LookupTreeNode>, path: &Lo
         nested_map = match current {
             PathItem::S(s) => {
                 let str_key = s.clone();
-                match nested_map.map.entry(str_key) {
-                    Entry::Occupied(entry) => {
-                        let entry = entry.into_mut();
-                        match entry {
-                            &mut LookupTreeNode::Field(i) => {
-                                *entry = LookupTreeNode::Complex {
-                                    fields: vec![i],
-                                    lookup_map: LookupMap {
-                                        map: AHashMap::new(),
-                                        list: AHashMap::new(),
-                                    },
-                                };
-                                let LookupTreeNode::Complex {
-                                    lookup_map: nested_map, ..
-                                } = entry
-                                else {
-                                    unreachable!()
-                                };
-                                nested_map
-                            }
-                            LookupTreeNode::Complex {
-                                lookup_map: nested_map, ..
-                            } => nested_map,
-                        }
-                    }
-                    Entry::Vacant(entry) => {
-                        let LookupTreeNode::Complex {
-                            lookup_map: nested_map, ..
-                        } = entry.insert(LookupTreeNode::Complex {
-                            fields: vec![],
-                            lookup_map: LookupMap {
-                                map: AHashMap::new(),
-                                list: AHashMap::new(),
-                            },
-                        })
-                        else {
-                            unreachable!()
-                        };
-                        nested_map
-                    }
-                }
+                &mut nested_map.map.entry(str_key).or_default().lookup_map
             }
-            PathItem::Pos(i) => match nested_map.list.entry(*i as i64) {
-                Entry::Occupied(entry) => {
-                    let entry = entry.into_mut();
-                    match entry {
-                        &mut LookupTreeNode::Field(i) => {
-                            *entry = LookupTreeNode::Complex {
-                                fields: vec![i],
-                                lookup_map: LookupMap {
-                                    map: AHashMap::new(),
-                                    list: AHashMap::new(),
-                                },
-                            };
-                            let LookupTreeNode::Complex {
-                                lookup_map: nested_map, ..
-                            } = entry
-                            else {
-                                unreachable!()
-                            };
-                            nested_map
-                        }
-                        LookupTreeNode::Complex {
-                            lookup_map: nested_map, ..
-                        } => nested_map,
-                    }
-                }
-                Entry::Vacant(entry) => {
-                    let LookupTreeNode::Complex {
-                        lookup_map: nested_map, ..
-                    } = entry.insert(LookupTreeNode::Complex {
-                        fields: vec![],
-                        lookup_map: LookupMap {
-                            map: AHashMap::new(),
-                            list: AHashMap::new(),
-                        },
-                    })
-                    else {
-                        unreachable!()
-                    };
-                    nested_map
-                }
-            },
-            PathItem::Neg(i) => match nested_map.list.entry(-(*i as i64)) {
-                Entry::Occupied(entry) => {
-                    let entry = entry.into_mut();
-                    match entry {
-                        &mut LookupTreeNode::Field(i) => {
-                            *entry = LookupTreeNode::Complex {
-                                fields: vec![i],
-                                lookup_map: LookupMap {
-                                    map: AHashMap::new(),
-                                    list: AHashMap::new(),
-                                },
-                            };
-                            let LookupTreeNode::Complex {
-                                lookup_map: nested_map, ..
-                            } = entry
-                            else {
-                                unreachable!()
-                            };
-                            nested_map
-                        }
-                        LookupTreeNode::Complex {
-                            lookup_map: nested_map, ..
-                        } => nested_map,
-                    }
-                }
-                Entry::Vacant(entry) => {
-                    let LookupTreeNode::Complex {
-                        lookup_map: nested_map, ..
-                    } = entry.insert(LookupTreeNode::Complex {
-                        fields: vec![],
-                        lookup_map: LookupMap {
-                            map: AHashMap::new(),
-                            list: AHashMap::new(),
-                        },
-                    })
-                    else {
-                        unreachable!()
-                    };
-                    nested_map
-                }
-            },
+            PathItem::Pos(i) => &mut nested_map.list.entry(*i as i64).or_default().lookup_map,
+            PathItem::Neg(i) => &mut nested_map.list.entry(-(*i as i64)).or_default().lookup_map,
         };
 
         current = next;
