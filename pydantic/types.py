@@ -3293,3 +3293,43 @@ class FailFast(_fields.PydanticMetadata, BaseMetadata):
     """
 
     fail_fast: bool = True
+
+
+
+# pydantic/types.py
+import re
+from pydantic_core import core_schema
+from pydantic import ValidationError
+
+
+class StrictNormalizedStr(str):
+    @classmethod
+    def __get_pydantic_core_schema__(cls, _source, _handler):
+        return core_schema.no_info_plain_validator_function(cls.validate)
+
+    @classmethod
+    def validate(cls, v):
+
+        def raise_validation(msg):
+            raise ValidationError.from_exception_data(
+                "StrictNormalizedStr",
+                [
+                    {
+                        "type": "value_error",
+                        "loc": (),
+                        "msg": msg,
+                        "input": v,
+                        "ctx": {"error": msg},
+                    }
+                ],
+            )
+
+        if not isinstance(v, str):
+            raise_validation("Input should be a valid string")
+
+        normalized = re.sub(r"\s+", " ", v.strip())
+
+        if normalized == "":
+            raise_validation("String cannot be empty after normalization")
+
+        return normalized
