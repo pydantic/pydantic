@@ -868,10 +868,26 @@ def ensure_property(f: Any) -> Any:
     Returns:
         The function, or a `property` or `cached_property` instance wrapping the function.
     """
+    if isinstance(f, cached_property):
+        return PydanticCachedProperty(f.func)  # type: ignore[arg-type]
     if ismethoddescriptor(f) or isdatadescriptor(f):
         return f
     else:
         return property(f)
+
+
+class PydanticCachedProperty(cached_property):
+    """cached_property variant that avoids caching into a stale __dict__."""
+
+    def __get__(self, instance: Any, owner: type[Any] | None = None) -> Any:
+        if instance is None:
+            return self
+        cache = instance.__dict__
+        if self.attrname in cache:
+            return cache[self.attrname]
+        value = self.func(instance)
+        instance.__dict__[self.attrname] = value
+        return value
 
 
 def _signature_no_eval(f: Callable[..., Any]) -> Signature:
