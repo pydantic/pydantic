@@ -11,7 +11,7 @@ from dataclasses import dataclass, field
 from functools import cached_property, partial, partialmethod
 from inspect import Parameter, Signature, isdatadescriptor, ismethoddescriptor, signature
 from itertools import islice
-from typing import TYPE_CHECKING, Any, Callable, ClassVar, Generic, Literal, TypeVar, Union
+from typing import TYPE_CHECKING, Any, Callable, ClassVar, Generic, Literal, TypeVar, Union, cast
 
 from pydantic_core import PydanticUndefined, PydanticUndefinedType, core_schema
 from typing_extensions import Self, TypeAlias, is_typeddict
@@ -758,7 +758,7 @@ def unwrap_wrapped_function(
     unwrap_class_static_method: bool = True,
 ) -> Any:
     """Recursively unwraps a wrapped function until the underlying function is reached.
-    This handles property, functools.partial, functools.partialmethod, staticmethod, and classmethod.
+    This handles property-like descriptors, functools.partial, functools.partialmethod, staticmethod, and classmethod.
 
     Args:
         func: The function to unwrap.
@@ -787,6 +787,12 @@ def unwrap_wrapped_function(
             # Make coverage happy as it can only get here in the last possible case
             assert isinstance(func, cached_property)
             func = func.func  # type: ignore
+    if not isinstance(func, _function_like) and hasattr(func, '__get__'):
+        inner = getattr(func, 'func', None) or getattr(func, 'fget', None)
+        if inner is not None and inner is not func:
+            return unwrap_wrapped_function(
+                inner, unwrap_partial=unwrap_partial, unwrap_class_static_method=unwrap_class_static_method
+            )
 
     return func
 
@@ -866,12 +872,13 @@ def ensure_property(f: Any) -> Any:
         f: The function to check.
 
     Returns:
-        The function, or a `property` or `cached_property` instance wrapping the function.
+        The function or descriptor, or a `property` or `cached_property` instance wrapping the function.
     """
     if ismethoddescriptor(f) or isdatadescriptor(f):
         return f
-    else:
-        return property(f)
+    if hasattr(f, '__get__') and not isinstance(f, _function_like):
+        return f
+    return property(cast(Callable[..., Any], f))
 
 
 def _signature_no_eval(f: Callable[..., Any]) -> Signature:
