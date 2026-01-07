@@ -1,7 +1,7 @@
 import pytest
 
 from pydantic import BaseModel, PydanticUserError, computed_field
-from pydantic._internal._decorators import inspect_annotated_serializer, inspect_validator
+from pydantic._internal._decorators import inspect_annotated_serializer, inspect_field_serializer, inspect_validator
 
 
 def _two_pos_required_args(a, b):
@@ -79,6 +79,10 @@ def test_inspect_validator_error(mode):
         inspect_validator(validator3, mode=mode, type='field')
 
     assert e.value.code == 'validator-signature'
+
+
+def test_inspect_field_serializer_no_signature() -> None:
+    assert inspect_field_serializer(int, mode='plain') == (False, False)
 
 
 @pytest.mark.parametrize(
