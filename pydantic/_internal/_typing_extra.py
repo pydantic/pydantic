@@ -582,16 +582,10 @@ def get_function_type_hints(
     - Do not wrap type annotation of a parameter with `Optional` if it has a default value of `None`
       (related bug: https://github.com/python/cpython/issues/90353, only fixed in 3.11+).
     """
-    try:
-        if isinstance(function, partial):
-            annotations = safe_get_annotations(function.func)
-        else:
-            annotations = safe_get_annotations(function)
-    except AttributeError:
-        # Some functions (e.g. builtins) don't have annotations.
-        # TODO revisit this when we drop support for Python 3.13, as
-        # we will unconditionally use `annotationlib.get_annotations()`:
-        return {}
+    if isinstance(function, partial):
+        annotations = safe_get_annotations(function.func)
+    else:
+        annotations = safe_get_annotations(function)
 
     if globalns is None:
         globalns = get_module_ns_of(function)
