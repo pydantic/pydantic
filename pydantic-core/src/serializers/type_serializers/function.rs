@@ -13,6 +13,7 @@ use pyo3::types::PyString;
 use crate::definitions::DefinitionsBuilder;
 use crate::py_gc::PyGcTraverse;
 use crate::serializers::SerializationState;
+use crate::serializers::extra::IncludeExclude;
 use crate::tools::SchemaDict;
 use crate::tools::{function_name, py_err, py_error_type};
 use crate::{PydanticOmit, PydanticSerializationUnexpectedValue};
@@ -224,7 +225,7 @@ macro_rules! function_type_serializer {
                     }
                 };
                 // None for include/exclude here, as filtering should be done
-                let state = &mut state.scoped_include_exclude(None, None);
+                let state = &mut state.scoped_include_exclude(IncludeExclude::empty());
                 ret_serializer.to_python(v.bind(py), state)
             }
 
@@ -234,21 +235,19 @@ macro_rules! function_type_serializer {
                 state: &mut SerializationState<'py>,
             ) -> PyResult<Cow<'a, str>> {
                 let py = key.py();
-                let state = &mut state.scoped_include_exclude(None, None);
-                match self.call(key, state) {
-                    Ok((true, v)) => self
-                        .return_serializer
-                        .json_key(v.bind(py), state)
-                        .map(|cow| Cow::Owned(cow.into_owned())),
-                    Ok((false, v)) => self
-                        .get_fallback_serializer()
-                        .json_key(v.bind(py), state)
-                        .map(|cow| Cow::Owned(cow.into_owned())),
+                let (ret_serializer, v) = match self.call(key, state) {
+                    Ok((true, v)) => (&*self.return_serializer, v),
+                    Ok((false, v)) => (self.get_fallback_serializer(), v),
                     Err(err) => {
                         on_error(py, err, &self.function_name, state)?;
-                        infer_json_key(key, state)
+                        return infer_json_key(key, state);
                     }
-                }
+                };
+                // None for include/exclude here, as filtering should be done
+                let state = &mut state.scoped_include_exclude(IncludeExclude::empty());
+                ret_serializer
+                    .json_key(v.bind(py), state)
+                    .map(|cow| Cow::Owned(cow.into_owned()))
             }
 
             fn serde_serialize<'py, S: serde::ser::Serializer>(
@@ -267,7 +266,7 @@ macro_rules! function_type_serializer {
                     }
                 };
                 // None for include/exclude here, as filtering should be done
-                let mut state = state.scoped_include_exclude(None, None);
+                let mut state = state.scoped_include_exclude(IncludeExclude::empty());
                 ret_serializer.serde_serialize(v.bind(py), serializer, &mut state)
             }
 
@@ -479,8 +478,8 @@ impl SerializationCallable {
             } else {
                 self.filter.key_filter(index_key, state)?
             };
-            if let Some((next_include, next_exclude)) = filter {
-                let state = &mut state.scoped_include_exclude(next_include, next_exclude);
+            if let Some(next_include_exclude) = filter {
+                let state = &mut state.scoped_include_exclude(next_include_exclude);
                 let v = self.serializer.to_python_no_infer(value, state)?;
                 state.warnings.final_check(py)?;
                 Ok(Some(v))
