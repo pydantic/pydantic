@@ -5,7 +5,7 @@ on:
     branches:
       - main
     tags:
-      - "**"
+      - '**'
   pull_request: {}
 
 env:
@@ -38,7 +38,7 @@ jobs:
           make build-dev
         env:
           RUST_BACKTRACE: 1
-          RUSTFLAGS: "-C instrument-coverage"
+          RUSTFLAGS: '-C instrument-coverage'
 
       - run: uv pip freeze
 
@@ -63,17 +63,17 @@ jobs:
       fail-fast: false
       matrix:
         python-version:
-          - "3.9"
-          - "3.10"
-          - "3.11"
-          - "3.12"
-          - "3.13"
-          - "3.14"
-          - "3.14t"
-          - "pypy3.10"
-          - "pypy3.11"
-          - "graalpy-3.11"
-          - "graalpy-3.12"
+          - '3.9'
+          - '3.10'
+          - '3.11'
+          - '3.12'
+          - '3.13'
+          - '3.14'
+          - '3.14t'
+          - 'pypy3.10'
+          - 'pypy3.11'
+          - 'graalpy-3.11'
+          - 'graalpy-3.12'
 
     runs-on: ubuntu-latest
 
@@ -189,8 +189,8 @@ jobs:
       fail-fast: false
       matrix:
         python-version:
-          - "3.13"
-          - "pypy3.10"
+          - '3.13'
+          - 'pypy3.10'
 
     steps:
       - uses: actions/checkout@v5
@@ -274,7 +274,7 @@ jobs:
       # used to lint js code
       - uses: actions/setup-node@v6
         with:
-          node-version: "18"
+          node-version: '18'
 
       - name: install uv
         uses: astral-sh/setup-uv@v7
@@ -306,7 +306,7 @@ jobs:
 
       - uses: actions/setup-python@v6
         with:
-          python-version: "3.13"
+          python-version: '3.13'
 
       - run: pip install typing_extensions
 
@@ -333,7 +333,7 @@ jobs:
           # NOTE!: as per https://github.com/pydantic/pydantic-core/pull/149 this version needs to match the version
           # in node_modules/pyodide/pyodide-lock.json, to get the version, run:
           # `cat node_modules/pyodide/pyodide-lock.json | jq .info.platform`
-          version: "3.1.58"
+          version: '3.1.58'
           actions-cache-folder: emsdk-cache
 
       - name: install uv
@@ -347,7 +347,7 @@ jobs:
 
       - uses: actions/setup-node@v6
         with:
-          node-version: "18"
+          node-version: '18'
 
       - run: npm install
 
@@ -381,7 +381,7 @@ jobs:
       - uses: actions/checkout@v5
       - uses: actions/setup-python@v6
         with:
-          python-version: "3.13"
+          python-version: '3.13'
       - uses: PyO3/maturin-action@v1
         with:
           command: sdist
@@ -470,7 +470,7 @@ jobs:
           - os: windows
             target: aarch64
             runs-on: windows-11-arm
-            interpreter: "3.11 3.12 3.13 3.14 3.14t"
+            interpreter: '3.11 3.12 3.13 3.14 3.14t'
 
         exclude:
           # was just a dummy variable to set a default value for target
@@ -483,7 +483,7 @@ jobs:
       - name: set up python
         uses: actions/setup-python@v6
         with:
-          python-version: "3.13"
+          python-version: '3.13'
           architecture: ${{ matrix.python-architecture || 'x64' }}
 
       - run: pip install -U twine 'ruff==0.5.0' typing_extensions
@@ -514,12 +514,12 @@ jobs:
       fail-fast: false
       matrix:
         platform: [{os: linux, runs-on: ubuntu-latest}, {os: linux_aarch64, runs-on: ubuntu-24.04-arm}, {os: windows, runs-on: windows-latest}, {os: macos, runs-on: macos-latest}]
-        interpreter: ["3.9", "3.10", "3.11", "3.12", "3.13", "3.14", "3.14t"]
+        interpreter: ['3.9', '3.10', '3.11', '3.12', '3.13', '3.14', '3.14t']
         exclude:
           # macos arm only supported from 3.10 and up
           - platform:
               os: macos
-            interpreter: "3.9"
+            interpreter: '3.9'
 
     runs-on: ${{ matrix.platform.runs-on }}
     steps:
@@ -591,7 +591,7 @@ jobs:
       fail-fast: false
       matrix:
         target: [armv7, s390x, ppc64le]
-        distro: ["ubuntu22.04"]
+        distro: ['ubuntu22.04']
         include:
           - target: aarch64
             distro: alpine_latest
