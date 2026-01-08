@@ -446,6 +446,11 @@ class _ApplyInferredDiscriminator:
             # After validators don't affect the discriminator values
             return self._infer_discriminator_values_for_inner_schema(schema['schema'], source)
 
+        elif schema['type'] == 'model' and schema.get('root_model'):
+            # Support RootModel[Literal[...]] as discriminator field type
+            # The inner schema of a RootModel contains the actual type (e.g., Literal)
+            return self._infer_discriminator_values_for_inner_schema(schema['schema'], source)
+
         elif schema['type'] in {'function-before', 'function-wrap', 'function-plain'}:
             validator_type = repr(schema['type'].split('-')[1])
             raise PydanticUserError(
