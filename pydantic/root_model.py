@@ -102,7 +102,9 @@ class RootModel(BaseModel, typing.Generic[RootModelRootType], metaclass=_RootMod
         """Returns a shallow copy of the model."""
         cls = type(self)
         m = cls.__new__(cls)
-        _object_setattr(m, '__dict__', copy(self.__dict__))
+        new_dict = copy(self.__dict__)
+        new_dict['root'] = copy(self.__dict__['root'])
+        _object_setattr(m, '__dict__', new_dict)
         _object_setattr(m, '__pydantic_fields_set__', copy(self.__pydantic_fields_set__))
         return m
 

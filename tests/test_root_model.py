@@ -623,6 +623,55 @@ def test_copy_preserves_equality():
     assert model == deepcopied
 
 
+def test_model_copy_shallow_copies_root():
+    """Test that model_copy(deep=False) creates a shallow copy of the root value.
+
+    Regression test for https://github.com/pydantic/pydantic/issues/12543
+    """
+
+    class ListRootModel(RootModel[list]):
+        pass
+
+    original = ListRootModel([1, 2, 3])
+    copied = original.model_copy(deep=False)
+
+    # Model instances should be different
+    assert original is not copied
+
+    # Root values should be different objects (shallow copy)
+    assert original.root is not copied.root
+
+    # But the values should be equal
+    assert original.root == copied.root
+
+    # Mutating copied shouldn't affect original
+    copied.root.append(4)
+    assert original.root == [1, 2, 3]
+    assert copied.root == [1, 2, 3, 4]
+
+
+def test_model_copy_deep_copies_root():
+    """Test that model_copy(deep=True) creates a deep copy of the root value."""
+
+    class NestedListRootModel(RootModel[list]):
+        pass
+
+    original = NestedListRootModel([[1, 2], [3, 4]])
+    copied = original.model_copy(deep=True)
+
+    # Model instances should be different
+    assert original is not copied
+
+    # Root values should be different objects
+    assert original.root is not copied.root
+
+    # Nested lists should also be different objects (deep copy)
+    assert original.root[0] is not copied.root[0]
+
+    # But the values should be equal
+    assert original.root == copied.root
+
+
 @pytest.mark.parametrize(
     'root_type,input_value,expected,raises_match,strict',
     [
