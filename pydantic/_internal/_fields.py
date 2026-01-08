@@ -264,9 +264,8 @@ def collect_model_fields(  # noqa: C901
 
     type_hints = _typing_extra.get_model_type_hints(cls, ns_resolver=ns_resolver)
 
-    # https://docs.python.org/3/howto/annotations.html#accessing-the-annotations-dict-of-an-object-in-python-3-9-and-older
-    # annotations is only used for finding fields in parent classes
-    annotations = _typing_extra.safe_get_annotations(cls)
+    # `cls_annotations` is only used to determine if an annotation comes from a parent class
+    cls_annotations = _typing_extra.safe_get_annotations(cls)
 
     fields: dict[str, FieldInfo] = {}
 
@@ -314,7 +313,7 @@ def collect_model_fields(  # noqa: C901
 
         for base in bases:
             if hasattr(base, ann_name):
-                if ann_name not in annotations:
+                if ann_name not in cls_annotations:
                     # Don't warn when a field exists in a parent class but has not been defined in the current class
                     continue
 
@@ -341,7 +340,7 @@ def collect_model_fields(  # noqa: C901
                 )
 
         if assigned_value is PydanticUndefined:  # no assignment, just a plain annotation
-            if ann_name in annotations or ann_name not in parent_fields_lookup:
+            if ann_name in cls_annotations or ann_name not in parent_fields_lookup:
                 # field is either:
                 # - present in the current model's annotations (and *not* from parent classes)
                 # - not found on any base classes; this seems to be caused by fields bot getting
