@@ -51,6 +51,7 @@ from ._internal import (
     _internal_dataclass,
     _mock_val_ser,
     _schema_generation_shared,
+    _typing_extra,
 )
 from .annotated_handlers import GetJsonSchemaHandler
 from .config import JsonDict, JsonValue
@@ -1671,7 +1672,7 @@ class GenerateJsonSchema:
             json_schema.update(json_schema_extra)
         elif callable(json_schema_extra):
             # FIXME: why are there type ignores here? We support two signatures for json_schema_extra callables...
-            if len(inspect.signature(json_schema_extra).parameters) > 1:
+            if len(_typing_extra.signature_no_eval(json_schema_extra).parameters) > 1:
                 json_schema_extra(json_schema, cls)  # type: ignore
             else:
                 json_schema_extra(json_schema)  # type: ignore

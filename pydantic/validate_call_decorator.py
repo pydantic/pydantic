@@ -25,8 +25,8 @@ def _check_function_type(function: object) -> None:
     """Check if the input function is a supported type for `validate_call`."""
     if isinstance(function, _generate_schema.VALIDATE_CALL_SUPPORTED_TYPES):
         try:
-            inspect.signature(cast(_generate_schema.ValidateCallSupportedTypes, function))
-        except ValueError:
+            _typing_extra.signature_no_eval(cast(_generate_schema.ValidateCallSupportedTypes, function))
+        except (ValueError, TypeError):
             raise PydanticUserError(
                 f"Input function `{function}` doesn't have a valid signature", code=_INVALID_TYPE_ERROR_CODE
             )

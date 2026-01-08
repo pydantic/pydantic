@@ -1298,6 +1298,15 @@ def test_plain_serializer_dunder_call() -> None:
     assert MyModel(x='a__b').model_dump() == {'x': 'a.b'}
 
 
+def test_plain_serializer_builtin_function() -> None:
+    """Relevant for Python <= 3.13, where we try to get `__annotations__` on built-in functions."""
+
+    class MyModel(BaseModel):
+        x: Annotated[int, PlainSerializer(abs)]
+
+    assert MyModel(x=-1).model_dump() == {'x': 1}
+
+
 @pytest.mark.xfail(reason='Waiting for union serialization fixes via https://github.com/pydantic/pydantic/issues/9688.')
 def smart_union_serialization() -> None:
     """Initially reported via https://github.com/pydantic/pydantic/issues/9417, effectively a round tripping problem with type consistency."""
