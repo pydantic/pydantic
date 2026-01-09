@@ -1,3 +1,7 @@
+---
+title: "Pydantic Validation Web & API Requests: FastAPI, Django, etc."
+description: "Turn messy API responses into structured Python objects. Use Pydantic with HTTP clients to ensure your request data is always valid and type-safe."
+---
 Pydantic models are a great way to validate and serialize data for requests and responses.
 Pydantic is instrumental in many web frameworks and libraries, such as FastAPI, Django, Flask, and HTTPX.
 

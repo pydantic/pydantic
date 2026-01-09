@@ -1,3 +1,7 @@
+---
+title: "Alias in Pydantic Validation: Configuration & Serialization"
+description: Learn how to use Pydantic aliases to map external data to Python fields. Use validation_alias and serialization_alias for flexible data handling and APIs.
+---
 An alias is an alternative name for a field, used when serializing and deserializing data.
 
 You can specify an alias in the following ways:

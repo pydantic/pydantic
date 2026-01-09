@@ -1,7 +1,7 @@
 ---
-description: Migrating from Pydantic V1.
+title: "Pydantic Validation Migration Guide: Updating from V1 to V2"
+description: Upgrade from Pydantic V1 to V2 seamlessly. Navigate breaking changes and unlock the massive speed of the new Rust core with our official transition guide.
 ---
-
 Pydantic V2 introduces a number of changes to the API, including some breaking changes.
 
 This page provides a guide highlighting the most

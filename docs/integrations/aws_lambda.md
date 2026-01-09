@@ -1,3 +1,7 @@
+---
+title: "AWS Lambda Integration with Pydantic Validation: Guide"
+description: "Build resilient AWS Lambda functions using Pydantic to validate payloads from API Gateway, SQS, and Kinesis with total type safety."
+---
 `pydantic` integrates well with AWS Lambda functions. In this guide, we'll discuss how to setup `pydantic` for an AWS Lambda function.
 
 ## Installing Python libraries for AWS Lambda functions

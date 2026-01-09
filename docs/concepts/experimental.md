@@ -1,3 +1,7 @@
+---
+title: "Pydantic Validation: Experimental Features"
+description: Explore experimental Pydantic features and help shape the next generation of Python data validation with your early feedback.
+---
 # Experimental Features
 
 In this section you will find documentation for new, experimental features in Pydantic. These features are subject to change or removal, and we are looking for feedback and suggestions before making them a permanent part of Pydantic.

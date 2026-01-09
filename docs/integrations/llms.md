@@ -1,3 +1,7 @@
+---
+title: Using llms.txt with Pydantic Validation LLM Integrations
+description: "Pydantic brings runtime validation to AI prompts, transforming raw text into structured, type-safe Python logic."
+---
 The Pydantic documentation is available in the [llms.txt](https://llmstxt.org/) format.
 This format is defined in Markdown and suited for large language models.
 

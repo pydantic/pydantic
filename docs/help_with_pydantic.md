@@ -1,3 +1,7 @@
+---
+title: "Getting Help With Pydantic Validation: Docs & Support"
+description: "Connect with the Pydantic community on Discord, GitHub, and Stack Overflow for expert troubleshooting and coding advice."
+---
 # Getting help with Pydantic
 
 If you need help getting started with Pydantic or with advanced usage, the following sources may be useful.
