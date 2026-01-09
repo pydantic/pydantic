@@ -145,7 +145,7 @@ jobs:
       - name: Start MongoDB
         uses: supercharge/mongodb-github-action@1.12.1
         with:
-          mongodb-version: "8.0"
+          mongodb-version: '8.0'
           mongodb-replica-set: test-rs
 
       - name: Install Beanie dependencies
@@ -375,8 +375,8 @@ jobs:
         uses: actions/setup-node@v6
         with:
           node-version-file: server/emails/.node-version
-          cache: "pnpm"
-          cache-dependency-path: "clients/pnpm-lock.yaml"
+          cache: 'pnpm'
+          cache-dependency-path: 'clients/pnpm-lock.yaml'
 
       - name: 📬 Build server/emails
         working-directory: server/emails
@@ -765,7 +765,7 @@ jobs:
 
       - name: Run Redis OM Python tests
         env:
-          REDIS_OM_URL: "redis://localhost:6379?decode_responses=True"
+          REDIS_OM_URL: 'redis://localhost:6379?decode_responses=True'
         run: |
           make test
 

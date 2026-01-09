@@ -6,14 +6,14 @@ updates:
     schedule:
       interval: monthly
 
-  - package-ecosystem: "cargo"
-    directory: "/pydantic-core/"
+  - package-ecosystem: 'cargo'
+    directory: '/pydantic-core/'
     schedule:
-      interval: "monthly"
+      interval: 'monthly'
     groups:
       rust-deps:
         patterns:
-          - "*"
+          - '*'
         # pyo3 updates will require jiter updates, we'll handle them manually anyway
         exclude-patterns:
-          - "pyo3*"
+          - 'pyo3*'

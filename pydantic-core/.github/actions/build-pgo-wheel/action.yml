@@ -12,7 +12,7 @@ outputs:
     description: 'Path to the built wheel'
     value: ${{ steps.find_wheel.outputs.path }}
 runs:
-  using: "composite"
+  using: 'composite'
   steps:
     - name: prepare profiling directory
       shell: bash
