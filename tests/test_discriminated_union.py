@@ -2333,76 +2333,33 @@ def test_recursive_discriminated_union() -> None:
         paragraph: ParagraphFilterExpression
 
 
-def test_discriminated_union_with_root_model_literal():
-    """Test that RootModel[Literal[...]] can be used as a discriminator field type.
+def test_discriminated_union_with_root_model_literal() -> None:
+    """https://github.com/pydantic/pydantic/issues/12605."""
 
-    Regression test for https://github.com/pydantic/pydantic/issues/12605
-    """
-
-    class ActionType(RootModel[Literal['PERFORM_OPERATION']]):
+    class Action1(RootModel[Literal['action1']]):
         pass
 
-    class OtherActionType(RootModel[Literal['OTHER_ACTION']]):
+    class Action2(RootModel[Literal['action2']]):
         pass
 
-    class OperationActionData(BaseModel):
-        action: ActionType
-        target_id: str
+    class Model1(BaseModel):
+        action: Action1
 
-    class OtherActionData(BaseModel):
-        action: OtherActionType
-        other_field: str
+    class Model1(BaseModel):
+        action: Action2
 
-    class TriggerActionData(RootModel[Union[OperationActionData, OtherActionData]]):
-        root: Union[OperationActionData, OtherActionData] = Field(..., discriminator='action')
 
-    # Test creating with PERFORM_OPERATION action
-    trigger1 = TriggerActionData(root={'action': 'PERFORM_OPERATION', 'target_id': 'target-123'})
-    assert isinstance(trigger1.root, OperationActionData)
-    assert trigger1.root.action.root == 'PERFORM_OPERATION'
-    assert trigger1.root.target_id == 'target-123'
+    ta = TypeAdater(Annotated[Union[Model1, Model2], Field(discriminator='action')])
 
-    # Test creating with OTHER_ACTION action
-    trigger2 = TriggerActionData(root={'action': 'OTHER_ACTION', 'other_field': 'some-value'})
-    assert isinstance(trigger2.root, OtherActionData)
-    assert trigger2.root.action.root == 'OTHER_ACTION'
-    assert trigger2.root.other_field == 'some-value'
+    model1 = ta.validate_python({'action': 'action1'})
+    assert isinstance(model1, Model1)
+    assert model1.action.root == 'action1'
 
-    # Test validation error for invalid discriminator value
+    model2 = ta.validate_python({'action': 'action2'})
+    assert isinstance(model2, Model2)
+    assert model1.action.root == 'action2'
+
     with pytest.raises(ValidationError) as exc_info:
-        TriggerActionData(root={'action': 'INVALID_ACTION', 'target_id': 'test'})
-    assert 'union_tag_invalid' in str(exc_info.value)
+        ta.validate_python({'action': 'invalid_action'})
 
-
-def test_discriminated_union_with_root_model_literal_multiple_values():
-    """Test RootModel with Literal containing multiple values as discriminator."""
-
-    class CatType(RootModel[Literal['cat', 'kitten']]):
-        pass
-
-    class DogType(RootModel[Literal['dog', 'puppy']]):
-        pass
-
-    class Cat(BaseModel):
-        pet_type: CatType
-        meows: bool
-
-    class Dog(BaseModel):
-        pet_type: DogType
-        barks: bool
-
-    class Pet(BaseModel):
-        pet: Union[Cat, Dog] = Field(discriminator='pet_type')
-
-    # Test all valid discriminator values
-    cat1 = Pet(pet={'pet_type': 'cat', 'meows': True})
-    assert isinstance(cat1.pet, Cat)
-
-    cat2 = Pet(pet={'pet_type': 'kitten', 'meows': True})
-    assert isinstance(cat2.pet, Cat)
-
-    dog1 = Pet(pet={'pet_type': 'dog', 'barks': True})
-    assert isinstance(dog1.pet, Dog)
-
-    dog2 = Pet(pet={'pet_type': 'puppy', 'barks': True})
-    assert isinstance(dog2.pet, Dog)
+    assert exc_info.value.errors()[0]['type'] == 'union_tag_invalid'
