@@ -2345,11 +2345,11 @@ def test_discriminated_union_with_root_model_literal() -> None:
     class Model1(BaseModel):
         action: Action1
 
-    class Model1(BaseModel):
+    class Model2(BaseModel):
         action: Action2
 
 
-    ta = TypeAdater(Annotated[Union[Model1, Model2], Field(discriminator='action')])
+    ta = TypeAdapter(Annotated[Union[Model1, Model2], Field(discriminator='action')])
 
     model1 = ta.validate_python({'action': 'action1'})
     assert isinstance(model1, Model1)
@@ -2357,7 +2357,7 @@ def test_discriminated_union_with_root_model_literal() -> None:
 
     model2 = ta.validate_python({'action': 'action2'})
     assert isinstance(model2, Model2)
-    assert model1.action.root == 'action2'
+    assert model2.action.root == 'action2'
 
     with pytest.raises(ValidationError) as exc_info:
         ta.validate_python({'action': 'invalid_action'})

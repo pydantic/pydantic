@@ -178,7 +178,7 @@ print(user_03_uuid.int)
 
 **Discriminated unions are sometimes referred to as "Tagged unions".**
 
-Unions can be validated more efficiently using a discriminator, by specificaly choosing which member of the union to validate against.
+Unions can be validated more efficiently using a discriminator, by specifically choosing which member of the union to validate against.
 This makes validation more efficient and also avoids a proliferation of errors when validation fails.
 
 Adding discriminator to unions also means the generated JSON schema implements the `discriminator` attribute from the
