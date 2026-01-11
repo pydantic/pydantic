@@ -237,7 +237,7 @@ except ValidationError as e:
 ```
 
 /// version-added | v2.13
-[Root models](./models.md#rootmodel-and-custom-root-types) can be used in place of [`Literal`][typing.Literal] types.
+[Root models](./models.md#rootmodel-and-custom-root-types) with a [`Literal`][typing.Literal] root type can be used in place of [`Literal`][typing.Literal] types.
 ///
 
 ### Discriminated Unions with callable `Discriminator`
