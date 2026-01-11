@@ -614,61 +614,43 @@ help_result_string = pydoc.render_doc(RootModel)
 
 
 def test_copy_preserves_equality():
-    model = RootModel()
+    class Root(RootModel):
+        pass
 
-    copied = model.__copy__()
+    copied = model.model_copy()
     assert model == copied
 
-    deepcopied = model.__deepcopy__()
+    deepcopied = model.model_copy(deep=True)
     assert model == deepcopied
 
 
-def test_model_copy_shallow_copies_root():
-    """Test that model_copy(deep=False) creates a shallow copy of the root value.
-
-    Regression test for https://github.com/pydantic/pydantic/issues/12543
-    """
-
-    class ListRootModel(RootModel[list]):
+def test_root_model_shallow_copy() -> None:
+    class ListRootModel(RootModel[list[int]]):
         pass
 
     original = ListRootModel([1, 2, 3])
     copied = original.model_copy(deep=False)
 
-    # Model instances should be different
     assert original is not copied
-
-    # Root values should be different objects (shallow copy)
+    # Root value is also shallow copied, see https://github.com/pydantic/pydantic/issues/12543:
     assert original.root is not copied.root
-
-    # But the values should be equal
     assert original.root == copied.root
 
-    # Mutating copied shouldn't affect original
     copied.root.append(4)
     assert original.root == [1, 2, 3]
     assert copied.root == [1, 2, 3, 4]
 
 
-def test_model_copy_deep_copies_root():
-    """Test that model_copy(deep=True) creates a deep copy of the root value."""
-
-    class NestedListRootModel(RootModel[list]):
+def test_root_model_deep_copy() -> None:
+    class NestedListRootModel(RootModel[list[list[int]]]):
         pass
 
     original = NestedListRootModel([[1, 2], [3, 4]])
     copied = original.model_copy(deep=True)
 
-    # Model instances should be different
     assert original is not copied
-
-    # Root values should be different objects
     assert original.root is not copied.root
-
-    # Nested lists should also be different objects (deep copy)
     assert original.root[0] is not copied.root[0]
-
-    # But the values should be equal
     assert original.root == copied.root
 
 
