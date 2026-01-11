@@ -618,7 +618,7 @@ def test_copy_preserves_equality():
         pass
 
     root_model = Root(1)
-    
+
     copied = root_model.model_copy()
     assert root_model == copied
 
