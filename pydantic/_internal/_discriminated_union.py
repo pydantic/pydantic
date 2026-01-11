@@ -448,7 +448,6 @@ class _ApplyInferredDiscriminator:
 
         elif schema['type'] == 'model' and schema.get('root_model'):
             # Support RootModel[Literal[...]] as discriminator field type
-            # The inner schema of a RootModel contains the actual type (e.g., Literal)
             return self._infer_discriminator_values_for_inner_schema(schema['schema'], source)
 
         elif schema['type'] in {'function-before', 'function-wrap', 'function-plain'}:
