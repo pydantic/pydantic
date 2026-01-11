@@ -614,9 +614,11 @@ help_result_string = pydoc.render_doc(RootModel)
 
 
 def test_copy_preserves_equality():
-    class Root(RootModel):
+    class Root(RootModel[int]):
         pass
 
+    root_model = Root(1)
+    
     copied = model.model_copy()
     assert model == copied
 
