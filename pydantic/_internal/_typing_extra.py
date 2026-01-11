@@ -341,9 +341,11 @@ def get_model_type_hints(
 
         with ns_resolver.push(base):
             base_model_fields: dict[str, FieldInfo] | None = base.__dict__.get('__pydantic_fields__')
-            globalns, localns = ns_resolver.types_namespace
+
             for name, value in ann.items():
                 if name.startswith('_'):
+                    globalns, localns = ns_resolver.types_namespace
+
                     # For private attributes, we only need the annotation to detect the `ClassVar` special form.
                     # For this reason, we still try to evaluate it, but we also catch any possible exception (on
                     # top of the `NameError`s caught in `try_eval_type`) that could happen so that users are free
@@ -361,6 +363,8 @@ def get_model_type_hints(
                         # As we are guaranteed to not make use of it:
                         hints[name] = (base_model_fields[name].annotation, True)
                     else:
+                        globalns, localns = ns_resolver.types_namespace
+
                         hints[name] = try_eval_type(value, globalns, localns)
 
     return hints
