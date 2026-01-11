@@ -606,7 +606,7 @@ def test_snowflake_dsns(dsn):
                 'loc': ('a',),
                 'msg': (
                     "URL scheme should be 'postgres', 'postgresql', 'postgresql+asyncpg', 'postgresql+pg8000', "
-                    "'postgresql+psycopg', 'postgresql+psycopg2', 'postgresql+psycopg2cffi', "
+                    "'postgresql+psycopg', 'postgresql+psycopg_async', 'postgresql+psycopg2', 'postgresql+psycopg2cffi', "
                     "'postgresql+py-postgresql' or 'postgresql+pygresql'"
                 ),
                 'input': 'http://example.org',
