@@ -619,11 +619,11 @@ def test_copy_preserves_equality():
 
     root_model = Root(1)
     
-    copied = model.model_copy()
-    assert model == copied
+    copied = root_model.model_copy()
+    assert root_model == copied
 
-    deepcopied = model.model_copy(deep=True)
-    assert model == deepcopied
+    deepcopied = root_model.model_copy(deep=True)
+    assert root_model == deepcopied
 
 
 def test_root_model_shallow_copy() -> None:
