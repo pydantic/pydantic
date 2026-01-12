@@ -695,6 +695,11 @@ of the `UserLogin` subclass when it is provided instead of a `User` value, and s
 behavior can be globally overridden with the `polymorphic_serialization` runtime setting; in this case setting it to false
 causes the `UserLogin` value to serialize just as a `User` value, ignoring the subclass' `password` field.
 
+!!! warning Polymorphic serialization of `dataclasses.dataclass`
+    Polymorphic serialization is only supported for Pydantic models and dataclasses (`pydantic.dataclasses.dataclass`).
+    When using standard library dataclasses (`dataclasses.dataclass`), polymorphic serialization is *not* supported,
+    even if the dataclass is a subclass of a Pydantic dataclass. This may be fixed in a future Pydantic release.
+
 ### `polymorphic_serialization` runtime setting
 
 The `polymorphic_serialization` runtime setting can be used to globally enable or disable polymorphic serialization
