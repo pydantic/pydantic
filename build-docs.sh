@@ -13,7 +13,7 @@ source $HOME/.cargo/env
 # Install uv
 curl -LsSf https://astral.sh/uv/install.sh | sh
 
-uv sync --python 3.12 --group docs --frozen
+uv sync --python 3.14 --group docs --frozen
 uv run --no-sync python -c 'import docs.plugins.main'
 
 # Adding local symlinks gets nice source locations like
