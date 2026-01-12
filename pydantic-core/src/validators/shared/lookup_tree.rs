@@ -29,21 +29,27 @@ impl LookupTree {
                 &collection.by_name,
                 LookupFieldInfo {
                     field_index,
-                    field_lookup_type: if collection.by_alias.is_empty() {
-                        LookupType::Both
-                    } else {
-                        LookupType::Name
+                    lookup_priority: LookupFieldPriority {
+                        lookup_type: if collection.by_alias.is_empty() {
+                            LookupType::Both
+                        } else {
+                            LookupType::Name
+                        },
+                        alias_index: 0,
                     },
                 },
             );
 
-            for alias in &collection.by_alias {
+            for (alias_index, alias) in collection.by_alias.iter().enumerate() {
                 add_path_to_map(
                     &mut tree.inner,
                     alias,
                     LookupFieldInfo {
                         field_index,
-                        field_lookup_type: LookupType::Alias,
+                        lookup_priority: LookupFieldPriority {
+                            lookup_type: LookupType::Alias,
+                            alias_index,
+                        },
                     },
                 );
             }
@@ -63,10 +69,39 @@ impl LookupTree {
     }
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct LookupFieldPriority {
+    /// The type of lookups that will match this lookup
+    pub lookup_type: LookupType,
+    /// The index of this alias within the `AliasChoices` for the field
+    pub alias_index: usize,
+}
+
+impl LookupFieldPriority {
+    pub fn is_higher_priority_than(&self, other: &Self) -> bool {
+        if self.lookup_type == LookupType::Name {
+            // name lookups are never higher priority than other lookups
+            return false;
+        } else if other.lookup_type == LookupType::Name {
+            // other is a name lookup, so self is higher priority
+            return true;
+        }
+
+        // lower alias indices are higher priority
+        self.alias_index < other.alias_index
+    }
+}
+
 #[derive(Debug, Clone, Copy)]
 pub struct LookupFieldInfo {
     pub field_index: usize,
-    pub field_lookup_type: LookupType,
+    pub lookup_priority: LookupFieldPriority,
+}
+
+impl LookupFieldInfo {
+    pub fn matches_lookup(&self, lookup_type: LookupType) -> bool {
+        self.lookup_priority.lookup_type.matches(lookup_type)
+    }
 }
 
 #[derive(Debug, Default)]

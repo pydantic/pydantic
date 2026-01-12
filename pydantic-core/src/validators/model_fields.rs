@@ -21,6 +21,7 @@ use crate::lookup_key::LookupType;
 use crate::tools::SchemaDict;
 use crate::tools::new_py_string;
 use crate::tools::pybackedstr_to_pystring;
+use crate::validators::shared::lookup_tree::LookupFieldPriority;
 use crate::validators::shared::lookup_tree::LookupPathItem;
 use crate::validators::shared::lookup_tree::LookupTree;
 
@@ -558,7 +559,7 @@ impl ModelFieldsValidator {
 
         let model_dict = PyDict::new(py);
         let mut model_extra_dict_op: Option<Bound<PyDict>> = None;
-        let mut field_results: Vec<Option<(ValResult<Py<PyAny>>, LookupType)>> =
+        let mut field_results: Vec<Option<(ValResult<Py<PyAny>>, LookupFieldPriority)>> =
             (0..self.fields.len()).map(|_| None).collect();
         let mut errors: Vec<ValLineError> = Vec::new();
         let fields_set = PySet::empty(py)?;
@@ -571,23 +572,16 @@ impl ModelFieldsValidator {
             while let Some((field_info, field_value, lookup_path)) = matches.next_match() {
                 handled = true;
 
-                if !field_info.field_lookup_type.matches(lookup_type) {
+                if !field_info.matches_lookup(lookup_type) {
                     continue;
                 }
 
                 let field_result = &mut field_results[field_info.field_index];
 
-                // handle the possibility of a result already existing
-                if let Some((_, existing_lookup_type)) = &field_result
-                    && field_info.field_lookup_type == LookupType::Name
-                    && existing_lookup_type.matches(LookupType::Alias)
+                // later results are preferred unless the existing result has come from a higher priority alias
+                if let Some((_, existing_lookup_priority)) = &field_result
+                    && existing_lookup_priority.is_higher_priority_than(&field_info.lookup_priority)
                 {
-                    // later results are typically preferred (standard JSON duplicate handling) BUT aliases
-                    // are preferred over names, so only return early if the new value is a name lookup
-                    // and the existing one is an alias lookup
-                    //
-                    // in all cases we're not super worried about efficiency of duplicate inputs, as
-                    // the data has provided those duplicates and the user can always clean them up if desired
                     continue;
                 }
 
@@ -618,7 +612,7 @@ impl ModelFieldsValidator {
                     other => other,
                 });
 
-                *field_result = Some((result, field_info.field_lookup_type));
+                *field_result = Some((result, field_info.lookup_priority));
             }
 
             if handled {
