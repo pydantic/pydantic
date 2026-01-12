@@ -2348,7 +2348,6 @@ def test_discriminated_union_with_root_model_literal() -> None:
     class Model2(BaseModel):
         action: Action2
 
-
     ta = TypeAdapter(Annotated[Union[Model1, Model2], Field(discriminator='action')])
 
     model1 = ta.validate_python({'action': 'action1'})
