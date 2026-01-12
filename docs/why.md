@@ -1,5 +1,4 @@
 ---
-title: "Why Millions use Pydantic Validation: Schema & Performance"
 description: "With Pydantic speed meets type safety. Top engineering teams choose Pydantic’s Rust-powered engine for high-performance Python data validation and parsing."
 ---
 # Why use Pydantic Validation?
