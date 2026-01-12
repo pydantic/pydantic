@@ -1,5 +1,4 @@
 ---
-title: "Pydantic Validation: Documentation"
 description: "Pydantic provides fast & reliable validation. Validate Python data with type hints, leverage seamless IDE integration, JSON Schema support & more."
 ---
 # Pydantic Validation

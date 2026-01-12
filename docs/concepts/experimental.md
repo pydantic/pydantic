@@ -1,5 +1,4 @@
 ---
-title: "Pydantic Validation: Experimental Features"
 description: Explore experimental Pydantic features and help shape the next generation of Python data validation with your early feedback.
 ---
 # Experimental Features
