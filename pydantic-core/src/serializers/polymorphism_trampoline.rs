@@ -39,12 +39,12 @@ impl PolymorphismTrampoline {
         Ok(!value.get_type().is(&self.class) && value.is_instance(self.class.bind(value.py()))?)
     }
 
-    fn serialize<'py, T, E: From<PyErr>>(
+    fn serialize<'py, S: DoSerialize>(
         &self,
         value: &Bound<'py, PyAny>,
         state: &mut SerializationState<'py>,
-        do_serialize: impl DoSerialize<'py, T, E>,
-    ) -> Result<T, E> {
+        do_serialize: S,
+    ) -> Result<S::Ok, S::Error> {
         let runtime_polymorphic = state.extra.polymorphic_serialization;
         if state.check != SerCheck::Strict // strict disables polymorphism
             && runtime_polymorphic.unwrap_or(self.enabled_from_config)
@@ -63,7 +63,7 @@ impl PolymorphismTrampoline {
 
 impl TypeSerializer for PolymorphismTrampoline {
     fn to_python<'py>(&self, value: &Bound<'py, PyAny>, state: &mut SerializationState<'py>) -> PyResult<Py<PyAny>> {
-        self.serialize(value, state, serialize_to_python())
+        self.serialize(value, state, serialize_to_python(state.py()))
     }
 
     fn json_key<'a, 'py>(

@@ -16,6 +16,7 @@ use speedate::MicrosecondsPrecisionOverflowBehavior;
 
 use crate::ArgsKwargs;
 use crate::errors::{ErrorType, ErrorTypeDefaults, InputValue, LocItem, ValError, ValResult};
+use crate::lookup_key::LookupPath;
 use crate::tools::safe_repr;
 use crate::validators::Exactness;
 use crate::validators::TemporalUnitMode;
@@ -828,10 +829,7 @@ impl<'py> KeywordArgs<'py> for PyKwargs<'py> {
         self.0.len()
     }
 
-    fn get_item<'k>(
-        &self,
-        key: &'k crate::lookup_key::LookupKey,
-    ) -> ValResult<Option<(&'k crate::lookup_key::LookupPath, Self::Item<'_>)>> {
+    fn get_item<'k>(&self, key: &LookupPath) -> ValResult<Option<Self::Item<'_>>> {
         key.py_get_dict_item(&self.0).map_err(Into::into)
     }
 
@@ -858,10 +856,7 @@ impl<'py> ValidatedDict<'py> for GenericPyMapping<'_, 'py> {
     where
         Self: 'a;
 
-    fn get_item<'k>(
-        &self,
-        key: &'k crate::lookup_key::LookupKey,
-    ) -> ValResult<Option<(&'k crate::lookup_key::LookupPath, Self::Item<'_>)>> {
+    fn get_item(&self, key: &LookupPath) -> ValResult<Option<Self::Item<'_>>> {
         match self {
             Self::Dict(dict) => key.py_get_dict_item(dict).map_err(Into::into),
             Self::Mapping(mapping) => key.py_get_mapping_item(mapping).map_err(Into::into),

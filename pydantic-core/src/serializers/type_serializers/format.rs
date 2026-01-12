@@ -184,7 +184,7 @@ impl_py_gc_traverse!(ToStringSerializer {});
 impl TypeSerializer for ToStringSerializer {
     fn to_python(&self, value: &Bound<'_, PyAny>, state: &mut SerializationState<'_>) -> PyResult<Py<PyAny>> {
         if self.when_used.should_use(value, &state.extra) {
-            serialize_via_str(value, serialize_to_python())
+            serialize_via_str(value, serialize_to_python(value.py()))
         } else {
             Ok(value.clone().unbind())
         }
@@ -221,10 +221,7 @@ impl TypeSerializer for ToStringSerializer {
 }
 
 /// Serialize a value by calling `str()` on it
-pub fn serialize_via_str<'py, T, E: From<PyErr>>(
-    value: &Bound<'py, PyAny>,
-    do_serialize: impl DoSerialize<'py, T, E>,
-) -> Result<T, E> {
+pub fn serialize_via_str<S: DoSerialize>(value: &Bound<'_, PyAny>, do_serialize: S) -> Result<S::Ok, S::Error> {
     let s = value.str()?;
     do_serialize.serialize_str(&s)
 }

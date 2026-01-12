@@ -3,7 +3,8 @@ use std::sync::Arc;
 
 use pyo3::intern;
 use pyo3::prelude::*;
-use pyo3::types::{PyDict, PySet, PyString, PyType};
+use pyo3::pybacked::PyBackedStr;
+use pyo3::types::{PyDict, PySet, PyType};
 
 use ahash::AHashMap;
 use pyo3::IntoPyObjectExt;
@@ -56,19 +57,14 @@ impl BuildSerializer for ModelFieldsBuilder {
         let serialize_by_alias = config.get_as(intern!(py, "serialize_by_alias"))?;
 
         for (key, value) in fields_dict {
-            let key_py = key.cast_into::<PyString>()?;
-            let key: String = key_py.extract()?;
+            let key_py: PyBackedStr = key.extract()?;
+            let key: String = key_py.to_string();
             let field_info = value.cast()?;
 
-            let key_py: Py<PyString> = key_py.into();
-
             if field_info.get_as(intern!(py, "serialization_exclude"))? == Some(true) {
-                fields.insert(
-                    key,
-                    SerField::new(py, key_py, None, None, true, serialize_by_alias, None),
-                );
+                fields.insert(key, SerField::new(key_py, None, None, true, serialize_by_alias, None));
             } else {
-                let alias: Option<String> = field_info.get_as(intern!(py, "serialization_alias"))?;
+                let alias = field_info.get_as(intern!(py, "serialization_alias"))?;
                 let serialization_exclude_if: Option<Py<PyAny>> =
                     field_info.get_as(intern!(py, "serialization_exclude_if"))?;
                 let schema = field_info.get_as_req(intern!(py, "schema"))?;
@@ -78,7 +74,6 @@ impl BuildSerializer for ModelFieldsBuilder {
                 fields.insert(
                     key,
                     SerField::new(
-                        py,
                         key_py,
                         alias,
                         Some(serializer),
@@ -163,15 +158,12 @@ impl ModelSerializer {
     /// - compatibility checks
     /// - extracting the inner value for root models
     /// - applying `serialize_as_any` where needed
-    ///
-    /// If the value is not applicable, `do_serialize` will be called with `None` to indicate fallback
-    /// behaviour should be used.
-    fn serialize<'py, T, E: From<PyErr>>(
+    fn serialize<'py, S: DoSerialize>(
         &self,
         value: &Bound<'py, PyAny>,
         state: &mut SerializationState<'py>,
-        do_serialize: impl DoSerialize<'py, T, E>,
-    ) -> Result<T, E> {
+        do_serialize: S,
+    ) -> Result<S::Ok, S::Error> {
         if self.root_model {
             return self.serialize_root_model(value, state, do_serialize);
         }
@@ -186,12 +178,12 @@ impl ModelSerializer {
         do_serialize.serialize_no_infer(&self.serializer, &inner_value, state)
     }
 
-    fn serialize_root_model<'py, T, E: From<PyErr>>(
+    fn serialize_root_model<'py, S: DoSerialize>(
         &self,
         value: &Bound<'py, PyAny>,
         state: &mut SerializationState<'py>,
-        do_serialize: impl DoSerialize<'py, T, E>,
-    ) -> Result<T, E> {
+        do_serialize: S,
+    ) -> Result<S::Ok, S::Error> {
         if !self.allow_value_root_model(value, state.check)? {
             return do_serialize.serialize_fallback(self.get_name(), value, state);
         }
@@ -251,7 +243,7 @@ impl_py_gc_traverse!(ModelSerializer { class, serializer });
 
 impl TypeSerializer for ModelSerializer {
     fn to_python<'py>(&self, value: &Bound<'py, PyAny>, state: &mut SerializationState<'py>) -> PyResult<Py<PyAny>> {
-        self.serialize(value, state, serialize_to_python())
+        self.serialize(value, state, serialize_to_python(value.py()))
     }
 
     fn json_key<'a, 'py>(

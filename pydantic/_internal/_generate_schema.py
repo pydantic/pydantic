@@ -19,7 +19,7 @@ from decimal import Decimal
 from enum import Enum
 from fractions import Fraction
 from functools import partial
-from inspect import Parameter, _ParameterKind, signature
+from inspect import Parameter, _ParameterKind
 from ipaddress import IPv4Address, IPv4Interface, IPv4Network, IPv6Address, IPv6Interface, IPv6Network
 from itertools import chain
 from operator import attrgetter
@@ -1937,7 +1937,7 @@ class GenerateSchema:
         return_schema: core_schema.CoreSchema | None = None
         config_wrapper = self._config_wrapper
         if config_wrapper.validate_return:
-            sig = signature(function)
+            sig = _typing_extra.signature_no_eval(function)
             return_hint = sig.return_annotation
             if return_hint is not sig.empty:
                 globalns, localns = self._types_namespace
@@ -1962,7 +1962,7 @@ class GenerateSchema:
             Parameter.KEYWORD_ONLY: 'keyword_only',
         }
 
-        sig = signature(function)
+        sig = _typing_extra.signature_no_eval(function)
         globalns, localns = self._types_namespace
         type_hints = _typing_extra.get_function_type_hints(function, globalns=globalns, localns=localns)
 
@@ -2039,7 +2039,7 @@ class GenerateSchema:
             Parameter.KEYWORD_ONLY: 'keyword_only',
         }
 
-        sig = signature(function)
+        sig = _typing_extra.signature_no_eval(function)
         globalns, localns = self._types_namespace
         type_hints = _typing_extra.get_function_type_hints(function, globalns=globalns, localns=localns)
 

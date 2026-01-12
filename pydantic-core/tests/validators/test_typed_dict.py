@@ -579,7 +579,8 @@ def test_aliases_debug():
     )
     print(repr(v))
     assert repr(v).startswith('SchemaValidator(title="typed-dict", validator=TypedDict(')
-    assert 'PathChoices(' in repr(v)
+    # check that aliases with non-empty "rest" are present, i.e. non-trivial paths
+    assert 'rest: [\n' in repr(v)
 
 
 def get_int_key():
