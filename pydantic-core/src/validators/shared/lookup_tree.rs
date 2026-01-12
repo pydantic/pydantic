@@ -5,13 +5,16 @@ use ahash::AHashMap;
 use jiter::{JsonArray, JsonValue};
 use smallvec::SmallVec;
 
+use crate::errors::LocItem;
 use crate::lookup_key::{LookupPath, LookupPathCollection, LookupType, PathItem, PathItemString};
 
-/// A tree of paths for lookups when trying to find fields from input names.
+/// A tree of paths for lookups when trying to find fields from input.
+///
+/// The structure is nested maps, typically there is only one level unless there are `AliasPath` aliases
+/// which require deeper lookups.
 #[derive(Debug)]
 pub struct LookupTree {
-    /// FIXME: make private again
-    pub inner: AHashMap<PathItemString, LookupTreeNode>,
+    inner: AHashMap<PathItemString, LookupTreeNode>,
 }
 
 impl LookupTree {
@@ -69,15 +72,17 @@ impl LookupTree {
     }
 }
 
+/// When resolving data for a field, aliases are preferred over names, and earlier aliases are preferred over later ones.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct LookupFieldPriority {
     /// The type of lookups that will match this lookup
-    pub lookup_type: LookupType,
+    lookup_type: LookupType,
     /// The index of this alias within the `AliasChoices` for the field
-    pub alias_index: usize,
+    alias_index: usize,
 }
 
 impl LookupFieldPriority {
+    /// Returns `true` if `self` has higher priority than `other`, i.e. data from this lookup should be used over data from `other`.
     pub fn is_higher_priority_than(&self, other: &Self) -> bool {
         if self.lookup_type == LookupType::Name {
             // name lookups are never higher priority than other lookups
@@ -92,37 +97,30 @@ impl LookupFieldPriority {
     }
 }
 
+/// Represents a location in the lookup tree which corresponds to data for a specific field.
 #[derive(Debug, Clone, Copy)]
 pub struct LookupFieldInfo {
+    /// The field which this lookup will populate.
     pub field_index: usize,
+    /// Information about whether this data should be preferred over other possible matches for the same field.
     pub lookup_priority: LookupFieldPriority,
 }
 
 impl LookupFieldInfo {
+    /// Whether this lookup should be used for the given lookup type (i.e. when validating by_name / by_alias)
     pub fn matches_lookup(&self, lookup_type: LookupType) -> bool {
         self.lookup_priority.lookup_type.matches(lookup_type)
     }
 }
 
+/// Represents a point in the lookup tree, containing exact matches plus possible nested lookups.
 #[derive(Debug, Default)]
 pub struct LookupTreeNode {
     /// All fields which wanted _exactly_ this key, typically this is just a single entry
     fields: SmallVec<[LookupFieldInfo; 1]>,
-    /// Fields which use this key as path prefix (often empty)
-    lookup_map: LookupMap,
-}
-
-#[derive(Clone, Copy)]
-pub enum LookupPathItem<'a> {
-    Key(&'a str),
-    Index(i64),
-}
-
-#[derive(Debug, Default)]
-pub struct LookupMap {
-    /// For lookups by name, e.g. `['foo', 'bar']`
+    /// For nested lookups by name, e.g. `['foo', 'bar']`, typically empty
     pub map: AHashMap<PathItemString, LookupTreeNode>,
-    /// For lookups by integer index, e.g. `['foo', 0]`
+    /// For nested lookups by integer index, e.g. `['foo', 0]`, typically empty
     pub list: AHashMap<i64, LookupTreeNode>,
 }
 
@@ -134,33 +132,30 @@ fn add_field_to_map<K: Hash + Eq>(map: &mut AHashMap<K, LookupTreeNode>, key: K,
         Entry::Vacant(entry) => {
             entry.insert(LookupTreeNode {
                 fields: SmallVec::from_buf([info]),
-                lookup_map: LookupMap::default(),
+                map: AHashMap::new(),
+                list: AHashMap::new(),
             });
         }
     }
 }
 
 fn add_path_to_map(map: &mut AHashMap<PathItemString, LookupTreeNode>, path: &LookupPath, info: LookupFieldInfo) {
-    if path.rest().is_empty() {
-        // terminal value
-        add_field_to_map(map, path.first_item().to_owned(), info);
-        return;
-    }
-
-    let mut nested_map = &mut map.entry(path.first_item().to_owned()).or_default().lookup_map;
-
+    let base_key = path.first_item().to_owned();
     let mut path_iter = path.rest().iter();
 
-    let mut current = path_iter.next().expect("rest is non-empty");
+    let Some(mut current) = path_iter.next() else {
+        // there was no items in "rest", so just a string key to add to the current map
+        add_field_to_map(map, base_key, info);
+        return;
+    };
 
+    // traverse the tree structure to find the final node to insert the field info into
+    let mut tree_node = map.entry(base_key).or_default();
     for next in path_iter {
-        nested_map = match current {
-            PathItem::S(s) => {
-                let str_key = s.clone();
-                &mut nested_map.map.entry(str_key).or_default().lookup_map
-            }
-            PathItem::Pos(i) => &mut nested_map.list.entry(*i as i64).or_default().lookup_map,
-            PathItem::Neg(i) => &mut nested_map.list.entry(-(*i as i64)).or_default().lookup_map,
+        tree_node = match current {
+            PathItem::S(s) => tree_node.map.entry(s.clone()).or_default(),
+            PathItem::Pos(i) => tree_node.list.entry(*i as i64).or_default(),
+            PathItem::Neg(i) => tree_node.list.entry(-(*i as i64)).or_default(),
         };
 
         current = next;
@@ -169,28 +164,45 @@ fn add_path_to_map(map: &mut AHashMap<PathItemString, LookupTreeNode>, path: &Lo
     // now have a terminal value
     match current {
         PathItem::S(s) => {
-            add_field_to_map(&mut nested_map.map, s.clone(), info);
+            add_field_to_map(&mut tree_node.map, s.clone(), info);
         }
         PathItem::Pos(i) => {
-            add_field_to_map(&mut nested_map.list, *i as i64, info);
+            add_field_to_map(&mut tree_node.list, *i as i64, info);
         }
         PathItem::Neg(i) => {
-            add_field_to_map(&mut nested_map.list, -(*i as i64), info);
+            add_field_to_map(&mut tree_node.list, -(*i as i64), info);
         }
     }
 }
 
-/// Iterator for matching fields in a lookup tree against JSON values
+/// Iterator for matching fields in a lookup tree against JSON values, retrurn value of `iter_matches`.
+///
+/// Call `next_match` to get the next matching field along with the JSON value and the path taken to reach it.
+///
+/// This isn't a typical `Iterator` because `next_match` returns data which borrows from the iterator itself,
+/// not yet supported by Rust's `Iterator` trait.
 pub struct LookupMatchesIter<'a, 'j> {
-    /// Current stack of the iterator; avoids allocating if the fields do not have nested-level aliases
-    stack: SmallVec<[NestedFrame<'a, 'j>; 1]>,
+    stack: LookupMatchesStack<'a, 'j>,
 }
 
+/// Current stack of the `LookupMatches` iterator
+pub struct LookupMatchesStack<'a, 'j>(
+    // uses SmallVec to avoid allocating if there are no `AliasPath` lookups
+    SmallVec<[NestedFrame<'a, 'j>; 1]>,
+);
+
+/// State of the iterator at a given depth in the lookup tree
 struct NestedFrame<'a, 'j> {
     json_value: &'a JsonValue<'j>,
     lookup_path: LookupPathItem<'a>,
     node: &'a LookupTreeNode,
     state: FrameState<'a, 'j>,
+}
+
+#[derive(Clone, Copy)]
+enum LookupPathItem<'a> {
+    Key(&'a str),
+    Index(i64),
 }
 
 enum FrameState<'a, 'j> {
@@ -204,6 +216,7 @@ enum FrameState<'a, 'j> {
     },
     /// Iterating through a JSON array at this path which might have matches on its indices
     NestedArray {
+        // NB we iterate the interesting entries in the lookup map, not the JSON array itself
         iter: std::collections::hash_map::Iter<'a, i64, LookupTreeNode>,
         json_array: &'a JsonArray<'j>,
     },
@@ -224,37 +237,39 @@ impl<'a, 'j> LookupMatchesIter<'a, 'j> {
             SmallVec::new()
         };
 
-        Self { stack }
+        Self {
+            stack: LookupMatchesStack(stack),
+        }
     }
 
-    pub fn next_match(&mut self) -> Option<(&'_ LookupFieldInfo, &'_ JsonValue<'j>, LookupMatchesStack<'_, 'a, 'j>)> {
-        'top_level: while let Some(frame) = self.stack.last_mut() {
+    pub fn next_match(&mut self) -> Option<(&'_ LookupFieldInfo, &'_ JsonValue<'j>, &'_ LookupMatchesStack<'a, 'j>)> {
+        'top_level: while let Some(frame) = self.stack.0.last_mut() {
             // Initialize exploration state if needed
             match &mut frame.state {
                 FrameState::Fields { fields } => {
                     if let Some(field_info) = fields.next() {
-                        return Some((field_info, frame.json_value, LookupMatchesStack { inner: &self.stack }));
+                        return Some((field_info, frame.json_value, &self.stack));
                     }
 
                     // no more fields, possibly explore nested structures if there are complex aliases
                     match frame.json_value {
-                        JsonValue::Object(obj) if !frame.node.lookup_map.map.is_empty() => {
+                        JsonValue::Object(obj) if !frame.node.map.is_empty() => {
                             frame.state = FrameState::NestedObject { iter: obj.iter() };
                         }
-                        JsonValue::Array(arr) if !frame.node.lookup_map.list.is_empty() => {
+                        JsonValue::Array(arr) if !frame.node.list.is_empty() => {
                             frame.state = FrameState::NestedArray {
                                 json_array: arr,
-                                iter: frame.node.lookup_map.list.iter(),
+                                iter: frame.node.list.iter(),
                             };
                         }
                         _ => {
-                            self.stack.pop();
+                            self.stack.0.pop();
                         }
                     }
                 }
                 FrameState::NestedObject { iter } => {
                     if let Some(next_frame) = iter.by_ref().find_map(|(key, value)| {
-                        let nested_node = frame.node.lookup_map.map.get(key.as_ref())?;
+                        let nested_node = frame.node.map.get(key.as_ref())?;
                         Some(NestedFrame {
                             json_value: value,
                             lookup_path: LookupPathItem::Key(key.as_ref()),
@@ -264,11 +279,11 @@ impl<'a, 'j> LookupMatchesIter<'a, 'j> {
                             },
                         })
                     }) {
-                        self.stack.push(next_frame);
+                        self.stack.0.push(next_frame);
                         continue 'top_level;
                     }
 
-                    self.stack.pop();
+                    self.stack.0.pop();
                 }
                 FrameState::NestedArray { json_array, iter } => {
                     if let Some(next_frame) = iter.by_ref().find_map(|(list_item, nested_node)| {
@@ -288,11 +303,11 @@ impl<'a, 'j> LookupMatchesIter<'a, 'j> {
                             },
                         })
                     }) {
-                        self.stack.push(next_frame);
+                        self.stack.0.push(next_frame);
                         continue 'top_level;
                     }
 
-                    self.stack.pop();
+                    self.stack.0.pop();
                 }
             }
         }
@@ -300,13 +315,12 @@ impl<'a, 'j> LookupMatchesIter<'a, 'j> {
     }
 }
 
-pub struct LookupMatchesStack<'stack, 'a, 'j> {
-    inner: &'stack SmallVec<[NestedFrame<'a, 'j>; 1]>,
-}
-
-impl<'a> LookupMatchesStack<'_, 'a, '_> {
-    /// Iterate paths from the deepest level up to the root
-    pub fn iter_paths_bottom_up(&self) -> impl Iterator<Item = LookupPathItem<'a>> + use<'_, 'a> {
-        self.inner.iter().rev().map(|frame| frame.lookup_path)
+impl LookupMatchesStack<'_, '_> {
+    /// Iterate the location items representing the path taken to reach the current match
+    pub fn iter_loc_items(&self) -> impl DoubleEndedIterator<Item = LocItem> + use<'_> {
+        self.0.iter().map(|frame| match frame.lookup_path {
+            LookupPathItem::Key(s) => s.into(),
+            LookupPathItem::Index(i) => i.into(),
+        })
     }
 }

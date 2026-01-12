@@ -22,7 +22,6 @@ use crate::tools::SchemaDict;
 use crate::tools::new_py_string;
 use crate::tools::pybackedstr_to_pystring;
 use crate::validators::shared::lookup_tree::LookupFieldPriority;
-use crate::validators::shared::lookup_tree::LookupPathItem;
 use crate::validators::shared::lookup_tree::LookupTree;
 
 use super::{BuildValidator, CombinedValidator, DefinitionsBuilder, ValidationState, Validator, build_validator};
@@ -595,11 +594,8 @@ impl ModelFieldsValidator {
                                 .into_iter()
                                 .map(|mut err| {
                                     if self.loc_by_alias {
-                                        for path in lookup_path.iter_paths_bottom_up() {
-                                            err = match path {
-                                                LookupPathItem::Key(k) => err.with_outer_location(k),
-                                                LookupPathItem::Index(i) => err.with_outer_location(i),
-                                            };
+                                        for loc in lookup_path.iter_loc_items().rev() {
+                                            err = err.with_outer_location(loc);
                                         }
                                     } else {
                                         err = err.with_outer_location(field.name.clone());
