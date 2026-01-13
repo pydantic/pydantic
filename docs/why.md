@@ -1,4 +1,4 @@
-# Why use Pydantic?
+# Why use Pydantic Validation?
 
 Today, Pydantic is downloaded <span id="download-count">many</span> times a month and used by some of the largest and most recognisable organisations in the world.
 
@@ -280,7 +280,7 @@ Pydantic provides four ways to create schemas and perform validation and seriali
 1. [`BaseModel`](concepts/models.md) &mdash; Pydantic's own super class with many common utilities available via instance methods.
 2. [Pydantic dataclasses](concepts/dataclasses.md) &mdash; a wrapper around standard dataclasses with additional validation performed.
 3. [`TypeAdapter`][pydantic.type_adapter.TypeAdapter] &mdash; a general way to adapt any type for validation and serialization.
-   This allows types like [`TypedDict`](api/standard_library_types.md#typeddict) and [`NamedTuple`](api/standard_library_types.md#typingnamedtuple)
+   This allows types like [`TypedDict`](api/standard_library_types.md#typeddict) and [`NamedTuple`](api/standard_library_types.md#named-tuples)
    to be validated as well as simple types (like [`int`][] or [`timedelta`][datetime.timedelta]) &mdash; [all types](concepts/types.md) supported
    can be used with [`TypeAdapter`][pydantic.type_adapter.TypeAdapter].
 4. [`validate_call`](concepts/validation_decorator.md) &mdash; a decorator to perform validation when calling a function.
@@ -363,7 +363,7 @@ Functional validators and serializers, as well as a powerful protocol for custom
 
 
     print(Meeting(when='2020-01-01T12:00+01:00'))
-    #> when=datetime.datetime(2020, 1, 1, 12, 0, tzinfo=TzInfo(+01:00))
+    #> when=datetime.datetime(2020, 1, 1, 12, 0, tzinfo=TzInfo(3600))
     print(Meeting(when='now'))
     #> when=datetime.datetime(2032, 1, 2, 3, 4, 5, 6)
     print(Meeting(when='2020-01-01T12:00'))
@@ -371,7 +371,8 @@ Functional validators and serializers, as well as a powerful protocol for custom
     ```
 
 !!! tip "Learn more"
-    See the documentation on [validators](concepts/validators.md), [custom serializers](concepts/serialization.md#custom-serializers), and [custom types](concepts/types.md#custom-types).
+    See the documentation on [validators](concepts/validators.md), [custom serializers](concepts/serialization.md#serializers),
+    and [custom types](concepts/types.md#custom-types).
 
 ## Ecosystem
 

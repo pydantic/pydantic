@@ -990,7 +990,7 @@ def test_email_validator_not_installed(mocker):
 
 def test_import_email_validator_not_installed(mocker):
     mocker.patch.dict('sys.modules', {'email_validator': None})
-    with pytest.raises(ImportError, match=r'email-validator is not installed, run `pip install pydantic\[email\]`'):
+    with pytest.raises(ImportError, match=r'email-validator is not installed, run `pip install \'pydantic\[email\]\'`'):
         import_email_validator()
 
 
@@ -1216,3 +1216,17 @@ def test_url_ser_as_any() -> None:
     ta = TypeAdapter(Any)
     assert ta.dump_python(HttpUrl('http://example.com')) == HttpUrl('http://example.com')
     assert ta.dump_json(HttpUrl('http://example.com')) == b'"http://example.com/"'
+
+
+@pytest.mark.parametrize(
+    'type',
+    [Url, AnyUrl, HttpUrl],
+)
+def test_url_preserve_empty_path(type) -> None:
+    ta_config = TypeAdapter(type, config={'url_preserve_empty_path': True})
+
+    assert str(ta_config.validate_python('http://example.com')) == 'http://example.com'
+
+    ta_constraint = TypeAdapter(Annotated[type, UrlConstraints(preserve_empty_path=True)])
+
+    assert str(ta_constraint.validate_python('http://example.com')) == 'http://example.com'

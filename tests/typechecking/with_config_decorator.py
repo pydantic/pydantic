@@ -6,12 +6,22 @@ from pydantic import ConfigDict, with_config
 
 
 @with_config(ConfigDict(str_to_lower=True))
-class Model(TypedDict):
+class Model1(TypedDict):
     a: str
 
 
-assert_type(Model, type[Model])
+@with_config(str_to_lower=True)
+class Model2(TypedDict):
+    pass
 
-model = Model(a='ABC')
 
-assert_type(model, Model)
+@with_config(config=ConfigDict(str_to_lower=True))  # type: ignore[deprecated]  # pyright: ignore[reportDeprecated]
+class Model3(TypedDict):
+    pass
+
+
+assert_type(Model1, type[Model1])
+
+model = Model1(a='ABC')
+
+assert_type(model, Model1)

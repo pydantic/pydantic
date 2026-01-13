@@ -1,9 +1,9 @@
-Pydantic models are a great way to validating and serializing data for requests and responses.
+Pydantic models are a great way to validate and serialize data for requests and responses.
 Pydantic is instrumental in many web frameworks and libraries, such as FastAPI, Django, Flask, and HTTPX.
 
 ## `httpx` requests
 
-[`httpx`](https://www.python-httpx.org/) is a HTTP client for Python 3 with synchronous and asynchronous APIs.
+[`httpx`](https://www.python-httpx.org/) is an HTTP client for Python 3 with synchronous and asynchronous APIs.
 In the below example, we query the [JSONPlaceholder API](https://jsonplaceholder.typicode.com/) to get a user's data and validate it with a Pydantic model.
 
 ```python {test="skip"}

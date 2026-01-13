@@ -7,3 +7,9 @@
 918402f01d82694214ff93cd77ff62d5d5beb1ab
 # Ruff 0.4.8:
 332e77ba3b658c2a57fc72f832587b72311d87c7
+# Replace `py` -> `python` in code blocks:
+33c4812cb3b7160d663620f84dd17eeda1480539
+# Markdownlint:
+c4f0262bd64734751a68846a10edd6cdc6acc6f6
+# yamlfmt:
+19223b9ce61537995cbc4c46141148ac619a60af

@@ -134,7 +134,7 @@ def ns_for_function(obj: Callable[..., Any], parent_namespace: MappingNamespace 
 
     locals_list.append({t.__name__: t for t in type_params})
 
-    # What about short-cirtuiting to `obj.__globals__`?
+    # What about short-circuiting to `obj.__globals__`?
     globalns = get_module_ns_of(obj)
 
     return NamespacesTuple(globalns, LazyLocalNamespace(*locals_list))

@@ -2,24 +2,38 @@ name: Pydantic Family Integration Tests
 
 on:
   schedule:
-  - cron: '21 3 * * 1,2,3,4,5'
+    - cron: '21 3 * * 1,2,3,4,5'
   workflow_dispatch: {}
 
 jobs:
   test-pydantic-settings:
     name: Test pydantic settings
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ['3.9', '3.10', '3.11', '3.12', '3.13', '3.14']
     steps:
-    - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
-    - name: Run tests
-      run: make test-pydantic-settings
+      - uses: astral-sh/setup-uv@v7
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Run tests
+        run: make test-pydantic-settings
 
   test-pydantic-extra-types:
     name: Test pydantic extra types
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ['3.9', '3.10', '3.11', '3.12', '3.13', '3.14']
     steps:
-    - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
-    - name: Run tests
-      run: make test-pydantic-extra-types
+      - uses: astral-sh/setup-uv@v7
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Run tests
+        run: make test-pydantic-extra-types

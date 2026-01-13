@@ -23,7 +23,7 @@
     ['/integrations/logging/', 'std lib logging.'],
     ['/integrations/django/', 'Django app.'],
     ['/integrations/anthropic/', 'Anthropic API calls.'],
-    ['/integrations/fastapi/', 'Flask app.'],
+    ['/integrations/flask/', 'Flask app.'],
     ['/integrations/mysql/', 'MySQL queries.'],
     ['/integrations/sqlalchemy/', 'SQLAlchemy queries.'],
     ['/integrations/structlog/', 'Structlog logs.'],

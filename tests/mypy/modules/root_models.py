@@ -1,5 +1,7 @@
 from typing import Generic, TypeVar
 
+from typing_extensions import assert_type
+
 from pydantic import BaseModel, RootModel
 
 
@@ -40,5 +42,7 @@ class Model(BaseModel, Generic[V]):
 
 
 Model[str](m1=1, m2='dog', m3=[])
-Model[str](m1=Maybe(None), m2=Maybe('dog'), m3=Maybe([]))
+m = Model[str](m1=Maybe(None), m2=Maybe('dog'), m3=Maybe([]))
 Model(m1=None, m2={}, m3=[])
+
+assert_type(m.m1, Maybe[int])

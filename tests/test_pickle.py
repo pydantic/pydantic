@@ -1,6 +1,7 @@
 import dataclasses
 import gc
 import pickle
+import sys
 from typing import Optional
 
 import pytest
@@ -16,6 +17,11 @@ except ImportError:
     cloudpickle = None
 
 pytestmark = pytest.mark.skipif(cloudpickle is None, reason='cloudpickle is not installed')
+
+cloudpickle_pypy_xfail = pytest.mark.xfail(
+    condition=sys.implementation.name == 'pypy' and sys.version_info >= (3, 11),
+    reason='Cloudpickle issue: - possibly https://github.com/cloudpipe/cloudpickle/issues/557',
+)
 
 
 class IntWrapper:
@@ -88,7 +94,7 @@ def model_factory() -> type:
         (ImportableModel, False),
         (ImportableModel, True),
         # Locally-defined model can only be pickled with cloudpickle.
-        (model_factory(), True),
+        pytest.param(model_factory(), True, marks=cloudpickle_pypy_xfail),
     ],
 )
 def test_pickle_model(model_type: type, use_cloudpickle: bool):
@@ -133,7 +139,7 @@ def nested_model_factory() -> type:
         (ImportableNestedModel, False),
         (ImportableNestedModel, True),
         # Locally-defined model can only be pickled with cloudpickle.
-        (nested_model_factory(), True),
+        pytest.param(nested_model_factory(), True, marks=cloudpickle_pypy_xfail),
     ],
 )
 def test_pickle_nested_model(model_type: type, use_cloudpickle: bool):
@@ -207,12 +213,12 @@ def child_dataclass_factory() -> type:
         (ImportableChildDataclass, False),
         (ImportableChildDataclass, True),
         # Locally-defined Pydantic dataclass can only be pickled with cloudpickle.
-        (dataclass_factory(), True),
+        pytest.param(dataclass_factory(), True, marks=cloudpickle_pypy_xfail),
         (child_dataclass_factory(), True),
         # Pydantic dataclass generated from builtin can only be pickled with cloudpickle.
-        (pydantic.dataclasses.dataclass(ImportableBuiltinDataclass), True),
+        pytest.param(pydantic.dataclasses.dataclass(ImportableBuiltinDataclass), True, marks=cloudpickle_pypy_xfail),
         # Pydantic dataclass generated from locally-defined builtin can only be pickled with cloudpickle.
-        (pydantic.dataclasses.dataclass(builtin_dataclass_factory()), True),
+        pytest.param(pydantic.dataclasses.dataclass(builtin_dataclass_factory()), True, marks=cloudpickle_pypy_xfail),
     ],
 )
 def test_pickle_dataclass(dataclass_type: type, use_cloudpickle: bool):
@@ -264,7 +270,7 @@ def nested_dataclass_model_factory() -> type:
         (ImportableNestedDataclassModel, False),
         (ImportableNestedDataclassModel, True),
         # Locally-defined model can only be pickled with cloudpickle.
-        (nested_dataclass_model_factory(), True),
+        pytest.param(nested_dataclass_model_factory(), True, marks=cloudpickle_pypy_xfail),
     ],
 )
 def test_pickle_dataclass_nested_in_model(model_type: type, use_cloudpickle: bool):
@@ -302,7 +308,7 @@ def model_with_config_factory() -> type:
     [
         (ImportableModelWithConfig, False),
         (ImportableModelWithConfig, True),
-        (model_with_config_factory(), True),
+        pytest.param(model_with_config_factory(), True, marks=cloudpickle_pypy_xfail),
     ],
 )
 def test_pickle_model_with_config(model_type: type, use_cloudpickle: bool):

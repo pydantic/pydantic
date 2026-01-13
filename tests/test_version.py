@@ -12,7 +12,6 @@ def test_version_info():
         'pydantic version',
         'pydantic-core version',
         'pydantic-core build',
-        'install path',
         'python version',
         'platform',
         'related packages',
@@ -21,7 +20,7 @@ def test_version_info():
 
     s = version_info()
     assert all(f'{field}:' in s for field in version_info_fields)
-    assert s.count('\n') == 7
+    assert s.count('\n') == 6
 
 
 def test_standard_version():

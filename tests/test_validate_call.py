@@ -12,6 +12,7 @@ from typing_extensions import Required, TypedDict, Unpack
 
 from pydantic import (
     AfterValidator,
+    AliasChoices,
     BaseModel,
     BeforeValidator,
     Field,
@@ -381,6 +382,41 @@ def test_unpacked_typed_dict_kwargs_functional_syntax() -> None:
     assert exc.value.errors()[0]['loc'] == ('in',)
 
 
+def test_unpacked_typed_dict_kwargs_closed() -> None:
+    class TD(TypedDict, closed=True):
+        a: int
+
+    @validate_call
+    def foo(**kwargs: Unpack[TD]):
+        pass
+
+    foo(a=1)
+
+    with pytest.raises(ValidationError) as exc:
+        foo(a=1, b=2)
+
+    assert exc.value.errors()[0]['type'] == 'extra_forbidden'
+    assert exc.value.errors()[0]['loc'] == ('b',)
+
+
+def test_unpacked_typed_dict_extra_items() -> None:
+    class TD(TypedDict, extra_items=str):
+        a: int
+
+    @validate_call
+    def foo(**kwargs: Unpack[TD]):
+        return kwargs
+
+    assert foo(a='1') == {'a': 1}
+    assert foo(a=1, b='x', c='y') == {'a': 1, 'b': 'x', 'c': 'y'}
+
+    with pytest.raises(ValidationError) as exc:
+        foo(a=1, b=2)
+
+    assert exc.value.errors()[0]['type'] == 'string_type'
+    assert exc.value.errors()[0]['loc'] == ('b',)
+
+
 def test_field_can_provide_factory() -> None:
     @validate_call
     def foo(a: int, b: int = Field(default_factory=lambda: 99), *args: int) -> int:
@@ -671,6 +707,27 @@ def test_json_schema():
     }
 
 
+def test_json_schema_custom_title() -> None:
+    def func(a: int):
+        pass
+
+    ta = TypeAdapter(func, config={'field_title_generator': lambda f_name, _: f_name + 'test'})
+
+    assert ta.json_schema()['properties']['a']['title'] == 'atest'
+
+
+def test_json_schema_title_not_set_on_ref() -> None:
+    class Model(BaseModel):
+        pass
+
+    def func(m: Model):
+        pass
+
+    ta = TypeAdapter(func)
+
+    assert ta.json_schema()['properties']['m'] == {'$ref': '#/$defs/Model'}
+
+
 def test_alias_generator():
     @validate_call(config=dict(alias_generator=lambda x: x * 2))
     def foo(a: int, b: int):
@@ -837,6 +894,17 @@ def test_annotated_use_of_alias():
         {'type': 'unexpected_keyword_argument', 'loc': ('a',), 'msg': 'Unexpected keyword argument', 'input': 10},
         {'type': 'unexpected_keyword_argument', 'loc': ('d',), 'msg': 'Unexpected keyword argument', 'input': 1},
     ]
+
+
+def test_validation_alias():
+    @validate_call
+    def foo(
+        a: Annotated[int, Field(validation_alias='b')],
+        c: Annotated[int, Field(validation_alias=AliasChoices('d', 'e'))],
+    ):
+        return a + c
+
+    assert foo(b=1, e=4) == 5
 
 
 def test_use_of_alias():

@@ -49,7 +49,8 @@ def get_plugins() -> Iterable[PydanticPluginProtocol]:
                     except (ImportError, AttributeError) as e:
                         warnings.warn(
                             f'{e.__class__.__name__} while loading the `{entry_point.name}` Pydantic plugin, '
-                            f'this plugin will not be installed.\n\n{e!r}'
+                            f'this plugin will not be installed.\n\n{e!r}',
+                            stacklevel=2,
                         )
         finally:
             _loading_plugins = False

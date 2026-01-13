@@ -11,6 +11,7 @@ from typing import Annotated, Any, NamedTuple, Optional, Union
 import pytest
 from dirty_equals import HasRepr, IsPartialDict
 from pydantic_core import SchemaError, SchemaSerializer, SchemaValidator
+from typing_extensions import TypedDict
 
 from pydantic import (
     BaseConfig,
@@ -35,7 +36,7 @@ from pydantic.dataclasses import rebuild_dataclass
 from pydantic.errors import PydanticUserError
 from pydantic.fields import ComputedFieldInfo, FieldInfo
 from pydantic.type_adapter import TypeAdapter
-from pydantic.warnings import PydanticDeprecatedSince210, PydanticDeprecationWarning
+from pydantic.warnings import PydanticDeprecatedSince210, PydanticDeprecatedSince211, PydanticDeprecationWarning
 
 from .conftest import CallCounter
 
@@ -934,6 +935,32 @@ def test_with_config_disallowed_with_model():
 
         @with_config({'coerce_numbers_to_str': True})
         class Model(BaseModel):
+            pass
+
+
+def test_with_config_kwargs() -> None:
+    @with_config(coerce_numbers_to_str=True)
+    class TD(TypedDict):
+        a: str
+
+    assert TypeAdapter(TD).validate_python({'a': 1}) == {'a': '1'}
+
+
+def test_with_config_keyword_argument_deprecated() -> None:
+    with pytest.warns(PydanticDeprecatedSince211):
+
+        @with_config(config={'coerce_numbers_to_str': True})
+        class TD(TypedDict):
+            a: str
+
+    assert TypeAdapter(TD).validate_python({'a': 1}) == {'a': '1'}
+
+
+def test_with_config_positional_and_keyword_error() -> None:
+    with pytest.raises(ValueError):
+
+        @with_config({'coerce_numbers_to_str': True}, coerce_numbers_to_str=True)
+        class TD(TypedDict):
             pass
 
 

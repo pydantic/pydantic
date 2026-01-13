@@ -98,7 +98,6 @@ except ValidationError as ve:
 
 We can also enforce UTC offset constraints in a similar way.  Assuming we have a `lower_bound` and an `upper_bound`, we can create a custom validator to ensure our `datetime` has a UTC offset that is inclusive within the boundary we define:
 
-
 ```python
 import datetime as dt
 from dataclasses import dataclass
@@ -279,4 +278,4 @@ except ValidationError as e:
 
 Note that if the context property is not included in `model_validate`, then `info.context` will be `None` and the forbidden passwords list will not get added to the context in the above implementation. As such, `validate_user_passwords` would not carry out the desired password validation.
 
-More details about validation context can be found [here](../concepts/validators.md#validation-context).
+More details about validation context can be found in the [validators documentation](../concepts/validators.md#validation-context).

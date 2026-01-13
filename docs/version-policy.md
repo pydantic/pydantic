@@ -18,11 +18,17 @@ Of course, some apparently safe changes and bug fixes will inevitably break some
 
 The following changes will **NOT** be considered breaking changes, and may occur in minor releases:
 
+* Bug fixes that may result in existing code breaking, provided that such code was relying on undocumented features/constructs.
 * Changing the format of JSON Schema [references](https://json-schema.org/understanding-json-schema/structuring#dollarref).
 * Changing the `msg`, `ctx`, and `loc` fields of [`ValidationError`][pydantic_core.ValidationError] exceptions. `type` will not change &mdash; if you're programmatically parsing error messages, you should use `type`.
 * Adding new keys to [`ValidationError`][pydantic_core.ValidationError] exceptions &mdash; e.g. we intend to add `line_number` and `column_number` to errors when validating JSON once we migrate to a new JSON parser.
 * Adding new [`ValidationError`][pydantic_core.ValidationError] errors.
 * Changing how `__repr__` behaves, even of public classes.
+* The contents of the [core schemas](./internals/architecture.md#communicating-between-pydantic-and-pydantic-core-the-core-schema) (usually available under the
+<!-- https://github.com/DavidAnson/markdownlint/issues/1472 -->
+<!-- markdownlint-disable-next-line strong-style -->
+  [`__pydantic_core_schema__`][pydantic.BaseModel.__pydantic_core_schema__] attribute for Pydantic models and `core_schema` for [type adapters](./concepts/type_adapter.md))
+  may change between releases (this is a low-level format Pydantic uses to plan how to execute validation and serialization).
 
 In all cases we will aim to minimize churn and do so only when justified by the increase of quality of Pydantic for users.
 
@@ -53,18 +59,6 @@ We use one of the following naming conventions to indicate that a feature is exp
 
 New features with these naming conventions are subject to change or removal, and we are looking for feedback and suggestions before making them a permanent part of Pydantic. See the [feedback section](./concepts/experimental.md#feedback) for more information.
 
-### Importing Experimental Features
-
-When you import an experimental feature from the [`experimental`](api/experimental.md) module, you'll see a warning message that the feature is experimental. You can disable this warning with the following:
-
-```python
-import warnings
-
-from pydantic import PydanticExperimentalWarning
-
-warnings.filterwarnings('ignore', category=PydanticExperimentalWarning)
-```
-
 ### Lifecycle of Experimental Features
 
 1. A new feature is added, either in the [`experimental`](api/experimental.md) module or with the `experimental_` prefix.
@@ -76,7 +70,6 @@ warnings.filterwarnings('ignore', category=PydanticExperimentalWarning)
     b. At some point, the code of the experimental feature is removed, but there will still be a stub of the feature that provides an error message with appropriate instructions.
 
     c. As a last step, the experimental version of the feature is entirely removed from the codebase.
-
 
 If the feature is unsuccessful or unpopular, it's removed with little notice. A stub will remain in the location of the deprecated feature with an error message.
 
