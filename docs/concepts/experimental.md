@@ -313,7 +313,7 @@ Right now only a subset of collection validators know how to handle partial vali
 * `set`
 * `frozenset`
 * `dict` (as in `dict[X, Y]`)
-* `TypedDict` — only non-required fields may be missing, e.g. via [`NotRequired`][typing.NotRequired] or [`total=False`][typing.__total__])
+* `TypedDict` — only non-required fields may be missing, e.g. via [`NotRequired`][typing.NotRequired] or [`total=False`][typing.TypedDict.__total__])
 
 While you can use `experimental_allow_partial` while validating against types that include other collection validators, those types will be validated "all or nothing", and partial validation will not work on more nested types.
 
