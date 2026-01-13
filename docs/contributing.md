@@ -84,7 +84,7 @@ Create a new branch for your changes.
 
 ```bash
 # Checkout a new branch and make your changes
-git checkout -b my-new-feature-branch
+git switch -c my-new-feature-branch
 # Make your changes...
 ```
 
