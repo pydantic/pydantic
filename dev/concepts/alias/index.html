@@ -4240,7 +4240,8 @@ to help you monitor and understand your
 </ol>
 <p>In the <code>'first_name'</code> field, we are using the alias <code>'names'</code> and the index <code>0</code> to specify the path to the first name.
 In the <code>'last_name'</code> field, we are using the alias <code>'names'</code> and the index <code>1</code> to specify the path to the last name.</p>
-<p><code>AliasChoices</code> is used to specify a choice of aliases. For example:</p>
+<p><code>AliasChoices</code> is used to specify a list of choices of aliases. Choices that appear first in the list will have higher
+priority during validation. For example:</p>
 <div class="language-python highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">pydantic</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">Field</span><span class="p">,</span> <span class="n">AliasChoices</span>
 
 
@@ -4254,11 +4255,15 @@ In the <code>'last_name'</code> field, we are using the alias <code>'names'</cod
 <span class="n">user</span> <span class="o">=</span> <span class="n">User</span><span class="o">.</span><span class="n">model_validate</span><span class="p">({</span><span class="s1">&#39;first_name&#39;</span><span class="p">:</span> <span class="s1">&#39;John&#39;</span><span class="p">,</span> <span class="s1">&#39;lname&#39;</span><span class="p">:</span> <span class="s1">&#39;Doe&#39;</span><span class="p">})</span>  <span class="c1"># (2)!</span>
 <span class="nb">print</span><span class="p">(</span><span class="n">user</span><span class="p">)</span>
 <span class="c1">#&gt; first_name=&#39;John&#39; last_name=&#39;Doe&#39;</span>
+<span class="n">user</span> <span class="o">=</span> <span class="n">User</span><span class="o">.</span><span class="n">model_validate</span><span class="p">({</span><span class="s1">&#39;first_name&#39;</span><span class="p">:</span> <span class="s1">&#39;John&#39;</span><span class="p">,</span> <span class="s1">&#39;fname&#39;</span><span class="p">:</span> <span class="s1">&#39;J&#39;</span><span class="p">,</span> <span class="s1">&#39;lname&#39;</span><span class="p">:</span> <span class="s1">&#39;Doe&#39;</span><span class="p">})</span>  <span class="c1"># (3)!</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">user</span><span class="p">)</span>
+<span class="c1">#&gt; first_name=&#39;John&#39; last_name=&#39;Doe&#39;</span>
 </code></pre></div>
 <ol>
 <li>We are using the second alias choice for both fields.</li>
 <li>We are using the first alias choice for the field <code>'first_name'</code> and the second alias choice
    for the field <code>'last_name'</code>.</li>
+<li>Both <code>'first_name'</code> and <code>'fname'</code> are provided, <code>'first_name'</code> is used because it has higher priority.</li>
 </ol>
 <p>You can also use <code>AliasChoices</code> with <code>AliasPath</code>:</p>
 <div class="language-python highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">pydantic</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">Field</span><span class="p">,</span> <span class="n">AliasPath</span><span class="p">,</span> <span class="n">AliasChoices</span>
