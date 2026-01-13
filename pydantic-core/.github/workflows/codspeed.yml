@@ -53,7 +53,7 @@ jobs:
           rust-toolchain: ${{ steps.rust-toolchain.outputs.name }}
         env:
           # make sure profiling information is present
-          CARGO_PROFILE_RELEASE_DEBUG: "line-tables-only"
+          CARGO_PROFILE_RELEASE_DEBUG: 'line-tables-only'
           CARGO_PROFILE_RELEASE_STRIP: false
 
       - name: Install PGO wheel

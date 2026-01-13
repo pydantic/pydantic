@@ -2,14 +2,13 @@
 
 from __future__ import annotations as _annotations
 
-import sys
 import types
 from collections import deque
 from collections.abc import Iterable
 from copy import copy
 from dataclasses import dataclass, field
 from functools import cached_property, partial, partialmethod
-from inspect import Parameter, Signature, isdatadescriptor, ismethoddescriptor, signature
+from inspect import Parameter, Signature, isdatadescriptor, ismethoddescriptor
 from itertools import islice
 from typing import TYPE_CHECKING, Any, Callable, ClassVar, Generic, Literal, TypeVar, Union
 
@@ -20,7 +19,7 @@ from ..errors import PydanticUserError
 from ._core_utils import get_type_ref
 from ._internal_dataclass import slots_true
 from ._namespace_utils import GlobalsNamespace, MappingNamespace
-from ._typing_extra import get_function_type_hints
+from ._typing_extra import get_function_type_hints, signature_no_eval
 from ._utils import can_be_positional
 
 if TYPE_CHECKING:
@@ -564,7 +563,7 @@ def inspect_validator(
         Whether the validator takes an info argument.
     """
     try:
-        sig = _signature_no_eval(validator)
+        sig = signature_no_eval(validator)
     except (ValueError, TypeError):
         # `inspect.signature` might not be able to infer a signature, e.g. with C objects.
         # In this case, we assume no info argument is present:
@@ -602,7 +601,7 @@ def inspect_field_serializer(serializer: Callable[..., Any], mode: Literal['plai
         Tuple of (is_field_serializer, info_arg).
     """
     try:
-        sig = _signature_no_eval(serializer)
+        sig = signature_no_eval(serializer)
     except (ValueError, TypeError):
         # `inspect.signature` might not be able to infer a signature, e.g. with C objects.
         # In this case, we assume no info argument is present and this is not a method:
@@ -640,7 +639,7 @@ def inspect_annotated_serializer(serializer: Callable[..., Any], mode: Literal['
         info_arg
     """
     try:
-        sig = _signature_no_eval(serializer)
+        sig = signature_no_eval(serializer)
     except (ValueError, TypeError):
         # `inspect.signature` might not be able to infer a signature, e.g. with C objects.
         # In this case, we assume no info argument is present:
@@ -672,7 +671,7 @@ def inspect_model_serializer(serializer: Callable[..., Any], mode: Literal['plai
             '`@model_serializer` must be applied to instance methods', code='model-serializer-instance-method'
         )
 
-    sig = _signature_no_eval(serializer)
+    sig = signature_no_eval(serializer)
     info_arg = _serializer_info_arg(mode, count_positional_required_params(sig))
     if info_arg is None:
         raise PydanticUserError(
@@ -720,7 +719,7 @@ def is_instance_method_from_sig(function: AnyDecoratorCallable) -> bool:
     Returns:
         `True` if the function is an instance method, `False` otherwise.
     """
-    sig = _signature_no_eval(unwrap_wrapped_function(function))
+    sig = signature_no_eval(unwrap_wrapped_function(function))
     first = next(iter(sig.parameters.values()), None)
     if first and first.name == 'self':
         return True
@@ -744,7 +743,7 @@ def ensure_classmethod_based_on_signature(function: AnyDecoratorCallable) -> Any
 
 
 def _is_classmethod_from_sig(function: AnyDecoratorCallable) -> bool:
-    sig = _signature_no_eval(unwrap_wrapped_function(function))
+    sig = signature_no_eval(unwrap_wrapped_function(function))
     first = next(iter(sig.parameters.values()), None)
     if first and first.name == 'cls':
         return True
@@ -872,13 +871,3 @@ def ensure_property(f: Any) -> Any:
         return f
     else:
         return property(f)
-
-
-def _signature_no_eval(f: Callable[..., Any]) -> Signature:
-    """Get the signature of a callable without evaluating any annotations."""
-    if sys.version_info >= (3, 14):
-        from annotationlib import Format
-
-        return signature(f, annotation_format=Format.FORWARDREF)
-    else:
-        return signature(f)

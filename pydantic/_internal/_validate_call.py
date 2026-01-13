@@ -13,6 +13,7 @@ from ..plugin._schema_validator import create_schema_validator
 from ._config import ConfigWrapper
 from ._generate_schema import GenerateSchema, ValidateCallSupportedTypes
 from ._namespace_utils import MappingNamespace, NsResolver, ns_for_function
+from ._typing_extra import signature_no_eval
 
 
 def extract_function_name(func: ValidateCallSupportedTypes) -> str:
@@ -103,7 +104,7 @@ class ValidateCallWrapper:
             self.config_wrapper.plugin_settings,
         )
         if self.validate_return:
-            signature = inspect.signature(self.function)
+            signature = signature_no_eval(self.function)
             return_type = signature.return_annotation if signature.return_annotation is not signature.empty else Any
             gen_schema = GenerateSchema(self.config_wrapper, self.ns_resolver)
             schema = gen_schema.clean_schema(gen_schema.generate_schema(return_type))

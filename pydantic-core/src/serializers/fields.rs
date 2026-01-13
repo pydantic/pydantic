@@ -207,16 +207,13 @@ impl GeneralFieldsSerializer {
             if state.extra.exclude_none && value.is_none() {
                 continue;
             }
-            if value.is(missing_sentinel) {
-                continue;
-            }
 
             let field_name = FieldName::from(key.clone().cast_into().map_err(PyErr::from)?);
             let state = &mut state.scoped_set(|s| &mut s.field_name, Some(field_name));
             if let Some((next_include, next_exclude)) = self.filter.key_filter(&key, state)? {
                 let state = &mut state.scoped_include_exclude(next_include, next_exclude);
                 if let Some(field) = op_field {
-                    let serializer = Self::prepare_value(&value, field, &state.extra)?;
+                    let serializer = Self::prepare_value(&value, field, &state.extra, missing_sentinel)?;
 
                     if field.required {
                         used_req_fields += 1;
@@ -277,11 +274,16 @@ impl GeneralFieldsSerializer {
         value: &Bound<'_, PyAny>,
         field: &'s SerField,
         field_extra: &Extra<'_>,
+        missing_sentinel: &Bound<'_, PyAny>,
     ) -> PyResult<Option<&'s Arc<CombinedSerializer>>> {
         let Some(serializer) = field.serializer.as_ref() else {
             // field excluded at schema level
             return Ok(None);
         };
+
+        if value.is(missing_sentinel) {
+            return Ok(None);
+        }
 
         if exclude_default(value, field_extra, serializer)? {
             return Ok(None);
