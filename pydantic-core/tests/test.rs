@@ -49,7 +49,7 @@ mod tests {
             }"
             );
             let schema: Bound<'_, PyDict> = py.eval(code, None, None).unwrap().extract().unwrap();
-            SchemaSerializer::py_new(schema, None).unwrap();
+            SchemaSerializer::py_new(schema, None, true).unwrap();
         });
     }
 
@@ -76,7 +76,7 @@ json_input = '{"a": "something"}'
             py.run(code, None, Some(&locals)).unwrap();
             let schema = locals.get_item("schema").unwrap().unwrap();
             let json_input = locals.get_item("json_input").unwrap().unwrap();
-            let binding = SchemaValidator::py_new(py, &schema, None)
+            let binding = SchemaValidator::py_new(py, &schema, None, true)
                 .unwrap()
                 .validate_json(py, &json_input, None, None, None, None, false.into(), None, None)
                 .unwrap();
@@ -137,7 +137,7 @@ dump_json_input_2 = {'a': 'something'}
                 .unwrap();
             let dump_json_input_1 = locals.get_item("dump_json_input_1").unwrap().unwrap();
             let dump_json_input_2 = locals.get_item("dump_json_input_2").unwrap().unwrap();
-            let serializer = SchemaSerializer::py_new(schema, None).unwrap();
+            let serializer = SchemaSerializer::py_new(schema, None, true).unwrap();
             let serialization_result = serializer
                 .to_json(
                     py,

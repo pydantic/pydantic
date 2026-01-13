@@ -27,7 +27,7 @@ def create_schema_validator(
     schema_kind: SchemaKind,
     config: CoreConfig | None = None,
     plugin_settings: dict[str, Any] | None = None,
-    rebuild: bool = False,
+    _use_prebuilt: bool = True,
 ) -> SchemaValidator | PluggableSchemaValidator:
     """Create a `SchemaValidator` or `PluggableSchemaValidator` if plugins are installed.
 
@@ -47,10 +47,10 @@ def create_schema_validator(
             config,
             plugins,
             plugin_settings or {},
-            rebuild=rebuild,
+            _use_prebuilt=_use_prebuilt,
         )
     else:
-        return SchemaValidator(schema, config, rebuild=rebuild)
+        return SchemaValidator(schema, config, _use_prebuilt=_use_prebuilt)
 
 
 class PluggableSchemaValidator:
@@ -67,9 +67,9 @@ class PluggableSchemaValidator:
         config: CoreConfig | None,
         plugins: Iterable[PydanticPluginProtocol],
         plugin_settings: dict[str, Any],
-        rebuild: bool = False,
+        _use_prebuilt: bool = True,
     ) -> None:
-        self._schema_validator = SchemaValidator(schema, config, rebuild=rebuild)
+        self._schema_validator = SchemaValidator(schema, config, _use_prebuilt=_use_prebuilt)
 
         python_event_handlers: list[BaseValidateHandlerProtocol] = []
         json_event_handlers: list[BaseValidateHandlerProtocol] = []

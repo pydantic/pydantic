@@ -14,7 +14,7 @@ pub(crate) use config::{BytesMode, SerializationConfig};
 pub use errors::{PydanticSerializationError, PydanticSerializationUnexpectedValue};
 pub(crate) use extra::{Extra, SerMode, SerializationState, WarningsMode};
 pub use shared::CombinedSerializer;
-use shared::to_json_bytes;
+use shared::{BuildSerializer, to_json_bytes};
 
 mod computed_fields;
 mod config;
@@ -58,10 +58,16 @@ impl_py_gc_traverse!(SchemaSerializer {
 #[pymethods]
 impl SchemaSerializer {
     #[new]
-    #[pyo3(signature = (schema, config=None))]
-    pub fn py_new(schema: Bound<'_, PyDict>, config: Option<&Bound<'_, PyDict>>) -> PyResult<Self> {
-        let mut definitions_builder = DefinitionsBuilder::new();
-        let serializer = CombinedSerializer::build_base(schema.cast()?, config, &mut definitions_builder)?;
+    #[pyo3(signature = (schema, config=None, _use_prebuilt=true))]
+    pub fn py_new(
+        schema: Bound<'_, PyDict>,
+        config: Option<&Bound<'_, PyDict>>,
+        _use_prebuilt: bool,
+    ) -> PyResult<Self> {
+        // use_prebuilt=true by default, but false during rebuilds to avoid stale references
+        // to old serializers (see https://github.com/pydantic/pydantic/issues/12446)
+        let mut definitions_builder = DefinitionsBuilder::new(_use_prebuilt);
+        let serializer = CombinedSerializer::build(schema.cast()?, config, &mut definitions_builder)?;
         Ok(Self {
             serializer,
             definitions: definitions_builder.finish()?,
@@ -181,7 +187,8 @@ impl SchemaSerializer {
     }
 
     pub fn __reduce__<'py>(slf: &Bound<'py, Self>) -> PyResult<(Bound<'py, PyType>, Bound<'py, PyTuple>)> {
-        let init_args = (&slf.get().py_schema, &slf.get().py_config).into_pyobject(slf.py())?;
+        // Passing _use_prebuilt=false avoids reusing prebuilt serializers when unpickling
+        let init_args = (&slf.get().py_schema, &slf.get().py_config, false).into_pyobject(slf.py())?;
         Ok((slf.get_type(), init_args))
     }
 

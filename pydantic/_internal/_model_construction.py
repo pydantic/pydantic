@@ -599,7 +599,7 @@ def complete_model_class(
     raise_errors: bool = True,
     call_on_complete_hook: bool = True,
     create_model_module: str | None = None,
-    rebuild: bool = False,
+    is_force_rebuild: bool = False,
 ) -> bool:
     """Finish building a model class.
 
@@ -613,6 +613,8 @@ def complete_model_class(
         raise_errors: Whether to raise errors.
         call_on_complete_hook: Whether to call the `__pydantic_on_complete__` hook.
         create_model_module: The module of the class to be created, if created by `create_model`.
+        is_force_rebuild: Whether the model is being force-rebuilt (if True, pre-built serializers and
+                          validators are not used, to avoid stale references).
 
     Returns:
         `True` if the model is successfully completed, else `False`.
@@ -687,9 +689,9 @@ def complete_model_class(
         'create_model' if create_model_module else 'BaseModel',
         core_config,
         config_wrapper.plugin_settings,
-        rebuild=rebuild,
+        _use_prebuilt=not is_force_rebuild,
     )
-    cls.__pydantic_serializer__ = SchemaSerializer(schema, core_config, rebuild=rebuild)
+    cls.__pydantic_serializer__ = SchemaSerializer(schema, core_config, _use_prebuilt=not is_force_rebuild)
 
     # set __signature__ attr only for model class, but not for its instances
     # (because instances can define `__call__`, and `inspect.signature` shouldn't

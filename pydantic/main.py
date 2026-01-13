@@ -679,7 +679,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
             raise_errors=raise_errors,
             # If the model was already complete, we don't need to call the hook again.
             call_on_complete_hook=not already_complete,
-            rebuild=force,
+            is_force_rebuild=force,
         )
 
     @classmethod
