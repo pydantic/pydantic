@@ -397,8 +397,7 @@ class SchemaSerializer:
                 "error" raises a [`PydanticSerializationError`][pydantic_core.PydanticSerializationError].
             fallback: A function to call when an unknown value is encountered,
                 if `None` a [`PydanticSerializationError`][pydantic_core.PydanticSerializationError] error is raised.
-            serialize_as_any: Whether to serialize fields with duck-typing
-            serialization behavior.
+            serialize_as_any: Whether to serialize fields with duck-typing serialization behavior.
             polymorphic_serialization: Whether to use model and dataclass polymorphic serialization for this call.
             context: The context to use for serialization, this is passed to functional serializers as
                 [`info.context`][pydantic_core.core_schema.SerializationInfo.context].
