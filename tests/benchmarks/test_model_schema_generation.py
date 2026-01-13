@@ -1,3 +1,4 @@
+from collections.abc import Mapping, Sequence
 from typing import (
     Annotated,
     Any,
@@ -300,6 +301,48 @@ def test_tagged_union_with_callable_discriminator_schema_generation(benchmark):
         ]
 
     benchmark(rebuild_model, ThanksgivingDinner)
+
+
+@pytest.mark.benchmark(group='model_schema_generation')
+def test_model_subclass(benchmark):
+    class Base1(BaseModel):
+        f1: str
+        f2: Annotated[Sequence[Mapping[str, int]], ...]
+        f3: Annotated[dict[str, list[Annotated[int, ...]]], ...]
+        f4: Literal['a', 'b']
+
+        f5: str
+        f6: int
+
+    class Base2(Base1):
+        f1: str
+        f2: Annotated[Sequence[Mapping[str, int]], ...]
+        f3: Annotated[dict[str, list[Annotated[int, ...]]], ...]
+
+        f7: str
+        f8: str
+
+    class Base3(Base2):
+        f1: str
+        f2: Annotated[Sequence[Mapping[str, int]], ...]
+        f3: Annotated[dict[str, list[Annotated[int, ...]]], ...]
+
+        f9: str
+        f10: str
+
+    class Base4(Base3):
+        f1: str
+        f2: Annotated[Sequence[Mapping[str, int]], ...]
+        f3: Annotated[dict[str, list[Annotated[int, ...]]], ...]
+        f4: Literal['a', 'b']
+
+        f11: str
+        f12: str
+
+    @benchmark
+    def build_subclass():
+        class Sub(Base4):
+            pass
 
 
 @pytest.mark.parametrize('field_type', StdLibTypes)

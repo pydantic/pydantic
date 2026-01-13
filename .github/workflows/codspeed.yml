@@ -46,8 +46,8 @@ jobs:
           uv pip uninstall pytest-speed
           make build-pgo
         env:
-          CARGO_PROFILE_RELEASE_DEBUG: "line-tables-only"
-          CARGO_PROFILE_RELEASE_STRIP: "false"
+          CARGO_PROFILE_RELEASE_DEBUG: 'line-tables-only'
+          CARGO_PROFILE_RELEASE_STRIP: 'false'
 
       - name: Run CodSpeed benchmarks
         uses: CodSpeedHQ/action@v4
