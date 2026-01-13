@@ -4496,7 +4496,7 @@ For example, if you're validating against the following model:</p>
 <li><code>set</code></li>
 <li><code>frozenset</code></li>
 <li><code>dict</code> (as in <code>dict[X, Y]</code>)</li>
-<li><code>TypedDict</code> — only non-required fields may be missing, e.g. via <a class="autorefs autorefs-external" href="https://docs.python.org/3/library/typing.html#typing.NotRequired"><code>NotRequired</code></a> or <a class="autorefs autorefs-external" href="https://docs.python.org/3/library/typing.html#typing.__total__"><code>total=False</code></a>)</li>
+<li><code>TypedDict</code> — only non-required fields may be missing, e.g. via <a class="autorefs autorefs-external" href="https://docs.python.org/3/library/typing.html#typing.NotRequired"><code>NotRequired</code></a> or <a class="autorefs autorefs-external" href="https://docs.python.org/3/library/typing.html#typing.TypedDict.__total__"><code>total=False</code></a>)</li>
 </ul>
 <p>While you can use <code>experimental_allow_partial</code> while validating against types that include other collection validators, those types will be validated "all or nothing", and partial validation will not work on more nested types.</p>
 <p>E.g. in the <a href="#2-ignore-errors-in-last">above</a> example partial validation works although the second item in the list is dropped completely since <code>BaseModel</code> doesn't (yet) support partial validation.</p>
