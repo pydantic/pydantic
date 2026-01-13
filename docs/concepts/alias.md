@@ -51,7 +51,8 @@ print(user)
 In the `'first_name'` field, we are using the alias `'names'` and the index `0` to specify the path to the first name.
 In the `'last_name'` field, we are using the alias `'names'` and the index `1` to specify the path to the last name.
 
-`AliasChoices` is used to specify a choice of aliases. For example:
+`AliasChoices` is used to specify a list of choices of aliases. Choices that appear first in the list will have higher
+priority during validation. For example:
 
 ```python {lint="skip"}
 from pydantic import BaseModel, Field, AliasChoices
@@ -67,11 +68,15 @@ print(user)
 user = User.model_validate({'first_name': 'John', 'lname': 'Doe'})  # (2)!
 print(user)
 #> first_name='John' last_name='Doe'
+user = User.model_validate({'first_name': 'John', 'fname': 'J', 'lname': 'Doe'})  # (3)!
+print(user)
+#> first_name='John' last_name='Doe'
 ```
 
 1. We are using the second alias choice for both fields.
 2. We are using the first alias choice for the field `'first_name'` and the second alias choice
    for the field `'last_name'`.
+3. Both `'first_name'` and `'fname'` are provided, `'first_name'` is used because it has higher priority.
 
 You can also use `AliasChoices` with `AliasPath`:
 
