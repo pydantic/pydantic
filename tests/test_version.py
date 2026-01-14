@@ -45,3 +45,19 @@ def test_check_pydantic_core_version() -> None:
 def test_version_short(version, expected):
     with patch('pydantic.version.VERSION', version):
         assert version_short() == expected
+
+
+@pytest.mark.parametrize(
+    'version,expected',
+    [
+        ('1.11.0', (1, 11, 0)),
+        ('1.0.0', (1, 0, 0)),
+        ('0.9.1', (0, 9, 1)),
+        ('1.11.0+dev.d6d9d8cd4f27c52edac1f537e236ec48a01e54cb.dirty', (1, 11, 0)),
+        ('2.0.0+local', (2, 0, 0)),
+    ],
+)
+def test_parse_mypy_version(version, expected):
+    from pydantic.version import parse_mypy_version
+
+    assert parse_mypy_version(version) == expected

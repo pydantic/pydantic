@@ -240,3 +240,42 @@ def test_pydantic_js_functions():
     )
 
     assert metadata['pydantic_js_functions'] == [func]
+
+
+class TestGitUtilities:
+    """Tests for git utilities in pydantic._internal._git."""
+
+    def test_is_git_repo_true(self, tmp_path):
+        """Test is_git_repo returns True for directories with .git folder."""
+        from pydantic._internal._git import is_git_repo
+
+        # Create a fake .git directory
+        git_dir = tmp_path / '.git'
+        git_dir.mkdir()
+
+        assert is_git_repo(tmp_path) is True
+
+    def test_is_git_repo_false(self, tmp_path):
+        """Test is_git_repo returns False for directories without .git folder."""
+        from pydantic._internal._git import is_git_repo
+
+        # tmp_path has no .git directory
+        assert is_git_repo(tmp_path) is False
+
+    def test_git_revision_returns_string(self):
+        """Test git_revision returns a short hash string for a valid git repo."""
+        from pathlib import Path
+
+        from pydantic._internal._git import git_revision, is_git_repo
+
+        # Use the pydantic repo itself for testing
+        pydantic_dir = Path(__file__).parents[1]
+
+        if is_git_repo(pydantic_dir):
+            revision = git_revision(pydantic_dir)
+            # Git short hash is typically 7-10 characters
+            assert isinstance(revision, str)
+            assert len(revision) >= 7
+            assert len(revision) <= 12
+            # Should only contain valid hex characters
+            assert all(c in '0123456789abcdef' for c in revision.lower())

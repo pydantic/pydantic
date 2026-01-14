@@ -8,6 +8,7 @@ from typing import Any
 import pytest
 from pydantic_core import ValidationError
 
+import pydantic.plugin._loader as plugin_loader
 from pydantic import BaseModel, TypeAdapter, create_model, dataclasses, field_validator, validate_call
 from pydantic.config import ExtraValues
 from pydantic.plugin import (
@@ -17,18 +18,20 @@ from pydantic.plugin import (
     ValidatePythonHandlerProtocol,
     ValidateStringsHandlerProtocol,
 )
-from pydantic.plugin._loader import _plugins
 
 pytestmark = pytest.mark.thread_unsafe(reason='`install_plugin()` is thread unsafe')
 
 
 @contextlib.contextmanager
 def install_plugin(plugin: PydanticPluginProtocol) -> Generator[None, None, None]:
-    _plugins[plugin.__class__.__qualname__] = plugin
+    # Initialize _plugins if it hasn't been initialized yet
+    if plugin_loader._plugins is None:
+        plugin_loader.get_plugins()
+    plugin_loader._plugins[plugin.__class__.__qualname__] = plugin
     try:
         yield
     finally:
-        _plugins.clear()
+        plugin_loader._plugins.clear()
 
 
 def test_on_validate_json_on_success() -> None:
@@ -500,3 +503,97 @@ def test_plugin_path_complex() -> None:
             'BaseModel',
         ),
     ]
+
+
+def test_filter_handlers() -> None:
+    """Test the filter_handlers function filters out protocol methods and None handlers."""
+    from pydantic.plugin._schema_validator import filter_handlers
+
+    class CustomHandler:
+        def on_enter(self, *args, **kwargs) -> None:
+            pass
+
+        def on_success(self, result: Any) -> None:
+            pass
+
+        # on_error and on_exception not implemented
+
+    handler = CustomHandler()
+
+    # Implemented methods should return True
+    assert filter_handlers(handler, 'on_enter') is True
+    assert filter_handlers(handler, 'on_success') is True
+
+    # Non-existent methods should return False
+    assert filter_handlers(handler, 'on_error') is False
+    assert filter_handlers(handler, 'on_exception') is False
+    assert filter_handlers(handler, 'nonexistent_method') is False
+
+
+def test_filter_handlers_protocol_inheritance() -> None:
+    """Test that handlers inheriting from protocol but not overriding methods are filtered out."""
+    from pydantic.plugin._schema_validator import filter_handlers
+
+    class HandlerInheritingFromProtocol(ValidatePythonHandlerProtocol):
+        def on_enter(self, *args, **kwargs) -> None:
+            pass
+
+        # on_success is not overridden, inherited from protocol
+
+    handler = HandlerInheritingFromProtocol()
+
+    # Overridden method should return True
+    assert filter_handlers(handler, 'on_enter') is True
+
+    # Methods inherited from protocol should return False (they have __module__ == 'pydantic.plugin')
+    assert filter_handlers(handler, 'on_success') is False
+
+
+def test_on_exception_handler() -> None:
+    """Test that on_exception handler is called when a non-ValidationError exception occurs."""
+    exception_log: list[Exception] = []
+
+    class CustomOnValidatePython(ValidatePythonHandlerProtocol):
+        def on_enter(self, *args, **kwargs) -> None:
+            pass
+
+        def on_exception(self, exception: Exception) -> None:
+            exception_log.append(exception)
+
+    class Plugin(PydanticPluginProtocol):
+        def new_schema_validator(self, schema, schema_type, schema_type_path, schema_kind, config, plugin_settings):
+            return CustomOnValidatePython(), None, None
+
+    plugin = Plugin()
+
+    class MyCustomException(Exception):
+        pass
+
+    with install_plugin(plugin):
+
+        class Model(BaseModel):
+            a: int
+
+            @field_validator('a')
+            def validate_a(cls, v: int) -> int:
+                raise MyCustomException('Custom error')
+
+        with contextlib.suppress(MyCustomException):
+            Model(a=1)
+
+    assert len(exception_log) == 1
+    assert isinstance(exception_log[0], MyCustomException)
+    assert str(exception_log[0]) == 'Custom error'
+
+
+def test_build_wrapper_no_handlers() -> None:
+    """Test that build_wrapper returns the original function when no handlers are provided."""
+    from pydantic.plugin._schema_validator import build_wrapper
+
+    def original_func(x: int) -> int:
+        return x * 2
+
+    # Empty handlers list should return the original function unchanged
+    wrapper = build_wrapper(original_func, [])
+    assert wrapper is original_func
+    assert wrapper(5) == 10
