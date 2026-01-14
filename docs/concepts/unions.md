@@ -178,26 +178,28 @@ print(user_03_uuid.int)
 #> 275603287559914445491632874575877060712
 ```
 
-## Discriminated Unions
+## Discriminated unions
 
-**Discriminated unions are sometimes referred to as "Tagged Unions".**
+**Discriminated unions are sometimes referred to as "Tagged unions".**
 
-We can use discriminated unions to more efficiently validate `Union` types, by choosing which member of the union to validate against.
-
+Unions can be validated more efficiently using a discriminator, by specifically choosing which member of the union to validate against.
 This makes validation more efficient and also avoids a proliferation of errors when validation fails.
 
-Adding discriminator to unions also means the generated JSON schema implements the [associated OpenAPI specification](https://github.com/OAI/OpenAPI-Specification/blob/main/versions/3.1.0.md#discriminator-object).
+Adding discriminator to unions also means the generated JSON schema implements the `discriminator` attribute from the
+[OpenAPI specification](https://swagger.io/specification/#discriminator-object).
 
-### Discriminated Unions with `str` discriminators
+<!-- old anchor added for backwards compatibility -->
+<!-- markdownlint-disable-next-line no-empty-links -->
+[](){#discriminated-unions-with-str-discriminators}
 
-Frequently, in the case of a `Union` with multiple models,
-there is a common field to all members of the union that can be used to distinguish
-which union case the data should be validated against; this is referred to as the "discriminator" in
-[OpenAPI](https://swagger.io/docs/specification/data-models/inheritance-and-polymorphism/).
+### Discriminated unions with string discriminators
 
-To validate models based on that information you can set the same field - let's call it `my_discriminator` -
-in each of the models with a discriminated value, which is one (or many) `Literal` value(s).
-For your `Union`, you can set the discriminator in its value: `Field(discriminator='my_discriminator')`.
+Frequently, in the case of a union with multiple models, there is a common field to all members of the union
+that can be used to distinguish which union case the data should be validated against.
+
+To validate models based on that information, you can set a common field on each model of the union (`pet_type` in the example below),
+typed as accepting one or multiple literal values. When defining the discriminated union type, the `discriminator` parameter of
+[the `Field()` function](./fields.md) must be specified (the [`Discriminator`][pydantic.Discriminator] type can also be used).
 
 ```python
 from typing import Literal, Union
@@ -237,6 +239,10 @@ except ValidationError as e:
       Field required [type=missing, input_value={'pet_type': 'dog'}, input_type=dict]
     """
 ```
+
+/// version-added | v2.13
+[Root models](./models.md#rootmodel-and-custom-root-types) with a [`Literal`][typing.Literal] root type can be used in place of [`Literal`][typing.Literal] types.
+///
 
 ### Discriminated Unions with callable `Discriminator`
 
