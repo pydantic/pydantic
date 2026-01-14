@@ -19,6 +19,7 @@ from pydantic import (
     Field,
     PlainSerializer,
     PlainValidator,
+    RootModel,
     TypeAdapter,
     ValidationError,
     field_validator,
@@ -2330,3 +2331,34 @@ def test_recursive_discriminated_union() -> None:
     class FilterExpression(BaseModel):
         field: FieldFilterExpression
         paragraph: ParagraphFilterExpression
+
+
+def test_discriminated_union_with_root_model_literal() -> None:
+    """https://github.com/pydantic/pydantic/issues/12605."""
+
+    class Action1(RootModel[Literal['action1']]):
+        pass
+
+    class Action2(RootModel[Literal['action2']]):
+        pass
+
+    class Model1(BaseModel):
+        action: Action1
+
+    class Model2(BaseModel):
+        action: Action2
+
+    ta = TypeAdapter(Annotated[Union[Model1, Model2], Field(discriminator='action')])
+
+    model1 = ta.validate_python({'action': 'action1'})
+    assert isinstance(model1, Model1)
+    assert model1.action.root == 'action1'
+
+    model2 = ta.validate_python({'action': 'action2'})
+    assert isinstance(model2, Model2)
+    assert model2.action.root == 'action2'
+
+    with pytest.raises(ValidationError) as exc_info:
+        ta.validate_python({'action': 'invalid_action'})
+
+    assert exc_info.value.errors()[0]['type'] == 'union_tag_invalid'
