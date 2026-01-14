@@ -1123,19 +1123,19 @@ to help you monitor and understand your
   <a href="#discriminated-unions" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Discriminated Unions
+        Discriminated unions
       
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="Discriminated Unions">
+    <nav class="md-nav" aria-label="Discriminated unions">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#discriminated-unions-with-str-discriminators" class="md-nav__link">
+  <a href="#discriminated-unions-with-string-discriminators" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Discriminated Unions with str discriminators
+        Discriminated unions with string discriminators
       
     </span>
   </a>
@@ -4014,19 +4014,19 @@ to help you monitor and understand your
   <a href="#discriminated-unions" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Discriminated Unions
+        Discriminated unions
       
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="Discriminated Unions">
+    <nav class="md-nav" aria-label="Discriminated unions">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#discriminated-unions-with-str-discriminators" class="md-nav__link">
+  <a href="#discriminated-unions-with-string-discriminators" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Discriminated Unions with str discriminators
+        Discriminated unions with string discriminators
       
     </span>
   </a>
@@ -4356,19 +4356,21 @@ with the valid fields set count also tallied.</li>
 </div>
 </div>
 </div>
-<h2 id="discriminated-unions">Discriminated Unions<a class="headerlink" href="#discriminated-unions" title="Permanent link">&para;</a></h2>
-<p><strong>Discriminated unions are sometimes referred to as "Tagged Unions".</strong></p>
-<p>We can use discriminated unions to more efficiently validate <code>Union</code> types, by choosing which member of the union to validate against.</p>
-<p>This makes validation more efficient and also avoids a proliferation of errors when validation fails.</p>
-<p>Adding discriminator to unions also means the generated JSON schema implements the <a href="https://github.com/OAI/OpenAPI-Specification/blob/main/versions/3.1.0.md#discriminator-object">associated OpenAPI specification</a>.</p>
-<h3 id="discriminated-unions-with-str-discriminators">Discriminated Unions with <code>str</code> discriminators<a class="headerlink" href="#discriminated-unions-with-str-discriminators" title="Permanent link">&para;</a></h3>
-<p>Frequently, in the case of a <code>Union</code> with multiple models,
-there is a common field to all members of the union that can be used to distinguish
-which union case the data should be validated against; this is referred to as the "discriminator" in
-<a href="https://swagger.io/docs/specification/data-models/inheritance-and-polymorphism/">OpenAPI</a>.</p>
-<p>To validate models based on that information you can set the same field - let's call it <code>my_discriminator</code> -
-in each of the models with a discriminated value, which is one (or many) <code>Literal</code> value(s).
-For your <code>Union</code>, you can set the discriminator in its value: <code>Field(discriminator='my_discriminator')</code>.</p>
+<h2 id="discriminated-unions">Discriminated unions<a class="headerlink" href="#discriminated-unions" title="Permanent link">&para;</a></h2>
+<p><strong>Discriminated unions are sometimes referred to as "Tagged unions".</strong></p>
+<p>Unions can be validated more efficiently using a discriminator, by specifically choosing which member of the union to validate against.
+This makes validation more efficient and also avoids a proliferation of errors when validation fails.</p>
+<p>Adding discriminator to unions also means the generated JSON schema implements the <code>discriminator</code> attribute from the
+<a href="https://swagger.io/specification/#discriminator-object">OpenAPI specification</a>.</p>
+<!-- old anchor added for backwards compatibility -->
+<!-- markdownlint-disable-next-line no-empty-links -->
+<p><a href="" id="discriminated-unions-with-str-discriminators"></a></p>
+<h3 id="discriminated-unions-with-string-discriminators">Discriminated unions with string discriminators<a class="headerlink" href="#discriminated-unions-with-string-discriminators" title="Permanent link">&para;</a></h3>
+<p>Frequently, in the case of a union with multiple models, there is a common field to all members of the union
+that can be used to distinguish which union case the data should be validated against.</p>
+<p>To validate models based on that information, you can set a common field on each model of the union (<code>pet_type</code> in the example below),
+typed as accepting one or multiple literal values. When defining the discriminated union type, the <code>discriminator</code> parameter of
+<a href="../fields/">the <code>Field()</code> function</a> must be specified (the <a class="autorefs autorefs-internal" href="../../api/types/#pydantic.types.Discriminator"><code>Discriminator</code></a> type can also be used).</p>
 <div class="tabbed-set tabbed-alternate" data-tabs="5:2"><input checked="checked" id="__tabbed_5_1" name="__tabbed_5" type="radio" /><input id="__tabbed_5_2" name="__tabbed_5" type="radio" /><div class="tabbed-labels"><label for="__tabbed_5_1">Python 3.9 and above</label><label for="__tabbed_5_2">Python 3.10 and above</label></div>
 <div class="tabbed-content">
 <div class="tabbed-block">
@@ -4450,6 +4452,9 @@ For your <code>Union</code>, you can set the discriminator in its value: <code>F
 </code></pre></div>
 </div>
 </div>
+</div>
+<div style="border-left: .15rem solid rgb(79, 196, 100); padding: 0 .5rem;">
+<p><span style="font-style: italic; color: rgb(79, 196, 100);">Added in v2.13: </span><span><a href="../models/#rootmodel-and-custom-root-types">Root models</a> with a <a class="autorefs autorefs-external" href="https://docs.python.org/3/library/typing.html#typing.Literal"><code>Literal</code></a> root type can be used in place of <a class="autorefs autorefs-external" href="https://docs.python.org/3/library/typing.html#typing.Literal"><code>Literal</code></a> types.</span></p>
 </div>
 <h3 id="discriminated-unions-with-callable-discriminator">Discriminated Unions with callable <code>Discriminator</code><a class="headerlink" href="#discriminated-unions-with-callable-discriminator" title="Permanent link">&para;</a></h3>
 <details class="api">
