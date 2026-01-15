@@ -1,5 +1,6 @@
 import asyncio
 import inspect
+import pickle
 import re
 import sys
 from collections import UserDict
@@ -1346,31 +1347,20 @@ def test_validate_call_defer_build() -> None:
 
 
 class _PickleTestModel(BaseModel):
-    """Model used for pickle test - must be at module level to be importable."""
-
     number: float
 
 
 class _PickleTestDict(UserDict[int, _PickleTestModel]):
-    """UserDict with validate_call - must be at module level to be importable."""
-
     @validate_call
     def __setitem__(self, key: int, value: _PickleTestModel):
         super().__setitem__(key, value)
 
 
-def test_pickle_validate_call_with_basemodel():
-    """Test that objects using validate_call with BaseModel can be pickled.
-
-    Regression test for https://github.com/pydantic/pydantic/issues/7846
-    """
-    import pickle
-
+def test_pickle_validate_call_with_basemodel() -> None:
+    """https://github.com/pydantic/pydantic/issues/7846."""
     my_dict = _PickleTestDict({1: _PickleTestModel(number=1.0)})
 
-    # This should not raise: "Can't pickle local object"
-    pickled = pickle.dumps(my_dict)
-    unpickled = pickle.loads(pickled)
+    unpickled = pickle.loads(pickle.dumps(my_dict))
 
     assert unpickled == {1: _PickleTestModel(number=1.0)}
     assert unpickled[1].number == 1.0
