@@ -14,6 +14,7 @@ use serde::ser::{Error, Serialize, SerializeSeq, Serializer};
 use crate::input::{EitherTimedelta, Int};
 use crate::serializers::SerializationState;
 use crate::serializers::errors::unwrap_ser_error;
+use crate::serializers::extra::IncludeExclude;
 use crate::serializers::shared::DoSerialize;
 use crate::serializers::shared::SerializeMap;
 use crate::serializers::shared::serialize_to_json;
@@ -65,7 +66,7 @@ pub(crate) fn infer_to_python_known<'py>(
 
     macro_rules! serialize_seq {
         ($t:ty) => {{
-            let state = &mut state.scoped_include_exclude(None, None);
+            let state = &mut state.scoped_include_exclude(IncludeExclude::empty());
             value
                 .cast::<$t>()?
                 .iter()
@@ -82,9 +83,8 @@ pub(crate) fn infer_to_python_known<'py>(
             let len = value.len().ok();
 
             for (index, element) in py_seq.iter().enumerate() {
-                let op_next = filter.index_filter(index, state, len)?;
-                if let Some((next_include, next_exclude)) = op_next {
-                    let state = &mut state.scoped_include_exclude(next_include, next_exclude);
+                if let Some(next_include_exclude) = filter.index_filter(index, state, len)? {
+                    let state = &mut state.scoped_include_exclude(next_include_exclude);
                     items.push(infer_to_python(&element, state)?);
                 }
             }
@@ -189,9 +189,8 @@ pub(crate) fn infer_to_python_known<'py>(
 
                 for (index, r) in py_seq.try_iter()?.enumerate() {
                     let element = r?;
-                    let op_next = filter.index_filter(index, state, None)?;
-                    if let Some((next_include, next_exclude)) = op_next {
-                        let state = &mut state.scoped_include_exclude(next_include, next_exclude);
+                    if let Some(next_include_exclude) = filter.index_filter(index, state, None)? {
+                        let state = &mut state.scoped_include_exclude(next_include_exclude);
                         items.push(infer_to_python(&element, state)?);
                     }
                 }
@@ -325,7 +324,7 @@ pub(crate) fn infer_serialize_known<'py, S: Serializer>(
 
     macro_rules! serialize_seq {
         ($t:ty) => {{
-            let state = &mut state.scoped_include_exclude(None, None);
+            let state = &mut state.scoped_include_exclude(IncludeExclude::empty());
             let py_seq = value.cast::<$t>().map_err(py_err_se_err)?;
             let mut seq = serializer.serialize_seq(Some(py_seq.len()))?;
             for element in py_seq.iter() {
@@ -344,9 +343,8 @@ pub(crate) fn infer_serialize_known<'py, S: Serializer>(
             let len = value.len().ok();
 
             for (index, element) in py_seq.iter().enumerate() {
-                let op_next = filter.index_filter(index, state, len).map_err(py_err_se_err)?;
-                if let Some((next_include, next_exclude)) = op_next {
-                    let state = &mut state.scoped_include_exclude(next_include, next_exclude);
+                if let Some(next_include_exclude) = filter.index_filter(index, state, len).map_err(py_err_se_err)? {
+                    let state = &mut state.scoped_include_exclude(next_include_exclude);
                     let item_serializer = SerializeInfer::new(&element, state);
                     seq.serialize_element(&item_serializer)?
                 }
@@ -442,8 +440,8 @@ pub(crate) fn infer_serialize_known<'py, S: Serializer>(
             for (index, r) in py_seq.try_iter().map_err(py_err_se_err)?.enumerate() {
                 let element = r.map_err(py_err_se_err)?;
                 let op_next = filter.index_filter(index, state, None).map_err(py_err_se_err)?;
-                if let Some((next_include, next_exclude)) = op_next {
-                    let state = &mut state.scoped_include_exclude(next_include, next_exclude);
+                if let Some(next_include_exclude) = op_next {
+                    let state = &mut state.scoped_include_exclude(next_include_exclude);
                     let item_serializer = SerializeInfer::new(&element, state);
                     seq.serialize_element(&item_serializer)?;
                 }
@@ -671,8 +669,8 @@ fn serialize_pairs<'py, S: DoSerialize>(
 
     for result in pairs_iter {
         let (key, value) = result?;
-        if let Some((next_include, next_exclude)) = filter.key_filter(&key, state)? {
-            let state = &mut state.scoped_include_exclude(next_include, next_exclude);
+        if let Some(next_include_exclude) = filter.key_filter(&key, state)? {
+            let state = &mut state.scoped_include_exclude(next_include_exclude);
             map_serializer.serialize_entry(&key, any_ser, &value, any_ser, state)?;
         }
     }

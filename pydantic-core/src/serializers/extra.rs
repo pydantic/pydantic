@@ -32,9 +32,29 @@ pub(crate) struct SerializationState<'py> {
     pub field_name: Option<FieldName<'py>>,
     /// Inside unions, checks are applied to attempt to select a preferred branch
     pub check: SerCheck,
-    pub include_exclude: (Option<Bound<'py, PyAny>>, Option<Bound<'py, PyAny>>),
+    pub include_exclude: IncludeExclude<'py>,
     /// Global settings for the serialization process
     pub extra: Extra<'py>,
+}
+
+/// Values of include/exclude parameters passed to serialization functions
+#[derive(Clone)]
+pub(crate) struct IncludeExclude<'py> {
+    pub include: Option<Bound<'py, PyAny>>,
+    pub exclude: Option<Bound<'py, PyAny>>,
+}
+
+impl<'py> IncludeExclude<'py> {
+    pub fn new(include: Option<Bound<'py, PyAny>>, exclude: Option<Bound<'py, PyAny>>) -> Self {
+        Self { include, exclude }
+    }
+
+    pub fn empty() -> Self {
+        Self {
+            include: None,
+            exclude: None,
+        }
+    }
 }
 
 #[derive(Clone)]
@@ -75,7 +95,7 @@ impl<'py> SerializationState<'py> {
             model: None,
             field_name: None,
             check: SerCheck::None,
-            include_exclude: (include, exclude),
+            include_exclude: IncludeExclude { include, exclude },
             extra,
         })
     }
@@ -136,18 +156,17 @@ impl<'py> SerializationState<'py> {
 
     pub fn scoped_include_exclude<'scope>(
         &'scope mut self,
-        next_include: Option<Bound<'py, PyAny>>,
-        next_exclude: Option<Bound<'py, PyAny>>,
+        next_include_exclude: IncludeExclude<'py>,
     ) -> ScopedIncludeExcludeState<'scope, 'py> {
-        self.scoped_set(SerializationState::include_exclude_mut, (next_include, next_exclude))
+        self.scoped_set(Self::include_exclude_mut, next_include_exclude)
     }
 
     pub fn include(&self) -> Option<&Bound<'py, PyAny>> {
-        self.include_exclude.0.as_ref()
+        self.include_exclude.include.as_ref()
     }
 
     pub fn exclude(&self) -> Option<&Bound<'py, PyAny>> {
-        self.include_exclude.1.as_ref()
+        self.include_exclude.exclude.as_ref()
     }
 
     pub fn serialize_infer<'slf>(
@@ -157,7 +176,7 @@ impl<'py> SerializationState<'py> {
         super::infer::SerializeInfer::new(value, self)
     }
 
-    fn include_exclude_mut(&mut self) -> &mut (Option<Bound<'py, PyAny>>, Option<Bound<'py, PyAny>>) {
+    fn include_exclude_mut(&mut self) -> &mut IncludeExclude<'py> {
         &mut self.include_exclude
     }
 }
@@ -340,10 +359,10 @@ impl ExtraOwned {
                 None => None,
             },
             check: self.check,
-            include_exclude: (
-                self.include.as_ref().map(|m| m.bind(py).clone()),
-                self.exclude.as_ref().map(|m| m.bind(py).clone()),
-            ),
+            include_exclude: IncludeExclude {
+                include: self.include.as_ref().map(|m| m.bind(py).clone()),
+                exclude: self.exclude.as_ref().map(|m| m.bind(py).clone()),
+            },
             extra,
         }
     }
@@ -578,6 +597,6 @@ where
 type ScopedIncludeExcludeState<'scope, 'py> = ScopedSetState<
     'scope,
     'py,
-    for<'s> fn(&'s mut SerializationState<'py>) -> &'s mut (Option<Bound<'py, PyAny>>, Option<Bound<'py, PyAny>>),
-    (Option<Bound<'py, PyAny>>, Option<Bound<'py, PyAny>>),
+    for<'s> fn(&'s mut SerializationState<'py>) -> &'s mut IncludeExclude<'py>,
+    IncludeExclude<'py>,
 >;
