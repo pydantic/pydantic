@@ -5768,7 +5768,9 @@ to help you monitor and understand your
 
 <a href="#pydantic_core.SchemaValidator" class="headerlink" title="Permanent link">&para;</a></h2>
 <div class="language-python doc-signature highlight"><pre><span></span><code><span class="nf">SchemaValidator</span><span class="p">(</span>
-    <span class="n">schema</span><span class="p">:</span> <span class="n"><span title="pydantic_core.core_schema.CoreSchema">CoreSchema</span></span><span class="p">,</span> <span class="n">config</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-internal" title="pydantic_core.core_schema.CoreConfig" href="../pydantic_core_schema/#pydantic_core.core_schema.CoreConfig">CoreConfig</a></span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">schema</span><span class="p">:</span> <span class="n"><span title="pydantic_core.core_schema.CoreSchema">CoreSchema</span></span><span class="p">,</span>
+    <span class="n">config</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-internal" title="pydantic_core.core_schema.CoreConfig" href="../pydantic_core_schema/#pydantic_core.core_schema.CoreConfig">CoreConfig</a></span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">_use_prebuilt</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a></span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
 <span class="p">)</span>
 </code></pre></div>
 
@@ -5821,6 +5823,22 @@ to help you monitor and understand your
             </td>
             <td>
                   <code>None</code>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>_use_prebuilt</code>
+            </td>
+            <td>
+                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Whether to use pre-built validators (False during rebuilds to avoid stale references).</p>
+              </div>
+            </td>
+            <td>
+                  <code>True</code>
             </td>
           </tr>
       </tbody>
@@ -7030,7 +7048,9 @@ If <code>None</code>, the value of <a class="autorefs autorefs-internal" href=".
 
 <a href="#pydantic_core.SchemaSerializer" class="headerlink" title="Permanent link">&para;</a></h2>
 <div class="language-python doc-signature highlight"><pre><span></span><code><span class="nf">SchemaSerializer</span><span class="p">(</span>
-    <span class="n">schema</span><span class="p">:</span> <span class="n"><span title="pydantic_core.core_schema.CoreSchema">CoreSchema</span></span><span class="p">,</span> <span class="n">config</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-internal" title="pydantic_core.core_schema.CoreConfig" href="../pydantic_core_schema/#pydantic_core.core_schema.CoreConfig">CoreConfig</a></span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">schema</span><span class="p">:</span> <span class="n"><span title="pydantic_core.core_schema.CoreSchema">CoreSchema</span></span><span class="p">,</span>
+    <span class="n">config</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-internal" title="pydantic_core.core_schema.CoreConfig" href="../pydantic_core_schema/#pydantic_core.core_schema.CoreConfig">CoreConfig</a></span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">_use_prebuilt</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a></span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
 <span class="p">)</span>
 </code></pre></div>
 
@@ -7083,6 +7103,22 @@ If <code>None</code>, the value of <a class="autorefs autorefs-internal" href=".
             </td>
             <td>
                   <code>None</code>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>_use_prebuilt</code>
+            </td>
+            <td>
+                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Whether to use pre-built validators (False during rebuilds to avoid stale references).</p>
+              </div>
+            </td>
+            <td>
+                  <code>True</code>
             </td>
           </tr>
       </tbody>

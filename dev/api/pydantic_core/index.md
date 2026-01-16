@@ -9,7 +9,9 @@ __version__: str
 
 ```python
 SchemaValidator(
-    schema: CoreSchema, config: CoreConfig | None = None
+    schema: CoreSchema,
+    config: CoreConfig | None = None,
+    _use_prebuilt: bool = True,
 )
 
 ```
@@ -18,7 +20,7 @@ SchemaValidator(
 
 Parameters:
 
-| Name | Type | Description | Default | | --- | --- | --- | --- | | `schema` | `CoreSchema` | The CoreSchema to use for validation. | *required* | | `config` | `CoreConfig | None` | Optionally a CoreConfig to configure validation. | `None` |
+| Name | Type | Description | Default | | --- | --- | --- | --- | | `schema` | `CoreSchema` | The CoreSchema to use for validation. | *required* | | `config` | `CoreConfig | None` | Optionally a CoreConfig to configure validation. | `None` | | `_use_prebuilt` | `bool` | Whether to use pre-built validators (False during rebuilds to avoid stale references). | `True` |
 
 ### title
 
@@ -221,7 +223,9 @@ Returns:
 
 ```python
 SchemaSerializer(
-    schema: CoreSchema, config: CoreConfig | None = None
+    schema: CoreSchema,
+    config: CoreConfig | None = None,
+    _use_prebuilt: bool = True,
 )
 
 ```
@@ -230,7 +234,7 @@ SchemaSerializer(
 
 Parameters:
 
-| Name | Type | Description | Default | | --- | --- | --- | --- | | `schema` | `CoreSchema` | The CoreSchema to use for serialization. | *required* | | `config` | `CoreConfig | None` | Optionally a CoreConfig to to configure serialization. | `None` |
+| Name | Type | Description | Default | | --- | --- | --- | --- | | `schema` | `CoreSchema` | The CoreSchema to use for serialization. | *required* | | `config` | `CoreConfig | None` | Optionally a CoreConfig to to configure serialization. | `None` | | `_use_prebuilt` | `bool` | Whether to use pre-built validators (False during rebuilds to avoid stale references). | `True` |
 
 ### to_python
 
