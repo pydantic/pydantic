@@ -1204,6 +1204,11 @@ class ConfigDict(TypedDict, total=False):
     ///
     """
 
+    polymorphic_serialization: bool
+    """
+    Whether to use polymorphic serialization for subclasses of the model or Pydantic dataclass. Defaults to `False`.
+    """
+
 
 _TypeT = TypeVar('_TypeT', bound=type)
 
