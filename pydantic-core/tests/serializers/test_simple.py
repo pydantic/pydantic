@@ -169,3 +169,8 @@ def test_float_inf_and_nan_serializers(value, expected_json, config):
 
     # Serialized JSON value respects the ser_json_inf_nan setting
     assert s.to_json(value).decode() == expected_json
+
+
+def test_schema_serializer_use_prebuilt_false():
+    """Test that SchemaSerializer can be constructed with _use_prebuilt=False."""
+    SchemaSerializer({'type': 'str'}, None, _use_prebuilt=False)

@@ -133,11 +133,18 @@ impl_py_gc_traverse!(SchemaValidator {
 #[pymethods]
 impl SchemaValidator {
     #[new]
-    #[pyo3(signature = (schema, config=None))]
-    pub fn py_new(py: Python, schema: &Bound<'_, PyAny>, config: Option<&Bound<'_, PyDict>>) -> PyResult<Self> {
-        let mut definitions_builder = DefinitionsBuilder::new();
+    #[pyo3(signature = (schema, config=None, _use_prebuilt=true))]
+    pub fn py_new(
+        py: Python,
+        schema: &Bound<'_, PyAny>,
+        config: Option<&Bound<'_, PyDict>>,
+        _use_prebuilt: bool,
+    ) -> PyResult<Self> {
+        // _use_prebuilt=true by default, but false during rebuilds to avoid stale references
+        // to old validators (see pydantic-core issue #1894)
+        let mut definitions_builder = DefinitionsBuilder::new(_use_prebuilt);
 
-        let validator = build_validator_base(schema, config, &mut definitions_builder)?;
+        let validator = build_validator(schema, config, &mut definitions_builder)?;
         let definitions = definitions_builder.finish()?;
         let py_schema = schema.clone().unbind();
         let py_config = match config {
@@ -393,7 +400,8 @@ impl SchemaValidator {
     }
 
     pub fn __reduce__<'py>(slf: &Bound<'py, Self>) -> PyResult<(Bound<'py, PyType>, Bound<'py, PyTuple>)> {
-        let init_args = (&slf.get().py_schema, &slf.get().py_config).into_pyobject(slf.py())?;
+        // Passing _use_prebuilt=false avoids reusing prebuilt serializers when unpickling
+        let init_args = (&slf.get().py_schema, &slf.get().py_config, false).into_pyobject(slf.py())?;
         Ok((slf.get_type(), init_args))
     }
 
@@ -508,22 +516,15 @@ pub trait BuildValidator: Sized {
     ) -> PyResult<Arc<CombinedValidator>>;
 }
 
-// Used when creating the base validator instance, to avoid reusing the instance
-// when unpickling:
-pub fn build_validator_base(
-    schema: &Bound<'_, PyAny>,
-    config: Option<&Bound<'_, PyDict>>,
-    definitions: &mut DefinitionsBuilder<Arc<CombinedValidator>>,
-) -> PyResult<Arc<CombinedValidator>> {
-    build_validator_inner(schema, config, definitions, false)
-}
-
 pub fn build_validator(
     schema: &Bound<'_, PyAny>,
     config: Option<&Bound<'_, PyDict>>,
     definitions: &mut DefinitionsBuilder<Arc<CombinedValidator>>,
 ) -> PyResult<Arc<CombinedValidator>> {
-    build_validator_inner(schema, config, definitions, true)
+    // Read use_prebuilt from the definitions builder - this ensures all nested
+    // validators respect the same setting as the top-level build
+    let use_prebuilt = definitions.use_prebuilt();
+    build_validator_inner(schema, config, definitions, use_prebuilt)
 }
 
 fn build_validator_inner(

@@ -73,15 +73,16 @@ class SchemaValidator:
     # note: pyo3 currently supports __new__, but not __init__, though we include __init__ stubs
     # and docstrings here (and in the following classes) for documentation purposes
 
-    def __init__(self, schema: CoreSchema, config: CoreConfig | None = None) -> None:
+    def __init__(self, schema: CoreSchema, config: CoreConfig | None = None, _use_prebuilt: bool = True) -> None:
         """Initializes the `SchemaValidator`.
 
         Arguments:
             schema: The `CoreSchema` to use for validation.
             config: Optionally a [`CoreConfig`][pydantic_core.core_schema.CoreConfig] to configure validation.
+            _use_prebuilt: Whether to use pre-built validators (False during rebuilds to avoid stale references).
         """
 
-    def __new__(cls, schema: CoreSchema, config: CoreConfig | None = None) -> Self: ...
+    def __new__(cls, schema: CoreSchema, config: CoreConfig | None = None, _use_prebuilt: bool = True) -> Self: ...
     @property
     def title(self) -> str:
         """
@@ -297,15 +298,16 @@ class SchemaSerializer:
     `CombinedSerializer` which may in turn own more `CombinedSerializer`s which make up the full schema serializer.
     """
 
-    def __init__(self, schema: CoreSchema, config: CoreConfig | None = None) -> None:
+    def __init__(self, schema: CoreSchema, config: CoreConfig | None = None, _use_prebuilt: bool = True) -> None:
         """Initializes the `SchemaSerializer`.
 
         Arguments:
             schema: The `CoreSchema` to use for serialization.
             config: Optionally a [`CoreConfig`][pydantic_core.core_schema.CoreConfig] to to configure serialization.
+            _use_prebuilt: Whether to use pre-built validators (False during rebuilds to avoid stale references).
         """
 
-    def __new__(cls, schema: CoreSchema, config: CoreConfig | None = None) -> Self: ...
+    def __new__(cls, schema: CoreSchema, config: CoreConfig | None = None, _use_prebuilt: bool = True) -> Self: ...
     def to_python(
         self,
         value: Any,
