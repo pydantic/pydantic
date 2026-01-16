@@ -1,7 +1,7 @@
 import copy
 import json
-import platform
 import re
+import types
 import zoneinfo
 from datetime import date, datetime, time, timedelta, timezone, tzinfo
 from decimal import Decimal
@@ -279,8 +279,8 @@ def test_custom_invalid_tz():
     with pytest.raises(ValidationError) as excinfo:
         schema.validate_python(dt)
 
-    # exception messages differ between python and pypy
-    if platform.python_implementation() in ('PyPy', 'GraalVM'):
+    # exception messages differ between cpython (using C datetime) and pypy (using pydatetime)
+    if isinstance(tzinfo.utcoffset, types.FunctionType):
         error_message = 'NotImplementedError: tzinfo subclass must override utcoffset()'
     else:
         error_message = 'NotImplementedError: a tzinfo subclass must implement utcoffset()'
