@@ -3,7 +3,6 @@ use std::str::from_utf8;
 use pyo3::intern;
 use pyo3::prelude::*;
 
-use pyo3::sync::PyOnceLock;
 use pyo3::types::PyType;
 use pyo3::types::{
     PyBool, PyByteArray, PyBytes, PyComplex, PyDate, PyDateTime, PyDict, PyFloat, PyFrozenSet, PyInt, PyIterator,
@@ -18,6 +17,7 @@ use crate::errors::{ErrorType, ErrorTypeDefaults, InputValue, LocItem, ValError,
 use crate::tools::{extract_i64, safe_repr};
 use crate::validators::complex::string_to_complex;
 use crate::validators::decimal::{create_decimal, get_decimal_type};
+use crate::validators::fraction::{create_fraction, get_fraction_type};
 use crate::validators::Exactness;
 use crate::validators::TemporalUnitMode;
 use crate::validators::ValBytesMode;
@@ -47,20 +47,6 @@ use super::{
     py_string_str, BorrowInput, EitherBytes, EitherFloat, EitherInt, EitherString, EitherTimedelta, GenericIterator,
     Input,
 };
-
-static FRACTION_TYPE: PyOnceLock<Py<PyType>> = PyOnceLock::new();
-
-pub fn get_fraction_type(py: Python<'_>) -> &Bound<'_, PyType> {
-    FRACTION_TYPE
-        .get_or_init(py, || {
-            py.import("fractions")
-                .and_then(|fractions_module| fractions_module.getattr("Fraction"))
-                .unwrap()
-                .extract()
-                .unwrap()
-        })
-        .bind(py)
-}
 
 pub(crate) fn downcast_python_input<'py, T: PyTypeCheck>(input: &(impl Input<'py> + ?Sized)) -> Option<&Bound<'py, T>> {
     input.as_python().and_then(|any| any.downcast::<T>().ok())
@@ -290,8 +276,8 @@ impl<'py> Input<'py> for Bound<'py, PyAny> {
                     float_as_int(self, self.extract::<f64>()?)
                 } else if let Ok(decimal) = self.validate_decimal(true, self.py()) {
                     decimal_as_int(self, &decimal.into_inner())
-                } else if self.is_instance(get_fraction_type(self.py()))? {
-                    fraction_as_int(self)
+                } else if let Ok(fraction) = self.validate_fraction(true, self.py()) {
+                    fraction_as_int(self, &fraction.into_inner())
                 } else if let Ok(float) = self.extract::<f64>() {
                     float_as_int(self, float)
                 } else if let Some(enum_val) = maybe_as_enum(self) {
@@ -347,6 +333,46 @@ impl<'py> Input<'py> for Bound<'py, PyAny> {
         }
 
         Err(ValError::new(ErrorTypeDefaults::FloatType, self))
+    }
+
+    fn validate_fraction(&self, strict: bool, py: Python<'py>) -> ValMatch<Bound<'py, PyAny>> {
+        let fraction_type = get_fraction_type(py);
+
+        // Fast path for existing fraction objects
+        if self.is_exact_instance(fraction_type) {
+            return Ok(ValidationMatch::exact(self.to_owned().clone()));
+        }
+
+        // Check for fraction subclasses
+        if self.is_instance(fraction_type)? {
+            return Ok(ValidationMatch::lax(self.to_owned().clone()));
+        }
+
+        if !strict {
+            if self.is_instance_of::<PyString>() || (self.is_instance_of::<PyInt>() && !self.is_instance_of::<PyBool>())
+            {
+                // Checking isinstance for str / int / bool is fast compared to fraction / float
+                return create_fraction(self, self).map(ValidationMatch::lax);
+            }
+
+            if self.is_instance_of::<PyFloat>() {
+                return create_fraction(self.str()?.as_any(), self).map(ValidationMatch::lax);
+            }
+        }
+
+        let error_type = if strict {
+            ErrorType::IsInstanceOf {
+                class: fraction_type
+                    .qualname()
+                    .and_then(|name| name.extract())
+                    .unwrap_or_else(|_| "Fraction".to_owned()),
+                context: None,
+            }
+        } else {
+            ErrorTypeDefaults::FractionType
+        };
+
+        Err(ValError::new(error_type, self))
     }
 
     fn validate_decimal(&self, strict: bool, py: Python<'py>) -> ValMatch<Bound<'py, PyAny>> {

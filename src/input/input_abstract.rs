@@ -115,6 +115,8 @@ pub trait Input<'py>: fmt::Debug {
 
     fn validate_decimal(&self, strict: bool, py: Python<'py>) -> ValMatch<Bound<'py, PyAny>>;
 
+    fn validate_fraction(&self, strict: bool, py: Python<'py>) -> ValMatch<Bound<'py, PyAny>>;
+
     type Dict<'a>: ValidatedDict<'py>
     where
         Self: 'a;
