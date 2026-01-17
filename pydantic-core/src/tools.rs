@@ -327,3 +327,9 @@ pub fn pybackedstr_to_pystring<'py>(py: Python<'py>, s: &PyBackedStr) -> Bound<'
     // need this cast
     unsafe { out.cast_into_unchecked() }
 }
+
+pub const ROOT_FIELD: &str = "root";
+
+pub fn root_field_py_str(py: Python<'_>) -> &'_ Bound<'_, PyString> {
+    intern!(py, ROOT_FIELD)
+}

@@ -219,8 +219,7 @@ impl Validator for TypedDictValidator {
                     };
 
                     // FIXME: for model and dataclass, `default_value` is called with field name set in extra, does that matter?
-                    let state = &mut state
-                        .rebind_extra(|extra| extra.field_name = Some(pybackedstr_to_pystring(py, &field.name)));
+                    let state = &mut state.scoped_set_field_name(Some(pybackedstr_to_pystring(py, &field.name)));
 
                     match field.validator.validate(py, value.borrow_input(), state) {
                         Ok(value) => {

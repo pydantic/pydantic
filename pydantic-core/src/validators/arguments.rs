@@ -228,8 +228,7 @@ impl Validator for ArgumentsValidator {
                 kw_value = Some((lookup_path, value));
             }
 
-            let state =
-                &mut state.rebind_extra(|extra| extra.field_name = Some(pybackedstr_to_pystring(py, &parameter.name)));
+            let state = &mut state.scoped_set_field_name(Some(pybackedstr_to_pystring(py, &parameter.name)));
 
             match (pos_value, kw_value) {
                 (Some(_), Some((_, kw_value))) => {

@@ -259,7 +259,7 @@ impl InternalValidator {
             extra_behavior: extra.extra_behavior,
             from_attributes: extra.from_attributes,
             context: extra.context.map(|d| d.clone().unbind()),
-            field_name: extra.field_name.as_ref().map(|d| d.clone().unbind()),
+            field_name: state.field_name().map(|d| d.clone().unbind()),
             self_instance: extra.self_instance.map(|d| d.clone().unbind()),
             recursion_guard: state.recursion_guard.clone(),
             exactness: state.exactness,
@@ -285,14 +285,18 @@ impl InternalValidator {
             strict: self.strict,
             extra_behavior: self.extra_behavior,
             from_attributes: self.from_attributes,
-            field_name: Some(pybackedstr_to_pystring(py, field_name)),
             context: self.context.as_ref().map(|data| data.bind(py)),
             self_instance: self.self_instance.as_ref().map(|data| data.bind(py)),
             cache_str: self.cache_str,
             by_alias: None,
             by_name: None,
         };
-        let mut state = ValidationState::new(extra, &mut self.recursion_guard, false.into());
+        let mut state = ValidationState::new(
+            extra,
+            &mut self.recursion_guard,
+            false.into(),
+            Some(pybackedstr_to_pystring(py, field_name)),
+        );
         state.exactness = self.exactness;
         let result = self
             .validator
@@ -324,14 +328,18 @@ impl InternalValidator {
             strict: self.strict,
             extra_behavior: self.extra_behavior,
             from_attributes: self.from_attributes,
-            field_name: self.field_name.as_ref().map(|name| name.bind(py).clone()),
             context: self.context.as_ref().map(|data| data.bind(py)),
             self_instance: self.self_instance.as_ref().map(|data| data.bind(py)),
             cache_str: self.cache_str,
             by_alias: None,
             by_name: None,
         };
-        let mut state = ValidationState::new(extra, &mut self.recursion_guard, false.into());
+        let mut state = ValidationState::new(
+            extra,
+            &mut self.recursion_guard,
+            false.into(),
+            self.field_name.as_ref().map(|name| name.bind(py).clone()),
+        );
         state.exactness = self.exactness;
         state.fields_set_count = self.fields_set_count;
         let result = self.validator.validate(py, input, &mut state).map_err(|e| {
