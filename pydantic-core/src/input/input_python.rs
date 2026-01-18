@@ -15,7 +15,6 @@ use speedate::MicrosecondsPrecisionOverflowBehavior;
 
 use crate::ArgsKwargs;
 use crate::errors::{ErrorType, ErrorTypeDefaults, InputValue, LocItem, ValError, ValResult};
-// CONFLICT RESOLVED: Kept HEAD imports, added fraction import from add-fraction branch
 use crate::lookup_key::LookupPath;
 use crate::tools::safe_repr;
 use crate::validators::Exactness;

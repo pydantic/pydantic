@@ -112,7 +112,6 @@ pub(crate) fn infer_to_python_known<'py>(
                 v.into_py_any(py)?
             }
             ObType::Decimal => value.to_string().into_py_any(py)?,
-            // CONFLICT RESOLVED: Added Fraction from add-fraction branch, kept .cast from HEAD
             ObType::Fraction => value.to_string().into_py_any(py)?,
             ObType::StrSubclass => PyString::new(py, value.cast::<PyString>()?.to_str()?).into(),
             ObType::Bytes => state
