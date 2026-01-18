@@ -42,7 +42,7 @@ def serialize_sequence_via_list(
     for index, item in enumerate(v):
         try:
             v = handler(item, index)
-        except PydanticOmit:
+        except PydanticOmit:  # noqa: PERF203
             pass
         else:
             items.append(v)

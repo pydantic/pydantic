@@ -19,11 +19,6 @@ from ..config import ConfigDict, ExtraValues, JsonDict, JsonEncoder, JsonSchemaE
 from ..errors import PydanticUserError
 from ..warnings import PydanticDeprecatedSince20, PydanticDeprecatedSince210
 
-if not TYPE_CHECKING:
-    # See PyCharm issues https://youtrack.jetbrains.com/issue/PY-21915
-    # and https://youtrack.jetbrains.com/issue/PY-51428
-    DeprecationWarning = PydanticDeprecatedSince20
-
 if TYPE_CHECKING:
     from .._internal._schema_generation_shared import GenerateSchema
     from ..fields import ComputedFieldInfo, FieldInfo
@@ -69,6 +64,8 @@ class ConfigWrapper:
     # whether instances of models and dataclasses (including subclass instances) should re-validate, default 'never'
     revalidate_instances: Literal['always', 'never', 'subclass-instances']
     ser_json_timedelta: Literal['iso8601', 'float']
+    ser_json_temporal: Literal['iso8601', 'seconds', 'milliseconds']
+    val_temporal_unit: Literal['seconds', 'milliseconds', 'infer']
     ser_json_bytes: Literal['utf8', 'base64', 'hex']
     val_json_bytes: Literal['utf8', 'base64', 'hex']
     ser_json_inf_nan: Literal['null', 'constants', 'strings']
@@ -90,6 +87,7 @@ class ConfigWrapper:
     validate_by_alias: bool
     validate_by_name: bool
     serialize_by_alias: bool
+    url_preserve_empty_path: bool
 
     def __init__(self, config: ConfigDict | dict[str, Any] | type[Any] | None, *, check: bool = True):
         if check:
@@ -98,7 +96,13 @@ class ConfigWrapper:
             self.config_dict = cast(ConfigDict, config)
 
     @classmethod
-    def for_model(cls, bases: tuple[type[Any], ...], namespace: dict[str, Any], kwargs: dict[str, Any]) -> Self:
+    def for_model(
+        cls,
+        bases: tuple[type[Any], ...],
+        namespace: dict[str, Any],
+        raw_annotations: dict[str, Any],
+        kwargs: dict[str, Any],
+    ) -> Self:
         """Build a new `ConfigWrapper` instance for a `BaseModel`.
 
         The config wrapper built based on (in descending order of priority):
@@ -109,6 +113,7 @@ class ConfigWrapper:
         Args:
             bases: A tuple of base classes.
             namespace: The namespace of the class being created.
+            raw_annotations: The (non-evaluated) annotations of the model.
             kwargs: The kwargs passed to the class being created.
 
         Returns:
@@ -123,7 +128,6 @@ class ConfigWrapper:
         config_class_from_namespace = namespace.get('Config')
         config_dict_from_namespace = namespace.get('model_config')
 
-        raw_annotations = namespace.get('__annotations__', {})
         if raw_annotations.get('model_config') and config_dict_from_namespace is None:
             raise PydanticUserError(
                 '`model_config` cannot be used as a model field name. Use `model_config` for model configuration.',
@@ -205,6 +209,8 @@ class ConfigWrapper:
                     ('str_to_upper', config.get('str_to_upper')),
                     ('strict', config.get('strict')),
                     ('ser_json_timedelta', config.get('ser_json_timedelta')),
+                    ('ser_json_temporal', config.get('ser_json_temporal')),
+                    ('val_temporal_unit', config.get('val_temporal_unit')),
                     ('ser_json_bytes', config.get('ser_json_bytes')),
                     ('val_json_bytes', config.get('val_json_bytes')),
                     ('ser_json_inf_nan', config.get('ser_json_inf_nan')),
@@ -222,6 +228,7 @@ class ConfigWrapper:
                     ('validate_by_alias', config.get('validate_by_alias')),
                     ('validate_by_name', config.get('validate_by_name')),
                     ('serialize_by_alias', config.get('serialize_by_alias')),
+                    ('url_preserve_empty_path', config.get('url_preserve_empty_path')),
                 )
                 if v is not None
             }
@@ -283,6 +290,8 @@ config_defaults = ConfigDict(
     strict=False,
     revalidate_instances='never',
     ser_json_timedelta='iso8601',
+    ser_json_temporal='iso8601',
+    val_temporal_unit='infer',
     ser_json_bytes='utf8',
     val_json_bytes='utf8',
     ser_json_inf_nan='null',
@@ -304,6 +313,7 @@ config_defaults = ConfigDict(
     validate_by_alias=True,
     validate_by_name=False,
     serialize_by_alias=False,
+    url_preserve_empty_path=False,
 )
 
 
@@ -320,7 +330,7 @@ def prepare_config(config: ConfigDict | dict[str, Any] | type[Any] | None) -> Co
         return ConfigDict()
 
     if not isinstance(config, dict):
-        warnings.warn(DEPRECATION_MESSAGE, DeprecationWarning)
+        warnings.warn(DEPRECATION_MESSAGE, PydanticDeprecatedSince20, stacklevel=4)
         config = {k: getattr(config, k) for k in dir(config) if not k.startswith('__')}
 
     config_dict = cast(ConfigDict, config)

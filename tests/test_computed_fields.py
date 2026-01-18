@@ -355,17 +355,17 @@ def test_expected_type_wrong():
     m = Model(x=1)
     with pytest.warns(
         UserWarning,
-        match=r"Expected `list\[int\]` - serialized value may not be as expected \[input_value='not a list', input_type=str\]",
+        match=r"Expected `list\[int\]` - serialized value may not be as expected \[field_name='x_list', input_value='not a list', input_type=str\]",
     ):
         m.model_dump()
     with pytest.warns(
         UserWarning,
-        match=r"Expected `list\[int\]` - serialized value may not be as expected \[input_value='not a list', input_type=str\]",
+        match=r"Expected `list\[int\]` - serialized value may not be as expected \[field_name='x_list', input_value='not a list', input_type=str\]",
     ):
         m.model_dump(mode='json')
     with pytest.warns(
         UserWarning,
-        match=r"Expected `list\[int\]` - serialized value may not be as expected \[input_value='not a list', input_type=str\]",
+        match=r"Expected `list\[int\]` - serialized value may not be as expected \[field_name='x_list', input_value='not a list', input_type=str\]",
     ):
         m.model_dump_json()
 
@@ -656,6 +656,18 @@ def test_alias_generator():
     }
 
 
+def test_alias_generator_defer_build() -> None:
+    class Model(BaseModel):
+        model_config = {'alias_generator': to_camel, 'defer_build': True}
+
+        @computed_field
+        @property
+        def my_prop(self) -> int:
+            return 1
+
+    assert Model.__pydantic_decorators__.computed_fields['my_prop'].info.alias == 'myProp'
+
+
 def make_base_model() -> Any:
     class CompModel(BaseModel):
         pass
@@ -775,7 +787,7 @@ def test_generic_computed_field():
 
     with pytest.warns(
         UserWarning,
-        match=r"Expected `int` - serialized value may not be as expected \[input_value='abc', input_type=str\]",
+        match=r"Expected `int` - serialized value may not be as expected \[field_name='double_x', input_value='abc', input_type=str\]",
     ):
         B[int]().model_dump()
 
@@ -826,3 +838,18 @@ def test_computed_field_with_field_serializer():
             return f'{info.field_name} = {value}'
 
     assert MyModel().model_dump() == {'my_field': 'my_field = foo', 'other_field': 'other_field = 42'}
+
+
+def test_computed_fields_exclude() -> None:
+    class Model(BaseModel):
+        @computed_field
+        def prop(self) -> int:
+            return 1
+
+    m = Model()
+    assert m.model_dump() == {'prop': 1}
+    assert m.model_dump(exclude_computed_fields=True) == {}
+    assert m.model_dump(mode='json') == {'prop': 1}
+    assert m.model_dump(mode='json', exclude_computed_fields=True) == {}
+    assert m.model_dump_json() == '{"prop":1}'
+    assert m.model_dump_json(exclude_computed_fields=True) == '{}'

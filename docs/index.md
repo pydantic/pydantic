@@ -1,4 +1,4 @@
-# Pydantic
+# Pydantic Validation
 
 [![CI](https://img.shields.io/github/actions/workflow/status/pydantic/pydantic/ci.yml?branch=main&logo=github&label=CI)](https://github.com/pydantic/pydantic/actions?query=event%3Apush+branch%3Amain+workflow%3ACI)
 [![Coverage](https://coverage-badge.samuelcolvin.workers.dev/pydantic/pydantic.svg)](https://github.com/pydantic/pydantic/actions?query=event%3Apush+branch%3Amain+workflow%3ACI)<br>
@@ -6,6 +6,7 @@
 [![CondaForge](https://img.shields.io/conda/v/conda-forge/pydantic.svg)](https://anaconda.org/conda-forge/pydantic)
 [![downloads](https://static.pepy.tech/badge/pydantic/month)](https://pepy.tech/project/pydantic)<br>
 [![license](https://img.shields.io/github/license/pydantic/pydantic.svg)](https://github.com/pydantic/pydantic/blob/main/LICENSE)
+[![llms.txt](https://img.shields.io/badge/llms.txt-green)](https://docs.pydantic.dev/latest/llms.txt)
 
 {{ version }}.
 
@@ -13,8 +14,8 @@ Pydantic is the most widely used data validation library for Python.
 
 Fast and extensible, Pydantic plays nicely with your linters/IDE/brain. Define how data should be in pure, canonical Python 3.9+; validate it with Pydantic.
 
-!!! logfire "Monitor Pydantic with Logfire :fire:"
-    Built by the same team as Pydantic, **[Logfire](https://pydantic.dev/logfire)** is an application monitoring tool that is as simple to use and powerful as Pydantic itself.
+!!! logfire "Monitor Pydantic with Pydantic Logfire :fire:"
+    **[Pydantic Logfire](https://pydantic.dev/logfire)** is an application monitoring tool that is as simple to use and powerful as Pydantic itself.
 
     Logfire integrates with many popular Python libraries including FastAPI, OpenAI and Pydantic itself, so you can use Logfire to monitor Pydantic validations and understand why some inputs fail validation:
 
@@ -55,18 +56,37 @@ Fast and extensible, Pydantic plays nicely with your linters/IDE/brain. Define h
 
     **[Learn more about Pydantic Logfire](https://logfire.pydantic.dev/docs/)**
 
+    **Sign up for our newsletter, *The Pydantic Stack*, with updates & tutorials on Pydantic, Logfire, and Pydantic AI:**
+
+      <form method="POST" action="https://eu.customerioforms.com/forms/submit_action?site_id=53d2086c3c4214eaecaa&form_id=14b22611745b458&success_url=https://docs.pydantic.dev/" class="md-typeset" style="display: flex; align-items: center; gap: 0.5rem; max-width: 100%;">
+          <input
+          type="email"
+          id="email_input"
+          name="email"
+          class="md-input md-input--stretch"
+          style="flex: 1; background: var(--md-default-bg-color); color: var(--md-default-fg-color);"
+          required
+          placeholder="Email"
+          data-1p-ignore
+          data-lpignore="true"
+          data-protonpass-ignore="true"
+          data-bwignore="true"
+          />
+          <input type="hidden" id="source_input" name="source" value="pydantic" />
+          <button type="submit" class="md-button md-button--primary">Subscribe</button>
+      </form>
 
 ## Why use Pydantic?
 
-- **Powered by type hints** &mdash; with Pydantic, schema validation and serialization are controlled by type annotations; less to learn, less code to write, and integration with your IDE and static analysis tools. [Learn more…](why.md#type-hints)
-- **Speed** &mdash; Pydantic's core validation logic is written in Rust. As a result, Pydantic is among the fastest data validation libraries for Python. [Learn more…](why.md#performance)
-- **JSON Schema** &mdash; Pydantic models can emit JSON Schema, allowing for easy integration with other tools. [Learn more…](why.md#json-schema)
-- **Strict** and **Lax** mode &mdash; Pydantic can run in either strict mode (where data is not converted) or lax mode where Pydantic tries to coerce data to the correct type where appropriate. [Learn more…](why.md#strict-lax)
-- **Dataclasses**, **TypedDicts** and more &mdash; Pydantic supports validation of many standard library types including `dataclass` and `TypedDict`. [Learn more…](why.md#dataclasses-typeddict-more)
-- **Customisation** &mdash; Pydantic allows custom validators and serializers to alter how data is processed in many powerful ways. [Learn more…](why.md#customisation)
-- **Ecosystem** &mdash; around 8,000 packages on PyPI use Pydantic, including massively popular libraries like
-  _FastAPI_, _huggingface_, _Django Ninja_, _SQLModel_, & _LangChain_. [Learn more…](why.md#ecosystem)
-- **Battle tested** &mdash; Pydantic is downloaded over 70M times/month and is used by all FAANG companies and 20 of the 25 largest companies on NASDAQ. If you're trying to do something with Pydantic, someone else has probably already done it. [Learn more…](why.md#using-pydantic)
+* **Powered by type hints** &mdash; with Pydantic, schema validation and serialization are controlled by type annotations; less to learn, less code to write, and integration with your IDE and static analysis tools. [Learn more…](why.md#type-hints)
+* **Speed** &mdash; Pydantic's core validation logic is written in Rust. As a result, Pydantic is among the fastest data validation libraries for Python. [Learn more…](why.md#performance)
+* **JSON Schema** &mdash; Pydantic models can emit JSON Schema, allowing for easy integration with other tools. [Learn more…](why.md#json-schema)
+* **Strict** and **Lax** mode &mdash; Pydantic can run in either strict mode (where data is not converted) or lax mode where Pydantic tries to coerce data to the correct type where appropriate. [Learn more…](why.md#strict-lax)
+* **Dataclasses**, **TypedDicts** and more &mdash; Pydantic supports validation of many standard library types including `dataclass` and `TypedDict`. [Learn more…](why.md#dataclasses-typeddict-more)
+* **Customisation** &mdash; Pydantic allows custom validators and serializers to alter how data is processed in many powerful ways. [Learn more…](why.md#customisation)
+* **Ecosystem** &mdash; around 8,000 packages on PyPI use Pydantic, including massively popular libraries like
+  *FastAPI*, *huggingface*, *Django Ninja*, *SQLModel*, & *LangChain*. [Learn more…](why.md#ecosystem)
+* **Battle tested** &mdash; Pydantic is downloaded over 360M times/month and is used by all FAANG companies and 20 of the 25 largest companies on NASDAQ. If you're trying to do something with Pydantic, someone else has probably already done it. [Learn more…](why.md#using-pydantic)
 
 [Installing Pydantic](install.md) is as simple as: `pip install pydantic`
 

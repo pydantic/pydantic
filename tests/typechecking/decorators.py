@@ -31,11 +31,23 @@ class BeforeModelValidator(BaseModel):
         """TODO This shouldn't be valid. At runtime, `self` is the actual value and `value` is the `ValidationInfo` instance."""
 
     @model_validator(mode='before')
-    def valid_method_info(self, value: Any, info: ValidationInfo) -> Any: ...
+    def valid_method_info_default(self, value: Any, info: ValidationInfo) -> Any: ...
+
+    @model_validator(mode='before')
+    def valid_method_info(self, value: Any, info: ValidationInfo[int]) -> Any:
+        assert_type(info.context, int)
 
     @model_validator(mode='before')
     @classmethod
     def valid_classmethod(cls, value: Any) -> Any: ...
+
+    @model_validator(mode='before')
+    @classmethod
+    def valid_classmethod_info_default(cls, value: Any, info: ValidationInfo) -> Any: ...
+
+    @model_validator(mode='before')
+    @classmethod
+    def valid_classmethod_info(cls, value: Any, info: ValidationInfo[int]) -> Any: ...
 
     @model_validator(mode='before')
     @staticmethod
@@ -45,9 +57,7 @@ class BeforeModelValidator(BaseModel):
 
 
 class WrapModelValidator(BaseModel):
-    # mypy randomly does not catch the type error here (https://github.com/python/mypy/issues/18125)
-    # so we also ignore the `unused-ignore` code:
-    @model_validator(mode='wrap')  # type: ignore[arg-type, unused-ignore]  # pyright: ignore[reportArgumentType]
+    @model_validator(mode='wrap')  # type: ignore[arg-type]  # pyright: ignore[reportArgumentType]
     def no_classmethod(cls, value: Any, handler: ModelWrapValidatorHandler[Self]) -> Self: ...
 
     @model_validator(mode='wrap')  # type: ignore[arg-type]  # pyright: ignore[reportArgumentType]
@@ -65,7 +75,7 @@ class WrapModelValidator(BaseModel):
         the `_ModelType` type var will thus bind to `Self`. It is then expected to have
         `handler: ModelWrapValidatorHandler[_ModelType]` and the return type as `-> _ModelType`.
         """
-        ...
+        ...  # noqa: PIE790
 
     @model_validator(mode='wrap')
     @classmethod
@@ -91,7 +101,10 @@ class AfterModelValidator(BaseModel):
     def valid_method_no_info(self) -> Self: ...
 
     @model_validator(mode='after')
-    def valid_method_info(self, info: ValidationInfo) -> Self: ...
+    def valid_method_info_default(self, info: ValidationInfo) -> Self: ...
+
+    @model_validator(mode='after')
+    def valid_method_info(self, info: ValidationInfo[int]) -> Self: ...
 
 
 class BeforeFieldValidator(BaseModel):
@@ -114,13 +127,25 @@ class BeforeFieldValidator(BaseModel):
 
     @field_validator('foo', mode='before', json_schema_input_type=int)  # `json_schema_input_type` allowed here.
     @classmethod
-    def valid_with_info(cls, value: Any, info: ValidationInfo) -> Any: ...
+    def valid_with_info_default(cls, value: Any, info: ValidationInfo) -> Any: ...
+
+    @field_validator('foo', mode='before', json_schema_input_type=int)  # `json_schema_input_type` allowed here.
+    @classmethod
+    def valid_with_info(cls, value: Any, info: ValidationInfo[int]) -> Any: ...
 
 
 class AfterFieldValidator(BaseModel):
     @field_validator('foo', mode='after')
     @classmethod
     def valid_classmethod(cls, value: Any) -> Any: ...
+
+    @field_validator('foo', mode='after')
+    @classmethod
+    def valid_classmethod_info_default(cls, value: Any, info: ValidationInfo) -> Any: ...
+
+    @field_validator('foo', mode='after')
+    @classmethod
+    def valid_classmethod_info(cls, value: Any, info: ValidationInfo[int]) -> Any: ...
 
     @field_validator('foo', mode='after', json_schema_input_type=int)  # type: ignore[call-overload]  # pyright: ignore[reportCallIssue, reportArgumentType]
     @classmethod
@@ -148,7 +173,13 @@ class WrapFieldValidator(BaseModel):
 
     @field_validator('foo', mode='wrap', json_schema_input_type=int)  # `json_schema_input_type` allowed here.
     @classmethod
-    def valid_with_info(cls, value: Any, handler: ValidatorFunctionWrapHandler, info: ValidationInfo) -> Any: ...
+    def valid_with_info_default(
+        cls, value: Any, handler: ValidatorFunctionWrapHandler, info: ValidationInfo
+    ) -> Any: ...
+
+    @field_validator('foo', mode='wrap', json_schema_input_type=int)  # `json_schema_input_type` allowed here.
+    @classmethod
+    def valid_with_info(cls, value: Any, handler: ValidatorFunctionWrapHandler, info: ValidationInfo[int]) -> Any: ...
 
 
 class PlainModelSerializer(BaseModel):
@@ -162,7 +193,10 @@ class PlainModelSerializer(BaseModel):
     def valid_plain_serializer_2(self) -> Any: ...
 
     @model_serializer(mode='plain')
-    def valid_plain_serializer_info(self, info: SerializationInfo) -> Any: ...
+    def valid_plain_serializer_info_default(self, info: SerializationInfo) -> Any: ...
+
+    @model_serializer(mode='plain')
+    def valid_plain_serializer_info(self, info: SerializationInfo[int]) -> Any: ...
 
 
 class WrapModelSerializer(BaseModel):
@@ -175,7 +209,12 @@ class WrapModelSerializer(BaseModel):
         return value
 
     @model_serializer(mode='wrap')
-    def valid_info(self, handler: SerializerFunctionWrapHandler, info: SerializationInfo) -> Any:
+    def valid_info_default(self, handler: SerializerFunctionWrapHandler, info: SerializationInfo) -> Any:
+        value = handler(self)
+        return value
+
+    @model_serializer(mode='wrap')
+    def valid_info(self, handler: SerializerFunctionWrapHandler, info: SerializationInfo[int]) -> Any:
         value = handler(self)
         return value
 
@@ -205,7 +244,10 @@ class PlainFieldSerializer(BaseModel):
         """
 
     @field_serializer('a', mode='plain')
-    def valid_method_info(self, value: Any, info: FieldSerializationInfo) -> Any: ...
+    def valid_method_info_default(self, value: Any, info: FieldSerializationInfo) -> Any: ...
+
+    @field_serializer('a', mode='plain')
+    def valid_method_info(self, value: Any, info: FieldSerializationInfo[int]) -> Any: ...
 
     @field_serializer('a', mode='plain')
     @staticmethod
@@ -213,7 +255,11 @@ class PlainFieldSerializer(BaseModel):
 
     @field_serializer('a', mode='plain')
     @staticmethod
-    def valid_staticmethod_info(value: Any, info: FieldSerializationInfo) -> Any: ...
+    def valid_staticmethod_info_default(value: Any, info: FieldSerializationInfo) -> Any: ...
+
+    @field_serializer('a', mode='plain')
+    @staticmethod
+    def valid_staticmethod_info(value: Any, info: FieldSerializationInfo[int]) -> Any: ...
 
     @field_serializer('a', mode='plain')
     @classmethod
@@ -221,7 +267,11 @@ class PlainFieldSerializer(BaseModel):
 
     @field_serializer('a', mode='plain')
     @classmethod
-    def valid_classmethod_info(cls, value: Any, info: FieldSerializationInfo) -> Any: ...
+    def valid_classmethod_info_default(cls, value: Any, info: FieldSerializationInfo) -> Any: ...
+
+    @field_serializer('a', mode='plain')
+    @classmethod
+    def valid_classmethod_info(cls, value: Any, info: FieldSerializationInfo[int]) -> Any: ...
 
     partial_ = field_serializer('a', mode='plain')(partial(lambda v, x: v, x=1))
 
@@ -250,4 +300,11 @@ class WrapFieldSerializer(BaseModel):
     def valid_no_info(self, value: Any, handler: SerializerFunctionWrapHandler) -> Any: ...
 
     @field_serializer('a', mode='wrap')
-    def valid_info(self, value: Any, handler: SerializerFunctionWrapHandler, info: FieldSerializationInfo) -> Any: ...
+    def valid_info_default(
+        self, value: Any, handler: SerializerFunctionWrapHandler, info: FieldSerializationInfo
+    ) -> Any: ...
+
+    @field_serializer('a', mode='wrap')
+    def valid_info(
+        self, value: Any, handler: SerializerFunctionWrapHandler, info: FieldSerializationInfo[int]
+    ) -> Any: ...

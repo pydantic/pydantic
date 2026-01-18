@@ -31,20 +31,24 @@ from pydantic import BaseModel, Field, AliasPath
 class User(BaseModel):
     first_name: str = Field(validation_alias=AliasPath('names', 0))
     last_name: str = Field(validation_alias=AliasPath('names', 1))
+    address: str = Field(validation_alias=AliasPath('contact', 'address'))
 
-user = User.model_validate({'names': ['John', 'Doe']})  # (1)!
+user = User.model_validate({  # (1)!
+    'names': ['John', 'Doe'],
+    'contact': {'address': '221B Baker Street'}
+})
 print(user)
-#> first_name='John' last_name='Doe'
+#> first_name='John' last_name='Doe' address='221B Baker Street'
 ```
 
-1. We are using `model_validate` to validate a dictionary using the field aliases.
-
-    You can see more details about [`model_validate`][pydantic.main.BaseModel.model_validate] in the API reference.
+1. We are using [`model_validate()`][pydantic.BaseModel.model_validate] to validate a dictionary using the field aliases.
+   Refer to documentation about [validating data](./models.md#validating-data) for more details.
 
 In the `'first_name'` field, we are using the alias `'names'` and the index `0` to specify the path to the first name.
 In the `'last_name'` field, we are using the alias `'names'` and the index `1` to specify the path to the last name.
 
-`AliasChoices` is used to specify a choice of aliases. For example:
+`AliasChoices` is used to specify a list of choices of aliases. Choices that appear first in the list will have higher
+priority during validation. For example:
 
 ```python {lint="skip"}
 from pydantic import BaseModel, Field, AliasChoices
@@ -60,11 +64,15 @@ print(user)
 user = User.model_validate({'first_name': 'John', 'lname': 'Doe'})  # (2)!
 print(user)
 #> first_name='John' last_name='Doe'
+user = User.model_validate({'first_name': 'John', 'fname': 'J', 'lname': 'Doe'})  # (3)!
+print(user)
+#> first_name='John' last_name='Doe'
 ```
 
 1. We are using the second alias choice for both fields.
 2. We are using the first alias choice for the field `'first_name'` and the second alias choice
    for the field `'last_name'`.
+3. Both `'first_name'` and `'fname'` are provided, `'first_name'` is used because it has higher priority.
 
 You can also use `AliasChoices` with `AliasPath`:
 
@@ -102,7 +110,6 @@ want to specify the alias for each field individually.
     [`to_camel`][pydantic.alias_generators.to_camel]<br>
     [`to_snake`][pydantic.alias_generators.to_snake]<br>
 
-
 ### Using a callable
 
 Here's a basic example using a callable:
@@ -131,7 +138,6 @@ print(t.model_dump(by_alias=True))
 ??? api "API Documentation"
 
     [`pydantic.aliases.AliasGenerator`][pydantic.aliases.AliasGenerator]<br>
-
 
 `AliasGenerator` is a class that allows you to specify multiple alias generators for a model.
 You can use an `AliasGenerator` to specify different alias generators for validation and serialization.

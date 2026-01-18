@@ -693,7 +693,7 @@ StrictBytes = Annotated[bytes, Strict()]
 @_dataclasses.dataclass(frozen=True)
 class StringConstraints(annotated_types.GroupedMetadata):
     """!!! abstract "Usage Documentation"
-        [`StringConstraints`](../concepts/fields.md#string-constraints)
+        [String types](./standard_library_types.md#strings)
 
     A field metadata class to apply constraints to `str` types.
     Use this class as an annotation via [`Annotated`](https://docs.python.org/3/library/typing.html#typing.Annotated), as seen below.
@@ -1028,8 +1028,7 @@ else:
                     return 'sys.stdin'
                 elif v.name == '<stderr>':
                     return 'sys.stderr'
-            else:
-                return v
+            return v
 
         def __repr__(self) -> str:
             return 'ImportString'
@@ -1142,7 +1141,7 @@ class UuidVersion:
     Use this class as an annotation via [`Annotated`](https://docs.python.org/3/library/typing.html#typing.Annotated), as seen below.
 
     Attributes:
-        uuid_version: The version of the UUID. Must be one of 1, 3, 4, 5, or 7.
+        uuid_version: The version of the UUID. Must be one of 1, 3, 4, 5, 6, 7 or 8.
 
     Example:
         ```python
@@ -1166,15 +1165,10 @@ class UuidVersion:
         return field_schema
 
     def __get_pydantic_core_schema__(self, source: Any, handler: GetCoreSchemaHandler) -> core_schema.CoreSchema:
-        if isinstance(self, source):
-            # used directly as a type
-            return core_schema.uuid_schema(version=self.uuid_version)
-        else:
-            # update existing schema with self.uuid_version
-            schema = handler(source)
-            _check_annotated_type(schema['type'], 'uuid', self.__class__.__name__)
-            schema['version'] = self.uuid_version  # type: ignore
-            return schema
+        schema = handler(source)
+        _check_annotated_type(schema['type'], 'uuid', self.__class__.__name__)
+        schema['version'] = self.uuid_version  # type: ignore
+        return schema
 
     def __hash__(self) -> int:
         return hash(type(self.uuid_version))
@@ -1535,7 +1529,8 @@ else:
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ SECRET TYPES ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-SecretType = TypeVar('SecretType')
+# The `Secret` class being conceptually immutable, make the type variable covariant:
+SecretType = TypeVar('SecretType', covariant=True)
 
 
 class _SecretBase(Generic[SecretType]):
@@ -3074,9 +3069,11 @@ class Discriminator:
             return handler(Annotated[source_type, Field(discriminator=self.discriminator)])
         else:
             original_schema = handler(source_type)
-            return self._convert_schema(original_schema)
+            return self._convert_schema(original_schema, handler)
 
-    def _convert_schema(self, original_schema: core_schema.CoreSchema) -> core_schema.TaggedUnionSchema:
+    def _convert_schema(
+        self, original_schema: core_schema.CoreSchema, handler: GetCoreSchemaHandler | None = None
+    ) -> core_schema.TaggedUnionSchema:
         if original_schema['type'] != 'union':
             # This likely indicates that the schema was a single-item union that was simplified.
             # In this case, we do the same thing we do in
@@ -3093,10 +3090,23 @@ class Discriminator:
             if metadata is not None:
                 tag = metadata.get('pydantic_internal_union_tag_key') or tag
             if tag is None:
-                raise PydanticUserError(
-                    f'`Tag` not provided for choice {choice} used with `Discriminator`',
-                    code='callable-discriminator-no-tag',
-                )
+                # `handler` is None when this method is called from `apply_discriminator()` (deferred discriminators)
+                if handler is not None and choice['type'] == 'definition-ref':
+                    # If choice was built from a PEP 695 type alias, try to resolve the def:
+                    try:
+                        choice = handler.resolve_ref_schema(choice)
+                    except LookupError:
+                        pass
+                    else:
+                        metadata = cast('CoreMetadata | None', choice.get('metadata'))
+                        if metadata is not None:
+                            tag = metadata.get('pydantic_internal_union_tag_key')
+
+                if tag is None:
+                    raise PydanticUserError(
+                        f'`Tag` not provided for choice {choice} used with `Discriminator`',
+                        code='callable-discriminator-no-tag',
+                    )
             tagged_union_choices[tag] = choice
 
         # Have to do these verbose checks to ensure falsy values ('' and {}) don't get ignored

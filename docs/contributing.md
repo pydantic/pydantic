@@ -10,7 +10,9 @@ To make it as simple as possible for us to help you, please include the output o
 ```bash
 python -c "import pydantic.version; print(pydantic.version.version_info())"
 ```
+
 If you're using Pydantic prior to **v2.0** please use:
+
 ```bash
 python -c "import pydantic.utils; print(pydantic.utils.version_info())"
 ```
@@ -48,10 +50,11 @@ Because of this, setting up and running the tests should be very simple.
 
 You'll need the following prerequisites:
 
-- Any Python version between **Python 3.9 and 3.12**
-- [**uv**](https://docs.astral.sh/uv/getting-started/installation/) or other virtual environment tool
-- **git**
-- **make**
+* Any Python version between **Python 3.9 and 3.12**
+* [**uv**](https://docs.astral.sh/uv/getting-started/installation/) or other virtual environment tool
+* [**git**](https://git-scm.com/) - For version control
+* [**make**](https://www.gnu.org/software/make/) - For running development commands (or use `nmake` on Windows)
+* [**Rust**](https://rustup.rs/) - Rust stable (or nightly for coverage)
 
 ### Installation and setup
 
@@ -81,7 +84,7 @@ Create a new branch for your changes.
 
 ```bash
 # Checkout a new branch and make your changes
-git checkout -b my-new-feature-branch
+git switch -c my-new-feature-branch
 # Make your changes...
 ```
 
@@ -106,8 +109,7 @@ make
 
 If you've made any changes to the documentation (including changes to function signatures, class definitions, or docstrings that will appear in the API documentation), make sure it builds successfully.
 
-We use `mkdocs-material[imaging]` to support social previews.
-You can find directions on how to install the required dependencies [here](https://squidfunk.github.io/mkdocs-material/plugins/requirements/image-processing/).
+We use `mkdocs-material[imaging]` to support social previews (see the [plugin documentation](https://squidfunk.github.io/mkdocs-material/plugins/requirements/image-processing/)).
 
 ```bash
 # Build documentation
@@ -143,7 +145,6 @@ Please follow the pull request template and fill in as much information as possi
 
 When your pull request is ready for review, add a comment with the message "please review" and we'll take a look as soon as we can.
 
-
 ## Documentation style
 
 Documentation is written in Markdown and built using [Material for MkDocs](https://squidfunk.github.io/mkdocs-material/). API documentation is build from docstrings using [mkdocstrings](https://mkdocstrings.github.io/).
@@ -152,10 +153,10 @@ Documentation is written in Markdown and built using [Material for MkDocs](https
 
 When contributing to Pydantic, please make sure that all code is well documented. The following should be documented using properly formatted docstrings:
 
-- Modules
-- Class definitions
-- Function definitions
-- Module-level variables
+* Modules
+* Class definitions
+* Function definitions
+* Module-level variables
 
 Pydantic uses [Google-style docstrings](https://google.github.io/styleguide/pyguide.html#38-comments-and-docstrings) formatted according to [PEP 257](https://www.python.org/dev/peps/pep-0257/) guidelines. (See [Example Google Style Python Docstrings](https://sphinxcontrib-napoleon.readthedocs.io/en/latest/example_google.html) for further examples.)
 
@@ -190,7 +191,7 @@ def bar(self, baz: int) -> str:
     return 'bar'
 ```
 
-You may include example code in docstrings. This code should be complete, self-contained, and runnable. Docstring examples are tested, so make sure they are correct and complete. See [`FieldInfo.from_annotated_attribute`][pydantic.fields.FieldInfo.from_annotated_attribute] for an example.
+You may include example code in docstrings. This code should be complete, self-contained, and runnable. Docstring examples are tested, so make sure they are correct and complete. See [`BeforeValidator`][pydantic.functional_validators.AfterValidator] for an example.
 
 !!! note "Class and instance attributes"
     Class attributes should be documented in the class docstring.
@@ -260,10 +261,10 @@ Pydantic has a badge that you can use to show that your project uses Pydantic. Y
 To be able to identify regressions early during development, Pydantic runs tests on various third-party projects
 using Pydantic. We consider adding support for testing new open source projects (that rely heavily on Pydantic) if your said project matches some of the following criteria:
 
-- The project is actively maintained.
-- The project makes use of Pydantic internals (e.g. relying on the [`BaseModel`][pydantic.BaseModel] metaclass, typing utilities).
-- The project is popular enough (although small projects can still be included depending on how Pydantic is being used).
-- The project CI is simple enough to be ported into Pydantic's testing workflow.
+* The project is actively maintained.
+* The project makes use of Pydantic internals (e.g. relying on the [`BaseModel`][pydantic.BaseModel] metaclass, typing utilities).
+* The project is popular enough (although small projects can still be included depending on how Pydantic is being used).
+* The project CI is simple enough to be ported into Pydantic's testing workflow.
 
 If your project meets some of these criteria, you can [open feature request][open feature request]
 to discuss the inclusion of your project.

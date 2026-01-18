@@ -1,6 +1,7 @@
 import re
 import sys
 from collections.abc import Sequence
+from copy import deepcopy
 from dataclasses import dataclass
 from enum import Enum, IntEnum
 from types import SimpleNamespace
@@ -9,7 +10,7 @@ from typing import Annotated, Any, Callable, Generic, Literal, Optional, TypeVar
 import pytest
 from dirty_equals import HasRepr, IsStr
 from pydantic_core import SchemaValidator, core_schema
-from typing_extensions import TypedDict
+from typing_extensions import TypeAliasType, TypedDict
 
 from pydantic import (
     BaseModel,
@@ -18,11 +19,14 @@ from pydantic import (
     Field,
     PlainSerializer,
     PlainValidator,
+    RootModel,
     TypeAdapter,
     ValidationError,
     field_validator,
 )
+from pydantic._internal._config import ConfigWrapper
 from pydantic._internal._discriminated_union import apply_discriminator
+from pydantic._internal._generate_schema import GenerateSchema
 from pydantic.dataclasses import dataclass as pydantic_dataclass
 from pydantic.errors import PydanticUserError
 from pydantic.fields import FieldInfo
@@ -450,7 +454,9 @@ def test_alias_different():
         pet_type: Literal['dog'] = Field(alias='T')
         d: str
 
-    with pytest.raises(TypeError, match=re.escape("Aliases for discriminator 'pet_type' must be the same (got T, U)")):
+    with pytest.raises(
+        PydanticUserError, match=re.escape("Aliases for discriminator 'pet_type' must be the same (got T, U)")
+    ):
 
         class Model(BaseModel):
             pet: Union[Cat, Dog] = Field(discriminator='pet_type')
@@ -883,7 +889,9 @@ def test_invalid_alias() -> None:
     dog = core_schema.typed_dict_schema(dog_fields)
     schema = core_schema.union_schema([cat, dog])
 
-    with pytest.raises(TypeError, match=re.escape("Alias ['cat', 'CAT'] is not supported in a discriminated union")):
+    with pytest.raises(
+        PydanticUserError, match=re.escape("Alias ['cat', 'CAT'] is not supported in a discriminated union")
+    ):
         apply_discriminator(schema, 'kind')
 
 
@@ -893,7 +901,7 @@ def test_invalid_discriminator_type() -> None:
     cat = core_schema.typed_dict_schema(cat_fields)
     dog = core_schema.typed_dict_schema(dog_fields)
 
-    with pytest.raises(TypeError, match=re.escape("TypedDict needs field 'kind' to be of type `Literal`")):
+    with pytest.raises(PydanticUserError, match=re.escape("TypedDict needs field 'kind' to be of type `Literal`")):
         apply_discriminator(core_schema.union_schema([cat, dog]), 'kind')
 
 
@@ -903,7 +911,7 @@ def test_missing_discriminator_field() -> None:
     cat = core_schema.typed_dict_schema(cat_fields)
     dog = core_schema.typed_dict_schema(dog_fields)
 
-    with pytest.raises(TypeError, match=re.escape("TypedDict needs a discriminator field for key 'kind'")):
+    with pytest.raises(PydanticUserError, match=re.escape("TypedDict needs a discriminator field for key 'kind'")):
         apply_discriminator(core_schema.union_schema([dog, cat]), 'kind')
 
 
@@ -1769,35 +1777,35 @@ def test_callable_discriminated_union_with_missing_tag() -> None:
         if isinstance(v, (dict, BaseModel)):
             return 'model'
 
-    try:
+    with pytest.raises(PydanticUserError) as exc_info:
 
         class DiscriminatedModel(BaseModel):
             x: Annotated[
                 Union[str, 'DiscriminatedModel'],
                 Discriminator(model_x_discriminator),
             ]
-    except PydanticUserError as exc_info:
-        assert exc_info.code == 'callable-discriminator-no-tag'
 
-    try:
+    assert exc_info.value.code == 'callable-discriminator-no-tag'
+
+    with pytest.raises(PydanticUserError) as exc_info:
 
         class DiscriminatedModel(BaseModel):
             x: Annotated[
                 Union[Annotated[str, Tag('str')], 'DiscriminatedModel'],
                 Discriminator(model_x_discriminator),
             ]
-    except PydanticUserError as exc_info:
-        assert exc_info.code == 'callable-discriminator-no-tag'
 
-    try:
+    assert exc_info.value.code == 'callable-discriminator-no-tag'
+
+    with pytest.raises(PydanticUserError) as exc_info:
 
         class DiscriminatedModel(BaseModel):
             x: Annotated[
                 Union[str, Annotated['DiscriminatedModel', Tag('model')]],
                 Discriminator(model_x_discriminator),
             ]
-    except PydanticUserError as exc_info:
-        assert exc_info.code == 'callable-discriminator-no-tag'
+
+    assert exc_info.value.code == 'callable-discriminator-no-tag'
 
 
 @pytest.mark.xfail(
@@ -2172,3 +2180,185 @@ def test_discriminated_union_serializer() -> None:
     adapter = TypeAdapter(FooOrBarId)
     assert adapter.dump_python(FooId(1)) == {'tag': 'foo', '_id': 1}
     assert adapter.dump_python(BarId(2)) == {'tag': 'bar', '_id': 2}
+
+
+def test_deferred_discriminated_union_meta_key_removed() -> None:
+    """A regression encountered after the schema cleaning refactor.
+
+    Issue: https://github.com/pydantic/pydantic/issues/11587.
+    """
+
+    class Test(BaseModel):
+        disc: Literal['test']
+
+    class Base(BaseModel):
+        root: Test = Field(discriminator='disc')
+
+    base_schema = deepcopy(Base.__pydantic_core_schema__)
+
+    class Reference(BaseModel):
+        base: list[Base]
+
+    # With the new schema cleaning logic, the core schema of `Base` isn't deepcopied anymore
+    # when used in `Reference`. We were aware that theoretically, this could lead to issues
+    # where referenced core schemas could be mutated. This regression was an example of that.
+    # It happened because when processing deferred discriminators, we forgot to remove the
+    # `'pydantic_internal_union_discriminator'` meta key from the schemas. The schema cleaning
+    # logic of `Reference` would then re-apply the deferred discriminator logic for `Base`.
+    assert Base.__pydantic_core_schema__ == base_schema
+
+
+def test_tagged_discriminator_type_alias() -> None:
+    """https://github.com/pydantic/pydantic/issues/11930"""
+
+    class Pie(BaseModel):
+        pass
+
+    class ApplePie(Pie):
+        fruit: Literal['apple'] = 'apple'
+
+    class PumpkinPie(Pie):
+        filling: Literal['pumpkin'] = 'pumpkin'
+
+    def get_discriminator_value(v):
+        return v.get('fruit', v.get('filling'))
+
+    TaggedApplePie = TypeAliasType('TaggedApplePie', Annotated[ApplePie, Tag('apple')])
+
+    class ThanksgivingDinner(BaseModel):
+        dessert: Annotated[
+            Union[TaggedApplePie, Annotated[PumpkinPie, Tag('pumpkin')]],
+            Discriminator(get_discriminator_value),
+        ]
+
+    inst = ThanksgivingDinner(dessert={'fruit': 'apple'})
+
+    assert isinstance(inst.dessert, ApplePie)
+
+
+def test_discriminated_union_type_alias_type() -> None:
+    """https://github.com/pydantic/pydantic/issues/11661
+
+    This was fixed by making sure we provide the available definitions
+    when first trying to apply discriminated unions during core schema
+    generation (which we forgot to do). Our schema cleaning logic is still
+    not working correctly when deferred discriminated unions are involved
+    together with referenceable core schemas that should be inlined. In practice,
+    I don't know if such a scenario can happen (see the test below --
+    `test_deferred_discriminated_union_and_references()` for a theoretical example).
+    """
+
+    class Foo(BaseModel):
+        type: Literal['foo'] = 'foo'
+
+    Disc = TypeAliasType('Disc', Annotated[Foo, Field(discriminator='type')])
+
+    class Main(BaseModel):
+        f: Disc
+
+    # Use the JSON Schema to avoid making assertions on the core schema, that
+    # may be less stable:
+    assert Main.model_json_schema()['$defs']['Disc']['discriminator'] == {
+        'mapping': {'foo': '#/$defs/Foo'},
+        'propertyName': 'type',
+    }
+
+
+@pytest.mark.xfail(reason='deferred discriminated union info is lost on core schemas that are inlined.')
+def test_deferred_discriminated_union_and_references() -> None:
+    class Foo(BaseModel):
+        type: Literal['foo'] = 'foo'
+
+    class Bar(BaseModel):
+        type: Literal['bar'] = 'bar'
+
+    gen_schema = GenerateSchema(ConfigWrapper(None))
+
+    foo_ref = gen_schema.defs.create_definition_reference_schema(Foo.__pydantic_core_schema__)
+    bar_ref = gen_schema.defs.create_definition_reference_schema(Bar.__pydantic_core_schema__)
+
+    disc_union = core_schema.union_schema(
+        choices=[foo_ref, bar_ref],
+        metadata={'pydantic_internal_union_discriminator': 'type'},
+        ref='disc_union',
+    )
+    disc_union_ref = gen_schema.defs.create_definition_reference_schema(disc_union)
+
+    final_schema = gen_schema.clean_schema(disc_union_ref)
+
+    assert final_schema['type'] == 'tagged-union'
+
+
+def test_recursive_discriminated_union() -> None:
+    """https://github.com/pydantic/pydantic/issues/11978"""
+
+    F = TypeVar('F', bound=BaseModel)
+
+    class Not(BaseModel, Generic[F]):
+        operand: F = Field()
+
+    class Label(BaseModel):
+        prop: Literal['label'] = 'label'
+
+    def filter_discriminator(v):
+        if isinstance(v, dict):
+            if 'not' in v:
+                return 'not'
+            else:
+                return v.get('prop')
+
+        if isinstance(v, Not):
+            return 'not'
+        else:
+            return getattr(v, 'prop', None)
+
+    ParagraphFilterExpression = Annotated[
+        Union[
+            Annotated[Not['ParagraphFilterExpression'], Tag('not')],
+            Annotated[Label, Tag('label')],
+        ],
+        Discriminator(filter_discriminator),
+    ]
+
+    FieldFilterExpression = Annotated[
+        Union[
+            Annotated[Not['FieldFilterExpression'], Tag('not')],
+            Annotated[Label, Tag('label')],
+        ],
+        Discriminator(filter_discriminator),
+    ]
+
+    class FilterExpression(BaseModel):
+        field: FieldFilterExpression
+        paragraph: ParagraphFilterExpression
+
+
+def test_discriminated_union_with_root_model_literal() -> None:
+    """https://github.com/pydantic/pydantic/issues/12605."""
+
+    class Action1(RootModel[Literal['action1']]):
+        pass
+
+    class Action2(RootModel[Literal['action2']]):
+        pass
+
+    class Model1(BaseModel):
+        action: Action1
+
+    class Model2(BaseModel):
+        action: Action2
+
+    ta = TypeAdapter(Annotated[Union[Model1, Model2], Field(discriminator='action')])
+
+    model1 = ta.validate_python({'action': 'action1'})
+    assert isinstance(model1, Model1)
+    assert model1.action.root == 'action1'
+
+    model2 = ta.validate_python({'action': 'action2'})
+    assert isinstance(model2, Model2)
+    assert model2.action.root == 'action2'
+
+    with pytest.raises(ValidationError) as exc_info:
+        ta.validate_python({'action': 'invalid_action'})
+
+    assert exc_info.value.errors()[0]['type'] == 'union_tag_invalid'

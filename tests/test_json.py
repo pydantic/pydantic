@@ -25,6 +25,7 @@ from pydantic import (
     NameEmail,
     PlainSerializer,
     RootModel,
+    TypeAdapter,
 )
 from pydantic._internal._config import ConfigWrapper
 from pydantic._internal._generate_schema import GenerateSchema
@@ -35,7 +36,6 @@ from pydantic.functional_serializers import (
     field_serializer,
 )
 from pydantic.json_schema import JsonSchemaValue
-from pydantic.type_adapter import TypeAdapter
 from pydantic.types import DirectoryPath, FilePath, SecretBytes, SecretStr, condecimal
 
 try:
@@ -574,3 +574,15 @@ def test_json_bytes_hex_round_trip():
     m_encoded = f'{{"key":{r_encoded}}}'
     assert m.model_dump_json() == m_encoded
     assert M.model_validate_json(m_encoded) == m
+
+
+# Complete tests exist in pydantic-core:
+def test_json_ensure_ascii() -> None:
+    ta = TypeAdapter(str)
+
+    assert ta.dump_json('à', ensure_ascii=True) == b'"\\u00e0"'
+
+    class Model(BaseModel):
+        f: str
+
+    assert Model(f='à').model_dump_json(ensure_ascii=True) == '{"f":"\\u00e0"}'

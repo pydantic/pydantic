@@ -5,7 +5,7 @@ from __future__ import annotations
 import sys
 from collections.abc import Iterator
 from configparser import ConfigParser
-from typing import Any, Callable, cast
+from typing import Any, Callable
 
 from mypy.errorcodes import ErrorCode
 from mypy.expandtype import expand_type, expand_type_by_instance
@@ -290,7 +290,7 @@ class PydanticModelField:
 
         strict = model_strict if self.strict is None else self.strict
         if typed or strict:
-            type_annotation = self.expand_type(current_info, api)
+            type_annotation = self.expand_type(current_info, api, include_root_type=True)
         else:
             type_annotation = AnyType(TypeOfAny.explicit)
 
@@ -304,7 +304,11 @@ class PydanticModelField:
         )
 
     def expand_type(
-        self, current_info: TypeInfo, api: SemanticAnalyzerPluginInterface, force_typevars_invariant: bool = False
+        self,
+        current_info: TypeInfo,
+        api: SemanticAnalyzerPluginInterface,
+        force_typevars_invariant: bool = False,
+        include_root_type: bool = False,
     ) -> Type | None:
         """Based on mypy.plugins.dataclasses.DataclassAttribute.expand_type."""
         if force_typevars_invariant:
@@ -332,10 +336,13 @@ class PydanticModelField:
                             arg.variance = INVARIANT
 
                 expanded_type = expand_type(self.type, {self.info.self_type.id: filled_with_typevars})
-                if isinstance(expanded_type, Instance) and is_root_model(expanded_type.type):
+                if include_root_type and isinstance(expanded_type, Instance) and is_root_model(expanded_type.type):
                     # When a root model is used as a field, Pydantic allows both an instance of the root model
                     # as well as instances of the `root` field type:
-                    root_type = cast(Type, expanded_type.type['root'].type)
+                    root_type = expanded_type.type['root'].type
+                    if root_type is None:
+                        # Happens if the hint for 'root' has unsolved forward references
+                        return expanded_type
                     expanded_root_type = expand_type_by_instance(root_type, expanded_type)
                     expanded_type = UnionType([expanded_type, expanded_root_type])
                 return expanded_type
@@ -948,15 +955,9 @@ class PydanticModelTransformer:
                 elif isinstance(var, PlaceholderNode) and not self._api.final_iteration:
                     # See https://github.com/pydantic/pydantic/issues/5191 to hit this branch for test coverage
                     self._api.defer()
-                else:  # pragma: no cover
-                    # I don't know whether it's possible to hit this branch, but I've added it for safety
-                    try:
-                        var_str = str(var)
-                    except TypeError:
-                        # This happens for PlaceholderNode; perhaps it will happen for other types in the future..
-                        var_str = repr(var)
-                    detail = f'sym_node.node: {var_str} (of type {var.__class__})'
-                    error_unexpected_behavior(detail, self._api, self._cls)
+                # `var` can also be a FuncDef or Decorator node (e.g. when overriding a field with a function or property).
+                # In that case, we don't want to do anything. Mypy will already raise an error that a field was not properly
+                # overridden.
             else:
                 var = field.to_var(info, api, use_alias=False)
                 var.info = info
@@ -1312,9 +1313,9 @@ def add_method(
         arg_names.append(arg.variable.name)
         arg_kinds.append(arg.kind)
 
-    signature = CallableType(arg_types, arg_kinds, arg_names, return_type, function_type)
-    if tvar_def:
-        signature.variables = [tvar_def]
+    signature = CallableType(
+        arg_types, arg_kinds, arg_names, return_type, function_type, variables=[tvar_def] if tvar_def else None
+    )
 
     func = FuncDef(name, args, Block([PassStmt()]))
     func.info = info
@@ -1366,7 +1367,7 @@ def parse_toml(config_file: str) -> dict[str, Any] | None:
         except ImportError:  # pragma: no cover
             import warnings
 
-            warnings.warn('No TOML parser installed, cannot read configuration from `pyproject.toml`.')
+            warnings.warn('No TOML parser installed, cannot read configuration from `pyproject.toml`.', stacklevel=2)
             return None
 
     with open(config_file, 'rb') as rf:

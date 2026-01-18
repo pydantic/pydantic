@@ -9,15 +9,16 @@ import collections.abc
 import math
 import re
 import typing
+from collections.abc import Sequence
 from decimal import Decimal
 from fractions import Fraction
 from ipaddress import IPv4Address, IPv4Interface, IPv4Network, IPv6Address, IPv6Interface, IPv6Network
-from typing import Any, Callable, Union, cast, get_origin
+from typing import Any, Callable, TypeVar, Union, cast
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 import typing_extensions
-from pydantic_core import PydanticCustomError, core_schema
-from pydantic_core._pydantic_core import PydanticKnownError
+from pydantic_core import PydanticCustomError, PydanticKnownError, core_schema
+from typing_extensions import get_args, get_origin
 from typing_inspection import typing_objects
 
 from pydantic._internal._import_utils import import_cached_field_info
@@ -25,10 +26,10 @@ from pydantic.errors import PydanticSchemaGenerationError
 
 
 def sequence_validator(
-    input_value: typing.Sequence[Any],
+    input_value: Sequence[Any],
     /,
     validator: core_schema.ValidatorFunctionWrapHandler,
-) -> typing.Sequence[Any]:
+) -> Sequence[Any]:
     """Validator for `Sequence` types, isinstance(v, Sequence) has already been called."""
     value_type = type(input_value)
 
@@ -126,8 +127,8 @@ def _import_string_logic(dotted_path: str) -> Any:
         return module
 
 
-def pattern_either_validator(input_value: Any, /) -> typing.Pattern[Any]:
-    if isinstance(input_value, typing.Pattern):
+def pattern_either_validator(input_value: Any, /) -> re.Pattern[Any]:
+    if isinstance(input_value, re.Pattern):
         return input_value
     elif isinstance(input_value, (str, bytes)):
         # todo strict mode
@@ -136,8 +137,8 @@ def pattern_either_validator(input_value: Any, /) -> typing.Pattern[Any]:
         raise PydanticCustomError('pattern_type', 'Input should be a valid pattern')
 
 
-def pattern_str_validator(input_value: Any, /) -> typing.Pattern[str]:
-    if isinstance(input_value, typing.Pattern):
+def pattern_str_validator(input_value: Any, /) -> re.Pattern[str]:
+    if isinstance(input_value, re.Pattern):
         if isinstance(input_value.pattern, str):
             return input_value
         else:
@@ -150,8 +151,8 @@ def pattern_str_validator(input_value: Any, /) -> typing.Pattern[str]:
         raise PydanticCustomError('pattern_type', 'Input should be a valid pattern')
 
 
-def pattern_bytes_validator(input_value: Any, /) -> typing.Pattern[bytes]:
-    if isinstance(input_value, typing.Pattern):
+def pattern_bytes_validator(input_value: Any, /) -> re.Pattern[bytes]:
+    if isinstance(input_value, re.Pattern):
         if isinstance(input_value.pattern, bytes):
             return input_value
         else:
@@ -164,10 +165,10 @@ def pattern_bytes_validator(input_value: Any, /) -> typing.Pattern[bytes]:
         raise PydanticCustomError('pattern_type', 'Input should be a valid pattern')
 
 
-PatternType = typing.TypeVar('PatternType', str, bytes)
+PatternType = TypeVar('PatternType', str, bytes)
 
 
-def compile_pattern(pattern: PatternType) -> typing.Pattern[PatternType]:
+def compile_pattern(pattern: PatternType) -> re.Pattern[PatternType]:
     try:
         return re.compile(pattern)
     except re.error:
@@ -472,7 +473,7 @@ def get_defaultdict_default_default_factory(values_source_type: Any) -> Callable
 
     # Assume Annotated[..., Field(...)]
     if typing_objects.is_annotated(values_type_origin):
-        field_info = next((v for v in typing_extensions.get_args(values_source_type) if isinstance(v, FieldInfo)), None)
+        field_info = next((v for v in get_args(values_source_type) if isinstance(v, FieldInfo)), None)
     else:
         field_info = None
     if field_info and field_info.default_factory:

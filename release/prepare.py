@@ -3,7 +3,6 @@
 import argparse
 import json
 import re
-import sys
 import warnings
 from datetime import date
 from pathlib import Path
@@ -11,13 +10,12 @@ from pathlib import Path
 import requests
 
 from release.shared import (
-    REPO,
     GITHUB_TOKEN,
     HISTORY_FILE,
     PACKAGE_VERSION_FILE,
+    REPO,
     run_command,
 )
-
 
 ROOT_DIR = Path(__file__).parent.parent
 
@@ -25,19 +23,18 @@ ROOT_DIR = Path(__file__).parent.parent
 def update_version(new_version: str, dry_run: bool) -> None:
     """Update the version in the giving py version file."""
     version_file_path = ROOT_DIR / PACKAGE_VERSION_FILE
-    with open(version_file_path, encoding='utf8') as f:
-        content = f.read()
+    content = version_file_path.read_text(encoding='utf-8')
 
     # Regex to match the VERSION assignment
-    pattern = r'(VERSION\s*=\s*)([\'\"])([^\"^\']+)([\'\"])'
+    pattern = r'(VERSION\s*=\s*[\'\"])([^\"^\']+)([\'\"])'
     version_stm = re.search(pattern, content)
     if not version_stm:
         print(
-            'Could not find the version assignment in the version file.'
-            'Please make sure the version file has a line like `VERSION = "1.2.3"`.'
+            'Could not find the version assignment in the version file. '
+            "Please make sure the version file has a line like `VERSION: Final = '1.2.3'`."
         )
-        sys.exit(1)
-    old_version = version_stm.group(3)
+        raise SystemExit(1)
+    old_version = version_stm.group(2)
     if old_version == new_version:
         warnings.warn('The new version is the same as the old version. The script might not have any effect.')
     old_version_stm = ''.join(version_stm.groups())
@@ -51,9 +48,8 @@ def update_version(new_version: str, dry_run: bool) -> None:
         print(new_version_stm)
         print('Running in dry mode, lock file is not updated.')
         return
-    with open(version_file_path, 'w', encoding='utf8') as f:
-        new_content = content.replace(old_version_stm, new_version_stm)
-        f.write(new_content)
+
+    version_file_path.write_text(content.replace(old_version_stm, new_version_stm), encoding='utf-8')
     run_command('uv', 'lock', '-P', 'pydantic')
 
 
@@ -62,11 +58,7 @@ def get_notes(new_version: str) -> str:
     last_tag = run_command('git', 'describe', '--tags', '--abbrev=0')
     auth_token = GITHUB_TOKEN
 
-    data = {
-        'target_committish': 'main',
-        'previous_tag_name': last_tag,
-        'tag_name': f'v{new_version}'
-    }
+    data = {'target_committish': 'main', 'previous_tag_name': last_tag, 'tag_name': f'v{new_version}'}
     response = requests.post(
         f'https://api.github.com/repos/{REPO}/releases/generate-notes',
         headers={
@@ -75,7 +67,7 @@ def get_notes(new_version: str) -> str:
             'x-github-api-version': '2022-11-28',
         },
         data=json.dumps(data),
-        timeout=100
+        timeout=100,
     )
     response.raise_for_status()
 
@@ -121,13 +113,9 @@ def update_history(new_version: str, dry_run: bool, force_update: bool) -> None:
     date_today_str = f'{date.today():%Y-%m-%d}'
     title = f'v{new_version} ({date_today_str})'
     notes = get_notes(new_version)
-    new_chunk = (
-        f'## {title}\n\n'
-        f'[GitHub release](https://github.com/{REPO}/releases/tag/v{new_version})\n\n'
-        f'{notes}\n\n'
-    )
+    new_chunk = f'## {title}\n\n[GitHub release](https://github.com/{REPO}/releases/tag/v{new_version})\n\n{notes}\n\n'
     if dry_run:
-        print(f"Would add the following to {history_path}:\n{new_chunk}")
+        print(f'Would add the following to {history_path}:\n{new_chunk}')
     history = new_chunk + history_content
 
     if not dry_run:
@@ -137,23 +125,14 @@ def update_history(new_version: str, dry_run: bool, force_update: bool) -> None:
     citation_path = ROOT_DIR / 'CITATION.cff'
     citation_text = citation_path.read_text()
 
-    is_release_version = not ('a' in new_version or 'b' in new_version)
-    if not is_release_version:
-        version_typ = 'alpha' if 'a' in new_version else 'beta'
-        warnings.warn(
-            f'WARNING: not updating CITATION.cff because version is {version_typ} version {new_version}'
-        )
-        return
-    else:
-        citation_text = re.sub(r'(?<=\nversion: ).*', f'v{new_version}', citation_text)
-        citation_text = re.sub(r'(?<=date-released: ).*', date_today_str, citation_text)
+    citation_text = re.sub(r'(?<=\nversion: ).*', f'v{new_version}', citation_text)
+    citation_text = re.sub(r'(?<=date-released: ).*', date_today_str, citation_text)
     if dry_run:
         print(
             f'Would update version=v{new_version} and date-released={date_today_str} in '
             f'{citation_path.relative_to(ROOT_DIR)}'
         )
         print(f'Updated content:\n{citation_text}')
-
     else:
         citation_path.write_text(citation_text)
         print(

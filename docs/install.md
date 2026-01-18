@@ -36,7 +36,6 @@ Pydantic has the following optional dependencies:
 
 To install optional dependencies along with Pydantic:
 
-
 === "pip"
 
     ```bash
@@ -60,7 +59,6 @@ Of course, you can also install requirements manually with `pip install email-va
 ## Install from repository
 
 And if you prefer to install Pydantic directly from the repository:
-
 
 === "pip"
 

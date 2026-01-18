@@ -9,8 +9,10 @@ import re
 import sys
 import typing
 import uuid
-from collections import Counter, OrderedDict, defaultdict, deque
-from collections.abc import Iterable, Sequence
+import warnings
+from abc import ABC, abstractmethod
+from collections import Counter, OrderedDict, UserDict, defaultdict, deque
+from collections.abc import Iterable, Mapping, MutableMapping, Sequence
 from dataclasses import dataclass
 from datetime import date, datetime, time, timedelta, timezone
 from decimal import Decimal
@@ -24,6 +26,7 @@ from typing import (
     Any,
     Callable,
     Literal,
+    NamedTuple,
     NewType,
     Optional,
     TypeVar,
@@ -105,6 +108,7 @@ from pydantic import (
     StringConstraints,
     Tag,
     TypeAdapter,
+    ValidateAs,
     ValidationError,
     conbytes,
     condate,
@@ -1046,6 +1050,20 @@ def test_import_string_sys_stdout() -> None:
 
     import_things = ImportThings(obj='sys.stdout')
     assert import_things.model_dump_json() == '{"obj":"sys.stdout"}'
+
+
+def test_import_string_thing_with_name() -> None:
+    """https://github.com/pydantic/pydantic/issues/12218"""
+
+    class ImportThings(BaseModel):
+        obj: ImportString
+
+    @dataclass
+    class ThingWithName:
+        name: str
+
+    import_things = ImportThings(obj=ThingWithName('foo'))
+    assert import_things.model_dump_json() == '{"obj":{"name":"foo"}}'
 
 
 def test_decimal():
@@ -6016,6 +6034,37 @@ def test_skip_validation_json_schema():
     }
 
 
+def test_validate_from() -> None:
+    class Arbitrary:
+        def __init__(self, a: int) -> None:
+            self.a = a
+
+        def __eq__(self, other) -> bool:
+            return self.a == other.a
+
+    class ArbitraryModel(BaseModel):
+        a: int
+
+    ta = TypeAdapter(Annotated[Arbitrary, ValidateAs(ArbitraryModel, instantiation_hook=lambda v: Arbitrary(a=v.a))])
+
+    assert ta.validate_python({'a': 1}) == Arbitrary(1)
+
+
+@pytest.mark.skipif(sys.version_info < (3, 12), reason="`Annotated` doesn't allow instances in <3.12")
+def test_skip_validation_arbitrary_type_object() -> None:
+    """https://github.com/pydantic/pydantic/issues/11997.
+
+    Using an arbitrary object (and not a type) normally raises a warning,
+    which should be suppressed when using `SkipValidation`.
+    """
+
+    with warnings.catch_warnings():
+        warnings.simplefilter('error')
+
+        class Model(BaseModel, arbitrary_types_allowed=True):
+            field: Annotated[object(), SkipValidation]
+
+
 def test_transform_schema():
     ValidateStrAsInt = Annotated[str, GetPydanticSchema(lambda _s, h: core_schema.int_schema())]
 
@@ -6391,13 +6440,13 @@ def test_constraints_arbitrary_type() -> None:
         {
             'type': 'predicate_failed',
             'loc': ('predicate',),
-            'msg': 'Predicate test_constraints_arbitrary_type.<locals>.Model.<lambda> failed',
+            'msg': "Predicate 'test_constraints_arbitrary_type.<locals>.Model.<lambda>' failed",
             'input': CustomType(-1),
         },
         {
             'type': 'not_operation_failed',
             'loc': ('not_multiple_of_3',),
-            'msg': 'Not of test_constraints_arbitrary_type.<locals>.Model.<lambda> failed',
+            'msg': "Not of 'test_constraints_arbitrary_type.<locals>.Model.<lambda>' failed",
             'input': CustomType(6),
         },
     ]
@@ -6786,6 +6835,29 @@ def test_strict_enum_with_use_enum_values() -> None:
         Foo(foo='1')
 
 
+def test_enum_with_namedtuple_values() -> None:
+    """https://github.com/pydantic/pydantic/issues/12503"""
+
+    class NT(NamedTuple):
+        f: str
+
+    class SomeEnum(NT, Enum):
+        FOO = 'foo'
+
+    class Model1(BaseModel):
+        value: SomeEnum
+
+    assert Model1(value=SomeEnum.FOO).value is SomeEnum.FOO
+
+    class Model2(BaseModel, use_enum_values=True):
+        value: SomeEnum
+
+    assert Model2(value=NT('foo')).value == NT('foo')
+
+    with pytest.raises(ValidationError):
+        Model2(value=NT('bar'))
+
+
 @pytest.mark.skipif(
     platform.python_implementation() == 'PyPy',
     reason='PyPy has a bug in complex string parsing. A fix is implemented but not yet released.',
@@ -6951,17 +7023,22 @@ def test_fail_fast(tp, fail_fast, decl) -> None:
     assert exc_info.value.errors(include_url=False) == errors
 
 
-def test_mutable_mapping() -> None:
+def test_mutable_mapping_userdict_subclass() -> None:
     """Addresses https://github.com/pydantic/pydantic/issues/9549.
 
-    Note - we still don't do a good job of handling subclasses, as we convert the input to a dict
-    via the MappingValidator annotation's schema.
+    Note - we still don't do a good job of handling subclasses, as we convert the input to a dict.
     """
-    import collections.abc
+    adapter = TypeAdapter(MutableMapping, config=ConfigDict(strict=True))
 
-    adapter = TypeAdapter(collections.abc.MutableMapping, config=ConfigDict(strict=True))
+    assert isinstance(adapter.validate_python(UserDict()), MutableMapping)
 
-    assert isinstance(adapter.validate_python(collections.UserDict()), collections.abc.MutableMapping)
+
+def test_mapping_parameterized() -> None:
+    """https://github.com/pydantic/pydantic/issues/11650"""
+    adapter = TypeAdapter(Mapping[str, int])
+
+    with pytest.raises(ValidationError):
+        adapter.validate_python({'valid': 1, 'invalid': {}})
 
 
 def test_ser_ip_with_union() -> None:
@@ -7115,3 +7192,34 @@ def test_union_respects_local_strict() -> None:
 
     m = Model(a=[1, 2])
     assert m.a == (1, 2)
+
+
+def test_union_abc() -> None:
+    """https://github.com/pydantic/pydantic/issues/12230"""
+
+    class ABC_1(BaseModel, ABC):
+        @abstractmethod
+        def do_something(self):
+            pass
+
+    class ABC_2(BaseModel, ABC):
+        @abstractmethod
+        def do_something_else(self):
+            pass
+
+    class A1(ABC_1):
+        def do_something(self):
+            print('Doing something in A1')
+
+    class A2(ABC_2):
+        def do_something_else(self):
+            print('Doing something else in A2')
+
+    class X(BaseModel):
+        x: Union[ABC_1, ABC_2]
+
+    a1 = A1()
+    a2 = A2()
+
+    X(x=a1)
+    X(x=a2)

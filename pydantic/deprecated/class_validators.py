@@ -118,19 +118,19 @@ def validator(
     )
 
     if allow_reuse is True:  # pragma: no cover
-        warn(_ALLOW_REUSE_WARNING_MESSAGE, DeprecationWarning)
+        warn(_ALLOW_REUSE_WARNING_MESSAGE, DeprecationWarning, stacklevel=2)
     fields = __field, *fields
     if isinstance(fields[0], FunctionType):
         raise PydanticUserError(
             '`@validator` should be used with fields and keyword arguments, not bare. '
             "E.g. usage should be `@validator('<field_name>', ...)`",
-            code='validator-no-fields',
+            code='decorator-missing-arguments',
         )
     elif not all(isinstance(field, str) for field in fields):
         raise PydanticUserError(
             '`@validator` fields should be passed as separate string args. '
             "E.g. usage should be `@validator('<field_name_1>', '<field_name_2>', ...)`",
-            code='validator-invalid-fields',
+            code='decorator-invalid-fields',
         )
 
     mode: Literal['before', 'after'] = 'before' if pre is True else 'after'
@@ -234,7 +234,7 @@ def root_validator(
         return root_validator()(*__args)  # type: ignore
 
     if allow_reuse is True:  # pragma: no cover
-        warn(_ALLOW_REUSE_WARNING_MESSAGE, DeprecationWarning)
+        warn(_ALLOW_REUSE_WARNING_MESSAGE, DeprecationWarning, stacklevel=2)
     mode: Literal['before', 'after'] = 'before' if pre is True else 'after'
     if pre is False and skip_on_failure is not True:
         raise PydanticUserError(

@@ -78,6 +78,7 @@ class UrlConstraints:
         default_host: The default host. Defaults to `None`.
         default_port: The default port. Defaults to `None`.
         default_path: The default path. Defaults to `None`.
+        preserve_empty_path: Whether to preserve empty URL paths. Defaults to `None`.
     """
 
     max_length: int | None = None
@@ -86,6 +87,7 @@ class UrlConstraints:
     default_host: str | None = None
     default_port: int | None = None
     default_path: str | None = None
+    preserve_empty_path: bool | None = None
 
     def __hash__(self) -> int:
         return hash(
@@ -96,6 +98,7 @@ class UrlConstraints:
                 self.default_host,
                 self.default_port,
                 self.default_path,
+                self.preserve_empty_path,
             )
         )
 
@@ -216,6 +219,13 @@ class _BaseUrl:
         `unicode_string()` will be `https://£££.com`
         """
         return self._url.unicode_string()
+
+    def encoded_string(self) -> str:
+        """The URL's encoded string representation via __str__().
+
+        This returns the punycode-encoded host version of the URL as a string.
+        """
+        return str(self)
 
     def __str__(self) -> str:
         """The URL as a string, this will punycode encode the host if required."""
@@ -367,7 +377,7 @@ class _BaseMultiHostUrl:
     def query_params(self) -> list[tuple[str, str]]:
         """The query part of the URL as a list of key-value pairs.
 
-        e.g. `[('foo', 'bar')]` in `https://foo.com,bar.com/path?query#fragment`
+        e.g. `[('foo', 'bar')]` in `https://foo.com,bar.com/path?foo=bar#fragment`
         """
         return self._url.query_params()
 
@@ -397,6 +407,13 @@ class _BaseMultiHostUrl:
             A list of dicts, each representing a host.
         '''
         return self._url.hosts()
+
+    def encoded_string(self) -> str:
+        """The URL's encoded string representation via __str__().
+
+        This returns the punycode-encoded host version of the URL as a string.
+        """
+        return str(self)
 
     def unicode_string(self) -> str:
         """The URL as a unicode string, unlike `__str__()` this will not punycode encode the hosts."""
@@ -817,6 +834,23 @@ class MongoDsn(_BaseMultiHostUrl):
     * Database name not required
     * Port not required
     * User info may be passed without user part (e.g., `mongodb://mongodb0.example.com:27017`).
+
+    !!! warning
+        If a port isn't specified, the default MongoDB port `27017` will be used. If this behavior is
+        undesirable, you can use the following:
+
+        ```python
+        from typing import Annotated
+
+        from pydantic_core import MultiHostUrl
+
+        from pydantic import UrlConstraints
+
+        MongoDsnNoDefaultPort = Annotated[
+            MultiHostUrl,
+            UrlConstraints(allowed_schemes=['mongodb', 'mongodb+srv']),
+        ]
+        ```
     """
 
     _constraints = UrlConstraints(allowed_schemes=['mongodb', 'mongodb+srv'], default_port=27017)
@@ -931,7 +965,7 @@ def import_email_validator() -> None:
     try:
         import email_validator
     except ImportError as e:
-        raise ImportError('email-validator is not installed, run `pip install pydantic[email]`') from e
+        raise ImportError("email-validator is not installed, run `pip install 'pydantic[email]'`") from e
     if not version('email-validator').partition('.')[0] == '2':
         raise ImportError('email-validator version >= 2.0 required, run pip install -U email-validator')
 

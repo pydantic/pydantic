@@ -7,6 +7,9 @@ on:
       - docs-update
     tags:
       - '**'
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 env:
   COLUMNS: 150
@@ -16,16 +19,16 @@ jobs:
   lint:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
-      - uses: astral-sh/setup-uv@v5
+      - uses: astral-sh/setup-uv@v7
         with:
-          python-version: '3.12'
+          python-version: '3.13'
 
       - name: Install dependencies
         # Installing pip is required for the pre-commit action:
         run: |
-          uv sync --group linting --all-extras
+          uv sync --all-packages --group linting --all-extras
           uv pip install pip
 
       - uses: pre-commit/action@v3.0.1
@@ -37,14 +40,14 @@ jobs:
   test:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
-      - uses: astral-sh/setup-uv@v5
+      - uses: astral-sh/setup-uv@v7
         with:
-          python-version: '3.12'
+          python-version: '3.13'
 
       - name: Install dependencies
-        run: uv sync --group testing-extra --all-extras
+        run: uv sync --all-packages --group testing-extra --all-extras
 
       - run: 'uv run python -c "import pydantic.version; print(pydantic.version.version_info())"'
 
@@ -58,18 +61,18 @@ jobs:
 
     steps:
       - name: Checkout docs-site
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           ref: docs-site
 
       - name: Checkout current branch
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
-      - uses: astral-sh/setup-uv@v5
+      - uses: astral-sh/setup-uv@v7
         with:
-          python-version: '3.12'
+          python-version: '3.13'
 
-      - run: uv sync --group docs --group docs-upload
+      - run: uv sync --all-packages --group docs --group docs-upload
 
       - run: uv pip install --default-index https://pydantic:${PPPR_TOKEN}@pppr.pydantic.dev/simple/ mkdocs-material
         env:
@@ -77,13 +80,10 @@ jobs:
 
       - run: uv run python -c 'import docs.plugins.main'
 
-      # Adding local symlinks gets nice source locations like
-      #   pydantic_core/core_schema.py
-      # instead of
-      #   .venv/lib/python3.10/site-packages/pydantic_core/core_schema.py
+      # Taken from docs-build.sh
       - name: Prepare shortcuts for extra modules
         run: |
-          ln -s .venv/lib/python*/site-packages/pydantic_core pydantic_core
+          ln -s pydantic-core/python/pydantic_core pydantic_core
           ln -s .venv/lib/python*/site-packages/pydantic_settings pydantic_settings
           ln -s .venv/lib/python*/site-packages/pydantic_extra_types pydantic_extra_types
 
@@ -92,17 +92,17 @@ jobs:
           git config --global user.name "${{ github.actor }}"
           git config --global user.email "${{ github.actor }}@users.noreply.github.com"
 
-      - run: uv run mike deploy -b docs-site dev --push
+      - run: PYTHONPATH="$PWD${PYTHONPATH:+:${PYTHONPATH}}" uv run mike deploy -b docs-site dev --push
         if: github.ref == 'refs/heads/main'
 
       - if: github.ref == 'refs/heads/docs-update' || startsWith(github.ref, 'refs/tags/')
         id: check-version
-        uses: samuelcolvin/check-python-version@v4.1
+        uses: samuelcolvin/check-python-version@v5
         with:
           version_file_path: 'pydantic/version.py'
           skip_env_check: true
 
-      - run: uv run mike deploy -b docs-site ${{ steps.check-version.outputs.VERSION_MAJOR_MINOR }} latest --update-aliases --push
+      - run: PYTHONPATH="$PWD${PYTHONPATH:+:${PYTHONPATH}}" uv run mike deploy -b docs-site ${{ steps.check-version.outputs.VERSION_MAJOR_MINOR }} latest --update-aliases --push
         if: ${{ (github.ref == 'refs/heads/docs-update' || startsWith(github.ref, 'refs/tags/')) && !fromJSON(steps.check-version.outputs.IS_PRERELEASE) }}
         env:
           PYDANTIC_VERSION: v${{ steps.check-version.outputs.VERSION }}

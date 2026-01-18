@@ -6,45 +6,47 @@ specified for Pydantic's supported types.
 
 On Pydantic models, configuration can be specified in two ways:
 
-- Using the [`model_config`][pydantic.BaseModel.model_config] class attribute:
-  ```python
-  from pydantic import BaseModel, ConfigDict, ValidationError
+* Using the [`model_config`][pydantic.BaseModel.model_config] class attribute:
+
+    ```python
+    from pydantic import BaseModel, ConfigDict, ValidationError
 
 
-  class Model(BaseModel):
-      model_config = ConfigDict(str_max_length=5)  # (1)!
+    class Model(BaseModel):
+        model_config = ConfigDict(str_max_length=5)  # (1)!
 
-      v: str
+        v: str
 
 
-  try:
-      m = Model(v='abcdef')
-  except ValidationError as e:
-      print(e)
-      """
-      1 validation error for Model
-      v
-        String should have at most 5 characters [type=string_too_long, input_value='abcdef', input_type=str]
-      """
-  ```
+    try:
+        m = Model(v='abcdef')
+    except ValidationError as e:
+        print(e)
+        """
+        1 validation error for Model
+        v
+          String should have at most 5 characters [type=string_too_long, input_value='abcdef', input_type=str]
+        """
+    ```
 
     1. A plain dictionary (i.e. `{'str_max_length': 5}`) can also be used.
 
     !!! note
         In Pydantic V1, the `Config` class was used. This is still supported, but **deprecated**.
 
-- Using class arguments:
-  ```python
-  from pydantic import BaseModel
+* Using class arguments:
+
+    ```python
+    from pydantic import BaseModel
 
 
-  class Model(BaseModel, frozen=True):
-      a: str  # (1)!
-  ```
+    class Model(BaseModel, frozen=True):
+        a: str
+    ```
 
-    1. Unlike the [`model_config`][pydantic.BaseModel.model_config] class attribute,
-       static type checkers will recognize the `frozen` argument, and so any instance
-       mutation will be flagged as an type checking error.
+  Unlike the [`model_config`][pydantic.BaseModel.model_config] class attribute,
+  static type checkers will recognize class arguments. For `frozen`, any instance
+  mutation will be flagged as an type checking error.
 
 ## Configuration on Pydantic dataclasses
 
@@ -76,7 +78,7 @@ except ValidationError as e:
 ## Configuration on `TypeAdapter`
 
 [Type adapters](./type_adapter.md) (using the [`TypeAdapter`][pydantic.TypeAdapter] class) support configuration,
-by providing a `config` argument.
+by providing the `config` argument.
 
 ```python
 from pydantic import ConfigDict, TypeAdapter
@@ -87,38 +89,49 @@ print(ta.validate_python([1, 2]))
 #> ['1', '2']
 ```
 
+Configuration can't be provided if the type adapter directly wraps a type that support it, and a
+[usage error](../errors/usage_errors.md) is raised in this case.
+The [configuration propagation](#configuration-propagation) rules also apply.
+
 ## Configuration on other supported types
 
 If you are using [standard library dataclasses][dataclasses] or [`TypedDict`][typing.TypedDict] classes,
 the configuration can be set in two ways:
 
-- Using the `__pydantic_config__` class attribute:
-  ```python
-  from dataclasses import dataclass
+* Using the `__pydantic_config__` class attribute:
 
-  from pydantic import ConfigDict
+    ```python
+    from dataclasses import dataclass
+
+    from pydantic import ConfigDict
 
 
-  @dataclass
-  class User:
-      __pydantic_config__ = ConfigDict(strict=True)
+    @dataclass
+    class User:
+        __pydantic_config__ = ConfigDict(strict=True)
 
-      id: int
-      name: str = 'John Doe'
-  ```
+        id: int
+        name: str = 'John Doe'
+    ```
 
-- Using the [`with_config`][pydantic.config.with_config] decorator (this avoids static type checking errors with
+* Using the [`@with_config`][pydantic.config.with_config] decorator (this avoids static type checking errors with
   [`TypedDict`][typing.TypedDict]):
-  ```python
-  from typing_extensions import TypedDict
 
-  from pydantic import ConfigDict, with_config
+    ```python
+    from typing_extensions import TypedDict
+
+    from pydantic import ConfigDict, with_config
 
 
-  @with_config(ConfigDict(str_to_lower=True))
-  class Model(TypedDict):
-      x: str
-  ```
+    @with_config(ConfigDict(str_to_lower=True))
+    class Model(TypedDict):
+        x: str
+    ```
+
+## Configuration on the `@validate_call` decorator
+
+The [`@validate_call`](./validation_decorator.md) also supports setting custom configuration. See the
+[dedicated section](./validation_decorator.md#custom-configuration) for more details.
 
 ## Change behaviour globally
 
@@ -142,7 +155,7 @@ print(m.model_dump())
 #> {'x': 'foo', 'y': 'bar'}
 ```
 
-If you provide configuration to the subclasses, it will be _merged_ with the parent configuration:
+If you provide configuration to the subclasses, it will be *merged* with the parent configuration:
 
 ```python
 from pydantic import BaseModel, ConfigDict
@@ -173,24 +186,56 @@ print(Model.model_config)
 
 ## Configuration propagation
 
-Note that when using types that support configuration as field annotations on other types,
-configuration will *not* be propagated. In the following example, each model has its own
-"configuration boundary":
+When using types that support configuration as field annotations, configuration may not be propagated:
 
-```python
-from pydantic import BaseModel, ConfigDict
+* For Pydantic models and dataclasses, configuration will *not* be propagated, each model has its own
+  "configuration boundary":
 
-
-class User(BaseModel):
-    name: str
+    ```python
+    from pydantic import BaseModel, ConfigDict
 
 
-class Parent(BaseModel):
-    user: User
-
-    model_config = ConfigDict(str_max_length=2)
+    class User(BaseModel):
+        name: str
 
 
-print(Parent(user={'name': 'John Doe'}))
-#> user=User(name='John Doe')
-```
+    class Parent(BaseModel):
+        user: User
+
+        model_config = ConfigDict(str_to_lower=True)
+
+
+    print(Parent(user={'name': 'JOHN'}))
+    #> user=User(name='JOHN')
+    ```
+
+* For stdlib types (dataclasses and typed dictionaries), configuration will be propagated, unless
+  the type has its own configuration set:
+
+    ```python
+    from dataclasses import dataclass
+
+    from pydantic import BaseModel, ConfigDict, with_config
+
+
+    @dataclass
+    class UserWithoutConfig:
+        name: str
+
+
+    @dataclass
+    @with_config(str_to_lower=False)
+    class UserWithConfig:
+        name: str
+
+
+    class Parent(BaseModel):
+        user_1: UserWithoutConfig
+        user_2: UserWithConfig
+
+        model_config = ConfigDict(str_to_lower=True)
+
+
+    print(Parent(user_1={'name': 'JOHN'}, user_2={'name': 'JOHN'}))
+    #> user_1=UserWithoutConfig(name='john') user_2=UserWithConfig(name='JOHN')
+    ```

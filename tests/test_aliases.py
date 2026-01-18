@@ -36,6 +36,17 @@ def test_alias_generator():
     assert v.model_dump(by_alias=True) == data
 
 
+def test_alias_generator_defer_build() -> None:
+    def to_camel(string: str):
+        return ''.join(x.capitalize() for x in string.split('_'))
+
+    class Model(BaseModel):
+        model_config = ConfigDict(alias_generator=to_camel, defer_build=True)
+        foo_bar: str
+
+    assert Model.model_fields['foo_bar'].alias == 'FooBar'
+
+
 def test_alias_generator_wrong_type_error():
     def return_bytes(string):
         return b'not a string'
@@ -626,6 +637,42 @@ def test_validation_alias_parse_data():
             'input': {'b': ['hello']},
         }
     ]
+
+
+def test_validation_alias_priority():
+    class Model(BaseModel):
+        model_config = ConfigDict(validate_by_alias=True, validate_by_name=True)
+        a: str = Field(validation_alias=AliasChoices('b', AliasPath('c', 0), 'd'))
+
+    assert Model.model_validate({'a': 'a', 'b': 'b', 'c': ['c'], 'd': 'd'}).a == 'b'
+    assert Model.model_validate({'a': 'a', 'c': ['c'], 'd': 'd', 'b': 'b'}).a == 'b'
+    assert Model.model_validate({'a': 'a', 'd': 'd', 'b': 'b', 'c': ['c']}).a == 'b'
+
+    assert Model.model_validate({'a': 'a', 'c': ['c'], 'd': 'd'}).a == 'c'
+    assert Model.model_validate({'a': 'a', 'd': 'd', 'c': ['c']}).a == 'c'
+
+    assert Model.model_validate({'d': 'd', 'a': 'a'}).a == 'd'
+    assert Model.model_validate({'a': 'a', 'd': 'd'}).a == 'd'
+
+    assert Model.model_validate({'a': 'a'}).a == 'a'
+
+
+def test_validation_alias_priority_json():
+    class Model(BaseModel):
+        model_config = ConfigDict(validate_by_alias=True, validate_by_name=True)
+        a: str = Field(validation_alias=AliasChoices('b', AliasPath('c', 0), 'd'))
+
+    assert Model.model_validate_json(b'{"a": "a", "b": "b", "c": ["c"], "d": "d"}').a == 'b'
+    assert Model.model_validate_json(b'{"a": "a", "c": ["c"], "d": "d", "b": "b"}').a == 'b'
+    assert Model.model_validate_json(b'{"a": "a", "d": "d", "b": "b", "c": ["c"]}').a == 'b'
+
+    assert Model.model_validate_json(b'{"a": "a", "c": ["c"], "d": "d"}').a == 'c'
+    assert Model.model_validate_json(b'{"a": "a", "d": "d", "c": ["c"]}').a == 'c'
+
+    assert Model.model_validate_json(b'{"d": "d", "a": "a"}').a == 'd'
+    assert Model.model_validate_json(b'{"a": "a", "d": "d"}').a == 'd'
+
+    assert Model.model_validate_json(b'{"a": "a"}').a == 'a'
 
 
 def test_alias_generator_class() -> None:

@@ -3,6 +3,7 @@
 from __future__ import annotations as _annotations
 
 import sys
+import types
 from collections.abc import Callable, Iterable
 from dataclasses import is_dataclass
 from types import FrameType
@@ -23,7 +24,7 @@ from pydantic.errors import PydanticUserError
 from pydantic.main import BaseModel, IncEx
 
 from ._internal import _config, _generate_schema, _mock_val_ser, _namespace_utils, _repr, _typing_extra, _utils
-from .config import ConfigDict
+from .config import ConfigDict, ExtraValues
 from .errors import PydanticUndefinedAnnotation
 from .json_schema import (
     DEFAULT_REF_TEMPLATE,
@@ -215,19 +216,35 @@ class TypeAdapter(Generic[T]):
         self.pydantic_complete = False
 
         parent_frame = self._fetch_parent_frame()
-        if parent_frame is not None:
-            globalns = parent_frame.f_globals
-            # Do not provide a local ns if the type adapter happens to be instantiated at the module level:
-            localns = parent_frame.f_locals if parent_frame.f_locals is not globalns else {}
+        if isinstance(type, types.FunctionType):
+            # Special case functions, which are *not* pushed to the `NsResolver` stack and without this special case
+            # would only have access to the parent namespace where the `TypeAdapter` was instantiated (if the function is defined
+            # in another module, we need to look at that module's globals).
+            if parent_frame is not None:
+                # `f_locals` is the namespace where the type adapter was instantiated (~ to `f_globals` if at the module level):
+                parent_ns = parent_frame.f_locals
+            else:  # pragma: no cover
+                parent_ns = None
+            globalns, localns = _namespace_utils.ns_for_function(
+                type,
+                parent_namespace=parent_ns,
+            )
+            parent_namespace = None
         else:
-            globalns = {}
-            localns = {}
+            if parent_frame is not None:
+                globalns = parent_frame.f_globals
+                # Do not provide a local ns if the type adapter happens to be instantiated at the module level:
+                localns = parent_frame.f_locals if parent_frame.f_locals is not globalns else {}
+            else:  # pragma: no cover
+                globalns = {}
+                localns = {}
+            parent_namespace = localns
 
         self._module_name = module or cast(str, globalns.get('__name__', ''))
         self._init_core_attrs(
             ns_resolver=_namespace_utils.NsResolver(
                 namespaces_tuple=_namespace_utils.NamespacesTuple(locals=localns, globals=globalns),
-                parent_namespace=localns,
+                parent_namespace=parent_namespace,
             ),
             force=False,
         )
@@ -384,8 +401,9 @@ class TypeAdapter(Generic[T]):
         /,
         *,
         strict: bool | None = None,
+        extra: ExtraValues | None = None,
         from_attributes: bool | None = None,
-        context: dict[str, Any] | None = None,
+        context: Any | None = None,
         experimental_allow_partial: bool | Literal['off', 'on', 'trailing-strings'] = False,
         by_alias: bool | None = None,
         by_name: bool | None = None,
@@ -395,6 +413,8 @@ class TypeAdapter(Generic[T]):
         Args:
             object: The Python object to validate against the model.
             strict: Whether to strictly check types.
+            extra: Whether to ignore, allow, or forbid extra data during model validation.
+                See the [`extra` configuration value][pydantic.ConfigDict.extra] for details.
             from_attributes: Whether to extract data from object attributes.
             context: Additional context to pass to the validator.
             experimental_allow_partial: **Experimental** whether to enable
@@ -421,6 +441,7 @@ class TypeAdapter(Generic[T]):
         return self.validator.validate_python(
             object,
             strict=strict,
+            extra=extra,
             from_attributes=from_attributes,
             context=context,
             allow_partial=experimental_allow_partial,
@@ -434,7 +455,8 @@ class TypeAdapter(Generic[T]):
         /,
         *,
         strict: bool | None = None,
-        context: dict[str, Any] | None = None,
+        extra: ExtraValues | None = None,
+        context: Any | None = None,
         experimental_allow_partial: bool | Literal['off', 'on', 'trailing-strings'] = False,
         by_alias: bool | None = None,
         by_name: bool | None = None,
@@ -447,6 +469,8 @@ class TypeAdapter(Generic[T]):
         Args:
             data: The JSON data to validate against the model.
             strict: Whether to strictly check types.
+            extra: Whether to ignore, allow, or forbid extra data during model validation.
+                See the [`extra` configuration value][pydantic.ConfigDict.extra] for details.
             context: Additional context to use during validation.
             experimental_allow_partial: **Experimental** whether to enable
                 [partial validation](../concepts/experimental.md#partial-validation), e.g. to process streams.
@@ -468,6 +492,7 @@ class TypeAdapter(Generic[T]):
         return self.validator.validate_json(
             data,
             strict=strict,
+            extra=extra,
             context=context,
             allow_partial=experimental_allow_partial,
             by_alias=by_alias,
@@ -480,7 +505,8 @@ class TypeAdapter(Generic[T]):
         /,
         *,
         strict: bool | None = None,
-        context: dict[str, Any] | None = None,
+        extra: ExtraValues | None = None,
+        context: Any | None = None,
         experimental_allow_partial: bool | Literal['off', 'on', 'trailing-strings'] = False,
         by_alias: bool | None = None,
         by_name: bool | None = None,
@@ -490,6 +516,8 @@ class TypeAdapter(Generic[T]):
         Args:
             obj: The object contains string data to validate.
             strict: Whether to strictly check types.
+            extra: Whether to ignore, allow, or forbid extra data during model validation.
+                See the [`extra` configuration value][pydantic.ConfigDict.extra] for details.
             context: Additional context to use during validation.
             experimental_allow_partial: **Experimental** whether to enable
                 [partial validation](../concepts/experimental.md#partial-validation), e.g. to process streams.
@@ -511,13 +539,14 @@ class TypeAdapter(Generic[T]):
         return self.validator.validate_strings(
             obj,
             strict=strict,
+            extra=extra,
             context=context,
             allow_partial=experimental_allow_partial,
             by_alias=by_alias,
             by_name=by_name,
         )
 
-    def get_default_value(self, *, strict: bool | None = None, context: dict[str, Any] | None = None) -> Some[T] | None:
+    def get_default_value(self, *, strict: bool | None = None, context: Any | None = None) -> Some[T] | None:
         """Get the default value for the wrapped type.
 
         Args:
@@ -541,11 +570,12 @@ class TypeAdapter(Generic[T]):
         exclude_unset: bool = False,
         exclude_defaults: bool = False,
         exclude_none: bool = False,
+        exclude_computed_fields: bool = False,
         round_trip: bool = False,
         warnings: bool | Literal['none', 'warn', 'error'] = True,
         fallback: Callable[[Any], Any] | None = None,
         serialize_as_any: bool = False,
-        context: dict[str, Any] | None = None,
+        context: Any | None = None,
     ) -> Any:
         """Dump an instance of the adapted type to a Python object.
 
@@ -558,6 +588,9 @@ class TypeAdapter(Generic[T]):
             exclude_unset: Whether to exclude unset fields.
             exclude_defaults: Whether to exclude fields with default values.
             exclude_none: Whether to exclude fields with None values.
+            exclude_computed_fields: Whether to exclude computed fields.
+                While this can be useful for round-tripping, it is usually recommended to use the dedicated
+                `round_trip` parameter instead.
             round_trip: Whether to output the serialized data in a way that is compatible with deserialization.
             warnings: How to handle serialization errors. False/"none" ignores them, True/"warn" logs errors,
                 "error" raises a [`PydanticSerializationError`][pydantic_core.PydanticSerializationError].
@@ -578,6 +611,7 @@ class TypeAdapter(Generic[T]):
             exclude_unset=exclude_unset,
             exclude_defaults=exclude_defaults,
             exclude_none=exclude_none,
+            exclude_computed_fields=exclude_computed_fields,
             round_trip=round_trip,
             warnings=warnings,
             fallback=fallback,
@@ -591,17 +625,19 @@ class TypeAdapter(Generic[T]):
         /,
         *,
         indent: int | None = None,
+        ensure_ascii: bool = False,
         include: IncEx | None = None,
         exclude: IncEx | None = None,
         by_alias: bool | None = None,
         exclude_unset: bool = False,
         exclude_defaults: bool = False,
         exclude_none: bool = False,
+        exclude_computed_fields: bool = False,
         round_trip: bool = False,
         warnings: bool | Literal['none', 'warn', 'error'] = True,
         fallback: Callable[[Any], Any] | None = None,
         serialize_as_any: bool = False,
-        context: dict[str, Any] | None = None,
+        context: Any | None = None,
     ) -> bytes:
         """!!! abstract "Usage Documentation"
             [JSON Serialization](../concepts/json.md#json-serialization)
@@ -611,12 +647,17 @@ class TypeAdapter(Generic[T]):
         Args:
             instance: The instance to be serialized.
             indent: Number of spaces for JSON indentation.
+            ensure_ascii: If `True`, the output is guaranteed to have all incoming non-ASCII characters escaped.
+                If `False` (the default), these characters will be output as-is.
             include: Fields to include.
             exclude: Fields to exclude.
             by_alias: Whether to use alias names for field names.
             exclude_unset: Whether to exclude unset fields.
             exclude_defaults: Whether to exclude fields with default values.
             exclude_none: Whether to exclude fields with a value of `None`.
+            exclude_computed_fields: Whether to exclude computed fields.
+                While this can be useful for round-tripping, it is usually recommended to use the dedicated
+                `round_trip` parameter instead.
             round_trip: Whether to serialize and deserialize the instance to ensure round-tripping.
             warnings: How to handle serialization errors. False/"none" ignores them, True/"warn" logs errors,
                 "error" raises a [`PydanticSerializationError`][pydantic_core.PydanticSerializationError].
@@ -631,12 +672,14 @@ class TypeAdapter(Generic[T]):
         return self.serializer.to_json(
             instance,
             indent=indent,
+            ensure_ascii=ensure_ascii,
             include=include,
             exclude=exclude,
             by_alias=by_alias,
             exclude_unset=exclude_unset,
             exclude_defaults=exclude_defaults,
             exclude_none=exclude_none,
+            exclude_computed_fields=exclude_computed_fields,
             round_trip=round_trip,
             warnings=warnings,
             fallback=fallback,
@@ -649,6 +692,7 @@ class TypeAdapter(Generic[T]):
         *,
         by_alias: bool = True,
         ref_template: str = DEFAULT_REF_TEMPLATE,
+        union_format: Literal['any_of', 'primitive_type_array'] = 'any_of',
         schema_generator: type[GenerateJsonSchema] = GenerateJsonSchema,
         mode: JsonSchemaMode = 'validation',
     ) -> dict[str, Any]:
@@ -657,13 +701,26 @@ class TypeAdapter(Generic[T]):
         Args:
             by_alias: Whether to use alias names for field names.
             ref_template: The format string used for generating $ref strings.
+            union_format: The format to use when combining schemas from unions together. Can be one of:
+
+                - `'any_of'`: Use the [`anyOf`](https://json-schema.org/understanding-json-schema/reference/combining#anyOf)
+                keyword to combine schemas (the default).
+                - `'primitive_type_array'`: Use the [`type`](https://json-schema.org/understanding-json-schema/reference/type)
+                keyword as an array of strings, containing each type of the combination. If any of the schemas is not a primitive
+                type (`string`, `boolean`, `null`, `integer` or `number`) or contains constraints/metadata, falls back to
+                `any_of`.
+            schema_generator: To override the logic used to generate the JSON schema, as a subclass of
+                `GenerateJsonSchema` with your desired modifications
+            mode: The mode in which to generate the schema.
             schema_generator: The generator class used for creating the schema.
             mode: The mode to use for schema generation.
 
         Returns:
             The JSON schema for the model as a dictionary.
         """
-        schema_generator_instance = schema_generator(by_alias=by_alias, ref_template=ref_template)
+        schema_generator_instance = schema_generator(
+            by_alias=by_alias, ref_template=ref_template, union_format=union_format
+        )
         if isinstance(self.core_schema, _mock_val_ser.MockCoreSchema):
             self.core_schema.rebuild()
             assert not isinstance(self.core_schema, _mock_val_ser.MockCoreSchema), 'this is a bug! please report it'
@@ -678,6 +735,7 @@ class TypeAdapter(Generic[T]):
         title: str | None = None,
         description: str | None = None,
         ref_template: str = DEFAULT_REF_TEMPLATE,
+        union_format: Literal['any_of', 'primitive_type_array'] = 'any_of',
         schema_generator: type[GenerateJsonSchema] = GenerateJsonSchema,
     ) -> tuple[dict[tuple[JsonSchemaKeyT, JsonSchemaMode], JsonSchemaValue], JsonSchemaValue]:
         """Generate a JSON schema including definitions from multiple type adapters.
@@ -690,6 +748,14 @@ class TypeAdapter(Generic[T]):
             title: The title for the schema.
             description: The description for the schema.
             ref_template: The format string used for generating $ref strings.
+            union_format: The format to use when combining schemas from unions together. Can be one of:
+
+                - `'any_of'`: Use the [`anyOf`](https://json-schema.org/understanding-json-schema/reference/combining#anyOf)
+                keyword to combine schemas (the default).
+                - `'primitive_type_array'`: Use the [`type`](https://json-schema.org/understanding-json-schema/reference/type)
+                keyword as an array of strings, containing each type of the combination. If any of the schemas is not a primitive
+                type (`string`, `boolean`, `null`, `integer` or `number`) or contains constraints/metadata, falls back to
+                `any_of`.
             schema_generator: The generator class used for creating the schema.
 
         Returns:
@@ -702,7 +768,9 @@ class TypeAdapter(Generic[T]):
                     element, along with the optional title and description keys.
 
         """
-        schema_generator_instance = schema_generator(by_alias=by_alias, ref_template=ref_template)
+        schema_generator_instance = schema_generator(
+            by_alias=by_alias, ref_template=ref_template, union_format=union_format
+        )
 
         inputs_ = []
         for key, mode, adapter in inputs:

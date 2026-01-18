@@ -13,6 +13,7 @@ from typing_extensions import TypeAlias
 from . import PydanticUndefinedAnnotation
 from ._internal import _decorators, _internal_dataclass
 from .annotated_handlers import GetCoreSchemaHandler
+from .errors import PydanticUserError
 
 
 @dataclasses.dataclass(**_internal_dataclass.slots_true, frozen=True)
@@ -228,9 +229,12 @@ def field_serializer(
 ) -> Callable[[_FieldPlainSerializerT], _FieldPlainSerializerT]: ...
 
 
-def field_serializer(
+def field_serializer(  # noqa: D417
+    field: str,
+    /,
     *fields: str,
     mode: Literal['plain', 'wrap'] = 'plain',
+    # TODO PEP 747 (grep for 'return_type' on the whole code base):
     return_type: Any = PydanticUndefined,
     when_used: WhenUsed = 'always',
     check_fields: bool | None = None,
@@ -243,16 +247,14 @@ def field_serializer(
     In the below example, a field of type `set` is used to mitigate duplication. A `field_serializer` is used to serialize the data as a sorted list.
 
     ```python
-    from typing import Set
-
     from pydantic import BaseModel, field_serializer
 
     class StudentModel(BaseModel):
         name: str = 'Jane'
-        courses: Set[str]
+        courses: set[str]
 
         @field_serializer('courses', when_used='json')
-        def serialize_courses_in_order(self, courses: Set[str]):
+        def serialize_courses_in_order(self, courses: set[str]):
             return sorted(courses)
 
     student = StudentModel(courses={'Math', 'Chemistry', 'English'})
@@ -260,9 +262,9 @@ def field_serializer(
     #> {"name":"Jane","courses":["Chemistry","English","Math"]}
     ```
 
-    See [Custom serializers](../concepts/serialization.md#custom-serializers) for more information.
+    See [the usage documentation](../concepts/serialization.md#serializers) for more information.
 
-    Four signatures are supported:
+    Four signatures are supported for the decorated serializer:
 
     - `(self, value: Any, info: FieldSerializationInfo)`
     - `(self, value: Any, nxt: SerializerFunctionWrapHandler, info: FieldSerializationInfo)`
@@ -270,7 +272,7 @@ def field_serializer(
     - `(value: Any, nxt: SerializerFunctionWrapHandler, info: SerializationInfo)`
 
     Args:
-        fields: Which field(s) the method should be called on.
+        *fields: The field names the serializer should apply to.
         mode: The serialization mode.
 
             - `plain` means the function will be called instead of the default serialization logic,
@@ -280,9 +282,25 @@ def field_serializer(
         when_used: Determines the serializer will be used for serialization.
         check_fields: Whether to check that the fields actually exist on the model.
 
-    Returns:
-        The decorator function.
+    Raises:
+        PydanticUserError:
+            - If the decorator is used without any arguments (at least one field name must be provided).
+            - If the provided field names are not strings.
     """
+    if callable(field) or isinstance(field, classmethod):
+        raise PydanticUserError(
+            'The `@field_serializer` decorator cannot be used without arguments, at least one field must be provided. '
+            "For example: `@field_serializer('<field_name>', ...)`.",
+            code='decorator-missing-arguments',
+        )
+
+    fields = field, *fields
+    if not all(isinstance(field, str) for field in fields):
+        raise PydanticUserError(
+            'The provided field names to the `@field_serializer` decorator should be strings. '
+            "For example: `@field_serializer('<field_name_1>', '<field_name_2>', ...).`",
+            code='decorator-invalid-fields',
+        )
 
     def dec(f: FieldSerializer) -> _decorators.PydanticDescriptorProxy[Any]:
         dec_info = _decorators.FieldSerializerDecoratorInfo(
@@ -300,7 +318,7 @@ def field_serializer(
 if TYPE_CHECKING:
     # The first argument in the following callables represent the `self` type:
 
-    ModelPlainSerializerWithInfo: TypeAlias = Callable[[Any, SerializationInfo], Any]
+    ModelPlainSerializerWithInfo: TypeAlias = Callable[[Any, SerializationInfo[Any]], Any]
     """A model serializer method with the `info` argument, in `plain` mode."""
 
     ModelPlainSerializerWithoutInfo: TypeAlias = Callable[[Any], Any]
@@ -309,7 +327,7 @@ if TYPE_CHECKING:
     ModelPlainSerializer: TypeAlias = 'ModelPlainSerializerWithInfo | ModelPlainSerializerWithoutInfo'
     """A model serializer method in `plain` mode."""
 
-    ModelWrapSerializerWithInfo: TypeAlias = Callable[[Any, SerializerFunctionWrapHandler, SerializationInfo], Any]
+    ModelWrapSerializerWithInfo: TypeAlias = Callable[[Any, SerializerFunctionWrapHandler, SerializationInfo[Any]], Any]
     """A model serializer method with the `info` argument, in `wrap` mode."""
 
     ModelWrapSerializerWithoutInfo: TypeAlias = Callable[[Any, SerializerFunctionWrapHandler], Any]
@@ -391,7 +409,7 @@ def model_serializer(
     - `(self, nxt: SerializerFunctionWrapHandler)`
     - `(self, nxt: SerializerFunctionWrapHandler, info: SerializationInfo)`
 
-        See [Custom serializers](../concepts/serialization.md#custom-serializers) for more information.
+        See [the usage documentation](../concepts/serialization.md#serializers) for more information.
 
     Args:
         f: The function to be decorated.
@@ -422,15 +440,19 @@ AnyType = TypeVar('AnyType')
 
 if TYPE_CHECKING:
     SerializeAsAny = Annotated[AnyType, ...]  # SerializeAsAny[list[str]] will be treated by type checkers as list[str]
-    """Force serialization to ignore whatever is defined in the schema and instead ask the object
-    itself how it should be serialized.
-    In particular, this means that when model subclasses are serialized, fields present in the subclass
-    but not in the original schema will be included.
+    """Annotation used to mark a type as having duck-typing serialization behavior.
+
+    See [usage documentation](../concepts/serialization.md#serializing-with-duck-typing) for more details.
     """
 else:
 
     @dataclasses.dataclass(**_internal_dataclass.slots_true)
-    class SerializeAsAny:  # noqa: D101
+    class SerializeAsAny:
+        """Annotation used to mark a type as having duck-typing serialization behavior.
+
+        See [usage documentation](../concepts/serialization.md#serializing-with-duck-typing) for more details.
+        """
+
         def __class_getitem__(cls, item: Any) -> Any:
             return Annotated[item, SerializeAsAny()]
 
@@ -442,9 +464,7 @@ else:
             while schema_to_update['type'] == 'definitions':
                 schema_to_update = schema_to_update.copy()
                 schema_to_update = schema_to_update['schema']
-            schema_to_update['serialization'] = core_schema.wrap_serializer_function_ser_schema(
-                lambda x, h: h(x), schema=core_schema.any_schema()
-            )
+            schema_to_update['serialization'] = core_schema.simple_ser_schema('any')
             return schema
 
         __hash__ = object.__hash__

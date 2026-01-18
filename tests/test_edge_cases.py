@@ -39,6 +39,7 @@ from pydantic import (
     PrivateAttr,
     PydanticDeprecatedSince20,
     PydanticSchemaGenerationError,
+    PydanticUndefinedAnnotation,
     PydanticUserError,
     RootModel,
     TypeAdapter,
@@ -973,7 +974,7 @@ def test_inheritance():
         a: float = ...
 
     with pytest.raises(
-        TypeError,
+        PydanticUserError,
         match=(
             "Field 'a' defined on a base class was overridden by a non-annotated attribute. "
             'All field definitions, including overrides, require a type annotation.'
@@ -1138,7 +1139,7 @@ def test_annotation_inheritance():
     assert C.model_fields['integer'].annotation == str
 
     with pytest.raises(
-        TypeError,
+        PydanticUserError,
         match=(
             "Field 'integer' defined on a base class was overridden by a non-annotated attribute. "
             'All field definitions, including overrides, require a type annotation.'
@@ -2154,7 +2155,7 @@ def test_custom_generic_disallowed():
         r'Unable to generate pydantic-core schema for (.*)MyGen\[str, bool\](.*). '
         r'Set `arbitrary_types_allowed=True` in the model_config to ignore this error'
     )
-    with pytest.raises(TypeError, match=match):
+    with pytest.raises(PydanticUserError, match=match):
 
         class Model(BaseModel):
             a: str
@@ -2637,6 +2638,33 @@ def test_invalid_forward_ref_model():
     ]
 
 
+def test_incomplete_superclass() -> None:
+    class MyModel(BaseModel):
+        sub_model: 'SubModel'
+
+    assert not MyModel.__pydantic_fields_complete__
+    assert not MyModel.__pydantic_complete__
+
+    with pytest.raises(PydanticUndefinedAnnotation, match="name 'SubModel' is not defined"):
+        MyModel.model_rebuild()
+
+    class SubModel(MyModel):
+        pass
+
+    # SubModel is complete because it reinterprets the superclass's fields and finds 'SubModel' to match itself
+    assert SubModel.__pydantic_fields_complete__
+    assert SubModel.__pydantic_complete__
+
+    # MyModel is still incomplete until it's rebuilt
+    assert not MyModel.__pydantic_fields_complete__
+    assert not MyModel.__pydantic_complete__
+
+    MyModel.model_rebuild()
+
+    assert MyModel.__pydantic_fields_complete__
+    assert MyModel.__pydantic_complete__
+
+
 @pytest.mark.parametrize(
     ('sequence_type', 'input_data', 'expected_error_type', 'expected_error_msg', 'expected_error_ctx'),
     [
@@ -2992,6 +3020,11 @@ def test_setattr_handler_does_not_memoize_on_validate_assignment_field_failure()
     assert 'a' in Model.__pydantic_setattr_handlers__
 
 
+# The following 3 tests define a `__get_pydantic_core_schema__()` method on Pydantic models.
+# This isn't explicitly supported and can lead to unexpected side effects, but are here
+# to prevent potential regressions:
+
+
 def test_get_pydantic_core_schema_on_referenceable_type() -> None:
     # This ensures that even if you define the method, it won't actually
     # be called twice and the cached definition will be used instead.
@@ -3048,6 +3081,31 @@ def test_repeated_custom_type() -> None:
 
     with pytest.raises(ValidationError):
         OuterModel(x=2, y=-1, z=-1)
+
+
+def test_get_pydantic_core_schema_noop() -> None:
+    """https://github.com/pydantic/pydantic/issues/12096"""
+
+    class Metadata(BaseModel):
+        foo: int = 100
+
+        @classmethod
+        def __get_pydantic_core_schema__(cls, source_type, handler: GetCoreSchemaHandler) -> CoreSchema:
+            return handler(source_type)
+
+    class Model1(BaseModel):
+        f: Annotated[str, Metadata()]
+
+    assert isinstance(Model1.model_fields['f'].metadata[0], Metadata)
+    assert Model1(f='test').f == 'test'
+
+    class Model2(BaseModel):
+        f1: Annotated[str, Metadata()]
+        f2: Annotated[str, Metadata()] = 'f2'
+
+    m2 = Model2(f1='f1')
+    assert m2.f1 == 'f1'
+    assert m2.f2 == 'f2'
 
 
 def test_validator_and_serializer_not_reused_during_rebuild() -> None:

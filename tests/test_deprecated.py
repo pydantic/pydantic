@@ -330,13 +330,13 @@ def test_fields():
     m = Model(x=1)
     assert len(Model.model_fields) == 2
 
-    with pytest.warns(PydanticDeprecatedSince211):
+    with pytest.warns(PydanticDeprecatedSince211, match="Accessing the 'model_fields' attribute"):
         assert len(m.model_fields) == 2
 
-    with pytest.warns(PydanticDeprecatedSince211):
+    with pytest.warns(PydanticDeprecatedSince211, match="Accessing the 'model_computed_fields' attribute"):
         assert len(m.model_computed_fields) == 1
 
-    match = '^The `__fields__` attribute is deprecated, use `model_fields` instead.'
+    match = '^The `__fields__` attribute is deprecated, use the `model_fields` class property instead.'
     with pytest.warns(PydanticDeprecatedSince20, match=match):
         assert len(Model.__fields__) == 2
     with pytest.warns(PydanticDeprecatedSince20, match=match):

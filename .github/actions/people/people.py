@@ -4,7 +4,6 @@ This logic is inspired by that of @tiangolo's
 [FastAPI people script](https://github.com/tiangolo/fastapi/blob/master/.github/actions/people/app/main.py).
 """
 
-# TODO: add docstrings to classes and functions (good first issue)
 # ruff: noqa: D101
 # ruff: noqa: D103
 
@@ -15,7 +14,7 @@ from collections import Counter
 from collections.abc import Container
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
-from typing import Any, Union
+from typing import Any
 
 import requests
 import yaml
@@ -152,6 +151,8 @@ query Q($after: String) {
 
 
 class Author(BaseModel):
+    """Represents a GitHub user with their basic information."""
+
     login: str
     avatarUrl: str
     url: str
@@ -161,29 +162,41 @@ class Author(BaseModel):
 
 
 class CommentsNode(BaseModel):
+    """Represents a comment node with creation time and author information."""
+
     createdAt: datetime
-    author: Union[Author, None] = None
+    author: Author | None = None
 
 
 class Replies(BaseModel):
+    """Container for reply nodes in a discussion."""
+
     nodes: list[CommentsNode]
 
 
 class DiscussionsCommentsNode(CommentsNode):
+    """Extends CommentsNode to include replies in discussions."""
+
     replies: Replies
 
 
 class Comments(BaseModel):
+    """Container for comment nodes."""
+
     nodes: list[CommentsNode]
 
 
 class DiscussionsComments(BaseModel):
+    """Container for discussion comment nodes."""
+
     nodes: list[DiscussionsCommentsNode]
 
 
 class IssuesNode(BaseModel):
+    """Represents a GitHub issue with its metadata and comments."""
+
     number: int
-    author: Union[Author, None] = None
+    author: Author | None = None
     title: str
     createdAt: datetime
     state: str
@@ -191,52 +204,74 @@ class IssuesNode(BaseModel):
 
 
 class DiscussionsNode(BaseModel):
+    """Represents a GitHub discussion with its metadata and comments."""
+
     number: int
-    author: Union[Author, None] = None
+    author: Author | None = None
     title: str
     createdAt: datetime
     comments: DiscussionsComments
 
 
 class IssuesEdge(BaseModel):
+    """Represents an edge in the GitHub GraphQL issues query."""
+
     cursor: str
     node: IssuesNode
 
 
 class DiscussionsEdge(BaseModel):
+    """Represents an edge in the GitHub GraphQL discussions query."""
+
     cursor: str
     node: DiscussionsNode
 
 
 class Issues(BaseModel):
+    """Container for issue edges."""
+
     edges: list[IssuesEdge]
 
 
 class Discussions(BaseModel):
+    """Container for discussion edges."""
+
     edges: list[DiscussionsEdge]
 
 
 class IssuesRepository(BaseModel):
+    """Represents a repository's issues in the GitHub GraphQL response."""
+
     issues: Issues
 
 
 class DiscussionsRepository(BaseModel):
+    """Represents a repository's discussions in the GitHub GraphQL response."""
+
     discussions: Discussions
 
 
 class IssuesResponseData(BaseModel):
+    """Top-level container for issues response data."""
+
     repository: IssuesRepository
 
 
 class DiscussionsResponseData(BaseModel):
+    """Top-level container for discussions response data."""
+
     repository: DiscussionsRepository
 
 
 class IssuesResponse(BaseModel):
+    """Complete response structure for issues query."""
+
     data: IssuesResponseData
 
 
 class DiscussionsResponse(BaseModel):
+    """Complete response structure for discussions query."""
+
     data: DiscussionsResponseData
 
 
@@ -244,26 +279,36 @@ class DiscussionsResponse(BaseModel):
 
 
 class LabelNode(BaseModel):
+    """Represents a GitHub label."""
+
     name: str
 
 
 class Labels(BaseModel):
+    """Container for label nodes."""
+
     nodes: list[LabelNode]
 
 
 class ReviewNode(BaseModel):
-    author: Union[Author, None] = None
+    """Represents a pull request review with author and state."""
+
+    author: Author | None = None
     state: str
 
 
 class Reviews(BaseModel):
+    """Container for review nodes."""
+
     nodes: list[ReviewNode]
 
 
 class PullRequestNode(BaseModel):
+    """Represents a GitHub pull request with its metadata and interactions."""
+
     number: int
     labels: Labels
-    author: Union[Author, None] = None
+    author: Author | None = None
     title: str
     createdAt: datetime
     state: str
@@ -272,27 +317,39 @@ class PullRequestNode(BaseModel):
 
 
 class PullRequestEdge(BaseModel):
+    """Represents an edge in the GitHub GraphQL pull requests query."""
+
     cursor: str
     node: PullRequestNode
 
 
 class PullRequests(BaseModel):
+    """Container for pull request edges."""
+
     edges: list[PullRequestEdge]
 
 
 class PRsRepository(BaseModel):
+    """Represents a repository's pull requests in the GitHub GraphQL response."""
+
     pullRequests: PullRequests
 
 
 class PRsResponseData(BaseModel):
+    """Top-level container for pull requests response data."""
+
     repository: PRsRepository
 
 
 class PRsResponse(BaseModel):
+    """Complete response structure for pull requests query."""
+
     data: PRsResponseData
 
 
 class Settings(BaseSettings):
+    """Configuration settings for the GitHub API interaction."""
+
     input_token: SecretStr
     github_repository: str = 'pydantic/pydantic'
     request_timeout: int = 30
@@ -302,8 +359,21 @@ def get_graphql_response(
     *,
     settings: Settings,
     query: str,
-    after: Union[str, None] = None,
+    after: str | None = None,
 ) -> dict[str, Any]:
+    """Make a GraphQL request to GitHub API.
+
+    Args:
+        settings: Configuration settings including API token
+        query: GraphQL query string
+        after: Cursor for pagination, if any
+
+    Returns:
+        Response data from GitHub API in JSON format
+
+    Raises:
+        RuntimeError: If the API request fails or returns errors
+    """
     headers = {'Authorization': f'token {settings.input_token.get_secret_value()}'}
     variables = {'after': after}
     response = requests.post(
@@ -325,7 +395,16 @@ def get_graphql_response(
     return data
 
 
-def get_graphql_issue_edges(*, settings: Settings, after: Union[str, None] = None):
+def get_graphql_issue_edges(*, settings: Settings, after: str | None = None) -> list[IssuesEdge]:
+    """Fetch issue edges from GitHub GraphQL API.
+
+    Args:
+        settings: Configuration settings
+        after: Cursor for pagination, if any
+
+    Returns:
+        List of issue edges from the GraphQL response
+    """
     data = get_graphql_response(settings=settings, query=issues_query, after=after)
     graphql_response = IssuesResponse.model_validate(data)
     return graphql_response.data.repository.issues.edges
@@ -334,8 +413,17 @@ def get_graphql_issue_edges(*, settings: Settings, after: Union[str, None] = Non
 def get_graphql_question_discussion_edges(
     *,
     settings: Settings,
-    after: Union[str, None] = None,
-):
+    after: str | None = None,
+) -> list[DiscussionsEdge]:
+    """Fetch discussion edges from GitHub GraphQL API.
+
+    Args:
+        settings: Configuration settings
+        after: Cursor for pagination, if any
+
+    Returns:
+        List of discussion edges from the GraphQL response
+    """
     data = get_graphql_response(
         settings=settings,
         query=discussions_query,
@@ -345,19 +433,38 @@ def get_graphql_question_discussion_edges(
     return graphql_response.data.repository.discussions.edges
 
 
-def get_graphql_pr_edges(*, settings: Settings, after: Union[str, None] = None):
+def get_graphql_pr_edges(*, settings: Settings, after: str | None = None) -> list[PullRequestEdge]:
+    """Fetch pull request edges from GitHub GraphQL API.
+
+    Args:
+        settings: Configuration settings
+        after: Cursor for pagination, if any
+
+    Returns:
+        List of pull request edges from the GraphQL response
+    """
     data = get_graphql_response(settings=settings, query=prs_query, after=after)
     graphql_response = PRsResponse.model_validate(data)
     return graphql_response.data.repository.pullRequests.edges
 
 
-def get_issues_experts(settings: Settings):
+def get_issues_experts(settings: Settings) -> tuple[Counter, Counter, dict[str, Author]]:
+    """Analyze issues to identify expert contributors.
+
+    Args:
+        settings: Configuration settings
+
+    Returns:
+        A tuple containing:
+            - Counter of all commentors
+            - Counter of commentors from the last month
+            - Dictionary mapping usernames to Author objects
+    """
     issue_nodes: list[IssuesNode] = []
     issue_edges = get_graphql_issue_edges(settings=settings)
 
     while issue_edges:
-        for edge in issue_edges:
-            issue_nodes.append(edge.node)
+        issue_nodes.extend(edge.node for edge in issue_edges)
         last_edge = issue_edges[-1]
         issue_edges = get_graphql_issue_edges(settings=settings, after=last_edge.cursor)
 
@@ -387,13 +494,23 @@ def get_issues_experts(settings: Settings):
     return commentors, last_month_commentors, authors
 
 
-def get_discussions_experts(settings: Settings):
+def get_discussions_experts(settings: Settings) -> tuple[Counter, Counter, dict[str, Author]]:
+    """Analyze discussions to identify expert contributors.
+
+    Args:
+        settings: Configuration settings
+
+    Returns:
+        A tuple containing:
+            - Counter of all commentors
+            - Counter of commentors from the last month
+            - Dictionary mapping usernames to Author objects
+    """
     discussion_nodes: list[DiscussionsNode] = []
     discussion_edges = get_graphql_question_discussion_edges(settings=settings)
 
     while discussion_edges:
-        for discussion_edge in discussion_edges:
-            discussion_nodes.append(discussion_edge.node)
+        discussion_nodes.extend(discussion_edge.node for discussion_edge in discussion_edges)
         last_edge = discussion_edges[-1]
         discussion_edges = get_graphql_question_discussion_edges(settings=settings, after=last_edge.cursor)
 
@@ -427,7 +544,18 @@ def get_discussions_experts(settings: Settings):
     return commentors, last_month_commentors, authors
 
 
-def get_experts(settings: Settings):
+def get_experts(settings: Settings) -> tuple[Counter, Counter, dict[str, Author]]:
+    """Get combined expert contributors from discussions.
+
+    Args:
+        settings: Configuration settings
+
+    Returns:
+        A tuple containing:
+            - Counter of all commentors
+            - Counter of commentors from the last month
+            - Dictionary mapping usernames to Author objects
+    """
     # Migrated to only use GitHub Discussions
     # (
     #     issues_commentors,
@@ -450,13 +578,24 @@ def get_experts(settings: Settings):
     return commentors, last_month_commentors, authors
 
 
-def get_contributors(settings: Settings):
+def get_contributors(settings: Settings) -> tuple[Counter, Counter, Counter, dict[str, Author]]:
+    """Analyze pull requests to identify contributors, commentors, and reviewers.
+
+    Args:
+        settings: Configuration settings
+
+    Returns:
+        A tuple containing:
+            - Counter of contributors (merged PRs)
+            - Counter of commentors
+            - Counter of reviewers
+            - Dictionary mapping usernames to Author objects
+    """
     pr_nodes: list[PullRequestNode] = []
     pr_edges = get_graphql_pr_edges(settings=settings)
 
     while pr_edges:
-        for edge in pr_edges:
-            pr_nodes.append(edge.node)
+        pr_nodes.extend(edge.node for edge in pr_edges)
         last_edge = pr_edges[-1]
         pr_edges = get_graphql_pr_edges(settings=settings, after=last_edge.cursor)
 
@@ -497,8 +636,23 @@ def get_top_users(
     min_count: int,
     authors: dict[str, Author],
     skip_users: Container[str],
-):
-    users = []
+) -> list[dict[str, Any]]:
+    """Get top users based on their contribution counts.
+
+    Args:
+        counter: Counter with user contribution counts
+        min_count: Minimum count to be included in results
+        authors: Dictionary mapping usernames to Author objects
+        skip_users: Container of usernames to exclude from results
+
+    Returns:
+        List of dictionaries containing:
+            - login: Username
+            - count: Number of contributions
+            - avatarUrl: URL to user's avatar
+            - url: URL to user's GitHub profile
+    """
+    users: list[dict[str, Any]] = []
     for commentor, count in counter.most_common(50):
         if commentor in skip_users:
             continue
@@ -531,7 +685,6 @@ if __name__ == '__main__':
         'hramezani',
         'Kludex',
         'davidhewitt',
-        'sydney-runkle',
         'alexmojaki',
         'Viicos',
     }

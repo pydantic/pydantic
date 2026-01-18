@@ -1,12 +1,10 @@
 from __future__ import annotations
 
 import inspect
-import os
 from collections.abc import Mapping, Sequence
 from typing import TYPE_CHECKING, Any, Union
 
 from pydantic_core import CoreSchema, core_schema
-from pydantic_core import validate_core_schema as _validate_core_schema
 from typing_extensions import TypeGuard, get_args, get_origin
 from typing_inspection import typing_objects
 
@@ -107,12 +105,6 @@ def get_ref(s: core_schema.CoreSchema) -> None | str:
     This exists just for type checking to work correctly.
     """
     return s.get('ref', None)
-
-
-def validate_core_schema(schema: CoreSchema) -> CoreSchema:
-    if os.getenv('PYDANTIC_VALIDATE_CORE_SCHEMAS'):
-        return _validate_core_schema(schema)
-    return schema
 
 
 def _clean_schema_for_pretty_print(obj: Any, strip_metadata: bool = True) -> Any:  # pragma: no cover

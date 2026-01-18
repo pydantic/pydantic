@@ -1,3 +1,4 @@
+import sys
 import warnings
 
 import pytest
@@ -14,6 +15,7 @@ def test_version():
     assert V1_VERSION != VERSION
 
 
+@pytest.mark.skipif(sys.version_info >= (3, 14), reason='Python 3.14+ not supported')
 @pytest.mark.thread_unsafe(reason='Mutates the value')
 def test_root_validator():
     class Model(V1BaseModel):

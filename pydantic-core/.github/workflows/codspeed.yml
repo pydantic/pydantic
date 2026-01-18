@@ -1,0 +1,66 @@
+name: codspeed
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+  # `workflow_dispatch` allows CodSpeed to trigger backtest
+  # performance analysis in order to generate initial data.
+  workflow_dispatch:
+
+env:
+  UV_FROZEN: true
+  UV_PYTHON: 3.13
+
+jobs:
+  benchmarks:
+    runs-on: ubuntu-22.04
+
+    steps:
+      - uses: actions/checkout@v5
+
+      # Using this action is still necessary for CodSpeed to work:
+      - uses: actions/setup-python@v6
+        with:
+          python-version: ${{ env.UV_PYTHON}}
+
+      - name: install uv
+        uses: astral-sh/setup-uv@v7
+        with:
+          enable-cache: true
+
+      - name: Install deps
+        run: |
+          uv sync --group testing-extra
+          uv pip uninstall pytest-speed
+          uv pip install pytest-benchmark==4.0.0 pytest-codspeed
+
+      - name: Install rust stable
+        id: rust-toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          components: llvm-tools
+
+      - name: Cache rust
+        uses: Swatinem/rust-cache@v2
+
+      - name: Build PGO wheel
+        id: pgo-wheel
+        uses: ./.github/actions/build-pgo-wheel
+        with:
+          interpreter: ${{ env.UV_PYTHON }}
+          rust-toolchain: ${{ steps.rust-toolchain.outputs.name }}
+        env:
+          # make sure profiling information is present
+          CARGO_PROFILE_RELEASE_DEBUG: 'line-tables-only'
+          CARGO_PROFILE_RELEASE_STRIP: false
+
+      - name: Install PGO wheel
+        run: uv pip install ${{ steps.pgo-wheel.outputs.wheel }} --force-reinstall
+
+      - name: Run CodSpeed benchmarks
+        uses: CodSpeedHQ/action@v4
+        with:
+          mode: instrumentation
+          run: uv run --group=codspeed pytest tests/benchmarks/ --codspeed

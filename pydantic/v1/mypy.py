@@ -209,14 +209,14 @@ class PydanticPlugin(Plugin):
                     default_factory_type = default_factory_type.items()[0]  # type: ignore[operator]
 
             if isinstance(default_factory_type, CallableType):
-                ret_type = default_factory_type.ret_type
-                # mypy doesn't think `ret_type` has `args`, you'd think mypy should know,
-                # add this check in case it varies by version
-                args = getattr(ret_type, 'args', None)
-                if args:
-                    if all(isinstance(arg, TypeVarType) for arg in args):
-                        # Looks like the default factory is a type like `list` or `dict`, replace all args with `Any`
-                        ret_type.args = tuple(default_any_type for _ in args)  # type: ignore[attr-defined]
+                ret_type = get_proper_type(default_factory_type.ret_type)
+                if (
+                    isinstance(ret_type, Instance)
+                    and ret_type.args
+                    and all(isinstance(arg, TypeVarType) for arg in ret_type.args)
+                ):
+                    # Looks like the default factory is a type like `list` or `dict`, replace all args with `Any`
+                    ret_type = ret_type.copy_modified(args=[default_any_type] * len(ret_type.args))
                 return ret_type
 
         return default_any_type
@@ -863,9 +863,9 @@ def add_method(
         arg_kinds.append(arg.kind)
 
     function_type = ctx.api.named_type(f'{BUILTINS_NAME}.function')
-    signature = CallableType(arg_types, arg_kinds, arg_names, return_type, function_type)
-    if tvar_def:
-        signature.variables = [tvar_def]
+    signature = CallableType(
+        arg_types, arg_kinds, arg_names, return_type, function_type, variables=[tvar_def] if tvar_def else None
+    )
 
     func = FuncDef(name, args, Block([PassStmt()]))
     func.info = info

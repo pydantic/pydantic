@@ -44,7 +44,7 @@ def _iter(
         )
 
     if include is not None:
-        include = _utils.ValueItems.merge({k: True for k in self.__pydantic_fields__}, include, intersect=True)
+        include = _utils.ValueItems.merge(dict.fromkeys(self.__pydantic_fields__, True), include, intersect=True)
 
     allowed_keys = _calculate_keys(self, include=include, exclude=exclude, exclude_unset=exclude_unset)  # type: ignore
     if allowed_keys is None and not (to_dict or by_alias or exclude_unset or exclude_defaults or exclude_none):
