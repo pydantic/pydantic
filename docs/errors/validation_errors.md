@@ -825,6 +825,48 @@ except ValidationError as exc:
     #> 'float_type'
 ```
 
+## `fraction_parsing`
+
+This error is raised when the value provided for a `Fraction` could not be parsed as a fraction:
+
+```python
+from fractions import Fraction
+
+from pydantic import BaseModel, ValidationError
+
+
+class Model(BaseModel):
+    x: Fraction
+
+
+try:
+    Model(x='invalid')
+except ValidationError as exc:
+    print(repr(exc.errors()[0]['type']))
+    #> 'fraction_parsing'
+```
+
+## `fraction_type`
+
+This error is raised when the value provided for a `Fraction` is of the wrong type:
+
+```python
+from fractions import Fraction
+
+from pydantic import BaseModel, ValidationError
+
+
+class Model(BaseModel):
+    x: Fraction
+
+
+try:
+    Model(x=[1, 2])
+except ValidationError as exc:
+    print(repr(exc.errors()[0]['type']))
+    #> 'fraction_type'
+```
+
 ## `frozen_field`
 
 This error is raised when you attempt to assign a value to a field with `frozen=True`, or to delete such a field:

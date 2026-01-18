@@ -19,7 +19,6 @@ See [`tests/benchmarks/`](./tests/benchmarks/) for details.
 ```py
 from pydantic_core import SchemaValidator, ValidationError
 
-
 v = SchemaValidator(
     {
         'type': 'typed-dict',

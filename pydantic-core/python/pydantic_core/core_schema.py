@@ -811,7 +811,7 @@ def decimal_schema(
     )
 
 class FractionSchema(TypedDict, total=False):
-    type: Required[Literal['decimal']]
+    type: Required[Literal['fraction']]
     le: Fraction
     ge: Fraction
     lt: Fraction
@@ -839,9 +839,9 @@ def fraction_schema(
     from fractions import Fraction
     from pydantic_core import SchemaValidator, core_schema
 
-    schema = core_schema.fraction_schema(le=0.8, ge=0.2)
+    schema = core_schema.fraction_schema(le=Fraction(3, 4), ge=Fraction(1, 4))
     v = SchemaValidator(schema)
-    assert v.validate_python(1, 2) == Fraction(1, 2)
+    assert v.validate_python('1/2') == Fraction(1, 2)
     ```
 
     Args:
@@ -849,7 +849,7 @@ def fraction_schema(
         ge: The value must be greater than or equal to this number
         lt: The value must be strictly less than this number
         gt: The value must be strictly greater than this number
-        strict: Whether the value should be a float or a value that can be converted to a float
+        strict: Whether the value should be a Fraction or a value that can be converted to a Fraction
         ref: optional unique identifier of the schema, used to reference the schema in other places
         metadata: Any other information you want to include with the schema, not used by pydantic-core
         serialization: Custom serialization schema
@@ -4377,11 +4377,11 @@ ErrorType = Literal[
     'uuid_version',
     'decimal_type',
     'decimal_parsing',
-    'fraction_type',
-    'fraction_parsing',
     'decimal_max_digits',
     'decimal_max_places',
     'decimal_whole_digits',
+    'fraction_type',
+    'fraction_parsing',
     'complex_type',
     'complex_str_parsing',
 ]
