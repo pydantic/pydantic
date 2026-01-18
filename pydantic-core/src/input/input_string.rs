@@ -9,6 +9,7 @@ use crate::lookup_key::LookupPath;
 use crate::tools::safe_repr;
 use crate::validators::complex::string_to_complex;
 use crate::validators::decimal::create_decimal;
+use crate::validators::fraction::create_fraction;
 use crate::validators::{TemporalUnitMode, ValBytesMode};
 
 use super::datetime::{
@@ -150,6 +151,13 @@ impl<'py> Input<'py> for StringMapping<'py> {
     fn validate_decimal(&self, _strict: bool, _py: Python<'py>) -> ValMatch<Bound<'py, PyAny>> {
         match self {
             Self::String(s) => create_decimal(s, self).map(ValidationMatch::strict),
+            Self::Mapping(_) => Err(ValError::new(ErrorTypeDefaults::DecimalType, self)),
+        }
+    }
+
+    fn validate_fraction(&self, _strict: bool, _py: Python<'py>) -> ValMatch<Bound<'py, PyAny>> {
+        match self {
+            Self::String(s) => create_fraction(s, self).map(ValidationMatch::strict),
             Self::Mapping(_) => Err(ValError::new(ErrorTypeDefaults::DecimalType, self)),
         }
     }

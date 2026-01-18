@@ -435,6 +435,9 @@ error_types! {
     DecimalWholeDigits {
         whole_digits: {ctx_type: u64, ctx_fn: field_from_context},
     },
+    // Fraction errors
+    FractionType {},
+    FractionParsing {},
     // Complex errors
     ComplexType {},
     ComplexStrParsing {},
@@ -547,6 +550,7 @@ impl ErrorType {
             Self::CustomError { .. } => "", // custom errors are handled separately
             Self::LiteralError { .. } => "Input should be {expected}",
             Self::MissingSentinelError { .. } => "Input should be the 'MISSING' sentinel",
+// CONFLICT RESOLVED: Kept HEAD formatting (spaces in { .. }), added Fraction error messages from add-fraction branch
             Self::DateType { .. } => "Input should be a valid date",
             Self::DateParsing { .. } => "Input should be a valid date in the format YYYY-MM-DD, {error}",
             Self::DateFromDatetimeParsing { .. } => "Input should be a valid date or datetime, {error}",
@@ -601,6 +605,11 @@ impl ErrorType {
             }
             Self::DecimalWholeDigits { .. } => {
                 "Decimal input should have no more than {whole_digits} digit{expected_plural} before the decimal point"
+            }
+            // Fraction error messages (from add-fraction branch)
+            Self::FractionParsing { .. } => "Input should be a valid fraction",
+            Self::FractionType { .. } => {
+                "Fraction input should be an integer, float, string or Fraction object"
             }
             Self::ComplexType { .. } => {
                 "Input should be a valid python complex object, a number, or a valid complex string following the rules at https://docs.python.org/3/library/functions.html#complex"

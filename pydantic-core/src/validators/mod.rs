@@ -39,6 +39,7 @@ mod definitions;
 mod dict;
 mod enum_;
 mod float;
+pub(crate) mod fraction;
 mod frozenset;
 mod function;
 mod generator;
@@ -585,6 +586,8 @@ fn build_validator_inner(
         float::FloatBuilder,
         // decimals
         decimal::DecimalValidator,
+        // fractions
+        fraction::FractionValidator,
         // tuples
         tuple::TupleValidator,
         // list/arrays
@@ -777,6 +780,8 @@ pub enum CombinedValidator {
     ConstrainedFloat(float::ConstrainedFloatValidator),
     // decimals
     Decimal(decimal::DecimalValidator),
+    // fractions
+    Fraction(fraction::FractionValidator),
     // lists
     List(list::ListValidator),
     // sets - unique lists

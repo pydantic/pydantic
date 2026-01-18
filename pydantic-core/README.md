@@ -6,8 +6,9 @@
 [![versions](https://img.shields.io/pypi/pyversions/pydantic-core.svg)](https://github.com/pydantic/pydantic-core)
 [![license](https://img.shields.io/github/license/pydantic/pydantic-core.svg)](https://github.com/pydantic/pydantic-core/blob/main/LICENSE)
 
-This package provides the core functionality for [pydantic](https://docs.pydantic.dev) validation and serialization.
+This repository is the (archived) original home of `pydantic-core`, which is a key piece of Pydantic >= 2. It now resides inside the main `pydantic` repository.
 
+<!-- CONFLICT RESOLVED: Kept full documentation from HEAD; commented out archived notice from add-fraction branch -->
 Pydantic-core is currently around 17x faster than pydantic V1.
 See [`tests/benchmarks/`](./tests/benchmarks/) for details.
 
@@ -134,3 +135,7 @@ The `flamegraph` command will produce an interactive SVG at `flamegraph.svg`.
 ## Releasing
 
 TBC (needs to be integrated into `pydantic` repository release process).
+
+<!-- Archived notice from add-fraction branch (not used):
+See the current `pydantic-core` code at https://github.com/pydantic/pydantic/tree/main/pydantic-core
+-->
