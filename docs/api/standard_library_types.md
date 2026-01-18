@@ -1188,7 +1188,7 @@ Standard library type: [`collections.abc.Iterable`][] (deprecated alias: [`typin
 <h4>Validation</h4>
 
 Iterables are lazily validated, and wrapped in an internal datastructure that can be iterated over
-(and will validated the items type while doing so). This means that even if you provide a concrete
+(and will validate the items type while doing so). This means that even if you provide a concrete
 container such as a list, the validated type will *not* be of type [`list`][]. However, Pydantic
 will ensure that the input value is iterable by getting an [iterator][] from it (by calling
 [`iter()`][iter] on the value).
