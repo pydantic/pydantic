@@ -1195,25 +1195,44 @@ When executing a subcommand with an asynchronous cli_cmd, Pydantic settings auto
 
 ### Serializing CLI Arguments
 
-An instantiated Pydantic model can be serialized into its CLI arguments using the `CliApp.serialize` method.
+An instantiated Pydantic model can be serialized into its CLI arguments using the `CliApp.serialize` method. Serialization styles can be controlled using the `list_style`, `dict_style`, and `positionals_first` flags.
 
 ```py
 from pydantic import BaseModel
 
-from pydantic_settings import CliApp
+from pydantic_settings import CliApp, CliPositionalArg
 
 
 class Nested(BaseModel):
-    that: int
+    that: dict[str, int]
 
 
 class Settings(BaseModel):
-    this: str
+    positional_arg: CliPositionalArg[str]
+    this: list[str]
     nested: Nested
 
 
-print(CliApp.serialize(Settings(this='hello', nested=Nested(that=123))))
-#> ['--this', 'hello', '--nested.that', '123']
+settings = Settings(
+    positional_arg='arg', this=['hello', 'world'], nested=Nested(that={'a': 1, 'b': 2})
+)
+
+print(CliApp.serialize(settings))
+#> ['--this', '["hello", "world"]', '--nested.that', '{"a": 1, "b": 2}', 'arg']
+
+print(CliApp.serialize(settings, positionals_first=True))
+#> ['arg', '--this', '["hello", "world"]', '--nested.that', '{"a": 1, "b": 2}']
+
+print(CliApp.serialize(settings, list_style='lazy'))
+#> ['--this', 'hello,world', '--nested.that', '{"a": 1, "b": 2}', 'arg']
+
+print(CliApp.serialize(settings, list_style='argparse'))
+#> ['--this', 'hello', '--this', 'world', '--nested.that', '{"a": 1, "b": 2}', 'arg']
+
+print(CliApp.serialize(settings, dict_style='env'))
+"""
+['--this', '["hello", "world"]', '--nested.that', 'a=1', '--nested.that', 'b=2', 'arg']
+"""
 
 ```
 

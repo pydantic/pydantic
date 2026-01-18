@@ -6201,7 +6201,7 @@ Strict mode does <em>not</em> apply to the values of the typed dictionary. The s
 <h4>Validation</h4>
 
 <p>Iterables are lazily validated, and wrapped in an internal datastructure that can be iterated over
-(and will validated the items type while doing so). This means that even if you provide a concrete
+(and will validate the items type while doing so). This means that even if you provide a concrete
 container such as a list, the validated type will <em>not</em> be of type <a class="autorefs autorefs-external" href="https://docs.python.org/3/glossary.html#term-list"><code>list</code></a>. However, Pydantic
 will ensure that the input value is iterable by getting an <a class="autorefs autorefs-external" href="https://docs.python.org/3/glossary.html#term-iterator">iterator</a> from it (by calling
 <a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#iter"><code>iter()</code></a> on the value).</p>

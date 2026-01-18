@@ -6642,23 +6642,42 @@ defined) after instantiation:</p>
 </code></pre></div>
 <p>When executing a subcommand with an asynchronous cli_cmd, Pydantic settings automatically detects whether the current thread already has an active event loop. If so, the async command is run in a fresh thread to avoid conflicts. Otherwise, it uses asyncio.run() in the current thread. This handling ensures your asynchronous subcommands "just work" without additional manual setup.</p>
 <h3 id="serializing-cli-arguments">Serializing CLI Arguments<a class="headerlink" href="#serializing-cli-arguments" title="Permanent link">&para;</a></h3>
-<p>An instantiated Pydantic model can be serialized into its CLI arguments using the <code>CliApp.serialize</code> method.</p>
+<p>An instantiated Pydantic model can be serialized into its CLI arguments using the <code>CliApp.serialize</code> method. Serialization styles can be controlled using the <code>list_style</code>, <code>dict_style</code>, and <code>positionals_first</code> flags.</p>
 <div class="language-py highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">pydantic</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseModel</span>
 
-<span class="kn">from</span><span class="w"> </span><span class="nn">pydantic_settings</span><span class="w"> </span><span class="kn">import</span> <span class="n">CliApp</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pydantic_settings</span><span class="w"> </span><span class="kn">import</span> <span class="n">CliApp</span><span class="p">,</span> <span class="n">CliPositionalArg</span>
 
 
 <span class="k">class</span><span class="w"> </span><span class="nc">Nested</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
-    <span class="n">that</span><span class="p">:</span> <span class="nb">int</span>
+    <span class="n">that</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">int</span><span class="p">]</span>
 
 
 <span class="k">class</span><span class="w"> </span><span class="nc">Settings</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
-    <span class="n">this</span><span class="p">:</span> <span class="nb">str</span>
+    <span class="n">positional_arg</span><span class="p">:</span> <span class="n">CliPositionalArg</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span>
+    <span class="n">this</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span>
     <span class="n">nested</span><span class="p">:</span> <span class="n">Nested</span>
 
 
-<span class="nb">print</span><span class="p">(</span><span class="n">CliApp</span><span class="o">.</span><span class="n">serialize</span><span class="p">(</span><span class="n">Settings</span><span class="p">(</span><span class="n">this</span><span class="o">=</span><span class="s1">&#39;hello&#39;</span><span class="p">,</span> <span class="n">nested</span><span class="o">=</span><span class="n">Nested</span><span class="p">(</span><span class="n">that</span><span class="o">=</span><span class="mi">123</span><span class="p">))))</span>
-<span class="c1">#&gt; [&#39;--this&#39;, &#39;hello&#39;, &#39;--nested.that&#39;, &#39;123&#39;]</span>
+<span class="n">settings</span> <span class="o">=</span> <span class="n">Settings</span><span class="p">(</span>
+    <span class="n">positional_arg</span><span class="o">=</span><span class="s1">&#39;arg&#39;</span><span class="p">,</span> <span class="n">this</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;hello&#39;</span><span class="p">,</span> <span class="s1">&#39;world&#39;</span><span class="p">],</span> <span class="n">nested</span><span class="o">=</span><span class="n">Nested</span><span class="p">(</span><span class="n">that</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;a&#39;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span> <span class="s1">&#39;b&#39;</span><span class="p">:</span> <span class="mi">2</span><span class="p">})</span>
+<span class="p">)</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="n">CliApp</span><span class="o">.</span><span class="n">serialize</span><span class="p">(</span><span class="n">settings</span><span class="p">))</span>
+<span class="c1">#&gt; [&#39;--this&#39;, &#39;[&quot;hello&quot;, &quot;world&quot;]&#39;, &#39;--nested.that&#39;, &#39;{&quot;a&quot;: 1, &quot;b&quot;: 2}&#39;, &#39;arg&#39;]</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="n">CliApp</span><span class="o">.</span><span class="n">serialize</span><span class="p">(</span><span class="n">settings</span><span class="p">,</span> <span class="n">positionals_first</span><span class="o">=</span><span class="kc">True</span><span class="p">))</span>
+<span class="c1">#&gt; [&#39;arg&#39;, &#39;--this&#39;, &#39;[&quot;hello&quot;, &quot;world&quot;]&#39;, &#39;--nested.that&#39;, &#39;{&quot;a&quot;: 1, &quot;b&quot;: 2}&#39;]</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="n">CliApp</span><span class="o">.</span><span class="n">serialize</span><span class="p">(</span><span class="n">settings</span><span class="p">,</span> <span class="n">list_style</span><span class="o">=</span><span class="s1">&#39;lazy&#39;</span><span class="p">))</span>
+<span class="c1">#&gt; [&#39;--this&#39;, &#39;hello,world&#39;, &#39;--nested.that&#39;, &#39;{&quot;a&quot;: 1, &quot;b&quot;: 2}&#39;, &#39;arg&#39;]</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="n">CliApp</span><span class="o">.</span><span class="n">serialize</span><span class="p">(</span><span class="n">settings</span><span class="p">,</span> <span class="n">list_style</span><span class="o">=</span><span class="s1">&#39;argparse&#39;</span><span class="p">))</span>
+<span class="c1">#&gt; [&#39;--this&#39;, &#39;hello&#39;, &#39;--this&#39;, &#39;world&#39;, &#39;--nested.that&#39;, &#39;{&quot;a&quot;: 1, &quot;b&quot;: 2}&#39;, &#39;arg&#39;]</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="n">CliApp</span><span class="o">.</span><span class="n">serialize</span><span class="p">(</span><span class="n">settings</span><span class="p">,</span> <span class="n">dict_style</span><span class="o">=</span><span class="s1">&#39;env&#39;</span><span class="p">))</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">[&#39;--this&#39;, &#39;[&quot;hello&quot;, &quot;world&quot;]&#39;, &#39;--nested.that&#39;, &#39;a=1&#39;, &#39;--nested.that&#39;, &#39;b=2&#39;, &#39;arg&#39;]</span>
+<span class="sd">&quot;&quot;&quot;</span>
 </code></pre></div>
 <h3 id="mutually-exclusive-groups">Mutually Exclusive Groups<a class="headerlink" href="#mutually-exclusive-groups" title="Permanent link">&para;</a></h3>
 <p>CLI mutually exclusive groups can be created by inheriting from the <code>CliMutuallyExclusiveGroup</code> class.</p>

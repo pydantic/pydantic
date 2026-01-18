@@ -1035,7 +1035,7 @@ Standard library type: collections.abc.Iterable (deprecated alias: typing.Iterab
 
 #### Validation
 
-Iterables are lazily validated, and wrapped in an internal datastructure that can be iterated over (and will validated the items type while doing so). This means that even if you provide a concrete container such as a list, the validated type will *not* be of type list. However, Pydantic will ensure that the input value is iterable by getting an iterator from it (by calling iter() on the value).
+Iterables are lazily validated, and wrapped in an internal datastructure that can be iterated over (and will validate the items type while doing so). This means that even if you provide a concrete container such as a list, the validated type will *not* be of type list. However, Pydantic will ensure that the input value is iterable by getting an iterator from it (by calling iter() on the value).
 
 It is recommended to use concrete collection types (such as [lists](#lists)) instead, unless you are using an infinite iterator (in which case eagerly validating the input would result in an infinite loop).
 
