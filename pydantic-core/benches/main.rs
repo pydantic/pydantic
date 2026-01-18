@@ -151,6 +151,7 @@ fn list_error_json(bench: &mut Bencher) {
             Ok(_) => panic!("unexpectedly valid"),
             Err(e) => {
                 let v = e.value(py);
+                // println!("error: {}", v.to_string());
                 assert_eq!(v.getattr("title").unwrap().to_string(), "list[int]");
                 let error_count: i64 = v.call_method0("error_count").unwrap().extract().unwrap();
                 assert_eq!(error_count, 100);
@@ -183,6 +184,7 @@ fn list_error_python_input(py: Python<'_>) -> (SchemaValidator, PyObject) {
         Ok(_) => panic!("unexpectedly valid"),
         Err(e) => {
             let v = e.value(py);
+            // println!("error: {}", v.to_string());
             assert_eq!(v.getattr("title").unwrap().to_string(), "list[int]");
             let error_count: i64 = v.call_method0("error_count").unwrap().extract().unwrap();
             assert_eq!(error_count, 100);
@@ -355,6 +357,7 @@ fn dict_value_error(bench: &mut Bencher) {
             Ok(_) => panic!("unexpectedly valid"),
             Err(e) => {
                 let v = e.value(py);
+                // println!("error: {}", v.to_string());
                 assert_eq!(v.getattr("title").unwrap().to_string(), "dict[str,constrained-int]");
                 let error_count: i64 = v.call_method0("error_count").unwrap().extract().unwrap();
                 assert_eq!(error_count, 100);
@@ -481,6 +484,7 @@ fn typed_dict_deep_error(bench: &mut Bencher) {
             Ok(_) => panic!("unexpectedly valid"),
             Err(e) => {
                 let v = e.value(py);
+                // println!("error: {}", v.to_string());
                 assert_eq!(v.getattr("title").unwrap().to_string(), "typed-dict");
                 let error_count: i64 = v.call_method0("error_count").unwrap().extract().unwrap();
                 assert_eq!(error_count, 1);
