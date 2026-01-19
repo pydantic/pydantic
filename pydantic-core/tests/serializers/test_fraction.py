@@ -4,10 +4,18 @@ import pytest
 
 from pydantic_core import SchemaSerializer, core_schema
 
+import sys
+
+
+# skip if python is lower than 3.12
+@pytest.mark.skipif(sys.version_info < (3, 12), reason="Fraction string parsing is only available in Python 3.12+")
+def test_fraction_string():
+    v = SchemaSerializer(core_schema.fraction_schema())
+    assert v.to_python(Fraction('3 / 4')) == Fraction(3, 4)
+
 
 def test_fraction():
     v = SchemaSerializer(core_schema.fraction_schema())
-    assert v.to_python(Fraction('3 / 4')) == Fraction(3, 4)
     assert v.to_python(Fraction(3, 4)) == Fraction(3, 4)
 
     # check correct casting to int when denominator is 1
