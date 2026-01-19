@@ -719,6 +719,7 @@ class GenerateJsonSchema:
         Returns:
             The generated JSON schema.
         """
+
         def get_decimal_pattern(schema: core_schema.DecimalSchema) -> str:
             max_digits = schema.get('max_digits')
             decimal_places = schema.get('decimal_places')

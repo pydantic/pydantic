@@ -1863,6 +1863,7 @@ def test_fraction_validation():
     with pytest.raises(ZeroDivisionError):
         Model(a='1/0')
 
+
 @pytest.mark.skipif(not email_validator, reason='email_validator not installed')
 def test_string_success():
     class MoreStringsModel(BaseModel):
@@ -7096,7 +7097,12 @@ def test_fraction_serialization() -> None:
 
 def test_fraction_json_schema() -> None:
     ta = TypeAdapter(Fraction)
-    assert ta.json_schema() == {'anyOf': [{'maxItems': 2, 'minItems': 2, 'prefixItems': [{'type': 'integer'}, {'type': 'number'}], 'type': 'array'}, {'pattern': '^\\s*\\(\\s*-?\\d+\\s*,\\s*-?\\d+\\s*\\)\\s*$', 'type': 'string'}]}
+    assert ta.json_schema() == {
+        'anyOf': [
+            {'maxItems': 2, 'minItems': 2, 'prefixItems': [{'type': 'integer'}, {'type': 'number'}], 'type': 'array'},
+            {'pattern': '^\\s*\\(\\s*-?\\d+\\s*,\\s*-?\\d+\\s*\\)\\s*$', 'type': 'string'},
+        ]
+    }
 
 
 def test_annotated_metadata_any_order() -> None:

@@ -810,6 +810,7 @@ def decimal_schema(
         serialization=serialization,
     )
 
+
 class FractionSchema(TypedDict, total=False):
     type: Required[Literal['fraction']]
     le: Fraction
@@ -820,6 +821,7 @@ class FractionSchema(TypedDict, total=False):
     ref: str
     metadata: dict[str, Any]
     serialization: SerSchema
+
 
 def fraction_schema(
     *,
@@ -865,6 +867,7 @@ def fraction_schema(
         metadata=metadata,
         serialization=serialization,
     )
+
 
 class ComplexSchema(TypedDict, total=False):
     type: Required[Literal['complex']]

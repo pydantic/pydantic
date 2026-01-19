@@ -97,7 +97,10 @@ def test_fraction(py_and_json: PyAndJson, input_value, expected):
         (Fraction(42), Fraction(42)),
         (Fraction('42.0'), Fraction('42.0')),
         (Fraction('42.5'), Fraction('42.5')),
-        (42.0, Err('Input should be an instance of Fraction [type=is_instance_of, input_value=42.0, input_type=float]')),
+        (
+            42.0,
+            Err('Input should be an instance of Fraction [type=is_instance_of, input_value=42.0, input_type=float]'),
+        ),
         ('42', Err("Input should be an instance of Fraction [type=is_instance_of, input_value='42', input_type=str]")),
         (42, Err('Input should be an instance of Fraction [type=is_instance_of, input_value=42, input_type=int]')),
         (True, Err('Input should be an instance of Fraction [type=is_instance_of, input_value=True, input_type=bool]')),
@@ -233,12 +236,12 @@ def test_fraction_repr():
         'SchemaValidator(title="fraction",validator=Fraction(FractionValidator{strict:false'
     )
     v = SchemaValidator(cs.fraction_schema(strict=True))
-    assert plain_repr(v).startswith(
-        'SchemaValidator(title="fraction",validator=Fraction(FractionValidator{strict:true'
-    )
+    assert plain_repr(v).startswith('SchemaValidator(title="fraction",validator=Fraction(FractionValidator{strict:true')
 
 
-@pytest.mark.parametrize('input_value,expected', [(Fraction('1.23'), Fraction('1.23')), (Fraction('1'), Fraction('1.0'))])
+@pytest.mark.parametrize(
+    'input_value,expected', [(Fraction('1.23'), Fraction('1.23')), (Fraction('1'), Fraction('1.0'))]
+)
 def test_fraction_not_json(input_value, expected):
     v = SchemaValidator(cs.fraction_schema())
     if isinstance(expected, Err):
