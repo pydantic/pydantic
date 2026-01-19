@@ -11,9 +11,7 @@ use crate::serializers::ob_type::{IsType, ObType};
 
 use crate::serializers::SerializationState;
 
-use super::{
-    infer_json_key, infer_serialize, infer_to_python, BuildSerializer, CombinedSerializer, TypeSerializer,
-};
+use super::{BuildSerializer, CombinedSerializer, TypeSerializer, infer_json_key, infer_serialize, infer_to_python};
 
 #[derive(Debug)]
 pub struct FractionSerializer {}
@@ -36,11 +34,7 @@ impl BuildSerializer for FractionSerializer {
 impl_py_gc_traverse!(FractionSerializer {});
 
 impl TypeSerializer for FractionSerializer {
-    fn to_python<'py>(
-        &self,
-        value: &Bound<'py, PyAny>,
-        state: &mut SerializationState<'py>,
-    ) -> PyResult<Py<PyAny>> {
+    fn to_python<'py>(&self, value: &Bound<'py, PyAny>, state: &mut SerializationState<'py>) -> PyResult<Py<PyAny>> {
         match state.extra.ob_type_lookup.is_type(value, ObType::Fraction) {
             IsType::Exact | IsType::Subclass => infer_to_python_known(ObType::Fraction, value, state),
             IsType::False => {

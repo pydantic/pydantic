@@ -607,9 +607,7 @@ impl ErrorType {
             }
             // Fraction error messages (from add-fraction branch)
             Self::FractionParsing { .. } => "Input should be a valid fraction",
-            Self::FractionType { .. } => {
-                "Fraction input should be an integer, float, string or Fraction object"
-            }
+            Self::FractionType { .. } => "Fraction input should be an integer, float, string or Fraction object",
             Self::ComplexType { .. } => {
                 "Input should be a valid python complex object, a number, or a valid complex string following the rules at https://docs.python.org/3/library/functions.html#complex"
             }
