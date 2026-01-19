@@ -64,9 +64,9 @@ jobs:
 
       - name: Install FastAPI dependencies
         run: |
-          uv venv --python ${{ matrix.python-version }}
-          uv pip install --no-progress -r requirements-tests.txt
-          uv pip install -e ./pydantic-latest
+          uv sync --locked --no-dev --group tests --extra all
+          uv pip uninstall pydantic pydantic-core
+          uv pip install -e ./pydantic-latest -e ./pydantic-latest/pydantic-core
 
       - name: List installed dependencies
         run: uv pip list
@@ -104,12 +104,14 @@ jobs:
 
       - name: Install SQLModel dependencies
         run: |
-          uv venv --python ${{ matrix.python-version }}
-          uv pip install --no-progress -r requirements-tests.txt
-          uv pip install -e ./pydantic-latest
+          uv sync --locked --no-dev --group tests
+          uv pip uninstall pydantic pydantic-core
+          uv pip install -e ./pydantic-latest -e ./pydantic-latest/pydantic-core
 
       - name: List installed dependencies
         run: uv pip list
+
+      - run: mkdir coverage
 
       - name: Run SQLModel tests
         run: uv run --no-sync pytest tests
@@ -151,8 +153,8 @@ jobs:
       - name: Install Beanie dependencies
         run: |
           pip install .[test,ci]
-          pip uninstall --yes pydantic
-          pip install -e ./pydantic-latest
+          pip uninstall --yes pydantic pydantic-core
+          pip install -e ./pydantic-latest -e ./pydantic-latest/pydantic-core
 
       - name: List installed dependencies
         run: pip list
@@ -193,8 +195,8 @@ jobs:
         run: |
           pdm install --quiet
           pdm run python -m ensurepip
-          pdm run python -m pip uninstall --yes pydantic
-          pdm run python -m pip install -e ./pydantic-latest
+          pdm run python -m pip uninstall --yes pydantic pydantic-core
+          pdm run python -m pip install -e ./pydantic-latest -e ./pydantic-latest/pydantic-core
 
       - name: List installed dependencies
         run: pdm list
@@ -266,8 +268,7 @@ jobs:
       - name: Checkout ODMantic
         uses: actions/checkout@v6
         with:
-          repository: sydney-runkle/odmantic
-          ref: fix-model-fields-access
+          repository: art049/odmantic
 
       - name: Checkout Pydantic
         uses: actions/checkout@v6
@@ -279,27 +280,29 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
 
+      - name: Set up uv
+        uses: astral-sh/setup-uv@v7
+
       - name: Mongo service
-        id: mongo-service
-        uses: art049/mongodb-cluster-action@v0
-        with:
-          version: 6
-          mode: standalone
+        run: bash mongodb-cluster/run.sh
+        env:
+          MODE: standalone
+          VERSION: '6'
 
       - name: Install ODMantic dependencies
         run: |
-          pip install ".[test]"
-          pip uninstall --yes pydantic
-          pip install -e ./pydantic-latest
+          uv sync --locked --no-dev --extra test
+          uv pip uninstall pydantic pydantic-core
+          uv pip install -e ./pydantic-latest -e ./pydantic-latest/pydantic-core
 
       - name: List installed dependencies
-        run: pip list
+        run: uv pip list
 
       - name: Run ODMantic tests
         # Disabled tests, as per https://github.com/art049/odmantic/issues/512:
-        run: pytest tests -k 'not test_custom_bson_serializable and not test_sync_custom_bson_serializable and not test_with_bson_serializer_override_builtin_bson'
+        run: uv run --no-sync pytest tests -k 'not test_custom_bson_serializable and not test_sync_custom_bson_serializable and not test_with_bson_serializer_override_builtin_bson'
         env:
-          TEST_MONGO_URI: ${{ steps.mongo-service.outputs.connection-string }}
+          TEST_MONGO_URI: mongodb://localhost:27017/
           TEST_MONGO_MODE: standalone
 
   test-polar:
@@ -454,8 +457,8 @@ jobs:
         run: |
           pdm sync -G grpc,io,testing --quiet
           pdm run python -m ensurepip
-          pdm run python -m pip uninstall --yes pydantic
-          pdm run python -m pip install -e ./pydantic-latest
+          pdm run python -m pip uninstall --yes pydantic pydantic-core
+          pdm run python -m pip install -e ./pydantic-latest -e ./pydantic-latest/pydantic-core
 
       - name: List installed dependencies
         run: pdm list
@@ -608,8 +611,8 @@ jobs:
       - name: Install Dify dependencies
         run: |
           uv sync --no-progress --directory api --dev
-          uv pip --directory api uninstall pydantic
-          uv pip --directory api install -e ../pydantic-latest
+          uv pip --directory api uninstall pydantic pydantic-core
+          uv pip --directory api install -e ../pydantic-latest -e ../pydantic-latest/pydantic-core
 
       - name: List installed dependencies
         run: uv pip --directory api list
@@ -710,7 +713,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python-version: ['3.9', '3.10', '3.11', '3.12', '3.13']
+        python-version: ['3.10', '3.11', '3.12', '3.13']
     services:
       redis:
         image: redis/redis-stack:latest
@@ -754,8 +757,8 @@ jobs:
       - name: Install Redis OM Python dependencies
         run: |
           poetry install --no-interaction --no-root
-          pip uninstall pydantic
-          pip install -e ./pydantic-latest
+          pip uninstall --yes pydantic pydantic-core
+          pip install -e ./pydantic-latest -e ./pydantic-latest/pydantic-core
 
       - name: Install Redis OM Python library
         run: poetry install --no-interaction
@@ -796,7 +799,7 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
       - name: Install Django Ninja dependencies
-        run: pip install pytest pytest-asyncio pytest-django psycopg2-binary 'django~=5.2.7' ./pydantic-latest
+        run: pip install pytest pytest-asyncio pytest-django psycopg2-binary 'django~=5.2.7' ./pydantic-latest ./pydantic-latest/pydantic-core
 
       # For some reason, tests can't run properly if the pydantic sources are around:
       - run: rm -rd ./pydantic-latest
