@@ -3529,13 +3529,11 @@ def test_shadow_attribute_warn_for_redefined_fields() -> None:
     # When inheriting from the parent class, as long as the field is not defined at all, there should be no warning
     # about shadowed fields.
     with warnings.catch_warnings(record=True) as captured_warnings:
-        # Start capturing all warnings
         warnings.simplefilter('always')
 
         class ChildWithoutRedefinedField(BaseModel, Parent):
             pass
 
-        # Check that no warnings were captured
         assert len(captured_warnings) == 0
 
     # But when inheriting from the parent class and a parent field is redefined, a warning should be raised about
@@ -3548,6 +3546,20 @@ def test_shadow_attribute_warn_for_redefined_fields() -> None:
 
         class ChildWithRedefinedField(BaseModel, Parent):
             foo: bool = True
+
+
+def test_shadow_attribute_no_warn_stdlib_dataclass() -> None:
+    @dataclass
+    class A:
+        a: int = 1
+
+    with warnings.catch_warnings(record=True) as captured_warnings:
+        warnings.simplefilter('always')
+
+        class B(A, BaseModel):
+            a: int
+
+        assert len(captured_warnings) == 0
 
 
 def test_field_name_deprecated_method_name() -> None:
