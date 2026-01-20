@@ -1,6 +1,7 @@
 import dataclasses
 import gc
 import pickle
+import subprocess
 import sys
 from pathlib import Path
 from typing import Optional
@@ -323,49 +324,46 @@ def test_pickle_model_with_config(model_type: type, use_cloudpickle: bool):
     assert model_type.model_config['title'] == 'MyTitle'
 
 
-@pytest.mark.skipif(
-    sys.version_info[:2] != (3, 14),
-    reason='Pickle data generated on 3.14',
-)
-def test_cloudpickle_model_with_defs() -> None:
+def test_cloudpickle_model_with_defs(tmp_path) -> None:
     """https://github.com/pydantic/pydantic/issues/12696
 
     The issue only reproduces if the unpickled function runs in a different process, and it seems we need
     to pickle the `bar_repr()` in `__main__` so that it fully encodes the core schema data.
-
-    As such, we load the pickled data from `test_cloudpickle_model_with_defs.pkl`, which can be created
-    by running this script at the root of the repository:
-
-    ```python
-    from pathlib import Path
-
-    import cloudpickle
-
-    from pydantic import BaseModel
-
-
-    class Foo(BaseModel):
-        foo: int
-
-
-    class Bar(BaseModel):
-        bar1: Foo
-        bar2: Foo
-
-
-    def bar_repr() -> str:
-        json = '{"bar1": {"foo": 1}, "bar2": {"foo": 2}}'
-        bar = Bar.model_validate_json(json)
-        return repr(bar)
-
-
-    pickled = cloudpickle.dumps(bar_repr)
-
-
-    Path('tests', 'test_data', 'test_cloudpickle_model_with_defs.pkl').write_bytes(pickled)
-    ```
     """
 
-    bar_repr = cloudpickle.loads(TEST_DATA_DIR.joinpath('test_cloudpickle_model_with_defs.pkl').read_bytes())
+    pickle_file = tmp_path / 'model.pkl'
+
+    code = """
+import sys
+from pathlib import Path
+
+import cloudpickle
+
+from pydantic import BaseModel
+
+
+class Foo(BaseModel):
+    foo: int
+
+
+class Bar(BaseModel):
+    bar1: Foo
+    bar2: Foo
+
+
+def bar_repr() -> str:
+    json = '{"bar1": {"foo": 1}, "bar2": {"foo": 2}}'
+    bar = Bar.model_validate_json(json)
+    return repr(bar)
+
+with open(sys.argv[1], 'w+b') as out:
+    cloudpickle.dump(bar_repr, out)
+"""
+
+    pickle_file = tmp_path / 'model.pkl'
+
+    subprocess.run([sys.executable, '-c', code, str(pickle_file)])
+
+    bar_repr = cloudpickle.loads(pickle_file.read_bytes())
 
     assert bar_repr() == 'Bar(bar1=Foo(foo=1), bar2=Foo(foo=2))'
