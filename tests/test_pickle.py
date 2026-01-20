@@ -1,9 +1,11 @@
 import dataclasses
 import gc
 import pickle
+import platform
 import subprocess
 import sys
 from pathlib import Path
+from textwrap import dedent
 from typing import Optional
 
 import pytest
@@ -324,6 +326,7 @@ def test_pickle_model_with_config(model_type: type, use_cloudpickle: bool):
     assert model_type.model_config['title'] == 'MyTitle'
 
 
+@pytest.mark.xfail(platform.python_implementation() == 'PyPy', reason='Unpickling fails on PyPy')
 def test_cloudpickle_model_with_defs(tmp_path) -> None:
     """https://github.com/pydantic/pydantic/issues/12696
 
@@ -333,32 +336,34 @@ def test_cloudpickle_model_with_defs(tmp_path) -> None:
 
     pickle_file = tmp_path / 'model.pkl'
 
-    code = """
-import sys
-from pathlib import Path
+    code = dedent(
+        """
+        import sys
+        from pathlib import Path
 
-import cloudpickle
+        import cloudpickle
 
-from pydantic import BaseModel
-
-
-class Foo(BaseModel):
-    foo: int
+        from pydantic import BaseModel
 
 
-class Bar(BaseModel):
-    bar1: Foo
-    bar2: Foo
+        class Foo(BaseModel):
+            foo: int
 
 
-def bar_repr() -> str:
-    json = '{"bar1": {"foo": 1}, "bar2": {"foo": 2}}'
-    bar = Bar.model_validate_json(json)
-    return repr(bar)
+        class Bar(BaseModel):
+            bar1: Foo
+            bar2: Foo
 
-with open(sys.argv[1], 'w+b') as out:
-    cloudpickle.dump(bar_repr, out)
-"""
+
+        def bar_repr() -> str:
+            json = '{"bar1": {"foo": 1}, "bar2": {"foo": 2}}'
+            bar = Bar.model_validate_json(json)
+            return repr(bar)
+
+        with open(sys.argv[1], 'w+b') as out:
+            cloudpickle.dump(bar_repr, out)
+        """
+    )
 
     pickle_file = tmp_path / 'model.pkl'
 
