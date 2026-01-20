@@ -1,7 +1,11 @@
 import dataclasses
 import gc
 import pickle
+import platform
+import subprocess
 import sys
+from pathlib import Path
+from textwrap import dedent
 from typing import Optional
 
 import pytest
@@ -15,6 +19,8 @@ try:
     import cloudpickle
 except ImportError:
     cloudpickle = None
+
+TEST_DATA_DIR = Path(__file__).parent / 'test_data'
 
 pytestmark = pytest.mark.skipif(cloudpickle is None, reason='cloudpickle is not installed')
 
@@ -318,3 +324,51 @@ def test_pickle_model_with_config(model_type: type, use_cloudpickle: bool):
         model_type = pickle.loads(pickle.dumps(model_type))
 
     assert model_type.model_config['title'] == 'MyTitle'
+
+
+@pytest.mark.xfail(platform.python_implementation() == 'PyPy', reason='Unpickling fails on PyPy')
+def test_cloudpickle_model_with_defs(tmp_path) -> None:
+    """https://github.com/pydantic/pydantic/issues/12696
+
+    The issue only reproduces if the unpickled function runs in a different process, and it seems we need
+    to pickle the `bar_repr()` in `__main__` so that it fully encodes the core schema data.
+    """
+
+    pickle_file = tmp_path / 'model.pkl'
+
+    code = dedent(
+        """
+        import sys
+        from pathlib import Path
+
+        import cloudpickle
+
+        from pydantic import BaseModel
+
+
+        class Foo(BaseModel):
+            foo: int
+
+
+        class Bar(BaseModel):
+            bar1: Foo
+            bar2: Foo
+
+
+        def bar_repr() -> str:
+            json = '{"bar1": {"foo": 1}, "bar2": {"foo": 2}}'
+            bar = Bar.model_validate_json(json)
+            return repr(bar)
+
+        with open(sys.argv[1], 'w+b') as out:
+            cloudpickle.dump(bar_repr, out)
+        """
+    )
+
+    pickle_file = tmp_path / 'model.pkl'
+
+    subprocess.run([sys.executable, '-c', code, str(pickle_file)])
+
+    bar_repr = cloudpickle.loads(pickle_file.read_bytes())
+
+    assert bar_repr() == 'Bar(bar1=Foo(foo=1), bar2=Foo(foo=2))'
