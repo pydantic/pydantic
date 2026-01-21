@@ -13,7 +13,7 @@ use crate::PydanticSerializationUnexpectedValue;
 use crate::common::missing_sentinel::get_missing_sentinel_object;
 use crate::serializers::SerializationState;
 use crate::serializers::errors::unwrap_ser_error;
-use crate::serializers::extra::{FieldName, IncludeExclude, SerCheck};
+use crate::serializers::extra::{IncludeExclude, SerCheck};
 use crate::serializers::shared::{DoSerialize, SerializeMap, serialize_to_json, serialize_to_python};
 use crate::serializers::type_serializers::any::AnySerializer;
 use crate::serializers::type_serializers::function::{FunctionPlainSerializer, FunctionWrapSerializer};
@@ -193,7 +193,7 @@ impl GeneralFieldsSerializer {
             let (key, value) = result?;
             let key_str: PyBackedStr = key.extract()?;
 
-            let field_name = FieldName::from(key.clone().cast_into().map_err(PyErr::from)?);
+            let field_name = pybackedstr_to_pystring(py, &key_str);
             let state = &mut state.scoped_set(|s| &mut s.field_name, Some(field_name));
 
             if let Some(field) = self.fields.get(&*key_str) {
@@ -401,7 +401,7 @@ fn model_type_name(model: &Bound<'_, PyAny>) -> Option<String> {
 fn unexpected_field(key: &PyBackedStr, model: &Bound<'_, PyAny>) -> PyErr {
     PydanticSerializationUnexpectedValue::new(
         Some(format!("Unexpected field `{key}`")),
-        Some(key.to_string()),
+        Some(pybackedstr_to_pystring(model.py(), key).unbind()),
         model_type_name(model),
         None,
     )
@@ -417,7 +417,7 @@ fn incorrect_field_count(
 ) -> PyErr {
     PydanticSerializationUnexpectedValue::new(
         Some(format!("Expected {expected_fields} fields but got {used_fields}").to_string()),
-        state.field_name.as_ref().map(ToString::to_string),
+        state.field_name.as_ref().map(|name| name.clone().unbind()),
         model_type_name(model),
         Some(model.clone().unbind()),
     )

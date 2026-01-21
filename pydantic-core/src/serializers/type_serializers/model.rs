@@ -17,7 +17,6 @@ use crate::build_tools::py_schema_err;
 use crate::build_tools::{ExtraBehavior, py_schema_error_type};
 use crate::definitions::DefinitionsBuilder;
 use crate::serializers::SerializationState;
-use crate::serializers::extra::FieldName;
 use crate::serializers::shared::DoSerialize;
 use crate::serializers::shared::serialize_to_json;
 use crate::serializers::shared::serialize_to_python;
@@ -25,8 +24,7 @@ use crate::serializers::type_serializers::any::AnySerializer;
 use crate::serializers::type_serializers::function::FunctionPlainSerializer;
 use crate::serializers::type_serializers::function::FunctionWrapSerializer;
 use crate::tools::SchemaDict;
-
-const ROOT_FIELD: &str = "root";
+use crate::tools::root_field_py_str;
 
 pub struct ModelFieldsBuilder;
 
@@ -188,7 +186,8 @@ impl ModelSerializer {
             return do_serialize.serialize_fallback(self.get_name(), value, state);
         }
 
-        let root = value.getattr(intern!(value.py(), ROOT_FIELD))?;
+        let root_field = root_field_py_str(value.py());
+        let root = value.getattr(root_field)?;
 
         // for root models, `serialize_as_any` may apply unless a `field_serializer` is used
         let serializer = if state.extra.serialize_as_any
@@ -207,7 +206,7 @@ impl ModelSerializer {
             &self.serializer
         };
 
-        let state = &mut state.scoped_set(|s| &mut s.field_name, Some(FieldName::Root));
+        let state = &mut state.scoped_set(|s| &mut s.field_name, Some(root_field.clone()));
         let state = &mut state.scoped_set(|s| &mut s.model, Some(value.clone()));
         do_serialize.serialize_no_infer(serializer, &root, state)
     }
