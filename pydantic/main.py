@@ -1701,7 +1701,7 @@ def create_model(
     __validators__: dict[str, Callable[..., Any]] | None = None,
     __cls_kwargs__: dict[str, Any] | None = None,
     __qualname__: str | None = None,
-    **field_definitions: Any | tuple[str, Any],
+    **field_definitions: Any | tuple[Any, Any],
 ) -> type[BaseModel]: ...
 
 
@@ -1717,7 +1717,7 @@ def create_model(
     __validators__: dict[str, Callable[..., Any]] | None = None,
     __cls_kwargs__: dict[str, Any] | None = None,
     __qualname__: str | None = None,
-    **field_definitions: Any | tuple[str, Any],
+    **field_definitions: Any | tuple[Any, Any],
 ) -> type[ModelT]: ...
 
 
@@ -1733,7 +1733,7 @@ def create_model(  # noqa: C901
     __cls_kwargs__: dict[str, Any] | None = None,
     __qualname__: str | None = None,
     # TODO PEP 747: replace `Any` by the TypeForm:
-    **field_definitions: Any | tuple[str, Any],
+    **field_definitions: Any | tuple[Any, Any],
 ) -> type[ModelT]:
     """!!! abstract "Usage Documentation"
         [Dynamic Model Creation](../concepts/models.md#dynamic-model-creation)
