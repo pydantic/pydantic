@@ -959,7 +959,7 @@ except ValidationError as e:
 
 ```
 
-1. The `OuterT` model is parametrized with `int`, but the data associated with the the `T` annotations during validation is of type `str`, leading to validation errors.
+1. The `OuterT` model is parametrized with `int`, but the data associated with the `T` annotations during validation is of type `str`, leading to validation errors.
 
 Warning
 
