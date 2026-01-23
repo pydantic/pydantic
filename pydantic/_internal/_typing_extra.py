@@ -316,7 +316,7 @@ def get_model_type_hints(
     *,
     ns_resolver: NsResolver | None = None,
 ) -> dict[str, tuple[Any, bool]]:
-    """Collect annotations from a Pydantic model class, optimizing for performance by reusing base class info.
+    """Collect annotations from a Pydantic model class by efficiently merging cached info from base classes.
 
     Args:
         model_class: The Pydantic model class to inspect.
@@ -330,19 +330,25 @@ def get_model_type_hints(
     hints: dict[str, tuple[Any, bool]] = {}
     ns_resolver = ns_resolver or NsResolver()
 
-    # Collect hints from base models first (ordered by MRO)
-    # We skip the last element which is BaseModel or something non-pydantic
+    # We use a custom attribute to store 'resolved' hints to cut off MRO traversal.
+    # If a base class already has its hints fully resolved, we don't need to look higher.
     for base in reversed(model_class.__bases__):
-        if base_fields := getattr(base, '__pydantic_fields__', None):
-            for name, field_info in base_fields.items():
-                hints[name] = (field_info.annotation, True)
-        
-        # Also include class vars and private attributes from base
-        if base_private := getattr(base, '__pydantic_private_attributes__', None):
-            # Private attributes usually have simple annotations, but we keep them
-            pass # Private attrs are handled separately in collect_model_fields
+        # Look for pre-resolved hints. This is our 'Forest' shortcut.
+        base_hints = getattr(base, '__pydantic_type_hints__', None)
+        if base_hints is not None:
+            hints.update(base_hints)
+            continue
+            
+        # Fallback for non-pydantic bases or unresolved models (recursive scan only when needed)
+        # This part ensures we still support complex mixed inheritance while cutting off the 'Forest'
+        # of standard Pydantic models.
+        if hasattr(base, '__pydantic_fields__'):
+            # If it's a Pydantic model but hints aren't cached, we might need to recurse or
+            # use what we have. For maximum safety and performance, we'll try to get hints
+            # from this base specifically.
+            hints.update(get_model_type_hints(base, ns_resolver=ns_resolver))
 
-    # Now add/override with current class annotations
+    # Now add/override with current class annotations (The 'Tree' part)
     ann = safe_get_annotations(model_class)
     if ann:
         with ns_resolver.push(model_class):
@@ -355,6 +361,15 @@ def get_model_type_hints(
                         hints[name] = (value, False)
                 else:
                     hints[name] = try_eval_type(value, globalns, localns)
+
+    # Cache the result on the class to enable the 'Cut-off' for future subclasses.
+    # This turns the expensive recursive forest traversal into an O(1) lookup for descendants.
+    if not hasattr(model_class, '__pydantic_type_hints__'):
+        try:
+            setattr(model_class, '__pydantic_type_hints__', hints)
+        except (AttributeError, TypeError):
+            # Fail silently if we can't set the attribute (e.g. some slots scenarios)
+            pass
 
     return hints
 
