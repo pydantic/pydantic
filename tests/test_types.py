@@ -6491,6 +6491,27 @@ def test_annotated_default_value_functional_validator() -> None:
         assert t.json_schema() == {'type': 'array', 'items': {'type': 'integer'}, 'default': ['1', '2']}
 
 
+def test_importstring_reports_internal_import_error(tmp_path, monkeypatch):
+    # Create a module that exists, but fails to import due to missing dependency
+    (tmp_path / 'my_module.py').write_text(
+        "import definitely_missing_dep_xyz\n\n"
+        "class MyClass:\n"
+        "    pass\n"
+    )
+    monkeypatch.syspath_prepend(tmp_path)
+
+    adapter = TypeAdapter(ImportString)
+
+    with pytest.raises(ValidationError) as exc_info:
+        adapter.validate_python('my_module.MyClass')
+
+    msg = str(exc_info.value)
+    assert "definitely_missing_dep_xyz" in msg
+    assert "my_module" in msg
+    # ensure we don't incorrectly claim the object path is missing
+    assert "my_module.MyClass" not in msg or "No module named 'my_module.MyClass'" not in msg
+
+
 @pytest.mark.parametrize(
     'pydantic_type,expected',
     (
