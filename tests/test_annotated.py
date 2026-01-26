@@ -635,3 +635,21 @@ def test_decimal_constraints_after_annotation() -> None:
         ta.validate_python(Decimal('12345678.901'))
 
     assert e.value.errors()[0]['type'] == 'decimal_max_digits'
+
+
+def test_field_constraint_override():
+    """Overriding Field constraints in nested Annotated should work. Regression for #11361."""
+    from pydantic.functional_validators import AfterValidator
+
+    String = Annotated[str, Field(max_length=10), AfterValidator(lambda v: v)]
+
+    class Model(BaseModel):
+        name: Annotated[String, Field(max_length=20)]
+
+    # max_length=20 should override max_length=10
+    m = Model(name='a' * 20)
+    assert len(m.name) == 20
+
+    # original constraint should still apply when not overridden
+    with pytest.raises(ValidationError):
+        Model(name='a' * 21)

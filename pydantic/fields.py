@@ -565,7 +565,20 @@ class FieldInfo(_repr.Representation):
 
         merged_kwargs.update(attr_overrides)
         merged_field_info = cls(**merged_kwargs)
-        merged_field_info.metadata = merged_metadata
+
+        # Deduplicate constraint metadata by type, keeping last occurrence.
+        # This allows Field(max_length=20) to override Field(max_length=10) from inner Annotated.
+        seen_constraint_types: dict[type, int] = {}
+        for i, item in enumerate(merged_metadata):
+            if isinstance(item, (annotated_types.BaseMetadata, _fields.PydanticMetadata)):
+                seen_constraint_types[type(item)] = i
+
+        # Keep non-constraints and only the last occurrence of each constraint type
+        merged_field_info.metadata = [
+            item for i, item in enumerate(merged_metadata)
+            if not isinstance(item, (annotated_types.BaseMetadata, _fields.PydanticMetadata))
+            or seen_constraint_types.get(type(item)) == i
+        ]
         return merged_field_info
 
     @staticmethod
