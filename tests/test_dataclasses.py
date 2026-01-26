@@ -3282,3 +3282,26 @@ def test_dataclass_field_exclude() -> None:
     assert ta.dump_json(Foo(foo='bar', bar=1)).decode('utf-8') == '{"bar":1}'
     assert ta.dump_json(Foo(foo='bar', bar=1), exclude={'bar'}).decode('utf-8') == '{}'
     assert ta.dump_json(Foo(foo='bar', bar=2)).decode('utf-8') == '{}'
+
+
+@pytest.mark.parametrize('class_kw_only', [True, False], ids=['class_kw=True', 'class_kw=False'])
+@pytest.mark.parametrize('field_kw_only', [True, False], ids=['field_kw=True', 'field_kw=False'])
+def test_dataclass_field_override_kw_only(class_kw_only, field_kw_only) -> None:
+    """
+    Verifies that pydantic.Field(kw_only=...) is able to correctly
+        override class-level kw_only
+    """
+
+    @pydantic.dataclasses.dataclass(kw_only=class_kw_only)
+    class Foo:
+        a: int = Field(kw_only=field_kw_only)
+
+    sig = str(inspect.signature(Foo))
+    if (field_kw_only) or (class_kw_only and field_kw_only is None):
+        with pytest.raises(ValidationError):
+            Foo(1)
+
+        assert re.match(r'\(\*,.+', sig)
+
+    else:
+        assert re.match(r'\([^\*]+', sig)
