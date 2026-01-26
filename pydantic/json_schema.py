@@ -465,7 +465,6 @@ class GenerateJsonSchema:
             if core_mode_ref in self.core_to_defs_refs and self.core_to_defs_refs[core_mode_ref] in self.definitions:
                 return {'$ref': self.core_to_json_refs[core_mode_ref]}
 
-
         def handler_func(schema_or_field: CoreSchemaOrField) -> JsonSchemaValue:
             """Generate a JSON schema based on the input schema.
 
