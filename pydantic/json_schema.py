@@ -455,9 +455,6 @@ class GenerateJsonSchema:
         Returns:
             The generated JSON schema.
 
-        TODO: the nested function definitions here seem like bad practice, I'd like to unpack these
-        in a future PR. It'd be great if we could shorten the call stack a bit for JSON schema generation,
-        and I think there's potential for that here.
         """
         # If a schema with the same CoreRef has been handled, just return a reference to it
         # Note that this assumes that it will _never_ be the case that the same CoreRef is used
@@ -468,19 +465,6 @@ class GenerateJsonSchema:
             if core_mode_ref in self.core_to_defs_refs and self.core_to_defs_refs[core_mode_ref] in self.definitions:
                 return {'$ref': self.core_to_json_refs[core_mode_ref]}
 
-        def populate_defs(core_schema: CoreSchema, json_schema: JsonSchemaValue) -> JsonSchemaValue:
-            if 'ref' in core_schema:
-                core_ref = CoreRef(core_schema['ref'])  # type: ignore[typeddict-item]
-                defs_ref, ref_json_schema = self.get_cache_defs_ref_schema(core_ref)
-                json_ref = JsonRef(ref_json_schema['$ref'])
-                # Replace the schema if it's not a reference to itself
-                # What we want to avoid is having the def be just a ref to itself
-                # which is what would happen if we blindly assigned any
-                if json_schema.get('$ref', None) != json_ref:
-                    self.definitions[defs_ref] = json_schema
-                    self._core_defs_invalid_for_json_schema.pop(defs_ref, None)
-                json_schema = ref_json_schema
-            return json_schema
 
         def handler_func(schema_or_field: CoreSchemaOrField) -> JsonSchemaValue:
             """Generate a JSON schema based on the input schema.
@@ -561,7 +545,7 @@ class GenerateJsonSchema:
             ) -> JsonSchemaValue:
                 json_schema = js_modify_function(schema_or_field, current_handler)
                 if _core_utils.is_core_schema(schema_or_field):
-                    json_schema = populate_defs(schema_or_field, json_schema)
+                    json_schema = self._populate_defs(schema_or_field, json_schema)
                 original_schema = current_handler.resolve_ref_schema(json_schema)
                 ref = json_schema.pop('$ref', None)
                 if ref and json_schema:
@@ -583,7 +567,21 @@ class GenerateJsonSchema:
 
         json_schema = current_handler(schema)
         if _core_utils.is_core_schema(schema):
-            json_schema = populate_defs(schema, json_schema)
+            json_schema = self._populate_defs(schema, json_schema)
+        return json_schema
+
+    def _populate_defs(self, core_schema: CoreSchema, json_schema: JsonSchemaValue) -> JsonSchemaValue:
+        if 'ref' in core_schema:
+            core_ref = CoreRef(core_schema['ref'])  # type: ignore[typeddict-item]
+            defs_ref, ref_json_schema = self.get_cache_defs_ref_schema(core_ref)
+            json_ref = JsonRef(ref_json_schema['$ref'])
+            # Replace the schema if it's not a reference to itself
+            # What we want to avoid is having the def be just a ref to itself
+            # which is what would happen if we blindly assigned any
+            if json_schema.get('$ref', None) != json_ref:
+                self.definitions[defs_ref] = json_schema
+                self._core_defs_invalid_for_json_schema.pop(defs_ref, None)
+            json_schema = ref_json_schema
         return json_schema
 
     def sort(self, value: JsonSchemaValue, parent_key: str | None = None) -> JsonSchemaValue:
