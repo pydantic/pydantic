@@ -1630,7 +1630,8 @@ def test_parameterized_with_annotated_forward_refs() -> None:
 
     assert M.model_fields['a'].metadata == [3]
     assert M.model_fields['b'].metadata == [3, 1]
-    assert M.model_fields['c'].metadata == [Gt(2), 3, 2]
+    # Field(gt=2) metadata is appended (last) for proper override semantics
+    assert M.model_fields['c'].metadata == [3, 2, Gt(2)]
 
 
 @pytest.mark.xfail(
@@ -1672,4 +1673,5 @@ def test_parameterized_pep695_generic_with_annotated_forward_refs(create_module)
 
     assert M.model_fields['a'].metadata == [3]
     assert M.model_fields['b'].metadata == [3, 1]
-    assert M.model_fields['c'].metadata == [Gt(2), 3, 2]
+    # Field(gt=2) metadata is appended (last) for proper override semantics
+    assert M.model_fields['c'].metadata == [3, 2, Gt(2)]
