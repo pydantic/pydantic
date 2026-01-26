@@ -3284,6 +3284,7 @@ def test_dataclass_field_exclude() -> None:
     assert ta.dump_json(Foo(foo='bar', bar=2)).decode('utf-8') == '{}'
 
 
+@pytest.mark.skipif(sys.version_info < (3, 10), reason='kw_only is not available in python < 3.10')
 @pytest.mark.parametrize('class_kw_only', [True, False], ids=['class_kw=True', 'class_kw=False'])
 @pytest.mark.parametrize('field_kw_only', [True, False], ids=['field_kw=True', 'field_kw=False'])
 def test_dataclass_field_override_kw_only(class_kw_only, field_kw_only) -> None:
