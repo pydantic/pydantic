@@ -58,7 +58,9 @@ NO_VALUE = object()
         (
             lambda: Annotated[int, Lt(2)],
             Field(5, gt=0),
-            'FieldInfo(annotation=int, required=False, default=5, metadata=[Gt(gt=0), Lt(lt=2)])',
+            # With constraint deduplication fix, assignment constraints are appended (not prepended)
+            # so the order is: annotation constraints first, then assignment constraints
+            'FieldInfo(annotation=int, required=False, default=5, metadata=[Lt(lt=2), Gt(gt=0)])',
         ),
         (
             lambda: Annotated[int, Gt(0)],
@@ -363,6 +365,53 @@ def test_merge_field_infos_ordering() -> None:
             'ctx': {'le': 2},
         }
     ]
+
+
+def test_override_composed_field_constraints_with_after_validator() -> None:
+    """Test that Field constraints can be overridden in composed Annotated types with AfterValidator.
+
+    This is a regression test for https://github.com/pydantic/pydantic/issues/11361
+    """
+    # Create a shared annotated type with constraints and a validator
+    String = Annotated[str, Field(min_length=5, max_length=10), AfterValidator(lambda v: v)]
+
+    # Test 1: Override max_length using nested Annotated
+    class TestModelAnnotated(BaseModel):
+        title: Annotated[String, Field(max_length=20)]
+
+    # Should accept a 20-character string
+    result = TestModelAnnotated(title='a' * 20)
+    assert len(result.title) == 20
+
+    # Test 2: Override max_length using Field() assignment
+    class TestModelAssignment(BaseModel):
+        title: String = Field(max_length=20)
+
+    result = TestModelAssignment(title='a' * 20)
+    assert len(result.title) == 20
+
+    # Test 3: Override min_length
+    class TestModelMinLen(BaseModel):
+        title: Annotated[String, Field(min_length=2)]
+
+    result = TestModelMinLen(title='abc')  # length 3, should pass with min_length=2
+    assert result.title == 'abc'
+
+    # Test 4: Original constraint still enforced when not overridden
+    class TestModelOriginal(BaseModel):
+        title: String
+
+    with pytest.raises(ValidationError):
+        TestModelOriginal(title='a' * 15)  # Should fail - max_length is 10
+
+    # Test 5: Validator still works after override
+    String2 = Annotated[str, Field(max_length=5), AfterValidator(lambda v: v.upper())]
+
+    class TestModelValidator(BaseModel):
+        title: Annotated[String2, Field(max_length=10)]
+
+    result = TestModelValidator(title='hello')
+    assert result.title == 'HELLO'
 
 
 def test_validate_float_inf_nan_python() -> None:

@@ -427,10 +427,6 @@ class FieldInfo(_repr.Representation):
         final = 'final' in inspected_ann.qualifiers
         metadata = inspected_ann.metadata
 
-        # HACK 1: the order in which the metadata is merged is inconsistent; we need to prepend
-        # metadata from the assignment at the beginning of the metadata. Changing this is only
-        # possible in v3 (at least). See https://github.com/pydantic/pydantic/issues/10507
-        prepend_metadata: list[Any] | None = None
         attr_overrides = {'annotation': type_expr}
         if final:
             attr_overrides['frozen'] = True
@@ -446,18 +442,18 @@ class FieldInfo(_repr.Representation):
             return field_info
 
         if isinstance(default, FieldInfo):
-            default_copy = default._copy()  # Copy unnecessary when we remove HACK 1.
-            prepend_metadata = default_copy.metadata
-            default_copy.metadata = []
-            metadata = metadata + [default_copy]
+            # Append the assignment FieldInfo to the end of metadata so it comes after annotation constraints.
+            # The _construct method handles deduplication by type for constraint metadata,
+            # keeping the LAST occurrence. This ensures `title: String = Field(max_length=20)`
+            # will use max_length=20 even if String has max_length=10.
+            metadata = metadata + [default]
             if 'init_var' in inspected_ann.qualifiers:
                 # Only relevant for dataclasses, when `f: InitVar[<type>] = Field(...)`
                 # is used:
                 attr_overrides['init_var'] = True
         elif isinstance(default, dataclasses.Field):
             from_field = FieldInfo._from_dataclass_field(default)
-            prepend_metadata = from_field.metadata  # Unnecessary when we remove HACK 1.
-            from_field.metadata = []
+            # Same as above - append to allow override
             metadata = metadata + [from_field]
             if 'init_var' in inspected_ann.qualifiers:
                 attr_overrides['init_var'] = True
@@ -469,9 +465,7 @@ class FieldInfo(_repr.Representation):
             # `default` is the actual default value
             attr_overrides['default'] = default
 
-        field_info = FieldInfo._construct(
-            prepend_metadata + metadata if prepend_metadata is not None else metadata, **attr_overrides
-        )
+        field_info = FieldInfo._construct(metadata, **attr_overrides)
         field_info._qualifiers = inspected_ann.qualifiers
         field_info._final = True
         return field_info
@@ -504,12 +498,34 @@ class FieldInfo(_repr.Representation):
         Returns:
             The final merged `FieldInfo` instance.
         """
-        merged_metadata: list[Any] = []
+        # First pass: collect all metadata items in order, tracking the LAST index of each constraint type.
+        # This allows us to deduplicate constraints (e.g., when composing Annotated types where the outer
+        # Field() should override the inner Field()'s constraints of the same type) while preserving order.
+        # The LAST occurrence wins because outer/assignment constraints are appended to the metadata list.
+        all_items: list[Any] = []
+        # Track the last index where each constraint type appears
+        constraint_last_index: dict[type, int] = {}
         merged_kwargs: dict[str, Any] = {}
+
+        def _is_constraint(item: Any) -> bool:
+            """Check if an item is a constraint type that should be deduplicated."""
+            return isinstance(
+                item, (annotated_types.BaseMetadata, _fields.PydanticMetadata, annotated_types.GroupedMetadata)
+            )
+
+        def _add_metadata_item(item: Any) -> None:
+            """Add a metadata item, tracking constraint indices for later deduplication."""
+            idx = len(all_items)
+            all_items.append(item)
+            if _is_constraint(item):
+                # Track the last index for this constraint type (overwrite each time)
+                constraint_last_index[type(item)] = idx
 
         for meta in metadata:
             if isinstance(meta, FieldInfo):
-                merged_metadata.extend(meta.metadata)
+                # Process each metadata item from this FieldInfo
+                for item in meta.metadata:
+                    _add_metadata_item(item)
 
                 new_js_extra: JsonDict | None = None
                 current_js_extra = meta.json_schema_extra
@@ -561,7 +577,19 @@ class FieldInfo(_repr.Representation):
             elif typing_objects.is_deprecated(meta):
                 merged_kwargs['deprecated'] = meta
             else:
-                merged_metadata.append(meta)
+                _add_metadata_item(meta)
+
+        # Second pass: build final metadata list, skipping duplicate constraints (keeping only the last one of each type).
+        # This preserves order while allowing later (appended) constraints to override earlier ones.
+        merged_metadata: list[Any] = []
+        for idx, item in enumerate(all_items):
+            if _is_constraint(item):
+                # Only include this constraint if it's the last occurrence of its type
+                if constraint_last_index.get(type(item)) == idx:
+                    merged_metadata.append(item)
+            else:
+                # Non-constraint items (validators, etc.) are always included
+                merged_metadata.append(item)
 
         merged_kwargs.update(attr_overrides)
         merged_field_info = cls(**merged_kwargs)

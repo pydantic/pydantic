@@ -388,8 +388,9 @@ def test_parametrized_with_annotated_unpacked() -> None:
 
     assert Sub.model_fields['a'].metadata == [3]
     assert Sub.model_fields['b'].metadata == [3, 1]
-    # Might look unexpected, but it is until v3 (https://github.com/pydantic/pydantic/issues/10507):
-    assert Sub.model_fields['c'].metadata == [Gt(2), 3, 2]
+    # With constraint deduplication fix, assignment constraints are appended (not prepended)
+    # so the order is: type constraints first, then Field() assignment constraints
+    assert Sub.model_fields['c'].metadata == [3, 2, Gt(2)]
 
 
 def test_field_info_mutation_create_model() -> None:
