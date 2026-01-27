@@ -349,6 +349,9 @@ print(my_model.model_dump_json())  # (2)!
 
 ### Complex numbers
 
+/// version-added | v2.9
+///
+
 Built-in type: [`complex`][].
 
 <h4>Validation</h4>
@@ -375,6 +378,9 @@ In [JSON mode](../concepts/serialization.md#json-mode), they are serialized as s
 [](){#fractionsfraction}
 
 ### Fractions
+
+/// version-added | v2.10
+///
 
 Standard library type: [`fractions.Fraction`][].
 

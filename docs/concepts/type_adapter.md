@@ -93,7 +93,10 @@ handle as fields of a [`BaseModel`][pydantic.main.BaseModel].
 
 ## Rebuilding a `TypeAdapter`'s schema
 
-In v2.10+, [`TypeAdapter`][pydantic.type_adapter.TypeAdapter]'s support deferred schema building and manual rebuilds. This is helpful for the case of:
+/// version-added | v2.10
+///
+
+[`TypeAdapter`][pydantic.type_adapter.TypeAdapter]'s support deferred schema building and manual rebuilds. This is helpful for the case of:
 
 * Types with forward references
 * Types for which core schema builds are expensive

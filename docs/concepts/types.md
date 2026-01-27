@@ -145,6 +145,10 @@ except ValidationError as exc:
 
 ### Named type aliases
 
+/// version-added | v2.11
+Named type aliases are now fully supported.
+///
+
 The above examples make use of *implicit* type aliases, assigned to a variable. At runtime, Pydantic
 has no way of knowing the name of the variable it was assigned to, and this can be problematic for
 two reasons:
