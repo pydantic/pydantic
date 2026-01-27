@@ -1,11 +1,10 @@
 use std::borrow::Cow;
 use std::collections::hash_map::DefaultHasher;
-use std::fmt::{self, Display};
-use std::fmt::{Formatter, Write};
+use std::fmt::{self, Formatter, Write};
 use std::hash::{Hash, Hasher};
 use std::sync::OnceLock;
 
-use idna::punycode::decode_to_string;
+use idna::punycode::{decode_to_string, encode_str};
 use jiter::{PartialMode, StringCacheMode};
 use percent_encoding::{AsciiSet, CONTROLS, percent_encode};
 use pyo3::exceptions::PyValueError;
@@ -218,7 +217,7 @@ impl PyUrl {
     }
 
     #[classmethod]
-    #[pyo3(signature=(*, scheme, host, username=None, password=None, port=None, path=None, query=None, fragment=None))]
+    #[pyo3(signature=(*, scheme, host, username=None, password=None, port=None, path=None, query=None, fragment=None, encode_components=false))]
     #[allow(clippy::too_many_arguments)]
     pub fn build<'py>(
         cls: &Bound<'py, PyType>,
@@ -230,27 +229,7 @@ impl PyUrl {
         path: Option<&str>,
         query: Option<&str>,
         fragment: Option<&str>,
-        // encode_credentials: bool, // TODO: re-enable this
-    ) -> PyResult<Bound<'py, PyAny>> {
-        Self::build_inner(
-            cls, scheme, host, username, password, port, path, query, fragment, false,
-        )
-    }
-}
-
-impl PyUrl {
-    #[allow(clippy::too_many_arguments)]
-    fn build_inner<'py>(
-        cls: &Bound<'py, PyType>,
-        scheme: &str,
-        host: &str,
-        username: Option<&str>,
-        password: Option<&str>,
-        port: Option<u16>,
-        path: Option<&str>,
-        query: Option<&str>,
-        fragment: Option<&str>,
-        encode_credentials: bool,
+        encode_components: bool,
     ) -> PyResult<Bound<'py, PyAny>> {
         let url_host = UrlHostParts {
             username: username.map(Into::into),
@@ -258,24 +237,54 @@ impl PyUrl {
             host: Some(host.into()),
             port,
         };
-        let mut url = format!("{scheme}://");
-        url_host
-            .to_writer(&mut url, encode_credentials)
+        let mut url = String::new();
+        write_url(&mut url, scheme, &[url_host], path, query, fragment, encode_components)
             .expect("writing to string should not fail");
-        if let Some(path) = path {
-            url.push('/');
-            url.push_str(path);
-        }
-        if let Some(query) = query {
-            url.push('?');
-            url.push_str(query);
-        }
-        if let Some(fragment) = fragment {
-            url.push('#');
-            url.push_str(fragment);
-        }
         cls.call1((url,))
     }
+}
+
+fn write_url(
+    writer: &mut impl Write,
+    scheme: &str,
+    host_parts: &[UrlHostParts],
+    path: Option<&str>,
+    query: Option<&str>,
+    fragment: Option<&str>,
+    encode_components: bool,
+) -> fmt::Result {
+    write!(writer, "{scheme}://")?;
+    let mut first = true;
+    for single_host in host_parts {
+        if first {
+            first = false;
+        } else {
+            writer.write_char(',')?;
+        }
+        single_host.to_writer(writer, encode_components)?;
+    }
+    if let Some(path) = path {
+        let path_encoding = encode_components.then_some(&PATH_ENCODE_SET);
+        writer.write_char('/')?;
+        write!(writer, "{}", MaybeEncoded(path, path_encoding))?;
+    }
+    if let Some(query) = query {
+        let query_encoding = encode_components.then(|| {
+            if scheme_is_special(scheme) {
+                &SPECIAL_QUERY_ENCODE_SET
+            } else {
+                &QUERY_ENCODE_SET
+            }
+        });
+        writer.write_char('?')?;
+        write!(writer, "{}", MaybeEncoded(query, query_encoding))?;
+    }
+    if let Some(fragment) = fragment {
+        let fragment_encoding = encode_components.then_some(&FRAGMENT_ENCODE_SET);
+        writer.write_char('#')?;
+        write!(writer, "{}", MaybeEncoded(fragment, fragment_encoding))?;
+    }
+    Ok(())
 }
 
 #[pyclass(name = "MultiHostUrl", module = "pydantic_core._pydantic_core", subclass, frozen)]
@@ -466,7 +475,7 @@ impl PyMultiHostUrl {
     }
 
     #[classmethod]
-    #[pyo3(signature=(*, scheme, hosts=None, path=None, query=None, fragment=None, host=None, username=None, password=None, port=None))]
+    #[pyo3(signature=(*, scheme, hosts=None, path=None, query=None, fragment=None, host=None, username=None, password=None, port=None, encode_components=false))]
     #[allow(clippy::too_many_arguments)]
     fn build<'py>(
         cls: &Bound<'py, PyType>,
@@ -480,80 +489,39 @@ impl PyMultiHostUrl {
         username: Option<&str>,
         password: Option<&str>,
         port: Option<u16>,
-        // encode_credentials: bool, // TODO: re-enable this
+        encode_components: bool,
     ) -> PyResult<Bound<'py, PyAny>> {
-        Self::build_inner(
-            cls, scheme, hosts, path, query, fragment, host, username, password, port,
-            false, // TODO: re-enable this
-        )
-    }
-}
-
-impl PyMultiHostUrl {
-    #[allow(clippy::too_many_arguments)]
-    fn build_inner<'py>(
-        cls: &Bound<'py, PyType>,
-        scheme: &str,
-        hosts: Option<Vec<UrlHostParts>>,
-        path: Option<&str>,
-        query: Option<&str>,
-        fragment: Option<&str>,
-        // convenience parameters to build with a single host
-        host: Option<&str>,
-        username: Option<&str>,
-        password: Option<&str>,
-        port: Option<u16>,
-        encode_credentials: bool,
-    ) -> PyResult<Bound<'py, PyAny>> {
-        let mut url = format!("{scheme}://");
-
-        if hosts.is_some() && (host.is_some() || username.is_some() || password.is_some() || port.is_some()) {
+        let single_host;
+        let hosts = if hosts.is_some() && (host.is_some() || username.is_some() || password.is_some() || port.is_some())
+        {
             return Err(PyValueError::new_err(
                 "expected one of `hosts` or singular values to be set.",
             ));
-        } else if let Some(hosts) = hosts {
+        } else if let Some(hosts) = &hosts {
             // check all of host / user / password / port empty
-            // build multi-host url
-            let len = hosts.len();
-            for (index, single_host) in hosts.into_iter().enumerate() {
-                if single_host.is_empty() {
+            for host in hosts {
+                if host.is_empty() {
                     return Err(PyValueError::new_err(
                         "expected one of 'host', 'username', 'password' or 'port' to be set",
                     ));
                 }
-                single_host
-                    .to_writer(&mut url, encode_credentials)
-                    .expect("writing to string should not fail");
-                if index != len - 1 {
-                    url.push(',');
-                }
             }
+            hosts
         } else if host.is_some() {
-            let url_host = UrlHostParts {
+            single_host = [UrlHostParts {
                 username: username.map(Into::into),
                 password: password.map(Into::into),
                 host: host.map(Into::into),
                 port,
-            };
-            url_host
-                .to_writer(&mut url, encode_credentials)
-                .expect("writing to string should not fail");
+            }];
+            &single_host[..]
         } else {
             return Err(PyValueError::new_err("expected either `host` or `hosts` to be set"));
-        }
+        };
 
-        if let Some(path) = path {
-            url.push('/');
-            url.push_str(path);
-        }
-        if let Some(query) = query {
-            url.push('?');
-            url.push_str(query);
-        }
-        if let Some(fragment) = fragment {
-            url.push('#');
-            url.push_str(fragment);
-        }
+        let mut url = String::new();
+        write_url(&mut url, scheme, hosts, path, query, fragment, encode_components)
+            .expect("writing to string should not fail");
         cls.call1((url,))
     }
 }
@@ -565,12 +533,12 @@ struct UrlHostParts {
     port: Option<u16>,
 }
 
-struct MaybeEncoded<'a>(&'a str, bool);
+struct MaybeEncoded<'a>(&'a str, Option<&'static AsciiSet>);
 
 impl fmt::Display for MaybeEncoded<'_> {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-        if self.1 {
-            write!(f, "{}", encode_userinfo_component(self.0))
+        if let Some(encode_set) = self.1 {
+            write!(f, "{}", percent_encode(self.0.as_bytes(), encode_set))
         } else {
             write!(f, "{}", self.0)
         }
@@ -582,21 +550,28 @@ impl UrlHostParts {
         self.host.is_none() && self.password.is_none() && self.host.is_none() && self.port.is_none()
     }
 
-    fn to_writer(&self, mut w: impl Write, encode_credentials: bool) -> fmt::Result {
+    fn to_writer(&self, w: &mut impl Write, encode_components: bool) -> fmt::Result {
+        let encode_userinfo = encode_components.then_some(&USERINFO_ENCODE_SET);
         match (&self.username, &self.password) {
-            (Some(username), None) => write!(w, "{}@", MaybeEncoded(username, encode_credentials))?,
-            (None, Some(password)) => write!(w, ":{}@", MaybeEncoded(password, encode_credentials))?,
+            (Some(username), None) => write!(w, "{}@", MaybeEncoded(username, encode_userinfo))?,
+            (None, Some(password)) => write!(w, ":{}@", MaybeEncoded(password, encode_userinfo))?,
             (Some(username), Some(password)) => write!(
                 w,
                 "{}:{}@",
-                MaybeEncoded(username, encode_credentials),
-                MaybeEncoded(password, encode_credentials)
+                MaybeEncoded(username, encode_userinfo),
+                MaybeEncoded(password, encode_userinfo)
             )?,
             (None, None) => {}
         }
         if let Some(host) = &self.host {
-            write!(w, "{host}")?;
+            // host might need punycode encoding
+            if encode_components && let Some(encoded) = encode_str(host) {
+                write!(w, "{encoded}")?;
+            } else {
+                write!(w, "{host}")?;
+            }
         }
+        // port does not need encoding
         if let Some(port) = self.port {
             write!(w, ":{port}")?;
         }
@@ -663,21 +638,25 @@ fn is_punnycode_domain(lib_url: &Url, domain: &str) -> bool {
     scheme_is_special(lib_url.scheme()) && domain.split('.').any(|part| part.starts_with(PUNYCODE_PREFIX))
 }
 
+// https://datatracker.ietf.org/doc/html/rfc3986.html#section-2.4
+// we must also percent-encode '%'
+// const not static because it's only used to build the other sets
+const BASE_ENCODE_SET: AsciiSet = CONTROLS.add(b'%');
+
+/// See <https://url.spec.whatwg.org/#fragment-percent-encode-set>
+static FRAGMENT_ENCODE_SET: AsciiSet = BASE_ENCODE_SET.add(b' ').add(b'"').add(b'<').add(b'>').add(b'`');
+
+/// See <https://url.spec.whatwg.org/#query-percent-encode-set>
+static QUERY_ENCODE_SET: AsciiSet = BASE_ENCODE_SET.add(b' ').add(b'"').add(b'#').add(b'<').add(b'>');
+
+/// See <https://url.spec.whatwg.org/#special-query-percent-encode-set>
+static SPECIAL_QUERY_ENCODE_SET: AsciiSet = QUERY_ENCODE_SET.add(b'\'');
+
+/// See <https://url.spec.whatwg.org/#path-percent-encode-set>
+static PATH_ENCODE_SET: AsciiSet = QUERY_ENCODE_SET.add(b'?').add(b'^').add(b'`').add(b'{').add(b'}');
+
 /// See <https://url.spec.whatwg.org/#userinfo-percent-encode-set>
-const USERINFO_ENCODE_SET: &AsciiSet = &CONTROLS
-    // query percent-encodes is controls plus the below
-    .add(b' ')
-    .add(b'"')
-    .add(b'#')
-    .add(b'<')
-    .add(b'>')
-    // path percent-encodes is query percent-encodes plus the below
-    .add(b'?')
-    .add(b'^')
-    .add(b'`')
-    .add(b'{')
-    .add(b'}')
-    // userinfo percent-encodes is path percent-encodes plus the below
+static USERINFO_ENCODE_SET: AsciiSet = PATH_ENCODE_SET
     .add(b'/')
     .add(b':')
     .add(b';')
@@ -686,14 +665,7 @@ const USERINFO_ENCODE_SET: &AsciiSet = &CONTROLS
     .add(b'[')
     .add(b'\\')
     .add(b']')
-    .add(b'|')
-    // https://datatracker.ietf.org/doc/html/rfc3986.html#section-2.4
-    // we must also percent-encode '%'
-    .add(b'%');
-
-fn encode_userinfo_component(value: &str) -> impl Display + '_ {
-    percent_encode(value.as_bytes(), USERINFO_ENCODE_SET)
-}
+    .add(b'|');
 
 // based on https://github.com/servo/rust-url/blob/1c1e406874b3d2aa6f36c5d2f3a5c2ea74af9efb/url/src/parser.rs#L161-L167
 pub fn scheme_is_special(scheme: &str) -> bool {
