@@ -1,3 +1,7 @@
+---
+title: How to Contribute to Pydantic Validation
+description: "Help build the backbone of modern Python apps. Join the Pydantic community to help identify bugs, enhance documentation, and contribute to the core Rust engine."
+---
 We'd love you to contribute to Pydantic!
 
 ## Issues

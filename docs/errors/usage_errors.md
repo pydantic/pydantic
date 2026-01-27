@@ -1,3 +1,7 @@
+---
+title: "Usage Errors: Common Issues & Solutions - Pydantic Validation"
+description: "A practical guide to resolving Pydantic usage errors. Decode common configuration mistakes & model setup issues with this comprehensive guide."
+---
 Pydantic attempts to provide useful errors. The following sections provide details on common errors developers may
 encounter when working with Pydantic, along with suggestions for addressing the error condition.
 
