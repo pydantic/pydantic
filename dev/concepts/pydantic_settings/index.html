@@ -1568,19 +1568,19 @@ to help you monitor and understand your
     </span>
   </a>
   
-</li>
+    <nav class="md-nav" aria-label="Creating CLI Applications">
+      <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#asynchronous-cli-commands" class="md-nav__link">
+  <a href="#asynchronous-commands" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Asynchronous CLI Commands
+        Asynchronous Commands
       
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="Asynchronous CLI Commands">
-      <ul class="md-nav__list">
+</li>
         
           <li class="md-nav__item">
   <a href="#asynchronous-subcommands" class="md-nav__link">
@@ -1593,19 +1593,30 @@ to help you monitor and understand your
   
 </li>
         
-      </ul>
-    </nav>
+          <li class="md-nav__item">
+  <a href="#printing-help" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Printing Help
+      
+    </span>
+  </a>
   
 </li>
         
           <li class="md-nav__item">
-  <a href="#serializing-cli-arguments" class="md-nav__link">
+  <a href="#serializing-arguments" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Serializing CLI Arguments
+        Serializing Arguments
       
     </span>
   </a>
+  
+</li>
+        
+      </ul>
+    </nav>
   
 </li>
         
@@ -4868,19 +4879,19 @@ to help you monitor and understand your
     </span>
   </a>
   
-</li>
+    <nav class="md-nav" aria-label="Creating CLI Applications">
+      <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#asynchronous-cli-commands" class="md-nav__link">
+  <a href="#asynchronous-commands" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Asynchronous CLI Commands
+        Asynchronous Commands
       
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="Asynchronous CLI Commands">
-      <ul class="md-nav__list">
+</li>
         
           <li class="md-nav__item">
   <a href="#asynchronous-subcommands" class="md-nav__link">
@@ -4893,19 +4904,30 @@ to help you monitor and understand your
   
 </li>
         
-      </ul>
-    </nav>
+          <li class="md-nav__item">
+  <a href="#printing-help" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Printing Help
+      
+    </span>
+  </a>
   
 </li>
         
           <li class="md-nav__item">
-  <a href="#serializing-cli-arguments" class="md-nav__link">
+  <a href="#serializing-arguments" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Serializing CLI Arguments
+        Serializing Arguments
       
     </span>
   </a>
+  
+</li>
+        
+      </ul>
+    </nav>
   
 </li>
         
@@ -6584,7 +6606,7 @@ defined) after instantiation:</p>
 <li><code>cli_implicit_flags=True</code></li>
 <li><code>cli_kebab_case=True</code></li>
 </ul>
-<h3 id="asynchronous-cli-commands">Asynchronous CLI Commands<a class="headerlink" href="#asynchronous-cli-commands" title="Permanent link">&para;</a></h3>
+<h4 id="asynchronous-commands">Asynchronous Commands<a class="headerlink" href="#asynchronous-commands" title="Permanent link">&para;</a></h4>
 <p>Pydantic settings supports running asynchronous CLI commands via <code>CliApp.run</code> and <code>CliApp.run_subcommand</code>. With this feature, you can define async def methods within your Pydantic models (including subcommands) and have them executed just like their synchronous counterparts. Specifically:</p>
 <ol>
 <li>Asynchronous methods are supported: You can now mark your cli_cmd or similar CLI entrypoint methods as async def and have CliApp execute them.</li>
@@ -6641,7 +6663,39 @@ defined) after instantiation:</p>
 <span class="p">}</span>
 </code></pre></div>
 <p>When executing a subcommand with an asynchronous cli_cmd, Pydantic settings automatically detects whether the current thread already has an active event loop. If so, the async command is run in a fresh thread to avoid conflicts. Otherwise, it uses asyncio.run() in the current thread. This handling ensures your asynchronous subcommands "just work" without additional manual setup.</p>
-<h3 id="serializing-cli-arguments">Serializing CLI Arguments<a class="headerlink" href="#serializing-cli-arguments" title="Permanent link">&para;</a></h3>
+<h4 id="printing-help">Printing Help<a class="headerlink" href="#printing-help" title="Permanent link">&para;</a></h4>
+<p>The <code>print_help</code> and <code>format_help</code> methods are available for printing or formatting help.</p>
+<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">pydantic_settings</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseSettings</span><span class="p">,</span> <span class="n">CliApp</span>
+
+
+<span class="k">class</span><span class="w"> </span><span class="nc">Settings</span><span class="p">(</span><span class="n">BaseSettings</span><span class="p">,</span> <span class="n">cli_prog_name</span><span class="o">=</span><span class="s1">&#39;example&#39;</span><span class="p">):</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">cli_cmd</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="c1"># Will print help for the current command or subcommand instance.</span>
+        <span class="n">CliApp</span><span class="o">.</span><span class="n">print_help</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+
+        <span class="c1"># Will return formatted help for the current command or subcommand instance.</span>
+        <span class="n">CliApp</span><span class="o">.</span><span class="n">format_help</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+
+
+<span class="n">CliApp</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">Settings</span><span class="p">,</span> <span class="n">cli_args</span><span class="o">=</span><span class="p">[])</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">usage: example [-h]</span>
+
+<span class="sd">options:</span>
+<span class="sd">  -h, --help  show this help message and exit</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="c1"># You can also print or format help on the class itself.</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">CliApp</span><span class="o">.</span><span class="n">format_help</span><span class="p">(</span><span class="n">Settings</span><span class="p">))</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">usage: example [-h]</span>
+
+<span class="sd">options:</span>
+<span class="sd">  -h, --help  show this help message and exit</span>
+<span class="sd">&quot;&quot;&quot;</span>
+</code></pre></div>
+<h4 id="serializing-arguments">Serializing Arguments<a class="headerlink" href="#serializing-arguments" title="Permanent link">&para;</a></h4>
 <p>An instantiated Pydantic model can be serialized into its CLI arguments using the <code>CliApp.serialize</code> method. Serialization styles can be controlled using the <code>list_style</code>, <code>dict_style</code>, and <code>positionals_first</code> flags.</p>
 <div class="language-py highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">pydantic</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseModel</span>
 
@@ -7239,6 +7293,7 @@ parser methods that can be customised, along with their argparse counterparts (t
 <li><code>add_argument_group_method</code> - (<code>argparse.ArgumentParser.add_argument_group</code>)</li>
 <li><code>add_parser_method</code> - (<code>argparse._SubParsersAction.add_parser</code>)</li>
 <li><code>add_subparsers_method</code> - (<code>argparse.ArgumentParser.add_subparsers</code>)</li>
+<li><code>format_help_method</code> - (<code>argparse.ArgumentParser.format_help</code>)</li>
 <li><code>formatter_class</code> - (<code>argparse.RawDescriptionHelpFormatter</code>)</li>
 </ul>
 <p>For a non-argparse parser the parser methods can be set to <code>None</code> if not supported. The CLI settings will only raise an

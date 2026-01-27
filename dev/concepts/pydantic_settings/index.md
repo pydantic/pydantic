@@ -1125,7 +1125,7 @@ For `BaseModel` and `pydantic.dataclasses.dataclass` types, `CliApp.run` will in
 - `cli_implicit_flags=True`
 - `cli_kebab_case=True`
 
-### Asynchronous CLI Commands
+#### Asynchronous Commands
 
 Pydantic settings supports running asynchronous CLI commands via `CliApp.run` and `CliApp.run_subcommand`. With this feature, you can define async def methods within your Pydantic models (including subcommands) and have them executed just like their synchronous counterparts. Specifically:
 
@@ -1193,7 +1193,44 @@ CliApp.run(Git, cli_args=['clone', 'repo', 'dir']).model_dump() == {
 
 When executing a subcommand with an asynchronous cli_cmd, Pydantic settings automatically detects whether the current thread already has an active event loop. If so, the async command is run in a fresh thread to avoid conflicts. Otherwise, it uses asyncio.run() in the current thread. This handling ensures your asynchronous subcommands "just work" without additional manual setup.
 
-### Serializing CLI Arguments
+#### Printing Help
+
+The `print_help` and `format_help` methods are available for printing or formatting help.
+
+```python
+from pydantic_settings import BaseSettings, CliApp
+
+
+class Settings(BaseSettings, cli_prog_name='example'):
+
+    def cli_cmd(self) -> None:
+        # Will print help for the current command or subcommand instance.
+        CliApp.print_help(self)
+
+        # Will return formatted help for the current command or subcommand instance.
+        CliApp.format_help(self)
+
+
+CliApp.run(Settings, cli_args=[])
+"""
+usage: example [-h]
+
+options:
+  -h, --help  show this help message and exit
+"""
+
+# You can also print or format help on the class itself.
+print(CliApp.format_help(Settings))
+"""
+usage: example [-h]
+
+options:
+  -h, --help  show this help message and exit
+"""
+
+```
+
+#### Serializing Arguments
 
 An instantiated Pydantic model can be serialized into its CLI arguments using the `CliApp.serialize` method. Serialization styles can be controlled using the `list_style`, `dict_style`, and `positionals_first` flags.
 
@@ -1863,6 +1900,7 @@ A `CliSettingsSource` connects with a `root_parser` object by using parser metho
 - `add_argument_group_method` - (`argparse.ArgumentParser.add_argument_group`)
 - `add_parser_method` - (`argparse._SubParsersAction.add_parser`)
 - `add_subparsers_method` - (`argparse.ArgumentParser.add_subparsers`)
+- `format_help_method` - (`argparse.ArgumentParser.format_help`)
 - `formatter_class` - (`argparse.RawDescriptionHelpFormatter`)
 
 For a non-argparse parser the parser methods can be set to `None` if not supported. The CLI settings will only raise an error when connecting to the root parser if a parser method is necessary but set to `None`.
