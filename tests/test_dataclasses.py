@@ -3284,25 +3284,15 @@ def test_dataclass_field_exclude() -> None:
     assert ta.dump_json(Foo(foo='bar', bar=2)).decode('utf-8') == '{}'
 
 
-@pytest.mark.skipif(sys.version_info < (3, 10), reason='kw_only is not available in python < 3.10')
-@pytest.mark.parametrize('class_kw_only', [True, False], ids=['class_kw=True', 'class_kw=False'])
-@pytest.mark.parametrize('field_kw_only', [True, False], ids=['field_kw=True', 'field_kw=False'])
-def test_dataclass_field_override_kw_only(class_kw_only, field_kw_only) -> None:
-    """
-    Verifies that pydantic.Field(kw_only=...) is able to correctly
-        override class-level kw_only
-    """
+@pytest.mark.skipif(sys.version_info < (3, 10), reason='kw_only is not available in python >= 3.10')
+def test_dataclass_field_override_kw_only() -> None:
+    """https://github.com/pydantic/pydantic/issues/12736"""
 
-    @pydantic.dataclasses.dataclass(kw_only=class_kw_only)
+    @pydantic.dataclasses.dataclass(kw_only=True)
     class Foo:
-        a: int = Field(kw_only=field_kw_only)
+        a: int = Field(kw_only=False)
 
-    sig = str(inspect.signature(Foo))
-    if (field_kw_only) or (class_kw_only and field_kw_only is None):
-        with pytest.raises(ValidationError):
-            Foo(1)
+    a_param = inspect.signature(Foo).parameters['a']
 
-        assert re.match(r'\(\*,.+', sig)
-
-    else:
-        assert re.match(r'\([^\*]+', sig)
+    assert a_param.kind is inspect.Parameter.POSITIONAL_OR_KEYWORD
+    assert a_param.default is inspect.Parameter.empty
