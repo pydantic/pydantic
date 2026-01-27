@@ -13,6 +13,7 @@ use crate::input::return_enums::EitherComplex;
 use crate::lookup_key::LookupPath;
 use crate::validators::complex::string_to_complex;
 use crate::validators::decimal::create_decimal;
+use crate::validators::fraction::create_fraction;
 use crate::validators::{TemporalUnitMode, ValBytesMode};
 
 use super::datetime::{
@@ -204,6 +205,18 @@ impl<'py, 'data> Input<'py> for JsonValue<'data> {
                 create_decimal(&self.into_pyobject(py)?, self).map(ValidationMatch::lax)
             }
             _ => Err(ValError::new(ErrorTypeDefaults::DecimalType, self)),
+        }
+    }
+
+    fn validate_fraction(&self, _strict: bool, py: Python<'py>) -> ValMatch<Bound<'py, PyAny>> {
+        match self {
+            JsonValue::Float(f) => {
+                create_fraction(&PyString::new(py, &f.to_string()), self).map(ValidationMatch::strict)
+            }
+            JsonValue::Str(..) | JsonValue::Int(..) | JsonValue::BigInt(..) => {
+                create_fraction(&self.into_pyobject(py)?, self).map(ValidationMatch::strict)
+            }
+            _ => Err(ValError::new(ErrorTypeDefaults::FractionType, self)),
         }
     }
 
@@ -460,6 +473,10 @@ impl<'py> Input<'py> for str {
 
     fn validate_decimal(&self, _strict: bool, py: Python<'py>) -> ValMatch<Bound<'py, PyAny>> {
         create_decimal(self.into_pyobject(py)?.as_any(), self).map(ValidationMatch::lax)
+    }
+
+    fn validate_fraction(&self, _strict: bool, py: Python<'py>) -> ValMatch<Bound<'py, PyAny>> {
+        create_fraction(self.into_pyobject(py)?.as_any(), self).map(ValidationMatch::lax)
     }
 
     type Dict<'a> = Never;
