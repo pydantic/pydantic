@@ -418,6 +418,10 @@ jobs:
             interpreter: 3.9 3.10 3.11 3.12 3.13 3.14 3.14t
           - os: linux
             manylinux: auto
+            target: riscv64gc-unknown-linux-gnu
+            interpreter: 3.9 3.10 3.11 3.12 3.13 3.14 3.14t
+          - os: linux
+            manylinux: auto
             target: s390x
             interpreter: 3.9 3.10 3.11 3.12 3.13 3.14 3.14t
           - os: linux
