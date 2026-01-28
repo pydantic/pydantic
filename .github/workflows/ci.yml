@@ -40,6 +40,25 @@ jobs:
           SKIP: no-commit-to-branch
           UV_NO_PROGRESS: '1'
 
+  core-build-sdist:
+    runs-on: ubuntu-latest
+    name: core-build sdist
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.13'
+      - uses: PyO3/maturin-action@v1
+        with:
+          working-directory: pydantic-core
+          command: sdist
+          args: --out dist
+          rust-toolchain: stable
+      - uses: actions/upload-artifact@v5
+        with:
+          name: pypi_files_sdist
+          path: pydantic-core/dist
+
   docs-build:
     runs-on: ubuntu-latest
     steps:
