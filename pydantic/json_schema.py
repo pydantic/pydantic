@@ -251,6 +251,8 @@ class GenerateJsonSchema:
         by_alias: Whether to use field aliases in the generated schemas.
         ref_template: The format string to use when generating reference names.
         union_format: The format to use when combining schemas from unions together. Can be one of:
+        validation_name_strategy: The suffix strategy for validation schemas (default: 'Input').
+        serialization_name_strategy: The suffix strategy for serialization schemas (default: 'Output').
 
             - `'any_of'`: Use the [`anyOf`](https://json-schema.org/understanding-json-schema/reference/combining#anyOf)
               keyword to combine schemas (the default).
