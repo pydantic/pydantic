@@ -2231,7 +2231,12 @@ class GenerateJsonSchema:
         components = [re.sub(r'(?:[^.[\]]+\.)+((?:[^.[\]]+))', r'\1', x) for x in components]
         short_ref = ''.join(components)
 
-        mode_title = _MODE_TITLE_MAPPING[mode]
+        #mode_title = _MODE_TITLE_MAPPING[mode]
+        if mode == 'validation' :
+            mode_title = self.validation_name_strategy
+        else :
+            mode_title = self.serialization_name_strategy
+
 
         # It is important that the generated defs_ref values be such that at least one choice will not
         # be generated for any other core_ref. Currently, this should be the case because we include
