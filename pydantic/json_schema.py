@@ -2231,20 +2231,29 @@ class GenerateJsonSchema:
         components = [re.sub(r'(?:[^.[\]]+\.)+((?:[^.[\]]+))', r'\1', x) for x in components]
         short_ref = ''.join(components)
 
-        #mode_title = _MODE_TITLE_MAPPING[mode]
+        # Select naming strategy based on mode (replaces hardcoded _MODE_TITLE_MAPPING)
+        # mode_title = _MODE_TITLE_MAPPING[mode]  <-- Original code
         if mode == 'validation' :
             mode_title = self.validation_name_strategy
         else :
             mode_title = self.serialization_name_strategy
+
+        # Handle empty suffixes: only append hyphen if suffix is present to avoid dangling '-'
+        if mode_title:
+            mode_suffix = f'-{mode_title}'
+        else:
+            mode_suffix = ''
 
 
         # It is important that the generated defs_ref values be such that at least one choice will not
         # be generated for any other core_ref. Currently, this should be the case because we include
         # the id of the source type in the core_ref
         name = DefsRef(self.normalize_name(short_ref))
-        name_mode = DefsRef(self.normalize_name(short_ref) + f'-{mode_title}')
+        # Use calculated mode_suffix
+        name_mode = DefsRef(self.normalize_name(short_ref) + mode_suffix)
         module_qualname = DefsRef(self.normalize_name(core_ref_no_id))
-        module_qualname_mode = DefsRef(f'{module_qualname}-{mode_title}')
+        # Use calculated mode_suffix
+        module_qualname_mode = DefsRef(f'{module_qualname}{mode_suffix}')
         module_qualname_id = DefsRef(self.normalize_name(core_ref))
         occurrence_index = self._collision_index.get(module_qualname_id)
         if occurrence_index is None:
