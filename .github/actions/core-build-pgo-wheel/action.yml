@@ -44,9 +44,8 @@ runs:
 
     - name: generate pgo data
       run: |
-        ls -lah
-        ls -lah pydantic-core/
-        uv sync --group testing-extra --find-links pydantic-core/pgo-wheel
+        uv sync --group testing-extra --no-install-package pydantic-core
+        uv pip install pydantic-core --no-index --no-deps --find-links pydantic-core/pgo-wheel
         uv run pytest tests/pydantic-core/benchmarks
         RUST_HOST=$(rustc -Vv | grep host | cut -d ' ' -f 2)
         rustup run ${{ inputs.rust-toolchain }} bash -c 'echo LLVM_PROFDATA=$RUSTUP_HOME/toolchains/$RUSTUP_TOOLCHAIN/lib/rustlib/$RUST_HOST/bin/llvm-profdata >> "$GITHUB_ENV"'
