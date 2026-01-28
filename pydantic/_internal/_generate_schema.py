@@ -2147,7 +2147,7 @@ class GenerateSchema:
                 required=True,
             )
             FieldInfo = import_cached_field_info()
-            # We don't accept any other Field annotations for computed fields
+            # We only accept at most one Field annotation for computed fields
             _seen = False
             # Collect all attributes from Annotated, so far exclude_if
             for annotation in annotations:
