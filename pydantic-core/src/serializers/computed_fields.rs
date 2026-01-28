@@ -59,8 +59,7 @@ impl ComputedFields {
                 &value,
                 state,
                 missing_sentinel,
-                // TODO: support exclude_if for computed fields?
-                None,
+                computed_field.serialization_exclude_if.as_ref(),
             )? {
                 continue;
             }
@@ -83,6 +82,7 @@ struct ComputedField {
     serializer: Arc<CombinedSerializer>,
     alias: PyBackedStr,
     serialize_by_alias: Option<bool>,
+    serialization_exclude_if: Option<Py<PyAny>>,
 }
 
 impl ComputedField {
@@ -105,6 +105,7 @@ impl ComputedField {
             serializer,
             alias,
             serialize_by_alias: config.get_as(intern!(py, "serialize_by_alias"))?,
+            serialization_exclude_if: schema.get_as(intern!(py, "serialization_exclude_if"))?,
         })
     }
 }
