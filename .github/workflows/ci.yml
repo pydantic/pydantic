@@ -42,7 +42,7 @@ jobs:
 
   core-build-sdist:
     runs-on: ubuntu-latest
-    name: core-build sdist
+    name: core/Build sdist
     steps:
       - uses: actions/checkout@v6
       - uses: actions/setup-python@v6
@@ -54,9 +54,179 @@ jobs:
           command: sdist
           args: --out dist
           rust-toolchain: stable
-      - uses: actions/upload-artifact@v5
+      - uses: actions/upload-artifact@v6
         with:
-          name: pypi_files_sdist
+          name: pydantic_core_pypi_files_sdist
+          path: pydantic-core/dist
+
+  core-build:
+    name: core/build on ${{ matrix.os }} (${{ matrix.target }} - ${{ matrix.interpreter || 'all' }}${{ matrix.os == 'linux' && format(' - {0}', matrix.manylinux == 'auto' && 'manylinux' || matrix.manylinux) || '' }})
+    # only run on push to main, if a full build was requested or on release:
+    if: startsWith(github.ref, 'refs/tags/') || github.ref == 'refs/heads/main' || contains(github.event.pull_request.labels.*.name, 'full build')
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [linux, macos, windows]
+        target: [undefined]
+        manylinux: [auto]
+        include:
+          # manylinux for various platforms
+          # x86_64 and aarch64 are PGO optimized below
+          - os: linux
+            manylinux: auto
+            target: i686
+          - os: linux
+            manylinux: auto
+            target: armv7
+            interpreter: 3.9 3.10 3.11 3.12 3.13 3.14 3.14t
+          - os: linux
+            manylinux: auto
+            target: ppc64le
+            interpreter: 3.9 3.10 3.11 3.12 3.13 3.14 3.14t
+          - os: linux
+            manylinux: auto
+            target: s390x
+            interpreter: 3.9 3.10 3.11 3.12 3.13 3.14 3.14t
+          - os: linux
+            manylinux: auto
+            target: x86_64
+            interpreter: pypy3.11 graalpy3.11 graalpy3.12
+
+            # manylinux pypy and graalpy on major architectures
+          - os: linux
+            manylinux: auto
+            target: x86_64
+            interpreter: graalpy3.11 graalpy3.12
+          - os: linux
+            manylinux: auto
+            target: aarch64
+            interpreter: graalpy3.11 graalpy3.12
+
+          # musllinux
+          - os: linux
+            manylinux: musllinux_1_1
+            target: x86_64
+          - os: linux
+            manylinux: musllinux_1_1
+            target: aarch64
+          - os: linux
+            manylinux: musllinux_1_1
+            target: armv7
+
+          # macos;
+          # all versions x86_64
+          # arm pypy and older pythons which can't be run on the arm hardware for PGO
+          - os: macos
+            target: x86_64
+            interpreter: 3.9 3.10 3.11 3.12 3.13 3.14 3.14t pypy3.11 graalpy3.11 graalpy3.12
+          - os: macos
+            target: aarch64
+            interpreter: 3.9 pypy3.11 graalpy3.11 graalpy3.12
+
+          # windows;
+          # x86_64 pypy builds are not PGO optimized
+          # i686 not supported by pypy
+          # windows 11 arm supports 3.11 and up, not PGO optimized for now
+          - os: windows
+            target: x86_64
+            interpreter: pypy3.11
+          - os: windows
+            target: i686
+            python-architecture: x86
+            interpreter: 3.9 3.10 3.11 3.12 3.13 3.14 3.14t
+          - os: windows
+            target: aarch64
+            runs-on: windows-11-arm
+            interpreter: 3.11 3.12 3.13 3.14 3.14t
+
+        exclude:
+          # was just a dummy variable to set a default value for target
+          - target: undefined
+
+    runs-on: ${{ matrix.runs-on || format('{0}-latest', (matrix.os == 'linux' && 'ubuntu') || matrix.os) }}
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.13'
+          architecture: ${{ matrix.python-architecture || 'x64' }}
+
+      - run: pip install -U twine 'ruff==0.5.0' typing_extensions
+
+      - name: Build wheels
+        uses: PyO3/maturin-action@v1
+        with:
+          working-directory: pydantic-core
+          target: ${{ matrix.target }}
+          manylinux: ${{ matrix.manylinux }}
+          args: --release --out dist --interpreter ${{ matrix.interpreter || '3.9 3.10 3.11 3.12 3.13 3.14 3.14t pypy3.11' }}
+          rust-toolchain: stable
+          docker-options: -e CI
+
+      - run: ${{ (matrix.os == 'windows' && 'dir') || 'ls -lh' }} dist/
+        working-directory: pydantic-core
+
+      - run: twine check --strict dist/*
+        working-directory: pydantic-core
+
+      - uses: actions/upload-artifact@v6
+        with:
+          name: pydantic_core_pypi_files_${{ matrix.os }}_${{ matrix.target }}_${{ matrix.interpreter || 'all' }}_${{ matrix.manylinux }}
+          path: pydantic-core/dist
+
+  core-build-pgo:
+    name: core/Build PGO-optimized on ${{ matrix.platform.os }} / ${{ matrix.interpreter }}
+    # only run on push to main, if a full build was requested or on release:
+    if: startsWith(github.ref, 'refs/tags/') || github.ref == 'refs/heads/main' || contains(github.event.pull_request.labels.*.name, 'full build')
+    strategy:
+      fail-fast: false
+      matrix:
+        platform:
+          - os: linux
+            runs-on: ubuntu-latst
+          - os: linux_aarch64
+            runs-on: ubuntu-24.04-arm
+          - os: windows
+            runs-on: windows-latest
+          - os: macos
+            runs-on: macos-latest
+        interpreter: ['3.9', '3.10', '3.11', '3.12', '3.13', '3.14', '3.14t']
+        exclude:
+          # macos arm only supported from 3.10 and up
+          - platform:
+              os: macos
+            interpreter: '3.9'
+
+    runs-on: ${{ matrix.platform.runs-on }}
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: astral-sh/setup-uv@v7
+        with:
+          python-version: ${{ matrix.interpreter }}
+
+      - name: Install rust stable
+        id: rust-toolchain
+        uses: dtolnay/rust-toolchain@master
+        with:
+          components: llvm-tools
+          toolchain: stable
+
+      - name: Build PGO wheel
+        id: pgo-wheel
+        uses: ./.github/actions/core-build-pgo-wheel
+        with:
+          working-directory: pydantic-core
+          interpreter: ${{ matrix.interpreter }}
+          rust-toolchain: ${{ steps.rust-toolchain.outputs.name }}
+
+      - run: ${{ (startsWith(matrix.platform.os, 'windows') && 'dir') || 'ls -lh' }} dist/
+        working-directory: pydantic-core
+
+      - uses: actions/upload-artifact@v6
+        with:
+          name: pydantic_core_pypi_files_${{ matrix.platform.os }}_${{ matrix.interpreter }}
           path: pydantic-core/dist
 
   docs-build:
@@ -84,6 +254,58 @@ jobs:
           ln -s .venv/lib/python*/site-packages/pydantic_extra_types pydantic_extra_types
 
       - run: PYTHONPATH="$PWD${PYTHONPATH:+:${PYTHONPATH}}" uv run mkdocs build
+
+  test-builds-arch:
+    name: core/Test build on ${{ matrix.target }}-${{ matrix.distro }}
+    needs: [core-build]
+    runs-on: ubuntu-latest
+
+    strategy:
+      fail-fast: false
+      matrix:
+        target: [armv7, s390x, ppc64le]
+        distro: ['ubuntu22.04']
+        include:
+          - target: aarch64
+            distro: alpine_latest
+
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Get dist artifacts
+        uses: actions/download-artifact@v6
+        with:
+          pattern: pydantic_core_pypi_files_linux_*
+          merge-multiple: true
+          path: dist
+
+      - uses: uraimo/run-on-arch-action@v3.0.1
+        name: Install and test
+        with:
+          arch: ${{ matrix.target }}
+          distro: ${{ matrix.distro }}
+          githubToken: ${{ github.token }}
+          install: |
+            set -x
+            if command -v apt-get &> /dev/null; then
+              echo "installing python & pip with apt-get..."
+              apt-get update
+              apt-get install -y --no-install-recommends python3 python3-pip python3-venv git curl
+            else
+              echo "installing python & pip with apk..."
+              apk update
+              apk add python3 py3-pip git curl
+            fi
+          env: |
+            UV_NO_PROGRESS: '1'
+          run: |
+            set -x
+            curl -LsSf https://astral.sh/uv/install.sh | sh
+            source $HOME/.local/bin/env
+            uv sync --frozen --group testing-extra
+            uv pip install pydantic-core --no-index --no-deps --find-links dist --force-reinstall
+            uv run --no-sync pytest tests/pydantic-core --ignore=tests/pydantic-core/test_docstrings.py
+            uv run --no-sync python -c 'import pydantic_core._pydantic_core; print(pydantic_core._pydantic_core.__version__)'
 
   test-memray:
     name: Test memray
