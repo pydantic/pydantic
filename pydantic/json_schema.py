@@ -274,10 +274,15 @@ class GenerateJsonSchema:
         by_alias: bool = True,
         ref_template: str = DEFAULT_REF_TEMPLATE,
         union_format: Literal['any_of', 'primitive_type_array'] = 'any_of',
+        validation_name_strategy: str = 'Input',
+        serialization_name_strategy: str = 'Output',
     ) -> None:
         self.by_alias = by_alias
         self.ref_template = ref_template
         self.union_format: Literal['any_of', 'primitive_type_array'] = union_format
+
+        self.validation_name_strategy = validation_name_strategy
+        self.serialization_name_strategy = serialization_name_strategy
 
         self.core_to_json_refs: dict[CoreModeRef, JsonRef] = {}
         self.core_to_defs_refs: dict[CoreModeRef, DefsRef] = {}
