@@ -44,6 +44,8 @@ runs:
 
     - name: generate pgo data
       run: |
+        ls -lah
+        ls -lah pydantic-core/
         uv sync --group testing-extra --find-links pydantic-core/pgo-wheel
         uv run pytest tests/pydantic-core/benchmarks
         RUST_HOST=$(rustc -Vv | grep host | cut -d ' ' -f 2)
