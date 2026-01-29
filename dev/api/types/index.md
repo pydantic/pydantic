@@ -684,15 +684,13 @@ A bytes type that is encoded and decoded using the standard (non-URL-safe) base6
 
 Note
 
-Under the hood, `Base64Bytes` uses the standard library `base64.b64encode` and `base64.b64decode` functions.
+Under the hood, `Base64Bytes` uses the standard library base64.b64encode() and base64.b64decode() functions.
 
 As a result, attempting to decode url-safe base64 data using the `Base64Bytes` type may fail or produce an incorrect decoding.
 
-Warning
+Changed in v2.10: `Base64Bytes` now uses base64.b64encode() and base64.b64decode() instead of base64.encodebytes() and base64.decodebytes().
 
-In versions of Pydantic prior to v2.10, `Base64Bytes` used base64.encodebytes and base64.decodebytes functions. According to the [base64 documentation](https://docs.python.org/3/library/base64.html), these methods are considered legacy implementation, and thus, Pydantic v2.10+ now uses the modern base64.b64encode and base64.b64decode functions.
-
-If you'd still like to use these legacy encoders / decoders, you can achieve this by creating a custom annotated type, like follows:
+These methods are considered legacy implementation. If you'd still like to use these legacy encoders/decoders, you can achieve this by creating a custom annotated type, like follows:
 
 ```python
 import base64
@@ -765,19 +763,17 @@ Base64Str = Annotated[
 
 ```
 
-A str type that is encoded and decoded using the standard (non-URL-safe) base64 encoder.
+A string type that is encoded and decoded using the standard (non-URL-safe) base64 encoder.
 
 Note
 
-Under the hood, `Base64Str` uses the standard library `base64.b64encode` and `base64.b64decode` functions.
+Under the hood, `Base64Str` uses the standard library base64.b64encode() and base64.b64decode() functions.
 
 As a result, attempting to decode url-safe base64 data using the `Base64Str` type may fail or produce an incorrect decoding.
 
-Warning
+Changed in v2.10: `Base64Str` now uses base64.b64encode() and base64.b64decode() instead of base64.encodebytes() and base64.decodebytes().
 
-In versions of Pydantic prior to v2.10, `Base64Str` used base64.encodebytes and base64.decodebytes functions. According to the [base64 documentation](https://docs.python.org/3/library/base64.html), these methods are considered legacy implementation, and thus, Pydantic v2.10+ now uses the modern base64.b64encode and base64.b64decode functions.
-
-See the Base64Bytes type for more information on how to replicate the old behavior with the legacy encoders / decoders.
+These methods are considered legacy implementation. See the documentation about the Base64Bytes type for more information on how to replicate the old behavior with the legacy encoders/decoders.
 
 ```python
 from pydantic import Base64Str, BaseModel, ValidationError

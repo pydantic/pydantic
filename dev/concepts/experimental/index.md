@@ -135,9 +135,9 @@ This example uses plain idiomatic Python code that may be easier to understand, 
 
 ## Partial Validation
 
-Pydantic v2.10.0 introduces experimental support for "partial validation".
+Added in v2.10.
 
-This allows you to validate an incomplete JSON string, or a Python object representing incomplete input data.
+Partial validation allows you to validate an incomplete JSON string, or a Python object representing incomplete input data.
 
 Partial validation is particularly helpful when processing the output of an LLM, where the model streams structured responses, and you may wish to begin validating the stream while you're still receiving data (e.g. to show partial data to users).
 

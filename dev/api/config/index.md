@@ -730,6 +730,8 @@ val_json_bytes: Literal['utf8', 'base64', 'hex']
 
 ```
 
+Added in v2.9.
+
 The encoding of JSON serialized bytes to decode. Defaults to `'utf8'`. Set equal to `ser_json_bytes` to get back an equal value after serialization round trip.
 
 - `'utf8'` will deserialize UTF-8 strings to bytes.

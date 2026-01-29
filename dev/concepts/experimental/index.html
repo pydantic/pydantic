@@ -4347,8 +4347,10 @@ The approach you choose should really depend on your use case.
 You will have to compare verbosity, performance, ease of returning meaningful errors to your users, etc. to choose the right pattern.
 Just be mindful of abusing advanced patterns like the pipeline API just because you can.</p>
 <h2 id="partial-validation">Partial Validation<a class="headerlink" href="#partial-validation" title="Permanent link">&para;</a></h2>
-<p>Pydantic v2.10.0 introduces experimental support for "partial validation".</p>
-<p>This allows you to validate an incomplete JSON string, or a Python object representing incomplete input data.</p>
+<div style="border-left: .15rem solid rgb(79, 196, 100); padding: 0 .5rem;">
+<p><span style="font-style: italic; color: rgb(79, 196, 100);">Added in v2.10.</span></p>
+</div>
+<p>Partial validation allows you to validate an incomplete JSON string, or a Python object representing incomplete input data.</p>
 <p>Partial validation is particularly helpful when processing the output of an LLM, where the model streams structured responses, and you may wish to begin validating the stream while you're still receiving data (e.g. to show partial data to users).</p>
 <div class="admonition warning">
 <p class="admonition-title">Warning</p>

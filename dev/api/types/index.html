@@ -7031,19 +7031,14 @@ to help you monitor and understand your
 
 <details class="note" open>
   <summary>Note</summary>
-  <p>Under the hood, <code>Base64Bytes</code> uses the standard library <code>base64.b64encode</code> and <code>base64.b64decode</code> functions.</p>
+  <p>Under the hood, <code>Base64Bytes</code> uses the standard library <a class="autorefs autorefs-external" href="https://docs.python.org/3/library/base64.html#base64.b64encode"><code>base64.b64encode()</code></a> and <a class="autorefs autorefs-external" href="https://docs.python.org/3/library/base64.html#base64.b64decode"><code>base64.b64decode()</code></a> functions.</p>
 <p>As a result, attempting to decode url-safe base64 data using the <code>Base64Bytes</code> type may fail or produce an incorrect
 decoding.</p>
-</details>
-
-<details class="warning" open>
-  <summary>Warning</summary>
-  <p>In versions of Pydantic prior to v2.10, <code>Base64Bytes</code> used <a class="autorefs autorefs-external" href="https://docs.python.org/3/library/base64.html#base64.encodebytes"><code>base64.encodebytes</code></a>
-and <a class="autorefs autorefs-external" href="https://docs.python.org/3/library/base64.html#base64.decodebytes"><code>base64.decodebytes</code></a> functions. According to the <a href="https://docs.python.org/3/library/base64.html">base64 documentation</a>,
-these methods are considered legacy implementation, and thus, Pydantic v2.10+ now uses the modern
-<a class="autorefs autorefs-external" href="https://docs.python.org/3/library/base64.html#base64.b64encode"><code>base64.b64encode</code></a> and <a class="autorefs autorefs-external" href="https://docs.python.org/3/library/base64.html#base64.b64decode"><code>base64.b64decode</code></a> functions.</p>
-<p>If you'd still like to use these legacy encoders / decoders, you can achieve this by creating a custom annotated type,
-like follows:</p>
+</details>        <div style="border-left: .15rem solid rgb(244, 227, 76); padding: 0 .5rem;">
+<p><span style="font-style: italic; color: rgb(244, 227, 76);">Changed in v2.10: </span><span><code>Base64Bytes</code> now uses <a class="autorefs autorefs-external" href="https://docs.python.org/3/library/base64.html#base64.b64encode"><code>base64.b64encode()</code></a> and <a class="autorefs autorefs-external" href="https://docs.python.org/3/library/base64.html#base64.b64decode"><code>base64.b64decode()</code></a>
+instead of <a class="autorefs autorefs-external" href="https://docs.python.org/3/library/base64.html#base64.encodebytes"><code>base64.encodebytes()</code></a> and <a class="autorefs autorefs-external" href="https://docs.python.org/3/library/base64.html#base64.decodebytes"><code>base64.decodebytes()</code></a>.</span></p>
+<p>These methods are considered legacy implementation. If you'd still like to use these legacy encoders/decoders,
+you can achieve this by creating a custom annotated type, like follows:
 <div class="language-python highlight"><pre><span></span><code><span class="kn">import</span><span class="w"> </span><span class="nn">base64</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Annotated</span><span class="p">,</span> <span class="n">Literal</span>
 
@@ -7072,8 +7067,9 @@ like follows:</p>
         <span class="k">return</span> <span class="s1">&#39;base64&#39;</span>
 
 <span class="n">LegacyBase64Bytes</span> <span class="o">=</span> <span class="n">Annotated</span><span class="p">[</span><span class="nb">bytes</span><span class="p">,</span> <span class="n">EncodedBytes</span><span class="p">(</span><span class="n">encoder</span><span class="o">=</span><span class="n">LegacyBase64Encoder</span><span class="p">)]</span>
-</code></pre></div>
-</details>        <div class="language-python highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">pydantic</span><span class="w"> </span><span class="kn">import</span> <span class="n">Base64Bytes</span><span class="p">,</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ValidationError</span>
+</code></pre></div></p>
+</div>
+<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">pydantic</span><span class="w"> </span><span class="kn">import</span> <span class="n">Base64Bytes</span><span class="p">,</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ValidationError</span>
 
 <span class="k">class</span><span class="w"> </span><span class="nc">Model</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
     <span class="n">base64_bytes</span><span class="p">:</span> <span class="n">Base64Bytes</span>
@@ -7124,25 +7120,21 @@ like follows:</p>
 
     <div class="doc doc-contents ">
 
-        <p>A str type that is encoded and decoded using the standard (non-URL-safe) base64 encoder.</p>
+        <p>A string type that is encoded and decoded using the standard (non-URL-safe) base64 encoder.</p>
 
 
 <details class="note" open>
   <summary>Note</summary>
-  <p>Under the hood, <code>Base64Str</code> uses the standard library <code>base64.b64encode</code> and <code>base64.b64decode</code> functions.</p>
+  <p>Under the hood, <code>Base64Str</code> uses the standard library <a class="autorefs autorefs-external" href="https://docs.python.org/3/library/base64.html#base64.b64encode"><code>base64.b64encode()</code></a> and <a class="autorefs autorefs-external" href="https://docs.python.org/3/library/base64.html#base64.b64decode"><code>base64.b64decode()</code></a> functions.</p>
 <p>As a result, attempting to decode url-safe base64 data using the <code>Base64Str</code> type may fail or produce an incorrect
 decoding.</p>
-</details>
-
-<details class="warning" open>
-  <summary>Warning</summary>
-  <p>In versions of Pydantic prior to v2.10, <code>Base64Str</code> used <a class="autorefs autorefs-external" href="https://docs.python.org/3/library/base64.html#base64.encodebytes"><code>base64.encodebytes</code></a>
-and <a class="autorefs autorefs-external" href="https://docs.python.org/3/library/base64.html#base64.decodebytes"><code>base64.decodebytes</code></a> functions. According to the <a href="https://docs.python.org/3/library/base64.html">base64 documentation</a>,
-these methods are considered legacy implementation, and thus, Pydantic v2.10+ now uses the modern
-<a class="autorefs autorefs-external" href="https://docs.python.org/3/library/base64.html#base64.b64encode"><code>base64.b64encode</code></a> and <a class="autorefs autorefs-external" href="https://docs.python.org/3/library/base64.html#base64.b64decode"><code>base64.b64decode</code></a> functions.</p>
-<p>See the <a class="autorefs autorefs-internal" href="#pydantic.types.Base64Bytes"><code>Base64Bytes</code></a> type for more information on how to
-replicate the old behavior with the legacy encoders / decoders.</p>
-</details>        <div class="language-python highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">pydantic</span><span class="w"> </span><span class="kn">import</span> <span class="n">Base64Str</span><span class="p">,</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ValidationError</span>
+</details>        <div style="border-left: .15rem solid rgb(244, 227, 76); padding: 0 .5rem;">
+<p><span style="font-style: italic; color: rgb(244, 227, 76);">Changed in v2.10: </span><span><code>Base64Str</code> now uses <a class="autorefs autorefs-external" href="https://docs.python.org/3/library/base64.html#base64.b64encode"><code>base64.b64encode()</code></a> and <a class="autorefs autorefs-external" href="https://docs.python.org/3/library/base64.html#base64.b64decode"><code>base64.b64decode()</code></a>
+instead of <a class="autorefs autorefs-external" href="https://docs.python.org/3/library/base64.html#base64.encodebytes"><code>base64.encodebytes()</code></a> and <a class="autorefs autorefs-external" href="https://docs.python.org/3/library/base64.html#base64.decodebytes"><code>base64.decodebytes()</code></a>.</span></p>
+<p>These methods are considered legacy implementation. See the documentation about the <a class="autorefs autorefs-internal" href="#pydantic.types.Base64Bytes"><code>Base64Bytes</code></a> type
+for more information on how to replicate the old behavior with the legacy encoders/decoders.</p>
+</div>
+<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">pydantic</span><span class="w"> </span><span class="kn">import</span> <span class="n">Base64Str</span><span class="p">,</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ValidationError</span>
 
 <span class="k">class</span><span class="w"> </span><span class="nc">Model</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
     <span class="n">base64_str</span><span class="p">:</span> <span class="n">Base64Str</span>
@@ -13384,7 +13376,9 @@ kibit, mibit, gibit, tibit, pibit, eibit (bit units).</p>
 
               <details class="quote">
                 <summary>Source code in <code>pydantic/types.py</code></summary>
-                <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">2842</span>
+                <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">2840</span>
+<span class="normal">2841</span>
+<span class="normal">2842</span>
 <span class="normal">2843</span>
 <span class="normal">2844</span>
 <span class="normal">2845</span>
@@ -13426,9 +13420,7 @@ kibit, mibit, gibit, tibit, pibit, eibit (bit units).</p>
 <span class="normal">2881</span>
 <span class="normal">2882</span>
 <span class="normal">2883</span>
-<span class="normal">2884</span>
-<span class="normal">2885</span>
-<span class="normal">2886</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@_dataclasses</span><span class="o">.</span><span class="n">dataclass</span><span class="p">(</span><span class="o">**</span><span class="n">_internal_dataclass</span><span class="o">.</span><span class="n">slots_true</span><span class="p">)</span>
+<span class="normal">2884</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@_dataclasses</span><span class="o">.</span><span class="n">dataclass</span><span class="p">(</span><span class="o">**</span><span class="n">_internal_dataclass</span><span class="o">.</span><span class="n">slots_true</span><span class="p">)</span>
 <span class="k">class</span><span class="w"> </span><span class="nc">GetPydanticSchema</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;!!! abstract &quot;Usage Documentation&quot;</span>
 <span class="sd">        [Using `GetPydanticSchema` to Reduce Boilerplate](../concepts/types.md#using-getpydanticschema-to-reduce-boilerplate)</span>
@@ -13587,7 +13579,9 @@ callable <code>Discriminator</code>. Failing to do so will result in a <code>Pyd
 
               <details class="quote">
                 <summary>Source code in <code>pydantic/types.py</code></summary>
-                <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">2889</span>
+                <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">2887</span>
+<span class="normal">2888</span>
+<span class="normal">2889</span>
 <span class="normal">2890</span>
 <span class="normal">2891</span>
 <span class="normal">2892</span>
@@ -13667,9 +13661,7 @@ callable <code>Discriminator</code>. Failing to do so will result in a <code>Pyd
 <span class="normal">2966</span>
 <span class="normal">2967</span>
 <span class="normal">2968</span>
-<span class="normal">2969</span>
-<span class="normal">2970</span>
-<span class="normal">2971</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@_dataclasses</span><span class="o">.</span><span class="n">dataclass</span><span class="p">(</span><span class="o">**</span><span class="n">_internal_dataclass</span><span class="o">.</span><span class="n">slots_true</span><span class="p">,</span> <span class="n">frozen</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="normal">2969</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@_dataclasses</span><span class="o">.</span><span class="n">dataclass</span><span class="p">(</span><span class="o">**</span><span class="n">_internal_dataclass</span><span class="o">.</span><span class="n">slots_true</span><span class="p">,</span> <span class="n">frozen</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 <span class="k">class</span><span class="w"> </span><span class="nc">Tag</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Provides a way to specify the expected tag to use for a case of a (callable) discriminated union.</span>
 
@@ -13864,7 +13856,9 @@ than it would be as a normal <code>Union</code>.</p>
 
               <details class="quote">
                 <summary>Source code in <code>pydantic/types.py</code></summary>
-                <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">2974</span>
+                <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">2972</span>
+<span class="normal">2973</span>
+<span class="normal">2974</span>
 <span class="normal">2975</span>
 <span class="normal">2976</span>
 <span class="normal">2977</span>
@@ -14024,9 +14018,7 @@ than it would be as a normal <code>Union</code>.</p>
 <span class="normal">3131</span>
 <span class="normal">3132</span>
 <span class="normal">3133</span>
-<span class="normal">3134</span>
-<span class="normal">3135</span>
-<span class="normal">3136</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@_dataclasses</span><span class="o">.</span><span class="n">dataclass</span><span class="p">(</span><span class="o">**</span><span class="n">_internal_dataclass</span><span class="o">.</span><span class="n">slots_true</span><span class="p">,</span> <span class="n">frozen</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="normal">3134</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@_dataclasses</span><span class="o">.</span><span class="n">dataclass</span><span class="p">(</span><span class="o">**</span><span class="n">_internal_dataclass</span><span class="o">.</span><span class="n">slots_true</span><span class="p">,</span> <span class="n">frozen</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 <span class="k">class</span><span class="w"> </span><span class="nc">Discriminator</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;!!! abstract &quot;Usage Documentation&quot;</span>
 <span class="sd">        [Discriminated Unions with `Callable` `Discriminator`](../concepts/unions.md#discriminated-unions-with-callable-discriminator)</span>
@@ -14362,7 +14354,9 @@ validation will be more performant with the caveat that you get less information
 
               <details class="quote">
                 <summary>Source code in <code>pydantic/types.py</code></summary>
-                <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">3265</span>
+                <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">3263</span>
+<span class="normal">3264</span>
+<span class="normal">3265</span>
 <span class="normal">3266</span>
 <span class="normal">3267</span>
 <span class="normal">3268</span>
@@ -14390,9 +14384,7 @@ validation will be more performant with the caveat that you get less information
 <span class="normal">3290</span>
 <span class="normal">3291</span>
 <span class="normal">3292</span>
-<span class="normal">3293</span>
-<span class="normal">3294</span>
-<span class="normal">3295</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@_dataclasses</span><span class="o">.</span><span class="n">dataclass</span>
+<span class="normal">3293</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@_dataclasses</span><span class="o">.</span><span class="n">dataclass</span>
 <span class="k">class</span><span class="w"> </span><span class="nc">FailFast</span><span class="p">(</span><span class="n">_fields</span><span class="o">.</span><span class="n">PydanticMetadata</span><span class="p">,</span> <span class="n">BaseMetadata</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;A `FailFast` annotation can be used to specify that validation should stop at the first error.</span>
 

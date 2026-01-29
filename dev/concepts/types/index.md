@@ -138,6 +138,8 @@ except ValidationError as exc:
 
 ### Named type aliases
 
+Added in v2.11: Named type aliases are now fully supported.
+
 The above examples make use of *implicit* type aliases, assigned to a variable. At runtime, Pydantic has no way of knowing the name of the variable it was assigned to, and this can be problematic for two reasons:
 
 - The [JSON Schema](../json_schema/) of the alias won't be converted into a [definition](https://json-schema.org/understanding-json-schema/structuring#defs). This is mostly useful when you are using the alias more than once in a model definition.

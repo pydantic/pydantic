@@ -115,7 +115,9 @@ When creating an instance of TypeAdapter, the provided type must be analyzed and
 
 ## Rebuilding a `TypeAdapter`'s schema
 
-In v2.10+, TypeAdapter's support deferred schema building and manual rebuilds. This is helpful for the case of:
+Added in v2.10.
+
+TypeAdapter's support deferred schema building and manual rebuilds. This is helpful for the case of:
 
 - Types with forward references
 - Types for which core schema builds are expensive

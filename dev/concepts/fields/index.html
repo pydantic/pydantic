@@ -4396,6 +4396,9 @@ to their definition (represented as <a class="autorefs autorefs-internal" href="
 <span class="nb">print</span><span class="p">(</span><span class="n">field_info</span><span class="o">.</span><span class="n">metadata</span><span class="p">)</span>
 <span class="c1">#&gt; [Gt(gt=1), WithJsonSchema(json_schema={&#39;extra&#39;: &#39;data&#39;}, mode=None)]</span>
 </code></pre></div>
+<div style="border-left: .15rem solid rgb(244, 76, 78); padding: 0 .5rem;">
+<p><span style="font-style: italic; color: rgb(244, 76, 78);">Deprecated in v2.11, will be removed in version v3: </span><span><a class="autorefs autorefs-internal" href="../../api/base_model/#pydantic.BaseModel.model_fields"><code>model_fields</code></a> can only be accessed from the class object, not the instance.</span></p>
+</div>
 <h2 id="default-values">Default values<a class="headerlink" href="#default-values" title="Permanent link">&para;</a></h2>
 <p>Default values for fields can be provided using the normal assignment syntax or by providing a value
 to the <code>default</code> argument:</p>
@@ -4407,11 +4410,10 @@ to the <code>default</code> argument:</p>
     <span class="n">name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;John Doe&#39;</span>
     <span class="n">age</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="n">default</span><span class="o">=</span><span class="mi">20</span><span class="p">)</span>
 </code></pre></div>
-<div class="admonition warning">
-<p class="admonition-title">Warning</p>
-<p><a href="../../migration/#required-optional-and-nullable-fields">In Pydantic V1</a>, a type annotated as <a class="autorefs autorefs-external" href="https://docs.python.org/3/library/typing.html#typing.Any"><code>Any</code></a>
+<div style="border-left: .15rem solid rgb(244, 227, 76); padding: 0 .5rem;">
+<p><span style="font-style: italic; color: rgb(244, 227, 76);">Changed in v2: </span><span><a href="../../migration/#required-optional-and-nullable-fields">In Pydantic V1</a>, a type annotated as <a class="autorefs autorefs-external" href="https://docs.python.org/3/library/typing.html#typing.Any"><code>Any</code></a>
 or wrapped by <a class="autorefs autorefs-external" href="https://docs.python.org/3/library/typing.html#typing.Optional"><code>Optional</code></a> would be given an implicit default of <code>None</code> even if no
-default was explicitly specified. This is no longer the case in Pydantic V2.</p>
+default was explicitly specified. This is no longer the case in Pydantic V2.</span></p>
 </div>
 <p>You can also pass a callable to the <code>default_factory</code> argument that will be called to generate a default value:</p>
 <div class="language-python highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">uuid</span><span class="w"> </span><span class="kn">import</span> <span class="n">uuid4</span>
@@ -4439,6 +4441,9 @@ default was explicitly specified. This is no longer the case in Pydantic V2.</p>
 </code></pre></div>
 <p>The <code>data</code> argument will <em>only</em> contain the already validated data, based on the <a href="../models/#field-ordering">order of model fields</a>
 (the above example would fail if <code>username</code> were to be defined before <code>email</code>).</p>
+<div style="border-left: .15rem solid rgb(79, 196, 100); padding: 0 .5rem;">
+<p><span style="font-style: italic; color: rgb(79, 196, 100);">Added in v2.10: </span><span>Default factories can take already validated data as an argument.</span></p>
+</div>
 <h2 id="validate-default-values">Validate default values<a class="headerlink" href="#validate-default-values" title="Permanent link">&para;</a></h2>
 <p>By default, Pydantic will <em>not</em> validate default values. The <code>validate_default</code> field parameter
 (or the <a class="autorefs autorefs-internal" href="../../api/config/#pydantic.config.ConfigDict.validate_default"><code>validate_default</code></a> configuration value) can be used
@@ -4770,7 +4775,7 @@ approach can be useful when the discriminator fields aren't the same for all the
 <span class="c1">#&gt; pet=Cat(pet_type=&#39;cat&#39;, age=12)</span>
 </code></pre></div>
 <ol>
-<li>See more about <a href="../models/#validating-data">Validating data</a> in the <a href="../models/">Models</a> page.</li>
+<li>See more about <code>model_validate()</code> in the <a href="../models/#validating-data">Validating data</a> documentation.</li>
 </ol>
 </div>
 <div class="tabbed-block">
@@ -4797,7 +4802,7 @@ approach can be useful when the discriminator fields aren't the same for all the
 <span class="c1">#&gt; pet=Cat(pet_type=&#39;cat&#39;, age=12)</span>
 </code></pre></div>
 <ol>
-<li>See more about <a href="../models/#validating-data">Validating data</a> in the <a href="../models/">Models</a> page.</li>
+<li>See more about <code>model_validate()</code> in the <a href="../models/#validating-data">Validating data</a> documentation.</li>
 </ol>
 </div>
 </div>
@@ -4878,7 +4883,7 @@ approach can be useful when the discriminator fields aren't the same for all the
 </div>
 </div>
 <p>You can also take advantage of <code>Annotated</code> to define your discriminated unions.
-See the <a href="../unions/#discriminated-unions">Discriminated Unions</a> docs for more details.</p>
+See the <a href="../unions/#discriminated-unions">Discriminated Unions</a> documentation for more details.</p>
 <h2 id="immutability">Immutability<a class="headerlink" href="#immutability" title="Permanent link">&para;</a></h2>
 <p>The parameter <code>frozen</code> is used to emulate the frozen dataclass behaviour. It is used to prevent the field from being
 assigned a new value after the model is created (immutability).</p>
@@ -4929,7 +4934,13 @@ model when exporting the model.</p>
 <li>The <code>age</code> field is not included in the <a class="autorefs autorefs-internal" href="../../api/base_model/#pydantic.BaseModel.model_dump"><code>model_dump()</code></a> output, since it is excluded.</li>
 </ol>
 <p>See the dedicated <a href="../serialization/#field-inclusion-and-exclusion">serialization section</a> for more details.</p>
+<div style="border-left: .15rem solid rgb(79, 196, 100); padding: 0 .5rem;">
+<p><span style="font-style: italic; color: rgb(79, 196, 100);">Added in v2.12: </span><span>The <code>exclude_if</code> parameter.</span></p>
+</div>
 <h2 id="deprecated-fields">Deprecated fields<a class="headerlink" href="#deprecated-fields" title="Permanent link">&para;</a></h2>
+<div style="border-left: .15rem solid rgb(79, 196, 100); padding: 0 .5rem;">
+<p><span style="font-style: italic; color: rgb(79, 196, 100);">Added in v2.7.0.</span></p>
+</div>
 <p>The <code>deprecated</code> parameter can be used to mark a field as being deprecated. Doing so will result in:</p>
 <ul>
 <li>a runtime deprecation warning emitted when accessing the field.</li>

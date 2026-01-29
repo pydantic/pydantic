@@ -1298,9 +1298,9 @@ This example uses plain idiomatic Python code that may be easier to understand, 
 
 ## Partial Validation
 
-Pydantic v2.10.0 introduces experimental support for "partial validation".
+Added in v2.10.
 
-This allows you to validate an incomplete JSON string, or a Python object representing incomplete input data.
+Partial validation allows you to validate an incomplete JSON string, or a Python object representing incomplete input data.
 
 Partial validation is particularly helpful when processing the output of an LLM, where the model streams structured responses, and you may wish to begin validating the stream while you're still receiving data (e.g. to show partial data to users).
 
@@ -1871,6 +1871,8 @@ print(field_info.metadata)
 
 ```
 
+Deprecated in v2.11, will be removed in version v3: model_fields can only be accessed from the class object, not the instance.
+
 ## Default values
 
 Default values for fields can be provided using the normal assignment syntax or by providing a value to the `default` argument:
@@ -1886,9 +1888,7 @@ class User(BaseModel):
 
 ```
 
-Warning
-
-[In Pydantic V1](../../migration/#required-optional-and-nullable-fields), a type annotated as Any or wrapped by Optional would be given an implicit default of `None` even if no default was explicitly specified. This is no longer the case in Pydantic V2.
+Changed in v2: [In Pydantic V1](../../migration/#required-optional-and-nullable-fields), a type annotated as Any or wrapped by Optional would be given an implicit default of `None` even if no default was explicitly specified. This is no longer the case in Pydantic V2.
 
 You can also pass a callable to the `default_factory` argument that will be called to generate a default value:
 
@@ -1921,6 +1921,8 @@ print(user.username)
 ```
 
 The `data` argument will *only* contain the already validated data, based on the [order of model fields](../models/#field-ordering) (the above example would fail if `username` were to be defined before `email`).
+
+Added in v2.10: Default factories can take already validated data as an argument.
 
 ## Validate default values
 
@@ -2284,7 +2286,7 @@ print(Model.model_validate({'pet': {'pet_type': 'cat', 'age': 12}}))  # (1)!
 
 ```
 
-1. See more about [Validating data](../models/#validating-data) in the [Models](../models/) page.
+1. See more about `model_validate()` in the [Validating data](../models/#validating-data) documentation.
 
 ```python
 from typing import Literal
@@ -2311,7 +2313,7 @@ print(Model.model_validate({'pet': {'pet_type': 'cat', 'age': 12}}))  # (1)!
 
 ```
 
-1. See more about [Validating data](../models/#validating-data) in the [Models](../models/) page.
+1. See more about `model_validate()` in the [Validating data](../models/#validating-data) documentation.
 
 The following example shows how to use the `discriminator` keyword argument with a `Discriminator` instance:
 
@@ -2387,7 +2389,7 @@ print(repr(Model.model_validate({'pet': {'pet_kind': 'dog', 'age': 12}})))
 
 ```
 
-You can also take advantage of `Annotated` to define your discriminated unions. See the [Discriminated Unions](../unions/#discriminated-unions) docs for more details.
+You can also take advantage of `Annotated` to define your discriminated unions. See the [Discriminated Unions](../unions/#discriminated-unions) documentation for more details.
 
 ## Immutability
 
@@ -2445,7 +2447,11 @@ print(user.model_dump())  # (1)!
 
 See the dedicated [serialization section](../serialization/#field-inclusion-and-exclusion) for more details.
 
+Added in v2.12: The `exclude_if` parameter.
+
 ## Deprecated fields
+
+Added in v2.7.0.
 
 The `deprecated` parameter can be used to mark a field as being deprecated. Doing so will result in:
 
@@ -5570,6 +5576,8 @@ except ValidationError as e:
 1. Declare a Pydantic model and add the list of type variables as type parameters.
 1. Use the type variables as annotations where you will want to replace them with other types.
 
+Added in v2.11: Full support for the type parameter syntax and [type variable defaults](https://typing.python.org/en/latest/spec/generics.html#type-parameter-defaults).
+
 Warning
 
 When parametrizing a model with a concrete type, Pydantic **does not** validate that the provided type is [assignable to the type variable](https://typing.readthedocs.io/en/latest/spec/generics.html#type-variables-with-an-upper-bound) if it has an upper bound.
@@ -6118,6 +6126,8 @@ Field definitions are specified as keyword arguments, and should either be:
 
 - A single element, representing the type annotation of the field.
 - A two-tuple, the first element being the type and the second element the assigned value (either a default or the Field() function).
+
+Changed in v2.11: When providing a single element for field definitions, any type can be used (previously, only an Annotated form could be provided).
 
 Here is a more advanced example:
 
@@ -9126,7 +9136,7 @@ class AzureKeyVaultSettings(BaseSettings):
 
 ### Snake case conversion
 
-The Azure Key Vault source accepts a `snake_case_convertion` option, disabled by default, to convert Key Vault secret names by mapping them to Python's snake_case field names, without the need to use aliases.
+The Azure Key Vault source accepts a `snake_case_conversion` option, disabled by default, to convert Key Vault secret names by mapping them to Python's snake_case field names, without the need to use aliases.
 
 ```py
 import os
@@ -9168,7 +9178,7 @@ This setup will load Azure Key Vault secrets (e.g., `MySetting`, `mySetting`, `m
 
 The Azure Key Vault source accepts a `dash_to_underscore` option, disabled by default, to support Key Vault kebab-case secret names by mapping them to Python's snake_case field names. When enabled, dashes (`-`) in secret names are mapped to underscores (`_`) in field names during validation.
 
-This mapping applies only to *field names*, not to aliases.
+This mapping applies only to *field names*, not to aliases. Consider snake case conversion if you need aliases or nested fields.
 
 ```py
 import os
@@ -9297,14 +9307,59 @@ The `GoogleSecretManagerSettingsSource` supports several authentication methods:
 
 For nested models, Secret Manager supports the `env_nested_delimiter` setting as long as it complies with the [naming rules](https://cloud.google.com/secret-manager/docs/creating-and-accessing-secrets#create-a-secret). In the example above, you would create secrets named `database__password` and `database__user` in Secret Manager.
 
+### Secret Versions
+
+By default, `GoogleSecretManagerSettingsSource` uses the "latest" version of secrets. You can specify a different version using the `SecretVersion` annotation.
+
+```py
+from typing import Annotated
+
+from pydantic import Field
+
+from pydantic_settings import (
+    BaseSettings,
+    GoogleSecretManagerSettingsSource,
+    PydanticBaseSettingsSource,
+)
+from pydantic_settings.sources.types import SecretVersion
+
+
+class Settings(BaseSettings):
+    # This will use the "latest" version
+    my_secret: str = Field(alias='my-secret')
+    # This will use version "1"
+    my_secret_v1: Annotated[str, Field(alias='my-secret'), SecretVersion('1')]
+
+    @classmethod
+    def settings_customise_sources(
+        cls,
+        settings_cls: type[BaseSettings],
+        init_settings: PydanticBaseSettingsSource,
+        env_settings: PydanticBaseSettingsSource,
+        dotenv_settings: PydanticBaseSettingsSource,
+        file_secret_settings: PydanticBaseSettingsSource,
+    ) -> tuple[PydanticBaseSettingsSource, ...]:
+        return (
+            GoogleSecretManagerSettingsSource(settings_cls, project_id='my-project'),
+            init_settings,
+            env_settings,
+            dotenv_settings,
+            file_secret_settings,
+        )
+
+```
+
+Note
+
+If you have multiple fields pointing to the same secret (alias) but with different versions, you MUST enable `populate_by_name=True` in `SettingsConfigDict`.
+
 ### Important Notes
 
 1. **Case Sensitivity**: By default, secret names are case-sensitive.
    - If you set `case_sensitive=False`, `pydantic-settings` will attempt to resolve secrets in a case-insensitive manner. It prioritizes exact matches over case-insensitive matches. For some examples of this, imagine `case_sensitive=False` and the model attribute is named `my_secret`:
      - If Google Secret Manager has both `MY_SECRET` and `my_secret` defined - the value of `my_secret` will be returned.
      - If Google Secret Manager has `MY_SECRET`, `My_Secret`, and `my_Secret` defined - a warning will be raised and the value of `my_Secret` will be returned - as the secret names are first sorted in ASCII sort order (where lowercased letters are greater than upper case letters) and the last one is chosen (which would be `my_Secret` in this case).
-1. **Secret Naming**: Create secrets in Google Secret Manager with names that match your field names (including any prefix). According the [Secret Manager documentation](https://cloud.google.com/secret-manager/docs/creating-and-accessing-secrets#create-a-secret), a secret name can contain uppercase and lowercase letters, numerals, hyphens, and underscores. The maximum allowed length for a name is 255 characters.
-1. **Secret Versions**: The GoogleSecretManagerSettingsSource uses the "latest" version of secrets.
+1. **Secret Naming**: Create secrets in Google Secret Manager with names that match your field names (including any prefix). According to the [Secret Manager documentation](https://cloud.google.com/secret-manager/docs/creating-and-accessing-secrets#create-a-secret), a secret name can contain uppercase and lowercase letters, numerals, hyphens, and underscores. The maximum allowed length for a name is 255 characters.
 
 For more details on creating and managing secrets in Google Cloud Secret Manager, see the [official Google Cloud documentation](https://cloud.google.com/secret-manager/docs).
 
@@ -10945,7 +11000,9 @@ When creating an instance of TypeAdapter, the provided type must be analyzed and
 
 ## Rebuilding a `TypeAdapter`'s schema
 
-In v2.10+, TypeAdapter's support deferred schema building and manual rebuilds. This is helpful for the case of:
+Added in v2.10.
+
+TypeAdapter's support deferred schema building and manual rebuilds. This is helpful for the case of:
 
 - Types with forward references
 - Types for which core schema builds are expensive
@@ -11108,6 +11165,8 @@ except ValidationError as exc:
 ```
 
 ### Named type aliases
+
+Added in v2.11: Named type aliases are now fully supported.
 
 The above examples make use of *implicit* type aliases, assigned to a variable. At runtime, Pydantic has no way of knowing the name of the variable it was assigned to, and this can be problematic for two reasons:
 
@@ -13205,6 +13264,8 @@ add_coords(x=1, y=2)
 
 For reference, see the [related specification section](https://typing.readthedocs.io/en/latest/spec/callables.html#unpack-for-keyword-arguments) and [PEP 692](https://peps.python.org/pep-0692/).
 
+Added in v2.10.
+
 ## Using the Field() function to describe function parameters
 
 The [`Field()` function](../fields/) can also be used with the decorator to provide extra information about the field and validations. If you don't make use of the `default` or `default_factory` parameter, it is recommended to use the [annotated pattern](../fields/#the-annotated-pattern) (so that type checkers infer the parameter as being required). Otherwise, the Field() function can be used as a default value (again, to trick type checkers into thinking a default value is provided for the parameter).
@@ -14640,7 +14701,7 @@ A base class for creating Pydantic models.
 
 Attributes:
 
-| Name | Type | Description | | --- | --- | --- | | `__class_vars__` | `set[str]` | The names of the class variables defined on the model. | | `__private_attributes__` | `Dict[str, ModelPrivateAttr]` | Metadata about the private attributes of the model. | | `__signature__` | `Signature` | The synthesized __init__ Signature of the model. | | `__pydantic_complete__` | `bool` | Whether model building is completed, or if there are still undefined fields. | | `__pydantic_core_schema__` | `CoreSchema` | The core schema of the model. | | `__pydantic_custom_init__` | `bool` | Whether the model has a custom __init__ function. | | `__pydantic_decorators__` | `DecoratorInfos` | Metadata containing the decorators defined on the model. This replaces Model.__validators__ and Model.__root_validators__ from Pydantic V1. | | `__pydantic_generic_metadata__` | `PydanticGenericMetadata` | Metadata for generic models; contains data used for a similar purpose to args, origin, parameters in typing-module generics. May eventually be replaced by these. | | `__pydantic_parent_namespace__` | `Dict[str, Any] | None` | Parent namespace of the model, used for automatic rebuilding of models. | | `__pydantic_post_init__` | `None | Literal['model_post_init']` | The name of the post-init method for the model, if defined. | | `__pydantic_root_model__` | `bool` | Whether the model is a RootModel. | | `__pydantic_serializer__` | `SchemaSerializer` | The pydantic-core SchemaSerializer used to dump instances of the model. | | `__pydantic_validator__` | `SchemaValidator | PluggableSchemaValidator` | The pydantic-core SchemaValidator used to validate instances of the model. | | `__pydantic_fields__` | `Dict[str, FieldInfo]` | A dictionary of field names and their corresponding FieldInfo objects. | | `__pydantic_computed_fields__` | `Dict[str, ComputedFieldInfo]` | A dictionary of computed field names and their corresponding ComputedFieldInfo objects. | | `__pydantic_extra__` | `Dict[str, Any] | None` | A dictionary containing extra values, if extra is set to 'allow'. | | `__pydantic_fields_set__` | `set[str]` | The names of fields explicitly set during instantiation. | | `__pydantic_private__` | `Dict[str, Any] | None` | Values of private attributes set on the model instance. |
+| Name | Type | Description | | --- | --- | --- | | `__class_vars__` | `set[str]` | The names of the class variables defined on the model. | | `__private_attributes__` | `Dict[str, ModelPrivateAttr]` | Metadata about the private attributes of the model. | | `__signature__` | `Signature` | The synthesized __init__ Signature of the model. | | `__pydantic_complete__` | `bool` | Whether model building is completed, or if there are still undefined fields. | | `__pydantic_core_schema__` | `CoreSchema` | The core schema of the model. | | `__pydantic_custom_init__` | `bool` | Whether the model has a custom __init__ function. | | `__pydantic_decorators__` | `DecoratorInfos` | Metadata containing the decorators defined on the model. This replaces Model.__validators__ and Model.__root_validators__ from Pydantic V1. | | `__pydantic_generic_metadata__` | `PydanticGenericMetadata` | A dictionary containing metadata about generic Pydantic models. The origin and args items map to the __origin__ and __args__ attributes of generic aliases, and the parameter item maps to the __parameter__ attribute of generic classes. | | `__pydantic_parent_namespace__` | `Dict[str, Any] | None` | Parent namespace of the model, used for automatic rebuilding of models. | | `__pydantic_post_init__` | `None | Literal['model_post_init']` | The name of the post-init method for the model, if defined. | | `__pydantic_root_model__` | `bool` | Whether the model is a RootModel. | | `__pydantic_serializer__` | `SchemaSerializer` | The pydantic-core SchemaSerializer used to dump instances of the model. | | `__pydantic_validator__` | `SchemaValidator | PluggableSchemaValidator` | The pydantic-core SchemaValidator used to validate instances of the model. | | `__pydantic_fields__` | `Dict[str, FieldInfo]` | A dictionary of field names and their corresponding FieldInfo objects. | | `__pydantic_computed_fields__` | `Dict[str, ComputedFieldInfo]` | A dictionary of computed field names and their corresponding ComputedFieldInfo objects. | | `__pydantic_extra__` | `Dict[str, Any] | None` | A dictionary containing extra values, if extra is set to 'allow'. | | `__pydantic_fields_set__` | `set[str]` | The names of fields explicitly set during instantiation. | | `__pydantic_private__` | `Dict[str, Any] | None` | Values of private attributes set on the model instance. |
 
 Source code in `pydantic/main.py`
 
@@ -14661,8 +14722,10 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
         __pydantic_custom_init__: Whether the model has a custom `__init__` function.
         __pydantic_decorators__: Metadata containing the decorators defined on the model.
             This replaces `Model.__validators__` and `Model.__root_validators__` from Pydantic V1.
-        __pydantic_generic_metadata__: Metadata for generic models; contains data used for a similar purpose to
-            __args__, __origin__, __parameters__ in typing-module generics. May eventually be replaced by these.
+        __pydantic_generic_metadata__: A dictionary containing metadata about generic Pydantic models.
+            The `origin` and `args` items map to the [`__origin__`][genericalias.__origin__]
+            and [`__args__`][genericalias.__args__] attributes of [generic aliases][types-genericalias],
+            and the `parameter` item maps to the `__parameter__` attribute of generic classes.
         __pydantic_parent_namespace__: Parent namespace of the model, used for automatic rebuilding of models.
         __pydantic_post_init__: The name of the post-init method for the model, if defined.
         __pydantic_root_model__: Whether the model is a [`RootModel`][pydantic.root_model.RootModel].
@@ -14709,8 +14772,12 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
     This replaces `Model.__validators__` and `Model.__root_validators__` from Pydantic V1."""
 
     __pydantic_generic_metadata__: ClassVar[_generics.PydanticGenericMetadata]
-    """Metadata for generic models; contains data used for a similar purpose to
-    __args__, __origin__, __parameters__ in typing-module generics. May eventually be replaced by these."""
+    """A dictionary containing metadata about generic Pydantic models.
+
+    The `origin` and `args` items map to the [`__origin__`][genericalias.__origin__]
+    and [`__args__`][genericalias.__args__] attributes of [generic aliases][types-genericalias],
+    and the `parameter` item maps to the `__parameter__` attribute of generic classes.
+    """
 
     __pydantic_parent_namespace__: ClassVar[Dict[str, Any] | None] = None  # noqa: UP006
     """Parent namespace of the model, used for automatic rebuilding of models."""
@@ -18143,6 +18210,8 @@ The encoding of JSON serialized bytes. Defaults to `'utf8'`. Set equal to `val_j
 val_json_bytes: Literal['utf8', 'base64', 'hex']
 
 ```
+
+Added in v2.9.
 
 The encoding of JSON serialized bytes to decode. Defaults to `'utf8'`. Set equal to `ser_json_bytes` to get back an equal value after serialization round trip.
 
@@ -39381,6 +39450,8 @@ print(my_model.model_dump_json())  # (2)!
 
 ### Complex numbers
 
+Added in v2.9.
+
 Built-in type: complex.
 
 #### Validation
@@ -39400,6 +39471,8 @@ In [Python mode](../../concepts/serialization/#python-mode), complex instances a
 In [JSON mode](../../concepts/serialization/#json-mode), they are serialized as strings.
 
 ### Fractions
+
+Added in v2.10.
 
 Standard library type: fractions.Fraction.
 
@@ -42051,15 +42124,13 @@ A bytes type that is encoded and decoded using the standard (non-URL-safe) base6
 
 Note
 
-Under the hood, `Base64Bytes` uses the standard library `base64.b64encode` and `base64.b64decode` functions.
+Under the hood, `Base64Bytes` uses the standard library base64.b64encode() and base64.b64decode() functions.
 
 As a result, attempting to decode url-safe base64 data using the `Base64Bytes` type may fail or produce an incorrect decoding.
 
-Warning
+Changed in v2.10: `Base64Bytes` now uses base64.b64encode() and base64.b64decode() instead of base64.encodebytes() and base64.decodebytes().
 
-In versions of Pydantic prior to v2.10, `Base64Bytes` used base64.encodebytes and base64.decodebytes functions. According to the [base64 documentation](https://docs.python.org/3/library/base64.html), these methods are considered legacy implementation, and thus, Pydantic v2.10+ now uses the modern base64.b64encode and base64.b64decode functions.
-
-If you'd still like to use these legacy encoders / decoders, you can achieve this by creating a custom annotated type, like follows:
+These methods are considered legacy implementation. If you'd still like to use these legacy encoders/decoders, you can achieve this by creating a custom annotated type, like follows:
 
 ```python
 import base64
@@ -42132,19 +42203,17 @@ Base64Str = Annotated[
 
 ```
 
-A str type that is encoded and decoded using the standard (non-URL-safe) base64 encoder.
+A string type that is encoded and decoded using the standard (non-URL-safe) base64 encoder.
 
 Note
 
-Under the hood, `Base64Str` uses the standard library `base64.b64encode` and `base64.b64decode` functions.
+Under the hood, `Base64Str` uses the standard library base64.b64encode() and base64.b64decode() functions.
 
 As a result, attempting to decode url-safe base64 data using the `Base64Str` type may fail or produce an incorrect decoding.
 
-Warning
+Changed in v2.10: `Base64Str` now uses base64.b64encode() and base64.b64decode() instead of base64.encodebytes() and base64.decodebytes().
 
-In versions of Pydantic prior to v2.10, `Base64Str` used base64.encodebytes and base64.decodebytes functions. According to the [base64 documentation](https://docs.python.org/3/library/base64.html), these methods are considered legacy implementation, and thus, Pydantic v2.10+ now uses the modern base64.b64encode and base64.b64decode functions.
-
-See the Base64Bytes type for more information on how to replicate the old behavior with the legacy encoders / decoders.
+These methods are considered legacy implementation. See the documentation about the Base64Bytes type for more information on how to replicate the old behavior with the legacy encoders/decoders.
 
 ```python
 from pydantic import Base64Str, BaseModel, ValidationError

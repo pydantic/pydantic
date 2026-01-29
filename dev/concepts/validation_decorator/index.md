@@ -184,6 +184,8 @@ add_coords(x=1, y=2)
 
 For reference, see the [related specification section](https://typing.readthedocs.io/en/latest/spec/callables.html#unpack-for-keyword-arguments) and [PEP 692](https://peps.python.org/pep-0692/).
 
+Added in v2.10.
+
 ## Using the Field() function to describe function parameters
 
 The [`Field()` function](../fields/) can also be used with the decorator to provide extra information about the field and validations. If you don't make use of the `default` or `default_factory` parameter, it is recommended to use the [annotated pattern](../fields/#the-annotated-pattern) (so that type checkers infer the parameter as being required). Otherwise, the Field() function can be used as a default value (again, to trick type checkers into thinking a default value is provided for the parameter).

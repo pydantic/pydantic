@@ -10,7 +10,7 @@ A base class for creating Pydantic models.
 
 Attributes:
 
-| Name | Type | Description | | --- | --- | --- | | `__class_vars__` | `set[str]` | The names of the class variables defined on the model. | | `__private_attributes__` | `Dict[str, ModelPrivateAttr]` | Metadata about the private attributes of the model. | | `__signature__` | `Signature` | The synthesized __init__ Signature of the model. | | `__pydantic_complete__` | `bool` | Whether model building is completed, or if there are still undefined fields. | | `__pydantic_core_schema__` | `CoreSchema` | The core schema of the model. | | `__pydantic_custom_init__` | `bool` | Whether the model has a custom __init__ function. | | `__pydantic_decorators__` | `DecoratorInfos` | Metadata containing the decorators defined on the model. This replaces Model.__validators__ and Model.__root_validators__ from Pydantic V1. | | `__pydantic_generic_metadata__` | `PydanticGenericMetadata` | Metadata for generic models; contains data used for a similar purpose to args, origin, parameters in typing-module generics. May eventually be replaced by these. | | `__pydantic_parent_namespace__` | `Dict[str, Any] | None` | Parent namespace of the model, used for automatic rebuilding of models. | | `__pydantic_post_init__` | `None | Literal['model_post_init']` | The name of the post-init method for the model, if defined. | | `__pydantic_root_model__` | `bool` | Whether the model is a RootModel. | | `__pydantic_serializer__` | `SchemaSerializer` | The pydantic-core SchemaSerializer used to dump instances of the model. | | `__pydantic_validator__` | `SchemaValidator | PluggableSchemaValidator` | The pydantic-core SchemaValidator used to validate instances of the model. | | `__pydantic_fields__` | `Dict[str, FieldInfo]` | A dictionary of field names and their corresponding FieldInfo objects. | | `__pydantic_computed_fields__` | `Dict[str, ComputedFieldInfo]` | A dictionary of computed field names and their corresponding ComputedFieldInfo objects. | | `__pydantic_extra__` | `Dict[str, Any] | None` | A dictionary containing extra values, if extra is set to 'allow'. | | `__pydantic_fields_set__` | `set[str]` | The names of fields explicitly set during instantiation. | | `__pydantic_private__` | `Dict[str, Any] | None` | Values of private attributes set on the model instance. |
+| Name | Type | Description | | --- | --- | --- | | `__class_vars__` | `set[str]` | The names of the class variables defined on the model. | | `__private_attributes__` | `Dict[str, ModelPrivateAttr]` | Metadata about the private attributes of the model. | | `__signature__` | `Signature` | The synthesized __init__ Signature of the model. | | `__pydantic_complete__` | `bool` | Whether model building is completed, or if there are still undefined fields. | | `__pydantic_core_schema__` | `CoreSchema` | The core schema of the model. | | `__pydantic_custom_init__` | `bool` | Whether the model has a custom __init__ function. | | `__pydantic_decorators__` | `DecoratorInfos` | Metadata containing the decorators defined on the model. This replaces Model.__validators__ and Model.__root_validators__ from Pydantic V1. | | `__pydantic_generic_metadata__` | `PydanticGenericMetadata` | A dictionary containing metadata about generic Pydantic models. The origin and args items map to the __origin__ and __args__ attributes of generic aliases, and the parameter item maps to the __parameter__ attribute of generic classes. | | `__pydantic_parent_namespace__` | `Dict[str, Any] | None` | Parent namespace of the model, used for automatic rebuilding of models. | | `__pydantic_post_init__` | `None | Literal['model_post_init']` | The name of the post-init method for the model, if defined. | | `__pydantic_root_model__` | `bool` | Whether the model is a RootModel. | | `__pydantic_serializer__` | `SchemaSerializer` | The pydantic-core SchemaSerializer used to dump instances of the model. | | `__pydantic_validator__` | `SchemaValidator | PluggableSchemaValidator` | The pydantic-core SchemaValidator used to validate instances of the model. | | `__pydantic_fields__` | `Dict[str, FieldInfo]` | A dictionary of field names and their corresponding FieldInfo objects. | | `__pydantic_computed_fields__` | `Dict[str, ComputedFieldInfo]` | A dictionary of computed field names and their corresponding ComputedFieldInfo objects. | | `__pydantic_extra__` | `Dict[str, Any] | None` | A dictionary containing extra values, if extra is set to 'allow'. | | `__pydantic_fields_set__` | `set[str]` | The names of fields explicitly set during instantiation. | | `__pydantic_private__` | `Dict[str, Any] | None` | Values of private attributes set on the model instance. |
 
 Source code in `pydantic/main.py`
 
@@ -31,8 +31,10 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
         __pydantic_custom_init__: Whether the model has a custom `__init__` function.
         __pydantic_decorators__: Metadata containing the decorators defined on the model.
             This replaces `Model.__validators__` and `Model.__root_validators__` from Pydantic V1.
-        __pydantic_generic_metadata__: Metadata for generic models; contains data used for a similar purpose to
-            __args__, __origin__, __parameters__ in typing-module generics. May eventually be replaced by these.
+        __pydantic_generic_metadata__: A dictionary containing metadata about generic Pydantic models.
+            The `origin` and `args` items map to the [`__origin__`][genericalias.__origin__]
+            and [`__args__`][genericalias.__args__] attributes of [generic aliases][types-genericalias],
+            and the `parameter` item maps to the `__parameter__` attribute of generic classes.
         __pydantic_parent_namespace__: Parent namespace of the model, used for automatic rebuilding of models.
         __pydantic_post_init__: The name of the post-init method for the model, if defined.
         __pydantic_root_model__: Whether the model is a [`RootModel`][pydantic.root_model.RootModel].
@@ -79,8 +81,12 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
     This replaces `Model.__validators__` and `Model.__root_validators__` from Pydantic V1."""
 
     __pydantic_generic_metadata__: ClassVar[_generics.PydanticGenericMetadata]
-    """Metadata for generic models; contains data used for a similar purpose to
-    __args__, __origin__, __parameters__ in typing-module generics. May eventually be replaced by these."""
+    """A dictionary containing metadata about generic Pydantic models.
+
+    The `origin` and `args` items map to the [`__origin__`][genericalias.__origin__]
+    and [`__args__`][genericalias.__args__] attributes of [generic aliases][types-genericalias],
+    and the `parameter` item maps to the `__parameter__` attribute of generic classes.
+    """
 
     __pydantic_parent_namespace__: ClassVar[Dict[str, Any] | None] = None  # noqa: UP006
     """Parent namespace of the model, used for automatic rebuilding of models."""

@@ -4013,7 +4013,10 @@ schema. This comes with some non-trivial overhead, so it is recommended to creat
 just once and reuse it in loops or other performance-critical code.</p>
 </div>
 <h2 id="rebuilding-a-typeadapters-schema">Rebuilding a <code>TypeAdapter</code>'s schema<a class="headerlink" href="#rebuilding-a-typeadapters-schema" title="Permanent link">&para;</a></h2>
-<p>In v2.10+, <a class="autorefs autorefs-internal" href="../../api/type_adapter/#pydantic.type_adapter.TypeAdapter"><code>TypeAdapter</code></a>'s support deferred schema building and manual rebuilds. This is helpful for the case of:</p>
+<div style="border-left: .15rem solid rgb(79, 196, 100); padding: 0 .5rem;">
+<p><span style="font-style: italic; color: rgb(79, 196, 100);">Added in v2.10.</span></p>
+</div>
+<p><a class="autorefs autorefs-internal" href="../../api/type_adapter/#pydantic.type_adapter.TypeAdapter"><code>TypeAdapter</code></a>'s support deferred schema building and manual rebuilds. This is helpful for the case of:</p>
 <ul>
 <li>Types with forward references</li>
 <li>Types for which core schema builds are expensive</li>

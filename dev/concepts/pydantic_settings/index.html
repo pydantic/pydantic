@@ -2086,6 +2086,17 @@ to help you monitor and understand your
 </li>
         
           <li class="md-nav__item">
+  <a href="#secret-versions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Secret Versions
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#important-notes" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -5397,6 +5408,17 @@ to help you monitor and understand your
 </li>
         
           <li class="md-nav__item">
+  <a href="#secret-versions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Secret Versions
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#important-notes" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -7696,7 +7718,7 @@ if not specified. Works in both plain and nested directory modes, like
         <span class="p">)</span>
 </code></pre></div>
 <h3 id="snake-case-conversion">Snake case conversion<a class="headerlink" href="#snake-case-conversion" title="Permanent link">&para;</a></h3>
-<p>The Azure Key Vault source accepts a <code>snake_case_convertion</code> option, disabled by default, to convert Key Vault secret names by mapping them to Python's snake_case field names, without the need to use aliases.</p>
+<p>The Azure Key Vault source accepts a <code>snake_case_conversion</code> option, disabled by default, to convert Key Vault secret names by mapping them to Python's snake_case field names, without the need to use aliases.</p>
 <div class="language-py highlight"><pre><span></span><code><span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">azure.identity</span><span class="w"> </span><span class="kn">import</span> <span class="n">DefaultAzureCredential</span>
@@ -7731,7 +7753,7 @@ if not specified. Works in both plain and nested directory modes, like
 <p>This setup will load Azure Key Vault secrets (e.g., <code>MySetting</code>, <code>mySetting</code>, <code>my-secret</code> or <code>MY-SECRET</code>), mapping them to the snake case version (<code>my_setting</code> in this case).</p>
 <h3 id="dash-to-underscore-mapping">Dash to underscore mapping<a class="headerlink" href="#dash-to-underscore-mapping" title="Permanent link">&para;</a></h3>
 <p>The Azure Key Vault source accepts a <code>dash_to_underscore</code> option, disabled by default, to support Key Vault kebab-case secret names by mapping them to Python's snake_case field names. When enabled, dashes (<code>-</code>) in secret names are mapped to underscores (<code>_</code>) in field names during validation.</p>
-<p>This mapping applies only to <em>field names</em>, not to aliases.</p>
+<p>This mapping applies only to <em>field names</em>, not to aliases.  Consider snake case conversion if you need aliases or nested fields.</p>
 <div class="language-py highlight"><pre><span></span><code><span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">azure.identity</span><span class="w"> </span><span class="kn">import</span> <span class="n">DefaultAzureCredential</span>
@@ -7849,6 +7871,48 @@ if not specified. Works in both plain and nested directory modes, like
 </ol>
 <h3 id="nested-models">Nested Models<a class="headerlink" href="#nested-models" title="Permanent link">&para;</a></h3>
 <p>For nested models, Secret Manager supports the <code>env_nested_delimiter</code> setting as long as it complies with the <a href="https://cloud.google.com/secret-manager/docs/creating-and-accessing-secrets#create-a-secret">naming rules</a>. In the example above, you would create secrets named <code>database__password</code> and <code>database__user</code> in Secret Manager.</p>
+<h3 id="secret-versions">Secret Versions<a class="headerlink" href="#secret-versions" title="Permanent link">&para;</a></h3>
+<p>By default, <code>GoogleSecretManagerSettingsSource</code> uses the "latest" version of secrets.
+You can specify a different version using the <code>SecretVersion</code> annotation.</p>
+<div class="language-py highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Annotated</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">pydantic</span><span class="w"> </span><span class="kn">import</span> <span class="n">Field</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">pydantic_settings</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+    <span class="n">BaseSettings</span><span class="p">,</span>
+    <span class="n">GoogleSecretManagerSettingsSource</span><span class="p">,</span>
+    <span class="n">PydanticBaseSettingsSource</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pydantic_settings.sources.types</span><span class="w"> </span><span class="kn">import</span> <span class="n">SecretVersion</span>
+
+
+<span class="k">class</span><span class="w"> </span><span class="nc">Settings</span><span class="p">(</span><span class="n">BaseSettings</span><span class="p">):</span>
+    <span class="c1"># This will use the &quot;latest&quot; version</span>
+    <span class="n">my_secret</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="n">alias</span><span class="o">=</span><span class="s1">&#39;my-secret&#39;</span><span class="p">)</span>
+    <span class="c1"># This will use version &quot;1&quot;</span>
+    <span class="n">my_secret_v1</span><span class="p">:</span> <span class="n">Annotated</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Field</span><span class="p">(</span><span class="n">alias</span><span class="o">=</span><span class="s1">&#39;my-secret&#39;</span><span class="p">),</span> <span class="n">SecretVersion</span><span class="p">(</span><span class="s1">&#39;1&#39;</span><span class="p">)]</span>
+
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">settings_customise_sources</span><span class="p">(</span>
+        <span class="bp">cls</span><span class="p">,</span>
+        <span class="n">settings_cls</span><span class="p">:</span> <span class="nb">type</span><span class="p">[</span><span class="n">BaseSettings</span><span class="p">],</span>
+        <span class="n">init_settings</span><span class="p">:</span> <span class="n">PydanticBaseSettingsSource</span><span class="p">,</span>
+        <span class="n">env_settings</span><span class="p">:</span> <span class="n">PydanticBaseSettingsSource</span><span class="p">,</span>
+        <span class="n">dotenv_settings</span><span class="p">:</span> <span class="n">PydanticBaseSettingsSource</span><span class="p">,</span>
+        <span class="n">file_secret_settings</span><span class="p">:</span> <span class="n">PydanticBaseSettingsSource</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">PydanticBaseSettingsSource</span><span class="p">,</span> <span class="o">...</span><span class="p">]:</span>
+        <span class="k">return</span> <span class="p">(</span>
+            <span class="n">GoogleSecretManagerSettingsSource</span><span class="p">(</span><span class="n">settings_cls</span><span class="p">,</span> <span class="n">project_id</span><span class="o">=</span><span class="s1">&#39;my-project&#39;</span><span class="p">),</span>
+            <span class="n">init_settings</span><span class="p">,</span>
+            <span class="n">env_settings</span><span class="p">,</span>
+            <span class="n">dotenv_settings</span><span class="p">,</span>
+            <span class="n">file_secret_settings</span><span class="p">,</span>
+        <span class="p">)</span>
+</code></pre></div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>If you have multiple fields pointing to the same secret (alias) but with different versions, you MUST enable <code>populate_by_name=True</code> in <code>SettingsConfigDict</code>.</p>
+</div>
 <h3 id="important-notes">Important Notes<a class="headerlink" href="#important-notes" title="Permanent link">&para;</a></h3>
 <ol>
 <li><strong>Case Sensitivity</strong>: By default, secret names are case-sensitive.<ul>
@@ -7859,8 +7923,7 @@ if not specified. Works in both plain and nested directory modes, like
 </li>
 </ul>
 </li>
-<li><strong>Secret Naming</strong>: Create secrets in Google Secret Manager with names that match your field names (including any prefix). According the <a href="https://cloud.google.com/secret-manager/docs/creating-and-accessing-secrets#create-a-secret">Secret Manager documentation</a>, a secret name can contain uppercase and lowercase letters, numerals, hyphens, and underscores. The maximum allowed length for a name is 255 characters.</li>
-<li><strong>Secret Versions</strong>: The GoogleSecretManagerSettingsSource uses the "latest" version of secrets.</li>
+<li><strong>Secret Naming</strong>: Create secrets in Google Secret Manager with names that match your field names (including any prefix). According to the <a href="https://cloud.google.com/secret-manager/docs/creating-and-accessing-secrets#create-a-secret">Secret Manager documentation</a>, a secret name can contain uppercase and lowercase letters, numerals, hyphens, and underscores. The maximum allowed length for a name is 255 characters.</li>
 </ol>
 <p>For more details on creating and managing secrets in Google Cloud Secret Manager, see the <a href="https://cloud.google.com/secret-manager/docs">official Google Cloud documentation</a>.</p>
 <h2 id="other-settings-source">Other settings source<a class="headerlink" href="#other-settings-source" title="Permanent link">&para;</a></h2>

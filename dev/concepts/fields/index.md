@@ -107,6 +107,8 @@ print(field_info.metadata)
 
 ```
 
+Deprecated in v2.11, will be removed in version v3: model_fields can only be accessed from the class object, not the instance.
+
 ## Default values
 
 Default values for fields can be provided using the normal assignment syntax or by providing a value to the `default` argument:
@@ -122,9 +124,7 @@ class User(BaseModel):
 
 ```
 
-Warning
-
-[In Pydantic V1](../../migration/#required-optional-and-nullable-fields), a type annotated as Any or wrapped by Optional would be given an implicit default of `None` even if no default was explicitly specified. This is no longer the case in Pydantic V2.
+Changed in v2: [In Pydantic V1](../../migration/#required-optional-and-nullable-fields), a type annotated as Any or wrapped by Optional would be given an implicit default of `None` even if no default was explicitly specified. This is no longer the case in Pydantic V2.
 
 You can also pass a callable to the `default_factory` argument that will be called to generate a default value:
 
@@ -157,6 +157,8 @@ print(user.username)
 ```
 
 The `data` argument will *only* contain the already validated data, based on the [order of model fields](../models/#field-ordering) (the above example would fail if `username` were to be defined before `email`).
+
+Added in v2.10: Default factories can take already validated data as an argument.
 
 ## Validate default values
 
@@ -520,7 +522,7 @@ print(Model.model_validate({'pet': {'pet_type': 'cat', 'age': 12}}))  # (1)!
 
 ```
 
-1. See more about [Validating data](../models/#validating-data) in the [Models](../models/) page.
+1. See more about `model_validate()` in the [Validating data](../models/#validating-data) documentation.
 
 ```python
 from typing import Literal
@@ -547,7 +549,7 @@ print(Model.model_validate({'pet': {'pet_type': 'cat', 'age': 12}}))  # (1)!
 
 ```
 
-1. See more about [Validating data](../models/#validating-data) in the [Models](../models/) page.
+1. See more about `model_validate()` in the [Validating data](../models/#validating-data) documentation.
 
 The following example shows how to use the `discriminator` keyword argument with a `Discriminator` instance:
 
@@ -623,7 +625,7 @@ print(repr(Model.model_validate({'pet': {'pet_kind': 'dog', 'age': 12}})))
 
 ```
 
-You can also take advantage of `Annotated` to define your discriminated unions. See the [Discriminated Unions](../unions/#discriminated-unions) docs for more details.
+You can also take advantage of `Annotated` to define your discriminated unions. See the [Discriminated Unions](../unions/#discriminated-unions) documentation for more details.
 
 ## Immutability
 
@@ -681,7 +683,11 @@ print(user.model_dump())  # (1)!
 
 See the dedicated [serialization section](../serialization/#field-inclusion-and-exclusion) for more details.
 
+Added in v2.12: The `exclude_if` parameter.
+
 ## Deprecated fields
+
+Added in v2.7.0.
 
 The `deprecated` parameter can be used to mark a field as being deprecated. Doing so will result in:
 

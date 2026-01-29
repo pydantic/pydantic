@@ -5298,6 +5298,9 @@ for more details).</p>
 </div>
 </div>
 </div>
+<div style="border-left: .15rem solid rgb(79, 196, 100); padding: 0 .5rem;">
+<p><span style="font-style: italic; color: rgb(79, 196, 100);">Added in v2.11: </span><span>Full support for the <a class="autorefs autorefs-external" href="https://docs.python.org/3/reference/compound_stmts.html#type-params">type parameter syntax</a> and <a href="https://typing.python.org/en/latest/spec/generics.html#type-parameter-defaults">type variable defaults</a>.</span></p>
+</div>
 <div class="admonition warning">
 <p class="admonition-title">Warning</p>
 <p>When parametrizing a model with a concrete type, Pydantic <strong>does not</strong> validate that the provided type
@@ -5814,6 +5817,10 @@ Pydantic provides the <a class="autorefs autorefs-internal" href="../../api/base
 <li>A two-tuple, the first element being the type and the second element the assigned value
   (either a default or the <a class="autorefs autorefs-internal" href="../../api/fields/#pydantic.fields.Field"><code>Field()</code></a> function).</li>
 </ul>
+<div style="border-left: .15rem solid rgb(244, 227, 76); padding: 0 .5rem;">
+<p><span style="font-style: italic; color: rgb(244, 227, 76);">Changed in v2.11: </span><span>When providing a single element for field definitions, any type can be used
+(previously, only an <a class="autorefs autorefs-external" href="https://docs.python.org/3/library/typing.html#typing.Annotated"><code>Annotated</code></a> form could be provided).</span></p>
+</div>
 <p>Here is a more advanced example:</p>
 <div class="language-python highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Annotated</span>
 

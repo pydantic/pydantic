@@ -801,6 +801,8 @@ except ValidationError as e:
 1. Declare a Pydantic model and add the list of type variables as type parameters.
 1. Use the type variables as annotations where you will want to replace them with other types.
 
+Added in v2.11: Full support for the type parameter syntax and [type variable defaults](https://typing.python.org/en/latest/spec/generics.html#type-parameter-defaults).
+
 Warning
 
 When parametrizing a model with a concrete type, Pydantic **does not** validate that the provided type is [assignable to the type variable](https://typing.readthedocs.io/en/latest/spec/generics.html#type-variables-with-an-upper-bound) if it has an upper bound.
@@ -1349,6 +1351,8 @@ Field definitions are specified as keyword arguments, and should either be:
 
 - A single element, representing the type annotation of the field.
 - A two-tuple, the first element being the type and the second element the assigned value (either a default or the Field() function).
+
+Changed in v2.11: When providing a single element for field definitions, any type can be used (previously, only an Annotated form could be provided).
 
 Here is a more advanced example:
 

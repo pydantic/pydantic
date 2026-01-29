@@ -258,6 +258,8 @@ print(my_model.model_dump_json())  # (2)!
 
 ### Complex numbers
 
+Added in v2.9.
+
 Built-in type: complex.
 
 #### Validation
@@ -277,6 +279,8 @@ In [Python mode](../../concepts/serialization/#python-mode), complex instances a
 In [JSON mode](../../concepts/serialization/#json-mode), they are serialized as strings.
 
 ### Fractions
+
+Added in v2.10.
 
 Standard library type: fractions.Fraction.
 
