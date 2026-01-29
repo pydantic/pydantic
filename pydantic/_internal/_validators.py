@@ -107,6 +107,12 @@ def _import_string_logic(dotted_path: str) -> Any:
     try:
         module = import_module(module_path)
     except ModuleNotFoundError as e:
+        # If the missing module is NOT the module we tried to import (or its submodule),
+        # then it's an internal import failure (missing dependency) and we must not mask it.
+        missing = getattr(e, "name", None)
+        if missing and not (missing == module_path or missing.startswith(module_path + ".")):
+            raise
+
         if '.' in module_path:
             # Check if it would be valid if the final item was separated from its module with a `:`
             maybe_module_path, maybe_attribute = dotted_path.strip().rsplit('.', 1)
@@ -115,8 +121,7 @@ def _import_string_logic(dotted_path: str) -> Any:
             except ImportError:
                 pass
             raise ImportError(f'No module named {module_path!r}') from e
-        raise e
-
+        raise
     if len(components) > 1:
         attribute = components[1]
         try:
