@@ -803,7 +803,8 @@ class GenerateSchema:
 
                 model_validators = decorators.model_validators.values()
 
-                extras_schema = None
+                extras_schema: CoreSchema | None = None
+                extras_serialization_exclude_if: Callable[[Any], bool] | None = None
                 extras_keys_schema = None
                 if core_config.get('extra_fields_behavior') == 'allow' and extra_info is not None:
                     tp = get_origin(extra_info.annotation)
@@ -820,7 +821,7 @@ class GenerateSchema:
                     if extra_keys_type is not str:
                         extras_keys_schema = self.generate_schema(extra_keys_type)
                     if not typing_objects.is_any(extra_items_type):
-                        extras_schema = self.generate_schema(extra_items_type)
+                        extras_schema, extras_serialization_exclude_if = self._extras_schema(extra_items_type)
 
                 generic_origin: type[BaseModel] | None = getattr(cls, '__pydantic_generic_metadata__', {}).get('origin')
 
@@ -846,6 +847,7 @@ class GenerateSchema:
                             for d in computed_fields.values()
                         ],
                         extras_schema=extras_schema,
+                        extras_serialization_exclude_if=extras_serialization_exclude_if,
                         extras_keys_schema=extras_keys_schema,
                         model_name=cls.__name__,
                     )
@@ -1307,6 +1309,20 @@ class GenerateSchema:
 
         return schema, core_metadata
 
+    def _extras_schema(self, extra_items_type: Any) -> tuple[core_schema.CoreSchema, Callable[[Any], bool] | None]:
+        serialization_exclude_if = None
+        if typing_objects.is_annotated(get_origin(extra_items_type)):
+            FieldInfo = import_cached_field_info()
+            _, *annotations = self._get_args_resolving_forward_refs(
+                extra_items_type,
+                required=True,
+            )
+            for annotation in annotations:
+                if isinstance(annotation, FieldInfo):
+                    serialization_exclude_if = annotation.exclude_if
+        schema = self.generate_schema(extra_items_type)
+        return schema, serialization_exclude_if
+
     def _union_schema(self, union_type: Any) -> core_schema.CoreSchema:
         """Generate schema for a Union."""
         args = self._get_args_resolving_forward_refs(union_type, required=True)
@@ -1460,7 +1476,10 @@ class GenerateSchema:
                     )
 
                 extra_behavior: core_schema.ExtraBehavior = 'ignore'
-                extras_schema: CoreSchema | None = None  # For 'allow', equivalent to `Any` - no validation performed.
+                extras_schema: core_schema.CoreSchema | None = (
+                    None  # For 'allow', equivalent to `Any` - no validation performed.
+                )
+                extras_serialization_exclude_if: Callable[[Any], bool] | None = None
 
                 # `__closed__` is `None` when not specified (equivalent to `False`):
                 is_closed = bool(getattr(typed_dict_cls, '__closed__', False))
@@ -1470,7 +1489,9 @@ class GenerateSchema:
                     extras_schema = None
                 elif not typing_objects.is_noextraitems(extra_items):
                     extra_behavior = 'allow'
-                    extras_schema = self.generate_schema(replace_types(extra_items, typevars_map))
+                    extras_schema, extras_serialization_exclude_if = self._extras_schema(
+                        replace_types(extra_items, typevars_map)
+                    )
 
                 if (config_extra := self._config_wrapper.extra) in ('allow', 'forbid'):
                     if is_closed and config_extra == 'allow':
@@ -1497,6 +1518,7 @@ class GenerateSchema:
                     ],
                     extra_behavior=extra_behavior,
                     extras_schema=extras_schema,
+                    extras_serialization_exclude_if=extras_serialization_exclude_if,
                     ref=typed_dict_ref,
                     config=core_config,
                 )
