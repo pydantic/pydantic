@@ -185,6 +185,9 @@ using all possible [parameter configurations][parameter] and all possible combin
 
     For reference, see the [related specification section] and [PEP 692].
 
+    /// version-added | v2.10
+    ///
+
     [related specification section]: https://typing.readthedocs.io/en/latest/spec/callables.html#unpack-for-keyword-arguments
     [PEP 692]: https://peps.python.org/pep-0692/
 
