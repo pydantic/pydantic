@@ -1047,6 +1047,41 @@ def test_property_setter():
     assert s.to_python(sq, exclude={'random_n'}) == {'side': 0, 'area': 0}
 
 
+def test_computed_field_serialization_exclude_if():
+    class Square:
+        side: float
+
+        def __init__(self, **kwargs):
+            self.__dict__ = kwargs
+
+        @property
+        def area(self) -> float:
+            return self.side**2
+
+    s = SchemaSerializer(
+        core_schema.model_schema(
+            Square,
+            core_schema.model_fields_schema(
+                {'side': core_schema.model_field(core_schema.float_schema())},
+                computed_fields=[
+                    core_schema.computed_field(
+                        'area', core_schema.float_schema(), serialization_exclude_if=lambda a: a == 4.0
+                    ),
+                ],
+            ),
+        )
+    )
+
+    sq = Square(side=10.0)
+    assert s.to_python(sq) == {'side': 10.0, 'area': 100.0}
+    assert s.to_json(sq) == b'{"side":10.0,"area":100.0}'
+
+    # Excluded by serialization exclude if
+    sq = Square(side=2.0)
+    assert s.to_python(sq) == {'side': 2.0}
+    assert s.to_json(sq) == b'{"side":2.0}'
+
+
 def test_extra():
     class MyModel:
         # this is not required, but it avoids `__pydantic_fields_set__` being included in `__dict__`
