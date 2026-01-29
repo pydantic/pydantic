@@ -100,7 +100,7 @@ from ._fields import (
 )
 from ._forward_ref import PydanticRecursiveRef
 from ._generics import get_standard_typevars_map, replace_types
-from ._import_utils import import_cached_base_model, import_cached_field_info
+from ._import_utils import import_cached_base_model, import_cached_base_struct, import_cached_field_info
 from ._mock_val_ser import MockCoreSchema
 from ._namespace_utils import NamespacesTuple, NsResolver
 from ._schema_gather import MissingDefinitionError, gather_schemas_for_cleaning
@@ -108,6 +108,7 @@ from ._schema_generation_shared import CallbackGetCoreSchemaHandler
 from ._utils import lenient_issubclass, smart_deepcopy
 
 if TYPE_CHECKING:
+    from ..experimental.structs import BaseStruct
     from ..fields import ComputedFieldInfo, FieldInfo
     from ..main import BaseModel
     from ..types import Discriminator
@@ -867,6 +868,148 @@ class GenerateSchema:
                 schema = apply_model_validators(schema, model_validators, 'outer')
                 return self.defs.create_definition_reference_schema(schema)
 
+    def _struct_schema(self, cls: type[BaseStruct]) -> core_schema.CoreSchema:
+        """Generate schema for a Pydantic struct."""
+        BaseStruct = import_cached_base_struct()
+
+        with self.defs.get_schema_or_ref(cls) as (model_ref, maybe_schema):
+            if maybe_schema is not None:
+                return maybe_schema
+
+            schema = cls.__dict__.get('__pydantic_core_schema__')
+            if schema is not None and not isinstance(schema, MockCoreSchema):
+                if schema['type'] == 'definitions':
+                    schema = self.defs.unpack_definitions(schema)
+                ref = get_ref(schema)
+                if ref:
+                    return self.defs.create_definition_reference_schema(schema)
+                else:
+                    return schema
+
+            config_wrapper = ConfigWrapper(cls.model_config, check=False)
+
+            with self._config_wrapper_stack.push(config_wrapper), self._ns_resolver.push(cls):
+                core_config = self._config_wrapper.core_config(title=cls.__name__)
+
+                if cls.__pydantic_fields_complete__ or cls is BaseStruct:
+                    fields = getattr(cls, '__pydantic_fields__', {})
+                else:
+                    if '__pydantic_fields__' not in cls.__dict__:
+                        # This happens when we have a loop in the schema generation:
+                        # class Base[T](BaseModel):
+                        #     t: T
+                        #
+                        # class Other(BaseModel):
+                        #     b: 'Base[Other]'
+                        # When we build fields for `Other`, we evaluate the forward annotation.
+                        # At this point, `Other` doesn't have the model fields set. We create
+                        # `Base[Other]`; model fields are successfully built, and we try to generate
+                        # a schema for `t: Other`. As `Other.__pydantic_fields__` aren't set, we abort.
+                        raise PydanticUndefinedAnnotation(
+                            name=cls.__name__,
+                            message=f'Class {cls.__name__!r} is not defined',
+                        )
+                    try:
+                        fields = rebuild_model_fields(
+                            cls,
+                            config_wrapper=self._config_wrapper,
+                            ns_resolver=self._ns_resolver,
+                            typevars_map=self._typevars_map or {},
+                        )
+                    except NameError as e:
+                        raise PydanticUndefinedAnnotation.from_name_error(e) from e
+
+                decorators = cls.__pydantic_decorators__
+                computed_fields = decorators.computed_fields
+                check_decorator_fields_exist(
+                    chain(
+                        decorators.field_validators.values(),
+                        decorators.field_serializers.values(),
+                        decorators.validators.values(),
+                    ),
+                    {*fields.keys(), *computed_fields.keys()},
+                )
+
+                model_validators = decorators.model_validators.values()
+
+                extras_schema = None
+                extras_keys_schema = None
+                if core_config.get('extra_fields_behavior') == 'allow':
+                    assert cls.__mro__[0] is cls
+                    assert cls.__mro__[-1] is object
+                    for candidate_cls in cls.__mro__[:-1]:
+                        extras_annotation = getattr(candidate_cls, '__annotations__', {}).get(
+                            '__pydantic_extra__', None
+                        )
+                        if extras_annotation is not None:
+                            if isinstance(extras_annotation, str):
+                                extras_annotation = _typing_extra.eval_type_backport(
+                                    _typing_extra._make_forward_ref(
+                                        extras_annotation, is_argument=False, is_class=True
+                                    ),
+                                    *self._types_namespace,
+                                )
+                            tp = get_origin(extras_annotation)
+                            if tp not in DICT_TYPES:
+                                raise PydanticSchemaGenerationError(
+                                    'The type annotation for `__pydantic_extra__` must be `dict[str, ...]`'
+                                )
+                            extra_keys_type, extra_items_type = self._get_args_resolving_forward_refs(
+                                extras_annotation,
+                                required=True,
+                            )
+                            if extra_keys_type is not str:
+                                extras_keys_schema = self.generate_schema(extra_keys_type)
+                            if not typing_objects.is_any(extra_items_type):
+                                extras_schema = self.generate_schema(extra_items_type)
+                            if extras_keys_schema is not None or extras_schema is not None:
+                                break
+
+                generic_origin: type[BaseModel] | None = getattr(cls, '__pydantic_generic_metadata__', {}).get('origin')
+
+                if cls.__pydantic_root_model__:
+                    # FIXME: should the common field metadata be used here?
+                    inner_schema, _ = self._common_field_schema('root', fields['root'], decorators)
+                    inner_schema = apply_model_validators(inner_schema, model_validators, 'inner')
+                    model_schema = core_schema.model_schema(
+                        cls,
+                        inner_schema,
+                        generic_origin=generic_origin,
+                        custom_init=getattr(cls, '__pydantic_custom_init__', None),
+                        root_model=True,
+                        post_init=getattr(cls, '__pydantic_post_init__', None),
+                        config=core_config,
+                        ref=model_ref,
+                    )
+                else:
+                    fields_schema: core_schema.CoreSchema = core_schema.model_fields_schema(
+                        {k: self._generate_md_field_schema(k, v, decorators) for k, v in fields.items()},
+                        computed_fields=[
+                            self._computed_field_schema(d, decorators.field_serializers)
+                            for d in computed_fields.values()
+                        ],
+                        extras_schema=extras_schema,
+                        extras_keys_schema=extras_keys_schema,
+                        model_name=cls.__name__,
+                    )
+                    inner_schema = apply_validators(fields_schema, decorators.root_validators.values())
+                    inner_schema = apply_model_validators(inner_schema, model_validators, 'inner')
+
+                    model_schema = core_schema.model_schema(
+                        cls,
+                        inner_schema,
+                        generic_origin=generic_origin,
+                        custom_init=getattr(cls, '__pydantic_custom_init__', None),
+                        root_model=False,
+                        post_init=getattr(cls, '__pydantic_post_init__', None),
+                        config=core_config,
+                        ref=model_ref,
+                    )
+
+                schema = self._apply_model_serializers(model_schema, decorators.model_serializers.values())
+                schema = apply_model_validators(schema, model_validators, 'outer')
+                return self.defs.create_definition_reference_schema(schema)
+
     def _resolve_self_type(self, obj: Any) -> Any:
         obj = self.model_type_stack.get()
         if obj is None:
@@ -1011,6 +1154,12 @@ class GenerateSchema:
         if lenient_issubclass(obj, BaseModel):
             with self.model_type_stack.push(obj):
                 return self._model_schema(obj)
+
+        BaseStruct = import_cached_base_struct()
+
+        if lenient_issubclass(obj, BaseStruct):
+            with self.model_type_stack.push(obj):
+                return self._struct_schema(obj)
 
         if isinstance(obj, PydanticRecursiveRef):
             return core_schema.definition_reference_schema(schema_ref=obj.type_ref)
