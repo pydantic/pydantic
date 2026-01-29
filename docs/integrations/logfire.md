@@ -76,3 +76,35 @@ And you can investigate each of the corresponding spans to get validation detail
 ![logfire span details](../img/logfire_span.png)
 
 <!-- TODO: add examples re tracing performance issues - what kind of example do we want to use? -->
+
+### Framework Instrumentation
+
+Logfire provides instrumentation for many popular Python frameworks, including Django, FastAPI, Celery, and more.
+See the [Logfire integrations documentation](https://logfire.pydantic.dev/docs/integrations/) for a full list.
+
+#### Multi-Container Celery Setup
+
+When using Logfire with Django (or another web framework) and Celery, you should call
+`logfire.instrument_celery()` in **both** the web application container and the Celery worker container.
+This is especially important for distributed tracing to work correctly.
+
+```python {test="skip"}
+# In your Django settings or application startup (e.g., settings.py or apps.py)
+import logfire
+
+logfire.configure()
+logfire.instrument_django()
+logfire.instrument_celery()  # Also needed here for distributed tracing
+```
+
+```python {test="skip"}
+# In your Celery worker startup (e.g., celery.py)
+import logfire
+
+logfire.configure()
+logfire.instrument_celery()  # Instruments task execution
+```
+
+By instrumenting Celery on both sides, Logfire can trace the full lifecycle of a task — from when it's enqueued
+by your web application to when it's picked up and executed by a worker — enabling complete distributed tracing
+across your services.
