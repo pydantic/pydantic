@@ -6268,14 +6268,22 @@ def test_instanceof_invalid_core_schema():
     class MyClass:
         pass
 
+    @dataclass
+    class ClassWithInvalidAnnotations:
+        a: 'Unknown' = 1  # noqa: F821
+        b: NotRequired[int] = 1
+
     class MyModel(BaseModel):
         a: InstanceOf[MyClass]
         b: Optional[InstanceOf[MyClass]]
+        c: InstanceOf[ClassWithInvalidAnnotations]
 
-    MyModel(a=MyClass(), b=None)
-    MyModel(a=MyClass(), b=MyClass())
+    MyModel(a=MyClass(), b=None, c=ClassWithInvalidAnnotations())
+    MyModel(a=MyClass(), b=MyClass(), c=ClassWithInvalidAnnotations())
+
     with pytest.raises(ValidationError) as exc_info:
-        MyModel(a=1, b=1)
+        MyModel(a=1, b=1, c=1)
+
     assert exc_info.value.errors(include_url=False) == [
         {
             'ctx': {'class': 'test_instanceof_invalid_core_schema.<locals>.MyClass'},
@@ -6289,6 +6297,13 @@ def test_instanceof_invalid_core_schema():
             'input': 1,
             'loc': ('b',),
             'msg': 'Input should be an instance of test_instanceof_invalid_core_schema.<locals>.MyClass',
+            'type': 'is_instance_of',
+        },
+        {
+            'ctx': {'class': 'test_instanceof_invalid_core_schema.<locals>.ClassWithInvalidAnnotations'},
+            'input': 1,
+            'loc': ('c',),
+            'msg': 'Input should be an instance of test_instanceof_invalid_core_schema.<locals>.ClassWithInvalidAnnotations',
             'type': 'is_instance_of',
         },
     ]
