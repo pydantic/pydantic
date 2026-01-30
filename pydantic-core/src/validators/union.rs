@@ -156,6 +156,9 @@ impl UnionValidator {
                         }
                     }
                 },
+                Err(ValError::Omit) => {
+                    // Omit might mean that at some other choice will work, so we continue trying
+                }
                 Err(ValError::LineErrors(lines)) => {
                     // if we don't yet know this validation will succeed, record the error
                     if best_match.is_none() {

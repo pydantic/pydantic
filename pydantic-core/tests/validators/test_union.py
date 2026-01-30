@@ -1021,6 +1021,24 @@ def test_td_smart_union_by_fields_set() -> None:
         assert set(validator.validate_python({'x': '1', 'y': '2'}).keys()) == {'x', 'y'}
 
 
+def test_td_smart_union_omit() -> None:
+    validator = SchemaValidator(
+        core_schema.typed_dict_schema(
+            fields={
+                'x': core_schema.typed_dict_field(
+                    core_schema.union_schema(
+                        [
+                            core_schema.with_default_schema(core_schema.int_schema(), on_error='omit'),
+                            core_schema.with_default_schema(core_schema.bool_schema(), on_error='omit'),
+                        ]
+                    )
+                )
+            },
+        )
+    )
+    assert validator.validate_python({'x': '123'}) == {'x': 123}
+
+
 def test_smart_union_does_nested_model_field_counting() -> None:
     class SubModelA:
         x: int = 1
