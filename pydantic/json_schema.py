@@ -1211,10 +1211,11 @@ class GenerateJsonSchema:
                     return json_schema
 
         # Sort set/frozenset defaults to ensure deterministic JSON schema generation
-        if isinstance(default, (set, frozenset)):
+        # We only sort if len > 1 because sets of size 0 or 1 are already deterministic
+        if isinstance(default, (set, frozenset)) and len(default) > 1:
             try:
                 default = sorted(default)
-            except TypeError:
+            except TypeError:  # pragma: no cover
                 # If items aren't comparable (e.g. mixed types), we can't sort them.
                 pass
 
