@@ -1210,6 +1210,14 @@ class GenerateJsonSchema:
                     )
                     return json_schema
 
+        # Sort set/frozenset defaults to ensure deterministic JSON schema generation
+        if isinstance(default, (set, frozenset)):
+            try:
+                default = sorted(default)
+            except TypeError:
+                # If items aren't comparable (e.g. mixed types), we can't sort them.
+                pass
+
         try:
             encoded_default = self.encode_default(default)
         except pydantic_core.PydanticSerializationError:
