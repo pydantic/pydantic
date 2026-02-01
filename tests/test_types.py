@@ -124,6 +124,7 @@ from pydantic import (
     validate_call,
 )
 from pydantic.dataclasses import dataclass as pydantic_dataclass
+from pydantic._internal._validators import _import_string_logic
 
 try:
     import email_validator
@@ -6511,6 +6512,13 @@ def test_importstring_reports_internal_import_error(tmp_path, monkeypatch):
     # ensure we don't incorrectly claim the object path is missing
     assert "my_module.MyClass" not in msg or "No module named 'my_module.MyClass'" not in msg
 
+
+def test_import_string_explicit_colon_does_not_try_dot_fallback():
+    # Regression test: if the input already contains ':attr', we should NOT try
+    # to reinterpret dots as module/attribute splits (which could accidentally
+    # create an invalid import string containing two colons).
+    with pytest.raises(ModuleNotFoundError):
+        _import_string_logic("does.not.exist:Thing")
 
 @pytest.mark.parametrize(
     'pydantic_type,expected',
