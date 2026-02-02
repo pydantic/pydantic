@@ -157,7 +157,7 @@ impl UnionValidator {
                     }
                 },
                 Err(ValError::Omit) => {
-                    // Omit might mean that at some other choice will work, so we continue trying
+                    // Omit might mean that the same validator would succeed with different exactness
                 }
                 Err(ValError::LineErrors(lines)) => {
                     // if we don't yet know this validation will succeed, record the error

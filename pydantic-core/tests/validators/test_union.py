@@ -1037,6 +1037,7 @@ def test_td_smart_union_omit() -> None:
         )
     )
     assert validator.validate_python({'x': '123'}) == {'x': 123}
+    assert validator.validate_python({'x': 'abc'}) == {}
 
 
 def test_smart_union_does_nested_model_field_counting() -> None:
