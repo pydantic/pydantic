@@ -158,6 +158,9 @@ impl UnionValidator {
                 },
                 Err(ValError::Omit) => {
                     // Omit might mean that the same validator would succeed with different exactness
+                    // This path swallows the omit error and does not validate the value which is fine
+                    // since we omitted values are correctly omitted from the union output
+                    // we may need to improve this in the future if we want to report omits from unions
                 }
                 Err(ValError::LineErrors(lines)) => {
                     // if we don't yet know this validation will succeed, record the error
