@@ -602,21 +602,15 @@ pub(crate) fn call_pydantic_serializer<'py, S: DoSerialize>(
 ) -> Result<S::Ok, S::Error> {
     let py = value.py();
     let py_serializer = value.getattr(intern!(py, "__pydantic_serializer__"))?;
+
     let extracted_serializer: PyRef<SchemaSerializer> = py_serializer.extract().map_err(Into::into)?;
-    let mut state = SerializationState {
-        warnings: state.warnings.clone(),
-        rec_guard: state.rec_guard.clone(),
-        config: extracted_serializer.config,
-        model: state.model.clone(),
-        field_name: state.field_name.clone(),
-        include_exclude: state.include_exclude.clone(),
-        check: state.check,
-        extra: state.extra.clone(),
-    };
+
+    // Use current serialization state, except with the config from the extracted serializer
+    let state = &mut state.scoped_set(|s| &mut s.config, extracted_serializer.config);
 
     // Avoid falling immediately back into inference because we need to use the serializer
     // to drive the next step of serialization
-    do_serialize.serialize_no_infer(&extracted_serializer.serializer, value, &mut state)
+    do_serialize.serialize_no_infer(&extracted_serializer.serializer, value, state)
 }
 
 fn serialize_pattern<S: DoSerialize>(value: &Bound<'_, PyAny>, do_serialize: S) -> Result<S::Ok, S::Error> {

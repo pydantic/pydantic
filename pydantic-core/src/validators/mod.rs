@@ -17,7 +17,7 @@ use crate::errors::{LocItem, ValError, ValResult, ValidationError};
 use crate::input::{Input, InputType, StringMapping};
 use crate::py_gc::PyGcTraverse;
 use crate::recursion_guard::RecursionState;
-use crate::tools::{SchemaDict, pybackedstr_to_pystring};
+use crate::tools::SchemaDict;
 pub(crate) use config::{TemporalUnitMode, ValBytesMode};
 
 mod any;
@@ -364,7 +364,7 @@ impl SchemaValidator {
             extra,
             guard,
             false.into(),
-            Some(pybackedstr_to_pystring(py, &field_name)),
+            Some(field_name.as_py_str().bind(py).clone()),
         );
         self.validator
             .validate_assignment(py, &obj, &field_name, &field_value, &mut state)

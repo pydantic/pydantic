@@ -544,7 +544,7 @@ impl SerializationInfo {
     fn new(state: &SerializationState<'_>, is_field_serializer: bool) -> PyResult<Self> {
         let extra = &state.extra;
         if is_field_serializer {
-            match state.field_name.as_ref() {
+            match state.field_name() {
                 Some(field_name) => Ok(Self {
                     include: state.include().map(|i| i.clone().unbind()),
                     exclude: state.exclude().map(|e| e.clone().unbind()),
