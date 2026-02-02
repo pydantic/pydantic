@@ -46,8 +46,8 @@ runs:
       run: |
         uv sync --group testing-extra --no-install-package pydantic-core
         uv pip install pydantic-core --no-index --no-deps --find-links pydantic-core/pgo-wheel
-        uv run python -c 'from pydantic_core._pydantic_core import build_info; print(f"{build_info=}")'
-        uv run pytest tests/pydantic_core/benchmarks
+        uv run --no-sync python -c 'from pydantic_core._pydantic_core import build_info; print(f"{build_info=}")'
+        uv run --no-sync pytest tests/pydantic_core/benchmarks
         RUST_HOST=$(rustc -Vv | grep host | cut -d ' ' -f 2)
         rustup run ${{ inputs.rust-toolchain }} bash -c 'echo LLVM_PROFDATA=$RUSTUP_HOME/toolchains/$RUSTUP_TOOLCHAIN/lib/rustlib/$RUST_HOST/bin/llvm-profdata >> "$GITHUB_ENV"'
       shell: bash

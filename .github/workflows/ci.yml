@@ -184,7 +184,7 @@ jobs:
       matrix:
         platform:
           - os: linux
-            runs-on: ubuntu-latst
+            runs-on: ubuntu-latest
           - os: linux_aarch64
             runs-on: ubuntu-24.04-arm
           - os: windows
