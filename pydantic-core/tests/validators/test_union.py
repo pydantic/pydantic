@@ -1030,7 +1030,7 @@ def test_td_smart_union_omit() -> None:
                         [
                             core_schema.with_default_schema(core_schema.int_schema(), on_error='omit'),
                             core_schema.with_default_schema(core_schema.bool_schema(), on_error='omit'),
-                        ]
+                        ],
                     )
                 )
             },
@@ -1038,6 +1038,21 @@ def test_td_smart_union_omit() -> None:
     )
     assert validator.validate_python({'x': '123'}) == {'x': 123}
     assert validator.validate_python({'x': 'abc'}) == {}
+
+
+def test_list_smart_union_omit() -> None:
+    validator = SchemaValidator(
+        core_schema.list_schema(
+            core_schema.union_schema(
+                [
+                    core_schema.with_default_schema(core_schema.int_schema(), on_error='omit'),
+                    core_schema.with_default_schema(core_schema.bool_schema(), on_error='omit'),
+                ],
+            )
+        )
+    )
+    assert validator.validate_python(['123', 'abc', 'True']) == [123, True]
+    assert validator.validate_python(['abc', 'cde']) == []
 
 
 def test_smart_union_does_nested_model_field_counting() -> None:
