@@ -3,10 +3,12 @@ import platform
 import re
 import sys
 import typing
-from typing import Annotated, Any, Generic, Optional, TypeVar
+from typing import Annotated, Any, Generic, Optional, TypeVar, Union
 
 import pytest
 from annotated_types import Gt
+from typing_extensions import get_args, get_origin
+from typing_inspection import typing_objects
 
 from pydantic import BaseModel, Field, PydanticUserError, TypeAdapter, ValidationError
 
@@ -1673,3 +1675,20 @@ def test_parameterized_pep695_generic_with_annotated_forward_refs(create_module)
     assert M.model_fields['a'].metadata == [3]
     assert M.model_fields['b'].metadata == [3, 1]
     assert M.model_fields['c'].metadata == [Gt(2), 3, 2]
+
+
+def test_string_annotation_union_type() -> None:
+    """https://github.com/pydantic/pydantic/issues/12732"""
+    T = TypeVar('T')
+
+    class Model(BaseModel, Generic[T]):
+        data: Union[T, int]  # Using `typing.Union` is important here.
+
+    class Main(BaseModel):
+        m: Model['Main']
+
+    Main.model_fields['m'].annotation.model_rebuild()
+    annotation = Main.model_fields['m'].annotation.model_fields['data'].annotation
+
+    assert typing_objects.is_union(get_origin(annotation))
+    assert get_args(annotation)[0] is Main

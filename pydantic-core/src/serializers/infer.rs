@@ -5,6 +5,7 @@ use pyo3::exceptions::PyTypeError;
 use pyo3::intern;
 use pyo3::prelude::*;
 use pyo3::sync::PyOnceLock;
+use pyo3::sync::critical_section::with_critical_section;
 use pyo3::types::PyComplex;
 use pyo3::types::{PyByteArray, PyBytes, PyDict, PyFrozenSet, PyIterator, PyList, PySet, PyString, PyTuple};
 
@@ -120,7 +121,7 @@ pub(crate) fn infer_to_python_known<'py>(
                 .into_py_any(py)?,
             ObType::Bytearray => {
                 let py_byte_array = value.cast::<PyByteArray>()?;
-                pyo3::sync::with_critical_section(py_byte_array, || {
+                with_critical_section(py_byte_array, || {
                     // SAFETY: `py_byte_array` is protected by a critical section,
                     // which guarantees no mutation, and `bytes_to_string` does not
                     // run any code which could cause the critical section to be
@@ -379,7 +380,7 @@ pub(crate) fn infer_serialize_known<'py, S: Serializer>(
         }
         ObType::Bytearray => {
             let py_byte_array = value.cast::<PyByteArray>().map_err(py_err_se_err)?;
-            pyo3::sync::with_critical_section(py_byte_array, || {
+            with_critical_section(py_byte_array, || {
                 // SAFETY: `py_byte_array` is protected by a critical section,
                 // which guarantees no mutation, and `serialize_bytes` does not
                 // run any code which could cause the critical section to be
@@ -517,7 +518,7 @@ pub(crate) fn infer_json_key_known<'a, 'py>(
             .bytes_to_string(key.py(), key.cast::<PyBytes>()?.as_bytes()),
         ObType::Bytearray => {
             let py_byte_array = key.cast::<PyByteArray>()?;
-            pyo3::sync::with_critical_section(py_byte_array, || {
+            with_critical_section(py_byte_array, || {
                 // SAFETY: `py_byte_array` is protected by a critical section,
                 // which guarantees no mutation, and `bytes_to_string` does not
                 // run any code which could cause the critical section to be
@@ -601,21 +602,15 @@ pub(crate) fn call_pydantic_serializer<'py, S: DoSerialize>(
 ) -> Result<S::Ok, S::Error> {
     let py = value.py();
     let py_serializer = value.getattr(intern!(py, "__pydantic_serializer__"))?;
+
     let extracted_serializer: PyRef<SchemaSerializer> = py_serializer.extract().map_err(Into::into)?;
-    let mut state = SerializationState {
-        warnings: state.warnings.clone(),
-        rec_guard: state.rec_guard.clone(),
-        config: extracted_serializer.config,
-        model: state.model.clone(),
-        field_name: state.field_name.clone(),
-        include_exclude: state.include_exclude.clone(),
-        check: state.check,
-        extra: state.extra.clone(),
-    };
+
+    // Use current serialization state, except with the config from the extracted serializer
+    let state = &mut state.scoped_set(|s| &mut s.config, extracted_serializer.config);
 
     // Avoid falling immediately back into inference because we need to use the serializer
     // to drive the next step of serialization
-    do_serialize.serialize_no_infer(&extracted_serializer.serializer, value, &mut state)
+    do_serialize.serialize_no_infer(&extracted_serializer.serializer, value, state)
 }
 
 fn serialize_pattern<S: DoSerialize>(value: &Bound<'_, PyAny>, do_serialize: S) -> Result<S::Ok, S::Error> {

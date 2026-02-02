@@ -213,8 +213,8 @@ def as_dataclass_field(pydantic_field: FieldInfo) -> dataclasses.Field[Any]:
         field_args['doc'] = pydantic_field.description
 
     # Needed as the stdlib dataclass module processes kw_only in a specific way during class construction:
-    if sys.version_info >= (3, 10) and pydantic_field.kw_only:
-        field_args['kw_only'] = True
+    if sys.version_info >= (3, 10) and pydantic_field.kw_only is not None:
+        field_args['kw_only'] = pydantic_field.kw_only
 
     # Needed as the stdlib dataclass modules generates `__repr__()` during class construction:
     if pydantic_field.repr is not True:

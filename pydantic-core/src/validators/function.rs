@@ -504,12 +504,12 @@ macro_rules! py_err_string {
 pub fn convert_err(py: Python<'_>, err: PyErr, input: impl ToErrorValue) -> ValError {
     if err.is_instance_of::<PyValueError>(py) {
         let error_value = err.value(py);
-        if let Ok(pydantic_value_error) = error_value.extract::<PydanticCustomError>() {
-            pydantic_value_error.into_val_error(input)
-        } else if let Ok(pydantic_error_type) = error_value.extract::<PydanticKnownError>() {
-            pydantic_error_type.into_val_error(input)
-        } else if let Ok(validation_error) = err.value(py).extract::<ValidationError>() {
-            validation_error.into_val_error()
+        if let Ok(pydantic_value_error) = error_value.cast::<PydanticCustomError>() {
+            pydantic_value_error.get().clone().into_val_error(input)
+        } else if let Ok(pydantic_error_type) = error_value.cast::<PydanticKnownError>() {
+            pydantic_error_type.get().clone().into_val_error(input)
+        } else if let Ok(validation_error) = err.value(py).cast::<ValidationError>() {
+            validation_error.get().clone().into_val_error()
         } else {
             py_err_string!(py, err, error_value, ValueError, input)
         }
