@@ -189,14 +189,15 @@ impl FunctionPlainSerializer {
 
 fn on_error(py: Python, err: PyErr, function_name: &str, state: &mut SerializationState<'_>) -> PyResult<()> {
     let exception = err.value(py);
-    if let Ok(ser_err) = exception.extract::<PydanticSerializationUnexpectedValue>() {
+    if let Ok(ser_err) = exception.cast::<PydanticSerializationUnexpectedValue>() {
         if state.check.enabled() {
             Err(err)
         } else {
-            state.warnings.register_warning(ser_err);
+            state.warnings.register_warning(ser_err.get().clone());
             Ok(())
         }
-    } else if let Ok(err) = exception.extract::<PydanticSerializationError>() {
+    } else if let Ok(err) = exception.cast::<PydanticSerializationError>() {
+        let err = err.get();
         py_err!(PydanticSerializationError; "{err}")
     } else if exception.is_instance_of::<PyRecursionError>() {
         py_err!(PydanticSerializationError; "Error calling function `{function_name}`: RecursionError")

@@ -7,7 +7,7 @@ use crate::input::InputType;
 use super::line_error::ToErrorValue;
 use super::{ErrorType, ValError};
 
-#[pyclass(extends=PyException, module="pydantic_core._pydantic_core")]
+#[pyclass(extends=PyException, module="pydantic_core._pydantic_core", skip_from_py_object)]
 #[derive(Debug, Clone)]
 pub struct PydanticOmit {}
 
@@ -33,7 +33,7 @@ impl PydanticOmit {
     }
 }
 
-#[pyclass(extends=PyException, module="pydantic_core._pydantic_core")]
+#[pyclass(extends=PyException, module="pydantic_core._pydantic_core", skip_from_py_object)]
 #[derive(Debug, Clone)]
 pub struct PydanticUseDefault {}
 
@@ -53,7 +53,7 @@ impl PydanticUseDefault {
     }
 }
 
-#[pyclass(extends=PyValueError, module="pydantic_core._pydantic_core", subclass)]
+#[pyclass(extends=PyValueError, module="pydantic_core._pydantic_core", subclass, frozen, skip_from_py_object)]
 #[derive(Debug, Clone, Default)]
 pub struct PydanticCustomError {
     error_type: String,
@@ -134,7 +134,7 @@ impl PydanticCustomError {
     }
 }
 
-#[pyclass(extends=PyValueError, module="pydantic_core._pydantic_core")]
+#[pyclass(extends=PyValueError, module="pydantic_core._pydantic_core", skip_from_py_object, frozen)]
 #[derive(Debug, Clone)]
 pub struct PydanticKnownError {
     error_type: ErrorType,
