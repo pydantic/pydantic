@@ -20,7 +20,6 @@ use crate::lookup_key::LookupPathCollection;
 use crate::lookup_key::LookupType;
 use crate::tools::SchemaDict;
 use crate::tools::new_py_string;
-use crate::tools::pybackedstr_to_pystring;
 use crate::validators::shared::lookup_tree::LookupFieldPriority;
 use crate::validators::shared::lookup_tree::LookupTree;
 
@@ -240,7 +239,7 @@ impl Validator for ModelFieldsValidator {
                     ));
                 }
 
-                let state = &mut state.scoped_set_field_name(Some(pybackedstr_to_pystring(py, &field.name)));
+                let state = &mut state.scoped_set_field_name(Some(field.name.as_py_str().bind(py).clone()));
 
                 prepare_result(field.validator.validate(py, field_value, state))?
             } else {
@@ -333,7 +332,7 @@ impl ModelFieldsValidator {
             let state = &mut state.scoped_set(|state| &mut state.has_field_error, false);
 
             for field in &self.fields {
-                let state = &mut state.scoped_set_field_name(Some(pybackedstr_to_pystring(py, &field.name)));
+                let state = &mut state.scoped_set_field_name(Some(field.name.as_py_str().bind(py).clone()));
 
                 if let Some((lookup_path, lookup_result)) = field
                     .lookup_path_collection

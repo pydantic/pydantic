@@ -281,10 +281,7 @@ impl<'py> IntoPyObject<'py> for &'_ PathItemString {
     type Error = Infallible;
 
     fn into_pyobject(self, py: Python<'py>) -> Result<Self::Output, Self::Error> {
-        (&self.0).into_pyobject(py).map(|obj|
-            // SAFETY: `PyBackedStr` always returns a `PyString`, should open a PyO3 issue to not
-            // need this unsafe cast
-            unsafe { obj.cast_into_unchecked() })
+        (&self.0).into_pyobject(py)
     }
 }
 
