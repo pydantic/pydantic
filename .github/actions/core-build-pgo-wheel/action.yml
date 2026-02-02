@@ -44,7 +44,8 @@ runs:
 
     - name: generate pgo data
       run: |
-        uv sync --group testing-extra
+        uv sync --directory pydantic-core --group testing-extra --no-install-package pydantic-core
+        uv sync --group testing-extra --no-install-package pydantic-core --inexact
         uv pip install pydantic-core --no-index --no-deps --find-links pydantic-core/pgo-wheel
         uv run --no-sync python -c 'from pydantic_core._pydantic_core import build_info; print(f"{build_info=}")'
         uv run --no-sync pytest tests/pydantic_core/benchmarks
