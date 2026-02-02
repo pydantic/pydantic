@@ -6493,11 +6493,7 @@ def test_annotated_default_value_functional_validator() -> None:
 
 def test_importstring_reports_internal_import_error(tmp_path, monkeypatch):
     # Create a module that exists, but fails to import due to missing dependency
-    (tmp_path / 'my_module.py').write_text(
-        "import definitely_missing_dep_xyz\n\n"
-        "class MyClass:\n"
-        "    pass\n"
-    )
+    (tmp_path / 'my_module.py').write_text('import definitely_missing_dep_xyz\n\nclass MyClass:\n    pass\n')
     monkeypatch.syspath_prepend(tmp_path)
 
     adapter = TypeAdapter(ImportString)
@@ -6516,6 +6512,7 @@ def test_import_string_explicit_colon_does_not_try_dot_fallback():
     # and create 'collections:defaultdict:get', which would be invalid
     with pytest.raises(ValidationError):
         adapter.validate_python('collections.defaultdict:get')
+
 
 @pytest.mark.parametrize(
     'pydantic_type,expected',
