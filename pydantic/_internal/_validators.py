@@ -108,7 +108,7 @@ def _import_string_logic(dotted_path: str) -> Any:
 
     try:
         module = import_module(module_path)
-    except ModuleNotFoundError as e:
+    except ModuleNotFoundError:
         if attribute is None and '.' in module_path:
             # Try interpreting the final dotted segment as an attribute, not a submodule
             maybe_module_path, maybe_attribute = module_path.rsplit('.', 1)
