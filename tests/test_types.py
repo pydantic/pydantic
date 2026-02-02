@@ -6511,7 +6511,7 @@ def test_import_string_explicit_colon_does_not_try_dot_fallback():
     # to reinterpret dots as module/attribute splits (which could accidentally
     # create an invalid import string containing two colons).
     adapter = TypeAdapter(ImportString)
-    
+
     # A buggy implementation might try to split 'collections.defaultdict' further
     # and create 'collections:defaultdict:get', which would be invalid
     with pytest.raises(ValidationError):

@@ -99,11 +99,9 @@ def _import_string_logic(dotted_path: str) -> Any:
     components = dotted_path.strip().split(':')
     if len(components) > 2:
         raise ImportError(f"Import strings should have at most one ':'; received {dotted_path!r}")
-    
     attribute = None
     if len(components) == 2:
         attribute = components[1]
-    
     module_path = components[0]
     if not module_path:
         raise ImportError(f'Import strings should have a nonempty module name; received {dotted_path!r}')
@@ -120,7 +118,7 @@ def _import_string_logic(dotted_path: str) -> Any:
             except ImportError:
                 pass
         raise
-    
+
     if attribute is not None:
         try:
             return getattr(module, attribute)
