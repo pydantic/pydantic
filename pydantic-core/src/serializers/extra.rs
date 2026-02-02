@@ -29,7 +29,7 @@ pub(crate) struct SerializationState<'py> {
     /// The model currently being serialized, if any
     pub model: Option<Bound<'py, PyAny>>,
     /// The name of the field currently being serialized, if any
-    pub field_name: Option<FieldName<'py>>,
+    pub field_name: Option<Bound<'py, PyString>>,
     /// Inside unions, checks are applied to attempt to select a preferred branch
     pub check: SerCheck,
     pub include_exclude: IncludeExclude<'py>,
@@ -53,27 +53,6 @@ impl<'py> IncludeExclude<'py> {
         Self {
             include: None,
             exclude: None,
-        }
-    }
-}
-
-#[derive(Clone)]
-pub enum FieldName<'py> {
-    Root,
-    Regular(Bound<'py, PyString>),
-}
-
-impl<'py> From<Bound<'py, PyString>> for FieldName<'py> {
-    fn from(s: Bound<'py, PyString>) -> Self {
-        FieldName::Regular(s)
-    }
-}
-
-impl fmt::Display for FieldName<'_> {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match self {
-            FieldName::Root => write!(f, "root"),
-            FieldName::Regular(s) => write!(f, "{s}"),
         }
     }
 }
@@ -267,7 +246,7 @@ pub(crate) struct ExtraOwned {
     rec_guard: RecursionState,
     check: SerCheck,
     pub model: Option<Py<PyAny>>,
-    field_name: Option<FieldNameOwned>,
+    field_name: Option<Py<PyString>>,
     serialize_unknown: bool,
     pub fallback: Option<Py<PyAny>>,
     serialize_as_any: bool,
@@ -283,21 +262,6 @@ impl_py_gc_traverse!(ExtraOwned {
     include,
     exclude,
 });
-
-#[derive(Clone)]
-enum FieldNameOwned {
-    Root,
-    Regular(Py<PyString>),
-}
-
-impl fmt::Debug for FieldNameOwned {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match self {
-            FieldNameOwned::Root => write!(f, "root"),
-            FieldNameOwned::Regular(s) => write!(f, "\"{s}\""),
-        }
-    }
-}
 
 impl ExtraOwned {
     pub fn new(state: &SerializationState<'_>) -> Self {
@@ -315,10 +279,7 @@ impl ExtraOwned {
             rec_guard: state.rec_guard.clone(),
             check: state.check,
             model: state.model.as_ref().map(|model| model.clone().into()),
-            field_name: state.field_name.as_ref().map(|name| match name {
-                FieldName::Root => FieldNameOwned::Root,
-                FieldName::Regular(b) => FieldNameOwned::Regular(b.clone().into()),
-            }),
+            field_name: state.field_name.as_ref().map(|name| name.clone().into()),
             serialize_unknown: extra.serialize_unknown,
             fallback: extra.fallback.clone().map(Bound::unbind),
             serialize_as_any: extra.serialize_as_any,
@@ -353,11 +314,7 @@ impl ExtraOwned {
             rec_guard: self.rec_guard.clone(),
             config: self.config,
             model: self.model.as_ref().map(|m| m.bind(py).clone()),
-            field_name: match &self.field_name {
-                Some(FieldNameOwned::Root) => Some(FieldName::Root),
-                Some(FieldNameOwned::Regular(b)) => Some(FieldName::Regular(b.bind(py).clone())),
-                None => None,
-            },
+            field_name: self.field_name.as_ref().map(|name| name.bind(py).clone()),
             check: self.check,
             include_exclude: IncludeExclude {
                 include: self.include.as_ref().map(|m| m.bind(py).clone()),
@@ -476,7 +433,7 @@ impl CollectWarnings {
         &mut self,
         field_type: &str,
         value: &Bound<'_, PyAny>,
-        field_name: Option<&FieldName<'_>>,
+        field_name: Option<&Bound<'_, PyString>>,
         check: SerCheck,
     ) -> PyResult<()> {
         // special case for None as it's very common e.g. as a default value
@@ -484,7 +441,7 @@ impl CollectWarnings {
             Ok(())
         } else if check.enabled() {
             Err(PydanticSerializationUnexpectedValue::new_from_parts(
-                field_name.map(ToString::to_string),
+                field_name.map(|name| name.clone().unbind()),
                 Some(field_type.to_string()),
                 Some(value.clone().unbind()),
             )
@@ -499,7 +456,7 @@ impl CollectWarnings {
         &mut self,
         field_type: &str,
         value: &Bound<'_, PyAny>,
-        field_name: Option<&FieldName<'_>>,
+        field_name: Option<&Bound<'_, PyString>>,
         check: SerCheck,
     ) -> Result<(), S::Error> {
         // special case for None as it's very common e.g. as a default value
@@ -516,10 +473,15 @@ impl CollectWarnings {
         }
     }
 
-    fn fallback_warning(&mut self, field_name: Option<&FieldName<'_>>, field_type: &str, value: &Bound<'_, PyAny>) {
+    fn fallback_warning(
+        &mut self,
+        field_name: Option<&Bound<'_, PyString>>,
+        field_type: &str,
+        value: &Bound<'_, PyAny>,
+    ) {
         if self.mode != WarningsMode::None {
             self.register_warning(PydanticSerializationUnexpectedValue::new_from_parts(
-                field_name.map(ToString::to_string),
+                field_name.map(|name| name.clone().unbind()),
                 Some(field_type.to_string()),
                 Some(value.clone().unbind()),
             ));

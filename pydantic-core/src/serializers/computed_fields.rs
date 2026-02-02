@@ -9,7 +9,6 @@ use crate::build_tools::py_schema_error_type;
 use crate::definitions::DefinitionsBuilder;
 use crate::py_gc::PyGcTraverse;
 use crate::serializers::SerializationState;
-use crate::serializers::extra::FieldName;
 use crate::serializers::fields::exclude_field_by_value;
 use crate::serializers::filter::SchemaFilter;
 use crate::serializers::shared::{BuildSerializer, CombinedSerializer, SerializeMap};
@@ -66,8 +65,7 @@ impl ComputedFields {
                 continue;
             }
 
-            let field_name = FieldName::from(property_name_py);
-            let state = &mut state.scoped_set(|s| &mut s.field_name, Some(field_name));
+            let state = &mut state.scoped_set(|s| &mut s.field_name, Some(property_name_py));
             let state = &mut state.scoped_include_exclude(next_include_exclude);
             let key = match state.extra.serialize_by_alias_or(computed_field.serialize_by_alias) {
                 true => &computed_field.alias,

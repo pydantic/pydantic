@@ -100,6 +100,7 @@ impl PyUrl {
                     ),
                     &mut RecursionState::default(),
                     PartialMode::Off,
+                    None,
                 ),
             )
             .map_err(|e| {
@@ -335,6 +336,7 @@ impl PyMultiHostUrl {
                     ),
                     &mut RecursionState::default(),
                     PartialMode::Off,
+                    None,
                 ),
             )
             .map_err(|e| {

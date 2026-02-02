@@ -67,7 +67,7 @@ def _process_param_defaults(param: Parameter) -> Parameter:
         # Replace the field default
         default = param_default.default
         if default is PydanticUndefined:
-            if param_default.default_factory is PydanticUndefined:
+            if param_default.default_factory is None:
                 default = Signature.empty
             else:
                 # this is used by dataclasses to indicate a factory exists:

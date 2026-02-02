@@ -240,8 +240,7 @@ impl Validator for ModelFieldsValidator {
                     ));
                 }
 
-                let state =
-                    &mut state.rebind_extra(|extra| extra.field_name = Some(pybackedstr_to_pystring(py, &field.name)));
+                let state = &mut state.scoped_set_field_name(Some(pybackedstr_to_pystring(py, &field.name)));
 
                 prepare_result(field.validator.validate(py, field_value, state))?
             } else {
@@ -334,8 +333,7 @@ impl ModelFieldsValidator {
             let state = &mut state.scoped_set(|state| &mut state.has_field_error, false);
 
             for field in &self.fields {
-                let state =
-                    &mut state.rebind_extra(|extra| extra.field_name = Some(pybackedstr_to_pystring(py, &field.name)));
+                let state = &mut state.scoped_set_field_name(Some(pybackedstr_to_pystring(py, &field.name)));
 
                 if let Some((lookup_path, lookup_result)) = field
                     .lookup_path_collection

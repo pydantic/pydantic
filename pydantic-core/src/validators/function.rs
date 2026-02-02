@@ -104,9 +104,8 @@ impl FunctionBeforeValidator {
     ) -> ValResult<Py<PyAny>> {
         let r = if self.info_arg {
             let field_name = state
-                .extra()
-                .field_name
-                .clone()
+                .field_name()
+                .cloned()
                 .map(Bound::unbind)
                 .or_else(|| self.field_name.clone());
             let info = ValidationInfo::new(py, state.extra(), &self.config, field_name);
@@ -179,9 +178,8 @@ impl FunctionAfterValidator {
         let v = call(input, state)?;
         let r = if self.info_arg {
             let field_name = state
-                .extra()
-                .field_name
-                .clone()
+                .field_name()
+                .cloned()
                 .map(Bound::unbind)
                 .or_else(|| self.field_name.clone());
             let info = ValidationInfo::new(py, state.extra(), &self.config, field_name);
@@ -274,9 +272,8 @@ impl Validator for FunctionPlainValidator {
     ) -> ValResult<Py<PyAny>> {
         let r = if self.info_arg {
             let field_name = state
-                .extra()
-                .field_name
-                .clone()
+                .field_name()
+                .cloned()
                 .map(Bound::unbind)
                 .or_else(|| self.field_name.clone());
             let info = ValidationInfo::new(py, state.extra(), &self.config, field_name);
@@ -344,9 +341,8 @@ impl FunctionWrapValidator {
     ) -> ValResult<Py<PyAny>> {
         let r = if self.info_arg {
             let field_name = state
-                .extra()
-                .field_name
-                .clone()
+                .field_name()
+                .cloned()
                 .map(Bound::unbind)
                 .or_else(|| self.field_name.clone());
             let info = ValidationInfo::new(py, state.extra(), &self.config, field_name);
