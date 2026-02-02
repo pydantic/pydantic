@@ -100,7 +100,10 @@ def _import_string_logic(dotted_path: str) -> Any:
     if len(components) > 2:
         raise ImportError(f"Import strings should have at most one ':'; received {dotted_path!r}")
     
-    has_explicit_attr = len(components) == 2
+    attribute = None
+    if len(components) == 2:
+        attribute = components[1]
+    
     module_path = components[0]
     if not module_path:
         raise ImportError(f'Import strings should have a nonempty module name; received {dotted_path!r}')
@@ -108,13 +111,7 @@ def _import_string_logic(dotted_path: str) -> Any:
     try:
         module = import_module(module_path)
     except ModuleNotFoundError as e:
-        # If the missing module is NOT the module we tried to import (or its submodule),
-        # then it's an internal import failure (missing dependency) and we must not mask it.
-        missing = getattr(e, "name", None)
-        if missing and not (missing == module_path or missing.startswith(module_path + ".")):
-            raise
-
-        if not has_explicit_attr and '.' in module_path:
+        if attribute is None and '.' in module_path:
             # Try interpreting the final dotted segment as an attribute, not a submodule
             maybe_module_path, maybe_attribute = module_path.rsplit('.', 1)
 
@@ -122,10 +119,9 @@ def _import_string_logic(dotted_path: str) -> Any:
                 return _import_string_logic(f'{maybe_module_path}:{maybe_attribute}')
             except ImportError:
                 pass
-            raise ImportError(f'No module named {module_path!r}') from e
         raise
-    if len(components) > 1:
-        attribute = components[1]
+    
+    if attribute is not None:
         try:
             return getattr(module, attribute)
         except AttributeError as e:
