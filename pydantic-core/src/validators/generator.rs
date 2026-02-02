@@ -11,7 +11,7 @@ use crate::errors::{ErrorType, LocItem, ValError, ValResult};
 use crate::input::{BorrowInput, GenericIterator, Input};
 use crate::py_gc::PyGcTraverse;
 use crate::recursion_guard::RecursionState;
-use crate::tools::{SchemaDict, pybackedstr_to_pystring};
+use crate::tools::SchemaDict;
 
 use super::list::get_items_schema;
 use super::{
@@ -295,7 +295,7 @@ impl InternalValidator {
             extra,
             &mut self.recursion_guard,
             false.into(),
-            Some(pybackedstr_to_pystring(py, field_name)),
+            Some(field_name.as_py_str().bind(py).clone()),
         );
         state.exactness = self.exactness;
         let result = self

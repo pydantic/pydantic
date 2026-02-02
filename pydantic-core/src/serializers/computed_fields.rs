@@ -12,7 +12,7 @@ use crate::serializers::SerializationState;
 use crate::serializers::fields::exclude_field_by_value;
 use crate::serializers::filter::SchemaFilter;
 use crate::serializers::shared::{BuildSerializer, CombinedSerializer, SerializeMap};
-use crate::tools::{SchemaDict, pybackedstr_to_pystring};
+use crate::tools::SchemaDict;
 
 #[derive(Debug)]
 pub(super) struct ComputedFields(Vec<ComputedField>);
@@ -49,12 +49,12 @@ impl ComputedFields {
         }
 
         for computed_field in &self.0 {
-            let property_name_py = pybackedstr_to_pystring(model.py(), &computed_field.property_name);
+            let property_name_py = computed_field.property_name.as_py_str().bind(state.py()).clone();
             let Some(next_include_exclude) = filter.key_filter(&property_name_py, state)? else {
                 continue;
             };
 
-            let value = model.getattr(&property_name_py)?;
+            let value = model.getattr(&computed_field.property_name)?;
             if exclude_field_by_value(
                 &value,
                 state,
@@ -65,7 +65,7 @@ impl ComputedFields {
                 continue;
             }
 
-            let state = &mut state.scoped_set(|s| &mut s.field_name, Some(property_name_py));
+            let state = &mut state.scoped_set_field_name(Some(property_name_py));
             let state = &mut state.scoped_include_exclude(next_include_exclude);
             let key = match state.extra.serialize_by_alias_or(computed_field.serialize_by_alias) {
                 true => &computed_field.alias,
