@@ -400,7 +400,7 @@ jobs:
         uses: Swatinem/rust-cache@v2
 
       - name: Install dependencies
-        run: uv sync --all-packages --group testing-extra
+        run: uv sync --all-packages --all-extras --group testing-extra
         env:
           RUST_BACKTRACE: 1
 
@@ -435,7 +435,7 @@ jobs:
         uses: Swatinem/rust-cache@v2
 
       - name: Install dependencies
-        run: uv sync --all-packages --group testing-extra
+        run: uv sync --all-packages --all-extras --group testing-extra
 
       - run: uv run --no-sync maturin develop --uv
         working-directory: pydantic-core
