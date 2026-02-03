@@ -18,46 +18,48 @@ outputs:
 runs:
   using: 'composite'
   steps:
-    - name: prepare profiling directory
+    - name: Prepare profiling directory
       shell: bash
       # making this ahead of the compile ensures that the local user can write to this
       # directory; the maturin action (on linux) runs in docker so would create as root
       run: mkdir -p ${{ github.workspace }}/profdata
 
-    - name: build initial wheel
+    - name: Build initial wheel
       uses: PyO3/maturin-action@v1
       with:
         working-directory: ${{ inputs.working-directory }}
         manylinux: auto
         args: >
           --release
-          --out pgo-wheel
+          --out initial-wheel
           --interpreter ${{ inputs.interpreter }}
         rust-toolchain: ${{ inputs.rust-toolchain }}
         docker-options: -e CI
       env:
         RUSTFLAGS: '-Cprofile-generate=${{ github.workspace }}/profdata'
 
-    - name: detect rust host
+    - name: Detect rust host
       run: echo RUST_HOST=$(rustc -Vv | grep host | cut -d ' ' -f 2) >> "$GITHUB_ENV"
       shell: bash
 
-    - name: generate pgo data
+    - name: Generate pgo data
+      # Until we move all dev dependencies to the main `pydantic` package, use this workaround:
+      # Sync the pydantic-core workspace to get the dev dependencies (without the actual `pydantic-core` package),
+      # and then sync the parent workspace:
       run: |
         uv sync --directory pydantic-core --group testing-extra --no-install-package pydantic-core
         uv sync --group testing-extra --no-install-package pydantic-core --inexact
-        uv pip install pydantic-core --no-index --no-deps --find-links pydantic-core/pgo-wheel
-        uv run --no-sync python -c 'from pydantic_core._pydantic_core import build_info; print(f"{build_info=}")'
+        uv pip install pydantic-core --no-index --no-deps --find-links pydantic-core/initial-wheel
         uv run --no-sync pytest tests/pydantic_core/benchmarks
         RUST_HOST=$(rustc -Vv | grep host | cut -d ' ' -f 2)
         rustup run ${{ inputs.rust-toolchain }} bash -c 'echo LLVM_PROFDATA=$RUSTUP_HOME/toolchains/$RUSTUP_TOOLCHAIN/lib/rustlib/$RUST_HOST/bin/llvm-profdata >> "$GITHUB_ENV"'
       shell: bash
 
-    - name: merge pgo data
+    - name: Merge pgo data
       run: ${{ env.LLVM_PROFDATA }} merge -o ${{ github.workspace }}/merged.profdata ${{ github.workspace }}/profdata
       shell: pwsh # because it handles paths on windows better, and works well enough on unix for this step
 
-    - name: build pgo-optimized wheel
+    - name: Build pgo-optimized wheel
       uses: PyO3/maturin-action@v1
       with:
         working-directory: ${{ inputs.working-directory }}
@@ -71,7 +73,7 @@ runs:
       env:
         RUSTFLAGS: '-Cprofile-use=${{ github.workspace }}/merged.profdata'
 
-    - name: find built wheel
+    - name: Find built wheel
       id: find_wheel
       working-directory: pydantic-core
       run: echo "path=$(ls dist/*.whl)" | tee -a "$GITHUB_OUTPUT"

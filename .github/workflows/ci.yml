@@ -42,7 +42,7 @@ jobs:
 
   core-build-sdist:
     runs-on: ubuntu-latest
-    name: core/Build sdist
+    name: core / Build sdist
     steps:
       - uses: actions/checkout@v6
       - uses: actions/setup-python@v6
@@ -60,7 +60,7 @@ jobs:
           path: pydantic-core/dist
 
   core-build:
-    name: core/build on ${{ matrix.os }} (${{ matrix.target }} - ${{ matrix.interpreter || 'all' }}${{ matrix.os == 'linux' && format(' - {0}', matrix.manylinux == 'auto' && 'manylinux' || matrix.manylinux) || '' }})
+    name: core / Build on ${{ matrix.os }} (${{ matrix.target }} - ${{ matrix.interpreter || 'all' }}${{ matrix.os == 'linux' && format(' - {0}', matrix.manylinux == 'auto' && 'manylinux' || matrix.manylinux) || '' }})
     # only run on push to main, if a full build was requested or on release:
     if: startsWith(github.ref, 'refs/tags/') || github.ref == 'refs/heads/main' || contains(github.event.pull_request.labels.*.name, 'full build')
     strategy:
@@ -176,7 +176,7 @@ jobs:
           path: pydantic-core/dist
 
   core-build-pgo:
-    name: core/Build PGO-optimized on ${{ matrix.platform.os }} / ${{ matrix.interpreter }}
+    name: core / Build PGO-optimized on ${{ matrix.platform.os }} / ${{ matrix.interpreter }}
     # only run on push to main, if a full build was requested or on release:
     if: startsWith(github.ref, 'refs/tags/') || github.ref == 'refs/heads/main' || contains(github.event.pull_request.labels.*.name, 'full build')
     strategy:
@@ -255,8 +255,8 @@ jobs:
 
       - run: PYTHONPATH="$PWD${PYTHONPATH:+:${PYTHONPATH}}" uv run mkdocs build
 
-  test-builds-arch:
-    name: core/Test build on ${{ matrix.target }}-${{ matrix.distro }}
+  core-test-builds-arch:
+    name: core / Test build on ${{ matrix.target }}-${{ matrix.distro }}
     needs: [core-build]
     runs-on: ubuntu-latest
 
@@ -306,6 +306,47 @@ jobs:
             uv pip install pydantic-core --no-index --no-deps --find-links dist --force-reinstall
             uv run --no-sync pytest tests/pydantic-core --ignore=tests/pydantic-core/test_docstrings.py
             uv run --no-sync python -c 'import pydantic_core._pydantic_core; print(pydantic_core._pydantic_core.__version__)'
+            uv run --no-sync python -c 'from pydantic_core._pydantic_core import build_info; print(f"{build_info=}")'
+
+  core-test-builds-os:
+    name: core / Test build on ${{ matrix.platform.os }}
+    needs: [core-build, core-build-pgo]
+
+    strategy:
+      fail-fast: false
+      matrix:
+        platform:
+          - runs-on: ubuntu-latest
+            os: linux
+          - runs-on: ubuntu-24.04-arm
+            os: linuw_aarch64
+          - runs-on: windows-latest
+            os: windows
+          - runs-on: windows-11-arm
+            os: windows_aarch64
+          - runs-on: macos-latest
+            os: macos
+
+    runs-on: ${{ matrix.platform.runs-on }}
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: install uv
+        uses: astral-sh/setup-uv@v7
+
+      - name: get dist artifacts
+        uses: actions/download-artifact@v6
+        with:
+          pattern: pydantic_core_pypi_files_*
+          merge-multiple: true
+          path: dist
+
+      - run: |
+          uv sync --frozen --group testing-extra
+          uv pip install pydantic-core --no-index --no-deps --find-links dist --force-reinstall
+          uv run --no-sync pytest tests/pydantic-core --ignore=tests/pydantic-core/test_docstrings.py
+          uv run --no-sync python -c 'import pydantic_core._pydantic_core; print(pydantic_core._pydantic_core.__version__)'
+          uv run --no-sync python -c 'from pydantic_core._pydantic_core import build_info; print(f"{build_info=}")'
 
   test-memray:
     name: Test memray
