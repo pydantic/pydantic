@@ -22,7 +22,7 @@ include = [
     "!tests/.pytest_cache",
     "!*.so",
 ]
-rust-version = "1.85"
+rust-version = "1.88"
 
 [dependencies]
 # TODO it would be very nice to remove the "py-clone" feature as it can panic,
