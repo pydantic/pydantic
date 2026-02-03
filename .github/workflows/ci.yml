@@ -304,7 +304,7 @@ jobs:
             source $HOME/.local/bin/env
             uv sync --frozen --group testing-extra
             uv pip install pydantic-core --no-index --no-deps --find-links dist --force-reinstall
-            uv run --no-sync pytest tests/pydantic-core --ignore=tests/pydantic-core/test_docstrings.py
+            uv run --no-sync pytest tests/pydantic_core --ignore=tests/pydantic_core/test_docstrings.py
             uv run --no-sync python -c 'import pydantic_core._pydantic_core; print(pydantic_core._pydantic_core.__version__)'
             uv run --no-sync python -c 'from pydantic_core._pydantic_core import build_info; print(f"{build_info=}")'
 
@@ -342,11 +342,106 @@ jobs:
           path: dist
 
       - run: |
-          uv sync --frozen --group testing-extra
+          uv sync --frozen --all-packages --group testing-extra
           uv pip install pydantic-core --no-index --no-deps --find-links dist --force-reinstall
-          uv run --no-sync pytest tests/pydantic-core --ignore=tests/pydantic-core/test_docstrings.py
+          uv run --no-sync pytest tests/pydantic_core --ignore=tests/pydantic_core/test_docstrings.py
           uv run --no-sync python -c 'import pydantic_core._pydantic_core; print(pydantic_core._pydantic_core.__version__)'
           uv run --no-sync python -c 'from pydantic_core._pydantic_core import build_info; print(f"{build_info=}")'
+
+  core-test-os:
+    name: core / Test on ${{ matrix.os }}
+
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu, macos, windows]
+
+    runs-on: ${{ matrix.os }}-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Install rust stable
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Cache rust
+        uses: Swatinem/rust-cache@v2
+
+      - uses: astral-sh/setup-uv@v7
+
+      - name: Install dependencies
+        run: uv sync --all-packages --group testing-extra
+        env:
+          RUST_BACKTRACE: 1
+
+      - run: uv pip freeze
+      - run: uv run pytest tests/pydantic_core
+      - run: cargo test
+        working-directory: pydantic-core
+
+  core-test-msrv:
+    name: core / Test MSRV
+
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: astral-sh/setup-uv@v7
+
+      - name: Resolve MSRV
+        id: resolve-msrv
+        run: echo MSRV=`cargo metadata --format-version 1 --no-deps --frozen --quiet --offline --manifest-path pydantic-core/Cargo.toml | jq -r '.packages[0].rust_version'` >> $GITHUB_OUTPUT
+
+      - name: Install rust MSRV
+        uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: ${{ steps.resolve-msrv.outputs.MSRV }}
+
+      - name: Cache rust
+        uses: Swatinem/rust-cache@v2
+
+      - name: Install dependencies
+        run: uv sync --all-packages --group testing-extra
+        env:
+          RUST_BACKTRACE: 1
+
+      - run: uv pip freeze
+      - run: uv run pytest tests/pydantic_core
+      - run: cargo test
+        working-directory: pydantic-core
+
+  # test with a debug build as it picks up errors which optimised release builds do not
+  core-test-debug:
+    name: core / Test with debug build (${{ matrix.python-version }})
+    runs-on: ubuntu-latest
+
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version:
+          - '3.13'
+          - 'pypy3.11'
+
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: astral-sh/setup-uv@v7
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install rust stable
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Cache rust
+        uses: Swatinem/rust-cache@v2
+
+      - name: Install dependencies
+        run: uv sync --all-packages --group testing-extra
+
+      - run: uv run --no-sync maturin develop --uv
+        working-directory: pydantic-core
+
+      - run: uv pip freeze
+      - run: uv run pytest
 
   test-memray:
     name: Test memray
