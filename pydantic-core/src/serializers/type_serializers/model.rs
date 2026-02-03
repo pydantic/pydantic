@@ -44,7 +44,7 @@ impl BuildSerializer for ModelFieldsBuilder {
         };
 
         let fields_dict: Bound<'_, PyDict> = schema.get_as_req(intern!(py, "fields"))?;
-        let mut fields: AHashMap<String, SerField> = AHashMap::with_capacity(fields_dict.len());
+        let mut fields = AHashMap::with_capacity(fields_dict.len());
 
         let extra_serializer = match (schema.get_item(intern!(py, "extras_schema"))?, &fields_mode) {
             (Some(v), FieldsMode::ModelExtra) => Some(CombinedSerializer::build(&v.extract()?, config, definitions)?),
@@ -55,12 +55,14 @@ impl BuildSerializer for ModelFieldsBuilder {
         let serialize_by_alias = config.get_as(intern!(py, "serialize_by_alias"))?;
 
         for (key, value) in fields_dict {
-            let key_py: PyBackedStr = key.extract()?;
-            let key: String = key_py.to_string();
+            let key: PyBackedStr = key.extract()?;
             let field_info = value.cast()?;
 
             if field_info.get_as(intern!(py, "serialization_exclude"))? == Some(true) {
-                fields.insert(key, SerField::new(key_py, None, None, true, serialize_by_alias, None));
+                fields.insert(
+                    key.clone_ref(py),
+                    SerField::new(key, None, None, true, serialize_by_alias, None),
+                );
             } else {
                 let alias = field_info.get_as(intern!(py, "serialization_alias"))?;
                 let serialization_exclude_if: Option<Py<PyAny>> =
@@ -70,9 +72,9 @@ impl BuildSerializer for ModelFieldsBuilder {
                     .map_err(|e| py_schema_error_type!("Field `{key}`:\n  {e}"))?;
 
                 fields.insert(
-                    key,
+                    key.clone_ref(py),
                     SerField::new(
-                        key_py,
+                        key,
                         alias,
                         Some(serializer),
                         true,
@@ -206,7 +208,7 @@ impl ModelSerializer {
             &self.serializer
         };
 
-        let state = &mut state.scoped_set(|s| &mut s.field_name, Some(root_field.clone()));
+        let state = &mut state.scoped_set_field_name(Some(root_field.clone()));
         let state = &mut state.scoped_set(|s| &mut s.model, Some(value.clone()));
         do_serialize.serialize_no_infer(serializer, &root, state)
     }

@@ -635,7 +635,7 @@ def test_paths_allow_by_name(py_and_json: PyAndJson, input_value):
     [
         ({'validation_alias': []}, 'Lookup paths should have at least one element'),
         ({'validation_alias': [[]]}, 'Each alias path should have at least one element'),
-        ({'validation_alias': [123]}, "TypeError: 'int' object cannot be cast as 'list'"),
+        ({'validation_alias': [123]}, "TypeError: 'int' object is not an instance of 'list'"),
         ({'validation_alias': [[1, 'foo']]}, 'TypeError: The first item in an alias path should be a string'),
     ],
     ids=repr,

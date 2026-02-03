@@ -94,10 +94,10 @@ def test_pydantic_value_error_invalid_dict():
 
     assert str(exc_info.value) == (
         '1 validation error for function-plain[my_function()]\n'
-        "  (error rendering message: TypeError: 'tuple' object cannot be cast as 'str') "
+        "  (error rendering message: TypeError: 'tuple' object is not an instance of 'str') "
         '[type=my_error, input_value=42, input_type=int]'
     )
-    with pytest.raises(TypeError, match="'tuple' object cannot be cast as 'str'"):
+    with pytest.raises(TypeError, match="'tuple' object is not an instance of 'str'"):
         exc_info.value.errors(include_url=False)
 
 
@@ -107,7 +107,7 @@ def test_pydantic_value_error_invalid_type():
 
     v = SchemaValidator(core_schema.with_info_plain_validator_function(f))
 
-    with pytest.raises(TypeError, match="argument 'context': 'list' object cannot be cast as 'dict'"):
+    with pytest.raises(TypeError, match="argument 'context': 'list' object is not an instance of 'dict'"):
         v.validate_python(42)
 
 
