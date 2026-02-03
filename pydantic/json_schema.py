@@ -12,7 +12,6 @@ In general you shouldn't need to use this module directly; instead, you can use
 from __future__ import annotations as _annotations
 
 import collections.abc
-
 import dataclasses
 import inspect
 import math
