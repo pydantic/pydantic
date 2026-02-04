@@ -80,7 +80,7 @@ pub fn complex_to_str(py_complex: &Bound<'_, PyComplex>) -> String {
     let mut s = format!("{im}j");
     if re != 0.0 {
         let mut sign = "";
-        if im >= 0.0 {
+        if im.is_nan() || im.is_sign_positive() {
             sign = "+";
         }
         s = format!("{re}{sign}{s}");

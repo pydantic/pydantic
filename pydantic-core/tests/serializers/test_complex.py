@@ -11,12 +11,15 @@ from pydantic_core import SchemaSerializer, core_schema
         (complex(-1.23e-4, 567.89), '-0.000123+567.89j'),
         (complex(0, -1.23), '-1.23j'),
         (complex(1.5, 0), '1.5+0j'),
+        (complex(1.5, -0.0), '1.5-0j'),
         (complex(1, 2), '1+2j'),
         (complex(0, 1), '1j'),
         (complex(0, 1e-500), '0j'),
         (complex(-float('inf'), 2), '-inf+2j'),
         (complex(float('inf'), 2), 'inf+2j'),
         (complex(float('nan'), 2), 'NaN+2j'),
+        (complex(2, float('nan')), '2+NaNj'),
+        (complex(2, float('-nan')), '2+NaNj'),
     ],
 )
 def test_complex_json(value, expected):
