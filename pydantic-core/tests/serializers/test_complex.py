@@ -39,7 +39,7 @@ def test_complex_json(value, expected):
     if math.isnan(value.real):
         assert math.isnan(c.real)
     else:
-        assert c.imag == value.imag
+        assert c.real == value.real
 
 
 def test_complex_inference() -> None:
