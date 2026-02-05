@@ -1048,7 +1048,8 @@ def test_list_smart_union_omit() -> None:
                     core_schema.with_default_schema(core_schema.int_schema(), on_error='omit'),
                     core_schema.with_default_schema(core_schema.bool_schema(), on_error='omit'),
                 ],
-            )
+            ),
+            max_length=2,
         )
     )
     assert validator.validate_python(['123', 'abc', 'True']) == [123, True]
