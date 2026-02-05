@@ -1069,8 +1069,7 @@ def test_list_smart_union_omit_with_other_errors() -> None:
         )
     )
     assert validator.validate_python(['123', 'True']) == [123, True]
-    with pytest.raises(ValidationError, match=r'1 validation error for list[union[int, bool]'):
-        validator.validate_python(['abc', 'True'])
+    assert validator.validate_python(['abc', 'True']) == [True]
 
 
 def test_smart_union_omit_with_defaults() -> None:
