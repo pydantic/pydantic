@@ -110,7 +110,7 @@ impl UnionValidator {
         let old_fields_set_count = state.fields_set_count;
 
         let mut errors = MaybeErrors::new(self.custom_error.as_ref());
-        let mut omits: MaybeOmits = MaybeOmits::new();
+        let mut omits = MaybeOmits::new();
 
         let mut best_match: Option<(Py<PyAny>, Exactness, Option<usize>)> = None;
 
