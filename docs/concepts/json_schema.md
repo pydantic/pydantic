@@ -863,6 +863,7 @@ class AllowAnySubclass:
                 raise ValueError(
                     f'Expected an instance of {source}, got an instance of {type(value)}'
                 )
+            return value
 
         return core_schema.no_info_plain_validator_function(validate)
 
