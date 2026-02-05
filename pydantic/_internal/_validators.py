@@ -99,26 +99,27 @@ def _import_string_logic(dotted_path: str) -> Any:
     components = dotted_path.strip().split(':')
     if len(components) > 2:
         raise ImportError(f"Import strings should have at most one ':'; received {dotted_path!r}")
-
+    attribute = None
+    if len(components) == 2:
+        attribute = components[1]
     module_path = components[0]
     if not module_path:
         raise ImportError(f'Import strings should have a nonempty module name; received {dotted_path!r}')
 
     try:
         module = import_module(module_path)
-    except ModuleNotFoundError as e:
-        if '.' in module_path:
-            # Check if it would be valid if the final item was separated from its module with a `:`
-            maybe_module_path, maybe_attribute = dotted_path.strip().rsplit('.', 1)
+    except ModuleNotFoundError:
+        if attribute is None and '.' in module_path:
+            # Try interpreting the final dotted segment as an attribute, not a submodule
+            maybe_module_path, maybe_attribute = module_path.rsplit('.', 1)
+
             try:
                 return _import_string_logic(f'{maybe_module_path}:{maybe_attribute}')
             except ImportError:
                 pass
-            raise ImportError(f'No module named {module_path!r}') from e
-        raise e
+        raise
 
-    if len(components) > 1:
-        attribute = components[1]
+    if attribute is not None:
         try:
             return getattr(module, attribute)
         except AttributeError as e:

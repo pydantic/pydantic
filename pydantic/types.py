@@ -944,7 +944,7 @@ else:
             '''
             1 validation error for ImportThings
             obj
-              Invalid python path: No module named 'foo.bar' [type=import_error, input_value='foo.bar', input_type=str]
+              Invalid python path: No module named 'foo' [type=import_error, input_value='foo.bar', input_type=str]
             '''
 
         # Actual python objects can be assigned as well
