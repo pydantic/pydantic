@@ -861,9 +861,9 @@ def test_string_import_callable(annotation):
         {
             'type': 'import_error',
             'loc': ('callable',),
-            'msg': "Invalid python path: No module named 'os.missing'",
+            'msg': "Invalid python path: No module named 'os.missing'; 'os' is not a package",
             'input': 'os.missing',
-            'ctx': {'error': "No module named 'os.missing'"},
+            'ctx': {'error': "No module named 'os.missing'; 'os' is not a package"},
         }
     ]
 
@@ -975,10 +975,10 @@ def test_string_import_examples():
             'collections.abc.def',
             [
                 {
-                    'ctx': {'error': "No module named 'collections.abc.def'"},
+                    'ctx': {'error': "No module named 'collections.abc.def'; 'collections.abc' is not a package"},
                     'input': 'collections.abc.def',
                     'loc': (),
-                    'msg': "Invalid python path: No module named 'collections.abc.def'",
+                    'msg': "Invalid python path: No module named 'collections.abc.def'; 'collections.abc' is not a package",
                     'type': 'import_error',
                 }
             ],
@@ -6489,6 +6489,29 @@ def test_annotated_default_value_functional_validator() -> None:
 
         # insert_assert(t.json_schema())
         assert t.json_schema() == {'type': 'array', 'items': {'type': 'integer'}, 'default': ['1', '2']}
+
+
+def test_importstring_reports_internal_import_error(tmp_path, monkeypatch):
+    # Create a module that exists, but fails to import due to missing dependency
+    (tmp_path / 'my_module.py').write_text('import definitely_missing_dep_xyz\n\nclass MyClass:\n    pass\n')
+    monkeypatch.syspath_prepend(tmp_path)
+
+    adapter = TypeAdapter(ImportString)
+
+    with pytest.raises(ValidationError, match="No module named 'definitely_missing_dep_xyz'"):
+        adapter.validate_python('my_module.MyClass')
+
+
+def test_import_string_explicit_colon_does_not_try_dot_fallback():
+    # Regression test: if the input already contains ':attr', we should NOT try
+    # to reinterpret dots as module/attribute splits (which could accidentally
+    # create an invalid import string containing two colons).
+    adapter = TypeAdapter(ImportString)
+
+    # A buggy implementation might try to split 'collections.defaultdict' further
+    # and create 'collections:defaultdict:get', which would be invalid
+    with pytest.raises(ValidationError):
+        adapter.validate_python('collections.defaultdict:get')
 
 
 @pytest.mark.parametrize(
