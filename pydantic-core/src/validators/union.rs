@@ -110,6 +110,7 @@ impl UnionValidator {
         let old_fields_set_count = state.fields_set_count;
 
         let mut errors = MaybeErrors::new(self.custom_error.as_ref());
+        let mut omits: MaybeOmits = MaybeOmits::new();
 
         let mut best_match: Option<(Py<PyAny>, Exactness, Option<usize>)> = None;
 
@@ -157,10 +158,9 @@ impl UnionValidator {
                     }
                 },
                 Err(ValError::Omit) => {
-                    // Omit might mean that the same validator would succeed with different exactness
-                    // This path intercepts the omit error and does not validate the value which is fine
-                    // since omitted values are correctly omitted from the union output
-                    // we may need to improve this in the future if we want to report omits from unions
+                    if best_match.is_none() {
+                        omits.push(choice, label.as_deref());
+                    }
                 }
                 Err(ValError::LineErrors(lines)) => {
                     // if we don't yet know this validation will succeed, record the error
@@ -183,7 +183,10 @@ impl UnionValidator {
             }
             return Ok(best_match);
         }
-
+        // if there were no successful matches, but there was at least one omit, return omit instead of errors
+        if best_match.is_none() && !omits.is_empty() {
+            return Err(ValError::Omit);
+        }
         // no matches, build errors
         Err(errors.into_val_error(input))
     }
@@ -283,6 +286,24 @@ impl<'a> MaybeErrors<'a> {
                     .collect(),
             ),
         }
+    }
+}
+
+struct MaybeOmits<'a> {
+    omits: SmallVec<[(&'a CombinedValidator, Option<&'a str>); SMALL_UNION_THRESHOLD]>,
+}
+
+impl<'a> MaybeOmits<'a> {
+    fn new() -> Self {
+        Self { omits: SmallVec::new() }
+    }
+
+    fn push(&mut self, choice: &'a CombinedValidator, label: Option<&'a str>) {
+        self.omits.push((choice, label));
+    }
+
+    fn is_empty(&self) -> bool {
+        self.omits.is_empty()
     }
 }
 
