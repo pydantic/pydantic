@@ -1056,6 +1056,38 @@ def test_list_smart_union_omit() -> None:
     assert validator.validate_python(['abc', 'cde']) == []
 
 
+def test_list_smart_union_omit_with_other_errors() -> None:
+    validator = SchemaValidator(
+        core_schema.list_schema(
+            core_schema.union_schema(
+                [
+                    core_schema.int_schema(),
+                    core_schema.with_default_schema(core_schema.bool_schema(), on_error='omit'),
+                ],
+            ),
+            max_length=2,
+        )
+    )
+    assert validator.validate_python(['123', 'True']) == [123, True]
+    with pytest.raises(ValidationError, match=r'1 validation error for list[union[int, bool]'):
+        validator.validate_python(['abc', 'True'])
+
+
+def test_smart_union_omit_with_defaults() -> None:
+    validator = SchemaValidator(
+        core_schema.list_schema(
+            core_schema.union_schema(
+                [
+                    core_schema.with_default_schema(core_schema.int_schema(), on_error='default', default=0),
+                    core_schema.with_default_schema(core_schema.bool_schema(), on_error='omit'),
+                ],
+            )
+        )
+    )
+    assert validator.validate_python(['123', 'abc', 'True']) == [123, 0, 0]
+    assert validator.validate_python(['abc', 'cde']) == [0, 0]
+
+
 def test_smart_union_does_nested_model_field_counting() -> None:
     class SubModelA:
         x: int = 1
