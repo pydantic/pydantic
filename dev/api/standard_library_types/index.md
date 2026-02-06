@@ -813,6 +813,10 @@ print(Model(set_of_ints=['1', '2', '3']).set_of_ints)
 
 ```
 
+#### JSON Schema
+
+Pydantic does best effort to sort default values that are collections.abc.Set instances.
+
 ### Deque
 
 Standard library type: collections.deque (deprecated alias: typing.Deque).
