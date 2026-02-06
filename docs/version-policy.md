@@ -1,3 +1,7 @@
+---
+title: "Pydantic Validation Version Policy: Release Timeline & Notes"
+description: "Understand Pydantic versions. From SemVer adherence to Python support cycles, our versioning policy ensures predictable updates and long-term reliability."
+---
 First of all, we recognize that the transitions from Pydantic V1 to V2 has been and will be painful for some users.
 We're sorry about this pain :pray:, it was an unfortunate but necessary step to correct design mistakes of V1.
 

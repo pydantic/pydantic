@@ -1,4 +1,7 @@
-# Performance tips
+---
+description: "Unlock peak performance in Python. See how Pydantic’s Rust engine handles high-throughput validation and serialization with industry-leading efficiency."
+---
+# Performance & optimization tips
 
 In most cases Pydantic won't be your bottle neck, only follow this if you're sure it's necessary.
 
