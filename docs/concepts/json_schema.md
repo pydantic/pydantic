@@ -877,7 +877,7 @@ class Model(BaseModel):
 
 
 print(Model(f=Foo()))
-#> f=None
+#> f=<__main__.Foo object at 0x0123456789ab>
 
 
 class NotFoo:
