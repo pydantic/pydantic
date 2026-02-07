@@ -436,7 +436,7 @@ json_type = "string"
 defined_in = "JSON Schema Validation"
 notes = "Any argument not passed to the function (not defined) will not be included in the schema."
 
-["constr(regex='^text$', min_length=2, max_length=10)".additional]
+["constr(pattern='^text$', min_length=2, max_length=10)".additional]
 pattern = "^text$"
 minLength = 2
 maxLength = 10
