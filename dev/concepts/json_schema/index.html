@@ -5342,6 +5342,7 @@ Pydantic handle generating the schema.</p>
                 <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
                     <span class="sa">f</span><span class="s1">&#39;Expected an instance of </span><span class="si">{</span><span class="n">source</span><span class="si">}</span><span class="s1">, got an instance of </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">value</span><span class="p">)</span><span class="si">}</span><span class="s1">&#39;</span>
                 <span class="p">)</span>
+            <span class="k">return</span> <span class="n">value</span>
 
         <span class="k">return</span> <span class="n">core_schema</span><span class="o">.</span><span class="n">no_info_plain_validator_function</span><span class="p">(</span><span class="n">validate</span><span class="p">)</span>
 
@@ -5355,7 +5356,7 @@ Pydantic handle generating the schema.</p>
 
 
 <span class="nb">print</span><span class="p">(</span><span class="n">Model</span><span class="p">(</span><span class="n">f</span><span class="o">=</span><span class="n">Foo</span><span class="p">()))</span>
-<span class="c1">#&gt; f=None</span>
+<span class="c1">#&gt; f=&lt;__main__.Foo object at 0x0123456789ab&gt;</span>
 
 
 <span class="k">class</span><span class="w"> </span><span class="nc">NotFoo</span><span class="p">:</span>
