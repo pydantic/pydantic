@@ -863,6 +863,7 @@ class AllowAnySubclass:
                 raise ValueError(
                     f'Expected an instance of {source}, got an instance of {type(value)}'
                 )
+            return value
 
         return core_schema.no_info_plain_validator_function(validate)
 
@@ -876,7 +877,7 @@ class Model(BaseModel):
 
 
 print(Model(f=Foo()))
-#> f=None
+#> f=<__main__.Foo object at 0x0123456789ab>
 
 
 class NotFoo:
