@@ -185,6 +185,17 @@ class _ApplyInferredDiscriminator:
             definitions_wrapper['schema'] = wrapped
             return definitions_wrapper
 
+        if schema['type'] == 'definition-ref':
+            schema_ref = schema['schema_ref']
+            if schema_ref not in self.definitions:
+                raise MissingDefinitionForUnionRef(schema_ref)
+
+            def_schema = self.definitions[schema_ref]
+            # If using a referenceable union as discriminated (e.g. `type Pet = Cat | Dog; field: Pet = Field(discriminator=...)`):
+            if def_schema['type'] == 'union':
+                schema = def_schema.copy()
+                schema.pop('ref')
+
         if schema['type'] != 'union':
             # If the schema is not a union, it probably means it just had a single member and
             # was flattened by pydantic_core.
