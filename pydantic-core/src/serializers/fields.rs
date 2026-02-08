@@ -17,7 +17,6 @@ use crate::serializers::extra::{IncludeExclude, SerCheck};
 use crate::serializers::shared::{DoSerialize, SerializeMap, serialize_to_json, serialize_to_python};
 use crate::serializers::type_serializers::any::AnySerializer;
 use crate::serializers::type_serializers::function::{FunctionPlainSerializer, FunctionWrapSerializer};
-use crate::tools::pybackedstr_to_pystring;
 
 use super::computed_fields::ComputedFields;
 use super::extra::Extra;
@@ -297,7 +296,6 @@ impl GeneralFieldsSerializer {
         missing_sentinel: &Bound<'py, PyAny>,
         map: &mut Map,
     ) -> Result<(), Map::Error> {
-        let key_py_string = pybackedstr_to_pystring(value.py(), key);
         let extras_serializer = self
             .extra_fields
             .as_ref()
@@ -308,7 +306,7 @@ impl GeneralFieldsSerializer {
             .extra_fields
             .as_ref()
             .and_then(|e| e.serialization_exclude_if.as_ref());
-        if let Some(next_include_exclude) = self.filter.key_filter(&key_py_string, state)?
+        if let Some(next_include_exclude) = self.filter.key_filter(key.as_py_str().bind(value.py()), state)?
             && !exclude_field_by_value(value, state, missing_sentinel, extras_serialization_exclude_if)?
         {
             let state = &mut state.scoped_include_exclude(next_include_exclude);
