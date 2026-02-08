@@ -215,6 +215,19 @@ def apply_known_metadata(annotation: Any, schema: CoreSchema) -> CoreSchema | No
             schema['schema'] = apply_known_metadata(annotation, schema['schema'])  # type: ignore  # schema is function schema
             return schema
 
+        # For function wrapper schemas, if the inner schema directly supports the constraint,
+        # apply it to the inner schema instead of creating a chain. This ensures that
+        # constraints like `pattern` are preserved in JSON schema generation, which only
+        # looks at the first step of a chain schema (the function wrapper itself).
+        # See: https://github.com/pydantic/pydantic/issues/12417
+        if (
+            schema_type in {'function-before', 'function-wrap', 'function-after'}
+            and constraint in chain_schema_constraints
+            and schema['schema']['type'] in allowed_schemas  # type: ignore
+        ):
+            schema['schema'][constraint] = value  # type: ignore
+            continue
+
         # if we're allowed to apply constraint directly to the schema, like le to int, do that
         if schema_type in allowed_schemas:
             if constraint == 'union_mode' and schema_type == 'union':

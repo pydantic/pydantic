@@ -6549,6 +6549,38 @@ def test_str_schema_with_pattern() -> None:
     }
 
 
+def test_annotated_optional_with_before_validator_preserves_pattern_in_json_schema() -> None:
+    """Test that combining Annotated type with BeforeValidator and optional Field with pattern
+    constraint produces correct JSON schema. Regression test for https://github.com/pydantic/pydantic/issues/12417."""
+
+    def _convert_bytes_to_str(value: Union[str, bytes]) -> str:
+        if isinstance(value, bytes):
+            return value.decode('utf8')
+        return value
+
+    bytes_to_str = Annotated[str, BeforeValidator(_convert_bytes_to_str)]
+
+    regex = r'^[\da-fA-F]{32}$'
+
+    class TestModel(BaseModel):
+        str_optional: Optional[str] = Field(None, pattern=regex)
+        annotated_optional: Optional[bytes_to_str] = Field(None, pattern=regex)
+
+    schema = TestModel.model_json_schema()
+
+    # Both fields should produce the same JSON schema structure with the pattern preserved
+    assert schema['properties']['str_optional'] == {
+        'anyOf': [{'pattern': regex, 'type': 'string'}, {'type': 'null'}],
+        'default': None,
+        'title': 'Str Optional',
+    }
+    assert schema['properties']['annotated_optional'] == {
+        'anyOf': [{'pattern': regex, 'type': 'string'}, {'type': 'null'}],
+        'default': None,
+        'title': 'Annotated Optional',
+    }
+
+
 def test_plain_serializer_applies_to_default() -> None:
     class Model(BaseModel):
         custom_str: Annotated[str, PlainSerializer(lambda x: f'serialized-{x}', return_type=str)] = 'foo'
