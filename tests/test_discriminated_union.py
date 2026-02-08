@@ -2362,3 +2362,47 @@ def test_discriminated_union_with_root_model_literal() -> None:
         ta.validate_python({'action': 'invalid_action'})
 
     assert exc_info.value.errors()[0]['type'] == 'union_tag_invalid'
+
+
+def test_discriminated_union_with_type_alias_type():
+    """Test that discriminated unions work correctly with TypeAliasType (PEP 695).
+
+    Regression test for https://github.com/pydantic/pydantic/issues/12771
+    """
+    validator_calls = []
+
+    class Cat(BaseModel):
+        pet_type: Literal['cat']
+
+        @model_validator(mode='before')
+        @classmethod
+        def validate_cat(cls, data: Any) -> Any:
+            validator_calls.append(('Cat', data))
+            return data
+
+    class Dog(BaseModel):
+        pet_type: Literal['dog']
+
+        @model_validator(mode='before')
+        @classmethod
+        def validate_dog(cls, data: Any) -> Any:
+            validator_calls.append(('Dog', data))
+            return data
+
+    # Using TypeAliasType (type keyword)
+    type Pet = Cat | Dog
+
+    class Model(BaseModel):
+        pet: Pet = Field(discriminator='pet_type')
+
+    # Test cat validation - should only call Cat validator
+    validator_calls.clear()
+    m1 = Model.model_validate({'pet': {'pet_type': 'cat'}})
+    assert isinstance(m1.pet, Cat)
+    assert validator_calls == [('Cat', {'pet_type': 'cat'})]
+
+    # Test dog validation - should only call Dog validator
+    validator_calls.clear()
+    m2 = Model.model_validate({'pet': {'pet_type': 'dog'}})
+    assert isinstance(m2.pet, Dog)
+    assert validator_calls == [('Dog', {'pet_type': 'dog'})]
