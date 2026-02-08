@@ -1,3 +1,4 @@
+import copy
 import json
 from typing import Annotated, Any, Union
 
@@ -31,7 +32,7 @@ from pydantic import (
     ValidationError,
     WebsocketUrl,
 )
-from pydantic.networks import import_email_validator, validate_email
+from pydantic.networks import _BaseMultiHostUrl, import_email_validator, validate_email
 
 try:
     import email_validator
@@ -1230,3 +1231,118 @@ def test_url_preserve_empty_path(type) -> None:
     ta_constraint = TypeAdapter(Annotated[type, UrlConstraints(preserve_empty_path=True)])
 
     assert str(ta_constraint.validate_python('http://example.com')) == 'http://example.com'
+
+
+def test_url_unicode_host() -> None:
+    url = HttpUrl('https://example.com/path')
+    assert url.unicode_host() == 'example.com'
+
+
+def test_url_query_params() -> None:
+    url = AnyUrl('https://example.com/path?foo=bar&baz=qux')
+    params = url.query_params()
+    assert params == [('foo', 'bar'), ('baz', 'qux')]
+
+
+def test_url_deepcopy() -> None:
+    url = HttpUrl('https://example.com/path?q=1#frag')
+    url_copy = copy.deepcopy(url)
+    assert url == url_copy
+    assert url is not url_copy
+    assert isinstance(url_copy, HttpUrl)
+
+
+def test_url_build() -> None:
+    url = HttpUrl.build(scheme='https', host='example.com', path='the/path', query='foo=bar', fragment='baz')
+    assert isinstance(url, HttpUrl)
+    assert url.scheme == 'https'
+    assert url.host == 'example.com'
+    assert 'the/path' in str(url)
+    assert url.query == 'foo=bar'
+    assert url.fragment == 'baz'
+
+
+def test_url_build_with_auth() -> None:
+    url = AnyUrl.build(scheme='https', username='user', password='pass', host='example.com', port=8080)
+    assert isinstance(url, AnyUrl)
+    assert url.username == 'user'
+    assert url.password == 'pass'
+    assert url.port == 8080
+
+
+def test_multi_host_url_query_and_fragment() -> None:
+    url = PostgresDsn('postgres://user:pass@host1:5432/app?timeout=10#section')
+    assert url.query == 'timeout=10'
+    assert url.query_params() == [('timeout', '10')]
+    assert url.fragment == 'section'
+
+
+def test_multi_host_url_unicode_string() -> None:
+    url = PostgresDsn('postgres://user:pass@host1:5432/app')
+    assert url.unicode_string() == 'postgres://user:pass@host1:5432/app'
+
+
+def test_multi_host_url_deepcopy() -> None:
+    url = PostgresDsn('postgres://user:pass@host1:5432/app')
+    url_copy = copy.deepcopy(url)
+    assert url == url_copy
+    assert url is not url_copy
+    assert isinstance(url_copy, PostgresDsn)
+
+
+def test_multi_host_url_build() -> None:
+    url = PostgresDsn.build(
+        scheme='postgres', username='user', password='pass', host='localhost', port=5432, path='mydb'
+    )
+    assert isinstance(url, PostgresDsn)
+    assert url.scheme == 'postgres'
+    assert 'mydb' in (url.path or '')
+    assert url.hosts()[0]['host'] == 'localhost'
+
+
+def test_multi_host_url_build_with_query_fragment() -> None:
+    url = PostgresDsn.build(
+        scheme='postgres', host='localhost', port=5432, path='/mydb', query='sslmode=require', fragment='section'
+    )
+    assert isinstance(url, PostgresDsn)
+    assert url.query == 'sslmode=require'
+    assert url.fragment == 'section'
+
+
+def test_multi_host_url_serialize_unexpected_value() -> None:
+    ta = TypeAdapter(PostgresDsn)
+    with pytest.raises(
+        PydanticSerializationError,
+        match=r'Expected.*PostgresDsn.*but got.*str',
+    ):
+        ta.dump_python('postgres://user:pass@localhost:5432/app', warnings='error')
+
+
+def test_cockroach_dsn_host() -> None:
+    url = CockroachDsn('cockroachdb://user:pass@myhost:26257/mydb')
+    assert url.host == 'myhost'
+
+
+def test_snowflake_dsn_host() -> None:
+    url = SnowflakeDsn('snowflake://user:pass@myaccount/mydb')
+    assert url.host == 'myaccount'
+
+
+def test_url_validate_from_different_url_type() -> None:
+    """Test that validating a _BaseUrl instance of a different type converts via str."""
+    http_url = HttpUrl('https://example.com/path')
+    any_url = TypeAdapter(AnyUrl).validate_python(http_url)
+    assert isinstance(any_url, AnyUrl)
+    assert str(any_url) == 'https://example.com/path'
+
+
+def test_multi_host_url_validate_from_different_multi_host_type() -> None:
+    """Test that validating a _BaseMultiHostUrl instance of a different type converts via str."""
+
+    class CustomMultiHostUrl(_BaseMultiHostUrl):
+        _constraints = UrlConstraints(allowed_schemes=['postgres', 'postgresql'])
+
+    custom = CustomMultiHostUrl('postgres://user:pass@host1:5432/app')
+    pg_url = TypeAdapter(PostgresDsn).validate_python(custom)
+    assert isinstance(pg_url, PostgresDsn)
+    assert str(pg_url) == 'postgres://user:pass@host1:5432/app'

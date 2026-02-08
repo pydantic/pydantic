@@ -3135,3 +3135,91 @@ def test_get_schema_on_classes_with_both_v1_and_v2_apis() -> None:
         @classmethod
         def __get_validators__(cls):
             raise AssertionError('This should not be called')
+
+
+def test_pydantic_undefined_annotation_from_name_error() -> None:
+    """Test the normal path where NameError.name is available."""
+    try:
+        Foo  # type: ignore[name-defined]  # noqa: F821
+    except NameError as e:
+        name_error = e
+    exc = PydanticUndefinedAnnotation.from_name_error(name_error)
+    assert exc.name == 'Foo'
+    assert 'Foo' in str(exc)
+
+
+def test_pydantic_undefined_annotation_from_name_error_no_name_attr() -> None:
+    """Test the regex fallback when NameError lacks .name attribute."""
+
+    class OldStyleNameError(NameError):
+        @property
+        def name(self):
+            raise AttributeError('no name attribute')
+
+    name_error = OldStyleNameError("name 'Bar' is not defined")
+    exc = PydanticUndefinedAnnotation.from_name_error(name_error)
+    assert exc.name == 'Bar'
+    assert 'Bar' in str(exc)
+
+
+def test_serialize_sequence_with_pydantic_omit() -> None:
+    """Test that PydanticOmit in serialize_sequence_via_list causes items to be skipped."""
+    from collections import deque
+
+    from pydantic_core import PydanticOmit
+
+    from pydantic._internal._serializers import serialize_sequence_via_list
+
+    call_count = 0
+
+    def mock_handler(item: Any, index: int = 0) -> Any:
+        nonlocal call_count
+        call_count += 1
+        if item < 0:
+            raise PydanticOmit
+        return item
+
+    class MockInfo:
+        def mode_is_json(self) -> bool:
+            return False
+
+    result = serialize_sequence_via_list(deque([1, -2, 3, -4, 5]), mock_handler, MockInfo())
+    assert isinstance(result, deque)
+    assert list(result) == [1, 3, 5]
+    assert call_count == 5
+
+
+def test_serialize_sequence_with_pydantic_omit_json() -> None:
+    """Test PydanticOmit in JSON serialization mode returns a list."""
+    from collections import deque
+
+    from pydantic_core import PydanticOmit
+
+    from pydantic._internal._serializers import serialize_sequence_via_list
+
+    def mock_handler(item: Any, index: int = 0) -> Any:
+        if item < 0:
+            raise PydanticOmit
+        return item
+
+    class MockInfo:
+        def mode_is_json(self) -> bool:
+            return True
+
+    result = serialize_sequence_via_list(deque([1, -2, 3, -4, 5]), mock_handler, MockInfo())
+    assert isinstance(result, list)
+    assert result == [1, 3, 5]
+
+
+def test_get_type_ref_qualname_exception() -> None:
+    """Test fallback when str(origin) raises during __qualname__ default evaluation."""
+    from pydantic._internal._core_utils import get_type_ref
+
+    class BadStr:
+        __module__ = 'test_module'
+
+        def __str__(self):
+            raise RuntimeError('cannot stringify')
+
+    ref = get_type_ref(BadStr())
+    assert '<No __qualname__>' in ref

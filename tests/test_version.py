@@ -4,7 +4,7 @@ import pytest
 from packaging.version import parse as parse_version
 
 import pydantic
-from pydantic.version import check_pydantic_core_version, version_info, version_short
+from pydantic.version import check_pydantic_core_version, parse_mypy_version, version_info, version_short
 
 
 def test_version_info():
@@ -38,6 +38,19 @@ def test_version_attribute_is_a_string():
 
 def test_check_pydantic_core_version() -> None:
     assert check_pydantic_core_version()
+
+
+@pytest.mark.parametrize(
+    'version,expected',
+    [
+        ('1.11.0', (1, 11, 0)),
+        ('0.0.0', (0, 0, 0)),
+        ('1.11.0+dev.d6d9d8cd4f27c52edac1f537e236ec48a01e54cb.dirty', (1, 11, 0)),
+        ('2.0.1+dev.abc123', (2, 0, 1)),
+    ],
+)
+def test_parse_mypy_version(version, expected):
+    assert parse_mypy_version(version) == expected
 
 
 @pytest.mark.thread_unsafe(reason='Monkeypatching')
