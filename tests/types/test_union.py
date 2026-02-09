@@ -74,3 +74,25 @@ def test_field_serializer_in_nested_tagged_union_called_only_twice():
     # as nested unions were individually attempted with each of strict and lax checking,
     # and the discriminators also incurred an extra attempt at each check level too.
     assert MyModel.field_a_serializer_calls == 2
+
+
+def test_list_union_omit():
+    OmitList = list[pydantic.OnErrorOmit[int] | pydantic.OnErrorOmit[bool]]
+    ta = pydantic.TypeAdapter(OmitList)
+    assert ta.validate_python([1, 'True', 'foo', '2', False, 'bar']) == [1, True, 2, False]
+
+
+def test_typed_dict_union_omit():
+    class TD(TypedDict):
+        # arguably this should fail on schema build since `x` is a
+        # required field, and setting the type to `OnErrorOmit`
+        # effectively makes it optional.
+        x: pydantic.OnErrorOmit[int] | pydantic.OnErrorOmit[bool]
+
+    ta = pydantic.TypeAdapter(TD)
+    assert ta.validate_python({'x': 1}) == {'x': 1}
+    assert ta.validate_python({'x': 'True'}) == {'x': True}
+
+    # test to document the behaviour that if all options in the union fail,
+    # the field is omitted, even if it is required in the TypedDict.
+    assert ta.validate_python({'x': 'foo'}) == {}
