@@ -36,7 +36,7 @@ User(id=42, name='John Doe', signup_ts=datetime.datetime(2032, 6, 21, 12, 0))
 
 Similarities between Pydantic dataclasses and models include support for:
 
-* [Configuration](#dataclass-config) support (even though dataclasses doesn't support the `model_config` attribute as with Pydantic models)
+* [Configuration](#dataclass-config) support (note that dataclasses doesn't support the `model_config` attribute as with Pydantic models)
 * [Nested](./models.md#nested-models) classes
 * Arguments used to instantiate the dataclass are also [copied](./models.md#attribute-copies).
 
@@ -67,7 +67,7 @@ Some differences between Pydantic dataclasses and models include:
 * The [`extra`][pydantic.ConfigDict.extra] configuration behavior:
     * Extra data is not included in [serialization](./serialization.md#serializing-data).
     * There is no way to customize validation of extra values [using the `__pydantic_extra__` attribute](./models.md#extra-data).
-* Generic dataclasses are supported, but using a parameterized class won't work as expected:
+* Generic dataclasses are supported, but as with other standard library generic types, using a parameterized dataclass won't work as expected:
 
     === "Python 3.9 and above"
 
