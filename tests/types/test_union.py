@@ -1,5 +1,7 @@
+from collections import deque
 from typing import ClassVar, Literal, Union
 
+import pytest
 from typing_extensions import TypedDict
 
 import pydantic
@@ -76,16 +78,25 @@ def test_field_serializer_in_nested_tagged_union_called_only_twice():
     assert MyModel.field_a_serializer_calls == 2
 
 
-def test_union_does_not_consume_generator():
-    expected = [0, 1, 2]
-
+@pytest.mark.parametrize(
+    'type_a,type_b,expected',
+    [
+        (list[int], list[str], [0, 1, 2]),
+        (tuple[int, ...], tuple[str, ...], (0, 1, 2)),
+        (set[int], set[str], {0, 1, 2}),
+        (frozenset[int], frozenset[str], frozenset({0, 1, 2})),
+        (deque[int], deque[str], deque([0, 1, 2])),
+    ],
+)
+def test_union_does_not_consume_generator(type_a, type_b, expected):
     class Test(pydantic.BaseModel):
-        x: Union[list[int], list[str], None] = None
-        y: Union[list[str], list[int], None] = None
+        x: Union[type_a, type_b, None] = None
+        y: Union[type_b, type_a, None] = None
 
     def gen():
         yield from range(3)
 
-    assert Test(x=gen()) == Test(x=expected)
-    # This asserts the generator was not consumed validating against the first union member.
-    assert Test(y=gen()) == Test(y=expected)
+    assert Test(x=gen()).x == expected
+    # y has the union choices reversed. The generator must not be exhausted after
+    # having been validated against the first union member.
+    assert Test(y=gen()).y == expected
