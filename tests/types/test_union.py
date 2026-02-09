@@ -77,7 +77,7 @@ def test_field_serializer_in_nested_tagged_union_called_only_twice():
 
 
 def test_list_union_omit():
-    OmitList = list[pydantic.OnErrorOmit[int] | pydantic.OnErrorOmit[bool]]
+    OmitList = list[Union[pydantic.OnErrorOmit[int], pydantic.OnErrorOmit[bool]]]
     ta = pydantic.TypeAdapter(OmitList)
     assert ta.validate_python([1, 'True', 'foo', '2', False, 'bar']) == [1, True, 2, False]
 
@@ -87,7 +87,7 @@ def test_typed_dict_union_omit():
         # arguably this should fail on schema build since `x` is a
         # required field, and setting the type to `OnErrorOmit`
         # effectively makes it optional.
-        x: pydantic.OnErrorOmit[int] | pydantic.OnErrorOmit[bool]
+        x: Union[pydantic.OnErrorOmit[int], pydantic.OnErrorOmit[bool]]
 
     ta = pydantic.TypeAdapter(TD)
     assert ta.validate_python({'x': 1}) == {'x': 1}
