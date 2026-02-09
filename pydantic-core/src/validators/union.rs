@@ -100,6 +100,25 @@ impl BuildValidator for UnionValidator {
 }
 
 impl UnionValidator {
+    fn materialize_generator_if_required<'py>(
+        &self,
+        py: Python<'py>,
+        input: &(impl Input<'py> + ?Sized),
+    ) -> ValResult<Option<Bound<'py, PyTuple>>> {
+        // The generator can safely be consumed if there is only a single choice. Otherwise,
+        // it needs to be materialized to allow multiple attempts at validation.
+        if self.choices.len() > 1 {
+            if let Some(py_input) = input.as_python() {
+                let generator_type = py.import("types")?.getattr("GeneratorType")?;
+                if py_input.is_instance(&generator_type)? {
+                    let items = py_input.try_iter()?.collect::<PyResult<Vec<_>>>()?;
+                    return Ok(Some(PyTuple::new(py, items)?));
+                }
+            }
+        }
+        Ok(None)
+    }
+
     fn validate_smart<'py>(
         &self,
         py: Python<'py>,
@@ -215,6 +234,12 @@ impl Validator for UnionValidator {
         input: &(impl Input<'py> + ?Sized),
         state: &mut ValidationState<'_, 'py>,
     ) -> ValResult<Py<PyAny>> {
+        if let Some(ref materialized) = self.materialize_generator_if_required(py, input)? {
+            return match self.mode {
+                UnionMode::Smart => self.validate_smart(py, materialized.as_any(), state),
+                UnionMode::LeftToRight => self.validate_left_to_right(py, materialized.as_any(), state),
+            };
+        }
         match self.mode {
             UnionMode::Smart => self.validate_smart(py, input, state),
             UnionMode::LeftToRight => self.validate_left_to_right(py, input, state),
