@@ -102,6 +102,15 @@ def test_display_as_type_310(value_gen, expected):
     assert _repr.display_as_type(value) == expected
 
 
+def test_display_as_type_parameterized_type_alias():
+    """Test display_as_type fallback for parameterized TypeAliasType (no __qualname__)."""
+    from typing_extensions import TypeAliasType, TypeVar
+
+    T = TypeVar('T')
+    MyList = TypeAliasType('MyList', list[T], type_params=(T,))
+    assert _repr.display_as_type(MyList[int]) == 'MyList[int]'
+
+
 def test_lenient_issubclass():
     class A(str):
         pass

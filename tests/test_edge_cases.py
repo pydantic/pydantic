@@ -3135,3 +3135,117 @@ def test_get_schema_on_classes_with_both_v1_and_v2_apis() -> None:
         @classmethod
         def __get_validators__(cls):
             raise AssertionError('This should not be called')
+
+
+def test_mock_core_schema_len_and_iter() -> None:
+    """Test MockCoreSchema.__len__ and __iter__ and cached _built_memo."""
+    from pydantic._internal._mock_val_ser import MockCoreSchema
+
+    built_schema: CoreSchema = core_schema.str_schema()
+    mock = MockCoreSchema(
+        'not fully defined',
+        code='class-not-fully-defined',
+        attempt_rebuild=lambda: built_schema,
+    )
+    # First access triggers rebuild and caches
+    assert len(mock) == len(built_schema)
+    # Second access uses cached _built_memo
+    assert list(mock) == list(built_schema)
+
+
+def test_mock_core_schema_rebuild_no_callback() -> None:
+    """Test MockCoreSchema.rebuild() when attempt_rebuild is None."""
+    from pydantic._internal._mock_val_ser import MockCoreSchema
+
+    mock = MockCoreSchema(
+        'not fully defined',
+        code='class-not-fully-defined',
+        attempt_rebuild=None,
+    )
+    assert mock.rebuild() is None
+
+
+def test_mock_val_ser_rebuild_success() -> None:
+    """Test MockValSer.rebuild() when rebuild succeeds."""
+    from pydantic._internal._mock_val_ser import MockValSer
+
+    sentinel = object()
+    mock = MockValSer(
+        'not fully defined',
+        code='class-not-fully-defined',
+        val_or_ser='validator',
+        attempt_rebuild=lambda: sentinel,
+    )
+    assert mock.rebuild() is sentinel
+
+
+def test_mock_val_ser_rebuild_failure() -> None:
+    """Test MockValSer.rebuild() when rebuild returns None."""
+    from pydantic._internal._mock_val_ser import MockValSer
+
+    mock = MockValSer(
+        'not fully defined',
+        code='class-not-fully-defined',
+        val_or_ser='validator',
+        attempt_rebuild=lambda: None,
+    )
+    with pytest.raises(PydanticUserError, match='not fully defined'):
+        mock.rebuild()
+
+
+def test_mock_val_ser_rebuild_no_callback() -> None:
+    """Test MockValSer.rebuild() when attempt_rebuild is None."""
+    from pydantic._internal._mock_val_ser import MockValSer
+
+    mock = MockValSer(
+        'not fully defined',
+        code='class-not-fully-defined',
+        val_or_ser='serializer',
+        attempt_rebuild=None,
+    )
+    assert mock.rebuild() is None
+
+
+def test_type_adapter_mock_rebuild_returns_none() -> None:
+    """Test TypeAdapter with unresolvable forward ref triggers rebuild that returns None."""
+    from pydantic._internal._mock_val_ser import MockCoreSchema
+
+    adapter = TypeAdapter('UndefinedTypeForTestXyz')
+    assert isinstance(adapter.core_schema, MockCoreSchema)
+    # Accessing a key on the mock triggers _attempt_rebuild, which calls adapter.rebuild()
+    # Since 'UndefinedTypeForTestXyz' can't be resolved, rebuild returns False and handler returns None
+    with pytest.raises(PydanticUserError, match='is not fully defined'):
+        adapter.core_schema['type']
+
+
+def test_docstring_visitor_non_name_target() -> None:
+    """Test DocstringVisitor skips docstring when AnnAssign target is not ast.Name."""
+    import ast
+
+    from pydantic._internal._docs_extraction import DocstringVisitor
+
+    code = 'class Foo:\n    Foo.x: int\n    """should be skipped"""\n    y: int\n    """y docstring"""\n'
+    visitor = DocstringVisitor()
+    visitor.visit(ast.parse(code))
+    assert visitor.attrs == {'y': 'y docstring'}
+
+
+def test_apply_known_metadata_unknown_constraint() -> None:
+    """Test apply_known_metadata raises ValueError for unknown constraints."""
+    from pydantic._internal._fields import PydanticMetadata
+    from pydantic._internal._known_annotated_metadata import apply_known_metadata
+
+    class FakeMetadata(PydanticMetadata):
+        def __init__(self):
+            self.fake_constraint = 42
+
+    with pytest.raises(ValueError, match='Unknown constraint fake_constraint'):
+        apply_known_metadata(FakeMetadata(), core_schema.str_schema())
+
+
+def test_check_metadata_unknown_keys() -> None:
+    """Test check_metadata raises TypeError for unknown metadata keys."""
+    from pydantic._internal._known_annotated_metadata import check_metadata
+
+    with pytest.raises(TypeError, match="The following constraints cannot be applied to 'int'"):
+        check_metadata({'unknown_key': 1, 'strict': True}, allowed=['strict'], source_type='int')
