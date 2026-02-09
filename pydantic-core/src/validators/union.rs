@@ -4,6 +4,7 @@ use std::sync::Arc;
 
 use crate::py_gc::PyGcTraverse;
 use pyo3::prelude::*;
+use pyo3::sync::PyOnceLock;
 use pyo3::types::{PyDict, PyList, PyString, PyTuple};
 use pyo3::{PyTraverseError, PyVisit, intern};
 use smallvec::SmallVec;
@@ -20,6 +21,19 @@ use super::literal::LiteralLookup;
 use super::{
     BuildValidator, CombinedValidator, DefinitionsBuilder, Exactness, ValidationState, Validator, build_validator,
 };
+
+static GENERATOR_TYPE: PyOnceLock<Py<PyAny>> = PyOnceLock::new();
+
+fn get_generator_type(py: Python<'_>) -> &Bound<'_, PyAny> {
+    GENERATOR_TYPE
+        .get_or_init(py, || {
+            py.import("types")
+                .and_then(|m| m.getattr("GeneratorType"))
+                .unwrap()
+                .unbind()
+        })
+        .bind(py)
+}
 
 #[derive(Debug)]
 enum UnionMode {
@@ -109,8 +123,7 @@ impl UnionValidator {
         // it needs to be materialized to allow multiple attempts at validation.
         if self.choices.len() > 1 {
             if let Some(py_input) = input.as_python() {
-                let generator_type = py.import("types")?.getattr("GeneratorType")?;
-                if py_input.is_instance(&generator_type)? {
+                if py_input.is_instance(get_generator_type(py))? {
                     let items = py_input.try_iter()?.collect::<PyResult<Vec<_>>>()?;
                     return Ok(Some(PyTuple::new(py, items)?));
                 }
