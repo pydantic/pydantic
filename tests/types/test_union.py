@@ -74,3 +74,18 @@ def test_field_serializer_in_nested_tagged_union_called_only_twice():
     # as nested unions were individually attempted with each of strict and lax checking,
     # and the discriminators also incurred an extra attempt at each check level too.
     assert MyModel.field_a_serializer_calls == 2
+
+
+def test_union_does_not_consume_generator():
+    expected = [0, 1, 2]
+
+    class Test(pydantic.BaseModel):
+        x: Union[list[int], list[str], None] = None
+        y: Union[list[str], list[int], None] = None
+
+    def gen():
+        yield from range(3)
+
+    assert Test(x=gen()) == Test(x=expected)
+    # This asserts the generator was not consumed validating against the first union member.
+    assert Test(y=gen()) == Test(y=expected)
