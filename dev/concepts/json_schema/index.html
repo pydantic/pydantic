@@ -5539,7 +5539,488 @@ following priority order (when there is an equivalent available):</p>
 <li>The standard <code>format</code> JSON field is used to define Pydantic extensions for more complex <code>string</code> sub-types.</li>
 </ol>
 <p>The field schema mapping from Python or Pydantic to JSON schema is done as follows:</p>
-<p>{{ schema_mappings_table }}</p>
+<table>
+<thead>
+<tr>
+<th>Python type</th>
+<th>JSON Schema Type</th>
+<th>Additional JSON Schema</th>
+<th>Defined in</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>None</code></td>
+<td><code>null</code></td>
+<td></td>
+<td>JSON Schema Core</td>
+<td>Same for <code>type(None)</code> or <code>Literal[None]</code></td>
+</tr>
+<tr>
+<td><code>bool</code></td>
+<td><code>boolean</code></td>
+<td></td>
+<td>JSON Schema Core</td>
+<td></td>
+</tr>
+<tr>
+<td><code>str</code></td>
+<td><code>string</code></td>
+<td></td>
+<td>JSON Schema Core</td>
+<td></td>
+</tr>
+<tr>
+<td><code>float</code></td>
+<td><code>number</code></td>
+<td></td>
+<td>JSON Schema Core</td>
+<td></td>
+</tr>
+<tr>
+<td><code>int</code></td>
+<td><code>integer</code></td>
+<td></td>
+<td>JSON Schema Validation</td>
+<td></td>
+</tr>
+<tr>
+<td><code>dict</code></td>
+<td><code>object</code></td>
+<td></td>
+<td>JSON Schema Core</td>
+<td></td>
+</tr>
+<tr>
+<td><code>list</code></td>
+<td><code>array</code></td>
+<td><code>{"items": {}}</code></td>
+<td>JSON Schema Core</td>
+<td></td>
+</tr>
+<tr>
+<td><code>tuple-positional</code></td>
+<td><code>array</code></td>
+<td><code>{"items": {}}</code></td>
+<td>JSON Schema Core</td>
+<td></td>
+</tr>
+<tr>
+<td><code>tuple-variable</code></td>
+<td><code>array</code></td>
+<td><code>{"items": {}}</code></td>
+<td>JSON Schema Core</td>
+<td></td>
+</tr>
+<tr>
+<td><code>set</code></td>
+<td><code>array</code></td>
+<td><code>{"uniqueItems": true, "items": {}}</code></td>
+<td>JSON Schema Validation</td>
+<td></td>
+</tr>
+<tr>
+<td><code>frozenset</code></td>
+<td><code>array</code></td>
+<td><code>{"uniqueItems": true, "items": {}}</code></td>
+<td>JSON Schema Validation</td>
+<td></td>
+</tr>
+<tr>
+<td><code>List[str]</code></td>
+<td><code>array</code></td>
+<td><code>{"items": {"type": "string"}}</code></td>
+<td>JSON Schema Validation</td>
+<td>And equivalently for any other sub type, e.g. <code>List[int]</code>.</td>
+</tr>
+<tr>
+<td><code>Tuple[str, ...]</code></td>
+<td><code>array</code></td>
+<td><code>{"items": {"type": "string"}}</code></td>
+<td>JSON Schema Validation</td>
+<td>And equivalently for any other sub type, e.g. <code>Tuple[int, ...]</code>.</td>
+</tr>
+<tr>
+<td><code>Tuple[str, int]</code></td>
+<td><code>array</code></td>
+<td><code>{"minItems": 2, "maxItems": 2, "items": [{"type": "string"}, {"type": "integer"}]}</code></td>
+<td>JSON Schema Validation</td>
+<td>And equivalently for any other set of subtypes. Note: If using schemas for OpenAPI, you shouldn't use this declaration, as it would not be valid in OpenAPI (although it is valid in JSON Schema).</td>
+</tr>
+<tr>
+<td><code>Dict[str, int]</code></td>
+<td><code>object</code></td>
+<td><code>{"additionalProperties": {"type": "integer"}}</code></td>
+<td>JSON Schema Validation</td>
+<td>And equivalently for any other subfields for dicts. Have in mind that although you can use other types as keys for dicts with Pydantic, only strings are valid keys for JSON, and so, only str is valid as JSON Schema key types.</td>
+</tr>
+<tr>
+<td><code>Union[str, int]</code></td>
+<td><code>anyOf</code></td>
+<td><code>{"anyOf": [{"type": "string"}, {"type": "integer"}]}</code></td>
+<td>JSON Schema Validation</td>
+<td>And equivalently for any other subfields for unions.</td>
+</tr>
+<tr>
+<td><code>Enum</code></td>
+<td><code>enum</code></td>
+<td><code>{"enum": [...]}</code></td>
+<td>JSON Schema Validation</td>
+<td>All the literal values in the enum are included in the definition.</td>
+</tr>
+<tr>
+<td><code>SecretStr</code></td>
+<td><code>string</code></td>
+<td><code>{"writeOnly": true}</code></td>
+<td>JSON Schema Validation</td>
+<td></td>
+</tr>
+<tr>
+<td><code>SecretBytes</code></td>
+<td><code>string</code></td>
+<td><code>{"writeOnly": true}</code></td>
+<td>JSON Schema Validation</td>
+<td></td>
+</tr>
+<tr>
+<td><code>EmailStr</code></td>
+<td><code>string</code></td>
+<td><code>{"format": "email"}</code></td>
+<td>JSON Schema Validation</td>
+<td></td>
+</tr>
+<tr>
+<td><code>NameEmail</code></td>
+<td><code>string</code></td>
+<td><code>{"format": "name-email"}</code></td>
+<td>Pydantic standard "format" extension</td>
+<td></td>
+</tr>
+<tr>
+<td><code>AnyUrl</code></td>
+<td><code>string</code></td>
+<td><code>{"format": "uri"}</code></td>
+<td>JSON Schema Validation</td>
+<td></td>
+</tr>
+<tr>
+<td><code>Pattern</code></td>
+<td><code>string</code></td>
+<td><code>{"format": "regex"}</code></td>
+<td>JSON Schema Validation</td>
+<td></td>
+</tr>
+<tr>
+<td><code>bytes</code></td>
+<td><code>string</code></td>
+<td><code>{"format": "binary"}</code></td>
+<td>OpenAPI</td>
+<td></td>
+</tr>
+<tr>
+<td><code>Decimal</code></td>
+<td><code>number</code></td>
+<td></td>
+<td>JSON Schema Core</td>
+<td></td>
+</tr>
+<tr>
+<td><code>UUID1</code></td>
+<td><code>string</code></td>
+<td><code>{"format": "uuid1"}</code></td>
+<td>Pydantic standard "format" extension</td>
+<td></td>
+</tr>
+<tr>
+<td><code>UUID3</code></td>
+<td><code>string</code></td>
+<td><code>{"format": "uuid3"}</code></td>
+<td>Pydantic standard "format" extension</td>
+<td></td>
+</tr>
+<tr>
+<td><code>UUID4</code></td>
+<td><code>string</code></td>
+<td><code>{"format": "uuid4"}</code></td>
+<td>Pydantic standard "format" extension</td>
+<td></td>
+</tr>
+<tr>
+<td><code>UUID5</code></td>
+<td><code>string</code></td>
+<td><code>{"format": "uuid5"}</code></td>
+<td>Pydantic standard "format" extension</td>
+<td></td>
+</tr>
+<tr>
+<td><code>UUID</code></td>
+<td><code>string</code></td>
+<td><code>{"format": "uuid"}</code></td>
+<td>Pydantic standard "format" extension</td>
+<td>Suggested in OpenAPI.</td>
+</tr>
+<tr>
+<td><code>FilePath</code></td>
+<td><code>string</code></td>
+<td><code>{"format": "file-path"}</code></td>
+<td>Pydantic standard "format" extension</td>
+<td></td>
+</tr>
+<tr>
+<td><code>DirectoryPath</code></td>
+<td><code>string</code></td>
+<td><code>{"format": "directory-path"}</code></td>
+<td>Pydantic standard "format" extension</td>
+<td></td>
+</tr>
+<tr>
+<td><code>Path</code></td>
+<td><code>string</code></td>
+<td><code>{"format": "path"}</code></td>
+<td>Pydantic standard "format" extension</td>
+<td></td>
+</tr>
+<tr>
+<td><code>datetime</code></td>
+<td><code>string</code></td>
+<td><code>{"format": "date-time"}</code></td>
+<td>JSON Schema Validation</td>
+<td></td>
+</tr>
+<tr>
+<td><code>date</code></td>
+<td><code>string</code></td>
+<td><code>{"format": "date"}</code></td>
+<td>JSON Schema Validation</td>
+<td></td>
+</tr>
+<tr>
+<td><code>time</code></td>
+<td><code>string</code></td>
+<td><code>{"format": "time"}</code></td>
+<td>JSON Schema Validation</td>
+<td></td>
+</tr>
+<tr>
+<td><code>timedelta</code></td>
+<td><code>number</code></td>
+<td><code>{"format": "time-delta"}</code></td>
+<td>Difference in seconds (a <code>float</code>), with Pydantic standard "format" extension</td>
+<td>Suggested in JSON Schema repository's issues by maintainer.</td>
+</tr>
+<tr>
+<td><code>Json</code></td>
+<td><code>string</code></td>
+<td><code>{"format": "json-string"}</code></td>
+<td>Pydantic standard "format" extension</td>
+<td></td>
+</tr>
+<tr>
+<td><code>IPv4Address</code></td>
+<td><code>string</code></td>
+<td><code>{"format": "ipv4"}</code></td>
+<td>JSON Schema Validation</td>
+<td></td>
+</tr>
+<tr>
+<td><code>IPv6Address</code></td>
+<td><code>string</code></td>
+<td><code>{"format": "ipv6"}</code></td>
+<td>JSON Schema Validation</td>
+<td></td>
+</tr>
+<tr>
+<td><code>IPvAnyAddress</code></td>
+<td><code>string</code></td>
+<td><code>{"format": "ipvanyaddress"}</code></td>
+<td>Pydantic standard "format" extension</td>
+<td>IPv4 or IPv6 address as used in <code>ipaddress</code> module</td>
+</tr>
+<tr>
+<td><code>IPv4Interface</code></td>
+<td><code>string</code></td>
+<td><code>{"format": "ipv4interface"}</code></td>
+<td>Pydantic standard "format" extension</td>
+<td>IPv4 interface as used in <code>ipaddress</code> module</td>
+</tr>
+<tr>
+<td><code>IPv6Interface</code></td>
+<td><code>string</code></td>
+<td><code>{"format": "ipv6interface"}</code></td>
+<td>Pydantic standard "format" extension</td>
+<td>IPv6 interface as used in <code>ipaddress</code> module</td>
+</tr>
+<tr>
+<td><code>IPvAnyInterface</code></td>
+<td><code>string</code></td>
+<td><code>{"format": "ipvanyinterface"}</code></td>
+<td>Pydantic standard "format" extension</td>
+<td>IPv4 or IPv6 interface as used in <code>ipaddress</code> module</td>
+</tr>
+<tr>
+<td><code>IPv4Network</code></td>
+<td><code>string</code></td>
+<td><code>{"format": "ipv4network"}</code></td>
+<td>Pydantic standard "format" extension</td>
+<td>IPv4 network as used in <code>ipaddress</code> module</td>
+</tr>
+<tr>
+<td><code>IPv6Network</code></td>
+<td><code>string</code></td>
+<td><code>{"format": "ipv6network"}</code></td>
+<td>Pydantic standard "format" extension</td>
+<td>IPv6 network as used in <code>ipaddress</code> module</td>
+</tr>
+<tr>
+<td><code>IPvAnyNetwork</code></td>
+<td><code>string</code></td>
+<td><code>{"format": "ipvanynetwork"}</code></td>
+<td>Pydantic standard "format" extension</td>
+<td>IPv4 or IPv6 network as used in <code>ipaddress</code> module</td>
+</tr>
+<tr>
+<td><code>StrictBool</code></td>
+<td><code>boolean</code></td>
+<td></td>
+<td>JSON Schema Core</td>
+<td></td>
+</tr>
+<tr>
+<td><code>StrictStr</code></td>
+<td><code>string</code></td>
+<td></td>
+<td>JSON Schema Core</td>
+<td></td>
+</tr>
+<tr>
+<td><code>ConstrainedStr</code></td>
+<td><code>string</code></td>
+<td></td>
+<td>JSON Schema Core</td>
+<td>If the type has values declared for the constraints, they are included as validations. See the mapping for <code>constr</code> below.</td>
+</tr>
+<tr>
+<td><code>constr(pattern='^text$', min_length=2, max_length=10)</code></td>
+<td><code>string</code></td>
+<td><code>{"pattern": "^text$", "minLength": 2, "maxLength": 10}</code></td>
+<td>JSON Schema Validation</td>
+<td>Any argument not passed to the function (not defined) will not be included in the schema.</td>
+</tr>
+<tr>
+<td><code>ConstrainedInt</code></td>
+<td><code>integer</code></td>
+<td></td>
+<td>JSON Schema Core</td>
+<td>If the type has values declared for the constraints, they are included as validations. See the mapping for <code>conint</code> below.</td>
+</tr>
+<tr>
+<td><code>conint(gt=1, ge=2, lt=6, le=5, multiple_of=2)</code></td>
+<td><code>integer</code></td>
+<td><code>{"maximum": 5, "exclusiveMaximum": 6, "minimum": 2, "exclusiveMinimum": 1, "multipleOf": 2}</code></td>
+<td></td>
+<td>Any argument not passed to the function (not defined) will not be included in the schema.</td>
+</tr>
+<tr>
+<td><code>PositiveInt</code></td>
+<td><code>integer</code></td>
+<td><code>{"exclusiveMinimum": 0}</code></td>
+<td>JSON Schema Validation</td>
+<td></td>
+</tr>
+<tr>
+<td><code>NegativeInt</code></td>
+<td><code>integer</code></td>
+<td><code>{"exclusiveMaximum": 0}</code></td>
+<td>JSON Schema Validation</td>
+<td></td>
+</tr>
+<tr>
+<td><code>NonNegativeInt</code></td>
+<td><code>integer</code></td>
+<td><code>{"minimum": 0}</code></td>
+<td>JSON Schema Validation</td>
+<td></td>
+</tr>
+<tr>
+<td><code>NonPositiveInt</code></td>
+<td><code>integer</code></td>
+<td><code>{"maximum": 0}</code></td>
+<td>JSON Schema Validation</td>
+<td></td>
+</tr>
+<tr>
+<td><code>ConstrainedFloat</code></td>
+<td><code>number</code></td>
+<td></td>
+<td>JSON Schema Core</td>
+<td>If the type has values declared for the constraints, they are included as validations. See the mapping for <code>confloat</code> below.</td>
+</tr>
+<tr>
+<td><code>confloat(gt=1, ge=2, lt=6, le=5, multiple_of=2)</code></td>
+<td><code>number</code></td>
+<td><code>{"maximum": 5, "exclusiveMaximum": 6, "minimum": 2, "exclusiveMinimum": 1, "multipleOf": 2}</code></td>
+<td>JSON Schema Validation</td>
+<td>Any argument not passed to the function (not defined) will not be included in the schema.</td>
+</tr>
+<tr>
+<td><code>PositiveFloat</code></td>
+<td><code>number</code></td>
+<td><code>{"exclusiveMinimum": 0}</code></td>
+<td>JSON Schema Validation</td>
+<td></td>
+</tr>
+<tr>
+<td><code>NegativeFloat</code></td>
+<td><code>number</code></td>
+<td><code>{"exclusiveMaximum": 0}</code></td>
+<td>JSON Schema Validation</td>
+<td></td>
+</tr>
+<tr>
+<td><code>NonNegativeFloat</code></td>
+<td><code>number</code></td>
+<td><code>{"minimum": 0}</code></td>
+<td>JSON Schema Validation</td>
+<td></td>
+</tr>
+<tr>
+<td><code>NonPositiveFloat</code></td>
+<td><code>number</code></td>
+<td><code>{"maximum": 0}</code></td>
+<td>JSON Schema Validation</td>
+<td></td>
+</tr>
+<tr>
+<td><code>ConstrainedDecimal</code></td>
+<td><code>number</code></td>
+<td></td>
+<td>JSON Schema Core</td>
+<td>If the type has values declared for the constraints, they are included as validations. See the mapping for <code>condecimal</code> below.</td>
+</tr>
+<tr>
+<td><code>condecimal(gt=1, ge=2, lt=6, le=5, multiple_of=2)</code></td>
+<td><code>number</code></td>
+<td><code>{"maximum": 5, "exclusiveMaximum": 6, "minimum": 2, "exclusiveMinimum": 1, "multipleOf": 2}</code></td>
+<td>JSON Schema Validation</td>
+<td>Any argument not passed to the function (not defined) will not be included in the schema.</td>
+</tr>
+<tr>
+<td><code>BaseModel</code></td>
+<td><code>object</code></td>
+<td></td>
+<td>JSON Schema Core</td>
+<td>All the properties defined will be defined with standard JSON Schema, including submodels.</td>
+</tr>
+<tr>
+<td><code>Color</code></td>
+<td><code>string</code></td>
+<td><code>{"format": "color"}</code></td>
+<td>Pydantic standard "format" extension</td>
+<td></td>
+</tr>
+</tbody>
+</table>
 <h2 id="top-level-schema-generation">Top-level schema generation<a class="headerlink" href="#top-level-schema-generation" title="Permanent link">&para;</a></h2>
 <p>You can also generate a top-level JSON schema that only includes a list of models and related
 sub-models in its <code>$defs</code>:</p>
