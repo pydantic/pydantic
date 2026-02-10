@@ -2362,3 +2362,69 @@ def test_discriminated_union_with_root_model_literal() -> None:
         ta.validate_python({'action': 'invalid_action'})
 
     assert exc_info.value.errors()[0]['type'] == 'union_tag_invalid'
+
+
+def test_discriminated_union_with_type_alias_type_pep695() -> None:
+    """https://github.com/pydantic/pydantic/issues/12771.
+
+    Using PEP 695 `type` statement (TypeAliasType) to create a union alias
+    should produce the same discriminated union behavior as using the union
+    type directly. Previously, the discriminator was not applied correctly
+    when the union was wrapped in a TypeAliasType, causing validators for
+    all union members to run instead of only the matching one.
+    """
+
+    class Cat(BaseModel):
+        pet_type: Literal['cat']
+        name: str = 'whiskers'
+
+    class Dog(BaseModel):
+        pet_type: Literal['dog']
+        name: str = 'buddy'
+
+    type Pet = Cat | Dog
+
+    class Model(BaseModel):
+        pet: Pet = Field(discriminator='pet_type')
+
+    # Validate that the correct type is selected
+    cat_result = Model.model_validate({'pet': {'pet_type': 'cat', 'name': 'fluffy'}})
+    assert isinstance(cat_result.pet, Cat)
+    assert cat_result.pet.name == 'fluffy'
+
+    dog_result = Model.model_validate({'pet': {'pet_type': 'dog', 'name': 'rex'}})
+    assert isinstance(dog_result.pet, Dog)
+    assert dog_result.pet.name == 'rex'
+
+    # Invalid discriminator value should produce a tagged union error
+    with pytest.raises(ValidationError) as exc_info:
+        Model.model_validate({'pet': {'pet_type': 'fish'}})
+    assert exc_info.value.errors()[0]['type'] == 'union_tag_invalid'
+
+    # Verify the core schema uses a tagged-union (not a plain union)
+    pet_field_schema = Model.__pydantic_core_schema__['schema']['fields']['pet']['schema']
+    assert pet_field_schema['type'] == 'tagged-union'
+
+
+def test_discriminated_union_with_nullable_type_alias_type_pep695() -> None:
+    """Nullable variant of the PEP 695 TypeAliasType discriminated union test."""
+
+    class Cat(BaseModel):
+        pet_type: Literal['cat']
+
+    class Dog(BaseModel):
+        pet_type: Literal['dog']
+
+    type Pet = Cat | Dog
+
+    class Model(BaseModel):
+        pet: Pet | None = Field(discriminator='pet_type', default=None)
+
+    cat_result = Model.model_validate({'pet': {'pet_type': 'cat'}})
+    assert isinstance(cat_result.pet, Cat)
+
+    none_result = Model.model_validate({'pet': None})
+    assert none_result.pet is None
+
+    default_result = Model.model_validate({})
+    assert default_result.pet is None
