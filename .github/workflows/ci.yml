@@ -298,11 +298,15 @@ jobs:
             fi
           env: |
             UV_NO_PROGRESS: '1'
+          # Until we move all dev dependencies to the main `pydantic` package, use this workaround:
+          # Sync the pydantic-core workspace to get the dev dependencies (without the actual `pydantic-core` package),
+          # and then sync the parent workspace:
           run: |
             set -x
             curl -LsSf https://astral.sh/uv/install.sh | sh
             source $HOME/.local/bin/env
-            uv sync --frozen --group testing-extra
+            uv sync --directory pydantic-core --group testing-extra --no-install-package pydantic-core
+            uv sync --group testing-extra --no-install-package pydantic-core --inexact
             uv pip install pydantic-core --no-index --no-deps --find-links dist --force-reinstall
             uv run --no-sync pytest tests/pydantic_core --ignore=tests/pydantic_core/test_docstrings.py
             uv run --no-sync python -c 'import pydantic_core._pydantic_core; print(pydantic_core._pydantic_core.__version__)'
@@ -341,8 +345,12 @@ jobs:
           merge-multiple: true
           path: dist
 
+      # Until we move all dev dependencies to the main `pydantic` package, use this workaround:
+      # Sync the pydantic-core workspace to get the dev dependencies (without the actual `pydantic-core` package),
+      # and then sync the parent workspace:
       - run: |
-          uv sync --frozen --all-packages --group testing-extra
+          uv sync --directory pydantic-core --group testing-extra --no-install-package pydantic-core
+          uv sync --group testing-extra --no-install-package pydantic-core --inexact
           uv pip install pydantic-core --no-index --no-deps --find-links dist --force-reinstall
           uv run --no-sync pytest tests/pydantic_core --ignore=tests/pydantic_core/test_docstrings.py
           uv run --no-sync python -c 'import pydantic_core._pydantic_core; print(pydantic_core._pydantic_core.__version__)'
