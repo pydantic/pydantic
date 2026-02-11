@@ -236,12 +236,10 @@ jobs:
       - uses: actions/checkout@v6
 
       - name: Install rust nightly
-        uses: dtolnay/rust-toolchain@master
+        uses: dtolnay/rust-toolchain@nightly
         with:
           components: rust-src
           targets: wasm32-unknown-emscripten
-          # might be able to unpin when pydodide uses emscripten 4, see below
-          toolchain: nightly-2025-02-17
 
       - name: Cache rust
         uses: Swatinem/rust-cache@v2
@@ -251,7 +249,7 @@ jobs:
           # NOTE!: as per https://github.com/pydantic/pydantic-core/pull/149 this version needs to match the version
           # in pydantic-core/node_modules/pyodide/pyodide-lock.json, to get the version, run:
           # `cat pydantic-core/node_modules/pyodide/pyodide-lock.json | jq .info.platform`
-          version: '3.1.58'
+          version: '4.0.9'
           actions-cache-folder: emsdk-cache
 
       - uses: astral-sh/setup-uv@v7
