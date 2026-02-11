@@ -86,7 +86,7 @@ Fast and extensible, Pydantic plays nicely with your linters/IDE/brain. Define h
 * **Customisation** &mdash; Pydantic allows custom validators and serializers to alter how data is processed in many powerful ways. [Learn more…](why.md#customisation)
 * **Ecosystem** &mdash; around 8,000 packages on PyPI use Pydantic, including massively popular libraries like
   *FastAPI*, *huggingface*, *Django Ninja*, *SQLModel*, & *LangChain*. [Learn more…](why.md#ecosystem)
-* **Battle tested** &mdash; Pydantic is downloaded over 360M times/month and is used by all FAANG companies and 20 of the 25 largest companies on NASDAQ. If you're trying to do something with Pydantic, someone else has probably already done it. [Learn more…](why.md#using-pydantic)
+* **Battle tested** &mdash; Pydantic is downloaded over 550M times/month and is used by all FAANG companies and 20 of the 25 largest companies on NASDAQ. If you're trying to do something with Pydantic, someone else has probably already done it. [Learn more…](why.md#using-pydantic)
 
 [Installing Pydantic](install.md) is as simple as: `pip install pydantic`
 
