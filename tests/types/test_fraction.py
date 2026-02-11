@@ -130,6 +130,8 @@ def test_fraction_strict_accepts_fraction(input_value):
     [
         ('not a number', ValidationError),
         ('1/0', ZeroDivisionError),
+        (np.inf, OverflowError),
+        (np.nan, ValidationError),
         ([1, 2], TypeError),
         ({}, TypeError),
         (None, TypeError),
