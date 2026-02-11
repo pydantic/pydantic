@@ -229,31 +229,79 @@ jobs:
           name: pydantic_core_pypi_files_${{ matrix.platform.os }}_${{ matrix.interpreter }}
           path: pydantic-core/dist
 
-  docs-build:
+  core-build-wasm-emscripten:
+    name: core / Build WASM Emscripten
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
 
-      - uses: astral-sh/setup-uv@v7
+      - name: Install rust nightly
+        uses: dtolnay/rust-toolchain@master
         with:
-          python-version: '3.12'
+          components: rust-src
+          targets: wasm32-unknown-emscripten
+          # might be able to unpin when pydodide uses emscripten 4, see below
+          toolchain: nightly-2025-02-17
+
+      - name: Cache rust
+        uses: Swatinem/rust-cache@v2
+
+      - uses: mymindstorm/setup-emsdk@v14
+        with:
+          # NOTE!: as per https://github.com/pydantic/pydantic-core/pull/149 this version needs to match the version
+          # in pydantic-core/node_modules/pyodide/pyodide-lock.json, to get the version, run:
+          # `cat pydantic-core/node_modules/pyodide/pyodide-lock.json | jq .info.platform`
+          version: '3.1.58'
+          actions-cache-folder: emsdk-cache
+
+      - uses: astral-sh/setup-uv@v7
 
       - name: Install dependencies
-        # Unlike the docs build, we don't use mkdocs_material-insiders
-        # Because the secret for accessing the library is not accessible from forks, but we still want to run
-        # this job on public CI runs.
-        run: uv sync --all-packages --group docs
+        run: uv sync --all-packages --group testing-extra --group wasm --all-extras
 
-      - run: uv run python -c 'import docs.plugins.main'
+      - name: Build wheels
+        run: make -C pydantic-core build-wasm
 
-      # Taken from docs-build.sh
-      - name: prepare shortcuts for extra modules
-        run: |
-          ln -s pydantic-core/python/pydantic_core pydantic_core
-          ln -s .venv/lib/python*/site-packages/pydantic_settings pydantic_settings
-          ln -s .venv/lib/python*/site-packages/pydantic_extra_types pydantic_extra_types
+      - uses: actions/setup-node@v6
+        with:
+          node-version: '18'
 
-      - run: PYTHONPATH="$PWD${PYTHONPATH:+:${PYTHONPATH}}" uv run mkdocs build
+      - run: npm install
+        working-directory: pydantic-core
+
+      - run: npm run test
+        working-directory: pydantic-core
+
+      - run: |
+          ls -lh dist/
+        working-directory: pydantic-core
+
+      - uses: actions/upload-artifact@v6
+        with:
+          name: pydantic_core_wasm_wheels
+          path: pydantic-core/dist
+
+  core-bench:
+    name: core / Run Rust benchmarks
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Install rust nightly
+        uses: dtolnay/rust-toolchain@nightly
+
+      - name: Cache rust
+        uses: Swatinem/rust-cache@v2
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.13'
+
+      - run: pip install typing_extensions
+
+      - run: cargo bench
+        working-directory: pydantic-core
 
   core-test-builds-arch:
     name: core / Test build on ${{ matrix.target }}-${{ matrix.distro }}
@@ -450,6 +498,32 @@ jobs:
 
       - run: uv pip freeze
       - run: uv run pytest
+
+  docs-build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: astral-sh/setup-uv@v7
+        with:
+          python-version: '3.12'
+
+      - name: Install dependencies
+        # Unlike the docs build, we don't use mkdocs_material-insiders
+        # Because the secret for accessing the library is not accessible from forks, but we still want to run
+        # this job on public CI runs.
+        run: uv sync --all-packages --group docs
+
+      - run: uv run python -c 'import docs.plugins.main'
+
+      # Taken from docs-build.sh
+      - name: prepare shortcuts for extra modules
+        run: |
+          ln -s pydantic-core/python/pydantic_core pydantic_core
+          ln -s .venv/lib/python*/site-packages/pydantic_settings pydantic_settings
+          ln -s .venv/lib/python*/site-packages/pydantic_extra_types pydantic_extra_types
+
+      - run: PYTHONPATH="$PWD${PYTHONPATH:+:${PYTHONPATH}}" uv run mkdocs build
 
   test-memray:
     name: Test memray
@@ -678,18 +752,9 @@ jobs:
   # https://github.com/marketplace/actions/alls-green
   check: # This job does nothing and is only used for the branch protection
     if: always()
-
     outputs:
       result: ${{ steps.all-green.outputs.result }}
-
-    needs:
-      - lint
-      - docs-build
-      - test
-      - test-memray
-      - test-mypy
-      - test-plugin
-
+    needs: [lint, docs-build, test, test-memray, test-mypy, test-plugin, core-test-os, core-test-debug, core-build-wasm-emscripten]
     runs-on: ubuntu-latest
 
     steps:
@@ -700,13 +765,14 @@ jobs:
           jobs: ${{ toJSON(needs) }}
 
   release:
-    needs: [check]
+    needs: [core-test-builds-arch, core-test-builds-os, core-build-sdist, check]
     if: needs.check.outputs.result == 'success' && startsWith(github.ref, 'refs/tags/')
     runs-on: ubuntu-latest
     environment: release
 
     permissions:
       id-token: write
+      contents: write
 
     outputs:
       pydantic-version: ${{ steps.check-tag.outputs.VERSION }}
@@ -714,21 +780,35 @@ jobs:
     steps:
       - uses: actions/checkout@v6
 
-      - uses: actions/setup-python@v6
+      - uses: astral-sh/setup-uv@v7
+
+      - run: uv pip install -U build -U twine
+
+      - name: Check pydantic-core package version
+        run: uv run .github/check_pydantic_core_version.py
+
+      - name: Get pydantic-core dist artifacts
+        uses: actions/download-artifact@v6
         with:
-          python-version: '3.12'
+          pattern: pydantic_core_pypi_files_*
+          merge-multiple: true
+          path: pydantic-core-dist
 
-      - name: Install 'build' library
-        run: pip install -U build
+      - name: Test pydantic-core wheels integrity
+        run: |
+          for whl in pydantic-core-dist/*.whl; do unzip -qt "$whl"; done
+          twine check --strict pydantic-core-dist/*
 
-      - name: Check version
+      - run: uv publish --trusted-publishing always pydantic-core-dist/*
+
+      - name: Check pydantic version
         id: check-tag
         uses: samuelcolvin/check-python-version@v5
         with:
           version_file_path: pydantic/version.py
 
-      - name: Build library
-        run: python -m build
+      - name: Build pydantic library
+        run: uv run python -m build
 
       - name: Upload package to PyPI
         uses: pypa/gh-action-pypi-publish@release/v1
