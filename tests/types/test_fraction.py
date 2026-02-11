@@ -4,6 +4,8 @@ from typing import Annotated
 import annotated_types
 import pytest
 
+import numpy as np
+
 from pydantic import BaseModel, ConfigDict, TypeAdapter, ValidationError
 
 
@@ -73,6 +75,8 @@ def test_fraction_validate_json(json_str, expected):
     [
         ('"not a number"', ValidationError),
         ('"1/0"', ZeroDivisionError),
+        (np.inf, ValidationError),
+        (np.nan, ValidationError),
     ],
 )
 def test_fraction_validate_json_error(json_str, error):
@@ -89,6 +93,8 @@ def test_fraction_validate_json_error(json_str, error):
         (False),
         ('not a number'),
         ('1/0'),
+        (np.inf),
+        (np.nan),
     ],
 )
 def test_fraction_validation_error_strict(input_value):
@@ -106,10 +112,27 @@ def test_fraction_validation_error_strict(input_value):
 
 
 @pytest.mark.parametrize(
+    'input_value',
+    [
+        Fraction(1, 3),
+        Fraction(0),
+        Fraction('42.5'),
+        FractionSubclass('1/7'),
+    ],
+)
+def test_fraction_strict_accepts_fraction(input_value):
+    ta = TypeAdapter(Fraction)
+    assert ta.validate_python(input_value, strict=True) == input_value
+
+
+@pytest.mark.parametrize(
     'input_value,error',
     [
         ('not a number', ValidationError),
         ('1/0', ZeroDivisionError),
+        ([1, 2], TypeError),
+        ({}, TypeError),
+        (None, TypeError),
     ],
 )
 def test_fraction_validation_error_non_strict(input_value, error):
