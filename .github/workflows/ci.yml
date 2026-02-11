@@ -306,7 +306,7 @@ jobs:
             curl -LsSf https://astral.sh/uv/install.sh | sh
             source $HOME/.local/bin/env
             uv sync --directory pydantic-core --group testing-extra --no-install-package pydantic-core
-            uv sync --group testing-extra --no-install-package pydantic-core --inexact
+            uv sync --group testing-extra --no-install-package pydantic-core --no-install-package memray --inexact
             uv pip install pydantic-core --no-index --no-deps --find-links dist --force-reinstall
             uv run --no-sync pytest tests/pydantic_core --ignore=tests/pydantic_core/test_docstrings.py
             uv run --no-sync python -c 'import pydantic_core._pydantic_core; print(pydantic_core._pydantic_core.__version__)'
