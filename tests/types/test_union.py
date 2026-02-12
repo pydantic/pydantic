@@ -1,5 +1,6 @@
 from typing import ClassVar, Literal, Union
 
+import pytest
 from typing_extensions import TypedDict
 
 import pydantic
@@ -78,7 +79,15 @@ def test_field_serializer_in_nested_tagged_union_called_only_twice():
 
 def test_list_union_omit():
     OmitList = list[Union[pydantic.OnErrorOmit[int], pydantic.OnErrorOmit[bool]]]
-    ta = pydantic.TypeAdapter(OmitList)
+    with pytest.warns(UserWarning, match='^Using OnErrorOmit within a Union is not recommended'):
+        ta = pydantic.TypeAdapter(OmitList)
+    assert ta.validate_python([1, 'True', 'foo', '2', False, 'bar']) == [1, True, 2, False]
+
+
+def test_list_union_omit_one_member():
+    OmitList = list[Union[pydantic.OnErrorOmit[int], bool]]
+    with pytest.warns(UserWarning, match='^Mixing OnErrorOmit schemas with non-omittable schemas'):
+        ta = pydantic.TypeAdapter(OmitList)
     assert ta.validate_python([1, 'True', 'foo', '2', False, 'bar']) == [1, True, 2, False]
 
 
@@ -89,7 +98,8 @@ def test_typed_dict_union_omit():
         # effectively makes it optional.
         x: Union[pydantic.OnErrorOmit[int], pydantic.OnErrorOmit[bool]]
 
-    ta = pydantic.TypeAdapter(TD)
+    with pytest.warns(UserWarning, match='^Using OnErrorOmit within a Union is not recommended'):
+        ta = pydantic.TypeAdapter(TD)
     assert ta.validate_python({'x': 1}) == {'x': 1}
     assert ta.validate_python({'x': 'True'}) == {'x': True}
 

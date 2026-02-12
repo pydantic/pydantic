@@ -1322,12 +1322,32 @@ class GenerateSchema:
             s = choices[0]
         else:
             choices_with_tags: list[CoreSchema | tuple[CoreSchema, str]] = []
+            omittable_choice_count = 0
             for choice in choices:
+                if choice.get('type') == 'default' and choice.get('on_error') == 'omit':
+                    omittable_choice_count += 1
                 tag = cast(CoreMetadata, choice.get('metadata', {})).get('pydantic_internal_union_tag_key')
                 if tag is not None:
                     choices_with_tags.append((choice, tag))
                 else:
                     choices_with_tags.append(choice)
+            if omittable_choice_count > 0:
+                # if one of the choices in a union is omittable,
+                # then the validation treats all choices as omittable
+                if len(choices) != omittable_choice_count:
+                    warnings.warn(
+                        'Mixing OnErrorOmit schemas with non-omittable schemas in a Union is not recommended, '
+                        'as it can lead to unexpected behavior. Consider annotating the entire Union with '
+                        'OnErrorOmit instead of individual choices within the Union.',
+                        UserWarning,
+                    )
+                else:
+                    warnings.warn(
+                        'Using OnErrorOmit within a Union is not recommended, '
+                        'as it can lead to unexpected behavior. Consider annotating the entire Union with '
+                        'OnErrorOmit instead of individual choices within the Union.',
+                        UserWarning,
+                    )
             s = core_schema.union_schema(choices_with_tags)
 
         if nullable:
