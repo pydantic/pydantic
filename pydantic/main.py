@@ -1171,9 +1171,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
                 # own behavior for recursive containers like lists and dicts.
                 # See GH-10630.
                 pair_key = (id(self), id(other))
-                active_comparisons: set[tuple[int, int]] = getattr(
-                    _eq_recursion_guard, 'active', None
-                ) or set()
+                active_comparisons: set[tuple[int, int]] = getattr(_eq_recursion_guard, 'active', None) or set()
                 if pair_key in active_comparisons:
                     return True
                 _eq_recursion_guard.active = active_comparisons

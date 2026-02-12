@@ -7,17 +7,13 @@ should detect the cycle and break it gracefully.
 
 from __future__ import annotations
 
-from typing import Optional
-
-import pytest
-
 from pydantic import BaseModel
 
 
 class Node(BaseModel):
     model_config = {'arbitrary_types_allowed': True}
     value: int = 0
-    child: Optional[Node] = None
+    child: Node | None = None
 
 
 class TestCircularReferenceEquality:
