@@ -965,6 +965,10 @@ print(Model(set_of_ints=['1', '2', '3']).set_of_ints)
 #> frozenset({1, 2, 3})
 ```
 
+<h4>JSON Schema</h4>
+
+Pydantic does best effort to sort default values that are [`collections.abc.Set`][] instances.
+
 ### Deque
 
 Standard library type: [`collections.deque`][] (deprecated alias: [`typing.Deque`][]).

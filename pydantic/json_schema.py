@@ -11,6 +11,7 @@ In general you shouldn't need to use this module directly; instead, you can use
 
 from __future__ import annotations as _annotations
 
+import collections.abc
 import dataclasses
 import inspect
 import math
@@ -1209,6 +1210,15 @@ class GenerateJsonSchema:
                         f'Unable to serialize value {default!r} with the plain serializer; excluding default from JSON schema',
                     )
                     return json_schema
+
+        # Sort set/frozenset defaults to ensure deterministic JSON schema generation
+        # We only sort if len > 1 because sets of size 0 or 1 are already deterministic
+        if isinstance(default, collections.abc.Set) and len(default) > 1:
+            try:
+                default = sorted(default)
+            except TypeError:  # pragma: no cover
+                # If items aren't comparable (e.g. mixed types), we can't sort them.
+                pass
 
         try:
             encoded_default = self.encode_default(default)
