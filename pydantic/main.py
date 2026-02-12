@@ -1177,7 +1177,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
                 _eq_recursion_guard.active = active_comparisons
                 active_comparisons.add(pair_key)
                 try:
-                    return self.__eq_impl(other)
+                    return self._eq_impl(other)
                 finally:
                     active_comparisons.discard(pair_key)
 
@@ -1185,7 +1185,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
             else:
                 return NotImplemented  # delegate to the other item in the comparison
 
-        def __eq_impl(self, other: Any) -> bool:
+        def _eq_impl(self, other: Any) -> bool:
             # When comparing instances of generic types for equality, as long as all field values are equal,
             # only require their generic origin types to be equal, rather than exact type equality.
             # This prevents headaches like MyGeneric(x=1) != MyGeneric[Any](x=1).
