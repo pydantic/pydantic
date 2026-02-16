@@ -1705,6 +1705,7 @@ class GenerateSchema:
                 raise ValueError('Variable tuples must end with an ellipsis')
             # special form: variadic tuple without any unpacking, e.g. tuple[int, ...]
             variadic_item_index = 0
+            params = (params[0],)
 
         return core_schema.tuple_schema(
             [self.generate_schema(param) for param in params], variadic_item_index=variadic_item_index
