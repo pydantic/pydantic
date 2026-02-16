@@ -1680,11 +1680,11 @@ class GenerateSchema:
                         args = get_args(inner)
                         if any(e is Ellipsis for e in args):
                             if variadic_item_index is not None:
-                                raise ValueError('More than one variadic Unpack in a type is not allowed')
+                                raise TypeError('More than one variadic Unpack in a type is not allowed')
                             if len(args) != 2:
-                                raise ValueError('Variable tuples must only have one type before the ellipsis')
+                                raise TypeError('Variable tuples must only have one type before the ellipsis')
                             if args[0] is Ellipsis or args[1] is not Ellipsis:
-                                raise ValueError('Variable tuples must end with an ellipsis')
+                                raise TypeError('Variable tuples must end with an ellipsis')
                             variadic_item_index = len(new_params)
                             new_params.append(args[0])
                         else:
@@ -1698,11 +1698,11 @@ class GenerateSchema:
 
         if any(param is Ellipsis for param in params):
             if variadic_item_index is not None:
-                raise ValueError('Cannot have a variadic Unpack and an ellipsis in the same tuple type')
+                raise TypeError('Cannot have a variadic Unpack and an ellipsis in the same tuple type')
             if len(params) != 2:
-                raise ValueError('Variable tuples must only have one type before the ellipsis')
+                raise TypeError('Variable tuples must only have one type before the ellipsis')
             if params[0] is Ellipsis or params[1] is not Ellipsis:
-                raise ValueError('Variable tuples must end with an ellipsis')
+                raise TypeError('Variable tuples must end with an ellipsis')
             # special form: variadic tuple without any unpacking, e.g. tuple[int, ...]
             variadic_item_index = 0
             params = (params[0],)
