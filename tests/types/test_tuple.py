@@ -99,3 +99,35 @@ def test_tuple_prefix_variadic_suffix(input, expected):
 def test_tuple_invalid_forms(input, expected):
     with pytest.raises(expected.exception_type, match=re.escape(expected.message)):
         TypeAdapter(input)
+
+
+# repeats of the above with the input as a string to to test *tuple[str, ...] syntax, can
+# remove the stringification when Python 3.10 support dropped
+@pytest.mark.parametrize(
+    ('input', 'expected'),
+    [
+        (
+            'tuple[int, *tuple[str, ...], *tuple[str, ...]]',
+            Err('More than one variadic Unpack in a type is not allowed', TypeError),
+        ),
+        (
+            'tuple[int, ..., *tuple[str, ...]]',
+            Err('Cannot have a variadic Unpack and an ellipsis in the same tuple type', TypeError),
+        ),
+        (
+            'tuple[int, *tuple[int, str, ...]]',
+            Err('Variable tuples must only have one type before the ellipsis', TypeError),
+        ),
+        ('tuple[int, *tuple[..., int]]', Err('Variable tuples must end with an ellipsis', TypeError)),
+        ('tuple[*list[int]]', Err("Unpacked type <class 'list'> is not a tuple", TypeError)),
+    ],
+)
+def test_tuple_starred_invalid_forms(create_module, input, expected):
+    with pytest.raises(expected.exception_type, match=re.escape(expected.message)):
+        create_module(
+            # language=Python
+            f"""\
+from pydantic import TypeAdapter
+TypeAdapter({input})
+"""
+        )
