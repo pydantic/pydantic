@@ -1485,13 +1485,15 @@ class GenerateJsonSchema:
         # where you don't necessarily have a class.
         # At runtime, `extra_behavior` takes priority over the config
         # for validation, so follow the same for the JSON Schema:
+        if 'extras_schema' in schema and schema['extras_schema'] != core_schema.any_schema():
+            allow_additional_props = self.generate_inner(schema['extras_schema'])
+        else:
+            allow_additional_props = True
+
         if schema.get('extra_behavior') == 'forbid':
             json_schema['additionalProperties'] = False
         elif schema.get('extra_behavior') == 'allow':
-            if 'extras_schema' in schema and schema['extras_schema'] != {'type': 'any'}:
-                json_schema['additionalProperties'] = self.generate_inner(schema['extras_schema'])
-            else:
-                json_schema['additionalProperties'] = True
+            json_schema['additionalProperties'] = allow_additional_props
 
         if cls is not None:
             # `_update_class_schema()` will not override
@@ -1502,7 +1504,7 @@ class GenerateJsonSchema:
             if extra == 'forbid':
                 json_schema['additionalProperties'] = False
             elif extra == 'allow':
-                json_schema['additionalProperties'] = True
+                json_schema['additionalProperties'] = allow_additional_props
 
         return json_schema
 
