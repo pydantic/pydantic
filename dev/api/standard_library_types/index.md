@@ -66,7 +66,7 @@ Strings support the following constraints:
 
 | Constraint | Description | JSON Schema | | --- | --- | --- | | `pattern` | A regex pattern that the string must match | [`pattern`](https://json-schema.org/understanding-json-schema/reference/string#regexp) keyword (see [note](#pattern-constraint-note) below). | | `min_length` | The minimum length of the string | [`minLength`](https://json-schema.org/understanding-json-schema/reference/string#length) keyword | | `max_length` | The maximum length of the string | [`maxLength`](https://json-schema.org/understanding-json-schema/reference/string#length) keyword | | `strip_whitespace` | Whether to remove leading and trailing whitespace | N/A | | `to_upper` | Whether to convert the string to uppercase | N/A | | `to_lower` | Whether to convert the string to lowercase | N/A |
 
-These constraints can be provided using the StringConstraints metadata type, or using the Field() function (except for `to_upper` and `to_lower`).
+These constraints can be provided using the StringConstraints metadata type, or using the Field() function (except for `strip_whitespace`, `to_upper` and `to_lower`).
 
 The [`annotated-types`](https://github.com/annotated-types/annotated-types) library also provides the `MinLen`, `MaxLen` and `Len` metadata types, as well as the `LowerCase`, `UpperCase`, `IsDigit` and `IsAscii` predicates (must be parameterized with `str`, e.g. `LowerCase[str]`).
 

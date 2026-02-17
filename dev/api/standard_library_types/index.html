@@ -4839,7 +4839,7 @@ type as a convenience to <a href="../../concepts/strict_mode/#using-the-strict-m
 </tr>
 </tbody>
 </table>
-<p>These constraints can be provided using the <a class="autorefs autorefs-internal" href="../types/#pydantic.types.StringConstraints"><code>StringConstraints</code></a> metadata type, or using the <a class="autorefs autorefs-internal" href="../fields/#pydantic.fields.Field"><code>Field()</code></a> function (except for <code>to_upper</code> and <code>to_lower</code>).</p>
+<p>These constraints can be provided using the <a class="autorefs autorefs-internal" href="../types/#pydantic.types.StringConstraints"><code>StringConstraints</code></a> metadata type, or using the <a class="autorefs autorefs-internal" href="../fields/#pydantic.fields.Field"><code>Field()</code></a> function (except for <code>strip_whitespace</code>, <code>to_upper</code> and <code>to_lower</code>).</p>
 <p>The <a href="https://github.com/annotated-types/annotated-types"><code>annotated-types</code></a> library also provides the <code>MinLen</code>, <code>MaxLen</code> and <code>Len</code> metadata types, as well
 as the <code>LowerCase</code>, <code>UpperCase</code>, <code>IsDigit</code> and <code>IsAscii</code> predicates (must be parameterized with <code>str</code>, e.g. <code>LowerCase[str]</code>).</p>
 <!-- markdownlint-disable-next-line no-empty-links -->
