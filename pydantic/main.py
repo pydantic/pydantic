@@ -1254,9 +1254,16 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
         # Eagerly create the repr of computed fields, as this may trigger access of cached properties and as such
         # modify the instance's `__dict__`. If we don't do it now, it could happen when iterating over the `__dict__`
         # below if the instance happens to be referenced in a field, and would modify the `__dict__` size *during* iteration.
-        computed_fields_repr_args = [
-            (k, getattr(self, k)) for k, v in self.__pydantic_computed_fields__.items() if v.repr
-        ]
+
+        # Computed fields may fail on partially initialized instances (e.g. when a ValidationError is raised
+        # during __init__ and the repr is generated as part of exception handling).  See #10739.
+        computed_fields_repr_args: list[tuple[str, Any]] = []
+        for k, v in self.__pydantic_computed_fields__.items():
+            if v.repr:
+                try:
+                    computed_fields_repr_args.append((k, getattr(self, k)))
+                except AttributeError:
+                    pass
 
         for k, v in self.__dict__.items():
             field = self.__pydantic_fields__.get(k)
