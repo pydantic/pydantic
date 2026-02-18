@@ -1649,7 +1649,15 @@ class GenerateJsonSchema:
             json_schema['title'] = cls.__name__
 
         # BaseModel and dataclasses; don't use cls.__doc__ as it will contain the verbose class signature by default
-        docstring = None if cls is BaseModel or dataclasses.is_dataclass(cls) else cls.__doc__
+        # For stdlib dataclasses, auto-generated docstrings start with 'ClassName(' and should be suppressed,
+        # but custom docstrings should be preserved.
+        if cls is BaseModel:
+            docstring = None
+        elif dataclasses.is_dataclass(cls):
+            doc = cls.__doc__
+            docstring = None if doc is None or doc.startswith(f'{cls.__name__}(') else doc
+        else:
+            docstring = cls.__doc__
 
         if docstring:
             json_schema.setdefault('description', inspect.cleandoc(docstring))
@@ -1826,8 +1834,10 @@ class GenerateJsonSchema:
 
         # Dataclass-specific handling of description
         if is_stdlib_dataclass(cls):
-            # vanilla dataclass; don't use cls.__doc__ as it will contain the class signature by default
-            description = None
+            # vanilla dataclass; auto-generated docstrings start with 'ClassName(' and should be suppressed,
+            # but custom docstrings should be preserved.
+            doc = cls.__doc__
+            description = None if doc is None or doc.startswith(f'{cls.__name__}(') else inspect.cleandoc(doc)
         else:
             description = None if cls.__doc__ is None else inspect.cleandoc(cls.__doc__)
         if description:

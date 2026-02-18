@@ -4497,6 +4497,28 @@ def test_nested_python_dataclasses():
     }
 
 
+def test_stdlib_dataclass_custom_docstring_preserved():
+    """Test that custom docstrings on stdlib dataclasses are preserved in JSON schema,
+    while auto-generated docstrings are still suppressed."""
+    from dataclasses import dataclass as python_dataclass
+
+    @python_dataclass
+    class WithCustomDoc:
+        """A custom description that should appear."""
+
+        x: int = 1
+
+    @python_dataclass
+    class WithoutDoc:
+        x: int = 1
+
+    schema_with_doc = TypeAdapter(WithCustomDoc).json_schema()
+    assert schema_with_doc.get('description') == 'A custom description that should appear.'
+
+    schema_without_doc = TypeAdapter(WithoutDoc).json_schema()
+    assert 'description' not in schema_without_doc
+
+
 def test_discriminated_union_in_list():
     class BlackCat(BaseModel):
         pet_type: Literal['cat']
