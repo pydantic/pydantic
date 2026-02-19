@@ -17,12 +17,11 @@ from typing import Any, Callable, TypeVar, Union, cast
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 import typing_extensions
-from pydantic_core import PydanticCustomError, PydanticKnownError, core_schema
+from pydantic_core import PydanticCustomError, PydanticKnownError, PydanticUndefined, PydanticUndefinedType, core_schema
 from typing_extensions import get_args, get_origin
 from typing_inspection import typing_objects
 
 from pydantic._internal._import_utils import import_cached_field_info
-from pydantic.errors import PydanticSchemaGenerationError
 
 
 def sequence_validator(
@@ -417,21 +416,25 @@ def deque_validator(input_value: Any, handler: core_schema.ValidatorFunctionWrap
 
 
 def defaultdict_validator(
-    input_value: Any, handler: core_schema.ValidatorFunctionWrapHandler, default_default_factory: Callable[[], Any]
+    input_value: Any,
+    handler: core_schema.ValidatorFunctionWrapHandler,
+    default_default_factory: Callable[[], Any] | PydanticUndefinedType,
 ) -> collections.defaultdict[Any, Any]:
     if isinstance(input_value, collections.defaultdict):
         default_factory = input_value.default_factory
         return collections.defaultdict(default_factory, handler(input_value))
     else:
-        return collections.defaultdict(default_default_factory, handler(input_value))
+        if default_default_factory is PydanticUndefined:
+            return collections.defaultdict(None, handler(input_value))
+        return collections.defaultdict(cast(Callable[[], Any], default_default_factory), handler(input_value))
 
 
-def get_defaultdict_default_default_factory(values_source_type: Any) -> Callable[[], Any]:
+def get_defaultdict_default_default_factory(values_source_type: Any) -> Callable[[], Any] | PydanticUndefinedType:
     FieldInfo = import_cached_field_info()
 
     values_type_origin = get_origin(values_source_type)
 
-    def infer_default() -> Callable[[], Any]:
+    def infer_default() -> Callable[[], Any] | PydanticUndefinedType:
         allowed_default_types: dict[Any, Any] = {
             tuple: tuple,
             collections.abc.Sequence: tuple,
@@ -463,13 +466,7 @@ def get_defaultdict_default_default_factory(values_source_type: Any) -> Callable
 
             return type_var_default_factory
         elif values_type not in allowed_default_types:
-            # a somewhat subjective set of types that have reasonable default values
-            allowed_msg = ', '.join([t.__name__ for t in set(allowed_default_types.values())])
-            raise PydanticSchemaGenerationError(
-                f'Unable to infer a default factory for keys of type {values_source_type}.'
-                f' Only {allowed_msg} are supported, other types require an explicit default factory'
-                ' ' + instructions
-            )
+            return PydanticUndefined
         return allowed_default_types[values_type]
 
     # Assume Annotated[..., Field(...)]
