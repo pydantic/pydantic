@@ -4497,18 +4497,16 @@ def test_nested_python_dataclasses():
     }
 
 
-def test_stdlib_dataclass_custom_docstring_preserved():
-    """Test that custom docstrings on stdlib dataclasses are preserved in JSON schema,
-    while auto-generated docstrings are still suppressed."""
-    from dataclasses import dataclass as python_dataclass
+def test_stdlib_dataclass_custom_docstring_preserved() -> None:
+    """https://github.com/pydantic/pydantic/issues/12812"""
 
-    @python_dataclass
+    @dataclasses.dataclass
     class WithCustomDoc:
         """A custom description that should appear."""
 
         x: int = 1
 
-    @python_dataclass
+    @dataclasses.dataclass
     class WithoutDoc:
         x: int = 1
 
