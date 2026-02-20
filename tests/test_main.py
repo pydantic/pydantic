@@ -1404,6 +1404,117 @@ def test_field_exclude_if() -> None:
     assert Model(a=2, b='foo').model_dump_json() == '{}'
 
 
+def test_model_dump_exclude_if() -> None:
+    """Test exclude_if parameter on model_dump()."""
+
+    class Model(BaseModel):
+        a: int
+        b: str
+        c: Optional[list]
+        d: Optional[dict]
+
+    m = Model(a=0, b='', c=[], d={})
+
+    # Exclude empty values (None, empty str, empty list, empty dict)
+    def is_empty(value: Any) -> bool:
+        return isinstance(value, (list, dict, str, type(None))) and not value
+
+    assert m.model_dump(exclude_if=is_empty) == {'a': 0}
+
+    # Exclude None values (like exclude_none=True)
+    m2 = Model(a=1, b='hello', c=None, d=None)
+    assert m2.model_dump(exclude_if=lambda v: v is None) == {'a': 1, 'b': 'hello'}
+
+    # No exclusions when predicate never returns True
+    assert m2.model_dump(exclude_if=lambda v: False) == {'a': 1, 'b': 'hello', 'c': None, 'd': None}
+
+    # Exclude all when predicate always returns True
+    assert m2.model_dump(exclude_if=lambda v: True) == {}
+
+    # Without exclude_if, normal behavior
+    assert m.model_dump() == {'a': 0, 'b': '', 'c': [], 'd': {}}
+
+
+def test_model_dump_exclude_if_nested() -> None:
+    """Test exclude_if recurses into nested models."""
+
+    class Inner(BaseModel):
+        x: Optional[int] = None
+        y: str = ''
+
+    class Outer(BaseModel):
+        name: str
+        inner: Inner
+
+    m = Outer(name='test', inner=Inner(x=None, y='hello'))
+
+    def is_none(v: Any) -> bool:
+        return v is None
+
+    result = m.model_dump(exclude_if=is_none)
+    assert result == {'name': 'test', 'inner': {'y': 'hello'}}
+
+    m2 = Outer(name='', inner=Inner(x=1, y=''))
+
+    def is_empty_str(v: Any) -> bool:
+        return isinstance(v, str) and not v
+
+    result = m2.model_dump(exclude_if=is_empty_str)
+    assert result == {'inner': {'x': 1}}
+
+
+def test_model_dump_json_exclude_if() -> None:
+    """Test exclude_if parameter on model_dump_json()."""
+
+    class Model(BaseModel):
+        a: int
+        b: Optional[str] = None
+        c: str = ''
+
+    m = Model(a=1, b=None, c='')
+
+    def is_none(v: Any) -> bool:
+        return v is None
+
+    result = json.loads(m.model_dump_json(exclude_if=is_none))
+    assert result == {'a': 1, 'c': ''}
+
+    def is_falsy(v: Any) -> bool:
+        return not v and v is not False and v != 0
+
+    result = json.loads(m.model_dump_json(exclude_if=is_falsy))
+    assert result == {'a': 1}
+
+    # Without exclude_if
+    result = json.loads(m.model_dump_json())
+    assert result == {'a': 1, 'b': None, 'c': ''}
+
+
+def test_model_dump_exclude_if_with_other_options() -> None:
+    """Test exclude_if combined with other exclude options."""
+
+    class Model(BaseModel):
+        a: int = 0
+        b: Optional[str] = None
+        c: str = 'default'
+
+    m = Model(a=1, c='custom')
+
+    # combine exclude_if with exclude_unset
+    result = m.model_dump(exclude_unset=True, exclude_if=lambda v: v == 1)
+    assert result == {'c': 'custom'}
+
+    # combine exclude_if with exclude_defaults
+    m2 = Model(a=0, b='hello', c='default')
+    result = m2.model_dump(exclude_defaults=True, exclude_if=lambda v: isinstance(v, str) and len(v) > 3)
+    assert result == {}
+
+    # combine exclude_if with exclude (set)
+    m3 = Model(a=1, b='hi', c='there')
+    result = m3.model_dump(exclude={'c'}, exclude_if=lambda v: v is None)
+    assert result == {'a': 1, 'b': 'hi'}
+
+
 def test_revalidate_instances_never():
     class User(BaseModel):
         hobbies: list[str]

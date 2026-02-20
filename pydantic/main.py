@@ -115,6 +115,27 @@ _SIMPLE_SETATTR_HANDLERS: Mapping[str, Callable[[BaseModel, str, Any], None]] = 
 }
 
 
+def _apply_exclude_if(data: dict[str, Any], exclude_if: Callable[[Any], bool]) -> dict[str, Any]:
+    """Recursively filter a dictionary, excluding entries where ``exclude_if`` returns ``True``.
+
+    Args:
+        data: The dictionary to filter.
+        exclude_if: A callable that receives a field value and returns ``True`` if the field should be excluded.
+
+    Returns:
+        A new dictionary with excluded fields removed.
+    """
+    result: dict[str, Any] = {}
+    for key, value in data.items():
+        if exclude_if(value):
+            continue
+        if isinstance(value, dict):
+            result[key] = _apply_exclude_if(value, exclude_if)
+        else:
+            result[key] = value
+    return result
+
+
 class BaseModel(metaclass=_model_construction.ModelMetaclass):
     """!!! abstract "Usage Documentation"
         [Models](../concepts/models.md)
@@ -426,6 +447,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
         exclude_unset: bool = False,
         exclude_defaults: bool = False,
         exclude_none: bool = False,
+        exclude_if: Callable[[Any], bool] | None = None,
         exclude_computed_fields: bool = False,
         round_trip: bool = False,
         warnings: bool | Literal['none', 'warn', 'error'] = True,
@@ -448,6 +470,8 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
             exclude_unset: Whether to exclude fields that have not been explicitly set.
             exclude_defaults: Whether to exclude fields that are set to their default value.
             exclude_none: Whether to exclude fields that have a value of `None`.
+            exclude_if: A callable that receives a field's serialized value and returns ``True`` if the field
+                should be excluded from the output. Applied recursively to nested model dictionaries.
             exclude_computed_fields: Whether to exclude computed fields.
                 While this can be useful for round-tripping, it is usually recommended to use the dedicated
                 `round_trip` parameter instead.
@@ -461,7 +485,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
         Returns:
             A dictionary representation of the model.
         """
-        return self.__pydantic_serializer__.to_python(
+        result = self.__pydantic_serializer__.to_python(
             self,
             mode=mode,
             by_alias=by_alias,
@@ -477,6 +501,9 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
             fallback=fallback,
             serialize_as_any=serialize_as_any,
         )
+        if exclude_if is not None:
+            result = _apply_exclude_if(result, exclude_if)
+        return result
 
     def model_dump_json(
         self,
@@ -490,6 +517,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
         exclude_unset: bool = False,
         exclude_defaults: bool = False,
         exclude_none: bool = False,
+        exclude_if: Callable[[Any], bool] | None = None,
         exclude_computed_fields: bool = False,
         round_trip: bool = False,
         warnings: bool | Literal['none', 'warn', 'error'] = True,
@@ -512,6 +540,8 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
             exclude_unset: Whether to exclude fields that have not been explicitly set.
             exclude_defaults: Whether to exclude fields that are set to their default value.
             exclude_none: Whether to exclude fields that have a value of `None`.
+            exclude_if: A callable that receives a field's serialized value and returns ``True`` if the field
+                should be excluded from the output. Applied recursively to nested model dictionaries.
             exclude_computed_fields: Whether to exclude computed fields.
                 While this can be useful for round-tripping, it is usually recommended to use the dedicated
                 `round_trip` parameter instead.
@@ -525,6 +555,26 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
         Returns:
             A JSON string representation of the model.
         """
+        if exclude_if is not None:
+            import json as json_mod
+
+            result = self.model_dump(
+                mode='json',
+                include=include,
+                exclude=exclude,
+                context=context,
+                by_alias=by_alias,
+                exclude_unset=exclude_unset,
+                exclude_defaults=exclude_defaults,
+                exclude_none=exclude_none,
+                exclude_if=exclude_if,
+                exclude_computed_fields=exclude_computed_fields,
+                round_trip=round_trip,
+                warnings=warnings,
+                fallback=fallback,
+                serialize_as_any=serialize_as_any,
+            )
+            return json_mod.dumps(result, ensure_ascii=ensure_ascii, indent=indent)
         return self.__pydantic_serializer__.to_json(
             self,
             indent=indent,

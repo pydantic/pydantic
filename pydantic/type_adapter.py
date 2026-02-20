@@ -570,6 +570,7 @@ class TypeAdapter(Generic[T]):
         exclude_unset: bool = False,
         exclude_defaults: bool = False,
         exclude_none: bool = False,
+        exclude_if: Callable[[Any], bool] | None = None,
         exclude_computed_fields: bool = False,
         round_trip: bool = False,
         warnings: bool | Literal['none', 'warn', 'error'] = True,
@@ -588,6 +589,8 @@ class TypeAdapter(Generic[T]):
             exclude_unset: Whether to exclude unset fields.
             exclude_defaults: Whether to exclude fields with default values.
             exclude_none: Whether to exclude fields with None values.
+            exclude_if: A callable that receives a field's serialized value and returns ``True`` if the field
+                should be excluded from the output. Applied recursively to nested dictionaries.
             exclude_computed_fields: Whether to exclude computed fields.
                 While this can be useful for round-tripping, it is usually recommended to use the dedicated
                 `round_trip` parameter instead.
@@ -602,7 +605,7 @@ class TypeAdapter(Generic[T]):
         Returns:
             The serialized object.
         """
-        return self.serializer.to_python(
+        result = self.serializer.to_python(
             instance,
             mode=mode,
             by_alias=by_alias,
@@ -618,6 +621,11 @@ class TypeAdapter(Generic[T]):
             serialize_as_any=serialize_as_any,
             context=context,
         )
+        if exclude_if is not None and isinstance(result, dict):
+            from .main import _apply_exclude_if
+
+            result = _apply_exclude_if(result, exclude_if)
+        return result
 
     def dump_json(
         self,
@@ -632,6 +640,7 @@ class TypeAdapter(Generic[T]):
         exclude_unset: bool = False,
         exclude_defaults: bool = False,
         exclude_none: bool = False,
+        exclude_if: Callable[[Any], bool] | None = None,
         exclude_computed_fields: bool = False,
         round_trip: bool = False,
         warnings: bool | Literal['none', 'warn', 'error'] = True,
@@ -655,6 +664,8 @@ class TypeAdapter(Generic[T]):
             exclude_unset: Whether to exclude unset fields.
             exclude_defaults: Whether to exclude fields with default values.
             exclude_none: Whether to exclude fields with a value of `None`.
+            exclude_if: A callable that receives a field's serialized value and returns ``True`` if the field
+                should be excluded from the output. Applied recursively to nested dictionaries.
             exclude_computed_fields: Whether to exclude computed fields.
                 While this can be useful for round-tripping, it is usually recommended to use the dedicated
                 `round_trip` parameter instead.
@@ -669,6 +680,27 @@ class TypeAdapter(Generic[T]):
         Returns:
             The JSON representation of the given instance as bytes.
         """
+        if exclude_if is not None:
+            import json as json_mod
+
+            result = self.dump_python(
+                instance,
+                mode='json',
+                include=include,
+                exclude=exclude,
+                by_alias=by_alias,
+                exclude_unset=exclude_unset,
+                exclude_defaults=exclude_defaults,
+                exclude_none=exclude_none,
+                exclude_if=exclude_if,
+                exclude_computed_fields=exclude_computed_fields,
+                round_trip=round_trip,
+                warnings=warnings,
+                fallback=fallback,
+                serialize_as_any=serialize_as_any,
+                context=context,
+            )
+            return json_mod.dumps(result, ensure_ascii=ensure_ascii, indent=indent).encode()
         return self.serializer.to_json(
             instance,
             indent=indent,
