@@ -2,7 +2,7 @@ import random
 import sys
 from abc import ABC, abstractmethod
 from functools import cached_property, lru_cache, singledispatchmethod
-from typing import Any, Callable, ClassVar, Generic, TypeVar
+from typing import Annotated, Any, Callable, ClassVar, Generic, TypeVar
 
 import pytest
 from pydantic_core import ValidationError, core_schema
@@ -853,3 +853,127 @@ def test_computed_fields_exclude() -> None:
     assert m.model_dump(mode='json', exclude_computed_fields=True) == {}
     assert m.model_dump_json() == '{"prop":1}'
     assert m.model_dump_json(exclude_computed_fields=True) == '{}'
+
+
+
+def test_computed_field_exclude_if_annotated() -> None:
+    """Test exclude_if on computed fields via Annotated return type."""
+    IntExcludeZero = Annotated[int, Field(exclude_if=lambda v: v == 0)]
+
+    class Model(BaseModel):
+        x: int = 1
+
+        @computed_field
+        @property
+        def doubled(self) -> IntExcludeZero:
+            return self.x * 2
+
+    # When doubled=0, it should be excluded
+    m0 = Model(x=0)
+    assert m0.model_dump() == {'x': 0}
+    assert m0.model_dump_json() == '{"x":0}'
+
+    # When doubled=2, it should be included
+    m1 = Model(x=1)
+    assert m1.model_dump() == {'x': 1, 'doubled': 2}
+    assert m1.model_dump_json() == '{"x":1,"doubled":2}'
+
+
+def test_computed_field_exclude_if_with_multiple_computed_fields() -> None:
+    """Test exclude_if with multiple computed fields, some excluded and some not."""
+    IntExcludeZero = Annotated[int, Field(exclude_if=lambda v: v == 0)]
+    StrExcludeEmpty = Annotated[str, Field(exclude_if=lambda v: v == '')]
+
+    class Model(BaseModel):
+        @computed_field
+        @property
+        def zero_value(self) -> IntExcludeZero:
+            return 0
+
+        @computed_field
+        @property
+        def nonzero_value(self) -> IntExcludeZero:
+            return 42
+
+        @computed_field
+        @property
+        def empty_name(self) -> StrExcludeEmpty:
+            return ''
+
+        @computed_field
+        @property
+        def nonempty_name(self) -> StrExcludeEmpty:
+            return 'hello'
+
+    m = Model()
+    result = m.model_dump()
+    assert result == {'nonzero_value': 42, 'nonempty_name': 'hello'}
+    assert 'zero_value' not in result
+    assert 'empty_name' not in result
+
+
+def test_computed_field_exclude_if_with_regular_fields() -> None:
+    """Test exclude_if on computed fields alongside regular fields with exclude_if."""
+    IntExcludeZero = Annotated[int, Field(exclude_if=lambda v: v == 0)]
+
+    class Model(BaseModel):
+        regular: IntExcludeZero = 0
+
+        @computed_field
+        @property
+        def computed(self) -> IntExcludeZero:
+            return 0
+
+    m = Model()
+    assert m.model_dump() == {}
+
+
+def test_computed_field_exclude_if_no_annotated() -> None:
+    """Test that computed fields without exclude_if still work normally."""
+
+    class Model(BaseModel):
+        @computed_field
+        @property
+        def value(self) -> int:
+            return 0
+
+    m = Model()
+    assert m.model_dump() == {'value': 0}
+
+
+def test_computed_field_exclude_if_dataclass() -> None:
+    """Test exclude_if on computed fields in pydantic dataclasses."""
+    IntExcludeZero = Annotated[int, Field(exclude_if=lambda v: v == 0)]
+
+    @dataclasses.dataclass
+    class MyDataclass:
+        x: int = 1
+
+        @computed_field
+        @property
+        def doubled(self) -> IntExcludeZero:
+            return self.x * 2
+
+    dc0 = MyDataclass(x=0)
+    result0 = TypeAdapter(MyDataclass).dump_python(dc0)
+    assert 'doubled' not in result0
+
+    dc1 = MyDataclass(x=3)
+    result1 = TypeAdapter(MyDataclass).dump_python(dc1)
+    assert result1['doubled'] == 6
+
+
+def test_computed_field_exclude_if_json_serialization() -> None:
+    """Test that exclude_if works correctly with model_dump_json."""
+    import json
+
+    IntExcludeNegative = Annotated[int, Field(exclude_if=lambda v: v < 0)]
+
+    class Model(BaseModel):
+        @computed_field
+        @property
+        def score(self) -> IntExcludeNegative:
+            return -1
+
+    m = Model()
+    assert json.loads(m.model_dump_json()) == {}

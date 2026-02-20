@@ -1506,11 +1506,17 @@ class GenerateJsonSchema:
 
         return json_schema
 
-    @staticmethod
     def _name_required_computed_fields(
+        self,
         computed_fields: list[ComputedField],
     ) -> list[tuple[str, bool, core_schema.ComputedField]]:
-        return [(field['property_name'], True, field) for field in computed_fields]
+        result = []
+        for field in computed_fields:
+            required = True
+            if self.mode == 'serialization' and field.get('serialization_exclude_if') is not None:
+                required = False
+            result.append((field['property_name'], required, field))
+        return result
 
     def _named_required_fields_schema(
         self, named_required_fields: Sequence[tuple[str, bool, CoreSchemaField]]

@@ -59,8 +59,7 @@ impl ComputedFields {
                 &value,
                 state,
                 missing_sentinel,
-                // TODO: support exclude_if for computed fields?
-                None,
+                computed_field.serialization_exclude_if.as_ref(),
             )? {
                 continue;
             }
@@ -83,6 +82,7 @@ struct ComputedField {
     serializer: Arc<CombinedSerializer>,
     alias: PyBackedStr,
     serialize_by_alias: Option<bool>,
+    serialization_exclude_if: Option<Py<PyAny>>,
 }
 
 impl ComputedField {
@@ -100,16 +100,19 @@ impl ComputedField {
         let alias = schema
             .get_as(intern!(py, "alias"))?
             .unwrap_or_else(|| property_name.clone());
+        let serialization_exclude_if: Option<Py<PyAny>> =
+            schema.get_as(intern!(py, "serialization_exclude_if"))?;
         Ok(Self {
             property_name,
             serializer,
             alias,
             serialize_by_alias: config.get_as(intern!(py, "serialize_by_alias"))?,
+            serialization_exclude_if,
         })
     }
 }
 
-impl_py_gc_traverse!(ComputedField { serializer });
+impl_py_gc_traverse!(ComputedField { serializer, serialization_exclude_if });
 
 impl PyGcTraverse for ComputedFields {
     fn py_gc_traverse(&self, visit: &PyVisit<'_>) -> Result<(), PyTraverseError> {

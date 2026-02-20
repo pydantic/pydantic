@@ -291,6 +291,19 @@ def _extract_json_schema_info_from_field_info(
     return (json_schema_updates or None, info.json_schema_extra)
 
 
+def _extract_exclude_if_from_return_type(return_type: Any) -> Callable[[Any], bool] | None:
+    """Extract `exclude_if` from the return type annotations of a computed field.
+
+    If the return type is `Annotated[T, Field(exclude_if=...)]`, extract the `exclude_if` callable.
+    """
+    FieldInfo = import_cached_field_info()
+    if typing_extensions.get_origin(return_type) is typing_extensions.Annotated:
+        for annotation in typing_extensions.get_args(return_type)[1:]:
+            if isinstance(annotation, FieldInfo) and annotation.exclude_if is not None:
+                return annotation.exclude_if
+    return None
+
+
 JsonEncoders = dict[type[Any], JsonEncoder]
 
 
@@ -2148,6 +2161,9 @@ class GenerateSchema:
             filter_field_decorator_info_by_field(field_serializers.values(), d.cls_var_name),
         )
 
+        # Extract exclude_if from return type annotations (e.g. Annotated[int, Field(exclude_if=...)])
+        exclude_if = _extract_exclude_if_from_return_type(return_type)
+
         pydantic_js_updates, pydantic_js_extra = _extract_json_schema_info_from_field_info(d.info)
         core_metadata: dict[str, Any] = {}
         update_core_metadata(
@@ -2156,7 +2172,11 @@ class GenerateSchema:
             pydantic_js_extra=pydantic_js_extra,
         )
         return core_schema.computed_field(
-            d.cls_var_name, return_schema=return_type_schema, alias=d.info.alias, metadata=core_metadata
+            d.cls_var_name,
+            return_schema=return_type_schema,
+            alias=d.info.alias,
+            serialization_exclude_if=exclude_if,
+            metadata=core_metadata,
         )
 
     def _annotated_schema(self, annotated_type: Any) -> core_schema.CoreSchema:

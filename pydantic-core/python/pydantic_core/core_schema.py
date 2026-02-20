@@ -498,11 +498,17 @@ class ComputedField(TypedDict, total=False):
     property_name: Required[str]
     return_schema: Required[CoreSchema]
     alias: str
+    serialization_exclude_if: Callable[[Any], bool]  # default None
     metadata: dict[str, Any]
 
 
 def computed_field(
-    property_name: str, return_schema: CoreSchema, *, alias: str | None = None, metadata: dict[str, Any] | None = None
+    property_name: str,
+    return_schema: CoreSchema,
+    *,
+    alias: str | None = None,
+    serialization_exclude_if: Callable[[Any], bool] | None = None,
+    metadata: dict[str, Any] | None = None,
 ) -> ComputedField:
     """
     ComputedFields are properties of a model or dataclass that are included in serialization.
@@ -511,10 +517,16 @@ def computed_field(
         property_name: The name of the property on the model or dataclass
         return_schema: The schema used for the type returned by the computed field
         alias: The name to use in the serialized output
+        serialization_exclude_if: A callable that determines whether to exclude the field when serializing based on its value.
         metadata: Any other information you want to include with the schema, not used by pydantic-core
     """
     return _dict_not_none(
-        type='computed-field', property_name=property_name, return_schema=return_schema, alias=alias, metadata=metadata
+        type='computed-field',
+        property_name=property_name,
+        return_schema=return_schema,
+        alias=alias,
+        serialization_exclude_if=serialization_exclude_if,
+        metadata=metadata,
     )
 
 
