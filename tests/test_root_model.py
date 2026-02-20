@@ -615,13 +615,46 @@ help_result_string = pydoc.render_doc(RootModel)
 
 
 def test_copy_preserves_equality():
-    model = RootModel()
+    class Root(RootModel[int]):
+        pass
 
-    copied = model.__copy__()
-    assert model == copied
+    root_model = Root(1)
 
-    deepcopied = model.__deepcopy__()
-    assert model == deepcopied
+    copied = root_model.model_copy()
+    assert root_model == copied
+
+    deepcopied = root_model.model_copy(deep=True)
+    assert root_model == deepcopied
+
+
+def test_root_model_shallow_copy() -> None:
+    class ListRootModel(RootModel[list[int]]):
+        pass
+
+    original = ListRootModel([1, 2, 3])
+    copied = original.model_copy(deep=False)
+
+    assert original is not copied
+    # Root value is also shallow copied, see https://github.com/pydantic/pydantic/issues/12543:
+    assert original.root is not copied.root
+    assert original.root == copied.root
+
+    copied.root.append(4)
+    assert original.root == [1, 2, 3]
+    assert copied.root == [1, 2, 3, 4]
+
+
+def test_root_model_deep_copy() -> None:
+    class NestedListRootModel(RootModel[list[list[int]]]):
+        pass
+
+    original = NestedListRootModel([[1, 2], [3, 4]])
+    copied = original.model_copy(deep=True)
+
+    assert original is not copied
+    assert original.root is not copied.root
+    assert original.root[0] is not copied.root[0]
+    assert original.root == copied.root
 
 
 @pytest.mark.parametrize(

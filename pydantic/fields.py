@@ -827,13 +827,19 @@ class FieldInfo(_repr.Representation):
         # Note: we can't define a custom `__copy__()`, as `FieldInfo` is being subclassed
         # by some third-party libraries with extra attributes defined (and as `FieldInfo`
         # is slotted, we can't make a copy of the `__dict__`).
-        copied = copy(self)
+        if type(self) is FieldInfo:
+            # Fast-path if the instance isn't a subclass (`copy.copy()` relies on pickling which is slower):
+            copied = FieldInfo.__new__(FieldInfo)
+            for attr_name in FieldInfo.__slots__:
+                setattr(copied, attr_name, getattr(self, attr_name))
+        else:
+            copied = copy(self)
+
         for attr_name in ('metadata', '_attributes_set', '_qualifiers'):
             # Apply "deep-copy" behavior on collections attributes:
-            value = getattr(copied, attr_name).copy()
-            setattr(copied, attr_name, value)
+            setattr(copied, attr_name, getattr(copied, attr_name).copy())
 
-        return copied
+        return copied  # pyright: ignore[reportReturnType]
 
     def __repr_args__(self) -> ReprArgs:
         yield 'annotation', _repr.PlainRepr(_repr.display_as_type(self.annotation))

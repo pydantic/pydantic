@@ -224,7 +224,7 @@ def test_typed_dict_extra():
                 core_schema.typed_dict_schema(
                     dict(
                         foo=core_schema.typed_dict_field(core_schema.int_schema()),
-                        bar=core_schema.typed_dict_field(core_schema.int_schema()),
+                        bar=core_schema.typed_dict_field(core_schema.nullable_schema(core_schema.int_schema())),
                     )
                 ),
                 core_schema.typed_dict_schema(
@@ -244,6 +244,12 @@ def test_typed_dict_extra():
     assert s.to_python(dict(foo=1)) == {'foo': 1}
     assert s.to_python(dict(foo=1), mode='json') == {'foo': '0001'}
     assert s.to_json(dict(foo=1)) == b'{"foo":"0001"}'
+
+    assert s.to_python(dict(foo=1, bar=None), mode='json', exclude_none=True) == {'foo': 1}
+    assert s.to_json(dict(foo=1, bar=None), exclude_none=True) == b'{"foo":1}'
+
+    assert s.to_python(dict(foo=1), mode='json', exclude_none=True) == {'foo': '0001'}
+    assert s.to_json(dict(foo=1), exclude_none=True) == b'{"foo":"0001"}'
 
 
 def test_typed_dict_different_fields():

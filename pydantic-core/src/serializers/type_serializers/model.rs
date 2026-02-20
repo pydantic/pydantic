@@ -17,7 +17,6 @@ use crate::build_tools::py_schema_err;
 use crate::build_tools::{ExtraBehavior, py_schema_error_type};
 use crate::definitions::DefinitionsBuilder;
 use crate::serializers::SerializationState;
-use crate::serializers::extra::FieldName;
 use crate::serializers::shared::DoSerialize;
 use crate::serializers::shared::serialize_to_json;
 use crate::serializers::shared::serialize_to_python;
@@ -25,8 +24,7 @@ use crate::serializers::type_serializers::any::AnySerializer;
 use crate::serializers::type_serializers::function::FunctionPlainSerializer;
 use crate::serializers::type_serializers::function::FunctionWrapSerializer;
 use crate::tools::SchemaDict;
-
-const ROOT_FIELD: &str = "root";
+use crate::tools::root_field_py_str;
 
 pub struct ModelFieldsBuilder;
 
@@ -46,7 +44,7 @@ impl BuildSerializer for ModelFieldsBuilder {
         };
 
         let fields_dict: Bound<'_, PyDict> = schema.get_as_req(intern!(py, "fields"))?;
-        let mut fields: AHashMap<String, SerField> = AHashMap::with_capacity(fields_dict.len());
+        let mut fields = AHashMap::with_capacity(fields_dict.len());
 
         let extra_serializer = match (schema.get_item(intern!(py, "extras_schema"))?, &fields_mode) {
             (Some(v), FieldsMode::ModelExtra) => Some(CombinedSerializer::build(&v.extract()?, config, definitions)?),
@@ -57,12 +55,14 @@ impl BuildSerializer for ModelFieldsBuilder {
         let serialize_by_alias = config.get_as(intern!(py, "serialize_by_alias"))?;
 
         for (key, value) in fields_dict {
-            let key_py: PyBackedStr = key.extract()?;
-            let key: String = key_py.to_string();
+            let key: PyBackedStr = key.extract()?;
             let field_info = value.cast()?;
 
             if field_info.get_as(intern!(py, "serialization_exclude"))? == Some(true) {
-                fields.insert(key, SerField::new(key_py, None, None, true, serialize_by_alias, None));
+                fields.insert(
+                    key.clone_ref(py),
+                    SerField::new(key, None, None, true, serialize_by_alias, None),
+                );
             } else {
                 let alias = field_info.get_as(intern!(py, "serialization_alias"))?;
                 let serialization_exclude_if: Option<Py<PyAny>> =
@@ -72,9 +72,9 @@ impl BuildSerializer for ModelFieldsBuilder {
                     .map_err(|e| py_schema_error_type!("Field `{key}`:\n  {e}"))?;
 
                 fields.insert(
-                    key,
+                    key.clone_ref(py),
                     SerField::new(
-                        key_py,
+                        key,
                         alias,
                         Some(serializer),
                         true,
@@ -188,7 +188,8 @@ impl ModelSerializer {
             return do_serialize.serialize_fallback(self.get_name(), value, state);
         }
 
-        let root = value.getattr(intern!(value.py(), ROOT_FIELD))?;
+        let root_field = root_field_py_str(value.py());
+        let root = value.getattr(root_field)?;
 
         // for root models, `serialize_as_any` may apply unless a `field_serializer` is used
         let serializer = if state.extra.serialize_as_any
@@ -207,7 +208,7 @@ impl ModelSerializer {
             &self.serializer
         };
 
-        let state = &mut state.scoped_set(|s| &mut s.field_name, Some(FieldName::Root));
+        let state = &mut state.scoped_set_field_name(Some(root_field.clone()));
         let state = &mut state.scoped_set(|s| &mut s.model, Some(value.clone()));
         do_serialize.serialize_no_infer(serializer, &root, state)
     }

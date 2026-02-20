@@ -17,7 +17,7 @@ use crate::errors::{LocItem, ValError, ValResult, ValidationError};
 use crate::input::{Input, InputType, StringMapping};
 use crate::py_gc::PyGcTraverse;
 use crate::recursion_guard::RecursionState;
-use crate::tools::{SchemaDict, pybackedstr_to_pystring};
+use crate::tools::SchemaDict;
 pub(crate) use config::{TemporalUnitMode, ValBytesMode};
 
 mod any;
@@ -57,6 +57,7 @@ mod none;
 mod nullable;
 mod prebuilt;
 mod set;
+mod shared;
 mod string;
 mod time;
 mod timedelta;
@@ -132,11 +133,18 @@ impl_py_gc_traverse!(SchemaValidator {
 #[pymethods]
 impl SchemaValidator {
     #[new]
-    #[pyo3(signature = (schema, config=None))]
-    pub fn py_new(py: Python, schema: &Bound<'_, PyAny>, config: Option<&Bound<'_, PyDict>>) -> PyResult<Self> {
-        let mut definitions_builder = DefinitionsBuilder::new();
+    #[pyo3(signature = (schema, config=None, _use_prebuilt=true))]
+    pub fn py_new(
+        py: Python,
+        schema: &Bound<'_, PyAny>,
+        config: Option<&Bound<'_, PyDict>>,
+        _use_prebuilt: bool,
+    ) -> PyResult<Self> {
+        // _use_prebuilt=true by default, but false during rebuilds to avoid stale references
+        // to old validators (see pydantic-core issue #1894)
+        let mut definitions_builder = DefinitionsBuilder::new(_use_prebuilt);
 
-        let validator = build_validator_base(schema, config, &mut definitions_builder)?;
+        let validator = build_validator(schema, config, &mut definitions_builder)?;
         let definitions = definitions_builder.finish()?;
         let py_schema = schema.clone().unbind();
         let py_config = match config {
@@ -344,7 +352,6 @@ impl SchemaValidator {
             strict,
             extra_behavior,
             from_attributes,
-            field_name: Some(pybackedstr_to_pystring(py, &field_name)),
             context,
             self_instance: None,
             cache_str: self.cache_str,
@@ -353,7 +360,12 @@ impl SchemaValidator {
         };
 
         let guard = &mut RecursionState::default();
-        let mut state = ValidationState::new(extra, guard, false.into());
+        let mut state = ValidationState::new(
+            extra,
+            guard,
+            false.into(),
+            Some(field_name.as_py_str().bind(py).clone()),
+        );
         self.validator
             .validate_assignment(py, &obj, &field_name, &field_value, &mut state)
             .map_err(|e| self.prepare_validation_err(py, e, InputType::Python))
@@ -372,7 +384,6 @@ impl SchemaValidator {
             strict,
             extra_behavior: None,
             from_attributes: None,
-            field_name: None,
             context,
             self_instance: None,
             cache_str: self.cache_str,
@@ -380,7 +391,7 @@ impl SchemaValidator {
             by_name: None,
         };
         let recursion_guard = &mut RecursionState::default();
-        let mut state = ValidationState::new(extra, recursion_guard, false.into());
+        let mut state = ValidationState::new(extra, recursion_guard, false.into(), None);
         let r = self.validator.default_value(py, None::<i64>, &mut state);
         match r {
             Ok(maybe_default) => match maybe_default {
@@ -392,7 +403,8 @@ impl SchemaValidator {
     }
 
     pub fn __reduce__<'py>(slf: &Bound<'py, Self>) -> PyResult<(Bound<'py, PyType>, Bound<'py, PyTuple>)> {
-        let init_args = (&slf.get().py_schema, &slf.get().py_config).into_pyobject(slf.py())?;
+        // Passing _use_prebuilt=false avoids reusing prebuilt serializers when unpickling
+        let init_args = (&slf.get().py_schema, &slf.get().py_config, false).into_pyobject(slf.py())?;
         Ok((slf.get_type(), init_args))
     }
 
@@ -446,6 +458,7 @@ impl SchemaValidator {
             ),
             &mut recursion_guard,
             allow_partial,
+            None,
         );
         self.validator.validate(py, input, &mut state)
     }
@@ -507,22 +520,15 @@ pub trait BuildValidator: Sized {
     ) -> PyResult<Arc<CombinedValidator>>;
 }
 
-// Used when creating the base validator instance, to avoid reusing the instance
-// when unpickling:
-pub fn build_validator_base(
-    schema: &Bound<'_, PyAny>,
-    config: Option<&Bound<'_, PyDict>>,
-    definitions: &mut DefinitionsBuilder<Arc<CombinedValidator>>,
-) -> PyResult<Arc<CombinedValidator>> {
-    build_validator_inner(schema, config, definitions, false)
-}
-
 pub fn build_validator(
     schema: &Bound<'_, PyAny>,
     config: Option<&Bound<'_, PyDict>>,
     definitions: &mut DefinitionsBuilder<Arc<CombinedValidator>>,
 ) -> PyResult<Arc<CombinedValidator>> {
-    build_validator_inner(schema, config, definitions, true)
+    // Read use_prebuilt from the definitions builder - this ensures all nested
+    // validators respect the same setting as the top-level build
+    let use_prebuilt = definitions.use_prebuilt();
+    build_validator_inner(schema, config, definitions, use_prebuilt)
 }
 
 fn build_validator_inner(
@@ -687,8 +693,6 @@ pub struct Extra<'a, 'py> {
     pub from_attributes: Option<bool>,
     /// context used in validator functions
     pub context: Option<&'a Bound<'py, PyAny>>,
-    /// The name of the field being validated, if applicable
-    pub field_name: Option<Bound<'py, PyString>>,
     /// This is an instance of the model or dataclass being validated, when validation is performed from `__init__`
     self_instance: Option<&'a Bound<'py, PyAny>>,
     /// Whether to use a cache of short strings to accelerate python string construction
@@ -718,7 +722,6 @@ impl<'a, 'py> Extra<'a, 'py> {
             strict,
             extra_behavior,
             from_attributes,
-            field_name: None,
             context,
             self_instance,
             cache_str,
@@ -736,7 +739,6 @@ impl Extra<'_, '_> {
             strict: Some(true),
             extra_behavior: self.extra_behavior,
             from_attributes: self.from_attributes,
-            field_name: self.field_name.clone(),
             context: self.context,
             self_instance: self.self_instance,
             cache_str: self.cache_str,

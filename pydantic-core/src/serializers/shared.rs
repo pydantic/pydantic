@@ -161,17 +161,6 @@ combined_serializer! {
 }
 
 impl CombinedSerializer {
-    // Used when creating the base serializer instance, to avoid reusing the instance
-    // when unpickling:
-    pub fn build_base(
-        schema: &Bound<'_, PyDict>,
-        config: Option<&Bound<'_, PyDict>>,
-        definitions: &mut DefinitionsBuilder<Arc<CombinedSerializer>>,
-    ) -> PyResult<Arc<CombinedSerializer>> {
-        let serializer = Self::_build(schema, config, definitions, false)?;
-        Self::maybe_wrap_in_polymorphism_trampoline(serializer, schema)
-    }
-
     fn _build(
         schema: &Bound<'_, PyDict>,
         config: Option<&Bound<'_, PyDict>>,
@@ -234,7 +223,8 @@ impl CombinedSerializer {
             }
         }
 
-        Self::find_serializer(type_, schema, config, definitions)
+        let serializer = Self::find_serializer(type_, schema, config, definitions)?;
+        Self::maybe_wrap_in_polymorphism_trampoline(serializer, schema)
     }
 
     fn maybe_wrap_in_polymorphism_trampoline(
@@ -347,7 +337,10 @@ impl BuildSerializer for CombinedSerializer {
         config: Option<&Bound<'_, PyDict>>,
         definitions: &mut DefinitionsBuilder<Arc<CombinedSerializer>>,
     ) -> PyResult<Arc<CombinedSerializer>> {
-        let serializer = Self::_build(schema, config, definitions, true)?;
+        // Read use_prebuilt from the definitions builder - this ensures all nested
+        // serializers respect the same setting as the top-level build
+        let use_prebuilt = definitions.use_prebuilt();
+        let serializer = Self::_build(schema, config, definitions, use_prebuilt)?;
         Self::maybe_wrap_in_polymorphism_trampoline(serializer, schema)
     }
 }

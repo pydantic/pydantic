@@ -16,7 +16,7 @@ fn build_schema_validator_with_globals(
     globals: Option<&Bound<'_, PyDict>>,
 ) -> SchemaValidator {
     let schema = py.eval(code, globals, None).unwrap().extract().unwrap();
-    SchemaValidator::py_new(py, &schema, None).unwrap()
+    SchemaValidator::py_new(py, &schema, None, true).unwrap()
 }
 
 fn build_schema_validator(py: Python, code: &CStr) -> SchemaValidator {
@@ -90,7 +90,7 @@ fn list_int_json(bench: &mut Bencher) {
     })
 }
 
-fn list_int_input(py: Python<'_>) -> (SchemaValidator, PyObject) {
+fn list_int_input(py: Python<'_>) -> (SchemaValidator, Py<PyAny>) {
     let validator = build_schema_validator(py, c"{'type': 'list', 'items_schema': {'type': 'int'}}");
     let code = CString::new(format!(
         "[{}]",
@@ -167,7 +167,7 @@ fn list_error_json(bench: &mut Bencher) {
     })
 }
 
-fn list_error_python_input(py: Python<'_>) -> (SchemaValidator, PyObject) {
+fn list_error_python_input(py: Python<'_>) -> (SchemaValidator, Py<PyAny>) {
     let validator = build_schema_validator(py, c"{'type': 'list', 'items_schema': {'type': 'int'}}");
     let code = CString::new(format!(
         "[{}]",
@@ -510,7 +510,7 @@ fn complete_model(bench: &mut Bencher) {
 
         let complete_schema = py.import("complete_schema").unwrap();
         let schema = complete_schema.call_method0("schema").unwrap();
-        let validator = SchemaValidator::py_new(py, &schema, None).unwrap();
+        let validator = SchemaValidator::py_new(py, &schema, None, true).unwrap();
 
         let input = complete_schema.call_method0("input_data_lax").unwrap();
         let input = black_box(input);
@@ -533,7 +533,7 @@ fn nested_model_using_definitions(bench: &mut Bencher) {
 
         let complete_schema = py.import("nested_schema").unwrap();
         let schema = complete_schema.call_method0("schema_using_defs").unwrap();
-        let validator = SchemaValidator::py_new(py, &schema, None).unwrap();
+        let validator = SchemaValidator::py_new(py, &schema, None, true).unwrap();
 
         let input = complete_schema.call_method0("input_data_valid").unwrap();
         let input = black_box(input);
@@ -560,7 +560,7 @@ fn nested_model_inlined(bench: &mut Bencher) {
 
         let complete_schema = py.import("nested_schema").unwrap();
         let schema = complete_schema.call_method0("inlined_schema").unwrap();
-        let validator = SchemaValidator::py_new(py, &schema, None).unwrap();
+        let validator = SchemaValidator::py_new(py, &schema, None, true).unwrap();
 
         let input = complete_schema.call_method0("input_data_valid").unwrap();
         let input = black_box(input);

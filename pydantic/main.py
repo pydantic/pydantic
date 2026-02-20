@@ -132,8 +132,10 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
         __pydantic_custom_init__: Whether the model has a custom `__init__` function.
         __pydantic_decorators__: Metadata containing the decorators defined on the model.
             This replaces `Model.__validators__` and `Model.__root_validators__` from Pydantic V1.
-        __pydantic_generic_metadata__: Metadata for generic models; contains data used for a similar purpose to
-            __args__, __origin__, __parameters__ in typing-module generics. May eventually be replaced by these.
+        __pydantic_generic_metadata__: A dictionary containing metadata about generic Pydantic models.
+            The `origin` and `args` items map to the [`__origin__`][genericalias.__origin__]
+            and [`__args__`][genericalias.__args__] attributes of [generic aliases][types-genericalias],
+            and the `parameter` item maps to the `__parameter__` attribute of generic classes.
         __pydantic_parent_namespace__: Parent namespace of the model, used for automatic rebuilding of models.
         __pydantic_post_init__: The name of the post-init method for the model, if defined.
         __pydantic_root_model__: Whether the model is a [`RootModel`][pydantic.root_model.RootModel].
@@ -180,8 +182,12 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
     This replaces `Model.__validators__` and `Model.__root_validators__` from Pydantic V1."""
 
     __pydantic_generic_metadata__: ClassVar[_generics.PydanticGenericMetadata]
-    """Metadata for generic models; contains data used for a similar purpose to
-    __args__, __origin__, __parameters__ in typing-module generics. May eventually be replaced by these."""
+    """A dictionary containing metadata about generic Pydantic models.
+
+    The `origin` and `args` items map to the [`__origin__`][genericalias.__origin__]
+    and [`__args__`][genericalias.__args__] attributes of [generic aliases][types-genericalias],
+    and the `parameter` item maps to the `__parameter__` attribute of generic classes.
+    """
 
     __pydantic_parent_namespace__: ClassVar[Dict[str, Any] | None] = None  # noqa: UP006
     """Parent namespace of the model, used for automatic rebuilding of models."""
@@ -685,6 +691,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
             raise_errors=raise_errors,
             # If the model was already complete, we don't need to call the hook again.
             call_on_complete_hook=not already_complete,
+            is_force_rebuild=force,
         )
 
     @classmethod
@@ -1706,7 +1713,7 @@ def create_model(
     __validators__: dict[str, Callable[..., Any]] | None = None,
     __cls_kwargs__: dict[str, Any] | None = None,
     __qualname__: str | None = None,
-    **field_definitions: Any | tuple[str, Any],
+    **field_definitions: Any | tuple[Any, Any],
 ) -> type[BaseModel]: ...
 
 
@@ -1722,7 +1729,7 @@ def create_model(
     __validators__: dict[str, Callable[..., Any]] | None = None,
     __cls_kwargs__: dict[str, Any] | None = None,
     __qualname__: str | None = None,
-    **field_definitions: Any | tuple[str, Any],
+    **field_definitions: Any | tuple[Any, Any],
 ) -> type[ModelT]: ...
 
 
@@ -1738,7 +1745,7 @@ def create_model(  # noqa: C901
     __cls_kwargs__: dict[str, Any] | None = None,
     __qualname__: str | None = None,
     # TODO PEP 747: replace `Any` by the TypeForm:
-    **field_definitions: Any | tuple[str, Any],
+    **field_definitions: Any | tuple[Any, Any],
 ) -> type[ModelT]:
     """!!! abstract "Usage Documentation"
         [Dynamic Model Creation](../concepts/models.md#dynamic-model-creation)

@@ -11,14 +11,14 @@ use crate::build_tools::{ExtraBehavior, py_schema_error_type};
 use crate::definitions::DefinitionsBuilder;
 use crate::serializers::SerializationState;
 use crate::serializers::errors::unwrap_ser_error;
-use crate::serializers::shared::SerializeMap;
+use crate::serializers::shared::DoSerialize;
 use crate::serializers::shared::serialize_to_json;
 use crate::serializers::shared::serialize_to_python;
 use crate::tools::SchemaDict;
 
 use super::{
     BuildSerializer, CombinedSerializer, ComputedFields, FieldsMode, GeneralFieldsSerializer, ObType, SerCheck,
-    SerField, TypeSerializer, infer_json_key, infer_json_key_known, infer_serialize, infer_to_python, py_err_se_err,
+    SerField, TypeSerializer, infer_json_key, infer_json_key_known,
 };
 
 pub struct DataclassArgsBuilder;
@@ -34,7 +34,7 @@ impl BuildSerializer for DataclassArgsBuilder {
         let py = schema.py();
 
         let fields_list: Bound<'_, PyList> = schema.get_as_req(intern!(py, "fields"))?;
-        let mut fields: AHashMap<String, SerField> = AHashMap::with_capacity(fields_list.len());
+        let mut fields = AHashMap::with_capacity(fields_list.len());
 
         let fields_mode = match ExtraBehavior::from_schema_or_config(py, schema, config, ExtraBehavior::Ignore)? {
             ExtraBehavior::Allow => FieldsMode::TypedDictAllow,
@@ -45,12 +45,14 @@ impl BuildSerializer for DataclassArgsBuilder {
 
         for (index, item) in fields_list.iter().enumerate() {
             let field_info = item.cast::<PyDict>()?;
-            let key_py: PyBackedStr = field_info.get_as_req(intern!(py, "name"))?;
-            let name: String = key_py.to_string();
+            let key: PyBackedStr = field_info.get_as_req(intern!(py, "name"))?;
 
             if !field_info.get_as(intern!(py, "init_only"))?.unwrap_or(false) {
                 if field_info.get_as(intern!(py, "serialization_exclude"))? == Some(true) {
-                    fields.insert(name, SerField::new(key_py, None, None, true, serialize_by_alias, None));
+                    fields.insert(
+                        key.clone_ref(py),
+                        SerField::new(key, None, None, true, serialize_by_alias, None),
+                    );
                 } else {
                     let schema = field_info.get_as_req(intern!(py, "schema"))?;
                     let serializer = CombinedSerializer::build(&schema, config, definitions)
@@ -60,9 +62,9 @@ impl BuildSerializer for DataclassArgsBuilder {
                     let serialization_exclude_if: Option<Py<PyAny>> =
                         field_info.get_as(intern!(py, "serialization_exclude_if"))?;
                     fields.insert(
-                        name,
+                        key.clone_ref(py),
                         SerField::new(
-                            key_py,
+                            key,
                             alias,
                             Some(serializer),
                             true,
@@ -139,35 +141,39 @@ impl DataclassSerializer {
         }
         Ok(dict)
     }
+
+    fn serialize<'py, S: DoSerialize>(
+        &self,
+        value: &Bound<'py, PyAny>,
+        state: &mut SerializationState<'py>,
+        do_serialize: S,
+    ) -> Result<S::Ok, S::Error> {
+        if self.allow_value(value, state)? {
+            let state = &mut state.scoped_set(|s| &mut s.model, Some(value.clone()));
+            if let CombinedSerializer::Fields(ref fields_serializer) = *self.serializer {
+                // Fast path uses known dataclass fields to avoid needing to create a dict of field values
+                fields_serializer.serialize_iterators(
+                    value,
+                    known_dataclass_iter(&self.fields, value),
+                    std::iter::empty(),
+                    state,
+                    do_serialize,
+                )
+            } else {
+                let inner_value = self.get_inner_value(value)?;
+                do_serialize.serialize_no_infer(&self.serializer, &inner_value, state)
+            }
+        } else {
+            do_serialize.serialize_fallback(self.get_name(), value, state)
+        }
+    }
 }
 
 impl_py_gc_traverse!(DataclassSerializer { class, serializer });
 
 impl TypeSerializer for DataclassSerializer {
     fn to_python<'py>(&self, value: &Bound<'py, PyAny>, state: &mut SerializationState<'py>) -> PyResult<Py<PyAny>> {
-        if self.allow_value(value, state)? {
-            let model = value;
-            let state = &mut state.scoped_set(|s| &mut s.model, Some(value.clone()));
-            let py = value.py();
-            if let CombinedSerializer::Fields(ref fields_serializer) = *self.serializer {
-                let mut map = fields_serializer.serialize_main(
-                    py,
-                    model,
-                    known_dataclass_iter(&self.fields, model),
-                    state,
-                    serialize_to_python(py),
-                )?;
-
-                fields_serializer.add_computed_fields(model, &mut map, state)?;
-                Ok(map.into())
-            } else {
-                let inner_value = self.get_inner_value(value)?;
-                self.serializer.to_python(&inner_value, state)
-            }
-        } else {
-            state.warn_fallback_py(self.get_name(), value)?;
-            infer_to_python(value, state)
-        }
+        self.serialize(value, state, serialize_to_python(value.py()))
     }
 
     fn json_key<'a, 'py>(
@@ -189,30 +195,8 @@ impl TypeSerializer for DataclassSerializer {
         serializer: S,
         state: &mut SerializationState<'py>,
     ) -> Result<S::Ok, S::Error> {
-        if self.allow_value(value, state).map_err(py_err_se_err)? {
-            let state = &mut state.scoped_set(|s| &mut s.model, Some(value.clone()));
-            if let CombinedSerializer::Fields(ref fields_serializer) = *self.serializer {
-                let mut map = fields_serializer
-                    .serialize_main(
-                        value.py(),
-                        value,
-                        known_dataclass_iter(&self.fields, value),
-                        state,
-                        serialize_to_json(serializer),
-                    )
-                    .map_err(unwrap_ser_error)?;
-                fields_serializer
-                    .add_computed_fields(value, &mut map, state)
-                    .map_err(unwrap_ser_error)?;
-                map.end().map_err(unwrap_ser_error)
-            } else {
-                let inner_value = self.get_inner_value(value).map_err(py_err_se_err)?;
-                self.serializer.serde_serialize(&inner_value, serializer, state)
-            }
-        } else {
-            state.warn_fallback_ser::<S>(self.get_name(), value)?;
-            infer_serialize(value, serializer, state)
-        }
+        self.serialize(value, state, serialize_to_json(serializer))
+            .map_err(unwrap_ser_error)
     }
 
     fn get_name(&self) -> &str {

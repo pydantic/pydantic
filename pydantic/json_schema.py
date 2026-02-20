@@ -11,6 +11,7 @@ In general you shouldn't need to use this module directly; instead, you can use
 
 from __future__ import annotations as _annotations
 
+import collections.abc
 import dataclasses
 import inspect
 import math
@@ -1210,6 +1211,15 @@ class GenerateJsonSchema:
                     )
                     return json_schema
 
+        # Sort set/frozenset defaults to ensure deterministic JSON schema generation
+        # We only sort if len > 1 because sets of size 0 or 1 are already deterministic
+        if isinstance(default, collections.abc.Set) and len(default) > 1:
+            try:
+                default = sorted(default)
+            except TypeError:  # pragma: no cover
+                # If items aren't comparable (e.g. mixed types), we can't sort them.
+                pass
+
         try:
             encoded_default = self.encode_default(default)
         except pydantic_core.PydanticSerializationError:
@@ -1671,11 +1681,12 @@ class GenerateJsonSchema:
         if isinstance(json_schema_extra, dict):
             json_schema.update(json_schema_extra)
         elif callable(json_schema_extra):
-            # FIXME: why are there type ignores here? We support two signatures for json_schema_extra callables...
             if len(_typing_extra.signature_no_eval(json_schema_extra).parameters) > 1:
-                json_schema_extra(json_schema, cls)  # type: ignore
+                json_schema_extra = cast(Callable[[JsonDict, type[Any]], None], json_schema_extra)
+                json_schema_extra(json_schema, cls)
             else:
-                json_schema_extra(json_schema)  # type: ignore
+                json_schema_extra = cast(Callable[[JsonDict], None], json_schema_extra)
+                json_schema_extra(json_schema)
         elif json_schema_extra is not None:
             raise ValueError(
                 f"model_config['json_schema_extra']={json_schema_extra} should be a dict, callable, or None"

@@ -28,6 +28,10 @@ use super::{
 };
 
 impl<'py, 'data> Input<'py> for JsonValue<'data> {
+    fn as_json(&self) -> Option<&JsonValue<'_>> {
+        Some(self)
+    }
+
     #[inline]
     fn py_converter(&self) -> impl IntoPyObject<'py> + '_ {
         self

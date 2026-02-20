@@ -80,7 +80,7 @@ Strings support the following constraints:
 | `to_upper`         | Whether to convert the string to uppercase        | N/A                                                                                                                                           |
 | `to_lower`         | Whether to convert the string to lowercase        | N/A                                                                                                                                           |
 
-These constraints can be provided using the [`StringConstraints`][pydantic.types.StringConstraints] metadata type, or using the [`Field()`][pydantic.Field] function (except for `to_upper` and `to_lower`).
+These constraints can be provided using the [`StringConstraints`][pydantic.types.StringConstraints] metadata type, or using the [`Field()`][pydantic.Field] function (except for `strip_whitespace`, `to_upper` and `to_lower`).
 
 The [`annotated-types`](https://github.com/annotated-types/annotated-types) library also provides the `MinLen`, `MaxLen` and `Len` metadata types, as well
 as the `LowerCase`, `UpperCase`, `IsDigit` and `IsAscii` predicates (must be parameterized with `str`, e.g. `LowerCase[str]`).
@@ -349,6 +349,9 @@ print(my_model.model_dump_json())  # (2)!
 
 ### Complex numbers
 
+/// version-added | v2.9
+///
+
 Built-in type: [`complex`][].
 
 <h4>Validation</h4>
@@ -375,6 +378,9 @@ In [JSON mode](../concepts/serialization.md#json-mode), they are serialized as s
 [](){#fractionsfraction}
 
 ### Fractions
+
+/// version-added | v2.10
+///
 
 Standard library type: [`fractions.Fraction`][].
 
@@ -959,6 +965,10 @@ print(Model(set_of_ints=['1', '2', '3']).set_of_ints)
 #> frozenset({1, 2, 3})
 ```
 
+<h4>JSON Schema</h4>
+
+Pydantic does best effort to sort default values that are [`collections.abc.Set`][] instances.
+
 ### Deque
 
 Standard library type: [`collections.deque`][] (deprecated alias: [`typing.Deque`][]).
@@ -1188,7 +1198,7 @@ Standard library type: [`collections.abc.Iterable`][] (deprecated alias: [`typin
 <h4>Validation</h4>
 
 Iterables are lazily validated, and wrapped in an internal datastructure that can be iterated over
-(and will validated the items type while doing so). This means that even if you provide a concrete
+(and will validate the items type while doing so). This means that even if you provide a concrete
 container such as a list, the validated type will *not* be of type [`list`][]. However, Pydantic
 will ensure that the input value is iterable by getting an [iterator][] from it (by calling
 [`iter()`][iter] on the value).

@@ -1,7 +1,9 @@
 import asyncio
 import inspect
+import pickle
 import re
 import sys
+from collections import UserDict
 from datetime import datetime, timezone
 from functools import partial
 from typing import Annotated, Any, Generic, Literal, TypeVar, Union
@@ -1342,3 +1344,23 @@ def test_validate_call_defer_build() -> None:
 
     with pytest.raises(ValidationError):
         DeferBuildClass.cls_meth(x='not_an_int')
+
+
+class _PickleTestModel(BaseModel):
+    number: float
+
+
+class _PickleTestDict(UserDict[int, _PickleTestModel]):
+    @validate_call
+    def __setitem__(self, key: int, value: _PickleTestModel):
+        super().__setitem__(key, value)
+
+
+def test_pickle_validate_call_with_basemodel() -> None:
+    """https://github.com/pydantic/pydantic/issues/7846."""
+    my_dict = _PickleTestDict({1: _PickleTestModel(number=1.0)})
+
+    unpickled = pickle.loads(pickle.dumps(my_dict))
+
+    assert unpickled == {1: _PickleTestModel(number=1.0)}
+    assert unpickled[1].number == 1.0

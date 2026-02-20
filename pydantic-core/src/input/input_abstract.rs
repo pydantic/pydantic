@@ -1,6 +1,7 @@
 use std::convert::Infallible;
 use std::fmt;
 
+use jiter::JsonValue;
 use pyo3::exceptions::PyValueError;
 use pyo3::types::{PyDict, PyList, PyString};
 use pyo3::{IntoPyObjectExt, intern, prelude::*};
@@ -70,6 +71,10 @@ pub trait Input<'py>: fmt::Debug {
     }
 
     fn as_python(&self) -> Option<&Bound<'py, PyAny>> {
+        None
+    }
+
+    fn as_json(&self) -> Option<&JsonValue<'_>> {
         None
     }
 

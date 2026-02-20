@@ -20,8 +20,6 @@ use crate::recursion_guard::RecursionError;
 use crate::recursion_guard::RecursionGuard;
 use crate::recursion_guard::RecursionState;
 
-/// this is ugly, would be much better if extra could be stored in `SerializationState`
-/// then `SerializationState` got a `serialize_infer` method, but I couldn't get it to work
 pub(crate) struct SerializationState<'py> {
     pub warnings: CollectWarnings,
     pub rec_guard: RecursionState,
@@ -29,31 +27,30 @@ pub(crate) struct SerializationState<'py> {
     /// The model currently being serialized, if any
     pub model: Option<Bound<'py, PyAny>>,
     /// The name of the field currently being serialized, if any
-    pub field_name: Option<FieldName<'py>>,
+    field_name: Option<Bound<'py, PyString>>,
     /// Inside unions, checks are applied to attempt to select a preferred branch
     pub check: SerCheck,
-    pub include_exclude: (Option<Bound<'py, PyAny>>, Option<Bound<'py, PyAny>>),
+    pub include_exclude: IncludeExclude<'py>,
     /// Global settings for the serialization process
     pub extra: Extra<'py>,
 }
 
+/// Values of include/exclude parameters passed to serialization functions
 #[derive(Clone)]
-pub enum FieldName<'py> {
-    Root,
-    Regular(Bound<'py, PyString>),
+pub(crate) struct IncludeExclude<'py> {
+    pub include: Option<Bound<'py, PyAny>>,
+    pub exclude: Option<Bound<'py, PyAny>>,
 }
 
-impl<'py> From<Bound<'py, PyString>> for FieldName<'py> {
-    fn from(s: Bound<'py, PyString>) -> Self {
-        FieldName::Regular(s)
+impl<'py> IncludeExclude<'py> {
+    pub fn new(include: Option<Bound<'py, PyAny>>, exclude: Option<Bound<'py, PyAny>>) -> Self {
+        Self { include, exclude }
     }
-}
 
-impl fmt::Display for FieldName<'_> {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match self {
-            FieldName::Root => write!(f, "root"),
-            FieldName::Regular(s) => write!(f, "{s}"),
+    pub fn empty() -> Self {
+        Self {
+            include: None,
+            exclude: None,
         }
     }
 }
@@ -75,7 +72,7 @@ impl<'py> SerializationState<'py> {
             model: None,
             field_name: None,
             check: SerCheck::None,
-            include_exclude: (include, exclude),
+            include_exclude: IncludeExclude { include, exclude },
             extra,
         })
     }
@@ -134,20 +131,27 @@ impl<'py> SerializationState<'py> {
         }
     }
 
+    pub fn scoped_set_field_name(&mut self, new_value: Option<Bound<'py, PyString>>) -> ScopedFieldNameState<'_, 'py> {
+        self.scoped_set(Self::field_name_mut, new_value)
+    }
+
     pub fn scoped_include_exclude<'scope>(
         &'scope mut self,
-        next_include: Option<Bound<'py, PyAny>>,
-        next_exclude: Option<Bound<'py, PyAny>>,
+        next_include_exclude: IncludeExclude<'py>,
     ) -> ScopedIncludeExcludeState<'scope, 'py> {
-        self.scoped_set(SerializationState::include_exclude_mut, (next_include, next_exclude))
+        self.scoped_set(Self::include_exclude_mut, next_include_exclude)
+    }
+
+    pub fn field_name(&self) -> Option<&Bound<'py, PyString>> {
+        self.field_name.as_ref()
     }
 
     pub fn include(&self) -> Option<&Bound<'py, PyAny>> {
-        self.include_exclude.0.as_ref()
+        self.include_exclude.include.as_ref()
     }
 
     pub fn exclude(&self) -> Option<&Bound<'py, PyAny>> {
-        self.include_exclude.1.as_ref()
+        self.include_exclude.exclude.as_ref()
     }
 
     pub fn serialize_infer<'slf>(
@@ -157,7 +161,11 @@ impl<'py> SerializationState<'py> {
         super::infer::SerializeInfer::new(value, self)
     }
 
-    fn include_exclude_mut(&mut self) -> &mut (Option<Bound<'py, PyAny>>, Option<Bound<'py, PyAny>>) {
+    fn field_name_mut(&mut self) -> &mut Option<Bound<'py, PyString>> {
+        &mut self.field_name
+    }
+
+    fn include_exclude_mut(&mut self) -> &mut IncludeExclude<'py> {
         &mut self.include_exclude
     }
 }
@@ -252,7 +260,7 @@ pub(crate) struct ExtraOwned {
     rec_guard: RecursionState,
     check: SerCheck,
     pub model: Option<Py<PyAny>>,
-    field_name: Option<FieldNameOwned>,
+    field_name: Option<Py<PyString>>,
     serialize_unknown: bool,
     pub fallback: Option<Py<PyAny>>,
     serialize_as_any: bool,
@@ -270,21 +278,6 @@ impl_py_gc_traverse!(ExtraOwned {
     exclude,
 });
 
-#[derive(Clone)]
-enum FieldNameOwned {
-    Root,
-    Regular(Py<PyString>),
-}
-
-impl fmt::Debug for FieldNameOwned {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match self {
-            FieldNameOwned::Root => write!(f, "root"),
-            FieldNameOwned::Regular(s) => write!(f, "\"{s}\""),
-        }
-    }
-}
-
 impl ExtraOwned {
     pub fn new(state: &SerializationState<'_>) -> Self {
         let extra = &state.extra;
@@ -301,10 +294,7 @@ impl ExtraOwned {
             rec_guard: state.rec_guard.clone(),
             check: state.check,
             model: state.model.as_ref().map(|model| model.clone().into()),
-            field_name: state.field_name.as_ref().map(|name| match name {
-                FieldName::Root => FieldNameOwned::Root,
-                FieldName::Regular(b) => FieldNameOwned::Regular(b.clone().into()),
-            }),
+            field_name: state.field_name.as_ref().map(|name| name.clone().into()),
             serialize_unknown: extra.serialize_unknown,
             fallback: extra.fallback.clone().map(Bound::unbind),
             serialize_as_any: extra.serialize_as_any,
@@ -341,16 +331,12 @@ impl ExtraOwned {
             rec_guard: self.rec_guard.clone(),
             config: self.config,
             model: self.model.as_ref().map(|m| m.bind(py).clone()),
-            field_name: match &self.field_name {
-                Some(FieldNameOwned::Root) => Some(FieldName::Root),
-                Some(FieldNameOwned::Regular(b)) => Some(FieldName::Regular(b.bind(py).clone())),
-                None => None,
-            },
+            field_name: self.field_name.as_ref().map(|name| name.bind(py).clone()),
             check: self.check,
-            include_exclude: (
-                self.include.as_ref().map(|m| m.bind(py).clone()),
-                self.exclude.as_ref().map(|m| m.bind(py).clone()),
-            ),
+            include_exclude: IncludeExclude {
+                include: self.include.as_ref().map(|m| m.bind(py).clone()),
+                exclude: self.exclude.as_ref().map(|m| m.bind(py).clone()),
+            },
             extra,
         }
     }
@@ -464,7 +450,7 @@ impl CollectWarnings {
         &mut self,
         field_type: &str,
         value: &Bound<'_, PyAny>,
-        field_name: Option<&FieldName<'_>>,
+        field_name: Option<&Bound<'_, PyString>>,
         check: SerCheck,
     ) -> PyResult<()> {
         // special case for None as it's very common e.g. as a default value
@@ -472,7 +458,7 @@ impl CollectWarnings {
             Ok(())
         } else if check.enabled() {
             Err(PydanticSerializationUnexpectedValue::new_from_parts(
-                field_name.map(ToString::to_string),
+                field_name.map(|name| name.clone().unbind()),
                 Some(field_type.to_string()),
                 Some(value.clone().unbind()),
             )
@@ -487,7 +473,7 @@ impl CollectWarnings {
         &mut self,
         field_type: &str,
         value: &Bound<'_, PyAny>,
-        field_name: Option<&FieldName<'_>>,
+        field_name: Option<&Bound<'_, PyString>>,
         check: SerCheck,
     ) -> Result<(), S::Error> {
         // special case for None as it's very common e.g. as a default value
@@ -504,10 +490,15 @@ impl CollectWarnings {
         }
     }
 
-    fn fallback_warning(&mut self, field_name: Option<&FieldName<'_>>, field_type: &str, value: &Bound<'_, PyAny>) {
+    fn fallback_warning(
+        &mut self,
+        field_name: Option<&Bound<'_, PyString>>,
+        field_type: &str,
+        value: &Bound<'_, PyAny>,
+    ) {
         if self.mode != WarningsMode::None {
             self.register_warning(PydanticSerializationUnexpectedValue::new_from_parts(
-                field_name.map(ToString::to_string),
+                field_name.map(|name| name.clone().unbind()),
                 Some(field_type.to_string()),
                 Some(value.clone().unbind()),
             ));
@@ -582,9 +573,16 @@ where
     }
 }
 
+type ScopedFieldNameState<'scope, 'py> = ScopedSetState<
+    'scope,
+    'py,
+    for<'s> fn(&'s mut SerializationState<'py>) -> &'s mut Option<Bound<'py, PyString>>,
+    Option<Bound<'py, PyString>>,
+>;
+
 type ScopedIncludeExcludeState<'scope, 'py> = ScopedSetState<
     'scope,
     'py,
-    for<'s> fn(&'s mut SerializationState<'py>) -> &'s mut (Option<Bound<'py, PyAny>>, Option<Bound<'py, PyAny>>),
-    (Option<Bound<'py, PyAny>>, Option<Bound<'py, PyAny>>),
+    for<'s> fn(&'s mut SerializationState<'py>) -> &'s mut IncludeExclude<'py>,
+    IncludeExclude<'py>,
 >;

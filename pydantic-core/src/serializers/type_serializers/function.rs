@@ -13,6 +13,7 @@ use pyo3::types::PyString;
 use crate::definitions::DefinitionsBuilder;
 use crate::py_gc::PyGcTraverse;
 use crate::serializers::SerializationState;
+use crate::serializers::extra::IncludeExclude;
 use crate::tools::SchemaDict;
 use crate::tools::{function_name, py_err, py_error_type};
 use crate::{PydanticOmit, PydanticSerializationUnexpectedValue};
@@ -188,14 +189,15 @@ impl FunctionPlainSerializer {
 
 fn on_error(py: Python, err: PyErr, function_name: &str, state: &mut SerializationState<'_>) -> PyResult<()> {
     let exception = err.value(py);
-    if let Ok(ser_err) = exception.extract::<PydanticSerializationUnexpectedValue>() {
+    if let Ok(ser_err) = exception.cast::<PydanticSerializationUnexpectedValue>() {
         if state.check.enabled() {
             Err(err)
         } else {
-            state.warnings.register_warning(ser_err);
+            state.warnings.register_warning(ser_err.get().clone());
             Ok(())
         }
-    } else if let Ok(err) = exception.extract::<PydanticSerializationError>() {
+    } else if let Ok(err) = exception.cast::<PydanticSerializationError>() {
+        let err = err.get();
         py_err!(PydanticSerializationError; "{err}")
     } else if exception.is_instance_of::<PyRecursionError>() {
         py_err!(PydanticSerializationError; "Error calling function `{function_name}`: RecursionError")
@@ -224,7 +226,7 @@ macro_rules! function_type_serializer {
                     }
                 };
                 // None for include/exclude here, as filtering should be done
-                let state = &mut state.scoped_include_exclude(None, None);
+                let state = &mut state.scoped_include_exclude(IncludeExclude::empty());
                 ret_serializer.to_python(v.bind(py), state)
             }
 
@@ -234,21 +236,19 @@ macro_rules! function_type_serializer {
                 state: &mut SerializationState<'py>,
             ) -> PyResult<Cow<'a, str>> {
                 let py = key.py();
-                let state = &mut state.scoped_include_exclude(None, None);
-                match self.call(key, state) {
-                    Ok((true, v)) => self
-                        .return_serializer
-                        .json_key(v.bind(py), state)
-                        .map(|cow| Cow::Owned(cow.into_owned())),
-                    Ok((false, v)) => self
-                        .get_fallback_serializer()
-                        .json_key(v.bind(py), state)
-                        .map(|cow| Cow::Owned(cow.into_owned())),
+                let (ret_serializer, v) = match self.call(key, state) {
+                    Ok((true, v)) => (&*self.return_serializer, v),
+                    Ok((false, v)) => (self.get_fallback_serializer(), v),
                     Err(err) => {
                         on_error(py, err, &self.function_name, state)?;
-                        infer_json_key(key, state)
+                        return infer_json_key(key, state);
                     }
-                }
+                };
+                // None for include/exclude here, as filtering should be done
+                let state = &mut state.scoped_include_exclude(IncludeExclude::empty());
+                ret_serializer
+                    .json_key(v.bind(py), state)
+                    .map(|cow| Cow::Owned(cow.into_owned()))
             }
 
             fn serde_serialize<'py, S: serde::ser::Serializer>(
@@ -267,7 +267,7 @@ macro_rules! function_type_serializer {
                     }
                 };
                 // None for include/exclude here, as filtering should be done
-                let mut state = state.scoped_include_exclude(None, None);
+                let mut state = state.scoped_include_exclude(IncludeExclude::empty());
                 ret_serializer.serde_serialize(v.bind(py), serializer, &mut state)
             }
 
@@ -479,8 +479,8 @@ impl SerializationCallable {
             } else {
                 self.filter.key_filter(index_key, state)?
             };
-            if let Some((next_include, next_exclude)) = filter {
-                let state = &mut state.scoped_include_exclude(next_include, next_exclude);
+            if let Some(next_include_exclude) = filter {
+                let state = &mut state.scoped_include_exclude(next_include_exclude);
                 let v = self.serializer.to_python_no_infer(value, state)?;
                 state.warnings.final_check(py)?;
                 Ok(Some(v))
@@ -545,33 +545,44 @@ impl_py_gc_traverse!(SerializationInfo {
 impl SerializationInfo {
     fn new(state: &SerializationState<'_>, is_field_serializer: bool) -> PyResult<Self> {
         let extra = &state.extra;
-
-        let field_name = if is_field_serializer {
-            let Some(field_name) = state.field_name.as_ref() else {
-                return Err(PyRuntimeError::new_err(
+        if is_field_serializer {
+            match state.field_name() {
+                Some(field_name) => Ok(Self {
+                    include: state.include().map(|i| i.clone().unbind()),
+                    exclude: state.exclude().map(|e| e.clone().unbind()),
+                    context: extra.context.clone().map(Bound::unbind),
+                    _mode: extra.mode.clone(),
+                    by_alias: extra.by_alias,
+                    exclude_unset: extra.exclude_unset,
+                    exclude_defaults: extra.exclude_defaults,
+                    exclude_none: extra.exclude_none,
+                    exclude_computed_fields: extra.exclude_none,
+                    round_trip: extra.round_trip,
+                    field_name: Some(field_name.to_string()),
+                    serialize_as_any: extra.serialize_as_any,
+                    polymorphic_serialization: extra.polymorphic_serialization,
+                }),
+                _ => Err(PyRuntimeError::new_err(
                     "Model field context expected for field serialization info but no model field was found",
-                ));
-            };
-            Some(field_name.to_string())
+                )),
+            }
         } else {
-            None
-        };
-
-        Ok(Self {
-            include: state.include().map(|i| i.clone().unbind()),
-            exclude: state.exclude().map(|e| e.clone().unbind()),
-            context: extra.context.clone().map(Bound::unbind),
-            _mode: extra.mode.clone(),
-            by_alias: extra.by_alias,
-            exclude_unset: extra.exclude_unset,
-            exclude_defaults: extra.exclude_defaults,
-            exclude_none: extra.exclude_none,
-            exclude_computed_fields: extra.exclude_computed_fields,
-            round_trip: extra.round_trip,
-            field_name,
-            serialize_as_any: extra.serialize_as_any,
-            polymorphic_serialization: extra.polymorphic_serialization,
-        })
+            Ok(Self {
+                include: state.include().map(|i| i.clone().unbind()),
+                exclude: state.exclude().map(|e| e.clone().unbind()),
+                context: extra.context.clone().map(Bound::unbind),
+                _mode: extra.mode.clone(),
+                by_alias: extra.by_alias,
+                exclude_unset: extra.exclude_unset,
+                exclude_defaults: extra.exclude_defaults,
+                exclude_none: extra.exclude_none,
+                exclude_computed_fields: extra.exclude_computed_fields,
+                round_trip: extra.round_trip,
+                field_name: None,
+                serialize_as_any: extra.serialize_as_any,
+                polymorphic_serialization: extra.polymorphic_serialization,
+            })
+        }
     }
 
     fn __traverse__(&self, visit: PyVisit<'_>) -> Result<(), PyTraverseError> {
