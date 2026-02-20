@@ -6742,7 +6742,7 @@ def test_json_value():
     assert exc_info.value.errors() == [
         {
             'input': Ellipsis,
-            'loc': ('dict', 'a', 'dict', 'b'),
+            'loc': ('a', 'b'),
             'msg': 'input was not a valid JSON value',
             'type': 'invalid-json-value',
         }

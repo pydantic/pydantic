@@ -1747,7 +1747,7 @@ def test_callable_discriminated_union_recursive():
         {
             'ctx': {'discriminator': 'str_or_model'},
             'input': 1,
-            'loc': ('x', 'model', 'x', 'model', 'x'),
+            'loc': ('x', 'x', 'x'),
             'msg': 'Invalid union member',
             'type': 'invalid_union_member',
         }
@@ -1758,7 +1758,7 @@ def test_callable_discriminated_union_recursive():
     assert exc_info.value.errors(include_url=False) == [
         {
             'input': {},
-            'loc': ('x', 'model', 'x', 'model', 'x', 'model', 'x'),
+            'loc': ('x', 'x', 'x', 'x'),
             'msg': 'Field required',
             'type': 'missing',
         }
@@ -1768,6 +1768,64 @@ def test_callable_discriminated_union_recursive():
     m = DiscriminatedModel.model_validate(data)
     assert m == DiscriminatedModel(x=DiscriminatedModel(x=DiscriminatedModel(x='a')))
     assert m.model_dump() == data
+
+
+@pytest.mark.thread_unsafe(reason='`pytest.raises()` is thread unsafe')
+def test_callable_discriminator_error_loc_no_tag():
+    """Test that callable discriminators don't include the Tag value in error location paths.
+
+    Regression test for https://github.com/pydantic/pydantic/issues/10433
+    """
+
+    class DiscriminatorOption1(BaseModel):
+        model_config = ConfigDict(extra='forbid')
+        option_1: str
+
+    class DiscriminatorOption2(BaseModel):
+        model_config = ConfigDict(extra='forbid')
+        option_2: str
+
+    def get_discriminator_value(v: Any) -> str:
+        if isinstance(v, dict):
+            if v.get('option_1'):
+                return 'option_1_tag'
+            if v.get('option_2'):
+                return 'option_2_tag'
+        return ''
+
+    class TestModel(BaseModel):
+        exclusive_options: (
+            Annotated[
+                Annotated[DiscriminatorOption1, Tag('option_1_tag')]
+                | Annotated[DiscriminatorOption2, Tag('option_2_tag')],
+                Discriminator(get_discriminator_value),
+            ]
+            | None
+        ) = None
+
+    # Providing both options should raise a ValidationError due to extra fields
+    raw = {
+        'exclusive_options': {
+            'option_1': 'test',
+            'option_2': 'test',
+        }
+    }
+    with pytest.raises(ValidationError) as exc_info:
+        TestModel.model_validate(raw)
+
+    errors = exc_info.value.errors(include_url=False)
+    assert len(errors) == 1
+    assert errors[0]['type'] == 'extra_forbidden'
+    # The error location should NOT include the tag value 'option_1_tag'.
+    # It should be ('exclusive_options', 'option_2'), not ('exclusive_options', 'option_1_tag', 'option_2').
+    assert errors[0]['loc'] == ('exclusive_options', 'option_2')
+
+    # Valid input should still work correctly
+    valid_result = TestModel.model_validate({'exclusive_options': {'option_1': 'test'}})
+    assert valid_result.exclusive_options == DiscriminatorOption1(option_1='test')
+
+    valid_result = TestModel.model_validate({'exclusive_options': {'option_2': 'test'}})
+    assert valid_result.exclusive_options == DiscriminatorOption2(option_2='test')
 
 
 def test_callable_discriminated_union_with_missing_tag() -> None:

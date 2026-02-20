@@ -309,7 +309,7 @@ def test_discriminator_path(py_and_json: PyAndJson):
                 [
                     {
                         'type': 'literal_error',
-                        'loc': ('str',),
+                        'loc': (),
                         'msg': "Input should be 'foo' or 'bar'",
                         'input': 'baz',
                         'ctx': {'expected': "'foo' or 'bar'"},

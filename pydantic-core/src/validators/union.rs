@@ -361,14 +361,17 @@ impl Validator for TaggedUnionValidator {
                     return Err(self.tag_not_found(input));
                 };
                 let tag = tag_result?;
-                self.find_call_validator(py, &tag.borrow_input().to_object(py)?, input, state)
+                self.find_call_validator(py, &tag.borrow_input().to_object(py)?, input, state, true)
             }
             Discriminator::Function(func) => {
                 let tag: Py<PyAny> = func.call1(py, (input.to_object(py)?,))?;
                 if tag.is_none(py) {
                     Err(self.tag_not_found(input))
                 } else {
-                    self.find_call_validator(py, tag.bind(py), input, state)
+                    // For callable discriminators, don't include the tag in the error location
+                    // since the tag is an internal routing label, not a meaningful path element.
+                    // See: https://github.com/pydantic/pydantic/issues/10433
+                    self.find_call_validator(py, tag.bind(py), input, state, false)
                 }
             }
         }
@@ -386,11 +389,18 @@ impl TaggedUnionValidator {
         tag: &Bound<'py, PyAny>,
         input: &(impl Input<'py> + ?Sized),
         state: &mut ValidationState<'_, 'py>,
+        use_tag_as_loc: bool,
     ) -> ValResult<Py<PyAny>> {
         if let Ok(Some((tag, validator))) = self.lookup.validate(py, tag) {
             return match validator.validate(py, input, state) {
                 Ok(res) => Ok(res),
-                Err(err) => Err(err.with_outer_location(tag)),
+                Err(err) => {
+                    if use_tag_as_loc {
+                        Err(err.with_outer_location(tag))
+                    } else {
+                        Err(err)
+                    }
+                }
             };
         }
         match self.custom_error {
