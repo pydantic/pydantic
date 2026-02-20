@@ -1171,7 +1171,7 @@ class UuidVersion:
         return schema
 
     def __hash__(self) -> int:
-        return hash(type(self.uuid_version))
+        return hash(self.uuid_version)
 
 
 UUID1 = Annotated[UUID, UuidVersion(1)]
@@ -1332,7 +1332,7 @@ class PathType:
             return path
 
     def __hash__(self) -> int:
-        return hash(type(self.path_type))
+        return hash(self.path_type)
 
 
 FilePath = Annotated[Path, PathType('file')]
