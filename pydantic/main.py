@@ -1247,6 +1247,24 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
         if extra:
             yield from extra.items()
 
+    def __getitem__(self, item: str) -> Any:
+        """Support item access for model instances, enabling ``AliasPath`` to traverse into
+        model instances during validation, not just plain dictionaries.
+
+        Args:
+            item: The field name to access.
+
+        Returns:
+            The value of the field.
+
+        Raises:
+            KeyError: If the field does not exist on the model.
+        """
+        try:
+            return getattr(self, item)
+        except AttributeError:
+            raise KeyError(item)
+
     def __repr__(self) -> str:
         return f'{self.__repr_name__()}({self.__repr_str__(", ")})'
 

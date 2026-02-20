@@ -599,3 +599,17 @@ def test_model_construct_with_alias_choices_and_path() -> None:
     assert MyModel.model_construct(a='a_value').a == 'a_value'
     assert MyModel.model_construct(aaa='a_value').a == 'a_value'
     assert MyModel.model_construct(AAA={'aaa': 'a_value'}).a == 'a_value'
+
+def test_model_construct_with_alias_path_and_model_instance():
+    """Test model_construct with AliasPath traversing into a model instance (issue #10851)."""
+
+    class Inner(BaseModel):
+        value: str
+
+    class Outer(BaseModel):
+        x: str = Field(validation_alias=AliasPath('inner', 'value'))
+
+    inner = Inner(value='hello')
+    result = Outer.model_construct(**{'inner': inner})
+    assert result.x == 'hello'
+

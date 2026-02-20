@@ -905,3 +905,101 @@ def test_serialization_alias_settings(
 
     model = Model(my_field=1)
     assert model.model_dump(by_alias=runtime) == expected
+
+def test_search_dict_for_path_with_model_instance():
+    """Test that AliasPath.search_dict_for_path can traverse into model instances."""
+    from pydantic import BaseModel
+
+    class Inner(BaseModel):
+        value: int = 42
+
+    ap = AliasPath('nested', 'value')
+    inner = Inner(value=10)
+    assert ap.search_dict_for_path({'nested': inner}) == 10
+    assert ap.search_dict_for_path({'nested': {'value': 10}}) == 10
+    assert ap.search_dict_for_path({'other': inner}) is PydanticUndefined
+
+
+def test_search_dict_for_path_with_object_attribute():
+    """Test that AliasPath.search_dict_for_path falls back to getattr for non-dict objects."""
+
+    class Container:
+        def __init__(self):
+            self.value = 99
+
+    ap = AliasPath('obj', 'value')
+    assert ap.search_dict_for_path({'obj': Container()}) == 99
+
+
+def test_search_dict_for_path_getattr_fallback_missing_attr():
+    """Test that getattr fallback returns PydanticUndefined for missing attributes."""
+
+    class Container:
+        pass
+
+    ap = AliasPath('obj', 'missing')
+    assert ap.search_dict_for_path({'obj': Container()}) is PydanticUndefined
+
+
+def test_alias_path_with_model_instance_validation():
+    """Test that AliasPath works with model instances during model_validate (issue #10851)."""
+    from pydantic import BaseModel, Field
+
+    class Nested(BaseModel):
+        could_be_nested: int = 42
+
+    class Outer(BaseModel):
+        regular_ol_val: int
+        could_be_nested: int = Field(..., validation_alias=AliasPath('nested', 'could_be_nested'))
+
+    result = Outer.model_validate({'regular_ol_val': 1, 'nested': {'could_be_nested': 2}})
+    assert result.regular_ol_val == 1
+    assert result.could_be_nested == 2
+
+    result2 = Outer.model_validate({'regular_ol_val': 1, 'nested': Nested(could_be_nested=3)})
+    assert result2.regular_ol_val == 1
+    assert result2.could_be_nested == 3
+
+
+def test_alias_path_with_deeply_nested_model_validation():
+    """Test AliasPath traversal through multiple levels of nested models."""
+    from pydantic import BaseModel, Field
+
+    class Level1(BaseModel):
+        value: str = 'deep'
+
+    class Level2(BaseModel):
+        level1: Level1 = Level1()
+
+    class Outer(BaseModel):
+        val: str = Field(..., validation_alias=AliasPath('l2', 'level1', 'value'))
+
+    result = Outer.model_validate({'l2': Level2()})
+    assert result.val == 'deep'
+
+
+def test_basemodel_getitem():
+    """Test that BaseModel supports item access via __getitem__."""
+    from pydantic import BaseModel
+
+    class MyModel(BaseModel):
+        x: int = 1
+        y: str = 'hello'
+
+    m = MyModel()
+    assert m['x'] == 1
+    assert m['y'] == 'hello'
+
+
+def test_basemodel_getitem_raises_keyerror():
+    """Test that BaseModel.__getitem__ raises KeyError for missing fields."""
+    from pydantic import BaseModel
+    import pytest
+
+    class MyModel(BaseModel):
+        x: int = 1
+
+    m = MyModel()
+    with pytest.raises(KeyError):
+        m['nonexistent']
+

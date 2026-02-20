@@ -50,7 +50,14 @@ class AliasPath:
             try:
                 v = v[k]
             except (KeyError, IndexError, TypeError):
-                return PydanticUndefined
+                # Fall back to attribute access for model instances and similar objects
+                if isinstance(k, str):
+                    try:
+                        v = getattr(v, k)
+                    except AttributeError:
+                        return PydanticUndefined
+                else:
+                    return PydanticUndefined
         return v
 
 
