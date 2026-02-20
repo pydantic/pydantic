@@ -275,38 +275,49 @@ impl TaggedUnionSerializer {
         mut selector: impl FnMut(&CombinedSerializer, &mut SerializationState<'py>) -> PyResult<S>,
         state: &mut SerializationState<'py>,
     ) -> PyResult<Option<S>> {
-        let mut skip = None;
-
         if let Some(tag) = self.get_discriminator_value(value)
             && let Some(&serializer_index) = self.lookup.get(&tag)?
         {
             let choice = &self.choices.choices[serializer_index];
 
             // Try a first pass with the appropriate checking level
-            match selector(choice, &mut scoped_check_level(state, initial_check_level(state))) {
+            let err = match selector(choice, &mut scoped_check_level(state, initial_check_level(state))) {
                 Ok(v) => return Ok(Some(v)),
-                Err(err) => {
-                    // if it fails, we record the error to skip this choice in the left to right pass
-                    skip = Some((serializer_index, err));
-                }
-            }
+                Err(err) => err,
+            };
 
-            // if not in a nested union, we can try a second pass with lax checking if needed
+            // if not in a nested union, try lax check
             if in_top_level_union(state)
                 && self.retry_with_lax_check()
                 && let Ok(v) = selector(choice, &mut scoped_check_level(state, SerCheck::Lax))
             {
                 return Ok(Some(v));
             }
+
+            // The discriminator matched a specific variant but serialization failed.
+            if in_top_level_union(state) {
+                // Register a warning for the matched variant only, then
+                // fall through to inference instead of trying all other variants.
+                if let Ok(unexpected_value) = err.value(value.py()).cast::<PydanticSerializationUnexpectedValue>() {
+                    state.warnings.register_warning(unexpected_value.borrow().clone());
+                } else {
+                    state
+                        .warnings
+                        .register_warning(PydanticSerializationUnexpectedValue::new_from_msg(Some(
+                            err.to_string(),
+                        )));
+                }
+                return Ok(None);
+            }
+            // In a nested union, propagate the error so the parent can retry
+            return Err(err);
         } else if in_top_level_union(state) {
             // Only register a warning if we're in a top-level union
             register_tagged_union_fallback_warning(value, state);
         }
 
-        // if we haven't returned at this point, we should fallback to the union serializer
-        // which preserves the historical expectation that we do our best with serialization
-        // even if that means we resort to inference
-        self.choices.serialize(selector, state, skip)
+        // if we haven't returned at this point (no discriminator found), fallback to the union serializer
+        self.choices.serialize(selector, state, None)
     }
 }
 
