@@ -2,15 +2,18 @@
 <!-- markdownlint-disable descriptive-link-text -->
 <!-- markdownlint-disable-next-line first-line-heading -->
 
-## v2.13.0b1 (2026-02-19)
+## v2.13.0b1 (2026-02-21)
 
 [GitHub release](https://github.com/pydantic/pydantic/releases/tag/v2.13.0b1)
 
-This is the first beta release of the 2.13 version, mainly providing bbug fixes and performance improvements
+This is the first beta release of the 2.13 version, mainly providing bug fixes and performance improvements
 for validation and serialization.
-This release includes the latest V1.10.26 release under the `pydantic.v1` namespace. This version includes support for Python 3.14.
 
-The [`pydantic-core`](https://github.com/pydantic/pydantic-core/) repository was merged inside the main `pydantic` one.
+Notable changes include:
+
+* Add a new `polymorphic_serialization` option, solving issues with `serialize_as_any` introduced in 2.12.
+* Latest V1.10.26 release under the `pydantic.v1` namespace. This version includes support for Python 3.14.
+* The [`pydantic-core`](https://github.com/pydantic/pydantic-core/) repository was merged inside the main `pydantic` one.
 
 ### What's Changed
 
@@ -22,6 +25,7 @@ The [`pydantic-core`](https://github.com/pydantic/pydantic-core/) repository was
 
 #### New Features
 
+* Add `polymorphic_serialization` option by @davidhewitt in [#12518](https://github.com/pydantic/pydantic/pull/12518)
 * Support Root models with `Literal` root types as discriminator field types by @YassinNouh21 in [#12680](https://github.com/pydantic/pydantic/pull/12680)
 
 #### Changes
@@ -69,41 +73,19 @@ The [`pydantic-core`](https://github.com/pydantic/pydantic-core/) repository was
 * Use `typing.Union` when replacing types under Python 3.14 by @Viicos in [#12733](https://github.com/pydantic/pydantic/pull/12733)
 * Improve ImportString error when internal imports fail by @tsembp in [#12740](https://github.com/pydantic/pydantic/pull/12740)
 * Fix serializing complex numbers with negative zero imaginary part by @lhnwrk in [#12770](https://github.com/pydantic/pydantic/pull/12770)
+* Preserve custom docstrings on stdlib dataclasses in JSON schema by @nightcityblade in [#12815](https://github.com/pydantic/pydantic/pull/12815)
 
 ### New Contributors
 
-* @davidpoblador made their first contribution in [#12351](https://github.com/pydantic/pydantic/pull/12351)
-* @spazm made their first contribution in [#12352](https://github.com/pydantic/pydantic/pull/12352)
-* @hengky-kurniawan-1 made their first contribution in [#12412](https://github.com/pydantic/pydantic/pull/12412)
-* @doraaki made their first contribution in [#12422](https://github.com/pydantic/pydantic/pull/12422)
-* @Harmon758 made their first contribution in [#12432](https://github.com/pydantic/pydantic/pull/12432)
-* @shenxianpeng made their first contribution in [#12443](https://github.com/pydantic/pydantic/pull/12443)
-* @kwilinsi made their first contribution in [#12454](https://github.com/pydantic/pydantic/pull/12454)
-* @vldmrdev made their first contribution in [#12471](https://github.com/pydantic/pydantic/pull/12471)
 * @marwan-alloreview made their first contribution in [#12494](https://github.com/pydantic/pydantic/pull/12494)
 * @tanmaymunjal made their first contribution in [#12498](https://github.com/pydantic/pydantic/pull/12498)
-* @ido-friedman made their first contribution in [#12373](https://github.com/pydantic/pydantic/pull/12373)
-* @WEGFan made their first contribution in [#12565](https://github.com/pydantic/pydantic/pull/12565)
 * @poliakovva made their first contribution in [#12579](https://github.com/pydantic/pydantic/pull/12579)
-* @cavea made their first contribution in [#12601](https://github.com/pydantic/pydantic/pull/12601)
-* @sesmi123 made their first contribution in [#12627](https://github.com/pydantic/pydantic/pull/12627)
-* @Tesla2000 made their first contribution in [#12661](https://github.com/pydantic/pydantic/pull/12661)
-* @dsfaccini made their first contribution in [#12593](https://github.com/pydantic/pydantic/pull/12593)
-* @smurfix made their first contribution in [#12672](https://github.com/pydantic/pydantic/pull/12672)
-* @tokihiko-tsurumoto made their first contribution in [#12701](https://github.com/pydantic/pydantic/pull/12701)
-* @VedantMadane made their first contribution in [#12707](https://github.com/pydantic/pydantic/pull/12707)
-* @msimacek made their first contribution in [#12710](https://github.com/pydantic/pydantic/pull/12710)
-* @AntoineD made their first contribution in [#12721](https://github.com/pydantic/pydantic/pull/12721)
-* @seuthootDev made their first contribution in [#12735](https://github.com/pydantic/pydantic/pull/12735)
 * @lehmann-hqs made their first contribution in [#12734](https://github.com/pydantic/pydantic/pull/12734)
-* @raghu24k made their first contribution in [#12743](https://github.com/pydantic/pydantic/pull/12743)
 * @jfadia made their first contribution in [#12741](https://github.com/pydantic/pydantic/pull/12741)
 * @tsembp made their first contribution in [#12740](https://github.com/pydantic/pydantic/pull/12740)
-* @laisbsc made their first contribution in [#12773](https://github.com/pydantic/pydantic/pull/12773)
 * @drshvik made their first contribution in [#12760](https://github.com/pydantic/pydantic/pull/12760)
-* @andrew222651 made their first contribution in [#12776](https://github.com/pydantic/pydantic/pull/12776)
 * @lhnwrk made their first contribution in [#12770](https://github.com/pydantic/pydantic/pull/12770)
-* @loichuder made their first contribution in [#12811](https://github.com/pydantic/pydantic/pull/12811)
+* @nightcityblade made their first contribution in [#12815](https://github.com/pydantic/pydantic/pull/12811)
 
 ## v2.12.5 (2025-11-26)
 
