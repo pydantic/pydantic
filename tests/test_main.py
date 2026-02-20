@@ -3094,6 +3094,26 @@ def test_model_validate_strings_dict(strict):
     }
 
 
+def test_model_validate_strings_custom_init():
+    """Test that model_validate_strings respects custom __init__().
+
+    See https://github.com/pydantic/pydantic/issues/12718
+    """
+    init_called = False
+
+    class MyModel(BaseModel):
+        x: int
+
+        def __init__(self, **data):
+            nonlocal init_called
+            init_called = True
+            super().__init__(**data)
+
+    m = MyModel.model_validate_strings({"x": "1"})
+    assert m.x == 1
+    assert init_called
+
+
 def test_model_signature_annotated() -> None:
     class Model(BaseModel):
         x: Annotated[int, 123]

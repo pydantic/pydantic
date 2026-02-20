@@ -76,7 +76,10 @@ impl<'py> Input<'py> for StringMapping<'py> {
     }
 
     fn as_kwargs(&self, _py: Python<'py>) -> Option<Bound<'py, PyDict>> {
-        None
+        match self {
+            Self::String(_) => None,
+            Self::Mapping(d) => Some(d.clone()),
+        }
     }
 
     type Arguments<'a>
