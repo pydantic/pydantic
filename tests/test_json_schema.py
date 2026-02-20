@@ -7217,3 +7217,28 @@ def test_nested_model_deduplication() -> None:
     assert 'Level1' in definitions
     assert 'Level1-Input' not in definitions
     assert 'Level1-Output' not in definitions
+
+
+def test_typed_dict_extras_schema_with_config_extra_fields_behavior():
+    """Regression test for https://github.com/pydantic/pydantic/issues/12809.
+
+    extras_schema should be included in JSON schema when extra_fields_behavior
+    is set via config dict, not just when set as a top-level extra_behavior.
+    """
+    # Top-level extra_behavior - already worked correctly
+    schema_top = core_schema.typed_dict_schema(
+        fields={"x": core_schema.typed_dict_field(core_schema.int_schema())},
+        extra_behavior="allow",
+        extras_schema=core_schema.int_schema(),
+    )
+    result_top = GenerateJsonSchema().generate(schema_top)
+    assert result_top["additionalProperties"] == {"type": "integer"}
+
+    # Config extra_fields_behavior - was producing True instead of the typed schema
+    schema_cfg = core_schema.typed_dict_schema(
+        fields={"x": core_schema.typed_dict_field(core_schema.int_schema())},
+        config=core_schema.CoreConfig(extra_fields_behavior="allow"),
+        extras_schema=core_schema.int_schema(),
+    )
+    result_cfg = GenerateJsonSchema().generate(schema_cfg)
+    assert result_cfg["additionalProperties"] == {"type": "integer"}

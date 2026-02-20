@@ -1502,7 +1502,10 @@ class GenerateJsonSchema:
             if extra == 'forbid':
                 json_schema['additionalProperties'] = False
             elif extra == 'allow':
-                json_schema['additionalProperties'] = True
+                if 'extras_schema' in schema and schema['extras_schema'] != {'type': 'any'}:
+                    json_schema['additionalProperties'] = self.generate_inner(schema['extras_schema'])
+                else:
+                    json_schema['additionalProperties'] = True
 
         return json_schema
 
