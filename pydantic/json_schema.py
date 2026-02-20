@@ -1635,6 +1635,7 @@ class GenerateJsonSchema:
         Done in place, hence there's no return value as the original json_schema is mutated.
         No ref resolving is involved here, as that's not appropriate for simple updates.
         """
+        from ._internal._dataclasses import is_stdlib_dataclass
         from .main import BaseModel
         from .root_model import RootModel
 
@@ -1649,7 +1650,18 @@ class GenerateJsonSchema:
             json_schema['title'] = cls.__name__
 
         # BaseModel and dataclasses; don't use cls.__doc__ as it will contain the verbose class signature by default
-        docstring = None if cls is BaseModel or dataclasses.is_dataclass(cls) else cls.__doc__
+        if cls is BaseModel:
+            docstring = None
+        elif is_stdlib_dataclass(cls):  # For Pydantic dataclasses, we already handle this at class creation
+            # The `dataclass` module generates a `__doc__` based on the `inspect.signature()`
+            # result, which we don't want to use as a description. Such `__doc__` startswith
+            # `cls.__name__(`, which could lead to mistakenly discarding it if for some reason
+            # an explicitly set class docstring follows the same pattern, but this is unlikely
+            # to happen.
+            doc = cls.__doc__
+            docstring = None if doc is None or doc.startswith(f'{cls.__name__}(') else doc
+        else:
+            docstring = cls.__doc__
 
         if docstring:
             json_schema.setdefault('description', inspect.cleandoc(docstring))
@@ -1814,24 +1826,14 @@ class GenerateJsonSchema:
         Returns:
             The generated JSON schema.
         """
-        from ._internal._dataclasses import is_stdlib_dataclass
 
         cls = schema['cls']
-        config: ConfigDict = getattr(cls, '__pydantic_config__', cast('ConfigDict', {}))
+        config = cast('ConfigDict', getattr(cls, '__pydantic_config__', {}))
 
         with self._config_wrapper_stack.push(config):
             json_schema = self.generate_inner(schema['schema']).copy()
 
         self._update_class_schema(json_schema, cls, config)
-
-        # Dataclass-specific handling of description
-        if is_stdlib_dataclass(cls):
-            # vanilla dataclass; don't use cls.__doc__ as it will contain the class signature by default
-            description = None
-        else:
-            description = None if cls.__doc__ is None else inspect.cleandoc(cls.__doc__)
-        if description:
-            json_schema['description'] = description
 
         return json_schema
 
