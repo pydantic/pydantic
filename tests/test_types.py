@@ -93,6 +93,7 @@ from pydantic import (
     PositiveInt,
     PydanticInvalidForJsonSchema,
     PydanticSchemaGenerationError,
+    RootModel,
     Secret,
     SecretBytes,
     SecretStr,
@@ -6879,6 +6880,106 @@ def test_enum_with_namedtuple_values() -> None:
 
     with pytest.raises(ValidationError):
         Model2(value=NT('bar'))
+
+
+def test_enum_with_tuple_values_json_roundtrip() -> None:
+    """Enums with tuple (multiple) values can roundtrip through JSON.
+
+    https://github.com/pydantic/pydantic/issues/10629
+    """
+
+    class MyEnum(Enum):
+        a = 1, 2
+
+    class Model(BaseModel):
+        value: MyEnum
+
+    m = Model(value=MyEnum.a)
+    serialized = m.model_dump_json()
+    assert serialized == '{"value":[1,2]}'
+    deserialized = Model.model_validate_json(serialized)
+    assert deserialized.value is MyEnum.a
+
+
+def test_enum_with_tuple_values_multiple_members() -> None:
+    """Multiple enum members with tuple values roundtrip correctly."""
+
+    class MyEnum(Enum):
+        x = 1, 2
+        y = 3, 4
+
+    for member in MyEnum:
+        m = RootModel[MyEnum](member)
+        serialized = m.model_dump_json()
+        deserialized = RootModel[MyEnum].model_validate_json(serialized)
+        assert deserialized.root is member
+
+
+def test_enum_with_mixed_tuple_and_scalar_values() -> None:
+    """Enums with a mix of tuple and scalar values work correctly."""
+
+    class MyEnum(Enum):
+        a = 1, 2
+        b = 3
+
+    for member in MyEnum:
+        m = RootModel[MyEnum](member)
+        serialized = m.model_dump_json()
+        deserialized = RootModel[MyEnum].model_validate_json(serialized)
+        assert deserialized.root is member
+
+
+def test_enum_with_nested_tuple_values() -> None:
+    """Enums with nested tuple values roundtrip correctly."""
+
+    class MyEnum(Enum):
+        a = (1, (2, 3))
+
+    m = RootModel[MyEnum](MyEnum.a)
+    serialized = m.model_dump_json()
+    deserialized = RootModel[MyEnum].model_validate_json(serialized)
+    assert deserialized.root is MyEnum.a
+
+
+def test_enum_with_tuple_values_use_enum_values() -> None:
+    """Enums with tuple values work with use_enum_values config."""
+
+    class MyEnum(Enum):
+        a = 1, 2
+
+    class Model(BaseModel, use_enum_values=True):
+        value: MyEnum
+
+    m = Model(value=MyEnum.a)
+    assert m.value == (1, 2)
+    serialized = m.model_dump_json()
+    deserialized = Model.model_validate_json(serialized)
+    assert deserialized.value == (1, 2)
+
+
+def test_enum_with_tuple_values_python_roundtrip() -> None:
+    """Enums with tuple values still work for Python-mode roundtrip."""
+
+    class MyEnum(Enum):
+        a = 1, 2
+
+    class Model(BaseModel):
+        value: MyEnum
+
+    m = Model(value=MyEnum.a)
+    dumped = m.model_dump()
+    restored = Model.model_validate(dumped)
+    assert restored.value is MyEnum.a
+
+
+def test_enum_with_tuple_values_list_input() -> None:
+    """Enum with tuple value can be validated from a list input."""
+
+    class MyEnum(Enum):
+        a = 1, 2
+
+    m = RootModel[MyEnum].model_validate([1, 2])
+    assert m.root is MyEnum.a
 
 
 @pytest.mark.skipif(

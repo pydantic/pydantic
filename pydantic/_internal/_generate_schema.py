@@ -438,6 +438,21 @@ class GenerateSchema:
                 metadata={'pydantic_js_functions': [get_json_schema]},
             )
 
+            # If any enum member has a tuple value, add a before-validator to convert
+            # lists back to tuples. This is needed because JSON serialization turns tuples
+            # into arrays, and deserialization produces lists which don't match tuple values
+            # in the enum lookup. See https://github.com/pydantic/pydantic/issues/10629
+            if any(isinstance(m.value, tuple) for m in cases):
+
+                def _coerce_list_to_tuple(v: Any) -> Any:
+                    if isinstance(v, list):
+                        return tuple(_coerce_list_to_tuple(x) for x in v)
+                    return v
+
+                enum_schema = core_schema.no_info_before_validator_function(
+                    _coerce_list_to_tuple, enum_schema
+                )
+
             if self._config_wrapper.use_enum_values:
                 enum_schema = core_schema.no_info_after_validator_function(
                     attrgetter('value'), enum_schema, serialization=value_ser_type
