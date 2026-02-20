@@ -642,7 +642,7 @@ We can then see the effect of serializing each of these types, and the interacti
 `polymorphic_serialization` setting:
 
 ```python
-from pydantic import BaseModel, SerializeAsAny
+from pydantic import BaseModel
 
 
 class User(BaseModel):
@@ -662,11 +662,10 @@ outer_model = OuterModel(
 )
 
 
-print(outer_model.model_dump())
-#> {'user': {'name': 'pydantic'}}  # (1)!
-print(outer_model.model_dump(polymorphic_serialization=True))
-#> {'user': {'name': 'pydantic', 'password': 'password'}}  # (2)!
-
+print(outer_model.model_dump())  # (1)!
+#> {'user': {'name': 'pydantic'}}
+print(outer_model.model_dump(polymorphic_serialization=True))  # (2)!
+#> {'user': {'name': 'pydantic', 'password': 'password'}}
 ```
 
 1. With polymorphic serialization disabled, `user` serializes as the base type.
