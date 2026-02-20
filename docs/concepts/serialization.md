@@ -642,14 +642,10 @@ We can then see the effect of serializing each of these types, and the interacti
 `polymorphic_serialization` setting:
 
 ```python
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, SerializeAsAny
 
 
 class User(BaseModel):
-    model_config = ConfigDict(
-        polymorphic_serialization=False,  # `False` is the default
-    )
-
     name: str
 
 
@@ -657,49 +653,24 @@ class UserLogin(User):
     password: str
 
 
-class PolymorphicUser(BaseModel):
-    model_config = ConfigDict(polymorphic_serialization=True)
-
-    name: str
-
-
-class PolymorphicUserLogin(PolymorphicUser):
-    password: str
-
-
 class OuterModel(BaseModel):
-    user1: User
-    user2: PolymorphicUser
+    user: User
 
 
-user = UserLogin(name='pydantic', password='password')
-polymorphic_user = PolymorphicUserLogin(name='pydantic', password='password')
+outer_model = OuterModel(
+    user=UserLogin(name='pydantic', password='password'),
+)
 
-outer_model = OuterModel(user1=user, user2=polymorphic_user)
 
-print(outer_model.model_dump())  # (1)!
-"""
-{
-    'user1': {'name': 'pydantic'},
-    'user2': {'name': 'pydantic', 'password': 'password'},
-}
-"""
+print(outer_model.model_dump())
+#> {'user': {'name': 'pydantic'}}  # (1)!
+print(outer_model.model_dump(polymorphic_serialization=True))
+#> {'user': {'name': 'pydantic', 'password': 'password'}}  # (2)!
 
-print(outer_model.model_dump(polymorphic_serialization=True))  # (2)!
-"""
-{
-    'user1': {'name': 'pydantic', 'password': 'password'},
-    'user2': {'name': 'pydantic', 'password': 'password'},
-}
-"""
-
-print(outer_model.model_dump(polymorphic_serialization=False))  # (3)!
-#> {'user1': {'name': 'pydantic'}, 'user2': {'name': 'pydantic'}}
 ```
 
-1. With no runtime setting, we see `user2` serialize as the subclass due to polymorphism being enabled.
-2. With the runtime setting set to `True`, both values serialize as their actual runtime subclasses.
-3. With the runtime setting set to `False`, both values serialize as the base type.
+1. With polymorphic serialization disabled, `user` serializes as the base type.
+2. With polymorphic serialization enabled, `user` serializes as the actual runtime subclass.
 
 As seen in the example, by having polymorphic serialization enabled, the `User.model_dump()` method will by respect the value
 of the `UserLogin` subclass when it is provided instead of a `User` value, and serialize the full `UserLogin` type. This
