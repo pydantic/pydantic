@@ -782,7 +782,6 @@ else:
 
         @classmethod
         def __get_pydantic_core_schema__(cls, source: Any, handler: GetCoreSchemaHandler) -> core_schema.CoreSchema:
-            from pydantic import PydanticSchemaGenerationError
 
             # use the generic _origin_ as the second argument to isinstance when appropriate
             instance_of_schema = core_schema.is_instance_schema(_generics.get_origin(source) or source)
@@ -790,8 +789,9 @@ else:
             try:
                 # Try to generate the "standard" schema, which will be used when loading from JSON
                 original_schema = handler(source)
-            except PydanticSchemaGenerationError:
-                # If that fails, just produce a schema that can validate from python
+            except Exception:
+                # If that fails (e.g. PydanticSchemaGenerationError, PydanticUndefinedAnnotation,
+                # or any other error), just produce a schema that can validate from python
                 return instance_of_schema
             else:
                 # Use the "original" approach to serialization

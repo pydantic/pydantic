@@ -6298,6 +6298,53 @@ def test_instanceof_invalid_core_schema():
         MyModel.model_json_schema()
 
 
+
+def test_instanceof_handles_all_schema_generation_errors():
+    """Test that InstanceOf handles all possible schema generation errors, not just PydanticSchemaGenerationError.
+
+    See https://github.com/pydantic/pydantic/issues/12704.
+    """
+    from pydantic.errors import PydanticUndefinedAnnotation
+
+    # NameError raised during schema generation
+    class ClsWithNameError:
+        @classmethod
+        def __get_pydantic_core_schema__(cls, source, handler):
+            raise NameError('SomeBadRef')
+
+    class Model1(BaseModel):
+        x: InstanceOf[ClsWithNameError]
+
+    Model1(x=ClsWithNameError())
+    with pytest.raises(ValidationError):
+        Model1(x=42)
+
+    # TypeError raised during schema generation
+    class ClsWithTypeError:
+        @classmethod
+        def __get_pydantic_core_schema__(cls, source, handler):
+            raise TypeError('some type error')
+
+    class Model2(BaseModel):
+        x: InstanceOf[ClsWithTypeError]
+
+    Model2(x=ClsWithTypeError())
+    with pytest.raises(ValidationError):
+        Model2(x=42)
+
+    # PydanticUndefinedAnnotation raised during schema generation
+    class ClsWithUndefinedAnnotation:
+        @classmethod
+        def __get_pydantic_core_schema__(cls, source, handler):
+            raise PydanticUndefinedAnnotation('NotResolvable', 'name NotResolvable is not defined')
+
+    class Model3(BaseModel):
+        x: InstanceOf[ClsWithUndefinedAnnotation]
+
+    Model3(x=ClsWithUndefinedAnnotation())
+    with pytest.raises(ValidationError):
+        Model3(x=42)
+
 def test_instanceof_serialization():
     class Inner(BaseModel):
         pass
