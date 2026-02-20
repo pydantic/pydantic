@@ -3838,7 +3838,7 @@ to any use case where you need to derive a new model from another (remove defaul
         <span class="p">)</span>
 
     <span class="k">return</span> <span class="n">create_model</span><span class="p">(</span>
-        <span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="nb">type</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s1">Optional&#39;</span><span class="p">,</span>
+        <span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">model_cls</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s1">Optional&#39;</span><span class="p">,</span>
         <span class="n">__base__</span><span class="o">=</span><span class="n">model_cls</span><span class="p">,</span>  <span class="c1"># (1)!</span>
         <span class="o">**</span><span class="n">new_fields</span><span class="p">,</span>
     <span class="p">)</span>
@@ -3884,7 +3884,7 @@ The parent fields are overridden by the ones we define.</li>
         <span class="p">)</span>
 
     <span class="k">return</span> <span class="n">create_model</span><span class="p">(</span>
-        <span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="nb">type</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s1">Optional&#39;</span><span class="p">,</span>
+        <span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">model_cls</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s1">Optional&#39;</span><span class="p">,</span>
         <span class="n">__base__</span><span class="o">=</span><span class="n">model_cls</span><span class="p">,</span>  <span class="c1"># (1)!</span>
         <span class="o">**</span><span class="n">new_fields</span><span class="p">,</span>
     <span class="p">)</span>
@@ -3930,7 +3930,7 @@ The parent fields are overridden by the ones we define.</li>
         <span class="p">)</span>
 
     <span class="k">return</span> <span class="n">create_model</span><span class="p">(</span>
-        <span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="nb">type</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s1">Optional&#39;</span><span class="p">,</span>
+        <span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">model_cls</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s1">Optional&#39;</span><span class="p">,</span>
         <span class="n">__base__</span><span class="o">=</span><span class="n">model_cls</span><span class="p">,</span>  <span class="c1"># (1)!</span>
         <span class="o">**</span><span class="n">new_fields</span><span class="p">,</span>
     <span class="p">)</span>

@@ -6591,7 +6591,7 @@ There are some situations where Pydantic does not copy attributes, such as when 
 
 # Performance tips
 
-In most cases Pydantic won't be your bottle neck, only follow this if you're sure it's necessary.
+In most cases Pydantic won't be your bottleneck, only follow this if you're sure it's necessary.
 
 ## In general, use `model_validate_json()` not `model_validate(json.loads(...))`
 
@@ -52230,7 +52230,7 @@ def make_fields_optional(model_cls: type[BaseModel]) -> type[BaseModel]:
         )
 
     return create_model(
-        f'{type.__name__}Optional',
+        f'{model_cls.__name__}Optional',
         __base__=model_cls,  # (1)!
         **new_fields,
     )
@@ -52256,7 +52256,7 @@ def make_fields_optional(model_cls: type[BaseModel]) -> type[BaseModel]:
         )
 
     return create_model(
-        f'{type.__name__}Optional',
+        f'{model_cls.__name__}Optional',
         __base__=model_cls,  # (1)!
         **new_fields,
     )
@@ -52282,7 +52282,7 @@ def make_fields_optional(model_cls: type[BaseModel]) -> type[BaseModel]:
         )
 
     return create_model(
-        f'{type.__name__}Optional',
+        f'{model_cls.__name__}Optional',
         __base__=model_cls,  # (1)!
         **new_fields,
     )

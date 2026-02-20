@@ -19,7 +19,7 @@ def make_fields_optional(model_cls: type[BaseModel]) -> type[BaseModel]:
         )
 
     return create_model(
-        f'{type.__name__}Optional',
+        f'{model_cls.__name__}Optional',
         __base__=model_cls,  # (1)!
         **new_fields,
     )
@@ -45,7 +45,7 @@ def make_fields_optional(model_cls: type[BaseModel]) -> type[BaseModel]:
         )
 
     return create_model(
-        f'{type.__name__}Optional',
+        f'{model_cls.__name__}Optional',
         __base__=model_cls,  # (1)!
         **new_fields,
     )
@@ -71,7 +71,7 @@ def make_fields_optional(model_cls: type[BaseModel]) -> type[BaseModel]:
         )
 
     return create_model(
-        f'{type.__name__}Optional',
+        f'{model_cls.__name__}Optional',
         __base__=model_cls,  # (1)!
         **new_fields,
     )
