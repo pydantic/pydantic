@@ -98,8 +98,7 @@ import importlib
 
 await micropip.install([
     'dirty-equals',
-    # inline-snapshot 0.21 requires pytest 8.3.4, pyodide 0.26 ships with 8.1.1
-    'inline-snapshot < 0.21',
+    'inline-snapshot<0.32',  # https://github.com/15r10nk/inline-snapshot/issues/349
     'hypothesis',
     'pytest-speed',
     'pytest-mock',

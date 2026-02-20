@@ -246,13 +246,13 @@ impl<'py> Input<'py> for Bound<'py, PyAny> {
                 return str_as_bool(self, s).map(ValidationMatch::lax);
             } else if let Ok(int) = self.extract() {
                 return int_as_bool(self, int).map(ValidationMatch::lax);
-            } else if let Ok(float) = self.extract::<f64>() {
-                if let Ok(int) = float_as_int(self, float) {
-                    return int
-                        .as_bool()
-                        .ok_or_else(|| ValError::new(ErrorTypeDefaults::BoolParsing, self))
-                        .map(ValidationMatch::lax);
-                }
+            } else if let Ok(float) = self.extract::<f64>()
+                && let Ok(int) = float_as_int(self, float)
+            {
+                return int
+                    .as_bool()
+                    .ok_or_else(|| ValError::new(ErrorTypeDefaults::BoolParsing, self))
+                    .map(ValidationMatch::lax);
             }
         }
 
@@ -322,11 +322,9 @@ impl<'py> Input<'py> for Bound<'py, PyAny> {
             return Ok(ValidationMatch::exact(EitherFloat::Py(float.clone())));
         }
 
-        if !strict {
-            if let Some(s) = maybe_as_string(self, ErrorTypeDefaults::FloatParsing)? {
-                // checking for bytes and string is fast, so do this before isinstance(float)
-                return str_as_float(self, s).map(ValidationMatch::lax);
-            }
+        if !strict && let Some(s) = maybe_as_string(self, ErrorTypeDefaults::FloatParsing)? {
+            // checking for bytes and string is fast, so do this before isinstance(float)
+            return str_as_float(self, s).map(ValidationMatch::lax);
         }
 
         if let Ok(float) = self.extract::<f64>() {
@@ -426,10 +424,8 @@ impl<'py> Input<'py> for Bound<'py, PyAny> {
             // if from_attributes, first try a dict, then mapping then from_attributes
             if let Ok(dict) = self.cast::<PyDict>() {
                 return Ok(GenericPyMapping::Dict(dict));
-            } else if !strict {
-                if let Ok(mapping) = self.cast::<PyMapping>() {
-                    return Ok(GenericPyMapping::Mapping(mapping));
-                }
+            } else if !strict && let Ok(mapping) = self.cast::<PyMapping>() {
+                return Ok(GenericPyMapping::Mapping(mapping));
             }
 
             if from_attributes_applicable(self) {
