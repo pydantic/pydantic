@@ -177,7 +177,7 @@ pub(crate) fn infer_to_python_known<'py>(
                 let uuid = super::type_serializers::uuid::uuid_to_string(value)?;
                 uuid.into_py_any(py)?
             }
-            ObType::PydanticSerializable => call_pydantic_serializer(value, state, serialize_to_python(py))?,
+            ObType::PydanticSerializable => serialize_pydantic_serializable(value, state, serialize_to_python(py))?,
             ObType::Dataclass => infer_serialize_dataclass(value, state, serialize_to_python(py))?,
             ObType::Enum => {
                 let v = value.getattr(intern!(py, "value"))?;
@@ -236,7 +236,7 @@ pub(crate) fn infer_to_python_known<'py>(
                 let dict = value.cast::<PyDict>()?;
                 serialize_pairs(dict.iter().map(Ok), state, serialize_to_python(py))?
             }
-            ObType::PydanticSerializable => call_pydantic_serializer(value, state, serialize_to_python(py))?,
+            ObType::PydanticSerializable => serialize_pydantic_serializable(value, state, serialize_to_python(py))?,
             ObType::Dataclass => infer_serialize_dataclass(value, state, serialize_to_python(py))?,
             ObType::Generator => {
                 let iter = super::type_serializers::generator::SerializationIterator::new(
@@ -421,7 +421,7 @@ pub(crate) fn infer_serialize_known<'py, S: Serializer>(
         | ObType::Ipv4Network
         | ObType::Ipv6Network => serialize_via_str(value, serialize_to_json(serializer)).map_err(unwrap_ser_error),
         ObType::PydanticSerializable => {
-            call_pydantic_serializer(value, state, serialize_to_json(serializer)).map_err(unwrap_ser_error)
+            serialize_pydantic_serializable(value, state, serialize_to_json(serializer)).map_err(unwrap_ser_error)
         }
         ObType::Dataclass => {
             infer_serialize_dataclass(value, state, serialize_to_json(serializer)).map_err(unwrap_ser_error)
@@ -592,25 +592,36 @@ pub(crate) fn infer_json_key_known<'a, 'py>(
     }
 }
 
+pub(crate) fn get_pydantic_serializer<'py>(value: &Bound<'py, PyAny>) -> PyResult<Bound<'py, SchemaSerializer>> {
+    let py = value.py();
+    let py_serializer = value.getattr(intern!(py, "__pydantic_serializer__"))?;
+    py_serializer.cast_into_exact().map_err(Into::into)
+}
+
 /// Serialize `value` as if it had a `__pydantic_serializer__` attribute
 ///
 /// `do_serialize` should be a closure which performs serialization without type inference
-pub(crate) fn call_pydantic_serializer<'py, S: DoSerialize>(
+fn serialize_pydantic_serializable<'py, S: DoSerialize>(
     value: &Bound<'py, PyAny>,
     state: &mut SerializationState<'py>,
     do_serialize: S,
 ) -> Result<S::Ok, S::Error> {
     let py = value.py();
     let py_serializer = value.getattr(intern!(py, "__pydantic_serializer__"))?;
+    call_pydantic_serializer(py_serializer.cast().map_err(Into::into)?, value, state, do_serialize)
+}
 
-    let extracted_serializer: PyRef<SchemaSerializer> = py_serializer.extract().map_err(Into::into)?;
-
-    // Use current serialization state, except with the config from the extracted serializer
-    let state = &mut state.scoped_set(|s| &mut s.config, extracted_serializer.config);
+pub(crate) fn call_pydantic_serializer<'py, S: DoSerialize>(
+    serializer: &Bound<'py, SchemaSerializer>,
+    value: &Bound<'py, PyAny>,
+    state: &mut SerializationState<'py>,
+    do_serialize: S,
+) -> Result<S::Ok, S::Error> {
+    let state = &mut state.scoped_set(|s| &mut s.config, serializer.get().config);
 
     // Avoid falling immediately back into inference because we need to use the serializer
     // to drive the next step of serialization
-    do_serialize.serialize_no_infer(&extracted_serializer.serializer, value, state)
+    do_serialize.serialize_no_infer(&serializer.get().serializer, value, state)
 }
 
 fn serialize_pattern<S: DoSerialize>(value: &Bound<'_, PyAny>, do_serialize: S) -> Result<S::Ok, S::Error> {
