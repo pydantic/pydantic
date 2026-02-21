@@ -67,6 +67,11 @@ TEXT_SCHEMA_TYPES = ('str', 'bytes', 'url', 'multi-host-url')
 SEQUENCE_SCHEMA_TYPES = ('list', 'tuple', 'set', 'frozenset', 'generator', *TEXT_SCHEMA_TYPES)
 NUMERIC_SCHEMA_TYPES = ('float', 'int', 'date', 'time', 'timedelta', 'datetime')
 
+# Schema types that should use minItems/maxItems in JSON schema (array-like)
+ARRAY_SCHEMA_TYPES = ('list', 'tuple', 'set', 'frozenset', 'generator')
+# Schema types that should use minLength/maxLength in JSON schema (string-like)
+STRING_SCHEMA_TYPES = ('str', 'bytes', 'url', 'multi-host-url')
+
 CONSTRAINTS_TO_ALLOWED_SCHEMAS: dict[str, set[str]] = defaultdict(set)
 
 constraint_schema_pairings: list[tuple[set[str], tuple[str, ...]]] = [
@@ -101,6 +106,34 @@ def as_jsonable_value(v: Any) -> Any:
     if type(v) not in (int, str, float, bytes, bool, type(None)):
         return to_jsonable_python(v)
     return v
+
+
+def _get_schema_type_for_js_update(schema: CoreSchema) -> str:
+    """Get the effective schema type for determining JSON schema constraint keys.
+
+    This function unwraps function-before, function-wrap, and function-after schemas
+    to get to the underlying schema type. It also handles json-or-python schemas.
+
+    Returns the schema type that should be used to determine whether to use
+    minItems/maxItems (for array-like types) or minLength/maxLength (for string-like types).
+    """
+    inner_schema = schema
+    while inner_schema['type'] in {'function-before', 'function-wrap', 'function-after'}:
+        inner_schema = inner_schema['schema']  # type: ignore
+
+    inner_schema_type = inner_schema['type']
+
+    # Handle json-or-python schema
+    if inner_schema_type == 'json-or-python':
+        json_schema = inner_schema.get('json_schema', {})  # type: ignore
+        if json_schema.get('type') == 'list':
+            return 'list'
+        # Check other array types in json_schema
+        json_schema_type = json_schema.get('type', '')
+        if json_schema_type in ARRAY_SCHEMA_TYPES:
+            return json_schema_type
+
+    return inner_schema_type
 
 
 def expand_grouped_metadata(annotations: Iterable[Any]) -> Iterable[Any]:
@@ -251,13 +284,8 @@ def apply_known_metadata(annotation: Any, schema: CoreSchema) -> CoreSchema | No
             )
         elif constraint in NUMERIC_VALIDATOR_LOOKUP:
             if constraint in LENGTH_CONSTRAINTS:
-                inner_schema = schema
-                while inner_schema['type'] in {'function-before', 'function-wrap', 'function-after'}:
-                    inner_schema = inner_schema['schema']  # type: ignore
-                inner_schema_type = inner_schema['type']
-                if inner_schema_type == 'list' or (
-                    inner_schema_type == 'json-or-python' and inner_schema['json_schema']['type'] == 'list'  # type: ignore
-                ):
+                inner_schema_type = _get_schema_type_for_js_update(schema)
+                if inner_schema_type in ARRAY_SCHEMA_TYPES:
                     js_constraint_key = 'minItems' if constraint == 'min_length' else 'maxItems'
                 else:
                     js_constraint_key = 'minLength' if constraint == 'min_length' else 'maxLength'
