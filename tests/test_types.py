@@ -5604,15 +5604,19 @@ def test_base64(field_type, input_data, expected_value, serialized_data):
         'base64_value_or_none': None,
     }
 
+    if field_type in (Base64Bytes,):
+        base64_schema = {'contentEncoding': 'base64', 'contentMediaType': 'application/octet-stream', 'type': 'string'}
+    else:
+        base64_schema = {'contentEncoding': 'base64', 'type': 'string'}
+
     assert Model.model_json_schema() == {
         'properties': {
             'base64_value': {
-                'format': 'base64',
+                **base64_schema,
                 'title': 'Base64 Value',
-                'type': 'string',
             },
             'base64_value_or_none': {
-                'anyOf': [{'type': 'string', 'format': 'base64'}, {'type': 'null'}],
+                'anyOf': [base64_schema, {'type': 'null'}],
                 'default': None,
                 'title': 'Base64 Value Or None',
             },
@@ -5697,15 +5701,23 @@ def test_base64url(field_type, input_data, expected_value, serialized_data):
         'base64url_value_or_none': None,
     }
 
+    if field_type in (Base64UrlBytes,):
+        base64url_schema = {
+            'contentEncoding': 'base64url',
+            'contentMediaType': 'application/octet-stream',
+            'type': 'string',
+        }
+    else:
+        base64url_schema = {'contentEncoding': 'base64url', 'type': 'string'}
+
     assert Model.model_json_schema() == {
         'properties': {
             'base64url_value': {
-                'format': 'base64url',
+                **base64url_schema,
                 'title': 'Base64Url Value',
-                'type': 'string',
             },
             'base64url_value_or_none': {
-                'anyOf': [{'type': 'string', 'format': 'base64url'}, {'type': 'null'}],
+                'anyOf': [base64url_schema, {'type': 'null'}],
                 'default': None,
                 'title': 'Base64Url Value Or None',
             },
