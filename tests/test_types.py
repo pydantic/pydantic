@@ -3547,7 +3547,12 @@ def test_path_like_extra_subtype():
     assert Model.model_json_schema() == {
         'properties': {
             'str_type': {'format': 'path', 'title': 'Str Type', 'type': 'string'},
-            'byte_type': {'format': 'path', 'title': 'Byte Type', 'type': 'string'},
+            'byte_type': {
+                'contentMediaType': 'application/octet-stream',
+                'format': 'path',
+                'title': 'Byte Type',
+                'type': 'string',
+            },
             'any_type': {'format': 'path', 'title': 'Any Type', 'type': 'string'},
         },
         'required': ['str_type', 'byte_type', 'any_type'],
