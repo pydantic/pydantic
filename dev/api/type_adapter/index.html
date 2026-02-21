@@ -5748,6 +5748,7 @@ See the <a class="autorefs autorefs-internal" href="../config/#pydantic.config.C
     <span class="p">)</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
     <span class="n">fallback</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" title="collections.abc.Callable" href="https://docs.python.org/3/library/collections.abc.html#collections.abc.Callable">Callable</a></span><span class="p">[[</span><span class="n"><a class="autorefs autorefs-external" title="typing.Any" href="https://docs.python.org/3/library/typing.html#typing.Any">Any</a></span><span class="p">],</span> <span class="n"><a class="autorefs autorefs-external" title="typing.Any" href="https://docs.python.org/3/library/typing.html#typing.Any">Any</a></span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">serialize_as_any</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a></span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+    <span class="n">polymorphic_serialization</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a></span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">context</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" title="typing.Any" href="https://docs.python.org/3/library/typing.html#typing.Any">Any</a></span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><a class="autorefs autorefs-external" title="typing.Any" href="https://docs.python.org/3/library/typing.html#typing.Any">Any</a></span>
 </code></pre></div>
@@ -5982,6 +5983,22 @@ a <a class="autorefs autorefs-internal" href="../pydantic_core/#pydantic_core.Py
           </tr>
           <tr class="doc-section-item">
             <td>
+                <code>polymorphic_serialization</code>
+            </td>
+            <td>
+                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a> | None</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Whether to use model and dataclass polymorphic serialization for this call.</p>
+              </div>
+            </td>
+            <td>
+                  <code>None</code>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
                 <code>context</code>
             </td>
             <td>
@@ -6083,7 +6100,10 @@ a <a class="autorefs autorefs-internal" href="../pydantic_core/#pydantic_core.Py
 <span class="normal">617</span>
 <span class="normal">618</span>
 <span class="normal">619</span>
-<span class="normal">620</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">dump_python</span><span class="p">(</span>
+<span class="normal">620</span>
+<span class="normal">621</span>
+<span class="normal">622</span>
+<span class="normal">623</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">dump_python</span><span class="p">(</span>
     <span class="bp">self</span><span class="p">,</span>
     <span class="n">instance</span><span class="p">:</span> <span class="n">T</span><span class="p">,</span>
     <span class="o">/</span><span class="p">,</span>
@@ -6100,6 +6120,7 @@ a <a class="autorefs autorefs-internal" href="../pydantic_core/#pydantic_core.Py
     <span class="n">warnings</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">|</span> <span class="n">Literal</span><span class="p">[</span><span class="s1">&#39;none&#39;</span><span class="p">,</span> <span class="s1">&#39;warn&#39;</span><span class="p">,</span> <span class="s1">&#39;error&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
     <span class="n">fallback</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[[</span><span class="n">Any</span><span class="p">],</span> <span class="n">Any</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">serialize_as_any</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+    <span class="n">polymorphic_serialization</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">context</span><span class="p">:</span> <span class="n">Any</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Any</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Dump an instance of the adapted type to a Python object.</span>
@@ -6122,6 +6143,7 @@ a <a class="autorefs autorefs-internal" href="../pydantic_core/#pydantic_core.Py
 <span class="sd">        fallback: A function to call when an unknown value is encountered. If not provided,</span>
 <span class="sd">            a [`PydanticSerializationError`][pydantic_core.PydanticSerializationError] error is raised.</span>
 <span class="sd">        serialize_as_any: Whether to serialize fields with duck-typing serialization behavior.</span>
+<span class="sd">        polymorphic_serialization: Whether to use model and dataclass polymorphic serialization for this call.</span>
 <span class="sd">        context: Additional context to pass to the serializer.</span>
 
 <span class="sd">    Returns:</span>
@@ -6141,6 +6163,7 @@ a <a class="autorefs autorefs-internal" href="../pydantic_core/#pydantic_core.Py
         <span class="n">warnings</span><span class="o">=</span><span class="n">warnings</span><span class="p">,</span>
         <span class="n">fallback</span><span class="o">=</span><span class="n">fallback</span><span class="p">,</span>
         <span class="n">serialize_as_any</span><span class="o">=</span><span class="n">serialize_as_any</span><span class="p">,</span>
+        <span class="n">polymorphic_serialization</span><span class="o">=</span><span class="n">polymorphic_serialization</span><span class="p">,</span>
         <span class="n">context</span><span class="o">=</span><span class="n">context</span><span class="p">,</span>
     <span class="p">)</span>
 </code></pre></div></td></tr></table></div>
@@ -6176,6 +6199,7 @@ a <a class="autorefs autorefs-internal" href="../pydantic_core/#pydantic_core.Py
     <span class="p">)</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
     <span class="n">fallback</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" title="collections.abc.Callable" href="https://docs.python.org/3/library/collections.abc.html#collections.abc.Callable">Callable</a></span><span class="p">[[</span><span class="n"><a class="autorefs autorefs-external" title="typing.Any" href="https://docs.python.org/3/library/typing.html#typing.Any">Any</a></span><span class="p">],</span> <span class="n"><a class="autorefs autorefs-external" title="typing.Any" href="https://docs.python.org/3/library/typing.html#typing.Any">Any</a></span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">serialize_as_any</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a></span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+    <span class="n">polymorphic_serialization</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a></span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">context</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" title="typing.Any" href="https://docs.python.org/3/library/typing.html#typing.Any">Any</a></span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#bytes">bytes</a></span>
 </code></pre></div>
@@ -6431,6 +6455,22 @@ a <a class="autorefs autorefs-internal" href="../pydantic_core/#pydantic_core.Py
           </tr>
           <tr class="doc-section-item">
             <td>
+                <code>polymorphic_serialization</code>
+            </td>
+            <td>
+                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a> | None</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Whether to use model and dataclass polymorphic serialization for this call.</p>
+              </div>
+            </td>
+            <td>
+                  <code>None</code>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
                 <code>context</code>
             </td>
             <td>
@@ -6473,10 +6513,7 @@ a <a class="autorefs autorefs-internal" href="../pydantic_core/#pydantic_core.Py
 
             <details class="quote">
               <summary>Source code in <code>pydantic/type_adapter.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">622</span>
-<span class="normal">623</span>
-<span class="normal">624</span>
-<span class="normal">625</span>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">625</span>
 <span class="normal">626</span>
 <span class="normal">627</span>
 <span class="normal">628</span>
@@ -6539,7 +6576,13 @@ a <a class="autorefs autorefs-internal" href="../pydantic_core/#pydantic_core.Py
 <span class="normal">685</span>
 <span class="normal">686</span>
 <span class="normal">687</span>
-<span class="normal">688</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">dump_json</span><span class="p">(</span>
+<span class="normal">688</span>
+<span class="normal">689</span>
+<span class="normal">690</span>
+<span class="normal">691</span>
+<span class="normal">692</span>
+<span class="normal">693</span>
+<span class="normal">694</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">dump_json</span><span class="p">(</span>
     <span class="bp">self</span><span class="p">,</span>
     <span class="n">instance</span><span class="p">:</span> <span class="n">T</span><span class="p">,</span>
     <span class="o">/</span><span class="p">,</span>
@@ -6557,6 +6600,7 @@ a <a class="autorefs autorefs-internal" href="../pydantic_core/#pydantic_core.Py
     <span class="n">warnings</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">|</span> <span class="n">Literal</span><span class="p">[</span><span class="s1">&#39;none&#39;</span><span class="p">,</span> <span class="s1">&#39;warn&#39;</span><span class="p">,</span> <span class="s1">&#39;error&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
     <span class="n">fallback</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[[</span><span class="n">Any</span><span class="p">],</span> <span class="n">Any</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">serialize_as_any</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+    <span class="n">polymorphic_serialization</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">context</span><span class="p">:</span> <span class="n">Any</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bytes</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;!!! abstract &quot;Usage Documentation&quot;</span>
@@ -6584,6 +6628,7 @@ a <a class="autorefs autorefs-internal" href="../pydantic_core/#pydantic_core.Py
 <span class="sd">        fallback: A function to call when an unknown value is encountered. If not provided,</span>
 <span class="sd">            a [`PydanticSerializationError`][pydantic_core.PydanticSerializationError] error is raised.</span>
 <span class="sd">        serialize_as_any: Whether to serialize fields with duck-typing serialization behavior.</span>
+<span class="sd">        polymorphic_serialization: Whether to use model and dataclass polymorphic serialization for this call.</span>
 <span class="sd">        context: Additional context to pass to the serializer.</span>
 
 <span class="sd">    Returns:</span>
@@ -6604,6 +6649,7 @@ a <a class="autorefs autorefs-internal" href="../pydantic_core/#pydantic_core.Py
         <span class="n">warnings</span><span class="o">=</span><span class="n">warnings</span><span class="p">,</span>
         <span class="n">fallback</span><span class="o">=</span><span class="n">fallback</span><span class="p">,</span>
         <span class="n">serialize_as_any</span><span class="o">=</span><span class="n">serialize_as_any</span><span class="p">,</span>
+        <span class="n">polymorphic_serialization</span><span class="o">=</span><span class="n">polymorphic_serialization</span><span class="p">,</span>
         <span class="n">context</span><span class="o">=</span><span class="n">context</span><span class="p">,</span>
     <span class="p">)</span>
 </code></pre></div></td></tr></table></div>
@@ -6799,13 +6845,7 @@ type (<code>string</code>, <code>boolean</code>, <code>null</code>, <code>intege
 
             <details class="quote">
               <summary>Source code in <code>pydantic/type_adapter.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">690</span>
-<span class="normal">691</span>
-<span class="normal">692</span>
-<span class="normal">693</span>
-<span class="normal">694</span>
-<span class="normal">695</span>
-<span class="normal">696</span>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">696</span>
 <span class="normal">697</span>
 <span class="normal">698</span>
 <span class="normal">699</span>
@@ -6836,7 +6876,13 @@ type (<code>string</code>, <code>boolean</code>, <code>null</code>, <code>intege
 <span class="normal">724</span>
 <span class="normal">725</span>
 <span class="normal">726</span>
-<span class="normal">727</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">json_schema</span><span class="p">(</span>
+<span class="normal">727</span>
+<span class="normal">728</span>
+<span class="normal">729</span>
+<span class="normal">730</span>
+<span class="normal">731</span>
+<span class="normal">732</span>
+<span class="normal">733</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">json_schema</span><span class="p">(</span>
     <span class="bp">self</span><span class="p">,</span>
     <span class="o">*</span><span class="p">,</span>
     <span class="n">by_alias</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
@@ -7092,13 +7138,7 @@ type (<code>string</code>, <code>boolean</code>, <code>null</code>, <code>intege
 
             <details class="quote">
               <summary>Source code in <code>pydantic/type_adapter.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">729</span>
-<span class="normal">730</span>
-<span class="normal">731</span>
-<span class="normal">732</span>
-<span class="normal">733</span>
-<span class="normal">734</span>
-<span class="normal">735</span>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">735</span>
 <span class="normal">736</span>
 <span class="normal">737</span>
 <span class="normal">738</span>
@@ -7158,7 +7198,13 @@ type (<code>string</code>, <code>boolean</code>, <code>null</code>, <code>intege
 <span class="normal">792</span>
 <span class="normal">793</span>
 <span class="normal">794</span>
-<span class="normal">795</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@staticmethod</span>
+<span class="normal">795</span>
+<span class="normal">796</span>
+<span class="normal">797</span>
+<span class="normal">798</span>
+<span class="normal">799</span>
+<span class="normal">800</span>
+<span class="normal">801</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@staticmethod</span>
 <span class="k">def</span><span class="w"> </span><span class="nf">json_schemas</span><span class="p">(</span>
     <span class="n">inputs</span><span class="p">:</span> <span class="n">Iterable</span><span class="p">[</span><span class="nb">tuple</span><span class="p">[</span><span class="n">JsonSchemaKeyT</span><span class="p">,</span> <span class="n">JsonSchemaMode</span><span class="p">,</span> <span class="n">TypeAdapter</span><span class="p">[</span><span class="n">Any</span><span class="p">]]],</span>
     <span class="o">/</span><span class="p">,</span>

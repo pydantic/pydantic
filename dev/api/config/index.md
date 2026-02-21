@@ -1354,6 +1354,15 @@ print(m.url)
 
 Added in v2.12.
 
+### polymorphic_serialization
+
+```python
+polymorphic_serialization: bool
+
+```
+
+Whether to use polymorphic serialization for subclasses of the model or Pydantic dataclass. Defaults to `False`.
+
 ## with_config
 
 ```python

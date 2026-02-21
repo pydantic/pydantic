@@ -2298,6 +2298,17 @@ to help you monitor and understand your
   
 </li>
         
+          <li class="md-nav__item">
+  <a href="#pydantic.config.ConfigDict.polymorphic_serialization" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        polymorphic_serialization
+      
+    </span>
+  </a>
+  
+</li>
+        
       </ul>
     </nav>
   
@@ -4985,6 +4996,17 @@ to help you monitor and understand your
   
 </li>
         
+          <li class="md-nav__item">
+  <a href="#pydantic.config.ConfigDict.polymorphic_serialization" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        polymorphic_serialization
+      
+    </span>
+  </a>
+  
+</li>
+        
       </ul>
     </nav>
   
@@ -7428,6 +7450,34 @@ for consistency with alias behavior for validation and serialization.</span></p>
 
 
 
+
+
+<div class="doc doc-object doc-attribute">
+
+
+
+<h3 id="pydantic.config.ConfigDict.polymorphic_serialization" class="doc doc-heading">
+            <span class="doc doc-object-name doc-attribute-name">polymorphic_serialization</span>
+
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-instance-attribute"><code>instance-attribute</code></small>
+  </span>
+
+<a href="#pydantic.config.ConfigDict.polymorphic_serialization" class="headerlink" title="Permanent link">&para;</a></h3>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span class="n">polymorphic_serialization</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a></span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+
+        <p>Whether to use polymorphic serialization for subclasses of the model or Pydantic dataclass. Defaults to <code>False</code>.</p>
+    </div>
+
+</div>
+
+
+
+
   </div>
 
     </div>
@@ -7497,12 +7547,7 @@ especially with <code>TypedDict</code>.</p>
 
             <details class="quote">
               <summary>Source code in <code>pydantic/config.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1227</span>
-<span class="normal">1228</span>
-<span class="normal">1229</span>
-<span class="normal">1230</span>
-<span class="normal">1231</span>
-<span class="normal">1232</span>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1232</span>
 <span class="normal">1233</span>
 <span class="normal">1234</span>
 <span class="normal">1235</span>
@@ -7558,7 +7603,12 @@ especially with <code>TypedDict</code>.</p>
 <span class="normal">1285</span>
 <span class="normal">1286</span>
 <span class="normal">1287</span>
-<span class="normal">1288</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">with_config</span><span class="p">(</span><span class="n">config</span><span class="p">:</span> <span class="n">ConfigDict</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="o">/</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Callable</span><span class="p">[[</span><span class="n">_TypeT</span><span class="p">],</span> <span class="n">_TypeT</span><span class="p">]:</span>
+<span class="normal">1288</span>
+<span class="normal">1289</span>
+<span class="normal">1290</span>
+<span class="normal">1291</span>
+<span class="normal">1292</span>
+<span class="normal">1293</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">with_config</span><span class="p">(</span><span class="n">config</span><span class="p">:</span> <span class="n">ConfigDict</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="o">/</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Callable</span><span class="p">[[</span><span class="n">_TypeT</span><span class="p">],</span> <span class="n">_TypeT</span><span class="p">]:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;!!! abstract &quot;Usage Documentation&quot;</span>
 <span class="sd">        [Configuration with other types](../concepts/config.md#configuration-on-other-supported-types)</span>
 

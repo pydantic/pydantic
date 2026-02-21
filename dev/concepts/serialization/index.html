@@ -1344,15 +1344,31 @@ to help you monitor and understand your
 </li>
         
           <li class="md-nav__item">
-  <a href="#serializing-with-duck-typing" class="md-nav__link">
+  <a href="#polymorphic-serialization" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Serializing with duck typing 🦆
+        Polymorphic serialization
       
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="Serializing with duck typing 🦆">
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#serializing-as-any" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Serializing "as Any"
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Serializing &#34;as Any&#34;">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
@@ -1374,11 +1390,6 @@ to help you monitor and understand your
       
     </span>
   </a>
-  
-</li>
-        
-      </ul>
-    </nav>
   
 </li>
         
@@ -4341,15 +4352,31 @@ to help you monitor and understand your
 </li>
         
           <li class="md-nav__item">
-  <a href="#serializing-with-duck-typing" class="md-nav__link">
+  <a href="#polymorphic-serialization" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Serializing with duck typing 🦆
+        Polymorphic serialization
       
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="Serializing with duck typing 🦆">
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#serializing-as-any" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Serializing "as Any"
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Serializing &#34;as Any&#34;">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
@@ -4371,11 +4398,6 @@ to help you monitor and understand your
       
     </span>
   </a>
-  
-</li>
-        
-      </ul>
-    </nav>
   
 </li>
         
@@ -5019,9 +5041,10 @@ inside the serializer functions using the <a class="autorefs autorefs-internal" 
 <!-- markdownlint-disable-next-line no-empty-links -->
 <p><a href="" id="subclass-instances-for-fields-of-basemodel-dataclasses-typeddict"></a></p>
 <h3 id="subclasses-of-model-like-types">Subclasses of model-like types<a class="headerlink" href="#subclasses-of-model-like-types" title="Permanent link">&para;</a></h3>
-<p>When using model-like classes (Pydantic models, dataclasses, etc.) as field annotations, the default behavior is to
-serializer the field value as though it was an instance of the class, even if it is a subclass. More specifically,
-only the fields declared on the type annotation will be included in the serialization result:</p>
+<p>When using model-like classes (Pydantic models, <a href="../dataclasses/">dataclasses</a>, etc.) as field annotations,
+the default behavior is to serialize the field value as though it was an instance of the class used as the
+annotation, even if it is a subclass. More specifically, only the fields declared on the type annotation
+will be included in the serialization result:</p>
 <div class="language-python highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">pydantic</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseModel</span>
 
 
@@ -5057,22 +5080,93 @@ even if subclasses get passed when instantiating the object. In particular, this
 when adding sensitive information like secrets as fields of subclasses. To enable the old V1 behavior, refer
 to the next section.</p>
 </div>
-<h3 id="serializing-with-duck-typing">Serializing with duck typing 🦆<a class="headerlink" href="#serializing-with-duck-typing" title="Permanent link">&para;</a></h3>
-<p>Duck typing serialization is the behavior of serializing a model instance based on the actual field values, rather
-than the field definitions. This means that for a field annotated with a model-like class, all the fields present
-in subclasses of such class will be included in the serialized output.</p>
-<p>To achieve duck typing serialization, Pydantic can apply <em>serialize as any</em> behavior. In this mode, Pydantic does
-<em>not</em> make use of the type annotation (more precisely, the serialization schema derived from the type) to infer
-how the value should be serialized, but instead inspects the actual type of the value at runtime to do so.</p>
-<p>When a subclass of a model is used as a value, Pydantic will <em>not</em> serialize it according to the schema of the
-parent class, but rather use the value itself and preserve all of its fields.</p>
+<!-- old anchor added for backwards compatibility -->
+<!-- markdownlint-disable-next-line no-empty-links -->
+<p><a href="" id="serializing-with-duck-typing"></a></p>
+<h3 id="polymorphic-serialization">Polymorphic serialization<a class="headerlink" href="#polymorphic-serialization" title="Permanent link">&para;</a></h3>
+<div style="border-left: .15rem solid rgb(79, 196, 100); padding: 0 .5rem;">
+<p><span style="font-style: italic; color: rgb(79, 196, 100);">Added in v2.12: </span><span>Polymorphic serialization was added as an better alternative to the <a href="#serializing-as-any">serialize as any</a> behavior, and only
+applies to Pydantic models and Pydantic dataclasses.</span></p>
+</div>
+<p>Polymorphic serialization is the behavior of serializing a model (or <a href="../dataclasses/">Pydantic dataclass</a>) instance
+according to the serialization schema of such instance, rather that the schema of the class used as the type.
+This will expose all the data defined on the subclass in the serialized payload.</p>
+<p>This behavior can be configured in the following ways:</p>
+<ul>
+<li>Configuration level: use the <a class="autorefs autorefs-internal" href="../../api/config/#pydantic.config.ConfigDict.polymorphic_serialization"><code>polymorphic_serialization</code></a> setting
+  in the model/dataclass <a href="../config/">configuration</a>.</li>
+<li>Runtime level: use the <code>polymorphic_serialization</code> argument when calling the <a href="#serializing-data">serialization methods</a>.
+  This will apply to all (nested) types, overriding any configuration.</li>
+</ul>
+<div class="admonition note">
+<p class="admonition-title">Duck-typed serialization</p>
+<p>This behavior (and the <a href="#serializing-as-any">"any" serialization</a> discussed below) was previously referred
+to as duck-typed serialization. This was a misnomer; it did not function like
+<a href="https://en.wikipedia.org/wiki/Duck_typing">duck typing</a> in the conventional programming language sense.</p>
+</div>
+<div class="admonition warning polymorphic serialization of standard library dataclasses">
+<p class="admonition-title">Warning</p>
+<p>Polymorphic serialization is only supported for Pydantic models and <a href="../dataclasses/">Pydantic dataclasses</a>.
+When using <a class="autorefs autorefs-external" href="https://docs.python.org/3/library/dataclasses.html#module-dataclasses">standard library dataclasses</a>, polymorphic serialization is <em>not</em> supported,
+even if the dataclass is a subclass of a Pydantic dataclass. This may be fixed in a future Pydantic release.</p>
+</div>
+<p>The example below defines a type <code>User</code> and a subclass of it, <code>UserLogin</code>. A second pair of types, <code>PolymorphicUser</code>
+and <code>PolymorphicUserLogin</code> are defined as equivalents with <code>polymorphic_serialization</code> enabled.</p>
+<p>We can then see the effect of serializing each of these types, and the interaction of this config with the runtime
+<code>polymorphic_serialization</code> setting:</p>
+<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">pydantic</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseModel</span>
+
+
+<span class="k">class</span><span class="w"> </span><span class="nc">User</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="n">name</span><span class="p">:</span> <span class="nb">str</span>
+
+
+<span class="k">class</span><span class="w"> </span><span class="nc">UserLogin</span><span class="p">(</span><span class="n">User</span><span class="p">):</span>
+    <span class="n">password</span><span class="p">:</span> <span class="nb">str</span>
+
+
+<span class="k">class</span><span class="w"> </span><span class="nc">OuterModel</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="n">user</span><span class="p">:</span> <span class="n">User</span>
+
+
+<span class="n">outer_model</span> <span class="o">=</span> <span class="n">OuterModel</span><span class="p">(</span>
+    <span class="n">user</span><span class="o">=</span><span class="n">UserLogin</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;pydantic&#39;</span><span class="p">,</span> <span class="n">password</span><span class="o">=</span><span class="s1">&#39;password&#39;</span><span class="p">),</span>
+<span class="p">)</span>
+
+
+<span class="nb">print</span><span class="p">(</span><span class="n">outer_model</span><span class="o">.</span><span class="n">model_dump</span><span class="p">())</span>  <span class="c1"># (1)!</span>
+<span class="c1">#&gt; {&#39;user&#39;: {&#39;name&#39;: &#39;pydantic&#39;}}</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">outer_model</span><span class="o">.</span><span class="n">model_dump</span><span class="p">(</span><span class="n">polymorphic_serialization</span><span class="o">=</span><span class="kc">True</span><span class="p">))</span>  <span class="c1"># (2)!</span>
+<span class="c1">#&gt; {&#39;user&#39;: {&#39;name&#39;: &#39;pydantic&#39;, &#39;password&#39;: &#39;password&#39;}}</span>
+</code></pre></div>
+<ol>
+<li>With polymorphic serialization disabled, <code>user</code> serializes as the base type.</li>
+<li>With polymorphic serialization enabled, <code>user</code> serializes as the actual runtime subclass.</li>
+</ol>
+<p>As seen in the example, by having polymorphic serialization enabled, the <code>User.model_dump()</code> method will by respect the value
+of the <code>UserLogin</code> subclass when it is provided instead of a <code>User</code> value, and serialize the full <code>UserLogin</code> type. This
+behavior can be globally overridden with the <code>polymorphic_serialization</code> runtime setting; in this case setting it to <code>False</code>
+causes the <code>UserLogin</code> value to serialize just as a <code>User</code> value, ignoring the subclass' <code>password</code> field.</p>
+<h2 id="serializing-as-any">Serializing "as Any"<a class="headerlink" href="#serializing-as-any" title="Permanent link">&para;</a></h2>
+<p>A more extreme form of <a href="#polymorphic-serialization">polymorphic serialization</a> is "any" serialization. In this
+mode, Pydantic does <em>not</em> make use of any type annotation (more precisely, the serialization schema derived from
+the type) to infer how the value should be serialized, but instead inspects the actual type of the value at runtime
+to do so (and this applies to <em>all</em> types, not only Pydantic models and dataclasses).</p>
+<p>This means that every value will be serialized exactly based on its runtime type and any knowledge Pydantic has
+of how to serialize the type. Pydantic can infer how to serialize the following types:</p>
+<ul>
+<li>Many Python standard library types (exact set may be expanded depending on Pydantic version).</li>
+<li>Types with a <code>__pydantic_serializer__</code> attribute.</li>
+<li>Any type serializable with the <code>fallback</code> function passed as an argument to <a href="#serializing-data">serialization methods</a>.</li>
+</ul>
+<p>In most cases, you will want to use the <a href="#polymorphic-serialization">polymorphic serialization</a> behavior instead.</p>
 <p>This behavior can be configured at the field level and at runtime, for a specific serialization call:</p>
 <ul>
 <li>Field level: use the <a class="autorefs autorefs-internal" href="../../api/functional_serializers/#pydantic.functional_serializers.SerializeAsAny"><code>SerializeAsAny</code></a> annotation.</li>
 <li>Runtime level: use the <code>serialize_as_any</code> argument when calling the <a href="#serializing-data">serialization methods</a>.</li>
 </ul>
-<p>We discuss these options below in more detail:</p>
-<h4 id="serializeasany-annotation"><code>SerializeAsAny</code> annotation<a class="headerlink" href="#serializeasany-annotation" title="Permanent link">&para;</a></h4>
+<p>These options are discussed below in more detail.</p>
+<h3 id="serializeasany-annotation"><code>SerializeAsAny</code> annotation<a class="headerlink" href="#serializeasany-annotation" title="Permanent link">&para;</a></h3>
 <p>If you want duck typing serialization behavior, this can be done using the
 <a class="autorefs autorefs-internal" href="../../api/functional_serializers/#pydantic.functional_serializers.SerializeAsAny"><code>SerializeAsAny</code></a> annotation
 on a type:</p>
@@ -5106,7 +5200,7 @@ on a type:</p>
 annotated as <code>&lt;type&gt;</code>, and static type checkers will treat the annotation as if it was simply <code>&lt;type&gt;</code>.
 When serializing, the field will be serialized as though the type hint for the field was <a class="autorefs autorefs-external" href="https://docs.python.org/3/library/typing.html#typing.Any"><code>Any</code></a>,
 which is where the name comes from.</p>
-<h4 id="serialize_as_any-runtime-setting"><code>serialize_as_any</code> runtime setting<a class="headerlink" href="#serialize_as_any-runtime-setting" title="Permanent link">&para;</a></h4>
+<h3 id="serialize_as_any-runtime-setting"><code>serialize_as_any</code> runtime setting<a class="headerlink" href="#serialize_as_any-runtime-setting" title="Permanent link">&para;</a></h3>
 <p>The <code>serialize_as_any</code> runtime setting can be used to serialize model data with or without duck typed serialization behavior.
 <code>serialize_as_any</code> can be passed as a keyword argument to the various <a href="#serializing-data">serialization methods</a> (such as
 <a class="autorefs autorefs-internal" href="../../api/base_model/#pydantic.BaseModel.model_dump"><code>model_dump()</code></a> and <a class="autorefs autorefs-internal" href="../../api/base_model/#pydantic.BaseModel.model_dump_json"><code>model_dump_json()</code></a> on Pydantic models).</p>
