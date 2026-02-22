@@ -2,7 +2,7 @@
 <!-- markdownlint-disable descriptive-link-text -->
 <!-- markdownlint-disable-next-line first-line-heading -->
 
-## v2.13.0b1 (2026-02-21)
+## v2.13.0b1 (2026-02-23)
 
 [GitHub release](https://github.com/pydantic/pydantic/releases/tag/v2.13.0b1)
 
