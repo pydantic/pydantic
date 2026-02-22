@@ -268,6 +268,13 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
                 'See the `model_validator` docs (https://docs.pydantic.dev/latest/concepts/validators/#model-validators) for more details.',
                 stacklevel=2,
             )
+        # Prevent computed field names from being stored as extra fields.
+        # When extra='allow', the validator treats computed field names as unknown
+        # keys and stores them in __pydantic_extra__, which causes conflicts
+        # during serialization (duplicate keys, incorrect exclude_none behavior).
+        if self.__pydantic_extra__ and self.__pydantic_computed_fields__:
+            for name in self.__pydantic_computed_fields__:
+                self.__pydantic_extra__.pop(name, None)
 
     # The following line sets a flag that we use to determine when `__init__` gets overridden by the user
     __init__.__pydantic_base_init__ = True  # pyright: ignore[reportFunctionMemberAccess]
@@ -374,6 +381,9 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
             _fields_set = fields_set
 
         _extra: dict[str, Any] | None = values if cls.model_config.get('extra') == 'allow' else None
+        if _extra and cls.__pydantic_computed_fields__:
+            for name in cls.__pydantic_computed_fields__:
+                _extra.pop(name, None)
         _object_setattr(m, '__dict__', fields_values)
         _object_setattr(m, '__pydantic_fields_set__', _fields_set)
         if not cls.__pydantic_root_model__:
