@@ -89,7 +89,8 @@ Some differences between Pydantic dataclasses and models include:
         ```
 
         1. Unlike [generic Pydantic models](./models.md#generic-models), `Foo[int]` is a [generic alias][types-genericalias] and not a proper type object.
-           As such, Pydantic currently performs no validation.
+           As such, Pydantic currently treats `Foo[int]` the same as `Foo[Any]`,
+           without performing validation for `f`.
 
     === "Python 3.12 and above (new syntax)"
 
