@@ -781,6 +781,8 @@ jobs:
       - uses: actions/checkout@v6
 
       - uses: astral-sh/setup-uv@v7
+        with:
+          activate-environment: true
 
       - run: uv pip install -U build twine
 
