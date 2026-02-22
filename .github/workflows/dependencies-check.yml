@@ -5,6 +5,9 @@ on:
     - cron: '43 3 * * 6,3'
   workflow_dispatch: {}
 
+permissions:
+  contents: read
+
 env:
   UV_FROZEN: true
 

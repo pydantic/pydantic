@@ -5,6 +5,9 @@ on:
     - cron: '21 3 * * 1,2,3,4,5'
   workflow_dispatch: {}
 
+permissions:
+  contents: read
+
 jobs:
   test-pydantic-settings:
     name: Test pydantic settings

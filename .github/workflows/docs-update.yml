@@ -7,6 +7,10 @@ on:
       - docs-update
     tags:
       - '**'
+
+permissions:
+  contents: write
+
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
