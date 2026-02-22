@@ -782,7 +782,7 @@ jobs:
 
       - uses: astral-sh/setup-uv@v7
 
-      - run: uv pip install -U build -U twine
+      - run: uv pip install -U build twine
 
       - name: Check pydantic-core package version
         run: uv run .github/check_pydantic_core_version.py
