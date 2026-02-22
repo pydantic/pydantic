@@ -148,10 +148,14 @@ class _Pipeline(Generic[_InT, _OutT]):
     def validate_as(self, tp: type[_NewOutT], *, strict: bool = ...) -> _Pipeline[_InT, _NewOutT]: ...
 
     @overload
-    def validate_as(self, tp: EllipsisType, *, strict: bool = ...) -> _Pipeline[_InT, Any]:  # type: ignore
-        ...
+    def validate_as(self, tp: EllipsisType, *, strict: bool = ...) -> _Pipeline[_InT, Any]: ...
 
-    def validate_as(self, tp: type[_NewOutT] | EllipsisType, *, strict: bool = False) -> _Pipeline[_InT, Any]:  # type: ignore
+    # TODO PEP 747: use TypeForm to properly type Annotated aliases (e.g. NewPath, FilePath).
+    # This fallback accepts any type expression but loses generic type inference.
+    @overload
+    def validate_as(self, tp: Any, *, strict: bool = ...) -> _Pipeline[_InT, Any]: ...
+
+    def validate_as(self, tp: type[_NewOutT] | EllipsisType | Any, *, strict: bool = False) -> _Pipeline[_InT, Any]:  # type: ignore
         """Validate / parse the input into a new type.
 
         If no type is provided, the type of the field is used.
