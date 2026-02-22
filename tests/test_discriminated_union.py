@@ -2319,6 +2319,33 @@ def test_discriminated_union_type_alias_type_separate() -> None:
     assert json_schema['properties']['f']['oneOf'] == [{'$ref': '#/$defs/Foo'}, {'$ref': '#/$defs/Bar'}]
 
 
+def test_discriminated_union_type_alias_type_separate_callable_discriminator() -> None:
+    """https://github.com/pydantic/pydantic/issues/12843"""
+
+    class Foo(BaseModel):
+        type: Literal['foo']
+
+    class Bar(BaseModel):
+        type: Literal['bar']
+
+    FooBar = TypeAliasType('FooBar', Union[Annotated[Foo, Tag('foo')], Annotated[Bar, Tag('bar')]])
+
+    T = TypeVar('T')
+
+    FooBarTV = TypeAliasType(
+        'FooBarTV', Union[Annotated[Foo, Tag('foo')], Annotated[Bar, Tag('bar')]], type_params=(T,)
+    )
+
+    class Main(BaseModel):
+        f: Annotated[FooBar, Discriminator(lambda v: v['type'])]
+        g: Annotated[FooBarTV[int], Discriminator(lambda v: v['type'])]
+
+    m = Main(f={'type': 'foo'}, g={'type': 'bar'})
+
+    assert m.f == Foo(type='foo')
+    assert m.g == Bar(type='bar')
+
+
 @pytest.mark.xfail(
     reason="Nested references aren't flattened (see comment in `_ApplyInferredDiscriminator._handle_choice()`)",
 )
