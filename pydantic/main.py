@@ -387,7 +387,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
                     if k in m.__private_attributes__:
                         m.__pydantic_private__[k] = v
 
-        elif not cls.__pydantic_root_model__:
+        if not cls.__pydantic_root_model__ and not hasattr(m, '__pydantic_private__'):
             # Note: if there are any private attributes, cls.__pydantic_post_init__ would exist
             # Since it doesn't, that means that `__pydantic_private__` should be set to None
             _object_setattr(m, '__pydantic_private__', None)
