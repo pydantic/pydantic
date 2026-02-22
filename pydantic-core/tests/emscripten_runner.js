@@ -98,7 +98,7 @@ import importlib
 
 await micropip.install([
     'dirty-equals',
-    'inline-snapshot<0.32',  # https://github.com/15r10nk/inline-snapshot/issues/349
+    'inline-snapshot',
     'hypothesis',
     'pytest-speed',
     'pytest-mock',
