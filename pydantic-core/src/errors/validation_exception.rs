@@ -355,6 +355,7 @@ impl ValidationError {
             None,
             false,
             None,
+            None,
         );
         let mut state = SerializationState::new(config, WarningsMode::None, None, None, extra)?;
         let mut serializer = ValidationErrorSerializer {
