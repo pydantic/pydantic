@@ -145,10 +145,15 @@ class _Pipeline(Generic[_InT, _OutT]):
         return _Pipeline[_InT, _NewOutT](self._steps + (_Transform(func),))
 
     @overload
-    def validate_as(self, tp: type[_NewOutT], *, strict: bool = ...) -> _Pipeline[_InT, _NewOutT]: ...
+    def validate_as(self, tp: type[_NewOutT], *, strict: bool = False) -> _Pipeline[_InT, _NewOutT]: ...
 
     @overload
-    def validate_as(self, tp: EllipsisType, *, strict: bool = ...) -> _Pipeline[_InT, Any]: ...
+    def validate_as(
+        self,
+        tp: ellipsis,  # noqa: F821  # TODO: use `_typing_extra.EllipsisType` when we drop Py3.9
+        *,
+        strict: bool = False
+    ) -> _Pipeline[_InT, Any]: ...
 
     # TODO PEP 747: use TypeForm to properly type Annotated aliases (e.g. NewPath, FilePath).
     # This fallback accepts any type expression but loses generic type inference.
