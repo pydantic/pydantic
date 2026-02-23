@@ -48,21 +48,28 @@ def transform(
 
 ```python
 validate_as(
-    tp: type[_NewOutT], *, strict: bool = ...
+    tp: type[_NewOutT], *, strict: bool = False
 ) -> _Pipeline[_InT, _NewOutT]
 
 ```
 
 ```python
 validate_as(
-    tp: EllipsisType, *, strict: bool = ...
+    tp: ellipsis, *, strict: bool = False
 ) -> _Pipeline[_InT, Any]
 
 ```
 
 ```python
 validate_as(
-    tp: type[_NewOutT] | EllipsisType,
+    tp: Any, *, strict: bool = ...
+) -> _Pipeline[_InT, Any]
+
+```
+
+```python
+validate_as(
+    tp: type[_NewOutT] | EllipsisType | Any,
     *,
     strict: bool = False
 ) -> _Pipeline[_InT, Any]
@@ -78,7 +85,7 @@ Types are parsed in Pydantic's `lax` mode by default, but you can enable `strict
 Source code in `pydantic/experimental/pipeline.py`
 
 ```python
-def validate_as(self, tp: type[_NewOutT] | EllipsisType, *, strict: bool = False) -> _Pipeline[_InT, Any]:  # type: ignore
+def validate_as(self, tp: type[_NewOutT] | EllipsisType | Any, *, strict: bool = False) -> _Pipeline[_InT, Any]:  # type: ignore
     """Validate / parse the input into a new type.
 
     If no type is provided, the type of the field is used.

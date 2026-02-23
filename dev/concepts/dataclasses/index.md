@@ -51,24 +51,85 @@ Note
 
 Keep in mind that Pydantic dataclasses are **not** a replacement for [Pydantic models](../models/). They provide a similar functionality to stdlib dataclasses with the addition of Pydantic validation.
 
-There are cases where subclassing using Pydantic models is the better choice.
+There are cases where using Pydantic models is the better choice.
 
 For more information and discussion see [pydantic/pydantic#710](https://github.com/pydantic/pydantic/issues/710).
 
 Similarities between Pydantic dataclasses and models include support for:
 
-- [Configuration](#dataclass-config) support
+- [Configuration](#dataclass-config) support (note that dataclasses doesn't support the `model_config` attribute as with Pydantic models)
 - [Nested](../models/#nested-models) classes
-- [Generics](../models/#generic-models)
+- Arguments used to instantiate the dataclass are also [copied](../models/#attribute-copies).
 
 Some differences between Pydantic dataclasses and models include:
 
-- [validators](#validators-and-initialization-hooks)
-- The behavior with the extra configuration value
+- The [various methods](../models/#model-methods-and-properties) to validate, dump and generate a JSON Schema aren't available. Instead, you can wrap the dataclass with a TypeAdapter and make use of its methods:
 
-Similarly to Pydantic models, arguments used to instantiate the dataclass are [copied](../models/#attribute-copies).
+  ```python
+  from pydantic import TypeAdapter
+  from pydantic.dataclasses import dataclass
 
-To make use of the [various methods](../models/#model-methods-and-properties) to validate, dump and generate a JSON Schema, you can wrap the dataclass with a TypeAdapter and make use of its methods.
+
+  @dataclass
+  class Foo:
+      f: int
+
+
+  foo = Foo(f=1)
+
+  TypeAdapter(Foo).dump_python(foo)
+  #> {'f': 1}
+  TypeAdapter(Foo).validate_python({'f': 1})
+  #> Foo(f=1)
+
+  ```
+
+- Validators (see the [dedicated section](#validators-and-initialization-hooks)).
+
+- The extra configuration behavior:
+
+  - Extra data is not included in [serialization](../serialization/#serializing-data).
+  - There is no way to customize validation of extra values [using the `__pydantic_extra__` attribute](../models/#extra-data).
+
+- Generic dataclasses are supported, but as with other standard library generic types, using a parameterized dataclass won't work as expected:
+
+  ```python
+  from typing import Generic, TypeVar
+
+  from pydantic.dataclasses import dataclass
+
+  T = TypeVar('T')
+
+
+  @dataclass
+  class Foo(Generic[T]):
+      f: T
+
+
+  Foo[int](f='not_an_int')  # (1)!
+  #> Foo(f='not_an_int')
+
+  ```
+
+  1. Unlike [generic Pydantic models](../models/#generic-models), `Foo[int]` is a generic alias and not a proper type object. As such, Pydantic currently treats `Foo[int]` the same as `Foo[Any]`, without performing validation for `f`.
+
+  ```python
+  from pydantic.dataclasses import dataclass
+
+
+  @dataclass
+  class Foo[T]:
+      f: T
+
+
+  Foo[int](f='not_an_int')  # (1)!
+  #> Foo(f='not_an_int')
+
+  ```
+
+  1. Unlike [generic Pydantic models](../models/#generic-models), `Foo[int]` is a generic alias and not a proper type object. As such, Pydantic currently performs no validation.
+
+  Instead, you can wrap the `Foo[int]` parameterized class with a TypeAdapter.
 
 You can use both the Pydantic's Field() and the stdlib's field() functions:
 
@@ -100,40 +161,13 @@ print(user)
 
 ```
 
-```python
-import dataclasses
-
-from pydantic import Field
-from pydantic.dataclasses import dataclass
-
-
-@dataclass
-class User:
-    id: int
-    name: str = 'John Doe'
-    friends: list[int] = dataclasses.field(default_factory=lambda: [0])
-    age: int | None = dataclasses.field(
-        default=None,
-        metadata={'title': 'The age of the user', 'description': 'do not lie!'},
-    )
-    height: int | None = Field(
-        default=None, title='The height in cm', ge=50, le=300
-    )
-
-
-user = User(id='42', height='250')
-print(user)
-#> User(id=42, name='John Doe', friends=[0], age=None, height=250)
-
-```
-
 The Pydantic @dataclass decorator accepts the same arguments as the standard decorator, with the addition of a `config` parameter.
 
 ## Dataclass config
 
 If you want to modify the configuration like you would with a BaseModel, you have two options:
 
-- Use the `config` argument of the decorator.
+- Use the `config` parameter of the decorator.
 - Define the configuration with the `__pydantic_config__` attribute.
 
 ```python
@@ -157,10 +191,6 @@ class MyDataclass2:
 ```
 
 1. You can read more about `validate_assignment` in the API reference.
-
-Note
-
-While Pydantic dataclasses support the extra configuration value, some default behavior of stdlib dataclasses may prevail. For example, any extra fields present on a Pydantic dataclass with extra set to `'allow'` are omitted in the dataclass' string representation. There is also no way to provide validation [using the `__pydantic_extra__` attribute](../models/#extra-data).
 
 ## Rebuilding dataclass schema
 

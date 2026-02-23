@@ -4087,28 +4087,95 @@ on standard <a class="autorefs autorefs-external" href="https://docs.python.org/
 <p class="admonition-title">Note</p>
 <p>Keep in mind that Pydantic dataclasses are <strong>not</strong> a replacement for <a href="../models/">Pydantic models</a>.
 They provide a similar functionality to stdlib dataclasses with the addition of Pydantic validation.</p>
-<p>There are cases where subclassing using Pydantic models is the better choice.</p>
+<p>There are cases where using Pydantic models is the better choice.</p>
 <p>For more information and discussion see
 <a href="https://github.com/pydantic/pydantic/issues/710">pydantic/pydantic#710</a>.</p>
 </div>
 <p>Similarities between Pydantic dataclasses and models include support for:</p>
 <ul>
-<li><a href="#dataclass-config">Configuration</a> support</li>
+<li><a href="#dataclass-config">Configuration</a> support (note that dataclasses doesn't support the <code>model_config</code> attribute as with Pydantic models)</li>
 <li><a href="../models/#nested-models">Nested</a> classes</li>
-<li><a href="../models/#generic-models">Generics</a></li>
+<li>Arguments used to instantiate the dataclass are also <a href="../models/#attribute-copies">copied</a>.</li>
 </ul>
 <p>Some differences between Pydantic dataclasses and models include:</p>
 <ul>
-<li><a href="#validators-and-initialization-hooks">validators</a></li>
-<li>The behavior with the <a class="autorefs autorefs-internal" href="../../api/config/#pydantic.config.ConfigDict.extra"><code>extra</code></a> configuration value</li>
+<li>
+<p>The <a href="../models/#model-methods-and-properties">various methods</a> to validate, dump and generate a JSON Schema aren't available. Instead,
+  you can wrap the dataclass with a <a class="autorefs autorefs-internal" href="../../api/type_adapter/#pydantic.type_adapter.TypeAdapter"><code>TypeAdapter</code></a> and make use of its methods:</p>
+<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">pydantic</span><span class="w"> </span><span class="kn">import</span> <span class="n">TypeAdapter</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pydantic.dataclasses</span><span class="w"> </span><span class="kn">import</span> <span class="n">dataclass</span>
+
+
+<span class="nd">@dataclass</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">Foo</span><span class="p">:</span>
+    <span class="n">f</span><span class="p">:</span> <span class="nb">int</span>
+
+
+<span class="n">foo</span> <span class="o">=</span> <span class="n">Foo</span><span class="p">(</span><span class="n">f</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+
+<span class="n">TypeAdapter</span><span class="p">(</span><span class="n">Foo</span><span class="p">)</span><span class="o">.</span><span class="n">dump_python</span><span class="p">(</span><span class="n">foo</span><span class="p">)</span>
+<span class="c1">#&gt; {&#39;f&#39;: 1}</span>
+<span class="n">TypeAdapter</span><span class="p">(</span><span class="n">Foo</span><span class="p">)</span><span class="o">.</span><span class="n">validate_python</span><span class="p">({</span><span class="s1">&#39;f&#39;</span><span class="p">:</span> <span class="mi">1</span><span class="p">})</span>
+<span class="c1">#&gt; Foo(f=1)</span>
+</code></pre></div>
+</li>
+<li>
+<p>Validators (see the <a href="#validators-and-initialization-hooks">dedicated section</a>).</p>
+</li>
+<li>The <a class="autorefs autorefs-internal" href="../../api/config/#pydantic.config.ConfigDict.extra"><code>extra</code></a> configuration behavior:<ul>
+<li>Extra data is not included in <a href="../serialization/#serializing-data">serialization</a>.</li>
+<li>There is no way to customize validation of extra values <a href="../models/#extra-data">using the <code>__pydantic_extra__</code> attribute</a>.</li>
 </ul>
-<p>Similarly to Pydantic models, arguments used to instantiate the dataclass are <a href="../models/#attribute-copies">copied</a>.</p>
-<p>To make use of the <a href="../models/#model-methods-and-properties">various methods</a> to validate, dump and generate a JSON Schema,
-you can wrap the dataclass with a <a class="autorefs autorefs-internal" href="../../api/type_adapter/#pydantic.type_adapter.TypeAdapter"><code>TypeAdapter</code></a> and make use of its methods.</p>
-<p>You can use both the Pydantic's <a class="autorefs autorefs-internal" href="../../api/fields/#pydantic.fields.Field"><code>Field()</code></a> and the stdlib's <a class="autorefs autorefs-external" href="https://docs.python.org/3/library/dataclasses.html#dataclasses.field"><code>field()</code></a> functions:</p>
-<div class="tabbed-set tabbed-alternate" data-tabs="2:2"><input checked="checked" id="__tabbed_2_1" name="__tabbed_2" type="radio" /><input id="__tabbed_2_2" name="__tabbed_2" type="radio" /><div class="tabbed-labels"><label for="__tabbed_2_1">Python 3.9 and above</label><label for="__tabbed_2_2">Python 3.10 and above</label></div>
+</li>
+<li>
+<p>Generic dataclasses are supported, but as with other standard library generic types, using a parameterized dataclass won't work as expected:</p>
+<div class="tabbed-set tabbed-alternate" data-tabs="2:2"><input checked="checked" id="__tabbed_2_1" name="__tabbed_2" type="radio" /><input id="__tabbed_2_2" name="__tabbed_2" type="radio" /><div class="tabbed-labels"><label for="__tabbed_2_1">Python 3.9 and above</label><label for="__tabbed_2_2">Python 3.12 and above (new syntax)</label></div>
 <div class="tabbed-content">
 <div class="tabbed-block">
+<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Generic</span><span class="p">,</span> <span class="n">TypeVar</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">pydantic.dataclasses</span><span class="w"> </span><span class="kn">import</span> <span class="n">dataclass</span>
+
+<span class="n">T</span> <span class="o">=</span> <span class="n">TypeVar</span><span class="p">(</span><span class="s1">&#39;T&#39;</span><span class="p">)</span>
+
+
+<span class="nd">@dataclass</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">Foo</span><span class="p">(</span><span class="n">Generic</span><span class="p">[</span><span class="n">T</span><span class="p">]):</span>
+    <span class="n">f</span><span class="p">:</span> <span class="n">T</span>
+
+
+<span class="n">Foo</span><span class="p">[</span><span class="nb">int</span><span class="p">](</span><span class="n">f</span><span class="o">=</span><span class="s1">&#39;not_an_int&#39;</span><span class="p">)</span>  <span class="c1"># (1)!</span>
+<span class="c1">#&gt; Foo(f=&#39;not_an_int&#39;)</span>
+</code></pre></div>
+<ol>
+<li>Unlike <a href="../models/#generic-models">generic Pydantic models</a>, <code>Foo[int]</code> is a <a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#types-genericalias">generic alias</a> and not a proper type object.
+   As such, Pydantic currently treats <code>Foo[int]</code> the same as <code>Foo[Any]</code>,
+   without performing validation for <code>f</code>.</li>
+</ol>
+</div>
+<div class="tabbed-block">
+<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">pydantic.dataclasses</span><span class="w"> </span><span class="kn">import</span> <span class="n">dataclass</span>
+
+
+<span class="nd">@dataclass</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">Foo</span><span class="p">[</span><span class="n">T</span><span class="p">]:</span>
+    <span class="n">f</span><span class="p">:</span> <span class="n">T</span>
+
+
+<span class="n">Foo</span><span class="p">[</span><span class="nb">int</span><span class="p">](</span><span class="n">f</span><span class="o">=</span><span class="s1">&#39;not_an_int&#39;</span><span class="p">)</span>  <span class="c1"># (1)!</span>
+<span class="c1">#&gt; Foo(f=&#39;not_an_int&#39;)</span>
+</code></pre></div>
+<ol>
+<li>Unlike <a href="../models/#generic-models">generic Pydantic models</a>, <code>Foo[int]</code> is a <a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#types-genericalias">generic alias</a> and not a proper type object.
+   As such, Pydantic currently performs no validation.</li>
+</ol>
+</div>
+</div>
+</div>
+<p>Instead, you can wrap the <code>Foo[int]</code> parameterized class with a <a class="autorefs autorefs-internal" href="../../api/type_adapter/#pydantic.type_adapter.TypeAdapter"><code>TypeAdapter</code></a>.</p>
+</li>
+</ul>
+<p>You can use both the Pydantic's <a class="autorefs autorefs-internal" href="../../api/fields/#pydantic.fields.Field"><code>Field()</code></a> and the stdlib's <a class="autorefs autorefs-external" href="https://docs.python.org/3/library/dataclasses.html#dataclasses.field"><code>field()</code></a> functions:</p>
 <div class="language-python highlight"><pre><span></span><code><span class="kn">import</span><span class="w"> </span><span class="nn">dataclasses</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Optional</span>
 
@@ -4134,41 +4201,12 @@ you can wrap the dataclass with a <a class="autorefs autorefs-internal" href="..
 <span class="nb">print</span><span class="p">(</span><span class="n">user</span><span class="p">)</span>
 <span class="c1">#&gt; User(id=42, name=&#39;John Doe&#39;, friends=[0], age=None, height=250)</span>
 </code></pre></div>
-</div>
-<div class="tabbed-block">
-<div class="language-python highlight"><pre><span></span><code><span class="kn">import</span><span class="w"> </span><span class="nn">dataclasses</span>
-
-<span class="kn">from</span><span class="w"> </span><span class="nn">pydantic</span><span class="w"> </span><span class="kn">import</span> <span class="n">Field</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">pydantic.dataclasses</span><span class="w"> </span><span class="kn">import</span> <span class="n">dataclass</span>
-
-
-<span class="nd">@dataclass</span>
-<span class="k">class</span><span class="w"> </span><span class="nc">User</span><span class="p">:</span>
-    <span class="nb">id</span><span class="p">:</span> <span class="nb">int</span>
-    <span class="n">name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;John Doe&#39;</span>
-    <span class="n">friends</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="n">dataclasses</span><span class="o">.</span><span class="n">field</span><span class="p">(</span><span class="n">default_factory</span><span class="o">=</span><span class="k">lambda</span><span class="p">:</span> <span class="p">[</span><span class="mi">0</span><span class="p">])</span>
-    <span class="n">age</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="n">dataclasses</span><span class="o">.</span><span class="n">field</span><span class="p">(</span>
-        <span class="n">default</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-        <span class="n">metadata</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;title&#39;</span><span class="p">:</span> <span class="s1">&#39;The age of the user&#39;</span><span class="p">,</span> <span class="s1">&#39;description&#39;</span><span class="p">:</span> <span class="s1">&#39;do not lie!&#39;</span><span class="p">},</span>
-    <span class="p">)</span>
-    <span class="n">height</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span>
-        <span class="n">default</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">title</span><span class="o">=</span><span class="s1">&#39;The height in cm&#39;</span><span class="p">,</span> <span class="n">ge</span><span class="o">=</span><span class="mi">50</span><span class="p">,</span> <span class="n">le</span><span class="o">=</span><span class="mi">300</span>
-    <span class="p">)</span>
-
-
-<span class="n">user</span> <span class="o">=</span> <span class="n">User</span><span class="p">(</span><span class="nb">id</span><span class="o">=</span><span class="s1">&#39;42&#39;</span><span class="p">,</span> <span class="n">height</span><span class="o">=</span><span class="s1">&#39;250&#39;</span><span class="p">)</span>
-<span class="nb">print</span><span class="p">(</span><span class="n">user</span><span class="p">)</span>
-<span class="c1">#&gt; User(id=42, name=&#39;John Doe&#39;, friends=[0], age=None, height=250)</span>
-</code></pre></div>
-</div>
-</div>
-</div>
 <p>The Pydantic <a class="autorefs autorefs-internal" href="../../api/dataclasses/#pydantic.dataclasses.dataclass"><code>@dataclass</code></a> decorator accepts the same arguments as the standard decorator,
 with the addition of a <code>config</code> parameter.</p>
 <h2 id="dataclass-config">Dataclass config<a class="headerlink" href="#dataclass-config" title="Permanent link">&para;</a></h2>
 <p>If you want to modify the configuration like you would with a <a class="autorefs autorefs-internal" href="../../api/base_model/#pydantic.BaseModel"><code>BaseModel</code></a>, you have two options:</p>
 <ul>
-<li>Use the <code>config</code> argument of the decorator.</li>
+<li>Use the <code>config</code> parameter of the decorator.</li>
 <li>Define the configuration with the <code>__pydantic_config__</code> attribute.</li>
 </ul>
 <div class="language-python highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">pydantic</span><span class="w"> </span><span class="kn">import</span> <span class="n">ConfigDict</span>
@@ -4191,13 +4229,6 @@ with the addition of a <code>config</code> parameter.</p>
 <ol>
 <li>You can read more about <code>validate_assignment</code> in the <a class="autorefs autorefs-internal" href="../../api/config/#pydantic.config.ConfigDict.validate_assignment">API reference</a>.</li>
 </ol>
-<div class="admonition note">
-<p class="admonition-title">Note</p>
-<p>While Pydantic dataclasses support the <a class="autorefs autorefs-internal" href="../../api/config/#pydantic.config.ConfigDict.extra"><code>extra</code></a> configuration value, some default
-behavior of stdlib dataclasses may prevail. For example, any extra fields present on a Pydantic dataclass with
-<a class="autorefs autorefs-internal" href="../../api/config/#pydantic.config.ConfigDict.extra"><code>extra</code></a> set to <code>'allow'</code> are omitted in the dataclass' string representation.
-There is also no way to provide validation <a href="../models/#extra-data">using the <code>__pydantic_extra__</code> attribute</a>.</p>
-</div>
 <h2 id="rebuilding-dataclass-schema">Rebuilding dataclass schema<a class="headerlink" href="#rebuilding-dataclass-schema" title="Permanent link">&para;</a></h2>
 <p>The <a class="autorefs autorefs-internal" href="../../api/dataclasses/#pydantic.dataclasses.rebuild_dataclass"><code>rebuild_dataclass()</code></a> function can be used to rebuild the core schema of the dataclass.
 See the <a href="../models/#rebuilding-model-schema">rebuilding model schema</a> section for more details.</p>
