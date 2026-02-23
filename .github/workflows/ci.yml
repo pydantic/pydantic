@@ -787,7 +787,7 @@ jobs:
       - run: uv pip install -U build twine
 
       - name: Check pydantic-core package version
-        run: uv run .github/check_pydantic_core_version.py
+        run: uv run --no-sync .github/check_pydantic_core_version.py
 
       - name: Get pydantic-core dist artifacts
         uses: actions/download-artifact@v6
@@ -810,7 +810,7 @@ jobs:
           version_file_path: pydantic/version.py
 
       - name: Build pydantic library
-        run: uv run python -m build
+        run: uv run --no-sync python -m build
 
       - name: Upload package to PyPI
         uses: pypa/gh-action-pypi-publish@release/v1
