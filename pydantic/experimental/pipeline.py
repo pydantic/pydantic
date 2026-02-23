@@ -152,7 +152,7 @@ class _Pipeline(Generic[_InT, _OutT]):
         self,
         tp: ellipsis,  # noqa: F821  # TODO: use `_typing_extra.EllipsisType` when we drop Py3.9
         *,
-        strict: bool = False
+        strict: bool = False,
     ) -> _Pipeline[_InT, Any]: ...
 
     # TODO PEP 747: use TypeForm to properly type Annotated aliases (e.g. NewPath, FilePath).
