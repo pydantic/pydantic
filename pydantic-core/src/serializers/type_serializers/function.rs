@@ -532,6 +532,8 @@ struct SerializationInfo {
     field_name: Option<String>,
     #[pyo3(get)]
     serialize_as_any: bool,
+    #[pyo3(get)]
+    polymorphic_serialization: Option<bool>,
 }
 
 impl_py_gc_traverse!(SerializationInfo {
@@ -558,6 +560,7 @@ impl SerializationInfo {
                     round_trip: extra.round_trip,
                     field_name: Some(field_name.to_string()),
                     serialize_as_any: extra.serialize_as_any,
+                    polymorphic_serialization: extra.polymorphic_serialization,
                 }),
                 _ => Err(PyRuntimeError::new_err(
                     "Model field context expected for field serialization info but no model field was found",
@@ -577,6 +580,7 @@ impl SerializationInfo {
                 round_trip: extra.round_trip,
                 field_name: None,
                 serialize_as_any: extra.serialize_as_any,
+                polymorphic_serialization: extra.polymorphic_serialization,
             })
         }
     }
