@@ -272,7 +272,10 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
         # When extra='allow', the validator treats computed field names as unknown
         # keys and stores them in __pydantic_extra__, which causes conflicts
         # during serialization (duplicate keys, incorrect exclude_none behavior).
-        if self.__pydantic_extra__ and self.__pydantic_computed_fields__:
+        # Check class-level __pydantic_computed_fields__ first (fast type attr cache hit)
+        # to avoid the instance dict lookup on __pydantic_extra__ for the common case
+        # where models have no computed fields.
+        if self.__pydantic_computed_fields__ and self.__pydantic_extra__:
             for name in self.__pydantic_computed_fields__:
                 self.__pydantic_extra__.pop(name, None)
 
