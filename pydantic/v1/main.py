@@ -192,7 +192,7 @@ class ModelMetaclass(ABCMeta):
             else:
                 raw_annotations = namespace.get('__annotations__', {})
 
-            annotations = resolve_annotations(namespace.get('__annotations__', {}), namespace.get('__module__', None))
+            annotations = resolve_annotations(raw_annotations, namespace.get('__module__', None))
             # annotation only fields need to come first in fields
             for ann_name, ann_type in annotations.items():
                 if is_classvar(ann_type):
