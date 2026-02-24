@@ -764,9 +764,64 @@ jobs:
         with:
           jobs: ${{ toJSON(needs) }}
 
-  release:
+  release-pydantic-core:
     needs: [core-test-builds-arch, core-test-builds-os, core-build-sdist, check]
     if: needs.check.outputs.result == 'success' && startsWith(github.ref, 'refs/tags/')
+    runs-on: ubuntu-latest
+    environment: release
+
+    permissions:
+      id-token: write
+
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: astral-sh/setup-uv@v7
+        with:
+          activate-environment: true
+
+      - run: uv pip install -U twine
+
+      - name: Extract pydantic-core version
+        id: core-version
+        run: |
+          VERSION=$(cargo metadata --format-version 1 --no-deps --frozen --quiet --offline --manifest-path pydantic-core/Cargo.toml | jq -r '.packages[0].version')
+          echo "VERSION=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "pydantic-core version: $VERSION"
+
+      - name: Check if pydantic-core version is already on PyPI
+        id: check-pypi
+        run: |
+          STATUS=$(curl -s -o /dev/null -I -w "%{http_code}" https://pypi.org/pypi/pydantic-core/${{ steps.core-version.outputs.VERSION }}/json)
+          if [ "$STATUS" = "200" ]; then
+            echo "already_published=true" >> "$GITHUB_OUTPUT"
+            echo "pydantic-core ${{ steps.core-version.outputs.VERSION }} is already on PyPI, skipping publish"
+          else
+            echo "already_published=false" >> "$GITHUB_OUTPUT"
+            echo "pydantic-core ${{ steps.core-version.outputs.VERSION }} not found on PyPI, will publish"
+          fi
+
+      - name: Get pydantic-core dist artifacts
+        if: steps.check-pypi.outputs.already_published != 'true'
+        uses: actions/download-artifact@v6
+        with:
+          pattern: pydantic_core_pypi_files_*
+          merge-multiple: true
+          path: pydantic-core-dist
+
+      - name: Test pydantic-core wheels integrity
+        if: steps.check-pypi.outputs.already_published != 'true'
+        run: |
+          for whl in pydantic-core-dist/*.whl; do unzip -qt "$whl"; done
+          twine check --strict pydantic-core-dist/*
+
+      - name: Publish pydantic-core to PyPI
+        if: steps.check-pypi.outputs.already_published != 'true'
+        run: uv publish --trusted-publishing always pydantic-core-dist/*
+
+  release-pydantic:
+    needs: [release-pydantic-core]
+    if: startsWith(github.ref, 'refs/tags/')
     runs-on: ubuntu-latest
     environment: release
 
@@ -784,21 +839,7 @@ jobs:
         with:
           activate-environment: true
 
-      - run: uv pip install -U build twine
-
-      - name: Get pydantic-core dist artifacts
-        uses: actions/download-artifact@v6
-        with:
-          pattern: pydantic_core_pypi_files_*
-          merge-multiple: true
-          path: pydantic-core-dist
-
-      - name: Test pydantic-core wheels integrity
-        run: |
-          for whl in pydantic-core-dist/*.whl; do unzip -qt "$whl"; done
-          twine check --strict pydantic-core-dist/*
-
-      - run: uv publish --trusted-publishing always pydantic-core-dist/*
+      - run: uv pip install -U build
 
       - name: Check pydantic version
         id: check-tag
@@ -814,8 +855,8 @@ jobs:
 
   send-tweet:
     name: Send tweet
-    needs: [release]
-    if: needs.release.result == 'success'
+    needs: [release-pydantic]
+    if: needs.release-pydantic.result == 'success'
     runs-on: ubuntu-latest
 
     steps:
@@ -846,7 +887,7 @@ jobs:
 
           client.create_tweet(text=tweet)
         env:
-          VERSION: ${{ needs.release.outputs.pydantic-version }}
+          VERSION: ${{ needs.release-pydantic.outputs.pydantic-version }}
           TWEET: |
             Pydantic version {version} is out! 🎉
 
