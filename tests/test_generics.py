@@ -3182,3 +3182,22 @@ def test_revalidation_with_basic_inference() -> None:
     holder2 = Holder(inner=Inner(inner=1))
     # implies that validation succeeds for both
     assert holder1 == holder2
+
+
+def test_generic_basemodel_bound_repr():
+    """Test that repr works for unparameterized generic models with BaseModel bound.
+
+    Regression test for https://github.com/pydantic/pydantic/issues/12858
+    """
+    T = TypeVar('T', bound=BaseModel)
+
+    class Container(BaseModel, Generic[T]):
+        x: T
+
+    # Unparameterized: T resolves to BaseModel, x becomes a raw BaseModel instance
+    m = Container(x={})
+    assert isinstance(m.x, BaseModel)
+    # These should not raise AttributeError
+    assert repr(m) == 'Container(x=BaseModel())'
+    assert str(m) == 'x=BaseModel()'
+    assert repr(m.x) == 'BaseModel()'

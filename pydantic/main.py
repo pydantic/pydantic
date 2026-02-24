@@ -1017,7 +1017,10 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
         # The same goes for __setattr__ and __delattr__, see: https://github.com/pydantic/pydantic/issues/8643
 
         def __getattr__(self, item: str) -> Any:
-            private_attributes = object.__getattribute__(self, '__private_attributes__')
+            try:
+                private_attributes = object.__getattribute__(self, '__private_attributes__')
+            except AttributeError:
+                private_attributes = {}
             if item in private_attributes:
                 attribute = private_attributes[item]
                 if hasattr(attribute, '__get__'):
@@ -1260,12 +1263,18 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
         # Eagerly create the repr of computed fields, as this may trigger access of cached properties and as such
         # modify the instance's `__dict__`. If we don't do it now, it could happen when iterating over the `__dict__`
         # below if the instance happens to be referenced in a field, and would modify the `__dict__` size *during* iteration.
+        # Use `getattr` with a fallback for `__pydantic_computed_fields__` and `__pydantic_fields__`
+        # because a raw `BaseModel` instance (e.g. from an unparameterized generic bound) may not
+        # have these class-level attributes set.
         computed_fields_repr_args = [
-            (k, getattr(self, k)) for k, v in self.__pydantic_computed_fields__.items() if v.repr
+            (k, getattr(self, k))
+            for k, v in getattr(self, '__pydantic_computed_fields__', {}).items()
+            if v.repr
         ]
 
+        pydantic_fields = getattr(self, '__pydantic_fields__', {})
         for k, v in self.__dict__.items():
-            field = self.__pydantic_fields__.get(k)
+            field = pydantic_fields.get(k)
             if field and field.repr:
                 if v is not self:
                     yield k, v
