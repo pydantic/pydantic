@@ -65,6 +65,12 @@ def apply_discriminator(
         if isinstance(discriminator.discriminator, str):
             discriminator = discriminator.discriminator
         else:
+            # If the schema is a definition-ref (e.g. from a PEP 695 type alias),
+            # resolve it to the underlying schema before converting.
+            if schema['type'] == 'definition-ref' and definitions:
+                ref = schema['schema_ref']
+                if ref in definitions and definitions[ref]['type'] == 'union':
+                    schema = definitions[ref]
             return discriminator._convert_schema(schema)
 
     return _ApplyInferredDiscriminator(discriminator, definitions or {}).apply(schema)

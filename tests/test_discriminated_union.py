@@ -2236,6 +2236,34 @@ def test_tagged_discriminator_type_alias() -> None:
     assert isinstance(inst.dessert, ApplePie)
 
 
+def test_callable_discriminator_pep695_type_alias() -> None:
+    """https://github.com/pydantic/pydantic/issues/12843
+
+    PEP 695 `type` statement creates TypeAliasType which must be unwrapped
+    before checking for union origin in Discriminator.__get_pydantic_core_schema__
+    and when resolving definition-ref schemas in _convert_schema and apply_discriminator.
+    """
+
+    def disc(v: Any) -> str:
+        if isinstance(v, int):
+            return 'a'
+        return 'b'
+
+    type TaggedUnion = Annotated[int, Tag('a')] | Annotated[str, Tag('b')]
+
+    # TypeAdapter with callable discriminator
+    ta = TypeAdapter(Annotated[TaggedUnion, Discriminator(disc)])
+    assert ta.validate_python(42) == 42
+    assert ta.validate_python('hello') == 'hello'
+
+    # Model field with callable discriminator
+    class M(BaseModel):
+        value: TaggedUnion = Field(discriminator=Discriminator(disc))
+
+    assert M(value=42).value == 42
+    assert M(value='hello').value == 'hello'
+
+
 def test_discriminated_union_type_alias_type() -> None:
     """https://github.com/pydantic/pydantic/issues/11661
 

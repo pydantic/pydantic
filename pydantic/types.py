@@ -30,6 +30,7 @@ import annotated_types
 from annotated_types import BaseMetadata, MaxLen, MinLen
 from pydantic_core import CoreSchema, PydanticCustomError, SchemaSerializer, core_schema
 from typing_extensions import Protocol, TypeAlias, TypeAliasType, deprecated, get_args, get_origin
+from typing_inspection import typing_objects
 from typing_inspection.introspection import is_union_origin
 
 from ._internal import _fields, _internal_dataclass, _utils, _validators
@@ -3058,7 +3059,12 @@ class Discriminator:
     """Context to use in custom errors."""
 
     def __get_pydantic_core_schema__(self, source_type: Any, handler: GetCoreSchemaHandler) -> CoreSchema:
-        if not is_union_origin(get_origin(source_type)):
+        origin = get_origin(source_type)
+        if typing_objects.is_typealiastype(origin or source_type):
+            resolved = (origin or source_type).__value__
+            if not is_union_origin(get_origin(resolved)):
+                raise TypeError(f'{type(self).__name__} must be used with a Union type, not {source_type}')
+        elif not is_union_origin(origin):
             raise TypeError(f'{type(self).__name__} must be used with a Union type, not {source_type}')
 
         if isinstance(self.discriminator, str):
@@ -3072,6 +3078,17 @@ class Discriminator:
     def _convert_schema(
         self, original_schema: core_schema.CoreSchema, handler: GetCoreSchemaHandler | None = None
     ) -> core_schema.TaggedUnionSchema:
+        # If the schema is a definition-ref (e.g. from a PEP 695 type alias), resolve it
+        # to get the underlying union schema before processing.
+        if original_schema['type'] == 'definition-ref' and handler is not None:
+            try:
+                resolved = handler.resolve_ref_schema(original_schema)
+            except LookupError:
+                pass
+            else:
+                if resolved['type'] == 'union':
+                    original_schema = resolved
+
         if original_schema['type'] != 'union':
             # This likely indicates that the schema was a single-item union that was simplified.
             # In this case, we do the same thing we do in
