@@ -2,6 +2,23 @@
 <!-- markdownlint-disable descriptive-link-text -->
 <!-- markdownlint-disable-next-line first-line-heading -->
 
+## v2.13.0b2 (2026-02-24)
+
+[GitHub release](https://github.com/pydantic/pydantic/releases/tag/v2.13.0b2)
+
+### What's Changed
+
+#### Fixes
+
+* Fix backported V1 namespace by @Viicos in [#12855](https://github.com/pydantic/pydantic/pull/12855)
+* Allow any type form to be used in `validate_as()` by @bledden in [#12846](https://github.com/pydantic/pydantic/pull/12846)
+* Fix walrus operator precedence in `UrlConstraints.__get_pydantic_core_schema__()` by @bysiber in [#12826](https://github.com/pydantic/pydantic/pull/12826)
+
+### New Contributors
+
+* @bledden made their first contribution in [#12846](https://github.com/pydantic/pydantic/pull/12846)
+* @bysiber made their first contribution in [#12827](https://github.com/pydantic/pydantic/pull/12827)
+
 ## v2.13.0b1 (2026-02-23)
 
 [GitHub release](https://github.com/pydantic/pydantic/releases/tag/v2.13.0b1)
