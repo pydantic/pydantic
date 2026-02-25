@@ -3256,7 +3256,7 @@ Thank you to pydantic's sponsors: @matin, @tiangolo, @chdsbd, @jorgecarleitao, a
 * **Breaking Change:** modify default config settings for `BaseSettings`; `case_insensitive` renamed to `case_sensitive`,
   default changed to `case_sensitive = False`, `env_prefix` default changed to `''` - e.g. no prefix, [#721](https://github.com/pydantic/pydantic/pull/721) by @dmontagu
 * **Breaking change:** Implement `root_validator` and rename root errors from `__obj__` to `__root__`, [#729](https://github.com/pydantic/pydantic/pull/729) by @samuelcolvin
-* **Breaking Change:** alter the behaviour of `dict(model)` so that sub-models are nolonger
+* **Breaking Change:** alter the behaviour of `dict(model)` so that sub-models are no longer
   converted to dictionaries, [#733](https://github.com/pydantic/pydantic/pull/733) by @samuelcolvin
 * **Breaking change:** Added `initvars` support to `post_init_post_parse`, [#748](https://github.com/pydantic/pydantic/pull/748) by @Raphael-C-Almeida
 * **Breaking Change:** Make `BaseModel.json()` only serialize the `__root__` key for models with custom root, [#752](https://github.com/pydantic/pydantic/pull/752) by @dmontagu
