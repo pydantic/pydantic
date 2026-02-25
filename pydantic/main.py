@@ -1267,9 +1267,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
         # because a raw `BaseModel` instance (e.g. from an unparameterized generic bound) may not
         # have these class-level attributes set.
         computed_fields_repr_args = [
-            (k, getattr(self, k))
-            for k, v in getattr(self, '__pydantic_computed_fields__', {}).items()
-            if v.repr
+            (k, getattr(self, k)) for k, v in getattr(self, '__pydantic_computed_fields__', {}).items() if v.repr
         ]
 
         pydantic_fields = getattr(self, '__pydantic_fields__', {})
