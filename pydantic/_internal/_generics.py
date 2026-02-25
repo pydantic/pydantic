@@ -307,9 +307,12 @@ def replace_types(type_: Any, type_map: Mapping[TypeVar, Any] | None) -> Any:
                 if not (typing_objects.is_noreturn(arg) or typing_objects.is_never(arg))
             )
 
-        # PEP-604 syntax (Ex.: list | str) is represented with a types.UnionType object that does not have __getitem__.
-        # We also cannot use isinstance() since we have to compare types.
-        if sys.version_info >= (3, 10) and origin_type is types.UnionType:
+        # PEP-604 syntax (e.g. `list | str`) is represented with a types.UnionType object that does not
+        # implement `__getitem__()`. In Python 3.14+, `typing.Union` and `types.UnionType` are the same,
+        # and we instead rely on `typing.Union` as it implicitly converts string annotations to `ForwardRef`
+        # instances (this is to avoid type errors as per https://github.com/python/cpython/pull/105366).
+        # TODO remove type ignore comment when we drop support for Python 3.9 (https://github.com/microsoft/pyright/issues/11241):
+        if (3, 10) <= sys.version_info < (3, 14) and origin_type is types.UnionType:  # pyright: ignore[reportAttributeAccessIssue]
             return reduce(operator.or_, resolved_type_args)
         # NotRequired[T] and Required[T] don't support tuple type resolved_type_args, hence the condition below
         return origin_type[resolved_type_args[0] if len(resolved_type_args) == 1 else resolved_type_args]

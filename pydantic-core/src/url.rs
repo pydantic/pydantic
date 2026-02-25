@@ -22,7 +22,13 @@ use crate::tools::SchemaDict;
 use crate::validators::url::{MultiHostUrlValidator, UrlValidator};
 use crate::validators::{Extra, ValidationState, Validator};
 
-#[pyclass(name = "Url", module = "pydantic_core._pydantic_core", subclass, frozen)]
+#[pyclass(
+    name = "Url",
+    module = "pydantic_core._pydantic_core",
+    subclass,
+    frozen,
+    skip_from_py_object
+)]
 #[derive(Clone)]
 #[cfg_attr(debug_assertions, derive(Debug))]
 pub struct PyUrl {
@@ -94,6 +100,7 @@ impl PyUrl {
                     ),
                     &mut RecursionState::default(),
                     PartialMode::Off,
+                    None,
                 ),
             )
             .map_err(|e| {
@@ -277,7 +284,13 @@ impl PyUrl {
     }
 }
 
-#[pyclass(name = "MultiHostUrl", module = "pydantic_core._pydantic_core", subclass, frozen)]
+#[pyclass(
+    name = "MultiHostUrl",
+    module = "pydantic_core._pydantic_core",
+    subclass,
+    frozen,
+    skip_from_py_object
+)]
 #[derive(Clone, Hash)]
 #[cfg_attr(debug_assertions, derive(Debug))]
 pub struct PyMultiHostUrl {
@@ -323,6 +336,7 @@ impl PyMultiHostUrl {
                     ),
                     &mut RecursionState::default(),
                     PartialMode::Off,
+                    None,
                 ),
             )
             .map_err(|e| {

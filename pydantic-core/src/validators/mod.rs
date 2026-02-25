@@ -17,7 +17,7 @@ use crate::errors::{LocItem, ValError, ValResult, ValidationError};
 use crate::input::{Input, InputType, StringMapping};
 use crate::py_gc::PyGcTraverse;
 use crate::recursion_guard::RecursionState;
-use crate::tools::{SchemaDict, pybackedstr_to_pystring};
+use crate::tools::SchemaDict;
 pub(crate) use config::{TemporalUnitMode, ValBytesMode};
 
 mod any;
@@ -352,7 +352,6 @@ impl SchemaValidator {
             strict,
             extra_behavior,
             from_attributes,
-            field_name: Some(pybackedstr_to_pystring(py, &field_name)),
             context,
             self_instance: None,
             cache_str: self.cache_str,
@@ -361,7 +360,12 @@ impl SchemaValidator {
         };
 
         let guard = &mut RecursionState::default();
-        let mut state = ValidationState::new(extra, guard, false.into());
+        let mut state = ValidationState::new(
+            extra,
+            guard,
+            false.into(),
+            Some(field_name.as_py_str().bind(py).clone()),
+        );
         self.validator
             .validate_assignment(py, &obj, &field_name, &field_value, &mut state)
             .map_err(|e| self.prepare_validation_err(py, e, InputType::Python))
@@ -380,7 +384,6 @@ impl SchemaValidator {
             strict,
             extra_behavior: None,
             from_attributes: None,
-            field_name: None,
             context,
             self_instance: None,
             cache_str: self.cache_str,
@@ -388,7 +391,7 @@ impl SchemaValidator {
             by_name: None,
         };
         let recursion_guard = &mut RecursionState::default();
-        let mut state = ValidationState::new(extra, recursion_guard, false.into());
+        let mut state = ValidationState::new(extra, recursion_guard, false.into(), None);
         let r = self.validator.default_value(py, None::<i64>, &mut state);
         match r {
             Ok(maybe_default) => match maybe_default {
@@ -455,6 +458,7 @@ impl SchemaValidator {
             ),
             &mut recursion_guard,
             allow_partial,
+            None,
         );
         self.validator.validate(py, input, &mut state)
     }
@@ -689,8 +693,6 @@ pub struct Extra<'a, 'py> {
     pub from_attributes: Option<bool>,
     /// context used in validator functions
     pub context: Option<&'a Bound<'py, PyAny>>,
-    /// The name of the field being validated, if applicable
-    pub field_name: Option<Bound<'py, PyString>>,
     /// This is an instance of the model or dataclass being validated, when validation is performed from `__init__`
     self_instance: Option<&'a Bound<'py, PyAny>>,
     /// Whether to use a cache of short strings to accelerate python string construction
@@ -720,7 +722,6 @@ impl<'a, 'py> Extra<'a, 'py> {
             strict,
             extra_behavior,
             from_attributes,
-            field_name: None,
             context,
             self_instance,
             cache_str,
@@ -738,7 +739,6 @@ impl Extra<'_, '_> {
             strict: Some(true),
             extra_behavior: self.extra_behavior,
             from_attributes: self.from_attributes,
-            field_name: self.field_name.clone(),
             context: self.context,
             self_instance: self.self_instance,
             cache_str: self.cache_str,

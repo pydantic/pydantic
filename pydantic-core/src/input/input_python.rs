@@ -122,10 +122,8 @@ impl<'py> Input<'py> for Bound<'py, PyAny> {
     fn validate_args(&self) -> ValResult<PyArgs<'py>> {
         if let Ok(dict) = self.cast::<PyDict>() {
             Ok(PyArgs::new(None, Some(dict.clone())))
-        } else if let Ok(args_kwargs) = self.extract::<ArgsKwargs>() {
-            let args = args_kwargs.args.into_bound(self.py());
-            let kwargs = args_kwargs.kwargs.map(|d| d.into_bound(self.py()));
-            Ok(PyArgs::new(Some(args), kwargs))
+        } else if let Ok(args_kwargs) = self.cast::<ArgsKwargs>() {
+            Ok(PyArgs::from_bound_args(args_kwargs))
         } else if let Ok(tuple) = self.cast::<PyTuple>() {
             Ok(PyArgs::new(Some(tuple.clone()), None))
         } else if let Ok(list) = self.cast::<PyList>() {
@@ -136,10 +134,8 @@ impl<'py> Input<'py> for Bound<'py, PyAny> {
     }
 
     fn validate_args_v3(&self) -> ValResult<PyArgs<'py>> {
-        if let Ok(args_kwargs) = self.extract::<ArgsKwargs>() {
-            let args = args_kwargs.args.into_bound(self.py());
-            let kwargs = args_kwargs.kwargs.map(|d| d.into_bound(self.py()));
-            Ok(PyArgs::new(Some(args), kwargs))
+        if let Ok(args_kwargs) = self.cast::<ArgsKwargs>() {
+            Ok(PyArgs::from_bound_args(args_kwargs))
         } else {
             Err(ValError::new(ErrorTypeDefaults::ArgumentsType, self))
         }
@@ -148,10 +144,8 @@ impl<'py> Input<'py> for Bound<'py, PyAny> {
     fn validate_dataclass_args<'a>(&'a self, class_name: &str) -> ValResult<PyArgs<'py>> {
         if let Ok(dict) = self.cast::<PyDict>() {
             Ok(PyArgs::new(None, Some(dict.clone())))
-        } else if let Ok(args_kwargs) = self.extract::<ArgsKwargs>() {
-            let args = args_kwargs.args.into_bound(self.py());
-            let kwargs = args_kwargs.kwargs.map(|d| d.into_bound(self.py()));
-            Ok(PyArgs::new(Some(args), kwargs))
+        } else if let Ok(args_kwargs) = self.cast::<ArgsKwargs>() {
+            Ok(PyArgs::from_bound_args(args_kwargs))
         } else {
             let class_name = class_name.to_string();
             Err(ValError::new(
@@ -252,13 +246,13 @@ impl<'py> Input<'py> for Bound<'py, PyAny> {
                 return str_as_bool(self, s).map(ValidationMatch::lax);
             } else if let Ok(int) = self.extract() {
                 return int_as_bool(self, int).map(ValidationMatch::lax);
-            } else if let Ok(float) = self.extract::<f64>() {
-                if let Ok(int) = float_as_int(self, float) {
-                    return int
-                        .as_bool()
-                        .ok_or_else(|| ValError::new(ErrorTypeDefaults::BoolParsing, self))
-                        .map(ValidationMatch::lax);
-                }
+            } else if let Ok(float) = self.extract::<f64>()
+                && let Ok(int) = float_as_int(self, float)
+            {
+                return int
+                    .as_bool()
+                    .ok_or_else(|| ValError::new(ErrorTypeDefaults::BoolParsing, self))
+                    .map(ValidationMatch::lax);
             }
         }
 
@@ -328,11 +322,9 @@ impl<'py> Input<'py> for Bound<'py, PyAny> {
             return Ok(ValidationMatch::exact(EitherFloat::Py(float.clone())));
         }
 
-        if !strict {
-            if let Some(s) = maybe_as_string(self, ErrorTypeDefaults::FloatParsing)? {
-                // checking for bytes and string is fast, so do this before isinstance(float)
-                return str_as_float(self, s).map(ValidationMatch::lax);
-            }
+        if !strict && let Some(s) = maybe_as_string(self, ErrorTypeDefaults::FloatParsing)? {
+            // checking for bytes and string is fast, so do this before isinstance(float)
+            return str_as_float(self, s).map(ValidationMatch::lax);
         }
 
         if let Ok(float) = self.extract::<f64>() {
@@ -432,10 +424,8 @@ impl<'py> Input<'py> for Bound<'py, PyAny> {
             // if from_attributes, first try a dict, then mapping then from_attributes
             if let Ok(dict) = self.cast::<PyDict>() {
                 return Ok(GenericPyMapping::Dict(dict));
-            } else if !strict {
-                if let Ok(mapping) = self.cast::<PyMapping>() {
-                    return Ok(GenericPyMapping::Mapping(mapping));
-                }
+            } else if !strict && let Ok(mapping) = self.cast::<PyMapping>() {
+                return Ok(GenericPyMapping::Mapping(mapping));
             }
 
             if from_attributes_applicable(self) {
@@ -779,6 +769,15 @@ impl<'py> PyArgs<'py> {
             args: args.map(PyPosArgs),
             kwargs: kwargs.map(PyKwargs),
         }
+    }
+
+    fn from_bound_args(py_args: &Bound<'py, ArgsKwargs>) -> Self {
+        let py = py_args.py();
+        let args_kwargs = py_args.get();
+        Self::new(
+            Some(args_kwargs.args.bind(py).clone()),
+            args_kwargs.kwargs.as_ref().map(|d| d.bind(py).clone()),
+        )
     }
 }
 

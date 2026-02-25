@@ -147,7 +147,7 @@ When your pull request is ready for review, add a comment with the message "plea
 
 ## Documentation style
 
-Documentation is written in Markdown and built using [Material for MkDocs](https://squidfunk.github.io/mkdocs-material/). API documentation is build from docstrings using [mkdocstrings](https://mkdocstrings.github.io/).
+Documentation is written in Markdown and built using [Material for MkDocs](https://squidfunk.github.io/mkdocs-material/). API documentation is built from docstrings using [mkdocstrings](https://mkdocstrings.github.io/).
 
 ### Code documentation
 

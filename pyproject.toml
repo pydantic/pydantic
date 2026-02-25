@@ -47,7 +47,7 @@ dependencies = [
     'typing-extensions>=4.14.1',
     'annotated-types>=0.6.0',
     # Keep this in sync with the version in the `check_pydantic_core_version()` function:
-    'pydantic-core==2.41.5',
+    'pydantic-core==2.42.0',
     'typing-inspection>=0.4.2',
 ]
 dynamic = ['version', 'readme']
@@ -265,16 +265,11 @@ context = '${CONTEXT}'
 
 [tool.coverage.report]
 precision = 2
-exclude_lines = [
-    'pragma: no cover',
-    'raise NotImplementedError',
-    'if TYPE_CHECKING:',
-    'if typing.TYPE_CHECKING:',
-    '@overload',
-    '@typing.overload',
-    '\(Protocol\):$',
-    'typing.assert_never',
-    'assert_never',
+exclude_also = [
+    'raise\sNotImplementedError',
+    '@(typing\.)?overload',
+    'class .*\bProtocol\):',
+    '(typing\.)?.assert_never',
 ]
 
 [tool.coverage.paths]

@@ -726,7 +726,7 @@ pub fn float_as_duration(input: impl ToErrorValue, total_seconds: f64) -> ValRes
         .map_err(|err| map_timedelta_err(input, err))
 }
 
-#[pyclass(module = "pydantic_core._pydantic_core", extends = PyTzInfo, frozen)]
+#[pyclass(module = "pydantic_core._pydantic_core", extends = PyTzInfo, frozen, skip_from_py_object)]
 #[derive(Clone)]
 #[cfg_attr(debug_assertions, derive(Debug))]
 pub struct TzInfo {

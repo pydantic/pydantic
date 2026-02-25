@@ -141,11 +141,11 @@ branch = true
 
 [tool.coverage.report]
 precision = 2
-exclude_lines = [
-    'pragma: no cover',
-    'raise NotImplementedError',
-    'if TYPE_CHECKING:',
-    '@overload',
+exclude_also = [
+    'raise\sNotImplementedError',
+    '@(typing\.)?overload',
+    'class .*\bProtocol\):',
+    '(typing\.)?.assert_never',
 ]
 
 # configuring https://github.com/pydantic/hooky

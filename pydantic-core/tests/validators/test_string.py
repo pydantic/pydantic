@@ -181,7 +181,7 @@ def test_invalid_regex(engine):
     # with pytest.raises(SchemaError) as exc_info:
     #     SchemaValidator({'type': 'str', 'pattern': 123})
     # assert exc_info.value.args[0] == (
-    #     'Error building "str" validator:\n  TypeError: \'int\' object cannot be cast as \'str\''
+    #     'Error building "str" validator:\n  TypeError: \'int\' object is not an instance of \'str\''
     # )
     with pytest.raises(SchemaError) as exc_info:
         SchemaValidator(core_schema.str_schema(pattern='(abc', regex_engine=engine))

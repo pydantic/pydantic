@@ -791,6 +791,10 @@ Here is an example using a generic Pydantic model to create an easily-reused HTT
     1. Declare a Pydantic model and add the list of type variables as type parameters.
     2. Use the type variables as annotations where you will want to replace them with other types.
 
+/// version-added | v2.11
+Full support for the [type parameter syntax][type-params] and [type variable defaults](https://typing.python.org/en/latest/spec/generics.html#type-parameter-defaults).
+///
+
 !!! warning
     When parametrizing a model with a concrete type, Pydantic **does not** validate that the provided type
     is [assignable to the type variable][spec-typevars-bound] if it has an upper bound.
@@ -952,7 +956,7 @@ except ValidationError as e:
     """
 ```
 
-1. The `OuterT` model is parametrized with `int`, but the data associated with the the `T` annotations during validation is of type `str`, leading to validation errors.
+1. The `OuterT` model is parametrized with `int`, but the data associated with the `T` annotations during validation is of type `str`, leading to validation errors.
 
 !!! warning
     While it may not raise an error, we strongly advise against using parametrized generics in [`isinstance()`](https://docs.python.org/3/library/functions.html#isinstance) checks.
@@ -1286,6 +1290,11 @@ Field definitions are specified as keyword arguments, and should either be:
 * A single element, representing the type annotation of the field.
 * A two-tuple, the first element being the type and the second element the assigned value
   (either a default or the [`Field()`][pydantic.Field] function).
+
+/// version-changed | v2.11
+When providing a single element for field definitions, any type can be used
+(previously, only an [`Annotated`][typing.Annotated] form could be provided).
+///
 
 Here is a more advanced example:
 
