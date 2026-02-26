@@ -665,7 +665,7 @@ else:
         localns: dict[str, Any] | None = None,
         include_extras: bool = False,
     ) -> dict[str, Any]:  # pragma: no cover
-        """Taken verbatim from python 3.10.8 unchanged, except:
+        """Taken verbatim from python 3.10.8 unchanged, except Exception:
         * type annotations of the function definition above.
         * prefixing `typing.` where appropriate
         * Use `_make_forward_ref` instead of `typing.ForwardRef` to handle the `is_class` argument.
