@@ -158,7 +158,7 @@ class _DefinitionsRemapping:
         copied_definitions = deepcopy(definitions)
         definitions_schema = {'$defs': copied_definitions}
         for _iter in range(100):  # prevent an infinite loop in the case of a bug, 100 iterations should be enough
-            # For every possible remapped DefsRef, collect all schemas that that DefsRef might be used for:
+            # For every possible remapped DefsRef, collect all schemas that DefsRef might be used for:
             schemas_for_alternatives: dict[DefsRef, list[JsonSchemaValue]] = defaultdict(list)
             for defs_ref in copied_definitions:
                 alternatives = prioritized_choices[defs_ref]
