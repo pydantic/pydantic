@@ -314,7 +314,7 @@ def dataclass(
 
 
 def _pydantic_fields_complete(cls: type[PydanticDataclass]) -> bool:
-    """Return whether the fields where successfully collected (i.e. type hints were successfully resolves).
+    """Return whether the fields were successfully collected (i.e. type hints were successfully resolved).
 
     This is a private property, not meant to be used outside Pydantic.
     """
