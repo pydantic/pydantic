@@ -15,7 +15,7 @@ def import_from(dotted_path: str):
         return importlib.import_module(dotted_path)
 
 
-@pytest.mark.filterwarnings('ignore::UserWarning')
+@pytest.mark.filterwarnings('ignore::pydantic.warnings.PydanticDeprecatedSince20')
 @pytest.mark.parametrize('module', MOVED_IN_V2.keys())
 def test_moved_on_v2(module: str):
     import_from(module)
@@ -26,7 +26,7 @@ def test_moved_but_not_warn_on_v2(module: str):
     import_from(module)
 
 
-@pytest.mark.filterwarnings('ignore::UserWarning')
+@pytest.mark.filterwarnings('ignore::pydantic.warnings.PydanticDeprecatedSince20')
 @pytest.mark.parametrize('module', REDIRECT_TO_V1.keys())
 def test_redirect_to_v1(module: str):
     import_from(module)

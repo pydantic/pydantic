@@ -179,9 +179,9 @@ to help ease migration, but calling them will emit `DeprecationWarning`s.
   bugs. You can read more about this (including how to opt out of this behavior) in the
   [relevant section](concepts/serialization.md#subclasses-of-model-like-types) of the model exporting docs.
 * `GetterDict` has been removed as it was just an implementation detail of `orm_mode`, which has been removed.
-* In many cases, arguments passed to the constructor will be **copied** in order to perform validation and, where necessary, coercion.
+* In many cases, arguments passed to the constructor will be **copied** in order to perform validation and, where necessary, coercion
+  (see the [documentation](./concepts/models.md#attribute-copies)).
   This is notable in the case of passing mutable objects as arguments to a constructor.
-  You can see an example + more detail [here](https://docs.pydantic.dev/latest/concepts/models/#attribute-copies).
 * The `.json()` method is deprecated, and attempting to use this deprecated method with arguments such as
 `indent` or `ensure_ascii` may lead to confusing errors. For best results, switch to V2's equivalent, `model_dump_json()`.
 If you'd still like to use said arguments, you can use [this workaround](https://github.com/pydantic/pydantic/issues/8825#issuecomment-1946206415).
@@ -394,6 +394,7 @@ Model()
 
 * `@root_validator` has been deprecated, and should be replaced with
     [`@model_validator`](api/functional_validators.md#pydantic.functional_validators.model_validator), which also provides new features and improvements.
+    Be aware that the allowed signatures have changed (see the [relevant documentation](./concepts/validators.md#model-validators)).
     * Under some circumstances (such as assignment when `model_config['validate_assignment'] is True`),
         the `@model_validator` decorator will receive an instance of the model, not a dict of values. You may
         need to be careful to handle this case.
@@ -515,7 +516,7 @@ Going back to the `Mapping` example, we promise the output will be a valid `Mapp
 plain `dict`:
 
 ```python
-from typing import Mapping
+from collections.abc import Mapping
 
 from pydantic import TypeAdapter
 
@@ -533,7 +534,8 @@ print(type(v))
 If you want the output type to be a specific type, consider annotating it as such or implementing a custom validator:
 
 ```python
-from typing import Annotated, Any, Mapping, TypeVar
+from collections.abc import Mapping
+from typing import Annotated, Any, TypeVar
 
 from pydantic import (
     TypeAdapter,

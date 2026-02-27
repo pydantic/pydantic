@@ -52,8 +52,9 @@ You'll need the following prerequisites:
 
 * Any Python version between **Python 3.9 and 3.12**
 * [**uv**](https://docs.astral.sh/uv/getting-started/installation/) or other virtual environment tool
-* **git**
-* **make**
+* [**git**](https://git-scm.com/) - For version control
+* [**make**](https://www.gnu.org/software/make/) - For running development commands (or use `nmake` on Windows)
+* [**Rust**](https://rustup.rs/) - Rust stable (or nightly for coverage)
 
 ### Installation and setup
 
@@ -83,7 +84,7 @@ Create a new branch for your changes.
 
 ```bash
 # Checkout a new branch and make your changes
-git checkout -b my-new-feature-branch
+git switch -c my-new-feature-branch
 # Make your changes...
 ```
 
@@ -108,8 +109,7 @@ make
 
 If you've made any changes to the documentation (including changes to function signatures, class definitions, or docstrings that will appear in the API documentation), make sure it builds successfully.
 
-We use `mkdocs-material[imaging]` to support social previews.
-You can find directions on how to install the required dependencies [here](https://squidfunk.github.io/mkdocs-material/plugins/requirements/image-processing/).
+We use `mkdocs-material[imaging]` to support social previews (see the [plugin documentation](https://squidfunk.github.io/mkdocs-material/plugins/requirements/image-processing/)).
 
 ```bash
 # Build documentation
@@ -147,7 +147,7 @@ When your pull request is ready for review, add a comment with the message "plea
 
 ## Documentation style
 
-Documentation is written in Markdown and built using [Material for MkDocs](https://squidfunk.github.io/mkdocs-material/). API documentation is build from docstrings using [mkdocstrings](https://mkdocstrings.github.io/).
+Documentation is written in Markdown and built using [Material for MkDocs](https://squidfunk.github.io/mkdocs-material/). API documentation is built from docstrings using [mkdocstrings](https://mkdocstrings.github.io/).
 
 ### Code documentation
 
@@ -191,7 +191,7 @@ def bar(self, baz: int) -> str:
     return 'bar'
 ```
 
-You may include example code in docstrings. This code should be complete, self-contained, and runnable. Docstring examples are tested, so make sure they are correct and complete. See [`FieldInfo.from_annotated_attribute`][pydantic.fields.FieldInfo.from_annotated_attribute] for an example.
+You may include example code in docstrings. This code should be complete, self-contained, and runnable. Docstring examples are tested, so make sure they are correct and complete. See [`BeforeValidator`][pydantic.functional_validators.AfterValidator] for an example.
 
 !!! note "Class and instance attributes"
     Class attributes should be documented in the class docstring.

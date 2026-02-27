@@ -19,6 +19,7 @@ from pydantic import (
     Field,
     PlainSerializer,
     PlainValidator,
+    RootModel,
     TypeAdapter,
     ValidationError,
     field_validator,
@@ -453,7 +454,9 @@ def test_alias_different():
         pet_type: Literal['dog'] = Field(alias='T')
         d: str
 
-    with pytest.raises(TypeError, match=re.escape("Aliases for discriminator 'pet_type' must be the same (got T, U)")):
+    with pytest.raises(
+        PydanticUserError, match=re.escape("Aliases for discriminator 'pet_type' must be the same (got T, U)")
+    ):
 
         class Model(BaseModel):
             pet: Union[Cat, Dog] = Field(discriminator='pet_type')
@@ -886,7 +889,9 @@ def test_invalid_alias() -> None:
     dog = core_schema.typed_dict_schema(dog_fields)
     schema = core_schema.union_schema([cat, dog])
 
-    with pytest.raises(TypeError, match=re.escape("Alias ['cat', 'CAT'] is not supported in a discriminated union")):
+    with pytest.raises(
+        PydanticUserError, match=re.escape("Alias ['cat', 'CAT'] is not supported in a discriminated union")
+    ):
         apply_discriminator(schema, 'kind')
 
 
@@ -896,7 +901,7 @@ def test_invalid_discriminator_type() -> None:
     cat = core_schema.typed_dict_schema(cat_fields)
     dog = core_schema.typed_dict_schema(dog_fields)
 
-    with pytest.raises(TypeError, match=re.escape("TypedDict needs field 'kind' to be of type `Literal`")):
+    with pytest.raises(PydanticUserError, match=re.escape("TypedDict needs field 'kind' to be of type `Literal`")):
         apply_discriminator(core_schema.union_schema([cat, dog]), 'kind')
 
 
@@ -906,7 +911,7 @@ def test_missing_discriminator_field() -> None:
     cat = core_schema.typed_dict_schema(cat_fields)
     dog = core_schema.typed_dict_schema(dog_fields)
 
-    with pytest.raises(TypeError, match=re.escape("TypedDict needs a discriminator field for key 'kind'")):
+    with pytest.raises(PydanticUserError, match=re.escape("TypedDict needs a discriminator field for key 'kind'")):
         apply_discriminator(core_schema.union_schema([dog, cat]), 'kind')
 
 
@@ -1772,35 +1777,35 @@ def test_callable_discriminated_union_with_missing_tag() -> None:
         if isinstance(v, (dict, BaseModel)):
             return 'model'
 
-    try:
+    with pytest.raises(PydanticUserError) as exc_info:
 
         class DiscriminatedModel(BaseModel):
             x: Annotated[
                 Union[str, 'DiscriminatedModel'],
                 Discriminator(model_x_discriminator),
             ]
-    except PydanticUserError as exc_info:
-        assert exc_info.code == 'callable-discriminator-no-tag'
 
-    try:
+    assert exc_info.value.code == 'callable-discriminator-no-tag'
+
+    with pytest.raises(PydanticUserError) as exc_info:
 
         class DiscriminatedModel(BaseModel):
             x: Annotated[
                 Union[Annotated[str, Tag('str')], 'DiscriminatedModel'],
                 Discriminator(model_x_discriminator),
             ]
-    except PydanticUserError as exc_info:
-        assert exc_info.code == 'callable-discriminator-no-tag'
 
-    try:
+    assert exc_info.value.code == 'callable-discriminator-no-tag'
+
+    with pytest.raises(PydanticUserError) as exc_info:
 
         class DiscriminatedModel(BaseModel):
             x: Annotated[
                 Union[str, Annotated['DiscriminatedModel', Tag('model')]],
                 Discriminator(model_x_discriminator),
             ]
-    except PydanticUserError as exc_info:
-        assert exc_info.code == 'callable-discriminator-no-tag'
+
+    assert exc_info.value.code == 'callable-discriminator-no-tag'
 
 
 @pytest.mark.xfail(
@@ -2326,3 +2331,34 @@ def test_recursive_discriminated_union() -> None:
     class FilterExpression(BaseModel):
         field: FieldFilterExpression
         paragraph: ParagraphFilterExpression
+
+
+def test_discriminated_union_with_root_model_literal() -> None:
+    """https://github.com/pydantic/pydantic/issues/12605."""
+
+    class Action1(RootModel[Literal['action1']]):
+        pass
+
+    class Action2(RootModel[Literal['action2']]):
+        pass
+
+    class Model1(BaseModel):
+        action: Action1
+
+    class Model2(BaseModel):
+        action: Action2
+
+    ta = TypeAdapter(Annotated[Union[Model1, Model2], Field(discriminator='action')])
+
+    model1 = ta.validate_python({'action': 'action1'})
+    assert isinstance(model1, Model1)
+    assert model1.action.root == 'action1'
+
+    model2 = ta.validate_python({'action': 'action2'})
+    assert isinstance(model2, Model2)
+    assert model2.action.root == 'action2'
+
+    with pytest.raises(ValidationError) as exc_info:
+        ta.validate_python({'action': 'invalid_action'})
+
+    assert exc_info.value.errors()[0]['type'] == 'union_tag_invalid'

@@ -9,7 +9,6 @@ from __future__ import annotations as _annotations
 import operator
 import sys
 import types
-import typing
 import warnings
 from collections.abc import Generator, Mapping
 from copy import copy, deepcopy
@@ -20,6 +19,7 @@ from typing import (
     Callable,
     ClassVar,
     Dict,
+    Generic,
     Literal,
     TypeVar,
     Union,
@@ -49,7 +49,7 @@ from ._internal import (
 from ._migration import getattr_migration
 from .aliases import AliasChoices, AliasPath
 from .annotated_handlers import GetCoreSchemaHandler, GetJsonSchemaHandler
-from .config import ConfigDict
+from .config import ConfigDict, ExtraValues
 from .errors import PydanticUndefinedAnnotation, PydanticUserError
 from .json_schema import DEFAULT_REF_TEMPLATE, GenerateJsonSchema, JsonSchemaMode, JsonSchemaValue, model_json_schema
 from .plugin._schema_validator import PluggableSchemaValidator
@@ -60,14 +60,12 @@ if TYPE_CHECKING:
 
     from pydantic_core import CoreSchema, SchemaSerializer, SchemaValidator
 
+    from ._internal._fields import PydanticExtraInfo
     from ._internal._namespace_utils import MappingNamespace
     from ._internal._utils import AbstractSetIntStr, MappingIntStrAny
     from .deprecated.parse import Protocol as DeprecatedParseProtocol
     from .fields import ComputedFieldInfo, FieldInfo, ModelPrivateAttr
-else:
-    # See PyCharm issues https://youtrack.jetbrains.com/issue/PY-21915
-    # and https://youtrack.jetbrains.com/issue/PY-51428
-    DeprecationWarning = PydanticDeprecatedSince20
+
 
 __all__ = 'BaseModel', 'create_model'
 
@@ -134,8 +132,10 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
         __pydantic_custom_init__: Whether the model has a custom `__init__` function.
         __pydantic_decorators__: Metadata containing the decorators defined on the model.
             This replaces `Model.__validators__` and `Model.__root_validators__` from Pydantic V1.
-        __pydantic_generic_metadata__: Metadata for generic models; contains data used for a similar purpose to
-            __args__, __origin__, __parameters__ in typing-module generics. May eventually be replaced by these.
+        __pydantic_generic_metadata__: A dictionary containing metadata about generic Pydantic models.
+            The `origin` and `args` items map to the [`__origin__`][genericalias.__origin__]
+            and [`__args__`][genericalias.__args__] attributes of [generic aliases][types-genericalias],
+            and the `parameter` item maps to the `__parameter__` attribute of generic classes.
         __pydantic_parent_namespace__: Parent namespace of the model, used for automatic rebuilding of models.
         __pydantic_post_init__: The name of the post-init method for the model, if defined.
         __pydantic_root_model__: Whether the model is a [`RootModel`][pydantic.root_model.RootModel].
@@ -182,8 +182,12 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
     This replaces `Model.__validators__` and `Model.__root_validators__` from Pydantic V1."""
 
     __pydantic_generic_metadata__: ClassVar[_generics.PydanticGenericMetadata]
-    """Metadata for generic models; contains data used for a similar purpose to
-    __args__, __origin__, __parameters__ in typing-module generics. May eventually be replaced by these."""
+    """A dictionary containing metadata about generic Pydantic models.
+
+    The `origin` and `args` items map to the [`__origin__`][genericalias.__origin__]
+    and [`__args__`][genericalias.__args__] attributes of [generic aliases][types-genericalias],
+    and the `parameter` item maps to the `__parameter__` attribute of generic classes.
+    """
 
     __pydantic_parent_namespace__: ClassVar[Dict[str, Any] | None] = None  # noqa: UP006
     """Parent namespace of the model, used for automatic rebuilding of models."""
@@ -210,6 +214,12 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
 
     __pydantic_computed_fields__: ClassVar[Dict[str, ComputedFieldInfo]]  # noqa: UP006
     """A dictionary of computed field names and their corresponding [`ComputedFieldInfo`][pydantic.fields.ComputedFieldInfo] objects."""
+
+    __pydantic_extra_info__: ClassVar[PydanticExtraInfo | None]
+    """A wrapper around the `__pydantic_extra__` annotation, if explicitly annotated on a model.
+
+    This is a private attribute, not meant to be used outside Pydantic.
+    """
 
     __pydantic_extra__: Dict[str, Any] | None = _model_construction.NoInitField(init=False)  # noqa: UP006
     """A dictionary containing extra values, if [`extra`][pydantic.config.ConfigDict.extra] is set to `'allow'`."""
@@ -429,10 +439,12 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
         exclude_unset: bool = False,
         exclude_defaults: bool = False,
         exclude_none: bool = False,
+        exclude_computed_fields: bool = False,
         round_trip: bool = False,
         warnings: bool | Literal['none', 'warn', 'error'] = True,
         fallback: Callable[[Any], Any] | None = None,
         serialize_as_any: bool = False,
+        polymorphic_serialization: bool | None = None,
     ) -> dict[str, Any]:
         """!!! abstract "Usage Documentation"
             [`model_dump`](../concepts/serialization.md#python-mode)
@@ -450,12 +462,16 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
             exclude_unset: Whether to exclude fields that have not been explicitly set.
             exclude_defaults: Whether to exclude fields that are set to their default value.
             exclude_none: Whether to exclude fields that have a value of `None`.
+            exclude_computed_fields: Whether to exclude computed fields.
+                While this can be useful for round-tripping, it is usually recommended to use the dedicated
+                `round_trip` parameter instead.
             round_trip: If True, dumped values should be valid as input for non-idempotent types such as Json[T].
             warnings: How to handle serialization errors. False/"none" ignores them, True/"warn" logs errors,
                 "error" raises a [`PydanticSerializationError`][pydantic_core.PydanticSerializationError].
             fallback: A function to call when an unknown value is encountered. If not provided,
                 a [`PydanticSerializationError`][pydantic_core.PydanticSerializationError] error is raised.
             serialize_as_any: Whether to serialize fields with duck-typing serialization behavior.
+            polymorphic_serialization: Whether to use model and dataclass polymorphic serialization for this call.
 
         Returns:
             A dictionary representation of the model.
@@ -470,10 +486,12 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
             exclude_unset=exclude_unset,
             exclude_defaults=exclude_defaults,
             exclude_none=exclude_none,
+            exclude_computed_fields=exclude_computed_fields,
             round_trip=round_trip,
             warnings=warnings,
             fallback=fallback,
             serialize_as_any=serialize_as_any,
+            polymorphic_serialization=polymorphic_serialization,
         )
 
     def model_dump_json(
@@ -488,10 +506,12 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
         exclude_unset: bool = False,
         exclude_defaults: bool = False,
         exclude_none: bool = False,
+        exclude_computed_fields: bool = False,
         round_trip: bool = False,
         warnings: bool | Literal['none', 'warn', 'error'] = True,
         fallback: Callable[[Any], Any] | None = None,
         serialize_as_any: bool = False,
+        polymorphic_serialization: bool | None = None,
     ) -> str:
         """!!! abstract "Usage Documentation"
             [`model_dump_json`](../concepts/serialization.md#json-mode)
@@ -509,12 +529,16 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
             exclude_unset: Whether to exclude fields that have not been explicitly set.
             exclude_defaults: Whether to exclude fields that are set to their default value.
             exclude_none: Whether to exclude fields that have a value of `None`.
+            exclude_computed_fields: Whether to exclude computed fields.
+                While this can be useful for round-tripping, it is usually recommended to use the dedicated
+                `round_trip` parameter instead.
             round_trip: If True, dumped values should be valid as input for non-idempotent types such as Json[T].
             warnings: How to handle serialization errors. False/"none" ignores them, True/"warn" logs errors,
                 "error" raises a [`PydanticSerializationError`][pydantic_core.PydanticSerializationError].
             fallback: A function to call when an unknown value is encountered. If not provided,
                 a [`PydanticSerializationError`][pydantic_core.PydanticSerializationError] error is raised.
             serialize_as_any: Whether to serialize fields with duck-typing serialization behavior.
+            polymorphic_serialization: Whether to use model and dataclass polymorphic serialization for this call.
 
         Returns:
             A JSON string representation of the model.
@@ -530,10 +554,12 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
             exclude_unset=exclude_unset,
             exclude_defaults=exclude_defaults,
             exclude_none=exclude_none,
+            exclude_computed_fields=exclude_computed_fields,
             round_trip=round_trip,
             warnings=warnings,
             fallback=fallback,
             serialize_as_any=serialize_as_any,
+            polymorphic_serialization=polymorphic_serialization,
         ).decode()
 
     @classmethod
@@ -543,12 +569,22 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
         ref_template: str = DEFAULT_REF_TEMPLATE,
         schema_generator: type[GenerateJsonSchema] = GenerateJsonSchema,
         mode: JsonSchemaMode = 'validation',
+        *,
+        union_format: Literal['any_of', 'primitive_type_array'] = 'any_of',
     ) -> dict[str, Any]:
         """Generates a JSON schema for a model class.
 
         Args:
             by_alias: Whether to use attribute aliases or not.
             ref_template: The reference template.
+            union_format: The format to use when combining schemas from unions together. Can be one of:
+
+                - `'any_of'`: Use the [`anyOf`](https://json-schema.org/understanding-json-schema/reference/combining#anyOf)
+                keyword to combine schemas (the default).
+                - `'primitive_type_array'`: Use the [`type`](https://json-schema.org/understanding-json-schema/reference/type)
+                keyword as an array of strings, containing each type of the combination. If any of the schemas is not a primitive
+                type (`string`, `boolean`, `null`, `integer` or `number`) or contains constraints/metadata, falls back to
+                `any_of`.
             schema_generator: To override the logic used to generate the JSON schema, as a subclass of
                 `GenerateJsonSchema` with your desired modifications
             mode: The mode in which to generate the schema.
@@ -557,7 +593,12 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
             The JSON schema for the given model class.
         """
         return model_json_schema(
-            cls, by_alias=by_alias, ref_template=ref_template, schema_generator=schema_generator, mode=mode
+            cls,
+            by_alias=by_alias,
+            ref_template=ref_template,
+            union_format=union_format,
+            schema_generator=schema_generator,
+            mode=mode,
         )
 
     @classmethod
@@ -577,7 +618,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
         Raises:
             TypeError: Raised when trying to generate concrete names for non-generic models.
         """
-        if not issubclass(cls, typing.Generic):
+        if not issubclass(cls, Generic):
             raise TypeError('Concrete names should only be generated for generic models.')
 
         # Any strings received should represent forward references, so we handle them specially below.
@@ -650,6 +691,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
             raise_errors=raise_errors,
             # If the model was already complete, we don't need to call the hook again.
             call_on_complete_hook=not already_complete,
+            is_force_rebuild=force,
         )
 
     @classmethod
@@ -658,6 +700,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
         obj: Any,
         *,
         strict: bool | None = None,
+        extra: ExtraValues | None = None,
         from_attributes: bool | None = None,
         context: Any | None = None,
         by_alias: bool | None = None,
@@ -668,6 +711,8 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
         Args:
             obj: The object to validate.
             strict: Whether to enforce types strictly.
+            extra: Whether to ignore, allow, or forbid extra data during model validation.
+                See the [`extra` configuration value][pydantic.ConfigDict.extra] for details.
             from_attributes: Whether to extract data from object attributes.
             context: Additional context to pass to the validator.
             by_alias: Whether to use the field's alias when validating against the provided input data.
@@ -689,7 +734,13 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
             )
 
         return cls.__pydantic_validator__.validate_python(
-            obj, strict=strict, from_attributes=from_attributes, context=context, by_alias=by_alias, by_name=by_name
+            obj,
+            strict=strict,
+            extra=extra,
+            from_attributes=from_attributes,
+            context=context,
+            by_alias=by_alias,
+            by_name=by_name,
         )
 
     @classmethod
@@ -698,6 +749,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
         json_data: str | bytes | bytearray,
         *,
         strict: bool | None = None,
+        extra: ExtraValues | None = None,
         context: Any | None = None,
         by_alias: bool | None = None,
         by_name: bool | None = None,
@@ -710,6 +762,8 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
         Args:
             json_data: The JSON data to validate.
             strict: Whether to enforce types strictly.
+            extra: Whether to ignore, allow, or forbid extra data during model validation.
+                See the [`extra` configuration value][pydantic.ConfigDict.extra] for details.
             context: Extra variables to pass to the validator.
             by_alias: Whether to use the field's alias when validating against the provided input data.
             by_name: Whether to use the field's name when validating against the provided input data.
@@ -730,7 +784,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
             )
 
         return cls.__pydantic_validator__.validate_json(
-            json_data, strict=strict, context=context, by_alias=by_alias, by_name=by_name
+            json_data, strict=strict, extra=extra, context=context, by_alias=by_alias, by_name=by_name
         )
 
     @classmethod
@@ -739,6 +793,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
         obj: Any,
         *,
         strict: bool | None = None,
+        extra: ExtraValues | None = None,
         context: Any | None = None,
         by_alias: bool | None = None,
         by_name: bool | None = None,
@@ -748,6 +803,8 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
         Args:
             obj: The object containing string data to validate.
             strict: Whether to enforce types strictly.
+            extra: Whether to ignore, allow, or forbid extra data during model validation.
+                See the [`extra` configuration value][pydantic.ConfigDict.extra] for details.
             context: Extra variables to pass to the validator.
             by_alias: Whether to use the field's alias when validating against the provided input data.
             by_name: Whether to use the field's name when validating against the provided input data.
@@ -765,7 +822,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
             )
 
         return cls.__pydantic_validator__.validate_strings(
-            obj, strict=strict, context=context, by_alias=by_alias, by_name=by_name
+            obj, strict=strict, extra=extra, context=context, by_alias=by_alias, by_name=by_name
         )
 
     @classmethod
@@ -859,7 +916,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
             raise TypeError('Type parameters should be placed on typing.Generic, not BaseModel')
         if not hasattr(cls, '__parameters__'):
             raise TypeError(f'{cls} cannot be parametrized because it does not inherit from typing.Generic')
-        if not cls.__pydantic_generic_metadata__['parameters'] and typing.Generic not in cls.__bases__:
+        if not cls.__pydantic_generic_metadata__['parameters'] and Generic not in cls.__bases__:
             raise TypeError(f'{cls} is not a generic class')
 
         if not isinstance(typevar_values, tuple):
@@ -884,7 +941,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
             origin = cls.__pydantic_generic_metadata__['origin'] or cls
             model_name = origin.model_parametrized_name(args)
             params = tuple(
-                {param: None for param in _generics.iter_contained_typevars(typevars_map.values())}
+                dict.fromkeys(_generics.iter_contained_typevars(typevars_map.values()))
             )  # use dict as ordered set
 
             with _generics.generic_recursion_self_type(origin, args) as maybe_self_type:
@@ -1655,7 +1712,8 @@ def create_model(
     __module__: str = __name__,
     __validators__: dict[str, Callable[..., Any]] | None = None,
     __cls_kwargs__: dict[str, Any] | None = None,
-    **field_definitions: Any | tuple[str, Any],
+    __qualname__: str | None = None,
+    **field_definitions: Any | tuple[Any, Any],
 ) -> type[BaseModel]: ...
 
 
@@ -1670,7 +1728,8 @@ def create_model(
     __module__: str = __name__,
     __validators__: dict[str, Callable[..., Any]] | None = None,
     __cls_kwargs__: dict[str, Any] | None = None,
-    **field_definitions: Any | tuple[str, Any],
+    __qualname__: str | None = None,
+    **field_definitions: Any | tuple[Any, Any],
 ) -> type[ModelT]: ...
 
 
@@ -1684,14 +1743,20 @@ def create_model(  # noqa: C901
     __module__: str | None = None,
     __validators__: dict[str, Callable[..., Any]] | None = None,
     __cls_kwargs__: dict[str, Any] | None = None,
+    __qualname__: str | None = None,
     # TODO PEP 747: replace `Any` by the TypeForm:
-    **field_definitions: Any | tuple[str, Any],
+    **field_definitions: Any | tuple[Any, Any],
 ) -> type[ModelT]:
     """!!! abstract "Usage Documentation"
         [Dynamic Model Creation](../concepts/models.md#dynamic-model-creation)
 
     Dynamically creates and returns a new Pydantic model, in other words, `create_model` dynamically creates a
     subclass of [`BaseModel`][pydantic.BaseModel].
+
+    !!! warning
+        This function may execute arbitrary code contained in field annotations, if string references need to be evaluated.
+
+        See [Security implications of introspecting annotations](https://docs.python.org/3/library/annotationlib.html#annotationlib-security) for more information.
 
     Args:
         model_name: The name of the newly created model.
@@ -1704,6 +1769,7 @@ def create_model(  # noqa: C901
             be added to the model, and the values are the validation methods themselves. You can read more about functional
             validators [here](https://docs.pydantic.dev/2.9/concepts/validators/#field-validators).
         __cls_kwargs__: A dictionary of keyword arguments for class creation, such as `metaclass`.
+        __qualname__: The qualified name of the newly created model.
         **field_definitions: Field definitions of the new model. Either:
 
             - a single element, representing the type annotation of the field.
@@ -1746,7 +1812,9 @@ def create_model(  # noqa: C901
 
     namespace: dict[str, Any] = {'__annotations__': annotations, '__module__': __module__}
     if __doc__:
-        namespace.update({'__doc__': __doc__})
+        namespace['__doc__'] = __doc__
+    if __qualname__ is not None:
+        namespace['__qualname__'] = __qualname__
     if __validators__:
         namespace.update(__validators__)
     namespace.update(fields)

@@ -41,7 +41,7 @@ In its simplest form, a field validator is a callable taking the value to be val
 
 **Four** different types of validators can be used. They can all be defined using the
 [annotated pattern](./fields.md#the-annotated-pattern) or using the
-[`field_validator()`][pydantic.field_validator] decorator, applied on a [class method][classmethod]:
+[`@field_validator`][pydantic.field_validator] decorator, applied on a [class method][classmethod]:
 
 * ***After* validators**: run after Pydantic's internal validation. They are generally more type safe and thus easier to implement.
 {#field-after-validator}
@@ -599,7 +599,7 @@ Both the field and model validators callables (in all modes) can optionally take
 
 * [already validated data](#validation-data)
 * [user defined context](#validation-context)
-* the current validation mode: either `'python'` or `'json'` (see the [`mode`][pydantic.ValidationInfo.mode] property)
+* the current [validation mode](./models.md#validating-data): either `'python'`, `'json'` or `'strings'` (see the [`mode`][pydantic.ValidationInfo.mode] property)
 * the current field name, if using a [field validator](#field-validators) (see the [`field_name`][pydantic.ValidationInfo.field_name] property).
 
 ### Validation data
@@ -670,9 +670,10 @@ Similarly, you can [use a context for serialization](../concepts/serialization.m
     ```python
     from __future__ import annotations
 
+    from collections.abc import Generator
     from contextlib import contextmanager
     from contextvars import ContextVar
-    from typing import Any, Generator
+    from typing import Any
 
     from pydantic import BaseModel, ValidationInfo, field_validator
 
@@ -801,6 +802,33 @@ Pydantic provides a few special utilities that can be used to customize validati
 
     1. Note that the validation of the second item is skipped. If it has the wrong type it will emit a
        warning during serialization.
+
+* [`ValidateAs`][pydantic.functional_validators.ValidateAs] can be used to validate an custom type from a
+  type natively supported by Pydantic. This is particularly useful when using custom types with multiple fields.
+
+    ```python {lint="skip"}
+    from typing import Annotated
+
+    from pydantic import BaseModel, TypeAdapter, ValidateAs
+
+    class MyCls:
+        def __init__(self, a: int) -> None:
+            self.a = a
+
+        def __repr__(self) -> str:
+            return f"MyCls(a={self.a})"
+
+    class ValModel(BaseModel):
+        a: int
+
+
+    ta = TypeAdapter(
+        Annotated[MyCls, ValidateAs(ValModel, lambda v: MyCls(a=v.a))]
+    )
+
+    print(ta.validate_python({'a': 1}))
+    #> MyCls(a=1)
+    ```
 
 * [`PydanticUseDefault`][pydantic_core.PydanticUseDefault] can be used to notify Pydantic that the default value
   should be used.

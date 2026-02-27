@@ -2,10 +2,12 @@
     [`pydantic.fields.Field`][pydantic.fields.Field]<br>
 
 In this section, we will go through the available mechanisms to customize Pydantic model fields:
-default values, JSON Schema metadata, constraints, etc.
+[default values](#default-values), [JSON Schema metadata](#customizing-json-schema),
+[constraints](#field-constraints), etc.
 
 To do so, the [`Field()`][pydantic.fields.Field] function is used a lot, and behaves the same way as
-the standard library [`field()`][dataclasses.field] function for dataclasses:
+the standard library [`field()`][dataclasses.field] function for dataclasses – by assigning to the
+annotated attribute:
 
 ```python
 from pydantic import BaseModel, Field
@@ -29,7 +31,7 @@ class Model(BaseModel):
 ## The annotated pattern
 
 To apply constraints or attach [`Field()`][pydantic.fields.Field] functions to a model field, Pydantic
-supports the [`Annotated`][typing.Annotated] typing construct to attach metadata to an annotation:
+also supports the [`Annotated`][typing.Annotated] typing construct to attach metadata to an annotation:
 
 ```python
 from typing import Annotated
@@ -57,7 +59,7 @@ Using this pattern has some advantages:
 
 However, note that certain arguments to the [`Field()`][pydantic.fields.Field] function (namely, `default`,
 `default_factory`, and `alias`) are taken into account by static type checkers to synthesize a correct
-`__init__` method. The annotated pattern is *not* understood by them, so you should use the normal
+`__init__()` method. The annotated pattern is *not* understood by them, so you should use the normal
 assignment form instead.
 
 !!! tip
@@ -94,6 +96,37 @@ assignment form instead.
       2. The [`Field()`][pydantic.fields.Field] function is applied to the "top-level" union type,
          hence the `deprecated` flag will be applied to the field.
 
+## Inspecting model fields
+
+The fields of a model can be inspected using the [`model_fields`][pydantic.main.BaseModel.model_fields] class attribute
+(or the `__pydantic_fields__` attribute for [Pydantic dataclasses](./dataclasses.md)). It is a mapping of field names
+to their definition (represented as [`FieldInfo`][pydantic.fields.FieldInfo] instances).
+
+```python
+from typing import Annotated
+
+from pydantic import BaseModel, Field, WithJsonSchema
+
+
+class Model(BaseModel):
+    a: Annotated[
+        int, Field(gt=1), WithJsonSchema({'extra': 'data'}), Field(alias='b')
+    ] = 1
+
+
+field_info = Model.model_fields['a']
+print(field_info.annotation)
+#> <class 'int'>
+print(field_info.alias)
+#> b
+print(field_info.metadata)
+#> [Gt(gt=1), WithJsonSchema(json_schema={'extra': 'data'}, mode=None)]
+```
+
+/// deprecated-removed | v2.11 v3
+[`model_fields`][pydantic.main.BaseModel.model_fields] can only be accessed from the class object, not the instance.
+///
+
 ## Default values
 
 Default values for fields can be provided using the normal assignment syntax or by providing a value
@@ -109,10 +142,11 @@ class User(BaseModel):
     age: int = Field(default=20)
 ```
 
-!!! warning
-    [In Pydantic V1](../migration.md#required-optional-and-nullable-fields), a type annotated as [`Any`][typing.Any]
-    or wrapped by [`Optional`][typing.Optional] would be given an implicit default of `None` even if no
-    default was explicitly specified. This is no longer the case in Pydantic V2.
+/// version-changed | v2
+[In Pydantic V1](../migration.md#required-optional-and-nullable-fields), a type annotated as [`Any`][typing.Any]
+or wrapped by [`Optional`][typing.Optional] would be given an implicit default of `None` even if no
+default was explicitly specified. This is no longer the case in Pydantic V2.
+///
 
 You can also pass a callable to the `default_factory` argument that will be called to generate a default value:
 
@@ -125,6 +159,9 @@ from pydantic import BaseModel, Field
 class User(BaseModel):
     id: str = Field(default_factory=lambda: uuid4().hex)
 ```
+
+<!-- markdownlint-disable-next-line no-empty-links -->
+[](){#default-factory-validated-data}
 
 The default factory can also take a single required argument, in which case the already validated data will be passed as a dictionary.
 
@@ -144,6 +181,10 @@ print(user.username)
 
 The `data` argument will *only* contain the already validated data, based on the [order of model fields](./models.md#field-ordering)
 (the above example would fail if `username` were to be defined before `email`).
+
+/// version-added | v2.10
+Default factories can take already validated data as an argument.
+///
 
 ## Validate default values
 
@@ -380,199 +421,17 @@ print(user.model_dump(by_alias=True))  # (2)!
     #> {'my_field': 1}
     ```
 
+<!-- old anchor added for backwards compatibility -->
 <!-- markdownlint-disable-next-line no-empty-links -->
-[](){#field-constraints}
+[](){#numeric-constraints}
+<!-- markdownlint-disable-next-line no-empty-links -->
+[](){#string-constraints}
+<!-- markdownlint-disable-next-line no-empty-links -->
+[](){#decimal-constraints}
 
-## Numeric Constraints
+## Field constraints
 
-There are some keyword arguments that can be used to constrain numeric values:
-
-* `gt` - greater than
-* `lt` - less than
-* `ge` - greater than or equal to
-* `le` - less than or equal to
-* `multiple_of` - a multiple of the given number
-* `allow_inf_nan` - allow `'inf'`, `'-inf'`, `'nan'` values
-
-Here's an example:
-
-```python
-from pydantic import BaseModel, Field
-
-
-class Foo(BaseModel):
-    positive: int = Field(gt=0)
-    non_negative: int = Field(ge=0)
-    negative: int = Field(lt=0)
-    non_positive: int = Field(le=0)
-    even: int = Field(multiple_of=2)
-    love_for_pydantic: float = Field(allow_inf_nan=True)
-
-
-foo = Foo(
-    positive=1,
-    non_negative=0,
-    negative=-1,
-    non_positive=0,
-    even=2,
-    love_for_pydantic=float('inf'),
-)
-print(foo)
-"""
-positive=1 non_negative=0 negative=-1 non_positive=0 even=2 love_for_pydantic=inf
-"""
-```
-
-??? info "JSON Schema"
-    In the generated JSON schema:
-
-    * `gt` and `lt` constraints will be translated to `exclusiveMinimum` and `exclusiveMaximum`.
-    * `ge` and `le` constraints will be translated to `minimum` and `maximum`.
-    * `multiple_of` constraint will be translated to `multipleOf`.
-
-    The above snippet will generate the following JSON Schema:
-
-    ```json
-    {
-      "title": "Foo",
-      "type": "object",
-      "properties": {
-        "positive": {
-          "title": "Positive",
-          "type": "integer",
-          "exclusiveMinimum": 0
-        },
-        "non_negative": {
-          "title": "Non Negative",
-          "type": "integer",
-          "minimum": 0
-        },
-        "negative": {
-          "title": "Negative",
-          "type": "integer",
-          "exclusiveMaximum": 0
-        },
-        "non_positive": {
-          "title": "Non Positive",
-          "type": "integer",
-          "maximum": 0
-        },
-        "even": {
-          "title": "Even",
-          "type": "integer",
-          "multipleOf": 2
-        },
-        "love_for_pydantic": {
-          "title": "Love For Pydantic",
-          "type": "number"
-        }
-      },
-      "required": [
-        "positive",
-        "non_negative",
-        "negative",
-        "non_positive",
-        "even",
-        "love_for_pydantic"
-      ]
-    }
-    ```
-
-    See the [JSON Schema Draft 2020-12] for more details.
-
-!!! warning "Constraints on compound types"
-    In case you use field constraints with compound types, an error can happen in some cases. To avoid potential issues,
-    you can use `Annotated`:
-
-    ```python
-    from typing import Annotated, Optional
-
-    from pydantic import BaseModel, Field
-
-
-    class Foo(BaseModel):
-        positive: Optional[Annotated[int, Field(gt=0)]]
-        # Can error in some cases, not recommended:
-        non_negative: Optional[int] = Field(ge=0)
-    ```
-
-## String Constraints
-
-??? api "API Documentation"
-    [`pydantic.types.StringConstraints`][pydantic.types.StringConstraints]<br>
-
-There are fields that can be used to constrain strings:
-
-* `min_length`: Minimum length of the string.
-* `max_length`: Maximum length of the string.
-* `pattern`: A regular expression that the string must match.
-
-Here's an example:
-
-```python
-from pydantic import BaseModel, Field
-
-
-class Foo(BaseModel):
-    short: str = Field(min_length=3)
-    long: str = Field(max_length=10)
-    regex: str = Field(pattern=r'^\d*$')  # (1)!
-
-
-foo = Foo(short='foo', long='foobarbaz', regex='123')
-print(foo)
-#> short='foo' long='foobarbaz' regex='123'
-```
-
-1. Only digits are allowed.
-
-??? info "JSON Schema"
-    In the generated JSON schema:
-
-    * `min_length` constraint will be translated to `minLength`.
-    * `max_length` constraint will be translated to `maxLength`.
-    * `pattern` constraint will be translated to `pattern`.
-
-    The above snippet will generate the following JSON Schema:
-
-    ```json
-    {
-      "title": "Foo",
-      "type": "object",
-      "properties": {
-        "short": {
-          "title": "Short",
-          "type": "string",
-          "minLength": 3
-        },
-        "long": {
-          "title": "Long",
-          "type": "string",
-          "maxLength": 10
-        },
-        "regex": {
-          "title": "Regex",
-          "type": "string",
-          "pattern": "^\\d*$"
-        }
-      },
-      "required": [
-        "short",
-        "long",
-        "regex"
-      ]
-    }
-    ```
-
-## Decimal Constraints
-
-There are fields that can be used to constrain decimals:
-
-* `max_digits`: Maximum number of digits within the `Decimal`. It does not include a zero before the decimal point or
-  trailing decimal zeroes.
-* `decimal_places`: Maximum number of decimal places allowed. It does not include trailing decimal zeroes.
-
-Here's an example:
+The [`Field()`][pydantic.Field] function can also be used to add constraints to specific types:
 
 ```python
 from decimal import Decimal
@@ -580,24 +439,56 @@ from decimal import Decimal
 from pydantic import BaseModel, Field
 
 
-class Foo(BaseModel):
-    precise: Decimal = Field(max_digits=5, decimal_places=2)
-
-
-foo = Foo(precise=Decimal('123.45'))
-print(foo)
-#> precise=Decimal('123.45')
+class Model(BaseModel):
+    positive: int = Field(gt=0)
+    short_str: str = Field(max_length=3)
+    precise_decimal: Decimal = Field(max_digits=5, decimal_places=2)
 ```
 
-## Dataclass Constraints
+The available constraints for each type (and the way they affect the JSON Schema) are described
+in the [standard library types](../api/standard_library_types.md) documentation.
 
-There are fields that can be used to constrain dataclasses:
+<!-- old anchor added for backwards compatibility -->
+<!-- markdownlint-disable-next-line no-empty-links -->
+[](){#strict-mode}
 
-* `init`: Whether the field should be included in the `__init__` of the dataclass.
-* `init_var`: Whether the field should be seen as an [init-only field] in the dataclass.
+## Strict fields
+
+The `strict` parameter of the [`Field()`][pydantic.Field] function specifies whether the field should be validated in
+[strict mode](./strict_mode.md).
+
+```python
+from pydantic import BaseModel, Field
+
+
+class User(BaseModel):
+    name: str = Field(strict=True)
+    age: int = Field(strict=False)  # (1)!
+
+
+user = User(name='John', age='42')  # (2)!
+print(user)
+#> name='John' age=42
+```
+
+1. This is the default value.
+2. The `age` field is validated in lax mode. Therefore, it can be assigned a string.
+
+The [standard library types](../api/standard_library_types.md) documentation describes the strict behavior for each type.
+
+<!-- old anchor added for backwards compatibility -->
+<!-- markdownlint-disable-next-line no-empty-links -->
+[](){#dataclass-constraints}
+
+## Dataclass fields
+
+Some parameters of the [`Field()`][pydantic.Field] function can be used on [dataclasses](./dataclasses.md):
+
+* `init`: Whether the field should be included in the synthesized `__init__()` method of the dataclass.
+* `init_var`: Whether the field should be [init-only][dataclasses-init-only-variables] in the dataclass.
 * `kw_only`: Whether the field should be a keyword-only argument in the constructor of the dataclass.
 
-Here's an example:
+Here is an example:
 
 ```python
 from pydantic import BaseModel, Field
@@ -620,7 +511,7 @@ print(model.model_dump())  # (1)!
 #> {'foo': {'bar': 'bar', 'qux': 'qux'}}
 ```
 
-1. The `baz` field is not included in the `model_dump()` output, since it is an init-only field.
+1. The `baz` field is not included in the serialized output, since it is an init-only field.
 
 ## Field Representation
 
@@ -675,7 +566,7 @@ print(Model.model_validate({'pet': {'pet_type': 'cat', 'age': 12}}))  # (1)!
 #> pet=Cat(pet_type='cat', age=12)
 ```
 
-1. See more about [Validating data] in the [Models] page.
+1. See more about `model_validate()` in the [Validating data](./models.md#validating-data) documentation.
 
 The following example shows how to use the `discriminator` keyword argument with a `Discriminator` instance:
 
@@ -715,33 +606,7 @@ print(repr(Model.model_validate({'pet': {'pet_kind': 'dog', 'age': 12}})))
 ```
 
 You can also take advantage of `Annotated` to define your discriminated unions.
-See the [Discriminated Unions] docs for more details.
-
-## Strict Mode
-
-The `strict` parameter on a [`Field`][pydantic.fields.Field] specifies whether the field should be validated in "strict mode".
-In strict mode, Pydantic throws an error during validation instead of coercing data on the field where `strict=True`.
-
-```python
-from pydantic import BaseModel, Field
-
-
-class User(BaseModel):
-    name: str = Field(strict=True)
-    age: int = Field(strict=False)  # (1)!
-
-
-user = User(name='John', age='42')  # (2)!
-print(user)
-#> name='John' age=42
-```
-
-1. This is the default value.
-2. The `age` field is not validated in the strict mode. Therefore, it can be assigned a string.
-
-See [Strict Mode](strict_mode.md) for more details.
-
-See [Conversion Table](conversion_table.md) for more details on how Pydantic converts data in both strict and lax modes.
+See the [Discriminated Unions](./unions.md#discriminated-unions) documentation for more details.
 
 ## Immutability
 
@@ -774,9 +639,13 @@ except ValidationError as e:
 
 1. Since `name` field is frozen, the assignment is not allowed.
 
-## Exclude
+<!-- old anchor added for backwards compatibility -->
+<!-- markdownlint-disable-next-line no-empty-links -->
+[](){#exclude}
 
-The `exclude` parameter can be used to control which fields should be excluded from the
+## Excluding fields
+
+The `exclude` and `exclude_if` parameters can be used to control which fields should be excluded from the
 model when exporting the model.
 
 See the following example:
@@ -795,11 +664,18 @@ print(user.model_dump())  # (1)!
 #> {'name': 'John'}
 ```
 
-1. The `age` field is not included in the `model_dump()` output, since it is excluded.
+1. The `age` field is not included in the [`model_dump()`][pydantic.BaseModel.model_dump] output, since it is excluded.
 
-See the [Serialization] section for more details.
+See the dedicated [serialization section](./serialization.md#field-inclusion-and-exclusion) for more details.
+
+/// version-added | v2.12
+The `exclude_if` parameter.
+///
 
 ## Deprecated fields
+
+/// version-added | v2.7.0
+///
 
 The `deprecated` parameter can be used to mark a field as being deprecated. Doing so will result in:
 
@@ -1016,9 +892,5 @@ class Box(BaseModel):
         return self.width * self.height * self.depth
 ```
 
-[Discriminated Unions]: ../concepts/unions.md#discriminated-unions
-[Validating data]: models.md#validating-data
-[Models]: models.md
-[init-only field]: https://docs.python.org/3/library/dataclasses.html#init-only-variables
 [frozen dataclass documentation]: https://docs.python.org/3/library/dataclasses.html#frozen-instances
 [Customizing JSON Schema]: json_schema.md#field-level-customization

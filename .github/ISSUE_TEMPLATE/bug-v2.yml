@@ -5,7 +5,7 @@ labels: [bug V2, pending]
 body:
   - type: markdown
     attributes:
-      value:  Thank you for contributing to pydantic! ✊
+      value: Thank you for contributing to pydantic! ✊
 
   - type: checkboxes
     id: checks

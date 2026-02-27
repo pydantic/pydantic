@@ -2,7 +2,7 @@ name: Dependencies Check
 
 on:
   schedule:
-  - cron: '43 3 * * 6,3'
+    - cron: '43 3 * * 6,3'
   workflow_dispatch: {}
 
 env:
@@ -16,17 +16,17 @@ jobs:
       PYTHON_DEPENDENCY_CASES: ${{ steps.list-python-dependencies.outputs.PYTHON_DEPENDENCY_CASES }}
 
     steps:
-    - uses: actions/checkout@v4
-    - uses: samuelcolvin/list-python-dependencies@main
-      id: list-python-dependencies
-      with:
-        mode: first-last
+      - uses: actions/checkout@v6
+      - uses: samuelcolvin/list-python-dependencies@main
+        id: list-python-dependencies
+        with:
+          mode: first-last
 
   test:
     name: Test py${{ matrix.python-version }} on ${{ matrix.PYTHON_DEPENDENCY_CASE }}
 
     needs:
-    - find_dependency_cases
+      - find_dependency_cases
 
     strategy:
       fail-fast: true
@@ -37,17 +37,17 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
-    - uses: actions/setup-python@v5
-      with:
-        python-version: ${{ matrix.python-version }}
+      - uses: actions/setup-python@v6
+        with:
+          python-version: ${{ matrix.python-version }}
 
-    - run: pip install uv
-    - run: uv sync --all-extras
+      - run: pip install uv
+      - run: uv sync --all-extras
 
-    - run: uv pip install ${{ matrix.PYTHON_DEPENDENCY_CASE }}
+      - run: uv pip install ${{ matrix.PYTHON_DEPENDENCY_CASE }}
 
-    - run: uv pip freeze
+      - run: uv pip freeze
 
-    - run: make test
+      - run: make test

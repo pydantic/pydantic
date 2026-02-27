@@ -11,7 +11,7 @@ from warnings import warn
 
 from typing_extensions import TypeGuard, dataclass_transform
 
-from ._internal import _config, _decorators, _namespace_utils, _typing_extra
+from ._internal import _config, _decorators, _mock_val_ser, _namespace_utils, _typing_extra
 from ._internal import _dataclasses as _pydantic_dataclasses
 from ._migration import getattr_migration
 from .config import ConfigDict
@@ -183,7 +183,7 @@ def dataclass(
         # if config is not explicitly provided, try to read it from the type
         config_dict = config if config is not None else getattr(cls, '__pydantic_config__', None)
         config_wrapper = _config.ConfigWrapper(config_dict)
-        decorators = _decorators.DecoratorInfos.build(cls)
+        decorators = _decorators.DecoratorInfos.build(cls, replace_wrapped_methods=True)
         decorators.update_from_config(config_wrapper)
 
         # Keep track of the original __doc__ so that we can restore it after applying the dataclasses decorator
@@ -249,10 +249,21 @@ def dataclass(
             )
 
         if config_wrapper.validate_assignment:
+            original_setattr = cls.__setattr__
 
             @functools.wraps(cls.__setattr__)
-            def validated_setattr(instance: Any, field: str, value: str, /) -> None:
-                type(instance).__pydantic_validator__.validate_assignment(instance, field, value)
+            def validated_setattr(instance: PydanticDataclass, name: str, value: Any, /) -> None:
+                if frozen_:
+                    return original_setattr(instance, name, value)  # pyright: ignore[reportCallIssue]
+                inst_cls = type(instance)
+                attr = getattr(inst_cls, name, None)
+
+                if isinstance(attr, property):
+                    attr.__set__(instance, value)
+                elif isinstance(attr, functools.cached_property):
+                    instance.__dict__.__setitem__(name, value)
+                else:
+                    inst_cls.__pydantic_validator__.validate_assignment(instance, name, value)
 
             cls.__setattr__ = validated_setattr.__get__(None, cls)  # type: ignore
 
@@ -303,9 +314,9 @@ def dataclass(
 
 
 def _pydantic_fields_complete(cls: type[PydanticDataclass]) -> bool:
-    """Return whether the fields where successfully collected (i.e. type hints were successfully resolves).
+    """Return whether the fields were successfully collected (i.e. type hints were successfully resolved).
 
-    This is a private property, not meant to be used outside Pydantic.
+    This is a private helper, not meant to be used outside Pydantic.
     """
     return all(field_info._complete for field_info in cls.__pydantic_fields__.values())
 
@@ -356,7 +367,7 @@ def rebuild_dataclass(
         return None
 
     for attr in ('__pydantic_core_schema__', '__pydantic_validator__', '__pydantic_serializer__'):
-        if attr in cls.__dict__:
+        if attr in cls.__dict__ and not isinstance(getattr(cls, attr), _mock_val_ser.MockValSer):
             # Deleting the validator/serializer is necessary as otherwise they can get reused in
             # pydantic-core. Same applies for the core schema that can be reused in schema generation.
             delattr(cls, attr)

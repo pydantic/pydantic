@@ -1,11 +1,12 @@
 from __future__ import annotations
 
 import dataclasses
-from inspect import Parameter, Signature, signature
+from inspect import Parameter, Signature
 from typing import TYPE_CHECKING, Any, Callable
 
 from pydantic_core import PydanticUndefined
 
+from ._typing_extra import signature_no_eval
 from ._utils import is_valid_identifier
 
 if TYPE_CHECKING:
@@ -66,7 +67,7 @@ def _process_param_defaults(param: Parameter) -> Parameter:
         # Replace the field default
         default = param_default.default
         if default is PydanticUndefined:
-            if param_default.default_factory is PydanticUndefined:
+            if param_default.default_factory is None:
                 default = Signature.empty
             else:
                 # this is used by dataclasses to indicate a factory exists:
@@ -86,7 +87,7 @@ def _generate_signature_parameters(  # noqa: C901 (ignore complexity, could use 
     """Generate a mapping of parameter names to Parameter objects for a pydantic BaseModel or dataclass."""
     from itertools import islice
 
-    present_params = signature(init).parameters.values()
+    present_params = signature_no_eval(init).parameters.values()
     merged_params: dict[str, Parameter] = {}
     var_kw = None
     use_var_kw = False

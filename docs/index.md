@@ -15,7 +15,7 @@ Pydantic is the most widely used data validation library for Python.
 Fast and extensible, Pydantic plays nicely with your linters/IDE/brain. Define how data should be in pure, canonical Python 3.9+; validate it with Pydantic.
 
 !!! logfire "Monitor Pydantic with Pydantic Logfire :fire:"
-    **[Pydantic Logfire](https://pydantic.dev/logfire)** is an application monitoring tool that is as simple to use and powerful as Pydantic itself.
+    **[Pydantic Logfire](https://pydantic.dev/logfire)** is a production-grade observability platform for AI and general applications. See LLM interactions, agent behavior, API requests, and database queries in one unified trace. With SDKs for Python, JavaScript/TypeScript, and Rust, Logfire works with all OpenTelemetry-compatible languages.
 
     Logfire integrates with many popular Python libraries including FastAPI, OpenAI and Pydantic itself, so you can use Logfire to monitor Pydantic validations and understand why some inputs fail validation:
 
@@ -56,15 +56,15 @@ Fast and extensible, Pydantic plays nicely with your linters/IDE/brain. Define h
 
     **[Learn more about Pydantic Logfire](https://logfire.pydantic.dev/docs/)**
 
-    **Sign up to *The Pydantic Stack* newsletter, with updates & tutorials on Logfire, Pydantic AI and Pydantic:**
+    **Sign up for our newsletter, *The Pydantic Stack*, with updates & tutorials on Pydantic, Logfire, and Pydantic AI:**
 
-      <form method="POST" action="https://eu.customerioforms.com/forms/submit_action?site_id=53d2086c3c4214eaecaa&form_id=14b22611745b458&success_url=https://docs.pydantic.dev/" style="display: flex; align-items: center; gap: 10px; max-width: 85%;">
+      <form method="POST" action="https://eu.customerioforms.com/forms/submit_action?site_id=53d2086c3c4214eaecaa&form_id=14b22611745b458&success_url=https://docs.pydantic.dev/" class="md-typeset" style="display: flex; align-items: center; gap: 0.5rem; max-width: 100%;">
           <input
           type="email"
           id="email_input"
           name="email"
-          class="md-input"
-          style="border-bottom: none; flex: 1;"
+          class="md-input md-input--stretch"
+          style="flex: 1; background: var(--md-default-bg-color); color: var(--md-default-fg-color);"
           required
           placeholder="Email"
           data-1p-ignore
@@ -73,7 +73,7 @@ Fast and extensible, Pydantic plays nicely with your linters/IDE/brain. Define h
           data-bwignore="true"
           />
           <input type="hidden" id="source_input" name="source" value="pydantic" />
-          <button type="submit" class="md-button" style="width: fit-content;">Subscribe</button>
+          <button type="submit" class="md-button md-button--primary">Subscribe</button>
       </form>
 
 ## Why use Pydantic?
@@ -86,7 +86,7 @@ Fast and extensible, Pydantic plays nicely with your linters/IDE/brain. Define h
 * **Customisation** &mdash; Pydantic allows custom validators and serializers to alter how data is processed in many powerful ways. [Learn more…](why.md#customisation)
 * **Ecosystem** &mdash; around 8,000 packages on PyPI use Pydantic, including massively popular libraries like
   *FastAPI*, *huggingface*, *Django Ninja*, *SQLModel*, & *LangChain*. [Learn more…](why.md#ecosystem)
-* **Battle tested** &mdash; Pydantic is downloaded over 360M times/month and is used by all FAANG companies and 20 of the 25 largest companies on NASDAQ. If you're trying to do something with Pydantic, someone else has probably already done it. [Learn more…](why.md#using-pydantic)
+* **Battle tested** &mdash; Pydantic is downloaded over 550M times/month and is used by all FAANG companies and 20 of the 25 largest companies on NASDAQ. If you're trying to do something with Pydantic, someone else has probably already done it. [Learn more…](why.md#using-pydantic)
 
 [Installing Pydantic](install.md) is as simple as: `pip install pydantic`
 

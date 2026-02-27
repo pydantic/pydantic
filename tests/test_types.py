@@ -10,6 +10,7 @@ import sys
 import typing
 import uuid
 import warnings
+from abc import ABC, abstractmethod
 from collections import Counter, OrderedDict, UserDict, defaultdict, deque
 from collections.abc import Iterable, Mapping, MutableMapping, Sequence
 from dataclasses import dataclass
@@ -25,6 +26,7 @@ from typing import (
     Any,
     Callable,
     Literal,
+    NamedTuple,
     NewType,
     Optional,
     TypeVar,
@@ -106,6 +108,7 @@ from pydantic import (
     StringConstraints,
     Tag,
     TypeAdapter,
+    ValidateAs,
     ValidationError,
     conbytes,
     condate,
@@ -858,9 +861,9 @@ def test_string_import_callable(annotation):
         {
             'type': 'import_error',
             'loc': ('callable',),
-            'msg': "Invalid python path: No module named 'os.missing'",
+            'msg': "Invalid python path: No module named 'os.missing'; 'os' is not a package",
             'input': 'os.missing',
-            'ctx': {'error': "No module named 'os.missing'"},
+            'ctx': {'error': "No module named 'os.missing'; 'os' is not a package"},
         }
     ]
 
@@ -972,10 +975,10 @@ def test_string_import_examples():
             'collections.abc.def',
             [
                 {
-                    'ctx': {'error': "No module named 'collections.abc.def'"},
+                    'ctx': {'error': "No module named 'collections.abc.def'; 'collections.abc' is not a package"},
                     'input': 'collections.abc.def',
                     'loc': (),
-                    'msg': "Invalid python path: No module named 'collections.abc.def'",
+                    'msg': "Invalid python path: No module named 'collections.abc.def'; 'collections.abc' is not a package",
                     'type': 'import_error',
                 }
             ],
@@ -1047,6 +1050,20 @@ def test_import_string_sys_stdout() -> None:
 
     import_things = ImportThings(obj='sys.stdout')
     assert import_things.model_dump_json() == '{"obj":"sys.stdout"}'
+
+
+def test_import_string_thing_with_name() -> None:
+    """https://github.com/pydantic/pydantic/issues/12218"""
+
+    class ImportThings(BaseModel):
+        obj: ImportString
+
+    @dataclass
+    class ThingWithName:
+        name: str
+
+    import_things = ImportThings(obj=ThingWithName('foo'))
+    assert import_things.model_dump_json() == '{"obj":{"name":"foo"}}'
 
 
 def test_decimal():
@@ -6017,6 +6034,22 @@ def test_skip_validation_json_schema():
     }
 
 
+def test_validate_from() -> None:
+    class Arbitrary:
+        def __init__(self, a: int) -> None:
+            self.a = a
+
+        def __eq__(self, other) -> bool:
+            return self.a == other.a
+
+    class ArbitraryModel(BaseModel):
+        a: int
+
+    ta = TypeAdapter(Annotated[Arbitrary, ValidateAs(ArbitraryModel, instantiation_hook=lambda v: Arbitrary(a=v.a))])
+
+    assert ta.validate_python({'a': 1}) == Arbitrary(1)
+
+
 @pytest.mark.skipif(sys.version_info < (3, 12), reason="`Annotated` doesn't allow instances in <3.12")
 def test_skip_validation_arbitrary_type_object() -> None:
     """https://github.com/pydantic/pydantic/issues/11997.
@@ -6407,13 +6440,13 @@ def test_constraints_arbitrary_type() -> None:
         {
             'type': 'predicate_failed',
             'loc': ('predicate',),
-            'msg': 'Predicate test_constraints_arbitrary_type.<locals>.Model.<lambda> failed',
+            'msg': "Predicate 'test_constraints_arbitrary_type.<locals>.Model.<lambda>' failed",
             'input': CustomType(-1),
         },
         {
             'type': 'not_operation_failed',
             'loc': ('not_multiple_of_3',),
-            'msg': 'Not of test_constraints_arbitrary_type.<locals>.Model.<lambda> failed',
+            'msg': "Not of 'test_constraints_arbitrary_type.<locals>.Model.<lambda>' failed",
             'input': CustomType(6),
         },
     ]
@@ -6456,6 +6489,29 @@ def test_annotated_default_value_functional_validator() -> None:
 
         # insert_assert(t.json_schema())
         assert t.json_schema() == {'type': 'array', 'items': {'type': 'integer'}, 'default': ['1', '2']}
+
+
+def test_importstring_reports_internal_import_error(tmp_path, monkeypatch):
+    # Create a module that exists, but fails to import due to missing dependency
+    (tmp_path / 'my_module.py').write_text('import definitely_missing_dep_xyz\n\nclass MyClass:\n    pass\n')
+    monkeypatch.syspath_prepend(tmp_path)
+
+    adapter = TypeAdapter(ImportString)
+
+    with pytest.raises(ValidationError, match="No module named 'definitely_missing_dep_xyz'"):
+        adapter.validate_python('my_module.MyClass')
+
+
+def test_import_string_explicit_colon_does_not_try_dot_fallback():
+    # Regression test: if the input already contains ':attr', we should NOT try
+    # to reinterpret dots as module/attribute splits (which could accidentally
+    # create an invalid import string containing two colons).
+    adapter = TypeAdapter(ImportString)
+
+    # A buggy implementation might try to split 'collections.defaultdict' further
+    # and create 'collections:defaultdict:get', which would be invalid
+    with pytest.raises(ValidationError):
+        adapter.validate_python('collections.defaultdict:get')
 
 
 @pytest.mark.parametrize(
@@ -6802,6 +6858,29 @@ def test_strict_enum_with_use_enum_values() -> None:
         Foo(foo='1')
 
 
+def test_enum_with_namedtuple_values() -> None:
+    """https://github.com/pydantic/pydantic/issues/12503"""
+
+    class NT(NamedTuple):
+        f: str
+
+    class SomeEnum(NT, Enum):
+        FOO = 'foo'
+
+    class Model1(BaseModel):
+        value: SomeEnum
+
+    assert Model1(value=SomeEnum.FOO).value is SomeEnum.FOO
+
+    class Model2(BaseModel, use_enum_values=True):
+        value: SomeEnum
+
+    assert Model2(value=NT('foo')).value == NT('foo')
+
+    with pytest.raises(ValidationError):
+        Model2(value=NT('bar'))
+
+
 @pytest.mark.skipif(
     platform.python_implementation() == 'PyPy',
     reason='PyPy has a bug in complex string parsing. A fix is implemented but not yet released.',
@@ -7136,3 +7215,34 @@ def test_union_respects_local_strict() -> None:
 
     m = Model(a=[1, 2])
     assert m.a == (1, 2)
+
+
+def test_union_abc() -> None:
+    """https://github.com/pydantic/pydantic/issues/12230"""
+
+    class ABC_1(BaseModel, ABC):
+        @abstractmethod
+        def do_something(self):
+            pass
+
+    class ABC_2(BaseModel, ABC):
+        @abstractmethod
+        def do_something_else(self):
+            pass
+
+    class A1(ABC_1):
+        def do_something(self):
+            print('Doing something in A1')
+
+    class A2(ABC_2):
+        def do_something_else(self):
+            print('Doing something else in A2')
+
+    class X(BaseModel):
+        x: Union[ABC_1, ABC_2]
+
+    a1 = A1()
+    a2 = A2()
+
+    X(x=a1)
+    X(x=a2)

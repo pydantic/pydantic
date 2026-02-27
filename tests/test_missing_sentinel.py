@@ -69,3 +69,32 @@ def test_missing_sentinel_json_schema() -> None:
     assert Model.model_json_schema()['properties'] == {
         'f': {'title': 'F', 'type': 'integer'},
     }
+
+
+def test_model_construct_with_missing_default_does_not_crash() -> None:
+    class M(BaseModel):
+        a: Union[int, MISSING] = MISSING
+
+    # Should not raise
+    m = M.model_construct()
+    assert hasattr(m, 'a')
+    # Keep sentinel by identity
+    assert getattr(m, 'a') is MISSING
+
+
+def test_no_warning_when_excluded_in_nested_model() -> None:
+    """https://github.com/pydantic/pydantic/issues/12628"""
+
+    class Inner(BaseModel):
+        f1: Union[int, MISSING] = MISSING
+        f2: Union[int, MISSING] = MISSING
+
+    class Outer(BaseModel):
+        inner: Union[Inner, MISSING] = MISSING
+
+    s = Outer(
+        inner={'f1': 1},
+    )
+
+    # Shouldn't raise a serialization warning about missing fields:
+    assert s.model_dump() == {'inner': {'f1': 1}}

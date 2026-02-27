@@ -7,6 +7,7 @@ import traceback
 from collections.abc import Hashable
 from dataclasses import InitVar
 from datetime import date, datetime
+from functools import cached_property
 from pathlib import Path
 from typing import (
     Annotated,
@@ -174,6 +175,39 @@ def test_validate_assignment_value_change():
 
     d.a = 3
     assert d.a == 6
+
+
+def test_validate_assignment_properties() -> None:
+    """https://github.com/pydantic/pydantic/issues/12112"""
+
+    @pydantic.dataclasses.dataclass(config=ConfigDict(validate_assignment=True))
+    class MyDataclass:
+        @property
+        def prop1(self) -> int:
+            return 1
+
+        @prop1.setter
+        def prop1(self, value: int) -> None:
+            pass
+
+        @computed_field
+        @property
+        def prop2(self) -> int:
+            return 1
+
+        @prop2.setter
+        def prop2(self, value: int) -> None:
+            pass
+
+        @cached_property
+        def prop3(self) -> int:
+            return 1
+
+    m = MyDataclass()
+
+    m.prop1 = 1
+    m.prop2 = 1
+    m.prop3 = 1
 
 
 @pytest.mark.parametrize(
@@ -650,6 +684,32 @@ def test_initvar():
 
     with pytest.raises(ValidationError):
         TestInitVar(1, 2, 0)
+
+
+def test_initvar_pydantic_field() -> None:
+    @pydantic.dataclasses.dataclass
+    class TestInitVar:
+        x: InitVar[int] = Field(title='X')
+
+        def __post_init__(self, x: int):
+            assert x == 1
+
+    assert TestInitVar.__pydantic_fields__['x'].init_var
+
+    TestInitVar(x=1)
+
+
+@pytest.mark.xfail(reason='Ideally we should raise an attribute error, like stdlib dataclasses')
+def test_initvar_pydantic_field_attribute_access() -> None:
+    @pydantic.dataclasses.dataclass
+    class TestInitVar:
+        x: InitVar[int] = Field(title='X')
+
+    t = TestInitVar(x=1)
+
+    # Currently this returns the `FieldInfo` instance:
+    with pytest.raises(AttributeError):
+        t.x
 
 
 def test_derived_field_from_initvar():
@@ -3111,10 +3171,8 @@ def test_simple_frozen() -> None:
 
     inst = MyDataclass('hello')
 
-    try:
+    with pytest.raises(dataclasses.FrozenInstanceError, match="cannot assign to field 'x'"):
         inst.x = 'other'
-    except Exception as e:
-        assert "cannot assign to field 'x'" in repr(e)
 
     @pydantic.dataclasses.dataclass(config=ConfigDict(frozen=True))
     class MyDataclass2:
@@ -3122,10 +3180,8 @@ def test_simple_frozen() -> None:
 
     inst = MyDataclass2('hello')
 
-    try:
+    with pytest.raises(dataclasses.FrozenInstanceError, match="cannot assign to field 'x'"):
         inst.x = 'other'
-    except Exception as e:
-        assert "cannot assign to field 'x'" in repr(e)
 
 
 def test_frozen_with_validate_assignment() -> None:
@@ -3137,10 +3193,8 @@ def test_frozen_with_validate_assignment() -> None:
 
     inst = MyDataclass('hello')
 
-    try:
+    with pytest.raises(dataclasses.FrozenInstanceError, match="cannot assign to field 'x'"):
         inst.x = 'other'
-    except Exception as e:
-        assert "cannot assign to field 'x'" in repr(e)
 
     @pydantic.dataclasses.dataclass(config=ConfigDict(frozen=True, validate_assignment=True))
     class MyDataclass2:
@@ -3148,11 +3202,8 @@ def test_frozen_with_validate_assignment() -> None:
 
     inst = MyDataclass2('hello')
 
-    # we want to make sure that the error raised relates to the frozen nature of the instance
-    try:
+    with pytest.raises(dataclasses.FrozenInstanceError, match="cannot assign to field 'x'"):
         inst.x = 'other'
-    except ValidationError as e:
-        assert 'Instance is frozen' in repr(e)
 
 
 def test_warns_on_double_frozen() -> None:
@@ -3231,3 +3282,17 @@ def test_dataclass_field_exclude() -> None:
     assert ta.dump_json(Foo(foo='bar', bar=1)).decode('utf-8') == '{"bar":1}'
     assert ta.dump_json(Foo(foo='bar', bar=1), exclude={'bar'}).decode('utf-8') == '{}'
     assert ta.dump_json(Foo(foo='bar', bar=2)).decode('utf-8') == '{}'
+
+
+@pytest.mark.skipif(sys.version_info < (3, 10), reason='kw_only is not available in python >= 3.10')
+def test_dataclass_field_override_kw_only() -> None:
+    """https://github.com/pydantic/pydantic/issues/12736"""
+
+    @pydantic.dataclasses.dataclass(kw_only=True)
+    class Foo:
+        a: int = Field(kw_only=False)
+
+    a_param = inspect.signature(Foo).parameters['a']
+
+    assert a_param.kind is inspect.Parameter.POSITIONAL_OR_KEYWORD
+    assert a_param.default is inspect.Parameter.empty

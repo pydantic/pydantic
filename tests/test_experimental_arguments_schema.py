@@ -1,15 +1,11 @@
-import warnings
 from typing import Annotated, Any, Generic, Literal, TypeVar
 
 import pytest
 from pydantic_core import ArgsKwargs, SchemaValidator
 from typing_extensions import TypedDict, Unpack
 
-from pydantic import AliasGenerator, Field, PydanticExperimentalWarning, PydanticUserError, ValidationError
-
-with warnings.catch_warnings():
-    warnings.filterwarnings('ignore', category=PydanticExperimentalWarning)
-    from pydantic.experimental.arguments_schema import generate_arguments_schema
+from pydantic import AliasGenerator, Field, PydanticUserError, ValidationError
+from pydantic.experimental.arguments_schema import generate_arguments_schema
 
 
 def func(p: bool, *args: str, **kwargs: int) -> None: ...

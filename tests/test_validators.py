@@ -534,7 +534,7 @@ def test_classmethod():
 
 
 def test_use_bare():
-    with pytest.raises(TypeError, match='`@validator` should be used with fields'):
+    with pytest.raises(PydanticUserError) as exc:
 
         class Model(BaseModel):
             a: str
@@ -545,9 +545,11 @@ def test_use_bare():
                 def checker(cls, v):
                     return v
 
+    assert exc.value.code == 'decorator-missing-arguments'
+
 
 def test_use_bare_field_validator():
-    with pytest.raises(TypeError, match='`@field_validator` should be used with fields'):
+    with pytest.raises(PydanticUserError) as exc:
 
         class Model(BaseModel):
             a: str
@@ -555,6 +557,8 @@ def test_use_bare_field_validator():
             @field_validator
             def checker(cls, v):
                 return v
+
+    assert exc.value.code == 'decorator-missing-arguments'
 
 
 def test_use_no_fields():
@@ -580,11 +584,7 @@ def test_use_no_fields_field_validator():
 
 
 def test_validator_bad_fields_throws_configerror():
-    """
-    Attempts to create a validator with fields set as a list of strings,
-    rather than just multiple string args. Expects ConfigError to be raised.
-    """
-    with pytest.raises(TypeError, match='`@validator` fields should be passed as separate string args.'):
+    with pytest.raises(PydanticUserError) as exc:
 
         class Model(BaseModel):
             a: str
@@ -596,21 +596,34 @@ def test_validator_bad_fields_throws_configerror():
                 def check_fields(cls, v):
                     return v
 
+    assert exc.value.code == 'decorator-invalid-fields'
+
 
 def test_field_validator_bad_fields_throws_configerror():
-    """
-    Attempts to create a validator with fields set as a list of strings,
-    rather than just multiple string args. Expects ConfigError to be raised.
-    """
-    with pytest.raises(TypeError, match='`@field_validator` fields should be passed as separate string args.'):
+    with pytest.raises(PydanticUserError) as exc:
 
-        class Model(BaseModel):
+        class Model1(BaseModel):
             a: str
             b: str
 
             @field_validator(['a', 'b'])
             def check_fields(cls, v):
                 return v
+
+    assert exc.value.code == 'decorator-invalid-fields'
+
+    with pytest.raises(PydanticUserError) as exc:
+
+        class Model2(BaseModel):
+            a: str
+            b: str
+
+            @field_validator(['a', 'b'])
+            @classmethod
+            def check_fields(cls, v):
+                return v
+
+    assert exc.value.code == 'decorator-invalid-fields'
 
 
 def test_validate_always():
@@ -1095,6 +1108,20 @@ def test_validation_each_item():
                 return v + 1
 
     assert Model(foobar={1: 1}).foobar == {1: 2}
+
+
+def test_validation_each_item_tuple():
+    with pytest.warns(PydanticDeprecatedSince20, match=V1_VALIDATOR_DEPRECATION_MATCH):
+
+        class Model(BaseModel):
+            foobar: tuple[int, ...]
+
+            @validator('foobar', each_item=True)
+            @classmethod
+            def check_foobar(cls, v: Any):
+                return v + 1
+
+    assert Model(foobar=(1, 2, 1)).foobar == (2, 3, 2)
 
 
 def test_validation_each_item_invalid_type():
@@ -1896,7 +1923,7 @@ def test_validating_assignment_model_validator_before_fail():
     ],
 )
 def test_root_validator_skip_on_failure_invalid(kwargs: dict[str, Any]):
-    with pytest.raises(TypeError, match='MUST specify `skip_on_failure=True`'):
+    with pytest.raises(PydanticUserError, match='MUST specify `skip_on_failure=True`'):
         with pytest.warns(
             PydanticDeprecatedSince20, match='Pydantic V1 style `@root_validator` validators are deprecated.'
         ):
@@ -2046,7 +2073,7 @@ def test_root_validator_self():
 
 def test_validator_self():
     with pytest.warns(PydanticDeprecatedSince20, match=V1_VALIDATOR_DEPRECATION_MATCH):
-        with pytest.raises(TypeError, match=r'`@validator` cannot be applied to instance methods'):
+        with pytest.raises(PydanticUserError, match=r'`@validator` cannot be applied to instance methods'):
 
             class Model(BaseModel):
                 a: int = 1
@@ -2057,7 +2084,7 @@ def test_validator_self():
 
 
 def test_field_validator_self():
-    with pytest.raises(TypeError, match=r'`@field_validator` cannot be applied to instance methods'):
+    with pytest.raises(PydanticUserError) as exc:
 
         class Model(BaseModel):
             a: int = 1
@@ -2066,10 +2093,12 @@ def test_field_validator_self():
             def check_a(self, values: Any) -> Any:
                 return values
 
+    assert exc.value.code == 'validator-instance-method'
+
 
 def test_v1_validator_signature_kwargs_not_allowed() -> None:
     with pytest.warns(PydanticDeprecatedSince20, match=V1_VALIDATOR_DEPRECATION_MATCH):
-        with pytest.raises(TypeError, match=r'Unsupported signature for V1 style validator'):
+        with pytest.raises(PydanticUserError, match=r'Unsupported signature for V1 style validator'):
 
             class Model(BaseModel):
                 a: int
@@ -2145,7 +2174,9 @@ def test_v1_validator_signature_with_values_kw_only() -> None:
 
 def test_v1_validator_signature_with_field() -> None:
     with pytest.warns(PydanticDeprecatedSince20, match=V1_VALIDATOR_DEPRECATION_MATCH):
-        with pytest.raises(TypeError, match=r'The `field` and `config` parameters are not available in Pydantic V2'):
+        with pytest.raises(
+            PydanticUserError, match=r'The `field` and `config` parameters are not available in Pydantic V2'
+        ):
 
             class Model(BaseModel):
                 a: int
@@ -2157,7 +2188,9 @@ def test_v1_validator_signature_with_field() -> None:
 
 def test_v1_validator_signature_with_config() -> None:
     with pytest.warns(PydanticDeprecatedSince20, match=V1_VALIDATOR_DEPRECATION_MATCH):
-        with pytest.raises(TypeError, match=r'The `field` and `config` parameters are not available in Pydantic V2'):
+        with pytest.raises(
+            PydanticUserError, match=r'The `field` and `config` parameters are not available in Pydantic V2'
+        ):
 
             class Model(BaseModel):
                 a: int
@@ -3087,3 +3120,28 @@ def test_after_and_wrap_combo_called_once() -> None:
 
     my_model = MyParentModel.model_validate({'nested': {'inner_value': 'foo'}})
     assert my_model.nested.inner_value == 'after_prefix:wrap_prefix:foo'
+
+
+@pytest.mark.xfail(
+    reason="Bug: Nested 'after' model_validator is re-executed. See issue #8452.", raises=ValidationError
+)
+def test_nested_model_validator_not_reexecuted():
+    """See https://github.com/pydantic/pydantic/issues/8452 for context.
+
+    Reproduces the bug in issue #8452 where a nested model's `model_validator` with `mode='after'` is unexpectedly re-executed.
+    """
+
+    class Sub(BaseModel):
+        @model_validator(mode='after')
+        def _validate(self):
+            # This line should not be reached when `Sub` is nested inside `Base`
+            assert False, 'Sub model_validator was re-executed'
+
+    class Base(BaseModel):
+        sub: Sub  # <-- This throws AssertionError
+
+    sub: Sub = (
+        Sub.model_construct()
+    )  # Create a Sub instance without triggering validation (e.g., using model_construct)
+    # Attempt to create Base with the Sub instance. This line should succeed if the bug is fixed, but currently raises ValidationError.
+    Base(sub=sub)  # <-- This throws AssertionError because Sub's 'after' validator runs again.

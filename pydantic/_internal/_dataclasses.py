@@ -5,12 +5,11 @@ from __future__ import annotations as _annotations
 import copy
 import dataclasses
 import sys
-import typing
 import warnings
 from collections.abc import Generator
 from contextlib import contextmanager
 from functools import partial
-from typing import Any, ClassVar, cast
+from typing import TYPE_CHECKING, Any, ClassVar, Protocol, cast
 
 from pydantic_core import (
     ArgsKwargs,
@@ -33,12 +32,12 @@ from ._namespace_utils import NsResolver
 from ._signature import generate_pydantic_signature
 from ._utils import LazyClassAttribute
 
-if typing.TYPE_CHECKING:
+if TYPE_CHECKING:
     from _typeshed import DataclassInstance as StandardDataclass
 
     from ..config import ConfigDict
 
-    class PydanticDataclass(StandardDataclass, typing.Protocol):
+    class PydanticDataclass(StandardDataclass, Protocol):
         """A protocol containing attributes only available once a class has been decorated as a Pydantic dataclass.
 
         Attributes:
@@ -61,11 +60,6 @@ if typing.TYPE_CHECKING:
 
         @classmethod
         def __pydantic_fields_complete__(cls) -> bool: ...
-
-else:
-    # See PyCharm issues https://youtrack.jetbrains.com/issue/PY-21915
-    # and https://youtrack.jetbrains.com/issue/PY-51428
-    DeprecationWarning = PydanticDeprecatedSince20
 
 
 def set_dataclass_fields(
@@ -139,7 +133,8 @@ def complete_dataclass(
 
     if hasattr(cls, '__post_init_post_parse__'):
         warnings.warn(
-            'Support for `__post_init_post_parse__` has been dropped, the method will not be called', DeprecationWarning
+            'Support for `__post_init_post_parse__` has been dropped, the method will not be called',
+            PydanticDeprecatedSince20,
         )
 
     typevars_map = get_standard_typevars_map(cls)
@@ -184,7 +179,7 @@ def complete_dataclass(
 
     # We are about to set all the remaining required properties expected for this cast;
     # __pydantic_decorators__ and __pydantic_fields__ should already be set
-    cls = typing.cast('type[PydanticDataclass]', cls)
+    cls = cast('type[PydanticDataclass]', cls)
 
     cls.__pydantic_core_schema__ = schema
     cls.__pydantic_validator__ = create_schema_validator(
@@ -218,8 +213,8 @@ def as_dataclass_field(pydantic_field: FieldInfo) -> dataclasses.Field[Any]:
         field_args['doc'] = pydantic_field.description
 
     # Needed as the stdlib dataclass module processes kw_only in a specific way during class construction:
-    if sys.version_info >= (3, 10) and pydantic_field.kw_only:
-        field_args['kw_only'] = True
+    if sys.version_info >= (3, 10) and pydantic_field.kw_only is not None:
+        field_args['kw_only'] = pydantic_field.kw_only
 
     # Needed as the stdlib dataclass modules generates `__repr__()` during class construction:
     if pydantic_field.repr is not True:

@@ -8,6 +8,7 @@ import sys
 import types
 import typing
 from functools import partial
+from inspect import Signature, signature
 from typing import TYPE_CHECKING, Any, Callable, cast
 
 import typing_extensions
@@ -31,6 +32,7 @@ if sys.version_info >= (3, 14):
 
 if TYPE_CHECKING:
     from pydantic import BaseModel
+    from pydantic.fields import FieldInfo
 
 # As per https://typing-extensions.readthedocs.io/en/latest/#runtime-use-of-types,
 # always check for both `typing` and `typing_extensions` variants of a typing construct.
@@ -292,28 +294,32 @@ def _type_convert(arg: Any) -> Any:
     return arg
 
 
-def safe_get_annotations(cls: type[Any]) -> dict[str, Any]:
-    """Get the annotations for the provided class, accounting for potential deferred forward references.
+def safe_get_annotations(obj: Any) -> dict[str, Any]:
+    """Get the annotations for the provided object, accounting for potential deferred forward references.
 
     Starting with Python 3.14, accessing the `__annotations__` attribute might raise a `NameError` if
     a referenced symbol isn't defined yet. In this case, we return the annotation in the *forward ref*
     format.
     """
     if sys.version_info >= (3, 14):
-        return annotationlib.get_annotations(cls, format=annotationlib.Format.FORWARDREF)
+        return annotationlib.get_annotations(obj, format=annotationlib.Format.FORWARDREF)
     else:
-        return cls.__dict__.get('__annotations__', {})
+        # TODO just do getattr(obj, '__annotations__', {}) when dropping support for Python 3.9:
+        if isinstance(obj, type):
+            return obj.__dict__.get('__annotations__', {})
+        else:
+            return getattr(obj, '__annotations__', {})
 
 
 def get_model_type_hints(
-    obj: type[BaseModel],
+    model_class: type[BaseModel],
     *,
     ns_resolver: NsResolver | None = None,
 ) -> dict[str, tuple[Any, bool]]:
     """Collect annotations from a Pydantic model class, including those from parent classes.
 
     Args:
-        obj: The Pydantic model to inspect.
+        model_class: The Pydantic model class to inspect.
         ns_resolver: A namespace resolver instance to use. Defaults to an empty instance.
 
     Returns:
@@ -324,7 +330,7 @@ def get_model_type_hints(
     hints: dict[str, Any] | dict[str, tuple[Any, bool]] = {}
     ns_resolver = ns_resolver or NsResolver()
 
-    for base in reversed(obj.__mro__):
+    for base in reversed(model_class.__mro__[:-1]):
         # For Python 3.14, we could also use `Format.VALUE` and pass the globals/locals
         # from the ns_resolver, but we want to be able to know which specific field failed
         # to evaluate:
@@ -334,9 +340,12 @@ def get_model_type_hints(
             continue
 
         with ns_resolver.push(base):
-            globalns, localns = ns_resolver.types_namespace
+            base_model_fields: dict[str, FieldInfo] | None = base.__dict__.get('__pydantic_fields__')
+
             for name, value in ann.items():
                 if name.startswith('_'):
+                    globalns, localns = ns_resolver.types_namespace
+
                     # For private attributes, we only need the annotation to detect the `ClassVar` special form.
                     # For this reason, we still try to evaluate it, but we also catch any possible exception (on
                     # top of the `NameError`s caught in `try_eval_type`) that could happen so that users are free
@@ -347,7 +356,17 @@ def get_model_type_hints(
                     except Exception:
                         hints[name] = (value, False)
                 else:
-                    hints[name] = try_eval_type(value, globalns, localns)
+                    if base_model_fields is not None and name in base_model_fields:
+                        # Avoid unnecessarily evaluating annotations from parent models, as we'll end up
+                        # copying the `FieldInfo` instance from it anyway if we need to.
+                        # We use the `annotation` attribute here, but in reality could put anything here,
+                        # As we are guaranteed to not make use of it:
+                        hints[name] = (base_model_fields[name].annotation, True)
+                    else:
+                        globalns, localns = ns_resolver.types_namespace
+
+                        hints[name] = try_eval_type(value, globalns, localns)
+
     return hints
 
 
@@ -518,7 +537,26 @@ def _eval_type(
     localns: MappingNamespace | None = None,
     type_params: tuple[Any, ...] | None = None,
 ) -> Any:
-    if sys.version_info >= (3, 13):
+    if sys.version_info >= (3, 14):
+        # Starting in 3.14, `_eval_type()` does *not* apply `_type_convert()`
+        # anymore. This means the `None` -> `type(None)` conversion does not apply:
+        evaluated = typing._eval_type(  # type: ignore
+            value,
+            globalns,
+            localns,
+            type_params=type_params,
+            # This is relevant when evaluating types from `TypedDict` classes, where string annotations
+            # are automatically converted to `ForwardRef` instances with a module set. In this case,
+            # Our `globalns` is irrelevant and we need to indicate `typing._eval_type()` that it should
+            # infer it from the `ForwardRef.__forward_module__` attribute instead (`typing.get_type_hints()`
+            # does the same). Note that this would probably be unnecessary if we properly iterated over the
+            # `__orig_bases__` for TypedDicts in `get_cls_type_hints()`:
+            prefer_fwd_module=True,
+        )
+        if evaluated is None:
+            evaluated = type(None)
+        return evaluated
+    elif sys.version_info >= (3, 13):
         return typing._eval_type(  # type: ignore
             value, globalns, localns, type_params=type_params
         )
@@ -532,6 +570,16 @@ def is_backport_fixable_error(e: TypeError) -> bool:
     msg = str(e)
 
     return sys.version_info < (3, 10) and msg.startswith('unsupported operand type(s) for |: ')
+
+
+def signature_no_eval(f: Callable[..., Any]) -> Signature:
+    """Get the signature of a callable without evaluating any annotations."""
+    if sys.version_info >= (3, 14):
+        from annotationlib import Format
+
+        return signature(f, annotation_format=Format.FORWARDREF)
+    else:
+        return signature(f)
 
 
 def get_function_type_hints(
@@ -548,14 +596,10 @@ def get_function_type_hints(
     - Do not wrap type annotation of a parameter with `Optional` if it has a default value of `None`
       (related bug: https://github.com/python/cpython/issues/90353, only fixed in 3.11+).
     """
-    try:
-        if isinstance(function, partial):
-            annotations = function.func.__annotations__
-        else:
-            annotations = function.__annotations__
-    except AttributeError:
-        # Some functions (e.g. builtins) don't have annotations:
-        return {}
+    if isinstance(function, partial):
+        annotations = safe_get_annotations(function.func)
+    else:
+        annotations = safe_get_annotations(function)
 
     if globalns is None:
         globalns = get_module_ns_of(function)
@@ -579,6 +623,7 @@ def get_function_type_hints(
     return type_hints
 
 
+# TODO use typing.ForwardRef directly when we stop supporting 3.9:
 if sys.version_info < (3, 9, 8) or (3, 10) <= sys.version_info < (3, 10, 1):
 
     def _make_forward_ref(
@@ -598,10 +643,10 @@ if sys.version_info < (3, 9, 8) or (3, 10) <= sys.version_info < (3, 10, 1):
 
         Implemented as EAFP with memory.
         """
-        return typing.ForwardRef(arg, is_argument)
+        return typing.ForwardRef(arg, is_argument)  # pyright: ignore[reportCallIssue]
 
 else:
-    _make_forward_ref = typing.ForwardRef
+    _make_forward_ref = typing.ForwardRef  # pyright: ignore[reportAssignmentType]
 
 
 if sys.version_info >= (3, 10):

@@ -3,20 +3,20 @@
 from __future__ import annotations as _annotations
 
 import types
-import typing
-from typing import Any
+from collections.abc import Callable, Collection, Generator, Iterable
+from typing import TYPE_CHECKING, Any, ForwardRef, cast
 
 import typing_extensions
+from typing_extensions import TypeAlias
 from typing_inspection import typing_objects
 from typing_inspection.introspection import is_union_origin
 
 from . import _typing_extra
 
-if typing.TYPE_CHECKING:
-    ReprArgs: typing_extensions.TypeAlias = 'typing.Iterable[tuple[str | None, Any]]'
-    RichReprResult: typing_extensions.TypeAlias = (
-        'typing.Iterable[Any | tuple[Any] | tuple[str, Any] | tuple[str, Any, Any]]'
-    )
+if TYPE_CHECKING:
+    # TODO remove type error comments when we drop support for Python 3.9
+    ReprArgs: TypeAlias = Iterable[tuple[str | None, Any]]  # pyright: ignore[reportGeneralTypeIssues]
+    RichReprResult: TypeAlias = Iterable[Any | tuple[Any] | tuple[str, Any] | tuple[str, Any, Any]]  # pyright: ignore[reportGeneralTypeIssues]
 
 
 class PlainRepr(str):
@@ -34,8 +34,7 @@ class Representation:
     # `__rich_repr__` is used by [rich](https://rich.readthedocs.io/en/stable/pretty.html).
     # (this is not a docstring to avoid adding a docstring to classes which inherit from Representation)
 
-    # we don't want to use a type annotation here as it can break get_type_hints
-    __slots__ = ()  # type: typing.Collection[str]
+    __slots__ = ()
 
     def __repr_args__(self) -> ReprArgs:
         """Returns the attributes to show in __str__, __repr__, and __pretty__ this is generally overridden.
@@ -44,7 +43,7 @@ class Representation:
         * name - value pairs, e.g.: `[('foo_name', 'foo'), ('bar_name', ['b', 'a', 'r'])]`
         * or, just values, e.g.: `[(None, 'foo'), (None, ['b', 'a', 'r'])]`
         """
-        attrs_names = self.__slots__
+        attrs_names = cast(Collection[str], self.__slots__)
         if not attrs_names and hasattr(self, '__dict__'):
             attrs_names = self.__dict__.keys()
         attrs = ((s, getattr(self, s)) for s in attrs_names)
@@ -62,7 +61,7 @@ class Representation:
     def __repr_str__(self, join_str: str) -> str:
         return join_str.join(repr(v) if a is None else f'{a}={v!r}' for a, v in self.__repr_args__())
 
-    def __pretty__(self, fmt: typing.Callable[[Any], Any], **kwargs: Any) -> typing.Generator[Any, None, None]:
+    def __pretty__(self, fmt: Callable[[Any], Any], **kwargs: Any) -> Generator[Any]:
         """Used by devtools (https://python-devtools.helpmanual.io/) to pretty print objects."""
         yield self.__repr_name__() + '('
         yield 1
@@ -101,7 +100,7 @@ def display_as_type(obj: Any) -> str:
         return '...'
     elif isinstance(obj, Representation):
         return repr(obj)
-    elif isinstance(obj, typing.ForwardRef) or typing_objects.is_typealiastype(obj):
+    elif isinstance(obj, ForwardRef) or typing_objects.is_typealiastype(obj):
         return str(obj)
 
     if not isinstance(obj, (_typing_extra.typing_base, _typing_extra.WithArgsTypes, type)):

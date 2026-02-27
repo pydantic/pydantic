@@ -11,6 +11,7 @@ In general you shouldn't need to use this module directly; instead, you can use
 
 from __future__ import annotations as _annotations
 
+import collections.abc
 import dataclasses
 import inspect
 import math
@@ -51,6 +52,7 @@ from ._internal import (
     _internal_dataclass,
     _mock_val_ser,
     _schema_generation_shared,
+    _typing_extra,
 )
 from .annotated_handlers import GetJsonSchemaHandler
 from .config import JsonDict, JsonValue
@@ -131,6 +133,8 @@ JsonRef = NewType('JsonRef', str)
 CoreModeRef = tuple[CoreRef, JsonSchemaMode]
 JsonSchemaKeyT = TypeVar('JsonSchemaKeyT', bound=Hashable)
 
+_PRIMITIVE_JSON_SCHEMA_TYPES = ('string', 'boolean', 'null', 'integer', 'number')
+
 
 @dataclasses.dataclass(**_internal_dataclass.slots_true)
 class _DefinitionsRemapping:
@@ -154,7 +158,7 @@ class _DefinitionsRemapping:
         copied_definitions = deepcopy(definitions)
         definitions_schema = {'$defs': copied_definitions}
         for _iter in range(100):  # prevent an infinite loop in the case of a bug, 100 iterations should be enough
-            # For every possible remapped DefsRef, collect all schemas that that DefsRef might be used for:
+            # For every possible remapped DefsRef, collect all schemas that DefsRef might be used for:
             schemas_for_alternatives: dict[DefsRef, list[JsonSchemaValue]] = defaultdict(list)
             for defs_ref in copied_definitions:
                 alternatives = prioritized_choices[defs_ref]
@@ -174,7 +178,12 @@ class _DefinitionsRemapping:
                 # Pick the first alternative that has only one schema, since that means there is no collision
                 remapped_defs_ref = next(x for x in alternatives if len(schemas_for_alternatives[x]) == 1)
                 defs_remapping[original_defs_ref] = remapped_defs_ref
-                json_remapping[defs_to_json[original_defs_ref]] = defs_to_json[remapped_defs_ref]
+
+                # Map all alternatives after the remapped one to the remapped one
+                # This ensures that intermediate simplifications are also remapped
+                remapped_index = alternatives.index(remapped_defs_ref)
+                for alt in alternatives[remapped_index:]:
+                    json_remapping[defs_to_json[alt]] = defs_to_json[remapped_defs_ref]
             remapping = _DefinitionsRemapping(defs_remapping, json_remapping)
             new_definitions_schema = remapping.remap_json_schema({'$defs': copied_definitions})
             if definitions_schema == new_definitions_schema:
@@ -242,6 +251,14 @@ class GenerateJsonSchema:
     Args:
         by_alias: Whether to use field aliases in the generated schemas.
         ref_template: The format string to use when generating reference names.
+        union_format: The format to use when combining schemas from unions together. Can be one of:
+
+            - `'any_of'`: Use the [`anyOf`](https://json-schema.org/understanding-json-schema/reference/combining#anyOf)
+              keyword to combine schemas (the default).
+            - `'primitive_type_array'`: Use the [`type`](https://json-schema.org/understanding-json-schema/reference/type)
+              keyword as an array of strings, containing each type of the combination. If any of the schemas is not a primitive
+              type (`string`, `boolean`, `null`, `integer` or `number`) or contains constraints/metadata, falls back to
+              `any_of`.
 
     Raises:
         JsonSchemaError: If the instance of the class is inadvertently reused after generating a schema.
@@ -253,9 +270,15 @@ class GenerateJsonSchema:
     # this value can be modified on subclasses to easily control which warnings are emitted
     ignored_warning_kinds: set[JsonSchemaWarningKind] = {'skipped-choice'}
 
-    def __init__(self, by_alias: bool = True, ref_template: str = DEFAULT_REF_TEMPLATE):
+    def __init__(
+        self,
+        by_alias: bool = True,
+        ref_template: str = DEFAULT_REF_TEMPLATE,
+        union_format: Literal['any_of', 'primitive_type_array'] = 'any_of',
+    ) -> None:
         self.by_alias = by_alias
         self.ref_template = ref_template
+        self.union_format: Literal['any_of', 'primitive_type_array'] = union_format
 
         self.core_to_json_refs: dict[CoreModeRef, JsonRef] = {}
         self.core_to_defs_refs: dict[CoreModeRef, DefsRef] = {}
@@ -488,14 +511,13 @@ class GenerateJsonSchema:
                     and ser_schema.get('when_used') in ('unless-none', 'json-unless-none')
                     and schema_or_field['type'] == 'nullable'
                 ):
-                    json_schema = self.get_flattened_anyof([{'type': 'null'}, json_schema])
+                    json_schema = self.get_union_of_schemas([{'type': 'null'}, json_schema])
             if json_schema is None:
                 if _core_utils.is_core_schema(schema_or_field) or _core_utils.is_core_schema_field(schema_or_field):
                     generate_for_schema_type = self._schema_type_to_method[schema_or_field['type']]
                     json_schema = generate_for_schema_type(schema_or_field)
                 else:
                     raise TypeError(f'Unexpected schema type: schema={schema_or_field}')
-
             return json_schema
 
         current_handler = _schema_generation_shared.GenerateJsonSchemaHandler(self, handler_func)
@@ -590,9 +612,7 @@ class GenerateJsonSchema:
                 sorted_dict[key] = self._sort_recursive(value[key], parent_key=key)
             return sorted_dict
         elif isinstance(value, list):
-            sorted_list: list[JsonSchemaValue] = []
-            for item in value:
-                sorted_list.append(self._sort_recursive(item, parent_key))
+            sorted_list: list[JsonSchemaValue] = [self._sort_recursive(item, parent_key) for item in value]
             return sorted_list
         else:
             return value
@@ -1191,6 +1211,15 @@ class GenerateJsonSchema:
                     )
                     return json_schema
 
+        # Sort set/frozenset defaults to ensure deterministic JSON schema generation
+        # We only sort if len > 1 because sets of size 0 or 1 are already deterministic
+        if isinstance(default, collections.abc.Set) and len(default) > 1:
+            try:
+                default = sorted(default)
+            except TypeError:  # pragma: no cover
+                # If items aren't comparable (e.g. mixed types), we can't sort them.
+                pass
+
         try:
             encoded_default = self.encode_default(default)
         except pydantic_core.PydanticSerializationError:
@@ -1234,9 +1263,7 @@ class GenerateJsonSchema:
         if inner_json_schema == null_schema:
             return null_schema
         else:
-            # Thanks to the equality check against `null_schema` above, I think 'oneOf' would also be valid here;
-            # I'll use 'anyOf' for now, but it could be changed it if it would work better with some external tooling
-            return self.get_flattened_anyof([inner_json_schema, null_schema])
+            return self.get_union_of_schemas([inner_json_schema, null_schema])
 
     def union_schema(self, schema: core_schema.UnionSchema) -> JsonSchemaValue:
         """Generates a JSON schema that matches a schema that allows values matching any of the given schemas.
@@ -1261,7 +1288,43 @@ class GenerateJsonSchema:
                 self.emit_warning('skipped-choice', exc.message)
         if len(generated) == 1:
             return generated[0]
-        return self.get_flattened_anyof(generated)
+        return self.get_union_of_schemas(generated)
+
+    def get_union_of_schemas(self, schemas: list[JsonSchemaValue]) -> JsonSchemaValue:
+        """Returns the JSON Schema representation for the union of the provided JSON Schemas.
+
+        The result depends on the configured `'union_format'`.
+
+        Args:
+            schemas: The list of JSON Schemas to be included in the union.
+
+        Returns:
+            The JSON Schema representing the union of schemas.
+        """
+        if self.union_format == 'primitive_type_array':
+            types: list[str] = []
+            for schema in schemas:
+                schema_types: list[str] | str | None = schema.get('type')
+                if schema_types is None:
+                    # No type, meaning it can be a ref or an empty schema.
+                    break
+                if not isinstance(schema_types, list):
+                    schema_types = [schema_types]
+                if not all(t in _PRIMITIVE_JSON_SCHEMA_TYPES for t in schema_types):
+                    break
+                if len(schema) != 1:
+                    # We only want to include types that don't have any constraints. For instance,
+                    # if `schemas = [{'type': 'string', 'maxLength': 3}, {'type': 'string', 'minLength': 5}]`,
+                    # we don't want to produce `{'type': 'string', 'maxLength': 3, 'minLength': 5}`.
+                    # Same if we have some metadata (e.g. `title`) on a specific union member, we want to preserve it.
+                    break
+
+                types.extend(schema_types)
+            else:
+                # If we got there, all the schemas where valid to be used with the `'primitive_type_array` format
+                return {'type': list(dict.fromkeys(types))}
+
+        return self.get_flattened_anyof(schemas)
 
     def tagged_union_schema(self, schema: core_schema.TaggedUnionSchema) -> JsonSchemaValue:
         """Generates a JSON schema that matches a schema that allows values matching any of the given schemas, where
@@ -1416,10 +1479,26 @@ class GenerateJsonSchema:
         with self._config_wrapper_stack.push(config):
             json_schema = self._named_required_fields_schema(named_required_fields)
 
+        # There's some duplication between `extra_behavior` and
+        # the config's `extra`/core config's `extra_fields_behavior`.
+        # However, it is common to manually create TypedDictSchemas,
+        # where you don't necessarily have a class.
+        # At runtime, `extra_behavior` takes priority over the config
+        # for validation, so follow the same for the JSON Schema:
+        if schema.get('extra_behavior') == 'forbid':
+            json_schema['additionalProperties'] = False
+        elif schema.get('extra_behavior') == 'allow':
+            if 'extras_schema' in schema and schema['extras_schema'] != {'type': 'any'}:
+                json_schema['additionalProperties'] = self.generate_inner(schema['extras_schema'])
+            else:
+                json_schema['additionalProperties'] = True
+
         if cls is not None:
+            # `_update_class_schema()` will not override
+            # `additionalProperties` if already present:
             self._update_class_schema(json_schema, cls, config)
-        else:
-            extra = config.get('extra')
+        elif 'additionalProperties' not in json_schema:
+            extra = schema.get('config', {}).get('extra_fields_behavior')
             if extra == 'forbid':
                 json_schema['additionalProperties'] = False
             elif extra == 'allow':
@@ -1556,6 +1635,7 @@ class GenerateJsonSchema:
         Done in place, hence there's no return value as the original json_schema is mutated.
         No ref resolving is involved here, as that's not appropriate for simple updates.
         """
+        from ._internal._dataclasses import is_stdlib_dataclass
         from .main import BaseModel
         from .root_model import RootModel
 
@@ -1570,7 +1650,18 @@ class GenerateJsonSchema:
             json_schema['title'] = cls.__name__
 
         # BaseModel and dataclasses; don't use cls.__doc__ as it will contain the verbose class signature by default
-        docstring = None if cls is BaseModel or dataclasses.is_dataclass(cls) else cls.__doc__
+        if cls is BaseModel:
+            docstring = None
+        elif is_stdlib_dataclass(cls):  # For Pydantic dataclasses, we already handle this at class creation
+            # The `dataclass` module generates a `__doc__` based on the `inspect.signature()`
+            # result, which we don't want to use as a description. Such `__doc__` startswith
+            # `cls.__name__(`, which could lead to mistakenly discarding it if for some reason
+            # an explicitly set class docstring follows the same pattern, but this is unlikely
+            # to happen.
+            doc = cls.__doc__
+            docstring = None if doc is None or doc.startswith(f'{cls.__name__}(') else doc
+        else:
+            docstring = cls.__doc__
 
         if docstring:
             json_schema.setdefault('description', inspect.cleandoc(docstring))
@@ -1578,7 +1669,7 @@ class GenerateJsonSchema:
             json_schema.setdefault('description', root_description)
 
         extra = config.get('extra')
-        if 'additionalProperties' not in json_schema:
+        if 'additionalProperties' not in json_schema:  # This check is particularly important for `typed_dict_schema()`
             if extra == 'allow':
                 json_schema['additionalProperties'] = True
             elif extra == 'forbid':
@@ -1602,11 +1693,12 @@ class GenerateJsonSchema:
         if isinstance(json_schema_extra, dict):
             json_schema.update(json_schema_extra)
         elif callable(json_schema_extra):
-            # FIXME: why are there type ignores here? We support two signatures for json_schema_extra callables...
-            if len(inspect.signature(json_schema_extra).parameters) > 1:
-                json_schema_extra(json_schema, cls)  # type: ignore
+            if len(_typing_extra.signature_no_eval(json_schema_extra).parameters) > 1:
+                json_schema_extra = cast(Callable[[JsonDict, type[Any]], None], json_schema_extra)
+                json_schema_extra(json_schema, cls)
             else:
-                json_schema_extra(json_schema)  # type: ignore
+                json_schema_extra = cast(Callable[[JsonDict], None], json_schema_extra)
+                json_schema_extra(json_schema)
         elif json_schema_extra is not None:
             raise ValueError(
                 f"model_config['json_schema_extra']={json_schema_extra} should be a dict, callable, or None"
@@ -1693,13 +1785,19 @@ class GenerateJsonSchema:
         Returns:
             `True` if the field should be marked as required in the generated JSON schema, `False` otherwise.
         """
-        if self.mode == 'serialization' and self._config.json_schema_serialization_defaults_required:
-            return not field.get('serialization_exclude')
+        if field['type'] == 'typed-dict-field':
+            required = field.get('required', total)
         else:
-            if field['type'] == 'typed-dict-field':
-                return field.get('required', total)
+            required = field['schema']['type'] != 'default'
+
+        if self.mode == 'serialization':
+            has_exclude_if = field.get('serialization_exclude_if') is not None
+            if self._config.json_schema_serialization_defaults_required:
+                return not has_exclude_if
             else:
-                return field['schema']['type'] != 'default'
+                return required and not has_exclude_if
+        else:
+            return required
 
     def dataclass_args_schema(self, schema: core_schema.DataclassArgsSchema) -> JsonSchemaValue:
         """Generates a JSON schema that matches a schema that defines a dataclass's constructor arguments.
@@ -1728,24 +1826,14 @@ class GenerateJsonSchema:
         Returns:
             The generated JSON schema.
         """
-        from ._internal._dataclasses import is_stdlib_dataclass
 
         cls = schema['cls']
-        config: ConfigDict = getattr(cls, '__pydantic_config__', cast('ConfigDict', {}))
+        config = cast('ConfigDict', getattr(cls, '__pydantic_config__', {}))
 
         with self._config_wrapper_stack.push(config):
             json_schema = self.generate_inner(schema['schema']).copy()
 
         self._update_class_schema(json_schema, cls, config)
-
-        # Dataclass-specific handling of description
-        if is_stdlib_dataclass(cls):
-            # vanilla dataclass; don't use cls.__doc__ as it will contain the class signature by default
-            description = None
-        else:
-            description = None if cls.__doc__ is None else inspect.cleandoc(cls.__doc__)
-        if description:
-            json_schema['description'] = description
 
         return json_schema
 
@@ -1801,7 +1889,8 @@ class GenerateJsonSchema:
         for argument in arguments:
             name = self.get_argument_name(argument)
             argument_schema = self.generate_inner(argument['schema']).copy()
-            argument_schema['title'] = self.get_title_from_name(name)
+            if 'title' not in argument_schema and self.field_title_should_be_set(argument['schema']):
+                argument_schema['title'] = self.get_title_from_name(name)
             properties[name] = argument_schema
 
             if argument['schema']['type'] != 'default':
@@ -1840,7 +1929,8 @@ class GenerateJsonSchema:
             name = self.get_argument_name(argument)
 
             argument_schema = self.generate_inner(argument['schema']).copy()
-            argument_schema['title'] = self.get_title_from_name(name)
+            if 'title' not in argument_schema and self.field_title_should_be_set(argument['schema']):
+                argument_schema['title'] = self.get_title_from_name(name)
             prefix_items.append(argument_schema)
 
             if argument['schema']['type'] != 'default':
@@ -2010,7 +2100,7 @@ class GenerateJsonSchema:
         for definition in schema['definitions']:
             try:
                 self.generate_inner(definition)
-            except PydanticInvalidForJsonSchema as e:
+            except PydanticInvalidForJsonSchema as e:  # noqa: PERF203
                 core_ref: CoreRef = CoreRef(definition['ref'])  # type: ignore
                 self._core_defs_invalid_for_json_schema[self.get_defs_ref((core_ref, self.mode))] = e
                 continue
@@ -2433,6 +2523,7 @@ def model_json_schema(
     cls: type[BaseModel] | type[PydanticDataclass],
     by_alias: bool = True,
     ref_template: str = DEFAULT_REF_TEMPLATE,
+    union_format: Literal['any_of', 'primitive_type_array'] = 'any_of',
     schema_generator: type[GenerateJsonSchema] = GenerateJsonSchema,
     mode: JsonSchemaMode = 'validation',
 ) -> dict[str, Any]:
@@ -2443,6 +2534,14 @@ def model_json_schema(
         by_alias: If `True` (the default), fields will be serialized according to their alias.
             If `False`, fields will be serialized according to their attribute name.
         ref_template: The template to use for generating JSON Schema references.
+        union_format: The format to use when combining schemas from unions together. Can be one of:
+
+            - `'any_of'`: Use the [`anyOf`](https://json-schema.org/understanding-json-schema/reference/combining#anyOf)
+              keyword to combine schemas (the default).
+            - `'primitive_type_array'`: Use the [`type`](https://json-schema.org/understanding-json-schema/reference/type)
+              keyword as an array of strings, containing each type of the combination. If any of the schemas is not a primitive
+              type (`string`, `boolean`, `null`, `integer` or `number`) or contains constraints/metadata, falls back to
+              `any_of`.
         schema_generator: The class to use for generating the JSON Schema.
         mode: The mode to use for generating the JSON Schema. It can be one of the following:
 
@@ -2454,7 +2553,9 @@ def model_json_schema(
     """
     from .main import BaseModel
 
-    schema_generator_instance = schema_generator(by_alias=by_alias, ref_template=ref_template)
+    schema_generator_instance = schema_generator(
+        by_alias=by_alias, ref_template=ref_template, union_format=union_format
+    )
 
     if isinstance(cls.__pydantic_core_schema__, _mock_val_ser.MockCoreSchema):
         cls.__pydantic_core_schema__.rebuild()
@@ -2473,6 +2574,7 @@ def models_json_schema(
     title: str | None = None,
     description: str | None = None,
     ref_template: str = DEFAULT_REF_TEMPLATE,
+    union_format: Literal['any_of', 'primitive_type_array'] = 'any_of',
     schema_generator: type[GenerateJsonSchema] = GenerateJsonSchema,
 ) -> tuple[dict[tuple[type[BaseModel] | type[PydanticDataclass], JsonSchemaMode], JsonSchemaValue], JsonSchemaValue]:
     """Utility function to generate a JSON Schema for multiple models.
@@ -2483,6 +2585,14 @@ def models_json_schema(
         title: The title of the generated JSON Schema.
         description: The description of the generated JSON Schema.
         ref_template: The reference template to use for generating JSON Schema references.
+        union_format: The format to use when combining schemas from unions together. Can be one of:
+
+            - `'any_of'`: Use the [`anyOf`](https://json-schema.org/understanding-json-schema/reference/combining#anyOf)
+              keyword to combine schemas (the default).
+            - `'primitive_type_array'`: Use the [`type`](https://json-schema.org/understanding-json-schema/reference/type)
+              keyword as an array of strings, containing each type of the combination. If any of the schemas is not a primitive
+              type (`string`, `boolean`, `null`, `integer` or `number`) or contains constraints/metadata, falls back to
+              `any_of`.
         schema_generator: The schema generator to use for generating the JSON Schema.
 
     Returns:
@@ -2497,7 +2607,7 @@ def models_json_schema(
         if isinstance(cls.__pydantic_core_schema__, _mock_val_ser.MockCoreSchema):
             cls.__pydantic_core_schema__.rebuild()
 
-    instance = schema_generator(by_alias=by_alias, ref_template=ref_template)
+    instance = schema_generator(by_alias=by_alias, ref_template=ref_template, union_format=union_format)
     inputs: list[tuple[type[BaseModel] | type[PydanticDataclass], JsonSchemaMode, CoreSchema]] = [
         (m, mode, m.__pydantic_core_schema__) for m, mode in models
     ]

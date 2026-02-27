@@ -10,18 +10,6 @@ We welcome feedback on experimental features! Please open an issue on the [Pydan
 
 We also encourage you to read through existing feedback and add your thoughts to existing issues.
 
-## Warnings on Import
-
-When you import an experimental feature from the `experimental` module, you'll see a warning message that the feature is experimental. You can disable this warning with the following:
-
-```python
-import warnings
-
-from pydantic import PydanticExperimentalWarning
-
-warnings.filterwarnings('ignore', category=PydanticExperimentalWarning)
-```
-
 ## Pipeline API
 
 Pydantic v2.8.0 introduced an experimental "pipeline" API that allows composing of parsing (validation), constraints and transformations in a more type-safe manner than existing APIs. This API is subject to change or removal, we are looking for feedback and suggestions before making it a permanent part of Pydantic.
@@ -150,9 +138,10 @@ Just be mindful of abusing advanced patterns like the pipeline API just because 
 
 ## Partial Validation
 
-Pydantic v2.10.0 introduces experimental support for "partial validation".
+/// version-added | v2.10
+///
 
-This allows you to validate an incomplete JSON string, or a Python object representing incomplete input data.
+Partial validation allows you to validate an incomplete JSON string, or a Python object representing incomplete input data.
 
 Partial validation is particularly helpful when processing the output of an LLM, where the model streams structured responses, and you may wish to begin validating the stream while you're still receiving data (e.g. to show partial data to users).
 
@@ -534,7 +523,7 @@ Configuration.model_json_schema()['properties']['timeout']
 #> {'anyOf': [{'type': 'integer'}, {'type': 'null'}], 'title': 'Timeout'}}
 
 
-# `is` can be used to discrimate between the sentinel and other values:
+# `is` can be used to discriminate between the sentinel and other values:
 timeout = conf.timeout if conf.timeout is not MISSING else defaults['timeout']
 ```
 

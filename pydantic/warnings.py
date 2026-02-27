@@ -10,10 +10,12 @@ __all__ = (
     'PydanticDeprecatedSince29',
     'PydanticDeprecatedSince210',
     'PydanticDeprecatedSince211',
+    'PydanticDeprecatedSince212',
     'PydanticDeprecationWarning',
     'PydanticExperimentalWarning',
     'ArbitraryTypeWarning',
     'UnsupportedFieldAttributeWarning',
+    'TypedDictExtraConfigWarning',
 )
 
 
@@ -58,7 +60,7 @@ class PydanticDeprecatedSince20(PydanticDeprecationWarning):
         super().__init__(message, *args, since=(2, 0), expected_removal=(3, 0))
 
 
-class PydanticDeprecatedSince26(PydanticDeprecationWarning):
+class PydanticDeprecatedSince26(PydanticDeprecationWarning):  # pragma: no cover
     """A specific `PydanticDeprecationWarning` subclass defining functionality deprecated since Pydantic 2.6."""
 
     def __init__(self, message: str, *args: object) -> None:
@@ -86,6 +88,13 @@ class PydanticDeprecatedSince211(PydanticDeprecationWarning):
         super().__init__(message, *args, since=(2, 11), expected_removal=(3, 0))
 
 
+class PydanticDeprecatedSince212(PydanticDeprecationWarning):
+    """A specific `PydanticDeprecationWarning` subclass defining functionality deprecated since Pydantic 2.12."""
+
+    def __init__(self, message: str, *args: object) -> None:
+        super().__init__(message, *args, since=(2, 12), expected_removal=(3, 0))
+
+
 class GenericBeforeBaseModelWarning(Warning):
     pass
 
@@ -93,7 +102,6 @@ class GenericBeforeBaseModelWarning(Warning):
 class PydanticExperimentalWarning(Warning):
     """A Pydantic specific experimental functionality warning.
 
-    This warning is raised when using experimental functionality in Pydantic.
     It is raised to warn users that the functionality may change or be removed in future versions of Pydantic.
     """
 
@@ -108,3 +116,7 @@ class ArbitraryTypeWarning(CoreSchemaGenerationWarning):
 
 class UnsupportedFieldAttributeWarning(CoreSchemaGenerationWarning):
     """A warning raised when a `Field()` attribute isn't supported in the context it is used."""
+
+
+class TypedDictExtraConfigWarning(CoreSchemaGenerationWarning):
+    """A warning raised when the [`extra`][pydantic.ConfigDict.extra] configuration is incompatible with the `closed` or `extra_items` specification."""

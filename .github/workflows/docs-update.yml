@@ -19,16 +19,16 @@ jobs:
   lint:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
-      - uses: astral-sh/setup-uv@v6
+      - uses: astral-sh/setup-uv@v7
         with:
-          python-version: '3.12'
+          python-version: '3.13'
 
       - name: Install dependencies
         # Installing pip is required for the pre-commit action:
         run: |
-          uv sync --group linting --all-extras
+          uv sync --all-packages --group linting --all-extras
           uv pip install pip
 
       - uses: pre-commit/action@v3.0.1
@@ -40,14 +40,14 @@ jobs:
   test:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
-      - uses: astral-sh/setup-uv@v6
+      - uses: astral-sh/setup-uv@v7
         with:
-          python-version: '3.12'
+          python-version: '3.13'
 
       - name: Install dependencies
-        run: uv sync --group testing-extra --all-extras
+        run: uv sync --all-packages --group testing-extra --all-extras
 
       - run: 'uv run python -c "import pydantic.version; print(pydantic.version.version_info())"'
 
@@ -61,18 +61,18 @@ jobs:
 
     steps:
       - name: Checkout docs-site
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           ref: docs-site
 
       - name: Checkout current branch
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
-      - uses: astral-sh/setup-uv@v6
+      - uses: astral-sh/setup-uv@v7
         with:
-          python-version: '3.12'
+          python-version: '3.13'
 
-      - run: uv sync --group docs --group docs-upload
+      - run: uv sync --all-packages --group docs --group docs-upload
 
       - run: uv pip install --default-index https://pydantic:${PPPR_TOKEN}@pppr.pydantic.dev/simple/ mkdocs-material
         env:
@@ -83,7 +83,7 @@ jobs:
       # Taken from docs-build.sh
       - name: Prepare shortcuts for extra modules
         run: |
-          ln -s .venv/lib/python*/site-packages/pydantic_core pydantic_core
+          ln -s pydantic-core/python/pydantic_core pydantic_core
           ln -s .venv/lib/python*/site-packages/pydantic_settings pydantic_settings
           ln -s .venv/lib/python*/site-packages/pydantic_extra_types pydantic_extra_types
 
@@ -97,7 +97,7 @@ jobs:
 
       - if: github.ref == 'refs/heads/docs-update' || startsWith(github.ref, 'refs/tags/')
         id: check-version
-        uses: samuelcolvin/check-python-version@v4.1
+        uses: samuelcolvin/check-python-version@v5
         with:
           version_file_path: 'pydantic/version.py'
           skip_env_check: true

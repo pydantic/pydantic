@@ -6,7 +6,6 @@ import dataclasses
 import sys
 import warnings
 from functools import partialmethod
-from types import FunctionType
 from typing import TYPE_CHECKING, Annotated, Any, Callable, Literal, TypeVar, Union, cast, overload
 
 from pydantic_core import PydanticUndefined, core_schema
@@ -15,7 +14,8 @@ from typing_extensions import Self, TypeAlias
 from ._internal import _decorators, _generics, _internal_dataclass
 from .annotated_handlers import GetCoreSchemaHandler
 from .errors import PydanticUserError
-from .warnings import ArbitraryTypeWarning
+from .version import version_short
+from .warnings import ArbitraryTypeWarning, PydanticDeprecatedSince212
 
 if sys.version_info < (3, 11):
     from typing_extensions import Protocol
@@ -73,7 +73,7 @@ class AfterValidator:
 
     def __get_pydantic_core_schema__(self, source_type: Any, handler: GetCoreSchemaHandler) -> core_schema.CoreSchema:
         schema = handler(source_type)
-        info_arg = _inspect_validator(self.func, 'after')
+        info_arg = _inspect_validator(self.func, mode='after', type='field')
         if info_arg:
             func = cast(core_schema.WithInfoValidatorFunction, self.func)
             return core_schema.with_info_after_validator_function(func, schema=schema)
@@ -131,7 +131,7 @@ class BeforeValidator:
             else handler.generate_schema(self.json_schema_input_type)
         )
 
-        info_arg = _inspect_validator(self.func, 'before')
+        info_arg = _inspect_validator(self.func, mode='before', type='field')
         if info_arg:
             func = cast(core_schema.WithInfoValidatorFunction, self.func)
             return core_schema.with_info_before_validator_function(
@@ -229,7 +229,7 @@ class PlainValidator:
 
         input_schema = handler.generate_schema(self.json_schema_input_type)
 
-        info_arg = _inspect_validator(self.func, 'plain')
+        info_arg = _inspect_validator(self.func, mode='plain', type='field')
         if info_arg:
             func = cast(core_schema.WithInfoValidatorFunction, self.func)
             return core_schema.with_info_plain_validator_function(
@@ -304,7 +304,7 @@ class WrapValidator:
             else handler.generate_schema(self.json_schema_input_type)
         )
 
-        info_arg = _inspect_validator(self.func, 'wrap')
+        info_arg = _inspect_validator(self.func, mode='wrap', type='field')
         if info_arg:
             func = cast(core_schema.WithInfoWrapValidatorFunction, self.func)
             return core_schema.with_info_wrap_validator_function(
@@ -406,7 +406,7 @@ def field_validator(
 ) -> Callable[[_V2BeforeAfterOrPlainValidatorType], _V2BeforeAfterOrPlainValidatorType]: ...
 
 
-def field_validator(
+def field_validator(  # noqa: D417
     field: str,
     /,
     *fields: str,
@@ -456,29 +456,25 @@ def field_validator(
     For more in depth examples, see [Field Validators](../concepts/validators.md#field-validators).
 
     Args:
-        field: The first field the `field_validator` should be called on; this is separate
-            from `fields` to ensure an error is raised if you don't pass at least one.
-        *fields: Additional field(s) the `field_validator` should be called on.
+        *fields: The field names the validator should apply to.
         mode: Specifies whether to validate the fields before or after validation.
         check_fields: Whether to check that the fields actually exist on the model.
         json_schema_input_type: The input type of the function. This is only used to generate
             the appropriate JSON Schema (in validation mode) and can only specified
             when `mode` is either `'before'`, `'plain'` or `'wrap'`.
 
-    Returns:
-        A decorator that can be used to decorate a function to be used as a field_validator.
-
     Raises:
         PydanticUserError:
-            - If `@field_validator` is used bare (with no fields).
-            - If the args passed to `@field_validator` as fields are not strings.
-            - If `@field_validator` applied to instance methods.
+            - If the decorator is used without any arguments (at least one field name must be provided).
+            - If the provided field names are not strings.
+            - If `json_schema_input_type` is provided with an unsupported `mode`.
+            - If the decorator is applied to an instance method.
     """
-    if isinstance(field, FunctionType):
+    if callable(field) or isinstance(field, classmethod):
         raise PydanticUserError(
-            '`@field_validator` should be used with fields and keyword arguments, not bare. '
-            "E.g. usage should be `@validator('<field_name>', ...)`",
-            code='validator-no-fields',
+            'The `@field_validator` decorator cannot be used without arguments, at least one field must be provided. '
+            "For example: `@field_validator('<field_name>', ...)`.",
+            code='decorator-missing-arguments',
         )
 
     if mode not in ('before', 'plain', 'wrap') and json_schema_input_type is not PydanticUndefined:
@@ -493,9 +489,9 @@ def field_validator(
     fields = field, *fields
     if not all(isinstance(field, str) for field in fields):
         raise PydanticUserError(
-            '`@field_validator` fields should be passed as separate string args. '
-            "E.g. usage should be `@validator('<field_name_1>', '<field_name_2>', ...)`",
-            code='validator-invalid-fields',
+            'The provided field names to the `@field_validator` decorator should be strings. '
+            "For example: `@field_validator('<field_name_1>', '<field_name_2>', ...).`",
+            code='decorator-invalid-fields',
         )
 
     def dec(
@@ -503,7 +499,8 @@ def field_validator(
     ) -> _decorators.PydanticDescriptorProxy[Any]:
         if _decorators.is_instance_method_from_sig(f):
             raise PydanticUserError(
-                '`@field_validator` cannot be applied to instance methods', code='validator-instance-method'
+                'The `@field_validator` decorator cannot be applied to instance methods',
+                code='validator-instance-method',
             )
 
         # auto apply the @classmethod decorator
@@ -718,9 +715,18 @@ def model_validator(
     """
 
     def dec(f: Any) -> _decorators.PydanticDescriptorProxy[Any]:
-        # auto apply the @classmethod decorator (except for *after* validators, which should be instance methods):
-        if mode != 'after':
-            f = _decorators.ensure_classmethod_based_on_signature(f)
+        # auto apply the @classmethod decorator. NOTE: in V3, do not apply the conversion for 'after' validators:
+        f = _decorators.ensure_classmethod_based_on_signature(f)
+        if mode == 'after' and isinstance(f, classmethod):
+            warnings.warn(
+                category=PydanticDeprecatedSince212,
+                message=(
+                    "Using `@model_validator` with mode='after' on a classmethod is deprecated. Instead, use an instance method. "
+                    f'See the documentation at https://docs.pydantic.dev/{version_short()}/concepts/validators/#model-after-validator.'
+                ),
+                stacklevel=2,
+            )
+
         dec_info = _decorators.ModelValidatorDecoratorInfo(mode=mode)
         return _decorators.PydanticDescriptorProxy(f, dec_info)
 
@@ -831,3 +837,53 @@ else:
             )
 
         __hash__ = object.__hash__
+
+
+_FromTypeT = TypeVar('_FromTypeT')
+
+
+class ValidateAs:
+    """A helper class to validate a custom type from a type that is natively supported by Pydantic.
+
+    Args:
+        from_type: The type natively supported by Pydantic to use to perform validation.
+        instantiation_hook: A callable taking the validated type as an argument, and returning
+            the populated custom type.
+
+    Example:
+        ```python {lint="skip"}
+        from typing import Annotated
+
+        from pydantic import BaseModel, TypeAdapter, ValidateAs
+
+        class MyCls:
+            def __init__(self, a: int) -> None:
+                self.a = a
+
+            def __repr__(self) -> str:
+                return f"MyCls(a={self.a})"
+
+        class Model(BaseModel):
+            a: int
+
+
+        ta = TypeAdapter(
+            Annotated[MyCls, ValidateAs(Model, lambda v: MyCls(a=v.a))]
+        )
+
+        print(ta.validate_python({'a': 1}))
+        #> MyCls(a=1)
+        ```
+    """
+
+    # TODO: make use of PEP 747
+    def __init__(self, from_type: type[_FromTypeT], /, instantiation_hook: Callable[[_FromTypeT], Any]) -> None:
+        self.from_type = from_type
+        self.instantiation_hook = instantiation_hook
+
+    def __get_pydantic_core_schema__(self, source: Any, handler: GetCoreSchemaHandler) -> core_schema.CoreSchema:
+        schema = handler(self.from_type)
+        return core_schema.no_info_after_validator_function(
+            self.instantiation_hook,
+            schema=schema,
+        )

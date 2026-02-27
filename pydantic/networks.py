@@ -78,6 +78,7 @@ class UrlConstraints:
         default_host: The default host. Defaults to `None`.
         default_port: The default port. Defaults to `None`.
         default_path: The default path. Defaults to `None`.
+        preserve_empty_path: Whether to preserve empty URL paths. Defaults to `None`.
     """
 
     max_length: int | None = None
@@ -86,6 +87,7 @@ class UrlConstraints:
     default_host: str | None = None
     default_port: int | None = None
     default_path: str | None = None
+    preserve_empty_path: bool | None = None
 
     def __hash__(self) -> int:
         return hash(
@@ -96,6 +98,7 @@ class UrlConstraints:
                 self.default_host,
                 self.default_port,
                 self.default_path,
+                self.preserve_empty_path,
             )
         )
 
@@ -111,7 +114,7 @@ class UrlConstraints:
         # because when we generate schemas for urls, we wrap a core_schema.url_schema() with a function-wrap schema
         # that helps with validation on initialization, see _BaseUrl and _BaseMultiHostUrl below.
         schema_to_mutate = schema['schema'] if schema['type'] == 'function-wrap' else schema
-        if annotated_type := schema_to_mutate['type'] not in ('url', 'multi-host-url'):
+        if (annotated_type := schema_to_mutate['type']) not in ('url', 'multi-host-url'):
             raise PydanticUserError(
                 f"'UrlConstraints' cannot annotate '{annotated_type}'.", code='invalid-annotated-type'
             )
@@ -831,6 +834,23 @@ class MongoDsn(_BaseMultiHostUrl):
     * Database name not required
     * Port not required
     * User info may be passed without user part (e.g., `mongodb://mongodb0.example.com:27017`).
+
+    !!! warning
+        If a port isn't specified, the default MongoDB port `27017` will be used. If this behavior is
+        undesirable, you can use the following:
+
+        ```python
+        from typing import Annotated
+
+        from pydantic_core import MultiHostUrl
+
+        from pydantic import UrlConstraints
+
+        MongoDsnNoDefaultPort = Annotated[
+            MultiHostUrl,
+            UrlConstraints(allowed_schemes=['mongodb', 'mongodb+srv']),
+        ]
+        ```
     """
 
     _constraints = UrlConstraints(allowed_schemes=['mongodb', 'mongodb+srv'], default_port=27017)

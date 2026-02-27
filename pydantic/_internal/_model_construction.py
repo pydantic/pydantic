@@ -2,7 +2,6 @@
 
 from __future__ import annotations as _annotations
 
-import builtins
 import operator
 import sys
 import typing
@@ -11,7 +10,7 @@ import weakref
 from abc import ABCMeta
 from functools import cache, partial, wraps
 from types import FunctionType
-from typing import Any, Callable, Generic, Literal, NoReturn, cast
+from typing import TYPE_CHECKING, Any, Callable, Generic, Literal, NoReturn, TypeVar, cast
 
 from pydantic_core import PydanticUndefined, SchemaSerializer
 from typing_extensions import TypeAliasType, dataclass_transform, deprecated, get_args, get_origin
@@ -37,15 +36,13 @@ from ._typing_extra import (
 )
 from ._utils import LazyClassAttribute, SafeGetItemProxy
 
-if typing.TYPE_CHECKING:
+if TYPE_CHECKING:
     from ..fields import Field as PydanticModelField
     from ..fields import FieldInfo, ModelPrivateAttr
     from ..fields import PrivateAttr as PydanticModelPrivateAttr
     from ..main import BaseModel
+    from ._fields import PydanticExtraInfo
 else:
-    # See PyCharm issues https://youtrack.jetbrains.com/issue/PY-21915
-    # and https://youtrack.jetbrains.com/issue/PY-51428
-    DeprecationWarning = PydanticDeprecatedSince20
     PydanticModelField = object()
     PydanticModelPrivateAttr = object()
 
@@ -60,7 +57,10 @@ class _ModelNamespaceDict(dict):
     def __setitem__(self, k: str, v: object) -> None:
         existing: Any = self.get(k, None)
         if existing and v is not existing and isinstance(existing, PydanticDescriptorProxy):
-            warnings.warn(f'`{k}` overrides an existing Pydantic `{existing.decorator_info.decorator_repr}` decorator')
+            warnings.warn(
+                f'`{k}` overrides an existing Pydantic `{existing.decorator_info.decorator_repr}` decorator',
+                stacklevel=2,
+            )
 
         return super().__setitem__(k, v)
 
@@ -73,6 +73,10 @@ def NoInitField(
     `__pydantic_extra__`, `__pydantic_private__`, so they could be ignored when
     synthesizing the `__init__` signature.
     """
+
+
+# For ModelMetaclass.register():
+_T = TypeVar('_T')
 
 
 @dataclass_transform(kw_only_default=True, field_specifiers=(PydanticModelField, PydanticModelPrivateAttr, NoInitField))
@@ -169,7 +173,7 @@ class ModelMetaclass(ABCMeta):
 
             cls.__pydantic_setattr_handlers__ = {}
 
-            cls.__pydantic_decorators__ = DecoratorInfos.build(cls)
+            cls.__pydantic_decorators__ = DecoratorInfos.build(cls, replace_wrapped_methods=True)
             cls.__pydantic_decorators__.update_from_config(config_wrapper)
 
             # Use the getattr below to grab the __parameters__ from the `typing.Generic` parent class
@@ -275,7 +279,7 @@ class ModelMetaclass(ABCMeta):
             namespace.get('__annotations__', {}).clear()
             return super().__new__(mcs, cls_name, bases, namespace, **kwargs)
 
-    if not typing.TYPE_CHECKING:  # pragma: no branch
+    if not TYPE_CHECKING:  # pragma: no branch
         # We put `__getattr__` in a non-TYPE_CHECKING block because otherwise, mypy allows arbitrary attribute access
 
         def __getattr__(self, item: str) -> Any:
@@ -289,19 +293,20 @@ class ModelMetaclass(ABCMeta):
     def __prepare__(cls, *args: Any, **kwargs: Any) -> dict[str, object]:
         return _ModelNamespaceDict()
 
-    def __instancecheck__(self, instance: Any) -> bool:
-        """Avoid calling ABC _abc_instancecheck unless we're pretty sure.
+    # Due to performance and memory issues, in the ABCMeta.__subclasscheck__ implementation, we don't support
+    # registered virtual subclasses. See https://github.com/python/cpython/issues/92810#issuecomment-2762454345.
+    # This may change once the CPython gets fixed (possibly in 3.15), in which case we should conditionally
+    # define `register()`.
+    def register(self, subclass: type[_T]) -> type[_T]:
+        warnings.warn(
+            f"For performance reasons, virtual subclasses registered using '{self.__qualname__}.register()' "
+            "are not supported in 'isinstance()' and 'issubclass()' checks.",
+            stacklevel=2,
+        )
+        return super().register(subclass)
 
-        See #3829 and python/cpython#92810
-        """
-        return hasattr(instance, '__pydantic_decorators__') and super().__instancecheck__(instance)
-
-    def __subclasscheck__(self, subclass: type[Any]) -> bool:
-        """Avoid calling ABC _abc_subclasscheck unless we're pretty sure.
-
-        See #3829 and python/cpython#92810
-        """
-        return hasattr(subclass, '__pydantic_decorators__') and super().__subclasscheck__(subclass)
+    __instancecheck__ = type.__instancecheck__  # pyright: ignore[reportAssignmentType]
+    __subclasscheck__ = type.__subclasscheck__  # pyright: ignore[reportAssignmentType]
 
     @staticmethod
     def _collect_bases_data(bases: tuple[type[Any], ...]) -> tuple[set[str], set[str], dict[str, ModelPrivateAttr]]:
@@ -336,12 +341,18 @@ class ModelMetaclass(ABCMeta):
 
         This is a private attribute, not meant to be used outside Pydantic.
         """
-        if not hasattr(self, '__pydantic_fields__'):
+        if '__pydantic_fields__' not in self.__dict__:
             return False
 
         field_infos = cast('dict[str, FieldInfo]', self.__pydantic_fields__)  # pyright: ignore[reportAttributeAccessIssue]
 
-        return all(field_info._complete for field_info in field_infos.values())
+        pydantic_extra_info = cast('PydanticExtraInfo | None', self.__pydantic_extra_info__)  # pyright: ignore[reportAttributeAccessIssue]
+        if pydantic_extra_info is not None:
+            extra_complete = pydantic_extra_info.complete
+        else:
+            extra_complete = True
+
+        return all(field_info._complete for field_info in field_infos.values()) and extra_complete
 
     def __dir__(self) -> list[str]:
         attributes = list(super().__dir__())
@@ -549,7 +560,7 @@ def make_hash_func(cls: type[BaseModel]) -> Any:
 def set_model_fields(
     cls: type[BaseModel],
     config_wrapper: ConfigWrapper,
-    ns_resolver: NsResolver | None,
+    ns_resolver: NsResolver,
 ) -> None:
     """Collect and set `cls.__pydantic_fields__` and `cls.__class_vars__`.
 
@@ -559,9 +570,12 @@ def set_model_fields(
         ns_resolver: Namespace resolver to use when getting model annotations.
     """
     typevars_map = get_model_typevars_map(cls)
-    fields, class_vars = collect_model_fields(cls, config_wrapper, ns_resolver, typevars_map=typevars_map)
+    fields, pydantic_extra_info, class_vars = collect_model_fields(
+        cls, config_wrapper, ns_resolver, typevars_map=typevars_map
+    )
 
     cls.__pydantic_fields__ = fields
+    cls.__pydantic_extra_info__ = pydantic_extra_info
     cls.__class_vars__.update(class_vars)
 
     for k in class_vars:
@@ -585,6 +599,7 @@ def complete_model_class(
     raise_errors: bool = True,
     call_on_complete_hook: bool = True,
     create_model_module: str | None = None,
+    is_force_rebuild: bool = False,
 ) -> bool:
     """Finish building a model class.
 
@@ -598,6 +613,8 @@ def complete_model_class(
         raise_errors: Whether to raise errors.
         call_on_complete_hook: Whether to call the `__pydantic_on_complete__` hook.
         create_model_module: The module of the class to be created, if created by `create_model`.
+        is_force_rebuild: Whether the model is being force-rebuilt (if True, pre-built serializers and
+                          validators are not used, to avoid stale references).
 
     Returns:
         `True` if the model is successfully completed, else `False`.
@@ -616,7 +633,7 @@ def complete_model_class(
         # generate schema process. As we want to avoid having `__pydantic_fields_complete__` set to `False`
         # when `__pydantic_complete__` is `True`, we rebuild here:
         try:
-            cls.__pydantic_fields__ = rebuild_model_fields(
+            cls.__pydantic_fields__, cls.__pydantic_extra_info__ = rebuild_model_fields(
                 cls,
                 config_wrapper=config_wrapper,
                 ns_resolver=ns_resolver,
@@ -672,8 +689,9 @@ def complete_model_class(
         'create_model' if create_model_module else 'BaseModel',
         core_config,
         config_wrapper.plugin_settings,
+        _use_prebuilt=not is_force_rebuild,
     )
-    cls.__pydantic_serializer__ = SchemaSerializer(schema, core_config)
+    cls.__pydantic_serializer__ = SchemaSerializer(schema, core_config, _use_prebuilt=not is_force_rebuild)
 
     # set __signature__ attr only for model class, but not for its instances
     # (because instances can define `__call__`, and `inspect.signature` shouldn't
@@ -740,7 +758,7 @@ class _DeprecatedFieldDescriptor:
                 return self.wrapped_property.__get__(None, obj_type)
             raise AttributeError(self.field_name)
 
-        warnings.warn(self.msg, builtins.DeprecationWarning, stacklevel=2)
+        warnings.warn(self.msg, DeprecationWarning, stacklevel=2)
 
         if self.wrapped_property is not None:
             return self.wrapped_property.__get__(obj, obj_type)

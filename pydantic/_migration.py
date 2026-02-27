@@ -1,6 +1,8 @@
 import sys
 from typing import Any, Callable
 
+from pydantic.warnings import PydanticDeprecatedSince20
+
 from .version import version_short
 
 MOVED_IN_V2 = {
@@ -280,7 +282,11 @@ def getattr_migration(module: str) -> Callable[[str], Any]:
         import_path = f'{module}:{name}'
         if import_path in MOVED_IN_V2.keys():
             new_location = MOVED_IN_V2[import_path]
-            warnings.warn(f'`{import_path}` has been moved to `{new_location}`.')
+            warnings.warn(
+                f'`{import_path}` has been moved to `{new_location}`.',
+                category=PydanticDeprecatedSince20,
+                stacklevel=2,
+            )
             return import_string(MOVED_IN_V2[import_path])
         if import_path in DEPRECATED_MOVED_IN_V2:
             # skip the warning here because a deprecation warning will be raised elsewhere
@@ -289,7 +295,9 @@ def getattr_migration(module: str) -> Callable[[str], Any]:
             new_location = REDIRECT_TO_V1[import_path]
             warnings.warn(
                 f'`{import_path}` has been removed. We are importing from `{new_location}` instead.'
-                'See the migration guide for more details: https://docs.pydantic.dev/latest/migration/'
+                'See the migration guide for more details: https://docs.pydantic.dev/latest/migration/',
+                category=PydanticDeprecatedSince20,
+                stacklevel=2,
             )
             return import_string(REDIRECT_TO_V1[import_path])
         if import_path == 'pydantic:BaseSettings':

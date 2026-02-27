@@ -15,10 +15,9 @@ authors = [
     {name = 'Serge Matveenko', email = 'lig@countzero.co'},
     {name = 'Marcelo Trylesinski', email = 'marcelotryle@gmail.com'},
     {name = 'Sydney Runkle', email = 'sydneymarierunkle@gmail.com'},
-    {name = 'David Hewitt', email = 'mail@davidhewitt.io'},
+    {name = 'David Hewitt', email = 'mail@davidhewitt.dev'},
     {name = 'Alex Hall', email = 'alex.mojaki@gmail.com'},
     {name = 'Victorien Plot', email = 'contact@vctrn.dev'},
-    {name = 'Douwe Maan', email = 'hi@douwe.me'},
 ]
 license = 'MIT'
 license-files = ['LICENSE']
@@ -48,8 +47,8 @@ dependencies = [
     'typing-extensions>=4.14.1',
     'annotated-types>=0.6.0',
     # Keep this in sync with the version in the `check_pydantic_core_version()` function:
-    'pydantic-core==2.37.2',
-    'typing-inspection>=0.4.0',
+    'pydantic-core==2.42.0',
+    'typing-inspection>=0.4.2',
 ]
 dynamic = ['version', 'readme']
 
@@ -96,12 +95,15 @@ docs = [
     'pyupgrade',
     'mike',
     'pydantic-settings',
-    # remove once docs issue is fixed in pydantic-extra-types
-    'pydantic-extra-types==2.10',
     'requests',
+    # To build pydantic wheel for run code feature on dev docs:
+    'build>=1.3.0',
+    'pydantic-extra-types>=2.10.6',
+    'pydantic-docs',
 ]
 docs-upload = [
-    "algoliasearch>=4.12.0",
+    'algoliasearch>=4.12.0',
+    'beautifulsoup4>=4.13.3',
 ]
 linting = [
     'eval-type-backport',
@@ -186,16 +188,25 @@ markers = [
 default-groups = ['dev']
 required-version = '>=0.8.4'
 
+[tool.uv.sources]
+pydantic-core = { workspace = true }
+pydantic-docs = { git = "https://github.com/pydantic/pydantic-docs" }
+
+[tool.uv.workspace]
+members = [
+    "pydantic-core",
+]
+
 # configuring https://github.com/pydantic/hooky
 [tool.hooky]
-reviewers = ['Viicos', 'DouweM']
+reviewers = ['Viicos']
 require_change_file = false
 unconfirmed_label = 'pending'
 
 [tool.ruff]
 line-length = 120
 target-version = 'py39'
-extend-exclude = ['pydantic/v1', 'tests/mypy/']
+extend-exclude = ['pydantic/v1', 'tests/mypy', 'tests/pydantic_core']
 
 [tool.ruff.lint]
 select = [
@@ -209,6 +220,7 @@ select = [
     'T10',    # flake8-debugger
     'T20',    # flake8-print
     'C4',     # flake8-comprehensions
+    'PERF',   # Perflint
     'PIE',    # flake8-pie
     'PYI006', # flake8-pyi
     'PYI062', # flake8-pyi
@@ -245,7 +257,7 @@ pydocstyle = { convention = 'google' }
 quote-style = 'single'
 
 [tool.coverage.run]
-source = ['pydantic']
+source = ['pydantic', 'pydantic_core']
 omit = ['pydantic/deprecated/*', 'pydantic/v1/*']
 branch = true
 relative_files = true
@@ -253,16 +265,11 @@ context = '${CONTEXT}'
 
 [tool.coverage.report]
 precision = 2
-exclude_lines = [
-    'pragma: no cover',
-    'raise NotImplementedError',
-    'if TYPE_CHECKING:',
-    'if typing.TYPE_CHECKING:',
-    '@overload',
-    '@typing.overload',
-    '\(Protocol\):$',
-    'typing.assert_never',
-    'assert_never',
+exclude_also = [
+    'raise\sNotImplementedError',
+    '@(typing\.)?overload',
+    'class .*\bProtocol\):',
+    '(typing\.)?.assert_never',
 ]
 
 [tool.coverage.paths]
@@ -284,11 +291,4 @@ enableExperimentalFeatures = true
 skip = '.git,env*,pydantic/v1/*,uv.lock'
 # `ser` - abbreviation for "ser"ialisation
 # `crate` - a rust crate
-ignore-words-list = 'gir,ser,crate'
-
-[tool.codeflash]
-module-root = "pydantic"
-tests-root = "tests"
-test-framework = "pytest"
-ignore-paths = []
-formatter-cmd = ["ruff check --exit-zero --fix $file", "ruff format $file"]
+ignore-words-list = 'gir,ser,crate,deques'

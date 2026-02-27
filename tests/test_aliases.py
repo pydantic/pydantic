@@ -639,6 +639,42 @@ def test_validation_alias_parse_data():
     ]
 
 
+def test_validation_alias_priority():
+    class Model(BaseModel):
+        model_config = ConfigDict(validate_by_alias=True, validate_by_name=True)
+        a: str = Field(validation_alias=AliasChoices('b', AliasPath('c', 0), 'd'))
+
+    assert Model.model_validate({'a': 'a', 'b': 'b', 'c': ['c'], 'd': 'd'}).a == 'b'
+    assert Model.model_validate({'a': 'a', 'c': ['c'], 'd': 'd', 'b': 'b'}).a == 'b'
+    assert Model.model_validate({'a': 'a', 'd': 'd', 'b': 'b', 'c': ['c']}).a == 'b'
+
+    assert Model.model_validate({'a': 'a', 'c': ['c'], 'd': 'd'}).a == 'c'
+    assert Model.model_validate({'a': 'a', 'd': 'd', 'c': ['c']}).a == 'c'
+
+    assert Model.model_validate({'d': 'd', 'a': 'a'}).a == 'd'
+    assert Model.model_validate({'a': 'a', 'd': 'd'}).a == 'd'
+
+    assert Model.model_validate({'a': 'a'}).a == 'a'
+
+
+def test_validation_alias_priority_json():
+    class Model(BaseModel):
+        model_config = ConfigDict(validate_by_alias=True, validate_by_name=True)
+        a: str = Field(validation_alias=AliasChoices('b', AliasPath('c', 0), 'd'))
+
+    assert Model.model_validate_json(b'{"a": "a", "b": "b", "c": ["c"], "d": "d"}').a == 'b'
+    assert Model.model_validate_json(b'{"a": "a", "c": ["c"], "d": "d", "b": "b"}').a == 'b'
+    assert Model.model_validate_json(b'{"a": "a", "d": "d", "b": "b", "c": ["c"]}').a == 'b'
+
+    assert Model.model_validate_json(b'{"a": "a", "c": ["c"], "d": "d"}').a == 'c'
+    assert Model.model_validate_json(b'{"a": "a", "d": "d", "c": ["c"]}').a == 'c'
+
+    assert Model.model_validate_json(b'{"d": "d", "a": "a"}').a == 'd'
+    assert Model.model_validate_json(b'{"a": "a", "d": "d"}').a == 'd'
+
+    assert Model.model_validate_json(b'{"a": "a"}').a == 'a'
+
+
 def test_alias_generator_class() -> None:
     class Model(BaseModel):
         a: str

@@ -7,7 +7,16 @@ from typing import Annotated
 import pytest
 from annotated_types import MaxLen
 
-from pydantic import BaseModel, Field, ValidationError
+from pydantic import (
+    BaseModel,
+    Field,
+    TypeAdapter,
+    ValidationError,
+    field_serializer,
+    field_validator,
+    model_serializer,
+    model_validator,
+)
 from pydantic.dataclasses import dataclass
 
 pytestmark = pytest.mark.skipif(
@@ -28,12 +37,6 @@ def test_deferred_annotations_model() -> None:
     assert inst.b == 'test'
 
 
-@pytest.mark.xfail(
-    reason=(
-        'When rebuilding model fields, we individually re-evaluate all fields (using `_eval_type()`) '
-        "and as such we don't benefit from PEP 649's capabilities."
-    ),
-)
 def test_deferred_annotations_nested_model() -> None:
     def outer():
         def inner():
@@ -80,3 +83,74 @@ def test_deferred_annotations_pydantic_dataclass_pydantic_field() -> None:
     Int = int
 
     assert A(a='1').a == 1
+
+
+def test_deferred_annotations_return_values() -> None:
+    class Model(BaseModel):
+        a: int
+
+        @model_validator(mode='after')
+        def check(self) -> Model:
+            return self
+
+        @model_validator(mode='before')
+        def before(cls, data) -> MyDict:
+            return data
+
+        @model_serializer(mode='plain')
+        def ser(self) -> MyDict:
+            return {'a': self.a}
+
+        @field_validator('a', mode='before')
+        def validate_a(cls, v) -> MyInt:
+            return v
+
+        @field_serializer('a', mode='plain')
+        def serialize_a(self, v) -> MyInt:
+            return v
+
+    MyDict = dict
+    MyInt = int
+
+
+def test_deferred_annotations_pydantic_extra() -> None:
+    """https://github.com/pydantic/pydantic/issues/12393"""
+
+    class Foo(BaseModel, extra='allow'):
+        a: MyInt
+
+        __pydantic_extra__: MyDict[str, int]
+
+    MyInt = int
+    MyDict = dict
+
+    f = Foo(a='1', extra='1')
+
+    assert f.a == 1
+    assert f.extra == 1
+
+
+def test_deferred_annotations_json_schema_extra() -> None:
+    def json_schema_extra(js_schema: Anything):
+        return js_schema
+
+    ta = TypeAdapter(int, config={'json_schema_extra': json_schema_extra})
+
+    assert ta.json_schema() == {'type': 'integer'}
+
+
+def test_deferred_annotations_default_factory() -> None:
+    def def_factory(validated_data: Anything):
+        return 1
+
+    class Model(BaseModel):
+        f: int = Field(default_factory=def_factory)
+
+    assert Model().f == 1
+
+
+def test_deferred_annotations_custom_init() -> None:
+    class Model(BaseModel):
+        def __init__(self, a: Anything) -> None: ...
+
+    assert len(Model.__signature__.parameters) == 1
