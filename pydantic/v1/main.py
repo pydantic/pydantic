@@ -991,7 +991,7 @@ def create_model(
     :param __cls_kwargs__: a dict for class creation
     :param __slots__: Deprecated, `__slots__` should not be passed to `create_model`
     :param field_definitions: fields of the model (or extra fields if a base is supplied)
-        in the format `<name>=(<type>, <default default>)` or `<name>=<default value>, e.g.
+        in the format `<name>=(<type>, <default>)` or `<name>=<default value>, e.g.
         `foobar=(str, ...)` or `foobar=123`, or, for complex use-cases, in the format
         `<name>=<Field>` or `<name>=(<type>, <FieldInfo>)`, e.g.
         `foo=Field(datetime, default_factory=datetime.utcnow, alias='bar')` or
