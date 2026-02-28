@@ -47,6 +47,7 @@ from pydantic_core import (
     PydanticCustomError,
     PydanticSerializationUnexpectedValue,
     PydanticUndefined,
+    ReturnAsIs,
     Url,
     core_schema,
     to_jsonable_python,
@@ -1066,6 +1067,8 @@ class GenerateSchema:
             return core_schema.none_schema()
         if obj is MISSING:
             return core_schema.missing_sentinel_schema()
+        if obj is ReturnAsIs:
+            return core_schema.return_as_is_schema()
         elif obj in IP_TYPES:
             return self._ip_schema(obj)
         elif obj in TUPLE_TYPES:

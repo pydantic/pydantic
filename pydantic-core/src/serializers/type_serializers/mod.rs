@@ -19,6 +19,7 @@ pub mod missing_sentinel;
 pub mod model;
 pub mod nullable;
 pub mod other;
+pub mod return_as_is;
 pub mod set_frozenset;
 pub mod simple;
 pub mod string;
