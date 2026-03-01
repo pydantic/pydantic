@@ -5824,13 +5824,34 @@ def test_defaultdict_unknown_default_factory() -> None:
     """
     https://github.com/pydantic/pydantic/issues/4687
     """
-    with pytest.raises(
-        PydanticSchemaGenerationError,
-        match=r'Unable to infer a default factory for keys of type collections.defaultdict\[int, int\]',
-    ):
 
-        class Model(BaseModel):
-            d: defaultdict[int, defaultdict[int, int]]
+    class Model(BaseModel):
+        d: defaultdict[int, defaultdict[int, int]]
+
+    m = Model(d={})
+    assert m.d.default_factory is None
+
+
+def test_defaultdict_default_factory_from_field() -> None:
+    """Regression test for https://github.com/pydantic/pydantic/issues/10226.
+
+    When a defaultdict value type is not in the allowed default types,
+    the default_factory from Field() should be used instead of raising.
+    """
+
+    class A(BaseModel):
+        pass
+
+    class Model(BaseModel):
+        a: defaultdict[str, A] = Field(default_factory=lambda: defaultdict(A))
+
+    m = Model()
+    assert isinstance(m.a, defaultdict)
+    assert isinstance(m.a['test'], A)
+
+    m2 = Model(a={'key': A()})
+    assert isinstance(m2.a, defaultdict)
+    assert isinstance(m2.a['key'], A)
 
 
 def test_defaultdict_infer_default_factory() -> None:
