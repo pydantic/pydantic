@@ -107,12 +107,17 @@ def _private_setattr_handler(model: BaseModel, name: str, val: Any) -> None:
     model.__pydantic_private__[name] = val  # pyright: ignore[reportOptionalSubscript]
 
 
+def _extra_field_setattr_handler(model: BaseModel, name: str, val: Any) -> None:
+    _object_setattr(model, name, val)
+    model.__pydantic_fields_set__.add(name)
+
+
 _SIMPLE_SETATTR_HANDLERS: Mapping[str, Callable[[BaseModel, str, Any], None]] = {
     'model_field': _model_field_setattr_handler,
     'validate_assignment': lambda model, name, val: model.__pydantic_validator__.validate_assignment(model, name, val),  # pyright: ignore[reportAssignmentType]
     'private': _private_setattr_handler,
     'cached_property': lambda model, name, val: model.__dict__.__setitem__(name, val),
-    'extra_known': lambda model, name, val: _object_setattr(model, name, val),
+    'extra_known': _extra_field_setattr_handler,
 }
 
 
@@ -1100,6 +1105,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
                 elif attr is None:
                     # attribute does not exist, so put it in extra
                     self.__pydantic_extra__[name] = value
+                    self.__pydantic_fields_set__.add(name)
                     return None  # Can not return memoized handler with possibly freeform attr names
                 else:
                     # attribute _does_ exist, and was not in extra, so update it
