@@ -2529,7 +2529,7 @@ class EncodedBytes:
         self, core_schema: core_schema.CoreSchema, handler: GetJsonSchemaHandler
     ) -> JsonSchemaValue:
         field_schema = handler(core_schema)
-        field_schema.update(type='string', format=self.encoder.get_json_format())
+        field_schema.update(type='string', contentEncoding=self.encoder.get_json_format())
         return field_schema
 
     def __get_pydantic_core_schema__(self, source: type[Any], handler: GetCoreSchemaHandler) -> core_schema.CoreSchema:
@@ -2628,7 +2628,7 @@ class EncodedStr:
         self, core_schema: core_schema.CoreSchema, handler: GetJsonSchemaHandler
     ) -> JsonSchemaValue:
         field_schema = handler(core_schema)
-        field_schema.update(type='string', format=self.encoder.get_json_format())
+        field_schema.update(type='string', contentEncoding=self.encoder.get_json_format())
         return field_schema
 
     def __get_pydantic_core_schema__(self, source: type[Any], handler: GetCoreSchemaHandler) -> core_schema.CoreSchema:
