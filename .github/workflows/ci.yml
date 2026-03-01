@@ -325,7 +325,7 @@ jobs:
       - uses: actions/checkout@v6
 
       - name: Get dist artifacts
-        uses: actions/download-artifact@v6
+        uses: actions/download-artifact@v8
         with:
           pattern: pydantic_core_pypi_files_linux_*
           merge-multiple: true
@@ -391,7 +391,7 @@ jobs:
         uses: astral-sh/setup-uv@v7
 
       - name: get dist artifacts
-        uses: actions/download-artifact@v6
+        uses: actions/download-artifact@v8
         with:
           pattern: pydantic_core_pypi_files_*
           merge-multiple: true
@@ -675,7 +675,7 @@ jobs:
           python-version: '3.12'
 
       - name: Get coverage files
-        uses: actions/download-artifact@v7
+        uses: actions/download-artifact@v8
         with:
           merge-multiple: true
           pattern: coverage-*
@@ -713,7 +713,7 @@ jobs:
       - uses: actions/checkout@v6
 
       - name: Download coverage data
-        uses: actions/download-artifact@v7
+        uses: actions/download-artifact@v8
         with:
           name: coverage-data
 
@@ -807,7 +807,7 @@ jobs:
 
       - name: Get pydantic-core dist artifacts
         if: steps.check-pypi.outputs.already_published != 'true'
-        uses: actions/download-artifact@v6
+        uses: actions/download-artifact@v8
         with:
           pattern: pydantic_core_pypi_files_*
           merge-multiple: true
