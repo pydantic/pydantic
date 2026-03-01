@@ -296,6 +296,110 @@ def test_copy_update(ModelTwo, copy_method):
     assert m != m2
 
 
+def test_copy_with_update_allow_extra_with_private_attr(copy_method):
+    """Tests that when extra is allow, private attr is copied and added to __pydantic_private__"""
+
+    class AllowExtraModel(BaseModel):
+        model_config = ConfigDict(extra='allow')
+
+        _foo: str = PrivateAttr()
+
+    mae_original_private_unset = AllowExtraModel()
+    mae_copied_private_unset = copy_method(mae_original_private_unset, update={'_foo': 'different', '_extra': 'extra'})
+
+    assert mae_copied_private_unset._foo == 'different'
+
+    # Deprecated copy does not properly update private or extra attributes
+    if copy_method == deprecated_copy:
+        assert mae_copied_private_unset.__pydantic_extra__ == {}
+        assert mae_copied_private_unset.__pydantic_private__ == {}
+    else:
+        assert mae_copied_private_unset.__pydantic_extra__ == {'_extra': 'extra'}
+        assert mae_copied_private_unset.__pydantic_private__ == {'_foo': 'different'}
+
+    mae_original_private_set = AllowExtraModel()
+    mae_original_private_set._foo = 'original'
+    mae_copied_private_set = copy_method(mae_original_private_set, update={'_foo': 'different', '_extra': 'extra'})
+
+    assert mae_copied_private_set._foo == 'different'
+
+    # Deprecated copy does not properly update private or extra attributes
+    if copy_method == deprecated_copy:
+        assert mae_copied_private_set.__pydantic_extra__ == {}
+        assert mae_copied_private_set.__pydantic_private__ == {'_foo': 'original'}
+    else:
+        assert mae_copied_private_set.__pydantic_extra__ == {'_extra': 'extra'}
+        assert mae_copied_private_set.__pydantic_private__ == {'_foo': 'different'}
+
+
+def test_copy_with_update_forbid_extra_with_private_attr(copy_method):
+    class ForbidExtraModel(BaseModel):
+        model_config = ConfigDict(extra='forbid')
+
+        _foo: str = PrivateAttr()
+
+    # When extra is forbid, the private attribute is not copied
+    mfe_original_private_unset: ForbidExtraModel = ForbidExtraModel()
+    mfe_copied_private_unset: ForbidExtraModel = copy_method(
+        mfe_original_private_unset, update={'_foo': 'different', '_extra': 'extra'}
+    )
+
+    assert mfe_copied_private_unset._foo == 'different'
+    assert mfe_copied_private_unset.__pydantic_extra__ is None
+
+    # Deprecated copy does not properly update private  attributes
+    if copy_method == deprecated_copy:
+        assert mfe_copied_private_unset.__pydantic_private__ == {}
+    else:
+        assert mfe_copied_private_unset.__pydantic_private__ == {'_foo': 'different'}
+
+    mfe_original_private_set = ForbidExtraModel()
+    mfe_original_private_set._foo = 'original'
+    mfe_copied_private_set = copy_method(mfe_original_private_set, update={'_foo': 'different', '_extra': 'extra'})
+    assert mfe_copied_private_set._foo == 'different'
+    assert mfe_copied_private_set.__pydantic_extra__ is None
+
+    # Deprecated copy does not properly update private attributes
+    if copy_method == deprecated_copy:
+        assert mfe_copied_private_set.__pydantic_private__ == {'_foo': 'original'}
+    else:
+        assert mfe_copied_private_set.__pydantic_private__ == {'_foo': 'different'}
+
+
+def test_copy_with_update_ignore_extra_with_private_attr(copy_method):
+    class IgnoreExtraModel(BaseModel):
+        model_config = ConfigDict(extra='ignore')
+
+        _foo: str = PrivateAttr()
+
+    # When extra is ignore, the private attribute is copied
+    mei_original_private_unset: IgnoreExtraModel = IgnoreExtraModel()
+    mei_copied_private_unset: IgnoreExtraModel = copy_method(
+        mei_original_private_unset, update={'_foo': 'different', '_extra': 'extra'}
+    )
+
+    assert mei_copied_private_unset._foo == 'different'
+    assert mei_copied_private_unset.__pydantic_extra__ is None
+
+    # Deprecated copy does not properly copy private attributes
+    if copy_method == deprecated_copy:
+        assert mei_copied_private_unset.__pydantic_private__ == {}
+    else:
+        assert mei_copied_private_unset.__pydantic_private__ == {'_foo': 'different'}
+
+    mei_original_private_set = IgnoreExtraModel()
+    mei_original_private_set._foo = 'original'
+    mei_copied_private_set = copy_method(mei_original_private_set, update={'_foo': 'different', '_extra': 'extra'})
+    assert mei_copied_private_set._foo == 'different'
+    assert mei_copied_private_set.__pydantic_extra__ is None
+
+    # Deprecated copy does not properly copy private attributes
+    if copy_method == deprecated_copy:
+        assert mei_copied_private_set.__pydantic_private__ == {'_foo': 'original'}
+    else:
+        assert mei_copied_private_set.__pydantic_private__ == {'_foo': 'different'}
+
+
 def test_copy_update_unset(copy_method):
     class Foo(BaseModel):
         foo: Optional[str] = None
