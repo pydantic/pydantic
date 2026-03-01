@@ -884,7 +884,9 @@ class PydanticModelTransformer:
                         if arg_name is None or arg_name.startswith('__') or not arg_name.startswith('_'):
                             continue
                         analyzed_variable_type = self._api.anal_type(func_type.arg_types[arg_idx])
-                        if analyzed_variable_type is not None and arg_name == '_cli_settings_source':
+                        if analyzed_variable_type is None:
+                            analyzed_variable_type = AnyType(TypeOfAny.from_error)
+                        if arg_name == '_cli_settings_source':
                             # _cli_settings_source is defined as CliSettingsSource[Any], and as such
                             # the Any causes issues with --disallow-any-explicit. As a workaround, change
                             # the Any type (as if CliSettingsSource was left unparameterized):
