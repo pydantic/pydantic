@@ -47,6 +47,7 @@ from mypy.options import Options
 from mypy.plugin import (
     CheckerPluginInterface,
     ClassDefContext,
+    DynamicClassDefContext,
     MethodContext,
     Plugin,
     ReportConfigContext,
@@ -82,6 +83,12 @@ from pydantic.version import parse_mypy_version
 CONFIGFILE_KEY = 'pydantic-mypy'
 METADATA_KEY = 'pydantic-mypy-metadata'
 BASEMODEL_FULLNAME = 'pydantic.main.BaseModel'
+CREATE_MODEL_FULLNAMES = frozenset(
+    {
+        'pydantic.main.create_model',
+        'pydantic.create_model',
+    }
+)
 BASESETTINGS_FULLNAME = 'pydantic_settings.main.BaseSettings'
 ROOT_MODEL_FULLNAME = 'pydantic.root_model.RootModel'
 MODEL_METACLASS_FULLNAME = 'pydantic._internal._model_construction.ModelMetaclass'
@@ -150,6 +157,12 @@ class PydanticPlugin(Plugin):
             return from_attributes_callback
         return None
 
+    def get_dynamic_class_hook(self, fullname: str) -> Callable[[DynamicClassDefContext], None] | None:
+        """Recognize `create_model()` calls as dynamic BaseModel subclasses."""
+        if fullname in CREATE_MODEL_FULLNAMES:
+            return self._pydantic_create_model_callback
+        return None
+
     def report_config_data(self, ctx: ReportConfigContext) -> dict[str, Any]:
         """Return all plugin config data.
 
@@ -173,6 +186,33 @@ class PydanticPlugin(Plugin):
         assert info_metaclass, "callback not passed from 'get_metaclass_hook'"
         if getattr(info_metaclass.type, 'dataclass_transform_spec', None):
             info_metaclass.type.dataclass_transform_spec = None
+
+    def _pydantic_create_model_callback(self, ctx: DynamicClassDefContext) -> None:
+        """Make variables assigned from `create_model()` usable as types by mypy."""
+        # Determine the base class from __base__ argument if provided
+        base_fullname = BASEMODEL_FULLNAME
+        for arg_name, arg_expr in zip(ctx.call.arg_names, ctx.call.args):
+            if arg_name == '__base__' and isinstance(arg_expr, RefExpr) and arg_expr.node is not None:
+                if isinstance(arg_expr.node, TypeInfo):
+                    base_fullname = arg_expr.node.fullname
+                elif isinstance(arg_expr.node, Var) and isinstance(arg_expr.node.type, Instance):
+                    base_fullname = arg_expr.node.type.type.fullname
+
+        base_sym = ctx.api.lookup_fully_qualified_or_none(base_fullname)
+        if base_sym is None or not isinstance(base_sym.node, TypeInfo):
+            # Fall back to BaseModel
+            base_sym = ctx.api.lookup_fully_qualified_or_none(BASEMODEL_FULLNAME)
+            if base_sym is None or not isinstance(base_sym.node, TypeInfo):
+                return
+
+        base_info = base_sym.node
+        base_instance = fill_typevars(base_info)
+        assert isinstance(base_instance, Instance)
+
+        info = ctx.api.basic_new_typeinfo(ctx.name, base_instance, ctx.call.line)
+        info.metaclass_type = base_info.metaclass_type
+
+        ctx.api.add_symbol_table_node(ctx.name, SymbolTableNode(MDEF, info))
 
 
 class PydanticPluginConfig:
