@@ -393,6 +393,8 @@ all_errors = [
     ('uuid_version', 'UUID version 42 expected', {'expected_version': 42}),
     ('decimal_type', 'Decimal input should be an integer, float, string or Decimal object', None),
     ('decimal_parsing', 'Input should be a valid decimal', None),
+    ('fraction_type', 'Fraction input should be an integer, float, string or Fraction object', None),
+    ('fraction_parsing', 'Input should be a valid fraction', None),
     ('decimal_max_digits', 'Decimal input should have no more than 42 digits in total', {'max_digits': 42}),
     ('decimal_max_digits', 'Decimal input should have no more than 1 digit in total', {'max_digits': 1}),
     ('decimal_max_places', 'Decimal input should have no more than 42 decimal places', {'decimal_places': 42}),

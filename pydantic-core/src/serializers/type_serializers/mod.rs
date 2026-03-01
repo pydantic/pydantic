@@ -9,6 +9,7 @@ pub mod dict;
 pub mod enum_;
 pub mod float;
 pub mod format;
+pub mod fraction;
 pub mod function;
 pub mod generator;
 pub mod json;

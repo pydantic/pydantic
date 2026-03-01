@@ -112,7 +112,7 @@ pub(crate) fn infer_to_python_known<'py>(
                 }
                 v.into_py_any(py)?
             }
-            ObType::Decimal => value.to_string().into_py_any(py)?,
+            ObType::Decimal | ObType::Fraction => value.to_string().into_py_any(py)?,
             ObType::StrSubclass => PyString::new(py, value.cast::<PyString>()?.to_str()?).into(),
             ObType::Bytes => state
                 .config
@@ -367,7 +367,7 @@ pub(crate) fn infer_serialize_known<'py, S: Serializer>(
             let v = value.extract::<f64>().map_err(py_err_se_err)?;
             type_serializers::float::serialize_f64(v, serializer, state.config.inf_nan_mode)
         }
-        ObType::Decimal => value.to_string().serialize(serializer),
+        ObType::Decimal | ObType::Fraction => value.to_string().serialize(serializer),
         ObType::Str | ObType::StrSubclass => {
             let py_str = value.cast::<PyString>().map_err(py_err_se_err)?;
             serialize_to_json(serializer)
@@ -509,7 +509,7 @@ pub(crate) fn infer_json_key_known<'a, 'py>(
                 super::type_serializers::simple::to_str_json_key(key)
             }
         }
-        ObType::Decimal => Ok(Cow::Owned(key.to_string())),
+        ObType::Decimal | ObType::Fraction => Ok(Cow::Owned(key.to_string())),
         ObType::Bool => super::type_serializers::simple::bool_json_key(key),
         ObType::Str | ObType::StrSubclass => key.cast::<PyString>()?.to_cow(),
         ObType::Bytes => state

@@ -685,6 +685,32 @@ class GenerateJsonSchema:
         json_schema = {k: v for k, v in json_schema.items() if v not in {math.inf, -math.inf}}
         return json_schema
 
+    def fraction_schema(self, schema: core_schema.FractionSchema) -> JsonSchemaValue:
+        """Generates a JSON schema that matches a fraction value.
+
+        Args:
+            schema: The core schema.
+
+        Returns:
+            The generated JSON schema.
+        """
+        json_schema = self.str_schema(core_schema.str_schema(pattern=r'^\s*\(\s*-?\d+\s*,\s*-?\d+\s*\)\s*$'))
+        if self.mode == 'validation':
+            # todo: handle le, ge, lt, gt in here
+            json_schema = {
+                'anyOf': [
+                    self.tuple_schema(
+                        core_schema.tuple_schema(
+                            items_schema=[core_schema.int_schema(), core_schema.float_schema()],
+                            max_length=2,
+                            min_length=2,
+                        )
+                    ),
+                    json_schema,
+                ],
+            }
+        return json_schema
+
     def decimal_schema(self, schema: core_schema.DecimalSchema) -> JsonSchemaValue:
         """Generates a JSON schema that matches a decimal value.
 
