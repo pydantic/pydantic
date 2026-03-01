@@ -7237,3 +7237,33 @@ def test_nested_model_deduplication() -> None:
     assert 'Level1' in definitions
     assert 'Level1-Input' not in definitions
     assert 'Level1-Output' not in definitions
+
+
+def test_deprecated_tuple_positional_schema() -> None:
+    """Test that tuple_positional_schema raises a deprecation warning and calls tuple_schema."""
+    from pydantic.warnings import PydanticDeprecatedSince26
+
+    gen_js = GenerateJsonSchema()
+    schema = core_schema.tuple_schema([core_schema.int_schema(), core_schema.str_schema()])
+
+    with pytest.warns(PydanticDeprecatedSince26, match='`tuple_positional_schema` is deprecated'):
+        result = gen_js.tuple_positional_schema(schema)
+
+    # Verify it returns the same result as tuple_schema
+    expected = gen_js.tuple_schema(schema)
+    assert result == expected
+
+
+def test_deprecated_tuple_variable_schema() -> None:
+    """Test that tuple_variable_schema raises a deprecation warning and calls tuple_schema."""
+    from pydantic.warnings import PydanticDeprecatedSince26
+
+    gen_js = GenerateJsonSchema()
+    schema = core_schema.tuple_schema([core_schema.int_schema()], variadic_item_index=0)
+
+    with pytest.warns(PydanticDeprecatedSince26, match='`tuple_variable_schema` is deprecated'):
+        result = gen_js.tuple_variable_schema(schema)
+
+    # Verify it returns the same result as tuple_schema
+    expected = gen_js.tuple_schema(schema)
+    assert result == expected
