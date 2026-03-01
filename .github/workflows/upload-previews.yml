@@ -20,7 +20,7 @@ jobs:
 
       - run: pip install smokeshow
 
-      - uses: dawidd6/action-download-artifact@v14
+      - uses: dawidd6/action-download-artifact@v16
         with:
           workflow: ci.yml
           commit: ${{ github.event.workflow_run.head_sha }}
