@@ -17037,7 +17037,7 @@ for their kind support.</p>
 <li><strong>Breaking Change:</strong> modify default config settings for <code>BaseSettings</code>; <code>case_insensitive</code> renamed to <code>case_sensitive</code>,
   default changed to <code>case_sensitive = False</code>, <code>env_prefix</code> default changed to <code>''</code> - e.g. no prefix, <a href="https://github.com/pydantic/pydantic/pull/721">#721</a> by <a href="https://github.com/dmontagu">@dmontagu</a></li>
 <li><strong>Breaking change:</strong> Implement <code>root_validator</code> and rename root errors from <code>__obj__</code> to <code>__root__</code>, <a href="https://github.com/pydantic/pydantic/pull/729">#729</a> by <a href="https://github.com/samuelcolvin">@samuelcolvin</a></li>
-<li><strong>Breaking Change:</strong> alter the behaviour of <code>dict(model)</code> so that sub-models are nolonger
+<li><strong>Breaking Change:</strong> alter the behaviour of <code>dict(model)</code> so that sub-models are no longer
   converted to dictionaries, <a href="https://github.com/pydantic/pydantic/pull/733">#733</a> by <a href="https://github.com/samuelcolvin">@samuelcolvin</a></li>
 <li><strong>Breaking change:</strong> Added <code>initvars</code> support to <code>post_init_post_parse</code>, <a href="https://github.com/pydantic/pydantic/pull/748">#748</a> by <a href="https://github.com/Raphael-C-Almeida">@Raphael-C-Almeida</a></li>
 <li><strong>Breaking Change:</strong> Make <code>BaseModel.json()</code> only serialize the <code>__root__</code> key for models with custom root, <a href="https://github.com/pydantic/pydantic/pull/752">#752</a> by <a href="https://github.com/dmontagu">@dmontagu</a></li>
