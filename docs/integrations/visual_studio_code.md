@@ -1,3 +1,7 @@
+---
+title: "Visual Studio Code: Configuration - Pydantic Validation"
+description: "Boost your VS Code productivity. The official Pydantic extension delivers lightning-fast autocompletion and smarter type hints for Python developers."
+---
 Pydantic works well with any editor or IDE out of the box because it's made on top of standard Python type annotations.
 
 When using [Visual Studio Code (VS Code)](https://code.visualstudio.com/), there are some **additional editor features** supported, comparable to the ones provided by the [PyCharm plugin](../integrations/pycharm.md).

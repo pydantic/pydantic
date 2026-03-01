@@ -1,3 +1,7 @@
+---
+title: "Pydantic Validation: Resolving Annotations"
+description: "Tame circular dependencies and complex types. Explore the internal mechanics of how Pydantic resolves string-wrapped annotations and deferred references."
+---
 !!! note
     This section is part of the *internals* documentation, and is partly targeted to contributors.
 

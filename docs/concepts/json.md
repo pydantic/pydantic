@@ -1,4 +1,7 @@
-# JSON
+---
+description: "Data integrity made simple. From model_validate_json to custom serialization, discover why Pydantic is the gold standard for JSON handling in Python."
+---
+# JSON parsing & serialization
 
 ## Json Parsing
 

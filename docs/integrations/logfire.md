@@ -1,3 +1,7 @@
+---
+title: "Pydantic Logfire: Instrumentation & Getting Started"
+description: "Pydantic Logfire delivers high-performance observability, allowing you to trace data flows and monitor app health with surgical precision."
+---
 Pydantic integrates seamlessly with **Pydantic Logfire**, an observability platform built by us on the same belief as our open source library — that the most powerful tools can be easy to use.
 
 ## Getting Started

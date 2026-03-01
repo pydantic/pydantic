@@ -1,3 +1,6 @@
+---
+description: "Pydantic provides fast & reliable validation. Validate Python data with type hints, leverage seamless IDE integration, JSON Schema support & more."
+---
 # Pydantic Validation
 
 [![CI](https://img.shields.io/github/actions/workflow/status/pydantic/pydantic/ci.yml?branch=main&logo=github&label=CI)](https://github.com/pydantic/pydantic/actions?query=event%3Apush+branch%3Amain+workflow%3ACI)

@@ -1,3 +1,7 @@
+---
+title: "PyCharm Pydantic Validation Integration: Plugin Setup"
+description: "The Pydantic PyCharm plugin provides the intelligence your IDE needs for faster, bug-free development with modern type hints."
+---
 While pydantic will work well with any IDE out of the box, a
 [PyCharm plugin](https://plugins.jetbrains.com/plugin/12861-pydantic)
 offering improved pydantic integration is available on the JetBrains Plugins Repository for PyCharm.

@@ -1,3 +1,7 @@
+---
+title: "Pydantic Validation Databases: SQLAlchemy"
+description: "Use Pydantic with SQLAlchemy to validate ORM objects, map models cleanly & serialize data. Transform SQLAlchemy or Tortoise ORM objects into type-safe models."
+---
 Pydantic serves as a great tool for defining models for ORM (object relational mapping) libraries.
 ORMs are used to map objects to database tables, and vice versa.
 

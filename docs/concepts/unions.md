@@ -1,3 +1,7 @@
+---
+title: "Pydantic Validation: Unions"
+description: "Validate multiple types with Pydantic unions. Learn about smart union mode, validation ordering, and how to use Union and | for flexible Python schemas."
+---
 Unions are fundamentally different to all other types Pydantic validates - instead of requiring all fields/items/values to be valid, unions require only one member to be valid.
 
 This leads to some nuance around how to validate unions:

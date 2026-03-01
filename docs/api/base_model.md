@@ -1,3 +1,7 @@
+---
+title: Pydantic Validation BaseModel API Reference
+description: "API reference for Pydantic BaseModel. Explore methods like model_validate, model_dump, and model_json_schema for Python data validation & serialization."
+---
 Pydantic models are simply classes which inherit from `BaseModel` and define fields as annotated attributes.
 
 ::: pydantic.BaseModel
