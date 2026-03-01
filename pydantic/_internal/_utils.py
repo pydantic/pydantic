@@ -443,4 +443,10 @@ class deprecated_instance_property(Generic[_ModelT, _RT]):
                 category=PydanticDeprecatedSince211,
                 stacklevel=2,
             )
+        if not objtype.__pydantic_fields_complete__:
+            warnings.warn(
+                "The model fields were accessed on a class that isn't complete. The field attributes may be inaccurate.",
+                category=UserWarning,
+                stacklevel=2,
+            )
         return self.fget.__get__(instance, objtype)()
