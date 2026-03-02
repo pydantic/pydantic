@@ -4029,9 +4029,6 @@ class Discriminator:
     """Context to use in custom errors."""
 
     def __get_pydantic_core_schema__(self, source_type: Any, handler: GetCoreSchemaHandler) -> CoreSchema:
-        if not is_union_origin(get_origin(source_type)):
-            raise TypeError(f'{type(self).__name__} must be used with a Union type, not {source_type}')
-
         if isinstance(self.discriminator, str):
             from pydantic import Field
 
@@ -4043,6 +4040,20 @@ class Discriminator:
     def _convert_schema(
         self, original_schema: core_schema.CoreSchema, handler: GetCoreSchemaHandler | None = None
     ) -> core_schema.TaggedUnionSchema:
+        if handler is not None and original_schema['type'] == 'definition-ref':
+            # Same logic as `_ApplyInferredDiscriminator._apply_to_root()`
+            try:
+                def_schema = handler.resolve_ref_schema(original_schema)
+            except LookupError:  # pragma: no cover
+                from pydantic._internal._discriminated_union import MissingDefinitionForUnionRef
+
+                raise MissingDefinitionForUnionRef(original_schema['schema_ref'])
+
+            # If using a referenceable union as discriminated (e.g. `type Pet = Cat | Dog; field: Pet = Field(discriminator=...)`):
+            if def_schema['type'] == 'union':
+                original_schema = def_schema.copy()
+                original_schema.pop('ref')
+
         if original_schema['type'] != 'union':
             # This likely indicates that the schema was a single-item union that was simplified.
             # In this case, we do the same thing we do in
