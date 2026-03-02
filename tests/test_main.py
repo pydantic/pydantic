@@ -1,4 +1,5 @@
 import json
+import pickle
 import platform
 import re
 import sys
@@ -3671,6 +3672,22 @@ def test_model_construct_with_model_post_init_and_model_copy() -> None:
 
     assert m == copy
     assert id(m) != id(copy)
+
+
+class _ModelWithPostInit(BaseModel):
+    """Module-level model for pickle test (local classes can't be pickled)."""
+
+    x: int
+
+    def model_post_init(self, context: Any, /) -> None:
+        pass
+
+
+def test_model_construct_pickle_with_model_post_init() -> None:
+    """https://github.com/pydantic/pydantic/issues/12813"""
+    m = _ModelWithPostInit.model_construct(x=1)
+    assert m.__pydantic_private__ is None
+    assert pickle.loads(pickle.dumps(m)).x == 1
 
 
 def test_subclassing_gen_schema_warns() -> None:
