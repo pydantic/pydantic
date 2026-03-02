@@ -30,8 +30,6 @@ import annotated_types
 from annotated_types import BaseMetadata, MaxLen, MinLen
 from pydantic_core import CoreSchema, PydanticCustomError, SchemaSerializer, core_schema
 from typing_extensions import Protocol, TypeAlias, TypeAliasType, deprecated, get_args, get_origin
-from typing_inspection import typing_objects
-from typing_inspection.introspection import is_union_origin
 
 from ._internal import _fields, _internal_dataclass, _utils, _validators
 from ._migration import getattr_migration
@@ -3059,12 +3057,6 @@ class Discriminator:
     """Context to use in custom errors."""
 
     def __get_pydantic_core_schema__(self, source_type: Any, handler: GetCoreSchemaHandler) -> CoreSchema:
-        origin = get_origin(source_type)
-        if not is_union_origin(origin) and not (
-            typing_objects.is_typealiastype(source_type) or typing_objects.is_typealiastype(origin)
-        ):
-            raise TypeError(f'{type(self).__name__} must be used with a Union type, not {source_type}')
-
         if isinstance(self.discriminator, str):
             from pydantic import Field
 
@@ -3080,7 +3072,7 @@ class Discriminator:
             # Same logic as `_ApplyInferredDiscriminator._apply_to_root()`
             try:
                 def_schema = handler.resolve_ref_schema(original_schema)
-            except LookupError:
+            except LookupError:  # pragma: no cover
                 from pydantic._internal._discriminated_union import MissingDefinitionForUnionRef
 
                 raise MissingDefinitionForUnionRef(original_schema['schema_ref'])

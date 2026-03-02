@@ -187,7 +187,7 @@ class _ApplyInferredDiscriminator:
 
         if schema['type'] == 'definition-ref':
             schema_ref = schema['schema_ref']
-            if schema_ref not in self.definitions:
+            if schema_ref not in self.definitions:  # pragma: no cover
                 raise MissingDefinitionForUnionRef(schema_ref)
 
             def_schema = self.definitions[schema_ref]
