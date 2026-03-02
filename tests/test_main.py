@@ -3673,6 +3673,17 @@ def test_model_construct_with_model_post_init_and_model_copy() -> None:
     assert id(m) != id(copy)
 
 
+def test_model_construct_with_model_post_init_has_pydantic_private() -> None:
+    """https://github.com/pydantic/pydantic/issues/12813"""
+
+    class Model(BaseModel):
+        def model_post_init(self, context: Any, /) -> None:
+            pass
+
+    m = Model.model_construct()
+    assert m.__pydantic_private__ is None
+
+
 def test_subclassing_gen_schema_warns() -> None:
     with pytest.warns(UserWarning, match='Subclassing `GenerateSchema` is not supported.'):
 

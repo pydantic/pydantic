@@ -54,7 +54,7 @@ jobs:
           command: sdist
           args: --out dist
           rust-toolchain: stable
-      - uses: actions/upload-artifact@v6
+      - uses: actions/upload-artifact@v7
         with:
           name: pydantic_core_pypi_files_sdist
           path: pydantic-core/dist
@@ -174,7 +174,7 @@ jobs:
       - run: twine check --strict dist/*
         working-directory: pydantic-core
 
-      - uses: actions/upload-artifact@v6
+      - uses: actions/upload-artifact@v7
         with:
           name: pydantic_core_pypi_files_${{ matrix.os }}_${{ matrix.target }}_${{ matrix.interpreter || 'all' }}_${{ matrix.manylinux }}
           path: pydantic-core/dist
@@ -228,7 +228,7 @@ jobs:
       - run: ${{ (startsWith(matrix.platform.os, 'windows') && 'dir') || 'ls -lh' }} dist/
         working-directory: pydantic-core
 
-      - uses: actions/upload-artifact@v6
+      - uses: actions/upload-artifact@v7
         with:
           name: pydantic_core_pypi_files_${{ matrix.platform.os }}_${{ matrix.interpreter }}
           path: pydantic-core/dist
@@ -280,7 +280,7 @@ jobs:
           ls -lh dist/
         working-directory: pydantic-core
 
-      - uses: actions/upload-artifact@v6
+      - uses: actions/upload-artifact@v7
         with:
           name: pydantic_core_wasm_wheels
           path: pydantic-core/dist
@@ -325,7 +325,7 @@ jobs:
       - uses: actions/checkout@v6
 
       - name: Get dist artifacts
-        uses: actions/download-artifact@v6
+        uses: actions/download-artifact@v8
         with:
           pattern: pydantic_core_pypi_files_linux_*
           merge-multiple: true
@@ -391,7 +391,7 @@ jobs:
         uses: astral-sh/setup-uv@v7
 
       - name: get dist artifacts
-        uses: actions/download-artifact@v6
+        uses: actions/download-artifact@v8
         with:
           pattern: pydantic_core_pypi_files_*
           merge-multiple: true
@@ -587,7 +587,7 @@ jobs:
           CONTEXT: ${{ runner.os }}-py${{ matrix.python-version }}-without-deps
 
       - name: Store coverage files
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with:
           name: coverage-${{ matrix.os }}-${{ matrix.python-version }}
           path: coverage
@@ -635,7 +635,7 @@ jobs:
           CONTEXT: linux-mypy
 
       - name: Store coverage files
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with:
           name: coverage-mypy
           path: coverage
@@ -675,7 +675,7 @@ jobs:
           python-version: '3.12'
 
       - name: Get coverage files
-        uses: actions/download-artifact@v7
+        uses: actions/download-artifact@v8
         with:
           merge-multiple: true
           pattern: coverage-*
@@ -689,14 +689,14 @@ jobs:
       - run: coverage html --show-contexts --title "pydantic coverage for ${{ github.sha }}"
 
       - name: Store coverage data
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with:
           name: coverage-data
           path: .coverage
           include-hidden-files: true
 
       - name: Store coverage HTML
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with:
           name: coverage-html
           path: htmlcov
@@ -713,7 +713,7 @@ jobs:
       - uses: actions/checkout@v6
 
       - name: Download coverage data
-        uses: actions/download-artifact@v7
+        uses: actions/download-artifact@v8
         with:
           name: coverage-data
 
@@ -724,7 +724,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Store coverage comment
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         if: steps.coverage-comment.outputs.COMMENT_FILE_WRITTEN == 'true'
         with:
           name: python-coverage-comment-action
@@ -807,7 +807,7 @@ jobs:
 
       - name: Get pydantic-core dist artifacts
         if: steps.check-pypi.outputs.already_published != 'true'
-        uses: actions/download-artifact@v6
+        uses: actions/download-artifact@v8
         with:
           pattern: pydantic_core_pypi_files_*
           merge-multiple: true
