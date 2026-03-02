@@ -3680,7 +3680,7 @@ def test_model_construct_with_model_post_init_has_pydantic_private() -> None:
         def model_post_init(self, context: Any, /) -> None:
             pass
 
-    m = _ModelWithPostInit.model_construct()
+    m = Model.model_construct()
     assert m.__pydantic_private__ is None
 
 
