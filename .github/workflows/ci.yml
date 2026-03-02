@@ -40,6 +40,469 @@ jobs:
           SKIP: no-commit-to-branch
           UV_NO_PROGRESS: '1'
 
+  core-build-sdist:
+    runs-on: ubuntu-latest
+    name: core / Build sdist
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.13'
+      - uses: PyO3/maturin-action@v1
+        with:
+          working-directory: pydantic-core
+          command: sdist
+          args: --out dist
+          rust-toolchain: stable
+      - uses: actions/upload-artifact@v6
+        with:
+          name: pydantic_core_pypi_files_sdist
+          path: pydantic-core/dist
+
+  core-build:
+    name: core / Build on ${{ matrix.os }} (${{ matrix.target }} - ${{ matrix.interpreter || 'all' }}${{ matrix.os == 'linux' && format(' - {0}', matrix.manylinux == 'auto' && 'manylinux' || matrix.manylinux) || '' }})
+    # only run on push to main, if a full build was requested or on release:
+    if: startsWith(github.ref, 'refs/tags/') || github.ref == 'refs/heads/main' || contains(github.event.pull_request.labels.*.name, 'full build')
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [linux, macos, windows]
+        target: [undefined]
+        manylinux: [auto]
+        include:
+          # manylinux for various platforms
+          # x86_64 and aarch64 are PGO optimized below
+          - os: linux
+            manylinux: auto
+            target: i686
+          - os: linux
+            manylinux: auto
+            target: armv7
+            interpreter: 3.9 3.10 3.11 3.12 3.13 3.14 3.14t
+          - os: linux
+            manylinux: auto
+            target: ppc64le
+            interpreter: 3.9 3.10 3.11 3.12 3.13 3.14 3.14t
+          - os: linux
+            manylinux: auto
+            target: riscv64gc-unknown-linux-gnu
+            interpreter: 3.9 3.10 3.11 3.12 3.13 3.14 3.14t
+          - os: linux
+            manylinux: auto
+            target: s390x
+            interpreter: 3.9 3.10 3.11 3.12 3.13 3.14 3.14t
+          - os: linux
+            manylinux: auto
+            target: x86_64
+            interpreter: pypy3.11 graalpy3.11 graalpy3.12
+
+            # manylinux pypy and graalpy on major architectures
+          - os: linux
+            manylinux: auto
+            target: x86_64
+            interpreter: graalpy3.11 graalpy3.12
+          - os: linux
+            manylinux: auto
+            target: aarch64
+            interpreter: graalpy3.11 graalpy3.12
+
+          # musllinux
+          - os: linux
+            manylinux: musllinux_1_1
+            target: x86_64
+          - os: linux
+            manylinux: musllinux_1_1
+            target: aarch64
+          - os: linux
+            manylinux: musllinux_1_1
+            target: armv7
+
+          # macos;
+          # all versions x86_64
+          # arm pypy and older pythons which can't be run on the arm hardware for PGO
+          - os: macos
+            target: x86_64
+            interpreter: 3.9 3.10 3.11 3.12 3.13 3.14 3.14t pypy3.11 graalpy3.11 graalpy3.12
+          - os: macos
+            target: aarch64
+            interpreter: 3.9 pypy3.11 graalpy3.11 graalpy3.12
+
+          # windows;
+          # x86_64 pypy builds are not PGO optimized
+          # i686 not supported by pypy
+          # windows 11 arm supports 3.11 and up, not PGO optimized for now
+          - os: windows
+            target: x86_64
+            interpreter: pypy3.11
+          - os: windows
+            target: i686
+            python-architecture: x86
+            interpreter: 3.9 3.10 3.11 3.12 3.13 3.14 3.14t
+          - os: windows
+            target: aarch64
+            runs-on: windows-11-arm
+            interpreter: 3.11 3.12 3.13 3.14 3.14t
+
+        exclude:
+          # was just a dummy variable to set a default value for target
+          - target: undefined
+
+    runs-on: ${{ matrix.runs-on || format('{0}-latest', (matrix.os == 'linux' && 'ubuntu') || matrix.os) }}
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.13'
+          architecture: ${{ matrix.python-architecture || 'x64' }}
+
+      - run: pip install -U twine 'ruff==0.5.0' typing_extensions
+
+      - name: Build wheels
+        uses: PyO3/maturin-action@v1
+        with:
+          working-directory: pydantic-core
+          target: ${{ matrix.target }}
+          manylinux: ${{ matrix.manylinux }}
+          args: --release --out dist --interpreter ${{ matrix.interpreter || '3.9 3.10 3.11 3.12 3.13 3.14 3.14t pypy3.11' }}
+          rust-toolchain: stable
+          docker-options: -e CI
+
+      - run: ${{ (matrix.os == 'windows' && 'dir') || 'ls -lh' }} dist/
+        working-directory: pydantic-core
+
+      - run: twine check --strict dist/*
+        working-directory: pydantic-core
+
+      - uses: actions/upload-artifact@v6
+        with:
+          name: pydantic_core_pypi_files_${{ matrix.os }}_${{ matrix.target }}_${{ matrix.interpreter || 'all' }}_${{ matrix.manylinux }}
+          path: pydantic-core/dist
+
+  core-build-pgo:
+    name: core / Build PGO-optimized on ${{ matrix.platform.os }} / ${{ matrix.interpreter }}
+    # only run on push to main, if a full build was requested or on release:
+    if: startsWith(github.ref, 'refs/tags/') || github.ref == 'refs/heads/main' || contains(github.event.pull_request.labels.*.name, 'full build')
+    strategy:
+      fail-fast: false
+      matrix:
+        platform:
+          - os: linux
+            runs-on: ubuntu-latest
+          - os: linux_aarch64
+            runs-on: ubuntu-24.04-arm
+          - os: windows
+            runs-on: windows-latest
+          - os: macos
+            runs-on: macos-latest
+        interpreter: ['3.9', '3.10', '3.11', '3.12', '3.13', '3.14', '3.14t']
+        exclude:
+          # macos arm only supported from 3.10 and up
+          - platform:
+              os: macos
+            interpreter: '3.9'
+
+    runs-on: ${{ matrix.platform.runs-on }}
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: astral-sh/setup-uv@v7
+        with:
+          python-version: ${{ matrix.interpreter }}
+
+      - name: Install rust stable
+        id: rust-toolchain
+        uses: dtolnay/rust-toolchain@master
+        with:
+          components: llvm-tools
+          toolchain: stable
+
+      - name: Build PGO wheel
+        id: pgo-wheel
+        uses: ./.github/actions/core-build-pgo-wheel
+        with:
+          working-directory: pydantic-core
+          interpreter: ${{ matrix.interpreter }}
+          rust-toolchain: ${{ steps.rust-toolchain.outputs.name }}
+
+      - run: ${{ (startsWith(matrix.platform.os, 'windows') && 'dir') || 'ls -lh' }} dist/
+        working-directory: pydantic-core
+
+      - uses: actions/upload-artifact@v6
+        with:
+          name: pydantic_core_pypi_files_${{ matrix.platform.os }}_${{ matrix.interpreter }}
+          path: pydantic-core/dist
+
+  core-build-wasm-emscripten:
+    name: core / Build WASM Emscripten
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Install rust nightly
+        uses: dtolnay/rust-toolchain@nightly
+        with:
+          components: rust-src
+          targets: wasm32-unknown-emscripten
+
+      - name: Cache rust
+        uses: Swatinem/rust-cache@v2
+
+      - uses: mymindstorm/setup-emsdk@v14
+        with:
+          # NOTE!: as per https://github.com/pydantic/pydantic-core/pull/149 this version needs to match the version
+          # in pydantic-core/node_modules/pyodide/pyodide-lock.json, to get the version, run:
+          # `cat pydantic-core/node_modules/pyodide/pyodide-lock.json | jq .info.platform`
+          version: '4.0.9'
+          actions-cache-folder: emsdk-cache
+
+      - uses: astral-sh/setup-uv@v7
+        with:
+          python-version: '3.13'
+
+      - name: Install dependencies
+        run: uv sync --all-packages --group testing-extra --group wasm --all-extras
+
+      - name: Build wheels
+        run: make -C pydantic-core build-wasm
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: '18'
+
+      - run: npm install
+        working-directory: pydantic-core
+
+      - run: npm run test
+        working-directory: pydantic-core
+
+      - run: |
+          ls -lh dist/
+        working-directory: pydantic-core
+
+      - uses: actions/upload-artifact@v6
+        with:
+          name: pydantic_core_wasm_wheels
+          path: pydantic-core/dist
+
+  core-bench:
+    name: core / Run Rust benchmarks
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Install rust nightly
+        uses: dtolnay/rust-toolchain@nightly
+
+      - name: Cache rust
+        uses: Swatinem/rust-cache@v2
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.13'
+
+      - run: pip install typing_extensions
+
+      - run: cargo bench
+        working-directory: pydantic-core
+
+  core-test-builds-arch:
+    name: core / Test build on ${{ matrix.target }}-${{ matrix.distro }}
+    needs: [core-build]
+    runs-on: ubuntu-latest
+
+    strategy:
+      fail-fast: false
+      matrix:
+        target: [armv7, s390x, ppc64le]
+        distro: ['ubuntu22.04']
+        include:
+          - target: aarch64
+            distro: alpine_latest
+
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Get dist artifacts
+        uses: actions/download-artifact@v6
+        with:
+          pattern: pydantic_core_pypi_files_linux_*
+          merge-multiple: true
+          path: dist
+
+      - uses: uraimo/run-on-arch-action@v3.0.1
+        name: Install and test
+        with:
+          arch: ${{ matrix.target }}
+          distro: ${{ matrix.distro }}
+          githubToken: ${{ github.token }}
+          install: |
+            set -x
+            if command -v apt-get &> /dev/null; then
+              echo "installing python & pip with apt-get..."
+              apt-get update
+              apt-get install -y --no-install-recommends python3 python3-pip python3-venv git curl
+            else
+              echo "installing python & pip with apk..."
+              apk update
+              apk add python3 py3-pip git curl
+            fi
+          env: |
+            UV_NO_PROGRESS: '1'
+          # Until we move all dev dependencies to the main `pydantic` package, use this workaround:
+          # Sync the pydantic-core workspace to get the dev dependencies (without the actual `pydantic-core` package),
+          # and then sync the parent workspace:
+          run: |
+            set -x
+            curl -LsSf https://astral.sh/uv/install.sh | sh
+            source $HOME/.local/bin/env
+            uv sync --directory pydantic-core --group testing-extra --no-install-package pydantic-core
+            uv sync --group testing-extra --no-install-package pydantic-core --no-install-package pytest-memray --no-install-package memray --no-install-package pytest-codspeed --no-install-package cffi --inexact
+            uv pip install pydantic-core --no-index --no-deps --find-links dist --force-reinstall
+            uv run --no-sync pytest tests/pydantic_core --ignore=tests/pydantic_core/test_docstrings.py
+            uv run --no-sync python -c 'import pydantic_core._pydantic_core; print(pydantic_core._pydantic_core.__version__)'
+            uv run --no-sync python -c 'from pydantic_core._pydantic_core import build_info; print(f"{build_info=}")'
+
+  core-test-builds-os:
+    name: core / Test build on ${{ matrix.platform.os }}
+    needs: [core-build, core-build-pgo]
+
+    strategy:
+      fail-fast: false
+      matrix:
+        platform:
+          - runs-on: ubuntu-latest
+            os: linux
+          - runs-on: ubuntu-24.04-arm
+            os: linuw_aarch64
+          - runs-on: windows-latest
+            os: windows
+          - runs-on: windows-11-arm
+            os: windows_aarch64
+          - runs-on: macos-latest
+            os: macos
+
+    runs-on: ${{ matrix.platform.runs-on }}
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: install uv
+        uses: astral-sh/setup-uv@v7
+
+      - name: get dist artifacts
+        uses: actions/download-artifact@v6
+        with:
+          pattern: pydantic_core_pypi_files_*
+          merge-multiple: true
+          path: dist
+
+      # Until we move all dev dependencies to the main `pydantic` package, use this workaround:
+      # Sync the pydantic-core workspace to get the dev dependencies (without the actual `pydantic-core` package),
+      # and then sync the parent workspace:
+      - run: |
+          uv sync --directory pydantic-core --group testing-extra --no-install-package pydantic-core
+          uv sync --group testing-extra --no-install-package pydantic-core --inexact
+          uv pip install pydantic-core --no-index --no-deps --find-links dist --force-reinstall
+          uv run --no-sync pytest tests/pydantic_core --ignore=tests/pydantic_core/test_docstrings.py
+          uv run --no-sync python -c 'import pydantic_core._pydantic_core; print(pydantic_core._pydantic_core.__version__)'
+          uv run --no-sync python -c 'from pydantic_core._pydantic_core import build_info; print(f"{build_info=}")'
+
+  core-test-os:
+    name: core / Test on ${{ matrix.os }}
+
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu, macos, windows]
+
+    runs-on: ${{ matrix.os }}-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Install rust stable
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Cache rust
+        uses: Swatinem/rust-cache@v2
+
+      - uses: astral-sh/setup-uv@v7
+
+      - name: Install dependencies
+        run: uv sync --all-packages --group testing-extra
+        env:
+          RUST_BACKTRACE: 1
+
+      - run: uv pip freeze
+      - run: uv run pytest tests/pydantic_core
+      - run: cargo test
+        working-directory: pydantic-core
+
+  core-test-msrv:
+    name: core / Test MSRV
+
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: astral-sh/setup-uv@v7
+
+      - name: Resolve MSRV
+        id: resolve-msrv
+        run: echo MSRV=`cargo metadata --format-version 1 --no-deps --frozen --quiet --offline --manifest-path pydantic-core/Cargo.toml | jq -r '.packages[0].rust_version'` >> $GITHUB_OUTPUT
+
+      - name: Install rust MSRV
+        uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: ${{ steps.resolve-msrv.outputs.MSRV }}
+
+      - name: Cache rust
+        uses: Swatinem/rust-cache@v2
+
+      - name: Install dependencies
+        run: uv sync --all-packages --all-extras --group testing-extra
+        env:
+          RUST_BACKTRACE: 1
+
+      - run: uv pip freeze
+      - run: uv run pytest tests/pydantic_core
+      - run: cargo test
+        working-directory: pydantic-core
+
+  # test with a debug build as it picks up errors which optimised release builds do not
+  core-test-debug:
+    name: core / Test with debug build (${{ matrix.python-version }})
+    runs-on: ubuntu-latest
+
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version:
+          - '3.13'
+          - 'pypy3.11'
+
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: astral-sh/setup-uv@v7
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install rust stable
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Cache rust
+        uses: Swatinem/rust-cache@v2
+
+      - name: Install dependencies
+        run: uv sync --all-packages --all-extras --group testing-extra
+
+      - run: uv run --no-sync maturin develop --uv
+        working-directory: pydantic-core
+
+      - run: uv pip freeze
+      - run: uv run pytest
+
   docs-build:
     runs-on: ubuntu-latest
     steps:
@@ -293,18 +756,9 @@ jobs:
   # https://github.com/marketplace/actions/alls-green
   check: # This job does nothing and is only used for the branch protection
     if: always()
-
     outputs:
       result: ${{ steps.all-green.outputs.result }}
-
-    needs:
-      - lint
-      - docs-build
-      - test
-      - test-memray
-      - test-mypy
-      - test-plugin
-
+    needs: [lint, docs-build, test, test-memray, test-mypy, test-plugin, core-test-os, core-test-debug, core-build-wasm-emscripten]
     runs-on: ubuntu-latest
 
     steps:
@@ -314,8 +768,8 @@ jobs:
         with:
           jobs: ${{ toJSON(needs) }}
 
-  release:
-    needs: [check]
+  release-pydantic-core:
+    needs: [core-test-builds-arch, core-test-builds-os, core-build-sdist, check]
     if: needs.check.outputs.result == 'success' && startsWith(github.ref, 'refs/tags/')
     runs-on: ubuntu-latest
     environment: release
@@ -323,35 +777,90 @@ jobs:
     permissions:
       id-token: write
 
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: astral-sh/setup-uv@v7
+        with:
+          activate-environment: true
+
+      - run: uv pip install -U twine
+
+      - name: Extract pydantic-core version
+        id: core-version
+        run: |
+          VERSION=$(cargo metadata --format-version 1 --no-deps --frozen --quiet --offline --manifest-path pydantic-core/Cargo.toml | jq -r '.packages[0].version')
+          echo "VERSION=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "pydantic-core version: $VERSION"
+
+      - name: Check if pydantic-core version is already on PyPI
+        id: check-pypi
+        run: |
+          STATUS=$(curl -s -o /dev/null -I -w "%{http_code}" https://pypi.org/pypi/pydantic-core/${{ steps.core-version.outputs.VERSION }}/json)
+          if [ "$STATUS" = "200" ]; then
+            echo "already_published=true" >> "$GITHUB_OUTPUT"
+            echo "pydantic-core ${{ steps.core-version.outputs.VERSION }} is already on PyPI, skipping publish"
+          else
+            echo "already_published=false" >> "$GITHUB_OUTPUT"
+            echo "pydantic-core ${{ steps.core-version.outputs.VERSION }} not found on PyPI, will publish"
+          fi
+
+      - name: Get pydantic-core dist artifacts
+        if: steps.check-pypi.outputs.already_published != 'true'
+        uses: actions/download-artifact@v6
+        with:
+          pattern: pydantic_core_pypi_files_*
+          merge-multiple: true
+          path: pydantic-core-dist
+
+      - name: Test pydantic-core wheels integrity
+        if: steps.check-pypi.outputs.already_published != 'true'
+        run: |
+          for whl in pydantic-core-dist/*.whl; do unzip -qt "$whl"; done
+          twine check --strict pydantic-core-dist/*
+
+      - name: Publish pydantic-core to PyPI
+        if: steps.check-pypi.outputs.already_published != 'true'
+        run: uv publish --trusted-publishing always pydantic-core-dist/*
+
+  release-pydantic:
+    needs: [release-pydantic-core]
+    if: startsWith(github.ref, 'refs/tags/')
+    runs-on: ubuntu-latest
+    environment: release
+
+    permissions:
+      id-token: write
+      contents: write
+
     outputs:
       pydantic-version: ${{ steps.check-tag.outputs.VERSION }}
 
     steps:
       - uses: actions/checkout@v6
 
-      - uses: actions/setup-python@v6
+      - uses: astral-sh/setup-uv@v7
         with:
-          python-version: '3.12'
+          activate-environment: true
 
-      - name: Install 'build' library
-        run: pip install -U build
+      - run: uv pip install -U build
 
-      - name: Check version
+      - name: Check pydantic version
         id: check-tag
         uses: samuelcolvin/check-python-version@v5
         with:
           version_file_path: pydantic/version.py
 
-      - name: Build library
-        run: python -m build
+      - name: Build pydantic library
+        run: uv run --no-sync python -m build
 
       - name: Upload package to PyPI
         uses: pypa/gh-action-pypi-publish@release/v1
 
   send-tweet:
     name: Send tweet
-    needs: [release]
-    if: needs.release.result == 'success'
+    needs: [release-pydantic]
+    if: needs.release-pydantic.result == 'success'
     runs-on: ubuntu-latest
 
     steps:
@@ -382,7 +891,7 @@ jobs:
 
           client.create_tweet(text=tweet)
         env:
-          VERSION: ${{ needs.release.outputs.pydantic-version }}
+          VERSION: ${{ needs.release-pydantic.outputs.pydantic-version }}
           TWEET: |
             Pydantic version {version} is out! 🎉
 

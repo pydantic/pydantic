@@ -1,6 +1,6 @@
 [package]
 name = "pydantic-core"
-version = "2.41.5"
+version = "2.42.0"
 edition = "2024"
 license = "MIT"
 homepage = "https://github.com/pydantic/pydantic-core"
@@ -22,7 +22,7 @@ include = [
     "!tests/.pytest_cache",
     "!*.so",
 ]
-rust-version = "1.85"
+rust-version = "1.88"
 
 [dependencies]
 # TODO it would be very nice to remove the "py-clone" feature as it can panic,
