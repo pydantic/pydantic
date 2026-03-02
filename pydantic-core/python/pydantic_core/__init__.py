@@ -169,3 +169,5 @@ Example:
     conf = Configuration.model_validate({...})
     timeout = conf.timeout if timeout.timeout is not MISSING else defaults['timeout']
 """
+
+ReturnAsIs = Sentinel('ReturnAsIs')

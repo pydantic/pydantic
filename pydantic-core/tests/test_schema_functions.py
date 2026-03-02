@@ -83,6 +83,7 @@ all_schema_functions = [
     ),
     (core_schema.literal_schema, args(['a', 'b']), {'type': 'literal', 'expected': ['a', 'b']}),
     (core_schema.missing_sentinel_schema, args(), {'type': 'missing-sentinel'}),
+    (core_schema.return_as_is_schema, args(), {'type': 'return-as-is'}),
     (
         core_schema.enum_schema,
         args(MyEnum, list(MyEnum.__members__.values())),
@@ -320,7 +321,7 @@ def test_schema_functions(function, args_kwargs, expected_schema):
     args, kwargs = args_kwargs
     schema = function(*args, **kwargs)
     assert schema == expected_schema
-    if schema.get('type') in {None, 'definition-ref', 'typed-dict-field', 'model-field', 'invalid'}:
+    if schema.get('type') in {None, 'definition-ref', 'typed-dict-field', 'model-field', 'invalid', 'return-as-is'}:
         return
 
     v = SchemaValidator(schema)

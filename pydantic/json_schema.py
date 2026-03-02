@@ -878,6 +878,17 @@ class GenerateJsonSchema:
         """
         raise PydanticOmit
 
+    def return_as_is_schema(self, schema: core_schema.MissingSentinelSchema) -> JsonSchemaValue:
+        """Generates a JSON schema that matches the `ReturnAsIs` sentinel value.
+
+        Args:
+            schema: The core schema.
+
+        Returns:
+            The generated JSON schema.
+        """
+        raise PydanticOmit
+
     def enum_schema(self, schema: core_schema.EnumSchema) -> JsonSchemaValue:
         """Generates a JSON schema that matches an Enum value.
 
