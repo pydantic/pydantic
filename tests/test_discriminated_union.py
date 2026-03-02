@@ -2208,7 +2208,7 @@ def test_deferred_discriminated_union_meta_key_removed() -> None:
     assert Base.__pydantic_core_schema__ == base_schema
 
 
-def test_tagged_discriminator_type_alias() -> None:
+def test_discriminated_discriminator_type_alias_type() -> None:
     """https://github.com/pydantic/pydantic/issues/11930"""
 
     class Pie(BaseModel):
@@ -2236,7 +2236,7 @@ def test_tagged_discriminator_type_alias() -> None:
     assert isinstance(inst.dessert, ApplePie)
 
 
-def test_discriminated_union_type_alias_type() -> None:
+def test_discriminated_union_type_alias_type_not_union() -> None:
     """https://github.com/pydantic/pydantic/issues/11661
 
     This was fixed by making sure we provide the available definitions
@@ -2287,6 +2287,100 @@ def test_deferred_discriminated_union_and_references() -> None:
     final_schema = gen_schema.clean_schema(disc_union_ref)
 
     assert final_schema['type'] == 'tagged-union'
+
+
+def test_discriminated_union_type_alias_type_separate() -> None:
+    """https://github.com/pydantic/pydantic/issues/12771
+
+    The recommended pattern is to define the type alias with the discriminator metadata,
+    but it is still desirable to support this pattern as well (to some extent, see TBD).
+    """
+
+    class Foo(BaseModel):
+        type: Literal['foo']
+
+    class Bar(BaseModel):
+        type: Literal['bar']
+
+    FooBar = TypeAliasType('BarFoo', Union[Foo, Bar])
+
+    class Main(BaseModel):
+        f: FooBar = Field(discriminator='type')
+
+    # Use the JSON Schema to avoid making assertions on the core schema, that
+    # may be less stable:
+    json_schema = Main.model_json_schema()
+    assert 'Foo' in json_schema['$defs']
+    assert 'Bar' in json_schema['$defs']
+    assert json_schema['properties']['f']['discriminator'] == {
+        'mapping': {'foo': '#/$defs/Foo', 'bar': '#/$defs/Bar'},
+        'propertyName': 'type',
+    }
+    assert json_schema['properties']['f']['oneOf'] == [{'$ref': '#/$defs/Foo'}, {'$ref': '#/$defs/Bar'}]
+
+
+def test_discriminated_union_type_alias_type_separate_callable_discriminator() -> None:
+    """https://github.com/pydantic/pydantic/issues/12843"""
+
+    class Foo(BaseModel):
+        type: Literal['foo']
+
+    class Bar(BaseModel):
+        type: Literal['bar']
+
+    FooBar = TypeAliasType('FooBar', Union[Annotated[Foo, Tag('foo')], Annotated[Bar, Tag('bar')]])
+
+    T = TypeVar('T')
+
+    FooBarTV = TypeAliasType(
+        'FooBarTV', Union[Annotated[Foo, Tag('foo')], Annotated[Bar, Tag('bar')]], type_params=(T,)
+    )
+
+    class Main(BaseModel):
+        f: Annotated[FooBar, Discriminator(lambda v: v['type'])]
+        g: Annotated[FooBarTV[int], Discriminator(lambda v: v['type'])]
+
+    m = Main(f={'type': 'foo'}, g={'type': 'bar'})
+
+    assert m.f == Foo(type='foo')
+    assert m.g == Bar(type='bar')
+
+
+@pytest.mark.xfail(
+    reason="Nested references aren't flattened (see comment in `_ApplyInferredDiscriminator._handle_choice()`)",
+)
+def test_discriminated_union_nested_type_alias() -> None:
+    class Foo1(BaseModel):
+        type: Literal['foo1']
+
+    class Foo2(BaseModel):
+        type: Literal['foo2']
+
+    Foos = TypeAliasType('Foos', Union[Foo1, Foo2])
+
+    class Bar(BaseModel):
+        type: Literal['bar']
+
+    FooBar = TypeAliasType('BarFoo', Union[Foos, Bar])
+
+    class Main(BaseModel):
+        f: FooBar = Field(discriminator='type')
+
+    # Use the JSON Schema to avoid making assertions on the core schema, that
+    # may be less stable:
+    json_schema = Main.model_json_schema()
+    assert 'Foo1' in json_schema['$defs']
+    assert 'Foo2' in json_schema['$defs']
+    assert 'Bar' in json_schema['$defs']
+    assert json_schema['properties']['f']['discriminator'] == {
+        'mapping': {'foo1': '#/$defs/Foo1', 'foo2': '#/$defs/Foo2', 'bar': '#/$defs/Bar'},
+        'propertyName': 'type',
+    }
+    assert json_schema['properties']['f']['oneOf'] == [
+        {'$ref': '#/$defs/Foo1'},
+        {'$ref': '#/$defs/Foo2'},
+        {'$ref': '#/$defs/Bar'},
+    ]
 
 
 def test_recursive_discriminated_union() -> None:

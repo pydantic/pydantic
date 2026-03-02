@@ -1089,3 +1089,18 @@ def test_typeddict_core_schema_no_cls_extra_config() -> None:
     )
 
     assert GenerateJsonSchema().generate(cs_allow) == {'additionalProperties': True, 'properties': {}, 'type': 'object'}
+
+
+def test_typeddict_core_schema_no_cls_extra_config_with_extas_schema() -> None:
+    cs_allow_extras_schema = core_schema.typed_dict_schema(
+        fields={},
+        cls=None,
+        extras_schema=core_schema.int_schema(),
+        config={'extra_fields_behavior': 'allow'},
+    )
+
+    assert GenerateJsonSchema().generate(cs_allow_extras_schema) == {
+        'additionalProperties': {'type': 'integer'},
+        'properties': {},
+        'type': 'object',
+    }
