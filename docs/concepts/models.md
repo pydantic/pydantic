@@ -1347,7 +1347,7 @@ You can also add validators by passing a dictionary to the `__validators__` argu
 from pydantic import ValidationError, create_model, field_validator
 
 
-def alphanum(cls, v):
+def alphanum(v):
     assert v.isalnum(), 'must be alphanumeric'
     return v
 
