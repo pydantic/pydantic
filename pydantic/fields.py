@@ -63,6 +63,7 @@ class _FromFieldInfoInputs(TypedDict, total=False):
     examples: list[Any] | None
     exclude: bool | None
     exclude_if: Callable[[Any], bool] | None
+    compare_as: Callable[[Any, Any], bool] | Callable[[Any], Any] | None
     gt: annotated_types.SupportsGt | None
     ge: annotated_types.SupportsGe | None
     lt: annotated_types.SupportsLt | None
@@ -100,6 +101,29 @@ class _FieldInfoAsDict(TypedDict, closed=True):
     annotation: Any
     metadata: list[Any]
     attributes: dict[str, Any]
+
+
+class FieldComparable:
+    """Wrapper for supporting custom field comparison"""
+
+    __slots__ = ('value', 'compare_as', 'is_unary')
+
+    @overload
+    def __init__(self, value: Any, compare_as: Callable[[Any], Any]) -> None: ...
+    @overload
+    def __init__(self, value: Any, compare_as: Callable[[Any, Any], bool]) -> None: ...
+
+    def __init__(self, value: Any, compare_as: Callable[[Any], Any] | Callable[[Any, Any], bool]) -> None:
+        self.value = value
+        self.compare_as = compare_as
+        self.is_unary = len(inspect.signature(compare_as).parameters) == 1
+
+    def __eq__(self, other: Any) -> bool:
+        if self.is_unary:
+            f = cast(Callable[[Any], Any], self.compare_as)
+            return f(self.value) == f(other)
+        g = cast(Callable[[Any, Any], bool], self.compare_as)
+        return g(self.value, other)
 
 
 @final
@@ -162,6 +186,7 @@ class FieldInfo(_repr.Representation):
     examples: list[Any] | None
     exclude: bool | None
     exclude_if: Callable[[Any], bool] | None
+    compare_as: Callable[[Any, Any], bool] | Callable[[Any], Any] | None
     discriminator: str | types.Discriminator | None
     deprecated: Deprecated | str | bool | None
     json_schema_extra: JsonDict | Callable[[JsonDict], None] | None
@@ -187,6 +212,7 @@ class FieldInfo(_repr.Representation):
         'examples',
         'exclude',
         'exclude_if',
+        'compare_as',
         'discriminator',
         'deprecated',
         'json_schema_extra',
@@ -262,6 +288,7 @@ class FieldInfo(_repr.Representation):
         self.examples = kwargs.pop('examples', None)
         self.exclude = kwargs.pop('exclude', None)
         self.exclude_if = kwargs.pop('exclude_if', None)
+        self.compare_as = kwargs.pop('compare_as', None)
         self.discriminator = kwargs.pop('discriminator', None)
         # For compatibility with FastAPI<=0.110.0, we preserve the existing value if it is not overridden
         self.deprecated = kwargs.pop('deprecated', getattr(self, 'deprecated', None))
@@ -567,6 +594,14 @@ class FieldInfo(_repr.Representation):
         merged_field_info = cls(**merged_kwargs)
         merged_field_info.metadata = merged_metadata
         return merged_field_info
+
+    def get_comparable(self, value: Any) -> FieldComparable | Any:
+        """Wraps the validated field value in a `FieldComparable`
+
+        Returns the original value if `compare_as` is not provided. This method is used
+        in `BaseModel.__eq__`
+        """
+        return FieldComparable(value=value, compare_as=self.compare_as) if self.compare_as else value
 
     @staticmethod
     @typing_extensions.deprecated(
@@ -895,6 +930,7 @@ _Attrs = {
     'examples': None,
     'exclude': None,
     'exclude_if': None,
+    'compare_as': None,
     'discriminator': None,
     'deprecated': None,
     'json_schema_extra': None,
@@ -944,6 +980,7 @@ def Field(
     examples: list[Any] | None = _Unset,
     exclude: bool | None = _Unset,
     exclude_if: Callable[[Any], bool] | None = _Unset,
+    compare_as: Callable[[Any, Any], bool] | Callable[[Any], Any] | None = _Unset,
     discriminator: str | types.Discriminator | None = _Unset,
     deprecated: Deprecated | str | bool | None = _Unset,
     json_schema_extra: JsonDict | Callable[[JsonDict], None] | None = _Unset,
@@ -984,6 +1021,7 @@ def Field(
     examples: list[Any] | None = _Unset,
     exclude: bool | None = _Unset,
     exclude_if: Callable[[Any], bool] | None = _Unset,
+    compare_as: Callable[[Any, Any], bool] | Callable[[Any], Any] | None = _Unset,
     discriminator: str | types.Discriminator | None = _Unset,
     deprecated: Deprecated | str | bool | None = _Unset,
     json_schema_extra: JsonDict | Callable[[JsonDict], None] | None = _Unset,
@@ -1027,6 +1065,7 @@ def Field(
     # this requires (at least for pyright) adding an additional overload where `exclude_if` is required (otherwise
     # `a: int = Field(default_factory=str)` results in a false negative).
     exclude_if: Callable[[Any], bool] | None = _Unset,
+    compare_as: Callable[[Any, Any], bool] | Callable[[Any], Any] | None = _Unset,
     discriminator: str | types.Discriminator | None = _Unset,
     deprecated: Deprecated | str | bool | None = _Unset,
     json_schema_extra: JsonDict | Callable[[JsonDict], None] | None = _Unset,
@@ -1067,6 +1106,7 @@ def Field(  # pyright: ignore[reportOverlappingOverload]
     examples: list[Any] | None = _Unset,
     exclude: bool | None = _Unset,
     exclude_if: Callable[[Any], bool] | None = _Unset,
+    compare_as: Callable[[Any, Any], bool] | Callable[[Any], Any] | None = _Unset,
     discriminator: str | types.Discriminator | None = _Unset,
     deprecated: Deprecated | str | bool | None = _Unset,
     json_schema_extra: JsonDict | Callable[[JsonDict], None] | None = _Unset,
@@ -1110,6 +1150,7 @@ def Field(
     # this requires (at least for pyright) adding an additional overload where `exclude_if` is required (otherwise
     # `a: int = Field(default_factory=str)` results in a false negative).
     exclude_if: Callable[[Any], bool] | None = _Unset,
+    compare_as: Callable[[Any, Any], bool] | Callable[[Any], Any] | None = _Unset,
     discriminator: str | types.Discriminator | None = _Unset,
     deprecated: Deprecated | str | bool | None = _Unset,
     json_schema_extra: JsonDict | Callable[[JsonDict], None] | None = _Unset,
@@ -1149,6 +1190,7 @@ def Field(  # No default set
     examples: list[Any] | None = _Unset,
     exclude: bool | None = _Unset,
     exclude_if: Callable[[Any], bool] | None = _Unset,
+    compare_as: Callable[[Any, Any], bool] | Callable[[Any], Any] | None = _Unset,
     discriminator: str | types.Discriminator | None = _Unset,
     deprecated: Deprecated | str | bool | None = _Unset,
     json_schema_extra: JsonDict | Callable[[JsonDict], None] | None = _Unset,
@@ -1189,6 +1231,7 @@ def Field(  # noqa: C901
     examples: list[Any] | None = _Unset,
     exclude: bool | None = _Unset,
     exclude_if: Callable[[Any], bool] | None = _Unset,
+    compare_as: Callable[[Any, Any], bool] | Callable[[Any], Any] | None = _Unset,
     discriminator: str | types.Discriminator | None = _Unset,
     deprecated: Deprecated | str | bool | None = _Unset,
     json_schema_extra: JsonDict | Callable[[JsonDict], None] | None = _Unset,
@@ -1241,6 +1284,7 @@ def Field(  # noqa: C901
         examples: Example values for this field.
         exclude: Whether to exclude the field from the model serialization.
         exclude_if: A callable that determines whether to exclude a field during serialization based on its value.
+        compare_as: A unary transformation for value normalization before comparison or a binary predicate for custom equality logic
         discriminator: Field name or Discriminator for discriminating the type in a tagged union.
         deprecated: A deprecation message, an instance of `warnings.deprecated` or the `typing_extensions.deprecated` backport,
             or a boolean. If `True`, a default deprecation message will be emitted when accessing the field.
@@ -1376,6 +1420,7 @@ def Field(  # noqa: C901
         examples=examples,
         exclude=exclude,
         exclude_if=exclude_if,
+        compare_as=compare_as,
         discriminator=discriminator,
         deprecated=deprecated,
         json_schema_extra=json_schema_extra,

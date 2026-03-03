@@ -2633,6 +2633,50 @@ def test_model_equality_generics():
             assert hash(m3) == hash(m4)
 
 
+def test_customizable_eq_unary_callable():
+    class LowerCaseFooModel(BaseModel):
+        foo: str = Field(compare_as=str.lower)
+        bar: str
+
+    assert LowerCaseFooModel(foo='FOO', bar='bar') == LowerCaseFooModel(foo='foo', bar='bar')
+    assert not LowerCaseFooModel(foo='FOO', bar='bar') == LowerCaseFooModel(foo='foo', bar='BAR')
+
+
+def test_customizable_eq_binary_callable():
+    class NdArray:
+        def __init__(self, obj: list[Any]):
+            self.obj = obj
+
+        def __eq__(self, other):
+            raise ValueError('The truth value of an array is ambiguous. Use compare_as at Field')
+
+        def __iter__(self):
+            return iter(self.obj)
+
+    class MyModel(BaseModel):
+        foo: NdArray
+
+        model_config = ConfigDict(arbitrary_types_allowed=True)
+
+    with pytest.raises(ValueError, match='The truth value of an array is ambiguous. Use compare_as at Field'):
+        assert MyModel(foo=NdArray([1, 2, 3])) == MyModel(foo=NdArray([1, 2, 3]))
+
+    # Use compare_as
+    class MyModelWithCompareAs(BaseModel):
+        foo: NdArray = Field(compare_as=lambda arr1, arr2: all(x == y for x, y in zip(arr1, arr2)))
+
+        model_config = ConfigDict(arbitrary_types_allowed=True)
+
+    class MyNestedModel(BaseModel):
+        bar: MyModelWithCompareAs
+
+    assert MyModelWithCompareAs(foo=NdArray([1, 2, 3])) == MyModelWithCompareAs(foo=NdArray([1, 2, 3]))
+
+    assert MyNestedModel(bar=MyModelWithCompareAs(foo=NdArray([1, 2, 3]))) == MyNestedModel(
+        bar=MyModelWithCompareAs(foo=NdArray([1, 2, 3]))
+    )
+
+
 def test_model_validate_strict() -> None:
     class LaxModel(BaseModel):
         x: int
