@@ -108,11 +108,6 @@ class FieldComparable:
 
     __slots__ = ('value', 'compare_as', 'is_unary')
 
-    @overload
-    def __init__(self, value: Any, compare_as: Callable[[Any], Any]) -> None: ...
-    @overload
-    def __init__(self, value: Any, compare_as: Callable[[Any, Any], bool]) -> None: ...
-
     def __init__(self, value: Any, compare_as: Callable[[Any], Any] | Callable[[Any, Any], bool]) -> None:
         self.value = value
         self.compare_as = compare_as
