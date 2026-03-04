@@ -1399,3 +1399,105 @@ def test_wrap_ser_called_once() -> None:
 
     my_model = MyParentModel.model_validate({'nested': {'inner_value': 'foo'}})
     assert my_model.model_dump() == {'nested': {'inner_value': 'my_prefix:foo'}}
+
+
+def test_union_exclude_unset_no_warning() -> None:
+    """
+    Regression test for https://github.com/pydantic/pydantic/issues/12888.
+
+    When serializing Union fields with exclude_unset=True, pydantic should not
+    produce spurious PydanticSerializationUnexpectedValue warnings when field
+    counts don't match due to excluded unset fields.
+    """
+    import warnings
+
+    class ModelA(BaseModel):
+        a: str = 'default_a'
+        b: str = 'default_b'
+
+    class ModelB(BaseModel):
+        x: str = 'default_x'
+
+    class Container(BaseModel):
+        item: Union[ModelA, ModelB]
+
+    # Create ModelA with only 'a' explicitly set
+    container = Container(item=ModelA(a='set_value'))
+
+    # Capture any warnings during serialization
+    with warnings.catch_warnings(record=True) as w:
+        warnings.simplefilter('always')
+        result = container.model_dump(exclude_unset=True)
+
+    # The serialization should work correctly
+    assert result == {'item': {'a': 'set_value'}}
+
+    # There should be no warnings about unexpected field counts
+    pydantic_warnings = [
+        warning for warning in w if 'PydanticSerializationUnexpectedValue' in str(warning.message)
+    ]
+    assert len(pydantic_warnings) == 0, f'Unexpected warnings: {[str(w.message) for w in pydantic_warnings]}'
+
+
+def test_union_exclude_defaults_no_warning() -> None:
+    """
+    Similar to test_union_exclude_unset_no_warning but for exclude_defaults=True.
+    """
+    import warnings
+
+    class ModelA(BaseModel):
+        a: str = 'default_a'
+        b: str = 'default_b'
+
+    class ModelB(BaseModel):
+        x: str = 'default_x'
+
+    class Container(BaseModel):
+        item: Union[ModelA, ModelB]
+
+    # Create ModelA with only 'a' changed from default
+    container = Container(item=ModelA(a='custom_value'))
+
+    with warnings.catch_warnings(record=True) as w:
+        warnings.simplefilter('always')
+        result = container.model_dump(exclude_defaults=True)
+
+    # The serialization should work correctly
+    assert result == {'item': {'a': 'custom_value'}}
+
+    pydantic_warnings = [
+        warning for warning in w if 'PydanticSerializationUnexpectedValue' in str(warning.message)
+    ]
+    assert len(pydantic_warnings) == 0, f'Unexpected warnings: {[str(w.message) for w in pydantic_warnings]}'
+
+
+def test_union_exclude_none_no_warning() -> None:
+    """
+    Similar to test_union_exclude_unset_no_warning but for exclude_none=True.
+    """
+    import warnings
+
+    class ModelA(BaseModel):
+        a: str
+        b: Optional[str] = None
+
+    class ModelB(BaseModel):
+        x: str
+
+    class Container(BaseModel):
+        item: Union[ModelA, ModelB]
+
+    # Create ModelA with b=None
+    container = Container(item=ModelA(a='value'))
+
+    with warnings.catch_warnings(record=True) as w:
+        warnings.simplefilter('always')
+        result = container.model_dump(exclude_none=True)
+
+    # The serialization should work correctly
+    assert result == {'item': {'a': 'value'}}
+
+    pydantic_warnings = [
+        warning for warning in w if 'PydanticSerializationUnexpectedValue' in str(warning.message)
+    ]
+    assert len(pydantic_warnings) == 0, f'Unexpected warnings: {[str(w.message) for w in pydantic_warnings]}'

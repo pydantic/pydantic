@@ -214,7 +214,12 @@ impl GeneralFieldsSerializer {
             }
         }
 
-        if state.check.enabled() && self.required_fields > used_req_fields {
+        // Skip field count check when exclusion flags could cause legitimate field count mismatches.
+        // When exclude_unset, exclude_defaults, or exclude_none is active, fields may be legitimately
+        // missing from the output without indicating a type mismatch.
+        let exclusions_active =
+            state.extra.exclude_unset || state.extra.exclude_defaults || state.extra.exclude_none;
+        if state.check.enabled() && self.required_fields > used_req_fields && !exclusions_active {
             return Err(incorrect_field_count(self.required_fields, used_req_fields, model, state).into());
         }
 
