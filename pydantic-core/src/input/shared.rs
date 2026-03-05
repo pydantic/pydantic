@@ -228,22 +228,17 @@ pub fn decimal_as_int<'py>(
     Ok(EitherInt::Py(numerator))
 }
 
-pub fn fraction_as_int<'py>(input: &Bound<'py, PyAny>) -> ValResult<EitherInt<'py>> {
-    #[cfg(Py_3_12)]
-    let is_integer = input.call_method0("is_integer")?.extract::<bool>()?;
-    #[cfg(not(Py_3_12))]
-    let is_integer = input.getattr("denominator")?.extract::<i64>().is_ok_and(|d| d == 1);
+pub fn fraction_as_int<'py>(
+    input: &(impl Input<'py> + ?Sized),
+    fraction: &Bound<'py, PyAny>,
+) -> ValResult<EitherInt<'py>> {
+    let py = fraction.py();
 
-    if is_integer {
-        #[cfg(Py_3_11)]
-        let as_int = input.call_method0("__int__");
-        #[cfg(not(Py_3_11))]
-        let as_int = input.call_method0("__trunc__");
-        match as_int {
-            Ok(i) => Ok(EitherInt::Py(i.as_any().to_owned())),
-            Err(_) => Err(ValError::new(ErrorTypeDefaults::IntType, input)),
-        }
-    } else {
-        Err(ValError::new(ErrorTypeDefaults::IntFromFloat, input))
+    let (numerator, denominator) = fraction
+        .call_method0(intern!(py, "as_integer_ratio"))?
+        .extract::<(Bound<'_, PyAny>, Bound<'_, PyAny>)>()?;
+    if denominator.extract::<i64>().map_or(true, |d| d != 1) {
+        return Err(ValError::new(ErrorTypeDefaults::IntFromFloat, input));
     }
+    Ok(EitherInt::Py(numerator))
 }
