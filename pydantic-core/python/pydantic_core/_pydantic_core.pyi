@@ -29,6 +29,7 @@ __all__ = [
     'PydanticUndefined',
     'PydanticUndefinedType',
     'Some',
+    'create_struct_type',
     'to_json',
     'from_json',
     'to_jsonable_python',
@@ -1054,3 +1055,5 @@ class TzInfo(datetime.tzinfo):
         More info can be found at [`tzinfo.fromutc`][datetime.tzinfo.fromutc]."""
 
     def __deepcopy__(self, _memo: dict[Any, Any]) -> TzInfo: ...
+
+def create_struct_type(cls: type) -> type: ...
