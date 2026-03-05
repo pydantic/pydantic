@@ -1096,6 +1096,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
                 elif attr is None:
                     # attribute does not exist, so put it in extra
                     self.__pydantic_extra__[name] = value
+                    self.__pydantic_fields_set__.add(name)
                     return None  # Can not return memoized handler with possibly freeform attr names
                 else:
                     # attribute _does_ exist, and was not in extra, so update it
