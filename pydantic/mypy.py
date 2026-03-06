@@ -154,7 +154,7 @@ class PydanticPlugin(Plugin):
 
     def get_dynamic_class_hook(self, fullname: str) -> Callable[[DynamicClassDefContext], None] | None:
         """Recognize `create_model()` calls as dynamic BaseModel subclasses."""
-        if fullname in CREATE_MODEL_FULLNAMES:
+        if fullname == CREATE_MODEL_FULLNAME:
             return self._pydantic_create_model_callback
         return None
 
