@@ -83,12 +83,7 @@ from pydantic.version import parse_mypy_version
 CONFIGFILE_KEY = 'pydantic-mypy'
 METADATA_KEY = 'pydantic-mypy-metadata'
 BASEMODEL_FULLNAME = 'pydantic.main.BaseModel'
-CREATE_MODEL_FULLNAMES = frozenset(
-    {
-        'pydantic.main.create_model',
-        'pydantic.create_model',
-    }
-)
+CREATE_MODEL_FULLNAME = 'pydantic.main.create_model'
 BASESETTINGS_FULLNAME = 'pydantic_settings.main.BaseSettings'
 ROOT_MODEL_FULLNAME = 'pydantic.root_model.RootModel'
 MODEL_METACLASS_FULLNAME = 'pydantic._internal._model_construction.ModelMetaclass'
