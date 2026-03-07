@@ -1377,6 +1377,25 @@ def missing_sentinel_schema(
     )
 
 
+class ReturnAsIsSchema(TypedDict, total=False):
+    type: Required[Literal['return-as-is']]
+    metadata: dict[str, Any]
+    serialization: SerSchema
+
+
+def return_as_is_schema(
+    metadata: dict[str, Any] | None = None,
+    serialization: SerSchema | None = None,
+) -> ReturnAsIsSchema:
+    """Returns a schema for the `ReturnAsIs` sentinel."""
+
+    return _dict_not_none(
+        type='return-as-is',
+        metadata=metadata,
+        serialization=serialization,
+    )
+
+
 # must match input/parse_json.rs::JsonType::try_from
 JsonType = Literal['null', 'bool', 'int', 'float', 'str', 'list', 'dict']
 
@@ -4124,6 +4143,7 @@ if not MYPY:
         TimedeltaSchema,
         LiteralSchema,
         MissingSentinelSchema,
+        ReturnAsIsSchema,
         EnumSchema,
         IsInstanceSchema,
         IsSubclassSchema,
@@ -4183,6 +4203,7 @@ CoreSchemaType = Literal[
     'timedelta',
     'literal',
     'missing-sentinel',
+    'return-as-is',
     'enum',
     'is-instance',
     'is-subclass',

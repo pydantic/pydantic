@@ -152,6 +152,7 @@ combined_serializer! {
         TaggedUnion: super::type_serializers::union::TaggedUnionSerializer;
         Literal: super::type_serializers::literal::LiteralSerializer;
         MissingSentinel: super::type_serializers::missing_sentinel::MissingSentinelSerializer;
+        ReturnAsIs: super::type_serializers::return_as_is::ReturnAsIsSerializer;
         Enum: super::type_serializers::enum_::EnumSerializer;
         Recursive: super::type_serializers::definitions::DefinitionRefSerializer;
         Tuple: super::type_serializers::tuple::TupleSerializer;
@@ -384,6 +385,7 @@ impl PyGcTraverse for CombinedSerializer {
             CombinedSerializer::TaggedUnion(inner) => inner.py_gc_traverse(visit),
             CombinedSerializer::Literal(inner) => inner.py_gc_traverse(visit),
             CombinedSerializer::MissingSentinel(inner) => inner.py_gc_traverse(visit),
+            CombinedSerializer::ReturnAsIs(inner) => inner.py_gc_traverse(visit),
             CombinedSerializer::Enum(inner) => inner.py_gc_traverse(visit),
             CombinedSerializer::Recursive(inner) => inner.py_gc_traverse(visit),
             CombinedSerializer::Tuple(inner) => inner.py_gc_traverse(visit),
