@@ -2153,33 +2153,6 @@ class GenerateSchema:
             )
 
         return_type = replace_types(return_type, self._typevars_map)
-        exclude_if = d.info.exclude_if
-
-        if typing_objects.is_annotated(get_origin(return_type)):
-            # Get anything from Annotated[..., Field(...)]
-            _, *annotations = self._get_args_resolving_forward_refs(
-                return_type,
-                required=True,
-            )
-            FieldInfo = import_cached_field_info()
-            # We only accept at most one Field annotation for computed fields
-            _seen = False
-            # Collect all attributes from Annotated, so far exclude_if
-            for annotation in annotations:
-                if isinstance(annotation, FieldInfo):
-                    if _seen:
-                        raise PydanticUserError(
-                            'Annotated computed field must have at most one Field(...)', code='invalid-annotated-type'
-                        )
-                    field_info = annotation
-                    if exclude_if is not None and field_info.exclude_if is not None:
-                        raise PydanticUserError(
-                            'exclude_if set in the computed_field decorator and in the annotated type',
-                            code='invalid-annotated-type',
-                        )
-                    exclude_if = exclude_if or field_info.exclude_if
-                    _seen = True
-
         # Create a new ComputedFieldInfo so that different type parametrizations of the same
         # generic model's computed field can have different return types.
         d.info = dataclasses.replace(d.info, return_type=return_type)
@@ -2197,6 +2170,8 @@ class GenerateSchema:
             pydantic_js_updates={'readOnly': True, **(pydantic_js_updates if pydantic_js_updates else {})},
             pydantic_js_extra=pydantic_js_extra,
         )
+        exclude_if = d.info.exclude_if
+        # TODO: Should we support exclude_if from annotations?
         return core_schema.computed_field(
             d.cls_var_name,
             return_schema=return_type_schema,

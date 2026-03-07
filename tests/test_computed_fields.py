@@ -860,18 +860,23 @@ def test_computed_fields_serialization_exclude_if() -> None:
         foo: int
 
         @computed_field(exclude_if=lambda x: x == 1)
-        def prop(self) -> int:
+        def bar(self) -> int:
             return 1
 
+        @computed_field(exclude_if=lambda x: x == 2)
+        def baz(self) -> int:
+            return self.foo
+
     m = Model(foo=1)
-    assert m.model_dump() == {'foo': 1}
+    assert m.model_dump() == {'foo': 1, 'baz': 1}
     assert m.model_dump(exclude_computed_fields=True) == {'foo': 1}
-    assert m.model_dump(mode='json') == {'foo': 1}
+    assert m.model_dump(mode='json') == {'foo': 1, 'baz': 1}
     assert m.model_dump(mode='json', exclude_computed_fields=True) == {'foo': 1}
-    assert m.model_dump_json() == '{"foo":1}'
+    assert m.model_dump_json() == '{"foo":1,"baz":1}'
     assert m.model_dump_json(exclude_computed_fields=True) == '{"foo":1}'
 
 
+@pytest.mark.xfail(reason='Not supported yet. See: https://github.com/pydantic/pydantic/pull/12748')
 def test_computed_fields_serialization_exclude_if_from_annotated() -> None:
     class Model(BaseModel):
         foo: int
@@ -887,29 +892,3 @@ def test_computed_fields_serialization_exclude_if_from_annotated() -> None:
     assert m.model_dump(mode='json', exclude_computed_fields=True) == {'foo': 1}
     assert m.model_dump_json() == '{"foo":1}'
     assert m.model_dump_json(exclude_computed_fields=True) == '{"foo":1}'
-
-
-def test_computed_fields_serialization_exclude_if_from_annotated_repeated_field() -> None:
-    with pytest.raises(PydanticUserError, match='Annotated computed field must have at most one Field(...)'):
-
-        class Model(BaseModel):
-            foo: int
-
-            @computed_field
-            def prop(self) -> Annotated[int, Field(exclude_if=lambda x: x == 1), Field(exclude_if=lambda x: x == 0)]:
-                return 1
-
-
-def test_computed_fields_serialization_exclude_if_multiple_definitions() -> None:
-    with pytest.raises(
-        PydanticUserError, match='exclude_if set in the computed_field decorator and in the annotated type'
-    ):
-
-        class Model(BaseModel):
-            foo: int
-
-            @computed_field(
-                exclude_if=Field(exclude_if=lambda x: x == 0),
-            )
-            def prop(self) -> Annotated[int, Field(exclude_if=lambda x: x == 1)]:
-                return 1
