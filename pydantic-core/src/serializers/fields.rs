@@ -102,13 +102,29 @@ pub(super) enum FieldsMode {
     TypedDictAllow,
 }
 
+/// representation of a extra field for serialization
+#[derive(Debug)]
+pub(super) struct ExtraSerFields {
+    pub extra_serializer: Option<Arc<CombinedSerializer>>,
+    pub serialization_exclude_if: Option<Py<PyAny>>,
+}
+
+impl ExtraSerFields {
+    pub fn new(extra_serializer: Option<Arc<CombinedSerializer>>, serialization_exclude_if: Option<Py<PyAny>>) -> Self {
+        Self {
+            extra_serializer,
+            serialization_exclude_if,
+        }
+    }
+}
+
 /// General purpose serializer for fields - used by dataclasses, models and typed_dicts
 #[derive(Debug)]
 pub struct GeneralFieldsSerializer {
     fields: AHashMap<PyBackedStr, SerField>,
     computed_fields: Option<ComputedFields>,
     mode: FieldsMode,
-    extra_serializer: Option<Arc<CombinedSerializer>>,
+    extra_fields: Option<ExtraSerFields>,
     // isize because we look up filter via `.hash()` which returns an isize
     filter: SchemaFilter<isize>,
     required_fields: usize,
@@ -118,14 +134,14 @@ impl GeneralFieldsSerializer {
     pub(super) fn new(
         fields: AHashMap<PyBackedStr, SerField>,
         mode: FieldsMode,
-        extra_serializer: Option<Arc<CombinedSerializer>>,
+        extra_fields: Option<ExtraSerFields>,
         computed_fields: Option<ComputedFields>,
     ) -> Self {
         let required_fields = fields.values().filter(|f| f.required).count();
         Self {
             fields,
             mode,
-            extra_serializer,
+            extra_fields,
             filter: SchemaFilter::default(),
             computed_fields,
             required_fields,
@@ -180,13 +196,6 @@ impl GeneralFieldsSerializer {
         let mut used_req_fields: usize = 0;
         let missing_sentinel = get_missing_sentinel_object(py);
 
-        let extras_serializer = self
-            .extra_serializer
-            .as_ref()
-            // If using `serialize_as_any`, extras are always inferred
-            .filter(|_| !state.extra.serialize_as_any)
-            .unwrap_or_else(|| AnySerializer::get());
-
         for result in main_iter {
             let (key, value) = result?;
             let key_str: PyBackedStr = key.extract()?;
@@ -208,7 +217,7 @@ impl GeneralFieldsSerializer {
                 let state = &mut state.scoped_include_exclude(next_include_exclude);
                 map.serialize_entry_string_key(field.get_key(&state.extra), &value, serializer, state)?;
             } else if self.mode == FieldsMode::TypedDictAllow {
-                self.serialize_extra(&key_str, &value, state, missing_sentinel, extras_serializer, &mut map)?;
+                self.serialize_extra(&key_str, &value, state, missing_sentinel, &mut map)?;
             } else if state.check == SerCheck::Strict {
                 return Err(unexpected_field(&key_str, model).into());
             }
@@ -220,14 +229,7 @@ impl GeneralFieldsSerializer {
 
         for result in extras_iter {
             let (key, value) = result?;
-            self.serialize_extra(
-                &key.extract()?,
-                &value,
-                state,
-                missing_sentinel,
-                extras_serializer,
-                &mut map,
-            )?;
+            self.serialize_extra(&key.extract()?, &value, state, missing_sentinel, &mut map)?;
         }
 
         if let Some(computed_fields) = &self.computed_fields {
@@ -292,17 +294,20 @@ impl GeneralFieldsSerializer {
         value: &Bound<'py, PyAny>,
         state: &mut SerializationState<'py>,
         missing_sentinel: &Bound<'py, PyAny>,
-        extras_serializer: &Arc<CombinedSerializer>,
         map: &mut Map,
     ) -> Result<(), Map::Error> {
+        let extras_serializer = self
+            .extra_fields
+            .as_ref()
+            .filter(|_| !state.extra.serialize_as_any)
+            .and_then(|e| e.extra_serializer.as_ref())
+            .unwrap_or_else(|| AnySerializer::get());
+        let extras_serialization_exclude_if = self
+            .extra_fields
+            .as_ref()
+            .and_then(|e| e.serialization_exclude_if.as_ref());
         if let Some(next_include_exclude) = self.filter.key_filter(key.as_py_str().bind(value.py()), state)?
-            && !exclude_field_by_value(
-                value,
-                state,
-                missing_sentinel,
-                // TODO: support `exclude_if` on extra_fields
-                None,
-            )?
+            && !exclude_field_by_value(value, state, missing_sentinel, extras_serialization_exclude_if)?
         {
             let state = &mut state.scoped_include_exclude(next_include_exclude);
             map.serialize_entry_string_key(key, value, extras_serializer, state)
