@@ -1,3 +1,7 @@
+---
+title: "Pydantic Validation: Sphinx & MkDocs Integration"
+description: "Stop manually updating API docs. Pydantic’s integrations with Sphinx and MkDocs turn your models into rich, up-to-date documentation automatically."
+---
 Pydantic uses [MkDocs](https://www.mkdocs.org/) for documentation, together with
 [mkdocstrings](https://mkdocstrings.github.io/). As such, you can make use of Pydantic's
 Sphinx object inventory to cross-reference the Pydantic API documentation.
