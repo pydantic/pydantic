@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import dataclasses
 import json
+import time
 import uuid
 import warnings
 from decimal import Decimal
@@ -1116,3 +1117,69 @@ def test_discriminated_union_ser_with_typed_dict() -> None:
 
     assert v.to_python({'type': 'a', 'a': 1}, warnings='error') == {'type': 'a', 'a': 1}
     assert v.to_python({'type': 'b', 'b': 'foo'}, warnings='error') == {'type': 'b', 'b': 'foo'}
+
+
+def test_tagged_union_no_fallback_on_matched_discriminator():
+    """Regression test for https://github.com/pydantic/pydantic/issues/12800.
+
+    When the discriminator successfully identifies the correct variant but
+    serialization of that variant fails, the serializer should NOT fall back
+    to trying all other union members. This prevents exponential performance
+    degradation with large unions.
+    """
+
+    class ModelA:
+        type_: str = 'a'
+
+    class ModelB:
+        type_: str = 'b'
+
+    class ModelC:
+        type_: str = 'c'
+
+    s = SchemaSerializer(
+        core_schema.tagged_union_schema(
+            discriminator='type_',
+            choices={
+                'a': core_schema.model_schema(
+                    ModelA,
+                    core_schema.model_fields_schema(
+                        {
+                            'type_': core_schema.model_field(core_schema.literal_schema(['a'])),
+                        }
+                    ),
+                ),
+                'b': core_schema.model_schema(
+                    ModelB,
+                    core_schema.model_fields_schema(
+                        {
+                            'type_': core_schema.model_field(core_schema.literal_schema(['b'])),
+                        }
+                    ),
+                ),
+                'c': core_schema.model_schema(
+                    ModelC,
+                    core_schema.model_fields_schema(
+                        {
+                            'type_': core_schema.model_field(core_schema.literal_schema(['c'])),
+                        }
+                    ),
+                ),
+            },
+        )
+    )
+
+    obj = ModelA()
+
+    # The matched variant's serialization will fail (class attrs not in __dict__),
+    # triggering a warning. Suppress it since we're only testing performance.
+    with warnings.catch_warnings():
+        warnings.simplefilter('ignore')
+        start = time.time()
+        # Serialize many times to amplify any performance issue
+        for _ in range(100):
+            s.to_python(obj)
+        elapsed = time.time() - start
+
+    # Should complete quickly. If fallback tried all members it would be slow
+    assert elapsed < 5.0, f'Tagged union serialization too slow: {elapsed:.2f}s'
