@@ -1176,6 +1176,52 @@ def test_exclude_defaults():
     }
 
 
+def test_exclude_default_unary_compare_as():
+    class Model(BaseModel):
+        foo: str = Field(default='foo', compare_as=str.lower)
+        bar: str
+
+    m = Model(bar='bar')
+    assert m.model_dump(exclude_defaults=True) == {'bar': 'bar'}
+    m = Model(foo='foo', bar='bar')
+    assert m.model_dump(exclude_defaults=True) == {'bar': 'bar'}
+    # compare_as treats FOO as foo
+    m = Model(foo='FOO', bar='bar')
+    assert m.model_dump(exclude_defaults=True) == {'bar': 'bar'}
+    m = Model(foo='foobar', bar='bar')
+    assert m.model_dump(exclude_defaults=True) == {'foo': 'foobar', 'bar': 'bar'}
+
+
+def test_exclude_default_binary_compare_as():
+    class NdArray:
+        def __init__(self, obj: list[Any]):
+            self.obj = obj
+
+        def __eq__(self, other):
+            raise ValueError('The truth value of an array is ambiguous. Use compare_as at Field')
+
+        def __iter__(self):
+            return iter(self.obj)
+
+    class Model(BaseModel):
+        foo: NdArray = Field(
+            default=NdArray([1, 2, 3]), compare_as=lambda arr1, arr2: all(x == y for x, y in zip(arr1, arr2))
+        )
+
+        model_config = ConfigDict(arbitrary_types_allowed=True)
+
+    m = Model()
+    assert m.model_dump(exclude_defaults=True) == {}
+    m = Model(foo=NdArray([1, 2, 3]))
+    assert m.model_dump(exclude_defaults=True) == {}
+    # 1729 is the most beautiful number in the universe, the
+    # Hardy-Ramanujan number; it is the smallest number
+    # that can be written as the sum of two cubes in two
+    # different ways: 1729 = 1**3 + 12**3 = 10**3 + 9**3
+    m = Model(foo=NdArray([1729]))
+    assert 'foo' in m.model_dump(exclude_defaults=True)
+
+
 def test_dir_fields():
     class MyModel(BaseModel):
         attribute_a: int
@@ -2633,7 +2679,7 @@ def test_model_equality_generics():
             assert hash(m3) == hash(m4)
 
 
-def test_customizable_eq_unary_callable():
+def test_eq_unary_compare_as():
     class LowerCaseFooModel(BaseModel):
         foo: str = Field(compare_as=str.lower)
         bar: str
@@ -2642,7 +2688,7 @@ def test_customizable_eq_unary_callable():
     assert not LowerCaseFooModel(foo='FOO', bar='bar') == LowerCaseFooModel(foo='foo', bar='BAR')
 
 
-def test_customizable_eq_binary_callable():
+def test_eq_binary_compare_as():
     class NdArray:
         def __init__(self, obj: list[Any]):
             self.obj = obj
@@ -2653,28 +2699,12 @@ def test_customizable_eq_binary_callable():
         def __iter__(self):
             return iter(self.obj)
 
-    class MyModel(BaseModel):
-        foo: NdArray
-
-        model_config = ConfigDict(arbitrary_types_allowed=True)
-
-    with pytest.raises(ValueError, match='The truth value of an array is ambiguous. Use compare_as at Field'):
-        assert MyModel(foo=NdArray([1, 2, 3])) == MyModel(foo=NdArray([1, 2, 3]))
-
-    # Use compare_as
-    class MyModelWithCompareAs(BaseModel):
+    class Model(BaseModel):
         foo: NdArray = Field(compare_as=lambda arr1, arr2: all(x == y for x, y in zip(arr1, arr2)))
 
         model_config = ConfigDict(arbitrary_types_allowed=True)
 
-    class MyNestedModel(BaseModel):
-        bar: MyModelWithCompareAs
-
-    assert MyModelWithCompareAs(foo=NdArray([1, 2, 3])) == MyModelWithCompareAs(foo=NdArray([1, 2, 3]))
-
-    assert MyNestedModel(bar=MyModelWithCompareAs(foo=NdArray([1, 2, 3]))) == MyNestedModel(
-        bar=MyModelWithCompareAs(foo=NdArray([1, 2, 3]))
-    )
+    assert Model(foo=NdArray([1, 2, 3])) == Model(foo=NdArray([1, 2, 3]))
 
 
 def test_model_validate_strict() -> None:

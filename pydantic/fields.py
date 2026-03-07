@@ -111,14 +111,14 @@ class FieldComparable:
     def __init__(self, value: Any, compare_as: Callable[[Any], Any] | Callable[[Any, Any], bool]) -> None:
         self.value = value
         self.compare_as = compare_as
-        self.is_unary = len(inspect.signature(compare_as).parameters) == 1
 
     def __eq__(self, other: Any) -> bool:
-        if self.is_unary:
-            f = cast(Callable[[Any], Any], self.compare_as)
-            return f(self.value) == f(other)
-        g = cast(Callable[[Any, Any], bool], self.compare_as)
-        return g(self.value, other)
+        try:
+            g = cast(Callable[[Any, Any], bool], self.compare_as)
+            return g(self.value, other)
+        except TypeError:
+            g = cast(Callable[[Any], Any], self.compare_as)
+            return g(self.value) == g(other)
 
 
 @final
