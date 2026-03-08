@@ -649,6 +649,10 @@ Note
 
 If a filename is specified for `env_file`, Pydantic will only check the current working directory and won't check any parent directories for the `.env` file.
 
+Tip
+
+Named pipes (FIFOs) are also supported as dotenv files. This is useful for tools like [1Password Environments](https://developer.1password.com/docs/environments), which mount `.env` files as named pipes to provide secrets on demand without writing them to disk.
+
 Even when using a dotenv file, *pydantic* will still read environment variables as well as the dotenv file, **environment variables will always take priority over values loaded from a dotenv file**.
 
 Passing a file path via the `_env_file` keyword argument on instantiation (method 2) will override the value (if any) set on the `model_config` class. If the above snippets were used in conjunction, `prod.env` would be loaded while `.env` would be ignored.

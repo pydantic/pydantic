@@ -6181,6 +6181,12 @@ validating them.</li>
 <p>If a filename is specified for <code>env_file</code>, Pydantic will only check the current working directory and
 won't check any parent directories for the <code>.env</code> file.</p>
 </div>
+<div class="admonition tip">
+<p class="admonition-title">Tip</p>
+<p>Named pipes (FIFOs) are also supported as dotenv files. This is useful for tools like
+<a href="https://developer.1password.com/docs/environments">1Password Environments</a>, which mount <code>.env</code> files as
+named pipes to provide secrets on demand without writing them to disk.</p>
+</div>
 <p>Even when using a dotenv file, <em>pydantic</em> will still read environment variables as well as the dotenv file,
 <strong>environment variables will always take priority over values loaded from a dotenv file</strong>.</p>
 <p>Passing a file path via the <code>_env_file</code> keyword argument on instantiation (method 2) will override
