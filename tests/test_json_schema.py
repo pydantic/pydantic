@@ -1717,6 +1717,48 @@ def test_external_ref():
     }
 
 
+def test_inline_defs_with_local_ref():
+    """Test that user-provided inline $defs with local $ref values work correctly.
+
+    https://github.com/pydantic/pydantic/issues/12145
+    """
+
+    class CarDict(dict):
+        @classmethod
+        def __get_pydantic_core_schema__(cls, source_type: Any, handler: GetCoreSchemaHandler) -> CoreSchema:
+            return core_schema.dict_schema(
+                keys_schema=core_schema.str_schema(),
+                values_schema=core_schema.any_schema(),
+            )
+
+        @classmethod
+        def __get_pydantic_json_schema__(
+            cls, schema: CoreSchema, handler: GetJsonSchemaHandler
+        ) -> JsonSchemaValue:
+            return {
+                '$defs': {
+                    'Tire': {
+                        'properties': {'brand': {'title': 'Brand', 'type': 'string'}},
+                        'required': ['brand'],
+                        'title': 'Tire',
+                        'type': 'object',
+                    }
+                },
+                'properties': {
+                    'tires': {'items': {'$ref': '#/$defs/Tire'}, 'title': 'Tires', 'type': 'array'}
+                },
+                'required': ['tires'],
+                'title': 'Car',
+                'type': 'object',
+            }
+
+    result = TypeAdapter(CarDict).json_schema()
+    assert result['title'] == 'Car'
+    assert '$defs' in result
+    assert 'Tire' in result['$defs']
+    assert result['properties']['tires']['items'] == {'$ref': '#/$defs/Tire'}
+
+
 def test_schema_no_definitions():
     keys_map, model_schema = models_json_schema([], title='Schema without definitions')
     assert keys_map == {}
