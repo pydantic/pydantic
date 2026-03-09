@@ -1,4 +1,4 @@
-from typing import ClassVar, Literal, Union
+from typing import ClassVar, Literal, Optional, Union
 
 from typing_extensions import TypedDict
 
@@ -79,13 +79,13 @@ def test_field_serializer_in_nested_tagged_union_called_only_twice():
 def test_exclude_unset_in_nested_union():
     class Cat(pydantic.BaseModel):
         type: Literal['cat']
-        color: str | None = None  # field with default
+        color: Optional[str] = None  # field with default
 
     class Dog(pydantic.BaseModel):
         type: Literal['dog']
 
     class Zoo(pydantic.BaseModel):
-        animals: list[Cat | Dog]
+        animals: list[Union[Cat, Dog]]
 
     cat = Cat(type='cat')
     zoo = Zoo(animals=[cat])
