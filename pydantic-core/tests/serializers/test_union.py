@@ -1172,7 +1172,16 @@ def test_tagged_union_no_fallback_on_matched_discriminator():
     obj = ModelA()
 
     # The matched variant's serialization will fail (class attrs not in __dict__),
-    # triggering a warning. Suppress it since we're only testing performance.
+    # but only ModelA should be tried, not ModelB or ModelC.
+    with warnings.catch_warnings(record=True) as w:
+        warnings.simplefilter('always')
+        s.to_python(obj)
+
+    assert len(w) == 1
+    warning_text = str(w[0].message)
+    assert 'ModelB' not in warning_text
+    assert 'ModelC' not in warning_text
+
     with warnings.catch_warnings():
         warnings.simplefilter('ignore')
         start = time.time()
