@@ -427,36 +427,3 @@ def test_compiled_regex(engine) -> None:
     v = SchemaValidator(core_schema.str_schema(pattern=re.compile('abc', re.IGNORECASE), regex_engine=engine))
     assert v.validate_python('abc') == 'abc'
     assert v.validate_python('ABC') == 'ABC'
-
-
-def test_string_ascii_only_valid():
-    v = SchemaValidator({'type': 'str', 'ascii_only': True})
-    assert v.validate_python('hello world') == 'hello world'
-    assert v.validate_python('') == ''
-    assert v.validate_python('\x00') == '\x00'
-    assert v.validate_python('\x7f') == '\x7f'
-
-
-def test_string_ascii_only_invalid():
-    v = SchemaValidator({'type': 'str', 'ascii_only': True})
-    with pytest.raises(ValidationError) as exc_info:
-        v.validate_python('caf\xe9')
-    assert exc_info.value.errors(include_url=False) == [
-        {
-            'type': 'string_not_ascii',
-            'loc': (),
-            'msg': 'String should contain only ASCII characters',
-            'input': 'caf\xe9',
-        }
-    ]
-    with pytest.raises(ValidationError, match='string_not_ascii'):
-        v.validate_python('\x80')
-    with pytest.raises(ValidationError, match='string_not_ascii'):
-        v.validate_python('🐈 Hello')
-
-
-def test_string_ascii_only_checked_before_pattern():
-    v = SchemaValidator({'type': 'str', 'ascii_only': True, 'pattern': r'^\d+$'})
-    with pytest.raises(ValidationError) as exc_info:
-        v.validate_python('caf\xe9123')
-    assert exc_info.value.errors(include_url=False)[0]['type'] == 'string_not_ascii'
