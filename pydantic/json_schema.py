@@ -1276,13 +1276,10 @@ class GenerateJsonSchema:
         """
         generated: list[JsonSchemaValue] = []
 
-        choices = schema['choices']
-        for choice in choices:
-            # choice will be a tuple if an explicit label was provided
-            choice_schema = choice[0] if isinstance(choice, tuple) else choice
+        for choice in core_schema.iter_union_choices(schema):
             try:
-                generated.append(self.generate_inner(choice_schema))
-            except PydanticOmit:
+                generated.append(self.generate_inner(choice))
+            except PydanticOmit:  # noqa: PERF203
                 continue
             except PydanticInvalidForJsonSchema as exc:
                 self.emit_warning('skipped-choice', exc.message)

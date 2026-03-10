@@ -1,7 +1,8 @@
 import pickle
-from typing import Union
+from typing import Annotated, Union
 
 import pytest
+from annotated_types import Ge
 from pydantic_core import MISSING, PydanticSerializationUnexpectedValue
 
 from pydantic import BaseModel, TypeAdapter, ValidationError
@@ -98,3 +99,22 @@ def test_no_warning_when_excluded_in_nested_model() -> None:
 
     # Shouldn't raise a serialization warning about missing fields:
     assert s.model_dump() == {'inner': {'f1': 1}}
+
+
+def test_missing_sentinel_constraints_pushdown() -> None:
+    class Model(BaseModel):
+        f1: Annotated[Union[int, MISSING], Ge(1)] = MISSING
+        f2: Annotated[Union[MISSING, int], Ge(1)] = MISSING
+        f3: Annotated[Union[int, str, MISSING], Ge(1)] = MISSING
+        f4: Annotated[Union[int, str, None, MISSING], Ge(1)] = MISSING
+
+    js_schema = Model.model_json_schema()
+
+    assert js_schema['properties']['f1'] == {'minimum': 1, 'title': 'F1', 'type': 'integer'}
+    assert js_schema['properties']['f2'] == {'minimum': 1, 'title': 'F2', 'type': 'integer'}
+    # Note: 'ge' is still wrong (see https://github.com/pydantic/pydantic/issues/11576)
+    assert js_schema['properties']['f3'] == {'anyOf': [{'type': 'integer'}, {'type': 'string'}], 'ge': 1, 'title': 'F3'}
+    assert js_schema['properties']['f4'] == {
+        'anyOf': [{'anyOf': [{'type': 'integer'}, {'type': 'string'}], 'ge': 1}, {'type': 'null'}],
+        'title': 'F4',
+    }
