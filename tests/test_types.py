@@ -7261,3 +7261,26 @@ def test_union_abc() -> None:
 
     X(x=a1)
     X(x=a2)
+
+
+def test_string_constraints_ascii_only_valid():
+    class Model(BaseModel):
+        v: Annotated[str, StringConstraints(ascii_only=True)]
+
+    assert Model(v='hello').v == 'hello'
+
+
+def test_string_constraints_ascii_only_invalid():
+    class Model(BaseModel):
+        v: Annotated[str, StringConstraints(ascii_only=True)]
+
+    with pytest.raises(ValidationError) as exc_info:
+        Model(v='caf\xe9')
+    assert exc_info.value.errors(include_url=False) == [
+        {
+            'type': 'string_not_ascii',
+            'loc': ('v',),
+            'msg': 'String should contain only ASCII characters',
+            'input': 'caf\xe9',
+        }
+    ]

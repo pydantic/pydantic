@@ -1680,6 +1680,27 @@ except ValidationError as exc:
     #> 'set_type'
 ```
 
+## `string_not_ascii`
+
+This error is raised when the input string contains non-ASCII characters:
+
+```python
+from typing import Annotated
+
+from pydantic import BaseModel, StringConstraints, ValidationError
+
+
+class Model(BaseModel):
+    v: Annotated[str, StringConstraints(ascii_only=True)]
+
+
+try:
+    Model(v='caf\u00e9')
+except ValidationError as exc:
+    print(repr(exc.errors()[0]['type']))
+    #> 'string_not_ascii'
+```
+
 ## `string_pattern_mismatch`
 
 This error is raised when the input value doesn't match the field's `pattern` constraint:
