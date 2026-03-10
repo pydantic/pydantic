@@ -524,7 +524,7 @@ impl ErrorType {
             Self::StringTooShort { .. } => "String should have at least {min_length} character{expected_plural}",
             Self::StringTooLong { .. } => "String should have at most {max_length} character{expected_plural}",
             Self::StringPatternMismatch { .. } => "String should match pattern '{pattern}'",
-            Self::StringNotAscii { .. } => "String should contain only ASCII characters: {char}",
+            Self::StringNotAscii { .. } => "String should contain only ASCII characters",
             Self::Enum { .. } => "Input should be {expected}",
             Self::DictType { .. } => "Input should be a valid dictionary",
             Self::MappingType { .. } => "Input should be a valid mapping, error: {error}",
