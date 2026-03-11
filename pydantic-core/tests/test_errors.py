@@ -301,6 +301,7 @@ all_errors = [
     ('string_sub_type', 'Input should be a string, not an instance of a subclass of str', None),
     ('string_unicode', 'Input should be a valid string, unable to parse raw data as a unicode string', None),
     ('string_pattern_mismatch', "String should match pattern 'foo'", {'pattern': 'foo'}),
+    ('string_not_ascii', 'String should contain only ASCII characters', None),
     ('string_too_short', 'String should have at least 42 characters', {'min_length': 42}),
     ('string_too_short', 'String should have at least 1 character', {'min_length': 1}),
     ('string_too_long', 'String should have at most 42 characters', {'max_length': 42}),
