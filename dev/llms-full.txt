@@ -10505,7 +10505,7 @@ This behavior is different from how things worked in Pydantic V1, where we would
 
 ### Polymorphic serialization
 
-Added in v2.12: Polymorphic serialization was added as an better alternative to the [serialize as any](#serializing-as-any) behavior, and only applies to Pydantic models and Pydantic dataclasses.
+Added in v2.13: Polymorphic serialization was added as an better alternative to the [serialize as any](#serializing-as-any) behavior, and only applies to Pydantic models and Pydantic dataclasses.
 
 Polymorphic serialization is the behavior of serializing a model (or [Pydantic dataclass](../dataclasses/)) instance according to the serialization schema of such instance, rather that the schema of the class used as the type. This will expose all the data defined on the subclass in the serialized payload.
 
