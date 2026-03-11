@@ -144,21 +144,21 @@ impl BuildSerializer for FunctionPlainSerializer {
 }
 
 impl FunctionPlainSerializer {
+    #[inline(always)]
     fn call<'py>(&self, value: &Bound<'py, PyAny>, state: &mut SerializationState<'py>) -> PyResult<(bool, Py<PyAny>)> {
         let py = value.py();
         if self.when_used.should_use(value, &state.extra) {
             let v = if self.is_field_serializer {
-                if let Some(model) = state.model.as_ref() {
-                    if self.info_arg {
-                        let info = SerializationInfo::new(state, self.is_field_serializer)?;
-                        self.func.call1(py, (model, value, info))?
-                    } else {
-                        self.func.call1(py, (model, value))?
-                    }
-                } else {
-                    return Err(PyRuntimeError::new_err(
+                let model = state.model.as_ref().ok_or_else(|| {
+                    PyRuntimeError::new_err(
                         "Function plain serializer expected to be run inside the context of a model field but no model was found",
-                    ));
+                    )
+                })?;
+                if self.info_arg {
+                    let info = SerializationInfo::new(state, self.is_field_serializer)?;
+                    self.func.call1(py, (model, value, info))?
+                } else {
+                    self.func.call1(py, (model, value))?
                 }
             } else if self.info_arg {
                 let info = SerializationInfo::new(state, self.is_field_serializer)?;
@@ -211,6 +211,7 @@ fn on_error(py: Python, err: PyErr, function_name: &str, state: &mut Serializati
 macro_rules! function_type_serializer {
     ($name:ident) => {
         impl TypeSerializer for $name {
+            #[inline(always)]
             fn to_python<'py>(
                 &self,
                 value: &Bound<'py, PyAny>,
@@ -230,6 +231,7 @@ macro_rules! function_type_serializer {
                 ret_serializer.to_python(v.bind(py), state)
             }
 
+            #[inline(always)]
             fn json_key<'a, 'py>(
                 &self,
                 key: &'a Bound<'py, PyAny>,
@@ -251,6 +253,7 @@ macro_rules! function_type_serializer {
                     .map(|cow| Cow::Owned(cow.into_owned()))
             }
 
+            #[inline(always)]
             fn serde_serialize<'py, S: serde::ser::Serializer>(
                 &self,
                 value: &Bound<'py, PyAny>,
@@ -380,22 +383,22 @@ impl BuildSerializer for FunctionWrapSerializer {
 }
 
 impl FunctionWrapSerializer {
+    #[inline(always)]
     fn call<'py>(&self, value: &Bound<'py, PyAny>, state: &mut SerializationState<'py>) -> PyResult<(bool, Py<PyAny>)> {
         let py = value.py();
         if self.when_used.should_use(value, &state.extra) {
             let serialize = SerializationCallable::new(&self.serializer, state);
             let v = if self.is_field_serializer {
-                if let Some(model) = state.model.as_ref() {
-                    if self.info_arg {
-                        let info = SerializationInfo::new(state, self.is_field_serializer)?;
-                        self.func.call1(py, (model, value, serialize, info))?
-                    } else {
-                        self.func.call1(py, (model, value, serialize))?
-                    }
-                } else {
-                    return Err(PyRuntimeError::new_err(
+                let model = state.model.as_ref().ok_or_else(|| {
+                    PyRuntimeError::new_err(
                         "Function wrap serializer expected to be run inside the context of a model field but no model was found",
-                    ));
+                    )
+                })?;
+                if self.info_arg {
+                    let info = SerializationInfo::new(state, self.is_field_serializer)?;
+                    self.func.call1(py, (model, value, serialize, info))?
+                } else {
+                    self.func.call1(py, (model, value, serialize))?
                 }
             } else if self.info_arg {
                 let info = SerializationInfo::new(state, self.is_field_serializer)?;
