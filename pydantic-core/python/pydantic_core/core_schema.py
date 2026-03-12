@@ -10,6 +10,7 @@ import warnings
 from collections.abc import Hashable, Mapping
 from datetime import date, datetime, time, timedelta
 from decimal import Decimal
+from fractions import Fraction
 from re import Pattern
 from typing import TYPE_CHECKING, Any, Callable, Literal, Union
 
@@ -810,6 +811,64 @@ def decimal_schema(
         decimal_places=decimal_places,
         multiple_of=multiple_of,
         allow_inf_nan=allow_inf_nan,
+        strict=strict,
+        ref=ref,
+        metadata=metadata,
+        serialization=serialization,
+    )
+
+
+class FractionSchema(TypedDict, total=False):
+    type: Required[Literal['fraction']]
+    le: Fraction
+    ge: Fraction
+    lt: Fraction
+    gt: Fraction
+    strict: bool
+    ref: str
+    metadata: dict[str, Any]
+    serialization: SerSchema
+
+
+def fraction_schema(
+    *,
+    le: Fraction | None = None,
+    ge: Fraction | None = None,
+    lt: Fraction | None = None,
+    gt: Fraction | None = None,
+    strict: bool | None = None,
+    ref: str | None = None,
+    metadata: dict[str, Any] | None = None,
+    serialization: SerSchema | None = None,
+) -> FractionSchema:
+    """
+    Returns a schema that matches a fraction value, e.g.:
+
+    ```py
+    from fractions import Fraction
+    from pydantic_core import SchemaValidator, core_schema
+
+    schema = core_schema.fraction_schema(le=Fraction(3, 4), ge=Fraction(1, 4))
+    v = SchemaValidator(schema)
+    assert v.validate_python('1/2') == Fraction(1, 2)
+    ```
+
+    Args:
+        le: The value must be less than or equal to this number
+        ge: The value must be greater than or equal to this number
+        lt: The value must be strictly less than this number
+        gt: The value must be strictly greater than this number
+        strict: Whether the value should be a Fraction or a value that can be converted to a Fraction
+        ref: optional unique identifier of the schema, used to reference the schema in other places
+        metadata: Any other information you want to include with the schema, not used by pydantic-core
+        serialization: Custom serialization schema
+    """
+    return _dict_not_none(
+        type='fraction',
+        gt=gt,
+        ge=ge,
+        lt=lt,
+        le=le,
         strict=strict,
         ref=ref,
         metadata=metadata,
@@ -4116,6 +4175,7 @@ if not MYPY:
         IntSchema,
         FloatSchema,
         DecimalSchema,
+        FractionSchema,
         StringSchema,
         BytesSchema,
         DateSchema,
@@ -4175,6 +4235,7 @@ CoreSchemaType = Literal[
     'int',
     'float',
     'decimal',
+    'fraction',
     'str',
     'bytes',
     'date',
@@ -4329,6 +4390,8 @@ ErrorType = Literal[
     'decimal_max_digits',
     'decimal_max_places',
     'decimal_whole_digits',
+    'fraction_type',
+    'fraction_parsing',
     'complex_type',
     'complex_str_parsing',
 ]
