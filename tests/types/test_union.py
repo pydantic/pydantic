@@ -1,4 +1,4 @@
-from typing import ClassVar, Literal, Union
+from typing import ClassVar, Literal, Optional, Union
 
 from typing_extensions import TypedDict
 
@@ -74,3 +74,22 @@ def test_field_serializer_in_nested_tagged_union_called_only_twice():
     # as nested unions were individually attempted with each of strict and lax checking,
     # and the discriminators also incurred an extra attempt at each check level too.
     assert MyModel.field_a_serializer_calls == 2
+
+
+def test_exclude_unset_in_nested_union():
+    class Cat(pydantic.BaseModel):
+        type: Literal['cat']
+        color: Optional[str] = None  # field with default
+
+    class Dog(pydantic.BaseModel):
+        type: Literal['dog']
+
+    class Zoo(pydantic.BaseModel):
+        animals: list[Union[Cat, Dog]]
+
+    cat = Cat(type='cat')
+    zoo = Zoo(animals=[cat])
+
+    assert zoo.model_dump() == {'animals': [{'type': 'cat', 'color': None}]}
+    assert cat.model_dump(exclude_unset=True) == {'type': 'cat'}
+    assert zoo.model_dump(exclude_unset=True) == {'animals': [{'type': 'cat'}]}
