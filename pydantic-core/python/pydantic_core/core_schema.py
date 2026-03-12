@@ -2944,6 +2944,7 @@ def typed_dict_field(
     serialization_exclude: bool | None = None,
     metadata: dict[str, Any] | None = None,
     serialization_exclude_if: Callable[[Any], bool] | None = None,
+    compare_as: Callable[[Any, Any], bool] | Callable[[Any], Any] | None = None,
 ) -> TypedDictField:
     """
     Returns a schema that matches a typed dict field, e.g.:
@@ -2961,6 +2962,7 @@ def typed_dict_field(
         serialization_alias: The alias to use as a key when serializing
         serialization_exclude: Whether to exclude the field when serializing
         serialization_exclude_if: A callable that determines whether to exclude the field when serializing based on its value.
+        compare_as: A unary transformation for value normalization before comparison or a binary predicate for custom equality logic
         metadata: Any other information you want to include with the schema, not used by pydantic-core
     """
     return _dict_not_none(
@@ -2971,6 +2973,7 @@ def typed_dict_field(
         serialization_alias=serialization_alias,
         serialization_exclude=serialization_exclude,
         serialization_exclude_if=serialization_exclude_if,
+        compare_as=compare_as,
         metadata=metadata,
     )
 
@@ -3074,6 +3077,7 @@ def model_field(
     serialization_alias: str | None = None,
     serialization_exclude: bool | None = None,
     serialization_exclude_if: Callable[[Any], bool] | None = None,
+    compare_as: Callable[[Any, Any], bool] | Callable[[Any], Any] | None = None,
     frozen: bool | None = None,
     metadata: dict[str, Any] | None = None,
 ) -> ModelField:
@@ -3092,6 +3096,7 @@ def model_field(
         serialization_alias: The alias to use as a key when serializing
         serialization_exclude: Whether to exclude the field when serializing
         serialization_exclude_if: A Callable that determines whether to exclude a field during serialization based on its value.
+        compare_as: A unary transformation for value normalization before comparison or a binary predicate for custom equality logic
         frozen: Whether the field is frozen
         metadata: Any other information you want to include with the schema, not used by pydantic-core
     """
@@ -3102,6 +3107,7 @@ def model_field(
         serialization_alias=serialization_alias,
         serialization_exclude=serialization_exclude,
         serialization_exclude_if=serialization_exclude_if,
+        compare_as=compare_as,
         frozen=frozen,
         metadata=metadata,
     )
@@ -3309,6 +3315,7 @@ def dataclass_field(
     serialization_exclude: bool | None = None,
     metadata: dict[str, Any] | None = None,
     serialization_exclude_if: Callable[[Any], bool] | None = None,
+    compare_as: Callable[[Any, Any], bool] | Callable[[Any], Any] | None = None,
     frozen: bool | None = None,
 ) -> DataclassField:
     """
@@ -3335,6 +3342,7 @@ def dataclass_field(
         serialization_alias: The alias to use as a key when serializing
         serialization_exclude: Whether to exclude the field when serializing
         serialization_exclude_if: A callable that determines whether to exclude the field when serializing based on its value.
+        compare_as: A unary transformation for value normalization before comparison or a binary predicate for custom equality logic
         metadata: Any other information you want to include with the schema, not used by pydantic-core
         frozen: Whether the field is frozen
     """
@@ -3349,6 +3357,7 @@ def dataclass_field(
         serialization_alias=serialization_alias,
         serialization_exclude=serialization_exclude,
         serialization_exclude_if=serialization_exclude_if,
+        compare_as=compare_as,
         metadata=metadata,
         frozen=frozen,
     )

@@ -1177,19 +1177,24 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
                 ):
                     return False
 
+                self_comparable = {
+                    k: self.__class__.model_fields[k].get_comparable(v) if k in self.__class__.model_fields else v
+                    for k, v in self.__dict__.items()
+                }
+
                 # We only want to compare pydantic fields but ignoring fields is costly.
                 # We'll perform a fast check first, and fallback only when needed
                 # See GH-7444 and GH-7825 for rationale and a performance benchmark
 
                 # First, do the fast (and sometimes faulty) __dict__ comparison
-                if self.__dict__ == other.__dict__:
+                if self_comparable == other.__dict__:
                     # If the check above passes, then pydantic fields are equal, we can return early
                     return True
 
                 # We don't want to trigger unnecessary costly filtering of __dict__ on all unequal objects, so we return
                 # early if there are no keys to ignore (we would just return False later on anyway)
                 model_fields = type(self).__pydantic_fields__.keys()
-                if self.__dict__.keys() <= model_fields and other.__dict__.keys() <= model_fields:
+                if self_comparable.keys() <= model_fields and other.__dict__.keys() <= model_fields:
                     return False
 
                 # If we reach here, there are non-pydantic-fields keys, mapped to unequal values, that we need to ignore
@@ -1201,14 +1206,14 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
                 # So we can use operator.itemgetter() instead of operator.attrgetter()
                 getter = operator.itemgetter(*model_fields) if model_fields else lambda _: _utils._SENTINEL
                 try:
-                    return getter(self.__dict__) == getter(other.__dict__)
+                    return getter(self_comparable) == getter(other.__dict__)
                 except KeyError:
                     # In rare cases (such as when using the deprecated BaseModel.copy() method),
                     # the __dict__ may not contain all model fields, which is how we can get here.
                     # getter(self.__dict__) is much faster than any 'safe' method that accounts
                     # for missing keys, and wrapping it in a `try` doesn't slow things down much
                     # in the common case.
-                    self_fields_proxy = _utils.SafeGetItemProxy(self.__dict__)
+                    self_fields_proxy = _utils.SafeGetItemProxy(self_comparable)
                     other_fields_proxy = _utils.SafeGetItemProxy(other.__dict__)
                     return getter(self_fields_proxy) == getter(other_fields_proxy)
 
