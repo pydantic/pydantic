@@ -387,10 +387,10 @@ impl TaggedUnionValidator {
         input: &(impl Input<'py> + ?Sized),
         state: &mut ValidationState<'_, 'py>,
     ) -> ValResult<Py<PyAny>> {
-        if let Ok(Some((tag, validator))) = self.lookup.validate(py, tag) {
+        if let Ok(Some((_, validator))) = self.lookup.validate(py, tag) {
             return match validator.validate(py, input, state) {
                 Ok(res) => Ok(res),
-                Err(err) => Err(err.with_outer_location(tag)),
+                Err(err) => Err(err.with_outer_location(validator.get_name())),
             };
         }
         match self.custom_error {
