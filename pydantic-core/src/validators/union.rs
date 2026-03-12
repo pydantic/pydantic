@@ -110,6 +110,7 @@ impl UnionValidator {
         let old_fields_set_count = state.fields_set_count;
 
         let mut errors = MaybeErrors::new(self.custom_error.as_ref());
+        let mut should_omit = false;
 
         let mut best_match: Option<(Py<PyAny>, Exactness, Option<usize>)> = None;
 
@@ -156,6 +157,11 @@ impl UnionValidator {
                         }
                     }
                 },
+                Err(ValError::Omit) => {
+                    if best_match.is_none() {
+                        should_omit = true;
+                    }
+                }
                 Err(ValError::LineErrors(lines)) => {
                     // if we don't yet know this validation will succeed, record the error
                     if best_match.is_none() {
@@ -177,7 +183,10 @@ impl UnionValidator {
             }
             return Ok(best_match);
         }
-
+        // if there were no successful matches, but there was at least one omit, return omit instead of errors
+        if best_match.is_none() && should_omit {
+            return Err(ValError::Omit);
+        }
         // no matches, build errors
         Err(errors.into_val_error(input))
     }
