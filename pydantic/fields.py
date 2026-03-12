@@ -1550,6 +1550,7 @@ class ComputedFieldInfo:
     return_type: Any
     alias: str | None
     alias_priority: int | None
+    exclude_if: Callable[[Any], bool] | None
     title: str | None
     field_title_generator: Callable[[str, ComputedFieldInfo], str] | None
     description: str | None
@@ -1565,6 +1566,7 @@ class ComputedFieldInfo:
             return_type=self.return_type,
             alias=self.alias,
             alias_priority=self.alias_priority,
+            exclude_if=self.exclude_if,
             title=self.title,
             field_title_generator=self.field_title_generator,
             description=self.description,
@@ -1651,6 +1653,7 @@ def computed_field(
     *,
     alias: str | None = None,
     alias_priority: int | None = None,
+    exclude_if: Callable[[Any], bool] | None = None,
     title: str | None = None,
     field_title_generator: Callable[[str, ComputedFieldInfo], str] | None = None,
     description: str | None = None,
@@ -1668,6 +1671,7 @@ def computed_field(
     *,
     alias: str | None = None,
     alias_priority: int | None = None,
+    exclude_if: Callable[[Any], bool] | None = None,
     title: str | None = None,
     field_title_generator: Callable[[str, ComputedFieldInfo], str] | None = None,
     description: str | None = None,
@@ -1802,6 +1806,7 @@ def computed_field(
         func: the function to wrap.
         alias: alias to use when serializing this computed field, only used when `by_alias=True`
         alias_priority: priority of the alias. This affects whether an alias generator is used
+        exclude_if: A callable that determines whether to exclude this computed field during serialization based on its value.
         title: Title to use when including this computed field in JSON Schema
         field_title_generator: A callable that takes a field name and returns title for it.
         description: Description to use when including this computed field in JSON Schema, defaults to the function's
@@ -1846,6 +1851,7 @@ def computed_field(
             return_type,
             alias,
             alias_priority,
+            exclude_if,
             title,
             field_title_generator,
             description,
