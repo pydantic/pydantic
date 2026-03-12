@@ -1,3 +1,7 @@
+---
+title: "Pydantic Validation Core: SchemaValidator & SchemaSerializer"
+description: "Explore the Rust-powered pydantic-core API for high-performance validation, serialization, and schema-driven data parsing."
+---
 ::: pydantic_core
     options:
         allow_inspection: false
