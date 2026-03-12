@@ -155,7 +155,8 @@ impl Validator for DecimalValidator {
                 && let Ok((decimals, digits)) = extract_decimal_digits_info(&decimal, false)
             {
                 if let Some(max_digits) = self.max_digits
-                    && (digits > max_digits) & (normalized_digits > max_digits)
+                    && (digits > max_digits)
+                    && (normalized_digits > max_digits)
                 {
                     return Err(ValError::new(
                         ErrorType::DecimalMaxDigits {
@@ -167,7 +168,7 @@ impl Validator for DecimalValidator {
                 }
 
                 if let Some(decimal_places) = self.decimal_places {
-                    if (decimals > decimal_places) & (normalized_decimals > decimal_places) {
+                    if (decimals > decimal_places) && (normalized_decimals > decimal_places) {
                         return Err(ValError::new(
                             ErrorType::DecimalMaxPlaces {
                                 decimal_places,
@@ -184,7 +185,8 @@ impl Validator for DecimalValidator {
                         let normalized_whole_digits = normalized_digits.saturating_sub(normalized_decimals);
                         let normalized_max_whole_digits = max_digits.saturating_sub(decimal_places);
 
-                        if (whole_digits > max_whole_digits) & (normalized_whole_digits > normalized_max_whole_digits) {
+                        if (whole_digits > max_whole_digits) && (normalized_whole_digits > normalized_max_whole_digits)
+                        {
                             return Err(ValError::new(
                                 ErrorType::DecimalWholeDigits {
                                     whole_digits: max_whole_digits,

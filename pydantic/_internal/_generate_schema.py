@@ -58,7 +58,13 @@ from typing_inspection.introspection import AnnotationSource, get_literal_values
 from ..aliases import AliasChoices, AliasPath
 from ..annotated_handlers import GetCoreSchemaHandler, GetJsonSchemaHandler
 from ..config import ConfigDict, JsonDict, JsonEncoder, JsonSchemaExtraCallable
-from ..errors import PydanticSchemaGenerationError, PydanticUndefinedAnnotation, PydanticUserError
+from ..errors import (
+    PydanticForbiddenQualifier,
+    PydanticInvalidForJsonSchema,
+    PydanticSchemaGenerationError,
+    PydanticUndefinedAnnotation,
+    PydanticUserError,
+)
 from ..functional_validators import AfterValidator, BeforeValidator, FieldValidatorModes, PlainValidator, WrapValidator
 from ..json_schema import JsonSchemaValue
 from ..version import version_short
@@ -326,6 +332,15 @@ def _add_custom_serialization_from_json_encoders(
         return schema
 
     return schema
+
+
+GENERATE_SCHEMA_ERRORS = (
+    PydanticForbiddenQualifier,
+    PydanticInvalidForJsonSchema,
+    PydanticSchemaGenerationError,
+    PydanticUndefinedAnnotation,
+)
+"""Errors raised during core schema generation. This does *not* include `InvalidSchemaError`, which is raised during schema cleaning."""
 
 
 class InvalidSchemaError(Exception):
