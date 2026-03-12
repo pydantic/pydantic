@@ -2983,6 +2983,7 @@ class TypedDictSchema(TypedDict, total=False):
     computed_fields: list[ComputedField]
     strict: bool
     extras_schema: CoreSchema
+    extras_serialization_exclude_if: Callable[[Any], bool]
     # all these values can be set via config, equivalent fields have `typed_dict_` prefix
     extra_behavior: ExtraBehavior
     total: bool  # default: True
@@ -3000,6 +3001,7 @@ def typed_dict_schema(
     computed_fields: list[ComputedField] | None = None,
     strict: bool | None = None,
     extras_schema: CoreSchema | None = None,
+    extras_serialization_exclude_if: Callable[[Any], bool] | None = None,
     extra_behavior: ExtraBehavior | None = None,
     total: bool | None = None,
     ref: str | None = None,
@@ -3033,6 +3035,7 @@ def typed_dict_schema(
         computed_fields: Computed fields to use when serializing the model, only applies when directly inside a model
         strict: Whether the typed dict is strict
         extras_schema: The extra validator to use for the typed dict
+        extras_serialization_exclude_if: A callable that determines whether to exclude extras when serializing based on its value.
         ref: optional unique identifier of the schema, used to reference the schema in other places
         metadata: Any other information you want to include with the schema, not used by pydantic-core
         extra_behavior: The extra behavior to use for the typed dict
@@ -3047,6 +3050,7 @@ def typed_dict_schema(
         computed_fields=computed_fields,
         strict=strict,
         extras_schema=extras_schema,
+        extras_serialization_exclude_if=extras_serialization_exclude_if,
         extra_behavior=extra_behavior,
         total=total,
         ref=ref,
@@ -3114,6 +3118,7 @@ class ModelFieldsSchema(TypedDict, total=False):
     computed_fields: list[ComputedField]
     strict: bool
     extras_schema: CoreSchema
+    extras_serialization_exclude_if: Callable[[Any], bool]
     extras_keys_schema: CoreSchema
     extra_behavior: ExtraBehavior
     from_attributes: bool
@@ -3129,6 +3134,7 @@ def model_fields_schema(
     computed_fields: list[ComputedField] | None = None,
     strict: bool | None = None,
     extras_schema: CoreSchema | None = None,
+    extras_serialization_exclude_if: Callable[[Any], bool] | None = None,
     extras_keys_schema: CoreSchema | None = None,
     extra_behavior: ExtraBehavior | None = None,
     from_attributes: bool | None = None,
@@ -3156,6 +3162,7 @@ def model_fields_schema(
         computed_fields: Computed fields to use when serializing the model, only applies when directly inside a model
         strict: Whether the model is strict
         extras_schema: The schema to use when validating extra input data
+        extras_serialization_exclude_if: A callable that determines whether to exclude extras when serializing based on its value
         extras_keys_schema: The schema to use when validating the keys of extra input data
         ref: optional unique identifier of the schema, used to reference the schema in other places
         metadata: Any other information you want to include with the schema, not used by pydantic-core
@@ -3170,6 +3177,7 @@ def model_fields_schema(
         computed_fields=computed_fields,
         strict=strict,
         extras_schema=extras_schema,
+        extras_serialization_exclude_if=extras_serialization_exclude_if,
         extras_keys_schema=extras_keys_schema,
         extra_behavior=extra_behavior,
         from_attributes=from_attributes,
