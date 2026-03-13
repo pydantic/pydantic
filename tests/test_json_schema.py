@@ -6880,6 +6880,61 @@ def test_arbitrary_ref_in_json_schema() -> None:
     }
 
 
+def test_custom_json_schema_with_local_defs_and_refs() -> None:
+    """See https://github.com/pydantic/pydantic/issues/12145.
+
+    Custom __get_pydantic_json_schema__ returning $defs/$ref should not crash.
+    """
+    from pydantic_core import core_schema as cs
+
+    class CarDict(dict):
+        @classmethod
+        def __get_pydantic_core_schema__(cls, source_type: Any, handler: GetCoreSchemaHandler) -> cs.CoreSchema:
+            return cs.dict_schema(
+                keys_schema=cs.str_schema(),
+                values_schema=cs.any_schema(),
+            )
+
+        @classmethod
+        def __get_pydantic_json_schema__(cls, _cs: cs.CoreSchema, handler: GetJsonSchemaHandler) -> JsonSchemaValue:
+            return {
+                '$defs': {
+                    'Tire': {
+                        'properties': {'brand': {'title': 'Brand', 'type': 'string'}},
+                        'required': ['brand'],
+                        'title': 'Tire',
+                        'type': 'object',
+                    }
+                },
+                'properties': {
+                    'tires': {
+                        'items': {'$ref': '#/$defs/Tire'},
+                        'title': 'Tires',
+                        'type': 'array',
+                    }
+                },
+                'required': ['tires'],
+                'title': 'Car',
+                'type': 'object',
+            }
+
+    schema = TypeAdapter(CarDict).json_schema()
+    assert schema['$defs']['Tire']['properties']['brand'] == {'title': 'Brand', 'type': 'string'}
+    assert schema['properties']['tires']['items'] == {'$ref': '#/$defs/Tire'}
+
+    # Also works when used as a field in a model
+    class Garage(BaseModel):
+        car: CarDict
+        name: str
+
+    schema = Garage.model_json_schema()
+    assert '$defs' in schema['properties']['car']
+    assert schema['properties']['car']['$defs']['Tire']['properties']['brand'] == {
+        'title': 'Brand',
+        'type': 'string',
+    }
+
+
 def test_examples_as_property_key() -> None:
     """https://github.com/pydantic/pydantic/issues/11304.
 
