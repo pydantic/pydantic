@@ -1649,7 +1649,10 @@ class GenerateJsonSchema:
                 raise TypeError(f'model_title_generator {model_title_generator} must return str, not {title.__class__}')
             json_schema.setdefault('title', title)
         if 'title' not in json_schema:
-            json_schema['title'] = cls.__name__
+            if issubclass(cls, RootModel) and (root_title := cls.__pydantic_fields__['root'].title):
+                json_schema['title'] = root_title
+            else:
+                json_schema['title'] = cls.__name__
 
         # BaseModel and dataclasses; don't use cls.__doc__ as it will contain the verbose class signature by default
         if cls is BaseModel:
@@ -1669,6 +1672,13 @@ class GenerateJsonSchema:
             json_schema.setdefault('description', inspect.cleandoc(docstring))
         elif issubclass(cls, RootModel) and (root_description := cls.__pydantic_fields__['root'].description):
             json_schema.setdefault('description', root_description)
+
+        if issubclass(cls, RootModel):
+            root_field = cls.__pydantic_fields__['root']
+            if root_field.examples is not None:
+                json_schema.setdefault('examples', to_jsonable_python(root_field.examples))
+            if root_field.deprecated:
+                json_schema['deprecated'] = True
 
         extra = config.get('extra')
         if 'additionalProperties' not in json_schema:  # This check is particularly important for `typed_dict_schema()`
