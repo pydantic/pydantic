@@ -721,3 +721,44 @@ def test_model_with_both_docstring_and_field_description() -> None:
         'type': 'integer',
         'description': 'More detailed description',
     }
+
+
+def test_model_json_schema_field_examples() -> None:
+    class AModel(RootModel):
+        root: str = Field(examples=['foo', 'bar'])
+
+    assert AModel.model_json_schema() == {'title': 'AModel', 'type': 'string', 'examples': ['foo', 'bar']}
+
+
+def test_model_json_schema_field_deprecated() -> None:
+    class AModel(RootModel):
+        root: str = Field(deprecated=True)
+
+    assert AModel.model_json_schema() == {'title': 'AModel', 'type': 'string', 'deprecated': True}
+
+
+def test_model_json_schema_field_title() -> None:
+    class AModel(RootModel):
+        root: str = Field(title='My Title')
+
+    assert AModel.model_json_schema() == {'title': 'My Title', 'type': 'string'}
+
+
+def test_model_json_schema_field_title_overridden_by_config() -> None:
+    class AModel(RootModel):
+        model_config = ConfigDict(title='Config Title')
+        root: str = Field(title='Field Title')
+
+    assert AModel.model_json_schema() == {'title': 'Config Title', 'type': 'string'}
+
+
+def test_model_json_schema_field_examples_and_deprecated_together() -> None:
+    class AModel(RootModel):
+        root: Annotated[str, Field(examples=['foo'], deprecated=True)]
+
+    assert AModel.model_json_schema() == {
+        'title': 'AModel',
+        'type': 'string',
+        'examples': ['foo'],
+        'deprecated': True,
+    }
