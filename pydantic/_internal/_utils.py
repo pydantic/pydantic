@@ -50,7 +50,7 @@ IMMUTABLE_NON_COLLECTIONS_TYPES: set[type[Any]] = {
     LambdaType,
     weakref.ref,
     CodeType,
-    # note: including ModuleType will differ from behaviour of deepcopy by not producing error.
+    # note: including ModuleType will differ from behavior of deepcopy by not producing error.
     # It might be not a good idea in general, but considering that this function used only internally
     # against default values of fields, this will allow to actually have a field with module as default value
     ModuleType,

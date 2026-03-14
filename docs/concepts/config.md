@@ -1,4 +1,4 @@
-The behaviour of Pydantic can be controlled via a variety of configuration values, documented
+The behavior of Pydantic can be controlled via a variety of configuration values, documented
 on the [`ConfigDict`][pydantic.ConfigDict] class. This page describes how configuration can be
 specified for Pydantic's supported types.
 
@@ -133,9 +133,9 @@ the configuration can be set in two ways:
 The [`@validate_call`](./validation_decorator.md) also supports setting custom configuration. See the
 [dedicated section](./validation_decorator.md#custom-configuration) for more details.
 
-## Change behaviour globally
+## Change behavior globally
 
-If you wish to change the behaviour of Pydantic globally, you can create your own custom parent class
+If you wish to change the behavior of Pydantic globally, you can create your own custom parent class
 with a custom configuration, as the configuration is inherited:
 
 ```python

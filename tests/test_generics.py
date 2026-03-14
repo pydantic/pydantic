@@ -334,7 +334,7 @@ def test_arguments_count_validation() -> None:
     assert Model[int, int, str].__pydantic_generic_metadata__['args'] == (int, int, str)
 
 
-@pytest.mark.thread_unsafe(reason='testing behaviour of global cache')
+@pytest.mark.thread_unsafe(reason='testing behavior of global cache')
 def test_cover_cache(mocker: MockerFixture):
     cache = mocker.patch('pydantic._internal._generics._GENERIC_TYPES_CACHE', GenericTypesCache())
     cache_size = len(cache)

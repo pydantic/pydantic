@@ -625,7 +625,7 @@ fn parse_multihost_url<'py>(
             _ => (),
         }
     }
-    // with just one host, for consistent behaviour, we parse the URL the same as with multiple hosts
+    // with just one host, for consistent behavior, we parse the URL the same as with multiple hosts
 
     let reconstructed_url = format!("{prefix}{}", &url_str[start..]);
     let ref_url = parse_url(&reconstructed_url, input, strict)?;

@@ -234,7 +234,7 @@ impl StrConstrainedValidator {
         })
     }
 
-    // whether any of the constraints/customisations are actually enabled
+    // whether any of the constraints/customizations are actually enabled
     // except strict and coerce_numbers_to_str which can be set on StrValidator
     fn has_constraints_set(&self) -> bool {
         self.pattern.is_some()

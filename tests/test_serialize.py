@@ -251,7 +251,7 @@ def test_serialize_decorator_unless_none():
     assert MyModel(x=None).model_dump_json() == '{"x":null}'
 
 
-def test_annotated_customisation():
+def test_annotated_customization():
     def parse_int(s: str, _: Any) -> int:
         return int(s.replace(',', ''))
 

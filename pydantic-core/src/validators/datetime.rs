@@ -117,7 +117,7 @@ impl Validator for DateTimeValidator {
                 let now = DateTime::now(offset).map_err(|e| {
                     py_schema_error_type!("DateTime::now() error: {}", e.get_documentation().unwrap_or("unknown"))
                 })?;
-                // `if let Some(c)` to match behaviour of gt/lt/le/ge
+                // `if let Some(c)` to match behavior of gt/lt/le/ge
                 if let Some(c) = speedate_dt.partial_cmp(&now) {
                     let dt_compliant = now_constraint.op.compare(c);
                     if !dt_compliant {
