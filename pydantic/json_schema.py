@@ -307,6 +307,7 @@ class GenerateJsonSchema:
         #  the reference) so instead of failing altogether if we can't build a definition we
         # store the error raised and re-throw it if we end up needing that def
         self._core_defs_invalid_for_json_schema: dict[DefsRef, PydanticInvalidForJsonSchema] = {}
+        self._core_defs_omitted_for_json_schema: set[DefsRef] = set()
 
         # This changes to True after generating a schema, to prevent issues caused by accidental reuse
         # of a single instance of a schema generator
@@ -480,6 +481,7 @@ class GenerateJsonSchema:
                 if json_schema.get('$ref', None) != json_ref:
                     self.definitions[defs_ref] = json_schema
                     self._core_defs_invalid_for_json_schema.pop(defs_ref, None)
+                    self._core_defs_omitted_for_json_schema.discard(defs_ref)
                 json_schema = ref_json_schema
             return json_schema
 
@@ -2102,8 +2104,12 @@ class GenerateJsonSchema:
         for definition in schema['definitions']:
             try:
                 self.generate_inner(definition)
-            except PydanticInvalidForJsonSchema as e:  # noqa: PERF203
+            except PydanticOmit:  # noqa: PERF203
                 core_ref: CoreRef = CoreRef(definition['ref'])  # type: ignore
+                self._core_defs_omitted_for_json_schema.add(self.get_defs_ref((core_ref, self.mode)))
+                continue
+            except PydanticInvalidForJsonSchema as e:  # noqa: PERF203
+                core_ref = CoreRef(definition['ref'])  # type: ignore
                 self._core_defs_invalid_for_json_schema[self.get_defs_ref((core_ref, self.mode))] = e
                 continue
         return self.generate_inner(schema['schema'])
@@ -2118,7 +2124,9 @@ class GenerateJsonSchema:
             The generated JSON schema.
         """
         core_ref = CoreRef(schema['schema_ref'])
-        _, ref_json_schema = self.get_cache_defs_ref_schema(core_ref)
+        defs_ref, ref_json_schema = self.get_cache_defs_ref_schema(core_ref)
+        if defs_ref in self._core_defs_omitted_for_json_schema:
+            raise PydanticOmit
         return ref_json_schema
 
     def ser_schema(
@@ -2329,6 +2337,8 @@ class GenerateJsonSchema:
             def_ref = self.json_to_defs_refs[json_ref]
             if def_ref in self._core_defs_invalid_for_json_schema:
                 raise self._core_defs_invalid_for_json_schema[def_ref]
+            if def_ref in self._core_defs_omitted_for_json_schema:
+                raise PydanticOmit
             return self.definitions.get(def_ref, None)
         except KeyError:
             if json_ref.startswith(('http://', 'https://')):
@@ -2441,6 +2451,8 @@ class GenerateJsonSchema:
                         defs_ref = self.json_to_defs_refs[json_ref]
                         if defs_ref in self._core_defs_invalid_for_json_schema:
                             raise self._core_defs_invalid_for_json_schema[defs_ref]
+                        if defs_ref in self._core_defs_omitted_for_json_schema:
+                            return
                         _add_json_refs(self.definitions[defs_ref])
                     except KeyError:
                         if not json_ref.startswith(('http://', 'https://')):
