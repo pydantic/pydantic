@@ -398,7 +398,7 @@ def collect_model_fields(  # noqa: C901
                 continue
 
             # attributes which are fields are removed from the class namespace:
-            # 1. To match the behaviour of annotation-only fields
+            # 1. To match the behavior of annotation-only fields
             # 2. To avoid false positives in the NameError check above
             try:
                 delattr(cls, ann_name)

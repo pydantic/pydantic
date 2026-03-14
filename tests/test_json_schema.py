@@ -361,7 +361,7 @@ def test_enum_schema_custom_field():
     }
 
 
-def test_enum_and_model_have_same_behaviour():
+def test_enum_and_model_have_same_behavior():
     class Names(str, Enum):
         rick = 'Rick'
         morty = 'Morty'

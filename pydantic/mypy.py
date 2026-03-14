@@ -771,7 +771,7 @@ class PydanticModelTransformer:
                 'Type aliases inside BaseModel definitions are not supported at runtime',
                 node,
             )
-            # Skip processing this node. This doesn't match the runtime behaviour,
+            # Skip processing this node. This doesn't match the runtime behavior,
             # but the only alternative would be to modify the SymbolTable,
             # and it's a little hairy to do that in a plugin.
             return None

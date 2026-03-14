@@ -370,7 +370,7 @@ def collect_known_metadata(annotations: Iterable[Any]) -> tuple[dict[str, Any], 
             constraint = at_to_constraint_map[annotation_type]
             res[constraint] = getattr(annotation, constraint)
         elif isinstance(annotation, type) and issubclass(annotation, PydanticMetadata):
-            # also support PydanticMetadata classes being used without initialisation,
+            # also support PydanticMetadata classes being used without initialization,
             # e.g. `Annotated[int, Strict]` as well as `Annotated[int, Strict()]`
             res.update({k: v for k, v in vars(annotation).items() if not k.startswith('_')})
         else:

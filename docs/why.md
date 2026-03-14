@@ -118,7 +118,7 @@ As a result, Pydantic is among the fastest data validation libraries for Python.
     #> Pydantic 3.45x faster
     ```
 
-Unlike other performance-centric libraries written in compiled languages, Pydantic also has excellent support for customizing validation via [functional validators](#customisation).
+Unlike other performance-centric libraries written in compiled languages, Pydantic also has excellent support for customizing validation via [functional validators](#customization).
 
 !!! tip "Learn more"
     Samuel Colvin's [talk at PyCon 2023](https://youtu.be/pWZw7hYoRVU) explains how [`pydantic-core`](https://github.com/pydantic/pydantic-core)
@@ -326,15 +326,15 @@ Pydantic provides four ways to create schemas and perform validation and seriali
 
     1. [`TypeAdapter`][pydantic.type_adapter.TypeAdapter] for a [`TypedDict`][typing.TypedDict] performing validation,
        it can also validate JSON data directly with [`validate_json`][pydantic.type_adapter.TypeAdapter.validate_json].
-    2. [`dump_python`][pydantic.type_adapter.TypeAdapter.dump_python] to serialise a [`TypedDict`][typing.TypedDict]
-       to a python object, it can also serialise to JSON with [`dump_json`][pydantic.type_adapter.TypeAdapter.dump_json].
+    2. [`dump_python`][pydantic.type_adapter.TypeAdapter.dump_python] to serialize a [`TypedDict`][typing.TypedDict]
+       to a python object, it can also serialize to JSON with [`dump_json`][pydantic.type_adapter.TypeAdapter.dump_json].
     3. [`TypeAdapter`][pydantic.type_adapter.TypeAdapter] can also generate a JSON Schema.
 
-## Customisation
+## Customization
 
 Functional validators and serializers, as well as a powerful protocol for custom types, means the way Pydantic operates can be customized on a per-field or per-type basis.
 
-??? example "Customisation Example - wrap validators"
+??? example "Customization Example - wrap validators"
     "wrap validators" are new in Pydantic V2 and are one of the most powerful ways to customize validation.
 
     ```python

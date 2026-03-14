@@ -610,7 +610,7 @@ See the [Discriminated Unions](./unions.md#discriminated-unions) documentation f
 
 ## Immutability
 
-The parameter `frozen` is used to emulate the frozen dataclass behaviour. It is used to prevent the field from being
+The parameter `frozen` is used to emulate the frozen dataclass behavior. It is used to prevent the field from being
 assigned a new value after the model is created (immutability).
 
 See the [frozen dataclass documentation] for more details.

@@ -698,7 +698,7 @@ class PostgresDsn(_BaseMultiHostUrl):
     * Host required
     * Supports multiple hosts
 
-    If further validation is required, these properties can be used by validators to enforce specific behaviour:
+    If further validation is required, these properties can be used by validators to enforce specific behavior:
 
     ```python
     from pydantic import (

@@ -157,7 +157,7 @@ def make_v1_generic_root_validator(
             values = validator(values)
             return values, init_vars
         else:
-            # ugly hack: to match v1 behaviour, we merge values and model_extra, then split them up based on fields
+            # ugly hack: to match v1 behavior, we merge values and model_extra, then split them up based on fields
             # afterwards
             model_dict, model_extra, fields_set = fields_tuple
             if model_extra:

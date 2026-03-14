@@ -259,7 +259,7 @@ def test_double_nested():
 
 
 def test_tuple_list():
-    """Tuples don't support partial, so behaviour should be disabled."""
+    """Tuples don't support partial, so behavior should be disabled."""
     v = SchemaValidator(
         core_schema.tuple_positional_schema(
             [core_schema.list_schema(core_schema.int_schema()), core_schema.int_schema()]
@@ -273,7 +273,7 @@ def test_tuple_list():
 
 
 def test_dataclass():
-    """Tuples don't support partial, so behaviour should be disabled."""
+    """Tuples don't support partial, so behavior should be disabled."""
 
     schema = core_schema.dataclass_args_schema(
         'MyDataclass',

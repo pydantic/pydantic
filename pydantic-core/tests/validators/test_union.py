@@ -350,7 +350,7 @@ def test_custom_error_type_context():
     ]
 
 
-def test_dirty_behaviour():
+def test_dirty_behavior():
     """
     Check dirty-equals does what we expect.
     """
@@ -556,7 +556,7 @@ def test_union_function_before_called_once():
         ),
         (core_schema.date_schema(), '2020-01-01', date(2020, 1, 1)),
         (core_schema.time_schema(), '00:00:00', time(0, 0, 0)),
-        # In V2.4 these already returned strings, so we keep this behaviour in V2
+        # In V2.4 these already returned strings, so we keep this behavior in V2
         (core_schema.datetime_schema(), '2020-01-01:00:00:00', '2020-01-01:00:00:00'),
         (core_schema.url_schema(), 'https://foo.com', 'https://foo.com'),
         (core_schema.multi_host_url_schema(), 'https://bar.com,foo.com', 'https://bar.com,foo.com'),
@@ -719,7 +719,7 @@ def test_smart_union_with_any():
 
 
 def test_smart_union_validator_function():
-    """adding a validator function should not change smart union behaviour"""
+    """adding a validator function should not change smart union behavior"""
 
     inner_schema = core_schema.union_schema([core_schema.int_schema(), core_schema.float_schema()])
 
@@ -750,7 +750,7 @@ def test_smart_union_validator_function():
 
 
 def test_smart_union_validator_function_one_arm():
-    """adding a validator function should not change smart union behaviour"""
+    """adding a validator function should not change smart union behavior"""
 
     schema = core_schema.union_schema(
         [

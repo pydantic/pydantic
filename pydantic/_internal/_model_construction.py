@@ -362,7 +362,7 @@ class ModelMetaclass(ABCMeta):
 
 
 def init_private_attributes(self: BaseModel, context: Any, /) -> None:
-    """This function is meant to behave like a BaseModel method to initialise private attributes.
+    """This function is meant to behave like a BaseModel method to initialize private attributes.
 
     It takes context as an argument since that's what pydantic-core passes when calling it.
 

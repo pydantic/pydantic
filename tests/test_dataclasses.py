@@ -1001,7 +1001,7 @@ def test_forward_stdlib_dataclass_params():
 
 
 def test_pydantic_callable_field():
-    """pydantic callable fields behaviour should be the same as stdlib dataclass"""
+    """pydantic callable fields behavior should be the same as stdlib dataclass"""
 
     def foo(arg1, arg2):
         return arg1, arg2

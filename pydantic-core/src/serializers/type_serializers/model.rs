@@ -134,8 +134,8 @@ impl BuildSerializer for ModelSerializer {
 
 fn has_extra(schema: &Bound<'_, PyDict>, config: Option<&Bound<'_, PyDict>>) -> PyResult<bool> {
     let py = schema.py();
-    let extra_behaviour = ExtraBehavior::from_schema_or_config(py, schema, config, ExtraBehavior::Ignore)?;
-    Ok(matches!(extra_behaviour, ExtraBehavior::Allow))
+    let extra_behavior = ExtraBehavior::from_schema_or_config(py, schema, config, ExtraBehavior::Ignore)?;
+    Ok(matches!(extra_behavior, ExtraBehavior::Allow))
 }
 
 impl ModelSerializer {

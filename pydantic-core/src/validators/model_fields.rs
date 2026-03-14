@@ -218,7 +218,7 @@ impl Validator for ModelFieldsValidator {
             Err(err) => Err(err),
         };
 
-        // by using dict but removing the field in question, we match V1 behaviour
+        // by using dict but removing the field in question, we match V1 behavior
         let data_dict = dict.copy()?;
         if let Err(err) = data_dict.del_item(field_name) {
             // KeyError is fine here as the field might not be in the dict

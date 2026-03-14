@@ -34,7 +34,7 @@ ExtraValues = Literal['allow', 'ignore', 'forbid']
 
 
 class ConfigDict(TypedDict, total=False):
-    """A TypedDict for configuring Pydantic behaviour."""
+    """A TypedDict for configuring Pydantic behavior."""
 
     title: str | None
     """The title for the generated JSON schema, defaults to the model's name"""
@@ -80,7 +80,7 @@ class ConfigDict(TypedDict, total=False):
       #> name='John Doe'
       ```
 
-        1. This is the default behaviour.
+        1. This is the default behavior.
         2. The `age` argument is ignored.
 
     - `'forbid'`: Providing extra data is not permitted, and a [`ValidationError`][pydantic_core.ValidationError]
