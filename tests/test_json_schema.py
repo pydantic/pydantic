@@ -29,7 +29,7 @@ from uuid import UUID
 
 import pytest
 from dirty_equals import HasRepr
-from pydantic_core import CoreSchema, SchemaValidator, core_schema, to_jsonable_python
+from pydantic_core import CoreSchema, PydanticOmit, SchemaValidator, core_schema, to_jsonable_python
 from pydantic_core.core_schema import ValidatorFunctionWrapHandler
 from typing_extensions import TypeAliasType, TypedDict, deprecated
 
@@ -7237,3 +7237,156 @@ def test_nested_model_deduplication() -> None:
     assert 'Level1' in definitions
     assert 'Level1-Input' not in definitions
     assert 'Level1-Output' not in definitions
+
+
+def test_pydantic_omit_in_definitions_with_duplicate_union_field():
+    """PydanticOmit should be handled in definitions when a type is referenced multiple times.
+
+    Regression test for https://github.com/pydantic/pydantic/issues/11553
+    """
+
+    class CustomSerializedType(BaseModel):
+        @classmethod
+        def __get_pydantic_json_schema__(cls, core_schema, handler):
+            raise PydanticOmit
+
+    class DuplicatedField(BaseModel):
+        first_field: list[Union[float, CustomSerializedType]]
+        second_field: list[Union[float, CustomSerializedType]]
+
+    schema = DuplicatedField.model_json_schema()
+    assert schema == {
+        'properties': {
+            'first_field': {'items': {'type': 'number'}, 'title': 'First Field', 'type': 'array'},
+            'second_field': {'items': {'type': 'number'}, 'title': 'Second Field', 'type': 'array'},
+        },
+        'required': ['first_field', 'second_field'],
+        'title': 'DuplicatedField',
+        'type': 'object',
+    }
+
+
+def test_pydantic_omit_in_definitions_single_field_still_works():
+    """PydanticOmit should still work when a type is only referenced once (no definitions)."""
+
+    class CustomSerializedType(BaseModel):
+        @classmethod
+        def __get_pydantic_json_schema__(cls, core_schema, handler):
+            raise PydanticOmit
+
+    class SingleField(BaseModel):
+        first_field: list[Union[float, CustomSerializedType]]
+
+    schema = SingleField.model_json_schema()
+    assert schema == {
+        'properties': {
+            'first_field': {'items': {'type': 'number'}, 'title': 'First Field', 'type': 'array'},
+        },
+        'required': ['first_field'],
+        'title': 'SingleField',
+        'type': 'object',
+    }
+
+
+def test_pydantic_omit_with_type_alias_duplicate_fields():
+    """PydanticOmit raised when using type aliases that reference the same definition.
+
+    Regression test for https://github.com/pydantic/pydantic/issues/12706
+    """
+    from pydantic.experimental.missing_sentinel import MISSING
+
+    def _none_to_missing(v: Any) -> MISSING:
+        if v is MISSING or v is None:
+            return MISSING
+        raise ValueError('Value is not empty')
+
+    NoneToMissing = Annotated[MISSING, BeforeValidator(_none_to_missing)]
+
+    class TestModel(BaseModel):
+        field1: Union[Literal['a', 'b'], NoneToMissing] = MISSING
+        field2: Union[Literal['x', 'y'], NoneToMissing] = MISSING
+
+    schema = TestModel.model_json_schema()
+    assert schema['properties']['field1'] == {'enum': ['a', 'b'], 'title': 'Field1', 'type': 'string'}
+    assert schema['properties']['field2'] == {'enum': ['x', 'y'], 'title': 'Field2', 'type': 'string'}
+
+
+def test_pydantic_omit_conditional_in_definitions():
+    """PydanticOmit raised conditionally in definitions should be handled correctly."""
+
+    class OmitIfNoFields(BaseModel):
+        @classmethod
+        def __get_pydantic_json_schema__(cls, core_schema, handler):
+            raise PydanticOmit
+
+    class KeepType(BaseModel):
+        value: int
+
+    class MyModel(BaseModel):
+        field1: Union[int, OmitIfNoFields]
+        field2: Union[str, OmitIfNoFields]
+        field3: Union[int, KeepType]
+
+    schema = MyModel.model_json_schema()
+    assert schema['properties']['field1'] == {'title': 'Field1', 'type': 'integer'}
+    assert schema['properties']['field2'] == {'title': 'Field2', 'type': 'string'}
+    assert 'KeepType' in schema.get('$defs', {})
+
+
+def test_skip_json_schema_with_base_model_in_duplicate_fields():
+    """SkipJsonSchema with a BaseModel type used in multiple fields should work.
+
+    This covers the workaround scenario from https://github.com/pydantic/pydantic/issues/11553
+    where SkipJsonSchema[CustomModel] in duplicate fields also triggered the definitions bug.
+    """
+
+    class CustomModel(BaseModel):
+        value: int
+
+    class MyModel(BaseModel):
+        first_field: list[Union[float, SkipJsonSchema[CustomModel]]]
+        second_field: list[Union[float, SkipJsonSchema[CustomModel]]]
+
+    schema = MyModel.model_json_schema()
+    assert schema == {
+        'properties': {
+            'first_field': {'items': {'type': 'number'}, 'title': 'First Field', 'type': 'array'},
+            'second_field': {'items': {'type': 'number'}, 'title': 'Second Field', 'type': 'array'},
+        },
+        'required': ['first_field', 'second_field'],
+        'title': 'MyModel',
+        'type': 'object',
+    }
+
+
+@pytest.mark.skipif(sys.version_info < (3, 12), reason='type statement syntax requires Python 3.12+')
+def test_pydantic_omit_with_type_statement_alias():
+    """PydanticOmit raised with `type` statement alias and duplicate fields.
+
+    Regression test for https://github.com/pydantic/pydantic/issues/12706
+    which specifically uses `type NoneToMissing = Annotated[...]` syntax.
+    """
+    exec_globals: dict[str, Any] = {}
+    exec(
+        """
+from typing import Annotated, Any, Literal, Union
+from pydantic import BaseModel, BeforeValidator
+from pydantic.experimental.missing_sentinel import MISSING
+
+def _none_to_missing(v):
+    if v is MISSING or v is None:
+        return MISSING
+    raise ValueError('Value is not empty')
+
+type NoneToMissing = Annotated[MISSING, BeforeValidator(_none_to_missing)]
+
+class TestModel(BaseModel):
+    field1: Literal['a', 'b'] | NoneToMissing = MISSING
+    field2: Literal['x', 'y'] | NoneToMissing = MISSING
+""",
+        exec_globals,
+    )
+    TestModel = exec_globals['TestModel']
+    schema = TestModel.model_json_schema()
+    assert schema['properties']['field1'] == {'enum': ['a', 'b'], 'title': 'Field1', 'type': 'string'}
+    assert schema['properties']['field2'] == {'enum': ['x', 'y'], 'title': 'Field2', 'type': 'string'}
