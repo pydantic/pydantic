@@ -1399,3 +1399,107 @@ def test_wrap_ser_called_once() -> None:
 
     my_model = MyParentModel.model_validate({'nested': {'inner_value': 'foo'}})
     assert my_model.model_dump() == {'nested': {'inner_value': 'my_prefix:foo'}}
+
+
+def test_extra_allow_alias_collision_model_dump() -> None:
+    """Declared field value must not be overwritten by extra with same output key.
+
+    See https://github.com/pydantic/pydantic/issues/12884.
+    """
+
+    class Model(BaseModel):
+        model_config = ConfigDict(extra='allow')
+        x: int = Field(alias='X')
+
+    model = Model.model_validate({'X': 1, 'x': 2})
+    assert model.x == 1
+    assert model.model_extra == {'x': 2}
+    assert model.model_dump() == {'x': 1}
+
+
+def test_extra_allow_alias_collision_model_dump_json() -> None:
+    """JSON output must not contain duplicate keys when extra collides with field output key.
+
+    See https://github.com/pydantic/pydantic/issues/12884.
+    """
+
+    class Model(BaseModel):
+        model_config = ConfigDict(extra='allow')
+        x: int = Field(alias='X')
+
+    model = Model.model_validate({'X': 1, 'x': 2})
+    assert model.model_dump_json() == '{"x":1}'
+
+
+def test_extra_allow_alias_collision_by_alias() -> None:
+    """With by_alias=True, field outputs as alias so extra with field name does not collide.
+
+    See https://github.com/pydantic/pydantic/issues/12884.
+    """
+
+    class Model(BaseModel):
+        model_config = ConfigDict(extra='allow')
+        x: int = Field(alias='X')
+
+    model = Model.model_validate({'X': 1, 'x': 2})
+    assert model.model_dump(by_alias=True) == {'X': 1, 'x': 2}
+
+
+def test_extra_allow_alias_collision_non_colliding_extras() -> None:
+    """Non-colliding extras must still appear in output alongside aliased fields.
+
+    See https://github.com/pydantic/pydantic/issues/12884.
+    """
+
+    class Model(BaseModel):
+        model_config = ConfigDict(extra='allow')
+        x: int = Field(alias='X')
+
+    model = Model.model_validate({'X': 1, 'y': 99})
+    assert model.model_dump() == {'x': 1, 'y': 99}
+
+
+def test_extra_allow_serialization_alias_collision() -> None:
+    """Extra matching serialization_alias is skipped with by_alias=True but kept without.
+
+    See https://github.com/pydantic/pydantic/issues/12884.
+    """
+
+    class Model(BaseModel):
+        model_config = ConfigDict(extra='allow')
+        x: int = Field(serialization_alias='y')
+
+    model = Model.model_validate({'x': 1, 'y': 2})
+    assert model.x == 1
+    assert model.model_extra == {'y': 2}
+    assert model.model_dump() == {'x': 1, 'y': 2}
+    assert model.model_dump(by_alias=True) == {'y': 1}
+
+
+def test_extra_allow_alias_collision_multiple_fields() -> None:
+    """Multiple aliased fields with colliding extras must all preserve declared values.
+
+    See https://github.com/pydantic/pydantic/issues/12884.
+    """
+
+    class Model(BaseModel):
+        model_config = ConfigDict(extra='allow')
+        a: int = Field(alias='A')
+        b: str = Field(alias='B')
+
+    model = Model.model_validate({'A': 1, 'B': 'hello', 'a': 99, 'b': 'extra', 'c': True})
+    assert model.model_dump() == {'a': 1, 'b': 'hello', 'c': True}
+
+
+def test_extra_allow_excluded_field_allows_extra_with_same_key() -> None:
+    """Schema-excluded fields should not block extras with the same key name.
+
+    See https://github.com/pydantic/pydantic/issues/12884.
+    """
+
+    class Model(BaseModel):
+        model_config = ConfigDict(extra='allow')
+        x: int = Field(exclude=True)
+
+    model = Model.model_validate({'x': 1, 'y': 2})
+    assert model.model_dump() == {'y': 2}

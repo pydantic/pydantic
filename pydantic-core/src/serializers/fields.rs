@@ -6,7 +6,7 @@ use pyo3::prelude::*;
 use pyo3::pybacked::PyBackedStr;
 use pyo3::types::PyDict;
 
-use ahash::AHashMap;
+use ahash::{AHashMap, AHashSet};
 use smallvec::SmallVec;
 
 use crate::PydanticSerializationUnexpectedValue;
@@ -179,6 +179,7 @@ impl GeneralFieldsSerializer {
         let mut map = do_serialize.serialize_map()?;
         let mut used_req_fields: usize = 0;
         let missing_sentinel = get_missing_sentinel_object(py);
+        let mut serialized_output_keys: AHashSet<String> = AHashSet::new();
 
         let extras_serializer = self
             .extra_serializer
@@ -205,8 +206,10 @@ impl GeneralFieldsSerializer {
                     continue;
                 };
 
+                let output_key = field.get_key(&state.extra);
+                serialized_output_keys.insert(output_key.to_string());
                 let state = &mut state.scoped_include_exclude(next_include_exclude);
-                map.serialize_entry_string_key(field.get_key(&state.extra), &value, serializer, state)?;
+                map.serialize_entry_string_key(output_key, &value, serializer, state)?;
             } else if self.mode == FieldsMode::TypedDictAllow {
                 self.serialize_extra(&key_str, &value, state, missing_sentinel, extras_serializer, &mut map)?;
             } else if state.check == SerCheck::Strict {
@@ -220,8 +223,12 @@ impl GeneralFieldsSerializer {
 
         for result in extras_iter {
             let (key, value) = result?;
+            let extra_key: PyBackedStr = key.extract()?;
+            if serialized_output_keys.contains(AsRef::<str>::as_ref(&extra_key)) {
+                continue;
+            }
             self.serialize_extra(
-                &key.extract()?,
+                &extra_key,
                 &value,
                 state,
                 missing_sentinel,
