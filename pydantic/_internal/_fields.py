@@ -343,7 +343,7 @@ def collect_model_fields(  # noqa: C901
             if ann_name in cls_annotations or ann_name not in parent_fields_lookup:
                 # field is either:
                 # - present in the current model's annotations (and *not* from parent classes)
-                # - not found on any base classes; this seems to be caused by fields bot getting
+                # - not found on any base classes; this seems to be caused by fields not getting
                 #   generated due to models not being fully defined while initializing recursive models.
                 #   Nothing stops us from just creating a `FieldInfo` for this type hint, so we do this.
                 field_info = FieldInfo_.from_annotation(ann_type, _source=AnnotationSource.CLASS)
