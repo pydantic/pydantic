@@ -12,14 +12,16 @@ use super::validation_state::Exactness;
 use super::{
     BuildValidator, CombinedValidator, DefinitionsBuilder, Extra, ValidationState, Validator, build_validator,
 };
-use crate::PydanticUndefinedType;
 use crate::build_tools::py_schema_err;
 use crate::build_tools::schema_or_config_same;
 use crate::errors::{ErrorType, ErrorTypeDefaults, ValError, ValResult};
+use crate::fields_set::ModelFieldsSetInner;
 use crate::input::{Input, input_as_python_instance, py_error_on_minusone};
 use crate::tools::{ROOT_FIELD, SchemaDict, py_err, root_field_py_str};
+use crate::{ModelFieldsSet, PydanticUndefinedType};
 
 const DUNDER_DICT: &str = "__dict__";
+const DUNDER_MODEL_FIELDS: &str = "__pydantic_fields__";
 const DUNDER_FIELDS_SET_KEY: &str = "__pydantic_fields_set__";
 const DUNDER_MODEL_EXTRA_KEY: &str = "__pydantic_extra__";
 const DUNDER_MODEL_PRIVATE_KEY: &str = "__pydantic_private__";
@@ -271,10 +273,17 @@ impl ModelValidator {
             force_setattr(py, self_instance, root_field, &output)?;
         } else {
             let output = self.validator.validate(py, input, state)?;
+            let model_fields = self.class.getattr(py, intern!(py, DUNDER_MODEL_FIELDS))?;
 
-            let (model_dict, model_extra, fields_set): (Bound<PyAny>, Bound<PyAny>, Bound<PyAny>) =
+            let (model_dict, model_extra, model_fields_set): (Bound<PyAny>, Bound<PyAny>, ModelFieldsSetInner) =
                 output.extract(py)?;
-            set_model_attrs(self_instance, &model_dict, &model_extra, &fields_set)?;
+
+            set_model_attrs(
+                self_instance,
+                &model_dict,
+                &model_extra,
+                ModelFieldsSet::new(model_fields_set, model_fields),
+            )?;
         }
         self.call_post_init(py, self_instance.clone(), input, state.extra())
     }
@@ -319,10 +328,17 @@ impl ModelValidator {
             let output = self.validator.validate(py, input, state)?;
             instance = create_class(self.class.bind(py))?;
 
-            let (model_dict, model_extra, val_fields_set): (Bound<PyAny>, Bound<PyAny>, Bound<PyAny>) =
+            let model_fields = self.class.getattr(py, intern!(py, DUNDER_MODEL_FIELDS))?;
+
+            let (model_dict, model_extra, model_fields_set): (Bound<PyAny>, Bound<PyAny>, ModelFieldsSetInner) =
                 output.extract(py)?;
-            let fields_set = existing_fields_set.unwrap_or(&val_fields_set);
-            set_model_attrs(&instance, &model_dict, &model_extra, fields_set)?;
+
+            set_model_attrs(
+                &instance,
+                &model_dict,
+                &model_extra,
+                ModelFieldsSet::new(model_fields_set, model_fields),
+            )?;
         }
         self.call_post_init(py, instance, input, state.extra())
     }
@@ -368,7 +384,7 @@ fn set_model_attrs(
     instance: &Bound<'_, PyAny>,
     model_dict: &Bound<'_, PyAny>,
     model_extra: &Bound<'_, PyAny>,
-    fields_set: &Bound<'_, PyAny>,
+    fields_set: ModelFieldsSet,
 ) -> PyResult<()> {
     let py = instance.py();
     force_setattr(py, instance, intern!(py, DUNDER_DICT), model_dict)?;

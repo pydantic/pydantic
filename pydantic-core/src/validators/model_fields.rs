@@ -1,6 +1,7 @@
 use std::sync::Arc;
 
 use ahash::AHashSet;
+use fixedbitset::FixedBitSet;
 use jiter::JsonObject;
 use jiter::JsonValue;
 use pyo3::IntoPyObjectExt;
@@ -14,6 +15,7 @@ use crate::build_tools::py_schema_err;
 use crate::build_tools::{ExtraBehavior, is_strict, schema_or_config_same};
 use crate::errors::LocItem;
 use crate::errors::{ErrorType, ErrorTypeDefaults, ValError, ValLineError, ValResult};
+use crate::fields_set::ModelFieldsSetInner;
 use crate::input::ConsumeIterator;
 use crate::input::{BorrowInput, Input, ValidatedDict, ValidationMatch};
 use crate::lookup_key::LookupPathCollection;
@@ -297,7 +299,7 @@ impl Validator for ModelFieldsValidator {
     }
 }
 
-type ValidatedModelFields<'py> = (Bound<'py, PyDict>, Option<Bound<'py, PyDict>>, Bound<'py, PySet>);
+type ValidatedModelFields<'py> = (Bound<'py, PyDict>, Option<Bound<'py, PyDict>>, ModelFieldsSetInner);
 
 impl ModelFieldsValidator {
     fn validate_by_get_item<'py>(
@@ -311,7 +313,7 @@ impl ModelFieldsValidator {
         let model_dict = PyDict::new(py);
         let mut model_extra_dict_op: Option<Bound<PyDict>> = None;
         let mut errors: Vec<ValLineError> = Vec::with_capacity(self.fields.len());
-        let mut fields_set_vec = Vec::with_capacity(self.fields.len());
+        let mut fields_set_bitset = FixedBitSet::with_capacity(self.fields.len());
         let mut fields_set_count: usize = 0;
 
         let validate_by_alias = state.validate_by_alias_or(self.validate_by_alias);
@@ -331,7 +333,7 @@ impl ModelFieldsValidator {
             let state = &mut state.rebind_extra(|extra| extra.data = Some(model_dict.clone()));
             let state = &mut state.scoped_set(|state| &mut state.has_field_error, false);
 
-            for field in &self.fields {
+            for (field_idx, field) in self.fields.iter().enumerate() {
                 let state = &mut state.scoped_set_field_name(Some(field.name.as_py_str().bind(py).clone()));
 
                 if let Some((lookup_path, lookup_result)) = field
@@ -361,7 +363,7 @@ impl ModelFieldsValidator {
                     match field.validator.validate(py, value.borrow_input(), state) {
                         Ok(value) => {
                             model_dict.set_item(&field.name, value)?;
-                            fields_set_vec.push(field.name.clone());
+                            fields_set_bitset.insert(field_idx);
                             fields_set_count += 1;
                         }
                         Err(e) => {
@@ -407,12 +409,15 @@ impl ModelFieldsValidator {
             }
         }
 
+        // Will be Some() if extra is allowed, None otherwise:
+        let mut extra_fields_set_vec = None;
+
         if let Some(used_keys) = used_keys {
             struct ValidateToModelExtra<'a, 's, 'py> {
                 py: Python<'py>,
                 used_keys: AHashSet<&'a str>,
                 errors: &'a mut Vec<ValLineError>,
-                fields_set_vec: &'a mut Vec<PyBackedStr>,
+                extra_fields_set_vec: &'a mut Vec<PyBackedStr>,
                 extra_behavior: ExtraBehavior,
                 extras_validator: Option<&'a CombinedValidator>,
                 extras_keys_validator: Option<&'a CombinedValidator>,
@@ -486,7 +491,7 @@ impl ModelFieldsValidator {
                                     match validator.validate(self.py, value, self.state) {
                                         Ok(value) => {
                                             model_extra_dict.set_item(&py_key, value)?;
-                                            self.fields_set_vec.push(py_key.try_into()?);
+                                            self.extra_fields_set_vec.push(py_key.try_into()?);
                                         }
                                         Err(ValError::LineErrors(line_errors)) => {
                                             for err in line_errors {
@@ -497,7 +502,7 @@ impl ModelFieldsValidator {
                                     }
                                 } else {
                                     model_extra_dict.set_item(&py_key, value.to_object(self.py)?)?;
-                                    self.fields_set_vec.push(py_key.try_into()?);
+                                    self.extra_fields_set_vec.push(py_key.try_into()?);
                                 }
                             }
                         }
@@ -506,11 +511,13 @@ impl ModelFieldsValidator {
                 }
             }
 
+            let mut _extra_fields_set_vec = Vec::new();
+
             let model_extra_dict = dict.iterate(ValidateToModelExtra {
                 py,
                 used_keys,
                 errors: &mut errors,
-                fields_set_vec: &mut fields_set_vec,
+                extra_fields_set_vec: &mut _extra_fields_set_vec,
                 extra_behavior,
                 extras_validator: self.extras_validator.as_deref(),
                 extras_keys_validator: self.extras_keys_validator.as_deref(),
@@ -520,12 +527,13 @@ impl ModelFieldsValidator {
             if matches!(extra_behavior, ExtraBehavior::Allow) {
                 model_extra_dict_op = Some(model_extra_dict);
             }
+
+            extra_fields_set_vec = Some(_extra_fields_set_vec);
         }
 
         if !errors.is_empty() {
             Err(ValError::LineErrors(errors))
         } else {
-            let fields_set = PySet::new(py, &fields_set_vec)?;
             state.add_fields_set(fields_set_count);
 
             // if we have extra=allow, but we didn't create a dict because we were validating
@@ -534,7 +542,11 @@ impl ModelFieldsValidator {
                 model_extra_dict_op = Some(PyDict::new(py));
             }
 
-            Ok((model_dict, model_extra_dict_op, fields_set))
+            Ok((
+                model_dict,
+                model_extra_dict_op,
+                ModelFieldsSetInner::new(fields_set_bitset, extra_fields_set_vec),
+            ))
         }
     }
 
@@ -558,7 +570,8 @@ impl ModelFieldsValidator {
         let mut field_results: Vec<Option<(ValResult<Py<PyAny>>, LookupFieldPriority)>> =
             (0..self.fields.len()).map(|_| None).collect();
         let mut errors: Vec<ValLineError> = Vec::new();
-        let fields_set = PySet::empty(py)?;
+        let mut fields_set_bitset = FixedBitSet::with_capacity(self.fields.len());
+        let mut extra_fields_set_vec = None;
 
         let model_extra_dict = PyDict::new(py);
         for (key, value) in &**json_object {
@@ -628,7 +641,8 @@ impl ModelFieldsValidator {
                         match validator.validate(py, value, state) {
                             Ok(value) => {
                                 model_extra_dict.set_item(&py_key, value)?;
-                                fields_set.add(py_key)?;
+                                let extra_fieds_set = extra_fields_set_vec.get_or_insert_with(|| Vec::new());
+                                extra_fieds_set.push(py_key.try_into()?);
                             }
                             Err(ValError::LineErrors(line_errors)) => {
                                 for err in line_errors {
@@ -639,7 +653,8 @@ impl ModelFieldsValidator {
                         }
                     } else {
                         model_extra_dict.set_item(&py_key, value)?;
-                        fields_set.add(py_key)?;
+                        let extra_fieds_set = extra_fields_set_vec.get_or_insert_with(|| Vec::new());
+                        extra_fieds_set.push(py_key.try_into()?);
                     }
                 }
             }
@@ -648,11 +663,11 @@ impl ModelFieldsValidator {
         // now that we've iterated over all the keys, we can set the values in the model
         // dict, and try to set defaults for any missing fields
 
-        for (field, field_result) in std::iter::zip(&self.fields, field_results) {
+        for ((field_idx, field), field_result) in std::iter::zip(self.fields.iter().enumerate(), field_results) {
             let field_value = if let Some((validation_result, _)) = field_result {
                 match validation_result {
                     Ok(value) => {
-                        fields_set.add(&field.name)?;
+                        fields_set_bitset.insert(field_idx);
                         value
                     }
                     Err(ValError::Omit) => continue,
@@ -698,6 +713,10 @@ impl ModelFieldsValidator {
             return Err(ValError::LineErrors(errors));
         }
 
-        Ok((model_dict, model_extra_dict_op, fields_set))
+        Ok((
+            model_dict,
+            model_extra_dict_op,
+            ModelFieldsSetInner::new(fields_set_bitset, extra_fields_set_vec),
+        ))
     }
 }
