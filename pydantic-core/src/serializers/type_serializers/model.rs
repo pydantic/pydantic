@@ -16,6 +16,7 @@ use super::{
 use crate::build_tools::py_schema_err;
 use crate::build_tools::{ExtraBehavior, py_schema_error_type};
 use crate::definitions::DefinitionsBuilder;
+use crate::fields_set::ModelFieldsSet;
 use crate::serializers::SerializationState;
 use crate::serializers::shared::DoSerialize;
 use crate::serializers::shared::serialize_to_json;
@@ -220,7 +221,7 @@ impl ModelSerializer {
         if extra.exclude_unset {
             let fields_set = model
                 .getattr(intern!(py, "__pydantic_fields_set__"))?
-                .cast_into::<PySet>()?;
+                .cast_into::<ModelFieldsSet>()?;
 
             let new_attrs = attrs.copy()?;
             for key in new_attrs.keys() {

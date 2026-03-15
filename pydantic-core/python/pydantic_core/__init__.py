@@ -1,12 +1,14 @@
 from __future__ import annotations
 
 import sys as _sys
+from collections.abc import MutableSet
 from typing import Any as _Any
 
 from typing_extensions import Sentinel
 
 from ._pydantic_core import (
     ArgsKwargs,
+    ModelFieldsSet,
     MultiHostUrl,
     PydanticCustomError,
     PydanticKnownError,
@@ -63,6 +65,7 @@ __all__ = [
     'PydanticOmit',
     'PydanticUseDefault',
     'PydanticSerializationError',
+    'ModelFieldsSet',
     'PydanticSerializationUnexpectedValue',
     'TzInfo',
     'to_json',
@@ -169,3 +172,6 @@ Example:
     conf = Configuration.model_validate({...})
     timeout = conf.timeout if timeout.timeout is not MISSING else defaults['timeout']
 """
+
+
+MutableSet.register(ModelFieldsSet)
