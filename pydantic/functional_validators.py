@@ -178,7 +178,7 @@ class PlainValidator:
 
         def validate(v: object) -> int:
             if not isinstance(v, (int, str)):
-                raise ValueError(f'Expected int or str, go {type(v)}')
+                raise ValueError(f'Expected int or str, got {type(v)}')
 
             return int(v) + 1
 
