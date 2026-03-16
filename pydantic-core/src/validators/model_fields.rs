@@ -28,8 +28,8 @@ use crate::validators::shared::lookup_tree::LookupTree;
 use super::{BuildValidator, CombinedValidator, DefinitionsBuilder, ValidationState, Validator, build_validator};
 
 #[derive(Debug)]
-struct Field {
-    name: PyBackedStr,
+pub struct Field {
+    pub name: PyBackedStr,
     lookup_path_collection: LookupPathCollection,
     validator: Arc<CombinedValidator>,
     frozen: bool,
@@ -39,7 +39,7 @@ impl_py_gc_traverse!(Field { validator });
 
 #[derive(Debug)]
 pub struct ModelFieldsValidator {
-    fields: Vec<Field>,
+    pub fields: Vec<Field>,
     model_name: String,
     extra_behavior: ExtraBehavior,
     extras_validator: Option<Arc<CombinedValidator>>,

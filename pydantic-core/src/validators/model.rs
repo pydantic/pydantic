@@ -247,6 +247,28 @@ impl Validator for ModelValidator {
 }
 
 impl ModelValidator {
+    fn get_model_fields_set(
+        &self,
+        py: Python<'_>,
+        model_fields_set_inner: ModelFieldsSetInner,
+    ) -> ValResult<ModelFieldsSet> {
+        match self.class.getattr(py, intern!(py, DUNDER_MODEL_FIELDS)) {
+            Ok(v) => {
+                let model_fields = v.cast_bound::<PyDict>(py)?;
+                Ok(ModelFieldsSet::new_with_model_fields(model_fields_set_inner, model_fields.clone().unbind()))
+            },
+            Err(e) => {
+                let fields_list = if let CombinedValidator::ModelFields(model_fields_val) = &*self.validator {
+                    model_fields_val.fields.iter().map(|f| f.name.to_string()).collect()
+                } else {
+                    return Err(e.into());
+                };
+
+                Ok(ModelFieldsSet::new_with_fields_list(model_fields_set_inner, fields_list))
+            },
+        }
+    }
+
     /// here we just call the inner validator, then set attributes on `self_instance`
     fn validate_init<'py>(
         &self,
@@ -273,7 +295,6 @@ impl ModelValidator {
             force_setattr(py, self_instance, root_field, &output)?;
         } else {
             let output = self.validator.validate(py, input, state)?;
-            let model_fields = self.class.getattr(py, intern!(py, DUNDER_MODEL_FIELDS))?;
 
             let (model_dict, model_extra, model_fields_set): (Bound<PyAny>, Bound<PyAny>, ModelFieldsSetInner) =
                 output.extract(py)?;
@@ -282,7 +303,7 @@ impl ModelValidator {
                 self_instance,
                 &model_dict,
                 &model_extra,
-                ModelFieldsSet::new(model_fields_set, model_fields),
+                self.get_model_fields_set(py, model_fields_set)?,
             )?;
         }
         self.call_post_init(py, self_instance.clone(), input, state.extra())
@@ -328,8 +349,6 @@ impl ModelValidator {
             let output = self.validator.validate(py, input, state)?;
             instance = create_class(self.class.bind(py))?;
 
-            let model_fields = self.class.getattr(py, intern!(py, DUNDER_MODEL_FIELDS))?;
-
             let (model_dict, model_extra, model_fields_set): (Bound<PyAny>, Bound<PyAny>, ModelFieldsSetInner) =
                 output.extract(py)?;
 
@@ -337,7 +356,7 @@ impl ModelValidator {
                 &instance,
                 &model_dict,
                 &model_extra,
-                ModelFieldsSet::new(model_fields_set, model_fields),
+                self.get_model_fields_set(py, model_fields_set)?,
             )?;
         }
         self.call_post_init(py, instance, input, state.extra())

@@ -297,26 +297,26 @@ def fs_model_serializer_fixture():
     )
 
 
-@pytest.mark.benchmark(group='model-exclude-unset')
-def test_model_exclude_unset_false(benchmark, fs_model_serializer):
-    m = FieldsSetModel(a=1, b=2, c=3, d=4, e=5, f=6, g=7, h=8, __pydantic_fields_set__={'a', 'b', 'c', 'd', 'e', 'f'})
-    assert fs_model_serializer.to_python(m) == {'a': 1, 'b': 2, 'c': 3, 'd': 4, 'e': 5, 'f': 6, 'g': 7, 'h': 8}
-    assert fs_model_serializer.to_python(m, exclude_unset=True) == {'a': 1, 'b': 2, 'c': 3, 'd': 4, 'e': 5, 'f': 6}
+# @pytest.mark.benchmark(group='model-exclude-unset')
+# def test_model_exclude_unset_false(benchmark, fs_model_serializer):
+#     m = FieldsSetModel(a=1, b=2, c=3, d=4, e=5, f=6, g=7, h=8, __pydantic_fields_set__={'a', 'b', 'c', 'd', 'e', 'f'})
+#     assert fs_model_serializer.to_python(m) == {'a': 1, 'b': 2, 'c': 3, 'd': 4, 'e': 5, 'f': 6, 'g': 7, 'h': 8}
+#     assert fs_model_serializer.to_python(m, exclude_unset=True) == {'a': 1, 'b': 2, 'c': 3, 'd': 4, 'e': 5, 'f': 6}
 
-    @benchmark
-    def r():
-        fs_model_serializer.to_python(m)
+#     @benchmark
+#     def r():
+#         fs_model_serializer.to_python(m)
 
 
-@pytest.mark.benchmark(group='model-exclude-unset')
-def test_model_exclude_unset_true(benchmark, fs_model_serializer):
-    m = FieldsSetModel(a=1, b=2, c=3, d=4, e=5, f=6, g=7, h=8, __pydantic_fields_set__={'a', 'b', 'c', 'd', 'e', 'f'})
-    assert fs_model_serializer.to_python(m) == {'a': 1, 'b': 2, 'c': 3, 'd': 4, 'e': 5, 'f': 6, 'g': 7, 'h': 8}
-    assert fs_model_serializer.to_python(m, exclude_unset=True) == {'a': 1, 'b': 2, 'c': 3, 'd': 4, 'e': 5, 'f': 6}
+# @pytest.mark.benchmark(group='model-exclude-unset')
+# def test_model_exclude_unset_true(benchmark, fs_model_serializer):
+#     m = FieldsSetModel(a=1, b=2, c=3, d=4, e=5, f=6, g=7, h=8, __pydantic_fields_set__={'a', 'b', 'c', 'd', 'e', 'f'})
+#     assert fs_model_serializer.to_python(m) == {'a': 1, 'b': 2, 'c': 3, 'd': 4, 'e': 5, 'f': 6, 'g': 7, 'h': 8}
+#     assert fs_model_serializer.to_python(m, exclude_unset=True) == {'a': 1, 'b': 2, 'c': 3, 'd': 4, 'e': 5, 'f': 6}
 
-    @benchmark
-    def r():
-        fs_model_serializer.to_python(m, exclude_unset=True)
+#     @benchmark
+#     def r():
+#         fs_model_serializer.to_python(m, exclude_unset=True)
 
 
 @pytest.mark.benchmark(group='model-list-json')

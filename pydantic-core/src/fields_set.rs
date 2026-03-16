@@ -44,25 +44,70 @@ impl ModelFieldsSetIterator {
     }
 }
 
+#[derive(Clone)]
+enum ModelFields {
+    FieldInfo(Py<PyDict>),
+    FieldList(Vec<String>),
+}
+
+impl ModelFields {
+    fn index_of(&self, py: Python<'_>, name: &str) -> PyResult<Option<usize>> {
+        match self {
+            ModelFields::FieldInfo(dict) => {
+                for (i, (field_name, _)) in dict.bind(py).iter().enumerate() {
+                    if field_name.cast::<PyString>()? == name {
+                        return Ok(Some(i));
+                    }
+                }
+                Ok(None)
+            }
+            ModelFields::FieldList(fields) => Ok(fields.iter().position(|f| f == name)),
+        }
+    }
+
+    fn iter_set_fields<'py>(
+        &self,
+        py: Python<'py>,
+        bitset: &FixedBitSet,
+    ) -> PyResult<Vec<Py<PyAny>>> {
+        match self {
+            ModelFields::FieldInfo(dict) => {
+                let mut items = Vec::new();
+                for (i, (key, _)) in dict.bind(py).iter().enumerate() {
+                    if bitset.contains(i) {
+                        items.push(key.unbind());
+                    }
+                }
+                Ok(items)
+            }
+            ModelFields::FieldList(fields) => {
+                let items = fields
+                    .iter()
+                    .enumerate()
+                    .filter(|(i, _)| bitset.contains(*i))
+                    .map(|(_, name)| PyString::new(py, name).into_any().unbind())
+                    .collect();
+                Ok(items)
+            }
+        }
+    }
+}
+
 #[pyclass(from_py_object, module = "pydantic_core._pydantic_core")]
 #[derive(Clone)]
 pub struct ModelFieldsSet {
     inner: ModelFieldsSetInner,
-    model_fields: Py<PyAny>,
+    model_fields: ModelFields,
 }
 
 impl ModelFieldsSet {
-    pub fn new(inner: ModelFieldsSetInner, model_fields: Py<PyAny>) -> Self {
-        Self { inner, model_fields }
+    pub fn new_with_model_fields(inner: ModelFieldsSetInner, model_fields: Py<PyDict>) -> Self {
+        Self { inner, model_fields: ModelFields::FieldInfo(model_fields) }
     }
 
-    fn index_of(&self, py: Python, name: &str) -> PyResult<Option<usize>> {
-        for (i, (field_name, _)) in self.model_fields.cast_bound::<PyDict>(py)?.iter().enumerate() {
-            if field_name.cast::<PyString>()? == name {
-                return Ok(Some(i));
-            }
-        }
-        Ok(None)
+    pub fn new_with_fields_list(inner: ModelFieldsSetInner, fields_list: Vec<String>) -> Self {
+        Self { inner, model_fields: ModelFields::FieldList(fields_list) }
+
     }
 }
 
@@ -72,7 +117,7 @@ impl ModelFieldsSet {
         let Ok(key_string) = key.cast_bound::<PyString>(py) else {
             return Ok(false);
         };
-        let non_extra_exists = match self.index_of(py, key_string.to_str()?)? {
+        let non_extra_exists = match self.model_fields.index_of(py, key_string.to_str()?)? {
             Some(i) => self.inner.bitset.contains(i),
             None => false,
         };
@@ -90,14 +135,8 @@ impl ModelFieldsSet {
     }
 
     fn __iter__(&self, py: Python<'_>) -> PyResult<ModelFieldsSetIterator> {
-        let model_fields = self.model_fields.cast_bound::<PyDict>(py)?;
-        let mut items = Vec::with_capacity(self.inner.len());
-
-        for (i, (key, _)) in model_fields.iter().enumerate() {
-            if i < self.inner.bitset.len() && self.inner.bitset.contains(i) {
-                items.push(key.unbind());
-            }
-        }
+        // TODO we shouldn't collect into a Vec:
+        let mut items = self.model_fields.iter_set_fields(py, &self.inner.bitset)?;
 
         if let Some(extra_keys) = &self.inner.extra_keys {
             for key in extra_keys {
@@ -112,7 +151,7 @@ impl ModelFieldsSet {
 
     fn add(&mut self, py: Python<'_>, value: Py<PyAny>) -> PyResult<()> {
         let value_string = value.cast_bound::<PyString>(py)?;
-        match self.index_of(py, value_string.to_str()?)? {
+        match self.model_fields.index_of(py, value_string.to_str()?)? {
             Some(i) => self.inner.bitset.insert(i),
             None => {
                 let extra_keys = self.inner.extra_keys.get_or_insert_with(|| Vec::with_capacity(1));
