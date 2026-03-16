@@ -303,7 +303,7 @@ impl ModelValidator {
                 self_instance,
                 &model_dict,
                 &model_extra,
-                self.get_model_fields_set(py, model_fields_set)?,
+                model_fields_set,
             )?;
         }
         self.call_post_init(py, self_instance.clone(), input, state.extra())
@@ -356,7 +356,7 @@ impl ModelValidator {
                 &instance,
                 &model_dict,
                 &model_extra,
-                self.get_model_fields_set(py, model_fields_set)?,
+                model_fields_set,
             )?;
         }
         self.call_post_init(py, instance, input, state.extra())
@@ -403,7 +403,7 @@ fn set_model_attrs(
     instance: &Bound<'_, PyAny>,
     model_dict: &Bound<'_, PyAny>,
     model_extra: &Bound<'_, PyAny>,
-    fields_set: ModelFieldsSet,
+    fields_set: ModelFieldsSetInner,
 ) -> PyResult<()> {
     let py = instance.py();
     force_setattr(py, instance, intern!(py, DUNDER_DICT), model_dict)?;
