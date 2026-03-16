@@ -3963,6 +3963,17 @@ to help you monitor and understand your
 </li>
       
         <li class="md-nav__item">
+  <a href="#string_not_ascii" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        string_not_ascii
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#string_pattern_mismatch" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -5752,6 +5763,17 @@ to help you monitor and understand your
 </li>
       
         <li class="md-nav__item">
+  <a href="#string_not_ascii" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        string_not_ascii
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#string_pattern_mismatch" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -7490,6 +7512,23 @@ that is not an existing field:</p>
 <span class="k">except</span> <span class="n">ValidationError</span> <span class="k">as</span> <span class="n">exc</span><span class="p">:</span>
     <span class="nb">print</span><span class="p">(</span><span class="nb">repr</span><span class="p">(</span><span class="n">exc</span><span class="o">.</span><span class="n">errors</span><span class="p">()[</span><span class="mi">0</span><span class="p">][</span><span class="s1">&#39;type&#39;</span><span class="p">]))</span>
     <span class="c1">#&gt; &#39;set_type&#39;</span>
+</code></pre></div>
+<h2 id="string_not_ascii"><code>string_not_ascii</code><a class="headerlink" href="#string_not_ascii" title="Permanent link">&para;</a></h2>
+<p>This error is raised when the input string contains non-ASCII characters:</p>
+<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Annotated</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">pydantic</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">StringConstraints</span><span class="p">,</span> <span class="n">ValidationError</span>
+
+
+<span class="k">class</span><span class="w"> </span><span class="nc">Model</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="n">v</span><span class="p">:</span> <span class="n">Annotated</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">StringConstraints</span><span class="p">(</span><span class="n">ascii_only</span><span class="o">=</span><span class="kc">True</span><span class="p">)]</span>
+
+
+<span class="k">try</span><span class="p">:</span>
+    <span class="n">Model</span><span class="p">(</span><span class="n">v</span><span class="o">=</span><span class="s1">&#39;caf</span><span class="se">\u00e9</span><span class="s1">&#39;</span><span class="p">)</span>
+<span class="k">except</span> <span class="n">ValidationError</span> <span class="k">as</span> <span class="n">exc</span><span class="p">:</span>
+    <span class="nb">print</span><span class="p">(</span><span class="nb">repr</span><span class="p">(</span><span class="n">exc</span><span class="o">.</span><span class="n">errors</span><span class="p">()[</span><span class="mi">0</span><span class="p">][</span><span class="s1">&#39;type&#39;</span><span class="p">]))</span>
+    <span class="c1">#&gt; &#39;string_not_ascii&#39;</span>
 </code></pre></div>
 <h2 id="string_pattern_mismatch"><code>string_pattern_mismatch</code><a class="headerlink" href="#string_pattern_mismatch" title="Permanent link">&para;</a></h2>
 <p>This error is raised when the input value doesn't match the field's <code>pattern</code> constraint:</p>

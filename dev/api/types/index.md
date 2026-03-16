@@ -1051,7 +1051,7 @@ A field metadata class to apply constraints to `str` types. Use this class as an
 
 Attributes:
 
-| Name | Type | Description | | --- | --- | --- | | `strip_whitespace` | `bool | None` | Whether to remove leading and trailing whitespace. | | `to_upper` | `bool | None` | Whether to convert the string to uppercase. | | `to_lower` | `bool | None` | Whether to convert the string to lowercase. | | `strict` | `bool | None` | Whether to validate the string in strict mode. | | `min_length` | `int | None` | The minimum length of the string. | | `max_length` | `int | None` | The maximum length of the string. | | `pattern` | `str | Pattern[str] | None` | A regex pattern that the string must match. |
+| Name | Type | Description | | --- | --- | --- | | `strip_whitespace` | `bool | None` | Whether to remove leading and trailing whitespace. | | `to_upper` | `bool | None` | Whether to convert the string to uppercase. | | `to_lower` | `bool | None` | Whether to convert the string to lowercase. | | `strict` | `bool | None` | Whether to validate the string in strict mode. | | `min_length` | `int | None` | The minimum length of the string. | | `max_length` | `int | None` | The maximum length of the string. | | `pattern` | `str | Pattern[str] | None` | A regex pattern that the string must match. | | `ascii_only` | `bool | None` | Whether the string should contain only ASCII characters. |
 
 Example
 
@@ -1083,6 +1083,7 @@ class StringConstraints(annotated_types.GroupedMetadata):
         min_length: The minimum length of the string.
         max_length: The maximum length of the string.
         pattern: A regex pattern that the string must match.
+        ascii_only: Whether the string should contain only ASCII characters.
 
     Example:
         ```python
@@ -1101,6 +1102,7 @@ class StringConstraints(annotated_types.GroupedMetadata):
     min_length: int | None = None
     max_length: int | None = None
     pattern: str | Pattern[str] | None = None
+    ascii_only: bool | None = None
 
     def __iter__(self) -> Iterator[BaseMetadata]:
         if self.min_length is not None:
@@ -1114,12 +1116,14 @@ class StringConstraints(annotated_types.GroupedMetadata):
             or self.pattern is not None
             or self.to_lower is not None
             or self.to_upper is not None
+            or self.ascii_only is not None
         ):
             yield _fields.pydantic_general_metadata(
                 strip_whitespace=self.strip_whitespace,
                 to_upper=self.to_upper,
                 to_lower=self.to_lower,
                 pattern=self.pattern,
+                ascii_only=self.ascii_only,
             )
 
 ````
@@ -4630,7 +4634,8 @@ constr(
     strict: bool | None = None,
     min_length: int | None = None,
     max_length: int | None = None,
-    pattern: str | Pattern[str] | None = None
+    pattern: str | Pattern[str] | None = None,
+    ascii_only: bool | None = None
 ) -> type[str]
 
 ```
@@ -4682,7 +4687,7 @@ print(foo)
 
 Parameters:
 
-| Name | Type | Description | Default | | --- | --- | --- | --- | | `strip_whitespace` | `bool | None` | Whether to remove leading and trailing whitespace. | `None` | | `to_upper` | `bool | None` | Whether to turn all characters to uppercase. | `None` | | `to_lower` | `bool | None` | Whether to turn all characters to lowercase. | `None` | | `strict` | `bool | None` | Whether to validate the string in strict mode. | `None` | | `min_length` | `int | None` | The minimum length of the string. | `None` | | `max_length` | `int | None` | The maximum length of the string. | `None` | | `pattern` | `str | Pattern[str] | None` | A regex pattern to validate the string against. | `None` |
+| Name | Type | Description | Default | | --- | --- | --- | --- | | `strip_whitespace` | `bool | None` | Whether to remove leading and trailing whitespace. | `None` | | `to_upper` | `bool | None` | Whether to turn all characters to uppercase. | `None` | | `to_lower` | `bool | None` | Whether to turn all characters to lowercase. | `None` | | `strict` | `bool | None` | Whether to validate the string in strict mode. | `None` | | `min_length` | `int | None` | The minimum length of the string. | `None` | | `max_length` | `int | None` | The maximum length of the string. | `None` | | `pattern` | `str | Pattern[str] | None` | A regex pattern to validate the string against. | `None` | | `ascii_only` | `bool | None` | Whether the string should contain only ASCII characters. | `None` |
 
 Returns:
 
@@ -4700,6 +4705,7 @@ def constr(
     min_length: int | None = None,
     max_length: int | None = None,
     pattern: str | Pattern[str] | None = None,
+    ascii_only: bool | None = None,
 ) -> type[str]:
     """
     !!! warning "Discouraged"
@@ -4755,6 +4761,7 @@ def constr(
         min_length: The minimum length of the string.
         max_length: The maximum length of the string.
         pattern: A regex pattern to validate the string against.
+        ascii_only: Whether the string should contain only ASCII characters.
 
     Returns:
         The wrapped string type.
@@ -4769,6 +4776,7 @@ def constr(
             min_length=min_length,
             max_length=max_length,
             pattern=pattern,
+            ascii_only=ascii_only,
         ),
     ]
 
