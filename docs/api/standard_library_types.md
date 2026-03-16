@@ -79,8 +79,9 @@ Strings support the following constraints:
 | `strip_whitespace` | Whether to remove leading and trailing whitespace | N/A                                                                                                                                           |
 | `to_upper`         | Whether to convert the string to uppercase        | N/A                                                                                                                                           |
 | `to_lower`         | Whether to convert the string to lowercase        | N/A                                                                                                                                           |
+| `ascii_only`       | Whether to allow only ASCII characters            | N/A                                                                                                                                           |
 
-These constraints can be provided using the [`StringConstraints`][pydantic.types.StringConstraints] metadata type, or using the [`Field()`][pydantic.Field] function (except for `strip_whitespace`, `to_upper` and `to_lower`).
+These constraints can be provided using the [`StringConstraints`][pydantic.types.StringConstraints] metadata type, or using the [`Field()`][pydantic.Field] function (except for `strip_whitespace`, `to_upper`, `to_lower` and `ascii_only`).
 
 The [`annotated-types`](https://github.com/annotated-types/annotated-types) library also provides the `MinLen`, `MaxLen` and `Len` metadata types, as well
 as the `LowerCase`, `UpperCase`, `IsDigit` and `IsAscii` predicates (must be parameterized with `str`, e.g. `LowerCase[str]`).

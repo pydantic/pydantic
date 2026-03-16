@@ -4261,6 +4261,7 @@ ErrorType = Literal[
     'string_too_short',
     'string_too_long',
     'string_pattern_mismatch',
+    'string_not_ascii',
     'enum',
     'dict_type',
     'mapping_type',
