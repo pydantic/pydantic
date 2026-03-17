@@ -854,7 +854,7 @@ print(Box.model_json_schema(mode='serialization'))
    to a [`property`][]. However, it is preferable to explicitly use the [`@property`][property] decorator
    for type checking purposes.
 
-Here's an example using the [`model_dump()`][BaseModel.model_dump] method with a computed field:
+Here's an example using the [`model_dump()`][pydantic.BaseModel.model_dump] method with a computed field:
 
 ```python
 from pydantic import BaseModel, computed_field
