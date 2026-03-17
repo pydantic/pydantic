@@ -851,7 +851,7 @@ print(Box.model_json_schema(mode='serialization'))
 ```
 
 1. If not specified, [`@computed_field`][pydantic.fields.computed_field] will implicitly convert the method
-   to a [`@property`][]. However, it is preferable to explicitly use the [`@property`][property] decorator
+   to a [`@property`][property]. However, it is preferable to explicitly use the [`@property`][property] decorator
    for type checking purposes.
 
 Here's an example using the [`model_dump()`][pydantic.BaseModel.model_dump] method with a computed field:
