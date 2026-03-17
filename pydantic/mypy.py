@@ -661,7 +661,7 @@ class PydanticModelTransformer:
                 found_fields[name] = field
 
                 sym_node = cls.info.names.get(name)
-                if sym_node and sym_node.node and not isinstance(sym_node.node, Var):
+                if sym_node and sym_node.node and not isinstance(sym_node.node, (Var, PlaceholderNode)):
                     self._api.fail(
                         'BaseModel field may only be overridden by another field',
                         sym_node.node,
