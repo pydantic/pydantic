@@ -802,6 +802,10 @@ Read more about JSON schema customization / modification with fields in the [Cus
 ??? api "API Documentation"
     [`computed_field`][pydantic.fields.computed_field]<br>
 
+/// version-added | v2.13
+Computed fields can be conditionally excluded from the serialization output by using the `exclude_if` parameter of the decorator.
+///
+
 The [`computed_field`][pydantic.fields.computed_field] decorator can be used to include [`property`][] or
 [`cached_property`][functools.cached_property] attributes when serializing a model or dataclass.
 The property will also be taken into account in the JSON Schema (in serialization mode).
@@ -850,7 +854,7 @@ print(Box.model_json_schema(mode='serialization'))
    to a [`property`][]. However, it is preferable to explicitly use the [`@property`][property] decorator
    for type checking purposes.
 
-Here's an example using the `model_dump` method with a computed field:
+Here's an example using the [`model_dump()`][BaseModel.model_dump] method with a computed field:
 
 ```python
 from pydantic import BaseModel, computed_field
