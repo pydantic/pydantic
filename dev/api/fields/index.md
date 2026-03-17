@@ -1075,6 +1075,7 @@ computed_field(
     *,
     alias: str | None = None,
     alias_priority: int | None = None,
+    exclude_if: Callable[[Any], bool] | None = None,
     title: str | None = None,
     field_title_generator: (
         Callable[[str, ComputedFieldInfo], str] | None
@@ -1098,6 +1099,7 @@ computed_field(
     *,
     alias: str | None = None,
     alias_priority: int | None = None,
+    exclude_if: Callable[[Any], bool] | None = None,
     title: str | None = None,
     field_title_generator: (
         Callable[[str, ComputedFieldInfo], str] | None
@@ -1237,7 +1239,7 @@ print(repr(m))
 
 Parameters:
 
-| Name | Type | Description | Default | | --- | --- | --- | --- | | `func` | `PropertyT | None` | the function to wrap. | `None` | | `alias` | `str | None` | alias to use when serializing this computed field, only used when by_alias=True | `None` | | `alias_priority` | `int | None` | priority of the alias. This affects whether an alias generator is used | `None` | | `title` | `str | None` | Title to use when including this computed field in JSON Schema | `None` | | `field_title_generator` | `Callable[[str, ComputedFieldInfo], str] | None` | A callable that takes a field name and returns title for it. | `None` | | `description` | `str | None` | Description to use when including this computed field in JSON Schema, defaults to the function's docstring | `None` | | `deprecated` | `Deprecated | str | bool | None` | A deprecation message (or an instance of warnings.deprecated or the typing_extensions.deprecated backport). to be emitted when accessing the field. Or a boolean. This will automatically be set if the property is decorated with the deprecated decorator. | `None` | | `examples` | `list[Any] | None` | Example values to use when including this computed field in JSON Schema | `None` | | `json_schema_extra` | `JsonDict | Callable[[JsonDict], None] | None` | A dict or callable to provide extra JSON schema properties. | `None` | | `repr` | `bool | None` | whether to include this computed field in model repr. Default is False for private properties and True for public properties. | `None` | | `return_type` | `Any` | optional return for serialization logic to expect when serializing to JSON, if included this must be correct, otherwise a TypeError is raised. If you don't include a return type Any is used, which does runtime introspection to handle arbitrary objects. | `PydanticUndefined` |
+| Name | Type | Description | Default | | --- | --- | --- | --- | | `func` | `PropertyT | None` | the function to wrap. | `None` | | `alias` | `str | None` | alias to use when serializing this computed field, only used when by_alias=True | `None` | | `alias_priority` | `int | None` | priority of the alias. This affects whether an alias generator is used | `None` | | `exclude_if` | `Callable[[Any], bool] | None` | A callable that determines whether to exclude this computed field during serialization based on its value. | `None` | | `title` | `str | None` | Title to use when including this computed field in JSON Schema | `None` | | `field_title_generator` | `Callable[[str, ComputedFieldInfo], str] | None` | A callable that takes a field name and returns title for it. | `None` | | `description` | `str | None` | Description to use when including this computed field in JSON Schema, defaults to the function's docstring | `None` | | `deprecated` | `Deprecated | str | bool | None` | A deprecation message (or an instance of warnings.deprecated or the typing_extensions.deprecated backport). to be emitted when accessing the field. Or a boolean. This will automatically be set if the property is decorated with the deprecated decorator. | `None` | | `examples` | `list[Any] | None` | Example values to use when including this computed field in JSON Schema | `None` | | `json_schema_extra` | `JsonDict | Callable[[JsonDict], None] | None` | A dict or callable to provide extra JSON schema properties. | `None` | | `repr` | `bool | None` | whether to include this computed field in model repr. Default is False for private properties and True for public properties. | `None` | | `return_type` | `Any` | optional return for serialization logic to expect when serializing to JSON, if included this must be correct, otherwise a TypeError is raised. If you don't include a return type Any is used, which does runtime introspection to handle arbitrary objects. | `PydanticUndefined` |
 
 Returns:
 
@@ -1252,6 +1254,7 @@ def computed_field(
     *,
     alias: str | None = None,
     alias_priority: int | None = None,
+    exclude_if: Callable[[Any], bool] | None = None,
     title: str | None = None,
     field_title_generator: Callable[[str, ComputedFieldInfo], str] | None = None,
     description: str | None = None,
@@ -1386,6 +1389,7 @@ def computed_field(
         func: the function to wrap.
         alias: alias to use when serializing this computed field, only used when `by_alias=True`
         alias_priority: priority of the alias. This affects whether an alias generator is used
+        exclude_if: A callable that determines whether to exclude this computed field during serialization based on its value.
         title: Title to use when including this computed field in JSON Schema
         field_title_generator: A callable that takes a field name and returns title for it.
         description: Description to use when including this computed field in JSON Schema, defaults to the function's
@@ -1430,6 +1434,7 @@ def computed_field(
             return_type,
             alias,
             alias_priority,
+            exclude_if,
             title,
             field_title_generator,
             description,
@@ -1455,6 +1460,7 @@ ComputedFieldInfo(
     return_type: Any,
     alias: str | None,
     alias_priority: int | None,
+    exclude_if: Callable[[Any], bool] | None,
     title: str | None,
     field_title_generator: (
         Callable[[str, ComputedFieldInfo], str] | None

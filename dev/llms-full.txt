@@ -2603,13 +2603,15 @@ Read more about JSON schema customization / modification with fields in the [Cus
 
 API Documentation
 
-computed_field
+@computed_field
 
-The computed_field decorator can be used to include property or cached_property attributes when serializing a model or dataclass. The property will also be taken into account in the JSON Schema (in serialization mode).
+Added in v2.13: Computed fields can be conditionally excluded from the serialization output by using the `exclude_if` parameter of the decorator.
+
+The @computed_field decorator can be used to include properties (or cached properties) when serializing a model or dataclass. The property will also be included in the JSON Schema (in serialization mode).
 
 Note
 
-Properties can be useful for fields that are computed from other fields, or for fields that are expensive to be computed (and thus, are cached if using cached_property).
+Properties can be useful for fields that are computed from other fields, or for fields that are expensive to be computed (and thus, are cached if using @cached_property).
 
 However, note that Pydantic will *not* perform any additional logic on the wrapped property (validation, cache invalidation, etc.).
 
@@ -2647,9 +2649,9 @@ print(Box.model_json_schema(mode='serialization'))
 
 ```
 
-1. If not specified, computed_field will implicitly convert the method to a property. However, it is preferable to explicitly use the @property decorator for type checking purposes.
+1. If not specified, @computed_field will implicitly convert the method to a @property. However, it is preferable to explicitly use the @property decorator for type checking purposes.
 
-Here's an example using the `model_dump` method with a computed field:
+Here's an example using the model_dump() method with a computed field:
 
 ```python
 from pydantic import BaseModel, computed_field
@@ -21505,6 +21507,7 @@ computed_field(
     *,
     alias: str | None = None,
     alias_priority: int | None = None,
+    exclude_if: Callable[[Any], bool] | None = None,
     title: str | None = None,
     field_title_generator: (
         Callable[[str, ComputedFieldInfo], str] | None
@@ -21528,6 +21531,7 @@ computed_field(
     *,
     alias: str | None = None,
     alias_priority: int | None = None,
+    exclude_if: Callable[[Any], bool] | None = None,
     title: str | None = None,
     field_title_generator: (
         Callable[[str, ComputedFieldInfo], str] | None
@@ -21667,7 +21671,7 @@ print(repr(m))
 
 Parameters:
 
-| Name | Type | Description | Default | | --- | --- | --- | --- | | `func` | `PropertyT | None` | the function to wrap. | `None` | | `alias` | `str | None` | alias to use when serializing this computed field, only used when by_alias=True | `None` | | `alias_priority` | `int | None` | priority of the alias. This affects whether an alias generator is used | `None` | | `title` | `str | None` | Title to use when including this computed field in JSON Schema | `None` | | `field_title_generator` | `Callable[[str, ComputedFieldInfo], str] | None` | A callable that takes a field name and returns title for it. | `None` | | `description` | `str | None` | Description to use when including this computed field in JSON Schema, defaults to the function's docstring | `None` | | `deprecated` | `Deprecated | str | bool | None` | A deprecation message (or an instance of warnings.deprecated or the typing_extensions.deprecated backport). to be emitted when accessing the field. Or a boolean. This will automatically be set if the property is decorated with the deprecated decorator. | `None` | | `examples` | `list[Any] | None` | Example values to use when including this computed field in JSON Schema | `None` | | `json_schema_extra` | `JsonDict | Callable[[JsonDict], None] | None` | A dict or callable to provide extra JSON schema properties. | `None` | | `repr` | `bool | None` | whether to include this computed field in model repr. Default is False for private properties and True for public properties. | `None` | | `return_type` | `Any` | optional return for serialization logic to expect when serializing to JSON, if included this must be correct, otherwise a TypeError is raised. If you don't include a return type Any is used, which does runtime introspection to handle arbitrary objects. | `PydanticUndefined` |
+| Name | Type | Description | Default | | --- | --- | --- | --- | | `func` | `PropertyT | None` | the function to wrap. | `None` | | `alias` | `str | None` | alias to use when serializing this computed field, only used when by_alias=True | `None` | | `alias_priority` | `int | None` | priority of the alias. This affects whether an alias generator is used | `None` | | `exclude_if` | `Callable[[Any], bool] | None` | A callable that determines whether to exclude this computed field during serialization based on its value. | `None` | | `title` | `str | None` | Title to use when including this computed field in JSON Schema | `None` | | `field_title_generator` | `Callable[[str, ComputedFieldInfo], str] | None` | A callable that takes a field name and returns title for it. | `None` | | `description` | `str | None` | Description to use when including this computed field in JSON Schema, defaults to the function's docstring | `None` | | `deprecated` | `Deprecated | str | bool | None` | A deprecation message (or an instance of warnings.deprecated or the typing_extensions.deprecated backport). to be emitted when accessing the field. Or a boolean. This will automatically be set if the property is decorated with the deprecated decorator. | `None` | | `examples` | `list[Any] | None` | Example values to use when including this computed field in JSON Schema | `None` | | `json_schema_extra` | `JsonDict | Callable[[JsonDict], None] | None` | A dict or callable to provide extra JSON schema properties. | `None` | | `repr` | `bool | None` | whether to include this computed field in model repr. Default is False for private properties and True for public properties. | `None` | | `return_type` | `Any` | optional return for serialization logic to expect when serializing to JSON, if included this must be correct, otherwise a TypeError is raised. If you don't include a return type Any is used, which does runtime introspection to handle arbitrary objects. | `PydanticUndefined` |
 
 Returns:
 
@@ -21682,6 +21686,7 @@ def computed_field(
     *,
     alias: str | None = None,
     alias_priority: int | None = None,
+    exclude_if: Callable[[Any], bool] | None = None,
     title: str | None = None,
     field_title_generator: Callable[[str, ComputedFieldInfo], str] | None = None,
     description: str | None = None,
@@ -21816,6 +21821,7 @@ def computed_field(
         func: the function to wrap.
         alias: alias to use when serializing this computed field, only used when `by_alias=True`
         alias_priority: priority of the alias. This affects whether an alias generator is used
+        exclude_if: A callable that determines whether to exclude this computed field during serialization based on its value.
         title: Title to use when including this computed field in JSON Schema
         field_title_generator: A callable that takes a field name and returns title for it.
         description: Description to use when including this computed field in JSON Schema, defaults to the function's
@@ -21860,6 +21866,7 @@ def computed_field(
             return_type,
             alias,
             alias_priority,
+            exclude_if,
             title,
             field_title_generator,
             description,
@@ -21885,6 +21892,7 @@ ComputedFieldInfo(
     return_type: Any,
     alias: str | None,
     alias_priority: int | None,
+    exclude_if: Callable[[Any], bool] | None,
     title: str | None,
     field_title_generator: (
         Callable[[str, ComputedFieldInfo], str] | None
@@ -30080,6 +30088,9 @@ computed_field(
     return_schema: CoreSchema,
     *,
     alias: str | None = None,
+    serialization_exclude_if: (
+        Callable[[Any], bool] | None
+    ) = None,
     metadata: dict[str, Any] | None = None
 ) -> ComputedField
 
@@ -30095,7 +30106,12 @@ Source code in `pydantic_core/core_schema.py`
 
 ```python
 def computed_field(
-    property_name: str, return_schema: CoreSchema, *, alias: str | None = None, metadata: dict[str, Any] | None = None
+    property_name: str,
+    return_schema: CoreSchema,
+    *,
+    alias: str | None = None,
+    serialization_exclude_if: Callable[[Any], bool] | None = None,
+    metadata: dict[str, Any] | None = None,
 ) -> ComputedField:
     """
     ComputedFields are properties of a model or dataclass that are included in serialization.
@@ -30107,7 +30123,12 @@ def computed_field(
         metadata: Any other information you want to include with the schema, not used by pydantic-core
     """
     return _dict_not_none(
-        type='computed-field', property_name=property_name, return_schema=return_schema, alias=alias, metadata=metadata
+        type='computed-field',
+        property_name=property_name,
+        return_schema=return_schema,
+        alias=alias,
+        serialization_exclude_if=serialization_exclude_if,
+        metadata=metadata,
     )
 
 ```
