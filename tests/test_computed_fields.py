@@ -2,7 +2,7 @@ import random
 import sys
 from abc import ABC, abstractmethod
 from functools import cached_property, lru_cache, singledispatchmethod
-from typing import Any, Callable, ClassVar, Generic, TypeVar
+from typing import Annotated, Any, Callable, ClassVar, Generic, TypeVar
 
 import pytest
 from pydantic_core import ValidationError, core_schema
@@ -853,3 +853,42 @@ def test_computed_fields_exclude() -> None:
     assert m.model_dump(mode='json', exclude_computed_fields=True) == {}
     assert m.model_dump_json() == '{"prop":1}'
     assert m.model_dump_json(exclude_computed_fields=True) == '{}'
+
+
+def test_computed_fields_serialization_exclude_if() -> None:
+    class Model(BaseModel):
+        foo: int
+
+        @computed_field(exclude_if=lambda x: x == 1)
+        def bar(self) -> int:
+            return 1
+
+        @computed_field(exclude_if=lambda x: x == 2)
+        def baz(self) -> int:
+            return self.foo
+
+    m = Model(foo=1)
+    assert m.model_dump() == {'foo': 1, 'baz': 1}
+    assert m.model_dump(exclude_computed_fields=True) == {'foo': 1}
+    assert m.model_dump(mode='json') == {'foo': 1, 'baz': 1}
+    assert m.model_dump(mode='json', exclude_computed_fields=True) == {'foo': 1}
+    assert m.model_dump_json() == '{"foo":1,"baz":1}'
+    assert m.model_dump_json(exclude_computed_fields=True) == '{"foo":1}'
+
+
+@pytest.mark.xfail(reason='Not supported yet. See: https://github.com/pydantic/pydantic/pull/12748')
+def test_computed_fields_serialization_exclude_if_from_annotated() -> None:
+    class Model(BaseModel):
+        foo: int
+
+        @computed_field
+        def prop(self) -> Annotated[int, Field(exclude_if=lambda x: x == 1)]:
+            return 1
+
+    m = Model(foo=1)
+    assert m.model_dump() == {'foo': 1}
+    assert m.model_dump(exclude_computed_fields=True) == {'foo': 1}
+    assert m.model_dump(mode='json') == {'foo': 1}
+    assert m.model_dump(mode='json', exclude_computed_fields=True) == {'foo': 1}
+    assert m.model_dump_json() == '{"foo":1}'
+    assert m.model_dump_json(exclude_computed_fields=True) == '{"foo":1}'
