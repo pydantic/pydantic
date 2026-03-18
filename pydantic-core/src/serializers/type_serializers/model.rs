@@ -220,6 +220,8 @@ impl ModelSerializer {
 
         // If excluding unset fields, mask any fields not in `__pydantic_fields_set__` with the
         // missing sentinel so that the fields serializer will exclude them from the output.
+        // The `GeneralFieldsSerializer` makes sure to exclude the value, so any user-defined
+        // serializer won't be called.
         if extra.exclude_unset {
             let fields_set = model
                 .getattr(intern!(py, "__pydantic_fields_set__"))?
