@@ -147,7 +147,7 @@ def parse_time(value: Union[time, StrBytesIntFloat]) -> time:
     number = get_numeric(value, 'time')
     if number is not None:
         if number >= 86400:
-            # doesn't make sense since the time loop back around to 0
+            # doesn't make sense since the time time loop back around to 0
             raise errors.TimeError()
         return (datetime.min + timedelta(seconds=number)).time()
 

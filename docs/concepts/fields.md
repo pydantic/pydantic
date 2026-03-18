@@ -800,15 +800,19 @@ Read more about JSON schema customization / modification with fields in the [Cus
 ## The `computed_field` decorator
 
 ??? api "API Documentation"
-    [`computed_field`][pydantic.fields.computed_field]<br>
+    [`@computed_field`][pydantic.fields.computed_field]<br>
 
-The [`computed_field`][pydantic.fields.computed_field] decorator can be used to include [`property`][] or
-[`cached_property`][functools.cached_property] attributes when serializing a model or dataclass.
-The property will also be taken into account in the JSON Schema (in serialization mode).
+/// version-added | v2.13
+Computed fields can be conditionally excluded from the serialization output by using the `exclude_if` parameter of the decorator.
+///
+
+The [`@computed_field`][pydantic.fields.computed_field] decorator can be used to include [properties][property] (or
+[cached properties][functools.cached_property]) when serializing a model or dataclass.
+The property will also be included in the JSON Schema (in serialization mode).
 
 !!! note
     Properties can be useful for fields that are computed from other fields, or for fields that
-    are expensive to be computed (and thus, are cached if using [`cached_property`][functools.cached_property]).
+    are expensive to be computed (and thus, are cached if using [`@cached_property`][functools.cached_property]).
 
     However, note that Pydantic will *not* perform any additional logic on the wrapped property
     (validation, cache invalidation, etc.).
@@ -846,11 +850,11 @@ print(Box.model_json_schema(mode='serialization'))
 """
 ```
 
-1. If not specified, [`computed_field`][pydantic.fields.computed_field] will implicitly convert the method
-   to a [`property`][]. However, it is preferable to explicitly use the [`@property`][property] decorator
+1. If not specified, [`@computed_field`][pydantic.fields.computed_field] will implicitly convert the method
+   to a [`@property`][property]. However, it is preferable to explicitly use the [`@property`][property] decorator
    for type checking purposes.
 
-Here's an example using the `model_dump` method with a computed field:
+Here's an example using the [`model_dump()`][pydantic.BaseModel.model_dump] method with a computed field:
 
 ```python
 from pydantic import BaseModel, computed_field

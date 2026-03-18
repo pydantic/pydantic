@@ -93,3 +93,31 @@ def test_exclude_unset_in_nested_union():
     assert zoo.model_dump() == {'animals': [{'type': 'cat', 'color': None}]}
     assert cat.model_dump(exclude_unset=True) == {'type': 'cat'}
     assert zoo.model_dump(exclude_unset=True) == {'animals': [{'type': 'cat'}]}
+
+
+def test_list_union_omit():
+    OmitList = list[Union[pydantic.OnErrorOmit[int], pydantic.OnErrorOmit[bool]]]
+    ta = pydantic.TypeAdapter(OmitList)
+    assert ta.validate_python([1, 'True', 'foo', '2', False, 'bar']) == [1, True, 2, False]
+
+
+def test_list_union_omit_one_member():
+    OmitList = list[Union[pydantic.OnErrorOmit[int], bool]]
+    ta = pydantic.TypeAdapter(OmitList)
+    assert ta.validate_python([1, 'True', 'foo', '2', False, 'bar']) == [1, True, 2, False]
+
+
+def test_typed_dict_union_omit():
+    class TD(TypedDict):
+        # arguably this should fail on schema build since `x` is a
+        # required field, and setting the type to `OnErrorOmit`
+        # effectively makes it optional.
+        x: Union[pydantic.OnErrorOmit[int], pydantic.OnErrorOmit[bool]]
+
+    ta = pydantic.TypeAdapter(TD)
+    assert ta.validate_python({'x': 1}) == {'x': 1}
+    assert ta.validate_python({'x': 'True'}) == {'x': True}
+
+    # test to document the behaviour that if all options in the union fail,
+    # the field is omitted, even if it is required in the TypedDict.
+    assert ta.validate_python({'x': 'foo'}) == {}

@@ -705,6 +705,7 @@ class StringConstraints(annotated_types.GroupedMetadata):
         min_length: The minimum length of the string.
         max_length: The maximum length of the string.
         pattern: A regex pattern that the string must match.
+        ascii_only: Whether the string should contain only ASCII characters.
 
     Example:
         ```python
@@ -723,6 +724,7 @@ class StringConstraints(annotated_types.GroupedMetadata):
     min_length: int | None = None
     max_length: int | None = None
     pattern: str | Pattern[str] | None = None
+    ascii_only: bool | None = None
 
     def __iter__(self) -> Iterator[BaseMetadata]:
         if self.min_length is not None:
@@ -736,12 +738,14 @@ class StringConstraints(annotated_types.GroupedMetadata):
             or self.pattern is not None
             or self.to_lower is not None
             or self.to_upper is not None
+            or self.ascii_only is not None
         ):
             yield _fields.pydantic_general_metadata(
                 strip_whitespace=self.strip_whitespace,
                 to_upper=self.to_upper,
                 to_lower=self.to_lower,
                 pattern=self.pattern,
+                ascii_only=self.ascii_only,
             )
 
 
@@ -754,6 +758,7 @@ def constr(
     min_length: int | None = None,
     max_length: int | None = None,
     pattern: str | Pattern[str] | None = None,
+    ascii_only: bool | None = None,
 ) -> type[str]:
     """
     !!! warning "Discouraged"
@@ -809,6 +814,7 @@ def constr(
         min_length: The minimum length of the string.
         max_length: The maximum length of the string.
         pattern: A regex pattern to validate the string against.
+        ascii_only: Whether the string should contain only ASCII characters.
 
     Returns:
         The wrapped string type.
@@ -823,6 +829,7 @@ def constr(
             min_length=min_length,
             max_length=max_length,
             pattern=pattern,
+            ascii_only=ascii_only,
         ),
     ]
 
