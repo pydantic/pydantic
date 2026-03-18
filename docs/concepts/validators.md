@@ -743,6 +743,40 @@ Internally, validators defined using [the decorator](#using-the-decorator-patter
 form counterpart and added last after the existing metadata for the field. This means that the same ordering
 logic applies.
 
+When validators are declared across a class hierarchy, execution order follows the generated core schema rather than
+"base class first" intuitions:
+
+- `mode='before'` and `mode='wrap'` validators on subclasses run before the same-mode validators on base classes.
+- `mode='after'` validators run after inner validation returns, so subclass `after` validators are observed last.
+
+```python {test="skip" lint="skip"}
+from pydantic import BaseModel, model_validator
+
+
+class Parent(BaseModel):
+    @model_validator(mode='before')
+    @classmethod
+    def parent_before(cls, data):
+        print('parent before')
+        return data
+
+
+class Child(Parent):
+    @model_validator(mode='before')
+    @classmethod
+    def child_before(cls, data):
+        print('child before')
+        return data
+
+
+Child.model_validate({})
+#> child before
+#> parent before
+```
+
+If you need a specific ordering, keep dependent logic within a single validator (or a single class level) instead of
+splitting that dependency across inheritance layers.
+
 ## Special types
 
 Pydantic provides a few special utilities that can be used to customize validation.
