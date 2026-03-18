@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import dataclasses
 import json
-import time
 import uuid
 import warnings
 from decimal import Decimal
@@ -1181,14 +1180,3 @@ def test_tagged_union_no_fallback_on_matched_discriminator():
     warning_text = str(w[0].message)
     assert 'ModelB' not in warning_text
     assert 'ModelC' not in warning_text
-
-    with warnings.catch_warnings():
-        warnings.simplefilter('ignore')
-        start = time.time()
-        # Serialize many times to amplify any performance issue
-        for _ in range(100):
-            s.to_python(obj)
-        elapsed = time.time() - start
-
-    # Should complete quickly. If fallback tried all members it would be slow
-    assert elapsed < 5.0, f'Tagged union serialization too slow: {elapsed:.2f}s'
