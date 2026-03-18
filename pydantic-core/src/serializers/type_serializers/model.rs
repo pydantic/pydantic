@@ -15,6 +15,7 @@ use super::{
 };
 use crate::build_tools::py_schema_err;
 use crate::build_tools::{ExtraBehavior, py_schema_error_type};
+use crate::common::missing_sentinel::get_missing_sentinel_object;
 use crate::definitions::DefinitionsBuilder;
 use crate::serializers::SerializationState;
 use crate::serializers::shared::DoSerialize;
@@ -217,18 +218,31 @@ impl ModelSerializer {
         let py: Python<'_> = model.py();
         let mut attrs = model.getattr(intern!(py, "__dict__"))?.cast_into::<PyDict>()?;
 
+        // If excluding unset fields, mask any fields not in `__pydantic_fields_set__` with the
+        // missing sentinel so that the fields serializer will exclude them from the output.
+        // The `GeneralFieldsSerializer` makes sure to exclude the value, so any user-defined
+        // serializer won't be called.
         if extra.exclude_unset {
             let fields_set = model
                 .getattr(intern!(py, "__pydantic_fields_set__"))?
                 .cast_into::<PySet>()?;
 
-            let new_attrs = attrs.copy()?;
-            for key in new_attrs.keys() {
+            // if nothing actually unset, avoid copying the dict
+            let mut new_attrs = None;
+            let mut missing_sentinel = None;
+
+            for key in attrs.keys() {
                 if !fields_set.contains(&key)? {
-                    new_attrs.del_item(key)?;
+                    let missing_sentinel = missing_sentinel.get_or_insert_with(|| get_missing_sentinel_object(py));
+                    let new_attrs = match &new_attrs {
+                        Some(new_attrs) => new_attrs,
+                        None => new_attrs.insert(attrs.copy()?),
+                    };
+                    new_attrs.set_item(key, missing_sentinel.to_owned())?;
                 }
             }
-            attrs = new_attrs;
+
+            attrs = new_attrs.unwrap_or(attrs);
         }
 
         if self.has_extra {
