@@ -2325,15 +2325,12 @@ class GenerateJsonSchema:
         return json_schema
 
     def get_schema_from_definitions(self, json_ref: JsonRef) -> JsonSchemaValue | None:
-        try:
-            def_ref = self.json_to_defs_refs[json_ref]
-            if def_ref in self._core_defs_invalid_for_json_schema:
-                raise self._core_defs_invalid_for_json_schema[def_ref]
-            return self.definitions.get(def_ref, None)
-        except KeyError:
-            if json_ref.startswith(('http://', 'https://')):
-                return None
-            raise
+        if json_ref not in self.json_to_defs_refs:
+            return None
+        def_ref = self.json_to_defs_refs[json_ref]
+        if def_ref in self._core_defs_invalid_for_json_schema:
+            raise self._core_defs_invalid_for_json_schema[def_ref]
+        return self.definitions.get(def_ref, None)
 
     def encode_default(self, dft: Any) -> Any:
         """Encode a default value to a JSON-serializable value.
@@ -2437,14 +2434,11 @@ class GenerateJsonSchema:
                     json_refs[json_ref] += 1
                     if already_visited:
                         return  # prevent recursion on a definition that was already visited
-                    try:
+                    if json_ref in self.json_to_defs_refs:
                         defs_ref = self.json_to_defs_refs[json_ref]
                         if defs_ref in self._core_defs_invalid_for_json_schema:
                             raise self._core_defs_invalid_for_json_schema[defs_ref]
                         _add_json_refs(self.definitions[defs_ref])
-                    except KeyError:
-                        if not json_ref.startswith(('http://', 'https://')):
-                            raise
 
                 for k, v in schema.items():
                     if k == 'examples' and isinstance(v, list):
@@ -2505,15 +2499,13 @@ class GenerateJsonSchema:
         unvisited_json_refs = _get_all_json_refs(schema)
         while unvisited_json_refs:
             next_json_ref = unvisited_json_refs.pop()
-            try:
-                next_defs_ref = self.json_to_defs_refs[next_json_ref]
-                if next_defs_ref in visited_defs_refs:
-                    continue
-                visited_defs_refs.add(next_defs_ref)
-                unvisited_json_refs.update(_get_all_json_refs(self.definitions[next_defs_ref]))
-            except KeyError:
-                if not next_json_ref.startswith(('http://', 'https://')):
-                    raise
+            if next_json_ref not in self.json_to_defs_refs:
+                continue
+            next_defs_ref = self.json_to_defs_refs[next_json_ref]
+            if next_defs_ref in visited_defs_refs:
+                continue
+            visited_defs_refs.add(next_defs_ref)
+            unvisited_json_refs.update(_get_all_json_refs(self.definitions[next_defs_ref]))
 
         self.definitions = {k: v for k, v in self.definitions.items() if k in visited_defs_refs}
 

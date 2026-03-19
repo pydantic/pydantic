@@ -7237,3 +7237,40 @@ def test_nested_model_deduplication() -> None:
     assert 'Level1' in definitions
     assert 'Level1-Input' not in definitions
     assert 'Level1-Output' not in definitions
+
+
+def test_custom_json_schema_with_ref_and_defs():
+    """TypeAdapter should handle custom $ref/$defs from __get_pydantic_json_schema__."""
+
+    class CarDict(dict):
+        @classmethod
+        def __get_pydantic_core_schema__(cls, source_type: Any, handler: GetCoreSchemaHandler) -> core_schema.CoreSchema:
+            return core_schema.dict_schema(
+                keys_schema=core_schema.str_schema(),
+                values_schema=core_schema.any_schema(),
+            )
+
+        @classmethod
+        def __get_pydantic_json_schema__(
+            cls, core_schema: core_schema.CoreSchema, handler: GetJsonSchemaHandler
+        ) -> JsonSchemaValue:
+            return {
+                '$defs': {
+                    'Tire': {
+                        'properties': {'brand': {'title': 'Brand', 'type': 'string'}},
+                        'required': ['brand'],
+                        'title': 'Tire',
+                        'type': 'object',
+                    }
+                },
+                'properties': {
+                    'tires': {'items': {'$ref': '#/$defs/Tire'}, 'title': 'Tires', 'type': 'array'}
+                },
+                'required': ['tires'],
+                'title': 'Car',
+                'type': 'object',
+            }
+
+    result = TypeAdapter(CarDict).json_schema()
+    assert result['$defs']['Tire']['type'] == 'object'
+    assert result['properties']['tires']['items']['$ref'] == '#/$defs/Tire'
