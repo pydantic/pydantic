@@ -397,9 +397,9 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
         Returns a copy of the model.
 
         !!! note
-            The underlying instance's [`__dict__`][object.__dict__] attribute is copied. This
-            might have unexpected side effects if you store anything in it, on top of the model
-            fields (e.g. the value of [cached properties][functools.cached_property]).
+            When `update` is provided, any [cached properties][functools.cached_property] are
+            cleared so they will be recomputed on next access with the updated field values.
+            When `update` is not provided, cached property values are preserved.
 
         Args:
             update: Values to change/add in the new model. Note: the data is not validated
@@ -422,6 +422,10 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
             else:
                 copied.__dict__.update(update)
             copied.__pydantic_fields_set__.update(update.keys())
+            # Clear cached_property values so they recompute with updated fields
+            for key in list(copied.__dict__):
+                if isinstance(getattr(type(copied), key, None), cached_property):
+                    del copied.__dict__[key]
         return copied
 
     def model_dump(

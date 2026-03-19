@@ -589,6 +589,90 @@ def test_frozen_model_cached_property():
     assert m.test == 3
 
 
+def test_model_copy_clears_cached_property_on_update() -> None:
+    class MyModel(BaseModel):
+        x: int
+
+        @cached_property
+        def double(self) -> int:
+            return self.x * 2
+
+    m1 = MyModel(x=2)
+    assert m1.double == 4
+
+    m2 = m1.model_copy(update={'x': 5})
+    assert m2.double == 10
+
+
+def test_model_copy_preserves_cached_property_without_update() -> None:
+    class MyModel(BaseModel):
+        x: int
+
+        @cached_property
+        def double(self) -> int:
+            return self.x * 2
+
+    m1 = MyModel(x=3)
+    assert m1.double == 6
+
+    m2 = m1.model_copy()
+    assert m2.double == 6
+
+
+def test_model_copy_deep_clears_cached_property_on_update() -> None:
+    class MyModel(BaseModel):
+        x: int
+
+        @cached_property
+        def double(self) -> int:
+            return self.x * 2
+
+    m1 = MyModel(x=2)
+    assert m1.double == 4
+
+    m2 = m1.model_copy(update={'x': 7}, deep=True)
+    assert m2.double == 14
+
+
+def test_model_copy_frozen_cached_property_on_update() -> None:
+    class MyModel(BaseModel):
+        model_config = ConfigDict(frozen=True)
+        x: int
+
+        @cached_property
+        def double(self) -> int:
+            return self.x * 2
+
+    m1 = MyModel(x=2)
+    assert m1.double == 4
+
+    m2 = m1.model_copy(update={'x': 3})
+    assert m2.double == 6
+    assert m1.double == 4  # original unchanged
+
+
+def test_model_copy_multiple_cached_properties_on_update() -> None:
+    class MyModel(BaseModel):
+        x: int
+        y: int
+
+        @cached_property
+        def sum(self) -> int:
+            return self.x + self.y
+
+        @cached_property
+        def product(self) -> int:
+            return self.x * self.y
+
+    m1 = MyModel(x=2, y=3)
+    assert m1.sum == 5
+    assert m1.product == 6
+
+    m2 = m1.model_copy(update={'x': 10})
+    assert m2.sum == 13
+    assert m2.product == 30
+
+
 def test_frozen_field():
     class FrozenModel(BaseModel):
         a: int = Field(10, frozen=True)
