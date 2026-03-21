@@ -339,9 +339,14 @@ def get_model_type_hints(
         if not ann:
             continue
 
-        with ns_resolver.push(base):
-            base_model_fields: dict[str, FieldInfo] | None = base.__dict__.get('__pydantic_fields__')
+        # Optimization: if the base already has __pydantic_fields__ and all its annotation
+        # names are already in hints, skip the entire base. This avoids the namespace resolver
+        # overhead for deep inheritance trees where parent fields have already been processed.
+        base_model_fields: dict[str, FieldInfo] | None = base.__dict__.get('__pydantic_fields__')
+        if base_model_fields is not None and all(name in hints for name in ann):
+            continue
 
+        with ns_resolver.push(base):
             for name, value in ann.items():
                 if name.startswith('_'):
                     globalns, localns = ns_resolver.types_namespace
