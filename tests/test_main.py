@@ -2750,6 +2750,24 @@ def test_model_validate_with_validate_fn_override() -> None:
     ]
 
 
+def test_model_validate_extra_allow_dump() -> None:
+    """When model_validate overrides extra to 'allow', model_dump should include the extra fields."""
+
+    class Model(BaseModel, extra='forbid'):
+        a: int
+
+    m = Model.model_validate({'a': 1, 'b': 'test'}, extra='allow')
+    assert m.model_dump() == {'a': 1, 'b': 'test'}
+    assert m.model_dump_json() == '{"a": 1, "b": "test"}'
+
+    # Respects include
+    assert m.model_dump(include=['a']) == {'a': 1}
+    assert m.model_dump(include=['a', 'b']) == {'a': 1, 'b': 'test'}
+
+    # Respects exclude
+    assert m.model_dump(exclude={'b'}) == {'a': 1}
+
+
 def test_model_validate_json_with_validate_fn_override() -> None:
     class Model(BaseModel):
         a: float

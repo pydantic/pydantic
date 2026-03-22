@@ -79,6 +79,36 @@ IncEx: TypeAlias = Union[set[int], set[str], Mapping[int, Union['IncEx', bool]],
 _object_setattr = _model_construction.object_setattr
 
 
+def _should_include_extra_field(key: str, include: IncEx | None, exclude: IncEx | None) -> bool:
+    """Check whether an extra field key should be included in the dump result."""
+    if include is not None:
+        if isinstance(include, set):
+            if key not in include:
+                return False
+        elif isinstance(include, Mapping):
+            if key not in include:
+                return False
+            # If the value is a nested mapping, skip (extra fields are always top-level)
+            if isinstance(include[key], Mapping):
+                return False
+        elif isinstance(include, (list, tuple)):
+            if key not in include:
+                return False
+    if exclude is not None:
+        if isinstance(exclude, set):
+            if key in exclude:
+                return False
+        elif isinstance(exclude, Mapping):
+            if key in exclude:
+                val = exclude[key]
+                if val is True or isinstance(val, Mapping):
+                    return False
+        elif isinstance(exclude, (list, tuple)):
+            if key in exclude:
+                return False
+    return True
+
+
 def _check_frozen(model_cls: type[BaseModel], name: str, value: Any) -> None:
     if model_cls.model_config.get('frozen'):
         error_type = 'frozen_instance'
@@ -472,7 +502,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
         Returns:
             A dictionary representation of the model.
         """
-        return self.__pydantic_serializer__.to_python(
+        result = self.__pydantic_serializer__.to_python(
             self,
             mode=mode,
             by_alias=by_alias,
@@ -489,6 +519,14 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
             serialize_as_any=serialize_as_any,
             polymorphic_serialization=polymorphic_serialization,
         )
+        # When model_validate overrides `extra` to 'allow' on a model configured with
+        # extra='forbid' or 'ignore', the serializer won't include extra fields.
+        # Merge them in so that per-instance extra settings are honoured in model_dump.
+        if self.__pydantic_extra__:
+            for key, value in self.__pydantic_extra__.items():
+                if key not in result and _should_include_extra_field(key, include, exclude):
+                    result[key] = value
+        return result
 
     def model_dump_json(
         self,
@@ -539,7 +577,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
         Returns:
             A JSON string representation of the model.
         """
-        return self.__pydantic_serializer__.to_json(
+        result = self.__pydantic_serializer__.to_json(
             self,
             indent=indent,
             ensure_ascii=ensure_ascii,
@@ -557,6 +595,18 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
             serialize_as_any=serialize_as_any,
             polymorphic_serialization=polymorphic_serialization,
         ).decode()
+        # When model_validate overrides `extra` to 'allow' on a model configured with
+        # extra='forbid' or 'ignore', the serializer won't include extra fields.
+        # Merge them in so that per-instance extra settings are honoured in model_dump_json.
+        if self.__pydantic_extra__:
+            import json as _json
+
+            data = _json.loads(result)
+            for key, value in self.__pydantic_extra__.items():
+                if key not in data and _should_include_extra_field(key, include, exclude):
+                    data[key] = value
+            result = _json.dumps(data, ensure_ascii=ensure_ascii, indent=indent)
+        return result
 
     @classmethod
     def model_json_schema(
