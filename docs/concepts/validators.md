@@ -519,6 +519,48 @@ decorator.
        this is not always the case. For instance, if the [`from_attributes`][pydantic.ConfigDict.from_attributes]
        configuration value is set, you might receive an arbitrary class instance for the `data` argument.
 
+    !!! warning "Input may not be a dict"
+        The `data` parameter in a `mode='before'` model validator receives **raw input** that can be of various types,
+        not just a dictionary. You should always use defensive type checking before accessing it as a dict.
+
+        Common input types include:
+
+        * **`dict`** — the usual case when constructing with keyword arguments (e.g., `Model(field='value')`)
+        * **Model instance** — when constructing from an existing model instance (e.g., `Model(other_model)`)
+        * **Other types** — when [`from_attributes`][pydantic.ConfigDict.from_attributes] is enabled, or when
+          custom validators or `__get_pydantic_core_schema__` provide non-dict inputs
+
+        Here's a more robust example of defensive checking:
+
+        ```python
+        from typing import Any
+
+        from pydantic import BaseModel, model_validator
+
+
+        class MyModel(BaseModel):
+            name: str
+            age: int
+
+            @model_validator(mode='before')
+            @classmethod
+            def validate_model(cls, data: Any) -> Any:
+                # Always check the type before accessing as a dict
+                if isinstance(data, dict):
+                    # Safe to access dict keys
+                    if data.get('age', 0) < 0:
+                        raise ValueError('Age must be non-negative')
+                elif isinstance(data, cls):
+                    # Input is already a model instance — return as-is or modify
+                    if data.age < 0:
+                        raise ValueError('Age must be non-negative')
+                # For other types, let Pydantic handle the validation
+                return data
+        ```
+
+        Failing to check the type of `data` before accessing it as a dict may result in
+        `AttributeError` or unexpected behavior when the input is not a dict.
+
 * ***Wrap* validators**: are the most flexible of all. You can run code before or after Pydantic and
   other validators process the input data, or you can terminate validation immediately, either by returning
   the data early or by raising an error.
