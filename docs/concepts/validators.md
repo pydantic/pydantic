@@ -551,6 +551,70 @@ decorator.
 
     Overriding a model validator in a subclass will override the base class' validator, and thus only the subclass' version of said validator will be called.
 
+    When both a base class and a subclass define model validators, the execution order follows these rules:
+
+    * Subclass `wrap` validators run **outermost** (first entry, last exit).
+    * Base class `wrap` validators run inside the subclass `wrap` validator.
+    * `before` validators run in subclass-first order (subclass before base class).
+    * `after` validators run in base-class-first order (base class before subclass).
+
+    ```python
+    from pydantic import BaseModel, model_validator
+
+
+    class Base(BaseModel):
+        @model_validator(mode='before')
+        @classmethod
+        def base_before(cls, data):
+            print('base_before')
+            return data
+
+        @model_validator(mode='after')
+        def base_after(self):
+            print('base_after')
+            return self
+
+        @model_validator(mode='wrap')
+        @classmethod
+        def base_wrap(cls, data, handler):
+            print('BEGIN base_wrap')
+            result = handler(data)
+            print('END base_wrap')
+            return result
+
+
+    class Sub(Base):
+        @model_validator(mode='before')
+        @classmethod
+        def sub_before(cls, data):
+            print('sub_before')
+            return data
+
+        @model_validator(mode='after')
+        def sub_after(self):
+            print('sub_after')
+            return self
+
+        @model_validator(mode='wrap')
+        @classmethod
+        def sub_wrap(cls, data, handler):
+            print('BEGIN sub_wrap')
+            result = handler(data)
+            print('END sub_wrap')
+            return result
+
+
+    Sub()
+    # > BEGIN sub_wrap
+    # > BEGIN base_wrap
+    # > sub_before
+    # > base_before
+    # > base_after
+    # > END base_wrap
+    # > sub_after
+    # > END sub_wrap
+    ```
+
 ## Raising validation errors
 
 To raise a validation error, three types of exceptions can be used:
