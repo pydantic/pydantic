@@ -519,6 +519,18 @@ decorator.
        this is not always the case. For instance, if the [`from_attributes`][pydantic.ConfigDict.from_attributes]
        configuration value is set, you might receive an arbitrary class instance for the `data` argument.
 
+    !!! note "Handling non-dict inputs"
+        Because *before* validators receive the raw input before any coercion, `data` may not always be a dictionary.
+        In addition to the `from_attributes` case mentioned above, the following scenarios can also produce non-dict inputs:
+
+        - **Model instance**: when passing an existing model instance (e.g., `MyModel(other_model)`), `data` will be that model instance.
+        - **Sequence or primitive**: when a validator wraps a type like `list` or a scalar, `data` could be a list, string, number, etc.
+        - **`None`**: if `None` is provided as input and the field is optional, `data` may be `None`.
+
+        To avoid `AttributeError` or `TypeError` at runtime, always guard against unexpected input types — typically by
+        checking with `isinstance(data, dict)` (or another expected type) before accessing keys or attributes. Use
+        [`Any`][typing.Any] as the type hint for `data` to reflect this.
+
 * ***Wrap* validators**: are the most flexible of all. You can run code before or after Pydantic and
   other validators process the input data, or you can terminate validation immediately, either by returning
   the data early or by raising an error.
