@@ -265,3 +265,31 @@ def test_eval_type_backport():
             'input': {'not a str or int'},
         },
     ]
+
+
+def test_namedtuple_inheritance_with_annotations():
+    """https://github.com/pydantic/pydantic/issues/7987."""
+
+    class Foo(NamedTuple):
+        test: str
+        test2: str
+
+    class Bar(Foo):
+        test3: str
+
+    ta = TypeAdapter(Bar)
+
+    # test3 should not be part of the schema
+    assert ta.validate_python({'test': 'a', 'test2': 'b'}) == Bar(test='a', test2='b')
+
+    with pytest.raises(ValidationError) as exc_info:
+        ta.validate_python({'test': 'a', 'test2': 'b', 'test3': 'c'})
+
+    assert exc_info.value.errors(include_url=False) == [
+        {
+            'type': 'unexpected_keyword_argument',
+            'loc': ('test3',),
+            'msg': 'Unexpected keyword argument',
+            'input': 'c',
+        }
+    ]
