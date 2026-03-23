@@ -1,5 +1,4 @@
 import os
-import platform
 import re
 import sys
 from functools import wraps
@@ -1139,9 +1138,6 @@ def test_invalid_schema():
         )
 
 
-@pytest.mark.xfail(
-    platform.python_implementation() == 'PyPy' and sys.version_info[:2] == (3, 11), reason='pypy 3.11 type formatting'
-)
 def test_error_display(pydantic_version):
     v = SchemaValidator(
         core_schema.arguments_schema(
