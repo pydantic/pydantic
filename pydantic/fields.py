@@ -831,13 +831,23 @@ class FieldInfo(_repr.Representation):
             # Fast-path if the instance isn't a subclass (`copy.copy()` relies on pickling which is slower):
             copied = FieldInfo.__new__(FieldInfo)
             for attr_name in FieldInfo.__slots__:
-                setattr(copied, attr_name, getattr(self, attr_name))
+                try:
+                    value = getattr(self, attr_name)
+                except AttributeError:
+                    # PyPy might have uninitialized slots
+                    continue
+                setattr(copied, attr_name, value)
         else:
             copied = copy(self)
 
         for attr_name in ('metadata', '_attributes_set', '_qualifiers'):
             # Apply "deep-copy" behavior on collections attributes:
-            setattr(copied, attr_name, getattr(copied, attr_name).copy())
+            try:
+                value = getattr(copied, attr_name)
+            except AttributeError:
+                # PyPy might have uninitialized slots
+                continue
+            setattr(copied, attr_name, value.copy())
 
         return copied  # pyright: ignore[reportReturnType]
 
