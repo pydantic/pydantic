@@ -1539,9 +1539,11 @@ class GenerateSchema:
                 annotations = _typing_extra.get_cls_type_hints(namedtuple_cls, ns_resolver=self._ns_resolver)
             except NameError as e:
                 raise PydanticUndefinedAnnotation.from_name_error(e) from e
-            if not annotations:
-                # annotations is empty, happens if namedtuple_cls defined via collections.namedtuple(...)
-                annotations: dict[str, Any] = dict.fromkeys(namedtuple_cls._fields, Any)
+
+            # Filter annotations to only include fields that are actually in the NamedTuple
+            # (as subclassing an existing NamedTuple is not supported yet - see https://github.com/python/typing/issues/427)
+            # and use `Any` if no annotation exist (i.e. when using `collections.namedtuple()`).
+            annotations = {field_name: annotations.get(field_name, Any) for field_name in namedtuple_cls._fields}
 
             if typevars_map:
                 annotations = {
