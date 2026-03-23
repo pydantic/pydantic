@@ -1539,9 +1539,13 @@ class GenerateSchema:
                 annotations = _typing_extra.get_cls_type_hints(namedtuple_cls, ns_resolver=self._ns_resolver)
             except NameError as e:
                 raise PydanticUndefinedAnnotation.from_name_error(e) from e
-            if not annotations:
-                # annotations is empty, happens if namedtuple_cls defined via collections.namedtuple(...)
-                annotations: dict[str, Any] = dict.fromkeys(namedtuple_cls._fields, Any)
+
+            # Filter annotations to only include fields that are actually in the NamedTuple,
+            # and ensure all NamedTuple fields are included in annotations (filling with Any if missing).
+            # This is to handle inheritance where subclasses might add annotations that aren't
+            # part of the NamedTuple, or where base classes (like collections.namedtuple) don't have annotations.
+            # See https://github.com/pydantic/pydantic/issues/7987
+            annotations = {field_name: annotations.get(field_name, Any) for field_name in namedtuple_cls._fields}
 
             if typevars_map:
                 annotations = {
