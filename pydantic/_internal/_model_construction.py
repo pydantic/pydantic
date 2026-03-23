@@ -136,7 +136,7 @@ class ModelMetaclass(ABCMeta):
             if private_attributes or base_private_attributes:
                 original_model_post_init = get_model_post_init(namespace, bases)
                 if original_model_post_init is not None:
-                    # if there are private_attributes and a model_post_init function, we handle both
+                    # if there are private attributes and a model_post_init function, we handle both
 
                     @wraps(original_model_post_init)
                     def wrapped_model_post_init(self: BaseModel, context: Any, /) -> None:
@@ -187,7 +187,7 @@ class ModelMetaclass(ABCMeta):
 
                     missing_parameters = tuple(x for x in parameters if x not in parent_parameters)
                     if RootModelRootType in parent_parameters and RootModelRootType not in parameters:
-                        # This is a special case where the user has subclassed `RootModel`, but has not parametrized
+                        # This is a special case where the user has subclassed RootModel, but has not parameterized
                         # RootModel with the generic type identifiers being used. Ex:
                         # class MyModel(RootModel, Generic[T]):
                         #    root: T
@@ -295,7 +295,7 @@ class ModelMetaclass(ABCMeta):
 
     # Due to performance and memory issues, in the ABCMeta.__subclasscheck__ implementation, we don't support
     # registered virtual subclasses. See https://github.com/python/cpython/issues/92810#issuecomment-2762454345.
-    # This may change once the CPython gets fixed (possibly in 3.15), in which case we should conditionally
+    # This may change once CPython is fixed (possibly in 3.15), in which case we should conditionally
     # define `register()`.
     def register(self, subclass: type[_T]) -> type[_T]:
         warnings.warn(
@@ -337,7 +337,7 @@ class ModelMetaclass(ABCMeta):
 
     @property
     def __pydantic_fields_complete__(self) -> bool:
-        """Whether the fields where successfully collected (i.e. type hints were successfully resolves).
+        """Whether the fields were successfully collected (i.e. type hints were successfully resolved).
 
         This is a private attribute, not meant to be used outside Pydantic.
         """
@@ -362,7 +362,7 @@ class ModelMetaclass(ABCMeta):
 
 
 def init_private_attributes(self: BaseModel, context: Any, /) -> None:
-    """This function is meant to behave like a BaseModel method to initialise private attributes.
+    """This function is meant to behave like a BaseModel method to initialize private attributes.
 
     It takes context as an argument since that's what pydantic-core passes when calling it.
 
@@ -410,7 +410,7 @@ def inspect_namespace(  # noqa C901
         base_class_fields: A set of base class fields.
 
     Returns:
-        A dict contains private attributes info.
+        A dict containing private attributes info.
 
     Raises:
         TypeError: If there is a `__root__` field in model.
@@ -620,14 +620,14 @@ def complete_model_class(
         `True` if the model is successfully completed, else `False`.
 
     Raises:
-        PydanticUndefinedAnnotation: If `PydanticUndefinedAnnotation` occurs in`__get_pydantic_core_schema__`
+        PydanticUndefinedAnnotation: If PydanticUndefinedAnnotation occurs in __get_pydantic_core_schema__
             and `raise_errors=True`.
     """
     typevars_map = get_model_typevars_map(cls)
 
     if not cls.__pydantic_fields_complete__:
         # Note: when coming from `ModelMetaclass.__new__()`, this results in fields being built twice.
-        # We do so a second time here so that we can get the `NameError` for the specific undefined annotation.
+        # We do so a second time here so that we can get the ``NameError`` for the specific undefined annotation.
         # Alternatively, we could let `GenerateSchema()` raise the error, but there are cases where incomplete
         # fields are inherited in `collect_model_fields()` and can actually have their annotation resolved in the
         # generate schema process. As we want to avoid having `__pydantic_fields_complete__` set to `False`
@@ -673,7 +673,7 @@ def complete_model_class(
         set_model_mocks(cls)
         return False
 
-    # This needs to happen *after* model schema generation, as the return type
+    # This needs to happen *after* model schema generation, as the return types
     # of the properties are evaluated and the `ComputedFieldInfo` are recreated:
     cls.__pydantic_computed_fields__ = {k: v.info for k, v in cls.__pydantic_decorators__.computed_fields.items()}
 
@@ -774,7 +774,7 @@ class _DeprecatedFieldDescriptor:
 class _PydanticWeakRef:
     """Wrapper for `weakref.ref` that enables `pickle` serialization.
 
-    Cloudpickle fails to serialize `weakref.ref` objects due to an arcane error related
+    Cloudpickle fails to serialize weakref.ref objects due to an arcane error related to
     to abstract base classes (`abc.ABC`). This class works around the issue by wrapping
     `weakref.ref` instead of subclassing it.
 
