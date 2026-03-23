@@ -268,9 +268,7 @@ def test_eval_type_backport():
 
 
 def test_namedtuple_inheritance_with_annotations():
-    """
-    https://github.com/pydantic/pydantic/issues/7987
-    """
+    """https://github.com/pydantic/pydantic/issues/7987."""
 
     class Foo(NamedTuple):
         test: str

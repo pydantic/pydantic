@@ -1540,11 +1540,9 @@ class GenerateSchema:
             except NameError as e:
                 raise PydanticUndefinedAnnotation.from_name_error(e) from e
 
-            # Filter annotations to only include fields that are actually in the NamedTuple,
-            # and ensure all NamedTuple fields are included in annotations (filling with Any if missing).
-            # This is to handle inheritance where subclasses might add annotations that aren't
-            # part of the NamedTuple, or where base classes (like collections.namedtuple) don't have annotations.
-            # See https://github.com/pydantic/pydantic/issues/7987
+            # Filter annotations to only include fields that are actually in the NamedTuple
+            # (as subclassing an existing NamedTuple is not supported yet - see https://github.com/python/typing/issues/427)
+            # and use `Any` if no annotation exist (i.e. when using `collections.namedtuple()`).
             annotations = {field_name: annotations.get(field_name, Any) for field_name in namedtuple_cls._fields}
 
             if typevars_map:
