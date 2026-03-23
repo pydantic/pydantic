@@ -129,7 +129,7 @@ def build_wrapper(func: Callable[P, R], event_handlers: list[BaseValidateHandler
 
 
 def filter_handlers(handler_cls: BaseValidateHandlerProtocol, method_name: str) -> bool:
-    """Filter out handler methods which are not implemented by the plugin directly - e.g. are missing
+    """Filter out handler methods which are not implemented by the plugin directly - e.g. those that are missing
     or are inherited from the protocol.
     """
     handler = getattr(handler_cls, method_name, None)
