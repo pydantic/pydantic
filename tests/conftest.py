@@ -143,6 +143,11 @@ class CallCounter:
 
 @pytest.fixture
 def generate_schema_calls(monkeypatch: pytest.MonkeyPatch) -> CallCounter:
+    # Pre-import `RootModel as it is lazily imported inside json_schema.py's _update_class_schema().
+    # Without this, the first call to model_json_schema() would trigger their import, causing
+    # generate_schema() to be called for `RootModel` and inflating the count.
+    from pydantic.root_model import RootModel  # noqa: F401
+
     orig_generate_schema = GenerateSchema.generate_schema
     counter = CallCounter()
     depth = 0  # generate_schema can be called recursively
