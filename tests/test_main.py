@@ -2782,6 +2782,128 @@ def test_model_validate_strings_with_validate_fn_override() -> None:
     ]
 
 
+@pytest.mark.parametrize('config_extra', ['forbid', 'ignore'])
+def test_model_dump_includes_extras_from_validate_override(config_extra: str) -> None:
+    """When model_validate is called with extra='allow' on a model whose config uses
+    'forbid' or 'ignore', model_dump and model_dump_json should include the extra fields.
+
+    Regression test for https://github.com/pydantic/pydantic/issues/12937
+    """
+
+    class Model(BaseModel):
+        model_config = ConfigDict(extra=config_extra)
+        name: str
+
+    m = Model.model_validate({'name': 'test', 'age': 25, 'city': 'NY'}, extra='allow')
+    assert m.__pydantic_extra__ == {'age': 25, 'city': 'NY'}
+
+    # model_dump includes extras
+    result = m.model_dump()
+    assert result == {'name': 'test', 'age': 25, 'city': 'NY'}
+
+    # model_dump_json includes extras
+    result_json = json.loads(m.model_dump_json())
+    assert result_json == {'name': 'test', 'age': 25, 'city': 'NY'}
+
+    # include filters extras
+    assert m.model_dump(include={'name'}) == {'name': 'test'}
+    assert m.model_dump(include={'age'}) == {'age': 25}
+
+    # exclude filters extras
+    assert m.model_dump(exclude={'age'}) == {'name': 'test', 'city': 'NY'}
+
+    # exclude_none drops null extras
+    m2 = Model.model_validate({'name': 'test', 'age': None}, extra='allow')
+    assert m2.model_dump(exclude_none=True) == {'name': 'test'}
+
+    # exclude_unset keeps extras that are in model_fields_set
+    m3 = Model.model_validate({'name': 'test', 'age': 25}, extra='allow')
+    assert 'age' in m3.model_fields_set
+    assert m3.model_dump(exclude_unset=True) == {'name': 'test', 'age': 25}
+
+    # exclude_unset with a model that has a default for 'name':
+    # extras are kept since they were explicitly provided
+    class ModelWithDefault(BaseModel):
+        model_config = ConfigDict(extra=config_extra)
+        name: str = 'default'
+
+    m4 = ModelWithDefault.model_validate({'age': 30}, extra='allow')
+    assert m4.model_dump(exclude_unset=True) == {'age': 30}
+
+
+@pytest.mark.parametrize('config_extra', ['forbid', 'ignore'])
+def test_model_dump_extras_mode_json_converts_values(config_extra: str) -> None:
+    """Extra values are converted to JSON-compatible types when mode='json'."""
+
+    class Model(BaseModel):
+        model_config = ConfigDict(extra=config_extra)
+        name: str
+
+    m = Model.model_validate({'name': 'test', 'ts': datetime(2024, 1, 15, 12, 0, 0)}, extra='allow')
+
+    # mode='json' converts datetime to ISO string
+    result = m.model_dump(mode='json')
+    assert result == {'name': 'test', 'ts': '2024-01-15T12:00:00'}
+
+    # model_dump_json also converts correctly (uses pydantic_core.to_json)
+    result_json = json.loads(m.model_dump_json())
+    assert result_json == {'name': 'test', 'ts': '2024-01-15T12:00:00'}
+
+
+def test_model_dump_no_extras_unchanged() -> None:
+    """Models without extra data should behave exactly as before."""
+
+    class Model(BaseModel):
+        model_config = ConfigDict(extra='forbid')
+        name: str
+
+    m = Model(name='test')
+    assert m.model_dump() == {'name': 'test'}
+    assert m.__pydantic_extra__ is None
+
+
+def test_model_dump_extra_allow_config_unchanged() -> None:
+    """Models with extra='allow' config should still work through the serializer path."""
+
+    class Model(BaseModel):
+        model_config = ConfigDict(extra='allow')
+        name: str
+
+    m = Model.model_validate({'name': 'test', 'age': 25})
+    assert m.model_dump() == {'name': 'test', 'age': 25}
+    assert m.model_dump(include={'name'}) == {'name': 'test'}
+    assert m.model_dump(exclude={'age'}) == {'name': 'test'}
+
+
+@pytest.mark.parametrize('config_extra', ['forbid', 'ignore'])
+def test_model_dump_nested_extras_from_validate_override(config_extra: str) -> None:
+    """Nested models with extras from model_validate(extra='allow') should include
+    extras at all nesting levels in model_dump and model_dump_json.
+
+    Regression test for https://github.com/pydantic/pydantic/issues/12937
+    """
+
+    class Inner(BaseModel):
+        model_config = ConfigDict(extra=config_extra)
+        x: int
+
+    class Outer(BaseModel):
+        model_config = ConfigDict(extra=config_extra)
+        inner: Inner
+
+    o = Outer.model_validate({'inner': {'x': 1, 'y': 'nested'}, 'z': 'top'}, extra='allow')
+    assert o.__pydantic_extra__ == {'z': 'top'}
+    assert o.inner.__pydantic_extra__ == {'y': 'nested'}
+
+    result = o.model_dump()
+    assert result == {'inner': {'x': 1, 'y': 'nested'}, 'z': 'top'}
+
+    import json
+
+    result_json = json.loads(o.model_dump_json())
+    assert result_json == {'inner': {'x': 1, 'y': 'nested'}, 'z': 'top'}
+
+
 def test_pydantic_hooks() -> None:
     calls = []
 

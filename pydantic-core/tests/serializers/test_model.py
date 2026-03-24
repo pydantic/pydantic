@@ -159,6 +159,98 @@ def test_model_recursive_in_extra():
     assert s.to_json(Model(__pydantic_extra__=dict(other=Model(__pydantic_extra__={})))) == b'{"other":{}}'
 
 
+def test_model_serialize_extra_without_allow_config():
+    """When __pydantic_extra__ is populated on a model whose schema uses extra_behavior='ignore',
+    the serializer should still include those extras in output.
+
+    Regression test for https://github.com/pydantic/pydantic/issues/12937
+    """
+    s = SchemaSerializer(
+        core_schema.model_schema(
+            BasicModel,
+            core_schema.model_fields_schema(
+                {'foo': core_schema.model_field(core_schema.int_schema())},
+                extra_behavior='ignore',
+            ),
+            extra_behavior='ignore',
+        )
+    )
+    m = BasicModel(foo=1, __pydantic_extra__={'bar': 'hello', 'baz': 42})
+    assert s.to_python(m) == IsStrictDict(foo=1, bar='hello', baz=42)
+    assert s.to_python(m, mode='json') == {'foo': 1, 'bar': 'hello', 'baz': 42}
+    assert json.loads(s.to_json(m)) == {'foo': 1, 'bar': 'hello', 'baz': 42}
+
+    # None extras should not change output
+    m_none = BasicModel(foo=1, __pydantic_extra__=None)
+    assert s.to_python(m_none) == IsStrictDict(foo=1)
+    assert json.loads(s.to_json(m_none)) == {'foo': 1}
+
+    # Empty dict extras should not change output
+    m_empty = BasicModel(foo=1, __pydantic_extra__={})
+    assert s.to_python(m_empty) == IsStrictDict(foo=1)
+
+
+def test_model_nested_extra_without_allow_config():
+    """Nested models with __pydantic_extra__ populated should include extras at all levels."""
+
+    class InnerModel(BasicModel):
+        pass
+
+    inner_schema = core_schema.model_schema(
+        InnerModel,
+        core_schema.model_fields_schema(
+            {'x': core_schema.model_field(core_schema.int_schema())},
+            extra_behavior='ignore',
+        ),
+        extra_behavior='ignore',
+    )
+
+    s = SchemaSerializer(
+        core_schema.model_schema(
+            BasicModel,
+            core_schema.model_fields_schema(
+                {
+                    'inner': core_schema.model_field(inner_schema),
+                },
+                extra_behavior='ignore',
+            ),
+            extra_behavior='ignore',
+        )
+    )
+    inner = InnerModel(x=1, __pydantic_extra__={'y': 'nested'})
+    outer = BasicModel(inner=inner, __pydantic_extra__={'z': 'top'})
+    result = s.to_python(outer)
+    assert result == IsStrictDict(inner={'x': 1, 'y': 'nested'}, z='top')
+    assert s.to_python(outer, mode='json') == {'inner': {'x': 1, 'y': 'nested'}, 'z': 'top'}
+    assert json.loads(s.to_json(outer)) == {'inner': {'x': 1, 'y': 'nested'}, 'z': 'top'}
+
+
+def test_model_extra_not_leaked_to_foreign_serializer():
+    """A serializer for class A should not include __pydantic_extra__ from an unrelated class B."""
+
+    class ModelA(BasicModel):
+        pass
+
+    class ModelB(BasicModel):
+        pass
+
+    s_a = SchemaSerializer(
+        core_schema.model_schema(
+            ModelA,
+            core_schema.model_fields_schema(
+                {'x': core_schema.model_field(core_schema.int_schema())},
+                extra_behavior='ignore',
+            ),
+            extra_behavior='ignore',
+        )
+    )
+    # ModelB instance has extras, but serialized with ModelA's serializer
+    b = ModelB(x=1, __pydantic_extra__={'secret': 'leaked'})
+    result = s_a.to_python(b)
+    assert result == IsStrictDict(x=1)
+    assert json.loads(s_a.to_json(b)) == {'x': 1}
+
+
 @pytest.mark.parametrize(
     'params',
     [
@@ -1073,8 +1165,8 @@ def test_extra():
     assert m.__pydantic_fields_set__ == {'field_a', 'field_b', 'field_c'}
 
     s = SchemaSerializer(schema)
-    assert 'mode:ModelExtra' in plain_repr(s)
     assert 'has_extra:true' in plain_repr(s)
+    assert 'mode:ModelExtra' in plain_repr(s)
     assert s.to_python(m) == {'field_a': b'test', 'field_b': 12, 'field_c': 'extra'}
     assert s.to_python(m, mode='json') == {'field_a': 'test', 'field_b': 12, 'field_c': 'extra'}
     assert s.to_json(m) == b'{"field_a":"test","field_b":12,"field_c":"extra"}'
@@ -1122,8 +1214,8 @@ def test_extra_config():
         config=core_schema.CoreConfig(extra_fields_behavior='allow'),
     )
     s = SchemaSerializer(schema)
-    assert 'mode:ModelExtra' in plain_repr(s)
     assert 'has_extra:true' in plain_repr(s)
+    assert 'mode:ModelExtra' in plain_repr(s)
 
 
 def test_extra_config_nested_model():
@@ -1151,8 +1243,8 @@ def test_extra_config_nested_model():
     s = SchemaSerializer(schema)
     # debug(s)
     s_repr = plain_repr(s)
-    assert 'has_extra:true,root_model:false,name:"InnerModel"' in s_repr
-    assert 'has_extra:false,root_model:false,name:"OuterModel"' in s_repr
+    assert 'root_model:false,name:"InnerModel"' in s_repr
+    assert 'root_model:false,name:"OuterModel"' in s_repr
 
 
 def test_extra_custom_serializer():

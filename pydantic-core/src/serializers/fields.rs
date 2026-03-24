@@ -133,15 +133,17 @@ impl GeneralFieldsSerializer {
     }
 
     fn extract_dicts<'a>(&self, value: &Bound<'a, PyAny>) -> Option<(Bound<'a, PyDict>, Option<Bound<'a, PyDict>>)> {
-        match self.mode {
-            FieldsMode::ModelExtra => value.extract().ok(),
-            _ => {
-                if let Ok(main_dict) = value.cast::<PyDict>() {
-                    Some((main_dict.clone(), None))
-                } else {
-                    None
-                }
-            }
+        // Try tuple (main_dict, extra_dict) first. Models pass __pydantic_extra__
+        // alongside __dict__ as a tuple. This also handles the case where a model
+        // with runtime extras is serialized through a wrapped serializer.
+        if let Ok(result) = value.extract() {
+            return Some(result);
+        }
+        // Fall back to plain dict for TypedDict, Dataclass, or models without extras.
+        if let Ok(main_dict) = value.cast::<PyDict>() {
+            Some((main_dict.clone(), None))
+        } else {
+            None
         }
     }
 

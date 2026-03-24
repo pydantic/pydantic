@@ -249,7 +249,17 @@ impl ModelSerializer {
             let model_extra = model.getattr(intern!(py, "__pydantic_extra__"))?;
             (attrs, model_extra).into_bound_py_any(py)
         } else {
-            Ok(attrs.into_any())
+            // When the schema does not allow extras but __pydantic_extra__ is populated
+            // at runtime (e.g. via model_validate with extra='allow' override), include
+            // those extras - but only if the model type exactly matches the expected class.
+            // An exact check (not isinstance) prevents leaking extras from subclasses
+            // or unrelated types serialized through a parent serializer.
+            let model_extra = model.getattr(intern!(py, "__pydantic_extra__")).ok();
+            if model_extra.as_ref().is_some_and(|e| !e.is_none()) && model.get_type().is(&self.class) {
+                (attrs, model_extra.unwrap()).into_bound_py_any(py)
+            } else {
+                Ok(attrs.into_any())
+            }
         }
     }
 }
