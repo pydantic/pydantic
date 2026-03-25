@@ -605,6 +605,22 @@ def test_validation_alias_path(value):
     assert Model.model_fields['x'].validation_alias == value
 
 
+@pytest.mark.parametrize(
+    'value',
+    [
+        AliasChoices(['a', 'b']),
+        AliasChoices(choices=['a', 'b']),
+        AliasChoices('a', 'b'),
+        AliasChoices('a', AliasPath('b', 1)),
+    ],
+)
+def test_validation_alias_choices(value):
+    class Model(BaseModel):
+        x: str = Field(validation_alias=value)
+
+    assert Model.model_fields['x'].validation_alias == value
+
+
 def test_search_dict_for_alias_path():
     ap = AliasPath('a', 1)
     assert ap.search_dict_for_path({'a': ['hello', 'world']}) == 'world'

@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import dataclasses
-from typing import Any, Callable, Literal
+from typing import Any, Callable, Literal, overload
 
 from pydantic_core import PydanticUndefined
 
@@ -67,8 +67,48 @@ class AliasChoices:
 
     choices: list[str | AliasPath]
 
-    def __init__(self, first_choice: str | AliasPath, *choices: str | AliasPath) -> None:
-        self.choices = [first_choice] + list(choices)
+    @overload
+    def __init__(self, *, choices: list[str | AliasPath]) -> None: ...
+
+    @overload
+    def __init__(
+        self,
+        first_choice: str | AliasPath,
+        *other_choices: str | AliasPath,
+    ) -> None: ...
+
+    @overload
+    def __init__(self, first_choice: list[str | AliasPath], /) -> None: ...
+
+    def __init__(
+        self,
+        first_choice: str | AliasPath | list[str | AliasPath] | None = None,
+        *other_choices: str | AliasPath,
+        choices: list[str | AliasPath] | None = None,
+    ) -> None:
+        match (first_choice, other_choices, choices):
+            case (None, _, None):
+                raise ValueError('No aliases specified')
+            case (None, tuple(), _choices):
+                self.choices = _choices
+            case (_first_choice, _other_choices, None) if len(_other_choices) == 0:
+                if isinstance(_first_choice, list):
+                    self.choices = _first_choice
+                elif isinstance(_first_choice, (str, AliasPath)):
+                    self.choices = [_first_choice]
+                else:
+                    raise ValueError(
+                        "Unsupported type for 'first_choice'",
+                    )
+            case (_first_choice, _other_choices, None):
+                if not isinstance(_first_choice, (str, AliasPath)):
+                    raise ValueError(
+                        "Unsupported type for 'first_choice'",
+                    )
+                self.choices = [_first_choice] + list(other_choices)
+
+            case (_first_choice, _, _choices):
+                raise ValueError('Either provide the aliases as positional or keyword arguments')
 
     def convert_to_aliases(self) -> list[list[str | int]]:
         """Converts arguments to a list of lists containing string or integer aliases.
