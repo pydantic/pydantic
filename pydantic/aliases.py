@@ -86,29 +86,32 @@ class AliasChoices:
         *other_choices: str | AliasPath,
         choices: list[str | AliasPath] | None = None,
     ) -> None:
-        match (first_choice, other_choices, choices):
-            case (None, _, None):
-                raise ValueError('No aliases specified')
-            case (None, tuple(), _choices):
-                self.choices = _choices
-            case (_first_choice, _other_choices, None) if len(_other_choices) == 0:
-                if isinstance(_first_choice, list):
-                    self.choices = _first_choice
-                elif isinstance(_first_choice, (str, AliasPath)):
-                    self.choices = [_first_choice]
-                else:
-                    raise ValueError(
-                        "Unsupported type for 'first_choice'",
-                    )
-            case (_first_choice, _other_choices, None):
-                if not isinstance(_first_choice, (str, AliasPath)):
-                    raise ValueError(
-                        "Unsupported type for 'first_choice'",
-                    )
-                self.choices = [_first_choice] + list(other_choices)
+        if first_choice is None and choices is None:
+            raise ValueError('No aliases specified')
+        if first_choice is None and len(other_choices) == 0 and (_choices := choices) is not None:
+            self.choices = _choices
+        if (
+            (_first_choice := first_choice) is not None
+            and len(_other_choices := other_choices) == 0
+            and choices is None
+        ):
+            if isinstance(_first_choice, list):
+                self.choices = _first_choice
+            elif isinstance(_first_choice, (str, AliasPath)):
+                self.choices = [_first_choice]
+            else:
+                raise ValueError(
+                    "Unsupported type for 'first_choice'",
+                )
+        if (_first_choice := first_choice) is not None and len(_other_choices := other_choices) > 0 and choices is None:
+            if not isinstance(_first_choice, (str, AliasPath)):
+                raise ValueError(
+                    "Unsupported type for 'first_choice'",
+                )
+            self.choices = [_first_choice] + list(other_choices)
 
-            case (_first_choice, _, _choices):
-                raise ValueError('Either provide the aliases as positional or keyword arguments')
+        if first_choice is not None and choices is not None:
+            raise ValueError('Either provide the aliases as positional or keyword arguments')
 
     def convert_to_aliases(self) -> list[list[str | int]]:
         """Converts arguments to a list of lists containing string or integer aliases.
