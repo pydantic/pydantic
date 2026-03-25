@@ -1347,6 +1347,22 @@ def test_custom_init():
     assert Model.model_validate({'x': 1, 'y': 'abc'}).x == 4
 
 
+def test_custom_init_validate_strings() -> None:
+    """https://github.com/pydantic/pydantic/issues/12718."""
+    calls: list[dict[str, object]] = []
+
+    class Model(BaseModel):
+        x: int
+
+        def __init__(self, **data: object) -> None:
+            calls.append(data)
+            super().__init__(**data)
+
+    Model.model_validate_strings({'x': '1'})
+
+    assert calls == [{'x': '1'}]
+
+
 def test_nested_custom_init():
     class NestedModel(BaseModel):
         self: str
