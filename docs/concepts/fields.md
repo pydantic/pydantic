@@ -448,6 +448,22 @@ class Model(BaseModel):
 The available constraints for each type (and the way they affect the JSON Schema) are described
 in the [standard library types](../api/standard_library_types.md) documentation.
 
+!!! note
+    When adding constraints to a union type, if a member of the union is `None` or the [`MISSING` sentinel](./experimental.md#missing-sentinel),
+    the constraints will be automatically applied to the remaining type(s) of the union:
+
+    ```python
+    from typing import Annotated, Union
+
+    from pydantic import BaseModel, Field
+
+
+    class Model(BaseModel):
+        positive: Union[int, None] = Field(gt=0)
+        # Also works with the annotated pattern:
+        negative: Annotated[Union[int, None], Field(lt=0)]
+    ```
+
 <!-- old anchor added for backwards compatibility -->
 <!-- markdownlint-disable-next-line no-empty-links -->
 [](){#strict-mode}

@@ -536,3 +536,7 @@ As such, the following limitations currently apply:
   or greater, and the `enableExperimentalFeatures` type evaluation setting
   should be enabled.
 * Pickling of models containing `MISSING` as a value is not supported.
+
+!!! note
+    When [applying constraints](./fields.md#field-constraints) to a union containing the `MISSING` sentinel,
+    such constraints are automatically applied to the remaining type(s) of the union.
