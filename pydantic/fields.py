@@ -827,13 +827,19 @@ class FieldInfo(_repr.Representation):
         # Note: we can't define a custom `__copy__()`, as `FieldInfo` is being subclassed
         # by some third-party libraries with extra attributes defined (and as `FieldInfo`
         # is slotted, we can't make a copy of the `__dict__`).
-        copied = copy(self)
+        if type(self) is FieldInfo:
+            # Fast-path if the instance isn't a subclass (`copy.copy()` relies on pickling which is slower):
+            copied = FieldInfo.__new__(FieldInfo)
+            for attr_name in FieldInfo.__slots__:
+                setattr(copied, attr_name, getattr(self, attr_name))
+        else:
+            copied = copy(self)
+
         for attr_name in ('metadata', '_attributes_set', '_qualifiers'):
             # Apply "deep-copy" behavior on collections attributes:
-            value = getattr(copied, attr_name).copy()
-            setattr(copied, attr_name, value)
+            setattr(copied, attr_name, getattr(copied, attr_name).copy())
 
-        return copied
+        return copied  # pyright: ignore[reportReturnType]
 
     def __repr_args__(self) -> ReprArgs:
         yield 'annotation', _repr.PlainRepr(_repr.display_as_type(self.annotation))
@@ -1544,6 +1550,7 @@ class ComputedFieldInfo:
     return_type: Any
     alias: str | None
     alias_priority: int | None
+    exclude_if: Callable[[Any], bool] | None
     title: str | None
     field_title_generator: Callable[[str, ComputedFieldInfo], str] | None
     description: str | None
@@ -1559,6 +1566,7 @@ class ComputedFieldInfo:
             return_type=self.return_type,
             alias=self.alias,
             alias_priority=self.alias_priority,
+            exclude_if=self.exclude_if,
             title=self.title,
             field_title_generator=self.field_title_generator,
             description=self.description,
@@ -1645,6 +1653,7 @@ def computed_field(
     *,
     alias: str | None = None,
     alias_priority: int | None = None,
+    exclude_if: Callable[[Any], bool] | None = None,
     title: str | None = None,
     field_title_generator: Callable[[str, ComputedFieldInfo], str] | None = None,
     description: str | None = None,
@@ -1662,6 +1671,7 @@ def computed_field(
     *,
     alias: str | None = None,
     alias_priority: int | None = None,
+    exclude_if: Callable[[Any], bool] | None = None,
     title: str | None = None,
     field_title_generator: Callable[[str, ComputedFieldInfo], str] | None = None,
     description: str | None = None,
@@ -1796,6 +1806,7 @@ def computed_field(
         func: the function to wrap.
         alias: alias to use when serializing this computed field, only used when `by_alias=True`
         alias_priority: priority of the alias. This affects whether an alias generator is used
+        exclude_if: A callable that determines whether to exclude this computed field during serialization based on its value.
         title: Title to use when including this computed field in JSON Schema
         field_title_generator: A callable that takes a field name and returns title for it.
         description: Description to use when including this computed field in JSON Schema, defaults to the function's
@@ -1840,6 +1851,7 @@ def computed_field(
             return_type,
             alias,
             alias_priority,
+            exclude_if,
             title,
             field_title_generator,
             description,

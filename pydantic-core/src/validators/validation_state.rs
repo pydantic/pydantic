@@ -35,18 +35,26 @@ pub struct ValidationState<'a, 'py> {
     // TODO: this should probably be moved directly into the structured types which need it, but that
     // requires some refactoring to make them have knowledge of default (factories).
     pub has_field_error: bool,
+    /// The name of the field being validated, if applicable
+    field_name: Option<Bound<'py, PyString>>,
     // deliberately make Extra readonly
     extra: Extra<'a, 'py>,
 }
 
 impl<'a, 'py> ValidationState<'a, 'py> {
-    pub fn new(extra: Extra<'a, 'py>, recursion_guard: &'a mut RecursionState, allow_partial: PartialMode) -> Self {
+    pub fn new(
+        extra: Extra<'a, 'py>,
+        recursion_guard: &'a mut RecursionState,
+        allow_partial: PartialMode,
+        field_name: Option<Bound<'py, PyString>>,
+    ) -> Self {
         Self {
             recursion_guard, // Don't care about exactness unless doing union validation
             exactness: None,
             fields_set_count: None,
             allow_partial,
             has_field_error: false,
+            field_name,
             extra,
         }
     }
@@ -81,6 +89,18 @@ impl<'a, 'py> ValidationState<'a, 'py> {
             projector,
             value,
         }
+    }
+
+    /// Set the field name within state for the given scope.
+    pub fn scoped_set_field_name(
+        &mut self,
+        new_value: Option<Bound<'py, PyString>>,
+    ) -> ScopedFieldNameState<'_, 'a, 'py> {
+        self.scoped_set(Self::field_name_mut, new_value)
+    }
+
+    pub fn field_name(&self) -> Option<&Bound<'py, PyString>> {
+        self.field_name.as_ref()
     }
 
     pub fn extra(&self) -> &'_ Extra<'a, 'py> {
@@ -134,6 +154,10 @@ impl<'a, 'py> ValidationState<'a, 'py> {
 
     pub fn maybe_cached_str(&self, py: Python<'py>, s: &str) -> Bound<'py, PyString> {
         new_py_string(py, s, self.extra.cache_str)
+    }
+
+    fn field_name_mut(&mut self) -> &mut Option<Bound<'py, PyString>> {
+        &mut self.field_name
     }
 }
 
@@ -242,3 +266,11 @@ where
         self.state
     }
 }
+
+type ScopedFieldNameState<'scope, 'a, 'py> = ScopedSetState<
+    'scope,
+    'a,
+    'py,
+    for<'s> fn(&'s mut ValidationState<'a, 'py>) -> &'s mut Option<Bound<'py, PyString>>,
+    Option<Bound<'py, PyString>>,
+>;

@@ -127,6 +127,10 @@ print(field_info.metadata)
 #> [Gt(gt=1), WithJsonSchema(json_schema={'extra': 'data'}, mode=None)]
 ```
 
+/// deprecated-removed | v2.11 v3
+[`model_fields`][pydantic.main.BaseModel.model_fields] can only be accessed from the class object, not the instance.
+///
+
 ## Default values
 
 Default values for fields can be provided using the normal assignment syntax or by providing a value
@@ -142,10 +146,11 @@ class User(BaseModel):
     age: int = Field(default=20)
 ```
 
-!!! warning
-    [In Pydantic V1](../migration.md#required-optional-and-nullable-fields), a type annotated as [`Any`][typing.Any]
-    or wrapped by [`Optional`][typing.Optional] would be given an implicit default of `None` even if no
-    default was explicitly specified. This is no longer the case in Pydantic V2.
+/// version-changed | v2
+[In Pydantic V1](../migration.md#required-optional-and-nullable-fields), a type annotated as [`Any`][typing.Any]
+or wrapped by [`Optional`][typing.Optional] would be given an implicit default of `None` even if no
+default was explicitly specified. This is no longer the case in Pydantic V2.
+///
 
 You can also pass a callable to the `default_factory` argument that will be called to generate a default value:
 
@@ -180,6 +185,10 @@ print(user.username)
 
 The `data` argument will *only* contain the already validated data, based on the [order of model fields](./models.md#field-ordering)
 (the above example would fail if `username` were to be defined before `email`).
+
+/// version-added | v2.10
+Default factories can take already validated data as an argument.
+///
 
 ## Validate default values
 
@@ -561,7 +570,7 @@ print(Model.model_validate({'pet': {'pet_type': 'cat', 'age': 12}}))  # (1)!
 #> pet=Cat(pet_type='cat', age=12)
 ```
 
-1. See more about [Validating data] in the [Models] page.
+1. See more about `model_validate()` in the [Validating data](./models.md#validating-data) documentation.
 
 The following example shows how to use the `discriminator` keyword argument with a `Discriminator` instance:
 
@@ -601,7 +610,7 @@ print(repr(Model.model_validate({'pet': {'pet_kind': 'dog', 'age': 12}})))
 ```
 
 You can also take advantage of `Annotated` to define your discriminated unions.
-See the [Discriminated Unions] docs for more details.
+See the [Discriminated Unions](./unions.md#discriminated-unions) documentation for more details.
 
 ## Immutability
 
@@ -663,7 +672,14 @@ print(user.model_dump())  # (1)!
 
 See the dedicated [serialization section](./serialization.md#field-inclusion-and-exclusion) for more details.
 
+/// version-added | v2.12
+The `exclude_if` parameter.
+///
+
 ## Deprecated fields
+
+/// version-added | v2.7.0
+///
 
 The `deprecated` parameter can be used to mark a field as being deprecated. Doing so will result in:
 
@@ -788,15 +804,19 @@ Read more about JSON schema customization / modification with fields in the [Cus
 ## The `computed_field` decorator
 
 ??? api "API Documentation"
-    [`computed_field`][pydantic.fields.computed_field]<br>
+    [`@computed_field`][pydantic.fields.computed_field]<br>
 
-The [`computed_field`][pydantic.fields.computed_field] decorator can be used to include [`property`][] or
-[`cached_property`][functools.cached_property] attributes when serializing a model or dataclass.
-The property will also be taken into account in the JSON Schema (in serialization mode).
+/// version-added | v2.13
+Computed fields can be conditionally excluded from the serialization output by using the `exclude_if` parameter of the decorator.
+///
+
+The [`@computed_field`][pydantic.fields.computed_field] decorator can be used to include [properties][property] (or
+[cached properties][functools.cached_property]) when serializing a model or dataclass.
+The property will also be included in the JSON Schema (in serialization mode).
 
 !!! note
     Properties can be useful for fields that are computed from other fields, or for fields that
-    are expensive to be computed (and thus, are cached if using [`cached_property`][functools.cached_property]).
+    are expensive to be computed (and thus, are cached if using [`@cached_property`][functools.cached_property]).
 
     However, note that Pydantic will *not* perform any additional logic on the wrapped property
     (validation, cache invalidation, etc.).
@@ -834,11 +854,11 @@ print(Box.model_json_schema(mode='serialization'))
 """
 ```
 
-1. If not specified, [`computed_field`][pydantic.fields.computed_field] will implicitly convert the method
-   to a [`property`][]. However, it is preferable to explicitly use the [`@property`][property] decorator
+1. If not specified, [`@computed_field`][pydantic.fields.computed_field] will implicitly convert the method
+   to a [`@property`][property]. However, it is preferable to explicitly use the [`@property`][property] decorator
    for type checking purposes.
 
-Here's an example using the `model_dump` method with a computed field:
+Here's an example using the [`model_dump()`][pydantic.BaseModel.model_dump] method with a computed field:
 
 ```python
 from pydantic import BaseModel, computed_field
@@ -880,8 +900,5 @@ class Box(BaseModel):
         return self.width * self.height * self.depth
 ```
 
-[Discriminated Unions]: ../concepts/unions.md#discriminated-unions
-[Validating data]: models.md#validating-data
-[Models]: models.md
 [frozen dataclass documentation]: https://docs.python.org/3/library/dataclasses.html#frozen-instances
 [Customizing JSON Schema]: json_schema.md#field-level-customization

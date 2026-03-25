@@ -73,15 +73,16 @@ class SchemaValidator:
     # note: pyo3 currently supports __new__, but not __init__, though we include __init__ stubs
     # and docstrings here (and in the following classes) for documentation purposes
 
-    def __init__(self, schema: CoreSchema, config: CoreConfig | None = None) -> None:
+    def __init__(self, schema: CoreSchema, config: CoreConfig | None = None, _use_prebuilt: bool = True) -> None:
         """Initializes the `SchemaValidator`.
 
         Arguments:
             schema: The `CoreSchema` to use for validation.
             config: Optionally a [`CoreConfig`][pydantic_core.core_schema.CoreConfig] to configure validation.
+            _use_prebuilt: Whether to use pre-built validators (False during rebuilds to avoid stale references).
         """
 
-    def __new__(cls, schema: CoreSchema, config: CoreConfig | None = None) -> Self: ...
+    def __new__(cls, schema: CoreSchema, config: CoreConfig | None = None, _use_prebuilt: bool = True) -> Self: ...
     @property
     def title(self) -> str:
         """
@@ -297,15 +298,16 @@ class SchemaSerializer:
     `CombinedSerializer` which may in turn own more `CombinedSerializer`s which make up the full schema serializer.
     """
 
-    def __init__(self, schema: CoreSchema, config: CoreConfig | None = None) -> None:
+    def __init__(self, schema: CoreSchema, config: CoreConfig | None = None, _use_prebuilt: bool = True) -> None:
         """Initializes the `SchemaSerializer`.
 
         Arguments:
             schema: The `CoreSchema` to use for serialization.
             config: Optionally a [`CoreConfig`][pydantic_core.core_schema.CoreConfig] to to configure serialization.
+            _use_prebuilt: Whether to use pre-built validators (False during rebuilds to avoid stale references).
         """
 
-    def __new__(cls, schema: CoreSchema, config: CoreConfig | None = None) -> Self: ...
+    def __new__(cls, schema: CoreSchema, config: CoreConfig | None = None, _use_prebuilt: bool = True) -> Self: ...
     def to_python(
         self,
         value: Any,
@@ -322,6 +324,7 @@ class SchemaSerializer:
         warnings: bool | Literal['none', 'warn', 'error'] = True,
         fallback: Callable[[Any], Any] | None = None,
         serialize_as_any: bool = False,
+        polymorphic_serialization: bool | None = None,
         context: Any | None = None,
     ) -> Any:
         """
@@ -345,6 +348,7 @@ class SchemaSerializer:
             fallback: A function to call when an unknown value is encountered,
                 if `None` a [`PydanticSerializationError`][pydantic_core.PydanticSerializationError] error is raised.
             serialize_as_any: Whether to serialize fields with duck-typing serialization behavior.
+            polymorphic_serialization: Whether to use model and dataclass polymorphic serialization for this call.
             context: The context to use for serialization, this is passed to functional serializers as
                 [`info.context`][pydantic_core.core_schema.SerializationInfo.context].
 
@@ -371,6 +375,7 @@ class SchemaSerializer:
         warnings: bool | Literal['none', 'warn', 'error'] = True,
         fallback: Callable[[Any], Any] | None = None,
         serialize_as_any: bool = False,
+        polymorphic_serialization: bool | None = None,
         context: Any | None = None,
     ) -> bytes:
         """
@@ -395,6 +400,7 @@ class SchemaSerializer:
             fallback: A function to call when an unknown value is encountered,
                 if `None` a [`PydanticSerializationError`][pydantic_core.PydanticSerializationError] error is raised.
             serialize_as_any: Whether to serialize fields with duck-typing serialization behavior.
+            polymorphic_serialization: Whether to use model and dataclass polymorphic serialization for this call.
             context: The context to use for serialization, this is passed to functional serializers as
                 [`info.context`][pydantic_core.core_schema.SerializationInfo.context].
 
@@ -425,6 +431,7 @@ def to_json(
     serialize_unknown: bool = False,
     fallback: Callable[[Any], Any] | None = None,
     serialize_as_any: bool = False,
+    polymorphic_serialization: bool | None = None,
     context: Any | None = None,
 ) -> bytes:
     """
@@ -453,6 +460,7 @@ def to_json(
         fallback: A function to call when an unknown value is encountered,
             if `None` a [`PydanticSerializationError`][pydantic_core.PydanticSerializationError] error is raised.
         serialize_as_any: Whether to serialize fields with duck-typing serialization behavior.
+        polymorphic_serialization: Whether to use model and dataclass polymorphic serialization for this call.
         context: The context to use for serialization, this is passed to functional serializers as
             [`info.context`][pydantic_core.core_schema.SerializationInfo.context].
 
@@ -510,6 +518,7 @@ def to_jsonable_python(
     serialize_unknown: bool = False,
     fallback: Callable[[Any], Any] | None = None,
     serialize_as_any: bool = False,
+    polymorphic_serialization: bool | None = None,
     context: Any | None = None,
 ) -> Any:
     """
@@ -536,6 +545,7 @@ def to_jsonable_python(
         fallback: A function to call when an unknown value is encountered,
             if `None` a [`PydanticSerializationError`][pydantic_core.PydanticSerializationError] error is raised.
         serialize_as_any: Whether to serialize fields with duck-typing serialization behavior.
+        polymorphic_serialization: Whether to use model and dataclass polymorphic serialization for this call.
         context: The context to use for serialization, this is passed to functional serializers as
             [`info.context`][pydantic_core.core_schema.SerializationInfo.context].
 

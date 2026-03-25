@@ -132,13 +132,20 @@ impl<T: PyGcTraverse> PyGcTraverse for Definitions<T> {
 #[derive(Debug)]
 pub struct DefinitionsBuilder<T> {
     definitions: Definitions<T>,
+    use_prebuilt: bool,
 }
 
 impl<T: std::fmt::Debug> DefinitionsBuilder<T> {
-    pub fn new() -> Self {
+    pub fn new(use_prebuilt: bool) -> Self {
         Self {
             definitions: Definitions(AHashMap::new()),
+            use_prebuilt,
         }
+    }
+
+    /// Whether prebuilt validators/serializers should be used
+    pub fn use_prebuilt(&self) -> bool {
+        self.use_prebuilt
     }
 
     /// Get a ReferenceId for the given reference string.

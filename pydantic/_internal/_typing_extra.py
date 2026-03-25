@@ -32,6 +32,7 @@ if sys.version_info >= (3, 14):
 
 if TYPE_CHECKING:
     from pydantic import BaseModel
+    from pydantic.fields import FieldInfo
 
 # As per https://typing-extensions.readthedocs.io/en/latest/#runtime-use-of-types,
 # always check for both `typing` and `typing_extensions` variants of a typing construct.
@@ -311,14 +312,14 @@ def safe_get_annotations(obj: Any) -> dict[str, Any]:
 
 
 def get_model_type_hints(
-    obj: type[BaseModel],
+    model_class: type[BaseModel],
     *,
     ns_resolver: NsResolver | None = None,
 ) -> dict[str, tuple[Any, bool]]:
     """Collect annotations from a Pydantic model class, including those from parent classes.
 
     Args:
-        obj: The Pydantic model to inspect.
+        model_class: The Pydantic model class to inspect.
         ns_resolver: A namespace resolver instance to use. Defaults to an empty instance.
 
     Returns:
@@ -329,7 +330,7 @@ def get_model_type_hints(
     hints: dict[str, Any] | dict[str, tuple[Any, bool]] = {}
     ns_resolver = ns_resolver or NsResolver()
 
-    for base in reversed(obj.__mro__):
+    for base in reversed(model_class.__mro__[:-1]):
         # For Python 3.14, we could also use `Format.VALUE` and pass the globals/locals
         # from the ns_resolver, but we want to be able to know which specific field failed
         # to evaluate:
@@ -339,9 +340,12 @@ def get_model_type_hints(
             continue
 
         with ns_resolver.push(base):
-            globalns, localns = ns_resolver.types_namespace
+            base_model_fields: dict[str, FieldInfo] | None = base.__dict__.get('__pydantic_fields__')
+
             for name, value in ann.items():
                 if name.startswith('_'):
+                    globalns, localns = ns_resolver.types_namespace
+
                     # For private attributes, we only need the annotation to detect the `ClassVar` special form.
                     # For this reason, we still try to evaluate it, but we also catch any possible exception (on
                     # top of the `NameError`s caught in `try_eval_type`) that could happen so that users are free
@@ -352,7 +356,17 @@ def get_model_type_hints(
                     except Exception:
                         hints[name] = (value, False)
                 else:
-                    hints[name] = try_eval_type(value, globalns, localns)
+                    if base_model_fields is not None and name in base_model_fields:
+                        # Avoid unnecessarily evaluating annotations from parent models, as we'll end up
+                        # copying the `FieldInfo` instance from it anyway if we need to.
+                        # We use the `annotation` attribute here, but in reality could put anything here,
+                        # As we are guaranteed to not make use of it:
+                        hints[name] = (base_model_fields[name].annotation, True)
+                    else:
+                        globalns, localns = ns_resolver.types_namespace
+
+                        hints[name] = try_eval_type(value, globalns, localns)
+
     return hints
 
 

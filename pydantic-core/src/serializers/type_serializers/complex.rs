@@ -80,7 +80,10 @@ pub fn complex_to_str(py_complex: &Bound<'_, PyComplex>) -> String {
     let mut s = format!("{im}j");
     if re != 0.0 {
         let mut sign = "";
-        if im >= 0.0 {
+        // NaNs and positive numbers are formatted without sign, so we prefix "+" explicitly
+        // Check for positive sign instead of comparing with zero to handle signed zeros correctly
+        // Check for NaN first since its sign bit might be negative
+        if im.is_nan() || im.is_sign_positive() {
             sign = "+";
         }
         s = format!("{re}{sign}{s}");

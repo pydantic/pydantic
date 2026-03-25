@@ -1,4 +1,5 @@
 import json
+import os
 import platform
 import re
 import sys
@@ -667,7 +668,11 @@ def test_function_wrap_preserves_wrapped_serialization():
 
 
 @pytest.mark.skipif(
-    platform.python_implementation() in ('PyPy', 'GraalVM') or sys.platform in {'emscripten', 'win32'},
+    # Also skip in local, as segfaults may happen on some platforms for Python < 3.14:
+    # TODO: re-enable locally after https://github.com/pydantic/pydantic/issues/12592
+    platform.python_implementation() in ('PyPy', 'GraalVM')
+    or sys.platform in {'emscripten', 'win32'}
+    or (sys.version_info < (3, 14) and not os.getenv('CI')),
     reason='fails on pypy, graalpy, emscripten and windows',
 )
 def test_recursive_call():

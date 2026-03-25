@@ -79,6 +79,7 @@ class CoreConfig(TypedDict, total=False):
         validate_by_alias: Whether to use the field's alias when validating against the provided input data. Default is `True`.
         validate_by_name: Whether to use the field's name when validating against the provided input data. Default is `False`. Replacement for `populate_by_name`.
         serialize_by_alias: Whether to serialize by alias. Default is `False`, expected to change to `True` in V3.
+        polymorphic_serialization: Whether to enable polymorphic serialization for models and dataclasses. Default is `False`.
         url_preserve_empty_path: Whether to preserve empty URL paths when validating values for a URL type. Defaults to `False`.
     """
 
@@ -120,6 +121,7 @@ class CoreConfig(TypedDict, total=False):
     validate_by_alias: bool  # default: True
     validate_by_name: bool  # default: False
     serialize_by_alias: bool  # default: False
+    polymorphic_serialization: bool  # default: False
     url_preserve_empty_path: bool  # default: False
 
 
@@ -179,6 +181,11 @@ class SerializationInfo(Protocol[ContextT]):
     @property
     def serialize_as_any(self) -> bool:
         """The `serialize_as_any` argument set during serialization."""
+        ...
+
+    @property
+    def polymorphic_serialization(self) -> bool | None:
+        """The `polymorphic_serialization` argument set during serialization, if any."""
         ...
 
     @property
@@ -498,11 +505,17 @@ class ComputedField(TypedDict, total=False):
     property_name: Required[str]
     return_schema: Required[CoreSchema]
     alias: str
+    serialization_exclude_if: Callable[[Any], bool]
     metadata: dict[str, Any]
 
 
 def computed_field(
-    property_name: str, return_schema: CoreSchema, *, alias: str | None = None, metadata: dict[str, Any] | None = None
+    property_name: str,
+    return_schema: CoreSchema,
+    *,
+    alias: str | None = None,
+    serialization_exclude_if: Callable[[Any], bool] | None = None,
+    metadata: dict[str, Any] | None = None,
 ) -> ComputedField:
     """
     ComputedFields are properties of a model or dataclass that are included in serialization.
@@ -514,7 +527,12 @@ def computed_field(
         metadata: Any other information you want to include with the schema, not used by pydantic-core
     """
     return _dict_not_none(
-        type='computed-field', property_name=property_name, return_schema=return_schema, alias=alias, metadata=metadata
+        type='computed-field',
+        property_name=property_name,
+        return_schema=return_schema,
+        alias=alias,
+        serialization_exclude_if=serialization_exclude_if,
+        metadata=metadata,
     )
 
 
@@ -4254,6 +4272,7 @@ ErrorType = Literal[
     'string_too_short',
     'string_too_long',
     'string_pattern_mismatch',
+    'string_not_ascii',
     'enum',
     'dict_type',
     'mapping_type',

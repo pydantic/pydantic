@@ -94,10 +94,10 @@ def test_pydantic_value_error_invalid_dict():
 
     assert str(exc_info.value) == (
         '1 validation error for function-plain[my_function()]\n'
-        "  (error rendering message: TypeError: 'tuple' object cannot be cast as 'str') "
+        "  (error rendering message: TypeError: 'tuple' object is not an instance of 'str') "
         '[type=my_error, input_value=42, input_type=int]'
     )
-    with pytest.raises(TypeError, match="'tuple' object cannot be cast as 'str'"):
+    with pytest.raises(TypeError, match="'tuple' object is not an instance of 'str'"):
         exc_info.value.errors(include_url=False)
 
 
@@ -107,7 +107,7 @@ def test_pydantic_value_error_invalid_type():
 
     v = SchemaValidator(core_schema.with_info_plain_validator_function(f))
 
-    with pytest.raises(TypeError, match="argument 'context': 'list' object cannot be cast as 'dict'"):
+    with pytest.raises(TypeError, match="argument 'context': 'list' object is not an instance of 'dict'"):
         v.validate_python(42)
 
 
@@ -301,6 +301,7 @@ all_errors = [
     ('string_sub_type', 'Input should be a string, not an instance of a subclass of str', None),
     ('string_unicode', 'Input should be a valid string, unable to parse raw data as a unicode string', None),
     ('string_pattern_mismatch', "String should match pattern 'foo'", {'pattern': 'foo'}),
+    ('string_not_ascii', 'String should contain only ASCII characters', None),
     ('string_too_short', 'String should have at least 42 characters', {'min_length': 42}),
     ('string_too_short', 'String should have at least 1 character', {'min_length': 1}),
     ('string_too_long', 'String should have at most 42 characters', {'max_length': 42}),

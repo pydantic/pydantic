@@ -65,9 +65,8 @@ impl TypeSerializer for GeneratorSerializer {
                         };
                         for (index, iter_result) in py_iter.clone().enumerate() {
                             let element = iter_result?;
-                            let op_next = self.filter.index_filter(index, state, None)?;
-                            if let Some((next_include, next_exclude)) = op_next {
-                                let state = &mut state.scoped_include_exclude(next_include, next_exclude);
+                            if let Some(next_include_exclude) = self.filter.index_filter(index, state, None)? {
+                                let state = &mut state.scoped_include_exclude(next_include_exclude);
                                 items.push(item_serializer.to_python(&element, state)?);
                             }
                         }
@@ -110,8 +109,8 @@ impl TypeSerializer for GeneratorSerializer {
                 for (index, iter_result) in py_iter.clone().enumerate() {
                     let element = iter_result.map_err(py_err_se_err)?;
                     let op_next = self.filter.index_filter(index, state, None).map_err(py_err_se_err)?;
-                    if let Some((next_include, next_exclude)) = op_next {
-                        let state = &mut state.scoped_include_exclude(next_include, next_exclude);
+                    if let Some(next_include_exclude) = op_next {
+                        let state = &mut state.scoped_include_exclude(next_include_exclude);
                         let item_serialize = PydanticSerializer::new(&element, item_serializer, state);
                         seq.serialize_element(&item_serialize)?;
                     }
@@ -187,8 +186,8 @@ impl SerializationIterator {
             let element = iter_result?;
             let filter = self.filter.index_filter(self.index, state, None)?;
             self.index += 1;
-            if let Some((next_include, next_exclude)) = filter {
-                let state = &mut state.scoped_include_exclude(next_include, next_exclude);
+            if let Some(next_include_exclude) = filter {
+                let state = &mut state.scoped_include_exclude(next_include_exclude);
                 let v = self.item_serializer.to_python(&element, state)?;
                 state.warnings.final_check(py)?;
                 return Ok(Some(v));

@@ -11,6 +11,7 @@ use crate::common::union::{Discriminator, SMALL_UNION_THRESHOLD};
 use crate::definitions::DefinitionsBuilder;
 use crate::serializers::PydanticSerializationUnexpectedValue;
 use crate::serializers::SerializationState;
+use crate::serializers::extra::IncludeExclude;
 use crate::serializers::extra::ScopedSetState;
 use crate::tools::PyHashTable;
 use crate::tools::SchemaDict;
@@ -104,7 +105,7 @@ impl TypeSerializer for UnionSerializer {
             None,
         ) {
             Ok(Some(v)) => {
-                let state = &mut state.scoped_include_exclude(None, None);
+                let state = &mut state.scoped_include_exclude(IncludeExclude::empty());
                 infer_serialize(v.bind(value.py()), serializer, state)
             }
             Ok(None) => infer_serialize(value, serializer, state),
@@ -210,7 +211,7 @@ impl TypeSerializer for TaggedUnionSerializer {
             state,
         ) {
             Ok(Some(v)) => {
-                let state = &mut state.scoped_include_exclude(None, None);
+                let state = &mut state.scoped_include_exclude(IncludeExclude::empty());
                 infer_serialize(v.bind(value.py()), serializer, state)
             }
             Ok(None) => infer_serialize(value, serializer, state),

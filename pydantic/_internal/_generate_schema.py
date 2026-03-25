@@ -58,7 +58,13 @@ from typing_inspection.introspection import AnnotationSource, get_literal_values
 from ..aliases import AliasChoices, AliasPath
 from ..annotated_handlers import GetCoreSchemaHandler, GetJsonSchemaHandler
 from ..config import ConfigDict, JsonDict, JsonEncoder, JsonSchemaExtraCallable
-from ..errors import PydanticSchemaGenerationError, PydanticUndefinedAnnotation, PydanticUserError
+from ..errors import (
+    PydanticForbiddenQualifier,
+    PydanticInvalidForJsonSchema,
+    PydanticSchemaGenerationError,
+    PydanticUndefinedAnnotation,
+    PydanticUserError,
+)
 from ..functional_validators import AfterValidator, BeforeValidator, FieldValidatorModes, PlainValidator, WrapValidator
 from ..json_schema import JsonSchemaValue
 from ..version import version_short
@@ -326,6 +332,15 @@ def _add_custom_serialization_from_json_encoders(
         return schema
 
     return schema
+
+
+GENERATE_SCHEMA_ERRORS = (
+    PydanticForbiddenQualifier,
+    PydanticInvalidForJsonSchema,
+    PydanticSchemaGenerationError,
+    PydanticUndefinedAnnotation,
+)
+"""Errors raised during core schema generation. This does *not* include `InvalidSchemaError`, which is raised during schema cleaning."""
 
 
 class InvalidSchemaError(Exception):
@@ -1524,9 +1539,11 @@ class GenerateSchema:
                 annotations = _typing_extra.get_cls_type_hints(namedtuple_cls, ns_resolver=self._ns_resolver)
             except NameError as e:
                 raise PydanticUndefinedAnnotation.from_name_error(e) from e
-            if not annotations:
-                # annotations is empty, happens if namedtuple_cls defined via collections.namedtuple(...)
-                annotations: dict[str, Any] = dict.fromkeys(namedtuple_cls._fields, Any)
+
+            # Filter annotations to only include fields that are actually in the NamedTuple
+            # (as subclassing an existing NamedTuple is not supported yet - see https://github.com/python/typing/issues/427)
+            # and use `Any` if no annotation exist (i.e. when using `collections.namedtuple()`).
+            annotations = {field_name: annotations.get(field_name, Any) for field_name in namedtuple_cls._fields}
 
             if typevars_map:
                 annotations = {
@@ -2155,8 +2172,14 @@ class GenerateSchema:
             pydantic_js_updates={'readOnly': True, **(pydantic_js_updates if pydantic_js_updates else {})},
             pydantic_js_extra=pydantic_js_extra,
         )
+        exclude_if = d.info.exclude_if
+        # TODO: Should we support exclude_if from annotations?
         return core_schema.computed_field(
-            d.cls_var_name, return_schema=return_type_schema, alias=d.info.alias, metadata=core_metadata
+            d.cls_var_name,
+            return_schema=return_type_schema,
+            alias=d.info.alias,
+            serialization_exclude_if=exclude_if,
+            metadata=core_metadata,
         )
 
     def _annotated_schema(self, annotated_type: Any) -> core_schema.CoreSchema:
@@ -2783,7 +2806,7 @@ class _Definitions:
             else:
                 # `ref` was encountered, at least two times (or only once, but with metadata or a serialization schema):
                 # - Do not inline the `'definition-ref'` schemas (they are not provided in the gather result anyway).
-                # - Store the the definition in the `remaining_defs`
+                # - Store the definition in the `remaining_defs`
                 remaining_defs[ref] = self._resolve_definition(ref, definitions)
 
         for cs in gather_result['deferred_discriminator_schemas']:

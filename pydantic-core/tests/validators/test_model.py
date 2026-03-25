@@ -476,7 +476,7 @@ def test_model_class_function_after():
 
 
 def test_model_class_not_type():
-    with pytest.raises(SchemaError, match=re.escape("TypeError: 'int' object cannot be cast as 'type'")):
+    with pytest.raises(SchemaError, match=re.escape("TypeError: 'int' object is not an instance of 'type'")):
         SchemaValidator(
             schema=core_schema.model_schema(
                 cls=123,

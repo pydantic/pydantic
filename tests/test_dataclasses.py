@@ -3282,3 +3282,17 @@ def test_dataclass_field_exclude() -> None:
     assert ta.dump_json(Foo(foo='bar', bar=1)).decode('utf-8') == '{"bar":1}'
     assert ta.dump_json(Foo(foo='bar', bar=1), exclude={'bar'}).decode('utf-8') == '{}'
     assert ta.dump_json(Foo(foo='bar', bar=2)).decode('utf-8') == '{}'
+
+
+@pytest.mark.skipif(sys.version_info < (3, 10), reason='kw_only is not available in python >= 3.10')
+def test_dataclass_field_override_kw_only() -> None:
+    """https://github.com/pydantic/pydantic/issues/12736"""
+
+    @pydantic.dataclasses.dataclass(kw_only=True)
+    class Foo:
+        a: int = Field(kw_only=False)
+
+    a_param = inspect.signature(Foo).parameters['a']
+
+    assert a_param.kind is inspect.Parameter.POSITIONAL_OR_KEYWORD
+    assert a_param.default is inspect.Parameter.empty

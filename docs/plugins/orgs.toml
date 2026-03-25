@@ -46,6 +46,10 @@ description = """
 """
 
 [[orgs]]
+key = "capital_one"
+name = "Capital One"
+
+[[orgs]]
 key = "comcast"
 name = "Comcast"
 

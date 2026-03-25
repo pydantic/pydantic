@@ -27,6 +27,7 @@ def create_schema_validator(
     schema_kind: SchemaKind,
     config: CoreConfig | None = None,
     plugin_settings: dict[str, Any] | None = None,
+    _use_prebuilt: bool = True,
 ) -> SchemaValidator | PluggableSchemaValidator:
     """Create a `SchemaValidator` or `PluggableSchemaValidator` if plugins are installed.
 
@@ -46,9 +47,10 @@ def create_schema_validator(
             config,
             plugins,
             plugin_settings or {},
+            _use_prebuilt=_use_prebuilt,
         )
     else:
-        return SchemaValidator(schema, config)
+        return SchemaValidator(schema, config, _use_prebuilt=_use_prebuilt)
 
 
 class PluggableSchemaValidator:
@@ -65,8 +67,9 @@ class PluggableSchemaValidator:
         config: CoreConfig | None,
         plugins: Iterable[PydanticPluginProtocol],
         plugin_settings: dict[str, Any],
+        _use_prebuilt: bool = True,
     ) -> None:
-        self._schema_validator = SchemaValidator(schema, config)
+        self._schema_validator = SchemaValidator(schema, config, _use_prebuilt=_use_prebuilt)
 
         python_event_handlers: list[BaseValidateHandlerProtocol] = []
         json_event_handlers: list[BaseValidateHandlerProtocol] = []
@@ -126,7 +129,7 @@ def build_wrapper(func: Callable[P, R], event_handlers: list[BaseValidateHandler
 
 
 def filter_handlers(handler_cls: BaseValidateHandlerProtocol, method_name: str) -> bool:
-    """Filter out handler methods which are not implemented by the plugin directly - e.g. are missing
+    """Filter out handler methods which are not implemented by the plugin directly - e.g. those that are missing
     or are inherited from the protocol.
     """
     handler = getattr(handler_cls, method_name, None)

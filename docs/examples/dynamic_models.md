@@ -29,7 +29,7 @@ to any use case where you need to derive a new model from another (remove defaul
             )
 
         return create_model(
-            f'{type.__name__}Optional',
+            f'{model_cls.__name__}Optional',
             __base__=model_cls,  # (1)!
             **new_fields,
         )
@@ -57,7 +57,7 @@ to any use case where you need to derive a new model from another (remove defaul
             )
 
         return create_model(
-            f'{type.__name__}Optional',
+            f'{model_cls.__name__}Optional',
             __base__=model_cls,  # (1)!
             **new_fields,
         )
@@ -85,7 +85,7 @@ to any use case where you need to derive a new model from another (remove defaul
             )
 
         return create_model(
-            f'{type.__name__}Optional',
+            f'{model_cls.__name__}Optional',
             __base__=model_cls,  # (1)!
             **new_fields,
         )

@@ -23,6 +23,7 @@ from pydantic import (
     NameEmail,
     NatsDsn,
     PostgresDsn,
+    PydanticUserError,
     RedisDsn,
     SnowflakeDsn,
     Strict,
@@ -1107,6 +1108,11 @@ def test_custom_constraints() -> None:
 
     with pytest.raises(ValidationError):
         ta.validate_python('ftp://example.com')
+
+
+def test_url_constraints_invalid_annotated_type() -> None:
+    with pytest.raises(PydanticUserError):
+        TypeAdapter(Annotated[str, UrlConstraints(max_length=1)])
 
 
 def test_after_validator() -> None:

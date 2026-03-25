@@ -76,3 +76,8 @@ def test_build_recursive_schema_from_defs() -> None:
     )
 
     SchemaValidator(s)
+
+
+def test_schema_validator_use_prebuilt_false():
+    """Test that SchemaValidator can be constructed with _use_prebuilt=False."""
+    SchemaValidator({'type': 'str'}, None, _use_prebuilt=False)

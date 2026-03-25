@@ -632,6 +632,9 @@ class ConfigDict(TypedDict, total=False):
 
     val_json_bytes: Literal['utf8', 'base64', 'hex']
     """
+    /// version-added | v2.9
+    ///
+
     The encoding of JSON serialized bytes to decode. Defaults to `'utf8'`.
     Set equal to `ser_json_bytes` to get back an equal value after serialization round trip.
 
@@ -1202,6 +1205,11 @@ class ConfigDict(TypedDict, total=False):
 
     /// version-added | v2.12
     ///
+    """
+
+    polymorphic_serialization: bool
+    """
+    Whether to use polymorphic serialization for subclasses of the model or Pydantic dataclass. Defaults to `False`.
     """
 
 

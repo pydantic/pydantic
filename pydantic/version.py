@@ -8,7 +8,7 @@ from pydantic_core import __version__ as __pydantic_core_version__
 
 __all__ = 'VERSION', 'version_info'
 
-VERSION = '2.13.0a0+dev'
+VERSION = '2.13.0b2'
 """The version of Pydantic.
 
 This version specifier is guaranteed to be compliant with the [specification],
@@ -19,7 +19,7 @@ introduced by [PEP 440].
 """
 
 # Keep this in sync with the version constraint in the `pyproject.toml` dependencies:
-_COMPATIBLE_PYDANTIC_CORE_VERSION = '2.41.5'
+_COMPATIBLE_PYDANTIC_CORE_VERSION = '2.42.0'
 
 
 def version_short() -> str:

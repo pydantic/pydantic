@@ -42,9 +42,9 @@ macro_rules! build_serializer {
                 state: &mut SerializationState<'py>,
             ) -> PyResult<Py<PyAny>> {
                 let py = value.py();
-                match value.extract::<$extract>() {
+                match value.cast::<$extract>() {
                     Ok(py_url) => match state.extra.mode {
-                        SerMode::Json => py_url.__str__(value.py()).into_py_any(py),
+                        SerMode::Json => py_url.get().__str__(value.py()).into_py_any(py),
                         _ => Ok(value.clone().unbind()),
                     },
                     Err(_) => {
@@ -59,8 +59,8 @@ macro_rules! build_serializer {
                 key: &'a Bound<'py, PyAny>,
                 state: &mut SerializationState<'py>,
             ) -> PyResult<Cow<'a, str>> {
-                match key.extract::<$extract>() {
-                    Ok(py_url) => Ok(Cow::Owned(py_url.__str__(key.py()).to_string())),
+                match key.cast::<$extract>() {
+                    Ok(py_url) => Ok(Cow::Owned(py_url.get().__str__(key.py()).to_string())),
                     Err(_) => {
                         state.warn_fallback_py(self.get_name(), key)?;
                         infer_json_key(key, state)
@@ -74,8 +74,8 @@ macro_rules! build_serializer {
                 serializer: S,
                 state: &mut SerializationState<'py>,
             ) -> Result<S::Ok, S::Error> {
-                match value.extract::<$extract>() {
-                    Ok(py_url) => serializer.serialize_str(&py_url.__str__(value.py())),
+                match value.cast::<$extract>() {
+                    Ok(py_url) => serializer.serialize_str(&py_url.get().__str__(value.py())),
                     Err(_) => {
                         state.warn_fallback_ser::<S>(self.get_name(), value)?;
                         infer_serialize(value, serializer, state)

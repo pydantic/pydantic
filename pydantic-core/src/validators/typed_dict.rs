@@ -16,7 +16,6 @@ use crate::input::{Input, ValidatedDict};
 use crate::lookup_key::LookupPathCollection;
 use crate::lookup_key::LookupType;
 use crate::tools::SchemaDict;
-use crate::tools::pybackedstr_to_pystring;
 use ahash::AHashSet;
 use jiter::PartialMode;
 
@@ -219,8 +218,7 @@ impl Validator for TypedDictValidator {
                     };
 
                     // FIXME: for model and dataclass, `default_value` is called with field name set in extra, does that matter?
-                    let state = &mut state
-                        .rebind_extra(|extra| extra.field_name = Some(pybackedstr_to_pystring(py, &field.name)));
+                    let state = &mut state.scoped_set_field_name(Some(field.name.as_py_str().bind(py).clone()));
 
                     match field.validator.validate(py, value.borrow_input(), state) {
                         Ok(value) => {

@@ -10,6 +10,7 @@ use serde::ser::SerializeSeq;
 use crate::PydanticSerializationUnexpectedValue;
 use crate::definitions::DefinitionsBuilder;
 use crate::serializers::SerializationState;
+use crate::serializers::extra::IncludeExclude;
 use crate::serializers::extra::SerCheck;
 use crate::serializers::type_serializers::any::AnySerializer;
 use crate::tools::SchemaDict;
@@ -98,7 +99,7 @@ impl TypeSerializer for TupleSerializer {
             Ok(py_tuple) => {
                 let mut key_builder = KeyBuilder::new();
 
-                let state = &mut state.scoped_include_exclude(None, None);
+                let state = &mut state.scoped_include_exclude(IncludeExclude::empty());
                 self.for_each_tuple_item_and_serializer(py_tuple, state, |entry| {
                     entry
                         .serializer
@@ -179,9 +180,8 @@ impl TupleSerializer {
                     let Some(element) = py_tuple_iter.next() else {
                         break;
                     };
-                    let op_next = self.filter.index_filter(index, state, Some(n_items))?;
-                    if let Some((next_include, next_exclude)) = op_next {
-                        let state = &mut state.scoped_include_exclude(next_include, next_exclude);
+                    if let Some(next_include_exclude) = self.filter.index_filter(index, state, Some(n_items))? {
+                        let state = &mut state.scoped_include_exclude(next_include_exclude);
                         if let Err(e) = f(TupleSerializerEntry {
                             item: element,
                             serializer,
@@ -221,11 +221,9 @@ impl TupleSerializer {
                         )));
                     warned = true;
                 }
-                let op_next = self
-                    .filter
-                    .index_filter(i + self.serializers.len(), state, Some(n_items))?;
-                if let Some((next_include, next_exclude)) = op_next {
-                    let state = &mut state.scoped_include_exclude(next_include, next_exclude);
+                let index = i + self.serializers.len();
+                if let Some(next_include_exclude) = self.filter.index_filter(index, state, Some(n_items))? {
+                    let state = &mut state.scoped_include_exclude(next_include_exclude);
                     if let Err(e) = f(TupleSerializerEntry {
                         item: element,
                         serializer: &CombinedSerializer::Any(AnySerializer),

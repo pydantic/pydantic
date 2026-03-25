@@ -62,8 +62,8 @@ impl TypeSerializer for ListSerializer {
                 let mut items = Vec::with_capacity(py_list.len());
                 for (index, element) in py_list.iter().enumerate() {
                     let op_next = self.filter.index_filter(index, state, value.len().ok())?;
-                    if let Some((next_include, next_exclude)) = op_next {
-                        let state = &mut state.scoped_include_exclude(next_include, next_exclude);
+                    if let Some(next_include_exclude) = op_next {
+                        let state = &mut state.scoped_include_exclude(next_include_exclude);
                         items.push(item_serializer.to_python(&element, state)?);
                     }
                 }
@@ -100,8 +100,8 @@ impl TypeSerializer for ListSerializer {
                         .filter
                         .index_filter(index, state, Some(py_list.len()))
                         .map_err(py_err_se_err)?;
-                    if let Some((next_include, next_exclude)) = op_next {
-                        let state = &mut state.scoped_include_exclude(next_include, next_exclude);
+                    if let Some(next_include_exclude) = op_next {
+                        let state = &mut state.scoped_include_exclude(next_include_exclude);
                         let item_serialize = PydanticSerializer::new(&element, item_serializer, state);
                         seq.serialize_element(&item_serialize)?;
                     }
