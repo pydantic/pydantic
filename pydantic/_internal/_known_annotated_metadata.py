@@ -217,6 +217,17 @@ def apply_known_metadata(annotation: Any, schema: CoreSchema) -> CoreSchema | No
             schema['schema'] = apply_known_metadata(annotation, schema['schema'])  # type: ignore  # schema is function schema
             return schema
 
+        # For function schemas with chain_schema_constraints (e.g. pattern, strip_whitespace),
+        # try to apply the constraint to the inner schema directly. This ensures the constraint
+        # is both enforced at runtime and correctly reflected in the JSON schema, rather than
+        # being placed in a separate chain step that JSON schema generation may not inspect.
+        if schema_type in {'function-before', 'function-wrap', 'function-after'} and constraint in chain_schema_constraints:
+            inner_schema = schema['schema']  # type: ignore  # schema is function schema
+            inner_type = inner_schema['type']
+            if inner_type in allowed_schemas:
+                inner_schema[constraint] = value
+                continue
+
         # if we're allowed to apply constraint directly to the schema, like le to int, do that
         if schema_type in allowed_schemas:
             if constraint == 'union_mode' and schema_type == 'union':

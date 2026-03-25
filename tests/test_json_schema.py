@@ -7237,3 +7237,51 @@ def test_nested_model_deduplication() -> None:
     assert 'Level1' in definitions
     assert 'Level1-Input' not in definitions
     assert 'Level1-Output' not in definitions
+
+
+def test_annotated_before_validator_with_field_pattern_constraint():
+    """Test that pattern constraint from Field() is preserved in JSON schema
+    when used with Annotated type that includes a BeforeValidator,
+    including when the field is Optional.
+
+    Regression test for https://github.com/pydantic/pydantic/issues/12417
+    """
+
+    def _convert_bytes_to_str(value):
+        if isinstance(value, bytes):
+            return value.decode('utf8')
+        return value
+
+    bytes_to_str = Annotated[str, BeforeValidator(_convert_bytes_to_str)]
+    regex = r'^[\da-fA-F]{32}$'
+
+    class TestModel(BaseModel):
+        str_mandatory: str = Field(..., pattern=regex)
+        annotated_mandatory: bytes_to_str = Field(..., pattern=regex)
+        str_optional: Optional[str] = Field(None, pattern=regex)
+        annotated_optional: Optional[bytes_to_str] = Field(None, pattern=regex)
+
+    schema = TestModel.model_json_schema()
+
+    # All four fields should have the pattern constraint in their JSON schema
+    assert schema['properties']['str_mandatory'] == {
+        'pattern': regex,
+        'title': 'Str Mandatory',
+        'type': 'string',
+    }
+    assert schema['properties']['annotated_mandatory'] == {
+        'pattern': regex,
+        'title': 'Annotated Mandatory',
+        'type': 'string',
+    }
+    assert schema['properties']['str_optional'] == {
+        'anyOf': [{'pattern': regex, 'type': 'string'}, {'type': 'null'}],
+        'default': None,
+        'title': 'Str Optional',
+    }
+    # This was the bug: pattern was missing from the annotated_optional field
+    assert schema['properties']['annotated_optional'] == {
+        'anyOf': [{'pattern': regex, 'type': 'string'}, {'type': 'null'}],
+        'default': None,
+        'title': 'Annotated Optional',
+    }
