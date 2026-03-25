@@ -1347,7 +1347,8 @@ def test_custom_init():
     assert Model.model_validate({'x': 1, 'y': 'abc'}).x == 4
 
 
-def test_model_validate_strings_custom_init_called() -> None:
+def test_custom_init_validate_strings() -> None:
+    """https://github.com/pydantic/pydantic/issues/12718."""
     calls: list[dict[str, object]] = []
 
     class Model(BaseModel):
