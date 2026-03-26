@@ -598,3 +598,7 @@ As such, the following limitations currently apply:
 
 - Static type checking of sentinels is only supported with Pyright [1.1.402](https://github.com/microsoft/pyright/releases/tag/1.1.402) or greater, and the `enableExperimentalFeatures` type evaluation setting should be enabled.
 - Pickling of models containing `MISSING` as a value is not supported.
+
+Note
+
+When [applying constraints](../fields/#field-constraints) to a union containing the `MISSING` sentinel, such constraints are automatically applied to the remaining type(s) of the union.

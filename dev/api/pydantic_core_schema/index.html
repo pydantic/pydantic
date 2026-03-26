@@ -3198,6 +3198,17 @@ to help you monitor and understand your
   
 </li>
       
+        <li class="md-nav__item">
+  <a href="#pydantic_core.core_schema.iter_union_choices" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        iter_union_choices
+      
+    </span>
+  </a>
+  
+</li>
+      
     </ul>
   
 </nav>
@@ -5904,6 +5915,17 @@ to help you monitor and understand your
     <span class="md-ellipsis">
       
         definition_reference_schema
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#pydantic_core.core_schema.iter_union_choices" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        iter_union_choices
       
     </span>
   </a>
@@ -23927,6 +23949,44 @@ models and also when you want to define validators separately from the main sche
     <span class="k">return</span> <span class="n">_dict_not_none</span><span class="p">(</span>
         <span class="nb">type</span><span class="o">=</span><span class="s1">&#39;definition-ref&#39;</span><span class="p">,</span> <span class="n">schema_ref</span><span class="o">=</span><span class="n">schema_ref</span><span class="p">,</span> <span class="n">ref</span><span class="o">=</span><span class="n">ref</span><span class="p">,</span> <span class="n">metadata</span><span class="o">=</span><span class="n">metadata</span><span class="p">,</span> <span class="n">serialization</span><span class="o">=</span><span class="n">serialization</span>
     <span class="p">)</span>
+</code></pre></div></td></tr></table></div>
+            </details>
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h2 id="pydantic_core.core_schema.iter_union_choices" class="doc doc-heading">
+            <span class="doc doc-object-name doc-function-name">iter_union_choices</span>
+
+
+<a href="#pydantic_core.core_schema.iter_union_choices" class="headerlink" title="Permanent link">&para;</a></h2>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span class="nf">iter_union_choices</span><span class="p">(</span>
+    <span class="n">union_schema</span><span class="p">:</span> <span class="n"><span title="pydantic_core.core_schema.UnionSchema">UnionSchema</span></span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><a class="autorefs autorefs-external" title="collections.abc.Generator" href="https://docs.python.org/3/library/collections.abc.html#collections.abc.Generator">Generator</a></span><span class="p">[</span><span class="n"><span title="pydantic_core.core_schema.CoreSchema">CoreSchema</span></span><span class="p">]</span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+
+        <p>Iterate over the choices of a <code>'union'</code> schema.</p>
+
+            <details class="quote">
+              <summary>Source code in <code>pydantic_core/core_schema.py</code></summary>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">4353</span>
+<span class="normal">4354</span>
+<span class="normal">4355</span>
+<span class="normal">4356</span>
+<span class="normal">4357</span>
+<span class="normal">4358</span>
+<span class="normal">4359</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">iter_union_choices</span><span class="p">(</span><span class="n">union_schema</span><span class="p">:</span> <span class="n">UnionSchema</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Generator</span><span class="p">[</span><span class="n">CoreSchema</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Iterate over the choices of a `&#39;union&#39;` schema.&quot;&quot;&quot;</span>
+    <span class="k">for</span> <span class="n">choice</span> <span class="ow">in</span> <span class="n">union_schema</span><span class="p">[</span><span class="s1">&#39;choices&#39;</span><span class="p">]:</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">choice</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">):</span>
+            <span class="k">yield</span> <span class="n">choice</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">yield</span> <span class="n">choice</span>
 </code></pre></div></td></tr></table></div>
             </details>
     </div>

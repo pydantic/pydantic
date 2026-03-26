@@ -1792,6 +1792,10 @@ As such, the following limitations currently apply:
 - Static type checking of sentinels is only supported with Pyright [1.1.402](https://github.com/microsoft/pyright/releases/tag/1.1.402) or greater, and the `enableExperimentalFeatures` type evaluation setting should be enabled.
 - Pickling of models containing `MISSING` as a value is not supported.
 
+Note
+
+When [applying constraints](../fields/#field-constraints) to a union containing the `MISSING` sentinel, such constraints are automatically applied to the remaining type(s) of the union.
+
 API Documentation
 
 pydantic.fields.Field
@@ -2205,6 +2209,23 @@ class Model(BaseModel):
 ```
 
 The available constraints for each type (and the way they affect the JSON Schema) are described in the [standard library types](../../api/standard_library_types/) documentation.
+
+Note
+
+When adding constraints to a union type, if a member of the union is `None` or the [`MISSING` sentinel](../experimental/#missing-sentinel), the constraints will be automatically applied to the remaining type(s) of the union:
+
+```python
+from typing import Annotated, Union
+
+from pydantic import BaseModel, Field
+
+
+class Model(BaseModel):
+    positive: Union[int, None] = Field(gt=0)
+    # Also works with the annotated pattern:
+    negative: Annotated[Union[int, None], Field(lt=0)]
+
+```
 
 ## Strict fields
 
@@ -25263,13 +25284,10 @@ def union_schema(self, schema: core_schema.UnionSchema) -> JsonSchemaValue:
     """
     generated: list[JsonSchemaValue] = []
 
-    choices = schema['choices']
-    for choice in choices:
-        # choice will be a tuple if an explicit label was provided
-        choice_schema = choice[0] if isinstance(choice, tuple) else choice
+    for choice in core_schema.iter_union_choices(schema):
         try:
-            generated.append(self.generate_inner(choice_schema))
-        except PydanticOmit:
+            generated.append(self.generate_inner(choice))
+        except PydanticOmit:  # noqa: PERF203
             continue
         except PydanticInvalidForJsonSchema as exc:
             self.emit_warning('skipped-choice', exc.message)
@@ -35417,6 +35435,30 @@ def definition_reference_schema(
     )
 
 ````
+
+## iter_union_choices
+
+```python
+iter_union_choices(
+    union_schema: UnionSchema,
+) -> Generator[CoreSchema]
+
+```
+
+Iterate over the choices of a `'union'` schema.
+
+Source code in `pydantic_core/core_schema.py`
+
+```python
+def iter_union_choices(union_schema: UnionSchema) -> Generator[CoreSchema]:
+    """Iterate over the choices of a `'union'` schema."""
+    for choice in union_schema['choices']:
+        if isinstance(choice, tuple):
+            yield choice[0]
+        else:
+            yield choice
+
+```
 
 Color definitions are used as per the CSS3 [CSS Color Module Level 3](http://www.w3.org/TR/css3-color/#svg-color) specification.
 

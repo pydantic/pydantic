@@ -4769,6 +4769,11 @@ meaning. During serialization, any field with <code>MISSING</code> as a value is
   should be enabled.</li>
 <li>Pickling of models containing <code>MISSING</code> as a value is not supported.</li>
 </ul>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>When <a href="../fields/#field-constraints">applying constraints</a> to a union containing the <code>MISSING</code> sentinel,
+such constraints are automatically applied to the remaining type(s) of the union.</p>
+</div>
 
 
 
