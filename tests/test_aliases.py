@@ -612,6 +612,8 @@ def test_validation_alias_path(value):
         AliasChoices(choices=['a', 'b']),
         AliasChoices('a', 'b'),
         AliasChoices('a', AliasPath('b', 1)),
+        AliasChoices('a'),
+        AliasChoices(AliasPath('b', 1)),
     ],
 )
 def test_validation_alias_choices(value):
@@ -619,6 +621,45 @@ def test_validation_alias_choices(value):
         x: str = Field(validation_alias=value)
 
     assert Model.model_fields['x'].validation_alias == value
+
+
+@pytest.mark.parametrize(
+    ('alias_1', 'alias_2'),
+    [('a', 'b'), ('a', AliasPath('b', 1))],
+)
+def test_validation_alias_choices_constructor(alias_1, alias_2):
+    standard_alias_choices = AliasChoices(alias_1, alias_2)
+
+    assert AliasChoices(alias_1, alias_2) == standard_alias_choices
+    assert AliasChoices([alias_1, alias_2]) == standard_alias_choices
+    assert AliasChoices(choices=[alias_1, alias_2]) == standard_alias_choices
+
+
+def test_validation_alias_choices_empty_constructor_error():
+    with pytest.raises(ValueError, match='No aliases specified'):
+        AliasChoices()
+
+
+@pytest.mark.parametrize(
+    'value',
+    [
+        1,
+    ],
+)
+def test_validation_alias_choices_unsupported_type_constructor_error(value):
+    with pytest.raises(ValueError, match="Unsupported type for 'first_choice'"):
+        AliasChoices(1)
+
+    with pytest.raises(ValueError, match="Unsupported type for 'first_choice'"):
+        AliasChoices(1, 'b', 'c')
+
+
+def test_validation_alias_choices_duplicate_choices_constructor_error():
+    with pytest.raises(ValueError, match='Either provide the aliases as positional or keyword arguments'):
+        AliasChoices('a', 'b', choices=['c'])
+
+    with pytest.raises(ValueError, match='Either provide the aliases as positional or keyword arguments'):
+        AliasChoices('a', choices=['b', 'c'])
 
 
 def test_search_dict_for_alias_path():
