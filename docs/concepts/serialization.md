@@ -292,6 +292,83 @@ print(MyModel(x=1234).model_dump(mode='json'))
 #> {'x': '1,235'}
 ```
 
+#### Reusable field types
+
+The annotated pattern becomes most powerful when you define field types once
+and reuse them across multiple models — similar to how field classes work in
+Django's ORM or DRF serializers.
+
+```python
+from datetime import datetime
+from typing import Annotated
+
+from pydantic import BaseModel, Field
+from pydantic.functional_serializers import PlainSerializer
+from pydantic.functional_validators import BeforeValidator
+
+# Define reusable field types with bundled validation and serialization
+TrimmedStr = Annotated[
+    str,
+    BeforeValidator(str.strip),
+]
+
+ISOTimestamp = Annotated[
+    datetime,
+    PlainSerializer(lambda v: v.isoformat(), return_type=str, when_used='json'),
+]
+
+SlugStr = Annotated[
+    str,
+    BeforeValidator(lambda v: v.lower().replace(' ', '-')),
+    Field(pattern=r'^[a-z0-9-]+$'),
+]
+
+
+# Reuse across models — validation and serialization logic travels with the type
+class ArticleCreate(BaseModel):
+    title: TrimmedStr
+    slug: SlugStr
+    published_at: ISOTimestamp
+
+
+class ArticleResponse(BaseModel):
+    id: int
+    title: TrimmedStr
+    slug: SlugStr
+    published_at: ISOTimestamp
+
+
+article = ArticleResponse(
+    id=1,
+    title='  Hello World  ',
+    slug='hello world',
+    published_at=datetime(2025, 1, 15, 10, 30),
+)
+print(article.model_dump())
+"""
+{
+    'id': 1,
+    'title': 'Hello World',
+    'slug': 'hello-world',
+    'published_at': MockedDatetime(2025, 1, 15, 10, 30),
+}
+"""
+
+print(article.model_dump(mode='json'))
+"""
+{
+    'id': 1,
+    'title': 'Hello World',
+    'slug': 'hello-world',
+    'published_at': '2025-01-15T10:30:00',
+}
+"""
+```
+
+This pattern keeps your models DRY: changing `ISOTimestamp`'s serializer once
+updates the behavior in every model that uses it, with no changes required at
+call sites.
+
 ### Overriding the return type when dumping a model
 
 While the return value of `.model_dump()` can usually be described as `dict[str, Any]`, through the use of
