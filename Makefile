@@ -20,8 +20,12 @@ install: .uv
 rebuild-lockfiles: .uv
 	uv lock --upgrade
 
+.PHONY: .cargo  # Check that cargo is installed
+.cargo:
+	@cargo1 --version || echo 'Please install cargo: https://doc.rust-lang.org/cargo/getting-started/installation.html'
+
 .PHONY: format  ## Auto-format python source files
-format: .uv
+format: .uv .cargo
 	uv run ruff check --fix $(sources)
 	uv run ruff format $(sources)
 	cargo fmt --manifest-path pydantic-core/Cargo.toml
