@@ -7,7 +7,7 @@ from __future__ import annotations as _annotations
 
 import sys
 import warnings
-from collections.abc import Hashable, Mapping
+from collections.abc import Generator, Hashable, Mapping
 from datetime import date, datetime, time, timedelta
 from decimal import Decimal
 from re import Pattern
@@ -4348,6 +4348,15 @@ ErrorType = Literal[
 
 def _dict_not_none(**kwargs: Any) -> Any:
     return {k: v for k, v in kwargs.items() if v is not None}
+
+
+def iter_union_choices(union_schema: UnionSchema) -> Generator[CoreSchema]:
+    """Iterate over the choices of a `'union'` schema."""
+    for choice in union_schema['choices']:
+        if isinstance(choice, tuple):
+            yield choice[0]
+        else:
+            yield choice
 
 
 ###############################################################################

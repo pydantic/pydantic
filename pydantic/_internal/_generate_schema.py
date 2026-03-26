@@ -2296,6 +2296,48 @@ class GenerateSchema:
                 schema['schema'] = inner
             return schema
 
+        if schema['type'] == 'union' and any(
+            choice['type'] == 'missing-sentinel' for choice in core_schema.iter_union_choices(schema)
+        ):
+            # Same behavior as for nullable schemas. This is a bit gross, but we have to support the same pattern
+            filtered_choices = [
+                choice
+                for choice in schema['choices']
+                if (choice[0] if isinstance(choice, tuple) else choice)['type'] != 'missing-sentinel'
+            ]
+            if len(filtered_choices) >= 2:
+                # e.g. `Annotated[int | str | MISSING, Constraint(...)]`. We apply `Constraint(...)` to `int | str`,
+                # and create a new union semantically equivalent to `Annotated[int | str, Constraint(...)] | MISSING`:
+                filtered_union = core_schema.union_schema(filtered_choices)
+                filtered_union = self._apply_single_annotation(filtered_union, metadata)
+                new_union = schema.copy()
+                new_union['choices'] = [
+                    filtered_union,
+                    next(
+                        choice
+                        for choice in schema['choices']
+                        if (choice[0] if isinstance(choice, tuple) else choice)['type'] == 'missing-sentinel'
+                    ),
+                ]
+                return new_union
+            elif len(filtered_choices) == 1:
+                # e.g. `Annotated[int | MISSING, Constraint(...)]`. We apply `Constraint(...)` to `int`, and reconstruct
+                # a new union preserving the order.
+                inner = filtered_choices[0][0] if isinstance(filtered_choices[0], tuple) else filtered_choices[0]
+                inner = self._apply_single_annotation(inner, metadata)
+
+                # Create a new union schema, preserving the order of the union:
+                new_union = schema.copy()
+                new_union['choices'] = [
+                    (inner, choice[1])
+                    if isinstance(choice, tuple) and choice[0]['type'] != 'missing-sentinel'
+                    else inner
+                    if not isinstance(choice, tuple) and choice['type'] != 'missing-sentinel'
+                    else choice
+                    for choice in schema['choices']
+                ]
+                return new_union
+
         original_schema = schema
         ref = schema.get('ref')
         if ref is not None:
