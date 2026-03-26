@@ -1,10 +1,10 @@
 import pickle
-from typing import Union
+from typing import Annotated, Union
 
 import pytest
 from pydantic_core import MISSING, PydanticSerializationUnexpectedValue
 
-from pydantic import BaseModel, TypeAdapter, ValidationError
+from pydantic import BaseModel, Field, TypeAdapter, ValidationError
 
 
 def test_missing_sentinel_model() -> None:
@@ -69,6 +69,38 @@ def test_missing_sentinel_json_schema() -> None:
     assert Model.model_json_schema()['properties'] == {
         'f': {'title': 'F', 'type': 'integer'},
     }
+
+
+def assert_missing_sentinel_pattern_schema(model: type[BaseModel]) -> None:
+    assert model.model_json_schema()['properties'] == {
+        'a': {
+            'description': 'Something',
+            'pattern': '^[a-z]+$',
+            'title': 'title',
+            'type': 'string',
+        }
+    }
+
+
+def test_missing_sentinel_json_schema_preserves_pattern_assignment() -> None:
+    class Model(BaseModel):
+        a: str | MISSING = Field(title='title', description='Something', pattern='^[a-z]+$')
+
+    assert_missing_sentinel_pattern_schema(Model)
+
+
+def test_missing_sentinel_json_schema_preserves_pattern_annotated_in_union() -> None:
+    class Model(BaseModel):
+        a: Annotated[str, Field(title='title', description='Something', pattern='^[a-z]+$')] | MISSING
+
+    assert_missing_sentinel_pattern_schema(Model)
+
+
+def test_missing_sentinel_json_schema_preserves_pattern_annotated_union() -> None:
+    class Model(BaseModel):
+        a: Annotated[str | MISSING, Field(title='title', description='Something', pattern='^[a-z]+$')]
+
+    assert_missing_sentinel_pattern_schema(Model)
 
 
 def test_model_construct_with_missing_default_does_not_crash() -> None:

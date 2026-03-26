@@ -9,6 +9,7 @@ from typing import TYPE_CHECKING, Any
 from pydantic_core import CoreSchema, PydanticCustomError, ValidationError, to_jsonable_python
 from pydantic_core import core_schema as cs
 
+from ._core_metadata import update_core_metadata
 from ._fields import PydanticMetadata
 from ._import_utils import import_cached_field_info
 
@@ -203,6 +204,7 @@ def apply_known_metadata(annotation: Any, schema: CoreSchema) -> CoreSchema | No
         'ascii_only',
     }
     chain_schema_steps: list[CoreSchema] = []
+    chain_schema_js_updates: dict[str, Any] = {}
 
     for constraint, value in schema_update.items():
         if constraint not in CONSTRAINTS_TO_ALLOWED_SCHEMAS:
@@ -251,6 +253,8 @@ def apply_known_metadata(annotation: Any, schema: CoreSchema) -> CoreSchema | No
                     _apply_constraint_with_incompatibility_info, cs.str_schema(**{constraint: value})
                 )
             )
+            if constraint == 'pattern':
+                chain_schema_js_updates['pattern'] = as_jsonable_value(value)
         elif constraint in NUMERIC_VALIDATOR_LOOKUP:
             if constraint in LENGTH_CONSTRAINTS:
                 inner_schema = schema
@@ -334,7 +338,11 @@ def apply_known_metadata(annotation: Any, schema: CoreSchema) -> CoreSchema | No
 
     if chain_schema_steps:
         chain_schema_steps = [schema] + chain_schema_steps
-        return cs.chain_schema(chain_schema_steps)
+        chain_schema = cs.chain_schema(chain_schema_steps)
+        if chain_schema_js_updates:
+            core_metadata = chain_schema.setdefault('metadata', {})
+            update_core_metadata(core_metadata, pydantic_js_updates=chain_schema_js_updates)
+        return chain_schema
 
     return schema
 
