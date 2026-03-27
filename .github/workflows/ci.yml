@@ -214,8 +214,8 @@ jobs:
 
       - name: Install rust stable
         id: rust-toolchain
-        # see https://github.com/dtolnay/rust-toolchain/issues/180
-        uses: dtolnay/rust-toolchain@efa25f7f19611383d5b0ccf2d1c8914531636bf9 # no release versioning
+        # no release versioning, see https://github.com/dtolnay/rust-toolchain/issues/180
+        uses: dtolnay/rust-toolchain@efa25f7f19611383d5b0ccf2d1c8914531636bf9
         with:
           components: llvm-tools
           toolchain: stable
@@ -243,10 +243,12 @@ jobs:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
 
       - name: Install rust nightly
-        uses: dtolnay/rust-toolchain@nightly
+        # no release versioning, see https://github.com/dtolnay/rust-toolchain/issues/180
+        uses: dtolnay/rust-toolchain@efa25f7f19611383d5b0ccf2d1c8914531636bf9
         with:
           components: rust-src
           targets: wasm32-unknown-emscripten
+          toolchain: nightly
 
       - name: Cache rust
         uses: Swatinem/rust-cache@e18b497796c12c097a38f9edb9d0641fb99eee32 # v2
@@ -275,6 +277,7 @@ jobs:
       - uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f # v6.3.0
         with:
           node-version: '18'
+          package-manager-cache: false
 
       - run: npm install
         working-directory: pydantic-core
@@ -299,7 +302,10 @@ jobs:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
 
       - name: Install rust nightly
-        uses: dtolnay/rust-toolchain@nightly
+        # no release versioning, see https://github.com/dtolnay/rust-toolchain/issues/180
+        uses: dtolnay/rust-toolchain@efa25f7f19611383d5b0ccf2d1c8914531636bf9
+        with:
+          toolchain: nightly
 
       - name: Cache rust
         uses: Swatinem/rust-cache@e18b497796c12c097a38f9edb9d0641fb99eee32 # v2
@@ -431,7 +437,10 @@ jobs:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
 
       - name: Install rust stable
-        uses: dtolnay/rust-toolchain@stable
+        # no release versioning, see https://github.com/dtolnay/rust-toolchain/issues/180
+        uses: dtolnay/rust-toolchain@efa25f7f19611383d5b0ccf2d1c8914531636bf9
+        with:
+          toolchain: stable
 
       - name: Cache rust
         uses: Swatinem/rust-cache@e18b497796c12c097a38f9edb9d0641fb99eee32 # v2
@@ -468,7 +477,8 @@ jobs:
         run: echo MSRV=`cargo metadata --format-version 1 --no-deps --frozen --quiet --offline --manifest-path pydantic-core/Cargo.toml | jq -r '.packages[0].rust_version'` >> $GITHUB_OUTPUT
 
       - name: Install rust MSRV
-        uses: dtolnay/rust-toolchain@master
+        # no release versioning, see https://github.com/dtolnay/rust-toolchain/issues/180
+        uses: dtolnay/rust-toolchain@efa25f7f19611383d5b0ccf2d1c8914531636bf9
         with:
           toolchain: ${{ steps.resolve-msrv.outputs.MSRV }}
 
@@ -509,7 +519,10 @@ jobs:
           enable-cache: false
 
       - name: Install rust stable
-        uses: dtolnay/rust-toolchain@stable
+        # no release versioning, see https://github.com/dtolnay/rust-toolchain/issues/180
+        uses: dtolnay/rust-toolchain@efa25f7f19611383d5b0ccf2d1c8914531636bf9
+        with:
+          toolchain: stable
 
       - name: Cache rust
         uses: Swatinem/rust-cache@e18b497796c12c097a38f9edb9d0641fb99eee32 # v2
@@ -793,7 +806,7 @@ jobs:
 
     steps:
       - name: Decide whether the needed jobs succeeded or failed
-        uses: re-actors/alls-green@release/v1
+        uses: re-actors/alls-green@05ac9388f0aebcb5727afa17fcccfecd6f8ec5fe # v1.2.2
         id: all-green
         with:
           jobs: ${{ toJSON(needs) }}
@@ -887,7 +900,7 @@ jobs:
         run: uv run --no-sync python -m build
 
       - name: Upload package to PyPI
-        uses: pypa/gh-action-pypi-publish@release/v1
+        uses: pypa/gh-action-pypi-publish@ed0c53931b1dc9bd32cbe73a98c7f6766f8a527e # v1.13.0
 
   send-tweet:
     name: Send tweet
