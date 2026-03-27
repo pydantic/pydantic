@@ -1,5 +1,6 @@
 import re
 import sys
+import warnings
 from collections.abc import Sequence
 from copy import deepcopy
 from dataclasses import dataclass
@@ -2456,3 +2457,58 @@ def test_discriminated_union_with_root_model_literal() -> None:
         ta.validate_python({'action': 'invalid_action'})
 
     assert exc_info.value.errors()[0]['type'] == 'union_tag_invalid'
+
+
+def test_tagged_union_no_fallback_on_matched_discriminator():
+    """Regression test for https://github.com/pydantic/pydantic/issues/12800.
+
+    When the discriminator successfully identifies the correct variant but
+    serialization of that variant fails, the serializer should NOT fall back
+    to trying all other union members.
+    """
+
+    class MyEnum(str, Enum):
+        ENABLED = 'enabled'
+        DISABLED = 'disabled'
+
+    class InnerTool(BaseModel):
+        type: Literal['inner'] = 'inner'
+        my_enum: MyEnum = MyEnum.ENABLED
+
+    class WrapTool(BaseModel):
+        type: Literal['wrap'] = 'wrap'
+        tool: InnerTool
+
+        @field_validator('tool')
+        @classmethod
+        def _validate_tool(cls, tool):
+            # Setting enum field to a plain string triggers the issue
+            tool.my_enum = 'disabled'
+            return tool
+
+    class ToolType1(BaseModel):
+        type: Literal['type1'] = 'type1'
+
+    class ToolType2(BaseModel):
+        type: Literal['type2'] = 'type2'
+
+    Tool = Annotated[
+        Union[InnerTool, WrapTool, ToolType1, ToolType2],
+        Discriminator('type'),
+    ]
+
+    ta = TypeAdapter(list[Tool])
+    tool = WrapTool(tool=InnerTool())
+
+    with warnings.catch_warnings(record=True) as w:
+        warnings.simplefilter('always')
+        data = ta.dump_python([tool])
+
+    assert len(data) == 1
+    assert data[0]['type'] == 'wrap'
+
+    # Only the matched variant (WrapTool) should produce a warning,
+    # not ToolType1 or ToolType2 from a fallback to all members.
+    warning_text = ' '.join(str(warning.message) for warning in w)
+    assert 'ToolType1' not in warning_text
+    assert 'ToolType2' not in warning_text

@@ -71,11 +71,7 @@ impl_py_gc_traverse!(UnionSerializer { choices });
 impl TypeSerializer for UnionSerializer {
     fn to_python<'py>(&self, value: &Bound<'py, PyAny>, state: &mut SerializationState<'py>) -> PyResult<Py<PyAny>> {
         self.choices
-            .serialize(
-                |comb_serializer, state| comb_serializer.to_python(value, state),
-                state,
-                None,
-            )?
+            .serialize(|comb_serializer, state| comb_serializer.to_python(value, state), state)?
             .map_or_else(|| infer_to_python(value, state), Ok)
     }
 
@@ -85,11 +81,7 @@ impl TypeSerializer for UnionSerializer {
         state: &mut SerializationState<'py>,
     ) -> PyResult<Cow<'a, str>> {
         self.choices
-            .serialize(
-                |comb_serializer, state| comb_serializer.json_key(key, state),
-                state,
-                None,
-            )?
+            .serialize(|comb_serializer, state| comb_serializer.json_key(key, state), state)?
             .map_or_else(|| infer_json_key(key, state), Ok)
     }
 
@@ -99,11 +91,10 @@ impl TypeSerializer for UnionSerializer {
         serializer: S,
         state: &mut SerializationState<'py>,
     ) -> Result<S::Ok, S::Error> {
-        match self.choices.serialize(
-            |comb_serializer, state| comb_serializer.to_python(value, state),
-            state,
-            None,
-        ) {
+        match self
+            .choices
+            .serialize(|comb_serializer, state| comb_serializer.to_python(value, state), state)
+        {
             Ok(Some(v)) => {
                 let state = &mut state.scoped_include_exclude(IncludeExclude::empty());
                 infer_serialize(v.bind(value.py()), serializer, state)
@@ -275,38 +266,50 @@ impl TaggedUnionSerializer {
         mut selector: impl FnMut(&CombinedSerializer, &mut SerializationState<'py>) -> PyResult<S>,
         state: &mut SerializationState<'py>,
     ) -> PyResult<Option<S>> {
-        let mut skip = None;
-
-        if let Some(tag) = self.get_discriminator_value(value)
+        let choice = if let Some(tag) = self.get_discriminator_value(value)
             && let Some(&serializer_index) = self.lookup.get(&tag)?
         {
-            let choice = &self.choices.choices[serializer_index];
-
-            // Try a first pass with the appropriate checking level
-            match selector(choice, &mut scoped_check_level(state, initial_check_level(state))) {
-                Ok(v) => return Ok(Some(v)),
-                Err(err) => {
-                    // if it fails, we record the error to skip this choice in the left to right pass
-                    skip = Some((serializer_index, err));
-                }
+            &self.choices.choices[serializer_index]
+        } else {
+            // No tag found, fall back to left-to-right inference
+            if in_top_level_union(state) {
+                register_tagged_union_fallback_warning(value, state);
             }
+            return self.choices.serialize(selector, state);
+        };
 
-            // if not in a nested union, we can try a second pass with lax checking if needed
-            if in_top_level_union(state)
-                && self.retry_with_lax_check()
-                && let Ok(v) = selector(choice, &mut scoped_check_level(state, SerCheck::Lax))
-            {
-                return Ok(Some(v));
-            }
-        } else if in_top_level_union(state) {
-            // Only register a warning if we're in a top-level union
-            register_tagged_union_fallback_warning(value, state);
+        // Try a first pass with the appropriate checking level
+        let err = match selector(choice, &mut scoped_check_level(state, initial_check_level(state))) {
+            Ok(v) => return Ok(Some(v)),
+            Err(err) => err,
+        };
+
+        // If not in a nested union, try lax check
+        if in_top_level_union(state)
+            && self.retry_with_lax_check()
+            && let Ok(v) = selector(choice, &mut scoped_check_level(state, SerCheck::Lax))
+        {
+            return Ok(Some(v));
         }
 
-        // if we haven't returned at this point, we should fallback to the union serializer
-        // which preserves the historical expectation that we do our best with serialization
-        // even if that means we resort to inference
-        self.choices.serialize(selector, state, skip)
+        // The discriminator matched a specific variant but serialization failed.
+        if in_top_level_union(state) {
+            // Register a warning for the matched variant only, then
+            // fall through to inference instead of trying all other variants.
+            if let Ok(unexpected_value) = err.value(value.py()).cast::<PydanticSerializationUnexpectedValue>() {
+                state.warnings.register_warning(unexpected_value.borrow().clone());
+            } else {
+                state
+                    .warnings
+                    .register_warning(PydanticSerializationUnexpectedValue::new_from_msg(Some(
+                        err.to_string(),
+                    )));
+            }
+            return Ok(None);
+        }
+
+        // In a nested union, propagate the error so the parent can retry
+        Err(err)
     }
 }
 
@@ -356,41 +359,21 @@ impl UnionChoices {
         &self,
         mut selector: impl FnMut(&CombinedSerializer, &mut SerializationState<'py>) -> PyResult<S>,
         state: &mut SerializationState<'py>,
-        // If some, skip the choice at this index (used to avoid retrying the same choice), the
-        // error is the error from trying this as a tag
-        skip: Option<(usize, PyErr)>,
     ) -> PyResult<Option<S>> {
         // try the serializers in left to right order with strict checking
         let mut errors: SmallVec<[PyErr; SMALL_UNION_THRESHOLD]> = SmallVec::new();
-
-        let (left, right) = match &skip {
-            Some((skip_index, _)) => {
-                let (left, rest) = self.choices.split_at(*skip_index);
-                let right = rest
-                    .get(1..) // skip the skipped index
-                    .unwrap_or(&[][..]);
-                (left, right)
-            }
-            None => (&self.choices[..], &[][..]),
-        };
-
-        let choices_iter = left.iter().chain(right.iter());
 
         // First try left-to-right with checks enabled, collecting errors
         // - at strict level if we're in a top-level union (state.check == None)
         // - otherwise, use the current check level
         {
             let state = &mut scoped_check_level(state, initial_check_level(state));
-            for comb_serializer in choices_iter.clone() {
+            for comb_serializer in &self.choices {
                 match selector(comb_serializer, state) {
                     Ok(v) => return Ok(Some(v)),
                     Err(err) => errors.push(err),
                 }
             }
-        }
-
-        if let Some((index, tag_err)) = skip {
-            errors.insert(index, tag_err);
         }
 
         // in a nested union, we immediately bail out with the collected errors
@@ -402,7 +385,7 @@ impl UnionChoices {
         // otherwise, in a top level union, we retry with lax checking if any choice supports it
         if self.retry_with_lax_check() {
             let state = &mut scoped_check_level(state, SerCheck::Lax);
-            for comb_serializer in choices_iter {
+            for comb_serializer in &self.choices {
                 if let Ok(v) = selector(comb_serializer, state) {
                     return Ok(Some(v));
                 }
