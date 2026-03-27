@@ -2,6 +2,54 @@
 <!-- markdownlint-disable descriptive-link-text -->
 <!-- markdownlint-disable-next-line first-line-heading -->
 
+## v2.13.0b3 (2026-03-27)
+
+[GitHub release](https://github.com/pydantic/pydantic/releases/tag/v2.13.0b3)
+
+### What's Changed
+
+#### Packaging
+
+* Add riscv64 build target for manylinux by @boosterl in [#12723](https://github.com/pydantic/pydantic/pull/12723)
+
+#### New Features
+
+* Add `ascii_only` option to `StringConstraints` by @ai-man-codes in [#12907](https://github.com/pydantic/pydantic/pull/12907)
+* Support `exclude_if` in computed fields by @andresliszt in [#12748](https://github.com/pydantic/pydantic/pull/12748)
+* Push down constraints in unions involving `MISSING` sentinel by @Viicos in [#12908](https://github.com/pydantic/pydantic/pull/12908)
+
+#### Changes
+
+* Track extra fields set after init in `model_fields_set` by @navalprakhar in [#12817](https://github.com/pydantic/pydantic/pull/12817)
+* Do not include annotations that are not part of named tuple fields by @galuszkak in [#12951](https://github.com/pydantic/pydantic/pull/12951)
+* No longer fall back to trying all union members when the variant selected by discriminator fails to serialize by @navalprakhar in [#12825](https://github.com/pydantic/pydantic/pull/12825)
+
+#### Fixes
+
+* Support discriminator metadata outside union type alias by @Viicos in [#12785](https://github.com/pydantic/pydantic/pull/12785)
+* Respect `extras_schema` when only `extra_fields_behavior` is set on the config in JSON Schema generation for typed dictionaries by @Viicos in [#12810](https://github.com/pydantic/pydantic/pull/12810)
+* Ensure `__pydantic_private__` is set in `model_construct()` with user-defined `model_post_init()` by @nightcityblade in [#12816](https://github.com/pydantic/pydantic/pull/12816)
+* Handle all schema generation errors in `InstanceOf` by @Viicos in [#12705](https://github.com/pydantic/pydantic/pull/12705)
+* Allow dynamic models created with `create_model()` to be used as annotations in the Mypy plugin by @Br1an67 in [#12879](https://github.com/pydantic/pydantic/pull/12879)
+* Check for `PlaceholderNode` in Mypy plugin by @Viicos in [#12929](https://github.com/pydantic/pydantic/pull/12929)
+* Try other branches in smart union in case of omit errors by @mikeedjones in [#12758](https://github.com/pydantic/pydantic/pull/12758)
+* Patch unset attributes with `MISSING` during model serialization with `exclude_unset` by @davidhewitt in [#12905](https://github.com/pydantic/pydantic/pull/12905)
+* Ensure custom `__init__()` is called when using `model_validate_strings()` by @siewcapital in [#12897](https://github.com/pydantic/pydantic/pull/12897)
+
+### New Contributors
+
+* @kelsonbrito50 made their first contribution in [#12860](https://github.com/pydantic/pydantic/pull/12860)
+* @boosterl made their first contribution in [#12723](https://github.com/pydantic/pydantic/pull/12723)
+* @adityagiri3600 made their first contribution in [#12868](https://github.com/pydantic/pydantic/pull/12868)
+* @navalprakhar made their first contribution in [#12817](https://github.com/pydantic/pydantic/pull/12817)
+* @Br1an67 made their first contribution in [#12879](https://github.com/pydantic/pydantic/pull/12879)
+* @rmorshea made their first contribution in [#12910](https://github.com/pydantic/pydantic/pull/12910)
+* @N3XT3R1337 made their first contribution in [#12922](https://github.com/pydantic/pydantic/pull/12922)
+* @ai-man-codes made their first contribution in [#12907](https://github.com/pydantic/pydantic/pull/12907)
+* @Yume05-dev made their first contribution in [#12953](https://github.com/pydantic/pydantic/pull/12953)
+* @galuszkak made their first contribution in [#12951](https://github.com/pydantic/pydantic/pull/12951)
+* @siewcapital made their first contribution in [#12897](https://github.com/pydantic/pydantic/pull/12897)
+
 ## v2.13.0b2 (2026-02-24)
 
 [GitHub release](https://github.com/pydantic/pydantic/releases/tag/v2.13.0b2)
