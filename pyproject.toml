@@ -109,6 +109,7 @@ linting = [
     'eval-type-backport',
     'ruff',
     'pyright',
+    'zizmor',
 ]
 testing-extra = [
     'cloudpickle',

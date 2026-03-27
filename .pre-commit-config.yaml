@@ -47,3 +47,9 @@ repos:
         types: [python]
         language: system
         pass_filenames: false
+      - id: zizmor
+        name: zizmor
+        entry: uv run --group linting zizmor --min-severity high --fix .
+        language: system
+        types: [yaml]
+        pass_filenames: false
