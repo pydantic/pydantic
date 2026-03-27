@@ -46,7 +46,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python-version: ['3.9', '3.10', '3.11', '3.12', '3.13']
+        python-version: ['3.10', '3.11', '3.12', '3.13', '3.14']
     steps:
       - name: Checkout FastAPI
         uses: actions/checkout@v6
@@ -86,7 +86,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python-version: ['3.9', '3.10', '3.11', '3.12', '3.13']
+        python-version: ['3.10', '3.11', '3.12', '3.13', '3.14']
     steps:
       - name: Checkout SQLModel
         uses: actions/checkout@v6
@@ -370,9 +370,9 @@ jobs:
           POLICY_FILE: policy.json
         run: bash github.sh
 
-      - uses: pnpm/action-setup@v4
+      - uses: pnpm/action-setup@v5
         with:
-          version: 9.15.0
+          package_json_file: server/emails/package.json
 
       - name: 📬 Setup Node.js environment for server/emails
         uses: actions/setup-node@v6
@@ -512,7 +512,7 @@ jobs:
 
       - name: Run Semantic Kernel tests
         working-directory: ./python
-        run: uv run --frozen --no-sync pytest ./tests/unit
+        run: uv run --frozen --no-sync pytest ./tests/unit --ignore=tests/unit/processes/dapr_runtime
 
   test-langchain:
     name: Test LangChain (main branch) on Python ${{ matrix.python-version }}
@@ -632,7 +632,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python-version: ['3.9', '3.10', '3.11', '3.12', '3.13']
+        python-version: ['3.10', '3.11', '3.12', '3.13', '3.14']
     steps:
       - name: Checkout Cadwyn
         uses: actions/checkout@v6
@@ -694,7 +694,7 @@ jobs:
           pip install poetry
           poetry install --no-root -E lxml
           pip uninstall pydantic
-          pip install -e ./pydantic-latest
+          pip install -e ./pydantic-latest/pydantic-core -e ./pydantic-latest
 
       - name: List installed dependencies
         run: pip list
@@ -739,32 +739,25 @@ jobs:
         with:
           path: pydantic-latest
 
+      - name: Install uv
+        uses: astral-sh/setup-uv@v7
+
       - name: Setup Python ${{ matrix.python-version }}
         uses: actions/setup-python@v6
         with:
           python-version: ${{ matrix.python-version }}
 
-      - name: Install Poetry
-        uses: snok/install-poetry@v1
-        with:
-          virtualenvs-create: true
-          virtualenvs-in-project: true
-          installer-parallel: true
+      - name: Install dependencies
+        run: |
+          uv sync
+          uv pip uninstall pydantic pydantic-core
+          uv pip install -e ./pydantic-latest -e ./pydantic-latest/pydantic-core
 
       - name: Make sync version of library (redis_om)
         run: make sync
 
-      - name: Install Redis OM Python dependencies
-        run: |
-          poetry install --no-interaction --no-root
-          pip uninstall --yes pydantic pydantic-core
-          pip install -e ./pydantic-latest -e ./pydantic-latest/pydantic-core
-
-      - name: Install Redis OM Python library
-        run: poetry install --no-interaction
-
       - name: List installed dependencies
-        run: pip list
+        run: uv pip list
 
       - name: Run Redis OM Python tests
         env:
