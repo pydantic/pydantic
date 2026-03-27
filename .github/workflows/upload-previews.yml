@@ -14,13 +14,13 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/setup-python@v6
+      - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
         with:
           python-version: '3.10'
 
       - run: pip install smokeshow
 
-      - uses: dawidd6/action-download-artifact@v16
+      - uses: dawidd6/action-download-artifact@2536c51d3d126276eb39f74d6bc9c72ac6ef30d3 # v16
         with:
           workflow: ci.yml
           commit: ${{ github.event.workflow_run.head_sha }}

@@ -25,7 +25,7 @@ runs:
       run: mkdir -p ${{ github.workspace }}/profdata
 
     - name: Build initial wheel
-      uses: PyO3/maturin-action@v1
+      uses: PyO3/maturin-action@04ac600d27cdf7a9a280dadf7147097c42b757ad # v1.50.1
       with:
         working-directory: ${{ inputs.working-directory }}
         manylinux: auto
@@ -52,15 +52,17 @@ runs:
         uv pip install pydantic-core --no-index --no-deps --find-links pydantic-core/initial-wheel
         uv run --no-sync pytest tests/pydantic_core/benchmarks
         RUST_HOST=$(rustc -Vv | grep host | cut -d ' ' -f 2)
-        rustup run ${{ inputs.rust-toolchain }} bash -c 'echo LLVM_PROFDATA=$RUSTUP_HOME/toolchains/$RUSTUP_TOOLCHAIN/lib/rustlib/$RUST_HOST/bin/llvm-profdata >> "$GITHUB_ENV"'
+        rustup run ${INPUTS_RUST_TOOLCHAIN} bash -c 'echo LLVM_PROFDATA=$RUSTUP_HOME/toolchains/$RUSTUP_TOOLCHAIN/lib/rustlib/$RUST_HOST/bin/llvm-profdata >> "$GITHUB_ENV"'
       shell: bash
+      env:
+        INPUTS_RUST_TOOLCHAIN: ${{ inputs.rust-toolchain }}
 
     - name: Merge pgo data
       run: ${{ env.LLVM_PROFDATA }} merge -o ${{ github.workspace }}/merged.profdata ${{ github.workspace }}/profdata
       shell: pwsh # because it handles paths on windows better, and works well enough on unix for this step
 
     - name: Build pgo-optimized wheel
-      uses: PyO3/maturin-action@v1
+      uses: PyO3/maturin-action@04ac600d27cdf7a9a280dadf7147097c42b757ad # v1.50.1
       with:
         working-directory: ${{ inputs.working-directory }}
         manylinux: auto
