@@ -898,6 +898,9 @@ class GenerateJsonSchema:
 
         expected = [to_jsonable_python(v.value) for v in schema['members']]
 
+        if self._config.use_x_enum_varnames:
+            result['x-enum-varnames'] = [to_jsonable_python(v.name) for v in schema['members']]
+
         result['enum'] = expected
 
         types = {type(e) for e in expected}

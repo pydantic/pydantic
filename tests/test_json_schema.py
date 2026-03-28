@@ -6143,6 +6143,144 @@ def test_enum_complex_value() -> None:
     assert ta.json_schema() == {'enum': [[1, 2], [2, 3]], 'title': 'MyEnum', 'type': 'array'}
 
 
+def test_x_enum_varnames_with_model_enabled():
+    class MyEnum(str, Enum):
+        FOO = 'foo'
+        BAR = 'bar'
+        BAZ = 'baz'
+
+    class Model(BaseModel):
+        model_config = ConfigDict(use_x_enum_varnames=True)
+        value: MyEnum
+
+    # insert_assert(Model.model_json_schema())
+    assert Model.model_json_schema() == {
+        '$defs': {
+            'MyEnum': {
+                'enum': ['foo', 'bar', 'baz'],
+                'title': 'MyEnum',
+                'type': 'string',
+                'x-enum-varnames': ['FOO', 'BAR', 'BAZ'],
+            }
+        },
+        'properties': {'value': {'$ref': '#/$defs/MyEnum'}},
+        'required': ['value'],
+        'title': 'Model',
+        'type': 'object',
+    }
+
+
+def test_x_enum_varnames_with_model_disabled():
+    class MyEnum(str, Enum):
+        FOO = 'foo'
+        BAR = 'bar'
+        BAZ = 'baz'
+
+    class Model(BaseModel):
+        value: MyEnum
+
+    schema = Model.model_json_schema()
+    assert 'x-enum-varnames' not in schema['$defs']['MyEnum']
+
+
+def test_x_enum_varnames_with_model_disabled_explicit():
+    class MyEnum(str, Enum):
+        FOO = 'foo'
+        BAR = 'bar'
+        BAZ = 'baz'
+
+    class Model(BaseModel):
+        model_config = ConfigDict(use_x_enum_varnames=False)
+        value: MyEnum
+
+    schema = Model.model_json_schema()
+    assert 'x-enum-varnames' not in schema['$defs']['MyEnum']
+
+
+def test_x_enum_varnames_with_type_adapter_enabled():
+    class MyEnum(str, Enum):
+        FOO = 'foo'
+        BAR = 'bar'
+        BAZ = 'baz'
+
+    ta = TypeAdapter(MyEnum, config=ConfigDict(use_x_enum_varnames=True))
+    # insert_assert(ta.json_schema())
+    assert ta.json_schema() == {
+        'enum': ['foo', 'bar', 'baz'],
+        'title': 'MyEnum',
+        'type': 'string',
+        'x-enum-varnames': ['FOO', 'BAR', 'BAZ'],
+    }
+
+
+def test_x_enum_varnames_with_type_adapter_disabled():
+    class MyEnum(str, Enum):
+        FOO = 'foo'
+        BAR = 'bar'
+        BAZ = 'baz'
+
+    ta = TypeAdapter(MyEnum)
+    schema = ta.json_schema()
+    assert 'x-enum-varnames' not in schema
+
+
+def test_x_enum_varnames_with_type_adapter_disabled_explicit():
+    class MyEnum(str, Enum):
+        FOO = 'foo'
+        BAR = 'bar'
+        BAZ = 'baz'
+
+    ta = TypeAdapter(MyEnum, config=ConfigDict(use_x_enum_varnames=False))
+    schema = ta.json_schema()
+    assert 'x-enum-varnames' not in schema
+
+
+def test_x_enum_varnames_int_enum():
+    class Status(IntEnum):
+        ACTIVE = 1
+        INACTIVE = 2
+        PENDING = 3
+
+    class Model(BaseModel):
+        model_config = ConfigDict(use_x_enum_varnames=True)
+        status: Status
+
+    # insert_assert(Model.model_json_schema())
+    assert Model.model_json_schema() == {
+        '$defs': {
+            'Status': {
+                'enum': [1, 2, 3],
+                'title': 'Status',
+                'type': 'integer',
+                'x-enum-varnames': ['ACTIVE', 'INACTIVE', 'PENDING'],
+            }
+        },
+        'properties': {'status': {'$ref': '#/$defs/Status'}},
+        'required': ['status'],
+        'title': 'Model',
+        'type': 'object',
+    }
+
+
+def test_x_enum_varnames_multiple_enums():
+    class Color(str, Enum):
+        RED = 'red'
+        GREEN = 'green'
+
+    class Size(str, Enum):
+        SMALL = 'S'
+        LARGE = 'L'
+
+    class Model(BaseModel):
+        model_config = ConfigDict(use_x_enum_varnames=True)
+        color: Color
+        size: Size
+
+    schema = Model.model_json_schema()
+    assert schema['$defs']['Color']['x-enum-varnames'] == ['RED', 'GREEN']
+    assert schema['$defs']['Size']['x-enum-varnames'] == ['SMALL', 'LARGE']
+
+
 def test_json_schema_serialization_defaults_required():
     class Model(BaseModel):
         a: str = 'a'

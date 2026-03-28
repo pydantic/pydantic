@@ -89,6 +89,7 @@ class ConfigWrapper:
     serialize_by_alias: bool
     url_preserve_empty_path: bool
     polymorphic_serialization: bool
+    use_x_enum_varnames: bool
 
     def __init__(self, config: ConfigDict | dict[str, Any] | type[Any] | None, *, check: bool = True):
         if check:
@@ -317,6 +318,7 @@ config_defaults = ConfigDict(
     serialize_by_alias=False,
     url_preserve_empty_path=False,
     polymorphic_serialization=False,
+    use_x_enum_varnames=False,
 )
 
 

@@ -1212,6 +1212,44 @@ class ConfigDict(TypedDict, total=False):
     Whether to use polymorphic serialization for subclasses of the model or Pydantic dataclass. Defaults to `False`.
     """
 
+    use_x_enum_varnames: bool
+    """
+    Whether the generated json-schema/openapi3 enums should have the `x-enum-varnames` extension populated.
+    This maintains the key of any enum value that defines it in the form `key: value`.
+    The default behavior is to use the value as both the key and value.
+    This is a supported extension field in OpenApi3.
+
+    Default: `false`
+
+    ```python
+    from enum import Enum
+
+    from pydantic import ConfigDict, TypeAdapter
+
+    class SomeEnum(Enum):
+        FOO = 'foo'
+        BAR = 'bar'
+        BAZ = 'baz'
+
+    taEnum1 = TypeAdapter(SomeEnum)
+
+    print(taEnum1.json_schema())
+    #> {'enum': ['foo', 'bar', 'baz'], 'title': 'SomeEnum', 'type': 'string'}
+
+    taEnum2 = TypeAdapter(SomeEnum, config=ConfigDict(use_x_enum_varnames=True))
+
+    print(taEnum2.json_schema())
+    '''
+    {
+        'enum': ['foo', 'bar', 'baz'],
+        'title': 'SomeEnum',
+        'type': 'string',
+        'x-enum-varnames': ['FOO', 'BAR', 'BAZ'],
+    }
+    '''
+    ```
+    """
+
 
 _TypeT = TypeVar('_TypeT', bound=type)
 
