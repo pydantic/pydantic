@@ -6281,6 +6281,52 @@ def test_x_enum_varnames_multiple_enums():
     assert schema['$defs']['Size']['x-enum-varnames'] == ['SMALL', 'LARGE']
 
 
+def test_x_enum_varnames_shared_enum_different_configs():
+    class MyEnum(str, Enum):
+        FOO = 'foo'
+        BAR = 'bar'
+
+    class ModelWith(BaseModel):
+        model_config = ConfigDict(use_x_enum_varnames=True)
+        value: MyEnum
+
+    class ModelWithout(BaseModel):
+        value: MyEnum
+
+    schema_with = ModelWith.model_json_schema()
+    assert schema_with['$defs']['MyEnum']['x-enum-varnames'] == ['FOO', 'BAR']
+
+    schema_without = ModelWithout.model_json_schema()
+    assert 'x-enum-varnames' not in schema_without['$defs']['MyEnum']
+
+
+def test_generate_with_config_overrides_default():
+    from datetime import timedelta
+
+    ta = TypeAdapter(timedelta)
+    gen = GenerateJsonSchema()
+    schema = gen.generate(ta.core_schema, config=ConfigDict(ser_json_timedelta='float'))
+    assert schema == {'type': 'number'}
+
+
+def test_generate_without_config_uses_defaults():
+    from datetime import timedelta
+
+    ta = TypeAdapter(timedelta)
+    gen = GenerateJsonSchema()
+    schema = gen.generate(ta.core_schema)
+    assert schema == {'type': 'string', 'format': 'duration'}
+
+
+def test_generate_with_config_none_uses_defaults():
+    from datetime import timedelta
+
+    ta = TypeAdapter(timedelta)
+    gen = GenerateJsonSchema()
+    schema = gen.generate(ta.core_schema, config=None)
+    assert schema == {'type': 'string', 'format': 'duration'}
+
+
 def test_json_schema_serialization_defaults_required():
     class Model(BaseModel):
         a: str = 'a'

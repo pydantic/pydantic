@@ -712,8 +712,8 @@ use the enum [value][enum.Enum.value] during validation (so that it is also used
 In [JSON mode](../concepts/serialization.md#json-mode), enum instances are serialized using
 their [value][enum.Enum.value].
 The [`use_x_enum_varnames`][pydantic.ConfigDict.use_x_enum_varnames] configuration value can be set to
-additionally emit the enum [name][enum.Enum.name] to during x_enum_varnames serialization.
-This is a supported extension field in OpenApi3.
+additionally emit the enum [name][enum.Enum.name] to x_enum_varnames during JSON Schema generation.
+This is a frequently supported extension field in OpenAPI 3.
 
 <h3>Example</h3>
 

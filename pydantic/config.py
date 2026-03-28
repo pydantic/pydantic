@@ -1214,12 +1214,12 @@ class ConfigDict(TypedDict, total=False):
 
     use_x_enum_varnames: bool
     """
-    Whether the generated json-schema/openapi3 enums should have the `x-enum-varnames` extension populated.
-    This maintains the key of any enum value that defines it in the form `key: value`.
+    Whether the generated json-schema/OpenAPI 3 enums should have the `x-enum-varnames` extension populated.
+    This maintains the key of any enum value that defines it in the form `key = 'value'`.
     The default behavior is to use the value as both the key and value.
-    This is a supported extension field in OpenApi3.
+    This is a frequently supported extension field in OpenAPI 3.
 
-    Default: `false`
+    Default: `False`
 
     ```python
     from enum import Enum
