@@ -1,6 +1,6 @@
 name: Post coverage comment
 
-on:
+on: # zizmor: ignore[dangerous-triggers] -- workflow_run is used safely here; no code checkout occurs
   workflow_run:
     workflows: ['CI']
     types:

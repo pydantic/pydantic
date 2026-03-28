@@ -1,6 +1,6 @@
 name: Release notes
 
-on:
+on: # zizmor: ignore[dangerous-triggers] -- pull_request_target is required for labeling; fork PRs only get base-branch checkout
   pull_request_target:
     types: [opened]
 
@@ -12,7 +12,11 @@ jobs:
       pull-requests: write
     runs-on: ubuntu-latest
     steps:
+      # DO NOT checkout fork PR head branches, for security reasons
+      # For details, refer to https://securitylab.github.com/research/github-actions-preventing-pwn-requests/
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          ref: ${{ github.event.pull_request.head.repo.full_name != github.repository && github.event.pull_request.base.ref || '' }}
 
       - id: label-PR-by-branch-name
         uses: actions/labeler@634933edcd8ababfe52f92936142cc22ac488b1b # v6.0.1

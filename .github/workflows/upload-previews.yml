@@ -1,6 +1,6 @@
 name: Upload previews
 
-on:
+on: # zizmor: ignore[dangerous-triggers] -- workflow_run is used safely here; no code checkout occurs
   workflow_run:
     workflows: [CI]
     types: [completed]
@@ -14,6 +14,8 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      # DO NOT run actions/checkout here, for security reasons
+      # For details, refer to https://securitylab.github.com/research/github-actions-preventing-pwn-requests/
       - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
         with:
           python-version: '3.10'

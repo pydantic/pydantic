@@ -716,7 +716,7 @@ jobs:
         python-version: ['3.10', '3.11', '3.12', '3.13']
     services:
       redis:
-        image: redis/redis-stack:latest
+        image: redis/redis-stack:latest # zizmor: ignore[unpinned-images] -- intentionally using latest for third-party compatibility testing
         ports:
           # Maps port 6379 on service container to the host
           - 6379:6379
