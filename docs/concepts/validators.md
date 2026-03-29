@@ -916,3 +916,234 @@ print(Model.model_json_schema()['properties']['value'])
 As a convenience, Pydantic will use the field type if the argument is not provided (unless you are using
 a [*plain*](#field-plain-validator) validator, in which case `json_schema_input_type` defaults to
 [`Any`][typing.Any] as the field type is completely discarded).
+
+## Practical Examples
+
+The following complete, runnable examples demonstrate the most common Pydantic v2 validator patterns used in production applications. Each example includes docstrings explaining the Pydantic v2-specific behaviour.
+
+### Example 1: Basic `field_validator`
+
+```python
+from pydantic import BaseModel, ValidationError, field_validator
+
+
+class UserRegistration(BaseModel):
+    """
+    Demonstrates @field_validator for single-field validation.
+
+    Key Pydantic v2 differences from v1:
+    - @field_validator replaces @validator
+    - Must be a @classmethod
+    - Receives the raw value (after type coercion) unless mode='before'
+    - Returns the (optionally transformed) value
+    """
+    username: str
+    email: str
+    age: int
+
+    @field_validator("username")
+    @classmethod
+    def username_alphanumeric(cls, v: str) -> str:
+        v = v.strip()
+        if not v.isalnum():
+            raise ValueError("Username must contain only letters and digits")
+        if not (3 <= len(v) <= 20):
+            raise ValueError("Username must be between 3 and 20 characters")
+        return v.lower()
+
+    @field_validator("email")
+    @classmethod
+    def email_lowercase(cls, v: str) -> str:
+        return v.lower().strip()
+
+    @field_validator("age")
+    @classmethod
+    def age_must_be_adult(cls, v: int) -> int:
+        if v < 18:
+            raise ValueError(f"Must be at least 18 years old (got {v})")
+        return v
+
+
+user = UserRegistration(username="Alice42", email="ALICE@EXAMPLE.COM", age=25)
+print(user)
+#> username='alice42' email='alice@example.com' age=25
+```
+
+### Example 2: `model_validator(mode='after')` — Cross-field Validation
+
+```python
+from pydantic import BaseModel, ValidationError, field_validator, model_validator
+
+
+class PasswordChange(BaseModel):
+    """
+    Demonstrates @model_validator(mode='after') for cross-field validation.
+
+    mode='after':
+    - Runs AFTER all field validators have passed
+    - Receives the fully constructed model instance (self)
+    - Can access all validated fields
+    - Must return self
+    """
+    current_password: str
+    new_password: str
+    new_password_confirm: str
+
+    @field_validator("new_password")
+    @classmethod
+    def password_strength(cls, v: str) -> str:
+        if len(v) < 8:
+            raise ValueError("Password must be at least 8 characters")
+        if not any(c.isupper() for c in v):
+            raise ValueError("Password must contain at least one uppercase letter")
+        if not any(c.isdigit() for c in v):
+            raise ValueError("Password must contain at least one digit")
+        return v
+
+    @model_validator(mode="after")
+    def passwords_match(self) -> "PasswordChange":
+        if self.new_password != self.new_password_confirm:
+            raise ValueError("new_password and new_password_confirm do not match")
+        if self.new_password == self.current_password:
+            raise ValueError("New password must differ from current password")
+        return self
+
+
+change = PasswordChange(
+    current_password="OldPass1",
+    new_password="NewPass42",
+    new_password_confirm="NewPass42",
+)
+print(change.new_password)
+#> NewPass42
+```
+
+### Example 3: `model_validator(mode='before')` — Input Normalization
+
+```python
+from datetime import date
+from typing import Any
+
+from pydantic import BaseModel, ValidationError, model_validator
+
+
+class DateRange(BaseModel):
+    """
+    Demonstrates @model_validator(mode='before') for data normalization.
+
+    mode='before':
+    - Runs BEFORE field validators
+    - Receives raw input data as a dict
+    - Useful for: renaming keys, parsing alternative formats, injecting defaults
+    """
+    start_date: date
+    end_date: date
+    label: str = "unnamed"
+
+    @model_validator(mode="before")
+    @classmethod
+    def normalize_input(cls, data: Any) -> Any:
+        if isinstance(data, dict):
+            if "from" in data and "start_date" not in data:
+                data["start_date"] = data.pop("from")
+            if "to" in data and "end_date" not in data:
+                data["end_date"] = data.pop("to")
+        return data
+
+    @model_validator(mode="after")
+    def validate_range(self) -> "DateRange":
+        if self.start_date >= self.end_date:
+            raise ValueError(f"start_date must be before end_date")
+        return self
+
+
+# Accept legacy key names
+dr = DateRange(**{"from": "2026-03-01", "to": "2026-06-30", "label": "Q2"})
+print(dr.start_date, "->", dr.end_date)
+#> 2026-03-01 -> 2026-06-30
+```
+
+### Example 4: `@computed_field` — Derived Properties
+
+```python
+from pydantic import BaseModel, computed_field, field_validator
+
+
+class Product(BaseModel):
+    """
+    Demonstrates @computed_field for values derived from other fields.
+
+    @computed_field (Pydantic v2.0+):
+    - Adds a read-only property to model serialization
+    - Included in model.model_dump() and model.model_json_schema()
+    - Does NOT accept input during model construction
+    """
+    name: str
+    price_eur: float
+    quantity: int
+    discount_pct: float = 0.0
+
+    @field_validator("price_eur")
+    @classmethod
+    def price_positive(cls, v: float) -> float:
+        if v <= 0:
+            raise ValueError("Price must be positive")
+        return round(v, 2)
+
+    @computed_field  # type: ignore[misc]
+    @property
+    def price_after_discount(self) -> float:
+        return round(self.price_eur * (1 - self.discount_pct / 100), 2)
+
+    @computed_field  # type: ignore[misc]
+    @property
+    def total_value(self) -> float:
+        return round(self.price_after_discount * self.quantity, 2)
+
+
+product = Product(name="Laptop", price_eur=999.99, quantity=3, discount_pct=15)
+print(product.model_dump())
+#> {'name': 'Laptop', 'price_eur': 999.99, 'quantity': 3, 'discount_pct': 15.0,
+#>  'price_after_discount': 849.99, 'total_value': 2549.97}
+```
+
+### Example 5: `field_validator` with `mode='before'` — Type Coercion
+
+```python
+from datetime import datetime
+from typing import Any
+
+from pydantic import BaseModel, field_validator
+
+
+class FlexibleEvent(BaseModel):
+    """
+    Demonstrates field_validator with mode='before' for accepting
+    multiple input types and normalizing them before Pydantic's type coercion.
+    """
+    title: str
+    event_time: datetime
+    tags: list[str] = []
+
+    @field_validator("event_time", mode="before")
+    @classmethod
+    def parse_event_time(cls, v: Any) -> Any:
+        """Accept datetime as ISO string, Unix timestamp int/float, or datetime object."""
+        if isinstance(v, (int, float)):
+            return datetime.fromtimestamp(v)
+        return v
+
+    @field_validator("tags", mode="before")
+    @classmethod
+    def parse_tags(cls, v: Any) -> Any:
+        """Accept tags as a comma-separated string or a list."""
+        if isinstance(v, str):
+            return [tag.strip() for tag in v.split(",") if tag.strip()]
+        return v
+
+
+# Unix timestamp + comma-separated tags
+event = FlexibleEvent(title="Launch", event_time=1750000000, tags="launch, product, v2")
+print(event.event_time)   #> 2025-06-15 18:26:40
+print(event.tags)         #> ['launch', 'product', 'v2']
+```
