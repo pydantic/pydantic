@@ -49,7 +49,7 @@ repos:
         pass_filenames: false
       - id: zizmor
         name: zizmor
-        entry: uv run --group linting zizmor --min-severity high --fix .
+        entry: uv run --group linting zizmor --min-severity high --no-progress --fix .
         language: system
         types: [yaml]
         pass_filenames: false
