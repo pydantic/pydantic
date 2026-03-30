@@ -796,7 +796,7 @@ jobs:
           twine check --strict pydantic-core-dist/*
 
       - name: Publish pydantic-core to PyPI
-        run: uv publish --trusted-publishing always pydantic-core-dist/*
+        run: uv publish --trusted-publishing always --check-url https://test.pypi.org/simple/ pydantic-core-dist/*
 
   release-pydantic:
     needs: [release-pydantic-core]
