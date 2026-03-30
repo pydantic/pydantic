@@ -38,16 +38,12 @@ runs:
       env:
         RUSTFLAGS: '-Cprofile-generate=${{ github.workspace }}/profdata'
 
-    - name: Detect rust host
-      id: detect_rust_host
-      run: echo RUST_HOST=$(rustc -Vv | grep host | cut -d ' ' -f 2) >> "$GITHUB_OUTPUT"
-      shell: bash
-
     - name: Generate pgo data
       # Until we move all dev dependencies to the main `pydantic` package, use this workaround:
       # Sync the pydantic-core workspace to get the dev dependencies (without the actual `pydantic-core` package),
       # and then sync the parent workspace:
       run: |
+        export RUST_HOST=$(rustc -Vv | grep host | cut -d ' ' -f 2)
         uv sync --directory pydantic-core --group testing-extra --no-install-package pydantic-core
         uv sync --group testing-extra --no-install-package pydantic-core --inexact
         uv pip install pydantic-core --no-index --no-deps --find-links pydantic-core/initial-wheel
@@ -56,7 +52,6 @@ runs:
       shell: bash
       env:
         INPUTS_RUST_TOOLCHAIN: ${{ inputs.rust-toolchain }}
-        RUST_HOST: ${{ steps.detect_rust_host.outputs.RUST_HOST }}
 
     - name: Merge pgo data
       run: ${{ env.LLVM_PROFDATA }} merge -o ${{ github.workspace }}/merged.profdata ${{ github.workspace }}/profdata
