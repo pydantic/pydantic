@@ -17,7 +17,8 @@ jobs:
 
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
-      - uses: samuelcolvin/list-python-dependencies@43f660fbd655f25c3e3ebd3165b09974bbf98e05 # main
+      # no release versioning, see https://github.com/samuelcolvin/list-python-dependencies/issues/2
+      - uses: samuelcolvin/list-python-dependencies@43f660fbd655f25c3e3ebd3165b09974bbf98e05
         id: list-python-dependencies
         with:
           mode: first-last
