@@ -2649,15 +2649,58 @@ class WithJsonSchema:
     """!!! abstract "Usage Documentation"
         [`WithJsonSchema` Annotation](../concepts/json_schema.md#withjsonschema-annotation)
 
-    Add this as an annotation on a field to override the (base) JSON schema that would be generated for that field.
-    This provides a way to set a JSON schema for types that would otherwise raise errors when producing a JSON schema,
-    such as Callable, or types that have an is-instance core schema, without needing to go so far as creating a
-    custom subclass of pydantic.json_schema.GenerateJsonSchema.
-    Note that any _modifications_ to the schema that would normally be made (such as setting the title for model fields)
-    will still be performed.
+    An annotation used to override the JSON Schema for a type.
 
-    If `mode` is set this will only apply to that schema generation mode, allowing you
-    to set different json schemas for validation and serialization.
+    This is useful when you want to set a JSON Schema for a type that don't produce any JSON Schemas by default
+    (e.g. [`Callable`][collections.abc.Callable]).
+
+    If `mode` is set this will only apply to that schema generation mode, allowing you to set different JSON Schemas for validation and serialization.
+
+    !!! note
+        If the `WithJsonSchema` annotation is coupled with the [`Field()`][pydantic.Field] function, the behavior overriding will vary depending on the location:
+
+        * If the [`Annotated`][typing.Annotated] metadata is specified at the "top-level" field, `Field()` metadata arguments
+          (excluding [constraints](../concepts/fields.md#field-constraints)) such as `title` and `description` will be applied on
+          top of the `WithJsonSchema`, no matter the order:
+
+            ```python
+            from typing import Annotated
+
+            from pydantic import BaseModel, Field, WithJsonSchema
+
+            class Model(BaseModel):
+                field: Annotated[
+                    int,
+                    Field(title='My Field'),
+                    WithJsonSchema({'type': 'integer', 'extra': 'data'}),
+                ]
+
+            Model.model_json_schema()['properties']['field']
+            #> {'type': 'integer', 'extra': 'data', 'title': 'My Field'}
+            ```
+
+        * If the [`Annotated`][typing.Annotated] metadata is specified on a specific inner type, `WithJsonSchema` will unconditionally
+          override the JSON Schema:
+
+            ```python
+            from typing import Annotated
+
+            from pydantic import BaseModel, Field, WithJsonSchema
+
+            class Model(BaseModel):
+                field: list[
+                    Annotated[
+                        int,
+                        Field(title='My Field'),
+                        WithJsonSchema({'type': 'integer', 'extra': 'data'}),
+                    ]
+                ]
+
+            Model.model_json_schema()['properties']['field']
+            #> {'items': {'extra': 'data', 'type': 'integer'}, 'title': 'Field', 'type': 'array'}
+            ```
+
+        See also the documentation about [the annotated pattern](../concepts/fields.md#the-annotated-pattern).
     """
 
     json_schema: JsonSchemaValue | None
@@ -2666,8 +2709,7 @@ class WithJsonSchema:
     def __get_pydantic_json_schema__(
         self, core_schema: core_schema.CoreSchema, handler: GetJsonSchemaHandler
     ) -> JsonSchemaValue:
-        mode = self.mode or handler.mode
-        if mode != handler.mode:
+        if self.mode is not None and self.mode != handler.mode:
             return handler(core_schema)
         if self.json_schema is None:
             # This exception is handled in pydantic.json_schema.GenerateJsonSchema._named_required_fields_schema

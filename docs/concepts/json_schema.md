@@ -578,18 +578,16 @@ print(json.dumps(ta.json_schema(), indent=2))
 
 ### `WithJsonSchema` annotation
 
-??? api "API Documentation"
-    [`pydantic.json_schema.WithJsonSchema`][pydantic.json_schema.WithJsonSchema]<br>
-
 !!! tip
     Using [`WithJsonSchema`][pydantic.json_schema.WithJsonSchema] is preferred over
-    [implementing `__get_pydantic_json_schema__`](#implementing_get_pydantic_json_schema) for custom types,
+    [implementing `__get_pydantic_json_schema__()`](#implementing_get_pydantic_json_schema) for custom types,
     as it's more simple and less error-prone.
 
-The [`WithJsonSchema`][pydantic.json_schema.WithJsonSchema] annotation can be used to override the generated (base)
-JSON schema for a given type without the need to implement `__get_pydantic_core_schema__`
-or `__get_pydantic_json_schema__` on the type itself. Note that this overrides the whole JSON Schema generation process
-for the field (in the following example, the `'type'` also needs to be provided).
+An annotation used to override the JSON Schema for a type.
+
+This is useful when you want to set a JSON Schema for a type that don't produce any JSON Schemas by default
+(e.g. [`Callable`][collections.abc.Callable]). Note that this overrides the whole generated JSON Schema
+for the type (in the following example, the `'type'` also needs to be provided).
 
 ```python {output="json"}
 import json
@@ -629,6 +627,8 @@ print(json.dumps(Model.model_json_schema(), indent=2))
 }
 """
 ```
+
+See the [API documentation][pydantic.json_schema.WithJsonSchema] for more details.
 
 !!! note
     You might be tempted to use the [`WithJsonSchema`][pydantic.json_schema.WithJsonSchema] annotation
