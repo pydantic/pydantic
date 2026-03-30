@@ -91,16 +91,11 @@ jobs:
             manylinux: auto
             target: s390x
             interpreter: 3.9 3.10 3.11 3.12 3.13 3.14 3.14t
+            # manylinux pypy and graalpy on major architectures:
           - os: linux
             manylinux: auto
             target: x86_64
             interpreter: pypy3.11 graalpy3.11 graalpy3.12
-
-            # manylinux pypy and graalpy on major architectures
-          - os: linux
-            manylinux: auto
-            target: x86_64
-            interpreter: graalpy3.11 graalpy3.12
           - os: linux
             manylinux: auto
             target: aarch64
@@ -788,27 +783,7 @@ jobs:
 
       - run: uv pip install -U twine
 
-      - name: Extract pydantic-core version
-        id: core-version
-        run: |
-          VERSION=$(cargo metadata --format-version 1 --no-deps --frozen --quiet --offline --manifest-path pydantic-core/Cargo.toml | jq -r '.packages[0].version')
-          echo "VERSION=$VERSION" >> "$GITHUB_OUTPUT"
-          echo "pydantic-core version: $VERSION"
-
-      - name: Check if pydantic-core version is already on PyPI
-        id: check-pypi
-        run: |
-          STATUS=$(curl -s -o /dev/null -I -w "%{http_code}" https://pypi.org/pypi/pydantic-core/${{ steps.core-version.outputs.VERSION }}/json)
-          if [ "$STATUS" = "200" ]; then
-            echo "already_published=true" >> "$GITHUB_OUTPUT"
-            echo "pydantic-core ${{ steps.core-version.outputs.VERSION }} is already on PyPI, skipping publish"
-          else
-            echo "already_published=false" >> "$GITHUB_OUTPUT"
-            echo "pydantic-core ${{ steps.core-version.outputs.VERSION }} not found on PyPI, will publish"
-          fi
-
       - name: Get pydantic-core dist artifacts
-        if: steps.check-pypi.outputs.already_published != 'true'
         uses: actions/download-artifact@v8
         with:
           pattern: pydantic_core_pypi_files_*
@@ -816,13 +791,11 @@ jobs:
           path: pydantic-core-dist
 
       - name: Test pydantic-core wheels integrity
-        if: steps.check-pypi.outputs.already_published != 'true'
         run: |
           for whl in pydantic-core-dist/*.whl; do unzip -qt "$whl"; done
           twine check --strict pydantic-core-dist/*
 
       - name: Publish pydantic-core to PyPI
-        if: steps.check-pypi.outputs.already_published != 'true'
         run: uv publish --trusted-publishing always pydantic-core-dist/*
 
   release-pydantic:
