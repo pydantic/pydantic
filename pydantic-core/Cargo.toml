@@ -3,8 +3,8 @@ name = "pydantic-core"
 version = "2.44.0"
 edition = "2024"
 license = "MIT"
-homepage = "https://github.com/pydantic/pydantic-core"
-repository = "https://github.com/pydantic/pydantic-core.git"
+homepage = "https://github.com/pydantic/pydantic"
+repository = "https://github.com/pydantic/pydantic.git"
 readme = "README.md"
 include = [
     "/pyproject.toml",
