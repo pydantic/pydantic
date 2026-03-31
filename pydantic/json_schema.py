@@ -398,17 +398,12 @@ class GenerateJsonSchema:
         self._used = True
         return json_schemas_map, self.sort(json_schema['$defs'])  # type: ignore
 
-    def generate(
-        self, schema: CoreSchema, mode: JsonSchemaMode = 'validation', config: ConfigDict | None = None
-    ) -> JsonSchemaValue:
+    def generate(self, schema: CoreSchema, mode: JsonSchemaMode = 'validation') -> JsonSchemaValue:
         """Generates a JSON schema for a specified schema in a specified mode.
 
         Args:
             schema: A Pydantic model.
             mode: The mode in which to generate the schema. Defaults to 'validation'.
-            config: Additional top level ConfigDict to be added to the stack. Defaults to 'None'.
-                This should normally be left blank unless the top level schema doesn't have a reference to its
-                ConfigDict. This is the case for TypeAdapter schemas.
 
         Returns:
             A JSON schema representing the specified schema.
@@ -424,34 +419,33 @@ class GenerateJsonSchema:
                 code='json-schema-already-used',
             )
 
-        with self._config_wrapper_stack.push(config):
-            json_schema: JsonSchemaValue = self.generate_inner(schema)
-            json_ref_counts = self.get_json_ref_counts(json_schema)
+        json_schema: JsonSchemaValue = self.generate_inner(schema)
+        json_ref_counts = self.get_json_ref_counts(json_schema)
 
-            ref = cast(JsonRef, json_schema.get('$ref'))
-            while ref is not None:  # may need to unpack multiple levels
-                ref_json_schema = self.get_schema_from_definitions(ref)
-                if json_ref_counts[ref] == 1 and ref_json_schema is not None and len(json_schema) == 1:
-                    # "Unpack" the ref since this is the only reference and there are no sibling keys
-                    json_schema = ref_json_schema.copy()  # copy to prevent recursive dict reference
-                    json_ref_counts[ref] -= 1
-                    ref = cast(JsonRef, json_schema.get('$ref'))
-                ref = None
+        ref = cast(JsonRef, json_schema.get('$ref'))
+        while ref is not None:  # may need to unpack multiple levels
+            ref_json_schema = self.get_schema_from_definitions(ref)
+            if json_ref_counts[ref] == 1 and ref_json_schema is not None and len(json_schema) == 1:
+                # "Unpack" the ref since this is the only reference and there are no sibling keys
+                json_schema = ref_json_schema.copy()  # copy to prevent recursive dict reference
+                json_ref_counts[ref] -= 1
+                ref = cast(JsonRef, json_schema.get('$ref'))
+            ref = None
 
-            self._garbage_collect_definitions(json_schema)
-            definitions_remapping = self._build_definitions_remapping()
+        self._garbage_collect_definitions(json_schema)
+        definitions_remapping = self._build_definitions_remapping()
 
-            if self.definitions:
-                json_schema['$defs'] = self.definitions
+        if self.definitions:
+            json_schema['$defs'] = self.definitions
 
-            json_schema = definitions_remapping.remap_json_schema(json_schema)
+        json_schema = definitions_remapping.remap_json_schema(json_schema)
 
-            # For now, we will not set the $schema key. However, if desired, this can be easily added by overriding
-            # this method and adding the following line after a call to super().generate(schema):
-            # json_schema['$schema'] = self.schema_dialect
+        # For now, we will not set the $schema key. However, if desired, this can be easily added by overriding
+        # this method and adding the following line after a call to super().generate(schema):
+        # json_schema['$schema'] = self.schema_dialect
 
-            self._used = True
-            return self.sort(json_schema)
+        self._used = True
+        return self.sort(json_schema)
 
     def generate_inner(self, schema: CoreSchemaOrField) -> JsonSchemaValue:  # noqa: C901
         """Generates a JSON schema for a given core schema.

@@ -6197,15 +6197,19 @@ def test_x_enum_varnames_with_model_disabled_explicit():
     assert 'x-enum-varnames' not in schema['$defs']['MyEnum']
 
 
-def test_x_enum_varnames_with_type_adapter_enabled():
+def test_x_enum_varnames_with_model_enabled_via_config():
     class MyEnum(str, Enum):
         FOO = 'foo'
         BAR = 'bar'
         BAZ = 'baz'
 
-    ta = TypeAdapter(MyEnum, config=ConfigDict(use_x_enum_varnames=True))
-    # insert_assert(ta.json_schema())
-    assert ta.json_schema() == {
+    class Model(BaseModel):
+        model_config = ConfigDict(use_x_enum_varnames=True)
+        value: MyEnum
+
+    schema = Model.model_json_schema()
+    # insert_assert(schema)
+    assert schema['$defs']['MyEnum'] == {
         'enum': ['foo', 'bar', 'baz'],
         'title': 'MyEnum',
         'type': 'string',
@@ -6213,26 +6217,31 @@ def test_x_enum_varnames_with_type_adapter_enabled():
     }
 
 
-def test_x_enum_varnames_with_type_adapter_disabled():
+def test_x_enum_varnames_with_model_disabled_no_config():
     class MyEnum(str, Enum):
         FOO = 'foo'
         BAR = 'bar'
         BAZ = 'baz'
 
-    ta = TypeAdapter(MyEnum)
-    schema = ta.json_schema()
-    assert 'x-enum-varnames' not in schema
+    class Model(BaseModel):
+        value: MyEnum
+
+    schema = Model.model_json_schema()
+    assert 'x-enum-varnames' not in schema['$defs']['MyEnum']
 
 
-def test_x_enum_varnames_with_type_adapter_disabled_explicit():
+def test_x_enum_varnames_with_model_disabled_via_config():
     class MyEnum(str, Enum):
         FOO = 'foo'
         BAR = 'bar'
         BAZ = 'baz'
 
-    ta = TypeAdapter(MyEnum, config=ConfigDict(use_x_enum_varnames=False))
-    schema = ta.json_schema()
-    assert 'x-enum-varnames' not in schema
+    class Model(BaseModel):
+        model_config = ConfigDict(use_x_enum_varnames=False)
+        value: MyEnum
+
+    schema = Model.model_json_schema()
+    assert 'x-enum-varnames' not in schema['$defs']['MyEnum']
 
 
 def test_x_enum_varnames_int_enum():
@@ -6298,33 +6307,6 @@ def test_x_enum_varnames_shared_enum_different_configs():
 
     schema_without = ModelWithout.model_json_schema()
     assert 'x-enum-varnames' not in schema_without['$defs']['MyEnum']
-
-
-def test_generate_with_config_overrides_default():
-    from datetime import timedelta
-
-    ta = TypeAdapter(timedelta)
-    gen = GenerateJsonSchema()
-    schema = gen.generate(ta.core_schema, config=ConfigDict(ser_json_timedelta='float'))
-    assert schema == {'type': 'number'}
-
-
-def test_generate_without_config_uses_defaults():
-    from datetime import timedelta
-
-    ta = TypeAdapter(timedelta)
-    gen = GenerateJsonSchema()
-    schema = gen.generate(ta.core_schema)
-    assert schema == {'type': 'string', 'format': 'duration'}
-
-
-def test_generate_with_config_none_uses_defaults():
-    from datetime import timedelta
-
-    ta = TypeAdapter(timedelta)
-    gen = GenerateJsonSchema()
-    schema = gen.generate(ta.core_schema, config=None)
-    assert schema == {'type': 'string', 'format': 'duration'}
 
 
 def test_json_schema_serialization_defaults_required():

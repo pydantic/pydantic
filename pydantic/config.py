@@ -1224,21 +1224,24 @@ class ConfigDict(TypedDict, total=False):
     ```python
     from enum import Enum
 
-    from pydantic import ConfigDict, TypeAdapter
+    from pydantic import BaseModel, ConfigDict
 
     class SomeEnum(Enum):
         FOO = 'foo'
         BAR = 'bar'
         BAZ = 'baz'
 
-    taEnum1 = TypeAdapter(SomeEnum)
+    class DefaultModel(BaseModel):
+        value: SomeEnum
 
-    print(taEnum1.json_schema())
+    print(DefaultModel.model_json_schema()['$defs']['SomeEnum'])
     #> {'enum': ['foo', 'bar', 'baz'], 'title': 'SomeEnum', 'type': 'string'}
 
-    taEnum2 = TypeAdapter(SomeEnum, config=ConfigDict(use_x_enum_varnames=True))
+    class VarnamesModel(BaseModel):
+        model_config = ConfigDict(use_x_enum_varnames=True)
+        value: SomeEnum
 
-    print(taEnum2.json_schema())
+    print(VarnamesModel.model_json_schema()['$defs']['SomeEnum'])
     '''
     {
         'enum': ['foo', 'bar', 'baz'],

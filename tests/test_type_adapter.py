@@ -708,14 +708,3 @@ def test_validate_strings_with_incorrect_configuration():
         ta.validate_strings(1, by_alias=False, by_name=False)
 
     assert exc_info.value.code == 'validate-by-alias-and-name-false'
-
-
-def test_type_adapter_json_schema_passes_config_to_generate():
-    """Test that TypeAdapter.json_schema() passes its config to GenerateJsonSchema.generate()."""
-    from datetime import timedelta
-
-    ta_float = TypeAdapter(timedelta, config=ConfigDict(ser_json_timedelta='float'))
-    assert ta_float.json_schema() == {'type': 'number'}
-
-    ta_default = TypeAdapter(timedelta)
-    assert ta_default.json_schema() == {'type': 'string', 'format': 'duration'}
