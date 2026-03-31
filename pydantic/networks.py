@@ -471,6 +471,11 @@ class _BaseMultiHostUrl:
         Returns:
             An instance of `MultiHostUrl`
         """
+        # pydantic-core's UrlHostParts extraction fails when a host dict contains keys
+        # mapped to None (e.g. username/password absent in multi-host URLs). Strip those
+        # None-valued entries so that pydantic-core treats them as absent, not as invalid.
+        if hosts is not None:
+            hosts = [{k: v for k, v in h.items() if v is not None} for h in hosts]
         return cls(
             _CoreMultiHostUrl.build(
                 scheme=scheme,

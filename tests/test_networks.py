@@ -759,6 +759,27 @@ def test_mongodb_dsns():
     assert m.a.hosts() == [{'username': None, 'password': None, 'host': 'localhost', 'port': 27017}]
 
 
+def test_mongo_dsn_build_multi_host_with_credentials():
+    """Regression test for https://github.com/pydantic/pydantic/issues/13007.
+
+    MongoDSN.build() raised TypeError when reconstructing a multi-host URL whose
+    hosts() dicts contain None-valued keys (e.g. username/password absent on
+    extra hosts in a replica-set connection string).
+    """
+    raw_uri = 'mongodb://user:pass@host-1.com:27017,host-2.com:27017/db?replicaSet=xxx&authSource=admin'
+    uri = MongoDsn(raw_uri)
+    # Should not raise: TypeError: argument 'hosts': 'NoneType' object cannot be converted to 'PyString'
+    new_uri = MongoDsn.build(
+        scheme=uri.scheme,
+        hosts=uri.hosts(),
+        path=uri.path,
+        query=uri.query,
+    )
+    assert new_uri.scheme == uri.scheme
+    assert new_uri.hosts() == uri.hosts()
+    assert new_uri.query == uri.query
+
+
 @pytest.mark.parametrize(
     ('dsn', 'expected'),
     [
