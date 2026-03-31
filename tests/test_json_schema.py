@@ -6183,67 +6183,6 @@ def test_x_enum_varnames_with_model_disabled():
     assert 'x-enum-varnames' not in schema['$defs']['MyEnum']
 
 
-def test_x_enum_varnames_with_model_disabled_explicit():
-    class MyEnum(str, Enum):
-        FOO = 'foo'
-        BAR = 'bar'
-        BAZ = 'baz'
-
-    class Model(BaseModel):
-        model_config = ConfigDict(use_x_enum_varnames=False)
-        value: MyEnum
-
-    schema = Model.model_json_schema()
-    assert 'x-enum-varnames' not in schema['$defs']['MyEnum']
-
-
-def test_x_enum_varnames_with_model_enabled_via_config():
-    class MyEnum(str, Enum):
-        FOO = 'foo'
-        BAR = 'bar'
-        BAZ = 'baz'
-
-    class Model(BaseModel):
-        model_config = ConfigDict(use_x_enum_varnames=True)
-        value: MyEnum
-
-    schema = Model.model_json_schema()
-    # insert_assert(schema)
-    assert schema['$defs']['MyEnum'] == {
-        'enum': ['foo', 'bar', 'baz'],
-        'title': 'MyEnum',
-        'type': 'string',
-        'x-enum-varnames': ['FOO', 'BAR', 'BAZ'],
-    }
-
-
-def test_x_enum_varnames_with_model_disabled_no_config():
-    class MyEnum(str, Enum):
-        FOO = 'foo'
-        BAR = 'bar'
-        BAZ = 'baz'
-
-    class Model(BaseModel):
-        value: MyEnum
-
-    schema = Model.model_json_schema()
-    assert 'x-enum-varnames' not in schema['$defs']['MyEnum']
-
-
-def test_x_enum_varnames_with_model_disabled_via_config():
-    class MyEnum(str, Enum):
-        FOO = 'foo'
-        BAR = 'bar'
-        BAZ = 'baz'
-
-    class Model(BaseModel):
-        model_config = ConfigDict(use_x_enum_varnames=False)
-        value: MyEnum
-
-    schema = Model.model_json_schema()
-    assert 'x-enum-varnames' not in schema['$defs']['MyEnum']
-
-
 def test_x_enum_varnames_int_enum():
     class Status(IntEnum):
         ACTIVE = 1
@@ -6269,25 +6208,6 @@ def test_x_enum_varnames_int_enum():
         'title': 'Model',
         'type': 'object',
     }
-
-
-def test_x_enum_varnames_multiple_enums():
-    class Color(str, Enum):
-        RED = 'red'
-        GREEN = 'green'
-
-    class Size(str, Enum):
-        SMALL = 'S'
-        LARGE = 'L'
-
-    class Model(BaseModel):
-        model_config = ConfigDict(use_x_enum_varnames=True)
-        color: Color
-        size: Size
-
-    schema = Model.model_json_schema()
-    assert schema['$defs']['Color']['x-enum-varnames'] == ['RED', 'GREEN']
-    assert schema['$defs']['Size']['x-enum-varnames'] == ['SMALL', 'LARGE']
 
 
 def test_x_enum_varnames_shared_enum_different_configs():
