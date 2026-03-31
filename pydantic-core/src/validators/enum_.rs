@@ -46,7 +46,7 @@ impl BuildValidator for BuildEnumValidator {
         let class: Bound<PyType> = schema.get_as_req(intern!(py, "cls"))?;
         let class_repr = class_repr(schema, &class)?;
 
-        let lookup = LiteralLookup::new(py, expected.into_iter())?;
+        let lookup = Box::new(LiteralLookup::new(py, expected.into_iter())?);
 
         macro_rules! build {
             ($vv:ty, $name_prefix:literal) => {
@@ -87,7 +87,7 @@ pub trait EnumValidateValue: std::fmt::Debug + Clone + Send + Sync {
 pub struct EnumValidator<T: EnumValidateValue> {
     phantom: PhantomData<T>,
     class: Py<PyType>,
-    lookup: LiteralLookup<Py<PyAny>>,
+    lookup: Box<LiteralLookup<Py<PyAny>>>,
     missing: Option<Py<PyAny>>,
     expected_repr: String,
     strict: bool,
