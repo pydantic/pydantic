@@ -115,7 +115,7 @@ impl TypeSerializer for UnionSerializer {
 
 #[derive(Debug)]
 pub struct TaggedUnionSerializer {
-    discriminator: Discriminator,
+    discriminator: Box<Discriminator>,
     lookup: PyHashTable<usize>,
     choices: UnionChoices,
     name: OnceLock<String>,
@@ -152,7 +152,7 @@ impl BuildSerializer for TaggedUnionSerializer {
         };
 
         Ok(CombinedSerializer::TaggedUnion(Self {
-            discriminator,
+            discriminator: Box::new(discriminator),
             lookup,
             choices,
             name: OnceLock::new(),
@@ -237,7 +237,7 @@ impl TypeSerializer for TaggedUnionSerializer {
 impl TaggedUnionSerializer {
     fn get_discriminator_value<'py>(&self, value: &Bound<'py, PyAny>) -> Option<Bound<'py, PyAny>> {
         let py = value.py();
-        match &self.discriminator {
+        match &*self.discriminator {
             Discriminator::LookupPaths(lookup_paths) => {
                 // FIXME: should we be emitting warnings for failed discriminator lookups?
 

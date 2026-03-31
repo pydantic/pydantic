@@ -1,10 +1,10 @@
 [package]
 name = "pydantic-core"
-version = "2.44.0"
+version = "2.45.0"
 edition = "2024"
 license = "MIT"
-homepage = "https://github.com/pydantic/pydantic-core"
-repository = "https://github.com/pydantic/pydantic-core.git"
+homepage = "https://github.com/pydantic/pydantic"
+repository = "https://github.com/pydantic/pydantic.git"
 readme = "README.md"
 include = [
     "/pyproject.toml",
@@ -44,7 +44,7 @@ idna = "1.1.0"
 base64 = "0.22.1"
 num-bigint = "0.4.6"
 num-traits = "0.2.19"
-uuid = "1.21.0"
+uuid = "1.23.0"
 jiter = { version = "0.13.0", features = ["python"] }
 hex = "0.4.3"
 percent-encoding = "2.3.2"
