@@ -211,6 +211,13 @@ impl TupleSerializer {
             .to_py_err());
         } else {
             use_serializers!(self.serializers.iter());
+            if n_items < self.serializers.len() {
+                state
+                    .warnings
+                    .register_warning(PydanticSerializationUnexpectedValue::new_from_msg(Some(
+                        "Unexpected too few items present in tuple".to_string(),
+                    )));
+            }
             let mut warned = false;
             for (i, element) in py_tuple_iter.enumerate() {
                 if !warned {
