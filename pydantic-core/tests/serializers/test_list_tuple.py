@@ -339,17 +339,20 @@ def test_positional_tuple():
     assert s.to_python((1, b'2', 3.0)) == (1, b'2', 3.0)
     with pytest.warns(UserWarning, match='Unexpected extra items present in tuple'):
         assert s.to_python((1, b'2', 3.0, 123)) == (1, b'2', 3.0, 123)
-    assert s.to_python((1, b'2')) == (1, b'2')
+    with pytest.warns(UserWarning, match='Unexpected too few items present in tuple'):
+        assert s.to_python((1, b'2')) == (1, b'2')
 
     assert s.to_python((1, b'2', 3.0), mode='json') == [1, '2', 3.0]
     with pytest.warns(UserWarning, match='Unexpected extra items present in tuple'):
         assert s.to_python((1, b'2', 3.0, 123), mode='json') == [1, '2', 3.0, 123]
-    assert s.to_python((1, b'2'), mode='json') == [1, '2']
+    with pytest.warns(UserWarning, match='Unexpected too few items present in tuple'):
+        assert s.to_python((1, b'2'), mode='json') == [1, '2']
 
     assert s.to_json((1, b'2', 3.0)) == b'[1,"2",3.0]'
     with pytest.warns(UserWarning, match='Unexpected extra items present in tuple'):
         assert s.to_json((1, b'2', 3.0, 123)) == b'[1,"2",3.0,123]'
-    assert s.to_json((1, b'2')) == b'[1,"2"]'
+    with pytest.warns(UserWarning, match='Unexpected too few items present in tuple'):
+        assert s.to_json((1, b'2')) == b'[1,"2"]'
 
 
 def test_function_positional_tuple():
