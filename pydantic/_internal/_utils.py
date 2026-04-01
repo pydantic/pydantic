@@ -20,7 +20,7 @@ from itertools import zip_longest
 from types import BuiltinFunctionType, CodeType, FunctionType, GeneratorType, LambdaType, ModuleType
 from typing import TYPE_CHECKING, Any, Generic, TypeVar, overload
 
-from pydantic_core import MISSING
+from pydantic_core import MISSING, PydanticUndefined
 from typing_extensions import TypeAlias, TypeGuard, deprecated
 
 from pydantic import PydanticDeprecatedSince211
@@ -338,7 +338,7 @@ def smart_deepcopy(obj: Obj) -> Obj:
     Use obj.copy() for built-in empty collections
     Use copy.deepcopy() for non-empty collections and unknown objects.
     """
-    if obj is MISSING:
+    if obj is MISSING or obj is PydanticUndefined:
         return obj  # pyright: ignore[reportReturnType]
     obj_type = obj.__class__
     if obj_type in IMMUTABLE_NON_COLLECTIONS_TYPES:

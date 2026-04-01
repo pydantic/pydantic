@@ -68,7 +68,7 @@ def test_private_attribute_nested():
 def test_private_attribute_factory():
     default = {'a': {}}
 
-    def factory():
+    def factory() -> dict[str, dict]:
         return default
 
     class Model(BaseModel):
@@ -86,6 +86,48 @@ def test_private_attribute_factory():
 
     assert m.model_dump() == {}
     assert m.__dict__ == {}
+
+
+def test_private_attribute_factory_uses_validated_data():
+    def factory(data: dict[str, str]) -> str:
+        return data['foo'] + data['bar']
+
+    class Model(BaseModel):
+        foo: str
+        bar: str
+        _foobaz = PrivateAttr(default_factory=factory)
+
+    m = Model(foo='foo', bar='bar')
+    assert m._foobaz == 'foobar'
+
+
+def test_private_attribute_factory_uses_other_private_attribute():
+    def factory(data: dict[str, str]) -> str:
+        return data['foo'] + data['bar'] + data['_foobaz']
+
+    class Model(BaseModel):
+        foo: str
+        bar: str
+        _foobaz = PrivateAttr(default='foobaz')
+        _foobazfoo = PrivateAttr(default_factory=factory)
+
+    m = Model(foo='foo', bar='bar')
+    assert m._foobaz == 'foobaz'
+    assert m._foobazfoo == 'foobarfoobaz'
+
+
+def test_private_attribute_factory_unset_private():
+    def factory(data: dict[str, str]) -> str:
+        return data['foo'] + data['bar'] + data['_foobazfoo']
+
+    class Model(BaseModel):
+        foo: str
+        bar: str
+        _foobaz = PrivateAttr(default_factory=factory)
+        _foobazfoo = PrivateAttr(default='foobazfoo')
+
+    with pytest.raises(KeyError, match='_foobazfoo'):
+        Model(foo='foo', bar='bar')
 
 
 def test_private_attribute_annotation():
