@@ -733,15 +733,13 @@ We no longer (and never fully did) support composing a mix of `dict` and `callab
 
 ### `WithJsonSchema` annotation
 
-API Documentation
-
-pydantic.json_schema.WithJsonSchema
-
 Tip
 
-Using WithJsonSchema is preferred over [implementing `__get_pydantic_json_schema__`](#implementing_get_pydantic_json_schema) for custom types, as it's more simple and less error-prone.
+Using WithJsonSchema is preferred over [implementing `__get_pydantic_json_schema__()`](#implementing_get_pydantic_json_schema) for custom types, as it's more simple and less error-prone.
 
-The WithJsonSchema annotation can be used to override the generated (base) JSON schema for a given type without the need to implement `__get_pydantic_core_schema__` or `__get_pydantic_json_schema__` on the type itself. Note that this overrides the whole JSON Schema generation process for the field (in the following example, the `'type'` also needs to be provided).
+An annotation used to override the JSON Schema for a type.
+
+This is useful when you want to set a JSON Schema for a type that don't produce any JSON Schemas by default (e.g. Callable). Note that this overrides the whole generated JSON Schema for the type (in the following example, the `'type'` also needs to be provided).
 
 ```python
 import json
@@ -786,6 +784,8 @@ JSON output:
 }
 
 ```
+
+See the API documentation for more details.
 
 Note
 

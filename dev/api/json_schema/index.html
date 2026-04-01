@@ -16613,14 +16613,56 @@ just return None in situations where you don't want warnings to be emitted.</p>
 <p class="admonition-title">Usage Documentation</p>
 <p><a href="../../concepts/json_schema/#withjsonschema-annotation"><code>WithJsonSchema</code> Annotation</a></p>
 </div>
-<p>Add this as an annotation on a field to override the (base) JSON schema that would be generated for that field.
-This provides a way to set a JSON schema for types that would otherwise raise errors when producing a JSON schema,
-such as Callable, or types that have an is-instance core schema, without needing to go so far as creating a
-custom subclass of pydantic.json_schema.GenerateJsonSchema.
-Note that any <em>modifications</em> to the schema that would normally be made (such as setting the title for model fields)
-will still be performed.</p>
-<p>If <code>mode</code> is set this will only apply to that schema generation mode, allowing you
-to set different json schemas for validation and serialization.</p>
+<p>An annotation used to override the JSON Schema for a type.</p>
+<p>This is useful when you want to set a JSON Schema for a type that don't produce any JSON Schemas by default
+(e.g. <a class="autorefs autorefs-external" href="https://docs.python.org/3/library/collections.abc.html#collections.abc.Callable"><code>Callable</code></a>).</p>
+<p>If <code>mode</code> is set this will only apply to that schema generation mode, allowing you to set different JSON Schemas for validation and serialization.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>If the <code>WithJsonSchema</code> annotation is coupled with the <a class="autorefs autorefs-internal" href="../fields/#pydantic.fields.Field"><code>Field()</code></a> function, the behavior overriding will vary depending on the location:</p>
+<ul>
+<li>
+<p>If the <a class="autorefs autorefs-external" href="https://docs.python.org/3/library/typing.html#typing.Annotated"><code>Annotated</code></a> metadata is specified at the "top-level" field, <code>Field()</code> metadata arguments
+  (excluding <a href="../../concepts/fields/#field-constraints">constraints</a>) such as <code>title</code> and <code>description</code> will be applied on
+  top of the <code>WithJsonSchema</code>, no matter the order:</p>
+<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Annotated</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">pydantic</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">Field</span><span class="p">,</span> <span class="n">WithJsonSchema</span>
+
+<span class="k">class</span><span class="w"> </span><span class="nc">Model</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="n">field</span><span class="p">:</span> <span class="n">Annotated</span><span class="p">[</span>
+        <span class="nb">int</span><span class="p">,</span>
+        <span class="n">Field</span><span class="p">(</span><span class="n">title</span><span class="o">=</span><span class="s1">&#39;My Field&#39;</span><span class="p">),</span>
+        <span class="n">WithJsonSchema</span><span class="p">({</span><span class="s1">&#39;type&#39;</span><span class="p">:</span> <span class="s1">&#39;integer&#39;</span><span class="p">,</span> <span class="s1">&#39;extra&#39;</span><span class="p">:</span> <span class="s1">&#39;data&#39;</span><span class="p">}),</span>
+    <span class="p">]</span>
+
+<span class="n">Model</span><span class="o">.</span><span class="n">model_json_schema</span><span class="p">()[</span><span class="s1">&#39;properties&#39;</span><span class="p">][</span><span class="s1">&#39;field&#39;</span><span class="p">]</span>
+<span class="c1">#&gt; {&#39;type&#39;: &#39;integer&#39;, &#39;extra&#39;: &#39;data&#39;, &#39;title&#39;: &#39;My Field&#39;}</span>
+</code></pre></div>
+</li>
+<li>
+<p>If the <a class="autorefs autorefs-external" href="https://docs.python.org/3/library/typing.html#typing.Annotated"><code>Annotated</code></a> metadata is specified on a specific inner type, <code>WithJsonSchema</code> will unconditionally
+  override the JSON Schema:</p>
+<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Annotated</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">pydantic</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">Field</span><span class="p">,</span> <span class="n">WithJsonSchema</span>
+
+<span class="k">class</span><span class="w"> </span><span class="nc">Model</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="n">field</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span>
+        <span class="n">Annotated</span><span class="p">[</span>
+            <span class="nb">int</span><span class="p">,</span>
+            <span class="n">Field</span><span class="p">(</span><span class="n">title</span><span class="o">=</span><span class="s1">&#39;My Field&#39;</span><span class="p">),</span>
+            <span class="n">WithJsonSchema</span><span class="p">({</span><span class="s1">&#39;type&#39;</span><span class="p">:</span> <span class="s1">&#39;integer&#39;</span><span class="p">,</span> <span class="s1">&#39;extra&#39;</span><span class="p">:</span> <span class="s1">&#39;data&#39;</span><span class="p">}),</span>
+        <span class="p">]</span>
+    <span class="p">]</span>
+
+<span class="n">Model</span><span class="o">.</span><span class="n">model_json_schema</span><span class="p">()[</span><span class="s1">&#39;properties&#39;</span><span class="p">][</span><span class="s1">&#39;field&#39;</span><span class="p">]</span>
+<span class="c1">#&gt; {&#39;items&#39;: {&#39;extra&#39;: &#39;data&#39;, &#39;type&#39;: &#39;integer&#39;}, &#39;title&#39;: &#39;Field&#39;, &#39;type&#39;: &#39;array&#39;}</span>
+</code></pre></div>
+</li>
+</ul>
+<p>See also the documentation about <a href="../../concepts/fields/#the-annotated-pattern">the annotated pattern</a>.</p>
+</div>
 
 
 
@@ -16695,17 +16737,17 @@ allowing you to add different examples for validation and serialization.</p>
 
                   <details class="quote">
                     <summary>Source code in <code>pydantic/json_schema.py</code></summary>
-                    <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">2701</span>
-<span class="normal">2702</span>
-<span class="normal">2703</span>
-<span class="normal">2704</span>
-<span class="normal">2705</span>
-<span class="normal">2706</span>
-<span class="normal">2707</span>
-<span class="normal">2708</span>
-<span class="normal">2709</span>
-<span class="normal">2710</span>
-<span class="normal">2711</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
+                    <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">2743</span>
+<span class="normal">2744</span>
+<span class="normal">2745</span>
+<span class="normal">2746</span>
+<span class="normal">2747</span>
+<span class="normal">2748</span>
+<span class="normal">2749</span>
+<span class="normal">2750</span>
+<span class="normal">2751</span>
+<span class="normal">2752</span>
+<span class="normal">2753</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
     <span class="bp">self</span><span class="p">,</span> <span class="n">examples</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span> <span class="o">|</span> <span class="nb">list</span><span class="p">[</span><span class="n">Any</span><span class="p">],</span> <span class="n">mode</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s1">&#39;validation&#39;</span><span class="p">,</span> <span class="s1">&#39;serialization&#39;</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
     <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">examples</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
