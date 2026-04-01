@@ -734,7 +734,7 @@ class FieldInfo(_repr.Representation):
             validated_data: The already validated data to be passed to the default factory.
 
         Returns:
-            The default value, calling the default factory if requested or `None` if not set.
+            The default value, calling the default factory if requested or `PydanticUndefined` if not set.
         """
         return _fields.resolve_default_value(
             default=self.default,

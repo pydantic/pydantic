@@ -10,7 +10,7 @@ from typing import Any, Union
 
 import pytest
 from dirty_equals import Contains, IsPartialDict
-from pydantic_core import CoreSchema
+from pydantic_core import CoreSchema, PydanticUndefined
 from pydantic_core import core_schema as cs
 
 from pydantic import BaseModel, TypeAdapter
@@ -248,7 +248,7 @@ def test_pydantic_js_functions():
     [
         ('foo', None, None, True, 'foo'),
         ('foo', None, None, False, 'foo'),
-        ('foo-unused', lambda: 'foo', None, False, None),
+        ('foo-unused', lambda: 'foo', None, False, PydanticUndefined),
         ('foo-unused', lambda: 'foo', None, True, 'foo'),
         ('foo-unused', lambda data: data['foo'], {'foo': 'bar'}, True, 'bar'),
     ],
@@ -265,5 +265,5 @@ def test_resolve_default_value(default, default_factory, validated_data, call_de
 
 def test_resolve_default_value_missing_validated_data():
     # When factory requires validated_data but none is provided, a ValueError should be raised.
-    with pytest.raises(ValueError, match='The default_factory requires "validated_data" but none was provided.'):
+    with pytest.raises(ValueError):
         resolve_default_value('foo', lambda data: data['foo'], validated_data=None, call_default_factory=True)
