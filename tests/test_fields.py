@@ -455,7 +455,7 @@ def test_default_factory_without_validated_data_unsupported() -> None:
     class FooBar(BaseModel):
         a: int = Field(default_factory=lambda x: x)
 
-    assert FooBar.model_fields['a'].get_default() is None
+    assert FooBar.model_fields['a'].get_default() is PydanticUndefined
 
     with pytest.raises(ValueError):
         FooBar.model_fields['a'].get_default(call_default_factory=True)

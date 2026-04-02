@@ -8,7 +8,7 @@ from collections.abc import Mapping
 from functools import cache
 from inspect import Parameter, ismethoddescriptor
 from re import Pattern
-from typing import TYPE_CHECKING, Any, Callable, TypeVar
+from typing import TYPE_CHECKING, Any, Callable, TypeVar, cast
 
 from pydantic_core import PydanticUndefined
 from typing_extensions import TypeIs
@@ -700,3 +700,30 @@ def takes_validated_data_argument(
     parameters = list(sig.parameters.values())
 
     return len(parameters) == 1 and can_be_positional(parameters[0]) and parameters[0].default is Parameter.empty
+
+
+def resolve_default_value(
+    default: Any,
+    default_factory: Callable[[], Any] | Callable[[dict[str, Any]], Any] | None,
+    *,
+    validated_data: dict[str, Any] | None = None,
+    call_default_factory: bool = False,
+) -> Any:
+    """Resolve the default value using either a static default or a default_factory."""
+    from ._utils import smart_deepcopy
+
+    if default_factory is None:
+        return smart_deepcopy(default)
+    if call_default_factory:
+        if takes_validated_data_argument(default_factory=default_factory):
+            fac = cast('Callable[[dict[str, Any]], Any]', default_factory)
+            if validated_data is None:
+                raise ValueError(
+                    "The default factory requires the 'validated_data' argument, which was not provided when calling 'get_default()'."
+                )
+            return fac(validated_data)
+        else:
+            fac = cast('Callable[[], Any]', default_factory)
+            return fac()
+
+    return PydanticUndefined
