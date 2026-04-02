@@ -5872,6 +5872,11 @@ If you have multiple variables with the same structure they will be merged.</p>
 <p>Sub model has to inherit from <code>pydantic.BaseModel</code>, Otherwise <code>pydantic-settings</code> will initialize sub model,
 collects values for sub model fields separately, and you may get unexpected results.</p>
 </div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>The <code>env_nested_delimiter</code> option applies only to variables that point to declared fields.
+If a variable points to an unknown field no conversion will take place.</p>
+</div>
 <p>As an example, given the following environment variables:
 <div class="language-bash highlight"><pre><span></span><code><span class="c1"># your environment</span>
 <span class="nb">export</span><span class="w"> </span><span class="nv">V0</span><span class="o">=</span><span class="m">0</span>
@@ -6211,6 +6216,9 @@ see <a href="https://saurabh-kumar.com/python-dotenv/#usages">python-dotenv's do
 <p>Pydantic settings consider <code>extra</code> config in case of dotenv file. It means if you set the <code>extra=forbid</code> (<em>default</em>)
 on <code>model_config</code> and your dotenv file contains an entry for a field that is not defined in settings model,
 it will raise <code>ValidationError</code> in settings construction.</p>
+<p>This behaviour can be customized by using the setting <code>dotenv_filtering</code> that supports two additional alternative modes:
+- <code>'match_prefix'</code>: only the variables that match the prefix will be passed to the model. Useful when used in conjunction with <code>env_prefix</code> to "scope" a single dotenv file to a specific model.
+- <code>'only_existing'</code>: only the variables that have a corresponding field will be passed to the model. When using this option the dotenv setting source will behave like the env settings source.</p>
 <p>For compatibility with pydantic 1.x BaseSettings you should use <code>extra=ignore</code>:
 <div class="language-py highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">pydantic_settings</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseSettings</span><span class="p">,</span> <span class="n">SettingsConfigDict</span>
 
@@ -6220,7 +6228,7 @@ it will raise <code>ValidationError</code> in settings construction.</p>
 </code></pre></div></p>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
-<p>Pydantic settings loads all the values from dotenv file and passes it to the model, regardless of the model's <code>env_prefix</code>.
+<p>Pydantic settings loads all the values from dotenv file and passes it to the model, regardless of the model's <code>env_prefix</code>, unless <code>dotenv_filtering</code> is used.
 So if you provide extra values in a dotenv file, whether they start with <code>env_prefix</code> or not,
 a <code>ValidationError</code> will be raised.</p>
 </div>

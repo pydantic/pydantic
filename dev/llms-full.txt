@@ -7154,6 +7154,10 @@ Note
 
 Sub model has to inherit from `pydantic.BaseModel`, Otherwise `pydantic-settings` will initialize sub model, collects values for sub model fields separately, and you may get unexpected results.
 
+Note
+
+The `env_nested_delimiter` option applies only to variables that point to declared fields. If a variable points to an unknown field no conversion will take place.
+
 As an example, given the following environment variables:
 
 ```bash
@@ -7522,6 +7526,11 @@ Because python-dotenv is used to parse the file, bash-like semantics such as `ex
 
 Pydantic settings consider `extra` config in case of dotenv file. It means if you set the `extra=forbid` (*default*) on `model_config` and your dotenv file contains an entry for a field that is not defined in settings model, it will raise `ValidationError` in settings construction.
 
+This behaviour can be customized by using the setting `dotenv_filtering` that supports two additional alternative modes:
+
+- `'match_prefix'`: only the variables that match the prefix will be passed to the model. Useful when used in conjunction with `env_prefix` to "scope" a single dotenv file to a specific model.
+- `'only_existing'`: only the variables that have a corresponding field will be passed to the model. When using this option the dotenv setting source will behave like the env settings source.
+
 For compatibility with pydantic 1.x BaseSettings you should use `extra=ignore`:
 
 ```py
@@ -7535,7 +7544,7 @@ class Settings(BaseSettings):
 
 Note
 
-Pydantic settings loads all the values from dotenv file and passes it to the model, regardless of the model's `env_prefix`. So if you provide extra values in a dotenv file, whether they start with `env_prefix` or not, a `ValidationError` will be raised.
+Pydantic settings loads all the values from dotenv file and passes it to the model, regardless of the model's `env_prefix`, unless `dotenv_filtering` is used. So if you provide extra values in a dotenv file, whether they start with `env_prefix` or not, a `ValidationError` will be raised.
 
 ## Command Line Support
 
