@@ -160,6 +160,8 @@ The `data` argument will *only* contain the already validated data, based on the
 
 Added in v2.10: Default factories can take already validated data as an argument.
 
+Added in v2.13: Default factories for [private attributes](../models/#private-model-attributes) can take the validated data as an argument.
+
 ## Validate default values
 
 By default, Pydantic will *not* validate default values. The `validate_default` field parameter (or the validate_default configuration value) can be used to enable this behavior:

@@ -6125,6 +6125,9 @@ calls to <code>__init__</code>, <code>model_validate</code>, etc.</p>
 </code></pre></div>
 <p>Private attribute names must start with underscore to prevent conflicts with model fields. However, dunder names
 (such as <code>__attr__</code>) are not supported, and will be completely ignored from the model definition.</p>
+<div style="border-left: .15rem solid rgb(79, 196, 100); padding: 0 .5rem;">
+<p><span style="font-style: italic; color: rgb(79, 196, 100);">Added in v2.13: </span><span>Default factories can take the validated model data as an argument.</span></p>
+</div>
 <h2 id="model-signature">Model signature<a class="headerlink" href="#model-signature" title="Permanent link">&para;</a></h2>
 <p>All Pydantic models will have their signature generated based on their fields:</p>
 <div class="language-python highlight"><pre><span></span><code><span class="kn">import</span><span class="w"> </span><span class="nn">inspect</span>

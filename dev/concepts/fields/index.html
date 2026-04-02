@@ -4444,6 +4444,9 @@ default was explicitly specified. This is no longer the case in Pydantic V2.</sp
 <div style="border-left: .15rem solid rgb(79, 196, 100); padding: 0 .5rem;">
 <p><span style="font-style: italic; color: rgb(79, 196, 100);">Added in v2.10: </span><span>Default factories can take already validated data as an argument.</span></p>
 </div>
+<div style="border-left: .15rem solid rgb(79, 196, 100); padding: 0 .5rem;">
+<p><span style="font-style: italic; color: rgb(79, 196, 100);">Added in v2.13: </span><span>Default factories for <a href="../models/#private-model-attributes">private attributes</a> can take the validated data as an argument.</span></p>
+</div>
 <h2 id="validate-default-values">Validate default values<a class="headerlink" href="#validate-default-values" title="Permanent link">&para;</a></h2>
 <p>By default, Pydantic will <em>not</em> validate default values. The <code>validate_default</code> field parameter
 (or the <a class="autorefs autorefs-internal" href="../../api/config/#pydantic.config.ConfigDict.validate_default"><code>validate_default</code></a> configuration value) can be used
