@@ -1638,6 +1638,10 @@ print(m._secret_value)
 Private attribute names must start with underscore to prevent conflicts with model fields. However, dunder names
 (such as `__attr__`) are not supported, and will be completely ignored from the model definition.
 
+/// version-added | v2.13
+Default factories can take the validated model data as an argument.
+///
+
 ## Model signature
 
 All Pydantic models will have their signature generated based on their fields:
