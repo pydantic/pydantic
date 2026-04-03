@@ -304,6 +304,16 @@ def collect_model_fields(  # noqa: C901
             # Then `assigned_value` would be the method, even though no default was specified:
             assigned_value = PydanticUndefined
 
+        # getattr can pick up a class attribute from a non-model parent even when a model
+        # parent already defines this field. Discard it so we copy from the parent's field info below.
+        if (
+            assigned_value is not PydanticUndefined
+            and ann_name not in cls_annotations
+            and ann_name not in cls.__dict__
+            and ann_name in parent_fields_lookup
+        ):
+            assigned_value = PydanticUndefined
+
         if not is_valid_field_name(ann_name):
             continue
         if cls.__pydantic_root_model__ and ann_name != 'root':
