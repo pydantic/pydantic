@@ -5605,9 +5605,14 @@ def test_base64(field_type, input_data, expected_value, serialized_data):
     }
 
     if field_type in (Base64Bytes,):
-        base64_schema = {'contentEncoding': 'base64', 'contentMediaType': 'application/octet-stream', 'type': 'string'}
+        base64_schema = {
+            'contentEncoding': 'base64',
+            'contentMediaType': 'application/octet-stream',
+            'format': 'base64',
+            'type': 'string',
+        }
     else:
-        base64_schema = {'contentEncoding': 'base64', 'type': 'string'}
+        base64_schema = {'contentEncoding': 'base64', 'format': 'base64', 'type': 'string'}
 
     assert Model.model_json_schema() == {
         'properties': {
@@ -5705,10 +5710,11 @@ def test_base64url(field_type, input_data, expected_value, serialized_data):
         base64url_schema = {
             'contentEncoding': 'base64url',
             'contentMediaType': 'application/octet-stream',
+            'format': 'base64url',
             'type': 'string',
         }
     else:
-        base64url_schema = {'contentEncoding': 'base64url', 'type': 'string'}
+        base64url_schema = {'contentEncoding': 'base64url', 'format': 'base64url', 'type': 'string'}
 
     assert Model.model_json_schema() == {
         'properties': {
