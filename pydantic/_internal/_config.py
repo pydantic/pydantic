@@ -1,5 +1,6 @@
 from __future__ import annotations as _annotations
 
+import difflib
 import warnings
 from contextlib import contextmanager
 from re import Pattern
@@ -337,6 +338,14 @@ def prepare_config(config: ConfigDict | dict[str, Any] | type[Any] | None) -> Co
         config = {k: getattr(config, k) for k in dir(config) if not k.startswith('__')}
 
     config_dict = cast(ConfigDict, config)
+    typo_warnings = []
+    valid_config_keys = config_keys | V2_REMOVED_KEYS | V2_RENAMED_KEYS.keys()
+    for key in sorted(config_dict.keys() - valid_config_keys):
+        matches = difflib.get_close_matches(key, valid_config_keys, n=1, cutoff=0.75)
+        if matches:
+            typo_warnings.append(f'{key!r} is not a valid config key; did you mean {matches[0]!r}?')
+    if typo_warnings:
+        warnings.warn('\n'.join(typo_warnings), UserWarning)
     check_deprecated(config_dict)
     return config_dict
 

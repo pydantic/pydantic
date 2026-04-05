@@ -483,9 +483,31 @@ def test_invalid_extra():
 
 
 def test_invalid_config_keys():
-    @validate_call(config={'alias_generator': lambda x: x})
-    def my_function():
-        pass
+    warning_message = "'stric' is not a valid config key; did you mean 'strict'?"
+    config_dict = {'stric': True}
+
+    with pytest.warns(UserWarning, match=re.escape(warning_message)):
+
+        class MyModel(BaseModel):
+            model_config = config_dict
+
+    assert MyModel.model_config == {'stric': True}
+    assert 'strict' not in MyModel.model_config
+
+    with pytest.warns(UserWarning, match=re.escape(warning_message)):
+        create_model('MyCreatedModel', __config__=config_dict)
+
+    with pytest.warns(UserWarning, match=re.escape(warning_message)):
+
+        @pydantic_dataclass(config=config_dict)
+        class MyDataclass:
+            pass
+
+    with pytest.warns(UserWarning, match=re.escape(warning_message)):
+
+        @validate_call(config=config_dict)
+        def my_function():
+            pass
 
 
 def test_multiple_inheritance_config():
