@@ -196,7 +196,7 @@ jobs:
           persist-credentials: false
 
       - name: Set up PDM
-        uses: pdm-project/setup-pdm@94a823180e06fcde4ad29308721954a521c96ed0 # v4.4
+        uses: pdm-project/setup-pdm@973541a5febeafcfdadf8a51211435be6ecfd90f # v4.5
         with:
           python-version: ${{ matrix.python-version }}
 
@@ -466,7 +466,7 @@ jobs:
       # Note: BentoML workflow uses nox sessions which don't allow installing
       # the custom Pydantic version. Instead, we manually set up the env.
       - name: Set up PDM
-        uses: pdm-project/setup-pdm@94a823180e06fcde4ad29308721954a521c96ed0 # v4.4
+        uses: pdm-project/setup-pdm@973541a5febeafcfdadf8a51211435be6ecfd90f # v4.5
         with:
           python-version: ${{ matrix.python-version }}
 
