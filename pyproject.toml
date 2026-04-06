@@ -140,6 +140,9 @@ path = 'pydantic/version.py'
 [tool.hatch.metadata]
 allow-direct-references = true
 
+[tool.hatch.build.targets.wheel]
+require-runtime-dependencies = true
+
 [tool.hatch.build.targets.sdist]
 # limit which files are included in the sdist (.tar.gz) asset,
 # see https://github.com/pydantic/pydantic/pull/4542
