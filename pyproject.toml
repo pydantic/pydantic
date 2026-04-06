@@ -125,6 +125,10 @@ typechecking = [
     'pyrefly',
     'pydantic-settings',
 ]
+build = [
+    'build',
+    'twine',
+]
 
 all = [
   { include-group = 'dev' },
@@ -132,6 +136,7 @@ all = [
   { include-group = 'linting' },
   { include-group = 'testing-extra' },
   { include-group = 'typechecking' },
+  { include-group = 'build' },
 ]
 
 [tool.hatch.version]

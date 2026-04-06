@@ -13,17 +13,22 @@ env:
   UV_FROZEN: true
   UV_PYTHON: 3.14
 
+permissions:
+  contents: read
+
 jobs:
   codspeed-profiling:
     name: CodSpeed profiling
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
 
-      - uses: astral-sh/setup-uv@v7
+      - uses: astral-sh/setup-uv@cec208311dfd045dd5311c1add060b2062131d57 # v8.0.0
 
       # Using this action is still necessary for CodSpeed to work:
-      - uses: actions/setup-python@v6
+      - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
         with:
           python-version: ${{ env.UV_PYTHON }}
 
@@ -31,12 +36,14 @@ jobs:
         run: uv sync --all-packages --group testing-extra --extra email --frozen
 
       - name: install rust stable
-        uses: dtolnay/rust-toolchain@stable
+        # no release versioning, see https://github.com/dtolnay/rust-toolchain/issues/180
+        uses: dtolnay/rust-toolchain@efa25f7f19611383d5b0ccf2d1c8914531636bf9
         with:
           components: llvm-tools
+          toolchain: stable
 
       - name: cache rust
-        uses: Swatinem/rust-cache@v2
+        uses: Swatinem/rust-cache@c19371144df3bb44fab255c43d04cbc2ab54d1c4 # v2.9.1
         with:
           workspaces: pydantic-core
 
@@ -50,7 +57,7 @@ jobs:
           CARGO_PROFILE_RELEASE_STRIP: 'false'
 
       - name: Run CodSpeed benchmarks
-        uses: CodSpeedHQ/action@v4
+        uses: CodSpeedHQ/action@1c8ae4843586d3ba879736b7f6b7b0c990757fab # v4.12.1
         with:
           mode: instrumentation
           run: uv run --no-sync pytest ./tests/benchmarks ./tests/pydantic_core/benchmarks --codspeed
