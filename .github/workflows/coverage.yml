@@ -1,6 +1,6 @@
 name: Post coverage comment
 
-on:
+on: # zizmor: ignore[dangerous-triggers] -- workflow_run is used safely here; no code checkout occurs
   workflow_run:
     workflows: ['CI']
     types:
@@ -19,7 +19,7 @@ jobs:
       # DO NOT run actions/checkout here, for security reasons
       # For details, refer to https://securitylab.github.com/research/github-actions-preventing-pwn-requests/
       - name: Post comment
-        uses: py-cov-action/python-coverage-comment-action@v3
+        uses: py-cov-action/python-coverage-comment-action@7188638f871f721a365d644f505d1ff3df20d683 # v3.40
         with:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GITHUB_PR_RUN_ID: ${{ github.event.workflow_run.id }}

@@ -8,6 +8,9 @@ on:
 env:
   UV_FROZEN: true
 
+permissions:
+  contents: read
+
 jobs:
   find_dependency_cases:
     runs-on: ubuntu-latest
@@ -16,8 +19,12 @@ jobs:
       PYTHON_DEPENDENCY_CASES: ${{ steps.list-python-dependencies.outputs.PYTHON_DEPENDENCY_CASES }}
 
     steps:
-      - uses: actions/checkout@v6
-      - uses: samuelcolvin/list-python-dependencies@main
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
+
+      # no release versioning, see https://github.com/samuelcolvin/list-python-dependencies/issues/2
+      - uses: samuelcolvin/list-python-dependencies@43f660fbd655f25c3e3ebd3165b09974bbf98e05
         id: list-python-dependencies
         with:
           mode: first-last
@@ -37,16 +44,20 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
 
-      - uses: actions/setup-python@v6
+      - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
         with:
           python-version: ${{ matrix.python-version }}
 
       - run: pip install uv
       - run: uv sync --all-extras
 
-      - run: uv pip install ${{ matrix.PYTHON_DEPENDENCY_CASE }}
+      - run: uv pip install ${MATRIX_PYTHON_DEPENDENCY_CASE}
+        env:
+          MATRIX_PYTHON_DEPENDENCY_CASE: ${{ matrix.PYTHON_DEPENDENCY_CASE }}
 
       - run: uv pip freeze
 

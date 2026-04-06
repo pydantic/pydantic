@@ -15,15 +15,21 @@ env:
   COLUMNS: 150
   UV_FROZEN: true
 
+permissions:
+  contents: read
+
 jobs:
   lint:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
 
-      - uses: astral-sh/setup-uv@v7
+      - uses: astral-sh/setup-uv@cec208311dfd045dd5311c1add060b2062131d57 # v8.0.0
         with:
           python-version: '3.13'
+          enable-cache: true # zizmor: ignore[cache-poisoning] -- Job does not produce release artifacts and does not have sensitive permissions
 
       - name: Install dependencies
         # Installing pip is required for the pre-commit action:
@@ -31,20 +37,24 @@ jobs:
           uv sync --all-packages --group linting --all-extras
           uv pip install pip
 
-      - uses: pre-commit/action@v3.0.1
+      - uses: pre-commit/action@2c7b3805fd2a0fd8c1884dcaebf91fc102a13ecd # v3.0.1
         with:
           extra_args: --all-files --verbose
         env:
           SKIP: no-commit-to-branch
+          UV_NO_PROGRESS: '1'
 
   test:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
 
-      - uses: astral-sh/setup-uv@v7
+      - uses: astral-sh/setup-uv@cec208311dfd045dd5311c1add060b2062131d57 # v8.0.0
         with:
           python-version: '3.13'
+          enable-cache: true # zizmor: ignore[cache-poisoning] -- Job does not produce release artifacts and does not have sensitive permissions
 
       - name: Install dependencies
         run: uv sync --all-packages --group testing-extra --all-extras
@@ -58,19 +68,25 @@ jobs:
     needs: [lint, test]
     runs-on: ubuntu-latest
     timeout-minutes: 30
+    permissions:
+      contents: write
 
     steps:
       - name: Checkout docs-site
-        uses: actions/checkout@v6
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           ref: docs-site
+          persist-credentials: true
 
       - name: Checkout current branch
-        uses: actions/checkout@v6
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: true
 
-      - uses: astral-sh/setup-uv@v7
+      - uses: astral-sh/setup-uv@cec208311dfd045dd5311c1add060b2062131d57 # v8.0.0
         with:
           python-version: '3.13'
+          enable-cache: false
 
       - run: uv sync --all-packages --group docs --group docs-upload
 
@@ -89,23 +105,24 @@ jobs:
 
       - name: Set git credentials
         run: |
-          git config --global user.name "${{ github.actor }}"
-          git config --global user.email "${{ github.actor }}@users.noreply.github.com"
+          git config --global user.name "${GITHUB_ACTOR}"
+          git config --global user.email "${GITHUB_ACTOR}@users.noreply.github.com"
 
       - run: PYTHONPATH="$PWD${PYTHONPATH:+:${PYTHONPATH}}" uv run mike deploy -b docs-site dev --push
         if: github.ref == 'refs/heads/main'
 
       - if: github.ref == 'refs/heads/docs-update' || startsWith(github.ref, 'refs/tags/')
         id: check-version
-        uses: samuelcolvin/check-python-version@v5
+        uses: samuelcolvin/check-python-version@ee87cddb8049d2694cc03badc8569765a05cef00 # v5
         with:
           version_file_path: 'pydantic/version.py'
           skip_env_check: true
 
-      - run: PYTHONPATH="$PWD${PYTHONPATH:+:${PYTHONPATH}}" uv run mike deploy -b docs-site ${{ steps.check-version.outputs.VERSION_MAJOR_MINOR }} latest --update-aliases --push
+      - run: PYTHONPATH="$PWD${PYTHONPATH:+:${PYTHONPATH}}" uv run mike deploy -b docs-site ${STEPS_CHECK_VERSION_OUTPUTS_VERSION_MAJOR_MINOR} latest --update-aliases --push
         if: ${{ (github.ref == 'refs/heads/docs-update' || startsWith(github.ref, 'refs/tags/')) && !fromJSON(steps.check-version.outputs.IS_PRERELEASE) }}
         env:
           PYDANTIC_VERSION: v${{ steps.check-version.outputs.VERSION }}
+          STEPS_CHECK_VERSION_OUTPUTS_VERSION_MAJOR_MINOR: ${{ steps.check-version.outputs.VERSION_MAJOR_MINOR }}
 
       - run: uv run python docs/plugins/algolia.py upload
         env:
