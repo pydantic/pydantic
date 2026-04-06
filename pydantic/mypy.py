@@ -919,10 +919,11 @@ class PydanticModelTransformer:
                         if arg_name is None or arg_name.startswith('__') or not arg_name.startswith('_'):
                             continue
                         analyzed_variable_type = self._api.anal_type(func_type.arg_types[arg_idx])
-                        if analyzed_variable_type is not None and arg_name == '_cli_settings_source':
-                            # _cli_settings_source is defined as CliSettingsSource[Any], and as such
-                            # the Any causes issues with --disallow-any-explicit. As a workaround, change
-                            # the Any type (as if CliSettingsSource was left unparameterized):
+                        if analyzed_variable_type is not None:
+                            # Private BaseSettings init params (e.g. _cli_settings_source,
+                            # _build_sources) may use generic types parameterized with Any, which
+                            # causes issues with --disallow-any-explicit. As a workaround, change
+                            # explicit Any to omitted-generics Any:
                             analyzed_variable_type = analyzed_variable_type.accept(
                                 ChangeExplicitTypeOfAny(TypeOfAny.from_omitted_generics)
                             )
