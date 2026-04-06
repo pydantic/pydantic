@@ -1678,9 +1678,6 @@ def test_extra_behavior_allow(
     assert new_fields_set == {'not_f'}
 
 
-# We can't test the extra parameter of the validate_* functions above, since the
-# extras_schema parameter isn't valid unless the models are configured with extra='allow'.
-# Test the validate_* extra parameter separately instead:
 @pytest.mark.parametrize(
     'config,schema_extra_behavior_kw',
     [
@@ -1694,20 +1691,30 @@ def test_extra_behavior_allow(
         (None, {'extra_behavior': None}),
     ],
 )
+@pytest.mark.parametrize(
+    'extras_schema_kw,expected_extra_value',
+    [
+        ({}, '123'),
+        ({'extras_schema': core_schema.int_schema()}, 123),
+    ],
+    ids=['extras_schema=unset', 'extras_schema=int'],
+)
 def test_extra_behavior_allow_with_validate_fn_override(
     config: Union[core_schema.CoreConfig, None],
     schema_extra_behavior_kw: dict[str, Any],
+    extras_schema_kw: dict[str, Any],
+    expected_extra_value: Any,
 ):
     v = SchemaValidator(
         core_schema.model_fields_schema(
-            {'f': core_schema.model_field(core_schema.str_schema())}, **schema_extra_behavior_kw
+            {'f': core_schema.model_field(core_schema.str_schema())}, **schema_extra_behavior_kw, **extras_schema_kw
         ),
         config=config,
     )
 
     m, model_extra, fields_set = v.validate_python({'f': 'x', 'extra_field': '123'}, extra='allow')
     assert m == {'f': 'x'}
-    assert model_extra == {'extra_field': '123'}
+    assert model_extra == {'extra_field': expected_extra_value}
     assert fields_set == {'f', 'extra_field'}
 
     v.validate_assignment(m, 'f', 'y', extra='allow')
@@ -1715,7 +1722,7 @@ def test_extra_behavior_allow_with_validate_fn_override(
 
     new_m, new_model_extra, new_fields_set = v.validate_assignment({**m, **model_extra}, 'not_f', '123', extra='allow')
     assert new_m == {'f': 'y'}
-    assert new_model_extra == {'extra_field': '123', 'not_f': '123'}
+    assert new_model_extra == {'extra_field': expected_extra_value, 'not_f': expected_extra_value}
     assert new_fields_set == {'not_f'}
 
 

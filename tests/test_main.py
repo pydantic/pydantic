@@ -2782,6 +2782,26 @@ def test_model_validate_strings_with_validate_fn_override() -> None:
     ]
 
 
+def test_model_validate_with_validate_fn_override_respects_extra_annotation() -> None:
+    class Model(BaseModel, extra='forbid'):
+        __pydantic_extra__: dict[str, int]
+        a: int
+
+    with pytest.raises(ValidationError) as exc_info:
+        Model.model_validate({'a': 1, 'b': 'test'}, extra='allow')
+    assert exc_info.value.errors(include_url=False) == [
+        {
+            'type': 'int_parsing',
+            'loc': ('b',),
+            'msg': 'Input should be a valid integer, unable to parse string as an integer',
+            'input': 'test',
+        }
+    ]
+
+    m = Model.model_validate({'a': 1, 'b': '2'}, extra='allow')
+    assert m.model_extra == {'b': 2}
+
+
 def test_pydantic_hooks() -> None:
     calls = []
 

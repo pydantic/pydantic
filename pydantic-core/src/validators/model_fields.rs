@@ -66,15 +66,13 @@ impl BuildValidator for ModelFieldsValidator {
 
         let extra_behavior = ExtraBehavior::from_schema_or_config(py, schema, config, ExtraBehavior::Ignore)?;
 
-        let extras_validator = match (schema.get_item(intern!(py, "extras_schema"))?, &extra_behavior) {
-            (Some(v), ExtraBehavior::Allow) => Some(build_validator(&v, config, definitions)?),
-            (Some(_), _) => return py_schema_err!("extras_schema can only be used if extra_behavior=allow"),
-            (_, _) => None,
+        let extras_validator = match schema.get_item(intern!(py, "extras_schema"))? {
+            Some(v) => Some(build_validator(&v, config, definitions)?),
+            None => None,
         };
-        let extras_keys_validator = match (schema.get_item(intern!(py, "extras_keys_schema"))?, &extra_behavior) {
-            (Some(v), ExtraBehavior::Allow) => Some(build_validator(&v, config, definitions)?),
-            (Some(_), _) => return py_schema_err!("extras_keys_schema can only be used if extra_behavior=allow"),
-            (_, _) => None,
+        let extras_keys_validator = match schema.get_item(intern!(py, "extras_keys_schema"))? {
+            Some(v) => Some(build_validator(&v, config, definitions)?),
+            None => None,
         };
         let model_name: String = schema
             .get_as(intern!(py, "model_name"))?

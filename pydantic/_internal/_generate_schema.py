@@ -820,22 +820,24 @@ class GenerateSchema:
 
                 extras_schema = None
                 extras_keys_schema = None
-                if core_config.get('extra_fields_behavior') == 'allow' and extra_info is not None:
+                if extra_info is not None:
                     tp = get_origin(extra_info.annotation)
                     if tp not in DICT_TYPES:
-                        raise PydanticSchemaGenerationError(
-                            'The type annotation for `__pydantic_extra__` must be `dict[str, ...]`'
+                        if core_config.get('extra_fields_behavior') == 'allow':
+                            raise PydanticSchemaGenerationError(
+                                'The type annotation for `__pydantic_extra__` must be `dict[str, ...]`'
+                            )
+                    else:
+                        # See the comments in `_get_args_resolving_forward_refs()` for why we need
+                        # to re-evaluate the annotation:
+                        extra_keys_type, extra_items_type = self._get_args_resolving_forward_refs(
+                            extra_info.annotation,
+                            required=True,
                         )
-                    # See the comments in `_get_args_resolving_forward_refs()` for why we need
-                    # to re-evaluate the annotation:
-                    extra_keys_type, extra_items_type = self._get_args_resolving_forward_refs(
-                        extra_info.annotation,
-                        required=True,
-                    )
-                    if extra_keys_type is not str:
-                        extras_keys_schema = self.generate_schema(extra_keys_type)
-                    if not typing_objects.is_any(extra_items_type):
-                        extras_schema = self.generate_schema(extra_items_type)
+                        if extra_keys_type is not str:
+                            extras_keys_schema = self.generate_schema(extra_keys_type)
+                        if not typing_objects.is_any(extra_items_type):
+                            extras_schema = self.generate_schema(extra_items_type)
 
                 generic_origin: type[BaseModel] | None = getattr(cls, '__pydantic_generic_metadata__', {}).get('origin')
 
