@@ -66,17 +66,23 @@ impl BuildValidator for ModelFieldsValidator {
 
         let extra_behavior = ExtraBehavior::from_schema_or_config(py, schema, config, ExtraBehavior::Ignore)?;
 
-        let allow_runtime_extra_override = schema
-            .get_as::<bool>(intern!(py, "allow_runtime_extra_override"))?
-            .unwrap_or(false);
+        let extras_schema = schema.get_item(intern!(py, "extras_schema"))?;
+        let extras_keys_schema = schema.get_item(intern!(py, "extras_keys_schema"))?;
+        let allow_runtime_extra_override = if extras_schema.is_some() || extras_keys_schema.is_some() {
+            schema
+                .get_as::<bool>(intern!(py, "allow_runtime_extra_override"))?
+                .unwrap_or(false)
+        } else {
+            false
+        };
 
-        let extras_validator = match (schema.get_item(intern!(py, "extras_schema"))?, &extra_behavior) {
+        let extras_validator = match (extras_schema, &extra_behavior) {
             (Some(v), ExtraBehavior::Allow) => Some(build_validator(&v, config, definitions)?),
             (Some(v), _) if allow_runtime_extra_override => Some(build_validator(&v, config, definitions)?),
             (Some(_), _) => return py_schema_err!("extras_schema can only be used if extra_behavior=allow"),
             (_, _) => None,
         };
-        let extras_keys_validator = match (schema.get_item(intern!(py, "extras_keys_schema"))?, &extra_behavior) {
+        let extras_keys_validator = match (extras_keys_schema, &extra_behavior) {
             (Some(v), ExtraBehavior::Allow) => Some(build_validator(&v, config, definitions)?),
             (Some(v), _) if allow_runtime_extra_override => Some(build_validator(&v, config, definitions)?),
             (Some(_), _) => return py_schema_err!("extras_keys_schema can only be used if extra_behavior=allow"),

@@ -47,11 +47,16 @@ impl BuildSerializer for ModelFieldsBuilder {
         let fields_dict: Bound<'_, PyDict> = schema.get_as_req(intern!(py, "fields"))?;
         let mut fields = AHashMap::with_capacity(fields_dict.len());
 
-        let allow_runtime_extra_override = schema
-            .get_as::<bool>(intern!(py, "allow_runtime_extra_override"))?
-            .unwrap_or(false);
+        let extras_schema = schema.get_item(intern!(py, "extras_schema"))?;
+        let allow_runtime_extra_override = if extras_schema.is_some() {
+            schema
+                .get_as::<bool>(intern!(py, "allow_runtime_extra_override"))?
+                .unwrap_or(false)
+        } else {
+            false
+        };
 
-        let extra_serializer = match (schema.get_item(intern!(py, "extras_schema"))?, &fields_mode) {
+        let extra_serializer = match (extras_schema, &fields_mode) {
             (Some(v), FieldsMode::ModelExtra) => Some(CombinedSerializer::build(&v.extract()?, config, definitions)?),
             (Some(v), _) if allow_runtime_extra_override => {
                 Some(CombinedSerializer::build(&v.extract()?, config, definitions)?)
