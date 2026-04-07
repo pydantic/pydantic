@@ -118,3 +118,26 @@ def test_missing_sentinel_constraints_pushdown() -> None:
         'anyOf': [{'anyOf': [{'type': 'integer'}, {'type': 'string'}], 'ge': 1}, {'type': 'null'}],
         'title': 'F4',
     }
+
+
+def test_missing_sentinel_child_fields() -> None:
+    """https://github.com/pydantic/pydantic/issues/13001."""
+
+    class Base(BaseModel, extra='forbid'):
+        base_field: Union[str, MISSING] = MISSING
+
+    class Parent(Base):
+        parent_field: str
+
+    class Child(Parent):
+        child_field: str
+
+    class Container(BaseModel, extra='forbid'):
+        item: Union[Parent, MISSING] = MISSING
+
+    child = Child(parent_field='p', child_field='c')
+    container = Container(item=child)
+
+    result = TypeAdapter(Container).dump_python(container)
+
+    assert result == {'item': {'parent_field': 'p'}}
