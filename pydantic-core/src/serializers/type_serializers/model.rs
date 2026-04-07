@@ -13,6 +13,7 @@ use super::{
     BuildSerializer, CombinedSerializer, ComputedFields, Extra, FieldsMode, GeneralFieldsSerializer, ObType, SerCheck,
     SerField, TypeSerializer, infer_json_key, infer_json_key_known,
 };
+use crate::build_tools::py_schema_err;
 use crate::build_tools::{ExtraBehavior, py_schema_error_type};
 use crate::common::missing_sentinel::get_missing_sentinel_object;
 use crate::definitions::DefinitionsBuilder;
@@ -46,9 +47,17 @@ impl BuildSerializer for ModelFieldsBuilder {
         let fields_dict: Bound<'_, PyDict> = schema.get_as_req(intern!(py, "fields"))?;
         let mut fields = AHashMap::with_capacity(fields_dict.len());
 
-        let extra_serializer = match schema.get_item(intern!(py, "extras_schema"))? {
-            Some(v) => Some(CombinedSerializer::build(&v.extract()?, config, definitions)?),
-            None => None,
+        let allow_runtime_extra_override = schema
+            .get_as::<bool>(intern!(py, "allow_runtime_extra_override"))?
+            .unwrap_or(false);
+
+        let extra_serializer = match (schema.get_item(intern!(py, "extras_schema"))?, &fields_mode) {
+            (Some(v), FieldsMode::ModelExtra) => Some(CombinedSerializer::build(&v.extract()?, config, definitions)?),
+            (Some(v), _) if allow_runtime_extra_override => {
+                Some(CombinedSerializer::build(&v.extract()?, config, definitions)?)
+            }
+            (Some(_), _) => return py_schema_err!("extras_schema can only be used if extra_behavior=allow"),
+            (_, _) => None,
         };
 
         let serialize_by_alias = config.get_as(intern!(py, "serialize_by_alias"))?;

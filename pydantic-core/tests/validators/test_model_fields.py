@@ -1705,12 +1705,13 @@ def test_extra_behavior_allow_with_validate_fn_override(
     extras_schema_kw: dict[str, Any],
     expected_extra_value: Any,
 ):
-    v = SchemaValidator(
-        core_schema.model_fields_schema(
-            {'f': core_schema.model_field(core_schema.str_schema())}, **schema_extra_behavior_kw, **extras_schema_kw
-        ),
-        config=config,
+    schema = core_schema.model_fields_schema(
+        {'f': core_schema.model_field(core_schema.str_schema())}, **schema_extra_behavior_kw, **extras_schema_kw
     )
+    if extras_schema_kw.get('extras_schema') is not None:
+        schema['allow_runtime_extra_override'] = True
+
+    v = SchemaValidator(schema, config=config)
 
     m, model_extra, fields_set = v.validate_python({'f': 'x', 'extra_field': '123'}, extra='allow')
     assert m == {'f': 'x'}

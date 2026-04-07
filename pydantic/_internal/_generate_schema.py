@@ -820,24 +820,42 @@ class GenerateSchema:
 
                 extras_schema = None
                 extras_keys_schema = None
+                allow_runtime_extra_override = False
                 if extra_info is not None:
-                    tp = get_origin(extra_info.annotation)
-                    if tp not in DICT_TYPES:
-                        if core_config.get('extra_fields_behavior') == 'allow':
-                            raise PydanticSchemaGenerationError(
-                                'The type annotation for `__pydantic_extra__` must be `dict[str, ...]`'
-                            )
-                    else:
-                        # See the comments in `_get_args_resolving_forward_refs()` for why we need
-                        # to re-evaluate the annotation:
-                        extra_keys_type, extra_items_type = self._get_args_resolving_forward_refs(
-                            extra_info.annotation,
-                            required=True,
+                    extra_annotation = extra_info.annotation
+                    extra_behavior = core_config.get('extra_fields_behavior')
+                    validate_extra_annotation = extra_behavior == 'allow'
+
+                    if not validate_extra_annotation and get_origin(extra_annotation) in DICT_TYPES:
+                        extra_args = get_args(extra_annotation)
+                        # Most models inherit `dict[str, Any]` for `__pydantic_extra__`; in that
+                        # common case, avoid extra schema generation work unless `extra='allow'`.
+                        validate_extra_annotation = not (
+                            len(extra_args) == 2 and extra_args[0] is str and typing_objects.is_any(extra_args[1])
                         )
-                        if extra_keys_type is not str:
-                            extras_keys_schema = self.generate_schema(extra_keys_type)
-                        if not typing_objects.is_any(extra_items_type):
-                            extras_schema = self.generate_schema(extra_items_type)
+
+                    if validate_extra_annotation:
+                        tp = get_origin(extra_annotation)
+                        if tp not in DICT_TYPES:
+                            if extra_behavior == 'allow':
+                                raise PydanticSchemaGenerationError(
+                                    'The type annotation for `__pydantic_extra__` must be `dict[str, ...]`'
+                                )
+                        else:
+                            # See the comments in `_get_args_resolving_forward_refs()` for why we need
+                            # to re-evaluate the annotation:
+                            extra_keys_type, extra_items_type = self._get_args_resolving_forward_refs(
+                                extra_annotation,
+                                required=True,
+                            )
+                            if extra_keys_type is not str:
+                                extras_keys_schema = self.generate_schema(extra_keys_type)
+                            if not typing_objects.is_any(extra_items_type):
+                                extras_schema = self.generate_schema(extra_items_type)
+
+                            allow_runtime_extra_override = extra_behavior != 'allow' and (
+                                extras_schema is not None or extras_keys_schema is not None
+                            )
 
                 generic_origin: type[BaseModel] | None = getattr(cls, '__pydantic_generic_metadata__', {}).get('origin')
 
@@ -866,6 +884,8 @@ class GenerateSchema:
                         extras_keys_schema=extras_keys_schema,
                         model_name=cls.__name__,
                     )
+                    if allow_runtime_extra_override:
+                        fields_schema['allow_runtime_extra_override'] = True
                     inner_schema = apply_validators(fields_schema, decorators.root_validators.values())
                     inner_schema = apply_model_validators(inner_schema, model_validators, 'inner')
 
