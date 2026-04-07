@@ -885,7 +885,7 @@ class GenerateSchema:
                         model_name=cls.__name__,
                     )
                     if allow_runtime_extra_override:
-                        fields_schema['allow_runtime_extra_override'] = True
+                        cast(dict[str, Any], fields_schema)['allow_runtime_extra_override'] = True
                     inner_schema = apply_validators(fields_schema, decorators.root_validators.values())
                     inner_schema = apply_model_validators(inner_schema, model_validators, 'inner')
 
