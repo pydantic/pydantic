@@ -1173,7 +1173,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
                 if not (
                     self_type == other_type
                     and getattr(self, '__pydantic_private__', None) == getattr(other, '__pydantic_private__', None)
-                    and self.__pydantic_extra__ == other.__pydantic_extra__
+                    and (self.__pydantic_extra__ or None) == (other.__pydantic_extra__ or None)
                 ):
                     return False
 
