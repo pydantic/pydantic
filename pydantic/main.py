@@ -1169,11 +1169,23 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
                 self_type = self.__pydantic_generic_metadata__['origin'] or self.__class__
                 other_type = other.__pydantic_generic_metadata__['origin'] or other.__class__
 
+                a = self.__pydantic_extra__
+                b = other.__pydantic_extra__
+
+                if a is b:
+                    extras_equal = True
+                elif a is None:
+                    extras_equal = b == {}
+                elif b is None:
+                    extras_equal = a == {}
+                else:
+                    extras_equal = a == b
+
                 # Perform common checks first
                 if not (
                     self_type == other_type
                     and getattr(self, '__pydantic_private__', None) == getattr(other, '__pydantic_private__', None)
-                    and self.__pydantic_extra__ == other.__pydantic_extra__
+                    and extras_equal
                 ):
                     return False
 

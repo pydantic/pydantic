@@ -3713,3 +3713,13 @@ def test_replace() -> None:
 
     m = Model(x=1, y=2)
     assert replace(m, x=3) == Model(x=3, y=2)
+
+
+def test_model_extra_none_vs_empty():
+    class A(BaseModel, extra='allow'):
+        a: int
+
+    m1 = A(a=1)
+    m2 = A.model_validate({'a': 1}, extra='forbid')
+
+    assert m1 == m2
