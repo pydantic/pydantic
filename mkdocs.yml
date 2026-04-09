@@ -176,7 +176,7 @@ nav:
       - Pydantic Logfire: integrations/logfire.md
       - LLMs: integrations/llms.md
       - Dev Tools:
-          - Mypy: integrations/mypy.md/.
+          - Mypy: integrations/mypy.md
           - Pyrefly: integrations/pyrefly.md
           - PyCharm: integrations/pycharm.md
           - Hypothesis: integrations/hypothesis.md
