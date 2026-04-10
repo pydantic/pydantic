@@ -1177,12 +1177,13 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
                     # can be controlled at validation time.
                     # Bit of a premature optimization, but this is slightly faster than
                     # `(self.__pydantic_extra__ or {}) == (other.__pydantic_extra__ or {})`
-                    and (
-                        (self.__pydantic_extra__ is None and other.__pydantic_extra__ is None)
-                        or (self.__pydantic_extra__ is None and other.__pydantic_extra__ == {})
-                        or (other.__pydantic_extra__ is None and self.__pydantic_extra__ == {})
-                        or (self.__pydantic_extra__ == other.__pydantic_extra__)
-                    )
+                    # and (
+                    #     (self.__pydantic_extra__ is None and other.__pydantic_extra__ is None)
+                    #     or (self.__pydantic_extra__ is None and other.__pydantic_extra__ == {})
+                    #     or (other.__pydantic_extra__ is None and self.__pydantic_extra__ == {})
+                    #     or (self.__pydantic_extra__ == other.__pydantic_extra__)
+                    # )
+                    and (self.__pydantic_extra__ or {}) == (other.__pydantic_extra__ or {})
                 ):
                     return False
 
