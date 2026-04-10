@@ -59,5 +59,5 @@ jobs:
       - name: Run CodSpeed benchmarks
         uses: CodSpeedHQ/action@1c8ae4843586d3ba879736b7f6b7b0c990757fab # v4.12.1
         with:
-          mode: instrumentation
+          mode: simulation
           run: uv run --no-sync pytest ./tests/benchmarks ./tests/pydantic_core/benchmarks --codspeed
