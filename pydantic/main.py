@@ -1171,9 +1171,11 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
 
                 # Perform common checks first
                 if not (
-                    self_type == other_type
+                    self_type is other_type
                     and getattr(self, '__pydantic_private__', None) == getattr(other, '__pydantic_private__', None)
-                    and self.__pydantic_extra__ == other.__pydantic_extra__
+                    # We need to assume `None` and `{}` are equivalent, because extra behavior
+                    # can be controlled at validation time:
+                    and (self.__pydantic_extra__ or {}) == (other.__pydantic_extra__ or {})
                 ):
                     return False
 

@@ -2871,6 +2871,15 @@ def test_extra_equality():
     assert MyModel(x=1) != MyModel()
 
 
+def test_extra_equality_runtime_override() -> None:
+    """https://github.com/pydantic/pydantic/issues/13051"""
+
+    class MyModel(BaseModel, extra='allow'):
+        a: int
+
+    assert MyModel.model_validate({'a': 1}) == MyModel.model_validate({'a': 1}, extra='forbid')
+
+
 def test_equality_delegation():
     from unittest.mock import ANY
 
