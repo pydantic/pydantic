@@ -836,6 +836,8 @@ class GenerateSchema:
                         extras_keys_schema = self.generate_schema(extra_keys_type)
                     if not typing_objects.is_any(extra_items_type):
                         extras_schema = self.generate_schema(extra_items_type)
+                        if extras_schema is not None:
+                            core_config['extra_fields_schema'] = extras_schema
 
                 generic_origin: type[BaseModel] | None = getattr(cls, '__pydantic_generic_metadata__', {}).get('origin')
 
