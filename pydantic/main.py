@@ -1174,15 +1174,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
                     self_type is other_type
                     and getattr(self, '__pydantic_private__', None) == getattr(other, '__pydantic_private__', None)
                     # We need to assume `None` and `{}` are equivalent, because extra behavior
-                    # can be controlled at validation time.
-                    # Bit of a premature optimization, but this is slightly faster than
-                    # `(self.__pydantic_extra__ or {}) == (other.__pydantic_extra__ or {})`
-                    # and (
-                    #     (self.__pydantic_extra__ is None and other.__pydantic_extra__ is None)
-                    #     or (self.__pydantic_extra__ is None and other.__pydantic_extra__ == {})
-                    #     or (other.__pydantic_extra__ is None and self.__pydantic_extra__ == {})
-                    #     or (self.__pydantic_extra__ == other.__pydantic_extra__)
-                    # )
+                    # can be controlled at validation time:
                     and (self.__pydantic_extra__ or {}) == (other.__pydantic_extra__ or {})
                 ):
                     return False
