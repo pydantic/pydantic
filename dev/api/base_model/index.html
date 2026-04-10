@@ -6183,7 +6183,9 @@ is set to <code>'allow'</code>.</p>
 <span class="normal">1692</span>
 <span class="normal">1693</span>
 <span class="normal">1694</span>
-<span class="normal">1695</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span><span class="w"> </span><span class="nc">BaseModel</span><span class="p">(</span><span class="n">metaclass</span><span class="o">=</span><span class="n">_model_construction</span><span class="o">.</span><span class="n">ModelMetaclass</span><span class="p">):</span>
+<span class="normal">1695</span>
+<span class="normal">1696</span>
+<span class="normal">1697</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span><span class="w"> </span><span class="nc">BaseModel</span><span class="p">(</span><span class="n">metaclass</span><span class="o">=</span><span class="n">_model_construction</span><span class="o">.</span><span class="n">ModelMetaclass</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;!!! abstract &quot;Usage Documentation&quot;</span>
 <span class="sd">        [Models](../concepts/models.md)</span>
 
@@ -7238,9 +7240,11 @@ is set to <code>'allow'</code>.</p>
 
                 <span class="c1"># Perform common checks first</span>
                 <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span>
-                    <span class="n">self_type</span> <span class="o">==</span> <span class="n">other_type</span>
+                    <span class="n">self_type</span> <span class="ow">is</span> <span class="n">other_type</span>
                     <span class="ow">and</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s1">&#39;__pydantic_private__&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span> <span class="o">==</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">other</span><span class="p">,</span> <span class="s1">&#39;__pydantic_private__&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
-                    <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">__pydantic_extra__</span> <span class="o">==</span> <span class="n">other</span><span class="o">.</span><span class="n">__pydantic_extra__</span>
+                    <span class="c1"># We need to assume `None` and `{}` are equivalent, because extra behavior</span>
+                    <span class="c1"># can be controlled at validation time:</span>
+                    <span class="ow">and</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">__pydantic_extra__</span> <span class="ow">or</span> <span class="p">{})</span> <span class="o">==</span> <span class="p">(</span><span class="n">other</span><span class="o">.</span><span class="n">__pydantic_extra__</span> <span class="ow">or</span> <span class="p">{})</span>
                 <span class="p">):</span>
                     <span class="k">return</span> <span class="kc">False</span>
 
@@ -11322,9 +11326,7 @@ validators <a href="https://docs.pydantic.dev/2.9/concepts/validators/#field-val
 
             <details class="quote">
               <summary>Source code in <code>pydantic/main.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1733</span>
-<span class="normal">1734</span>
-<span class="normal">1735</span>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1735</span>
 <span class="normal">1736</span>
 <span class="normal">1737</span>
 <span class="normal">1738</span>
@@ -11422,7 +11424,9 @@ validators <a href="https://docs.pydantic.dev/2.9/concepts/validators/#field-val
 <span class="normal">1830</span>
 <span class="normal">1831</span>
 <span class="normal">1832</span>
-<span class="normal">1833</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">create_model</span><span class="p">(</span>  <span class="c1"># noqa: C901</span>
+<span class="normal">1833</span>
+<span class="normal">1834</span>
+<span class="normal">1835</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">create_model</span><span class="p">(</span>  <span class="c1"># noqa: C901</span>
     <span class="n">model_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
     <span class="o">/</span><span class="p">,</span>
     <span class="o">*</span><span class="p">,</span>

@@ -102,7 +102,7 @@ Field(
 
 ```python
 Field(
-    default: _T,
+    default: _T" optional hover>_T,
     *,
     alias: str | None = _Unset,
     alias_priority: int | None = _Unset,
@@ -847,7 +847,7 @@ def asdict(self) -> _FieldInfoAsDict:
 
 ```python
 PrivateAttr(
-    default: _T, *, init: Literal[False] = False
+    default: _T" optional hover>_T, *, init: Literal[False] = False
 ) -> _T
 
 ```
@@ -856,7 +856,7 @@ PrivateAttr(
 PrivateAttr(
     *,
     default_factory: (
-        Callable[[], _T" optional hover>_T] | Callable[[dict[str, Any]], _T]
+        Callable[[], _T] | Callable[[dict[str, Any]], _T]
     ),
     init: Literal[False] = False
 ) -> _T
