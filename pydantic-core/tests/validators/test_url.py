@@ -5,7 +5,16 @@ from typing import Optional, Union
 import pytest
 from dirty_equals import HasRepr, IsInstance
 
-from pydantic_core import CoreConfig, MultiHostUrl, SchemaError, SchemaValidator, Url, ValidationError, core_schema
+from pydantic_core import (
+    CoreConfig,
+    MultiHostHost,
+    MultiHostUrl,
+    SchemaError,
+    SchemaValidator,
+    Url,
+    ValidationError,
+    core_schema,
+)
 
 from ..conftest import Err, PyAndJson
 
@@ -1464,12 +1473,17 @@ def test_multi_url_build_hosts_empty_host() -> None:
 
 def test_multi_url_build_hosts() -> None:
     """Hosts can't be provided with any single url values."""
-    hosts = [
+    hosts: list[MultiHostHost] = [
         {'host': '127.0.0.1', 'password': 'testpassword', 'username': 'testuser', 'port': 5431},
         {'host': '127.0.0.1', 'password': 'testpassword', 'username': 'testuser', 'port': 5433},
     ]
-    kwargs = dict(scheme='postgresql', hosts=hosts, path='database', query='sslmode=require', fragment='test')
-    url = MultiHostUrl.build(**kwargs)
+    url = MultiHostUrl.build(
+        scheme='postgresql',
+        hosts=hosts,
+        path='database',
+        query='sslmode=require',
+        fragment='test',
+    )
     assert url == MultiHostUrl(
         'postgresql://testuser:testpassword@127.0.0.1:5431,testuser:testpassword@127.0.0.1:5433/database?sslmode=require#test'
     )
@@ -1477,6 +1491,23 @@ def test_multi_url_build_hosts() -> None:
         str(url)
         == 'postgresql://testuser:testpassword@127.0.0.1:5431,testuser:testpassword@127.0.0.1:5433/database?sslmode=require#test'
     )
+
+
+def test_multi_url_build_hosts_with_none_values() -> None:
+    """https://github.com/pydantic/pydantic/issues/13007"""
+
+    hosts: list[MultiHostHost] = [
+        {'host': 'host-1.com', 'password': 'pass', 'username': 'user', 'port': 27017},
+        {'host': 'host-2.com', 'password': None, 'username': None, 'port': 27017},
+    ]
+    url = MultiHostUrl.build(
+        scheme='mongodb',
+        hosts=hosts,
+        path='db',
+        query='replicaSet=xxx&authSource=admin',
+    )
+    assert str(url) == 'mongodb://user:pass@host-1.com:27017,host-2.com:27017/db?replicaSet=xxx&authSource=admin'
+    assert url.hosts() == hosts
 
 
 def test_multi_url_build_neither_host_and_hosts_set() -> None:
