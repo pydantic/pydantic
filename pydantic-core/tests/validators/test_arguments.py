@@ -1044,7 +1044,6 @@ def test_function_types():
     ]
 
 
-@pytest.mark.skipif(sys.version_info < (3, 10), reason='requires python3.10 or higher')
 def test_function_positional_only(import_execute):
     # language=Python
     m = import_execute(
@@ -1078,7 +1077,6 @@ def create_function(validate, config = None):
     assert foobar('1', '2', c=3, d=4) == (1, 2, 3)
 
 
-@pytest.mark.skipif(sys.version_info < (3, 10), reason='requires python3.10 or higher')
 def test_function_positional_only_default(import_execute):
     # language=Python
     m = import_execute(
@@ -1095,7 +1093,6 @@ def create_function(validate):
     assert foobar('1') == (1, 42)
 
 
-@pytest.mark.skipif(sys.version_info < (3, 10), reason='requires python3.10 or higher')
 def test_function_positional_kwargs(import_execute):
     # language=Python
     m = import_execute(

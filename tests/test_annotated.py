@@ -168,7 +168,6 @@ def test_config_field_info():
     }
 
 
-@pytest.mark.skipif(sys.version_info < (3, 10), reason='repr different on older versions')
 def test_annotated_alias() -> None:
     # https://github.com/pydantic/pydantic/issues/2971
 

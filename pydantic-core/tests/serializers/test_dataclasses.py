@@ -138,7 +138,6 @@ def test_properties():
     assert s.to_json(FooProp(a='hello', b=b'more'), include={'a'}) == b'{"a":"hello"}'
 
 
-@pytest.mark.skipif(sys.version_info < (3, 10), reason='slots are only supported for dataclasses in Python > 3.10')
 def test_slots_mixed():
     @dataclasses.dataclass(slots=True)
     class Model:

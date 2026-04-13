@@ -7,7 +7,6 @@ from __future__ import annotations as _annotations
 
 import dataclasses
 import keyword
-import sys
 import warnings
 import weakref
 from collections import OrderedDict, defaultdict, deque
@@ -429,15 +428,8 @@ class deprecated_instance_property(Generic[_ModelT, _RT]):
     def __get__(self, instance: _ModelT, objtype: type[_ModelT]) -> _RT: ...
     def __get__(self, instance: _ModelT | None, objtype: type[_ModelT]) -> _RT:
         if instance is not None:
-            # fmt: off
-            attr_name = (
-                self.fget.__name__
-                if sys.version_info >= (3, 10)
-                else self.fget.__func__.__name__  # pyright: ignore[reportFunctionMemberAccess]
-            )
-            # fmt: on
             warnings.warn(
-                f'Accessing the {attr_name!r} attribute on the instance is deprecated. '
+                f'Accessing the {self.fget.__name__!r} attribute on the instance is deprecated. '
                 'Instead, you should access this attribute from the model class.',
                 category=PydanticDeprecatedSince211,
                 stacklevel=2,

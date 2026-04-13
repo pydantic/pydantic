@@ -1,6 +1,5 @@
 import os
 import platform
-import sys
 import weakref
 from collections import deque
 from collections.abc import Callable
@@ -571,7 +570,6 @@ def test_some(validate_default: bool) -> None:
     assert repr(res) == 'Some(42)'
 
 
-@pytest.mark.skipif(sys.version_info < (3, 10), reason='pattern matching was added in 3.10')
 def test_some_pattern_match() -> None:
     code = """\
 def f(v: Union[Some[Any], None]) -> str:

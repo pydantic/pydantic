@@ -35,10 +35,8 @@ DEPRECATED_MODEL_MEMBERS = {
 # Disable deprecation warnings, as we enumerate members that may be
 # i.e. pydantic.warnings.PydanticDeprecatedSince20: The `__fields__` attribute is deprecated,
 #      use `model_fields` instead.
-# Additionally, only run these tests for 3.10+
 pytestmark = [
     pytest.mark.filterwarnings('ignore::DeprecationWarning'),
-    pytest.mark.skipif(sys.version_info < (3, 10), reason='requires python3.10 or higher to work properly'),
 ]
 
 

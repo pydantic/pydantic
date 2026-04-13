@@ -213,7 +213,7 @@ def as_dataclass_field(pydantic_field: FieldInfo) -> dataclasses.Field[Any]:
         field_args['doc'] = pydantic_field.description
 
     # Needed as the stdlib dataclass module processes kw_only in a specific way during class construction:
-    if sys.version_info >= (3, 10) and pydantic_field.kw_only is not None:
+    if pydantic_field.kw_only is not None:
         field_args['kw_only'] = pydantic_field.kw_only
 
     # Needed as the stdlib dataclass modules generates `__repr__()` during class construction:
@@ -301,7 +301,7 @@ def patch_base_fields(cls: type[Any]) -> Generator[None]:
                 new_dc_field = copy.copy(field)
                 # For base fields, no need to set `doc` from `FieldInfo.description`, this is only relevant
                 # for the class under construction and handled in `as_dataclass_field()`.
-                if sys.version_info >= (3, 10) and default.kw_only:
+                if default.kw_only:
                     new_dc_field.kw_only = True
                 if default.repr is not True:
                     new_dc_field.repr = default.repr
