@@ -902,7 +902,27 @@ jobs:
 
       - run: uv sync --only-group build
 
+      - name: Extract pydantic-core version
+        id: core-version
+        run: |
+          VERSION=$(cargo metadata --format-version 1 --no-deps --frozen --quiet --offline --manifest-path pydantic-core/Cargo.toml | jq -r '.packages[0].version')
+          echo "VERSION=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "pydantic-core version: $VERSION"
+
+      - name: Check if pydantic-core version is already on PyPI
+        id: check-pypi
+        run: |
+          STATUS=$(curl -s -o /dev/null -I -w "%{http_code}" https://pypi.org/pypi/pydantic-core/${{ steps.core-version.outputs.VERSION }}/json)
+          if [ "$STATUS" = "200" ]; then
+            echo "already_published=true" >> "$GITHUB_OUTPUT"
+            echo "pydantic-core ${{ steps.core-version.outputs.VERSION }} is already on PyPI, skipping publish"
+          else
+            echo "already_published=false" >> "$GITHUB_OUTPUT"
+            echo "pydantic-core ${{ steps.core-version.outputs.VERSION }} not found on PyPI, will publish"
+          fi
+
       - name: Get pydantic-core dist artifacts
+        if: steps.check-pypi.outputs.already_published != 'true'
         uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
         with:
           pattern: pydantic_core_pypi_files_*
@@ -910,11 +930,13 @@ jobs:
           path: pydantic-core-dist
 
       - name: Test pydantic-core wheels integrity
+        if: steps.check-pypi.outputs.already_published != 'true'
         run: |
           for whl in pydantic-core-dist/*.whl; do unzip -qt "$whl"; done
           uv run --no-sync twine check --strict pydantic-core-dist/*
 
       - name: Publish pydantic-core to PyPI
+        if: steps.check-pypi.outputs.already_published != 'true'
         run: uv publish --trusted-publishing always pydantic-core-dist/*
 
   release-pydantic:
@@ -935,6 +957,8 @@ jobs:
       - uses: astral-sh/setup-uv@cec208311dfd045dd5311c1add060b2062131d57 # v8.0.0
         with:
           enable-cache: false
+
+      - run: uv sync --only-group build
 
       - name: Get pydantic dist artifacts
         uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
