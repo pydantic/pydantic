@@ -653,7 +653,7 @@ def complete_model_class(
             )
         except NameError as e:
             exc = PydanticUndefinedAnnotation.from_name_error(e)
-            set_model_mocks(cls, f'`{exc.name}`')
+            set_model_mocks(cls, f'`{exc.name}`' if exc.name is not None else None)
             if raise_errors:
                 raise exc from e
 
@@ -674,7 +674,7 @@ def complete_model_class(
     except PydanticUndefinedAnnotation as e:
         if raise_errors:
             raise
-        set_model_mocks(cls, f'`{e.name}`')
+        set_model_mocks(cls, f'`{e.name}`' if e.name is not None else None)
         return False
 
     core_config = config_wrapper.core_config(title=cls.__name__)

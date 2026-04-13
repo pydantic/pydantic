@@ -148,13 +148,15 @@ def set_type_adapter_mocks(adapter: TypeAdapter) -> None:
     )
 
 
-def set_model_mocks(cls: type[BaseModel], undefined_name: str = 'all referenced types') -> None:
+def set_model_mocks(cls: type[BaseModel], undefined_name: str | None = None) -> None:
     """Set `__pydantic_core_schema__`, `__pydantic_validator__` and `__pydantic_serializer__` to mock core types on a model.
 
     Args:
         cls: The model class to set the mocks on
         undefined_name: Name of the undefined thing, used in error messages
     """
+    undefined_name = undefined_name if undefined_name is not None else 'all referenced types'
+
     undefined_type_error_message = (
         f'`{cls.__name__}` is not fully defined; you should define {undefined_name},'
         f' then call `{cls.__name__}.model_rebuild()`.'
@@ -187,7 +189,7 @@ def set_model_mocks(cls: type[BaseModel], undefined_name: str = 'all referenced 
     )
 
 
-def set_dataclass_mocks(cls: type[PydanticDataclass], undefined_name: str = 'all referenced types') -> None:
+def set_dataclass_mocks(cls: type[PydanticDataclass], undefined_name: str | None = None) -> None:
     """Set `__pydantic_validator__` and `__pydantic_serializer__` to `MockValSer`s on a dataclass.
 
     Args:
@@ -195,6 +197,8 @@ def set_dataclass_mocks(cls: type[PydanticDataclass], undefined_name: str = 'all
         undefined_name: Name of the undefined thing, used in error messages
     """
     from ..dataclasses import rebuild_dataclass
+
+    undefined_name = undefined_name if undefined_name is not None else 'all referenced types'
 
     undefined_type_error_message = (
         f'`{cls.__name__}` is not fully defined; you should define {undefined_name},'

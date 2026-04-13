@@ -166,7 +166,7 @@ def complete_dataclass(
     except PydanticUndefinedAnnotation as e:
         if raise_errors:
             raise
-        set_dataclass_mocks(cls, f'`{e.name}`')
+        set_dataclass_mocks(cls, f'`{e.name}`' if e.name is not None else None)
         return False
 
     core_config = config_wrapper.core_config(title=cls.__name__)
