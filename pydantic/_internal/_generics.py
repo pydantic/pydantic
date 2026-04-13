@@ -221,7 +221,7 @@ def get_standard_typevars_map(cls: Any) -> dict[TypeVar, Any] | None:
     # So it is safe to access cls.__args__ and origin.__parameters__
     args: tuple[Any, ...] = cls.__args__  # type: ignore
     parameters: tuple[TypeVar, ...] = origin.__parameters__
-    return dict(zip(parameters, args))
+    return dict(zip(parameters, args, strict=True))
 
 
 def get_model_typevars_map(cls: type[BaseModel]) -> dict[TypeVar, Any]:
@@ -239,7 +239,7 @@ def get_model_typevars_map(cls: type[BaseModel]) -> dict[TypeVar, Any]:
     if not args:
         # No need to go into `iter_contained_typevars`:
         return {}
-    return dict(zip(iter_contained_typevars(origin), args))
+    return dict(zip(iter_contained_typevars(origin), args, strict=True))
 
 
 def replace_types(type_: Any, type_map: Mapping[TypeVar, Any] | None) -> Any:

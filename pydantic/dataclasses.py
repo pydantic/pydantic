@@ -246,7 +246,7 @@ def dataclass(
                     return [getattr(self, f.name) for f in dataclasses.fields(self)]
 
                 def _dataclass_setstate(self: Any, state: list[Any]) -> None:
-                    for field, value in zip(dataclasses.fields(self), state):
+                    for field, value in zip(dataclasses.fields(self), state, strict=True):
                         object.__setattr__(self, field.name, value)
 
                 cls.__getstate__ = _dataclass_getstate  # pyright: ignore[reportAttributeAccessIssue]
