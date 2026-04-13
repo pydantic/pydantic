@@ -1,9 +1,9 @@
 import datetime
-from collections.abc import Mapping
-from typing import Any, Callable, Generic, Literal, TypeVar, final, overload
+from collections.abc import Callable, Mapping
+from typing import Any, Generic, Literal, TypeAlias, TypeVar, final, overload
 
 from _typeshed import SupportsAllComparisons
-from typing_extensions import LiteralString, Self, TypeAlias
+from typing_extensions import LiteralString, Self
 
 from pydantic_core import ErrorDetails, ErrorTypeInfo, InitErrorDetails, MultiHostHost
 from pydantic_core.core_schema import CoreConfig, CoreSchema, ErrorType, ExtraBehavior
@@ -1032,6 +1032,7 @@ def list_all_errors() -> list[ErrorTypeInfo]:
     Returns:
         A list of `ErrorTypeInfo` typed dicts.
     """
+
 @final
 class TzInfo(datetime.tzinfo):
     """An `pydantic-core` implementation of the abstract [`datetime.tzinfo`][] class."""

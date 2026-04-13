@@ -7,10 +7,11 @@ import json
 import os
 import re
 import sys
+from collections.abc import Callable
 from dataclasses import dataclass
 from pathlib import Path
 from time import sleep, time
-from typing import Any, Callable, Literal
+from typing import Any, Literal
 
 import hypothesis
 import pytest

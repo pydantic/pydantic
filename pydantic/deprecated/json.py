@@ -1,13 +1,14 @@
 import datetime
 import warnings
 from collections import deque
+from collections.abc import Callable
 from decimal import Decimal
 from enum import Enum
 from ipaddress import IPv4Address, IPv4Interface, IPv4Network, IPv6Address, IPv6Interface, IPv6Network
 from pathlib import Path
 from re import Pattern
 from types import GeneratorType
-from typing import TYPE_CHECKING, Any, Callable, Union
+from typing import TYPE_CHECKING, Any, Union
 from uuid import UUID
 
 from typing_extensions import deprecated

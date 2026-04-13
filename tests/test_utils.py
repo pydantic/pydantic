@@ -3,8 +3,9 @@ import os
 import pickle
 import sys
 import time
+from collections.abc import Callable
 from copy import copy, deepcopy
-from typing import Annotated, Callable, Generic, TypeVar, Union
+from typing import Annotated, Generic, TypeVar, Union
 
 import pytest
 from pydantic_core import PydanticCustomError, PydanticUndefined

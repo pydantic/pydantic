@@ -5,11 +5,12 @@ from __future__ import annotations as _annotations
 import dataclasses
 import sys
 import warnings
+from collections.abc import Callable
 from functools import partialmethod
-from typing import TYPE_CHECKING, Annotated, Any, Callable, Literal, TypeVar, Union, cast, overload
+from typing import TYPE_CHECKING, Annotated, Any, Literal, TypeAlias, TypeVar, Union, cast, overload
 
 from pydantic_core import PydanticUndefined, core_schema
-from typing_extensions import Self, TypeAlias
+from typing_extensions import Self
 
 from ._internal import _decorators, _generics, _internal_dataclass
 from .annotated_handlers import GetCoreSchemaHandler

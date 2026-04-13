@@ -4,7 +4,7 @@ from inspect import Parameter, Signature, signature
 from typing import Annotated, Any, Generic, Optional, TypeVar, Union
 
 import pytest
-from typing_extensions import get_origin
+from typing_extensions import get_origin  # noqa: UP035
 from typing_inspection import typing_objects
 
 from pydantic import BaseModel, ConfigDict, Field, create_model

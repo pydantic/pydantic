@@ -5,7 +5,7 @@ from __future__ import annotations as _annotations
 import base64
 import dataclasses as _dataclasses
 import re
-from collections.abc import Hashable, Iterator
+from collections.abc import Callable, Hashable, Iterator
 from datetime import date, datetime
 from decimal import Decimal
 from enum import Enum
@@ -16,10 +16,10 @@ from typing import (
     TYPE_CHECKING,
     Annotated,
     Any,
-    Callable,
     ClassVar,
     Generic,
     Literal,
+    TypeAlias,
     TypeVar,
     Union,
     cast,
@@ -29,7 +29,13 @@ from uuid import UUID
 import annotated_types
 from annotated_types import BaseMetadata, MaxLen, MinLen
 from pydantic_core import CoreSchema, PydanticCustomError, SchemaSerializer, core_schema
-from typing_extensions import Protocol, TypeAlias, TypeAliasType, deprecated, get_args, get_origin
+from typing_extensions import (  # noqa: UP035 (for `get_args` and `get_origin`)
+    Protocol,
+    TypeAliasType,
+    deprecated,
+    get_args,
+    get_origin,
+)
 
 from ._internal import _fields, _internal_dataclass, _utils, _validators
 from ._migration import getattr_migration

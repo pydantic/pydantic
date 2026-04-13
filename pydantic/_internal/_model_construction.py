@@ -8,12 +8,19 @@ import typing
 import warnings
 import weakref
 from abc import ABCMeta
+from collections.abc import Callable
 from functools import cache, partial, wraps
 from types import FunctionType
-from typing import TYPE_CHECKING, Any, Callable, Generic, Literal, NoReturn, TypeVar, cast
+from typing import TYPE_CHECKING, Any, Generic, Literal, NoReturn, TypeVar, cast
 
 from pydantic_core import PydanticUndefined, SchemaSerializer
-from typing_extensions import TypeAliasType, dataclass_transform, deprecated, get_args, get_origin
+from typing_extensions import (  # noqa: UP035 (for `get_args` and `get_origin`)
+    TypeAliasType,
+    dataclass_transform,
+    deprecated,
+    get_args,
+    get_origin,
+)
 from typing_inspection import typing_objects
 
 from ..errors import PydanticUndefinedAnnotation, PydanticUserError

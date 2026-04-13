@@ -19,7 +19,7 @@ import os
 import re
 import warnings
 from collections import Counter, defaultdict
-from collections.abc import Hashable, Iterable, Sequence
+from collections.abc import Callable, Hashable, Iterable, Sequence
 from copy import deepcopy
 from enum import Enum
 from re import Pattern
@@ -27,9 +27,9 @@ from typing import (
     TYPE_CHECKING,
     Annotated,
     Any,
-    Callable,
     Literal,
     NewType,
+    TypeAlias,
     TypeVar,
     Union,
     cast,
@@ -39,7 +39,7 @@ from typing import (
 import pydantic_core
 from pydantic_core import MISSING, CoreSchema, PydanticOmit, core_schema, to_jsonable_python
 from pydantic_core.core_schema import ComputedField
-from typing_extensions import TypeAlias, assert_never, deprecated, final
+from typing_extensions import assert_never, deprecated, final
 from typing_inspection.introspection import get_literal_values
 
 from pydantic.warnings import PydanticDeprecatedSince26, PydanticDeprecatedSince29

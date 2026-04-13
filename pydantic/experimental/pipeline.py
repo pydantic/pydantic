@@ -7,12 +7,12 @@ import operator
 import re
 import sys
 from collections import deque
-from collections.abc import Container
+from collections.abc import Callable, Container
 from dataclasses import dataclass
 from decimal import Decimal
 from functools import cached_property, partial
 from re import Pattern
-from typing import TYPE_CHECKING, Annotated, Any, Callable, Generic, Protocol, TypeVar, Union, overload
+from typing import TYPE_CHECKING, Annotated, Any, Generic, Protocol, TypeVar, Union, overload
 
 import annotated_types
 

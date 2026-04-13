@@ -1,5 +1,6 @@
 import sys
-from typing import Any, Callable
+from collections.abc import Callable
+from typing import Any
 
 from pydantic.warnings import PydanticDeprecatedSince20
 

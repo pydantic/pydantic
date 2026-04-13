@@ -10,13 +10,13 @@ from collections.abc import Callable, Mapping
 from copy import copy
 from dataclasses import Field as DataclassField
 from functools import cached_property
-from typing import TYPE_CHECKING, Annotated, Any, ClassVar, Literal, TypeVar, final, overload
+from typing import TYPE_CHECKING, Annotated, Any, ClassVar, Literal, TypeAlias, TypeVar, final, overload
 from warnings import warn
 
 import annotated_types
 import typing_extensions
 from pydantic_core import MISSING, PydanticUndefined
-from typing_extensions import Self, TypeAlias, TypedDict, Unpack, deprecated
+from typing_extensions import Self, TypedDict, Unpack, deprecated
 from typing_inspection import typing_objects
 from typing_inspection.introspection import UNKNOWN, AnnotationSource, ForbiddenQualifier, Qualifier, inspect_annotation
 

@@ -4,10 +4,9 @@ from __future__ import annotations as _annotations
 
 import types
 from collections.abc import Callable, Collection, Generator, Iterable
-from typing import TYPE_CHECKING, Any, ForwardRef, cast
+from typing import TYPE_CHECKING, Any, ForwardRef, TypeAlias, cast
 
 import typing_extensions
-from typing_extensions import TypeAlias
 from typing_inspection import typing_objects
 from typing_inspection.introspection import is_union_origin
 

@@ -3,8 +3,9 @@ import platform
 import sys
 import weakref
 from collections import deque
+from collections.abc import Callable
 from dataclasses import dataclass
-from typing import Any, Callable, Union, cast
+from typing import Any, Union, cast
 
 import pytest
 

@@ -3,7 +3,7 @@ import os
 import pickle
 
 import pytest
-from typing_extensions import (
+from typing_extensions import (  # noqa: UP035 (for `get_args` and `get_origin`)
     get_args,
     get_origin,
     get_type_hints,

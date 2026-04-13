@@ -8,10 +8,11 @@ import secrets
 import subprocess
 import sys
 import textwrap
+from collections.abc import Callable
 from dataclasses import dataclass
 from pathlib import Path
 from types import FunctionType, ModuleType
-from typing import Any, Callable
+from typing import Any
 
 import pytest
 from _pytest.assertion.rewrite import AssertionRewritingHook

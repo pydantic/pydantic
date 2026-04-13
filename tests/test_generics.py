@@ -5,14 +5,14 @@ import platform
 import re
 import sys
 from collections import Counter, OrderedDict, defaultdict, deque
-from collections.abc import Iterable, Mapping, Sequence
+from collections.abc import Callable, Iterable, Mapping, Sequence
 from enum import Enum, IntEnum
 from typing import (
     Annotated,
     Any,
-    Callable,
     ClassVar,
     Generic,
+    Literal,
     NamedTuple,
     Optional,
     TypeVar,
@@ -23,8 +23,7 @@ import pytest
 from dirty_equals import HasRepr, IsStr
 from pydantic_core import CoreSchema, core_schema
 from pytest_mock import MockerFixture
-from typing_extensions import (
-    Literal,
+from typing_extensions import (  # noqa: UP035 (for `get_args`)
     Never,
     NotRequired,
     ParamSpec,

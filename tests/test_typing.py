@@ -1,6 +1,7 @@
 import sys
 from collections import namedtuple
-from typing import Annotated, Callable, ClassVar, ForwardRef, Literal, NamedTuple
+from collections.abc import Callable
+from typing import Annotated, ClassVar, ForwardRef, Literal, NamedTuple
 
 import pytest
 

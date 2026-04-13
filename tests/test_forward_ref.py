@@ -7,7 +7,7 @@ from typing import Annotated, Any, Generic, Optional, TypeVar, Union
 
 import pytest
 from annotated_types import Gt
-from typing_extensions import get_args, get_origin
+from typing_extensions import get_args, get_origin  # noqa: UP035
 from typing_inspection import typing_objects
 
 from pydantic import BaseModel, Field, PydanticUserError, TypeAdapter, ValidationError

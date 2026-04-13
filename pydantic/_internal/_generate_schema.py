@@ -12,7 +12,7 @@ import re
 import sys
 import typing
 import warnings
-from collections.abc import Generator, Iterable, Iterator, Mapping
+from collections.abc import Callable, Generator, Iterable, Iterator, Mapping
 from contextlib import contextmanager
 from copy import copy
 from decimal import Decimal
@@ -27,10 +27,10 @@ from types import FunctionType, GenericAlias, LambdaType, MethodType
 from typing import (
     TYPE_CHECKING,
     Any,
-    Callable,
     Final,
     ForwardRef,
     Literal,
+    TypeAlias,
     TypeVar,
     Union,
     cast,
@@ -51,7 +51,12 @@ from pydantic_core import (
     core_schema,
     to_jsonable_python,
 )
-from typing_extensions import TypeAlias, TypeAliasType, get_args, get_origin, is_typeddict
+from typing_extensions import (  # noqa: UP035 (for `get_args` and `get_origin`)
+    TypeAliasType,
+    get_args,
+    get_origin,
+    is_typeddict,
+)
 from typing_inspection import typing_objects
 from typing_inspection.introspection import AnnotationSource, get_literal_values, is_union_origin
 

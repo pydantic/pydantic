@@ -1,5 +1,5 @@
+from collections.abc import Callable
 from collections.abc import Callable as CollectionsCallable
-from typing import Callable
 
 import pytest
 

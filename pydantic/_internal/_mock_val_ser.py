@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-from collections.abc import Iterator, Mapping
-from typing import TYPE_CHECKING, Any, Callable, Generic, Literal, TypeVar, Union
+from collections.abc import Callable, Iterator, Mapping
+from typing import TYPE_CHECKING, Any, Generic, Literal, TypeVar, Union
 
 from pydantic_core import CoreSchema, SchemaSerializer, SchemaValidator
 

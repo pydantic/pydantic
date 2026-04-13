@@ -12,7 +12,7 @@ import uuid
 import warnings
 from abc import ABC, abstractmethod
 from collections import Counter, OrderedDict, UserDict, defaultdict, deque
-from collections.abc import Iterable, Mapping, MutableMapping, Sequence
+from collections.abc import Callable, Iterable, Mapping, MutableMapping, Sequence
 from dataclasses import dataclass
 from datetime import date, datetime, time, timedelta, timezone
 from decimal import Decimal
@@ -24,7 +24,6 @@ from re import Pattern
 from typing import (
     Annotated,
     Any,
-    Callable,
     Literal,
     NamedTuple,
     NewType,
@@ -37,6 +36,7 @@ from uuid import UUID
 import annotated_types
 import dirty_equals
 import pytest
+import typing_extensions
 from dirty_equals import HasRepr, IsFloatNan, IsOneOf, IsStr
 from pydantic_core import (
     CoreSchema,
@@ -44,7 +44,7 @@ from pydantic_core import (
     SchemaError,
     core_schema,
 )
-from typing_extensions import NotRequired, TypedDict, get_args
+from typing_extensions import NotRequired, TypedDict, get_args  # noqa: UP035 (for `get_args`)
 
 from pydantic import (
     UUID1,
@@ -6215,20 +6215,11 @@ def test_iterable_arbitrary_type():
             x: CustomIterable
 
 
-def test_typing_extension_literal_field():
-    from typing_extensions import Literal
+@pytest.mark.parametrize('typing_literal', [typing.Literal, typing_extensions.Literal])
+def test_literal_field(typing_literal):
 
     class Model(BaseModel):
-        foo: Literal['foo']
-
-    assert Model(foo='foo').foo == 'foo'
-
-
-def test_typing_literal_field():
-    from typing import Literal
-
-    class Model(BaseModel):
-        foo: Literal['foo']
+        foo: typing_literal['foo']
 
     assert Model(foo='foo').foo == 'foo'
 

@@ -1,12 +1,12 @@
 import re
 import sys
 import warnings
-from collections.abc import Sequence
+from collections.abc import Callable, Sequence
 from copy import deepcopy
 from dataclasses import dataclass
 from enum import Enum, IntEnum
 from types import SimpleNamespace
-from typing import Annotated, Any, Callable, Generic, Literal, Optional, TypeVar, Union
+from typing import Annotated, Any, Generic, Literal, Optional, TypeVar, Union
 
 import pytest
 from dirty_equals import HasRepr, IsStr

@@ -7,11 +7,11 @@ from __future__ import annotations as _annotations
 
 import sys
 import warnings
-from collections.abc import Generator, Hashable, Mapping
+from collections.abc import Callable, Generator, Hashable, Mapping
 from datetime import date, datetime, time, timedelta
 from decimal import Decimal
 from re import Pattern
-from typing import TYPE_CHECKING, Any, Callable, Literal, Union
+from typing import TYPE_CHECKING, Any, Literal, Union
 
 from typing_extensions import TypeVar, deprecated
 
@@ -21,7 +21,9 @@ else:
     from typing import TypedDict
 
 if sys.version_info < (3, 11):
-    from typing_extensions import Protocol, Required, TypeAlias
+    from typing import TypeAlias
+
+    from typing_extensions import Protocol, Required
 else:
     from typing import Protocol, Required, TypeAlias
 

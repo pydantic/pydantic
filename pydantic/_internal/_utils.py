@@ -18,10 +18,10 @@ from functools import cached_property
 from inspect import Parameter
 from itertools import zip_longest
 from types import BuiltinFunctionType, CodeType, FunctionType, GeneratorType, LambdaType, ModuleType
-from typing import TYPE_CHECKING, Any, Generic, TypeVar, overload
+from typing import TYPE_CHECKING, Any, Generic, TypeAlias, TypeGuard, TypeVar, overload
 
 from pydantic_core import MISSING, PydanticUndefined
-from typing_extensions import TypeAlias, TypeGuard, deprecated
+from typing_extensions import deprecated
 
 from pydantic import PydanticDeprecatedSince211
 

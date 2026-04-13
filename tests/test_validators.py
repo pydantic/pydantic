@@ -1,6 +1,7 @@
 import contextlib
 import re
 from collections import deque
+from collections.abc import Callable
 from dataclasses import dataclass
 from datetime import date, datetime
 from enum import Enum
@@ -10,7 +11,6 @@ from os.path import normcase
 from typing import (
     Annotated,
     Any,
-    Callable,
     Literal,
     NamedTuple,
     Optional,

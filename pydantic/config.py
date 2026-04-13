@@ -3,10 +3,11 @@
 from __future__ import annotations as _annotations
 
 import warnings
+from collections.abc import Callable
 from re import Pattern
-from typing import TYPE_CHECKING, Any, Callable, Literal, TypeVar, Union, cast, overload
+from typing import TYPE_CHECKING, Any, Literal, TypeAlias, TypeVar, Union, cast, overload
 
-from typing_extensions import TypeAlias, TypedDict, Unpack, deprecated
+from typing_extensions import TypedDict, Unpack, deprecated
 
 from ._migration import getattr_migration
 from .aliases import AliasGenerator

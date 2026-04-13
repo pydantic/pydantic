@@ -2,12 +2,13 @@
 
 from __future__ import annotations as _annotations
 
+from collections.abc import Callable
 from functools import partial, partialmethod
 from types import FunctionType
-from typing import TYPE_CHECKING, Any, Callable, Literal, TypeVar, Union, overload
+from typing import TYPE_CHECKING, Any, Literal, TypeAlias, TypeVar, Union, overload
 from warnings import warn
 
-from typing_extensions import Protocol, TypeAlias, deprecated
+from typing_extensions import Protocol, deprecated
 
 from .._internal import _decorators, _decorators_v1
 from ..errors import PydanticUserError

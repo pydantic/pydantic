@@ -4,7 +4,7 @@ import pickle
 import re
 import sys
 import traceback
-from collections.abc import Hashable
+from collections.abc import Callable, Hashable
 from dataclasses import InitVar
 from datetime import date, datetime
 from functools import cached_property
@@ -12,7 +12,6 @@ from pathlib import Path
 from typing import (
     Annotated,
     Any,
-    Callable,
     ClassVar,
     Generic,
     Literal,

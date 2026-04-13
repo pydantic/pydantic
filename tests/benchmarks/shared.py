@@ -1,5 +1,5 @@
 from collections import deque
-from collections.abc import Iterable, Sequence
+from collections.abc import Callable, Iterable, Sequence
 from datetime import date, datetime, time, timedelta
 from decimal import Decimal
 from enum import Enum, IntEnum
@@ -15,7 +15,6 @@ from pathlib import Path
 from re import Pattern
 from typing import (
     Any,
-    Callable,
     Literal,
     NamedTuple,
     Optional,

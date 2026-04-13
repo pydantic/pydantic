@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import TypedDict
+from typing import TypeAlias, TypedDict
 
 from pydantic_core.core_schema import (
     ComputedField,
@@ -11,7 +11,6 @@ from pydantic_core.core_schema import (
     SerSchema,
     iter_union_choices,
 )
-from typing_extensions import TypeAlias
 
 AllSchemas: TypeAlias = 'CoreSchema | SerSchema | ComputedField'
 

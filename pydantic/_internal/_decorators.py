@@ -4,16 +4,16 @@ from __future__ import annotations as _annotations
 
 import types
 from collections import deque
-from collections.abc import Iterable
+from collections.abc import Callable, Iterable
 from copy import copy
 from dataclasses import dataclass, field
 from functools import cached_property, partial, partialmethod
 from inspect import Parameter, Signature, isdatadescriptor, ismethoddescriptor
 from itertools import islice
-from typing import TYPE_CHECKING, Any, Callable, ClassVar, Generic, Literal, TypeVar, Union
+from typing import TYPE_CHECKING, Any, ClassVar, Generic, Literal, TypeAlias, TypeVar, Union
 
 from pydantic_core import PydanticUndefined, PydanticUndefinedType, core_schema
-from typing_extensions import Self, TypeAlias, is_typeddict
+from typing_extensions import Self, is_typeddict
 
 from ..errors import PydanticUserError
 from ._core_utils import get_type_ref

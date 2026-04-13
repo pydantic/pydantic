@@ -9,16 +9,16 @@ import collections.abc
 import math
 import re
 import typing
-from collections.abc import Sequence
+from collections.abc import Callable, Sequence
 from decimal import Decimal
 from fractions import Fraction
 from ipaddress import IPv4Address, IPv4Interface, IPv4Network, IPv6Address, IPv6Interface, IPv6Network
-from typing import Any, Callable, TypeVar, Union, cast
+from typing import Any, TypeVar, Union, cast
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 import typing_extensions
 from pydantic_core import PydanticCustomError, PydanticKnownError, core_schema
-from typing_extensions import get_args, get_origin
+from typing_extensions import get_args, get_origin  # noqa: UP035
 from typing_inspection import typing_objects
 
 from pydantic._internal._import_utils import import_cached_field_info

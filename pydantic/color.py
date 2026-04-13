@@ -14,8 +14,9 @@ Warning: Deprecated
 
 import math
 import re
+from collections.abc import Callable
 from colorsys import hls_to_rgb, rgb_to_hls
-from typing import Any, Callable, Optional, Union, cast
+from typing import Any, Optional, Union, cast
 
 from pydantic_core import CoreSchema, PydanticCustomError, core_schema
 from typing_extensions import deprecated

@@ -4,11 +4,11 @@ from __future__ import annotations as _annotations
 
 import dataclasses
 import warnings
-from collections.abc import Mapping
+from collections.abc import Callable, Mapping
 from functools import cache
 from inspect import Parameter, ismethoddescriptor
 from re import Pattern
-from typing import TYPE_CHECKING, Any, Callable, TypeVar, cast
+from typing import TYPE_CHECKING, Any, TypeVar, cast
 
 from pydantic_core import PydanticUndefined
 from typing_extensions import TypeIs

@@ -9,7 +9,7 @@ import warnings
 from collections.abc import Generator
 from contextlib import contextmanager
 from functools import partial
-from typing import TYPE_CHECKING, Any, ClassVar, Protocol, cast
+from typing import TYPE_CHECKING, Any, ClassVar, Protocol, TypeAlias, cast
 
 from pydantic_core import (
     ArgsKwargs,
@@ -17,7 +17,7 @@ from pydantic_core import (
     SchemaValidator,
     core_schema,
 )
-from typing_extensions import TypeAlias, TypeIs
+from typing_extensions import TypeIs
 
 from ..errors import PydanticUndefinedAnnotation
 from ..fields import FieldInfo

@@ -4,7 +4,7 @@ import re
 import sys
 import warnings
 from collections import defaultdict
-from collections.abc import Mapping
+from collections.abc import Callable, Mapping
 from copy import deepcopy
 from dataclasses import dataclass
 from datetime import date, datetime
@@ -13,7 +13,6 @@ from functools import cache, cached_property, partial
 from typing import (
     Annotated,
     Any,
-    Callable,
     ClassVar,
     Final,
     Generic,

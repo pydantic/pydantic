@@ -5,10 +5,11 @@ New tests for v2 of serialization logic.
 import json
 import re
 import sys
+from collections.abc import Callable
 from enum import Enum
 from functools import partial, partialmethod
 from re import Pattern
-from typing import Annotated, Any, Callable, ClassVar, Optional, Union
+from typing import Annotated, Any, ClassVar, Optional, Union
 
 import pytest
 from pydantic_core import PydanticSerializationError, core_schema, to_jsonable_python

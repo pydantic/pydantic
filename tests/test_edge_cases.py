@@ -4,13 +4,12 @@ import re
 import sys
 import typing
 from abc import ABC, abstractmethod
-from collections.abc import Hashable, Sequence
+from collections.abc import Callable, Hashable, Sequence
 from decimal import Decimal
 from enum import Enum, auto
 from typing import (
     Annotated,
     Any,
-    Callable,
     ForwardRef,
     Generic,
     Literal,
@@ -29,7 +28,7 @@ from pydantic_core import (
     PydanticUndefined,
     core_schema,
 )
-from typing_extensions import Self, TypeAliasType, TypedDict, get_args
+from typing_extensions import Self, TypeAliasType, TypedDict, get_args  # noqa: UP035 (for `get_args`)
 
 from pydantic import (
     AfterValidator,

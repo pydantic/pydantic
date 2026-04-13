@@ -3,8 +3,9 @@
 from __future__ import annotations
 
 import datetime
+from collections.abc import Callable
 from decimal import Decimal
-from typing import Annotated, Any, Callable, Union
+from typing import Annotated, Any, Union
 
 import pytest
 import pytz

@@ -1,9 +1,10 @@
 import re
 import sys
 from collections import defaultdict
+from collections.abc import Callable
 from copy import deepcopy
 from decimal import Decimal
-from typing import Any, Callable, Union
+from typing import Any, Union
 
 import pytest
 from dirty_equals import HasRepr, IsInstance
