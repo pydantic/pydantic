@@ -23,7 +23,7 @@ from inspect import Parameter, _ParameterKind
 from ipaddress import IPv4Address, IPv4Interface, IPv4Network, IPv6Address, IPv6Interface, IPv6Network
 from itertools import chain
 from operator import attrgetter
-from types import FunctionType, GenericAlias, LambdaType, MethodType
+from types import FunctionType, GenericAlias, LambdaType, MethodType, NoneType
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -981,7 +981,7 @@ class GenerateSchema:
                 # This was fixed in https://github.com/python/cpython/pull/30900 (Python 3.11).
                 # TODO: this shouldn't be necessary (probably even this `_get_args_resolving_forward_refs()` function)
                 # once we drop support for Python 3.10 *or* if we implement our own `typing._eval_type()` implementation.
-                args = (_typing_extra._make_forward_ref(a) if isinstance(a, str) else a for a in args)
+                args = (ForwardRef(a) if isinstance(a, str) else a for a in args)
             args = tuple(self._resolve_forward_ref(a) if isinstance(a, ForwardRef) else a for a in args)
         elif required:  # pragma: no cover
             raise TypeError(f'Expected {obj} to have generic parameters but it had none')
@@ -1075,7 +1075,7 @@ class GenerateSchema:
             return self._fraction_schema()
         elif obj is MultiHostUrl:
             return core_schema.multi_host_url_schema()
-        elif obj is None or obj is _typing_extra.NoneType:
+        elif obj is None or obj is NoneType:
             return core_schema.none_schema()
         if obj is MISSING:
             return core_schema.missing_sentinel_schema()
@@ -1326,7 +1326,7 @@ class GenerateSchema:
         choices: list[CoreSchema] = []
         nullable = False
         for arg in args:
-            if arg is None or arg is _typing_extra.NoneType:
+            if arg is None or arg is NoneType:
                 nullable = True
             else:
                 choices.append(self.generate_schema(arg))
@@ -1747,7 +1747,7 @@ class GenerateSchema:
                 # when using type[None], this doesn't type convert to type[NoneType], and None isn't a class
                 # so we handle it manually here
                 if type_param is None:
-                    return core_schema.is_subclass_schema(_typing_extra.NoneType)
+                    return core_schema.is_subclass_schema(NoneType)
                 raise TypeError(f'Expected a class, got {type_param!r}')
             return core_schema.is_subclass_schema(type_param)
 

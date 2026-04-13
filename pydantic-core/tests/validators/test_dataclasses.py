@@ -1367,29 +1367,23 @@ def test_dataclass_slots_field_after_validator():
     assert dataclasses.asdict(foo) == {'a': 1, 'b': 'hello world!'}
 
 
-if sys.version_info < (3, 10):
-    kwargs = {}
-else:
-    kwargs = {'slots': True}
-
-
-@dataclasses.dataclass(**kwargs)
+@dataclasses.dataclass(slots=True)
 class FooDataclassSlots:
     a: str
     b: bool
 
 
-@dataclasses.dataclass(**kwargs)
+@dataclasses.dataclass(slots=True)
 class FooDataclassSameSlots(FooDataclassSlots):
     pass
 
 
-@dataclasses.dataclass(**kwargs)
+@dataclasses.dataclass(slots=True)
 class FooDataclassMoreSlots(FooDataclassSlots):
     c: str
 
 
-@dataclasses.dataclass(**kwargs)
+@dataclasses.dataclass(slots=True)
 class DuplicateDifferentSlots:
     a: str
     b: bool

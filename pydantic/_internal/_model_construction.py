@@ -11,7 +11,7 @@ from abc import ABCMeta
 from collections.abc import Callable
 from functools import cache, partial, wraps
 from types import FunctionType
-from typing import TYPE_CHECKING, Any, Generic, Literal, NoReturn, TypeVar, cast
+from typing import TYPE_CHECKING, Any, ForwardRef, Generic, Literal, NoReturn, TypeVar, cast
 
 from pydantic_core import PydanticUndefined, SchemaSerializer
 from typing_extensions import (  # noqa: UP035 (for `get_args` and `get_origin`)
@@ -36,7 +36,6 @@ from ._mock_val_ser import set_model_mocks
 from ._namespace_utils import NsResolver
 from ._signature import generate_pydantic_signature
 from ._typing_extra import (
-    _make_forward_ref,
     eval_type_backport,
     is_classvar_annotation,
     parent_frame_namespace,
@@ -523,7 +522,7 @@ def inspect_namespace(  # noqa C901
                 if frame is not None:
                     try:
                         ann_type = eval_type_backport(
-                            _make_forward_ref(ann_type, is_argument=False, is_class=True),
+                            ForwardRef(ann_type, is_argument=False, is_class=True),
                             globalns=frame.f_globals,
                             localns=frame.f_locals,
                         )

@@ -22,7 +22,6 @@ from . import _generics, _typing_extra
 from ._config import ConfigWrapper
 from ._docs_extraction import extract_docstrings_from_cls
 from ._import_utils import import_cached_base_model, import_cached_field_info
-from ._internal_dataclass import slots_true
 from ._namespace_utils import NsResolver
 from ._repr import Representation
 from ._utils import can_be_positional, get_first_not_none
@@ -42,7 +41,7 @@ class PydanticMetadata(Representation):
     __slots__ = ()
 
 
-@dataclasses.dataclass(**slots_true)  # TODO: make kw_only when we drop support for 3.9.
+@dataclasses.dataclass(slots=True)  # TODO: make kw_only when we drop support for 3.9.
 class PydanticExtraInfo:
     # TODO: make use of PEP 747:
     annotation: Any

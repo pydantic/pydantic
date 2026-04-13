@@ -27,75 +27,41 @@ __all__ = 'dataclass', 'rebuild_dataclass'
 
 _T = TypeVar('_T')
 
-if sys.version_info >= (3, 10):
 
-    @dataclass_transform(field_specifiers=(dataclasses.field, Field, PrivateAttr))
-    @overload
-    def dataclass(
-        *,
-        init: Literal[False] = False,
-        repr: bool = True,
-        eq: bool = True,
-        order: bool = False,
-        unsafe_hash: bool = False,
-        frozen: bool = False,
-        config: ConfigDict | type[object] | None = None,
-        validate_on_init: bool | None = None,
-        kw_only: bool = ...,
-        slots: bool = ...,
-    ) -> Callable[[type[_T]], type[PydanticDataclass]]:  # type: ignore
-        ...
-
-    @dataclass_transform(field_specifiers=(dataclasses.field, Field, PrivateAttr))
-    @overload
-    def dataclass(
-        _cls: type[_T],  # type: ignore
-        *,
-        init: Literal[False] = False,
-        repr: bool = True,
-        eq: bool = True,
-        order: bool = False,
-        unsafe_hash: bool = False,
-        frozen: bool | None = None,
-        config: ConfigDict | type[object] | None = None,
-        validate_on_init: bool | None = None,
-        kw_only: bool = ...,
-        slots: bool = ...,
-    ) -> type[PydanticDataclass]: ...
-
-else:
-
-    @dataclass_transform(field_specifiers=(dataclasses.field, Field, PrivateAttr))
-    @overload
-    def dataclass(
-        *,
-        init: Literal[False] = False,
-        repr: bool = True,
-        eq: bool = True,
-        order: bool = False,
-        unsafe_hash: bool = False,
-        frozen: bool | None = None,
-        config: ConfigDict | type[object] | None = None,
-        validate_on_init: bool | None = None,
-    ) -> Callable[[type[_T]], type[PydanticDataclass]]:  # type: ignore
-        ...
-
-    @dataclass_transform(field_specifiers=(dataclasses.field, Field, PrivateAttr))
-    @overload
-    def dataclass(
-        _cls: type[_T],  # type: ignore
-        *,
-        init: Literal[False] = False,
-        repr: bool = True,
-        eq: bool = True,
-        order: bool = False,
-        unsafe_hash: bool = False,
-        frozen: bool | None = None,
-        config: ConfigDict | type[object] | None = None,
-        validate_on_init: bool | None = None,
-    ) -> type[PydanticDataclass]: ...
+@dataclass_transform(field_specifiers=(dataclasses.field, Field, PrivateAttr))
+@overload
+def dataclass(
+    *,
+    init: Literal[False] = False,
+    repr: bool = True,
+    eq: bool = True,
+    order: bool = False,
+    unsafe_hash: bool = False,
+    frozen: bool = False,
+    config: ConfigDict | type[object] | None = None,
+    validate_on_init: bool | None = None,
+    kw_only: bool = ...,
+    slots: bool = ...,
+) -> Callable[[type[_T]], type[PydanticDataclass]]:  # type: ignore
+    ...
 
 
+@dataclass_transform(field_specifiers=(dataclasses.field, Field, PrivateAttr))
+@overload
+def dataclass(
+    _cls: type[_T],  # type: ignore
+    *,
+    init: Literal[False] = False,
+    repr: bool = True,
+    eq: bool = True,
+    order: bool = False,
+    unsafe_hash: bool = False,
+    frozen: bool | None = None,
+    config: ConfigDict | type[object] | None = None,
+    validate_on_init: bool | None = None,
+    kw_only: bool = ...,
+    slots: bool = ...,
+) -> type[PydanticDataclass]: ...
 @dataclass_transform(field_specifiers=(dataclasses.field, Field, PrivateAttr))
 def dataclass(
     _cls: type[_T] | None = None,
@@ -146,10 +112,7 @@ def dataclass(
     assert init is False, 'pydantic.dataclasses.dataclass only supports init=False'
     assert validate_on_init is not False, 'validate_on_init=False is no longer supported'
 
-    if sys.version_info >= (3, 10):
-        kwargs = {'kw_only': kw_only, 'slots': slots}
-    else:
-        kwargs = {}
+    kwargs = {'kw_only': kw_only, 'slots': slots}
 
     def create_dataclass(cls: type[Any]) -> type[PydanticDataclass]:
         """Create a Pydantic dataclass from a regular dataclass.

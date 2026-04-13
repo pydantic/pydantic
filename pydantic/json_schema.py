@@ -48,7 +48,6 @@ from ._internal import (
     _core_metadata,
     _core_utils,
     _decorators,
-    _internal_dataclass,
     _mock_val_ser,
     _schema_generation_shared,
     _typing_extra,
@@ -135,7 +134,7 @@ JsonSchemaKeyT = TypeVar('JsonSchemaKeyT', bound=Hashable)
 _PRIMITIVE_JSON_SCHEMA_TYPES = ('string', 'boolean', 'null', 'integer', 'number')
 
 
-@dataclasses.dataclass(**_internal_dataclass.slots_true)
+@dataclasses.dataclass(slots=True)
 class _DefinitionsRemapping:
     defs_remapping: dict[DefsRef, DefsRef]
     json_remapping: dict[JsonRef, JsonRef]
@@ -2643,7 +2642,7 @@ def _make_json_hashable(value: JsonValue) -> _HashableJsonValue:
         return value
 
 
-@dataclasses.dataclass(**_internal_dataclass.slots_true)
+@dataclasses.dataclass(slots=True)
 class WithJsonSchema:
     """!!! abstract "Usage Documentation"
         [`WithJsonSchema` Annotation](../concepts/json_schema.md#withjsonschema-annotation)
@@ -2828,7 +2827,7 @@ if TYPE_CHECKING:
     SkipJsonSchema = Annotated[AnyType, ...]
 else:
 
-    @dataclasses.dataclass(**_internal_dataclass.slots_true)
+    @dataclasses.dataclass(slots=True)
     class SkipJsonSchema:
         """!!! abstract "Usage Documentation"
             [`SkipJsonSchema` Annotation](../concepts/json_schema.md#skipjsonschema-annotation)

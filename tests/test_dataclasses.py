@@ -1909,9 +1909,8 @@ def test_kw_only_inheritance_on_field() -> None:
     class B(A):
         pass
 
-    if sys.version_info >= (3, 10):  # On 3.9, we ignore kw_only.
-        with pytest.raises(ValidationError):
-            B(1)
+    with pytest.raises(ValidationError):
+        B(1)
 
 
 def test_repr_inheritance() -> None:

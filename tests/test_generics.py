@@ -1198,9 +1198,8 @@ def test_replace_types():
     # example)
     assert replace_types(list[str | list | T], {T: int}) == list[str | list | int]
 
-    if sys.version_info >= (3, 10):
-        # Check that types.UnionType gets handled properly
-        assert replace_types(str | list[T] | float, {T: int}) == str | list[int] | float
+    # Check that types.UnionType gets handled properly
+    assert replace_types(str | list[T] | float, {T: int}) == str | list[int] | float
 
 
 def test_replace_types_with_user_defined_generic_type_field():  # noqa: C901

@@ -17,7 +17,7 @@ from copy import deepcopy
 from functools import cached_property
 from inspect import Parameter
 from itertools import zip_longest
-from types import BuiltinFunctionType, CodeType, FunctionType, GeneratorType, LambdaType, ModuleType
+from types import BuiltinFunctionType, CodeType, FunctionType, GeneratorType, LambdaType, ModuleType, NoneType
 from typing import TYPE_CHECKING, Any, Generic, TypeAlias, TypeGuard, TypeVar, overload
 
 from pydantic_core import MISSING, PydanticUndefined
@@ -44,7 +44,7 @@ IMMUTABLE_NON_COLLECTIONS_TYPES: set[type[Any]] = {
     bool,
     bytes,
     type,
-    _typing_extra.NoneType,
+    NoneType,
     FunctionType,
     BuiltinFunctionType,
     LambdaType,

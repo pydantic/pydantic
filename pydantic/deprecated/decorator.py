@@ -1,11 +1,11 @@
 import warnings
 from collections.abc import Callable, Mapping
 from functools import wraps
-from typing import TYPE_CHECKING, Any, Optional, TypeVar, Union, overload
+from typing import TYPE_CHECKING, Any, Optional, TypeVar, Union, get_type_hints, overload
 
 from typing_extensions import deprecated
 
-from .._internal import _config, _typing_extra
+from .._internal import _config
 from ..alias_generators import to_pascal
 from ..errors import PydanticUserError
 from ..functional_validators import field_validator
@@ -92,7 +92,7 @@ class ValidatedFunction:
         self.v_args_name = 'args'
         self.v_kwargs_name = 'kwargs'
 
-        type_hints = _typing_extra.get_type_hints(function, include_extras=True)
+        type_hints = get_type_hints(function, include_extras=True)
         takes_args = False
         takes_kwargs = False
         fields: dict[str, tuple[Any, Any]] = {}
