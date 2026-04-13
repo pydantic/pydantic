@@ -3,7 +3,7 @@ import platform
 import re
 import sys
 import typing
-from typing import Annotated, Any, Generic, Optional, TypeVar
+from typing import Annotated, Any, Generic, Optional, TypeVar, Union
 
 import pytest
 from annotated_types import Gt
@@ -1677,7 +1677,7 @@ def test_string_annotation_union_type() -> None:
     T = TypeVar('T')
 
     class Model(BaseModel, Generic[T]):
-        data: T | int  # Using `typing.Union` is important here.
+        data: Union[T | int]  # noqa: UP007  # Using `typing.Union` is important here.
 
     class Main(BaseModel):
         m: Model['Main']
