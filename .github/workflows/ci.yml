@@ -23,7 +23,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python-version: ['3.9', '3.10', '3.11', '3.12', '3.13', '3.14']
+        python-version: ['3.10', '3.11', '3.12', '3.13', '3.14']
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
@@ -86,19 +86,19 @@ jobs:
           - os: linux
             manylinux: auto
             target: armv7
-            interpreter: 3.9 3.10 3.11 3.12 3.13 3.14 3.14t
+            interpreter: 3.10 3.11 3.12 3.13 3.14 3.14t
           - os: linux
             manylinux: auto
             target: ppc64le
-            interpreter: 3.9 3.10 3.11 3.12 3.13 3.14 3.14t
+            interpreter: 3.10 3.11 3.12 3.13 3.14 3.14t
           - os: linux
             manylinux: auto
             target: riscv64gc-unknown-linux-gnu
-            interpreter: 3.9 3.10 3.11 3.12 3.13 3.14 3.14t
+            interpreter: 3.10 3.11 3.12 3.13 3.14 3.14t
           - os: linux
             manylinux: auto
             target: s390x
-            interpreter: 3.9 3.10 3.11 3.12 3.13 3.14 3.14t
+            interpreter: 3.10 3.11 3.12 3.13 3.14 3.14t
             # manylinux pypy and graalpy on major architectures:
           - os: linux
             manylinux: auto
@@ -125,10 +125,10 @@ jobs:
           # arm pypy and older pythons which can't be run on the arm hardware for PGO
           - os: macos
             target: x86_64
-            interpreter: 3.9 3.10 3.11 3.12 3.13 3.14 3.14t pypy3.11 graalpy3.11 graalpy3.12
+            interpreter: 3.10 3.11 3.12 3.13 3.14 3.14t pypy3.11 graalpy3.11 graalpy3.12
           - os: macos
             target: aarch64
-            interpreter: 3.9 pypy3.11 graalpy3.11 graalpy3.12
+            interpreter: pypy3.11 graalpy3.11 graalpy3.12
 
           # windows;
           # x86_64 pypy builds are not PGO optimized
@@ -140,7 +140,7 @@ jobs:
           - os: windows
             target: i686
             python-architecture: x86
-            interpreter: 3.9 3.10 3.11 3.12 3.13 3.14 3.14t
+            interpreter: 3.10 3.11 3.12 3.13 3.14 3.14t
           - os: windows
             target: aarch64
             runs-on: windows-11-arm
@@ -169,7 +169,7 @@ jobs:
           working-directory: pydantic-core
           target: ${{ matrix.target }}
           manylinux: ${{ matrix.manylinux }}
-          args: --release --out dist --interpreter ${{ matrix.interpreter || '3.9 3.10 3.11 3.12 3.13 3.14 3.14t pypy3.11' }}
+          args: --release --out dist --interpreter ${{ matrix.interpreter || '3.10 3.11 3.12 3.13 3.14 3.14t pypy3.11' }}
           rust-toolchain: stable
           docker-options: -e CI
 
@@ -200,12 +200,7 @@ jobs:
             runs-on: windows-latest
           - os: macos
             runs-on: macos-latest
-        interpreter: ['3.9', '3.10', '3.11', '3.12', '3.13', '3.14', '3.14t']
-        exclude:
-          # macos arm only supported from 3.10 and up
-          - platform:
-              os: macos
-            interpreter: '3.9'
+        interpreter: ['3.10', '3.11', '3.12', '3.13', '3.14', '3.14t']
 
     runs-on: ${{ matrix.platform.runs-on }}
     steps:
@@ -646,7 +641,7 @@ jobs:
       matrix:
         os: [ubuntu-latest, macos-latest, windows-latest]
         # Segmentation fault on pypy3.11.15 (latest), see https://github.com/pypy/pypy/issues/5400
-        python-version: ['3.9', '3.10', '3.11', '3.12', '3.13', '3.14', '3.14t', 'pypy3.11.13']
+        python-version: ['3.10', '3.11', '3.12', '3.13', '3.14', '3.14t', 'pypy3.11.13']
         include:
           # test macos intel just with latest python version
           - os: macos-15-intel
@@ -847,7 +842,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python-version: ['3.9', '3.10', '3.11', '3.12', '3.13', '3.14']
+        python-version: ['3.10', '3.11', '3.12', '3.13', '3.14']
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
