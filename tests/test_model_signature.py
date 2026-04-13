@@ -4,6 +4,7 @@ from inspect import Parameter, Signature, signature
 from typing import Annotated, Any, Generic, TypeVar
 
 import pytest
+from annotated_types import Gt
 from typing_extensions import get_origin  # noqa: UP035
 from typing_inspection import typing_objects
 
@@ -173,7 +174,6 @@ def test_optional_field():
 
 @pytest.mark.skipif(sys.version_info < (3, 12), reason='repr different on older versions')
 def test_annotated_field():
-    from annotated_types import Gt
 
     class Model(BaseModel):
         foo: Annotated[int, Gt(1)] = 1
@@ -184,11 +184,10 @@ def test_annotated_field():
     assert typing_objects.is_annotated(get_origin(sig.parameters['foo'].annotation))
 
 
-@pytest.mark.skipif(sys.version_info >= (3, 14), reason='repr different on newer versions')
+@pytest.mark.skipif(sys.version_info < (3, 12), sys.version_info >= (3, 14), reason='repr different on newer versions')
 def test_annotated_optional_field():
-    from annotated_types import Gt
 
     class Model(BaseModel):
         foo: Annotated[int | None, Gt(1)] = None
 
-    assert str(signature(Model)) == '(*, foo: Annotated[Optional[int], Gt(gt=1)] = None) -> None'
+    assert str(signature(Model)) == '(*, foo: Annotated[int | None, Gt(gt=1)] = None) -> None'

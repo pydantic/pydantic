@@ -1,7 +1,6 @@
 import dataclasses
 import platform
 import re
-import sys
 import weakref
 from typing import Any, ClassVar
 

@@ -4,7 +4,7 @@ import weakref
 from collections import deque
 from collections.abc import Callable
 from dataclasses import dataclass
-from typing import Any, cast
+from typing import Any
 
 import pytest
 
@@ -571,24 +571,18 @@ def test_some(validate_default: bool) -> None:
 
 
 def test_some_pattern_match() -> None:
-    code = """\
-def f(v: Union[Some[Any], None]) -> str:
-    match v:
-        case Some(1):
-            return 'case1'
-        case Some(value=2):
-            return 'case2'
-        case Some(int(value)):
-            return f'case3: {value}'
-        case Some(value):
-            return f'case4: {type(value).__name__}({value})'
-        case None:
-            return 'case5'
-"""
-
-    local_vars = {}
-    exec(code, globals(), local_vars)
-    f = cast(Callable[[Some[Any] | None], str], local_vars['f'])
+    def f(v: Some[Any] | None) -> str:
+        match v:
+            case Some(1):
+                return 'case1'
+            case Some(value=2):
+                return 'case2'
+            case Some(int(value)):
+                return f'case3: {value}'
+            case Some(value):
+                return f'case4: {type(value).__name__}({value})'
+            case None:
+                return 'case5'
 
     res = f(SchemaValidator(core_schema.with_default_schema(core_schema.int_schema(), default=1)).get_default_value())
     assert res == 'case1'

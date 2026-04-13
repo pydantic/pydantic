@@ -1,5 +1,4 @@
 import datetime as dt
-import sys
 from collections.abc import Callable, Iterator
 from dataclasses import dataclass
 from decimal import Decimal

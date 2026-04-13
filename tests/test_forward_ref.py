@@ -77,6 +77,7 @@ def test_forward_ref_auto_update_no_model(create_module):
     assert f.model_dump() == {'a': {'b': {'a': {'b': {'a': None}}}}}
 
 
+@pytest.mark.skipif(sys.version_info < (3, 11), reason="ForwardRef doesn't support pipe unions")
 def test_basic_forward_ref(create_module):
     @create_module
     def module():
@@ -96,6 +97,7 @@ def test_basic_forward_ref(create_module):
     assert module.Bar(b={'a': '123'}).model_dump() == {'b': {'a': 123}}
 
 
+@pytest.mark.skipif(sys.version_info < (3, 11), reason="ForwardRef doesn't support pipe unions")
 def test_self_forward_ref_module(create_module):
     @create_module
     def module():
@@ -188,6 +190,7 @@ def test_forward_ref_dataclass(create_module):
     assert dataclasses.asdict(dc) == {'a': 1, 'b': {'a': 2, 'b': {'a': 3, 'b': None}}}
 
 
+@pytest.mark.skipif(sys.version_info < (3, 11), reason="ForwardRef doesn't support pipe unions")
 def test_forward_ref_sub_types(create_module):
     @create_module
     def module():

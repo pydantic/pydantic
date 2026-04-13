@@ -1,7 +1,6 @@
 import dataclasses
 import json
 import platform
-import sys
 from typing import ClassVar
 
 import pytest

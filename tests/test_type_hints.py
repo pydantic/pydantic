@@ -4,7 +4,6 @@ queried by :py:meth:`typing.get_type_hints`.
 """
 
 import inspect
-import sys
 from functools import lru_cache
 from typing import (
     Any,
