@@ -2,6 +2,42 @@
 <!-- markdownlint-disable descriptive-link-text -->
 <!-- markdownlint-disable-next-line first-line-heading -->
 
+## v2.13.0 (2026-04-13)
+
+[GitHub release](https://github.com/pydantic/pydantic/releases/tag/v2.13.0)
+
+The highlights of the v2.13 release are available in the [blog post](https://pydantic.dev/articles/pydantic-v2-13-release).
+Several minor changes (considered non-breaking changes according to our [versioning policy](https://pydantic.dev/docs/validation/2.13/get-started/version-policy/#pydantic-v2))
+are also included in this release. Make sure to look into them before upgrading.
+
+This release contains the updated `pydantic.v1` namespace, matching version 1.10.26 which includes support for Python 3.14.
+
+### What's Changed
+
+See the beta releases for all changes sinces 2.12.
+
+#### Packaging
+
+* Add zizmor for GitHub Actions workflow linting by @Viicos in [#13039](https://github.com/pydantic/pydantic/pull/13039)
+* Update jiter to v0.14.0 to fix a segmentation fault on musl Linux by @Viicos in [#13064](https://github.com/pydantic/pydantic/pull/13064)
+
+#### New Features
+
+* Allow default factories of private attributes to take validated model data by @Viicos in [#13013](https://github.com/pydantic/pydantic/pull/13013)
+
+#### Changes
+
+* Warn when serializing fixed length tuples with too few items by @arvindsaripalli in [#13016](https://github.com/pydantic/pydantic/pull/13016)
+
+#### Fixes
+
+* Change type of `Any` when synthesizing `_build_sources` for  `BaseSettings.__init__()` signature in the mypy plugin by @Viicos in [#13049](https://github.com/pydantic/pydantic/pull/13049)
+* Fix model equality when using runtime `extra` configuration by @Viicos in [#13062](https://github.com/pydantic/pydantic/pull/13062)
+
+### New Contributors
+
+* @arvindsaripalli made their first contribution in [#13016](https://github.com/pydantic/pydantic/pull/13016)
+
 ## v2.13.0b3 (2026-03-31)
 
 [GitHub release](https://github.com/pydantic/pydantic/releases/tag/v2.13.0b3)
@@ -255,15 +291,15 @@ This is the first 2.12 patch release, addressing most (but not all yet) regressi
 
 [GitHub release](https://github.com/pydantic/pydantic/releases/tag/v2.12.0)
 
-### What's Changed
-
 This is the final 2.12 release. It features the work of 20 external contributors and provides useful new features, along with initial Python 3.14 support.
 Several minor changes (considered non-breaking changes according to our [versioning policy](https://docs.pydantic.dev/2.12/version-policy/#pydantic-v2))
 are also included in this release. Make sure to look into them before upgrading.
 
 **Note that Pydantic V1 is not compatible with Python 3.14 and greater**.
 
-Changes (see the alpha and beta releases for additional changes since 2.11):
+### What's Changed
+
+See the beta releases for all changes sinces 2.11.
 
 #### Packaging
 
