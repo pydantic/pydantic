@@ -144,7 +144,7 @@ class _Pipeline(Generic[_InT, _OutT]):
     @overload
     def validate_as(
         self,
-        tp: ellipsis,  # noqa: F821  # TODO: use `_typing_extra.EllipsisType` when we drop Py3.9
+        tp: EllipsisType,
         *,
         strict: bool = False,
     ) -> _Pipeline[_InT, Any]: ...

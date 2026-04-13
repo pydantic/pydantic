@@ -10,6 +10,7 @@ from collections.abc import Callable, Mapping
 from copy import copy
 from dataclasses import Field as DataclassField
 from functools import cached_property
+from types import EllipsisType
 from typing import TYPE_CHECKING, Annotated, Any, ClassVar, Literal, TypeAlias, TypeVar, final, overload
 from warnings import warn
 
@@ -923,7 +924,7 @@ _T = TypeVar('_T')
 # to understand the magic that happens at runtime with the following overloads:
 @overload  # type hint the return value as `Any` to avoid type checking regressions when using `...`.
 def Field(
-    default: ellipsis,  # noqa: F821  # TODO: use `_typing_extra.EllipsisType` when we drop Py3.9
+    default: EllipsisType,
     *,
     alias: str | None = _Unset,
     alias_priority: int | None = _Unset,

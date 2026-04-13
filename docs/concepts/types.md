@@ -161,7 +161,7 @@ two reasons:
 By leveraging the new [`type` statement](https://typing.readthedocs.io/en/latest/spec/aliases.html#type-statement)
 (introduced in [PEP 695](https://peps.python.org/pep-0695/)), you can define aliases as follows:
 
-=== "Python 3.9 and above"
+=== "Python 3.10 and above"
 
     ```python
     from typing import Annotated
@@ -251,7 +251,7 @@ By leveraging the new [`type` statement](https://typing.readthedocs.io/en/latest
     Pydantic will *not* understand field-specific metadata inside named aliases. That is, metadata such as
     `alias`, `default`, `deprecated`, *cannot* be used:
 
-    === "Python 3.9 and above"
+    === "Python 3.10 and above"
 
         ```python {test="skip"}
         from typing import Annotated
@@ -290,7 +290,7 @@ By leveraging the new [`type` statement](https://typing.readthedocs.io/en/latest
 !!! note
     As with implicit type aliases, [type variables][typing.TypeVar] can also be used inside the generic alias:
 
-    === "Python 3.9 and above"
+    === "Python 3.10 and above"
 
         ```python
         from typing import Annotated, TypeVar
@@ -326,7 +326,7 @@ Named type aliases should be used whenever you need to define recursive type ali
 
 For instance, here is an example definition of a JSON type:
 
-=== "Python 3.9 and above"
+=== "Python 3.10 and above"
 
     ```python
     from typing import Union

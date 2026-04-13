@@ -69,7 +69,7 @@ Some differences between Pydantic dataclasses and models include:
     * There is no way to customize validation of extra values [using the `__pydantic_extra__` attribute](./models.md#extra-data).
 * Generic dataclasses are supported, but as with other standard library generic types, using a parameterized dataclass won't work as expected:
 
-    === "Python 3.9 and above"
+    === "Python 3.10 and above"
 
         ```python {upgrade="skip"}
         from typing import Generic, TypeVar

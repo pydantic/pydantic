@@ -29,9 +29,8 @@ from . import _repr, _typing_extra
 from ._import_utils import import_cached_base_model
 
 if TYPE_CHECKING:
-    # TODO remove type error comments when we drop support for Python 3.9
-    MappingIntStrAny: TypeAlias = Mapping[int, Any] | Mapping[str, Any]  # pyright: ignore[reportGeneralTypeIssues]
-    AbstractSetIntStr: TypeAlias = AbstractSet[int] | AbstractSet[str]  # pyright: ignore[reportGeneralTypeIssues]
+    MappingIntStrAny: TypeAlias = Mapping[int, Any] | Mapping[str, Any]
+    AbstractSetIntStr: TypeAlias = AbstractSet[int] | AbstractSet[str]
     from ..main import BaseModel
 
 

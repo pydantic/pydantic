@@ -1,7 +1,6 @@
 import collections.abc
 import os
 import pickle
-import sys
 import time
 from collections.abc import Callable
 from copy import copy, deepcopy
@@ -65,7 +64,9 @@ class LoggedVar(Generic[T]):
         ('foobar', 'str'),
         ('SomeForwardRefString', 'str'),  # included to document current behavior; could be changed
         (Union[str, int], 'Union[str, int]'),  # noqa: UP007
+        (str | int, 'Union[str, int]'),
         (list, 'list'),
+        (list[int], 'list[int]'),
         ([1, 2, 3], 'list'),
         (list[dict[str, int]], 'list[dict[str, int]]'),
         (tuple[str, int, float], 'tuple[str, int, float]'),
@@ -75,31 +76,11 @@ class LoggedVar(Generic[T]):
         (time.time_ns, 'time_ns'),
         (LoggedVar, 'LoggedVar'),
         (LoggedVar(), 'LoggedVar'),
+        (LoggedVar[int], 'LoggedVar[int]'),
+        (LoggedVar[dict[int, str]], 'LoggedVar[dict[int, str]]'),
     ],
 )
 def test_display_as_type(value, expected):
-    assert _repr.display_as_type(value) == expected
-
-
-@pytest.mark.skipif(sys.version_info < (3, 10), reason='requires python 3.10 or higher')
-@pytest.mark.parametrize(
-    'value_gen,expected',
-    [
-        (lambda: str, 'str'),
-        (lambda: 'SomeForwardRefString', 'str'),  # included to document current behavior; could be changed
-        (lambda: str | int, 'Union[str, int]'),
-        (lambda: list, 'list'),
-        (lambda: list[int], 'list[int]'),
-        (lambda: list[int], 'list[int]'),
-        (lambda: list[dict[str, int]], 'list[dict[str, int]]'),
-        (lambda: list[str | int], 'list[Union[str, int]]'),
-        (lambda: list[str | int], 'list[Union[str, int]]'),
-        (lambda: LoggedVar[int], 'LoggedVar[int]'),
-        (lambda: LoggedVar[dict[int, str]], 'LoggedVar[dict[int, str]]'),
-    ],
-)
-def test_display_as_type_310(value_gen, expected):
-    value = value_gen()
     assert _repr.display_as_type(value) == expected
 
 

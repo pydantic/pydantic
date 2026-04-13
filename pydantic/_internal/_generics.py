@@ -311,8 +311,7 @@ def replace_types(type_: Any, type_map: Mapping[TypeVar, Any] | None) -> Any:
         # implement `__getitem__()`. In Python 3.14+, `typing.Union` and `types.UnionType` are the same,
         # and we instead rely on `typing.Union` as it implicitly converts string annotations to `ForwardRef`
         # instances (this is to avoid type errors as per https://github.com/python/cpython/pull/105366).
-        # TODO remove type ignore comment when we drop support for Python 3.9 (https://github.com/microsoft/pyright/issues/11241):
-        if (3, 10) <= sys.version_info < (3, 14) and origin_type is types.UnionType:  # pyright: ignore[reportAttributeAccessIssue]
+        if sys.version_info < (3, 14) and origin_type is types.UnionType:
             return reduce(operator.or_, resolved_type_args)
         # NotRequired[T] and Required[T] don't support tuple type resolved_type_args, hence the condition below
         return origin_type[resolved_type_args[0] if len(resolved_type_args) == 1 else resolved_type_args]
