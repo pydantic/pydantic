@@ -6,7 +6,7 @@ from contextlib import AbstractContextManager
 from contextlib import nullcontext as does_not_raise
 from decimal import Decimal
 from inspect import signature
-from typing import Annotated, Any, NamedTuple, Union
+from typing import Annotated, Any, NamedTuple
 
 import pytest
 from dirty_equals import HasRepr, IsPartialDict
@@ -57,7 +57,7 @@ def model_with_strict_config():
     return ModelWithStrictConfig
 
 
-def _equals(a: Union[str, Iterable[str]], b: Union[str, Iterable[str]]) -> bool:
+def _equals(a: str | Iterable[str], b: str | Iterable[str]) -> bool:
     """
     Compare strings with spaces removed
     """
@@ -701,7 +701,7 @@ def test_json_encoders_type_adapter() -> None:
     ta = TypeAdapter(Decimal, config=config)
     assert json.loads(ta.dump_json(Decimal('1.1'))) == '2.2'
 
-    ta = TypeAdapter(Union[Decimal, int], config=config)
+    ta = TypeAdapter(Decimal | int, config=config)
     assert json.loads(ta.dump_json(Decimal('1.1'))) == '2.2'
     assert json.loads(ta.dump_json(1)) == '2'
 

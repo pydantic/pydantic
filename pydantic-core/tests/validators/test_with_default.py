@@ -5,7 +5,7 @@ import weakref
 from collections import deque
 from collections.abc import Callable
 from dataclasses import dataclass
-from typing import Any, Union, cast
+from typing import Any, cast
 
 import pytest
 
@@ -354,8 +354,8 @@ def test_model_class():
     ids=['after', 'before', 'wrap-before', 'wrap-after'],
 )
 def test_validate_default(
-    config_validate_default: Union[bool, None],
-    schema_validate_default: Union[bool, None],
+    config_validate_default: bool | None,
+    schema_validate_default: bool | None,
     inner_schema: core_schema.CoreSchema,
 ):
     if config_validate_default is not None:
@@ -561,7 +561,7 @@ def test_no_default_value(validate_default: bool) -> None:
 
 @pytest.mark.parametrize('validate_default', [True, False])
 def test_some(validate_default: bool) -> None:
-    def get_default() -> Union[Some[int], None]:
+    def get_default() -> Some[int] | None:
         s = core_schema.with_default_schema(core_schema.int_schema(), default=42)
         return SchemaValidator(s).get_default_value()
 
@@ -590,7 +590,7 @@ def f(v: Union[Some[Any], None]) -> str:
 
     local_vars = {}
     exec(code, globals(), local_vars)
-    f = cast(Callable[[Union[Some[Any], None]], str], local_vars['f'])
+    f = cast(Callable[[Some[Any] | None], str], local_vars['f'])
 
     res = f(SchemaValidator(core_schema.with_default_schema(core_schema.int_schema(), default=1)).get_default_value())
     assert res == 'case1'
@@ -770,8 +770,8 @@ validate_default_raises_examples = [
 )
 @pytest.mark.parametrize('input_value,expected', validate_default_raises_examples)
 def test_validate_default_raises(
-    core_schema_constructor: Union[core_schema.ModelFieldsSchema, core_schema.TypedDictSchema],
-    field_constructor: Union[core_schema.model_field, core_schema.typed_dict_field],
+    core_schema_constructor: Callable[..., Any],
+    field_constructor: Callable[..., Any],
     input_value: dict,
     expected: Any,
 ) -> None:

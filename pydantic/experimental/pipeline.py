@@ -12,7 +12,7 @@ from dataclasses import dataclass
 from decimal import Decimal
 from functools import cached_property, partial
 from re import Pattern
-from typing import TYPE_CHECKING, Annotated, Any, Generic, Protocol, TypeVar, Union, overload
+from typing import TYPE_CHECKING, Annotated, Any, Generic, Protocol, TypeAlias, TypeVar, overload
 
 import annotated_types
 
@@ -87,24 +87,26 @@ class _NotIn:
     values: Container[Any]
 
 
-_ConstraintAnnotation = Union[
-    annotated_types.Le,
-    annotated_types.Ge,
-    annotated_types.Lt,
-    annotated_types.Gt,
-    annotated_types.Len,
-    annotated_types.MultipleOf,
-    annotated_types.Timezone,
-    annotated_types.Interval,
-    annotated_types.Predicate,
+_ConstraintAnnotation: TypeAlias = (
+    annotated_types.Le
+    | annotated_types.Ge
+    | annotated_types.Lt
+    | annotated_types.Gt
+    | annotated_types.Len
+    | annotated_types.MultipleOf
+    | annotated_types.Timezone
+    | annotated_types.Interval
+    | annotated_types.Predicate
+    |
     # common predicates not included in annotated_types
-    _Eq,
-    _NotEq,
-    _In,
-    _NotIn,
+    _Eq
+    | _NotEq
+    | _In
+    | _NotIn
+    |
     # regular expressions
-    Pattern[str],
-]
+    Pattern[str]
+)
 
 
 @dataclass(**_slots_frozen)
@@ -112,7 +114,7 @@ class _Constraint:
     constraint: _ConstraintAnnotation
 
 
-_Step = Union[_ValidateAs, _ValidateAsDefer, _Transform, _PipelineOr, _PipelineAnd, _Constraint]
+_Step: TypeAlias = _ValidateAs | _ValidateAsDefer | _Transform | _PipelineOr | _PipelineAnd | _Constraint
 
 _InT = TypeVar('_InT')
 _OutT = TypeVar('_OutT')

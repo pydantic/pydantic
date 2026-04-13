@@ -3,7 +3,7 @@ import platform
 import re
 import sys
 import weakref
-from typing import Any, ClassVar, Union
+from typing import Any, ClassVar
 
 import pytest
 from dirty_equals import IsListOrTuple, IsStr
@@ -964,9 +964,9 @@ def test_frozen_field():
     ],
 )
 def test_extra_behavior_ignore(
-    config: Union[core_schema.CoreConfig, None],
+    config: core_schema.CoreConfig | None,
     schema_extra_behavior_kw: dict[str, Any],
-    validate_fn_extra_kw: Union[ExtraBehavior, None],
+    validate_fn_extra_kw: ExtraBehavior | None,
 ):
     @dataclasses.dataclass
     class MyModel:
@@ -1024,9 +1024,9 @@ def test_extra_behavior_ignore(
     ],
 )
 def test_extra_behavior_forbid(
-    config: Union[core_schema.CoreConfig, None],
+    config: core_schema.CoreConfig | None,
     schema_extra_behavior_kw: dict[str, Any],
-    validate_fn_extra_kw: Union[ExtraBehavior, None],
+    validate_fn_extra_kw: ExtraBehavior | None,
 ):
     @dataclasses.dataclass
     class MyModel:
@@ -1082,9 +1082,9 @@ def test_extra_behavior_forbid(
     ],
 )
 def test_extra_behavior_allow(
-    config: Union[core_schema.CoreConfig, None],
+    config: core_schema.CoreConfig | None,
     schema_extra_behavior_kw: dict[str, Any],
-    validate_fn_extra_kw: Union[ExtraBehavior, None],
+    validate_fn_extra_kw: ExtraBehavior | None,
 ):
     @dataclasses.dataclass
     class MyModel:
@@ -1796,10 +1796,10 @@ def test_only_allow_alias(py_and_json) -> None:
 @pytest.mark.parametrize('runtime_by_alias', [None, True, False])
 @pytest.mark.parametrize('runtime_by_name', [None, True, False])
 def test_by_alias_and_name_config_interaction(
-    config_by_alias: Union[bool, None],
-    config_by_name: Union[bool, None],
-    runtime_by_alias: Union[bool, None],
-    runtime_by_name: Union[bool, None],
+    config_by_alias: bool | None,
+    config_by_name: bool | None,
+    runtime_by_alias: bool | None,
+    runtime_by_name: bool | None,
 ) -> None:
     """This test reflects the priority that applies for config vs runtime validation alias configuration.
 

@@ -32,7 +32,6 @@ from typing import (
     Literal,
     TypeAlias,
     TypeVar,
-    Union,
     cast,
     overload,
 )
@@ -127,17 +126,15 @@ if TYPE_CHECKING:
 
 _SUPPORTS_TYPEDDICT = sys.version_info >= (3, 12)
 
-FieldDecoratorInfo = Union[ValidatorDecoratorInfo, FieldValidatorDecoratorInfo, FieldSerializerDecoratorInfo]
+FieldDecoratorInfo: TypeAlias = ValidatorDecoratorInfo | FieldValidatorDecoratorInfo | FieldSerializerDecoratorInfo
 FieldDecoratorInfoType = TypeVar('FieldDecoratorInfoType', bound=FieldDecoratorInfo)
-AnyFieldDecorator = Union[
-    Decorator[ValidatorDecoratorInfo],
-    Decorator[FieldValidatorDecoratorInfo],
-    Decorator[FieldSerializerDecoratorInfo],
-]
+AnyFieldDecorator = (
+    Decorator[ValidatorDecoratorInfo] | Decorator[FieldValidatorDecoratorInfo] | Decorator[FieldSerializerDecoratorInfo]
+)
 
 ModifyCoreSchemaWrapHandler: TypeAlias = GetCoreSchemaHandler
 GetCoreSchemaFunction: TypeAlias = Callable[[Any, ModifyCoreSchemaWrapHandler], core_schema.CoreSchema]
-ParametersCallback: TypeAlias = "Callable[[int, str, Any], Literal['skip'] | None]"
+ParametersCallback: TypeAlias = Callable[[int, str, Any], Literal['skip'] | None]
 
 TUPLE_TYPES: list[type] = [typing.Tuple, tuple]  # noqa: UP006
 LIST_TYPES: list[type] = [typing.List, list, collections.abc.MutableSequence]  # noqa: UP006
@@ -172,12 +169,8 @@ DEQUE_TYPES: list[type] = [collections.deque, typing.Deque]  # noqa: UP006
 
 # Note: This does not play very well with type checkers. For example,
 # `a: LambdaType = lambda x: x` will raise a type error by Pyright.
-ValidateCallSupportedTypes = Union[
-    LambdaType,
-    FunctionType,
-    MethodType,
-    partial,
-]
+ValidateCallSupportedTypes: TypeAlias = LambdaType | FunctionType | MethodType | partial
+
 
 VALIDATE_CALL_SUPPORTED_TYPES = get_args(ValidateCallSupportedTypes)
 UNSUPPORTED_STANDALONE_FIELDINFO_ATTRIBUTES: list[tuple[str, Any]] = [
@@ -2128,7 +2121,7 @@ class GenerateSchema:
                 return self.generate_schema(typevar.__default__)  # pyright: ignore[reportAttributeAccessIssue]
 
         if constraints := typevar.__constraints__:
-            return self._union_schema(typing.Union[constraints])
+            return self._union_schema(typing.Union[constraints])  # noqa: UP007
 
         if bound := typevar.__bound__:
             schema = self.generate_schema(bound)

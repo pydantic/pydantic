@@ -1,5 +1,5 @@
 import copy
-from typing import Annotated, Any, Final, Generic, TypeVar, Union
+from typing import Annotated, Any, Final, Generic, TypeVar
 
 import pytest
 from annotated_types import Gt
@@ -133,8 +133,8 @@ def test_model_field_default_info():
     """Test that __repr_args__ of FieldInfo includes the default value when it's set to None."""
 
     class Model(BaseModel):
-        a: Union[int, None] = Field(default=None)
-        b: Union[int, None] = None
+        a: int | None = Field(default=None)
+        b: int | None = None
 
     assert str(Model.model_fields) == (
         "{'a': FieldInfo(annotation=Union[int, NoneType], required=False, default=None), "
@@ -430,7 +430,7 @@ def test_optional_model_using_asdict() -> None:
         for f_name, f_info in model_cls.model_fields.items():
             f_dct = f_info.asdict()
             new_fields[f_name] = (
-                Annotated[(Union[f_dct['annotation'], None], *f_dct['metadata'], Field(**f_dct['attributes']))],  # noqa: F821
+                Annotated[(f_dct['annotation'] | None, *f_dct['metadata'], Field(**f_dct['attributes']))],  # noqa: F821
                 None,
             )
 

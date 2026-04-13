@@ -900,11 +900,11 @@ def test_union_enum_values():
         val = 'val'
 
     class NormalModel(BaseModel):
-        x: Union[MyEnum, int]
+        x: MyEnum | int
 
     class UseEnumValuesModel(BaseModel):
         model_config = ConfigDict(use_enum_values=True)
-        x: Union[MyEnum, int]
+        x: MyEnum | int
 
     assert NormalModel(x=MyEnum.val).x != 'val'
     assert UseEnumValuesModel(x=MyEnum.val).x == 'val'
@@ -3662,7 +3662,7 @@ def test_validation_works_for_cyclical_forward_refs() -> None:
         y: Union['Y', None]
 
     class Y(BaseModel):
-        x: Union[X, None]
+        x: X | None
 
     assert Y(x={'y': None}).x.y is None
 

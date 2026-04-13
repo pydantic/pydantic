@@ -7,7 +7,7 @@ import sys
 import warnings
 from collections.abc import Callable
 from functools import partialmethod
-from typing import TYPE_CHECKING, Annotated, Any, Literal, TypeAlias, TypeVar, Union, cast, overload
+from typing import TYPE_CHECKING, Annotated, Any, Literal, TypeAlias, TypeVar, cast, overload
 
 from pydantic_core import PydanticUndefined, core_schema
 from typing_extensions import Self
@@ -350,27 +350,27 @@ if TYPE_CHECKING:
             /,
         ) -> Any: ...
 
-    _V2Validator = Union[
-        _V2ValidatorClsMethod,
-        core_schema.WithInfoValidatorFunction,
-        _OnlyValueValidatorClsMethod,
-        core_schema.NoInfoValidatorFunction,
-    ]
+    _V2Validator: TypeAlias = (
+        _V2ValidatorClsMethod
+        | core_schema.WithInfoValidatorFunction
+        | _OnlyValueValidatorClsMethod
+        | core_schema.NoInfoValidatorFunction
+    )
 
-    _V2WrapValidator = Union[
-        _V2WrapValidatorClsMethod,
-        core_schema.WithInfoWrapValidatorFunction,
-        _OnlyValueWrapValidatorClsMethod,
-        core_schema.NoInfoWrapValidatorFunction,
-    ]
+    _V2WrapValidator: TypeAlias = (
+        _V2WrapValidatorClsMethod
+        | core_schema.WithInfoWrapValidatorFunction
+        | _OnlyValueWrapValidatorClsMethod
+        | core_schema.NoInfoWrapValidatorFunction
+    )
 
-    _PartialClsOrStaticMethod: TypeAlias = Union[classmethod[Any, Any, Any], staticmethod[Any, Any], partialmethod[Any]]
+    _PartialClsOrStaticMethod: TypeAlias = classmethod[Any, Any, Any] | staticmethod[Any, Any] | partialmethod[Any]
 
     _V2BeforeAfterOrPlainValidatorType = TypeVar(
         '_V2BeforeAfterOrPlainValidatorType',
-        bound=Union[_V2Validator, _PartialClsOrStaticMethod],
+        bound=_V2Validator | _PartialClsOrStaticMethod,
     )
-    _V2WrapValidatorType = TypeVar('_V2WrapValidatorType', bound=Union[_V2WrapValidator, _PartialClsOrStaticMethod])
+    _V2WrapValidatorType = TypeVar('_V2WrapValidatorType', bound=_V2WrapValidator | _PartialClsOrStaticMethod)
 
 FieldValidatorModes: TypeAlias = Literal['before', 'after', 'wrap', 'plain']
 
@@ -624,19 +624,22 @@ class ModelBeforeValidator(Protocol):
     ) -> Any: ...
 
 
-ModelAfterValidatorWithoutInfo = Callable[[_ModelType], _ModelType]
+ModelAfterValidatorWithoutInfo: TypeAlias = Callable[[_ModelType], _ModelType]
 """A `@model_validator` decorated function signature. This is used when `mode='after'` and the function does not
 have info argument.
 """
 
-ModelAfterValidator = Callable[[_ModelType, core_schema.ValidationInfo[Any]], _ModelType]
+ModelAfterValidator: TypeAlias = Callable[[_ModelType, core_schema.ValidationInfo[Any]], _ModelType]
 """A `@model_validator` decorated function signature. This is used when `mode='after'`."""
 
-_AnyModelWrapValidator = Union[ModelWrapValidator[_ModelType], ModelWrapValidatorWithoutInfo[_ModelType]]
-_AnyModelBeforeValidator = Union[
-    FreeModelBeforeValidator, ModelBeforeValidator, FreeModelBeforeValidatorWithoutInfo, ModelBeforeValidatorWithoutInfo
-]
-_AnyModelAfterValidator = Union[ModelAfterValidator[_ModelType], ModelAfterValidatorWithoutInfo[_ModelType]]
+_AnyModelWrapValidator: TypeAlias = ModelWrapValidator[_ModelType] | ModelWrapValidatorWithoutInfo[_ModelType]
+_AnyModelBeforeValidator: TypeAlias = (
+    FreeModelBeforeValidator
+    | ModelBeforeValidator
+    | FreeModelBeforeValidatorWithoutInfo
+    | ModelBeforeValidatorWithoutInfo
+)
+_AnyModelAfterValidator: TypeAlias = ModelAfterValidator[_ModelType] | ModelAfterValidatorWithoutInfo[_ModelType]
 
 
 @overload

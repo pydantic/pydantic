@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from collections.abc import Callable, Iterator, Mapping
-from typing import TYPE_CHECKING, Any, Generic, Literal, TypeVar, Union
+from typing import TYPE_CHECKING, Any, Generic, Literal, TypeVar
 
 from pydantic_core import CoreSchema, SchemaSerializer, SchemaValidator
 
@@ -14,7 +14,7 @@ if TYPE_CHECKING:
     from ..type_adapter import TypeAdapter
 
 
-ValSer = TypeVar('ValSer', bound=Union[SchemaValidator, PluggableSchemaValidator, SchemaSerializer])
+ValSer = TypeVar('ValSer', bound=SchemaValidator | PluggableSchemaValidator | SchemaSerializer)
 T = TypeVar('T')
 
 

@@ -1,6 +1,5 @@
 import re
 from copy import deepcopy
-from typing import Union
 
 import pytest
 from dirty_equals import HasRepr, IsInstance
@@ -69,7 +68,7 @@ MULTI_URL_CLASS_MODE = 'MULTI_URL_CLASS'
 
 
 def url_test_case_helper(
-    url: str, expected: Union[Err, str], validator_mode: str, url_validator: SchemaValidator | None = None
+    url: str, expected: Err | str, validator_mode: str, url_validator: SchemaValidator | None = None
 ):
     if isinstance(expected, Err):
         with pytest.raises(ValidationError) as exc_info:
@@ -1340,7 +1339,7 @@ def test_multi_url_build() -> None:
         False,
     ],
 )
-def test_url_build_not_encode_credentials(url_type: type[Union[Url, MultiHostUrl]], include_kwarg: bool) -> None:
+def test_url_build_not_encode_credentials(url_type: type[Url | MultiHostUrl], include_kwarg: bool) -> None:
     kwargs = {}
     if include_kwarg:
         kwargs['encode_credentials'] = False
@@ -1378,7 +1377,7 @@ def test_url_build_not_encode_credentials(url_type: type[Union[Url, MultiHostUrl
 
 @pytest.mark.xfail(reason='semantics of `encode_credentials` need to be fully decided, not enabled yet')
 @pytest.mark.parametrize('url_type', [Url, MultiHostUrl])
-def test_url_build_encode_credentials(url_type: type[Union[Url, MultiHostUrl]]) -> None:
+def test_url_build_encode_credentials(url_type: type[Url | MultiHostUrl]) -> None:
     url = url_type.build(
         scheme='postgresql',
         username='user name',

@@ -31,7 +31,6 @@ from typing import (
     NewType,
     TypeAlias,
     TypeVar,
-    Union,
     cast,
     overload,
 )
@@ -2626,9 +2625,9 @@ def models_json_schema(
 # ##### End JSON Schema Generation Functions #####
 
 
-_HashableJsonValue: TypeAlias = Union[
-    int, float, str, bool, None, tuple['_HashableJsonValue', ...], tuple[tuple[str, '_HashableJsonValue'], ...]
-]
+_HashableJsonValue: TypeAlias = (
+    int | float | str | bool | None | tuple['_HashableJsonValue', ...] | tuple[tuple[str, '_HashableJsonValue'], ...]
+)
 
 
 def _deduplicate_schemas(schemas: Iterable[JsonDict]) -> list[JsonDict]:

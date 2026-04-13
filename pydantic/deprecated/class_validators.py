@@ -56,7 +56,7 @@ if TYPE_CHECKING:
         _decorators_v1.V1RootValidatorFunction,
     ]
 
-    _PartialClsOrStaticMethod: TypeAlias = Union[classmethod[Any, Any, Any], staticmethod[Any, Any], partialmethod[Any]]
+    _PartialClsOrStaticMethod: TypeAlias = classmethod[Any, Any, Any] | staticmethod[Any, Any] | partialmethod[Any]
 
     # Allow both a V1 (assumed pre=False) or V2 (assumed mode='after') validator
     # We lie to type checkers and say we return the same thing we get

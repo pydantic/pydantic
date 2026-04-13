@@ -64,13 +64,13 @@ class LoggedVar(Generic[T]):
         (str, 'str'),
         ('foobar', 'str'),
         ('SomeForwardRefString', 'str'),  # included to document current behavior; could be changed
-        (Union[str, int], 'Union[str, int]'),
+        (Union[str, int], 'Union[str, int]'),  # noqa: UP007
         (list, 'list'),
         ([1, 2, 3], 'list'),
         (list[dict[str, int]], 'list[dict[str, int]]'),
         (tuple[str, int, float], 'tuple[str, int, float]'),
         (tuple[str, ...], 'tuple[str, ...]'),
-        (Union[int, list[str], tuple[str, int]], 'Union[int, list[str], tuple[str, int]]'),
+        (Union[int, list[str], tuple[str, int]], 'Union[int, list[str], tuple[str, int]]'),  # noqa: UP007
         (foobar, 'foobar'),
         (time.time_ns, 'time_ns'),
         (LoggedVar, 'LoggedVar'),
@@ -92,7 +92,7 @@ def test_display_as_type(value, expected):
         (lambda: list[int], 'list[int]'),
         (lambda: list[int], 'list[int]'),
         (lambda: list[dict[str, int]], 'list[dict[str, int]]'),
-        (lambda: list[Union[str, int]], 'list[Union[str, int]]'),
+        (lambda: list[str | int], 'list[Union[str, int]]'),
         (lambda: list[str | int], 'list[Union[str, int]]'),
         (lambda: LoggedVar[int], 'LoggedVar[int]'),
         (lambda: LoggedVar[dict[int, str]], 'LoggedVar[dict[int, str]]'),
@@ -413,7 +413,7 @@ T = TypeVar('T')
         (Callable[[], T][int], collections.abc.Callable),
         (dict[str, int], dict),
         (list[str], list),
-        (Union[int, str], Union),
+        (Union[int, str], Union),  # noqa: UP007
         (int, None),
     ],
 )

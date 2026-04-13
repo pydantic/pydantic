@@ -466,7 +466,7 @@ def test_json_encoders_on_model() -> None:
         m: Model
 
     class Outermost(BaseModel):
-        inner: Union[Outer1, Outer2]
+        inner: Outer1 | Outer2
 
     m = Outermost(inner=Outer1(m=Model(x=1)))
     # insert_assert(m.model_dump())

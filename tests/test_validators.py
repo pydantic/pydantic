@@ -13,7 +13,6 @@ from typing import (
     Any,
     Literal,
     NamedTuple,
-    Union,
 )
 from unittest.mock import MagicMock
 
@@ -1751,7 +1750,7 @@ def test_nested_literal_validator():
 
 def test_union_literal_with_constraints():
     class Model(BaseModel, validate_assignment=True):
-        x: Union[Literal[42], Literal['pika']] = Field(frozen=True)
+        x: Literal[42] | Literal['pika'] = Field(frozen=True)
 
     m = Model(x=42)
     with pytest.raises(ValidationError) as exc_info:
@@ -3017,7 +3016,7 @@ def test_field_validator_input_type_invalid_mode() -> None:
         class Model(BaseModel):
             a: int
 
-            @field_validator('a', mode='after', json_schema_input_type=Union[int, str])  # pyright: ignore
+            @field_validator('a', mode='after', json_schema_input_type=int | str)  # pyright: ignore
             @classmethod
             def validate_a(cls, value: Any) -> Any: ...
 

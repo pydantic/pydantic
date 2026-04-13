@@ -16,7 +16,7 @@ import math
 import re
 from collections.abc import Callable
 from colorsys import hls_to_rgb, rgb_to_hls
-from typing import Any, Union, cast
+from typing import Any, TypeAlias, cast
 
 from pydantic_core import CoreSchema, PydanticCustomError, core_schema
 from typing_extensions import deprecated
@@ -26,9 +26,9 @@ from ._internal._schema_generation_shared import GetJsonSchemaHandler as _GetJso
 from .json_schema import JsonSchemaValue
 from .warnings import PydanticDeprecatedSince20
 
-ColorTuple = Union[tuple[int, int, int], tuple[int, int, int, float]]
-ColorType = Union[ColorTuple, str]
-HslColorTuple = Union[tuple[float, float, float], tuple[float, float, float, float]]
+ColorTuple: TypeAlias = tuple[int, int, int] | tuple[int, int, int, float]
+ColorType: TypeAlias = ColorTuple | str
+HslColorTuple: TypeAlias = tuple[float, float, float] | tuple[float, float, float, float]
 
 
 class RGBA:
@@ -337,7 +337,7 @@ def parse_str(value: str) -> RGBA:
     raise PydanticCustomError('color_error', 'value is not a valid color: string not recognised as a valid color')
 
 
-def ints_to_rgba(r: Union[int, str], g: Union[int, str], b: Union[int, str], alpha: float | None = None) -> RGBA:
+def ints_to_rgba(r: int | str, g: int | str, b: int | str, alpha: float | None = None) -> RGBA:
     """Converts integer or string values for RGB color and an optional alpha value to an `RGBA` object.
 
     Args:
@@ -352,7 +352,7 @@ def ints_to_rgba(r: Union[int, str], g: Union[int, str], b: Union[int, str], alp
     return RGBA(parse_color_value(r), parse_color_value(g), parse_color_value(b), parse_float_alpha(alpha))
 
 
-def parse_color_value(value: Union[int, str], max_val: int = 255) -> float:
+def parse_color_value(value: int | str, max_val: int = 255) -> float:
     """Parse the color value provided and return a number between 0 and 1.
 
     Args:
@@ -379,7 +379,7 @@ def parse_color_value(value: Union[int, str], max_val: int = 255) -> float:
         )
 
 
-def parse_float_alpha(value: Union[None, str, float, int]) -> float | None:
+def parse_float_alpha(value: None | str | float | int) -> float | None:
     """Parse an alpha value checking it's a valid float in the range 0 to 1.
 
     Args:

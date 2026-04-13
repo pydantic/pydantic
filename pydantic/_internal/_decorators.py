@@ -10,7 +10,7 @@ from dataclasses import dataclass, field
 from functools import cached_property, partial, partialmethod
 from inspect import Parameter, Signature, isdatadescriptor, ismethoddescriptor
 from itertools import islice
-from typing import TYPE_CHECKING, Any, ClassVar, Generic, Literal, TypeAlias, TypeVar, Union
+from typing import TYPE_CHECKING, Any, ClassVar, Generic, Literal, TypeAlias, TypeVar
 
 from pydantic_core import PydanticUndefined, PydanticUndefinedType, core_schema
 from typing_extensions import Self, is_typeddict
@@ -145,19 +145,11 @@ class ModelValidatorDecoratorInfo:
     mode: Literal['wrap', 'before', 'after']
 
 
-DecoratorInfo: TypeAlias = """Union[
-    ValidatorDecoratorInfo,
-    FieldValidatorDecoratorInfo,
-    RootValidatorDecoratorInfo,
-    FieldSerializerDecoratorInfo,
-    ModelSerializerDecoratorInfo,
-    ModelValidatorDecoratorInfo,
-    ComputedFieldInfo,
-]"""
+DecoratorInfo: TypeAlias = 'ValidatorDecoratorInfo | FieldValidatorDecoratorInfo | RootValidatorDecoratorInfo | FieldSerializerDecoratorInfo | ModelSerializerDecoratorInfo | ModelValidatorDecoratorInfo | ComputedFieldInfo'
 
 ReturnType = TypeVar('ReturnType')
 DecoratedType: TypeAlias = (
-    'Union[classmethod[Any, Any, ReturnType], staticmethod[Any, ReturnType], Callable[..., ReturnType], property]'
+    'classmethod[Any, Any, ReturnType] | staticmethod[Any, ReturnType] | Callable[..., ReturnType] | property'
 )
 
 
@@ -703,7 +695,7 @@ def _serializer_info_arg(mode: Literal['plain', 'wrap'], n_positional: int) -> b
 
 
 AnyDecoratorCallable: TypeAlias = (
-    'Union[classmethod[Any, Any, Any], staticmethod[Any, Any], partialmethod[Any], Callable[..., Any]]'
+    'classmethod[Any, Any, Any] | staticmethod[Any, Any] | partialmethod[Any] | Callable[..., Any]'
 )
 
 

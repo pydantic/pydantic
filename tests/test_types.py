@@ -3794,8 +3794,8 @@ def test_new_path_validation_success(value, result):
 
 def test_path_union_ser() -> None:
     class Model(BaseModel):
-        a: Union[Path, list[Path]]
-        b: Union[list[Path], Path]
+        a: Path | list[Path]
+        b: list[Path] | Path
 
     model = Model(a=Path('potato'), b=Path('potato'))
     assert model.model_dump() == {'a': Path('potato'), 'b': Path('potato')}
@@ -4611,7 +4611,7 @@ def test_secretdate_idempotent():
 
 def test_secret_union_serializable() -> None:
     class Base(BaseModel):
-        x: Union[Secret[int], Secret[str]]
+        x: Secret[int] | Secret[str]
 
     model = Base(x=1)
     assert model.model_dump() == {'x': Secret[int](1)}
@@ -4671,7 +4671,7 @@ def test_is_hashable(pydantic_type):
 
 def test_model_contain_hashable_type():
     class MyModel(BaseModel):
-        v: Union[str, StrictStr]
+        v: str | StrictStr
 
     assert MyModel(v='test').v == 'test'
 
@@ -5388,7 +5388,7 @@ def test_none_literal():
 
 def test_default_union_types():
     class DefaultModel(BaseModel):
-        v: Union[int, bool, str]
+        v: int | bool | str
 
     # do it this way since `1 == True`
     assert repr(DefaultModel(v=True).v) == 'True'
@@ -5405,7 +5405,7 @@ def test_default_union_types():
 
 def test_default_union_types_left_to_right():
     class DefaultModel(BaseModel):
-        v: Annotated[Union[int, bool, str], Field(union_mode='left_to_right')]
+        v: Annotated[int | bool | str, Field(union_mode='left_to_right')]
 
     print(DefaultModel.__pydantic_core_schema__)
 
@@ -5428,17 +5428,17 @@ def test_union_enum_int_left_to_right():
         ONE = 1
 
     # int will win over enum in this case
-    assert TypeAdapter(Union[BinaryEnum, int]).validate_python(0) is not BinaryEnum.ZERO
+    assert TypeAdapter(BinaryEnum | int).validate_python(0) is not BinaryEnum.ZERO
 
     # in left to right mode, enum will validate successfully and take precedence
     assert (
-        TypeAdapter(Annotated[Union[BinaryEnum, int], Field(union_mode='left_to_right')]).validate_python(0)
+        TypeAdapter(Annotated[BinaryEnum | int, Field(union_mode='left_to_right')]).validate_python(0)
         is BinaryEnum.ZERO
     )
 
 
 def test_union_uuid_str_left_to_right():
-    IdOrSlug = Union[UUID, str]
+    IdOrSlug = UUID | str
 
     # in smart mode JSON and python are currently validated differently in this
     # case, because in Python this is a str but in JSON a str is also a UUID
@@ -5450,7 +5450,7 @@ def test_union_uuid_str_left_to_right():
         == 'f4fe10b4-e0c8-4232-ba26-4acd491c2414'
     )
 
-    IdOrSlugLTR = Annotated[Union[UUID, str], Field(union_mode='left_to_right')]
+    IdOrSlugLTR = Annotated[UUID | str, Field(union_mode='left_to_right')]
 
     # in left to right mode both JSON and python are validated as UUID
     assert TypeAdapter(IdOrSlugLTR).validate_json('"f4fe10b4-e0c8-4232-ba26-4acd491c2414"') == UUID(
@@ -5469,18 +5469,18 @@ def test_default_union_class():
         x: str
 
     class Model(BaseModel):
-        y: Union[A, B]
+        y: A | B
 
     assert isinstance(Model(y=A(x='a')).y, A)
     assert isinstance(Model(y=B(x='b')).y, B)
 
 
 @pytest.mark.parametrize('max_length', [10, None])
-def test_union_subclass(max_length: Union[int, None]):
+def test_union_subclass(max_length: int | None):
     class MyStr(str): ...
 
     class Model(BaseModel):
-        x: Union[int, Annotated[str, Field(max_length=max_length)]]
+        x: int | Annotated[str, Field(max_length=max_length)]
 
     v = Model(x=MyStr('1')).x
     assert type(v) is str
@@ -5489,7 +5489,7 @@ def test_union_subclass(max_length: Union[int, None]):
 
 def test_union_compound_types():
     class Model(BaseModel):
-        values: Union[dict[str, str], list[str], dict[str, list[str]]]
+        values: dict[str, str] | list[str] | dict[str, list[str]]
 
     assert Model(values={'L': '1'}).model_dump() == {'values': {'L': '1'}}
     assert Model(values=['L1']).model_dump() == {'values': ['L1']}
@@ -5523,7 +5523,7 @@ def test_union_compound_types():
 
 def test_smart_union_compounded_types_edge_case():
     class Model(BaseModel):
-        x: Union[list[str], list[int]]
+        x: list[str] | list[int]
 
     assert Model(x=[1, 2]).x == [1, 2]
     assert Model(x=['1', '2']).x == ['1', '2']
@@ -5538,7 +5538,7 @@ def test_union_typeddict():
         bar: str
 
     class M(BaseModel):
-        d: Union[Dict2, Dict1]
+        d: Dict2 | Dict1
 
     assert M(d=dict(foo='baz')).d == {'foo': 'baz'}
 
@@ -6694,7 +6694,7 @@ def test_union_tags_in_errors():
     DoubledList = Annotated[list[int], AfterValidator(lambda x: x * 2)]
     StringsMap = dict[str, str]
 
-    adapter = TypeAdapter(Union[DoubledList, StringsMap])
+    adapter = TypeAdapter(DoubledList | StringsMap)
 
     with pytest.raises(ValidationError) as exc_info:
         adapter.validate_python(['a'])
@@ -6717,9 +6717,7 @@ def test_union_tags_in_errors():
         },
     ]
 
-    tag_adapter = TypeAdapter(
-        Union[Annotated[DoubledList, Tag('DoubledList')], Annotated[StringsMap, Tag('StringsMap')]]
-    )
+    tag_adapter = TypeAdapter(Annotated[DoubledList, Tag('DoubledList')] | Annotated[StringsMap, Tag('StringsMap')])
     with pytest.raises(ValidationError) as exc_info:
         tag_adapter.validate_python(['a'])
 
@@ -6786,7 +6784,7 @@ def test_json_value_with_subclassed_types():
 def test_json_value_roundtrip() -> None:
     # see https://github.com/pydantic/pydantic/issues/8175
     class MyModel(BaseModel):
-        val: Union[str, JsonValue]
+        val: str | JsonValue
 
     round_trip_value = json.loads(MyModel(val=True).model_dump_json())['val']
     assert round_trip_value is True, round_trip_value
@@ -7078,11 +7076,11 @@ def test_mapping_parameterized() -> None:
 
 
 def test_ser_ip_with_union() -> None:
-    bool_first = TypeAdapter(Union[bool, ipaddress.IPv4Address])
+    bool_first = TypeAdapter(Union[bool, ipaddress.IPv4Address])  # noqa: UP007
     assert bool_first.dump_python(True, mode='json') is True
     assert bool_first.dump_json(True) == b'true'
 
-    ip_first = TypeAdapter(Union[ipaddress.IPv4Address, bool])
+    ip_first = TypeAdapter(Union[ipaddress.IPv4Address, bool])  # noqa: UP007
     assert ip_first.dump_python(True, mode='json') is True
     assert ip_first.dump_json(True) == b'true'
 
@@ -7224,7 +7222,7 @@ def test_union_respects_local_strict() -> None:
         model_config = ConfigDict(strict=True)
 
     class Model(MyBaseModel):
-        a: Union[int, Annotated[tuple[int, int], Strict(False)]] = Field(default=(1, 2))
+        a: int | Annotated[tuple[int, int], Strict(False)] = Field(default=(1, 2))
 
     m = Model(a=[1, 2])
     assert m.a == (1, 2)
@@ -7252,7 +7250,7 @@ def test_union_abc() -> None:
             print('Doing something else in A2')
 
     class X(BaseModel):
-        x: Union[ABC_1, ABC_2]
+        x: ABC_1 | ABC_2
 
     a1 = A1()
     a2 = A2()

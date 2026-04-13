@@ -1,7 +1,7 @@
 import sys
 from collections.abc import Iterable
 from inspect import Parameter, Signature, signature
-from typing import Annotated, Any, Generic, TypeVar, Union
+from typing import Annotated, Any, Generic, TypeVar
 
 import pytest
 from typing_extensions import get_origin  # noqa: UP035
@@ -10,7 +10,7 @@ from typing_inspection import typing_objects
 from pydantic import BaseModel, ConfigDict, Field, create_model
 
 
-def _equals(a: Union[str, Iterable[str]], b: Union[str, Iterable[str]]) -> bool:
+def _equals(a: str | Iterable[str], b: str | Iterable[str]) -> bool:
     """
     compare strings with spaces removed
     """

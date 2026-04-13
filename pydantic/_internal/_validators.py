@@ -13,7 +13,7 @@ from collections.abc import Callable, Sequence
 from decimal import Decimal
 from fractions import Fraction
 from ipaddress import IPv4Address, IPv4Interface, IPv4Network, IPv6Address, IPv6Interface, IPv6Network
-from typing import Any, TypeVar, Union, cast
+from typing import Any, TypeAlias, TypeVar, cast
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 import typing_extensions
@@ -506,7 +506,7 @@ NUMERIC_VALIDATOR_LOOKUP: dict[str, Callable] = {
     'decimal_places': decimal_places_validator,
 }
 
-IpType = Union[IPv4Address, IPv6Address, IPv4Network, IPv6Network, IPv4Interface, IPv6Interface]
+IpType: TypeAlias = IPv4Address | IPv6Address | IPv4Network | IPv6Network | IPv4Interface | IPv6Interface
 
 IP_VALIDATOR_LOOKUP: dict[type[IpType], Callable] = {
     IPv4Address: ip_v4_address_validator,

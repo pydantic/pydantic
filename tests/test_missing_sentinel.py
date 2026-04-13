@@ -1,5 +1,5 @@
 import pickle
-from typing import Annotated, Union
+from typing import Annotated
 
 import pytest
 from annotated_types import Ge
@@ -10,7 +10,7 @@ from pydantic import BaseModel, TypeAdapter, ValidationError
 
 def test_missing_sentinel_model() -> None:
     class Model(BaseModel):
-        f: Union[int, MISSING] = MISSING
+        f: int | MISSING = MISSING
         g: MISSING = MISSING
 
     m1 = Model()
@@ -50,7 +50,7 @@ def test_missing_sentinel_type_adapter() -> None:
 
 # Defined in module to be picklable:
 class ModelPickle(BaseModel):
-    f: Union[int, MISSING] = MISSING
+    f: int | MISSING = MISSING
 
 
 @pytest.mark.xfail(reason="PEP 661 sentinels aren't picklable yet in the experimental typing-extensions implementation")
@@ -63,7 +63,7 @@ def test_missing_sentinel_pickle() -> None:
 
 def test_missing_sentinel_json_schema() -> None:
     class Model(BaseModel):
-        f: Union[int, MISSING] = MISSING
+        f: int | MISSING = MISSING
         g: MISSING = MISSING
         h: MISSING
 
@@ -74,7 +74,7 @@ def test_missing_sentinel_json_schema() -> None:
 
 def test_model_construct_with_missing_default_does_not_crash() -> None:
     class M(BaseModel):
-        a: Union[int, MISSING] = MISSING
+        a: int | MISSING = MISSING
 
     # Should not raise
     m = M.model_construct()
@@ -87,11 +87,11 @@ def test_no_warning_when_excluded_in_nested_model() -> None:
     """https://github.com/pydantic/pydantic/issues/12628"""
 
     class Inner(BaseModel):
-        f1: Union[int, MISSING] = MISSING
-        f2: Union[int, MISSING] = MISSING
+        f1: int | MISSING = MISSING
+        f2: int | MISSING = MISSING
 
     class Outer(BaseModel):
-        inner: Union[Inner, MISSING] = MISSING
+        inner: Inner | MISSING = MISSING
 
     s = Outer(
         inner={'f1': 1},
@@ -103,10 +103,10 @@ def test_no_warning_when_excluded_in_nested_model() -> None:
 
 def test_missing_sentinel_constraints_pushdown() -> None:
     class Model(BaseModel):
-        f1: Annotated[Union[int, MISSING], Ge(1)] = MISSING
-        f2: Annotated[Union[MISSING, int], Ge(1)] = MISSING
-        f3: Annotated[Union[int, str, MISSING], Ge(1)] = MISSING
-        f4: Annotated[Union[int, str, None, MISSING], Ge(1)] = MISSING
+        f1: Annotated[int | MISSING, Ge(1)] = MISSING
+        f2: Annotated[MISSING | int, Ge(1)] = MISSING
+        f3: Annotated[int | str | MISSING, Ge(1)] = MISSING
+        f4: Annotated[int | str | None | MISSING, Ge(1)] = MISSING
 
     js_schema = Model.model_json_schema()
 
@@ -124,7 +124,7 @@ def test_missing_sentinel_child_fields() -> None:
     """https://github.com/pydantic/pydantic/issues/13001."""
 
     class Base(BaseModel, extra='forbid'):
-        base_field: Union[str, MISSING] = MISSING
+        base_field: str | MISSING = MISSING
 
     class Parent(Base):
         parent_field: str
@@ -133,7 +133,7 @@ def test_missing_sentinel_child_fields() -> None:
         child_field: str
 
     class Container(BaseModel, extra='forbid'):
-        item: Union[Parent, MISSING] = MISSING
+        item: Parent | MISSING = MISSING
 
     child = Child(parent_field='p', child_field='c')
     container = Container(item=child)

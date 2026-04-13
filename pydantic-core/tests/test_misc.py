@@ -200,7 +200,7 @@ def test_core_schema_type_literal():
     if get_args(CoreSchemaType) != schema_types:
         literal = ''.join(f'\n    {e!r},' for e in schema_types)
         print(
-            f'python code (near end of python/pydantic_core/core_schema.py):\n\nCoreSchemaType = Literal[{literal}\n]'
+            f'python code (near end of python/pydantic_core/core_schema.py):\n\nCoreSchemaType: TypeAlias = Literal[{literal}\n]'
         )
         pytest.fail('core_schema.CoreSchemaType needs to be updated')
 

@@ -3,7 +3,7 @@ import platform
 import re
 import sys
 import typing
-from typing import Annotated, Any, Generic, Optional, TypeVar, Union
+from typing import Annotated, Any, Generic, Optional, TypeVar
 
 import pytest
 from annotated_types import Gt
@@ -193,14 +193,14 @@ def test_forward_ref_dataclass(create_module):
 def test_forward_ref_sub_types(create_module):
     @create_module
     def module():
-        from typing import ForwardRef, Union
+        from typing import ForwardRef
 
         from pydantic import BaseModel
 
         class Leaf(BaseModel):
             a: str
 
-        TreeType = Union[ForwardRef('Node'), Leaf]
+        TreeType = ForwardRef('Node') | Leaf
 
         class Node(BaseModel):
             value: int
@@ -219,14 +219,14 @@ def test_forward_ref_sub_types(create_module):
 def test_forward_ref_nested_sub_types(create_module):
     @create_module
     def module():
-        from typing import ForwardRef, Union
+        from typing import ForwardRef
 
         from pydantic import BaseModel
 
         class Leaf(BaseModel):
             a: str
 
-        TreeType = Union[Union[tuple[ForwardRef('Node'), str], int], Leaf]
+        TreeType = tuple[ForwardRef('Node'), str] | int | Leaf
 
         class Node(BaseModel):
             value: int
@@ -1682,7 +1682,7 @@ def test_string_annotation_union_type() -> None:
     T = TypeVar('T')
 
     class Model(BaseModel, Generic[T]):
-        data: Union[T, int]  # Using `typing.Union` is important here.
+        data: T | int  # Using `typing.Union` is important here.
 
     class Main(BaseModel):
         m: Model['Main']

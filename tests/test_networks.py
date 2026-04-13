@@ -1,5 +1,5 @@
 import json
-from typing import Annotated, Any, Union
+from typing import Annotated, Any
 
 import pytest
 from pydantic_core import MultiHostHost, PydanticCustomError, PydanticSerializationError, Url
@@ -291,7 +291,7 @@ def test_http_url_success(value, expected):
 
 def test_nullable_http_url():
     class Model(BaseModel):
-        v: Union[HttpUrl, None]
+        v: HttpUrl | None
 
     assert Model(v=None).v is None
     assert str(Model(v='http://example.org').v) == 'http://example.org/'
@@ -976,7 +976,7 @@ def test_address_valid(value, name, email):
         pytest.param('foobar <' + 'a' * 4096 + '@example.com>', 'Length must not exceed 2048 characters', id='long'),
     ],
 )
-def test_address_invalid(value: str, reason: Union[str, None]):
+def test_address_invalid(value: str, reason: str | None):
     with pytest.raises(PydanticCustomError, match=f'value is not a valid email address: {reason or ""}'):
         validate_email(value)
 

@@ -21,7 +21,6 @@ from typing import (
     Literal,
     TypeAlias,
     TypeVar,
-    Union,
     cast,
 )
 from uuid import UUID
@@ -3190,15 +3189,7 @@ class _AllowAnyJson:
 
 if TYPE_CHECKING:
     # This seems to only be necessary for mypy
-    JsonValue: TypeAlias = Union[
-        list['JsonValue'],
-        dict[str, 'JsonValue'],
-        str,
-        bool,
-        int,
-        float,
-        None,
-    ]
+    JsonValue: TypeAlias = 'list[JsonValue] | dict[str, JsonValue] | str | bool | int | float | None'
     """A `JsonValue` is used to represent a value that can be serialized to JSON.
 
     It may be one of:
@@ -3246,15 +3237,13 @@ else:
     JsonValue = TypeAliasType(
         'JsonValue',
         Annotated[
-            Union[
-                Annotated[list['JsonValue'], Tag('list')],
-                Annotated[dict[str, 'JsonValue'], Tag('dict')],
-                Annotated[str, Tag('str')],
-                Annotated[bool, Tag('bool')],
-                Annotated[int, Tag('int')],
-                Annotated[float, Tag('float')],
-                Annotated[None, Tag('NoneType')],
-            ],
+            Annotated[list['JsonValue'], Tag('list')]
+            | Annotated[dict[str, 'JsonValue'], Tag('dict')]
+            | Annotated[str, Tag('str')]
+            | Annotated[bool, Tag('bool')]
+            | Annotated[int, Tag('int')]
+            | Annotated[float, Tag('float')]
+            | Annotated[None, Tag('NoneType')],
             Discriminator(
                 _get_type_name,
                 custom_error_type='invalid-json-value',

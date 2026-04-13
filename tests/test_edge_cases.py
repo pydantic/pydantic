@@ -60,7 +60,7 @@ from pydantic.functional_serializers import (
 
 def test_str_bytes():
     class Model(BaseModel):
-        v: Union[str, bytes]
+        v: str | bytes
 
     m = Model(v='s')
     assert m.v == 's'
@@ -80,7 +80,7 @@ def test_str_bytes():
 
 def test_str_bytes_none():
     class Model(BaseModel):
-        v: Union[None, str, bytes] = ...
+        v: None | str | bytes = ...
 
     m = Model(v='s')
     assert m.v == 's'
@@ -94,7 +94,7 @@ def test_str_bytes_none():
 
 def test_union_int_str():
     class Model(BaseModel):
-        v: Union[int, str] = ...
+        v: int | str = ...
 
     m = Model(v=123)
     assert m.v == 123
@@ -124,7 +124,7 @@ def test_union_int_str():
 
 def test_union_int_any():
     class Model(BaseModel):
-        v: Union[int, Any]
+        v: int | Any
 
     m = Model(v=123)
     assert m.v == 123
@@ -503,7 +503,7 @@ def test_recursive_list_error():
 
 def test_list_unions():
     class Model(BaseModel):
-        v: list[Union[int, str]]
+        v: list[int | str]
 
     assert Model(v=[123, '456', 'foobar']).v == [123, '456', 'foobar']
 
@@ -525,10 +525,10 @@ def test_list_unions():
 
 def test_recursive_lists():
     class Model(BaseModel):
-        v: list[list[Union[int, float]]] = ...
+        v: list[list[int | float]] = ...
 
     assert Model(v=[[1, 2], [3, '4', '4.1']]).v == [[1, 2], [3, 4, 4.1]]
-    assert Model.model_fields['v'].annotation == list[list[Union[int, float]]]
+    assert Model.model_fields['v'].annotation == list[list[int | float]]
     assert Model.model_fields['v'].is_required()
 
 
@@ -1223,7 +1223,7 @@ def test_unable_to_infer():
 
 def test_multiple_errors():
     class Model(BaseModel):
-        a: Union[None, int, float, Decimal]
+        a: None | int | float | Decimal
 
     with pytest.raises(ValidationError) as exc_info:
         Model(a='foobar')
@@ -1409,8 +1409,8 @@ def test_type_on_annotation():
         c: type[FooBar]
         d: type[FooBar] = FooBar
         e: Sequence[type[FooBar]] = [FooBar]
-        f: Union[type[FooBar], Sequence[type[FooBar]]] = FooBar
-        g: Union[type[FooBar], Sequence[type[FooBar]]] = [FooBar]
+        f: type[FooBar] | Sequence[type[FooBar]] = FooBar
+        g: type[FooBar] | Sequence[type[FooBar]] = [FooBar]
 
         model_config = {'arbitrary_types_allowed': True}
 
@@ -1419,8 +1419,8 @@ def test_type_on_annotation():
 
 def test_type_union():
     class Model(BaseModel):
-        a: type[Union[str, bytes]]
-        b: type[Union[Any, str]]
+        a: type[str | bytes]
+        b: type[Any | str]
 
     m = Model(a=bytes, b=int)
     assert m.model_dump() == {'a': bytes, 'b': int}
@@ -1646,11 +1646,11 @@ class DisplayGen(Generic[T1, T2]):
         (int, 'int'),
         (Optional[int], 'Union[int, NoneType]'),  # noqa: UP045
         (int | None, 'Union[int, NoneType]'),
-        (Union[None, int, str], 'Union[NoneType, int, str]'),  # noqa: UP045
-        (Union[int, str, bytes], 'Union[int, str, bytes]'),  # noqa: UP045
+        (Union[None, int, str], 'Union[NoneType, int, str]'),  # noqa: UP007
+        (Union[int, str, bytes], 'Union[int, str, bytes]'),  # noqa: UP007
         (list[int], 'list[int]'),
         (tuple[int, str, bytes], 'tuple[int, str, bytes]'),
-        (Union[list[int], set[bytes]], 'Union[list[int], set[bytes]]'),  # noqa: UP045
+        (Union[list[int], set[bytes]], 'Union[list[int], set[bytes]]'),  # noqa: UP007
         (list[tuple[int, int]], 'list[tuple[int, int]]'),
         (dict[int, str], 'dict[int, str]'),
         (frozenset[int], 'frozenset[int]'),
@@ -2747,8 +2747,8 @@ def test_multiple_enums():
 )
 def test_union_literal_with_other_type(literal_type, other_type, data, json_value, data_reversed, json_value_reversed):
     class Model(BaseModel):
-        value: Union[literal_type, other_type]
-        value_types_reversed: Union[other_type, literal_type]
+        value: literal_type | other_type
+        value_types_reversed: other_type | literal_type
 
     m = Model(value=data, value_types_reversed=data)
     assert m.model_dump() == {'value': data, 'value_types_reversed': data_reversed}
@@ -2851,8 +2851,8 @@ def test_recursive_root_models_in_discriminated_union():
             return self.root.kind
 
     class Outer(BaseModel):
-        a: Annotated[Union[Root1, Root2], Field(discriminator='kind')]
-        b: Annotated[Union[Root1, Root2], Field(discriminator='kind')]
+        a: Annotated[Root1 | Root2, Field(discriminator='kind')]
+        b: Annotated[Root1 | Root2, Field(discriminator='kind')]
 
     validated = Outer.model_validate({'a': {'kind': '1', 'two': None}, 'b': {'kind': '2', 'one': None}})
     assert validated == Outer(a=Root1(root=Model1(two=None)), b=Root2(root=Model2(one=None)))
@@ -3071,7 +3071,7 @@ def test_repeated_custom_type() -> None:
             return core_schema.no_info_before_validator_function(cls._validate, handler(source_type))
 
         @classmethod
-        def _validate(cls, v: Any) -> Union[dict[str, Any], Self]:
+        def _validate(cls, v: Any) -> dict[str, Any] | Self:
             if isinstance(v, (str, float, int)):
                 return cls(value=v)
             if isinstance(v, Numeric):

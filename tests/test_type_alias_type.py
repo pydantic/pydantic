@@ -11,7 +11,7 @@ from pydantic import BaseModel, PlainSerializer, PydanticUserError, TypeAdapter,
 
 T = TypeVar('T')
 
-JsonType = TypeAliasType('JsonType', Union[list['JsonType'], dict[str, 'JsonType'], str, int, float, bool, None])
+JsonType = TypeAliasType('JsonType', list['JsonType'] | dict[str, 'JsonType'] | str | int | float | bool | None)
 RecursiveGenericAlias = TypeAliasType(
     'RecursiveGenericAlias', list[Union['RecursiveGenericAlias[T]', T]], type_params=(T,)
 )
@@ -141,7 +141,7 @@ def test_recursive_type_alias_name():
     class MyGeneric(Generic[T]):
         field: T
 
-    MyRecursiveType = TypeAliasType('MyRecursiveType', Union[MyGeneric['MyRecursiveType'], int])
+    MyRecursiveType = TypeAliasType('MyRecursiveType', MyGeneric['MyRecursiveType'] | int)
     json_schema = TypeAdapter(MyRecursiveType).json_schema()
     assert sorted(json_schema['$defs'].keys()) == ['MyGeneric_MyRecursiveType_', 'MyRecursiveType']
 

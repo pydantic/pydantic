@@ -11,7 +11,7 @@ from collections.abc import Callable, Generator, Hashable, Mapping
 from datetime import date, datetime, time, timedelta
 from decimal import Decimal
 from re import Pattern
-from typing import TYPE_CHECKING, Any, Literal, Union
+from typing import TYPE_CHECKING, Any, Literal
 
 from typing_extensions import TypeVar, deprecated
 
@@ -39,7 +39,7 @@ else:
         PydanticUndefined = object()
 
 
-ExtraBehavior = Literal['allow', 'forbid', 'ignore']
+ExtraBehavior: TypeAlias = Literal['allow', 'forbid', 'ignore']
 
 
 class CoreConfig(TypedDict, total=False):
@@ -119,7 +119,7 @@ class CoreConfig(TypedDict, total=False):
     validation_error_cause: bool  # default: False
     coerce_numbers_to_str: bool  # default: False
     regex_engine: Literal['rust-regex', 'python-re']  # default: 'rust-regex'
-    cache_strings: Union[bool, Literal['all', 'keys', 'none']]  # default: 'True'
+    cache_strings: bool | Literal['all', 'keys', 'none']  # default: 'True'
     validate_by_alias: bool  # default: True
     validate_by_name: bool  # default: False
     serialize_by_alias: bool  # default: False
@@ -243,7 +243,7 @@ class ValidationInfo(Protocol[ContextT]):
         ...
 
 
-ExpectedSerializationTypes = Literal[
+ExpectedSerializationTypes: TypeAlias = Literal[
     'none',
     'int',
     'bool',
@@ -284,21 +284,21 @@ def simple_ser_schema(type: ExpectedSerializationTypes) -> SimpleSerSchema:
 
 
 # (input_value: Any, /) -> Any
-GeneralPlainNoInfoSerializerFunction = Callable[[Any], Any]
+GeneralPlainNoInfoSerializerFunction: TypeAlias = Callable[[Any], Any]
 # (input_value: Any, info: FieldSerializationInfo, /) -> Any
-GeneralPlainInfoSerializerFunction = Callable[[Any, SerializationInfo[Any]], Any]
+GeneralPlainInfoSerializerFunction: TypeAlias = Callable[[Any, SerializationInfo[Any]], Any]
 # (model: Any, input_value: Any, /) -> Any
-FieldPlainNoInfoSerializerFunction = Callable[[Any, Any], Any]
+FieldPlainNoInfoSerializerFunction: TypeAlias = Callable[[Any, Any], Any]
 # (model: Any, input_value: Any, info: FieldSerializationInfo, /) -> Any
-FieldPlainInfoSerializerFunction = Callable[[Any, Any, FieldSerializationInfo[Any]], Any]
-SerializerFunction = Union[
-    GeneralPlainNoInfoSerializerFunction,
-    GeneralPlainInfoSerializerFunction,
-    FieldPlainNoInfoSerializerFunction,
-    FieldPlainInfoSerializerFunction,
-]
+FieldPlainInfoSerializerFunction: TypeAlias = Callable[[Any, Any, FieldSerializationInfo[Any]], Any]
+SerializerFunction: TypeAlias = (
+    GeneralPlainNoInfoSerializerFunction
+    | GeneralPlainInfoSerializerFunction
+    | FieldPlainNoInfoSerializerFunction
+    | FieldPlainInfoSerializerFunction
+)
 
-WhenUsed = Literal['always', 'unless-none', 'json', 'json-unless-none']
+WhenUsed: TypeAlias = Literal['always', 'unless-none', 'json', 'json-unless-none']
 """
 Values have the following meanings:
 
@@ -355,19 +355,23 @@ class SerializerFunctionWrapHandler(Protocol):  # pragma: no cover
 
 
 # (input_value: Any, serializer: SerializerFunctionWrapHandler, /) -> Any
-GeneralWrapNoInfoSerializerFunction = Callable[[Any, SerializerFunctionWrapHandler], Any]
+GeneralWrapNoInfoSerializerFunction: TypeAlias = Callable[[Any, SerializerFunctionWrapHandler], Any]
 # (input_value: Any, serializer: SerializerFunctionWrapHandler, info: SerializationInfo, /) -> Any
-GeneralWrapInfoSerializerFunction = Callable[[Any, SerializerFunctionWrapHandler, SerializationInfo[Any]], Any]
-# (model: Any, input_value: Any, serializer: SerializerFunctionWrapHandler, /) -> Any
-FieldWrapNoInfoSerializerFunction = Callable[[Any, Any, SerializerFunctionWrapHandler], Any]
-# (model: Any, input_value: Any, serializer: SerializerFunctionWrapHandler, info: FieldSerializationInfo, /) -> Any
-FieldWrapInfoSerializerFunction = Callable[[Any, Any, SerializerFunctionWrapHandler, FieldSerializationInfo[Any]], Any]
-WrapSerializerFunction = Union[
-    GeneralWrapNoInfoSerializerFunction,
-    GeneralWrapInfoSerializerFunction,
-    FieldWrapNoInfoSerializerFunction,
-    FieldWrapInfoSerializerFunction,
+GeneralWrapInfoSerializerFunction: TypeAlias = Callable[
+    [Any, SerializerFunctionWrapHandler, SerializationInfo[Any]], Any
 ]
+# (model: Any, input_value: Any, serializer: SerializerFunctionWrapHandler, /) -> Any
+FieldWrapNoInfoSerializerFunction: TypeAlias = Callable[[Any, Any, SerializerFunctionWrapHandler], Any]
+# (model: Any, input_value: Any, serializer: SerializerFunctionWrapHandler, info: FieldSerializationInfo, /) -> Any
+FieldWrapInfoSerializerFunction: TypeAlias = Callable[
+    [Any, Any, SerializerFunctionWrapHandler, FieldSerializationInfo[Any]], Any
+]
+WrapSerializerFunction: TypeAlias = (
+    GeneralWrapNoInfoSerializerFunction
+    | GeneralWrapInfoSerializerFunction
+    | FieldWrapNoInfoSerializerFunction
+    | FieldWrapInfoSerializerFunction
+)
 
 
 class WrapSerializerFunctionSerSchema(TypedDict, total=False):
@@ -471,14 +475,14 @@ def model_ser_schema(cls: type[Any], schema: CoreSchema) -> ModelSerSchema:
     return ModelSerSchema(type='model', cls=cls, schema=schema)
 
 
-SerSchema = Union[
-    SimpleSerSchema,
-    PlainSerializerFunctionSerSchema,
-    WrapSerializerFunctionSerSchema,
-    FormatSerSchema,
-    ToStringSerSchema,
-    ModelSerSchema,
-]
+SerSchema: TypeAlias = (
+    SimpleSerSchema
+    | PlainSerializerFunctionSerSchema
+    | WrapSerializerFunctionSerSchema
+    | FormatSerSchema
+    | ToStringSerSchema
+    | ModelSerSchema
+)
 
 
 class InvalidSchema(TypedDict, total=False):
@@ -874,7 +878,7 @@ def complex_schema(
 
 class StringSchema(TypedDict, total=False):
     type: Required[Literal['str']]
-    pattern: Union[str, Pattern[str]]
+    pattern: str | Pattern[str]
     max_length: int
     min_length: int
     strip_whitespace: bool
@@ -1074,7 +1078,7 @@ class TimeSchema(TypedDict, total=False):
     ge: time
     lt: time
     gt: time
-    tz_constraint: Union[Literal['aware', 'naive'], int]
+    tz_constraint: Literal['aware', 'naive'] | int
     microseconds_precision: Literal['truncate', 'error']
     ref: str
     metadata: dict[str, Any]
@@ -1141,7 +1145,7 @@ class DatetimeSchema(TypedDict, total=False):
     lt: datetime
     gt: datetime
     now_op: Literal['past', 'future']
-    tz_constraint: Union[Literal['aware', 'naive'], int]
+    tz_constraint: Literal['aware', 'naive'] | int
     # defaults to current local utc offset from `time.localtime().tm_gmtoff`
     # value is restricted to -86_400 < offset < 86_400 by bounds in generate_self_schema.py
     now_utc_offset: int
@@ -1544,7 +1548,7 @@ def filter_seq_schema(*, include: set[int] | None = None, exclude: set[int] | No
     return _dict_not_none(type='include-exclude-sequence', include=include, exclude=exclude)
 
 
-IncExSeqOrElseSerSchema = Union[IncExSeqSerSchema, SerSchema]
+IncExSeqOrElseSerSchema: TypeAlias = IncExSeqSerSchema | SerSchema
 
 
 class ListSchema(TypedDict, total=False):
@@ -1937,7 +1941,7 @@ def generator_schema(
     )
 
 
-IncExDict = set[Union[int, str]]
+IncExDict: TypeAlias = set[int | str]
 
 
 class IncExDictSerSchema(TypedDict, total=False):
@@ -1950,7 +1954,7 @@ def filter_dict_schema(*, include: IncExDict | None = None, exclude: IncExDict |
     return _dict_not_none(type='include-exclude-dict', include=include, exclude=exclude)
 
 
-IncExDictOrElseSerSchema = Union[IncExDictSerSchema, SerSchema]
+IncExDictOrElseSerSchema: TypeAlias = IncExDictSerSchema | SerSchema
 
 
 class DictSchema(TypedDict, total=False):
@@ -2017,7 +2021,7 @@ def dict_schema(
 
 
 # (input_value: Any, /) -> Any
-NoInfoValidatorFunction = Callable[[Any], Any]
+NoInfoValidatorFunction: TypeAlias = Callable[[Any], Any]
 
 
 class NoInfoValidatorFunctionSchema(TypedDict):
@@ -2026,7 +2030,7 @@ class NoInfoValidatorFunctionSchema(TypedDict):
 
 
 # (input_value: Any, info: ValidationInfo, /) -> Any
-WithInfoValidatorFunction = Callable[[Any, ValidationInfo[Any]], Any]
+WithInfoValidatorFunction: TypeAlias = Callable[[Any, ValidationInfo[Any]], Any]
 
 
 class WithInfoValidatorFunctionSchema(TypedDict, total=False):
@@ -2035,7 +2039,7 @@ class WithInfoValidatorFunctionSchema(TypedDict, total=False):
     field_name: str  # deprecated
 
 
-ValidationFunction = Union[NoInfoValidatorFunctionSchema, WithInfoValidatorFunctionSchema]
+ValidationFunction: TypeAlias = NoInfoValidatorFunctionSchema | WithInfoValidatorFunctionSchema
 
 
 class _ValidatorFunctionSchema(TypedDict, total=False):
@@ -2264,7 +2268,7 @@ class ValidatorFunctionWrapHandler(Protocol):
 
 
 # (input_value: Any, validator: ValidatorFunctionWrapHandler, /) -> Any
-NoInfoWrapValidatorFunction = Callable[[Any, ValidatorFunctionWrapHandler], Any]
+NoInfoWrapValidatorFunction: TypeAlias = Callable[[Any, ValidatorFunctionWrapHandler], Any]
 
 
 class NoInfoWrapValidatorFunctionSchema(TypedDict):
@@ -2273,7 +2277,7 @@ class NoInfoWrapValidatorFunctionSchema(TypedDict):
 
 
 # (input_value: Any, validator: ValidatorFunctionWrapHandler, info: ValidationInfo, /) -> Any
-WithInfoWrapValidatorFunction = Callable[[Any, ValidatorFunctionWrapHandler, ValidationInfo[Any]], Any]
+WithInfoWrapValidatorFunction: TypeAlias = Callable[[Any, ValidatorFunctionWrapHandler, ValidationInfo[Any]], Any]
 
 
 class WithInfoWrapValidatorFunctionSchema(TypedDict, total=False):
@@ -2282,7 +2286,7 @@ class WithInfoWrapValidatorFunctionSchema(TypedDict, total=False):
     field_name: str  # deprecated
 
 
-WrapValidatorFunction = Union[NoInfoWrapValidatorFunctionSchema, WithInfoWrapValidatorFunctionSchema]
+WrapValidatorFunction: TypeAlias = NoInfoWrapValidatorFunctionSchema | WithInfoWrapValidatorFunctionSchema
 
 
 class WrapValidatorFunctionSchema(TypedDict, total=False):
@@ -2505,7 +2509,7 @@ class WithDefaultSchema(TypedDict, total=False):
     type: Required[Literal['default']]
     schema: Required[CoreSchema]
     default: Any
-    default_factory: Union[Callable[[], Any], Callable[[dict[str, Any]], Any]]
+    default_factory: Callable[[], Any] | Callable[[dict[str, Any]], Any]
     default_factory_takes_data: bool
     on_error: Literal['raise', 'omit', 'default']  # default: 'raise'
     validate_default: bool  # default: False
@@ -2519,7 +2523,7 @@ def with_default_schema(
     schema: CoreSchema,
     *,
     default: Any = PydanticUndefined,
-    default_factory: Union[Callable[[], Any], Callable[[dict[str, Any]], Any], None] = None,
+    default_factory: Callable[[], Any] | Callable[[dict[str, Any]], Any] | None = None,
     default_factory_takes_data: bool | None = None,
     on_error: Literal['raise', 'omit', 'default'] | None = None,
     validate_default: bool | None = None,
@@ -2613,12 +2617,12 @@ def nullable_schema(
 
 class UnionSchema(TypedDict, total=False):
     type: Required[Literal['union']]
-    choices: Required[list[Union[CoreSchema, tuple[CoreSchema, str]]]]
+    choices: Required[list[CoreSchema | tuple[CoreSchema, str]]]
     # default true, whether to automatically collapse unions with one element to the inner validator
     auto_collapse: bool
     custom_error_type: str
     custom_error_message: str
-    custom_error_context: dict[str, Union[str, int, float]]
+    custom_error_context: dict[str, str | int | float]
     mode: Literal['smart', 'left_to_right']  # default: 'smart'
     strict: bool
     ref: str
@@ -2680,10 +2684,10 @@ def union_schema(
 class TaggedUnionSchema(TypedDict, total=False):
     type: Required[Literal['tagged-union']]
     choices: Required[dict[Hashable, CoreSchema]]
-    discriminator: Required[Union[str, list[Union[str, int]], list[list[Union[str, int]]], Callable[[Any], Hashable]]]
+    discriminator: Required[str | list[str | int] | list[list[str | int]] | Callable[[Any], Hashable]]
     custom_error_type: str
     custom_error_message: str
-    custom_error_context: dict[str, Union[str, int, float]]
+    custom_error_context: dict[str, str | int | float]
     strict: bool
     from_attributes: bool  # default: True
     ref: str
@@ -2941,7 +2945,7 @@ class TypedDictField(TypedDict, total=False):
     type: Required[Literal['typed-dict-field']]
     schema: Required[CoreSchema]
     required: bool
-    validation_alias: Union[str, list[Union[str, int]], list[list[Union[str, int]]]]
+    validation_alias: str | list[str | int] | list[list[str | int]]
     serialization_alias: str
     serialization_exclude: bool  # default: False
     metadata: dict[str, Any]
@@ -3072,7 +3076,7 @@ def typed_dict_schema(
 class ModelField(TypedDict, total=False):
     type: Required[Literal['model-field']]
     schema: Required[CoreSchema]
-    validation_alias: Union[str, list[Union[str, int]], list[list[Union[str, int]]]]
+    validation_alias: str | list[str | int] | list[list[str | int]]
     serialization_alias: str
     serialization_exclude: bool  # default: False
     serialization_exclude_if: Callable[[Any], bool]  # default: None
@@ -3303,7 +3307,7 @@ class DataclassField(TypedDict, total=False):
     init: bool  # default: True
     init_only: bool  # default: False
     frozen: bool  # default: False
-    validation_alias: Union[str, list[Union[str, int]], list[list[Union[str, int]]]]
+    validation_alias: str | list[str | int] | list[list[str | int]]
     serialization_alias: str
     serialization_exclude: bool  # default: False
     metadata: dict[str, Any]
@@ -3511,7 +3515,7 @@ class ArgumentsParameter(TypedDict, total=False):
     name: Required[str]
     schema: Required[CoreSchema]
     mode: Literal['positional_only', 'positional_or_keyword', 'keyword_only']  # default positional_or_keyword
-    alias: Union[str, list[Union[str, int]], list[list[Union[str, int]]]]
+    alias: str | list[str | int] | list[list[str | int]]
 
 
 def arguments_parameter(
@@ -3627,7 +3631,7 @@ class ArgumentsV3Parameter(TypedDict, total=False):
         'var_kwargs_uniform',
         'var_kwargs_unpacked_typed_dict',
     ]  # default positional_or_keyword
-    alias: Union[str, list[Union[str, int]], list[list[Union[str, int]]]]
+    alias: str | list[str | int] | list[list[str | int]]
 
 
 def arguments_v3_parameter(
@@ -3800,7 +3804,7 @@ class CustomErrorSchema(TypedDict, total=False):
     schema: Required[CoreSchema]
     custom_error_type: Required[str]
     custom_error_message: str
-    custom_error_context: dict[str, Union[str, int, float]]
+    custom_error_context: dict[str, str | int | float]
     ref: str
     metadata: dict[str, Any]
     serialization: SerSchema
@@ -4121,66 +4125,66 @@ MYPY = False
 # See https://github.com/python/mypy/issues/14034 for details, in summary mypy is extremely slow to process this
 # union which kills performance not just for pydantic, but even for code using pydantic
 if not MYPY:
-    CoreSchema = Union[
-        InvalidSchema,
-        AnySchema,
-        NoneSchema,
-        BoolSchema,
-        IntSchema,
-        FloatSchema,
-        DecimalSchema,
-        StringSchema,
-        BytesSchema,
-        DateSchema,
-        TimeSchema,
-        DatetimeSchema,
-        TimedeltaSchema,
-        LiteralSchema,
-        MissingSentinelSchema,
-        EnumSchema,
-        IsInstanceSchema,
-        IsSubclassSchema,
-        CallableSchema,
-        ListSchema,
-        TupleSchema,
-        SetSchema,
-        FrozenSetSchema,
-        GeneratorSchema,
-        DictSchema,
-        AfterValidatorFunctionSchema,
-        BeforeValidatorFunctionSchema,
-        WrapValidatorFunctionSchema,
-        PlainValidatorFunctionSchema,
-        WithDefaultSchema,
-        NullableSchema,
-        UnionSchema,
-        TaggedUnionSchema,
-        ChainSchema,
-        LaxOrStrictSchema,
-        JsonOrPythonSchema,
-        TypedDictSchema,
-        ModelFieldsSchema,
-        ModelSchema,
-        DataclassArgsSchema,
-        DataclassSchema,
-        ArgumentsSchema,
-        ArgumentsV3Schema,
-        CallSchema,
-        CustomErrorSchema,
-        JsonSchema,
-        UrlSchema,
-        MultiHostUrlSchema,
-        DefinitionsSchema,
-        DefinitionReferenceSchema,
-        UuidSchema,
-        ComplexSchema,
-    ]
+    CoreSchema: TypeAlias = (
+        InvalidSchema
+        | AnySchema
+        | NoneSchema
+        | BoolSchema
+        | IntSchema
+        | FloatSchema
+        | DecimalSchema
+        | StringSchema
+        | BytesSchema
+        | DateSchema
+        | TimeSchema
+        | DatetimeSchema
+        | TimedeltaSchema
+        | LiteralSchema
+        | MissingSentinelSchema
+        | EnumSchema
+        | IsInstanceSchema
+        | IsSubclassSchema
+        | CallableSchema
+        | ListSchema
+        | TupleSchema
+        | SetSchema
+        | FrozenSetSchema
+        | GeneratorSchema
+        | DictSchema
+        | AfterValidatorFunctionSchema
+        | BeforeValidatorFunctionSchema
+        | WrapValidatorFunctionSchema
+        | PlainValidatorFunctionSchema
+        | WithDefaultSchema
+        | NullableSchema
+        | UnionSchema
+        | TaggedUnionSchema
+        | ChainSchema
+        | LaxOrStrictSchema
+        | JsonOrPythonSchema
+        | TypedDictSchema
+        | ModelFieldsSchema
+        | ModelSchema
+        | DataclassArgsSchema
+        | DataclassSchema
+        | ArgumentsSchema
+        | ArgumentsV3Schema
+        | CallSchema
+        | CustomErrorSchema
+        | JsonSchema
+        | UrlSchema
+        | MultiHostUrlSchema
+        | DefinitionsSchema
+        | DefinitionReferenceSchema
+        | UuidSchema
+        | ComplexSchema
+    )
 elif False:
     CoreSchema: TypeAlias = Mapping[str, Any]
 
 
 # to update this, call `pytest -k test_core_schema_type_literal` and copy the output
-CoreSchemaType = Literal[
+CoreSchemaType: TypeAlias = Literal[
     'invalid',
     'any',
     'none',
@@ -4235,12 +4239,12 @@ CoreSchemaType = Literal[
     'complex',
 ]
 
-CoreSchemaFieldType = Literal['model-field', 'dataclass-field', 'typed-dict-field', 'computed-field']
+CoreSchemaFieldType: TypeAlias = Literal['model-field', 'dataclass-field', 'typed-dict-field', 'computed-field']
 
 
 # used in _pydantic_core.pyi::PydanticKnownError
 # to update this, call `pytest -k test_all_errors` and copy the output
-ErrorType = Literal[
+ErrorType: TypeAlias = Literal[
     'no_such_attribute',
     'json_invalid',
     'json_type',

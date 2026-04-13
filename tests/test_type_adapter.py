@@ -51,8 +51,8 @@ class SomeNamedTuple(NamedTuple):
         (tuple[str, int], ('1', 1), ('1', 1)),
         (tuple[str, ...], ('1',), ('1',)),
         (dict[str, int], {'foo': 123}, {'foo': 123}),
-        (Union[int, str], 1, 1),
-        (Union[int, str], '2', '2'),
+        (Union[int, str], 1, 1),  # noqa: UP007
+        (Union[int, str], '2', '2'),  # noqa: UP007
         (GenericPydanticModel[int], {'x': [[1]]}, GenericPydanticModel[int](x=[[1]])),
         (GenericPydanticModel[int], {'x': [['1']]}, GenericPydanticModel[int](x=[[1]])),
         (NestedList[int], [[1]], [[1]]),
@@ -181,7 +181,7 @@ def test_top_level_fwd_ref(defer_build: bool, method: str, generate_schema_calls
         assert schemas[(FwdRef, 'validation')]['type'] == 'object'
 
 
-MyUnion: TypeAlias = 'Union[str, int]'
+MyUnion: TypeAlias = 'str | int'
 
 
 def test_type_alias():

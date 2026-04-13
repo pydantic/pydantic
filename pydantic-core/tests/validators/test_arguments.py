@@ -4,7 +4,7 @@ import re
 import sys
 from functools import wraps
 from inspect import Parameter, signature
-from typing import Any, Union, get_type_hints
+from typing import Any, get_type_hints
 
 import pytest
 
@@ -1189,10 +1189,10 @@ def test_error_display(pydantic_version):
 @pytest.mark.parametrize('runtime_by_alias', [None, True, False])
 @pytest.mark.parametrize('runtime_by_name', [None, True, False])
 def test_by_alias_and_name_config_interaction(
-    config_by_alias: Union[bool, None],
-    config_by_name: Union[bool, None],
-    runtime_by_alias: Union[bool, None],
-    runtime_by_name: Union[bool, None],
+    config_by_alias: bool | None,
+    config_by_name: bool | None,
+    runtime_by_alias: bool | None,
+    runtime_by_name: bool | None,
 ) -> None:
     """This test reflects the priority that applies for config vs runtime validation alias configuration.
 

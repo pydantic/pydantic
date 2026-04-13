@@ -16,7 +16,6 @@ from typing import (
     NamedTuple,
     Optional,
     TypeVar,
-    Union,
 )
 
 import pytest
@@ -526,7 +525,7 @@ def test_generics_reused() -> None:
     class B(BaseModel, Generic[T]):
         pass
 
-    AorB = TypeAliasType('AorB', Union[A[T], B[T]], type_params=(T,))
+    AorB = TypeAliasType('AorB', A[T] | B[T], type_params=(T,))
 
     class Main(BaseModel, Generic[T]):
         ls: list[AorB[T]] = []
@@ -649,7 +648,7 @@ def test_complex_nesting():
     T = TypeVar('T')
 
     class MyModel(BaseModel, Generic[T]):
-        item: list[dict[Union[int, T], str]]
+        item: list[dict[int | T, str]]
 
     item = [{1: 'a', 'a': 'a'}]
     model = MyModel[str](item=item)
@@ -1068,8 +1067,8 @@ def test_generic_model_caching_detect_order_of_union_args_basic(create_module):
         class Model(BaseModel, Generic[t]):
             data: t
 
-        int_or_float_model = Model[Union[int, float]]
-        float_or_int_model = Model[Union[float, int]]
+        int_or_float_model = Model[Union[int, float]]  # noqa: UP007
+        float_or_int_model = Model[Union[float, int]]  # noqa: UP007
 
         assert type(int_or_float_model(data='1').data) is int
         assert type(float_or_int_model(data='1').data) is float
@@ -1085,7 +1084,7 @@ def test_generic_model_caching_detect_order_of_union_args_nested(create_module):
     # Nested variant of https://github.com/pydantic/pydantic/issues/4474
     @create_module
     def module():
-        from typing import Generic, TypeVar, Union
+        from typing import Generic, TypeVar
 
         from pydantic import BaseModel
 
@@ -1094,8 +1093,8 @@ def test_generic_model_caching_detect_order_of_union_args_nested(create_module):
         class Model(BaseModel, Generic[t]):
             data: t
 
-        int_or_float_model = Model[list[Union[int, float]]]
-        float_or_int_model = Model[list[Union[float, int]]]
+        int_or_float_model = Model[list[int | float]]
+        float_or_int_model = Model[list[float | int]]
 
         assert type(int_or_float_model(data=['1']).data[0]) is int
         assert type(float_or_int_model(data=['1']).data[0]) is float
@@ -1155,7 +1154,7 @@ def test_iter_contained_typevars():
         a: T
 
     assert list(iter_contained_typevars(Model[T])) == [T]
-    assert list(iter_contained_typevars(Optional[list[Union[str, Model[T]]]])) == [T]  # noqa: UP045
+    assert list(iter_contained_typevars(Optional[list[str | Model[T]]])) == [T]  # noqa: UP045
     assert list(iter_contained_typevars(list[str | Model[int]] | None)) == []
     assert list(iter_contained_typevars(list[str | Model[T] | Callable[[T2, T], str]] | None)) == [T, T2, T]
 
@@ -1179,7 +1178,7 @@ def test_replace_types():
         a: T
 
     assert replace_types(T, {T: int}) is int
-    assert replace_types(list[Union[str, list, T]], {T: int}) == list[Union[str, list, int]]
+    assert replace_types(list[str | list | T], {T: int}) == list[str | list | int]
     assert replace_types(Callable, {T: int}) == Callable
     assert replace_types(Callable[[int, str, T], T], {T: int}) == Callable[[int, str, int], int]
     assert replace_types(T, {}) is T
@@ -1197,7 +1196,7 @@ def test_replace_types():
     # Check generic aliases (subscripted builtin types) to make sure they
     # resolve correctly (don't get translated to typing versions for
     # example)
-    assert replace_types(list[Union[str, list, T]], {T: int}) == list[Union[str, list, int]]
+    assert replace_types(list[str | list | T], {T: int}) == list[str | list | int]
 
     if sys.version_info >= (3, 10):
         # Check that types.UnionType gets handled properly
@@ -1372,7 +1371,7 @@ def test_replace_types_identity_on_unchanged():
     T = TypeVar('T')
     U = TypeVar('U')
 
-    type_ = list[Union[str, Callable[[list], str | None], U]]
+    type_ = list[str | Callable[[list], str | None] | U]
     assert replace_types(type_, {T: int}) is type_
 
 
@@ -1383,7 +1382,7 @@ def test_deep_generic():
 
     class OuterModel(BaseModel, Generic[T, S, R]):
         a: dict[R, list[T] | None]
-        b: Union[S, R] | None
+        b: S | R | None
         c: R
         d: float
 
@@ -1452,7 +1451,7 @@ def test_deep_generic_with_referenced_inner_generic():
         a: T
 
     class OuterModel(BaseModel, Generic[T]):
-        a: list[Union[ReferencedModel[T], str]] | None
+        a: list[ReferencedModel[T] | str] | None
 
     class InnerModel(OuterModel[T], Generic[T]):
         pass
@@ -1464,7 +1463,7 @@ def test_deep_generic_with_referenced_inner_generic():
         InnerModel[int](a=['s', {'a': 'wrong'}])
 
     assert InnerModel[int](a=['s', {'a': 1}]).a[1].a == 1
-    assert InnerModel[int].model_fields['a'].annotation == list[Union[ReferencedModel[int], str]] | None
+    assert InnerModel[int].model_fields['a'].annotation == list[ReferencedModel[int] | str] | None
 
 
 def test_deep_generic_with_multiple_typevars():
@@ -1553,7 +1552,7 @@ def test_generic_with_referenced_generic_type_bound():
 
 
 def test_generic_with_referenced_generic_union_type_bound():
-    T = TypeVar('T', bound=Union[str, int])
+    T = TypeVar('T', bound=str | int)
 
     class ModelWithType(BaseModel, Generic[T]):
         some_type: type[T]
@@ -1621,7 +1620,7 @@ def test_generic_with_partial_callable():
 def test_generic_recursive_models(create_module):
     @create_module
     def module():
-        from typing import Generic, TypeVar, Union
+        from typing import Generic, TypeVar
 
         from pydantic import BaseModel
 
@@ -1631,7 +1630,7 @@ def test_generic_recursive_models(create_module):
             ref: 'Model2[T]'
 
         class Model2(BaseModel, Generic[T]):
-            ref: Union[T, Model1[T]]
+            ref: T | Model1[T]
 
         Model1.model_rebuild()
 
@@ -1754,7 +1753,7 @@ def test_generic_recursive_models_inheritance() -> None:
 def test_generic_recursive_models_separate_parameters(create_module):
     @create_module
     def module():
-        from typing import Generic, TypeVar, Union
+        from typing import Generic, TypeVar
 
         from pydantic import BaseModel
 
@@ -1766,7 +1765,7 @@ def test_generic_recursive_models_separate_parameters(create_module):
         S = TypeVar('S')
 
         class Model2(BaseModel, Generic[S]):
-            ref: Union[S, Model1[S]]
+            ref: S | Model1[S]
 
         Model1.model_rebuild()
 
@@ -1829,8 +1828,8 @@ def test_generic_recursive_models_repeated_separate_parameters(create_module):
         S = TypeVar('S')
 
         class Model2(BaseModel, Generic[S]):
-            ref: Union[S, Model1[S]]
-            ref2: Union[S, Model1[S], None] = None
+            ref: S | Model1[S]
+            ref2: S | Model1[S] | None = None
 
         Model1.model_rebuild()
 
@@ -1913,7 +1912,7 @@ def test_generic_recursive_models_triple(create_module):
 def test_generic_recursive_models_with_a_concrete_parameter(create_module):
     @create_module
     def module():
-        from typing import Generic, TypeVar, Union
+        from typing import Generic, TypeVar
 
         from pydantic import BaseModel
 
@@ -1926,7 +1925,7 @@ def test_generic_recursive_models_with_a_concrete_parameter(create_module):
             m2: 'M2[V2]'
 
         class M2(BaseModel, Generic[V3]):
-            m1: Union[M1[int, V3], V3]
+            m1: M1[int, V3] | V3
 
         M1.model_rebuild()
 
@@ -1963,7 +1962,7 @@ def test_generic_recursive_models_complicated(create_module):
             a2: 'A3[T2]'
 
         class A3(BaseModel, Generic[T3]):
-            a3: Union[A1[T3], T3]
+            a3: A1[T3] | T3
 
         A1.model_rebuild()
 
@@ -1988,7 +1987,7 @@ def test_generic_recursive_models_complicated(create_module):
             m2: 'M2[V1]'
 
         class M2(BaseModel, Generic[V3]):
-            m1: Union[M1[V3, int], V3]
+            m1: M1[V3, int] | V3
 
         M1.model_rebuild()
 
@@ -3108,7 +3107,7 @@ def test_generic_any_or_never() -> None:
     T = TypeVar('T')
 
     class GenericModel(BaseModel, Generic[T]):
-        f: Union[T, int]
+        f: T | int
 
     any_json_schema = GenericModel[Any].model_json_schema()
     assert any_json_schema['properties']['f'] == {'title': 'F'}  # any type

@@ -1459,7 +1459,7 @@ def test_discriminated_union_basemodel_instance_value():
 
     @pydantic.dataclasses.dataclass
     class Top:
-        sub: Union[A, B] = dataclasses.field(metadata=dict(discriminator='l'))
+        sub: A | B = dataclasses.field(metadata=dict(discriminator='l'))
 
     t = Top(sub=A(l='a'))
     assert isinstance(t, Top)
@@ -3124,7 +3124,7 @@ def test_validation_works_for_cyclical_forward_refs() -> None:
 
     @pydantic.dataclasses.dataclass()
     class Y:
-        x: Union[X, None]
+        x: X | None
 
     assert Y(x={'y': None}).x.y is None
 
