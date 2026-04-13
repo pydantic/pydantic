@@ -1,6 +1,6 @@
 import datetime
 from collections.abc import Mapping
-from typing import Any, Callable, Generic, Literal, TypeVar, final
+from typing import Any, Callable, Generic, Literal, TypeVar, final, overload
 
 from _typeshed import SupportsAllComparisons
 from typing_extensions import LiteralString, Self, TypeAlias
@@ -625,14 +625,30 @@ class MultiHostUrl(SupportsAllComparisons):
     def __str__(self) -> str: ...
     def __deepcopy__(self, memo: dict) -> Self: ...
     @classmethod
+    @overload
     def build(
         cls,
         *,
         scheme: str,
-        hosts: list[MultiHostHost] | None = None,
+        hosts: list[MultiHostHost],
+        username: None = None,
+        password: None = None,
+        host: None = None,
+        port: None = None,
+        path: str | None = None,
+        query: str | None = None,
+        fragment: str | None = None,
+    ) -> Self: ...
+    @classmethod
+    @overload
+    def build(
+        cls,
+        *,
+        scheme: str,
+        hosts: None = None,
+        host: str,
         username: str | None = None,
         password: str | None = None,
-        host: str | None = None,
         port: int | None = None,
         path: str | None = None,
         query: str | None = None,

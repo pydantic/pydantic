@@ -5,7 +5,16 @@ from typing import Optional, Union
 import pytest
 from dirty_equals import HasRepr, IsInstance
 
-from pydantic_core import CoreConfig, MultiHostUrl, SchemaError, SchemaValidator, Url, ValidationError, core_schema
+from pydantic_core import (
+    CoreConfig,
+    MultiHostHost,
+    MultiHostUrl,
+    SchemaError,
+    SchemaValidator,
+    Url,
+    ValidationError,
+    core_schema,
+)
 
 from ..conftest import Err, PyAndJson
 
@@ -1464,12 +1473,17 @@ def test_multi_url_build_hosts_empty_host() -> None:
 
 def test_multi_url_build_hosts() -> None:
     """Hosts can't be provided with any single url values."""
-    hosts = [
+    hosts: list[MultiHostHost] = [
         {'host': '127.0.0.1', 'password': 'testpassword', 'username': 'testuser', 'port': 5431},
         {'host': '127.0.0.1', 'password': 'testpassword', 'username': 'testuser', 'port': 5433},
     ]
-    kwargs = dict(scheme='postgresql', hosts=hosts, path='database', query='sslmode=require', fragment='test')
-    url = MultiHostUrl.build(**kwargs)
+    url = MultiHostUrl.build(
+        scheme='postgresql',
+        hosts=hosts,
+        path='database',
+        query='sslmode=require',
+        fragment='test',
+    )
     assert url == MultiHostUrl(
         'postgresql://testuser:testpassword@127.0.0.1:5431,testuser:testpassword@127.0.0.1:5433/database?sslmode=require#test'
     )

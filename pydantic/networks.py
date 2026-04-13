@@ -8,7 +8,7 @@ from dataclasses import fields
 from functools import lru_cache
 from importlib.metadata import version
 from ipaddress import IPv4Address, IPv4Interface, IPv4Network, IPv6Address, IPv6Interface, IPv6Network
-from typing import TYPE_CHECKING, Annotated, Any, ClassVar
+from typing import TYPE_CHECKING, Annotated, Any, ClassVar, overload
 
 from pydantic_core import (
     MultiHostHost,
@@ -439,6 +439,36 @@ class _BaseMultiHostUrl:
         return len(str(self._url))
 
     @classmethod
+    @overload
+    def build(
+        cls,
+        *,
+        scheme: str,
+        hosts: list[MultiHostHost],
+        username: None = None,
+        password: None = None,
+        host: None = None,
+        port: None = None,
+        path: str | None = None,
+        query: str | None = None,
+        fragment: str | None = None,
+    ) -> Self: ...
+    @classmethod
+    @overload
+    def build(
+        cls,
+        *,
+        scheme: str,
+        hosts: None = None,
+        host: str,
+        username: str | None = None,
+        password: str | None = None,
+        port: int | None = None,
+        path: str | None = None,
+        query: str | None = None,
+        fragment: str | None = None,
+    ) -> Self: ...
+    @classmethod
     def build(
         cls,
         *,
@@ -472,12 +502,12 @@ class _BaseMultiHostUrl:
             An instance of `MultiHostUrl`
         """
         return cls(
-            _CoreMultiHostUrl.build(
+            _CoreMultiHostUrl.build(  # pyright: ignore[reportCallIssue]
                 scheme=scheme,
-                hosts=hosts,
+                hosts=hosts,  # pyright: ignore[reportArgumentType]
                 username=username,
                 password=password,
-                host=host,
+                host=host,  # pyright: ignore[reportArgumentType]
                 port=port,
                 path=path,
                 query=query,

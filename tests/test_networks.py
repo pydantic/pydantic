@@ -2,7 +2,7 @@ import json
 from typing import Annotated, Any, Union
 
 import pytest
-from pydantic_core import PydanticCustomError, PydanticSerializationError, Url
+from pydantic_core import MultiHostHost, PydanticCustomError, PydanticSerializationError, Url
 
 from pydantic import (
     AfterValidator,
@@ -1236,3 +1236,20 @@ def test_url_preserve_empty_path(type) -> None:
     ta_constraint = TypeAdapter(Annotated[type, UrlConstraints(preserve_empty_path=True)])
 
     assert str(ta_constraint.validate_python('http://example.com')) == 'http://example.com'
+
+
+def test_multi_url_build_hosts_with_none_values() -> None:
+    """https://github.com/pydantic/pydantic/issues/13007"""
+
+    hosts: list[MultiHostHost] = [
+        {'host': 'host-1.com', 'password': 'pass', 'username': 'user', 'port': 27017},
+        {'host': 'host-2.com', 'password': None, 'username': None, 'port': 27017},
+    ]
+    url = MongoDsn.build(
+        scheme='mongodb',
+        hosts=hosts,
+        path='db',
+        query='replicaSet=xxx&authSource=admin',
+    )
+    assert str(url) == 'mongodb://user:pass@host-1.com:27017,host-2.com:27017/db?replicaSet=xxx&authSource=admin'
+    assert url.hosts() == hosts
