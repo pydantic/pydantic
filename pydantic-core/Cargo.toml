@@ -49,6 +49,7 @@ jiter = { version = "0.14.0", features = ["python"] }
 hex = "0.4.3"
 percent-encoding = "2.3.2"
 hashbrown = { version = "0.16", default-features = false, features = ["inline-more"] }
+fixedbitset = { version = "0.5.7" }
 
 [lib]
 name = "_pydantic_core"

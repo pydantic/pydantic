@@ -29,7 +29,7 @@ from typing import (
 
 import pydantic_core
 import typing_extensions
-from pydantic_core import PydanticUndefined, ValidationError
+from pydantic_core import ModelFieldsSet, PydanticUndefined, ValidationError
 from typing_extensions import Self, TypeAlias, Unpack
 
 from . import PydanticDeprecatedSince20, PydanticDeprecatedSince211
@@ -224,7 +224,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
     __pydantic_extra__: Dict[str, Any] | None = _model_construction.NoInitField(init=False)  # noqa: UP006
     """A dictionary containing extra values, if [`extra`][pydantic.config.ConfigDict.extra] is set to `'allow'`."""
 
-    __pydantic_fields_set__: set[str] = _model_construction.NoInitField(init=False)
+    __pydantic_fields_set__: ModelFieldsSet = _model_construction.NoInitField(init=False)
     """The names of fields explicitly set during instantiation."""
 
     __pydantic_private__: Dict[str, Any] | None = _model_construction.NoInitField(init=False)  # noqa: UP006
