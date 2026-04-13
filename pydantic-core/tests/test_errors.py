@@ -1127,10 +1127,6 @@ def test_hide_input_in_json() -> None:
         assert 'input' not in error
 
 
-@pytest.mark.skipif(
-    sys.version_info < (3, 9) and sys.implementation.name == 'pypy',
-    reason='PyPy before 3.9 cannot pickle this correctly',
-)
 def test_validation_error_pickle() -> None:
     s = SchemaValidator(core_schema.int_schema())
     with pytest.raises(ValidationError) as exc_info:

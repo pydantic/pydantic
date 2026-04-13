@@ -441,7 +441,6 @@ def test_caches_get_cleaned_up_with_aliased_parametrized_bases(mocker: MockerFix
 
 @pytest.mark.thread_unsafe(reason='GC is flaky')
 @pytest.mark.skipif(platform.python_implementation() == 'PyPy', reason='PyPy does not play nice with PyO3 gc')
-@pytest.mark.skipif(sys.version_info[:2] == (3, 9), reason='The test randomly fails on Python 3.9')
 def test_circular_generic_refs_get_cleaned_up(mocker: MockerFixture):
     cache = mocker.patch('pydantic._internal._generics._GENERIC_TYPES_CACHE', GenericTypesCache())
     initial_cache_size = len(cache)

@@ -115,12 +115,7 @@ quote-style = 'single'
 [tool.pytest.ini_options]
 testpaths = 'tests'
 log_format = '%(name)s %(levelname)s: %(message)s'
-filterwarnings = [
-    'error',
-    # Python 3.9 and below allowed truncation of float to integers in some
-    # cases, by not making this an error we can test for this behaviour
-    'ignore:(.+)Implicit conversion to integers using __int__ is deprecated',
-]
+filterwarnings = ['error']
 timeout = 30
 xfail_strict = true
 # min, max, mean, stddev, median, iqr, outliers, ops, rounds, iterations

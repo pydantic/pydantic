@@ -41,7 +41,7 @@ class PydanticMetadata(Representation):
     __slots__ = ()
 
 
-@dataclasses.dataclass(slots=True)  # TODO: make kw_only when we drop support for 3.9.
+@dataclasses.dataclass(slots=True, kw_only=True)
 class PydanticExtraInfo:
     # TODO: make use of PEP 747:
     annotation: Any
