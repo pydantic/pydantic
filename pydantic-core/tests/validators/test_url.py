@@ -1480,7 +1480,7 @@ def test_multi_url_build_hosts() -> None:
 
 
 def test_multi_url_build_hosts_with_none_values() -> None:
-    hosts = [
+    # Regression test for https://github.com/pydantic/pydantic/issues/13007
         {'host': 'host-1.com', 'password': 'pass', 'username': 'user', 'port': 27017},
         {'host': 'host-2.com', 'password': None, 'username': None, 'port': 27017},
     ]
@@ -1491,10 +1491,7 @@ def test_multi_url_build_hosts_with_none_values() -> None:
         query='replicaSet=xxx&authSource=admin',
     )
     assert str(url) == 'mongodb://user:pass@host-1.com:27017,host-2.com:27017/db?replicaSet=xxx&authSource=admin'
-    assert url.hosts() == [
-        {'username': 'user', 'password': 'pass', 'host': 'host-1.com', 'port': 27017},
-        {'username': None, 'password': None, 'host': 'host-2.com', 'port': 27017},
-    ]
+    assert url.hosts() == hosts
 
 
 def test_multi_url_build_neither_host_and_hosts_set() -> None:
