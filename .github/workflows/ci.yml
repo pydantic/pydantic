@@ -912,14 +912,16 @@ jobs:
       - name: Check if pydantic-core version is already on PyPI
         id: check-pypi
         run: |
-          STATUS=$(curl -s -o /dev/null -I -w "%{http_code}" https://pypi.org/pypi/pydantic-core/${{ steps.core-version.outputs.VERSION }}/json)
+          STATUS=$(curl -s -o /dev/null -I -w "%{http_code}" https://pypi.org/pypi/pydantic-core/${STEPS_CORE_VERSION_OUTPUTS_VERSION}/json)
           if [ "$STATUS" = "200" ]; then
             echo "already_published=true" >> "$GITHUB_OUTPUT"
-            echo "pydantic-core ${{ steps.core-version.outputs.VERSION }} is already on PyPI, skipping publish"
+            echo "pydantic-core ${STEPS_CORE_VERSION_OUTPUTS_VERSION} is already on PyPI, skipping publish"
           else
             echo "already_published=false" >> "$GITHUB_OUTPUT"
-            echo "pydantic-core ${{ steps.core-version.outputs.VERSION }} not found on PyPI, will publish"
+            echo "pydantic-core ${STEPS_CORE_VERSION_OUTPUTS_VERSION} not found on PyPI, will publish"
           fi
+        env:
+          STEPS_CORE_VERSION_OUTPUTS_VERSION: ${{ steps.core-version.outputs.VERSION }}
 
       - name: Get pydantic-core dist artifacts
         if: steps.check-pypi.outputs.already_published != 'true'
