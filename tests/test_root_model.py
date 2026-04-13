@@ -1,6 +1,6 @@
 import pickle
 from datetime import date, datetime
-from typing import Annotated, Any, Generic, Literal, Optional, TypeVar, Union
+from typing import Annotated, Any, Generic, Literal, TypeVar, Union
 
 import pytest
 from pydantic_core import CoreSchema
@@ -114,7 +114,7 @@ def test_root_model_recursive():
         def my_a_method(self):
             pass
 
-    class B(RootModel[dict[str, Optional[A]]]):
+    class B(RootModel[dict[str, A | None]]):
         def my_b_method(self):
             pass
 

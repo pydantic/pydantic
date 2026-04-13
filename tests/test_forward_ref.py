@@ -80,7 +80,7 @@ def test_forward_ref_auto_update_no_model(create_module):
 def test_basic_forward_ref(create_module):
     @create_module
     def module():
-        from typing import ForwardRef, Optional
+        from typing import ForwardRef
 
         from pydantic import BaseModel
 
@@ -90,7 +90,7 @@ def test_basic_forward_ref(create_module):
         FooRef = ForwardRef('Foo')
 
         class Bar(BaseModel):
-            b: Optional[FooRef] = None
+            b: FooRef | None = None
 
     assert module.Bar().model_dump() == {'b': None}
     assert module.Bar(b={'a': '123'}).model_dump() == {'b': {'a': 123}}
@@ -99,7 +99,7 @@ def test_basic_forward_ref(create_module):
 def test_self_forward_ref_module(create_module):
     @create_module
     def module():
-        from typing import ForwardRef, Optional
+        from typing import ForwardRef
 
         from pydantic import BaseModel
 
@@ -107,7 +107,7 @@ def test_self_forward_ref_module(create_module):
 
         class Foo(BaseModel):
             a: int = 123
-            b: Optional[FooRef] = None
+            b: FooRef | None = None
 
     assert module.Foo().model_dump() == {'a': 123, 'b': None}
     assert module.Foo(b={'a': '321'}).model_dump() == {'a': 123, 'b': {'a': 321, 'b': None}}
@@ -731,8 +731,8 @@ Foo.model_rebuild()
     finally:
         del sys.modules['eval_type_backport']
 
-    assert module.Foo.model_fields['bar'].annotation == typing.Optional[module.Bar[str]]
-    assert module.Foo.model_fields['bar2'].annotation == typing.Union[int, module.Bar[float]]
+    assert module.Foo.model_fields['bar'].annotation == module.Bar[str] | None
+    assert module.Foo.model_fields['bar2'].annotation == int | module.Bar[float]
     assert module.Bar.model_fields['foo'].annotation == module.Foo
 
 
@@ -761,8 +761,8 @@ Foo.model_rebuild()
 """
     )
 
-    assert module.Foo.model_fields['bar'].annotation == typing.Optional[module.Bar[str]]
-    assert module.Foo.model_fields['bar2'].annotation == typing.Union[int, str, module.Bar[float]]
+    assert module.Foo.model_fields['bar'].annotation == module.Bar[str] | None
+    assert module.Foo.model_fields['bar2'].annotation == int | str | module.Bar[float]
     assert module.Bar.model_fields['foo'].annotation == module.Foo
 
 
@@ -1236,7 +1236,7 @@ def test_preserve_evaluated_attribute_of_parent_fields(create_module):
         from pydantic import BaseModel
 
         class Child(BaseModel):
-            parent: 'Optional[Parent]' = None
+            parent: 'Parent | None' = None
 
         class Parent(BaseModel):
             child: list[Child] = []

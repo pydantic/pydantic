@@ -1,6 +1,5 @@
 import json
 from dataclasses import dataclass
-from typing import Optional
 
 import pytest
 from typing_extensions import TypedDict
@@ -23,7 +22,7 @@ user_login = UserLogin(name='pydantic', password='password')
 
 def test_serialize_as_any_annotation() -> None:
     class OuterModel(BaseModel):
-        maybe_as_any: Optional[SerializeAsAny[User]] = None
+        maybe_as_any: SerializeAsAny[User] | None = None
         as_any: SerializeAsAny[User]
         without: User
 

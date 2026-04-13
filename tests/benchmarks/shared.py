@@ -17,7 +17,6 @@ from typing import (
     Any,
     Literal,
     NamedTuple,
-    Optional,
     Union,
 )
 from uuid import UUID, uuid4, uuid5
@@ -75,13 +74,13 @@ class NestedModel(BaseModel):
 
 class OuterModel(BaseModel):
     nested: NestedModel
-    optional_nested: Optional[NestedModel]
+    optional_nested: NestedModel | None
 
 
 class ComplexModel(BaseModel):
     field1: Union[str, int, float]
     field2: list[dict[str, Union[int, float]]]
-    field3: Optional[list[Union[str, int]]]
+    field3: list[Union[str, int]] | None
 
 
 class Color(Enum):
@@ -160,11 +159,11 @@ StdLibTypes = [
     frozenset,  # built-in frozenset
     frozenset[int],  # built-in frozenset
     frozenset[str],  # built-in frozenset
-    Optional[int],  # typing.Optional
-    Optional[str],  # typing.Optional
-    Optional[float],  # typing.Optional
-    Optional[bytes],  # typing.Optional
-    Optional[bool],  # typing.Optional
+    int | None,
+    str | None,
+    float | None,
+    bytes | None,
+    bool | None,
     Sequence[int],  # typing.Sequence
     Sequence[str],  # typing.Sequence
     Sequence[bytes],  # typing.Sequence

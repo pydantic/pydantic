@@ -51,7 +51,7 @@ from pydantic_core import (
     core_schema,
     to_jsonable_python,
 )
-from typing_extensions import (  # noqa: UP035 (for `get_args` and `get_origin`)
+from typing_extensions import (  # noqa: UP035 (for `get_args` and `get_origin`)
     TypeAliasType,
     get_args,
     get_origin,

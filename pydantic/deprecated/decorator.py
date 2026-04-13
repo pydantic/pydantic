@@ -243,7 +243,7 @@ class ValidatedFunction:
         class DecoratorBaseModel(BaseModel):
             @field_validator(self.v_args_name, check_fields=False)
             @classmethod
-            def check_args(cls, v: Optional[list[Any]]) -> Optional[list[Any]]:
+            def check_args(cls, v: list[Any] | None) -> list[Any] | None:
                 if takes_args or v is None:
                     return v
 
@@ -251,7 +251,7 @@ class ValidatedFunction:
 
             @field_validator(self.v_kwargs_name, check_fields=False)
             @classmethod
-            def check_kwargs(cls, v: Optional[dict[str, Any]]) -> Optional[dict[str, Any]]:
+            def check_kwargs(cls, v: dict[str, Any] | None) -> dict[str, Any] | None:
                 if takes_kwargs or v is None:
                     return v
 
@@ -261,7 +261,7 @@ class ValidatedFunction:
 
             @field_validator(V_POSITIONAL_ONLY_NAME, check_fields=False)
             @classmethod
-            def check_positional_only(cls, v: Optional[list[str]]) -> None:
+            def check_positional_only(cls, v: list[str] | None) -> None:
                 if v is None:
                     return
 
@@ -271,7 +271,7 @@ class ValidatedFunction:
 
             @field_validator(V_DUPLICATE_KWARGS, check_fields=False)
             @classmethod
-            def check_duplicate_kwargs(cls, v: Optional[list[str]]) -> None:
+            def check_duplicate_kwargs(cls, v: list[str] | None) -> None:
                 if v is None:
                     return
 

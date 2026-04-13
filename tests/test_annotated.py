@@ -3,7 +3,7 @@ import sys
 from collections.abc import Callable, Iterator
 from dataclasses import dataclass
 from decimal import Decimal
-from typing import Annotated, Any, Generic, Optional, TypeVar
+from typing import Annotated, Any, Generic, TypeVar
 
 import pytest
 import pytz
@@ -499,7 +499,7 @@ def test_tzinfo_validator_example_pattern() -> None:
 
     @dataclass(frozen=True)
     class MyDatetimeValidator:
-        tz_constraint: Optional[str] = None
+        tz_constraint: str | None = None
 
         def tz_constraint_validator(
             self,

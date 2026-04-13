@@ -1,7 +1,7 @@
 from contextlib import AbstractContextManager
 from contextlib import nullcontext as does_not_raise
 from inspect import signature
-from typing import Any, Optional, Union
+from typing import Any, Union
 
 import pytest
 from dirty_equals import IsStr
@@ -132,7 +132,7 @@ def test_annotation_config():
 def test_pop_by_field_name():
     class Model(BaseModel):
         model_config = ConfigDict(extra='forbid', validate_by_name=True)
-        last_updated_by: Optional[str] = Field(None, alias='lastUpdatedBy')
+        last_updated_by: str | None = Field(None, alias='lastUpdatedBy')
 
     assert Model(lastUpdatedBy='foo').model_dump() == {'last_updated_by': 'foo'}
     assert Model(last_updated_by='foo').model_dump() == {'last_updated_by': 'foo'}

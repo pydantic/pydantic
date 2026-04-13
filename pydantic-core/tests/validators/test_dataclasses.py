@@ -3,7 +3,7 @@ import platform
 import re
 import sys
 import weakref
-from typing import Any, ClassVar, Optional, Union
+from typing import Any, ClassVar, Union
 
 import pytest
 from dirty_equals import IsListOrTuple, IsStr
@@ -1213,7 +1213,7 @@ def test_function_validator_wrapping_args_schema_wrap() -> None:
 
 @dataclasses.dataclass
 class FooParentDataclass:
-    foo: Optional[FooDataclass]
+    foo: FooDataclass | None
 
 
 def test_custom_dataclass_names():

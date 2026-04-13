@@ -142,7 +142,7 @@ def test_serializer_annotated_typing_cache(serializer, func):
     FancyInt = Annotated[int, serializer(func)]
 
     class FancyIntModel(BaseModel):
-        x: Optional[FancyInt]
+        x: FancyInt | None
 
     assert FancyIntModel(x=1234).model_dump() == {'x': '1,235'}
 
@@ -202,7 +202,7 @@ def test_field_serializer_bad_fields_throws_configerror():
 
 def test_serialize_decorator_always():
     class MyModel(BaseModel):
-        x: Optional[int]
+        x: int | None
 
         @field_serializer('x')
         def customise_x_serialization(v, _info) -> str:
@@ -238,7 +238,7 @@ def test_serialize_decorator_json():
 
 def test_serialize_decorator_unless_none():
     class MyModel(BaseModel):
-        x: Optional[int]
+        x: int | None
 
         @field_serializer('x', when_used='unless-none')
         def customise_x_serialization(v):
@@ -405,7 +405,7 @@ def test_serialize_ignore_info_wrap():
 
 def test_serialize_decorator_self_info():
     class MyModel(BaseModel):
-        x: Optional[int]
+        x: int | None
 
         @field_serializer('x')
         def customise_x_serialization(self, v, info) -> str:
@@ -417,7 +417,7 @@ def test_serialize_decorator_self_info():
 
 def test_serialize_decorator_self_no_info():
     class MyModel(BaseModel):
-        x: Optional[int]
+        x: int | None
 
         @field_serializer('x')
         def customise_x_serialization(self, v) -> str:

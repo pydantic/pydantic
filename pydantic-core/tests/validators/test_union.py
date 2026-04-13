@@ -4,7 +4,7 @@ from dataclasses import dataclass
 from datetime import date, time
 from enum import Enum, IntEnum
 from itertools import permutations
-from typing import Any, Optional, Union
+from typing import Any, Union
 from uuid import UUID
 
 import pytest
@@ -893,7 +893,7 @@ class TestSmartUnionWithDefaults:
     @pytest.mark.parametrize('choices', permute_choices([model_a_schema, model_b_schema]))
     def test_optional_union_with_members_having_defaults(self, choices) -> None:
         class WrapModel:
-            val: Optional[Union[self.ModelA, self.ModelB]] = None
+            val: Union[self.ModelA, self.ModelB] | None = None
 
         val = SchemaValidator(
             schema=core_schema.model_schema(

@@ -13,7 +13,7 @@ from inspect import Signature, signature
 from typing import TYPE_CHECKING, Any, cast
 
 import typing_extensions
-from typing_extensions import deprecated, get_args, get_origin  # noqa: UP035 (for `get_args` and `get_origin`)
+from typing_extensions import deprecated, get_args, get_origin  # noqa: UP035 (for `get_args` and `get_origin`)
 from typing_inspection import typing_objects
 from typing_inspection.introspection import is_union_origin
 

@@ -1,5 +1,4 @@
 from datetime import datetime
-from typing import Optional
 
 import pytest
 
@@ -12,7 +11,7 @@ def user_fixture():
     class User(BaseModel):
         id: int
         name: str = 'John Doe'
-        signup_ts: Optional[datetime] = None
+        signup_ts: datetime | None = None
         friends: list[int] = []
 
     return User

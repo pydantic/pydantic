@@ -14,7 +14,7 @@ from types import FunctionType
 from typing import TYPE_CHECKING, Any, Generic, Literal, NoReturn, TypeVar, cast
 
 from pydantic_core import PydanticUndefined, SchemaSerializer
-from typing_extensions import (  # noqa: UP035 (for `get_args` and `get_origin`)
+from typing_extensions import (  # noqa: UP035 (for `get_args` and `get_origin`)
     TypeAliasType,
     dataclass_transform,
     deprecated,

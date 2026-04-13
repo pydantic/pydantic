@@ -1,7 +1,7 @@
 import json
 from dataclasses import dataclass
 from datetime import date, datetime
-from typing import Annotated, Any, ForwardRef, Generic, NamedTuple, Optional, TypeAlias, TypeVar, Union
+from typing import Annotated, Any, ForwardRef, Generic, NamedTuple, TypeAlias, TypeVar, Union
 
 import pytest
 from pydantic_core import ValidationError
@@ -554,7 +554,7 @@ def defer_build_test_models(config: ConfigDict) -> list[Any]:
         x: int
 
     class SubModel(Model):
-        y: Optional[int] = None
+        y: int | None = None
 
     @pydantic_dataclass(config=config)
     class DataClassModel:
@@ -562,7 +562,7 @@ def defer_build_test_models(config: ConfigDict) -> list[Any]:
 
     @pydantic_dataclass
     class SubDataClassModel(DataClassModel):
-        y: Optional[int] = None
+        y: int | None = None
 
     class TypedDictModel(TypedDict):
         __pydantic_config__ = config  # type: ignore

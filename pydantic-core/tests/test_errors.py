@@ -5,7 +5,7 @@ import re
 import subprocess
 import sys
 from decimal import Decimal
-from typing import Any, Optional
+from typing import Any
 
 import pytest
 from dirty_equals import HasRepr, IsInstance, IsJson, IsStr
@@ -201,7 +201,7 @@ def test_pydantic_error_type_raise_ctx(extra: dict):
 
 
 @pytest.mark.parametrize('ctx', [None, {}])
-def test_pydantic_error_type_raise_custom_no_ctx(ctx: Optional[dict]):
+def test_pydantic_error_type_raise_custom_no_ctx(ctx: dict | None):
     def f(input_value, info):
         raise PydanticKnownError('int_type', ctx)
 
@@ -237,7 +237,7 @@ def test_pydantic_custom_error_type_raise_custom_ctx(extra: dict):
 
 
 @pytest.mark.parametrize('ctx', [None, {}])
-def test_pydantic_custom_error_type_raise_custom_no_ctx(ctx: Optional[dict]):
+def test_pydantic_custom_error_type_raise_custom_no_ctx(ctx: dict | None):
     def f(input_value, info):
         raise PydanticCustomError('my_error', 'my message', ctx)
 

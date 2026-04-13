@@ -1,7 +1,7 @@
 import sys
 from collections.abc import Iterable
 from inspect import Parameter, Signature, signature
-from typing import Annotated, Any, Generic, Optional, TypeVar, Union
+from typing import Annotated, Any, Generic, TypeVar, Union
 
 import pytest
 from typing_extensions import get_origin  # noqa: UP035
@@ -164,10 +164,10 @@ def test_signature_is_class_only():
 
 def test_optional_field():
     class Model(BaseModel):
-        foo: Optional[int] = None
+        foo: int | None = None
 
     assert signature(Model) == Signature(
-        [Parameter('foo', Parameter.KEYWORD_ONLY, default=None, annotation=Optional[int])], return_annotation=None
+        [Parameter('foo', Parameter.KEYWORD_ONLY, default=None, annotation=int | None)], return_annotation=None
     )
 
 
@@ -189,6 +189,6 @@ def test_annotated_optional_field():
     from annotated_types import Gt
 
     class Model(BaseModel):
-        foo: Annotated[Optional[int], Gt(1)] = None
+        foo: Annotated[int | None, Gt(1)] = None
 
     assert str(signature(Model)) == '(*, foo: Annotated[Optional[int], Gt(gt=1)] = None) -> None'

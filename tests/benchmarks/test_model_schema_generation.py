@@ -4,7 +4,6 @@ from typing import (
     Any,
     Generic,
     Literal,
-    Optional,
     TypeVar,
     Union,
     get_origin,
@@ -65,7 +64,7 @@ def test_nested_model_schema_generation(benchmark) -> None:
 
     class OuterModel(DeferredModel):
         nested: NestedModel
-        optional_nested: Optional[NestedModel]
+        optional_nested: NestedModel | None
 
     benchmark(rebuild_model, OuterModel)
 
@@ -75,7 +74,7 @@ def test_complex_model_schema_generation(benchmark) -> None:
     class ComplexModel(DeferredModel):
         field1: Union[str, int, float]
         field2: list[dict[str, Union[int, float]]]
-        field3: Optional[list[Union[str, int]]]
+        field3: list[Union[str, int]] | None
 
     benchmark(rebuild_model, ComplexModel)
 
@@ -84,7 +83,7 @@ def test_complex_model_schema_generation(benchmark) -> None:
 def test_recursive_model_schema_generation(benchmark) -> None:
     class RecursiveModel(DeferredModel):
         name: str
-        children: Optional[list['RecursiveModel']] = None
+        children: list['RecursiveModel'] | None = None
 
     benchmark(rebuild_model, RecursiveModel)
 
@@ -123,7 +122,7 @@ def test_lots_of_models_with_lots_of_fields(benchmark):
 
     class RecursiveModel(BaseModel):
         name: str
-        children: Optional[list['RecursiveModel']] = None
+        children: list['RecursiveModel'] | None = None
 
     class Address(BaseModel):
         street: Annotated[str, Field(max_length=100)]

@@ -1195,7 +1195,7 @@ def test_string_none():
 
 def test_optional_required():
     class Model(BaseModel):
-        bar: Optional[int]
+        bar: int | None
 
     assert Model(bar=123).model_dump() == {'bar': 123}
     assert Model(bar=None).model_dump() == {'bar': None}
@@ -1548,9 +1548,9 @@ def test_type_assign():
 
 def test_optional_subfields():
     class Model(BaseModel):
-        a: Optional[int]
+        a: int | None
 
-    assert Model.model_fields['a'].annotation == Optional[int]
+    assert Model.model_fields['a'].annotation == int | None
 
     with pytest.raises(ValidationError) as exc_info:
         Model(a='foobar')
@@ -1575,14 +1575,14 @@ def test_optional_subfields():
 
 def test_validated_optional_subfields():
     class Model(BaseModel):
-        a: Optional[int]
+        a: int | None
 
         @field_validator('a')
         @classmethod
         def check_a(cls, v):
             return v
 
-    assert Model.model_fields['a'].annotation == Optional[int]
+    assert Model.model_fields['a'].annotation == int | None
 
     with pytest.raises(ValidationError) as exc_info:
         Model(a='foobar')
@@ -1607,7 +1607,7 @@ def test_validated_optional_subfields():
 
 def test_optional_field_constraints():
     class MyModel(BaseModel):
-        my_int: Optional[int] = Field(ge=3)
+        my_int: int | None = Field(ge=3)
 
     with pytest.raises(ValidationError) as exc_info:
         MyModel(my_int=2)
@@ -1644,23 +1644,19 @@ class DisplayGen(Generic[T1, T2]):
     'type_,expected',
     [
         (int, 'int'),
-        (Optional[int], 'Union[int, NoneType]'),
-        (Union[None, int, str], 'Union[NoneType, int, str]'),
-        (Union[int, str, bytes], 'Union[int, str, bytes]'),
+        (Optional[int], 'Union[int, NoneType]'),  # noqa: UP045
+        (int | None, 'Union[int, NoneType]'),
+        (Union[None, int, str], 'Union[NoneType, int, str]'),  # noqa: UP045
+        (Union[int, str, bytes], 'Union[int, str, bytes]'),  # noqa: UP045
         (list[int], 'list[int]'),
         (tuple[int, str, bytes], 'tuple[int, str, bytes]'),
-        (Union[list[int], set[bytes]], 'Union[list[int], set[bytes]]'),
+        (Union[list[int], set[bytes]], 'Union[list[int], set[bytes]]'),  # noqa: UP045
         (list[tuple[int, int]], 'list[tuple[int, int]]'),
         (dict[int, str], 'dict[int, str]'),
         (frozenset[int], 'frozenset[int]'),
         (tuple[int, ...], 'tuple[int, ...]'),
-        (Optional[list[int]], 'Union[list[int], NoneType]'),
+        (Optional[list[int]], 'Union[list[int], NoneType]'),  # noqa: UP045
         (dict, 'dict'),
-        pytest.param(
-            DisplayGen[bool, str],
-            'tests.test_edge_cases.DisplayGen[bool, str]',
-            marks=pytest.mark.skipif(sys.version_info[:2] > (3, 9), reason='difference in __name__ between versions'),
-        ),
     ],
 )
 def test_field_type_display(type_, expected):
@@ -1797,7 +1793,7 @@ def test_modify_fields():
 
 def test_exclude_none():
     class MyModel(BaseModel):
-        a: Optional[int] = None
+        a: int | None = None
         b: int = 2
 
     m = MyModel(a=5)
@@ -1810,14 +1806,14 @@ def test_exclude_none():
 
 def test_exclude_none_recursive():
     class ModelA(BaseModel):
-        a: Optional[int] = None
+        a: int | None = None
         b: int = 1
 
     class ModelB(BaseModel):
         c: int
         d: int = 2
         e: ModelA
-        f: Optional[str] = None
+        f: str | None = None
 
     m = ModelB(c=5, e={'a': 0})
     assert m.model_dump() == {'c': 5, 'd': 2, 'e': {'a': 0, 'b': 1}, 'f': None}
@@ -1834,7 +1830,7 @@ def test_exclude_none_with_extra():
     class MyModel(BaseModel):
         model_config = ConfigDict(extra='allow')
         a: str = 'default'
-        b: Optional[str] = None
+        b: str | None = None
 
     m = MyModel(a='a', c='c')
 
@@ -1885,7 +1881,7 @@ def test_optional_validator():
     val_calls = []
 
     class Model(BaseModel):
-        something: Optional[str]
+        something: str | None
 
         @field_validator('something')
         @classmethod
@@ -1906,8 +1902,8 @@ def test_optional_validator():
 
 def test_required_optional():
     class Model(BaseModel):
-        nullable1: Optional[int] = ...
-        nullable2: Optional[int] = Field(...)
+        nullable1: int | None = ...
+        nullable2: int | None = Field(...)
 
     with pytest.raises(ValidationError) as exc_info:
         Model()
@@ -1962,10 +1958,10 @@ def test_required_any():
     class Model(BaseModel):
         optional1: Any
         optional2: Any = None
-        optional3: Optional[Any] = None
+        optional3: Any | None = None
         nullable1: Any = ...
         nullable2: Any = Field(...)
-        nullable3: Optional[Any]
+        nullable3: Any | None
 
     with pytest.raises(ValidationError) as exc_info:
         Model()
@@ -2731,8 +2727,8 @@ def test_multiple_enums():
         a = auto()
 
     class MyModel(TypedDict):
-        a: Optional[MyEnum]
-        b: Optional[MyEnum]
+        a: MyEnum | None
+        b: MyEnum | None
 
     ta = TypeAdapter(MyModel)
     assert ta.validate_json('{"a": 1, "b": 1}') == {'a': MyEnum.a, 'b': MyEnum.a}
@@ -2840,7 +2836,7 @@ def test_recursive_root_models_in_discriminated_union():
 
     class Model2(BaseModel):
         kind: Literal['2'] = '2'
-        one: Optional[Model1]
+        one: Model1 | None
 
     class Root1(RootModel[Model1]):
         @property

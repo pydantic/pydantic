@@ -1,6 +1,6 @@
 import re
 from copy import deepcopy
-from typing import Optional, Union
+from typing import Union
 
 import pytest
 from dirty_equals import HasRepr, IsInstance
@@ -69,7 +69,7 @@ MULTI_URL_CLASS_MODE = 'MULTI_URL_CLASS'
 
 
 def url_test_case_helper(
-    url: str, expected: Union[Err, str], validator_mode: str, url_validator: Optional[SchemaValidator] = None
+    url: str, expected: Union[Err, str], validator_mode: str, url_validator: SchemaValidator | None = None
 ):
     if isinstance(expected, Err):
         with pytest.raises(ValidationError) as exc_info:
@@ -305,7 +305,7 @@ def test_url_cases(url_validator, url, expected, mode):
         ('http://example.com/path/?x=1', 'http://example.com/path/?x=1', '/path/'),
     ],
 )
-def test_trailing_slash(url: str, expected: str, expected_path: Optional[str]):
+def test_trailing_slash(url: str, expected: str, expected_path: str | None):
     url1 = Url(url, preserve_empty_path=True)
     assert str(url1) == expected
     assert url1.unicode_string() == expected
@@ -340,7 +340,7 @@ def test_trailing_slash(url: str, expected: str, expected_path: Optional[str]):
         ('http://localhost,127.0.0.1/path/', 'http://localhost,127.0.0.1/path/', '/path/'),
     ],
 )
-def test_multi_trailing_slash(url: str, expected: str, expected_path: Optional[str]):
+def test_multi_trailing_slash(url: str, expected: str, expected_path: str | None):
     url1 = MultiHostUrl(url, preserve_empty_path=True)
     assert str(url1) == expected
     assert url1.unicode_string() == expected

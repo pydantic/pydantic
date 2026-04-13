@@ -142,6 +142,13 @@ def con_bytes_model_fixture():
     return ConBytesModel
 
 
+def test_optional():
+    ta = TypeAdapter(Optional[int])  # noqa: UP045
+
+    assert ta.validate_python(None) is None
+    assert ta.validate_python(1) == 1
+
+
 def test_constrained_bytes_good(ConBytesModel):
     m = ConBytesModel(v=b'short')
     assert m.v == b'short'
@@ -285,8 +292,8 @@ def test_constrained_list_too_short():
 
 def test_constrained_list_optional():
     class Model(BaseModel):
-        req: Optional[conlist(str, min_length=1)]
-        opt: Optional[conlist(str, min_length=1)] = None
+        req: conlist(str, min_length=1) | None
+        opt: conlist(str, min_length=1) | None = None
 
     assert Model(req=None).model_dump() == {'req': None, 'opt': None}
     assert Model(req=None, opt=None).model_dump() == {'req': None, 'opt': None}
@@ -500,8 +507,8 @@ def test_constrained_set_too_short():
 
 def test_constrained_set_optional():
     class Model(BaseModel):
-        req: Optional[conset(str, min_length=1)]
-        opt: Optional[conset(str, min_length=1)] = None
+        req: conset(str, min_length=1) | None
+        opt: conset(str, min_length=1) | None = None
 
     assert Model(req=None).model_dump() == {'req': None, 'opt': None}
     assert Model(req=None, opt=None).model_dump() == {'req': None, 'opt': None}
@@ -645,7 +652,7 @@ def test_conset():
 
 def test_conset_not_required():
     class Model(BaseModel):
-        foo: Optional[set[int]] = None
+        foo: set[int] | None = None
 
     assert Model(foo=None).foo is None
     assert Model().foo is None
@@ -697,7 +704,7 @@ def test_confrozenset():
 
 def test_confrozenset_not_required():
     class Model(BaseModel):
-        foo: Optional[frozenset[int]] = None
+        foo: frozenset[int] | None = None
 
     assert Model(foo=None).foo is None
     assert Model().foo is None
@@ -705,8 +712,8 @@ def test_confrozenset_not_required():
 
 def test_constrained_frozenset_optional():
     class Model(BaseModel):
-        req: Optional[confrozenset(str, min_length=1)]
-        opt: Optional[confrozenset(str, min_length=1)] = None
+        req: confrozenset(str, min_length=1) | None
+        opt: confrozenset(str, min_length=1) | None = None
 
     assert Model(req=None).model_dump() == {'req': None, 'opt': None}
     assert Model(req=None, opt=None).model_dump() == {'req': None, 'opt': None}
@@ -3445,7 +3452,7 @@ def test_decimal_validation(mode, type_args, value, result):
     elif mode == 'optional':
 
         class Model(BaseModel):
-            foo: Optional[Decimal] = Field(**type_args)
+            foo: Decimal | None = Field(**type_args)
 
     else:
 
@@ -4160,7 +4167,7 @@ def test_json_before_validator():
 
 def test_json_optional_simple():
     class JsonOptionalModel(BaseModel):
-        json_obj: Optional[Json]
+        json_obj: Json | None
 
     assert JsonOptionalModel(json_obj=None).model_dump() == {'json_obj': None}
     assert JsonOptionalModel(json_obj='["x", "y", "z"]').model_dump() == {'json_obj': ['x', 'y', 'z']}
@@ -4168,7 +4175,7 @@ def test_json_optional_simple():
 
 def test_json_optional_complex():
     class JsonOptionalModel(BaseModel):
-        json_obj: Optional[Json[list[int]]]
+        json_obj: Json[list[int]] | None
 
     JsonOptionalModel(json_obj=None)
 
@@ -5586,7 +5593,7 @@ def test_custom_generic_containers():
 def test_base64(field_type, input_data, expected_value, serialized_data):
     class Model(BaseModel):
         base64_value: field_type
-        base64_value_or_none: Optional[field_type] = None
+        base64_value_or_none: field_type | None = None
 
     m = Model(base64_value=input_data)
     assert m.base64_value == expected_value
@@ -5679,7 +5686,7 @@ def test_base64_invalid(field_type, input_data):
 def test_base64url(field_type, input_data, expected_value, serialized_data):
     class Model(BaseModel):
         base64url_value: field_type
-        base64url_value_or_none: Optional[field_type] = None
+        base64url_value_or_none: field_type | None = None
 
     m = Model(base64url_value=input_data)
     assert m.base64url_value == expected_value
@@ -5990,7 +5997,7 @@ def test_handle_3rd_party_custom_type_reusing_known_metadata() -> None:
 def test_skip_validation(optional):
     type_hint = SkipValidation[int]
     if optional:
-        type_hint = Optional[type_hint]
+        type_hint = type_hint | None
 
     @validate_call
     def my_function(y: type_hint):
@@ -6069,7 +6076,7 @@ def test_transform_schema():
     ValidateStrAsInt = Annotated[str, GetPydanticSchema(lambda _s, h: core_schema.int_schema())]
 
     class Model(BaseModel):
-        x: Optional[ValidateStrAsInt]
+        x: ValidateStrAsInt | None
 
     assert Model(x=None).x is None
     assert Model(x='1').x == 1
@@ -6219,7 +6226,7 @@ def test_iterable_arbitrary_type():
 def test_literal_field(typing_literal):
 
     class Model(BaseModel):
-        foo: typing_literal['foo']
+        foo: typing_literal['foo']  # noqa: F821
 
     assert Model(foo='foo').foo == 'foo'
 
@@ -6266,7 +6273,7 @@ def test_instanceof_invalid_core_schema():
 
     class MyModel(BaseModel):
         a: InstanceOf[MyClass]
-        b: Optional[InstanceOf[MyClass]]
+        b: InstanceOf[MyClass] | None
         c: InstanceOf[ClassWithInvalidAnnotations]
 
     MyModel(a=MyClass(), b=None, c=ClassWithInvalidAnnotations())

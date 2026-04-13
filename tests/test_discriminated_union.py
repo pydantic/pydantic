@@ -6,7 +6,7 @@ from copy import deepcopy
 from dataclasses import dataclass
 from enum import Enum, IntEnum
 from types import SimpleNamespace
-from typing import Annotated, Any, Generic, Literal, Optional, TypeVar, Union
+from typing import Annotated, Any, Generic, Literal, TypeVar, Union
 
 import pytest
 from dirty_equals import HasRepr, IsStr
@@ -556,7 +556,7 @@ def test_optional_union():
         name: str
 
     class Pet(BaseModel):
-        pet: Optional[Union[Cat, Dog]] = Field(discriminator='pet_type')
+        pet: Union[Cat, Dog] | None = Field(discriminator='pet_type')
 
     assert Pet(pet={'pet_type': 'cat', 'name': 'Milo'}).model_dump() == {'pet': {'name': 'Milo', 'pet_type': 'cat'}}
     assert Pet(pet={'pet_type': 'dog', 'name': 'Otis'}).model_dump() == {'pet': {'name': 'Otis', 'pet_type': 'dog'}}
@@ -603,7 +603,7 @@ def test_optional_union_with_defaults():
         name: str
 
     class Pet(BaseModel):
-        pet: Optional[Union[Cat, Dog]] = Field(default=None, discriminator='pet_type')
+        pet: Union[Cat, Dog] | None = Field(default=None, discriminator='pet_type')
 
     assert Pet(pet={'pet_type': 'cat', 'name': 'Milo'}).model_dump() == {'pet': {'name': 'Milo', 'pet_type': 'cat'}}
     assert Pet(pet={'pet_type': 'dog', 'name': 'Otis'}).model_dump() == {'pet': {'name': 'Otis', 'pet_type': 'dog'}}
@@ -658,7 +658,7 @@ def test_nested_optional_unions() -> None:
     class Lizard(BaseModel):
         pet_type: Literal['lizard', 'reptile'] = 'lizard'
 
-    MaybeCatDog = Annotated[Optional[Union[Cat, Dog]], Field(discriminator='pet_type')]
+    MaybeCatDog = Annotated[Union[Cat, Dog] | None, Field(discriminator='pet_type')]
     MaybeDogLizard = Annotated[Union[Dog, Lizard, None], Field(discriminator='pet_type')]
 
     class Pet(BaseModel):
@@ -748,7 +748,7 @@ def test_unions_of_optionals() -> None:
         pet_type: Literal['lizard'] = Field(alias='typeOfPet')
 
     MaybeCat = Annotated[Union[Cat, None], 'some annotation']
-    MaybeDogLizard = Annotated[Optional[Union[Dog, Lizard]], 'some other annotation']
+    MaybeDogLizard = Annotated[Union[Dog, Lizard] | None, 'some other annotation']
 
     class Model(BaseModel):
         maybe_pet: Union[MaybeCat, MaybeDogLizard] = Field(discriminator='pet_type')

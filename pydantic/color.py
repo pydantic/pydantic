@@ -16,7 +16,7 @@ import math
 import re
 from collections.abc import Callable
 from colorsys import hls_to_rgb, rgb_to_hls
-from typing import Any, Optional, Union, cast
+from typing import Any, Union, cast
 
 from pydantic_core import CoreSchema, PydanticCustomError, core_schema
 from typing_extensions import deprecated
@@ -36,13 +36,13 @@ class RGBA:
 
     __slots__ = 'r', 'g', 'b', 'alpha', '_tuple'
 
-    def __init__(self, r: float, g: float, b: float, alpha: Optional[float]):
+    def __init__(self, r: float, g: float, b: float, alpha: float | None):
         self.r = r
         self.g = g
         self.b = b
         self.alpha = alpha
 
-        self._tuple: tuple[float, float, float, Optional[float]] = (r, g, b, alpha)
+        self._tuple: tuple[float, float, float, float | None] = (r, g, b, alpha)
 
     def __getitem__(self, item: Any) -> Any:
         return self._tuple[item]
@@ -164,7 +164,7 @@ class Color(_repr.Representation):
                 f'{round(self._alpha_float(), 2)})'
             )
 
-    def as_rgb_tuple(self, *, alpha: Optional[bool] = None) -> ColorTuple:
+    def as_rgb_tuple(self, *, alpha: bool | None = None) -> ColorTuple:
         """Returns the color as an RGB or RGBA tuple.
 
         Args:
@@ -199,7 +199,7 @@ class Color(_repr.Representation):
             h, s, li, a = self.as_hsl_tuple(alpha=True)  # type: ignore
             return f'hsl({h * 360:0.0f}, {s:0.0%}, {li:0.0%}, {round(a, 2)})'
 
-    def as_hsl_tuple(self, *, alpha: Optional[bool] = None) -> HslColorTuple:
+    def as_hsl_tuple(self, *, alpha: bool | None = None) -> HslColorTuple:
         """Returns the color as an HSL or HSLA tuple.
 
         Args:
@@ -311,7 +311,7 @@ def parse_str(value: str) -> RGBA:
         *rgb, a = m.groups()
         r, g, b = (int(v * 2, 16) for v in rgb)
         if a:
-            alpha: Optional[float] = int(a * 2, 16) / 255
+            alpha: float | None = int(a * 2, 16) / 255
         else:
             alpha = None
         return ints_to_rgba(r, g, b, alpha)
@@ -337,7 +337,7 @@ def parse_str(value: str) -> RGBA:
     raise PydanticCustomError('color_error', 'value is not a valid color: string not recognised as a valid color')
 
 
-def ints_to_rgba(r: Union[int, str], g: Union[int, str], b: Union[int, str], alpha: Optional[float] = None) -> RGBA:
+def ints_to_rgba(r: Union[int, str], g: Union[int, str], b: Union[int, str], alpha: float | None = None) -> RGBA:
     """Converts integer or string values for RGB color and an optional alpha value to an `RGBA` object.
 
     Args:
@@ -379,7 +379,7 @@ def parse_color_value(value: Union[int, str], max_val: int = 255) -> float:
         )
 
 
-def parse_float_alpha(value: Union[None, str, float, int]) -> Optional[float]:
+def parse_float_alpha(value: Union[None, str, float, int]) -> float | None:
     """Parse an alpha value checking it's a valid float in the range 0 to 1.
 
     Args:
@@ -409,7 +409,7 @@ def parse_float_alpha(value: Union[None, str, float, int]) -> Optional[float]:
         raise PydanticCustomError('color_error', 'value is not a valid color: alpha values must be in the range 0 to 1')
 
 
-def parse_hsl(h: str, h_units: str, sat: str, light: str, alpha: Optional[float] = None) -> RGBA:
+def parse_hsl(h: str, h_units: str, sat: str, light: str, alpha: float | None = None) -> RGBA:
     """Parse raw hue, saturation, lightness, and alpha values and convert to RGBA.
 
     Args:

@@ -23,7 +23,7 @@ import pytest
 from dirty_equals import HasRepr, IsStr
 from pydantic_core import CoreSchema, core_schema
 from pytest_mock import MockerFixture
-from typing_extensions import (  # noqa: UP035 (for `get_args`)
+from typing_extensions import (  # noqa: UP035 (for `get_args`)
     Never,
     NotRequired,
     ParamSpec,
@@ -567,13 +567,13 @@ def test_generic():
     error_type = TypeVar('error_type')
 
     class Result(BaseModel, Generic[data_type, error_type]):
-        data: Optional[list[data_type]] = None
-        error: Optional[error_type] = None
+        data: list[data_type] | None = None
+        error: error_type | None = None
         positive_number: int
 
         @field_validator('error')
         @classmethod
-        def validate_error(cls, v: Optional[error_type], info: ValidationInfo) -> Optional[error_type]:
+        def validate_error(cls, v: error_type | None, info: ValidationInfo) -> error_type | None:
             values = info.data
             if values.get('data', None) is None and v is None:
                 raise ValueError('Must provide data or error')
@@ -673,7 +673,7 @@ def test_optional_value():
     T = TypeVar('T')
 
     class MyModel(BaseModel, Generic[T]):
-        a: Optional[int] = 1
+        a: int | None = 1
 
     model = MyModel[int]()
     assert model.model_dump() == {'a': 1}
@@ -711,7 +711,7 @@ def test_custom_generic_naming():
     T = TypeVar('T')
 
     class MyModel(BaseModel, Generic[T]):
-        value: Optional[T]
+        value: T | None
 
         @classmethod
         def model_parametrized_name(cls, params: tuple[type[Any], ...]) -> str:
@@ -1155,9 +1155,9 @@ def test_iter_contained_typevars():
         a: T
 
     assert list(iter_contained_typevars(Model[T])) == [T]
-    assert list(iter_contained_typevars(Optional[list[Union[str, Model[T]]]])) == [T]
-    assert list(iter_contained_typevars(Optional[list[Union[str, Model[int]]]])) == []
-    assert list(iter_contained_typevars(Optional[list[Union[str, Model[T], Callable[[T2, T], str]]]])) == [T, T2, T]
+    assert list(iter_contained_typevars(Optional[list[Union[str, Model[T]]]])) == [T]  # noqa: UP045
+    assert list(iter_contained_typevars(list[str | Model[int]] | None)) == []
+    assert list(iter_contained_typevars(list[str | Model[T] | Callable[[T2, T], str]] | None)) == [T, T2, T]
 
 
 def test_nested_identity_parameterization():
@@ -1372,7 +1372,7 @@ def test_replace_types_identity_on_unchanged():
     T = TypeVar('T')
     U = TypeVar('U')
 
-    type_ = list[Union[str, Callable[[list], Optional[str]], U]]
+    type_ = list[Union[str, Callable[[list], str | None], U]]
     assert replace_types(type_, {T: int}) is type_
 
 
@@ -1382,8 +1382,8 @@ def test_deep_generic():
     R = TypeVar('R')
 
     class OuterModel(BaseModel, Generic[T, S, R]):
-        a: dict[R, Optional[list[T]]]
-        b: Optional[Union[S, R]]
+        a: dict[R, list[T] | None]
+        b: Union[S, R] | None
         c: R
         d: float
 
@@ -1452,7 +1452,7 @@ def test_deep_generic_with_referenced_inner_generic():
         a: T
 
     class OuterModel(BaseModel, Generic[T]):
-        a: Optional[list[Union[ReferencedModel[T], str]]]
+        a: list[Union[ReferencedModel[T], str]] | None
 
     class InnerModel(OuterModel[T], Generic[T]):
         pass
@@ -1464,7 +1464,7 @@ def test_deep_generic_with_referenced_inner_generic():
         InnerModel[int](a=['s', {'a': 'wrong'}])
 
     assert InnerModel[int](a=['s', {'a': 1}]).a[1].a == 1
-    assert InnerModel[int].model_fields['a'].annotation == Optional[list[Union[ReferencedModel[int], str]]]
+    assert InnerModel[int].model_fields['a'].annotation == list[Union[ReferencedModel[int], str]] | None
 
 
 def test_deep_generic_with_multiple_typevars():
@@ -1598,7 +1598,7 @@ def test_generic_with_callable():
 
     class Model(BaseModel, Generic[T]):
         # Callable is a test for any type that accepts a list as an argument
-        some_callable: Callable[[Optional[int], T], None]
+        some_callable: Callable[[int | None, T], None]
 
     assert not Model[str].__pydantic_generic_metadata__['parameters']
     assert Model.__pydantic_generic_metadata__['parameters']
@@ -1612,7 +1612,7 @@ def test_generic_with_partial_callable():
         t: T
         u: U
         # Callable is a test for any type that accepts a list as an argument
-        some_callable: Callable[[Optional[int], str], None]
+        some_callable: Callable[[int | None, str], None]
 
     assert Model[str, U].__pydantic_generic_metadata__['parameters'] == (U,)
     assert not Model[str, int].__pydantic_generic_metadata__['parameters']
@@ -1698,7 +1698,7 @@ def test_generic_recursive_models_parametrized_with_model() -> None:
         t: T
 
     class Other(BaseModel):
-        child: 'Optional[Base[Other]]'
+        child: 'Base[Other] | None'
 
     with pytest.raises(ValidationError):
         # In v2.0-2.10, this unexpectedly validated fine (The core schema of Base[Other].t was an empty model).
@@ -1726,7 +1726,7 @@ def test_generic_recursive_models_parametrized_with_model_subclass() -> None:
         t: T
 
     class Other(MyBaseModel):
-        child: 'Optional[Base[Other]]'
+        child: 'Base[Other] | None'
 
     with pytest.raises(ValidationError):
         Base[Other].model_validate({'t': {}})
@@ -1974,7 +1974,7 @@ def test_generic_recursive_models_complicated(create_module):
             a1: 'B2[S1]'
 
         class B2(BaseModel, Generic[S2]):
-            a2: 'Optional[B1[S2]]' = None
+            a2: 'B1[S2] | None' = None
 
         B1.model_rebuild()
 
@@ -2000,14 +2000,14 @@ def test_generic_recursive_models_complicated(create_module):
 def test_generic_recursive_models_in_container(create_module):
     @create_module
     def module():
-        from typing import Generic, Optional, TypeVar
+        from typing import Generic, TypeVar
 
         from pydantic import BaseModel
 
         T = TypeVar('T')
 
         class MyGenericModel(BaseModel, Generic[T]):
-            foobar: Optional[list['MyGenericModel[T]']]
+            foobar: list['MyGenericModel[T]'] | None
             spam: T
 
     MyGenericModel = module.MyGenericModel
@@ -2231,7 +2231,7 @@ def test_multi_inheritance_generic_defaults():
         x: str = 'a'
 
     class B(A[int], Generic[T]):
-        b: Optional[T] = None
+        b: T | None = None
         y: str = 'b'
 
     class C(B[str], Generic[T]):
@@ -2622,8 +2622,8 @@ def test_variadic_generic_init():
 
     class VariadicToolbox(BaseModel, Generic[ComponentVar, Unpack[NumberOfComponents]]):
         main_component: ComponentVar
-        left_component_pocket: Optional[list[ComponentVar]] = Field(default_factory=list)
-        right_component_pocket: Optional[list[ComponentVar]] = Field(default_factory=list)
+        left_component_pocket: list[ComponentVar] | None = Field(default_factory=list)
+        right_component_pocket: list[ComponentVar] | None = Field(default_factory=list)
 
         @computed_field
         @property
@@ -2656,8 +2656,8 @@ def test_variadic_generic_with_variadic_fields():
     NumberOfComponents = TypeVarTuple('NumberOfComponents')
 
     class VariadicToolbox(BaseModel, Generic[ComponentVar, Unpack[NumberOfComponents]]):
-        toolbelt_cm_size: Optional[tuple[Unpack[NumberOfComponents]]] = Field(default_factory=tuple)
-        manual_toolset: Optional[tuple[ComponentVar, Unpack[NumberOfComponents]]] = Field(default_factory=tuple)
+        toolbelt_cm_size: tuple[Unpack[NumberOfComponents]] | None = Field(default_factory=tuple)
+        manual_toolset: tuple[ComponentVar, Unpack[NumberOfComponents]] | None = Field(default_factory=tuple)
 
     MyToolboxClass = VariadicToolbox[Screwdriver, Screwdriver, Wrench]
 
