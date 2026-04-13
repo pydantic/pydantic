@@ -8,7 +8,7 @@ to any use case where you need to derive a new model from another (remove defaul
 
 === "Python 3.10"
 
-    ```python {lint="skip" requires="3.10" linenums="1"}
+    ```python {lint="skip" linenums="1"}
     from typing import Annotated
 
     from pydantic import BaseModel, Field, create_model

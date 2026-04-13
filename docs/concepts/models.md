@@ -1693,7 +1693,7 @@ a `**data` argument will be added. In addition, the `**data` argument will alway
 
 Pydantic supports structural pattern matching for models, as introduced by [PEP 636](https://peps.python.org/pep-0636/) in Python 3.10.
 
-```python {requires="3.10" lint="skip"}
+```python {lint="skip"}
 from pydantic import BaseModel
 
 

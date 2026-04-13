@@ -94,7 +94,7 @@ Fast and extensible, Pydantic plays nicely with your linters/IDE/brain. Define h
 
 To see Pydantic at work, let's start with a simple example, creating a custom class that inherits from `BaseModel`:
 
-```python {upgrade="skip" title="Validation Successful" requires="3.10"}
+```python {upgrade="skip" title="Validation Successful"}
 from datetime import datetime
 
 from pydantic import BaseModel, PositiveInt
