@@ -173,7 +173,7 @@ class PlainValidator:
 
     Example:
         ```python
-        from typing import Annotated, Union
+        from typing import Annotated
 
         from pydantic import BaseModel, PlainValidator
 
@@ -185,7 +185,7 @@ class PlainValidator:
 
         MyInt = Annotated[
             int,
-            PlainValidator(validate, json_schema_input_type=Union[str, int]),  # (1)!
+            PlainValidator(validate, json_schema_input_type=str | int),  # (1)!
         ]
 
         class Model(BaseModel):

@@ -110,11 +110,9 @@ class TypeAdapter(Generic[T]):
         annotate your variable:
 
         ```py
-        from typing import Union
-
         from pydantic import TypeAdapter
 
-        ta: TypeAdapter[Union[str, int]] = TypeAdapter(Union[str, int])  # type: ignore[arg-type]
+        ta: TypeAdapter[str | int] = TypeAdapter(str | int)  # type: ignore[arg-type]
         ```
 
     ??? info "Namespace management nuances and implementation details"

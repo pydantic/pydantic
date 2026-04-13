@@ -177,10 +177,11 @@ This error is also raised for strict fields when the input value is not an insta
 
 ## `callable_type`
 
-This error is raised when the input value is not valid as a `Callable`:
+This error is raised when the input value is not valid as a callable:
 
 ```python
-from typing import Any, Callable
+from collections.abc import Callable
+from typing import Any
 
 from pydantic import BaseModel, ImportString, ValidationError
 
@@ -1603,13 +1604,11 @@ except ValidationError as exc:
     For example, the following would yield the `none_required` validation error since the field `int` is set to a default value of `None` and has the exact same name as its type, which causes problems with validation.
 
     ```python {test="skip"}
-    from typing import Optional
-
     from pydantic import BaseModel
 
 
     class M1(BaseModel):
-        int: Optional[int] = None
+        int: int | None = None
 
 
     m = M1(int=123)  # errors
@@ -2080,7 +2079,7 @@ except ValidationError as exc:
 This error is raised when the input's discriminator is not one of the expected values:
 
 ```python
-from typing import Literal, Union
+from typing import Literal
 
 from pydantic import BaseModel, Field, ValidationError
 
@@ -2094,7 +2093,7 @@ class WhiteCat(BaseModel):
 
 
 class Model(BaseModel):
-    cat: Union[BlackCat, WhiteCat] = Field(discriminator='pet_type')
+    cat: BlackCat | WhiteCat = Field(discriminator='pet_type')
 
 
 try:
@@ -2109,7 +2108,7 @@ except ValidationError as exc:
 This error is raised when it is not possible to extract a discriminator value from the input:
 
 ```python
-from typing import Literal, Union
+from typing import Literal
 
 from pydantic import BaseModel, Field, ValidationError
 
@@ -2123,7 +2122,7 @@ class WhiteCat(BaseModel):
 
 
 class Model(BaseModel):
-    cat: Union[BlackCat, WhiteCat] = Field(discriminator='pet_type')
+    cat: BlackCat | WhiteCat = Field(discriminator='pet_type')
 
 
 try:

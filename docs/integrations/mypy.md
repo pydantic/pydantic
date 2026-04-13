@@ -7,7 +7,6 @@ For example, consider the following script:
 
 ```python {test="skip" linenums="1"}
 from datetime import datetime
-from typing import Optional
 
 from pydantic import BaseModel
 
@@ -15,8 +14,8 @@ from pydantic import BaseModel
 class Model(BaseModel):
     age: int
     first_name = 'John'
-    last_name: Optional[str] = None
-    signup_ts: Optional[datetime] = None
+    last_name: str | None = None
+    signup_ts: datetime | None = None
     list_of_ints: list[int]
 
 

@@ -131,13 +131,11 @@ assert user.id == 321
     For example, the following will not behave as expected and would yield a validation error:
 
     ```python {test="skip"}
-    from typing import Optional
-
     from pydantic import BaseModel
 
 
     class Boo(BaseModel):
-        int: Optional[int] = None
+        int: int | None = None
 
 
     m = Boo(int=123)  # Will fail to validate.
@@ -287,14 +285,12 @@ Pydantic dataclasses also support extra data (see the [dataclass configuration](
 More complex hierarchical data structures can be defined using models themselves as types in annotations.
 
 ```python
-from typing import Optional
-
 from pydantic import BaseModel
 
 
 class Foo(BaseModel):
     count: int
-    size: Optional[float] = None
+    size: float | None = None
 
 
 class Bar(BaseModel):
@@ -409,7 +405,6 @@ Compared to using the model constructor, it is possible to control several valid
 
 ```python
 from datetime import datetime
-from typing import Optional
 
 from pydantic import BaseModel, ValidationError
 
@@ -417,7 +412,7 @@ from pydantic import BaseModel, ValidationError
 class User(BaseModel):
     id: int
     name: str = 'John Doe'
-    signup_ts: Optional[datetime] = None
+    signup_ts: datetime | None = None
 
 
 m = User.model_validate({'id': 123, 'name': 'James'})

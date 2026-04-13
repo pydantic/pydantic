@@ -49,7 +49,7 @@ def apply_discriminator(
     Raises:
         TypeError:
             - If `discriminator` is used with invalid union variant.
-            - If `discriminator` is used with `Union` type with one variant.
+            - If `discriminator` is used with union type with one variant.
             - If `discriminator` value mapped to multiple choices.
         MissingDefinitionForUnionRef:
             If the definition for ref is missing.
@@ -150,7 +150,7 @@ class _ApplyInferredDiscriminator:
         Raises:
             TypeError:
                 - If `discriminator` is used with invalid union variant.
-                - If `discriminator` is used with `Union` type with one variant.
+                - If `discriminator` is used with union type with one variant.
                 - If `discriminator` value mapped to multiple choices.
             ValueError:
                 If the definition for ref is missing.
