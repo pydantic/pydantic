@@ -524,7 +524,7 @@ def test_decimal_json_schema():
 
     assert model_json_schema_validation == {
         'properties': {
-            'a': {'default': 'foobar', 'format': 'binary', 'title': 'A', 'type': 'string'},
+            'a': {'contentMediaType': 'application/octet-stream', 'default': 'foobar', 'title': 'A', 'type': 'string'},
             'b': {
                 'anyOf': [
                     {'type': 'number'},
@@ -542,7 +542,7 @@ def test_decimal_json_schema():
     }
     assert model_json_schema_serialization == {
         'properties': {
-            'a': {'default': 'foobar', 'format': 'binary', 'title': 'A', 'type': 'string'},
+            'a': {'contentMediaType': 'application/octet-stream', 'default': 'foobar', 'title': 'A', 'type': 'string'},
             'b': {
                 'default': '12.34',
                 'title': 'B',
@@ -873,13 +873,26 @@ def test_complex_types():
         (Optional[str], {'properties': {'a': {'anyOf': [{'type': 'string'}, {'type': 'null'}], 'title': 'A'}}}),
         (
             Optional[bytes],
-            {'properties': {'a': {'title': 'A', 'anyOf': [{'type': 'string', 'format': 'binary'}, {'type': 'null'}]}}},
+            {
+                'properties': {
+                    'a': {
+                        'title': 'A',
+                        'anyOf': [{'contentMediaType': 'application/octet-stream', 'type': 'string'}, {'type': 'null'}],
+                    }
+                }
+            },
         ),
         (
             Union[str, bytes],
             {
                 'properties': {
-                    'a': {'title': 'A', 'anyOf': [{'type': 'string'}, {'type': 'string', 'format': 'binary'}]}
+                    'a': {
+                        'title': 'A',
+                        'anyOf': [
+                            {'type': 'string'},
+                            {'contentMediaType': 'application/octet-stream', 'type': 'string'},
+                        ],
+                    }
                 },
             },
         ),
@@ -889,7 +902,11 @@ def test_complex_types():
                 'properties': {
                     'a': {
                         'title': 'A',
-                        'anyOf': [{'type': 'string'}, {'type': 'string', 'format': 'binary'}, {'type': 'null'}],
+                        'anyOf': [
+                            {'type': 'string'},
+                            {'contentMediaType': 'application/octet-stream', 'type': 'string'},
+                            {'type': 'null'},
+                        ],
                     }
                 }
             },
@@ -994,6 +1011,8 @@ def test_secret_types(field_type, inner_type):
         'properties': {'a': {'title': 'A', 'type': inner_type, 'writeOnly': True, 'format': 'password'}},
         'required': ['a'],
     }
+    if field_type is SecretBytes:
+        base_schema['properties']['a']['contentMediaType'] = 'application/octet-stream'
 
     assert Model.model_json_schema() == base_schema
 
@@ -1876,8 +1895,29 @@ def test_model_default_timedelta(ser_json_timedelta: Literal['float', 'iso8601']
 @pytest.mark.parametrize(
     'ser_json_bytes,properties',
     [
-        ('base64', {'data': {'default': 'Zm9vYmFy', 'format': 'base64url', 'title': 'Data', 'type': 'string'}}),
-        ('utf8', {'data': {'default': 'foobar', 'format': 'binary', 'title': 'Data', 'type': 'string'}}),
+        (
+            'base64',
+            {
+                'data': {
+                    'default': 'Zm9vYmFy',
+                    'contentEncoding': 'base64',
+                    'contentMediaType': 'application/octet-stream',
+                    'title': 'Data',
+                    'type': 'string',
+                }
+            },
+        ),
+        (
+            'utf8',
+            {
+                'data': {
+                    'contentMediaType': 'application/octet-stream',
+                    'default': 'foobar',
+                    'title': 'Data',
+                    'type': 'string',
+                }
+            },
+        ),
     ],
 )
 def test_model_default_bytes(ser_json_bytes: Literal['base64', 'utf8'], properties: dict[str, Any]):
@@ -1917,8 +1957,29 @@ def test_dataclass_default_timedelta(ser_json_timedelta: Literal['float', 'iso86
 @pytest.mark.parametrize(
     'ser_json_bytes,properties',
     [
-        ('base64', {'data': {'default': 'Zm9vYmFy', 'format': 'base64url', 'title': 'Data', 'type': 'string'}}),
-        ('utf8', {'data': {'default': 'foobar', 'format': 'binary', 'title': 'Data', 'type': 'string'}}),
+        (
+            'base64',
+            {
+                'data': {
+                    'default': 'Zm9vYmFy',
+                    'contentEncoding': 'base64',
+                    'contentMediaType': 'application/octet-stream',
+                    'title': 'Data',
+                    'type': 'string',
+                }
+            },
+        ),
+        (
+            'utf8',
+            {
+                'data': {
+                    'contentMediaType': 'application/octet-stream',
+                    'default': 'foobar',
+                    'title': 'Data',
+                    'type': 'string',
+                }
+            },
+        ),
     ],
 )
 def test_dataclass_default_bytes(ser_json_bytes: Literal['base64', 'utf8'], properties: dict[str, Any]):
@@ -1958,8 +2019,29 @@ def test_typeddict_default_timedelta(ser_json_timedelta: Literal['float', 'iso86
 @pytest.mark.parametrize(
     'ser_json_bytes,properties',
     [
-        ('base64', {'data': {'default': 'Zm9vYmFy', 'format': 'base64url', 'title': 'Data', 'type': 'string'}}),
-        ('utf8', {'data': {'default': 'foobar', 'format': 'binary', 'title': 'Data', 'type': 'string'}}),
+        (
+            'base64',
+            {
+                'data': {
+                    'default': 'Zm9vYmFy',
+                    'contentEncoding': 'base64',
+                    'contentMediaType': 'application/octet-stream',
+                    'title': 'Data',
+                    'type': 'string',
+                }
+            },
+        ),
+        (
+            'utf8',
+            {
+                'data': {
+                    'contentMediaType': 'application/octet-stream',
+                    'default': 'foobar',
+                    'title': 'Data',
+                    'type': 'string',
+                }
+            },
+        ),
     ],
 )
 def test_typeddict_default_bytes(ser_json_bytes: Literal['base64', 'utf8'], properties: dict[str, Any]):
@@ -2018,7 +2100,7 @@ def test_docstring(docstring, description):
         ({'max_length': 5}, str, {'type': 'string', 'maxLength': 5}),
         ({}, constr(max_length=6), {'type': 'string', 'maxLength': 6}),
         ({'min_length': 2}, str, {'type': 'string', 'minLength': 2}),
-        ({'max_length': 5}, bytes, {'type': 'string', 'maxLength': 5, 'format': 'binary'}),
+        ({'max_length': 5}, bytes, {'contentMediaType': 'application/octet-stream', 'type': 'string', 'maxLength': 5}),
         ({'pattern': '^foo$'}, str, {'type': 'string', 'pattern': '^foo$'}),
         ({'gt': 2}, int, {'type': 'integer', 'exclusiveMinimum': 2}),
         ({'lt': 5}, int, {'type': 'integer', 'exclusiveMaximum': 5}),
@@ -2122,7 +2204,7 @@ def test_constraints_schema_validation(kwargs, type_, expected_extra):
         ({'max_length': 5}, str, {'type': 'string', 'maxLength': 5}),
         ({}, constr(max_length=6), {'type': 'string', 'maxLength': 6}),
         ({'min_length': 2}, str, {'type': 'string', 'minLength': 2}),
-        ({'max_length': 5}, bytes, {'type': 'string', 'maxLength': 5, 'format': 'binary'}),
+        ({'max_length': 5}, bytes, {'contentMediaType': 'application/octet-stream', 'type': 'string', 'maxLength': 5}),
         ({'pattern': '^foo$'}, str, {'type': 'string', 'pattern': '^foo$'}),
         ({'gt': 2}, int, {'type': 'integer', 'exclusiveMinimum': 2}),
         ({'lt': 5}, int, {'type': 'integer', 'exclusiveMaximum': 5}),
@@ -2295,7 +2377,13 @@ def test_schema_dict_constr():
         # (ConstrainedBytes, {'title': 'A', 'type': 'string', 'format': 'binary'}),
         (
             conbytes(min_length=3, max_length=5),
-            {'title': 'A', 'type': 'string', 'format': 'binary', 'minLength': 3, 'maxLength': 5},
+            {
+                'title': 'A',
+                'contentMediaType': 'application/octet-stream',
+                'type': 'string',
+                'minLength': 3,
+                'maxLength': 5,
+            },
         ),
     ],
 )
@@ -4642,12 +4730,14 @@ def test_secrets_schema(secret_cls, field_kw, schema_kw):
     class Foobar(BaseModel):
         password: secret_cls = Field(**field_kw)
 
+    expected_props = {'title': 'Password', 'type': 'string', 'writeOnly': True, 'format': 'password', **schema_kw}
+    if secret_cls is SecretBytes:
+        expected_props['contentMediaType'] = 'application/octet-stream'
+
     assert Foobar.model_json_schema() == {
         'title': 'Foobar',
         'type': 'object',
-        'properties': {
-            'password': {'title': 'Password', 'type': 'string', 'writeOnly': True, 'format': 'password', **schema_kw}
-        },
+        'properties': {'password': expected_props},
         'required': ['password'],
     }
 

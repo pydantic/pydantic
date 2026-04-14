@@ -2385,11 +2385,20 @@ class EncoderProtocol(Protocol):
         ...
 
     @classmethod
-    def get_json_format(cls) -> str:
-        """Get the JSON format for the encoded data.
+    def get_json_format(cls) -> str | None:
+        """Get the JSON Schema `format` value for the encoded data.
 
         Returns:
-            The JSON format for the encoded data.
+            The format string, or `None` if no format should be set.
+        """
+        ...
+
+    @classmethod
+    def get_content_encoding(cls) -> str | None:
+        """Get the JSON Schema `contentEncoding` value for the encoded data.
+
+        Returns:
+            The content encoding string, or `None` if no content encoding should be set.
         """
         ...
 
@@ -2433,6 +2442,15 @@ class Base64Encoder(EncoderProtocol):
         """
         return 'base64'
 
+    @classmethod
+    def get_content_encoding(cls) -> Literal['base64']:
+        """Get the JSON Schema `contentEncoding` value for the encoded data.
+
+        Returns:
+            The content encoding string.
+        """
+        return 'base64'
+
 
 class Base64UrlEncoder(EncoderProtocol):
     """URL-safe Base64 encoder."""
@@ -2470,6 +2488,15 @@ class Base64UrlEncoder(EncoderProtocol):
 
         Returns:
             The JSON format for the encoded data.
+        """
+        return 'base64url'
+
+    @classmethod
+    def get_content_encoding(cls) -> Literal['base64url']:
+        """Get the JSON Schema `contentEncoding` value for the encoded data.
+
+        Returns:
+            The content encoding string.
         """
         return 'base64url'
 
@@ -2535,7 +2562,13 @@ class EncodedBytes:
         self, core_schema: core_schema.CoreSchema, handler: GetJsonSchemaHandler
     ) -> JsonSchemaValue:
         field_schema = handler(core_schema)
-        field_schema.update(type='string', format=self.encoder.get_json_format())
+        field_schema.update(type='string')
+        json_format = self.encoder.get_json_format()
+        if json_format is not None:
+            field_schema['format'] = json_format
+        content_encoding = self.encoder.get_content_encoding()
+        if content_encoding is not None:
+            field_schema['contentEncoding'] = content_encoding
         return field_schema
 
     def __get_pydantic_core_schema__(self, source: type[Any], handler: GetCoreSchemaHandler) -> core_schema.CoreSchema:
@@ -2634,7 +2667,13 @@ class EncodedStr:
         self, core_schema: core_schema.CoreSchema, handler: GetJsonSchemaHandler
     ) -> JsonSchemaValue:
         field_schema = handler(core_schema)
-        field_schema.update(type='string', format=self.encoder.get_json_format())
+        field_schema.update(type='string')
+        json_format = self.encoder.get_json_format()
+        if json_format is not None:
+            field_schema['format'] = json_format
+        content_encoding = self.encoder.get_content_encoding()
+        if content_encoding is not None:
+            field_schema['contentEncoding'] = content_encoding
         return field_schema
 
     def __get_pydantic_core_schema__(self, source: type[Any], handler: GetCoreSchemaHandler) -> core_schema.CoreSchema:
