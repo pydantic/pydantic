@@ -375,16 +375,12 @@ def get_first_not_none(a: Any, b: Any) -> Any:
     return a if a is not None else b
 
 
-@dataclasses.dataclass(frozen=True)
+@dataclasses.dataclass(frozen=True, slots=True)
 class SafeGetItemProxy:
     """Wrapper redirecting `__getitem__` to `get` with a sentinel value as default
 
     This makes is safe to use in `operator.itemgetter` when some keys may be missing
     """
-
-    # Define __slots__manually for performances
-    # @dataclasses.dataclass() only support slots=True in python>=3.10
-    __slots__ = ('wrapped',)
 
     wrapped: Mapping[str, Any]
 

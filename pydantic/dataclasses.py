@@ -112,8 +112,6 @@ def dataclass(
     assert init is False, 'pydantic.dataclasses.dataclass only supports init=False'
     assert validate_on_init is not False, 'validate_on_init=False is no longer supported'
 
-    kwargs = {'kw_only': kw_only, 'slots': slots}
-
     def create_dataclass(cls: type[Any]) -> type[PydanticDataclass]:
         """Create a Pydantic dataclass from a regular dataclass.
 
@@ -209,7 +207,8 @@ def dataclass(
                 order=order,
                 unsafe_hash=unsafe_hash,
                 frozen=frozen_,
-                **kwargs,
+                kw_only=kw_only,
+                slots=slots,
             )
 
         if config_wrapper.validate_assignment:
