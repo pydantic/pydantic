@@ -92,7 +92,6 @@ impl PyUrl {
                         None,
                         None,
                         None,
-                        None,
                         InputType::Python,
                         StringCacheMode::None,
                         None,
@@ -100,6 +99,7 @@ impl PyUrl {
                     ),
                     &mut RecursionState::default(),
                     PartialMode::Off,
+                    None,
                     None,
                 ),
             )
@@ -328,7 +328,6 @@ impl PyMultiHostUrl {
                         None,
                         None,
                         None,
-                        None,
                         InputType::Python,
                         StringCacheMode::None,
                         None,
@@ -336,6 +335,7 @@ impl PyMultiHostUrl {
                     ),
                     &mut RecursionState::default(),
                     PartialMode::Off,
+                    None,
                     None,
                 ),
             )
