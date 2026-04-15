@@ -4,7 +4,7 @@ import re
 import sys
 import warnings
 from collections import defaultdict
-from collections.abc import Mapping
+from collections.abc import Callable, Mapping
 from copy import deepcopy
 from dataclasses import dataclass
 from datetime import date, datetime
@@ -13,7 +13,6 @@ from functools import cache, cached_property, partial
 from typing import (
     Annotated,
     Any,
-    Callable,
     ClassVar,
     Final,
     Generic,
@@ -121,7 +120,7 @@ def test_recursive_repr() -> None:
         a: object = None
 
     class B(BaseModel):
-        a: Optional[A] = None
+        a: A | None = None
 
     a = A()
     a.a = a
@@ -178,10 +177,10 @@ def none_check_model_fix():
     class NoneCheckModel(BaseModel):
         existing_str_value: str = 'foo'
         required_str_value: str = ...
-        required_str_none_value: Optional[str] = ...
+        required_str_none_value: str | None = ...
         existing_bytes_value: bytes = b'foo'
         required_bytes_value: bytes = ...
-        required_bytes_none_value: Optional[bytes] = ...
+        required_bytes_none_value: bytes | None = ...
 
     return NoneCheckModel
 
@@ -901,11 +900,11 @@ def test_union_enum_values():
         val = 'val'
 
     class NormalModel(BaseModel):
-        x: Union[MyEnum, int]
+        x: MyEnum | int
 
     class UseEnumValuesModel(BaseModel):
         model_config = ConfigDict(use_enum_values=True)
-        x: Union[MyEnum, int]
+        x: MyEnum | int
 
     assert NormalModel(x=MyEnum.val).x != 'val'
     assert UseEnumValuesModel(x=MyEnum.val).x == 'val'
@@ -1150,9 +1149,9 @@ def test_dict_exclude_unset_populated_by_alias_with_extra():
 def test_exclude_defaults():
     class Model(BaseModel):
         mandatory: str
-        nullable_mandatory: Optional[str] = ...
+        nullable_mandatory: str | None = ...
         facultative: str = 'x'
-        nullable_facultative: Optional[str] = None
+        nullable_facultative: str | None = None
 
     m = Model(mandatory='a', nullable_mandatory=None)
     assert m.model_dump(exclude_defaults=True) == {
@@ -1707,8 +1706,8 @@ def test_recursive_cycle_with_repeated_field():
         b: 'B'
 
     class B(BaseModel):
-        a1: Optional[A] = None
-        a2: Optional[A] = None
+        a1: A | None = None
+        a2: A | None = None
 
     A.model_rebuild()
 
@@ -1855,7 +1854,7 @@ def test_default_factory_validated_data_arg() -> None:
 
 
 def test_default_factory_validated_data_arg_not_required() -> None:
-    def fac(data: Optional[dict[str, Any]] = None):
+    def fac(data: dict[str, Any] | None = None):
         if data is not None:
             return data['a']
         return 3
@@ -2018,23 +2017,6 @@ def test_class_kwargs_custom_config():
 
         class Model(BaseModel, some_config='new_value'):
             a: int
-
-
-def test_new_union_origin():
-    """On 3.10+, origin of `int | str` is `types.UnionType`, not `typing.Union`"""
-
-    class Model(BaseModel):
-        x: 'int | str'
-
-    assert Model(x=3).x == 3
-    assert Model(x='3').x == '3'
-    assert Model(x='pika').x == 'pika'
-    assert Model.model_json_schema() == {
-        'title': 'Model',
-        'type': 'object',
-        'properties': {'x': {'title': 'X', 'anyOf': [{'type': 'integer'}, {'type': 'string'}]}},
-        'required': ['x'],
-    }
 
 
 @pytest.mark.parametrize(
@@ -3663,7 +3645,7 @@ def test_validation_works_for_cyclical_forward_refs() -> None:
         y: Union['Y', None]
 
     class Y(BaseModel):
-        x: Union[X, None]
+        x: X | None
 
     assert Y(x={'y': None}).x.y is None
 

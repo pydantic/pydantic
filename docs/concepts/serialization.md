@@ -54,8 +54,6 @@ When using the Python mode, Pydantic models (and model-like types such as [datac
 1. With the exception of [root models](./models.md#rootmodel-and-custom-root-types), where the root value is dumped directly.
 
 ```python {group="python-dump"}
-from typing import Optional
-
 from pydantic import BaseModel, Field
 
 
@@ -64,7 +62,7 @@ class BarModel(BaseModel):
 
 
 class FooBarModel(BaseModel):
-    banana: Optional[float] = 1.1
+    banana: float | None = 1.1
     foo: str = Field(serialization_alias='foo_alias')
     bar: BarModel
 

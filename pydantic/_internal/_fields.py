@@ -4,11 +4,11 @@ from __future__ import annotations as _annotations
 
 import dataclasses
 import warnings
-from collections.abc import Mapping
+from collections.abc import Callable, Mapping
 from functools import cache
 from inspect import Parameter, ismethoddescriptor
 from re import Pattern
-from typing import TYPE_CHECKING, Any, Callable, TypeVar, cast
+from typing import TYPE_CHECKING, Any, TypeVar, cast
 
 from pydantic_core import PydanticUndefined
 from typing_extensions import TypeIs
@@ -22,7 +22,6 @@ from . import _generics, _typing_extra
 from ._config import ConfigWrapper
 from ._docs_extraction import extract_docstrings_from_cls
 from ._import_utils import import_cached_base_model, import_cached_field_info
-from ._internal_dataclass import slots_true
 from ._namespace_utils import NsResolver
 from ._repr import Representation
 from ._utils import can_be_positional, get_first_not_none
@@ -42,7 +41,7 @@ class PydanticMetadata(Representation):
     __slots__ = ()
 
 
-@dataclasses.dataclass(**slots_true)  # TODO: make kw_only when we drop support for 3.9.
+@dataclasses.dataclass(slots=True, kw_only=True)
 class PydanticExtraInfo:
     # TODO: make use of PEP 747:
     annotation: Any

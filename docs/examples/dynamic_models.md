@@ -6,37 +6,9 @@ we will make use of the [`model_fields`][pydantic.main.BaseModel.model_fields] m
 from the field definitions to be passed to the [`create_model()`][pydantic.create_model] factory. Of course, this example can apply
 to any use case where you need to derive a new model from another (remove default values, add aliases, etc).
 
-=== "Python 3.9"
-
-    ```python {lint="skip" linenums="1"}
-    from typing import Annotated, Union
-
-    from pydantic import BaseModel, Field, create_model
-
-
-    def make_fields_optional(model_cls: type[BaseModel]) -> type[BaseModel]:
-        new_fields = {}
-
-        for f_name, f_info in model_cls.model_fields.items():
-            f_dct = f_info.asdict()
-            new_fields[f_name] = (
-                Annotated[(Union[f_dct['annotation'], None], *f_dct['metadata'], Field(**f_dct['attributes']))],
-                None,
-            )
-
-        return create_model(
-            f'{model_cls.__name__}Optional',
-            __base__=model_cls,  # (1)!
-            **new_fields,
-        )
-    ```
-
-    1. Using the original model as a base will inherit the [validators](../concepts/validators.md), [computed fields](../concepts/fields.md#the-computed_field-decorator), etc.
-    The parent fields are overridden by the ones we define.
-
 === "Python 3.10"
 
-    ```python {lint="skip" requires="3.10" linenums="1"}
+    ```python {lint="skip" linenums="1"}
     from typing import Annotated
 
     from pydantic import BaseModel, Field, create_model
@@ -108,7 +80,7 @@ The [`FieldInfo`][pydantic.fields.FieldInfo] instance of `f` will have three ite
 
 With that in mind, we can recreate an annotation that "simulates" the one from the original model:
 
-=== "Python 3.9 and above"
+=== "Python 3.10 and above"
 
     ```python {lint="skip" test="skip"}
     new_annotation = Annotated[(
@@ -172,7 +144,7 @@ A couple notes on the implementation:
 * Our `make_fields_optional()` function is defined as returning an arbitrary Pydantic model class (`-> type[BaseModel]`).
   An alternative solution can be to use a type variable to preserve the input class:
 
-    === "Python 3.9 and above"
+    === "Python 3.10 and above"
 
         ```python {lint="skip" test="skip"}
         ModelTypeT = TypeVar('ModelTypeT', bound=type[BaseModel])

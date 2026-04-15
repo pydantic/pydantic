@@ -19,7 +19,7 @@ import os
 import re
 import warnings
 from collections import Counter, defaultdict
-from collections.abc import Hashable, Iterable, Sequence
+from collections.abc import Callable, Hashable, Iterable, Sequence
 from copy import deepcopy
 from enum import Enum
 from re import Pattern
@@ -27,11 +27,10 @@ from typing import (
     TYPE_CHECKING,
     Annotated,
     Any,
-    Callable,
     Literal,
     NewType,
+    TypeAlias,
     TypeVar,
-    Union,
     cast,
     overload,
 )
@@ -39,7 +38,7 @@ from typing import (
 import pydantic_core
 from pydantic_core import MISSING, CoreSchema, PydanticOmit, core_schema, to_jsonable_python
 from pydantic_core.core_schema import ComputedField
-from typing_extensions import TypeAlias, assert_never, deprecated, final
+from typing_extensions import assert_never, deprecated, final
 from typing_inspection.introspection import get_literal_values
 
 from pydantic.warnings import PydanticDeprecatedSince26, PydanticDeprecatedSince29
@@ -49,7 +48,6 @@ from ._internal import (
     _core_metadata,
     _core_utils,
     _decorators,
-    _internal_dataclass,
     _mock_val_ser,
     _schema_generation_shared,
     _typing_extra,
@@ -136,7 +134,7 @@ JsonSchemaKeyT = TypeVar('JsonSchemaKeyT', bound=Hashable)
 _PRIMITIVE_JSON_SCHEMA_TYPES = ('string', 'boolean', 'null', 'integer', 'number')
 
 
-@dataclasses.dataclass(**_internal_dataclass.slots_true)
+@dataclasses.dataclass(slots=True)
 class _DefinitionsRemapping:
     defs_remapping: dict[DefsRef, DefsRef]
     json_remapping: dict[JsonRef, JsonRef]
@@ -2626,9 +2624,9 @@ def models_json_schema(
 # ##### End JSON Schema Generation Functions #####
 
 
-_HashableJsonValue: TypeAlias = Union[
-    int, float, str, bool, None, tuple['_HashableJsonValue', ...], tuple[tuple[str, '_HashableJsonValue'], ...]
-]
+_HashableJsonValue: TypeAlias = (
+    int | float | str | bool | None | tuple['_HashableJsonValue', ...] | tuple[tuple[str, '_HashableJsonValue'], ...]
+)
 
 
 def _deduplicate_schemas(schemas: Iterable[JsonDict]) -> list[JsonDict]:
@@ -2644,7 +2642,7 @@ def _make_json_hashable(value: JsonValue) -> _HashableJsonValue:
         return value
 
 
-@dataclasses.dataclass(**_internal_dataclass.slots_true)
+@dataclasses.dataclass(slots=True)
 class WithJsonSchema:
     """!!! abstract "Usage Documentation"
         [`WithJsonSchema` Annotation](../concepts/json_schema.md#withjsonschema-annotation)
@@ -2829,7 +2827,7 @@ if TYPE_CHECKING:
     SkipJsonSchema = Annotated[AnyType, ...]
 else:
 
-    @dataclasses.dataclass(**_internal_dataclass.slots_true)
+    @dataclasses.dataclass(slots=True)
     class SkipJsonSchema:
         """!!! abstract "Usage Documentation"
             [`SkipJsonSchema` Annotation](../concepts/json_schema.md#skipjsonschema-annotation)
@@ -2839,15 +2837,14 @@ else:
         Example:
             ```python
             from pprint import pprint
-            from typing import Union
 
             from pydantic import BaseModel
             from pydantic.json_schema import SkipJsonSchema
 
             class Model(BaseModel):
-                a: Union[int, None] = None  # (1)!
-                b: Union[int, SkipJsonSchema[None]] = None  # (2)!
-                c: SkipJsonSchema[Union[int, None]] = None  # (3)!
+                a: int | None = None  # (1)!
+                b: int | SkipJsonSchema[None] = None  # (2)!
+                c: SkipJsonSchema[int | None] = None  # (3)!
 
             pprint(Model.model_json_schema())
             '''

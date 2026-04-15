@@ -4,7 +4,7 @@ from dataclasses import dataclass
 from datetime import date, time
 from enum import Enum, IntEnum
 from itertools import permutations
-from typing import Any, Optional, Union
+from typing import Any
 from uuid import UUID
 
 import pytest
@@ -893,7 +893,7 @@ class TestSmartUnionWithDefaults:
     @pytest.mark.parametrize('choices', permute_choices([model_a_schema, model_b_schema]))
     def test_optional_union_with_members_having_defaults(self, choices) -> None:
         class WrapModel:
-            val: Optional[Union[self.ModelA, self.ModelB]] = None
+            val: self.ModelA | self.ModelB | None = None
 
         val = SchemaValidator(
             schema=core_schema.model_schema(
@@ -1213,10 +1213,10 @@ def test_nested_unions_bubble_up_field_count() -> None:
         w3: int = 0
 
     class ModelA:
-        a: Union[SubModelX, SubModelY]
+        a: SubModelX | SubModelY
 
     class ModelB:
-        b: Union[SubModelZ, SubModelW]
+        b: SubModelZ | SubModelW
 
     model_x_schema = core_schema.model_schema(
         SubModelX,
@@ -1305,7 +1305,7 @@ def test_smart_union_extra_behavior(extra_behavior) -> None:
         bar: str = 'bar'
 
     class Model:
-        x: Union[Foo, Bar]
+        x: Foo | Bar
 
     validator = SchemaValidator(
         core_schema.model_schema(
@@ -1408,7 +1408,7 @@ def test_smart_union_wrap_validator_should_not_change_nested_model_field_counts(
 
     # test validate_assignment
     class RootModel:
-        ab: Union[ModelA, ModelB]
+        ab: ModelA | ModelB
 
     root_model = core_schema.model_schema(
         RootModel,

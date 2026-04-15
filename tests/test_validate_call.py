@@ -6,7 +6,7 @@ import sys
 from collections import UserDict
 from datetime import datetime, timezone
 from functools import partial
-from typing import Annotated, Any, Generic, Literal, TypeVar, Union
+from typing import Annotated, Any, Generic, Literal, TypeVar
 
 import pytest
 from pydantic_core import ArgsKwargs
@@ -809,7 +809,7 @@ def test_annotated_discriminator():
         food: str
         bark: int
 
-    Pet = Annotated[Union[Cat, Dog], Field(discriminator='type')]
+    Pet = Annotated[Cat | Dog, Field(discriminator='type')]
 
     @validate_call
     def f(pet: Pet):

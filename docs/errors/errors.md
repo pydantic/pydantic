@@ -212,12 +212,12 @@ dictionary of translations.
 Another example is customizing the way that the `'loc'` value of an error is represented.
 
 ```python
-from typing import Any, Union
+from typing import Any
 
 from pydantic import BaseModel, ValidationError
 
 
-def loc_to_dot_sep(loc: tuple[Union[str, int], ...]) -> str:
+def loc_to_dot_sep(loc: tuple[str | int, ...]) -> str:
     path = ''
     for i, x in enumerate(loc):
         if isinstance(x, str):

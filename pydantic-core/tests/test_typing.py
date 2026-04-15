@@ -1,7 +1,8 @@
 from __future__ import annotations as _annotations
 
+from collections.abc import Callable
 from datetime import date, datetime, time
-from typing import Any, Callable
+from typing import Any
 
 from pydantic_core import (
     CoreSchema,

@@ -5,14 +5,14 @@ from __future__ import annotations
 import datetime
 import operator
 import re
-import sys
 from collections import deque
-from collections.abc import Container
+from collections.abc import Callable, Container
 from dataclasses import dataclass
 from decimal import Decimal
 from functools import cached_property, partial
 from re import Pattern
-from typing import TYPE_CHECKING, Annotated, Any, Callable, Generic, Protocol, TypeVar, Union, overload
+from types import EllipsisType
+from typing import TYPE_CHECKING, Annotated, Any, Generic, Protocol, TypeAlias, TypeVar, overload
 
 import annotated_types
 
@@ -23,19 +23,11 @@ from pydantic_core import PydanticCustomError
 from pydantic_core import core_schema as cs
 
 from pydantic import Strict
-from pydantic._internal._internal_dataclass import slots_true as _slots_true
-
-if sys.version_info < (3, 10):
-    EllipsisType = type(Ellipsis)
-else:
-    from types import EllipsisType
 
 __all__ = ['validate_as', 'validate_as_deferred', 'transform']
 
-_slots_frozen = {**_slots_true, 'frozen': True}
 
-
-@dataclass(**_slots_frozen)
+@dataclass(frozen=True, slots=True)
 class _ValidateAs:
     tp: type[Any]
     strict: bool = False
@@ -50,69 +42,71 @@ class _ValidateAsDefer:
         return self.func()
 
 
-@dataclass(**_slots_frozen)
+@dataclass(frozen=True, slots=True)
 class _Transform:
     func: Callable[[Any], Any]
 
 
-@dataclass(**_slots_frozen)
+@dataclass(frozen=True, slots=True)
 class _PipelineOr:
     left: _Pipeline[Any, Any]
     right: _Pipeline[Any, Any]
 
 
-@dataclass(**_slots_frozen)
+@dataclass(frozen=True, slots=True)
 class _PipelineAnd:
     left: _Pipeline[Any, Any]
     right: _Pipeline[Any, Any]
 
 
-@dataclass(**_slots_frozen)
+@dataclass(frozen=True, slots=True)
 class _Eq:
     value: Any
 
 
-@dataclass(**_slots_frozen)
+@dataclass(frozen=True, slots=True)
 class _NotEq:
     value: Any
 
 
-@dataclass(**_slots_frozen)
+@dataclass(frozen=True, slots=True)
 class _In:
     values: Container[Any]
 
 
-@dataclass(**_slots_frozen)
+@dataclass(frozen=True, slots=True)
 class _NotIn:
     values: Container[Any]
 
 
-_ConstraintAnnotation = Union[
-    annotated_types.Le,
-    annotated_types.Ge,
-    annotated_types.Lt,
-    annotated_types.Gt,
-    annotated_types.Len,
-    annotated_types.MultipleOf,
-    annotated_types.Timezone,
-    annotated_types.Interval,
-    annotated_types.Predicate,
+_ConstraintAnnotation: TypeAlias = (
+    annotated_types.Le
+    | annotated_types.Ge
+    | annotated_types.Lt
+    | annotated_types.Gt
+    | annotated_types.Len
+    | annotated_types.MultipleOf
+    | annotated_types.Timezone
+    | annotated_types.Interval
+    | annotated_types.Predicate
+    |
     # common predicates not included in annotated_types
-    _Eq,
-    _NotEq,
-    _In,
-    _NotIn,
+    _Eq
+    | _NotEq
+    | _In
+    | _NotIn
+    |
     # regular expressions
-    Pattern[str],
-]
+    Pattern[str]
+)
 
 
-@dataclass(**_slots_frozen)
+@dataclass(frozen=True, slots=True)
 class _Constraint:
     constraint: _ConstraintAnnotation
 
 
-_Step = Union[_ValidateAs, _ValidateAsDefer, _Transform, _PipelineOr, _PipelineAnd, _Constraint]
+_Step: TypeAlias = _ValidateAs | _ValidateAsDefer | _Transform | _PipelineOr | _PipelineAnd | _Constraint
 
 _InT = TypeVar('_InT')
 _OutT = TypeVar('_OutT')
@@ -127,7 +121,7 @@ class _FieldTypeMarker:
 # Also, make this frozen eventually, but that doesn't work right now because of the generic base
 # Which attempts to modify __orig_base__ and such.
 # We could go with a manual freeze, but that seems overkill for now.
-@dataclass(**_slots_true)
+@dataclass(slots=True)
 class _Pipeline(Generic[_InT, _OutT]):
     """Abstract representation of a chain of validation, transformation, and parsing steps."""
 
@@ -150,7 +144,7 @@ class _Pipeline(Generic[_InT, _OutT]):
     @overload
     def validate_as(
         self,
-        tp: ellipsis,  # noqa: F821  # TODO: use `_typing_extra.EllipsisType` when we drop Py3.9
+        tp: EllipsisType,
         *,
         strict: bool = False,
     ) -> _Pipeline[_InT, Any]: ...

@@ -1,7 +1,6 @@
 import dataclasses
 import re
 import typing
-from typing import Optional, Union
 
 import pytest
 import typing_extensions
@@ -19,7 +18,7 @@ pytestmark = pytest.mark.parametrize('Self', self_types)
 def test_recursive_model(Self):
     class SelfRef(BaseModel):
         data: int
-        ref: typing.Optional[Self] = None
+        ref: Self | None = None
 
     assert SelfRef(data=1, ref={'data': 2}).model_dump() == {'data': 1, 'ref': {'data': 2, 'ref': None}}
 
@@ -27,7 +26,7 @@ def test_recursive_model(Self):
 def test_recursive_model_invalid(Self):
     class SelfRef(BaseModel):
         data: int
-        ref: typing.Optional[Self] = None
+        ref: Self | None = None
 
     with pytest.raises(
         ValidationError,
@@ -83,7 +82,7 @@ def test_recursive_model_with_subclass_override(Self):
 
     class SubSelfRef(SelfRef):
         y: int
-        ref: Optional[Union[SelfRef, Self]] = None
+        ref: SelfRef | Self | None = None
 
     assert SubSelfRef(x=1, ref=SubSelfRef(x=3, y=4), y=2).model_dump() == {
         'x': 1,
@@ -109,7 +108,7 @@ def test_self_type_with_field(Self):
 def test_self_type_json_schema(Self):
     class SelfRef(BaseModel):
         x: int
-        refs: Optional[list[Self]] = []
+        refs: list[Self] | None = []
 
     assert SelfRef.model_json_schema() == {
         '$defs': {

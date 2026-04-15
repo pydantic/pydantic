@@ -3,7 +3,7 @@ import re
 from collections import deque
 from collections.abc import Iterator
 from dataclasses import dataclass
-from typing import Any, Union
+from typing import Any
 
 import pytest
 from dirty_equals import Contains, HasRepr, IsInstance, IsList, IsStr
@@ -476,8 +476,8 @@ class MyMapping(collections.abc.Mapping):
 @dataclass
 class ListInputTestCase:
     input: Any
-    output: Union[Any, Err]
-    strict: Union[bool, None] = None
+    output: Any | Err
+    strict: bool | None = None
 
 
 LAX_MODE_INPUTS: list[Any] = [

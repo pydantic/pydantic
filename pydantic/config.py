@@ -3,10 +3,11 @@
 from __future__ import annotations as _annotations
 
 import warnings
+from collections.abc import Callable
 from re import Pattern
-from typing import TYPE_CHECKING, Any, Callable, Literal, TypeVar, Union, cast, overload
+from typing import TYPE_CHECKING, Any, Literal, TypeAlias, TypeVar, Union, cast, overload
 
-from typing_extensions import TypeAlias, TypedDict, Unpack, deprecated
+from typing_extensions import TypedDict, Unpack, deprecated
 
 from ._migration import getattr_migration
 from .aliases import AliasGenerator
@@ -25,10 +26,7 @@ JsonDict: TypeAlias = dict[str, JsonValue]
 
 JsonEncoder = Callable[[Any], Any]
 
-JsonSchemaExtraCallable: TypeAlias = Union[
-    Callable[[JsonDict], None],
-    Callable[[JsonDict, type[Any]], None],
-]
+JsonSchemaExtraCallable: TypeAlias = Callable[[JsonDict], None] | Callable[[JsonDict, type[Any]], None]
 
 ExtraValues = Literal['allow', 'ignore', 'forbid']
 
@@ -227,17 +225,16 @@ class ConfigDict(TypedDict, total=False):
 
     use_enum_values: bool
     """
-    Whether to populate models with the `value` property of enums, rather than the raw enum.
-    This may be useful if you want to serialize `model.model_dump()` later. Defaults to `False`.
+    Whether to populate models with the [`value`][enum.Enum.value] property of enums, rather than the raw enum.
+    This may be useful if you want to serialize the value later. Defaults to `False`.
 
     !!! note
-        If you have an `Optional[Enum]` value that you set a default for, you need to use `validate_default=True`
-        for said Field to ensure that the `use_enum_values` flag takes effect on the default, as extracting an
+        If you have a field typed as an enum with a default value, the [`validate_default`][pydantic.ConfigDict.validate_default]
+        configuration needs to be set to ensure that the `use_enum_values` flag takes effect on the default, as extracting an
         enum's value occurs during validation, not serialization.
 
     ```python
     from enum import Enum
-    from typing import Optional
 
     from pydantic import BaseModel, ConfigDict, Field
 
@@ -250,7 +247,7 @@ class ConfigDict(TypedDict, total=False):
         model_config = ConfigDict(use_enum_values=True)
 
         some_enum: SomeEnum
-        another_enum: Optional[SomeEnum] = Field(
+        another_enum: SomeEnum | None = Field(
             default=SomeEnum.FOO, validate_default=True
         )
 

@@ -1,9 +1,10 @@
 import re
 import sys
 from collections import defaultdict
+from collections.abc import Callable
 from copy import deepcopy
 from decimal import Decimal
-from typing import Any, Callable, Union
+from typing import Any
 
 import pytest
 from dirty_equals import HasRepr, IsInstance
@@ -55,7 +56,7 @@ def test_model_class():
         ('ignore', 'allow'),
     ],
 )
-def test_model_class_extra(schema_extra_behavior: dict[str, Any], validate_fn_extra_kw: Union[ExtraBehavior, None]):
+def test_model_class_extra(schema_extra_behavior: dict[str, Any], validate_fn_extra_kw: ExtraBehavior | None):
     class MyModel:
         # this is not required, but it avoids `__pydantic_fields_set__` being included in `__dict__`
         __slots__ = '__dict__', '__pydantic_fields_set__', '__pydantic_extra__', '__pydantic_private__'
@@ -90,9 +91,7 @@ def test_model_class_extra(schema_extra_behavior: dict[str, Any], validate_fn_ex
         ('ignore', 'forbid'),
     ],
 )
-def test_model_class_extra_forbid(
-    schema_extra_behavior: dict[str, Any], validate_fn_extra_kw: Union[ExtraBehavior, None]
-):
+def test_model_class_extra_forbid(schema_extra_behavior: dict[str, Any], validate_fn_extra_kw: ExtraBehavior | None):
     class MyModel:
         class Meta:
             pass

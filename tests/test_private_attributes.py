@@ -1,6 +1,6 @@
 import functools
 from enum import Enum
-from typing import ClassVar, Generic, Optional, TypeVar
+from typing import ClassVar, Generic, TypeVar
 
 import pytest
 from pydantic_core import PydanticUndefined
@@ -384,16 +384,15 @@ def test_none_as_private_attr():
 
 
 def test_layout_compatible_multiple_private_parents():
-    import typing as t
 
     import pydantic
 
     class ModelMixin(pydantic.BaseModel):
-        _mixin_private: t.Optional[str] = pydantic.PrivateAttr(None)
+        _mixin_private: str | None = pydantic.PrivateAttr(None)
 
     class Model(pydantic.BaseModel):
         public: str = 'default'
-        _private: t.Optional[str] = pydantic.PrivateAttr(None)
+        _private: str | None = pydantic.PrivateAttr(None)
 
     class NewModel(ModelMixin, Model):
         pass
@@ -572,7 +571,7 @@ def test_private_descriptors(base, use_annotation):
 
 def test_private_attr_set_name():
     class SetNameInt(int):
-        _owner_attr_name: Optional[str] = None
+        _owner_attr_name: str | None = None
 
         def __set_name__(self, owner, name):
             self._owner_attr_name = f'{owner.__name__}.{name}'

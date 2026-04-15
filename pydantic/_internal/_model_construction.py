@@ -8,12 +8,19 @@ import typing
 import warnings
 import weakref
 from abc import ABCMeta
+from collections.abc import Callable
 from functools import cache, partial, wraps
 from types import FunctionType
-from typing import TYPE_CHECKING, Any, Callable, Generic, Literal, NoReturn, TypeVar, cast
+from typing import TYPE_CHECKING, Any, ForwardRef, Generic, Literal, NoReturn, TypeVar, cast
 
 from pydantic_core import PydanticUndefined, SchemaSerializer
-from typing_extensions import TypeAliasType, dataclass_transform, deprecated, get_args, get_origin
+from typing_extensions import (  # noqa: UP035 (for `get_args` and `get_origin`)
+    TypeAliasType,
+    dataclass_transform,
+    deprecated,
+    get_args,
+    get_origin,
+)
 from typing_inspection import typing_objects
 
 from ..errors import PydanticUndefinedAnnotation, PydanticUserError
@@ -29,7 +36,6 @@ from ._mock_val_ser import set_model_mocks
 from ._namespace_utils import NsResolver
 from ._signature import generate_pydantic_signature
 from ._typing_extra import (
-    _make_forward_ref,
     eval_type_backport,
     is_classvar_annotation,
     parent_frame_namespace,
@@ -516,7 +522,7 @@ def inspect_namespace(  # noqa C901
                 if frame is not None:
                     try:
                         ann_type = eval_type_backport(
-                            _make_forward_ref(ann_type, is_argument=False, is_class=True),
+                            ForwardRef(ann_type, is_argument=False, is_class=True),
                             globalns=frame.f_globals,
                             localns=frame.f_locals,
                         )
@@ -647,7 +653,7 @@ def complete_model_class(
             )
         except NameError as e:
             exc = PydanticUndefinedAnnotation.from_name_error(e)
-            set_model_mocks(cls, f'`{exc.name}`')
+            set_model_mocks(cls, f'`{exc.name}`' if exc.name is not None else None)
             if raise_errors:
                 raise exc from e
 
@@ -668,7 +674,7 @@ def complete_model_class(
     except PydanticUndefinedAnnotation as e:
         if raise_errors:
             raise
-        set_model_mocks(cls, f'`{e.name}`')
+        set_model_mocks(cls, f'`{e.name}`' if e.name is not None else None)
         return False
 
     core_config = config_wrapper.core_config(title=cls.__name__)

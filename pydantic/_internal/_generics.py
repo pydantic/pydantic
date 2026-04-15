@@ -221,7 +221,7 @@ def get_standard_typevars_map(cls: Any) -> dict[TypeVar, Any] | None:
     # So it is safe to access cls.__args__ and origin.__parameters__
     args: tuple[Any, ...] = cls.__args__  # type: ignore
     parameters: tuple[TypeVar, ...] = origin.__parameters__
-    return dict(zip(parameters, args))
+    return dict(zip(parameters, args, strict=True))
 
 
 def get_model_typevars_map(cls: type[BaseModel]) -> dict[TypeVar, Any]:
@@ -239,7 +239,7 @@ def get_model_typevars_map(cls: type[BaseModel]) -> dict[TypeVar, Any]:
     if not args:
         # No need to go into `iter_contained_typevars`:
         return {}
-    return dict(zip(iter_contained_typevars(origin), args))
+    return dict(zip(iter_contained_typevars(origin), args, strict=True))
 
 
 def replace_types(type_: Any, type_map: Mapping[TypeVar, Any] | None) -> Any:
@@ -255,12 +255,10 @@ def replace_types(type_: Any, type_map: Mapping[TypeVar, Any] | None) -> Any:
 
     Example:
         ```python
-        from typing import Union
-
         from pydantic._internal._generics import replace_types
 
-        replace_types(tuple[str, Union[list[str], float]], {str: int})
-        #> tuple[int, Union[list[int], float]]
+        replace_types(tuple[str, list[str] | float], {str: int})
+        #> tuple[int, list[int] | float]
         ```
     """
     if not type_map:
@@ -311,8 +309,7 @@ def replace_types(type_: Any, type_map: Mapping[TypeVar, Any] | None) -> Any:
         # implement `__getitem__()`. In Python 3.14+, `typing.Union` and `types.UnionType` are the same,
         # and we instead rely on `typing.Union` as it implicitly converts string annotations to `ForwardRef`
         # instances (this is to avoid type errors as per https://github.com/python/cpython/pull/105366).
-        # TODO remove type ignore comment when we drop support for Python 3.9 (https://github.com/microsoft/pyright/issues/11241):
-        if (3, 10) <= sys.version_info < (3, 14) and origin_type is types.UnionType:  # pyright: ignore[reportAttributeAccessIssue]
+        if sys.version_info < (3, 14) and origin_type is types.UnionType:
             return reduce(operator.or_, resolved_type_args)
         # NotRequired[T] and Required[T] don't support tuple type resolved_type_args, hence the condition below
         return origin_type[resolved_type_args[0] if len(resolved_type_args) == 1 else resolved_type_args]

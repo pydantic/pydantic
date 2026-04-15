@@ -7,7 +7,6 @@ from __future__ import annotations as _annotations
 
 import dataclasses
 import keyword
-import sys
 import warnings
 import weakref
 from collections import OrderedDict, defaultdict, deque
@@ -17,11 +16,11 @@ from copy import deepcopy
 from functools import cached_property
 from inspect import Parameter
 from itertools import zip_longest
-from types import BuiltinFunctionType, CodeType, FunctionType, GeneratorType, LambdaType, ModuleType
-from typing import TYPE_CHECKING, Any, Generic, TypeVar, overload
+from types import BuiltinFunctionType, CodeType, FunctionType, GeneratorType, LambdaType, ModuleType, NoneType
+from typing import TYPE_CHECKING, Any, Generic, TypeAlias, TypeGuard, TypeVar, overload
 
 from pydantic_core import MISSING, PydanticUndefined
-from typing_extensions import TypeAlias, TypeGuard, deprecated
+from typing_extensions import deprecated
 
 from pydantic import PydanticDeprecatedSince211
 
@@ -29,9 +28,8 @@ from . import _repr, _typing_extra
 from ._import_utils import import_cached_base_model
 
 if TYPE_CHECKING:
-    # TODO remove type error comments when we drop support for Python 3.9
-    MappingIntStrAny: TypeAlias = Mapping[int, Any] | Mapping[str, Any]  # pyright: ignore[reportGeneralTypeIssues]
-    AbstractSetIntStr: TypeAlias = AbstractSet[int] | AbstractSet[str]  # pyright: ignore[reportGeneralTypeIssues]
+    MappingIntStrAny: TypeAlias = Mapping[int, Any] | Mapping[str, Any]
+    AbstractSetIntStr: TypeAlias = AbstractSet[int] | AbstractSet[str]
     from ..main import BaseModel
 
 
@@ -44,7 +42,7 @@ IMMUTABLE_NON_COLLECTIONS_TYPES: set[type[Any]] = {
     bool,
     bytes,
     type,
-    _typing_extra.NoneType,
+    NoneType,
     FunctionType,
     BuiltinFunctionType,
     LambdaType,
@@ -377,16 +375,12 @@ def get_first_not_none(a: Any, b: Any) -> Any:
     return a if a is not None else b
 
 
-@dataclasses.dataclass(frozen=True)
+@dataclasses.dataclass(frozen=True, slots=True)
 class SafeGetItemProxy:
     """Wrapper redirecting `__getitem__` to `get` with a sentinel value as default
 
     This makes is safe to use in `operator.itemgetter` when some keys may be missing
     """
-
-    # Define __slots__manually for performances
-    # @dataclasses.dataclass() only support slots=True in python>=3.10
-    __slots__ = ('wrapped',)
 
     wrapped: Mapping[str, Any]
 
@@ -430,15 +424,8 @@ class deprecated_instance_property(Generic[_ModelT, _RT]):
     def __get__(self, instance: _ModelT, objtype: type[_ModelT]) -> _RT: ...
     def __get__(self, instance: _ModelT | None, objtype: type[_ModelT]) -> _RT:
         if instance is not None:
-            # fmt: off
-            attr_name = (
-                self.fget.__name__
-                if sys.version_info >= (3, 10)
-                else self.fget.__func__.__name__  # pyright: ignore[reportFunctionMemberAccess]
-            )
-            # fmt: on
             warnings.warn(
-                f'Accessing the {attr_name!r} attribute on the instance is deprecated. '
+                f'Accessing the {self.fget.__name__!r} attribute on the instance is deprecated. '
                 'Instead, you should access this attribute from the model class.',
                 category=PydanticDeprecatedSince211,
                 stacklevel=2,

@@ -8,9 +8,9 @@ import operator
 import sys
 import textwrap
 import timeit
-from collections.abc import Iterable, Sized
+from collections.abc import Callable, Iterable, Sized
 from importlib import metadata
-from typing import TYPE_CHECKING, Any, Callable, Generic, TypeVar
+from typing import TYPE_CHECKING, Any, Generic, TypeVar
 
 # Do not import additional dependencies at top-level
 if TYPE_CHECKING:

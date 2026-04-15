@@ -44,7 +44,7 @@ Here's an example of generating JSON schema from a `BaseModel`:
 ```python {output="json"}
 import json
 from enum import Enum
-from typing import Annotated, Union
+from typing import Annotated
 
 from pydantic import BaseModel, Field
 from pydantic.config import ConfigDict
@@ -52,7 +52,7 @@ from pydantic.config import ConfigDict
 
 class FooBar(BaseModel):
     count: int
-    size: Union[float, None] = None
+    size: float | None = None
 
 
 class Gender(str, Enum):
@@ -70,7 +70,7 @@ class MainModel(BaseModel):
     model_config = ConfigDict(title='Main')
 
     foo_bar: FooBar
-    gender: Annotated[Union[Gender, None], Field(alias='Gender')] = None
+    gender: Annotated[Gender | None, Field(alias='Gender')] = None
     snap: int = Field(
         default=42,
         title='The Snap',
@@ -177,7 +177,6 @@ and [`TypeAdapter`s][pydantic.type_adapter.TypeAdapter], as shown in this exampl
 
 ```python {output="json"}
 import json
-from typing import Union
 
 from pydantic import BaseModel, TypeAdapter
 
@@ -192,7 +191,7 @@ class Dog(BaseModel):
     breed: str
 
 
-ta = TypeAdapter(Union[Cat, Dog])
+ta = TypeAdapter(Cat | Dog)
 ta_schema = ta.json_schema()
 print(json.dumps(ta_schema, indent=2))
 """
@@ -549,9 +548,7 @@ for more details.
 
 ```python
 import json
-from typing import Annotated
-
-from typing_extensions import TypeAlias
+from typing import Annotated, TypeAlias
 
 from pydantic import Field, TypeAdapter
 
@@ -1199,7 +1196,7 @@ print(MyModel.model_json_schema(schema_generator=MyGenerateJsonSchema))
 Below is an approach you can use to exclude any fields from the schema that don't have valid json schemas:
 
 ```python
-from typing import Callable
+from collections.abc import Callable
 
 from pydantic_core import PydanticOmit, core_schema
 
@@ -1250,7 +1247,6 @@ uses a no-op `sort` method to disable sorting entirely, which is reflected in th
 
 ```python
 import json
-from typing import Optional
 
 from pydantic import BaseModel, Field
 from pydantic.json_schema import GenerateJsonSchema, JsonSchemaValue
@@ -1258,7 +1254,7 @@ from pydantic.json_schema import GenerateJsonSchema, JsonSchemaValue
 
 class MyGenerateJsonSchema(GenerateJsonSchema):
     def sort(
-        self, value: JsonSchemaValue, parent_key: Optional[str] = None
+        self, value: JsonSchemaValue, parent_key: str | None = None
     ) -> JsonSchemaValue:
         """No-op, we don't want to sort schema values at all."""
         return value

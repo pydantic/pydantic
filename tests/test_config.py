@@ -6,7 +6,7 @@ from contextlib import AbstractContextManager
 from contextlib import nullcontext as does_not_raise
 from decimal import Decimal
 from inspect import signature
-from typing import Annotated, Any, NamedTuple, Optional, Union
+from typing import Annotated, Any, NamedTuple, get_type_hints
 
 import pytest
 from dirty_equals import HasRepr, IsPartialDict
@@ -29,7 +29,6 @@ from pydantic import (
 from pydantic._internal._config import ConfigWrapper, config_defaults
 from pydantic._internal._generate_schema import GenerateSchema
 from pydantic._internal._mock_val_ser import MockValSer
-from pydantic._internal._typing_extra import get_type_hints
 from pydantic.config import ConfigDict, JsonValue
 from pydantic.dataclasses import dataclass as pydantic_dataclass
 from pydantic.dataclasses import rebuild_dataclass
@@ -57,7 +56,7 @@ def model_with_strict_config():
     return ModelWithStrictConfig
 
 
-def _equals(a: Union[str, Iterable[str]], b: Union[str, Iterable[str]]) -> bool:
+def _equals(a: str | Iterable[str], b: str | Iterable[str]) -> bool:
     """
     Compare strings with spaces removed
     """
@@ -701,7 +700,7 @@ def test_json_encoders_type_adapter() -> None:
     ta = TypeAdapter(Decimal, config=config)
     assert json.loads(ta.dump_json(Decimal('1.1'))) == '2.2'
 
-    ta = TypeAdapter(Union[Decimal, int], config=config)
+    ta = TypeAdapter(Decimal | int, config=config)
     assert json.loads(ta.dump_json(Decimal('1.1'))) == '2.2'
     assert json.loads(ta.dump_json(1)) == '2'
 
@@ -892,7 +891,7 @@ def test_partial_creation_with_defer_build():
         for name, field in model.model_fields.items():
             if field.is_required() and name in optionals:
                 assert field.annotation is not None
-                override_fields[name] = (Optional[field.annotation], FieldInfo.merge_field_infos(field, default=None))
+                override_fields[name] = (field.annotation | None, FieldInfo.merge_field_infos(field, default=None))
 
         return create_model(f'Partial{model.__name__}', __base__=model, **override_fields)
 

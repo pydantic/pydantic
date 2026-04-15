@@ -799,14 +799,12 @@ The strict constraint must be applied to the parameter type for this to work.
 <h4>Example</h4>
 
 ```python
-from typing import Optional
-
 from pydantic import BaseModel, Field
 
 
 class Model(BaseModel):
-    simple_list: Optional[list[object]] = None
-    list_of_ints: Optional[list[int]] = Field(default=None, strict=True)
+    simple_list: list[object] | None = None
+    list_of_ints: list[int] | None = Field(default=None, strict=True)
 
 
 print(Model(simple_list=('1', '2', '3')).simple_list)
@@ -855,14 +853,12 @@ The strict constraint must be applied to the parameter types for this to work.
 <h4>Example</h4>
 
 ```python
-from typing import Optional
-
 from pydantic import BaseModel
 
 
 class Model(BaseModel):
-    simple_tuple: Optional[tuple] = None
-    tuple_of_different_types: Optional[tuple[int, float, bool]] = None
+    simple_tuple: tuple | None = None
+    tuple_of_different_types: tuple[int, float, bool] | None = None
 
 
 print(Model(simple_tuple=[1, 2, 3, 4]).simple_tuple)
@@ -950,14 +946,12 @@ they are serialized as arrays.
 <h4>Example</h4>
 
 ```python
-from typing import Optional
-
 from pydantic import BaseModel
 
 
 class Model(BaseModel):
-    simple_set: Optional[set] = None
-    set_of_ints: Optional[frozenset[int]] = None
+    simple_set: set | None = None
+    set_of_ints: frozenset[int] | None = None
 
 
 print(Model(simple_set=['1', '2', '3']).simple_set)
@@ -1243,7 +1237,7 @@ Pydantic only validates that the input is a [callable][] (using the [`callable()
 It does *not* validate the number of parameters or their type, nor the type of the return value.
 
 ```python
-from typing import Callable
+from collections.abc import Callable
 
 from pydantic import BaseModel
 

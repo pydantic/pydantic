@@ -1,9 +1,8 @@
 import datetime as dt
-import sys
-from collections.abc import Iterator
+from collections.abc import Callable, Iterator
 from dataclasses import dataclass
 from decimal import Decimal
-from typing import Annotated, Any, Callable, Generic, Optional, TypeVar
+from typing import Annotated, Any, Generic, TypeVar
 
 import pytest
 import pytz
@@ -168,7 +167,6 @@ def test_config_field_info():
     }
 
 
-@pytest.mark.skipif(sys.version_info < (3, 10), reason='repr different on older versions')
 def test_annotated_alias() -> None:
     # https://github.com/pydantic/pydantic/issues/2971
 
@@ -499,7 +497,7 @@ def test_tzinfo_validator_example_pattern() -> None:
 
     @dataclass(frozen=True)
     class MyDatetimeValidator:
-        tz_constraint: Optional[str] = None
+        tz_constraint: str | None = None
 
         def tz_constraint_validator(
             self,

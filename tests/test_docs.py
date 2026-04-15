@@ -72,7 +72,7 @@ class MockedDatetime(datetime):
 
 skip_reason = skip_docs_tests()
 LINE_LENGTH = 80
-TARGET_VERSION = 'py39'
+TARGET_VERSION = 'py310'
 
 
 def print_callback(print_statement: str) -> str:

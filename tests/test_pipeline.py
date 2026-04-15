@@ -3,8 +3,9 @@
 from __future__ import annotations
 
 import datetime
+from collections.abc import Callable
 from decimal import Decimal
-from typing import Annotated, Any, Callable, Union
+from typing import Annotated, Any
 
 import pytest
 import pytz
@@ -310,7 +311,7 @@ def test_predicates() -> None:
     'model, expected_val_schema, expected_ser_schema',
     [
         (
-            Annotated[Union[int, str], validate_as(...) | validate_as(str)],
+            Annotated[int | str, validate_as(...) | validate_as(str)],
             {'anyOf': [{'type': 'integer'}, {'type': 'string'}]},
             {'anyOf': [{'type': 'integer'}, {'type': 'string'}]},
         ),

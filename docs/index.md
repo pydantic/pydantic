@@ -12,7 +12,7 @@
 
 Pydantic is the most widely used data validation library for Python.
 
-Fast and extensible, Pydantic plays nicely with your linters/IDE/brain. Define how data should be in pure, canonical Python 3.9+; validate it with Pydantic.
+Fast and extensible, Pydantic plays nicely with your linters/IDE/brain. Define how data should be in pure, canonical Python 3.10+; validate it with Pydantic.
 
 !!! logfire "Monitor Pydantic with Pydantic Logfire :fire:"
     **[Pydantic Logfire](https://pydantic.dev/logfire)** is a production-grade observability platform for AI and general applications. See LLM interactions, agent behavior, API requests, and database queries in one unified trace. With SDKs for Python, JavaScript/TypeScript, and Rust, Logfire works with all OpenTelemetry-compatible languages.
@@ -94,7 +94,7 @@ Fast and extensible, Pydantic plays nicely with your linters/IDE/brain. Define h
 
 To see Pydantic at work, let's start with a simple example, creating a custom class that inherits from `BaseModel`:
 
-```python {upgrade="skip" title="Validation Successful" requires="3.10"}
+```python {upgrade="skip" title="Validation Successful"}
 from datetime import datetime
 
 from pydantic import BaseModel, PositiveInt

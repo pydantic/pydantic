@@ -448,9 +448,9 @@ def test_typed_dict_inheritance_schema(TypedDict, req_no_req):
 
 def test_typeddict_annotated_nonoptional_schema(TypedDict):
     class DataTD(TypedDict):
-        a: Optional[int]
-        b: Annotated[Optional[int], Field(42)]
-        c: Annotated[Optional[int], Field(description='Test')]
+        a: int | None
+        b: Annotated[int | None, Field(42)]
+        c: Annotated[int | None, Field(description='Test')]
 
     class Model(BaseModel):
         data_td: DataTD
@@ -489,9 +489,9 @@ def test_typeddict_annotated_nonoptional_schema(TypedDict):
 )
 def test_typeddict_annotated(TypedDict, input_value, expected):
     class DataTD(TypedDict):
-        a: Optional[int]
-        b: Annotated[Optional[int], Field(42)]
-        c: Annotated[Optional[int], Field(description='Test', lt=4)]
+        a: int | None
+        b: Annotated[int | None, Field(42)]
+        c: Annotated[int | None, Field(description='Test', lt=4)]
 
     class Model(BaseModel):
         d: DataTD

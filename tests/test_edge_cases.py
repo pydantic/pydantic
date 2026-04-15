@@ -4,13 +4,12 @@ import re
 import sys
 import typing
 from abc import ABC, abstractmethod
-from collections.abc import Hashable, Sequence
+from collections.abc import Callable, Hashable, Sequence
 from decimal import Decimal
 from enum import Enum, auto
 from typing import (
     Annotated,
     Any,
-    Callable,
     ForwardRef,
     Generic,
     Literal,
@@ -29,7 +28,7 @@ from pydantic_core import (
     PydanticUndefined,
     core_schema,
 )
-from typing_extensions import Self, TypeAliasType, TypedDict, get_args
+from typing_extensions import Self, TypeAliasType, TypedDict, get_args  # noqa: UP035 (for `get_args`)
 
 from pydantic import (
     AfterValidator,
@@ -61,7 +60,7 @@ from pydantic.functional_serializers import (
 
 def test_str_bytes():
     class Model(BaseModel):
-        v: Union[str, bytes]
+        v: str | bytes
 
     m = Model(v='s')
     assert m.v == 's'
@@ -81,7 +80,7 @@ def test_str_bytes():
 
 def test_str_bytes_none():
     class Model(BaseModel):
-        v: Union[None, str, bytes] = ...
+        v: None | str | bytes = ...
 
     m = Model(v='s')
     assert m.v == 's'
@@ -95,7 +94,7 @@ def test_str_bytes_none():
 
 def test_union_int_str():
     class Model(BaseModel):
-        v: Union[int, str] = ...
+        v: int | str = ...
 
     m = Model(v=123)
     assert m.v == 123
@@ -125,7 +124,7 @@ def test_union_int_str():
 
 def test_union_int_any():
     class Model(BaseModel):
-        v: Union[int, Any]
+        v: int | Any
 
     m = Model(v=123)
     assert m.v == 123
@@ -504,7 +503,7 @@ def test_recursive_list_error():
 
 def test_list_unions():
     class Model(BaseModel):
-        v: list[Union[int, str]]
+        v: list[int | str]
 
     assert Model(v=[123, '456', 'foobar']).v == [123, '456', 'foobar']
 
@@ -526,10 +525,10 @@ def test_list_unions():
 
 def test_recursive_lists():
     class Model(BaseModel):
-        v: list[list[Union[int, float]]] = ...
+        v: list[list[int | float]] = ...
 
     assert Model(v=[[1, 2], [3, '4', '4.1']]).v == [[1, 2], [3, 4, 4.1]]
-    assert Model.model_fields['v'].annotation == list[list[Union[int, float]]]
+    assert Model.model_fields['v'].annotation == list[list[int | float]]
     assert Model.model_fields['v'].is_required()
 
 
@@ -1196,7 +1195,7 @@ def test_string_none():
 
 def test_optional_required():
     class Model(BaseModel):
-        bar: Optional[int]
+        bar: int | None
 
     assert Model(bar=123).model_dump() == {'bar': 123}
     assert Model(bar=None).model_dump() == {'bar': None}
@@ -1224,7 +1223,7 @@ def test_unable_to_infer():
 
 def test_multiple_errors():
     class Model(BaseModel):
-        a: Union[None, int, float, Decimal]
+        a: None | int | float | Decimal
 
     with pytest.raises(ValidationError) as exc_info:
         Model(a='foobar')
@@ -1410,8 +1409,8 @@ def test_type_on_annotation():
         c: type[FooBar]
         d: type[FooBar] = FooBar
         e: Sequence[type[FooBar]] = [FooBar]
-        f: Union[type[FooBar], Sequence[type[FooBar]]] = FooBar
-        g: Union[type[FooBar], Sequence[type[FooBar]]] = [FooBar]
+        f: type[FooBar] | Sequence[type[FooBar]] = FooBar
+        g: type[FooBar] | Sequence[type[FooBar]] = [FooBar]
 
         model_config = {'arbitrary_types_allowed': True}
 
@@ -1420,8 +1419,8 @@ def test_type_on_annotation():
 
 def test_type_union():
     class Model(BaseModel):
-        a: type[Union[str, bytes]]
-        b: type[Union[Any, str]]
+        a: type[str | bytes]
+        b: type[Any | str]
 
     m = Model(a=bytes, b=int)
     assert m.model_dump() == {'a': bytes, 'b': int}
@@ -1549,9 +1548,9 @@ def test_type_assign():
 
 def test_optional_subfields():
     class Model(BaseModel):
-        a: Optional[int]
+        a: int | None
 
-    assert Model.model_fields['a'].annotation == Optional[int]
+    assert Model.model_fields['a'].annotation == int | None
 
     with pytest.raises(ValidationError) as exc_info:
         Model(a='foobar')
@@ -1576,14 +1575,14 @@ def test_optional_subfields():
 
 def test_validated_optional_subfields():
     class Model(BaseModel):
-        a: Optional[int]
+        a: int | None
 
         @field_validator('a')
         @classmethod
         def check_a(cls, v):
             return v
 
-    assert Model.model_fields['a'].annotation == Optional[int]
+    assert Model.model_fields['a'].annotation == int | None
 
     with pytest.raises(ValidationError) as exc_info:
         Model(a='foobar')
@@ -1608,7 +1607,7 @@ def test_validated_optional_subfields():
 
 def test_optional_field_constraints():
     class MyModel(BaseModel):
-        my_int: Optional[int] = Field(ge=3)
+        my_int: int | None = Field(ge=3)
 
     with pytest.raises(ValidationError) as exc_info:
         MyModel(my_int=2)
@@ -1645,23 +1644,19 @@ class DisplayGen(Generic[T1, T2]):
     'type_,expected',
     [
         (int, 'int'),
-        (Optional[int], 'Union[int, NoneType]'),
-        (Union[None, int, str], 'Union[NoneType, int, str]'),
-        (Union[int, str, bytes], 'Union[int, str, bytes]'),
+        (Optional[int], 'Union[int, NoneType]'),  # noqa: UP045
+        (int | None, 'Union[int, NoneType]'),
+        (Union[None, int, str], 'Union[NoneType, int, str]'),  # noqa: UP007
+        (Union[int, str, bytes], 'Union[int, str, bytes]'),  # noqa: UP007
         (list[int], 'list[int]'),
         (tuple[int, str, bytes], 'tuple[int, str, bytes]'),
-        (Union[list[int], set[bytes]], 'Union[list[int], set[bytes]]'),
+        (Union[list[int], set[bytes]], 'Union[list[int], set[bytes]]'),  # noqa: UP007
         (list[tuple[int, int]], 'list[tuple[int, int]]'),
         (dict[int, str], 'dict[int, str]'),
         (frozenset[int], 'frozenset[int]'),
         (tuple[int, ...], 'tuple[int, ...]'),
-        (Optional[list[int]], 'Union[list[int], NoneType]'),
+        (Optional[list[int]], 'Union[list[int], NoneType]'),  # noqa: UP045
         (dict, 'dict'),
-        pytest.param(
-            DisplayGen[bool, str],
-            'tests.test_edge_cases.DisplayGen[bool, str]',
-            marks=pytest.mark.skipif(sys.version_info[:2] > (3, 9), reason='difference in __name__ between versions'),
-        ),
     ],
 )
 def test_field_type_display(type_, expected):
@@ -1798,7 +1793,7 @@ def test_modify_fields():
 
 def test_exclude_none():
     class MyModel(BaseModel):
-        a: Optional[int] = None
+        a: int | None = None
         b: int = 2
 
     m = MyModel(a=5)
@@ -1811,14 +1806,14 @@ def test_exclude_none():
 
 def test_exclude_none_recursive():
     class ModelA(BaseModel):
-        a: Optional[int] = None
+        a: int | None = None
         b: int = 1
 
     class ModelB(BaseModel):
         c: int
         d: int = 2
         e: ModelA
-        f: Optional[str] = None
+        f: str | None = None
 
     m = ModelB(c=5, e={'a': 0})
     assert m.model_dump() == {'c': 5, 'd': 2, 'e': {'a': 0, 'b': 1}, 'f': None}
@@ -1835,7 +1830,7 @@ def test_exclude_none_with_extra():
     class MyModel(BaseModel):
         model_config = ConfigDict(extra='allow')
         a: str = 'default'
-        b: Optional[str] = None
+        b: str | None = None
 
     m = MyModel(a='a', c='c')
 
@@ -1886,7 +1881,7 @@ def test_optional_validator():
     val_calls = []
 
     class Model(BaseModel):
-        something: Optional[str]
+        something: str | None
 
         @field_validator('something')
         @classmethod
@@ -1907,8 +1902,8 @@ def test_optional_validator():
 
 def test_required_optional():
     class Model(BaseModel):
-        nullable1: Optional[int] = ...
-        nullable2: Optional[int] = Field(...)
+        nullable1: int | None = ...
+        nullable2: int | None = Field(...)
 
     with pytest.raises(ValidationError) as exc_info:
         Model()
@@ -1963,10 +1958,10 @@ def test_required_any():
     class Model(BaseModel):
         optional1: Any
         optional2: Any = None
-        optional3: Optional[Any] = None
+        optional3: Any | None = None
         nullable1: Any = ...
         nullable2: Any = Field(...)
-        nullable3: Optional[Any]
+        nullable3: Any | None
 
     with pytest.raises(ValidationError) as exc_info:
         Model()
@@ -2732,8 +2727,8 @@ def test_multiple_enums():
         a = auto()
 
     class MyModel(TypedDict):
-        a: Optional[MyEnum]
-        b: Optional[MyEnum]
+        a: MyEnum | None
+        b: MyEnum | None
 
     ta = TypeAdapter(MyModel)
     assert ta.validate_json('{"a": 1, "b": 1}') == {'a': MyEnum.a, 'b': MyEnum.a}
@@ -2752,8 +2747,8 @@ def test_multiple_enums():
 )
 def test_union_literal_with_other_type(literal_type, other_type, data, json_value, data_reversed, json_value_reversed):
     class Model(BaseModel):
-        value: Union[literal_type, other_type]
-        value_types_reversed: Union[other_type, literal_type]
+        value: literal_type | other_type
+        value_types_reversed: other_type | literal_type
 
     m = Model(value=data, value_types_reversed=data)
     assert m.model_dump() == {'value': data, 'value_types_reversed': data_reversed}
@@ -2841,7 +2836,7 @@ def test_recursive_root_models_in_discriminated_union():
 
     class Model2(BaseModel):
         kind: Literal['2'] = '2'
-        one: Optional[Model1]
+        one: Model1 | None
 
     class Root1(RootModel[Model1]):
         @property
@@ -2856,8 +2851,8 @@ def test_recursive_root_models_in_discriminated_union():
             return self.root.kind
 
     class Outer(BaseModel):
-        a: Annotated[Union[Root1, Root2], Field(discriminator='kind')]
-        b: Annotated[Union[Root1, Root2], Field(discriminator='kind')]
+        a: Annotated[Root1 | Root2, Field(discriminator='kind')]
+        b: Annotated[Root1 | Root2, Field(discriminator='kind')]
 
     validated = Outer.model_validate({'a': {'kind': '1', 'two': None}, 'b': {'kind': '2', 'one': None}})
     assert validated == Outer(a=Root1(root=Model1(two=None)), b=Root2(root=Model2(one=None)))
@@ -3076,7 +3071,7 @@ def test_repeated_custom_type() -> None:
             return core_schema.no_info_before_validator_function(cls._validate, handler(source_type))
 
         @classmethod
-        def _validate(cls, v: Any) -> Union[dict[str, Any], Self]:
+        def _validate(cls, v: Any) -> dict[str, Any] | Self:
             if isinstance(v, (str, float, int)):
                 return cls(value=v)
             if isinstance(v, Numeric):

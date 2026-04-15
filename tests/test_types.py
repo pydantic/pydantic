@@ -12,7 +12,7 @@ import uuid
 import warnings
 from abc import ABC, abstractmethod
 from collections import Counter, OrderedDict, UserDict, defaultdict, deque
-from collections.abc import Iterable, Mapping, MutableMapping, Sequence
+from collections.abc import Callable, Iterable, Mapping, MutableMapping, Sequence
 from dataclasses import dataclass
 from datetime import date, datetime, time, timedelta, timezone
 from decimal import Decimal
@@ -24,7 +24,6 @@ from re import Pattern
 from typing import (
     Annotated,
     Any,
-    Callable,
     Literal,
     NamedTuple,
     NewType,
@@ -37,6 +36,7 @@ from uuid import UUID
 import annotated_types
 import dirty_equals
 import pytest
+import typing_extensions
 from dirty_equals import HasRepr, IsFloatNan, IsOneOf, IsStr
 from pydantic_core import (
     CoreSchema,
@@ -44,7 +44,7 @@ from pydantic_core import (
     SchemaError,
     core_schema,
 )
-from typing_extensions import NotRequired, TypedDict, get_args
+from typing_extensions import NotRequired, TypedDict, get_args  # noqa: UP035 (for `get_args`)
 
 from pydantic import (
     UUID1,
@@ -140,6 +140,13 @@ def con_bytes_model_fixture():
         v: conbytes(max_length=10) = b'foobar'
 
     return ConBytesModel
+
+
+def test_optional():
+    ta = TypeAdapter(Optional[int])  # noqa: UP045
+
+    assert ta.validate_python(None) is None
+    assert ta.validate_python(1) == 1
 
 
 def test_constrained_bytes_good(ConBytesModel):
@@ -285,8 +292,8 @@ def test_constrained_list_too_short():
 
 def test_constrained_list_optional():
     class Model(BaseModel):
-        req: Optional[conlist(str, min_length=1)]
-        opt: Optional[conlist(str, min_length=1)] = None
+        req: conlist(str, min_length=1) | None
+        opt: conlist(str, min_length=1) | None = None
 
     assert Model(req=None).model_dump() == {'req': None, 'opt': None}
     assert Model(req=None, opt=None).model_dump() == {'req': None, 'opt': None}
@@ -500,8 +507,8 @@ def test_constrained_set_too_short():
 
 def test_constrained_set_optional():
     class Model(BaseModel):
-        req: Optional[conset(str, min_length=1)]
-        opt: Optional[conset(str, min_length=1)] = None
+        req: conset(str, min_length=1) | None
+        opt: conset(str, min_length=1) | None = None
 
     assert Model(req=None).model_dump() == {'req': None, 'opt': None}
     assert Model(req=None, opt=None).model_dump() == {'req': None, 'opt': None}
@@ -645,7 +652,7 @@ def test_conset():
 
 def test_conset_not_required():
     class Model(BaseModel):
-        foo: Optional[set[int]] = None
+        foo: set[int] | None = None
 
     assert Model(foo=None).foo is None
     assert Model().foo is None
@@ -697,7 +704,7 @@ def test_confrozenset():
 
 def test_confrozenset_not_required():
     class Model(BaseModel):
-        foo: Optional[frozenset[int]] = None
+        foo: frozenset[int] | None = None
 
     assert Model(foo=None).foo is None
     assert Model().foo is None
@@ -705,8 +712,8 @@ def test_confrozenset_not_required():
 
 def test_constrained_frozenset_optional():
     class Model(BaseModel):
-        req: Optional[confrozenset(str, min_length=1)]
-        opt: Optional[confrozenset(str, min_length=1)] = None
+        req: confrozenset(str, min_length=1) | None
+        opt: confrozenset(str, min_length=1) | None = None
 
     assert Model(req=None).model_dump() == {'req': None, 'opt': None}
     assert Model(req=None, opt=None).model_dump() == {'req': None, 'opt': None}
@@ -3445,7 +3452,7 @@ def test_decimal_validation(mode, type_args, value, result):
     elif mode == 'optional':
 
         class Model(BaseModel):
-            foo: Optional[Decimal] = Field(**type_args)
+            foo: Decimal | None = Field(**type_args)
 
     else:
 
@@ -3787,8 +3794,8 @@ def test_new_path_validation_success(value, result):
 
 def test_path_union_ser() -> None:
     class Model(BaseModel):
-        a: Union[Path, list[Path]]
-        b: Union[list[Path], Path]
+        a: Path | list[Path]
+        b: list[Path] | Path
 
     model = Model(a=Path('potato'), b=Path('potato'))
     assert model.model_dump() == {'a': Path('potato'), 'b': Path('potato')}
@@ -4160,7 +4167,7 @@ def test_json_before_validator():
 
 def test_json_optional_simple():
     class JsonOptionalModel(BaseModel):
-        json_obj: Optional[Json]
+        json_obj: Json | None
 
     assert JsonOptionalModel(json_obj=None).model_dump() == {'json_obj': None}
     assert JsonOptionalModel(json_obj='["x", "y", "z"]').model_dump() == {'json_obj': ['x', 'y', 'z']}
@@ -4168,7 +4175,7 @@ def test_json_optional_simple():
 
 def test_json_optional_complex():
     class JsonOptionalModel(BaseModel):
-        json_obj: Optional[Json[list[int]]]
+        json_obj: Json[list[int]] | None
 
     JsonOptionalModel(json_obj=None)
 
@@ -4604,7 +4611,7 @@ def test_secretdate_idempotent():
 
 def test_secret_union_serializable() -> None:
     class Base(BaseModel):
-        x: Union[Secret[int], Secret[str]]
+        x: Secret[int] | Secret[str]
 
     model = Base(x=1)
     assert model.model_dump() == {'x': Secret[int](1)}
@@ -4664,7 +4671,7 @@ def test_is_hashable(pydantic_type):
 
 def test_model_contain_hashable_type():
     class MyModel(BaseModel):
-        v: Union[str, StrictStr]
+        v: str | StrictStr
 
     assert MyModel(v='test').v == 'test'
 
@@ -5381,7 +5388,7 @@ def test_none_literal():
 
 def test_default_union_types():
     class DefaultModel(BaseModel):
-        v: Union[int, bool, str]
+        v: int | bool | str
 
     # do it this way since `1 == True`
     assert repr(DefaultModel(v=True).v) == 'True'
@@ -5398,7 +5405,7 @@ def test_default_union_types():
 
 def test_default_union_types_left_to_right():
     class DefaultModel(BaseModel):
-        v: Annotated[Union[int, bool, str], Field(union_mode='left_to_right')]
+        v: Annotated[int | bool | str, Field(union_mode='left_to_right')]
 
     print(DefaultModel.__pydantic_core_schema__)
 
@@ -5421,17 +5428,17 @@ def test_union_enum_int_left_to_right():
         ONE = 1
 
     # int will win over enum in this case
-    assert TypeAdapter(Union[BinaryEnum, int]).validate_python(0) is not BinaryEnum.ZERO
+    assert TypeAdapter(BinaryEnum | int).validate_python(0) is not BinaryEnum.ZERO
 
     # in left to right mode, enum will validate successfully and take precedence
     assert (
-        TypeAdapter(Annotated[Union[BinaryEnum, int], Field(union_mode='left_to_right')]).validate_python(0)
+        TypeAdapter(Annotated[BinaryEnum | int, Field(union_mode='left_to_right')]).validate_python(0)
         is BinaryEnum.ZERO
     )
 
 
 def test_union_uuid_str_left_to_right():
-    IdOrSlug = Union[UUID, str]
+    IdOrSlug = UUID | str
 
     # in smart mode JSON and python are currently validated differently in this
     # case, because in Python this is a str but in JSON a str is also a UUID
@@ -5443,7 +5450,7 @@ def test_union_uuid_str_left_to_right():
         == 'f4fe10b4-e0c8-4232-ba26-4acd491c2414'
     )
 
-    IdOrSlugLTR = Annotated[Union[UUID, str], Field(union_mode='left_to_right')]
+    IdOrSlugLTR = Annotated[UUID | str, Field(union_mode='left_to_right')]
 
     # in left to right mode both JSON and python are validated as UUID
     assert TypeAdapter(IdOrSlugLTR).validate_json('"f4fe10b4-e0c8-4232-ba26-4acd491c2414"') == UUID(
@@ -5462,18 +5469,18 @@ def test_default_union_class():
         x: str
 
     class Model(BaseModel):
-        y: Union[A, B]
+        y: A | B
 
     assert isinstance(Model(y=A(x='a')).y, A)
     assert isinstance(Model(y=B(x='b')).y, B)
 
 
 @pytest.mark.parametrize('max_length', [10, None])
-def test_union_subclass(max_length: Union[int, None]):
+def test_union_subclass(max_length: int | None):
     class MyStr(str): ...
 
     class Model(BaseModel):
-        x: Union[int, Annotated[str, Field(max_length=max_length)]]
+        x: int | Annotated[str, Field(max_length=max_length)]
 
     v = Model(x=MyStr('1')).x
     assert type(v) is str
@@ -5482,7 +5489,7 @@ def test_union_subclass(max_length: Union[int, None]):
 
 def test_union_compound_types():
     class Model(BaseModel):
-        values: Union[dict[str, str], list[str], dict[str, list[str]]]
+        values: dict[str, str] | list[str] | dict[str, list[str]]
 
     assert Model(values={'L': '1'}).model_dump() == {'values': {'L': '1'}}
     assert Model(values=['L1']).model_dump() == {'values': ['L1']}
@@ -5516,7 +5523,7 @@ def test_union_compound_types():
 
 def test_smart_union_compounded_types_edge_case():
     class Model(BaseModel):
-        x: Union[list[str], list[int]]
+        x: list[str] | list[int]
 
     assert Model(x=[1, 2]).x == [1, 2]
     assert Model(x=['1', '2']).x == ['1', '2']
@@ -5531,7 +5538,7 @@ def test_union_typeddict():
         bar: str
 
     class M(BaseModel):
-        d: Union[Dict2, Dict1]
+        d: Dict2 | Dict1
 
     assert M(d=dict(foo='baz')).d == {'foo': 'baz'}
 
@@ -5586,7 +5593,7 @@ def test_custom_generic_containers():
 def test_base64(field_type, input_data, expected_value, serialized_data):
     class Model(BaseModel):
         base64_value: field_type
-        base64_value_or_none: Optional[field_type] = None
+        base64_value_or_none: field_type | None = None
 
     m = Model(base64_value=input_data)
     assert m.base64_value == expected_value
@@ -5679,7 +5686,7 @@ def test_base64_invalid(field_type, input_data):
 def test_base64url(field_type, input_data, expected_value, serialized_data):
     class Model(BaseModel):
         base64url_value: field_type
-        base64url_value_or_none: Optional[field_type] = None
+        base64url_value_or_none: field_type | None = None
 
     m = Model(base64url_value=input_data)
     assert m.base64url_value == expected_value
@@ -5990,7 +5997,7 @@ def test_handle_3rd_party_custom_type_reusing_known_metadata() -> None:
 def test_skip_validation(optional):
     type_hint = SkipValidation[int]
     if optional:
-        type_hint = Optional[type_hint]
+        type_hint = type_hint | None
 
     @validate_call
     def my_function(y: type_hint):
@@ -6069,7 +6076,7 @@ def test_transform_schema():
     ValidateStrAsInt = Annotated[str, GetPydanticSchema(lambda _s, h: core_schema.int_schema())]
 
     class Model(BaseModel):
-        x: Optional[ValidateStrAsInt]
+        x: ValidateStrAsInt | None
 
     assert Model(x=None).x is None
     assert Model(x='1').x == 1
@@ -6215,20 +6222,11 @@ def test_iterable_arbitrary_type():
             x: CustomIterable
 
 
-def test_typing_extension_literal_field():
-    from typing_extensions import Literal
+@pytest.mark.parametrize('typing_literal', [typing.Literal, typing_extensions.Literal])
+def test_literal_field(typing_literal):
 
     class Model(BaseModel):
-        foo: Literal['foo']
-
-    assert Model(foo='foo').foo == 'foo'
-
-
-def test_typing_literal_field():
-    from typing import Literal
-
-    class Model(BaseModel):
-        foo: Literal['foo']
+        foo: typing_literal['foo']  # noqa: F821
 
     assert Model(foo='foo').foo == 'foo'
 
@@ -6275,7 +6273,7 @@ def test_instanceof_invalid_core_schema():
 
     class MyModel(BaseModel):
         a: InstanceOf[MyClass]
-        b: Optional[InstanceOf[MyClass]]
+        b: InstanceOf[MyClass] | None
         c: InstanceOf[ClassWithInvalidAnnotations]
 
     MyModel(a=MyClass(), b=None, c=ClassWithInvalidAnnotations())
@@ -6696,7 +6694,7 @@ def test_union_tags_in_errors():
     DoubledList = Annotated[list[int], AfterValidator(lambda x: x * 2)]
     StringsMap = dict[str, str]
 
-    adapter = TypeAdapter(Union[DoubledList, StringsMap])
+    adapter = TypeAdapter(DoubledList | StringsMap)
 
     with pytest.raises(ValidationError) as exc_info:
         adapter.validate_python(['a'])
@@ -6719,9 +6717,7 @@ def test_union_tags_in_errors():
         },
     ]
 
-    tag_adapter = TypeAdapter(
-        Union[Annotated[DoubledList, Tag('DoubledList')], Annotated[StringsMap, Tag('StringsMap')]]
-    )
+    tag_adapter = TypeAdapter(Annotated[DoubledList, Tag('DoubledList')] | Annotated[StringsMap, Tag('StringsMap')])
     with pytest.raises(ValidationError) as exc_info:
         tag_adapter.validate_python(['a'])
 
@@ -6788,7 +6784,7 @@ def test_json_value_with_subclassed_types():
 def test_json_value_roundtrip() -> None:
     # see https://github.com/pydantic/pydantic/issues/8175
     class MyModel(BaseModel):
-        val: Union[str, JsonValue]
+        val: str | JsonValue
 
     round_trip_value = json.loads(MyModel(val=True).model_dump_json())['val']
     assert round_trip_value is True, round_trip_value
@@ -7080,11 +7076,11 @@ def test_mapping_parameterized() -> None:
 
 
 def test_ser_ip_with_union() -> None:
-    bool_first = TypeAdapter(Union[bool, ipaddress.IPv4Address])
+    bool_first = TypeAdapter(Union[bool, ipaddress.IPv4Address])  # noqa: UP007
     assert bool_first.dump_python(True, mode='json') is True
     assert bool_first.dump_json(True) == b'true'
 
-    ip_first = TypeAdapter(Union[ipaddress.IPv4Address, bool])
+    ip_first = TypeAdapter(Union[ipaddress.IPv4Address, bool])  # noqa: UP007
     assert ip_first.dump_python(True, mode='json') is True
     assert ip_first.dump_json(True) == b'true'
 
@@ -7226,7 +7222,7 @@ def test_union_respects_local_strict() -> None:
         model_config = ConfigDict(strict=True)
 
     class Model(MyBaseModel):
-        a: Union[int, Annotated[tuple[int, int], Strict(False)]] = Field(default=(1, 2))
+        a: int | Annotated[tuple[int, int], Strict(False)] = Field(default=(1, 2))
 
     m = Model(a=[1, 2])
     assert m.a == (1, 2)
@@ -7254,7 +7250,7 @@ def test_union_abc() -> None:
             print('Doing something else in A2')
 
     class X(BaseModel):
-        x: Union[ABC_1, ABC_2]
+        x: ABC_1 | ABC_2
 
     a1 = A1()
     a2 = A2()

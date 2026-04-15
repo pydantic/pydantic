@@ -35,7 +35,7 @@ abstract: >-
 
   Fast and extensible, Pydantic Validation plays nicely with your
   linters/IDE/brain. Define how data should be in pure,
-  canonical Python 3.9+; validate it with Pydantic Validation.
+  canonical Python 3.10+; validate it with Pydantic Validation.
 keywords:
   - python
   - validation

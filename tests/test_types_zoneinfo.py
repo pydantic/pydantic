@@ -1,5 +1,4 @@
 from datetime import timezone
-from typing import Union
 from zoneinfo import ZoneInfo
 
 import pytest
@@ -53,5 +52,5 @@ def test_zoneinfo_json_schema():
 
 
 def test_zoneinfo_union() -> None:
-    ta = TypeAdapter(Union[ZoneInfo, timezone], config=ConfigDict(arbitrary_types_allowed=True))
+    ta = TypeAdapter(ZoneInfo | timezone, config=ConfigDict(arbitrary_types_allowed=True))
     assert ta.validate_python(timezone.utc) is timezone.utc

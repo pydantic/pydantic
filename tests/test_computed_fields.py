@@ -1,8 +1,9 @@
 import random
 import sys
 from abc import ABC, abstractmethod
+from collections.abc import Callable
 from functools import cached_property, lru_cache, singledispatchmethod
-from typing import Annotated, Any, Callable, ClassVar, Generic, TypeVar
+from typing import Annotated, Any, ClassVar, Generic, TypeVar
 
 import pytest
 from pydantic_core import ValidationError, core_schema

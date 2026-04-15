@@ -6,7 +6,6 @@ on standard [dataclasses][dataclasses].
 
 ```python
 from datetime import datetime
-from typing import Optional
 
 from pydantic.dataclasses import dataclass
 
@@ -15,7 +14,7 @@ from pydantic.dataclasses import dataclass
 class User:
     id: int
     name: str = 'John Doe'
-    signup_ts: Optional[datetime] = None
+    signup_ts: datetime | None = None
 
 
 user = User(id='42', signup_ts='2032-06-21T12:00')
@@ -69,7 +68,7 @@ Some differences between Pydantic dataclasses and models include:
     * There is no way to customize validation of extra values [using the `__pydantic_extra__` attribute](./models.md#extra-data).
 * Generic dataclasses are supported, but as with other standard library generic types, using a parameterized dataclass won't work as expected:
 
-    === "Python 3.9 and above"
+    === "Python 3.10 and above"
 
         ```python {upgrade="skip"}
         from typing import Generic, TypeVar
@@ -116,7 +115,6 @@ You can use both the Pydantic's [`Field()`][pydantic.Field] and the stdlib's [`f
 
 ```python
 import dataclasses
-from typing import Optional
 
 from pydantic import Field
 from pydantic.dataclasses import dataclass
@@ -127,11 +125,11 @@ class User:
     id: int
     name: str = 'John Doe'
     friends: list[int] = dataclasses.field(default_factory=lambda: [0])
-    age: Optional[int] = dataclasses.field(
+    age: int | None = dataclasses.field(
         default=None,
         metadata={'title': 'The age of the user', 'description': 'do not lie!'},
     )
-    height: Optional[int] = Field(
+    height: int | None = Field(
         default=None, title='The height in cm', ge=50, le=300
     )
 
@@ -246,7 +244,6 @@ dataclass as a field annotation is functionally equivalent.
 
 ```python
 import dataclasses
-from typing import Optional
 
 from pydantic import BaseModel, ConfigDict, ValidationError
 
@@ -260,7 +257,7 @@ class Foo(BaseModel):
     # Required so that pydantic revalidates the model attributes:
     model_config = ConfigDict(revalidate_instances='always')
 
-    user: Optional[User] = None
+    user: User | None = None
 
 
 # nothing is validated as expected:

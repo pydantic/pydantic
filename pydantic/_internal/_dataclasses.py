@@ -9,7 +9,7 @@ import warnings
 from collections.abc import Generator
 from contextlib import contextmanager
 from functools import partial
-from typing import TYPE_CHECKING, Any, ClassVar, Protocol, cast
+from typing import TYPE_CHECKING, Any, ClassVar, Protocol, TypeAlias, cast
 
 from pydantic_core import (
     ArgsKwargs,
@@ -17,7 +17,7 @@ from pydantic_core import (
     SchemaValidator,
     core_schema,
 )
-from typing_extensions import TypeAlias, TypeIs
+from typing_extensions import TypeIs
 
 from ..errors import PydanticUndefinedAnnotation
 from ..fields import FieldInfo
@@ -166,7 +166,7 @@ def complete_dataclass(
     except PydanticUndefinedAnnotation as e:
         if raise_errors:
             raise
-        set_dataclass_mocks(cls, f'`{e.name}`')
+        set_dataclass_mocks(cls, f'`{e.name}`' if e.name is not None else None)
         return False
 
     core_config = config_wrapper.core_config(title=cls.__name__)
@@ -213,7 +213,7 @@ def as_dataclass_field(pydantic_field: FieldInfo) -> dataclasses.Field[Any]:
         field_args['doc'] = pydantic_field.description
 
     # Needed as the stdlib dataclass module processes kw_only in a specific way during class construction:
-    if sys.version_info >= (3, 10) and pydantic_field.kw_only is not None:
+    if pydantic_field.kw_only is not None:
         field_args['kw_only'] = pydantic_field.kw_only
 
     # Needed as the stdlib dataclass modules generates `__repr__()` during class construction:
@@ -301,7 +301,7 @@ def patch_base_fields(cls: type[Any]) -> Generator[None]:
                 new_dc_field = copy.copy(field)
                 # For base fields, no need to set `doc` from `FieldInfo.description`, this is only relevant
                 # for the class under construction and handled in `as_dataclass_field()`.
-                if sys.version_info >= (3, 10) and default.kw_only:
+                if default.kw_only:
                     new_dc_field.kw_only = True
                 if default.repr is not True:
                     new_dc_field.repr = default.repr

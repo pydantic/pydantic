@@ -3,7 +3,7 @@ import re
 import sys
 from decimal import Decimal
 from numbers import Number
-from typing import Any, Union
+from typing import Any
 
 import pytest
 
@@ -154,7 +154,7 @@ def test_unicode_error():
         pytest.param('а' * 25, 32, None, id='a lot of `а`s'),
     ],
 )
-def test_str_constrained(data: str, max_length: int, error: Union[re.Pattern, None]):
+def test_str_constrained(data: str, max_length: int, error: re.Pattern | None):
     v = SchemaValidator(core_schema.str_schema(max_length=max_length))
     if error is None:
         assert v.validate_python(data) == data

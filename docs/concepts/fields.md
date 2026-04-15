@@ -457,15 +457,15 @@ in the [standard library types](../api/standard_library_types.md) documentation.
     the constraints will be automatically applied to the remaining type(s) of the union:
 
     ```python
-    from typing import Annotated, Union
+    from typing import Annotated
 
     from pydantic import BaseModel, Field
 
 
     class Model(BaseModel):
-        positive: Union[int, None] = Field(gt=0)
+        positive: int | None = Field(gt=0)
         # Also works with the annotated pattern:
-        negative: Annotated[Union[int, None], Field(lt=0)]
+        negative: Annotated[int | None, Field(lt=0)]
     ```
 
 <!-- old anchor added for backwards compatibility -->
@@ -558,12 +558,12 @@ print(user)
 
 The parameter `discriminator` can be used to control the field that will be used to discriminate between different
 models in a union. It takes either the name of a field or a `Discriminator` instance. The `Discriminator`
-approach can be useful when the discriminator fields aren't the same for all the models in the `Union`.
+approach can be useful when the discriminator fields aren't the same for all the models in the union.
 
 The following example shows how to use `discriminator` with a field name:
 
 ```python
-from typing import Literal, Union
+from typing import Literal
 
 from pydantic import BaseModel, Field
 
@@ -579,7 +579,7 @@ class Dog(BaseModel):
 
 
 class Model(BaseModel):
-    pet: Union[Cat, Dog] = Field(discriminator='pet_type')
+    pet: Cat | Dog = Field(discriminator='pet_type')
 
 
 print(Model.model_validate({'pet': {'pet_type': 'cat', 'age': 12}}))  # (1)!
@@ -591,7 +591,7 @@ print(Model.model_validate({'pet': {'pet_type': 'cat', 'age': 12}}))  # (1)!
 The following example shows how to use the `discriminator` keyword argument with a `Discriminator` instance:
 
 ```python
-from typing import Annotated, Literal, Union
+from typing import Annotated, Literal
 
 from pydantic import BaseModel, Discriminator, Field, Tag
 
@@ -613,7 +613,7 @@ def pet_discriminator(v):
 
 
 class Model(BaseModel):
-    pet: Union[Annotated[Cat, Tag('cat')], Annotated[Dog, Tag('dog')]] = Field(
+    pet: Annotated[Cat, Tag('cat')] | Annotated[Dog, Tag('dog')] = Field(
         discriminator=Discriminator(pet_discriminator)
     )
 
@@ -731,7 +731,7 @@ The [`@warnings.deprecated`][warnings.deprecated] decorator (or the
 
 <!-- TODO: tabs should be auto-generated if using Ruff (https://github.com/pydantic/pydantic/issues/10083) -->
 
-=== "Python 3.9 and above"
+=== "Python 3.10 and above"
 
     ```python
     from typing import Annotated

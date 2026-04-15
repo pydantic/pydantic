@@ -12,7 +12,7 @@ import re
 import sys
 import typing
 import warnings
-from collections.abc import Generator, Iterable, Iterator, Mapping
+from collections.abc import Callable, Generator, Iterable, Iterator, Mapping
 from contextlib import contextmanager
 from copy import copy
 from decimal import Decimal
@@ -23,16 +23,15 @@ from inspect import Parameter, _ParameterKind
 from ipaddress import IPv4Address, IPv4Interface, IPv4Network, IPv6Address, IPv6Interface, IPv6Network
 from itertools import chain
 from operator import attrgetter
-from types import FunctionType, GenericAlias, LambdaType, MethodType
+from types import FunctionType, GenericAlias, LambdaType, MethodType, NoneType
 from typing import (
     TYPE_CHECKING,
     Any,
-    Callable,
     Final,
     ForwardRef,
     Literal,
+    TypeAlias,
     TypeVar,
-    Union,
     cast,
     overload,
 )
@@ -51,7 +50,12 @@ from pydantic_core import (
     core_schema,
     to_jsonable_python,
 )
-from typing_extensions import TypeAlias, TypeAliasType, get_args, get_origin, is_typeddict
+from typing_extensions import (  # noqa: UP035 (for `get_args` and `get_origin`)
+    TypeAliasType,
+    get_args,
+    get_origin,
+    is_typeddict,
+)
 from typing_inspection import typing_objects
 from typing_inspection.introspection import AnnotationSource, get_literal_values, is_union_origin
 
@@ -122,17 +126,15 @@ if TYPE_CHECKING:
 
 _SUPPORTS_TYPEDDICT = sys.version_info >= (3, 12)
 
-FieldDecoratorInfo = Union[ValidatorDecoratorInfo, FieldValidatorDecoratorInfo, FieldSerializerDecoratorInfo]
+FieldDecoratorInfo: TypeAlias = ValidatorDecoratorInfo | FieldValidatorDecoratorInfo | FieldSerializerDecoratorInfo
 FieldDecoratorInfoType = TypeVar('FieldDecoratorInfoType', bound=FieldDecoratorInfo)
-AnyFieldDecorator = Union[
-    Decorator[ValidatorDecoratorInfo],
-    Decorator[FieldValidatorDecoratorInfo],
-    Decorator[FieldSerializerDecoratorInfo],
-]
+AnyFieldDecorator = (
+    Decorator[ValidatorDecoratorInfo] | Decorator[FieldValidatorDecoratorInfo] | Decorator[FieldSerializerDecoratorInfo]
+)
 
 ModifyCoreSchemaWrapHandler: TypeAlias = GetCoreSchemaHandler
 GetCoreSchemaFunction: TypeAlias = Callable[[Any, ModifyCoreSchemaWrapHandler], core_schema.CoreSchema]
-ParametersCallback: TypeAlias = "Callable[[int, str, Any], Literal['skip'] | None]"
+ParametersCallback: TypeAlias = Callable[[int, str, Any], Literal['skip'] | None]
 
 TUPLE_TYPES: list[type] = [typing.Tuple, tuple]  # noqa: UP006
 LIST_TYPES: list[type] = [typing.List, list, collections.abc.MutableSequence]  # noqa: UP006
@@ -167,12 +169,8 @@ DEQUE_TYPES: list[type] = [collections.deque, typing.Deque]  # noqa: UP006
 
 # Note: This does not play very well with type checkers. For example,
 # `a: LambdaType = lambda x: x` will raise a type error by Pyright.
-ValidateCallSupportedTypes = Union[
-    LambdaType,
-    FunctionType,
-    MethodType,
-    partial,
-]
+ValidateCallSupportedTypes: TypeAlias = LambdaType | FunctionType | MethodType | partial
+
 
 VALIDATE_CALL_SUPPORTED_TYPES = get_args(ValidateCallSupportedTypes)
 UNSUPPORTED_STANDALONE_FIELDINFO_ATTRIBUTES: list[tuple[str, Any]] = [
@@ -983,7 +981,7 @@ class GenerateSchema:
                 # This was fixed in https://github.com/python/cpython/pull/30900 (Python 3.11).
                 # TODO: this shouldn't be necessary (probably even this `_get_args_resolving_forward_refs()` function)
                 # once we drop support for Python 3.10 *or* if we implement our own `typing._eval_type()` implementation.
-                args = (_typing_extra._make_forward_ref(a) if isinstance(a, str) else a for a in args)
+                args = (ForwardRef(a) if isinstance(a, str) else a for a in args)
             args = tuple(self._resolve_forward_ref(a) if isinstance(a, ForwardRef) else a for a in args)
         elif required:  # pragma: no cover
             raise TypeError(f'Expected {obj} to have generic parameters but it had none')
@@ -1077,7 +1075,7 @@ class GenerateSchema:
             return self._fraction_schema()
         elif obj is MultiHostUrl:
             return core_schema.multi_host_url_schema()
-        elif obj is None or obj is _typing_extra.NoneType:
+        elif obj is None or obj is NoneType:
             return core_schema.none_schema()
         if obj is MISSING:
             return core_schema.missing_sentinel_schema()
@@ -1328,7 +1326,7 @@ class GenerateSchema:
         choices: list[CoreSchema] = []
         nullable = False
         for arg in args:
-            if arg is None or arg is _typing_extra.NoneType:
+            if arg is None or arg is NoneType:
                 nullable = True
             else:
                 choices.append(self.generate_schema(arg))
@@ -1749,7 +1747,7 @@ class GenerateSchema:
                 # when using type[None], this doesn't type convert to type[NoneType], and None isn't a class
                 # so we handle it manually here
                 if type_param is None:
-                    return core_schema.is_subclass_schema(_typing_extra.NoneType)
+                    return core_schema.is_subclass_schema(NoneType)
                 raise TypeError(f'Expected a class, got {type_param!r}')
             return core_schema.is_subclass_schema(type_param)
 
@@ -2123,7 +2121,7 @@ class GenerateSchema:
                 return self.generate_schema(typevar.__default__)  # pyright: ignore[reportAttributeAccessIssue]
 
         if constraints := typevar.__constraints__:
-            return self._union_schema(typing.Union[constraints])
+            return self._union_schema(typing.Union[constraints])  # noqa: UP007
 
         if bound := typevar.__bound__:
             schema = self.generate_schema(bound)

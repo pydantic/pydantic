@@ -6,7 +6,6 @@ import subprocess
 import sys
 from pathlib import Path
 from textwrap import dedent
-from typing import Optional
 
 import pytest
 
@@ -80,14 +79,14 @@ def test_pickle_pydantic_weakref():
 
 class ImportableModel(BaseModel):
     foo: str
-    bar: Optional[str] = None
+    bar: str | None = None
     val: PositiveFloat = 0.7
 
 
 def model_factory() -> type:
     class NonImportableModel(BaseModel):
         foo: str
-        bar: Optional[str] = None
+        bar: str | None = None
         val: PositiveFloat = 0.7
 
     return NonImportableModel

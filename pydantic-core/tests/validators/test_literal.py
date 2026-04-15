@@ -1,6 +1,7 @@
 import re
+from collections.abc import Callable
 from enum import Enum
-from typing import Any, Callable
+from typing import Any
 
 import pytest
 

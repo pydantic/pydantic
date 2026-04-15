@@ -4,7 +4,7 @@ import pickle
 import re
 import sys
 import traceback
-from collections.abc import Hashable
+from collections.abc import Callable, Hashable
 from dataclasses import InitVar
 from datetime import date, datetime
 from functools import cached_property
@@ -12,7 +12,6 @@ from pathlib import Path
 from typing import (
     Annotated,
     Any,
-    Callable,
     ClassVar,
     Generic,
     Literal,
@@ -611,10 +610,10 @@ def test_schema():
         name: str = 'John Doe'
         aliases: dict[str, str] = dataclasses.field(default_factory=lambda: {'John': 'Joey'})
         signup_ts: datetime = None
-        age: Optional[int] = dataclasses.field(
+        age: int | None = dataclasses.field(
             default=None, metadata=dict(title='The age of the user', description='do not lie!')
         )
-        height: Optional[int] = pydantic.Field(None, title='The height in cm', ge=50, le=300)
+        height: int | None = pydantic.Field(None, title='The height in cm', ge=50, le=300)
 
     User(id=123)
     assert model_json_schema(User) == {
@@ -731,7 +730,7 @@ def test_initvars_post_init():
     @pydantic.dataclasses.dataclass
     class PathDataPostInit:
         path: Path
-        base_path: dataclasses.InitVar[Optional[Path]] = None
+        base_path: dataclasses.InitVar[Path | None] = None
 
         def __post_init__(self, base_path):
             if base_path is not None:
@@ -834,9 +833,9 @@ def test_override_builtin_dataclass():
     @dataclasses.dataclass
     class File:
         hash: str
-        name: Optional[str]
+        name: str | None
         size: int
-        content: Optional[bytes] = None
+        content: bytes | None = None
 
     ValidFile = pydantic.dataclasses.dataclass(File)
 
@@ -868,7 +867,7 @@ def test_override_builtin_dataclass():
 def test_override_builtin_dataclass_2():
     @dataclasses.dataclass
     class Meta:
-        modified_date: Optional[datetime]
+        modified_date: datetime | None
         seen_count: int
 
     Meta(modified_date='not-validated', seen_count=0)
@@ -889,7 +888,7 @@ def test_override_builtin_dataclass_2():
 def test_override_builtin_dataclass_nested():
     @dataclasses.dataclass
     class Meta:
-        modified_date: Optional[datetime]
+        modified_date: datetime | None
         seen_count: int
 
         __pydantic_config__ = {'revalidate_instances': 'always'}
@@ -933,7 +932,7 @@ def test_override_builtin_dataclass_nested():
 def test_override_builtin_dataclass_nested_schema():
     @dataclasses.dataclass
     class Meta:
-        modified_date: Optional[datetime]
+        modified_date: datetime | None
         seen_count: int
 
     @dataclasses.dataclass
@@ -1460,7 +1459,7 @@ def test_discriminated_union_basemodel_instance_value():
 
     @pydantic.dataclasses.dataclass
     class Top:
-        sub: Union[A, B] = dataclasses.field(metadata=dict(discriminator='l'))
+        sub: A | B = dataclasses.field(metadata=dict(discriminator='l'))
 
     t = Top(sub=A(l='a'))
     assert isinstance(t, Top)
@@ -1600,9 +1599,9 @@ def test_forbid_extra():
 def test_self_reference_dataclass():
     @pydantic.dataclasses.dataclass
     class MyDataclass:
-        self_reference: Optional['MyDataclass'] = None
+        self_reference: 'MyDataclass | None' = None
 
-    assert MyDataclass.__pydantic_fields__['self_reference'].annotation == Optional[MyDataclass]
+    assert MyDataclass.__pydantic_fields__['self_reference'].annotation == MyDataclass | None
 
     instance = MyDataclass(self_reference=MyDataclass(self_reference=MyDataclass()))
     assert TypeAdapter(MyDataclass).dump_python(instance) == {
@@ -1815,7 +1814,6 @@ def test_base_dataclasses_annotations_resolving_with_override(create_module, dat
     assert TypeAdapter(D3).validate_python({'db_id': 42, 's': 'ABC'}) == D3(db_id=42, s='abc')
 
 
-@pytest.mark.skipif(sys.version_info < (3, 10), reason='kw_only is not available in python < 3.10')
 def test_kw_only():
     @pydantic.dataclasses.dataclass(kw_only=True)
     class A:
@@ -1828,7 +1826,6 @@ def test_kw_only():
     assert A(b='hi').b == 'hi'
 
 
-@pytest.mark.skipif(sys.version_info < (3, 10), reason='kw_only is not available in python < 3.10')
 def test_kw_only_subclass():
     @pydantic.dataclasses.dataclass
     class A:
@@ -1883,7 +1880,6 @@ def dataclass_decorators(include_identity: bool = False, exclude_combined: bool 
     return {'argvalues': decorators, 'ids': ids}
 
 
-@pytest.mark.skipif(sys.version_info < (3, 10), reason='kw_only is not available in python < 3.10')
 @pytest.mark.parametrize('decorator1', **dataclass_decorators(exclude_combined=True))
 @pytest.mark.parametrize('decorator2', **dataclass_decorators(exclude_combined=True))
 def test_kw_only_inheritance(decorator1, decorator2):
@@ -1910,9 +1906,8 @@ def test_kw_only_inheritance_on_field() -> None:
     class B(A):
         pass
 
-    if sys.version_info >= (3, 10):  # On 3.9, we ignore kw_only.
-        with pytest.raises(ValidationError):
-            B(1)
+    with pytest.raises(ValidationError):
+        B(1)
 
 
 def test_repr_inheritance() -> None:
@@ -2569,7 +2564,6 @@ def test_vanilla_dataclass_decorators_in_type_adapter(decorator1, decorator2):
     ],
     ids=['pydantic', 'stdlib'],
 )
-@pytest.mark.skipif(sys.version_info < (3, 10), reason='slots are only supported for dataclasses in Python >= 3.10')
 def test_dataclass_slots(dataclass_decorator):
     @dataclass_decorator(slots=True)
     class Model:
@@ -2587,7 +2581,6 @@ class DataclassSlotsValidateAssignment:
     a: int
 
 
-@pytest.mark.skipif(sys.version_info < (3, 10), reason='slots are only supported for dataclasses in Python >= 3.10')
 def test_dataclass_slots_validate_assignment():
     """https://github.com/pydantic/pydantic/issues/11768"""
 
@@ -2606,7 +2599,6 @@ def test_dataclass_slots_validate_assignment():
     ],
     ids=['pydantic', 'stdlib'],
 )
-@pytest.mark.skipif(sys.version_info < (3, 10), reason='slots are only supported for dataclasses in Python >= 3.10')
 def test_dataclass_slots_mixed(dataclass_decorator):
     @dataclass_decorator(slots=True)
     class Model:
@@ -3125,7 +3117,7 @@ def test_validation_works_for_cyclical_forward_refs() -> None:
 
     @pydantic.dataclasses.dataclass()
     class Y:
-        x: Union[X, None]
+        x: X | None
 
     assert Y(x={'y': None}).x.y is None
 
@@ -3284,7 +3276,6 @@ def test_dataclass_field_exclude() -> None:
     assert ta.dump_json(Foo(foo='bar', bar=2)).decode('utf-8') == '{}'
 
 
-@pytest.mark.skipif(sys.version_info < (3, 10), reason='kw_only is not available in python >= 3.10')
 def test_dataclass_field_override_kw_only() -> None:
     """https://github.com/pydantic/pydantic/issues/12736"""
 

@@ -15,7 +15,7 @@ We use `__get_pydantic_core_schema__` in the validator to customize the schema o
 import datetime as dt
 from dataclasses import dataclass
 from pprint import pprint
-from typing import Annotated, Any, Callable, Optional
+from typing import Annotated, Any
 
 import pytz
 from pydantic_core import CoreSchema, core_schema
@@ -25,17 +25,18 @@ from pydantic import (
     PydanticUserError,
     TypeAdapter,
     ValidationError,
+    ValidatorFunctionWrapHandler,
 )
 
 
 @dataclass(frozen=True)
 class MyDatetimeValidator:
-    tz_constraint: Optional[str] = None
+    tz_constraint: str | None = None
 
     def tz_constraint_validator(
         self,
         value: dt.datetime,
-        handler: Callable,  # (1)!
+        handler: ValidatorFunctionWrapHandler,  # (1)!
     ):
         """Validate tz_constraint and tz_info."""
         # handle naive datetimes
@@ -102,12 +103,17 @@ We can also enforce UTC offset constraints in a similar way.  Assuming we have a
 import datetime as dt
 from dataclasses import dataclass
 from pprint import pprint
-from typing import Annotated, Any, Callable
+from typing import Annotated, Any
 
 import pytz
 from pydantic_core import CoreSchema, core_schema
 
-from pydantic import GetCoreSchemaHandler, TypeAdapter, ValidationError
+from pydantic import (
+    GetCoreSchemaHandler,
+    TypeAdapter,
+    ValidationError,
+    ValidatorFunctionWrapHandler,
+)
 
 
 @dataclass(frozen=True)
@@ -115,7 +121,9 @@ class MyDatetimeValidator:
     lower_bound: int
     upper_bound: int
 
-    def validate_tz_bounds(self, value: dt.datetime, handler: Callable):
+    def validate_tz_bounds(
+        self, value: dt.datetime, handler: ValidatorFunctionWrapHandler
+    ):
         """Validate and test bounds"""
         assert value.utcoffset() is not None, 'UTC offset must exist'
         assert self.lower_bound <= self.upper_bound, 'Invalid bounds'

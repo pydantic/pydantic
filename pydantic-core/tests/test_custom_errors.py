@@ -1,4 +1,4 @@
-from typing import Any, Optional
+from typing import Any
 from unittest import TestCase
 from unittest.mock import ANY
 
@@ -131,7 +131,7 @@ def test_custom_pydantic_error_overrides():
     class CustomErrorWithCustomTemplate(PydanticCustomError):
         @override
         def __new__(
-            cls, error_type: LiteralString, my_custom_setting: str, context: Optional[dict[str, Any]] = None
+            cls, error_type: LiteralString, my_custom_setting: str, context: dict[str, Any] | None = None
         ) -> Self:
             message_template = (
                 "'{my_custom_value}' setting requires a specific my custom field value, got '{wrong_value}'"

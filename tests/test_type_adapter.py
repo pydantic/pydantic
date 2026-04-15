@@ -1,11 +1,11 @@
 import json
 from dataclasses import dataclass
 from datetime import date, datetime
-from typing import Annotated, Any, ForwardRef, Generic, NamedTuple, Optional, TypeVar, Union
+from typing import Annotated, Any, ForwardRef, Generic, NamedTuple, TypeAlias, TypeVar, Union
 
 import pytest
 from pydantic_core import ValidationError
-from typing_extensions import TypeAlias, TypedDict
+from typing_extensions import TypedDict
 
 from pydantic import BaseModel, Field, TypeAdapter, ValidationInfo, create_model, field_validator
 from pydantic._internal import _mock_val_ser
@@ -51,8 +51,8 @@ class SomeNamedTuple(NamedTuple):
         (tuple[str, int], ('1', 1), ('1', 1)),
         (tuple[str, ...], ('1',), ('1',)),
         (dict[str, int], {'foo': 123}, {'foo': 123}),
-        (Union[int, str], 1, 1),
-        (Union[int, str], '2', '2'),
+        (Union[int, str], 1, 1),  # noqa: UP007
+        (Union[int, str], '2', '2'),  # noqa: UP007
         (GenericPydanticModel[int], {'x': [[1]]}, GenericPydanticModel[int](x=[[1]])),
         (GenericPydanticModel[int], {'x': [['1']]}, GenericPydanticModel[int](x=[[1]])),
         (NestedList[int], [[1]], [[1]]),
@@ -181,7 +181,7 @@ def test_top_level_fwd_ref(defer_build: bool, method: str, generate_schema_calls
         assert schemas[(FwdRef, 'validation')]['type'] == 'object'
 
 
-MyUnion: TypeAlias = 'Union[str, int]'
+MyUnion: TypeAlias = 'str | int'
 
 
 def test_type_alias():
@@ -554,7 +554,7 @@ def defer_build_test_models(config: ConfigDict) -> list[Any]:
         x: int
 
     class SubModel(Model):
-        y: Optional[int] = None
+        y: int | None = None
 
     @pydantic_dataclass(config=config)
     class DataClassModel:
@@ -562,7 +562,7 @@ def defer_build_test_models(config: ConfigDict) -> list[Any]:
 
     @pydantic_dataclass
     class SubDataClassModel(DataClassModel):
-        y: Optional[int] = None
+        y: int | None = None
 
     class TypedDictModel(TypedDict):
         __pydantic_config__ = config  # type: ignore

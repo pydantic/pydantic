@@ -5,7 +5,7 @@ import re
 import subprocess
 import sys
 from decimal import Decimal
-from typing import Any, Optional
+from typing import Any
 
 import pytest
 from dirty_equals import HasRepr, IsInstance, IsJson, IsStr
@@ -201,7 +201,7 @@ def test_pydantic_error_type_raise_ctx(extra: dict):
 
 
 @pytest.mark.parametrize('ctx', [None, {}])
-def test_pydantic_error_type_raise_custom_no_ctx(ctx: Optional[dict]):
+def test_pydantic_error_type_raise_custom_no_ctx(ctx: dict | None):
     def f(input_value, info):
         raise PydanticKnownError('int_type', ctx)
 
@@ -237,7 +237,7 @@ def test_pydantic_custom_error_type_raise_custom_ctx(extra: dict):
 
 
 @pytest.mark.parametrize('ctx', [None, {}])
-def test_pydantic_custom_error_type_raise_custom_no_ctx(ctx: Optional[dict]):
+def test_pydantic_custom_error_type_raise_custom_no_ctx(ctx: dict | None):
     def f(input_value, info):
         raise PydanticCustomError('my_error', 'my message', ctx)
 
@@ -540,7 +540,9 @@ def test_all_errors():
     error_types = [e['type'] for e in errors]
     if error_types != list(core_schema.ErrorType.__args__):
         literal = ''.join(f'\n    {e!r},' for e in error_types)
-        print(f'python code (end of python/pydantic_core/core_schema.py):\n\nErrorType = Literal[{literal}\n]')
+        print(
+            f'python code (end of python/pydantic_core/core_schema.py):\n\nErrorType: TypeAlias = Literal[{literal}\n]'
+        )
         pytest.fail('core_schema.ErrorType needs to be updated')
 
 
@@ -1125,10 +1127,6 @@ def test_hide_input_in_json() -> None:
         assert 'input' not in error
 
 
-@pytest.mark.skipif(
-    sys.version_info < (3, 9) and sys.implementation.name == 'pypy',
-    reason='PyPy before 3.9 cannot pickle this correctly',
-)
 def test_validation_error_pickle() -> None:
     s = SchemaValidator(core_schema.int_schema())
     with pytest.raises(ValidationError) as exc_info:

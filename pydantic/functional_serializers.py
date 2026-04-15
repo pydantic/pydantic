@@ -3,20 +3,20 @@
 from __future__ import annotations
 
 import dataclasses
+from collections.abc import Callable
 from functools import partial, partialmethod
-from typing import TYPE_CHECKING, Annotated, Any, Callable, Literal, TypeVar, overload
+from typing import TYPE_CHECKING, Annotated, Any, Literal, TypeAlias, TypeVar, overload
 
 from pydantic_core import PydanticUndefined, core_schema
 from pydantic_core.core_schema import SerializationInfo, SerializerFunctionWrapHandler, WhenUsed
-from typing_extensions import TypeAlias
 
 from . import PydanticUndefinedAnnotation
-from ._internal import _decorators, _internal_dataclass
+from ._internal import _decorators
 from .annotated_handlers import GetCoreSchemaHandler
 from .errors import PydanticUserError
 
 
-@dataclasses.dataclass(**_internal_dataclass.slots_true, frozen=True)
+@dataclasses.dataclass(slots=True, frozen=True)
 class PlainSerializer:
     """Plain serializers use a function to modify the output of serialization.
 
@@ -86,7 +86,7 @@ class PlainSerializer:
         return schema
 
 
-@dataclasses.dataclass(**_internal_dataclass.slots_true, frozen=True)
+@dataclasses.dataclass(slots=True, frozen=True)
 class WrapSerializer:
     """Wrap serializers receive the raw inputs along with a handler function that applies the standard serialization
     logic, and can modify the resulting value before returning it as the final output of serialization.
@@ -446,7 +446,7 @@ if TYPE_CHECKING:
     """
 else:
 
-    @dataclasses.dataclass(**_internal_dataclass.slots_true)
+    @dataclasses.dataclass(slots=True)
     class SerializeAsAny:
         """Annotation used to mark a type as having duck-typing serialization behavior.
 

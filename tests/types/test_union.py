@@ -1,4 +1,4 @@
-from typing import ClassVar, Literal, Optional, Union
+from typing import ClassVar, Literal
 
 from typing_extensions import TypedDict
 
@@ -18,16 +18,16 @@ def test_field_serializer_in_nested_union_called_only_twice():
             return str(value)
 
     class Container(TypedDict):
-        u: Union[MyModel, int]
+        u: MyModel | int
 
     class Container2(TypedDict):
-        u: Union[Container, int]
+        u: Container | int
 
     # forcibly construct model with a False value
     value = MyModel.model_construct(a=1, b=False)
     assert value.b is False
 
-    ta = pydantic.TypeAdapter(Union[Container2, int])
+    ta = pydantic.TypeAdapter(Container2 | int)
     ta.dump_json(Container2(u=Container(u=value)), warnings=False)
 
     # Historical implementations of pydantic would call the field serializer many times
@@ -58,16 +58,16 @@ def test_field_serializer_in_nested_tagged_union_called_only_twice():
 
     class Container(pydantic.BaseModel):
         type_: Literal['a'] = 'a'
-        u: Union[MyModel, ModelB] = pydantic.Field(..., discriminator='type_')
+        u: MyModel | ModelB = pydantic.Field(..., discriminator='type_')
 
     class Container2(pydantic.BaseModel):
-        u: Union[Container, ModelB] = pydantic.Field(..., discriminator='type_')
+        u: Container | ModelB = pydantic.Field(..., discriminator='type_')
 
     # forcibly construct model with a False value
     value = MyModel.model_construct(a=1, b=False)
     assert value.b is False
 
-    ta = pydantic.TypeAdapter(Union[Container2, int])
+    ta = pydantic.TypeAdapter(Container2 | int)
     ta.dump_json(Container2(u=Container(u=value)), warnings=False)
 
     # Historical implementations of pydantic would call the field serializer many times
@@ -79,13 +79,13 @@ def test_field_serializer_in_nested_tagged_union_called_only_twice():
 def test_exclude_unset_in_nested_union():
     class Cat(pydantic.BaseModel):
         type: Literal['cat']
-        color: Optional[str] = None  # field with default
+        color: str | None = None  # field with default
 
     class Dog(pydantic.BaseModel):
         type: Literal['dog']
 
     class Zoo(pydantic.BaseModel):
-        animals: list[Union[Cat, Dog]]
+        animals: list[Cat | Dog]
 
     cat = Cat(type='cat')
     zoo = Zoo(animals=[cat])
@@ -96,13 +96,13 @@ def test_exclude_unset_in_nested_union():
 
 
 def test_list_union_omit():
-    OmitList = list[Union[pydantic.OnErrorOmit[int], pydantic.OnErrorOmit[bool]]]
+    OmitList = list[pydantic.OnErrorOmit[int] | pydantic.OnErrorOmit[bool]]
     ta = pydantic.TypeAdapter(OmitList)
     assert ta.validate_python([1, 'True', 'foo', '2', False, 'bar']) == [1, True, 2, False]
 
 
 def test_list_union_omit_one_member():
-    OmitList = list[Union[pydantic.OnErrorOmit[int], bool]]
+    OmitList = list[pydantic.OnErrorOmit[int] | bool]
     ta = pydantic.TypeAdapter(OmitList)
     assert ta.validate_python([1, 'True', 'foo', '2', False, 'bar']) == [1, True, 2, False]
 
@@ -112,7 +112,7 @@ def test_typed_dict_union_omit():
         # arguably this should fail on schema build since `x` is a
         # required field, and setting the type to `OnErrorOmit`
         # effectively makes it optional.
-        x: Union[pydantic.OnErrorOmit[int], pydantic.OnErrorOmit[bool]]
+        x: pydantic.OnErrorOmit[int] | pydantic.OnErrorOmit[bool]
 
     ta = pydantic.TypeAdapter(TD)
     assert ta.validate_python({'x': 1}) == {'x': 1}

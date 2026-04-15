@@ -6,7 +6,7 @@ import sys
 from copy import deepcopy
 from dataclasses import dataclass
 from decimal import Decimal
-from typing import Any, Union
+from typing import Any
 
 import pytest
 from dirty_equals import Contains, IsPartialDict
@@ -126,7 +126,7 @@ def test_core_schema_with_model_used_in_multiple_places(nested_ref: bool) -> Non
         b: M1
 
     class M3(BaseModel):
-        c: Union[M2, M1]
+        c: M2 | M1
         d: M1
 
     init, cleaned = init_schema_and_cleaned_schema(list[M3] if nested_ref else M3)
