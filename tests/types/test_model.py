@@ -91,17 +91,15 @@ def test_model_validate_by_json_with_validation_info_data():
     """https://github.com/pydantic/pydantic/issues/13074"""
 
     class Foo(BaseModel):
-        field1: str
-        field2: str
+        field1: int
+        field2: int
 
         @field_validator('field2')
         @classmethod
-        def _validate_field2(cls, v: str, info: ValidationInfo) -> str:
-            if info.data['field1'] == v:
-                raise ValueError
-            return v
+        def _validate_field2(cls, v: str, info: ValidationInfo) -> int:
+            return v + info.data['field1']
 
-    f1 = Foo.model_validate({'field1': 'a', 'field2': 'b'})
-    f2 = Foo.model_validate_json('{"field1": "a", "field2": "b"}')
+    f1 = Foo.model_validate({'field1': 1, 'field2': 2})
+    f2 = Foo.model_validate_json('{"field1": 1, "field2": 2}')
 
-    assert f1 == f2 == Foo(field1='a', field2='b')
+    assert f1 == f2 == Foo(field1=1, field2=3)
