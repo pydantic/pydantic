@@ -620,6 +620,35 @@ def test_wrap_return_type():
     assert s.to_json('foobar') == b'"foobar.new"'
 
 
+def test_wrap_serializer_warnings_are_aggregated_once():
+    def passthrough(value, handler):
+        return handler(value)
+
+    s = SchemaSerializer(
+        core_schema.typed_dict_schema(
+            {
+                'a': core_schema.typed_dict_field(
+                    core_schema.str_schema(
+                        serialization=core_schema.wrap_serializer_function_ser_schema(passthrough)
+                    )
+                ),
+                'b': core_schema.typed_dict_field(core_schema.str_schema()),
+                'c': core_schema.typed_dict_field(core_schema.str_schema()),
+            }
+        )
+    )
+
+    with pytest.warns(UserWarning) as warnings:
+        assert s.to_python({'a': 1, 'b': 2, 'c': 3}) == {'a': 1, 'b': 2, 'c': 3}
+
+    assert len(warnings) == 1
+    message = str(warnings[0].message)
+    assert message.count('PydanticSerializationUnexpectedValue(') == 3
+    assert "field_name='a', input_value=1, input_type=int" in message
+    assert "field_name='b', input_value=2, input_type=int" in message
+    assert "field_name='c', input_value=3, input_type=int" in message
+
+
 def test_raise_unexpected():
     def raise_unexpected(_value):
         raise PydanticSerializationUnexpectedValue('unexpected')

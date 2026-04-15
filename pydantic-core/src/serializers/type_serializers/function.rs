@@ -383,14 +383,14 @@ impl FunctionWrapSerializer {
     fn call<'py>(&self, value: &Bound<'py, PyAny>, state: &mut SerializationState<'py>) -> PyResult<(bool, Py<PyAny>)> {
         let py = value.py();
         if self.when_used.should_use(value, &state.extra) {
-            let serialize = SerializationCallable::new(&self.serializer, state);
+            let serialize = Py::new(py, SerializationCallable::new(&self.serializer, state))?;
             let v = if self.is_field_serializer {
                 if let Some(model) = state.model.as_ref() {
                     if self.info_arg {
                         let info = SerializationInfo::new(state, self.is_field_serializer)?;
-                        self.func.call1(py, (model, value, serialize, info))?
+                        self.func.call1(py, (model, value, serialize.clone_ref(py), info))?
                     } else {
-                        self.func.call1(py, (model, value, serialize))?
+                        self.func.call1(py, (model, value, serialize.clone_ref(py)))?
                     }
                 } else {
                     return Err(PyRuntimeError::new_err(
@@ -399,10 +399,15 @@ impl FunctionWrapSerializer {
                 }
             } else if self.info_arg {
                 let info = SerializationInfo::new(state, self.is_field_serializer)?;
-                self.func.call1(py, (value, serialize, info))?
+                self.func.call1(py, (value, serialize.clone_ref(py), info))?
             } else {
-                self.func.call1(py, (value, serialize))?
+                self.func.call1(py, (value, serialize.clone_ref(py)))?
             };
+            let nested_warnings = {
+                let serialize = serialize.borrow_mut(py);
+                serialize.extra_owned.warnings()
+            };
+            state.warnings.extend(nested_warnings.into_warnings());
             Ok((true, v))
         } else {
             Ok((false, value.clone().unbind()))
@@ -471,27 +476,30 @@ impl SerializationCallable {
         // so use to_python_no_infer so that type inference can't apply
         // at this layer
 
-        let state = &mut self.extra_owned.to_state(py);
+        let mut state = self.extra_owned.to_state(py);
 
-        if let Some(index_key) = index_key {
+        let result = if let Some(index_key) = index_key {
             let filter = if let Ok(index) = index_key.extract::<usize>() {
-                self.filter.index_filter(index, state, None)?
+                self.filter.index_filter(index, &mut state, None)?
             } else {
-                self.filter.key_filter(index_key, state)?
+                self.filter.key_filter(index_key, &mut state)?
             };
             if let Some(next_include_exclude) = filter {
                 let state = &mut state.scoped_include_exclude(next_include_exclude);
-                let v = self.serializer.to_python_no_infer(value, state)?;
-                state.warnings.final_check(py)?;
-                Ok(Some(v))
+                self.serializer.to_python_no_infer(value, state).map(Some)
             } else {
                 Err(PydanticOmit::new_err())
             }
         } else {
-            let v = self.serializer.to_python_no_infer(value, state)?;
+            self.serializer.to_python_no_infer(value, &mut state).map(Some)
+        };
+
+        if self.extra_owned.warnings_mode() == super::super::extra::WarningsMode::Error {
             state.warnings.final_check(py)?;
-            Ok(Some(v))
         }
+        self.extra_owned.set_warnings(state.warnings.clone());
+
+        result
     }
 
     fn __repr__(&self) -> PyResult<String> {

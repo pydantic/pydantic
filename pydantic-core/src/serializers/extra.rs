@@ -340,6 +340,18 @@ impl ExtraOwned {
             extra,
         }
     }
+
+    pub fn warnings_mode(&self) -> WarningsMode {
+        self.warnings.mode
+    }
+
+    pub fn warnings(&self) -> CollectWarnings {
+        self.warnings.clone()
+    }
+
+    pub fn set_warnings(&mut self, warnings: CollectWarnings) {
+        self.warnings = warnings;
+    }
 }
 
 #[derive(Clone)]
@@ -503,6 +515,16 @@ impl CollectWarnings {
                 Some(value.clone().unbind()),
             ));
         }
+    }
+
+    pub fn extend(&mut self, warnings: impl IntoIterator<Item = PydanticSerializationUnexpectedValue>) {
+        if self.mode != WarningsMode::None {
+            self.warnings.extend(warnings);
+        }
+    }
+
+    pub fn into_warnings(self) -> Vec<PydanticSerializationUnexpectedValue> {
+        self.warnings
     }
 
     pub fn final_check(&self, py: Python) -> PyResult<()> {
