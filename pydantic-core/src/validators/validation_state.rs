@@ -297,29 +297,10 @@ where
     }
 }
 
-type ScopedFieldNameState<'scope, 'a, 'py> = ScopedSetState<
-    'scope,
-    'a,
-    'py,
-    for<'s> fn(&'s mut ValidationState<'a, 'py>) -> &'s mut Option<Bound<'py, PyString>>,
-    Option<Bound<'py, PyString>>,
->;
+type ScopedSetStateT<'scope, 'a, 'py, T> =
+    ScopedSetState<'scope, 'a, 'py, for<'s> fn(&'s mut ValidationState<'a, 'py>) -> &'s mut T, T>;
 
-type ScopedDataState<'scope, 'a, 'py> = ScopedSetState<
-    'scope,
-    'a,
-    'py,
-    for<'s> fn(&'s mut ValidationState<'a, 'py>) -> &'s mut Option<Bound<'py, PyDict>>,
-    Option<Bound<'py, PyDict>>,
->;
-
-type ScopedHasFieldErrorState<'scope, 'a, 'py> =
-    ScopedSetState<'scope, 'a, 'py, for<'s> fn(&'s mut ValidationState<'a, 'py>) -> &'s mut bool, bool>;
-
-type ScopedSelfInstanceState<'scope, 'a, 'py> = ScopedSetState<
-    'scope,
-    'a,
-    'py,
-    for<'s> fn(&'s mut ValidationState<'a, 'py>) -> &'s mut Option<&'a Bound<'py, PyAny>>,
-    Option<&'a Bound<'py, PyAny>>,
->;
+type ScopedFieldNameState<'scope, 'a, 'py> = ScopedSetStateT<'scope, 'a, 'py, Option<Bound<'py, PyString>>>;
+type ScopedDataState<'scope, 'a, 'py> = ScopedSetStateT<'scope, 'a, 'py, Option<Bound<'py, PyDict>>>;
+type ScopedHasFieldErrorState<'scope, 'a, 'py> = ScopedSetStateT<'scope, 'a, 'py, bool>;
+type ScopedSelfInstanceState<'scope, 'a, 'py> = ScopedSetStateT<'scope, 'a, 'py, Option<&'a Bound<'py, PyAny>>>;
