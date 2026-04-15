@@ -102,4 +102,5 @@ def test_model_validate_by_json_with_validation_info_data():
     f1 = Foo.model_validate({'field1': 1, 'field2': 2})
     f2 = Foo.model_validate_json('{"field1": 1, "field2": 2}')
 
-    assert f1 == f2 == Foo(field1=1, field2=3)
+    assert f1.field1 == f2.field1 == 1
+    assert f1.field2 == f2.field2 == 3
