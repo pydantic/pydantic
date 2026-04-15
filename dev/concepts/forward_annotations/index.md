@@ -30,14 +30,12 @@ Models with self-referencing fields are also supported. These annotations will b
 Within the model, you can either add the `from __future__ import annotations` import or wrap the annotation in a string:
 
 ```python
-from typing import Optional
-
 from pydantic import BaseModel
 
 
 class Foo(BaseModel):
     a: int = 123
-    sibling: 'Optional[Foo]' = None
+    sibling: 'Foo | None' = None
 
 
 print(Foo())
@@ -54,44 +52,11 @@ When working with self-referencing recursive models, it is possible that you mig
 Rather than raising a RecursionError while attempting to validate data with cyclic references, Pydantic is able to detect the cyclic reference and raise an appropriate ValidationError:
 
 ```python
-from typing import Optional
-
 from pydantic import BaseModel, ValidationError
 
 
 class ModelA(BaseModel):
-    b: 'Optional[ModelB]' = None
-
-
-class ModelB(BaseModel):
-    a: Optional[ModelA] = None
-
-
-cyclic_data = {}
-cyclic_data['a'] = {'b': cyclic_data}
-print(cyclic_data)
-#> {'a': {'b': {...}}}
-
-try:
-    ModelB.model_validate(cyclic_data)
-except ValidationError as exc:
-    print(exc)
-    """
-    1 validation error for ModelB
-    a.b
-      Recursion error - cyclic reference detected [type=recursion_loop, input_value={'a': {'b': {...}}}, input_type=dict]
-    """
-
-```
-
-```python
-from typing import Optional
-
-from pydantic import BaseModel, ValidationError
-
-
-class ModelA(BaseModel):
-    b: 'Optional[ModelB]' = None
+    b: 'ModelB | None' = None
 
 
 class ModelB(BaseModel):

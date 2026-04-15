@@ -4363,7 +4363,7 @@ to help you monitor and understand your
   </span>
 
 <a href="#pydantic.functional_validators.ModelAfterValidatorWithoutInfo" class="headerlink" title="Permanent link">&para;</a></h2>
-<div class="language-python doc-signature highlight"><pre><span></span><code><span class="n">ModelAfterValidatorWithoutInfo</span> <span class="o">=</span> <span class="n"><a class="autorefs autorefs-external" title="typing.Callable" href="https://docs.python.org/3/library/typing.html#typing.Callable">Callable</a></span><span class="p">[</span>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span class="n">ModelAfterValidatorWithoutInfo</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" title="typing.TypeAlias" href="https://docs.python.org/3/library/typing.html#typing.TypeAlias">TypeAlias</a></span> <span class="o">=</span> <span class="n"><a class="autorefs autorefs-external" title="collections.abc.Callable" href="https://docs.python.org/3/library/collections.abc.html#collections.abc.Callable">Callable</a></span><span class="p">[</span>
     <span class="p">[</span><span class="n"><span title="pydantic.functional_validators._ModelType">_ModelType</span></span><span class="p">],</span> <span class="n"><span title="pydantic.functional_validators._ModelType">_ModelType</span></span>
 <span class="p">]</span>
 </code></pre></div>
@@ -4389,7 +4389,7 @@ have info argument.</p>
   </span>
 
 <a href="#pydantic.functional_validators.ModelAfterValidator" class="headerlink" title="Permanent link">&para;</a></h2>
-<div class="language-python doc-signature highlight"><pre><span></span><code><span class="n">ModelAfterValidator</span> <span class="o">=</span> <span class="n"><a class="autorefs autorefs-external" title="typing.Callable" href="https://docs.python.org/3/library/typing.html#typing.Callable">Callable</a></span><span class="p">[</span>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span class="n">ModelAfterValidator</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" title="typing.TypeAlias" href="https://docs.python.org/3/library/typing.html#typing.TypeAlias">TypeAlias</a></span> <span class="o">=</span> <span class="n"><a class="autorefs autorefs-external" title="collections.abc.Callable" href="https://docs.python.org/3/library/collections.abc.html#collections.abc.Callable">Callable</a></span><span class="p">[</span>
     <span class="p">[</span><span class="n"><span title="pydantic.functional_validators._ModelType">_ModelType</span></span><span class="p">,</span> <span class="n"><a class="autorefs autorefs-internal" title="pydantic_core.core_schema.ValidationInfo" href="../pydantic_core_schema/#pydantic_core.core_schema.ValidationInfo">ValidationInfo</a></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-external" title="typing.Any" href="https://docs.python.org/3/library/typing.html#typing.Any">Any</a></span><span class="p">]],</span> <span class="n"><span title="pydantic.functional_validators._ModelType">_ModelType</span></span>
 <span class="p">]</span>
 </code></pre></div>
@@ -4707,7 +4707,7 @@ JSON Schema (in validation mode). The actual input type is <code>Any</code>.</p>
 
 <details class="example" open>
   <summary>Example</summary>
-  <div class="language-python highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Annotated</span><span class="p">,</span> <span class="n">Union</span>
+  <div class="language-python highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Annotated</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">pydantic</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">PlainValidator</span>
 
@@ -4719,7 +4719,7 @@ JSON Schema (in validation mode). The actual input type is <code>Any</code>.</p>
 
 <span class="n">MyInt</span> <span class="o">=</span> <span class="n">Annotated</span><span class="p">[</span>
     <span class="nb">int</span><span class="p">,</span>
-    <span class="n">PlainValidator</span><span class="p">(</span><span class="n">validate</span><span class="p">,</span> <span class="n">json_schema_input_type</span><span class="o">=</span><span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">int</span><span class="p">]),</span>  <span class="c1"># (1)!</span>
+    <span class="n">PlainValidator</span><span class="p">(</span><span class="n">validate</span><span class="p">,</span> <span class="n">json_schema_input_type</span><span class="o">=</span><span class="nb">str</span> <span class="o">|</span> <span class="nb">int</span><span class="p">),</span>  <span class="c1"># (1)!</span>
 <span class="p">]</span>
 
 <span class="k">class</span><span class="w"> </span><span class="nc">Model</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
@@ -5334,7 +5334,7 @@ annotation applied to a type.</p>
 <div class="language-python doc-signature highlight"><pre><span></span><code><span class="nf">ValidateAs</span><span class="p">(</span>
     <span class="n">from_type</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/glossary.html#term-type">type</a></span><span class="p">[</span><span class="n"><span title="pydantic.functional_validators._FromTypeT">_FromTypeT</span></span><span class="p">],</span>
     <span class="o">/</span><span class="p">,</span>
-    <span class="n">instantiation_hook</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" title="typing.Callable" href="https://docs.python.org/3/library/typing.html#typing.Callable">Callable</a></span><span class="p">[[</span><span class="n"><span title="pydantic.functional_validators._FromTypeT">_FromTypeT</span></span><span class="p">],</span> <span class="n"><a class="autorefs autorefs-external" title="typing.Any" href="https://docs.python.org/3/library/typing.html#typing.Any">Any</a></span><span class="p">],</span>
+    <span class="n">instantiation_hook</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" title="collections.abc.Callable" href="https://docs.python.org/3/library/collections.abc.html#collections.abc.Callable">Callable</a></span><span class="p">[[</span><span class="n"><span title="pydantic.functional_validators._FromTypeT">_FromTypeT</span></span><span class="p">],</span> <span class="n"><a class="autorefs autorefs-external" title="typing.Any" href="https://docs.python.org/3/library/typing.html#typing.Any">Any</a></span><span class="p">],</span>
 <span class="p">)</span>
 </code></pre></div>
 
@@ -5376,7 +5376,7 @@ annotation applied to a type.</p>
                 <code>instantiation_hook</code>
             </td>
             <td>
-                  <code><a class="autorefs autorefs-external" title="typing.Callable" href="https://docs.python.org/3/library/typing.html#typing.Callable">Callable</a>[[<span title="pydantic.functional_validators._FromTypeT">_FromTypeT</span>], <a class="autorefs autorefs-external" title="typing.Any" href="https://docs.python.org/3/library/typing.html#typing.Any">Any</a>]</code>
+                  <code><a class="autorefs autorefs-external" title="collections.abc.Callable" href="https://docs.python.org/3/library/collections.abc.html#collections.abc.Callable">Callable</a>[[<span title="pydantic.functional_validators._FromTypeT">_FromTypeT</span>], <a class="autorefs autorefs-external" title="typing.Any" href="https://docs.python.org/3/library/typing.html#typing.Any">Any</a>]</code>
             </td>
             <td>
               <div class="doc-md-description">
@@ -5424,9 +5424,9 @@ the populated custom type.</p>
 
                   <details class="quote">
                     <summary>Source code in <code>pydantic/functional_validators.py</code></summary>
-                    <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">880</span>
-<span class="normal">881</span>
-<span class="normal">882</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">from_type</span><span class="p">:</span> <span class="nb">type</span><span class="p">[</span><span class="n">_FromTypeT</span><span class="p">],</span> <span class="o">/</span><span class="p">,</span> <span class="n">instantiation_hook</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[[</span><span class="n">_FromTypeT</span><span class="p">],</span> <span class="n">Any</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+                    <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">884</span>
+<span class="normal">885</span>
+<span class="normal">886</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">from_type</span><span class="p">:</span> <span class="nb">type</span><span class="p">[</span><span class="n">_FromTypeT</span><span class="p">],</span> <span class="o">/</span><span class="p">,</span> <span class="n">instantiation_hook</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[[</span><span class="n">_FromTypeT</span><span class="p">],</span> <span class="n">Any</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
     <span class="bp">self</span><span class="o">.</span><span class="n">from_type</span> <span class="o">=</span> <span class="n">from_type</span>
     <span class="bp">self</span><span class="o">.</span><span class="n">instantiation_hook</span> <span class="o">=</span> <span class="n">instantiation_hook</span>
 </code></pre></div></td></tr></table></div>
@@ -5469,7 +5469,7 @@ the populated custom type.</p>
     <span class="n">mode</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" title="typing.Literal" href="https://docs.python.org/3/library/typing.html#typing.Literal">Literal</a></span><span class="p">[</span><span class="s2">&quot;wrap&quot;</span><span class="p">],</span>
     <span class="n">check_fields</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a></span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="o">...</span><span class="p">,</span>
     <span class="n">json_schema_input_type</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" title="typing.Any" href="https://docs.python.org/3/library/typing.html#typing.Any">Any</a></span> <span class="o">=</span> <span class="o">...</span><span class="p">,</span>
-<span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><a class="autorefs autorefs-external" title="typing.Callable" href="https://docs.python.org/3/library/typing.html#typing.Callable">Callable</a></span><span class="p">[[</span><span class="n"><span title="pydantic.functional_validators._V2WrapValidatorType">_V2WrapValidatorType</span></span><span class="p">],</span> <span class="n"><span title="pydantic.functional_validators._V2WrapValidatorType">_V2WrapValidatorType</span></span><span class="p">]</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><a class="autorefs autorefs-external" title="collections.abc.Callable" href="https://docs.python.org/3/library/collections.abc.html#collections.abc.Callable">Callable</a></span><span class="p">[[</span><span class="n"><span title="pydantic.functional_validators._V2WrapValidatorType">_V2WrapValidatorType</span></span><span class="p">],</span> <span class="n"><span title="pydantic.functional_validators._V2WrapValidatorType">_V2WrapValidatorType</span></span><span class="p">]</span>
 </code></pre></div><div class="language-python doc-signature highlight"><pre><span></span><code><span class="nf">field_validator</span><span class="p">(</span>
     <span class="n">field</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span><span class="p">,</span>
     <span class="o">/</span><span class="p">,</span>
@@ -5477,7 +5477,7 @@ the populated custom type.</p>
     <span class="n">mode</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" title="typing.Literal" href="https://docs.python.org/3/library/typing.html#typing.Literal">Literal</a></span><span class="p">[</span><span class="s2">&quot;before&quot;</span><span class="p">,</span> <span class="s2">&quot;plain&quot;</span><span class="p">],</span>
     <span class="n">check_fields</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a></span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="o">...</span><span class="p">,</span>
     <span class="n">json_schema_input_type</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" title="typing.Any" href="https://docs.python.org/3/library/typing.html#typing.Any">Any</a></span> <span class="o">=</span> <span class="o">...</span><span class="p">,</span>
-<span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><a class="autorefs autorefs-external" title="typing.Callable" href="https://docs.python.org/3/library/typing.html#typing.Callable">Callable</a></span><span class="p">[</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><a class="autorefs autorefs-external" title="collections.abc.Callable" href="https://docs.python.org/3/library/collections.abc.html#collections.abc.Callable">Callable</a></span><span class="p">[</span>
     <span class="p">[</span><span class="n"><span title="pydantic.functional_validators._V2BeforeAfterOrPlainValidatorType">_V2BeforeAfterOrPlainValidatorType</span></span><span class="p">],</span>
     <span class="n"><span title="pydantic.functional_validators._V2BeforeAfterOrPlainValidatorType">_V2BeforeAfterOrPlainValidatorType</span></span><span class="p">,</span>
 <span class="p">]</span>
@@ -5487,7 +5487,7 @@ the populated custom type.</p>
     <span class="o">*</span><span class="n">fields</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span><span class="p">,</span>
     <span class="n">mode</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" title="typing.Literal" href="https://docs.python.org/3/library/typing.html#typing.Literal">Literal</a></span><span class="p">[</span><span class="s2">&quot;after&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="o">...</span><span class="p">,</span>
     <span class="n">check_fields</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a></span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="o">...</span><span class="p">,</span>
-<span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><a class="autorefs autorefs-external" title="typing.Callable" href="https://docs.python.org/3/library/typing.html#typing.Callable">Callable</a></span><span class="p">[</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><a class="autorefs autorefs-external" title="collections.abc.Callable" href="https://docs.python.org/3/library/collections.abc.html#collections.abc.Callable">Callable</a></span><span class="p">[</span>
     <span class="p">[</span><span class="n"><span title="pydantic.functional_validators._V2BeforeAfterOrPlainValidatorType">_V2BeforeAfterOrPlainValidatorType</span></span><span class="p">],</span>
     <span class="n"><span title="pydantic.functional_validators._V2BeforeAfterOrPlainValidatorType">_V2BeforeAfterOrPlainValidatorType</span></span><span class="p">,</span>
 <span class="p">]</span>
@@ -5499,7 +5499,7 @@ the populated custom type.</p>
     <span class="n">mode</span><span class="p">:</span> <span class="n"><span title="pydantic.functional_validators.FieldValidatorModes">FieldValidatorModes</span></span> <span class="o">=</span> <span class="s2">&quot;after&quot;</span><span class="p">,</span>
     <span class="n">check_fields</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a></span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">json_schema_input_type</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" title="typing.Any" href="https://docs.python.org/3/library/typing.html#typing.Any">Any</a></span> <span class="o">=</span> <span class="n"><span title="pydantic_core.PydanticUndefined">PydanticUndefined</span></span><span class="p">,</span>
-<span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><a class="autorefs autorefs-external" title="typing.Callable" href="https://docs.python.org/3/library/typing.html#typing.Callable">Callable</a></span><span class="p">[[</span><span class="n"><a class="autorefs autorefs-external" title="typing.Any" href="https://docs.python.org/3/library/typing.html#typing.Any">Any</a></span><span class="p">],</span> <span class="n"><a class="autorefs autorefs-external" title="typing.Any" href="https://docs.python.org/3/library/typing.html#typing.Any">Any</a></span><span class="p">]</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><a class="autorefs autorefs-external" title="collections.abc.Callable" href="https://docs.python.org/3/library/collections.abc.html#collections.abc.Callable">Callable</a></span><span class="p">[[</span><span class="n"><a class="autorefs autorefs-external" title="typing.Any" href="https://docs.python.org/3/library/typing.html#typing.Any">Any</a></span><span class="p">],</span> <span class="n"><a class="autorefs autorefs-external" title="typing.Any" href="https://docs.python.org/3/library/typing.html#typing.Any">Any</a></span><span class="p">]</span>
 </code></pre></div>
 
     <div class="doc doc-contents ">
@@ -5654,8 +5654,7 @@ when <code>mode</code> is either <code>'before'</code>, <code>'plain'</code> or 
 
             <details class="quote">
               <summary>Source code in <code>pydantic/functional_validators.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">409</span>
-<span class="normal">410</span>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">410</span>
 <span class="normal">411</span>
 <span class="normal">412</span>
 <span class="normal">413</span>
@@ -5759,7 +5758,8 @@ when <code>mode</code> is either <code>'before'</code>, <code>'plain'</code> or 
 <span class="normal">511</span>
 <span class="normal">512</span>
 <span class="normal">513</span>
-<span class="normal">514</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">field_validator</span><span class="p">(</span>  <span class="c1"># noqa: D417</span>
+<span class="normal">514</span>
+<span class="normal">515</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">field_validator</span><span class="p">(</span>  <span class="c1"># noqa: D417</span>
     <span class="n">field</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
     <span class="o">/</span><span class="p">,</span>
     <span class="o">*</span><span class="n">fields</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
@@ -5880,15 +5880,15 @@ when <code>mode</code> is either <code>'before'</code>, <code>'plain'</code> or 
 
 <a href="#pydantic.functional_validators.model_validator" class="headerlink" title="Permanent link">&para;</a></h2>
           <div class="doc-overloads">
-<div class="language-python doc-signature highlight"><pre><span></span><code><span class="nf">model_validator</span><span class="p">(</span><span class="o">*</span><span class="p">,</span> <span class="n">mode</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" title="typing.Literal" href="https://docs.python.org/3/library/typing.html#typing.Literal">Literal</a></span><span class="p">[</span><span class="s2">&quot;wrap&quot;</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n"><a class="autorefs autorefs-external" title="typing.Callable" href="https://docs.python.org/3/library/typing.html#typing.Callable">Callable</a></span><span class="p">[</span>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span class="nf">model_validator</span><span class="p">(</span><span class="o">*</span><span class="p">,</span> <span class="n">mode</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" title="typing.Literal" href="https://docs.python.org/3/library/typing.html#typing.Literal">Literal</a></span><span class="p">[</span><span class="s2">&quot;wrap&quot;</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n"><a class="autorefs autorefs-external" title="collections.abc.Callable" href="https://docs.python.org/3/library/collections.abc.html#collections.abc.Callable">Callable</a></span><span class="p">[</span>
     <span class="p">[</span><span class="n"><span title="pydantic.functional_validators._AnyModelWrapValidator">_AnyModelWrapValidator</span></span><span class="p">[</span><span class="n"><span title="pydantic.functional_validators._ModelType">_ModelType</span></span><span class="p">]],</span>
     <span class="n"><span title="pydantic._internal._decorators.PydanticDescriptorProxy">PydanticDescriptorProxy</span></span><span class="p">[</span><span class="n"><span title="pydantic._internal._decorators.ModelValidatorDecoratorInfo">ModelValidatorDecoratorInfo</span></span><span class="p">],</span>
 <span class="p">]</span>
-</code></pre></div><div class="language-python doc-signature highlight"><pre><span></span><code><span class="nf">model_validator</span><span class="p">(</span><span class="o">*</span><span class="p">,</span> <span class="n">mode</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" title="typing.Literal" href="https://docs.python.org/3/library/typing.html#typing.Literal">Literal</a></span><span class="p">[</span><span class="s2">&quot;before&quot;</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n"><a class="autorefs autorefs-external" title="typing.Callable" href="https://docs.python.org/3/library/typing.html#typing.Callable">Callable</a></span><span class="p">[</span>
+</code></pre></div><div class="language-python doc-signature highlight"><pre><span></span><code><span class="nf">model_validator</span><span class="p">(</span><span class="o">*</span><span class="p">,</span> <span class="n">mode</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" title="typing.Literal" href="https://docs.python.org/3/library/typing.html#typing.Literal">Literal</a></span><span class="p">[</span><span class="s2">&quot;before&quot;</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n"><a class="autorefs autorefs-external" title="collections.abc.Callable" href="https://docs.python.org/3/library/collections.abc.html#collections.abc.Callable">Callable</a></span><span class="p">[</span>
     <span class="p">[</span><span class="n"><span title="pydantic.functional_validators._AnyModelBeforeValidator">_AnyModelBeforeValidator</span></span><span class="p">],</span>
     <span class="n"><span title="pydantic._internal._decorators.PydanticDescriptorProxy">PydanticDescriptorProxy</span></span><span class="p">[</span><span class="n"><span title="pydantic._internal._decorators.ModelValidatorDecoratorInfo">ModelValidatorDecoratorInfo</span></span><span class="p">],</span>
 <span class="p">]</span>
-</code></pre></div><div class="language-python doc-signature highlight"><pre><span></span><code><span class="nf">model_validator</span><span class="p">(</span><span class="o">*</span><span class="p">,</span> <span class="n">mode</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" title="typing.Literal" href="https://docs.python.org/3/library/typing.html#typing.Literal">Literal</a></span><span class="p">[</span><span class="s2">&quot;after&quot;</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n"><a class="autorefs autorefs-external" title="typing.Callable" href="https://docs.python.org/3/library/typing.html#typing.Callable">Callable</a></span><span class="p">[</span>
+</code></pre></div><div class="language-python doc-signature highlight"><pre><span></span><code><span class="nf">model_validator</span><span class="p">(</span><span class="o">*</span><span class="p">,</span> <span class="n">mode</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" title="typing.Literal" href="https://docs.python.org/3/library/typing.html#typing.Literal">Literal</a></span><span class="p">[</span><span class="s2">&quot;after&quot;</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n"><a class="autorefs autorefs-external" title="collections.abc.Callable" href="https://docs.python.org/3/library/collections.abc.html#collections.abc.Callable">Callable</a></span><span class="p">[</span>
     <span class="p">[</span><span class="n"><span title="pydantic.functional_validators._AnyModelAfterValidator">_AnyModelAfterValidator</span></span><span class="p">[</span><span class="n"><span title="pydantic.functional_validators._ModelType">_ModelType</span></span><span class="p">]],</span>
     <span class="n"><span title="pydantic._internal._decorators.PydanticDescriptorProxy">PydanticDescriptorProxy</span></span><span class="p">[</span><span class="n"><span title="pydantic._internal._decorators.ModelValidatorDecoratorInfo">ModelValidatorDecoratorInfo</span></span><span class="p">],</span>
 <span class="p">]</span>
@@ -5992,11 +5992,7 @@ It can be one of the following: 'wrap', 'before', or 'after'.</p>
 
             <details class="quote">
               <summary>Source code in <code>pydantic/functional_validators.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">668</span>
-<span class="normal">669</span>
-<span class="normal">670</span>
-<span class="normal">671</span>
-<span class="normal">672</span>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">672</span>
 <span class="normal">673</span>
 <span class="normal">674</span>
 <span class="normal">675</span>
@@ -6057,7 +6053,11 @@ It can be one of the following: 'wrap', 'before', or 'after'.</p>
 <span class="normal">730</span>
 <span class="normal">731</span>
 <span class="normal">732</span>
-<span class="normal">733</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">model_validator</span><span class="p">(</span>
+<span class="normal">733</span>
+<span class="normal">734</span>
+<span class="normal">735</span>
+<span class="normal">736</span>
+<span class="normal">737</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">model_validator</span><span class="p">(</span>
     <span class="o">*</span><span class="p">,</span>
     <span class="n">mode</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s1">&#39;wrap&#39;</span><span class="p">,</span> <span class="s1">&#39;before&#39;</span><span class="p">,</span> <span class="s1">&#39;after&#39;</span><span class="p">],</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Any</span><span class="p">:</span>

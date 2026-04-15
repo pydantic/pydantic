@@ -3,7 +3,7 @@ This module contains related classes and functions for validation.
 ## ModelAfterValidatorWithoutInfo
 
 ```python
-ModelAfterValidatorWithoutInfo = Callable[
+ModelAfterValidatorWithoutInfo: TypeAlias = Callable[
     [_ModelType], _ModelType
 ]
 
@@ -14,7 +14,7 @@ A `@model_validator` decorated function signature. This is used when `mode='afte
 ## ModelAfterValidator
 
 ```python
-ModelAfterValidator = Callable[
+ModelAfterValidator: TypeAlias = Callable[
     [_ModelType, ValidationInfo[Any]], _ModelType
 ]
 
@@ -152,7 +152,7 @@ Attributes:
 Example
 
 ```python
-from typing import Annotated, Union
+from typing import Annotated
 
 from pydantic import BaseModel, PlainValidator
 
@@ -164,7 +164,7 @@ def validate(v: object) -> int:
 
 MyInt = Annotated[
     int,
-    PlainValidator(validate, json_schema_input_type=Union[str, int]),  # (1)!
+    PlainValidator(validate, json_schema_input_type=str | int),  # (1)!
 ]
 
 class Model(BaseModel):

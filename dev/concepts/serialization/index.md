@@ -37,33 +37,6 @@ When using the Python mode, Pydantic models (and model-like types such as datacl
 1. With the exception of [root models](../models/#rootmodel-and-custom-root-types), where the root value is dumped directly.
 
 ```python
-from typing import Optional
-
-from pydantic import BaseModel, Field
-
-
-class BarModel(BaseModel):
-    whatever: tuple[int, ...]
-
-
-class FooBarModel(BaseModel):
-    banana: Optional[float] = 1.1
-    foo: str = Field(serialization_alias='foo_alias')
-    bar: BarModel
-
-
-m = FooBarModel(banana=3.14, foo='hello', bar={'whatever': (1, 2)})
-
-# returns a dictionary:
-print(m.model_dump())
-#> {'banana': 3.14, 'foo': 'hello', 'bar': {'whatever': (1, 2)}}
-
-print(m.model_dump(by_alias=True))
-#> {'banana': 3.14, 'foo_alias': 'hello', 'bar': {'whatever': (1, 2)}}
-
-```
-
-```python
 from pydantic import BaseModel, Field
 
 

@@ -4,7 +4,7 @@ Defining fields on models.
 
 ```python
 Field(
-    default: ellipsis,
+    default: EllipsisType,
     *,
     alias: str | None = _Unset,
     alias_priority: int | None = _Unset,
@@ -856,7 +856,7 @@ PrivateAttr(
 PrivateAttr(
     *,
     default_factory: (
-        Callable[[], _T] | Callable[[dict[str, Any]], _T]
+        Callable[[], _T" optional hover>_T] | Callable[[dict[str, Any]], _T]
     ),
     init: Literal[False] = False
 ) -> _T

@@ -868,15 +868,9 @@ print(m)
 ### JsonValue
 
 ```python
-JsonValue: TypeAlias = Union[
-    list["JsonValue"],
-    dict[str, "JsonValue"],
-    str,
-    bool,
-    int,
-    float,
-    None,
-]
+JsonValue: TypeAlias = (
+    "list[JsonValue] | dict[str, JsonValue] | str | bool | int | float | None"
+)
 
 ```
 
@@ -1359,7 +1353,7 @@ UUID1 = Annotated[UUID, UuidVersion(1)]
 Source code in `pydantic/types.py`
 
 ````python
-@_dataclasses.dataclass(**_internal_dataclass.slots_true)
+@_dataclasses.dataclass(slots=True)
 class UuidVersion:
     """A field metadata class to indicate a [UUID](https://docs.python.org/3/library/uuid.html) version.
 
@@ -3248,7 +3242,7 @@ except ValidationError as e:
 Source code in `pydantic/types.py`
 
 ````python
-@_dataclasses.dataclass(**_internal_dataclass.slots_true)
+@_dataclasses.dataclass(slots=True)
 class EncodedBytes:
     """A bytes type that is encoded and decoded using the specified encoder.
 
@@ -3472,7 +3466,7 @@ except ValidationError as e:
 Source code in `pydantic/types.py`
 
 ````python
-@_dataclasses.dataclass(**_internal_dataclass.slots_true)
+@_dataclasses.dataclass(slots=True)
 class EncodedStr:
     """A str type that is encoded and decoded using the specified encoder.
 
@@ -3668,7 +3662,7 @@ print(repr(Model(x='abc').x))
 Source code in `pydantic/types.py`
 
 ````python
-@_dataclasses.dataclass(**_internal_dataclass.slots_true)
+@_dataclasses.dataclass(slots=True)
 class GetPydanticSchema:
     """!!! abstract "Usage Documentation"
         [Using `GetPydanticSchema` to Reduce Boilerplate](../concepts/types.md#using-getpydanticschema-to-reduce-boilerplate)
@@ -3722,12 +3716,12 @@ Provides a way to specify the expected tag to use for a case of a (callable) dis
 
 Also provides a way to label a union case in error messages.
 
-When using a callable `Discriminator`, attach a `Tag` to each case in the `Union` to specify the tag that should be used to identify that case. For example, in the below example, the `Tag` is used to specify that if `get_discriminator_value` returns `'apple'`, the input should be validated as an `ApplePie`, and if it returns `'pumpkin'`, the input should be validated as a `PumpkinPie`.
+When using a callable `Discriminator`, attach a `Tag` to each case in the union to specify the tag that should be used to identify that case. For example, in the below example, the `Tag` is used to specify that if `get_discriminator_value` returns `'apple'`, the input should be validated as an `ApplePie`, and if it returns `'pumpkin'`, the input should be validated as a `PumpkinPie`.
 
-The primary role of the `Tag` here is to map the return value from the callable `Discriminator` function to the appropriate member of the `Union` in question.
+The primary role of the `Tag` here is to map the return value from the callable `Discriminator` function to the appropriate member of the union in question.
 
 ```python
-from typing import Annotated, Any, Literal, Union
+from typing import Annotated, Any, Literal
 
 from pydantic import BaseModel, Discriminator, Tag
 
@@ -3748,10 +3742,7 @@ def get_discriminator_value(v: Any) -> str:
 
 class ThanksgivingDinner(BaseModel):
     dessert: Annotated[
-        Union[
-            Annotated[ApplePie, Tag('apple')],
-            Annotated[PumpkinPie, Tag('pumpkin')],
-        ],
+        Annotated[ApplePie, Tag('apple')] | Annotated[PumpkinPie, Tag('pumpkin')],
         Discriminator(get_discriminator_value),
     ]
 
@@ -3788,22 +3779,22 @@ See the [Discriminated Unions](../../concepts/unions/#discriminated-unions) conc
 Source code in `pydantic/types.py`
 
 ````python
-@_dataclasses.dataclass(**_internal_dataclass.slots_true, frozen=True)
+@_dataclasses.dataclass(slots=True, frozen=True)
 class Tag:
     """Provides a way to specify the expected tag to use for a case of a (callable) discriminated union.
 
     Also provides a way to label a union case in error messages.
 
-    When using a callable `Discriminator`, attach a `Tag` to each case in the `Union` to specify the tag that
+    When using a callable `Discriminator`, attach a `Tag` to each case in the union to specify the tag that
     should be used to identify that case. For example, in the below example, the `Tag` is used to specify that
     if `get_discriminator_value` returns `'apple'`, the input should be validated as an `ApplePie`, and if it
     returns `'pumpkin'`, the input should be validated as a `PumpkinPie`.
 
     The primary role of the `Tag` here is to map the return value from the callable `Discriminator` function to
-    the appropriate member of the `Union` in question.
+    the appropriate member of the union in question.
 
-    ```python
-    from typing import Annotated, Any, Literal, Union
+    ```python {lint="skip"}
+    from typing import Annotated, Any, Literal
 
     from pydantic import BaseModel, Discriminator, Tag
 
@@ -3824,10 +3815,7 @@ class Tag:
 
     class ThanksgivingDinner(BaseModel):
         dessert: Annotated[
-            Union[
-                Annotated[ApplePie, Tag('apple')],
-                Annotated[PumpkinPie, Tag('pumpkin')],
-            ],
+            Annotated[ApplePie, Tag('apple')] | Annotated[PumpkinPie, Tag('pumpkin')],
             Discriminator(get_discriminator_value),
         ]
 
@@ -3884,10 +3872,10 @@ Provides a way to use a custom callable as the way to extract the value of a uni
 
 This allows you to get validation behavior like you'd get from `Field(discriminator=<field_name>)`, but without needing to have a single shared field across all the union choices. This also makes it possible to handle unions of models and primitive types with discriminated-union-style validation errors. Finally, this allows you to use a custom callable as the way to identify which member of a union a value belongs to, while still seeing all the performance benefits of a discriminated union.
 
-Consider this example, which is much more performant with the use of `Discriminator` and thus a `TaggedUnion` than it would be as a normal `Union`.
+Consider this example, which is much more performant with the use of `Discriminator` and thus a `TaggedUnion` than it would be as a normal union.
 
 ```python
-from typing import Annotated, Any, Literal, Union
+from typing import Annotated, Any, Literal
 
 from pydantic import BaseModel, Discriminator, Tag
 
@@ -3908,10 +3896,7 @@ def get_discriminator_value(v: Any) -> str:
 
 class ThanksgivingDinner(BaseModel):
     dessert: Annotated[
-        Union[
-            Annotated[ApplePie, Tag('apple')],
-            Annotated[PumpkinPie, Tag('pumpkin')],
-        ],
+        Annotated[ApplePie, Tag('apple')] | Annotated[PumpkinPie, Tag('pumpkin')],
         Discriminator(get_discriminator_value),
     ]
 
@@ -3944,7 +3929,7 @@ See the [Discriminated Unions](../../concepts/unions/#discriminated-unions) conc
 Source code in `pydantic/types.py`
 
 ````python
-@_dataclasses.dataclass(**_internal_dataclass.slots_true, frozen=True)
+@_dataclasses.dataclass(slots=True, frozen=True)
 class Discriminator:
     """!!! abstract "Usage Documentation"
         [Discriminated Unions with `Callable` `Discriminator`](../concepts/unions.md#discriminated-unions-with-callable-discriminator)
@@ -3958,10 +3943,10 @@ class Discriminator:
     belongs to, while still seeing all the performance benefits of a discriminated union.
 
     Consider this example, which is much more performant with the use of `Discriminator` and thus a `TaggedUnion`
-    than it would be as a normal `Union`.
+    than it would be as a normal union.
 
-    ```python
-    from typing import Annotated, Any, Literal, Union
+    ```python {lint="skip"}
+    from typing import Annotated, Any, Literal
 
     from pydantic import BaseModel, Discriminator, Tag
 
@@ -3982,10 +3967,7 @@ class Discriminator:
 
     class ThanksgivingDinner(BaseModel):
         dessert: Annotated[
-            Union[
-                Annotated[ApplePie, Tag('apple')],
-                Annotated[PumpkinPie, Tag('pumpkin')],
-            ],
+            Annotated[ApplePie, Tag('apple')] | Annotated[PumpkinPie, Tag('pumpkin')],
             Discriminator(get_discriminator_value),
         ]
 

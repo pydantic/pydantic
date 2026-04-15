@@ -36,128 +36,6 @@ Here's an example of generating JSON schema from a `BaseModel`:
 ```python
 import json
 from enum import Enum
-from typing import Annotated, Union
-
-from pydantic import BaseModel, Field
-from pydantic.config import ConfigDict
-
-
-class FooBar(BaseModel):
-    count: int
-    size: Union[float, None] = None
-
-
-class Gender(str, Enum):
-    male = 'male'
-    female = 'female'
-    other = 'other'
-    not_given = 'not_given'
-
-
-class MainModel(BaseModel):
-    """
-    This is the description of the main model
-    """
-
-    model_config = ConfigDict(title='Main')
-
-    foo_bar: FooBar
-    gender: Annotated[Union[Gender, None], Field(alias='Gender')] = None
-    snap: int = Field(
-        default=42,
-        title='The Snap',
-        description='this is the value of snap',
-        gt=30,
-        lt=50,
-    )
-
-
-main_model_schema = MainModel.model_json_schema()  # (1)!
-print(json.dumps(main_model_schema, indent=2))  # (2)!
-
-```
-
-JSON output:
-
-```json
-{
-  "$defs": {
-    "FooBar": {
-      "properties": {
-        "count": {
-          "title": "Count",
-          "type": "integer"
-        },
-        "size": {
-          "anyOf": [
-            {
-              "type": "number"
-            },
-            {
-              "type": "null"
-            }
-          ],
-          "default": null,
-          "title": "Size"
-        }
-      },
-      "required": [
-        "count"
-      ],
-      "title": "FooBar",
-      "type": "object"
-    },
-    "Gender": {
-      "enum": [
-        "male",
-        "female",
-        "other",
-        "not_given"
-      ],
-      "title": "Gender",
-      "type": "string"
-    }
-  },
-  "description": "This is the description of the main model",
-  "properties": {
-    "foo_bar": {
-      "$ref": "#/$defs/FooBar"
-    },
-    "Gender": {
-      "anyOf": [
-        {
-          "$ref": "#/$defs/Gender"
-        },
-        {
-          "type": "null"
-        }
-      ],
-      "default": null
-    },
-    "snap": {
-      "default": 42,
-      "description": "this is the value of snap",
-      "exclusiveMaximum": 50,
-      "exclusiveMinimum": 30,
-      "title": "The Snap",
-      "type": "integer"
-    }
-  },
-  "required": [
-    "foo_bar"
-  ],
-  "title": "Main",
-  "type": "object"
-}
-
-```
-
-1. This produces a "jsonable" dict of `MainModel`'s schema.
-1. Calling `json.dumps` on the schema dict produces a JSON string.
-
-```python
-import json
-from enum import Enum
 from typing import Annotated
 
 from pydantic import BaseModel, Field
@@ -294,7 +172,6 @@ You can also generate JSON schemas for combinations of BaseModels and TypeAdapte
 
 ```python
 import json
-from typing import Union
 
 from pydantic import BaseModel, TypeAdapter
 
@@ -309,7 +186,7 @@ class Dog(BaseModel):
     breed: str
 
 
-ta = TypeAdapter(Union[Cat, Dog])
+ta = TypeAdapter(Cat | Dog)
 ta_schema = ta.json_schema()
 print(json.dumps(ta_schema, indent=2))
 
@@ -677,35 +554,7 @@ We viewed this change largely as a bug fix, as it resolves unintentional differe
 
 ```python
 import json
-from typing import Annotated
-
-from typing_extensions import TypeAlias
-
-from pydantic import Field, TypeAdapter
-
-ExternalType: TypeAlias = Annotated[
-    int, Field(json_schema_extra={'key1': 'value1'})
-]
-
-ta = TypeAdapter(
-    Annotated[ExternalType, Field(json_schema_extra={'key2': 'value2'})]
-)
-print(json.dumps(ta.json_schema(), indent=2))
-"""
-{
-  "key1": "value1",
-  "key2": "value2",
-  "type": "integer"
-}
-"""
-
-```
-
-```python
-import json
-from typing import Annotated
-
-from typing import TypeAlias
+from typing import Annotated, TypeAlias
 
 from pydantic import Field, TypeAdapter
 
@@ -1358,49 +1207,6 @@ print(MyModel.model_json_schema(schema_generator=MyGenerateJsonSchema))
 Below is an approach you can use to exclude any fields from the schema that don't have valid json schemas:
 
 ```python
-from typing import Callable
-
-from pydantic_core import PydanticOmit, core_schema
-
-from pydantic import BaseModel
-from pydantic.json_schema import GenerateJsonSchema, JsonSchemaValue
-
-
-class MyGenerateJsonSchema(GenerateJsonSchema):
-    def handle_invalid_for_json_schema(
-        self, schema: core_schema.CoreSchema, error_info: str
-    ) -> JsonSchemaValue:
-        raise PydanticOmit
-
-
-def example_callable():
-    return 1
-
-
-class Example(BaseModel):
-    name: str = 'example'
-    function: Callable = example_callable
-
-
-instance_example = Example()
-
-validation_schema = instance_example.model_json_schema(
-    schema_generator=MyGenerateJsonSchema, mode='validation'
-)
-print(validation_schema)
-"""
-{
-    'properties': {
-        'name': {'default': 'example', 'title': 'Name', 'type': 'string'}
-    },
-    'title': 'Example',
-    'type': 'object',
-}
-"""
-
-```
-
-```python
 from collections.abc import Callable
 
 from pydantic_core import PydanticOmit, core_schema
@@ -1448,61 +1254,6 @@ print(validation_schema)
 By default, Pydantic recursively sorts JSON schemas by alphabetically sorting keys. Notably, Pydantic skips sorting the values of the `properties` key, to preserve the order of the fields as they were defined in the model.
 
 If you would like to customize this behavior, you can override the `sort` method in your custom `GenerateJsonSchema` subclass. The below example uses a no-op `sort` method to disable sorting entirely, which is reflected in the preserved order of the model fields and `json_schema_extra` keys:
-
-```python
-import json
-from typing import Optional
-
-from pydantic import BaseModel, Field
-from pydantic.json_schema import GenerateJsonSchema, JsonSchemaValue
-
-
-class MyGenerateJsonSchema(GenerateJsonSchema):
-    def sort(
-        self, value: JsonSchemaValue, parent_key: Optional[str] = None
-    ) -> JsonSchemaValue:
-        """No-op, we don't want to sort schema values at all."""
-        return value
-
-
-class Bar(BaseModel):
-    c: str
-    b: str
-    a: str = Field(json_schema_extra={'c': 'hi', 'b': 'hello', 'a': 'world'})
-
-
-json_schema = Bar.model_json_schema(schema_generator=MyGenerateJsonSchema)
-print(json.dumps(json_schema, indent=2))
-"""
-{
-  "type": "object",
-  "properties": {
-    "c": {
-      "type": "string",
-      "title": "C"
-    },
-    "b": {
-      "type": "string",
-      "title": "B"
-    },
-    "a": {
-      "type": "string",
-      "c": "hi",
-      "b": "hello",
-      "a": "world",
-      "title": "A"
-    }
-  },
-  "required": [
-    "c",
-    "b",
-    "a"
-  ],
-  "title": "Bar"
-}
-"""
-
-```
 
 ```python
 import json

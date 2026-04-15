@@ -4421,127 +4421,6 @@ of the JSON schema generation process overall. The same effects can be achieved 
 depending on your use case, one approach might offer a more simple solution than the other.</p>
 </div>
 <p>Here's an example of generating JSON schema from a <code>BaseModel</code>:</p>
-<div class="tabbed-set tabbed-alternate" data-tabs="1:2"><input checked="checked" id="__tabbed_1_1" name="__tabbed_1" type="radio" /><input id="__tabbed_1_2" name="__tabbed_1" type="radio" /><div class="tabbed-labels"><label for="__tabbed_1_1">Python 3.9 and above</label><label for="__tabbed_1_2">Python 3.10 and above</label></div>
-<div class="tabbed-content">
-<div class="tabbed-block">
-<div class="language-python highlight"><pre><span></span><code><span class="kn">import</span><span class="w"> </span><span class="nn">json</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">enum</span><span class="w"> </span><span class="kn">import</span> <span class="n">Enum</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Annotated</span><span class="p">,</span> <span class="n">Union</span>
-
-<span class="kn">from</span><span class="w"> </span><span class="nn">pydantic</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">Field</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">pydantic.config</span><span class="w"> </span><span class="kn">import</span> <span class="n">ConfigDict</span>
-
-
-<span class="k">class</span><span class="w"> </span><span class="nc">FooBar</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
-    <span class="n">count</span><span class="p">:</span> <span class="nb">int</span>
-    <span class="n">size</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="kc">None</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
-
-
-<span class="k">class</span><span class="w"> </span><span class="nc">Gender</span><span class="p">(</span><span class="nb">str</span><span class="p">,</span> <span class="n">Enum</span><span class="p">):</span>
-    <span class="n">male</span> <span class="o">=</span> <span class="s1">&#39;male&#39;</span>
-    <span class="n">female</span> <span class="o">=</span> <span class="s1">&#39;female&#39;</span>
-    <span class="n">other</span> <span class="o">=</span> <span class="s1">&#39;other&#39;</span>
-    <span class="n">not_given</span> <span class="o">=</span> <span class="s1">&#39;not_given&#39;</span>
-
-
-<span class="k">class</span><span class="w"> </span><span class="nc">MainModel</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    This is the description of the main model</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-
-    <span class="n">model_config</span> <span class="o">=</span> <span class="n">ConfigDict</span><span class="p">(</span><span class="n">title</span><span class="o">=</span><span class="s1">&#39;Main&#39;</span><span class="p">)</span>
-
-    <span class="n">foo_bar</span><span class="p">:</span> <span class="n">FooBar</span>
-    <span class="n">gender</span><span class="p">:</span> <span class="n">Annotated</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="n">Gender</span><span class="p">,</span> <span class="kc">None</span><span class="p">],</span> <span class="n">Field</span><span class="p">(</span><span class="n">alias</span><span class="o">=</span><span class="s1">&#39;Gender&#39;</span><span class="p">)]</span> <span class="o">=</span> <span class="kc">None</span>
-    <span class="n">snap</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span>
-        <span class="n">default</span><span class="o">=</span><span class="mi">42</span><span class="p">,</span>
-        <span class="n">title</span><span class="o">=</span><span class="s1">&#39;The Snap&#39;</span><span class="p">,</span>
-        <span class="n">description</span><span class="o">=</span><span class="s1">&#39;this is the value of snap&#39;</span><span class="p">,</span>
-        <span class="n">gt</span><span class="o">=</span><span class="mi">30</span><span class="p">,</span>
-        <span class="n">lt</span><span class="o">=</span><span class="mi">50</span><span class="p">,</span>
-    <span class="p">)</span>
-
-
-<span class="n">main_model_schema</span> <span class="o">=</span> <span class="n">MainModel</span><span class="o">.</span><span class="n">model_json_schema</span><span class="p">()</span>  <span class="c1"># (1)!</span>
-<span class="nb">print</span><span class="p">(</span><span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">main_model_schema</span><span class="p">,</span> <span class="n">indent</span><span class="o">=</span><span class="mi">2</span><span class="p">))</span>  <span class="c1"># (2)!</span>
-</code></pre></div>
-<p>JSON output:</p>
-<div class="language-json highlight"><pre><span></span><code><span class="p">{</span>
-<span class="w">  </span><span class="nt">&quot;$defs&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
-<span class="w">    </span><span class="nt">&quot;FooBar&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
-<span class="w">      </span><span class="nt">&quot;properties&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
-<span class="w">        </span><span class="nt">&quot;count&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
-<span class="w">          </span><span class="nt">&quot;title&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Count&quot;</span><span class="p">,</span>
-<span class="w">          </span><span class="nt">&quot;type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;integer&quot;</span>
-<span class="w">        </span><span class="p">},</span>
-<span class="w">        </span><span class="nt">&quot;size&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
-<span class="w">          </span><span class="nt">&quot;anyOf&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
-<span class="w">            </span><span class="p">{</span>
-<span class="w">              </span><span class="nt">&quot;type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;number&quot;</span>
-<span class="w">            </span><span class="p">},</span>
-<span class="w">            </span><span class="p">{</span>
-<span class="w">              </span><span class="nt">&quot;type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;null&quot;</span>
-<span class="w">            </span><span class="p">}</span>
-<span class="w">          </span><span class="p">],</span>
-<span class="w">          </span><span class="nt">&quot;default&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">null</span><span class="p">,</span>
-<span class="w">          </span><span class="nt">&quot;title&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Size&quot;</span>
-<span class="w">        </span><span class="p">}</span>
-<span class="w">      </span><span class="p">},</span>
-<span class="w">      </span><span class="nt">&quot;required&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
-<span class="w">        </span><span class="s2">&quot;count&quot;</span>
-<span class="w">      </span><span class="p">],</span>
-<span class="w">      </span><span class="nt">&quot;title&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;FooBar&quot;</span><span class="p">,</span>
-<span class="w">      </span><span class="nt">&quot;type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;object&quot;</span>
-<span class="w">    </span><span class="p">},</span>
-<span class="w">    </span><span class="nt">&quot;Gender&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
-<span class="w">      </span><span class="nt">&quot;enum&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
-<span class="w">        </span><span class="s2">&quot;male&quot;</span><span class="p">,</span>
-<span class="w">        </span><span class="s2">&quot;female&quot;</span><span class="p">,</span>
-<span class="w">        </span><span class="s2">&quot;other&quot;</span><span class="p">,</span>
-<span class="w">        </span><span class="s2">&quot;not_given&quot;</span>
-<span class="w">      </span><span class="p">],</span>
-<span class="w">      </span><span class="nt">&quot;title&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Gender&quot;</span><span class="p">,</span>
-<span class="w">      </span><span class="nt">&quot;type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;string&quot;</span>
-<span class="w">    </span><span class="p">}</span>
-<span class="w">  </span><span class="p">},</span>
-<span class="w">  </span><span class="nt">&quot;description&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;This is the description of the main model&quot;</span><span class="p">,</span>
-<span class="w">  </span><span class="nt">&quot;properties&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
-<span class="w">    </span><span class="nt">&quot;foo_bar&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
-<span class="w">      </span><span class="nt">&quot;$ref&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;#/$defs/FooBar&quot;</span>
-<span class="w">    </span><span class="p">},</span>
-<span class="w">    </span><span class="nt">&quot;Gender&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
-<span class="w">      </span><span class="nt">&quot;anyOf&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
-<span class="w">        </span><span class="p">{</span>
-<span class="w">          </span><span class="nt">&quot;$ref&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;#/$defs/Gender&quot;</span>
-<span class="w">        </span><span class="p">},</span>
-<span class="w">        </span><span class="p">{</span>
-<span class="w">          </span><span class="nt">&quot;type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;null&quot;</span>
-<span class="w">        </span><span class="p">}</span>
-<span class="w">      </span><span class="p">],</span>
-<span class="w">      </span><span class="nt">&quot;default&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">null</span>
-<span class="w">    </span><span class="p">},</span>
-<span class="w">    </span><span class="nt">&quot;snap&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
-<span class="w">      </span><span class="nt">&quot;default&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">42</span><span class="p">,</span>
-<span class="w">      </span><span class="nt">&quot;description&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;this is the value of snap&quot;</span><span class="p">,</span>
-<span class="w">      </span><span class="nt">&quot;exclusiveMaximum&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">50</span><span class="p">,</span>
-<span class="w">      </span><span class="nt">&quot;exclusiveMinimum&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">30</span><span class="p">,</span>
-<span class="w">      </span><span class="nt">&quot;title&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;The Snap&quot;</span><span class="p">,</span>
-<span class="w">      </span><span class="nt">&quot;type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;integer&quot;</span>
-<span class="w">    </span><span class="p">}</span>
-<span class="w">  </span><span class="p">},</span>
-<span class="w">  </span><span class="nt">&quot;required&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
-<span class="w">    </span><span class="s2">&quot;foo_bar&quot;</span>
-<span class="w">  </span><span class="p">],</span>
-<span class="w">  </span><span class="nt">&quot;title&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Main&quot;</span><span class="p">,</span>
-<span class="w">  </span><span class="nt">&quot;type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;object&quot;</span>
-<span class="p">}</span>
-</code></pre></div>
-<ol>
-<li>This produces a "jsonable" dict of <code>MainModel</code>'s schema.</li>
-<li>Calling <code>json.dumps</code> on the schema dict produces a JSON string.</li>
-</ol>
-</div>
-<div class="tabbed-block">
 <div class="language-python highlight"><pre><span></span><code><span class="kn">import</span><span class="w"> </span><span class="nn">json</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">enum</span><span class="w"> </span><span class="kn">import</span> <span class="n">Enum</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Annotated</span>
@@ -4658,9 +4537,6 @@ depending on your use case, one approach might offer a more simple solution than
 <li>This produces a "jsonable" dict of <code>MainModel</code>'s schema.</li>
 <li>Calling <code>json.dumps</code> on the schema dict produces a JSON string.</li>
 </ol>
-</div>
-</div>
-</div>
 <p>The <a class="autorefs autorefs-internal" href="../../api/type_adapter/#pydantic.type_adapter.TypeAdapter"><code>TypeAdapter</code></a> class lets you create an object with methods for validating, serializing,
 and producing JSON schemas for arbitrary types. This serves as a complete replacement for <code>schema_of</code> in
 Pydantic V1 (which is now deprecated).</p>
@@ -4674,7 +4550,6 @@ Pydantic V1 (which is now deprecated).</p>
 <p>You can also generate JSON schemas for combinations of <a class="autorefs autorefs-internal" href="../../api/base_model/#pydantic.BaseModel"><code>BaseModel</code>s</a>
 and <a class="autorefs autorefs-internal" href="../../api/type_adapter/#pydantic.type_adapter.TypeAdapter"><code>TypeAdapter</code>s</a>, as shown in this example:</p>
 <div class="language-python highlight"><pre><span></span><code><span class="kn">import</span><span class="w"> </span><span class="nn">json</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Union</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">pydantic</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">TypeAdapter</span>
 
@@ -4689,7 +4564,7 @@ and <a class="autorefs autorefs-internal" href="../../api/type_adapter/#pydantic
     <span class="n">breed</span><span class="p">:</span> <span class="nb">str</span>
 
 
-<span class="n">ta</span> <span class="o">=</span> <span class="n">TypeAdapter</span><span class="p">(</span><span class="n">Union</span><span class="p">[</span><span class="n">Cat</span><span class="p">,</span> <span class="n">Dog</span><span class="p">])</span>
+<span class="n">ta</span> <span class="o">=</span> <span class="n">TypeAdapter</span><span class="p">(</span><span class="n">Cat</span> <span class="o">|</span> <span class="n">Dog</span><span class="p">)</span>
 <span class="n">ta_schema</span> <span class="o">=</span> <span class="n">ta</span><span class="o">.</span><span class="n">json_schema</span><span class="p">()</span>
 <span class="nb">print</span><span class="p">(</span><span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">ta_schema</span><span class="p">,</span> <span class="n">indent</span><span class="o">=</span><span class="mi">2</span><span class="p">))</span>
 </code></pre></div>
@@ -5012,13 +4887,8 @@ This can be quite helpful for cases of reusing json schema extra information acr
 <p>We viewed this change largely as a bug fix, as it resolves unintentional differences in the <code>json_schema_extra</code> merging behavior
 between <code>BaseModel</code> and <code>TypeAdapter</code> instances - see <a href="https://github.com/pydantic/pydantic/issues/9210">this issue</a>
 for more details.</p>
-<div class="tabbed-set tabbed-alternate" data-tabs="2:2"><input checked="checked" id="__tabbed_2_1" name="__tabbed_2" type="radio" /><input id="__tabbed_2_2" name="__tabbed_2" type="radio" /><div class="tabbed-labels"><label for="__tabbed_2_1">Python 3.9 and above</label><label for="__tabbed_2_2">Python 3.10 and above</label></div>
-<div class="tabbed-content">
-<div class="tabbed-block">
 <div class="language-python highlight"><pre><span></span><code><span class="kn">import</span><span class="w"> </span><span class="nn">json</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Annotated</span>
-
-<span class="kn">from</span><span class="w"> </span><span class="nn">typing_extensions</span><span class="w"> </span><span class="kn">import</span> <span class="n">TypeAlias</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Annotated</span><span class="p">,</span> <span class="n">TypeAlias</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">pydantic</span><span class="w"> </span><span class="kn">import</span> <span class="n">Field</span><span class="p">,</span> <span class="n">TypeAdapter</span>
 
@@ -5038,34 +4908,6 @@ for more details.</p>
 <span class="sd">}</span>
 <span class="sd">&quot;&quot;&quot;</span>
 </code></pre></div>
-</div>
-<div class="tabbed-block">
-<div class="language-python highlight"><pre><span></span><code><span class="kn">import</span><span class="w"> </span><span class="nn">json</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Annotated</span>
-
-<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">TypeAlias</span>
-
-<span class="kn">from</span><span class="w"> </span><span class="nn">pydantic</span><span class="w"> </span><span class="kn">import</span> <span class="n">Field</span><span class="p">,</span> <span class="n">TypeAdapter</span>
-
-<span class="n">ExternalType</span><span class="p">:</span> <span class="n">TypeAlias</span> <span class="o">=</span> <span class="n">Annotated</span><span class="p">[</span>
-    <span class="nb">int</span><span class="p">,</span> <span class="n">Field</span><span class="p">(</span><span class="n">json_schema_extra</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;key1&#39;</span><span class="p">:</span> <span class="s1">&#39;value1&#39;</span><span class="p">})</span>
-<span class="p">]</span>
-
-<span class="n">ta</span> <span class="o">=</span> <span class="n">TypeAdapter</span><span class="p">(</span>
-    <span class="n">Annotated</span><span class="p">[</span><span class="n">ExternalType</span><span class="p">,</span> <span class="n">Field</span><span class="p">(</span><span class="n">json_schema_extra</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;key2&#39;</span><span class="p">:</span> <span class="s1">&#39;value2&#39;</span><span class="p">})]</span>
-<span class="p">)</span>
-<span class="nb">print</span><span class="p">(</span><span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">ta</span><span class="o">.</span><span class="n">json_schema</span><span class="p">(),</span> <span class="n">indent</span><span class="o">=</span><span class="mi">2</span><span class="p">))</span>
-<span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">{</span>
-<span class="sd">  &quot;key1&quot;: &quot;value1&quot;,</span>
-<span class="sd">  &quot;key2&quot;: &quot;value2&quot;,</span>
-<span class="sd">  &quot;type&quot;: &quot;integer&quot;</span>
-<span class="sd">}</span>
-<span class="sd">&quot;&quot;&quot;</span>
-</code></pre></div>
-</div>
-</div>
-</div>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
 <p>We no longer (and never fully did) support composing a mix of <code>dict</code> and <code>callable</code> type <code>json_schema_extra</code> specifications.
@@ -6126,51 +5968,6 @@ subclasses to modify the "global" approach to generating JSON schema.</p>
 <span class="sd">&quot;&quot;&quot;</span>
 </code></pre></div>
 <p>Below is an approach you can use to exclude any fields from the schema that don't have valid json schemas:</p>
-<div class="tabbed-set tabbed-alternate" data-tabs="3:2"><input checked="checked" id="__tabbed_3_1" name="__tabbed_3" type="radio" /><input id="__tabbed_3_2" name="__tabbed_3" type="radio" /><div class="tabbed-labels"><label for="__tabbed_3_1">Python 3.9 and above</label><label for="__tabbed_3_2">Python 3.10 and above</label></div>
-<div class="tabbed-content">
-<div class="tabbed-block">
-<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Callable</span>
-
-<span class="kn">from</span><span class="w"> </span><span class="nn">pydantic_core</span><span class="w"> </span><span class="kn">import</span> <span class="n">PydanticOmit</span><span class="p">,</span> <span class="n">core_schema</span>
-
-<span class="kn">from</span><span class="w"> </span><span class="nn">pydantic</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseModel</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">pydantic.json_schema</span><span class="w"> </span><span class="kn">import</span> <span class="n">GenerateJsonSchema</span><span class="p">,</span> <span class="n">JsonSchemaValue</span>
-
-
-<span class="k">class</span><span class="w"> </span><span class="nc">MyGenerateJsonSchema</span><span class="p">(</span><span class="n">GenerateJsonSchema</span><span class="p">):</span>
-    <span class="k">def</span><span class="w"> </span><span class="nf">handle_invalid_for_json_schema</span><span class="p">(</span>
-        <span class="bp">self</span><span class="p">,</span> <span class="n">schema</span><span class="p">:</span> <span class="n">core_schema</span><span class="o">.</span><span class="n">CoreSchema</span><span class="p">,</span> <span class="n">error_info</span><span class="p">:</span> <span class="nb">str</span>
-    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">JsonSchemaValue</span><span class="p">:</span>
-        <span class="k">raise</span> <span class="n">PydanticOmit</span>
-
-
-<span class="k">def</span><span class="w"> </span><span class="nf">example_callable</span><span class="p">():</span>
-    <span class="k">return</span> <span class="mi">1</span>
-
-
-<span class="k">class</span><span class="w"> </span><span class="nc">Example</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
-    <span class="n">name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;example&#39;</span>
-    <span class="n">function</span><span class="p">:</span> <span class="n">Callable</span> <span class="o">=</span> <span class="n">example_callable</span>
-
-
-<span class="n">instance_example</span> <span class="o">=</span> <span class="n">Example</span><span class="p">()</span>
-
-<span class="n">validation_schema</span> <span class="o">=</span> <span class="n">instance_example</span><span class="o">.</span><span class="n">model_json_schema</span><span class="p">(</span>
-    <span class="n">schema_generator</span><span class="o">=</span><span class="n">MyGenerateJsonSchema</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s1">&#39;validation&#39;</span>
-<span class="p">)</span>
-<span class="nb">print</span><span class="p">(</span><span class="n">validation_schema</span><span class="p">)</span>
-<span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">{</span>
-<span class="sd">    &#39;properties&#39;: {</span>
-<span class="sd">        &#39;name&#39;: {&#39;default&#39;: &#39;example&#39;, &#39;title&#39;: &#39;Name&#39;, &#39;type&#39;: &#39;string&#39;}</span>
-<span class="sd">    },</span>
-<span class="sd">    &#39;title&#39;: &#39;Example&#39;,</span>
-<span class="sd">    &#39;type&#39;: &#39;object&#39;,</span>
-<span class="sd">}</span>
-<span class="sd">&quot;&quot;&quot;</span>
-</code></pre></div>
-</div>
-<div class="tabbed-block">
 <div class="language-python highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">collections.abc</span><span class="w"> </span><span class="kn">import</span> <span class="n">Callable</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">pydantic_core</span><span class="w"> </span><span class="kn">import</span> <span class="n">PydanticOmit</span><span class="p">,</span> <span class="n">core_schema</span>
@@ -6211,71 +6008,11 @@ subclasses to modify the "global" approach to generating JSON schema.</p>
 <span class="sd">}</span>
 <span class="sd">&quot;&quot;&quot;</span>
 </code></pre></div>
-</div>
-</div>
-</div>
 <h3 id="json-schema-sorting">JSON schema sorting<a class="headerlink" href="#json-schema-sorting" title="Permanent link">&para;</a></h3>
 <p>By default, Pydantic recursively sorts JSON schemas by alphabetically sorting keys. Notably, Pydantic skips sorting the values of the <code>properties</code> key,
 to preserve the order of the fields as they were defined in the model.</p>
 <p>If you would like to customize this behavior, you can override the <code>sort</code> method in your custom <code>GenerateJsonSchema</code> subclass. The below example
 uses a no-op <code>sort</code> method to disable sorting entirely, which is reflected in the preserved order of the model fields and <code>json_schema_extra</code> keys:</p>
-<div class="tabbed-set tabbed-alternate" data-tabs="4:2"><input checked="checked" id="__tabbed_4_1" name="__tabbed_4" type="radio" /><input id="__tabbed_4_2" name="__tabbed_4" type="radio" /><div class="tabbed-labels"><label for="__tabbed_4_1">Python 3.9 and above</label><label for="__tabbed_4_2">Python 3.10 and above</label></div>
-<div class="tabbed-content">
-<div class="tabbed-block">
-<div class="language-python highlight"><pre><span></span><code><span class="kn">import</span><span class="w"> </span><span class="nn">json</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Optional</span>
-
-<span class="kn">from</span><span class="w"> </span><span class="nn">pydantic</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">Field</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">pydantic.json_schema</span><span class="w"> </span><span class="kn">import</span> <span class="n">GenerateJsonSchema</span><span class="p">,</span> <span class="n">JsonSchemaValue</span>
-
-
-<span class="k">class</span><span class="w"> </span><span class="nc">MyGenerateJsonSchema</span><span class="p">(</span><span class="n">GenerateJsonSchema</span><span class="p">):</span>
-    <span class="k">def</span><span class="w"> </span><span class="nf">sort</span><span class="p">(</span>
-        <span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">:</span> <span class="n">JsonSchemaValue</span><span class="p">,</span> <span class="n">parent_key</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
-    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">JsonSchemaValue</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;No-op, we don&#39;t want to sort schema values at all.&quot;&quot;&quot;</span>
-        <span class="k">return</span> <span class="n">value</span>
-
-
-<span class="k">class</span><span class="w"> </span><span class="nc">Bar</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
-    <span class="n">c</span><span class="p">:</span> <span class="nb">str</span>
-    <span class="n">b</span><span class="p">:</span> <span class="nb">str</span>
-    <span class="n">a</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="n">json_schema_extra</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;c&#39;</span><span class="p">:</span> <span class="s1">&#39;hi&#39;</span><span class="p">,</span> <span class="s1">&#39;b&#39;</span><span class="p">:</span> <span class="s1">&#39;hello&#39;</span><span class="p">,</span> <span class="s1">&#39;a&#39;</span><span class="p">:</span> <span class="s1">&#39;world&#39;</span><span class="p">})</span>
-
-
-<span class="n">json_schema</span> <span class="o">=</span> <span class="n">Bar</span><span class="o">.</span><span class="n">model_json_schema</span><span class="p">(</span><span class="n">schema_generator</span><span class="o">=</span><span class="n">MyGenerateJsonSchema</span><span class="p">)</span>
-<span class="nb">print</span><span class="p">(</span><span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">json_schema</span><span class="p">,</span> <span class="n">indent</span><span class="o">=</span><span class="mi">2</span><span class="p">))</span>
-<span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">{</span>
-<span class="sd">  &quot;type&quot;: &quot;object&quot;,</span>
-<span class="sd">  &quot;properties&quot;: {</span>
-<span class="sd">    &quot;c&quot;: {</span>
-<span class="sd">      &quot;type&quot;: &quot;string&quot;,</span>
-<span class="sd">      &quot;title&quot;: &quot;C&quot;</span>
-<span class="sd">    },</span>
-<span class="sd">    &quot;b&quot;: {</span>
-<span class="sd">      &quot;type&quot;: &quot;string&quot;,</span>
-<span class="sd">      &quot;title&quot;: &quot;B&quot;</span>
-<span class="sd">    },</span>
-<span class="sd">    &quot;a&quot;: {</span>
-<span class="sd">      &quot;type&quot;: &quot;string&quot;,</span>
-<span class="sd">      &quot;c&quot;: &quot;hi&quot;,</span>
-<span class="sd">      &quot;b&quot;: &quot;hello&quot;,</span>
-<span class="sd">      &quot;a&quot;: &quot;world&quot;,</span>
-<span class="sd">      &quot;title&quot;: &quot;A&quot;</span>
-<span class="sd">    }</span>
-<span class="sd">  },</span>
-<span class="sd">  &quot;required&quot;: [</span>
-<span class="sd">    &quot;c&quot;,</span>
-<span class="sd">    &quot;b&quot;,</span>
-<span class="sd">    &quot;a&quot;</span>
-<span class="sd">  ],</span>
-<span class="sd">  &quot;title&quot;: &quot;Bar&quot;</span>
-<span class="sd">}</span>
-<span class="sd">&quot;&quot;&quot;</span>
-</code></pre></div>
-</div>
-<div class="tabbed-block">
 <div class="language-python highlight"><pre><span></span><code><span class="kn">import</span><span class="w"> </span><span class="nn">json</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">pydantic</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">Field</span>
@@ -6327,9 +6064,6 @@ uses a no-op <code>sort</code> method to disable sorting entirely, which is refl
 <span class="sd">}</span>
 <span class="sd">&quot;&quot;&quot;</span>
 </code></pre></div>
-</div>
-</div>
-</div>
 <h2 id="customizing-the-refs-in-json-schema">Customizing the <code>$ref</code>s in JSON Schema<a class="headerlink" href="#customizing-the-refs-in-json-schema" title="Permanent link">&para;</a></h2>
 <p>The format of <code>$ref</code>s can be altered by calling <a class="autorefs autorefs-internal" href="../../api/base_model/#pydantic.BaseModel.model_json_schema"><code>model_json_schema()</code></a>
 or <a class="autorefs autorefs-internal" href="../../api/base_model/#pydantic.BaseModel.model_dump_json"><code>model_dump_json()</code></a> with the <code>ref_template</code> keyword argument.

@@ -6,28 +6,6 @@ If you don't want to use Pydantic's BaseModel you can instead get the same data 
 
 ```python
 from datetime import datetime
-from typing import Optional
-
-from pydantic.dataclasses import dataclass
-
-
-@dataclass
-class User:
-    id: int
-    name: str = 'John Doe'
-    signup_ts: Optional[datetime] = None
-
-
-user = User(id='42', signup_ts='2032-06-21T12:00')
-print(user)
-"""
-User(id=42, name='John Doe', signup_ts=datetime.datetime(2032, 6, 21, 12, 0))
-"""
-
-```
-
-```python
-from datetime import datetime
 
 from pydantic.dataclasses import dataclass
 
@@ -135,7 +113,6 @@ You can use both the Pydantic's Field() and the stdlib's field() functions:
 
 ```python
 import dataclasses
-from typing import Optional
 
 from pydantic import Field
 from pydantic.dataclasses import dataclass
@@ -146,11 +123,11 @@ class User:
     id: int
     name: str = 'John Doe'
     friends: list[int] = dataclasses.field(default_factory=lambda: [0])
-    age: Optional[int] = dataclasses.field(
+    age: int | None = dataclasses.field(
         default=None,
         metadata={'title': 'The age of the user', 'description': 'do not lie!'},
     )
-    height: Optional[int] = Field(
+    height: int | None = Field(
         default=None, title='The height in cm', ge=50, le=300
     )
 
@@ -261,50 +238,6 @@ print(PydanticA(a='1'))
 ### Usage of stdlib dataclasses with `BaseModel`
 
 When a standard library dataclass is used within a Pydantic model, a Pydantic dataclass or a TypeAdapter, validation will be applied (and the [configuration](#dataclass-config) stays the same). This means that using a stdlib or a Pydantic dataclass as a field annotation is functionally equivalent.
-
-```python
-import dataclasses
-from typing import Optional
-
-from pydantic import BaseModel, ConfigDict, ValidationError
-
-
-@dataclasses.dataclass(frozen=True)
-class User:
-    name: str
-
-
-class Foo(BaseModel):
-    # Required so that pydantic revalidates the model attributes:
-    model_config = ConfigDict(revalidate_instances='always')
-
-    user: Optional[User] = None
-
-
-# nothing is validated as expected:
-user = User(name=['not', 'a', 'string'])
-print(user)
-#> User(name=['not', 'a', 'string'])
-
-
-try:
-    Foo(user=user)
-except ValidationError as e:
-    print(e)
-    """
-    1 validation error for Foo
-    user.name
-      Input should be a valid string [type=string_type, input_value=['not', 'a', 'string'], input_type=list]
-    """
-
-foo = Foo(user=User(name='pika'))
-try:
-    foo.user.name = 'bulbi'
-except dataclasses.FrozenInstanceError as e:
-    print(e)
-    #> cannot assign to field 'name'
-
-```
 
 ```python
 import dataclasses

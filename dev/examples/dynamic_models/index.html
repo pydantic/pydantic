@@ -3800,54 +3800,8 @@ factory function.</p>
 we will make use of the <a class="autorefs autorefs-internal" href="../../api/base_model/#pydantic.BaseModel.model_fields"><code>model_fields</code></a> model class attribute, and derive new annotations
 from the field definitions to be passed to the <a class="autorefs autorefs-internal" href="../../api/base_model/#pydantic.create_model"><code>create_model()</code></a> factory. Of course, this example can apply
 to any use case where you need to derive a new model from another (remove default values, add aliases, etc).</p>
-<div class="tabbed-set tabbed-alternate" data-tabs="1:3"><input checked="checked" id="__tabbed_1_1" name="__tabbed_1" type="radio" /><input id="__tabbed_1_2" name="__tabbed_1" type="radio" /><input id="__tabbed_1_3" name="__tabbed_1" type="radio" /><div class="tabbed-labels"><label for="__tabbed_1_1">Python 3.9</label><label for="__tabbed_1_2">Python 3.10</label><label for="__tabbed_1_3">Python 3.11 and above</label></div>
+<div class="tabbed-set tabbed-alternate" data-tabs="1:2"><input checked="checked" id="__tabbed_1_1" name="__tabbed_1" type="radio" /><input id="__tabbed_1_2" name="__tabbed_1" type="radio" /><div class="tabbed-labels"><label for="__tabbed_1_1">Python 3.10</label><label for="__tabbed_1_2">Python 3.11 and above</label></div>
 <div class="tabbed-content">
-<div class="tabbed-block">
-<div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"> 1</span>
-<span class="normal"> 2</span>
-<span class="normal"> 3</span>
-<span class="normal"> 4</span>
-<span class="normal"> 5</span>
-<span class="normal"> 6</span>
-<span class="normal"> 7</span>
-<span class="normal"> 8</span>
-<span class="normal"> 9</span>
-<span class="normal">10</span>
-<span class="normal">11</span>
-<span class="normal">12</span>
-<span class="normal">13</span>
-<span class="normal">14</span>
-<span class="normal">15</span>
-<span class="normal">16</span>
-<span class="normal">17</span>
-<span class="normal">18</span>
-<span class="normal">19</span>
-<span class="normal">20</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Annotated</span><span class="p">,</span> <span class="n">Union</span>
-
-<span class="kn">from</span><span class="w"> </span><span class="nn">pydantic</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">Field</span><span class="p">,</span> <span class="n">create_model</span>
-
-
-<span class="k">def</span><span class="w"> </span><span class="nf">make_fields_optional</span><span class="p">(</span><span class="n">model_cls</span><span class="p">:</span> <span class="nb">type</span><span class="p">[</span><span class="n">BaseModel</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="nb">type</span><span class="p">[</span><span class="n">BaseModel</span><span class="p">]:</span>
-    <span class="n">new_fields</span> <span class="o">=</span> <span class="p">{}</span>
-
-    <span class="k">for</span> <span class="n">f_name</span><span class="p">,</span> <span class="n">f_info</span> <span class="ow">in</span> <span class="n">model_cls</span><span class="o">.</span><span class="n">model_fields</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
-        <span class="n">f_dct</span> <span class="o">=</span> <span class="n">f_info</span><span class="o">.</span><span class="n">asdict</span><span class="p">()</span>
-        <span class="n">new_fields</span><span class="p">[</span><span class="n">f_name</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span>
-            <span class="n">Annotated</span><span class="p">[(</span><span class="n">Union</span><span class="p">[</span><span class="n">f_dct</span><span class="p">[</span><span class="s1">&#39;annotation&#39;</span><span class="p">],</span> <span class="kc">None</span><span class="p">],</span> <span class="o">*</span><span class="n">f_dct</span><span class="p">[</span><span class="s1">&#39;metadata&#39;</span><span class="p">],</span> <span class="n">Field</span><span class="p">(</span><span class="o">**</span><span class="n">f_dct</span><span class="p">[</span><span class="s1">&#39;attributes&#39;</span><span class="p">]))],</span>
-            <span class="kc">None</span><span class="p">,</span>
-        <span class="p">)</span>
-
-    <span class="k">return</span> <span class="n">create_model</span><span class="p">(</span>
-        <span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">model_cls</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s1">Optional&#39;</span><span class="p">,</span>
-        <span class="n">__base__</span><span class="o">=</span><span class="n">model_cls</span><span class="p">,</span>  <span class="c1"># (1)!</span>
-        <span class="o">**</span><span class="n">new_fields</span><span class="p">,</span>
-    <span class="p">)</span>
-</code></pre></div></td></tr></table></div>
-<ol>
-<li>Using the original model as a base will inherit the <a href="../../concepts/validators/">validators</a>, <a href="../../concepts/fields/#the-computed_field-decorator">computed fields</a>, etc.
-The parent fields are overridden by the ones we define.</li>
-</ol>
-</div>
 <div class="tabbed-block">
 <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"> 1</span>
 <span class="normal"> 2</span>
@@ -3955,7 +3909,7 @@ using the <a class="autorefs autorefs-internal" href="../../api/fields/#pydantic
 <li><code>attributes</code>: The remaining field-specific attributes: <code>{'title': 'F'}</code>.</li>
 </ul>
 <p>With that in mind, we can recreate an annotation that "simulates" the one from the original model:</p>
-<div class="tabbed-set tabbed-alternate" data-tabs="2:2"><input checked="checked" id="__tabbed_2_1" name="__tabbed_2" type="radio" /><input id="__tabbed_2_2" name="__tabbed_2" type="radio" /><div class="tabbed-labels"><label for="__tabbed_2_1">Python 3.9 and above</label><label for="__tabbed_2_2">Python 3.11 and above</label></div>
+<div class="tabbed-set tabbed-alternate" data-tabs="2:2"><input checked="checked" id="__tabbed_2_1" name="__tabbed_2" type="radio" /><input id="__tabbed_2_2" name="__tabbed_2" type="radio" /><div class="tabbed-labels"><label for="__tabbed_2_1">Python 3.10 and above</label><label for="__tabbed_2_2">Python 3.11 and above</label></div>
 <div class="tabbed-content">
 <div class="tabbed-block">
 <div class="language-python highlight"><pre><span></span><code><span class="n">new_annotation</span> <span class="o">=</span> <span class="n">Annotated</span><span class="p">[(</span>
@@ -4025,7 +3979,7 @@ using the <a class="autorefs autorefs-internal" href="../../api/fields/#pydantic
 <li>
 <p>Our <code>make_fields_optional()</code> function is defined as returning an arbitrary Pydantic model class (<code>-&gt; type[BaseModel]</code>).
   An alternative solution can be to use a type variable to preserve the input class:</p>
-<div class="tabbed-set tabbed-alternate" data-tabs="3:2"><input checked="checked" id="__tabbed_3_1" name="__tabbed_3" type="radio" /><input id="__tabbed_3_2" name="__tabbed_3" type="radio" /><div class="tabbed-labels"><label for="__tabbed_3_1">Python 3.9 and above</label><label for="__tabbed_3_2">Python 3.12 and above</label></div>
+<div class="tabbed-set tabbed-alternate" data-tabs="3:2"><input checked="checked" id="__tabbed_3_1" name="__tabbed_3" type="radio" /><input id="__tabbed_3_2" name="__tabbed_3" type="radio" /><div class="tabbed-labels"><label for="__tabbed_3_1">Python 3.10 and above</label><label for="__tabbed_3_2">Python 3.12 and above</label></div>
 <div class="tabbed-content">
 <div class="tabbed-block">
 <div class="language-python highlight"><pre><span></span><code><span class="n">ModelTypeT</span> <span class="o">=</span> <span class="n">TypeVar</span><span class="p">(</span><span class="s1">&#39;ModelTypeT&#39;</span><span class="p">,</span> <span class="n">bound</span><span class="o">=</span><span class="nb">type</span><span class="p">[</span><span class="n">BaseModel</span><span class="p">])</span>

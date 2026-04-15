@@ -4677,15 +4677,15 @@ in the <a href="../../api/standard_library_types/">standard library types</a> do
 <p class="admonition-title">Note</p>
 <p>When adding constraints to a union type, if a member of the union is <code>None</code> or the <a href="../experimental/#missing-sentinel"><code>MISSING</code> sentinel</a>,
 the constraints will be automatically applied to the remaining type(s) of the union:</p>
-<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Annotated</span><span class="p">,</span> <span class="n">Union</span>
+<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Annotated</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">pydantic</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">Field</span>
 
 
 <span class="k">class</span><span class="w"> </span><span class="nc">Model</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
-    <span class="n">positive</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="kc">None</span><span class="p">]</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="n">gt</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+    <span class="n">positive</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="n">gt</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
     <span class="c1"># Also works with the annotated pattern:</span>
-    <span class="n">negative</span><span class="p">:</span> <span class="n">Annotated</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="kc">None</span><span class="p">],</span> <span class="n">Field</span><span class="p">(</span><span class="n">lt</span><span class="o">=</span><span class="mi">0</span><span class="p">)]</span>
+    <span class="n">negative</span><span class="p">:</span> <span class="n">Annotated</span><span class="p">[</span><span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span><span class="p">,</span> <span class="n">Field</span><span class="p">(</span><span class="n">lt</span><span class="o">=</span><span class="mi">0</span><span class="p">)]</span>
 </code></pre></div>
 </div>
 <!-- old anchor added for backwards compatibility -->
@@ -4765,38 +4765,8 @@ representation of the model.</p>
 <h2 id="discriminator">Discriminator<a class="headerlink" href="#discriminator" title="Permanent link">&para;</a></h2>
 <p>The parameter <code>discriminator</code> can be used to control the field that will be used to discriminate between different
 models in a union. It takes either the name of a field or a <code>Discriminator</code> instance. The <code>Discriminator</code>
-approach can be useful when the discriminator fields aren't the same for all the models in the <code>Union</code>.</p>
+approach can be useful when the discriminator fields aren't the same for all the models in the union.</p>
 <p>The following example shows how to use <code>discriminator</code> with a field name:</p>
-<div class="tabbed-set tabbed-alternate" data-tabs="1:2"><input checked="checked" id="__tabbed_1_1" name="__tabbed_1" type="radio" /><input id="__tabbed_1_2" name="__tabbed_1" type="radio" /><div class="tabbed-labels"><label for="__tabbed_1_1">Python 3.9 and above</label><label for="__tabbed_1_2">Python 3.10 and above</label></div>
-<div class="tabbed-content">
-<div class="tabbed-block">
-<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Literal</span><span class="p">,</span> <span class="n">Union</span>
-
-<span class="kn">from</span><span class="w"> </span><span class="nn">pydantic</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">Field</span>
-
-
-<span class="k">class</span><span class="w"> </span><span class="nc">Cat</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
-    <span class="n">pet_type</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s1">&#39;cat&#39;</span><span class="p">]</span>
-    <span class="n">age</span><span class="p">:</span> <span class="nb">int</span>
-
-
-<span class="k">class</span><span class="w"> </span><span class="nc">Dog</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
-    <span class="n">pet_type</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s1">&#39;dog&#39;</span><span class="p">]</span>
-    <span class="n">age</span><span class="p">:</span> <span class="nb">int</span>
-
-
-<span class="k">class</span><span class="w"> </span><span class="nc">Model</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
-    <span class="n">pet</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">Cat</span><span class="p">,</span> <span class="n">Dog</span><span class="p">]</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="n">discriminator</span><span class="o">=</span><span class="s1">&#39;pet_type&#39;</span><span class="p">)</span>
-
-
-<span class="nb">print</span><span class="p">(</span><span class="n">Model</span><span class="o">.</span><span class="n">model_validate</span><span class="p">({</span><span class="s1">&#39;pet&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;pet_type&#39;</span><span class="p">:</span> <span class="s1">&#39;cat&#39;</span><span class="p">,</span> <span class="s1">&#39;age&#39;</span><span class="p">:</span> <span class="mi">12</span><span class="p">}}))</span>  <span class="c1"># (1)!</span>
-<span class="c1">#&gt; pet=Cat(pet_type=&#39;cat&#39;, age=12)</span>
-</code></pre></div>
-<ol>
-<li>See more about <code>model_validate()</code> in the <a href="../models/#validating-data">Validating data</a> documentation.</li>
-</ol>
-</div>
-<div class="tabbed-block">
 <div class="language-python highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Literal</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">pydantic</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">Field</span>
@@ -4822,48 +4792,7 @@ approach can be useful when the discriminator fields aren't the same for all the
 <ol>
 <li>See more about <code>model_validate()</code> in the <a href="../models/#validating-data">Validating data</a> documentation.</li>
 </ol>
-</div>
-</div>
-</div>
 <p>The following example shows how to use the <code>discriminator</code> keyword argument with a <code>Discriminator</code> instance:</p>
-<div class="tabbed-set tabbed-alternate" data-tabs="2:2"><input checked="checked" id="__tabbed_2_1" name="__tabbed_2" type="radio" /><input id="__tabbed_2_2" name="__tabbed_2" type="radio" /><div class="tabbed-labels"><label for="__tabbed_2_1">Python 3.9 and above</label><label for="__tabbed_2_2">Python 3.10 and above</label></div>
-<div class="tabbed-content">
-<div class="tabbed-block">
-<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Annotated</span><span class="p">,</span> <span class="n">Literal</span><span class="p">,</span> <span class="n">Union</span>
-
-<span class="kn">from</span><span class="w"> </span><span class="nn">pydantic</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">Discriminator</span><span class="p">,</span> <span class="n">Field</span><span class="p">,</span> <span class="n">Tag</span>
-
-
-<span class="k">class</span><span class="w"> </span><span class="nc">Cat</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
-    <span class="n">pet_type</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s1">&#39;cat&#39;</span><span class="p">]</span>
-    <span class="n">age</span><span class="p">:</span> <span class="nb">int</span>
-
-
-<span class="k">class</span><span class="w"> </span><span class="nc">Dog</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
-    <span class="n">pet_kind</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s1">&#39;dog&#39;</span><span class="p">]</span>
-    <span class="n">age</span><span class="p">:</span> <span class="nb">int</span>
-
-
-<span class="k">def</span><span class="w"> </span><span class="nf">pet_discriminator</span><span class="p">(</span><span class="n">v</span><span class="p">):</span>
-    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
-        <span class="k">return</span> <span class="n">v</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;pet_type&#39;</span><span class="p">,</span> <span class="n">v</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;pet_kind&#39;</span><span class="p">))</span>
-    <span class="k">return</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="s1">&#39;pet_type&#39;</span><span class="p">,</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="s1">&#39;pet_kind&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">))</span>
-
-
-<span class="k">class</span><span class="w"> </span><span class="nc">Model</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
-    <span class="n">pet</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">Annotated</span><span class="p">[</span><span class="n">Cat</span><span class="p">,</span> <span class="n">Tag</span><span class="p">(</span><span class="s1">&#39;cat&#39;</span><span class="p">)],</span> <span class="n">Annotated</span><span class="p">[</span><span class="n">Dog</span><span class="p">,</span> <span class="n">Tag</span><span class="p">(</span><span class="s1">&#39;dog&#39;</span><span class="p">)]]</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span>
-        <span class="n">discriminator</span><span class="o">=</span><span class="n">Discriminator</span><span class="p">(</span><span class="n">pet_discriminator</span><span class="p">)</span>
-    <span class="p">)</span>
-
-
-<span class="nb">print</span><span class="p">(</span><span class="nb">repr</span><span class="p">(</span><span class="n">Model</span><span class="o">.</span><span class="n">model_validate</span><span class="p">({</span><span class="s1">&#39;pet&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;pet_type&#39;</span><span class="p">:</span> <span class="s1">&#39;cat&#39;</span><span class="p">,</span> <span class="s1">&#39;age&#39;</span><span class="p">:</span> <span class="mi">12</span><span class="p">}})))</span>
-<span class="c1">#&gt; Model(pet=Cat(pet_type=&#39;cat&#39;, age=12))</span>
-
-<span class="nb">print</span><span class="p">(</span><span class="nb">repr</span><span class="p">(</span><span class="n">Model</span><span class="o">.</span><span class="n">model_validate</span><span class="p">({</span><span class="s1">&#39;pet&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;pet_kind&#39;</span><span class="p">:</span> <span class="s1">&#39;dog&#39;</span><span class="p">,</span> <span class="s1">&#39;age&#39;</span><span class="p">:</span> <span class="mi">12</span><span class="p">}})))</span>
-<span class="c1">#&gt; Model(pet=Dog(pet_kind=&#39;dog&#39;, age=12))</span>
-</code></pre></div>
-</div>
-<div class="tabbed-block">
 <div class="language-python highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Annotated</span><span class="p">,</span> <span class="n">Literal</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">pydantic</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">Discriminator</span><span class="p">,</span> <span class="n">Field</span><span class="p">,</span> <span class="n">Tag</span>
@@ -4897,9 +4826,6 @@ approach can be useful when the discriminator fields aren't the same for all the
 <span class="nb">print</span><span class="p">(</span><span class="nb">repr</span><span class="p">(</span><span class="n">Model</span><span class="o">.</span><span class="n">model_validate</span><span class="p">({</span><span class="s1">&#39;pet&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;pet_kind&#39;</span><span class="p">:</span> <span class="s1">&#39;dog&#39;</span><span class="p">,</span> <span class="s1">&#39;age&#39;</span><span class="p">:</span> <span class="mi">12</span><span class="p">}})))</span>
 <span class="c1">#&gt; Model(pet=Dog(pet_kind=&#39;dog&#39;, age=12))</span>
 </code></pre></div>
-</div>
-</div>
-</div>
 <p>You can also take advantage of <code>Annotated</code> to define your discriminated unions.
 See the <a href="../unions/#discriminated-unions">Discriminated Unions</a> documentation for more details.</p>
 <h2 id="immutability">Immutability<a class="headerlink" href="#immutability" title="Permanent link">&para;</a></h2>
@@ -4986,7 +4912,7 @@ model when exporting the model.</p>
 3.12 and lower) can be used as an instance.</p>
 <!-- TODO: tabs should be auto-generated if using Ruff (https://github.com/pydantic/pydantic/issues/10083) -->
 
-<div class="tabbed-set tabbed-alternate" data-tabs="3:2"><input checked="checked" id="__tabbed_3_1" name="__tabbed_3" type="radio" /><input id="__tabbed_3_2" name="__tabbed_3" type="radio" /><div class="tabbed-labels"><label for="__tabbed_3_1">Python 3.9 and above</label><label for="__tabbed_3_2">Python 3.13 and above</label></div>
+<div class="tabbed-set tabbed-alternate" data-tabs="1:2"><input checked="checked" id="__tabbed_1_1" name="__tabbed_1" type="radio" /><input id="__tabbed_1_2" name="__tabbed_1" type="radio" /><div class="tabbed-labels"><label for="__tabbed_1_1">Python 3.10 and above</label><label for="__tabbed_1_2">Python 3.13 and above</label></div>
 <div class="tabbed-content">
 <div class="tabbed-block">
 <div class="language-python highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Annotated</span>

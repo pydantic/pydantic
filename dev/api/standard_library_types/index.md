@@ -619,24 +619,6 @@ In [strict mode](../../concepts/strict_mode/), only list instances are valid. St
 #### Example
 
 ```python
-from typing import Optional
-
-from pydantic import BaseModel, Field
-
-
-class Model(BaseModel):
-    simple_list: Optional[list[object]] = None
-    list_of_ints: Optional[list[int]] = Field(default=None, strict=True)
-
-
-print(Model(simple_list=('1', '2', '3')).simple_list)
-#> ['1', '2', '3']
-print(Model(list_of_ints=['1', 2, 3]).list_of_ints)
-#> [1, 2, 3]
-
-```
-
-```python
 from pydantic import BaseModel, Field
 
 
@@ -680,24 +662,6 @@ Additionally, the [`prefixItems`](https://json-schema.org/understanding-json-sch
 In [strict mode](../../concepts/strict_mode/), only tuple instances are valid. Strict mode does *not* apply to the items of the tuple. The strict constraint must be applied to the parameter types for this to work.
 
 #### Example
-
-```python
-from typing import Optional
-
-from pydantic import BaseModel
-
-
-class Model(BaseModel):
-    simple_tuple: Optional[tuple] = None
-    tuple_of_different_types: Optional[tuple[int, float, bool]] = None
-
-
-print(Model(simple_tuple=[1, 2, 3, 4]).simple_tuple)
-#> (1, 2, 3, 4)
-print(Model(tuple_of_different_types=[3, 2, 1]).tuple_of_different_types)
-#> (3, 2.0, True)
-
-```
 
 ```python
 from pydantic import BaseModel
@@ -778,24 +742,6 @@ In [strict mode](../../concepts/strict_mode/), only set/frozenset instances are 
 In [Python mode](../../concepts/serialization/#python-mode), sets are serialized as is. In [JSON mode](../../concepts/serialization/#json-mode), they are serialized as arrays.
 
 #### Example
-
-```python
-from typing import Optional
-
-from pydantic import BaseModel
-
-
-class Model(BaseModel):
-    simple_set: Optional[set] = None
-    set_of_ints: Optional[frozenset[int]] = None
-
-
-print(Model(simple_set=['1', '2', '3']).simple_set)
-#> {'1', '2', '3'}
-print(Model(set_of_ints=['1', '2', '3']).set_of_ints)
-#> frozenset({1, 2, 3})
-
-```
 
 ```python
 from pydantic import BaseModel
@@ -1080,22 +1026,6 @@ Standard library type: collections.abc.Callable (deprecated alias: typing.Callab
 ### Validation
 
 Pydantic only validates that the input is a callable (using the [`callable()`](https://docs.python.org/3/library/functions.html#callable) function). It does *not* validate the number of parameters or their type, nor the type of the return value.
-
-```python
-from typing import Callable
-
-from pydantic import BaseModel
-
-
-class Foo(BaseModel):
-    callback: Callable[[int], int]
-
-
-m = Foo(callback=lambda x: x)
-print(m)
-#> callback=<function <lambda> at 0x0123456789ab>
-
-```
 
 ```python
 from collections.abc import Callable

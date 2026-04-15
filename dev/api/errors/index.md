@@ -49,7 +49,7 @@ def __init__(self, message: str, *, code: PydanticErrorCodes | None) -> None:
 ## PydanticUndefinedAnnotation
 
 ```python
-PydanticUndefinedAnnotation(name: str, message: str)
+PydanticUndefinedAnnotation(name: str | None, message: str)
 
 ```
 
@@ -59,12 +59,12 @@ A subclass of `NameError` raised when handling undefined annotations during `Cor
 
 Attributes:
 
-| Name | Type | Description | | --- | --- | --- | | `name` | | Name of the error. | | `message` | | Description of the error. |
+| Name | Type | Description | | --- | --- | --- | | `name` | | Name of the error, of None if not available. | | `message` | | Description of the error. |
 
 Source code in `pydantic/errors.py`
 
 ```python
-def __init__(self, name: str, message: str) -> None:
+def __init__(self, name: str | None, message: str) -> None:
     self.name = name
     super().__init__(message=message, code='undefined-annotation')
 
@@ -100,11 +100,7 @@ def from_name_error(cls, name_error: NameError) -> Self:
     Returns:
         Converted `PydanticUndefinedAnnotation` error.
     """
-    try:
-        name = name_error.name  # type: ignore  # python > 3.10
-    except AttributeError:
-        name = re.search(r".*'(.+?)'", str(name_error)).group(1)  # type: ignore[union-attr]
-    return cls(name=name, message=str(name_error))
+    return cls(name=name_error.name, message=str(name_error))
 
 ```
 

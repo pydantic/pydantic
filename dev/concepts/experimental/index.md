@@ -535,36 +535,6 @@ The `MISSING` sentinel is a singleton indicating a field value was not provided 
 This singleton can be used as a default value, as an alternative to `None` when it has an explicit meaning. During serialization, any field with `MISSING` as a value is excluded from the output.
 
 ```python
-from typing import Union
-
-from pydantic import BaseModel
-from pydantic.experimental.missing_sentinel import MISSING
-
-
-class Configuration(BaseModel):
-    timeout: Union[int, None, MISSING] = MISSING
-
-
-# configuration defaults, stored somewhere else:
-defaults = {'timeout': 200}
-
-conf = Configuration()
-
-# `timeout` is excluded from the serialization output:
-conf.model_dump()
-# {}
-
-# The `MISSING` value doesn't appear in the JSON Schema:
-Configuration.model_json_schema()['properties']['timeout']
-#> {'anyOf': [{'type': 'integer'}, {'type': 'null'}], 'title': 'Timeout'}}
-
-
-# `is` can be used to discriminate between the sentinel and other values:
-timeout = conf.timeout if conf.timeout is not MISSING else defaults['timeout']
-
-```
-
-```python
 from pydantic import BaseModel
 from pydantic.experimental.missing_sentinel import MISSING
 

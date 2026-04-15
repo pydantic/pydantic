@@ -3991,7 +3991,7 @@ to help you monitor and understand your
     <span class="o">*</span><span class="p">,</span>
     <span class="n">config</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-internal" title="pydantic.config.ConfigDict" href="../config/#pydantic.config.ConfigDict">ConfigDict</a></span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">validate_return</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a></span> <span class="o">=</span> <span class="kc">False</span>
-<span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><a class="autorefs autorefs-external" title="typing.Callable" href="https://docs.python.org/3/library/typing.html#typing.Callable">Callable</a></span><span class="p">[[</span><span class="n"><span title="pydantic.validate_call_decorator.AnyCallableT">AnyCallableT</span></span><span class="p">],</span> <span class="n"><span title="pydantic.validate_call_decorator.AnyCallableT">AnyCallableT</span></span><span class="p">]</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><a class="autorefs autorefs-external" title="collections.abc.Callable" href="https://docs.python.org/3/library/collections.abc.html#collections.abc.Callable">Callable</a></span><span class="p">[[</span><span class="n"><span title="pydantic.validate_call_decorator.AnyCallableT">AnyCallableT</span></span><span class="p">],</span> <span class="n"><span title="pydantic.validate_call_decorator.AnyCallableT">AnyCallableT</span></span><span class="p">]</span>
 </code></pre></div><div class="language-python doc-signature highlight"><pre><span></span><code><span class="nf">validate_call</span><span class="p">(</span><span class="n">func</span><span class="p">:</span> <span class="n"><span title="pydantic.validate_call_decorator.AnyCallableT">AnyCallableT</span></span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><span title="pydantic.validate_call_decorator.AnyCallableT">AnyCallableT</span></span>
 </code></pre></div>          </div>
 <div class="language-python doc-signature highlight"><pre><span></span><code><span class="nf">validate_call</span><span class="p">(</span>
@@ -4000,7 +4000,7 @@ to help you monitor and understand your
     <span class="o">*</span><span class="p">,</span>
     <span class="n">config</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-internal" title="pydantic.config.ConfigDict" href="../config/#pydantic.config.ConfigDict">ConfigDict</a></span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">validate_return</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a></span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
-<span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><span title="pydantic.validate_call_decorator.AnyCallableT">AnyCallableT</span></span> <span class="o">|</span> <span class="n"><a class="autorefs autorefs-external" title="typing.Callable" href="https://docs.python.org/3/library/typing.html#typing.Callable">Callable</a></span><span class="p">[[</span><span class="n"><span title="pydantic.validate_call_decorator.AnyCallableT">AnyCallableT</span></span><span class="p">],</span> <span class="n"><span title="pydantic.validate_call_decorator.AnyCallableT">AnyCallableT</span></span><span class="p">]</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><span title="pydantic.validate_call_decorator.AnyCallableT">AnyCallableT</span></span> <span class="o">|</span> <span class="n"><a class="autorefs autorefs-external" title="collections.abc.Callable" href="https://docs.python.org/3/library/collections.abc.html#collections.abc.Callable">Callable</a></span><span class="p">[[</span><span class="n"><span title="pydantic.validate_call_decorator.AnyCallableT">AnyCallableT</span></span><span class="p">],</span> <span class="n"><span title="pydantic.validate_call_decorator.AnyCallableT">AnyCallableT</span></span><span class="p">]</span>
 </code></pre></div>
 
     <div class="doc doc-contents ">
@@ -4087,7 +4087,7 @@ to help you monitor and understand your
       <tbody>
           <tr class="doc-section-item">
             <td>
-                  <code><span title="pydantic.validate_call_decorator.AnyCallableT">AnyCallableT</span> | <a class="autorefs autorefs-external" title="typing.Callable" href="https://docs.python.org/3/library/typing.html#typing.Callable">Callable</a>[[<span title="pydantic.validate_call_decorator.AnyCallableT">AnyCallableT</span>], <span title="pydantic.validate_call_decorator.AnyCallableT">AnyCallableT</span>]</code>
+                  <code><span title="pydantic.validate_call_decorator.AnyCallableT">AnyCallableT</span> | <a class="autorefs autorefs-external" title="collections.abc.Callable" href="https://docs.python.org/3/library/collections.abc.html#collections.abc.Callable">Callable</a>[[<span title="pydantic.validate_call_decorator.AnyCallableT">AnyCallableT</span>], <span title="pydantic.validate_call_decorator.AnyCallableT">AnyCallableT</span>]</code>
             </td>
             <td>
               <div class="doc-md-description">
@@ -4100,8 +4100,7 @@ to help you monitor and understand your
 
             <details class="quote">
               <summary>Source code in <code>pydantic/validate_call_decorator.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"> 82</span>
-<span class="normal"> 83</span>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"> 83</span>
 <span class="normal"> 84</span>
 <span class="normal"> 85</span>
 <span class="normal"> 86</span>
@@ -4134,7 +4133,8 @@ to help you monitor and understand your
 <span class="normal">113</span>
 <span class="normal">114</span>
 <span class="normal">115</span>
-<span class="normal">116</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">validate_call</span><span class="p">(</span>
+<span class="normal">116</span>
+<span class="normal">117</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">validate_call</span><span class="p">(</span>
     <span class="n">func</span><span class="p">:</span> <span class="n">AnyCallableT</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="o">/</span><span class="p">,</span>
     <span class="o">*</span><span class="p">,</span>

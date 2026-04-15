@@ -826,7 +826,7 @@ print(Model(value=1))
 While the type hint for `value` is `str`, the `cast_ints` validator also allows integers. To specify the correct input type, the `json_schema_input_type` argument can be provided:
 
 ```python
-from typing import Any, Union
+from typing import Any
 
 from pydantic import BaseModel, field_validator
 
@@ -834,9 +834,7 @@ from pydantic import BaseModel, field_validator
 class Model(BaseModel):
     value: str
 
-    @field_validator(
-        'value', mode='before', json_schema_input_type=Union[int, str]
-    )
+    @field_validator('value', mode='before', json_schema_input_type=int | str)
     @classmethod
     def cast_ints(cls, value: Any) -> Any:
         if isinstance(value, int):

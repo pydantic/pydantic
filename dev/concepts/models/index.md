@@ -111,13 +111,11 @@ When defining your models, watch out for naming collisions between your field na
 For example, the following will not behave as expected and would yield a validation error:
 
 ```python
-from typing import Optional
-
 from pydantic import BaseModel
 
 
 class Boo(BaseModel):
-    int: Optional[int] = None
+    int: int | None = None
 
 
 m = Boo(int=123)  # Will fail to validate.
@@ -252,42 +250,6 @@ Pydantic dataclasses also support extra data (see the [dataclass configuration](
 More complex hierarchical data structures can be defined using models themselves as types in annotations.
 
 ```python
-from typing import Optional
-
-from pydantic import BaseModel
-
-
-class Foo(BaseModel):
-    count: int
-    size: Optional[float] = None
-
-
-class Bar(BaseModel):
-    apple: str = 'x'
-    banana: str = 'y'
-
-
-class Spam(BaseModel):
-    foo: Foo
-    bars: list[Bar]
-
-
-m = Spam(foo={'count': 4}, bars=[{'apple': 'x1'}, {'apple': 'x2'}])
-print(m)
-"""
-foo=Foo(count=4, size=None) bars=[Bar(apple='x1', banana='y'), Bar(apple='x2', banana='y')]
-"""
-print(m.model_dump())
-"""
-{
-    'foo': {'count': 4, 'size': None},
-    'bars': [{'apple': 'x1', 'banana': 'y'}, {'apple': 'x2', 'banana': 'y'}],
-}
-"""
-
-```
-
-```python
 from pydantic import BaseModel
 
 
@@ -389,57 +351,6 @@ Compared to using the model constructor, it is possible to control several valid
 Note
 
 Depending on the types and model configuration involved, the *Python* and *JSON* modes may have different validation behavior (e.g. with [strictness](../strict_mode/)). If you have data coming from a non-JSON source, but want the same validation behavior and errors you'd get from the *JSON* mode, our recommendation for now is to either dump your data to JSON (e.g. using json.dumps()), or use model_validate_strings() if the data takes the form of a (potentially nested) dictionary with string keys and values. Progress for this feature can be tracked in [this issue](https://github.com/pydantic/pydantic/issues/11154).
-
-```python
-from datetime import datetime
-from typing import Optional
-
-from pydantic import BaseModel, ValidationError
-
-
-class User(BaseModel):
-    id: int
-    name: str = 'John Doe'
-    signup_ts: Optional[datetime] = None
-
-
-m = User.model_validate({'id': 123, 'name': 'James'})
-print(m)
-#> id=123 name='James' signup_ts=None
-
-try:
-    m = User.model_validate_json('{"id": 123, "name": 123}')
-except ValidationError as e:
-    print(e)
-    """
-    1 validation error for User
-    name
-      Input should be a valid string [type=string_type, input_value=123, input_type=int]
-    """
-
-m = User.model_validate_strings({'id': '123', 'name': 'James'})
-print(m)
-#> id=123 name='James' signup_ts=None
-
-m = User.model_validate_strings(
-    {'id': '123', 'name': 'James', 'signup_ts': '2024-04-01T12:00:00'}
-)
-print(m)
-#> id=123 name='James' signup_ts=datetime.datetime(2024, 4, 1, 12, 0)
-
-try:
-    m = User.model_validate_strings(
-        {'id': '123', 'name': 'James', 'signup_ts': '2024-04-01'}, strict=True
-    )
-except ValidationError as e:
-    print(e)
-    """
-    1 validation error for User
-    signup_ts
-      Input should be a valid datetime, invalid datetime separator, expected `T`, `t`, `_` or space [type=datetime_parsing, input_value='2024-04-01', input_type=str]
-    """
-
-```
 
 ```python
 from datetime import datetime

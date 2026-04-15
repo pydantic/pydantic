@@ -5694,26 +5694,6 @@ library can also be used.</p>
 The strict constraint must be applied to the parameter type for this to work.</p>
 <h4>Example</h4>
 
-<div class="tabbed-set tabbed-alternate" data-tabs="1:2"><input checked="checked" id="__tabbed_1_1" name="__tabbed_1" type="radio" /><input id="__tabbed_1_2" name="__tabbed_1" type="radio" /><div class="tabbed-labels"><label for="__tabbed_1_1">Python 3.9 and above</label><label for="__tabbed_1_2">Python 3.10 and above</label></div>
-<div class="tabbed-content">
-<div class="tabbed-block">
-<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Optional</span>
-
-<span class="kn">from</span><span class="w"> </span><span class="nn">pydantic</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">Field</span>
-
-
-<span class="k">class</span><span class="w"> </span><span class="nc">Model</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
-    <span class="n">simple_list</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">list</span><span class="p">[</span><span class="nb">object</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span>
-    <span class="n">list_of_ints</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">list</span><span class="p">[</span><span class="nb">int</span><span class="p">]]</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="n">default</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">strict</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-
-
-<span class="nb">print</span><span class="p">(</span><span class="n">Model</span><span class="p">(</span><span class="n">simple_list</span><span class="o">=</span><span class="p">(</span><span class="s1">&#39;1&#39;</span><span class="p">,</span> <span class="s1">&#39;2&#39;</span><span class="p">,</span> <span class="s1">&#39;3&#39;</span><span class="p">))</span><span class="o">.</span><span class="n">simple_list</span><span class="p">)</span>
-<span class="c1">#&gt; [&#39;1&#39;, &#39;2&#39;, &#39;3&#39;]</span>
-<span class="nb">print</span><span class="p">(</span><span class="n">Model</span><span class="p">(</span><span class="n">list_of_ints</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;1&#39;</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">])</span><span class="o">.</span><span class="n">list_of_ints</span><span class="p">)</span>
-<span class="c1">#&gt; [1, 2, 3]</span>
-</code></pre></div>
-</div>
-<div class="tabbed-block">
 <div class="language-python highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">pydantic</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">Field</span>
 
 
@@ -5727,9 +5707,6 @@ The strict constraint must be applied to the parameter type for this to work.</p
 <span class="nb">print</span><span class="p">(</span><span class="n">Model</span><span class="p">(</span><span class="n">list_of_ints</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;1&#39;</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">])</span><span class="o">.</span><span class="n">list_of_ints</span><span class="p">)</span>
 <span class="c1">#&gt; [1, 2, 3]</span>
 </code></pre></div>
-</div>
-</div>
-</div>
 <h3 id="tuples">Tuples<a class="headerlink" href="#tuples" title="Permanent link">&para;</a></h3>
 <p>Built-in type: <a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#tuple"><code>tuple</code></a> (deprecated alias: <a class="autorefs autorefs-external" href="https://docs.python.org/3/library/typing.html#typing.Tuple"><code>typing.Tuple</code></a>).</p>
 <div class="admonition note">
@@ -5781,26 +5758,6 @@ depending on the tuple shape.</p>
 The strict constraint must be applied to the parameter types for this to work.</p>
 <h4>Example</h4>
 
-<div class="tabbed-set tabbed-alternate" data-tabs="2:2"><input checked="checked" id="__tabbed_2_1" name="__tabbed_2" type="radio" /><input id="__tabbed_2_2" name="__tabbed_2" type="radio" /><div class="tabbed-labels"><label for="__tabbed_2_1">Python 3.9 and above</label><label for="__tabbed_2_2">Python 3.10 and above</label></div>
-<div class="tabbed-content">
-<div class="tabbed-block">
-<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Optional</span>
-
-<span class="kn">from</span><span class="w"> </span><span class="nn">pydantic</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseModel</span>
-
-
-<span class="k">class</span><span class="w"> </span><span class="nc">Model</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
-    <span class="n">simple_tuple</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">tuple</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
-    <span class="n">tuple_of_different_types</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">float</span><span class="p">,</span> <span class="nb">bool</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span>
-
-
-<span class="nb">print</span><span class="p">(</span><span class="n">Model</span><span class="p">(</span><span class="n">simple_tuple</span><span class="o">=</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">4</span><span class="p">])</span><span class="o">.</span><span class="n">simple_tuple</span><span class="p">)</span>
-<span class="c1">#&gt; (1, 2, 3, 4)</span>
-<span class="nb">print</span><span class="p">(</span><span class="n">Model</span><span class="p">(</span><span class="n">tuple_of_different_types</span><span class="o">=</span><span class="p">[</span><span class="mi">3</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="p">])</span><span class="o">.</span><span class="n">tuple_of_different_types</span><span class="p">)</span>
-<span class="c1">#&gt; (3, 2.0, True)</span>
-</code></pre></div>
-</div>
-<div class="tabbed-block">
 <div class="language-python highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">pydantic</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseModel</span>
 
 
@@ -5814,9 +5771,6 @@ The strict constraint must be applied to the parameter types for this to work.</
 <span class="nb">print</span><span class="p">(</span><span class="n">Model</span><span class="p">(</span><span class="n">tuple_of_different_types</span><span class="o">=</span><span class="p">[</span><span class="mi">3</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="p">])</span><span class="o">.</span><span class="n">tuple_of_different_types</span><span class="p">)</span>
 <span class="c1">#&gt; (3, 2.0, True)</span>
 </code></pre></div>
-</div>
-</div>
-</div>
 <!-- old anchor added for backwards compatibility -->
 <!-- markdownlint-disable-next-line no-empty-links -->
 <p><a href="" id="typingnamedtuple"></a></p>
@@ -5901,26 +5855,6 @@ The strict constraint must be applied to the parameter type for this to work.</p
 they are serialized as arrays.</p>
 <h4>Example</h4>
 
-<div class="tabbed-set tabbed-alternate" data-tabs="3:2"><input checked="checked" id="__tabbed_3_1" name="__tabbed_3" type="radio" /><input id="__tabbed_3_2" name="__tabbed_3" type="radio" /><div class="tabbed-labels"><label for="__tabbed_3_1">Python 3.9 and above</label><label for="__tabbed_3_2">Python 3.10 and above</label></div>
-<div class="tabbed-content">
-<div class="tabbed-block">
-<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Optional</span>
-
-<span class="kn">from</span><span class="w"> </span><span class="nn">pydantic</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseModel</span>
-
-
-<span class="k">class</span><span class="w"> </span><span class="nc">Model</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
-    <span class="n">simple_set</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">set</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
-    <span class="n">set_of_ints</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">frozenset</span><span class="p">[</span><span class="nb">int</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span>
-
-
-<span class="nb">print</span><span class="p">(</span><span class="n">Model</span><span class="p">(</span><span class="n">simple_set</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;1&#39;</span><span class="p">,</span> <span class="s1">&#39;2&#39;</span><span class="p">,</span> <span class="s1">&#39;3&#39;</span><span class="p">])</span><span class="o">.</span><span class="n">simple_set</span><span class="p">)</span>
-<span class="c1">#&gt; {&#39;1&#39;, &#39;2&#39;, &#39;3&#39;}</span>
-<span class="nb">print</span><span class="p">(</span><span class="n">Model</span><span class="p">(</span><span class="n">set_of_ints</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;1&#39;</span><span class="p">,</span> <span class="s1">&#39;2&#39;</span><span class="p">,</span> <span class="s1">&#39;3&#39;</span><span class="p">])</span><span class="o">.</span><span class="n">set_of_ints</span><span class="p">)</span>
-<span class="c1">#&gt; frozenset({1, 2, 3})</span>
-</code></pre></div>
-</div>
-<div class="tabbed-block">
 <div class="language-python highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">pydantic</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseModel</span>
 
 
@@ -5934,9 +5868,6 @@ they are serialized as arrays.</p>
 <span class="nb">print</span><span class="p">(</span><span class="n">Model</span><span class="p">(</span><span class="n">set_of_ints</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;1&#39;</span><span class="p">,</span> <span class="s1">&#39;2&#39;</span><span class="p">,</span> <span class="s1">&#39;3&#39;</span><span class="p">])</span><span class="o">.</span><span class="n">set_of_ints</span><span class="p">)</span>
 <span class="c1">#&gt; frozenset({1, 2, 3})</span>
 </code></pre></div>
-</div>
-</div>
-</div>
 <h4>JSON Schema</h4>
 
 <p>Pydantic does best effort to sort default values that are <a class="autorefs autorefs-external" href="https://docs.python.org/3/library/collections.abc.html#collections.abc.Set"><code>collections.abc.Set</code></a> instances.</p>
@@ -6149,7 +6080,7 @@ The strict constraint must be applied to the parameter types for this to work.</
 Strict mode does <em>not</em> apply to the values of the typed dictionary. The strict constraint must be applied to the value types for this to work.</p>
 <h4>Example</h4>
 
-<div class="tabbed-set tabbed-alternate" data-tabs="4:2"><input checked="checked" id="__tabbed_4_1" name="__tabbed_4" type="radio" /><input id="__tabbed_4_2" name="__tabbed_4" type="radio" /><div class="tabbed-labels"><label for="__tabbed_4_1">Python 3.9 and above</label><label for="__tabbed_4_2">Python 3.13 and above</label></div>
+<div class="tabbed-set tabbed-alternate" data-tabs="1:2"><input checked="checked" id="__tabbed_1_1" name="__tabbed_1" type="radio" /><input id="__tabbed_1_2" name="__tabbed_1" type="radio" /><div class="tabbed-labels"><label for="__tabbed_1_1">Python 3.9 and above</label><label for="__tabbed_1_2">Python 3.13 and above</label></div>
 <div class="tabbed-content">
 <div class="tabbed-block">
 <div class="language-python highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">typing_extensions</span><span class="w"> </span><span class="kn">import</span> <span class="n">TypedDict</span>
@@ -6251,24 +6182,6 @@ in an infinite loop).</p>
 
 <p>Pydantic only validates that the input is a <a class="autorefs autorefs-external" href="https://docs.python.org/3/glossary.html#term-callable">callable</a> (using the <a href="https://docs.python.org/3/library/functions.html#callable"><code>callable()</code></a> function).
 It does <em>not</em> validate the number of parameters or their type, nor the type of the return value.</p>
-<div class="tabbed-set tabbed-alternate" data-tabs="5:2"><input checked="checked" id="__tabbed_5_1" name="__tabbed_5" type="radio" /><input id="__tabbed_5_2" name="__tabbed_5" type="radio" /><div class="tabbed-labels"><label for="__tabbed_5_1">Python 3.9 and above</label><label for="__tabbed_5_2">Python 3.10 and above</label></div>
-<div class="tabbed-content">
-<div class="tabbed-block">
-<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Callable</span>
-
-<span class="kn">from</span><span class="w"> </span><span class="nn">pydantic</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseModel</span>
-
-
-<span class="k">class</span><span class="w"> </span><span class="nc">Foo</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
-    <span class="n">callback</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[[</span><span class="nb">int</span><span class="p">],</span> <span class="nb">int</span><span class="p">]</span>
-
-
-<span class="n">m</span> <span class="o">=</span> <span class="n">Foo</span><span class="p">(</span><span class="n">callback</span><span class="o">=</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span><span class="p">)</span>
-<span class="nb">print</span><span class="p">(</span><span class="n">m</span><span class="p">)</span>
-<span class="c1">#&gt; callback=&lt;function &lt;lambda&gt; at 0x0123456789ab&gt;</span>
-</code></pre></div>
-</div>
-<div class="tabbed-block">
 <div class="language-python highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">collections.abc</span><span class="w"> </span><span class="kn">import</span> <span class="n">Callable</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">pydantic</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseModel</span>
@@ -6282,9 +6195,6 @@ It does <em>not</em> validate the number of parameters or their type, nor the ty
 <span class="nb">print</span><span class="p">(</span><span class="n">m</span><span class="p">)</span>
 <span class="c1">#&gt; callback=&lt;function &lt;lambda&gt; at 0x0123456789ab&gt;</span>
 </code></pre></div>
-</div>
-</div>
-</div>
 <h3>Serialization</h3>
 
 <p>Callables are serialized as is. Callables can't be serialized in <a href="../../concepts/serialization/#json-mode">JSON mode</a>

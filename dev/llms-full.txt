@@ -4,7 +4,7 @@
 
 Pydantic is the most widely used data validation library for Python.
 Fast and extensible, Pydantic plays nicely with your linters/IDE/brain.
-Define how data should be in pure, canonical Python 3.9+; validate it with Pydantic.
+Define how data should be in pure, canonical Python 3.10+; validate it with Pydantic.
 
 # Concepts documentation
 
@@ -682,28 +682,6 @@ If you don't want to use Pydantic's BaseModel you can instead get the same data 
 
 ```python
 from datetime import datetime
-from typing import Optional
-
-from pydantic.dataclasses import dataclass
-
-
-@dataclass
-class User:
-    id: int
-    name: str = 'John Doe'
-    signup_ts: Optional[datetime] = None
-
-
-user = User(id='42', signup_ts='2032-06-21T12:00')
-print(user)
-"""
-User(id=42, name='John Doe', signup_ts=datetime.datetime(2032, 6, 21, 12, 0))
-"""
-
-```
-
-```python
-from datetime import datetime
 
 from pydantic.dataclasses import dataclass
 
@@ -811,7 +789,6 @@ You can use both the Pydantic's Field() and the stdlib's field() functions:
 
 ```python
 import dataclasses
-from typing import Optional
 
 from pydantic import Field
 from pydantic.dataclasses import dataclass
@@ -822,11 +799,11 @@ class User:
     id: int
     name: str = 'John Doe'
     friends: list[int] = dataclasses.field(default_factory=lambda: [0])
-    age: Optional[int] = dataclasses.field(
+    age: int | None = dataclasses.field(
         default=None,
         metadata={'title': 'The age of the user', 'description': 'do not lie!'},
     )
-    height: Optional[int] = Field(
+    height: int | None = Field(
         default=None, title='The height in cm', ge=50, le=300
     )
 
@@ -937,50 +914,6 @@ print(PydanticA(a='1'))
 ### Usage of stdlib dataclasses with `BaseModel`
 
 When a standard library dataclass is used within a Pydantic model, a Pydantic dataclass or a TypeAdapter, validation will be applied (and the [configuration](#dataclass-config) stays the same). This means that using a stdlib or a Pydantic dataclass as a field annotation is functionally equivalent.
-
-```python
-import dataclasses
-from typing import Optional
-
-from pydantic import BaseModel, ConfigDict, ValidationError
-
-
-@dataclasses.dataclass(frozen=True)
-class User:
-    name: str
-
-
-class Foo(BaseModel):
-    # Required so that pydantic revalidates the model attributes:
-    model_config = ConfigDict(revalidate_instances='always')
-
-    user: Optional[User] = None
-
-
-# nothing is validated as expected:
-user = User(name=['not', 'a', 'string'])
-print(user)
-#> User(name=['not', 'a', 'string'])
-
-
-try:
-    Foo(user=user)
-except ValidationError as e:
-    print(e)
-    """
-    1 validation error for Foo
-    user.name
-      Input should be a valid string [type=string_type, input_value=['not', 'a', 'string'], input_type=list]
-    """
-
-foo = Foo(user=User(name='pika'))
-try:
-    foo.user.name = 'bulbi'
-except dataclasses.FrozenInstanceError as e:
-    print(e)
-    #> cannot assign to field 'name'
-
-```
 
 ```python
 import dataclasses
@@ -1728,36 +1661,6 @@ The `MISSING` sentinel is a singleton indicating a field value was not provided 
 This singleton can be used as a default value, as an alternative to `None` when it has an explicit meaning. During serialization, any field with `MISSING` as a value is excluded from the output.
 
 ```python
-from typing import Union
-
-from pydantic import BaseModel
-from pydantic.experimental.missing_sentinel import MISSING
-
-
-class Configuration(BaseModel):
-    timeout: Union[int, None, MISSING] = MISSING
-
-
-# configuration defaults, stored somewhere else:
-defaults = {'timeout': 200}
-
-conf = Configuration()
-
-# `timeout` is excluded from the serialization output:
-conf.model_dump()
-# {}
-
-# The `MISSING` value doesn't appear in the JSON Schema:
-Configuration.model_json_schema()['properties']['timeout']
-#> {'anyOf': [{'type': 'integer'}, {'type': 'null'}], 'title': 'Timeout'}}
-
-
-# `is` can be used to discriminate between the sentinel and other values:
-timeout = conf.timeout if conf.timeout is not MISSING else defaults['timeout']
-
-```
-
-```python
 from pydantic import BaseModel
 from pydantic.experimental.missing_sentinel import MISSING
 
@@ -2217,15 +2120,15 @@ Note
 When adding constraints to a union type, if a member of the union is `None` or the [`MISSING` sentinel](../experimental/#missing-sentinel), the constraints will be automatically applied to the remaining type(s) of the union:
 
 ```python
-from typing import Annotated, Union
+from typing import Annotated
 
 from pydantic import BaseModel, Field
 
 
 class Model(BaseModel):
-    positive: Union[int, None] = Field(gt=0)
+    positive: int | None = Field(gt=0)
     # Also works with the annotated pattern:
-    negative: Annotated[Union[int, None], Field(lt=0)]
+    negative: Annotated[int | None, Field(lt=0)]
 
 ```
 
@@ -2310,36 +2213,9 @@ print(user)
 
 ## Discriminator
 
-The parameter `discriminator` can be used to control the field that will be used to discriminate between different models in a union. It takes either the name of a field or a `Discriminator` instance. The `Discriminator` approach can be useful when the discriminator fields aren't the same for all the models in the `Union`.
+The parameter `discriminator` can be used to control the field that will be used to discriminate between different models in a union. It takes either the name of a field or a `Discriminator` instance. The `Discriminator` approach can be useful when the discriminator fields aren't the same for all the models in the union.
 
 The following example shows how to use `discriminator` with a field name:
-
-```python
-from typing import Literal, Union
-
-from pydantic import BaseModel, Field
-
-
-class Cat(BaseModel):
-    pet_type: Literal['cat']
-    age: int
-
-
-class Dog(BaseModel):
-    pet_type: Literal['dog']
-    age: int
-
-
-class Model(BaseModel):
-    pet: Union[Cat, Dog] = Field(discriminator='pet_type')
-
-
-print(Model.model_validate({'pet': {'pet_type': 'cat', 'age': 12}}))  # (1)!
-#> pet=Cat(pet_type='cat', age=12)
-
-```
-
-1. See more about `model_validate()` in the [Validating data](../models/#validating-data) documentation.
 
 ```python
 from typing import Literal
@@ -2369,42 +2245,6 @@ print(Model.model_validate({'pet': {'pet_type': 'cat', 'age': 12}}))  # (1)!
 1. See more about `model_validate()` in the [Validating data](../models/#validating-data) documentation.
 
 The following example shows how to use the `discriminator` keyword argument with a `Discriminator` instance:
-
-```python
-from typing import Annotated, Literal, Union
-
-from pydantic import BaseModel, Discriminator, Field, Tag
-
-
-class Cat(BaseModel):
-    pet_type: Literal['cat']
-    age: int
-
-
-class Dog(BaseModel):
-    pet_kind: Literal['dog']
-    age: int
-
-
-def pet_discriminator(v):
-    if isinstance(v, dict):
-        return v.get('pet_type', v.get('pet_kind'))
-    return getattr(v, 'pet_type', getattr(v, 'pet_kind', None))
-
-
-class Model(BaseModel):
-    pet: Union[Annotated[Cat, Tag('cat')], Annotated[Dog, Tag('dog')]] = Field(
-        discriminator=Discriminator(pet_discriminator)
-    )
-
-
-print(repr(Model.model_validate({'pet': {'pet_type': 'cat', 'age': 12}})))
-#> Model(pet=Cat(pet_type='cat', age=12))
-
-print(repr(Model.model_validate({'pet': {'pet_kind': 'dog', 'age': 12}})))
-#> Model(pet=Dog(pet_kind='dog', age=12))
-
-```
 
 ```python
 from typing import Annotated, Literal
@@ -2750,14 +2590,12 @@ Models with self-referencing fields are also supported. These annotations will b
 Within the model, you can either add the `from __future__ import annotations` import or wrap the annotation in a string:
 
 ```python
-from typing import Optional
-
 from pydantic import BaseModel
 
 
 class Foo(BaseModel):
     a: int = 123
-    sibling: 'Optional[Foo]' = None
+    sibling: 'Foo | None' = None
 
 
 print(Foo())
@@ -2774,44 +2612,11 @@ When working with self-referencing recursive models, it is possible that you mig
 Rather than raising a RecursionError while attempting to validate data with cyclic references, Pydantic is able to detect the cyclic reference and raise an appropriate ValidationError:
 
 ```python
-from typing import Optional
-
 from pydantic import BaseModel, ValidationError
 
 
 class ModelA(BaseModel):
-    b: 'Optional[ModelB]' = None
-
-
-class ModelB(BaseModel):
-    a: Optional[ModelA] = None
-
-
-cyclic_data = {}
-cyclic_data['a'] = {'b': cyclic_data}
-print(cyclic_data)
-#> {'a': {'b': {...}}}
-
-try:
-    ModelB.model_validate(cyclic_data)
-except ValidationError as exc:
-    print(exc)
-    """
-    1 validation error for ModelB
-    a.b
-      Recursion error - cyclic reference detected [type=recursion_loop, input_value={'a': {'b': {...}}}, input_type=dict]
-    """
-
-```
-
-```python
-from typing import Optional
-
-from pydantic import BaseModel, ValidationError
-
-
-class ModelA(BaseModel):
-    b: 'Optional[ModelB]' = None
+    b: 'ModelB | None' = None
 
 
 class ModelB(BaseModel):
@@ -3109,7 +2914,7 @@ Check out the following example for a more in-depth look at how to use default v
 Using default values with partial JSON parsing
 
 ```python
-from typing import Annotated, Any, Optional
+from typing import Annotated, Any
 
 import pydantic_core
 
@@ -3140,13 +2945,13 @@ class NestedModel(BaseModel):
 
 
 class MyModel(BaseModel):
-    foo: Optional[str] = None
-    bar: Annotated[
-        Optional[tuple[str, int]], WrapValidator(default_on_error)
-    ] = None
-    nested: Annotated[
-        Optional[NestedModel], WrapValidator(default_on_error)
-    ] = None
+    foo: str | None = None
+    bar: Annotated[tuple[str, int] | None, WrapValidator(default_on_error)] = (
+        None
+    )
+    nested: Annotated[NestedModel | None, WrapValidator(default_on_error)] = (
+        None
+    )
 
 
 m = MyModel.model_validate(
@@ -3228,128 +3033,6 @@ Pydantic offers support for both of:
 The first approach generally has a more narrow scope, allowing for customization of the JSON schema for more specific cases and types. The second approach generally has a more broad scope, allowing for customization of the JSON schema generation process overall. The same effects can be achieved with either approach, but depending on your use case, one approach might offer a more simple solution than the other.
 
 Here's an example of generating JSON schema from a `BaseModel`:
-
-```python
-import json
-from enum import Enum
-from typing import Annotated, Union
-
-from pydantic import BaseModel, Field
-from pydantic.config import ConfigDict
-
-
-class FooBar(BaseModel):
-    count: int
-    size: Union[float, None] = None
-
-
-class Gender(str, Enum):
-    male = 'male'
-    female = 'female'
-    other = 'other'
-    not_given = 'not_given'
-
-
-class MainModel(BaseModel):
-    """
-    This is the description of the main model
-    """
-
-    model_config = ConfigDict(title='Main')
-
-    foo_bar: FooBar
-    gender: Annotated[Union[Gender, None], Field(alias='Gender')] = None
-    snap: int = Field(
-        default=42,
-        title='The Snap',
-        description='this is the value of snap',
-        gt=30,
-        lt=50,
-    )
-
-
-main_model_schema = MainModel.model_json_schema()  # (1)!
-print(json.dumps(main_model_schema, indent=2))  # (2)!
-
-```
-
-JSON output:
-
-```json
-{
-  "$defs": {
-    "FooBar": {
-      "properties": {
-        "count": {
-          "title": "Count",
-          "type": "integer"
-        },
-        "size": {
-          "anyOf": [
-            {
-              "type": "number"
-            },
-            {
-              "type": "null"
-            }
-          ],
-          "default": null,
-          "title": "Size"
-        }
-      },
-      "required": [
-        "count"
-      ],
-      "title": "FooBar",
-      "type": "object"
-    },
-    "Gender": {
-      "enum": [
-        "male",
-        "female",
-        "other",
-        "not_given"
-      ],
-      "title": "Gender",
-      "type": "string"
-    }
-  },
-  "description": "This is the description of the main model",
-  "properties": {
-    "foo_bar": {
-      "$ref": "#/$defs/FooBar"
-    },
-    "Gender": {
-      "anyOf": [
-        {
-          "$ref": "#/$defs/Gender"
-        },
-        {
-          "type": "null"
-        }
-      ],
-      "default": null
-    },
-    "snap": {
-      "default": 42,
-      "description": "this is the value of snap",
-      "exclusiveMaximum": 50,
-      "exclusiveMinimum": 30,
-      "title": "The Snap",
-      "type": "integer"
-    }
-  },
-  "required": [
-    "foo_bar"
-  ],
-  "title": "Main",
-  "type": "object"
-}
-
-```
-
-1. This produces a "jsonable" dict of `MainModel`'s schema.
-1. Calling `json.dumps` on the schema dict produces a JSON string.
 
 ```python
 import json
@@ -3490,7 +3173,6 @@ You can also generate JSON schemas for combinations of BaseModels and TypeAdapte
 
 ```python
 import json
-from typing import Union
 
 from pydantic import BaseModel, TypeAdapter
 
@@ -3505,7 +3187,7 @@ class Dog(BaseModel):
     breed: str
 
 
-ta = TypeAdapter(Union[Cat, Dog])
+ta = TypeAdapter(Cat | Dog)
 ta_schema = ta.json_schema()
 print(json.dumps(ta_schema, indent=2))
 
@@ -3873,35 +3555,7 @@ We viewed this change largely as a bug fix, as it resolves unintentional differe
 
 ```python
 import json
-from typing import Annotated
-
-from typing_extensions import TypeAlias
-
-from pydantic import Field, TypeAdapter
-
-ExternalType: TypeAlias = Annotated[
-    int, Field(json_schema_extra={'key1': 'value1'})
-]
-
-ta = TypeAdapter(
-    Annotated[ExternalType, Field(json_schema_extra={'key2': 'value2'})]
-)
-print(json.dumps(ta.json_schema(), indent=2))
-"""
-{
-  "key1": "value1",
-  "key2": "value2",
-  "type": "integer"
-}
-"""
-
-```
-
-```python
-import json
-from typing import Annotated
-
-from typing import TypeAlias
+from typing import Annotated, TypeAlias
 
 from pydantic import Field, TypeAdapter
 
@@ -4554,49 +4208,6 @@ print(MyModel.model_json_schema(schema_generator=MyGenerateJsonSchema))
 Below is an approach you can use to exclude any fields from the schema that don't have valid json schemas:
 
 ```python
-from typing import Callable
-
-from pydantic_core import PydanticOmit, core_schema
-
-from pydantic import BaseModel
-from pydantic.json_schema import GenerateJsonSchema, JsonSchemaValue
-
-
-class MyGenerateJsonSchema(GenerateJsonSchema):
-    def handle_invalid_for_json_schema(
-        self, schema: core_schema.CoreSchema, error_info: str
-    ) -> JsonSchemaValue:
-        raise PydanticOmit
-
-
-def example_callable():
-    return 1
-
-
-class Example(BaseModel):
-    name: str = 'example'
-    function: Callable = example_callable
-
-
-instance_example = Example()
-
-validation_schema = instance_example.model_json_schema(
-    schema_generator=MyGenerateJsonSchema, mode='validation'
-)
-print(validation_schema)
-"""
-{
-    'properties': {
-        'name': {'default': 'example', 'title': 'Name', 'type': 'string'}
-    },
-    'title': 'Example',
-    'type': 'object',
-}
-"""
-
-```
-
-```python
 from collections.abc import Callable
 
 from pydantic_core import PydanticOmit, core_schema
@@ -4644,61 +4255,6 @@ print(validation_schema)
 By default, Pydantic recursively sorts JSON schemas by alphabetically sorting keys. Notably, Pydantic skips sorting the values of the `properties` key, to preserve the order of the fields as they were defined in the model.
 
 If you would like to customize this behavior, you can override the `sort` method in your custom `GenerateJsonSchema` subclass. The below example uses a no-op `sort` method to disable sorting entirely, which is reflected in the preserved order of the model fields and `json_schema_extra` keys:
-
-```python
-import json
-from typing import Optional
-
-from pydantic import BaseModel, Field
-from pydantic.json_schema import GenerateJsonSchema, JsonSchemaValue
-
-
-class MyGenerateJsonSchema(GenerateJsonSchema):
-    def sort(
-        self, value: JsonSchemaValue, parent_key: Optional[str] = None
-    ) -> JsonSchemaValue:
-        """No-op, we don't want to sort schema values at all."""
-        return value
-
-
-class Bar(BaseModel):
-    c: str
-    b: str
-    a: str = Field(json_schema_extra={'c': 'hi', 'b': 'hello', 'a': 'world'})
-
-
-json_schema = Bar.model_json_schema(schema_generator=MyGenerateJsonSchema)
-print(json.dumps(json_schema, indent=2))
-"""
-{
-  "type": "object",
-  "properties": {
-    "c": {
-      "type": "string",
-      "title": "C"
-    },
-    "b": {
-      "type": "string",
-      "title": "B"
-    },
-    "a": {
-      "type": "string",
-      "c": "hi",
-      "b": "hello",
-      "a": "world",
-      "title": "A"
-    }
-  },
-  "required": [
-    "c",
-    "b",
-    "a"
-  ],
-  "title": "Bar"
-}
-"""
-
-```
 
 ```python
 import json
@@ -4942,13 +4498,11 @@ When defining your models, watch out for naming collisions between your field na
 For example, the following will not behave as expected and would yield a validation error:
 
 ```python
-from typing import Optional
-
 from pydantic import BaseModel
 
 
 class Boo(BaseModel):
-    int: Optional[int] = None
+    int: int | None = None
 
 
 m = Boo(int=123)  # Will fail to validate.
@@ -5083,42 +4637,6 @@ Pydantic dataclasses also support extra data (see the [dataclass configuration](
 More complex hierarchical data structures can be defined using models themselves as types in annotations.
 
 ```python
-from typing import Optional
-
-from pydantic import BaseModel
-
-
-class Foo(BaseModel):
-    count: int
-    size: Optional[float] = None
-
-
-class Bar(BaseModel):
-    apple: str = 'x'
-    banana: str = 'y'
-
-
-class Spam(BaseModel):
-    foo: Foo
-    bars: list[Bar]
-
-
-m = Spam(foo={'count': 4}, bars=[{'apple': 'x1'}, {'apple': 'x2'}])
-print(m)
-"""
-foo=Foo(count=4, size=None) bars=[Bar(apple='x1', banana='y'), Bar(apple='x2', banana='y')]
-"""
-print(m.model_dump())
-"""
-{
-    'foo': {'count': 4, 'size': None},
-    'bars': [{'apple': 'x1', 'banana': 'y'}, {'apple': 'x2', 'banana': 'y'}],
-}
-"""
-
-```
-
-```python
 from pydantic import BaseModel
 
 
@@ -5220,57 +4738,6 @@ Compared to using the model constructor, it is possible to control several valid
 Note
 
 Depending on the types and model configuration involved, the *Python* and *JSON* modes may have different validation behavior (e.g. with [strictness](../strict_mode/)). If you have data coming from a non-JSON source, but want the same validation behavior and errors you'd get from the *JSON* mode, our recommendation for now is to either dump your data to JSON (e.g. using json.dumps()), or use model_validate_strings() if the data takes the form of a (potentially nested) dictionary with string keys and values. Progress for this feature can be tracked in [this issue](https://github.com/pydantic/pydantic/issues/11154).
-
-```python
-from datetime import datetime
-from typing import Optional
-
-from pydantic import BaseModel, ValidationError
-
-
-class User(BaseModel):
-    id: int
-    name: str = 'John Doe'
-    signup_ts: Optional[datetime] = None
-
-
-m = User.model_validate({'id': 123, 'name': 'James'})
-print(m)
-#> id=123 name='James' signup_ts=None
-
-try:
-    m = User.model_validate_json('{"id": 123, "name": 123}')
-except ValidationError as e:
-    print(e)
-    """
-    1 validation error for User
-    name
-      Input should be a valid string [type=string_type, input_value=123, input_type=int]
-    """
-
-m = User.model_validate_strings({'id': '123', 'name': 'James'})
-print(m)
-#> id=123 name='James' signup_ts=None
-
-m = User.model_validate_strings(
-    {'id': '123', 'name': 'James', 'signup_ts': '2024-04-01T12:00:00'}
-)
-print(m)
-#> id=123 name='James' signup_ts=datetime.datetime(2024, 4, 1, 12, 0)
-
-try:
-    m = User.model_validate_strings(
-        {'id': '123', 'name': 'James', 'signup_ts': '2024-04-01'}, strict=True
-    )
-except ValidationError as e:
-    print(e)
-    """
-    1 validation error for User
-    signup_ts
-      Input should be a valid datetime, invalid datetime separator, expected `T`, `t`, `_` or space [type=datetime_parsing, input_value='2024-04-01', input_type=str]
-    """
-
-```
 
 ```python
 from datetime import datetime
@@ -10022,33 +9489,6 @@ When using the Python mode, Pydantic models (and model-like types such as datacl
 1. With the exception of [root models](../models/#rootmodel-and-custom-root-types), where the root value is dumped directly.
 
 ```python
-from typing import Optional
-
-from pydantic import BaseModel, Field
-
-
-class BarModel(BaseModel):
-    whatever: tuple[int, ...]
-
-
-class FooBarModel(BaseModel):
-    banana: Optional[float] = 1.1
-    foo: str = Field(serialization_alias='foo_alias')
-    bar: BarModel
-
-
-m = FooBarModel(banana=3.14, foo='hello', bar={'whatever': (1, 2)})
-
-# returns a dictionary:
-print(m.model_dump())
-#> {'banana': 3.14, 'foo': 'hello', 'bar': {'whatever': (1, 2)}}
-
-print(m.model_dump(by_alias=True))
-#> {'banana': 3.14, 'foo_alias': 'hello', 'bar': {'whatever': (1, 2)}}
-
-```
-
-```python
 from pydantic import BaseModel, Field
 
 
@@ -11453,15 +10893,13 @@ Named type aliases should be used whenever you need to define recursive type ali
 For instance, here is an example definition of a JSON type:
 
 ```python
-from typing import Union
-
 from typing_extensions import TypeAliasType
 
 from pydantic import TypeAdapter
 
 Json = TypeAliasType(
     'Json',
-    'Union[dict[str, Json], list[Json], str, int, float, bool, None]',  # (1)!
+    'dict[str, Json] | list[Json] | str | int | float | bool | None',  # (1)!
 )
 
 ta = TypeAdapter(Json)
@@ -11575,44 +11013,9 @@ Often you'll want to parametrize your custom type by more than just generic type
 For example, if you were to implement `pydantic.AfterValidator` (see [Adding validation and serialization](#adding-validation-and-serialization)) yourself, you'd do something similar to the following:
 
 ```python
-from dataclasses import dataclass
-from typing import Annotated, Any, Callable
-
-from pydantic_core import CoreSchema, core_schema
-
-from pydantic import BaseModel, GetCoreSchemaHandler
-
-
-@dataclass(frozen=True)  # (1)!
-class MyAfterValidator:
-    func: Callable[[Any], Any]
-
-    def __get_pydantic_core_schema__(
-        self, source_type: Any, handler: GetCoreSchemaHandler
-    ) -> CoreSchema:
-        return core_schema.no_info_after_validator_function(
-            self.func, handler(source_type)
-        )
-
-
-Username = Annotated[str, MyAfterValidator(str.lower)]
-
-
-class Model(BaseModel):
-    name: Username
-
-
-assert Model(name='ABC').name == 'abc'  # (2)!
-
-```
-
-1. The `frozen=True` specification makes `MyAfterValidator` hashable. Without this, a union such as `Username | None` will raise an error.
-1. Notice that type checkers will not complain about assigning `'ABC'` to `Username` like they did in the previous example because they do not consider `Username` to be a distinct type from `str`.
-
-```python
+from collections.abc import Callable
 from dataclasses import dataclass
 from typing import Annotated, Any
-from collections.abc import Callable
 
 from pydantic_core import CoreSchema, core_schema
 
@@ -11833,154 +11236,9 @@ Because the `source_type` parameter is not the same as the `cls` parameter, you 
 
 ```python
 from dataclasses import dataclass
-from typing import Any, Generic, TypeVar
+from typing import Any, Generic, TypeVar, get_args, get_origin
 
 from pydantic_core import CoreSchema, core_schema
-from typing_extensions import get_args, get_origin
-
-from pydantic import (
-    BaseModel,
-    GetCoreSchemaHandler,
-    ValidationError,
-    ValidatorFunctionWrapHandler,
-)
-
-ItemType = TypeVar('ItemType')
-
-
-# This is not a pydantic model, it's an arbitrary generic class
-@dataclass
-class Owner(Generic[ItemType]):
-    name: str
-    item: ItemType
-
-    @classmethod
-    def __get_pydantic_core_schema__(
-        cls, source_type: Any, handler: GetCoreSchemaHandler
-    ) -> CoreSchema:
-        origin = get_origin(source_type)
-        if origin is None:  # used as `x: Owner` without params
-            origin = source_type
-            item_tp = Any
-        else:
-            item_tp = get_args(source_type)[0]
-        # both calling handler(...) and handler.generate_schema(...)
-        # would work, but prefer the latter for conceptual and consistency reasons
-        item_schema = handler.generate_schema(item_tp)
-
-        def val_item(
-            v: Owner[Any], handler: ValidatorFunctionWrapHandler
-        ) -> Owner[Any]:
-            v.item = handler(v.item)
-            return v
-
-        python_schema = core_schema.chain_schema(
-            # `chain_schema` means do the following steps in order:
-            [
-                # Ensure the value is an instance of Owner
-                core_schema.is_instance_schema(cls),
-                # Use the item_schema to validate `items`
-                core_schema.no_info_wrap_validator_function(
-                    val_item, item_schema
-                ),
-            ]
-        )
-
-        return core_schema.json_or_python_schema(
-            # for JSON accept an object with name and item keys
-            json_schema=core_schema.chain_schema(
-                [
-                    core_schema.typed_dict_schema(
-                        {
-                            'name': core_schema.typed_dict_field(
-                                core_schema.str_schema()
-                            ),
-                            'item': core_schema.typed_dict_field(item_schema),
-                        }
-                    ),
-                    # after validating the json data convert it to python
-                    core_schema.no_info_before_validator_function(
-                        lambda data: Owner(
-                            name=data['name'], item=data['item']
-                        ),
-                        # note that we reuse the same schema here as below
-                        python_schema,
-                    ),
-                ]
-            ),
-            python_schema=python_schema,
-        )
-
-
-class Car(BaseModel):
-    color: str
-
-
-class House(BaseModel):
-    rooms: int
-
-
-class Model(BaseModel):
-    car_owner: Owner[Car]
-    home_owner: Owner[House]
-
-
-model = Model(
-    car_owner=Owner(name='John', item=Car(color='black')),
-    home_owner=Owner(name='James', item=House(rooms=3)),
-)
-print(model)
-"""
-car_owner=Owner(name='John', item=Car(color='black')) home_owner=Owner(name='James', item=House(rooms=3))
-"""
-
-try:
-    # If the values of the sub-types are invalid, we get an error
-    Model(
-        car_owner=Owner(name='John', item=House(rooms=3)),
-        home_owner=Owner(name='James', item=Car(color='black')),
-    )
-except ValidationError as e:
-    print(e)
-    """
-    2 validation errors for Model
-    wine
-      Input should be a valid number, unable to parse string as a number [type=float_parsing, input_value='Kinda good', input_type=str]
-    cheese
-      Input should be a valid boolean, unable to interpret input [type=bool_parsing, input_value='yeah', input_type=str]
-    """
-
-# Similarly with JSON
-model = Model.model_validate_json(
-    '{"car_owner":{"name":"John","item":{"color":"black"}},"home_owner":{"name":"James","item":{"rooms":3}}}'
-)
-print(model)
-"""
-car_owner=Owner(name='John', item=Car(color='black')) home_owner=Owner(name='James', item=House(rooms=3))
-"""
-
-try:
-    Model.model_validate_json(
-        '{"car_owner":{"name":"John","item":{"rooms":3}},"home_owner":{"name":"James","item":{"color":"black"}}}'
-    )
-except ValidationError as e:
-    print(e)
-    """
-    2 validation errors for Model
-    car_owner.item.color
-      Field required [type=missing, input_value={'rooms': 3}, input_type=dict]
-    home_owner.item.rooms
-      Field required [type=missing, input_value={'color': 'black'}, input_type=dict]
-    """
-
-```
-
-```python
-from dataclasses import dataclass
-from typing import Any, Generic, TypeVar
-
-from pydantic_core import CoreSchema, core_schema
-from typing import get_args, get_origin
 
 from pydantic import (
     BaseModel,
@@ -12125,84 +11383,9 @@ The same idea can be applied to create generic container types, like a custom `S
 
 ```python
 from collections.abc import Sequence
-from typing import Any, TypeVar
+from typing import Any, TypeVar, get_args
 
 from pydantic_core import ValidationError, core_schema
-from typing_extensions import get_args
-
-from pydantic import BaseModel, GetCoreSchemaHandler
-
-T = TypeVar('T')
-
-
-class MySequence(Sequence[T]):
-    def __init__(self, v: Sequence[T]):
-        self.v = v
-
-    def __getitem__(self, i):
-        return self.v[i]
-
-    def __len__(self):
-        return len(self.v)
-
-    @classmethod
-    def __get_pydantic_core_schema__(
-        cls, source: Any, handler: GetCoreSchemaHandler
-    ) -> core_schema.CoreSchema:
-        instance_schema = core_schema.is_instance_schema(cls)
-
-        args = get_args(source)
-        if args:
-            # replace the type and rely on Pydantic to generate the right schema
-            # for `Sequence`
-            sequence_t_schema = handler.generate_schema(Sequence[args[0]])
-        else:
-            sequence_t_schema = handler.generate_schema(Sequence)
-
-        non_instance_schema = core_schema.no_info_after_validator_function(
-            MySequence, sequence_t_schema
-        )
-        return core_schema.union_schema([instance_schema, non_instance_schema])
-
-
-class M(BaseModel):
-    model_config = dict(validate_default=True)
-
-    s1: MySequence = [3]
-
-
-m = M()
-print(m)
-#> s1=<__main__.MySequence object at 0x0123456789ab>
-print(m.s1.v)
-#> [3]
-
-
-class M(BaseModel):
-    s1: MySequence[int]
-
-
-M(s1=[1])
-try:
-    M(s1=['a'])
-except ValidationError as exc:
-    print(exc)
-    """
-    2 validation errors for M
-    s1.is-instance[MySequence]
-      Input should be an instance of MySequence [type=is_instance_of, input_value=['a'], input_type=list]
-    s1.function-after[MySequence(), json-or-python[json=list[int],python=chain[is-instance[Sequence],function-wrap[sequence_validator()]]]].0
-      Input should be a valid integer, unable to parse string as an integer [type=int_parsing, input_value='a', input_type=str]
-    """
-
-```
-
-```python
-from collections.abc import Sequence
-from typing import Any, TypeVar
-
-from pydantic_core import ValidationError, core_schema
-from typing import get_args
 
 from pydantic import BaseModel, GetCoreSchemaHandler
 
@@ -12382,37 +11565,6 @@ If validation fails on all members, the validation error includes the errors fro
 Union with left to right mode
 
 ```python
-from typing import Union
-
-from pydantic import BaseModel, Field, ValidationError
-
-
-class User(BaseModel):
-    id: Union[str, int] = Field(union_mode='left_to_right')
-
-
-print(User(id=123))
-#> id=123
-print(User(id='hello'))
-#> id='hello'
-
-try:
-    User(id=[])
-except ValidationError as e:
-    print(e)
-    """
-    2 validation errors for User
-    id.str
-      Input should be a valid string [type=string_type, input_value=[], input_type=list]
-    id.int
-      Input should be a valid integer [type=int_type, input_value=[], input_type=list]
-    """
-
-```
-
-Union with left to right mode
-
-```python
 from pydantic import BaseModel, Field, ValidationError
 
 
@@ -12444,28 +11596,6 @@ The order of members is very important in this case, as demonstrated by tweak th
 Union with left to right - unexpected results
 
 ```python
-from typing import Union
-
-from pydantic import BaseModel, Field
-
-
-class User(BaseModel):
-    id: Union[int, str] = Field(union_mode='left_to_right')
-
-
-print(User(id=123))  # (1)
-#> id=123
-print(User(id='456'))  # (2)
-#> id=456
-
-```
-
-1. As expected the input is validated against the `int` member and the result is as expected.
-1. We're in lax mode and the numeric string `'123'` is valid as input to the first member of the union, `int`. Since that is tried first, we get the surprising result of `id` being an `int` instead of a `str`.
-
-Union with left to right - unexpected results
-
-```python
 from pydantic import BaseModel, Field
 
 
@@ -12485,7 +11615,7 @@ print(User(id='456'))  # (2)
 
 ### Smart Mode
 
-Because of the potentially surprising results of `union_mode='left_to_right'`, in Pydantic >=2 the default mode for `Union` validation is `union_mode='smart'`.
+Because of the potentially surprising results of `union_mode='left_to_right'`, in Pydantic >=2 the default mode for union validation is `union_mode='smart'`.
 
 In this mode, pydantic attempts to select the best match for the input from the union members. The exact algorithm may change between Pydantic minor releases to allow for improvements in both performance and accuracy.
 
@@ -12543,39 +11673,6 @@ In smart mode, the following steps are taken to try to select the best match for
 1. Validation failed on all the members, return all the errors.
 
 ```python
-from typing import Union
-from uuid import UUID
-
-from pydantic import BaseModel
-
-
-class User(BaseModel):
-    id: Union[int, str, UUID]
-    name: str
-
-
-user_01 = User(id=123, name='John Doe')
-print(user_01)
-#> id=123 name='John Doe'
-print(user_01.id)
-#> 123
-user_02 = User(id='1234', name='John Doe')
-print(user_02)
-#> id='1234' name='John Doe'
-print(user_02.id)
-#> 1234
-user_03_uuid = UUID('cf57432e-809e-4353-adbd-9d5c0d733868')
-user_03 = User(id=user_03_uuid, name='John Doe')
-print(user_03)
-#> id=UUID('cf57432e-809e-4353-adbd-9d5c0d733868') name='John Doe'
-print(user_03.id)
-#> cf57432e-809e-4353-adbd-9d5c0d733868
-print(user_03_uuid.int)
-#> 275603287559914445491632874575877060712
-
-```
-
-```python
 from uuid import UUID
 
 from pydantic import BaseModel
@@ -12620,46 +11717,6 @@ Adding discriminator to unions also means the generated JSON schema implements t
 Frequently, in the case of a union with multiple models, there is a common field to all members of the union that can be used to distinguish which union case the data should be validated against.
 
 To validate models based on that information, you can set a common field on each model of the union (`pet_type` in the example below), typed as accepting one or multiple literal values. When defining the discriminated union type, the `discriminator` parameter of [the `Field()` function](../fields/) must be specified (the Discriminator type can also be used).
-
-```python
-from typing import Literal, Union
-
-from pydantic import BaseModel, Field, ValidationError
-
-
-class Cat(BaseModel):
-    pet_type: Literal['cat']
-    meows: int
-
-
-class Dog(BaseModel):
-    pet_type: Literal['dog']
-    barks: float
-
-
-class Lizard(BaseModel):
-    pet_type: Literal['reptile', 'lizard']
-    scales: bool
-
-
-class Model(BaseModel):
-    pet: Union[Cat, Dog, Lizard] = Field(discriminator='pet_type')
-    n: int
-
-
-print(Model(pet={'pet_type': 'dog', 'barks': 3.14}, n=1))
-#> pet=Dog(pet_type='dog', barks=3.14) n=1
-try:
-    Model(pet={'pet_type': 'dog'}, n=1)
-except ValidationError as e:
-    print(e)
-    """
-    1 validation error for Model
-    pet.dog.barks
-      Field required [type=missing, input_value={'pet_type': 'dog'}, input_type=dict]
-    """
-
-```
 
 ```python
 from typing import Literal
@@ -12709,7 +11766,7 @@ API Documentation
 
 pydantic.types.Discriminator
 
-In the case of a `Union` with multiple models, sometimes there isn't a single uniform field across all models that you can use as a discriminator. This is the perfect use case for a callable `Discriminator`.
+In the case of a union with multiple models, sometimes there isn't a single uniform field across all models that you can use as a discriminator. This is the perfect use case for a callable `Discriminator`.
 
 Tip
 
@@ -12718,65 +11775,6 @@ When you're designing callable discriminators, remember that you might have to a
 But wait! You ask, I only anticipate passing in `dict` types, why do I need to account for models? Pydantic uses callable discriminators for serialization as well, at which point the input to your callable is very likely to be a model instance.
 
 In the following examples, you'll see that the callable discriminators are designed to handle both `dict` and model inputs. If you don't follow this practice, it's likely that you'll, in the best case, get warnings during serialization, and in the worst case, get runtime errors during validation.
-
-```python
-from typing import Annotated, Any, Literal, Optional, Union
-
-from pydantic import BaseModel, Discriminator, Tag
-
-
-class Pie(BaseModel):
-    time_to_cook: int
-    num_ingredients: int
-
-
-class ApplePie(Pie):
-    fruit: Literal['apple'] = 'apple'
-
-
-class PumpkinPie(Pie):
-    filling: Literal['pumpkin'] = 'pumpkin'
-
-
-def get_discriminator_value(v: Any) -> Optional[str]:
-    if isinstance(v, dict):
-        return v.get('fruit', v.get('filling'))
-    return getattr(v, 'fruit', getattr(v, 'filling', None))
-
-
-class ThanksgivingDinner(BaseModel):
-    dessert: Annotated[
-        Union[
-            Annotated[ApplePie, Tag('apple')],
-            Annotated[PumpkinPie, Tag('pumpkin')],
-        ],
-        Discriminator(get_discriminator_value),
-    ]
-
-
-apple_variation = ThanksgivingDinner.model_validate(
-    {'dessert': {'fruit': 'apple', 'time_to_cook': 60, 'num_ingredients': 8}}
-)
-print(repr(apple_variation))
-"""
-ThanksgivingDinner(dessert=ApplePie(time_to_cook=60, num_ingredients=8, fruit='apple'))
-"""
-
-pumpkin_variation = ThanksgivingDinner.model_validate(
-    {
-        'dessert': {
-            'filling': 'pumpkin',
-            'time_to_cook': 40,
-            'num_ingredients': 6,
-        }
-    }
-)
-print(repr(pumpkin_variation))
-"""
-ThanksgivingDinner(dessert=PumpkinPie(time_to_cook=40, num_ingredients=6, filling='pumpkin'))
-"""
-
-```
 
 ```python
 from typing import Annotated, Any, Literal
@@ -12805,10 +11803,7 @@ def get_discriminator_value(v: Any) -> str | None:
 
 class ThanksgivingDinner(BaseModel):
     dessert: Annotated[
-        (
-            Annotated[ApplePie, Tag('apple')] |
-            Annotated[PumpkinPie, Tag('pumpkin')]
-        ),
+        Annotated[ApplePie, Tag('apple')] | Annotated[PumpkinPie, Tag('pumpkin')],
         Discriminator(get_discriminator_value),
     ]
 
@@ -12837,63 +11832,9 @@ ThanksgivingDinner(dessert=PumpkinPie(time_to_cook=40, num_ingredients=6, fillin
 
 ```
 
-`Discriminator`s can also be used to validate `Union` types with combinations of models and primitive types.
+`Discriminator`s can also be used to validate union types with combinations of models and primitive types.
 
 For example:
-
-```python
-from typing import Annotated, Any, Optional, Union
-
-from pydantic import BaseModel, Discriminator, Tag, ValidationError
-
-
-def model_x_discriminator(v: Any) -> Optional[str]:
-    if isinstance(v, int):
-        return 'int'
-    if isinstance(v, (dict, BaseModel)):
-        return 'model'
-    else:
-        # return None if the discriminator value isn't found
-        return None
-
-
-class SpecialValue(BaseModel):
-    value: int
-
-
-class DiscriminatedModel(BaseModel):
-    value: Annotated[
-        Union[
-            Annotated[int, Tag('int')],
-            Annotated['SpecialValue', Tag('model')],
-        ],
-        Discriminator(model_x_discriminator),
-    ]
-
-
-model_data = {'value': {'value': 1}}
-m = DiscriminatedModel.model_validate(model_data)
-print(m)
-#> value=SpecialValue(value=1)
-
-int_data = {'value': 123}
-m = DiscriminatedModel.model_validate(int_data)
-print(m)
-#> value=123
-
-try:
-    DiscriminatedModel.model_validate({'value': 'not an int or a model'})
-except ValidationError as e:
-    print(e)  # (1)!
-    """
-    1 validation error for DiscriminatedModel
-    value
-      Unable to extract tag using discriminator model_x_discriminator() [type=union_tag_not_found, input_value='not an int or a model', input_type=str]
-    """
-
-```
-
-1. Notice the callable discriminator function returns `None` if a discriminator value is not found. When `None` is returned, this `union_tag_not_found` error is raised.
 
 ```python
 from typing import Annotated, Any
@@ -12917,10 +11858,7 @@ class SpecialValue(BaseModel):
 
 class DiscriminatedModel(BaseModel):
     value: Annotated[
-        (
-            Annotated[int, Tag('int')] |
-            Annotated['SpecialValue', Tag('model')]
-        ),
+        Annotated[int, Tag('int')] | Annotated['SpecialValue', Tag('model')],
         Discriminator(model_x_discriminator),
     ]
 
@@ -12951,39 +11889,33 @@ except ValidationError as e:
 
 Note
 
-Using the [annotated pattern](../fields/#the-annotated-pattern) can be handy to regroup the `Union` and `discriminator` information. See the next example for more details.
+Using the [annotated pattern](../fields/#the-annotated-pattern) can be handy to regroup the union and `discriminator` information. See the next example for more details.
 
 There are a few ways to set a discriminator for a field, all varying slightly in syntax.
 
 For `str` discriminators:
 
 ```python
-some_field: Union[...] = Field(discriminator='my_discriminator')
-some_field: Annotated[Union[...], Field(discriminator='my_discriminator')]
+some_field: ... | ... = Field(discriminator='my_discriminator')
+some_field: Annotated[... | ..., Field(discriminator='my_discriminator')]
 
 ```
 
 For callable `Discriminator`s:
 
 ```python
-some_field: Union[...] = Field(discriminator=Discriminator(...))
-some_field: Annotated[Union[...], Discriminator(...)]
-some_field: Annotated[Union[...], Field(discriminator=Discriminator(...))]
+some_field: ... | ... = Field(discriminator=Discriminator(...))
+some_field: Annotated[... | ..., Discriminator(...)]
+some_field: Annotated[... | ..., Field(discriminator=Discriminator(...))]
 
 ```
-
-Warning
-
-Discriminated unions cannot be used with only a single variant, such as `Union[Cat]`.
-
-Python changes `Union[T]` into `T` at interpretation time, so it is not possible for `pydantic` to distinguish fields of `Union[T]` from `T`.
 
 ### Nested Discriminated Unions
 
 Only one discriminator can be set for a field but sometimes you want to combine multiple discriminators. You can do it by creating nested `Annotated` types, e.g.:
 
 ```python
-from typing import Annotated, Literal, Union
+from typing import Annotated, Literal
 
 from pydantic import BaseModel, Field, ValidationError
 
@@ -13000,7 +11932,7 @@ class WhiteCat(BaseModel):
     white_name: str
 
 
-Cat = Annotated[Union[BlackCat, WhiteCat], Field(discriminator='color')]
+Cat = Annotated[BlackCat | WhiteCat, Field(discriminator='color')]
 
 
 class Dog(BaseModel):
@@ -13008,7 +11940,7 @@ class Dog(BaseModel):
     name: str
 
 
-Pet = Annotated[Union[Cat, Dog], Field(discriminator='pet_type')]
+Pet = Annotated[Cat | Dog, Field(discriminator='pet_type')]
 
 
 class Model(BaseModel):
@@ -13059,19 +11991,19 @@ print(repr(pet))
 
 ## Union Validation Errors
 
-When `Union` validation fails, error messages can be quite verbose, as they will produce validation errors for each case in the union. This is especially noticeable when dealing with recursive models, where reasons may be generated at each level of recursion. Discriminated unions help to simplify error messages in this case, as validation errors are only produced for the case with a matching discriminator value.
+When union validation fails, error messages can be quite verbose, as they will produce validation errors for each case in the union. This is especially noticeable when dealing with recursive models, where reasons may be generated at each level of recursion. Discriminated unions help to simplify error messages in this case, as validation errors are only produced for the case with a matching discriminator value.
 
 You can also customize the error type, message, and context for a `Discriminator` by passing these specifications as parameters to the `Discriminator` constructor, as seen in the example below.
 
 ```python
-from typing import Annotated, Union
+from typing import Annotated
 
 from pydantic import BaseModel, Discriminator, Tag, ValidationError
 
 
-# Errors are quite verbose with a normal Union:
+# Errors are quite verbose with a normal union:
 class Model(BaseModel):
-    x: Union[str, 'Model']
+    x: 'str | Model'
 
 
 try:
@@ -13117,10 +12049,7 @@ def model_x_discriminator(v):
 
 class DiscriminatedModel(BaseModel):
     x: Annotated[
-        Union[
-            Annotated[str, Tag('str')],
-            Annotated['DiscriminatedModel', Tag('model')],
-        ],
+        Annotated[str, Tag('str')] | Annotated['DiscriminatedModel', Tag('model')],
         Discriminator(
             model_x_discriminator,
             custom_error_type='invalid_union_member',  # (1)!
@@ -13165,7 +12094,7 @@ print(m.model_dump())
 You can also simplify error messages by labeling each case with a Tag. This is especially useful when you have complex types like those in this example:
 
 ```python
-from typing import Annotated, Union
+from typing import Annotated
 
 from pydantic import AfterValidator, Tag, TypeAdapter, ValidationError
 
@@ -13174,7 +12103,7 @@ StringsMap = dict[str, str]
 
 
 # Not using any `Tag`s for each union case, the errors are not so nice to look at
-adapter = TypeAdapter(Union[DoubledList, StringsMap])
+adapter = TypeAdapter(DoubledList | StringsMap)
 
 try:
     adapter.validate_python(['a'])
@@ -13189,10 +12118,7 @@ except ValidationError as exc_info:
     """
 
 tag_adapter = TypeAdapter(
-    Union[
-        Annotated[DoubledList, Tag('DoubledList')],
-        Annotated[StringsMap, Tag('StringsMap')],
-    ]
+    Annotated[DoubledList, Tag('DoubledList')] | Annotated[StringsMap, Tag('StringsMap')]
 )
 
 try:
@@ -14438,7 +13364,7 @@ print(Model(value=1))
 While the type hint for `value` is `str`, the `cast_ints` validator also allows integers. To specify the correct input type, the `json_schema_input_type` argument can be provided:
 
 ```python
-from typing import Any, Union
+from typing import Any
 
 from pydantic import BaseModel, field_validator
 
@@ -14446,9 +13372,7 @@ from pydantic import BaseModel, field_validator
 class Model(BaseModel):
     value: str
 
-    @field_validator(
-        'value', mode='before', json_schema_input_type=Union[int, str]
-    )
+    @field_validator('value', mode='before', json_schema_input_type=int | str)
     @classmethod
     def cast_ints(cls, value: Any) -> Any:
         if isinstance(value, int):
@@ -17890,15 +16814,14 @@ use_enum_values: bool
 
 ```
 
-Whether to populate models with the `value` property of enums, rather than the raw enum. This may be useful if you want to serialize `model.model_dump()` later. Defaults to `False`.
+Whether to populate models with the value property of enums, rather than the raw enum. This may be useful if you want to serialize the value later. Defaults to `False`.
 
 Note
 
-If you have an `Optional[Enum]` value that you set a default for, you need to use `validate_default=True` for said Field to ensure that the `use_enum_values` flag takes effect on the default, as extracting an enum's value occurs during validation, not serialization.
+If you have a field typed as an enum with a default value, the validate_default configuration needs to be set to ensure that the `use_enum_values` flag takes effect on the default, as extracting an enum's value occurs during validation, not serialization.
 
 ```python
 from enum import Enum
-from typing import Optional
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -17911,7 +16834,7 @@ class SomeModel(BaseModel):
     model_config = ConfigDict(use_enum_values=True)
 
     some_enum: SomeEnum
-    another_enum: Optional[SomeEnum] = Field(
+    another_enum: SomeEnum | None = Field(
         default=SomeEnum.FOO, validate_default=True
     )
 
@@ -19280,37 +18203,6 @@ dataclass(
 
 ```python
 dataclass(
-    *,
-    init: Literal[False] = False,
-    repr: bool = True,
-    eq: bool = True,
-    order: bool = False,
-    unsafe_hash: bool = False,
-    frozen: bool | None = None,
-    config: ConfigDict | type[object] | None = None,
-    validate_on_init: bool | None = None
-) -> Callable[[type[_T]], type[PydanticDataclass]]
-
-```
-
-```python
-dataclass(
-    _cls: type[_T],
-    *,
-    init: Literal[False] = False,
-    repr: bool = True,
-    eq: bool = True,
-    order: bool = False,
-    unsafe_hash: bool = False,
-    frozen: bool | None = None,
-    config: ConfigDict | type[object] | None = None,
-    validate_on_init: bool | None = None
-) -> type[PydanticDataclass]
-
-```
-
-```python
-dataclass(
     _cls: type[_T] | None = None,
     *,
     init: Literal[False] = False,
@@ -19402,11 +18294,6 @@ def dataclass(
     """
     assert init is False, 'pydantic.dataclasses.dataclass only supports init=False'
     assert validate_on_init is not False, 'validate_on_init=False is no longer supported'
-
-    if sys.version_info >= (3, 10):
-        kwargs = {'kw_only': kw_only, 'slots': slots}
-    else:
-        kwargs = {}
 
     def create_dataclass(cls: type[Any]) -> type[PydanticDataclass]:
         """Create a Pydantic dataclass from a regular dataclass.
@@ -19503,7 +18390,8 @@ def dataclass(
                 order=order,
                 unsafe_hash=unsafe_hash,
                 frozen=frozen_,
-                **kwargs,
+                kw_only=kw_only,
+                slots=slots,
             )
 
         if config_wrapper.validate_assignment:
@@ -19540,7 +18428,7 @@ def dataclass(
                     return [getattr(self, f.name) for f in dataclasses.fields(self)]
 
                 def _dataclass_setstate(self: Any, state: list[Any]) -> None:
-                    for field, value in zip(dataclasses.fields(self), state):
+                    for field, value in zip(dataclasses.fields(self), state, strict=True):
                         object.__setattr__(self, field.name, value)
 
                 cls.__getstate__ = _dataclass_getstate  # pyright: ignore[reportAttributeAccessIssue]
@@ -19754,7 +18642,7 @@ def __init__(self, message: str, *, code: PydanticErrorCodes | None) -> None:
 ## PydanticUndefinedAnnotation
 
 ```python
-PydanticUndefinedAnnotation(name: str, message: str)
+PydanticUndefinedAnnotation(name: str | None, message: str)
 
 ```
 
@@ -19764,12 +18652,12 @@ A subclass of `NameError` raised when handling undefined annotations during `Cor
 
 Attributes:
 
-| Name | Type | Description | | --- | --- | --- | | `name` | | Name of the error. | | `message` | | Description of the error. |
+| Name | Type | Description | | --- | --- | --- | | `name` | | Name of the error, of None if not available. | | `message` | | Description of the error. |
 
 Source code in `pydantic/errors.py`
 
 ```python
-def __init__(self, name: str, message: str) -> None:
+def __init__(self, name: str | None, message: str) -> None:
     self.name = name
     super().__init__(message=message, code='undefined-annotation')
 
@@ -19805,11 +18693,7 @@ def from_name_error(cls, name_error: NameError) -> Self:
     Returns:
         Converted `PydanticUndefinedAnnotation` error.
     """
-    try:
-        name = name_error.name  # type: ignore  # python > 3.10
-    except AttributeError:
-        name = re.search(r".*'(.+?)'", str(name_error)).group(1)  # type: ignore[union-attr]
-    return cls(name=name, message=str(name_error))
+    return cls(name=name_error.name, message=str(name_error))
 
 ```
 
@@ -19966,7 +18850,7 @@ validate_as(
 
 ```python
 validate_as(
-    tp: ellipsis, *, strict: bool = False
+    tp: EllipsisType, *, strict: bool = False
 ) -> _Pipeline[_InT, Any]
 
 ```
@@ -20472,7 +19356,7 @@ Defining fields on models.
 
 ```python
 Field(
-    default: ellipsis,
+    default: EllipsisType,
     *,
     alias: str | None = _Unset,
     alias_priority: int | None = _Unset,
@@ -21324,7 +20208,7 @@ PrivateAttr(
 PrivateAttr(
     *,
     default_factory: (
-        Callable[[], _T] | Callable[[dict[str, Any]], _T]
+        Callable[[], _T" optional hover>_T] | Callable[[dict[str, Any]], _T]
     ),
     init: Literal[False] = False
 ) -> _T
@@ -22598,7 +21482,7 @@ This module contains related classes and functions for validation.
 ## ModelAfterValidatorWithoutInfo
 
 ```python
-ModelAfterValidatorWithoutInfo = Callable[
+ModelAfterValidatorWithoutInfo: TypeAlias = Callable[
     [_ModelType], _ModelType
 ]
 
@@ -22609,7 +21493,7 @@ A `@model_validator` decorated function signature. This is used when `mode='afte
 ## ModelAfterValidator
 
 ```python
-ModelAfterValidator = Callable[
+ModelAfterValidator: TypeAlias = Callable[
     [_ModelType, ValidationInfo[Any]], _ModelType
 ]
 
@@ -22747,7 +21631,7 @@ Attributes:
 Example
 
 ```python
-from typing import Annotated, Union
+from typing import Annotated
 
 from pydantic import BaseModel, PlainValidator
 
@@ -22759,7 +21643,7 @@ def validate(v: object) -> int:
 
 MyInt = Annotated[
     int,
-    PlainValidator(validate, json_schema_input_type=Union[str, int]),  # (1)!
+    PlainValidator(validate, json_schema_input_type=str | int),  # (1)!
 ]
 
 class Model(BaseModel):
@@ -27470,15 +26354,14 @@ Example
 
 ```python
 from pprint import pprint
-from typing import Union
 
 from pydantic import BaseModel
 from pydantic.json_schema import SkipJsonSchema
 
 class Model(BaseModel):
-    a: Union[int, None] = None  # (1)!
-    b: Union[int, SkipJsonSchema[None]] = None  # (2)!
-    c: SkipJsonSchema[Union[int, None]] = None  # (3)!
+    a: int | None = None  # (1)!
+    b: int | SkipJsonSchema[None] = None  # (2)!
+    c: SkipJsonSchema[int | None] = None  # (3)!
 
 pprint(Model.model_json_schema())
 '''
@@ -29732,7 +28615,7 @@ This module contains definitions to build schemas which `pydantic_core` can vali
 ## WhenUsed
 
 ```python
-WhenUsed = Literal[
+WhenUsed: TypeAlias = Literal[
     "always", "unless-none", "json", "json-unless-none"
 ]
 
@@ -29753,7 +28636,7 @@ Base class for schema configuration options.
 
 Attributes:
 
-| Name | Type | Description | | --- | --- | --- | | `title` | `str` | The name of the configuration. | | `strict` | `bool` | Whether the configuration should strictly adhere to specified rules. | | `extra_fields_behavior` | `ExtraBehavior` | The behavior for handling extra fields. | | `typed_dict_total` | `bool` | Whether the TypedDict should be considered total. Default is True. | | `from_attributes` | `bool` | Whether to use attributes for models, dataclasses, and tagged union keys. | | `loc_by_alias` | `bool` | Whether to use the used alias (or first alias for "field required" errors) instead of field_names to construct error locs. Default is True. | | `revalidate_instances` | `Literal['always', 'never', 'subclass-instances']` | Whether instances of models and dataclasses should re-validate. Default is 'never'. | | `validate_default` | `bool` | Whether to validate default values during validation. Default is False. | | `str_max_length` | `int` | The maximum length for string fields. | | `str_min_length` | `int` | The minimum length for string fields. | | `str_strip_whitespace` | `bool` | Whether to strip whitespace from string fields. | | `str_to_lower` | `bool` | Whether to convert string fields to lowercase. | | `str_to_upper` | `bool` | Whether to convert string fields to uppercase. | | `allow_inf_nan` | `bool` | Whether to allow infinity and NaN values for float fields. Default is True. | | `ser_json_timedelta` | `Literal['iso8601', 'float']` | The serialization option for timedelta values. Default is 'iso8601'. Note that if ser_json_temporal is set, then this param will be ignored. | | `ser_json_temporal` | `Literal['iso8601', 'seconds', 'milliseconds']` | The serialization option for datetime like values. Default is 'iso8601'. The types this covers are datetime, date, time and timedelta. If this is set, it will take precedence over ser_json_timedelta | | `ser_json_bytes` | `Literal['utf8', 'base64', 'hex']` | The serialization option for bytes values. Default is 'utf8'. | | `ser_json_inf_nan` | `Literal['null', 'constants', 'strings']` | The serialization option for infinity and NaN values in float fields. Default is 'null'. | | `val_json_bytes` | `Literal['utf8', 'base64', 'hex']` | The validation option for bytes values, complementing ser_json_bytes. Default is 'utf8'. | | `hide_input_in_errors` | `bool` | Whether to hide input data from ValidationError representation. | | `validation_error_cause` | `bool` | Whether to add user-python excs to the cause of a ValidationError. Requires exceptiongroup backport pre Python 3.11. | | `coerce_numbers_to_str` | `bool` | Whether to enable coercion of any Number type to str (not applicable in strict mode). | | `regex_engine` | `Literal['rust-regex', 'python-re']` | The regex engine to use for regex pattern validation. Default is 'rust-regex'. See StringSchema. | | `cache_strings` | `Union[bool, Literal['all', 'keys', 'none']]` | Whether to cache strings. Default is True, True or 'all' is required to cache strings during general validation since validators don't know if they're in a key or a value. | | `validate_by_alias` | `bool` | Whether to use the field's alias when validating against the provided input data. Default is True. | | `validate_by_name` | `bool` | Whether to use the field's name when validating against the provided input data. Default is False. Replacement for populate_by_name. | | `serialize_by_alias` | `bool` | Whether to serialize by alias. Default is False, expected to change to True in V3. | | `polymorphic_serialization` | `bool` | Whether to enable polymorphic serialization for models and dataclasses. Default is False. | | `url_preserve_empty_path` | `bool` | Whether to preserve empty URL paths when validating values for a URL type. Defaults to False. |
+| Name | Type | Description | | --- | --- | --- | | `title` | `str` | The name of the configuration. | | `strict` | `bool` | Whether the configuration should strictly adhere to specified rules. | | `extra_fields_behavior` | `ExtraBehavior` | The behavior for handling extra fields. | | `typed_dict_total` | `bool` | Whether the TypedDict should be considered total. Default is True. | | `from_attributes` | `bool` | Whether to use attributes for models, dataclasses, and tagged union keys. | | `loc_by_alias` | `bool` | Whether to use the used alias (or first alias for "field required" errors) instead of field_names to construct error locs. Default is True. | | `revalidate_instances` | `Literal['always', 'never', 'subclass-instances']` | Whether instances of models and dataclasses should re-validate. Default is 'never'. | | `validate_default` | `bool` | Whether to validate default values during validation. Default is False. | | `str_max_length` | `int` | The maximum length for string fields. | | `str_min_length` | `int` | The minimum length for string fields. | | `str_strip_whitespace` | `bool` | Whether to strip whitespace from string fields. | | `str_to_lower` | `bool` | Whether to convert string fields to lowercase. | | `str_to_upper` | `bool` | Whether to convert string fields to uppercase. | | `allow_inf_nan` | `bool` | Whether to allow infinity and NaN values for float fields. Default is True. | | `ser_json_timedelta` | `Literal['iso8601', 'float']` | The serialization option for timedelta values. Default is 'iso8601'. Note that if ser_json_temporal is set, then this param will be ignored. | | `ser_json_temporal` | `Literal['iso8601', 'seconds', 'milliseconds']` | The serialization option for datetime like values. Default is 'iso8601'. The types this covers are datetime, date, time and timedelta. If this is set, it will take precedence over ser_json_timedelta | | `ser_json_bytes` | `Literal['utf8', 'base64', 'hex']` | The serialization option for bytes values. Default is 'utf8'. | | `ser_json_inf_nan` | `Literal['null', 'constants', 'strings']` | The serialization option for infinity and NaN values in float fields. Default is 'null'. | | `val_json_bytes` | `Literal['utf8', 'base64', 'hex']` | The validation option for bytes values, complementing ser_json_bytes. Default is 'utf8'. | | `hide_input_in_errors` | `bool` | Whether to hide input data from ValidationError representation. | | `validation_error_cause` | `bool` | Whether to add user-python excs to the cause of a ValidationError. Requires exceptiongroup backport pre Python 3.11. | | `coerce_numbers_to_str` | `bool` | Whether to enable coercion of any Number type to str (not applicable in strict mode). | | `regex_engine` | `Literal['rust-regex', 'python-re']` | The regex engine to use for regex pattern validation. Default is 'rust-regex'. See StringSchema. | | `cache_strings` | `bool | Literal['all', 'keys', 'none']` | Whether to cache strings. Default is True, True or 'all' is required to cache strings during general validation since validators don't know if they're in a key or a value. | | `validate_by_alias` | `bool` | Whether to use the field's alias when validating against the provided input data. Default is True. | | `validate_by_name` | `bool` | Whether to use the field's name when validating against the provided input data. Default is False. Replacement for populate_by_name. | | `serialize_by_alias` | `bool` | Whether to serialize by alias. Default is False, expected to change to True in V3. | | `polymorphic_serialization` | `bool` | Whether to enable polymorphic serialization for models and dataclasses. Default is False. | | `url_preserve_empty_path` | `bool` | Whether to preserve empty URL paths when validating values for a URL type. Defaults to False. |
 
 ## SerializationInfo
 
@@ -33122,11 +32005,11 @@ with_default_schema(
     schema: CoreSchema,
     *,
     default: Any = PydanticUndefined,
-    default_factory: Union[
-        Callable[[], Any],
-        Callable[[dict[str, Any]], Any],
-        None,
-    ] = None,
+    default_factory: (
+        Callable[[], Any]
+        | Callable[[dict[str, Any]], Any]
+        | None
+    ) = None,
     default_factory_takes_data: bool | None = None,
     on_error: (
         Literal["raise", "omit", "default"] | None
@@ -33156,7 +32039,7 @@ assert v.validate_python({}) == v.validate_python({'a': 'hello'})
 
 Parameters:
 
-| Name | Type | Description | Default | | --- | --- | --- | --- | | `schema` | `CoreSchema` | The schema to add a default value to | *required* | | `default` | `Any` | The default value to use | `PydanticUndefined` | | `default_factory` | `Union[Callable[[], Any], Callable[[dict[str, Any]], Any], None]` | A callable that returns the default value to use | `None` | | `default_factory_takes_data` | `bool | None` | Whether the default factory takes a validated data argument | `None` | | `on_error` | `Literal['raise', 'omit', 'default'] | None` | What to do if the schema validation fails. One of 'raise', 'omit', 'default' | `None` | | `validate_default` | `bool | None` | Whether the default value should be validated | `None` | | `strict` | `bool | None` | Whether the underlying schema should be validated with strict mode | `None` | | `ref` | `str | None` | optional unique identifier of the schema, used to reference the schema in other places | `None` | | `metadata` | `dict[str, Any] | None` | Any other information you want to include with the schema, not used by pydantic-core | `None` | | `serialization` | `SerSchema | None` | Custom serialization schema | `None` |
+| Name | Type | Description | Default | | --- | --- | --- | --- | | `schema` | `CoreSchema` | The schema to add a default value to | *required* | | `default` | `Any` | The default value to use | `PydanticUndefined` | | `default_factory` | `Callable[[], Any] | Callable[[dict[str, Any]], Any] | None` | A callable that returns the default value to use | `None` | | `default_factory_takes_data` | `bool | None` | Whether the default factory takes a validated data argument | `None` | | `on_error` | `Literal['raise', 'omit', 'default'] | None` | What to do if the schema validation fails. One of 'raise', 'omit', 'default' | `None` | | `validate_default` | `bool | None` | Whether the default value should be validated | `None` | | `strict` | `bool | None` | Whether the underlying schema should be validated with strict mode | `None` | | `ref` | `str | None` | optional unique identifier of the schema, used to reference the schema in other places | `None` | | `metadata` | `dict[str, Any] | None` | Any other information you want to include with the schema, not used by pydantic-core | `None` | | `serialization` | `SerSchema | None` | Custom serialization schema | `None` |
 
 Source code in `pydantic_core/core_schema.py`
 
@@ -33165,7 +32048,7 @@ def with_default_schema(
     schema: CoreSchema,
     *,
     default: Any = PydanticUndefined,
-    default_factory: Union[Callable[[], Any], Callable[[dict[str, Any]], Any], None] = None,
+    default_factory: Callable[[], Any] | Callable[[dict[str, Any]], Any] | None = None,
     default_factory_takes_data: bool | None = None,
     on_error: Literal['raise', 'omit', 'default'] | None = None,
     validate_default: bool | None = None,
@@ -40118,24 +39001,6 @@ In [strict mode](../../concepts/strict_mode/), only list instances are valid. St
 #### Example
 
 ```python
-from typing import Optional
-
-from pydantic import BaseModel, Field
-
-
-class Model(BaseModel):
-    simple_list: Optional[list[object]] = None
-    list_of_ints: Optional[list[int]] = Field(default=None, strict=True)
-
-
-print(Model(simple_list=('1', '2', '3')).simple_list)
-#> ['1', '2', '3']
-print(Model(list_of_ints=['1', 2, 3]).list_of_ints)
-#> [1, 2, 3]
-
-```
-
-```python
 from pydantic import BaseModel, Field
 
 
@@ -40179,24 +39044,6 @@ Additionally, the [`prefixItems`](https://json-schema.org/understanding-json-sch
 In [strict mode](../../concepts/strict_mode/), only tuple instances are valid. Strict mode does *not* apply to the items of the tuple. The strict constraint must be applied to the parameter types for this to work.
 
 #### Example
-
-```python
-from typing import Optional
-
-from pydantic import BaseModel
-
-
-class Model(BaseModel):
-    simple_tuple: Optional[tuple] = None
-    tuple_of_different_types: Optional[tuple[int, float, bool]] = None
-
-
-print(Model(simple_tuple=[1, 2, 3, 4]).simple_tuple)
-#> (1, 2, 3, 4)
-print(Model(tuple_of_different_types=[3, 2, 1]).tuple_of_different_types)
-#> (3, 2.0, True)
-
-```
 
 ```python
 from pydantic import BaseModel
@@ -40277,24 +39124,6 @@ In [strict mode](../../concepts/strict_mode/), only set/frozenset instances are 
 In [Python mode](../../concepts/serialization/#python-mode), sets are serialized as is. In [JSON mode](../../concepts/serialization/#json-mode), they are serialized as arrays.
 
 #### Example
-
-```python
-from typing import Optional
-
-from pydantic import BaseModel
-
-
-class Model(BaseModel):
-    simple_set: Optional[set] = None
-    set_of_ints: Optional[frozenset[int]] = None
-
-
-print(Model(simple_set=['1', '2', '3']).simple_set)
-#> {'1', '2', '3'}
-print(Model(set_of_ints=['1', '2', '3']).set_of_ints)
-#> frozenset({1, 2, 3})
-
-```
 
 ```python
 from pydantic import BaseModel
@@ -40581,22 +39410,6 @@ Standard library type: collections.abc.Callable (deprecated alias: typing.Callab
 Pydantic only validates that the input is a callable (using the [`callable()`](https://docs.python.org/3/library/functions.html#callable) function). It does *not* validate the number of parameters or their type, nor the type of the return value.
 
 ```python
-from typing import Callable
-
-from pydantic import BaseModel
-
-
-class Foo(BaseModel):
-    callback: Callable[[int], int]
-
-
-m = Foo(callback=lambda x: x)
-print(m)
-#> callback=<function <lambda> at 0x0123456789ab>
-
-```
-
-```python
 from collections.abc import Callable
 
 from pydantic import BaseModel
@@ -40863,11 +39676,9 @@ Compatibility with `mypy`
 Depending on the type used, `mypy` might raise an error when instantiating a `TypeAdapter`. As a workaround, you can explicitly annotate your variable:
 
 ```py
-from typing import Union
-
 from pydantic import TypeAdapter
 
-ta: TypeAdapter[Union[str, int]] = TypeAdapter(Union[str, int])  # type: ignore[arg-type]
+ta: TypeAdapter[str | int] = TypeAdapter(str | int)  # type: ignore[arg-type]
 
 ```
 
@@ -42627,15 +41438,9 @@ print(m)
 ### JsonValue
 
 ```python
-JsonValue: TypeAlias = Union[
-    list["JsonValue"],
-    dict[str, "JsonValue"],
-    str,
-    bool,
-    int,
-    float,
-    None,
-]
+JsonValue: TypeAlias = (
+    "list[JsonValue] | dict[str, JsonValue] | str | bool | int | float | None"
+)
 
 ```
 
@@ -43118,7 +41923,7 @@ UUID1 = Annotated[UUID, UuidVersion(1)]
 Source code in `pydantic/types.py`
 
 ````python
-@_dataclasses.dataclass(**_internal_dataclass.slots_true)
+@_dataclasses.dataclass(slots=True)
 class UuidVersion:
     """A field metadata class to indicate a [UUID](https://docs.python.org/3/library/uuid.html) version.
 
@@ -45007,7 +43812,7 @@ except ValidationError as e:
 Source code in `pydantic/types.py`
 
 ````python
-@_dataclasses.dataclass(**_internal_dataclass.slots_true)
+@_dataclasses.dataclass(slots=True)
 class EncodedBytes:
     """A bytes type that is encoded and decoded using the specified encoder.
 
@@ -45231,7 +44036,7 @@ except ValidationError as e:
 Source code in `pydantic/types.py`
 
 ````python
-@_dataclasses.dataclass(**_internal_dataclass.slots_true)
+@_dataclasses.dataclass(slots=True)
 class EncodedStr:
     """A str type that is encoded and decoded using the specified encoder.
 
@@ -45427,7 +44232,7 @@ print(repr(Model(x='abc').x))
 Source code in `pydantic/types.py`
 
 ````python
-@_dataclasses.dataclass(**_internal_dataclass.slots_true)
+@_dataclasses.dataclass(slots=True)
 class GetPydanticSchema:
     """!!! abstract "Usage Documentation"
         [Using `GetPydanticSchema` to Reduce Boilerplate](../concepts/types.md#using-getpydanticschema-to-reduce-boilerplate)
@@ -45481,12 +44286,12 @@ Provides a way to specify the expected tag to use for a case of a (callable) dis
 
 Also provides a way to label a union case in error messages.
 
-When using a callable `Discriminator`, attach a `Tag` to each case in the `Union` to specify the tag that should be used to identify that case. For example, in the below example, the `Tag` is used to specify that if `get_discriminator_value` returns `'apple'`, the input should be validated as an `ApplePie`, and if it returns `'pumpkin'`, the input should be validated as a `PumpkinPie`.
+When using a callable `Discriminator`, attach a `Tag` to each case in the union to specify the tag that should be used to identify that case. For example, in the below example, the `Tag` is used to specify that if `get_discriminator_value` returns `'apple'`, the input should be validated as an `ApplePie`, and if it returns `'pumpkin'`, the input should be validated as a `PumpkinPie`.
 
-The primary role of the `Tag` here is to map the return value from the callable `Discriminator` function to the appropriate member of the `Union` in question.
+The primary role of the `Tag` here is to map the return value from the callable `Discriminator` function to the appropriate member of the union in question.
 
 ```python
-from typing import Annotated, Any, Literal, Union
+from typing import Annotated, Any, Literal
 
 from pydantic import BaseModel, Discriminator, Tag
 
@@ -45507,10 +44312,7 @@ def get_discriminator_value(v: Any) -> str:
 
 class ThanksgivingDinner(BaseModel):
     dessert: Annotated[
-        Union[
-            Annotated[ApplePie, Tag('apple')],
-            Annotated[PumpkinPie, Tag('pumpkin')],
-        ],
+        Annotated[ApplePie, Tag('apple')] | Annotated[PumpkinPie, Tag('pumpkin')],
         Discriminator(get_discriminator_value),
     ]
 
@@ -45547,22 +44349,22 @@ See the [Discriminated Unions](../../concepts/unions/#discriminated-unions) conc
 Source code in `pydantic/types.py`
 
 ````python
-@_dataclasses.dataclass(**_internal_dataclass.slots_true, frozen=True)
+@_dataclasses.dataclass(slots=True, frozen=True)
 class Tag:
     """Provides a way to specify the expected tag to use for a case of a (callable) discriminated union.
 
     Also provides a way to label a union case in error messages.
 
-    When using a callable `Discriminator`, attach a `Tag` to each case in the `Union` to specify the tag that
+    When using a callable `Discriminator`, attach a `Tag` to each case in the union to specify the tag that
     should be used to identify that case. For example, in the below example, the `Tag` is used to specify that
     if `get_discriminator_value` returns `'apple'`, the input should be validated as an `ApplePie`, and if it
     returns `'pumpkin'`, the input should be validated as a `PumpkinPie`.
 
     The primary role of the `Tag` here is to map the return value from the callable `Discriminator` function to
-    the appropriate member of the `Union` in question.
+    the appropriate member of the union in question.
 
-    ```python
-    from typing import Annotated, Any, Literal, Union
+    ```python {lint="skip"}
+    from typing import Annotated, Any, Literal
 
     from pydantic import BaseModel, Discriminator, Tag
 
@@ -45583,10 +44385,7 @@ class Tag:
 
     class ThanksgivingDinner(BaseModel):
         dessert: Annotated[
-            Union[
-                Annotated[ApplePie, Tag('apple')],
-                Annotated[PumpkinPie, Tag('pumpkin')],
-            ],
+            Annotated[ApplePie, Tag('apple')] | Annotated[PumpkinPie, Tag('pumpkin')],
             Discriminator(get_discriminator_value),
         ]
 
@@ -45643,10 +44442,10 @@ Provides a way to use a custom callable as the way to extract the value of a uni
 
 This allows you to get validation behavior like you'd get from `Field(discriminator=<field_name>)`, but without needing to have a single shared field across all the union choices. This also makes it possible to handle unions of models and primitive types with discriminated-union-style validation errors. Finally, this allows you to use a custom callable as the way to identify which member of a union a value belongs to, while still seeing all the performance benefits of a discriminated union.
 
-Consider this example, which is much more performant with the use of `Discriminator` and thus a `TaggedUnion` than it would be as a normal `Union`.
+Consider this example, which is much more performant with the use of `Discriminator` and thus a `TaggedUnion` than it would be as a normal union.
 
 ```python
-from typing import Annotated, Any, Literal, Union
+from typing import Annotated, Any, Literal
 
 from pydantic import BaseModel, Discriminator, Tag
 
@@ -45667,10 +44466,7 @@ def get_discriminator_value(v: Any) -> str:
 
 class ThanksgivingDinner(BaseModel):
     dessert: Annotated[
-        Union[
-            Annotated[ApplePie, Tag('apple')],
-            Annotated[PumpkinPie, Tag('pumpkin')],
-        ],
+        Annotated[ApplePie, Tag('apple')] | Annotated[PumpkinPie, Tag('pumpkin')],
         Discriminator(get_discriminator_value),
     ]
 
@@ -45703,7 +44499,7 @@ See the [Discriminated Unions](../../concepts/unions/#discriminated-unions) conc
 Source code in `pydantic/types.py`
 
 ````python
-@_dataclasses.dataclass(**_internal_dataclass.slots_true, frozen=True)
+@_dataclasses.dataclass(slots=True, frozen=True)
 class Discriminator:
     """!!! abstract "Usage Documentation"
         [Discriminated Unions with `Callable` `Discriminator`](../concepts/unions.md#discriminated-unions-with-callable-discriminator)
@@ -45717,10 +44513,10 @@ class Discriminator:
     belongs to, while still seeing all the performance benefits of a discriminated union.
 
     Consider this example, which is much more performant with the use of `Discriminator` and thus a `TaggedUnion`
-    than it would be as a normal `Union`.
+    than it would be as a normal union.
 
-    ```python
-    from typing import Annotated, Any, Literal, Union
+    ```python {lint="skip"}
+    from typing import Annotated, Any, Literal
 
     from pydantic import BaseModel, Discriminator, Tag
 
@@ -45741,10 +44537,7 @@ class Discriminator:
 
     class ThanksgivingDinner(BaseModel):
         dessert: Annotated[
-            Union[
-                Annotated[ApplePie, Tag('apple')],
-                Annotated[PumpkinPie, Tag('pumpkin')],
-            ],
+            Annotated[ApplePie, Tag('apple')] | Annotated[PumpkinPie, Tag('pumpkin')],
             Discriminator(get_discriminator_value),
         ]
 
@@ -47675,78 +46468,6 @@ A common use case would be to translate error messages. For example, in the abov
 Another example is customizing the way that the `'loc'` value of an error is represented.
 
 ```python
-from typing import Any, Union
-
-from pydantic import BaseModel, ValidationError
-
-
-def loc_to_dot_sep(loc: tuple[Union[str, int], ...]) -> str:
-    path = ''
-    for i, x in enumerate(loc):
-        if isinstance(x, str):
-            if i > 0:
-                path += '.'
-            path += x
-        elif isinstance(x, int):
-            path += f'[{x}]'
-        else:
-            raise TypeError('Unexpected type')
-    return path
-
-
-def convert_errors(e: ValidationError) -> list[dict[str, Any]]:
-    new_errors: list[dict[str, Any]] = e.errors()
-    for error in new_errors:
-        error['loc'] = loc_to_dot_sep(error['loc'])
-    return new_errors
-
-
-class TestNestedModel(BaseModel):
-    key: str
-    value: str
-
-
-class TestModel(BaseModel):
-    items: list[TestNestedModel]
-
-
-data = {'items': [{'key': 'foo', 'value': 'bar'}, {'key': 'baz'}]}
-
-try:
-    TestModel.model_validate(data)
-except ValidationError as e:
-    print(e.errors())  # (1)!
-    """
-    [
-        {
-            'type': 'missing',
-            'loc': ('items', 1, 'value'),
-            'msg': 'Field required',
-            'input': {'key': 'baz'},
-            'url': 'https://errors.pydantic.dev/2/v/missing',
-        }
-    ]
-    """
-    pretty_errors = convert_errors(e)
-    print(pretty_errors)  # (2)!
-    """
-    [
-        {
-            'type': 'missing',
-            'loc': 'items[1].value',
-            'msg': 'Field required',
-            'input': {'key': 'baz'},
-            'url': 'https://errors.pydantic.dev/2/v/missing',
-        }
-    ]
-    """
-
-```
-
-1. By default, `e.errors()` produces a list of errors with `loc` values that take the form of tuples.
-1. With our custom `loc_to_dot_sep` function, we've modified the form of the `loc` representation.
-
-```python
 from typing import Any
 
 from pydantic import BaseModel, ValidationError
@@ -48072,32 +46793,6 @@ model = create_model('FooModel', a=(str, 'cake'), __base__=Model)
 This error is raised when a model in discriminated unions doesn't define a discriminator field.
 
 ```python
-from typing import Literal, Union
-
-from pydantic import BaseModel, Field, PydanticUserError
-
-
-class Cat(BaseModel):
-    c: str
-
-
-class Dog(BaseModel):
-    pet_type: Literal['dog']
-    d: str
-
-
-try:
-
-    class Model(BaseModel):
-        pet: Union[Cat, Dog] = Field(discriminator='pet_type')
-        number: int
-
-except PydanticUserError as exc_info:
-    assert exc_info.code == 'discriminator-no-field'
-
-```
-
-```python
 from typing import Literal
 
 from pydantic import BaseModel, Field, PydanticUserError
@@ -48126,35 +46821,6 @@ except PydanticUserError as exc_info:
 ## Discriminator alias type
 
 This error is raised when you define a non-string alias on a discriminator field.
-
-```python
-from typing import Literal, Union
-
-from pydantic import AliasChoices, BaseModel, Field, PydanticUserError
-
-
-class Cat(BaseModel):
-    pet_type: Literal['cat'] = Field(
-        validation_alias=AliasChoices('Pet', 'PET')
-    )
-    c: str
-
-
-class Dog(BaseModel):
-    pet_type: Literal['dog']
-    d: str
-
-
-try:
-
-    class Model(BaseModel):
-        pet: Union[Cat, Dog] = Field(discriminator='pet_type')
-        number: int
-
-except PydanticUserError as exc_info:
-    assert exc_info.code == 'discriminator-alias-type'
-
-```
 
 ```python
 from typing import Literal
@@ -48190,33 +46856,6 @@ except PydanticUserError as exc_info:
 This error is raised when you define a non-`Literal` type on a discriminator field.
 
 ```python
-from typing import Literal, Union
-
-from pydantic import BaseModel, Field, PydanticUserError
-
-
-class Cat(BaseModel):
-    pet_type: int
-    c: str
-
-
-class Dog(BaseModel):
-    pet_type: Literal['dog']
-    d: str
-
-
-try:
-
-    class Model(BaseModel):
-        pet: Union[Cat, Dog] = Field(discriminator='pet_type')
-        number: int
-
-except PydanticUserError as exc_info:
-    assert exc_info.code == 'discriminator-needs-literal'
-
-```
-
-```python
 from typing import Literal
 
 from pydantic import BaseModel, Field, PydanticUserError
@@ -48246,33 +46885,6 @@ except PydanticUserError as exc_info:
 ## Discriminator alias
 
 This error is raised when you define different aliases on discriminator fields.
-
-```python
-from typing import Literal, Union
-
-from pydantic import BaseModel, Field, PydanticUserError
-
-
-class Cat(BaseModel):
-    pet_type: Literal['cat'] = Field(validation_alias='PET')
-    c: str
-
-
-class Dog(BaseModel):
-    pet_type: Literal['dog'] = Field(validation_alias='Pet')
-    d: str
-
-
-try:
-
-    class Model(BaseModel):
-        pet: Union[Cat, Dog] = Field(discriminator='pet_type')
-        number: int
-
-except PydanticUserError as exc_info:
-    assert exc_info.code == 'discriminator-alias'
-
-```
 
 ```python
 from typing import Literal
@@ -48308,38 +46920,6 @@ This error is raised when you use a before, wrap, or plain validator on a discri
 This is disallowed because the discriminator field is used to determine the type of the model to use for validation, so you can't use a validator that might change its value.
 
 ```python
-from typing import Literal, Union
-
-from pydantic import BaseModel, Field, PydanticUserError, field_validator
-
-
-class Cat(BaseModel):
-    pet_type: Literal['cat']
-
-    @field_validator('pet_type', mode='before')
-    @classmethod
-    def validate_pet_type(cls, v):
-        if v == 'kitten':
-            return 'cat'
-        return v
-
-
-class Dog(BaseModel):
-    pet_type: Literal['dog']
-
-
-try:
-
-    class Model(BaseModel):
-        pet: Union[Cat, Dog] = Field(discriminator='pet_type')
-        number: int
-
-except PydanticUserError as exc_info:
-    assert exc_info.code == 'discriminator-validator'
-
-```
-
-```python
 from typing import Literal
 
 from pydantic import BaseModel, Field, PydanticUserError, field_validator
@@ -48371,36 +46951,7 @@ except PydanticUserError as exc_info:
 
 ```
 
-This can be worked around by using a standard `Union`, dropping the discriminator:
-
-```python
-from typing import Literal, Union
-
-from pydantic import BaseModel, field_validator
-
-
-class Cat(BaseModel):
-    pet_type: Literal['cat']
-
-    @field_validator('pet_type', mode='before')
-    @classmethod
-    def validate_pet_type(cls, v):
-        if v == 'kitten':
-            return 'cat'
-        return v
-
-
-class Dog(BaseModel):
-    pet_type: Literal['dog']
-
-
-class Model(BaseModel):
-    pet: Union[Cat, Dog]
-
-
-assert Model(pet={'pet_type': 'kitten'}).pet.pet_type == 'cat'
-
-```
+This can be worked around by using a standard union, dropping the discriminator:
 
 ```python
 from typing import Literal
@@ -48433,10 +46984,10 @@ assert Model(pet={'pet_type': 'kitten'}).pet.pet_type == 'cat'
 
 ## Callable discriminator case with no tag
 
-This error is raised when a `Union` that uses a callable `Discriminator` doesn't have `Tag` annotations for all cases.
+This error is raised when a union that uses a callable `Discriminator` doesn't have `Tag` annotations for all cases.
 
 ```python
-from typing import Annotated, Union
+from typing import Annotated
 
 from pydantic import BaseModel, Discriminator, PydanticUserError, Tag
 
@@ -48453,7 +47004,7 @@ try:
 
     class DiscriminatedModel(BaseModel):
         x: Annotated[
-            Union[str, 'DiscriminatedModel'],
+            'str | DiscriminatedModel',
             Discriminator(model_x_discriminator),
         ]
 
@@ -48465,7 +47016,7 @@ try:
 
     class DiscriminatedModel(BaseModel):
         x: Annotated[
-            Union[Annotated[str, Tag('str')], 'DiscriminatedModel'],
+            "Annotated[str, Tag('str')] | DiscriminatedModel",
             Discriminator(model_x_discriminator),
         ]
 
@@ -48477,58 +47028,7 @@ try:
 
     class DiscriminatedModel(BaseModel):
         x: Annotated[
-            Union[str, Annotated['DiscriminatedModel', Tag('model')]],
-            Discriminator(model_x_discriminator),
-        ]
-
-except PydanticUserError as exc_info:
-    assert exc_info.code == 'callable-discriminator-no-tag'
-
-```
-
-```python
-from typing import Annotated, Union
-
-from pydantic import BaseModel, Discriminator, PydanticUserError, Tag
-
-
-def model_x_discriminator(v):
-    if isinstance(v, str):
-        return 'str'
-    if isinstance(v, (dict, BaseModel)):
-        return 'model'
-
-
-# tag missing for both union choices
-try:
-
-    class DiscriminatedModel(BaseModel):
-        x: Annotated[
-            Union[str, 'DiscriminatedModel'],
-            Discriminator(model_x_discriminator),
-        ]
-
-except PydanticUserError as exc_info:
-    assert exc_info.code == 'callable-discriminator-no-tag'
-
-# tag missing for `'DiscriminatedModel'` union choice
-try:
-
-    class DiscriminatedModel(BaseModel):
-        x: Annotated[
-            Union[Annotated[str, Tag('str')], 'DiscriminatedModel'],
-            Discriminator(model_x_discriminator),
-        ]
-
-except PydanticUserError as exc_info:
-    assert exc_info.code == 'callable-discriminator-no-tag'
-
-# tag missing for `str` union choice
-try:
-
-    class DiscriminatedModel(BaseModel):
-        x: Annotated[
-            str | Annotated['DiscriminatedModel', Tag('model')],
+            "str | Annotated[DiscriminatedModel, Tag('model')]",
             Discriminator(model_x_discriminator),
         ]
 
@@ -49779,31 +48279,11 @@ This error is also raised for strict fields when the input value is not an insta
 
 ## `callable_type`
 
-This error is raised when the input value is not valid as a `Callable`:
+This error is raised when the input value is not valid as a callable:
 
 ```python
-from typing import Any, Callable
-
-from pydantic import BaseModel, ImportString, ValidationError
-
-
-class Model(BaseModel):
-    x: ImportString[Callable[[Any], Any]]
-
-
-Model(x='math:cos')  # OK
-
-try:
-    Model(x='os.path')
-except ValidationError as exc:
-    print(repr(exc.errors()[0]['type']))
-    #> 'callable_type'
-
-```
-
-```python
-from typing import Any
 from collections.abc import Callable
+from typing import Any
 
 from pydantic import BaseModel, ImportString, ValidationError
 
@@ -51277,13 +49757,11 @@ You may encounter this error when there is a naming collision in your model betw
 For example, the following would yield the `none_required` validation error since the field `int` is set to a default value of `None` and has the exact same name as its type, which causes problems with validation.
 
 ```python
-from typing import Optional
-
 from pydantic import BaseModel
 
 
 class M1(BaseModel):
-    int: Optional[int] = None
+    int: int | None = None
 
 
 m = M1(int=123)  # errors
@@ -51773,32 +50251,6 @@ except ValidationError as exc:
 This error is raised when the input's discriminator is not one of the expected values:
 
 ```python
-from typing import Literal, Union
-
-from pydantic import BaseModel, Field, ValidationError
-
-
-class BlackCat(BaseModel):
-    pet_type: Literal['blackcat']
-
-
-class WhiteCat(BaseModel):
-    pet_type: Literal['whitecat']
-
-
-class Model(BaseModel):
-    cat: Union[BlackCat, WhiteCat] = Field(discriminator='pet_type')
-
-
-try:
-    Model(cat={'pet_type': 'dog'})
-except ValidationError as exc:
-    print(repr(exc.errors()[0]['type']))
-    #> 'union_tag_invalid'
-
-```
-
-```python
 from typing import Literal
 
 from pydantic import BaseModel, Field, ValidationError
@@ -51827,32 +50279,6 @@ except ValidationError as exc:
 ## `union_tag_not_found`
 
 This error is raised when it is not possible to extract a discriminator value from the input:
-
-```python
-from typing import Literal, Union
-
-from pydantic import BaseModel, Field, ValidationError
-
-
-class BlackCat(BaseModel):
-    pet_type: Literal['blackcat']
-
-
-class WhiteCat(BaseModel):
-    pet_type: Literal['whitecat']
-
-
-class Model(BaseModel):
-    cat: Union[BlackCat, WhiteCat] = Field(discriminator='pet_type')
-
-
-try:
-    Model(cat={'name': 'blackcat'})
-except ValidationError as exc:
-    print(repr(exc.errors()[0]['type']))
-    #> 'union_tag_not_found'
-
-```
 
 ```python
 from typing import Literal
@@ -52083,94 +50509,7 @@ We use `__get_pydantic_core_schema__` in the validator to customize the schema o
 import datetime as dt
 from dataclasses import dataclass
 from pprint import pprint
-from typing import Annotated, Any, Callable, Optional
-
-import pytz
-from pydantic_core import CoreSchema, core_schema
-
-from pydantic import (
-    GetCoreSchemaHandler,
-    PydanticUserError,
-    TypeAdapter,
-    ValidationError,
-)
-
-
-@dataclass(frozen=True)
-class MyDatetimeValidator:
-    tz_constraint: Optional[str] = None
-
-    def tz_constraint_validator(
-        self,
-        value: dt.datetime,
-        handler: Callable,  # (1)!
-    ):
-        """Validate tz_constraint and tz_info."""
-        # handle naive datetimes
-        if self.tz_constraint is None:
-            assert (
-                value.tzinfo is None
-            ), 'tz_constraint is None, but provided value is tz-aware.'
-            return handler(value)
-
-        # validate tz_constraint and tz-aware tzinfo
-        if self.tz_constraint not in pytz.all_timezones:
-            raise PydanticUserError(
-                f'Invalid tz_constraint: {self.tz_constraint}',
-                code='unevaluable-type-annotation',
-            )
-        result = handler(value)  # (2)!
-        assert self.tz_constraint == str(
-            result.tzinfo
-        ), f'Invalid tzinfo: {str(result.tzinfo)}, expected: {self.tz_constraint}'
-
-        return result
-
-    def __get_pydantic_core_schema__(
-        self,
-        source_type: Any,
-        handler: GetCoreSchemaHandler,
-    ) -> CoreSchema:
-        return core_schema.no_info_wrap_validator_function(
-            self.tz_constraint_validator,
-            handler(source_type),
-        )
-
-
-LA = 'America/Los_Angeles'
-ta = TypeAdapter(Annotated[dt.datetime, MyDatetimeValidator(LA)])
-print(
-    ta.validate_python(dt.datetime(2023, 1, 1, 0, 0, tzinfo=pytz.timezone(LA)))
-)
-#> 2023-01-01 00:00:00-07:53
-
-LONDON = 'Europe/London'
-try:
-    ta.validate_python(
-        dt.datetime(2023, 1, 1, 0, 0, tzinfo=pytz.timezone(LONDON))
-    )
-except ValidationError as ve:
-    pprint(ve.errors(), width=100)
-    """
-    [{'ctx': {'error': AssertionError('Invalid tzinfo: Europe/London, expected: America/Los_Angeles')},
-    'input': datetime.datetime(2023, 1, 1, 0, 0, tzinfo=<DstTzInfo 'Europe/London' LMT-1 day, 23:59:00 STD>),
-    'loc': (),
-    'msg': 'Assertion failed, Invalid tzinfo: Europe/London, expected: America/Los_Angeles',
-    'type': 'assertion_error',
-    'url': 'https://errors.pydantic.dev/2.8/v/assertion_error'}]
-    """
-
-```
-
-1. The `handler` function is what we call to validate the input with standard `pydantic` validation
-1. We call the `handler` function to validate the input with standard `pydantic` validation in this wrap validator
-
-```python
-import datetime as dt
-from dataclasses import dataclass
-from pprint import pprint
 from typing import Annotated, Any
-from collections.abc import Callable
 
 import pytz
 from pydantic_core import CoreSchema, core_schema
@@ -52180,6 +50519,7 @@ from pydantic import (
     PydanticUserError,
     TypeAdapter,
     ValidationError,
+    ValidatorFunctionWrapHandler,
 )
 
 
@@ -52190,7 +50530,7 @@ class MyDatetimeValidator:
     def tz_constraint_validator(
         self,
         value: dt.datetime,
-        handler: Callable,  # (1)!
+        handler: ValidatorFunctionWrapHandler,  # (1)!
     ):
         """Validate tz_constraint and tz_info."""
         # handle naive datetimes
@@ -52258,82 +50598,17 @@ We can also enforce UTC offset constraints in a similar way. Assuming we have a 
 import datetime as dt
 from dataclasses import dataclass
 from pprint import pprint
-from typing import Annotated, Any, Callable
-
-import pytz
-from pydantic_core import CoreSchema, core_schema
-
-from pydantic import GetCoreSchemaHandler, TypeAdapter, ValidationError
-
-
-@dataclass(frozen=True)
-class MyDatetimeValidator:
-    lower_bound: int
-    upper_bound: int
-
-    def validate_tz_bounds(self, value: dt.datetime, handler: Callable):
-        """Validate and test bounds"""
-        assert value.utcoffset() is not None, 'UTC offset must exist'
-        assert self.lower_bound <= self.upper_bound, 'Invalid bounds'
-
-        result = handler(value)
-
-        hours_offset = value.utcoffset().total_seconds() / 3600
-        assert (
-            self.lower_bound <= hours_offset <= self.upper_bound
-        ), 'Value out of bounds'
-
-        return result
-
-    def __get_pydantic_core_schema__(
-        self,
-        source_type: Any,
-        handler: GetCoreSchemaHandler,
-    ) -> CoreSchema:
-        return core_schema.no_info_wrap_validator_function(
-            self.validate_tz_bounds,
-            handler(source_type),
-        )
-
-
-LA = 'America/Los_Angeles'  # UTC-7 or UTC-8
-ta = TypeAdapter(Annotated[dt.datetime, MyDatetimeValidator(-10, -5)])
-print(
-    ta.validate_python(dt.datetime(2023, 1, 1, 0, 0, tzinfo=pytz.timezone(LA)))
-)
-#> 2023-01-01 00:00:00-07:53
-
-LONDON = 'Europe/London'
-try:
-    print(
-        ta.validate_python(
-            dt.datetime(2023, 1, 1, 0, 0, tzinfo=pytz.timezone(LONDON))
-        )
-    )
-except ValidationError as e:
-    pprint(e.errors(), width=100)
-    """
-    [{'ctx': {'error': AssertionError('Value out of bounds')},
-    'input': datetime.datetime(2023, 1, 1, 0, 0, tzinfo=<DstTzInfo 'Europe/London' LMT-1 day, 23:59:00 STD>),
-    'loc': (),
-    'msg': 'Assertion failed, Value out of bounds',
-    'type': 'assertion_error',
-    'url': 'https://errors.pydantic.dev/2.8/v/assertion_error'}]
-    """
-
-```
-
-```python
-import datetime as dt
-from dataclasses import dataclass
-from pprint import pprint
 from typing import Annotated, Any
-from collections.abc import Callable
 
 import pytz
 from pydantic_core import CoreSchema, core_schema
 
-from pydantic import GetCoreSchemaHandler, TypeAdapter, ValidationError
+from pydantic import (
+    GetCoreSchemaHandler,
+    TypeAdapter,
+    ValidationError,
+    ValidatorFunctionWrapHandler,
+)
 
 
 @dataclass(frozen=True)
@@ -52341,7 +50616,9 @@ class MyDatetimeValidator:
     lower_bound: int
     upper_bound: int
 
-    def validate_tz_bounds(self, value: dt.datetime, handler: Callable):
+    def validate_tz_bounds(
+        self, value: dt.datetime, handler: ValidatorFunctionWrapHandler
+    ):
         """Validate and test bounds"""
         assert value.utcoffset() is not None, 'UTC offset must exist'
         assert self.lower_bound <= self.upper_bound, 'Invalid bounds'
@@ -52558,32 +50835,6 @@ More details about validation context can be found in the [validators documentat
 Models can be [created dynamically](../../concepts/models/#dynamic-model-creation) using the create_model() factory function.
 
 In this example, we will show how to dynamically derive a model from an existing one, making every field optional. To achieve this, we will make use of the model_fields model class attribute, and derive new annotations from the field definitions to be passed to the create_model() factory. Of course, this example can apply to any use case where you need to derive a new model from another (remove default values, add aliases, etc).
-
-```python
-from typing import Annotated, Union
-
-from pydantic import BaseModel, Field, create_model
-
-
-def make_fields_optional(model_cls: type[BaseModel]) -> type[BaseModel]:
-    new_fields = {}
-
-    for f_name, f_info in model_cls.model_fields.items():
-        f_dct = f_info.asdict()
-        new_fields[f_name] = (
-            Annotated[(Union[f_dct['annotation'], None], *f_dct['metadata'], Field(**f_dct['attributes']))],
-            None,
-        )
-
-    return create_model(
-        f'{model_cls.__name__}Optional',
-        __base__=model_cls,  # (1)!
-        **new_fields,
-    )
-
-```
-
-1. Using the original model as a base will inherit the [validators](../../concepts/validators/), [computed fields](../../concepts/fields/#the-computed_field-decorator), etc. The parent fields are overridden by the ones we define.
 
 ```python
 from typing import Annotated
@@ -53904,27 +52155,6 @@ Pydantic works well with [mypy](http://mypy-lang.org) right out of the box.
 However, Pydantic also ships with a mypy plugin that adds a number of important Pydantic-specific features that improve its ability to type-check your code.
 
 For example, consider the following script:
-
-```python
-from datetime import datetime
-from typing import Optional
-
-from pydantic import BaseModel
-
-
-class Model(BaseModel):
-    age: int
-    first_name = 'John'
-    last_name: Optional[str] = None
-    signup_ts: Optional[datetime] = None
-    list_of_ints: list[int]
-
-
-m = Model(age=42, list_of_ints=[1, '2', b'3'])
-print(m.middle_name)  # not a model field!
-Model()  # will raise a validation error for age and list_of_ints
-
-```
 
 ```python
 from datetime import datetime

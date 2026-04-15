@@ -5201,34 +5201,6 @@ decorators are used bare, without any arguments.</p>
 </code></pre></div>
 <h2 id="discriminator-no-field">Discriminator no field<a class="headerlink" href="#discriminator-no-field" title="Permanent link">&para;</a></h2>
 <p>This error is raised when a model in discriminated unions doesn't define a discriminator field.</p>
-<div class="tabbed-set tabbed-alternate" data-tabs="1:2"><input checked="checked" id="__tabbed_1_1" name="__tabbed_1" type="radio" /><input id="__tabbed_1_2" name="__tabbed_1" type="radio" /><div class="tabbed-labels"><label for="__tabbed_1_1">Python 3.9 and above</label><label for="__tabbed_1_2">Python 3.10 and above</label></div>
-<div class="tabbed-content">
-<div class="tabbed-block">
-<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Literal</span><span class="p">,</span> <span class="n">Union</span>
-
-<span class="kn">from</span><span class="w"> </span><span class="nn">pydantic</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">Field</span><span class="p">,</span> <span class="n">PydanticUserError</span>
-
-
-<span class="k">class</span><span class="w"> </span><span class="nc">Cat</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
-    <span class="n">c</span><span class="p">:</span> <span class="nb">str</span>
-
-
-<span class="k">class</span><span class="w"> </span><span class="nc">Dog</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
-    <span class="n">pet_type</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s1">&#39;dog&#39;</span><span class="p">]</span>
-    <span class="n">d</span><span class="p">:</span> <span class="nb">str</span>
-
-
-<span class="k">try</span><span class="p">:</span>
-
-    <span class="k">class</span><span class="w"> </span><span class="nc">Model</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
-        <span class="n">pet</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">Cat</span><span class="p">,</span> <span class="n">Dog</span><span class="p">]</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="n">discriminator</span><span class="o">=</span><span class="s1">&#39;pet_type&#39;</span><span class="p">)</span>
-        <span class="n">number</span><span class="p">:</span> <span class="nb">int</span>
-
-<span class="k">except</span> <span class="n">PydanticUserError</span> <span class="k">as</span> <span class="n">exc_info</span><span class="p">:</span>
-    <span class="k">assert</span> <span class="n">exc_info</span><span class="o">.</span><span class="n">code</span> <span class="o">==</span> <span class="s1">&#39;discriminator-no-field&#39;</span>
-</code></pre></div>
-</div>
-<div class="tabbed-block">
 <div class="language-python highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Literal</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">pydantic</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">Field</span><span class="p">,</span> <span class="n">PydanticUserError</span>
@@ -5252,42 +5224,8 @@ decorators are used bare, without any arguments.</p>
 <span class="k">except</span> <span class="n">PydanticUserError</span> <span class="k">as</span> <span class="n">exc_info</span><span class="p">:</span>
     <span class="k">assert</span> <span class="n">exc_info</span><span class="o">.</span><span class="n">code</span> <span class="o">==</span> <span class="s1">&#39;discriminator-no-field&#39;</span>
 </code></pre></div>
-</div>
-</div>
-</div>
 <h2 id="discriminator-alias-type">Discriminator alias type<a class="headerlink" href="#discriminator-alias-type" title="Permanent link">&para;</a></h2>
 <p>This error is raised when you define a non-string alias on a discriminator field.</p>
-<div class="tabbed-set tabbed-alternate" data-tabs="2:2"><input checked="checked" id="__tabbed_2_1" name="__tabbed_2" type="radio" /><input id="__tabbed_2_2" name="__tabbed_2" type="radio" /><div class="tabbed-labels"><label for="__tabbed_2_1">Python 3.9 and above</label><label for="__tabbed_2_2">Python 3.10 and above</label></div>
-<div class="tabbed-content">
-<div class="tabbed-block">
-<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Literal</span><span class="p">,</span> <span class="n">Union</span>
-
-<span class="kn">from</span><span class="w"> </span><span class="nn">pydantic</span><span class="w"> </span><span class="kn">import</span> <span class="n">AliasChoices</span><span class="p">,</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">Field</span><span class="p">,</span> <span class="n">PydanticUserError</span>
-
-
-<span class="k">class</span><span class="w"> </span><span class="nc">Cat</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
-    <span class="n">pet_type</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s1">&#39;cat&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span>
-        <span class="n">validation_alias</span><span class="o">=</span><span class="n">AliasChoices</span><span class="p">(</span><span class="s1">&#39;Pet&#39;</span><span class="p">,</span> <span class="s1">&#39;PET&#39;</span><span class="p">)</span>
-    <span class="p">)</span>
-    <span class="n">c</span><span class="p">:</span> <span class="nb">str</span>
-
-
-<span class="k">class</span><span class="w"> </span><span class="nc">Dog</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
-    <span class="n">pet_type</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s1">&#39;dog&#39;</span><span class="p">]</span>
-    <span class="n">d</span><span class="p">:</span> <span class="nb">str</span>
-
-
-<span class="k">try</span><span class="p">:</span>
-
-    <span class="k">class</span><span class="w"> </span><span class="nc">Model</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
-        <span class="n">pet</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">Cat</span><span class="p">,</span> <span class="n">Dog</span><span class="p">]</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="n">discriminator</span><span class="o">=</span><span class="s1">&#39;pet_type&#39;</span><span class="p">)</span>
-        <span class="n">number</span><span class="p">:</span> <span class="nb">int</span>
-
-<span class="k">except</span> <span class="n">PydanticUserError</span> <span class="k">as</span> <span class="n">exc_info</span><span class="p">:</span>
-    <span class="k">assert</span> <span class="n">exc_info</span><span class="o">.</span><span class="n">code</span> <span class="o">==</span> <span class="s1">&#39;discriminator-alias-type&#39;</span>
-</code></pre></div>
-</div>
-<div class="tabbed-block">
 <div class="language-python highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Literal</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">pydantic</span><span class="w"> </span><span class="kn">import</span> <span class="n">AliasChoices</span><span class="p">,</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">Field</span><span class="p">,</span> <span class="n">PydanticUserError</span>
@@ -5314,40 +5252,8 @@ decorators are used bare, without any arguments.</p>
 <span class="k">except</span> <span class="n">PydanticUserError</span> <span class="k">as</span> <span class="n">exc_info</span><span class="p">:</span>
     <span class="k">assert</span> <span class="n">exc_info</span><span class="o">.</span><span class="n">code</span> <span class="o">==</span> <span class="s1">&#39;discriminator-alias-type&#39;</span>
 </code></pre></div>
-</div>
-</div>
-</div>
 <h2 id="discriminator-needs-literal">Discriminator needs literal<a class="headerlink" href="#discriminator-needs-literal" title="Permanent link">&para;</a></h2>
 <p>This error is raised when you define a non-<code>Literal</code> type on a discriminator field.</p>
-<div class="tabbed-set tabbed-alternate" data-tabs="3:2"><input checked="checked" id="__tabbed_3_1" name="__tabbed_3" type="radio" /><input id="__tabbed_3_2" name="__tabbed_3" type="radio" /><div class="tabbed-labels"><label for="__tabbed_3_1">Python 3.9 and above</label><label for="__tabbed_3_2">Python 3.10 and above</label></div>
-<div class="tabbed-content">
-<div class="tabbed-block">
-<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Literal</span><span class="p">,</span> <span class="n">Union</span>
-
-<span class="kn">from</span><span class="w"> </span><span class="nn">pydantic</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">Field</span><span class="p">,</span> <span class="n">PydanticUserError</span>
-
-
-<span class="k">class</span><span class="w"> </span><span class="nc">Cat</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
-    <span class="n">pet_type</span><span class="p">:</span> <span class="nb">int</span>
-    <span class="n">c</span><span class="p">:</span> <span class="nb">str</span>
-
-
-<span class="k">class</span><span class="w"> </span><span class="nc">Dog</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
-    <span class="n">pet_type</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s1">&#39;dog&#39;</span><span class="p">]</span>
-    <span class="n">d</span><span class="p">:</span> <span class="nb">str</span>
-
-
-<span class="k">try</span><span class="p">:</span>
-
-    <span class="k">class</span><span class="w"> </span><span class="nc">Model</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
-        <span class="n">pet</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">Cat</span><span class="p">,</span> <span class="n">Dog</span><span class="p">]</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="n">discriminator</span><span class="o">=</span><span class="s1">&#39;pet_type&#39;</span><span class="p">)</span>
-        <span class="n">number</span><span class="p">:</span> <span class="nb">int</span>
-
-<span class="k">except</span> <span class="n">PydanticUserError</span> <span class="k">as</span> <span class="n">exc_info</span><span class="p">:</span>
-    <span class="k">assert</span> <span class="n">exc_info</span><span class="o">.</span><span class="n">code</span> <span class="o">==</span> <span class="s1">&#39;discriminator-needs-literal&#39;</span>
-</code></pre></div>
-</div>
-<div class="tabbed-block">
 <div class="language-python highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Literal</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">pydantic</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">Field</span><span class="p">,</span> <span class="n">PydanticUserError</span>
@@ -5372,40 +5278,8 @@ decorators are used bare, without any arguments.</p>
 <span class="k">except</span> <span class="n">PydanticUserError</span> <span class="k">as</span> <span class="n">exc_info</span><span class="p">:</span>
     <span class="k">assert</span> <span class="n">exc_info</span><span class="o">.</span><span class="n">code</span> <span class="o">==</span> <span class="s1">&#39;discriminator-needs-literal&#39;</span>
 </code></pre></div>
-</div>
-</div>
-</div>
 <h2 id="discriminator-alias">Discriminator alias<a class="headerlink" href="#discriminator-alias" title="Permanent link">&para;</a></h2>
 <p>This error is raised when you define different aliases on discriminator fields.</p>
-<div class="tabbed-set tabbed-alternate" data-tabs="4:2"><input checked="checked" id="__tabbed_4_1" name="__tabbed_4" type="radio" /><input id="__tabbed_4_2" name="__tabbed_4" type="radio" /><div class="tabbed-labels"><label for="__tabbed_4_1">Python 3.9 and above</label><label for="__tabbed_4_2">Python 3.10 and above</label></div>
-<div class="tabbed-content">
-<div class="tabbed-block">
-<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Literal</span><span class="p">,</span> <span class="n">Union</span>
-
-<span class="kn">from</span><span class="w"> </span><span class="nn">pydantic</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">Field</span><span class="p">,</span> <span class="n">PydanticUserError</span>
-
-
-<span class="k">class</span><span class="w"> </span><span class="nc">Cat</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
-    <span class="n">pet_type</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s1">&#39;cat&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="n">validation_alias</span><span class="o">=</span><span class="s1">&#39;PET&#39;</span><span class="p">)</span>
-    <span class="n">c</span><span class="p">:</span> <span class="nb">str</span>
-
-
-<span class="k">class</span><span class="w"> </span><span class="nc">Dog</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
-    <span class="n">pet_type</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s1">&#39;dog&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="n">validation_alias</span><span class="o">=</span><span class="s1">&#39;Pet&#39;</span><span class="p">)</span>
-    <span class="n">d</span><span class="p">:</span> <span class="nb">str</span>
-
-
-<span class="k">try</span><span class="p">:</span>
-
-    <span class="k">class</span><span class="w"> </span><span class="nc">Model</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
-        <span class="n">pet</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">Cat</span><span class="p">,</span> <span class="n">Dog</span><span class="p">]</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="n">discriminator</span><span class="o">=</span><span class="s1">&#39;pet_type&#39;</span><span class="p">)</span>
-        <span class="n">number</span><span class="p">:</span> <span class="nb">int</span>
-
-<span class="k">except</span> <span class="n">PydanticUserError</span> <span class="k">as</span> <span class="n">exc_info</span><span class="p">:</span>
-    <span class="k">assert</span> <span class="n">exc_info</span><span class="o">.</span><span class="n">code</span> <span class="o">==</span> <span class="s1">&#39;discriminator-alias&#39;</span>
-</code></pre></div>
-</div>
-<div class="tabbed-block">
 <div class="language-python highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Literal</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">pydantic</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">Field</span><span class="p">,</span> <span class="n">PydanticUserError</span>
@@ -5430,47 +5304,10 @@ decorators are used bare, without any arguments.</p>
 <span class="k">except</span> <span class="n">PydanticUserError</span> <span class="k">as</span> <span class="n">exc_info</span><span class="p">:</span>
     <span class="k">assert</span> <span class="n">exc_info</span><span class="o">.</span><span class="n">code</span> <span class="o">==</span> <span class="s1">&#39;discriminator-alias&#39;</span>
 </code></pre></div>
-</div>
-</div>
-</div>
 <h2 id="discriminator-validator">Invalid discriminator validator<a class="headerlink" href="#discriminator-validator" title="Permanent link">&para;</a></h2>
 <p>This error is raised when you use a before, wrap, or plain validator on a discriminator field.</p>
 <p>This is disallowed because the discriminator field is used to determine the type of the model to use for validation,
 so you can't use a validator that might change its value.</p>
-<div class="tabbed-set tabbed-alternate" data-tabs="5:2"><input checked="checked" id="__tabbed_5_1" name="__tabbed_5" type="radio" /><input id="__tabbed_5_2" name="__tabbed_5" type="radio" /><div class="tabbed-labels"><label for="__tabbed_5_1">Python 3.9 and above</label><label for="__tabbed_5_2">Python 3.10 and above</label></div>
-<div class="tabbed-content">
-<div class="tabbed-block">
-<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Literal</span><span class="p">,</span> <span class="n">Union</span>
-
-<span class="kn">from</span><span class="w"> </span><span class="nn">pydantic</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">Field</span><span class="p">,</span> <span class="n">PydanticUserError</span><span class="p">,</span> <span class="n">field_validator</span>
-
-
-<span class="k">class</span><span class="w"> </span><span class="nc">Cat</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
-    <span class="n">pet_type</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s1">&#39;cat&#39;</span><span class="p">]</span>
-
-    <span class="nd">@field_validator</span><span class="p">(</span><span class="s1">&#39;pet_type&#39;</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s1">&#39;before&#39;</span><span class="p">)</span>
-    <span class="nd">@classmethod</span>
-    <span class="k">def</span><span class="w"> </span><span class="nf">validate_pet_type</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">v</span><span class="p">):</span>
-        <span class="k">if</span> <span class="n">v</span> <span class="o">==</span> <span class="s1">&#39;kitten&#39;</span><span class="p">:</span>
-            <span class="k">return</span> <span class="s1">&#39;cat&#39;</span>
-        <span class="k">return</span> <span class="n">v</span>
-
-
-<span class="k">class</span><span class="w"> </span><span class="nc">Dog</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
-    <span class="n">pet_type</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s1">&#39;dog&#39;</span><span class="p">]</span>
-
-
-<span class="k">try</span><span class="p">:</span>
-
-    <span class="k">class</span><span class="w"> </span><span class="nc">Model</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
-        <span class="n">pet</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">Cat</span><span class="p">,</span> <span class="n">Dog</span><span class="p">]</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="n">discriminator</span><span class="o">=</span><span class="s1">&#39;pet_type&#39;</span><span class="p">)</span>
-        <span class="n">number</span><span class="p">:</span> <span class="nb">int</span>
-
-<span class="k">except</span> <span class="n">PydanticUserError</span> <span class="k">as</span> <span class="n">exc_info</span><span class="p">:</span>
-    <span class="k">assert</span> <span class="n">exc_info</span><span class="o">.</span><span class="n">code</span> <span class="o">==</span> <span class="s1">&#39;discriminator-validator&#39;</span>
-</code></pre></div>
-</div>
-<div class="tabbed-block">
 <div class="language-python highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Literal</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">pydantic</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">Field</span><span class="p">,</span> <span class="n">PydanticUserError</span><span class="p">,</span> <span class="n">field_validator</span>
@@ -5500,41 +5337,7 @@ so you can't use a validator that might change its value.</p>
 <span class="k">except</span> <span class="n">PydanticUserError</span> <span class="k">as</span> <span class="n">exc_info</span><span class="p">:</span>
     <span class="k">assert</span> <span class="n">exc_info</span><span class="o">.</span><span class="n">code</span> <span class="o">==</span> <span class="s1">&#39;discriminator-validator&#39;</span>
 </code></pre></div>
-</div>
-</div>
-</div>
-<p>This can be worked around by using a standard <code>Union</code>, dropping the discriminator:</p>
-<div class="tabbed-set tabbed-alternate" data-tabs="6:2"><input checked="checked" id="__tabbed_6_1" name="__tabbed_6" type="radio" /><input id="__tabbed_6_2" name="__tabbed_6" type="radio" /><div class="tabbed-labels"><label for="__tabbed_6_1">Python 3.9 and above</label><label for="__tabbed_6_2">Python 3.10 and above</label></div>
-<div class="tabbed-content">
-<div class="tabbed-block">
-<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Literal</span><span class="p">,</span> <span class="n">Union</span>
-
-<span class="kn">from</span><span class="w"> </span><span class="nn">pydantic</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">field_validator</span>
-
-
-<span class="k">class</span><span class="w"> </span><span class="nc">Cat</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
-    <span class="n">pet_type</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s1">&#39;cat&#39;</span><span class="p">]</span>
-
-    <span class="nd">@field_validator</span><span class="p">(</span><span class="s1">&#39;pet_type&#39;</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s1">&#39;before&#39;</span><span class="p">)</span>
-    <span class="nd">@classmethod</span>
-    <span class="k">def</span><span class="w"> </span><span class="nf">validate_pet_type</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">v</span><span class="p">):</span>
-        <span class="k">if</span> <span class="n">v</span> <span class="o">==</span> <span class="s1">&#39;kitten&#39;</span><span class="p">:</span>
-            <span class="k">return</span> <span class="s1">&#39;cat&#39;</span>
-        <span class="k">return</span> <span class="n">v</span>
-
-
-<span class="k">class</span><span class="w"> </span><span class="nc">Dog</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
-    <span class="n">pet_type</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s1">&#39;dog&#39;</span><span class="p">]</span>
-
-
-<span class="k">class</span><span class="w"> </span><span class="nc">Model</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
-    <span class="n">pet</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">Cat</span><span class="p">,</span> <span class="n">Dog</span><span class="p">]</span>
-
-
-<span class="k">assert</span> <span class="n">Model</span><span class="p">(</span><span class="n">pet</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;pet_type&#39;</span><span class="p">:</span> <span class="s1">&#39;kitten&#39;</span><span class="p">})</span><span class="o">.</span><span class="n">pet</span><span class="o">.</span><span class="n">pet_type</span> <span class="o">==</span> <span class="s1">&#39;cat&#39;</span>
-</code></pre></div>
-</div>
-<div class="tabbed-block">
+<p>This can be worked around by using a standard union, dropping the discriminator:</p>
 <div class="language-python highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Literal</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">pydantic</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">field_validator</span>
@@ -5561,15 +5364,9 @@ so you can't use a validator that might change its value.</p>
 
 <span class="k">assert</span> <span class="n">Model</span><span class="p">(</span><span class="n">pet</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;pet_type&#39;</span><span class="p">:</span> <span class="s1">&#39;kitten&#39;</span><span class="p">})</span><span class="o">.</span><span class="n">pet</span><span class="o">.</span><span class="n">pet_type</span> <span class="o">==</span> <span class="s1">&#39;cat&#39;</span>
 </code></pre></div>
-</div>
-</div>
-</div>
 <h2 id="callable-discriminator-no-tag">Callable discriminator case with no tag<a class="headerlink" href="#callable-discriminator-no-tag" title="Permanent link">&para;</a></h2>
-<p>This error is raised when a <code>Union</code> that uses a callable <code>Discriminator</code> doesn't have <code>Tag</code> annotations for all cases.</p>
-<div class="tabbed-set tabbed-alternate" data-tabs="7:2"><input checked="checked" id="__tabbed_7_1" name="__tabbed_7" type="radio" /><input id="__tabbed_7_2" name="__tabbed_7" type="radio" /><div class="tabbed-labels"><label for="__tabbed_7_1">Python 3.9 and above</label><label for="__tabbed_7_2">Python 3.10 and above</label></div>
-<div class="tabbed-content">
-<div class="tabbed-block">
-<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Annotated</span><span class="p">,</span> <span class="n">Union</span>
+<p>This error is raised when a union that uses a callable <code>Discriminator</code> doesn't have <code>Tag</code> annotations for all cases.</p>
+<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Annotated</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">pydantic</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">Discriminator</span><span class="p">,</span> <span class="n">PydanticUserError</span><span class="p">,</span> <span class="n">Tag</span>
 
@@ -5586,7 +5383,7 @@ so you can't use a validator that might change its value.</p>
 
     <span class="k">class</span><span class="w"> </span><span class="nc">DiscriminatedModel</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
         <span class="n">x</span><span class="p">:</span> <span class="n">Annotated</span><span class="p">[</span>
-            <span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="s1">&#39;DiscriminatedModel&#39;</span><span class="p">],</span>
+            <span class="s1">&#39;str | DiscriminatedModel&#39;</span><span class="p">,</span>
             <span class="n">Discriminator</span><span class="p">(</span><span class="n">model_x_discriminator</span><span class="p">),</span>
         <span class="p">]</span>
 
@@ -5598,7 +5395,7 @@ so you can't use a validator that might change its value.</p>
 
     <span class="k">class</span><span class="w"> </span><span class="nc">DiscriminatedModel</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
         <span class="n">x</span><span class="p">:</span> <span class="n">Annotated</span><span class="p">[</span>
-            <span class="n">Union</span><span class="p">[</span><span class="n">Annotated</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Tag</span><span class="p">(</span><span class="s1">&#39;str&#39;</span><span class="p">)],</span> <span class="s1">&#39;DiscriminatedModel&#39;</span><span class="p">],</span>
+            <span class="s2">&quot;Annotated[str, Tag(&#39;str&#39;)] | DiscriminatedModel&quot;</span><span class="p">,</span>
             <span class="n">Discriminator</span><span class="p">(</span><span class="n">model_x_discriminator</span><span class="p">),</span>
         <span class="p">]</span>
 
@@ -5610,66 +5407,13 @@ so you can't use a validator that might change its value.</p>
 
     <span class="k">class</span><span class="w"> </span><span class="nc">DiscriminatedModel</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
         <span class="n">x</span><span class="p">:</span> <span class="n">Annotated</span><span class="p">[</span>
-            <span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Annotated</span><span class="p">[</span><span class="s1">&#39;DiscriminatedModel&#39;</span><span class="p">,</span> <span class="n">Tag</span><span class="p">(</span><span class="s1">&#39;model&#39;</span><span class="p">)]],</span>
+            <span class="s2">&quot;str | Annotated[DiscriminatedModel, Tag(&#39;model&#39;)]&quot;</span><span class="p">,</span>
             <span class="n">Discriminator</span><span class="p">(</span><span class="n">model_x_discriminator</span><span class="p">),</span>
         <span class="p">]</span>
 
 <span class="k">except</span> <span class="n">PydanticUserError</span> <span class="k">as</span> <span class="n">exc_info</span><span class="p">:</span>
     <span class="k">assert</span> <span class="n">exc_info</span><span class="o">.</span><span class="n">code</span> <span class="o">==</span> <span class="s1">&#39;callable-discriminator-no-tag&#39;</span>
 </code></pre></div>
-</div>
-<div class="tabbed-block">
-<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Annotated</span><span class="p">,</span> <span class="n">Union</span>
-
-<span class="kn">from</span><span class="w"> </span><span class="nn">pydantic</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">Discriminator</span><span class="p">,</span> <span class="n">PydanticUserError</span><span class="p">,</span> <span class="n">Tag</span>
-
-
-<span class="k">def</span><span class="w"> </span><span class="nf">model_x_discriminator</span><span class="p">(</span><span class="n">v</span><span class="p">):</span>
-    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
-        <span class="k">return</span> <span class="s1">&#39;str&#39;</span>
-    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="p">(</span><span class="nb">dict</span><span class="p">,</span> <span class="n">BaseModel</span><span class="p">)):</span>
-        <span class="k">return</span> <span class="s1">&#39;model&#39;</span>
-
-
-<span class="c1"># tag missing for both union choices</span>
-<span class="k">try</span><span class="p">:</span>
-
-    <span class="k">class</span><span class="w"> </span><span class="nc">DiscriminatedModel</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
-        <span class="n">x</span><span class="p">:</span> <span class="n">Annotated</span><span class="p">[</span>
-            <span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="s1">&#39;DiscriminatedModel&#39;</span><span class="p">],</span>
-            <span class="n">Discriminator</span><span class="p">(</span><span class="n">model_x_discriminator</span><span class="p">),</span>
-        <span class="p">]</span>
-
-<span class="k">except</span> <span class="n">PydanticUserError</span> <span class="k">as</span> <span class="n">exc_info</span><span class="p">:</span>
-    <span class="k">assert</span> <span class="n">exc_info</span><span class="o">.</span><span class="n">code</span> <span class="o">==</span> <span class="s1">&#39;callable-discriminator-no-tag&#39;</span>
-
-<span class="c1"># tag missing for `&#39;DiscriminatedModel&#39;` union choice</span>
-<span class="k">try</span><span class="p">:</span>
-
-    <span class="k">class</span><span class="w"> </span><span class="nc">DiscriminatedModel</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
-        <span class="n">x</span><span class="p">:</span> <span class="n">Annotated</span><span class="p">[</span>
-            <span class="n">Union</span><span class="p">[</span><span class="n">Annotated</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Tag</span><span class="p">(</span><span class="s1">&#39;str&#39;</span><span class="p">)],</span> <span class="s1">&#39;DiscriminatedModel&#39;</span><span class="p">],</span>
-            <span class="n">Discriminator</span><span class="p">(</span><span class="n">model_x_discriminator</span><span class="p">),</span>
-        <span class="p">]</span>
-
-<span class="k">except</span> <span class="n">PydanticUserError</span> <span class="k">as</span> <span class="n">exc_info</span><span class="p">:</span>
-    <span class="k">assert</span> <span class="n">exc_info</span><span class="o">.</span><span class="n">code</span> <span class="o">==</span> <span class="s1">&#39;callable-discriminator-no-tag&#39;</span>
-
-<span class="c1"># tag missing for `str` union choice</span>
-<span class="k">try</span><span class="p">:</span>
-
-    <span class="k">class</span><span class="w"> </span><span class="nc">DiscriminatedModel</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
-        <span class="n">x</span><span class="p">:</span> <span class="n">Annotated</span><span class="p">[</span>
-            <span class="nb">str</span> <span class="o">|</span> <span class="n">Annotated</span><span class="p">[</span><span class="s1">&#39;DiscriminatedModel&#39;</span><span class="p">,</span> <span class="n">Tag</span><span class="p">(</span><span class="s1">&#39;model&#39;</span><span class="p">)],</span>
-            <span class="n">Discriminator</span><span class="p">(</span><span class="n">model_x_discriminator</span><span class="p">),</span>
-        <span class="p">]</span>
-
-<span class="k">except</span> <span class="n">PydanticUserError</span> <span class="k">as</span> <span class="n">exc_info</span><span class="p">:</span>
-    <span class="k">assert</span> <span class="n">exc_info</span><span class="o">.</span><span class="n">code</span> <span class="o">==</span> <span class="s1">&#39;callable-discriminator-no-tag&#39;</span>
-</code></pre></div>
-</div>
-</div>
-</div>
 <h2 id="typed-dict-version"><code>TypedDict</code> version<a class="headerlink" href="#typed-dict-version" title="Permanent link">&para;</a></h2>
 <p>This error is raised when you use <a class="autorefs autorefs-external" href="https://docs.python.org/3/library/typing.html#typing.TypedDict">typing.TypedDict</a>
 instead of <code>typing_extensions.TypedDict</code> on Python &lt; 3.12.</p>
@@ -6080,7 +5824,7 @@ but it is a dictionary instead of an object like it was in Pydantic V1.</p>
 <h2 id="type-adapter-config-unused"><code>config</code> is unused with <code>TypeAdapter</code><a class="headerlink" href="#type-adapter-config-unused" title="Permanent link">&para;</a></h2>
 <p>You will get this error if you try to pass <code>config</code> to <code>TypeAdapter</code> when the type is a type that
 has its own config that cannot be overridden (currently this is only <code>BaseModel</code>, <code>TypedDict</code> and <code>dataclass</code>):</p>
-<div class="tabbed-set tabbed-alternate" data-tabs="8:2"><input checked="checked" id="__tabbed_8_1" name="__tabbed_8" type="radio" /><input id="__tabbed_8_2" name="__tabbed_8" type="radio" /><div class="tabbed-labels"><label for="__tabbed_8_1">Python 3.9 and above</label><label for="__tabbed_8_2">Python 3.13 and above</label></div>
+<div class="tabbed-set tabbed-alternate" data-tabs="1:2"><input checked="checked" id="__tabbed_1_1" name="__tabbed_1" type="radio" /><input id="__tabbed_1_2" name="__tabbed_1" type="radio" /><div class="tabbed-labels"><label for="__tabbed_1_1">Python 3.9 and above</label><label for="__tabbed_1_2">Python 3.13 and above</label></div>
 <div class="tabbed-content">
 <div class="tabbed-block">
 <div class="language-python highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">typing_extensions</span><span class="w"> </span><span class="kn">import</span> <span class="n">TypedDict</span>
@@ -6117,7 +5861,7 @@ has its own config that cannot be overridden (currently this is only <code>BaseM
 </div>
 </div>
 <p>Instead you'll need to subclass the type and override or set the config on it:</p>
-<div class="tabbed-set tabbed-alternate" data-tabs="9:2"><input checked="checked" id="__tabbed_9_1" name="__tabbed_9" type="radio" /><input id="__tabbed_9_2" name="__tabbed_9" type="radio" /><div class="tabbed-labels"><label for="__tabbed_9_1">Python 3.9 and above</label><label for="__tabbed_9_2">Python 3.13 and above</label></div>
+<div class="tabbed-set tabbed-alternate" data-tabs="2:2"><input checked="checked" id="__tabbed_2_1" name="__tabbed_2" type="radio" /><input id="__tabbed_2_2" name="__tabbed_2" type="radio" /><div class="tabbed-labels"><label for="__tabbed_2_1">Python 3.9 and above</label><label for="__tabbed_2_2">Python 3.13 and above</label></div>
 <div class="tabbed-content">
 <div class="tabbed-block">
 <div class="language-python highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">typing_extensions</span><span class="w"> </span><span class="kn">import</span> <span class="n">TypedDict</span>
@@ -6345,7 +6089,7 @@ This may change in the future, but for now, you should use <code>validate_call</
 <p>This error is raised when <a class="autorefs autorefs-external" href="https://docs.python.org/3/library/typing.html#typing.Unpack"><code>Unpack</code></a> is used with something other than
 a <a class="autorefs autorefs-external" href="https://docs.python.org/3/library/typing.html#typing.TypedDict"><code>TypedDict</code></a> class object to type hint variadic keyword parameters.</p>
 <p>For reference, see the <a href="https://typing.readthedocs.io/en/latest/spec/callables.html#unpack-for-keyword-arguments">related specification section</a> and <a href="https://peps.python.org/pep-0692/">PEP 692</a>.</p>
-<div class="tabbed-set tabbed-alternate" data-tabs="10:2"><input checked="checked" id="__tabbed_10_1" name="__tabbed_10" type="radio" /><input id="__tabbed_10_2" name="__tabbed_10" type="radio" /><div class="tabbed-labels"><label for="__tabbed_10_1">Python 3.9 and above</label><label for="__tabbed_10_2">Python 3.12 and above</label></div>
+<div class="tabbed-set tabbed-alternate" data-tabs="3:2"><input checked="checked" id="__tabbed_3_1" name="__tabbed_3" type="radio" /><input id="__tabbed_3_2" name="__tabbed_3" type="radio" /><div class="tabbed-labels"><label for="__tabbed_3_1">Python 3.9 and above</label><label for="__tabbed_3_2">Python 3.12 and above</label></div>
 <div class="tabbed-content">
 <div class="tabbed-block">
 <div class="language-python highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">typing_extensions</span><span class="w"> </span><span class="kn">import</span> <span class="n">Unpack</span>
@@ -6383,7 +6127,7 @@ a <a class="autorefs autorefs-external" href="https://docs.python.org/3/library/
 <p>This error is raised when the typed dictionary used to type hint variadic keywords parameters has field names
 overlapping with other parameters (unless <a class="autorefs autorefs-external" href="https://docs.python.org/3/glossary.html#positional-only-parameter">positional only</a>).</p>
 <p>For reference, see the <a href="https://typing.readthedocs.io/en/latest/spec/callables.html#unpack-for-keyword-arguments">related specification section</a> and <a href="https://peps.python.org/pep-0692/">PEP 692</a>.</p>
-<div class="tabbed-set tabbed-alternate" data-tabs="11:3"><input checked="checked" id="__tabbed_11_1" name="__tabbed_11" type="radio" /><input id="__tabbed_11_2" name="__tabbed_11" type="radio" /><input id="__tabbed_11_3" name="__tabbed_11" type="radio" /><div class="tabbed-labels"><label for="__tabbed_11_1">Python 3.9 and above</label><label for="__tabbed_11_2">Python 3.12 and above</label><label for="__tabbed_11_3">Python 3.13 and above</label></div>
+<div class="tabbed-set tabbed-alternate" data-tabs="4:3"><input checked="checked" id="__tabbed_4_1" name="__tabbed_4" type="radio" /><input id="__tabbed_4_2" name="__tabbed_4" type="radio" /><input id="__tabbed_4_3" name="__tabbed_4" type="radio" /><div class="tabbed-labels"><label for="__tabbed_4_1">Python 3.9 and above</label><label for="__tabbed_4_2">Python 3.12 and above</label><label for="__tabbed_4_3">Python 3.13 and above</label></div>
 <div class="tabbed-content">
 <div class="tabbed-block">
 <div class="language-python highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">typing_extensions</span><span class="w"> </span><span class="kn">import</span> <span class="n">TypedDict</span><span class="p">,</span> <span class="n">Unpack</span>
@@ -6450,7 +6194,7 @@ overlapping with other parameters (unless <a class="autorefs autorefs-external" 
 </div>
 <h2 id="invalid-self-type">Invalid <code>Self</code> type<a class="headerlink" href="#invalid-self-type" title="Permanent link">&para;</a></h2>
 <p>Currently, <a class="autorefs autorefs-external" href="https://docs.python.org/3/library/typing.html#typing.Self"><code>Self</code></a> can only be used to annotate a field of a class (specifically, subclasses of <a class="autorefs autorefs-internal" href="../../api/base_model/#pydantic.BaseModel"><code>BaseModel</code></a>, <a class="autorefs autorefs-external" href="https://docs.python.org/3/library/typing.html#typing.NamedTuple"><code>NamedTuple</code></a>, <a class="autorefs autorefs-external" href="https://docs.python.org/3/library/typing.html#typing.TypedDict"><code>TypedDict</code></a>, or dataclasses). Attempting to use <a class="autorefs autorefs-external" href="https://docs.python.org/3/library/typing.html#typing.Self"><code>Self</code></a> in any other ways will raise this error.</p>
-<div class="tabbed-set tabbed-alternate" data-tabs="12:2"><input checked="checked" id="__tabbed_12_1" name="__tabbed_12" type="radio" /><input id="__tabbed_12_2" name="__tabbed_12" type="radio" /><div class="tabbed-labels"><label for="__tabbed_12_1">Python 3.9 and above</label><label for="__tabbed_12_2">Python 3.11 and above</label></div>
+<div class="tabbed-set tabbed-alternate" data-tabs="5:2"><input checked="checked" id="__tabbed_5_1" name="__tabbed_5" type="radio" /><input id="__tabbed_5_2" name="__tabbed_5" type="radio" /><div class="tabbed-labels"><label for="__tabbed_5_1">Python 3.9 and above</label><label for="__tabbed_5_2">Python 3.11 and above</label></div>
 <div class="tabbed-content">
 <div class="tabbed-block">
 <div class="language-python highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">typing_extensions</span><span class="w"> </span><span class="kn">import</span> <span class="n">Self</span>
@@ -6485,7 +6229,7 @@ overlapping with other parameters (unless <a class="autorefs autorefs-external" 
 </div>
 </div>
 <p>The following example of <a class="autorefs autorefs-internal" href="../../api/validate_call/#pydantic.validate_call_decorator.validate_call"><code>validate_call()</code></a> will also raise this error, even though it is correct from a type-checking perspective. This may be supported in the future.</p>
-<div class="tabbed-set tabbed-alternate" data-tabs="13:2"><input checked="checked" id="__tabbed_13_1" name="__tabbed_13" type="radio" /><input id="__tabbed_13_2" name="__tabbed_13" type="radio" /><div class="tabbed-labels"><label for="__tabbed_13_1">Python 3.9 and above</label><label for="__tabbed_13_2">Python 3.11 and above</label></div>
+<div class="tabbed-set tabbed-alternate" data-tabs="6:2"><input checked="checked" id="__tabbed_6_1" name="__tabbed_6" type="radio" /><input id="__tabbed_6_2" name="__tabbed_6" type="radio" /><div class="tabbed-labels"><label for="__tabbed_6_1">Python 3.9 and above</label><label for="__tabbed_6_2">Python 3.11 and above</label></div>
 <div class="tabbed-content">
 <div class="tabbed-block">
 <div class="language-python highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">typing_extensions</span><span class="w"> </span><span class="kn">import</span> <span class="n">Self</span>

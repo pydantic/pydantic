@@ -55,7 +55,7 @@ validate_as(
 
 ```python
 validate_as(
-    tp: ellipsis, *, strict: bool = False
+    tp: EllipsisType, *, strict: bool = False
 ) -> _Pipeline[_InT, Any]
 
 ```

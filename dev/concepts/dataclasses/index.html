@@ -4038,30 +4038,6 @@ to help you monitor and understand your
 </details>
 <p>If you don't want to use Pydantic's <a class="autorefs autorefs-internal" href="../../api/base_model/#pydantic.BaseModel"><code>BaseModel</code></a> you can instead get the same data validation
 on standard <a class="autorefs autorefs-external" href="https://docs.python.org/3/library/dataclasses.html#module-dataclasses">dataclasses</a>.</p>
-<div class="tabbed-set tabbed-alternate" data-tabs="1:2"><input checked="checked" id="__tabbed_1_1" name="__tabbed_1" type="radio" /><input id="__tabbed_1_2" name="__tabbed_1" type="radio" /><div class="tabbed-labels"><label for="__tabbed_1_1">Python 3.9 and above</label><label for="__tabbed_1_2">Python 3.10 and above</label></div>
-<div class="tabbed-content">
-<div class="tabbed-block">
-<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">datetime</span><span class="w"> </span><span class="kn">import</span> <span class="n">datetime</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Optional</span>
-
-<span class="kn">from</span><span class="w"> </span><span class="nn">pydantic.dataclasses</span><span class="w"> </span><span class="kn">import</span> <span class="n">dataclass</span>
-
-
-<span class="nd">@dataclass</span>
-<span class="k">class</span><span class="w"> </span><span class="nc">User</span><span class="p">:</span>
-    <span class="nb">id</span><span class="p">:</span> <span class="nb">int</span>
-    <span class="n">name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;John Doe&#39;</span>
-    <span class="n">signup_ts</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">datetime</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
-
-
-<span class="n">user</span> <span class="o">=</span> <span class="n">User</span><span class="p">(</span><span class="nb">id</span><span class="o">=</span><span class="s1">&#39;42&#39;</span><span class="p">,</span> <span class="n">signup_ts</span><span class="o">=</span><span class="s1">&#39;2032-06-21T12:00&#39;</span><span class="p">)</span>
-<span class="nb">print</span><span class="p">(</span><span class="n">user</span><span class="p">)</span>
-<span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">User(id=42, name=&#39;John Doe&#39;, signup_ts=datetime.datetime(2032, 6, 21, 12, 0))</span>
-<span class="sd">&quot;&quot;&quot;</span>
-</code></pre></div>
-</div>
-<div class="tabbed-block">
 <div class="language-python highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">datetime</span><span class="w"> </span><span class="kn">import</span> <span class="n">datetime</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">pydantic.dataclasses</span><span class="w"> </span><span class="kn">import</span> <span class="n">dataclass</span>
@@ -4080,9 +4056,6 @@ on standard <a class="autorefs autorefs-external" href="https://docs.python.org/
 <span class="sd">User(id=42, name=&#39;John Doe&#39;, signup_ts=datetime.datetime(2032, 6, 21, 12, 0))</span>
 <span class="sd">&quot;&quot;&quot;</span>
 </code></pre></div>
-</div>
-</div>
-</div>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
 <p>Keep in mind that Pydantic dataclasses are <strong>not</strong> a replacement for <a href="../models/">Pydantic models</a>.
@@ -4129,7 +4102,7 @@ They provide a similar functionality to stdlib dataclasses with the addition of 
 </li>
 <li>
 <p>Generic dataclasses are supported, but as with other standard library generic types, using a parameterized dataclass won't work as expected:</p>
-<div class="tabbed-set tabbed-alternate" data-tabs="2:2"><input checked="checked" id="__tabbed_2_1" name="__tabbed_2" type="radio" /><input id="__tabbed_2_2" name="__tabbed_2" type="radio" /><div class="tabbed-labels"><label for="__tabbed_2_1">Python 3.9 and above</label><label for="__tabbed_2_2">Python 3.12 and above (new syntax)</label></div>
+<div class="tabbed-set tabbed-alternate" data-tabs="1:2"><input checked="checked" id="__tabbed_1_1" name="__tabbed_1" type="radio" /><input id="__tabbed_1_2" name="__tabbed_1" type="radio" /><div class="tabbed-labels"><label for="__tabbed_1_1">Python 3.10 and above</label><label for="__tabbed_1_2">Python 3.12 and above (new syntax)</label></div>
 <div class="tabbed-content">
 <div class="tabbed-block">
 <div class="language-python highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Generic</span><span class="p">,</span> <span class="n">TypeVar</span>
@@ -4177,7 +4150,6 @@ They provide a similar functionality to stdlib dataclasses with the addition of 
 </ul>
 <p>You can use both the Pydantic's <a class="autorefs autorefs-internal" href="../../api/fields/#pydantic.fields.Field"><code>Field()</code></a> and the stdlib's <a class="autorefs autorefs-external" href="https://docs.python.org/3/library/dataclasses.html#dataclasses.field"><code>field()</code></a> functions:</p>
 <div class="language-python highlight"><pre><span></span><code><span class="kn">import</span><span class="w"> </span><span class="nn">dataclasses</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Optional</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">pydantic</span><span class="w"> </span><span class="kn">import</span> <span class="n">Field</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">pydantic.dataclasses</span><span class="w"> </span><span class="kn">import</span> <span class="n">dataclass</span>
@@ -4188,11 +4160,11 @@ They provide a similar functionality to stdlib dataclasses with the addition of 
     <span class="nb">id</span><span class="p">:</span> <span class="nb">int</span>
     <span class="n">name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;John Doe&#39;</span>
     <span class="n">friends</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="n">dataclasses</span><span class="o">.</span><span class="n">field</span><span class="p">(</span><span class="n">default_factory</span><span class="o">=</span><span class="k">lambda</span><span class="p">:</span> <span class="p">[</span><span class="mi">0</span><span class="p">])</span>
-    <span class="n">age</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="n">dataclasses</span><span class="o">.</span><span class="n">field</span><span class="p">(</span>
+    <span class="n">age</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="n">dataclasses</span><span class="o">.</span><span class="n">field</span><span class="p">(</span>
         <span class="n">default</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
         <span class="n">metadata</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;title&#39;</span><span class="p">:</span> <span class="s1">&#39;The age of the user&#39;</span><span class="p">,</span> <span class="s1">&#39;description&#39;</span><span class="p">:</span> <span class="s1">&#39;do not lie!&#39;</span><span class="p">},</span>
     <span class="p">)</span>
-    <span class="n">height</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span>
+    <span class="n">height</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span>
         <span class="n">default</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">title</span><span class="o">=</span><span class="s1">&#39;The height in cm&#39;</span><span class="p">,</span> <span class="n">ge</span><span class="o">=</span><span class="mi">50</span><span class="p">,</span> <span class="n">le</span><span class="o">=</span><span class="mi">300</span>
     <span class="p">)</span>
 
@@ -4289,52 +4261,6 @@ all the inherited fields.</p>
 <p>When a standard library dataclass is used within a Pydantic model, a Pydantic dataclass or a <a class="autorefs autorefs-internal" href="../../api/type_adapter/#pydantic.type_adapter.TypeAdapter"><code>TypeAdapter</code></a>,
 validation will be applied (and the <a href="#dataclass-config">configuration</a> stays the same). This means that using a stdlib or a Pydantic
 dataclass as a field annotation is functionally equivalent.</p>
-<div class="tabbed-set tabbed-alternate" data-tabs="3:2"><input checked="checked" id="__tabbed_3_1" name="__tabbed_3" type="radio" /><input id="__tabbed_3_2" name="__tabbed_3" type="radio" /><div class="tabbed-labels"><label for="__tabbed_3_1">Python 3.9 and above</label><label for="__tabbed_3_2">Python 3.10 and above</label></div>
-<div class="tabbed-content">
-<div class="tabbed-block">
-<div class="language-python highlight"><pre><span></span><code><span class="kn">import</span><span class="w"> </span><span class="nn">dataclasses</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Optional</span>
-
-<span class="kn">from</span><span class="w"> </span><span class="nn">pydantic</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ConfigDict</span><span class="p">,</span> <span class="n">ValidationError</span>
-
-
-<span class="nd">@dataclasses</span><span class="o">.</span><span class="n">dataclass</span><span class="p">(</span><span class="n">frozen</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-<span class="k">class</span><span class="w"> </span><span class="nc">User</span><span class="p">:</span>
-    <span class="n">name</span><span class="p">:</span> <span class="nb">str</span>
-
-
-<span class="k">class</span><span class="w"> </span><span class="nc">Foo</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
-    <span class="c1"># Required so that pydantic revalidates the model attributes:</span>
-    <span class="n">model_config</span> <span class="o">=</span> <span class="n">ConfigDict</span><span class="p">(</span><span class="n">revalidate_instances</span><span class="o">=</span><span class="s1">&#39;always&#39;</span><span class="p">)</span>
-
-    <span class="n">user</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">User</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
-
-
-<span class="c1"># nothing is validated as expected:</span>
-<span class="n">user</span> <span class="o">=</span> <span class="n">User</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;not&#39;</span><span class="p">,</span> <span class="s1">&#39;a&#39;</span><span class="p">,</span> <span class="s1">&#39;string&#39;</span><span class="p">])</span>
-<span class="nb">print</span><span class="p">(</span><span class="n">user</span><span class="p">)</span>
-<span class="c1">#&gt; User(name=[&#39;not&#39;, &#39;a&#39;, &#39;string&#39;])</span>
-
-
-<span class="k">try</span><span class="p">:</span>
-    <span class="n">Foo</span><span class="p">(</span><span class="n">user</span><span class="o">=</span><span class="n">user</span><span class="p">)</span>
-<span class="k">except</span> <span class="n">ValidationError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
-    <span class="nb">print</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    1 validation error for Foo</span>
-<span class="sd">    user.name</span>
-<span class="sd">      Input should be a valid string [type=string_type, input_value=[&#39;not&#39;, &#39;a&#39;, &#39;string&#39;], input_type=list]</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-
-<span class="n">foo</span> <span class="o">=</span> <span class="n">Foo</span><span class="p">(</span><span class="n">user</span><span class="o">=</span><span class="n">User</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;pika&#39;</span><span class="p">))</span>
-<span class="k">try</span><span class="p">:</span>
-    <span class="n">foo</span><span class="o">.</span><span class="n">user</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="s1">&#39;bulbi&#39;</span>
-<span class="k">except</span> <span class="n">dataclasses</span><span class="o">.</span><span class="n">FrozenInstanceError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
-    <span class="nb">print</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
-    <span class="c1">#&gt; cannot assign to field &#39;name&#39;</span>
-</code></pre></div>
-</div>
-<div class="tabbed-block">
 <div class="language-python highlight"><pre><span></span><code><span class="kn">import</span><span class="w"> </span><span class="nn">dataclasses</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">pydantic</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ConfigDict</span><span class="p">,</span> <span class="n">ValidationError</span>
@@ -4375,9 +4301,6 @@ dataclass as a field annotation is functionally equivalent.</p>
     <span class="nb">print</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
     <span class="c1">#&gt; cannot assign to field &#39;name&#39;</span>
 </code></pre></div>
-</div>
-</div>
-</div>
 <h3 id="using-custom-types">Using custom types<a class="headerlink" href="#using-custom-types" title="Permanent link">&para;</a></h3>
 <p>As said above, validation is applied on standard library dataclasses. If you make use
 of custom types, you will get an error when trying to refer to the dataclass. To circumvent

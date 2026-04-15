@@ -3,32 +3,6 @@ Models can be [created dynamically](../../concepts/models/#dynamic-model-creatio
 In this example, we will show how to dynamically derive a model from an existing one, making every field optional. To achieve this, we will make use of the model_fields model class attribute, and derive new annotations from the field definitions to be passed to the create_model() factory. Of course, this example can apply to any use case where you need to derive a new model from another (remove default values, add aliases, etc).
 
 ```python
-from typing import Annotated, Union
-
-from pydantic import BaseModel, Field, create_model
-
-
-def make_fields_optional(model_cls: type[BaseModel]) -> type[BaseModel]:
-    new_fields = {}
-
-    for f_name, f_info in model_cls.model_fields.items():
-        f_dct = f_info.asdict()
-        new_fields[f_name] = (
-            Annotated[(Union[f_dct['annotation'], None], *f_dct['metadata'], Field(**f_dct['attributes']))],
-            None,
-        )
-
-    return create_model(
-        f'{model_cls.__name__}Optional',
-        __base__=model_cls,  # (1)!
-        **new_fields,
-    )
-
-```
-
-1. Using the original model as a base will inherit the [validators](../../concepts/validators/), [computed fields](../../concepts/fields/#the-computed_field-decorator), etc. The parent fields are overridden by the ones we define.
-
-```python
 from typing import Annotated
 
 from pydantic import BaseModel, Field, create_model

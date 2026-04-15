@@ -125,7 +125,7 @@ Check out the following example for a more in-depth look at how to use default v
 Using default values with partial JSON parsing
 
 ```python
-from typing import Annotated, Any, Optional
+from typing import Annotated, Any
 
 import pydantic_core
 
@@ -156,13 +156,13 @@ class NestedModel(BaseModel):
 
 
 class MyModel(BaseModel):
-    foo: Optional[str] = None
-    bar: Annotated[
-        Optional[tuple[str, int]], WrapValidator(default_on_error)
-    ] = None
-    nested: Annotated[
-        Optional[NestedModel], WrapValidator(default_on_error)
-    ] = None
+    foo: str | None = None
+    bar: Annotated[tuple[str, int] | None, WrapValidator(default_on_error)] = (
+        None
+    )
+    nested: Annotated[NestedModel | None, WrapValidator(default_on_error)] = (
+        None
+    )
 
 
 m = MyModel.model_validate(

@@ -252,32 +252,6 @@ model = create_model('FooModel', a=(str, 'cake'), __base__=Model)
 This error is raised when a model in discriminated unions doesn't define a discriminator field.
 
 ```python
-from typing import Literal, Union
-
-from pydantic import BaseModel, Field, PydanticUserError
-
-
-class Cat(BaseModel):
-    c: str
-
-
-class Dog(BaseModel):
-    pet_type: Literal['dog']
-    d: str
-
-
-try:
-
-    class Model(BaseModel):
-        pet: Union[Cat, Dog] = Field(discriminator='pet_type')
-        number: int
-
-except PydanticUserError as exc_info:
-    assert exc_info.code == 'discriminator-no-field'
-
-```
-
-```python
 from typing import Literal
 
 from pydantic import BaseModel, Field, PydanticUserError
@@ -306,35 +280,6 @@ except PydanticUserError as exc_info:
 ## Discriminator alias type
 
 This error is raised when you define a non-string alias on a discriminator field.
-
-```python
-from typing import Literal, Union
-
-from pydantic import AliasChoices, BaseModel, Field, PydanticUserError
-
-
-class Cat(BaseModel):
-    pet_type: Literal['cat'] = Field(
-        validation_alias=AliasChoices('Pet', 'PET')
-    )
-    c: str
-
-
-class Dog(BaseModel):
-    pet_type: Literal['dog']
-    d: str
-
-
-try:
-
-    class Model(BaseModel):
-        pet: Union[Cat, Dog] = Field(discriminator='pet_type')
-        number: int
-
-except PydanticUserError as exc_info:
-    assert exc_info.code == 'discriminator-alias-type'
-
-```
 
 ```python
 from typing import Literal
@@ -370,33 +315,6 @@ except PydanticUserError as exc_info:
 This error is raised when you define a non-`Literal` type on a discriminator field.
 
 ```python
-from typing import Literal, Union
-
-from pydantic import BaseModel, Field, PydanticUserError
-
-
-class Cat(BaseModel):
-    pet_type: int
-    c: str
-
-
-class Dog(BaseModel):
-    pet_type: Literal['dog']
-    d: str
-
-
-try:
-
-    class Model(BaseModel):
-        pet: Union[Cat, Dog] = Field(discriminator='pet_type')
-        number: int
-
-except PydanticUserError as exc_info:
-    assert exc_info.code == 'discriminator-needs-literal'
-
-```
-
-```python
 from typing import Literal
 
 from pydantic import BaseModel, Field, PydanticUserError
@@ -426,33 +344,6 @@ except PydanticUserError as exc_info:
 ## Discriminator alias
 
 This error is raised when you define different aliases on discriminator fields.
-
-```python
-from typing import Literal, Union
-
-from pydantic import BaseModel, Field, PydanticUserError
-
-
-class Cat(BaseModel):
-    pet_type: Literal['cat'] = Field(validation_alias='PET')
-    c: str
-
-
-class Dog(BaseModel):
-    pet_type: Literal['dog'] = Field(validation_alias='Pet')
-    d: str
-
-
-try:
-
-    class Model(BaseModel):
-        pet: Union[Cat, Dog] = Field(discriminator='pet_type')
-        number: int
-
-except PydanticUserError as exc_info:
-    assert exc_info.code == 'discriminator-alias'
-
-```
 
 ```python
 from typing import Literal
@@ -488,38 +379,6 @@ This error is raised when you use a before, wrap, or plain validator on a discri
 This is disallowed because the discriminator field is used to determine the type of the model to use for validation, so you can't use a validator that might change its value.
 
 ```python
-from typing import Literal, Union
-
-from pydantic import BaseModel, Field, PydanticUserError, field_validator
-
-
-class Cat(BaseModel):
-    pet_type: Literal['cat']
-
-    @field_validator('pet_type', mode='before')
-    @classmethod
-    def validate_pet_type(cls, v):
-        if v == 'kitten':
-            return 'cat'
-        return v
-
-
-class Dog(BaseModel):
-    pet_type: Literal['dog']
-
-
-try:
-
-    class Model(BaseModel):
-        pet: Union[Cat, Dog] = Field(discriminator='pet_type')
-        number: int
-
-except PydanticUserError as exc_info:
-    assert exc_info.code == 'discriminator-validator'
-
-```
-
-```python
 from typing import Literal
 
 from pydantic import BaseModel, Field, PydanticUserError, field_validator
@@ -551,36 +410,7 @@ except PydanticUserError as exc_info:
 
 ```
 
-This can be worked around by using a standard `Union`, dropping the discriminator:
-
-```python
-from typing import Literal, Union
-
-from pydantic import BaseModel, field_validator
-
-
-class Cat(BaseModel):
-    pet_type: Literal['cat']
-
-    @field_validator('pet_type', mode='before')
-    @classmethod
-    def validate_pet_type(cls, v):
-        if v == 'kitten':
-            return 'cat'
-        return v
-
-
-class Dog(BaseModel):
-    pet_type: Literal['dog']
-
-
-class Model(BaseModel):
-    pet: Union[Cat, Dog]
-
-
-assert Model(pet={'pet_type': 'kitten'}).pet.pet_type == 'cat'
-
-```
+This can be worked around by using a standard union, dropping the discriminator:
 
 ```python
 from typing import Literal
@@ -613,10 +443,10 @@ assert Model(pet={'pet_type': 'kitten'}).pet.pet_type == 'cat'
 
 ## Callable discriminator case with no tag
 
-This error is raised when a `Union` that uses a callable `Discriminator` doesn't have `Tag` annotations for all cases.
+This error is raised when a union that uses a callable `Discriminator` doesn't have `Tag` annotations for all cases.
 
 ```python
-from typing import Annotated, Union
+from typing import Annotated
 
 from pydantic import BaseModel, Discriminator, PydanticUserError, Tag
 
@@ -633,7 +463,7 @@ try:
 
     class DiscriminatedModel(BaseModel):
         x: Annotated[
-            Union[str, 'DiscriminatedModel'],
+            'str | DiscriminatedModel',
             Discriminator(model_x_discriminator),
         ]
 
@@ -645,7 +475,7 @@ try:
 
     class DiscriminatedModel(BaseModel):
         x: Annotated[
-            Union[Annotated[str, Tag('str')], 'DiscriminatedModel'],
+            "Annotated[str, Tag('str')] | DiscriminatedModel",
             Discriminator(model_x_discriminator),
         ]
 
@@ -657,58 +487,7 @@ try:
 
     class DiscriminatedModel(BaseModel):
         x: Annotated[
-            Union[str, Annotated['DiscriminatedModel', Tag('model')]],
-            Discriminator(model_x_discriminator),
-        ]
-
-except PydanticUserError as exc_info:
-    assert exc_info.code == 'callable-discriminator-no-tag'
-
-```
-
-```python
-from typing import Annotated, Union
-
-from pydantic import BaseModel, Discriminator, PydanticUserError, Tag
-
-
-def model_x_discriminator(v):
-    if isinstance(v, str):
-        return 'str'
-    if isinstance(v, (dict, BaseModel)):
-        return 'model'
-
-
-# tag missing for both union choices
-try:
-
-    class DiscriminatedModel(BaseModel):
-        x: Annotated[
-            Union[str, 'DiscriminatedModel'],
-            Discriminator(model_x_discriminator),
-        ]
-
-except PydanticUserError as exc_info:
-    assert exc_info.code == 'callable-discriminator-no-tag'
-
-# tag missing for `'DiscriminatedModel'` union choice
-try:
-
-    class DiscriminatedModel(BaseModel):
-        x: Annotated[
-            Union[Annotated[str, Tag('str')], 'DiscriminatedModel'],
-            Discriminator(model_x_discriminator),
-        ]
-
-except PydanticUserError as exc_info:
-    assert exc_info.code == 'callable-discriminator-no-tag'
-
-# tag missing for `str` union choice
-try:
-
-    class DiscriminatedModel(BaseModel):
-        x: Annotated[
-            str | Annotated['DiscriminatedModel', Tag('model')],
+            "str | Annotated[DiscriminatedModel, Tag('model')]",
             Discriminator(model_x_discriminator),
         ]
 

@@ -39,37 +39,6 @@ dataclass(
 
 ```python
 dataclass(
-    *,
-    init: Literal[False] = False,
-    repr: bool = True,
-    eq: bool = True,
-    order: bool = False,
-    unsafe_hash: bool = False,
-    frozen: bool | None = None,
-    config: ConfigDict | type[object] | None = None,
-    validate_on_init: bool | None = None
-) -> Callable[[type[_T]], type[PydanticDataclass]]
-
-```
-
-```python
-dataclass(
-    _cls: type[_T],
-    *,
-    init: Literal[False] = False,
-    repr: bool = True,
-    eq: bool = True,
-    order: bool = False,
-    unsafe_hash: bool = False,
-    frozen: bool | None = None,
-    config: ConfigDict | type[object] | None = None,
-    validate_on_init: bool | None = None
-) -> type[PydanticDataclass]
-
-```
-
-```python
-dataclass(
     _cls: type[_T] | None = None,
     *,
     init: Literal[False] = False,
@@ -161,11 +130,6 @@ def dataclass(
     """
     assert init is False, 'pydantic.dataclasses.dataclass only supports init=False'
     assert validate_on_init is not False, 'validate_on_init=False is no longer supported'
-
-    if sys.version_info >= (3, 10):
-        kwargs = {'kw_only': kw_only, 'slots': slots}
-    else:
-        kwargs = {}
 
     def create_dataclass(cls: type[Any]) -> type[PydanticDataclass]:
         """Create a Pydantic dataclass from a regular dataclass.
@@ -262,7 +226,8 @@ def dataclass(
                 order=order,
                 unsafe_hash=unsafe_hash,
                 frozen=frozen_,
-                **kwargs,
+                kw_only=kw_only,
+                slots=slots,
             )
 
         if config_wrapper.validate_assignment:
@@ -299,7 +264,7 @@ def dataclass(
                     return [getattr(self, f.name) for f in dataclasses.fields(self)]
 
                 def _dataclass_setstate(self: Any, state: list[Any]) -> None:
-                    for field, value in zip(dataclasses.fields(self), state):
+                    for field, value in zip(dataclasses.fields(self), state, strict=True):
                         object.__setattr__(self, field.name, value)
 
                 cls.__getstate__ = _dataclass_getstate  # pyright: ignore[reportAttributeAccessIssue]

@@ -4553,35 +4553,6 @@ can be emulated).</p>
 <ol>
 <li>With the exception of <a href="../models/#rootmodel-and-custom-root-types">root models</a>, where the root value is dumped directly.</li>
 </ol>
-<div class="tabbed-set tabbed-alternate" data-tabs="1:2"><input checked="checked" id="__tabbed_1_1" name="__tabbed_1" type="radio" /><input id="__tabbed_1_2" name="__tabbed_1" type="radio" /><div class="tabbed-labels"><label for="__tabbed_1_1">Python 3.9 and above</label><label for="__tabbed_1_2">Python 3.10 and above</label></div>
-<div class="tabbed-content">
-<div class="tabbed-block">
-<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Optional</span>
-
-<span class="kn">from</span><span class="w"> </span><span class="nn">pydantic</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">Field</span>
-
-
-<span class="k">class</span><span class="w"> </span><span class="nc">BarModel</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
-    <span class="n">whatever</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="o">...</span><span class="p">]</span>
-
-
-<span class="k">class</span><span class="w"> </span><span class="nc">FooBarModel</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
-    <span class="n">banana</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="mf">1.1</span>
-    <span class="n">foo</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="n">serialization_alias</span><span class="o">=</span><span class="s1">&#39;foo_alias&#39;</span><span class="p">)</span>
-    <span class="n">bar</span><span class="p">:</span> <span class="n">BarModel</span>
-
-
-<span class="n">m</span> <span class="o">=</span> <span class="n">FooBarModel</span><span class="p">(</span><span class="n">banana</span><span class="o">=</span><span class="mf">3.14</span><span class="p">,</span> <span class="n">foo</span><span class="o">=</span><span class="s1">&#39;hello&#39;</span><span class="p">,</span> <span class="n">bar</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;whatever&#39;</span><span class="p">:</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">)})</span>
-
-<span class="c1"># returns a dictionary:</span>
-<span class="nb">print</span><span class="p">(</span><span class="n">m</span><span class="o">.</span><span class="n">model_dump</span><span class="p">())</span>
-<span class="c1">#&gt; {&#39;banana&#39;: 3.14, &#39;foo&#39;: &#39;hello&#39;, &#39;bar&#39;: {&#39;whatever&#39;: (1, 2)}}</span>
-
-<span class="nb">print</span><span class="p">(</span><span class="n">m</span><span class="o">.</span><span class="n">model_dump</span><span class="p">(</span><span class="n">by_alias</span><span class="o">=</span><span class="kc">True</span><span class="p">))</span>
-<span class="c1">#&gt; {&#39;banana&#39;: 3.14, &#39;foo_alias&#39;: &#39;hello&#39;, &#39;bar&#39;: {&#39;whatever&#39;: (1, 2)}}</span>
-</code></pre></div>
-</div>
-<div class="tabbed-block">
 <div class="language-python highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">pydantic</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">Field</span>
 
 
@@ -4604,9 +4575,6 @@ can be emulated).</p>
 <span class="nb">print</span><span class="p">(</span><span class="n">m</span><span class="o">.</span><span class="n">model_dump</span><span class="p">(</span><span class="n">by_alias</span><span class="o">=</span><span class="kc">True</span><span class="p">))</span>
 <span class="c1">#&gt; {&#39;banana&#39;: 3.14, &#39;foo_alias&#39;: &#39;hello&#39;, &#39;bar&#39;: {&#39;whatever&#39;: (1, 2)}}</span>
 </code></pre></div>
-</div>
-</div>
-</div>
 <p>Notice that the value of <code>whatever</code> was dumped as tuple, which isn't a known JSON type. The <code>mode</code> argument can be set to <code>'json'</code>
 to ensure JSON-compatible types are used:</p>
 <div class="language-python highlight"><pre><span></span><code><span class="nb">print</span><span class="p">(</span><span class="n">m</span><span class="o">.</span><span class="n">model_dump</span><span class="p">(</span><span class="n">mode</span><span class="o">=</span><span class="s1">&#39;json&#39;</span><span class="p">))</span>
@@ -4749,7 +4717,7 @@ it will be used to build an extra serializer, to ensure that the serialized fiel
 <li>
 <p id="field-plain-serializer"><strong><em>Plain</em> serializers</strong>: are called unconditionally to serialize a field. The serialization logic for types supported
   by Pydantic will <em>not</em> be called. Using such serializers is also useful to specify the logic for arbitrary types.</p>
-<div class="tabbed-set tabbed-alternate" data-tabs="2:2"><input checked="checked" id="__tabbed_2_1" name="__tabbed_2" type="radio" /><input id="__tabbed_2_2" name="__tabbed_2" type="radio" /><div class="tabbed-labels"><label for="__tabbed_2_1">Annotated pattern</label><label for="__tabbed_2_2">Decorator</label></div>
+<div class="tabbed-set tabbed-alternate" data-tabs="1:2"><input checked="checked" id="__tabbed_1_1" name="__tabbed_1" type="radio" /><input id="__tabbed_1_2" name="__tabbed_1" type="radio" /><div class="tabbed-labels"><label for="__tabbed_1_1">Annotated pattern</label><label for="__tabbed_1_2">Decorator</label></div>
 <div class="tabbed-content">
 <div class="tabbed-block">
 <div class="language-python highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Annotated</span><span class="p">,</span> <span class="n">Any</span>
@@ -4817,7 +4785,7 @@ it will be used to build an extra serializer, to ensure that the serialized fiel
 <p>Such serializers must be defined with a <strong>mandatory</strong> extra <em>handler</em> parameter: a callable taking the value to be serialized
 as an argument. Internally, this handler will delegate serialization of the value to Pydantic. You are free to <em>not</em> call the
 handler at all.</p>
-<div class="tabbed-set tabbed-alternate" data-tabs="3:2"><input checked="checked" id="__tabbed_3_1" name="__tabbed_3" type="radio" /><input id="__tabbed_3_2" name="__tabbed_3" type="radio" /><div class="tabbed-labels"><label for="__tabbed_3_1">Annotated pattern</label><label for="__tabbed_3_2">Decorator</label></div>
+<div class="tabbed-set tabbed-alternate" data-tabs="2:2"><input checked="checked" id="__tabbed_2_1" name="__tabbed_2" type="radio" /><input id="__tabbed_2_2" name="__tabbed_2" type="radio" /><div class="tabbed-labels"><label for="__tabbed_2_1">Annotated pattern</label><label for="__tabbed_2_2">Decorator</label></div>
 <div class="tabbed-content">
 <div class="tabbed-block">
 <div class="language-python highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Annotated</span><span class="p">,</span> <span class="n">Any</span>

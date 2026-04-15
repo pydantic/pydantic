@@ -4874,18 +4874,16 @@ to help ease migration, but calling them will emit <code>DeprecationWarning</cod
 If you'd still like to use said arguments, you can use <a href="https://github.com/pydantic/pydantic/issues/8825#issuecomment-1946206415">this workaround</a>.</li>
 <li>JSON serialization of non-string key values is generally done with <code>str(key)</code>, leading to some changes in behavior such as the following:</li>
 </ul>
-<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Optional</span>
-
-<span class="kn">from</span><span class="w"> </span><span class="nn">pydantic</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseModel</span> <span class="k">as</span> <span class="n">V2BaseModel</span>
+<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">pydantic</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseModel</span> <span class="k">as</span> <span class="n">V2BaseModel</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">pydantic.v1</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseModel</span> <span class="k">as</span> <span class="n">V1BaseModel</span>
 
 
 <span class="k">class</span><span class="w"> </span><span class="nc">V1Model</span><span class="p">(</span><span class="n">V1BaseModel</span><span class="p">):</span>
-    <span class="n">a</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span> <span class="nb">int</span><span class="p">]</span>
+    <span class="n">a</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span><span class="p">,</span> <span class="nb">int</span><span class="p">]</span>
 
 
 <span class="k">class</span><span class="w"> </span><span class="nc">V2Model</span><span class="p">(</span><span class="n">V2BaseModel</span><span class="p">):</span>
-    <span class="n">a</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span> <span class="nb">int</span><span class="p">]</span>
+    <span class="n">a</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span><span class="p">,</span> <span class="nb">int</span><span class="p">]</span>
 
 
 <span class="n">v1_model</span> <span class="o">=</span> <span class="n">V1Model</span><span class="p">(</span><span class="n">a</span><span class="o">=</span><span class="p">{</span><span class="kc">None</span><span class="p">:</span> <span class="mi">123</span><span class="p">})</span>
@@ -5279,23 +5277,6 @@ and for dataclasses:</p>
 <p>While union types will still attempt validation of each choice from left to right, they now preserve the type of the
 input whenever possible, even if the correct type is not the first choice for which the input would pass validation.
 As a demonstration, consider the following example:</p>
-<div class="tabbed-set tabbed-alternate" data-tabs="2:2"><input checked="checked" id="__tabbed_2_1" name="__tabbed_2" type="radio" /><input id="__tabbed_2_2" name="__tabbed_2" type="radio" /><div class="tabbed-labels"><label for="__tabbed_2_1">Python 3.9 and above</label><label for="__tabbed_2_2">Python 3.10 and above</label></div>
-<div class="tabbed-content">
-<div class="tabbed-block">
-<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Union</span>
-
-<span class="kn">from</span><span class="w"> </span><span class="nn">pydantic</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseModel</span>
-
-
-<span class="k">class</span><span class="w"> </span><span class="nc">Model</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
-    <span class="n">x</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">str</span><span class="p">]</span>
-
-
-<span class="nb">print</span><span class="p">(</span><span class="n">Model</span><span class="p">(</span><span class="n">x</span><span class="o">=</span><span class="s1">&#39;1&#39;</span><span class="p">))</span>
-<span class="c1">#&gt; x=&#39;1&#39;</span>
-</code></pre></div>
-</div>
-<div class="tabbed-block">
 <div class="language-python highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">pydantic</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseModel</span>
 
 
@@ -5306,9 +5287,6 @@ As a demonstration, consider the following example:</p>
 <span class="nb">print</span><span class="p">(</span><span class="n">Model</span><span class="p">(</span><span class="n">x</span><span class="o">=</span><span class="s1">&#39;1&#39;</span><span class="p">))</span>
 <span class="c1">#&gt; x=&#39;1&#39;</span>
 </code></pre></div>
-</div>
-</div>
-</div>
 <p>In Pydantic V1, the printed result would have been <code>x=1</code>, since the value would pass validation as an <code>int</code>.
 In Pydantic V2, we recognize that the value is an instance of one of the cases and short-circuit the standard union validation.</p>
 <p>To revert to the non-short-circuiting left-to-right behavior of V1, annotate the union with <code>Field(union_mode='left_to_right')</code>.
@@ -5366,7 +5344,7 @@ It does not mean that the field has a default value of <code>None</code>. <em>(T
 <p>Any default value if provided makes a field not required.</p>
 </div>
 <p>Here is a code example demonstrating the above:</p>
-<div class="tabbed-set tabbed-alternate" data-tabs="3:2"><input checked="checked" id="__tabbed_3_1" name="__tabbed_3" type="radio" /><input id="__tabbed_3_2" name="__tabbed_3" type="radio" /><div class="tabbed-labels"><label for="__tabbed_3_1">Python 3.9 and above</label><label for="__tabbed_3_2">Python 3.10 and above</label></div>
+<div class="tabbed-set tabbed-alternate" data-tabs="2:2"><input checked="checked" id="__tabbed_2_1" name="__tabbed_2" type="radio" /><input id="__tabbed_2_2" name="__tabbed_2" type="radio" /><div class="tabbed-labels"><label for="__tabbed_2_1">Python 3.9 and above</label><label for="__tabbed_2_2">Python 3.10 and above</label></div>
 <div class="tabbed-content">
 <div class="tabbed-block">
 <div class="language-python highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Optional</span>
@@ -5578,7 +5556,7 @@ docs.</p>
 <p>When using <a href="./#continue-using-pydantic-v1-features">V1 features</a> the
 <code>pydantic.v1.mypy</code> plugin might need to also be enabled.</p>
 <p>To configure the mypy plugins:</p>
-<div class="tabbed-set tabbed-alternate" data-tabs="4:2"><input checked="checked" id="__tabbed_4_1" name="__tabbed_4" type="radio" /><input id="__tabbed_4_2" name="__tabbed_4" type="radio" /><div class="tabbed-labels"><label for="__tabbed_4_1"><code>mypy.ini</code></label><label for="__tabbed_4_2"><code>pyproject.toml</code></label></div>
+<div class="tabbed-set tabbed-alternate" data-tabs="3:2"><input checked="checked" id="__tabbed_3_1" name="__tabbed_3" type="radio" /><input id="__tabbed_3_2" name="__tabbed_3" type="radio" /><div class="tabbed-labels"><label for="__tabbed_3_1"><code>mypy.ini</code></label><label for="__tabbed_3_2"><code>pyproject.toml</code></label></div>
 <div class="tabbed-content">
 <div class="tabbed-block">
 <div class="language-ini highlight"><pre><span></span><code><span class="k">[mypy]</span>
