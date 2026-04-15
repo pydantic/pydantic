@@ -2,7 +2,15 @@ from typing import Union
 
 import pytest
 
-from pydantic import BaseModel, ConfigDict, SerializationInfo, TypeAdapter, model_serializer
+from pydantic import (
+    BaseModel,
+    ConfigDict,
+    SerializationInfo,
+    TypeAdapter,
+    ValidationInfo,
+    field_validator,
+    model_serializer,
+)
 
 
 @pytest.mark.parametrize('config', [True, False, None])
@@ -77,3 +85,22 @@ def test_polymorphic_serialization_with_model_serializer(config: bool, runtime: 
     else:
         assert serializer.to_python(ModelB(a=123, b='test'), **kwargs) == 'ModelA'
         assert serializer.to_json(ModelB(a=123, b='test'), **kwargs) == b'"ModelA"'
+
+
+def test_model_validate_by_json_with_validation_info_data():
+    """https://github.com/pydantic/pydantic/issues/13074"""
+
+    class Foo(BaseModel):
+        field1: int
+        field2: int
+
+        @field_validator('field2')
+        @classmethod
+        def _validate_field2(cls, v: str, info: ValidationInfo) -> int:
+            return v + info.data['field1']
+
+    f1 = Foo.model_validate({'field1': 1, 'field2': 2})
+    f2 = Foo.model_validate_json('{"field1": 1, "field2": 2}')
+
+    assert f1.field1 == f2.field1 == 1
+    assert f1.field2 == f2.field2 == 3
