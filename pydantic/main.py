@@ -409,7 +409,31 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
         Returns:
             New model instance.
         """
-        copied = self.__deepcopy__() if deep else self.__copy__()
+        if deep and update:
+            # When deep=True with update, skip deep-copying fields that will be
+            # replaced by update. This avoids unnecessary work and supports
+            # fields that cannot be deep-copied (e.g. file handles, C extensions).
+            cls = type(self)
+            copied = cls.__new__(cls)
+            _object_setattr(copied, '__dict__', {
+                k: (deepcopy(v, memo={}) if k not in update else v)
+                for k, v in self.__dict__.items()
+            })
+            _object_setattr(copied, '__pydantic_extra__', deepcopy(self.__pydantic_extra__, memo={}))
+            _object_setattr(copied, '__pydantic_fields_set__', copy(self.__pydantic_fields_set__))
+            if not hasattr(self, '__pydantic_private__') or self.__pydantic_private__ is None:
+                _object_setattr(copied, '__pydantic_private__', None)
+            else:
+                _object_setattr(
+                    copied,
+                    '__pydantic_private__',
+                    deepcopy(
+                        {k: v for k, v in self.__pydantic_private__.items() if v is not PydanticUndefined},
+                        memo={},
+                    ),
+                )
+        else:
+            copied = self.__deepcopy__() if deep else self.__copy__()
         if update:
             if self.model_config.get('extra') == 'allow':
                 for k, v in update.items():
