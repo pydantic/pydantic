@@ -3143,3 +3143,45 @@ def test_nested_model_validator_not_reexecuted():
     )  # Create a Sub instance without triggering validation (e.g., using model_construct)
     # Attempt to create Base with the Sub instance. This line should succeed if the bug is fixed, but currently raises ValidationError.
     Base(sub=sub)  # <-- This throws AssertionError because Sub's 'after' validator runs again.
+
+
+def test_model_validate_by_json_field_validator_with_validation_info() -> None:
+    """https://github.com/pydantic/pydantic/issues/13074"""
+
+    class Foo(BaseModel):
+        field1: int
+        field2: int
+
+        @field_validator('field2')
+        @classmethod
+        def _validate_field2(cls, v: int, info: ValidationInfo) -> int:
+            assert info.field_name in ('field1', 'field2')
+            assert info.context == 'context'
+
+            return v + info.data['field1']
+
+    f1 = Foo.model_validate({'field1': 1, 'field2': 2}, context='context')
+    f2 = Foo.model_validate_json('{"field1": 1, "field2": 2}', context='context')
+
+    assert f1.field1 == f2.field1 == 1
+    assert f1.field2 == f2.field2 == 3
+
+
+def test_model_validate_json_default_value_validator_with_validation_info() -> None:
+    """https://github.com/pydantic/pydantic/issues/13074"""
+
+    class Foo(BaseModel, validate_default=True):
+        field: int = 1
+
+        @field_validator('field')
+        @classmethod
+        def _validate_field(cls, v: int, info: ValidationInfo) -> int:
+            assert info.field_name == 'field'
+            assert info.context == 'context'
+
+            return v + 1
+
+    f1 = Foo.model_validate({'field': 1}, context='context')
+    f2 = Foo.model_validate_json('{"field1": 1}', context='context')
+
+    assert f1.field == f2.field == 2
