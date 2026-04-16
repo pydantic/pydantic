@@ -629,6 +629,8 @@ impl ModelFieldsValidator {
         // dict, and try to set defaults for any missing fields
 
         for (field, field_result) in std::iter::zip(&self.fields, field_results) {
+            let state = &mut state.scoped_set_field_name(Some(field.name.as_py_str().bind(py).clone()));
+
             let field_value = if let Some((field_info, field_json_value)) = field_result {
                 match field.validator.validate(py, field_json_value, state) {
                     Ok(value) => {
