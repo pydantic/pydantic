@@ -409,7 +409,28 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
         Returns:
             New model instance.
         """
-        copied = self.__deepcopy__() if deep else self.__copy__()
+        if deep and update:
+            # Start with a fast shallow copy to preserve structure
+            copied = self.__copy__()
+
+            # A shared memo preserves object identity across fields
+            memo: dict[int, Any] = {}
+
+            # Selectively deepcopy fields that are not being updated
+            for k, v in copied.__dict__.items():
+                if k not in update:
+                    copied.__dict__[k] = deepcopy(v, memo)
+            if copied.__pydantic_extra__ is not None:
+                for k, v in copied.__pydantic_extra__.items():
+                    if k not in update:
+                        copied.__pydantic_extra__[k] = deepcopy(v, memo)
+            if copied.__pydantic_private__ is not None:
+                copied.__pydantic_private__ = deepcopy(
+                    {k: v for k, v in copied.__pydantic_private__.items() if v is not PydanticUndefined},
+                    memo,
+                )
+        else:
+            copied = self.__deepcopy__() if deep else self.__copy__()
         if update:
             if self.model_config.get('extra') == 'allow':
                 for k, v in update.items():

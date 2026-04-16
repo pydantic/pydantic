@@ -321,6 +321,79 @@ def test_copy_deep_extra(copy_method):
     assert copy_method(m, deep=True).extra is not m.extra
 
 
+class NotDeepCopyable:
+    """Helper class that raises when deepcopied, simulating native C extension objects."""
+
+    def __deepcopy__(self, memo):
+        raise TypeError('This object cannot be deepcopied')
+
+
+def test_model_copy_deep_update_skips_deepcopy_of_updated_fields():
+    """Fields present in `update` should not be deepcopied since they are replaced."""
+
+    class AppConfig(BaseModel):
+        model_config = ConfigDict(arbitrary_types_allowed=True)
+        name: str = 'default'
+        engine: Any = None
+
+    config = AppConfig(engine=NotDeepCopyable())
+
+    copied = config.model_copy(deep=True, update={'engine': None})
+    assert copied.engine is None
+    assert copied.name == 'default'
+    assert copied is not config
+
+
+def test_model_copy_deep_update_preserves_shared_references():
+    """A shared memo should preserve shared references across deep-copied fields."""
+
+    class Inner(BaseModel):
+        x: int = 0
+
+    class Outer(BaseModel):
+        a: Inner
+        b: Inner
+        c: Inner
+
+    shared = Inner(x=1)
+    m = Outer(a=shared, b=shared, c=Inner(x=2))
+    m2 = m.model_copy(deep=True, update={'c': Inner(x=99)})
+
+    assert m2.a is not shared
+    assert m2.a is m2.b
+    assert m2.c.x == 99
+    assert m.a is shared
+
+
+def test_model_copy_deep_update_skips_deepcopy_of_extra_fields():
+    """Extra fields present in `update` should not be deepcopied."""
+
+    class Foo(BaseModel, extra='allow'):
+        pass
+
+    m = Foo(extra_field=NotDeepCopyable(), other=[1, 2, 3])
+
+    copied = m.model_copy(deep=True, update={'extra_field': 'replaced'})
+    assert copied.extra_field == 'replaced'
+    assert copied.other == [1, 2, 3]
+    assert copied.other is not m.other
+
+
+def test_model_copy_deep_update_applies_update_value():
+    """Ensure the update value is applied and not clobbered by the original value."""
+
+    class M(BaseModel):
+        a: int
+        b: int
+
+    m = M(a=1, b=2)
+    m2 = m.model_copy(deep=True, update={'a': 100})
+
+    assert m2.a == 100
+    assert m2.b == 2
+    assert m.a == 1
+
+
 def test_copy_set_fields(ModelTwo, copy_method):
     m = ModelTwo(a=24, d=Model(a='12'))
     m2 = copy_method(m)
