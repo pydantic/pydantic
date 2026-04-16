@@ -519,6 +519,44 @@ decorator.
        this is not always the case. For instance, if the [`from_attributes`][pydantic.ConfigDict.from_attributes]
        configuration value is set, you might receive an arbitrary class instance for the `data` argument.
 
+    !!! warning "Handling non-dict inputs in *before* model validators"
+        When using `mode='before'`, the `data` argument receives the **raw, unprocessed input**.
+        While this is often a `dict`, it can also be:
+
+        - A **model instance**, when calling `MyModel.model_validate(existing_instance)`.
+        - An **arbitrary object**, when [`from_attributes`][pydantic.ConfigDict.from_attributes]
+          is enabled and an ORM model or similar object is passed.
+
+        Always use `isinstance` checks to guard against non-dict inputs:
+
+        ```python
+        from typing import Any
+
+        from pydantic import BaseModel, model_validator
+
+
+        class UserModel(BaseModel):
+            username: str
+
+            @model_validator(mode='before')
+            @classmethod
+            def normalize_input(cls, data: Any) -> Any:
+                if isinstance(data, dict):
+                    # Only modify dict inputs
+                    data.setdefault('username', 'default_user')
+                return data
+
+
+        # Dict input — validator applies normalization
+        print(UserModel.model_validate({}))
+        #> username='default_user'
+
+        # Model instance input — validator safely passes through
+        user = UserModel(username='Alice')
+        print(UserModel.model_validate(user))
+        #> username='Alice'
+        ```
+
 * ***Wrap* validators**: are the most flexible of all. You can run code before or after Pydantic and
   other validators process the input data, or you can terminate validation immediately, either by returning
   the data early or by raising an error.
