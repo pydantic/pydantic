@@ -472,7 +472,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
         Returns:
             A dictionary representation of the model.
         """
-        return self.__pydantic_serializer__.to_python(
+        result = self.__pydantic_serializer__.to_python(
             self,
             mode=mode,
             by_alias=by_alias,
@@ -489,6 +489,24 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
             serialize_as_any=serialize_as_any,
             polymorphic_serialization=polymorphic_serialization,
         )
+
+        # When `model_validate(..., extra='allow')` is called on a model whose
+        # class-level config is *not* `extra='allow'`, extra fields are stored
+        # in `__pydantic_extra__` but the serializer (built from the class
+        # schema) does not emit them.  Merge them here so that the runtime
+        # intent is honoured.  See https://github.com/pydantic/pydantic/issues/12937
+        pydantic_extra = self.__pydantic_extra__
+        if pydantic_extra and self.model_config.get('extra') != 'allow':
+            for key, value in pydantic_extra.items():
+                if include is not None and key not in include:
+                    continue
+                if exclude is not None and key in exclude:
+                    continue
+                if exclude_none and value is None:
+                    continue
+                result[key] = value
+
+        return result
 
     def model_dump_json(
         self,
