@@ -401,10 +401,17 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
             might have unexpected side effects if you store anything in it, on top of the model
             fields (e.g. the value of [cached properties][functools.cached_property]).
 
+        !!! note
+            When both `deep=True` and `update` are provided, fields present in `update` are
+            not deepcopied (their replacement values are used directly). This avoids
+            unnecessary work and allows replacing fields whose current values cannot be
+            deepcopied (e.g. native C extension objects, file handles, GPU tensors).
+
         Args:
             update: Values to change/add in the new model. Note: the data is not validated
                 before creating the new model. You should trust this data.
-            deep: Set to `True` to make a deep copy of the model.
+            deep: Set to `True` to make a deep copy of the model. Fields that are being
+                replaced via `update` are not deepcopied.
 
         Returns:
             New model instance.
