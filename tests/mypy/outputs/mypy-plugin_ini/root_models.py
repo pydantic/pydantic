@@ -24,6 +24,17 @@ pets2 = Pets2(['dog', 'cat'])
 pets3 = Pets3(['dog', 'cat'])
 
 
+class FloatModel(BaseModel):
+    value: float
+
+
+float_model = FloatModel(value='1.0')
+float_root_model = RootModel[float]('1.0')
+
+assert_type(float_model.value, float)
+assert_type(float_root_model.root, float)
+
+
 class Pets4(RootModel[list[str]]):
     pets: list[str]
 # MYPY: error: Only `root` is allowed as a field of a `RootModel`  [pydantic-field]

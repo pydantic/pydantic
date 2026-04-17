@@ -86,6 +86,8 @@ BASEMODEL_FULLNAME = 'pydantic.main.BaseModel'
 CREATE_MODEL_FULLNAME = 'pydantic.main.create_model'
 BASESETTINGS_FULLNAME = 'pydantic_settings.main.BaseSettings'
 ROOT_MODEL_FULLNAME = 'pydantic.root_model.RootModel'
+ROOT_MODEL_INIT_FULLNAME = 'pydantic.root_model.RootModel.__init__'
+ROOT_MODEL_METACLASS_FULLNAME = 'pydantic.root_model._RootModelMetaclass'
 MODEL_METACLASS_FULLNAME = 'pydantic._internal._model_construction.ModelMetaclass'
 FIELD_FULLNAME = 'pydantic.fields.Field'
 DATACLASS_FULLNAME = 'pydantic.dataclasses.dataclass'
@@ -142,7 +144,7 @@ class PydanticPlugin(Plugin):
 
     def get_metaclass_hook(self, fullname: str) -> Callable[[ClassDefContext], None] | None:
         """Update Pydantic `ModelMetaclass` definition."""
-        if fullname == MODEL_METACLASS_FULLNAME:
+        if fullname in {MODEL_METACLASS_FULLNAME, ROOT_MODEL_METACLASS_FULLNAME}:
             return self._pydantic_model_metaclass_marker_callback
         return None
 
@@ -889,7 +891,13 @@ class PydanticModelTransformer:
         The added `__init__` will be annotated with types vs. all `Any` depending on the plugin settings.
         """
         if '__init__' in self._cls.info.names and not self._cls.info.names['__init__'].plugin_generated:
-            return  # Don't generate an __init__ if one already exists
+            existing_init = self._cls.info.names['__init__'].node
+            if not (
+                is_root_model
+                and isinstance(existing_init, FuncDef)
+                and existing_init.fullname == ROOT_MODEL_INIT_FULLNAME
+            ):
+                return  # Don't generate an __init__ if one already exists
 
         typed = self.plugin_config.init_typed
         model_strict = bool(config.strict)

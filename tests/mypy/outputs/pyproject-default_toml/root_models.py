@@ -24,6 +24,19 @@ pets2 = Pets2(['dog', 'cat'])
 pets3 = Pets3(['dog', 'cat'])
 
 
+class FloatModel(BaseModel):
+    value: float
+
+
+float_model = FloatModel(value='1.0')
+# MYPY: error: Argument "value" to "FloatModel" has incompatible type "str"; expected "float"  [arg-type]
+float_root_model = RootModel[float]('1.0')
+# MYPY: error: Argument 1 to "RootModel" has incompatible type "str"; expected "float"  [arg-type]
+
+assert_type(float_model.value, float)
+assert_type(float_root_model.root, float)
+
+
 class Pets4(RootModel[list[str]]):
     pets: list[str]
 
