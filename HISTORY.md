@@ -2,6 +2,16 @@
 <!-- markdownlint-disable descriptive-link-text -->
 <!-- markdownlint-disable-next-line first-line-heading -->
 
+## v2.13.2 (2026-04-17)
+
+[GitHub release](https://github.com/pydantic/pydantic/releases/tag/v2.13.2)
+
+### What's Changed
+
+#### Fixes
+
+* Fix `ValidationInfo.field_name` missing with `model_validate_json()` by @Viicos in [#13084](https://github.com/pydantic/pydantic/pull/13084)
+
 ## v2.13.1 (2026-04-15)
 
 [GitHub release](https://github.com/pydantic/pydantic/releases/tag/v2.13.1)
