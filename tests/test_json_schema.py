@@ -545,7 +545,7 @@ def test_decimal_json_schema():
                 'default': '12.34',
                 'title': 'B',
                 'type': 'string',
-                'pattern': '^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$',
+                'pattern': '^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*(?:[eE][+-]?\\d+)?$',
             },
         },
         'title': 'Model',
@@ -2137,7 +2137,7 @@ def test_constraints_schema_validation(kwargs, type_, expected_extra):
             Decimal,
             {
                 'type': 'string',
-                'pattern': '^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$',
+                'pattern': '^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*(?:[eE][+-]?\\d+)?$',
             },
         ),
         (
@@ -2145,7 +2145,7 @@ def test_constraints_schema_validation(kwargs, type_, expected_extra):
             Decimal,
             {
                 'type': 'string',
-                'pattern': '^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$',
+                'pattern': '^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*(?:[eE][+-]?\\d+)?$',
             },
         ),
         (
@@ -2153,7 +2153,7 @@ def test_constraints_schema_validation(kwargs, type_, expected_extra):
             Decimal,
             {
                 'type': 'string',
-                'pattern': '^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$',
+                'pattern': '^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*(?:[eE][+-]?\\d+)?$',
             },
         ),
         (
@@ -2161,7 +2161,7 @@ def test_constraints_schema_validation(kwargs, type_, expected_extra):
             Decimal,
             {
                 'type': 'string',
-                'pattern': '^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$',
+                'pattern': '^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*(?:[eE][+-]?\\d+)?$',
             },
         ),
         (
@@ -2169,7 +2169,7 @@ def test_constraints_schema_validation(kwargs, type_, expected_extra):
             Decimal,
             {
                 'type': 'string',
-                'pattern': '^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$',
+                'pattern': '^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*(?:[eE][+-]?\\d+)?$',
             },
         ),
     ],
@@ -5942,7 +5942,7 @@ def test_generate_definitions_for_no_ref_schemas():
         {
             ('Decimal', 'serialization'): {
                 'type': 'string',
-                'pattern': '^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$',
+                'pattern': '^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*(?:[eE][+-]?\\d+)?$',
             },
             ('Decimal', 'validation'): {
                 'anyOf': [
@@ -7141,6 +7141,65 @@ def test_decimal_pattern_reject_invalid_not_numerical_values_with_decimal_places
 ) -> None:
     pattern = get_decimal_pattern()
     assert re.fullmatch(pattern, invalid_decimal) is None
+
+
+def test_decimal_serialization_pattern_accepts_scientific_notation() -> None:
+    """Regression test for #13089: serialization-mode Decimal pattern must accept the
+    scientific notation that pydantic-core's ``str(Decimal)`` serializer emits
+    (e.g. ``Decimal('0.0000001')`` -> ``'1E-7'``)."""
+
+    class MyModel(BaseModel):
+        value: Decimal | None
+
+    schema = MyModel.model_json_schema(mode='serialization')
+    pattern = next(v for v in schema['properties']['value']['anyOf'] if v.get('type') == 'string')['pattern']
+    regex = re.compile(pattern)
+
+    # Round-trip: the serializer must produce something the schema accepts.
+    m = MyModel(value=Decimal('0.0000001'))
+    serialized_value = json.loads(m.model_dump_json())['value']
+    assert serialized_value == '1E-7'
+    assert regex.fullmatch(serialized_value) is not None
+
+    # Forms emitted by ``str(Decimal)`` for various magnitudes.
+    for valid in ['1E-7', '1E-12', '-1E-7', '1.5E+10', '1E+20', '0', '1', '-1.5', '0.0000123']:
+        assert regex.fullmatch(valid) is not None, f'pattern should accept {valid!r}'
+
+    # Garbage must still be rejected.
+    for invalid in ['abc', '1.2.3', '1E', '1E--5', 'foo1E-5', '1E5bar', '.', '..', '++']:
+        assert regex.fullmatch(invalid) is None, f'pattern should reject {invalid!r}'
+
+
+def test_decimal_validation_pattern_unchanged_for_scientific_notation() -> None:
+    """The validation-mode pattern is deliberately left untouched by the #13089 fix:
+    the scientific-notation suffix is only added in serialization mode."""
+
+    class MyModel(BaseModel):
+        value: Decimal | None
+
+    schema = MyModel.model_json_schema(mode='validation')
+    pattern = next(v for v in schema['properties']['value']['anyOf'] if v.get('type') == 'string')['pattern']
+    assert '[eE]' not in pattern
+
+
+@pytest.mark.parametrize(
+    ('max_digits', 'decimal_places', 'valid_value'),
+    [
+        (None, None, '1E-7'),
+        (None, 10, '1E-7'),
+        (10, None, '1E-7'),
+        (20, 10, '1.5E+5'),
+    ],
+)
+def test_decimal_serialization_pattern_scientific_notation_with_constraints(
+    max_digits, decimal_places, valid_value
+) -> None:
+    """The scientific-notation allowance must also apply under every
+    ``max_digits`` / ``decimal_places`` combination in serialization mode."""
+    adapter = TypeAdapter(Annotated[Decimal, Field(max_digits=max_digits, decimal_places=decimal_places)])
+    schema = adapter.json_schema(mode='serialization')
+    pattern = schema['anyOf'][1]['pattern'] if 'anyOf' in schema else schema['pattern']
+    assert re.fullmatch(pattern, valid_value) is not None
 
 
 def test_union_format_primitive_type_array() -> None:
