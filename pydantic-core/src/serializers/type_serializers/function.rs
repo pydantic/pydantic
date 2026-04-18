@@ -384,13 +384,16 @@ impl FunctionWrapSerializer {
         let py = value.py();
         if self.when_used.should_use(value, &state.extra) {
             let serialize = SerializationCallable::new(&self.serializer, state);
+            // Keep a Py<> reference so we can read back accumulated warnings after the call.
+            let initial_warning_count = serialize.initial_warning_count;
+            let serialize_callable = Py::new(py, serialize)?;
             let v = if self.is_field_serializer {
                 if let Some(model) = state.model.as_ref() {
                     if self.info_arg {
                         let info = SerializationInfo::new(state, self.is_field_serializer)?;
-                        self.func.call1(py, (model, value, serialize, info))?
+                        self.func.call1(py, (model, value, serialize_callable.clone_ref(py), info))?
                     } else {
-                        self.func.call1(py, (model, value, serialize))?
+                        self.func.call1(py, (model, value, serialize_callable.clone_ref(py)))?
                     }
                 } else {
                     return Err(PyRuntimeError::new_err(
@@ -399,10 +402,19 @@ impl FunctionWrapSerializer {
                 }
             } else if self.info_arg {
                 let info = SerializationInfo::new(state, self.is_field_serializer)?;
-                self.func.call1(py, (value, serialize, info))?
+                self.func.call1(py, (value, serialize_callable.clone_ref(py), info))?
             } else {
-                self.func.call1(py, (value, serialize))?
+                self.func.call1(py, (value, serialize_callable.clone_ref(py)))?
             };
+            // Merge warnings collected inside the wrap handler into the outer context so
+            // the top-level final_check emits a single consolidated UserWarning.
+            {
+                let callable = serialize_callable.borrow(py);
+                callable
+                    .extra_owned
+                    .warnings
+                    .propagate_new_to(initial_warning_count, &mut state.warnings, py)?;
+            }
             Ok((true, v))
         } else {
             Ok((false, value.clone().unbind()))
@@ -431,6 +443,9 @@ pub(crate) struct SerializationCallable {
     serializer: Arc<CombinedSerializer>,
     extra_owned: ExtraOwned,
     filter: AnyFilter,
+    /// Number of warnings already present in `extra_owned` at construction time.
+    /// Used by `FunctionWrapSerializer::call` to determine which warnings are new.
+    initial_warning_count: usize,
 }
 
 impl_py_gc_traverse!(SerializationCallable {
@@ -440,10 +455,12 @@ impl_py_gc_traverse!(SerializationCallable {
 
 impl SerializationCallable {
     pub fn new(serializer: &Arc<CombinedSerializer>, state: &SerializationState<'_>) -> Self {
+        let initial_warning_count = state.warnings.len();
         Self {
             serializer: serializer.clone(),
             extra_owned: ExtraOwned::new(state),
             filter: AnyFilter::new(),
+            initial_warning_count,
         }
     }
 
@@ -472,8 +489,10 @@ impl SerializationCallable {
         // at this layer
 
         let state = &mut self.extra_owned.to_state(py);
+        // Track how many warnings existed before this call so we only propagate new ones.
+        let initial_warning_count = state.warnings.len();
 
-        if let Some(index_key) = index_key {
+        let result = if let Some(index_key) = index_key {
             let filter = if let Ok(index) = index_key.extract::<usize>() {
                 self.filter.index_filter(index, state, None)?
             } else {
@@ -482,16 +501,24 @@ impl SerializationCallable {
             if let Some(next_include_exclude) = filter {
                 let state = &mut state.scoped_include_exclude(next_include_exclude);
                 let v = self.serializer.to_python_no_infer(value, state)?;
-                state.warnings.final_check(py)?;
                 Ok(Some(v))
             } else {
                 Err(PydanticOmit::new_err())
             }
         } else {
             let v = self.serializer.to_python_no_infer(value, state)?;
-            state.warnings.final_check(py)?;
             Ok(Some(v))
-        }
+        };
+
+        // Instead of calling final_check() here (which would emit a separate UserWarning),
+        // propagate new warnings to extra_owned so FunctionWrapSerializer::call can merge
+        // them into the outer serialization context for a single consolidated warning.
+        // In error mode, raise immediately.
+        state
+            .warnings
+            .propagate_new_to(initial_warning_count, &mut self.extra_owned.warnings, py)?;
+
+        result
     }
 
     fn __repr__(&self) -> PyResult<String> {
