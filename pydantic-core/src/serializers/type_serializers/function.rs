@@ -391,7 +391,8 @@ impl FunctionWrapSerializer {
                 if let Some(model) = state.model.as_ref() {
                     if self.info_arg {
                         let info = SerializationInfo::new(state, self.is_field_serializer)?;
-                        self.func.call1(py, (model, value, serialize_callable.clone_ref(py), info))?
+                        self.func
+                            .call1(py, (model, value, serialize_callable.clone_ref(py), info))?
                     } else {
                         self.func.call1(py, (model, value, serialize_callable.clone_ref(py)))?
                     }
