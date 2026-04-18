@@ -249,7 +249,7 @@ impl SerCheck {
 #[derive(Clone)]
 pub(crate) struct ExtraOwned {
     mode: SerMode,
-    warnings: CollectWarnings,
+    pub(crate) warnings: CollectWarnings,
     by_alias: Option<bool>,
     exclude_unset: bool,
     exclude_defaults: bool,
@@ -503,6 +503,32 @@ impl CollectWarnings {
                 Some(value.clone().unbind()),
             ));
         }
+    }
+
+    pub fn len(&self) -> usize {
+        self.warnings.len()
+    }
+
+    /// Propagates warnings added after `initial_len` to `target`.
+    ///
+    /// Used by `WrapSerializer` to forward inner warnings to the outer serialization context
+    /// instead of emitting them as a separate `UserWarning`.  In error mode the new warnings
+    /// are raised immediately; in warn/none mode they are appended to `target` so the outer
+    /// `final_check` can emit a single consolidated warning.
+    pub fn propagate_new_to(&self, initial_len: usize, target: &mut CollectWarnings, py: Python) -> PyResult<()> {
+        let new_warnings = &self.warnings[initial_len..];
+        if new_warnings.is_empty() {
+            return Ok(());
+        }
+        if self.mode == WarningsMode::Error {
+            let formatted: Vec<String> = new_warnings.iter().map(|w| w.__repr__(py)).collect();
+            let message = format!("Pydantic serializer warnings:\n  {}", formatted.join("\n  "));
+            return Err(PydanticSerializationError::new_err(message));
+        }
+        if self.mode == WarningsMode::Warn {
+            target.warnings.extend(new_warnings.iter().cloned());
+        }
+        Ok(())
     }
 
     pub fn final_check(&self, py: Python) -> PyResult<()> {
