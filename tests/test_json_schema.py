@@ -6563,6 +6563,30 @@ def test_str_schema_with_pattern() -> None:
     }
 
 
+def test_optional_annotated_before_validator_preserves_field_pattern_in_json_schema() -> None:
+    """Regression for https://github.com/pydantic/pydantic/issues/12417"""
+
+    regex = r'^[\da-fA-F]{32}$'
+
+    def _convert_bytes_to_str(value: str | bytes) -> str:
+        if isinstance(value, bytes):
+            return value.decode('utf8')
+        return value
+
+    bytes_to_str = Annotated[str, BeforeValidator(_convert_bytes_to_str)]
+
+    class TestModel(BaseModel):
+        str_optional: str | None = Field(None, pattern=regex)
+        annotated_optional: bytes_to_str | None = Field(None, pattern=regex)
+
+    props = TestModel.model_json_schema()['properties']
+
+    def string_branch(prop: dict[str, Any]) -> dict[str, Any]:
+        return next(s for s in prop['anyOf'] if s.get('type') == 'string')
+
+    assert string_branch(props['str_optional']) == string_branch(props['annotated_optional'])
+
+
 def test_plain_serializer_applies_to_default() -> None:
     class Model(BaseModel):
         custom_str: Annotated[str, PlainSerializer(lambda x: f'serialized-{x}', return_type=str)] = 'foo'

@@ -213,7 +213,12 @@ def apply_known_metadata(annotation: Any, schema: CoreSchema) -> CoreSchema | No
         # in this recursive case with function-after or function-wrap, we should refactor
         # this is a bit challenging because we sometimes want to apply constraints to the inner schema,
         # whereas other times we want to wrap the existing schema with a new one that enforces a new constraint.
-        if schema_type in {'function-before', 'function-wrap', 'function-after'} and constraint == 'strict':
+        # Push constraints onto the inner schema so JSON Schema generation (which for chain_schema
+        # only inspects the first step) still sees str constraints like pattern; see
+        # https://github.com/pydantic/pydantic/issues/12417
+        if schema_type in {'function-before', 'function-wrap', 'function-after'} and (
+            constraint == 'strict' or constraint in chain_schema_constraints
+        ):
             schema['schema'] = apply_known_metadata(annotation, schema['schema'])  # type: ignore  # schema is function schema
             return schema
 
