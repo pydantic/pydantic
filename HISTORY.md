@@ -2,6 +2,16 @@
 <!-- markdownlint-disable descriptive-link-text -->
 <!-- markdownlint-disable-next-line first-line-heading -->
 
+## v2.13.3 (2026-04-20)
+
+[GitHub release](https://github.com/pydantic/pydantic/releases/tag/v2.13.3)
+
+### What's Changed
+
+#### Fixes
+
+* Handle `AttributeError` subclasses with `from_attributes` by @Viicos in [#13096](https://github.com/pydantic/pydantic/pull/13096)
+
 ## v2.13.2 (2026-04-17)
 
 [GitHub release](https://github.com/pydantic/pydantic/releases/tag/v2.13.2)
