@@ -3,7 +3,7 @@ use std::convert::Infallible;
 use std::fmt;
 
 use pyo3::IntoPyObjectExt;
-use pyo3::exceptions::{PyTypeError, PyValueError};
+use pyo3::exceptions::{PyAttributeError, PyTypeError, PyValueError};
 use pyo3::prelude::*;
 use pyo3::pybacked::PyBackedStr;
 use pyo3::types::{PyDict, PyList, PyMapping, PyString};
@@ -111,7 +111,7 @@ impl LookupPath {
     }
 
     pub fn simple_py_get_attr<'py>(&self, obj: &Bound<'py, PyAny>) -> PyResult<Option<Bound<'py, PyAny>>> {
-        self.get_impl(obj, PyAnyMethods::getattr_opt, |d, loc| loc.py_get_attrs(&d))
+        self.get_impl(obj, py_get_attrs, |d, loc| loc.py_get_attrs(&d))
     }
 
     pub fn py_get_attr<'py>(
@@ -366,7 +366,7 @@ impl PathItemString {
             // FIXME: should this instance check be for Mapping instead of Dict, and use `mapping_get`?
             Ok(obj.get_item(self).ok())
         } else {
-            obj.getattr_opt(self)
+            py_get_attrs(obj, self)
         }
     }
 }
@@ -452,5 +452,22 @@ impl LookupType {
 
     pub fn matches(self, other: LookupType) -> bool {
         (self as u8 & other as u8) != 0
+    }
+}
+
+// TODO replace with `PyAnyMethods::getattr_opt` once https://github.com/PyO3/pyo3/pull/5985 is merged:
+fn py_get_attrs<'py, N>(obj: &Bound<'py, PyAny>, attr_name: N) -> PyResult<Option<Bound<'py, PyAny>>>
+where
+    N: IntoPyObject<'py, Target = PyString>,
+{
+    match obj.getattr(attr_name) {
+        Ok(attr) => Ok(Some(attr)),
+        Err(err) => {
+            if err.get_type(obj.py()).is_subclass_of::<PyAttributeError>()? {
+                Ok(None)
+            } else {
+                Err(err)
+            }
+        }
     }
 }
