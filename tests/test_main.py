@@ -3038,6 +3038,25 @@ def test_validate_python_from_attributes() -> None:
     assert res == ModelFromAttributesFalse(x=1)
 
 
+def test_from_attributes_attributeerror_subclass() -> None:
+    """https://github.com/pydantic/pydantic/issues/13092"""
+
+    class SubAttributeError(AttributeError):
+        pass
+
+    class Model(BaseModel, from_attributes=True):
+        field: int | None = None
+
+    class Obj:
+        @property
+        def child(self):
+            raise SubAttributeError()
+
+    m = Model.model_validate(Obj())
+
+    assert m.field is None
+
+
 @pytest.mark.parametrize(
     'field_type,input_value,expected,raises_match,strict',
     [
