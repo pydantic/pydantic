@@ -3063,7 +3063,7 @@ def test_from_attributes_attributeerror_subclass() -> None:
         pass
 
     class Model(BaseModel, from_attributes=True):
-        field: int | None = None
+        field: Union[int, None] = None
 
     class Obj:
         @property
