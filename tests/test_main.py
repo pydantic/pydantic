@@ -2862,6 +2862,26 @@ def test_extra_equality_runtime_override() -> None:
     assert MyModel.model_validate({'a': 1}) == MyModel.model_validate({'a': 1}, extra='forbid')
 
 
+def test_pydantic_extra_type_respected_with_runtime_extra_override() -> None:
+    """https://github.com/pydantic/pydantic/issues/13024"""
+
+    class A(BaseModel, extra='forbid'):
+        __pydantic_extra__: dict[str, int]
+        a: int
+
+    # When extra='allow' is passed at runtime, __pydantic_extra__ type hint should be respected
+    a = A.model_validate({'a': 1, 'b': 2}, extra='allow')
+    assert a.a == 1
+    assert a.model_extra == {'b': 2}
+
+    # 'test' is not an int, so this should fail validation
+    with pytest.raises(ValidationError) as exc_info:
+        A.model_validate({'a': 1, 'b': 'test'}, extra='allow')
+    assert exc_info.value.error_count() == 1
+    assert exc_info.value.errors(include_url=False)[0]['type'] == 'int_parsing'
+    assert exc_info.value.errors(include_url=False)[0]['loc'] == ('b',)
+
+
 def test_equality_delegation():
     from unittest.mock import ANY
 

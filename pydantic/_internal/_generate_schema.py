@@ -818,7 +818,7 @@ class GenerateSchema:
 
                 extras_schema = None
                 extras_keys_schema = None
-                if core_config.get('extra_fields_behavior') == 'allow' and extra_info is not None:
+                if extra_info is not None:
                     tp = get_origin(extra_info.annotation)
                     if tp not in DICT_TYPES:
                         raise PydanticSchemaGenerationError(
