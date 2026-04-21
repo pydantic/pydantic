@@ -3165,3 +3165,225 @@ def test_model_fields_set_includes_extra_after_assignment():
     m.extra_after_init = 3
     assert m.model_fields_set == {'field', 'extra_at_init', 'extra_after_init'}
     assert m.model_extra == {'extra_at_init': 2, 'extra_after_init': 3}
+
+
+class TestPydanticUndefinedRejected:
+    """Tests for https://github.com/pydantic/pydantic/issues/11288.
+
+    PydanticUndefined should be rejected when explicitly passed as a field value.
+    """
+
+    def test_undefined_rejected_with_default_factory(self):
+        class Model(BaseModel):
+            field: dict = Field(default_factory=dict)
+
+        with pytest.raises(PydanticUserError, match='undefined-as-value'):
+            Model(field=PydanticUndefined)
+
+    def test_undefined_rejected_with_default(self):
+        class Model(BaseModel):
+            field: int = 0
+
+        with pytest.raises(PydanticUserError, match='undefined-as-value'):
+            Model(field=PydanticUndefined)
+
+    def test_undefined_rejected_required_field(self):
+        class Model(BaseModel):
+            field: int
+
+        with pytest.raises(PydanticUserError, match='undefined-as-value'):
+            Model(field=PydanticUndefined)
+
+    def test_undefined_rejected_model_validate(self):
+        class Model(BaseModel):
+            field: dict = Field(default_factory=dict)
+
+        with pytest.raises(PydanticUserError, match='undefined-as-value'):
+            Model.model_validate({'field': PydanticUndefined})
+
+    def test_undefined_rejected_multiple_fields(self):
+        class Model(BaseModel):
+            a: int = 0
+            b: str = 'default'
+
+        with pytest.raises(PydanticUserError, match="Field 'a'"):
+            Model(a=PydanticUndefined, b='hello')
+
+    def test_normal_values_still_work(self):
+        class Model(BaseModel):
+            field: dict = Field(default_factory=dict)
+
+        m1 = Model()
+        assert m1.field == {}
+
+        m2 = Model(field={'a': 1})
+        assert m2.field == {'a': 1}
+
+        m3 = Model.model_validate({})
+        assert m3.field == {}
+
+
+class TestExcludeIf:
+    """Tests for https://github.com/pydantic/pydantic/issues/10728.
+
+    ``exclude_if`` callable parameter for ``model_dump`` and ``model_dump_json``.
+    """
+
+    def test_exclude_empty_values(self):
+        class Model(BaseModel):
+            a: int = 0
+            b: list = []
+            c: dict = {}
+            d: str = ''
+            e: str = 'hello'
+
+        m = Model(a=1, e='world')
+        result = m.model_dump(exclude_if=lambda inst, k, v: isinstance(v, (list, dict, str)) and not v)
+        assert result == {'a': 1, 'e': 'world'}
+
+    def test_exclude_none(self):
+        class Model(BaseModel):
+            a: int
+            b: str | None = None
+
+        m = Model(a=1)
+        result = m.model_dump(exclude_if=lambda inst, k, v: v is None)
+        assert result == {'a': 1}
+
+    def test_exclude_defaults(self):
+        class Model(BaseModel):
+            a: int = 0
+            b: str = 'default'
+            c: str
+
+        m = Model(a=0, b='custom', c='val')
+        result = m.model_dump(
+            exclude_if=lambda inst, k, v: k in type(inst).model_fields and type(inst).model_fields[k].default == v
+        )
+        assert result == {'b': 'custom', 'c': 'val'}
+
+    def test_exclude_if_with_nested_model(self):
+        class Inner(BaseModel):
+            x: int = 0
+            y: str | None = None
+
+        class Outer(BaseModel):
+            name: str
+            inner: Inner
+
+        m = Outer(name='test', inner=Inner(x=1))
+        result = m.model_dump(exclude_if=lambda inst, k, v: v is None)
+        assert result == {'name': 'test', 'inner': {'x': 1}}
+
+    def test_exclude_if_with_list_of_models(self):
+        class Item(BaseModel):
+            val: int
+            tag: str | None = None
+
+        class Container(BaseModel):
+            items: list[Item]
+
+        m = Container(items=[Item(val=1, tag='a'), Item(val=2)])
+        result = m.model_dump(exclude_if=lambda inst, k, v: v is None)
+        assert result == {'items': [{'val': 1, 'tag': 'a'}, {'val': 2}]}
+
+    def test_exclude_if_none_is_noop(self):
+        class Model(BaseModel):
+            a: int = 1
+            b: str = 'x'
+
+        m = Model()
+        assert m.model_dump(exclude_if=None) == {'a': 1, 'b': 'x'}
+        assert m.model_dump() == {'a': 1, 'b': 'x'}
+
+    def test_exclude_if_combined_with_exclude_none(self):
+        class Model(BaseModel):
+            a: int = 0
+            b: str | None = None
+            c: list = []
+
+        m = Model()
+        # exclude_none removes b, exclude_if removes c
+        result = m.model_dump(
+            exclude_none=True,
+            exclude_if=lambda inst, k, v: isinstance(v, list) and not v,
+        )
+        assert result == {'a': 0}
+
+    def test_exclude_if_json_mode(self):
+        class Model(BaseModel):
+            a: int = 0
+            b: str | None = None
+            c: str = 'hello'
+
+        m = Model(a=1, c='world')
+
+        result = m.model_dump(
+            mode='json',
+            exclude_if=lambda inst, k, v: v is None,
+        )
+        assert result == {'a': 1, 'c': 'world'}
+
+    def test_model_dump_json_with_exclude_if(self):
+        import json
+
+        class Model(BaseModel):
+            a: int
+            b: str | None = None
+
+        m = Model(a=1)
+        result = m.model_dump_json(exclude_if=lambda inst, k, v: v is None)
+        assert json.loads(result) == {'a': 1}
+
+    def test_exclude_if_instance_parameter(self):
+        """The instance parameter receives the correct model instance."""
+
+        class Model(BaseModel):
+            a: int = 0
+            b: int = 0
+
+        instances = []
+
+        def capture_instance(inst, key, value):
+            instances.append(inst)
+            return False
+
+        m = Model(a=1, b=2)
+        m.model_dump(exclude_if=capture_instance)
+        assert all(inst is m for inst in instances)
+
+    def test_exclude_if_with_by_alias(self):
+        from pydantic import Field
+
+        class Model(BaseModel):
+            field_name: int = Field(alias='fieldName', default=0)
+            other: str | None = None
+
+        m = Model(**{'fieldName': 42})
+        result = m.model_dump(
+            by_alias=True,
+            exclude_if=lambda inst, k, v: v is None,
+        )
+        assert result == {'fieldName': 42}
+
+    def test_type_adapter_dump_python_exclude_if(self):
+        class Model(BaseModel):
+            a: int
+            b: str | None = None
+
+        ta = TypeAdapter(Model)
+        m = Model(a=1)
+        result = ta.dump_python(m, exclude_if=lambda inst, k, v: v is None)
+        assert result == {'a': 1}
+
+    def test_type_adapter_dump_json_exclude_if(self):
+        import json
+
+        class Model(BaseModel):
+            a: int
+            b: str | None = None
+
+        ta = TypeAdapter(Model)
+        m = Model(a=1)
+        result = ta.dump_json(m, exclude_if=lambda inst, k, v: v is None)
+        assert json.loads(result) == {'a': 1}

@@ -75,6 +75,7 @@ PydanticErrorCodes = Literal[
     'overlapping-unpack-typed-dict',
     'invalid-self-type',
     'validate-by-alias-and-name-false',
+    'undefined-as-value',
 ]
 
 
