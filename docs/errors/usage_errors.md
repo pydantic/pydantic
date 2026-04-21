@@ -1400,8 +1400,9 @@ or `model_validate`. `PydanticUndefined` is an internal sentinel used by Pydanti
 as input data.
 
 ```python
-from pydantic import BaseModel, PydanticUserError
 from pydantic_core import PydanticUndefined
+
+from pydantic import BaseModel, PydanticUserError
 
 
 class Model(BaseModel):

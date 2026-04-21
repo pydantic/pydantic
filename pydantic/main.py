@@ -92,12 +92,10 @@ def _check_frozen(model_cls: type[BaseModel], name: str, value: Any) -> None:
     )
 
 
-def _check_frozen_set_undefined(data: dict[str, Any]) -> None:
-    """Check if any values in the input data are ``PydanticUndefined``.
+def _raise_undefined_error(data: dict[str, Any]) -> None:
+    """Raise an error identifying which field received ``PydanticUndefined``.
 
-    ``PydanticUndefined`` is an internal sentinel used by pydantic and should not be passed
-    as a field value. Doing so can lead to unexpected behavior such as silently using the
-    field's default value instead of raising a validation error.
+    This is the slow-path called only when ``PydanticUndefined`` is detected in the input.
     """
     for key, value in data.items():
         if value is PydanticUndefined:
@@ -309,7 +307,8 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
         """
         # `__tracebackhide__` tells pytest and some other tools to omit this function from tracebacks
         __tracebackhide__ = True
-        _check_frozen_set_undefined(data)
+        if PydanticUndefined in data.values():
+            _raise_undefined_error(data)
         validated_self = self.__pydantic_validator__.validate_python(data, self_instance=self)
         if self is not validated_self:
             warnings.warn(
@@ -815,8 +814,8 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
                 code='validate-by-alias-and-name-false',
             )
 
-        if isinstance(obj, dict):
-            _check_frozen_set_undefined(obj)
+        if isinstance(obj, dict) and PydanticUndefined in obj.values():
+            _raise_undefined_error(obj)
 
         return cls.__pydantic_validator__.validate_python(
             obj,
