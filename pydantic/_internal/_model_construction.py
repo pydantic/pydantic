@@ -30,7 +30,7 @@ from ._config import ConfigWrapper
 from ._decorators import DecoratorInfos, PydanticDescriptorProxy, get_attribute_from_bases, unwrap_wrapped_function
 from ._fields import collect_model_fields, is_valid_field_name, is_valid_privateattr_name, rebuild_model_fields
 from ._generate_schema import GenerateSchema, InvalidSchemaError
-from ._generics import PydanticGenericMetadata, get_model_typevars_map
+from ._generics import PydanticGenericMetadata, generic_model_under_construction, get_model_typevars_map
 from ._import_utils import import_cached_base_model, import_cached_field_info
 from ._mock_val_ser import set_model_mocks
 from ._namespace_utils import NsResolver
@@ -246,26 +246,27 @@ class ModelMetaclass(ABCMeta):
 
             ns_resolver = NsResolver(parent_namespace=parent_namespace)
 
-            set_model_fields(cls, config_wrapper=config_wrapper, ns_resolver=ns_resolver)
+            with generic_model_under_construction(cls):
+                set_model_fields(cls, config_wrapper=config_wrapper, ns_resolver=ns_resolver)
 
-            # This is also set in `complete_model_class()`, after schema gen because they are recreated.
-            # We set them here as well for backwards compatibility:
-            cls.__pydantic_computed_fields__ = {
-                k: v.info for k, v in cls.__pydantic_decorators__.computed_fields.items()
-            }
+                # This is also set in `complete_model_class()`, after schema gen because they are recreated.
+                # We set them here as well for backwards compatibility:
+                cls.__pydantic_computed_fields__ = {
+                    k: v.info for k, v in cls.__pydantic_decorators__.computed_fields.items()
+                }
 
-            if config_wrapper.defer_build:
-                set_model_mocks(cls)
-            else:
-                # Any operation that requires accessing the field infos instances should be put inside
-                # `complete_model_class()`:
-                complete_model_class(
-                    cls,
-                    config_wrapper,
-                    ns_resolver,
-                    raise_errors=False,
-                    create_model_module=_create_model_module,
-                )
+                if config_wrapper.defer_build:
+                    set_model_mocks(cls)
+                else:
+                    # Any operation that requires accessing the field infos instances should be put inside
+                    # `complete_model_class()`:
+                    complete_model_class(
+                        cls,
+                        config_wrapper,
+                        ns_resolver,
+                        raise_errors=False,
+                        create_model_module=_create_model_module,
+                    )
 
             if config_wrapper.frozen and '__hash__' not in namespace:
                 set_default_hash_func(cls, bases)

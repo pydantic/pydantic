@@ -1731,7 +1731,6 @@ def test_generic_recursive_models_parametrized_with_model_subclass() -> None:
     Base[Other].model_validate({'t': {'child': {'t': {'child': None}}}})
 
 
-@pytest.mark.xfail(reason='Core schema generation is missing the M1 definition')
 def test_generic_recursive_models_inheritance() -> None:
     """https://github.com/pydantic/pydantic/issues/9969"""
 
@@ -1746,6 +1745,32 @@ def test_generic_recursive_models_inheritance() -> None:
     M2.model_rebuild()
 
     assert M2.__pydantic_complete__
+
+
+def test_generic_recursive_union_bound_issue_13085() -> None:
+    """https://github.com/pydantic/pydantic/issues/13085"""
+
+    from typing import Generic, TypeVar, Union
+
+    from pydantic._internal._forward_ref import PydanticRecursiveRef
+
+    TBaseItem = Union['GroupSpec', 'ArraySpec']
+    TItem = TypeVar('TItem', bound=TBaseItem)
+
+    class ArraySpec(BaseModel):
+        pass
+
+    class GroupSpec(BaseModel, Generic[TItem]):
+        members: TItem
+
+    class BaseGroupv04(GroupSpec[TBaseItem]):
+        pass
+
+    assert BaseGroupv04.__pydantic_complete__
+
+    members_ann = BaseGroupv04.model_fields['members'].annotation
+    args = get_args(members_ann)
+    assert not any(isinstance(a, PydanticRecursiveRef) for a in args)
 
 
 def test_generic_recursive_models_separate_parameters(create_module):

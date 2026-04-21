@@ -324,7 +324,20 @@ def replace_types(type_: Any, type_map: Mapping[TypeVar, Any] | None) -> Any:
         resolved_type_args = tuple(replace_types(t, type_map) for t in parameters)
         if all_identical(parameters, resolved_type_args):
             return type_
-        return type_[resolved_type_args]
+        parametrized = type_[resolved_type_args]
+        if isinstance(parametrized, PydanticRecursiveRef):
+            target_ref = parametrized.type_ref
+            for candidate in reversed(_generic_model_build_stack.get()):
+                if get_type_ref(candidate) == target_ref:
+                    return candidate
+            cached = get_cached_generic_type_early(type_, resolved_type_args)
+            if cached is not None:
+                return cached
+            if len(resolved_type_args) == 1:
+                cached = get_cached_generic_type_early(type_, resolved_type_args[0])
+                if cached is not None:
+                    return cached
+        return parametrized
 
     # Handle special case for typehints that can have lists as arguments.
     # `typing.Callable[[int, str], int]` is an example for this.
@@ -393,6 +406,33 @@ def map_generic_model_arguments(cls: type[BaseModel], args: tuple[Any, ...]) -> 
 
 
 _generic_recursion_cache: ContextVar[set[str] | None] = ContextVar('_generic_recursion_cache', default=None)
+
+_generic_model_build_stack: ContextVar[tuple[type[BaseModel], ...]] = ContextVar(
+    '_generic_model_build_stack', default=()
+)
+"""Stack of parametrized generic models currently being built (see `generic_model_under_construction`).
+
+Used so that `replace_types()` can resolve `PydanticRecursiveRef` placeholders emitted by nested
+`__class_getitem__` calls back to the real in-construction class (same `type_ref` as the placeholder).
+"""
+
+
+@contextmanager
+def generic_model_under_construction(cls: type[BaseModel]) -> Iterator[None]:
+    """Push `cls` onto a stack while its fields/schema are being finalized.
+
+    Only used for concrete parametrizations (generic origin set in metadata), so that recursive
+    `type_[args]` calls during field collection can be mapped back to the class object under construction.
+    """
+    if not cls.__pydantic_generic_metadata__.get('origin'):
+        yield
+        return
+    prev = _generic_model_build_stack.get()
+    token = _generic_model_build_stack.set(prev + (cls,))
+    try:
+        yield
+    finally:
+        _generic_model_build_stack.reset(token)
 
 
 @contextmanager
