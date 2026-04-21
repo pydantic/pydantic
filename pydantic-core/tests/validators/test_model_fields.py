@@ -211,20 +211,22 @@ def test_forbid_extra():
     ]
 
 
-def test_allow_extra_invalid():
-    with pytest.raises(SchemaError, match='extras_schema can only be used if extra_behavior=allow'):
-        SchemaValidator(
-            schema=core_schema.model_fields_schema(
-                fields={}, extras_schema=core_schema.int_schema(), extra_behavior='ignore'
-            )
+def test_extras_schema_with_non_allow_extra_behavior():
+    # extras_schema/extras_keys_schema are now allowed with any extra_behavior;
+    # they are only applied when extra_behavior resolves to 'allow' at runtime.
+    v = SchemaValidator(
+        schema=core_schema.model_fields_schema(
+            fields={}, extras_schema=core_schema.int_schema(), extra_behavior='ignore'
         )
+    )
+    assert v.validate_python({}) == ({}, None, set())
 
-    with pytest.raises(SchemaError, match='extras_keys_schema can only be used if extra_behavior=allow'):
-        SchemaValidator(
-            schema=core_schema.model_fields_schema(
-                fields={}, extras_keys_schema=core_schema.int_schema(), extra_behavior='ignore'
-            )
+    v = SchemaValidator(
+        schema=core_schema.model_fields_schema(
+            fields={}, extras_keys_schema=core_schema.int_schema(), extra_behavior='ignore'
         )
+    )
+    assert v.validate_python({}) == ({}, None, set())
 
 
 def test_allow_extra_wrong():

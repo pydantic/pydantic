@@ -194,13 +194,15 @@ def test_forbid_extra(schema_extra_behavior: dict[str, Any], validate_fn_extra_k
     ]
 
 
-def test_allow_extra_invalid():
-    with pytest.raises(SchemaError, match='extras_schema can only be used if extra_behavior=allow'):
-        SchemaValidator(
-            schema=core_schema.typed_dict_schema(
-                fields={}, extras_schema=core_schema.int_schema(), extra_behavior='ignore'
-            )
+def test_extras_schema_with_non_allow_extra_behavior():
+    # extras_schema is now allowed with any extra_behavior;
+    # it is only applied when extra_behavior resolves to 'allow' at runtime.
+    v = SchemaValidator(
+        schema=core_schema.typed_dict_schema(
+            fields={}, extras_schema=core_schema.int_schema(), extra_behavior='ignore'
         )
+    )
+    assert v.validate_python({}) == ({}, set())
 
 
 def test_str_config():

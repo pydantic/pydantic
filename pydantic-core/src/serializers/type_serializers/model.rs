@@ -49,7 +49,7 @@ impl BuildSerializer for ModelFieldsBuilder {
 
         let extra_serializer = match (schema.get_item(intern!(py, "extras_schema"))?, &fields_mode) {
             (Some(v), FieldsMode::ModelExtra) => Some(CombinedSerializer::build(&v.extract()?, config, definitions)?),
-            (Some(_), _) => return py_schema_err!("extras_schema can only be used if extra_behavior=allow"),
+            (Some(v), _) => Some(CombinedSerializer::build(&v.extract()?, config, definitions)?),
             (_, _) => None,
         };
 

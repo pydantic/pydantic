@@ -61,10 +61,9 @@ impl BuildValidator for DataclassArgsValidator {
 
         let extra_behavior = ExtraBehavior::from_schema_or_config(py, schema, config, ExtraBehavior::Ignore)?;
 
-        let extras_validator = match (schema.get_item(intern!(py, "extras_schema"))?, &extra_behavior) {
-            (Some(v), ExtraBehavior::Allow) => Some(build_validator(&v, config, definitions)?),
-            (Some(_), _) => return py_schema_err!("extras_schema can only be used if extra_behavior=allow"),
-            (_, _) => None,
+        let extras_validator = match schema.get_item(intern!(py, "extras_schema"))? {
+            Some(v) => Some(build_validator(&v, config, definitions)?),
+            None => None,
         };
 
         let fields_schema: Bound<'_, PyList> = schema.get_as_req(intern!(py, "fields"))?;

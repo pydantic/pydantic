@@ -2732,6 +2732,43 @@ def test_model_validate_with_validate_fn_override() -> None:
     ]
 
 
+def test_model_validate_extra_allow_runtime_respects_pydantic_extra_annotation() -> None:
+    """Regression test for https://github.com/pydantic/pydantic/issues/13024.
+
+    When extra='allow' is passed at runtime, __pydantic_extra__ type annotation must be respected.
+    """
+
+    class A(BaseModel, extra='forbid'):
+        __pydantic_extra__: dict[str, int]
+        a: int
+
+    # Extra field with wrong type should fail even with runtime extra='allow'
+    with pytest.raises(ValidationError) as exc_info:
+        A.model_validate({'a': 1, 'b': 'test'}, extra='allow')
+    assert exc_info.value.errors(include_url=False) == [
+        {
+            'type': 'int_parsing',
+            'loc': ('b',),
+            'msg': 'Input should be a valid integer, unable to parse string as an integer',
+            'input': 'test',
+        }
+    ]
+
+    # Extra field with correct type should pass
+    result = A.model_validate({'a': 1, 'b': 2}, extra='allow')
+    assert result.model_extra == {'b': 2}
+
+    # Subclass with extra='allow' statically should also respect the annotation
+    class B(A, extra='allow'):
+        pass
+
+    with pytest.raises(ValidationError):
+        B.model_validate({'a': 1, 'b': 'test'})
+
+    result_b = B.model_validate({'a': 1, 'b': 2})
+    assert result_b.model_extra == {'b': 2}
+
+
 def test_model_validate_json_with_validate_fn_override() -> None:
     class Model(BaseModel):
         a: float

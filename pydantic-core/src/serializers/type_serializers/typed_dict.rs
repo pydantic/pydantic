@@ -51,7 +51,7 @@ impl BuildSerializer for TypedDictSerializer {
             (Some(v), FieldsMode::TypedDictAllow) => {
                 Some(CombinedSerializer::build(&v.extract()?, config, definitions)?)
             }
-            (Some(_), _) => return py_schema_err!("extras_schema can only be used if extra_behavior=allow"),
+            (Some(v), _) => Some(CombinedSerializer::build(&v.extract()?, config, definitions)?),
             (_, _) => None,
         };
 
