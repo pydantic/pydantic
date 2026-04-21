@@ -329,8 +329,9 @@ def replace_types(type_: Any, type_map: Mapping[TypeVar, Any] | None) -> Any:
             target_ref = parametrized.type_ref
             build_stack = _generic_model_build_stack.get()
             if build_stack:
-                for candidate in reversed(build_stack):
-                    if get_type_ref(candidate) == target_ref:
+                # Entries store precomputed refs to avoid repeated get_type_ref() in this hot path.
+                for candidate, cls_type_ref in reversed(build_stack):
+                    if cls_type_ref == target_ref:
                         return candidate
             cached = get_cached_generic_type_early(type_, resolved_type_args)
             if cached is not None:
@@ -409,7 +410,7 @@ def map_generic_model_arguments(cls: type[BaseModel], args: tuple[Any, ...]) -> 
 
 _generic_recursion_cache: ContextVar[set[str] | None] = ContextVar('_generic_recursion_cache', default=None)
 
-_generic_model_build_stack: ContextVar[list[type[BaseModel]] | None] = ContextVar(
+_generic_model_build_stack: ContextVar[list[tuple[type[BaseModel], str]] | None] = ContextVar(
     '_generic_model_build_stack', default=None
 )
 """Stack of parametrized generic models currently being built (see `generic_model_under_construction`).
@@ -417,6 +418,7 @@ _generic_model_build_stack: ContextVar[list[type[BaseModel]] | None] = ContextVa
 Used so that `replace_types()` can resolve `PydanticRecursiveRef` placeholders emitted by nested
 `__class_getitem__` calls back to the real in-construction class (same `type_ref` as the placeholder).
 
+Each entry is ``(cls, get_type_ref(cls))`` so ``replace_types`` matches refs by string equality only.
 Implemented as a list with append/pop so nested construction stays O(1) per level (no tuple copying).
 """
 
@@ -436,7 +438,7 @@ def generic_model_under_construction(cls: type[BaseModel]) -> Iterator[None]:
     if stack is None:
         stack = []
         token = _generic_model_build_stack.set(stack)
-    stack.append(cls)
+    stack.append((cls, get_type_ref(cls)))
     try:
         yield
     finally:
