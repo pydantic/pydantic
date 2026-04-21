@@ -1395,8 +1395,8 @@ except PydanticUserError as exc_info:
 
 ## `PydanticUndefined` used as a value {#undefined-as-value}
 
-This error is raised when `PydanticUndefined` is passed as a field value to a `BaseModel` constructor
-or `model_validate`. `PydanticUndefined` is an internal sentinel used by Pydantic and must not be used
+This error is raised when `PydanticUndefined` is passed as a field value via
+`model_validate`. `PydanticUndefined` is an internal sentinel used by Pydantic and must not be used
 as input data.
 
 ```python
@@ -1410,7 +1410,7 @@ class Model(BaseModel):
 
 
 try:
-    Model(a=PydanticUndefined)
+    Model.model_validate({'a': PydanticUndefined})
 except PydanticUserError as exc_info:
     assert exc_info.code == 'undefined-as-value'
 ```

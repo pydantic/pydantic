@@ -3173,41 +3173,34 @@ class TestPydanticUndefinedRejected:
     PydanticUndefined should be rejected when explicitly passed as a field value.
     """
 
-    def test_undefined_rejected_with_default_factory(self):
-        class Model(BaseModel):
-            field: dict = Field(default_factory=dict)
-
-        with pytest.raises(PydanticUserError, match='undefined-as-value'):
-            Model(field=PydanticUndefined)
-
-    def test_undefined_rejected_with_default(self):
-        class Model(BaseModel):
-            field: int = 0
-
-        with pytest.raises(PydanticUserError, match='undefined-as-value'):
-            Model(field=PydanticUndefined)
-
-    def test_undefined_rejected_required_field(self):
-        class Model(BaseModel):
-            field: int
-
-        with pytest.raises(PydanticUserError, match='undefined-as-value'):
-            Model(field=PydanticUndefined)
-
-    def test_undefined_rejected_model_validate(self):
+    def test_undefined_rejected_model_validate_default_factory(self):
         class Model(BaseModel):
             field: dict = Field(default_factory=dict)
 
         with pytest.raises(PydanticUserError, match='undefined-as-value'):
             Model.model_validate({'field': PydanticUndefined})
 
-    def test_undefined_rejected_multiple_fields(self):
+    def test_undefined_rejected_model_validate_default(self):
+        class Model(BaseModel):
+            field: int = 0
+
+        with pytest.raises(PydanticUserError, match='undefined-as-value'):
+            Model.model_validate({'field': PydanticUndefined})
+
+    def test_undefined_rejected_model_validate_required(self):
+        class Model(BaseModel):
+            field: int
+
+        with pytest.raises(PydanticUserError, match='undefined-as-value'):
+            Model.model_validate({'field': PydanticUndefined})
+
+    def test_undefined_rejected_model_validate_multiple(self):
         class Model(BaseModel):
             a: int = 0
             b: str = 'default'
 
         with pytest.raises(PydanticUserError, match="Field 'a'"):
-            Model(a=PydanticUndefined, b='hello')
+            Model.model_validate({'a': PydanticUndefined, 'b': 'hello'})
 
     def test_normal_values_still_work(self):
         class Model(BaseModel):

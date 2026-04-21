@@ -307,8 +307,6 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
         """
         # `__tracebackhide__` tells pytest and some other tools to omit this function from tracebacks
         __tracebackhide__ = True
-        if PydanticUndefined in data.values():
-            _raise_undefined_error(data)
         validated_self = self.__pydantic_validator__.validate_python(data, self_instance=self)
         if self is not validated_self:
             warnings.warn(
