@@ -92,6 +92,53 @@ def _check_frozen(model_cls: type[BaseModel], name: str, value: Any) -> None:
     )
 
 
+def _raise_undefined_error(data: dict[str, Any]) -> None:
+    """Raise an error identifying which field received ``PydanticUndefined``.
+
+    This is the slow-path called only when ``PydanticUndefined`` is detected in the input.
+    """
+    for key, value in data.items():
+        if value is PydanticUndefined:
+            raise PydanticUserError(
+                f'Field {key!r} received `PydanticUndefined` as a value. '
+                f'`PydanticUndefined` is a pydantic internal sentinel value and must not be used as input data.',
+                code='undefined-as-value',
+            )
+
+
+def _apply_exclude_if(
+    instance: Any,
+    data: dict[str, Any],
+    exclude_if: Callable[[Any, str, Any], bool],
+) -> dict[str, Any]:
+    """Apply an ``exclude_if`` callable to filter fields from serialized model output.
+
+    Recursively walks into nested model values so the callable is invoked with
+    the correct model instance at each level.
+    """
+    result: dict[str, Any] = {}
+    for key, value in data.items():
+        if exclude_if(instance, key, value):
+            continue
+        # Recurse into nested model values
+        attr = getattr(instance, key, None) if hasattr(instance, '__pydantic_fields__') else None
+        if attr is not None:
+            value = _recurse_exclude_if(attr, value, exclude_if)
+        result[key] = value
+    return result
+
+
+def _recurse_exclude_if(attr: Any, value: Any, exclude_if: Callable[[Any, str, Any], bool]) -> Any:
+    """Recurse into nested structures to apply ``exclude_if``."""
+    if hasattr(attr, '__pydantic_fields__') and isinstance(value, dict):
+        return _apply_exclude_if(attr, value, exclude_if)
+    if isinstance(attr, (list, tuple)) and isinstance(value, list):
+        return [_recurse_exclude_if(a, v, exclude_if) for a, v in zip(attr, value, strict=False)]
+    if isinstance(attr, dict) and isinstance(value, dict):
+        return {k: _recurse_exclude_if(attr.get(k), v, exclude_if) for k, v in value.items() if k in attr}
+    return value
+
+
 def _model_field_setattr_handler(model: BaseModel, name: str, val: Any) -> None:
     model.__dict__[name] = val
     model.__pydantic_fields_set__.add(name)
@@ -435,6 +482,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
         exclude_unset: bool = False,
         exclude_defaults: bool = False,
         exclude_none: bool = False,
+        exclude_if: Callable[[Any, str, Any], bool] | None = None,
         exclude_computed_fields: bool = False,
         round_trip: bool = False,
         warnings: bool | Literal['none', 'warn', 'error'] = True,
@@ -458,6 +506,10 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
             exclude_unset: Whether to exclude fields that have not been explicitly set.
             exclude_defaults: Whether to exclude fields that are set to their default value.
             exclude_none: Whether to exclude fields that have a value of `None`.
+            exclude_if: A callable that receives ``(instance, field_name, value)`` and returns ``True`` to
+                exclude the field. Applied after all other exclusion parameters. The ``instance`` is the
+                model instance being serialized, ``field_name`` is the key in the serialized output, and
+                ``value`` is the serialized value.
             exclude_computed_fields: Whether to exclude computed fields.
                 While this can be useful for round-tripping, it is usually recommended to use the dedicated
                 `round_trip` parameter instead.
@@ -472,7 +524,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
         Returns:
             A dictionary representation of the model.
         """
-        return self.__pydantic_serializer__.to_python(
+        result = self.__pydantic_serializer__.to_python(
             self,
             mode=mode,
             by_alias=by_alias,
@@ -489,6 +541,9 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
             serialize_as_any=serialize_as_any,
             polymorphic_serialization=polymorphic_serialization,
         )
+        if exclude_if is not None:
+            result = _apply_exclude_if(self, result, exclude_if)
+        return result
 
     def model_dump_json(
         self,
@@ -502,6 +557,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
         exclude_unset: bool = False,
         exclude_defaults: bool = False,
         exclude_none: bool = False,
+        exclude_if: Callable[[Any, str, Any], bool] | None = None,
         exclude_computed_fields: bool = False,
         round_trip: bool = False,
         warnings: bool | Literal['none', 'warn', 'error'] = True,
@@ -525,6 +581,10 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
             exclude_unset: Whether to exclude fields that have not been explicitly set.
             exclude_defaults: Whether to exclude fields that are set to their default value.
             exclude_none: Whether to exclude fields that have a value of `None`.
+            exclude_if: A callable that receives ``(instance, field_name, value)`` and returns ``True`` to
+                exclude the field. Applied after all other exclusion parameters. The ``instance`` is the
+                model instance being serialized, ``field_name`` is the key in the serialized output, and
+                ``value`` is the serialized value.
             exclude_computed_fields: Whether to exclude computed fields.
                 While this can be useful for round-tripping, it is usually recommended to use the dedicated
                 `round_trip` parameter instead.
@@ -539,6 +599,29 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
         Returns:
             A JSON string representation of the model.
         """
+        if exclude_if is not None:
+            # When exclude_if is used, serialize to Python first (with JSON-compatible types),
+            # apply the filter, then encode to JSON.
+            import json
+
+            data = self.model_dump(
+                mode='json',
+                include=include,
+                exclude=exclude,
+                context=context,
+                by_alias=by_alias,
+                exclude_unset=exclude_unset,
+                exclude_defaults=exclude_defaults,
+                exclude_none=exclude_none,
+                exclude_if=exclude_if,
+                exclude_computed_fields=exclude_computed_fields,
+                round_trip=round_trip,
+                warnings=warnings,
+                fallback=fallback,
+                serialize_as_any=serialize_as_any,
+                polymorphic_serialization=polymorphic_serialization,
+            )
+            return json.dumps(data, indent=indent, ensure_ascii=ensure_ascii)
         return self.__pydantic_serializer__.to_json(
             self,
             indent=indent,
@@ -728,6 +811,9 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
                 'At least one of `by_alias` or `by_name` must be set to True.',
                 code='validate-by-alias-and-name-false',
             )
+
+        if isinstance(obj, dict) and PydanticUndefined in obj.values():
+            _raise_undefined_error(obj)
 
         return cls.__pydantic_validator__.validate_python(
             obj,
