@@ -2,6 +2,7 @@
 
 from __future__ import annotations as _annotations
 
+import contextlib
 import operator
 import sys
 import typing
@@ -246,7 +247,15 @@ class ModelMetaclass(ABCMeta):
 
             ns_resolver = NsResolver(parent_namespace=parent_namespace)
 
-            with generic_model_under_construction(cls):
+            # Only track generic parametrizations (`origin` set); the stack is used by `replace_types` when
+            # resolving `PydanticRecursiveRef` during recursive `__class_getitem__`. `nullcontext` avoids
+            # context-manager and ContextVar overhead on the common path (non-parametrized models).
+            _gen_build_ctx = (
+                generic_model_under_construction(cls)
+                if cls.__pydantic_generic_metadata__.get('origin')
+                else contextlib.nullcontext()
+            )
+            with _gen_build_ctx:
                 set_model_fields(cls, config_wrapper=config_wrapper, ns_resolver=ns_resolver)
 
                 # This is also set in `complete_model_class()`, after schema gen because they are recreated.

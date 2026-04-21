@@ -327,9 +327,11 @@ def replace_types(type_: Any, type_map: Mapping[TypeVar, Any] | None) -> Any:
         parametrized = type_[resolved_type_args]
         if isinstance(parametrized, PydanticRecursiveRef):
             target_ref = parametrized.type_ref
-            for candidate in reversed(_generic_model_build_stack.get()):
-                if get_type_ref(candidate) == target_ref:
-                    return candidate
+            build_stack = _generic_model_build_stack.get()
+            if build_stack:
+                for candidate in reversed(build_stack):
+                    if get_type_ref(candidate) == target_ref:
+                        return candidate
             cached = get_cached_generic_type_early(type_, resolved_type_args)
             if cached is not None:
                 return cached
@@ -407,13 +409,15 @@ def map_generic_model_arguments(cls: type[BaseModel], args: tuple[Any, ...]) -> 
 
 _generic_recursion_cache: ContextVar[set[str] | None] = ContextVar('_generic_recursion_cache', default=None)
 
-_generic_model_build_stack: ContextVar[tuple[type[BaseModel], ...]] = ContextVar(
-    '_generic_model_build_stack', default=()
+_generic_model_build_stack: ContextVar[list[type[BaseModel]] | None] = ContextVar(
+    '_generic_model_build_stack', default=None
 )
 """Stack of parametrized generic models currently being built (see `generic_model_under_construction`).
 
 Used so that `replace_types()` can resolve `PydanticRecursiveRef` placeholders emitted by nested
 `__class_getitem__` calls back to the real in-construction class (same `type_ref` as the placeholder).
+
+Implemented as a list with append/pop so nested construction stays O(1) per level (no tuple copying).
 """
 
 
@@ -427,12 +431,18 @@ def generic_model_under_construction(cls: type[BaseModel]) -> Iterator[None]:
     if not cls.__pydantic_generic_metadata__.get('origin'):
         yield
         return
-    prev = _generic_model_build_stack.get()
-    token = _generic_model_build_stack.set(prev + (cls,))
+    stack = _generic_model_build_stack.get()
+    token = None
+    if stack is None:
+        stack = []
+        token = _generic_model_build_stack.set(stack)
+    stack.append(cls)
     try:
         yield
     finally:
-        _generic_model_build_stack.reset(token)
+        stack.pop()
+        if token is not None:
+            _generic_model_build_stack.reset(token)
 
 
 @contextmanager
