@@ -87,7 +87,7 @@ impl PySome {
 #[pymethods]
 impl PySome {
     pub fn __repr__(&self, py: Python) -> PyResult<String> {
-        Ok(format!("Some({})", self.value.bind(py).repr()?,))
+        Ok(format!("Some({})", self.value.bind(py).repr()?))
     }
 
     #[new]
@@ -348,12 +348,10 @@ impl SchemaValidator {
 
         let extra = Extra {
             input_type: InputType::Python,
-            data: None,
             strict,
             extra_behavior,
             from_attributes,
             context,
-            self_instance: None,
             cache_str: self.cache_str,
             by_alias,
             by_name,
@@ -365,6 +363,7 @@ impl SchemaValidator {
             guard,
             false.into(),
             Some(field_name.as_py_str().bind(py).clone()),
+            None,
         );
         self.validator
             .validate_assignment(py, &obj, &field_name, &field_value, &mut state)
@@ -380,18 +379,16 @@ impl SchemaValidator {
     ) -> PyResult<Py<PyAny>> {
         let extra = Extra {
             input_type: InputType::Python,
-            data: None,
             strict,
             extra_behavior: None,
             from_attributes: None,
             context,
-            self_instance: None,
             cache_str: self.cache_str,
             by_alias: None,
             by_name: None,
         };
         let recursion_guard = &mut RecursionState::default();
-        let mut state = ValidationState::new(extra, recursion_guard, false.into(), None);
+        let mut state = ValidationState::new(extra, recursion_guard, false.into(), None, None);
         let r = self.validator.default_value(py, None::<i64>, &mut state);
         match r {
             Ok(maybe_default) => match maybe_default {
@@ -450,7 +447,6 @@ impl SchemaValidator {
                 extra_behavior,
                 from_attributes,
                 context,
-                self_instance,
                 input_type,
                 self.cache_str,
                 by_alias,
@@ -459,6 +455,7 @@ impl SchemaValidator {
             &mut recursion_guard,
             allow_partial,
             None,
+            self_instance,
         );
         self.validator.validate(py, input, &mut state)
     }
@@ -676,14 +673,11 @@ fn unknown_schema_type(val_type: &str) -> PyErr {
     py_schema_error_type!("Unknown schema type: \"{val_type}\"")
 }
 
-/// More (mostly immutable) data to pass between validators, should probably be class `Context`,
-/// but that would confuse it with context as per pydantic/pydantic#1549
+/// Constants for a validation process
 #[derive(Debug, Clone)]
 pub struct Extra<'a, 'py> {
     /// Validation mode
     pub input_type: InputType,
-    /// This is used as the `data` kwargs to validator functions and default factories (if they accept the argument)
-    pub data: Option<Bound<'py, PyDict>>,
     /// whether we're in strict or lax mode
     pub strict: Option<bool>,
     /// Whether to ignore, allow, or forbid extra data during model validation
@@ -693,8 +687,6 @@ pub struct Extra<'a, 'py> {
     pub from_attributes: Option<bool>,
     /// context used in validator functions
     pub context: Option<&'a Bound<'py, PyAny>>,
-    /// This is an instance of the model or dataclass being validated, when validation is performed from `__init__`
-    self_instance: Option<&'a Bound<'py, PyAny>>,
     /// Whether to use a cache of short strings to accelerate python string construction
     cache_str: StringCacheMode,
     /// Whether to use the field's alias to match the input data to an attribute.
@@ -710,7 +702,6 @@ impl<'a, 'py> Extra<'a, 'py> {
         extra_behavior: Option<ExtraBehavior>,
         from_attributes: Option<bool>,
         context: Option<&'a Bound<'py, PyAny>>,
-        self_instance: Option<&'a Bound<'py, PyAny>>,
         input_type: InputType,
         cache_str: StringCacheMode,
         by_alias: Option<bool>,
@@ -718,32 +709,13 @@ impl<'a, 'py> Extra<'a, 'py> {
     ) -> Self {
         Extra {
             input_type,
-            data: None,
             strict,
             extra_behavior,
             from_attributes,
             context,
-            self_instance,
             cache_str,
             by_alias,
             by_name,
-        }
-    }
-}
-
-impl Extra<'_, '_> {
-    pub fn as_strict(&self) -> Self {
-        Self {
-            input_type: self.input_type,
-            data: self.data.clone(),
-            strict: Some(true),
-            extra_behavior: self.extra_behavior,
-            from_attributes: self.from_attributes,
-            context: self.context,
-            self_instance: self.self_instance,
-            cache_str: self.cache_str,
-            by_alias: self.by_alias,
-            by_name: self.by_name,
         }
     }
 }

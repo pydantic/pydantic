@@ -753,7 +753,7 @@ fn maybe_as_enum<'py>(v: &Bound<'py, PyAny>) -> Option<Bound<'py, PyAny>> {
 }
 
 #[cfg_attr(debug_assertions, derive(Debug))]
-pub struct PyArgs<'py> {
+pub(crate) struct PyArgs<'py> {
     pub args: Option<PyPosArgs<'py>>,
     pub kwargs: Option<PyKwargs<'py>>,
 }
@@ -761,7 +761,7 @@ pub struct PyArgs<'py> {
 #[cfg_attr(debug_assertions, derive(Debug))]
 pub struct PyPosArgs<'py>(Bound<'py, PyTuple>);
 #[cfg_attr(debug_assertions, derive(Debug))]
-pub struct PyKwargs<'py>(Bound<'py, PyDict>);
+pub(crate) struct PyKwargs<'py>(Bound<'py, PyDict>);
 
 impl<'py> PyArgs<'py> {
     pub fn new(args: Option<Bound<'py, PyTuple>>, kwargs: Option<Bound<'py, PyDict>>) -> Self {

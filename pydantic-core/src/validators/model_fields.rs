@@ -228,7 +228,7 @@ impl Validator for ModelFieldsValidator {
         }
 
         let new_data = {
-            let state = &mut state.rebind_extra(move |extra| extra.data = Some(data_dict));
+            let state = &mut state.scoped_set_data(Some(data_dict));
 
             if let Some(field) = self.fields.iter().find(|f| &*f.name == field_name) {
                 if field.frozen {
@@ -328,8 +328,8 @@ impl ModelFieldsValidator {
         };
 
         {
-            let state = &mut state.rebind_extra(|extra| extra.data = Some(model_dict.clone()));
-            let state = &mut state.scoped_set(|state| &mut state.has_field_error, false);
+            let state = &mut state.scoped_set_data(Some(model_dict.clone()));
+            let state = &mut state.scoped_clear_field_error();
 
             for field in &self.fields {
                 let state = &mut state.scoped_set_field_name(Some(field.name.as_py_str().bind(py).clone()));
@@ -560,8 +560,8 @@ impl ModelFieldsValidator {
         let mut errors: Vec<ValLineError> = Vec::new();
         let fields_set = PySet::empty(py)?;
 
-        let state = &mut state.rebind_extra(|extra| extra.data = Some(model_dict.clone()));
-        let state = &mut state.scoped_set(|state| &mut state.has_field_error, false);
+        let state = &mut state.scoped_set_data(Some(model_dict.clone()));
+        let state = &mut state.scoped_clear_field_error();
 
         let model_extra_dict = PyDict::new(py);
         for (key, value) in &**json_object {
