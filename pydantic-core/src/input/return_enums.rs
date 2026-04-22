@@ -558,6 +558,7 @@ impl EitherBytes<'_, '_> {
 #[derive(IntoPyObject)]
 pub enum EitherInt<'py> {
     I64(i64),
+    #[expect(dead_code, reason = "Should this variant be used?")]
     U64(u64),
     BigInt(BigInt),
     Py(Bound<'py, PyAny>),

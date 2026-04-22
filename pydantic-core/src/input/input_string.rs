@@ -23,7 +23,7 @@ use super::{
 };
 
 #[derive(Debug, Clone, IntoPyObject, IntoPyObjectRef)]
-pub enum StringMapping<'py> {
+pub(crate) enum StringMapping<'py> {
     String(Bound<'py, PyString>),
     Mapping(Bound<'py, PyDict>),
 }
@@ -265,7 +265,7 @@ impl<'py> BorrowInput<'py> for StringMapping<'py> {
     }
 }
 
-pub struct StringMappingDict<'py>(Bound<'py, PyDict>);
+pub(crate) struct StringMappingDict<'py>(Bound<'py, PyDict>);
 
 impl<'py> Arguments<'py> for StringMappingDict<'py> {
     type Args = Never;

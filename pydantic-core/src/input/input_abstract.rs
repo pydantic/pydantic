@@ -56,7 +56,7 @@ pub type ValMatch<T> = ValResult<ValidationMatch<T>>;
 /// the convention is to either implement:
 /// * `strict_*` & `lax_*` if they have different behavior
 /// * or, `validate_*` and `strict_*` to just call `validate_*` if the behavior for strict and lax is the same
-pub trait Input<'py>: fmt::Debug {
+pub(crate) trait Input<'py>: fmt::Debug {
     fn py_converter(&self) -> impl IntoPyObject<'py> + '_;
 
     #[inline]
@@ -188,7 +188,7 @@ pub trait Input<'py>: fmt::Debug {
 /// this trait we abstract over whether the return value from the iterator is owned
 /// or borrowed; all we care about is that we can borrow it again with `borrow_input`
 /// for some lifetime 'a.
-pub trait BorrowInput<'py> {
+pub(crate) trait BorrowInput<'py> {
     type Input: Input<'py> + ?Sized;
     fn borrow_input(&self) -> &Self::Input;
 }
@@ -237,7 +237,7 @@ pub trait ConsumeIterator<T> {
 }
 
 /// For validations from a dictionary
-pub trait ValidatedDict<'py> {
+pub(crate) trait ValidatedDict<'py> {
     type Key<'a>: BorrowInput<'py> + Clone + Into<LocItem>
     where
         Self: 'a;
