@@ -87,7 +87,7 @@ impl PySome {
 #[pymethods]
 impl PySome {
     pub fn __repr__(&self, py: Python) -> PyResult<String> {
-        Ok(format!("Some({})", self.value.bind(py).repr()?,))
+        Ok(format!("Some({})", self.value.bind(py).repr()?))
     }
 
     #[new]
@@ -727,23 +727,6 @@ impl<'a, 'py> Extra<'a, 'py> {
             cache_str,
             by_alias,
             by_name,
-        }
-    }
-}
-
-impl Extra<'_, '_> {
-    pub fn as_strict(&self) -> Self {
-        Self {
-            input_type: self.input_type,
-            data: self.data.clone(),
-            strict: Some(true),
-            extra_behavior: self.extra_behavior,
-            from_attributes: self.from_attributes,
-            context: self.context,
-            self_instance: self.self_instance,
-            cache_str: self.cache_str,
-            by_alias: self.by_alias,
-            by_name: self.by_name,
         }
     }
 }
