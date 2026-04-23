@@ -1,3 +1,4 @@
+import inspect
 import os
 import warnings
 from pathlib import Path
@@ -37,15 +38,15 @@ class BaseSettings(BaseModel):
         **values: Any,
     ) -> None:
         # Uses something other than `self` the first arg to allow "self" as a settable attribute
-        super().__init__(
-            **__pydantic_self__._build_values(
-                values,
-                _env_file=_env_file,
-                _env_file_encoding=_env_file_encoding,
-                _env_nested_delimiter=_env_nested_delimiter,
-                _secrets_dir=_secrets_dir,
-            )
-        )
+        _build_kw = {
+            '_env_file': _env_file,
+            '_env_file_encoding': _env_file_encoding,
+            '_env_nested_delimiter': _env_nested_delimiter,
+            '_secrets_dir': _secrets_dir,
+        }
+        _sig = inspect.signature(__pydantic_self__._build_values)
+        _build_kw = {k: v for k, v in _build_kw.items() if k in _sig.parameters}
+        super().__init__(**__pydantic_self__._build_values(values, **_build_kw))
 
     def _build_values(
         self,
@@ -304,7 +305,7 @@ class SecretsSettingsSource:
                     continue
 
                 if path.is_file():
-                    secret_value = path.read_text().strip()
+                    secret_value = path.read_text(encoding='utf-8').strip()
                     if field.is_complex():
                         try:
                             secret_value = settings.__config__.parse_env_var(field.name, secret_value)
