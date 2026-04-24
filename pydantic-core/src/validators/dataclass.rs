@@ -156,8 +156,8 @@ impl Validator for DataclassArgsValidator {
         let mut errors: Vec<ValLineError> = Vec::new();
         let mut used_keys: AHashSet<&str> = AHashSet::with_capacity(self.fields.len());
 
-        let state = &mut state.rebind_extra(|extra| extra.data = Some(output_dict.clone()));
-        let state = &mut state.scoped_set(|state| &mut state.has_field_error, false);
+        let state = &mut state.scoped_set_data(Some(output_dict.clone()));
+        let state = &mut state.scoped_clear_field_error();
 
         let extra_behavior = state.extra_behavior_or(self.extra_behavior);
 
@@ -407,9 +407,7 @@ impl Validator for DataclassArgsValidator {
                 }
             }
 
-            let state = &mut state.rebind_extra(|extra| {
-                extra.data = Some(data_dict.clone());
-            });
+            let state = &mut state.scoped_set_data(Some(data_dict.clone()));
             let state = &mut state.scoped_set_field_name(Some(field.name.as_py_str().bind(py).clone()));
 
             match field.validator.validate(py, field_value, state) {
@@ -527,7 +525,7 @@ impl Validator for DataclassValidator {
         input: &(impl Input<'py> + ?Sized),
         state: &mut ValidationState<'_, 'py>,
     ) -> ValResult<Py<PyAny>> {
-        if let Some(self_instance) = state.extra().self_instance {
+        if let Some(self_instance) = state.self_instance {
             // in the case that self_instance is Some, we're calling validation from within `BaseModel.__init__`
             return self.validate_init(py, self_instance, input, state);
         }
@@ -631,7 +629,7 @@ impl DataclassValidator {
     ) -> ValResult<Py<PyAny>> {
         // we need to set `self_instance` to None for nested validators as we don't want to operate on the self_instance
         // instance anymore
-        let state = &mut state.rebind_extra(|extra| extra.self_instance = None);
+        let state = &mut state.scoped_clear_self_instance();
         let val_output = self.validator.validate(py, input, state)?;
 
         self.set_dict_call(py, self_instance, val_output, input)?;
