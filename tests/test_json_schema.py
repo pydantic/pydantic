@@ -6719,6 +6719,35 @@ def test_annotated_field_validator_input_type() -> None:
     }
 
 
+@pytest.mark.parametrize(
+    'constraint,json_schema_key',
+    [
+        ('gt', 'exclusiveMinimum'),
+        ('lt', 'exclusiveMaximum'),
+        ('ge', 'minimum'),
+        ('le', 'maximum'),
+        ('multiple_of', 'multipleOf'),
+    ],
+)
+def test_numeric_constraint_after_validator_uses_json_schema_key(constraint, json_schema_key) -> None:
+    """Numeric constraints applied to a function-* schema must be exposed under the JSON Schema name.
+
+    See: https://github.com/pydantic/pydantic/issues/11576.
+    """
+    value = 3
+    ta = TypeAdapter(Annotated[int, BeforeValidator(lambda v: v), Field(**{constraint: value})])
+    schema = ta.json_schema()
+    assert constraint not in schema, schema
+    assert schema.get(json_schema_key) == value, schema
+
+
+def test_numeric_constraints_combined_with_validator_use_json_schema_keys() -> None:
+    """The reproducer from #11576 should not leak `lt` into the generated JSON Schema."""
+    ta = TypeAdapter(Annotated[int, Field(gt=2), BeforeValidator(lambda v: v), Field(lt=10)])
+    schema = ta.json_schema()
+    assert schema == {'type': 'integer', 'exclusiveMinimum': 2, 'exclusiveMaximum': 10}
+
+
 def test_decorator_field_validator_input_type() -> None:
     class Model(BaseModel):
         a: int

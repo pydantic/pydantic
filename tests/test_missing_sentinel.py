@@ -112,10 +112,15 @@ def test_missing_sentinel_constraints_pushdown() -> None:
 
     assert js_schema['properties']['f1'] == {'minimum': 1, 'title': 'F1', 'type': 'integer'}
     assert js_schema['properties']['f2'] == {'minimum': 1, 'title': 'F2', 'type': 'integer'}
-    # Note: 'ge' is still wrong (see https://github.com/pydantic/pydantic/issues/11576)
-    assert js_schema['properties']['f3'] == {'anyOf': [{'type': 'integer'}, {'type': 'string'}], 'ge': 1, 'title': 'F3'}
+    # Wrapped numeric constraints are now translated to their JSON Schema keys
+    # via `_NUMERIC_CONSTRAINT_TO_JSON_SCHEMA_KEY` (fixes #11576).
+    assert js_schema['properties']['f3'] == {
+        'anyOf': [{'type': 'integer'}, {'type': 'string'}],
+        'minimum': 1,
+        'title': 'F3',
+    }
     assert js_schema['properties']['f4'] == {
-        'anyOf': [{'anyOf': [{'type': 'integer'}, {'type': 'string'}], 'ge': 1}, {'type': 'null'}],
+        'anyOf': [{'anyOf': [{'type': 'integer'}, {'type': 'string'}], 'minimum': 1}, {'type': 'null'}],
         'title': 'F4',
     }
 

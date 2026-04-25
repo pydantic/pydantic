@@ -22,6 +22,18 @@ INEQUALITY = {'le', 'ge', 'lt', 'gt'}
 NUMERIC_CONSTRAINTS = {'multiple_of', *INEQUALITY}
 ALLOW_INF_NAN = {'allow_inf_nan'}
 
+# Translation of numeric core-schema constraint names to JSON Schema keys, used when
+# the constraint can't be applied directly to the inner schema (e.g. it is wrapped by
+# a `function-*` schema) and is instead exposed via `pydantic_js_updates` metadata.
+# See `apply_known_metadata` and https://github.com/pydantic/pydantic/issues/11576.
+_NUMERIC_CONSTRAINT_TO_JSON_SCHEMA_KEY = {
+    'lt': 'exclusiveMaximum',
+    'le': 'maximum',
+    'gt': 'exclusiveMinimum',
+    'ge': 'minimum',
+    'multiple_of': 'multipleOf',
+}
+
 STR_CONSTRAINTS = {
     *LENGTH_CONSTRAINTS,
     *STRICT,
@@ -264,11 +276,25 @@ def apply_known_metadata(annotation: Any, schema: CoreSchema) -> CoreSchema | No
                 else:
                     js_constraint_key = 'minLength' if constraint == 'min_length' else 'maxLength'
             else:
-                js_constraint_key = constraint
+                # Translate numeric core-schema constraint names to their JSON Schema equivalents.
+                # This mirrors `GenerateJsonSchema.ValidationsMapping.numeric` in `pydantic/json_schema.py`,
+                # which only runs when the constraint is applied directly to e.g. an `int` schema.
+                # When the schema is wrapped (e.g. by a `BeforeValidator`), the constraint is applied
+                # via `pydantic_js_updates` metadata instead, and so we must translate the key here
+                # to avoid emitting an invalid JSON Schema like `{'lt': 5}` (#11576). Decimal-only
+                # constraints (`max_digits`, `decimal_places`) have no JSON Schema equivalent —
+                # `DecimalSchema` encodes them into a regex `pattern` instead — so dropping them
+                # from `pydantic_js_updates` is preferable to leaking the raw core-schema name.
+                if constraint in ('max_digits', 'decimal_places'):
+                    js_constraint_key = None
+                else:
+                    js_constraint_key = _NUMERIC_CONSTRAINT_TO_JSON_SCHEMA_KEY.get(constraint, constraint)
 
             schema = cs.no_info_after_validator_function(
                 partial(NUMERIC_VALIDATOR_LOOKUP[constraint], **{constraint: value}), schema
             )
+            if js_constraint_key is None:
+                continue
             metadata = schema.get('metadata', {})
             if (existing_json_schema_updates := metadata.get('pydantic_js_updates')) is not None:
                 metadata['pydantic_js_updates'] = {
