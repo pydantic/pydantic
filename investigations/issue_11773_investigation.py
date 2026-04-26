@@ -63,3 +63,4 @@ print("pydantic-core detects __dataclass_fields__ via inheritance and overrides"
 print("the serialization schema regardless of what Python-side schema is provided.")
 print("Fix must be implemented in pydantic-core's Rust serializer.")
 print("Relevant file to fix: pydantic-core/src/serializers/")
+
