@@ -25,6 +25,13 @@ class AliasPath:
     path: list[int | str]
 
     def __init__(self, first_arg: str, *args: str | int) -> None:
+        if not isinstance(first_arg, str):
+            raise TypeError(
+                f'The first argument to AliasPath must be a str (a dict key), '
+                f'got {type(first_arg).__name__}. '
+                f'Subsequent segments may be str (dict keys) or int (sequence indices), '
+                f"e.g. AliasPath('data', 0)."
+            )
         self.path = [first_arg] + list(args)
 
     def convert_to_aliases(self) -> list[str | int]:

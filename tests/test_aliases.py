@@ -611,6 +611,18 @@ def test_search_dict_for_alias_path():
     assert ap.search_dict_for_path({'a': 'hello'}) is PydanticUndefined
 
 
+def test_alias_path_first_arg_must_be_str():
+    """The first segment of an AliasPath must be a string dict key.
+
+    Regression test for #13112: passing an int as the first arg used to
+    surface as an opaque pydantic-core SchemaError at model build time.
+    """
+    with pytest.raises(TypeError, match='first argument to AliasPath must be a str'):
+        AliasPath(0)
+    with pytest.raises(TypeError, match='first argument to AliasPath must be a str'):
+        AliasPath(0, 'a')
+
+
 def test_validation_alias_invalid_value_type():
     m = 'Invalid `validation_alias` type. it should be `str`, `AliasChoices`, or `AliasPath`'
     with pytest.raises(TypeError, match=m):
