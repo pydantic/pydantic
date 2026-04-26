@@ -9,8 +9,9 @@ Fix (in _generate_schema.py): replace is_dataclass(cls) with
 """
 import dataclasses
 from typing import Any
+
 import pytest
-from pydantic import BaseModel, TypeAdapter, PydanticSchemaGenerationError
+from pydantic import BaseModel, TypeAdapter
 from pydantic_core import core_schema
 
 # Shared Base Dataclass
