@@ -394,6 +394,22 @@ def test_model_copy_deep_update_applies_update_value():
     assert m.a == 1
 
 
+def test_model_copy_deep_update_with_private_attributes():
+    """Ensure private attributes are deepcopied when `deep=True` and `update` are provided."""
+
+    class M(BaseModel):
+        a: int
+        _private = PrivateAttr({'private'})
+
+    m = M(a=1)
+    m._private = {'modified'}
+    m2 = m.model_copy(deep=True, update={'a': 2})
+
+    assert m2.a == 2
+    assert m2._private == {'modified'}
+    assert m2._private is not m._private
+
+
 def test_copy_set_fields(ModelTwo, copy_method):
     m = ModelTwo(a=24, d=Model(a='12'))
     m2 = copy_method(m)
