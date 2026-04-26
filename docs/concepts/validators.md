@@ -551,6 +551,53 @@ decorator.
 
     Overriding a model validator in a subclass will override the base class' validator, and thus only the subclass' version of said validator will be called.
 
+    **Execution order with inheritance.** When the same mode is defined on both a base class and a subclass (under different names, so neither overrides the other), validators run in the following order:
+
+    * `mode='before'`: the **subclass** validator runs first, then the **base class** validator. The data flows from subclass to base before reaching pydantic-core.
+    * `mode='after'`: the **base class** validator runs first, then the **subclass** validator. The instance flows from base to subclass after pydantic-core has built it.
+    * `mode='wrap'`: the **subclass** wrapper is the outermost layer, and the **base class** wrapper sits inside it (so the subclass' wrapper begins first and ends last).
+
+    Note that subclass `mode='after'` validators run *outside* a base class `mode='wrap'` validator, not inside it. If you need an `after` validator to be wrapped by an inherited `wrap` validator, define the `wrap` validator on the subclass instead.
+
+    ```python {test="skip"}
+    from pydantic import BaseModel, model_validator
+
+
+    class Base(BaseModel):
+        @model_validator(mode='before')
+        @classmethod
+        def base_before(cls, data):
+            print('base before')
+            return data
+
+        @model_validator(mode='after')
+        def base_after(self):
+            print('base after')
+            return self
+
+
+    class Sub(Base):
+        @model_validator(mode='before')
+        @classmethod
+        def sub_before(cls, data):
+            print('sub before')
+            return data
+
+        @model_validator(mode='after')
+        def sub_after(self):
+            print('sub after')
+            return self
+
+
+    Sub()
+    """
+    sub before
+    base before
+    base after
+    sub after
+    """
+    ```
+
 ## Raising validation errors
 
 To raise a validation error, three types of exceptions can be used:
