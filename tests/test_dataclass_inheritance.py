@@ -7,6 +7,8 @@ __dataclass_fields__ via MRO, even if the subclass was never @dataclass-decorate
 Fix (in _generate_schema.py): replace is_dataclass(cls) with
 '__dataclass_fields__' in cls.__dict__
 """
+from __future__ import annotations
+
 import dataclasses
 from typing import Any
 
