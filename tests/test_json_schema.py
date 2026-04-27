@@ -545,7 +545,7 @@ def test_decimal_json_schema():
                 'default': '12.34',
                 'title': 'B',
                 'type': 'string',
-                'pattern': '^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$',
+                'pattern': '^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*(?:[eE][+-]?\\d+)?$',
             },
         },
         'title': 'Model',
@@ -7141,6 +7141,66 @@ def test_decimal_pattern_reject_invalid_not_numerical_values_with_decimal_places
 ) -> None:
     pattern = get_decimal_pattern()
     assert re.fullmatch(pattern, invalid_decimal) is None
+
+
+@pytest.mark.parametrize(
+    'value',
+    [
+        Decimal('0.0000001'),   # str() → '1E-7'
+        Decimal('1.23E+20'),    # str() → '1.23E+20'
+        Decimal('1E+10'),       # str() → '1E+10'
+        Decimal('5E-3'),        # str() → '5E-3'
+        Decimal('1.5'),         # str() → '1.5' (fixed-point still works)
+        Decimal('100'),         # str() → '100'
+    ],
+)
+def test_decimal_serialization_schema_matches_own_output(value: Decimal) -> None:
+    """Regression test for #13089: serialization schema pattern must accept
+    values that pydantic-core's own str()-based serializer produces."""
+
+    class Model(BaseModel):
+        v: Decimal
+
+    schema = Model.model_json_schema(mode='serialization')
+    pattern = schema['properties']['v']['pattern']
+    serialized = json.loads(Model(v=value).model_dump_json())['v']
+    assert re.fullmatch(pattern, serialized) is not None, (
+        f'Serialization schema pattern {pattern!r} rejected '
+        f'own serialized value {serialized!r} for Decimal({str(value)!r})'
+    )
+
+
+@pytest.fixture
+def get_decimal_serialization_pattern():
+    def pattern(max_digits=None, decimal_places=None) -> str:
+        ta = TypeAdapter(Annotated[Decimal, Field(max_digits=max_digits, decimal_places=decimal_places)])
+        return ta.json_schema(mode='serialization')['pattern']
+
+    return pattern
+
+
+@pytest.mark.parametrize(
+    'sci_value',
+    ['1E-7', '1E+20', '1.23E+10', '5E-3', '1.5e2', '1.0e-0'],
+)
+def test_decimal_serialization_pattern_accepts_scientific_notation(
+    sci_value, get_decimal_serialization_pattern
+) -> None:
+    pattern = get_decimal_serialization_pattern()
+    assert re.fullmatch(pattern, sci_value) is not None
+
+
+@pytest.mark.parametrize(
+    'sci_value',
+    ['1E-7', '1E+20', '1.23E+10'],
+)
+def test_decimal_serialization_pattern_accepts_scientific_notation_with_constraints(
+    sci_value, get_decimal_serialization_pattern
+) -> None:
+    """Scientific notation accepted in serialization mode even when max_digits/decimal_places are set."""
+    assert re.fullmatch(get_decimal_serialization_pattern(max_digits=10, decimal_places=5), sci_value) is not None
+    assert re.fullmatch(get_decimal_serialization_pattern(max_digits=10), sci_value) is not None
+    assert re.fullmatch(get_decimal_serialization_pattern(decimal_places=5), sci_value) is not None
 
 
 def test_union_format_primitive_type_array() -> None:

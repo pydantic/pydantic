@@ -693,7 +693,7 @@ class GenerateJsonSchema:
             The generated JSON schema.
         """
 
-        def get_decimal_pattern(schema: core_schema.DecimalSchema) -> str:
+        def get_decimal_pattern(schema: core_schema.DecimalSchema, *, serialization_mode: bool) -> str:
             max_digits = schema.get('max_digits')
             decimal_places = schema.get('decimal_places')
 
@@ -701,40 +701,54 @@ class GenerateJsonSchema:
                 r'^(?!^[-+.]*$)[+-]?0*'  # check it is not empty string and not one or sequence of ".+-" characters.
             )
 
+            # pydantic-core serializes Decimal values using str(), which produces
+            # scientific notation for very small/large values (e.g. "1E-7").
+            # In serialization mode we only need to describe the output format;
+            # max_digits/decimal_places constraints are already enforced on input.
+            sci = r'(?:[eE][+-]?\d+)?' if serialization_mode else r''
+
             # Case 1: Both max_digits and decimal_places are set
             if max_digits is not None and decimal_places is not None:
-                integer_places = max(0, max_digits - decimal_places)
-                pattern += (
-                    rf'(?:'
-                    rf'\d{{0,{integer_places}}}'
-                    rf'|'
-                    rf'(?=[\d.]{{1,{max_digits + 1}}}0*$)'
-                    rf'\d{{0,{integer_places}}}\.\d{{0,{decimal_places}}}0*$'
-                    rf')'
-                )
+                if serialization_mode:
+                    pattern += rf'\d*\.?\d*{sci}$'
+                else:
+                    integer_places = max(0, max_digits - decimal_places)
+                    pattern += (
+                        rf'(?:'
+                        rf'\d{{0,{integer_places}}}'
+                        rf'|'
+                        rf'(?=[\d.]{{1,{max_digits + 1}}}0*$)'
+                        rf'\d{{0,{integer_places}}}\.\d{{0,{decimal_places}}}0*$'
+                        rf')'
+                    )
 
             # Case 2: Only max_digits is set
             elif max_digits is not None and decimal_places is None:
-                pattern += (
-                    rf'(?:'
-                    rf'\d{{0,{max_digits}}}'
-                    rf'|'
-                    rf'(?=[\d.]{{1,{max_digits + 1}}}0*$)'
-                    rf'\d*\.\d*0*$'
-                    rf')'
-                )
+                if serialization_mode:
+                    pattern += rf'\d*\.?\d*{sci}$'
+                else:
+                    pattern += (
+                        rf'(?:'
+                        rf'\d{{0,{max_digits}}}'
+                        rf'|'
+                        rf'(?=[\d.]{{1,{max_digits + 1}}}0*$)'
+                        rf'\d*\.\d*0*$'
+                        rf')'
+                    )
 
             # Case 3: Only decimal_places is set
             elif max_digits is None and decimal_places is not None:
-                pattern += rf'\d*\.?\d{{0,{decimal_places}}}0*$'
+                pattern += rf'\d*\.?\d{{0,{decimal_places}}}0*{sci}$'
 
             # Case 4: Both are None (no restrictions)
             else:
-                pattern += r'\d*\.?\d*$'  # look for arbitrary integer or decimal
+                pattern += rf'\d*\.?\d*{sci}$'  # look for arbitrary integer or decimal
 
             return pattern
 
-        json_schema = self.str_schema(core_schema.str_schema(pattern=get_decimal_pattern(schema)))
+        json_schema = self.str_schema(
+            core_schema.str_schema(pattern=get_decimal_pattern(schema, serialization_mode=self.mode == 'serialization'))
+        )
         if self.mode == 'validation':
             multiple_of = schema.get('multiple_of')
             le = schema.get('le')
