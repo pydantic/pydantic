@@ -517,7 +517,9 @@ decorator.
        can be anything.
     2. Most of the time, the input data will be a dictionary (e.g. when calling `UserModel(username='...')`). However,
        this is not always the case. For instance, if the [`from_attributes`][pydantic.ConfigDict.from_attributes]
-       configuration value is set, you might receive an arbitrary class instance for the `data` argument.
+       configuration value is set, you might receive an arbitrary class instance for the `data` argument. Because
+       the raw input can be any object, avoid assuming that `data` is a dictionary and guard dictionary-specific
+       access with `isinstance()` checks before mutating or reading from it.
 
 * ***Wrap* validators**: are the most flexible of all. You can run code before or after Pydantic and
   other validators process the input data, or you can terminate validation immediately, either by returning
