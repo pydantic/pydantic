@@ -1665,6 +1665,11 @@ class GenerateJsonSchema:
         elif issubclass(cls, RootModel) and (root_description := cls.__pydantic_fields__['root'].description):
             json_schema.setdefault('description', root_description)
 
+        if issubclass(cls, RootModel):
+            root_examples = cls.__pydantic_fields__['root'].examples
+            if root_examples is not None:
+                json_schema['examples'] = to_jsonable_python(root_examples)
+
         extra = config.get('extra')
         if 'additionalProperties' not in json_schema:  # This check is particularly important for `typed_dict_schema()`
             if extra == 'allow':

@@ -590,6 +590,30 @@ def test_json_schema_extra_on_field():
     }
 
 
+def test_json_schema_examples_on_parametrized_root_model():
+    root_type = Annotated[str, Field(examples=['hello', 'world'])]
+
+    class Model(RootModel[root_type]):
+        pass
+
+    assert Model.model_json_schema() == {
+        'examples': ['hello', 'world'],
+        'title': 'Model',
+        'type': 'string',
+    }
+
+
+def test_json_schema_examples_on_annotated_root_field():
+    class Model(RootModel):
+        root: Annotated[str, Field(examples=['hello', 'world'])]
+
+    assert Model.model_json_schema() == {
+        'examples': ['hello', 'world'],
+        'title': 'Model',
+        'type': 'string',
+    }
+
+
 def test_json_schema_extra_on_model_and_on_field():
     class Model(RootModel):
         model_config = ConfigDict(json_schema_extra={'schema key on model': 'schema value on model'})
