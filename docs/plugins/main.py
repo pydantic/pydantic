@@ -158,6 +158,7 @@ def upgrade_python(markdown: str) -> str:
 
         py_code = match.group(2)
         numbers = match.group(3)
+        base_indent = re.match(r' *', prefix).group(0)
         # import devtools
         # devtools.debug(numbers)
         output = []
@@ -171,8 +172,8 @@ def upgrade_python(markdown: str) -> str:
                     continue
                 last_code = tab_code
 
-            content = indent(f'{prefix}\n{tab_code}```{numbers}', ' ' * 4)
-            output.append(f'=== "Python 3.{minor_version} and above"\n\n{content}')
+            content = indent(f'{prefix}\n{tab_code}```{numbers}', f'{base_indent}    ')
+            output.append(f'{base_indent}=== "Python 3.{minor_version} and above"\n\n{content}')
 
         if len(output) == 1:
             return match.group(0)
