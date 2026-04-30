@@ -325,6 +325,7 @@ class NotDeepCopyable:
     def __deepcopy__(self, memo):
         raise TypeError('This object cannot be deepcopied')
 
+
 def test_model_copy_deep_update_skips_deepcopy_of_updated_fields() -> None:
 
     class Model(BaseModel):
