@@ -520,8 +520,7 @@ jobs:
       matrix:
         python-version:
           - '3.13'
-          # Segmentation fault on pypy3.11.15 (latest), see https://github.com/pypy/pypy/issues/5400
-          - 'pypy3.11.13'
+          - 'pypy3.11'
 
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
@@ -640,8 +639,7 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, macos-latest, windows-latest]
-        # Segmentation fault on pypy3.11.15 (latest), see https://github.com/pypy/pypy/issues/5400
-        python-version: ['3.10', '3.11', '3.12', '3.13', '3.14', '3.14t', 'pypy3.11.13']
+        python-version: ['3.10', '3.11', '3.12', '3.13', '3.14', '3.14t', 'pypy3.11']
         include:
           # test macos intel just with latest python version
           - os: macos-15-intel
