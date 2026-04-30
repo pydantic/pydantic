@@ -838,8 +838,7 @@ class GenerateSchema:
                 generic_origin: type[BaseModel] | None = getattr(cls, '__pydantic_generic_metadata__', {}).get('origin')
 
                 if cls.__pydantic_root_model__:
-                    # FIXME: should the common field metadata be used here?
-                    inner_schema, _ = self._common_field_schema('root', fields['root'], decorators)
+                    inner_schema, metadata = self._common_field_schema('root', fields['root'], decorators)
                     inner_schema = apply_model_validators(inner_schema, model_validators, 'inner')
                     model_schema = core_schema.model_schema(
                         cls,
@@ -850,6 +849,7 @@ class GenerateSchema:
                         post_init=getattr(cls, '__pydantic_post_init__', None),
                         config=core_config,
                         ref=model_ref,
+                        metadata=metadata,
                     )
                 else:
                     fields_schema: core_schema.CoreSchema = core_schema.model_fields_schema(
