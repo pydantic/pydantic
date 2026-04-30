@@ -520,34 +520,6 @@ def test_ta_config_with_annotated_type() -> None:
     ]
 
 
-def test_eval_type_backport():
-    v = TypeAdapter('list[int | str]').validate_python
-    assert v([1, '2']) == [1, '2']
-    with pytest.raises(ValidationError) as exc_info:
-        v([{'not a str or int'}])
-    # insert_assert(exc_info.value.errors(include_url=False))
-    assert exc_info.value.errors(include_url=False) == [
-        {
-            'type': 'int_type',
-            'loc': (0, 'int'),
-            'msg': 'Input should be a valid integer',
-            'input': {'not a str or int'},
-        },
-        {
-            'type': 'string_type',
-            'loc': (0, 'str'),
-            'msg': 'Input should be a valid string',
-            'input': {'not a str or int'},
-        },
-    ]
-    with pytest.raises(ValidationError) as exc_info:
-        v('not a list')
-    # insert_assert(exc_info.value.errors(include_url=False))
-    assert exc_info.value.errors(include_url=False) == [
-        {'type': 'list_type', 'loc': (), 'msg': 'Input should be a valid list', 'input': 'not a list'}
-    ]
-
-
 def defer_build_test_models(config: ConfigDict) -> list[Any]:
     class Model(BaseModel):
         model_config = config

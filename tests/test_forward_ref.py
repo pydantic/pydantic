@@ -699,68 +699,23 @@ class Foobar(BaseModel):
     assert f.y.model_fields_set == {'x'}
 
 
-def test_recursive_models_union(create_module):
-    # This test should pass because PydanticRecursiveRef.__or__ is implemented,
-    # not because `eval_type_backport` magically makes `|` work,
-    # since it's installed for tests but otherwise optional.
-    sys.modules['eval_type_backport'] = None  # type: ignore
-    try:
-        module = create_module(
-            # language=Python
-            """
-from __future__ import annotations
+def test_recursive_models_union() -> None:
+    """Test that `PydanticRecursiveRef.__(r)or__` is implemented."""
 
-from pydantic import BaseModel
-from typing import TypeVar, Generic
+    T = TypeVar('T')
 
-T = TypeVar("T")
+    class Foo(BaseModel):
+        bar: 'Bar[str] | None' = None
+        bar2: 'int | Bar[float]'
 
-class Foo(BaseModel):
-    bar: Bar[str] | None = None
-    bar2: int | Bar[float]
+    class Bar(BaseModel, Generic[T]):
+        foo: Foo
 
-class Bar(BaseModel, Generic[T]):
-    foo: Foo
+    Foo.model_rebuild()
 
-Foo.model_rebuild()
-    """
-        )
-    finally:
-        del sys.modules['eval_type_backport']
-
-    assert module.Foo.model_fields['bar'].annotation == module.Bar[str] | None
-    assert module.Foo.model_fields['bar2'].annotation == int | module.Bar[float]
-    assert module.Bar.model_fields['foo'].annotation == module.Foo
-
-
-def test_recursive_models_union_backport(create_module):
-    module = create_module(
-        # language=Python
-        """
-from __future__ import annotations
-
-from pydantic import BaseModel
-from typing import TypeVar, Generic
-
-T = TypeVar("T")
-
-class Foo(BaseModel):
-    bar: Bar[str] | None = None
-    # The `int | str` here differs from the previous test and requires the backport.
-    # At the same time, `PydanticRecursiveRef.__or__` means that the second `|` works normally,
-    # which actually triggered a bug in the backport that needed fixing.
-    bar2: int | str | Bar[float]
-
-class Bar(BaseModel, Generic[T]):
-    foo: Foo
-
-Foo.model_rebuild()
-"""
-    )
-
-    assert module.Foo.model_fields['bar'].annotation == module.Bar[str] | None
-    assert module.Foo.model_fields['bar2'].annotation == int | str | module.Bar[float]
-    assert module.Bar.model_fields['foo'].annotation == module.Foo
+    assert Foo.model_fields['bar'].annotation == Bar[str] | None
+    assert Foo.model_fields['bar2'].annotation == int | Bar[float]
+    assert Bar.model_fields['foo'].annotation == Foo
 
 
 def test_force_rebuild():
@@ -1080,6 +1035,16 @@ def test_invalid_forward_ref() -> None:
 
         class Model(BaseModel):
             foo: 'CustomType[int]'
+
+    if sys.version_info < (3, 11):
+        msg = "Unable to evaluate type annotation 'CustomType[int]'."
+    else:
+        msg = "Unable to evaluate type annotation list['CustomType[int]']."
+
+    with pytest.raises(TypeError, match=re.escape(msg)):
+
+        class Model(BaseModel):
+            foo: list['CustomType[int]']
 
 
 def test_pydantic_extra_forward_ref_separate_module(create_module: Any) -> None:
