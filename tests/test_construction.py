@@ -321,27 +321,23 @@ def test_copy_deep_extra(copy_method):
     assert copy_method(m, deep=True).extra is not m.extra
 
 
-class NotDeepCopyable:
-    """Helper class that raises when deepcopied, simulating native C extension objects."""
+def test_model_copy_deep_update_skips_deepcopy_of_updated_fields() -> None:
 
-    def __deepcopy__(self, memo):
-        raise TypeError('This object cannot be deepcopied')
+    class NotDeepCopyable:
+        def __deepcopy__(self, memo):
+            raise TypeError('This object cannot be deepcopied')
 
-
-def test_model_copy_deep_update_skips_deepcopy_of_updated_fields():
-    """Fields present in `update` should not be deepcopied since they are replaced."""
-
-    class AppConfig(BaseModel):
+    class Model(BaseModel):
         model_config = ConfigDict(arbitrary_types_allowed=True)
         name: str = 'default'
-        engine: Any = None
+        arbitrary: Any = None
 
-    config = AppConfig(engine=NotDeepCopyable())
+    model = Model(arbitrary=NotDeepCopyable())
 
-    copied = config.model_copy(deep=True, update={'engine': None})
-    assert copied.engine is None
-    assert copied.name == 'default'
-    assert copied is not config
+    copied = model.model_copy(deep=True, update={'arbitrary': None})
+    assert model.arbitrary is None
+    assert model.name == 'default'
+    assert copied is not model
 
 
 def test_model_copy_deep_update_preserves_shared_references():
