@@ -435,20 +435,21 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
                 )
         else:
             copied = self.__deepcopy__() if deep else self.__copy__()
-            if update:
-                if self.model_config.get('extra') == 'allow':
-                    for k, v in update.items():
-                        if k in self.__pydantic_fields__:
-                            copied.__dict__[k] = v
-                        else:
-                            if copied.__pydantic_extra__ is None:
-                                copied.__pydantic_extra__ = {}
-                            copied.__pydantic_extra__[k] = v
-                else:
-                    copied.__dict__.update(update)
 
         if update:
+            if self.model_config.get('extra') == 'allow':
+                for k, v in update.items():
+                    if k in self.__pydantic_fields__:
+                        copied.__dict__[k] = v
+                    else:
+                        if copied.__pydantic_extra__ is None:
+                            copied.__pydantic_extra__ = {}
+                        copied.__pydantic_extra__[k] = v
+            else:
+                copied.__dict__.update(update)
+
             copied.__pydantic_fields_set__.update(update.keys())
+
         return copied
 
     def model_dump(
