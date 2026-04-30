@@ -401,29 +401,25 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
             might have unexpected side effects if you store anything in it, on top of the model
             fields (e.g. the value of [cached properties][functools.cached_property]).
 
-        !!! note
-            When both `deep=True` and `update` are provided, fields present in `update` are
-            not deepcopied (their replacement values are used directly). This avoids
-            unnecessary work and allows replacing fields whose current values cannot be
-            deepcopied (e.g. native C extension objects, file handles, GPU tensors).
-
         Args:
-            update: Values to change/add in the new model. Note: the data is not validated
-                before creating the new model. You should trust this data.
-            deep: Set to `True` to make a deep copy of the model. Fields that are being
-                replaced via `update` are not deepcopied.
+            update: A mapping of values to update the copied model. Updates are *not*
+                applied recursively, and no validation is performed on updated values.
+                Only the known fields are updated (if unknown keys are being passed and
+                the model has [`extra`][pydantic.ConfigDict.extra] set to `'allow'`, they
+                are added as extra data).
+            deep: Whether a [deep copy][copy.deepcopy] of the model should be performed.
 
         Returns:
             New model instance.
         """
         if deep and update:
-            # Start with a fast shallow copy to preserve structure
+            # Only deep copy the fields that won't be updated:
             copied = self.__copy__()
 
-            # A shared memo preserves object identity across fields
+            # As we make separate `deepcopy()` calls, use a shared memo:
             memo: dict[int, Any] = {}
 
-            # Selectively deepcopy fields that are not being updated
+            # Selectively deepcopy fields that are not being updated:
             for k, v in copied.__dict__.items():
                 if k not in update:
                     copied.__dict__[k] = deepcopy(v, memo)
@@ -432,23 +428,26 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
                     if k not in update:
                         copied.__pydantic_extra__[k] = deepcopy(v, memo)
             if copied.__pydantic_private__ is not None:
+                # Same logic as `BaseModel.__deepcopy__()`:
                 copied.__pydantic_private__ = deepcopy(
                     {k: v for k, v in copied.__pydantic_private__.items() if v is not PydanticUndefined},
                     memo,
                 )
         else:
             copied = self.__deepcopy__() if deep else self.__copy__()
+            if update:
+                if self.model_config.get('extra') == 'allow':
+                    for k, v in update.items():
+                        if k in self.__pydantic_fields__:
+                            copied.__dict__[k] = v
+                        else:
+                            if copied.__pydantic_extra__ is None:
+                                copied.__pydantic_extra__ = {}
+                            copied.__pydantic_extra__[k] = v
+                else:
+                    copied.__dict__.update(update)
+
         if update:
-            if self.model_config.get('extra') == 'allow':
-                for k, v in update.items():
-                    if k in self.__pydantic_fields__:
-                        copied.__dict__[k] = v
-                    else:
-                        if copied.__pydantic_extra__ is None:
-                            copied.__pydantic_extra__ = {}
-                        copied.__pydantic_extra__[k] = v
-            else:
-                copied.__dict__.update(update)
             copied.__pydantic_fields_set__.update(update.keys())
         return copied
 
