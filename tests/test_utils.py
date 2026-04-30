@@ -63,8 +63,8 @@ class LoggedVar(Generic[T]):
         (str, 'str'),
         ('foobar', 'str'),
         ('SomeForwardRefString', 'str'),  # included to document current behavior; could be changed
-        (Union[str, int], 'Union[str, int]'),  # noqa: UP007
-        (str | int, 'Union[str, int]'),
+        pytest.param(Union[str, int], 'Union[str, int]', id='Union[str, int]'),  # noqa: UP007  # TODO remove when we drop support for Python 3.13
+        pytest.param(str | int, 'Union[str, int]', id='str | int'),
         (list, 'list'),
         (list[int], 'list[int]'),
         ([1, 2, 3], 'list'),
@@ -347,7 +347,19 @@ def test_class_attribute():
 
 @pytest.mark.parametrize(
     'obj',
-    (1, 1.0, '1', b'1', int, None, test_class_attribute, len, test_class_attribute.__code__, lambda: ..., ...),
+    (
+        pytest.param(1, id='int-1'),
+        pytest.param(1.0, id='float-1.0'),
+        pytest.param('1', id='str-1'),
+        pytest.param(b'1', id='bytes-1'),
+        int,
+        None,
+        test_class_attribute,
+        len,
+        test_class_attribute.__code__,
+        lambda: ...,
+        ...,
+    ),
 )
 def test_smart_deepcopy_immutable_non_sequence(obj, mocker):
     # make sure deepcopy is not used

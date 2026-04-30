@@ -905,12 +905,10 @@ def test_partial_creation_with_defer_build():
 
 
 def test_model_config_as_model_field_raises():
-    with pytest.raises(PydanticUserError) as exc_info:
+    with pytest.raises(PydanticUserError, check=lambda e: e.code == 'model-config-invalid-field-name'):
 
         class MyModel(BaseModel):
             model_config: str
-
-    assert exc_info.value.code == 'model-config-invalid-field-name'
 
 
 def test_dataclass_allows_model_config_as_model_field():

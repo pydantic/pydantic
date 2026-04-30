@@ -26,6 +26,7 @@ from typing import (
 from uuid import UUID
 
 import pytest
+from annotated_types import Interval
 from dirty_equals import HasRepr
 from pydantic_core import CoreSchema, SchemaValidator, core_schema, to_jsonable_python
 from pydantic_core.core_schema import ValidatorFunctionWrapHandler
@@ -103,7 +104,6 @@ from pydantic.types import (
     StrictStr,
     StringConstraints,
     conbytes,
-    condate,
     condecimal,
     confloat,
     conint,
@@ -114,6 +114,8 @@ try:
     import email_validator
 except ImportError:
     email_validator = None
+
+from .utils import dataclass_decorators
 
 T = TypeVar('T')
 
@@ -828,18 +830,18 @@ def test_date_types(field_type, expected_schema):
 
 
 @pytest.mark.parametrize(
-    'field_type',
+    'interval',
     [
-        condate(),
-        condate(gt=date(2010, 1, 1), lt=date(2021, 2, 2)),
-        condate(ge=date(2010, 1, 1), le=date(2021, 2, 2)),
+        Interval(),
+        Interval(gt=date(2010, 1, 1), lt=date(2021, 2, 2)),
+        Interval(ge=date(2010, 1, 1), le=date(2021, 2, 2)),
     ],
 )
-def test_date_constrained_types_no_constraints(field_type):
+def test_date_constrained_types_no_constraints(interval):
     """No constraints added, see https://github.com/json-schema-org/json-schema-spec/issues/116."""
 
     class Model(BaseModel):
-        a: field_type
+        a: Annotated[date, interval]
 
     assert Model.model_json_schema() == {
         'title': 'Model',
@@ -1269,10 +1271,10 @@ def test_ipvanynetwork_type():
 @pytest.mark.parametrize(
     'type_,default_value',
     (
-        (Callable, ...),
-        (Callable, lambda x: x),
-        (Callable[[int], int], ...),
-        (Callable[[int], int], lambda x: x),
+        pytest.param(Callable, ..., id='Callable-NO_DEFAULT'),
+        pytest.param(Callable, lambda x: x, id='Callable-lambda_default'),
+        pytest.param(Callable[[int], int], ..., id='Callable_parameterized-NO_DEFAULT'),
+        pytest.param(Callable[[int], int], lambda x: x, id='Callable_parameterized-lambda_default'),
     ),
 )
 @pytest.mark.parametrize(
@@ -1305,7 +1307,7 @@ def test_callable_type(type_, default_value, base_json_schema, properties):
         callback: Annotated[type_, WithJsonSchema(base_json_schema)] = default_value
         foo: int
 
-    if default_value is Ellipsis or base_json_schema is None:
+    if default_value is ... or base_json_schema is None:
         model_schema = ModelWithOverride.model_json_schema()
     else:
         with pytest.warns(
@@ -2919,7 +2921,7 @@ def test_dataclass():
 @pytest.mark.skipif(sys.version_info < (3, 14), reason='`doc` added in 3.14')
 @pytest.mark.parametrize(
     'dataclass_decorator',
-    [dataclass, pydantic.dataclasses.dataclass],
+    **dataclass_decorators(include_combined=False),
 )
 def test_dataclass_doc_json_schema(dataclass_decorator) -> None:
     @dataclass_decorator

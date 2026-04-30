@@ -35,10 +35,10 @@ def test_str(py_and_json: PyAndJson, input_value, expected):
 @pytest.mark.parametrize(
     'input_value,expected',
     [
-        ('foobar', 'foobar'),
+        pytest.param('foobar', 'foobar', id='foobar_str-foobar_str'),
         ('🐈 Hello \ud800World', '🐈 Hello \ud800World'),
-        (b'foobar', 'foobar'),
-        (bytearray(b'foobar'), 'foobar'),
+        pytest.param(b'foobar', 'foobar', id='foobar_bytes-foobar_str'),
+        pytest.param(bytearray(b'foobar'), 'foobar', id='foobar_bytearray-foobar_str'),
         (
             b'\x81',
             Err('Input should be a valid string, unable to parse raw data as a unicode string [type=string_unicode'),

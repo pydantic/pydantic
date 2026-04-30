@@ -423,13 +423,13 @@ def test_circular_type_aliases() -> None:
     B = TypeAliasType('B', A)
     C = TypeAliasType('C', B)
 
-    with pytest.raises(PydanticUserError) as exc_info:
+    with pytest.raises(
+        PydanticUserError,
+        check=lambda e: e.code == 'circular-reference-schema' and e.message.startswith('tests.test_type_alias_type.C'),
+    ):
 
         class MyModel(BaseModel):
             a: C
-
-    assert exc_info.value.code == 'circular-reference-schema'
-    assert exc_info.value.message.startswith('tests.test_type_alias_type.C')
 
 
 def test_type_alias_type_with_serialization() -> None:

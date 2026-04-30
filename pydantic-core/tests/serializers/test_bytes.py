@@ -88,7 +88,11 @@ class BytesEnum(bytes, Enum):
 @pytest.mark.parametrize('schema_type', ['bytes', 'any'])
 @pytest.mark.parametrize(
     'input_value,expected_json',
-    [(BytesSubclass(b'foo'), 'foo'), (BytesMixin(b'foo'), 'foo'), (BytesEnum.foo, 'foo-value')],
+    [
+        pytest.param(BytesSubclass(b'foo'), 'foo', id='BytesSubclass'),
+        pytest.param(BytesMixin(b'foo'), 'foo', id='BytesMixin'),
+        pytest.param(BytesEnum.foo, 'foo-value', id='BytesEnum'),
+    ],
 )
 def test_subclass_bytes(schema_type, input_value, expected_json):
     s = SchemaSerializer({'type': schema_type})

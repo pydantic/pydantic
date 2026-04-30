@@ -834,8 +834,8 @@ def test_constrained_str_max_length_0():
 @pytest.mark.parametrize(
     'annotation',
     [
-        ImportString[Callable[[Any], Any]],
-        Annotated[Callable[[Any], Any], ImportString],
+        pytest.param(ImportString[Callable[[Any], Any]], id='ImportString[...]'),
+        pytest.param(Annotated[Callable[[Any], Any], ImportString], id='Annotated[..., ImportString]'),
     ],
 )
 def test_string_import_callable(annotation):
@@ -952,8 +952,13 @@ def test_string_import_any_expected_failure(value: Any):
 @pytest.mark.parametrize(
     'annotation',
     [
-        ImportString[Annotated[float, annotated_types.Ge(3), annotated_types.Le(4)]],
-        Annotated[float, annotated_types.Ge(3), annotated_types.Le(4), ImportString],
+        pytest.param(
+            ImportString[Annotated[float, annotated_types.Ge(3), annotated_types.Le(4)]], id='ImportString[...]'
+        ),
+        pytest.param(
+            Annotated[float, annotated_types.Ge(3), annotated_types.Le(4), ImportString],
+            id='Annotated[..., ImportString]',
+        ),
     ],
 )
 def test_string_import_constraints(annotation):
@@ -1272,9 +1277,9 @@ class BoolCastable:
 @pytest.mark.parametrize(
     'field,value,result',
     [
-        ('bool_check', True, True),
-        ('bool_check', 1, True),
-        ('bool_check', 1.0, True),
+        pytest.param('bool_check', True, True, id='bool_check-True_bool-True_bool'),
+        pytest.param('bool_check', 1, True, id='bool_check-1_int-True_bool'),
+        pytest.param('bool_check', 1.0, True, id='bool_check-1.0_float-True_bool'),
         ('bool_check', Decimal(1), True),
         ('bool_check', 'y', True),
         ('bool_check', 'Y', True),
@@ -1282,18 +1287,18 @@ class BoolCastable:
         ('bool_check', 'Yes', True),
         ('bool_check', 'YES', True),
         ('bool_check', 'true', True),
-        ('bool_check', 'True', True),
-        ('bool_check', 'TRUE', True),
+        pytest.param('bool_check', 'True', True, id='bool_check-True_str-True_bool'),
+        pytest.param('bool_check', 'TRUE', True, id='bool_check-TRUE_str-True_bool'),
         ('bool_check', 'on', True),
         ('bool_check', 'On', True),
         ('bool_check', 'ON', True),
-        ('bool_check', '1', True),
+        pytest.param('bool_check', '1', True, id='bool_check-1_str-True_bool'),
         ('bool_check', 't', True),
         ('bool_check', 'T', True),
-        ('bool_check', b'TRUE', True),
-        ('bool_check', False, False),
-        ('bool_check', 0, False),
-        ('bool_check', 0.0, False),
+        pytest.param('bool_check', b'TRUE', True, id='bool_check-TRUE_bytes-True_bool'),
+        pytest.param('bool_check', False, False, id='bool_check-False_bool-False_bool'),
+        pytest.param('bool_check', 0, False, id='bool_check-0_int-False_bool'),
+        pytest.param('bool_check', 0.0, False, id='bool_check-0.0_float-False_bool'),
         ('bool_check', Decimal(0), False),
         ('bool_check', 'n', False),
         ('bool_check', 'N', False),
@@ -1301,72 +1306,72 @@ class BoolCastable:
         ('bool_check', 'No', False),
         ('bool_check', 'NO', False),
         ('bool_check', 'false', False),
-        ('bool_check', 'False', False),
-        ('bool_check', 'FALSE', False),
+        pytest.param('bool_check', 'False', False, id='bool_check-False_str-False_bool'),
+        pytest.param('bool_check', 'FALSE', False, id='bool_check-FALSE_str-False_bool'),
         ('bool_check', 'off', False),
         ('bool_check', 'Off', False),
         ('bool_check', 'OFF', False),
-        ('bool_check', '0', False),
+        pytest.param('bool_check', '0', False, id='bool_check-0_str-False_bool'),
         ('bool_check', 'f', False),
         ('bool_check', 'F', False),
-        ('bool_check', b'FALSE', False),
+        pytest.param('bool_check', b'FALSE', False, id='bool_check-FALSE_bytes-False_bool'),
         ('bool_check', None, ValidationError),
         ('bool_check', '', ValidationError),
         ('bool_check', [], ValidationError),
         ('bool_check', {}, ValidationError),
         ('bool_check', [1, 2, 3, 4], ValidationError),
         ('bool_check', {1: 2, 3: 4}, ValidationError),
-        ('bool_check', b'2', ValidationError),
-        ('bool_check', '2', ValidationError),
-        ('bool_check', 2, ValidationError),
+        pytest.param('bool_check', b'2', ValidationError, id='bool_check-2_bytes-ValidationError'),
+        pytest.param('bool_check', '2', ValidationError, id='bool_check-2_str-ValidationError'),
+        pytest.param('bool_check', 2, ValidationError, id='bool_check-2_int-ValidationError'),
         ('bool_check', 2.0, ValidationError),
         ('bool_check', Decimal(2), ValidationError),
         ('bool_check', b'\x81', ValidationError),
         ('bool_check', BoolCastable(), ValidationError),
-        ('str_check', 's', 's'),
-        ('str_check', '  s  ', 's'),
+        pytest.param('str_check', 's', 's', id='str_check-s_str-s_str'),
+        pytest.param('str_check', '  s  ', 's', id='str_check-s_stripped-s_str'),
         ('str_check', ' leading', 'leading'),
         ('str_check', 'trailing ', 'trailing'),
-        ('str_check', b's', 's'),
-        ('str_check', b'  s  ', 's'),
+        pytest.param('str_check', b's', 's', id='str_check-s_bytes-s_str'),
+        pytest.param('str_check', b'  s  ', 's', id='str_check-s_bytes_stripped-s_str'),
         ('str_check', bytearray(b's' * 5), 'sssss'),
         ('str_check', 1, ValidationError),
-        ('str_check', 'x' * 11, ValidationError),
-        ('str_check', b'x' * 11, ValidationError),
+        pytest.param('str_check', 'x' * 11, ValidationError, id='str_check-too_long_str-ValidationError'),
+        pytest.param('str_check', b'x' * 11, ValidationError, id='str_check-too_long_bytes-ValidationError'),
         ('str_check', b'\x81', ValidationError),
         ('str_check', bytearray(b'\x81' * 5), ValidationError),
-        ('bytes_check', 's', b's'),
-        ('bytes_check', '  s  ', b'  s  '),
-        ('bytes_check', b's', b's'),
+        pytest.param('bytes_check', 's', b's', id='bytes_check-s_str-s_bytes'),
+        pytest.param('bytes_check', '  s  ', b'  s  ', id='bytes_check-s_stripped-s_bytes'),
+        pytest.param('bytes_check', b's', b's', id='bytes_check-s_bytes-s_bytes'),
         ('bytes_check', 1, ValidationError),
         ('bytes_check', bytearray('xx', encoding='utf8'), b'xx'),
         ('bytes_check', True, ValidationError),
         ('bytes_check', False, ValidationError),
         ('bytes_check', {}, ValidationError),
-        ('bytes_check', 'x' * 11, b'x' * 11),
-        ('bytes_check', b'x' * 11, b'x' * 11),
-        ('int_check', 1, 1),
+        pytest.param('bytes_check', 'x' * 11, b'x' * 11, id='bytes_check-too_long_str-b_bytes'),
+        pytest.param('bytes_check', b'x' * 11, b'x' * 11, id='bytes_check-too_long_bytes-b_bytes'),
+        pytest.param('int_check', 1, 1, id='int_check-1_int-1_int'),
         ('int_check', 1.0, 1),
         ('int_check', 1.9, ValidationError),
         ('int_check', Decimal(1), 1),
         ('int_check', Decimal(1.9), ValidationError),
-        ('int_check', '1', 1),
-        ('int_check', '1.9', ValidationError),
+        pytest.param('int_check', '1', 1, id='int_check-1_str-1_int'),
+        pytest.param('int_check', '1.9', ValidationError, id='int_check-1.9_str-ValidationError'),
         ('int_check', b'1', 1),
-        ('int_check', 12, 12),
-        ('int_check', '12', 12),
-        ('int_check', b'12', 12),
-        ('float_check', 1, 1.0),
-        ('float_check', 1.0, 1.0),
+        pytest.param('int_check', 12, 12, id='int_check-12_int-12_int'),
+        pytest.param('int_check', '12', 12, id='int_check-12_str-12_int'),
+        pytest.param('int_check', b'12', 12, id='int_check-12_bytes-12_int'),
+        pytest.param('float_check', 1, 1.0, id='float_check-1_int-1.0_float'),
+        pytest.param('float_check', 1.0, 1.0, id='float_check-1.0_float-1.0_float'),
         ('float_check', Decimal(1.0), 1.0),
-        ('float_check', '1.0', 1.0),
-        ('float_check', '1', 1.0),
-        ('float_check', b'1.0', 1.0),
-        ('float_check', b'1', 1.0),
+        pytest.param('float_check', '1.0', 1.0, id='float_check-1.0_str-1.0_float'),
+        pytest.param('float_check', '1', 1.0, id='float_check-1_str-1.0_float'),
+        pytest.param('float_check', b'1.0', 1.0, id='float_check-1.0_bytes-1.0_float'),
+        pytest.param('float_check', b'1', 1.0, id='float_check-1_bytes-1.0_float'),
         ('float_check', True, 1.0),
         ('float_check', False, 0.0),
-        ('float_check', 't', ValidationError),
-        ('float_check', b't', ValidationError),
+        pytest.param('float_check', 't', ValidationError, id='float_check-t_str-ValidationError'),
+        pytest.param('float_check', b't', ValidationError, id='float_check-t_bytes-ValidationError'),
         ('uuid_check', 'ebcdab58-6eb8-46fb-a190-d07a33e9eac8', UUID('ebcdab58-6eb8-46fb-a190-d07a33e9eac8')),
         ('uuid_check', UUID('ebcdab58-6eb8-46fb-a190-d07a33e9eac8'), UUID('ebcdab58-6eb8-46fb-a190-d07a33e9eac8')),
         ('uuid_check', b'ebcdab58-6eb8-46fb-a190-d07a33e9eac8', UUID('ebcdab58-6eb8-46fb-a190-d07a33e9eac8')),
@@ -1382,38 +1387,58 @@ class BoolCastable:
         ('decimal_check', 'NaN', ValidationError),
         ('date_check', date(2017, 5, 5), date(2017, 5, 5)),
         ('date_check', datetime(2017, 5, 5), date(2017, 5, 5)),
-        ('date_check', '2017-05-05', date(2017, 5, 5)),
-        ('date_check', b'2017-05-05', date(2017, 5, 5)),
+        pytest.param('date_check', '2017-05-05', date(2017, 5, 5), id='date_check-2017-05-05_str-2017-05-05_date'),
+        pytest.param('date_check', b'2017-05-05', date(2017, 5, 5), id='date_check-2017-05-05_bytes-2017-05-05_date'),
         ('date_check', 1493942400000, date(2017, 5, 5)),
         ('date_check', 1493942400, date(2017, 5, 5)),
         ('date_check', 1493942400000.0, date(2017, 5, 5)),
         ('date_check', Decimal(1493942400000), date(2017, 5, 5)),
         ('date_check', datetime(2017, 5, 5, 10), ValidationError),
-        ('date_check', '2017-5-5', ValidationError),
-        ('date_check', b'2017-5-5', ValidationError),
+        pytest.param('date_check', '2017-5-5', ValidationError, id='date_check-2017-5-5_str-ValidationError'),
+        pytest.param('date_check', b'2017-5-5', ValidationError, id='date_check-2017-5-5_bytes-ValidationError'),
         ('date_check', 1493942401000, ValidationError),
         ('date_check', 1493942401000.0, ValidationError),
         ('date_check', Decimal(1493942401000), ValidationError),
         ('datetime_check', datetime(2017, 5, 5, 10, 10, 10), datetime(2017, 5, 5, 10, 10, 10)),
         ('datetime_check', date(2017, 5, 5), datetime(2017, 5, 5, 0, 0, 0)),
-        ('datetime_check', '2017-05-05T10:10:10.0002', datetime(2017, 5, 5, 10, 10, 10, microsecond=200)),
+        pytest.param(
+            'datetime_check',
+            '2017-05-05T10:10:10.0002',
+            datetime(2017, 5, 5, 10, 10, 10, microsecond=200),
+            id='datetime_check-2017-05-05T10:10:10.0002_str-2017-05-05T10:10:10.0002_datetime',
+        ),
         ('datetime_check', '2017-05-05 10:10:10', datetime(2017, 5, 5, 10, 10, 10)),
         ('datetime_check', '2017-05-05 10:10:10+00:00', datetime(2017, 5, 5, 10, 10, 10, tzinfo=timezone.utc)),
-        ('datetime_check', b'2017-05-05T10:10:10.0002', datetime(2017, 5, 5, 10, 10, 10, microsecond=200)),
+        pytest.param(
+            'datetime_check',
+            b'2017-05-05T10:10:10.0002',
+            datetime(2017, 5, 5, 10, 10, 10, microsecond=200),
+            id='datetime_check-2017-05-05T10:10:10.0002_bytes-2017-05-05T10:10:10.0002_datetime',
+        ),
         ('datetime_check', 1493979010000, datetime(2017, 5, 5, 10, 10, 10, tzinfo=timezone.utc)),
         ('datetime_check', 1493979010, datetime(2017, 5, 5, 10, 10, 10, tzinfo=timezone.utc)),
         ('datetime_check', 1493979010000.0, datetime(2017, 5, 5, 10, 10, 10, tzinfo=timezone.utc)),
         ('datetime_check', Decimal(1493979010), datetime(2017, 5, 5, 10, 10, 10, tzinfo=timezone.utc)),
-        ('datetime_check', '2017-5-5T10:10:10', ValidationError),
-        ('datetime_check', b'2017-5-5T10:10:10', ValidationError),
+        pytest.param(
+            'datetime_check',
+            '2017-5-5T10:10:10',
+            ValidationError,
+            id='datetime_check-2017-5-5T10:10:10_str-ValidationError',
+        ),
+        pytest.param(
+            'datetime_check',
+            b'2017-5-5T10:10:10',
+            ValidationError,
+            id='datetime_check-2017-5-5T10:10:10_bytes-ValidationError',
+        ),
         ('time_check', time(10, 10, 10), time(10, 10, 10)),
         ('time_check', '10:10:10.0002', time(10, 10, 10, microsecond=200)),
         ('time_check', b'10:10:10.0002', time(10, 10, 10, microsecond=200)),
         ('time_check', 3720, time(1, 2, tzinfo=timezone.utc)),
         ('time_check', 3720.0002, time(1, 2, microsecond=200, tzinfo=timezone.utc)),
         ('time_check', Decimal(3720.0002), time(1, 2, microsecond=200, tzinfo=timezone.utc)),
-        ('time_check', '1:1:1', ValidationError),
-        ('time_check', b'1:1:1', ValidationError),
+        pytest.param('time_check', '1:1:1', ValidationError, id='time_check-1:1:1_str-ValidationError'),
+        pytest.param('time_check', b'1:1:1', ValidationError, id='time_check-1:1:1_bytes-ValidationError'),
         ('time_check', -1, ValidationError),
         ('time_check', 86400, ValidationError),
         ('time_check', 86400.0, ValidationError),
@@ -1425,8 +1450,10 @@ class BoolCastable:
         ('timedelta_check', 123_000, timedelta(days=1, seconds=36600)),
         ('timedelta_check', 123_000.0002, timedelta(days=1, seconds=36600, microseconds=200)),
         ('timedelta_check', Decimal(123_000.0002), timedelta(days=1, seconds=36600, microseconds=200)),
-        ('timedelta_check', '1 10:10', ValidationError),
-        ('timedelta_check', b'1 10:10', ValidationError),
+        pytest.param('timedelta_check', '1 10:10', ValidationError, id='timedelta_check-1 10:10_str-ValidationError'),
+        pytest.param(
+            'timedelta_check', b'1 10:10', ValidationError, id='timedelta_check-1 10:10_bytes-ValidationError'
+        ),
         ('list_check', ['1', '2'], ['1', '2']),
         ('list_check', ('1', '2'), ['1', '2']),
         ('list_check', {'1': 1, '2': 2}.keys(), ['1', '2']),
@@ -2006,7 +2033,7 @@ def test_list_success(value, result):
     assert Model(v=value).v == result
 
 
-@pytest.mark.parametrize('value', (123, '123'))
+@pytest.mark.parametrize('value', (pytest.param(123, id='int-123'), pytest.param('123', id='str-123')))
 def test_list_fails(value):
     class Model(BaseModel):
         v: list
@@ -2056,7 +2083,7 @@ def test_tuple_success(value, result):
     assert Model(v=value).v == result
 
 
-@pytest.mark.parametrize('value', (123, '123'))
+@pytest.mark.parametrize('value', (pytest.param(123, id='int-123'), pytest.param('123', id='str-123')))
 def test_tuple_fails(value):
     class Model(BaseModel):
         v: tuple
@@ -2145,7 +2172,7 @@ def test_set_success(value, result):
     assert Model(v=value).v == result
 
 
-@pytest.mark.parametrize('value', (123, '123'))
+@pytest.mark.parametrize('value', (pytest.param(123, id='int-123'), pytest.param('123', id='str-123')))
 def test_set_fails(value):
     class Model(BaseModel):
         v: set
@@ -2245,7 +2272,9 @@ def test_infinite_iterable_int():
     ]
 
 
-@pytest.mark.parametrize('type_annotation', (Iterable[Any], Iterable))
+@pytest.mark.parametrize(
+    'type_annotation', (pytest.param(Iterable[Any], id='Iterable[Any]'), pytest.param(Iterable, id='Iterable'))
+)
 def test_iterable_any(type_annotation):
     class Model(BaseModel):
         it: type_annotation
@@ -4011,12 +4040,10 @@ def test_valid_simple_json_any():
     assert JsonModel(json_obj=obj).model_dump() == {'json_obj': {'a': 1, 'b': [2, 3]}}
 
 
-@pytest.mark.parametrize('gen_type', [lambda: Json, lambda: Json[Any]])
-def test_invalid_simple_json(gen_type):
-    t = gen_type()
-
+@pytest.mark.parametrize('type_expr', [Json, Json[Any]])
+def test_invalid_simple_json(type_expr):
     class JsonModel(BaseModel):
-        json_obj: t
+        json_obj: type_expr
 
     obj = '{a: 1, b: [2, 3]}'
     with pytest.raises(ValidationError) as exc_info:
@@ -4304,50 +4331,44 @@ def test_pattern_with_invalid_param():
             'Input should be a valid regular expression',
             id='re.Pattern-pattern_regex',
         ),
+        pytest.param(re.Pattern, (), 'pattern_type', 'Input should be a valid pattern', id='re.Pattern-pattern_type'),
         pytest.param(
-            Pattern, '[xx', 'pattern_regex', 'Input should be a valid regular expression', id='re.Pattern-pattern_regex'
-        ),
-        pytest.param(
-            re.Pattern, (), 'pattern_type', 'Input should be a valid pattern', id='typing.Pattern-pattern_type'
-        ),
-        pytest.param(Pattern, (), 'pattern_type', 'Input should be a valid pattern', id='typing.Pattern-pattern_type'),
-        pytest.param(
-            Pattern[str],
+            re.Pattern[str],
             re.compile(b''),
             'pattern_str_type',
             'Input should be a string pattern',
-            id='typing.Pattern[str]-pattern_str_type-non_str',
+            id='re.Pattern[str]-pattern_str_type-non_str',
         ),
         pytest.param(
-            Pattern[str],
+            re.Pattern[str],
             b'',
             'pattern_str_type',
             'Input should be a string pattern',
-            id='typing.Pattern[str]-pattern_str_type-bytes',
+            id='re.Pattern[str]-pattern_str_type-bytes',
         ),
         pytest.param(
-            Pattern[str], (), 'pattern_type', 'Input should be a valid pattern', id='typing.Pattern[str]-pattern_type'
+            re.Pattern[str], (), 'pattern_type', 'Input should be a valid pattern', id='re.Pattern[str]-pattern_type'
         ),
         pytest.param(
-            Pattern[bytes],
+            re.Pattern[bytes],
             re.compile(''),
             'pattern_bytes_type',
             'Input should be a bytes pattern',
-            id='typing.Pattern[bytes]-pattern_bytes_type-non_bytes',
+            id='re.Pattern[bytes]-pattern_bytes_type-non_bytes',
         ),
         pytest.param(
-            Pattern[bytes],
+            re.Pattern[bytes],
             '',
             'pattern_bytes_type',
             'Input should be a bytes pattern',
-            id='typing.Pattern[bytes]-pattern_bytes_type-str',
+            id='re.Pattern[bytes]-pattern_bytes_type-str',
         ),
         pytest.param(
-            Pattern[bytes],
+            re.Pattern[bytes],
             (),
             'pattern_type',
             'Input should be a valid pattern',
-            id='typing.Pattern[bytes]-pattern_type',
+            id='re.Pattern[bytes]-pattern_type',
         ),
     ],
 )
@@ -4580,7 +4601,6 @@ def test_strict_secretfield_annotated(field, value, error_msg):
         'infinity',
         float('inf'),
         int('1' + '0' * 100),
-        1e1000,
         float('-infinity'),
         float('nan'),
     ],
@@ -4621,48 +4641,48 @@ def test_secret_union_serializable() -> None:
 @pytest.mark.parametrize(
     'pydantic_type',
     [
-        Strict,
-        StrictBool,
-        conint,
-        PositiveInt,
-        NegativeInt,
-        NonPositiveInt,
-        NonNegativeInt,
-        StrictInt,
-        confloat,
-        PositiveFloat,
-        NegativeFloat,
-        NonPositiveFloat,
-        NonNegativeFloat,
-        StrictFloat,
-        FiniteFloat,
-        conbytes,
-        Secret,
-        SecretBytes,
-        constr,
-        StrictStr,
-        SecretStr,
-        ImportString,
-        conset,
-        confrozenset,
-        conlist,
-        condecimal,
-        UUID1,
-        UUID3,
-        UUID4,
-        UUID5,
-        FilePath,
-        DirectoryPath,
-        NewPath,
-        Json,
-        ByteSize,
-        condate,
-        PastDate,
-        FutureDate,
-        PastDatetime,
-        FutureDatetime,
-        AwareDatetime,
-        NaiveDatetime,
+        pytest.param(Strict, id='Strict'),
+        pytest.param(StrictBool, id='StrictBool'),
+        pytest.param(conint, id='conint'),
+        pytest.param(PositiveInt, id='PositiveInt'),
+        pytest.param(NegativeInt, id='NegativeInt'),
+        pytest.param(NonPositiveInt, id='NonPositiveInt'),
+        pytest.param(NonNegativeInt, id='NonNegativeInt'),
+        pytest.param(StrictInt, id='StrictInt'),
+        pytest.param(confloat, id='confloat'),
+        pytest.param(PositiveFloat, id='PositiveFloat'),
+        pytest.param(NegativeFloat, id='NegativeFloat'),
+        pytest.param(NonPositiveFloat, id='NonPositiveFloat'),
+        pytest.param(NonNegativeFloat, id='NonNegativeFloat'),
+        pytest.param(StrictFloat, id='StrictFloat'),
+        pytest.param(FiniteFloat, id='FiniteFloat'),
+        pytest.param(conbytes, id='conbytes'),
+        pytest.param(Secret, id='Secret'),
+        pytest.param(SecretBytes, id='SecretBytes'),
+        pytest.param(constr, id='constr'),
+        pytest.param(StrictStr, id='StrictStr'),
+        pytest.param(SecretStr, id='SecretStr'),
+        pytest.param(ImportString, id='ImportString'),
+        pytest.param(conset, id='conset'),
+        pytest.param(confrozenset, id='confrozenset'),
+        pytest.param(conlist, id='conlist'),
+        pytest.param(condecimal, id='condecimal'),
+        pytest.param(UUID1, id='UUID1'),
+        pytest.param(UUID3, id='UUID3'),
+        pytest.param(UUID4, id='UUID4'),
+        pytest.param(UUID5, id='UUID5'),
+        pytest.param(FilePath, id='FilePath'),
+        pytest.param(DirectoryPath, id='DirectoryPath'),
+        pytest.param(NewPath, id='NewPath'),
+        pytest.param(Json, id='Json'),
+        pytest.param(ByteSize, id='ByteSize'),
+        pytest.param(condate, id='condate'),
+        pytest.param(PastDate, id='PastDate'),
+        pytest.param(FutureDate, id='FutureDate'),
+        pytest.param(PastDatetime, id='PastDatetime'),
+        pytest.param(FutureDatetime, id='FutureDatetime'),
+        pytest.param(AwareDatetime, id='AwareDatetime'),
+        pytest.param(NaiveDatetime, id='NaiveDatetime'),
     ],
 )
 def test_is_hashable(pydantic_type):
@@ -4965,8 +4985,8 @@ def test_frozenset_field_not_convertible():
 @pytest.mark.parametrize(
     'input_value,output,human_bin,human_dec,human_sep',
     (
-        (1, 1, '1B', '1B', '1 B'),
-        ('1', 1, '1B', '1B', '1 B'),
+        pytest.param(1, 1, '1B', '1B', '1 B', id='1_int-1_int-1B-1B-1 B'),
+        pytest.param('1', 1, '1B', '1B', '1 B', id='1_str-1_int-1B-1B-1 B'),
         ('1.0', 1, '1B', '1B', '1 B'),
         ('1b', 1, '1B', '1B', '1 B'),
         ('1.5 KB', int(1.5e3), '1.5KiB', '1.5KB', '1.5 KiB'),
@@ -5240,7 +5260,7 @@ def test_deque_enforces_maxlen():
         DequeModel1(field=deque([1, 2, 3, 4]))
 
 
-@pytest.mark.parametrize('value_type', (None, type(None), None.__class__))
+@pytest.mark.parametrize('value_type', (None, type(None)))
 def test_none(value_type):
     class Model(BaseModel):
         my_none: value_type
@@ -5896,7 +5916,13 @@ def test_custom_default_dict() -> None:
     assert ta.validate_python({'a': 1}) == CustomDefaultDict(int, {'a': 1})
 
 
-@pytest.mark.parametrize('field_type', [typing.OrderedDict, collections.OrderedDict])
+@pytest.mark.parametrize(
+    'field_type',
+    [
+        pytest.param(typing.OrderedDict, id='typing.OrderedDict'),
+        pytest.param(collections.OrderedDict, id='collections.OrderedDict'),
+    ],
+)
 def test_ordered_dict_from_ordered_dict(field_type):
     class Model(BaseModel):
         od_field: field_type
@@ -5946,7 +5972,13 @@ def test_ordered_dict_from_ordered_dict_typed():
     }
 
 
-@pytest.mark.parametrize('field_type', [typing.OrderedDict, collections.OrderedDict])
+@pytest.mark.parametrize(
+    'field_type',
+    [
+        pytest.param(typing.OrderedDict, id='typing.OrderedDict'),
+        pytest.param(collections.OrderedDict, id='collections.OrderedDict'),
+    ],
+)
 def test_ordered_dict_from_dict(field_type):
     class Model(BaseModel):
         od_field: field_type
@@ -6222,7 +6254,13 @@ def test_iterable_arbitrary_type():
             x: CustomIterable
 
 
-@pytest.mark.parametrize('typing_literal', [typing.Literal, typing_extensions.Literal])
+@pytest.mark.parametrize(
+    'typing_literal',
+    [
+        pytest.param(typing.Literal, id='typing.Literal'),
+        pytest.param(typing_extensions.Literal, id='typing_extensions.Literal'),
+    ],
+)
 def test_literal_field(typing_literal):
 
     class Model(BaseModel):
@@ -7157,7 +7195,11 @@ def test_annotated_metadata_any_order() -> None:
         assert 'datetime.timedelta(days=365)' in str(ex)
 
 
-@pytest.mark.parametrize('base64_type', [Base64Bytes, Base64Str, Base64UrlBytes, Base64UrlStr])
+@pytest.mark.parametrize(
+    'base64_type',
+    [Base64Bytes, Base64Str, Base64UrlBytes, Base64UrlStr],
+    ids=['Base64Bytes', 'Base64Str', 'Base64UrlBytes', 'Base64UrlStr'],
+)
 def test_base64_with_invalid_min_length(base64_type) -> None:
     """Check that an error is raised when the length of the base64 type's value is less or more than the min_length and max_length."""
 

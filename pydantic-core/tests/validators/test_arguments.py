@@ -189,7 +189,6 @@ def test_positional_args(py_and_json: PyAndJson, input_value, expected):
         [ArgsKwargs((), {'a': 1, 'b': 'a', 'c': True}), ((), {'a': 1, 'b': 'a', 'c': True})],
         [{'a': 1, 'b': 'a', 'c': True}, ((), {'a': 1, 'b': 'a', 'c': True})],
         [ArgsKwargs((), {'a': '1', 'b': 'a', 'c': 'True'}), ((), {'a': 1, 'b': 'a', 'c': True})],
-        [ArgsKwargs((), {'a': 1, 'b': 'a', 'c': True}), ((), {'a': 1, 'b': 'a', 'c': True})],
         [ArgsKwargs((1,), {'a': 1, 'b': 'a', 'c': True}), Err('type=unexpected_positional_argument,')],
         [
             ArgsKwargs((), {'a': 1, 'b': 'a', 'c': True, 'd': 'wrong'}),
@@ -479,7 +478,6 @@ def test_positional_optional(py_and_json: PyAndJson, input_value, expected):
     'input_value,expected',
     [
         [{'a': 1}, ((), {'a': 1})],
-        [ArgsKwargs((), {'a': 1}), ((), {'a': 1})],
         [ArgsKwargs((), {'a': 1}), ((), {'a': 1})],
         [ArgsKwargs(()), ((), {'a': 1})],
     ],

@@ -42,12 +42,13 @@ def test_str():
         ),
         (' s p a c e d ', '" s p a c e d "'),
         ('\U0001d120', '"\\ud834\\udd20"'),
-        ('\u03b1\u03a9', '"\\u03b1\\u03a9"'),
+        pytest.param('\u03b1\u03a9', '"\\u03b1\\u03a9"', id='\\u03b1\\u03a9'),
         ("`1~!@#$%^&*()_+-={':[,]}|;.</>?", '"`1~!@#$%^&*()_+-={\':[,]}|;.</>?"'),
-        ('\x08\x0c\n\r\t', '"\\b\\f\\n\\r\\t"'),
-        ('\u0123\u4567\u89ab\ucdef\uabcd\uef4a', '"\\u0123\\u4567\\u89ab\\ucdef\\uabcd\\uef4a"'),
-        ('\N{GREEK SMALL LETTER ALPHA}\N{GREEK CAPITAL LETTER OMEGA}', '"\\u03b1\\u03a9"'),
-        ('\U0001d120', '"\\ud834\\udd20"'),
+        pytest.param(
+            '\N{GREEK SMALL LETTER ALPHA}\N{GREEK CAPITAL LETTER OMEGA}',
+            '"\\u03b1\\u03a9"',
+            id='\\N{GREEK SMALL LETTER ALPHA}\\N{GREEK CAPITAL LETTER OMEGA}',
+        ),
     ],
 )
 def test_str_ensure_ascii(input: str, expected: str) -> None:
@@ -167,7 +168,12 @@ class StrEnum(str, Enum):
 
 @pytest.mark.parametrize('schema_type', ['str', 'any'])
 @pytest.mark.parametrize(
-    'input_value,expected', [(StrSubclass('foo'), 'foo'), (StrMixin('foo'), 'foo'), (StrEnum.foo, 'foo-value')]
+    'input_value,expected',
+    [
+        pytest.param(StrSubclass('foo'), 'foo', id='StrSubclass'),
+        pytest.param(StrMixin('foo'), 'foo', id='StrMixin'),
+        pytest.param(StrEnum.foo, 'foo-value', id='StrEnum'),
+    ],
 )
 def test_subclass_str(schema_type, input_value, expected):
     s = SchemaSerializer({'type': schema_type})
