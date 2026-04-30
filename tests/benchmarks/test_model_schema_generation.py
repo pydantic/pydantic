@@ -1,3 +1,4 @@
+import sys
 from collections.abc import Mapping, Sequence
 from typing import (
     Annotated,
@@ -10,7 +11,7 @@ from typing import (
 )
 
 import pytest
-from typing_extensions import Self
+from typing_extensions import Self, type_repr
 
 from pydantic import (
     AfterValidator,
@@ -344,21 +345,23 @@ def test_model_subclass(benchmark):
             pass
 
 
-@pytest.mark.parametrize('field_type', StdLibTypes)
-@pytest.mark.benchmark(group='stdlib_schema_generation')
-@pytest.mark.skip('Clutters codspeed CI, but should be enabled on branches where we modify schema building.')
-def test_stdlib_type_schema_generation(benchmark, field_type):
-    class StdlibTypeModel(DeferredModel):
-        field: field_type
+# On Python 3.10, type_repr produces duplicate ids.
+if sys.version_info >= (3, 11):
 
-    benchmark(rebuild_model, StdlibTypeModel)
+    @pytest.mark.parametrize('field_type', StdLibTypes, ids=type_repr)
+    @pytest.mark.benchmark(group='stdlib_schema_generation')
+    @pytest.mark.skip('Clutters codspeed CI, but should be enabled on branches where we modify schema building.')
+    def test_stdlib_type_schema_generation(benchmark, field_type):
+        class StdlibTypeModel(DeferredModel):
+            field: field_type
 
+        benchmark(rebuild_model, StdlibTypeModel)
 
-@pytest.mark.parametrize('field_type', PydanticTypes)
-@pytest.mark.benchmark(group='pydantic_custom_types_schema_generation')
-@pytest.mark.skip('Clutters codspeed CI, but should be enabled on branches where we modify schema building.')
-def test_pydantic_custom_types_schema_generation(benchmark, field_type):
-    class PydanticTypeModel(DeferredModel):
-        field: field_type
+    @pytest.mark.parametrize('field_type', PydanticTypes, ids=type_repr)
+    @pytest.mark.benchmark(group='pydantic_custom_types_schema_generation')
+    @pytest.mark.skip('Clutters codspeed CI, but should be enabled on branches where we modify schema building.')
+    def test_pydantic_custom_types_schema_generation(benchmark, field_type):
+        class PydanticTypeModel(DeferredModel):
+            field: field_type
 
-    benchmark(rebuild_model, PydanticTypeModel)
+        benchmark(rebuild_model, PydanticTypeModel)

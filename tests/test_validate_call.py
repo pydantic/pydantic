@@ -287,13 +287,11 @@ def test_var_args_kwargs(validated):
 
 
 def test_unpacked_typed_dict_kwargs_invalid_type() -> None:
-    with pytest.raises(PydanticUserError) as exc:
+    with pytest.raises(PydanticUserError, check=lambda e: e.code == 'unpack-typed-dict'):
 
         @validate_call
         def foo(**kwargs: Unpack[int]):
             pass
-
-    assert exc.value.code == 'unpack-typed-dict'
 
 
 def test_unpacked_typed_dict_kwargs_overlaps() -> None:
@@ -302,14 +300,17 @@ def test_unpacked_typed_dict_kwargs_overlaps() -> None:
         b: int
         c: int
 
-    with pytest.raises(PydanticUserError) as exc:
+    with pytest.raises(
+        PydanticUserError,
+        check=lambda e: (
+            e.code == 'overlapping-unpack-typed-dict'
+            and e.message == "Typed dictionary 'TD' overlaps with parameters 'a', 'b'"
+        ),
+    ):
 
         @validate_call
         def foo(a: int, b: int, **kwargs: Unpack[TD]):
             pass
-
-    assert exc.value.code == 'overlapping-unpack-typed-dict'
-    assert exc.value.message == "Typed dictionary 'TD' overlaps with parameters 'a', 'b'"
 
     # Works for a pos-only argument
     @validate_call

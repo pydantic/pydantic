@@ -1,11 +1,11 @@
 import json
-from dataclasses import dataclass
 
 import pytest
 from typing_extensions import TypedDict
 
 from pydantic import BaseModel, ConfigDict, RootModel, SecretStr, SerializeAsAny, TypeAdapter
-from pydantic.dataclasses import dataclass as pydantic_dataclass
+
+from .utils import dataclass_decorators
 
 
 class User(BaseModel):
@@ -91,7 +91,7 @@ def test_serialize_as_any_type_adapter() -> None:
     assert json.loads(ta.dump_json(user_login, serialize_as_any=True)) == {'name': 'pydantic', 'password': '**********'}
 
 
-@pytest.mark.parametrize('dataclass_constructor', [dataclass, pydantic_dataclass])
+@pytest.mark.parametrize('dataclass_constructor', **dataclass_decorators(include_combined=False))
 def test_serialize_as_any_with_dataclasses(dataclass_constructor) -> None:
     @dataclass_constructor
     class User:

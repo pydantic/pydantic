@@ -24,8 +24,8 @@ from ..conftest import plain_repr
         ('false', False),
         (1, 1),
         (0, 0),
-        (123, 123),
-        ('123', 123),
+        pytest.param(123, 123, id='123_int-123_int'),
+        pytest.param('123', 123, id='123_str-123_int'),
         ('0', False),  # this case is different depending on the order of the choices
         ('1', True),  # this case is different depending on the order of the choices
     ],
@@ -42,12 +42,12 @@ def test_union_bool_int(input_value, expected_value):
         (False, False),
         ('true', True),
         ('false', False),
-        (1, 1),
-        (0, 0),
-        (123, 123),
-        ('123', 123),
-        ('0', 0),  # this case is different depending on the order of the choices
-        ('1', 1),  # this case is different depending on the order of the choices
+        pytest.param(1, 1, id='1_int-1_int'),
+        pytest.param(0, 0, id='0_int-0_int'),
+        pytest.param(123, 123, id='123_int-123_int'),
+        pytest.param('123', 123, id='123_str-123_int'),
+        pytest.param('0', 0, id='0_str-0_int'),  # this case is different depending on the order of the choices
+        pytest.param('1', 1, id='1_str-1_int'),  # this case is different depending on the order of the choices
     ],
 )
 def test_union_int_bool(input_value, expected_value):

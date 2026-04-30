@@ -1,10 +1,10 @@
 import re
 import typing
-from collections.abc import Callable
 from typing import Any
 
 import pytest
 import typing_extensions
+from _pytest.mark.structures import ParameterSet
 
 import pydantic
 from pydantic import BaseModel, ConfigDict, Field, TypeAdapter, computed_field
@@ -35,17 +35,17 @@ def make_title(name: str, _):
     return re.sub(r'(?<=[a-z])([A-Z])', r' \1', _capitalize(name))
 
 
-FIELD_TITLE_GENERATORS: list[Callable[[str, Any], str]] = [
-    lambda t, _: t.lower(),
-    lambda t, _: t * 2,
-    lambda t, _: 'My Title',
-    make_title,
+FIELD_TITLE_GENERATORS: list[ParameterSet] = [
+    pytest.param(lambda t, _: t.lower(), id='lower'),
+    pytest.param(lambda t, _: t * 2, id='t * 2'),
+    pytest.param(lambda t, _: 'My Title', id='My Title'),
+    pytest.param(make_title, id='make_title'),
 ]
 
-MODEL_TITLE_GENERATORS: list[Callable[[Any], str]] = [
-    lambda m: m.__name__.upper(),
-    lambda m: m.__name__ * 2,
-    lambda m: 'My Model',
+MODEL_TITLE_GENERATORS: list[ParameterSet] = [
+    pytest.param(lambda m: m.__name__.upper(), id='upper'),
+    pytest.param(lambda m: m.__name__ * 2, id='name * 2'),
+    pytest.param(lambda m: 'My Model', id='My Model'),
 ]
 
 

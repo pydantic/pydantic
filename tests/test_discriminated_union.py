@@ -1778,7 +1778,7 @@ def test_callable_discriminated_union_with_missing_tag() -> None:
         if isinstance(v, (dict, BaseModel)):
             return 'model'
 
-    with pytest.raises(PydanticUserError) as exc_info:
+    with pytest.raises(PydanticUserError, check=lambda e: e.code == 'callable-discriminator-no-tag'):
 
         class DiscriminatedModel(BaseModel):
             x: Annotated[
@@ -1786,9 +1786,7 @@ def test_callable_discriminated_union_with_missing_tag() -> None:
                 Discriminator(model_x_discriminator),
             ]
 
-    assert exc_info.value.code == 'callable-discriminator-no-tag'
-
-    with pytest.raises(PydanticUserError) as exc_info:
+    with pytest.raises(PydanticUserError, check=lambda e: e.code == 'callable-discriminator-no-tag'):
 
         class DiscriminatedModel(BaseModel):
             x: Annotated[
@@ -1796,17 +1794,13 @@ def test_callable_discriminated_union_with_missing_tag() -> None:
                 Discriminator(model_x_discriminator),
             ]
 
-    assert exc_info.value.code == 'callable-discriminator-no-tag'
-
-    with pytest.raises(PydanticUserError) as exc_info:
+    with pytest.raises(PydanticUserError, check=lambda e: e.code == 'callable-discriminator-no-tag'):
 
         class DiscriminatedModel(BaseModel):
             x: Annotated[
                 str | Annotated['DiscriminatedModel', Tag('model')],
                 Discriminator(model_x_discriminator),
             ]
-
-    assert exc_info.value.code == 'callable-discriminator-no-tag'
 
 
 @pytest.mark.xfail(

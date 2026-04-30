@@ -1,18 +1,27 @@
 import dataclasses
 import re
+import sys
 import typing
 
 import pytest
 import typing_extensions
-from typing_extensions import NamedTuple, TypedDict
+from typing_extensions import NamedTuple, TypedDict, TypeForm
 
 from pydantic import BaseModel, Field, PydanticUserError, TypeAdapter, ValidationError, computed_field, validate_call
 
-self_types = [typing_extensions.Self]
-if hasattr(typing, 'Self'):
+self_types: list[TypeForm] = []
+ids: list[str] = []
+if sys.version_info >= (3, 11):
     self_types.append(typing.Self)
+    ids.append('typing-self')
+    if typing.Self is not typing_extensions.Self:
+        self_types.append(typing_extensions.Self)
+        ids.append('typing-extensions-self')
+else:
+    self_types.append(typing_extensions.Self)
+    ids.append('typing-extensions-self')
 
-pytestmark = pytest.mark.parametrize('Self', self_types)
+pytestmark = pytest.mark.parametrize('Self', self_types, ids=ids)
 
 
 def test_recursive_model(Self):

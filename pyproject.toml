@@ -43,7 +43,7 @@ classifiers = [
 ]
 requires-python = '>=3.10'
 dependencies = [
-    'typing-extensions>=4.14.1',
+    'typing-extensions>=4.15.0',
     'annotated-types>=0.6.0',
     # Keep this in sync with the version in the `check_pydantic_core_version()` function:
     'pydantic-core==2.46.0',
@@ -171,9 +171,9 @@ substitutions = [
     {pattern = '@@', replacement = '@'},
 ]
 
-[tool.pytest.ini_options]
-testpaths = 'tests'
-xfail_strict = true
+[tool.pytest]
+testpaths = ['tests']
+strict = true
 filterwarnings = [
     'error',
     'ignore:path is deprecated.*:DeprecationWarning:',

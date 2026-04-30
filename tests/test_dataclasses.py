@@ -35,18 +35,22 @@ from pydantic import (
     PydanticUndefinedAnnotation,
     PydanticUserError,
     RootModel,
+    SerializationInfo,
     TypeAdapter,
     ValidationError,
     ValidationInfo,
     computed_field,
     field_serializer,
     field_validator,
+    model_serializer,
     model_validator,
     with_config,
 )
 from pydantic._internal._mock_val_ser import MockValSer
 from pydantic.dataclasses import is_pydantic_dataclass, rebuild_dataclass
 from pydantic.json_schema import model_json_schema
+
+from .utils import dataclass_decorators
 
 
 def test_cannot_create_dataclass_from_basemodel_subclass():
@@ -1852,36 +1856,8 @@ def test_repr_false(field_constructor: Callable):
     assert "hidden_field='this_should_not_be_included'" not in repr(instance)
 
 
-def dataclass_decorators(include_identity: bool = False, exclude_combined: bool = False):
-    decorators = [pydantic.dataclasses.dataclass, dataclasses.dataclass]
-    ids = ['pydantic', 'stdlib']
-
-    if not exclude_combined:
-
-        def combined_decorator(cls):
-            """
-            Should be equivalent to:
-            @pydantic.dataclasses.dataclass
-            @dataclasses.dataclass
-            """
-            return pydantic.dataclasses.dataclass(dataclasses.dataclass(cls))
-
-        decorators.append(combined_decorator)
-        ids.append('combined')
-
-    if include_identity:
-
-        def identity_decorator(cls):
-            return cls
-
-        decorators.append(identity_decorator)
-        ids.append('identity')
-
-    return {'argvalues': decorators, 'ids': ids}
-
-
-@pytest.mark.parametrize('decorator1', **dataclass_decorators(exclude_combined=True))
-@pytest.mark.parametrize('decorator2', **dataclass_decorators(exclude_combined=True))
+@pytest.mark.parametrize('decorator1', **dataclass_decorators(include_combined=False))
+@pytest.mark.parametrize('decorator2', **dataclass_decorators(include_combined=False))
 def test_kw_only_inheritance(decorator1, decorator2):
     # Exclude combined from the decorators since it doesn't know how to accept kw_only
     @decorator1(kw_only=True)
@@ -3287,3 +3263,85 @@ def test_dataclass_field_override_kw_only() -> None:
 
     assert a_param.kind is inspect.Parameter.POSITIONAL_OR_KEYWORD
     assert a_param.default is inspect.Parameter.empty
+
+
+@pytest.mark.parametrize('config', [True, False, None])
+@pytest.mark.parametrize('runtime', [True, False, None])
+@pytest.mark.parametrize('dataclass_decorator', **dataclass_decorators(include_combined=False))
+def test_polymorphic_serialization(config: bool, runtime: bool, dataclass_decorator: Any) -> None:
+    @dataclass_decorator
+    class ClassA:
+        if config is not None:
+            __pydantic_config__ = ConfigDict(polymorphic_serialization=config)
+
+        a: int
+
+    @dataclass_decorator
+    class ClassB(ClassA):
+        b: str
+
+    kwargs = {}
+    if runtime is not None:
+        kwargs['polymorphic_serialization'] = runtime
+
+    serializer = TypeAdapter(ClassA).serializer
+
+    assert serializer.to_python(ClassA(a=123), **kwargs) == {'a': 123}
+    assert serializer.to_json(ClassA(a=123), **kwargs) == b'{"a":123}'
+
+    polymorphism_enabled = runtime if runtime is not None else config
+    # FIXME: stdlib dataclass does not serialize with polymorphism yet
+    if polymorphism_enabled and dataclass_decorator is pydantic.dataclasses.dataclass:
+        assert serializer.to_python(ClassB(a=123, b='test'), **kwargs) == {'a': 123, 'b': 'test'}
+        assert serializer.to_json(ClassB(a=123, b='test'), **kwargs) == b'{"a":123,"b":"test"}'
+    else:
+        assert serializer.to_python(ClassB(a=123, b='test'), **kwargs) == {'a': 123}
+        assert serializer.to_json(ClassB(a=123, b='test'), **kwargs) == b'{"a":123}'
+
+
+@pytest.mark.parametrize('config', [True, False, None])
+@pytest.mark.parametrize('runtime', [True, False, None])
+@pytest.mark.parametrize('dataclass_decorator', **dataclass_decorators(include_combined=False))
+def test_polymorphic_serialization_with_model_serializer(config: bool, runtime: bool, dataclass_decorator: Any) -> None:
+    @dataclass_decorator
+    class ClassA:
+        if config is not None:
+            __pydantic_config__ = ConfigDict(polymorphic_serialization=config)
+
+        a: int
+
+        @model_serializer
+        def serialize(self, info: SerializationInfo) -> str:
+            assert info.polymorphic_serialization is runtime
+            return 'ClassA'
+
+    @dataclass_decorator
+    class ClassB(ClassA):
+        b: str
+
+        @model_serializer
+        def serialize(self, info: SerializationInfo) -> str:
+            assert info.polymorphic_serialization is runtime
+            return 'ClassB'
+
+    kwargs = {}
+    if runtime is not None:
+        kwargs['polymorphic_serialization'] = runtime
+
+    serializer = TypeAdapter(ClassA).serializer
+
+    kwargs = {}
+    if runtime is not None:
+        kwargs['polymorphic_serialization'] = runtime
+
+    assert serializer.to_python(ClassA(a=123), **kwargs) == 'ClassA'
+    assert serializer.to_json(ClassA(a=123), **kwargs) == b'"ClassA"'
+
+    polymorphism_enabled = runtime if runtime is not None else config
+    # FIXME: stdlib dataclass does not serialize with polymorphism yet
+    if polymorphism_enabled and dataclass_decorator is pydantic.dataclasses.dataclass:
+        assert serializer.to_python(ClassB(a=123, b='test'), **kwargs) == 'ClassB'
+        assert serializer.to_json(ClassB(a=123, b='test'), **kwargs) == b'"ClassB"'
+    else:
+        assert serializer.to_python(ClassB(a=123, b='test'), **kwargs) == 'ClassA'
+        assert serializer.to_json(ClassB(a=123, b='test'), **kwargs) == b'"ClassA"'

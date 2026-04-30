@@ -245,7 +245,7 @@ def test_int_validation():
     assert Model(a=(2**63) + 100).a == (2**63) + 100
 
 
-@pytest.mark.parametrize('value', [2.2250738585072011e308, float('nan'), float('inf')])
+@pytest.mark.parametrize('value', [float('nan'), float('inf')])
 def test_int_overflow_validation(value):
     class Model(BaseModel):
         a: int
@@ -532,7 +532,7 @@ def test_classmethod():
 
 
 def test_use_bare():
-    with pytest.raises(PydanticUserError) as exc:
+    with pytest.raises(PydanticUserError, check=lambda e: e.code == 'decorator-missing-arguments'):
 
         class Model(BaseModel):
             a: str
@@ -543,11 +543,9 @@ def test_use_bare():
                 def checker(cls, v):
                     return v
 
-    assert exc.value.code == 'decorator-missing-arguments'
-
 
 def test_use_bare_field_validator():
-    with pytest.raises(PydanticUserError) as exc:
+    with pytest.raises(PydanticUserError, check=lambda e: e.code == 'decorator-missing-arguments'):
 
         class Model(BaseModel):
             a: str
@@ -555,8 +553,6 @@ def test_use_bare_field_validator():
             @field_validator
             def checker(cls, v):
                 return v
-
-    assert exc.value.code == 'decorator-missing-arguments'
 
 
 def test_use_no_fields():
@@ -582,7 +578,7 @@ def test_use_no_fields_field_validator():
 
 
 def test_validator_bad_fields_throws_configerror():
-    with pytest.raises(PydanticUserError) as exc:
+    with pytest.raises(PydanticUserError, check=lambda e: e.code == 'decorator-invalid-fields'):
 
         class Model(BaseModel):
             a: str
@@ -594,11 +590,9 @@ def test_validator_bad_fields_throws_configerror():
                 def check_fields(cls, v):
                     return v
 
-    assert exc.value.code == 'decorator-invalid-fields'
-
 
 def test_field_validator_bad_fields_throws_configerror():
-    with pytest.raises(PydanticUserError) as exc:
+    with pytest.raises(PydanticUserError, check=lambda e: e.code == 'decorator-invalid-fields'):
 
         class Model1(BaseModel):
             a: str
@@ -608,9 +602,7 @@ def test_field_validator_bad_fields_throws_configerror():
             def check_fields(cls, v):
                 return v
 
-    assert exc.value.code == 'decorator-invalid-fields'
-
-    with pytest.raises(PydanticUserError) as exc:
+    with pytest.raises(PydanticUserError, check=lambda e: e.code == 'decorator-invalid-fields'):
 
         class Model2(BaseModel):
             a: str
@@ -620,8 +612,6 @@ def test_field_validator_bad_fields_throws_configerror():
             @classmethod
             def check_fields(cls, v):
                 return v
-
-    assert exc.value.code == 'decorator-invalid-fields'
 
 
 def test_validate_always():
@@ -2082,7 +2072,7 @@ def test_validator_self():
 
 
 def test_field_validator_self():
-    with pytest.raises(PydanticUserError) as exc:
+    with pytest.raises(PydanticUserError, check=lambda e: e.code == 'validator-instance-method'):
 
         class Model(BaseModel):
             a: int = 1
@@ -2090,8 +2080,6 @@ def test_field_validator_self():
             @field_validator('a')
             def check_a(self, values: Any) -> Any:
                 return values
-
-    assert exc.value.code == 'validator-instance-method'
 
 
 def test_v1_validator_signature_kwargs_not_allowed() -> None:

@@ -74,7 +74,7 @@ from ..conftest import Err, PyAndJson, plain_repr
                     }
                 ],
             ),
-            id='wrong-multiple-int',
+            id='wrong-multiple-int-2',
         ),
         (['a', 'b'], 'a', 'a'),
         pytest.param(

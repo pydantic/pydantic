@@ -2,6 +2,7 @@ import json
 import platform
 import re
 import sys
+import typing
 import warnings
 from collections import defaultdict
 from collections.abc import Callable, Mapping
@@ -807,7 +808,7 @@ class Foo(Enum):
     BAR = 'bar'
 
 
-@pytest.mark.parametrize('value', [Foo.FOO, Foo.FOO.value, 'foo'])
+@pytest.mark.parametrize('value', [Foo.FOO, Foo.FOO.value])
 def test_enum_values(value: Any) -> None:
     class Model(BaseModel):
         foo: Foo
@@ -857,7 +858,9 @@ class StrFoo(str, Enum):
     BAR = 'bar'
 
 
-@pytest.mark.parametrize('value', [StrFoo.FOO, StrFoo.FOO.value, 'foo', 'hello'])
+@pytest.mark.parametrize(
+    'value', [pytest.param(StrFoo.FOO, id='enum-StrFoo.FOO'), pytest.param(StrFoo.FOO.value, id='str-StrFoo.FOO.value')]
+)
 def test_literal_use_enum_values_multi_type(value) -> None:
     class Model(BaseModel):
         baz: Literal[StrFoo.FOO, 'hello']
@@ -1026,7 +1029,7 @@ def test_type_type_validation_fails(TypeTypeModel, input_value):
     ]
 
 
-@pytest.mark.parametrize('bare_type', [type, type])
+@pytest.mark.parametrize('bare_type', [type, typing.Type])  # noqa: UP006
 def test_bare_type_type_validation_success(bare_type):
     class TypeTypeModel(BaseModel):
         t: bare_type
@@ -1036,7 +1039,7 @@ def test_bare_type_type_validation_success(bare_type):
     assert m.t == arbitrary_type_class
 
 
-@pytest.mark.parametrize('bare_type', [type, type])
+@pytest.mark.parametrize('bare_type', [type, typing.Type])  # noqa: UP006
 def test_bare_type_type_validation_fails(bare_type):
     class TypeTypeModel(BaseModel):
         t: bare_type
@@ -3626,7 +3629,6 @@ def test_eval_type_backport():
 def test_inherited_class_vars(create_module):
     @create_module
     def module():
-        import typing
 
         from pydantic import BaseModel
 

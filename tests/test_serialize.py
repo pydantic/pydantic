@@ -148,7 +148,7 @@ def test_serializer_annotated_typing_cache(serializer, func):
 
 
 def test_use_bare_field_serializer():
-    with pytest.raises(PydanticUserError) as exc:
+    with pytest.raises(PydanticUserError, check=lambda e: e.code == 'decorator-missing-arguments'):
 
         class Model(BaseModel):
             a: str
@@ -156,8 +156,6 @@ def test_use_bare_field_serializer():
             @field_serializer
             def checker(cls, v):
                 return v
-
-    assert exc.value.code == 'decorator-missing-arguments'
 
 
 def test_use_no_fields_field_serializer():
@@ -174,7 +172,7 @@ def test_use_no_fields_field_serializer():
 
 
 def test_field_serializer_bad_fields_throws_configerror():
-    with pytest.raises(PydanticUserError) as exc:
+    with pytest.raises(PydanticUserError, check=lambda e: e.code == 'decorator-invalid-fields'):
 
         class Model1(BaseModel):
             a: str
@@ -184,9 +182,7 @@ def test_field_serializer_bad_fields_throws_configerror():
             def check_fields(cls, v):
                 return v
 
-    assert exc.value.code == 'decorator-invalid-fields'
-
-    with pytest.raises(PydanticUserError) as exc:
+    with pytest.raises(PydanticUserError, check=lambda e: e.code == 'decorator-invalid-fields'):
 
         class Model2(BaseModel):
             a: str
@@ -196,8 +192,6 @@ def test_field_serializer_bad_fields_throws_configerror():
             @classmethod
             def check_fields(cls, v):
                 return v
-
-    assert exc.value.code == 'decorator-invalid-fields'
 
 
 def test_serialize_decorator_always():

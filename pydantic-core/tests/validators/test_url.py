@@ -477,7 +477,6 @@ def strict_url_validator_fixture():
         ('http://user:@example.org', 'http://user@example.org/'),
         ('http://us[er:@example.org', Err('non-URL code point', 'url_syntax_violation')),
         ('http://us%5Ber:bar@example.org', 'http://us%5Ber:bar@example.org/'),
-        ('http://user:@example.org', 'http://user@example.org/'),
         ('mongodb://us%5Ber:bar@example.org', 'mongodb://us%5Ber:bar@example.org'),
         ('mongodb://us@er@example.org', Err('unencoded @ sign in username or password', 'url_syntax_violation')),
     ],

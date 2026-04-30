@@ -8,6 +8,7 @@ import pytest
 import pytz
 from annotated_types import BaseMetadata, GroupedMetadata, Gt, Lt, Not, Predicate
 from pydantic_core import CoreSchema, PydanticUndefined, core_schema
+from typing_extensions import Sentinel
 
 from pydantic import (
     BaseModel,
@@ -22,87 +23,91 @@ from pydantic.errors import PydanticSchemaGenerationError
 from pydantic.fields import PrivateAttr
 from pydantic.functional_validators import AfterValidator
 
-NO_VALUE = object()
+NO_DEFAULT = Sentinel('NO_DEFAULT')
 
 
-@pytest.mark.thread_unsafe(
-    reason=(
-        'The `FieldInfo.from_annotated_attribute()` implementation directly mutates the assigned value, '
-        'if it is a `Field()`. https://github.com/pydantic/pydantic/issues/11122 tracks this issue'
-    )
-)
 @pytest.mark.parametrize(
-    'hint_fn,value,expected_repr',
+    'type_expr,value,expected_repr',
     [
-        (
-            lambda: Annotated[int, Gt(0)],
+        pytest.param(
+            Annotated[int, Gt(0)],
             5,
             'FieldInfo(annotation=int, required=False, default=5, metadata=[Gt(gt=0)])',
+            id='Annotated[int, Gt(0)]-5',
         ),
-        (
-            lambda: Annotated[int, Field(gt=0)],
+        pytest.param(
+            Annotated[int, Field(gt=0)],
             5,
             'FieldInfo(annotation=int, required=False, default=5, metadata=[Gt(gt=0)])',
+            id='Annotated[int, Field(gt=0)]-5',
         ),
-        (
-            lambda: int,
+        pytest.param(
+            int,
             Field(5, gt=0),
             'FieldInfo(annotation=int, required=False, default=5, metadata=[Gt(gt=0)])',
+            id='int-Field(5, gt=0)',
         ),
-        (
-            lambda: int,
+        pytest.param(
+            int,
             Field(default_factory=lambda: 5, gt=0),
             'FieldInfo(annotation=int, required=False, default_factory=<lambda>, metadata=[Gt(gt=0)])',
+            id='int-Field(default_factory=lambda: 5, gt=0)',
         ),
-        (
-            lambda: Annotated[int, Lt(2)],
+        pytest.param(
+            Annotated[int, Lt(2)],
             Field(5, gt=0),
             'FieldInfo(annotation=int, required=False, default=5, metadata=[Gt(gt=0), Lt(lt=2)])',
+            id='Annotated[int, Lt(2)]-Field(5, gt=0)',
         ),
-        (
-            lambda: Annotated[int, Gt(0)],
-            NO_VALUE,
+        pytest.param(
+            Annotated[int, Gt(0)],
+            NO_DEFAULT,
             'FieldInfo(annotation=int, required=True, metadata=[Gt(gt=0)])',
+            id='Annotated[int, Gt(0)]-NO_VALUE',
         ),
-        (
-            lambda: Annotated[int, Gt(0)],
+        pytest.param(
+            Annotated[int, Gt(0)],
             Field(),
             'FieldInfo(annotation=int, required=True, metadata=[Gt(gt=0)])',
+            id='Annotated[int, Gt(0)]-Field()',
         ),
-        (
-            lambda: int,
+        pytest.param(
+            int,
             Field(gt=0),
             'FieldInfo(annotation=int, required=True, metadata=[Gt(gt=0)])',
+            id='int-Field(gt=0)',
         ),
-        (
-            lambda: Annotated[int, Gt(0)],
+        pytest.param(
+            Annotated[int, Gt(0)],
             PydanticUndefined,
             'FieldInfo(annotation=int, required=True, metadata=[Gt(gt=0)])',
+            id='Annotated[int, Gt(0)]-PydanticUndefined',
         ),
-        (
-            lambda: Annotated[int, Field(gt=0), Lt(2)],
+        pytest.param(
+            Annotated[int, Field(gt=0), Lt(2)],
             5,
             'FieldInfo(annotation=int, required=False, default=5, metadata=[Gt(gt=0), Lt(lt=2)])',
+            id='Annotated[int, Field(gt=0), Lt(2)]-5',
         ),
-        (
-            lambda: Annotated[int, Field(alias='foobar')],
+        pytest.param(
+            Annotated[int, Field(alias='foobar')],
             PydanticUndefined,
             "FieldInfo(annotation=int, required=True, alias='foobar', alias_priority=2)",
+            id="Annotated[int, Field(alias='foobar')]-PydanticUndefined",
         ),
     ],
 )
-def test_annotated(hint_fn, value, expected_repr):
-    hint = hint_fn()
+def test_annotated(type_expr, value, expected_repr):
 
-    if value is NO_VALUE:
+    if value is NO_DEFAULT:
 
         class M(BaseModel):
-            x: hint
+            x: type_expr
 
     else:
 
         class M(BaseModel):
-            x: hint = value
+            x: type_expr = value
 
     assert repr(M.model_fields['x']) == expected_repr
 
@@ -120,25 +125,25 @@ def test_annotated_allows_unknown(metadata):
 
 @pytest.mark.thread_unsafe(reason='`pytest.raises()` is thread unsafe')
 @pytest.mark.parametrize(
-    ['hint_fn', 'value', 'empty_init_ctx'],
+    ['type_expr', 'value', 'empty_init_ctx'],
     [
-        (
-            lambda: int,
+        pytest.param(
+            int,
             PydanticUndefined,
             pytest.raises(ValueError, match=r'Field required \[type=missing,'),
+            id='int-PydanticUndefined',
         ),
-        (
-            lambda: Annotated[int, Field()],
+        pytest.param(
+            Annotated[int, Field()],
             PydanticUndefined,
             pytest.raises(ValueError, match=r'Field required \[type=missing,'),
+            id='Annotated[int, Field()]-PydanticUndefined',
         ),
     ],
 )
-def test_annotated_instance_exceptions(hint_fn, value, empty_init_ctx):
-    hint = hint_fn()
-
+def test_annotated_instance_exceptions(type_expr, value, empty_init_ctx):
     class M(BaseModel):
-        x: hint = value
+        x: type_expr = value
 
     with empty_init_ctx:
         assert M().x == 5

@@ -865,17 +865,17 @@ def test_advanced_exclude_nested_lists(exclude, expected):
         pytest.param(
             {'subs': {'__all__': {'subsubs': {'__all__': {'i'}, 0: {'j'}}}}},
             {'subs': [{'subsubs': [{'i': 1, 'j': 1}, {'i': 2}]}, {'subsubs': [{'i': 3, 'j': 3}]}]},
-            id='Nested different keys 1',
+            id='Nested different keys 4',
         ),
         pytest.param(
             {'subs': {'__all__': {'subsubs': {'__all__': {'i': ...}, 0: {'j'}}}}},
             {'subs': [{'subsubs': [{'i': 1, 'j': 1}, {'i': 2}]}, {'subsubs': [{'i': 3, 'j': 3}]}]},
-            id='Nested different keys 2',
+            id='Nested different keys 5',
         ),
         pytest.param(
             {'subs': {'__all__': {'subsubs': {'__all__': {'i'}, 0: {'j': ...}}}}},
             {'subs': [{'subsubs': [{'i': 1, 'j': 1}, {'i': 2}]}, {'subsubs': [{'i': 3, 'j': 3}]}]},
-            id='Nested different keys 3',
+            id='Nested different keys 6',
         ),
         pytest.param(
             {'subs': {'__all__': {'subsubs'}, 0: {'subsubs': {'__all__': {'j'}}}}},
@@ -1494,24 +1494,20 @@ def test_type_on_annotated():
 def test_type_on_generic_alias() -> None:
     error_msg = 'Instead of using type[list[int]], use type[list].'
 
-    with pytest.raises(PydanticUserError) as exc_info:
+    with pytest.raises(PydanticUserError, check=lambda e: error_msg in e.message):
 
         class Model(BaseModel):
             a: type[list[int]]
-
-    assert error_msg in exc_info.value.message
 
 
 def test_typing_type_on_generic_alias() -> None:
     error_msg = 'Instead of using type[typing.List[int]], use type[list].'
 
-    with pytest.raises(PydanticUserError) as exc_info:
+    with pytest.raises(PydanticUserError, check=lambda e: error_msg in e.message):
         # Note: this only works with typing.List, list behaves differently in Python 3.9 and sometimes 3.10,
         # so thus we use typing.List here.
         class Model(BaseModel):
             a: type[typing.List[int]]  # noqa: UP006
-
-    assert error_msg in exc_info.value.message
 
 
 def test_type_assign():
@@ -1644,8 +1640,8 @@ class DisplayGen(Generic[T1, T2]):
     'type_,expected',
     [
         (int, 'int'),
-        (Optional[int], 'Union[int, NoneType]'),  # noqa: UP045
-        (int | None, 'Union[int, NoneType]'),
+        pytest.param(Optional[int], 'Union[int, NoneType]', id='Optional[int]'),  # noqa: UP045
+        pytest.param(int | None, 'Union[int, NoneType]', id='int | None'),
         (Union[None, int, str], 'Union[NoneType, int, str]'),  # noqa: UP007
         (Union[int, str, bytes], 'Union[int, str, bytes]'),  # noqa: UP007
         (list[int], 'list[int]'),
