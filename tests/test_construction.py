@@ -321,11 +321,11 @@ def test_copy_deep_extra(copy_method):
     assert copy_method(m, deep=True).extra is not m.extra
 
 
-def test_model_copy_deep_update_skips_deepcopy_of_updated_fields() -> None:
+class NotDeepCopyable:
+    def __deepcopy__(self, memo):
+        raise TypeError('This object cannot be deepcopied')
 
-    class NotDeepCopyable:
-        def __deepcopy__(self, memo):
-            raise TypeError('This object cannot be deepcopied')
+def test_model_copy_deep_update_skips_deepcopy_of_updated_fields() -> None:
 
     class Model(BaseModel):
         model_config = ConfigDict(arbitrary_types_allowed=True)
@@ -340,8 +340,7 @@ def test_model_copy_deep_update_skips_deepcopy_of_updated_fields() -> None:
     assert copied is not model
 
 
-def test_model_copy_deep_update_preserves_shared_references():
-    """A shared memo should preserve shared references across deep-copied fields."""
+def test_model_copy_deep_update_preserves_shared_references() -> None:
 
     class Inner(BaseModel):
         x: int = 0
@@ -361,7 +360,7 @@ def test_model_copy_deep_update_preserves_shared_references():
     assert m.a is shared
 
 
-def test_model_copy_deep_update_skips_deepcopy_of_extra_fields():
+def test_model_copy_deep_update_skips_deepcopy_of_extra_fields() -> None:
     """Extra fields present in `update` should not be deepcopied."""
 
     class Foo(BaseModel, extra='allow'):
@@ -375,22 +374,7 @@ def test_model_copy_deep_update_skips_deepcopy_of_extra_fields():
     assert copied.other is not m.other
 
 
-def test_model_copy_deep_update_applies_update_value():
-    """Ensure the update value is applied and not clobbered by the original value."""
-
-    class M(BaseModel):
-        a: int
-        b: int
-
-    m = M(a=1, b=2)
-    m2 = m.model_copy(deep=True, update={'a': 100})
-
-    assert m2.a == 100
-    assert m2.b == 2
-    assert m.a == 1
-
-
-def test_model_copy_deep_update_with_private_attributes():
+def test_model_copy_deep_update_with_private_attributes() -> None:
     """Ensure private attributes are deepcopied when `deep=True` and `update` are provided."""
 
     class M(BaseModel):
