@@ -14,67 +14,25 @@ Pydantic is the most widely used data validation library for Python.
 
 Fast and extensible, Pydantic plays nicely with your linters/IDE/brain. Define how data should be in pure, canonical Python 3.10+; validate it with Pydantic.
 
-!!! logfire "Monitor Pydantic with Pydantic Logfire :fire:"
-    **[Pydantic Logfire](https://pydantic.dev/logfire)** is a production-grade observability platform for AI and general applications. See LLM interactions, agent behavior, API requests, and database queries in one unified trace. With SDKs for Python, JavaScript/TypeScript, and Rust, Logfire works with all OpenTelemetry-compatible languages.
+**Sign up for our newsletter, *The Pydantic Stack*, with updates & tutorials on Pydantic, Logfire, and Pydantic AI:**
 
-    Logfire integrates with many popular Python libraries including FastAPI, OpenAI and Pydantic itself, so you can use Logfire to monitor Pydantic validations and understand why some inputs fail validation:
-
-    ```python {title="Monitoring Pydantic with Logfire" test="skip"}
-    from datetime import datetime
-
-    import logfire
-
-    from pydantic import BaseModel
-
-    logfire.configure()
-    logfire.instrument_pydantic()  # (1)!
-
-
-    class Delivery(BaseModel):
-        timestamp: datetime
-        dimensions: tuple[int, int]
-
-
-    # this will record details of a successful validation to logfire
-    m = Delivery(timestamp='2020-01-02T03:04:05Z', dimensions=['10', '20'])
-    print(repr(m.timestamp))
-    #> datetime.datetime(2020, 1, 2, 3, 4, 5, tzinfo=TzInfo(UTC))
-    print(m.dimensions)
-    #> (10, 20)
-
-    Delivery(timestamp='2020-01-02T03:04:05Z', dimensions=['10'])  # (2)!
-    ```
-
-    1. Set logfire record all both successful and failed validations, use `record='failure'` to only record failed validations, [learn more](https://logfire.pydantic.dev/docs/integrations/pydantic/).
-    2. This will raise a `ValidationError` since there are too few `dimensions`, details of the input data and validation errors will be recorded in Logfire.
-
-    Would give you a view like this in the Logfire platform:
-
-    [![Logfire Pydantic Integration](img/logfire-pydantic-integration.png)](https://logfire.pydantic.dev/docs/guides/web-ui/live/)
-
-    This is just a toy example, but hopefully makes clear the potential value of instrumenting a more complex application.
-
-    **[Learn more about Pydantic Logfire](https://logfire.pydantic.dev/docs/)**
-
-    **Sign up for our newsletter, *The Pydantic Stack*, with updates & tutorials on Pydantic, Logfire, and Pydantic AI:**
-
-      <form method="POST" action="https://eu.customerioforms.com/forms/submit_action?site_id=53d2086c3c4214eaecaa&form_id=14b22611745b458&success_url=https://docs.pydantic.dev/" class="md-typeset" style="display: flex; align-items: center; gap: 0.5rem; max-width: 100%;">
-          <input
-          type="email"
-          id="email_input"
-          name="email"
-          class="md-input md-input--stretch"
-          style="flex: 1; background: var(--md-default-bg-color); color: var(--md-default-fg-color);"
-          required
-          placeholder="Email"
-          data-1p-ignore
-          data-lpignore="true"
-          data-protonpass-ignore="true"
-          data-bwignore="true"
-          />
-          <input type="hidden" id="source_input" name="source" value="pydantic" />
-          <button type="submit" class="md-button md-button--primary">Subscribe</button>
-      </form>
+<form method="POST" action="https://eu.customerioforms.com/forms/submit_action?site_id=53d2086c3c4214eaecaa&form_id=14b22611745b458&success_url=https://docs.pydantic.dev/" class="md-typeset" style="display: flex; align-items: center; gap: 0.5rem; max-width: 100%;">
+    <input
+    type="email"
+    id="email_input"
+    name="email"
+    class="md-input md-input--stretch"
+    style="flex: 1; background: var(--md-default-bg-color); color: var(--md-default-fg-color);"
+    required
+    placeholder="Email"
+    data-1p-ignore
+    data-lpignore="true"
+    data-protonpass-ignore="true"
+    data-bwignore="true"
+    />
+    <input type="hidden" id="source_input" name="source" value="pydantic" />
+    <button type="submit" class="md-button md-button--primary">Subscribe</button>
+</form>
 
 ## Why use Pydantic?
 
