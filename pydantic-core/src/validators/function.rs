@@ -176,6 +176,7 @@ impl FunctionAfterValidator {
         state: &mut ValidationState<'_, 'py>,
     ) -> ValResult<Py<PyAny>> {
         let v = call(input, state)?;
+        let v_ref = v.clone_ref(py).into_bound(py);
         let r = if self.info_arg {
             let field_name = state
                 .field_name()
@@ -187,7 +188,7 @@ impl FunctionAfterValidator {
         } else {
             self.func.call1(py, (v,))
         };
-        r.map_err(|e| convert_err(py, e, input))
+        r.map_err(|e| convert_err(py, e, v_ref))
     }
 }
 

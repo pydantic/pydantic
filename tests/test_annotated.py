@@ -1,4 +1,5 @@
 import datetime as dt
+import math
 import sys
 from collections.abc import Iterator
 from dataclasses import dataclass
@@ -374,11 +375,11 @@ def test_validate_float_inf_nan_python() -> None:
     with pytest.raises(ValidationError) as exc_info:
         ta.validate_python(1.0)
 
-    # insert_assert(exc_info.value.errors(include_url=False))
-    # TODO: input should be float('nan'), this seems like a subtle bug in pydantic-core
-    assert exc_info.value.errors(include_url=False) == [
-        {'type': 'finite_number', 'loc': (), 'msg': 'Input should be a finite number', 'input': 1.0}
+    errors = exc_info.value.errors(include_url=False)
+    assert errors == [
+        {'type': 'finite_number', 'loc': (), 'msg': 'Input should be a finite number', 'input': errors[0]['input']}
     ]
+    assert math.isnan(errors[0]['input'])
 
 
 def test_predicate_success_python() -> None:

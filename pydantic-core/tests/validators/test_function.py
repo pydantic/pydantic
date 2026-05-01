@@ -1,4 +1,5 @@
 import datetime
+import math
 import platform
 import re
 from copy import deepcopy
@@ -6,9 +7,9 @@ from dataclasses import dataclass
 from typing import Any
 
 import pytest
-from dirty_equals import HasRepr
+from dirty_equals import HasRepr, IsFloatNan
 
-from pydantic_core import CoreConfig, SchemaValidator, ValidationError, core_schema
+from pydantic_core import CoreConfig, PydanticKnownError, SchemaValidator, ValidationError, core_schema
 from pydantic_core import core_schema as cs
 
 from ..conftest import plain_repr
@@ -1008,6 +1009,37 @@ def test_function_after_doesnt_change_mode() -> None:
     assert v.validate_json(b'"2000-01-01"') == datetime.date(2000, 1, 1)
     with pytest.raises(ValidationError):
         v.validate_python(b'"2000-01-01"')
+
+
+def test_function_after_error_input_reflects_transformed_value() -> None:
+    def make_nan(v):
+        return float('nan')
+
+    def finite_check(v):
+        if not math.isfinite(v):
+            raise PydanticKnownError('finite_number')
+        return v
+
+    schema = core_schema.no_info_after_validator_function(
+        function=finite_check,
+        schema=core_schema.no_info_after_validator_function(
+            function=make_nan,
+            schema=core_schema.float_schema(),
+        ),
+    )
+    v = SchemaValidator(schema)
+
+    with pytest.raises(ValidationError) as exc_info:
+        v.validate_python(1.0)
+
+    assert exc_info.value.errors(include_url=False) == [
+        {
+            'type': 'finite_number',
+            'loc': (),
+            'msg': 'Input should be a finite number',
+            'input': IsFloatNan(),
+        }
+    ]
 
 
 def test_field_name_preserved_wrap_validator() -> None:
