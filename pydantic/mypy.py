@@ -105,7 +105,7 @@ MYPY_VERSION_TUPLE = parse_mypy_version(mypy_version)
 BUILTINS_NAME = 'builtins'
 
 # Increment version if plugin changes and mypy caches should be invalidated
-__version__ = 2
+__version__ = 3
 
 
 def plugin(version: str) -> type[Plugin]:
@@ -190,8 +190,18 @@ class PydanticPlugin(Plugin):
             if arg_name == '__base__' and isinstance(arg_expr, RefExpr) and arg_expr.node is not None:
                 if isinstance(arg_expr.node, TypeInfo):
                     base_fullname = arg_expr.node.fullname
-                elif isinstance(arg_expr.node, Var) and isinstance(arg_expr.node.type, Instance):
-                    base_fullname = arg_expr.node.type.type.fullname
+                elif isinstance(arg_expr.node, Var):
+                    arg_type = get_proper_type(arg_expr.node.type)
+                    if isinstance(arg_type, Instance):
+                        base_fullname = arg_type.type.fullname
+                    elif isinstance(arg_type, TypeType):
+                        item_type = get_proper_type(arg_type.item)
+                        if isinstance(item_type, TypeVarType):
+                            # Inside classmethods, ``cls`` is modeled as ``type[Self]``. Creating a concrete
+                            # synthetic type here loses that type variable, so let mypy use the overload return.
+                            return
+                        if isinstance(item_type, Instance):
+                            base_fullname = item_type.type.fullname
 
         base_sym = ctx.api.lookup_fully_qualified_or_none(base_fullname)
         if base_sym is None or not isinstance(base_sym.node, TypeInfo):
