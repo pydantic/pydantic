@@ -258,7 +258,7 @@ jobs:
         with:
           lookup-only: true
 
-      - uses: mymindstorm/setup-emsdk@6ab9eb1bda2574c4ddb79809fc9247783eaf9021 # v14
+      - uses: mymindstorm/setup-emsdk@4528d102f7230f0e7b276855c01ea1159be0e984 # v16
         with:
           # NOTE!: as per https://github.com/pydantic/pydantic-core/pull/149 this version needs to match the version
           # in pydantic-core/node_modules/pyodide/pyodide-lock.json, to get the version, run:
