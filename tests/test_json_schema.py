@@ -5387,6 +5387,38 @@ def test_root_model():
     }
 
 
+def test_root_model_annotated_root_type_parameterized() -> None:
+    """https://github.com/pydantic/pydantic/issues/13123"""
+
+    MyType = Annotated[str, Field(examples=['hello'], description='desc', deprecated=True)]
+
+    class MyModel(RootModel[MyType]):
+        pass
+
+    assert MyModel.model_json_schema() == {
+        'deprecated': True,
+        'description': 'desc',
+        'examples': ['hello'],
+        'title': 'MyModel',
+        'type': 'string',
+    }
+
+
+def test_root_model_annotated_root_type() -> None:
+    """https://github.com/pydantic/pydantic/issues/13123"""
+
+    class MyModel(RootModel):
+        root: Annotated[str, Field(examples=['hello'], description='desc', deprecated=True)]
+
+    assert MyModel.model_json_schema() == {
+        'deprecated': True,
+        'description': 'desc',
+        'examples': ['hello'],
+        'title': 'MyModel',
+        'type': 'string',
+    }
+
+
 def test_type_adapter_json_schemas_title_description():
     class Model(BaseModel):
         a: str
