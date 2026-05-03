@@ -1636,7 +1636,6 @@ class GenerateJsonSchema:
         """
         from ._internal._dataclasses import is_stdlib_dataclass
         from .main import BaseModel
-        from .root_model import RootModel
 
         if (config_title := config.get('title')) is not None:
             json_schema.setdefault('title', config_title)
@@ -1664,8 +1663,6 @@ class GenerateJsonSchema:
 
         if docstring:
             json_schema.setdefault('description', inspect.cleandoc(docstring))
-        elif issubclass(cls, RootModel) and (root_description := cls.__pydantic_fields__['root'].description):
-            json_schema.setdefault('description', root_description)
 
         extra = config.get('extra')
         if 'additionalProperties' not in json_schema:  # This check is particularly important for `typed_dict_schema()`
