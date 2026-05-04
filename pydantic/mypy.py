@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import sys
+import warnings
 from collections.abc import Callable, Iterator
 from configparser import ConfigParser
 from typing import Any
@@ -244,12 +245,25 @@ class PydanticPluginConfig:
                 if not isinstance(setting, bool):
                     raise ValueError(f'Configuration value must be a boolean for key: {key}')
                 setattr(self, key, setting)
+            unknown_keys = config.keys() - set(self.__slots__)
+            if unknown_keys:
+                warnings.warn(
+                    f'Unknown pydantic-mypy config keys: {", ".join(sorted(unknown_keys))}',
+                    stacklevel=2,
+                )
         else:
             plugin_config = ConfigParser()
             plugin_config.read(options.config_file)
             for key in self.__slots__:
                 setting = plugin_config.getboolean(CONFIGFILE_KEY, key, fallback=False)
                 setattr(self, key, setting)
+            if plugin_config.has_section(CONFIGFILE_KEY):
+                unknown_keys = set(plugin_config.options(CONFIGFILE_KEY)) - set(self.__slots__)
+                if unknown_keys:
+                    warnings.warn(
+                        f'Unknown pydantic-mypy config keys: {", ".join(sorted(unknown_keys))}',
+                        stacklevel=2,
+                    )
 
     def to_data(self) -> dict[str, Any]:
         """Returns a dict of config names to their values."""
