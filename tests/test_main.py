@@ -3575,6 +3575,38 @@ def test_shadow_attribute_no_warn_stdlib_dataclass() -> None:
         assert len(captured_warnings) == 0
 
 
+def test_non_model_parent_does_not_override_field_info() -> None:
+    """https://github.com/pydantic/pydantic/issues/12229"""
+
+    from abc import ABCMeta
+
+    from pydantic import AliasChoices
+
+    class NumberUnit(metaclass=ABCMeta):
+        unit: Optional[str] = None
+        quantity: Union[int, float] = 1
+
+    class QuantifiedValue(BaseModel, NumberUnit):
+        model_config = ConfigDict(arbitrary_types_allowed=True, validate_by_alias=True, validate_by_name=True)
+
+    with pytest.warns(UserWarning, match='shadows an attribute'):
+
+        class OverrideQuantifiedValue(QuantifiedValue):
+            unit: str = Field(validation_alias=AliasChoices('xxx', 'unit'))
+
+    class Sub(OverrideQuantifiedValue):
+        pass
+
+    # The parent class should work with the alias:
+    x = OverrideQuantifiedValue.model_validate(dict(quantity=10, xxx='m'))
+    assert x.unit == 'm'
+
+    # The subclass should preserve the alias from the parent model,
+    # not pick up the default from the non-model ancestor:
+    x2 = Sub.model_validate(dict(quantity=10, xxx='m'))
+    assert x2.unit == 'm'
+
+
 def test_field_name_deprecated_method_name() -> None:
     """https://github.com/pydantic/pydantic/issues/11912"""
 
