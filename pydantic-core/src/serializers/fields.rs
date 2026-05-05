@@ -33,6 +33,7 @@ pub(super) struct SerField {
     pub required: bool,
     pub serialize_by_alias: Option<bool>,
     pub serialization_exclude_if: Option<Py<PyAny>>,
+    pub compare_as: Option<Py<PyAny>>,
 }
 
 impl_py_gc_traverse!(SerField { serializer });
@@ -45,6 +46,7 @@ impl SerField {
         required: bool,
         serialize_by_alias: Option<bool>,
         serialization_exclude_if: Option<Py<PyAny>>,
+        compare_as: Option<Py<PyAny>>,
     ) -> Self {
         Self {
             key,
@@ -53,6 +55,7 @@ impl SerField {
             required,
             serialize_by_alias,
             serialization_exclude_if,
+            compare_as,
         }
     }
 
@@ -82,12 +85,25 @@ fn exclude_default<'py>(
     value: &Bound<'py, PyAny>,
     extra: &Extra<'py>,
     serializer: &CombinedSerializer,
+    compare_as: Option<&Py<PyAny>>,
 ) -> PyResult<bool> {
-    if extra.exclude_defaults
-        && let Some(default) = serializer.get_default(value.py())?
-        && value.eq(default)?
-    {
-        return Ok(true);
+    if extra.exclude_defaults {
+        let py = value.py();
+        if let Some(default) = serializer.get_default(py)? {
+            if let Some(compare_callable) = compare_as {
+                let cb = compare_callable.bind(py);
+                return match cb.call1((value, &default)) {
+                    Ok(res) => res.extract::<bool>(),
+                    Err(err) if err.is_instance_of::<pyo3::exceptions::PyTypeError>(py) => {
+                        let transformed = cb.call1((value,))?;
+                        transformed.eq(default)
+                    }
+                    Err(err) => Err(err),
+                };
+            } else if value.eq(default)? {
+                return Ok(true);
+            }
+        }
     }
     Ok(false)
 }
@@ -259,7 +275,7 @@ impl GeneralFieldsSerializer {
 
         // filtering on the value
         if exclude_field_by_value(value, state, missing_sentinel, field.serialization_exclude_if.as_ref())?
-            || exclude_default(value, &state.extra, serializer)?
+            || exclude_default(value, &state.extra, serializer, field.compare_as.as_ref())?
         {
             return Ok(None);
         }

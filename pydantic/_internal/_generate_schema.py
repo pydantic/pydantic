@@ -1230,6 +1230,7 @@ class GenerateSchema:
             validation_alias=_convert_to_aliases(field_info.validation_alias),
             serialization_alias=field_info.serialization_alias,
             serialization_exclude_if=field_info.exclude_if,
+            compare_as=field_info.compare_as,
             metadata=metadata,
         )
 
@@ -1247,6 +1248,7 @@ class GenerateSchema:
             validation_alias=_convert_to_aliases(field_info.validation_alias),
             serialization_alias=field_info.serialization_alias,
             serialization_exclude_if=field_info.exclude_if,
+            compare_as=field_info.compare_as,
             frozen=field_info.frozen,
             metadata=metadata,
         )
@@ -1269,6 +1271,7 @@ class GenerateSchema:
             validation_alias=_convert_to_aliases(field_info.validation_alias),
             serialization_alias=field_info.serialization_alias,
             serialization_exclude_if=field_info.exclude_if,
+            compare_as=field_info.compare_as,
             frozen=field_info.frozen,
             metadata=metadata,
         )
