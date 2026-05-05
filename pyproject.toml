@@ -186,6 +186,12 @@ addopts = [
 ]
 markers = [
     'skip_json_schema_validation: Disable JSON Schema validation.',
+    'skip_emscripten: skipped when running under Emscripten/Pyodide.',
+    # `thread_unsafe` and `timeout` are normally registered by their plugins
+    # (pytest-run-parallel, pytest-timeout); registered here so strict-marker
+    # mode passes in the Pyodide venv where neither plugin is installed.
+    'thread_unsafe: thread-unsafe; honored by pytest-run-parallel when installed.',
+    'timeout: pytest-timeout marker; no-op without pytest-timeout installed.',
 ]
 
 [tool.uv]
