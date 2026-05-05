@@ -251,6 +251,7 @@ pub(crate) fn infer_to_python_known<'py>(
                 let v = value.cast::<PyComplex>()?;
                 v.into_py_any(py)?
             }
+            ObType::Fraction => value.to_string().into_py_any(py)?,
             ObType::Unknown => {
                 if let Some(fallback) = &state.extra.fallback {
                     let next_value = fallback.call1((value,))?;

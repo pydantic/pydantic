@@ -144,12 +144,12 @@ def test_fraction_validation_error_non_strict(input_value, error):
 @pytest.mark.parametrize(
     'input_value,expected',
     [
-        (Fraction(0), Fraction(0)),
-        (Fraction(1), Fraction(1)),
-        (Fraction(1, 3), Fraction(1, 3)),
-        (Fraction(-1, 2), Fraction(-1, 2)),
-        (Fraction('42.5'), Fraction(85, 2)),
-        (Fraction('123456789/1000000'), Fraction(123456789, 1000000)),
+        (Fraction(0), '0'),
+        (Fraction(1), '1'),
+        (Fraction(1, 3), '1/3'),
+        (Fraction(-1, 2), '-1/2'),
+        (Fraction('42.5'), '85/2'),
+        (Fraction('123456789/1000000'), '123456789/1000000'),
     ],
 )
 def test_fraction_dump_python(input_value, expected):
