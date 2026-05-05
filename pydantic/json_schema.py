@@ -692,24 +692,7 @@ class GenerateJsonSchema:
         Returns:
             The generated JSON schema.
         """
-        # json_schema = {'type': 'string', 'format': 'base64url' if self._config.ser_json_bytes == 'base64' else 'binary'}
-        raise ValueError("went through fraction schema!")
-        json_schema = self.str_schema(core_schema.str_schema(pattern=r'^\s*\(\s*-?\d+\s*,\s*-?\d+\s*\)\s*$'))
-        if self.mode == 'validation':
-            # todo: handle le, ge, lt, gt in here
-            json_schema = {
-                'anyOf': [
-                    self.tuple_schema(
-                        core_schema.tuple_schema(
-                            items_schema=[core_schema.int_schema(), core_schema.float_schema()],
-                            max_length=2,
-                            min_length=2,
-                        )
-                    ),
-                    json_schema,
-                ],
-            }
-        return json_schema
+        return {'type': 'string', 'format': 'fraction'}
 
     def decimal_schema(self, schema: core_schema.DecimalSchema) -> JsonSchemaValue:
         """Generates a JSON schema that matches a decimal value.
