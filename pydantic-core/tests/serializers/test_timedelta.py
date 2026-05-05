@@ -358,6 +358,20 @@ def test_config_timedelta_timedelta_ser_flag_prioritised(
         assert s.to_json({td: 'foo'}) == expected_to_json_dict
 
 
+def test_config_timedelta_rfc2822_falls_back_to_iso8601():
+    """RFC 2822 has no concept of duration, so `timedelta` falls back to ISO 8601."""
+    s = SchemaSerializer(core_schema.timedelta_schema(), config={'ser_json_temporal': 'rfc2822'})
+    td = timedelta(hours=2)
+    assert s.to_python(td) == td
+    assert s.to_python(td, mode='json') == 'PT2H'
+    assert s.to_json(td) == b'"PT2H"'
+    # As a dict key
+    with pytest.warns(UserWarning):
+        assert s.to_python({td: 'foo'}, mode='json') == {'PT2H': 'foo'}
+    with pytest.warns(UserWarning):
+        assert s.to_json({td: 'foo'}) == b'{"PT2H":"foo"}'
+
+
 def test_union_timedelta_respects_instanceof_check():
     serialization_schema = core_schema.plain_serializer_function_ser_schema(lambda v: None)
     json_validation_schema = core_schema.no_info_plain_validator_function(

@@ -158,6 +158,34 @@ def test_date_datetime_union():
             b'{"1704070861000.023":"foo"}',
             'milliseconds',
         ),
+        # rfc2822: naive datetime (treated as UTC)
+        (
+            datetime(2024, 1, 1, 0, 0, 0),
+            'Mon, 01 Jan 2024 00:00:00 GMT',
+            b'"Mon, 01 Jan 2024 00:00:00 GMT"',
+            {'Mon, 01 Jan 2024 00:00:00 GMT': 'foo'},
+            b'{"Mon, 01 Jan 2024 00:00:00 GMT":"foo"}',
+            'rfc2822',
+        ),
+        # rfc2822: UTC datetime
+        (
+            datetime(2024, 1, 1, 12, 0, 0, tzinfo=timezone.utc),
+            'Mon, 01 Jan 2024 12:00:00 GMT',
+            b'"Mon, 01 Jan 2024 12:00:00 GMT"',
+            {'Mon, 01 Jan 2024 12:00:00 GMT': 'foo'},
+            b'{"Mon, 01 Jan 2024 12:00:00 GMT":"foo"}',
+            'rfc2822',
+        ),
+        # rfc2822: non-UTC datetime is converted to UTC before formatting
+        # +02:00 offset means local 14:00 -> UTC 12:00
+        (
+            datetime(2024, 1, 1, 14, 0, 0, tzinfo=tz(hours=2)),
+            'Mon, 01 Jan 2024 12:00:00 GMT',
+            b'"Mon, 01 Jan 2024 12:00:00 GMT"',
+            {'Mon, 01 Jan 2024 12:00:00 GMT': 'foo'},
+            b'{"Mon, 01 Jan 2024 12:00:00 GMT":"foo"}',
+            'rfc2822',
+        ),
     ],
 )
 def test_config_datetime(
@@ -172,7 +200,7 @@ def test_config_datetime(
         UserWarning,
         match=(
             r'Expected `datetime` - serialized value may not be as expected '
-            r"\[input_value=\{datetime\.datetime\([^)]*\): 'foo'\}, input_type=dict\]"
+            r"\[input_value=\{datetime\.datetime\(.*\): 'foo'\}, input_type=dict\]"
         ),
     ):
         assert s.to_python({dt: 'foo'}) == {dt: 'foo'}
@@ -180,7 +208,7 @@ def test_config_datetime(
         UserWarning,
         match=(
             r'Expected `datetime` - serialized value may not be as expected '
-            r"\[input_value=\{datetime\.datetime\([^)]*\): 'foo'\}, input_type=dict\]"
+            r"\[input_value=\{datetime\.datetime\(.*\): 'foo'\}, input_type=dict\]"
         ),
     ):
         assert s.to_python({dt: 'foo'}, mode='json') == expected_to_python_dict
@@ -188,7 +216,7 @@ def test_config_datetime(
         UserWarning,
         match=(
             r'Expected `datetime` - serialized value may not be as expected '
-            r"\[input_value=\{datetime\.datetime\([^)]*\): 'foo'\}, input_type=dict\]"
+            r"\[input_value=\{datetime\.datetime\(.*\): 'foo'\}, input_type=dict\]"
         ),
     ):
         assert s.to_json({dt: 'foo'}) == expected_to_json_dict
@@ -220,6 +248,15 @@ def test_config_datetime(
             {'1704067200000': 'foo'},
             b'{"1704067200000":"foo"}',
             'milliseconds',
+        ),
+        # rfc2822: bare `date` is treated as midnight UTC, matching werkzeug.http.http_date
+        (
+            date(2024, 1, 1),
+            'Mon, 01 Jan 2024 00:00:00 GMT',
+            b'"Mon, 01 Jan 2024 00:00:00 GMT"',
+            {'Mon, 01 Jan 2024 00:00:00 GMT': 'foo'},
+            b'{"Mon, 01 Jan 2024 00:00:00 GMT":"foo"}',
+            'rfc2822',
         ),
     ],
 )
@@ -283,6 +320,15 @@ def test_config_date(
             {'11641059.263': 'foo'},
             b'{"11641059.263":"foo"}',
             'milliseconds',
+        ),
+        # rfc2822 has no standalone time format, so we fall back to ISO 8601
+        (
+            time(3, 14, 1, 59263),
+            '03:14:01.059263',
+            b'"03:14:01.059263"',
+            {'03:14:01.059263': 'foo'},
+            b'{"03:14:01.059263":"foo"}',
+            'rfc2822',
         ),
     ],
 )
