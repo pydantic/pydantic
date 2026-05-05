@@ -10,11 +10,11 @@ mod input_string;
 mod return_enums;
 mod shared;
 
-pub use datetime::TzInfo;
 pub(crate) use datetime::{
     EitherDate, EitherDateTime, EitherTimedelta, duration_as_pytimedelta, pydate_as_date, pydatetime_as_datetime,
     pytime_as_time,
 };
+pub use datetime::{TzInfo, set_tzinfo_py_class};
 pub(crate) use input_abstract::{
     Arguments, BorrowInput, ConsumeIterator, Input, InputType, KeywordArgs, PositionalArgs, ValidatedDict,
     ValidatedList, ValidatedSet, ValidatedTuple,

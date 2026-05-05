@@ -2,6 +2,17 @@
 <!-- markdownlint-disable descriptive-link-text -->
 <!-- markdownlint-disable-next-line first-line-heading -->
 
+## v2.13.4 (unreleased)
+
+### What's Changed
+
+#### Fixes
+
+* Fix SIGSEGV (exit 139) during CPython interpreter shutdown when a `pydantic_core.TzInfo` instance is alive at process exit (#12867).
+  Removes C-level `extends = PyTzInfo`; instead creates a Python-level `TzInfo` class that inherits from both the Rust-backed base and `datetime.tzinfo`.
+  `datetime.tzinfo` remains in the MRO (so `PyTZInfo_Check` still passes), but `tp_base` is the Rust class so `subtype_dealloc` never traverses `PyDateTimeAPI` pointers that may be dangling after `_datetime` cleanup.
+  A `PyOnceLock<Py<PyAny>>` static holds a permanent strong reference to the class, keeping it alive past `_PyImport_Cleanup` without a manual `Py_INCREF`.
+
 ## v2.13.3 (2026-04-20)
 
 [GitHub release](https://github.com/pydantic/pydantic/releases/tag/v2.13.3)

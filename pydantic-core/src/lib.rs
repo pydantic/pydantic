@@ -126,6 +126,39 @@ pub mod _pydantic_core {
         m.add("build_info", build_info())?;
         m.add("_recursion_limit", recursion_guard::RECURSION_GUARD_LIMIT)?;
         m.add("PydanticUndefined", PydanticUndefinedType::get(m.py()))?;
+        // ---------------------------------------------------------------------------
+        // Fix for pydantic_core.TzInfo shutdown SIGSEGV (pydantic#12867)
+        //
+        // The Rust TzInfo struct has no C-level `extends = PyTzInfo` so its tp_base
+        // chain is simply `object`.  Here we create a Python-level class that inherits
+        // from *both* the Rust-backed TzInfo *and* `datetime.tzinfo`:
+        //
+        //   class TzInfo(RustTzInfo, datetime.tzinfo): pass
+        //
+        // This gives instances the correct MRO so that PyTZInfo_Check still passes
+        // (datetime.tzinfo is in the MRO), while tp_base stays as RustTzInfo (the
+        // "best base" — largest basicsize).  subtype_dealloc therefore traverses:
+        //   TzInfo → RustTzInfo → object
+        // ...and never touches PyDateTime_CAPI pointers that may be dangling after
+        // _datetime module cleanup.
+        //
+        // The PyOnceLock in `input::datetime` holds a strong Py<PyAny> reference to
+        // the new class.  PyOnceLock is intentionally never dropped (static lifetime),
+        // which keeps the class alive past _PyImport_Cleanup — fixing the class-freed-
+        // before-instances race (Bug 1) without a manual Py_INCREF.
+        // ---------------------------------------------------------------------------
+        let py = m.py();
+        let rust_tzinfo = py.get_type::<TzInfo>().into_any();
+        let datetime_mod = py.import("datetime")?;
+        let py_tzinfo_base = datetime_mod.getattr("tzinfo")?;
+        let bases = pyo3::types::PyTuple::new(py, [rust_tzinfo, py_tzinfo_base])?;
+        let class_dict = pyo3::types::PyDict::new(py);
+        class_dict.set_item("__module__", "pydantic_core._pydantic_core")?;
+        let new_tzinfo: Bound<'_, PyAny> = py
+            .get_type::<pyo3::types::PyType>()
+            .call1(("TzInfo", bases, class_dict))?;
+        m.setattr("TzInfo", &new_tzinfo)?;
+        crate::input::set_tzinfo_py_class(py, new_tzinfo.unbind());
         Ok(())
     }
 }

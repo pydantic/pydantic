@@ -4,6 +4,7 @@ use pyo3::prelude::*;
 use pyo3::IntoPyObjectExt;
 use pyo3::exceptions::PyValueError;
 use pyo3::pyclass::CompareOp;
+use pyo3::sync::PyOnceLock;
 use pyo3::types::PyDateAccess;
 use pyo3::types::PyTimeAccess;
 use pyo3::types::PyTuple;
@@ -402,8 +403,13 @@ impl EitherTime<'_> {
 fn time_as_tzinfo<'py>(py: Python<'py>, time: &Time) -> PyResult<Option<Bound<'py, PyTzInfo>>> {
     match time.tz_offset {
         Some(offset) => {
-            let tz_info: TzInfo = offset.try_into()?;
-            Ok(Some(Bound::new(py, tz_info)?.into_any().cast_into()?))
+            // Instantiate via the Python-level TzInfo class (set at module init).
+            // That class inherits from (RustTzInfo, datetime.tzinfo) so instances
+            // pass PyTZInfo_Check while tp_base does NOT point to datetime.tzinfo,
+            // eliminating the PyDateTimeAPI-pointer-chain traversal during shutdown.
+            let tz_class = TZINFO_PY_CLASS.get(py).expect("pydantic_core not fully initialized");
+            let tz_obj = tz_class.bind(py).call1((offset,))?;
+            Ok(Some(tz_obj.cast_into()?))
         }
         None => Ok(None),
     }
@@ -726,7 +732,17 @@ pub fn float_as_duration(input: impl ToErrorValue, total_seconds: f64) -> ValRes
         .map_err(|err| map_timedelta_err(input, err))
 }
 
-#[pyclass(module = "pydantic_core._pydantic_core", extends = PyTzInfo, frozen, skip_from_py_object)]
+// Holds the Python-level TzInfo class created at module init.
+// The PyOnceLock is never dropped (static lifetime), so this acts as a permanent
+// strong reference that keeps the class alive past _PyImport_Cleanup.
+static TZINFO_PY_CLASS: PyOnceLock<Py<PyAny>> = PyOnceLock::new();
+
+/// Called from `module_init` with the Python-level `TzInfo` class object.
+pub fn set_tzinfo_py_class(py: Python<'_>, class: Py<PyAny>) {
+    let _ = TZINFO_PY_CLASS.get_or_init(py, || class);
+}
+
+#[pyclass(module = "pydantic_core._pydantic_core", frozen, subclass, skip_from_py_object)]
 #[derive(Clone)]
 #[cfg_attr(debug_assertions, derive(Debug))]
 pub struct TzInfo {
@@ -806,13 +822,19 @@ impl TzInfo {
         }
     }
 
-    fn __deepcopy__(&self, py: Python, _memo: &Bound<'_, PyDict>) -> PyResult<Py<Self>> {
-        Py::new(py, self.clone())
+    fn __deepcopy__<'py>(&self, py: Python<'py>, _memo: &Bound<'_, PyDict>) -> PyResult<Bound<'py, PyAny>> {
+        // TzInfo is frozen (immutable), so deepcopy can create a new instance of the
+        // same Python-level class with the same offset rather than cloning the Rust struct.
+        let tz_class = TZINFO_PY_CLASS.get(py).expect("pydantic_core not fully initialized");
+        tz_class.bind(py).call1((self.seconds,))
     }
 
     pub fn __reduce__<'py>(slf: &Bound<'py, Self>) -> PyResult<Bound<'py, PyTuple>> {
-        let args = (slf.get().seconds,);
-        (slf.get_type(), args).into_pyobject(slf.py())
+        // Always pickle using the public Python-level TzInfo class so that unpickling
+        // produces a proper datetime.tzinfo subclass instance.
+        let py = slf.py();
+        let tz_class = TZINFO_PY_CLASS.get(py).expect("pydantic_core not fully initialized");
+        (tz_class.bind(py), (slf.get().seconds,)).into_pyobject(py)
     }
 }
 
