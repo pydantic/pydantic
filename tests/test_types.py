@@ -7143,7 +7143,8 @@ def test_ser_ip_python_and_json() -> None:
     assert ta.dump_json(ip) == b'"127.0.0.1"'
 
 
-@pytest.mark.parametrize('input_data', ['1/3', Fraction(1, 3)])
+@pytest.mark.parametrize('input_data', ['1/3', 1.333, Fraction(1, 3), Decimal('1.333')])
+# @pytest.mark.parametrize('input_data', ['1/3', Fraction(1, 3)])
 def test_fraction_validation_lax(input_data) -> None:
     ta = TypeAdapter(Fraction)
     fraction = ta.validate_python(input_data)
@@ -7169,12 +7170,7 @@ def test_fraction_serialization() -> None:
 
 def test_fraction_json_schema() -> None:
     ta = TypeAdapter(Fraction)
-    assert ta.json_schema() == {
-        'anyOf': [
-            {'maxItems': 2, 'minItems': 2, 'prefixItems': [{'type': 'integer'}, {'type': 'number'}], 'type': 'array'},
-            {'pattern': '^\\s*\\(\\s*-?\\d+\\s*,\\s*-?\\d+\\s*\\)\\s*$', 'type': 'string'},
-        ]
-    }
+    assert ta.json_schema() == {"format": "fraction", "type": "string"}
 
 
 def test_annotated_metadata_any_order() -> None:

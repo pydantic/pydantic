@@ -691,8 +691,11 @@ class GenerateJsonSchema:
 
         Returns:
             The generated JSON schema.
+
         """
-        return {'type': 'string', 'format': 'fraction'}
+        json_schema: JsonSchemaValue = {'type': 'string', 'format': 'fraction'}
+        self.update_with_validations(json_schema, schema, self.ValidationsMapping.numeric)
+        return json_schema
 
     def decimal_schema(self, schema: core_schema.DecimalSchema) -> JsonSchemaValue:
         """Generates a JSON schema that matches a decimal value.

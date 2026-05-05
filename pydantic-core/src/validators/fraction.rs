@@ -148,11 +148,8 @@ fn handle_fraction_new_error(input: impl ToErrorValue, error: PyErr) -> ValError
     Python::attach(|py| {
         if error.matches(py, PyValueError::type_object(py)).unwrap_or(false) {
             ValError::new(ErrorTypeDefaults::FractionParsing, input)
-        } else if error.matches(py, PyTypeError::type_object(py)).unwrap_or(false) {
-            ValError::new(ErrorTypeDefaults::FractionType, input)
         } else {
-            // Let ZeroDivisionError and other exceptions bubble up as InternalErr
-            // which will be shown to the user with the original Python error message
+            // Let TypeError, ZeroDivisionError, OverflowError and other exceptions bubble up
             ValError::InternalErr(error)
         }
     })

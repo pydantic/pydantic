@@ -342,30 +342,30 @@ impl<'py> Input<'py> for Bound<'py, PyAny> {
         }
 
         if !strict {
-            if self.is_instance_of::<PyString>() || (self.is_instance_of::<PyInt>() && !self.is_instance_of::<PyBool>())
-            {
+            if self.is_instance_of::<PyString>() || self.is_instance_of::<PyInt>() {
                 // Checking isinstance for str / int / bool is fast compared to fraction / float
                 return create_fraction(self, self).map(ValidationMatch::lax);
             }
 
             if self.is_instance_of::<PyFloat>() {
-                return create_fraction(self.str()?.as_any(), self).map(ValidationMatch::lax);
+                // Pass float directly so inf raises OverflowError and nan raises ValueError
+                return create_fraction(self, self).map(ValidationMatch::lax);
             }
+
+            // For all other types, attempt coercion and let Python raise TypeError naturally
+            return create_fraction(self, self).map(ValidationMatch::lax);
         }
 
-        let error_type = if strict {
+        Err(ValError::new(
             ErrorType::IsInstanceOf {
                 class: fraction_type
                     .qualname()
                     .and_then(|name| name.extract())
                     .unwrap_or_else(|_| "Fraction".to_owned()),
                 context: None,
-            }
-        } else {
-            ErrorTypeDefaults::FractionType
-        };
-
-        Err(ValError::new(error_type, self))
+            },
+            self,
+        ))
     }
 
     fn validate_decimal(&self, strict: bool, py: Python<'py>) -> ValMatch<Bound<'py, PyAny>> {
