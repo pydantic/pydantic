@@ -1394,3 +1394,34 @@ def test_wrap_ser_called_once() -> None:
 
     my_model = MyParentModel.model_validate({'nested': {'inner_value': 'foo'}})
     assert my_model.model_dump() == {'nested': {'inner_value': 'my_prefix:foo'}}
+
+
+def test_wrap_serializer_warnings_consolidated() -> None:
+    """WrapSerializer must not emit a separate UserWarning for its field.
+
+    All serializer warnings from a single model_dump() call should be consolidated
+    into a single UserWarning regardless of whether a field uses WrapSerializer.
+    Regression test for https://github.com/pydantic/pydantic/issues/12995.
+    """
+
+    class Model(BaseModel):
+        a: Annotated[str, WrapSerializer(lambda v, h: h(v))]
+        b: str
+        c: str
+
+    m = Model(a='t', b='t', c='t')
+    m.a = 1  # type: ignore[assignment]
+    m.b = 2  # type: ignore[assignment]
+    m.c = 3  # type: ignore[assignment]
+
+    with pytest.warns(UserWarning) as warning_list:
+        m.model_dump()
+
+    # Should be exactly ONE UserWarning containing all three fields
+    assert len(warning_list) == 1, (
+        f'Expected 1 consolidated warning, got {len(warning_list)}: {[str(w.message) for w in warning_list]}'
+    )
+    warning_msg = str(warning_list[0].message)
+    assert "field_name='a'" in warning_msg
+    assert "field_name='b'" in warning_msg
+    assert "field_name='c'" in warning_msg
