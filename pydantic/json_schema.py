@@ -701,6 +701,11 @@ class GenerateJsonSchema:
                 r'^(?!^[-+.]*$)[+-]?0*'  # check it is not empty string and not one or sequence of ".+-" characters.
             )
 
+            # In serialization mode, `pydantic-core` calls `str()` on `Decimal` values, which can emit
+            # scientific notation (e.g. `Decimal('0.0000001')` -> `'1E-7'`). Allow an optional exponent
+            # suffix so the generated schema accepts pydantic's own serialization output.
+            exponent_suffix = r'(?:[eE][+-]?\d+)?' if self.mode == 'serialization' else ''
+
             # Case 1: Both max_digits and decimal_places are set
             if max_digits is not None and decimal_places is not None:
                 integer_places = max(0, max_digits - decimal_places)
@@ -708,9 +713,9 @@ class GenerateJsonSchema:
                     rf'(?:'
                     rf'\d{{0,{integer_places}}}'
                     rf'|'
-                    rf'(?=[\d.]{{1,{max_digits + 1}}}0*$)'
-                    rf'\d{{0,{integer_places}}}\.\d{{0,{decimal_places}}}0*$'
-                    rf')'
+                    rf'(?=[\d.]{{1,{max_digits + 1}}}0*{exponent_suffix}$)'
+                    rf'\d{{0,{integer_places}}}\.\d{{0,{decimal_places}}}0*'
+                    rf'){exponent_suffix}$'
                 )
 
             # Case 2: Only max_digits is set
@@ -719,18 +724,18 @@ class GenerateJsonSchema:
                     rf'(?:'
                     rf'\d{{0,{max_digits}}}'
                     rf'|'
-                    rf'(?=[\d.]{{1,{max_digits + 1}}}0*$)'
-                    rf'\d*\.\d*0*$'
-                    rf')'
+                    rf'(?=[\d.]{{1,{max_digits + 1}}}0*{exponent_suffix}$)'
+                    rf'\d*\.\d*0*'
+                    rf'){exponent_suffix}$'
                 )
 
             # Case 3: Only decimal_places is set
             elif max_digits is None and decimal_places is not None:
-                pattern += rf'\d*\.?\d{{0,{decimal_places}}}0*$'
+                pattern += rf'\d*\.?\d{{0,{decimal_places}}}0*{exponent_suffix}$'
 
             # Case 4: Both are None (no restrictions)
             else:
-                pattern += r'\d*\.?\d*$'  # look for arbitrary integer or decimal
+                pattern += rf'\d*\.?\d*{exponent_suffix}$'  # look for arbitrary integer or decimal
 
             return pattern
 
