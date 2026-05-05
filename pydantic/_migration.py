@@ -281,14 +281,14 @@ def getattr_migration(module: str) -> Callable[[str], Any]:
         from ._internal._validators import import_string
 
         import_path = f'{module}:{name}'
-        if import_path in MOVED_IN_V2.keys():
+        if import_path in MOVED_IN_V2:
             new_location = MOVED_IN_V2[import_path]
             warnings.warn(
                 f'`{import_path}` has been moved to `{new_location}`.',
                 category=PydanticDeprecatedSince20,
                 stacklevel=2,
             )
-            return import_string(MOVED_IN_V2[import_path])
+            return import_string(new_location)
         if import_path in DEPRECATED_MOVED_IN_V2:
             # skip the warning here because a deprecation warning will be raised elsewhere
             return import_string(DEPRECATED_MOVED_IN_V2[import_path])
@@ -300,7 +300,7 @@ def getattr_migration(module: str) -> Callable[[str], Any]:
                 category=PydanticDeprecatedSince20,
                 stacklevel=2,
             )
-            return import_string(REDIRECT_TO_V1[import_path])
+            return import_string(new_location)
         if import_path == 'pydantic:BaseSettings':
             raise PydanticImportError(
                 '`BaseSettings` has been moved to the `pydantic-settings` package. '
