@@ -321,6 +321,76 @@ def test_copy_deep_extra(copy_method):
     assert copy_method(m, deep=True).extra is not m.extra
 
 
+class NotDeepCopyable:
+    def __deepcopy__(self, memo):
+        raise TypeError('This object cannot be deepcopied')
+
+
+def test_model_copy_deep_update_skips_deepcopy_of_updated_fields() -> None:
+
+    class Model(BaseModel):
+        model_config = ConfigDict(arbitrary_types_allowed=True)
+        name: str = 'default'
+        arbitrary: Any = None
+
+    model = Model(arbitrary=NotDeepCopyable())
+
+    copied = model.model_copy(deep=True, update={'arbitrary': None})
+    assert model.arbitrary is None
+    assert model.name == 'default'
+    assert copied is not model
+
+
+def test_model_copy_deep_update_preserves_shared_references() -> None:
+
+    class Inner(BaseModel):
+        x: int = 0
+
+    class Outer(BaseModel):
+        a: Inner
+        b: Inner
+        c: Inner
+
+    shared = Inner(x=1)
+    m = Outer(a=shared, b=shared, c=Inner(x=2))
+    m2 = m.model_copy(deep=True, update={'c': Inner(x=99)})
+
+    assert m2.a is not shared
+    assert m2.a is m2.b
+    assert m2.c.x == 99
+    assert m.a is shared
+
+
+def test_model_copy_deep_update_skips_deepcopy_of_extra_fields() -> None:
+    """Extra fields present in `update` should not be deepcopied."""
+
+    class Foo(BaseModel, extra='allow'):
+        pass
+
+    m = Foo(extra_field=NotDeepCopyable(), other=[1, 2, 3])
+
+    copied = m.model_copy(deep=True, update={'extra_field': 'replaced'})
+    assert copied.extra_field == 'replaced'
+    assert copied.other == [1, 2, 3]
+    assert copied.other is not m.other
+
+
+def test_model_copy_deep_update_with_private_attributes() -> None:
+    """Ensure private attributes are deepcopied when `deep=True` and `update` are provided."""
+
+    class M(BaseModel):
+        a: int
+        _private = PrivateAttr({'private'})
+
+    m = M(a=1)
+    m._private = {'modified'}
+    m2 = m.model_copy(deep=True, update={'a': 2})
+
+    assert m2.a == 2
+    assert m2._private == {'modified'}
+    assert m2._private is not m._private
+
+
 def test_copy_set_fields(ModelTwo, copy_method):
     m = ModelTwo(a=24, d=Model(a='12'))
     m2 = copy_method(m)
