@@ -547,12 +547,58 @@ def test_decimal_json_schema():
                 'default': '12.34',
                 'title': 'B',
                 'type': 'string',
-                'pattern': '^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$',
+                'pattern': '^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*(?:[eE][+-]?\\d+)?$',
             },
         },
         'title': 'Model',
         'type': 'object',
     }
+
+
+
+def test_decimal_json_schema_serialization_scientific_notation():
+    """Regression test for https://github.com/pydantic/pydantic/issues/13089.
+
+    When pydantic-core serializes small/large Decimal values, it uses str()
+    which produces scientific notation (e.g. '1E-7'). The serialization JSON
+    schema pattern must accept this format.
+    """
+
+    class Model(BaseModel):
+        value: Decimal
+
+    # Verify serialization schema includes exponent suffix in pattern
+    schema = Model.model_json_schema(mode='serialization')
+    pattern = schema['properties']['value']['pattern']
+    assert '[eE]' in pattern, (
+        f'Serialization pattern should accept scientific notation: {pattern}'
+    )
+
+    # Verify validation schema does NOT include exponent suffix
+    schema_val = Model.model_json_schema(mode='validation')
+    pattern_val = next(
+        v for v in schema_val['properties']['value']['anyOf']
+        if v.get('type') == 'string'
+    )['pattern']
+    assert '[eE]' not in pattern_val, (
+        f'Validation pattern should not include scientific notation: {pattern_val}'
+    )
+
+    # Verify the serialized output matches the serialization schema pattern
+    import json
+    m = Model(value=Decimal('0.0000001'))
+    serialized = json.loads(m.model_dump_json())['value']
+    assert re.match(pattern, serialized), (
+        f'Serialized value {serialized!r} should match pattern {pattern}'
+    )
+
+    # Also test other scientific notation forms
+    for val in ['1E-7', '1e-7', '1E+10', '-3.14E+2', '+2.5e-3', '42']:
+        m = Model(value=Decimal(val))
+        serialized = json.loads(m.model_dump_json())['value']
+        assert re.match(pattern, serialized), (
+            f'Serialized value {serialized!r} should match pattern {pattern}'
+        )
 
 
 def test_list_sub_model():
@@ -2139,7 +2185,7 @@ def test_constraints_schema_validation(kwargs, type_, expected_extra):
             Decimal,
             {
                 'type': 'string',
-                'pattern': '^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$',
+                'pattern': '^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*(?:[eE][+-]?\\d+)?$',
             },
         ),
         (
@@ -2147,7 +2193,7 @@ def test_constraints_schema_validation(kwargs, type_, expected_extra):
             Decimal,
             {
                 'type': 'string',
-                'pattern': '^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$',
+                'pattern': '^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*(?:[eE][+-]?\\d+)?$',
             },
         ),
         (
@@ -2155,7 +2201,7 @@ def test_constraints_schema_validation(kwargs, type_, expected_extra):
             Decimal,
             {
                 'type': 'string',
-                'pattern': '^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$',
+                'pattern': '^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*(?:[eE][+-]?\\d+)?$',
             },
         ),
         (
@@ -2163,7 +2209,7 @@ def test_constraints_schema_validation(kwargs, type_, expected_extra):
             Decimal,
             {
                 'type': 'string',
-                'pattern': '^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$',
+                'pattern': '^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*(?:[eE][+-]?\\d+)?$',
             },
         ),
         (
@@ -2171,7 +2217,7 @@ def test_constraints_schema_validation(kwargs, type_, expected_extra):
             Decimal,
             {
                 'type': 'string',
-                'pattern': '^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$',
+                'pattern': '^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*(?:[eE][+-]?\\d+)?$',
             },
         ),
     ],

@@ -732,6 +732,18 @@ class GenerateJsonSchema:
             else:
                 pattern += r'\d*\.?\d*$'  # look for arbitrary integer or decimal
 
+            # In serialization mode, pydantic-core emits scientific notation
+            # (e.g. Decimal('0.0000001') -> '1E-7') via str(), so the pattern
+            # must accept an optional exponent suffix.  Validation mode does not
+            # need this because user input is expected in plain decimal form.
+            # See https://github.com/pydantic/pydantic/issues/13089
+            if self.mode == 'serialization':
+                # Strip the trailing '$' from the pattern so we can append
+                # the optional exponent before the end anchor.
+                if pattern.endswith('$'):
+                    pattern = pattern[:-1]
+                pattern += r'(?:[eE][+-]?\d+)?$'
+
             return pattern
 
         json_schema = self.str_schema(core_schema.str_schema(pattern=get_decimal_pattern(schema)))
