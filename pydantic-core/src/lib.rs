@@ -2,7 +2,9 @@
 
 extern crate core;
 
+use std::ffi::c_void;
 use std::sync::OnceLock;
+use std::sync::atomic::{AtomicPtr, Ordering};
 
 use jiter::{FloatMode, PartialMode, PythonParse, StringCacheMode, map_json_error};
 use pyo3::exceptions::PyTypeError;
@@ -106,6 +108,86 @@ pub fn build_info() -> String {
     )
 }
 
+// ---------------------------------------------------------------------------
+// Two-part fix for pydantic_core.TzInfo shutdown SIGSEGV (pydantic#12867)
+//
+// Part 1 — keep TzInfo *class* alive past _PyImport_Cleanup.
+//   pydantic_core._pydantic_core is finalized before __main__, so the TzInfo
+//   class object can be freed while datetime objects in __main__ still hold
+//   TzInfo instances.  _Py_Dealloc then dereferences the freed class ->
+//   SIGSEGV before tp_dealloc is even called.  A deliberate Py_INCREF at
+//   module init (stored in a raw AtomicPtr with no Drop) keeps the class
+//   alive for the rest of the process lifetime.
+//
+// Part 2 — skip the base-class dealloc chain during shutdown.
+//   TzInfo.tp_base = PyDateTime_TZInfoType; subtype_dealloc traverses this
+//   chain.  After _PyImport_Cleanup, PyDateTimeAPI type pointers may be
+//   dangling -> SIGSEGV inside subtype_dealloc.  We replace tp_dealloc with
+//   tzinfo_dealloc_guarded, which skips the chain when _Py_IsFinalizing().
+//   TzInfo holds only `seconds: i32` — no Python refs, nothing to leak.
+// ---------------------------------------------------------------------------
+
+// Detect interpreter shutdown without depending on version-specific private symbols.
+//
+// CPython 3.13+ exports Py_IsFinalizing() as a real symbol; pyo3::ffi exposes it
+// under the Py_3_13 cfg flag. On CPython 3.9–3.12 the public Py_IsFinalizing()
+// is a static inline, so we link against the internal _Py_IsFinalizing() which
+// is exported in those versions. PyPy and GraalPy have different GC/shutdown
+// semantics; the CPython _PyImport_Cleanup race does not apply to them, so we
+// simply return false there (taking the normal dealloc path is always safe).
+#[cfg(all(not(PyPy), not(GraalPy), not(Py_3_13)))]
+unsafe extern "C" {
+    fn _Py_IsFinalizing() -> std::os::raw::c_int;
+}
+
+#[inline]
+fn is_finalizing() -> bool {
+    #[cfg(any(PyPy, GraalPy))]
+    let finalizing = false;
+    #[cfg(all(not(PyPy), not(GraalPy), Py_3_13))]
+    let finalizing = unsafe { pyo3::ffi::Py_IsFinalizing() != 0 };
+    #[cfg(all(not(PyPy), not(GraalPy), not(Py_3_13)))]
+    let finalizing = unsafe { _Py_IsFinalizing() != 0 };
+    finalizing
+}
+
+// Stores a raw (uncounted by Rust) pointer to the original PyO3-generated
+// tp_dealloc for TzInfo. Set once at module init.
+static TZINFO_ORIG_DEALLOC: AtomicPtr<c_void> = AtomicPtr::new(std::ptr::null_mut());
+
+// Stores a raw pointer to the TzInfo PyTypeObject with a deliberate Py_INCREF
+// (never balanced — AtomicPtr has no Drop impl). Keeps the class alive past
+// _PyImport_Cleanup so _Py_Dealloc(instance) can safely read tp_dealloc.
+static TZINFO_CLASS_PTR: AtomicPtr<c_void> = AtomicPtr::new(std::ptr::null_mut());
+
+/// Replacement tp_dealloc for pydantic_core.TzInfo.
+///
+/// Part 1 of the fix ensures the TzInfo class is still alive when this
+/// function is reached. Part 2 skips the datetime.tzinfo base-class dealloc
+/// chain, which accesses PyDateTimeAPI pointers that may be dangling during
+/// interpreter shutdown.
+unsafe extern "C" fn tzinfo_dealloc_guarded(slf: *mut pyo3::ffi::PyObject) {
+    use pyo3::ffi;
+    if is_finalizing() {
+        // Shutdown path: skip tp_base (datetime.tzinfo) dealloc chain.
+        // PyDateTimeAPI type pointers may be dangling after _datetime cleanup.
+        // TzInfo holds only `seconds: i32` — nothing to release beyond memory.
+        // TzInfo is not GC-tracked; tp_free is PyObject_Free. Safe to call directly.
+        let tp_ptr = TZINFO_CLASS_PTR.load(Ordering::Relaxed).cast::<ffi::PyTypeObject>();
+        if let Some(tp_free) = unsafe { (*tp_ptr).tp_free } {
+            unsafe { tp_free(slf.cast()) };
+        }
+        return;
+    }
+    // Normal path: call the original PyO3-generated dealloc, which drops Rust
+    // data and then chains through the datetime.tzinfo base-class dealloc.
+    let orig_ptr = TZINFO_ORIG_DEALLOC.load(Ordering::Relaxed);
+    if !orig_ptr.is_null() {
+        let orig: unsafe extern "C" fn(*mut pyo3::ffi::PyObject) = unsafe { std::mem::transmute(orig_ptr) };
+        unsafe { orig(slf) };
+    }
+}
+
 #[pymodule(gil_used = false)]
 pub mod _pydantic_core {
     #[allow(clippy::wildcard_imports)]
@@ -126,6 +208,29 @@ pub mod _pydantic_core {
         m.add("build_info", build_info())?;
         m.add("_recursion_limit", recursion_guard::RECURSION_GUARD_LIMIT)?;
         m.add("PydanticUndefined", PydanticUndefinedType::get(m.py()))?;
+        // Install the two-part shutdown-safety fix for TzInfo.
+        // See https://github.com/pydantic/pydantic/issues/12867
+        //
+        // SAFETY:
+        //   - type_ptr is valid; TzInfo is registered via #[pymodule_export]
+        //     before module_init is called, so its type object is initialized.
+        //   - TZINFO_CLASS_PTR receives a deliberate Py_INCREF that is never
+        //     balanced (AtomicPtr has no Drop), intentionally keeping the class
+        //     alive for the lifetime of the process to prevent use-after-free
+        //     in _Py_Dealloc during interpreter shutdown.
+        unsafe {
+            use pyo3::ffi;
+            let type_ptr = m.py().get_type::<TzInfo>().as_type_ptr();
+            // Part 1: keep the class alive past _PyImport_Cleanup.
+            ffi::Py_INCREF(type_ptr.cast::<ffi::PyObject>());
+            TZINFO_CLASS_PTR.store(type_ptr.cast::<c_void>(), Ordering::Relaxed);
+            // Part 2: replace tp_dealloc with the shutdown-safe version.
+            let orig = (*type_ptr).tp_dealloc;
+            let orig_ptr: *mut c_void = orig.map_or(std::ptr::null_mut(), |f| f as *mut c_void);
+            TZINFO_ORIG_DEALLOC.store(orig_ptr, Ordering::Relaxed);
+            (*type_ptr).tp_dealloc = Some(tzinfo_dealloc_guarded);
+            ffi::PyType_Modified(type_ptr);
+        }
         Ok(())
     }
 }

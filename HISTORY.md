@@ -2,6 +2,15 @@
 <!-- markdownlint-disable descriptive-link-text -->
 <!-- markdownlint-disable-next-line first-line-heading -->
 
+## v2.13.4 (unreleased)
+
+### What's Changed
+
+#### Fixes
+
+* Fix SIGSEGV (exit 139) during CPython interpreter shutdown when a `pydantic_core.TzInfo` instance is alive at process exit by @pydantic in [#12867](https://github.com/pydantic/pydantic/issues/12867).
+  Two-part fix in pydantic-core Rust: keep the TzInfo class object alive past `_PyImport_Cleanup` via a deliberate `Py_INCREF` at module init, and guard `tp_dealloc` against the `datetime.tzinfo` base-class dealloc chain using `_Py_IsFinalizing()`.
+
 ## v2.13.3 (2026-04-20)
 
 [GitHub release](https://github.com/pydantic/pydantic/releases/tag/v2.13.3)
