@@ -742,6 +742,18 @@ def test_datetime_from_date_str():
             b'1704070861000.023',
             'milliseconds',
         ),
+        # rfc2822: naive datetime (treated as UTC)
+        (
+            datetime(2024, 1, 1, 0, 0, 0),
+            b'"Mon, 01 Jan 2024 00:00:00 GMT"',
+            'rfc2822',
+        ),
+        # rfc2822: UTC datetime
+        (
+            datetime(2024, 1, 1, 12, 0, 0, tzinfo=timezone.utc),
+            b'"Mon, 01 Jan 2024 12:00:00 GMT"',
+            'rfc2822',
+        ),
     ],
 )
 def test_config_datetime(dt: datetime, expected_to_json, mode):
@@ -770,6 +782,12 @@ def test_config_datetime(dt: datetime, expected_to_json, mode):
             date(2024, 1, 1),
             b'1704067200000.0',
             'milliseconds',
+        ),
+        # rfc2822: bare `date` is treated as midnight UTC, matching werkzeug.http.http_date
+        (
+            date(2024, 1, 1),
+            b'"Mon, 01 Jan 2024 00:00:00 GMT"',
+            'rfc2822',
         ),
     ],
 )
@@ -800,6 +818,12 @@ def test_config_date(dt: date, expected_to_json, mode):
             b'11641059.263',
             'milliseconds',
         ),
+        # rfc2822 has no standalone time format, so we fall back to ISO 8601
+        (
+            time(3, 14, 1, 59263),
+            b'"03:14:01.059263"',
+            'rfc2822',
+        ),
     ],
 )
 def test_config_time(t: date, expected_to_json, mode):
@@ -809,3 +833,9 @@ def test_config_time(t: date, expected_to_json, mode):
 
     assert instance == t
     assert ta.dump_json(instance) == expected_to_json
+
+
+def test_config_timedelta_rfc2822_falls_back_to_iso8601():
+    """RFC 2822 has no concept of duration, so `timedelta` falls back to ISO 8601."""
+    ta = TypeAdapter(timedelta, config={'ser_json_temporal': 'rfc2822'})
+    assert ta.dump_json(timedelta(hours=2)) == b'"PT2H"'

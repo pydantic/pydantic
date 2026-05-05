@@ -575,7 +575,7 @@ class ConfigDict(TypedDict, total=False):
     ///
     """
 
-    ser_json_temporal: Literal['iso8601', 'seconds', 'milliseconds']
+    ser_json_temporal: Literal['iso8601', 'seconds', 'milliseconds', 'rfc2822']
     """
     The format of JSON serialized temporal types from the [`datetime`][] module. This includes:
 
@@ -589,12 +589,24 @@ class ConfigDict(TypedDict, total=False):
     - `'iso8601'` will serialize date-like types to [ISO 8601 text format](https://en.wikipedia.org/wiki/ISO_8601#Durations).
     - `'milliseconds'` will serialize date-like types to a floating point number of milliseconds since the epoch.
     - `'seconds'` will serialize date-like types to a floating point number of seconds since the epoch.
+    - `'rfc2822'` will serialize date-like types to an [RFC 2822](https://datatracker.ietf.org/doc/html/rfc2822)
+      date string with a `GMT` zone label, e.g. `'Mon, 01 Jan 2024 12:00:00 GMT'`. This mirrors the behaviour of
+      [`werkzeug.http.http_date`](https://werkzeug.palletsprojects.com/en/stable/http/#werkzeug.http.http_date)
+      and is the preferred date format for the HTTP `Date` header per
+      [RFC 7231 §7.1.1.1](https://datatracker.ietf.org/doc/html/rfc7231#section-7.1.1.1).
+      [`datetime.datetime`][] values are converted to UTC before formatting (naive datetimes are assumed UTC),
+      and bare [`datetime.date`][] values are treated as midnight UTC. [`datetime.time`][] and
+      [`datetime.timedelta`][] have no RFC 2822 representation and fall back to ISO 8601.
 
     Defaults to `'iso8601'`.
 
     /// version-added | v2.12
     This setting replaces [`ser_json_timedelta`][pydantic.config.ConfigDict.ser_json_timedelta],
     which will be deprecated in v3. `ser_json_temporal` adds more configurability for the other temporal types.
+    ///
+
+    /// version-changed | v2.14
+    Added the `'rfc2822'` option.
     ///
     """
 

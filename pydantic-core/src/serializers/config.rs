@@ -11,8 +11,8 @@ use serde::ser::Error;
 use crate::build_tools::py_schema_err;
 use crate::input::{EitherTimedelta, pydate_as_date, pydatetime_as_datetime, pytime_as_time};
 use crate::serializers::type_serializers::datetime_etc::{
-    date_to_milliseconds, date_to_seconds, datetime_to_milliseconds, datetime_to_seconds, time_to_milliseconds,
-    time_to_seconds,
+    date_to_milliseconds, date_to_rfc2822, date_to_seconds, datetime_to_milliseconds, datetime_to_rfc2822,
+    datetime_to_seconds, time_to_milliseconds, time_to_seconds,
 };
 use crate::tools::SchemaDict;
 
@@ -127,7 +127,8 @@ serialization_mode! {
     "ser_json_temporal",
     Iso8601 => "iso8601",
     Seconds => "seconds",
-    Milliseconds => "milliseconds"
+    Milliseconds => "milliseconds",
+    Rfc2822 => "rfc2822",
 }
 
 serialization_mode! {
@@ -164,6 +165,7 @@ impl TemporalMode {
             Self::Iso8601 => dt.to_string().into_py_any(py),
             Self::Seconds => datetime_to_seconds(dt).into_py_any(py),
             Self::Milliseconds => datetime_to_milliseconds(dt).into_py_any(py),
+            Self::Rfc2822 => datetime_to_rfc2822(dt).into_py_any(py),
         }
     }
 
@@ -173,13 +175,16 @@ impl TemporalMode {
             Self::Iso8601 => date.to_string().into_py_any(py),
             Self::Seconds => date_to_seconds(date).into_py_any(py),
             Self::Milliseconds => date_to_milliseconds(date).into_py_any(py),
+            // A bare `date` is treated as midnight UTC, matching `werkzeug.http.http_date`.
+            Self::Rfc2822 => date_to_rfc2822(date).into_py_any(py),
         }
     }
 
     pub fn time_to_json(self, py: Python, time: &Bound<'_, PyTime>) -> PyResult<Py<PyAny>> {
         let time = pytime_as_time(time)?;
         match self {
-            Self::Iso8601 => time.to_string().into_py_any(py),
+            // RFC 2822 has no standalone time format, so we fall back to ISO 8601.
+            Self::Iso8601 | Self::Rfc2822 => time.to_string().into_py_any(py),
             Self::Seconds => time_to_seconds(time).into_py_any(py),
             Self::Milliseconds => time_to_milliseconds(time).into_py_any(py),
         }
@@ -187,7 +192,8 @@ impl TemporalMode {
 
     pub fn timedelta_to_json(self, py: Python, either_delta: EitherTimedelta) -> PyResult<Py<PyAny>> {
         match self {
-            Self::Iso8601 => {
+            // RFC 2822 has no concept of duration, so we fall back to ISO 8601.
+            Self::Iso8601 | Self::Rfc2822 => {
                 let d = either_delta.to_duration()?;
                 d.to_string().into_py_any(py)
             }
@@ -208,6 +214,7 @@ impl TemporalMode {
             Self::Iso8601 => Ok(dt.to_string().into()),
             Self::Seconds => Ok(datetime_to_seconds(dt).to_string().into()),
             Self::Milliseconds => Ok(datetime_to_milliseconds(dt).to_string().into()),
+            Self::Rfc2822 => Ok(datetime_to_rfc2822(dt).into()),
         }
     }
 
@@ -217,13 +224,16 @@ impl TemporalMode {
             Self::Iso8601 => Ok(date.to_string().into()),
             Self::Seconds => Ok(date_to_seconds(date).to_string().into()),
             Self::Milliseconds => Ok(date_to_milliseconds(date).to_string().into()),
+            // A bare `date` is treated as midnight UTC, matching `werkzeug.http.http_date`.
+            Self::Rfc2822 => Ok(date_to_rfc2822(date).into()),
         }
     }
 
     pub fn time_json_key<'py>(self, time: &Bound<'_, PyTime>) -> PyResult<Cow<'py, str>> {
         let time = pytime_as_time(time)?;
         match self {
-            Self::Iso8601 => Ok(time.to_string().into()),
+            // RFC 2822 has no standalone time format, so we fall back to ISO 8601.
+            Self::Iso8601 | Self::Rfc2822 => Ok(time.to_string().into()),
             Self::Seconds => Ok(time_to_seconds(time).to_string().into()),
             Self::Milliseconds => Ok(time_to_milliseconds(time).to_string().into()),
         }
@@ -231,7 +241,8 @@ impl TemporalMode {
 
     pub fn timedelta_json_key<'py>(self, either_delta: &EitherTimedelta) -> PyResult<Cow<'py, str>> {
         match self {
-            Self::Iso8601 => {
+            // RFC 2822 has no concept of duration, so we fall back to ISO 8601.
+            Self::Iso8601 | Self::Rfc2822 => {
                 let d = either_delta.to_duration()?;
                 Ok(d.to_string().into())
             }
@@ -256,6 +267,7 @@ impl TemporalMode {
             Self::Iso8601 => serializer.collect_str(&dt),
             Self::Seconds => serializer.serialize_f64(datetime_to_seconds(dt)),
             Self::Milliseconds => serializer.serialize_f64(datetime_to_milliseconds(dt)),
+            Self::Rfc2822 => serializer.serialize_str(&datetime_to_rfc2822(dt)),
         }
     }
 
@@ -269,6 +281,8 @@ impl TemporalMode {
             Self::Iso8601 => serializer.collect_str(&date),
             Self::Seconds => serializer.serialize_f64(date_to_seconds(date)),
             Self::Milliseconds => serializer.serialize_f64(date_to_milliseconds(date)),
+            // A bare `date` is treated as midnight UTC, matching `werkzeug.http.http_date`.
+            Self::Rfc2822 => serializer.serialize_str(&date_to_rfc2822(date)),
         }
     }
 
@@ -279,7 +293,8 @@ impl TemporalMode {
     ) -> Result<S::Ok, S::Error> {
         let time = pytime_as_time(time).map_err(py_err_se_err)?;
         match self {
-            Self::Iso8601 => serializer.collect_str(&time),
+            // RFC 2822 has no standalone time format, so we fall back to ISO 8601.
+            Self::Iso8601 | Self::Rfc2822 => serializer.collect_str(&time),
             Self::Seconds => serializer.serialize_f64(time_to_seconds(time)),
             Self::Milliseconds => serializer.serialize_f64(time_to_milliseconds(time)),
         }
@@ -291,7 +306,8 @@ impl TemporalMode {
         serializer: S,
     ) -> Result<S::Ok, S::Error> {
         match self {
-            Self::Iso8601 => {
+            // RFC 2822 has no concept of duration, so we fall back to ISO 8601.
+            Self::Iso8601 | Self::Rfc2822 => {
                 let d = either_delta.to_duration().map_err(py_err_se_err)?;
                 serializer.collect_str(&d)
             }

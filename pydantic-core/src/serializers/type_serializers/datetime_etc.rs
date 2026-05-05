@@ -43,6 +43,71 @@ pub(crate) fn time_to_milliseconds(time: Time) -> f64 {
         + f64::from(time.microsecond) / 1_000.0
 }
 
+const RFC2822_DAY_NAMES: [&str; 7] = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+const RFC2822_MONTH_NAMES: [&str; 12] = [
+    "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec",
+];
+
+/// Format a `Date` as an RFC 2822 (HTTP) date string at midnight UTC,
+/// e.g. "Mon, 01 Jan 2024 00:00:00 GMT".
+///
+/// This mirrors the behaviour of `werkzeug.http.http_date`, which combines a bare
+/// `date` with midnight in UTC before formatting.
+pub(crate) fn date_to_rfc2822(date: Date) -> String {
+    let midnight = Time {
+        hour: 0,
+        minute: 0,
+        second: 0,
+        microsecond: 0,
+        tz_offset: None,
+    };
+    datetime_to_rfc2822(DateTime { date, time: midnight })
+}
+
+/// Format a `DateTime` as an RFC 2822 date string with `GMT` as the zone label,
+/// e.g. "Mon, 01 Jan 2024 12:00:00 GMT".
+///
+/// This matches the output of Python's `email.utils.format_datetime(dt, usegmt=True)`,
+/// which is what `werkzeug.http.http_date` uses for the HTTP `Date` header (the format
+/// is RFC 2822 / RFC 5322 §3.3, which RFC 7231 §7.1.1.1 designates as the preferred HTTP
+/// date format).
+///
+/// The datetime is converted to UTC before formatting:
+/// - If `tz_offset` is `None` (naive), it is assumed to already be UTC.
+/// - If `tz_offset` is `Some`, the offset is subtracted from the timestamp to get UTC.
+pub(crate) fn datetime_to_rfc2822(dt: DateTime) -> String {
+    // Compute the UTC unix timestamp (seconds since 1970-01-01 UTC).
+    // `DateTime::timestamp()` ignores the timezone offset and returns the timestamp
+    // as if the date/time were UTC, so we need to subtract the offset to get the
+    // true UTC timestamp.
+    let local_ts = dt.date.timestamp()
+        + i64::from(dt.time.hour) * 3600
+        + i64::from(dt.time.minute) * 60
+        + i64::from(dt.time.second);
+    let tz_offset = i64::from(dt.time.tz_offset.unwrap_or(0));
+    let utc_ts = local_ts - tz_offset;
+
+    // Compute date parts from the UTC timestamp using `Date::from_timestamp`-style
+    // logic via `DateTime::from_timestamp`. We pass microseconds separately.
+    let utc = DateTime::from_timestamp(utc_ts, 0).expect("RFC 2822 timestamp must be in valid range");
+
+    // Day-of-week: 1970-01-01 (UTC, ts=0) was a Thursday (index 3 in our Mon-first array).
+    // Normalize the day count to be non-negative before taking modulo to handle pre-1970 dates.
+    let days_since_epoch = utc_ts.div_euclid(86_400);
+    let weekday_index = (days_since_epoch + 3).rem_euclid(7) as usize;
+
+    format!(
+        "{day_name}, {day:02} {month_name} {year:04} {hour:02}:{minute:02}:{second:02} GMT",
+        day_name = RFC2822_DAY_NAMES[weekday_index],
+        day = utc.date.day,
+        month_name = RFC2822_MONTH_NAMES[(utc.date.month as usize).saturating_sub(1)],
+        year = utc.date.year,
+        hour = utc.time.hour,
+        minute = utc.time.minute,
+        second = utc.time.second,
+    )
+}
+
 fn downcast_date_reject_datetime<'a, 'py>(py_date: &'a Bound<'py, PyAny>) -> PyResult<&'a Bound<'py, PyDate>> {
     if let Ok(py_date) = py_date.cast::<PyDate>() {
         // because `datetime` is a subclass of `date` we have to check that the value is not a
