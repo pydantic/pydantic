@@ -1,3 +1,7 @@
+---
+title: "Installation Guide: pip & uv Setup - Pydantic Validation"
+description: "Get Pydantic running in seconds. Quick-start guides for pip and conda installation, plus a breakdown of version requirements and optional dependencies."
+---
 Installation is as simple as:
 
 === "pip"

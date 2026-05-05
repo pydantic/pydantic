@@ -1,4 +1,7 @@
-
+---
+title: "Pydantic Validation Error Handling: Messages & Exceptions"
+description: "Complete guide to Pydantic error handling. Dive into the comprehensive Pydantic error code list to troubleshoot validation issues & debug Python models."
+---
 Pydantic will raise a [`ValidationError`][pydantic_core.ValidationError] whenever it finds an error in the data it's validating.
 
 !!! note
