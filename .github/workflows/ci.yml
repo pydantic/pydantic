@@ -241,7 +241,7 @@ jobs:
     name: core / Build WASM Emscripten
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           persist-credentials: false
 
@@ -296,6 +296,127 @@ jobs:
         with:
           name: pydantic_core_wasm_wheels
           path: pydantic-core/dist
+
+  core-build-pyemscripten:
+    name: core / Build pyemscripten wheel (Pyodide ${{ matrix.pyodide.version }})
+    # Ungated so `core-test-pyemscripten` runs on every PR. Re-enable the gate
+    # below to match other heavy `core-build*` jobs (also drop
+    # `core-test-pyemscripten` from `check.needs`).
+    # if: startsWith(github.ref, 'refs/tags/') || github.ref == 'refs/heads/main' || contains(github.event.pull_request.labels.*.name, 'full build')
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        pyodide:
+          # `pyodide xbuildenv install 314.0.0a1` requires *host* Python 3.14
+          # and emsdk 5.0.3 exactly; mismatches fail with a vague "is not
+          # compatible" error. Bump these together when 314.0.0 stable ships.
+          - version: '314.0.0a1'
+            python: '3.14'
+            emsdk: '5.0.3'
+            abi: '2026_0'
+    env:
+      PYODIDE_VERSION: ${{ matrix.pyodide.version }}
+      EMSDK_VERSION: ${{ matrix.pyodide.emsdk }}
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
+        with:
+          python-version: ${{ matrix.pyodide.python }}
+
+      - name: Install rust nightly
+        # Pyodide 314's emcc passes nightly-only `-Z link-native-libraries`
+        # and `-Z emscripten-wasm-eh`; revisit when those flags stabilise.
+        # no release versioning, see https://github.com/dtolnay/rust-toolchain/issues/180
+        uses: dtolnay/rust-toolchain@3c5f7ea28cd621ae0bf5283f0e981fb97b8a7af9
+        with:
+          components: rust-src
+          targets: wasm32-unknown-emscripten
+          toolchain: nightly
+
+      - name: Cache rust
+        uses: Swatinem/rust-cache@c19371144df3bb44fab255c43d04cbc2ab54d1c4 # v2.9.1
+        with:
+          lookup-only: false # zizmor: ignore[cache-poisoning] -- Job has no sensitive permissions; release publish runs in release-pydantic-core under environment: release with OIDC.
+
+      - uses: mymindstorm/setup-emsdk@4528d102f7230f0e7b276855c01ea1159be0e984 # v16
+        with:
+          version: ${{ env.EMSDK_VERSION }}
+          actions-cache-folder: emsdk-cache
+
+      - name: Install pyodide-build
+        # `[resolve]` extra is required by `pyodide build` (resolvelib + unearth).
+        run: python -m pip install "pyodide-build[resolve]" build twine
+
+      - name: Install Pyodide xbuildenv
+        run: pyodide xbuildenv install "${PYODIDE_VERSION}"
+
+      - name: Build pydantic-core pyemscripten wheel
+        run: make -C pydantic-core build-pyemscripten
+
+      - run: ls -lh pydantic-core/dist
+
+      - run: twine check --strict pydantic-core/dist/*.whl
+
+      - uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7.0.0
+        with:
+          # Matches the `pydantic_core_pypi_files_*` glob `release-pydantic-core`
+          # uses, so this wheel ships to PyPI alongside the other core wheels.
+          # The pure-Python pydantic wheel is published separately via the
+          # `build-pydantic` -> `pydantic_pypi_files` -> `release-pydantic` chain.
+          name: pydantic_core_pypi_files_pyemscripten_${{ matrix.pyodide.abi }}
+          path: pydantic-core/dist/*.whl
+
+  core-test-pyemscripten:
+    name: core / Test pyemscripten wheel (Pyodide ${{ matrix.pyodide.version }})
+    needs: [core-build-pyemscripten]
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        pyodide:
+          # Must stay in lockstep with the `core-build-pyemscripten` matrix
+          # (same xbuildenv compatibility constraints).
+          - version: '314.0.0a1'
+            python: '3.14'
+            abi: '2026_0'
+    env:
+      PYODIDE_VERSION: ${{ matrix.pyodide.version }}
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
+        with:
+          python-version: ${{ matrix.pyodide.python }}
+
+      - name: Install pyodide-build
+        run: python -m pip install "pyodide-build[resolve]" build
+
+      - name: Install Pyodide xbuildenv
+        run: pyodide xbuildenv install "${PYODIDE_VERSION}"
+
+      - name: Build pydantic (pure-Python) wheel
+        # Built inline rather than reused from `build-pydantic`, which only
+        # runs on tag pushes.
+        run: python -m build --wheel --outdir dist
+
+      - name: Download pyemscripten wheel
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: pydantic_core_pypi_files_pyemscripten_${{ matrix.pyodide.abi }}
+          path: pydantic-core/dist
+
+      - run: ls -lh pydantic-core/dist dist
+
+      - name: Run unit test suite inside Pyodide venv
+        run: bash .github/scripts/pyemscripten-run-tests.sh
 
   core-bench:
     name: core / Run Rust benchmarks
@@ -867,7 +988,11 @@ jobs:
     if: always()
     outputs:
       result: ${{ steps.all-green.outputs.result }}
-    needs: [lint, docs-build, test, test-memray, test-mypy, test-plugin, core-test-os, core-test-debug, core-build-wasm-emscripten]
+    # `core-test-pyemscripten` belongs here only while its parent build job is
+    # un-gated (see the note in `core-build-pyemscripten`). If the gate is
+    # re-enabled, drop it from this list so a skipped test doesn't red the
+    # all-green check on regular PRs.
+    needs: [lint, docs-build, test, test-memray, test-mypy, test-plugin, core-test-os, core-test-debug, core-build-wasm-emscripten, core-test-pyemscripten]
     runs-on: ubuntu-latest
 
     steps:
