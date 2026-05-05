@@ -2735,6 +2735,45 @@ def test_model_validate_with_validate_fn_override() -> None:
     ]
 
 
+def test_model_dump_includes_runtime_extra_fields() -> None:
+    """model_dump() must include extra fields collected via model_validate(extra='allow')
+    even when the model's class-level config is not extra='allow'.
+    See https://github.com/pydantic/pydantic/issues/12937
+    """
+
+    class ForbidModel(BaseModel, extra='forbid'):
+        a: int
+
+    class IgnoreModel(BaseModel):
+        a: int
+
+    # extra='forbid' at class level, but runtime extra='allow'
+    m_forbid = ForbidModel.model_validate({'a': 1, 'b': 'test'}, extra='allow')
+    assert m_forbid.model_extra == {'b': 'test'}
+    assert m_forbid.model_dump() == {'a': 1, 'b': 'test'}
+
+    # extra='ignore' (default) at class level, but runtime extra='allow'
+    m_ignore = IgnoreModel.model_validate({'a': 1, 'b': 'test', 'c': None}, extra='allow')
+    assert m_ignore.model_extra == {'b': 'test', 'c': None}
+    assert m_ignore.model_dump() == {'a': 1, 'b': 'test', 'c': None}
+
+    # exclude filter applies to runtime extra fields
+    assert m_ignore.model_dump(exclude={'b'}) == {'a': 1, 'c': None}
+
+    # include filter applies to runtime extra fields
+    assert m_ignore.model_dump(include={'b'}) == {'b': 'test'}
+
+    # exclude_none applies to runtime extra fields
+    assert m_ignore.model_dump(exclude_none=True) == {'a': 1, 'b': 'test'}
+
+    # models with class-level extra='allow' are unaffected
+    class AllowModel(BaseModel, extra='allow'):
+        a: int
+
+    m_allow = AllowModel.model_validate({'a': 1, 'b': 'test'})
+    assert m_allow.model_dump() == {'a': 1, 'b': 'test'}
+
+
 def test_model_validate_json_with_validate_fn_override() -> None:
     class Model(BaseModel):
         a: float
