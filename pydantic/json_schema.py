@@ -692,6 +692,8 @@ class GenerateJsonSchema:
         Returns:
             The generated JSON schema.
         """
+        # json_schema = {'type': 'string', 'format': 'base64url' if self._config.ser_json_bytes == 'base64' else 'binary'}
+        raise ValueError("went through fraction schema!")
         json_schema = self.str_schema(core_schema.str_schema(pattern=r'^\s*\(\s*-?\d+\s*,\s*-?\d+\s*\)\s*$'))
         if self.mode == 'validation':
             # todo: handle le, ge, lt, gt in here

@@ -639,10 +639,6 @@ class GenerateSchema:
 
         return schema
 
-    def _fraction_schema(self) -> CoreSchema:
-        """Support for [`fractions.Fraction`][fractions.Fraction]."""
-        return core_schema.fraction_schema()
-
     def _arbitrary_type_schema(self, tp: Any) -> CoreSchema:
         if not isinstance(tp, type):
             warnings.warn(
@@ -1069,7 +1065,7 @@ class GenerateSchema:
         elif obj is Url:
             return core_schema.url_schema()
         elif obj is Fraction:
-            return self._fraction_schema()
+            return core_schema.fraction_schema()
         elif obj is MultiHostUrl:
             return core_schema.multi_host_url_schema()
         elif obj is None or obj is NoneType:

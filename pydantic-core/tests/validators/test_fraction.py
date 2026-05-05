@@ -95,7 +95,6 @@ def test_fraction(py_and_json: PyAndJson, input_value, expected):
         (Fraction(0), Fraction(0)),
         (Fraction(1), Fraction(1)),
         (Fraction(42), Fraction(42)),
-        (Fraction('42.0'), Fraction('42.0')),
         (Fraction('42.5'), Fraction('42.5')),
         (
             42.0,
