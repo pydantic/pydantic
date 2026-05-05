@@ -14,7 +14,7 @@ PYDANTIC_ENTRY_POINT_GROUP: Final[str] = 'pydantic'
 
 # cache of plugins
 _plugins: dict[str, PydanticPluginProtocol] | None = None
-# return no plugins while loading plugins to avoid recursion and errors while import plugins
+# return no plugins while loading plugins to avoid recursion and errors while importing plugins
 # this means that if plugins use pydantic
 _loading_plugins: bool = False
 

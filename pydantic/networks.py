@@ -8,7 +8,7 @@ from dataclasses import fields
 from functools import lru_cache
 from importlib.metadata import version
 from ipaddress import IPv4Address, IPv4Interface, IPv4Network, IPv6Address, IPv6Interface, IPv6Network
-from typing import TYPE_CHECKING, Annotated, Any, ClassVar
+from typing import TYPE_CHECKING, Annotated, Any, ClassVar, TypeAlias, overload
 
 from pydantic_core import (
     MultiHostHost,
@@ -19,7 +19,7 @@ from pydantic_core import (
 )
 from pydantic_core import MultiHostUrl as _CoreMultiHostUrl
 from pydantic_core import Url as _CoreUrl
-from typing_extensions import Self, TypeAlias
+from typing_extensions import Self
 
 from pydantic.errors import PydanticUserError
 
@@ -114,7 +114,7 @@ class UrlConstraints:
         # because when we generate schemas for urls, we wrap a core_schema.url_schema() with a function-wrap schema
         # that helps with validation on initialization, see _BaseUrl and _BaseMultiHostUrl below.
         schema_to_mutate = schema['schema'] if schema['type'] == 'function-wrap' else schema
-        if annotated_type := schema_to_mutate['type'] not in ('url', 'multi-host-url'):
+        if (annotated_type := schema_to_mutate['type']) not in ('url', 'multi-host-url'):
             raise PydanticUserError(
                 f"'UrlConstraints' cannot annotate '{annotated_type}'.", code='invalid-annotated-type'
             )
@@ -439,6 +439,36 @@ class _BaseMultiHostUrl:
         return len(str(self._url))
 
     @classmethod
+    @overload
+    def build(
+        cls,
+        *,
+        scheme: str,
+        hosts: list[MultiHostHost],
+        username: None = None,
+        password: None = None,
+        host: None = None,
+        port: None = None,
+        path: str | None = None,
+        query: str | None = None,
+        fragment: str | None = None,
+    ) -> Self: ...
+    @classmethod
+    @overload
+    def build(
+        cls,
+        *,
+        scheme: str,
+        hosts: None = None,
+        host: str,
+        username: str | None = None,
+        password: str | None = None,
+        port: int | None = None,
+        path: str | None = None,
+        query: str | None = None,
+        fragment: str | None = None,
+    ) -> Self: ...
+    @classmethod
     def build(
         cls,
         *,
@@ -472,12 +502,12 @@ class _BaseMultiHostUrl:
             An instance of `MultiHostUrl`
         """
         return cls(
-            _CoreMultiHostUrl.build(
+            _CoreMultiHostUrl.build(  # pyright: ignore[reportCallIssue]
                 scheme=scheme,
-                hosts=hosts,
+                hosts=hosts,  # pyright: ignore[reportArgumentType]
                 username=username,
                 password=password,
-                host=host,
+                host=host,  # pyright: ignore[reportArgumentType]
                 port=port,
                 path=path,
                 query=query,

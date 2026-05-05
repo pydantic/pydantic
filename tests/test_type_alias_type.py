@@ -11,7 +11,7 @@ from pydantic import BaseModel, PlainSerializer, PydanticUserError, TypeAdapter,
 
 T = TypeVar('T')
 
-JsonType = TypeAliasType('JsonType', Union[list['JsonType'], dict[str, 'JsonType'], str, int, float, bool, None])
+JsonType = TypeAliasType('JsonType', list['JsonType'] | dict[str, 'JsonType'] | str | int | float | bool | None)
 RecursiveGenericAlias = TypeAliasType(
     'RecursiveGenericAlias', list[Union['RecursiveGenericAlias[T]', T]], type_params=(T,)
 )
@@ -141,7 +141,7 @@ def test_recursive_type_alias_name():
     class MyGeneric(Generic[T]):
         field: T
 
-    MyRecursiveType = TypeAliasType('MyRecursiveType', Union[MyGeneric['MyRecursiveType'], int])
+    MyRecursiveType = TypeAliasType('MyRecursiveType', MyGeneric['MyRecursiveType'] | int)
     json_schema = TypeAdapter(MyRecursiveType).json_schema()
     assert sorted(json_schema['$defs'].keys()) == ['MyGeneric_MyRecursiveType_', 'MyRecursiveType']
 
@@ -423,13 +423,13 @@ def test_circular_type_aliases() -> None:
     B = TypeAliasType('B', A)
     C = TypeAliasType('C', B)
 
-    with pytest.raises(PydanticUserError) as exc_info:
+    with pytest.raises(
+        PydanticUserError,
+        check=lambda e: e.code == 'circular-reference-schema' and e.message.startswith('tests.test_type_alias_type.C'),
+    ):
 
         class MyModel(BaseModel):
             a: C
-
-    assert exc_info.value.code == 'circular-reference-schema'
-    assert exc_info.value.message.startswith('tests.test_type_alias_type.C')
 
 
 def test_type_alias_type_with_serialization() -> None:

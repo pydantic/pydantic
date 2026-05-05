@@ -156,6 +156,7 @@ dump_json_input_2 = {'a': 'something'}
                     None,
                     false,
                     None,
+                    None,
                 )
                 .unwrap();
             let repr = format!("{}", serialization_result.bind(py).repr().unwrap());
@@ -178,6 +179,7 @@ dump_json_input_2 = {'a': 'something'}
                     WarningsArg::Bool(false),
                     None,
                     false,
+                    None,
                     None,
                 )
                 .unwrap();

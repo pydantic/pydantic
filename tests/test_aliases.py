@@ -1,7 +1,7 @@
 from contextlib import AbstractContextManager
 from contextlib import nullcontext as does_not_raise
 from inspect import signature
-from typing import Any, Optional, Union
+from typing import Any
 
 import pytest
 from dirty_equals import IsStr
@@ -132,7 +132,7 @@ def test_annotation_config():
 def test_pop_by_field_name():
     class Model(BaseModel):
         model_config = ConfigDict(extra='forbid', validate_by_name=True)
-        last_updated_by: Optional[str] = Field(None, alias='lastUpdatedBy')
+        last_updated_by: str | None = Field(None, alias='lastUpdatedBy')
 
     assert Model(lastUpdatedBy='foo').model_dump() == {'last_updated_by': 'foo'}
     assert Model(last_updated_by='foo').model_dump() == {'last_updated_by': 'foo'}
@@ -826,10 +826,10 @@ def test_alias_gen_with_empty_string_and_computed_field() -> None:
 @pytest.mark.parametrize('runtime_by_alias', [None, True, False])
 @pytest.mark.parametrize('runtime_by_name', [None, True, False])
 def test_validation_alias_settings(
-    config_by_alias: Union[bool, None],
-    config_by_name: Union[bool, None],
-    runtime_by_alias: Union[bool, None],
-    runtime_by_name: Union[bool, None],
+    config_by_alias: bool | None,
+    config_by_name: bool | None,
+    runtime_by_alias: bool | None,
+    runtime_by_name: bool | None,
 ) -> None:
     """This test reflects the priority that applies for config vs runtime validation alias configuration.
 
@@ -889,9 +889,7 @@ def test_user_error_on_validation_methods() -> None:
         (None, None, {'my_field': 1}),
     ],
 )
-def test_serialization_alias_settings(
-    config: Union[bool, None], runtime: Union[bool, None], expected: dict[str, int]
-) -> None:
+def test_serialization_alias_settings(config: bool | None, runtime: bool | None, expected: dict[str, int]) -> None:
     """This test reflects the priority that applies for config vs runtime serialization alias configuration.
 
     Runtime value (by_alias) takes precedence over config value (serialize_by_alias).

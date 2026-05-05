@@ -1,6 +1,6 @@
 import functools
 from enum import Enum
-from typing import ClassVar, Generic, Optional, TypeVar
+from typing import ClassVar, Generic, TypeVar
 
 import pytest
 from pydantic_core import PydanticUndefined
@@ -68,7 +68,7 @@ def test_private_attribute_nested():
 def test_private_attribute_factory():
     default = {'a': {}}
 
-    def factory():
+    def factory() -> dict[str, dict]:
         return default
 
     class Model(BaseModel):
@@ -86,6 +86,48 @@ def test_private_attribute_factory():
 
     assert m.model_dump() == {}
     assert m.__dict__ == {}
+
+
+def test_private_attribute_factory_uses_validated_data():
+    def factory(data: dict[str, str]) -> str:
+        return data['foo'] + data['bar']
+
+    class Model(BaseModel):
+        foo: str
+        bar: str
+        _foobaz = PrivateAttr(default_factory=factory)
+
+    m = Model(foo='foo', bar='bar')
+    assert m._foobaz == 'foobar'
+
+
+def test_private_attribute_factory_uses_other_private_attribute():
+    def factory(data: dict[str, str]) -> str:
+        return data['foo'] + data['bar'] + data['_foobaz']
+
+    class Model(BaseModel):
+        foo: str
+        bar: str
+        _foobaz = PrivateAttr(default='foobaz')
+        _foobazfoo = PrivateAttr(default_factory=factory)
+
+    m = Model(foo='foo', bar='bar')
+    assert m._foobaz == 'foobaz'
+    assert m._foobazfoo == 'foobarfoobaz'
+
+
+def test_private_attribute_factory_unset_private():
+    def factory(data: dict[str, str]) -> str:
+        return data['foo'] + data['bar'] + data['_foobazfoo']
+
+    class Model(BaseModel):
+        foo: str
+        bar: str
+        _foobaz = PrivateAttr(default_factory=factory)
+        _foobazfoo = PrivateAttr(default='foobazfoo')
+
+    with pytest.raises(KeyError, match='_foobazfoo'):
+        Model(foo='foo', bar='bar')
 
 
 def test_private_attribute_annotation():
@@ -342,16 +384,15 @@ def test_none_as_private_attr():
 
 
 def test_layout_compatible_multiple_private_parents():
-    import typing as t
 
     import pydantic
 
     class ModelMixin(pydantic.BaseModel):
-        _mixin_private: t.Optional[str] = pydantic.PrivateAttr(None)
+        _mixin_private: str | None = pydantic.PrivateAttr(None)
 
     class Model(pydantic.BaseModel):
         public: str = 'default'
-        _private: t.Optional[str] = pydantic.PrivateAttr(None)
+        _private: str | None = pydantic.PrivateAttr(None)
 
     class NewModel(ModelMixin, Model):
         pass
@@ -530,7 +571,7 @@ def test_private_descriptors(base, use_annotation):
 
 def test_private_attr_set_name():
     class SetNameInt(int):
-        _owner_attr_name: Optional[str] = None
+        _owner_attr_name: str | None = None
 
         def __set_name__(self, owner, name):
             self._owner_attr_name = f'{owner.__name__}.{name}'

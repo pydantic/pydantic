@@ -9,11 +9,10 @@ use crate::build_tools::py_schema_error_type;
 use crate::definitions::DefinitionsBuilder;
 use crate::py_gc::PyGcTraverse;
 use crate::serializers::SerializationState;
-use crate::serializers::extra::FieldName;
 use crate::serializers::fields::exclude_field_by_value;
 use crate::serializers::filter::SchemaFilter;
 use crate::serializers::shared::{BuildSerializer, CombinedSerializer, SerializeMap};
-use crate::tools::{SchemaDict, pybackedstr_to_pystring};
+use crate::tools::SchemaDict;
 
 #[derive(Debug)]
 pub(super) struct ComputedFields(Vec<ComputedField>);
@@ -50,24 +49,22 @@ impl ComputedFields {
         }
 
         for computed_field in &self.0 {
-            let property_name_py = pybackedstr_to_pystring(model.py(), &computed_field.property_name);
+            let property_name_py = computed_field.property_name.as_py_str().bind(state.py()).clone();
             let Some(next_include_exclude) = filter.key_filter(&property_name_py, state)? else {
                 continue;
             };
 
-            let value = model.getattr(&property_name_py)?;
+            let value = model.getattr(&computed_field.property_name)?;
             if exclude_field_by_value(
                 &value,
                 state,
                 missing_sentinel,
-                // TODO: support exclude_if for computed fields?
-                None,
+                computed_field.serialization_exclude_if.as_ref(),
             )? {
                 continue;
             }
 
-            let field_name = FieldName::from(property_name_py);
-            let state = &mut state.scoped_set(|s| &mut s.field_name, Some(field_name));
+            let state = &mut state.scoped_set_field_name(Some(property_name_py));
             let state = &mut state.scoped_include_exclude(next_include_exclude);
             let key = match state.extra.serialize_by_alias_or(computed_field.serialize_by_alias) {
                 true => &computed_field.alias,
@@ -85,6 +82,7 @@ struct ComputedField {
     serializer: Arc<CombinedSerializer>,
     alias: PyBackedStr,
     serialize_by_alias: Option<bool>,
+    serialization_exclude_if: Option<Py<PyAny>>,
 }
 
 impl ComputedField {
@@ -107,6 +105,7 @@ impl ComputedField {
             serializer,
             alias,
             serialize_by_alias: config.get_as(intern!(py, "serialize_by_alias"))?,
+            serialization_exclude_if: schema.get_as(intern!(py, "serialization_exclude_if"))?,
         })
     }
 }

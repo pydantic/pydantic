@@ -138,9 +138,10 @@ Just be mindful of abusing advanced patterns like the pipeline API just because 
 
 ## Partial Validation
 
-Pydantic v2.10.0 introduces experimental support for "partial validation".
+/// version-added | v2.10
+///
 
-This allows you to validate an incomplete JSON string, or a Python object representing incomplete input data.
+Partial validation allows you to validate an incomplete JSON string, or a Python object representing incomplete input data.
 
 Partial validation is particularly helpful when processing the output of an LLM, where the model streams structured responses, and you may wish to begin validating the stream while you're still receiving data (e.g. to show partial data to users).
 
@@ -498,14 +499,12 @@ This singleton can be used as a default value, as an alternative to `None` when 
 meaning. During serialization, any field with `MISSING` as a value is excluded from the output.
 
 ```python
-from typing import Union
-
 from pydantic import BaseModel
 from pydantic.experimental.missing_sentinel import MISSING
 
 
 class Configuration(BaseModel):
-    timeout: Union[int, None, MISSING] = MISSING
+    timeout: int | None | MISSING = MISSING
 
 
 # configuration defaults, stored somewhere else:
@@ -535,3 +534,7 @@ As such, the following limitations currently apply:
   or greater, and the `enableExperimentalFeatures` type evaluation setting
   should be enabled.
 * Pickling of models containing `MISSING` as a value is not supported.
+
+!!! note
+    When [applying constraints](./fields.md#field-constraints) to a union containing the `MISSING` sentinel,
+    such constraints are automatically applied to the remaining type(s) of the union.

@@ -103,6 +103,7 @@ pub struct StrConstrainedValidator {
     to_lower: bool,
     to_upper: bool,
     coerce_numbers_to_str: bool,
+    ascii_only: bool,
 }
 
 impl_py_gc_traverse!(StrConstrainedValidator {});
@@ -121,6 +122,9 @@ impl Validator for StrConstrainedValidator {
         let mut str = cow.as_ref();
         if self.strip_whitespace {
             str = str.trim();
+        }
+        if self.ascii_only && !str.is_ascii() {
+            return Err(ValError::new(ErrorType::StringNotAscii { context: None }, input));
         }
 
         let str_len: Option<usize> = if self.min_length.is_some() | self.max_length.is_some() {
@@ -221,6 +225,7 @@ impl StrConstrainedValidator {
 
         let coerce_numbers_to_str: bool =
             schema_or_config_same(schema, config, intern!(py, "coerce_numbers_to_str"))?.unwrap_or(false);
+        let ascii_only: bool = schema_or_config_same(schema, config, intern!(py, "ascii_only"))?.unwrap_or(false);
 
         Ok(Self {
             strict: is_strict(schema, config)?,
@@ -231,6 +236,7 @@ impl StrConstrainedValidator {
             to_lower,
             to_upper,
             coerce_numbers_to_str,
+            ascii_only,
         })
     }
 
@@ -243,6 +249,7 @@ impl StrConstrainedValidator {
             || self.strip_whitespace
             || self.to_lower
             || self.to_upper
+            || self.ascii_only
     }
 }
 

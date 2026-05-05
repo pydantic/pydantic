@@ -1,10 +1,10 @@
 import collections.abc
 import os
 import pickle
-import sys
 import time
+from collections.abc import Callable
 from copy import copy, deepcopy
-from typing import Annotated, Callable, Generic, TypeVar, Union
+from typing import Annotated, Generic, TypeVar, Union
 
 import pytest
 from pydantic_core import PydanticCustomError, PydanticUndefined
@@ -63,42 +63,24 @@ class LoggedVar(Generic[T]):
         (str, 'str'),
         ('foobar', 'str'),
         ('SomeForwardRefString', 'str'),  # included to document current behavior; could be changed
-        (Union[str, int], 'Union[str, int]'),
+        pytest.param(Union[str, int], 'Union[str, int]', id='Union[str, int]'),  # noqa: UP007  # TODO remove when we drop support for Python 3.13
+        pytest.param(str | int, 'Union[str, int]', id='str | int'),
         (list, 'list'),
+        (list[int], 'list[int]'),
         ([1, 2, 3], 'list'),
         (list[dict[str, int]], 'list[dict[str, int]]'),
         (tuple[str, int, float], 'tuple[str, int, float]'),
         (tuple[str, ...], 'tuple[str, ...]'),
-        (Union[int, list[str], tuple[str, int]], 'Union[int, list[str], tuple[str, int]]'),
+        (Union[int, list[str], tuple[str, int]], 'Union[int, list[str], tuple[str, int]]'),  # noqa: UP007
         (foobar, 'foobar'),
         (time.time_ns, 'time_ns'),
         (LoggedVar, 'LoggedVar'),
         (LoggedVar(), 'LoggedVar'),
+        (LoggedVar[int], 'LoggedVar[int]'),
+        (LoggedVar[dict[int, str]], 'LoggedVar[dict[int, str]]'),
     ],
 )
 def test_display_as_type(value, expected):
-    assert _repr.display_as_type(value) == expected
-
-
-@pytest.mark.skipif(sys.version_info < (3, 10), reason='requires python 3.10 or higher')
-@pytest.mark.parametrize(
-    'value_gen,expected',
-    [
-        (lambda: str, 'str'),
-        (lambda: 'SomeForwardRefString', 'str'),  # included to document current behavior; could be changed
-        (lambda: str | int, 'Union[str, int]'),
-        (lambda: list, 'list'),
-        (lambda: list[int], 'list[int]'),
-        (lambda: list[int], 'list[int]'),
-        (lambda: list[dict[str, int]], 'list[dict[str, int]]'),
-        (lambda: list[Union[str, int]], 'list[Union[str, int]]'),
-        (lambda: list[str | int], 'list[Union[str, int]]'),
-        (lambda: LoggedVar[int], 'LoggedVar[int]'),
-        (lambda: LoggedVar[dict[int, str]], 'LoggedVar[dict[int, str]]'),
-    ],
-)
-def test_display_as_type_310(value_gen, expected):
-    value = value_gen()
     assert _repr.display_as_type(value) == expected
 
 
@@ -365,7 +347,19 @@ def test_class_attribute():
 
 @pytest.mark.parametrize(
     'obj',
-    (1, 1.0, '1', b'1', int, None, test_class_attribute, len, test_class_attribute.__code__, lambda: ..., ...),
+    (
+        pytest.param(1, id='int-1'),
+        pytest.param(1.0, id='float-1.0'),
+        pytest.param('1', id='str-1'),
+        pytest.param(b'1', id='bytes-1'),
+        int,
+        None,
+        test_class_attribute,
+        len,
+        test_class_attribute.__code__,
+        lambda: ...,
+        ...,
+    ),
 )
 def test_smart_deepcopy_immutable_non_sequence(obj, mocker):
     # make sure deepcopy is not used
@@ -412,7 +406,7 @@ T = TypeVar('T')
         (Callable[[], T][int], collections.abc.Callable),
         (dict[str, int], dict),
         (list[str], list),
-        (Union[int, str], Union),
+        (Union[int, str], Union),  # noqa: UP007
         (int, None),
     ],
 )

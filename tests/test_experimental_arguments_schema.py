@@ -100,13 +100,11 @@ def test_arguments_v3_kwargs_uniform() -> None:
 def test_unpacked_typed_dict_kwargs_invalid_type() -> None:
     def func(**kwargs: Unpack[int]): ...
 
-    with pytest.raises(PydanticUserError) as exc:
+    with pytest.raises(PydanticUserError, check=lambda e: e.code == 'unpack-typed-dict'):
         generate_arguments_schema(
             func=func,
             schema_type='arguments-v3',
         )
-
-    assert exc.value.code == 'unpack-typed-dict'
 
 
 def test_unpacked_typed_dict_kwargs_overlaps() -> None:
@@ -117,14 +115,17 @@ def test_unpacked_typed_dict_kwargs_overlaps() -> None:
 
     def func(a: int, b: int, **kwargs: Unpack[TD]): ...
 
-    with pytest.raises(PydanticUserError) as exc:
+    with pytest.raises(
+        PydanticUserError,
+        check=lambda e: (
+            e.code == 'overlapping-unpack-typed-dict'
+            and e.message == "Typed dictionary 'TD' overlaps with parameters 'a', 'b'"
+        ),
+    ):
         generate_arguments_schema(
             func=func,
             schema_type='arguments-v3',
         )
-
-    assert exc.value.code == 'overlapping-unpack-typed-dict'
-    assert exc.value.message == "Typed dictionary 'TD' overlaps with parameters 'a', 'b'"
 
     # Works for a pos-only argument
     def func(a: int, /, **kwargs: Unpack[TD]): ...

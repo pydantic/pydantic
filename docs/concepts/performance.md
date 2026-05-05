@@ -1,6 +1,6 @@
 # Performance tips
 
-In most cases Pydantic won't be your bottle neck, only follow this if you're sure it's necessary.
+In most cases Pydantic won't be your bottleneck, only follow this if you're sure it's necessary.
 
 ## In general, use `model_validate_json()` not `model_validate(json.loads(...))`
 

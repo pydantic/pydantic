@@ -301,7 +301,7 @@ def _generate_table_heading(col_names: list[str]) -> str:
 
 
 def build_schema_mappings(markdown: str, page: Page) -> str | None:
-    if page.file.src_uri != 'usage/schema.md':
+    if page.file.src_uri != 'concepts/json_schema.md':
         return None
 
     col_names = [

@@ -21,8 +21,8 @@ use super::{
 
 #[derive(Debug)]
 pub struct LiteralSerializer {
-    expected_int: AHashSet<i64>,
-    expected_str: AHashSet<String>,
+    expected_int: Box<AHashSet<i64>>,
+    expected_str: Box<AHashSet<String>>,
     expected_py: Option<Py<PyList>>,
     name: String,
 }
@@ -60,8 +60,8 @@ impl BuildSerializer for LiteralSerializer {
 
         Ok(Arc::new(
             Self {
-                expected_int,
-                expected_str,
+                expected_int: Box::new(expected_int),
+                expected_str: Box::new(expected_str),
                 expected_py: match expected_py.is_empty() {
                     true => None,
                     false => Some(expected_py.into()),

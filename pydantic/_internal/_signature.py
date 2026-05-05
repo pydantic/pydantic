@@ -1,8 +1,9 @@
 from __future__ import annotations
 
 import dataclasses
+from collections.abc import Callable
 from inspect import Parameter, Signature
-from typing import TYPE_CHECKING, Any, Callable
+from typing import TYPE_CHECKING, Any
 
 from pydantic_core import PydanticUndefined
 
@@ -67,7 +68,7 @@ def _process_param_defaults(param: Parameter) -> Parameter:
         # Replace the field default
         default = param_default.default
         if default is PydanticUndefined:
-            if param_default.default_factory is PydanticUndefined:
+            if param_default.default_factory is None:
                 default = Signature.empty
             else:
                 # this is used by dataclasses to indicate a factory exists:

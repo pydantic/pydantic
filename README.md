@@ -13,12 +13,12 @@
 Data validation using Python type hints.
 
 Fast and extensible, Pydantic plays nicely with your linters/IDE/brain.
-Define how data should be in pure, canonical Python 3.9+; validate it with Pydantic.
+Define how data should be in pure, canonical Python 3.10+; validate it with Pydantic.
 
 ## Pydantic Logfire :fire:
 
-We've recently launched Pydantic Logfire to help you monitor your applications.
-[Learn more](https://pydantic.dev/articles/logfire-announcement)
+We've launched Pydantic Logfire to help you monitor your applications.
+[Learn more](https://pydantic.dev/logfire/?utm_source=pydantic_validation)
 
 ## Pydantic V1.10 vs. V2
 

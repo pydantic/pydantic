@@ -49,7 +49,7 @@ def apply_discriminator(
     Raises:
         TypeError:
             - If `discriminator` is used with invalid union variant.
-            - If `discriminator` is used with `Union` type with one variant.
+            - If `discriminator` is used with union type with one variant.
             - If `discriminator` value mapped to multiple choices.
         MissingDefinitionForUnionRef:
             If the definition for ref is missing.
@@ -150,7 +150,7 @@ class _ApplyInferredDiscriminator:
         Raises:
             TypeError:
                 - If `discriminator` is used with invalid union variant.
-                - If `discriminator` is used with `Union` type with one variant.
+                - If `discriminator` is used with union type with one variant.
                 - If `discriminator` value mapped to multiple choices.
             ValueError:
                 If the definition for ref is missing.
@@ -184,6 +184,17 @@ class _ApplyInferredDiscriminator:
             definitions_wrapper = schema.copy()
             definitions_wrapper['schema'] = wrapped
             return definitions_wrapper
+
+        if schema['type'] == 'definition-ref':
+            schema_ref = schema['schema_ref']
+            if schema_ref not in self.definitions:  # pragma: no cover
+                raise MissingDefinitionForUnionRef(schema_ref)
+
+            def_schema = self.definitions[schema_ref]
+            # If using a referenceable union as discriminated (e.g. `type Pet = Cat | Dog; field: Pet = Field(discriminator=...)`):
+            if def_schema['type'] == 'union':
+                schema = def_schema.copy()
+                schema.pop('ref')
 
         if schema['type'] != 'union':
             # If the schema is not a union, it probably means it just had a single member and

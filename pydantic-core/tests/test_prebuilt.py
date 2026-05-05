@@ -1,5 +1,3 @@
-from typing import Union
-
 from pydantic_core import SchemaSerializer, SchemaValidator, core_schema
 
 
@@ -57,7 +55,7 @@ def test_prebuilt_not_used_for_wrap_serializer_functions() -> None:
         def __init__(self, x: str) -> None:
             self.x = x
 
-    def serialize_inner(v: InnerModel, serializer) -> Union[dict[str, str], str]:
+    def serialize_inner(v: InnerModel, serializer) -> dict[str, str] | str:
         v.x = v.x + ' modified'
         return serializer(v)
 

@@ -5,10 +5,11 @@ New tests for v2 of serialization logic.
 import json
 import re
 import sys
+from collections.abc import Callable
 from enum import Enum
 from functools import partial, partialmethod
 from re import Pattern
-from typing import Annotated, Any, Callable, ClassVar, Optional, Union
+from typing import Annotated, Any, ClassVar, Optional
 
 import pytest
 from pydantic_core import PydanticSerializationError, core_schema, to_jsonable_python
@@ -141,13 +142,13 @@ def test_serializer_annotated_typing_cache(serializer, func):
     FancyInt = Annotated[int, serializer(func)]
 
     class FancyIntModel(BaseModel):
-        x: Optional[FancyInt]
+        x: FancyInt | None
 
     assert FancyIntModel(x=1234).model_dump() == {'x': '1,235'}
 
 
 def test_use_bare_field_serializer():
-    with pytest.raises(PydanticUserError) as exc:
+    with pytest.raises(PydanticUserError, check=lambda e: e.code == 'decorator-missing-arguments'):
 
         class Model(BaseModel):
             a: str
@@ -155,8 +156,6 @@ def test_use_bare_field_serializer():
             @field_serializer
             def checker(cls, v):
                 return v
-
-    assert exc.value.code == 'decorator-missing-arguments'
 
 
 def test_use_no_fields_field_serializer():
@@ -173,7 +172,7 @@ def test_use_no_fields_field_serializer():
 
 
 def test_field_serializer_bad_fields_throws_configerror():
-    with pytest.raises(PydanticUserError) as exc:
+    with pytest.raises(PydanticUserError, check=lambda e: e.code == 'decorator-invalid-fields'):
 
         class Model1(BaseModel):
             a: str
@@ -183,9 +182,7 @@ def test_field_serializer_bad_fields_throws_configerror():
             def check_fields(cls, v):
                 return v
 
-    assert exc.value.code == 'decorator-invalid-fields'
-
-    with pytest.raises(PydanticUserError) as exc:
+    with pytest.raises(PydanticUserError, check=lambda e: e.code == 'decorator-invalid-fields'):
 
         class Model2(BaseModel):
             a: str
@@ -196,12 +193,10 @@ def test_field_serializer_bad_fields_throws_configerror():
             def check_fields(cls, v):
                 return v
 
-    assert exc.value.code == 'decorator-invalid-fields'
-
 
 def test_serialize_decorator_always():
     class MyModel(BaseModel):
-        x: Optional[int]
+        x: int | None
 
         @field_serializer('x')
         def customise_x_serialization(v, _info) -> str:
@@ -237,7 +232,7 @@ def test_serialize_decorator_json():
 
 def test_serialize_decorator_unless_none():
     class MyModel(BaseModel):
-        x: Optional[int]
+        x: int | None
 
         @field_serializer('x', when_used='unless-none')
         def customise_x_serialization(v):
@@ -404,7 +399,7 @@ def test_serialize_ignore_info_wrap():
 
 def test_serialize_decorator_self_info():
     class MyModel(BaseModel):
-        x: Optional[int]
+        x: int | None
 
         @field_serializer('x')
         def customise_x_serialization(self, v, info) -> str:
@@ -416,7 +411,7 @@ def test_serialize_decorator_self_info():
 
 def test_serialize_decorator_self_no_info():
     class MyModel(BaseModel):
-        x: Optional[int]
+        x: int | None
 
         @field_serializer('x')
         def customise_x_serialization(self, v) -> str:
@@ -1196,7 +1191,7 @@ def test_subclass_support_unions() -> None:
         age: str
 
     class Home(BaseModel):
-        little_guys: Union[list[Pet], list[Kid]]
+        little_guys: list[Pet] | list[Kid]
 
     class Shelter(BaseModel):
         pets: list[Pet]
@@ -1220,7 +1215,7 @@ def test_subclass_support_unions_with_forward_ref() -> None:
         baz_id: int
 
     class Foo(BaseModel):
-        items: Union[list['Foo'], list[Bar]]
+        items: list['Foo'] | list[Bar]
 
     foo = Foo(items=[Baz(bar_id=1, baz_id=2), Baz(bar_id=3, baz_id=4)])
     assert foo.model_dump() == {'items': [{'bar_id': 1}, {'bar_id': 3}]}
@@ -1312,10 +1307,10 @@ def smart_union_serialization() -> None:
     """Initially reported via https://github.com/pydantic/pydantic/issues/9417, effectively a round tripping problem with type consistency."""
 
     class FloatThenInt(BaseModel):
-        value: Union[float, int, str] = Field(union_mode='smart')
+        value: float | int | str = Field(union_mode='smart')
 
     class IntThenFloat(BaseModel):
-        value: Union[int, float, str] = Field(union_mode='smart')
+        value: int | float | str = Field(union_mode='smart')
 
     float_then_int = FloatThenInt(value=100)
     assert type(json.loads(float_then_int.model_dump_json())['value']) is int
@@ -1333,7 +1328,7 @@ def test_serialize_with_custom_ser() -> None:
             return {'id': self.id}
 
     class ItemContainer(BaseModel):
-        item_or_items: Union[Item, list[Item]]
+        item_or_items: Item | list[Item]
 
     items = [Item(id=i) for i in range(5)]
     assert (

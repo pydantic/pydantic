@@ -46,7 +46,7 @@ impl BuildValidator for BuildEnumValidator {
         let class: Bound<PyType> = schema.get_as_req(intern!(py, "cls"))?;
         let class_repr = class_repr(schema, &class)?;
 
-        let lookup = LiteralLookup::new(py, expected.into_iter())?;
+        let lookup = Box::new(LiteralLookup::new(py, expected.into_iter())?);
 
         macro_rules! build {
             ($vv:ty, $name_prefix:literal) => {
@@ -87,7 +87,7 @@ pub trait EnumValidateValue: std::fmt::Debug + Clone + Send + Sync {
 pub struct EnumValidator<T: EnumValidateValue> {
     phantom: PhantomData<T>,
     class: Py<PyType>,
-    lookup: LiteralLookup<Py<PyAny>>,
+    lookup: Box<LiteralLookup<Py<PyAny>>>,
     missing: Option<Py<PyAny>>,
     expected_repr: String,
     strict: bool,
@@ -180,17 +180,15 @@ impl EnumValidateValue for PlainEnumValidator {
         match lookup.validate(py, input)? {
             Some((_, v)) => Ok(Some(v.clone_ref(py))),
             None => {
-                if !strict {
-                    if let Some(py_input) = input.as_python() {
-                        // necessary for compatibility with 2.6, where str and int subclasses are allowed
-                        if py_input.is_instance_of::<PyString>() {
-                            return Ok(lookup.validate_str(input, false)?.map(|v| v.clone_ref(py)));
-                        } else if py_input.is_instance_of::<PyInt>() {
-                            return Ok(lookup.validate_int(py, input, false)?.map(|v| v.clone_ref(py)));
-                        // necessary for compatibility with 2.6, where float values are allowed for int enums in lax mode
-                        } else if py_input.is_instance_of::<PyFloat>() {
-                            return Ok(lookup.validate_int(py, input, false)?.map(|v| v.clone_ref(py)));
-                        }
+                if !strict && let Some(py_input) = input.as_python() {
+                    // necessary for compatibility with 2.6, where str and int subclasses are allowed
+                    if py_input.is_instance_of::<PyString>() {
+                        return Ok(lookup.validate_str(input, false)?.map(|v| v.clone_ref(py)));
+                    } else if py_input.is_instance_of::<PyInt>() {
+                        return Ok(lookup.validate_int(py, input, false)?.map(|v| v.clone_ref(py)));
+                    // necessary for compatibility with 2.6, where float values are allowed for int enums in lax mode
+                    } else if py_input.is_instance_of::<PyFloat>() {
+                        return Ok(lookup.validate_int(py, input, false)?.map(|v| v.clone_ref(py)));
                     }
                 }
                 Ok(None)

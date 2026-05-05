@@ -11,6 +11,7 @@ In general you shouldn't need to use this module directly; instead, you can use
 
 from __future__ import annotations as _annotations
 
+import collections.abc
 import dataclasses
 import inspect
 import math
@@ -18,7 +19,7 @@ import os
 import re
 import warnings
 from collections import Counter, defaultdict
-from collections.abc import Hashable, Iterable, Sequence
+from collections.abc import Callable, Hashable, Iterable, Sequence
 from copy import deepcopy
 from enum import Enum
 from re import Pattern
@@ -26,11 +27,10 @@ from typing import (
     TYPE_CHECKING,
     Annotated,
     Any,
-    Callable,
     Literal,
     NewType,
+    TypeAlias,
     TypeVar,
-    Union,
     cast,
     overload,
 )
@@ -38,7 +38,7 @@ from typing import (
 import pydantic_core
 from pydantic_core import MISSING, CoreSchema, PydanticOmit, core_schema, to_jsonable_python
 from pydantic_core.core_schema import ComputedField
-from typing_extensions import TypeAlias, assert_never, deprecated, final
+from typing_extensions import assert_never, deprecated, final
 from typing_inspection.introspection import get_literal_values
 
 from pydantic.warnings import PydanticDeprecatedSince26, PydanticDeprecatedSince29
@@ -48,7 +48,6 @@ from ._internal import (
     _core_metadata,
     _core_utils,
     _decorators,
-    _internal_dataclass,
     _mock_val_ser,
     _schema_generation_shared,
     _typing_extra,
@@ -135,7 +134,7 @@ JsonSchemaKeyT = TypeVar('JsonSchemaKeyT', bound=Hashable)
 _PRIMITIVE_JSON_SCHEMA_TYPES = ('string', 'boolean', 'null', 'integer', 'number')
 
 
-@dataclasses.dataclass(**_internal_dataclass.slots_true)
+@dataclasses.dataclass(slots=True)
 class _DefinitionsRemapping:
     defs_remapping: dict[DefsRef, DefsRef]
     json_remapping: dict[JsonRef, JsonRef]
@@ -157,7 +156,7 @@ class _DefinitionsRemapping:
         copied_definitions = deepcopy(definitions)
         definitions_schema = {'$defs': copied_definitions}
         for _iter in range(100):  # prevent an infinite loop in the case of a bug, 100 iterations should be enough
-            # For every possible remapped DefsRef, collect all schemas that that DefsRef might be used for:
+            # For every possible remapped DefsRef, collect all schemas that DefsRef might be used for:
             schemas_for_alternatives: dict[DefsRef, list[JsonSchemaValue]] = defaultdict(list)
             for defs_ref in copied_definitions:
                 alternatives = prioritized_choices[defs_ref]
@@ -1236,6 +1235,15 @@ class GenerateJsonSchema:
                     )
                     return json_schema
 
+        # Sort set/frozenset defaults to ensure deterministic JSON schema generation
+        # We only sort if len > 1 because sets of size 0 or 1 are already deterministic
+        if isinstance(default, collections.abc.Set) and len(default) > 1:
+            try:
+                default = sorted(default)
+            except TypeError:  # pragma: no cover
+                # If items aren't comparable (e.g. mixed types), we can't sort them.
+                pass
+
         try:
             encoded_default = self.encode_default(default)
         except pydantic_core.PydanticSerializationError:
@@ -1292,13 +1300,10 @@ class GenerateJsonSchema:
         """
         generated: list[JsonSchemaValue] = []
 
-        choices = schema['choices']
-        for choice in choices:
-            # choice will be a tuple if an explicit label was provided
-            choice_schema = choice[0] if isinstance(choice, tuple) else choice
+        for choice in core_schema.iter_union_choices(schema):
             try:
-                generated.append(self.generate_inner(choice_schema))
-            except PydanticOmit:
+                generated.append(self.generate_inner(choice))
+            except PydanticOmit:  # noqa: PERF203
                 continue
             except PydanticInvalidForJsonSchema as exc:
                 self.emit_warning('skipped-choice', exc.message)
@@ -1501,13 +1506,15 @@ class GenerateJsonSchema:
         # where you don't necessarily have a class.
         # At runtime, `extra_behavior` takes priority over the config
         # for validation, so follow the same for the JSON Schema:
+        if 'extras_schema' in schema and schema['extras_schema'] != core_schema.any_schema():
+            allow_additional_props = self.generate_inner(schema['extras_schema'])
+        else:
+            allow_additional_props = True
+
         if schema.get('extra_behavior') == 'forbid':
             json_schema['additionalProperties'] = False
         elif schema.get('extra_behavior') == 'allow':
-            if 'extras_schema' in schema and schema['extras_schema'] != {'type': 'any'}:
-                json_schema['additionalProperties'] = self.generate_inner(schema['extras_schema'])
-            else:
-                json_schema['additionalProperties'] = True
+            json_schema['additionalProperties'] = allow_additional_props
 
         if cls is not None:
             # `_update_class_schema()` will not override
@@ -1518,7 +1525,7 @@ class GenerateJsonSchema:
             if extra == 'forbid':
                 json_schema['additionalProperties'] = False
             elif extra == 'allow':
-                json_schema['additionalProperties'] = True
+                json_schema['additionalProperties'] = allow_additional_props
 
         return json_schema
 
@@ -1651,8 +1658,8 @@ class GenerateJsonSchema:
         Done in place, hence there's no return value as the original json_schema is mutated.
         No ref resolving is involved here, as that's not appropriate for simple updates.
         """
+        from ._internal._dataclasses import is_stdlib_dataclass
         from .main import BaseModel
-        from .root_model import RootModel
 
         if (config_title := config.get('title')) is not None:
             json_schema.setdefault('title', config_title)
@@ -1665,12 +1672,21 @@ class GenerateJsonSchema:
             json_schema['title'] = cls.__name__
 
         # BaseModel and dataclasses; don't use cls.__doc__ as it will contain the verbose class signature by default
-        docstring = None if cls is BaseModel or dataclasses.is_dataclass(cls) else cls.__doc__
+        if cls is BaseModel:
+            docstring = None
+        elif is_stdlib_dataclass(cls):  # For Pydantic dataclasses, we already handle this at class creation
+            # The `dataclass` module generates a `__doc__` based on the `inspect.signature()`
+            # result, which we don't want to use as a description. Such `__doc__` startswith
+            # `cls.__name__(`, which could lead to mistakenly discarding it if for some reason
+            # an explicitly set class docstring follows the same pattern, but this is unlikely
+            # to happen.
+            doc = cls.__doc__
+            docstring = None if doc is None or doc.startswith(f'{cls.__name__}(') else doc
+        else:
+            docstring = cls.__doc__
 
         if docstring:
             json_schema.setdefault('description', inspect.cleandoc(docstring))
-        elif issubclass(cls, RootModel) and (root_description := cls.__pydantic_fields__['root'].description):
-            json_schema.setdefault('description', root_description)
 
         extra = config.get('extra')
         if 'additionalProperties' not in json_schema:  # This check is particularly important for `typed_dict_schema()`
@@ -1697,11 +1713,12 @@ class GenerateJsonSchema:
         if isinstance(json_schema_extra, dict):
             json_schema.update(json_schema_extra)
         elif callable(json_schema_extra):
-            # FIXME: why are there type ignores here? We support two signatures for json_schema_extra callables...
             if len(_typing_extra.signature_no_eval(json_schema_extra).parameters) > 1:
-                json_schema_extra(json_schema, cls)  # type: ignore
+                json_schema_extra = cast(Callable[[JsonDict, type[Any]], None], json_schema_extra)
+                json_schema_extra(json_schema, cls)
             else:
-                json_schema_extra(json_schema)  # type: ignore
+                json_schema_extra = cast(Callable[[JsonDict], None], json_schema_extra)
+                json_schema_extra(json_schema)
         elif json_schema_extra is not None:
             raise ValueError(
                 f"model_config['json_schema_extra']={json_schema_extra} should be a dict, callable, or None"
@@ -1829,24 +1846,14 @@ class GenerateJsonSchema:
         Returns:
             The generated JSON schema.
         """
-        from ._internal._dataclasses import is_stdlib_dataclass
 
         cls = schema['cls']
-        config: ConfigDict = getattr(cls, '__pydantic_config__', cast('ConfigDict', {}))
+        config = cast('ConfigDict', getattr(cls, '__pydantic_config__', {}))
 
         with self._config_wrapper_stack.push(config):
             json_schema = self.generate_inner(schema['schema']).copy()
 
         self._update_class_schema(json_schema, cls, config)
-
-        # Dataclass-specific handling of description
-        if is_stdlib_dataclass(cls):
-            # vanilla dataclass; don't use cls.__doc__ as it will contain the class signature by default
-            description = None
-        else:
-            description = None if cls.__doc__ is None else inspect.cleandoc(cls.__doc__)
-        if description:
-            json_schema['description'] = description
 
         return json_schema
 
@@ -2640,9 +2647,9 @@ def models_json_schema(
 # ##### End JSON Schema Generation Functions #####
 
 
-_HashableJsonValue: TypeAlias = Union[
-    int, float, str, bool, None, tuple['_HashableJsonValue', ...], tuple[tuple[str, '_HashableJsonValue'], ...]
-]
+_HashableJsonValue: TypeAlias = (
+    int | float | str | bool | None | tuple['_HashableJsonValue', ...] | tuple[tuple[str, '_HashableJsonValue'], ...]
+)
 
 
 def _deduplicate_schemas(schemas: Iterable[JsonDict]) -> list[JsonDict]:
@@ -2658,20 +2665,63 @@ def _make_json_hashable(value: JsonValue) -> _HashableJsonValue:
         return value
 
 
-@dataclasses.dataclass(**_internal_dataclass.slots_true)
+@dataclasses.dataclass(slots=True)
 class WithJsonSchema:
     """!!! abstract "Usage Documentation"
         [`WithJsonSchema` Annotation](../concepts/json_schema.md#withjsonschema-annotation)
 
-    Add this as an annotation on a field to override the (base) JSON schema that would be generated for that field.
-    This provides a way to set a JSON schema for types that would otherwise raise errors when producing a JSON schema,
-    such as Callable, or types that have an is-instance core schema, without needing to go so far as creating a
-    custom subclass of pydantic.json_schema.GenerateJsonSchema.
-    Note that any _modifications_ to the schema that would normally be made (such as setting the title for model fields)
-    will still be performed.
+    An annotation used to override the JSON Schema for a type.
 
-    If `mode` is set this will only apply to that schema generation mode, allowing you
-    to set different json schemas for validation and serialization.
+    This is useful when you want to set a JSON Schema for a type that don't produce any JSON Schemas by default
+    (e.g. [`Callable`][collections.abc.Callable]).
+
+    If `mode` is set this will only apply to that schema generation mode, allowing you to set different JSON Schemas for validation and serialization.
+
+    !!! note
+        If the `WithJsonSchema` annotation is coupled with the [`Field()`][pydantic.Field] function, the behavior overriding will vary depending on the location:
+
+        * If the [`Annotated`][typing.Annotated] metadata is specified at the "top-level" field, `Field()` metadata arguments
+          (excluding [constraints](../concepts/fields.md#field-constraints)) such as `title` and `description` will be applied on
+          top of the `WithJsonSchema`, no matter the order:
+
+            ```python
+            from typing import Annotated
+
+            from pydantic import BaseModel, Field, WithJsonSchema
+
+            class Model(BaseModel):
+                field: Annotated[
+                    int,
+                    Field(title='My Field'),
+                    WithJsonSchema({'type': 'integer', 'extra': 'data'}),
+                ]
+
+            Model.model_json_schema()['properties']['field']
+            #> {'type': 'integer', 'extra': 'data', 'title': 'My Field'}
+            ```
+
+        * If the [`Annotated`][typing.Annotated] metadata is specified on a specific inner type, `WithJsonSchema` will unconditionally
+          override the JSON Schema:
+
+            ```python
+            from typing import Annotated
+
+            from pydantic import BaseModel, Field, WithJsonSchema
+
+            class Model(BaseModel):
+                field: list[
+                    Annotated[
+                        int,
+                        Field(title='My Field'),
+                        WithJsonSchema({'type': 'integer', 'extra': 'data'}),
+                    ]
+                ]
+
+            Model.model_json_schema()['properties']['field']
+            #> {'items': {'extra': 'data', 'type': 'integer'}, 'title': 'Field', 'type': 'array'}
+            ```
+
+        See also the documentation about [the annotated pattern](../concepts/fields.md#the-annotated-pattern).
     """
 
     json_schema: JsonSchemaValue | None
@@ -2680,8 +2730,7 @@ class WithJsonSchema:
     def __get_pydantic_json_schema__(
         self, core_schema: core_schema.CoreSchema, handler: GetJsonSchemaHandler
     ) -> JsonSchemaValue:
-        mode = self.mode or handler.mode
-        if mode != handler.mode:
+        if self.mode is not None and self.mode != handler.mode:
             return handler(core_schema)
         if self.json_schema is None:
             # This exception is handled in pydantic.json_schema.GenerateJsonSchema._named_required_fields_schema
@@ -2801,7 +2850,7 @@ if TYPE_CHECKING:
     SkipJsonSchema = Annotated[AnyType, ...]
 else:
 
-    @dataclasses.dataclass(**_internal_dataclass.slots_true)
+    @dataclasses.dataclass(slots=True)
     class SkipJsonSchema:
         """!!! abstract "Usage Documentation"
             [`SkipJsonSchema` Annotation](../concepts/json_schema.md#skipjsonschema-annotation)
@@ -2811,15 +2860,14 @@ else:
         Example:
             ```python
             from pprint import pprint
-            from typing import Union
 
             from pydantic import BaseModel
             from pydantic.json_schema import SkipJsonSchema
 
             class Model(BaseModel):
-                a: Union[int, None] = None  # (1)!
-                b: Union[int, SkipJsonSchema[None]] = None  # (2)!
-                c: SkipJsonSchema[Union[int, None]] = None  # (3)!
+                a: int | None = None  # (1)!
+                b: int | SkipJsonSchema[None] = None  # (2)!
+                c: SkipJsonSchema[int | None] = None  # (3)!
 
             pprint(Model.model_json_schema())
             '''

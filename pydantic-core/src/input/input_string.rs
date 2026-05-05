@@ -24,7 +24,7 @@ use super::{
 };
 
 #[derive(Debug, Clone, IntoPyObject, IntoPyObjectRef)]
-pub enum StringMapping<'py> {
+pub(crate) enum StringMapping<'py> {
     String(Bound<'py, PyString>),
     Mapping(Bound<'py, PyDict>),
 }
@@ -77,7 +77,10 @@ impl<'py> Input<'py> for StringMapping<'py> {
     }
 
     fn as_kwargs(&self, _py: Python<'py>) -> Option<Bound<'py, PyDict>> {
-        None
+        match self {
+            Self::String(_) => None,
+            Self::Mapping(mapping) => Some(mapping.clone()),
+        }
     }
 
     type Arguments<'a>
@@ -270,7 +273,7 @@ impl<'py> BorrowInput<'py> for StringMapping<'py> {
     }
 }
 
-pub struct StringMappingDict<'py>(Bound<'py, PyDict>);
+pub(crate) struct StringMappingDict<'py>(Bound<'py, PyDict>);
 
 impl<'py> Arguments<'py> for StringMappingDict<'py> {
     type Args = Never;

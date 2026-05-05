@@ -1,9 +1,9 @@
 import datetime
-from collections.abc import Mapping
-from typing import Any, Callable, Generic, Literal, TypeVar, final
+from collections.abc import Callable, Mapping
+from typing import Any, Generic, Literal, TypeAlias, TypeVar, final, overload
 
 from _typeshed import SupportsAllComparisons
-from typing_extensions import LiteralString, Self, TypeAlias
+from typing_extensions import LiteralString, Self
 
 from pydantic_core import ErrorDetails, ErrorTypeInfo, InitErrorDetails, MultiHostHost
 from pydantic_core.core_schema import CoreConfig, CoreSchema, ErrorType, ExtraBehavior
@@ -324,6 +324,7 @@ class SchemaSerializer:
         warnings: bool | Literal['none', 'warn', 'error'] = True,
         fallback: Callable[[Any], Any] | None = None,
         serialize_as_any: bool = False,
+        polymorphic_serialization: bool | None = None,
         context: Any | None = None,
     ) -> Any:
         """
@@ -347,6 +348,7 @@ class SchemaSerializer:
             fallback: A function to call when an unknown value is encountered,
                 if `None` a [`PydanticSerializationError`][pydantic_core.PydanticSerializationError] error is raised.
             serialize_as_any: Whether to serialize fields with duck-typing serialization behavior.
+            polymorphic_serialization: Whether to use model and dataclass polymorphic serialization for this call.
             context: The context to use for serialization, this is passed to functional serializers as
                 [`info.context`][pydantic_core.core_schema.SerializationInfo.context].
 
@@ -373,6 +375,7 @@ class SchemaSerializer:
         warnings: bool | Literal['none', 'warn', 'error'] = True,
         fallback: Callable[[Any], Any] | None = None,
         serialize_as_any: bool = False,
+        polymorphic_serialization: bool | None = None,
         context: Any | None = None,
     ) -> bytes:
         """
@@ -397,6 +400,7 @@ class SchemaSerializer:
             fallback: A function to call when an unknown value is encountered,
                 if `None` a [`PydanticSerializationError`][pydantic_core.PydanticSerializationError] error is raised.
             serialize_as_any: Whether to serialize fields with duck-typing serialization behavior.
+            polymorphic_serialization: Whether to use model and dataclass polymorphic serialization for this call.
             context: The context to use for serialization, this is passed to functional serializers as
                 [`info.context`][pydantic_core.core_schema.SerializationInfo.context].
 
@@ -427,6 +431,7 @@ def to_json(
     serialize_unknown: bool = False,
     fallback: Callable[[Any], Any] | None = None,
     serialize_as_any: bool = False,
+    polymorphic_serialization: bool | None = None,
     context: Any | None = None,
 ) -> bytes:
     """
@@ -455,6 +460,7 @@ def to_json(
         fallback: A function to call when an unknown value is encountered,
             if `None` a [`PydanticSerializationError`][pydantic_core.PydanticSerializationError] error is raised.
         serialize_as_any: Whether to serialize fields with duck-typing serialization behavior.
+        polymorphic_serialization: Whether to use model and dataclass polymorphic serialization for this call.
         context: The context to use for serialization, this is passed to functional serializers as
             [`info.context`][pydantic_core.core_schema.SerializationInfo.context].
 
@@ -512,6 +518,7 @@ def to_jsonable_python(
     serialize_unknown: bool = False,
     fallback: Callable[[Any], Any] | None = None,
     serialize_as_any: bool = False,
+    polymorphic_serialization: bool | None = None,
     context: Any | None = None,
 ) -> Any:
     """
@@ -538,6 +545,7 @@ def to_jsonable_python(
         fallback: A function to call when an unknown value is encountered,
             if `None` a [`PydanticSerializationError`][pydantic_core.PydanticSerializationError] error is raised.
         serialize_as_any: Whether to serialize fields with duck-typing serialization behavior.
+        polymorphic_serialization: Whether to use model and dataclass polymorphic serialization for this call.
         context: The context to use for serialization, this is passed to functional serializers as
             [`info.context`][pydantic_core.core_schema.SerializationInfo.context].
 
@@ -617,14 +625,30 @@ class MultiHostUrl(SupportsAllComparisons):
     def __str__(self) -> str: ...
     def __deepcopy__(self, memo: dict) -> Self: ...
     @classmethod
+    @overload
     def build(
         cls,
         *,
         scheme: str,
-        hosts: list[MultiHostHost] | None = None,
+        hosts: list[MultiHostHost],
+        username: None = None,
+        password: None = None,
+        host: None = None,
+        port: None = None,
+        path: str | None = None,
+        query: str | None = None,
+        fragment: str | None = None,
+    ) -> Self: ...
+    @classmethod
+    @overload
+    def build(
+        cls,
+        *,
+        scheme: str,
+        hosts: None = None,
+        host: str,
         username: str | None = None,
         password: str | None = None,
-        host: str | None = None,
         port: int | None = None,
         path: str | None = None,
         query: str | None = None,
@@ -1008,6 +1032,7 @@ def list_all_errors() -> list[ErrorTypeInfo]:
     Returns:
         A list of `ErrorTypeInfo` typed dicts.
     """
+
 @final
 class TzInfo(datetime.tzinfo):
     """An `pydantic-core` implementation of the abstract [`datetime.tzinfo`][] class."""

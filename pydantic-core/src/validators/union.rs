@@ -110,6 +110,7 @@ impl UnionValidator {
         let old_fields_set_count = state.fields_set_count;
 
         let mut errors = MaybeErrors::new(self.custom_error.as_ref());
+        let mut should_omit = false;
 
         let mut best_match: Option<(Py<PyAny>, Exactness, Option<usize>)> = None;
 
@@ -156,6 +157,11 @@ impl UnionValidator {
                         }
                     }
                 },
+                Err(ValError::Omit) => {
+                    if best_match.is_none() {
+                        should_omit = true;
+                    }
+                }
                 Err(ValError::LineErrors(lines)) => {
                     // if we don't yet know this validation will succeed, record the error
                     if best_match.is_none() {
@@ -177,7 +183,10 @@ impl UnionValidator {
             }
             return Ok(best_match);
         }
-
+        // if there were no successful matches, but there was at least one omit, return omit instead of errors
+        if best_match.is_none() && should_omit {
+            return Err(ValError::Omit);
+        }
         // no matches, build errors
         Err(errors.into_val_error(input))
     }
@@ -282,8 +291,8 @@ impl<'a> MaybeErrors<'a> {
 
 #[derive(Debug)]
 pub struct TaggedUnionValidator {
-    discriminator: Discriminator,
-    lookup: LiteralLookup<Arc<CombinedValidator>>,
+    discriminator: Box<Discriminator>,
+    lookup: Box<LiteralLookup<Arc<CombinedValidator>>>,
     from_attributes: bool,
     custom_error: Option<CustomError>,
     tags_repr: String,
@@ -324,13 +333,13 @@ impl BuildValidator for TaggedUnionValidator {
             lookup_map.push((choice_key, validator));
         }
 
-        let lookup = LiteralLookup::new(py, lookup_map.into_iter())?;
+        let lookup = Box::new(LiteralLookup::new(py, lookup_map.into_iter())?);
 
         let key = intern!(py, "from_attributes");
         let from_attributes = schema_or_config(schema, config, key, key)?.unwrap_or(true);
 
         Ok(CombinedValidator::TaggedUnion(Self {
-            discriminator,
+            discriminator: Box::new(discriminator),
             lookup,
             from_attributes,
             custom_error: CustomError::build(schema, config, definitions)?,
@@ -351,7 +360,7 @@ impl Validator for TaggedUnionValidator {
         input: &(impl Input<'py> + ?Sized),
         state: &mut ValidationState<'_, 'py>,
     ) -> ValResult<Py<PyAny>> {
-        match &self.discriminator {
+        match &*self.discriminator {
             Discriminator::LookupPaths(lookup_paths) => {
                 let from_attributes = state.extra().from_attributes.unwrap_or(self.from_attributes);
                 let dict = input.validate_model_fields(state.strict_or(false), from_attributes)?;

@@ -448,9 +448,9 @@ def test_typed_dict_inheritance_schema(TypedDict, req_no_req):
 
 def test_typeddict_annotated_nonoptional_schema(TypedDict):
     class DataTD(TypedDict):
-        a: Optional[int]
-        b: Annotated[Optional[int], Field(42)]
-        c: Annotated[Optional[int], Field(description='Test')]
+        a: int | None
+        b: Annotated[int | None, Field(42)]
+        c: Annotated[int | None, Field(description='Test')]
 
     class Model(BaseModel):
         data_td: DataTD
@@ -489,9 +489,9 @@ def test_typeddict_annotated_nonoptional_schema(TypedDict):
 )
 def test_typeddict_annotated(TypedDict, input_value, expected):
     class DataTD(TypedDict):
-        a: Optional[int]
-        b: Annotated[Optional[int], Field(42)]
-        c: Annotated[Optional[int], Field(description='Test', lt=4)]
+        a: int | None
+        b: Annotated[int | None, Field(42)]
+        c: Annotated[int | None, Field(description='Test', lt=4)]
 
     class Model(BaseModel):
         d: DataTD
@@ -1089,3 +1089,18 @@ def test_typeddict_core_schema_no_cls_extra_config() -> None:
     )
 
     assert GenerateJsonSchema().generate(cs_allow) == {'additionalProperties': True, 'properties': {}, 'type': 'object'}
+
+
+def test_typeddict_core_schema_no_cls_extra_config_with_extas_schema() -> None:
+    cs_allow_extras_schema = core_schema.typed_dict_schema(
+        fields={},
+        cls=None,
+        extras_schema=core_schema.int_schema(),
+        config={'extra_fields_behavior': 'allow'},
+    )
+
+    assert GenerateJsonSchema().generate(cs_allow_extras_schema) == {
+        'additionalProperties': {'type': 'integer'},
+        'properties': {},
+        'type': 'object',
+    }

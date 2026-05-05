@@ -188,18 +188,16 @@ If you'd still like to use said arguments, you can use [this workaround](https:/
 * JSON serialization of non-string key values is generally done with `str(key)`, leading to some changes in behavior such as the following:
 
 ```python {test="skip"}
-from typing import Optional
-
 from pydantic import BaseModel as V2BaseModel
 from pydantic.v1 import BaseModel as V1BaseModel
 
 
 class V1Model(V1BaseModel):
-    a: dict[Optional[str], int]
+    a: dict[str | None, int]
 
 
 class V2Model(V2BaseModel):
-    a: dict[Optional[str], int]
+    a: dict[str | None, int]
 
 
 v1_model = V1Model(a={None: 123})
@@ -624,13 +622,11 @@ input whenever possible, even if the correct type is not the first choice for wh
 As a demonstration, consider the following example:
 
 ```python
-from typing import Union
-
 from pydantic import BaseModel
 
 
 class Model(BaseModel):
-    x: Union[int, str]
+    x: int | str
 
 
 print(Model(x='1'))
@@ -670,7 +666,7 @@ The following table describes the behavior of field annotations in V2:
 
 Here is a code example demonstrating the above:
 
-```python
+```python {lint="skip"}
 from typing import Optional
 
 from pydantic import BaseModel, ValidationError

@@ -193,7 +193,7 @@ impl Validator for WithDefaultValidator {
             }
             return Err(err);
         }
-        match self.default.default_value(py, state.extra().data.as_ref())? {
+        match self.default.default_value(py, state.data.as_ref())? {
             Some(stored_dft) => {
                 let dft: Py<PyAny> = if self.copy_default {
                     let deepcopy_func = COPY_DEEPCOPY.get_or_init(py, || get_deepcopy(py).unwrap());

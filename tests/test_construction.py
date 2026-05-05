@@ -1,5 +1,5 @@
 import pickle
-from typing import Any, Optional
+from typing import Any
 
 import pytest
 from pydantic_core import PydanticUndefined, ValidationError
@@ -298,8 +298,8 @@ def test_copy_update(ModelTwo, copy_method):
 
 def test_copy_update_unset(copy_method):
     class Foo(BaseModel):
-        foo: Optional[str] = None
-        bar: Optional[str] = None
+        foo: str | None = None
+        bar: str | None = None
 
     assert (
         copy_method(Foo(foo='hello'), update={'bar': 'world'}).model_dump_json(exclude_unset=True)

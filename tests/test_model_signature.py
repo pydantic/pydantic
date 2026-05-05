@@ -1,16 +1,17 @@
 import sys
 from collections.abc import Iterable
 from inspect import Parameter, Signature, signature
-from typing import Annotated, Any, Generic, Optional, TypeVar, Union
+from typing import Annotated, Any, Generic, TypeVar
 
 import pytest
-from typing_extensions import get_origin
+from annotated_types import Gt
+from typing_extensions import get_origin  # noqa: UP035
 from typing_inspection import typing_objects
 
 from pydantic import BaseModel, ConfigDict, Field, create_model
 
 
-def _equals(a: Union[str, Iterable[str]], b: Union[str, Iterable[str]]) -> bool:
+def _equals(a: str | Iterable[str], b: str | Iterable[str]) -> bool:
     """
     compare strings with spaces removed
     """
@@ -164,16 +165,15 @@ def test_signature_is_class_only():
 
 def test_optional_field():
     class Model(BaseModel):
-        foo: Optional[int] = None
+        foo: int | None = None
 
     assert signature(Model) == Signature(
-        [Parameter('foo', Parameter.KEYWORD_ONLY, default=None, annotation=Optional[int])], return_annotation=None
+        [Parameter('foo', Parameter.KEYWORD_ONLY, default=None, annotation=int | None)], return_annotation=None
     )
 
 
 @pytest.mark.skipif(sys.version_info < (3, 12), reason='repr different on older versions')
 def test_annotated_field():
-    from annotated_types import Gt
 
     class Model(BaseModel):
         foo: Annotated[int, Gt(1)] = 1
@@ -184,11 +184,10 @@ def test_annotated_field():
     assert typing_objects.is_annotated(get_origin(sig.parameters['foo'].annotation))
 
 
-@pytest.mark.skipif(sys.version_info < (3, 10), sys.version_info >= (3, 14), reason='repr different on older versions')
+@pytest.mark.skipif(sys.version_info < (3, 12), sys.version_info >= (3, 14), reason='repr different on newer versions')
 def test_annotated_optional_field():
-    from annotated_types import Gt
 
     class Model(BaseModel):
-        foo: Annotated[Optional[int], Gt(1)] = None
+        foo: Annotated[int | None, Gt(1)] = None
 
-    assert str(signature(Model)) == '(*, foo: Annotated[Optional[int], Gt(gt=1)] = None) -> None'
+    assert str(signature(Model)) == '(*, foo: Annotated[int | None, Gt(gt=1)] = None) -> None'

@@ -3,16 +3,15 @@
 from __future__ import annotations
 
 import dataclasses
-from typing import Any, Callable, Literal
+from collections.abc import Callable
+from typing import Any, Literal
 
 from pydantic_core import PydanticUndefined
-
-from ._internal import _internal_dataclass
 
 __all__ = ('AliasGenerator', 'AliasPath', 'AliasChoices')
 
 
-@dataclasses.dataclass(**_internal_dataclass.slots_true)
+@dataclasses.dataclass(slots=True)
 class AliasPath:
     """!!! abstract "Usage Documentation"
         [`AliasPath` and `AliasChoices`](../concepts/alias.md#aliaspath-and-aliaschoices)
@@ -54,7 +53,7 @@ class AliasPath:
         return v
 
 
-@dataclasses.dataclass(**_internal_dataclass.slots_true)
+@dataclasses.dataclass(slots=True)
 class AliasChoices:
     """!!! abstract "Usage Documentation"
         [`AliasPath` and `AliasChoices`](../concepts/alias.md#aliaspath-and-aliaschoices)
@@ -85,7 +84,7 @@ class AliasChoices:
         return aliases
 
 
-@dataclasses.dataclass(**_internal_dataclass.slots_true)
+@dataclasses.dataclass(slots=True)
 class AliasGenerator:
     """!!! abstract "Usage Documentation"
         [Using an `AliasGenerator`](../concepts/alias.md#using-an-aliasgenerator)

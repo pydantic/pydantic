@@ -1,6 +1,6 @@
 import pickle
 from datetime import date, datetime
-from typing import Annotated, Any, Generic, Literal, Optional, TypeVar, Union
+from typing import Annotated, Any, Generic, Literal, TypeVar
 
 import pytest
 from pydantic_core import CoreSchema
@@ -114,7 +114,7 @@ def test_root_model_recursive():
         def my_a_method(self):
             pass
 
-    class B(RootModel[dict[str, Optional[A]]]):
+    class B(RootModel[dict[str, A | None]]):
         def my_b_method(self):
             pass
 
@@ -475,12 +475,12 @@ def test_root_model_dump_with_base_model(order):
     if order == 'BR':
 
         class Model(RootModel):
-            root: list[Union[BModel, RModel]]
+            root: list[BModel | RModel]
 
     elif order == 'RB':
 
         class Model(RootModel):
-            root: list[Union[RModel, BModel]]
+            root: list[RModel | BModel]
 
     m = Model([1, 2, {'value': 'abc'}])
 
@@ -509,7 +509,7 @@ def test_mixed_discriminated_union(data):
         str_value: str
 
     class Model(RootModel):
-        root: Union[SModel, RModel] = Field(discriminator='kind')
+        root: SModel | RModel = Field(discriminator='kind')
 
     if data['kind'] == 'IModel':
         with pytest.warns(
@@ -532,7 +532,7 @@ def test_list_rootmodel():
         type: Literal['b']
         b: str
 
-    class D(RootModel[Annotated[Union[A, B], Field(discriminator='type')]]):
+    class D(RootModel[Annotated[A | B, Field(discriminator='type')]]):
         pass
 
     LD = RootModel[list[D]]
@@ -698,7 +698,7 @@ def test_model_construction_with_invalid_generic_specification() -> None:
     with pytest.raises(TypeError, match='You should parametrize RootModel directly'):
 
         class GenericRootModel(RootModel, Generic[T_]):
-            root: Union[T_, int]
+            root: T_ | int
 
 
 def test_model_with_field_description() -> None:

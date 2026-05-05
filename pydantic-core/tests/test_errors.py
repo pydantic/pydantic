@@ -5,7 +5,7 @@ import re
 import subprocess
 import sys
 from decimal import Decimal
-from typing import Any, Optional
+from typing import Any
 
 import pytest
 from dirty_equals import HasRepr, IsInstance, IsJson, IsStr
@@ -94,10 +94,10 @@ def test_pydantic_value_error_invalid_dict():
 
     assert str(exc_info.value) == (
         '1 validation error for function-plain[my_function()]\n'
-        "  (error rendering message: TypeError: 'tuple' object cannot be cast as 'str') "
+        "  (error rendering message: TypeError: 'tuple' object is not an instance of 'str') "
         '[type=my_error, input_value=42, input_type=int]'
     )
-    with pytest.raises(TypeError, match="'tuple' object cannot be cast as 'str'"):
+    with pytest.raises(TypeError, match="'tuple' object is not an instance of 'str'"):
         exc_info.value.errors(include_url=False)
 
 
@@ -107,7 +107,7 @@ def test_pydantic_value_error_invalid_type():
 
     v = SchemaValidator(core_schema.with_info_plain_validator_function(f))
 
-    with pytest.raises(TypeError, match="argument 'context': 'list' object cannot be cast as 'dict'"):
+    with pytest.raises(TypeError, match="argument 'context': 'list' object is not an instance of 'dict'"):
         v.validate_python(42)
 
 
@@ -201,7 +201,7 @@ def test_pydantic_error_type_raise_ctx(extra: dict):
 
 
 @pytest.mark.parametrize('ctx', [None, {}])
-def test_pydantic_error_type_raise_custom_no_ctx(ctx: Optional[dict]):
+def test_pydantic_error_type_raise_custom_no_ctx(ctx: dict | None):
     def f(input_value, info):
         raise PydanticKnownError('int_type', ctx)
 
@@ -237,7 +237,7 @@ def test_pydantic_custom_error_type_raise_custom_ctx(extra: dict):
 
 
 @pytest.mark.parametrize('ctx', [None, {}])
-def test_pydantic_custom_error_type_raise_custom_no_ctx(ctx: Optional[dict]):
+def test_pydantic_custom_error_type_raise_custom_no_ctx(ctx: dict | None):
     def f(input_value, info):
         raise PydanticCustomError('my_error', 'my message', ctx)
 
@@ -301,6 +301,7 @@ all_errors = [
     ('string_sub_type', 'Input should be a string, not an instance of a subclass of str', None),
     ('string_unicode', 'Input should be a valid string, unable to parse raw data as a unicode string', None),
     ('string_pattern_mismatch', "String should match pattern 'foo'", {'pattern': 'foo'}),
+    ('string_not_ascii', 'String should contain only ASCII characters', None),
     ('string_too_short', 'String should have at least 42 characters', {'min_length': 42}),
     ('string_too_short', 'String should have at least 1 character', {'min_length': 1}),
     ('string_too_long', 'String should have at most 42 characters', {'max_length': 42}),
@@ -541,7 +542,9 @@ def test_all_errors():
     error_types = [e['type'] for e in errors]
     if error_types != list(core_schema.ErrorType.__args__):
         literal = ''.join(f'\n    {e!r},' for e in error_types)
-        print(f'python code (end of python/pydantic_core/core_schema.py):\n\nErrorType = Literal[{literal}\n]')
+        print(
+            f'python code (end of python/pydantic_core/core_schema.py):\n\nErrorType: TypeAlias = Literal[{literal}\n]'
+        )
         pytest.fail('core_schema.ErrorType needs to be updated')
 
 
@@ -1126,10 +1129,6 @@ def test_hide_input_in_json() -> None:
         assert 'input' not in error
 
 
-@pytest.mark.skipif(
-    sys.version_info < (3, 9) and sys.implementation.name == 'pypy',
-    reason='PyPy before 3.9 cannot pickle this correctly',
-)
 def test_validation_error_pickle() -> None:
     s = SchemaValidator(core_schema.int_schema())
     with pytest.raises(ValidationError) as exc_info:

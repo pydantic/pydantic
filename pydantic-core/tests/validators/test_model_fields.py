@@ -5,7 +5,7 @@ import sys
 from collections.abc import Mapping
 from dataclasses import dataclass
 from datetime import datetime
-from typing import Any, Union
+from typing import Any
 
 import pytest
 from dirty_equals import FunctionCheck, HasRepr, IsStr
@@ -763,7 +763,7 @@ def test_paths_allow_by_name(py_and_json: PyAndJson, input_value):
     [
         ({'validation_alias': []}, 'Lookup paths should have at least one element'),
         ({'validation_alias': [[]]}, 'Each alias path should have at least one element'),
-        ({'validation_alias': [123]}, "TypeError: 'int' object cannot be cast as 'list'"),
+        ({'validation_alias': [123]}, "TypeError: 'int' object is not an instance of 'list'"),
         ({'validation_alias': [[1, 'foo']]}, 'TypeError: The first item in an alias path should be a string'),
     ],
     ids=repr,
@@ -1652,7 +1652,7 @@ def test_frozen_field():
     ids=['extras_schema=unset', 'extras_schema=None', 'extras_schema=int'],
 )
 def test_extra_behavior_allow(
-    config: Union[core_schema.CoreConfig, None],
+    config: core_schema.CoreConfig | None,
     schema_extra_behavior_kw: dict[str, Any],
     extras_schema_kw: dict[str, Any],
     expected_extra_value: Any,
@@ -1695,7 +1695,7 @@ def test_extra_behavior_allow(
     ],
 )
 def test_extra_behavior_allow_with_validate_fn_override(
-    config: Union[core_schema.CoreConfig, None],
+    config: core_schema.CoreConfig | None,
     schema_extra_behavior_kw: dict[str, Any],
 ):
     v = SchemaValidator(
@@ -1738,9 +1738,9 @@ def test_extra_behavior_allow_with_validate_fn_override(
     ],
 )
 def test_extra_behavior_forbid(
-    config: Union[core_schema.CoreConfig, None],
+    config: core_schema.CoreConfig | None,
     schema_extra_behavior_kw: dict[str, Any],
-    validate_fn_extra_kw: Union[ExtraBehavior, None],
+    validate_fn_extra_kw: ExtraBehavior | None,
 ):
     v = SchemaValidator(
         core_schema.model_fields_schema(
@@ -1793,9 +1793,9 @@ def test_extra_behavior_forbid(
     ],
 )
 def test_extra_behavior_ignore(
-    config: Union[core_schema.CoreConfig, None],
+    config: core_schema.CoreConfig | None,
     schema_extra_behavior_kw: dict[str, Any],
-    validate_fn_extra_kw: Union[ExtraBehavior, None],
+    validate_fn_extra_kw: ExtraBehavior | None,
 ):
     v = SchemaValidator(
         core_schema.model_fields_schema(
@@ -1853,10 +1853,10 @@ def test_extra_behavior_allow_keys_validation() -> None:
 @pytest.mark.parametrize('runtime_by_alias', [None, True, False])
 @pytest.mark.parametrize('runtime_by_name', [None, True, False])
 def test_by_alias_and_name_config_interaction(
-    config_by_alias: Union[bool, None],
-    config_by_name: Union[bool, None],
-    runtime_by_alias: Union[bool, None],
-    runtime_by_name: Union[bool, None],
+    config_by_alias: bool | None,
+    config_by_name: bool | None,
+    runtime_by_alias: bool | None,
+    runtime_by_name: bool | None,
 ) -> None:
     """This test reflects the priority that applies for config vs runtime validation alias configuration.
 

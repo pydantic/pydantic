@@ -4,8 +4,8 @@ use pyo3::prelude::*;
 use pyo3::types::PyDict;
 
 use crate::SchemaSerializer;
-use crate::common::prebuilt::get_prebuilt;
 use crate::serializers::SerializationState;
+use crate::{common::prebuilt::get_prebuilt, serializers::polymorphism_trampoline::PolymorphismTrampoline};
 
 use super::shared::{CombinedSerializer, TypeSerializer};
 
@@ -18,12 +18,24 @@ impl PrebuiltSerializer {
     pub fn try_get_from_schema(type_: &str, schema: &Bound<'_, PyDict>) -> PyResult<Option<CombinedSerializer>> {
         get_prebuilt(type_, schema, "__pydantic_serializer__", |py_any| {
             let schema_serializer = py_any.extract::<Py<SchemaSerializer>>()?;
-            if matches!(
-                schema_serializer.get().serializer.as_ref(),
-                CombinedSerializer::FunctionWrap(_)
-            ) {
+
+            let mut serializer = schema_serializer.get().serializer.as_ref();
+
+            // it is very likely that the prebuilt serializer is a polymorphism trampoline, peek
+            // through it for the sake of the check below
+            if let CombinedSerializer::PolymorphismTrampoline(PolymorphismTrampoline {
+                serializer: inner_serializer,
+                ..
+            }) = serializer
+            {
+                serializer = inner_serializer.as_ref();
+            }
+
+            // don't allow wrap serializers as prebuilt serializers (leads to double wrapping)
+            if matches!(serializer, CombinedSerializer::FunctionWrap(_)) {
                 return Ok(None);
             }
+
             Ok(Some(Self { schema_serializer }.into()))
         })
     }

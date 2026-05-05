@@ -28,7 +28,6 @@ classifiers = [
     'Programming Language :: Python :: Implementation :: PyPy',
     'Programming Language :: Python :: 3',
     'Programming Language :: Python :: 3 :: Only',
-    'Programming Language :: Python :: 3.9',
     'Programming Language :: Python :: 3.10',
     'Programming Language :: Python :: 3.11',
     'Programming Language :: Python :: 3.12',
@@ -42,12 +41,12 @@ classifiers = [
     'Topic :: Software Development :: Libraries :: Python Modules',
     'Topic :: Internet',
 ]
-requires-python = '>=3.9'
+requires-python = '>=3.10'
 dependencies = [
-    'typing-extensions>=4.14.1',
+    'typing-extensions>=4.15.0',
     'annotated-types>=0.6.0',
     # Keep this in sync with the version in the `check_pydantic_core_version()` function:
-    'pydantic-core==2.41.5',
+    'pydantic-core==2.46.0',
     'typing-inspection>=0.4.2',
 ]
 dynamic = ['version', 'readme']
@@ -56,7 +55,7 @@ dynamic = ['version', 'readme']
 email = ['email-validator>=2.0.0']
 timezone = [
     # See: https://docs.python.org/3/library/zoneinfo.html#data-sources
-    'tzdata; python_version >= "3.9" and platform_system == "Windows"',
+    'tzdata; platform_system == "Windows"',
 ]
 
 [project.urls]
@@ -125,6 +124,10 @@ typechecking = [
     'pyrefly',
     'pydantic-settings',
 ]
+build = [
+    'build',
+    'twine',
+]
 
 all = [
   { include-group = 'dev' },
@@ -132,6 +135,7 @@ all = [
   { include-group = 'linting' },
   { include-group = 'testing-extra' },
   { include-group = 'typechecking' },
+  { include-group = 'build' },
 ]
 
 [tool.hatch.version]
@@ -167,9 +171,9 @@ substitutions = [
     {pattern = '@@', replacement = '@'},
 ]
 
-[tool.pytest.ini_options]
-testpaths = 'tests'
-xfail_strict = true
+[tool.pytest]
+testpaths = ['tests']
+strict = true
 filterwarnings = [
     'error',
     'ignore:path is deprecated.*:DeprecationWarning:',
@@ -205,7 +209,7 @@ unconfirmed_label = 'pending'
 
 [tool.ruff]
 line-length = 120
-target-version = 'py39'
+target-version = 'py310'
 extend-exclude = ['pydantic/v1', 'tests/mypy', 'tests/pydantic_core']
 
 [tool.ruff.lint]
@@ -242,7 +246,7 @@ pydocstyle = { convention = 'google' }
 'tests/test_main.py' = ['PIE807']
 'tests/*' = ['D', 'B', 'C4']
 'pydantic/_internal/_known_annotated_metadata.py' = ['PIE800']
-'pydantic/deprecated/*' = ['D', 'PYI']
+'pydantic/deprecated/*' = ['D', 'PYI', 'UP007']
 'pydantic/color.py' = ['PYI']
 'pydantic/_internal/_decorators_v1.py' = ['PYI']
 'pydantic/json_schema.py' = ['D']
@@ -265,16 +269,11 @@ context = '${CONTEXT}'
 
 [tool.coverage.report]
 precision = 2
-exclude_lines = [
-    'pragma: no cover',
-    'raise NotImplementedError',
-    'if TYPE_CHECKING:',
-    'if typing.TYPE_CHECKING:',
-    '@overload',
-    '@typing.overload',
-    '\(Protocol\):$',
-    'typing.assert_never',
-    'assert_never',
+exclude_also = [
+    'raise\sNotImplementedError',
+    '@(typing\.)?overload',
+    'class .*\bProtocol\):',
+    '(typing\.)?.assert_never',
 ]
 
 [tool.coverage.paths]

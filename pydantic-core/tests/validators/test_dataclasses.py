@@ -1,9 +1,8 @@
 import dataclasses
 import platform
 import re
-import sys
 import weakref
-from typing import Any, ClassVar, Optional, Union
+from typing import Any, ClassVar
 
 import pytest
 from dirty_equals import IsListOrTuple, IsStr
@@ -964,9 +963,9 @@ def test_frozen_field():
     ],
 )
 def test_extra_behavior_ignore(
-    config: Union[core_schema.CoreConfig, None],
+    config: core_schema.CoreConfig | None,
     schema_extra_behavior_kw: dict[str, Any],
-    validate_fn_extra_kw: Union[ExtraBehavior, None],
+    validate_fn_extra_kw: ExtraBehavior | None,
 ):
     @dataclasses.dataclass
     class MyModel:
@@ -1024,9 +1023,9 @@ def test_extra_behavior_ignore(
     ],
 )
 def test_extra_behavior_forbid(
-    config: Union[core_schema.CoreConfig, None],
+    config: core_schema.CoreConfig | None,
     schema_extra_behavior_kw: dict[str, Any],
-    validate_fn_extra_kw: Union[ExtraBehavior, None],
+    validate_fn_extra_kw: ExtraBehavior | None,
 ):
     @dataclasses.dataclass
     class MyModel:
@@ -1082,9 +1081,9 @@ def test_extra_behavior_forbid(
     ],
 )
 def test_extra_behavior_allow(
-    config: Union[core_schema.CoreConfig, None],
+    config: core_schema.CoreConfig | None,
     schema_extra_behavior_kw: dict[str, Any],
-    validate_fn_extra_kw: Union[ExtraBehavior, None],
+    validate_fn_extra_kw: ExtraBehavior | None,
 ):
     @dataclasses.dataclass
     class MyModel:
@@ -1213,7 +1212,7 @@ def test_function_validator_wrapping_args_schema_wrap() -> None:
 
 @dataclasses.dataclass
 class FooParentDataclass:
-    foo: Optional[FooDataclass]
+    foo: FooDataclass | None
 
 
 def test_custom_dataclass_names():
@@ -1266,7 +1265,6 @@ def test_custom_dataclass_names():
     ]
 
 
-@pytest.mark.skipif(sys.version_info < (3, 10), reason='slots are only supported for dataclasses in Python >= 3.10')
 def test_slots() -> None:
     @dataclasses.dataclass(slots=True)
     class Model:
@@ -1297,7 +1295,6 @@ def test_slots() -> None:
         val.validate_assignment(m, 'x', 'abc')
 
 
-@pytest.mark.skipif(sys.version_info < (3, 10), reason='slots are only supported for dataclasses in Python >= 3.10')
 def test_dataclass_slots_field_before_validator():
     @dataclasses.dataclass(slots=True)
     class Foo:
@@ -1332,7 +1329,6 @@ def test_dataclass_slots_field_before_validator():
     assert dataclasses.asdict(foo) == {'a': 1, 'b': 'hello world!'}
 
 
-@pytest.mark.skipif(sys.version_info < (3, 10), reason='slots are only supported for dataclasses in Python >= 3.10')
 def test_dataclass_slots_field_after_validator():
     @dataclasses.dataclass(slots=True)
     class Foo:
@@ -1367,29 +1363,23 @@ def test_dataclass_slots_field_after_validator():
     assert dataclasses.asdict(foo) == {'a': 1, 'b': 'hello world!'}
 
 
-if sys.version_info < (3, 10):
-    kwargs = {}
-else:
-    kwargs = {'slots': True}
-
-
-@dataclasses.dataclass(**kwargs)
+@dataclasses.dataclass(slots=True)
 class FooDataclassSlots:
     a: str
     b: bool
 
 
-@dataclasses.dataclass(**kwargs)
+@dataclasses.dataclass(slots=True)
 class FooDataclassSameSlots(FooDataclassSlots):
     pass
 
 
-@dataclasses.dataclass(**kwargs)
+@dataclasses.dataclass(slots=True)
 class FooDataclassMoreSlots(FooDataclassSlots):
     c: str
 
 
-@dataclasses.dataclass(**kwargs)
+@dataclasses.dataclass(slots=True)
 class DuplicateDifferentSlots:
     a: str
     b: bool
@@ -1434,7 +1424,6 @@ class DuplicateDifferentSlots:
         ),
     ],
 )
-@pytest.mark.skipif(sys.version_info < (3, 10), reason='slots are only supported for dataclasses in Python >= 3.10')
 def test_slots_dataclass_subclass(revalidate_instances, input_value, expected):
     schema = core_schema.dataclass_schema(
         FooDataclassSlots,
@@ -1465,7 +1454,6 @@ def test_slots_dataclass_subclass(revalidate_instances, input_value, expected):
         assert dataclasses.asdict(dc) == expected
 
 
-@pytest.mark.skipif(sys.version_info < (3, 10), reason='slots are only supported for dataclasses in Python >= 3.10')
 def test_slots_mixed():
     @dataclasses.dataclass(slots=True)
     class Model:
@@ -1796,10 +1784,10 @@ def test_only_allow_alias(py_and_json) -> None:
 @pytest.mark.parametrize('runtime_by_alias', [None, True, False])
 @pytest.mark.parametrize('runtime_by_name', [None, True, False])
 def test_by_alias_and_name_config_interaction(
-    config_by_alias: Union[bool, None],
-    config_by_name: Union[bool, None],
-    runtime_by_alias: Union[bool, None],
-    runtime_by_name: Union[bool, None],
+    config_by_alias: bool | None,
+    config_by_name: bool | None,
+    runtime_by_alias: bool | None,
+    runtime_by_name: bool | None,
 ) -> None:
     """This test reflects the priority that applies for config vs runtime validation alias configuration.
 

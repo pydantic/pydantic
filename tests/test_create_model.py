@@ -45,10 +45,8 @@ def test_create_model() -> None:
 
 
 def test_create_model_invalid_tuple():
-    with pytest.raises(PydanticUserError) as exc_info:
+    with pytest.raises(PydanticUserError, check=lambda e: e.code == 'create-model-field-definitions'):
         create_model('FooModel', foo=(tuple[int, int], (1, 2), 'more'))
-
-    assert exc_info.value.code == 'create-model-field-definitions'
 
 
 def test_create_model_usage():

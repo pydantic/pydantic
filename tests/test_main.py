@@ -2,9 +2,10 @@ import json
 import platform
 import re
 import sys
+import typing
 import warnings
 from collections import defaultdict
-from collections.abc import Mapping
+from collections.abc import Callable, Mapping
 from copy import deepcopy
 from dataclasses import dataclass
 from datetime import date, datetime
@@ -13,7 +14,6 @@ from functools import cache, cached_property, partial
 from typing import (
     Annotated,
     Any,
-    Callable,
     ClassVar,
     Final,
     Generic,
@@ -121,7 +121,7 @@ def test_recursive_repr() -> None:
         a: object = None
 
     class B(BaseModel):
-        a: Optional[A] = None
+        a: A | None = None
 
     a = A()
     a.a = a
@@ -178,10 +178,10 @@ def none_check_model_fix():
     class NoneCheckModel(BaseModel):
         existing_str_value: str = 'foo'
         required_str_value: str = ...
-        required_str_none_value: Optional[str] = ...
+        required_str_none_value: str | None = ...
         existing_bytes_value: bytes = b'foo'
         required_bytes_value: bytes = ...
-        required_bytes_none_value: Optional[bytes] = ...
+        required_bytes_none_value: bytes | None = ...
 
     return NoneCheckModel
 
@@ -808,7 +808,7 @@ class Foo(Enum):
     BAR = 'bar'
 
 
-@pytest.mark.parametrize('value', [Foo.FOO, Foo.FOO.value, 'foo'])
+@pytest.mark.parametrize('value', [Foo.FOO, Foo.FOO.value])
 def test_enum_values(value: Any) -> None:
     class Model(BaseModel):
         foo: Foo
@@ -858,7 +858,9 @@ class StrFoo(str, Enum):
     BAR = 'bar'
 
 
-@pytest.mark.parametrize('value', [StrFoo.FOO, StrFoo.FOO.value, 'foo', 'hello'])
+@pytest.mark.parametrize(
+    'value', [pytest.param(StrFoo.FOO, id='enum-StrFoo.FOO'), pytest.param(StrFoo.FOO.value, id='str-StrFoo.FOO.value')]
+)
 def test_literal_use_enum_values_multi_type(value) -> None:
     class Model(BaseModel):
         baz: Literal[StrFoo.FOO, 'hello']
@@ -901,11 +903,11 @@ def test_union_enum_values():
         val = 'val'
 
     class NormalModel(BaseModel):
-        x: Union[MyEnum, int]
+        x: MyEnum | int
 
     class UseEnumValuesModel(BaseModel):
         model_config = ConfigDict(use_enum_values=True)
-        x: Union[MyEnum, int]
+        x: MyEnum | int
 
     assert NormalModel(x=MyEnum.val).x != 'val'
     assert UseEnumValuesModel(x=MyEnum.val).x == 'val'
@@ -1027,7 +1029,7 @@ def test_type_type_validation_fails(TypeTypeModel, input_value):
     ]
 
 
-@pytest.mark.parametrize('bare_type', [type, type])
+@pytest.mark.parametrize('bare_type', [type, typing.Type])  # noqa: UP006
 def test_bare_type_type_validation_success(bare_type):
     class TypeTypeModel(BaseModel):
         t: bare_type
@@ -1037,7 +1039,7 @@ def test_bare_type_type_validation_success(bare_type):
     assert m.t == arbitrary_type_class
 
 
-@pytest.mark.parametrize('bare_type', [type, type])
+@pytest.mark.parametrize('bare_type', [type, typing.Type])  # noqa: UP006
 def test_bare_type_type_validation_fails(bare_type):
     class TypeTypeModel(BaseModel):
         t: bare_type
@@ -1150,9 +1152,9 @@ def test_dict_exclude_unset_populated_by_alias_with_extra():
 def test_exclude_defaults():
     class Model(BaseModel):
         mandatory: str
-        nullable_mandatory: Optional[str] = ...
+        nullable_mandatory: str | None = ...
         facultative: str = 'x'
-        nullable_facultative: Optional[str] = None
+        nullable_facultative: str | None = None
 
     m = Model(mandatory='a', nullable_mandatory=None)
     assert m.model_dump(exclude_defaults=True) == {
@@ -1707,8 +1709,8 @@ def test_recursive_cycle_with_repeated_field():
         b: 'B'
 
     class B(BaseModel):
-        a1: Optional[A] = None
-        a2: Optional[A] = None
+        a1: A | None = None
+        a2: A | None = None
 
     A.model_rebuild()
 
@@ -1855,7 +1857,7 @@ def test_default_factory_validated_data_arg() -> None:
 
 
 def test_default_factory_validated_data_arg_not_required() -> None:
-    def fac(data: Optional[dict[str, Any]] = None):
+    def fac(data: dict[str, Any] | None = None):
         if data is not None:
             return data['a']
         return 3
@@ -2018,23 +2020,6 @@ def test_class_kwargs_custom_config():
 
         class Model(BaseModel, some_config='new_value'):
             a: int
-
-
-def test_new_union_origin():
-    """On 3.10+, origin of `int | str` is `types.UnionType`, not `typing.Union`"""
-
-    class Model(BaseModel):
-        x: 'int | str'
-
-    assert Model(x=3).x == 3
-    assert Model(x='3').x == '3'
-    assert Model(x='pika').x == 'pika'
-    assert Model.model_json_schema() == {
-        'title': 'Model',
-        'type': 'object',
-        'properties': {'x': {'title': 'X', 'anyOf': [{'type': 'integer'}, {'type': 'string'}]}},
-        'required': ['x'],
-    }
 
 
 @pytest.mark.parametrize(
@@ -2871,6 +2856,15 @@ def test_extra_equality():
     assert MyModel(x=1) != MyModel()
 
 
+def test_extra_equality_runtime_override() -> None:
+    """https://github.com/pydantic/pydantic/issues/13051"""
+
+    class MyModel(BaseModel, extra='allow'):
+        a: int
+
+    assert MyModel.model_validate({'a': 1}) == MyModel.model_validate({'a': 1}, extra='forbid')
+
+
 def test_equality_delegation():
     from unittest.mock import ANY
 
@@ -3045,6 +3039,25 @@ def test_validate_python_from_attributes() -> None:
 
     res = ModelFromAttributesFalse.model_validate(UnrelatedClass(), from_attributes=True)
     assert res == ModelFromAttributesFalse(x=1)
+
+
+def test_from_attributes_attributeerror_subclass() -> None:
+    """https://github.com/pydantic/pydantic/issues/13092"""
+
+    class SubAttributeError(AttributeError):
+        pass
+
+    class Model(BaseModel, from_attributes=True):
+        field: int | None = None
+
+    class Obj:
+        @property
+        def child(self):
+            raise SubAttributeError()
+
+    m = Model.model_validate(Obj())
+
+    assert m.field is None
 
 
 @pytest.mark.parametrize(
@@ -3616,7 +3629,6 @@ def test_eval_type_backport():
 def test_inherited_class_vars(create_module):
     @create_module
     def module():
-        import typing
 
         from pydantic import BaseModel
 
@@ -3654,7 +3666,7 @@ def test_validation_works_for_cyclical_forward_refs() -> None:
         y: Union['Y', None]
 
     class Y(BaseModel):
-        x: Union[X, None]
+        x: X | None
 
     assert Y(x={'y': None}).x.y is None
 
@@ -3671,6 +3683,17 @@ def test_model_construct_with_model_post_init_and_model_copy() -> None:
 
     assert m == copy
     assert id(m) != id(copy)
+
+
+def test_model_construct_with_model_post_init_has_pydantic_private() -> None:
+    """https://github.com/pydantic/pydantic/issues/12813"""
+
+    class Model(BaseModel):
+        def model_post_init(self, context: Any, /) -> None:
+            pass
+
+    m = Model.model_construct()
+    assert m.__pydantic_private__ is None
 
 
 def test_subclassing_gen_schema_warns() -> None:

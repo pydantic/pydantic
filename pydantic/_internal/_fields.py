@@ -4,11 +4,11 @@ from __future__ import annotations as _annotations
 
 import dataclasses
 import warnings
-from collections.abc import Mapping
+from collections.abc import Callable, Mapping
 from functools import cache
 from inspect import Parameter, ismethoddescriptor
 from re import Pattern
-from typing import TYPE_CHECKING, Any, Callable, TypeVar
+from typing import TYPE_CHECKING, Any, TypeVar, cast
 
 from pydantic_core import PydanticUndefined
 from typing_extensions import TypeIs
@@ -22,7 +22,6 @@ from . import _generics, _typing_extra
 from ._config import ConfigWrapper
 from ._docs_extraction import extract_docstrings_from_cls
 from ._import_utils import import_cached_base_model, import_cached_field_info
-from ._internal_dataclass import slots_true
 from ._namespace_utils import NsResolver
 from ._repr import Representation
 from ._utils import can_be_positional, get_first_not_none
@@ -42,7 +41,7 @@ class PydanticMetadata(Representation):
     __slots__ = ()
 
 
-@dataclasses.dataclass(**slots_true)  # TODO: make kw_only when we drop support for 3.9.
+@dataclasses.dataclass(slots=True, kw_only=True)
 class PydanticExtraInfo:
     # TODO: make use of PEP 747:
     annotation: Any
@@ -343,7 +342,7 @@ def collect_model_fields(  # noqa: C901
             if ann_name in cls_annotations or ann_name not in parent_fields_lookup:
                 # field is either:
                 # - present in the current model's annotations (and *not* from parent classes)
-                # - not found on any base classes; this seems to be caused by fields bot getting
+                # - not found on any base classes; this seems to be caused by fields not getting
                 #   generated due to models not being fully defined while initializing recursive models.
                 #   Nothing stops us from just creating a `FieldInfo` for this type hint, so we do this.
                 field_info = FieldInfo_.from_annotation(ann_type, _source=AnnotationSource.CLASS)
@@ -700,3 +699,30 @@ def takes_validated_data_argument(
     parameters = list(sig.parameters.values())
 
     return len(parameters) == 1 and can_be_positional(parameters[0]) and parameters[0].default is Parameter.empty
+
+
+def resolve_default_value(
+    default: Any,
+    default_factory: Callable[[], Any] | Callable[[dict[str, Any]], Any] | None,
+    *,
+    validated_data: dict[str, Any] | None = None,
+    call_default_factory: bool = False,
+) -> Any:
+    """Resolve the default value using either a static default or a default_factory."""
+    from ._utils import smart_deepcopy
+
+    if default_factory is None:
+        return smart_deepcopy(default)
+    if call_default_factory:
+        if takes_validated_data_argument(default_factory=default_factory):
+            fac = cast('Callable[[dict[str, Any]], Any]', default_factory)
+            if validated_data is None:
+                raise ValueError(
+                    "The default factory requires the 'validated_data' argument, which was not provided when calling 'get_default()'."
+                )
+            return fac(validated_data)
+        else:
+            fac = cast('Callable[[], Any]', default_factory)
+            return fac()
+
+    return PydanticUndefined

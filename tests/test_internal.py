@@ -6,16 +6,17 @@ import sys
 from copy import deepcopy
 from dataclasses import dataclass
 from decimal import Decimal
-from typing import Any, Union
+from typing import Any
 
 import pytest
 from dirty_equals import Contains, IsPartialDict
-from pydantic_core import CoreSchema
+from pydantic_core import CoreSchema, PydanticUndefined
 from pydantic_core import core_schema as cs
 
 from pydantic import BaseModel, TypeAdapter
 from pydantic._internal._config import ConfigWrapper
 from pydantic._internal._core_metadata import update_core_metadata
+from pydantic._internal._fields import resolve_default_value
 from pydantic._internal._generate_schema import GenerateSchema
 from pydantic._internal._repr import Representation
 from pydantic._internal._validators import _extract_decimal_digits_info
@@ -125,7 +126,7 @@ def test_core_schema_with_model_used_in_multiple_places(nested_ref: bool) -> Non
         b: M1
 
     class M3(BaseModel):
-        c: Union[M2, M1]
+        c: M2 | M1
         d: M1
 
     init, cleaned = init_schema_and_cleaned_schema(list[M3] if nested_ref else M3)
@@ -240,3 +241,29 @@ def test_pydantic_js_functions():
     )
 
     assert metadata['pydantic_js_functions'] == [func]
+
+
+@pytest.mark.parametrize(
+    'default, default_factory, validated_data, call_default_factory, expected',
+    [
+        ('foo', None, None, True, 'foo'),
+        ('foo', None, None, False, 'foo'),
+        ('foo-unused', lambda: 'foo', None, False, PydanticUndefined),
+        ('foo-unused', lambda: 'foo', None, True, 'foo'),
+        ('foo-unused', lambda data: data['foo'], {'foo': 'bar'}, True, 'bar'),
+    ],
+)
+def test_resolve_default_value(default, default_factory, validated_data, call_default_factory, expected):
+    result = resolve_default_value(
+        default,
+        default_factory,
+        validated_data=validated_data,
+        call_default_factory=call_default_factory,
+    )
+    assert result == expected
+
+
+def test_resolve_default_value_missing_validated_data():
+    # When factory requires validated_data but none is provided, a ValueError should be raised.
+    with pytest.raises(ValueError):
+        resolve_default_value('foo', lambda data: data['foo'], validated_data=None, call_default_factory=True)

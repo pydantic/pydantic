@@ -2,10 +2,10 @@ from __future__ import annotations
 
 import inspect
 from collections.abc import Mapping, Sequence
-from typing import TYPE_CHECKING, Any, Union
+from typing import TYPE_CHECKING, Any, TypeAlias, TypeGuard
 
 from pydantic_core import CoreSchema, core_schema
-from typing_extensions import TypeGuard, get_args, get_origin
+from typing_extensions import get_args, get_origin  # noqa: UP035
 from typing_inspection import typing_objects
 
 from . import _repr
@@ -14,24 +14,26 @@ from ._typing_extra import is_generic_alias
 if TYPE_CHECKING:
     from rich.console import Console
 
-AnyFunctionSchema = Union[
-    core_schema.AfterValidatorFunctionSchema,
-    core_schema.BeforeValidatorFunctionSchema,
-    core_schema.WrapValidatorFunctionSchema,
-    core_schema.PlainValidatorFunctionSchema,
-]
+AnyFunctionSchema: TypeAlias = (
+    core_schema.AfterValidatorFunctionSchema
+    | core_schema.BeforeValidatorFunctionSchema
+    | core_schema.WrapValidatorFunctionSchema
+    | core_schema.PlainValidatorFunctionSchema
+)
 
 
-FunctionSchemaWithInnerSchema = Union[
-    core_schema.AfterValidatorFunctionSchema,
-    core_schema.BeforeValidatorFunctionSchema,
-    core_schema.WrapValidatorFunctionSchema,
-]
+FunctionSchemaWithInnerSchema: TypeAlias = (
+    core_schema.AfterValidatorFunctionSchema
+    | core_schema.BeforeValidatorFunctionSchema
+    | core_schema.WrapValidatorFunctionSchema
+)
 
-CoreSchemaField = Union[
-    core_schema.ModelField, core_schema.DataclassField, core_schema.TypedDictField, core_schema.ComputedField
-]
-CoreSchemaOrField = Union[core_schema.CoreSchema, CoreSchemaField]
+
+CoreSchemaField: TypeAlias = (
+    core_schema.ModelField | core_schema.DataclassField | core_schema.TypedDictField | core_schema.ComputedField
+)
+
+CoreSchemaOrField: TypeAlias = core_schema.CoreSchema | CoreSchemaField
 
 _CORE_SCHEMA_FIELD_TYPES = {'typed-dict-field', 'dataclass-field', 'model-field', 'computed-field'}
 _FUNCTION_WITH_INNER_SCHEMA_TYPES = {'function-before', 'function-after', 'function-wrap'}

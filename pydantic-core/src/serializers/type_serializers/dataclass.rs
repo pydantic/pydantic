@@ -34,7 +34,7 @@ impl BuildSerializer for DataclassArgsBuilder {
         let py = schema.py();
 
         let fields_list: Bound<'_, PyList> = schema.get_as_req(intern!(py, "fields"))?;
-        let mut fields: AHashMap<String, SerField> = AHashMap::with_capacity(fields_list.len());
+        let mut fields = AHashMap::with_capacity(fields_list.len());
 
         let fields_mode = match ExtraBehavior::from_schema_or_config(py, schema, config, ExtraBehavior::Ignore)? {
             ExtraBehavior::Allow => FieldsMode::TypedDictAllow,
@@ -45,12 +45,14 @@ impl BuildSerializer for DataclassArgsBuilder {
 
         for (index, item) in fields_list.iter().enumerate() {
             let field_info = item.cast::<PyDict>()?;
-            let key_py: PyBackedStr = field_info.get_as_req(intern!(py, "name"))?;
-            let name: String = key_py.to_string();
+            let key: PyBackedStr = field_info.get_as_req(intern!(py, "name"))?;
 
             if !field_info.get_as(intern!(py, "init_only"))?.unwrap_or(false) {
                 if field_info.get_as(intern!(py, "serialization_exclude"))? == Some(true) {
-                    fields.insert(name, SerField::new(key_py, None, None, true, serialize_by_alias, None));
+                    fields.insert(
+                        key.clone_ref(py),
+                        SerField::new(key, None, None, true, serialize_by_alias, None),
+                    );
                 } else {
                     let schema = field_info.get_as_req(intern!(py, "schema"))?;
                     let serializer = CombinedSerializer::build(&schema, config, definitions)
@@ -60,9 +62,9 @@ impl BuildSerializer for DataclassArgsBuilder {
                     let serialization_exclude_if: Option<Py<PyAny>> =
                         field_info.get_as(intern!(py, "serialization_exclude_if"))?;
                     fields.insert(
-                        name,
+                        key.clone_ref(py),
                         SerField::new(
-                            key_py,
+                            key,
                             alias,
                             Some(serializer),
                             true,
