@@ -39,7 +39,7 @@ pytestmark = pytest.mark.skipif(
 # at all (importing it fails), so all tests are skipped as per the module's `pytestmark`. We keep the xfail marker if this ever
 # changes:
 cloudpickle_pypy_xfail = pytest.mark.xfail(
-    condition=sys.implementation.name == 'pypy' and sys.version_info >= (3, 11),
+    condition=IS_PYPY,
     reason='Cloudpickle issue: - possibly https://github.com/cloudpipe/cloudpickle/issues/557',
 )
 
