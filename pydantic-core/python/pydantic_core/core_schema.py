@@ -4254,6 +4254,8 @@ CoreSchemaType: TypeAlias = Literal[
     'decimal',
     'fraction',
     'str',
+    'bytes',
+    'date',
     'time',
     'datetime',
     'timedelta',
