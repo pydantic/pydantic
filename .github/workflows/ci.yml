@@ -70,7 +70,7 @@ jobs:
   core-build:
     name: core / Build on ${{ matrix.os }} (${{ matrix.target }} - ${{ matrix.interpreter || 'all' }}${{ matrix.os == 'linux' && format(' - {0}', matrix.manylinux == 'auto' && 'manylinux' || matrix.manylinux) || '' }})
     # only run on push to main, if a full build was requested or on release:
-    if: startsWith(github.ref, 'refs/tags/') || github.ref == 'refs/heads/main' || contains(github.event.pull_request.labels.*.name, 'full build')
+    if: startsWith(github.ref, 'refs/tags/v') || github.ref == 'refs/heads/main' || contains(github.event.pull_request.labels.*.name, 'full build')
     strategy:
       fail-fast: false
       matrix:
@@ -187,7 +187,7 @@ jobs:
   core-build-pgo:
     name: core / Build PGO-optimized on ${{ matrix.platform.os }} / ${{ matrix.interpreter }}
     # only run on push to main, if a full build was requested or on release:
-    if: startsWith(github.ref, 'refs/tags/') || github.ref == 'refs/heads/main' || contains(github.event.pull_request.labels.*.name, 'full build')
+    if: startsWith(github.ref, 'refs/tags/v') || github.ref == 'refs/heads/main' || contains(github.event.pull_request.labels.*.name, 'full build')
     strategy:
       fail-fast: false
       matrix:
@@ -559,7 +559,7 @@ jobs:
 
   build-pydantic:
     runs-on: ubuntu-latest
-    if: startsWith(github.ref, 'refs/tags/')
+    if: startsWith(github.ref, 'refs/tags/v')
     outputs:
       pydantic-version: ${{ steps.check-tag.outputs.VERSION }}
 
@@ -882,7 +882,7 @@ jobs:
 
   release-pydantic-core:
     needs: [core-test-builds-arch, core-test-builds-os, core-build-sdist, check]
-    if: needs.check.outputs.result == 'success' && startsWith(github.ref, 'refs/tags/')
+    if: needs.check.outputs.result == 'success' && startsWith(github.ref, 'refs/tags/v')
     runs-on: ubuntu-latest
     environment: release
 
@@ -941,7 +941,7 @@ jobs:
 
   release-pydantic:
     needs: [build-pydantic, release-pydantic-core]
-    if: startsWith(github.ref, 'refs/tags/')
+    if: startsWith(github.ref, 'refs/tags/v')
     runs-on: ubuntu-latest
     environment: release
 
