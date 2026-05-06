@@ -34,7 +34,16 @@ In all cases we will aim to minimize churn and do so only when justified by the 
 
 ## Pydantic V3 and beyond
 
-We expect to make new major releases roughly once a year going forward, although as mentioned above, any associated breaking changes should be trivial to fix compared to the V1-to-V2 transition.
+Any associated breaking changes in the V3 release will be introduced with care. This will include bug fixes that can't be solved in V2 without introducing a change in behavior
+(e.g. [fixing configuration not following the MRO](https://github.com/pydantic/pydantic/issues/9992)), or changes that don't remove existing functionality or doesn't provide
+proper alternatives.
+
+In V3, it is expected to merged `pydantic-core` as an internal sub-module of Pydantic, meaning it won't be published as a standalone library anymore.
+
+## Tagging conventions
+
+Pydantic uses Git tags to identify all published versions on PyPI (including alpha and beta releases), prefixed with the `v` character. Since v2.13, `pydantic-core`
+has been merged as a workspace member inside the `pydantic` repository, and subsequent `pydantic-core` releases are tagged as `core-vx.y.z`.
 
 ## Experimental Features
 
