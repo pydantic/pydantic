@@ -128,6 +128,12 @@ addopts = [
     'on',
     '--benchmark-disable',                        # this is enable by `make benchmark` when you actually want to run benchmarks
 ]
+markers = [
+    'skip_emscripten: skipped when running under Emscripten/Pyodide.',
+    # See pyproject.toml at repo root for the rationale on the next two.
+    'thread_unsafe: thread-unsafe; honored by pytest-run-parallel when installed.',
+    'timeout: pytest-timeout marker; no-op without pytest-timeout installed.',
+]
 
 [tool.coverage.run]
 source = ['pydantic_core']

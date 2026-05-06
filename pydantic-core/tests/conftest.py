@@ -195,3 +195,9 @@ def assert_gc(test: Callable[[], bool], timeout: float = 10) -> None:
         sleep(0.1)
         now = time()
     raise AssertionError('Timeout waiting for GC')
+
+
+def pytest_runtest_setup(item: pytest.Item) -> None:
+    if sys.platform == 'emscripten':
+        for marker in item.iter_markers(name='skip_emscripten'):
+            pytest.skip(marker.kwargs.get('reason', 'Skipped under Emscripten/Pyodide'))

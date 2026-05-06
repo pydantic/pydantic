@@ -21,7 +21,10 @@ except ImportError:
 
 TEST_DATA_DIR = Path(__file__).parent / 'test_data'
 
-pytestmark = pytest.mark.skipif(cloudpickle is None, reason='cloudpickle is not installed')
+pytestmark = [
+    pytest.mark.skipif(cloudpickle is None, reason='cloudpickle is not installed'),
+    pytest.mark.skip_emscripten(reason='subprocess is unavailable under Emscripten/Pyodide'),
+]
 
 cloudpickle_pypy_xfail = pytest.mark.xfail(
     condition=sys.implementation.name == 'pypy' and sys.version_info >= (3, 11),
