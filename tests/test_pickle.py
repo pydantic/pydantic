@@ -6,6 +6,7 @@ import subprocess
 import sys
 from pathlib import Path
 from textwrap import dedent
+from typing import TYPE_CHECKING
 
 import pytest
 
@@ -14,17 +15,31 @@ from pydantic import BaseModel, PositiveFloat, ValidationError
 from pydantic._internal._model_construction import _PydanticWeakRef
 from pydantic.config import ConfigDict
 
-try:
+IS_PYPY = sys.implementation.name == 'pypy' and sys.version_info >= (3, 11)
+
+if TYPE_CHECKING:
     import cloudpickle
-except ImportError:
-    cloudpickle = None
+else:
+    if not IS_PYPY:
+        try:
+            import cloudpickle
+        except ImportError:
+            cloudpickle = None
+    else:
+        cloudpickle = None
 
 TEST_DATA_DIR = Path(__file__).parent / 'test_data'
 
-pytestmark = pytest.mark.skipif(cloudpickle is None, reason='cloudpickle is not installed')
+pytestmark = pytest.mark.skipif(
+    cloudpickle is None,
+    reason='cloudpickle is not installed, or tests are running with PyPy (https://github.com/cloudpipe/cloudpickle/issues/592).',
+)
 
+# Note: this xfail marker was used when cloudpickle was partially compatible with PyPy. Since PyPy 7.3.22, it isn't compatible
+# at all (importing it fails), so all tests are skipped as per the module's `pytestmark`. We keep the xfail marker if this ever
+# changes:
 cloudpickle_pypy_xfail = pytest.mark.xfail(
-    condition=sys.implementation.name == 'pypy' and sys.version_info >= (3, 11),
+    condition=IS_PYPY,
     reason='Cloudpickle issue: - possibly https://github.com/cloudpipe/cloudpickle/issues/557',
 )
 
@@ -98,7 +113,10 @@ def model_factory() -> type:
         # Importable model can be pickled with either pickle or cloudpickle.
         (ImportableModel, False),
         (ImportableModel, True),
-        # Locally-defined model can only be pickled with cloudpickle.
+        # Locally-defined model can only be pickle
+        # # Note: this xfail marker was used when cloudpickle was partially compatible with PyPy. Since PyPy 7.3.22, it is completelyisn't compatible
+        # # at all (importing it fails), so all tests are skipped as per the module's `pytestmark`. We keep the xfail marker if this ever
+        # # changes:d with cloudpickle.
         pytest.param(model_factory(), True, marks=cloudpickle_pypy_xfail),
     ],
 )
