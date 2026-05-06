@@ -803,6 +803,17 @@ to help you monitor and understand your
 </li>
       
         <li class="md-nav__item">
+  <a href="#tagging-conventions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Tagging conventions
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#experimental-features" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -3932,6 +3943,17 @@ to help you monitor and understand your
 </li>
       
         <li class="md-nav__item">
+  <a href="#tagging-conventions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Tagging conventions
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#experimental-features" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -4036,7 +4058,13 @@ the release of Pydantic V3.</p>
   may change between releases (this is a low-level format Pydantic uses to plan how to execute validation and serialization).</p>
 <p>In all cases we will aim to minimize churn and do so only when justified by the increase of quality of Pydantic for users.</p>
 <h2 id="pydantic-v3-and-beyond">Pydantic V3 and beyond<a class="headerlink" href="#pydantic-v3-and-beyond" title="Permanent link">&para;</a></h2>
-<p>We expect to make new major releases roughly once a year going forward, although as mentioned above, any associated breaking changes should be trivial to fix compared to the V1-to-V2 transition.</p>
+<p>Any associated breaking changes in the V3 release will be introduced with care. This will include bug fixes that can't be solved in V2 without introducing a change in behavior
+(e.g. <a href="https://github.com/pydantic/pydantic/issues/9992">fixing configuration not following the MRO</a>), or changes that don't remove existing functionality or doesn't provide
+proper alternatives.</p>
+<p>In V3, it is expected to merged <code>pydantic-core</code> as an internal sub-module of Pydantic, meaning it won't be published as a standalone library anymore.</p>
+<h2 id="tagging-conventions">Tagging conventions<a class="headerlink" href="#tagging-conventions" title="Permanent link">&para;</a></h2>
+<p>Pydantic uses Git tags to identify all published versions on PyPI (including alpha and beta releases), prefixed with the <code>v</code> character. Since v2.13, <code>pydantic-core</code>
+has been merged as a workspace member inside the <code>pydantic</code> repository, and subsequent <code>pydantic-core</code> releases are tagged as <code>core-vx.y.z</code>.</p>
 <h2 id="experimental-features">Experimental Features<a class="headerlink" href="#experimental-features" title="Permanent link">&para;</a></h2>
 <p>At Pydantic, we like to move quickly and innovate! To that end, we may introduce experimental features in minor releases.</p>
 <div class="admonition abstract">
