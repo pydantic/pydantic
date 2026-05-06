@@ -2010,11 +2010,7 @@ def test_class_kwargs_config_and_attr_conflict():
 
 
 def test_class_kwargs_custom_config():
-    if platform.python_implementation() == 'PyPy':
-        msg = r"__init_subclass__\(\) got an unexpected keyword argument 'some_config'"
-    else:
-        msg = r'__init_subclass__\(\) takes no keyword arguments'
-    with pytest.raises(TypeError, match=msg):
+    with pytest.raises(TypeError, match=r'__init_subclass__\(\) takes no keyword arguments'):
 
         class Model(BaseModel, some_config='new_value'):
             a: int
