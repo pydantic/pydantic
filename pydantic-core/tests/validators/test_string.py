@@ -348,9 +348,6 @@ def test_coerce_numbers_to_str_from_json(number: str, expected_str: str) -> None
 
 
 @pytest.mark.parametrize('mode', (None, 'schema', 'config'))
-@pytest.mark.xfail(
-    platform.python_implementation() == 'PyPy' and sys.version_info[:2] == (3, 11), reason='pypy 3.11 type formatting'
-)
 def test_backtracking_regex_rust_unsupported(mode) -> None:
     pattern = r'r(#*)".*?"\1'
 
