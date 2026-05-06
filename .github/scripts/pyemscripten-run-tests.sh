@@ -57,6 +57,9 @@ pip install \
 # `--override-ini=addopts=` strips the project's `--benchmark-*` defaults
 # (pytest-benchmark has no wasm wheel; pytest would reject them as
 # unrecognized). `-p no:timeout` because pytest-timeout is not installed.
+pytest_log=$(mktemp)
+trap 'rm -f "${pytest_log}"' EXIT
+set +e
 pytest \
     --override-ini='addopts=' \
     -p no:cacheprovider \
@@ -67,4 +70,21 @@ pytest \
     --ignore=tests/benchmarks \
     --ignore=tests/test_docs.py \
     tests/pydantic_core \
-    tests
+    tests 2>&1 | tee "${pytest_log}"
+pytest_exit=${PIPESTATUS[0]}
+set -e
+
+# Pyodide 314 alphas crash during CPython interpreter teardown after pytest
+# returns -- the wasm vtable goes south *after* the test summary prints,
+# making the process exit non-zero on x86_64 GH runners. Trust pytest's own
+# summary line: if it reports a clean run and the only failure signal is the
+# teardown crash, treat the job as green.
+if [ "${pytest_exit}" -ne 0 ] \
+    && grep -q 'Pyodide has suffered a fatal error' "${pytest_log}" \
+    && grep -qE '^Results \([0-9.]+s\):' "${pytest_log}" \
+    && ! grep -qE '(^|[[:space:]])[0-9]+ (failed|error)' "${pytest_log}" \
+    && ! grep -qE '(error|errors) during collection' "${pytest_log}"; then
+    echo "[pyemscripten-run-tests] pytest reported a clean run; treating Pyodide teardown crash as non-fatal."
+    exit 0
+fi
+exit "${pytest_exit}"
