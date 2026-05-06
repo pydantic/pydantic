@@ -58,7 +58,8 @@ pip install \
 # (pytest-benchmark has no wasm wheel; pytest would reject them as
 # unrecognized). `-p no:timeout` because pytest-timeout is not installed.
 pytest_log=$(mktemp)
-trap 'rm -f "${pytest_log}"' EXIT
+plain_log=$(mktemp)
+trap 'rm -f "${pytest_log}" "${plain_log}"' EXIT
 set +e
 pytest \
     --override-ini='addopts=' \
@@ -74,16 +75,20 @@ pytest \
 pytest_exit=${PIPESTATUS[0]}
 set -e
 
+# Strip ANSI escapes pytest-pretty emits, so the guard below greps the same
+# text humans see rather than the colourised byte stream.
+sed -E $'s/\x1b\\[[0-9;]*[a-zA-Z]//g' "${pytest_log}" > "${plain_log}"
+
 # Pyodide 314 alphas crash during CPython interpreter teardown after pytest
 # returns -- the wasm vtable goes south *after* the test summary prints,
 # making the process exit non-zero on x86_64 GH runners. Trust pytest's own
 # summary line: if it reports a clean run and the only failure signal is the
 # teardown crash, treat the job as green.
 if [ "${pytest_exit}" -ne 0 ] \
-    && grep -q 'Pyodide has suffered a fatal error' "${pytest_log}" \
-    && grep -qE '^Results \([0-9.]+s\):' "${pytest_log}" \
-    && ! grep -qE '(^|[[:space:]])[0-9]+ (failed|error)' "${pytest_log}" \
-    && ! grep -qE '(error|errors) during collection' "${pytest_log}"; then
+    && grep -q 'Pyodide has suffered a fatal error' "${plain_log}" \
+    && grep -qE '^Results \([0-9.]+s\):' "${plain_log}" \
+    && ! grep -qE '(^|[[:space:]])[0-9]+ (failed|error)' "${plain_log}" \
+    && ! grep -qE '(error|errors) during collection' "${plain_log}"; then
     echo "[pyemscripten-run-tests] pytest reported a clean run; treating Pyodide teardown crash as non-fatal."
     exit 0
 fi
