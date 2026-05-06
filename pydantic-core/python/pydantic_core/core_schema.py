@@ -4184,61 +4184,61 @@ MYPY = False
 # See https://github.com/python/mypy/issues/14034 for details, in summary mypy is extremely slow to process this
 # union which kills performance not just for pydantic, but even for code using pydantic
 if not MYPY:
-    CoreSchema = Union[
-        InvalidSchema,
-        AnySchema,
-        NoneSchema,
-        BoolSchema,
-        IntSchema,
-        FloatSchema,
-        DecimalSchema,
-        FractionSchema,
-        StringSchema,
-        BytesSchema,
-        DateSchema,
-        TimeSchema,
-        DatetimeSchema,
-        TimedeltaSchema,
-        LiteralSchema,
-        MissingSentinelSchema,
-        EnumSchema,
-        IsInstanceSchema,
-        IsSubclassSchema,
-        CallableSchema,
-        ListSchema,
-        TupleSchema,
-        SetSchema,
-        FrozenSetSchema,
-        GeneratorSchema,
-        DictSchema,
-        AfterValidatorFunctionSchema,
-        BeforeValidatorFunctionSchema,
-        WrapValidatorFunctionSchema,
-        PlainValidatorFunctionSchema,
-        WithDefaultSchema,
-        NullableSchema,
-        UnionSchema,
-        TaggedUnionSchema,
-        ChainSchema,
-        LaxOrStrictSchema,
-        JsonOrPythonSchema,
-        TypedDictSchema,
-        ModelFieldsSchema,
-        ModelSchema,
-        DataclassArgsSchema,
-        DataclassSchema,
-        ArgumentsSchema,
-        ArgumentsV3Schema,
-        CallSchema,
-        CustomErrorSchema,
-        JsonSchema,
-        UrlSchema,
-        MultiHostUrlSchema,
-        DefinitionsSchema,
-        DefinitionReferenceSchema,
-        UuidSchema,
-        ComplexSchema,
-    ]
+    CoreSchema: TypeAlias = (
+        InvalidSchema
+        | AnySchema
+        | NoneSchema
+        | BoolSchema
+        | IntSchema
+        | FloatSchema
+        | DecimalSchema
+        | FractionSchema
+        | StringSchema
+        | BytesSchema
+        | DateSchema
+        | TimeSchema
+        | DatetimeSchema
+        | TimedeltaSchema
+        | LiteralSchema
+        | MissingSentinelSchema
+        | EnumSchema
+        | IsInstanceSchema
+        | IsSubclassSchema
+        | CallableSchema
+        | ListSchema
+        | TupleSchema
+        | SetSchema
+        | FrozenSetSchema
+        | GeneratorSchema
+        | DictSchema
+        | AfterValidatorFunctionSchema
+        | BeforeValidatorFunctionSchema
+        | WrapValidatorFunctionSchema
+        | PlainValidatorFunctionSchema
+        | WithDefaultSchema
+        | NullableSchema
+        | UnionSchema
+        | TaggedUnionSchema
+        | ChainSchema
+        | LaxOrStrictSchema
+        | JsonOrPythonSchema
+        | TypedDictSchema
+        | ModelFieldsSchema
+        | ModelSchema
+        | DataclassArgsSchema
+        | DataclassSchema
+        | ArgumentsSchema
+        | ArgumentsV3Schema
+        | CallSchema
+        | CustomErrorSchema
+        | JsonSchema
+        | UrlSchema
+        | MultiHostUrlSchema
+        | DefinitionsSchema
+        | DefinitionReferenceSchema
+        | UuidSchema
+        | ComplexSchema
+    )
 elif False:
     CoreSchema: TypeAlias = Mapping[str, Any]
 
@@ -4254,8 +4254,6 @@ CoreSchemaType: TypeAlias = Literal[
     'decimal',
     'fraction',
     'str',
-    'bytes',
-    'date',
     'time',
     'datetime',
     'timedelta',
