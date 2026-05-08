@@ -1,6 +1,6 @@
 use std::sync::Arc;
 
-use pyo3::exceptions::{PyTypeError, PyValueError};
+use pyo3::exceptions::PyValueError;
 use pyo3::intern;
 use pyo3::sync::PyOnceLock;
 use pyo3::types::{IntoPyDict, PyDict, PyString, PyType};
