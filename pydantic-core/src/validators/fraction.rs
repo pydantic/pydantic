@@ -84,49 +84,49 @@ impl Validator for FractionValidator {
     ) -> ValResult<Py<PyAny>> {
         let fraction = input.validate_fraction(state.strict_or(self.strict), py)?.unpack(state);
 
-        if let Some(le) = &self.le {
-            if !fraction.le(le)? {
-                return Err(ValError::new(
-                    ErrorType::LessThanEqual {
-                        le: Number::String(le.to_string()),
-                        context: Some([("le", le)].into_py_dict(py)?.into()),
-                    },
-                    input,
-                ));
-            }
+        if let Some(le) = &self.le
+            && !fraction.le(le)?
+        {
+            return Err(ValError::new(
+                ErrorType::LessThanEqual {
+                    le: Number::String(le.to_string()),
+                    context: Some([("le", le)].into_py_dict(py)?.into()),
+                },
+                input,
+            ));
         }
-        if let Some(lt) = &self.lt {
-            if !fraction.lt(lt)? {
-                return Err(ValError::new(
-                    ErrorType::LessThan {
-                        lt: Number::String(lt.to_string()),
-                        context: Some([("lt", lt)].into_py_dict(py)?.into()),
-                    },
-                    input,
-                ));
-            }
+        if let Some(lt) = &self.lt
+            && !fraction.lt(lt)?
+        {
+            return Err(ValError::new(
+                ErrorType::LessThan {
+                    lt: Number::String(lt.to_string()),
+                    context: Some([("lt", lt)].into_py_dict(py)?.into()),
+                },
+                input,
+            ));
         }
-        if let Some(ge) = &self.ge {
-            if !fraction.ge(ge)? {
-                return Err(ValError::new(
-                    ErrorType::GreaterThanEqual {
-                        ge: Number::String(ge.to_string()),
-                        context: Some([("ge", ge)].into_py_dict(py)?.into()),
-                    },
-                    input,
-                ));
-            }
+        if let Some(ge) = &self.ge
+            && !fraction.ge(ge)?
+        {
+            return Err(ValError::new(
+                ErrorType::GreaterThanEqual {
+                    ge: Number::String(ge.to_string()),
+                    context: Some([("ge", ge)].into_py_dict(py)?.into()),
+                },
+                input,
+            ));
         }
-        if let Some(gt) = &self.gt {
-            if !fraction.gt(gt)? {
-                return Err(ValError::new(
-                    ErrorType::GreaterThan {
-                        gt: Number::String(gt.to_string()),
-                        context: Some([("gt", gt)].into_py_dict(py)?.into()),
-                    },
-                    input,
-                ));
-            }
+        if let Some(gt) = &self.gt
+            && !fraction.gt(gt)?
+        {
+            return Err(ValError::new(
+                ErrorType::GreaterThan {
+                    gt: Number::String(gt.to_string()),
+                    context: Some([("gt", gt)].into_py_dict(py)?.into()),
+                },
+                input,
+            ));
         }
 
         Ok(fraction.into())
