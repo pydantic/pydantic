@@ -342,17 +342,6 @@ impl<'py> Input<'py> for Bound<'py, PyAny> {
         }
 
         if !strict {
-            if self.is_instance_of::<PyString>() || self.is_instance_of::<PyInt>() {
-                // Checking isinstance for str / int / bool is fast compared to fraction / float
-                return create_fraction(self, self).map(ValidationMatch::lax);
-            }
-
-            if self.is_instance_of::<PyFloat>() {
-                // Pass float directly so inf raises OverflowError and nan raises ValueError
-                return create_fraction(self, self).map(ValidationMatch::lax);
-            }
-
-            // For all other types, attempt coercion and let Python raise TypeError naturally
             return create_fraction(self, self).map(ValidationMatch::lax);
         }
 

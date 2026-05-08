@@ -607,7 +607,6 @@ impl ErrorType {
             Self::DecimalWholeDigits { .. } => {
                 "Decimal input should have no more than {whole_digits} digit{expected_plural} before the decimal point"
             }
-            // Fraction error messages (from add-fraction branch)
             Self::FractionParsing { .. } => "Input is not a valid fraction",
             Self::FractionType { .. } => "Fraction input should be an integer, float, string or Fraction object",
             Self::ComplexType { .. } => {
