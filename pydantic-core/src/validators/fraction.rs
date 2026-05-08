@@ -1,6 +1,6 @@
 use std::sync::Arc;
 
-use pyo3::exceptions::PyValueError;
+use pyo3::exceptions::{PyTypeError, PyValueError};
 use pyo3::intern;
 use pyo3::sync::PyOnceLock;
 use pyo3::types::{IntoPyDict, PyDict, PyString, PyType};
@@ -148,8 +148,10 @@ fn handle_fraction_new_error(input: impl ToErrorValue, error: PyErr) -> ValError
     Python::attach(|py| {
         if error.matches(py, PyValueError::type_object(py)).unwrap_or(false) {
             ValError::new(ErrorTypeDefaults::FractionParsing, input)
+        } else if error.matches(py, PyTypeError::type_object(py)).unwrap_or(false) {
+            ValError::new(ErrorTypeDefaults::FractionType, input)
         } else {
-            // Let TypeError, ZeroDivisionError, OverflowError and other exceptions bubble up
+            // Let ZeroDivisionError, OverflowError and other exceptions bubble up
             ValError::InternalErr(error)
         }
     })

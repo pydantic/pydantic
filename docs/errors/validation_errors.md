@@ -862,7 +862,7 @@ class Model(BaseModel):
 
 
 try:
-    Model(x=[1, 2])
+    Model.model_validate_json('{"x": [1, 2]}')
 except ValidationError as exc:
     print(repr(exc.errors()[0]['type']))
     #> 'fraction_type'
