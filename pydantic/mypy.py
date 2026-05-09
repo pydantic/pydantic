@@ -934,7 +934,9 @@ class PydanticModelTransformer:
 
         if not self.should_init_forbid_extra(fields, config):
             var = Var('kwargs')
-            args.append(Argument(var, AnyType(TypeOfAny.explicit), None, ARG_STAR2))
+            # Use `from_omitted_generics` rather than `explicit` so that this `Any` does not trip
+            # `--disallow-any-explicit` when `**kwargs` is added because of a dynamic alias.
+            args.append(Argument(var, AnyType(TypeOfAny.from_omitted_generics), None, ARG_STAR2))
 
         add_method(self._api, self._cls, '__init__', args=args, return_type=NoneType())
 
@@ -965,7 +967,7 @@ class PydanticModelTransformer:
             )
         if not self.should_init_forbid_extra(fields, config):
             var = Var('kwargs')
-            args.append(Argument(var, AnyType(TypeOfAny.explicit), None, ARG_STAR2))
+            args.append(Argument(var, AnyType(TypeOfAny.from_omitted_generics), None, ARG_STAR2))
 
         args = args + [fields_set_argument] if is_root_model else [fields_set_argument] + args
 
