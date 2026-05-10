@@ -230,20 +230,13 @@ impl GeneralFieldsSerializer {
             if emitted_main_keys.contains(&*key_str) {
                 continue;
             }
-            if let Some(computed_fields) = &self.computed_fields {
-                if computed_fields.contains_key(&key_str, state) {
-                    continue;
-                }
+            if let Some(computed_fields) = &self.computed_fields
+                && computed_fields.contains_key(&key_str, state)
+            {
+                continue;
             }
 
-            self.serialize_extra(
-                &key_str,
-                &value,
-                state,
-                missing_sentinel,
-                extras_serializer,
-                &mut map,
-            )?;
+            self.serialize_extra(&key_str, &value, state, missing_sentinel, extras_serializer, &mut map)?;
         }
 
         if let Some(computed_fields) = &self.computed_fields {
