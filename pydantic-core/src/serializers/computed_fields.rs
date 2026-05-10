@@ -35,6 +35,16 @@ impl ComputedFields {
         }
     }
 
+    pub(crate) fn contains_key(&self, key: &str, state: &SerializationState) -> bool {
+        self.0.iter().any(|cf| {
+            let cf_key = match state.extra.serialize_by_alias_or(cf.serialize_by_alias) {
+                true => &cf.alias,
+                false => &cf.property_name,
+            };
+            &**cf_key == key
+        })
+    }
+
     pub fn serialize<'py, M: SerializeMap>(
         &self,
         model: &Bound<'py, PyAny>,
