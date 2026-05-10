@@ -315,25 +315,25 @@ class _Pipeline(Generic[_InT, _OutT]):
     ) -> _Pipeline[_InT, datetime.datetime]:
         """Transform a datetime value by replacing its timezone with the given value.
 
-        Unlike `datetime_tz`, this does not validate the existing timezone — it
-        unconditionally sets ``tzinfo`` to ``tz``.
+        Unlike `datetime_tz()`, this does not validate the existing timezone, it
+        unconditionally sets [`tzinfo`][datetime.datetime.tzinfo] to `tz`.
 
         Args:
-            tz: The timezone to attach to the datetime, or ``None`` to make it naive.
+            tz: The timezone to attach to the datetime, or `None` to make it naive.
         """
         return self.transform(partial(datetime.datetime.replace, tzinfo=tz))
 
     # string methods
     def str_lower(self: _Pipeline[_InT, str]) -> _Pipeline[_InT, str]:
-        """Transform a string value to lowercase."""
+        """Transform a string value to [lowercase][str.lower]."""
         return self.transform(str.lower)
 
     def str_upper(self: _Pipeline[_InT, str]) -> _Pipeline[_InT, str]:
-        """Transform a string value to uppercase."""
+        """Transform a string value to [uppercase][str.upper]."""
         return self.transform(str.upper)
 
     def str_title(self: _Pipeline[_InT, str]) -> _Pipeline[_InT, str]:
-        """Transform a string value to title case."""
+        """Transform a string value to [title case][str.title]."""
         return self.transform(str.title)
 
     def str_strip(self: _Pipeline[_InT, str]) -> _Pipeline[_InT, str]:
