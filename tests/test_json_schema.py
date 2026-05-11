@@ -7265,3 +7265,24 @@ def test_nested_model_deduplication() -> None:
     assert 'Level1' in definitions
     assert 'Level1-Input' not in definitions
     assert 'Level1-Output' not in definitions
+
+
+def test_type_adapter_custom_json_schema_with_local_defs_ref() -> None:
+    schema = {
+        '$defs': {'Tire': {'type': 'object'}},
+        'properties': {'tires': {'items': {'$ref': '#/$defs/Tire'}, 'type': 'array'}},
+        'type': 'object',
+    }
+
+    class CarDict(dict[str, Any]):
+        @classmethod
+        def __get_pydantic_core_schema__(cls, source_type: Any, handler: GetCoreSchemaHandler) -> CoreSchema:
+            return core_schema.dict_schema()
+
+        @classmethod
+        def __get_pydantic_json_schema__(
+            cls, core_schema: CoreSchema, handler: GetJsonSchemaHandler
+        ) -> JsonSchemaValue:
+            return schema
+
+    assert TypeAdapter(CarDict).json_schema() == schema

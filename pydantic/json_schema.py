@@ -2435,6 +2435,10 @@ class GenerateJsonSchema:
                             raise self._core_defs_invalid_for_json_schema[defs_ref]
                         _add_json_refs(self.definitions[defs_ref])
                     except KeyError:
+                        local_schema = _get_local_json_schema_definition(json_schema, json_ref)
+                        if local_schema is not None:
+                            _add_json_refs(local_schema)
+                            return
                         if not json_ref.startswith(('http://', 'https://')):
                             raise
 
@@ -2504,6 +2508,10 @@ class GenerateJsonSchema:
                 visited_defs_refs.add(next_defs_ref)
                 unvisited_json_refs.update(_get_all_json_refs(self.definitions[next_defs_ref]))
             except KeyError:
+                local_schema = _get_local_json_schema_definition(schema, next_json_ref)
+                if local_schema is not None:
+                    unvisited_json_refs.update(_get_all_json_refs(local_schema))
+                    continue
                 if not next_json_ref.startswith(('http://', 'https://')):
                     raise
 
@@ -2816,6 +2824,18 @@ def _get_all_json_refs(item: Any) -> set[JsonRef]:
             stack.extend(current)
 
     return refs
+
+
+def _get_local_json_schema_definition(schema: Any, json_ref: JsonRef) -> Any | None:
+    if not isinstance(schema, dict) or not json_ref.startswith('#/$defs/'):
+        return None
+
+    definitions = schema.get('$defs')
+    if not isinstance(definitions, dict):
+        return None
+
+    key = json_ref.removeprefix('#/$defs/').replace('~1', '/').replace('~0', '~')
+    return definitions.get(key)
 
 
 AnyType = TypeVar('AnyType')
