@@ -160,23 +160,32 @@ impl From<TimedeltaMode> for TemporalMode {
 
 impl TemporalMode {
     pub fn datetime_to_json(self, py: Python, datetime: &Bound<'_, PyDateTime>) -> PyResult<Py<PyAny>> {
+        // For `Rfc2822` we delegate to Python's `email.utils.format_datetime` without going
+        // through speedate, so handle it before parsing.
+        if let Self::Rfc2822 = self {
+            return datetime_to_rfc2822(py, datetime)?.into_py_any(py);
+        }
         let dt = pydatetime_as_datetime(datetime)?;
         match self {
             Self::Iso8601 => dt.to_string().into_py_any(py),
             Self::Seconds => datetime_to_seconds(dt).into_py_any(py),
             Self::Milliseconds => datetime_to_milliseconds(dt).into_py_any(py),
-            Self::Rfc2822 => datetime_to_rfc2822(dt).into_py_any(py),
+            Self::Rfc2822 => unreachable!("handled above"),
         }
     }
 
     pub fn date_to_json(self, py: Python, date: &Bound<'_, PyDate>) -> PyResult<Py<PyAny>> {
+        // For `Rfc2822` we delegate to Python's `email.utils.format_datetime` without going
+        // through speedate, so handle it before parsing.
+        if let Self::Rfc2822 = self {
+            return date_to_rfc2822(py, date)?.into_py_any(py);
+        }
         let date = pydate_as_date(date)?;
         match self {
             Self::Iso8601 => date.to_string().into_py_any(py),
             Self::Seconds => date_to_seconds(date).into_py_any(py),
             Self::Milliseconds => date_to_milliseconds(date).into_py_any(py),
-            // A bare `date` is treated as midnight UTC, matching `werkzeug.http.http_date`.
-            Self::Rfc2822 => date_to_rfc2822(date).into_py_any(py),
+            Self::Rfc2822 => unreachable!("handled above"),
         }
     }
 
@@ -209,23 +218,28 @@ impl TemporalMode {
     }
 
     pub fn datetime_json_key<'py>(self, datetime: &Bound<'_, PyDateTime>) -> PyResult<Cow<'py, str>> {
+        if let Self::Rfc2822 = self {
+            return Ok(datetime_to_rfc2822(datetime.py(), datetime)?.into());
+        }
         let dt = pydatetime_as_datetime(datetime)?;
         match self {
             Self::Iso8601 => Ok(dt.to_string().into()),
             Self::Seconds => Ok(datetime_to_seconds(dt).to_string().into()),
             Self::Milliseconds => Ok(datetime_to_milliseconds(dt).to_string().into()),
-            Self::Rfc2822 => Ok(datetime_to_rfc2822(dt).into()),
+            Self::Rfc2822 => unreachable!("handled above"),
         }
     }
 
     pub fn date_json_key<'py>(self, date: &Bound<'_, PyDate>) -> PyResult<Cow<'py, str>> {
-        let date = pydate_as_date(date)?;
+        if let Self::Rfc2822 = self {
+            return Ok(date_to_rfc2822(date.py(), date)?.into());
+        }
+        let parsed = pydate_as_date(date)?;
         match self {
-            Self::Iso8601 => Ok(date.to_string().into()),
-            Self::Seconds => Ok(date_to_seconds(date).to_string().into()),
-            Self::Milliseconds => Ok(date_to_milliseconds(date).to_string().into()),
-            // A bare `date` is treated as midnight UTC, matching `werkzeug.http.http_date`.
-            Self::Rfc2822 => Ok(date_to_rfc2822(date).into()),
+            Self::Iso8601 => Ok(parsed.to_string().into()),
+            Self::Seconds => Ok(date_to_seconds(parsed).to_string().into()),
+            Self::Milliseconds => Ok(date_to_milliseconds(parsed).to_string().into()),
+            Self::Rfc2822 => unreachable!("handled above"),
         }
     }
 
@@ -262,12 +276,16 @@ impl TemporalMode {
         datetime: &Bound<'_, PyDateTime>,
         serializer: S,
     ) -> Result<S::Ok, S::Error> {
+        if let Self::Rfc2822 = self {
+            let formatted = datetime_to_rfc2822(datetime.py(), datetime).map_err(py_err_se_err)?;
+            return serializer.serialize_str(&formatted);
+        }
         let dt = pydatetime_as_datetime(datetime).map_err(py_err_se_err)?;
         match self {
             Self::Iso8601 => serializer.collect_str(&dt),
             Self::Seconds => serializer.serialize_f64(datetime_to_seconds(dt)),
             Self::Milliseconds => serializer.serialize_f64(datetime_to_milliseconds(dt)),
-            Self::Rfc2822 => serializer.serialize_str(&datetime_to_rfc2822(dt)),
+            Self::Rfc2822 => unreachable!("handled above"),
         }
     }
 
@@ -276,13 +294,16 @@ impl TemporalMode {
         date: &Bound<'_, PyDate>,
         serializer: S,
     ) -> Result<S::Ok, S::Error> {
-        let date = pydate_as_date(date).map_err(py_err_se_err)?;
+        if let Self::Rfc2822 = self {
+            let formatted = date_to_rfc2822(date.py(), date).map_err(py_err_se_err)?;
+            return serializer.serialize_str(&formatted);
+        }
+        let parsed = pydate_as_date(date).map_err(py_err_se_err)?;
         match self {
-            Self::Iso8601 => serializer.collect_str(&date),
-            Self::Seconds => serializer.serialize_f64(date_to_seconds(date)),
-            Self::Milliseconds => serializer.serialize_f64(date_to_milliseconds(date)),
-            // A bare `date` is treated as midnight UTC, matching `werkzeug.http.http_date`.
-            Self::Rfc2822 => serializer.serialize_str(&date_to_rfc2822(date)),
+            Self::Iso8601 => serializer.collect_str(&parsed),
+            Self::Seconds => serializer.serialize_f64(date_to_seconds(parsed)),
+            Self::Milliseconds => serializer.serialize_f64(date_to_milliseconds(parsed)),
+            Self::Rfc2822 => unreachable!("handled above"),
         }
     }
 

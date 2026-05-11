@@ -590,9 +590,9 @@ class ConfigDict(TypedDict, total=False):
     - `'milliseconds'` will serialize date-like types to a floating point number of milliseconds since the epoch.
     - `'seconds'` will serialize date-like types to a floating point number of seconds since the epoch.
     - `'rfc2822'` will serialize date-like types to an [RFC 2822](https://datatracker.ietf.org/doc/html/rfc2822)
-      date string with a `GMT` zone label, e.g. `'Mon, 01 Jan 2024 12:00:00 GMT'`. This mirrors the behaviour of
-      [`werkzeug.http.http_date`](https://werkzeug.palletsprojects.com/en/stable/http/#werkzeug.http.http_date)
-      and is the preferred date format for the HTTP `Date` header per
+      date string with a `GMT` zone label, e.g. `'Mon, 01 Jan 2024 12:00:00 GMT'`. Formatting is delegated to
+      [`email.utils.format_datetime(dt, usegmt=True)`](https://docs.python.org/3/library/email.utils.html#email.utils.format_datetime),
+      which is the preferred date format for the HTTP `Date` header per
       [RFC 7231 §7.1.1.1](https://datatracker.ietf.org/doc/html/rfc7231#section-7.1.1.1).
       [`datetime.datetime`][] values are converted to UTC before formatting (naive datetimes are assumed UTC),
       and bare [`datetime.date`][] values are treated as midnight UTC. [`datetime.time`][] and

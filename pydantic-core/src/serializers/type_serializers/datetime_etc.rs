@@ -1,6 +1,7 @@
 use std::borrow::Cow;
 use std::sync::Arc;
 
+use pyo3::intern;
 use pyo3::prelude::*;
 use pyo3::types::{PyDate, PyDateTime, PyDict, PyTime};
 use speedate::{Date, DateTime, Time};
@@ -43,69 +44,58 @@ pub(crate) fn time_to_milliseconds(time: Time) -> f64 {
         + f64::from(time.microsecond) / 1_000.0
 }
 
-const RFC2822_DAY_NAMES: [&str; 7] = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
-const RFC2822_MONTH_NAMES: [&str; 12] = [
-    "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec",
-];
-
-/// Format a `Date` as an RFC 2822 (HTTP) date string at midnight UTC,
-/// e.g. "Mon, 01 Jan 2024 00:00:00 GMT".
+/// Format a Python `datetime` as an RFC 2822 date string with `GMT` as the zone label,
+/// e.g. `"Mon, 01 Jan 2024 12:00:00 GMT"`.
 ///
-/// This mirrors the behaviour of `werkzeug.http.http_date`, which combines a bare
-/// `date` with midnight in UTC before formatting.
-pub(crate) fn date_to_rfc2822(date: Date) -> String {
-    let midnight = Time {
-        hour: 0,
-        minute: 0,
-        second: 0,
-        microsecond: 0,
-        tz_offset: None,
+/// Delegates to Python's [`email.utils.format_datetime(dt, usegmt=True)`](https://docs.python.org/3/library/email.utils.html#email.utils.format_datetime).
+/// The datetime is normalised to UTC first:
+/// - naive datetimes are assumed to be UTC and have their `tzinfo` set to UTC,
+/// - aware datetimes are converted to UTC via `astimezone()`.
+pub(crate) fn datetime_to_rfc2822<'py>(py: Python<'py>, datetime: &Bound<'py, PyDateTime>) -> PyResult<String> {
+    let datetime_module = py.import(intern!(py, "datetime"))?;
+    let timezone_utc = datetime_module
+        .getattr(intern!(py, "timezone"))?
+        .getattr(intern!(py, "utc"))?;
+
+    let utc_datetime = if datetime.getattr(intern!(py, "tzinfo"))?.is_none() {
+        // Naive datetime: assume it represents UTC, attach `tzinfo=timezone.utc`.
+        let replace_kwargs = PyDict::new(py);
+        replace_kwargs.set_item(intern!(py, "tzinfo"), &timezone_utc)?;
+        datetime.call_method(intern!(py, "replace"), (), Some(&replace_kwargs))?
+    } else {
+        // Aware datetime: convert to UTC.
+        datetime.call_method1(intern!(py, "astimezone"), (&timezone_utc,))?
     };
-    datetime_to_rfc2822(DateTime { date, time: midnight })
+
+    let format_kwargs = PyDict::new(py);
+    format_kwargs.set_item(intern!(py, "usegmt"), true)?;
+    py.import(intern!(py, "email.utils"))?
+        .call_method(intern!(py, "format_datetime"), (utc_datetime,), Some(&format_kwargs))?
+        .extract()
 }
 
-/// Format a `DateTime` as an RFC 2822 date string with `GMT` as the zone label,
-/// e.g. "Mon, 01 Jan 2024 12:00:00 GMT".
+/// Format a Python `date` as an RFC 2822 date string at midnight UTC,
+/// e.g. `"Mon, 01 Jan 2024 00:00:00 GMT"`.
 ///
-/// This matches the output of Python's `email.utils.format_datetime(dt, usegmt=True)`,
-/// which is what `werkzeug.http.http_date` uses for the HTTP `Date` header (the format
-/// is RFC 2822 / RFC 5322 §3.3, which RFC 7231 §7.1.1.1 designates as the preferred HTTP
-/// date format).
-///
-/// The datetime is converted to UTC before formatting:
-/// - If `tz_offset` is `None` (naive), it is assumed to already be UTC.
-/// - If `tz_offset` is `Some`, the offset is subtracted from the timestamp to get UTC.
-pub(crate) fn datetime_to_rfc2822(dt: DateTime) -> String {
-    // Compute the UTC unix timestamp (seconds since 1970-01-01 UTC).
-    // `DateTime::timestamp()` ignores the timezone offset and returns the timestamp
-    // as if the date/time were UTC, so we need to subtract the offset to get the
-    // true UTC timestamp.
-    let local_ts = dt.date.timestamp()
-        + i64::from(dt.time.hour) * 3600
-        + i64::from(dt.time.minute) * 60
-        + i64::from(dt.time.second);
-    let tz_offset = i64::from(dt.time.tz_offset.unwrap_or(0));
-    let utc_ts = local_ts - tz_offset;
+/// Combines the bare `date` with midnight in UTC and then delegates to Python's
+/// [`email.utils.format_datetime(dt, usegmt=True)`](https://docs.python.org/3/library/email.utils.html#email.utils.format_datetime).
+pub(crate) fn date_to_rfc2822<'py>(py: Python<'py>, date: &Bound<'py, PyDate>) -> PyResult<String> {
+    let datetime_module = py.import(intern!(py, "datetime"))?;
+    let datetime_cls = datetime_module.getattr(intern!(py, "datetime"))?;
+    let midnight = datetime_module.getattr(intern!(py, "time"))?.call0()?;
+    let timezone_utc = datetime_module
+        .getattr(intern!(py, "timezone"))?
+        .getattr(intern!(py, "utc"))?;
 
-    // Compute date parts from the UTC timestamp using `Date::from_timestamp`-style
-    // logic via `DateTime::from_timestamp`. We pass microseconds separately.
-    let utc = DateTime::from_timestamp(utc_ts, 0).expect("RFC 2822 timestamp must be in valid range");
+    let combine_kwargs = PyDict::new(py);
+    combine_kwargs.set_item(intern!(py, "tzinfo"), &timezone_utc)?;
+    let utc_datetime = datetime_cls.call_method(intern!(py, "combine"), (date, midnight), Some(&combine_kwargs))?;
 
-    // Day-of-week: 1970-01-01 (UTC, ts=0) was a Thursday (index 3 in our Mon-first array).
-    // Normalize the day count to be non-negative before taking modulo to handle pre-1970 dates.
-    let days_since_epoch = utc_ts.div_euclid(86_400);
-    let weekday_index = (days_since_epoch + 3).rem_euclid(7) as usize;
-
-    format!(
-        "{day_name}, {day:02} {month_name} {year:04} {hour:02}:{minute:02}:{second:02} GMT",
-        day_name = RFC2822_DAY_NAMES[weekday_index],
-        day = utc.date.day,
-        month_name = RFC2822_MONTH_NAMES[(utc.date.month as usize).saturating_sub(1)],
-        year = utc.date.year,
-        hour = utc.time.hour,
-        minute = utc.time.minute,
-        second = utc.time.second,
-    )
+    let kwargs = PyDict::new(py);
+    kwargs.set_item(intern!(py, "usegmt"), true)?;
+    py.import(intern!(py, "email.utils"))?
+        .call_method(intern!(py, "format_datetime"), (utc_datetime,), Some(&kwargs))?
+        .extract()
 }
 
 fn downcast_date_reject_datetime<'a, 'py>(py_date: &'a Bound<'py, PyAny>) -> PyResult<&'a Bound<'py, PyDate>> {

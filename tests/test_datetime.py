@@ -783,7 +783,7 @@ def test_config_datetime(dt: datetime, expected_to_json, mode):
             b'1704067200000.0',
             'milliseconds',
         ),
-        # rfc2822: bare `date` is treated as midnight UTC, matching werkzeug.http.http_date
+        # rfc2822: bare `date` is treated as midnight UTC, matching email.utils.format_datetime
         (
             date(2024, 1, 1),
             b'"Mon, 01 Jan 2024 00:00:00 GMT"',

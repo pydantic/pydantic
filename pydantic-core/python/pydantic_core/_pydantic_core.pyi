@@ -452,7 +452,7 @@ def to_json(
         timedelta_mode: How to serialize `timedelta` objects, either `'iso8601'` or `'float'`.
         temporal_mode: How to serialize datetime-like objects (`datetime`, `date`, `time`), either `'iso8601'`, `'seconds'`, `'milliseconds'`, or `'rfc2822'`.
             `iso8601` returns an ISO 8601 string; `seconds` returns the Unix timestamp in seconds as a float; `milliseconds` returns the Unix timestamp in milliseconds as a float;
-            `rfc2822` returns an RFC 2822 (HTTP) date string (e.g. `'Mon, 01 Jan 2024 12:00:00 GMT'`), matching the output of `werkzeug.http.http_date`. `datetime` values are converted to UTC before formatting (naive datetimes are assumed UTC), and bare `date` values are treated as midnight UTC; `time` and `timedelta` fall back to ISO 8601.
+            `rfc2822` returns an RFC 2822 (HTTP) date string (e.g. `'Mon, 01 Jan 2024 12:00:00 GMT'`), produced by delegating to Python's `email.utils.format_datetime(dt, usegmt=True)`. `datetime` values are converted to UTC before formatting (naive datetimes are assumed UTC), and bare `date` values are treated as midnight UTC; `time` and `timedelta` fall back to ISO 8601.
 
         bytes_mode: How to serialize `bytes` objects, either `'utf8'`, `'base64'`, or `'hex'`.
         inf_nan_mode: How to serialize `Infinity`, `-Infinity` and `NaN` values, either `'null'`, `'constants'`, or `'strings'`.
@@ -538,7 +538,7 @@ def to_jsonable_python(
         timedelta_mode: How to serialize `timedelta` objects, either `'iso8601'` or `'float'`.
         temporal_mode: How to serialize datetime-like objects (`datetime`, `date`, `time`), either `'iso8601'`, `'seconds'`, `'milliseconds'`, or `'rfc2822'`.
             `iso8601` returns an ISO 8601 string; `seconds` returns the Unix timestamp in seconds as a float; `milliseconds` returns the Unix timestamp in milliseconds as a float;
-            `rfc2822` returns an RFC 2822 (HTTP) date string (e.g. `'Mon, 01 Jan 2024 12:00:00 GMT'`), matching the output of `werkzeug.http.http_date`. `datetime` values are converted to UTC before formatting (naive datetimes are assumed UTC), and bare `date` values are treated as midnight UTC; `time` and `timedelta` fall back to ISO 8601.
+            `rfc2822` returns an RFC 2822 (HTTP) date string (e.g. `'Mon, 01 Jan 2024 12:00:00 GMT'`), produced by delegating to Python's `email.utils.format_datetime(dt, usegmt=True)`. `datetime` values are converted to UTC before formatting (naive datetimes are assumed UTC), and bare `date` values are treated as midnight UTC; `time` and `timedelta` fall back to ISO 8601.
 
         bytes_mode: How to serialize `bytes` objects, either `'utf8'`, `'base64'`, or `'hex'`.
         inf_nan_mode: How to serialize `Infinity`, `-Infinity` and `NaN` values, either `'null'`, `'constants'`, or `'strings'`.
