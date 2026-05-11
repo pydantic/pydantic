@@ -269,7 +269,7 @@ def parent_frame_namespace(*, parent_depth: int = 2, force: bool = False) -> dic
 def _type_convert(arg: Any) -> Any:
     """Convert `None` to `NoneType` and strings to `ForwardRef` instances.
 
-    This is a backport of the private `typing._type_convert()` function. When
+    This is a vendored version of the private `typing._type_convert()` function. When
     evaluating a type, `ForwardRef._evaluate()` ends up being called, and is
     responsible for making this conversion. However, we still have to apply
     it for the first argument passed to our type evaluation functions, similarly
@@ -419,7 +419,7 @@ def eval_type(
 ) -> Any:
     """Evaluate the annotation using the provided namespaces.
 
-    This function relies on our own backport of `typing._eval_type()`, and provide better error messages
+    This function relies on our vendored `typing._eval_type()` function, and provide better error messages
     if possible.
 
     Args:
@@ -435,8 +435,8 @@ def eval_type(
         if 'Unable to evaluate type annotation' in str(e):
             raise
 
-        # In most cases, value is a `ForwardRef`, otherwise the `TypeError` would have been failed when the annotation
-        # was defined (at least on Python < 3.14). However, in rare cases, the `TypeError` can alsoappear when evaluating nested
+        # In most cases, value is a `ForwardRef`, otherwise the `TypeError` would have been raised when the annotation
+        # was defined (at least on Python < 3.14). However, in rare cases, the `TypeError` can also appear when evaluating nested
         # parts of the annotation (e.g. `list["1 + 'a'"]`).
         if isinstance(value, ForwardRef):
             message = f'Unable to evaluate type annotation {value.__forward_arg__!r}.'
@@ -481,7 +481,7 @@ def _eval_type(
 ) -> Any:
     """Evaluate all forward references for a given type.
 
-    This is a backport of the private `typing._eval_type()` function, adapted to work for all supported Python versions.
+    This is a vendored version of the private `typing._eval_type()` function, adapted to work for all supported Python versions.
     """
     if sys.version_info >= (3, 14):
         # Starting in 3.14, `_eval_type()` does *not* apply `_type_convert()`
