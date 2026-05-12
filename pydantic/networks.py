@@ -127,6 +127,7 @@ class UrlConstraints:
         # that extracts the underlying pydantic-core Url so the constrained inner
         # schema can re-validate.
         if schema['type'] == 'function-wrap':
+
             def _revalidate_existing_url(v: Any, handler: Any) -> Any:
                 if isinstance(v, _BaseUrl):
                     v = v._url
