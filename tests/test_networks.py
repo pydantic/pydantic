@@ -1117,6 +1117,22 @@ def test_custom_constraints() -> None:
         Model.model_validate({'v': existing_file_url})
 
 
+def test_custom_constraints_revalidate_existing_url_instances() -> None:
+    http_url = AnyHttpUrl('https://example.com')
+    assert TypeAdapter(AnyHttpUrl).validate_python(http_url) is http_url
+
+    ShortHttpUrl = Annotated[AnyHttpUrl, UrlConstraints(max_length=10)]
+    with pytest.raises(ValidationError, match='URL should have at most 10 characters'):
+        TypeAdapter(ShortHttpUrl).validate_python(http_url)
+
+    postgres_dsn = PostgresDsn('postgres://user:pass@localhost:5432/app')
+    assert TypeAdapter(PostgresDsn).validate_python(postgres_dsn) is postgres_dsn
+
+    ShortPostgresDsn = Annotated[PostgresDsn, UrlConstraints(max_length=20)]
+    with pytest.raises(ValidationError, match='URL should have at most 20 characters'):
+        TypeAdapter(ShortPostgresDsn).validate_python(postgres_dsn)
+
+
 def test_url_constraints_invalid_annotated_type() -> None:
     with pytest.raises(PydanticUserError):
         TypeAdapter(Annotated[str, UrlConstraints(max_length=1)])

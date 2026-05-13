@@ -127,8 +127,8 @@ class UrlConstraints:
 _URL_CONSTRAINT_FIELDS = tuple(field.name for field in fields(UrlConstraints))
 
 
-def _url_schema_has_constraints(schema: Mapping[str, Any]) -> bool:
-    return any(schema.get(field_name) is not None for field_name in _URL_CONSTRAINT_FIELDS)
+def _url_schema_constraints_match(schema: Mapping[str, Any], constraints: Mapping[str, Any]) -> bool:
+    return all(schema.get(field_name) == constraints.get(field_name) for field_name in _URL_CONSTRAINT_FIELDS)
 
 
 class _BaseUrl:
@@ -321,15 +321,16 @@ class _BaseUrl:
     def __get_pydantic_core_schema__(
         cls, source: type[_BaseUrl], handler: GetCoreSchemaHandler
     ) -> core_schema.CoreSchema:
-        url_schema = core_schema.url_schema(**cls._constraints.defined_constraints)
-        schema_has_constraints: bool | None = None
+        defined_constraints = cls._constraints.defined_constraints
+        url_schema = core_schema.url_schema(**defined_constraints)
+        schema_matches_class_constraints: bool | None = None
 
         def wrap_val(v, h):
-            nonlocal schema_has_constraints
+            nonlocal schema_matches_class_constraints
             if isinstance(v, source):
-                if schema_has_constraints is None:
-                    schema_has_constraints = _url_schema_has_constraints(url_schema)
-                if not schema_has_constraints:
+                if schema_matches_class_constraints is None:
+                    schema_matches_class_constraints = _url_schema_constraints_match(url_schema, defined_constraints)
+                if schema_matches_class_constraints:
                     return v
                 v = v._url
             elif isinstance(v, _BaseUrl):
@@ -545,15 +546,16 @@ class _BaseMultiHostUrl:
     def __get_pydantic_core_schema__(
         cls, source: type[_BaseMultiHostUrl], handler: GetCoreSchemaHandler
     ) -> core_schema.CoreSchema:
-        url_schema = core_schema.multi_host_url_schema(**cls._constraints.defined_constraints)
-        schema_has_constraints: bool | None = None
+        defined_constraints = cls._constraints.defined_constraints
+        url_schema = core_schema.multi_host_url_schema(**defined_constraints)
+        schema_matches_class_constraints: bool | None = None
 
         def wrap_val(v, h):
-            nonlocal schema_has_constraints
+            nonlocal schema_matches_class_constraints
             if isinstance(v, source):
-                if schema_has_constraints is None:
-                    schema_has_constraints = _url_schema_has_constraints(url_schema)
-                if not schema_has_constraints:
+                if schema_matches_class_constraints is None:
+                    schema_matches_class_constraints = _url_schema_constraints_match(url_schema, defined_constraints)
+                if schema_matches_class_constraints:
                     return v
                 v = v._url
             elif isinstance(v, _BaseMultiHostUrl):
