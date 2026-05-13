@@ -212,8 +212,8 @@ class PydanticPlugin(Plugin):
 
         # Mypy has a quirk for serialization of classes nested in functions. This is
         # a workaround that should work in most cases, until mypy has a better plugin API.
-        if "@" in info.fullname:
-            _, name = info.fullname.rsplit(".", maxsplit=1)
+        if '@' in info.fullname:
+            _, name = info.fullname.rsplit('.', maxsplit=1)
             ctx.api.modules[ctx.api.cur_mod_id].names[name] = SymbolTableNode(GDEF, info)
 
 
