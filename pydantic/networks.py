@@ -322,10 +322,14 @@ class _BaseUrl:
         cls, source: type[_BaseUrl], handler: GetCoreSchemaHandler
     ) -> core_schema.CoreSchema:
         url_schema = core_schema.url_schema(**cls._constraints.defined_constraints)
+        schema_has_constraints: bool | None = None
 
         def wrap_val(v, h):
+            nonlocal schema_has_constraints
             if isinstance(v, source):
-                if not _url_schema_has_constraints(url_schema):
+                if schema_has_constraints is None:
+                    schema_has_constraints = _url_schema_has_constraints(url_schema)
+                if not schema_has_constraints:
                     return v
                 v = v._url
             elif isinstance(v, _BaseUrl):
@@ -542,10 +546,14 @@ class _BaseMultiHostUrl:
         cls, source: type[_BaseMultiHostUrl], handler: GetCoreSchemaHandler
     ) -> core_schema.CoreSchema:
         url_schema = core_schema.multi_host_url_schema(**cls._constraints.defined_constraints)
+        schema_has_constraints: bool | None = None
 
         def wrap_val(v, h):
+            nonlocal schema_has_constraints
             if isinstance(v, source):
-                if not _url_schema_has_constraints(url_schema):
+                if schema_has_constraints is None:
+                    schema_has_constraints = _url_schema_has_constraints(url_schema)
+                if not schema_has_constraints:
                     return v
                 v = v._url
             elif isinstance(v, _BaseMultiHostUrl):
