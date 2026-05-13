@@ -4,6 +4,7 @@ from __future__ import annotations as _annotations
 
 import dataclasses as _dataclasses
 import re
+from collections.abc import Mapping
 from dataclasses import fields
 from functools import lru_cache
 from importlib.metadata import version
@@ -121,6 +122,13 @@ class UrlConstraints:
         for constraint_key, constraint_value in self.defined_constraints.items():
             schema_to_mutate[constraint_key] = constraint_value
         return schema
+
+
+_URL_CONSTRAINT_FIELDS = tuple(field.name for field in fields(UrlConstraints))
+
+
+def _url_schema_has_constraints(schema: Mapping[str, Any]) -> bool:
+    return any(schema.get(field_name) is not None for field_name in _URL_CONSTRAINT_FIELDS)
 
 
 class _BaseUrl:
@@ -313,11 +321,15 @@ class _BaseUrl:
     def __get_pydantic_core_schema__(
         cls, source: type[_BaseUrl], handler: GetCoreSchemaHandler
     ) -> core_schema.CoreSchema:
+        url_schema = core_schema.url_schema(**cls._constraints.defined_constraints)
+
         def wrap_val(v, h):
             if isinstance(v, source):
-                return v
-            if isinstance(v, _BaseUrl):
-                v = str(v)
+                if not _url_schema_has_constraints(url_schema):
+                    return v
+                v = v._url
+            elif isinstance(v, _BaseUrl):
+                v = v._url
             core_url = h(v)
             instance = source.__new__(source)
             instance._url = core_url
@@ -325,7 +337,7 @@ class _BaseUrl:
 
         return core_schema.no_info_wrap_validator_function(
             wrap_val,
-            schema=core_schema.url_schema(**cls._constraints.defined_constraints),
+            schema=url_schema,
             serialization=core_schema.plain_serializer_function_ser_schema(
                 cls.serialize_url, info_arg=True, when_used='always'
             ),
@@ -529,11 +541,15 @@ class _BaseMultiHostUrl:
     def __get_pydantic_core_schema__(
         cls, source: type[_BaseMultiHostUrl], handler: GetCoreSchemaHandler
     ) -> core_schema.CoreSchema:
+        url_schema = core_schema.multi_host_url_schema(**cls._constraints.defined_constraints)
+
         def wrap_val(v, h):
             if isinstance(v, source):
-                return v
-            if isinstance(v, _BaseMultiHostUrl):
-                v = str(v)
+                if not _url_schema_has_constraints(url_schema):
+                    return v
+                v = v._url
+            elif isinstance(v, _BaseMultiHostUrl):
+                v = v._url
             core_url = h(v)
             instance = source.__new__(source)
             instance._url = core_url
@@ -541,7 +557,7 @@ class _BaseMultiHostUrl:
 
         return core_schema.no_info_wrap_validator_function(
             wrap_val,
-            schema=core_schema.multi_host_url_schema(**cls._constraints.defined_constraints),
+            schema=url_schema,
             serialization=core_schema.plain_serializer_function_ser_schema(
                 cls.serialize_url, info_arg=True, when_used='always'
             ),

@@ -1106,6 +1106,16 @@ def test_custom_constraints() -> None:
     with pytest.raises(ValidationError):
         ta.validate_python('ftp://example.com')
 
+    existing_file_url = AnyUrl('file:///etc/passwd')
+    with pytest.raises(ValidationError, match="URL scheme should be 'http' or 'https'"):
+        ta.validate_python(existing_file_url)
+
+    class Model(BaseModel):
+        v: HttpUrl
+
+    with pytest.raises(ValidationError, match="URL scheme should be 'http' or 'https'"):
+        Model.model_validate({'v': existing_file_url})
+
 
 def test_url_constraints_invalid_annotated_type() -> None:
     with pytest.raises(PydanticUserError):
