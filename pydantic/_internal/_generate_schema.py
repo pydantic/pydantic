@@ -16,7 +16,7 @@ from collections.abc import Callable, Generator, Iterable, Iterator, Mapping
 from contextlib import contextmanager
 from copy import copy
 from decimal import Decimal
-from enum import Enum
+from enum import Enum, Flag
 from fractions import Fraction
 from functools import partial
 from inspect import Parameter, _ParameterKind
@@ -416,6 +416,51 @@ class GenerateSchema:
             description = None
         js_updates = {'title': enum_type.__name__, 'description': description}
         js_updates = {k: v for k, v in js_updates.items() if v is not None}
+
+        if issubclass(enum_type, Flag):
+            # `Flag` (and `IntFlag`) instances can be bitwise OR combinations of
+            # declared members, so `enum_schema`'s strict declared-cases check is
+            # too narrow — it rejects values like `(A | B)` whenever `A | B` isn't
+            # a named member. Use a custom validator that constructs through
+            # `enum_type(int(value))`, which accepts both declared and composite
+            # values, and serialize back to the underlying integer (so dict-key
+            # JSON roundtrips work, since JSON dict keys are always strings).
+            def get_json_schema_flag(_: CoreSchema, handler: GetJsonSchemaHandler) -> JsonSchemaValue:
+                schema: JsonSchemaValue = {'type': 'integer', 'title': enum_type.__name__}
+                if description is not None:
+                    schema['description'] = description
+                if cases:
+                    schema['enum'] = [c.value for c in cases]
+                return schema
+
+            def validate_flag(value: Any) -> Any:
+                if isinstance(value, enum_type):
+                    return value
+                if isinstance(value, str):
+                    try:
+                        value = int(value)
+                    except ValueError:
+                        raise ValueError(
+                            f'Input should be a valid {enum_type.__name__} value; '
+                            f'got string {value!r} which is not an integer.'
+                        ) from None
+                try:
+                    return enum_type(value)
+                except (ValueError, TypeError) as e:
+                    raise ValueError(
+                        f'Input should be a {enum_type.__name__} member or a bitwise '
+                        f'OR combination of members; got {value!r}.'
+                    ) from e
+
+            return core_schema.no_info_plain_validator_function(
+                validate_flag,
+                ref=enum_ref,
+                serialization=core_schema.plain_serializer_function_ser_schema(
+                    lambda v: v.value if isinstance(v, enum_type) else v,
+                    return_schema=core_schema.int_schema(),
+                ),
+                metadata={'pydantic_js_functions': [get_json_schema_flag]},
+            )
 
         sub_type: Literal['str', 'int', 'float'] | None = None
         if issubclass(enum_type, int):

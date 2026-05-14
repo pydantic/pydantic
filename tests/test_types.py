@@ -1852,6 +1852,77 @@ def test_enum_with_no_cases() -> None:
     assert json_schema['properties']['e']['enum'] == []
 
 
+def test_flag_roundtrip_including_composites() -> None:
+    """`Flag` (and `IntFlag`) instances — including bitwise OR composites of
+    declared members — must roundtrip through JSON serialization, including
+    when used as dict keys (where JSON forces them to strings).
+
+    Regression test for https://github.com/pydantic/pydantic/issues/12448.
+    """
+    from enum import Flag, IntFlag, auto
+
+    class Diet(Flag):
+        ANIMALS = auto()
+        LEAVES = auto()
+        FRUIT = auto()
+        OMNIVORE = ANIMALS | LEAVES | FRUIT
+        HERBIVORE = LEAVES | FRUIT
+
+    class Config(BaseModel):
+        diet: dict[Diet, float]
+
+    composite = Diet.FRUIT | Diet.ANIMALS  # value 5, not a declared member
+    original = {Diet.OMNIVORE: 2.0, Diet.ANIMALS: 3.0, Diet.HERBIVORE: 5.0, composite: 7.0}
+    model = Config.model_validate({'diet': original})
+
+    # roundtrip via JSON
+    dumped = model.model_dump_json()
+    reloaded = Config.model_validate_json(dumped)
+    assert reloaded.diet == original
+
+    # roundtrip via python dict (already worked, but guard against regressions)
+    py_dumped = model.model_dump()
+    reloaded_py = Config.model_validate(py_dumped)
+    assert reloaded_py.diet == original
+
+    # also exercise IntFlag, which had the same composite-rejection bug
+    class IFDiet(IntFlag):
+        ANIMALS = auto()
+        LEAVES = auto()
+        FRUIT = auto()
+
+    class IFConfig(BaseModel):
+        diet: dict[IFDiet, float]
+
+    if_composite = IFDiet.ANIMALS | IFDiet.FRUIT  # value 5
+    if_original = {IFDiet.ANIMALS: 1.0, if_composite: 2.0}
+    if_model = IFConfig.model_validate({'diet': if_original})
+    if_dumped = if_model.model_dump_json()
+    if_reloaded = IFConfig.model_validate_json(if_dumped)
+    assert if_reloaded.diet == if_original
+
+
+def test_flag_rejects_invalid_input() -> None:
+    """`Flag` validation must surface a clear error on values that aren't ints
+    (or bitwise combinations of members)."""
+    from enum import Flag, auto
+
+    class Diet(Flag):
+        ANIMALS = auto()
+        LEAVES = auto()
+
+    class Config(BaseModel):
+        d: Diet
+
+    with pytest.raises(ValidationError):
+        Config.model_validate({'d': 'not-a-flag'})
+
+    # An integer outside the valid OR-combination space (here: > 2^n-1 = 3)
+    # raises because `Flag(int)` rejects it.
+    with pytest.raises(ValidationError):
+        Config.model_validate({'d': 99})
+
+
 @pytest.mark.parametrize(
     'kwargs,type_,a',
     [
