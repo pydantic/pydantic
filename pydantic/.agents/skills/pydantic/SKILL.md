@@ -18,22 +18,28 @@ Do this:
 ```python
 from pydantic import BaseModel, Field
 
+
 class User(BaseModel):
     id: int
     name: str = 'John Doe'
-    email: str = Field(pattern=r'^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$')
+    email: str = Field(
+        pattern=r'^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$'
+    )
 ```
 
 Instead of this:
 
-```python
+```python {test="skip" lint="skip"}
 # DO NOT DO THIS - V1 patterns
 from pydantic import BaseModel, Field
+
 
 class User(BaseModel):
     id: int
     name: str = 'John Doe'
-    email: str = Field(regex=r'^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$')  # regex is deprecated, use pattern
+    email: str = Field(
+        regex=r'^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$'
+    )  # regex is deprecated, use pattern
 ```
 
 ## Use `Annotated` for Field Metadata
@@ -49,6 +55,7 @@ from typing import Annotated
 
 from pydantic import BaseModel, Field
 
+
 class Item(BaseModel):
     name: Annotated[str, Field(min_length=1, max_length=100)]
     price: Annotated[float, Field(gt=0)]
@@ -60,6 +67,7 @@ Instead of this:
 ```python
 # DO NOT DO THIS
 from pydantic import BaseModel, Field
+
 
 class Item(BaseModel):
     name: str = Field(min_length=1, max_length=100)
@@ -76,9 +84,10 @@ Use modern Python type hints from `collections.abc` and built-in generics instea
 Do this:
 
 ```python
-from collections.abc import Sequence, Mapping
+from collections.abc import Mapping, Sequence
 
 from pydantic import BaseModel
+
 
 class User(BaseModel):
     name: str
@@ -92,14 +101,15 @@ Instead of this:
 
 ```python
 # DO NOT DO THIS
-from typing import List, Dict, Sequence, Mapping
+from collections.abc import Mapping, Sequence
 
 from pydantic import BaseModel
 
+
 class User(BaseModel):
     name: str
-    scores: List[int]  # Use list[int] instead
-    metadata: Dict[str, str]  # Use dict[str, str] instead
+    scores: list[int]  # Use list[int] instead
+    metadata: dict[str, str]  # Use dict[str, str] instead
     items: Sequence[str]
     mapping: Mapping[str, int]
 ```
@@ -115,9 +125,11 @@ Do this:
 ```python
 from pydantic import BaseModel
 
+
 class User(BaseModel):
     id: int
     name: str
+
 
 user = User(id=1, name='Alice')
 
@@ -133,7 +145,7 @@ user_dict = user.model_dump(include={'id'}, exclude_none=True, by_alias=True)
 
 Instead of this:
 
-```python
+```python {test="skip" lint="skip"}
 # DO NOT DO THIS - V1 methods are deprecated
 user_dict = user.dict()  # Deprecated, use model_dump()
 user_json = user.json()  # Deprecated, use model_dump_json()
@@ -150,9 +162,11 @@ Do this:
 ```python
 from pydantic import BaseModel
 
+
 class User(BaseModel):
     id: int
     name: str
+
 
 # Validate from dict
 data = {'id': 1, 'name': 'Alice'}
@@ -165,7 +179,7 @@ user = User.model_validate_json(json_data)
 
 Instead of this:
 
-```python
+```python {test="skip" lint="skip"}
 # DO NOT DO THIS - V1 methods are deprecated
 user = User.parse_obj(data)  # Deprecated, use model_validate()
 user = User.parse_raw(json_data)  # Deprecated, use model_validate_json()
@@ -180,7 +194,8 @@ The `@validator` decorator is deprecated. Always use `@field_validator` for fiel
 Do this:
 
 ```python
-from pydantic import BaseModel, field_validator, ValidationInfo
+from pydantic import BaseModel, ValidationInfo, field_validator
+
 
 class User(BaseModel):
     name: str
@@ -203,9 +218,10 @@ class User(BaseModel):
 
 Instead of this:
 
-```python
+```python {test="skip" lint="skip"}
 # DO NOT DO THIS - @validator is deprecated
 from pydantic import BaseModel, validator
+
 
 class User(BaseModel):
     name: str
@@ -226,10 +242,10 @@ class User(BaseModel):
 
 ### Field Validator Key Differences
 
-- Must use `@classmethod`
-- Signature is cleaner: no `values`, `config`, or `field` parameters
-- Use `ValidationInfo` for accessing context if needed
-- No `each_item` parameter; use `Annotated` for container item validation
+* Must use `@classmethod`
+* Signature is cleaner: no `values`, `config`, or `field` parameters
+* Use `ValidationInfo` for accessing context if needed
+* No `each_item` parameter; use `Annotated` for container item validation
 
 ## Use `@model_validator` Instead of `@root_validator`
 
@@ -240,9 +256,8 @@ The `@root_validator` decorator is deprecated. Use `@model_validator` for model-
 Do this:
 
 ```python
-from typing import Any
-
 from pydantic import BaseModel, model_validator
+
 
 class User(BaseModel):
     password: str
@@ -262,6 +277,7 @@ from typing import Any
 
 from pydantic import BaseModel, model_validator
 
+
 class User(BaseModel):
     first_name: str
     last_name: str
@@ -271,15 +287,18 @@ class User(BaseModel):
     @classmethod
     def set_full_name(cls, data: Any) -> Any:
         if isinstance(data, dict) and 'full_name' not in data:
-            data['full_name'] = f"{data.get('first_name', '')} {data.get('last_name', '')}".strip()
+            data['full_name'] = (
+                f"{data.get('first_name', '')} {data.get('last_name', '')}".strip()
+            )
         return data
 ```
 
 Instead of this:
 
-```python
+```python {test="skip" lint="skip"}
 # DO NOT DO THIS - @root_validator is deprecated
 from pydantic import BaseModel, root_validator
+
 
 class User(BaseModel):
     password: str
@@ -303,6 +322,7 @@ Do this:
 ```python
 from pydantic import BaseModel, ConfigDict
 
+
 class User(BaseModel):
     model_config = ConfigDict(
         str_strip_whitespace=True,
@@ -316,9 +336,10 @@ class User(BaseModel):
 
 Instead of this:
 
-```python
+```python {test="skip" lint="skip"}
 # DO NOT DO THIS - class Config is deprecated
 from pydantic import BaseModel
+
 
 class User(BaseModel):
     name: str
@@ -373,7 +394,7 @@ schema = adapter.json_schema()
 
 Instead of this:
 
-```python
+```python {test="skip" lint="skip"}
 # DO NOT DO THIS - parse_obj_as is deprecated
 from pydantic import parse_obj_as  # Deprecated
 
@@ -384,21 +405,21 @@ data = parse_obj_as(list[int], ['1', '2', '3'])
 
 [](#use-rootmodel-for-custom-root-types)
 
-For models that should validate a single type (like a list or dict), use `RootModel`.
+For models that should validate a single type (like a list or dict), use `RootModel`. For a constrained root list, use a separate model class name (for example `TagsConstrained` below).
 
 Do this:
 
 ```python
-from pydantic import RootModel
+from typing import Annotated
+
+from pydantic import Field, RootModel
+
 
 class Tags(RootModel[list[str]]):
     pass
 
-# Or with constraints
-from typing import Annotated
-from pydantic import Field
 
-class Tags(RootModel[list[Annotated[str, Field(min_length=1)]]]):
+class TagsConstrained(RootModel[list[Annotated[str, Field(min_length=1)]]]):
     def __iter__(self):
         return iter(self.root)
 
@@ -408,9 +429,10 @@ class Tags(RootModel[list[Annotated[str, Field(min_length=1)]]]):
 
 Instead of this:
 
-```python
+```python {test="skip" lint="skip"}
 # DO NOT DO THIS - __root__ is removed in V2
 from pydantic import BaseModel
+
 
 class Tags(BaseModel):
     __root__: list[str]  # Removed in V2
@@ -431,8 +453,10 @@ from pydantic import BaseModel
 
 T = TypeVar('T')
 
+
 class Container(BaseModel, Generic[T]):
     item: T
+
 
 # Usage
 int_container = Container[int](item=42)
@@ -443,7 +467,6 @@ Instead of this:
 
 ```python
 # DO NOT DO THIS - GenericModel is removed in V2
-from pydantic.generics import GenericModel  # Removed in V2
 ```
 
 ## Settings Management
@@ -456,15 +479,17 @@ Do this:
 
 ```python
 # pip install pydantic-settings
-from pydantic_settings import BaseSettings
+from pydantic_settings import BaseSettings, SettingsConfigDict
+
 
 class Settings(BaseSettings):
-    database_url: str
-    debug: bool = False
-    api_key: str
+    model_config = SettingsConfigDict(env_file='.env')
 
-    class Config:
-        env_file = '.env'
+    # Example defaults so this snippet runs in docs tests; in apps omit defaults and load from the environment
+    database_url: str = 'postgres://localhost/db'
+    debug: bool = False
+    api_key: str = 'dev-placeholder'
+
 
 settings = Settings()
 ```
@@ -473,7 +498,6 @@ Instead of this:
 
 ```python
 # DO NOT DO THIS - BaseSettings moved to pydantic-settings
-from pydantic import BaseSettings  # Moved in V2
 ```
 
 ## Use `Field()` for Constraints and Metadata
@@ -489,8 +513,11 @@ from typing import Annotated
 
 from pydantic import BaseModel, Field
 
+
 class Product(BaseModel):
-    name: Annotated[str, Field(min_length=1, max_length=100, description='Product name')]
+    name: Annotated[
+        str, Field(min_length=1, max_length=100, description='Product name')
+    ]
     price: Annotated[float, Field(gt=0, le=1000000, description='Price in USD')]
     quantity: Annotated[int, Field(ge=0, default=0)]
     sku: Annotated[str | None, Field(default=None, pattern=r'^[A-Z]{3}-\d{4}$')]
@@ -508,8 +535,10 @@ Do this:
 from typing import Any
 
 from pydantic_core import core_schema
+
 from pydantic import GetCoreSchemaHandler, GetJsonSchemaHandler
 from pydantic.json_schema import JsonSchemaValue
+
 
 class PhoneNumber(str):
     @classmethod
@@ -533,7 +562,7 @@ class PhoneNumber(str):
 
 Instead of this:
 
-```python
+```python {test="skip" lint="skip"}
 # DO NOT DO THIS - V1 custom type methods are removed
 class PhoneNumber(str):
     @classmethod
@@ -561,29 +590,40 @@ Do this:
 ```python
 from pydantic import BaseModel
 
+
 class User(BaseModel):
     id: int
     name: str = 'Unknown'
     email: str
 
+
 user = User(id=1, email='alice@example.com')
 
 # Get field definitions
 print(User.model_fields)
+"""
+{
+    'id': FieldInfo(annotation=int, required=True),
+    'name': FieldInfo(annotation=str, required=False, default='Unknown'),
+    'email': FieldInfo(annotation=str, required=True),
+}
+"""
 # Returns: {'id': FieldInfo(...), 'name': FieldInfo(...), 'email': FieldInfo(...)}
 
 # Get fields that were explicitly set
 print(user.model_fields_set)
+#> {'email', 'id'}
 # Returns: {'id', 'email'}
 
 # Check if field is required
 print(User.model_fields['name'].is_required())
+#> False
 # Returns: False
 ```
 
 Instead of this:
 
-```python
+```python {test="skip" lint="skip"}
 # DO NOT DO THIS - V1 attributes are removed/deprecated
 print(User.__fields__)  # Removed, use model_fields
 print(user.__fields_set__)  # Deprecated, use model_fields_set
@@ -600,9 +640,11 @@ Do this:
 ```python
 from pydantic import BaseModel
 
+
 class User(BaseModel):
     id: int
     name: str
+
 
 # Fast construction without validation (use with caution)
 user = User.model_construct(id=1, name='Alice')
@@ -610,7 +652,7 @@ user = User.model_construct(id=1, name='Alice')
 
 Instead of this:
 
-```python
+```python {test="skip" lint="skip"}
 # DO NOT DO THIS - construct() is deprecated
 user = User.construct(id=1, name='Alice')  # Deprecated
 ```
@@ -627,11 +669,13 @@ Do this:
 from pydantic import TypeAdapter
 from pydantic.dataclasses import dataclass
 
+
 @dataclass
 class InventoryItem:
     name: str
     unit_price: float
     quantity_on_hand: int = 0
+
 
 # Validate
 item = InventoryItem(name='Widget', unit_price=3.50, quantity_on_hand=10)
@@ -650,25 +694,24 @@ Pydantic V2 follows `dataclass`-like behavior for field requirements.
 Do this:
 
 ```python
-from typing import Optional
-
 from pydantic import BaseModel
+
 
 class Example(BaseModel):
     # Required, cannot be None
     field1: str
 
     # Required, can be None (Optional does NOT provide a default!)
-    field2: Optional[str]
+    field2: str | None
 
     # Not required, defaults to None
-    field3: Optional[str] = None
+    field3: str | None = None
 
     # Not required, has default value
     field4: str = 'default'
 
     # Not required, can be None, has default
-    field5: Optional[str] = 'default'
+    field5: str | None = 'default'
 ```
 
 ## Do Not Use Ellipsis for Required Fields
@@ -682,18 +725,22 @@ Do this:
 ```python
 from pydantic import BaseModel
 
+
 class User(BaseModel):
     name: str  # Required - no default
-    age: int   # Required - no default
+    age: int  # Required - no default
 ```
 
 Instead of this:
 
-```python
+```python {test="skip" lint="skip"}
 # DO NOT DO THIS - Ellipsis is unnecessary
+from pydantic import BaseModel
+
+
 class User(BaseModel):
     name: str = ...  # Unnecessary
-    age: int = ...   # Unnecessary
+    age: int = ...  # Unnecessary
 ```
 
 ## ValidationError Handling
@@ -707,9 +754,11 @@ Do this:
 ```python
 from pydantic import BaseModel, ValidationError
 
+
 class User(BaseModel):
     id: int
     name: str
+
 
 try:
     user = User(id='not an int', name='Alice')
@@ -717,9 +766,15 @@ except ValidationError as e:
     # Access structured error information
     for error in e.errors():
         print(f"Field: {error['loc']}, Error: {error['msg']}")
+        """
+        Field: ('id',), Error: Input should be a valid integer, unable to parse string as an integer
+        """
 
     # Or get as JSON
     print(e.json())
+    """
+    [{"type":"int_parsing","loc":["id"],"msg":"Input should be a valid integer, unable to parse string as an integer","input":"not an int","url":"https://errors.pydantic.dev/2/v/int_parsing"}]
+    """
 ```
 
 ## Model Rebuilding
@@ -733,11 +788,14 @@ Do this:
 ```python
 from pydantic import BaseModel
 
+
 class Foo(BaseModel):
     bar: 'Bar'
 
+
 class Bar(BaseModel):
     value: int
+
 
 # Rebuild to resolve forward references
 Foo.model_rebuild()
@@ -745,7 +803,7 @@ Foo.model_rebuild()
 
 Instead of this:
 
-```python
+```python {test="skip" lint="skip"}
 # DO NOT DO THIS - update_forward_refs() is deprecated
 Foo.update_forward_refs()  # Deprecated
 ```
