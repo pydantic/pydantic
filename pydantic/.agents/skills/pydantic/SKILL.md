@@ -477,7 +477,7 @@ Instead of this:
 
 Do this:
 
-```python
+```python {test="skip"}
 # pip install pydantic-settings
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
@@ -485,7 +485,7 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_file='.env')
 
-    # Example defaults so this snippet runs in docs tests; in apps omit defaults and load from the environment
+    # Example defaults for illustration; in real apps omit defaults and load from the environment
     database_url: str = 'postgres://localhost/db'
     debug: bool = False
     api_key: str = 'dev-placeholder'

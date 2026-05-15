@@ -2258,7 +2258,6 @@ testing-extra = [
     { name = "ansi2html" },
     { name = "cloudpickle" },
     { name = "devtools" },
-    { name = "pydantic-settings" },
     { name = "pytest-memray", marker = "platform_python_implementation == 'CPython' and sys_platform != 'win32'" },
     { name = "sqlalchemy" },
 ]
@@ -2370,7 +2369,6 @@ testing-extra = [
     { name = "ansi2html" },
     { name = "cloudpickle" },
     { name = "devtools" },
-    { name = "pydantic-settings" },
     { name = "pytest-memray", marker = "platform_python_implementation == 'CPython' and sys_platform != 'win32'" },
     { name = "sqlalchemy" },
 ]
