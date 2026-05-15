@@ -114,6 +114,7 @@ testing-extra = [
     'devtools',
     # used in docs tests
     'sqlalchemy',
+    'pydantic-settings',
     'pytest-memray; platform_python_implementation == "CPython" and platform_system != "Windows"',
 ]
 typechecking = [
