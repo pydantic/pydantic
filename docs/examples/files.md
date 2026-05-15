@@ -84,7 +84,7 @@ except ValidationError as err:
     Input should be greater than 0 [type=greater_than, input_value=-30, input_type=int]
         For further information visit https://errors.pydantic.dev/2.10/v/greater_than
     email
-    value is not a valid email address: An email address must have an @-sign. [type=value_error, input_value='not-an-email-address', input_type=str]
+    value is not a valid email address: An email address must have an @-sign. [type=email_error, input_value='not-an-email-address', input_type=str]
     """
 ```
 

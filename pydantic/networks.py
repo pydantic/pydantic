@@ -1333,9 +1333,9 @@ def validate_email(value: str) -> tuple[str, str]:
 
     if len(value) > MAX_EMAIL_LENGTH:
         raise PydanticCustomError(
-            'value_error',
-            'value is not a valid email address: {reason}',
-            {'reason': f'Length must not exceed {MAX_EMAIL_LENGTH} characters'},
+            'email_error',
+            'value is not a valid email address: {error}',
+            {'error': f'Length must not exceed {MAX_EMAIL_LENGTH} characters'},
         )
 
     m = pretty_email_regex.fullmatch(value)
@@ -1350,7 +1350,7 @@ def validate_email(value: str) -> tuple[str, str]:
         parts = email_validator.validate_email(email, check_deliverability=False)
     except email_validator.EmailNotValidError as e:
         raise PydanticCustomError(
-            'value_error', 'value is not a valid email address: {reason}', {'reason': str(e.args[0])}
+            'email_error', 'value is not a valid email address: {error}', {'error': str(e.args[0])}
         ) from e
 
     email = parts.normalized

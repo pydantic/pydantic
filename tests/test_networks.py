@@ -978,6 +978,23 @@ def test_address_invalid(value: str, reason: str | None):
         validate_email(value)
 
 
+@pytest.mark.skipif(not email_validator, reason='email_validator not installed')
+@pytest.mark.parametrize(
+    'value',
+    [
+        'foobar',
+        'a' * (2048 + 1),
+    ],
+    ids=['parse_failure', 'too_long'],
+)
+def test_email_error_type_and_ctx(value: str):
+    with pytest.raises(PydanticCustomError) as exc_info:
+        validate_email(value)
+    assert exc_info.value.type == 'email_error'
+    assert 'error' in exc_info.value.context
+    assert 'reason' not in exc_info.value.context
+
+
 def test_email_validator_not_installed(mocker):
     mocker.patch('pydantic.networks.email_validator', None)
     m = mocker.patch('pydantic.networks.import_email_validator', side_effect=ImportError)
