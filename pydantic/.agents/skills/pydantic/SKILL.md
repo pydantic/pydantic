@@ -58,7 +58,7 @@ class User(BaseModel):
 
 Instead of this:
 
-```python
+```python {test="skip" lint="skip"}
 # DO NOT DO THIS — legacy typing generics
 from typing import Dict, List
 
@@ -69,7 +69,6 @@ class User(BaseModel):
     name: str
     scores: List[int]
     metadata: Dict[str, str]
-
 ```
 
 ## Serialization: Use `model_dump()` and `model_dump_json()`
@@ -146,13 +145,12 @@ The `@validator` decorator is deprecated. Always use `@field_validator` for fiel
 Do this:
 
 ```python
-from pydantic import BaseModel, ValidationInfo, field_validator
+from pydantic import BaseModel, field_validator
 
 
 class User(BaseModel):
     name: str
     age: int
-
 
     @field_validator('age')
     @classmethod
@@ -265,6 +263,7 @@ Do this:
 
 ```python
 from pydantic import TypeAdapter
+
 adapter = TypeAdapter(list[int])
 data = adapter.validate_python(['1', '2', '3'])  # [1, 2, 3]
 ```
@@ -286,9 +285,13 @@ Do this:
 
 ```python
 from pydantic import RootModel
+
+# Type alias
 Tags = RootModel[list[str]]
-# or
-class Tags(RootModel[list[str]]):
+
+
+# Or subclass
+class TagsModel(RootModel[list[str]]):
     pass
 ```
 
@@ -379,8 +382,7 @@ from typing import Any
 
 from pydantic_core import core_schema
 
-from pydantic import GetCoreSchemaHandler, GetJsonSchemaHandler
-from pydantic.json_schema import JsonSchemaValue
+from pydantic import GetCoreSchemaHandler
 
 
 class PhoneNumber(str):
