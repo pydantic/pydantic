@@ -7274,13 +7274,9 @@ def test_annotated_optional_with_before_validator_keeps_pattern_in_json_schema()
     JSON schema when a field used Optional[Annotated[str, Validator(...)]]
     combined with a Field(pattern=...) constraint.
     """
-    from typing import Annotated, Optional, Union
-
-    from pydantic import BaseModel, BeforeValidator, Field
-
     regex = r'^[\da-fA-F]{32}$'
 
-    def _convert_bytes_to_str(value: Union[str, bytes]) -> str:
+    def _convert_bytes_to_str(value: str | bytes) -> str:
         if isinstance(value, bytes):
             return value.decode('utf8')
         return value
@@ -7289,7 +7285,7 @@ def test_annotated_optional_with_before_validator_keeps_pattern_in_json_schema()
 
     class TestModel(BaseModel):
         annotated_mandatory: bytes_to_str = Field(..., pattern=regex)
-        annotated_optional: Optional[bytes_to_str] = Field(None, pattern=regex)
+        annotated_optional: bytes_to_str | None = Field(None, pattern=regex)
 
     schema = TestModel.model_json_schema()
     props = schema['properties']
