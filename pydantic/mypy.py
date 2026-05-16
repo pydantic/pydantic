@@ -15,6 +15,7 @@ from mypy.nodes import (
     ARG_OPT,
     ARG_POS,
     ARG_STAR2,
+    GDEF,
     INVARIANT,
     MDEF,
     Argument,
@@ -208,6 +209,12 @@ class PydanticPlugin(Plugin):
         info.metaclass_type = base_info.metaclass_type
 
         ctx.api.add_symbol_table_node(ctx.name, SymbolTableNode(MDEF, info))
+
+        # Mypy has a quirk for serialization of classes nested in functions. This is
+        # a workaround that should work in most cases, until mypy has a better plugin API.
+        if '@' in info.fullname:
+            _, name = info.fullname.rsplit('.', maxsplit=1)
+            ctx.api.modules[ctx.api.cur_mod_id].names[name] = SymbolTableNode(GDEF, info)
 
 
 class PydanticPluginConfig:

@@ -1519,7 +1519,7 @@ Model = func()
 
 
 @pytest.mark.skipif(
-    platform.python_implementation() == 'PyPy' and sys.version_info < (3, 11),
+    platform.python_implementation() == 'PyPy',
     reason='Flaky on PyPy',
 )
 def test_implicit_type_alias_recursive_error_message() -> None:
