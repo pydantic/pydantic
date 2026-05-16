@@ -9,8 +9,6 @@ Official Pydantic skill to write code with best practices, keeping up to date wi
 
 ## Always Use Pydantic V2 Patterns
 
-[](#always-use-pydantic-v2-patterns)
-
 Pydantic V2 is the current production release. It offers significant performance improvements, new features, and cleaner APIs. **Always use V2 patterns** and avoid V1 compatibility code.
 
 Do this:
@@ -44,8 +42,6 @@ class User(BaseModel):
 
 ## Use `Annotated` for Field Metadata
 
-[](#use-annotated-for-field-metadata)
-
 Always prefer `typing.Annotated` for adding field metadata and constraints. It keeps type annotations clean and compatible with type checkers.
 
 Do this:
@@ -76,8 +72,6 @@ class Item(BaseModel):
 ```
 
 ## Use Modern Type Hints
-
-[](#use-modern-type-hints)
 
 Use modern Python type hints from `collections.abc` and built-in generics instead of `typing` module imports.
 
@@ -116,8 +110,6 @@ class User(BaseModel):
 
 ## Serialization: Use `model_dump()` and `model_dump_json()`
 
-[](#serialization-use-model_dump-and-model_dump_json)
-
 Use V2 serialization methods. The V1 methods are deprecated.
 
 Do this:
@@ -153,8 +145,6 @@ user_json = user.json()  # Deprecated, use model_dump_json()
 
 ## Validation: Use `model_validate()` and `model_validate_json()`
 
-[](#validation-use-model_validate-and-model_validate_json)
-
 Use V2 validation class methods instead of deprecated V1 methods.
 
 Do this:
@@ -186,8 +176,6 @@ user = User.parse_raw(json_data)  # Deprecated, use model_validate_json()
 ```
 
 ## Use `@field_validator` Instead of `@validator`
-
-[](#use-field_validator-instead-of-validator)
 
 The `@validator` decorator is deprecated. Always use `@field_validator` for field-level validation.
 
@@ -242,14 +230,12 @@ class User(BaseModel):
 
 ### Field Validator Key Differences
 
-* Must use `@classmethod`
-* Signature is cleaner: no `values`, `config`, or `field` parameters
-* Use `ValidationInfo` for accessing context if needed
-* No `each_item` parameter; use `Annotated` for container item validation
+- Must use `@classmethod`
+- Signature is cleaner: no `values`, `config`, or `field` parameters
+- Use `ValidationInfo` for accessing context if needed
+- No `each_item` parameter; use `Annotated` for container item validation
 
 ## Use `@model_validator` Instead of `@root_validator`
-
-[](#use-model_validator-instead-of-root_validator)
 
 The `@root_validator` decorator is deprecated. Use `@model_validator` for model-level validation.
 
@@ -313,8 +299,6 @@ class User(BaseModel):
 
 ## Use `model_config` with `ConfigDict`
 
-[](#use-model_config-with-configdict)
-
 The `class Config:` pattern is deprecated. Use `model_config` with `ConfigDict`.
 
 Do this:
@@ -353,22 +337,22 @@ class User(BaseModel):
 
 ### Common Config Migrations
 
-| V1 (Deprecated) | V2 (Use This) |
-|----------------|---------------|
-| `allow_population_by_field_name` | `populate_by_name` |
-| `anystr_lower` | `str_to_lower` |
-| `anystr_strip_whitespace` | `str_strip_whitespace` |
-| `anystr_upper` | `str_to_upper` |
-| `orm_mode` | `from_attributes` |
-| `schema_extra` | `json_schema_extra` |
-| `validate_all` | `validate_default` |
-| `max_anystr_length` | `str_max_length` |
-| `min_anystr_length` | `str_min_length` |
-| `underscore_attrs_are_private` | Removed (always True) |
+
+| V1 (Deprecated)                  | V2 (Use This)          |
+| -------------------------------- | ---------------------- |
+| `allow_population_by_field_name` | `populate_by_name`     |
+| `anystr_lower`                   | `str_to_lower`         |
+| `anystr_strip_whitespace`        | `str_strip_whitespace` |
+| `anystr_upper`                   | `str_to_upper`         |
+| `orm_mode`                       | `from_attributes`      |
+| `schema_extra`                   | `json_schema_extra`    |
+| `validate_all`                   | `validate_default`     |
+| `max_anystr_length`              | `str_max_length`       |
+| `min_anystr_length`              | `str_min_length`       |
+| `underscore_attrs_are_private`   | Removed (always True)  |
+
 
 ## Use `TypeAdapter` for Non-Model Types
-
-[](#use-typeadapter-for-non-model-types)
 
 For validating, serializing, or generating JSON schemas for arbitrary types (not just `BaseModel` subclasses), use `TypeAdapter`.
 
@@ -402,8 +386,6 @@ data = parse_obj_as(list[int], ['1', '2', '3'])
 ```
 
 ## Use `RootModel` for Custom Root Types
-
-[](#use-rootmodel-for-custom-root-types)
 
 For models that should validate a single type (like a list or dict), use `RootModel`. For a constrained root list, use a separate model class name (for example `TagsConstrained` below).
 
@@ -440,11 +422,7 @@ class Tags(BaseModel):
 
 ## Generic Models
 
-[](#generic-models)
-
 Generic models no longer require `GenericModel`. Simply inherit from `BaseModel` and `typing.Generic`.
-
-Do this:
 
 ```python
 from typing import Generic, TypeVar
@@ -460,18 +438,10 @@ class Container(BaseModel, Generic[T]):
 
 # Usage
 int_container = Container[int](item=42)
-str_container = Container[str](item='hello')
-```
-
-Instead of this:
-
-```python
-# DO NOT DO THIS - GenericModel is removed in V2
+str_container = Container[str]
 ```
 
 ## Settings Management
-
-[](#settings-management)
 
 `BaseSettings` has been moved to the `pydantic-settings` package. Install it separately.
 
@@ -494,15 +464,7 @@ class Settings(BaseSettings):
 settings = Settings()
 ```
 
-Instead of this:
-
-```python
-# DO NOT DO THIS - BaseSettings moved to pydantic-settings
-```
-
 ## Use `Field()` for Constraints and Metadata
-
-[](#use-field-for-constraints-and-metadata)
 
 Use `Field()` for adding constraints, defaults, and metadata to model fields.
 
@@ -525,9 +487,7 @@ class Product(BaseModel):
 
 ## Custom Types with `__get_pydantic_core_schema__`
 
-[](#custom-types-with-get_pydantic_core_schema)
-
-For custom types, implement `__get_pydantic_core_schema__` and `__get_pydantic_json_schema__`.
+For custom types, implement `__get_pydantic_core_schema__`.
 
 Do this:
 
@@ -548,16 +508,6 @@ class PhoneNumber(str):
         handler: GetCoreSchemaHandler,
     ) -> core_schema.CoreSchema:
         return core_schema.str_schema(pattern=r'^\+?[1-9]\d{1,14}$')
-
-    @classmethod
-    def __get_pydantic_json_schema__(
-        cls,
-        core_schema: core_schema.CoreSchema,
-        handler: GetJsonSchemaHandler,
-    ) -> JsonSchemaValue:
-        json_schema = handler(core_schema)
-        json_schema.update(type='string', format='phone')
-        return json_schema
 ```
 
 Instead of this:
@@ -568,22 +518,11 @@ class PhoneNumber(str):
     @classmethod
     def __get_validators__(cls):
         yield cls.validate
-
-    @classmethod
-    def validate(cls, v):
-        # ... validation logic
-        return v
-
-    @classmethod
-    def __modify_schema__(cls, field_schema):
-        field_schema.update(format='phone')
 ```
 
 ## Accessing Model Fields
 
-[](#accessing-model-fields)
-
-Use `model_fields` and `model_fields_set` instead of deprecated V1 attributes.
+Use `model_fields` instead of `fields`.
 
 Do this:
 
@@ -610,11 +549,6 @@ print(User.model_fields)
 """
 # Returns: {'id': FieldInfo(...), 'name': FieldInfo(...), 'email': FieldInfo(...)}
 
-# Get fields that were explicitly set
-print(user.model_fields_set)
-#> {'email', 'id'}
-# Returns: {'id', 'email'}
-
 # Check if field is required
 print(User.model_fields['name'].is_required())
 #> False
@@ -626,12 +560,9 @@ Instead of this:
 ```python {test="skip" lint="skip"}
 # DO NOT DO THIS - V1 attributes are removed/deprecated
 print(User.__fields__)  # Removed, use model_fields
-print(user.__fields_set__)  # Deprecated, use model_fields_set
 ```
 
 ## Model Construction
-
-[](#model-construction)
 
 Use `model_construct()` for creating models without validation when you trust the data.
 
@@ -659,8 +590,6 @@ user = User.construct(id=1, name='Alice')  # Deprecated
 
 ## Dataclasses
 
-[](#dataclasses)
-
 Pydantic supports standard library dataclasses with validation.
 
 Do this:
@@ -686,8 +615,6 @@ schema = adapter.json_schema()
 ```
 
 ## Required, Optional, and Nullable Fields
-
-[](#required-optional-and-nullable-fields)
 
 Pydantic V2 follows `dataclass`-like behavior for field requirements.
 
@@ -716,8 +643,6 @@ class Example(BaseModel):
 
 ## Do Not Use Ellipsis for Required Fields
 
-[](#do-not-use-ellipsis-for-required-fields)
-
 Do not use `...` (Ellipsis) to mark fields as required. Simply omit the default value.
 
 Do this:
@@ -744,8 +669,6 @@ class User(BaseModel):
 ```
 
 ## ValidationError Handling
-
-[](#validationerror-handling)
 
 Use `ValidationError` for catching and handling validation errors.
 
@@ -779,8 +702,6 @@ except ValidationError as e:
 
 ## Model Rebuilding
 
-[](#model-rebuilding)
-
 Use `model_rebuild()` to rebuild models with forward references or after modifications.
 
 Do this:
@@ -809,8 +730,6 @@ Foo.update_forward_refs()  # Deprecated
 ```
 
 ## Performance Best Practices
-
-[](#performance-best-practices)
 
 1. **Use `model_validate()` over manual instantiation** when parsing unknown data
 2. **Use `model_construct()` when you trust the data** for better performance
