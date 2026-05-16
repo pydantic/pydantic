@@ -13,7 +13,7 @@ from collections.abc import Callable, Sequence
 from decimal import Decimal
 from fractions import Fraction
 from ipaddress import IPv4Address, IPv4Interface, IPv4Network, IPv6Address, IPv6Interface, IPv6Network
-from typing import Any, TypeAlias, TypeVar, cast
+from typing import Any, TypeAlias, TypeVar, cast, overload
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 import typing_extensions
@@ -256,8 +256,17 @@ def fraction_validator(input_value: Any, /) -> Fraction:
         raise PydanticCustomError('fraction_parsing', 'Input is not a valid fraction')
 
 
+@overload
+def forbid_inf_nan_check(x: int) -> int: ...
+@overload
+def forbid_inf_nan_check(x: float) -> float: ...
+@overload
+def forbid_inf_nan_check(x: Decimal) -> Decimal: ...
 def forbid_inf_nan_check(x: Any) -> Any:
-    if not math.isfinite(x):
+    try:
+        if not math.isfinite(x):
+            raise PydanticKnownError('finite_number')
+    except ValueError:
         raise PydanticKnownError('finite_number')
     return x
 

@@ -10,7 +10,7 @@ from typing import Any
 
 import pytest
 from dirty_equals import Contains, IsPartialDict
-from pydantic_core import CoreSchema, PydanticUndefined
+from pydantic_core import CoreSchema, PydanticKnownError, PydanticUndefined
 from pydantic_core import core_schema as cs
 
 from pydantic import BaseModel, TypeAdapter
@@ -19,7 +19,7 @@ from pydantic._internal._core_metadata import update_core_metadata
 from pydantic._internal._fields import resolve_default_value
 from pydantic._internal._generate_schema import GenerateSchema
 from pydantic._internal._repr import Representation
-from pydantic._internal._validators import _extract_decimal_digits_info
+from pydantic._internal._validators import _extract_decimal_digits_info, forbid_inf_nan_check
 from pydantic.config import JsonDict
 from pydantic.json_schema import GetJsonSchemaHandler, JsonSchemaValue, PydanticJsonSchemaWarning
 
@@ -192,6 +192,36 @@ def test_decimal_digits_calculation(decimal: Decimal, decimal_places: int, digit
 def test_decimal_digits_calculation_type_error(value) -> None:
     with pytest.raises(TypeError, match=f'Unable to extract decimal digits info from supplied value {value}'):
         _extract_decimal_digits_info(value)
+
+
+@pytest.mark.parametrize(
+    'value',
+    [
+        float('inf'),
+        float('-inf'),
+        float('nan'),
+        Decimal('Infinity'),
+        Decimal('-Infinity'),
+        Decimal('NaN'),
+        Decimal('sNaN'),
+    ],
+)
+def test_forbid_inf_nan_check_non_finite(value: Any) -> None:
+    with pytest.raises(PydanticKnownError) as exc_info:
+        forbid_inf_nan_check(value)
+    assert exc_info.value.type == 'finite_number'
+
+
+@pytest.mark.parametrize(
+    'value',
+    [
+        1,
+        1.5,
+        Decimal('1.5'),
+    ],
+)
+def test_forbid_inf_nan_check_finite(value: Any) -> None:
+    assert forbid_inf_nan_check(value) == value
 
 
 def test_update_js_extra_as_callable_when_existing_js_extra_is_dict_type():
