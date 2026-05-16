@@ -40,37 +40,6 @@ class User(BaseModel):
     )  # regex is deprecated, use pattern
 ```
 
-## Use `Annotated` for Field Metadata
-
-Always prefer `typing.Annotated` for adding field metadata and constraints. It keeps type annotations clean and compatible with type checkers.
-
-Do this:
-
-```python
-from typing import Annotated
-
-from pydantic import BaseModel, Field
-
-
-class Item(BaseModel):
-    name: Annotated[str, Field(min_length=1, max_length=100)]
-    price: Annotated[float, Field(gt=0)]
-    tags: Annotated[list[str], Field(default_factory=list)]
-```
-
-Instead of this:
-
-```python
-# DO NOT DO THIS
-from pydantic import BaseModel, Field
-
-
-class Item(BaseModel):
-    name: str = Field(min_length=1, max_length=100)
-    price: float = Field(gt=0)
-    tags: list[str] = Field(default_factory=list)
-```
-
 ## Use Modern Type Hints
 
 Use modern Python type hints from `collections.abc` and built-in generics instead of `typing` module imports.
@@ -78,8 +47,6 @@ Use modern Python type hints from `collections.abc` and built-in generics instea
 Do this:
 
 ```python
-from collections.abc import Mapping, Sequence
-
 from pydantic import BaseModel
 
 
@@ -87,25 +54,22 @@ class User(BaseModel):
     name: str
     scores: list[int]
     metadata: dict[str, str]
-    items: Sequence[str]
-    mapping: Mapping[str, int]
 ```
 
 Instead of this:
 
 ```python
-# DO NOT DO THIS
-from collections.abc import Mapping, Sequence
+# DO NOT DO THIS — legacy typing generics
+from typing import Dict, List
 
 from pydantic import BaseModel
 
 
 class User(BaseModel):
     name: str
-    scores: list[int]  # Use list[int] instead
-    metadata: dict[str, str]  # Use dict[str, str] instead
-    items: Sequence[str]
-    mapping: Mapping[str, int]
+    scores: List[int]
+    metadata: Dict[str, str]
+
 ```
 
 ## Serialization: Use `model_dump()` and `model_dump_json()`
@@ -189,16 +153,10 @@ class User(BaseModel):
     name: str
     age: int
 
-    @field_validator('name')
-    @classmethod
-    def validate_name(cls, v: str) -> str:
-        if not v.strip():
-            raise ValueError('name must not be empty')
-        return v.strip()
 
     @field_validator('age')
     @classmethod
-    def validate_age(cls, v: int, info: ValidationInfo) -> int:
+    def validate_age(cls, v: int) -> int:
         if v < 0:
             raise ValueError('age must be non-negative')
         return v
@@ -215,25 +173,12 @@ class User(BaseModel):
     name: str
     age: int
 
-    @validator('name')
-    def validate_name(cls, v):
-        if not v.strip():
-            raise ValueError('name must not be empty')
-        return v.strip()
-
     @validator('age')
-    def validate_age(cls, v, values, **kwargs):
+    def validate_age(cls, v):
         if v < 0:
             raise ValueError('age must be non-negative')
         return v
 ```
-
-### Field Validator Key Differences
-
-- Must use `@classmethod`
-- Signature is cleaner: no `values`, `config`, or `field` parameters
-- Use `ValidationInfo` for accessing context if needed
-- No `each_item` parameter; use `Annotated` for container item validation
 
 ## Use `@model_validator` Instead of `@root_validator`
 
@@ -254,29 +199,6 @@ class User(BaseModel):
         if self.password != self.password_confirm:
             raise ValueError('passwords do not match')
         return self
-```
-
-Or with `mode='before'` for dict-based validation:
-
-```python
-from typing import Any
-
-from pydantic import BaseModel, model_validator
-
-
-class User(BaseModel):
-    first_name: str
-    last_name: str
-    full_name: str
-
-    @model_validator(mode='before')
-    @classmethod
-    def set_full_name(cls, data: Any) -> Any:
-        if isinstance(data, dict) and 'full_name' not in data:
-            data['full_name'] = (
-                f"{data.get('first_name', '')} {data.get('last_name', '')}".strip()
-            )
-        return data
 ```
 
 Instead of this:
@@ -335,23 +257,6 @@ class User(BaseModel):
         extra = 'forbid'
 ```
 
-### Common Config Migrations
-
-
-| V1 (Deprecated)                  | V2 (Use This)          |
-| -------------------------------- | ---------------------- |
-| `allow_population_by_field_name` | `populate_by_name`     |
-| `anystr_lower`                   | `str_to_lower`         |
-| `anystr_strip_whitespace`        | `str_strip_whitespace` |
-| `anystr_upper`                   | `str_to_upper`         |
-| `orm_mode`                       | `from_attributes`      |
-| `schema_extra`                   | `json_schema_extra`    |
-| `validate_all`                   | `validate_default`     |
-| `max_anystr_length`              | `str_max_length`       |
-| `min_anystr_length`              | `str_min_length`       |
-| `underscore_attrs_are_private`   | Removed (always True)  |
-
-
 ## Use `TypeAdapter` for Non-Model Types
 
 For validating, serializing, or generating JSON schemas for arbitrary types (not just `BaseModel` subclasses), use `TypeAdapter`.
@@ -360,20 +265,8 @@ Do this:
 
 ```python
 from pydantic import TypeAdapter
-
-# Create adapter for any type
 adapter = TypeAdapter(list[int])
-
-# Validate data
-data = adapter.validate_python(['1', '2', '3'])
-# Returns: [1, 2, 3]
-
-# Validate from JSON
-json_data = '[1, 2, 3]'
-data = adapter.validate_json(json_data)
-
-# Generate JSON schema
-schema = adapter.json_schema()
+data = adapter.validate_python(['1', '2', '3'])  # [1, 2, 3]
 ```
 
 Instead of this:
@@ -387,26 +280,16 @@ data = parse_obj_as(list[int], ['1', '2', '3'])
 
 ## Use `RootModel` for Custom Root Types
 
-For models that should validate a single type (like a list or dict), use `RootModel`. For a constrained root list, use a separate model class name (for example `TagsConstrained` below).
+For models that should validate a single type (like a list or dict), use `RootModel`.
 
 Do this:
 
 ```python
-from typing import Annotated
-
-from pydantic import Field, RootModel
-
-
+from pydantic import RootModel
+Tags = RootModel[list[str]]
+# or
 class Tags(RootModel[list[str]]):
     pass
-
-
-class TagsConstrained(RootModel[list[Annotated[str, Field(min_length=1)]]]):
-    def __iter__(self):
-        return iter(self.root)
-
-    def __getitem__(self, item):
-        return self.root[item]
 ```
 
 Instead of this:
