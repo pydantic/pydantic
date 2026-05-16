@@ -269,16 +269,16 @@ def parent_frame_namespace(*, parent_depth: int = 2, force: bool = False) -> dic
 def _type_convert(arg: Any) -> Any:
     """Convert `None` to `NoneType` and strings to `ForwardRef` instances.
 
-    This is a backport of the private `typing._type_convert` function. When
-    evaluating a type, `ForwardRef._evaluate` ends up being called, and is
+    This is a vendored version of the private `typing._type_convert()` function. When
+    evaluating a type, `ForwardRef._evaluate()` ends up being called, and is
     responsible for making this conversion. However, we still have to apply
     it for the first argument passed to our type evaluation functions, similarly
-    to the `typing.get_type_hints` function.
+    to the `typing.get_type_hints()` function.
     """
     if arg is None:
         return NoneType
     if isinstance(arg, str):
-        # Like `typing.get_type_hints`, assume the arg can be in any context,
+        # Like `typing.get_type_hints()`, assume the arg can be in any context,
         # hence the proper `is_argument` and `is_class` args:
         return ForwardRef(arg, is_argument=False, is_class=True)
     return arg
@@ -406,7 +406,7 @@ def try_eval_type(
     value = _type_convert(value)
 
     try:
-        return eval_type_backport(value, globalns, localns), True
+        return eval_type(value, globalns, localns), True
     except NameError:
         return value, False
 
@@ -415,66 +415,39 @@ def eval_type(
     value: Any,
     globalns: GlobalsNamespace | None = None,
     localns: MappingNamespace | None = None,
+    type_params: tuple[Any, ...] | None = None,
 ) -> Any:
     """Evaluate the annotation using the provided namespaces.
 
+    This function relies on our vendored `typing._eval_type()` function, and provide better error messages
+    if possible.
+
     Args:
-        value: The value to evaluate. If `None`, it will be replaced by `type[None]`. If an instance
-            of `str`, it will be converted to a `ForwardRef`.
+        value: The value to evaluate (will be converted to `NoneType` if `None`, and to a `ForwardRef` instance if a string).
         localns: The global namespace to use during annotation evaluation.
         globalns: The local namespace to use during annotation evaluation.
+        type_params: The type params belonging to the object being evaluated.
     """
     value = _type_convert(value)
-    return eval_type_backport(value, globalns, localns)
-
-
-@deprecated(
-    '`eval_type_lenient` is deprecated, use `try_eval_type` instead.',
-    category=None,
-)
-def eval_type_lenient(
-    value: Any,
-    globalns: GlobalsNamespace | None = None,
-    localns: MappingNamespace | None = None,
-) -> Any:
-    ev, _ = try_eval_type(value, globalns, localns)
-    return ev
-
-
-def eval_type_backport(
-    value: Any,
-    globalns: GlobalsNamespace | None = None,
-    localns: MappingNamespace | None = None,
-    type_params: tuple[Any, ...] | None = None,
-) -> Any:
-    """An enhanced version of `typing._eval_type` which will fall back to using the `eval_type_backport`
-    package if it's installed to let older Python versions use newer typing constructs.
-
-    Specifically, this transforms `X | Y` into `typing.Union[X, Y]` and `list[X]` into `typing.List[X]`
-    (as well as all the types made generic in PEP 585) if the original syntax is not supported in the
-    current Python version.
-
-    This function will also display a helpful error if the value passed fails to evaluate.
-    """
     try:
-        return _eval_type_backport(value, globalns, localns, type_params)
+        return _eval_type(value, globalns, localns, type_params)
     except TypeError as e:
         if 'Unable to evaluate type annotation' in str(e):
             raise
 
-        # If it is a `TypeError` and value isn't a `ForwardRef`, it would have failed during annotation definition.
-        # Thus we assert here for type checking purposes:
-        assert isinstance(value, typing.ForwardRef)
-
-        message = f'Unable to evaluate type annotation {value.__forward_arg__!r}.'
+        # In most cases, value is a `ForwardRef`, otherwise the `TypeError` would have been raised when the annotation
+        # was defined (at least on Python < 3.14). However, in rare cases, the `TypeError` can also appear when evaluating nested
+        # parts of the annotation (e.g. `list["1 + 'a'"]`).
+        if isinstance(value, ForwardRef):
+            message = f'Unable to evaluate type annotation {value.__forward_arg__!r}.'
+        else:
+            message = f'Unable to evaluate type annotation {value!r}.'
         if sys.version_info >= (3, 11):
             e.add_note(message)
             raise
         else:
             raise TypeError(message) from e
     except RecursionError as e:
-        # TODO ideally recursion errors should be checked in `eval_type` above, but `eval_type_backport`
-        # is used directly in some places.
         message = (
             "If you made use of an implicit recursive type alias (e.g. `MyType = list['MyType']), "
             'consider using PEP 695 type aliases instead. For more details, refer to the documentation: '
@@ -487,34 +460,17 @@ def eval_type_backport(
             raise RecursionError(f'{e.args[0]}\n{message}')
 
 
-def _eval_type_backport(
+@deprecated(
+    '`eval_type_lenient()` is deprecated, use `try_eval_type()` instead.',
+    category=None,
+)
+def eval_type_lenient(
     value: Any,
     globalns: GlobalsNamespace | None = None,
     localns: MappingNamespace | None = None,
-    type_params: tuple[Any, ...] | None = None,
-) -> Any:
-    try:
-        return _eval_type(value, globalns, localns, type_params)
-    except TypeError as e:
-        if not (isinstance(value, typing.ForwardRef) and is_backport_fixable_error(e)):
-            raise
-
-        try:
-            from eval_type_backport import eval_type_backport
-        except ImportError:
-            raise TypeError(
-                f'Unable to evaluate type annotation {value.__forward_arg__!r}. If you are making use '
-                'of the new typing syntax (unions using `|` since Python 3.10 or builtins subscripting '
-                'since Python 3.9), you should either replace the use of new syntax with the existing '
-                '`typing` constructs or install the `eval_type_backport` package.'
-            ) from e
-
-        return eval_type_backport(
-            value,
-            globalns,
-            localns,  # pyright: ignore[reportArgumentType], waiting on a new `eval_type_backport` release.
-            try_default=False,
-        )
+) -> Any:  # pragma: no cover
+    ev, _ = try_eval_type(value, globalns, localns)
+    return ev
 
 
 def _eval_type(
@@ -523,9 +479,13 @@ def _eval_type(
     localns: MappingNamespace | None = None,
     type_params: tuple[Any, ...] | None = None,
 ) -> Any:
+    """Evaluate all forward references for a given type.
+
+    This is a vendored version of the private `typing._eval_type()` function, adapted to work for all supported Python versions.
+    """
     if sys.version_info >= (3, 14):
         # Starting in 3.14, `_eval_type()` does *not* apply `_type_convert()`
-        # anymore. This means the `None` -> `type(None)` conversion does not apply:
+        # anymore. This means the `None` -> `NoneType` conversion does not apply:
         evaluated = typing._eval_type(  # type: ignore
             value,
             globalns,
@@ -540,7 +500,7 @@ def _eval_type(
             prefer_fwd_module=True,
         )
         if evaluated is None:
-            evaluated = type(None)
+            evaluated = NoneType
         return evaluated
     elif sys.version_info >= (3, 13):
         return typing._eval_type(  # type: ignore
@@ -550,12 +510,6 @@ def _eval_type(
         return typing._eval_type(  # type: ignore
             value, globalns, localns
         )
-
-
-def is_backport_fixable_error(e: TypeError) -> bool:
-    msg = str(e)
-
-    return sys.version_info < (3, 10) and msg.startswith('unsupported operand type(s) for |: ')
 
 
 def signature_no_eval(f: Callable[..., Any]) -> Signature:
@@ -599,8 +553,7 @@ def get_function_type_hints(
     for name, value in annotations.items():
         if include_keys is not None and name not in include_keys:
             continue
-        value = _type_convert(value)
 
-        type_hints[name] = eval_type_backport(value, globalns, localns, type_params)
+        type_hints[name] = eval_type(value, globalns, localns, type_params)
 
     return type_hints

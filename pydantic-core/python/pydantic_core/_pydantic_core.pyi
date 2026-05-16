@@ -303,7 +303,7 @@ class SchemaSerializer:
 
         Arguments:
             schema: The `CoreSchema` to use for serialization.
-            config: Optionally a [`CoreConfig`][pydantic_core.core_schema.CoreConfig] to to configure serialization.
+            config: Optionally a [`CoreConfig`][pydantic_core.core_schema.CoreConfig] to configure serialization.
             _use_prebuilt: Whether to use pre-built validators (False during rebuilds to avoid stale references).
         """
 

@@ -16,9 +16,19 @@ class Main(BaseModel):
     sub: SubModel
 
 
+# This only crashes in parallel mode (see https://github.com/python/mypy/issues/21472):
+def dyn_model() -> type[BaseModel]:
+    Inner = create_model("Inner", __base__=BaseModel, value=(int, ...))
+
+    class Outer(Inner):
+        pass
+
+    return Outer
+
+
 class ClassmethodModel(BaseModel):
     @classmethod
     def composite(cls) -> type[Self]:
-        fields: dict[str, Any] = {'plugin_id': (int, ...)}
-        model = create_model(cls.__name__, __base__=cls, **fields)
+        # Ensures the mypy plugin defers to the `create_model()` overload:
+        model = create_model(cls.__name__, __base__=cls)
         return model

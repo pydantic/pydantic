@@ -70,7 +70,6 @@ dev = [
     'coverage[toml]',
     'pytz',
     'dirty-equals',
-    'eval-type-backport',
     'pytest',
     'pytest-mock',
     'pytest-pretty',
@@ -105,7 +104,6 @@ docs-upload = [
     'beautifulsoup4>=4.13.3',
 ]
 linting = [
-    'eval-type-backport',
     'ruff',
     'pyright',
 ]

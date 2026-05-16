@@ -287,44 +287,83 @@ class _Pipeline(Generic[_InT, _OutT]):
 
     # timezone methods
     def datetime_tz_naive(self: _Pipeline[_InT, datetime.datetime]) -> _Pipeline[_InT, datetime.datetime]:
+        """Constrain a datetime value to be timezone-naive (i.e. have no tzinfo)."""
         return self.constrain(annotated_types.Timezone(None))
 
     def datetime_tz_aware(self: _Pipeline[_InT, datetime.datetime]) -> _Pipeline[_InT, datetime.datetime]:
+        """Constrain a datetime value to be timezone-aware (i.e. have a non-None tzinfo)."""
         return self.constrain(annotated_types.Timezone(...))
 
     def datetime_tz(
         self: _Pipeline[_InT, datetime.datetime], tz: datetime.tzinfo
     ) -> _Pipeline[_InT, datetime.datetime]:
+        """Constrain a datetime value to have a specific timezone.
+
+        Args:
+            tz: The required timezone.
+        """
         return self.constrain(annotated_types.Timezone(tz))  # type: ignore
 
     def datetime_with_tz(
         self: _Pipeline[_InT, datetime.datetime], tz: datetime.tzinfo | None
     ) -> _Pipeline[_InT, datetime.datetime]:
+        """Transform a datetime value by replacing its timezone with the given value.
+
+        Unlike `datetime_tz()`, this does not validate the existing timezone, it
+        unconditionally sets [`tzinfo`][datetime.datetime.tzinfo] to `tz`.
+
+        Args:
+            tz: The timezone to attach to the datetime, or `None` to make it naive.
+        """
         return self.transform(partial(datetime.datetime.replace, tzinfo=tz))
 
     # string methods
     def str_lower(self: _Pipeline[_InT, str]) -> _Pipeline[_InT, str]:
+        """Transform a string value to [lowercase][str.lower]."""
         return self.transform(str.lower)
 
     def str_upper(self: _Pipeline[_InT, str]) -> _Pipeline[_InT, str]:
+        """Transform a string value to [uppercase][str.upper]."""
         return self.transform(str.upper)
 
     def str_title(self: _Pipeline[_InT, str]) -> _Pipeline[_InT, str]:
+        """Transform a string value to [title case][str.title]."""
         return self.transform(str.title)
 
     def str_strip(self: _Pipeline[_InT, str]) -> _Pipeline[_InT, str]:
+        """Strip leading and trailing whitespace from a string value."""
         return self.transform(str.strip)
 
     def str_pattern(self: _Pipeline[_InT, str], pattern: str) -> _Pipeline[_InT, str]:
+        """Constrain a string value to match a regular expression pattern.
+
+        Args:
+            pattern: The regular expression pattern the string must match.
+        """
         return self.constrain(re.compile(pattern))
 
     def str_contains(self: _Pipeline[_InT, str], substring: str) -> _Pipeline[_InT, str]:
+        """Constrain a string value to contain a given substring.
+
+        Args:
+            substring: The substring that must be present in the string.
+        """
         return self.predicate(lambda v: substring in v)
 
     def str_starts_with(self: _Pipeline[_InT, str], prefix: str) -> _Pipeline[_InT, str]:
+        """Constrain a string value to start with a given prefix.
+
+        Args:
+            prefix: The prefix the string must start with.
+        """
         return self.predicate(lambda v: v.startswith(prefix))
 
     def str_ends_with(self: _Pipeline[_InT, str], suffix: str) -> _Pipeline[_InT, str]:
+        """Constrain a string value to end with a given suffix.
+
+        Args:
+            suffix: The suffix the string must end with.
+        """
         return self.predicate(lambda v: v.endswith(suffix))
 
     # operators

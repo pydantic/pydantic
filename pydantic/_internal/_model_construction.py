@@ -36,7 +36,7 @@ from ._mock_val_ser import set_model_mocks
 from ._namespace_utils import NsResolver
 from ._signature import generate_pydantic_signature
 from ._typing_extra import (
-    eval_type_backport,
+    eval_type,
     is_classvar_annotation,
     parent_frame_namespace,
 )
@@ -521,7 +521,7 @@ def inspect_namespace(  # noqa C901
                 frame = sys._getframe(2)
                 if frame is not None:
                     try:
-                        ann_type = eval_type_backport(
+                        ann_type = eval_type(
                             ForwardRef(ann_type, is_argument=False, is_class=True),
                             globalns=frame.f_globals,
                             localns=frame.f_locals,
