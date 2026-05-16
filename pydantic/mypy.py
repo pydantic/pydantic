@@ -106,7 +106,7 @@ MYPY_VERSION_TUPLE = parse_mypy_version(mypy_version)
 BUILTINS_NAME = 'builtins'
 
 # Increment version if plugin changes and mypy caches should be invalidated
-__version__ = 3
+__version__ = 2
 
 
 def plugin(version: str) -> type[Plugin]:
@@ -198,8 +198,9 @@ class PydanticPlugin(Plugin):
                     elif isinstance(arg_type, TypeType):
                         item_type = get_proper_type(arg_type.item)
                         if isinstance(item_type, TypeVarType):
-                            # Inside classmethods, ``cls`` is modeled as ``type[Self]``. Creating a concrete
-                            # synthetic type here loses that type variable, so let mypy use the overload return.
+                            # Inside classmethods, `cls` is modeled as `type[Self]`. Creating a concrete
+                            # synthetic type here loses that type variable, so let mypy use infer the correct type
+                            # from the `create_model()` overload with the type var instead.
                             return
                         if isinstance(item_type, Instance):
                             base_fullname = item_type.type.fullname
