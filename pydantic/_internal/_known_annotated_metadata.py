@@ -213,9 +213,13 @@ def apply_known_metadata(annotation: Any, schema: CoreSchema) -> CoreSchema | No
         # in this recursive case with function-after or function-wrap, we should refactor
         # this is a bit challenging because we sometimes want to apply constraints to the inner schema,
         # whereas other times we want to wrap the existing schema with a new one that enforces a new constraint.
-        if schema_type in {'function-before', 'function-wrap', 'function-after'} and constraint == 'strict':
-            schema['schema'] = apply_known_metadata(annotation, schema['schema'])  # type: ignore  # schema is function schema
-            return schema
+        if schema_type in {'function-before', 'function-wrap', 'function-after'} and (
+            constraint == 'strict' or constraint in chain_schema_constraints
+        ):
+            inner = apply_known_metadata(annotation, schema['schema'])  # type: ignore  # schema is function schema
+            if inner is not None:
+                schema['schema'] = inner
+                return schema
 
         # if we're allowed to apply constraint directly to the schema, like le to int, do that
         if schema_type in allowed_schemas:
