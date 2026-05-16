@@ -94,13 +94,13 @@ print(Settings().model_dump())
 
    Check the [`Field` documentation](../fields/#field-aliases) for more information.
 
-1. The AliasChoices class allows to have multiple environment variable names for a single field. The first environment variable that is found will be used.
+1. The AliasChoices class allows you to have multiple environment variable names for a single field. The first environment variable that is found will be used.
 
    Check the [documentation on alias choices](../alias/#aliaspath-and-aliaschoices) for more information.
 
-1. The ImportString class allows to import an object from a string. In this case, the environment variable `special_function` will be read and the function math.cos will be imported.
+1. The ImportString class allows you to import an object from a string. In this case, the environment variable `special_function` will be read and the function math.cos will be imported.
 
-1. The `env_prefix` config setting allows to set a prefix for all environment variables.
+1. The `env_prefix` config setting allows you to set a prefix for all environment variables.
 
    Check the [Environment variable names documentation](#environment-variable-names) for more information.
 
@@ -2235,7 +2235,7 @@ Same as `case_sensitive`, but works for secrets only. If not specified, defaults
 
 #### secrets_nested_delimiter
 
-Same as `env_nested_delimiter`, but works for secrets only. If not specified, defaults to `env_nested_delimiter`. This option is used to implement *nested secrets directory* layout and allows to do even nasty things like `/run/secrets/model/delim/nested1/delim/nested2`.
+Same as `env_nested_delimiter`, but works for secrets only. If not specified, defaults to `env_nested_delimiter`. This option is used to implement *nested secrets directory* layout and allows you to do even nasty things like `/run/secrets/model/delim/nested1/delim/nested2`.
 
 #### secrets_nested_subdir
 

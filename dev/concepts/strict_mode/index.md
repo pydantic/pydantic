@@ -45,7 +45,7 @@ Strict mode can be enabled in various ways:
 
 ## As a validation parameter
 
-Strict mode can be enaled on a per-validation-call basis, when using the [validation methods](../models/#validating-data) on [Pydantic models](../models/) and [type adapters](../type_adapter/).
+Strict mode can be enabled on a per-validation-call basis, when using the [validation methods](../models/#validating-data) on [Pydantic models](../models/) and [type adapters](../type_adapter/).
 
 ```python
 from datetime import date

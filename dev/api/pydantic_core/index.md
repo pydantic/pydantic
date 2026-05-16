@@ -234,7 +234,7 @@ SchemaSerializer(
 
 Parameters:
 
-| Name | Type | Description | Default | | --- | --- | --- | --- | | `schema` | `CoreSchema` | The CoreSchema to use for serialization. | *required* | | `config` | `CoreConfig | None` | Optionally a CoreConfig to to configure serialization. | `None` | | `_use_prebuilt` | `bool` | Whether to use pre-built validators (False during rebuilds to avoid stale references). | `True` |
+| Name | Type | Description | Default | | --- | --- | --- | --- | | `schema` | `CoreSchema` | The CoreSchema to use for serialization. | *required* | | `config` | `CoreConfig | None` | Optionally a CoreConfig to configure serialization. | `None` | | `_use_prebuilt` | `bool` | Whether to use pre-built validators (False during rebuilds to avoid stale references). | `True` |
 
 ### to_python
 
