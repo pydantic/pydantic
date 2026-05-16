@@ -336,8 +336,8 @@ def test_model_copy_deep_update_skips_deepcopy_of_updated_fields() -> None:
     model = Model(arbitrary=NotDeepCopyable())
 
     copied = model.model_copy(deep=True, update={'arbitrary': None})
-    assert model.arbitrary is None
-    assert model.name == 'default'
+    assert copied.arbitrary is None
+    assert copied.name == 'default'
     assert copied is not model
 
 
