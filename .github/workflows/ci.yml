@@ -245,13 +245,25 @@ jobs:
         with:
           persist-credentials: false
 
+      - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
+        with:
+          python-version: '3.13'
+
+      - run: pip install -U pyodide-build
+
+      - name: Get pyodide config
+        id: pyodide-config
+        run: |
+          echo "rust-toolchain=$(pyodide config get rust_toolchain)" >> "$GITHUB_OUTPUT"
+          echo "emscripten-version=$(pyodide config get emscripten_version)" >> "$GITHUB_OUTPUT"
+
       - name: Install rust nightly
         # no release versioning, see https://github.com/dtolnay/rust-toolchain/issues/180
         uses: dtolnay/rust-toolchain@3c5f7ea28cd621ae0bf5283f0e981fb97b8a7af9
         with:
           components: rust-src
           targets: wasm32-unknown-emscripten
-          toolchain: nightly
+          toolchain: ${{ steps.pyodide-config.outputs.rust-toolchain }}
 
       - name: Cache rust
         uses: Swatinem/rust-cache@c19371144df3bb44fab255c43d04cbc2ab54d1c4 # v2.9.1
@@ -260,36 +272,19 @@ jobs:
 
       - uses: mymindstorm/setup-emsdk@4528d102f7230f0e7b276855c01ea1159be0e984 # v16
         with:
-          # NOTE!: as per https://github.com/pydantic/pydantic-core/pull/149 this version needs to match the version
-          # in pydantic-core/node_modules/pyodide/pyodide-lock.json, to get the version, run:
-          # `cat pydantic-core/node_modules/pyodide/pyodide-lock.json | jq .info.platform`
-          version: '4.0.9'
+          version: ${{ steps.pyodide-config.outputs.emscripten-version }}
           actions-cache-folder: emsdk-cache
 
-      - uses: astral-sh/setup-uv@08807647e7069bb48b6ef5acd8ec9567f424441b # v8.1.0
-        with:
-          python-version: '3.13'
-          enable-cache: false
-
-      - name: Install dependencies
-        run: uv sync --all-packages --group testing-extra --group wasm --all-extras
-
       - name: Build wheels
-        run: make -C pydantic-core build-wasm
-
-      - uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f # v6.3.0
+        uses: PyO3/maturin-action@v1
         with:
-          node-version: '18'
-          package-manager-cache: false
+          working-directory: pydantic-core
+          target: wasm32-unknown-emscripten
+          args: --release --out dist --interpreter 3.13
+          sccache: ${{ !startsWith(github.ref, 'refs/tags/') }}
+          rust-toolchain: ${{ steps.pyodide-config.outputs.rust-toolchain }}
 
-      - run: npm install
-        working-directory: pydantic-core
-
-      - run: npm run test
-        working-directory: pydantic-core
-
-      - run: |
-          ls -lh dist/
+      - run: ls -lh dist/
         working-directory: pydantic-core
 
       - uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7.0.0
