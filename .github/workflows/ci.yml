@@ -283,6 +283,7 @@ jobs:
           args: --release --out dist --interpreter 3.13
           sccache: ${{ !startsWith(github.ref, 'refs/tags/') }}
           rust-toolchain: nightly-2025-05-09
+          before-script-linux: pip install git+https://github.com/PyO3/maturin.git@7543032bbc9e510e340dea162b3a4e5295eada7d
 
       - run: ls -lh dist/
         working-directory: pydantic-core
