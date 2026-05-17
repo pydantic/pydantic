@@ -257,19 +257,6 @@ jobs:
           echo "rust-toolchain=$(pyodide config get rust_toolchain)" >> "$GITHUB_OUTPUT"
           echo "emscripten-version=$(pyodide config get emscripten_version)" >> "$GITHUB_OUTPUT"
 
-      - name: Install rust
-        # no release versioning, see https://github.com/dtolnay/rust-toolchain/issues/180
-        uses: dtolnay/rust-toolchain@3c5f7ea28cd621ae0bf5283f0e981fb97b8a7af9
-        with:
-          components: rust-src
-          targets: wasm32-unknown-emscripten
-          toolchain: ${{ steps.pyodide-config.outputs.rust-toolchain }}
-
-      - name: Cache rust
-        uses: Swatinem/rust-cache@c19371144df3bb44fab255c43d04cbc2ab54d1c4 # v2.9.1
-        with:
-          lookup-only: true
-
       - uses: mymindstorm/setup-emsdk@4528d102f7230f0e7b276855c01ea1159be0e984 # v16
         with:
           version: ${{ steps.pyodide-config.outputs.emscripten-version }}
