@@ -4384,6 +4384,86 @@ def test_pattern_error(pattern_type, pattern_value, error_type, error_msg):
     ]
 
 
+@pytest.mark.skipif(
+    sys.version_info < (3, 14),
+    reason='templatelib added in Python 3.14',
+)
+def test_template_type_accepts_template():
+    from string.templatelib import Template
+
+    class Model(BaseModel):
+        field: Template
+
+    value = eval("t'hello'")
+
+    m = Model(field=value)
+
+    assert m.field is value
+
+
+@pytest.mark.skipif(
+    sys.version_info < (3, 14),
+    reason='templatelib added in Python 3.14',
+)
+def test_template_type_rejects_str():
+    from string.templatelib import Template
+
+    class Model(BaseModel):
+        field: Template
+
+    with pytest.raises(ValidationError):
+        Model(field='hello')
+
+
+@pytest.mark.skipif(
+    sys.version_info < (3, 14),
+    reason='templatelib added in Python 3.14',
+)
+def test_template_json_serialization():
+    from string.templatelib import Template
+
+    class Model(BaseModel):
+        field: Template
+
+    m = Model(field=eval("t'hello'"))
+
+    assert m.model_dump(mode='json') == {
+        'field': {
+            'strings': ['hello'],
+            'interpolations': [],
+        }
+    }
+
+
+@pytest.mark.skipif(
+    sys.version_info < (3, 14),
+    reason='templatelib added in Python 3.14',
+)
+def test_template_json_serialization_interpolation():
+    from string.templatelib import Template
+
+    class Model(BaseModel):
+        field: Template
+
+    value = 'world'
+
+    m = Model(field=eval("""t'hello {value}'""", {}, {'value': value}))
+
+    assert m.model_dump(mode='json') == {
+        'field': {
+            'strings': ['hello ', ''],
+            'interpolations': [
+                {
+                    'value': 'world',
+                    'expression': 'value',
+                    'conversion': None,
+                    'format_spec': '',
+                }
+            ],
+        }
+    }
+
+
 @pytest.mark.parametrize('validate_json', [True, False])
 def test_secretstr(validate_json):
     class Foobar(BaseModel):

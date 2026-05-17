@@ -38,6 +38,11 @@ from typing import (
 from uuid import UUID
 from zoneinfo import ZoneInfo
 
+try:
+    from string.templatelib import Template
+except ImportError:
+    Template = None
+
 import typing_extensions
 from pydantic_core import (
     MISSING,
@@ -1134,6 +1139,25 @@ class GenerateSchema:
             return self.generate_schema(obj.__supertype__)
         elif obj in PATTERN_TYPES:
             return self._pattern_schema(obj)
+        elif Template is not None and obj is Template:
+            return core_schema.is_instance_schema(
+                Template,
+                serialization=core_schema.plain_serializer_function_ser_schema(
+                    lambda t: {
+                        'strings': list(t.strings),
+                        'interpolations': [
+                            {
+                                'value': i.value,
+                                'expression': i.expression,
+                                'conversion': i.conversion,
+                                'format_spec': i.format_spec,
+                            }
+                            for i in t.interpolations
+                        ],
+                    },
+                    when_used='json',
+                ),
+            )
         elif _typing_extra.is_hashable(obj):
             return self._hashable_schema()
         elif isinstance(obj, typing.TypeVar):
