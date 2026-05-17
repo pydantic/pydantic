@@ -263,7 +263,7 @@ jobs:
         with:
           components: rust-src
           targets: wasm32-unknown-emscripten
-          toolchain: nightly-2025-05-09
+          toolchain: nightly-2025-06-23
 
       - name: Cache rust
         uses: Swatinem/rust-cache@c19371144df3bb44fab255c43d04cbc2ab54d1c4 # v2.9.1
@@ -282,7 +282,7 @@ jobs:
           target: wasm32-unknown-emscripten
           args: --release --out dist --interpreter 3.13
           sccache: ${{ !startsWith(github.ref, 'refs/tags/') }}
-          rust-toolchain: nightly-2025-05-09
+          rust-toolchain: nightly-2025-06-23
           before-script-linux: pip install git+https://github.com/PyO3/maturin.git@7543032bbc9e510e340dea162b3a4e5295eada7d
 
       - run: ls -lh dist/
