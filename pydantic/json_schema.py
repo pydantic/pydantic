@@ -730,7 +730,7 @@ class GenerateJsonSchema:
 
             # Case 4: Both are None (no restrictions)
             else:
-                pattern += r'\d*\.?\d*$'  # look for arbitrary integer or decimal
+                pattern += r'\d*\.?\d*(?:[eE][+-]?\d+)?$'  # look for arbitrary integer, decimal, or scientific notation
 
             return pattern
 

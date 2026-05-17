@@ -7133,6 +7133,17 @@ def test_decimal_pattern_reject_invalid_with_decimal_places_max_digits_unset(
 
 
 @pytest.mark.parametrize(
+    'scientific_decimal',
+    ['1E-7', '1E+7', '1.5E-3', '2.5e10', '+1E-7', '-1E-7', '1e0', '1.23E+45'],
+)
+def test_decimal_pattern_accepts_scientific_notation_with_no_constraints(scientific_decimal, get_decimal_pattern) -> None:
+    """Serialization mode pattern must accept scientific notation (e.g. 1E-7) since pydantic-core can produce it."""
+    pattern = get_decimal_pattern()
+
+    assert re.fullmatch(pattern, scientific_decimal) is not None
+
+
+@pytest.mark.parametrize(
     'valid_decimal', ['10.01', '11.11', '010.010', '011.110', '11', '0011', '001.100', '.1', '.11000', '00011.']
 )
 def test_decimal_pattern_with_decimal_places_max_digits_set(valid_decimal, get_decimal_pattern) -> None:
@@ -7175,6 +7186,32 @@ def test_decimal_pattern_reject_invalid_not_numerical_values_with_decimal_places
 ) -> None:
     pattern = get_decimal_pattern()
     assert re.fullmatch(pattern, invalid_decimal) is None
+
+
+def test_decimal_serialization_schema_matches_scientific_notation_output() -> None:
+    """Serialization schema pattern must accept values that pydantic-core itself produces.
+
+    pydantic-core calls str() on Decimal, which can produce scientific notation
+    (e.g. Decimal('0.0000001') -> '1E-7'). The generated pattern must match.
+    """
+    import json
+    import re
+    from decimal import Decimal
+
+    class MyModel(BaseModel):
+        value: Decimal
+
+    schema = MyModel.model_json_schema(mode='serialization')
+    pattern = schema['properties']['value']['pattern']
+    regex = re.compile(pattern)
+
+    for raw in ['0.0000001', '1E-7', '1.5E-10', '0.001']:
+        m = MyModel(value=Decimal(raw))
+        serialized_value = json.loads(m.model_dump_json())['value']
+        assert regex.match(serialized_value), (
+            f'Serialization schema pattern {pattern!r} rejected serialized value {serialized_value!r} '
+            f'(from Decimal({raw!r}))'
+        )
 
 
 def test_union_format_primitive_type_array() -> None:
