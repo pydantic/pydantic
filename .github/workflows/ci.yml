@@ -284,7 +284,9 @@ jobs:
           sccache: ${{ !startsWith(github.ref, 'refs/tags/') }}
           rust-toolchain: nightly-2025-06-23
           before-script-linux: |
-            cargo install maturin --git https://github.com/PyO3/maturin --rev 7543032bbc9e510e340dea162b3a4e5295eada7d --force --root /usr/local
+            rm -f /usr/local/bin/maturin
+            python3 -m pip install --force-reinstall git+https://github.com/PyO3/maturin.git@7543032bbc9e510e340dea162b3a4e5295eada7d
+            ln -sf "$(python3 -c 'import shutil; print(shutil.which("maturin"))')" /usr/local/bin/maturin
             maturin --version
 
       - run: ls -lh dist/
