@@ -4389,7 +4389,7 @@ def test_pattern_error(pattern_type, pattern_value, error_type, error_msg):
     reason='templatelib added in Python 3.14',
 )
 def test_template_type_accepts_template():
-    from string.templatelib import Template
+    Template = __import__('string.templatelib', fromlist=['Template']).Template
 
     class Model(BaseModel):
         field: Template
@@ -4406,7 +4406,7 @@ def test_template_type_accepts_template():
     reason='templatelib added in Python 3.14',
 )
 def test_template_type_rejects_str():
-    from string.templatelib import Template
+    Template = __import__('string.templatelib', fromlist=['Template']).Template
 
     class Model(BaseModel):
         field: Template
@@ -4420,7 +4420,7 @@ def test_template_type_rejects_str():
     reason='templatelib added in Python 3.14',
 )
 def test_template_json_serialization():
-    from string.templatelib import Template
+    Template = __import__('string.templatelib', fromlist=['Template']).Template
 
     class Model(BaseModel):
         field: Template
@@ -4440,7 +4440,7 @@ def test_template_json_serialization():
     reason='templatelib added in Python 3.14',
 )
 def test_template_json_serialization_interpolation():
-    from string.templatelib import Template
+    Template = __import__('string.templatelib', fromlist=['Template']).Template
 
     class Model(BaseModel):
         field: Template
