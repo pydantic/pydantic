@@ -39,7 +39,9 @@ from uuid import UUID
 from zoneinfo import ZoneInfo
 
 try:
-    from string.templatelib import Template
+    import importlib
+
+    Template = importlib.import_module('string.templatelib').Template
 except ImportError:
     Template = None
 
