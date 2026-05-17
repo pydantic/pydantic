@@ -562,7 +562,7 @@ jobs:
           uv pip install pyodide-build
           uv run pyodide venv .venv-pyodide
           source .venv-pyodide/bin/activate
-          python -m pip install -r .github.pyodide/pylock.toml
+          python -m pip install -r .github/pyodide/pylock.toml
           python -m pip install pydantic-core --no-index --no-deps --find-links dist
           python -m pytest
           python -c 'import pydantic_core._pydantic_core; print(pydantic_core._pydantic_core.__version__)'
