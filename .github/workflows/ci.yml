@@ -586,6 +586,7 @@ jobs:
           uv sync --only-group pyodide-build
           uv run pyodide venv .venv-pyodide
           source .venv-pyodide/bin/activate
+          python -m pip install --upgrade pip>=26.1.1
           python -m pip install -r .github/pyodide/pylock.${{ matrix.pylock-suffix }}.toml
           python -m pip install pydantic-core --no-index --no-deps --find-links dist
           python -m pytest
