@@ -7265,3 +7265,15 @@ def test_nested_model_deduplication() -> None:
     assert 'Level1' in definitions
     assert 'Level1-Input' not in definitions
     assert 'Level1-Output' not in definitions
+d e f   t e s t _ d e c i m a l _ s c h e m a _ s c i e n t i f i c _ n o t a t i o n ( ) :  
+         f r o m   d e c i m a l   i m p o r t   D e c i m a l  
+         f r o m   p y d a n t i c   i m p o r t   B a s e M o d e l  
+         i m p o r t   r e  
+         c l a s s   M y M o d e l ( B a s e M o d e l ) :  
+                 v a l u e :   D e c i m a l  
+         s c h e m a   =   M y M o d e l . m o d e l _ j s o n _ s c h e m a ( )  
+         p a t t e r n   =   n e x t ( v   f o r   v   i n   s c h e m a [ ' p r o p e r t i e s ' ] [ ' v a l u e ' ] [ ' a n y O f ' ]   i f   v . g e t ( ' t y p e ' )   = =   ' s t r i n g ' ) [ ' p a t t e r n ' ]  
+         r e g e x   =   r e . c o m p i l e ( p a t t e r n )  
+         a s s e r t   b o o l ( r e g e x . m a t c h ( ' 1 e - 7 ' ) )   i s   T r u e  
+         a s s e r t   b o o l ( r e g e x . m a t c h ( ' 1 E - 7 ' ) )   i s   T r u e  
+ 

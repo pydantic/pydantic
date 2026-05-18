@@ -708,8 +708,8 @@ class GenerateJsonSchema:
                     rf'(?:'
                     rf'\d{{0,{integer_places}}}'
                     rf'|'
-                    rf'(?=[\d.]{{1,{max_digits + 1}}}0*$)'
-                    rf'\d{{0,{integer_places}}}\.\d{{0,{decimal_places}}}0*$'
+                    rf'(?=[\d.]{{1,{max_digits + 1}}}0*(?:[eE][+-]?\d+)?$)'
+                    rf'\d{{0,{integer_places}}}\.\d{{0,{decimal_places}}}0*(?:[eE][+-]?\d+)?$'
                     rf')'
                 )
 
@@ -719,18 +719,18 @@ class GenerateJsonSchema:
                     rf'(?:'
                     rf'\d{{0,{max_digits}}}'
                     rf'|'
-                    rf'(?=[\d.]{{1,{max_digits + 1}}}0*$)'
-                    rf'\d*\.\d*0*$'
+                    rf'(?=[\d.]{{1,{max_digits + 1}}}0*(?:[eE][+-]?\d+)?$)'
+                    rf'\d*\.\d*0*(?:[eE][+-]?\d+)?$'
                     rf')'
                 )
 
             # Case 3: Only decimal_places is set
             elif max_digits is None and decimal_places is not None:
-                pattern += rf'\d*\.?\d{{0,{decimal_places}}}0*$'
+                pattern += rf'\d*\.?\d{{0,{decimal_places}}}0*(?:[eE][+-]?\d+)?$'
 
             # Case 4: Both are None (no restrictions)
             else:
-                pattern += r'\d*\.?\d*$'  # look for arbitrary integer or decimal
+                pattern += r'\d*\.?\d*(?:[eE][+-]?\d+)?$'  # look for arbitrary integer or decimal
 
             return pattern
 
