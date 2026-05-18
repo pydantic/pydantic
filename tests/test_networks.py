@@ -935,6 +935,7 @@ def test_json():
         ('xn--80ak6aa92e@example.com', 'xn--80ak6aa92e', 'xn--80ak6aa92e@example.com'),
         ('葉士豪@臺網中心.tw', '葉士豪', '葉士豪@臺網中心.tw'),
         ('"first.last" <first.last@example.com>', 'first.last', 'first.last@example.com'),
+        ('first.last <first.last@example.com>', 'first.last', 'first.last@example.com'),
         ("Shaquille O'Neal <shaq@example.com>", "Shaquille O'Neal", 'shaq@example.com'),
         ('Homer J. Simpson <homer@thesimpsons.com>', 'Homer J. Simpson', 'homer@thesimpsons.com'),
     ],
