@@ -247,7 +247,7 @@ jobs:
           # We can't build for 3.12 as Rust 1.88 is incompatible with the emsdk version (https://github.com/PyO3/maturin/issues/2549)
           # For 3.13, pyodide gives nightly-2025-02-01 (1.86.0), which is below our MSRV (1.88) — override it.
           - python-version: '3.13'
-            rust-toolchain: 'nightly-2025-07-01'
+            rust-toolchain: 'nightly-2025-11-01'
           - python-version: '3.14'
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
