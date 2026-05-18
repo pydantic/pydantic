@@ -17,7 +17,6 @@ from typing import Any
 import pytest
 from _pytest.assertion.rewrite import AssertionRewritingHook
 from _pytest.nodes import Item
-from jsonschema import Draft202012Validator, SchemaError
 
 from pydantic._internal._generate_schema import GenerateSchema
 from pydantic.json_schema import GenerateJsonSchema
@@ -170,6 +169,8 @@ def validate_json_schemas(monkeypatch: pytest.MonkeyPatch, request: pytest.Fixtu
 
     if sys.platform != 'emscripten':
         # Until https://github.com/pyodide/pyodide/issues/6234 is fixed:
+
+        from jsonschema import Draft202012Validator, SchemaError
 
         def generate(*args: Any, **kwargs: Any) -> Any:
             json_schema = orig_generate(*args, **kwargs)

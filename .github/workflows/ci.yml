@@ -247,10 +247,8 @@ jobs:
           # We can't build for 3.12 as Rust 1.88 is incompatible with the emsdk version (https://github.com/PyO3/maturin/issues/2549)
           # For 3.13, pyodide gives nightly-2025-02-01 (1.86.0), which is below our MSRV (1.88) — override it.
           - python-version: '3.13'
-            platform-version: '2025_0'
             rust-toolchain: 'nightly-2025-05-09'
           - python-version: '3.14'
-            platform-version: '2026_0'
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
@@ -268,6 +266,8 @@ jobs:
         run: |
           echo "rust-toolchain=$(uv run pyodide config get rust_toolchain)" >> "$GITHUB_OUTPUT"
           echo "emscripten-version=$(uv run pyodide config get emscripten_version)" >> "$GITHUB_OUTPUT"
+          echo "pyodide-abi-version=$(uv run pyodide config get pyodide_abi_version)" >> "$GITHUB_OUTPUT"
+          echo "rustflags=$(uv run pyodide config get rustflags)" >> "$GITHUB_OUTPUT"
 
       - uses: mymindstorm/setup-emsdk@4528d102f7230f0e7b276855c01ea1159be0e984 # v16
         with:
@@ -278,7 +278,8 @@ jobs:
         uses: PyO3/maturin-action@04ac600d27cdf7a9a280dadf7147097c42b757ad # v1.50.1
         # Unclear how to avoid manually specifying this yet (https://github.com/PyO3/maturin/issues/3189):
         env:
-          MATURIN_PYEMSCRIPTEN_PLATFORM_VERSION: ${{ matrix.platform-version }}
+          CARGO_TARGET_WASM32_UNKNOWN_EMSCRIPTEN_RUSTFLAGS: ${{ steps.pyodide-config.outputs.rustflags }}
+          MATURIN_PYEMSCRIPTEN_PLATFORM_VERSION: ${{ steps.pyodide-config.outputs.pyodide-abi-version }}
         with:
           working-directory: pydantic-core
           target: wasm32-unknown-emscripten
@@ -550,7 +551,7 @@ jobs:
       - run: uv run pytest
 
   test-pyemscripten:
-    name: Test build on pyodide (${{ matrix.python-version }})
+    name: Test build on PyEmscripten (Pyodide) (${{ matrix.python-version }})
     needs: [core-build-pyemscripten]
     runs-on: ubuntu-latest
     strategy:
@@ -571,7 +572,6 @@ jobs:
         uses: astral-sh/setup-uv@08807647e7069bb48b6ef5acd8ec9567f424441b # v8.1.0
         with:
           python-version: ${{ matrix.python-version }}
-          activate-environment: true
           enable-cache: true # zizmor: ignore[cache-poisoning] -- Job does not produce release artifacts and does not have sensitive permissions
 
       - name: get dist artifacts
@@ -581,7 +581,7 @@ jobs:
           path: dist
 
       - run: |
-          uv pip install pyodide-build
+          uv sync --only-group build
           uv run pyodide venv .venv-pyodide
           source .venv-pyodide/bin/activate
           python -m pip install -r .github/pyodide/pylock.${{ matrix.pylock-suffix }}.toml
