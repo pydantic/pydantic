@@ -120,6 +120,11 @@ class UrlConstraints:
             )
         for constraint_key, constraint_value in self.defined_constraints.items():
             schema_to_mutate[constraint_key] = constraint_value
+        # Signal to the wrap_val closure that extra constraints were added via Annotated
+        if schema['type'] == 'function-wrap':
+            fn = schema['function'].get('function')
+            if fn is not None and hasattr(fn, '_has_extra_constraints'):
+                fn._has_extra_constraints = True
         return schema
 
 
@@ -315,7 +320,8 @@ class _BaseUrl:
     ) -> core_schema.CoreSchema:
         def wrap_val(v, h):
             if isinstance(v, source):
-                h(v._url)
+                if wrap_val._has_extra_constraints:
+                    h(v._url)
                 return v
             if isinstance(v, _BaseUrl):
                 v = str(v)
@@ -323,6 +329,8 @@ class _BaseUrl:
             instance = source.__new__(source)
             instance._url = core_url
             return instance
+
+        wrap_val._has_extra_constraints = False
 
         return core_schema.no_info_wrap_validator_function(
             wrap_val,
@@ -532,7 +540,8 @@ class _BaseMultiHostUrl:
     ) -> core_schema.CoreSchema:
         def wrap_val(v, h):
             if isinstance(v, source):
-                h(v._url)
+                if wrap_val._has_extra_constraints:
+                    h(v._url)
                 return v
             if isinstance(v, _BaseMultiHostUrl):
                 v = str(v)
@@ -540,6 +549,8 @@ class _BaseMultiHostUrl:
             instance = source.__new__(source)
             instance._url = core_url
             return instance
+
+        wrap_val._has_extra_constraints = False
 
         return core_schema.no_info_wrap_validator_function(
             wrap_val,
