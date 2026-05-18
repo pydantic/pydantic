@@ -314,8 +314,6 @@ class _BaseUrl:
         cls, source: type[_BaseUrl], handler: GetCoreSchemaHandler
     ) -> core_schema.CoreSchema:
         def wrap_val(v, h):
-            if isinstance(v, source):
-                return v
             if isinstance(v, _BaseUrl):
                 v = str(v)
             core_url = h(v)
@@ -530,8 +528,6 @@ class _BaseMultiHostUrl:
         cls, source: type[_BaseMultiHostUrl], handler: GetCoreSchemaHandler
     ) -> core_schema.CoreSchema:
         def wrap_val(v, h):
-            if isinstance(v, source):
-                return v
             if isinstance(v, _BaseMultiHostUrl):
                 v = str(v)
             core_url = h(v)

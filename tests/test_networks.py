@@ -1095,7 +1095,8 @@ def test_url_subclasses_any_url() -> None:
     assert isinstance(http_url, AnyHttpUrl)
 
     url = TypeAdapter(AnyUrl).validate_python(http_url)
-    assert url is http_url
+    assert isinstance(url, AnyUrl)
+    assert str(url) == 'https://localhost/'
 
 
 def test_custom_constraints() -> None:
@@ -1105,6 +1106,35 @@ def test_custom_constraints() -> None:
 
     with pytest.raises(ValidationError):
         ta.validate_python('ftp://example.com')
+
+
+def test_url_constraints_applied_to_any_url_instance() -> None:
+    """UrlConstraints should not be bypassed when an existing AnyUrl instance is passed.
+
+    See https://github.com/pydantic/pydantic/issues/13170
+    """
+    ShortUrl = Annotated[AnyUrl, UrlConstraints(max_length=20)]
+    ta = TypeAdapter(ShortUrl)
+
+    with pytest.raises(ValidationError, match=r'URL should have at most 20 characters'):
+        ta.validate_python(AnyUrl('https://example.com/longer-than-twenty'))
+
+
+def test_url_constraints_applied_to_http_url_instance() -> None:
+    """UrlConstraints should apply when an HttpUrl subclass instance is passed to a constrained field."""
+    HttpsOnly = Annotated[AnyUrl, UrlConstraints(allowed_schemes=['https'])]
+    ta = TypeAdapter(HttpsOnly)
+
+    with pytest.raises(ValidationError, match=r'URL scheme should be'):
+        ta.validate_python(HttpUrl('http://example.com'))
+
+
+def test_url_constraints_passed_with_str_unchanged() -> None:
+    """Passing a string to a constrained URL field should work as before."""
+    ShortUrl = Annotated[AnyUrl, UrlConstraints(max_length=20)]
+    ta = TypeAdapter(ShortUrl)
+
+    assert ta.validate_python('https://example.com')
 
 
 def test_url_constraints_invalid_annotated_type() -> None:
@@ -1198,6 +1228,19 @@ def test_max_length_base_multi_host() -> None:
 
     with pytest.raises(ValidationError, match=r'Value should have at most 45 items after validation'):
         Model(postgres='postgres://user:pass@localhost:5432/foobarbazfoo')
+
+
+def test_url_constraints_applied_to_multi_host_instance() -> None:
+    """UrlConstraints should not be bypassed when an existing multi-host URL instance is passed."""
+    ShortDsn = Annotated[PostgresDsn, UrlConstraints(max_length=45)]
+    ta = TypeAdapter(ShortDsn)
+
+    with pytest.raises(ValidationError, match=r'URL should have at most 45 characters'):
+        ta.validate_python(PostgresDsn('postgres://user:pass@localhost:5432/foobarbazfoo'))
+
+    # Passing a string should work fine
+    result = ta.validate_python('postgres://user:pass@localhost:5432/foobar')
+    assert str(result) == 'postgres://user:pass@localhost:5432/foobar'
 
 
 def test_unexpected_ser() -> None:
