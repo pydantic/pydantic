@@ -1107,6 +1107,24 @@ def test_custom_constraints() -> None:
         ta.validate_python('ftp://example.com')
 
 
+def test_custom_constraints_reject_existing_url_instance() -> None:
+    HttpUrl = Annotated[AnyUrl, UrlConstraints(allowed_schemes=['http', 'https'])]
+    ta = TypeAdapter(HttpUrl)
+
+    with pytest.raises(ValidationError):
+        ta.validate_python(AnyUrl('file:///etc/passwd'))
+
+
+def test_model_validate_reapplies_url_constraints_to_existing_instance() -> None:
+    HttpUrl = Annotated[AnyUrl, UrlConstraints(allowed_schemes=['http', 'https'])]
+
+    class Model(BaseModel):
+        v: HttpUrl
+
+    with pytest.raises(ValidationError):
+        Model.model_validate({'v': AnyUrl('file:///etc/passwd')})
+
+
 def test_url_constraints_invalid_annotated_type() -> None:
     with pytest.raises(PydanticUserError):
         TypeAdapter(Annotated[str, UrlConstraints(max_length=1)])
