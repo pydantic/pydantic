@@ -238,8 +238,15 @@ jobs:
           path: pydantic-core/dist
 
   core-build-wasm-emscripten:
-    name: core / Build WASM Emscripten
+    name: core / Build WASM Emscripten (${{ matrix.python-version }})
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version:
+          # Can't build on 3.13 (https://github.com/PyO3/maturin/issues/3189)
+          # - '3.13'
+          - '3.14'
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
@@ -247,7 +254,7 @@ jobs:
 
       - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
         with:
-          python-version: '3.14'
+          python-version: ${{ matrix.python-version }}
 
       - run: pip install -U pyodide-build
 
@@ -267,7 +274,7 @@ jobs:
         with:
           working-directory: pydantic-core
           target: wasm32-unknown-emscripten
-          args: --release --out dist --interpreter 3.14
+          args: --release --out dist --interpreter ${{ matrix.python-version }}
           sccache: ${{ !startsWith(github.ref, 'refs/tags/') }}
           rust-toolchain: ${{ steps.pyodide-config.outputs.rust-toolchain }}
 
@@ -276,7 +283,7 @@ jobs:
 
       - uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7.0.0
         with:
-          name: pydantic_core_pyemscripten_wheels
+          name: pydantic_core_pyemscripten_wheels_${{ matrix.python-version }}
           path: pydantic-core/dist
 
   core-bench:
@@ -554,7 +561,7 @@ jobs:
       - name: get dist artifacts
         uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
         with:
-          pattern: pydantic_core_pyemscripten_wheels
+          pattern: pydantic_core_pyemscripten_wheels_*
           merge-multiple: true
           path: dist
 
