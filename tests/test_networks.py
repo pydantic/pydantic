@@ -936,6 +936,7 @@ def test_json():
         ('葉士豪@臺網中心.tw', '葉士豪', '葉士豪@臺網中心.tw'),
         ('"first.last" <first.last@example.com>', 'first.last', 'first.last@example.com'),
         ("Shaquille O'Neal <shaq@example.com>", "Shaquille O'Neal", 'shaq@example.com'),
+        ('Homer J. Simpson <homer@thesimpsons.com>', 'Homer J. Simpson', 'homer@thesimpsons.com'),
     ],
 )
 def test_address_valid(value, name, email):
@@ -969,7 +970,6 @@ def test_address_valid(value, name, email):
         ('foobar <foobar@example.com>>', None),
         ('foobar <<foobar<@example.com>', None),
         ('foobar <>', None),
-        ('first.last <first.last@example.com>', None),
         pytest.param('foobar <' + 'a' * 4096 + '@example.com>', 'Length must not exceed 2048 characters', id='long'),
     ],
 )
@@ -1008,6 +1008,12 @@ def test_name_email():
 
     assert str(Model(v=NameEmail('foo bar', 'foobaR@example.com')).v) == 'foo bar <foobaR@example.com>'
     assert str(Model(v='foo bar  <foobaR@example.com>').v) == 'foo bar <foobaR@example.com>'
+    assert Model(v='Homer J. Simpson <homer@thesimpsons.com>').v == NameEmail(
+        'Homer J. Simpson', 'homer@thesimpsons.com'
+    )
+    assert TypeAdapter(NameEmail).validate_python('Homer J. Simpson <homer@thesimpsons.com>') == NameEmail(
+        'Homer J. Simpson', 'homer@thesimpsons.com'
+    )
     assert str(Model(v='foobaR@example.com').v) == 'foobaR <foobaR@example.com>'
     assert NameEmail('foo bar', 'foobaR@example.com') == NameEmail('foo bar', 'foobaR@example.com')
     assert NameEmail('foo bar', 'foobaR@example.com') != NameEmail('foo bar', 'different@example.com')
