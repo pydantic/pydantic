@@ -270,7 +270,7 @@ jobs:
           actions-cache-folder: emsdk-cache
 
       - name: Build wheels
-        uses: PyO3/maturin-action@v1
+        uses: PyO3/maturin-action@04ac600d27cdf7a9a280dadf7147097c42b757ad # v1.50.1
         with:
           working-directory: pydantic-core
           target: wasm32-unknown-emscripten
@@ -281,7 +281,7 @@ jobs:
       - run: ls -lh dist/
         working-directory: pydantic-core
 
-      - uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7.0.0
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: pydantic_core_pyemscripten_wheels_${{ matrix.python-version }}
           path: pydantic-core/dist
@@ -542,9 +542,18 @@ jobs:
       - run: uv run pytest
 
   core-test-pyemscripten:
-    name: core / Test build on pyodide
+    name: core / Test build on pyodide (${{ matrix.python-version }})
     needs: [core-build-wasm-emscripten]
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          # Can't build on 3.13 (https://github.com/PyO3/maturin/issues/3189)
+          # - python-version: '3.13'
+          #   pylock-suffix: '313'
+          - python-version: '3.14'
+            pylock-suffix: '314'
 
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
@@ -554,22 +563,21 @@ jobs:
       - name: install uv
         uses: astral-sh/setup-uv@08807647e7069bb48b6ef5acd8ec9567f424441b # v8.1.0
         with:
-          python-version: '3.14'
+          python-version: ${{ matrix.python-version }}
           activate-environment: true
           enable-cache: true # zizmor: ignore[cache-poisoning] -- Job does not produce release artifacts and does not have sensitive permissions
 
       - name: get dist artifacts
         uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
         with:
-          pattern: pydantic_core_pyemscripten_wheels_*
-          merge-multiple: true
+          name: pydantic_core_pyemscripten_wheels_${{ matrix.python-version }}
           path: dist
 
       - run: |
           uv pip install pyodide-build
           uv run pyodide venv .venv-pyodide
           source .venv-pyodide/bin/activate
-          python -m pip install -r .github/pyodide/pylock.toml
+          python -m pip install -r .github/pyodide/pylock.${{ matrix.pylock-suffix }}.toml
           python -m pip install pydantic-core --no-index --no-deps --find-links dist
           python -m pytest
           python -c 'import pydantic_core._pydantic_core; print(pydantic_core._pydantic_core.__version__)'
