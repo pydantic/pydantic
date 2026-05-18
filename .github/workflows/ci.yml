@@ -243,11 +243,13 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python-version:
-          # Can't build on 3.12/3.13 (https://github.com/PyO3/maturin/issues/3189)
-          # - '3.12'
-          # - '3.13'
-          - '3.14'
+        include:
+          - python-version: '3.12'
+            platform-version: '2024_0'
+          - python-version: '3.13'
+            platform-version: '2025_0'
+          - python-version: '3.14'
+            platform-version: '2026_0'
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
@@ -256,7 +258,7 @@ jobs:
       - uses: astral-sh/setup-uv@08807647e7069bb48b6ef5acd8ec9567f424441b # v8.1.0
         with:
           python-version: ${{ matrix.python-version }}
-          enable-cache: ${{ !startsWith(github.ref, 'refs/tags/') }}
+          enable-cache: ${{ !startsWith(github.ref, 'refs/tags/') }} # zizmor: ignore[cache-poisoning]
 
       - run: uv sync --only-group pyodide-build
 
@@ -281,6 +283,9 @@ jobs:
           args: --release --out dist --interpreter ${{ matrix.python-version }}
           sccache: ${{ !startsWith(github.ref, 'refs/tags/') }} # zizmor: ignore[cache-poisoning]
           rust-toolchain: ${{ steps.pyodide-config.outputs.rust-toolchain }}
+          # Unclear how to avoid manually specifying this yet (https://github.com/PyO3/maturin/issues/3189):
+          docker-options: |
+            -e MATURIN_PYEMSCRIPTEN_PLATFORM_VERSION=${{ matrix.platform-version }}
 
       - run: ls -lh dist/
         working-directory: pydantic-core
@@ -553,11 +558,10 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          # Can't build on 3.12/3.13 (https://github.com/PyO3/maturin/issues/3189)
-          # - python-version: '3.12'
-          #   pylock-suffix: '312'
-          # - python-version: '3.13'
-          #   pylock-suffix: '313'
+          - python-version: '3.12'
+            pylock-suffix: '312'
+          - python-version: '3.13'
+            pylock-suffix: '313'
           - python-version: '3.14'
             pylock-suffix: '314'
 
