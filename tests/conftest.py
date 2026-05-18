@@ -107,6 +107,7 @@ def create_module(
 def subprocess_run_code(tmp_path: Path):
     if sys.platform == 'emscripten':
         pytest.skip('No subprocess support in emscripten')
+
     def run_code(source_code_or_function) -> str:
         if isinstance(source_code_or_function, FunctionType):
             source_code = _extract_source_code_from_function(source_code_or_function)
@@ -167,21 +168,24 @@ def generate_schema_calls(monkeypatch: pytest.MonkeyPatch) -> CallCounter:
 def validate_json_schemas(monkeypatch: pytest.MonkeyPatch, request: pytest.FixtureRequest) -> None:
     orig_generate = GenerateJsonSchema.generate
 
-    def generate(*args: Any, **kwargs: Any) -> Any:
-        json_schema = orig_generate(*args, **kwargs)
-        if not request.node.get_closest_marker('skip_json_schema_validation'):
-            try:
-                Draft202012Validator.check_schema(json_schema)
-            except SchemaError:
-                pytest.fail(
-                    'Failed to validate the JSON Schema against the Draft 2020-12 spec. '
-                    'If this is expected, you can mark the test function with the `skip_json_schema_validation` '
-                    'marker. Note that this validation only takes place during tests, and is not active at runtime.'
-                )
+    if sys.platform != 'emscripten':
+        # Until https://github.com/pyodide/pyodide/issues/6234 is fixed:
 
-        return json_schema
+        def generate(*args: Any, **kwargs: Any) -> Any:
+            json_schema = orig_generate(*args, **kwargs)
+            if not request.node.get_closest_marker('skip_json_schema_validation'):
+                try:
+                    Draft202012Validator.check_schema(json_schema)
+                except SchemaError:
+                    pytest.fail(
+                        'Failed to validate the JSON Schema against the Draft 2020-12 spec. '
+                        'If this is expected, you can mark the test function with the `skip_json_schema_validation` '
+                        'marker. Note that this validation only takes place during tests, and is not active at runtime.'
+                    )
 
-    monkeypatch.setattr(GenerateJsonSchema, 'generate', generate)
+            return json_schema
+
+        monkeypatch.setattr(GenerateJsonSchema, 'generate', generate)
 
 
 _thread_unsafe_fixtures = (

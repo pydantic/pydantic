@@ -126,6 +126,9 @@ build = [
     'build',
     'twine',
 ]
+pyodide-build = [
+    "pyodide-build",
+]
 
 all = [
   { include-group = 'dev' },
@@ -134,6 +137,7 @@ all = [
   { include-group = 'testing-extra' },
   { include-group = 'typechecking' },
   { include-group = 'build' },
+  { include-group = 'pyodide-build' },
 ]
 
 [tool.hatch.version]
