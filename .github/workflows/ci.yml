@@ -244,10 +244,13 @@ jobs:
       fail-fast: false
       matrix:
         include:
+          # For 3.12/3.13, pyodide gives nightly-2025-02-01 (1.86.0), which is below our MSRV (1.88) — override it.
           - python-version: '3.12'
             platform-version: '2024_0'
+            rust-toolchain: 'nightly-2025-05-09'
           - python-version: '3.13'
             platform-version: '2025_0'
+            rust-toolchain: 'nightly-2025-05-09'
           - python-version: '3.14'
             platform-version: '2026_0'
     steps:
@@ -264,8 +267,6 @@ jobs:
 
       - name: Get pyodide config
         id: pyodide-config
-        # TODO when enabling 3.12/3.13 back, we need to use a different rust_toolchain, as our MSRV is set to 1.88.
-        # For 3.12/3.13, pyodide gives nightly-2025-02-01 (1.86.0), use nightly-2025-05-09 instead.
         run: |
           echo "rust-toolchain=$(uv run pyodide config get rust_toolchain)" >> "$GITHUB_OUTPUT"
           echo "emscripten-version=$(uv run pyodide config get emscripten_version)" >> "$GITHUB_OUTPUT"
@@ -282,7 +283,7 @@ jobs:
           target: wasm32-unknown-emscripten
           args: --release --out dist --interpreter ${{ matrix.python-version }}
           sccache: ${{ !startsWith(github.ref, 'refs/tags/') }} # zizmor: ignore[cache-poisoning]
-          rust-toolchain: ${{ steps.pyodide-config.outputs.rust-toolchain }}
+          rust-toolchain: ${{ matrix.rust-toolchain || steps.pyodide-config.outputs.rust-toolchain }}
           # Unclear how to avoid manually specifying this yet (https://github.com/PyO3/maturin/issues/3189):
           docker-options: |
             -e MATURIN_PYEMSCRIPTEN_PLATFORM_VERSION=${{ matrix.platform-version }}
