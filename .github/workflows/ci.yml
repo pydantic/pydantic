@@ -247,9 +247,7 @@ jobs:
           # We can't build for 3.12 as Rust 1.88 is incompatible with the emsdk version (https://github.com/PyO3/maturin/issues/2549)
           # For 3.13, pyodide gives nightly-2025-02-01 (1.86.0), which is below our MSRV (1.88) — override it.
           - python-version: '3.13'
-            rust-toolchain: 'nightly-2025-05-09'
-            # Hardcoded copy of `pyodide config get rustflags` without `-Z emscripten-wasm-eh`:
-            rustflags: '-C link-arg=-sSIDE_MODULE=2 -Z link-native-libraries=yes'
+            rust-toolchain: 'nightly-2025-07-01'
           - python-version: '3.14'
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
@@ -280,7 +278,7 @@ jobs:
         uses: PyO3/maturin-action@04ac600d27cdf7a9a280dadf7147097c42b757ad # v1.50.1
         # Unclear how to avoid manually specifying this yet (https://github.com/PyO3/maturin/issues/3189):
         env:
-          CARGO_TARGET_WASM32_UNKNOWN_EMSCRIPTEN_RUSTFLAGS: ${{ matrix.rustflags || steps.pyodide-config.outputs.rustflags }}
+          CARGO_TARGET_WASM32_UNKNOWN_EMSCRIPTEN_RUSTFLAGS: ${{ steps.pyodide-config.outputs.rustflags }}
           MATURIN_PYEMSCRIPTEN_PLATFORM_VERSION: ${{ steps.pyodide-config.outputs.pyodide-abi-version }}
         with:
           working-directory: pydantic-core
