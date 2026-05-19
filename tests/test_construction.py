@@ -391,6 +391,53 @@ def test_model_copy_deep_update_with_private_attributes() -> None:
     assert m2._private is not m._private
 
 
+def test_model_copy_update_private_attribute() -> None:
+    """Private attributes in model_copy(update=...) should route to __pydantic_private__, not __dict__."""
+
+    class M(BaseModel):
+        a: int
+        _private: str = PrivateAttr(default='old')
+
+    m = M(a=1)
+    m2 = m.model_copy(update={'_private': 'new'})
+
+    # Private attribute should be accessible via property
+    assert m2._private == 'new'
+    # Private attribute should NOT be in __dict__
+    assert '_private' not in m2.__dict__
+    # Private attribute should be in __pydantic_private__
+    assert m2.__pydantic_private__ is not None
+    assert m2.__pydantic_private__['_private'] == 'new'
+
+
+def test_model_copy_update_respects_extra_forbid() -> None:
+    """model_copy(update=...) should respect extra='forbid' and not set unknown keys."""
+
+    class M(BaseModel, extra='forbid'):
+        a: int
+
+    m = M(a=1)
+    m2 = m.model_copy(update={'nonexistent': 'value'})
+
+    assert m2.a == 1
+    assert 'nonexistent' not in m2.__dict__
+    assert m2.__pydantic_extra__ is None or 'nonexistent' not in (m2.__pydantic_extra__ or {})
+
+
+def test_model_copy_update_respects_extra_ignore() -> None:
+    """model_copy(update=...) should respect extra='ignore' and not set unknown keys."""
+
+    class M(BaseModel, extra='ignore'):
+        a: int
+
+    m = M(a=1)
+    m2 = m.model_copy(update={'nonexistent': 'value'})
+
+    assert m2.a == 1
+    assert 'nonexistent' not in m2.__dict__
+    assert m2.__pydantic_extra__ is None or 'nonexistent' not in (m2.__pydantic_extra__ or {})
+
+
 def test_copy_set_fields(ModelTwo, copy_method):
     m = ModelTwo(a=24, d=Model(a='12'))
     m2 = copy_method(m)
