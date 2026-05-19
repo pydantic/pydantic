@@ -1009,6 +1009,8 @@ def test_name_email():
     assert str(Model(v=NameEmail('foo bar', 'foobaR@example.com')).v) == 'foo bar <foobaR@example.com>'
     assert str(Model(v='foo bar  <foobaR@example.com>').v) == 'foo bar <foobaR@example.com>'
     assert str(Model(v='foobaR@example.com').v) == 'foobaR <foobaR@example.com>'
+    # periods are allowed in unquoted display names per RFC 5322 (fixes #13206)
+    assert str(Model(v='Homer J. Simpson <homer@example.com>').v) == 'Homer J. Simpson <homer@example.com>'
     assert NameEmail('foo bar', 'foobaR@example.com') == NameEmail('foo bar', 'foobaR@example.com')
     assert NameEmail('foo bar', 'foobaR@example.com') != NameEmail('foo bar', 'different@example.com')
 
