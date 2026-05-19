@@ -441,12 +441,22 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
                 for k, v in update.items():
                     if k in self.__pydantic_fields__:
                         copied.__dict__[k] = v
+                    elif self.__private_attributes__ and k in self.__private_attributes__:
+                        if copied.__pydantic_private__ is None:
+                            copied.__pydantic_private__ = {}
+                        copied.__pydantic_private__[k] = v
                     else:
                         if copied.__pydantic_extra__ is None:
                             copied.__pydantic_extra__ = {}
                         copied.__pydantic_extra__[k] = v
             else:
-                copied.__dict__.update(update)
+                for k, v in update.items():
+                    if k in self.__pydantic_fields__:
+                        copied.__dict__[k] = v
+                    elif self.__private_attributes__ and k in self.__private_attributes__:
+                        if copied.__pydantic_private__ is None:
+                            copied.__pydantic_private__ = {}
+                        copied.__pydantic_private__[k] = v
 
             copied.__pydantic_fields_set__.update(update.keys())
 
