@@ -5,7 +5,8 @@
 // core schema is used standalone (e.g. with a Pydantic type adapter), but this isn't
 // something we explicitly support.
 
-use std::{borrow::Cow, sync::Arc};
+use std::borrow::Cow;
+use std::sync::{Arc, LazyLock};
 
 use pyo3::prelude::*;
 use pyo3::types::PyDict;
@@ -13,9 +14,9 @@ use pyo3::types::PyDict;
 use serde::ser::Error;
 
 use crate::PydanticSerializationUnexpectedValue;
+use crate::common::missing_sentinel::get_missing_sentinel_object;
 use crate::definitions::DefinitionsBuilder;
 use crate::serializers::SerializationState;
-use crate::{build_tools::LazyLock, common::missing_sentinel::get_missing_sentinel_object};
 
 use super::{BuildSerializer, CombinedSerializer, TypeSerializer};
 

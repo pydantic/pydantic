@@ -3,12 +3,11 @@ use pyo3::prelude::*;
 use pyo3::types::PyDict;
 
 use std::borrow::Cow;
-use std::sync::Arc;
+use std::sync::{Arc, LazyLock};
 
 use serde::Serialize;
 
 use crate::PydanticSerializationUnexpectedValue;
-use crate::build_tools::LazyLock;
 use crate::{definitions::DefinitionsBuilder, input::Int};
 
 use crate::serializers::SerializationState;
@@ -95,8 +94,8 @@ macro_rules! build_simple_serializer {
 
         impl $struct_name {
             pub fn get() -> &'static std::sync::Arc<CombinedSerializer> {
-                static INSTANCE: $crate::build_tools::LazyLock<std::sync::Arc<CombinedSerializer>> =
-                    $crate::build_tools::LazyLock::new(|| std::sync::Arc::new($struct_name.into()));
+                static INSTANCE: std::sync::LazyLock<std::sync::Arc<CombinedSerializer>> =
+                    std::sync::LazyLock::new(|| std::sync::Arc::new($struct_name.into()));
                 &INSTANCE
             }
         }
