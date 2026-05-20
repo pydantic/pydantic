@@ -45,6 +45,7 @@ class ConfigWrapper:
     frozen: bool
     populate_by_name: bool
     use_enum_values: bool
+    use_enum_names: bool
     validate_assignment: bool
     arbitrary_types_allowed: bool
     from_attributes: bool
@@ -279,6 +280,7 @@ config_defaults = ConfigDict(
     frozen=False,
     populate_by_name=False,
     use_enum_values=False,
+    use_enum_names=False,
     validate_assignment=False,
     arbitrary_types_allowed=False,
     from_attributes=False,

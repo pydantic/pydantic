@@ -432,6 +432,10 @@ class GenerateSchema:
             # TODO this is an ugly hack, how do we trigger an Any schema for serialization?
             value_ser_type = core_schema.plain_serializer_function_ser_schema(lambda x: x)
 
+        use_enum_names = self._config_wrapper.use_enum_names
+        if use_enum_names:
+            sub_type = 'str'
+
         if cases:
 
             def get_json_schema(schema: CoreSchema, handler: GetJsonSchemaHandler) -> JsonSchemaValue:
@@ -447,6 +451,7 @@ class GenerateSchema:
                 cases,
                 sub_type=sub_type,
                 missing=None if default_missing else enum_type._missing_,
+                use_enum_name=use_enum_names or None,
                 ref=enum_ref,
                 metadata={'pydantic_js_functions': [get_json_schema]},
             )

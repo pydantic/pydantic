@@ -1318,6 +1318,7 @@ class EnumSchema(TypedDict, total=False):
     members: Required[list[Any]]
     sub_type: Literal['str', 'int', 'float']
     missing: Callable[[Any], Any]
+    use_enum_name: bool
     strict: bool
     ref: str
     metadata: dict[str, Any]
@@ -1330,6 +1331,7 @@ def enum_schema(
     *,
     sub_type: Literal['str', 'int', 'float'] | None = None,
     missing: Callable[[Any], Any] | None = None,
+    use_enum_name: bool | None = None,
     strict: bool | None = None,
     ref: str | None = None,
     metadata: dict[str, Any] | None = None,
@@ -1357,6 +1359,7 @@ def enum_schema(
         members: The members of the enum, generally `list(MyEnum.__members__.values())`
         sub_type: The type of the enum, either 'str' or 'int' or None for plain enums
         missing: A function to use when the value is not found in the enum, from `_missing_`
+        use_enum_name: Whether to validate/serialize using the enum member's name instead of value
         strict: Whether to use strict mode, defaults to False
         ref: optional unique identifier of the schema, used to reference the schema in other places
         metadata: Any other information you want to include with the schema, not used by pydantic-core
@@ -1368,6 +1371,7 @@ def enum_schema(
         members=members,
         sub_type=sub_type,
         missing=missing,
+        use_enum_name=use_enum_name,
         strict=strict,
         ref=ref,
         metadata=metadata,

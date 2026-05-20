@@ -261,6 +261,45 @@ class ConfigDict(TypedDict, total=False):
     ```
     """
 
+    use_enum_names: bool
+    """
+    Whether to validate and serialize enums using the member
+    [`name`][enum.Enum.name] instead of the [`value`][enum.Enum.value].
+    Defaults to `False`.
+
+    When enabled, input data should use the enum member's name (e.g. `'NY'`)
+    rather than its value (e.g. `'New York'`), and serialization will output
+    the member name. JSON schemas will also list member names.
+
+    This is useful when enum names serve as short codes and values are
+    human-readable descriptions, or when interoperating with systems
+    like SQLAlchemy that store enum names.
+
+    ```python
+    from enum import Enum
+
+    from pydantic import BaseModel, ConfigDict
+
+    class StateAbbrev(Enum):
+        NY = 'New York'
+        MA = 'Massachusetts'
+
+    class Address(BaseModel):
+        model_config = ConfigDict(use_enum_names=True)
+
+        state: StateAbbrev
+
+    addr = Address(state='NY')
+    print(addr.state)
+    #> StateAbbrev.NY
+    print(addr.model_dump())
+    #> {'state': 'NY'}
+    ```
+
+    /// version-added | v2.14
+    ///
+    """
+
     validate_assignment: bool
     """
     Whether to validate the data when the model is changed. Defaults to `False`.

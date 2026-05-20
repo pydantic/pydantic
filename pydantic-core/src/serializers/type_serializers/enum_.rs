@@ -21,6 +21,7 @@ use super::{BuildSerializer, CombinedSerializer, TypeSerializer};
 pub struct EnumSerializer {
     class: Py<PyType>,
     serializer: Option<Arc<CombinedSerializer>>,
+    use_enum_name: bool,
 }
 
 impl BuildSerializer for EnumSerializer {
@@ -31,18 +32,21 @@ impl BuildSerializer for EnumSerializer {
         config: Option<&Bound<'_, PyDict>>,
         _definitions: &mut DefinitionsBuilder<Arc<CombinedSerializer>>,
     ) -> PyResult<Arc<CombinedSerializer>> {
-        let sub_type: Option<String> = schema.get_as(intern!(schema.py(), "sub_type"))?;
+        let py = schema.py();
+        let use_enum_name: bool = schema.get_as(intern!(py, "use_enum_name"))?.unwrap_or(false);
+        let sub_type: Option<String> = schema.get_as(intern!(py, "sub_type"))?;
 
         let serializer = match sub_type.as_deref() {
             Some("int") => Some(IntSerializer::get().clone()),
             Some("str") => Some(StrSerializer::get().clone()),
-            Some("float") => Some(FloatSerializer::get(schema.py(), config)?.clone()),
+            Some("float") => Some(FloatSerializer::get(py, config)?.clone()),
             Some(_) => return py_schema_err!("`sub_type` must be one of: 'int', 'str', 'float' or None"),
             None => None,
         };
         Ok(CombinedSerializer::Enum(Self {
-            class: schema.get_as_req(intern!(schema.py(), "cls"))?,
+            class: schema.get_as_req(intern!(py, "cls"))?,
             serializer,
+            use_enum_name,
         })
         .into())
     }
@@ -54,15 +58,21 @@ impl TypeSerializer for EnumSerializer {
     fn to_python<'py>(&self, value: &Bound<'py, PyAny>, state: &mut SerializationState<'py>) -> PyResult<Py<PyAny>> {
         let py = value.py();
         if value.is_exact_instance(self.class.bind(py)) {
-            // if we're in JSON mode, we need to get the value attribute and serialize that
-            if state.extra.mode.is_json() {
-                let dot_value = value.getattr(intern!(py, "value"))?;
-                match self.serializer {
-                    Some(ref s) => s.to_python(&dot_value, state),
-                    None => infer_to_python(&dot_value, state),
-                }
+            let attr = if self.use_enum_name {
+                intern!(py, "name")
             } else {
-                // if we're not in JSON mode, we assume the value is safe to return directly
+                intern!(py, "value")
+            };
+            if state.extra.mode.is_json() {
+                let dot_attr = value.getattr(attr)?;
+                match self.serializer {
+                    Some(ref s) => s.to_python(&dot_attr, state),
+                    None => infer_to_python(&dot_attr, state),
+                }
+            } else if self.use_enum_name {
+                let dot_attr = value.getattr(attr)?;
+                Ok(dot_attr.unbind())
+            } else {
                 Ok(value.clone().unbind())
             }
         } else {
@@ -78,13 +88,16 @@ impl TypeSerializer for EnumSerializer {
     ) -> PyResult<Cow<'a, str>> {
         let py = key.py();
         if key.is_exact_instance(self.class.bind(py)) {
-            let dot_value = key.getattr(intern!(py, "value"))?;
+            let attr = if self.use_enum_name {
+                intern!(py, "name")
+            } else {
+                intern!(py, "value")
+            };
+            let dot_attr = key.getattr(attr)?;
             let k = match self.serializer {
-                Some(ref s) => s.json_key(&dot_value, state),
-                None => infer_json_key(&dot_value, state),
+                Some(ref s) => s.json_key(&dot_attr, state),
+                None => infer_json_key(&dot_attr, state),
             }?;
-            // since dot_value is a local reference, we need to allocate it and returned an
-            // owned variant of cow.
             Ok(Cow::Owned(k.into_owned()))
         } else {
             state.warn_fallback_py(self.get_name(), key)?;
@@ -98,11 +111,17 @@ impl TypeSerializer for EnumSerializer {
         serializer: S,
         state: &mut SerializationState<'py>,
     ) -> Result<S::Ok, S::Error> {
-        if value.is_exact_instance(self.class.bind(value.py())) {
-            let dot_value = value.getattr(intern!(value.py(), "value")).map_err(py_err_se_err)?;
+        let py = value.py();
+        if value.is_exact_instance(self.class.bind(py)) {
+            let attr = if self.use_enum_name {
+                intern!(py, "name")
+            } else {
+                intern!(py, "value")
+            };
+            let dot_attr = value.getattr(attr).map_err(py_err_se_err)?;
             match self.serializer {
-                Some(ref s) => s.serde_serialize(&dot_value, serializer, state),
-                None => infer_serialize(&dot_value, serializer, state),
+                Some(ref s) => s.serde_serialize(&dot_attr, serializer, state),
+                None => infer_serialize(&dot_attr, serializer, state),
             }
         } else {
             state.warn_fallback_ser::<S>(self.get_name(), value)?;

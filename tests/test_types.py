@@ -7314,3 +7314,154 @@ def test_string_constraints_ascii_only() -> None:
         'msg': 'String should contain only ASCII characters',
         'input': 'caf\xe9',
     }
+
+
+class TestUseEnumNames:
+    """Tests for the use_enum_names config option."""
+
+    def test_basic_validation_by_name(self) -> None:
+        class StateAbbrev(Enum):
+            NY = 'New York'
+            MA = 'Massachusetts'
+            CA = 'California'
+
+        class Address(BaseModel):
+            model_config = ConfigDict(use_enum_names=True)
+
+            state: StateAbbrev
+
+        addr = Address(state='NY')
+        assert addr.state is StateAbbrev.NY
+
+    def test_validation_rejects_value_when_use_enum_names(self) -> None:
+        class StateAbbrev(Enum):
+            NY = 'New York'
+            MA = 'Massachusetts'
+
+        class Address(BaseModel):
+            model_config = ConfigDict(use_enum_names=True)
+
+            state: StateAbbrev
+
+        with pytest.raises(ValidationError):
+            Address(state='New York')
+
+    def test_serialization_by_name(self) -> None:
+        class StateAbbrev(Enum):
+            NY = 'New York'
+            MA = 'Massachusetts'
+
+        class Address(BaseModel):
+            model_config = ConfigDict(use_enum_names=True)
+
+            state: StateAbbrev
+
+        addr = Address(state='NY')
+        assert addr.model_dump() == {'state': 'NY'}
+        assert addr.model_dump_json() == '{"state":"NY"}'
+
+    def test_json_schema_lists_names(self) -> None:
+        class StateAbbrev(Enum):
+            NY = 'New York'
+            MA = 'Massachusetts'
+
+        class Address(BaseModel):
+            model_config = ConfigDict(use_enum_names=True)
+
+            state: StateAbbrev
+
+        schema = Address.model_json_schema()
+        state_schema = schema['$defs']['StateAbbrev']
+        assert state_schema['enum'] == ['NY', 'MA']
+        assert state_schema['type'] == 'string'
+
+    def test_int_enum_with_use_enum_names(self) -> None:
+        class Priority(IntEnum):
+            LOW = 1
+            MEDIUM = 2
+            HIGH = 3
+
+        class Task(BaseModel):
+            model_config = ConfigDict(use_enum_names=True)
+
+            priority: Priority
+
+        task = Task(priority='HIGH')
+        assert task.priority is Priority.HIGH
+        assert task.model_dump() == {'priority': 'HIGH'}
+        assert task.model_dump_json() == '{"priority":"HIGH"}'
+
+        with pytest.raises(ValidationError):
+            Task(priority=3)
+
+    def test_str_enum_with_use_enum_names(self) -> None:
+        class Color(str, Enum):
+            RED = 'red_value'
+            GREEN = 'green_value'
+
+        class Model(BaseModel):
+            model_config = ConfigDict(use_enum_names=True)
+
+            color: Color
+
+        m = Model(color='RED')
+        assert m.color is Color.RED
+        assert m.model_dump() == {'color': 'RED'}
+
+        with pytest.raises(ValidationError):
+            Model(color='red_value')
+
+    def test_default_behavior_unchanged(self) -> None:
+        class StateAbbrev(Enum):
+            NY = 'New York'
+            MA = 'Massachusetts'
+
+        class Address(BaseModel):
+            state: StateAbbrev
+
+        addr = Address(state='New York')
+        assert addr.state is StateAbbrev.NY
+        assert addr.model_dump() == {'state': StateAbbrev.NY}
+        assert addr.model_dump_json() == '{"state":"New York"}'
+
+    def test_enum_member_passthrough(self) -> None:
+        class StateAbbrev(Enum):
+            NY = 'New York'
+            MA = 'Massachusetts'
+
+        class Address(BaseModel):
+            model_config = ConfigDict(use_enum_names=True)
+
+            state: StateAbbrev
+
+        addr = Address(state=StateAbbrev.NY)
+        assert addr.state is StateAbbrev.NY
+
+    def test_use_enum_names_with_use_enum_values(self) -> None:
+        class StateAbbrev(Enum):
+            NY = 'New York'
+            MA = 'Massachusetts'
+
+        class Address(BaseModel):
+            model_config = ConfigDict(use_enum_names=True, use_enum_values=True)
+
+            state: StateAbbrev
+
+        addr = Address(state='NY')
+        assert addr.state == 'New York'
+
+    def test_json_schema_names_for_int_enum(self) -> None:
+        class Priority(IntEnum):
+            LOW = 1
+            MEDIUM = 2
+            HIGH = 3
+
+        class Task(BaseModel):
+            model_config = ConfigDict(use_enum_names=True)
+
+            priority: Priority
+
+        schema = Task.model_json_schema()
+        priority_schema = schema['$defs']['Priority']
+        assert priority_schema['enum'] == ['LOW', 'MEDIUM', 'HIGH']
+        assert priority_schema['type'] == 'string'

@@ -34,10 +34,15 @@ impl BuildValidator for BuildEnumValidator {
         }
 
         let py = schema.py();
-        let value_str = intern!(py, "value");
+        let use_enum_name: bool = schema.get_as(intern!(py, "use_enum_name"))?.unwrap_or(false);
+        let attr_str = if use_enum_name {
+            intern!(py, "name")
+        } else {
+            intern!(py, "value")
+        };
         let expected: Vec<(Bound<'_, PyAny>, Py<PyAny>)> = members
             .iter()
-            .map(|v| Ok((v.getattr(value_str)?, v.into())))
+            .map(|v| Ok((v.getattr(attr_str)?, v.into())))
             .collect::<PyResult<_>>()?;
 
         let repr_args: Vec<_> = expected.iter().map(|(k, _)| k.repr()).collect::<PyResult<_>>()?;
@@ -58,6 +63,7 @@ impl BuildValidator for BuildEnumValidator {
                     expected_repr,
                     strict: is_strict(schema, config)?,
                     class_repr: class_repr.clone(),
+                    use_enum_name,
                     name: format!("{}[{class_repr}]", $name_prefix),
                 }
             };
@@ -92,6 +98,7 @@ pub struct EnumValidator<T: EnumValidateValue> {
     expected_repr: String,
     strict: bool,
     class_repr: String,
+    use_enum_name: bool,
     name: String,
 }
 
@@ -122,9 +129,12 @@ impl<T: EnumValidateValue> Validator for EnumValidator<T> {
 
         if let Some(v) = T::validate_value(py, input, &self.lookup, strict)? {
             return Ok(v);
-        } else if let Ok(res) = class.as_unbound().call1(py, (input.as_python(),)) {
-            return Ok(res);
-        } else if let Some(ref missing) = self.missing {
+        } else if !self.use_enum_name {
+            if let Ok(res) = class.as_unbound().call1(py, (input.as_python(),)) {
+                return Ok(res);
+            }
+        }
+        if let Some(ref missing) = self.missing {
             let enum_value = missing.bind(py).call1((input.to_object(py)?,)).map_err(|_| {
                 ValError::new(
                     ErrorType::Enum {
