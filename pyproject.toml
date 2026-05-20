@@ -184,6 +184,8 @@ addopts = [
 ]
 markers = [
     'skip_json_schema_validation: Disable JSON Schema validation.',
+    # Registered here for the Pyodide venv (pytest-timeout uses signal.setitimer).
+    'timeout: pytest-timeout marker; no-op without pytest-timeout installed.',
 ]
 
 [tool.uv]

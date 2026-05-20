@@ -56,3 +56,7 @@ pydantic/*.so
 
 # Rust build files
 /target/
+
+# pyemscripten-test-local.sh bootstrap toolchain
+/.pyodide-toolchain/
+/.venv-pyodide/

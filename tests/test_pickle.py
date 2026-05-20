@@ -30,10 +30,13 @@ else:
 
 TEST_DATA_DIR = Path(__file__).parent / 'test_data'
 
-pytestmark = pytest.mark.skipif(
-    cloudpickle is None,
-    reason='cloudpickle is not installed, or tests are running with PyPy (https://github.com/cloudpipe/cloudpickle/issues/592).',
-)
+pytestmark = [
+    pytest.mark.skipif(
+        cloudpickle is None,
+        reason='cloudpickle is not installed, or tests are running with PyPy (https://github.com/cloudpipe/cloudpickle/issues/592).',
+    ),
+    pytest.mark.skipif(sys.platform == 'emscripten', reason='subprocess is unavailable under Emscripten/Pyodide'),
+]
 
 # Note: this xfail marker was used when cloudpickle was partially compatible with PyPy. Since PyPy 7.3.22, it isn't compatible
 # at all (importing it fails), so all tests are skipped as per the module's `pytestmark`. We keep the xfail marker if this ever

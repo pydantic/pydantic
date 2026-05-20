@@ -105,6 +105,9 @@ def create_module(
 
 @pytest.fixture
 def subprocess_run_code(tmp_path: Path):
+    if sys.platform == 'emscripten':
+        pytest.skip('subprocess is unavailable under Emscripten/Pyodide')
+
     def run_code(source_code_or_function) -> str:
         if isinstance(source_code_or_function, FunctionType):
             source_code = _extract_source_code_from_function(source_code_or_function)

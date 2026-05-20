@@ -72,6 +72,12 @@ build-wasm:
 	uvx maturin build --release --target wasm32-unknown-emscripten --out dist -i 3.13
 	ls -lh dist
 
+.PHONY: build-pyemscripten  ## Build a PEP 783 pyemscripten wheel via pyodide-build
+build-pyemscripten:
+	# `pyodide build` writes to ./dist (it treats --output-dir as a package spec).
+	pyodide build .
+	ls -lh dist
+
 .PHONY: format  ## Auto-format rust and python source files
 format:
 	uv run ruff check --fix $(sources)

@@ -104,6 +104,10 @@ test-pydantic-extra-types: .uv
 test-no-docs: .uv
 	uv run pytest tests --ignore=tests/test_docs.py
 
+.PHONY: test-pyemscripten  ## Bootstrap a local pyemscripten toolchain into .pyodide-toolchain/ and run the test suite under Pyodide.
+test-pyemscripten:
+	bash pyemscripten-test-local.sh
+
 .PHONY: all  ## Run the standard set of checks performed in CI
 all: lint typecheck codespell testcov
 

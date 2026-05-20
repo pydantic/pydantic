@@ -1,5 +1,6 @@
 [build-system]
-requires = ['maturin>=1.10,<2']
+# >=1.13.3 for the PEP 783 `pyemscripten_*_wasm32` tag (PyO3/maturin#3163).
+requires = ['maturin>=1.13.3,<2']
 build-backend = 'maturin'
 
 [project]
@@ -127,6 +128,9 @@ addopts = [
     '--benchmark-warmup',
     'on',
     '--benchmark-disable',                        # this is enable by `make benchmark` when you actually want to run benchmarks
+]
+markers = [
+    'timeout: pytest-timeout marker; no-op without pytest-timeout installed.',
 ]
 
 [tool.coverage.run]
