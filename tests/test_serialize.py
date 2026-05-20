@@ -148,7 +148,7 @@ def test_serializer_annotated_typing_cache(serializer, func):
 
 
 def test_use_bare_field_serializer():
-    with pytest.raises(PydanticUserError, check=lambda e: e.code == 'decorator-missing-arguments'):
+    with pytest.raises(PydanticUserError) as exc:
 
         class Model(BaseModel):
             a: str
@@ -156,6 +156,8 @@ def test_use_bare_field_serializer():
             @field_serializer
             def checker(cls, v):
                 return v
+
+    assert exc.value.code == 'decorator-missing-arguments'
 
 
 def test_use_no_fields_field_serializer():
@@ -172,7 +174,7 @@ def test_use_no_fields_field_serializer():
 
 
 def test_field_serializer_bad_fields_throws_configerror():
-    with pytest.raises(PydanticUserError, check=lambda e: e.code == 'decorator-invalid-fields'):
+    with pytest.raises(PydanticUserError) as exc:
 
         class Model1(BaseModel):
             a: str
@@ -182,7 +184,9 @@ def test_field_serializer_bad_fields_throws_configerror():
             def check_fields(cls, v):
                 return v
 
-    with pytest.raises(PydanticUserError, check=lambda e: e.code == 'decorator-invalid-fields'):
+    assert exc.value.code == 'decorator-invalid-fields'
+
+    with pytest.raises(PydanticUserError) as exc:
 
         class Model2(BaseModel):
             a: str
@@ -192,6 +196,8 @@ def test_field_serializer_bad_fields_throws_configerror():
             @classmethod
             def check_fields(cls, v):
                 return v
+
+    assert exc.value.code == 'decorator-invalid-fields'
 
 
 def test_serialize_decorator_always():
@@ -1394,3 +1400,40 @@ def test_wrap_ser_called_once() -> None:
 
     my_model = MyParentModel.model_validate({'nested': {'inner_value': 'foo'}})
     assert my_model.model_dump() == {'nested': {'inner_value': 'my_prefix:foo'}}
+
+
+def test_extra_allow_alias_collision():
+    class Model(BaseModel):
+        model_config = ConfigDict(extra='allow')
+        x: int = Field(alias='X')
+
+    payload = {'X': 1, 'x': 2}
+    model = Model.model_validate(payload)
+
+    # In model_dump, we expect 'x' to be 1 (the validated field),
+    # and not overwritten by the extra field 'x' which was 2.
+    dump = model.model_dump()
+    assert dump == {'x': 1}, f"Expected {{'x': 1}}, got {dump}"
+
+    json_dump = model.model_dump_json()
+    assert '"x":2' not in json_dump, f'Unexpected \'"x":2\' in {json_dump}'
+
+
+def test_computed_field_collision():
+    class Model(BaseModel):
+        model_config = ConfigDict(extra='allow')
+
+        @computed_field
+        def x(self) -> int:
+            return 1
+
+    # Payload provides an extra field 'x'
+    model = Model.model_validate({'x': 2})
+
+    dump = model.model_dump()
+    assert dump['x'] == 1, f"Computed field 'x' was overwritten by extra field. Value is {dump['x']}"
+
+    json_dump_str = model.model_dump_json()
+    found_keys = re.findall(r'"([^"]+)"\s*:', json_dump_str)
+    x_count = found_keys.count('x')
+    assert x_count == 1, f"Duplicate key 'x' found in JSON dump: {json_dump_str}"

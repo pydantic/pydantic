@@ -187,6 +187,8 @@ impl GeneralFieldsSerializer {
             .filter(|_| !state.extra.serialize_as_any)
             .unwrap_or_else(|| AnySerializer::get());
 
+        let mut emitted_main_keys = ahash::AHashSet::new();
+
         for result in main_iter {
             let (key, value) = result?;
             let key_str: PyBackedStr = key.extract()?;
@@ -206,9 +208,12 @@ impl GeneralFieldsSerializer {
                 };
 
                 let state = &mut state.scoped_include_exclude(next_include_exclude);
-                map.serialize_entry_string_key(field.get_key(&state.extra), &value, serializer, state)?;
+                let field_key = field.get_key(&state.extra);
+                map.serialize_entry_string_key(field_key, &value, serializer, state)?;
+                emitted_main_keys.insert(field_key.to_string());
             } else if self.mode == FieldsMode::TypedDictAllow {
                 self.serialize_extra(&key_str, &value, state, missing_sentinel, extras_serializer, &mut map)?;
+                emitted_main_keys.insert(key_str.to_string());
             } else if state.check == SerCheck::Strict {
                 return Err(unexpected_field(&key_str, model).into());
             }
@@ -220,14 +225,18 @@ impl GeneralFieldsSerializer {
 
         for result in extras_iter {
             let (key, value) = result?;
-            self.serialize_extra(
-                &key.extract()?,
-                &value,
-                state,
-                missing_sentinel,
-                extras_serializer,
-                &mut map,
-            )?;
+            let key_str: PyBackedStr = key.extract()?;
+
+            if emitted_main_keys.contains(&*key_str) {
+                continue;
+            }
+            if let Some(computed_fields) = &self.computed_fields
+                && computed_fields.contains_key(&key_str, state)
+            {
+                continue;
+            }
+
+            self.serialize_extra(&key_str, &value, state, missing_sentinel, extras_serializer, &mut map)?;
         }
 
         if let Some(computed_fields) = &self.computed_fields {
