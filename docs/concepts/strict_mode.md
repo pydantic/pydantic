@@ -1,3 +1,7 @@
+---
+title: Pydantic Validation Strict Mode Explained
+description: "Enforce type safety without compromise. Pydantic strict mode allows you to reject invalid data types and build more predictable, high-performance apps."
+---
 ??? api "API Documentation"
     [`pydantic.types.Strict`][pydantic.types.Strict]<br>
 

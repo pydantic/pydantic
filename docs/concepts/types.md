@@ -1,3 +1,7 @@
+---
+title: "Pydantic Validation Types: Defining Validation & Serialization"
+description: "Intro to standard Python types, specialized fields & strict validation modes. Learn how Pydantic’s type system automates data integrity & accelerates builds."
+---
 Pydantic uses types to define how validation and serialization should be performed.
 [Built-in and standard library types](../api/standard_library_types.md) (such as [`int`][],
 [`str`][], [`date`][datetime.date]) can be used as is. [Strictness](./strict_mode.md)

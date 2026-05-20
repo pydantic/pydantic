@@ -1,3 +1,7 @@
+---
+title: "Guide to Generating JSON Schema - Pydantic Validation"
+description: "Learn how to generate JSON Schema from Pydantic models. Use model_json_schema() to create OpenAPI-compatible schemas for your Python data validation."
+---
 ??? api "API Documentation"
     [`pydantic.json_schema`][pydantic.json_schema]<br>
 

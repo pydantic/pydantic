@@ -1,3 +1,7 @@
+---
+title: "Property-Based Testing with Pydantic Validation & Hypothesis"
+description: "Bridge Pydantic models with Hypothesis to auto-generate diverse test data and ensure your data validation is production-ready."
+---
 [Hypothesis](https://hypothesis.readthedocs.io/) is the Python library for
 [property-based testing](https://increment.com/testing/in-praise-of-property-based-testing/).
 Hypothesis can infer how to construct type-annotated classes, and supports builtin types,

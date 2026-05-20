@@ -1,3 +1,7 @@
+---
+title: "Pydantic Validation Mypy Plugin: Capabilities & Configuration"
+description: Eliminate type errors before they hit production. The Pydantic Mypy plugin brings robust static analysis to your data models for bulletproof Python code.
+---
 Pydantic works well with [mypy](http://mypy-lang.org) right out of the box.
 
 However, Pydantic also ships with a mypy plugin that adds a number of important Pydantic-specific

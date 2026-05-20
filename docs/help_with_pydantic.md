@@ -1,10 +1,13 @@
+---
+description: "Connect with the Pydantic community on Discord, GitHub, and Stack Overflow for expert troubleshooting and coding advice."
+---
 # Getting help with Pydantic
 
 If you need help getting started with Pydantic or with advanced usage, the following sources may be useful.
 
 ## :material-help: Usage Documentation
 
-The [usage documentation](concepts/models.md) is the most complete guide on how to use Pydantic.
+The [usage documentation](concepts/models.md) is the most complete guide on how to use Pydantic Validation.
 
 ## :material-api: API Documentation
 
@@ -20,6 +23,6 @@ Use the [`pydantic`](https://stackoverflow.com/questions/tagged/pydantic) tag on
 
 ## :simple-youtube: YouTube
 
-Youtube has lots of useful [videos on Pydantic](https://www.youtube.com/results?search_query=pydantic).
+YouTube has lots of useful [videos on Pydantic](https://www.youtube.com/results?search_query=pydantic).
 
 In particular Marcelo Trylesinski's video ["Pydantic V1 to V2 - The Migration"](https://youtu.be/sD_xpYl4fPU) has helped people a lot when migrating from Pydantic V1 to V2.

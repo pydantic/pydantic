@@ -1,3 +1,7 @@
+---
+title: "Forward Annotations - Pydantic Validation"
+description: "End circular dependency struggles. Pydantic’s forward references let you annotate types before they exist, keeping your recursive models clean and valid."
+---
 Forward annotations (wrapped in quotes) or using the `from __future__ import annotations` [future statement]
 (as introduced in [PEP563](https://www.python.org/dev/peps/pep-0563/)) are supported:
 

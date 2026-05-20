@@ -1,3 +1,7 @@
+---
+title: "Pydantic File Validation: JSON, CSV, YAML & XML"
+description: "Ensure filesystem integrity. Pydantic’s FilePath and DirectoryPath types provide built-in validation to verify that files and directories exist in Python."
+---
 `pydantic` is a great tool for validating data coming from various sources.
 In this section, we will look at how to validate data from different types of files.
 
