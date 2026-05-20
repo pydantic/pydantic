@@ -9,6 +9,7 @@ from typing import Any
 
 from mypy.errorcodes import ErrorCode
 from mypy.expandtype import expand_type, expand_type_by_instance
+from mypy.exprtotype import TypeTranslationError, expr_to_unanalyzed_type
 from mypy.nodes import (
     ARG_NAMED,
     ARG_NAMED_OPT,
@@ -18,6 +19,7 @@ from mypy.nodes import (
     GDEF,
     INVARIANT,
     MDEF,
+    ArgKind,
     Argument,
     AssignmentStmt,
     Block,
@@ -40,6 +42,7 @@ from mypy.nodes import (
     StrExpr,
     SymbolTableNode,
     TempNode,
+    TupleExpr,
     TypeAlias,
     TypeInfo,
     Var,
@@ -185,6 +188,8 @@ class PydanticPlugin(Plugin):
 
     def _pydantic_create_model_callback(self, ctx: DynamicClassDefContext) -> None:
         """Make variables assigned from `create_model()` usable as types by mypy."""
+        self._expand_create_model_kwargs(ctx)
+
         # Determine the base class from __base__ argument if provided
         base_fullname = BASEMODEL_FULLNAME
         for arg_name, arg_expr in zip(ctx.call.arg_names, ctx.call.args, strict=True):
@@ -221,11 +226,298 @@ class PydanticPlugin(Plugin):
 
         ctx.api.add_symbol_table_node(ctx.name, SymbolTableNode(MDEF, info))
 
+        if not self._configure_create_model_typeinfo(ctx, info):
+            return
+
         # Mypy has a quirk for serialization of classes nested in functions. This is
         # a workaround that should work in most cases, until mypy has a better plugin API.
         if '@' in info.fullname:
             _, name = info.fullname.rsplit('.', maxsplit=1)
             ctx.api.modules[ctx.api.cur_mod_id].names[name] = SymbolTableNode(GDEF, info)
+
+    def _expand_create_model_kwargs(self, dynamic_class_context: DynamicClassDefContext) -> None:
+        """Expand statically visible `**field_definitions` into named keyword arguments.
+
+        Mypy checks overload compatibility against the raw call expression. For
+        `create_model('M', **{'x': (int, ...)})`, that raw expression is a
+        `dict[str, tuple[type[int], EllipsisType]]`, not the individual keyword
+        argument `x=(int, ...)`, so overload checking fails before the dynamic
+        class hook can make the synthetic class field-aware.
+
+        When the mapping is a dict literal, or a name assigned from a dict literal,
+        rewrite the call expression into the same shape as `create_model('M', x=(int, ...))`.
+        """
+        expanded_argument_names: list[str | None] = []
+        expanded_argument_kinds: list[ArgKind] = []
+        expanded_argument_expressions: list[Expression] = []
+
+        for argument_name, argument_kind, argument_expression in zip(
+            dynamic_class_context.call.arg_names,
+            dynamic_class_context.call.arg_kinds,
+            dynamic_class_context.call.args,
+            strict=True,
+        ):
+            field_definitions_dict = (
+                self._resolve_create_model_field_definitions_dict(dynamic_class_context, argument_expression)
+                if argument_kind == ARG_STAR2
+                else None
+            )
+            if field_definitions_dict is None:
+                expanded_argument_names.append(argument_name)
+                expanded_argument_kinds.append(argument_kind)
+                expanded_argument_expressions.append(argument_expression)
+                continue
+            # Non-string keys and invalid field-name keys are not valid for this transformation.
+            # Leave the original **mapping intact so mypy/runtime report the real issue.
+            if not all(
+                self._is_expandable_create_model_kwarg_key(field_name)
+                for field_name, _ in field_definitions_dict.items
+            ):
+                expanded_argument_names.append(argument_name)
+                expanded_argument_kinds.append(argument_kind)
+                expanded_argument_expressions.append(argument_expression)
+                continue
+            for field_name_expression, field_definition_expression in field_definitions_dict.items:
+                assert isinstance(field_name_expression, StrExpr)
+                expanded_argument_names.append(field_name_expression.value)
+                expanded_argument_kinds.append(ARG_NAMED)
+                expanded_argument_expressions.append(field_definition_expression)
+        dynamic_class_context.call.arg_names = expanded_argument_names
+        dynamic_class_context.call.arg_kinds = expanded_argument_kinds
+        dynamic_class_context.call.args = expanded_argument_expressions
+
+    @staticmethod
+    def _is_expandable_create_model_kwarg_key(kwarg_key_expression: Expression) -> bool:
+        """Return whether a `**kwargs` dict key can be safely expanded into a keyword argument."""
+        return isinstance(kwarg_key_expression, StrExpr) and (
+            kwarg_key_expression.value.startswith('__') or _fields.is_valid_field_name(kwarg_key_expression.value)
+        )
+
+    def _configure_create_model_typeinfo(
+        self, dynamic_class_context: DynamicClassDefContext, synthetic_model_info: TypeInfo
+    ) -> bool:
+        """Configure the synthetic `create_model()` TypeInfo as a Pydantic model.
+
+        Returns `False` when semantic analysis must be deferred because inherited
+        fields or field annotations are not ready yet.
+        """
+        semantic_analyzer_api = dynamic_class_context.api
+
+        # A dynamic class hook gets a synthetic TypeInfo, not a normal ClassDef callback.
+        # Reuse the model transformer against that synthetic class so inherited fields,
+        # generated methods, frozen handling, and metadata stay aligned with regular models.
+        synthetic_model_transformer = PydanticModelTransformer(
+            synthetic_model_info.defn,
+            dynamic_class_context.call,
+            semantic_analyzer_api,
+            self.plugin_config,
+        )
+        model_config = synthetic_model_transformer.collect_config()
+        is_dynamic_model_root_model = is_root_model(synthetic_model_info)
+        model_fields, model_class_vars = synthetic_model_transformer.collect_fields_and_class_vars(
+            model_config, is_dynamic_model_root_model
+        )
+        if model_fields is None or model_class_vars is None:
+            semantic_analyzer_api.defer()
+            return False
+
+        model_fields.extend(self._collect_fields_from_create_model_call(dynamic_class_context, synthetic_model_info))
+        if any(model_field.type is None for model_field in model_fields):
+            semantic_analyzer_api.defer()
+            return False
+
+        is_settings = synthetic_model_info.has_base(BASESETTINGS_FULLNAME)
+        synthetic_model_transformer.add_initializer(
+            model_fields, model_config, is_settings, is_dynamic_model_root_model
+        )
+        synthetic_model_transformer.add_model_construct_method(
+            model_fields, model_config, is_settings, is_dynamic_model_root_model
+        )
+        synthetic_model_transformer.set_frozen(model_fields, semantic_analyzer_api, frozen=model_config.frozen is True)
+        synthetic_model_info.metadata[METADATA_KEY] = {
+            'fields': {model_field.name: model_field.serialize() for model_field in model_fields},
+            'class_vars': {
+                model_class_var.name: model_class_var.serialize() for model_class_var in model_class_vars
+            },
+            'config': model_config.get_values_dict(),
+        }
+        return True
+
+    def _collect_fields_from_create_model_call(
+        self, dynamic_class_context: DynamicClassDefContext, synthetic_model_info: TypeInfo
+    ) -> list[PydanticModelField]:
+        """Collect statically visible field definitions from a `create_model()` call.
+
+        The plugin can only infer fields that mypy exposes as named keyword arguments,
+        such as `create_model('Model', x=(int, ...))`. For `**kwargs`, it only
+        handles dict literals and names assigned from dict literals in the same file.
+        """
+        create_model_fields: list[PydanticModelField] = []
+        for argument_name, argument_kind, argument_expression in zip(
+            dynamic_class_context.call.arg_names,
+            dynamic_class_context.call.arg_kinds,
+            dynamic_class_context.call.args,
+            strict=True,
+        ):
+            if (
+                argument_kind == ARG_STAR2
+                or argument_name is None
+                or argument_name.startswith('__')
+                or not _fields.is_valid_field_name(argument_name)
+            ):
+                continue
+            create_model_field = self._infer_field_from_create_model_field_definition(
+                dynamic_class_context, synthetic_model_info, argument_name, argument_expression
+            )
+            if create_model_field is not None:
+                create_model_fields.append(create_model_field)
+        return create_model_fields
+
+    def _resolve_create_model_field_definitions_dict(
+        self, dynamic_class_context: DynamicClassDefContext, argument_expression: Expression
+    ) -> DictExpr | None:
+        """Resolve a `create_model(**fields)` expression to a dict literal when statically visible.
+
+        This intentionally supports only two shapes: an inline dict literal and a
+        simple name whose latest prior assignment in the current lexical block is a
+        dict literal. It does not try to model branch-dependent assignments,
+        mutation, imports, comprehensions, or function calls.
+        """
+        if isinstance(argument_expression, DictExpr):
+            return argument_expression
+        if not isinstance(argument_expression, NameExpr) or not isinstance(argument_expression.node, Var):
+            return None
+
+        field_definitions_variable = argument_expression.node
+        field_definitions_dict: DictExpr | None = None
+        for assignment_statement in self._iter_direct_assignment_statements_in_current_block(
+            dynamic_class_context, argument_expression
+        ):
+            if assignment_statement.line >= argument_expression.line:
+                continue
+            for assignment_target in assignment_statement.lvalues:
+                if (
+                    isinstance(assignment_target, NameExpr)
+                    and assignment_target.node is field_definitions_variable
+                ):
+                    if isinstance(assignment_statement.rvalue, DictExpr):
+                        field_definitions_dict = assignment_statement.rvalue
+                    else:
+                        field_definitions_dict = None
+        return field_definitions_dict
+
+    def _iter_direct_assignment_statements_in_current_block(
+        self, dynamic_class_context: DynamicClassDefContext, argument_expression: Expression
+    ) -> Iterator[AssignmentStmt]:
+        """Yield direct assignment statements from the current lexical block.
+
+        This intentionally does not recurse into `if` bodies. A branch assignment
+        can produce different field dictionaries at runtime, so treating it as a
+        straight-line assignment would be fake certainty.
+        """
+        current_module = dynamic_class_context.api.modules[dynamic_class_context.api.cur_mod_id]
+        for statement in self._get_current_lexical_block_statements(current_module.defs, argument_expression.line):
+            if isinstance(statement, AssignmentStmt):
+                yield statement
+
+    def _get_current_lexical_block_statements(
+        self, statements: list[Statement], line: int
+    ) -> list[Statement]:
+        """Return the innermost module, function, or class body containing a line."""
+        for statement in statements:
+            if not self._statement_contains_line(statement, line):
+                continue
+            if isinstance(statement, FuncDef):
+                return self._get_current_lexical_block_statements(statement.body.body, line)
+            if isinstance(statement, ClassDef):
+                return self._get_current_lexical_block_statements(statement.defs.body, line)
+        return statements
+
+    @staticmethod
+    def _statement_contains_line(statement: Statement, line: int) -> bool:
+        """Return whether a statement's source span contains a line."""
+        end_line = getattr(statement, 'end_line', None)
+        return statement.line <= line and end_line is not None and line <= end_line
+
+    def _infer_field_from_create_model_field_definition(
+        self,
+        dynamic_class_context: DynamicClassDefContext,
+        synthetic_model_info: TypeInfo,
+        field_name: str,
+        field_definition_expression: Expression,
+    ) -> PydanticModelField | None:
+        """Infer a Pydantic field from one create_model field expression.
+
+        Runtime `create_model()` accepts either a bare annotation, `x=int`, or a
+        two-tuple of annotation and default, `x=(int, ...)`. Other tuple lengths are
+        invalid at runtime too, so the plugin leaves them to mypy/runtime errors.
+        """
+        if isinstance(field_definition_expression, TupleExpr):
+            if len(field_definition_expression.items) != 2:
+                return None
+            field_annotation_expression, field_default_expression = field_definition_expression.items
+            has_default = self._create_model_field_default_expression_has_default(field_default_expression)
+        else:
+            field_annotation_expression = field_definition_expression
+            has_default = False
+
+        field_type = self._analyze_create_model_field_annotation(dynamic_class_context, field_annotation_expression)
+        if field_type is None:
+            return None
+
+        return PydanticModelField(
+            name=field_name,
+            has_dynamic_alias=False,
+            has_default=has_default,
+            strict=None,
+            alias=None,
+            is_frozen=False,
+            line=field_definition_expression.line,
+            column=field_definition_expression.column,
+            type=field_type,
+            info=synthetic_model_info,
+        )
+
+    def _analyze_create_model_field_annotation(
+        self, dynamic_class_context: DynamicClassDefContext, field_annotation_expression: Expression
+    ) -> Type | None:
+        """Convert a field annotation expression from the call site into a mypy type."""
+        try:
+            unanalyzed_field_type = expr_to_unanalyzed_type(
+                field_annotation_expression,
+                dynamic_class_context.api.options,
+                dynamic_class_context.api.is_stub_file,
+            )
+        except TypeTranslationError:
+            return AnyType(TypeOfAny.from_error)
+        return dynamic_class_context.api.anal_type(unanalyzed_field_type)
+
+    @staticmethod
+    def _create_model_field_default_expression_has_default(default_expression: Expression) -> bool:
+        """Returns whether a `create_model()` field default expression makes the field optional in `__init__`."""
+        if (
+            isinstance(default_expression, CallExpr)
+            and isinstance(default_expression.callee, RefExpr)
+            and default_expression.callee.fullname == FIELD_FULLNAME
+        ):
+            # The "default value" is a call to `Field`; at this point, the field has a default if and only if:
+            # * there is a positional argument that is not `...`
+            # * there is a keyword argument named "default" that is not `...`
+            # * there is a "default_factory" that is not `None`
+            for field_argument_expression, field_argument_name in zip(
+                default_expression.args, default_expression.arg_names, strict=True
+            ):
+                # If name is None, then this arg is the default because it is the only positional argument.
+                if field_argument_name is None or field_argument_name == 'default':
+                    return field_argument_expression.__class__ is not EllipsisExpr
+                if field_argument_name == 'default_factory':
+                    return not (
+                        isinstance(field_argument_expression, NameExpr)
+                        and field_argument_expression.fullname == 'builtins.None'
+                    )
+            return False
+        # Has no default if the "default value" is Ellipsis (i.e., `field_name: Annotation = ...`)
+        return not isinstance(default_expression, EllipsisExpr)
 
 
 class PydanticPluginConfig:
