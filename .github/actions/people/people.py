@@ -12,6 +12,7 @@ import subprocess
 import sys
 from collections import Counter
 from collections.abc import Container
+from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any
@@ -675,8 +676,14 @@ if __name__ == '__main__':
     logging.info(f'Using config: {settings.model_dump_json()}')
     g = Github(settings.input_token.get_secret_value())
     repo = g.get_repo(settings.github_repository)
-    question_commentors, question_last_month_commentors, question_authors = get_experts(settings=settings)
-    contributors, pr_commentors, reviewers, pr_authors = get_contributors(settings=settings)
+
+    # Fetch discussions and PRs concurrently to speed up data collection
+    with ThreadPoolExecutor(max_workers=2) as executor:
+        experts_future = executor.submit(get_experts, settings)
+        contributors_future = executor.submit(get_contributors, settings)
+        question_commentors, question_last_month_commentors, question_authors = experts_future.result()
+        contributors, pr_commentors, reviewers, pr_authors = contributors_future.result()
+
     authors = {**question_authors, **pr_authors}
     maintainers_logins = {
         'samuelcolvin',
