@@ -697,9 +697,23 @@ class GenerateJsonSchema:
             max_digits = schema.get('max_digits')
             decimal_places = schema.get('decimal_places')
 
-            pattern = (
-                r'^(?!^[-+.]*$)[+-]?0*'  # check it is not empty string and not one or sequence of ".+-" characters.
-            )
+            # pydantic-core serializes `Decimal` via `str(d)`, which yields
+            # scientific notation for values whose canonical exponent makes
+            # fixed-point output verbose (e.g. `Decimal('0.0000001') -> '1E-7'`).
+            # Allow an optional `[eE][+-]?\d+` suffix so the schema accepts
+            # everything `model_dump_json` itself can emit. Digit-count limits
+            # are enforced on the coefficient form only; bounding scientific
+            # notation by digit counts via regex is intractable, and rejecting
+            # valid serializer output is the worse failure mode (it breaks
+            # round-tripping the JSON through the schema). See issue #13089.
+            exp_suffix = r'(?:[eE][+-]?\d+)?'
+            # Body is built without the trailing `$`; we append `exp_suffix$`
+            # once at the end so a single exponent rule covers every branch.
+            # The leading ``(?=[^eE]*\d)`` lookahead requires at least one
+            # digit in the *coefficient* (everything before the optional
+            # ``[eE]``); without it, strings like ``"E5"`` would slip through
+            # because each per-case body permits an empty coefficient.
+            pattern = r'^(?=[^eE]*\d)(?!^[-+.]*$)[+-]?0*'
 
             # Case 1: Both max_digits and decimal_places are set
             if max_digits is not None and decimal_places is not None:
@@ -708,8 +722,8 @@ class GenerateJsonSchema:
                     rf'(?:'
                     rf'\d{{0,{integer_places}}}'
                     rf'|'
-                    rf'(?=[\d.]{{1,{max_digits + 1}}}0*$)'
-                    rf'\d{{0,{integer_places}}}\.\d{{0,{decimal_places}}}0*$'
+                    rf'(?=[\d.]{{1,{max_digits + 1}}}0*{exp_suffix}$)'
+                    rf'\d{{0,{integer_places}}}\.\d{{0,{decimal_places}}}0*'
                     rf')'
                 )
 
@@ -719,20 +733,20 @@ class GenerateJsonSchema:
                     rf'(?:'
                     rf'\d{{0,{max_digits}}}'
                     rf'|'
-                    rf'(?=[\d.]{{1,{max_digits + 1}}}0*$)'
-                    rf'\d*\.\d*0*$'
+                    rf'(?=[\d.]{{1,{max_digits + 1}}}0*{exp_suffix}$)'
+                    rf'\d*\.\d*0*'
                     rf')'
                 )
 
             # Case 3: Only decimal_places is set
             elif max_digits is None and decimal_places is not None:
-                pattern += rf'\d*\.?\d{{0,{decimal_places}}}0*$'
+                pattern += rf'\d*\.?\d{{0,{decimal_places}}}0*'
 
             # Case 4: Both are None (no restrictions)
             else:
-                pattern += r'\d*\.?\d*$'  # look for arbitrary integer or decimal
+                pattern += r'\d*\.?\d*'  # look for arbitrary integer or decimal
 
-            return pattern
+            return pattern + exp_suffix + '$'
 
         json_schema = self.str_schema(core_schema.str_schema(pattern=get_decimal_pattern(schema)))
         if self.mode == 'validation':
