@@ -19,7 +19,7 @@ runs:
         enable-cache: true
 
     - name: Install dependencies
-      run: uv pip install --requirements .github/actions/people/pylock.toml
+      run: uv pip install -r .github/actions/people/requirements.in
       shell: bash
 
     - name: Update pydantic people
