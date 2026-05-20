@@ -12,14 +12,14 @@ import subprocess
 import sys
 from collections import Counter
 from collections.abc import Container
-from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any
 
-import requests
+import anyio
 import yaml
 from github import Github
+from pyreqwest.client import ClientBuilder
 from pydantic_settings import BaseSettings
 
 from pydantic import BaseModel, SecretStr
@@ -356,164 +356,70 @@ class Settings(BaseSettings):
     request_timeout: int = 30
 
 
-def get_graphql_response(
+async def get_graphql_response(
     *,
+    client: Any,
     settings: Settings,
     query: str,
     after: str | None = None,
 ) -> dict[str, Any]:
-    """Make a GraphQL request to GitHub API.
-
-    Args:
-        settings: Configuration settings including API token
-        query: GraphQL query string
-        after: Cursor for pagination, if any
-
-    Returns:
-        Response data from GitHub API in JSON format
-
-    Raises:
-        RuntimeError: If the API request fails or returns errors
-    """
-    headers = {'Authorization': f'token {settings.input_token.get_secret_value()}'}
+    """Make a GraphQL request to GitHub API."""
     variables = {'after': after}
-    response = requests.post(
-        github_graphql_url,
-        headers=headers,
-        timeout=settings.request_timeout,
-        json={'query': query, 'variables': variables, 'operationName': 'Q'},
+    response = await (
+        client.post(github_graphql_url)
+        .header('Authorization', f'token {settings.input_token.get_secret_value()}')
+        .json({'query': query, 'variables': variables, 'operationName': 'Q'})
+        .build()
+        .send()
     )
     if response.status_code != 200:
+        text = await response.text()
         logging.error(f'Response was not 200, after: {after}')
-        logging.error(response.text)
-        raise RuntimeError(response.text)
-    data = response.json()
+        logging.error(text)
+        raise RuntimeError(text)
+    data = await response.json()
     if 'errors' in data:
         logging.error(f'Errors in response, after: {after}')
         logging.error(data['errors'])
-        logging.error(response.text)
-        raise RuntimeError(response.text)
+        raise RuntimeError(str(data['errors']))
     return data
 
 
-def get_graphql_issue_edges(*, settings: Settings, after: str | None = None) -> list[IssuesEdge]:
-    """Fetch issue edges from GitHub GraphQL API.
-
-    Args:
-        settings: Configuration settings
-        after: Cursor for pagination, if any
-
-    Returns:
-        List of issue edges from the GraphQL response
-    """
-    data = get_graphql_response(settings=settings, query=issues_query, after=after)
+async def get_graphql_issue_edges(*, client: Any, settings: Settings, after: str | None = None) -> list[IssuesEdge]:
+    """Fetch issue edges from GitHub GraphQL API."""
+    data = await get_graphql_response(client=client, settings=settings, query=issues_query, after=after)
     graphql_response = IssuesResponse.model_validate(data)
     return graphql_response.data.repository.issues.edges
 
 
-def get_graphql_question_discussion_edges(
+async def get_graphql_question_discussion_edges(
     *,
+    client: Any,
     settings: Settings,
     after: str | None = None,
 ) -> list[DiscussionsEdge]:
-    """Fetch discussion edges from GitHub GraphQL API.
-
-    Args:
-        settings: Configuration settings
-        after: Cursor for pagination, if any
-
-    Returns:
-        List of discussion edges from the GraphQL response
-    """
-    data = get_graphql_response(
-        settings=settings,
-        query=discussions_query,
-        after=after,
-    )
+    """Fetch discussion edges from GitHub GraphQL API."""
+    data = await get_graphql_response(client=client, settings=settings, query=discussions_query, after=after)
     graphql_response = DiscussionsResponse.model_validate(data)
     return graphql_response.data.repository.discussions.edges
 
 
-def get_graphql_pr_edges(*, settings: Settings, after: str | None = None) -> list[PullRequestEdge]:
-    """Fetch pull request edges from GitHub GraphQL API.
-
-    Args:
-        settings: Configuration settings
-        after: Cursor for pagination, if any
-
-    Returns:
-        List of pull request edges from the GraphQL response
-    """
-    data = get_graphql_response(settings=settings, query=prs_query, after=after)
+async def get_graphql_pr_edges(*, client: Any, settings: Settings, after: str | None = None) -> list[PullRequestEdge]:
+    """Fetch pull request edges from GitHub GraphQL API."""
+    data = await get_graphql_response(client=client, settings=settings, query=prs_query, after=after)
     graphql_response = PRsResponse.model_validate(data)
     return graphql_response.data.repository.pullRequests.edges
 
 
-def get_issues_experts(settings: Settings) -> tuple[Counter, Counter, dict[str, Author]]:
-    """Analyze issues to identify expert contributors.
-
-    Args:
-        settings: Configuration settings
-
-    Returns:
-        A tuple containing:
-            - Counter of all commentors
-            - Counter of commentors from the last month
-            - Dictionary mapping usernames to Author objects
-    """
-    issue_nodes: list[IssuesNode] = []
-    issue_edges = get_graphql_issue_edges(settings=settings)
-
-    while issue_edges:
-        issue_nodes.extend(edge.node for edge in issue_edges)
-        last_edge = issue_edges[-1]
-        issue_edges = get_graphql_issue_edges(settings=settings, after=last_edge.cursor)
-
-    commentors = Counter()
-    last_month_commentors = Counter()
-    authors: dict[str, Author] = {}
-
-    now = datetime.now(tz=timezone.utc)
-    one_month_ago = now - timedelta(days=30)
-
-    for issue in issue_nodes:
-        issue_author_name = None
-        if issue.author:
-            authors[issue.author.login] = issue.author
-            issue_author_name = issue.author.login
-        issue_commentors = set()
-        for comment in issue.comments.nodes:
-            if comment.author:
-                authors[comment.author.login] = comment.author
-                if comment.author.login != issue_author_name:
-                    issue_commentors.add(comment.author.login)
-        for author_name in issue_commentors:
-            commentors[author_name] += 1
-            if issue.createdAt > one_month_ago:
-                last_month_commentors[author_name] += 1
-
-    return commentors, last_month_commentors, authors
-
-
-def get_discussions_experts(settings: Settings) -> tuple[Counter, Counter, dict[str, Author]]:
-    """Analyze discussions to identify expert contributors.
-
-    Args:
-        settings: Configuration settings
-
-    Returns:
-        A tuple containing:
-            - Counter of all commentors
-            - Counter of commentors from the last month
-            - Dictionary mapping usernames to Author objects
-    """
+async def get_discussions_experts(client: Any, settings: Settings) -> tuple[Counter, Counter, dict[str, Author]]:
+    """Analyze discussions to identify expert contributors."""
     discussion_nodes: list[DiscussionsNode] = []
-    discussion_edges = get_graphql_question_discussion_edges(settings=settings)
+    discussion_edges = await get_graphql_question_discussion_edges(client=client, settings=settings)
 
     while discussion_edges:
         discussion_nodes.extend(discussion_edge.node for discussion_edge in discussion_edges)
         last_edge = discussion_edges[-1]
-        discussion_edges = get_graphql_question_discussion_edges(settings=settings, after=last_edge.cursor)
+        discussion_edges = await get_graphql_question_discussion_edges(client=client, settings=settings, after=last_edge.cursor)
 
     commentors = Counter()
     last_month_commentors = Counter()
@@ -545,60 +451,15 @@ def get_discussions_experts(settings: Settings) -> tuple[Counter, Counter, dict[
     return commentors, last_month_commentors, authors
 
 
-def get_experts(settings: Settings) -> tuple[Counter, Counter, dict[str, Author]]:
-    """Get combined expert contributors from discussions.
-
-    Args:
-        settings: Configuration settings
-
-    Returns:
-        A tuple containing:
-            - Counter of all commentors
-            - Counter of commentors from the last month
-            - Dictionary mapping usernames to Author objects
-    """
-    # Migrated to only use GitHub Discussions
-    # (
-    #     issues_commentors,
-    #     issues_last_month_commentors,
-    #     issues_authors,
-    # ) = get_issues_experts(settings=settings)
-    (
-        discussions_commentors,
-        discussions_last_month_commentors,
-        discussions_authors,
-    ) = get_discussions_experts(settings=settings)
-    # commentors = issues_commentors + discussions_commentors
-    commentors = discussions_commentors
-    # last_month_commentors = (
-    #     issues_last_month_commentors + discussions_last_month_commentors
-    # )
-    last_month_commentors = discussions_last_month_commentors
-    # authors = {**issues_authors, **discussions_authors}
-    authors = {**discussions_authors}
-    return commentors, last_month_commentors, authors
-
-
-def get_contributors(settings: Settings) -> tuple[Counter, Counter, Counter, dict[str, Author]]:
-    """Analyze pull requests to identify contributors, commentors, and reviewers.
-
-    Args:
-        settings: Configuration settings
-
-    Returns:
-        A tuple containing:
-            - Counter of contributors (merged PRs)
-            - Counter of commentors
-            - Counter of reviewers
-            - Dictionary mapping usernames to Author objects
-    """
+async def get_contributors(client: Any, settings: Settings) -> tuple[Counter, Counter, Counter, dict[str, Author]]:
+    """Analyze pull requests to identify contributors, commentors, and reviewers."""
     pr_nodes: list[PullRequestNode] = []
-    pr_edges = get_graphql_pr_edges(settings=settings)
+    pr_edges = await get_graphql_pr_edges(client=client, settings=settings)
 
     while pr_edges:
         pr_nodes.extend(edge.node for edge in pr_edges)
         last_edge = pr_edges[-1]
-        pr_edges = get_graphql_pr_edges(settings=settings, after=last_edge.cursor)
+        pr_edges = await get_graphql_pr_edges(client=client, settings=settings, after=last_edge.cursor)
 
     contributors = Counter()
     commentors = Counter()
@@ -670,19 +531,34 @@ def get_top_users(
     return users
 
 
-if __name__ == '__main__':
+async def main() -> None:
     logging.basicConfig(level=logging.INFO)
     settings = Settings()
     logging.info(f'Using config: {settings.model_dump_json()}')
     g = Github(settings.input_token.get_secret_value())
     repo = g.get_repo(settings.github_repository)
 
-    # Fetch discussions and PRs concurrently to speed up data collection
-    with ThreadPoolExecutor(max_workers=2) as executor:
-        experts_future = executor.submit(get_experts, settings)
-        contributors_future = executor.submit(get_contributors, settings)
-        question_commentors, question_last_month_commentors, question_authors = experts_future.result()
-        contributors, pr_commentors, reviewers, pr_authors = contributors_future.result()
+    # Fetch discussions and PRs concurrently
+    discussions_result: tuple[Counter, Counter, dict[str, Author]] | None = None
+    contributors_result: tuple[Counter, Counter, Counter, dict[str, Author]] | None = None
+
+    async def fetch_discussions(client: Any) -> None:
+        nonlocal discussions_result
+        discussions_result = await get_discussions_experts(client, settings)
+
+    async def fetch_contributors(client: Any) -> None:
+        nonlocal contributors_result
+        contributors_result = await get_contributors(client, settings)
+
+    async with ClientBuilder().build() as client:
+        async with anyio.create_task_group() as tg:
+            tg.start_soon(fetch_discussions, client)
+            tg.start_soon(fetch_contributors, client)
+
+    assert discussions_result is not None
+    assert contributors_result is not None
+    question_commentors, question_last_month_commentors, question_authors = discussions_result
+    contributors, pr_commentors, reviewers, pr_authors = contributors_result
 
     authors = {**question_authors, **pr_authors}
     maintainers_logins = {
@@ -775,10 +651,14 @@ if __name__ == '__main__':
     subprocess.run(['git', 'add', str(people_path)], check=True)
     logging.info('Committing updated file')
     message = '👥 Update Pydantic People'
-    result = subprocess.run(['git', 'commit', '-m', message], check=True)
+    subprocess.run(['git', 'commit', '-m', message], check=True)
     logging.info('Pushing branch')
     subprocess.run(['git', 'push', 'origin', branch_name], check=True)
     logging.info('Creating PR')
     pr = repo.create_pull(title=message, body=message, base='main', head=branch_name)
     logging.info(f'Created PR: {pr.number}')
     logging.info('Finished')
+
+
+if __name__ == '__main__':
+    anyio.run(main)

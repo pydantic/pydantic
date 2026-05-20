@@ -1,4 +1,6 @@
+anyio
 pydantic
 pydantic-settings
 PyGithub
+pyreqwest-impersonate
 pyyaml
