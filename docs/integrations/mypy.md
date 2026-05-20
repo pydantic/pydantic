@@ -161,6 +161,8 @@ A configuration file with all plugin strictness flags enabled (and some other my
 
 ### `init_typed`
 
+**Default**: `False`.
+
 Because Pydantic performs [data conversion](../concepts/models.md#data-conversion) by default, the following is still valid at runtime:
 
 ```python {test="skip" lint="skip"}
@@ -171,10 +173,12 @@ class Model(BaseModel):
 Model(a='1')
 ```
 
-For this reason, the plugin will use [`Any`][typing.Any] for field annotations when synthesizing the `__init__` method,
+For this reason, the plugin will use [`Any`][typing.Any] for field annotations when synthesizing the `__init__()` method,
 unless `init_typed` is set or [strict mode](../concepts/strict_mode.md) is enabled on the model.
 
 ### `init_forbid_extra`
+
+**Default**: `False`.
 
 By default, Pydantic allows (and ignores) any extra provided argument:
 
@@ -186,17 +190,14 @@ class Model(BaseModel):
 Model(unrelated=2)
 ```
 
-For this reason, the plugin will add an extra `**kwargs: Any` parameter when synthesizing the `__init__` method, unless
-`init_forbid_extra` is set or the [`extra`][pydantic.ConfigDict.extra] is set to `'forbid'`.
+For this reason, the plugin will add an extra `**kwargs: Any` parameter when synthesizing the `__init__()` method, unless
+`init_forbid_extra` is set or the [`extra`][pydantic.ConfigDict.extra] configuration value is set to `'forbid'`.
 
 ### `warn_required_dynamic_aliases`
 
+**Default**: `False`.
+
 Whether to error when using a dynamically-determined alias or alias generator on a model with
 [`validate_by_name`][pydantic.ConfigDict.validate_by_name] set to `False`. If such aliases are
-present, mypy cannot properly type check calls to `__init__`. In this case, it will default to
-treating all arguments as not required.
-
-!!! note "Compatibility with `Any` being disallowed"
-    Some mypy configuration options (such as [`disallow_any_explicit`](https://mypy.readthedocs.io/en/stable/config_file.html#confval-disallow_any_explicit))
-    will error because the synthesized `__init__` method contains [`Any`][typing.Any] annotations. To circumvent the issue, you will have
-    to enable both `init_forbid_extra` and `init_typed`.
+present, mypy cannot properly type check calls to `__init__()`. In this case, it will default to
+treating all arguments as not required, by synthesizing the `__init__()` as `(**kwargs: Any) -> None`.
