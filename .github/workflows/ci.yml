@@ -240,39 +240,32 @@ jobs:
   core-build-wasm-emscripten:
     name: core / Build WASM Emscripten
     runs-on: ubuntu-latest
+    env:
+      PYODIDE_VERSION: '314.0.0a2'
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           persist-credentials: false
 
-      - name: Install rust nightly
+      - name: Install rust stable
         # no release versioning, see https://github.com/dtolnay/rust-toolchain/issues/180
         uses: dtolnay/rust-toolchain@3c5f7ea28cd621ae0bf5283f0e981fb97b8a7af9
         with:
-          components: rust-src
           targets: wasm32-unknown-emscripten
-          toolchain: nightly
+          toolchain: stable
 
       - name: Cache rust
         uses: Swatinem/rust-cache@c19371144df3bb44fab255c43d04cbc2ab54d1c4 # v2.9.1
         with:
           lookup-only: true
 
-      - uses: mymindstorm/setup-emsdk@4528d102f7230f0e7b276855c01ea1159be0e984 # v16
-        with:
-          # NOTE!: as per https://github.com/pydantic/pydantic-core/pull/149 this version needs to match the version
-          # in pydantic-core/node_modules/pyodide/pyodide-lock.json, to get the version, run:
-          # `cat pydantic-core/node_modules/pyodide/pyodide-lock.json | jq .info.platform`
-          version: '4.0.9'
-          actions-cache-folder: emsdk-cache
-
       - uses: astral-sh/setup-uv@08807647e7069bb48b6ef5acd8ec9567f424441b # v8.1.0
         with:
-          python-version: '3.13'
+          python-version: '3.14'
           enable-cache: false
 
-      - name: Install dependencies
-        run: uv sync --all-packages --group testing-extra --group wasm --all-extras
+      - name: Install Pyodide xbuildenv
+        run: uvx --from pyodide-cli --with pyodide-build pyodide xbuildenv install "$PYODIDE_VERSION"
 
       - name: Build wheels
         run: make -C pydantic-core build-wasm
@@ -294,7 +287,7 @@ jobs:
 
       - uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7.0.0
         with:
-          name: pydantic_core_wasm_wheels
+          name: pydantic_core_pypi_files_wasm_emscripten
           path: pydantic-core/dist
 
   core-bench:
