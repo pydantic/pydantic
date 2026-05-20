@@ -4,6 +4,7 @@ from collections import defaultdict
 from dataclasses import is_dataclass
 from datetime import date, datetime, time, timedelta
 from decimal import Decimal
+from fractions import Fraction
 from enum import Enum
 from ipaddress import IPv4Address, IPv4Interface, IPv4Network, IPv6Address, IPv6Interface, IPv6Network
 from pathlib import Path
@@ -270,7 +271,7 @@ def field_schema(
         return s, f_definitions, f_nested_models
 
 
-numeric_types = (int, float, Decimal)
+numeric_types = (int, float, Decimal, Fraction)
 _str_types_attrs: Tuple[Tuple[str, Union[type, Tuple[type, ...]], str], ...] = (
     ('max_length', numeric_types, 'maxLength'),
     ('min_length', numeric_types, 'minLength'),
@@ -790,6 +791,7 @@ field_class_to_schema: Tuple[Tuple[Any, Dict[str, Any]], ...] = (
     (int, {'type': 'integer'}),
     (float, {'type': 'number'}),
     (Decimal, {'type': 'number'}),
+    (Fraction, {'type': 'array', 'items': {'type': 'integer'}, 'minItems': 2, 'maxItems': 2}),
     (UUID, {'type': 'string', 'format': 'uuid'}),
     (dict, {'type': 'object'}),
     (list, {'type': 'array', 'items': {}}),
