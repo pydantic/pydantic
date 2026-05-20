@@ -1107,6 +1107,40 @@ def test_custom_constraints() -> None:
         ta.validate_python('ftp://example.com')
 
 
+def test_custom_constraints_reject_existing_url_instance() -> None:
+    """URL constraints should re-validate existing AnyUrl instances."""
+    HttpOnlyUrl = Annotated[AnyUrl, UrlConstraints(allowed_schemes=['http', 'https'])]
+    ta = TypeAdapter(HttpOnlyUrl)
+
+    # Existing AnyUrl with disallowed scheme should be rejected
+    existing = AnyUrl('ftp://example.com')
+    with pytest.raises(ValidationError):
+        ta.validate_python(existing)
+
+    # Existing AnyUrl with allowed scheme should be accepted
+    existing_ok = AnyUrl('https://example.com')
+    validated = ta.validate_python(existing_ok)
+    assert validated.scheme == 'https'
+
+
+def test_model_validate_reapplies_url_constraints_to_existing_instance() -> None:
+    """Model validation should re-apply constraints to existing URL instances."""
+    from pydantic import BaseModel
+
+    HttpOnlyUrl = Annotated[AnyUrl, UrlConstraints(allowed_schemes=['http', 'https'])]
+
+    class Model(BaseModel):
+        v: HttpOnlyUrl
+
+    # Should reject existing AnyUrl with disallowed scheme
+    with pytest.raises(ValidationError):
+        Model.model_validate({'v': AnyUrl('ftp://example.com')})
+
+    # Should accept existing AnyUrl with allowed scheme
+    m = Model.model_validate({'v': AnyUrl('https://example.com')})
+    assert m.v.scheme == 'https'
+
+
 def test_url_constraints_invalid_annotated_type() -> None:
     with pytest.raises(PydanticUserError):
         TypeAdapter(Annotated[str, UrlConstraints(max_length=1)])

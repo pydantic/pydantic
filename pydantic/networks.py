@@ -120,6 +120,25 @@ class UrlConstraints:
             )
         for constraint_key, constraint_value in self.defined_constraints.items():
             schema_to_mutate[constraint_key] = constraint_value
+
+        # The function-wrap schema used by _BaseUrl / _BaseMultiHostUrl short-circuits
+        # via isinstance(v, source) when an existing URL instance is passed, which
+        # bypasses the URL constraints applied above. Wrap the schema with a validator
+        # that extracts the underlying pydantic-core Url so the constrained inner
+        # schema can re-validate.
+        if schema['type'] == 'function-wrap':
+
+            def _revalidate_existing_url(v: Any, handler: Any) -> Any:
+                if isinstance(v, _BaseUrl):
+                    v = v._url
+                if isinstance(v, _BaseMultiHostUrl):
+                    v = v._url
+                return handler(v)
+
+            schema = core_schema.no_info_wrap_validator_function(
+                _revalidate_existing_url,
+                schema,
+            )
         return schema
 
 
