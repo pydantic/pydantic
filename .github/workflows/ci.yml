@@ -269,7 +269,7 @@ jobs:
           echo "pyodide-abi-version=$(uv run pyodide config get pyodide_abi_version)" >> "$GITHUB_OUTPUT"
           echo "rustflags=$(uv run pyodide config get rustflags)" >> "$GITHUB_OUTPUT"
 
-      - uses: mymindstorm/setup-emsdk@4528d102f7230f0e7b276855c01ea1159be0e984 # v16
+      - uses: emscripten-core/setup-emsdk@4528d102f7230f0e7b276855c01ea1159be0e984 # v16
         with:
           version: ${{ steps.pyodide-config.outputs.emscripten-version }}
           no-cache: ${{ startsWith(github.ref, 'refs/tags/') }}
