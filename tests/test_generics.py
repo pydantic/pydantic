@@ -4,6 +4,7 @@ import json
 import platform
 import re
 import sys
+import weakref
 from collections import Counter, OrderedDict, defaultdict, deque
 from collections.abc import Callable, Iterable, Mapping, Sequence
 from enum import Enum, IntEnum
@@ -380,6 +381,30 @@ def test_cache_keys_are_hashable(mocker: MockerFixture):
     models.append(Model)
     assert len(cache) == cache_size + 15
     del models
+
+
+def test_generic_submodel_preserves_slots() -> None:
+    T = TypeVar('T')
+
+    class Model(BaseModel, Generic[T]):
+        __slots__ = ()
+
+        value: T | None = None
+
+    with pytest.raises(TypeError):
+        weakref.ref(Model())
+
+    ModelInt = Model[int]
+    assert ModelInt.__slots__ == ()
+
+    with pytest.raises(TypeError):
+        weakref.ref(ModelInt())
+
+    class SubModel(ModelInt):
+        __slots__ = ()
+
+    with pytest.raises(TypeError):
+        weakref.ref(SubModel())
 
 
 @pytest.mark.thread_unsafe(reason='GC is flaky')
