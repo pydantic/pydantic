@@ -1713,6 +1713,27 @@ def test_external_ref():
     }
 
 
+@pytest.mark.parametrize(
+    'ref',
+    [
+        'https://example.com/schema.json#/$defs/Model',
+        'schema.json#/$defs/Model',
+        '#/$defs/External',
+        'urn:example:schema',
+    ],
+)
+def test_external_ref_not_a_local_definition(ref):
+    """External `$ref` values are passed through verbatim, regardless of the URI scheme.
+
+    https://github.com/pydantic/pydantic/issues/12093
+    """
+
+    class Model(BaseModel):
+        model_config = ConfigDict(json_schema_extra={'$ref': ref})
+
+    assert Model.model_json_schema() == {'$ref': ref, 'properties': {}, 'title': 'Model', 'type': 'object'}
+
+
 def test_schema_no_definitions():
     keys_map, model_schema = models_json_schema([], title='Schema without definitions')
     assert keys_map == {}
