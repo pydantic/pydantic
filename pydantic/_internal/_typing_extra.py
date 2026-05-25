@@ -451,7 +451,7 @@ def eval_type(
         message = (
             "If you made use of an implicit recursive type alias (e.g. `MyType = list['MyType']), "
             'consider using PEP 695 type aliases instead. For more details, refer to the documentation: '
-            f'https://docs.pydantic.dev/{version_short()}/concepts/types/#named-recursive-types'
+            f'https://pydantic.dev/docs/validation/{version_short()}/concepts/types/#named-recursive-types'
         )
         if sys.version_info >= (3, 11):
             e.add_note(message)

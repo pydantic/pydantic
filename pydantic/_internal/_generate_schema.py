@@ -321,7 +321,7 @@ def _add_custom_serialization_from_json_encoders(
             continue
 
         warnings.warn(
-            f'`json_encoders` is deprecated. See https://docs.pydantic.dev/{version_short()}/concepts/serialization/#custom-serializers for alternatives',
+            f'`json_encoders` is deprecated. See https://pydantic.dev/docs/validation/{version_short()}/concepts/serialization/#custom-serializers for alternatives',
             PydanticDeprecatedSince20,
         )
 

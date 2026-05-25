@@ -296,7 +296,7 @@ def getattr_migration(module: str) -> Callable[[str], Any]:
             new_location = REDIRECT_TO_V1[import_path]
             warnings.warn(
                 f'`{import_path}` has been removed. We are importing from `{new_location}` instead.'
-                'See the migration guide for more details: https://docs.pydantic.dev/latest/migration/',
+                'See the migration guide for more details: https://pydantic.dev/docs/validation/latest/get-started/migration/',
                 category=PydanticDeprecatedSince20,
                 stacklevel=2,
             )
@@ -304,7 +304,7 @@ def getattr_migration(module: str) -> Callable[[str], Any]:
         if import_path == 'pydantic:BaseSettings':
             raise PydanticImportError(
                 '`BaseSettings` has been moved to the `pydantic-settings` package. '
-                f'See https://docs.pydantic.dev/{version_short()}/migration/#basesettings-has-moved-to-pydantic-settings '
+                f'See https://pydantic.dev/docs/validation/{version_short()}/migration/#basesettings-has-moved-to-pydantic-settings '
                 'for more details.'
             )
         if import_path in REMOVED_IN_V2:

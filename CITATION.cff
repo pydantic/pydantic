@@ -28,7 +28,7 @@ authors:
   - family-names: Plot
     given-names: Victorien
 repository-code: 'https://github.com/pydantic/pydantic'
-url: 'https://docs.pydantic.dev/latest/'
+url: 'https://pydantic.dev/docs/validation/latest/get-started/'
 abstract: >-
   Pydantic Validation is the most widely used data validation library
   for Python.
