@@ -3,13 +3,13 @@ from pathlib import Path
 
 import pytest
 
-try:
+if sys.platform != 'emscripten':
     from pytest_examples import CodeExample, EvalExample, find_examples
-except ImportError:
+else:
     # pytest_examples is not installed on emscripten
     CodeExample = EvalExample = None
 
-    def find_examples(*_directories):
+    def find_examples(*args, **kwargs):
         return []
 
 
