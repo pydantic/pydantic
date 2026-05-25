@@ -24,7 +24,7 @@ class AliasPath:
 
     path: list[int | str]
 
-    def __init__(self, first_arg: str, *args: str | int) -> None:
+    def __init__(self, first_arg: str | int, *args: str | int) -> None:
         self.path = [first_arg] + list(args)
 
     def convert_to_aliases(self) -> list[str | int]:
@@ -35,8 +35,8 @@ class AliasPath:
         """
         return self.path
 
-    def search_dict_for_path(self, d: dict) -> Any:
-        """Searches a dictionary for the path specified by the alias.
+    def search_dict_for_path(self, d: Any) -> Any:
+        """Searches a dictionary, list, or tuple for the path specified by the alias.
 
         Returns:
             The value at the specified path, or `PydanticUndefined` if the path is not found.
