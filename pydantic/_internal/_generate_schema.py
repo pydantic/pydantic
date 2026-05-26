@@ -282,6 +282,39 @@ def apply_each_item_validators(
     return schema
 
 
+def _sort_union_args_subclasses_first(args: list[Any]) -> list[Any]:
+    """Sort union args so subclasses come before their parent classes.
+
+    This ensures correct serialization when a subclass instance is serialized
+    against a union that includes both the subclass and one of its parent classes.
+    pydantic-core's union serializer uses the first matching schema, so without
+    this sorting a ``Parent | Child`` union would incorrectly serialize ``Child``
+    instances as ``Parent`` (since ``isinstance(child, Parent)`` is ``True``).
+
+    The sort is stable: unrelated types preserve their original relative order.
+    Only types that are strict subclasses of other union members are moved earlier.
+
+    Args:
+        args: The union member types to sort.
+
+    Returns:
+        A new list with subclasses ordered before their parent classes.
+    """
+
+    def _is_strict_subclass(a: Any, b: Any) -> bool:
+        try:
+            return isinstance(a, type) and isinstance(b, type) and issubclass(a, b) and a is not b
+        except TypeError:
+            return False
+
+    n = len(args)
+    # Specificity of arg[i] = count of other union members that arg[i] is a strict subclass of.
+    # A higher specificity means the type is more derived and should come first.
+    specificity = [sum(1 for j in range(n) if i != j and _is_strict_subclass(args[i], args[j])) for i in range(n)]
+    # Stable descending sort: higher specificity (more derived) types come first.
+    return [arg for arg, _ in sorted(zip(args, specificity), key=lambda x: -x[1])]
+
+
 def _extract_json_schema_info_from_field_info(
     info: FieldInfo | ComputedFieldInfo,
 ) -> tuple[JsonDict | None, JsonDict | JsonSchemaExtraCallable | None]:
@@ -1333,6 +1366,12 @@ class GenerateSchema:
     def _union_schema(self, union_type: Any) -> core_schema.CoreSchema:
         """Generate schema for a Union."""
         args = self._get_args_resolving_forward_refs(union_type, required=True)
+        # Sort args so subclasses come before their parent classes. This ensures
+        # that pydantic-core's union serializer (which uses the first matching
+        # schema) selects the correct, most specific schema when serializing a
+        # subclass instance against a union containing both the subclass and a
+        # parent class. See https://github.com/pydantic/pydantic/issues/12099.
+        args = _sort_union_args_subclasses_first(list(args))
         choices: list[CoreSchema] = []
         nullable = False
         for arg in args:

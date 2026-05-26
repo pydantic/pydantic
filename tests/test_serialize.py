@@ -1224,6 +1224,43 @@ def test_subclass_support_unions_with_forward_ref() -> None:
     assert foo_recursive.model_dump() == {'items': [{'items': [{'bar_id': 42}]}]}
 
 
+def test_union_subclass_serialization_with_unvalidated_default() -> None:
+    """Regression test for https://github.com/pydantic/pydantic/issues/12099.
+
+    When a union contains both a parent class and a subclass (e.g. ``Parent | Child``),
+    pydantic-core's union serializer uses the first matching schema.  Because
+    ``isinstance(child_instance, Parent)`` is ``True``, the Parent schema was
+    incorrectly selected first, causing the child's extra fields to be dropped.
+
+    Sorting union args so subclasses come before their parent classes ensures
+    the most specific type is tried first during serialization.
+    """
+
+    class Parent(BaseModel):
+        a: float = 0  # default is int 0, not float — triggers the wrong schema path
+
+    class Child(Parent):
+        b: int
+
+    class Container(BaseModel):
+        union: Parent | Child
+
+    # Subclass instance must serialise with *all* its fields, not just Parent's
+    container = Container(union=Child(b=3))
+    assert container.model_dump() == {'union': {'a': 0, 'b': 3}}
+
+    # Parent instance must still serialise correctly
+    container2 = Container(union=Parent())
+    assert container2.model_dump() == {'union': {'a': 0}}
+
+    # Reversed annotation order should also work
+    class ContainerReversed(BaseModel):
+        union: Child | Parent
+
+    container3 = ContainerReversed(union=Child(b=3))
+    assert container3.model_dump() == {'union': {'a': 0, 'b': 3}}
+
+
 def test_serialize_python_context() -> None:
     contexts: list[Any] = [None, None, {'foo': 'bar'}]
 
