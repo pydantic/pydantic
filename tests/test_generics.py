@@ -3178,3 +3178,31 @@ def test_revalidation_with_basic_inference() -> None:
     holder2 = Holder(inner=Inner(inner=1))
     # implies that validation succeeds for both
     assert holder1 == holder2
+
+
+def test_generic_model_slots_propagation() -> None:
+    import weakref
+
+    T = TypeVar('T')
+
+    class Envelope(BaseModel, Generic[T]):
+        __slots__ = ()
+        content: None | T = None
+
+    base = Envelope()
+    assert '__weakref__' not in type(base).__dict__
+    with pytest.raises(TypeError):
+        weakref.ref(base)
+
+    param = Envelope[int]()
+    assert '__weakref__' not in type(param).__dict__
+    with pytest.raises(TypeError):
+        weakref.ref(param)
+
+    class Sub(Envelope[int]):
+        __slots__ = ()
+
+    sub = Sub()
+    assert '__weakref__' not in type(sub).__dict__
+    with pytest.raises(TypeError):
+        weakref.ref(sub)

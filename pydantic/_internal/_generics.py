@@ -121,6 +121,8 @@ def create_generic_submodel(
         The created submodel.
     """
     namespace: dict[str, Any] = {'__module__': origin.__module__}
+    if '__slots__' in origin.__dict__:
+        namespace['__slots__'] = origin.__slots__
     bases = (origin,)
     meta, ns, kwds = prepare_class(model_name, bases)
     namespace.update(ns)
