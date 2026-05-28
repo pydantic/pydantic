@@ -15175,7 +15175,7 @@ the remaining unexpected changes to the <em>serialize as any</em> behavior.</p>
 <h2 id="v2124-2025-11-05">v2.12.4 (2025-11-05)<a class="headerlink" href="#v2124-2025-11-05" title="Permanent link">&para;</a></h2>
 <p><a href="https://github.com/pydantic/pydantic/releases/tag/v2.12.4"><span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 .297c-6.63 0-12 5.373-12 12 0 5.303 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61C4.422 18.07 3.633 17.7 3.633 17.7c-1.087-.744.084-.729.084-.729 1.205.084 1.838 1.236 1.838 1.236 1.07 1.835 2.809 1.305 3.495.998.108-.776.417-1.305.76-1.605-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.465-2.38 1.235-3.22-.135-.303-.54-1.523.105-3.176 0 0 1.005-.322 3.3 1.23.96-.267 1.98-.399 3-.405 1.02.006 2.04.138 3 .405 2.28-1.552 3.285-1.23 3.285-1.23.645 1.653.24 2.873.12 3.176.765.84 1.23 1.91 1.23 3.22 0 4.61-2.805 5.625-5.475 5.92.42.36.81 1.096.81 2.22 0 1.606-.015 2.896-.015 3.286 0 .315.21.69.825.57C20.565 22.092 24 17.592 24 12.297c0-6.627-5.373-12-12-12"/></svg></span> GitHub release</a></p>
 <p>This is the fourth 2.12 patch release, fixing more regressions, and reverting a change in the <code>build()</code> method
-of the <a href="https://docs.pydantic.dev/latest/api/networks/"><code>AnyUrl</code> and Dsn types</a>.</p>
+of the <a href="https://pydantic.dev/docs/validation/latest/api/pydantic/networks/"><code>AnyUrl</code> and Dsn types</a>.</p>
 <p>This patch release also fixes an issue with the serialization of IP address types, when <code>serialize_as_any</code> is used. The next patch release
 will try to address the remaining issues with <em>serialize as any</em> behavior by introducing a new <em>polymorphic serialization</em> feature, that
 should be used in most cases in place of <em>serialize as any</em>.</p>
@@ -15189,7 +15189,7 @@ should be used in most cases in place of <em>serialize as any</em>.</p>
 </li>
 <li>
 <p>Revert URL percent-encoding of credentials in the <code>build()</code> method
-  of the <a href="https://docs.pydantic.dev/latest/api/networks/"><code>AnyUrl</code> and Dsn types</a> by <a href="https://github.com/davidhewitt">@davidhewitt</a> in
+  of the <a href="https://pydantic.dev/docs/validation/latest/api/pydantic/networks/"><code>AnyUrl</code> and Dsn types</a> by <a href="https://github.com/davidhewitt">@davidhewitt</a> in
   <a href="https://github.com/pydantic/pydantic-core/pull/1833">pydantic-core#1833</a>.</p>
 <p>This was initially considered as a bugfix, but caused regressions and as such was fully reverted. The next release will include
 an opt-in option to percent-encode components of the URL.</p>
@@ -15212,14 +15212,14 @@ type.</p>
 <p><a href="https://github.com/pydantic/pydantic/releases/tag/v2.12.3"><span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 .297c-6.63 0-12 5.373-12 12 0 5.303 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61C4.422 18.07 3.633 17.7 3.633 17.7c-1.087-.744.084-.729.084-.729 1.205.084 1.838 1.236 1.838 1.236 1.07 1.835 2.809 1.305 3.495.998.108-.776.417-1.305.76-1.605-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.465-2.38 1.235-3.22-.135-.303-.54-1.523.105-3.176 0 0 1.005-.322 3.3 1.23.96-.267 1.98-.399 3-.405 1.02.006 2.04.138 3 .405 2.28-1.552 3.285-1.23 3.285-1.23.645 1.653.24 2.873.12 3.176.765.84 1.23 1.91 1.23 3.22 0 4.61-2.805 5.625-5.475 5.92.42.36.81 1.096.81 2.22 0 1.606-.015 2.896-.015 3.286 0 .315.21.69.825.57C20.565 22.092 24 17.592 24 12.297c0-6.627-5.373-12-12-12"/></svg></span> GitHub release</a></p>
 <h3 id="whats-changed_9">What's Changed<a class="headerlink" href="#whats-changed_9" title="Permanent link">&para;</a></h3>
 <p>This is the third 2.12 patch release, fixing issues related to the <code>FieldInfo</code> class, and reverting a change to the supported
-<a href="https://docs.pydantic.dev/latest/concepts/validators/#model-validators"><em>after</em> model validator</a> function signatures.</p>
+<a href="https://pydantic.dev/docs/validation/latest/concepts/validators/#model-validators"><em>after</em> model validator</a> function signatures.</p>
 <ul>
 <li>Raise a warning when an invalid after model validator function signature is raised by <a href="https://github.com/Viicos">@Viicos</a> in <a href="https://github.com/pydantic/pydantic/pull/12414">#12414</a>.
   Starting in 2.12.0, using class methods for <em>after</em> model validators raised an error, but the error wasn't raised concistently. We decided
   to emit a deprecation warning instead.</li>
-<li>Add <a href="https://docs.pydantic.dev/latest/api/fields/#pydantic.fields.FieldInfo.asdict"><code>FieldInfo.asdict()</code></a> method, improve documentation around <code>FieldInfo</code> by <a href="https://github.com/Viicos">@Viicos</a> in <a href="https://github.com/pydantic/pydantic/pull/12411">#12411</a>.
+<li>Add <a href="https://pydantic.dev/docs/validation/latest/api/pydantic/fields/#pydantic.fields.FieldInfo.asdict"><code>FieldInfo.asdict()</code></a> method, improve documentation around <code>FieldInfo</code> by <a href="https://github.com/Viicos">@Viicos</a> in <a href="https://github.com/pydantic/pydantic/pull/12411">#12411</a>.
   This also add back support for mutations on <code>FieldInfo</code> classes, that are reused as <code>Annotated</code> metadata. <strong>However</strong>, note that this is still
-  <em>not</em> a supported pattern. Instead, please refer to the <a href="https://docs.pydantic.dev/latest/examples/dynamic_models/">added example</a> in the documentation.</li>
+  <em>not</em> a supported pattern. Instead, please refer to the <a href="https://pydantic.dev/docs/validation/latest/examples/dynamic_models/">added example</a> in the documentation.</li>
 </ul>
 <p>The <a href="https://pydantic.dev/articles/pydantic-v2-12-release#changes">blog post</a> section on changes was also updated to document the changes related to <code>serialize_as_any</code>.</p>
 <h2 id="v2122-2025-10-14">v2.12.2 (2025-10-14)<a class="headerlink" href="#v2122-2025-10-14" title="Permanent link">&para;</a></h2>
@@ -15252,7 +15252,7 @@ type.</p>
 <h2 id="v2120-2025-10-07">v2.12.0 (2025-10-07)<a class="headerlink" href="#v2120-2025-10-07" title="Permanent link">&para;</a></h2>
 <p><a href="https://github.com/pydantic/pydantic/releases/tag/v2.12.0"><span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 .297c-6.63 0-12 5.373-12 12 0 5.303 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61C4.422 18.07 3.633 17.7 3.633 17.7c-1.087-.744.084-.729.084-.729 1.205.084 1.838 1.236 1.838 1.236 1.07 1.835 2.809 1.305 3.495.998.108-.776.417-1.305.76-1.605-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.465-2.38 1.235-3.22-.135-.303-.54-1.523.105-3.176 0 0 1.005-.322 3.3 1.23.96-.267 1.98-.399 3-.405 1.02.006 2.04.138 3 .405 2.28-1.552 3.285-1.23 3.285-1.23.645 1.653.24 2.873.12 3.176.765.84 1.23 1.91 1.23 3.22 0 4.61-2.805 5.625-5.475 5.92.42.36.81 1.096.81 2.22 0 1.606-.015 2.896-.015 3.286 0 .315.21.69.825.57C20.565 22.092 24 17.592 24 12.297c0-6.627-5.373-12-12-12"/></svg></span> GitHub release</a></p>
 <p>This is the final 2.12 release. It features the work of 20 external contributors and provides useful new features, along with initial Python 3.14 support.
-Several minor changes (considered non-breaking changes according to our <a href="https://docs.pydantic.dev/2.12/version-policy/#pydantic-v2">versioning policy</a>)
+Several minor changes (considered non-breaking changes according to our <a href="https://pydantic.dev/docs/validation/2.12/get-started/version-policy/#pydantic-v2">versioning policy</a>)
 are also included in this release. Make sure to look into them before upgrading.</p>
 <p><strong>Note that Pydantic V1 is not compatible with Python 3.14 and greater</strong>.</p>
 <h3 id="whats-changed_12">What's Changed<a class="headerlink" href="#whats-changed_12" title="Permanent link">&para;</a></h3>
@@ -16048,7 +16048,7 @@ This is an early alpha release, meant to collect early feedback from users havin
 <h4 id="changes_10">Changes<a class="headerlink" href="#changes_10" title="Permanent link">&para;</a></h4>
 <ul>
 <li>Breaking Change: Merge <code>dict</code> type <code>json_schema_extra</code> by <a href="https://github.com/sydney-runkle">@sydney-runkle</a> in <a href="https://github.com/pydantic/pydantic/pull/9792">#9792</a><ul>
-<li>For more info (how to replicate old behavior) on this change, see <a href="https://docs.pydantic.dev/dev/concepts/json_schema/#merging-json_schema_extra">here</a></li>
+<li>For more info (how to replicate old behavior) on this change, see <a href="https://pydantic.dev/docs/validation/dev/concepts/json_schema/#merging-json_schema_extra">here</a></li>
 </ul>
 </li>
 <li>Refactor annotation injection for known (often generic) types by <a href="https://github.com/sydney-runkle">@sydney-runkle</a> in <a href="https://github.com/pydantic/pydantic/pull/9979">#9979</a></li>
@@ -16242,7 +16242,7 @@ This is an early alpha release, meant to collect early feedback from users havin
 <li>Support serialization of some serializable defaults in JSON schema by <a href="https://github.com/sydney-runkle">@sydney-runkle</a> in <a href="https://github.com/pydantic/pydantic/pull/9624">#9624</a></li>
 <li>Relax type specification for <code>__validators__</code> values in <code>create_model</code> by <a href="https://github.com/sydney-runkle">@sydney-runkle</a> in <a href="https://github.com/pydantic/pydantic/pull/9697">#9697</a></li>
 <li><strong>Breaking Change:</strong> Improve <code>smart</code> union matching logic by <a href="https://github.com/sydney-runkle">@sydney-runkle</a> in <a href="https://github.com/pydantic/pydantic-core/pull/1322">pydantic/pydantic-core#1322</a>
-You can read more about our <code>smart</code> union matching logic <a href="https://docs.pydantic.dev/dev/concepts/unions/#smart-mode">here</a>. In some cases, if the old behavior
+You can read more about our <code>smart</code> union matching logic <a href="https://pydantic.dev/docs/validation/dev/concepts/unions/#smart-mode">here</a>. In some cases, if the old behavior
 is desired, you can switch to <code>left-to-right</code> mode and change the order of your <code>Union</code> members.</li>
 </ul>
 <h4 id="performance_6">Performance<a class="headerlink" href="#performance_6" title="Permanent link">&para;</a></h4>
@@ -17218,7 +17218,7 @@ is desired, you can switch to <code>left-to-right</code> mode and change the ord
 <h2 id="v20-2023-06-30">v2.0 (2023-06-30)<a class="headerlink" href="#v20-2023-06-30" title="Permanent link">&para;</a></h2>
 <p><a href="https://github.com/pydantic/pydantic/releases/tag/v2.0"><span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 .297c-6.63 0-12 5.373-12 12 0 5.303 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61C4.422 18.07 3.633 17.7 3.633 17.7c-1.087-.744.084-.729.084-.729 1.205.084 1.838 1.236 1.838 1.236 1.07 1.835 2.809 1.305 3.495.998.108-.776.417-1.305.76-1.605-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.465-2.38 1.235-3.22-.135-.303-.54-1.523.105-3.176 0 0 1.005-.322 3.3 1.23.96-.267 1.98-.399 3-.405 1.02.006 2.04.138 3 .405 2.28-1.552 3.285-1.23 3.285-1.23.645 1.653.24 2.873.12 3.176.765.84 1.23 1.91 1.23 3.22 0 4.61-2.805 5.625-5.475 5.92.42.36.81 1.096.81 2.22 0 1.606-.015 2.896-.015 3.286 0 .315.21.69.825.57C20.565 22.092 24 17.592 24 12.297c0-6.627-5.373-12-12-12"/></svg></span> GitHub release</a></p>
 <p>Pydantic V2 is here! <img alt="🎉" class="twemoji" src="https://cdn.jsdelivr.net/gh/jdecked/twemoji@16.0.1/assets/svg/1f389.svg" title=":tada:" /></p>
-<p>See <a href="https://docs.pydantic.dev/2.0/blog/pydantic-v2-final/">this post</a> for more details.</p>
+<p>See <a href="https://pydantic.dev/articles/pydantic-v2-final">this post</a> for more details.</p>
 <h2 id="v20b3-2023-06-16">v2.0b3 (2023-06-16)<a class="headerlink" href="#v20b3-2023-06-16" title="Permanent link">&para;</a></h2>
 <p>Third beta pre-release of Pydantic V2</p>
 <p>See the full changelog <a href="https://github.com/pydantic/pydantic/releases/tag/v2.0b3">here</a></p>
@@ -17239,7 +17239,7 @@ is desired, you can switch to <code>left-to-right</code> mode and change the ord
 <p>See the full changelog <a href="https://github.com/pydantic/pydantic/releases/tag/v2.0a2">here</a></p>
 <h2 id="v20a1-2023-04-03">v2.0a1 (2023-04-03)<a class="headerlink" href="#v20a1-2023-04-03" title="Permanent link">&para;</a></h2>
 <p>First pre-release of Pydantic V2!</p>
-<p>See <a href="https://docs.pydantic.dev/blog/pydantic-v2-alpha/">this post</a> for more details.</p>
+<p>See <a href="https://pydantic.dev/articles/pydantic-v2-alpha">this post</a> for more details.</p>
 <h2 id="v11024-2025-09-25">v1.10.24 (2025-09-25)<a class="headerlink" href="#v11024-2025-09-25" title="Permanent link">&para;</a></h2>
 <ul>
 <li>Add user warning when using Python 3.14 by <a href="https://github.com/Viicos">@Viicos</a> in https://github.com/pydantic/pydantic/pull/12263
@@ -17542,10 +17542,10 @@ for their kind support.</p>
 <h3 id="highlights">Highlights<a class="headerlink" href="#highlights" title="Permanent link">&para;</a></h3>
 <ul>
 <li>add Python 3.10 support, <a href="https://github.com/pydantic/pydantic/pull/2885">#2885</a> by <a href="https://github.com/PrettyWood">@PrettyWood</a></li>
-<li><a href="https://docs.pydantic.dev/usage/types/#discriminated-unions-aka-tagged-unions">Discriminated unions</a>, <a href="https://github.com/pydantic/pydantic/pull/619">#619</a> by <a href="https://github.com/PrettyWood">@PrettyWood</a></li>
-<li><a href="https://docs.pydantic.dev/usage/model_config/#smart-union"><code>Config.smart_union</code> for better union logic</a>, <a href="https://github.com/pydantic/pydantic/pull/2092">#2092</a> by <a href="https://github.com/PrettyWood">@PrettyWood</a></li>
+<li><a href="https://pydantic.dev/docs/validation/1.10/usage/types/#discriminated-unions-aka-tagged-unions">Discriminated unions</a>, <a href="https://github.com/pydantic/pydantic/pull/619">#619</a> by <a href="https://github.com/PrettyWood">@PrettyWood</a></li>
+<li><a href="https://pydantic.dev/docs/validation/1.10/usage/model_config/#smart-union"><code>Config.smart_union</code> for better union logic</a>, <a href="https://github.com/pydantic/pydantic/pull/2092">#2092</a> by <a href="https://github.com/PrettyWood">@PrettyWood</a></li>
 <li>Binaries for Macos M1 CPUs, <a href="https://github.com/pydantic/pydantic/pull/3498">#3498</a> by <a href="https://github.com/samuelcolvin">@samuelcolvin</a></li>
-<li>Complex types can be set via <a href="https://docs.pydantic.dev/usage/settings/#parsing-environment-variable-values">nested environment variables</a>, e.g. <code>foo___bar</code>, <a href="https://github.com/pydantic/pydantic/pull/3159">#3159</a> by <a href="https://github.com/Air-Mark">@Air-Mark</a></li>
+<li>Complex types can be set via <a href="https://pydantic.dev/docs/validation/1.10/usage/settings/#parsing-environment-variable-values">nested environment variables</a>, e.g. <code>foo___bar</code>, <a href="https://github.com/pydantic/pydantic/pull/3159">#3159</a> by <a href="https://github.com/Air-Mark">@Air-Mark</a></li>
 <li>add a dark mode to <em>pydantic</em> documentation, <a href="https://github.com/pydantic/pydantic/pull/2913">#2913</a> by <a href="https://github.com/gbdlin">@gbdlin</a></li>
 <li>Add support for autocomplete in VS Code via <code>__dataclass_transform__</code>, <a href="https://github.com/pydantic/pydantic/pull/2721">#2721</a> by <a href="https://github.com/tiangolo">@tiangolo</a></li>
 <li>Add "exclude" as a field parameter so that it can be configured using model config, <a href="https://github.com/pydantic/pydantic/pull/660">#660</a> by <a href="https://github.com/daviskirk">@daviskirk</a></li>
@@ -17576,7 +17576,7 @@ for their kind support.</p>
   <code>pydantic.fields.ModelField</code>) to <code>__modify_schema__()</code> if present, <a href="https://github.com/pydantic/pydantic/pull/3434">#3434</a> by <a href="https://github.com/jasujm">@jasujm</a></li>
 <li>Fix issue when pydantic fail to parse <code>typing.ClassVar</code> string type annotation, <a href="https://github.com/pydantic/pydantic/pull/3401">#3401</a> by <a href="https://github.com/uriyyo">@uriyyo</a></li>
 <li>Mention Python &gt;= 3.9.2 as an alternative to <code>typing_extensions.TypedDict</code>, <a href="https://github.com/pydantic/pydantic/pull/3374">#3374</a> by <a href="https://github.com/BvB93">@BvB93</a></li>
-<li>Changed the validator method name in the <a href="https://docs.pydantic.dev/usage/models/#custom-errors">Custom Errors example</a>
+<li>Changed the validator method name in the <a href="https://pydantic.dev/docs/validation/1.10/usage/models/#custom-errors">Custom Errors example</a>
   to more accurately describe what the validator is doing; changed from <code>name_must_contain_space</code> to <code>value_must_equal_bar</code>, <a href="https://github.com/pydantic/pydantic/pull/3327">#3327</a> by <a href="https://github.com/michaelrios28">@michaelrios28</a></li>
 <li>Add <code>AmqpDsn</code> class, <a href="https://github.com/pydantic/pydantic/pull/3254">#3254</a> by <a href="https://github.com/kludex">@kludex</a></li>
 <li>Always use <code>Enum</code> value as default in generated JSON schema, <a href="https://github.com/pydantic/pydantic/pull/3190">#3190</a> by <a href="https://github.com/joaommartins">@joaommartins</a></li>
@@ -17598,7 +17598,7 @@ for their kind support.</p>
   just as when sourced from environment variables, <a href="https://github.com/pydantic/pydantic/pull/2917">#2917</a> by <a href="https://github.com/davidmreed">@davidmreed</a></li>
 <li>add a dark mode to <em>pydantic</em> documentation, <a href="https://github.com/pydantic/pydantic/pull/2913">#2913</a> by <a href="https://github.com/gbdlin">@gbdlin</a></li>
 <li>Make <code>pydantic-mypy</code> plugin compatible with <code>pyproject.toml</code> configuration, consistent with <code>mypy</code> changes.
-  See the <a href="https://docs.pydantic.dev/mypy_plugin/#configuring-the-plugin">doc</a> for more information, <a href="https://github.com/pydantic/pydantic/pull/2908">#2908</a> by <a href="https://github.com/jrwalk">@jrwalk</a></li>
+  See the <a href="https://pydantic.dev/docs/validation/1.10/extras/mypy_plugin/">doc</a> for more information, <a href="https://github.com/pydantic/pydantic/pull/2908">#2908</a> by <a href="https://github.com/jrwalk">@jrwalk</a></li>
 <li>add Python 3.10 support, <a href="https://github.com/pydantic/pydantic/pull/2885">#2885</a> by <a href="https://github.com/PrettyWood">@PrettyWood</a></li>
 <li>Correctly parse generic models with <code>Json[T]</code>, <a href="https://github.com/pydantic/pydantic/pull/2860">#2860</a> by <a href="https://github.com/geekingfrog">@geekingfrog</a></li>
 <li>Update contrib docs re: Python version to use for building docs, <a href="https://github.com/pydantic/pydantic/pull/2856">#2856</a> by <a href="https://github.com/paxcodes">@paxcodes</a></li>
@@ -17643,7 +17643,7 @@ for their kind support.</p>
 <li>Support generating schema for <code>Generic</code> fields with subtypes, <a href="https://github.com/pydantic/pydantic/pull/2375">#2375</a> by <a href="https://github.com/maximberg">@maximberg</a></li>
 <li>fix(encoder): serialize <code>NameEmail</code> to str, <a href="https://github.com/pydantic/pydantic/pull/2341">#2341</a> by <a href="https://github.com/alecgerona">@alecgerona</a></li>
 <li>add <code>Config.smart_union</code> to prevent coercion in <code>Union</code> if possible, see
- <a href="https://docs.pydantic.dev/usage/model_config/#smart-union">the doc</a> for more information, <a href="https://github.com/pydantic/pydantic/pull/2092">#2092</a> by <a href="https://github.com/PrettyWood">@PrettyWood</a></li>
+ <a href="https://pydantic.dev/docs/validation/1.10/usage/model_config/#smart-union">the doc</a> for more information, <a href="https://github.com/pydantic/pydantic/pull/2092">#2092</a> by <a href="https://github.com/PrettyWood">@PrettyWood</a></li>
 <li>Add ability to use <code>typing.Counter</code> as a model field type, <a href="https://github.com/pydantic/pydantic/pull/2060">#2060</a> by <a href="https://github.com/uriyyo">@uriyyo</a></li>
 <li>Add parameterised subclasses to <code>__bases__</code> when constructing new parameterised classes, so that <code>A &lt;: B =&gt; A[int] &lt;: B[int]</code>, <a href="https://github.com/pydantic/pydantic/pull/2007">#2007</a> by <a href="https://github.com/diabolo-dan">@diabolo-dan</a></li>
 <li>Create <code>FileUrl</code> type that allows URLs that conform to <a href="https://tools.ietf.org/html/rfc8089#section-2">RFC 8089</a>.
@@ -17691,10 +17691,10 @@ See security advisory <a href="https://github.com/pydantic/pydantic/security/adv
 for their kind support.</p>
 <h3 id="highlights_1">Highlights<a class="headerlink" href="#highlights_1" title="Permanent link">&para;</a></h3>
 <ul>
-<li><a href="https://docs.pydantic.dev/hypothesis_plugin/">Hypothesis plugin</a> for testing, <a href="https://github.com/pydantic/pydantic/pull/2097">#2097</a> by <a href="https://github.com/Zac-HD">@Zac-HD</a></li>
-<li>support for <a href="https://docs.pydantic.dev/usage/types/#annotated-types"><code>NamedTuple</code> and <code>TypedDict</code></a>, <a href="https://github.com/pydantic/pydantic/pull/2216">#2216</a> by <a href="https://github.com/PrettyWood">@PrettyWood</a></li>
-<li>Support <a href="https://docs.pydantic.dev/usage/schema/#typingannotated-fields"><code>Annotated</code> hints on model fields</a>, <a href="https://github.com/pydantic/pydantic/pull/2147">#2147</a> by <a href="https://github.com/JacobHayes">@JacobHayes</a></li>
-<li><a href="https://docs.pydantic.dev/usage/model_config/"><code>frozen</code> parameter on <code>Config</code></a> to allow models to be hashed, <a href="https://github.com/pydantic/pydantic/pull/1880">#1880</a> by <a href="https://github.com/rhuille">@rhuille</a></li>
+<li><a href="https://pydantic.dev/docs/validation/1.10/extras/hypothesis_plugin/">Hypothesis plugin</a> for testing, <a href="https://github.com/pydantic/pydantic/pull/2097">#2097</a> by <a href="https://github.com/Zac-HD">@Zac-HD</a></li>
+<li>support for <a href="https://pydantic.dev/docs/validation/1.10/usage/types/#annotated-types"><code>NamedTuple</code> and <code>TypedDict</code></a>, <a href="https://github.com/pydantic/pydantic/pull/2216">#2216</a> by <a href="https://github.com/PrettyWood">@PrettyWood</a></li>
+<li>Support <a href="https://pydantic.dev/docs/validation/1.10/usage/schema/#typingannotated-fields"><code>Annotated</code> hints on model fields</a>, <a href="https://github.com/pydantic/pydantic/pull/2147">#2147</a> by <a href="https://github.com/JacobHayes">@JacobHayes</a></li>
+<li><a href="https://pydantic.dev/docs/validation/1.10/usage/model_config/"><code>frozen</code> parameter on <code>Config</code></a> to allow models to be hashed, <a href="https://github.com/pydantic/pydantic/pull/1880">#1880</a> by <a href="https://github.com/rhuille">@rhuille</a></li>
 </ul>
 <h3 id="changes_17">Changes<a class="headerlink" href="#changes_17" title="Permanent link">&para;</a></h3>
 <ul>
@@ -17753,7 +17753,7 @@ for their kind support.</p>
   to validate parameters without actually calling the function, <a href="https://github.com/pydantic/pydantic/pull/2127">#2127</a> by <a href="https://github.com/PrettyWood">@PrettyWood</a></li>
 <li>Add the ability to customize settings sources (add / disable / change priority order), <a href="https://github.com/pydantic/pydantic/pull/2107">#2107</a> by <a href="https://github.com/kozlek">@kozlek</a></li>
 <li>Fix mypy complaints about most custom <em>pydantic</em> types, <a href="https://github.com/pydantic/pydantic/pull/2098">#2098</a> by <a href="https://github.com/PrettyWood">@PrettyWood</a></li>
-<li>Add a <a href="https://hypothesis.readthedocs.io/">Hypothesis</a> plugin for easier <a href="https://increment.com/testing/in-praise-of-property-based-testing/">property-based testing</a> with Pydantic's custom types - <a href="https://docs.pydantic.dev/hypothesis_plugin/">usage details here</a>, <a href="https://github.com/pydantic/pydantic/pull/2097">#2097</a> by <a href="https://github.com/Zac-HD">@Zac-HD</a></li>
+<li>Add a <a href="https://hypothesis.readthedocs.io/">Hypothesis</a> plugin for easier <a href="https://increment.com/testing/in-praise-of-property-based-testing/">property-based testing</a> with Pydantic's custom types - <a href="https://pydantic.dev/docs/validation/1.10/extras/hypothesis_plugin/">usage details here</a>, <a href="https://github.com/pydantic/pydantic/pull/2097">#2097</a> by <a href="https://github.com/Zac-HD">@Zac-HD</a></li>
 <li>add validator for <code>None</code>, <code>NoneType</code> or <code>Literal[None]</code>, <a href="https://github.com/pydantic/pydantic/pull/2095">#2095</a> by <a href="https://github.com/PrettyWood">@PrettyWood</a></li>
 <li>Handle properly fields of type <code>Callable</code> with a default value, <a href="https://github.com/pydantic/pydantic/pull/2094">#2094</a> by <a href="https://github.com/PrettyWood">@PrettyWood</a></li>
 <li>Updated <code>create_model</code> return type annotation to return type which inherits from <code>__base__</code> argument, <a href="https://github.com/pydantic/pydantic/pull/2071">#2071</a> by <a href="https://github.com/uriyyo">@uriyyo</a></li>
@@ -17819,9 +17819,9 @@ for their kind support.</p>
 <h3 id="highlights_2">Highlights<a class="headerlink" href="#highlights_2" title="Permanent link">&para;</a></h3>
 <ul>
 <li>Python 3.9 support, thanks <a href="https://github.com/PrettyWood">@PrettyWood</a></li>
-<li><a href="https://docs.pydantic.dev/usage/models/#private-model-attributes">Private model attributes</a>, thanks <a href="https://github.com/Bobronium">@Bobronium</a></li>
-<li><a href="https://docs.pydantic.dev/usage/settings/#secret-support">"secrets files" support in <code>BaseSettings</code></a>, thanks <a href="https://github.com/mdgilene">@mdgilene</a></li>
-<li><a href="https://docs.pydantic.dev/usage/dataclasses/#stdlib-dataclasses-and-pydantic-dataclasses">convert stdlib dataclasses to pydantic dataclasses and use stdlib dataclasses in models</a>, thanks <a href="https://github.com/PrettyWood">@PrettyWood</a></li>
+<li><a href="https://pydantic.dev/docs/validation/1.10/usage/models/#private-model-attributes">Private model attributes</a>, thanks <a href="https://github.com/Bobronium">@Bobronium</a></li>
+<li><a href="https://pydantic.dev/docs/validation/1.10/usage/settings/#secret-support">"secrets files" support in <code>BaseSettings</code></a>, thanks <a href="https://github.com/mdgilene">@mdgilene</a></li>
+<li><a href="https://pydantic.dev/docs/validation/1.10/usage/dataclasses/#stdlib-dataclasses-and-pydantic-dataclasses">convert stdlib dataclasses to pydantic dataclasses and use stdlib dataclasses in models</a>, thanks <a href="https://github.com/PrettyWood">@PrettyWood</a></li>
 </ul>
 <h3 id="changes_18">Changes<a class="headerlink" href="#changes_18" title="Permanent link">&para;</a></h3>
 <ul>
@@ -17963,7 +17963,7 @@ for their kind support.</p>
 <ul>
 <li><strong>Breaking Change:</strong> alias precedence logic changed so aliases on a field always take priority over
   an alias from <code>alias_generator</code> to avoid buggy/unexpected behaviour,
-  see <a href="https://docs.pydantic.dev/usage/model_config/#alias-precedence">here</a> for details, <a href="https://github.com/pydantic/pydantic/pull/1178">#1178</a> by <a href="https://github.com/samuelcolvin">@samuelcolvin</a></li>
+  see <a href="https://pydantic.dev/docs/validation/1.10/usage/model_config/#alias-precedence">here</a> for details, <a href="https://github.com/pydantic/pydantic/pull/1178">#1178</a> by <a href="https://github.com/samuelcolvin">@samuelcolvin</a></li>
 <li>Add support for unicode and punycode in TLDs, <a href="https://github.com/pydantic/pydantic/pull/1182">#1182</a> by <a href="https://github.com/jamescurtin">@jamescurtin</a></li>
 <li>Fix <code>cls</code> argument in validators during assignment, <a href="https://github.com/pydantic/pydantic/pull/1172">#1172</a> by <a href="https://github.com/samuelcolvin">@samuelcolvin</a></li>
 <li>completing Luhn algorithm for <code>PaymentCardNumber</code>, <a href="https://github.com/pydantic/pydantic/pull/1166">#1166</a> by <a href="https://github.com/cuencandres">@cuencandres</a></li>
@@ -18005,7 +18005,7 @@ for their kind support.</p>
 <ul>
 <li><strong>Possible Breaking Change:</strong> Add support for required <code>Optional</code> with <code>name: Optional[AnyType] = Field(...)</code>
   and refactor <code>ModelField</code> creation to preserve <code>required</code> parameter value, <a href="https://github.com/pydantic/pydantic/pull/1031">#1031</a> by <a href="https://github.com/tiangolo">@tiangolo</a>;
-  see <a href="https://docs.pydantic.dev/usage/models/#required-optional-fields">here</a> for details</li>
+  see <a href="https://pydantic.dev/docs/validation/1.10/usage/models/#required-optional-fields">here</a> for details</li>
 <li>Add benchmarks for <code>cattrs</code>, <a href="https://github.com/pydantic/pydantic/pull/513">#513</a> by <a href="https://github.com/sebastianmika">@sebastianmika</a></li>
 <li>Add <code>exclude_none</code> option to <code>dict()</code> and friends, <a href="https://github.com/pydantic/pydantic/pull/587">#587</a> by <a href="https://github.com/niknetniko">@niknetniko</a></li>
 <li>Add benchmarks for <code>valideer</code>, <a href="https://github.com/pydantic/pydantic/pull/670">#670</a> by <a href="https://github.com/gsakkis">@gsakkis</a></li>

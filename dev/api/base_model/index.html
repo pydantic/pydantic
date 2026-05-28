@@ -6362,7 +6362,7 @@ is set to <code>'allow'</code>.</p>
             <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span>
                 <span class="s1">&#39;A custom validator is returning a value other than `self`.</span><span class="se">\n</span><span class="s1">&#39;</span>
                 <span class="s2">&quot;Returning anything other than `self` from a top level model validator isn&#39;t supported when validating via `__init__`.</span><span class="se">\n</span><span class="s2">&quot;</span>
-                <span class="s1">&#39;See the `model_validator` docs (https://docs.pydantic.dev/latest/concepts/validators/#model-validators) for more details.&#39;</span><span class="p">,</span>
+                <span class="s1">&#39;See the `model_validator` docs (https://pydantic.dev/docs/validation/latest/concepts/validators/#model-validators) for more details.&#39;</span><span class="p">,</span>
                 <span class="n">stacklevel</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span>
             <span class="p">)</span>
 
@@ -7884,7 +7884,7 @@ validated to form a valid model.</p>
         <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span>
             <span class="s1">&#39;A custom validator is returning a value other than `self`.</span><span class="se">\n</span><span class="s1">&#39;</span>
             <span class="s2">&quot;Returning anything other than `self` from a top level model validator isn&#39;t supported when validating via `__init__`.</span><span class="se">\n</span><span class="s2">&quot;</span>
-            <span class="s1">&#39;See the `model_validator` docs (https://docs.pydantic.dev/latest/concepts/validators/#model-validators) for more details.&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;See the `model_validator` docs (https://pydantic.dev/docs/validation/latest/concepts/validators/#model-validators) for more details.&#39;</span><span class="p">,</span>
             <span class="n">stacklevel</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span>
         <span class="p">)</span>
 </code></pre></div></td></tr></table></div>
@@ -11218,7 +11218,7 @@ See the <a class="autorefs autorefs-internal" href="../config/#pydantic.config.C
 <p class="admonition-title">Usage Documentation</p>
 <p><a href="../../concepts/models/#dynamic-model-creation">Dynamic Model Creation</a></p>
 </div>
-<p>Dynamically creates and returns a new Pydantic model, in other words, <code>create_model</code> dynamically creates a
+<p>Dynamically creates and returns a new Pydantic model. In other words, <code>create_model()</code> dynamically creates a
 subclass of <a class="autorefs autorefs-internal" href="#pydantic.BaseModel"><code>BaseModel</code></a>.</p>
 <div class="admonition warning">
 <p class="admonition-title">Warning</p>
@@ -11330,7 +11330,7 @@ if <code>None</code>, the value is taken from <code>sys._getframe(1)</code></p>
               <div class="doc-md-description">
                 <p>A dictionary of methods that validate fields. The keys are the names of the validation methods to
 be added to the model, and the values are the validation methods themselves. You can read more about functional
-validators <a href="https://docs.pydantic.dev/2.9/concepts/validators/#field-validators">here</a>.</p>
+validators <a href="../../concepts/validators/#field-validators">here</a>.</p>
               </div>
             </td>
             <td>
@@ -11558,7 +11558,7 @@ validators <a href="https://docs.pydantic.dev/2.9/concepts/validators/#field-val
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;!!! abstract &quot;Usage Documentation&quot;</span>
 <span class="sd">        [Dynamic Model Creation](../concepts/models.md#dynamic-model-creation)</span>
 
-<span class="sd">    Dynamically creates and returns a new Pydantic model, in other words, `create_model` dynamically creates a</span>
+<span class="sd">    Dynamically creates and returns a new Pydantic model. In other words, `create_model()` dynamically creates a</span>
 <span class="sd">    subclass of [`BaseModel`][pydantic.BaseModel].</span>
 
 <span class="sd">    !!! warning</span>
@@ -11575,7 +11575,7 @@ validators <a href="https://docs.pydantic.dev/2.9/concepts/validators/#field-val
 <span class="sd">            if `None`, the value is taken from `sys._getframe(1)`</span>
 <span class="sd">        __validators__: A dictionary of methods that validate fields. The keys are the names of the validation methods to</span>
 <span class="sd">            be added to the model, and the values are the validation methods themselves. You can read more about functional</span>
-<span class="sd">            validators [here](https://docs.pydantic.dev/2.9/concepts/validators/#field-validators).</span>
+<span class="sd">            validators [here](../concepts/validators.md#field-validators).</span>
 <span class="sd">        __cls_kwargs__: A dictionary of keyword arguments for class creation, such as `metaclass`.</span>
 <span class="sd">        __qualname__: The qualified name of the newly created model.</span>
 <span class="sd">        **field_definitions: Field definitions of the new model. Either:</span>

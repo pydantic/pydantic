@@ -13911,7 +13911,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
             warnings.warn(
                 'A custom validator is returning a value other than `self`.\n'
                 "Returning anything other than `self` from a top level model validator isn't supported when validating via `__init__`.\n"
-                'See the `model_validator` docs (https://docs.pydantic.dev/latest/concepts/validators/#model-validators) for more details.',
+                'See the `model_validator` docs (https://pydantic.dev/docs/validation/latest/concepts/validators/#model-validators) for more details.',
                 stacklevel=2,
             )
 
@@ -15401,7 +15401,7 @@ def __init__(self, /, **data: Any) -> None:
         warnings.warn(
             'A custom validator is returning a value other than `self`.\n'
             "Returning anything other than `self` from a top level model validator isn't supported when validating via `__init__`.\n"
-            'See the `model_validator` docs (https://docs.pydantic.dev/latest/concepts/validators/#model-validators) for more details.',
+            'See the `model_validator` docs (https://pydantic.dev/docs/validation/latest/concepts/validators/#model-validators) for more details.',
             stacklevel=2,
         )
 
@@ -16473,7 +16473,7 @@ Usage Documentation
 
 [Dynamic Model Creation](../../concepts/models/#dynamic-model-creation)
 
-Dynamically creates and returns a new Pydantic model, in other words, `create_model` dynamically creates a subclass of BaseModel.
+Dynamically creates and returns a new Pydantic model. In other words, `create_model()` dynamically creates a subclass of BaseModel.
 
 Warning
 
@@ -16513,7 +16513,7 @@ def create_model(  # noqa: C901
     """!!! abstract "Usage Documentation"
         [Dynamic Model Creation](../concepts/models.md#dynamic-model-creation)
 
-    Dynamically creates and returns a new Pydantic model, in other words, `create_model` dynamically creates a
+    Dynamically creates and returns a new Pydantic model. In other words, `create_model()` dynamically creates a
     subclass of [`BaseModel`][pydantic.BaseModel].
 
     !!! warning
@@ -16530,7 +16530,7 @@ def create_model(  # noqa: C901
             if `None`, the value is taken from `sys._getframe(1)`
         __validators__: A dictionary of methods that validate fields. The keys are the names of the validation methods to
             be added to the model, and the values are the validation methods themselves. You can read more about functional
-            validators [here](https://docs.pydantic.dev/2.9/concepts/validators/#field-validators).
+            validators [here](../concepts/validators.md#field-validators).
         __cls_kwargs__: A dictionary of keyword arguments for class creation, such as `metaclass`.
         __qualname__: The qualified name of the newly created model.
         **field_definitions: Field definitions of the new model. Either:
@@ -22550,7 +22550,7 @@ def model_validator(
                 category=PydanticDeprecatedSince212,
                 message=(
                     "Using `@model_validator` with mode='after' on a classmethod is deprecated. Instead, use an instance method. "
-                    f'See the documentation at https://docs.pydantic.dev/{version_short()}/concepts/validators/#model-after-validator.'
+                    f'See the documentation at https://pydantic.dev/docs/validation/{version_short()}/concepts/validators/#model-after-validator.'
                 ),
                 stacklevel=2,
             )
@@ -42940,7 +42940,7 @@ Source code in `pydantic/types.py`
 ```python
 @deprecated(
     'The `PaymentCardNumber` class is deprecated, use `pydantic_extra_types` instead. '
-    'See https://docs.pydantic.dev/latest/api/pydantic_extra_types_payment/#pydantic_extra_types.payment.PaymentCardNumber.',
+    'See https://pydantic.dev/docs/validation/latest/api/pydantic-extra-types/pydantic_extra_types_payment/#pydantic_extra_types.payment.PaymentCardNumber.',
     category=PydanticDeprecatedSince20,
 )
 class PaymentCardNumber(str):
@@ -52353,7 +52353,7 @@ In your [Sphinx configuration](https://www.sphinx-doc.org/en/master/usage/config
 
 ```python
 intersphinx_mapping = {
-    'pydantic': ('https://docs.pydantic.dev/latest', None),  # (1)!
+    'pydantic': ('https://pydantic.dev/docs/validation/latest', None),  # (1)!
 }
 
 ```
@@ -52368,7 +52368,7 @@ plugins:
     handlers:
       python:
         import:
-        - https://docs.pydantic.dev/latest/objects.inv  # (1)!
+        - https://pydantic.dev/docs/validation/latest/objects.inv  # (1)!
 
 ```
 
@@ -52405,8 +52405,8 @@ The Pydantic documentation is available in the [llms.txt](https://llmstxt.org/) 
 
 Two formats are available:
 
-- [llms.txt](https://docs.pydantic.dev/latest/llms.txt): a file containing a brief description of the project, along with links to the different sections of the documentation. The structure of this file is described in details in the [format documentation](https://llmstxt.org/#format).
-- [llms-full.txt](https://docs.pydantic.dev/latest/llms-full.txt): Similar to the `llms.txt` file, but every link content is included. Note that this file may be too large for some LLMs.
+- [llms.txt](https://pydantic.dev/docs/validation/latest/llms.txt): a file containing a brief description of the project, along with links to the different sections of the documentation. The structure of this file is described in details in the [format documentation](https://llmstxt.org/#format).
+- [llms-full.txt](https://pydantic.dev/docs/validation/latest/llms-full.txt): Similar to the `llms.txt` file, but every link content is included. Note that this file may be too large for some LLMs.
 
 As of today, these files *cannot* be natively leveraged by LLM frameworks or IDEs. Alternatively, a [MCP server](https://modelcontextprotocol.io/) can be implemented to properly parse the `llms.txt` file.
 

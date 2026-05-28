@@ -3854,7 +3854,7 @@ Sphinx object inventory to cross-reference the Pydantic API documentation.</p>
 <p>In your <a href="https://www.sphinx-doc.org/en/master/usage/configuration.html">Sphinx configuration</a>,
 add the following to the <a href="https://www.sphinx-doc.org/en/master/usage/extensions/intersphinx.html#configuration"><code>intersphinx</code> extension configuration</a>:</p>
 <div class="language-python highlight"><pre><span></span><code><span class="n">intersphinx_mapping</span> <span class="o">=</span> <span class="p">{</span>
-    <span class="s1">&#39;pydantic&#39;</span><span class="p">:</span> <span class="p">(</span><span class="s1">&#39;https://docs.pydantic.dev/latest&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">),</span>  <span class="c1"># (1)!</span>
+    <span class="s1">&#39;pydantic&#39;</span><span class="p">:</span> <span class="p">(</span><span class="s1">&#39;https://pydantic.dev/docs/validation/latest&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">),</span>  <span class="c1"># (1)!</span>
 <span class="p">}</span>
 </code></pre></div>
 <ol>
@@ -3870,7 +3870,7 @@ import to your <a href="https://mkdocstrings.github.io/usage/#cross-references-t
 <span class="w">    </span><span class="nt">handlers</span><span class="p">:</span>
 <span class="w">      </span><span class="nt">python</span><span class="p">:</span>
 <span class="w">        </span><span class="nt">import</span><span class="p">:</span>
-<span class="w">        </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">https://docs.pydantic.dev/latest/objects.inv</span><span class="w">  </span><span class="c1"># (1)!</span>
+<span class="w">        </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">https://pydantic.dev/docs/validation/latest/objects.inv</span><span class="w">  </span><span class="c1"># (1)!</span>
 </code></pre></div>
 <ol>
 <li>You can also use <code>dev</code> instead of <code>latest</code> to target the latest documentation build, up to date
