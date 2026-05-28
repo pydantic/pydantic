@@ -6,7 +6,7 @@
 [![versions](https://img.shields.io/pypi/pyversions/pydantic-core.svg)](https://github.com/pydantic/pydantic-core)
 [![license](https://img.shields.io/github/license/pydantic/pydantic-core.svg)](https://github.com/pydantic/pydantic-core/blob/main/LICENSE)
 
-This package provides the core functionality for [pydantic](https://docs.pydantic.dev) validation and serialization.
+This package provides the core functionality for [pydantic](https://pydantic.dev/docs/validation/latest/get-started/) validation and serialization.
 
 Pydantic-core is currently around 17x faster than pydantic V1.
 See [`tests/benchmarks/`](./tests/benchmarks/) for details.

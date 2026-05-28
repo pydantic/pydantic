@@ -60,10 +60,10 @@ timezone = [
 
 [project.urls]
 Homepage = 'https://github.com/pydantic/pydantic'
-Documentation = 'https://docs.pydantic.dev'
+Documentation = 'https://pydantic.dev/docs/validation/latest/get-started/'
 Funding = 'https://github.com/sponsors/samuelcolvin'
 Source = 'https://github.com/pydantic/pydantic'
-Changelog = 'https://docs.pydantic.dev/latest/changelog/'
+Changelog = 'https://pydantic.dev/docs/validation/latest/get-started/changelog/'
 
 [dependency-groups]
 dev = [
@@ -164,7 +164,7 @@ fragments = [
     {path = 'README.md'},
     {text = "\n## Changelog\n\n"},
     {path = 'HISTORY.md', pattern = '(.+?)<!-- package description limit -->'},
-    {text = "\n... see [here](https://docs.pydantic.dev/changelog/#v0322-2019-08-17) for earlier changes.\n"},
+    {text = "\n... see [here](https://pydantic.dev/docs/validation/latest/get-started/changelog/#v2100b1-2024-11-06) for earlier changes.\n"},
 ]
 # convert GitHub issue/PR numbers and handles to links
 substitutions = [
