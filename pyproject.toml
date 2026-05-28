@@ -82,7 +82,6 @@ dev = [
     'jsonschema',
 ]
 docs = [
-    'autoflake',
     'mkdocs',
     'mkdocs-exclude',
     'mkdocs-llmstxt',
@@ -90,7 +89,7 @@ docs = [
     'mkdocs-redirects',
     'mkdocstrings-python',
     'tomli',
-    'pyupgrade',
+    'ruff',
     'mike',
     'pydantic-settings',
     'requests',

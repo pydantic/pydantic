@@ -4,12 +4,12 @@ import json
 import logging
 import os
 import re
+import shutil
+import subprocess
 import textwrap
 from pathlib import Path
 from textwrap import indent
 
-import autoflake
-import pyupgrade._main as pyupgrade_main  # type: ignore
 import requests
 import tomli
 import yaml
@@ -143,7 +143,7 @@ MAX_MINOR_VERSION = 13
 
 def upgrade_python(markdown: str) -> str:
     """
-    Apply pyupgrade to all Python code blocks, unless explicitly skipped, create a tab for each version.
+    Apply Ruff's pyupgrade rules to all Python code blocks, unless explicitly skipped, create a tab for each version.
     """
 
     def add_tabs(match: re.Match[str]) -> str:
@@ -185,17 +185,37 @@ def upgrade_python(markdown: str) -> str:
     return re.sub(r'(``` *py.*?)\n(.+?)^```(\s+(?:^\d+\. (?:[^\n][\n]?)+\n?)*)', add_tabs, markdown, flags=re.M | re.S)
 
 
+_RUFF_BIN: str | None = shutil.which('ruff')
+
+
 def _upgrade_code(code: str, min_version: int) -> str:
-    upgraded = pyupgrade_main._fix_plugins(
-        code,
-        settings=pyupgrade_main.Settings(
-            min_version=(3, min_version),
-            keep_percent_format=True,
-            keep_mock=False,
-            keep_runtime_typing=True,
-        ),
+    if _RUFF_BIN is None:
+        logger.warning('ruff binary not found on PATH, skipping code upgrade')
+        return code
+
+    result = subprocess.run(
+        [
+            _RUFF_BIN,
+            'check',
+            '--select',
+            'UP,F401',
+            '--fix',
+            '--target-version',
+            f'py3{min_version}',
+            '--isolated',
+            '--stdin-filename',
+            'example.py',
+            '-',
+        ],
+        input=code,
+        capture_output=True,
+        text=True,
     )
-    return autoflake.fix_code(upgraded, remove_all_unused_imports=True)
+    if result.returncode not in (0, 1):
+        logger.warning('ruff check failed (exit %d): %s', result.returncode, result.stderr)
+        return code
+
+    return result.stdout
 
 
 def insert_json_output(markdown: str) -> str:

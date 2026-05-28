@@ -237,19 +237,6 @@ wheels = [
 ]
 
 [[package]]
-name = "autoflake"
-version = "2.3.1"
-source = { registry = "https://pypi.org/simple" }
-dependencies = [
-    { name = "pyflakes" },
-    { name = "tomli", marker = "python_full_version < '3.11'" },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/2a/cb/486f912d6171bc5748c311a2984a301f4e2d054833a1da78485866c71522/autoflake-2.3.1.tar.gz", hash = "sha256:c98b75dc5b0a86459c4f01a1d32ac7eb4338ec4317a4469515ff1e687ecd909e", size = 27642, upload-time = "2024-03-13T03:41:28.977Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/a2/ee/3fd29bf416eb4f1c5579cf12bf393ae954099258abd7bde03c4f9716ef6b/autoflake-2.3.1-py3-none-any.whl", hash = "sha256:3ae7495db9084b7b32818b4140e6dc4fc280b712fb414f5b8fe57b0a8e85a840", size = 32483, upload-time = "2024-03-13T03:41:26.969Z" },
-]
-
-[[package]]
 name = "babel"
 version = "2.16.0"
 source = { registry = "https://pypi.org/simple" }
@@ -2215,7 +2202,6 @@ timezone = [
 [package.dev-dependencies]
 all = [
     { name = "ansi2html" },
-    { name = "autoflake" },
     { name = "build" },
     { name = "cloudpickle" },
     { name = "coverage", extra = ["toml"] },
@@ -2248,7 +2234,6 @@ all = [
     { name = "pytest-pretty" },
     { name = "pytest-run-parallel" },
     { name = "pytz" },
-    { name = "pyupgrade" },
     { name = "requests" },
     { name = "ruff" },
     { name = "sqlalchemy" },
@@ -2275,7 +2260,6 @@ dev = [
     { name = "pytz" },
 ]
 docs = [
-    { name = "autoflake" },
     { name = "build" },
     { name = "mike" },
     { name = "mkdocs" },
@@ -2287,8 +2271,8 @@ docs = [
     { name = "pydantic-docs" },
     { name = "pydantic-extra-types" },
     { name = "pydantic-settings" },
-    { name = "pyupgrade" },
     { name = "requests" },
+    { name = "ruff" },
     { name = "tomli" },
 ]
 docs-upload = [
@@ -2331,7 +2315,6 @@ provides-extras = ["email", "timezone"]
 [package.metadata.requires-dev]
 all = [
     { name = "ansi2html" },
-    { name = "autoflake" },
     { name = "build" },
     { name = "build", specifier = ">=1.3.0" },
     { name = "cloudpickle" },
@@ -2364,7 +2347,6 @@ all = [
     { name = "pytest-pretty" },
     { name = "pytest-run-parallel", specifier = ">=0.3.1" },
     { name = "pytz" },
-    { name = "pyupgrade" },
     { name = "requests" },
     { name = "ruff" },
     { name = "sqlalchemy" },
@@ -2391,7 +2373,6 @@ dev = [
     { name = "pytz" },
 ]
 docs = [
-    { name = "autoflake" },
     { name = "build", specifier = ">=1.3.0" },
     { name = "mike" },
     { name = "mkdocs" },
@@ -2403,8 +2384,8 @@ docs = [
     { name = "pydantic-docs", git = "https://github.com/pydantic/pydantic-docs" },
     { name = "pydantic-extra-types", specifier = ">=2.10.6" },
     { name = "pydantic-settings" },
-    { name = "pyupgrade" },
     { name = "requests" },
+    { name = "ruff" },
     { name = "tomli" },
 ]
 docs-upload = [
@@ -2554,15 +2535,6 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/73/7b/c58a586cd7d9ac66d2ee4ba60ca2d241fa837c02bca9bea80a9a8c3d22a9/pydantic_settings-2.7.1.tar.gz", hash = "sha256:10c9caad35e64bfb3c2fbf70a078c0e25cc92499782e5200747f942a065dec93", size = 79920, upload-time = "2024-12-31T11:27:44.632Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/b4/46/93416fdae86d40879714f72956ac14df9c7b76f7d41a4d68aa9f71a0028b/pydantic_settings-2.7.1-py3-none-any.whl", hash = "sha256:590be9e6e24d06db33a4262829edef682500ef008565a969c73d39d5f8bfb3fd", size = 29718, upload-time = "2024-12-31T11:27:43.201Z" },
-]
-
-[[package]]
-name = "pyflakes"
-version = "3.2.0"
-source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/57/f9/669d8c9c86613c9d568757c7f5824bd3197d7b1c6c27553bc5618a27cce2/pyflakes-3.2.0.tar.gz", hash = "sha256:1c61603ff154621fb2a9172037d84dca3500def8c8b630657d1701f026f8af3f", size = 63788, upload-time = "2024-01-05T00:28:47.703Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/d4/d7/f1b7db88d8e4417c5d47adad627a93547f44bdc9028372dbd2313f34a855/pyflakes-3.2.0-py2.py3-none-any.whl", hash = "sha256:84b5be138a2dfbb40689ca07e2152deb896a65c3a3e24c251c5c62489568074a", size = 62725, upload-time = "2024-01-05T00:28:45.903Z" },
 ]
 
 [[package]]
@@ -2871,18 +2843,6 @@ source = { registry = "https://pypi.org/simple" }
 sdist = { url = "https://files.pythonhosted.org/packages/3a/31/3c70bf7603cc2dca0f19bdc53b4537a797747a58875b552c8c413d963a3f/pytz-2024.2.tar.gz", hash = "sha256:2aa355083c50a0f93fa581709deac0c9ad65cca8a9e9beac660adcbd493c798a", size = 319692, upload-time = "2024-09-11T02:24:47.91Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/11/c3/005fcca25ce078d2cc29fd559379817424e94885510568bc1bc53d7d5846/pytz-2024.2-py2.py3-none-any.whl", hash = "sha256:31c7c1817eb7fae7ca4b8c7ee50c72f93aa2dd863de768e1ef4245d426aa0725", size = 508002, upload-time = "2024-09-11T02:24:45.8Z" },
-]
-
-[[package]]
-name = "pyupgrade"
-version = "3.19.1"
-source = { registry = "https://pypi.org/simple" }
-dependencies = [
-    { name = "tokenize-rt" },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/35/3a/efa8e75cf84d53f1b3f0113387ab120ef460396a4068e41b6cf18a3d216d/pyupgrade-3.19.1.tar.gz", hash = "sha256:d10e8c5f54b8327211828769e98d95d95e4715de632a3414f1eef3f51357b9e2", size = 45116, upload-time = "2024-12-17T01:43:02.326Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/dd/43/c6c1ff945c7900613f6e6ef2a8688639a247d62eb0ffa9935c599f69c08e/pyupgrade-3.19.1-py2.py3-none-any.whl", hash = "sha256:8c5b0bfacae5ff30fa136a53eb7f22c34ba007450d4099e9da8089dabb9e67c9", size = 62412, upload-time = "2024-12-17T01:42:59.829Z" },
 ]
 
 [[package]]
@@ -3379,15 +3339,6 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/7a/fd/7a5ee21fd08ff70d3d33a5781c255cbe779659bd03278feb98b19ee550f4/tinycss2-1.4.0.tar.gz", hash = "sha256:10c0972f6fc0fbee87c3edb76549357415e94548c1ae10ebccdea16fb404a9b7", size = 87085, upload-time = "2024-10-24T14:58:29.895Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/e6/34/ebdc18bae6aa14fbee1a08b63c015c72b64868ff7dae68808ab500c492e2/tinycss2-1.4.0-py3-none-any.whl", hash = "sha256:3a49cf47b7675da0b15d0c6e1df8df4ebd96e9394bb905a5775adb0d884c5289", size = 26610, upload-time = "2024-10-24T14:58:28.029Z" },
-]
-
-[[package]]
-name = "tokenize-rt"
-version = "6.1.0"
-source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/6b/0a/5854d8ced8c1e00193d1353d13db82d7f813f99bd5dcb776ce3e2a4c0d19/tokenize_rt-6.1.0.tar.gz", hash = "sha256:e8ee836616c0877ab7c7b54776d2fefcc3bde714449a206762425ae114b53c86", size = 5506, upload-time = "2024-10-22T00:14:59.189Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/87/ba/576aac29b10dfa49a6ce650001d1bb31f81e734660555eaf144bfe5b8995/tokenize_rt-6.1.0-py2.py3-none-any.whl", hash = "sha256:d706141cdec4aa5f358945abe36b911b8cbdc844545da99e811250c0cee9b6fc", size = 6015, upload-time = "2024-10-22T00:14:57.469Z" },
 ]
 
 [[package]]
