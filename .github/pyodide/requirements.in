@@ -1,0 +1,24 @@
+# Selected dependencies (including dev ones) to run the test suite with Pyodide.
+# Dependencies should be installed from the derived `pylock.toml` file.
+# To generate the lockfile, run `python -m pip lock -r requirements.in -o pylock.31x.toml`,
+# in a Pyodide venv matching the target Python version. Such a venv can be created using
+# `pyodide venv .venv-pyodide` (and this must be done from a Python venv matching the target
+# Python version).
+annotated-types>=0.6.0
+dirty-equals
+email-validator>=2.0.0
+faker
+hypothesis
+inline-snapshot
+jsonschema
+packaging
+pytest
+pytest-benchmark
+pytest-mock
+pytest-pretty
+pytest-run-parallel>=0.3.1
+python-dateutil
+pytz
+typing-extensions>=4.15.0
+typing-inspection>=0.4.2
+tzdata

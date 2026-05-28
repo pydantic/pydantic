@@ -46,7 +46,7 @@ dependencies = [
     'typing-extensions>=4.15.0',
     'annotated-types>=0.6.0',
     # Keep this in sync with the version in the `check_pydantic_core_version()` function:
-    'pydantic-core==2.46.0',
+    'pydantic-core==2.47.0',
     'typing-inspection>=0.4.2',
 ]
 dynamic = ['version', 'readme']
@@ -126,6 +126,9 @@ build = [
     'build',
     'twine',
 ]
+pyodide-build = [
+    "pyodide-build",
+]
 
 all = [
   { include-group = 'dev' },
@@ -134,6 +137,7 @@ all = [
   { include-group = 'testing-extra' },
   { include-group = 'typechecking' },
   { include-group = 'build' },
+  { include-group = 'pyodide-build' },
 ]
 
 [tool.hatch.version]
@@ -184,6 +188,8 @@ addopts = [
 ]
 markers = [
     'skip_json_schema_validation: Disable JSON Schema validation.',
+    # Necessary as pytest-timeout doesn't work under emscripten:
+    'timeout: pytest-timeout marker (no-op when plugin not installed)',
 ]
 
 [tool.uv]

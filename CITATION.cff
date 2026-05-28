@@ -44,4 +44,5 @@ keywords:
   - hints
   - typing
 license: MIT
-version: 2.14.0a0+dev
+version: v2.14.0a1
+date-released: 2026-05-22
