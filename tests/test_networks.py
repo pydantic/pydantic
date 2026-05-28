@@ -1112,6 +1112,28 @@ def test_url_constraints_invalid_annotated_type() -> None:
         TypeAdapter(Annotated[str, UrlConstraints(max_length=1)])
 
 
+def test_url_constraints_enforced_on_existing_url_instance() -> None:
+    HttpOnlyUrl = Annotated[AnyUrl, UrlConstraints(allowed_schemes=['http', 'https'])]
+    ta = TypeAdapter(HttpOnlyUrl)
+
+    assert ta.validate_python('https://example.com')
+
+    with pytest.raises(ValidationError):
+        ta.validate_python(AnyUrl('file:///etc/passwd'))
+
+
+def test_url_constraints_enforced_on_existing_url_instance_in_model() -> None:
+    HttpOnlyUrl = Annotated[AnyUrl, UrlConstraints(allowed_schemes=['http', 'https'])]
+
+    class Model(BaseModel):
+        v: HttpOnlyUrl
+
+    assert Model.model_validate({'v': 'https://example.com'})
+
+    with pytest.raises(ValidationError):
+        Model.model_validate({'v': AnyUrl('file:///etc/passwd')})
+
+
 def test_after_validator() -> None:
     def remove_trailing_slash(url: AnyUrl) -> str:
         """Custom url -> str transformer that removes trailing slash."""
