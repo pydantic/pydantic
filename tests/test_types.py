@@ -97,6 +97,7 @@ from pydantic import (
     SecretBytes,
     SecretStr,
     SerializeAsAny,
+    SignedByteSize,
     SkipValidation,
     SocketPath,
     Strict,
@@ -5062,6 +5063,115 @@ def test_bytesize_raises():
 
     with pytest.raises(PydanticCustomError, match='byte unit'):
         m.size.to('1ZiB')
+
+
+class TestSignedByteSize:
+    @pytest.mark.parametrize(
+        'input_value,output,human_bin,human_dec',
+        (
+            # negative byte strings
+            ('-23.96 MiB', -25123880, '-24.0MiB', '-25.1MB'),
+            ('-1 GB', -1000000000, '-953.7MiB', '-1.0GB'),
+            ('-500 KB', -500000, '-488.3KiB', '-500.0KB'),
+            ('-1.5 KiB', -1536, '-1.5KiB', '-1.5KB'),
+            # negative integers
+            (-1000, -1000, '-1000B', '-1.0KB'),
+            (-1048576, -1048576, '-1.0MiB', '-1.0MB'),
+            # positive values keep working
+            ('23.96 MiB', 25123880, '24.0MiB', '25.1MB'),
+            (1000, 1000, '1000B', '1.0KB'),
+            # zero
+            (0, 0, '0B', '0B'),
+            ('0 B', 0, '0B', '0B'),
+        ),
+    )
+    def test_conversions(self, input_value, output, human_bin, human_dec):
+        class Model(BaseModel):
+            size: SignedByteSize
+
+        m = Model(size=input_value)
+
+        assert m.size == output
+        assert m.size.human_readable() == human_bin
+        assert m.size.human_readable(decimal=True) == human_dec
+
+    def test_to(self):
+        class Model(BaseModel):
+            size: SignedByteSize
+
+        m = Model(size='-1GiB')
+
+        assert m.size.to('MiB') == pytest.approx(-1024)
+        assert m.size.to('MB') == pytest.approx(-1073.741824)
+        assert m.size.to('bit') == pytest.approx(-8589934592)
+
+    def test_arithmetic_returns_int(self):
+        class Model(BaseModel):
+            size: SignedByteSize
+
+        m = Model(size='-1 GB')
+
+        assert isinstance(m.size, SignedByteSize)
+        assert m.size + 500 == -999999500
+        assert m.size * 2 == -2000000000
+        assert abs(m.size) == 1000000000
+
+    def test_raises(self):
+        class Model(BaseModel):
+            size: SignedByteSize
+
+        with pytest.raises(ValidationError, match='parse value') as exc_info:
+            Model(size='d1MB')
+        assert exc_info.value.errors(include_url=False) == [
+            {
+                'input': 'd1MB',
+                'loc': ('size',),
+                'msg': 'could not parse value and unit from byte string',
+                'type': 'byte_size',
+            }
+        ]
+
+        with pytest.raises(ValidationError, match='byte unit') as exc_info:
+            Model(size='-1LiB')
+        assert exc_info.value.errors(include_url=False) == [
+            {
+                'ctx': {'unit': 'LiB'},
+                'input': '-1LiB',
+                'loc': ('size',),
+                'msg': 'could not interpret byte unit: LiB',
+                'type': 'byte_size_unit',
+            }
+        ]
+
+        # a lone sign is not a valid value
+        with pytest.raises(ValidationError, match='parse value'):
+            Model(size='-')
+
+    def test_serialization(self):
+        class Model(BaseModel):
+            size: SignedByteSize
+
+        m = Model(size='-1 GB')
+
+        assert m.model_dump() == {'size': -1000000000}
+        assert m.model_dump_json() == '{"size":-1000000000}'
+
+    def test_json_schema(self):
+        class Model(BaseModel):
+            size: SignedByteSize
+
+        # unlike `ByteSize`, the integer branch has no `minimum` constraint
+        assert Model.model_json_schema()['properties']['size'] == {
+            'anyOf': [
+                {'pattern': r'^\s*(-?\d*\.?\d+)\s*(\w+)?', 'type': 'string'},
+                {'type': 'integer'},
+            ],
+            'title': 'Size',
+        }
+        assert Model.model_json_schema(mode='serialization')['properties']['size'] == {
+            'title': 'Size',
+            'type': 'integer',
+        }
 
 
 def test_deque_success():

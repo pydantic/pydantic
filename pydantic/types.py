@@ -88,6 +88,7 @@ __all__ = (
     'StrictFloat',
     'PaymentCardNumber',
     'ByteSize',
+    'SignedByteSize',
     'PastDate',
     'FutureDate',
     'PastDatetime',
@@ -2191,6 +2192,58 @@ class ByteSize(int):
             raise PydanticCustomError('byte_size_unit', 'Could not interpret byte unit: {unit}', {'unit': unit})
 
         return self / unit_div
+
+
+class SignedByteSize(ByteSize):
+    """A [`ByteSize`][pydantic.types.ByteSize] that also accepts negative values.
+
+    `ByteSize` only allows non-negative values, which is the right choice when modelling an absolute
+    amount of data. `SignedByteSize` lifts that restriction so a byte quantity can also be negative,
+    which is useful when modelling a *signed* amount of bytes, such as a remaining data balance, a
+    filesystem usage delta, or a network usage difference between two points in time.
+
+    Negative values may be provided either as integers or as strings carrying a leading `'-'` (for
+    example `'-1.5 MiB'`). Everything else (units, parsing rules, `human_readable()`, `to()`) behaves
+    exactly as it does for `ByteSize`.
+
+    ```python
+    from pydantic import BaseModel, SignedByteSize
+
+    class MyModel(BaseModel):
+        size: SignedByteSize
+
+    print(MyModel(size=-52000).size)
+    #> -52000
+    print(MyModel(size='-3000 KiB').size)
+    #> -3072000
+
+    m = MyModel(size='-50 PB')
+    print(m.size.human_readable())
+    #> -44.4PiB
+    print(m.size.to('TiB'))
+    #> -45474.73508864641
+    ```
+    """
+
+    # Same as `ByteSize.byte_string_pattern`, but with an optional leading sign so that negative
+    # byte strings (e.g. `'-1.5 MiB'`) are parsed as well.
+    byte_string_pattern = r'^\s*(-?\d*\.?\d+)\s*(\w+)?'
+    byte_string_re = re.compile(byte_string_pattern, re.IGNORECASE)
+
+    @classmethod
+    def __get_pydantic_core_schema__(cls, source: type[Any], handler: GetCoreSchemaHandler) -> core_schema.CoreSchema:
+        return core_schema.with_info_after_validator_function(
+            function=cls._validate,
+            schema=core_schema.union_schema(
+                [
+                    core_schema.str_schema(pattern=cls.byte_string_pattern),
+                    core_schema.int_schema(),
+                ],
+                custom_error_type='byte_size',
+                custom_error_message='could not parse value and unit from byte string',
+            ),
+            serialization=core_schema.plain_serializer_function_ser_schema(int, return_schema=core_schema.int_schema()),
+        )
 
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ DATE TYPES ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

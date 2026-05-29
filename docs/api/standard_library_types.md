@@ -125,7 +125,8 @@ print(StringModel(constrained_str_value='TEST').constrained_str_value)
 
 Built-in type: [`bytes`][].
 
-See also: [`ByteSize`][pydantic.types.ByteSize].
+See also: [`ByteSize`][pydantic.types.ByteSize] and [`SignedByteSize`][pydantic.types.SignedByteSize]
+(which also accepts negative byte quantities).
 
 <h3>Validation</h3>
 
