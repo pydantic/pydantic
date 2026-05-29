@@ -121,6 +121,19 @@ def create_generic_submodel(
         The created submodel.
     """
     namespace: dict[str, Any] = {'__module__': origin.__module__}
+    # As per https://docs.python.org/3/reference/datamodel.html#slots:
+    # "The action of a __slots__ declaration is not limited to the class where it is defined.
+    # __slots__ declared in parents are available in child classes. However, instances of a
+    # child subclass will get a __dict__ and __weakref__ unless the subclass also defines
+    # __slots__".
+    # Because when users parameterize a generic model, we create a subclass of such generic model
+    # (what happens in this function), they can't control the fact that no slots is defined on the
+    # dynamic subclass, and so even if they defined extra __slots__ on the generic class (which results
+    # in the class *not* being weakref-able), the parameterized class *will* be weakref-able.
+    # For this reason (and to make Pydantic generic models behavior closer to generic aliases),
+    # we forward any slots from the origin:
+    if '__slots__' in origin.__dict__:
+        namespace['__slots__'] = origin.__dict__['__slots__']
     bases = (origin,)
     meta, ns, kwds = prepare_class(model_name, bases)
     namespace.update(ns)
@@ -141,7 +154,7 @@ def create_generic_submodel(
     if called_globally:  # create global reference and therefore allow pickling
         object_by_reference = None
         reference_name = model_name
-        reference_module_globals = sys.modules[created_model.__module__].__dict__
+        reference_module_globals = sys.modules[model_module or created_model.__module__].__dict__
         while object_by_reference is not created_model:
             object_by_reference = reference_module_globals.setdefault(reference_name, created_model)
             reference_name += '_'

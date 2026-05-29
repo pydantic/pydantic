@@ -4,6 +4,7 @@ import json
 import platform
 import re
 import sys
+import weakref
 from collections import Counter, OrderedDict, defaultdict, deque
 from collections.abc import Callable, Iterable, Mapping, Sequence
 from enum import Enum, IntEnum
@@ -3178,3 +3179,21 @@ def test_revalidation_with_basic_inference() -> None:
     holder2 = Holder(inner=Inner(inner=1))
     # implies that validation succeeds for both
     assert holder1 == holder2
+
+
+def test_slots_forwarded_from_generic_class() -> None:
+    """https://github.com/pydantic/pydantic/issues/13215"""
+
+    T = TypeVar('T')
+
+    class Base(BaseModel, Generic[T]):
+        __slots__ = ()
+
+    BaseInt = Base[int]
+
+    assert BaseInt.__dict__['__slots__'] == ()
+
+    if platform.python_implementation() != 'PyPy':
+        with pytest.raises(TypeError):
+            # As per https://docs.python.org/3/reference/datamodel.html#slots:
+            weakref.ref(BaseInt())
