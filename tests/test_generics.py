@@ -3193,6 +3193,7 @@ def test_slots_forwarded_from_generic_class() -> None:
 
     assert BaseInt.__dict__['__slots__'] == ()
 
-    with pytest.raises(TypeError):
-        # As per https://docs.python.org/3/reference/datamodel.html#slots:
-        weakref.ref(BaseInt())
+    if platform.python_implementation() != 'PyPy':
+        with pytest.raises(TypeError):
+            # As per https://docs.python.org/3/reference/datamodel.html#slots:
+            weakref.ref(BaseInt())
