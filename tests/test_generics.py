@@ -3178,3 +3178,41 @@ def test_revalidation_with_basic_inference() -> None:
     holder2 = Holder(inner=Inner(inner=1))
     # implies that validation succeeds for both
     assert holder1 == holder2
+
+
+def test_slots_propagated_to_generic_parameterizations() -> None:
+    """Regression test for https://github.com/pydantic/pydantic/issues/13215.
+
+    __slots__ declared on a generic BaseModel origin should be forwarded to every
+    synthesized parameterization so that weakref suppression (and any other
+    slot-level invariant) is preserved.
+    """
+    import weakref
+
+    T = TypeVar('T')
+
+    class Envelope(BaseModel, Generic[T]):
+        __slots__ = ()
+        content: Optional[T] = None
+
+    # Un-parameterized: __slots__ = () suppresses __weakref__
+    base = Envelope()
+    assert '__weakref__' not in type(base).__dict__
+    with pytest.raises(TypeError):
+        weakref.ref(base)
+
+    # Parameterized: __slots__ must still be forwarded
+    param = Envelope[int]()
+    assert '__weakref__' not in type(param).__dict__, (
+        'create_generic_submodel must propagate __slots__ from origin so that '
+        '__weakref__ is not silently re-added on parameterized subclasses'
+    )
+    with pytest.raises(TypeError):
+        weakref.ref(param)
+
+    # Explicit subclass of a parameterized model should also stay slot-clean
+    class Sub(Envelope[int]):
+        __slots__ = ()
+
+    with pytest.raises(TypeError):
+        weakref.ref(Sub())
