@@ -1219,7 +1219,7 @@ def Field(  # noqa: C901
         - Any `_Unset` objects will be replaced by the corresponding value defined in the `_DefaultValues` dictionary. If a key for the `_Unset` object is not found in the `_DefaultValues` dictionary, it will default to `None`
 
     Args:
-        default: Default value if the field is not set.
+        default: Default value if the field is not set. If not provided, the field is required.
         default_factory: A callable to generate the default value. The callable can either take 0 arguments
             (in which case it is called as is) or a single argument containing the already validated data.
         alias: The name to use for the attribute when validating or serializing by alias.
