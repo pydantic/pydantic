@@ -447,9 +447,17 @@ class GenerateSchema:
                 cases,
                 sub_type=sub_type,
                 missing=None if default_missing else enum_type._missing_,
-                ref=enum_ref,
+                ref=None if not default_missing else enum_ref,
                 metadata={'pydantic_js_functions': [get_json_schema]},
             )
+
+            if not default_missing:
+                # Wrap so that JSON inputs are converted to Python objects before reaching
+                # `_missing_`, which otherwise receives `None` from `input.as_python()`.
+                # See https://github.com/pydantic/pydantic/issues/12960
+                enum_schema = core_schema.no_info_wrap_validator_function(
+                    lambda value, handler: handler(value), enum_schema, ref=enum_ref
+                )
 
             if self._config_wrapper.use_enum_values:
                 enum_schema = core_schema.no_info_after_validator_function(

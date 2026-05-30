@@ -1754,6 +1754,33 @@ def test_enum_missing_custom():
     assert ta.validate_python(2) is MyEnum.a
 
 
+def test_enum_missing_called_with_correct_value_in_json():
+    """
+    Test that _missing_ receives the real value in JSON mode, not None.
+
+    See https://github.com/pydantic/pydantic/issues/12960
+    """
+    class MyEnum(Enum):
+        a = 'a'
+        b = 'b'
+
+        @classmethod
+        def _missing_(cls, value: Any) -> Any:
+            if isinstance(value, str):
+                return cls.__members__.get(value.lower())
+            return None
+
+    ta = TypeAdapter(MyEnum)
+
+    assert ta.validate_python('A') is MyEnum.a
+    assert ta.validate_json('"A"') is MyEnum.a
+
+    with pytest.raises(ValidationError):
+        ta.validate_python(0)
+    with pytest.raises(ValidationError):
+        ta.validate_json('0')
+
+
 def test_int_enum_type():
     class Model(BaseModel):
         my_enum: IntEnum
