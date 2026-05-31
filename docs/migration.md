@@ -847,6 +847,11 @@ classes using `Annotated`.
 Inheriting from `str` had upsides and downsides, and for V2 we decided it would be better to remove this. To use these
 types in APIs which expect `str` you'll now need to convert them (with `str(url)`).
 
+Unlike V1, multi-host DSN types such as [`MongoDsn`][pydantic.networks.MongoDsn],
+[`NatsDsn`][pydantic.networks.NatsDsn], and [`PostgresDsn`][pydantic.networks.PostgresDsn] do not expose all host
+components as direct attributes. Use the `hosts()` method to get a list of dictionaries containing each host's
+`username`, `password`, `host`, and `port`. The V1-specific `host_type` and `tld` attributes are not available in V2.
+
 Pydantic V2 uses Rust's [Url](https://crates.io/crates/url) crate for URL validation.
 Some of the URL validation differs slightly from the previous behavior in V1.
 One notable difference is that the new `Url` types append slashes to the validated version if no path is included,
