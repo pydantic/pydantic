@@ -345,7 +345,7 @@ class PydanticModelField:
         if typed or strict:
             type_annotation = self.expand_type(current_info, api, include_root_type=True)
         else:
-            type_annotation = AnyType(TypeOfAny.explicit)
+            type_annotation = AnyType(TypeOfAny.special_form)
 
         return Argument(
             variable=variable,
@@ -952,7 +952,7 @@ class PydanticModelTransformer:
 
         if not self.should_init_forbid_extra(fields, config):
             var = Var('kwargs')
-            args.append(Argument(var, AnyType(TypeOfAny.explicit), None, ARG_STAR2))
+            args.append(Argument(var, AnyType(TypeOfAny.special_form), None, ARG_STAR2))
 
         add_method(self._api, self._cls, '__init__', args=args, return_type=NoneType())
 
@@ -983,7 +983,7 @@ class PydanticModelTransformer:
             )
         if not self.should_init_forbid_extra(fields, config):
             var = Var('kwargs')
-            args.append(Argument(var, AnyType(TypeOfAny.explicit), None, ARG_STAR2))
+            args.append(Argument(var, AnyType(TypeOfAny.special_form), None, ARG_STAR2))
 
         args = args + [fields_set_argument] if is_root_model else [fields_set_argument] + args
 
