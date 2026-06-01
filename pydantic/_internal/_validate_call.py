@@ -84,10 +84,20 @@ class ValidateCallWrapper:
             namespaces_tuple=ns_for_function(self.schema_type, parent_namespace=parent_namespace)
         )
         self.config_wrapper = ConfigWrapper(config)
-        if not self.config_wrapper.defer_build:
-            self._create_validators()
-        else:
+        if self.config_wrapper.defer_build:
             self.__pydantic_complete__ = False
+        else:
+            try:
+                self._create_validators()
+            except NameError:
+                # Some annotations cannot be resolved yet (e.g. forward references to names
+                # that are introduced later in the enclosing module/namespace, which is also
+                # the case for every annotation when `from __future__ import annotations` is
+                # used). Instead of failing eagerly at decoration time, defer building the
+                # validators until the wrapper is first called, mirroring the behavior of
+                # models (`PydanticUndefinedAnnotation` is itself a `NameError` subclass).
+                # See https://github.com/pydantic/pydantic/issues/12620.
+                self.__pydantic_complete__ = False
 
     def _create_validators(self) -> None:
         gen_schema = GenerateSchema(self.config_wrapper, self.ns_resolver)

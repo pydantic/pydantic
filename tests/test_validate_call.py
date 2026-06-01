@@ -1222,8 +1222,10 @@ class A[T]:
 
 @pytest.mark.skipif(sys.version_info < (3, 12), reason='requires Python 3.12+ for PEP 695 syntax with generics')
 def test_pep695_with_nested_scopes(create_module):
-    """Nested scopes generally cannot be caught by `parent_frame_namespace`,
-    so currently this test is expected to fail.
+    """Nested scopes (PEP 695 class-scoped TypeVars) cannot be captured by
+    `parent_frame_namespace`. Decoration is now deferred (no error at decoration time),
+    but calling the decorated function still raises `NameError` because the TypeVar
+    is not in the module namespace and can never be resolved.
     """
 
     module = create_module(
@@ -1235,36 +1237,43 @@ class A[T]:
     def g(self):
         @validate_call(validate_return=True)
         def inner(a: T) -> T: ...
+        return inner
 
     def h[S](self):
         @validate_call(validate_return=True)
         def inner(a: T) -> S: ...
+        return inner
         """
     )
 
     A = module.A
     a = A[int]()
+    # Decoration is deferred; NameError surfaces on first call to the wrapped function
     with pytest.raises(NameError):
-        a.g()
+        a.g()(1)
     with pytest.raises(NameError):
-        a.h()
+        a.h()(1)
 
-    with pytest.raises(NameError):
-        create_module(
-            """
+    # Module import succeeds (decoration deferred), but calling the method still fails
+    module2 = create_module(
+        """
 from __future__ import annotations
 from pydantic import validate_call
 
 class A[T]:
     class B:
         @validate_call(validate_return=True)
-        def f(a: T) -> T: ...
+        def f(self, a: T) -> T: ...
 
     class C[S]:
         @validate_call(validate_return=True)
-        def f(a: T) -> S: ...
+        def f(self, a: T) -> S: ...
             """
-        )
+    )
+    with pytest.raises(NameError):
+        module2.A[int]().B().f(1)
+    with pytest.raises(NameError):
+        module2.A[int]().C[str]().f(1)
 
 
 class M0(BaseModel):
@@ -1329,3 +1338,48 @@ def test_pickle_validate_call_with_basemodel() -> None:
 
     assert unpickled == {1: _PickleTestModel(number=1.0)}
     assert unpickled[1].number == 1.0
+
+
+# https://github.com/pydantic/pydantic/issues/12620
+# `@validate_call` should support deferred annotations: when an annotation references a name
+# not yet defined at decoration time, schema building is deferred until first call, mirroring
+# models. The symbols below are intentionally defined *after* the decorated callables.
+
+
+@validate_call(validate_return=True)
+def _vc_deferred_func(x: '_VCDeferredAlias') -> '_VCDeferredAlias':
+    return x
+
+
+@validate_call
+def _vc_deferred_undefined(x: '_VCNeverDefined') -> int:  # noqa: F821
+    return x
+
+
+class _VCDeferredMethodHost:
+    @validate_call(validate_return=True)
+    def method(self, x: '_VCDeferredAlias') -> '_VCDeferredAlias':
+        return x
+
+
+_VCDeferredAlias = int
+
+
+def test_validate_call_deferred_annotation() -> None:
+    """Forward reference resolved at call time, not decoration time."""
+    assert _vc_deferred_func('5') == 5
+
+
+def test_validate_call_deferred_annotation_validation_enforced() -> None:
+    with pytest.raises(ValidationError):
+        _vc_deferred_func('not an int')
+
+
+def test_validate_call_deferred_annotation_on_method() -> None:
+    assert _VCDeferredMethodHost().method('2') == 2
+
+
+def test_validate_call_deferred_undefined_annotation_raises_on_call() -> None:
+    """A truly-undefined name should not raise at decoration time, but on first call."""
+    with pytest.raises(NameError, match='_VCNeverDefined'):
+        _vc_deferred_undefined(1)
