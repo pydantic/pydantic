@@ -418,7 +418,7 @@ def inspect_namespace(  # noqa C901
         namespace: The attribute dictionary of the class to be created.
         raw_annotations: The (non-evaluated) annotations of the model.
         ignored_types: A tuple of ignore types.
-        base_class_vars: A set of base class class variables.
+        base_class_vars: A set of base class variables.
         base_class_fields: A set of base class fields.
 
     Returns:
