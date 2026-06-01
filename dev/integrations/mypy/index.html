@@ -4337,6 +4337,7 @@ and add any key-value pairs for settings you want to override.</p>
 </div>
 </div>
 <h3 id="init_typed"><code>init_typed</code><a class="headerlink" href="#init_typed" title="Permanent link">&para;</a></h3>
+<p><strong>Default</strong>: <code>False</code>.</p>
 <p>Because Pydantic performs <a href="../../concepts/models/#data-conversion">data conversion</a> by default, the following is still valid at runtime:</p>
 <div class="language-python highlight"><pre><span></span><code><span class="k">class</span><span class="w"> </span><span class="nc">Model</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
     <span class="n">a</span><span class="p">:</span> <span class="nb">int</span>
@@ -4344,9 +4345,10 @@ and add any key-value pairs for settings you want to override.</p>
 
 <span class="n">Model</span><span class="p">(</span><span class="n">a</span><span class="o">=</span><span class="s1">&#39;1&#39;</span><span class="p">)</span>
 </code></pre></div>
-<p>For this reason, the plugin will use <a class="autorefs autorefs-external" href="https://docs.python.org/3/library/typing.html#typing.Any"><code>Any</code></a> for field annotations when synthesizing the <code>__init__</code> method,
+<p>For this reason, the plugin will use <a class="autorefs autorefs-external" href="https://docs.python.org/3/library/typing.html#typing.Any"><code>Any</code></a> for field annotations when synthesizing the <code>__init__()</code> method,
 unless <code>init_typed</code> is set or <a href="../../concepts/strict_mode/">strict mode</a> is enabled on the model.</p>
 <h3 id="init_forbid_extra"><code>init_forbid_extra</code><a class="headerlink" href="#init_forbid_extra" title="Permanent link">&para;</a></h3>
+<p><strong>Default</strong>: <code>False</code>.</p>
 <p>By default, Pydantic allows (and ignores) any extra provided argument:</p>
 <div class="language-python highlight"><pre><span></span><code><span class="k">class</span><span class="w"> </span><span class="nc">Model</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
     <span class="n">a</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1</span>
@@ -4354,19 +4356,14 @@ unless <code>init_typed</code> is set or <a href="../../concepts/strict_mode/">s
 
 <span class="n">Model</span><span class="p">(</span><span class="n">unrelated</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
 </code></pre></div>
-<p>For this reason, the plugin will add an extra <code>**kwargs: Any</code> parameter when synthesizing the <code>__init__</code> method, unless
-<code>init_forbid_extra</code> is set or the <a class="autorefs autorefs-internal" href="../../api/config/#pydantic.config.ConfigDict.extra"><code>extra</code></a> is set to <code>'forbid'</code>.</p>
+<p>For this reason, the plugin will add an extra <code>**kwargs: Any</code> parameter when synthesizing the <code>__init__()</code> method, unless
+<code>init_forbid_extra</code> is set or the <a class="autorefs autorefs-internal" href="../../api/config/#pydantic.config.ConfigDict.extra"><code>extra</code></a> configuration value is set to <code>'forbid'</code>.</p>
 <h3 id="warn_required_dynamic_aliases"><code>warn_required_dynamic_aliases</code><a class="headerlink" href="#warn_required_dynamic_aliases" title="Permanent link">&para;</a></h3>
+<p><strong>Default</strong>: <code>False</code>.</p>
 <p>Whether to error when using a dynamically-determined alias or alias generator on a model with
 <a class="autorefs autorefs-internal" href="../../api/config/#pydantic.config.ConfigDict.validate_by_name"><code>validate_by_name</code></a> set to <code>False</code>. If such aliases are
-present, mypy cannot properly type check calls to <code>__init__</code>. In this case, it will default to
-treating all arguments as not required.</p>
-<div class="admonition note">
-<p class="admonition-title">Compatibility with <code>Any</code> being disallowed</p>
-<p>Some mypy configuration options (such as <a href="https://mypy.readthedocs.io/en/stable/config_file.html#confval-disallow_any_explicit"><code>disallow_any_explicit</code></a>)
-will error because the synthesized <code>__init__</code> method contains <a class="autorefs autorefs-external" href="https://docs.python.org/3/library/typing.html#typing.Any"><code>Any</code></a> annotations. To circumvent the issue, you will have
-to enable both <code>init_forbid_extra</code> and <code>init_typed</code>.</p>
-</div>
+present, mypy cannot properly type check calls to <code>__init__()</code>. In this case, it will default to
+treating all arguments as not required, by synthesizing the <code>__init__()</code> as <code>(**kwargs: Any) -&gt; None</code>.</p>
 
 
 

@@ -20531,7 +20531,7 @@ def asdict(self) -> _FieldInfoAsDict:
 
 ```python
 PrivateAttr(
-    default: _T, *, init: Literal[False] = False
+    default: _T" optional hover>_T, *, init: Literal[False] = False
 ) -> _T
 
 ```
@@ -52630,6 +52630,8 @@ warn_required_dynamic_aliases = true
 
 ### `init_typed`
 
+**Default**: `False`.
+
 Because Pydantic performs [data conversion](../../concepts/models/#data-conversion) by default, the following is still valid at runtime:
 
 ```python
@@ -52641,9 +52643,11 @@ Model(a='1')
 
 ```
 
-For this reason, the plugin will use Any for field annotations when synthesizing the `__init__` method, unless `init_typed` is set or [strict mode](../../concepts/strict_mode/) is enabled on the model.
+For this reason, the plugin will use Any for field annotations when synthesizing the `__init__()` method, unless `init_typed` is set or [strict mode](../../concepts/strict_mode/) is enabled on the model.
 
 ### `init_forbid_extra`
+
+**Default**: `False`.
 
 By default, Pydantic allows (and ignores) any extra provided argument:
 
@@ -52656,15 +52660,13 @@ Model(unrelated=2)
 
 ```
 
-For this reason, the plugin will add an extra `**kwargs: Any` parameter when synthesizing the `__init__` method, unless `init_forbid_extra` is set or the extra is set to `'forbid'`.
+For this reason, the plugin will add an extra `**kwargs: Any` parameter when synthesizing the `__init__()` method, unless `init_forbid_extra` is set or the extra configuration value is set to `'forbid'`.
 
 ### `warn_required_dynamic_aliases`
 
-Whether to error when using a dynamically-determined alias or alias generator on a model with validate_by_name set to `False`. If such aliases are present, mypy cannot properly type check calls to `__init__`. In this case, it will default to treating all arguments as not required.
+**Default**: `False`.
 
-Compatibility with `Any` being disallowed
-
-Some mypy configuration options (such as [`disallow_any_explicit`](https://mypy.readthedocs.io/en/stable/config_file.html#confval-disallow_any_explicit)) will error because the synthesized `__init__` method contains Any annotations. To circumvent the issue, you will have to enable both `init_forbid_extra` and `init_typed`.
+Whether to error when using a dynamically-determined alias or alias generator on a model with validate_by_name set to `False`. If such aliases are present, mypy cannot properly type check calls to `__init__()`. In this case, it will default to treating all arguments as not required, by synthesizing the `__init__()` as `(**kwargs: Any) -> None`.
 
 While pydantic will work well with any IDE out of the box, a [PyCharm plugin](https://plugins.jetbrains.com/plugin/12861-pydantic) offering improved pydantic integration is available on the JetBrains Plugins Repository for PyCharm. You can install the plugin for free from the plugin marketplace (PyCharm's Preferences -> Plugin -> Marketplace -> search "pydantic").
 
