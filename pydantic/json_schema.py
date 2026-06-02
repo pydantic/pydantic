@@ -732,6 +732,11 @@ class GenerateJsonSchema:
             else:
                 pattern += r'\d*\.?\d*$'  # look for arbitrary integer or decimal
 
+            # Serialization mode: also accept scientific notation (e.g. '1E-7')
+            # since pydantic's serializer calls str() on Decimal objects.
+            if self.mode == 'serialization':
+                pattern = pattern.replace('$', r'(?:[eE][+-]?\d+)?$')
+
             return pattern
 
         json_schema = self.str_schema(core_schema.str_schema(pattern=get_decimal_pattern(schema)))

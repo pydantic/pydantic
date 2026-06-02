@@ -547,7 +547,7 @@ def test_decimal_json_schema():
                 'default': '12.34',
                 'title': 'B',
                 'type': 'string',
-                'pattern': '^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$',
+                'pattern': '^(?!^[-+.]*(?:[eE][+-]?\\d+)?$)[+-]?0*\\d*\\.?\\d*(?:[eE][+-]?\\d+)?$',
             },
         },
         'title': 'Model',
@@ -2139,7 +2139,7 @@ def test_constraints_schema_validation(kwargs, type_, expected_extra):
             Decimal,
             {
                 'type': 'string',
-                'pattern': '^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$',
+                'pattern': '^(?!^[-+.]*(?:[eE][+-]?\\d+)?$)[+-]?0*\\d*\\.?\\d*(?:[eE][+-]?\\d+)?$',
             },
         ),
         (
@@ -2147,7 +2147,7 @@ def test_constraints_schema_validation(kwargs, type_, expected_extra):
             Decimal,
             {
                 'type': 'string',
-                'pattern': '^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$',
+                'pattern': '^(?!^[-+.]*(?:[eE][+-]?\\d+)?$)[+-]?0*\\d*\\.?\\d*(?:[eE][+-]?\\d+)?$',
             },
         ),
         (
@@ -2155,7 +2155,7 @@ def test_constraints_schema_validation(kwargs, type_, expected_extra):
             Decimal,
             {
                 'type': 'string',
-                'pattern': '^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$',
+                'pattern': '^(?!^[-+.]*(?:[eE][+-]?\\d+)?$)[+-]?0*\\d*\\.?\\d*(?:[eE][+-]?\\d+)?$',
             },
         ),
         (
@@ -2163,7 +2163,7 @@ def test_constraints_schema_validation(kwargs, type_, expected_extra):
             Decimal,
             {
                 'type': 'string',
-                'pattern': '^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$',
+                'pattern': '^(?!^[-+.]*(?:[eE][+-]?\\d+)?$)[+-]?0*\\d*\\.?\\d*(?:[eE][+-]?\\d+)?$',
             },
         ),
         (
@@ -2171,7 +2171,7 @@ def test_constraints_schema_validation(kwargs, type_, expected_extra):
             Decimal,
             {
                 'type': 'string',
-                'pattern': '^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$',
+                'pattern': '^(?!^[-+.]*(?:[eE][+-]?\\d+)?$)[+-]?0*\\d*\\.?\\d*(?:[eE][+-]?\\d+)?$',
             },
         ),
     ],
