@@ -1894,6 +1894,19 @@ def test_fraction_validation():
     ]
 
 
+def test_fraction_validation_zero_denominator():
+    """ZeroDivisionError from Fraction('6/0') should be caught and re-raised as ValidationError."""
+
+    class Model(BaseModel):
+        a: Fraction
+
+    with pytest.raises(ValidationError) as exc_info:
+        Model(a='6/0')
+    assert exc_info.value.errors(include_url=False) == [
+        {'type': 'fraction_parsing', 'loc': ('a',), 'msg': 'Input is not a valid fraction', 'input': '6/0'}
+    ]
+
+
 @pytest.mark.skipif(not email_validator, reason='email_validator not installed')
 def test_string_success():
     class MoreStringsModel(BaseModel):
