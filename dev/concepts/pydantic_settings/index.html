@@ -2075,6 +2075,17 @@ to help you monitor and understand your
 </li>
         
           <li class="md-nav__item">
+  <a href="#project-id-resolution" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Project ID resolution
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#nested-models" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -5397,6 +5408,17 @@ to help you monitor and understand your
 </li>
         
           <li class="md-nav__item">
+  <a href="#project-id-resolution" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Project ID resolution
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#nested-models" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -7883,6 +7905,15 @@ if not specified. Works in both plain and nested directory modes, like
 <p><strong>Explicit credentials</strong> - You can also provide <code>credentials</code> directly. e.g. <code>sa_credentials = google.oauth2.service_account.Credentials.from_service_account_file('path/to/service-account.json')</code> and then <code>GoogleSecretManagerSettingsSource(credentials=sa_credentials)</code></p>
 </li>
 </ol>
+<h3 id="project-id-resolution">Project ID resolution<a class="headerlink" href="#project-id-resolution" title="Permanent link">&para;</a></h3>
+<p>The <code>project_id</code> is resolved lazily when the source is read, in the following order of precedence:</p>
+<ol>
+<li>the explicit <code>project_id</code> argument if it was passed</li>
+<li>the value resolved by a previous (higher priority) settings source - by default the <code>project_id</code> field, configurable via the <code>project_id_field</code> argument</li>
+<li><a href="https://google-auth.readthedocs.io/en/master/reference/google.auth.html#google.auth.default"><code>google.auth.default()</code></a></li>
+</ol>
+<p>This lets the project be supplied by another settings source (for example an environment variable or an init argument) instead of being hardcoded. For example, with <code>GoogleSecretManagerSettingsSource(settings_cls, project_id_field='gcp_project')</code> the source uses the <code>gcp_project</code> value resolved by an earlier source as its project.</p>
+<p><code>project_id_field</code> must match the key that the earlier source uses in <code>current_state</code> — this is typically the field's preferred alias. For example, if your settings model has <code>gcp_project: str = Field(alias='GCP_PROJECT')</code>, use <code>project_id_field='GCP_PROJECT'</code> (the alias), not <code>'gcp_project'</code> (the Python attribute name).</p>
 <h3 id="nested-models">Nested Models<a class="headerlink" href="#nested-models" title="Permanent link">&para;</a></h3>
 <p>For nested models, Secret Manager supports the <code>env_nested_delimiter</code> setting as long as it complies with the <a href="https://cloud.google.com/secret-manager/docs/creating-and-accessing-secrets#create-a-secret">naming rules</a>. In the example above, you would create secrets named <code>database__password</code> and <code>database__user</code> in Secret Manager.</p>
 <h3 id="secret-versions">Secret Versions<a class="headerlink" href="#secret-versions" title="Permanent link">&para;</a></h3>

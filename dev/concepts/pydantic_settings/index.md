@@ -2529,6 +2529,18 @@ The `GoogleSecretManagerSettingsSource` supports several authentication methods:
 1. Compute Engine, GKE, Cloud Run, or Cloud Functions default service accounts
 1. **Explicit credentials** - You can also provide `credentials` directly. e.g. `sa_credentials = google.oauth2.service_account.Credentials.from_service_account_file('path/to/service-account.json')` and then `GoogleSecretManagerSettingsSource(credentials=sa_credentials)`
 
+### Project ID resolution
+
+The `project_id` is resolved lazily when the source is read, in the following order of precedence:
+
+1. the explicit `project_id` argument if it was passed
+1. the value resolved by a previous (higher priority) settings source - by default the `project_id` field, configurable via the `project_id_field` argument
+1. [`google.auth.default()`](https://google-auth.readthedocs.io/en/master/reference/google.auth.html#google.auth.default)
+
+This lets the project be supplied by another settings source (for example an environment variable or an init argument) instead of being hardcoded. For example, with `GoogleSecretManagerSettingsSource(settings_cls, project_id_field='gcp_project')` the source uses the `gcp_project` value resolved by an earlier source as its project.
+
+`project_id_field` must match the key that the earlier source uses in `current_state` — this is typically the field's preferred alias. For example, if your settings model has `gcp_project: str = Field(alias='GCP_PROJECT')`, use `project_id_field='GCP_PROJECT'` (the alias), not `'gcp_project'` (the Python attribute name).
+
 ### Nested Models
 
 For nested models, Secret Manager supports the `env_nested_delimiter` setting as long as it complies with the [naming rules](https://cloud.google.com/secret-manager/docs/creating-and-accessing-secrets#create-a-secret). In the example above, you would create secrets named `database__password` and `database__user` in Secret Manager.
