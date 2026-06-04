@@ -51,6 +51,8 @@ We reserve the right to close any pull request at our discretion, without furthe
 * the author appears to be mass-submitting pull requests across multiple repositories (spam),
 * the pull request description is AI generated *and* incoherent or nonsensical.
 
+Such behavior can also result in a permanent ban from the organization.
+
 ### Prerequisites
 
 You'll need the following prerequisites:
