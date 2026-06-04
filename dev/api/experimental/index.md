@@ -19,7 +19,7 @@ Abstract representation of a chain of validation, transformation, and parsing st
 
 ```python
 transform(
-    func: Callable[[_OutT], _NewOutT]
+    func: Callable[[_OutT], _NewOutT],
 ) -> _Pipeline[_InT, _NewOutT]
 
 ```
@@ -103,7 +103,7 @@ def validate_as(self, tp: type[_NewOutT] | EllipsisType | Any, *, strict: bool =
 
 ```python
 validate_as_deferred(
-    func: Callable[[], type[_NewOutT]]
+    func: Callable[[], type[_NewOutT]],
 ) -> _Pipeline[_InT, _NewOutT]
 
 ```
@@ -235,7 +235,7 @@ def constrain(self, constraint: _ConstraintAnnotation) -> Any:
 
 ```python
 predicate(
-    func: Callable[[_NewOutT], bool]
+    func: Callable[[_NewOutT], bool],
 ) -> _Pipeline[_InT, _NewOutT]
 
 ```
@@ -726,7 +726,7 @@ def str_ends_with(self: _Pipeline[_InT, str], suffix: str) -> _Pipeline[_InT, st
 
 ```python
 otherwise(
-    other: _Pipeline[_OtherIn, _OtherOut]
+    other: _Pipeline[_OtherIn, _OtherOut],
 ) -> _Pipeline[_InT | _OtherIn, _OutT | _OtherOut]
 
 ```
@@ -746,7 +746,7 @@ def otherwise(self, other: _Pipeline[_OtherIn, _OtherOut]) -> _Pipeline[_InT | _
 
 ```python
 then(
-    other: _Pipeline[_OutT, _OtherOut]
+    other: _Pipeline[_OutT, _OtherOut],
 ) -> _Pipeline[_InT, _OtherOut]
 
 ```

@@ -217,7 +217,7 @@ def build_schema_type_to_method(
 generate_definitions(
     inputs: Sequence[
         tuple[JsonSchemaKeyT, JsonSchemaMode, CoreSchema]
-    ]
+    ],
 ) -> tuple[
     dict[
         tuple[JsonSchemaKeyT, JsonSchemaMode],

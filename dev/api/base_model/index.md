@@ -2264,7 +2264,7 @@ def model_json_schema(
 
 ```python
 model_parametrized_name(
-    params: tuple[type[Any], ...]
+    params: tuple[type[Any], ...],
 ) -> str
 
 ```
