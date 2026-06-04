@@ -3216,14 +3216,15 @@ def test_resolve_def_schema_from_core_schema() -> None:
     assert Outer.model_validate({'inner': {'x': 1}}).inner.x == 2
 
 
-def test_extra_validator_scalar() -> None:
+def test_extra_validator_scalar(py_and_json) -> None:
     class Model(BaseModel):
         model_config = ConfigDict(extra='allow')
 
     class Child(Model):
         __pydantic_extra__: dict[str, int]
 
-    m = Child(a='1')
+    adapter = py_and_json(Child)
+    m = adapter.validate_test({'a': '1'})
     assert m.__pydantic_extra__ == {'a': 1}
 
     # insert_assert(Child.model_json_schema())
@@ -3235,26 +3236,29 @@ def test_extra_validator_scalar() -> None:
     }
 
 
-def test_extra_validator_keys() -> None:
+def test_extra_validator_keys(py_and_json) -> None:
     class Model(BaseModel, extra='allow'):
         __pydantic_extra__: dict[Annotated[str, Field(max_length=3)], int]
 
+    adapter = py_and_json(Model)
     with pytest.raises(ValidationError) as exc_info:
-        Model(extra_too_long=1)
+        adapter.validate_test({'extra_too_long': 1})
 
     assert exc_info.value.errors()[0]['type'] == 'string_too_long'
 
 
-def test_extra_validator_field() -> None:
+def test_extra_validator_field(py_and_json) -> None:
     class Model(BaseModel, extra='allow'):
         # use Field(init=False) to ensure this is not treated as a field by dataclass_transform
         __pydantic_extra__: dict[str, int] = Field(init=False)
 
-    m = Model(a='1')
+    adapter = py_and_json(Model)
+    m = adapter.validate_test({'a': '1'})
     assert m.__pydantic_extra__ == {'a': 1}
 
     with pytest.raises(ValidationError) as exc_info:
-        Model(a='a')
+        adapter.validate_test({'a': 'a'})
+
     assert exc_info.value.errors(include_url=False) == [
         {
             'input': 'a',
@@ -3273,7 +3277,7 @@ def test_extra_validator_field() -> None:
     }
 
 
-def test_extra_validator_named() -> None:
+def test_extra_validator_named(py_and_json) -> None:
     class Foo(BaseModel):
         x: int
 
@@ -3284,7 +3288,8 @@ def test_extra_validator_named() -> None:
     class Child(Model):
         y: int
 
-    m = Child(a={'x': '1'}, y=2)
+    adapter = py_and_json(Child)
+    m = adapter.validate_test({'a': {'x': '1'}, 'y': 2})
     assert m.__pydantic_extra__ == {'a': Foo(x=1)}
 
     # insert_assert(Child.model_json_schema())
