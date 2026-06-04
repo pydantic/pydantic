@@ -23,20 +23,16 @@ to your question or feature request.
 ## Pull Requests
 
 It should be extremely simple to get started and create a Pull Request.
-Pydantic is released regularly so you should see your improvements release in a matter of days or weeks 🚀.
 
 Unless your change is trivial (typo, docs tweak etc.), please create an issue to discuss the change before
-creating a pull request.
+creating a pull request. Any pull request fixing an existing issue without being assigned first will be
+automatically closed.
 
 !!! note "Pydantic V1 is in maintenance mode"
     Pydantic v1 is in maintenance mode, meaning that only bug fixes and security fixes will be accepted.
     New features should be targeted at Pydantic v2.
 
-    To submit a fix to Pydantic v1, use the `1.10.X-fixes` as a target branch.
-
-If you're looking for something to get your teeth into, check out the
-["help wanted"](https://github.com/pydantic/pydantic/issues?q=is%3Aopen+is%3Aissue+label%3A%22help+wanted%22)
-label on github.
+    To submit a fix to Pydantic v1, use the [`1.10.X-fixes`](https://github.com/pydantic/pydantic/tree/1.10.X-fixes) as a target branch.
 
 To make contributing as easy and fast as possible, you'll want to run tests and linting locally. Luckily,
 Pydantic has few dependencies, doesn't require compiling and tests don't need access to databases, etc.
@@ -46,12 +42,23 @@ Because of this, setting up and running the tests should be very simple.
     **tl;dr**: use `make format` to fix formatting, `make` to run tests and linting and `make docs`
     to build the docs.
 
+## AI policy
+
+We welcome the use of AI when contributing to Pydantic. However, users should certify that they fully understand the code being submitted.
+We reserve the right to close any pull request at our discretion, without further justification. This includes, but is not limited to, cases where:
+
+* the contribution does not meet our quality standards,
+* the author appears to be mass-submitting pull requests across multiple repositories (spam),
+* the pull request description is AI generated *and* incoherent or nonsensical.
+
+Such behavior can also result in a permanent ban from the organization.
+
 ### Prerequisites
 
 You'll need the following prerequisites:
 
 * Any Python version between **Python 3.10 and 3.14**
-* [**uv**](https://docs.astral.sh/uv/getting-started/installation/) or other virtual environment tool
+* [**uv**](https://docs.astral.sh/uv/getting-started/installation/)
 * [**git**](https://git-scm.com/) - For version control
 * [**make**](https://www.gnu.org/software/make/) - For running development commands (or use `nmake` on Windows)
 * [**Rust**](https://rustup.rs/) - Rust stable (or nightly for coverage)
@@ -69,10 +76,8 @@ cd pydantic
 # We use pipx here, for other options see:
 # https://docs.astral.sh/uv/getting-started/installation/
 # https://pre-commit.com/#install
-# To get pipx itself:
-# https://pypa.github.io/pipx/
-pipx install uv
-pipx install pre-commit
+curl -LsSf https://astral.sh/uv/install.sh | sh
+uvx install pre-commit
 
 # Install pydantic, dependencies, test dependencies and doc dependencies
 make install
