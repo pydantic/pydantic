@@ -432,6 +432,20 @@ def test_circular_type_aliases() -> None:
             a: C
 
 
+def test_type_alias_to_recursive_model() -> None:
+    """https://github.com/pydantic/pydantic/issues/13272"""
+
+    Alias = TypeAliasType('Alias', 'Model')
+
+    class Model(BaseModel):
+        f: Alias | None = None
+
+    Model.model_rebuild()
+
+    node = Model.model_validate({'f': {'f': {'f': None}}})
+    assert node.f.f.f is None
+
+
 def test_type_alias_type_with_serialization() -> None:
     """Regression test for https://github.com/pydantic/pydantic/issues/11642.
 
