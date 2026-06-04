@@ -3987,10 +3987,10 @@ the class definition of <code>Foo</code>, even if <code>MyType</code> isn't yet 
 The Python standard library provides some tools to do so (<a class="autorefs autorefs-external" href="https://docs.python.org/3/library/typing.html#typing.get_type_hints"><code>typing.get_type_hints()</code></a>,
 <a class="autorefs autorefs-external" href="https://docs.python.org/3/library/inspect.html#inspect.get_annotations"><code>inspect.get_annotations()</code></a>), but they come with some limitations. Thus, they are
 being re-implemented in Pydantic with improved support for edge cases.</p>
-<p>As Pydantic as grown, it's adapted to support many edge cases requiring irregular patterns for annotation evaluation.
+<p>As Pydantic has grown, it's adapted to support many edge cases requiring irregular patterns for annotation evaluation.
 Some of these use cases aren't necessarily sound from a static type checking perspective. In v2.10, the internal
 logic was refactored in an attempt to simplify and standardize annotation evaluation. Admittedly, backwards compatibility
-posed some challenges, and there is still some noticeable scar tissue in the codebase because of this.There's a hope that
+posed some challenges, and there is still some noticeable scar tissue in the codebase because of this. There's a hope that
 <a href="https://peps.python.org/pep-0649/">PEP 649</a> (introduced in Python 3.14) will greatly simplify the process, especially when it comes to dealing with locals
 of a function.</p>
 <p>To evaluate forward references, Pydantic roughly follows the same logic as described in the documentation of the
