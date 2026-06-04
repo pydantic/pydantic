@@ -81,6 +81,9 @@ dev = [
     'packaging',
     'jsonschema',
 ]
+coverage = [
+    'coverage[toml]',
+]
 docs = [
     'autoflake',
     'mkdocs',
@@ -128,6 +131,9 @@ build = [
 ]
 pyodide-build = [
     "pyodide-build",
+]
+tweet = [
+    "tweepy",
 ]
 
 all = [
