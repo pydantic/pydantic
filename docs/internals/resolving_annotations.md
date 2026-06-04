@@ -51,10 +51,10 @@ The Python standard library provides some tools to do so ([`typing.get_type_hint
 [`inspect.get_annotations()`][inspect.get_annotations]), but they come with some limitations. Thus, they are
 being re-implemented in Pydantic with improved support for edge cases.
 
-As Pydantic as grown, it's adapted to support many edge cases requiring irregular patterns for annotation evaluation.
+As Pydantic has grown, it's adapted to support many edge cases requiring irregular patterns for annotation evaluation.
 Some of these use cases aren't necessarily sound from a static type checking perspective. In v2.10, the internal
 logic was refactored in an attempt to simplify and standardize annotation evaluation. Admittedly, backwards compatibility
-posed some challenges, and there is still some noticeable scar tissue in the codebase because of this.There's a hope that
+posed some challenges, and there is still some noticeable scar tissue in the codebase because of this. There's a hope that
 [PEP 649] (introduced in Python 3.14) will greatly simplify the process, especially when it comes to dealing with locals
 of a function.
 
