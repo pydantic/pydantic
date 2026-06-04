@@ -153,7 +153,7 @@ impl Validator for TypedDictValidator {
         let dict = input.validate_dict(strict)?;
 
         let output_dict = PyDict::new(py);
-        let mut errors: Vec<ValLineError> = Vec::with_capacity(self.fields.len());
+        let mut errors: Vec<ValLineError> = Vec::new();
 
         let partial_last_key = if state.allow_partial.is_active() {
             dict.last_key().map(Into::into)

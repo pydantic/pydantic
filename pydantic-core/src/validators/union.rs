@@ -3,6 +3,7 @@ use std::str::FromStr;
 use std::sync::Arc;
 
 use crate::py_gc::PyGcTraverse;
+use itertools::Itertools;
 use pyo3::prelude::*;
 use pyo3::types::{PyDict, PyList, PyString, PyTuple};
 use pyo3::{PyTraverseError, PyVisit, intern};
@@ -312,35 +313,43 @@ impl BuildValidator for TaggedUnionValidator {
         let discriminator = Discriminator::new(&schema.get_as_req(intern!(py, "discriminator"))?)?;
         let discriminator_repr = discriminator.to_string_py(py)?;
 
-        let choices = PyDict::new(py);
         let mut tags_repr = String::with_capacity(50);
         let mut descr = String::with_capacity(50);
         let mut first = true;
-        let schema_choices: Bound<PyDict> = schema.get_as_req(intern!(py, "choices"))?;
-        let mut lookup_map = Vec::with_capacity(choices.len());
-        for (choice_key, choice_schema) in schema_choices {
-            let validator = build_validator(&choice_schema, config, definitions)?;
-            let tag_repr = choice_key.repr()?.to_string();
+
+        let mut push_validator_repr = |validator: &CombinedValidator, tag_repr: Bound<'_, PyString>| {
             if first {
                 first = false;
-                write!(tags_repr, "{tag_repr}").unwrap();
-                descr.push_str(validator.get_name());
             } else {
-                write!(tags_repr, ", {tag_repr}").unwrap();
+                tags_repr.push_str(", ");
                 // no spaces in get_name() output to make loc easy to read
-                write!(descr, ",{}", validator.get_name()).unwrap();
+                descr.push(',');
             }
-            lookup_map.push((choice_key, validator));
-        }
 
-        let lookup = Box::new(LiteralLookup::new(py, lookup_map.into_iter())?);
+            tags_repr.push_str(&tag_repr.to_string_lossy());
+            descr.push_str(validator.get_name());
+        };
+
+        let schema_choices: Bound<PyDict> = schema.get_as_req(intern!(py, "choices"))?;
+
+        let lookup = schema_choices
+            .iter()
+            .map(|(key, schema)| -> PyResult<_> {
+                let validator = build_validator(&schema, config, definitions)?;
+
+                let tag_repr = key.repr()?;
+                push_validator_repr(&validator, tag_repr);
+
+                Ok((key, validator))
+            })
+            .process_results(|choices| LiteralLookup::new(py, choices))??;
 
         let key = intern!(py, "from_attributes");
         let from_attributes = schema_or_config(schema, config, key, key)?.unwrap_or(true);
 
         Ok(CombinedValidator::TaggedUnion(Self {
             discriminator: Box::new(discriminator),
-            lookup,
+            lookup: Box::new(lookup),
             from_attributes,
             custom_error: CustomError::build(schema, config, definitions)?,
             tags_repr,

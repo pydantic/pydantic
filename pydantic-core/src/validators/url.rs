@@ -606,7 +606,7 @@ fn parse_multihost_url<'py>(
 
     // process host and port, splitting based on `,`, some logic taken from `parse_host`
     // https://github.com/servo/rust-url/blob/v2.3.1/url/src/parser.rs#L971-L1026
-    let mut hosts: Vec<&str> = Vec::with_capacity(3);
+    let mut extra_hosts: Vec<&str> = Vec::new();
     let mut start = chars.position;
     while let Some(c) = chars.next() {
         match c {
@@ -618,7 +618,7 @@ fn parse_multihost_url<'py>(
                 if start == end {
                     return parsing_err!(ParseError::EmptyHost);
                 }
-                hosts.push(&url_str[start..end]);
+                extra_hosts.push(&url_str[start..end]);
                 start = chars.position;
             }
             _ => (),
@@ -632,7 +632,7 @@ fn parse_multihost_url<'py>(
 
     let ref_url = PyUrl::new(ref_url, path_is_empty);
 
-    if hosts.is_empty() {
+    if extra_hosts.is_empty() {
         // if there's no one host (e.g. no `,`), we allow it to be empty to allow for default hosts
         Ok(PyMultiHostUrl::new(ref_url, None))
     } else {
@@ -640,7 +640,7 @@ fn parse_multihost_url<'py>(
         if !ref_url.url().has_host() {
             return parsing_err!(ParseError::EmptyHost);
         }
-        let extra_urls: Vec<Url> = hosts
+        let extra_urls: Vec<Url> = extra_hosts
             .iter()
             .map(|host| {
                 let reconstructed_url = format!("{prefix}{host}");
