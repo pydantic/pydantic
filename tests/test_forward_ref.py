@@ -1115,12 +1115,6 @@ def test_pydantic_extra_forward_ref_evaluated_pep585() -> None:
     assert 'extras_keys_schema' not in Bar.__pydantic_core_schema__['schema']
 
 
-@pytest.mark.xfail(
-    reason='While `get_cls_type_hints` uses the correct module ns for each base, `collect_model_fields` '
-    'will still use the `FieldInfo` instances from each base (see the `parent_fields_lookup` logic). '
-    'This means that `f` is still a forward ref in `Foo.model_fields`, and it gets evaluated in '
-    '`GenerateSchema._model_schema`, where only the module of `Foo` is considered.'
-)
 def test_uses_the_correct_globals_to_resolve_model_forward_refs(create_module):
     @create_module
     def module_1():
@@ -1143,6 +1137,40 @@ class Foo(Bar):
     )
 
     assert module_2.Foo.model_fields['f'].annotation is int
+
+
+def test_inherited_field_uses_base_class_globals_when_subclassed_in_other_module(create_module):
+    """A field inherited from a base class defined in another module should have its forward
+    references resolved using the base class' module namespace, not the subclass' one.
+
+    See https://github.com/pydantic/pydantic/issues/12000.
+    """
+
+    @create_module
+    def module_1():
+        from pydantic import BaseModel
+
+        class Outer1(BaseModel):
+            class Inner1(BaseModel):
+                outer: 'Outer1'
+
+    # Note: `Outer1` is intentionally *not* imported at the top level of `module_2`, so the
+    # `'Outer1'` forward reference can only be resolved using `module_1`'s namespace.
+    module_2 = create_module(
+        f"""
+import {module_1.__name__} as module_1
+
+from pydantic import BaseModel
+
+
+class Outer2(BaseModel):
+    class Inner2(module_1.Outer1.Inner1):
+        pass
+        """
+    )
+
+    instance = module_2.Outer2.Inner2(outer=module_1.Outer1())
+    assert isinstance(instance.outer, module_1.Outer1)
 
 
 @pytest.mark.xfail(

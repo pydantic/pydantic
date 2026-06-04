@@ -2,6 +2,7 @@
 
 from __future__ import annotations as _annotations
 
+import contextlib
 import dataclasses
 import warnings
 from collections.abc import Callable, Mapping
@@ -460,9 +461,20 @@ def rebuild_model_fields(
             if field_info._complete:
                 rebuilt_fields[f_name] = field_info
             else:
-                new_field = _recreate_field_info(
-                    field_info, ns_resolver=ns_resolver, typevars_map=typevars_map, lenient=False
+                # The field might have been inherited from a base class defined in a different module.
+                # In that case, the forward references in its annotation must be resolved using the
+                # namespace of the base class that defined the field, not the one of `cls` (see
+                # https://github.com/pydantic/pydantic/issues/12000).
+                defining_base = _defining_base_of_field(cls, f_name)
+                base_ns_ctx = (
+                    ns_resolver.push(defining_base)
+                    if defining_base is not None and defining_base is not cls
+                    else contextlib.nullcontext()
                 )
+                with base_ns_ctx:
+                    new_field = _recreate_field_info(
+                        field_info, ns_resolver=ns_resolver, typevars_map=typevars_map, lenient=False
+                    )
                 update_field_from_config(config_wrapper, f_name, new_field)
                 rebuilt_fields[f_name] = new_field
 
@@ -477,6 +489,23 @@ def rebuild_model_fields(
             rebuilt_extra_info = cls.__pydantic_extra_info__
 
     return rebuilt_fields, rebuilt_extra_info
+
+
+def _defining_base_of_field(cls: type[BaseModel], field_name: str) -> type[BaseModel] | None:
+    """Find the base class in the MRO of `cls` that defines `field_name` in its own annotations.
+
+    Fields can be inherited from a base class defined in a separate module. When rebuilding such a
+    field, the forward references in its annotation must be evaluated using the namespace of the
+    class that actually defined it. This walks the MRO from the most derived class and returns the
+    first one whose own annotations contain `field_name`, or `None` if no such class is found.
+    """
+    BaseModel_ = import_cached_base_model()
+    for base in cls.__mro__:
+        if base is BaseModel_ or not issubclass(base, BaseModel_):
+            continue
+        if field_name in _typing_extra.safe_get_annotations(base):
+            return base
+    return None
 
 
 def _recreate_field_info(
