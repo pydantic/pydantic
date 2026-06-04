@@ -1356,25 +1356,37 @@ class GenerateSchema:
         if nullable:
             s = core_schema.nullable_schema(s)
         return s
+        
+def _type_alias_type_schema(self, obj: TypeAliasType) -> CoreSchema:
+        # PEP 695 self-reference recursion guard
+        if obj in self.defs._visited_type_aliases:
+            raise PydanticUserError(
+                f'Infinite self-referential type alias detected: {getattr(obj, "__name__", str(obj))}. '
+                'Type aliases must have a terminating base case.',
+                code='infinite-type-alias'
+            )
+            
+        self.defs._visited_type_aliases.add(obj)
+        try:
+            with self.defs.get_schema_or_ref(obj) as (ref, maybe_schema):
+                if maybe_schema is not None:
+                    return maybe_schema
 
-    def _type_alias_type_schema(self, obj: TypeAliasType) -> CoreSchema:
-        with self.defs.get_schema_or_ref(obj) as (ref, maybe_schema):
-            if maybe_schema is not None:
-                return maybe_schema
+                origin: TypeAliasType = get_origin(obj) or obj
+                typevars_map = get_standard_typevars_map(obj)
 
-            origin: TypeAliasType = get_origin(obj) or obj
-            typevars_map = get_standard_typevars_map(obj)
-
-            with self._ns_resolver.push(origin):
-                try:
-                    annotation = _typing_extra.eval_type(origin.__value__, *self._types_namespace)
-                except NameError as e:
-                    raise PydanticUndefinedAnnotation.from_name_error(e) from e
-                annotation = replace_types(annotation, typevars_map)
-                schema = self.generate_schema(annotation)
-                assert schema['type'] != 'definitions'
-                schema['ref'] = ref  # type: ignore
-            return self.defs.create_definition_reference_schema(schema)
+                with self._ns_resolver.push(origin):
+                    try:
+                        annotation = _typing_extra.eval_type(origin.__value__, *self._types_namespace)
+                    except NameError as e:
+                        raise PydanticUndefinedAnnotation.from_name_error(e) from e
+                    annotation = replace_types(annotation, typevars_map)
+                    schema = self.generate_schema(annotation)
+                    assert schema['type'] != 'definitions'
+                    schema['ref'] = ref  # type: ignore
+                return self.defs.create_definition_reference_schema(schema)
+        finally:
+            self.defs._visited_type_aliases.remove(obj)
 
     def _literal_schema(self, literal_type: Any) -> CoreSchema:
         """Generate schema for a Literal."""
@@ -2761,9 +2773,12 @@ class _Definitions:
     manager.
     """
 
+   _visited_type_aliases: set[Any]
+
     def __init__(self) -> None:
         self._recursively_seen = set()
         self._definitions = {}
+        self._visited_type_aliases = set()
 
     @contextmanager
     def get_schema_or_ref(self, tp: Any, /) -> Generator[tuple[str, core_schema.DefinitionReferenceSchema | None]]:
