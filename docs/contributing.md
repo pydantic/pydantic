@@ -49,7 +49,7 @@ We reserve the right to close any pull request at our discretion, without furthe
 
 * the contribution does not meet our quality standards,
 * the author appears to be mass-submitting pull requests across multiple repositories (spam),
-* the pull request description is AI generated _and_ incoherent or nonsensical.
+* the pull request description is AI generated *and* incoherent or nonsensical.
 
 ### Prerequisites
 
