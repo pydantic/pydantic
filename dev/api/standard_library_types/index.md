@@ -816,7 +816,7 @@ Any collections.abc.Sequence instance (expect strings and bytes) is accepted. It
 
 Strings aren't treated as sequences
 
-While strings are technically valid sequence instances, this is frequently not intended as is a common source of bugs.
+While strings are technically valid sequence instances, this is frequently not intended, and is a common source of bugs.
 
 As a result, Pydantic will *not* accept strings and bytes for the Sequence type (see example below).
 
