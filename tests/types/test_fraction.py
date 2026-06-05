@@ -72,7 +72,7 @@ def test_fraction_validate_json(json_str, expected):
     'json_str,error',
     [
         ('"not a number"', ValidationError),
-        ('"1/0"', ZeroDivisionError),
+        ('"1/0"', ValidationError),
         (float('inf'), ValidationError),
         (float('nan'), ValidationError),
     ],
@@ -127,7 +127,7 @@ def test_fraction_strict_accepts_fraction(input_value):
     'input_value,error',
     [
         ('not a number', ValidationError),
-        ('1/0', ZeroDivisionError),
+        ('1/0', ValidationError),
         (float('inf'), OverflowError),
         (float('nan'), ValidationError),
         ([1, 2], TypeError),
