@@ -2834,6 +2834,15 @@ class _Definitions:
 
         remaining_defs: dict[str, CoreSchema] = {}
 
+        # References that will be kept as actual definitions (i.e. not inlined). When resolving an
+        # "intermediate" `'definition-ref'` schema (see `_resolve_definition()`), we must not follow
+        # the reference chain through one of these definitions:
+        kept_refs = {
+            ref
+            for ref, inlinable_def_ref in gather_result['collected_references'].items()
+            if inlinable_def_ref is None or _inlining_behavior(inlinable_def_ref) == 'keep'
+        }
+
         # Note: this logic doesn't play well when core schemas with deferred discriminator metadata
         # and references are encountered. See the `test_deferred_discriminated_union_and_references()` test.
         for ref, inlinable_def_ref in gather_result['collected_references'].items():
@@ -2844,20 +2853,20 @@ class _Definitions:
                     #    the only one. Transform it into the definition it points to.
                     #  - Do not store the definition in the `remaining_defs`.
                     inlinable_def_ref.clear()  # pyright: ignore[reportAttributeAccessIssue]
-                    inlinable_def_ref.update(self._resolve_definition(ref, definitions))  # pyright: ignore
+                    inlinable_def_ref.update(self._resolve_definition(ref, definitions, kept_refs))  # pyright: ignore
                 elif inlining_behavior == 'preserve_metadata':
                     # `ref` was encountered, and only once, but contains discriminator metadata.
                     # We will do the same thing as if `inlining_behavior` was `'inline'`, but make
                     # sure to keep the metadata for the deferred discriminator application logic below.
                     meta = inlinable_def_ref.pop('metadata')
                     inlinable_def_ref.clear()  # pyright: ignore[reportAttributeAccessIssue]
-                    inlinable_def_ref.update(self._resolve_definition(ref, definitions))  # pyright: ignore
+                    inlinable_def_ref.update(self._resolve_definition(ref, definitions, kept_refs))  # pyright: ignore
                     inlinable_def_ref['metadata'] = meta
             else:
                 # `ref` was encountered, at least two times (or only once, but with metadata or a serialization schema):
                 # - Do not inline the `'definition-ref'` schemas (they are not provided in the gather result anyway).
                 # - Store the definition in the `remaining_defs`
-                remaining_defs[ref] = self._resolve_definition(ref, definitions)
+                remaining_defs[ref] = self._resolve_definition(ref, definitions, kept_refs)
 
         for cs in gather_result['deferred_discriminator_schemas']:
             discriminator: str | None = cs['metadata'].pop('pydantic_internal_union_discriminator', None)  # pyright: ignore[reportTypedDictNotRequiredAccess]
@@ -2875,7 +2884,7 @@ class _Definitions:
             schema = core_schema.definitions_schema(schema=schema, definitions=[*remaining_defs.values()])
         return schema
 
-    def _resolve_definition(self, ref: str, definitions: dict[str, CoreSchema]) -> CoreSchema:
+    def _resolve_definition(self, ref: str, definitions: dict[str, CoreSchema], kept_refs: set[str]) -> CoreSchema:
         definition = definitions[ref]
         if definition['type'] != 'definition-ref':
             return definition
@@ -2885,6 +2894,14 @@ class _Definitions:
         visited: set[str] = set()
         while definition['type'] == 'definition-ref' and _inlining_behavior(definition) == 'inline':
             schema_ref = definition['schema_ref']
+            if schema_ref in kept_refs and schema_ref != ref:
+                # The reference chain leads to a *different* definition that is kept on its own (e.g. a
+                # recursive model referenced through a PEP 695 type alias). Resolve to a reference
+                # pointing to it instead of following the chain and inlining a copy of that definition,
+                # which could otherwise introduce a reference cycle in the resulting schema.
+                # Note: when `schema_ref == ref`, the reference points back to itself, which is a genuine
+                # circular reference and is reported as an error by the `visited` logic below.
+                return {**definition, 'ref': ref}
             if schema_ref in visited:
                 raise PydanticUserError(
                     f'{ref} contains a circular reference to itself.', code='circular-reference-schema'
