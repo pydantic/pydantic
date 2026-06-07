@@ -936,6 +936,36 @@ b
     assert str(e.value) == expected
 
 
+def test_default_factory_not_called_if_field_missing(container_schema_builder, pydantic_version) -> None:
+    """When a required field is entirely missing from the input, default_factory_takes_data should not be called."""
+    schema = container_schema_builder(
+        {
+            'a': core_schema.int_schema(),
+            'b': core_schema.with_default_schema(
+                schema=core_schema.int_schema(), default_factory=lambda data: data['a'], default_factory_takes_data=True
+            ),
+        }
+    )
+    v = SchemaValidator(schema)
+    with pytest.raises(ValidationError) as e:
+        v.validate_python({})
+
+    assert e.value.errors(include_url=False) == [
+        {
+            'type': 'missing',
+            'loc': ('a',),
+            'msg': 'Field required',
+            'input': {},
+        },
+        {
+            'input': PydanticUndefined,
+            'loc': ('b',),
+            'msg': 'The default factory uses validated data, but at least one validation error occurred',
+            'type': 'default_factory_not_called',
+        },
+    ]
+
+
 def test_default_factory_not_called_union_ok(container_schema_builder) -> None:
     schema_fail = container_schema_builder(
         {
