@@ -2038,7 +2038,7 @@ def test_docstring(docstring, description):
                     {'exclusiveMinimum': 2.0, 'type': 'number'},
                     {
                         'type': 'string',
-                        'pattern': '^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$',
+                        'pattern': '^(?!^[-+.]*$)[+-]?0*(?:(?:\\d+\\.?\\d*|\\.\\d+))$',
                     },
                 ]
             },
@@ -2051,7 +2051,7 @@ def test_docstring(docstring, description):
                     {'type': 'number', 'exclusiveMaximum': 5},
                     {
                         'type': 'string',
-                        'pattern': '^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$',
+                        'pattern': '^(?!^[-+.]*$)[+-]?0*(?:(?:\\d+\\.?\\d*|\\.\\d+))$',
                     },
                 ]
             },
@@ -2064,7 +2064,7 @@ def test_docstring(docstring, description):
                     {'type': 'number', 'minimum': 2},
                     {
                         'type': 'string',
-                        'pattern': '^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$',
+                        'pattern': '^(?!^[-+.]*$)[+-]?0*(?:(?:\\d+\\.?\\d*|\\.\\d+))$',
                     },
                 ]
             },
@@ -2077,7 +2077,7 @@ def test_docstring(docstring, description):
                     {'type': 'number', 'maximum': 5},
                     {
                         'type': 'string',
-                        'pattern': '^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$',
+                        'pattern': '^(?!^[-+.]*$)[+-]?0*(?:(?:\\d+\\.?\\d*|\\.\\d+))$',
                     },
                 ]
             },
@@ -2090,7 +2090,7 @@ def test_docstring(docstring, description):
                     {'type': 'number', 'multipleOf': 5},
                     {
                         'type': 'string',
-                        'pattern': '^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$',
+                        'pattern': '^(?!^[-+.]*$)[+-]?0*(?:(?:\\d+\\.?\\d*|\\.\\d+))$',
                     },
                 ]
             },
@@ -5974,18 +5974,18 @@ def test_generate_definitions_for_no_ref_schemas():
     )
     assert result == (
         {
-            ('Decimal', 'serialization'): {
-                'type': 'string',
-                'pattern': '^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$',
-            },
             ('Decimal', 'validation'): {
                 'anyOf': [
                     {'type': 'number'},
                     {
                         'type': 'string',
-                        'pattern': '^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$',
+                        'pattern': '^(?!^[-+.]*$)[+-]?0*(?:(?:\\d+\\.?\\d*|\\.\\d+))$',
                     },
-                ]
+                ],
+            },
+            ('Decimal', 'serialization'): {
+                'type': 'string',
+                'pattern': '^(?!^[-+.]*$)[+-]?0*(?:(?:\\d+\\.?\\d*|\\.\\d+)(?:[eE][+-]?\\d+)?)$',
             },
             ('Model', 'validation'): {'$ref': '#/$defs/Model'},
         },

@@ -693,9 +693,12 @@ class GenerateJsonSchema:
             The generated JSON schema.
         """
 
-        def get_decimal_pattern(schema: core_schema.DecimalSchema) -> str:
+        def get_decimal_pattern(schema: core_schema.DecimalSchema, mode: JsonSchemaMode) -> str:
             max_digits = schema.get('max_digits')
             decimal_places = schema.get('decimal_places')
+
+            # Scientific notation suffix for serialization mode
+            exp_suffix = r'(?:[eE][+-]?\d+)?' if mode == 'serialization' else ''
 
             pattern = (
                 r'^(?!^[-+.]*$)[+-]?0*'  # check it is not empty string and not one or sequence of ".+-" characters.
@@ -705,36 +708,42 @@ class GenerateJsonSchema:
             if max_digits is not None and decimal_places is not None:
                 integer_places = max(0, max_digits - decimal_places)
                 pattern += (
-                    rf'(?:'
-                    rf'\d{{0,{integer_places}}}'
-                    rf'|'
-                    rf'(?=[\d.]{{1,{max_digits + 1}}}0*$)'
-                    rf'\d{{0,{integer_places}}}\.\d{{0,{decimal_places}}}0*$'
-                    rf')'
+                    rf'(?:'  # Two alternatives: integer-only, or with decimal point
+                    rf'(?:\d{{1,{integer_places}}}|(?:\d{{1,{integer_places}}})?\.\d{{1,{decimal_places}}})'
+                    rf'{exp_suffix})'
+                    rf'$'
                 )
 
             # Case 2: Only max_digits is set
             elif max_digits is not None and decimal_places is None:
                 pattern += (
-                    rf'(?:'
-                    rf'\d{{0,{max_digits}}}'
-                    rf'|'
-                    rf'(?=[\d.]{{1,{max_digits + 1}}}0*$)'
-                    rf'\d*\.\d*0*$'
-                    rf')'
+                    rf'(?:'  # Two alternatives: integer-only, or with decimal point
+                    rf'(?:\d{{1,{max_digits}}}|(?:\d{{1,{max_digits}}})?\.\d*)'
+                    rf'{exp_suffix})'
+                    rf'$'
                 )
 
             # Case 3: Only decimal_places is set
             elif max_digits is None and decimal_places is not None:
-                pattern += rf'\d*\.?\d{{0,{decimal_places}}}0*$'
+                pattern += (
+                    rf'(?:'  # Integer, or decimal with limited places, each with optional exponent
+                    rf'(?:\d+(?:\.\d{{0,{decimal_places}}})?|\.\d{{1,{decimal_places}}})'
+                    rf'{exp_suffix})'
+                    rf'$'
+                )
 
             # Case 4: Both are None (no restrictions)
             else:
-                pattern += r'\d*\.?\d*$'  # look for arbitrary integer or decimal
+                pattern += (
+                    rf'(?:'  # Standard decimal pattern: digits with optional decimal, or decimal with digits
+                    rf'(?:\d+\.?\d*|\.\d+)'
+                    rf'{exp_suffix})'
+                    rf'$'
+                )
 
             return pattern
 
-        json_schema = self.str_schema(core_schema.str_schema(pattern=get_decimal_pattern(schema)))
+        json_schema = self.str_schema(core_schema.str_schema(pattern=get_decimal_pattern(schema, self.mode)))
         if self.mode == 'validation':
             multiple_of = schema.get('multiple_of')
             le = schema.get('le')
