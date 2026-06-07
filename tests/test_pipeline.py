@@ -469,6 +469,45 @@ def test_composition() -> None:
     calls.clear()
 
 
+def test_nested_composition() -> None:
+    """Nested ``|``/``&`` compositions build and validate.
+
+    https://github.com/pydantic/pydantic/issues/13287 — a nested operand is itself a
+    ``_Pipeline``; resolving it used to crash schema generation with
+    ``AttributeError: '_Pipeline' object has no attribute '__dict__'``.
+    """
+    # the exact composition from the issue
+    ta = TypeAdapter[int](Annotated[int, (validate_as(int) | validate_as(int)) & validate_as(int)])
+    assert ta.validate_python(5) == 5
+
+    # nested OR: outer OR whose left operand is itself an OR
+    ta = TypeAdapter[int](Annotated[int, (validate_as(int).gt(10) | validate_as(int).lt(5)) | validate_as(int).eq(7)])
+    for ok in (1, 7, 20):
+        assert ta.validate_python(ok) == ok
+    with pytest.raises(ValidationError):
+        ta.validate_python(8)
+
+    # nested AND: outer AND whose left operand is itself an AND
+    ta = TypeAdapter[int](
+        Annotated[int, (validate_as(int).gt(0) & validate_as(int).lt(100)) & validate_as(int).multiple_of(5)]
+    )
+    assert ta.validate_python(15) == 15
+    for bad in (-5, 7, 105):
+        with pytest.raises(ValidationError):
+            ta.validate_python(bad)
+
+    # mixed: a nested OR on one side of an AND
+    ta = TypeAdapter[int](
+        Annotated[int, (validate_as(int).lt(0) | validate_as(int).gt(100)) & validate_as(int).multiple_of(10)]
+    )
+    assert ta.validate_python(110) == 110
+    assert ta.validate_python(-10) == -10
+    with pytest.raises(ValidationError):
+        ta.validate_python(50)  # fails the OR (0..100)
+    with pytest.raises(ValidationError):
+        ta.validate_python(105)  # passes the OR but not multiple_of(10)
+
+
 def test_validate_as_ellipsis_preserves_other_steps() -> None:
     """https://github.com/pydantic/pydantic/issues/11624"""
 
