@@ -88,6 +88,9 @@ CREATE_MODEL_FULLNAME = 'pydantic.main.create_model'
 BASESETTINGS_FULLNAME = 'pydantic_settings.main.BaseSettings'
 ROOT_MODEL_FULLNAME = 'pydantic.root_model.RootModel'
 MODEL_METACLASS_FULLNAME = 'pydantic._internal._model_construction.ModelMetaclass'
+# RootModel uses its own metaclass that also has a dataclass_transform spec, so the plugin
+# has to treat it the same way or RootModel.__init__ wins over our synthesized one.
+ROOT_MODEL_METACLASS_FULLNAME = 'pydantic.root_model._RootModelMetaclass'
 FIELD_FULLNAME = 'pydantic.fields.Field'
 DATACLASS_FULLNAME = 'pydantic.dataclasses.dataclass'
 MODEL_VALIDATOR_FULLNAME = 'pydantic.functional_validators.model_validator'
@@ -143,7 +146,7 @@ class PydanticPlugin(Plugin):
 
     def get_metaclass_hook(self, fullname: str) -> Callable[[ClassDefContext], None] | None:
         """Update Pydantic `ModelMetaclass` definition."""
-        if fullname == MODEL_METACLASS_FULLNAME:
+        if fullname in (MODEL_METACLASS_FULLNAME, ROOT_MODEL_METACLASS_FULLNAME):
             return self._pydantic_model_metaclass_marker_callback
         return None
 
@@ -906,8 +909,14 @@ class PydanticModelTransformer:
 
         The added `__init__` will be annotated with types vs. all `Any` depending on the plugin settings.
         """
-        if '__init__' in self._cls.info.names and not self._cls.info.names['__init__'].plugin_generated:
-            return  # Don't generate an __init__ if one already exists
+        existing_init = self._cls.info.names.get('__init__')
+        if existing_init is not None and not existing_init.plugin_generated:
+            # RootModel itself declares a typed __init__ (root: RootModelRootType), which otherwise
+            # shadows the coercion-friendly one we add to subclasses. So when we're transforming the
+            # RootModel base class, go ahead and replace that with our generated init too. See #12978.
+            is_root_model_base = is_root_model and self._cls.info.fullname == ROOT_MODEL_FULLNAME
+            if not is_root_model_base:
+                return  # Don't generate an __init__ if one already exists
 
         typed = self.plugin_config.init_typed
         model_strict = bool(config.strict)

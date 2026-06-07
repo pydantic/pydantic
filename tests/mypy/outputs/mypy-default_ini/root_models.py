@@ -54,3 +54,18 @@ Model(m1=None, m2={}, m3=[])
 # MYPY: error: Argument "m3" to "Model" has incompatible type "list[Never]"; expected "Maybe[Any]"  [arg-type]
 
 assert_type(m.m1, Maybe[int])
+
+
+# regression for #12978: a string that pydantic can coerce to float should be accepted
+# the same way for a normal field and for a root model. with the plugin on, the synthesized
+# untyped __init__ should win so neither of these errors against float.
+class Foo(BaseModel):
+    f: float
+
+
+RFoo = RootModel[float]
+
+Foo(f='1.0')
+# MYPY: error: Argument "f" to "Foo" has incompatible type "str"; expected "float"  [arg-type]
+RFoo('1.0')
+# MYPY: error: Argument 1 to "RootModel" has incompatible type "str"; expected "float"  [arg-type]
