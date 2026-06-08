@@ -707,18 +707,30 @@ class GenerateJsonSchema:
             # Case 1: Both max_digits and decimal_places are set
             if max_digits is not None and decimal_places is not None:
                 integer_places = max(0, max_digits - decimal_places)
-                pattern += (
-                    rf'(?:'  # Two alternatives: integer-only, or with decimal point
-                    rf'(?:\d{{1,{integer_places}}}|(?:\d{{1,{integer_places}}})?\.\d{{1,{decimal_places}}})'
-                    rf'{exp_suffix})'
-                    rf'$'
-                )
+                if integer_places > 0:
+                    pattern += (
+                        rf'(?:'  # Two alternatives: integer-only, or with decimal point
+                        rf'(?:\d{{1,{integer_places}}}|(?:\d{{1,{integer_places}}})?\.\d{{0,{decimal_places}}}0*)'
+                        rf'{exp_suffix})'
+                        rf'$'
+                    )
+                else:
+                    # No integer digits allowed, only decimal starting with .
+                    pattern += (
+                        rf'(?:'  # Only decimal starting with .
+                        rf'(?:\.\d{{0,{decimal_places}}}0*)'
+                        rf'{exp_suffix})'
+                        rf'$'
+                    )
 
             # Case 2: Only max_digits is set
             elif max_digits is not None and decimal_places is None:
                 pattern += (
                     rf'(?:'  # Two alternatives: integer-only, or with decimal point
-                    rf'(?:\d{{1,{max_digits}}}|(?:\d{{1,{max_digits}}})?\.\d*)'
+                    rf'(?:\d{{1,{max_digits}}}|'  # Integer with 1 to max_digits digits
+                    rf'(?=[\d.]{{1,{max_digits + 1}}}0*$)'  # Lookahead: total length <= max_digits+1
+                    rf'(?:\d{{1,{max_digits}}})?\.\d*'  # Decimal with up to max_digits integer digits
+                    rf')'
                     rf'{exp_suffix})'
                     rf'$'
                 )
@@ -728,6 +740,7 @@ class GenerateJsonSchema:
                 pattern += (
                     rf'(?:'  # Integer, or decimal with limited places, each with optional exponent
                     rf'(?:\d+(?:\.\d{{0,{decimal_places}}})?|\.\d{{1,{decimal_places}}})'
+                    rf'0*'  # Allow trailing zeros
                     rf'{exp_suffix})'
                     rf'$'
                 )
