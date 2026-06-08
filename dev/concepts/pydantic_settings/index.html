@@ -7976,7 +7976,7 @@ You can specify a different version using the <code>SecretVersion</code> annotat
 <ul>
 <li><code>JsonConfigSettingsSource</code> using <code>json_file</code> and <code>json_file_encoding</code> arguments</li>
 <li><code>PyprojectTomlConfigSettingsSource</code> using <em>(optional)</em> <code>pyproject_toml_depth</code> and <em>(optional)</em> <code>pyproject_toml_table_header</code> arguments</li>
-<li><code>TomlConfigSettingsSource</code> using <code>toml_file</code> argument</li>
+<li><code>TomlConfigSettingsSource</code> using <code>toml_file</code> argument and <em>(optional)</em> <code>toml_table_header</code> argument</li>
 <li><code>YamlConfigSettingsSource</code> using <code>yaml_file</code> and yaml_file_encoding arguments</li>
 </ul>
 <p>To use them, you can use the same mechanism described <a href="#customise-settings-sources">here</a>.</p>
@@ -8124,6 +8124,38 @@ You can specify a different version using the <code>SecretVersion</code> annotat
 <span class="n">foo</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">3</span>
 <span class="n">bar</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">2</span>
 </code></pre></div>
+<p>If you want to load from a specific table in the file, you can provide <code>toml_table_header</code> as a tuple of header parts. For example, <code>toml_table_header=('my-table',)</code> will load variables from the <code>[my-table]</code> table.</p>
+<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">pydantic_settings</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+    <span class="n">BaseSettings</span><span class="p">,</span>
+    <span class="n">PydanticBaseSettingsSource</span><span class="p">,</span>
+    <span class="n">SettingsConfigDict</span><span class="p">,</span>
+    <span class="n">TomlConfigSettingsSource</span><span class="p">,</span>
+<span class="p">)</span>
+
+
+<span class="k">class</span><span class="w"> </span><span class="nc">Settings</span><span class="p">(</span><span class="n">BaseSettings</span><span class="p">):</span>
+    <span class="n">field</span><span class="p">:</span> <span class="nb">str</span>
+
+    <span class="n">model_config</span> <span class="o">=</span> <span class="n">SettingsConfigDict</span><span class="p">(</span>
+        <span class="n">toml_file</span><span class="o">=</span><span class="s1">&#39;config.toml&#39;</span><span class="p">,</span> <span class="n">toml_table_header</span><span class="o">=</span><span class="p">(</span><span class="s1">&#39;my-table&#39;</span><span class="p">,)</span>
+    <span class="p">)</span>
+
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">settings_customise_sources</span><span class="p">(</span>
+        <span class="bp">cls</span><span class="p">,</span>
+        <span class="n">settings_cls</span><span class="p">:</span> <span class="nb">type</span><span class="p">[</span><span class="n">BaseSettings</span><span class="p">],</span>
+        <span class="n">init_settings</span><span class="p">:</span> <span class="n">PydanticBaseSettingsSource</span><span class="p">,</span>
+        <span class="n">env_settings</span><span class="p">:</span> <span class="n">PydanticBaseSettingsSource</span><span class="p">,</span>
+        <span class="n">dotenv_settings</span><span class="p">:</span> <span class="n">PydanticBaseSettingsSource</span><span class="p">,</span>
+        <span class="n">file_secret_settings</span><span class="p">:</span> <span class="n">PydanticBaseSettingsSource</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">PydanticBaseSettingsSource</span><span class="p">,</span> <span class="o">...</span><span class="p">]:</span>
+        <span class="k">return</span> <span class="p">(</span><span class="n">TomlConfigSettingsSource</span><span class="p">(</span><span class="n">settings_cls</span><span class="p">),)</span>
+</code></pre></div>
+<p>This will allow you to read the following TOML file:
+<div class="language-toml highlight"><pre><span></span><code><span class="c1"># config.toml</span>
+<span class="k">[my-table]</span>
+<span class="n">field</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;value from my-table&quot;</span>
+</code></pre></div></p>
 <h3 id="pyprojecttoml">pyproject.toml<a class="headerlink" href="#pyprojecttoml" title="Permanent link">&para;</a></h3>
 <p>"pyproject.toml" is a standardized file for providing configuration values in Python projects.
 <a href="https://peps.python.org/pep-0518/#tool-table">PEP 518</a> defines a <code>[tool]</code> table that can be used to provide arbitrary tool configuration.

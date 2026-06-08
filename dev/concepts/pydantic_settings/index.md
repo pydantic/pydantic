@@ -2607,7 +2607,7 @@ Other settings sources are available for common configuration files:
 
 - `JsonConfigSettingsSource` using `json_file` and `json_file_encoding` arguments
 - `PyprojectTomlConfigSettingsSource` using *(optional)* `pyproject_toml_depth` and *(optional)* `pyproject_toml_table_header` arguments
-- `TomlConfigSettingsSource` using `toml_file` argument
+- `TomlConfigSettingsSource` using `toml_file` argument and *(optional)* `toml_table_header` argument
 - `YamlConfigSettingsSource` using `yaml_file` and yaml_file_encoding arguments
 
 To use them, you can use the same mechanism described [here](#customise-settings-sources).
@@ -2790,6 +2790,46 @@ hello = "world"
 [nested]
 foo = 3
 bar = 2
+
+```
+
+If you want to load from a specific table in the file, you can provide `toml_table_header` as a tuple of header parts. For example, `toml_table_header=('my-table',)` will load variables from the `[my-table]` table.
+
+```python
+from pydantic_settings import (
+    BaseSettings,
+    PydanticBaseSettingsSource,
+    SettingsConfigDict,
+    TomlConfigSettingsSource,
+)
+
+
+class Settings(BaseSettings):
+    field: str
+
+    model_config = SettingsConfigDict(
+        toml_file='config.toml', toml_table_header=('my-table',)
+    )
+
+    @classmethod
+    def settings_customise_sources(
+        cls,
+        settings_cls: type[BaseSettings],
+        init_settings: PydanticBaseSettingsSource,
+        env_settings: PydanticBaseSettingsSource,
+        dotenv_settings: PydanticBaseSettingsSource,
+        file_secret_settings: PydanticBaseSettingsSource,
+    ) -> tuple[PydanticBaseSettingsSource, ...]:
+        return (TomlConfigSettingsSource(settings_cls),)
+
+```
+
+This will allow you to read the following TOML file:
+
+```toml
+# config.toml
+[my-table]
+field = "value from my-table"
 
 ```
 
