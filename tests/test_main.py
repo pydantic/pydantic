@@ -26,7 +26,7 @@ from typing import (
 from uuid import UUID, uuid4
 
 import pytest
-from pydantic_core import CoreSchema, core_schema
+from pydantic_core import CoreSchema, PydanticUndefined, core_schema
 
 from pydantic import (
     AfterValidator,
@@ -1868,6 +1868,104 @@ def test_default_factory_validated_data_arg_not_required() -> None:
 
     model = Model()
     assert model.b == 3
+
+
+def test_default_factory_validated_data_not_called_if_input_validation_error(container_class) -> None:
+
+    class Model(container_class):
+        a: int
+        b: Annotated[int, Field(default_factory=lambda data: data['a'])]
+
+    ta = TypeAdapter(Model)
+
+    with pytest.raises(ValidationError) as exc:
+        ta.validate_python({'a': 'not_an_int'})
+
+    assert exc.value.errors(include_url=False) == [
+        {
+            'type': 'int_parsing',
+            'loc': ('a',),
+            'msg': 'Input should be a valid integer, unable to parse string as an integer',
+            'input': 'not_an_int',
+        },
+        {
+            'input': PydanticUndefined,
+            'loc': ('b',),
+            'msg': 'The default factory uses validated data, but at least one validation error occurred',
+            'type': 'default_factory_not_called',
+        },
+    ]
+
+
+def test_default_factory_validated_data_not_called_if_validate_default_validation_error(container_class) -> None:
+
+    class Model(container_class):
+        a: Annotated[int, Field(default='not_an_int', validate_default=True)]
+        b: Annotated[int, Field(default_factory=lambda data: data['a'])]
+
+    ta = TypeAdapter(Model)
+
+    with pytest.raises(ValidationError) as exc:
+        ta.validate_python({})
+
+    assert exc.value.errors(include_url=False) == [
+        {
+            'type': 'int_parsing',
+            'loc': ('a',),
+            'msg': 'Input should be a valid integer, unable to parse string as an integer',
+            'input': 'not_an_int',
+        },
+        {
+            'input': PydanticUndefined,
+            'loc': ('b',),
+            'msg': 'The default factory uses validated data, but at least one validation error occurred',
+            'type': 'default_factory_not_called',
+        },
+    ]
+
+
+def test_default_factory_validated_data_not_called_if_missing_value_validation_error(container_class) -> None:
+
+    class Model(container_class):
+        a: int
+        b: Annotated[int, Field(default_factory=lambda data: data['a'])]
+
+    ta = TypeAdapter(Model)
+
+    with pytest.raises(ValidationError) as exc:
+        ta.validate_python({})
+
+    assert exc.value.errors(include_url=False) == [
+        {
+            'type': 'missing',
+            'loc': ('a',),
+            'msg': 'Field required',
+            'input': {},
+        },
+        {
+            'input': PydanticUndefined,
+            'loc': ('b',),
+            'msg': 'The default factory uses validated data, but at least one validation error occurred',
+            'type': 'default_factory_not_called',
+        },
+    ]
+
+
+def test_default_factory_not_called_union_ok(container_class) -> None:
+
+    class ModelFail(container_class):
+        a: None
+        b: Annotated[int, Field(default_factory=lambda data: data['a'])]
+
+    class ModelOk(container_class):
+        a: int
+        b: Annotated[int, Field(default_factory=lambda data: data['a'] + 1)]
+        # this is used to show that this union member was selected
+        c: Annotated[int, Field(default=3)]
+
+    ta = TypeAdapter(ModelFail | ModelOk)
+
+    assert ta.dump_python(ta.validate_python({'a': 1}), mode='json') == {'a': 1, 'b': 2, 'c': 3}
 
 
 def test_reuse_same_field():

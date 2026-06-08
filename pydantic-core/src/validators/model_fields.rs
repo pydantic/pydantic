@@ -387,6 +387,7 @@ impl ModelFieldsValidator {
                     }
                     Ok(None) => {
                         // There was no default value
+                        state.has_field_error = true;
                         let error_type = ErrorTypeDefaults::Missing;
                         let error_loc = field.lookup_path_collection.error_loc(lookup_type, self.loc_by_alias);
                         errors.push(ValLineError::new_with_full_loc(error_type, input, error_loc));
