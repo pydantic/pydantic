@@ -81,3 +81,69 @@ def test_duplicated_field_omitted_type_regression() -> None:
     }
     # No stale $defs entry for the omitted type:
     assert '$defs' not in schema
+
+
+def test_recursive_with_omitted_type() -> None:
+    """Verifies that recursive definition refs resolve normally when an omitted type is in the recursion path."""
+
+    class RecursiveModel(BaseModel):
+        child: 'RecursiveModel | OmittedType | None' = None
+
+    schema = RecursiveModel.model_json_schema()
+
+    # The self-reference to RecursiveModel should resolve to a valid $ref schema.
+    # OmittedType should be completely omitted from the anyOf choices.
+    assert schema == {
+        '$defs': {
+            'RecursiveModel': {
+                'properties': {
+                    'child': {
+                        'anyOf': [
+                            {'$ref': '#/$defs/RecursiveModel'},
+                            {'type': 'null'},
+                        ],
+                        'default': None,
+                        'title': 'Child',
+                    }
+                },
+                'title': 'RecursiveModel',
+                'type': 'object',
+            }
+        },
+        '$ref': '#/$defs/RecursiveModel',
+    }
+
+
+from typing import Generic, TypeVar
+
+T = TypeVar('T')
+
+
+def test_generic_model_with_omitted_type() -> None:
+    """Verifies that generic models referencing the omitted type function correctly."""
+
+    class GenericModel(BaseModel, Generic[T]):
+        value: T
+        other: list[T | OmittedType]
+
+    schema = GenericModel[float].model_json_schema()
+
+    # GenericModel[float] should resolve T to float (number), and other should have OmittedType removed,
+    # leaving list[float] (items: {type: number}).
+    assert schema == {
+        'properties': {
+            'value': {
+                'title': 'Value',
+                'type': 'number',
+            },
+            'other': {
+                'items': {'type': 'number'},
+                'title': 'Other',
+                'type': 'array',
+            },
+        },
+        'required': ['value', 'other'],
+        'title': 'GenericModel[float]',
+        'type': 'object',
+    }
+

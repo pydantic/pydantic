@@ -305,6 +305,7 @@ class GenerateJsonSchema:
         #  the reference) so instead of failing altogether if we can't build a definition we
         # store the error raised and re-throw it if we end up needing that def
         self._core_defs_invalid_for_json_schema: dict[DefsRef, PydanticInvalidForJsonSchema] = {}
+        self._core_defs_omitted_for_json_schema: set[DefsRef] = set()
 
         # This changes to True after generating a schema, to prevent issues caused by accidental reuse
         # of a single instance of a schema generator
@@ -2098,6 +2099,10 @@ class GenerateJsonSchema:
                 core_ref: CoreRef = CoreRef(definition['ref'])  # type: ignore
                 self._core_defs_invalid_for_json_schema[self.get_defs_ref((core_ref, self.mode))] = e
                 continue
+            except PydanticOmit:
+                core_ref: CoreRef = CoreRef(definition['ref'])  # type: ignore
+                self._core_defs_omitted_for_json_schema.add(self.get_defs_ref((core_ref, self.mode)))
+                continue
         return self.generate_inner(schema['schema'])
 
     def definition_ref_schema(self, schema: core_schema.DefinitionReferenceSchema) -> JsonSchemaValue:
@@ -2274,10 +2279,14 @@ class GenerateJsonSchema:
         core_mode_ref = (core_ref, self.mode)
         maybe_defs_ref = self.core_to_defs_refs.get(core_mode_ref)
         if maybe_defs_ref is not None:
+            if maybe_defs_ref in self._core_defs_omitted_for_json_schema:
+                raise PydanticOmit
             json_ref = self.core_to_json_refs[core_mode_ref]
             return maybe_defs_ref, {'$ref': json_ref}
 
         defs_ref = self.get_defs_ref(core_mode_ref)
+        if defs_ref in self._core_defs_omitted_for_json_schema:
+            raise PydanticOmit
 
         # populate the ref translation mappings
         self.core_to_defs_refs[core_mode_ref] = defs_ref
