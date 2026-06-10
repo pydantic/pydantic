@@ -522,6 +522,35 @@ print(model.model_dump(context={'stopwords': ['this', 'is', 'an']}))
 #> {'text': 'example document'}
 ```
 
+Similarly, you can access the serialization context within a `@model_serializer`:
+
+```python
+from typing import Any
+
+from pydantic import BaseModel, SerializationInfo, model_serializer
+
+
+class Model(BaseModel):
+    text: str
+    value: int
+
+    @model_serializer(mode="wrap")
+    def serialize_model(
+        self, handler: Any, info: SerializationInfo
+    ) -> dict[str, Any]:
+        data = handler(self)
+        if info.context and info.context.get("uppercase_text"):
+            data["text"] = data["text"].upper()
+        return data
+
+
+model = Model(text="hello world", value=10)
+print(model.model_dump())
+#> {'text': 'hello world', 'value': 10}
+print(model.model_dump(context={"uppercase_text": True}))
+#> {'text': 'HELLO WORLD', 'value': 10}
+```
+
 Similarly, you can [use a context for validation](../concepts/validators.md#validation-context).
 
 ## Serializing subclasses
