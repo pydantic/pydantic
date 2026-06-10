@@ -807,6 +807,19 @@ you would expect if you were to declare a distinct type for each parametrization
     Internally, Pydantic creates subclasses of the generic model at runtime when the generic model class is parametrized.
     These classes are cached, so there should be minimal overhead introduced by the use of generics models.
 
+!!! note "Pickling parametrized generic models"
+    Python's [`pickle`](https://docs.python.org/3/library/pickle.html) module restores classes by importing
+    them from their module and looking up their qualified name. When a generic model is parametrized inside a
+    function or another local scope, the runtime-created parametrized class may not be available from the module
+    namespace under that name, so pickle may fail to serialize or deserialize instances of that model.
+
+    If you need to pickle instances of a parametrized generic model, define a named subclass at module scope:
+
+    ```python {test="skip"}
+    class IntResponse(Response[int]):
+        pass
+    ```
+
 To inherit from a generic model and preserve the fact that it is generic, the subclass must also inherit from
 [`Generic`][typing.Generic]:
 
