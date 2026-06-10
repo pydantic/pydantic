@@ -448,6 +448,17 @@ def test_base64():
         (lambda: MyEnum.b, {}, b'"b"'),
         (lambda: [MyDataclass(1, 'a', 2), MyModel(a=2, b='b')], {}, b'[{"a":1,"b":"a"},{"a":2,"b":"b"}]'),
         (lambda: re.compile('^regex$'), {}, b'"^regex$"'),
+        # rfc2822 temporal mode for datetime
+        (
+            lambda: datetime(2024, 1, 1, 12, 0, 0, tzinfo=timezone.utc),
+            dict(temporal_mode='rfc2822'),
+            b'"Mon, 01 Jan 2024 12:00:00 GMT"',
+        ),
+        (
+            lambda: datetime(2024, 1, 1, 0, 0, 0),
+            dict(temporal_mode='rfc2822'),
+            b'"Mon, 01 Jan 2024 00:00:00 GMT"',
+        ),
     ],
 )
 def test_encoding(any_serializer, gen_input, kwargs, expected_json):
