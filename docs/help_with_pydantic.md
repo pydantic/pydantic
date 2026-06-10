@@ -2,6 +2,12 @@
 
 If you need help getting started with Pydantic or with advanced usage, the following sources may be useful.
 
+## :simple-slack: Slack
+
+The [Pydantic Logfire Slack](https://pydantic.dev/docs/logfire/join-slack/) is a great place to ask questions,
+and get help and chat about Pydantic and the other Pydantic products ([Pydantic AI](https://pydantic.dev/pydantic-ai),
+[Logfire](https://pydantic.dev/logfire)).
+
 ## :material-help: Usage Documentation
 
 The [usage documentation](concepts/models.md) is the most complete guide on how to use Pydantic.
