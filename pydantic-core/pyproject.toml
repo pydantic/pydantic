@@ -47,7 +47,7 @@ Funding = 'https://github.com/sponsors/samuelcolvin'
 Source = 'https://github.com/pydantic/pydantic/tree/main/pydantic-core'
 
 [dependency-groups]
-dev = ["maturin"]
+dev = ["maturin>=1.13"]
 testing-extra = [
     { include-group = "dev" },
     'coverage',
@@ -92,6 +92,7 @@ bindings = 'pyo3'
 # when using `uv` to build `pydantic-core`, use the `dev` profile
 # can override by e.g. `make build-pgo` and then using `uv run --no-sync`
 editable-profile = 'dev'
+pgo-command = "uv sync --active --no-install-package pydantic-core --group testing-extra --inexact && uv run --active --no-sync pytest tests/benchmarks"
 
 [tool.ruff]
 line-length = 120
