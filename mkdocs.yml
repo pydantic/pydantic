@@ -149,6 +149,7 @@ nav:
           - Routing Numbers: api/pydantic_extra_types_routing_numbers.md
           - Coordinate: api/pydantic_extra_types_coordinate.md
           - Mac Address: api/pydantic_extra_types_mac_address.md
+          - Mongo ObjectId: api/pydantic_extra_types_mongo_object_id.md
           - ISBN: api/pydantic_extra_types_isbn.md
           - Pendulum: api/pydantic_extra_types_pendulum_dt.md
           - Currency: api/pydantic_extra_types_currency_code.md
