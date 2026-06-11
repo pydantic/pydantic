@@ -107,7 +107,7 @@ def test_pydantic_value_error_invalid_type():
 
     v = SchemaValidator(core_schema.with_info_plain_validator_function(f))
 
-    with pytest.raises(TypeError, match="argument 'context': 'list' object is not an instance of 'dict'"):
+    with pytest.raises(TypeError, match="'list' object is not an instance of 'dict'"):
         v.validate_python(42)
 
 
