@@ -570,15 +570,6 @@ def collect_dataclass_fields(
                 if _typing_extra.is_classvar_annotation(ann_type):
                     continue
 
-                if (
-                    not dataclass_field.init
-                    and dataclass_field.default is dataclasses.MISSING
-                    and dataclass_field.default_factory is dataclasses.MISSING
-                ):
-                    # TODO: We should probably do something with this so that validate_assignment behaves properly
-                    #   Issue: https://github.com/pydantic/pydantic/issues/5470
-                    continue
-
                 if isinstance(dataclass_field.default, FieldInfo_):
                     if dataclass_field.default.init_var:
                         if dataclass_field.default.init is False:

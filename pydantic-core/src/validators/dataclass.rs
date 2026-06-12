@@ -1,6 +1,6 @@
 use std::sync::Arc;
 
-use pyo3::exceptions::PyKeyError;
+use pyo3::exceptions::{PyAttributeError, PyKeyError};
 use pyo3::intern;
 use pyo3::prelude::*;
 use pyo3::pybacked::PyBackedStr;
@@ -92,7 +92,10 @@ impl BuildValidator for DataclassArgsValidator {
             }
 
             let kw_only = field.get_as(intern!(py, "kw_only"))?.unwrap_or(true);
-            if !kw_only {
+            let init = field.get_as(intern!(py, "init"))?.unwrap_or(true);
+            // `init=False` fields are not part of the generated `__init__()` signature, so they
+            // never consume a positional argument slot.
+            if !kw_only && init {
                 positional_count += 1;
             }
 
@@ -104,7 +107,7 @@ impl BuildValidator for DataclassArgsValidator {
                 name,
                 lookup_path_collection,
                 validator,
-                init: field.get_as(intern!(py, "init"))?.unwrap_or(true),
+                init,
                 init_only: field.get_as(intern!(py, "init_only"))?.unwrap_or(false),
                 frozen: field.get_as::<bool>(intern!(py, "frozen"))?.unwrap_or(false),
             });
@@ -167,6 +170,10 @@ impl Validator for DataclassArgsValidator {
 
         let mut fields_set_count: usize = 0;
 
+        // Tracks the positional index of init fields. `init=False` fields do not appear in the
+        // generated `__init__()` signature, so they must not consume positional argument slots.
+        let mut positional_index: usize = 0;
+
         macro_rules! set_item {
             ($field:ident, $value:expr) => {{
                 if $field.init_only {
@@ -180,7 +187,7 @@ impl Validator for DataclassArgsValidator {
         }
 
         // go through fields getting the value from args or kwargs and validating it
-        for (index, field) in self.fields.iter().enumerate() {
+        for field in &self.fields {
             if !field.init {
                 match field.validator.default_value(py, Some(field.name.clone()), state) {
                     Ok(Some(value)) => {
@@ -198,6 +205,9 @@ impl Validator for DataclassArgsValidator {
                 }
                 continue;
             }
+
+            let index = positional_index;
+            positional_index += 1;
 
             let mut pos_value = None;
             if let Some(args) = args.args()
@@ -642,8 +652,19 @@ impl DataclassValidator {
         let py = dc.py();
         let dict = PyDict::new(py);
 
+        // A field may legitimately not be set on a genuine instance yet. This notably happens for
+        // `init=False` fields that are assigned for the first time inside `__post_init__()` while
+        // `validate_assignment` is enabled. For such instances we mirror the model validator
+        // behaviour (which reads `__dict__` directly) by simply skipping fields that aren't present.
+        // For anything that isn't an instance of the dataclass, the `AttributeError` is propagated.
+        let is_instance = dc.is_instance(self.class.bind(py))?;
+
         for field_name in &self.fields {
-            dict.set_item(field_name, dc.getattr(field_name)?)?;
+            match dc.getattr(field_name) {
+                Ok(value) => dict.set_item(field_name, value)?,
+                Err(e) if is_instance && e.is_instance_of::<PyAttributeError>(py) => continue,
+                Err(e) => return Err(e),
+            }
         }
         Ok(dict)
     }

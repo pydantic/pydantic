@@ -1713,6 +1713,68 @@ def test_dataclass_args_init_with_default(input_value, extra_behavior, expected)
         assert dataclasses.asdict(v.validate_python(input_value)) == expected
 
 
+def test_dataclass_init_false_positional_index():
+    """An `init=False` field declared before an `init=True` field must not consume a positional slot.
+
+    https://github.com/pydantic/pydantic/issues/5470
+    """
+
+    schema = core_schema.dataclass_args_schema(
+        'Foo',
+        [
+            core_schema.dataclass_field(name='b', schema=core_schema.int_schema(), init=False, kw_only=False),
+            core_schema.dataclass_field(name='a', schema=core_schema.int_schema(), kw_only=False),
+        ],
+    )
+    v = SchemaValidator(schema)
+
+    # The single positional argument maps to `a` (the only init field), not to `b`
+    # (which, being `init=False`, doesn't occupy a positional slot):
+    assert v.validate_python(ArgsKwargs((5,))) == ({'a': 5}, None)
+
+    # And one positional argument is still one too many (only `a` is positional):
+    with pytest.raises(ValidationError) as exc_info:
+        v.validate_python(ArgsKwargs((5, 6)))
+    assert exc_info.value.errors(include_url=False)[0]['type'] == 'unexpected_positional_argument'
+
+
+def test_dataclass_validate_assignment_init_false_unset():
+    """Assigning a not-yet-set `init=False` field must validate rather than raise an ``AttributeError``."""
+
+    @dataclasses.dataclass
+    class Foo:
+        a: int
+        b: int = dataclasses.field(init=False)
+
+    schema = core_schema.dataclass_schema(
+        Foo,
+        core_schema.dataclass_args_schema(
+            'Foo',
+            [
+                core_schema.dataclass_field(name='a', schema=core_schema.int_schema()),
+                core_schema.dataclass_field(name='b', schema=core_schema.int_schema(), init=False),
+            ],
+        ),
+        ['a', 'b'],
+    )
+    v = SchemaValidator(schema)
+
+    foo = v.validate_python({'a': 1})
+    assert not hasattr(foo, 'b')
+
+    # `b` isn't set yet, but assignment still validates and succeeds:
+    v.validate_assignment(foo, 'b', '2')
+    assert foo.b == 2
+
+    with pytest.raises(ValidationError) as exc_info:
+        v.validate_assignment(foo, 'b', 'not an int')
+    assert exc_info.value.errors(include_url=False)[0]['type'] == 'int_parsing'
+
+    # A non-instance still raises a plain ``AttributeError``:
+    with pytest.raises(AttributeError):
+        v.validate_assignment('not a Foo', 'b', 1)
+
+
 @dataclasses.dataclass
 class BasicDataclass:
     a: str

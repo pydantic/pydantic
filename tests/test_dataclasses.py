@@ -399,6 +399,45 @@ def test_post_init_assignment():
     assert c.c == 0.30000000000000004
 
 
+def test_validate_assignment_with_init_false_field():
+    """https://github.com/pydantic/pydantic/issues/5470"""
+    from dataclasses import field
+
+    @pydantic.dataclasses.dataclass(config=ConfigDict(validate_assignment=True))
+    class C:
+        a: int
+        b: int = field(init=False)
+
+        def __post_init__(self):
+            self.b = self.a + 1
+
+    c = C(1)
+    assert c.a == 1
+    # The `init=False` field is collected, so it ends up in the fields:
+    assert set(c.__pydantic_fields__) == {'a', 'b'}
+    assert c.b == 2
+
+    # Assignment of the `init=False` field is still validated:
+    with pytest.raises(ValidationError) as exc_info:
+        c.b = 'not an int'
+    assert exc_info.value.errors(include_url=False)[0]['type'] == 'int_parsing'
+
+    c.b = '3'
+    assert c.b == 3
+
+    # Validation also applies when the field is first set inside `__post_init__()`:
+    @pydantic.dataclasses.dataclass(config=ConfigDict(validate_assignment=True))
+    class D:
+        b: int = field(init=False)
+
+        def __post_init__(self):
+            self.b = 'not an int'
+
+    with pytest.raises(ValidationError) as exc_info:
+        D()
+    assert exc_info.value.errors(include_url=False)[0]['type'] == 'int_parsing'
+
+
 def test_inheritance():
     @pydantic.dataclasses.dataclass
     class A:
