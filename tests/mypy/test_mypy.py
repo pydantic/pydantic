@@ -197,14 +197,26 @@ def test_bad_toml_config() -> None:
     assert str(e.value) == 'Configuration value must be a boolean for key: init_forbid_extra'
 
 
-def test_unknown_toml_config_key() -> None:
+def test_unknown_toml_config_key(capsys: pytest.CaptureFixture[str]) -> None:
     full_config_filename = 'tests/mypy/configs/pyproject-plugin-unknown-param.toml'
     full_filename = 'tests/mypy/modules/generics.py'  # File doesn't matter
 
     command = [full_filename, '--config-file', full_config_filename, '--show-error-codes']
     print(f'\nExecuting: mypy {" ".join(command)}')  # makes it easier to debug as necessary
-    with pytest.warns(UserWarning, match='Unknown pydantic-mypy config keys: warn_untyped_fields'):
-        mypy_api.run(command)
+    mypy_api.run(command)
+    captured = capsys.readouterr()
+    assert '[pydantic-mypy]: Unrecognized option: warn_untyped_fields = True' in captured.err
+
+
+def test_unknown_ini_config_key(capsys: pytest.CaptureFixture[str]) -> None:
+    full_config_filename = 'tests/mypy/configs/mypy-plugin-unknown-param.ini'
+    full_filename = 'tests/mypy/modules/generics.py'  # File doesn't matter
+
+    command = [full_filename, '--config-file', full_config_filename, '--show-error-codes']
+    print(f'\nExecuting: mypy {" ".join(command)}')  # makes it easier to debug as necessary
+    mypy_api.run(command)
+    captured = capsys.readouterr()
+    assert '[pydantic-mypy]: Unrecognized option: warn_untyped_fields = True' in captured.err
 
 
 @pytest.mark.parametrize('module', ['dataclass_no_any', 'plugin_success', 'plugin_success_baseConfig'])
