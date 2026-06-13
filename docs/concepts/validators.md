@@ -44,6 +44,7 @@ In its simplest form, a field validator is a callable taking the value to be val
 [`@field_validator`][pydantic.field_validator] decorator, applied on a [class method][classmethod]:
 
 * ***After* validators**: run after Pydantic's internal validation. They are generally more type safe and thus easier to implement.
+After is the default mode for the [`field_validator()`][pydantic.field_validator] decorator.
 {#field-after-validator}
 
     === "Annotated pattern"
@@ -740,8 +741,19 @@ class Model(BaseModel):
 ```
 
 Internally, validators defined using [the decorator](#using-the-decorator-pattern) are converted to their annotated
-form counterpart and added last after the existing metadata for the field. This means that the same ordering
-logic applies.
+form counterpart and added last after the existing metadata for the field - that is, they will always come to the
+right of all annotated validators. From there, the same ordering logic applies.
+
+Fields are validated in the order in which the fields are defined, with each field's validators running in the
+order described above.
+
+Model before and wrap validators are run before all field validators. Model after validators are run after all
+field validators.
+
+On the first exception encountered in validating a given field, the exception will be raised to wrap validators
+for that field in LTR order. If any returns, subsequent validation of that field is skipped, and validation
+proceeds from the next defined field. If no field wrap validator returns, the exception is raised to any model
+wrap validators in LTR order. All subsequent validation for the field and other subsequent fields is skipped.
 
 ## Special types
 
