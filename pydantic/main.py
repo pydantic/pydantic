@@ -1246,24 +1246,12 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
             else:
                 return NotImplemented  # delegate to the other item in the comparison
 
-    def __init_subclass__(cls, **kwargs: Any) -> None:
-        """This is called automatically by Python when a subclass of BaseModel is created.
-        
-        It accepts **kwargs to support custom parameters in class definitions, which are then
-        passed through to `__pydantic_init_subclass__`. Config-related kwargs are filtered out
-        by the metaclass before reaching this method.
-        
-        Args:
-            **kwargs: Any keyword arguments that should be processed by __pydantic_init_subclass__.
-        """
-        # We intentionally do not call super().__init_subclass__() with kwargs because
-        # object.__init_subclass__ doesn't accept **kwargs, and we want to avoid the
-        # TypeError that would result from passing them.
-        super().__init_subclass__()
-
     if TYPE_CHECKING:
-        # Type checking signature that includes ConfigDict for better IDE support
-        def __init_subclass__(cls, **kwargs: Unpack[ConfigDict]) -> None:
+        # We put `__init_subclass__` in a TYPE_CHECKING block because, even though we want the type-checking benefits
+        # described in the signature of `__init_subclass__` below, we don't want to modify the default behavior of
+        # subclass initialization.
+
+        def __init_subclass__(cls, **kwargs: Unpack[ConfigDict]):
             """This signature is included purely to help type-checkers check arguments to class declaration, which
             provides a way to conveniently set model_config key/value pairs.
 
@@ -1272,6 +1260,10 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
 
             class MyModel(BaseModel, extra='allow'): ...
             ```
+
+            However, this may be deceiving, since the _actual_ calls to `__init_subclass__` will not receive any
+            of the config arguments, and will only receive any keyword arguments passed during class initialization
+            that are _not_ expected keys in ConfigDict. (This is due to the way `ModelMetaclass.__new__` works.)
 
             Args:
                 **kwargs: Keyword arguments passed to the class definition, which set model_config
