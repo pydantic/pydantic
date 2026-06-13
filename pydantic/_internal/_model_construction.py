@@ -159,19 +159,7 @@ class ModelMetaclass(ABCMeta):
             namespace['__class_vars__'] = class_vars
             namespace['__private_attributes__'] = {**base_private_attributes, **private_attributes}
 
-            # Try to pass kwargs to super().__new__() to maintain cooperative inheritance.
-            # This allows parent classes' __init_subclass__ to receive custom kwargs.
-            # If no parent class handles them (TypeError), fall back to calling without kwargs.
-            try:
-                cls = cast('type[BaseModel]', super().__new__(mcs, cls_name, bases, namespace, **kwargs))
-            except TypeError as e:
-                # Check if the error is about unexpected keyword arguments to __init_subclass__
-                if 'keyword argument' in str(e) or 'takes no keyword arguments' in str(e):
-                    # No parent class in the MRO handled the custom kwargs, so create the class without them
-                    cls = cast('type[BaseModel]', super().__new__(mcs, cls_name, bases, namespace))
-                else:
-                    # Re-raise if it's a different TypeError
-                    raise
+            cls = cast('type[BaseModel]', super().__new__(mcs, cls_name, bases, namespace, **kwargs))
             BaseModel_ = import_cached_base_model()
 
             mro = cls.__mro__
@@ -295,13 +283,7 @@ class ModelMetaclass(ABCMeta):
                     None,  # In case the metaclass is used with a class other than `BaseModel`.
                 )
             namespace.get('__annotations__', {}).clear()
-            try:
-                return super().__new__(mcs, cls_name, bases, namespace, **kwargs)
-            except TypeError as e:
-                if 'keyword argument' in str(e) or 'takes no keyword arguments' in str(e):
-                    return super().__new__(mcs, cls_name, bases, namespace)
-                else:
-                    raise
+            return super().__new__(mcs, cls_name, bases, namespace, **kwargs)
 
     if not TYPE_CHECKING:  # pragma: no branch
         # We put `__getattr__` in a non-TYPE_CHECKING block because otherwise, mypy allows arbitrary attribute access
