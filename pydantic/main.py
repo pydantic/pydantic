@@ -1211,33 +1211,19 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
                 # We'll perform a fast check first, and fallback only when needed
                 # See GH-7444 and GH-7825 for rationale and a performance benchmark
 
-                # First, do the fast (and sometimes faulty) __dict__ comparison
                 if self.__dict__ == other.__dict__:
                     # If the check above passes, then pydantic fields are equal, we can return early
                     return True
 
-                # We don't want to trigger unnecessary costly filtering of __dict__ on all unequal objects, so we return
-                # early if there are no keys to ignore (we would just return False later on anyway)
+                # If the dictionaries are not equal, we need to compare only the model fields.
+                # We use `operator.itemgetter` for performance.
                 model_fields = type(self).__pydantic_fields__.keys()
-                if self.__dict__.keys() <= model_fields and other.__dict__.keys() <= model_fields:
-                    return False
-
-                # If we reach here, there are non-pydantic-fields keys, mapped to unequal values, that we need to ignore
-                # Resort to costly filtering of the __dict__ objects
-                # We use operator.itemgetter because it is much faster than dict comprehensions
-                # NOTE: Contrary to standard python class and instances, when the Model class has a default value for an
-                # attribute and the model instance doesn't have a corresponding attribute, accessing the missing attribute
-                # raises an error in BaseModel.__getattr__ instead of returning the class attribute
-                # So we can use operator.itemgetter() instead of operator.attrgetter()
                 getter = operator.itemgetter(*model_fields) if model_fields else lambda _: _utils._SENTINEL
                 try:
                     return getter(self.__dict__) == getter(other.__dict__)
                 except KeyError:
-                    # In rare cases (such as when using the deprecated BaseModel.copy() method),
-                    # the __dict__ may not contain all model fields, which is how we can get here.
-                    # getter(self.__dict__) is much faster than any 'safe' method that accounts
-                    # for missing keys, and wrapping it in a `try` doesn't slow things down much
-                    # in the common case.
+                    # Fallback for when a field is not in __dict__, e.g. when using `model_construct`
+                    # or a model with default values that haven't been set.
                     self_fields_proxy = _utils.SafeGetItemProxy(self.__dict__)
                     other_fields_proxy = _utils.SafeGetItemProxy(other.__dict__)
                     return getter(self_fields_proxy) == getter(other_fields_proxy)
