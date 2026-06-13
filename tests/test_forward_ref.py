@@ -11,6 +11,7 @@ from typing_extensions import get_args, get_origin  # noqa: UP035
 from typing_inspection import typing_objects
 
 from pydantic import BaseModel, Field, PydanticUserError, TypeAdapter, ValidationError
+from pydantic._internal._namespace_utils import LazyLocalNamespace
 
 
 def test_postponed_annotations(create_module):
@@ -1113,6 +1114,12 @@ def test_pydantic_extra_forward_ref_evaluated_pep585() -> None:
     # `GenerateSchema._get_args_resolving_forward_refs()`) and as such `extra_keys_schema` isn't
     # set because `str` is the default.
     assert 'extras_keys_schema' not in Bar.__pydantic_core_schema__['schema']
+
+
+def test_lazy_local_namespace_len() -> None:
+    namespace = LazyLocalNamespace({'a': int}, {'b': str, 'a': str})
+
+    assert len(namespace) == 2
 
 
 @pytest.mark.xfail(
