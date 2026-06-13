@@ -18,6 +18,7 @@ from pydantic._internal._config import ConfigWrapper
 from pydantic._internal._core_metadata import update_core_metadata
 from pydantic._internal._fields import resolve_default_value
 from pydantic._internal._generate_schema import GenerateSchema
+from pydantic._internal._namespace_utils import LazyLocalNamespace, get_module_ns_of
 from pydantic._internal._repr import Representation
 from pydantic._internal._validators import _extract_decimal_digits_info
 from pydantic.config import JsonDict
@@ -31,6 +32,24 @@ def init_schema_and_cleaned_schema(type_: Any) -> tuple[CoreSchema, CoreSchema]:
     cleaned_schema = gen.clean_schema(cleaned_schema)
     assert TypeAdapter(type_).pydantic_complete  # Just to make sure it works and test setup is sane
     return schema, cleaned_schema
+
+
+def test_lazy_local_namespace_iter() -> None:
+    ns = LazyLocalNamespace({'a': 1, 'b': 2}, {'a': 3, 'c': 4})
+
+    assert list(ns) == ['a', 'b', 'c']
+
+
+def test_get_module_ns_of_returns_empty_dict_without_available_module(monkeypatch: pytest.MonkeyPatch) -> None:
+    module_name = 'pydantic_missing_module_for_test'
+
+    class MissingModule:
+        __module__ = module_name
+
+    monkeypatch.delitem(sys.modules, module_name, raising=False)
+
+    assert get_module_ns_of(object()) == {}
+    assert get_module_ns_of(MissingModule) == {}
 
 
 def test_simple_core_schema_with_no_references() -> None:
