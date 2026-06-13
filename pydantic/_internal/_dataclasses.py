@@ -136,9 +136,12 @@ def complete_dataclass(
             'Support for `__post_init_post_parse__` has been dropped, the method will not be called',
             PydanticDeprecatedSince20,
         )
+    from ._schema_gen._type_registry import pydantic_registry
+    from ._schema_gen._types import _builtins, _base_model, _generic_builtins, _stdlib
 
     typevars_map = get_standard_typevars_map(cls)
     gen_schema = GenerateSchema(
+        pydantic_registry,
         config_wrapper,
         ns_resolver=ns_resolver,
         typevars_map=typevars_map,
