@@ -159,19 +159,23 @@ class ModelMetaclass(ABCMeta):
             namespace['__class_vars__'] = class_vars
             namespace['__private_attributes__'] = {**base_private_attributes, **private_attributes}
 
-            # Try to pass kwargs to super().__new__() to maintain cooperative inheritance.
-            # This allows parent classes' __init_subclass__ to receive custom kwargs.
-            # If no parent class handles them (TypeError), fall back to calling without kwargs.
-            try:
-                cls = cast('type[BaseModel]', super().__new__(mcs, cls_name, bases, namespace, **kwargs))
-            except TypeError as e:
-                # Check if the error is about unexpected keyword arguments to __init_subclass__
-                if 'keyword argument' in str(e) or 'takes no keyword arguments' in str(e):
-                    # No parent class in the MRO handled the custom kwargs, so create the class without them
-                    cls = cast('type[BaseModel]', super().__new__(mcs, cls_name, bases, namespace))
-                else:
-                    # Re-raise if it's a different TypeError
-                    raise
+            # After ConfigWrapper.for_model() has popped known config kwargs, any remaining kwargs
+            # are unknown and should raise an error. Only pass kwargs to super().__new__() if there
+            # are any left (meaning they might be handled by parent __init_subclass__ methods).
+            if kwargs:
+                # Try to pass remaining kwargs to super().__new__() to maintain cooperative inheritance.
+                # This allows parent classes' __init_subclass__ to receive custom kwargs.
+                try:
+                    cls = cast('type[BaseModel]', super().__new__(mcs, cls_name, bases, namespace, **kwargs))
+                except TypeError as e:
+                    # If the error is about unexpected keyword arguments and there are unknown kwargs,
+                    # this is expected - raise a more informative error.
+                    if 'keyword argument' in str(e) or 'takes no keyword arguments' in str(e):
+                        raise TypeError(f'__init_subclass__() takes no keyword arguments') from e
+                    else:
+                        raise
+            else:
+                cls = cast('type[BaseModel]', super().__new__(mcs, cls_name, bases, namespace))
             BaseModel_ = import_cached_base_model()
 
             mro = cls.__mro__
