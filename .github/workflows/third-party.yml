@@ -339,7 +339,7 @@ jobs:
         image: postgres:15.1-bullseye
         env:
           POSTGRES_USER: polar
-          POSTGRES_PASSWORD: polar
+          POSTGRES_PASSWORD: polar # gitleaks:allow -- ephemeral CI test service, mirrors polarsource/polar test config
           POSTGRES_DB: polar_test
           POSTGRES_PORT: 5432
         options: >-
@@ -357,7 +357,7 @@ jobs:
           - 9001:9001
         env:
           MINIO_ROOT_USER: polar
-          MINIO_ROOT_PASSWORD: polarpolar
+          MINIO_ROOT_PASSWORD: polarpolar # gitleaks:allow -- ephemeral CI test service, mirrors polarsource/polar test config
         options: >-
           --health-cmd "curl -I http://127.0.0.1:9000/minio/health/live"
           --health-interval 10s
@@ -376,9 +376,9 @@ jobs:
         env:
           MINIO_HOST: 127.0.0.1
           MINIO_ROOT_USER: polar
-          MINIO_ROOT_PASSWORD: polarpolar
+          MINIO_ROOT_PASSWORD: polarpolar # gitleaks:allow -- ephemeral CI test service, mirrors polarsource/polar test config
           ACCESS_KEY: polar-development
-          SECRET_ACCESS_KEY: polar123456789
+          SECRET_ACCESS_KEY: polar123456789 # gitleaks:allow -- ephemeral CI test service, mirrors polarsource/polar test config
           BUCKET_NAME: polar-s3
           BUCKET_TESTING_NAME: testing-polar-s3
           POLICY_FILE: policy.json
