@@ -1,3 +1,7 @@
+---
+title: "Pydantic Validation Models: Basic Models & Data Conversion"
+description: "Learn how to define schemas in Pydantic using models. Inherit from BaseModel to validate data, convert types, and manage Python attributes efficiently."
+---
 ??? api "API Documentation"
     [`pydantic.main.BaseModel`][pydantic.main.BaseModel]<br>
 

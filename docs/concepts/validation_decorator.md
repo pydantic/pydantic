@@ -1,3 +1,7 @@
+---
+title: "Pydantic Validation: Decorator Guide"
+description: "Turn your Python functions into type-safe powerhouses. Use @validate_call to enforce runtime validation on arguments and return values automatically."
+---
 ??? api "API Documentation"
     [`pydantic.validate_call_decorator.validate_call`][pydantic.validate_call_decorator.validate_call]<br>
 

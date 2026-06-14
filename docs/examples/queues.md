@@ -1,3 +1,7 @@
+---
+title: "Pydantic Validation Queues: Redis, RabbitMQ & ARQ"
+description: Integrate Pydantic with Celery or Redis to enforce strict validation on task schemas and message payloads.
+---
 Pydantic is quite helpful for validating data that goes into and comes out of queues. Below,
 we'll explore how to validate / serialize data with various queue systems.
 

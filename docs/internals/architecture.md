@@ -1,3 +1,7 @@
+---
+title: "Pydantic Validation Architecture: Core Schema & Model"
+description: "Understand how Pydantic-core uses CoreSchema to build the industry's fastest validation and serialization engine."
+---
 !!! note
     This section is part of the *internals* documentation, and is partly targeted to contributors.
 

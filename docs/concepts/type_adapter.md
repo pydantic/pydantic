@@ -1,3 +1,7 @@
+---
+title: "Pydantic Validation TypeAdapter: Parse & Validate Data"
+description: "Bridge the gap between raw data and Python types. TypeAdapter brings Pydantic’s Rust-backed validation and serialization to every part of your codebase."
+---
 You may have types that are not `BaseModel`s that you want to validate data against.
 Or you may want to validate a `list[SomeModel]`, or dump it to JSON.
 

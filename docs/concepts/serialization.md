@@ -1,3 +1,7 @@
+---
+title: "Serialization: Python Mode & JSON Mode - Pydantic Validation"
+description: Learn how to serialize Pydantic models to dictionaries and JSON. Master model_dump and model_dump_json for efficient Python data export and customization.
+---
 Beyond accessing model attributes directly via their field names (e.g. `model.foobar`), models can be converted, dumped,
 serialized, and exported in a number of ways. Serialization can be customized for the whole model, or on a per-field
 or per-type basis.

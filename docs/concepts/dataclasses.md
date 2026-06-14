@@ -1,3 +1,7 @@
+---
+title: "Pydantic Validation Dataclasses: Config & Dataclass Schema"
+description: "Use Pydantic dataclasses to add validation, parsing & config controls to your Python dataclass models while keeping familiar dataclass syntax & simplicity."
+---
 ??? api "API Documentation"
     [`@pydantic.dataclasses.dataclass`][pydantic.dataclasses.dataclass]<br>
 
