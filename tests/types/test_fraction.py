@@ -72,7 +72,7 @@ def test_fraction_validate_json(json_str, expected):
     'json_str,error',
     [
         ('"not a number"', ValidationError),
-        ('"1/0"', ZeroDivisionError),
+        ('"1/0"', ValidationError),
         (float('inf'), ValidationError),
         (float('nan'), ValidationError),
     ],
@@ -127,7 +127,7 @@ def test_fraction_strict_accepts_fraction(input_value):
     'input_value,error',
     [
         ('not a number', ValidationError),
-        ('1/0', ZeroDivisionError),
+        ('1/0', ValidationError),
         (float('inf'), OverflowError),
         (float('nan'), ValidationError),
         ([1, 2], TypeError),
@@ -139,6 +139,20 @@ def test_fraction_validation_error_non_strict(input_value, error):
     with pytest.raises(error):
         ta = TypeAdapter(Fraction)
         ta.validate_python(input_value, strict=False)
+
+
+@pytest.mark.parametrize('input_value', ['1/0', '6/0', '-3/0'])
+def test_fraction_zero_denominator(input_value):
+    # https://github.com/pydantic/pydantic/issues/13257
+    # A zero denominator must raise a ValidationError, not a raw ZeroDivisionError.
+    ta = TypeAdapter(Fraction)
+
+    with pytest.raises(ValidationError) as exc_info:
+        ta.validate_strings(input_value)
+    assert exc_info.value.errors()[0]['type'] == 'fraction_parsing'
+
+    with pytest.raises(ValidationError):
+        ta.validate_python(input_value)
 
 
 @pytest.mark.parametrize(
