@@ -159,7 +159,13 @@ class ModelMetaclass(ABCMeta):
             namespace['__class_vars__'] = class_vars
             namespace['__private_attributes__'] = {**base_private_attributes, **private_attributes}
 
-            cls = cast('type[BaseModel]', super().__new__(mcs, cls_name, bases, namespace, **kwargs))
+            # `kwargs` now only contains the custom class keyword arguments (config keys were popped by
+            # `ConfigWrapper.for_model` above). `type.__new__` forwards these to `__init_subclass__`, so if a
+            # user defined one it can consume them. When none of the bases define `__init_subclass__`, the kwargs
+            # would otherwise reach `object.__init_subclass__` and raise a `TypeError`. In that case we withhold
+            # them from `type.__new__` and let `__pydantic_init_subclass__` receive them below instead (see #13300).
+            new_kwargs = kwargs if _bases_define_init_subclass(bases) else {}
+            cls = cast('type[BaseModel]', super().__new__(mcs, cls_name, bases, namespace, **new_kwargs))
             BaseModel_ = import_cached_base_model()
 
             mro = cls.__mro__
@@ -401,6 +407,28 @@ def get_model_post_init(namespace: dict[str, Any], bases: tuple[type[Any], ...])
     model_post_init = get_attribute_from_bases(bases, 'model_post_init')
     if model_post_init is not BaseModel.model_post_init:
         return model_post_init
+
+
+def _bases_define_init_subclass(bases: tuple[type[Any], ...]) -> bool:
+    """Return whether any class in the MRO of the given bases defines a custom `__init_subclass__`.
+
+    This mirrors the lookup `type.__new__` performs when forwarding class keyword arguments to
+    `__init_subclass__`: the first `__init_subclass__` found in the bases' MRO is the one that would be
+    invoked. When that resolves to `object.__init_subclass__`, no user code is able to consume custom
+    keyword arguments, so they should instead be routed to `__pydantic_init_subclass__` (see #13300).
+
+    Args:
+        bases: The base classes of the model being created.
+
+    Returns:
+        `True` if a base in the MRO defines `__init_subclass__`, `False` if it only resolves to
+        `object.__init_subclass__`.
+    """
+    for base in bases:
+        for klass in base.__mro__:
+            if '__init_subclass__' in klass.__dict__:
+                return klass is not object
+    return False
 
 
 def inspect_namespace(  # noqa C901

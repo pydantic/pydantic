@@ -2110,10 +2110,20 @@ def test_class_kwargs_config_and_attr_conflict():
 
 
 def test_class_kwargs_custom_config():
-    with pytest.raises(TypeError, match=r'__init_subclass__\(\) takes no keyword arguments'):
+    # A custom (non-config) class keyword argument is no longer rejected when no `__init_subclass__`
+    # is defined; it is delivered to `__pydantic_init_subclass__` instead (see #13300).
+    received = []
 
-        class Model(BaseModel, some_config='new_value'):
-            a: int
+    class Base(BaseModel):
+        @classmethod
+        def __pydantic_init_subclass__(cls, some_config: str | None = None, **kwargs: Any) -> None:
+            super().__pydantic_init_subclass__(**kwargs)
+            received.append(some_config)
+
+    class Model(Base, some_config='new_value'):
+        a: int
+
+    assert received == ['new_value']
 
 
 @pytest.mark.parametrize(
@@ -2925,6 +2935,25 @@ def test_pydantic_hooks() -> None:
 
     MyModel.model_rebuild(force=True)
     assert calls == []
+
+
+def test_pydantic_init_subclass_custom_kwargs_without_init_subclass() -> None:
+    """Custom class keyword arguments should reach `__pydantic_init_subclass__` even when no
+    `__init_subclass__` is defined to absorb them (see issue #13300).
+    """
+    registered = []
+
+    class Event(BaseModel):
+        e_type: str
+
+        @classmethod
+        def __pydantic_init_subclass__(cls, event_type: str | None = None, **kwargs: Any) -> None:
+            super().__pydantic_init_subclass__(**kwargs)
+            registered.append((cls.__name__, event_type))
+
+    class CreatedEvent(Event, event_type='created'): ...
+
+    assert registered == [('CreatedEvent', 'created')]
 
 
 def test_model_validate_with_context():
