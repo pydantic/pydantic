@@ -127,7 +127,7 @@ class AliasGenerator:
         """Generate `alias`, `validation_alias`, and `serialization_alias` for a field.
 
         Returns:
-            A tuple of three aliases - validation, alias, and serialization.
+            A tuple of three aliases - alias, validation, and serialization.
         """
         alias = self._generate_alias('alias', (str,), field_name)
         validation_alias = self._generate_alias('validation_alias', (str, AliasChoices, AliasPath), field_name)
