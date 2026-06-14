@@ -315,6 +315,7 @@ class _BaseUrl:
     ) -> core_schema.CoreSchema:
         def wrap_val(v, h):
             if isinstance(v, source):
+                h(v._url)
                 return v
             if isinstance(v, _BaseUrl):
                 v = str(v)
@@ -531,6 +532,7 @@ class _BaseMultiHostUrl:
     ) -> core_schema.CoreSchema:
         def wrap_val(v, h):
             if isinstance(v, source):
+                h(v._url)
                 return v
             if isinstance(v, _BaseMultiHostUrl):
                 v = str(v)
