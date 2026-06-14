@@ -551,6 +551,42 @@ decorator.
 
     Overriding a model validator in a subclass will override the base class' validator, and thus only the subclass' version of said validator will be called.
 
+    Model validators are ordered by their mode rather than by the class they are defined in. In particular, a *wrap* validator
+    defined in a base class does **not** wrap the *after* validators defined in a subclass: *after* validators always run once
+    the *wrap* validators have returned.
+
+    ```python
+    from typing import Any
+
+    from pydantic import BaseModel, ModelWrapValidatorHandler, model_validator
+
+    calls: list[str] = []
+
+
+    class Base(BaseModel):
+        @model_validator(mode='wrap')
+        @classmethod
+        def base_wrap(
+            cls, data: Any, handler: ModelWrapValidatorHandler['Base']
+        ) -> 'Base':
+            calls.append('base wrap: enter')
+            result = handler(data)
+            calls.append('base wrap: exit')
+            return result
+
+
+    class Sub(Base):
+        @model_validator(mode='after')
+        def sub_after(self) -> 'Sub':
+            calls.append('sub after')
+            return self
+
+
+    Sub()
+    print(calls)
+    #> ['base wrap: enter', 'base wrap: exit', 'sub after']
+    ```
+
 ## Raising validation errors
 
 To raise a validation error, three types of exceptions can be used:
