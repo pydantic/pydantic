@@ -46,7 +46,7 @@ pub struct LiteralLookup<T: Debug> {
 }
 
 impl<T: Debug> LiteralLookup<T> {
-    pub fn new<'py>(py: Python<'py>, expected: impl Iterator<Item = (Bound<'py, PyAny>, T)>) -> PyResult<Self> {
+    pub fn new<'py>(py: Python<'py>, expected: impl IntoIterator<Item = (Bound<'py, PyAny>, T)>) -> PyResult<Self> {
         let mut expected_bool = BoolLiteral::default();
         let mut expected_int = AHashMap::new();
         let mut expected_str: AHashMap<String, usize> = AHashMap::new();
