@@ -202,7 +202,6 @@ def test_unknown_toml_config_key(capsys: pytest.CaptureFixture[str]) -> None:
     full_filename = 'tests/mypy/modules/generics.py'  # File doesn't matter
 
     command = [full_filename, '--config-file', full_config_filename, '--show-error-codes']
-    print(f'\nExecuting: mypy {" ".join(command)}')  # makes it easier to debug as necessary
     mypy_api.run(command)
     captured = capsys.readouterr()
     assert '[pydantic-mypy]: Unrecognized option: warn_untyped_fields = True' in captured.err
@@ -213,7 +212,6 @@ def test_unknown_ini_config_key(capsys: pytest.CaptureFixture[str]) -> None:
     full_filename = 'tests/mypy/modules/generics.py'  # File doesn't matter
 
     command = [full_filename, '--config-file', full_config_filename, '--show-error-codes']
-    print(f'\nExecuting: mypy {" ".join(command)}')  # makes it easier to debug as necessary
     mypy_api.run(command)
     captured = capsys.readouterr()
     assert '[pydantic-mypy]: Unrecognized option: warn_untyped_fields = True' in captured.err
