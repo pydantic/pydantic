@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import sys
-import warnings
 from collections.abc import Callable, Iterator
 from configparser import ConfigParser
 from typing import Any
@@ -265,7 +264,7 @@ class PydanticPluginConfig:
                 setattr(self, key, setting)
             unknown_keys = config.keys() - set(self.__slots__)
             for key in sorted(unknown_keys):
-                print(f'[pydantic-mypy]: Unrecognized option: {key} = {config[key]}', file=sys.stderr)
+                print(f'[pydantic-mypy]: Unrecognized option: {key} = {config[key]}', file=sys.stderr)  # noqa: T201
         else:
             plugin_config = ConfigParser()
             plugin_config.read(options.config_file)
@@ -275,7 +274,7 @@ class PydanticPluginConfig:
             if plugin_config.has_section(CONFIGFILE_KEY):
                 unknown_keys = set(plugin_config.options(CONFIGFILE_KEY)) - set(self.__slots__)
                 for key in sorted(unknown_keys):
-                    print(f'[pydantic-mypy]: Unrecognized option: {key} = {plugin_config.get(CONFIGFILE_KEY, key)}', file=sys.stderr)
+                    print(f'[pydantic-mypy]: Unrecognized option: {key} = {plugin_config.get(CONFIGFILE_KEY, key)}', file=sys.stderr)  # noqa: T201
 
     def to_data(self) -> dict[str, Any]:
         """Returns a dict of config names to their values."""
