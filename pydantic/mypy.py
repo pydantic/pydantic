@@ -274,7 +274,10 @@ class PydanticPluginConfig:
             if plugin_config.has_section(CONFIGFILE_KEY):
                 unknown_keys = set(plugin_config.options(CONFIGFILE_KEY)) - set(self.__slots__)
                 for key in sorted(unknown_keys):
-                    print(f'[pydantic-mypy]: Unrecognized option: {key} = {plugin_config.get(CONFIGFILE_KEY, key)}', file=sys.stderr)  # noqa: T201
+                    print(  # noqa: T201
+                        f'[pydantic-mypy]: Unrecognized option: {key} = {plugin_config.get(CONFIGFILE_KEY, key)}',
+                        file=sys.stderr,
+                    )
 
     def to_data(self) -> dict[str, Any]:
         """Returns a dict of config names to their values."""
