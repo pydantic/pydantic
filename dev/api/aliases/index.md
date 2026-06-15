@@ -186,7 +186,7 @@ Generate `alias`, `validation_alias`, and `serialization_alias` for a field.
 
 Returns:
 
-| Type | Description | | --- | --- | | `tuple[str | None, str | AliasPath | AliasChoices | None, str | None]` | A tuple of three aliases - validation, alias, and serialization. |
+| Type | Description | | --- | --- | | `tuple[str | None, str | AliasPath | AliasChoices | None, str | None]` | A tuple of three aliases - alias, validation, and serialization. |
 
 Source code in `pydantic/aliases.py`
 
@@ -195,7 +195,7 @@ def generate_aliases(self, field_name: str) -> tuple[str | None, str | AliasPath
     """Generate `alias`, `validation_alias`, and `serialization_alias` for a field.
 
     Returns:
-        A tuple of three aliases - validation, alias, and serialization.
+        A tuple of three aliases - alias, validation, and serialization.
     """
     alias = self._generate_alias('alias', (str,), field_name)
     validation_alias = self._generate_alias('validation_alias', (str, AliasChoices, AliasPath), field_name)

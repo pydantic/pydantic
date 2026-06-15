@@ -4654,7 +4654,7 @@ to help you monitor and understand your
             </td>
             <td>
               <div class="doc-md-description">
-                <p>A tuple of three aliases - validation, alias, and serialization.</p>
+                <p>A tuple of three aliases - alias, validation, and serialization.</p>
               </div>
             </td>
           </tr>
@@ -4677,7 +4677,7 @@ to help you monitor and understand your
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Generate `alias`, `validation_alias`, and `serialization_alias` for a field.</span>
 
 <span class="sd">    Returns:</span>
-<span class="sd">        A tuple of three aliases - validation, alias, and serialization.</span>
+<span class="sd">        A tuple of three aliases - alias, validation, and serialization.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">alias</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_generate_alias</span><span class="p">(</span><span class="s1">&#39;alias&#39;</span><span class="p">,</span> <span class="p">(</span><span class="nb">str</span><span class="p">,),</span> <span class="n">field_name</span><span class="p">)</span>
     <span class="n">validation_alias</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_generate_alias</span><span class="p">(</span><span class="s1">&#39;validation_alias&#39;</span><span class="p">,</span> <span class="p">(</span><span class="nb">str</span><span class="p">,</span> <span class="n">AliasChoices</span><span class="p">,</span> <span class="n">AliasPath</span><span class="p">),</span> <span class="n">field_name</span><span class="p">)</span>
