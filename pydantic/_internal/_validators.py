@@ -78,7 +78,7 @@ def import_string(value: Any) -> Any:
 
 def _import_string_logic(dotted_path: str) -> Any:
     """Inspired by uvicorn — dotted paths should include a colon before the final item if that item is not a module.
-    (This is necessary to distinguish between a submodule and an attribute when there is a conflict.).
+    (This is necessary to distinguish between a submodule and an attribute when there is a conflict.)
 
     If the dotted path does not include a colon and the final item is not a valid module, importing as an attribute
     rather than a submodule will be attempted automatically.
@@ -341,10 +341,10 @@ def max_length_validator(x: Any, max_length: Any) -> Any:
 
 
 def _extract_decimal_digits_info(decimal: Decimal) -> tuple[int, int]:
-    """Compute the total number of digits and decimal places for a given [`Decimal`][decimal.Decimal] instance.
+    """Compute the number of decimal places and total digits for a given [`Decimal`][decimal.Decimal] instance.
 
     This function handles both normalized and non-normalized Decimal instances.
-    Example: Decimal('1.230') -> 4 digits, 3 decimal places
+    Example: `Decimal('1.230')` returns `(3, 4)` — 3 decimal places, 4 total digits.
 
     Args:
         decimal (Decimal): The decimal number to analyze.
