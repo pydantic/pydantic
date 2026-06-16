@@ -262,12 +262,22 @@ class PydanticPluginConfig:
                 if not isinstance(setting, bool):
                     raise ValueError(f'Configuration value must be a boolean for key: {key}')
                 setattr(self, key, setting)
+            unknown_keys = config.keys() - set(self.__slots__)
+            for key in sorted(unknown_keys):
+                print(f'[pydantic-mypy]: Unrecognized option: {key} = {config[key]}', file=sys.stderr)  # noqa: T201
         else:
             plugin_config = ConfigParser()
             plugin_config.read(options.config_file)
             for key in self.__slots__:
                 setting = plugin_config.getboolean(CONFIGFILE_KEY, key, fallback=False)
                 setattr(self, key, setting)
+            if plugin_config.has_section(CONFIGFILE_KEY):
+                unknown_keys = set(plugin_config.options(CONFIGFILE_KEY)) - set(self.__slots__)
+                for key in sorted(unknown_keys):
+                    print(  # noqa: T201
+                        f'[pydantic-mypy]: Unrecognized option: {key} = {plugin_config.get(CONFIGFILE_KEY, key)}',
+                        file=sys.stderr,
+                    )
 
     def to_data(self) -> dict[str, Any]:
         """Returns a dict of config names to their values."""
