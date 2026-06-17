@@ -1087,6 +1087,8 @@ class GenerateSchema:
             return core_schema.multi_host_url_schema()
         elif obj is None or obj is NoneType:
             return core_schema.none_schema()
+        elif typing_objects.is_never(obj) or typing_objects.is_noreturn(obj):
+            return self._never_schema()
         if obj is MISSING:
             return core_schema.missing_sentinel_schema()
         elif obj in IP_TYPES:
@@ -1338,10 +1340,16 @@ class GenerateSchema:
         for arg in args:
             if arg is None or arg is NoneType:
                 nullable = True
+            elif typing_objects.is_never(arg) or typing_objects.is_noreturn(arg):
+                continue
             else:
                 choices.append(self.generate_schema(arg))
 
-        if len(choices) == 1:
+        if len(choices) == 0:
+            if nullable:
+                return core_schema.none_schema()
+            return self._never_schema()
+        elif len(choices) == 1:
             s = choices[0]
         else:
             choices_with_tags: list[CoreSchema | tuple[CoreSchema, str]] = []
@@ -1714,6 +1722,16 @@ class GenerateSchema:
         return core_schema.no_info_plain_validator_function(
             validate_str_is_valid_iana_tz,
             serialization=core_schema.to_string_ser_schema(),
+            metadata=metadata,
+        )
+
+    def _never_schema(self) -> core_schema.CoreSchema:
+        """Generate schema for typing.Never / typing.NoReturn — always fails validation."""
+        from ._validators import never_validator
+
+        metadata = {'pydantic_js_functions': [lambda _1, _2: {'not': {}}]}
+        return core_schema.no_info_plain_validator_function(
+            never_validator,
             metadata=metadata,
         )
 

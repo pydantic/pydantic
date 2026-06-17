@@ -485,6 +485,10 @@ def get_defaultdict_default_default_factory(values_source_type: Any) -> Callable
     return default_default_factory
 
 
+def never_validator(value: Any, /) -> Any:
+    raise PydanticCustomError('never_type', 'Value cannot be validated against type Never')
+
+
 def validate_str_is_valid_iana_tz(value: Any, /) -> ZoneInfo:
     if isinstance(value, ZoneInfo):
         return value
