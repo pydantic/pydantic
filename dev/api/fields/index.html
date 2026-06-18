@@ -5235,7 +5235,7 @@ See <a href="../../concepts/strict_mode/">Strict Mode</a> for details.</p>
             </td>
             <td>
               <div class="doc-md-description">
-                <p>Maximum number of allow digits for strings.</p>
+                <p>Maximum number of allowed digits for <a class="autorefs autorefs-external" href="https://docs.python.org/3/library/decimal.html#decimal.Decimal"><code>Decimal</code></a> numbers.</p>
               </div>
             </td>
             <td>
@@ -5658,7 +5658,7 @@ type-annotated fields without causing a type error.</p>
 <span class="sd">        max_length: Maximum length for iterables.</span>
 <span class="sd">        pattern: Pattern for strings (a regular expression).</span>
 <span class="sd">        allow_inf_nan: Allow `inf`, `-inf`, `nan`. Only applicable to float and [`Decimal`][decimal.Decimal] numbers.</span>
-<span class="sd">        max_digits: Maximum number of allow digits for strings.</span>
+<span class="sd">        max_digits: Maximum number of allowed digits for [`Decimal`][decimal.Decimal] numbers.</span>
 <span class="sd">        decimal_places: Maximum number of decimal places allowed for numbers.</span>
 <span class="sd">        union_mode: The strategy to apply when validating a union. Can be `smart` (the default), or `left_to_right`.</span>
 <span class="sd">            See [Union Mode](../concepts/unions.md#union-modes) for details.</span>
@@ -6755,7 +6755,7 @@ If both <code>default</code> and <code>default_factory</code> are set, an error 
       <tbody>
           <tr class="doc-section-item">
             <td>
-                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/exceptions.html#ValueError">ValueError</a></code>
+                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/exceptions.html#TypeError">TypeError</a></code>
             </td>
             <td>
               <div class="doc-md-description">
@@ -6830,7 +6830,7 @@ If both <code>default</code> and <code>default_factory</code> are set, an error 
 <span class="sd">        An instance of [`ModelPrivateAttr`][pydantic.fields.ModelPrivateAttr] class.</span>
 
 <span class="sd">    Raises:</span>
-<span class="sd">        ValueError: If both `default` and `default_factory` are set.</span>
+<span class="sd">        TypeError: If both `default` and `default_factory` are set.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">if</span> <span class="n">default</span> <span class="ow">is</span> <span class="ow">not</span> <span class="n">PydanticUndefined</span> <span class="ow">and</span> <span class="n">default_factory</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
         <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s1">&#39;cannot specify both default and default_factory&#39;</span><span class="p">)</span>
