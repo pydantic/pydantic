@@ -1,7 +1,7 @@
 use std::cell::RefCell;
 use std::iter::Peekable;
 use std::str::Chars;
-use std::sync::Arc;
+use std::sync::{Arc, LazyLock};
 
 use pyo3::intern;
 use pyo3::prelude::*;
@@ -11,7 +11,6 @@ use ahash::AHashSet;
 use pyo3::IntoPyObjectExt;
 use url::{ParseError, SyntaxViolation, Url};
 
-use crate::build_tools::LazyLock;
 use crate::build_tools::schema_or_config;
 use crate::build_tools::{is_strict, py_schema_err};
 use crate::errors::{ErrorType, ErrorTypeDefaults, ValError, ValResult};

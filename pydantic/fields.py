@@ -1259,7 +1259,7 @@ def Field(  # noqa: C901
         max_length: Maximum length for iterables.
         pattern: Pattern for strings (a regular expression).
         allow_inf_nan: Allow `inf`, `-inf`, `nan`. Only applicable to float and [`Decimal`][decimal.Decimal] numbers.
-        max_digits: Maximum number of allow digits for strings.
+        max_digits: Maximum number of allowed digits for [`Decimal`][decimal.Decimal] numbers.
         decimal_places: Maximum number of decimal places allowed for numbers.
         union_mode: The strategy to apply when validating a union. Can be `smart` (the default), or `left_to_right`.
             See [Union Mode](../concepts/unions.md#union-modes) for details.
@@ -1539,7 +1539,7 @@ def PrivateAttr(
         An instance of [`ModelPrivateAttr`][pydantic.fields.ModelPrivateAttr] class.
 
     Raises:
-        ValueError: If both `default` and `default_factory` are set.
+        TypeError: If both `default` and `default_factory` are set.
     """
     if default is not PydanticUndefined and default_factory is not None:
         raise TypeError('cannot specify both default and default_factory')

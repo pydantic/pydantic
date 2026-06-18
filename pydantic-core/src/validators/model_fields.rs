@@ -603,6 +603,7 @@ impl<'py> ModelFieldsValidationState<'_, '_, 'py> {
             }
             Ok(None) | Err(ValError::UseDefault) => {
                 // There was no default value available
+                state.has_field_error = true;
                 let error_type = ErrorTypeDefaults::Missing;
                 let error_loc = field
                     .lookup_path_collection

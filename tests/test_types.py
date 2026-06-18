@@ -2299,6 +2299,22 @@ def test_iterable_any(type_annotation):
         {'type': 'iterable_type', 'loc': ('it',), 'msg': 'Input should be iterable', 'input': 3}
     ]
 
+    class MaxLenModel(BaseModel):
+        it: type_annotation = Field(max_length=2)
+
+    m = MaxLenModel(it=[1, 2, 3])
+    with pytest.raises(ValidationError) as exc_info:
+        list(m.it)
+    assert exc_info.value.errors(include_url=False) == [
+        {
+            'type': 'too_long',
+            'loc': (),
+            'msg': 'Generator should have at most 2 items after validation, not more',
+            'input': [1, 2, 3],
+            'ctx': {'field_type': 'Generator', 'max_length': 2, 'actual_length': None},
+        }
+    ]
+
 
 def test_invalid_iterable():
     class Model(BaseModel):

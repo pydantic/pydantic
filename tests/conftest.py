@@ -19,9 +19,10 @@ from typing import Any, Final, Generic, Literal, TypeVar
 import pytest
 from _pytest.assertion.rewrite import AssertionRewritingHook
 from _pytest.nodes import Item
+from typing_extensions import TypedDict
 
 import pydantic
-from pydantic import TypeAdapter
+from pydantic import BaseModel, TypeAdapter
 from pydantic._internal._generate_schema import GenerateSchema
 from pydantic.json_schema import GenerateJsonSchema
 
@@ -191,6 +192,22 @@ def validate_json_schemas(monkeypatch: pytest.MonkeyPatch, request: pytest.Fixtu
             return json_schema
 
         monkeypatch.setattr(GenerateJsonSchema, 'generate', generate)
+
+
+class AutoDataclass:
+    def __init_subclass__(cls) -> None:
+        super().__init_subclass__()
+        dataclass()(cls)
+
+
+@pytest.fixture(params=['model', 'typed_dict', 'dataclass'])
+def container_class(request: pytest.FixtureRequest) -> type[Any]:
+    if request.param == 'model':
+        return BaseModel
+    elif request.param == 'typed_dict':
+        return TypedDict
+    else:
+        return AutoDataclass
 
 
 _thread_unsafe_fixtures = (

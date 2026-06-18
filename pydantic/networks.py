@@ -158,7 +158,7 @@ class _BaseUrl:
     def host(self) -> str | None:
         """The host part of the URL, or `None`.
 
-        If the URL must be punycode encoded, this is the encoded host, e.g if the input URL is `https://£££.com`,
+        If the URL must be punycode encoded, this is the encoded host, e.g. if the input URL is `https://£££.com`,
         `host` will be `xn--9aaa.com`
         """
         return self._url.host
@@ -168,7 +168,7 @@ class _BaseUrl:
 
         e.g. `host` in `https://user:pass@host:port/path?query#fragment`
 
-        If the URL must be punycode encoded, this is the decoded host, e.g if the input URL is `https://£££.com`,
+        If the URL must be punycode encoded, this is the decoded host, e.g. if the input URL is `https://£££.com`,
         `unicode_host()` will be `£££.com`
         """
         return self._url.unicode_host()
@@ -215,7 +215,7 @@ class _BaseUrl:
     def unicode_string(self) -> str:
         """The URL as a unicode string, unlike `__str__()` this will not punycode encode the host.
 
-        If the URL must be punycode encoded, this is the decoded string, e.g if the input URL is `https://£££.com`,
+        If the URL must be punycode encoded, this is the decoded string, e.g. if the input URL is `https://£££.com`,
         `unicode_string()` will be `https://£££.com`
         """
         return self._url.unicode_string()

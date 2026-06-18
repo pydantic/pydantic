@@ -1,5 +1,5 @@
 use std::num::NonZeroUsize;
-use std::sync::Arc;
+use std::sync::{Arc, LazyLock};
 use std::sync::{Mutex, PoisonError};
 
 use lru::LruCache;
@@ -10,7 +10,6 @@ use pyo3::sync::MutexExt;
 use pyo3::types::{PyDict, PyString};
 use regex::Regex;
 
-use crate::build_tools::LazyLock;
 use crate::build_tools::{is_strict, py_schema_error_type, schema_or_config, schema_or_config_same};
 use crate::errors::{ErrorType, ValError, ValResult};
 use crate::input::Input;
