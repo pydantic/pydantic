@@ -642,7 +642,7 @@ impl<'py> ModelFieldsValidationState<'_, '_, 'py> {
         let state = &mut **state;
         match extra_validator {
             ModelExtraValidator::Forbid => {
-                self.errors.push(ValLineError::new_with_loc(
+                errors.push(ValLineError::new_with_loc(
                     ErrorTypeDefaults::ExtraForbidden,
                     value,
                     key,
