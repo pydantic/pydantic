@@ -1,6 +1,8 @@
 use std::sync::Arc;
 
 use ahash::AHashSet;
+use ahash::RandomState;
+use indexmap::IndexMap;
 use jiter::JsonObject;
 use jiter::JsonValue;
 use pyo3::IntoPyObjectExt;
@@ -444,7 +446,8 @@ impl ModelFieldsValidator {
 
         // Buffer for possible extra data, `None` if ignoring extra. Extra data
         // is validated in order of appearance after all fields have been processed.
-        let mut possible_extra = (!matches!(&state.extra_validator, ModelExtraValidator::Ignore)).then_some(Vec::new());
+        let mut possible_extra = (!matches!(&state.extra_validator, ModelExtraValidator::Ignore))
+            .then_some(IndexMap::with_hasher(RandomState::new()));
 
         for (key, value) in &**json_object {
             let mut might_be_extra = possible_extra.is_some();
@@ -480,11 +483,16 @@ impl ModelFieldsValidator {
 
             if might_be_extra {
                 let possible_extra = possible_extra.as_mut().expect("must be Some if might_be_extra is true");
-                if let Some(existing) = possible_extra.iter_mut().find(|(k, _)| *k == key) {
-                    // if the key is already in possible_extra, we update the value to the latest one
-                    existing.1 = value;
-                } else {
-                    possible_extra.push((key, value));
+                match possible_extra.entry(key) {
+                    indexmap::map::Entry::Vacant(entry) => {
+                        // when recording in possible_extra, we also record a boolean which is used to
+                        // skip extra for any keys consumed by a field input (see below)
+                        entry.insert((value, false));
+                    }
+                    indexmap::map::Entry::Occupied(mut existing) => {
+                        // if the key is already in possible_extra, we update the value to the latest one
+                        existing.get_mut().0 = value;
+                    }
                 }
             }
         }
@@ -498,10 +506,12 @@ impl ModelFieldsValidator {
                     &field.lookup_path_collection.by_name
                 };
 
-                // remove any existing possible extra for this lookup path's first key,
-                // since it has been consumed by the input
-                if let Some(possible_extra) = possible_extra.as_mut() {
-                    possible_extra.retain(|(k, _)| *k != lookup_path.first_key());
+                // mark consumed any existing possible extra for this lookup path's first key
+                if let Some(possible_extra) = possible_extra.as_mut()
+                    && let Some(extra) = possible_extra.get_mut(lookup_path.first_key())
+                {
+                    // marking true is cheaper than removing from the index map
+                    extra.1 = true;
                 }
 
                 (lookup_path, value)
@@ -511,7 +521,11 @@ impl ModelFieldsValidator {
         }
 
         // handle extra fields if necessary
-        for (key, value) in possible_extra.into_iter().flatten() {
+        for (key, (value, consumed)) in possible_extra.into_iter().flatten() {
+            if consumed {
+                // this key was consumed by a field input, so we don't want to treat it as extra
+                continue;
+            }
             state.validate_extra_key_value(py, key, value)?;
         }
 
