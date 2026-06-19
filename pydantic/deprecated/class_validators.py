@@ -2,12 +2,13 @@
 
 from __future__ import annotations as _annotations
 
+from collections.abc import Callable
 from functools import partial, partialmethod
 from types import FunctionType
-from typing import TYPE_CHECKING, Any, Callable, Literal, TypeVar, Union, overload
+from typing import TYPE_CHECKING, Any, Literal, TypeAlias, TypeVar, Union, overload
 from warnings import warn
 
-from typing_extensions import Protocol, TypeAlias, deprecated
+from typing_extensions import Protocol, deprecated
 
 from .._internal import _decorators, _decorators_v1
 from ..errors import PydanticUserError
@@ -55,7 +56,7 @@ if TYPE_CHECKING:
         _decorators_v1.V1RootValidatorFunction,
     ]
 
-    _PartialClsOrStaticMethod: TypeAlias = Union[classmethod[Any, Any, Any], staticmethod[Any, Any], partialmethod[Any]]
+    _PartialClsOrStaticMethod: TypeAlias = classmethod[Any, Any, Any] | staticmethod[Any, Any] | partialmethod[Any]
 
     # Allow both a V1 (assumed pre=False) or V2 (assumed mode='after') validator
     # We lie to type checkers and say we return the same thing we get
@@ -124,13 +125,13 @@ def validator(
         raise PydanticUserError(
             '`@validator` should be used with fields and keyword arguments, not bare. '
             "E.g. usage should be `@validator('<field_name>', ...)`",
-            code='validator-no-fields',
+            code='decorator-missing-arguments',
         )
     elif not all(isinstance(field, str) for field in fields):
         raise PydanticUserError(
             '`@validator` fields should be passed as separate string args. '
             "E.g. usage should be `@validator('<field_name_1>', '<field_name_2>', ...)`",
-            code='validator-invalid-fields',
+            code='decorator-invalid-fields',
         )
 
     mode: Literal['before', 'after'] = 'before' if pre is True else 'after'

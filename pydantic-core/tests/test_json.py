@@ -30,7 +30,14 @@ def test_bool(input_value, output_value):
     assert v.validate_json(input_value) == output_value
 
 
-@pytest.mark.parametrize('input_value', ['[1, 2, 3]', b'[1, 2, 3]', bytearray(b'[1, 2, 3]')])
+@pytest.mark.parametrize(
+    'input_value',
+    [
+        pytest.param('[1, 2, 3]', id='[1, 2, 3]_list'),
+        pytest.param(b'[1, 2, 3]', id='[1, 2, 3]_bytes'),
+        pytest.param(bytearray(b'[1, 2, 3]'), id='[1, 2, 3]_bytearray'),
+    ],
+)
 def test_input_types(input_value):
     v = SchemaValidator(core_schema.list_schema(items_schema=core_schema.int_schema()))
     assert v.validate_json(input_value) == [1, 2, 3]

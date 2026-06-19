@@ -2,23 +2,23 @@ use std::ptr::null_mut;
 use std::sync::Arc;
 
 use pyo3::exceptions::PyTypeError;
+use pyo3::pybacked::PyBackedStr;
 use pyo3::types::{PyDict, PySet, PyString, PyTuple, PyType};
-use pyo3::{ffi, BoundObject, IntoPyObjectExt};
+use pyo3::{BoundObject, IntoPyObjectExt, ffi};
 use pyo3::{intern, prelude::*};
 
 use super::function::convert_err;
 use super::validation_state::Exactness;
 use super::{
-    build_validator, BuildValidator, CombinedValidator, DefinitionsBuilder, Extra, ValidationState, Validator,
+    BuildValidator, CombinedValidator, DefinitionsBuilder, Extra, ValidationState, Validator, build_validator,
 };
+use crate::PydanticUndefinedType;
 use crate::build_tools::py_schema_err;
 use crate::build_tools::schema_or_config_same;
 use crate::errors::{ErrorType, ErrorTypeDefaults, ValError, ValResult};
-use crate::input::{input_as_python_instance, py_error_on_minusone, Input};
-use crate::tools::{py_err, SchemaDict};
-use crate::PydanticUndefinedType;
+use crate::input::{Input, input_as_python_instance, py_error_on_minusone};
+use crate::tools::{ROOT_FIELD, SchemaDict, py_err, root_field_py_str};
 
-const ROOT_FIELD: &str = "root";
 const DUNDER_DICT: &str = "__dict__";
 const DUNDER_FIELDS_SET_KEY: &str = "__pydantic_fields_set__";
 const DUNDER_MODEL_EXTRA_KEY: &str = "__pydantic_extra__";
@@ -37,7 +37,7 @@ impl Revalidate {
             Some("always") => Ok(Self::Always),
             Some("never") | None => Ok(Self::Never),
             Some("subclass-instances") => Ok(Self::SubclassInstances),
-            Some(s) => py_schema_err!("Invalid revalidate_instances value: {}", s),
+            Some(s) => py_schema_err!("Invalid revalidate_instances value: {s}"),
         }
     }
 
@@ -121,7 +121,7 @@ impl Validator for ModelValidator {
         input: &(impl Input<'py> + ?Sized),
         state: &mut ValidationState<'_, 'py>,
     ) -> ValResult<Py<PyAny>> {
-        if let Some(self_instance) = state.extra().self_instance {
+        if let Some(self_instance) = state.self_instance {
             // in the case that self_instance is Some, we're calling validation from within `BaseModel.__init__`
             return self.validate_init(py, self_instance, input, state);
         }
@@ -155,7 +155,7 @@ impl Validator for ModelValidator {
             if self.revalidate.should_revalidate(py_input, class) || force_revalidate {
                 let fields_set = py_input.getattr(intern!(py, DUNDER_FIELDS_SET_KEY))?;
                 if self.root_model {
-                    let inner_input = py_input.getattr(intern!(py, ROOT_FIELD))?;
+                    let inner_input = py_input.getattr(root_field_py_str(py))?;
                     self.validate_construct(py, &inner_input, Some(&fields_set), state)
                 } else {
                     // get dict here so from_attributes logic doesn't apply
@@ -185,29 +185,29 @@ impl Validator for ModelValidator {
         &self,
         py: Python<'py>,
         model: &Bound<'py, PyAny>,
-        field_name: &str,
+        field_name: &PyBackedStr,
         field_value: &Bound<'py, PyAny>,
         state: &mut ValidationState<'_, 'py>,
     ) -> ValResult<Py<PyAny>> {
         if self.frozen {
             return Err(ValError::new(ErrorTypeDefaults::FrozenInstance, field_value));
         } else if self.root_model {
-            return if field_name != ROOT_FIELD {
-                Err(ValError::new_with_loc(
+            if field_name != ROOT_FIELD {
+                return Err(ValError::new_with_loc(
                     ErrorType::NoSuchAttribute {
                         attribute: field_name.to_string(),
                         context: None,
                     },
                     field_value,
                     field_name.to_string(),
-                ))
-            } else {
-                let state = &mut state.rebind_extra(|extra| extra.field_name = Some(PyString::new(py, ROOT_FIELD)));
-                let output = self.validator.validate(py, field_value, state)?;
+                ));
+            }
+            let root_field = root_field_py_str(py);
+            let state = &mut state.scoped_set_field_name(Some(root_field.clone()));
+            let output = self.validator.validate(py, field_value, state)?;
 
-                force_setattr(py, model, intern!(py, ROOT_FIELD), output)?;
-                Ok(model.into_py_any(py)?)
-            };
+            force_setattr(py, model, root_field, output)?;
+            return Ok(model.into_py_any(py)?);
         }
         let old_dict = model.getattr(intern!(py, DUNDER_DICT))?.cast_into::<PyDict>()?;
 
@@ -278,19 +278,20 @@ impl ModelValidator {
     ) -> ValResult<Py<PyAny>> {
         // we need to set `self_instance` to None for nested validators as we don't want to operate on self_instance
         // anymore
-        let state = &mut state.rebind_extra(|extra| extra.self_instance = None);
+        let state = &mut state.scoped_clear_self_instance();
 
         if self.root_model {
-            let state = &mut state.rebind_extra(|extra| extra.field_name = Some(PyString::new(py, ROOT_FIELD)));
+            let root_field = root_field_py_str(py);
+            let state = &mut state.scoped_set_field_name(Some(root_field.clone()));
             let output = self.validator.validate(py, input, state)?;
 
             let fields_set = if input.as_python().is_some_and(|py_input| py_input.is(&self.undefined)) {
                 PySet::empty(py)?
             } else {
-                PySet::new(py, [&String::from(ROOT_FIELD)])?
+                PySet::new(py, [root_field])?
             };
             force_setattr(py, self_instance, intern!(py, DUNDER_FIELDS_SET_KEY), &fields_set)?;
-            force_setattr(py, self_instance, intern!(py, ROOT_FIELD), &output)?;
+            force_setattr(py, self_instance, root_field, &output)?;
         } else {
             let output = self.validator.validate(py, input, state)?;
 
@@ -325,17 +326,18 @@ impl ModelValidator {
         let instance;
 
         if self.root_model {
-            let state = &mut state.rebind_extra(|extra| extra.field_name = Some(PyString::new(py, ROOT_FIELD)));
+            let root_field = root_field_py_str(py);
+            let state = &mut state.scoped_set_field_name(Some(root_field.clone()));
             let output = self.validator.validate(py, input, state)?;
             instance = create_class(self.class.bind(py))?;
 
             let fields_set = if input.as_python().is_some_and(|py_input| py_input.is(&self.undefined)) {
                 PySet::empty(py)?
             } else {
-                PySet::new(py, [&String::from(ROOT_FIELD)])?
+                PySet::new(py, [root_field])?
             };
             force_setattr(py, &instance, intern!(py, DUNDER_FIELDS_SET_KEY), &fields_set)?;
-            force_setattr(py, &instance, intern!(py, ROOT_FIELD), output)?;
+            force_setattr(py, &instance, root_field, output)?;
         } else {
             let output = self.validator.validate(py, input, state)?;
             instance = create_class(self.class.bind(py))?;

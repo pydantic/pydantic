@@ -1,18 +1,16 @@
 use std::error::Error;
 use std::fmt;
-use std::ops::Deref;
 use std::str::FromStr;
-use std::sync::OnceLock;
 
 use pyo3::exceptions::PyException;
 use pyo3::prelude::*;
 use pyo3::types::{PyDict, PyList, PyString};
-use pyo3::{intern, PyErrArguments};
+use pyo3::{PyErrArguments, intern};
 
+use crate::ValidationError;
 use crate::errors::{PyLineError, ValError};
 use crate::input::InputType;
 use crate::tools::SchemaDict;
-use crate::ValidationError;
 
 pub fn schema_or_config<'py, T>(
     schema: &Bound<'py, PyDict>,
@@ -159,21 +157,15 @@ impl SchemaError {
 }
 
 macro_rules! py_schema_error_type {
-    ($msg:expr) => {
-        crate::tools::py_error_type!(crate::build_tools::SchemaError; $msg)
-    };
-    ($msg:expr, $( $msg_args:expr ),+ ) => {
-        crate::tools::py_error_type!(crate::build_tools::SchemaError; $msg, $( $msg_args ),+)
+    ($( $msg_args:expr ),+ ) => {
+        crate::tools::py_error_type!(crate::build_tools::SchemaError; $( $msg_args ),+)
     };
 }
 pub(crate) use py_schema_error_type;
 
 macro_rules! py_schema_err {
-    ($msg:expr) => {
-        Err(crate::build_tools::py_schema_error_type!($msg))
-    };
-    ($msg:expr, $( $msg_args:expr ),+ ) => {
-        Err(crate::build_tools::py_schema_error_type!($msg, $( $msg_args ),+))
+    ($( $msg_args:expr ),+ ) => {
+        Err(crate::build_tools::py_schema_error_type!($( $msg_args ),+))
     };
 }
 pub(crate) use py_schema_err;
@@ -215,32 +207,7 @@ impl FromStr for ExtraBehavior {
             "allow" => Ok(Self::Allow),
             "forbid" => Ok(Self::Forbid),
             "ignore" => Ok(Self::Ignore),
-            s => py_schema_err!("Invalid extra_behavior: `{}`", s),
-        }
-    }
-}
-
-/// A lazily-initialized value.
-///
-/// This is a basic replacement for `LazyLock` which is available only in Rust 1.80+.
-pub struct LazyLock<T> {
-    init: fn() -> T,
-    value: OnceLock<T>,
-}
-
-impl<T> Deref for LazyLock<T> {
-    type Target = T;
-
-    fn deref(&self) -> &Self::Target {
-        self.value.get_or_init(self.init)
-    }
-}
-
-impl<T> LazyLock<T> {
-    pub const fn new(init: fn() -> T) -> Self {
-        Self {
-            init,
-            value: OnceLock::new(),
+            s => py_schema_err!("Invalid extra_behavior: `{s}`"),
         }
     }
 }

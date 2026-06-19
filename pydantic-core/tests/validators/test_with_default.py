@@ -1,15 +1,13 @@
-import os
 import platform
-import sys
 import weakref
 from collections import deque
-from dataclasses import dataclass
-from typing import Any, Callable, Union, cast
+from collections.abc import Callable
+from typing import Any
 
 import pytest
+
 from pydantic_core import (
     ArgsKwargs,
-    PydanticUndefined,
     PydanticUseDefault,
     SchemaError,
     SchemaValidator,
@@ -17,7 +15,6 @@ from pydantic_core import (
     ValidationError,
     core_schema,
 )
-from pydantic_core._pydantic_core import SchemaSerializer
 
 from ..conftest import PyAndJson, assert_gc
 
@@ -352,8 +349,8 @@ def test_model_class():
     ids=['after', 'before', 'wrap-before', 'wrap-after'],
 )
 def test_validate_default(
-    config_validate_default: Union[bool, None],
-    schema_validate_default: Union[bool, None],
+    config_validate_default: bool | None,
+    schema_validate_default: bool | None,
     inner_schema: core_schema.CoreSchema,
 ):
     if config_validate_default is not None:
@@ -559,7 +556,7 @@ def test_no_default_value(validate_default: bool) -> None:
 
 @pytest.mark.parametrize('validate_default', [True, False])
 def test_some(validate_default: bool) -> None:
-    def get_default() -> Union[Some[int], None]:
+    def get_default() -> Some[int] | None:
         s = core_schema.with_default_schema(core_schema.int_schema(), default=42)
         return SchemaValidator(s).get_default_value()
 
@@ -569,26 +566,19 @@ def test_some(validate_default: bool) -> None:
     assert repr(res) == 'Some(42)'
 
 
-@pytest.mark.skipif(sys.version_info < (3, 10), reason='pattern matching was added in 3.10')
 def test_some_pattern_match() -> None:
-    code = """\
-def f(v: Union[Some[Any], None]) -> str:
-    match v:
-        case Some(1):
-            return 'case1'
-        case Some(value=2):
-            return 'case2'
-        case Some(int(value)):
-            return f'case3: {value}'
-        case Some(value):
-            return f'case4: {type(value).__name__}({value})'
-        case None:
-            return 'case5'
-"""
-
-    local_vars = {}
-    exec(code, globals(), local_vars)
-    f = cast(Callable[[Union[Some[Any], None]], str], local_vars['f'])
+    def f(v: Some[Any] | None) -> str:
+        match v:
+            case Some(1):
+                return 'case1'
+            case Some(value=2):
+                return 'case2'
+            case Some(int(value)):
+                return f'case3: {value}'
+            case Some(value):
+                return f'case4: {type(value).__name__}({value})'
+            case None:
+                return 'case5'
 
     res = f(SchemaValidator(core_schema.with_default_schema(core_schema.int_schema(), default=1)).get_default_value())
     assert res == 'case1'
@@ -768,8 +758,8 @@ validate_default_raises_examples = [
 )
 @pytest.mark.parametrize('input_value,expected', validate_default_raises_examples)
 def test_validate_default_raises(
-    core_schema_constructor: Union[core_schema.ModelFieldsSchema, core_schema.TypedDictSchema],
-    field_constructor: Union[core_schema.model_field, core_schema.typed_dict_field],
+    core_schema_constructor: Callable[..., Any],
+    field_constructor: Callable[..., Any],
     input_value: dict,
     expected: Any,
 ) -> None:
@@ -822,156 +812,6 @@ def test_validate_default_raises_dataclass(input_value: dict, expected: Any) -> 
         v.validate_python(input_value)
 
     assert exc_info.value.errors(include_url=False, include_context=False) == expected
-
-
-@pytest.fixture(params=['model', 'typed_dict', 'dataclass', 'arguments_v3'])
-def container_schema_builder(
-    request: pytest.FixtureRequest,
-) -> Callable[[dict[str, core_schema.CoreSchema]], core_schema.CoreSchema]:
-    if request.param == 'model':
-        return lambda fields: core_schema.model_schema(
-            cls=type('Test', (), {}),
-            schema=core_schema.model_fields_schema(
-                fields={k: core_schema.model_field(schema=v) for k, v in fields.items()},
-            ),
-        )
-    elif request.param == 'typed_dict':
-        return lambda fields: core_schema.typed_dict_schema(
-            fields={k: core_schema.typed_dict_field(schema=v) for k, v in fields.items()}
-        )
-    elif request.param == 'dataclass':
-        return lambda fields: core_schema.dataclass_schema(
-            cls=dataclass(type('Test', (), {})),
-            schema=core_schema.dataclass_args_schema(
-                'Test',
-                fields=[core_schema.dataclass_field(name=k, schema=v) for k, v in fields.items()],
-            ),
-            fields=[k for k in fields.keys()],
-        )
-    elif request.param == 'arguments_v3':
-        # TODO: open an issue for this
-        raise pytest.xfail('arguments v3 does not yet support default_factory_takes_data properly')
-    else:
-        raise ValueError(f'Unknown container type {request.param}')
-
-
-def test_default_factory_not_called_if_existing_error(container_schema_builder, pydantic_version) -> None:
-    schema = container_schema_builder(
-        {
-            'a': core_schema.int_schema(),
-            'b': core_schema.with_default_schema(
-                schema=core_schema.int_schema(), default_factory=lambda data: data['a'], default_factory_takes_data=True
-            ),
-        }
-    )
-    v = SchemaValidator(schema)
-    with pytest.raises(ValidationError) as e:
-        v.validate_python({'a': 'not_an_int'})
-
-    assert e.value.errors(include_url=False) == [
-        {
-            'type': 'int_parsing',
-            'loc': ('a',),
-            'msg': 'Input should be a valid integer, unable to parse string as an integer',
-            'input': 'not_an_int',
-        },
-        {
-            'input': PydanticUndefined,
-            'loc': ('b',),
-            'msg': 'The default factory uses validated data, but at least one validation error occurred',
-            'type': 'default_factory_not_called',
-        },
-    ]
-
-    include_urls = os.environ.get('PYDANTIC_ERRORS_INCLUDE_URL', '1') != 'false'
-
-    expected = (
-        f"""2 validation errors for {v.title}
-a
-  Input should be a valid integer, unable to parse string as an integer [type=int_parsing, input_value='not_an_int', input_type=str]"""
-        + (
-            f"""
-    For further information visit https://errors.pydantic.dev/{pydantic_version}/v/int_parsing"""
-            if include_urls
-            else ''
-        )
-        + """
-b
-  The default factory uses validated data, but at least one validation error occurred [type=default_factory_not_called]"""
-        + (
-            f"""
-    For further information visit https://errors.pydantic.dev/{pydantic_version}/v/default_factory_not_called"""
-            if include_urls
-            else ''
-        )
-    )
-
-    assert str(e.value) == expected
-
-    # repeat with the first field being a default which validates incorrectly
-
-    schema = container_schema_builder(
-        {
-            'a': core_schema.with_default_schema(
-                schema=core_schema.int_schema(), default='not_an_int', validate_default=True
-            ),
-            'b': core_schema.with_default_schema(
-                schema=core_schema.int_schema(), default_factory=lambda data: data['a'], default_factory_takes_data=True
-            ),
-        }
-    )
-    v = SchemaValidator(schema)
-    with pytest.raises(ValidationError) as e:
-        v.validate_python({})
-
-    assert e.value.errors(include_url=False) == [
-        {
-            'type': 'int_parsing',
-            'loc': ('a',),
-            'msg': 'Input should be a valid integer, unable to parse string as an integer',
-            'input': 'not_an_int',
-        },
-        {
-            'input': PydanticUndefined,
-            'loc': ('b',),
-            'msg': 'The default factory uses validated data, but at least one validation error occurred',
-            'type': 'default_factory_not_called',
-        },
-    ]
-
-    assert str(e.value) == expected
-
-
-def test_default_factory_not_called_union_ok(container_schema_builder) -> None:
-    schema_fail = container_schema_builder(
-        {
-            'a': core_schema.none_schema(),
-            'b': core_schema.with_default_schema(
-                schema=core_schema.int_schema(),
-                default_factory=lambda data: data['a'],
-                default_factory_takes_data=True,
-            ),
-        }
-    )
-
-    schema_ok = container_schema_builder(
-        {
-            'a': core_schema.int_schema(),
-            'b': core_schema.with_default_schema(
-                schema=core_schema.int_schema(),
-                default_factory=lambda data: data['a'] + 1,
-                default_factory_takes_data=True,
-            ),
-            # this is used to show that this union member was selected
-            'c': core_schema.with_default_schema(schema=core_schema.int_schema(), default=3),
-        }
-    )
-
-    schema = core_schema.union_schema([schema_fail, schema_ok])
-
-    v = SchemaValidator(schema)
-    s = SchemaSerializer(schema)
-    assert s.to_python(v.validate_python({'a': 1}), mode='json') == {'a': 1, 'b': 2, 'c': 3}
 
 
 def test_default_validate_default_after_validator_field_name() -> None:

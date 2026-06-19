@@ -20,7 +20,7 @@ use crate::errors::LocItem;
 use crate::get_pydantic_version;
 use crate::input::InputType;
 use crate::serializers::{Extra, SerMode, SerializationConfig, SerializationState, WarningsMode};
-use crate::tools::{safe_repr, write_truncated_to_limited_bytes, SchemaDict};
+use crate::tools::{SchemaDict, safe_repr, write_truncated_to_limited_bytes};
 
 use super::line_error::ValLineError;
 use super::location::Location;
@@ -28,7 +28,7 @@ use super::types::ErrorType;
 use super::value_exception::PydanticCustomError;
 use super::{InputValue, ValError};
 
-#[pyclass(extends=PyValueError, module="pydantic_core._pydantic_core", subclass)]
+#[pyclass(extends=PyValueError, module="pydantic_core._pydantic_core", subclass, skip_from_py_object, frozen)]
 #[derive(Clone)]
 #[cfg_attr(debug_assertions, derive(Debug))]
 pub struct ValidationError {
@@ -76,12 +76,13 @@ impl ValidationError {
                 let validation_error = Self::new(line_errors, title, input_type, hide_input);
                 match Bound::new(py, validation_error) {
                     Ok(err) => {
-                        if validation_error_cause {
-                            // Will return an import error if the backport was needed and not installed:
-                            if let Some(cause_problem) = ValidationError::maybe_add_cause(err.borrow(), py) {
-                                return cause_problem;
-                            }
+                        // Will return an import error if the backport was needed and not installed:
+                        if validation_error_cause
+                            && let Some(cause_problem) = ValidationError::maybe_add_cause(err.borrow(), py)
+                        {
+                            return cause_problem;
                         }
+
                         PyErr::from_value(err.into_any())
                     }
                     Err(err) => err,
@@ -111,7 +112,9 @@ impl ValidationError {
     }
 
     pub fn use_default_error() -> PyErr {
-        py_schema_error_type!("Uncaught `PydanticUseDefault` exception: the error was raised in a field validator and no default value is available for that field.")
+        py_schema_error_type!(
+            "Uncaught `PydanticUseDefault` exception: the error was raised in a field validator and no default value is available for that field."
+        )
     }
 
     fn maybe_add_cause(self_: PyRef<'_, Self>, py: Python) -> Option<PyErr> {
@@ -180,7 +183,11 @@ impl ValidationError {
                         Ok(group_cls) => group_cls.call1((title, user_py_errs)).ok(),
                         Err(_) => None,
                     },
-                    Err(_) => return Some(PyImportError::new_err("validation_error_cause flag requires the exceptiongroup module backport to be installed when used on Python <3.11.")),
+                    Err(_) => {
+                        return Some(PyImportError::new_err(
+                            "validation_error_cause flag requires the exceptiongroup module backport to be installed when used on Python <3.11.",
+                        ));
+                    }
                 }
             };
 
@@ -237,11 +244,7 @@ fn get_formated_url(py: Python) -> &'static str {
 }
 
 fn get_url_prefix(py: Python<'_>, include_url: bool) -> Option<&str> {
-    if include_url {
-        Some(get_formated_url(py))
-    } else {
-        None
-    }
+    if include_url { Some(get_formated_url(py)) } else { None }
 }
 
 // used to convert a validation error back to ValError for wrap functions
@@ -338,10 +341,10 @@ impl ValidationError {
         include_context: bool,
         include_input: bool,
     ) -> PyResult<Bound<'py, PyString>> {
-        let config = SerializationConfig::from_args("iso8601", "iso8601", "utf8", "constants")?;
+        let config = SerializationConfig::default();
         let extra = Extra::new(
             py,
-            &SerMode::Json,
+            SerMode::Json,
             None,
             false,
             false,
@@ -351,6 +354,7 @@ impl ValidationError {
             true,
             None,
             false,
+            None,
             None,
         );
         let mut state = SerializationState::new(config, WarningsMode::None, None, None, extra)?;
@@ -421,7 +425,7 @@ pub fn pretty_py_line_errors<'a>(
 }
 
 /// `PyLineError` are the public version of `ValLineError`, as help and used in `ValidationError`s
-#[pyclass]
+#[pyclass(from_py_object)]
 #[derive(Clone)]
 #[cfg_attr(debug_assertions, derive(Debug))]
 pub struct PyLineError {
@@ -455,8 +459,8 @@ impl TryFrom<&Bound<'_, PyAny>> for PyLineError {
         let error_type = if let Ok(type_str) = type_raw.cast::<PyString>() {
             let context: Option<Bound<'_, PyDict>> = dict.get_as(intern!(py, "ctx"))?;
             ErrorType::new(py, type_str.to_str()?, context)?
-        } else if let Ok(custom_error) = type_raw.extract::<PydanticCustomError>() {
-            ErrorType::new_custom_error(py, custom_error)
+        } else if let Ok(custom_error) = type_raw.cast::<PydanticCustomError>() {
+            ErrorType::new_custom_error(py, custom_error.get().clone())
         } else {
             return Err(PyTypeError::new_err(
                 "`type` should be a `str` or `PydanticCustomError`",
@@ -506,20 +510,14 @@ impl PyLineError {
         if include_input {
             dict.set_item("input", &self.input_value)?;
         }
-        if include_context {
-            if let Some(context) = self.error_type.py_dict(py)? {
-                dict.set_item("ctx", context)?;
-            }
+        if include_context && let Some(context) = self.error_type.py_dict(py)? {
+            dict.set_item("ctx", context)?;
         }
-        if let Some(url_prefix) = url_prefix {
-            match self.error_type {
-                ErrorType::CustomError { .. } => {
-                    // Don't add URLs for custom errors
-                }
-                _ => {
-                    dict.set_item("url", self.get_error_url(url_prefix))?;
-                }
-            }
+        if let Some(url_prefix) = url_prefix
+            // Don't add URLs for custom errors
+            && !matches!(self.error_type, ErrorType::CustomError { .. })
+        {
+            dict.set_item("url", self.get_error_url(url_prefix))?;
         }
         Ok(dict)
     }
@@ -551,22 +549,16 @@ impl PyLineError {
                 write!(output, ", input_type={type_}")?;
             }
         }
-        if let Some(url_prefix) = url_prefix {
-            match self.error_type {
-                ErrorType::CustomError { .. } => {
-                    // Don't display URLs for custom errors
-                    output.push(']');
-                }
-                _ => {
-                    write!(
-                        output,
-                        "]\n    For further information visit {}",
-                        self.get_error_url(url_prefix)
-                    )?;
-                }
-            }
-        } else {
-            output.push(']');
+        output.push(']');
+        if let Some(url_prefix) = url_prefix
+            // Don't display URLs for custom errors
+            && !matches!(self.error_type, ErrorType::CustomError { .. })
+        {
+            write!(
+                output,
+                "\n    For further information visit {}",
+                self.get_error_url(url_prefix)
+            )?;
         }
         Ok(output)
     }
@@ -583,17 +575,17 @@ where
     S::Error::custom(error.to_string())
 }
 
-struct ValidationErrorSerializer<'slf, 'a, 'py> {
+struct ValidationErrorSerializer<'slf, 'py> {
     py: Python<'py>,
     line_errors: &'py [PyLineError],
     url_prefix: Option<&'py str>,
     include_context: bool,
     include_input: bool,
-    state: &'slf mut SerializationState<'a, 'py>,
+    state: &'slf mut SerializationState<'py>,
     input_type: &'py InputType,
 }
 
-impl ValidationErrorSerializer<'_, '_, '_> {
+impl ValidationErrorSerializer<'_, '_> {
     fn serialize<S>(&mut self, serializer: S) -> Result<S::Ok, S::Error>
     where
         S: Serializer,
@@ -615,17 +607,17 @@ impl ValidationErrorSerializer<'_, '_, '_> {
     }
 }
 
-struct PyLineErrorSerializer<'slf, 'a, 'py> {
+struct PyLineErrorSerializer<'slf, 'py> {
     py: Python<'py>,
     line_error: &'py PyLineError,
     url_prefix: Option<&'py str>,
     include_context: bool,
     include_input: bool,
-    state: RefCell<&'slf mut SerializationState<'a, 'py>>,
+    state: RefCell<&'slf mut SerializationState<'py>>,
     input_type: &'py InputType,
 }
 
-impl Serialize for PyLineErrorSerializer<'_, '_, '_> {
+impl Serialize for PyLineErrorSerializer<'_, '_> {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
         S: Serializer,
@@ -653,10 +645,10 @@ impl Serialize for PyLineErrorSerializer<'_, '_, '_> {
             map.serialize_entry("input", &state.serialize_infer(self.line_error.input_value.bind(py)))?;
         }
 
-        if self.include_context {
-            if let Some(context) = self.line_error.error_type.py_dict(py).map_err(py_err_json::<S>)? {
-                map.serialize_entry("ctx", &state.serialize_infer(context.bind(py)))?;
-            }
+        if self.include_context
+            && let Some(context) = self.line_error.error_type.py_dict(py).map_err(py_err_json::<S>)?
+        {
+            map.serialize_entry("ctx", &state.serialize_infer(context.bind(py)))?;
         }
         if let Some(url_prefix) = self.url_prefix {
             map.serialize_entry("url", &self.line_error.get_error_url(url_prefix))?;

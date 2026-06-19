@@ -13,6 +13,7 @@ from pydantic import (
     NaiveDatetime,
     PastDate,
     PastDatetime,
+    PydanticUserError,
     TypeAdapter,
     ValidationError,
     condate,
@@ -450,10 +451,10 @@ def test_parse_durations(TimedeltaModel, value, result):
 )
 def test_model_type_errors(field, value, error_message):
     class Model(BaseModel):
-        dt: datetime = None
-        d: date = None
-        t: time = None
-        td: timedelta = None
+        dt: datetime | None = None
+        d: date | None = None
+        t: time | None = None
+        td: timedelta | None = None
 
     with pytest.raises(ValidationError) as exc_info:
         Model(**{field: value})
@@ -462,13 +463,13 @@ def test_model_type_errors(field, value, error_message):
     assert error['msg'] == error_message
 
 
-@pytest.mark.parametrize('field', ['dt', 'd', 't', 'dt'])
+@pytest.mark.parametrize('field', ['dt', 'd', 't'])
 def test_unicode_decode_error(field):
     class Model(BaseModel):
-        dt: datetime = None
-        d: date = None
-        t: time = None
-        td: timedelta = None
+        dt: datetime | None = None
+        d: date | None = None
+        t: time | None = None
+        td: timedelta | None = None
 
     with pytest.raises(ValidationError) as exc_info:
         Model(**{field: b'\x81\x81\x81\x81\x81\x81\x81\x81'})
@@ -685,7 +686,7 @@ def test_future_datetime_validation_fails(value, future_datetime_type):
     ),
 )
 def test_invalid_annotated_type(annotation):
-    with pytest.raises(TypeError, match=f"'{annotation.__name__}' cannot annotate 'str'."):
+    with pytest.raises(PydanticUserError, match=f"'{annotation.__name__}' cannot annotate 'str'."):
 
         class Model(BaseModel):
             foo: Annotated[str, annotation()]

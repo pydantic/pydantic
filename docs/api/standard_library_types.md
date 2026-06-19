@@ -79,10 +79,12 @@ Strings support the following constraints:
 | `strip_whitespace` | Whether to remove leading and trailing whitespace | N/A                                                                                                                                           |
 | `to_upper`         | Whether to convert the string to uppercase        | N/A                                                                                                                                           |
 | `to_lower`         | Whether to convert the string to lowercase        | N/A                                                                                                                                           |
+| `ascii_only`       | Whether to allow only ASCII characters            | N/A                                                                                                                                           |
 
-These constraints can be provided using the [`StringConstraints`][pydantic.types.StringConstraints] metadata type, or using the [`Field()`][pydantic.Field] function (except for `to_upper` and `to_lower`).
-The `MinLen`, `MaxLen`, `Len`, `LowerCase`, `UpperCase` metadata types from the [`annotated-types`](https://github.com/annotated-types/annotated-types)
-library can also be used.
+These constraints can be provided using the [`StringConstraints`][pydantic.types.StringConstraints] metadata type, or using the [`Field()`][pydantic.Field] function (except for `strip_whitespace`, `to_upper`, `to_lower` and `ascii_only`).
+
+The [`annotated-types`](https://github.com/annotated-types/annotated-types) library also provides the `MinLen`, `MaxLen` and `Len` metadata types, as well
+as the `LowerCase`, `UpperCase`, `IsDigit` and `IsAscii` predicates (must be parameterized with `str`, e.g. `LowerCase[str]`).
 
 <!-- markdownlint-disable-next-line no-empty-links -->
 [](){#pattern-constraint-note}
@@ -237,8 +239,10 @@ Floats support the following constraints:
 | `allow_inf_nan` | Whether to allow NaN (not-a-number) and infinite values | N/A                                                                                                     |
 
 These constraints can be provided using the [`Field()`][pydantic.Field] function.
-The `Le`, `Ge`, `Lt`, `Gt` and `MultipleOf` metadata types from the [`annotated-types`](https://github.com/annotated-types/annotated-types)
-library and the [`AllowInfNan`][pydantic.types.AllowInfNan] type can also be used.
+
+The [`annotated-types`](https://github.com/annotated-types/annotated-types) library also provides the `Le`, `Ge`, `Lt`, `Gt` and `MultipleOf` metadata types,
+as well as the `IsFinite`, `IsNotFinite`, `IsNan`, `IsNotNan`, `IsAscii`, `IsInfinite` and `IsNotInfinite` predicates
+(must be parameterized with `float`, e.g. `IsFinite[float]`). The [`AllowInfNan`][pydantic.types.AllowInfNan] type can also be used.
 
 Pydantic also provides the following types as convenience aliases:
 
@@ -266,7 +270,7 @@ Standard library type: [`enum.IntEnum`][].
 <h4>Validation</h4>
 
 * If the [`enum.IntEnum`][] type is used directly, any [`enum.IntEnum`][] instance is validated as-is
-* Id an [`enum.IntEnum`][] subclass is used as a type, any enum member or value that correspond to the
+* If an [`enum.IntEnum`][] subclass is used as a type, any enum member or value that correspond to the
   enum members values is validated as-is.
 
 See [Enums](#enums) for more details.
@@ -346,6 +350,9 @@ print(my_model.model_dump_json())  # (2)!
 
 ### Complex numbers
 
+/// version-added | v2.9
+///
+
 Built-in type: [`complex`][].
 
 <h4>Validation</h4>
@@ -372,6 +379,9 @@ In [JSON mode](../concepts/serialization.md#json-mode), they are serialized as s
 [](){#fractionsfraction}
 
 ### Fractions
+
+/// version-added | v2.10
+///
 
 Standard library type: [`fractions.Fraction`][].
 
@@ -690,7 +700,7 @@ Standard library type: [`enum.Enum`][].
 <h3>Validation</h3>
 
 * If the [`enum.Enum`][] type is used directly, any [`enum.Enum`][] instance is validated as-is.
-* Id an [`enum.Enum`][] subclass is used as a type, any enum member or value that correspond to the
+* If an [`enum.Enum`][] subclass is used as a type, any enum member or value that correspond to the
   enum members [values][enum.Enum.value] is validated as-is.
 
 <h3>Serialization</h3>
@@ -789,14 +799,12 @@ The strict constraint must be applied to the parameter type for this to work.
 <h4>Example</h4>
 
 ```python
-from typing import Optional
-
 from pydantic import BaseModel, Field
 
 
 class Model(BaseModel):
-    simple_list: Optional[list[object]] = None
-    list_of_ints: Optional[list[int]] = Field(default=None, strict=True)
+    simple_list: list[object] | None = None
+    list_of_ints: list[int] | None = Field(default=None, strict=True)
 
 
 print(Model(simple_list=('1', '2', '3')).simple_list)
@@ -845,14 +853,12 @@ The strict constraint must be applied to the parameter types for this to work.
 <h4>Example</h4>
 
 ```python
-from typing import Optional
-
 from pydantic import BaseModel
 
 
 class Model(BaseModel):
-    simple_tuple: Optional[tuple] = None
-    tuple_of_different_types: Optional[tuple[int, float, bool]] = None
+    simple_tuple: tuple | None = None
+    tuple_of_different_types: tuple[int, float, bool] | None = None
 
 
 print(Model(simple_tuple=[1, 2, 3, 4]).simple_tuple)
@@ -940,14 +946,12 @@ they are serialized as arrays.
 <h4>Example</h4>
 
 ```python
-from typing import Optional
-
 from pydantic import BaseModel
 
 
 class Model(BaseModel):
-    simple_set: Optional[set] = None
-    set_of_ints: Optional[frozenset[int]] = None
+    simple_set: set | None = None
+    set_of_ints: frozenset[int] | None = None
 
 
 print(Model(simple_set=['1', '2', '3']).simple_set)
@@ -955,6 +959,10 @@ print(Model(simple_set=['1', '2', '3']).simple_set)
 print(Model(set_of_ints=['1', '2', '3']).set_of_ints)
 #> frozenset({1, 2, 3})
 ```
+
+<h4>JSON Schema</h4>
+
+Pydantic does best effort to sort default values that are [`collections.abc.Set`][] instances.
 
 ### Deque
 
@@ -1020,7 +1028,7 @@ Any [`collections.abc.Sequence`][] instance (expect strings and bytes) is accept
 constructor, and then converted back to the original input type.
 
 !!! warning "Strings aren't treated as sequences"
-    While strings are technically valid sequence instances, this is frequently not intended as is a common source of bugs.
+    While strings are technically valid sequence instances, this is frequently not intended, and is a common source of bugs.
 
     As a result, Pydantic will *not* accept strings and bytes for the [`Sequence`][collections.abc.Sequence] type (see example below).
 
@@ -1185,7 +1193,7 @@ Standard library type: [`collections.abc.Iterable`][] (deprecated alias: [`typin
 <h4>Validation</h4>
 
 Iterables are lazily validated, and wrapped in an internal datastructure that can be iterated over
-(and will validated the items type while doing so). This means that even if you provide a concrete
+(and will validate the items type while doing so). This means that even if you provide a concrete
 container such as a list, the validated type will *not* be of type [`list`][]. However, Pydantic
 will ensure that the input value is iterable by getting an [iterator][] from it (by calling
 [`iter()`][iter] on the value).
@@ -1229,7 +1237,7 @@ Pydantic only validates that the input is a [callable][] (using the [`callable()
 It does *not* validate the number of parameters or their type, nor the type of the return value.
 
 ```python
-from typing import Callable
+from collections.abc import Callable
 
 from pydantic import BaseModel
 

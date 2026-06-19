@@ -1,5 +1,4 @@
 from collections.abc import Mapping
-from typing import Union
 
 import pytest
 
@@ -77,11 +76,11 @@ def test_parse_mapping_as():
 
 
 def test_schema():
-    assert schema_of(Union[int, str], title='IntOrStr') == {
+    assert schema_of(int | str, title='IntOrStr') == {
         'title': 'IntOrStr',
         'anyOf': [{'type': 'integer'}, {'type': 'string'}],
     }
-    assert schema_json_of(Union[int, str], title='IntOrStr', indent=2) == (
+    assert schema_json_of(int | str, title='IntOrStr', indent=2) == (
         '{\n'
         '  "anyOf": [\n'
         '    {\n'

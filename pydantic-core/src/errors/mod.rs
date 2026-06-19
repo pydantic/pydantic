@@ -8,7 +8,7 @@ mod value_exception;
 
 pub use self::line_error::{InputValue, ToErrorValue, ValError, ValLineError, ValResult};
 pub use self::location::{LocItem, Location};
-pub use self::types::{list_all_errors, ErrorType, ErrorTypeDefaults, Number};
+pub use self::types::{ErrorType, ErrorTypeDefaults, Number, list_all_errors};
 pub use self::validation_exception::{PyLineError, ValidationError};
 pub use self::value_exception::{PydanticCustomError, PydanticKnownError, PydanticOmit, PydanticUseDefault};
 

@@ -112,7 +112,7 @@ def test_simple_tagged_union(py_and_json: PyAndJson, input_value, expected):
             },
         }
     )
-    assert 'discriminator: LookupKey' in repr(v.validator)
+    assert 'discriminator: LookupPaths' in repr(v.validator)
     if isinstance(expected, Err):
         with pytest.raises(ValidationError, match=expected.message) as exc_info:
             v.validate_test(input_value)
@@ -187,7 +187,7 @@ def test_int_choice_keys(py_and_json: PyAndJson, input_value, expected):
             },
         }
     )
-    assert 'discriminator: LookupKey' in repr(v.validator)
+    assert 'discriminator: LookupPaths' in repr(v.validator)
     if isinstance(expected, Err):
         with pytest.raises(ValidationError, match=expected.message) as exc_info:
             v.validate_test(input_value)

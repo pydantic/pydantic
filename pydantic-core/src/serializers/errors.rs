@@ -19,7 +19,7 @@ pub(super) fn py_err_se_err<T: ser::Error, E: fmt::Display>(py_error: E) -> T {
 }
 
 /// Wrapper type which allows convenient conversion between `PyErr` and `ser::Error` in `?` expressions.
-pub(super) struct WrappedSerError<T: ser::Error>(pub T);
+pub(crate) struct WrappedSerError<T: ser::Error>(pub T);
 
 pub fn unwrap_ser_error<T: ser::Error>(wrapped: WrappedSerError<T>) -> T {
     wrapped.0
@@ -31,7 +31,7 @@ impl<T: ser::Error> From<PyErr> for WrappedSerError<T> {
     }
 }
 
-#[pyclass(extends=PyValueError, module="pydantic_core._pydantic_core")]
+#[pyclass(extends=PyValueError, module="pydantic_core._pydantic_core", skip_from_py_object)]
 #[derive(Debug, Clone)]
 pub struct PythonSerializerError {
     pub message: String,
@@ -73,7 +73,7 @@ pub(super) fn se_err_py_err(error: PythonSerializerError) -> PyErr {
     }
 }
 
-#[pyclass(extends=PyValueError, module="pydantic_core._pydantic_core")]
+#[pyclass(extends=PyValueError, module="pydantic_core._pydantic_core", skip_from_py_object, frozen)]
 #[derive(Debug, Clone)]
 pub struct PydanticSerializationError {
     message: String,
@@ -86,8 +86,8 @@ impl fmt::Display for PydanticSerializationError {
 }
 
 impl PydanticSerializationError {
-    pub(crate) fn new_err(msg: String) -> PyErr {
-        PyErr::new::<Self, String>(msg)
+    pub(crate) fn new_err<T: Into<String>>(msg: T) -> PyErr {
+        PyErr::new::<Self, String>(msg.into())
     }
 }
 
@@ -108,11 +108,11 @@ impl PydanticSerializationError {
     }
 }
 
-#[pyclass(extends=PyValueError, module="pydantic_core._pydantic_core")]
+#[pyclass(extends=PyValueError, module="pydantic_core._pydantic_core", skip_from_py_object, frozen)]
 #[derive(Debug, Clone)]
 pub struct PydanticSerializationUnexpectedValue {
     message: Option<String>,
-    field_name: Option<String>,
+    field_name: Option<Py<PyString>>,
     field_type: Option<String>,
     input_value: Option<Py<PyAny>>,
 }
@@ -128,7 +128,7 @@ impl PydanticSerializationUnexpectedValue {
     }
 
     pub fn new_from_parts(
-        field_name: Option<String>,
+        field_name: Option<Py<PyString>>,
         field_type: Option<String>,
         input_value: Option<Py<PyAny>>,
     ) -> Self {
@@ -142,7 +142,7 @@ impl PydanticSerializationUnexpectedValue {
 
     pub fn new(
         message: Option<String>,
-        field_name: Option<String>,
+        field_name: Option<Py<PyString>>,
         field_type: Option<String>,
         input_value: Option<Py<PyAny>>,
     ) -> Self {
@@ -155,7 +155,7 @@ impl PydanticSerializationUnexpectedValue {
     }
 
     pub fn to_py_err(&self) -> PyErr {
-        PyErr::new::<Self, (Option<String>, Option<String>, Option<String>, Option<Py<PyAny>>)>((
+        PyErr::new::<Self, _>((
             self.message.clone(),
             self.field_name.clone(),
             self.field_type.clone(),
@@ -170,7 +170,7 @@ impl PydanticSerializationUnexpectedValue {
     #[pyo3(signature = (message=None, field_name=None, field_type=None, input_value=None, /))]
     fn py_new(
         message: Option<String>,
-        field_name: Option<String>,
+        field_name: Option<Py<PyString>>,
         field_type: Option<String>,
         input_value: Option<Py<PyAny>>,
     ) -> Self {

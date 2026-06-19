@@ -3,6 +3,14 @@ import os
 import pickle
 
 import pytest
+from typing_extensions import (  # noqa: UP035 (for `get_args` and `get_origin`)
+    get_args,
+    get_origin,
+    get_type_hints,
+)
+from typing_inspection import typing_objects
+from typing_inspection.introspection import UNKNOWN, AnnotationSource, inspect_annotation
+
 from pydantic_core import CoreConfig, CoreSchema, CoreSchemaType, PydanticUndefined, core_schema
 from pydantic_core._pydantic_core import (
     SchemaError,
@@ -12,13 +20,6 @@ from pydantic_core._pydantic_core import (
     build_info,
     build_profile,
 )
-from typing_extensions import (  # noqa: UP035 (https://github.com/astral-sh/ruff/pull/18476)
-    get_args,
-    get_origin,
-    get_type_hints,
-)
-from typing_inspection import typing_objects
-from typing_inspection.introspection import UNKNOWN, AnnotationSource, inspect_annotation
 
 
 @pytest.mark.parametrize('obj', [ValidationError, SchemaValidator, SchemaError])
@@ -199,7 +200,7 @@ def test_core_schema_type_literal():
     if get_args(CoreSchemaType) != schema_types:
         literal = ''.join(f'\n    {e!r},' for e in schema_types)
         print(
-            f'python code (near end of python/pydantic_core/core_schema.py):\n\nCoreSchemaType = Literal[{literal}\n]'
+            f'python code (near end of python/pydantic_core/core_schema.py):\n\nCoreSchemaType: TypeAlias = Literal[{literal}\n]'
         )
         pytest.fail('core_schema.CoreSchemaType needs to be updated')
 

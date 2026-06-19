@@ -7,22 +7,28 @@ use std::sync::OnceLock;
 
 use idna::punycode::decode_to_string;
 use jiter::{PartialMode, StringCacheMode};
-use percent_encoding::{percent_encode, AsciiSet, CONTROLS};
+use percent_encoding::{AsciiSet, CONTROLS, percent_encode};
 use pyo3::exceptions::PyValueError;
 use pyo3::pyclass::CompareOp;
 use pyo3::sync::OnceLockExt;
 use pyo3::types::{PyDict, PyType};
-use pyo3::{intern, prelude::*, IntoPyObjectExt};
+use pyo3::{IntoPyObjectExt, intern, prelude::*};
 use url::Url;
 
+use crate::ValidationError;
 use crate::input::InputType;
 use crate::recursion_guard::RecursionState;
 use crate::tools::SchemaDict;
 use crate::validators::url::{MultiHostUrlValidator, UrlValidator};
 use crate::validators::{Extra, ValidationState, Validator};
-use crate::ValidationError;
 
-#[pyclass(name = "Url", module = "pydantic_core._pydantic_core", subclass, frozen)]
+#[pyclass(
+    name = "Url",
+    module = "pydantic_core._pydantic_core",
+    subclass,
+    frozen,
+    skip_from_py_object
+)]
 #[derive(Clone)]
 #[cfg_attr(debug_assertions, derive(Debug))]
 pub struct PyUrl {
@@ -86,7 +92,6 @@ impl PyUrl {
                         None,
                         None,
                         None,
-                        None,
                         InputType::Python,
                         StringCacheMode::None,
                         None,
@@ -94,6 +99,8 @@ impl PyUrl {
                     ),
                     &mut RecursionState::default(),
                     PartialMode::Off,
+                    None,
+                    None,
                 ),
             )
             .map_err(|e| {
@@ -277,7 +284,13 @@ impl PyUrl {
     }
 }
 
-#[pyclass(name = "MultiHostUrl", module = "pydantic_core._pydantic_core", subclass, frozen)]
+#[pyclass(
+    name = "MultiHostUrl",
+    module = "pydantic_core._pydantic_core",
+    subclass,
+    frozen,
+    skip_from_py_object
+)]
 #[derive(Clone, Hash)]
 #[cfg_attr(debug_assertions, derive(Debug))]
 pub struct PyMultiHostUrl {
@@ -315,7 +328,6 @@ impl PyMultiHostUrl {
                         None,
                         None,
                         None,
-                        None,
                         InputType::Python,
                         StringCacheMode::None,
                         None,
@@ -323,6 +335,8 @@ impl PyMultiHostUrl {
                     ),
                     &mut RecursionState::default(),
                     PartialMode::Off,
+                    None,
+                    None,
                 ),
             )
             .map_err(|e| {
@@ -608,10 +622,10 @@ impl FromPyObject<'_, '_> for UrlHostParts {
         let py = ob.py();
         let dict = ob.cast::<PyDict>()?;
         Ok(UrlHostParts {
-            username: dict.get_as(intern!(py, "username"))?,
-            password: dict.get_as(intern!(py, "password"))?,
-            host: dict.get_as(intern!(py, "host"))?,
-            port: dict.get_as(intern!(py, "port"))?,
+            username: dict.get_as::<Option<String>>(intern!(py, "username"))?.flatten(),
+            password: dict.get_as::<Option<String>>(intern!(py, "password"))?.flatten(),
+            host: dict.get_as::<Option<String>>(intern!(py, "host"))?.flatten(),
+            port: dict.get_as::<Option<u16>>(intern!(py, "port"))?.flatten(),
         })
     }
 }

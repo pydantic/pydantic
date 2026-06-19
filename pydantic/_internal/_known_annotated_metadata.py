@@ -30,6 +30,7 @@ STR_CONSTRAINTS = {
     'to_upper',
     'pattern',
     'coerce_numbers_to_str',
+    'ascii_only',
 }
 BYTES_CONSTRAINTS = {*LENGTH_CONSTRAINTS, *STRICT}
 
@@ -199,6 +200,7 @@ def apply_known_metadata(annotation: Any, schema: CoreSchema) -> CoreSchema | No
         'to_lower',
         'to_upper',
         'coerce_numbers_to_str',
+        'ascii_only',
     }
     chain_schema_steps: list[CoreSchema] = []
 

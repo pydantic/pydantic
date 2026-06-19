@@ -1,12 +1,15 @@
-use std::sync::Arc;
+use std::num::NonZeroUsize;
+use std::sync::{Arc, LazyLock};
+use std::sync::{Mutex, PoisonError};
 
+use lru::LruCache;
+use pyo3::IntoPyObjectExt;
 use pyo3::intern;
 use pyo3::prelude::*;
+use pyo3::sync::MutexExt;
 use pyo3::types::{PyDict, PyString};
-use pyo3::IntoPyObjectExt;
 use regex::Regex;
 
-use crate::build_tools::LazyLock;
 use crate::build_tools::{is_strict, py_schema_error_type, schema_or_config, schema_or_config_same};
 use crate::errors::{ErrorType, ValError, ValResult};
 use crate::input::Input;
@@ -103,6 +106,7 @@ pub struct StrConstrainedValidator {
     to_lower: bool,
     to_upper: bool,
     coerce_numbers_to_str: bool,
+    ascii_only: bool,
 }
 
 impl_py_gc_traverse!(StrConstrainedValidator {});
@@ -122,45 +126,48 @@ impl Validator for StrConstrainedValidator {
         if self.strip_whitespace {
             str = str.trim();
         }
+        if self.ascii_only && !str.is_ascii() {
+            return Err(ValError::new(ErrorType::StringNotAscii { context: None }, input));
+        }
 
         let str_len: Option<usize> = if self.min_length.is_some() | self.max_length.is_some() {
             Some(str.chars().count())
         } else {
             None
         };
-        if let Some(min_length) = self.min_length {
-            if str_len.unwrap() < min_length {
-                return Err(ValError::new(
-                    ErrorType::StringTooShort {
-                        min_length,
-                        context: None,
-                    },
-                    input,
-                ));
-            }
+        if let Some(min_length) = self.min_length
+            && str_len.unwrap() < min_length
+        {
+            return Err(ValError::new(
+                ErrorType::StringTooShort {
+                    min_length,
+                    context: None,
+                },
+                input,
+            ));
         }
-        if let Some(max_length) = self.max_length {
-            if str_len.unwrap() > max_length {
-                return Err(ValError::new(
-                    ErrorType::StringTooLong {
-                        max_length,
-                        context: None,
-                    },
-                    input,
-                ));
-            }
+        if let Some(max_length) = self.max_length
+            && str_len.unwrap() > max_length
+        {
+            return Err(ValError::new(
+                ErrorType::StringTooLong {
+                    max_length,
+                    context: None,
+                },
+                input,
+            ));
         }
 
-        if let Some(pattern) = &self.pattern {
-            if !pattern.is_match(py, str)? {
-                return Err(ValError::new(
-                    ErrorType::StringPatternMismatch {
-                        pattern: pattern.pattern.clone(),
-                        context: None,
-                    },
-                    input,
-                ));
-            }
+        if let Some(pattern) = &self.pattern
+            && !pattern.is_match(py, str)?
+        {
+            return Err(ValError::new(
+                ErrorType::StringPatternMismatch {
+                    pattern: pattern.pattern.clone(),
+                    context: None,
+                },
+                input,
+            ));
         }
 
         let py_string = if self.to_lower {
@@ -225,6 +232,7 @@ impl StrConstrainedValidator {
 
         let coerce_numbers_to_str: bool =
             schema_or_config_same(schema, config, intern!(py, "coerce_numbers_to_str"))?.unwrap_or(false);
+        let ascii_only: bool = schema_or_config_same(schema, config, intern!(py, "ascii_only"))?.unwrap_or(false);
 
         Ok(Self {
             strict: is_strict(schema, config)?,
@@ -235,6 +243,7 @@ impl StrConstrainedValidator {
             to_lower,
             to_upper,
             coerce_numbers_to_str,
+            ascii_only,
         })
     }
 
@@ -247,8 +256,15 @@ impl StrConstrainedValidator {
             || self.strip_whitespace
             || self.to_lower
             || self.to_upper
+            || self.ascii_only
     }
 }
+
+// A shared LRU cache for compiled regex objects.
+// NOTE: We could push things even further by using an Arc over the `Regex` instances, but this is largely sufficient to avoid
+// memory consumption issues.
+static REGEX_CACHE: LazyLock<Mutex<LruCache<String, Regex>>> =
+    LazyLock::new(|| Mutex::new(LruCache::new(NonZeroUsize::new(50).unwrap())));
 
 #[derive(Debug, Clone)]
 struct Pattern {
@@ -275,7 +291,7 @@ impl Pattern {
             pattern
                 .getattr("pattern")
                 .and_then(|attr| attr.extract::<String>())
-                .map_err(|_| py_schema_error_type!("Invalid pattern, must be str or re.Pattern: {}", pattern))
+                .map_err(|_| py_schema_error_type!("Invalid pattern, must be str or re.Pattern: {pattern}"))
         }
     }
 
@@ -298,10 +314,20 @@ impl Pattern {
         } else {
             let engine = match engine {
                 RegexEngine::RUST_REGEX => {
-                    RegexEngine::RustRegex(Regex::new(&pattern_str).map_err(|e| py_schema_error_type!("{}", e))?)
+                    let lock_cache = || REGEX_CACHE.lock_py_attached(py).unwrap_or_else(PoisonError::into_inner);
+                    let re_pattern = if let Some(re_pattern) = lock_cache().get(&pattern_str) {
+                        re_pattern.clone()
+                    } else {
+                        // compile the pattern outside of the lock so that other threads can use the cache while we compile
+                        let pattern = Regex::new(&pattern_str).map_err(|e| py_schema_error_type!("{}", e))?;
+                        // use get_or_insert to allow the possibility another thread raced to compile the same pattern
+                        lock_cache().get_or_insert(pattern_str.clone(), || pattern).clone()
+                    };
+
+                    RegexEngine::RustRegex(re_pattern)
                 }
                 RegexEngine::PYTHON_RE => RegexEngine::PythonRe(re_compile.call1((pattern,))?.into()),
-                _ => return Err(py_schema_error_type!("Invalid regex engine: {}", engine)),
+                _ => return Err(py_schema_error_type!("Invalid regex engine: {engine}")),
             };
 
             Ok(Self {

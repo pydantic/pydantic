@@ -4,10 +4,11 @@ import platform
 import re
 import weakref
 from collections.abc import Mapping
-from typing import Any, Union
+from typing import Any
 
 import pytest
 from dirty_equals import FunctionCheck
+
 from pydantic_core import CoreConfig, SchemaError, SchemaValidator, ValidationError, core_schema
 from pydantic_core.core_schema import ExtraBehavior
 
@@ -178,7 +179,7 @@ def test_ignore_extra():
         ({}, 'forbid'),
     ],
 )
-def test_forbid_extra(schema_extra_behavior: dict[str, Any], validate_fn_extra_kw: Union[ExtraBehavior, None]):
+def test_forbid_extra(schema_extra_behavior: dict[str, Any], validate_fn_extra_kw: ExtraBehavior | None):
     v = SchemaValidator(
         core_schema.typed_dict_schema(
             fields={'field_a': core_schema.typed_dict_field(schema=core_schema.str_schema())}, **schema_extra_behavior
@@ -578,7 +579,8 @@ def test_aliases_debug():
     )
     print(repr(v))
     assert repr(v).startswith('SchemaValidator(title="typed-dict", validator=TypedDict(')
-    assert 'PathChoices(' in repr(v)
+    # check that aliases with non-empty "rest" are present, i.e. non-trivial paths
+    assert 'rest: [\n' in repr(v)
 
 
 def get_int_key():
@@ -633,7 +635,7 @@ def test_paths_allow_by_name(py_and_json: PyAndJson, input_value):
     [
         ({'validation_alias': []}, 'Lookup paths should have at least one element'),
         ({'validation_alias': [[]]}, 'Each alias path should have at least one element'),
-        ({'validation_alias': [123]}, "TypeError: 'int' object cannot be cast as 'list'"),
+        ({'validation_alias': [123]}, "TypeError: 'int' object is not an instance of 'list'"),
         ({'validation_alias': [[1, 'foo']]}, 'TypeError: The first item in an alias path should be a string'),
     ],
     ids=repr,
@@ -1083,7 +1085,7 @@ class TestOnError:
     ids=['extras_schema=unset', 'extras_schema=None', 'extras_schema=int'],
 )
 def test_extra_behavior_allow(
-    config: Union[core_schema.CoreConfig, None],
+    config: core_schema.CoreConfig | None,
     schema_extra_behavior_kw: dict[str, Any],
     extras_schema_kw: dict[str, Any],
     expected_extra_value: Any,
@@ -1118,7 +1120,7 @@ def test_extra_behavior_allow(
     ],
 )
 def test_extra_behavior_allow_with_validate_fn_override(
-    config: Union[core_schema.CoreConfig, None],
+    config: core_schema.CoreConfig | None,
     schema_extra_behavior_kw: dict[str, Any],
 ):
     v = SchemaValidator(
@@ -1152,9 +1154,9 @@ def test_extra_behavior_allow_with_validate_fn_override(
     ],
 )
 def test_extra_behavior_forbid(
-    config: Union[core_schema.CoreConfig, None],
+    config: core_schema.CoreConfig | None,
     schema_extra_behavior_kw: dict[str, Any],
-    validate_fn_extra_kw: Union[ExtraBehavior, None],
+    validate_fn_extra_kw: ExtraBehavior | None,
 ):
     v = SchemaValidator(
         core_schema.typed_dict_schema(
@@ -1191,9 +1193,9 @@ def test_extra_behavior_forbid(
     ],
 )
 def test_extra_behavior_ignore(
-    config: Union[core_schema.CoreConfig, None],
+    config: core_schema.CoreConfig | None,
     schema_extra_behavior_kw: dict[str, Any],
-    validate_fn_extra_kw: Union[ExtraBehavior, None],
+    validate_fn_extra_kw: ExtraBehavior | None,
 ):
     v = SchemaValidator(
         core_schema.typed_dict_schema(
@@ -1241,10 +1243,10 @@ def test_leak_typed_dict():
 @pytest.mark.parametrize('runtime_by_alias', [None, True, False])
 @pytest.mark.parametrize('runtime_by_name', [None, True, False])
 def test_by_alias_and_name_config_interaction(
-    config_by_alias: Union[bool, None],
-    config_by_name: Union[bool, None],
-    runtime_by_alias: Union[bool, None],
-    runtime_by_name: Union[bool, None],
+    config_by_alias: bool | None,
+    config_by_name: bool | None,
+    runtime_by_alias: bool | None,
+    runtime_by_name: bool | None,
 ) -> None:
     """This test reflects the priority that applies for config vs runtime validation alias configuration.
 

@@ -3,7 +3,7 @@ use std::sync::Arc;
 
 use pyo3::prelude::*;
 use pyo3::types::{PyDict, PyFrozenSet, PyList, PySet};
-use pyo3::{intern, IntoPyObjectExt};
+use pyo3::{IntoPyObjectExt, intern};
 
 use serde::ser::SerializeSeq;
 
@@ -13,7 +13,7 @@ use crate::tools::SchemaDict;
 
 use super::any::AnySerializer;
 use super::{
-    infer_serialize, infer_to_python, BuildSerializer, CombinedSerializer, PydanticSerializer, SerMode, TypeSerializer,
+    BuildSerializer, CombinedSerializer, PydanticSerializer, SerMode, TypeSerializer, infer_serialize, infer_to_python,
 };
 
 macro_rules! build_serializer {
@@ -54,7 +54,7 @@ macro_rules! build_serializer {
             fn to_python<'py>(
                 &self,
                 value: &Bound<'py, PyAny>,
-                state: &mut SerializationState<'_, 'py>,
+                state: &mut SerializationState<'py>,
             ) -> PyResult<Py<PyAny>> {
                 let py = value.py();
                 match value.cast::<$py_type>() {
@@ -80,7 +80,7 @@ macro_rules! build_serializer {
             fn json_key<'a, 'py>(
                 &self,
                 key: &'a Bound<'py, PyAny>,
-                state: &mut SerializationState<'_, 'py>,
+                state: &mut SerializationState<'py>,
             ) -> PyResult<Cow<'a, str>> {
                 self.invalid_as_json_key(key, state, Self::EXPECTED_TYPE)
             }
@@ -89,7 +89,7 @@ macro_rules! build_serializer {
                 &self,
                 value: &Bound<'py, PyAny>,
                 serializer: S,
-                state: &mut SerializationState<'_, 'py>,
+                state: &mut SerializationState<'py>,
             ) -> Result<S::Ok, S::Error> {
                 match value.cast::<$py_type>() {
                     Ok(py_set) => {

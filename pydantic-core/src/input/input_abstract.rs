@@ -1,12 +1,13 @@
 use std::convert::Infallible;
 use std::fmt;
 
+use jiter::JsonValue;
 use pyo3::exceptions::PyValueError;
 use pyo3::types::{PyDict, PyList, PyString};
-use pyo3::{intern, prelude::*, IntoPyObjectExt};
+use pyo3::{IntoPyObjectExt, intern, prelude::*};
 
 use crate::errors::{ErrorTypeDefaults, InputValue, LocItem, ValError, ValResult};
-use crate::lookup_key::{LookupKey, LookupPath};
+use crate::lookup_key::LookupPath;
 use crate::tools::py_err;
 use crate::validators::{TemporalUnitMode, ValBytesMode};
 
@@ -44,7 +45,7 @@ impl TryFrom<&str> for InputType {
             "python" => Ok(Self::Python),
             "json" => Ok(Self::Json),
             "string" => Ok(Self::String),
-            s => py_err!(PyValueError; "Invalid error mode: {}", s),
+            s => py_err!(PyValueError; "Invalid error mode: {s}"),
         }
     }
 }
@@ -55,7 +56,7 @@ pub type ValMatch<T> = ValResult<ValidationMatch<T>>;
 /// the convention is to either implement:
 /// * `strict_*` & `lax_*` if they have different behavior
 /// * or, `validate_*` and `strict_*` to just call `validate_*` if the behavior for strict and lax is the same
-pub trait Input<'py>: fmt::Debug {
+pub(crate) trait Input<'py>: fmt::Debug {
     fn py_converter(&self) -> impl IntoPyObject<'py> + '_;
 
     #[inline]
@@ -70,6 +71,10 @@ pub trait Input<'py>: fmt::Debug {
     }
 
     fn as_python(&self) -> Option<&Bound<'py, PyAny>> {
+        None
+    }
+
+    fn as_json(&self) -> Option<&JsonValue<'_>> {
         None
     }
 
@@ -120,11 +125,7 @@ pub trait Input<'py>: fmt::Debug {
         Self: 'a;
 
     fn validate_dict(&self, strict: bool) -> ValResult<Self::Dict<'_>> {
-        if strict {
-            self.strict_dict()
-        } else {
-            self.lax_dict()
-        }
+        if strict { self.strict_dict() } else { self.lax_dict() }
     }
     fn strict_dict(&self) -> ValResult<Self::Dict<'_>>;
     #[cfg_attr(has_coverage_attribute, coverage(off))]
@@ -187,7 +188,7 @@ pub trait Input<'py>: fmt::Debug {
 /// this trait we abstract over whether the return value from the iterator is owned
 /// or borrowed; all we care about is that we can borrow it again with `borrow_input`
 /// for some lifetime 'a.
-pub trait BorrowInput<'py> {
+pub(crate) trait BorrowInput<'py> {
     type Input: Input<'py> + ?Sized;
     fn borrow_input(&self) -> &Self::Input;
 }
@@ -223,7 +224,7 @@ pub trait KeywordArgs<'py> {
     where
         Self: 'a;
     fn len(&self) -> usize;
-    fn get_item<'k>(&self, key: &'k LookupKey) -> ValResult<Option<(&'k LookupPath, Self::Item<'_>)>>;
+    fn get_item(&self, key: &LookupPath) -> ValResult<Option<Self::Item<'_>>>;
     fn iter(&self) -> impl Iterator<Item = ValResult<(Self::Key<'_>, Self::Item<'_>)>>;
 }
 
@@ -236,14 +237,14 @@ pub trait ConsumeIterator<T> {
 }
 
 /// For validations from a dictionary
-pub trait ValidatedDict<'py> {
+pub(crate) trait ValidatedDict<'py> {
     type Key<'a>: BorrowInput<'py> + Clone + Into<LocItem>
     where
         Self: 'a;
     type Item<'a>: BorrowInput<'py>
     where
         Self: 'a;
-    fn get_item<'k>(&self, key: &'k LookupKey) -> ValResult<Option<(&'k LookupPath, Self::Item<'_>)>>;
+    fn get_item(&self, key: &LookupPath) -> ValResult<Option<Self::Item<'_>>>;
     // FIXME this is a bit of a leaky abstraction
     fn is_py_get_attr(&self) -> bool {
         false
@@ -285,7 +286,7 @@ pub enum Never {}
 impl<'py> ValidatedDict<'py> for Never {
     type Key<'a> = Bound<'py, PyAny>;
     type Item<'a> = Bound<'py, PyAny>;
-    fn get_item<'k>(&self, _key: &'k LookupKey) -> ValResult<Option<(&'k LookupPath, Self::Item<'_>)>> {
+    fn get_item<'k>(&self, _key: &LookupPath) -> ValResult<Option<Self::Item<'_>>> {
         unreachable!()
     }
     fn iterate<'a, R>(
@@ -371,7 +372,7 @@ impl<'py> KeywordArgs<'py> for Never {
     fn len(&self) -> usize {
         unreachable!()
     }
-    fn get_item<'k>(&self, _key: &'k LookupKey) -> ValResult<Option<(&'k LookupPath, Self::Item<'_>)>> {
+    fn get_item<'k>(&self, _key: &LookupPath) -> ValResult<Option<Self::Item<'_>>> {
         unreachable!()
     }
     fn iter(&self) -> impl Iterator<Item = ValResult<(Self::Key<'_>, Self::Item<'_>)>> {

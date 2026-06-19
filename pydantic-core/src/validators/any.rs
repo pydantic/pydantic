@@ -1,13 +1,13 @@
-use std::sync::Arc;
+use std::sync::{Arc, LazyLock};
 
 use pyo3::prelude::*;
 use pyo3::types::PyDict;
 
+use crate::errors::ValResult;
 use crate::input::Input;
-use crate::{build_tools::LazyLock, errors::ValResult};
 
 use super::{
-    validation_state::Exactness, BuildValidator, CombinedValidator, DefinitionsBuilder, ValidationState, Validator,
+    BuildValidator, CombinedValidator, DefinitionsBuilder, ValidationState, Validator, validation_state::Exactness,
 };
 
 /// This might seem useless, but it's useful in DictValidator to avoid Option<Validator> a lot

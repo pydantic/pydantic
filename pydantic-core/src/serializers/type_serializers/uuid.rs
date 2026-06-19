@@ -1,17 +1,16 @@
 use std::borrow::Cow;
-use std::sync::Arc;
+use std::sync::{Arc, LazyLock};
 
 use pyo3::types::PyDict;
-use pyo3::{intern, prelude::*, IntoPyObjectExt};
+use pyo3::{IntoPyObjectExt, intern, prelude::*};
 use uuid::Uuid;
 
-use crate::build_tools::LazyLock;
 use crate::definitions::DefinitionsBuilder;
 use crate::serializers::SerializationState;
 
 use super::{
-    infer_json_key, infer_serialize, infer_to_python, py_err_se_err, BuildSerializer, CombinedSerializer, IsType,
-    ObType, SerMode, TypeSerializer,
+    BuildSerializer, CombinedSerializer, IsType, ObType, SerMode, TypeSerializer, infer_json_key, infer_serialize,
+    infer_to_python, py_err_se_err,
 };
 
 pub(crate) fn uuid_to_string(py_uuid: &Bound<'_, PyAny>) -> PyResult<String> {
@@ -42,11 +41,7 @@ impl BuildSerializer for UuidSerializer {
 }
 
 impl TypeSerializer for UuidSerializer {
-    fn to_python<'py>(
-        &self,
-        value: &Bound<'py, PyAny>,
-        state: &mut SerializationState<'_, 'py>,
-    ) -> PyResult<Py<PyAny>> {
+    fn to_python<'py>(&self, value: &Bound<'py, PyAny>, state: &mut SerializationState<'py>) -> PyResult<Py<PyAny>> {
         let py = value.py();
         match state.extra.ob_type_lookup.is_type(value, ObType::Uuid) {
             IsType::Exact | IsType::Subclass => match state.extra.mode {
@@ -63,7 +58,7 @@ impl TypeSerializer for UuidSerializer {
     fn json_key<'a, 'py>(
         &self,
         key: &'a Bound<'py, PyAny>,
-        state: &mut SerializationState<'_, 'py>,
+        state: &mut SerializationState<'py>,
     ) -> PyResult<Cow<'a, str>> {
         match state.extra.ob_type_lookup.is_type(key, ObType::Uuid) {
             IsType::Exact | IsType::Subclass => {
@@ -81,7 +76,7 @@ impl TypeSerializer for UuidSerializer {
         &self,
         value: &Bound<'py, PyAny>,
         serializer: S,
-        state: &mut SerializationState<'_, 'py>,
+        state: &mut SerializationState<'py>,
     ) -> Result<S::Ok, S::Error> {
         match state.extra.ob_type_lookup.is_type(value, ObType::Uuid) {
             IsType::Exact | IsType::Subclass => {

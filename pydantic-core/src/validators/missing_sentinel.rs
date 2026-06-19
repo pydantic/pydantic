@@ -1,10 +1,9 @@
 use core::fmt::Debug;
-use std::sync::Arc;
+use std::sync::{Arc, LazyLock};
 
 use pyo3::prelude::*;
 use pyo3::types::PyDict;
 
-use crate::build_tools::LazyLock;
 use crate::common::missing_sentinel::get_missing_sentinel_object;
 use crate::errors::{ErrorType, ValError, ValResult};
 use crate::input::Input;

@@ -1,12 +1,11 @@
 import os
-import platform
 import re
-import sys
 from functools import wraps
 from inspect import Parameter, signature
-from typing import Any, Union, get_type_hints
+from typing import Any, get_type_hints
 
 import pytest
+
 from pydantic_core import ArgsKwargs, SchemaError, SchemaValidator, ValidationError, core_schema
 from pydantic_core import core_schema as cs
 
@@ -188,7 +187,6 @@ def test_positional_args(py_and_json: PyAndJson, input_value, expected):
         [ArgsKwargs((), {'a': 1, 'b': 'a', 'c': True}), ((), {'a': 1, 'b': 'a', 'c': True})],
         [{'a': 1, 'b': 'a', 'c': True}, ((), {'a': 1, 'b': 'a', 'c': True})],
         [ArgsKwargs((), {'a': '1', 'b': 'a', 'c': 'True'}), ((), {'a': 1, 'b': 'a', 'c': True})],
-        [ArgsKwargs((), {'a': 1, 'b': 'a', 'c': True}), ((), {'a': 1, 'b': 'a', 'c': True})],
         [ArgsKwargs((1,), {'a': 1, 'b': 'a', 'c': True}), Err('type=unexpected_positional_argument,')],
         [
             ArgsKwargs((), {'a': 1, 'b': 'a', 'c': True, 'd': 'wrong'}),
@@ -478,7 +476,6 @@ def test_positional_optional(py_and_json: PyAndJson, input_value, expected):
     'input_value,expected',
     [
         [{'a': 1}, ((), {'a': 1})],
-        [ArgsKwargs((), {'a': 1}), ((), {'a': 1})],
         [ArgsKwargs((), {'a': 1}), ((), {'a': 1})],
         [ArgsKwargs(()), ((), {'a': 1})],
     ],
@@ -1043,7 +1040,6 @@ def test_function_types():
     ]
 
 
-@pytest.mark.skipif(sys.version_info < (3, 10), reason='requires python3.10 or higher')
 def test_function_positional_only(import_execute):
     # language=Python
     m = import_execute(
@@ -1077,7 +1073,6 @@ def create_function(validate, config = None):
     assert foobar('1', '2', c=3, d=4) == (1, 2, 3)
 
 
-@pytest.mark.skipif(sys.version_info < (3, 10), reason='requires python3.10 or higher')
 def test_function_positional_only_default(import_execute):
     # language=Python
     m = import_execute(
@@ -1094,7 +1089,6 @@ def create_function(validate):
     assert foobar('1') == (1, 42)
 
 
-@pytest.mark.skipif(sys.version_info < (3, 10), reason='requires python3.10 or higher')
 def test_function_positional_kwargs(import_execute):
     # language=Python
     m = import_execute(
@@ -1138,9 +1132,6 @@ def test_invalid_schema():
         )
 
 
-@pytest.mark.xfail(
-    platform.python_implementation() == 'PyPy' and sys.version_info[:2] == (3, 11), reason='pypy 3.11 type formatting'
-)
 def test_error_display(pydantic_version):
     v = SchemaValidator(
         core_schema.arguments_schema(
@@ -1188,10 +1179,10 @@ def test_error_display(pydantic_version):
 @pytest.mark.parametrize('runtime_by_alias', [None, True, False])
 @pytest.mark.parametrize('runtime_by_name', [None, True, False])
 def test_by_alias_and_name_config_interaction(
-    config_by_alias: Union[bool, None],
-    config_by_name: Union[bool, None],
-    runtime_by_alias: Union[bool, None],
-    runtime_by_name: Union[bool, None],
+    config_by_alias: bool | None,
+    config_by_name: bool | None,
+    runtime_by_alias: bool | None,
+    runtime_by_name: bool | None,
 ) -> None:
     """This test reflects the priority that applies for config vs runtime validation alias configuration.
 

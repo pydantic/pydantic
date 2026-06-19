@@ -1,11 +1,12 @@
 import re
 import sys
-from collections.abc import Sequence
+import warnings
+from collections.abc import Callable, Sequence
 from copy import deepcopy
 from dataclasses import dataclass
 from enum import Enum, IntEnum
 from types import SimpleNamespace
-from typing import Annotated, Any, Callable, Generic, Literal, Optional, TypeVar, Union
+from typing import Annotated, Any, Generic, Literal, TypeVar, Union
 
 import pytest
 from dirty_equals import HasRepr, IsStr
@@ -19,6 +20,7 @@ from pydantic import (
     Field,
     PlainSerializer,
     PlainValidator,
+    RootModel,
     TypeAdapter,
     ValidationError,
     field_validator,
@@ -49,7 +51,7 @@ def test_discriminated_single_variant(union):
 
     class Model(BaseModel):
         if union:
-            x: Union[InnerModel] = Field(discriminator='qwe')
+            x: InnerModel = Field(discriminator='qwe')
         else:
             x: InnerModel = Field(discriminator='qwe')
 
@@ -72,7 +74,7 @@ def test_discriminated_union_single_variant():
         qwe: Literal['qwe']
 
     class Model(BaseModel):
-        x: Union[InnerModel] = Field(discriminator='qwe')
+        x: InnerModel = Field(discriminator='qwe')
 
     assert Model(x={'qwe': 'qwe'}).x.qwe == 'qwe'
 
@@ -88,7 +90,7 @@ def test_discriminated_union_defined_discriminator():
     with pytest.raises(PydanticUserError, match="Model 'Cat' needs a discriminator field for key 'pet_type'"):
 
         class Model(BaseModel):
-            pet: Union[Cat, Dog] = Field(discriminator='pet_type')
+            pet: Cat | Dog = Field(discriminator='pet_type')
             number: int
 
 
@@ -104,7 +106,7 @@ def test_discriminated_union_literal_discriminator():
     with pytest.raises(PydanticUserError, match="Model 'Cat' needs field 'pet_type' to be of type `Literal`"):
 
         class Model(BaseModel):
-            pet: Union[Cat, Dog] = Field(discriminator='pet_type')
+            pet: Cat | Dog = Field(discriminator='pet_type')
             number: int
 
 
@@ -115,12 +117,12 @@ def test_discriminated_union_root_same_discriminator():
     class WhiteCat(BaseModel):
         pet_type: Literal['whitecat']
 
-    Cat = Union[BlackCat, WhiteCat]
+    Cat = BlackCat | WhiteCat
 
     class Dog(BaseModel):
         pet_type: Literal['dog']
 
-    CatDog = TypeAdapter(Annotated[Union[Cat, Dog], Field(discriminator='pet_type')]).validate_python
+    CatDog = TypeAdapter(Annotated[Cat | Dog, Field(discriminator='pet_type')]).validate_python
     CatDog({'pet_type': 'blackcat'})
     CatDog({'pet_type': 'whitecat'})
     CatDog({'pet_type': 'dog'})
@@ -161,7 +163,7 @@ def test_discriminated_union_validation(color_discriminator_kind, pet_discrimina
         white_infos: str
 
     color_discriminator = _get_str_discriminator('color', color_discriminator_kind)
-    Cat = Annotated[Union[BlackCat, WhiteCat], color_discriminator]
+    Cat = Annotated[BlackCat | WhiteCat, color_discriminator]
 
     class Dog(BaseModel):
         pet_type: Literal['dog']
@@ -174,7 +176,7 @@ def test_discriminated_union_validation(color_discriminator_kind, pet_discrimina
     pet_discriminator = _get_str_discriminator('pet_type', pet_discriminator_kind)
 
     class Model(BaseModel):
-        pet: Annotated[Union[Cat, Dog, Lizard], pet_discriminator]
+        pet: Annotated[Cat | Dog | Lizard, pet_discriminator]
         number: int
 
     with pytest.raises(ValidationError) as exc_info:
@@ -255,13 +257,13 @@ def test_discriminated_annotated_union():
         color: Literal['white']
         white_infos: str
 
-    Cat = Annotated[Union[BlackCat, WhiteCat], Field(discriminator='color')]
+    Cat = Annotated[BlackCat | WhiteCat, Field(discriminator='color')]
 
     class Dog(BaseModel):
         pet_type: Literal['dog']
         dog_name: str
 
-    Pet = Annotated[Union[Cat, Dog], Field(discriminator='pet_type')]
+    Pet = Annotated[Cat | Dog, Field(discriminator='pet_type')]
 
     class Model(BaseModel):
         pet: Pet
@@ -339,7 +341,7 @@ def test_discriminated_union_basemodel_instance_value():
         foo: Literal['b']
 
     class Top(BaseModel):
-        sub: Union[A, B] = Field(discriminator='foo')
+        sub: A | B = Field(discriminator='foo')
 
     t = Top(sub=A(foo='a'))
     assert isinstance(t, Top)
@@ -354,7 +356,7 @@ def test_discriminated_union_basemodel_instance_value_with_alias():
         literal: Literal['b'] = Field(alias='lit')
 
     class Top(BaseModel):
-        sub: Union[A, B] = Field(discriminator='literal')
+        sub: A | B = Field(discriminator='literal')
 
     with pytest.raises(ValidationError) as exc_info:
         Top(sub=A(literal='a'))
@@ -375,7 +377,7 @@ def test_discriminated_union_int():
         m: Literal[2]
 
     class Top(BaseModel):
-        sub: Union[A, B] = Field(discriminator='m')
+        sub: A | B = Field(discriminator='m')
 
     assert isinstance(Top.model_validate({'sub': {'m': 2}}).sub, B)
     with pytest.raises(ValidationError) as exc_info:
@@ -423,7 +425,7 @@ def test_discriminated_union_enum(base_class, choices):
         m: Literal[EnumValue.b]
 
     class Top(BaseModel):
-        sub: Union[A, B] = Field(discriminator='m')
+        sub: A | B = Field(discriminator='m')
 
     assert isinstance(Top.model_validate({'sub': {'m': EnumValue.b}}).sub, B)
     if isinstance(EnumValue.b, (int, str)):
@@ -453,10 +455,12 @@ def test_alias_different():
         pet_type: Literal['dog'] = Field(alias='T')
         d: str
 
-    with pytest.raises(TypeError, match=re.escape("Aliases for discriminator 'pet_type' must be the same (got T, U)")):
+    with pytest.raises(
+        PydanticUserError, match=re.escape("Aliases for discriminator 'pet_type' must be the same (got T, U)")
+    ):
 
         class Model(BaseModel):
-            pet: Union[Cat, Dog] = Field(discriminator='pet_type')
+            pet: Cat | Dog = Field(discriminator='pet_type')
 
 
 def test_alias_same():
@@ -469,7 +473,7 @@ def test_alias_same():
         d: str
 
     class Model(BaseModel):
-        pet: Union[Cat, Dog] = Field(discriminator='pet_type')
+        pet: Cat | Dog = Field(discriminator='pet_type')
 
     assert Model(**{'pet': {'typeOfPet': 'dog', 'd': 'milou'}}).pet.pet_type == 'dog'
 
@@ -483,14 +487,14 @@ def test_nested():
         pet_type: Literal['dog']
         name: str
 
-    CommonPet = Annotated[Union[Cat, Dog], Field(discriminator='pet_type')]
+    CommonPet = Annotated[Cat | Dog, Field(discriminator='pet_type')]
 
     class Lizard(BaseModel):
         pet_type: Literal['reptile', 'lizard']
         name: str
 
     class Model(BaseModel):
-        pet: Union[CommonPet, Lizard] = Field(discriminator='pet_type')
+        pet: CommonPet | Lizard = Field(discriminator='pet_type')
         n: int
 
     assert isinstance(Model(**{'pet': {'pet_type': 'dog', 'name': 'Milou'}, 'n': 5}).pet, Dog)
@@ -508,7 +512,7 @@ def test_generic():
         error_message: str
 
     class Container(BaseModel, Generic[T]):
-        result: Union[Success[T], Failure] = Field(discriminator='type')
+        result: Success[T] | Failure = Field(discriminator='type')
 
     with pytest.raises(ValidationError, match="Unable to extract tag using discriminator 'type'"):
         Container[str].model_validate({'result': {}})
@@ -552,7 +556,7 @@ def test_optional_union():
         name: str
 
     class Pet(BaseModel):
-        pet: Optional[Union[Cat, Dog]] = Field(discriminator='pet_type')
+        pet: Cat | Dog | None = Field(discriminator='pet_type')
 
     assert Pet(pet={'pet_type': 'cat', 'name': 'Milo'}).model_dump() == {'pet': {'name': 'Milo', 'pet_type': 'cat'}}
     assert Pet(pet={'pet_type': 'dog', 'name': 'Otis'}).model_dump() == {'pet': {'name': 'Otis', 'pet_type': 'dog'}}
@@ -599,7 +603,7 @@ def test_optional_union_with_defaults():
         name: str
 
     class Pet(BaseModel):
-        pet: Optional[Union[Cat, Dog]] = Field(default=None, discriminator='pet_type')
+        pet: Cat | Dog | None = Field(default=None, discriminator='pet_type')
 
     assert Pet(pet={'pet_type': 'cat', 'name': 'Milo'}).model_dump() == {'pet': {'name': 'Milo', 'pet_type': 'cat'}}
     assert Pet(pet={'pet_type': 'dog', 'name': 'Otis'}).model_dump() == {'pet': {'name': 'Otis', 'pet_type': 'dog'}}
@@ -641,7 +645,7 @@ def test_aliases_matching_is_not_sufficient() -> None:
     with pytest.raises(PydanticUserError, match="Model 'Case1' needs a discriminator field for key 'kind'"):
 
         class TaggedParent(BaseModel):
-            tagged: Union[Case1, Case2] = Field(discriminator='kind')
+            tagged: Case1 | Case2 = Field(discriminator='kind')
 
 
 def test_nested_optional_unions() -> None:
@@ -654,11 +658,11 @@ def test_nested_optional_unions() -> None:
     class Lizard(BaseModel):
         pet_type: Literal['lizard', 'reptile'] = 'lizard'
 
-    MaybeCatDog = Annotated[Optional[Union[Cat, Dog]], Field(discriminator='pet_type')]
-    MaybeDogLizard = Annotated[Union[Dog, Lizard, None], Field(discriminator='pet_type')]
+    MaybeCatDog = Annotated[Cat | Dog | None, Field(discriminator='pet_type')]
+    MaybeDogLizard = Annotated[Dog | Lizard | None, Field(discriminator='pet_type')]
 
     class Pet(BaseModel):
-        pet: Union[MaybeCatDog, MaybeDogLizard] = Field(discriminator='pet_type')
+        pet: MaybeCatDog | MaybeDogLizard = Field(discriminator='pet_type')
 
     Pet.model_validate({'pet': {'pet_type': 'dog'}})
     Pet.model_validate({'pet': {'pet_type': 'cat'}})
@@ -703,8 +707,8 @@ def test_nested_discriminated_union() -> None:
     class Lizard(BaseModel):
         pet_type: Literal['lizard', 'LIZARD']
 
-    CatDog = Annotated[Union[Cat, Dog], Field(discriminator='pet_type')]
-    CatDogLizard = Annotated[Union[CatDog, Lizard], Field(discriminator='pet_type')]
+    CatDog = Annotated[Cat | Dog, Field(discriminator='pet_type')]
+    CatDogLizard = Annotated[CatDog | Lizard, Field(discriminator='pet_type')]
 
     class Pet(BaseModel):
         pet: CatDogLizard
@@ -743,11 +747,11 @@ def test_unions_of_optionals() -> None:
     class Lizard(BaseModel):
         pet_type: Literal['lizard'] = Field(alias='typeOfPet')
 
-    MaybeCat = Annotated[Union[Cat, None], 'some annotation']
-    MaybeDogLizard = Annotated[Optional[Union[Dog, Lizard]], 'some other annotation']
+    MaybeCat = Annotated[Cat | None, 'some annotation']
+    MaybeDogLizard = Annotated[Dog | Lizard | None, 'some other annotation']
 
     class Model(BaseModel):
-        maybe_pet: Union[MaybeCat, MaybeDogLizard] = Field(discriminator='pet_type')
+        maybe_pet: MaybeCat | MaybeDogLizard = Field(discriminator='pet_type')
 
     assert Model(**{'maybe_pet': None}).maybe_pet is None
     assert Model(**{'maybe_pet': {'typeOfPet': 'dog', 'd': 'milou'}}).maybe_pet.pet_type == 'dog'
@@ -756,13 +760,13 @@ def test_unions_of_optionals() -> None:
 
 def test_union_discriminator_literals() -> None:
     class Cat(BaseModel):
-        pet_type: Union[Literal['cat'], Literal['CAT']] = Field(alias='typeOfPet')
+        pet_type: Literal['cat'] | Literal['CAT'] = Field(alias='typeOfPet')
 
     class Dog(BaseModel):
         pet_type: Literal['dog'] = Field(alias='typeOfPet')
 
     class Model(BaseModel):
-        pet: Union[Cat, Dog] = Field(discriminator='pet_type')
+        pet: Cat | Dog = Field(discriminator='pet_type')
 
     assert Model(**{'pet': {'typeOfPet': 'dog'}}).pet.pet_type == 'dog'
     assert Model(**{'pet': {'typeOfPet': 'cat'}}).pet.pet_type == 'cat'
@@ -846,7 +850,7 @@ def test_distinct_choices() -> None:
     with pytest.raises(TypeError, match="Value 'dog' for discriminator 'pet_type' mapped to multiple choices"):
 
         class Model(BaseModel):
-            pet: Union[Cat, Dog] = Field(discriminator='pet_type')
+            pet: Cat | Dog = Field(discriminator='pet_type')
 
 
 def test_invalid_discriminated_union_type() -> None:
@@ -859,7 +863,7 @@ def test_invalid_discriminated_union_type() -> None:
     with pytest.raises(TypeError, match="The core schema type 'str' is not a valid discriminated union variant."):
 
         class Model(BaseModel):
-            pet: Union[Cat, Dog, str] = Field(discriminator='pet_type')
+            pet: Cat | Dog | str = Field(discriminator='pet_type')
 
 
 def test_invalid_list_discriminated_union_type():
@@ -874,7 +878,7 @@ def test_invalid_list_discriminated_union_type():
 
         class Model(BaseModel):
             # Note: `int`/`str` is invalid but we just want to test the `list` error message:
-            pets: list[Union[int, str]] = Field(discriminator='pet_type')
+            pets: list[int | str] = Field(discriminator='pet_type')
 
 
 def test_invalid_alias() -> None:
@@ -886,7 +890,9 @@ def test_invalid_alias() -> None:
     dog = core_schema.typed_dict_schema(dog_fields)
     schema = core_schema.union_schema([cat, dog])
 
-    with pytest.raises(TypeError, match=re.escape("Alias ['cat', 'CAT'] is not supported in a discriminated union")):
+    with pytest.raises(
+        PydanticUserError, match=re.escape("Alias ['cat', 'CAT'] is not supported in a discriminated union")
+    ):
         apply_discriminator(schema, 'kind')
 
 
@@ -896,7 +902,7 @@ def test_invalid_discriminator_type() -> None:
     cat = core_schema.typed_dict_schema(cat_fields)
     dog = core_schema.typed_dict_schema(dog_fields)
 
-    with pytest.raises(TypeError, match=re.escape("TypedDict needs field 'kind' to be of type `Literal`")):
+    with pytest.raises(PydanticUserError, match=re.escape("TypedDict needs field 'kind' to be of type `Literal`")):
         apply_discriminator(core_schema.union_schema([cat, dog]), 'kind')
 
 
@@ -906,7 +912,7 @@ def test_missing_discriminator_field() -> None:
     cat = core_schema.typed_dict_schema(cat_fields)
     dog = core_schema.typed_dict_schema(dog_fields)
 
-    with pytest.raises(TypeError, match=re.escape("TypedDict needs a discriminator field for key 'kind'")):
+    with pytest.raises(PydanticUserError, match=re.escape("TypedDict needs a discriminator field for key 'kind'")):
         apply_discriminator(core_schema.union_schema([dog, cat]), 'kind')
 
 
@@ -951,7 +957,7 @@ def test_plain_function_schema_is_invalid() -> None:
     ):
 
         class Model(BaseModel):
-            a: Union[Annotated[int, PlainValidator(lambda v: v)], str] = Field(discriminator='kind')
+            a: Annotated[int, PlainValidator(lambda v: v)] | str = Field(discriminator='kind')
 
 
 def test_invalid_str_choice_discriminator_values() -> None:
@@ -1166,7 +1172,7 @@ def test_union_in_submodel() -> None:
         type: Literal[2] = 2
         other: Literal['UnionModel2'] = 'UnionModel2'
 
-    UnionModel = Annotated[Union[UnionModel1, UnionModel2], Field(discriminator='type')]
+    UnionModel = Annotated[UnionModel1 | UnionModel2, Field(discriminator='type')]
 
     class SubModel1(BaseModel):
         union_model: UnionModel
@@ -1175,7 +1181,7 @@ def test_union_in_submodel() -> None:
         union_model: UnionModel
 
     class TestModel(BaseModel):
-        submodel: Union[SubModel1, SubModel2]
+        submodel: SubModel1 | SubModel2
 
     m = TestModel.model_validate({'submodel': {'union_model': {'type': 1}}})
     assert isinstance(m.submodel, SubModel1)
@@ -1291,7 +1297,7 @@ def test_function_after_discriminator():
         def replace_name(cls, v):
             return 'dog'
 
-    AllowedAnimal = Annotated[Union[CatModel, DogModel], Field(discriminator='name')]
+    AllowedAnimal = Annotated[CatModel | DogModel, Field(discriminator='name')]
 
     class Model(BaseModel):
         x: AllowedAnimal
@@ -1327,7 +1333,7 @@ def test_sequence_discriminated_union():
         pet_type: Literal['reptile', 'lizard']
         scales: bool
 
-    Pet = Annotated[Union[Cat, Dog, Lizard], Field(discriminator='pet_type')]
+    Pet = Annotated[Cat | Dog | Lizard, Field(discriminator='pet_type')]
 
     class Model(BaseModel):
         pet: Sequence[Pet]
@@ -1403,7 +1409,7 @@ def test_sequence_discriminated_union_validation():
         b_field: str
 
     class Model(BaseModel):
-        items: Sequence[Annotated[Union[A, B], Field(discriminator='type')]]
+        items: Sequence[Annotated[A | B, Field(discriminator='type')]]
 
     import json
 
@@ -1451,7 +1457,7 @@ def test_sequence_discriminated_union_validation_with_validator():
             return self
 
     class Model(BaseModel):
-        items: Sequence[Annotated[Union[A, B], Field(discriminator='type')]]
+        items: Sequence[Annotated[A | B, Field(discriminator='type')]]
 
     import json
 
@@ -1506,7 +1512,7 @@ def test_callable_discriminated_union_with_type_adapter(
 ) -> None:
     pet_adapter = TypeAdapter(
         Annotated[
-            Union[Annotated[animals.cat, Tag('cat')], Annotated[animals.dog, Tag('dog')]],
+            Annotated[animals.cat, Tag('cat')] | Annotated[animals.dog, Tag('dog')],
             Discriminator(get_pet_discriminator_value),
         ]
     )
@@ -1577,19 +1583,19 @@ def test_various_syntax_options_for_callable_union(
     animals: SimpleNamespace, get_pet_discriminator_value: Callable[[Any], str]
 ) -> None:
     class PetModelField(BaseModel):
-        pet: Union[Annotated[animals.cat, Tag('cat')], Annotated[animals.dog, Tag('dog')]] = Field(
+        pet: Annotated[animals.cat, Tag('cat')] | Annotated[animals.dog, Tag('dog')] = Field(
             discriminator=Discriminator(get_pet_discriminator_value)
         )
 
     class PetModelAnnotated(BaseModel):
         pet: Annotated[
-            Union[Annotated[animals.cat, Tag('cat')], Annotated[animals.dog, Tag('dog')]],
+            Annotated[animals.cat, Tag('cat')] | Annotated[animals.dog, Tag('dog')],
             Discriminator(get_pet_discriminator_value),
         ]
 
     class PetModelAnnotatedWithField(BaseModel):
         pet: Annotated[
-            Union[Annotated[animals.cat, Tag('cat')], Annotated[animals.dog, Tag('dog')]],
+            Annotated[animals.cat, Tag('cat')] | Annotated[animals.dog, Tag('dog')],
             Field(discriminator=Discriminator(get_pet_discriminator_value)),
         ]
 
@@ -1727,7 +1733,7 @@ def test_callable_discriminated_union_recursive():
 
     class DiscriminatedModel(BaseModel):
         x: Annotated[
-            Union[Annotated[str, Tag('str')], Annotated['DiscriminatedModel', Tag('model')]],
+            Annotated[str, Tag('str')] | Annotated['DiscriminatedModel', Tag('model')],
             Discriminator(
                 model_x_discriminator,
                 custom_error_type='invalid_union_member',
@@ -1772,7 +1778,7 @@ def test_callable_discriminated_union_with_missing_tag() -> None:
         if isinstance(v, (dict, BaseModel)):
             return 'model'
 
-    with pytest.raises(PydanticUserError) as exc_info:
+    with pytest.raises(PydanticUserError, check=lambda e: e.code == 'callable-discriminator-no-tag'):
 
         class DiscriminatedModel(BaseModel):
             x: Annotated[
@@ -1780,9 +1786,7 @@ def test_callable_discriminated_union_with_missing_tag() -> None:
                 Discriminator(model_x_discriminator),
             ]
 
-    assert exc_info.value.code == 'callable-discriminator-no-tag'
-
-    with pytest.raises(PydanticUserError) as exc_info:
+    with pytest.raises(PydanticUserError, check=lambda e: e.code == 'callable-discriminator-no-tag'):
 
         class DiscriminatedModel(BaseModel):
             x: Annotated[
@@ -1790,17 +1794,13 @@ def test_callable_discriminated_union_with_missing_tag() -> None:
                 Discriminator(model_x_discriminator),
             ]
 
-    assert exc_info.value.code == 'callable-discriminator-no-tag'
-
-    with pytest.raises(PydanticUserError) as exc_info:
+    with pytest.raises(PydanticUserError, check=lambda e: e.code == 'callable-discriminator-no-tag'):
 
         class DiscriminatedModel(BaseModel):
             x: Annotated[
-                Union[str, Annotated['DiscriminatedModel', Tag('model')]],
+                str | Annotated['DiscriminatedModel', Tag('model')],
                 Discriminator(model_x_discriminator),
             ]
-
-    assert exc_info.value.code == 'callable-discriminator-no-tag'
 
 
 @pytest.mark.xfail(
@@ -1823,10 +1823,7 @@ def test_presence_of_discriminator_when_generating_type_adaptor_json_schema_defi
         id: int
         items: list[
             Annotated[
-                Union[
-                    CreateItem1,
-                    CreateItem2,
-                ],
+                CreateItem1 | CreateItem2,
                 Field(discriminator='item_type'),
             ]
         ]
@@ -1890,7 +1887,7 @@ def test_nested_discriminator() -> None:
     class MyModel(BaseModel):
         type: Literal['mixed']
         sub_models: list['SubModel']
-        steps: Union[Step_A, Step_B] = Field(
+        steps: Step_A | Step_B = Field(
             default=None,
             discriminator='type',
         )
@@ -1973,7 +1970,7 @@ def test_nested_schema_gen_uses_tagged_union_in_ref() -> None:
     class LeafState(BaseModel):
         state_type: Literal['leaf']
 
-    AnyState = Annotated[Union[NestedState, LoopState, LeafState], Field(discriminator='state_type')]
+    AnyState = Annotated[NestedState | LoopState | LeafState, Field(discriminator='state_type')]
     adapter = TypeAdapter(AnyState)
 
     assert adapter.core_schema['schema']['type'] == 'tagged-union'
@@ -1990,7 +1987,7 @@ def test_recursive_discriminiated_union_with_typed_dict() -> None:
     class Bar(TypedDict):
         type: Literal['bar']
 
-    Foobar = Annotated[Union[Foo, Bar], Field(discriminator='type')]
+    Foobar = Annotated[Foo | Bar, Field(discriminator='type')]
     ta = TypeAdapter(Foobar)
 
     # len of errors should be 1 for each case, bc we're using a tagged union
@@ -2017,7 +2014,7 @@ def test_recursive_discriminiated_union_with_base_model() -> None:
     class Bar(BaseModel):
         type: Literal['bar']
 
-    Foobar = Annotated[Union[Foo, Bar], Field(discriminator='type')]
+    Foobar = Annotated[Foo | Bar, Field(discriminator='type')]
     ta = TypeAdapter(Foobar)
 
     # len of errors should be 1 for each case, bc we're using a tagged union
@@ -2046,7 +2043,7 @@ def test_recursive_discriminated_union_with_pydantic_dataclass() -> None:
     class Bar:
         type: Literal['bar']
 
-    Foobar = Annotated[Union[Foo, Bar], Field(discriminator='type')]
+    Foobar = Annotated[Foo | Bar, Field(discriminator='type')]
     ta = TypeAdapter(Foobar)
 
     # len of errors should be 1 for each case, bc we're using a tagged union
@@ -2077,7 +2074,7 @@ def test_discriminated_union_with_nested_dataclass() -> None:
 
     @pydantic_dataclass
     class NestedDataClass:
-        animal: Annotated[Union[Cat, Dog], Discriminator('type')]
+        animal: Annotated[Cat | Dog, Discriminator('type')]
 
     @pydantic_dataclass
     class Root:
@@ -2095,7 +2092,7 @@ def test_discriminated_union_with_nested_typed_dicts() -> None:
         type: Literal['dog']
 
     class NestedTypedDict(TypedDict):
-        animal: Annotated[Union[Cat, Dog], Discriminator('type')]
+        animal: Annotated[Cat | Dog, Discriminator('type')]
 
     class Root(TypedDict):
         data_class: NestedTypedDict
@@ -2117,7 +2114,7 @@ def test_discriminated_union_with_unsubstituted_type_var() -> None:
         friends: list['GenericPet']
         id: T
 
-    GenericPet = Annotated[Union[Dog[T], Cat[T]], Field(discriminator='type_')]
+    GenericPet = Annotated[Dog[T] | Cat[T], Field(discriminator='type_')]
 
     ta = TypeAdapter(Dog[int])
     int_dog = {
@@ -2144,7 +2141,7 @@ def test_discriminated_union_model_dump_with_nested_class() -> None:
         name: str
 
     class Yard(BaseModel):
-        pet: Union[Dog, Cat] = Field(discriminator='type')
+        pet: Dog | Cat = Field(discriminator='type')
 
     yard = Yard(pet=Dog(name='Rex'))
     yard_dict = yard.model_dump(mode='json')
@@ -2203,7 +2200,7 @@ def test_deferred_discriminated_union_meta_key_removed() -> None:
     assert Base.__pydantic_core_schema__ == base_schema
 
 
-def test_tagged_discriminator_type_alias() -> None:
+def test_discriminated_discriminator_type_alias_type() -> None:
     """https://github.com/pydantic/pydantic/issues/11930"""
 
     class Pie(BaseModel):
@@ -2222,7 +2219,7 @@ def test_tagged_discriminator_type_alias() -> None:
 
     class ThanksgivingDinner(BaseModel):
         dessert: Annotated[
-            Union[TaggedApplePie, Annotated[PumpkinPie, Tag('pumpkin')]],
+            TaggedApplePie | Annotated[PumpkinPie, Tag('pumpkin')],
             Discriminator(get_discriminator_value),
         ]
 
@@ -2231,7 +2228,7 @@ def test_tagged_discriminator_type_alias() -> None:
     assert isinstance(inst.dessert, ApplePie)
 
 
-def test_discriminated_union_type_alias_type() -> None:
+def test_discriminated_union_type_alias_type_not_union() -> None:
     """https://github.com/pydantic/pydantic/issues/11661
 
     This was fixed by making sure we provide the available definitions
@@ -2284,6 +2281,98 @@ def test_deferred_discriminated_union_and_references() -> None:
     assert final_schema['type'] == 'tagged-union'
 
 
+def test_discriminated_union_type_alias_type_separate() -> None:
+    """https://github.com/pydantic/pydantic/issues/12771
+
+    The recommended pattern is to define the type alias with the discriminator metadata,
+    but it is still desirable to support this pattern as well (to some extent, see TBD).
+    """
+
+    class Foo(BaseModel):
+        type: Literal['foo']
+
+    class Bar(BaseModel):
+        type: Literal['bar']
+
+    FooBar = TypeAliasType('BarFoo', Foo | Bar)
+
+    class Main(BaseModel):
+        f: FooBar = Field(discriminator='type')
+
+    # Use the JSON Schema to avoid making assertions on the core schema, that
+    # may be less stable:
+    json_schema = Main.model_json_schema()
+    assert 'Foo' in json_schema['$defs']
+    assert 'Bar' in json_schema['$defs']
+    assert json_schema['properties']['f']['discriminator'] == {
+        'mapping': {'foo': '#/$defs/Foo', 'bar': '#/$defs/Bar'},
+        'propertyName': 'type',
+    }
+    assert json_schema['properties']['f']['oneOf'] == [{'$ref': '#/$defs/Foo'}, {'$ref': '#/$defs/Bar'}]
+
+
+def test_discriminated_union_type_alias_type_separate_callable_discriminator() -> None:
+    """https://github.com/pydantic/pydantic/issues/12843"""
+
+    class Foo(BaseModel):
+        type: Literal['foo']
+
+    class Bar(BaseModel):
+        type: Literal['bar']
+
+    FooBar = TypeAliasType('FooBar', Annotated[Foo, Tag('foo')] | Annotated[Bar, Tag('bar')])
+
+    T = TypeVar('T')
+
+    FooBarTV = TypeAliasType('FooBarTV', Annotated[Foo, Tag('foo')] | Annotated[Bar, Tag('bar')], type_params=(T,))
+
+    class Main(BaseModel):
+        f: Annotated[FooBar, Discriminator(lambda v: v['type'])]
+        g: Annotated[FooBarTV[int], Discriminator(lambda v: v['type'])]
+
+    m = Main(f={'type': 'foo'}, g={'type': 'bar'})
+
+    assert m.f == Foo(type='foo')
+    assert m.g == Bar(type='bar')
+
+
+@pytest.mark.xfail(
+    reason="Nested references aren't flattened (see comment in `_ApplyInferredDiscriminator._handle_choice()`)",
+)
+def test_discriminated_union_nested_type_alias() -> None:
+    class Foo1(BaseModel):
+        type: Literal['foo1']
+
+    class Foo2(BaseModel):
+        type: Literal['foo2']
+
+    Foos = TypeAliasType('Foos', Foo1 | Foo2)
+
+    class Bar(BaseModel):
+        type: Literal['bar']
+
+    FooBar = TypeAliasType('BarFoo', Foos | Bar)
+
+    class Main(BaseModel):
+        f: FooBar = Field(discriminator='type')
+
+    # Use the JSON Schema to avoid making assertions on the core schema, that
+    # may be less stable:
+    json_schema = Main.model_json_schema()
+    assert 'Foo1' in json_schema['$defs']
+    assert 'Foo2' in json_schema['$defs']
+    assert 'Bar' in json_schema['$defs']
+    assert json_schema['properties']['f']['discriminator'] == {
+        'mapping': {'foo1': '#/$defs/Foo1', 'foo2': '#/$defs/Foo2', 'bar': '#/$defs/Bar'},
+        'propertyName': 'type',
+    }
+    assert json_schema['properties']['f']['oneOf'] == [
+        {'$ref': '#/$defs/Foo1'},
+        {'$ref': '#/$defs/Foo2'},
+        {'$ref': '#/$defs/Bar'},
+    ]
+
+
 def test_recursive_discriminated_union() -> None:
     """https://github.com/pydantic/pydantic/issues/11978"""
 
@@ -2308,21 +2397,101 @@ def test_recursive_discriminated_union() -> None:
             return getattr(v, 'prop', None)
 
     ParagraphFilterExpression = Annotated[
-        Union[
-            Annotated[Not['ParagraphFilterExpression'], Tag('not')],
-            Annotated[Label, Tag('label')],
-        ],
+        Annotated[Not['ParagraphFilterExpression'], Tag('not')] | Annotated[Label, Tag('label')],
         Discriminator(filter_discriminator),
     ]
 
     FieldFilterExpression = Annotated[
-        Union[
-            Annotated[Not['FieldFilterExpression'], Tag('not')],
-            Annotated[Label, Tag('label')],
-        ],
+        Annotated[Not['FieldFilterExpression'], Tag('not')] | Annotated[Label, Tag('label')],
         Discriminator(filter_discriminator),
     ]
 
     class FilterExpression(BaseModel):
         field: FieldFilterExpression
         paragraph: ParagraphFilterExpression
+
+
+def test_discriminated_union_with_root_model_literal() -> None:
+    """https://github.com/pydantic/pydantic/issues/12605."""
+
+    class Action1(RootModel[Literal['action1']]):
+        pass
+
+    class Action2(RootModel[Literal['action2']]):
+        pass
+
+    class Model1(BaseModel):
+        action: Action1
+
+    class Model2(BaseModel):
+        action: Action2
+
+    ta = TypeAdapter(Annotated[Model1 | Model2, Field(discriminator='action')])
+
+    model1 = ta.validate_python({'action': 'action1'})
+    assert isinstance(model1, Model1)
+    assert model1.action.root == 'action1'
+
+    model2 = ta.validate_python({'action': 'action2'})
+    assert isinstance(model2, Model2)
+    assert model2.action.root == 'action2'
+
+    with pytest.raises(ValidationError) as exc_info:
+        ta.validate_python({'action': 'invalid_action'})
+
+    assert exc_info.value.errors()[0]['type'] == 'union_tag_invalid'
+
+
+def test_tagged_union_no_fallback_on_matched_discriminator():
+    """Regression test for https://github.com/pydantic/pydantic/issues/12800.
+
+    When the discriminator successfully identifies the correct variant but
+    serialization of that variant fails, the serializer should NOT fall back
+    to trying all other union members.
+    """
+
+    class MyEnum(str, Enum):
+        ENABLED = 'enabled'
+        DISABLED = 'disabled'
+
+    class InnerTool(BaseModel):
+        type: Literal['inner'] = 'inner'
+        my_enum: MyEnum = MyEnum.ENABLED
+
+    class WrapTool(BaseModel):
+        type: Literal['wrap'] = 'wrap'
+        tool: InnerTool
+
+        @field_validator('tool')
+        @classmethod
+        def _validate_tool(cls, tool):
+            # Setting enum field to a plain string triggers the issue
+            tool.my_enum = 'disabled'
+            return tool
+
+    class ToolType1(BaseModel):
+        type: Literal['type1'] = 'type1'
+
+    class ToolType2(BaseModel):
+        type: Literal['type2'] = 'type2'
+
+    Tool = Annotated[
+        InnerTool | WrapTool | ToolType1 | ToolType2,
+        Discriminator('type'),
+    ]
+
+    ta = TypeAdapter(list[Tool])
+    tool = WrapTool(tool=InnerTool())
+
+    with warnings.catch_warnings(record=True) as w:
+        warnings.simplefilter('always')
+        data = ta.dump_python([tool])
+
+    assert len(data) == 1
+    assert data[0]['type'] == 'wrap'
+
+    # Only the matched variant (WrapTool) should produce a warning,
+    # not ToolType1 or ToolType2 from a fallback to all members.
+    warning_text = ' '.join(str(warning.message) for warning in w)
+    assert 'ToolType1' not in warning_text
+    assert 'ToolType2' not in warning_text

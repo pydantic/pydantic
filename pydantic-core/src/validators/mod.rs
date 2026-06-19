@@ -6,11 +6,12 @@ use enum_dispatch::enum_dispatch;
 use jiter::{PartialMode, StringCacheMode};
 
 use pyo3::exceptions::{PyTypeError, PyValueError};
+use pyo3::pybacked::PyBackedStr;
 use pyo3::types::{PyAny, PyDict, PyString, PyTuple, PyType};
-use pyo3::{intern, PyTraverseError, PyVisit};
-use pyo3::{prelude::*, IntoPyObjectExt};
+use pyo3::{IntoPyObjectExt, prelude::*};
+use pyo3::{PyTraverseError, PyVisit, intern};
 
-use crate::build_tools::{py_schema_err, py_schema_error_type, ExtraBehavior};
+use crate::build_tools::{ExtraBehavior, py_schema_error_type};
 use crate::definitions::{Definitions, DefinitionsBuilder};
 use crate::errors::{LocItem, ValError, ValResult, ValidationError};
 use crate::input::{Input, InputType, StringMapping};
@@ -56,6 +57,7 @@ mod none;
 mod nullable;
 mod prebuilt;
 mod set;
+mod shared;
 mod string;
 mod time;
 mod timedelta;
@@ -85,7 +87,7 @@ impl PySome {
 #[pymethods]
 impl PySome {
     pub fn __repr__(&self, py: Python) -> PyResult<String> {
-        Ok(format!("Some({})", self.value.bind(py).repr()?,))
+        Ok(format!("Some({})", self.value.bind(py).repr()?))
     }
 
     #[new]
@@ -131,11 +133,18 @@ impl_py_gc_traverse!(SchemaValidator {
 #[pymethods]
 impl SchemaValidator {
     #[new]
-    #[pyo3(signature = (schema, config=None))]
-    pub fn py_new(py: Python, schema: &Bound<'_, PyAny>, config: Option<&Bound<'_, PyDict>>) -> PyResult<Self> {
-        let mut definitions_builder = DefinitionsBuilder::new();
+    #[pyo3(signature = (schema, config=None, _use_prebuilt=true))]
+    pub fn py_new(
+        py: Python,
+        schema: &Bound<'_, PyAny>,
+        config: Option<&Bound<'_, PyDict>>,
+        _use_prebuilt: bool,
+    ) -> PyResult<Self> {
+        // _use_prebuilt=true by default, but false during rebuilds to avoid stale references
+        // to old validators (see pydantic-core issue #1894)
+        let mut definitions_builder = DefinitionsBuilder::new(_use_prebuilt);
 
-        let validator = Arc::new(build_validator_base(schema, config, &mut definitions_builder)?);
+        let validator = build_validator(schema, config, &mut definitions_builder)?;
         let definitions = definitions_builder.finish()?;
 
         // now optimize the schemas:
@@ -329,7 +338,7 @@ impl SchemaValidator {
         &self,
         py: Python,
         obj: Bound<'_, PyAny>,
-        field_name: &str,
+        field_name: PyBackedStr,
         field_value: Bound<'_, PyAny>,
         strict: Option<bool>,
         extra: Option<&Bound<'_, PyString>>,
@@ -344,22 +353,25 @@ impl SchemaValidator {
 
         let extra = Extra {
             input_type: InputType::Python,
-            data: None,
             strict,
             extra_behavior,
             from_attributes,
-            field_name: Some(PyString::new(py, field_name)),
             context,
-            self_instance: None,
             cache_str: self.cache_str,
             by_alias,
             by_name,
         };
 
         let guard = &mut RecursionState::default();
-        let mut state = ValidationState::new(extra, guard, false.into());
+        let mut state = ValidationState::new(
+            extra,
+            guard,
+            false.into(),
+            Some(field_name.as_py_str().bind(py).clone()),
+            None,
+        );
         self.validator
-            .validate_assignment(py, &obj, field_name, &field_value, &mut state)
+            .validate_assignment(py, &obj, &field_name, &field_value, &mut state)
             .map_err(|e| self.prepare_validation_err(py, e, InputType::Python))
     }
 
@@ -372,19 +384,16 @@ impl SchemaValidator {
     ) -> PyResult<Py<PyAny>> {
         let extra = Extra {
             input_type: InputType::Python,
-            data: None,
             strict,
             extra_behavior: None,
             from_attributes: None,
-            field_name: None,
             context,
-            self_instance: None,
             cache_str: self.cache_str,
             by_alias: None,
             by_name: None,
         };
         let recursion_guard = &mut RecursionState::default();
-        let mut state = ValidationState::new(extra, recursion_guard, false.into());
+        let mut state = ValidationState::new(extra, recursion_guard, false.into(), None, None);
         let r = self.validator.default_value(py, None::<i64>, &mut state);
         match r {
             Ok(maybe_default) => match maybe_default {
@@ -396,7 +405,8 @@ impl SchemaValidator {
     }
 
     pub fn __reduce__<'py>(slf: &Bound<'py, Self>) -> PyResult<(Bound<'py, PyType>, Bound<'py, PyTuple>)> {
-        let init_args = (&slf.get().py_schema, &slf.get().py_config).into_pyobject(slf.py())?;
+        // Passing _use_prebuilt=false avoids reusing prebuilt serializers when unpickling
+        let init_args = (&slf.get().py_schema, &slf.get().py_config, false).into_pyobject(slf.py())?;
         Ok((slf.get_type(), init_args))
     }
 
@@ -442,7 +452,6 @@ impl SchemaValidator {
                 extra_behavior,
                 from_attributes,
                 context,
-                self_instance,
                 input_type,
                 self.cache_str,
                 by_alias,
@@ -450,6 +459,8 @@ impl SchemaValidator {
             ),
             &mut recursion_guard,
             allow_partial,
+            None,
+            self_instance,
         );
         self.validator.validate(py, input, &mut state)
     }
@@ -511,46 +522,15 @@ pub trait BuildValidator: Sized {
     ) -> PyResult<Arc<CombinedValidator>>;
 }
 
-/// Logic to create a particular validator, called in the `validator_match` macro, then in turn by `build_validator`
-fn build_specific_validator<T: BuildValidator>(
-    val_type: &str,
-    schema_dict: &Bound<'_, PyDict>,
-    config: Option<&Bound<'_, PyDict>>,
-    definitions: &mut DefinitionsBuilder<Arc<CombinedValidator>>,
-) -> PyResult<Arc<CombinedValidator>> {
-    T::build(schema_dict, config, definitions)
-        .map_err(|err| py_schema_error_type!("Error building \"{}\" validator:\n  {}", val_type, err))
-}
-
-// macro to build the match statement for validator selection
-macro_rules! validator_match {
-    ($type:ident, $dict:ident, $config:ident, $definitions:ident, $($validator:path,)+) => {
-        match $type {
-            $(
-                <$validator>::EXPECTED_TYPE => build_specific_validator::<$validator>($type, $dict, $config, $definitions),
-            )+
-            "invalid" => return py_schema_err!("Cannot construct schema with `InvalidSchema` member."),
-            _ => return py_schema_err!(r#"Unknown schema type: "{}""#, $type),
-        }
-    };
-}
-
-// Used when creating the base validator instance, to avoid reusing the instance
-// when unpickling:
-pub fn build_validator_base(
-    schema: &Bound<'_, PyAny>,
-    config: Option<&Bound<'_, PyDict>>,
-    definitions: &mut DefinitionsBuilder<Arc<CombinedValidator>>,
-) -> PyResult<Arc<CombinedValidator>> {
-    build_validator_inner(schema, config, definitions, false)
-}
-
 pub fn build_validator(
     schema: &Bound<'_, PyAny>,
     config: Option<&Bound<'_, PyDict>>,
     definitions: &mut DefinitionsBuilder<Arc<CombinedValidator>>,
 ) -> PyResult<Arc<CombinedValidator>> {
-    build_validator_inner(schema, config, definitions, true)
+    // Read use_prebuilt from the definitions builder - this ensures all nested
+    // validators respect the same setting as the top-level build
+    let use_prebuilt = definitions.use_prebuilt();
+    build_validator_inner(schema, config, definitions, use_prebuilt)
 }
 
 fn build_validator_inner(
@@ -564,14 +544,26 @@ fn build_validator_inner(
     let type_: Bound<'_, PyString> = dict.get_as_req(intern!(py, "type"))?;
     let type_ = type_.to_str()?;
 
-    if use_prebuilt {
-        // if we have a SchemaValidator on the type already, use it
-        if let Ok(Some(prebuilt_validator)) = prebuilt::PrebuiltValidator::try_get_from_schema(type_, dict) {
-            return Ok(Arc::new(prebuilt_validator));
-        }
+    // if we have a SchemaValidator on the type already, use it
+    if use_prebuilt && let Ok(Some(prebuilt_validator)) = prebuilt::PrebuiltValidator::try_get_from_schema(type_, dict)
+    {
+        return Ok(Arc::new(prebuilt_validator));
     }
 
-    validator_match!(
+    // macro to build the match statement for validator selection
+    macro_rules! validator_match {
+        ($type:ident, $dict:ident, $config:ident, $definitions:ident, $($validator:path,)+) => {
+            match $type {
+                $(
+                    <$validator>::EXPECTED_TYPE => <$validator>::build($dict, $config, $definitions),
+                )+
+                "invalid" => return Err(invalid_schema_type()),
+                _ => return Err(unknown_schema_type($type)),
+            }
+        };
+    }
+
+    let result = validator_match!(
         type_,
         dict,
         config,
@@ -666,17 +658,31 @@ fn build_validator_inner(
         definitions::DefinitionRefValidator,
         definitions::DefinitionsValidatorBuilder,
         complex::ComplexValidator,
-    )
+    );
+
+    result.map_err(|e| failed_to_build_validator(type_, e))
 }
 
-/// More (mostly immutable) data to pass between validators, should probably be class `Context`,
-/// but that would confuse it with context as per pydantic/pydantic#1549
+#[cold]
+fn failed_to_build_validator(val_type: &str, err: PyErr) -> PyErr {
+    py_schema_error_type!("Error building \"{val_type}\" validator:\n  {err}")
+}
+
+#[cold]
+fn invalid_schema_type() -> PyErr {
+    py_schema_error_type!("Cannot construct schema with `InvalidSchema` member.")
+}
+
+#[cold]
+fn unknown_schema_type(val_type: &str) -> PyErr {
+    py_schema_error_type!("Unknown schema type: \"{val_type}\"")
+}
+
+/// Constants for a validation process
 #[derive(Debug, Clone)]
 pub struct Extra<'a, 'py> {
     /// Validation mode
     pub input_type: InputType,
-    /// This is used as the `data` kwargs to validator functions and default factories (if they accept the argument)
-    pub data: Option<Bound<'py, PyDict>>,
     /// whether we're in strict or lax mode
     pub strict: Option<bool>,
     /// Whether to ignore, allow, or forbid extra data during model validation
@@ -686,10 +692,6 @@ pub struct Extra<'a, 'py> {
     pub from_attributes: Option<bool>,
     /// context used in validator functions
     pub context: Option<&'a Bound<'py, PyAny>>,
-    /// The name of the field being validated, if applicable
-    pub field_name: Option<Bound<'py, PyString>>,
-    /// This is an instance of the model or dataclass being validated, when validation is performed from `__init__`
-    self_instance: Option<&'a Bound<'py, PyAny>>,
     /// Whether to use a cache of short strings to accelerate python string construction
     cache_str: StringCacheMode,
     /// Whether to use the field's alias to match the input data to an attribute.
@@ -705,7 +707,6 @@ impl<'a, 'py> Extra<'a, 'py> {
         extra_behavior: Option<ExtraBehavior>,
         from_attributes: Option<bool>,
         context: Option<&'a Bound<'py, PyAny>>,
-        self_instance: Option<&'a Bound<'py, PyAny>>,
         input_type: InputType,
         cache_str: StringCacheMode,
         by_alias: Option<bool>,
@@ -713,34 +714,13 @@ impl<'a, 'py> Extra<'a, 'py> {
     ) -> Self {
         Extra {
             input_type,
-            data: None,
             strict,
             extra_behavior,
             from_attributes,
-            field_name: None,
             context,
-            self_instance,
             cache_str,
             by_alias,
             by_name,
-        }
-    }
-}
-
-impl Extra<'_, '_> {
-    pub fn as_strict(&self) -> Self {
-        Self {
-            input_type: self.input_type,
-            data: self.data.clone(),
-            strict: Some(true),
-            extra_behavior: self.extra_behavior,
-            from_attributes: self.from_attributes,
-            field_name: self.field_name.clone(),
-            context: self.context,
-            self_instance: self.self_instance,
-            cache_str: self.cache_str,
-            by_alias: self.by_alias,
-            by_name: self.by_name,
         }
     }
 }
@@ -876,7 +856,7 @@ pub trait Validator: Send + Sync + Debug {
         &self,
         _py: Python<'py>,
         _obj: &Bound<'py, PyAny>,
-        _field_name: &str,
+        _field_name: &PyBackedStr,
         _field_value: &Bound<'py, PyAny>,
         _state: &mut ValidationState<'_, 'py>,
     ) -> ValResult<Py<PyAny>> {

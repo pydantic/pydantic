@@ -12,7 +12,7 @@ use crate::tools::SchemaDict;
 
 use super::Exactness;
 use super::ValidationState;
-use super::{build_validator, BuildValidator, CombinedValidator, DefinitionsBuilder, Validator};
+use super::{BuildValidator, CombinedValidator, DefinitionsBuilder, Validator, build_validator};
 
 #[derive(Debug)]
 pub struct LaxOrStrictValidator {

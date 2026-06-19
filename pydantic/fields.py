@@ -10,18 +10,19 @@ from collections.abc import Callable, Mapping
 from copy import copy
 from dataclasses import Field as DataclassField
 from functools import cached_property
-from typing import TYPE_CHECKING, Annotated, Any, ClassVar, Literal, TypeVar, cast, final, overload
+from types import EllipsisType
+from typing import TYPE_CHECKING, Annotated, Any, ClassVar, Literal, TypeAlias, TypeVar, final, overload
 from warnings import warn
 
 import annotated_types
 import typing_extensions
 from pydantic_core import MISSING, PydanticUndefined
-from typing_extensions import Self, TypeAlias, TypedDict, Unpack, deprecated
+from typing_extensions import Self, TypedDict, Unpack, deprecated
 from typing_inspection import typing_objects
 from typing_inspection.introspection import UNKNOWN, AnnotationSource, ForbiddenQualifier, Qualifier, inspect_annotation
 
 from . import types
-from ._internal import _decorators, _fields, _generics, _internal_dataclass, _repr, _typing_extra, _utils
+from ._internal import _decorators, _fields, _generics, _repr, _typing_extra, _utils
 from ._internal._namespace_utils import GlobalsNamespace, MappingNamespace
 from .aliases import AliasChoices, AliasGenerator, AliasPath
 from .config import JsonDict
@@ -734,23 +735,14 @@ class FieldInfo(_repr.Representation):
             validated_data: The already validated data to be passed to the default factory.
 
         Returns:
-            The default value, calling the default factory if requested or `None` if not set.
+            The default value, calling the default factory if requested or `PydanticUndefined` if not set.
         """
-        if self.default_factory is None:
-            return _utils.smart_deepcopy(self.default)
-        elif call_default_factory:
-            if self.default_factory_takes_validated_data:
-                fac = cast('Callable[[dict[str, Any]], Any]', self.default_factory)
-                if validated_data is None:
-                    raise ValueError(
-                        "The default factory requires the 'validated_data' argument, which was not provided when calling 'get_default'."
-                    )
-                return fac(validated_data)
-            else:
-                fac = cast('Callable[[], Any]', self.default_factory)
-                return fac()
-        else:
-            return None
+        return _fields.resolve_default_value(
+            default=self.default,
+            default_factory=self.default_factory,
+            validated_data=validated_data,
+            call_default_factory=call_default_factory,
+        )
 
     def is_required(self) -> bool:
         """Check if the field is required (i.e., does not have a default value or factory).
@@ -827,13 +819,19 @@ class FieldInfo(_repr.Representation):
         # Note: we can't define a custom `__copy__()`, as `FieldInfo` is being subclassed
         # by some third-party libraries with extra attributes defined (and as `FieldInfo`
         # is slotted, we can't make a copy of the `__dict__`).
-        copied = copy(self)
+        if type(self) is FieldInfo:
+            # Fast-path if the instance isn't a subclass (`copy.copy()` relies on pickling which is slower):
+            copied = FieldInfo.__new__(FieldInfo)
+            for attr_name in FieldInfo.__slots__:
+                setattr(copied, attr_name, getattr(self, attr_name))
+        else:
+            copied = copy(self)
+
         for attr_name in ('metadata', '_attributes_set', '_qualifiers'):
             # Apply "deep-copy" behavior on collections attributes:
-            value = getattr(copied, attr_name).copy()
-            setattr(copied, attr_name, value)
+            setattr(copied, attr_name, getattr(copied, attr_name).copy())
 
-        return copied
+        return copied  # pyright: ignore[reportReturnType]
 
     def __repr_args__(self) -> ReprArgs:
         yield 'annotation', _repr.PlainRepr(_repr.display_as_type(self.annotation))
@@ -926,7 +924,7 @@ _T = TypeVar('_T')
 # to understand the magic that happens at runtime with the following overloads:
 @overload  # type hint the return value as `Any` to avoid type checking regressions when using `...`.
 def Field(
-    default: ellipsis,  # noqa: F821  # TODO: use `_typing_extra.EllipsisType` when we drop Py3.9
+    default: EllipsisType,
     *,
     alias: str | None = _Unset,
     alias_priority: int | None = _Unset,
@@ -1261,7 +1259,7 @@ def Field(  # noqa: C901
         max_length: Maximum length for iterables.
         pattern: Pattern for strings (a regular expression).
         allow_inf_nan: Allow `inf`, `-inf`, `nan`. Only applicable to float and [`Decimal`][decimal.Decimal] numbers.
-        max_digits: Maximum number of allow digits for strings.
+        max_digits: Maximum number of allowed digits for [`Decimal`][decimal.Decimal] numbers.
         decimal_places: Maximum number of decimal places allowed for numbers.
         union_mode: The strategy to apply when validating a union. Can be `smart` (the default), or `left_to_right`.
             See [Union Mode](../concepts/unions.md#union-modes) for details.
@@ -1410,13 +1408,19 @@ class ModelPrivateAttr(_repr.Representation):
 
     Attributes:
         default: The default value of the attribute if not provided.
-        default_factory: A callable function that generates the default value of the
-            attribute if not provided.
+        default_factory: A callable to generate the default value. The callable can either take 0 arguments
+            (in which case it is called as is) or a single argument containing the validated data (the model's
+            [`__dict__`][object.__dict__]) and the already initialized private attributes.
     """
 
     __slots__ = ('default', 'default_factory')
 
-    def __init__(self, default: Any = PydanticUndefined, *, default_factory: Callable[[], Any] | None = None) -> None:
+    def __init__(
+        self,
+        default: Any = PydanticUndefined,
+        *,
+        default_factory: Callable[[], Any] | Callable[[dict[str, Any]], Any] | None = None,
+    ) -> None:
         if default is Ellipsis:
             self.default = PydanticUndefined
         else:
@@ -1444,17 +1448,43 @@ class ModelPrivateAttr(_repr.Representation):
         if callable(set_name):
             set_name(cls, name)
 
-    def get_default(self) -> Any:
-        """Retrieve the default value of the object.
+    @property
+    def default_factory_takes_validated_data(self) -> bool | None:
+        """Whether the provided default factory callable has a validated data parameter.
 
-        If `self.default_factory` is `None`, the method will return a deep copy of the `self.default` object.
+        Returns `None` if no default factory is set.
+        """
+        if self.default_factory is not None:
+            return _fields.takes_validated_data_argument(self.default_factory)
 
-        If `self.default_factory` is not `None`, it will call `self.default_factory` and return the value returned.
+    @overload
+    def get_default(
+        self, *, call_default_factory: Literal[True], validated_data: dict[str, Any] | None = None
+    ) -> Any: ...
+
+    @overload
+    def get_default(self, *, call_default_factory: Literal[False] = ...) -> Any: ...
+
+    def get_default(self, *, call_default_factory: bool = False, validated_data: dict[str, Any] | None = None) -> Any:
+        """Get the default value.
+
+        We expose an option for whether to call the default_factory (if present), as calling it may
+        result in side effects that we want to avoid. However, there are times when it really should
+        be called (namely, when instantiating a model via `model_construct`).
+
+        Args:
+            call_default_factory: Whether to call the default factory or not.
+            validated_data: The already validated data to be passed to the default factory.
 
         Returns:
-            The default value of the object.
+            The default value, calling the default factory if requested or `None` if not set.
         """
-        return _utils.smart_deepcopy(self.default) if self.default_factory is None else self.default_factory()
+        return _fields.resolve_default_value(
+            default=self.default,
+            default_factory=self.default_factory,
+            validated_data=validated_data,
+            call_default_factory=call_default_factory,
+        )
 
     def __eq__(self, other: Any) -> bool:
         return isinstance(other, self.__class__) and (self.default, self.default_factory) == (
@@ -1474,7 +1504,7 @@ def PrivateAttr(
 @overload  # `default_factory` argument set
 def PrivateAttr(
     *,
-    default_factory: Callable[[], _T],
+    default_factory: Callable[[], _T] | Callable[[dict[str, Any]], _T],
     init: Literal[False] = False,
 ) -> _T: ...
 @overload  # No default set
@@ -1485,7 +1515,7 @@ def PrivateAttr(
 def PrivateAttr(
     default: Any = PydanticUndefined,
     *,
-    default_factory: Callable[[], Any] | None = None,
+    default_factory: Callable[[], Any] | Callable[[dict[str, Any]], Any] | None = None,
     init: Literal[False] = False,
 ) -> Any:
     """!!! abstract "Usage Documentation"
@@ -1499,8 +1529,9 @@ def PrivateAttr(
 
     Args:
         default: The attribute's default value. Defaults to Undefined.
-        default_factory: Callable that will be
-            called when a default value is needed for this attribute.
+        default_factory: A callable to generate the default value. The callable can either take 0 arguments
+            (in which case it is called as is) or a single argument containing the validated data (the model's
+            [`__dict__`][object.__dict__]) and the already initialized private attributes.
             If both `default` and `default_factory` are set, an error will be raised.
         init: Whether the attribute should be included in the constructor of the dataclass. Always `False`.
 
@@ -1508,7 +1539,7 @@ def PrivateAttr(
         An instance of [`ModelPrivateAttr`][pydantic.fields.ModelPrivateAttr] class.
 
     Raises:
-        ValueError: If both `default` and `default_factory` are set.
+        TypeError: If both `default` and `default_factory` are set.
     """
     if default is not PydanticUndefined and default_factory is not None:
         raise TypeError('cannot specify both default and default_factory')
@@ -1519,7 +1550,7 @@ def PrivateAttr(
     )
 
 
-@dataclasses.dataclass(**_internal_dataclass.slots_true)
+@dataclasses.dataclass(slots=True)
 class ComputedFieldInfo:
     """A container for data from `@computed_field` so that we can access it while building the pydantic-core schema.
 
@@ -1544,6 +1575,7 @@ class ComputedFieldInfo:
     return_type: Any
     alias: str | None
     alias_priority: int | None
+    exclude_if: Callable[[Any], bool] | None
     title: str | None
     field_title_generator: Callable[[str, ComputedFieldInfo], str] | None
     description: str | None
@@ -1551,6 +1583,25 @@ class ComputedFieldInfo:
     examples: list[Any] | None
     json_schema_extra: JsonDict | Callable[[JsonDict], None] | None
     repr: bool
+    # NOTE: if you add a new field, add it to the `__copy__()` implementation.
+
+    def __copy__(self) -> Self:
+        return type(self)(
+            wrapped_property=self.wrapped_property,
+            return_type=self.return_type,
+            alias=self.alias,
+            alias_priority=self.alias_priority,
+            exclude_if=self.exclude_if,
+            title=self.title,
+            field_title_generator=self.field_title_generator,
+            description=self.description,
+            deprecated=self.deprecated,
+            examples=self.examples.copy() if isinstance(self.examples, list) else self.examples,
+            json_schema_extra=self.json_schema_extra.copy()
+            if isinstance(self.json_schema_extra, dict)
+            else self.json_schema_extra,
+            repr=self.repr,
+        )
 
     @property
     def deprecation_message(self) -> str | None:
@@ -1627,6 +1678,7 @@ def computed_field(
     *,
     alias: str | None = None,
     alias_priority: int | None = None,
+    exclude_if: Callable[[Any], bool] | None = None,
     title: str | None = None,
     field_title_generator: Callable[[str, ComputedFieldInfo], str] | None = None,
     description: str | None = None,
@@ -1644,6 +1696,7 @@ def computed_field(
     *,
     alias: str | None = None,
     alias_priority: int | None = None,
+    exclude_if: Callable[[Any], bool] | None = None,
     title: str | None = None,
     field_title_generator: Callable[[str, ComputedFieldInfo], str] | None = None,
     description: str | None = None,
@@ -1778,6 +1831,7 @@ def computed_field(
         func: the function to wrap.
         alias: alias to use when serializing this computed field, only used when `by_alias=True`
         alias_priority: priority of the alias. This affects whether an alias generator is used
+        exclude_if: A callable that determines whether to exclude this computed field during serialization based on its value.
         title: Title to use when including this computed field in JSON Schema
         field_title_generator: A callable that takes a field name and returns title for it.
         description: Description to use when including this computed field in JSON Schema, defaults to the function's
@@ -1822,6 +1876,7 @@ def computed_field(
             return_type,
             alias,
             alias_priority,
+            exclude_if,
             title,
             field_title_generator,
             description,

@@ -10,10 +10,11 @@ use pyo3::types::{PyDict, PyFloat, PyInt, PyList, PyString, PyType};
 use crate::build_tools::{is_strict, py_schema_err};
 use crate::errors::{ErrorType, ValError, ValResult};
 use crate::input::{Input, InputType};
-use crate::tools::{safe_repr, SchemaDict};
+use crate::tools::{SchemaDict, safe_repr};
+use crate::validators::literal::expected_repr;
 
 use super::is_instance::class_repr;
-use super::literal::{expected_repr_name, LiteralLookup};
+use super::literal::LiteralLookup;
 use super::{BuildValidator, CombinedValidator, DefinitionsBuilder, Exactness, ValidationState, Validator};
 
 #[derive(Debug, Clone)]
@@ -39,15 +40,13 @@ impl BuildValidator for BuildEnumValidator {
             .map(|v| Ok((v.getattr(value_str)?, v.into())))
             .collect::<PyResult<_>>()?;
 
-        let repr_args: Vec<String> = expected
-            .iter()
-            .map(|(k, _)| k.repr()?.extract())
-            .collect::<PyResult<_>>()?;
+        let repr_args: Vec<_> = expected.iter().map(|(k, _)| k.repr()).collect::<PyResult<_>>()?;
+        let expected_repr = expected_repr(&repr_args)?;
 
         let class: Bound<PyType> = schema.get_as_req(intern!(py, "cls"))?;
         let class_repr = class_repr(schema, &class)?;
 
-        let lookup = LiteralLookup::new(py, expected.into_iter())?;
+        let lookup = Box::new(LiteralLookup::new(py, expected.into_iter())?);
 
         macro_rules! build {
             ($vv:ty, $name_prefix:literal) => {
@@ -56,7 +55,7 @@ impl BuildValidator for BuildEnumValidator {
                     class: class.clone().into(),
                     lookup,
                     missing: schema.get_as(intern!(py, "missing"))?,
-                    expected_repr: expected_repr_name(repr_args, "").0,
+                    expected_repr,
                     strict: is_strict(schema, config)?,
                     class_repr: class_repr.clone(),
                     name: format!("{}[{class_repr}]", $name_prefix),
@@ -88,7 +87,7 @@ pub trait EnumValidateValue: std::fmt::Debug + Clone + Send + Sync {
 pub struct EnumValidator<T: EnumValidateValue> {
     phantom: PhantomData<T>,
     class: Py<PyType>,
-    lookup: LiteralLookup<Py<PyAny>>,
+    lookup: Box<LiteralLookup<Py<PyAny>>>,
     missing: Option<Py<PyAny>>,
     expected_repr: String,
     strict: bool,
@@ -185,17 +184,15 @@ impl EnumValidateValue for PlainEnumValidator {
         match lookup.validate(py, input)? {
             Some((_, v)) => Ok(Some(v.clone_ref(py))),
             None => {
-                if !strict {
-                    if let Some(py_input) = input.as_python() {
-                        // necessary for compatibility with 2.6, where str and int subclasses are allowed
-                        if py_input.is_instance_of::<PyString>() {
-                            return Ok(lookup.validate_str(input, false)?.map(|v| v.clone_ref(py)));
-                        } else if py_input.is_instance_of::<PyInt>() {
-                            return Ok(lookup.validate_int(py, input, false)?.map(|v| v.clone_ref(py)));
-                        // necessary for compatibility with 2.6, where float values are allowed for int enums in lax mode
-                        } else if py_input.is_instance_of::<PyFloat>() {
-                            return Ok(lookup.validate_int(py, input, false)?.map(|v| v.clone_ref(py)));
-                        }
+                if !strict && let Some(py_input) = input.as_python() {
+                    // necessary for compatibility with 2.6, where str and int subclasses are allowed
+                    if py_input.is_instance_of::<PyString>() {
+                        return Ok(lookup.validate_str(input, false)?.map(|v| v.clone_ref(py)));
+                    } else if py_input.is_instance_of::<PyInt>() {
+                        return Ok(lookup.validate_int(py, input, false)?.map(|v| v.clone_ref(py)));
+                    // necessary for compatibility with 2.6, where float values are allowed for int enums in lax mode
+                    } else if py_input.is_instance_of::<PyFloat>() {
+                        return Ok(lookup.validate_int(py, input, false)?.map(|v| v.clone_ref(py)));
                     }
                 }
                 Ok(None)

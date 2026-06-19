@@ -70,7 +70,7 @@ query Q($after: String) {
 
 issues_query = """
 query Q($after: String) {
-  repository(name: "pydantic", owner: "samuelcolvin") {
+  repository(name: "pydantic", owner: "pydantic") {
     issues(first: 100, after: $after) {
       edges {
         cursor
@@ -103,7 +103,7 @@ query Q($after: String) {
 
 prs_query = """
 query Q($after: String) {
-  repository(name: "pydantic", owner: "samuelcolvin") {
+  repository(name: "pydantic", owner: "pydantic") {
     pullRequests(first: 100, after: $after) {
       edges {
         cursor
@@ -688,7 +688,7 @@ if __name__ == '__main__':
         'alexmojaki',
         'Viicos',
     }
-    bot_names = {'codecov', 'github-actions', 'pre-commit-ci', 'dependabot'}
+    bot_names = {'codecov', 'github-actions', 'pre-commit-ci', 'dependabot', 'dependabot-preview'}
     maintainers = []
     for login in maintainers_logins:
         user = authors[login]
@@ -706,36 +706,35 @@ if __name__ == '__main__':
     min_count_last_month = 3
     min_count_contributor = 4
     min_count_reviewer = 4
-    skip_users = maintainers_logins | bot_names
     experts = get_top_users(
         counter=question_commentors,
         min_count=min_count_expert,
         authors=authors,
-        skip_users=skip_users,
+        skip_users=bot_names,
     )
     last_month_active = get_top_users(
         counter=question_last_month_commentors,
         min_count=min_count_last_month,
         authors=authors,
-        skip_users=skip_users,
+        skip_users=bot_names,
     )
     top_contributors = get_top_users(
         counter=contributors,
         min_count=min_count_contributor,
         authors=authors,
-        skip_users=skip_users,
+        skip_users=bot_names,
     )
     top_reviewers = get_top_users(
         counter=reviewers,
         min_count=min_count_reviewer,
         authors=authors,
-        skip_users=skip_users,
+        skip_users=bot_names,
     )
 
     extra_experts = [
         {
             'login': 'ybressler',
-            'count': None,
+            'count': 3,
             'avatarUrl': 'https://avatars.githubusercontent.com/u/40807730?v=4',
             'url': 'https://github.com/ybressler',
         },

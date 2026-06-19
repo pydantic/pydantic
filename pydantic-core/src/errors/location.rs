@@ -1,6 +1,6 @@
 use pyo3::exceptions::PyTypeError;
+use pyo3::pybacked::PyBackedStr;
 use pyo3::sync::PyOnceLock;
-use std::borrow::Cow;
 use std::fmt;
 
 use pyo3::prelude::*;
@@ -15,6 +15,8 @@ use serde::{Serialize, Serializer};
 pub enum LocItem {
     /// string type key, used to identify items from a dict or anything that implements `__getitem__`
     S(String),
+    /// Python-owned variant of the above
+    PyS(PyBackedStr),
     /// integer key, used to get:
     ///   * items from a list
     ///   * items from a tuple
@@ -28,6 +30,8 @@ impl fmt::Display for LocItem {
         match self {
             Self::S(s) if s.contains('.') => write!(f, "`{s}`"),
             Self::S(s) => write!(f, "{s}"),
+            Self::PyS(s) if s.contains('.') => write!(f, "`{s}`"),
+            Self::PyS(s) => write!(f, "{s}"),
             Self::I(i) => write!(f, "{i}"),
         }
     }
@@ -39,21 +43,9 @@ impl From<String> for LocItem {
     }
 }
 
-impl From<&String> for LocItem {
-    fn from(s: &String) -> Self {
-        s.clone().into()
-    }
-}
-
 impl From<&str> for LocItem {
     fn from(s: &str) -> Self {
         Self::S(s.to_string())
-    }
-}
-
-impl From<Cow<'_, str>> for LocItem {
-    fn from(s: Cow<'_, str>) -> Self {
-        Self::S(s.into_owned())
     }
 }
 
@@ -69,6 +61,12 @@ impl From<usize> for LocItem {
     }
 }
 
+impl From<PyBackedStr> for LocItem {
+    fn from(s: PyBackedStr) -> Self {
+        Self::PyS(s)
+    }
+}
+
 impl Serialize for LocItem {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
@@ -76,6 +74,7 @@ impl Serialize for LocItem {
     {
         match self {
             Self::S(s) => serializer.serialize_str(s.as_str()),
+            Self::PyS(s) => serializer.serialize_str(s),
             Self::I(loc) => serializer.serialize_i64(*loc),
         }
     }
@@ -138,7 +137,7 @@ impl Location {
 
     pub fn with_outer(&mut self, loc_item: LocItem) {
         match self {
-            Self::List(ref mut loc) => loc.push(loc_item),
+            Self::List(loc) => loc.push(loc_item),
             Self::Empty => {
                 *self = Self::new_some(loc_item);
             }

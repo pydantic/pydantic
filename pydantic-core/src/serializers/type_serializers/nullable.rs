@@ -9,7 +9,7 @@ use crate::definitions::DefinitionsBuilder;
 use crate::serializers::SerializationState;
 use crate::tools::SchemaDict;
 
-use super::{infer_json_key_known, BuildSerializer, CombinedSerializer, IsType, ObType, TypeSerializer};
+use super::{BuildSerializer, CombinedSerializer, IsType, ObType, TypeSerializer, infer_json_key_known};
 
 #[derive(Debug)]
 pub struct NullableSerializer {
@@ -35,11 +35,7 @@ impl BuildSerializer for NullableSerializer {
 impl_py_gc_traverse!(NullableSerializer { serializer });
 
 impl TypeSerializer for NullableSerializer {
-    fn to_python<'py>(
-        &self,
-        value: &Bound<'py, PyAny>,
-        state: &mut SerializationState<'_, 'py>,
-    ) -> PyResult<Py<PyAny>> {
+    fn to_python<'py>(&self, value: &Bound<'py, PyAny>, state: &mut SerializationState<'py>) -> PyResult<Py<PyAny>> {
         let py = value.py();
         match state.extra.ob_type_lookup.is_type(value, ObType::None) {
             IsType::Exact => Ok(py.None()),
@@ -51,7 +47,7 @@ impl TypeSerializer for NullableSerializer {
     fn json_key<'a, 'py>(
         &self,
         key: &'a Bound<'py, PyAny>,
-        state: &mut SerializationState<'_, 'py>,
+        state: &mut SerializationState<'py>,
     ) -> PyResult<Cow<'a, str>> {
         match state.extra.ob_type_lookup.is_type(key, ObType::None) {
             IsType::Exact => infer_json_key_known(ObType::None, key, state),
@@ -63,7 +59,7 @@ impl TypeSerializer for NullableSerializer {
         &self,
         value: &Bound<'py, PyAny>,
         serializer: S,
-        state: &mut SerializationState<'_, 'py>,
+        state: &mut SerializationState<'py>,
     ) -> Result<S::Ok, S::Error> {
         match state.extra.ob_type_lookup.is_type(value, ObType::None) {
             IsType::Exact => serializer.serialize_none(),

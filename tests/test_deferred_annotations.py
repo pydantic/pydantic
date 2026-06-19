@@ -10,6 +10,7 @@ from annotated_types import MaxLen
 from pydantic import (
     BaseModel,
     Field,
+    TypeAdapter,
     ValidationError,
     field_serializer,
     field_validator,
@@ -36,12 +37,6 @@ def test_deferred_annotations_model() -> None:
     assert inst.b == 'test'
 
 
-@pytest.mark.xfail(
-    reason=(
-        'When rebuilding model fields, we individually re-evaluate all fields (using `_eval_type()`) '
-        "and as such we don't benefit from PEP 649's capabilities."
-    ),
-)
 def test_deferred_annotations_nested_model() -> None:
     def outer():
         def inner():
@@ -116,3 +111,46 @@ def test_deferred_annotations_return_values() -> None:
 
     MyDict = dict
     MyInt = int
+
+
+def test_deferred_annotations_pydantic_extra() -> None:
+    """https://github.com/pydantic/pydantic/issues/12393"""
+
+    class Foo(BaseModel, extra='allow'):
+        a: MyInt
+
+        __pydantic_extra__: MyDict[str, int]
+
+    MyInt = int
+    MyDict = dict
+
+    f = Foo(a='1', extra='1')
+
+    assert f.a == 1
+    assert f.extra == 1
+
+
+def test_deferred_annotations_json_schema_extra() -> None:
+    def json_schema_extra(js_schema: Anything):
+        return js_schema
+
+    ta = TypeAdapter(int, config={'json_schema_extra': json_schema_extra})
+
+    assert ta.json_schema() == {'type': 'integer'}
+
+
+def test_deferred_annotations_default_factory() -> None:
+    def def_factory(validated_data: Anything):
+        return 1
+
+    class Model(BaseModel):
+        f: int = Field(default_factory=def_factory)
+
+    assert Model().f == 1
+
+
+def test_deferred_annotations_custom_init() -> None:
+    class Model(BaseModel):
+        def __init__(self, a: Anything) -> None: ...
+
+    assert len(Model.__signature__.parameters) == 1

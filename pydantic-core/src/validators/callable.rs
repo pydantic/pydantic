@@ -1,9 +1,8 @@
-use std::sync::Arc;
+use std::sync::{Arc, LazyLock};
 
 use pyo3::prelude::*;
 use pyo3::types::PyDict;
 
-use crate::build_tools::LazyLock;
 use crate::errors::{ErrorTypeDefaults, ValError, ValResult};
 use crate::input::Input;
 
@@ -37,10 +36,10 @@ impl Validator for CallableValidator {
         state: &mut ValidationState<'_, 'py>,
     ) -> ValResult<Py<PyAny>> {
         state.floor_exactness(Exactness::Lax);
-        if let Some(py_input) = input.as_python() {
-            if py_input.is_callable() {
-                return Ok(py_input.clone().unbind());
-            }
+        if let Some(py_input) = input.as_python()
+            && py_input.is_callable()
+        {
+            return Ok(py_input.clone().unbind());
         }
         Err(ValError::new(ErrorTypeDefaults::CallableType, input))
     }

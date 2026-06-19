@@ -6,7 +6,7 @@
 [![versions](https://img.shields.io/pypi/pyversions/pydantic-core.svg)](https://github.com/pydantic/pydantic-core)
 [![license](https://img.shields.io/github/license/pydantic/pydantic-core.svg)](https://github.com/pydantic/pydantic-core/blob/main/LICENSE)
 
-This package provides the core functionality for [pydantic](https://docs.pydantic.dev) validation and serialization.
+This package provides the core functionality for [pydantic](https://pydantic.dev/docs/validation/latest/get-started/) validation and serialization.
 
 Pydantic-core is currently around 17x faster than pydantic V1.
 See [`tests/benchmarks/`](./tests/benchmarks/) for details.
@@ -17,7 +17,6 @@ See [`tests/benchmarks/`](./tests/benchmarks/) for details.
 
 ```py
 from pydantic_core import SchemaValidator, ValidationError
-
 
 v = SchemaValidator(
     {
@@ -74,7 +73,7 @@ except ValidationError as e:
 You'll need:
 
 1. **[Rust](https://rustup.rs/)** - Rust stable (or nightly for coverage)
-2. **[uv](https://docs.astral.sh/uv/getting-started/installation/)** - Fast Python package manager (will install Python 3.9+ automatically)
+2. **[uv](https://docs.astral.sh/uv/getting-started/installation/)** - Fast Python package manager
 3. **[git](https://git-scm.com/)** - For version control
 4. **[make](https://www.gnu.org/software/make/)** - For running development commands (or use `nmake` on Windows)
 

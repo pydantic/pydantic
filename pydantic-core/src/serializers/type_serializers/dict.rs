@@ -10,12 +10,13 @@ use serde::ser::SerializeMap;
 
 use crate::definitions::DefinitionsBuilder;
 use crate::serializers::SerializationState;
+use crate::serializers::extra::IncludeExclude;
 use crate::tools::SchemaDict;
 
 use super::any::AnySerializer;
 use super::{
-    infer_serialize, infer_to_python, py_err_se_err, BuildSerializer, CombinedSerializer, PydanticSerializer,
-    SchemaFilter, SerMode, TypeSerializer,
+    BuildSerializer, CombinedSerializer, PydanticSerializer, SchemaFilter, SerMode, TypeSerializer, infer_serialize,
+    infer_to_python, py_err_se_err,
 };
 
 #[derive(Debug)]
@@ -74,11 +75,7 @@ impl_py_gc_traverse!(DictSerializer {
 });
 
 impl TypeSerializer for DictSerializer {
-    fn to_python<'py>(
-        &self,
-        value: &Bound<'py, PyAny>,
-        state: &mut SerializationState<'_, 'py>,
-    ) -> PyResult<Py<PyAny>> {
+    fn to_python<'py>(&self, value: &Bound<'py, PyAny>, state: &mut SerializationState<'py>) -> PyResult<Py<PyAny>> {
         let py = value.py();
         match value.cast::<PyDict>() {
             Ok(py_dict) => {
@@ -86,17 +83,16 @@ impl TypeSerializer for DictSerializer {
 
                 let new_dict = PyDict::new(py);
                 for (key, value) in py_dict.iter() {
-                    let op_next = self.filter.key_filter(&key, state)?;
-                    if let Some((next_include, next_exclude)) = op_next {
+                    if let Some(next_include_exclude) = self.filter.key_filter(&key, state)? {
                         let key = {
                             // disable include/exclude for keys
-                            let state = &mut state.scoped_include_exclude(None, None);
+                            let state = &mut state.scoped_include_exclude(IncludeExclude::empty());
                             match state.extra.mode {
                                 SerMode::Json => self.key_serializer.json_key(&key, state)?.into_py_any(py)?,
                                 _ => self.key_serializer.to_python(&key, state)?,
                             }
                         };
-                        let state = &mut state.scoped_include_exclude(next_include, next_exclude);
+                        let state = &mut state.scoped_include_exclude(next_include_exclude);
                         let value = value_serializer.to_python(&value, state)?;
                         new_dict.set_item(key, value)?;
                     }
@@ -113,7 +109,7 @@ impl TypeSerializer for DictSerializer {
     fn json_key<'a, 'py>(
         &self,
         key: &'a Bound<'py, PyAny>,
-        state: &mut SerializationState<'_, 'py>,
+        state: &mut SerializationState<'py>,
     ) -> PyResult<Cow<'a, str>> {
         self.invalid_as_json_key(key, state, Self::EXPECTED_TYPE)
     }
@@ -122,7 +118,7 @@ impl TypeSerializer for DictSerializer {
         &self,
         value: &Bound<'py, PyAny>,
         serializer: S,
-        state: &mut SerializationState<'_, 'py>,
+        state: &mut SerializationState<'py>,
     ) -> Result<S::Ok, S::Error> {
         match value.cast::<PyDict>() {
             Ok(py_dict) => {
@@ -131,9 +127,8 @@ impl TypeSerializer for DictSerializer {
                 let value_serializer = self.value_serializer.as_ref();
 
                 for (key, value) in py_dict.iter() {
-                    let op_next = self.filter.key_filter(&key, state).map_err(py_err_se_err)?;
-                    if let Some((next_include, next_exclude)) = op_next {
-                        let state = &mut state.scoped_include_exclude(next_include, next_exclude);
+                    if let Some(next_include_exclude) = self.filter.key_filter(&key, state).map_err(py_err_se_err)? {
+                        let state = &mut state.scoped_include_exclude(next_include_exclude);
                         let key = key_serializer.json_key(&key, state).map_err(py_err_se_err)?;
                         let value_serialize = PydanticSerializer::new(&value, value_serializer, state);
                         map.serialize_entry(&key, &value_serialize)?;

@@ -2,9 +2,10 @@
 
 from __future__ import annotations
 
+from collections.abc import Callable
 from datetime import datetime
 from pathlib import Path
-from typing import Annotated, Any, Callable
+from typing import Annotated, Any
 from uuid import UUID
 
 import pytest

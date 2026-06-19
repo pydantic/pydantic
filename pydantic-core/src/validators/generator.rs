@@ -1,16 +1,17 @@
 use std::fmt;
 use std::sync::Arc;
 
+use pyo3::pybacked::PyBackedStr;
 use pyo3::types::{PyDict, PyString};
-use pyo3::{prelude::*, IntoPyObjectExt, PyTraverseError, PyVisit};
+use pyo3::{IntoPyObjectExt, PyTraverseError, PyVisit, prelude::*};
 
-use crate::build_tools::{py_schema_err, ExtraBehavior};
+use crate::ValidationError;
+use crate::build_tools::{ExtraBehavior, py_schema_err};
 use crate::errors::{ErrorType, LocItem, ValError, ValResult};
 use crate::input::{BorrowInput, GenericIterator, Input};
 use crate::py_gc::PyGcTraverse;
 use crate::recursion_guard::RecursionState;
 use crate::tools::SchemaDict;
-use crate::ValidationError;
 
 use super::list::get_items_schema;
 use super::{
@@ -154,58 +155,58 @@ impl ValidatorIterator {
         macro_rules! next {
             ($iter:ident) => {
                 match $iter.next(py)? {
-                    Some((next, index)) => match validator {
-                        Some(validator) => {
-                            if let Some(max_length) = max_length {
-                                if index >= max_length {
-                                    let val_error = ValError::new_custom_input(
-                                        ErrorType::TooLong {
-                                            field_type: "Generator".to_string(),
-                                            max_length,
-                                            actual_length: None,
-                                            context: None,
-                                        },
-                                        $iter.input_as_error_value(py),
-                                    );
-                                    return Err(ValidationError::from_val_error(
-                                        py,
-                                        "ValidatorIterator".into_pyobject(py)?.into(),
-                                        InputType::Python,
-                                        val_error,
-                                        None,
-                                        hide_input_in_errors,
-                                        validation_error_cause,
-                                    ));
-                                }
-                            }
-                            validator
-                                .validate(py, next.borrow_input(), Some(index.into()))
-                                .map(Some)
+                    Some((next, index)) => {
+                        if let Some(max_length) = max_length
+                            && index >= max_length
+                        {
+                            let val_error = ValError::new_custom_input(
+                                ErrorType::TooLong {
+                                    field_type: "Generator".to_string(),
+                                    max_length,
+                                    actual_length: None,
+                                    context: None,
+                                },
+                                $iter.input_as_error_value(py),
+                            );
+                            return Err(ValidationError::from_val_error(
+                                py,
+                                "ValidatorIterator".into_pyobject(py)?.into(),
+                                InputType::Python,
+                                val_error,
+                                None,
+                                hide_input_in_errors,
+                                validation_error_cause,
+                            ));
                         }
-                        None => Ok(Some(next.into_pyobject(py)?.unbind())),
-                    },
+                        match validator {
+                            Some(validator) => validator
+                                .validate(py, next.borrow_input(), Some(index.into()))
+                                .map(Some),
+                            None => Ok(Some(next.into_py_any(py)?)),
+                        }
+                    }
                     None => {
-                        if let Some(min_length) = min_length {
-                            if $iter.index() < min_length {
-                                let val_error = ValError::new_custom_input(
-                                    ErrorType::TooShort {
-                                        field_type: "Generator".to_string(),
-                                        min_length,
-                                        actual_length: $iter.index(),
-                                        context: None,
-                                    },
-                                    $iter.input_as_error_value(py),
-                                );
-                                return Err(ValidationError::from_val_error(
-                                    py,
-                                    "ValidatorIterator".into_pyobject(py)?.into(),
-                                    InputType::Python,
-                                    val_error,
-                                    None,
-                                    hide_input_in_errors,
-                                    validation_error_cause,
-                                ));
-                            }
+                        if let Some(min_length) = min_length
+                            && $iter.index() < min_length
+                        {
+                            let val_error = ValError::new_custom_input(
+                                ErrorType::TooShort {
+                                    field_type: "Generator".to_string(),
+                                    min_length,
+                                    actual_length: $iter.index(),
+                                    context: None,
+                                },
+                                $iter.input_as_error_value(py),
+                            );
+                            return Err(ValidationError::from_val_error(
+                                py,
+                                "ValidatorIterator".into_pyobject(py)?.into(),
+                                InputType::Python,
+                                val_error,
+                                None,
+                                hide_input_in_errors,
+                                validation_error_cause,
+                            ));
                         }
                         Ok(None)
                     }
@@ -214,8 +215,8 @@ impl ValidatorIterator {
         }
 
         match iterator {
-            GenericIterator::PyIterator(ref mut iter) => next!(iter),
-            GenericIterator::JsonArray(ref mut iter) => next!(iter),
+            GenericIterator::PyIterator(iter) => next!(iter),
+            GenericIterator::JsonArray(iter) => next!(iter),
         }
     }
 
@@ -282,13 +283,13 @@ impl InternalValidator {
         Self {
             name: name.to_string(),
             validator,
-            data: extra.data.as_ref().map(|d| d.clone().into()),
+            data: state.data.as_ref().map(|d| d.clone().into()),
             strict: extra.strict,
             extra_behavior: extra.extra_behavior,
             from_attributes: extra.from_attributes,
             context: extra.context.map(|d| d.clone().unbind()),
-            field_name: extra.field_name.as_ref().map(|d| d.clone().unbind()),
-            self_instance: extra.self_instance.map(|d| d.clone().unbind()),
+            field_name: state.field_name().map(|d| d.clone().unbind()),
+            self_instance: state.self_instance.map(|d| d.clone().unbind()),
             recursion_guard: state.recursion_guard.clone(),
             exactness: state.exactness,
             fields_set_count: state.fields_set_count,
@@ -303,24 +304,28 @@ impl InternalValidator {
         &mut self,
         py: Python<'py>,
         model: &Bound<'py, PyAny>,
-        field_name: &str,
+        field_name: &PyBackedStr,
         field_value: &Bound<'py, PyAny>,
         outer_location: Option<LocItem>,
     ) -> PyResult<Py<PyAny>> {
         let extra = Extra {
             input_type: self.validation_mode,
-            data: self.data.as_ref().map(|data| data.bind(py).clone()),
             strict: self.strict,
             extra_behavior: self.extra_behavior,
             from_attributes: self.from_attributes,
-            field_name: Some(PyString::new(py, field_name)),
             context: self.context.as_ref().map(|data| data.bind(py)),
-            self_instance: self.self_instance.as_ref().map(|data| data.bind(py)),
             cache_str: self.cache_str,
             by_alias: None,
             by_name: None,
         };
-        let mut state = ValidationState::new(extra, &mut self.recursion_guard, false.into());
+        let mut state = ValidationState::new(
+            extra,
+            &mut self.recursion_guard,
+            false.into(),
+            Some(field_name.as_py_str().bind(py).clone()),
+            self.self_instance.as_ref().map(|data| data.bind(py)),
+        );
+        state.data = self.data.as_ref().map(|data| data.bind(py).clone());
         state.exactness = self.exactness;
         let result = self
             .validator
@@ -348,18 +353,22 @@ impl InternalValidator {
     ) -> PyResult<Py<PyAny>> {
         let extra = Extra {
             input_type: self.validation_mode,
-            data: self.data.as_ref().map(|data| data.bind(py).clone()),
             strict: self.strict,
             extra_behavior: self.extra_behavior,
             from_attributes: self.from_attributes,
-            field_name: self.field_name.as_ref().map(|d| d.bind(py).clone()),
             context: self.context.as_ref().map(|data| data.bind(py)),
-            self_instance: self.self_instance.as_ref().map(|data| data.bind(py)),
             cache_str: self.cache_str,
             by_alias: None,
             by_name: None,
         };
-        let mut state = ValidationState::new(extra, &mut self.recursion_guard, false.into());
+        let mut state = ValidationState::new(
+            extra,
+            &mut self.recursion_guard,
+            false.into(),
+            self.field_name.as_ref().map(|name| name.bind(py).clone()),
+            self.self_instance.as_ref().map(|data| data.bind(py)),
+        );
+        state.data = self.data.as_ref().map(|data| data.bind(py).clone());
         state.exactness = self.exactness;
         state.fields_set_count = self.fields_set_count;
         let result = self.validator.validate(py, input, &mut state).map_err(|e| {

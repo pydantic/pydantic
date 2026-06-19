@@ -2,7 +2,8 @@ use std::sync::Arc;
 
 use ahash::AHashMap;
 use enum_dispatch::enum_dispatch;
-use pyo3::{Py, PyTraverseError, PyVisit};
+use hashbrown::HashTable;
+use pyo3::{Py, PyTraverseError, PyVisit, pybacked::PyBackedStr};
 
 /// Trait implemented by types which can be traversed by the Python GC.
 #[enum_dispatch]
@@ -16,6 +17,12 @@ impl<T> PyGcTraverse for Py<T> {
     }
 }
 
+impl PyGcTraverse for PyBackedStr {
+    fn py_gc_traverse(&self, visit: &PyVisit<'_>) -> Result<(), PyTraverseError> {
+        visit.call(self.as_py_str())
+    }
+}
+
 impl<T: PyGcTraverse> PyGcTraverse for Vec<T> {
     fn py_gc_traverse(&self, visit: &PyVisit<'_>) -> Result<(), PyTraverseError> {
         for item in self {
@@ -26,6 +33,15 @@ impl<T: PyGcTraverse> PyGcTraverse for Vec<T> {
 }
 
 impl<T: PyGcTraverse> PyGcTraverse for AHashMap<String, T> {
+    fn py_gc_traverse(&self, visit: &PyVisit<'_>) -> Result<(), PyTraverseError> {
+        for item in self.values() {
+            item.py_gc_traverse(visit)?;
+        }
+        Ok(())
+    }
+}
+
+impl<K: PyGcTraverse, T: PyGcTraverse> PyGcTraverse for AHashMap<K, T> {
     fn py_gc_traverse(&self, visit: &PyVisit<'_>) -> Result<(), PyTraverseError> {
         for item in self.values() {
             item.py_gc_traverse(visit)?;
@@ -52,6 +68,12 @@ impl<T: PyGcTraverse> PyGcTraverse for Option<T> {
             Some(item) => T::py_gc_traverse(item, visit),
             None => Ok(()),
         }
+    }
+}
+
+impl<T: PyGcTraverse> PyGcTraverse for HashTable<T> {
+    fn py_gc_traverse(&self, visit: &PyVisit<'_>) -> Result<(), PyTraverseError> {
+        self.iter().try_for_each(|item| item.py_gc_traverse(visit))
     }
 }
 

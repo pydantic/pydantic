@@ -3,16 +3,15 @@
 from __future__ import annotations
 
 import dataclasses
-from typing import Any, Callable, Literal
+from collections.abc import Callable
+from typing import Any, Literal
 
 from pydantic_core import PydanticUndefined
-
-from ._internal import _internal_dataclass
 
 __all__ = ('AliasGenerator', 'AliasPath', 'AliasChoices')
 
 
-@dataclasses.dataclass(**_internal_dataclass.slots_true)
+@dataclasses.dataclass(slots=True)
 class AliasPath:
     """!!! abstract "Usage Documentation"
         [`AliasPath` and `AliasChoices`](../concepts/alias.md#aliaspath-and-aliaschoices)
@@ -54,7 +53,7 @@ class AliasPath:
         return v
 
 
-@dataclasses.dataclass(**_internal_dataclass.slots_true)
+@dataclasses.dataclass(slots=True)
 class AliasChoices:
     """!!! abstract "Usage Documentation"
         [`AliasPath` and `AliasChoices`](../concepts/alias.md#aliaspath-and-aliaschoices)
@@ -85,7 +84,7 @@ class AliasChoices:
         return aliases
 
 
-@dataclasses.dataclass(**_internal_dataclass.slots_true)
+@dataclasses.dataclass(slots=True)
 class AliasGenerator:
     """!!! abstract "Usage Documentation"
         [Using an `AliasGenerator`](../concepts/alias.md#using-an-aliasgenerator)
@@ -114,9 +113,11 @@ class AliasGenerator:
             TypeError: If the alias generator produces an invalid type.
         """
         alias = None
-        if alias_generator := getattr(self, alias_kind):
+        alias_generator = getattr(self, alias_kind)
+
+        if alias_generator is not None:
             alias = alias_generator(field_name)
-            if alias and not isinstance(alias, allowed_types):
+            if alias is not None and not isinstance(alias, allowed_types):
                 raise TypeError(
                     f'Invalid `{alias_kind}` type. `{alias_kind}` generator must produce one of `{allowed_types}`'
                 )
@@ -126,7 +127,7 @@ class AliasGenerator:
         """Generate `alias`, `validation_alias`, and `serialization_alias` for a field.
 
         Returns:
-            A tuple of three aliases - validation, alias, and serialization.
+            A tuple of three aliases - alias, validation, and serialization.
         """
         alias = self._generate_alias('alias', (str,), field_name)
         validation_alias = self._generate_alias('validation_alias', (str, AliasChoices, AliasPath), field_name)

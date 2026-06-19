@@ -6,18 +6,22 @@ import sys
 from copy import deepcopy
 from dataclasses import dataclass
 from decimal import Decimal
-from typing import Any, Union
+from typing import Any
 
 import pytest
 from dirty_equals import Contains, IsPartialDict
-from pydantic_core import CoreSchema
+from pydantic_core import CoreSchema, PydanticUndefined
 from pydantic_core import core_schema as cs
 
 from pydantic import BaseModel, TypeAdapter
 from pydantic._internal._config import ConfigWrapper
+from pydantic._internal._core_metadata import update_core_metadata
+from pydantic._internal._fields import resolve_default_value
 from pydantic._internal._generate_schema import GenerateSchema
 from pydantic._internal._repr import Representation
 from pydantic._internal._validators import _extract_decimal_digits_info
+from pydantic.config import JsonDict
+from pydantic.json_schema import GetJsonSchemaHandler, JsonSchemaValue, PydanticJsonSchemaWarning
 
 
 def init_schema_and_cleaned_schema(type_: Any) -> tuple[CoreSchema, CoreSchema]:
@@ -122,7 +126,7 @@ def test_core_schema_with_model_used_in_multiple_places(nested_ref: bool) -> Non
         b: M1
 
     class M3(BaseModel):
-        c: Union[M2, M1]
+        c: M2 | M1
         d: M1
 
     init, cleaned = init_schema_and_cleaned_schema(list[M3] if nested_ref else M3)
@@ -188,3 +192,78 @@ def test_decimal_digits_calculation(decimal: Decimal, decimal_places: int, digit
 def test_decimal_digits_calculation_type_error(value) -> None:
     with pytest.raises(TypeError, match=f'Unable to extract decimal digits info from supplied value {value}'):
         _extract_decimal_digits_info(value)
+
+
+def test_update_js_extra_as_callable_when_existing_js_extra_is_dict_type():
+    """
+    It should ignore the callable with a warning.
+    """
+    metadata: dict[str, Any] = {}
+
+    extra_dict: JsonDict = {'testKey': 'testValue'}
+
+    def extra_func(schema: JsonDict) -> None:
+        schema['testKey'] = 'testValue'
+
+    update_core_metadata(metadata, pydantic_js_extra=extra_dict)
+
+    with pytest.warns(PydanticJsonSchemaWarning):
+        update_core_metadata(metadata, pydantic_js_extra=extra_func)
+    assert metadata['pydantic_js_extra'] is extra_dict
+
+
+def test_update_js_extra_as_callable_when_existing_js_extra_is_callable_type():
+    """
+    It should overwrite existing js_extra with the new callable.
+    """
+    metadata: dict[str, Any] = {}
+
+    def extra_func1(schema: JsonDict) -> None:
+        schema['testKey1'] = 'testValue1'
+
+    def extra_func2(schema: JsonDict) -> None:
+        schema['testKey2'] = 'testValue2'
+
+    update_core_metadata(metadata, pydantic_js_extra=extra_func1)
+    update_core_metadata(metadata, pydantic_js_extra=extra_func2)
+    assert metadata['pydantic_js_extra'] is extra_func2
+
+
+def test_pydantic_js_functions():
+    metadata: dict[str, Any] = {}
+
+    def func(schema: CoreSchema, handler: GetJsonSchemaHandler) -> JsonSchemaValue:
+        return {'type': 'string'}
+
+    update_core_metadata(
+        metadata,
+        pydantic_js_functions=[func],
+    )
+
+    assert metadata['pydantic_js_functions'] == [func]
+
+
+@pytest.mark.parametrize(
+    'default, default_factory, validated_data, call_default_factory, expected',
+    [
+        ('foo', None, None, True, 'foo'),
+        ('foo', None, None, False, 'foo'),
+        ('foo-unused', lambda: 'foo', None, False, PydanticUndefined),
+        ('foo-unused', lambda: 'foo', None, True, 'foo'),
+        ('foo-unused', lambda data: data['foo'], {'foo': 'bar'}, True, 'bar'),
+    ],
+)
+def test_resolve_default_value(default, default_factory, validated_data, call_default_factory, expected):
+    result = resolve_default_value(
+        default,
+        default_factory,
+        validated_data=validated_data,
+        call_default_factory=call_default_factory,
+    )
+    assert result == expected
+
+
+def test_resolve_default_value_missing_validated_data():
+    # When factory requires validated_data but none is provided, a ValueError should be raised.
+    with pytest.raises(ValueError):
+        resolve_default_value('foo', lambda data: data['foo'], validated_data=None, call_default_factory=True)

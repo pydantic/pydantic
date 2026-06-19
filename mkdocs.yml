@@ -7,26 +7,26 @@ theme:
   name: 'material'
   custom_dir: 'docs/theme'
   palette:
-    - media: "(prefers-color-scheme)"
+    - media: '(prefers-color-scheme)'
       primary: pink
       accent: pink
       toggle:
         icon: material/brightness-auto
-        name: "Switch to light mode"
-    - media: "(prefers-color-scheme: light)"
+        name: 'Switch to light mode'
+    - media: '(prefers-color-scheme: light)'
       scheme: default
       primary: pink
       accent: pink
       toggle:
         icon: material/brightness-7
-        name: "Switch to dark mode"
-    - media: "(prefers-color-scheme: dark)"
+        name: 'Switch to dark mode'
+    - media: '(prefers-color-scheme: dark)'
       scheme: slate
       primary: pink
       accent: pink
       toggle:
         icon: material/brightness-4
-        name: "Switch to system preference"
+        name: 'Switch to system preference'
   features:
     - content.tabs.link
     - content.code.annotate
@@ -78,8 +78,8 @@ extra_css:
   - 'extra/terminal.css'
   - 'extra/tweaks.css'
 extra_javascript:
-  - "https://cdn.jsdelivr.net/npm/algoliasearch@5.20.0/dist/lite/builds/browser.umd.js"
-  - "https://cdn.jsdelivr.net/npm/instantsearch.js@4.77.3/dist/instantsearch.production.min.js"
+  - 'https://cdn.jsdelivr.net/npm/algoliasearch@5.20.0/dist/lite/builds/browser.umd.js'
+  - 'https://cdn.jsdelivr.net/npm/instantsearch.js@4.77.3/dist/instantsearch.production.min.js'
   - 'extra/algolia.js'
   - 'extra/feedback.js'
   - 'extra/fluff.js'
@@ -167,6 +167,7 @@ nav:
       - Databases: examples/orms.md
       - Custom Validators: examples/custom_validators.md
       - Dynamic models: examples/dynamic_models.md
+      - Agent libraries – Pydantic AI: examples/pydantic_ai.md
   - Error Messages:
       - Error Handling: errors/errors.md
       - Validation Errors: errors/validation_errors.md
@@ -175,7 +176,7 @@ nav:
       - Pydantic Logfire: integrations/logfire.md
       - LLMs: integrations/llms.md
       - Dev Tools:
-          - Mypy: integrations/mypy.md/.
+          - Mypy: integrations/mypy.md
           - Pyrefly: integrations/pyrefly.md
           - PyCharm: integrations/pycharm.md
           - Hypothesis: integrations/hypothesis.md
@@ -208,6 +209,7 @@ markdown_extensions:
       alternate_style: true
   - pymdownx.arithmatex:
       generic: true
+  - pydantic_docs.mdext
 
 watch:
   - pydantic
@@ -228,7 +230,7 @@ plugins:
       markdown_description: |-
         Pydantic is the most widely used data validation library for Python.
         Fast and extensible, Pydantic plays nicely with your linters/IDE/brain.
-        Define how data should be in pure, canonical Python 3.9+; validate it with Pydantic.
+        Define how data should be in pure, canonical Python 3.10+; validate it with Pydantic.
       sections:
         Concepts documentation:
           - concepts/*.md
@@ -253,7 +255,7 @@ plugins:
           options:
             members_order: source
             separate_signature: true
-            filters: ["!^_"]
+            filters: ['!^_']
             docstring_options:
               ignore_init_summary: true
             merge_init_into_class: true

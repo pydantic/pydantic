@@ -12,8 +12,8 @@ use crate::build_tools::is_strict;
 use crate::errors::{ErrorType, ValError, ValResult};
 use crate::input::Input;
 
-use super::datetime::extract_microseconds_precision;
 use super::datetime::TZConstraint;
+use super::datetime::extract_microseconds_precision;
 use super::{BuildValidator, CombinedValidator, DefinitionsBuilder, ValidationState, Validator};
 
 #[derive(Debug, Clone)]

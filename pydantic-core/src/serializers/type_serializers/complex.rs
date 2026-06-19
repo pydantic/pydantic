@@ -1,14 +1,13 @@
 use std::borrow::Cow;
-use std::sync::Arc;
+use std::sync::{Arc, LazyLock};
 
 use pyo3::types::{PyComplex, PyDict};
-use pyo3::{prelude::*, IntoPyObjectExt};
+use pyo3::{IntoPyObjectExt, prelude::*};
 
-use crate::build_tools::LazyLock;
 use crate::definitions::DefinitionsBuilder;
 use crate::serializers::SerializationState;
 
-use super::{infer_serialize, infer_to_python, BuildSerializer, CombinedSerializer, SerMode, TypeSerializer};
+use super::{BuildSerializer, CombinedSerializer, SerMode, TypeSerializer, infer_serialize, infer_to_python};
 
 #[derive(Debug, Clone)]
 pub struct ComplexSerializer {}
@@ -29,11 +28,7 @@ impl BuildSerializer for ComplexSerializer {
 impl_py_gc_traverse!(ComplexSerializer {});
 
 impl TypeSerializer for ComplexSerializer {
-    fn to_python<'py>(
-        &self,
-        value: &Bound<'py, PyAny>,
-        state: &mut SerializationState<'_, 'py>,
-    ) -> PyResult<Py<PyAny>> {
+    fn to_python<'py>(&self, value: &Bound<'py, PyAny>, state: &mut SerializationState<'py>) -> PyResult<Py<PyAny>> {
         let py = value.py();
         match value.cast::<PyComplex>() {
             Ok(py_complex) => match state.extra.mode {
@@ -50,7 +45,7 @@ impl TypeSerializer for ComplexSerializer {
     fn json_key<'a, 'py>(
         &self,
         key: &'a Bound<'py, PyAny>,
-        state: &mut SerializationState<'_, 'py>,
+        state: &mut SerializationState<'py>,
     ) -> PyResult<Cow<'a, str>> {
         self.invalid_as_json_key(key, state, "complex")
     }
@@ -59,7 +54,7 @@ impl TypeSerializer for ComplexSerializer {
         &self,
         value: &Bound<'py, PyAny>,
         serializer: S,
-        state: &mut SerializationState<'_, 'py>,
+        state: &mut SerializationState<'py>,
     ) -> Result<S::Ok, S::Error> {
         match value.cast::<PyComplex>() {
             Ok(py_complex) => {
@@ -84,7 +79,10 @@ pub fn complex_to_str(py_complex: &Bound<'_, PyComplex>) -> String {
     let mut s = format!("{im}j");
     if re != 0.0 {
         let mut sign = "";
-        if im >= 0.0 {
+        // NaNs and positive numbers are formatted without sign, so we prefix "+" explicitly
+        // Check for positive sign instead of comparing with zero to handle signed zeros correctly
+        // Check for NaN first since its sign bit might be negative
+        if im.is_nan() || im.is_sign_positive() {
             sign = "+";
         }
         s = format!("{re}{sign}{s}");

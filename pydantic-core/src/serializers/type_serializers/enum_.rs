@@ -51,11 +51,7 @@ impl BuildSerializer for EnumSerializer {
 impl_py_gc_traverse!(EnumSerializer { serializer });
 
 impl TypeSerializer for EnumSerializer {
-    fn to_python<'py>(
-        &self,
-        value: &Bound<'py, PyAny>,
-        state: &mut SerializationState<'_, 'py>,
-    ) -> PyResult<Py<PyAny>> {
+    fn to_python<'py>(&self, value: &Bound<'py, PyAny>, state: &mut SerializationState<'py>) -> PyResult<Py<PyAny>> {
         let py = value.py();
         if value.is_exact_instance(self.class.bind(py)) {
             // if we're in JSON mode, we need to get the value attribute and serialize that
@@ -78,7 +74,7 @@ impl TypeSerializer for EnumSerializer {
     fn json_key<'a, 'py>(
         &self,
         key: &'a Bound<'py, PyAny>,
-        state: &mut SerializationState<'_, 'py>,
+        state: &mut SerializationState<'py>,
     ) -> PyResult<Cow<'a, str>> {
         let py = key.py();
         if key.is_exact_instance(self.class.bind(py)) {
@@ -100,7 +96,7 @@ impl TypeSerializer for EnumSerializer {
         &self,
         value: &Bound<'py, PyAny>,
         serializer: S,
-        state: &mut SerializationState<'_, 'py>,
+        state: &mut SerializationState<'py>,
     ) -> Result<S::Ok, S::Error> {
         if value.is_exact_instance(self.class.bind(value.py())) {
             let dot_value = value.getattr(intern!(value.py(), "value")).map_err(py_err_se_err)?;

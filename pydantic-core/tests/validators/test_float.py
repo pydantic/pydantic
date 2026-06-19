@@ -21,10 +21,10 @@ f64_max = sys.float_info.max
     [
         (0, 0),
         (1, 1),
-        (42, 42),
+        pytest.param(42, 42, id='42_int-42_int'),
         (i64_max + 1, i64_max + 1),
         (f64_max, f64_max),
-        ('42', 42),
+        pytest.param('42', 42, id='42_str-42_int'),
         ('  42.1  ', 42.1),
         ('42.123', 42.123),
         (42.0, 42),

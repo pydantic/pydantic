@@ -131,13 +131,11 @@ assert user.id == 321
     For example, the following will not behave as expected and would yield a validation error:
 
     ```python {test="skip"}
-    from typing import Optional
-
     from pydantic import BaseModel
 
 
     class Boo(BaseModel):
-        int: Optional[int] = None
+        int: int | None = None
 
 
     m = Boo(int=123)  # Will fail to validate.
@@ -287,14 +285,12 @@ Pydantic dataclasses also support extra data (see the [dataclass configuration](
 More complex hierarchical data structures can be defined using models themselves as types in annotations.
 
 ```python
-from typing import Optional
-
 from pydantic import BaseModel
 
 
 class Foo(BaseModel):
     count: int
-    size: Optional[float] = None
+    size: float | None = None
 
 
 class Bar(BaseModel):
@@ -409,7 +405,6 @@ Compared to using the model constructor, it is possible to control several valid
 
 ```python
 from datetime import datetime
-from typing import Optional
 
 from pydantic import BaseModel, ValidationError
 
@@ -417,7 +412,7 @@ from pydantic import BaseModel, ValidationError
 class User(BaseModel):
     id: int
     name: str = 'John Doe'
-    signup_ts: Optional[datetime] = None
+    signup_ts: datetime | None = None
 
 
 m = User.model_validate({'id': 123, 'name': 'James'})
@@ -708,7 +703,7 @@ Here is an example using a generic Pydantic model to create an easily-reused HTT
 
 <!-- TODO: tabs should be auto-generated if using Ruff (https://github.com/pydantic/pydantic/issues/10083) -->
 
-=== "Python 3.9 and above"
+=== "Python 3.10 and above"
 
     ```python {upgrade="skip"}
     from typing import Generic, TypeVar
@@ -790,6 +785,10 @@ Here is an example using a generic Pydantic model to create an easily-reused HTT
 
     1. Declare a Pydantic model and add the list of type variables as type parameters.
     2. Use the type variables as annotations where you will want to replace them with other types.
+
+/// version-added | v2.11
+Full support for the [type parameter syntax][type-params] and [type variable defaults](https://typing.python.org/en/latest/spec/generics.html#type-parameter-defaults).
+///
 
 !!! warning
     When parametrizing a model with a concrete type, Pydantic **does not** validate that the provided type
@@ -952,7 +951,7 @@ except ValidationError as e:
     """
 ```
 
-1. The `OuterT` model is parametrized with `int`, but the data associated with the the `T` annotations during validation is of type `str`, leading to validation errors.
+1. The `OuterT` model is parametrized with `int`, but the data associated with the `T` annotations during validation is of type `str`, leading to validation errors.
 
 !!! warning
     While it may not raise an error, we strongly advise against using parametrized generics in [`isinstance()`](https://docs.python.org/3/library/functions.html#isinstance) checks.
@@ -1287,6 +1286,11 @@ Field definitions are specified as keyword arguments, and should either be:
 * A two-tuple, the first element being the type and the second element the assigned value
   (either a default or the [`Field()`][pydantic.Field] function).
 
+/// version-changed | v2.11
+When providing a single element for field definitions, any type can be used
+(previously, only an [`Annotated`][typing.Annotated] form could be provided).
+///
+
 Here is a more advanced example:
 
 ```python
@@ -1375,6 +1379,11 @@ except ValidationError as e:
 
     * the model must be defined globally
     * the `__module__` argument must be provided
+
+!!! warning
+    This function may execute arbitrary code contained in field annotations, if string references need to be evaluated.
+
+    See [Security implications of introspecting annotations](https://docs.python.org/3/library/annotationlib.html#annotationlib-security) for more information.
 
 See also: the [dynamic model example](../examples/dynamic_models.md), providing guidelines to derive an optional model from another one.
 
@@ -1624,6 +1633,10 @@ print(m._secret_value)
 Private attribute names must start with underscore to prevent conflicts with model fields. However, dunder names
 (such as `__attr__`) are not supported, and will be completely ignored from the model definition.
 
+/// version-added | v2.13
+Default factories can take the validated model data as an argument.
+///
+
 ## Model signature
 
 All Pydantic models will have their signature generated based on their fields:
@@ -1680,7 +1693,7 @@ a `**data` argument will be added. In addition, the `**data` argument will alway
 
 Pydantic supports structural pattern matching for models, as introduced by [PEP 636](https://peps.python.org/pep-0636/) in Python 3.10.
 
-```python {requires="3.10" lint="skip"}
+```python {lint="skip"}
 from pydantic import BaseModel
 
 

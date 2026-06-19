@@ -373,12 +373,9 @@ def test_ipvany_serialization():
         ('2001:db00::0/120', IPv6Interface),
         ('2001:db00::1/120', IPv6Interface),
         (2**32 - 1, IPv4Interface),  # no mask equals to mask /32
-        (2**32 - 1, IPv4Interface),  # so `strict` has no effect
         (20_282_409_603_651_670_423_947_251_286_015, IPv6Interface),  # /128
         (20_282_409_603_651_670_423_947_251_286_014, IPv6Interface),
         (b'\xff\xff\xff\xff', IPv4Interface),  # /32
-        (b'\xff\xff\xff\xff', IPv4Interface),
-        (b'\x00\x00\x00\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff', IPv6Interface),
         (b'\x00\x00\x00\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff', IPv6Interface),
         (('192.168.0.0', 24), IPv4Interface),
         (('192.168.0.1', 24), IPv4Interface),
@@ -392,7 +389,7 @@ def test_ipvany_serialization():
 )
 def test_ipinterface_success(value, cls):
     class Model(BaseModel):
-        ip: IPvAnyInterface = None
+        ip: IPvAnyInterface
 
     assert Model(ip=value).ip == cls(value)
 
@@ -405,9 +402,7 @@ def test_ipinterface_success(value, cls):
         ('192.168.128.0/30', IPv4Interface),
         ('192.168.128.1/30', IPv4Interface),
         (2**32 - 1, IPv4Interface),  # no mask equals to mask /32
-        (2**32 - 1, IPv4Interface),  # so `strict` has no effect
         (b'\xff\xff\xff\xff', IPv4Interface),  # /32
-        (b'\xff\xff\xff\xff', IPv4Interface),
         (('192.168.0.0', 24), IPv4Interface),
         (('192.168.0.1', 24), IPv4Interface),
         (IPv4Interface('192.168.0.0/24'), IPv4Interface),
@@ -428,7 +423,6 @@ def test_ip_v4_interface_success(value, cls):
         ('2001:db00::1/120', IPv6Interface),
         (20_282_409_603_651_670_423_947_251_286_015, IPv6Interface),  # /128
         (20_282_409_603_651_670_423_947_251_286_014, IPv6Interface),
-        (b'\x00\x00\x00\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff', IPv6Interface),
         (b'\x00\x00\x00\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff', IPv6Interface),
         (('2001:db00::0', 120), IPv6Interface),
         (('2001:db00::1', 120), IPv6Interface),

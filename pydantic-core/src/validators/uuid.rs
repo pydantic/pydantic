@@ -10,10 +10,10 @@ use uuid::Variant;
 
 use crate::build_tools::is_strict;
 use crate::errors::{ErrorType, ErrorTypeDefaults, ValError, ValResult};
-use crate::input::input_as_python_instance;
 use crate::input::Input;
 use crate::input::InputType;
 use crate::input::ValidationMatch;
+use crate::input::input_as_python_instance;
 use crate::serializers::BytesMode;
 use crate::tools::SchemaDict;
 
@@ -137,16 +137,16 @@ impl Validator for UuidValidator {
             // This block checks if the UUID version matches the expected version and
             // if the UUID variant conforms to RFC 9562 (superseding RFC 4122).
             // When dealing with Python inputs, UUIDs must adhere to RFC 9562 standards.
-            if let Some(expected_version) = self.version {
-                if uuid.get_version_num() != expected_version || uuid.get_variant() != Variant::RFC4122 {
-                    return Err(ValError::new(
-                        ErrorType::UuidVersion {
-                            expected_version,
-                            context: None,
-                        },
-                        input,
-                    ));
-                }
+            if let Some(expected_version) = self.version
+                && (uuid.get_version_num() != expected_version || uuid.get_variant() != Variant::RFC4122)
+            {
+                return Err(ValError::new(
+                    ErrorType::UuidVersion {
+                        expected_version,
+                        context: None,
+                    },
+                    input,
+                ));
             }
             self.create_py_uuid(class, &uuid)
         }
@@ -183,13 +183,13 @@ impl UuidValidator {
                     .map_err(|_| ValError::new(ErrorTypeDefaults::UuidType, input))?
                     .into_inner();
                 let bytes_slice = either_bytes.as_slice();
-                'parse: {
-                    // Try parsing as utf8, but don't care if it fails
-                    if let Ok(utf8_str) = from_utf8(bytes_slice) {
-                        if let Ok(uuid) = Uuid::parse_str(utf8_str) {
-                            break 'parse uuid;
-                        }
-                    }
+
+                // Try parsing as utf8, if it fails fall back to bytes
+                if let Ok(utf8_str) = from_utf8(bytes_slice)
+                    && let Ok(uuid) = Uuid::parse_str(utf8_str)
+                {
+                    uuid
+                } else {
                     Uuid::from_slice(bytes_slice).map_err(|e| {
                         ValError::new(
                             ErrorType::UuidParsing {
@@ -203,17 +203,16 @@ impl UuidValidator {
             }
         };
 
-        if let Some(expected_version) = self.version {
-            let v1 = uuid.get_version_num();
-            if v1 != expected_version {
-                return Err(ValError::new(
-                    ErrorType::UuidVersion {
-                        expected_version,
-                        context: None,
-                    },
-                    input,
-                ));
-            }
+        if let Some(expected_version) = self.version
+            && uuid.get_version_num() != expected_version
+        {
+            return Err(ValError::new(
+                ErrorType::UuidVersion {
+                    expected_version,
+                    context: None,
+                },
+                input,
+            ));
         }
         Ok(uuid)
     }
@@ -226,15 +225,18 @@ impl UuidValidator {
     /// This implementation does not use the Python `__init__` function to speed up the process,
     /// as the `__init__` function in the Python `uuid` module performs extensive checks.
     fn create_py_uuid(&self, py_type: &Bound<'_, PyType>, uuid: &Uuid) -> ValResult<Py<PyAny>> {
+        static UUID_SAFE_UNKNOWN: PyOnceLock<Py<PyAny>> = PyOnceLock::new();
         let py = py_type.py();
-        let dc = create_class(py_type)?;
-        let int = uuid.as_u128();
-        let safe = py
-            .import(intern!(py, "uuid"))?
-            .getattr(intern!(py, "SafeUUID"))?
-            .get_item("safe")?;
-        force_setattr(py, &dc, intern!(py, UUID_INT), int)?;
-        force_setattr(py, &dc, intern!(py, UUID_IS_SAFE), safe)?;
-        Ok(dc.into())
+        let safe_unknown = UUID_SAFE_UNKNOWN.get_or_try_init(py, || {
+            py.import("uuid")?
+                .getattr("SafeUUID")?
+                .get_item("unknown")
+                .map(Bound::unbind)
+        })?;
+
+        let uuid_instance = create_class(py_type)?;
+        force_setattr(py, &uuid_instance, intern!(py, UUID_INT), uuid.as_u128())?;
+        force_setattr(py, &uuid_instance, intern!(py, UUID_IS_SAFE), safe_unknown)?;
+        Ok(uuid_instance.into())
     }
 }

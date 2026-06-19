@@ -1,7 +1,7 @@
 use std::ops::{Deref, DerefMut};
 
 use pyo3::prelude::*;
-use pyo3::types::PyString;
+use pyo3::types::{PyDict, PyString};
 
 use jiter::{PartialMode, StringCacheMode};
 
@@ -35,19 +35,34 @@ pub struct ValidationState<'a, 'py> {
     // TODO: this should probably be moved directly into the structured types which need it, but that
     // requires some refactoring to make them have knowledge of default (factories).
     pub has_field_error: bool,
+    /// The name of the field being validated, if applicable
+    field_name: Option<Bound<'py, PyString>>,
+    /// This is used as the `data` kwargs to validator functions and default factories (if they accept the argument)
+    pub data: Option<Bound<'py, PyDict>>,
+    /// This is an instance of the model or dataclass being validated, when validation is performed from `__init__`
+    pub self_instance: Option<&'a Bound<'py, PyAny>>,
     // deliberately make Extra readonly
     extra: Extra<'a, 'py>,
 }
 
 impl<'a, 'py> ValidationState<'a, 'py> {
-    pub fn new(extra: Extra<'a, 'py>, recursion_guard: &'a mut RecursionState, allow_partial: PartialMode) -> Self {
+    pub fn new(
+        extra: Extra<'a, 'py>,
+        recursion_guard: &'a mut RecursionState,
+        allow_partial: PartialMode,
+        field_name: Option<Bound<'py, PyString>>,
+        self_instance: Option<&'a Bound<'py, PyAny>>,
+    ) -> Self {
         Self {
             recursion_guard, // Don't care about exactness unless doing union validation
             exactness: None,
             fields_set_count: None,
             allow_partial,
             has_field_error: false,
+            field_name,
             extra,
+            data: None,
+            self_instance,
         }
     }
 
@@ -67,11 +82,7 @@ impl<'a, 'py> ValidationState<'a, 'py> {
     /// and setting that field to `value`.
     ///
     /// When `ScopedSetState` drops, the field is restored to its original value.
-    pub fn scoped_set<'state, P, T>(
-        &'state mut self,
-        projector: P,
-        new_value: T,
-    ) -> ScopedSetState<'state, 'a, 'py, P, T>
+    fn scoped_set<'state, P, T>(&'state mut self, projector: P, new_value: T) -> ScopedSetState<'state, 'a, 'py, P, T>
     where
         P: for<'p> Fn(&'p mut ValidationState<'a, 'py>) -> &'p mut T,
     {
@@ -83,11 +94,38 @@ impl<'a, 'py> ValidationState<'a, 'py> {
         }
     }
 
+    /// Set the field name within state for the given scope.
+    pub fn scoped_set_field_name(
+        &mut self,
+        new_value: Option<Bound<'py, PyString>>,
+    ) -> ScopedFieldNameState<'_, 'a, 'py> {
+        self.scoped_set(Self::field_name_mut, new_value)
+    }
+
+    /// Set the data within state for the given scope.
+    pub fn scoped_set_data(&mut self, new_value: Option<Bound<'py, PyDict>>) -> ScopedDataState<'_, 'a, 'py> {
+        self.scoped_set(Self::data_mut, new_value)
+    }
+
+    /// Set has_field_error to `false`, reset on exit of the scope.
+    pub fn scoped_clear_field_error(&mut self) -> ScopedHasFieldErrorState<'_, 'a, 'py> {
+        self.scoped_set(Self::has_field_error_mut, false)
+    }
+
+    /// Set `self_instance` to `None`, reset on exit of the scope.
+    pub fn scoped_clear_self_instance(&mut self) -> ScopedSelfInstanceState<'_, 'a, 'py> {
+        self.scoped_set(Self::self_instance_mut, None)
+    }
+
+    pub fn field_name(&self) -> Option<&Bound<'py, PyString>> {
+        self.field_name.as_ref()
+    }
+
     pub fn extra(&self) -> &'_ Extra<'a, 'py> {
         &self.extra
     }
 
-    pub fn enumerate_last_partial<I>(&self, iter: impl Iterator<Item = I>) -> impl Iterator<Item = (usize, bool, I)> {
+    pub fn enumerate_last_partial<I: Iterator>(&self, iter: I) -> EnumerateLastPartial<I> {
         EnumerateLastPartial::new(iter, self.allow_partial)
     }
 
@@ -134,6 +172,22 @@ impl<'a, 'py> ValidationState<'a, 'py> {
 
     pub fn maybe_cached_str(&self, py: Python<'py>, s: &str) -> Bound<'py, PyString> {
         new_py_string(py, s, self.extra.cache_str)
+    }
+
+    fn field_name_mut(&mut self) -> &mut Option<Bound<'py, PyString>> {
+        &mut self.field_name
+    }
+
+    fn data_mut(&mut self) -> &mut Option<Bound<'py, PyDict>> {
+        &mut self.data
+    }
+
+    fn has_field_error_mut(&mut self) -> &mut bool {
+        &mut self.has_field_error
+    }
+
+    fn self_instance_mut(&mut self) -> &mut Option<&'a Bound<'py, PyAny>> {
+        &mut self.self_instance
     }
 }
 
@@ -242,3 +296,11 @@ where
         self.state
     }
 }
+
+type ScopedSetStateT<'scope, 'a, 'py, T> =
+    ScopedSetState<'scope, 'a, 'py, for<'s> fn(&'s mut ValidationState<'a, 'py>) -> &'s mut T, T>;
+
+type ScopedFieldNameState<'scope, 'a, 'py> = ScopedSetStateT<'scope, 'a, 'py, Option<Bound<'py, PyString>>>;
+type ScopedDataState<'scope, 'a, 'py> = ScopedSetStateT<'scope, 'a, 'py, Option<Bound<'py, PyDict>>>;
+type ScopedHasFieldErrorState<'scope, 'a, 'py> = ScopedSetStateT<'scope, 'a, 'py, bool>;
+type ScopedSelfInstanceState<'scope, 'a, 'py> = ScopedSetStateT<'scope, 'a, 'py, Option<&'a Bound<'py, PyAny>>>;

@@ -1,6 +1,7 @@
 import re
+from collections.abc import Callable
 from enum import Enum
-from typing import Any, Callable
+from typing import Any
 
 import pytest
 
@@ -73,7 +74,7 @@ from ..conftest import Err, PyAndJson, plain_repr
                     }
                 ],
             ),
-            id='wrong-multiple-int',
+            id='wrong-multiple-int-2',
         ),
         (['a', 'b'], 'a', 'a'),
         pytest.param(

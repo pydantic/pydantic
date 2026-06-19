@@ -1,6 +1,6 @@
 import pickle
 from datetime import date, datetime
-from typing import Annotated, Any, Generic, Literal, Optional, TypeVar, Union
+from typing import Annotated, Any, Generic, Literal, TypeVar
 
 import pytest
 from pydantic_core import CoreSchema
@@ -114,7 +114,7 @@ def test_root_model_recursive():
         def my_a_method(self):
             pass
 
-    class B(RootModel[dict[str, Optional[A]]]):
+    class B(RootModel[dict[str, A | None]]):
         def my_b_method(self):
             pass
 
@@ -475,12 +475,12 @@ def test_root_model_dump_with_base_model(order):
     if order == 'BR':
 
         class Model(RootModel):
-            root: list[Union[BModel, RModel]]
+            root: list[BModel | RModel]
 
     elif order == 'RB':
 
         class Model(RootModel):
-            root: list[Union[RModel, BModel]]
+            root: list[RModel | BModel]
 
     m = Model([1, 2, {'value': 'abc'}])
 
@@ -509,7 +509,7 @@ def test_mixed_discriminated_union(data):
         str_value: str
 
     class Model(RootModel):
-        root: Union[SModel, RModel] = Field(discriminator='kind')
+        root: SModel | RModel = Field(discriminator='kind')
 
     if data['kind'] == 'IModel':
         with pytest.warns(
@@ -532,7 +532,7 @@ def test_list_rootmodel():
         type: Literal['b']
         b: str
 
-    class D(RootModel[Annotated[Union[A, B], Field(discriminator='type')]]):
+    class D(RootModel[Annotated[A | B, Field(discriminator='type')]]):
         pass
 
     LD = RootModel[list[D]]
@@ -615,13 +615,46 @@ help_result_string = pydoc.render_doc(RootModel)
 
 
 def test_copy_preserves_equality():
-    model = RootModel()
+    class Root(RootModel[int]):
+        pass
 
-    copied = model.__copy__()
-    assert model == copied
+    root_model = Root(1)
 
-    deepcopied = model.__deepcopy__()
-    assert model == deepcopied
+    copied = root_model.model_copy()
+    assert root_model == copied
+
+    deepcopied = root_model.model_copy(deep=True)
+    assert root_model == deepcopied
+
+
+def test_root_model_shallow_copy() -> None:
+    class ListRootModel(RootModel[list[int]]):
+        pass
+
+    original = ListRootModel([1, 2, 3])
+    copied = original.model_copy(deep=False)
+
+    assert original is not copied
+    # Root value is also shallow copied, see https://github.com/pydantic/pydantic/issues/12543:
+    assert original.root is not copied.root
+    assert original.root == copied.root
+
+    copied.root.append(4)
+    assert original.root == [1, 2, 3]
+    assert copied.root == [1, 2, 3, 4]
+
+
+def test_root_model_deep_copy() -> None:
+    class NestedListRootModel(RootModel[list[list[int]]]):
+        pass
+
+    original = NestedListRootModel([[1, 2], [3, 4]])
+    copied = original.model_copy(deep=True)
+
+    assert original is not copied
+    assert original.root is not copied.root
+    assert original.root[0] is not copied.root[0]
+    assert original.root == copied.root
 
 
 @pytest.mark.parametrize(
@@ -665,7 +698,7 @@ def test_model_construction_with_invalid_generic_specification() -> None:
     with pytest.raises(TypeError, match='You should parametrize RootModel directly'):
 
         class GenericRootModel(RootModel, Generic[T_]):
-            root: Union[T_, int]
+            root: T_ | int
 
 
 def test_model_with_field_description() -> None:

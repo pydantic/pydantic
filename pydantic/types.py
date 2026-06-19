@@ -5,7 +5,7 @@ from __future__ import annotations as _annotations
 import base64
 import dataclasses as _dataclasses
 import re
-from collections.abc import Hashable, Iterator
+from collections.abc import Callable, Hashable, Iterator
 from datetime import date, datetime
 from decimal import Decimal
 from enum import Enum
@@ -16,12 +16,11 @@ from typing import (
     TYPE_CHECKING,
     Annotated,
     Any,
-    Callable,
     ClassVar,
     Generic,
     Literal,
+    TypeAlias,
     TypeVar,
-    Union,
     cast,
 )
 from uuid import UUID
@@ -29,10 +28,15 @@ from uuid import UUID
 import annotated_types
 from annotated_types import BaseMetadata, MaxLen, MinLen
 from pydantic_core import CoreSchema, PydanticCustomError, SchemaSerializer, core_schema
-from typing_extensions import Protocol, TypeAlias, TypeAliasType, deprecated, get_args, get_origin
-from typing_inspection.introspection import is_union_origin
+from typing_extensions import (  # noqa: UP035 (for `get_args` and `get_origin`)
+    Protocol,
+    TypeAliasType,
+    deprecated,
+    get_args,
+    get_origin,
+)
 
-from ._internal import _fields, _internal_dataclass, _utils, _validators
+from ._internal import _fields, _utils, _validators
 from ._migration import getattr_migration
 from .annotated_handlers import GetCoreSchemaHandler, GetJsonSchemaHandler
 from .errors import PydanticUserError
@@ -706,6 +710,7 @@ class StringConstraints(annotated_types.GroupedMetadata):
         min_length: The minimum length of the string.
         max_length: The maximum length of the string.
         pattern: A regex pattern that the string must match.
+        ascii_only: Whether the string should contain only ASCII characters.
 
     Example:
         ```python
@@ -724,6 +729,7 @@ class StringConstraints(annotated_types.GroupedMetadata):
     min_length: int | None = None
     max_length: int | None = None
     pattern: str | Pattern[str] | None = None
+    ascii_only: bool | None = None
 
     def __iter__(self) -> Iterator[BaseMetadata]:
         if self.min_length is not None:
@@ -737,12 +743,14 @@ class StringConstraints(annotated_types.GroupedMetadata):
             or self.pattern is not None
             or self.to_lower is not None
             or self.to_upper is not None
+            or self.ascii_only is not None
         ):
             yield _fields.pydantic_general_metadata(
                 strip_whitespace=self.strip_whitespace,
                 to_upper=self.to_upper,
                 to_lower=self.to_lower,
                 pattern=self.pattern,
+                ascii_only=self.ascii_only,
             )
 
 
@@ -755,6 +763,7 @@ def constr(
     min_length: int | None = None,
     max_length: int | None = None,
     pattern: str | Pattern[str] | None = None,
+    ascii_only: bool | None = None,
 ) -> type[str]:
     """
     !!! warning "Discouraged"
@@ -810,6 +819,7 @@ def constr(
         min_length: The minimum length of the string.
         max_length: The maximum length of the string.
         pattern: A regex pattern to validate the string against.
+        ascii_only: Whether the string should contain only ASCII characters.
 
     Returns:
         The wrapped string type.
@@ -824,6 +834,7 @@ def constr(
             min_length=min_length,
             max_length=max_length,
             pattern=pattern,
+            ascii_only=ascii_only,
         ),
     ]
 
@@ -944,7 +955,7 @@ else:
             '''
             1 validation error for ImportThings
             obj
-              Invalid python path: No module named 'foo.bar' [type=import_error, input_value='foo.bar', input_type=str]
+              Invalid python path: No module named 'foo' [type=import_error, input_value='foo.bar', input_type=str]
             '''
 
         # Actual python objects can be assigned as well
@@ -1134,7 +1145,7 @@ def condecimal(
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ UUID TYPES ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 
-@_dataclasses.dataclass(**_internal_dataclass.slots_true)
+@_dataclasses.dataclass(slots=True)
 class UuidVersion:
     """A field metadata class to indicate a [UUID](https://docs.python.org/3/library/uuid.html) version.
 
@@ -1171,7 +1182,7 @@ class UuidVersion:
         return schema
 
     def __hash__(self) -> int:
-        return hash(type(self.uuid_version))
+        return hash(self.uuid_version)
 
 
 UUID1 = Annotated[UUID, UuidVersion(1)]
@@ -1332,7 +1343,7 @@ class PathType:
             return path
 
     def __hash__(self) -> int:
-        return hash(type(self.path_type))
+        return hash(self.path_type)
 
 
 FilePath = Annotated[Path, PathType('file')]
@@ -1913,7 +1924,7 @@ class PaymentCardBrand(str, Enum):
 
 @deprecated(
     'The `PaymentCardNumber` class is deprecated, use `pydantic_extra_types` instead. '
-    'See https://docs.pydantic.dev/latest/api/pydantic_extra_types_payment/#pydantic_extra_types.payment.PaymentCardNumber.',
+    'See https://pydantic.dev/docs/validation/latest/api/pydantic-extra-types/pydantic_extra_types_payment/#pydantic_extra_types.payment.PaymentCardNumber.',
     category=PydanticDeprecatedSince20,
 )
 class PaymentCardNumber(str):
@@ -2468,7 +2479,7 @@ class Base64UrlEncoder(EncoderProtocol):
         return 'base64url'
 
 
-@_dataclasses.dataclass(**_internal_dataclass.slots_true)
+@_dataclasses.dataclass(slots=True)
 class EncodedBytes:
     """A bytes type that is encoded and decoded using the specified encoder.
 
@@ -2567,7 +2578,7 @@ class EncodedBytes:
         return hash(self.encoder)
 
 
-@_dataclasses.dataclass(**_internal_dataclass.slots_true)
+@_dataclasses.dataclass(slots=True)
 class EncodedStr:
     """A str type that is encoded and decoded using the specified encoder.
 
@@ -2670,50 +2681,48 @@ Base64Bytes = Annotated[bytes, EncodedBytes(encoder=Base64Encoder)]
 """A bytes type that is encoded and decoded using the standard (non-URL-safe) base64 encoder.
 
 Note:
-    Under the hood, `Base64Bytes` uses the standard library `base64.b64encode` and `base64.b64decode` functions.
+    Under the hood, `Base64Bytes` uses the standard library [`base64.b64encode()`][base64.b64encode] and [`base64.b64decode()`][base64.b64decode] functions.
 
     As a result, attempting to decode url-safe base64 data using the `Base64Bytes` type may fail or produce an incorrect
     decoding.
 
-Warning:
-    In versions of Pydantic prior to v2.10, `Base64Bytes` used [`base64.encodebytes`][base64.encodebytes]
-    and [`base64.decodebytes`][base64.decodebytes] functions. According to the [base64 documentation](https://docs.python.org/3/library/base64.html),
-    these methods are considered legacy implementation, and thus, Pydantic v2.10+ now uses the modern
-    [`base64.b64encode`][base64.b64encode] and [`base64.b64decode`][base64.b64decode] functions.
+/// version-changed | v2.10
+`Base64Bytes` now uses [`base64.b64encode()`][base64.b64encode] and [`base64.b64decode()`][base64.b64decode]
+instead of [`base64.encodebytes()`][base64.encodebytes] and [`base64.decodebytes()`][base64.decodebytes].
 
-    If you'd still like to use these legacy encoders / decoders, you can achieve this by creating a custom annotated type,
-    like follows:
+These methods are considered legacy implementation. If you'd still like to use these legacy encoders/decoders,
+you can achieve this by creating a custom annotated type, like follows:
+```python
+import base64
+from typing import Annotated, Literal
 
-    ```python
-    import base64
-    from typing import Annotated, Literal
+from pydantic_core import PydanticCustomError
 
-    from pydantic_core import PydanticCustomError
+from pydantic import EncodedBytes, EncoderProtocol
 
-    from pydantic import EncodedBytes, EncoderProtocol
+class LegacyBase64Encoder(EncoderProtocol):
+    @classmethod
+    def decode(cls, data: bytes) -> bytes:
+        try:
+            return base64.decodebytes(data)
+        except ValueError as e:
+            raise PydanticCustomError(
+                'base64_decode',
+                "Base64 decoding error: '{error}'",
+                {'error': str(e)},
+            )
 
-    class LegacyBase64Encoder(EncoderProtocol):
-        @classmethod
-        def decode(cls, data: bytes) -> bytes:
-            try:
-                return base64.decodebytes(data)
-            except ValueError as e:
-                raise PydanticCustomError(
-                    'base64_decode',
-                    "Base64 decoding error: '{error}'",
-                    {'error': str(e)},
-                )
+    @classmethod
+    def encode(cls, value: bytes) -> bytes:
+        return base64.encodebytes(value)
 
-        @classmethod
-        def encode(cls, value: bytes) -> bytes:
-            return base64.encodebytes(value)
+    @classmethod
+    def get_json_format(cls) -> Literal['base64']:
+        return 'base64'
 
-        @classmethod
-        def get_json_format(cls) -> Literal['base64']:
-            return 'base64'
-
-    LegacyBase64Bytes = Annotated[bytes, EncodedBytes(encoder=LegacyBase64Encoder)]
-    ```
+LegacyBase64Bytes = Annotated[bytes, EncodedBytes(encoder=LegacyBase64Encoder)]
+```
+///
 
 ```python
 from pydantic import Base64Bytes, BaseModel, ValidationError
@@ -2745,22 +2754,22 @@ except ValidationError as e:
 ```
 """
 Base64Str = Annotated[str, EncodedStr(encoder=Base64Encoder)]
-"""A str type that is encoded and decoded using the standard (non-URL-safe) base64 encoder.
+"""A string type that is encoded and decoded using the standard (non-URL-safe) base64 encoder.
 
 Note:
-    Under the hood, `Base64Str` uses the standard library `base64.b64encode` and `base64.b64decode` functions.
+    Under the hood, `Base64Str` uses the standard library [`base64.b64encode()`][base64.b64encode] and [`base64.b64decode()`][base64.b64decode] functions.
 
     As a result, attempting to decode url-safe base64 data using the `Base64Str` type may fail or produce an incorrect
     decoding.
 
-Warning:
-    In versions of Pydantic prior to v2.10, `Base64Str` used [`base64.encodebytes`][base64.encodebytes]
-    and [`base64.decodebytes`][base64.decodebytes] functions. According to the [base64 documentation](https://docs.python.org/3/library/base64.html),
-    these methods are considered legacy implementation, and thus, Pydantic v2.10+ now uses the modern
-    [`base64.b64encode`][base64.b64encode] and [`base64.b64decode`][base64.b64decode] functions.
+/// version-changed | v2.10
+`Base64Str` now uses [`base64.b64encode()`][base64.b64encode] and [`base64.b64decode()`][base64.b64decode]
+instead of [`base64.encodebytes()`][base64.encodebytes] and [`base64.decodebytes()`][base64.decodebytes].
 
-    See the [`Base64Bytes`][pydantic.types.Base64Bytes] type for more information on how to
-    replicate the old behavior with the legacy encoders / decoders.
+These methods are considered legacy implementation. See the documentation about the [`Base64Bytes`][pydantic.types.Base64Bytes] type
+for more information on how to replicate the old behavior with the legacy encoders/decoders.
+///
+
 
 ```python
 from pydantic import Base64Str, BaseModel, ValidationError
@@ -2839,7 +2848,7 @@ print(m)
 __getattr__ = getattr_migration(__name__)
 
 
-@_dataclasses.dataclass(**_internal_dataclass.slots_true)
+@_dataclasses.dataclass(slots=True)
 class GetPydanticSchema:
     """!!! abstract "Usage Documentation"
         [Using `GetPydanticSchema` to Reduce Boilerplate](../concepts/types.md#using-getpydanticschema-to-reduce-boilerplate)
@@ -2886,22 +2895,22 @@ class GetPydanticSchema:
     __hash__ = object.__hash__
 
 
-@_dataclasses.dataclass(**_internal_dataclass.slots_true, frozen=True)
+@_dataclasses.dataclass(slots=True, frozen=True)
 class Tag:
     """Provides a way to specify the expected tag to use for a case of a (callable) discriminated union.
 
     Also provides a way to label a union case in error messages.
 
-    When using a callable `Discriminator`, attach a `Tag` to each case in the `Union` to specify the tag that
+    When using a callable `Discriminator`, attach a `Tag` to each case in the union to specify the tag that
     should be used to identify that case. For example, in the below example, the `Tag` is used to specify that
     if `get_discriminator_value` returns `'apple'`, the input should be validated as an `ApplePie`, and if it
     returns `'pumpkin'`, the input should be validated as a `PumpkinPie`.
 
     The primary role of the `Tag` here is to map the return value from the callable `Discriminator` function to
-    the appropriate member of the `Union` in question.
+    the appropriate member of the union in question.
 
-    ```python
-    from typing import Annotated, Any, Literal, Union
+    ```python {lint="skip"}
+    from typing import Annotated, Any, Literal
 
     from pydantic import BaseModel, Discriminator, Tag
 
@@ -2922,10 +2931,7 @@ class Tag:
 
     class ThanksgivingDinner(BaseModel):
         dessert: Annotated[
-            Union[
-                Annotated[ApplePie, Tag('apple')],
-                Annotated[PumpkinPie, Tag('pumpkin')],
-            ],
+            Annotated[ApplePie, Tag('apple')] | Annotated[PumpkinPie, Tag('pumpkin')],
             Discriminator(get_discriminator_value),
         ]
 
@@ -2971,7 +2977,7 @@ class Tag:
         return schema
 
 
-@_dataclasses.dataclass(**_internal_dataclass.slots_true, frozen=True)
+@_dataclasses.dataclass(slots=True, frozen=True)
 class Discriminator:
     """!!! abstract "Usage Documentation"
         [Discriminated Unions with `Callable` `Discriminator`](../concepts/unions.md#discriminated-unions-with-callable-discriminator)
@@ -2985,10 +2991,10 @@ class Discriminator:
     belongs to, while still seeing all the performance benefits of a discriminated union.
 
     Consider this example, which is much more performant with the use of `Discriminator` and thus a `TaggedUnion`
-    than it would be as a normal `Union`.
+    than it would be as a normal union.
 
-    ```python
-    from typing import Annotated, Any, Literal, Union
+    ```python {lint="skip"}
+    from typing import Annotated, Any, Literal
 
     from pydantic import BaseModel, Discriminator, Tag
 
@@ -3009,10 +3015,7 @@ class Discriminator:
 
     class ThanksgivingDinner(BaseModel):
         dessert: Annotated[
-            Union[
-                Annotated[ApplePie, Tag('apple')],
-                Annotated[PumpkinPie, Tag('pumpkin')],
-            ],
+            Annotated[ApplePie, Tag('apple')] | Annotated[PumpkinPie, Tag('pumpkin')],
             Discriminator(get_discriminator_value),
         ]
 
@@ -3060,9 +3063,6 @@ class Discriminator:
     """Context to use in custom errors."""
 
     def __get_pydantic_core_schema__(self, source_type: Any, handler: GetCoreSchemaHandler) -> CoreSchema:
-        if not is_union_origin(get_origin(source_type)):
-            raise TypeError(f'{type(self).__name__} must be used with a Union type, not {source_type}')
-
         if isinstance(self.discriminator, str):
             from pydantic import Field
 
@@ -3074,6 +3074,20 @@ class Discriminator:
     def _convert_schema(
         self, original_schema: core_schema.CoreSchema, handler: GetCoreSchemaHandler | None = None
     ) -> core_schema.TaggedUnionSchema:
+        if handler is not None and original_schema['type'] == 'definition-ref':
+            # Same logic as `_ApplyInferredDiscriminator._apply_to_root()`
+            try:
+                def_schema = handler.resolve_ref_schema(original_schema)
+            except LookupError:  # pragma: no cover
+                from pydantic._internal._discriminated_union import MissingDefinitionForUnionRef
+
+                raise MissingDefinitionForUnionRef(original_schema['schema_ref'])
+
+            # If using a referenceable union as discriminated (e.g. `type Pet = Cat | Dog; field: Pet = Field(discriminator=...)`):
+            if def_schema['type'] == 'union':
+                original_schema = def_schema.copy()
+                original_schema.pop('ref')
+
         if original_schema['type'] != 'union':
             # This likely indicates that the schema was a single-item union that was simplified.
             # In this case, we do the same thing we do in
@@ -3169,15 +3183,7 @@ class _AllowAnyJson:
 
 if TYPE_CHECKING:
     # This seems to only be necessary for mypy
-    JsonValue: TypeAlias = Union[
-        list['JsonValue'],
-        dict[str, 'JsonValue'],
-        str,
-        bool,
-        int,
-        float,
-        None,
-    ]
+    JsonValue: TypeAlias = 'list[JsonValue] | dict[str, JsonValue] | str | bool | int | float | None'
     """A `JsonValue` is used to represent a value that can be serialized to JSON.
 
     It may be one of:
@@ -3225,15 +3231,13 @@ else:
     JsonValue = TypeAliasType(
         'JsonValue',
         Annotated[
-            Union[
-                Annotated[list['JsonValue'], Tag('list')],
-                Annotated[dict[str, 'JsonValue'], Tag('dict')],
-                Annotated[str, Tag('str')],
-                Annotated[bool, Tag('bool')],
-                Annotated[int, Tag('int')],
-                Annotated[float, Tag('float')],
-                Annotated[None, Tag('NoneType')],
-            ],
+            Annotated[list['JsonValue'], Tag('list')]
+            | Annotated[dict[str, 'JsonValue'], Tag('dict')]
+            | Annotated[str, Tag('str')]
+            | Annotated[bool, Tag('bool')]
+            | Annotated[int, Tag('int')]
+            | Annotated[float, Tag('float')]
+            | Annotated[None, Tag('NoneType')],
             Discriminator(
                 _get_type_name,
                 custom_error_type='invalid-json-value',

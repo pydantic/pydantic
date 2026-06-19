@@ -5,3 +5,4 @@ formatter:
   type: basic
   retain_line_breaks_single: true
   scan_folded_as_literal: true
+  force_quote_style: single

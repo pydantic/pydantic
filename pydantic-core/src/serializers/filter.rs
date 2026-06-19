@@ -8,12 +8,13 @@ use pyo3::prelude::*;
 use pyo3::types::{PyBool, PyDict, PySet};
 
 use crate::serializers::SerializationState;
+use crate::serializers::extra::IncludeExclude;
 use crate::tools::SchemaDict;
 
 #[derive(Debug, Clone, Default)]
 pub(crate) struct SchemaFilter<T> {
-    include: Option<AHashSet<T>>,
-    exclude: Option<AHashSet<T>>,
+    include: Option<Box<AHashSet<T>>>,
+    exclude: Option<Box<AHashSet<T>>>,
 }
 
 fn map_negative_index<'py>(value: &Bound<'py, PyAny>, len: Option<usize>) -> PyResult<Bound<'py, PyAny>> {
@@ -58,7 +59,7 @@ fn map_negative_indices<'py>(
     }
 }
 
-type NextFilters<'py> = Option<(Option<Bound<'py, PyAny>>, Option<Bound<'py, PyAny>>)>;
+type NextFilters<'py> = Option<IncludeExclude<'py>>;
 
 impl SchemaFilter<usize> {
     pub fn from_schema(schema: &Bound<'_, PyDict>) -> PyResult<Self> {
@@ -73,7 +74,7 @@ impl SchemaFilter<usize> {
         }
     }
 
-    fn build_set_ints(v: Option<Bound<'_, PyAny>>) -> PyResult<Option<AHashSet<usize>>> {
+    fn build_set_ints(v: Option<Bound<'_, PyAny>>) -> PyResult<Option<Box<AHashSet<usize>>>> {
         match v {
             Some(value) => {
                 if value.is_none() {
@@ -85,7 +86,7 @@ impl SchemaFilter<usize> {
                     for item in py_set {
                         set.insert(item.extract()?);
                     }
-                    Ok(Some(set))
+                    Ok(Some(Box::new(set)))
                 }
             }
             None => Ok(None),
@@ -95,7 +96,7 @@ impl SchemaFilter<usize> {
     pub fn index_filter<'py>(
         &self,
         index: usize,
-        state: &SerializationState<'_, 'py>,
+        state: &SerializationState<'py>,
         len: Option<usize>,
     ) -> PyResult<NextFilters<'py>> {
         let include = state.include().map(|v| map_negative_indices(v, len)).transpose()?;
@@ -111,7 +112,7 @@ impl SchemaFilter<isize> {
         Ok(Self { include, exclude })
     }
 
-    fn build_set_hashes(v: Option<&Bound<'_, PyAny>>) -> PyResult<Option<AHashSet<isize>>> {
+    fn build_set_hashes(v: Option<&Bound<'_, PyAny>>) -> PyResult<Option<Box<AHashSet<isize>>>> {
         match v {
             Some(value) => {
                 if value.is_none() {
@@ -123,7 +124,7 @@ impl SchemaFilter<isize> {
                     for item in py_set.iter() {
                         set.insert(item.hash()?);
                     }
-                    Ok(Some(set))
+                    Ok(Some(Box::new(set)))
                 }
             }
             None => Ok(None),
@@ -133,7 +134,7 @@ impl SchemaFilter<isize> {
     pub fn key_filter<'py>(
         &self,
         key: &Bound<'py, PyAny>,
-        state: &SerializationState<'_, 'py>,
+        state: &SerializationState<'py>,
     ) -> PyResult<NextFilters<'py>> {
         let hash = key.hash()?;
         self.filter(key, hash, state.include(), state.exclude())
@@ -194,9 +195,9 @@ trait FilterLogic<T: Eq + Copy> {
                 if let Some(inc_value) = op_inc_value {
                     // if the index is in include, we definitely want to include this index
                     return if is_ellipsis_like(&inc_value) {
-                        Ok(Some((None, next_exclude)))
+                        Ok(Some(IncludeExclude::new(None, next_exclude)))
                     } else {
-                        Ok(Some((Some(inc_value), next_exclude)))
+                        Ok(Some(IncludeExclude::new(Some(inc_value), next_exclude)))
                     };
                 } else if !self.explicit_include(int_key) {
                     // if the index is not in include, include exists, AND it's not in schema include,
@@ -205,7 +206,7 @@ trait FilterLogic<T: Eq + Copy> {
                 }
             } else if let Ok(include_set) = include.cast::<PySet>() {
                 if include_set.contains(py_key)? || include_set.contains(intern!(include_set.py(), "__all__"))? {
-                    return Ok(Some((None, next_exclude)));
+                    return Ok(Some(IncludeExclude::new(None, next_exclude)));
                 } else if !self.explicit_include(int_key) {
                     // if the index is not in include, include exists, AND it's not in schema include,
                     // this index should be omitted
@@ -213,7 +214,7 @@ trait FilterLogic<T: Eq + Copy> {
                 }
             } else if let Some(contains) = check_contains(include, py_key)? {
                 if contains {
-                    return Ok(Some((None, next_exclude)));
+                    return Ok(Some(IncludeExclude::new(None, next_exclude)));
                 } else if !self.explicit_include(int_key) {
                     // if the index is not in include, include exists, AND it's not in schema include,
                     // this index should be omitted
@@ -225,9 +226,9 @@ trait FilterLogic<T: Eq + Copy> {
         }
 
         if next_exclude.is_some() {
-            Ok(Some((None, next_exclude)))
+            Ok(Some(IncludeExclude::new(None, next_exclude)))
         } else if self.default_filter(int_key) {
-            Ok(Some((None, None)))
+            Ok(Some(IncludeExclude::empty()))
         } else {
             Ok(None)
         }
@@ -266,7 +267,7 @@ impl AnyFilter {
     pub fn key_filter<'py>(
         &self,
         key: &Bound<'py, PyAny>,
-        state: &SerializationState<'_, 'py>,
+        state: &SerializationState<'py>,
     ) -> PyResult<NextFilters<'py>> {
         // just use 0 for the int_key, it's always ignored in the implementation here
         self.filter(key, 0, state.include(), state.exclude())
@@ -275,7 +276,7 @@ impl AnyFilter {
     pub fn index_filter<'py>(
         &self,
         index: usize,
-        state: &SerializationState<'_, 'py>,
+        state: &SerializationState<'py>,
         len: Option<usize>,
     ) -> PyResult<NextFilters<'py>> {
         let include = state.include().map(|v| map_negative_indices(v, len)).transpose()?;

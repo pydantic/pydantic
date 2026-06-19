@@ -4,11 +4,11 @@ from __future__ import annotations as _annotations
 
 import dataclasses
 import warnings
-from collections.abc import Mapping
+from collections.abc import Callable, Mapping
 from functools import cache
-from inspect import Parameter, ismethoddescriptor, signature
+from inspect import Parameter, ismethoddescriptor
 from re import Pattern
-from typing import TYPE_CHECKING, Any, Callable, TypeVar
+from typing import TYPE_CHECKING, Any, TypeVar, cast
 
 from pydantic_core import PydanticUndefined
 from typing_extensions import TypeIs
@@ -39,6 +39,13 @@ class PydanticMetadata(Representation):
     """Base class for annotation markers like `Strict`."""
 
     __slots__ = ()
+
+
+@dataclasses.dataclass(slots=True, kw_only=True)
+class PydanticExtraInfo:
+    # TODO: make use of PEP 747:
+    annotation: Any
+    complete: bool
 
 
 def pydantic_general_metadata(**metadata: Any) -> BaseMetadata:
@@ -219,7 +226,7 @@ def collect_model_fields(  # noqa: C901
     ns_resolver: NsResolver,
     *,
     typevars_map: Mapping[TypeVar, Any] | None = None,
-) -> tuple[dict[str, FieldInfo], set[str]]:
+) -> tuple[dict[str, FieldInfo], PydanticExtraInfo | None, set[str]]:
     """Collect the fields and class variables names of a nascent Pydantic model.
 
     The fields collection process is *lenient*, meaning it won't error if string annotations
@@ -236,7 +243,8 @@ def collect_model_fields(  # noqa: C901
         typevars_map: A dictionary mapping type variables to their concrete types.
 
     Returns:
-        A two-tuple containing model fields and class variables names.
+        A three-tuple containing the model fields, the `PydanticExtraInfo` instance if the `__pydantic_extra__` annotation is set,
+        and class variables names.
 
     Raises:
         NameError:
@@ -255,9 +263,8 @@ def collect_model_fields(  # noqa: C901
 
     type_hints = _typing_extra.get_model_type_hints(cls, ns_resolver=ns_resolver)
 
-    # https://docs.python.org/3/howto/annotations.html#accessing-the-annotations-dict-of-an-object-in-python-3-9-and-older
-    # annotations is only used for finding fields in parent classes
-    annotations = _typing_extra.safe_get_annotations(cls)
+    # `cls_annotations` is only used to determine if an annotation comes from a parent class
+    cls_annotations = _typing_extra.safe_get_annotations(cls)
 
     fields: dict[str, FieldInfo] = {}
 
@@ -303,25 +310,25 @@ def collect_model_fields(  # noqa: C901
                 f"Unexpected field with name {ann_name!r}; only 'root' is allowed as a field of a `RootModel`"
             )
 
-        # when building a generic model with `MyModel[int]`, the generic_origin check makes sure we don't get
-        # "... shadows an attribute" warnings
-        generic_origin = getattr(cls, '__pydantic_generic_metadata__', {}).get('origin')
         for base in bases:
-            dataclass_fields = {
-                field.name for field in (dataclasses.fields(base) if dataclasses.is_dataclass(base) else ())
-            }
             if hasattr(base, ann_name):
+                if ann_name not in cls_annotations:
+                    # Don't warn when a field exists in a parent class but has not been defined in the current class
+                    continue
+
+                # when building a generic model with `MyModel[int]`, the generic_origin check makes sure we don't get
+                # "... shadows an attribute" warnings
+                generic_origin = getattr(cls, '__pydantic_generic_metadata__', {}).get('origin')
                 if base is generic_origin:
                     # Don't warn when "shadowing" of attributes in parametrized generics
                     continue
 
+                dataclass_fields = {
+                    field.name for field in (dataclasses.fields(base) if dataclasses.is_dataclass(base) else ())
+                }
                 if ann_name in dataclass_fields:
                     # Don't warn when inheriting stdlib dataclasses whose fields are "shadowed" by defaults being set
                     # on the class instance.
-                    continue
-
-                if ann_name not in annotations:
-                    # Don't warn when a field exists in a parent class but has not been defined in the current class
                     continue
 
                 warnings.warn(
@@ -332,10 +339,10 @@ def collect_model_fields(  # noqa: C901
                 )
 
         if assigned_value is PydanticUndefined:  # no assignment, just a plain annotation
-            if ann_name in annotations or ann_name not in parent_fields_lookup:
+            if ann_name in cls_annotations or ann_name not in parent_fields_lookup:
                 # field is either:
                 # - present in the current model's annotations (and *not* from parent classes)
-                # - not found on any base classes; this seems to be caused by fields bot getting
+                # - not found on any base classes; this seems to be caused by fields not getting
                 #   generated due to models not being fully defined while initializing recursive models.
                 #   Nothing stops us from just creating a `FieldInfo` for this type hint, so we do this.
                 field_info = FieldInfo_.from_annotation(ann_type, _source=AnnotationSource.CLASS)
@@ -413,7 +420,16 @@ def collect_model_fields(  # noqa: C901
 
     if config_wrapper.use_attribute_docstrings:
         _update_fields_from_docstrings(cls, fields)
-    return fields, class_vars
+
+    pydantic_extra_info: PydanticExtraInfo | None = None
+    if '__pydantic_extra__' in type_hints:
+        ann, complete = type_hints['__pydantic_extra__']
+        pydantic_extra_info = PydanticExtraInfo(
+            annotation=ann,
+            complete=complete,
+        )
+
+    return fields, pydantic_extra_info, class_vars
 
 
 def rebuild_model_fields(
@@ -422,10 +438,14 @@ def rebuild_model_fields(
     config_wrapper: ConfigWrapper,
     ns_resolver: NsResolver,
     typevars_map: Mapping[TypeVar, Any],
-) -> dict[str, FieldInfo]:
+) -> tuple[dict[str, FieldInfo], PydanticExtraInfo | None]:
     """Rebuild the (already present) model fields by trying to reevaluate annotations.
 
     This function should be called whenever a model with incomplete fields is encountered.
+
+    Returns:
+        A two-tuple, the first element being the rebuilt fields, the second element being
+        the rebuild `PydanticExtraInfo` instance, if available.
 
     Raises:
         NameError: If one of the annotations failed to evaluate.
@@ -446,7 +466,17 @@ def rebuild_model_fields(
                 update_field_from_config(config_wrapper, f_name, new_field)
                 rebuilt_fields[f_name] = new_field
 
-    return rebuilt_fields
+        if cls.__pydantic_extra_info__ is not None and not cls.__pydantic_extra_info__.complete:
+            rebuilt_extra_info = PydanticExtraInfo(
+                annotation=_typing_extra.eval_type(
+                    cls.__pydantic_extra_info__.annotation, *ns_resolver.types_namespace
+                ),
+                complete=True,
+            )
+        else:
+            rebuilt_extra_info = cls.__pydantic_extra_info__
+
+    return rebuilt_fields, rebuilt_extra_info
 
 
 def _recreate_field_info(
@@ -660,7 +690,7 @@ def takes_validated_data_argument(
 ) -> TypeIs[Callable[[dict[str, Any]], Any]]:
     """Whether the provided default factory callable has a validated data parameter."""
     try:
-        sig = signature(default_factory)
+        sig = _typing_extra.signature_no_eval(default_factory)
     except (ValueError, TypeError):
         # `inspect.signature` might not be able to infer a signature, e.g. with C objects.
         # In this case, we assume no data argument is present:
@@ -669,3 +699,30 @@ def takes_validated_data_argument(
     parameters = list(sig.parameters.values())
 
     return len(parameters) == 1 and can_be_positional(parameters[0]) and parameters[0].default is Parameter.empty
+
+
+def resolve_default_value(
+    default: Any,
+    default_factory: Callable[[], Any] | Callable[[dict[str, Any]], Any] | None,
+    *,
+    validated_data: dict[str, Any] | None = None,
+    call_default_factory: bool = False,
+) -> Any:
+    """Resolve the default value using either a static default or a default_factory."""
+    from ._utils import smart_deepcopy
+
+    if default_factory is None:
+        return smart_deepcopy(default)
+    if call_default_factory:
+        if takes_validated_data_argument(default_factory=default_factory):
+            fac = cast('Callable[[dict[str, Any]], Any]', default_factory)
+            if validated_data is None:
+                raise ValueError(
+                    "The default factory requires the 'validated_data' argument, which was not provided when calling 'get_default()'."
+                )
+            return fac(validated_data)
+        else:
+            fac = cast('Callable[[], Any]', default_factory)
+            return fac()
+
+    return PydanticUndefined

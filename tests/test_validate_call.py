@@ -1,10 +1,12 @@
 import asyncio
 import inspect
+import pickle
 import re
 import sys
+from collections import UserDict
 from datetime import datetime, timezone
 from functools import partial
-from typing import Annotated, Any, Generic, Literal, TypeVar, Union
+from typing import Annotated, Any, Generic, Literal, TypeVar
 
 import pytest
 from pydantic_core import ArgsKwargs
@@ -285,13 +287,11 @@ def test_var_args_kwargs(validated):
 
 
 def test_unpacked_typed_dict_kwargs_invalid_type() -> None:
-    with pytest.raises(PydanticUserError) as exc:
+    with pytest.raises(PydanticUserError, check=lambda e: e.code == 'unpack-typed-dict'):
 
         @validate_call
         def foo(**kwargs: Unpack[int]):
             pass
-
-    assert exc.value.code == 'unpack-typed-dict'
 
 
 def test_unpacked_typed_dict_kwargs_overlaps() -> None:
@@ -300,14 +300,17 @@ def test_unpacked_typed_dict_kwargs_overlaps() -> None:
         b: int
         c: int
 
-    with pytest.raises(PydanticUserError) as exc:
+    with pytest.raises(
+        PydanticUserError,
+        check=lambda e: (
+            e.code == 'overlapping-unpack-typed-dict'
+            and e.message == "Typed dictionary 'TD' overlaps with parameters 'a', 'b'"
+        ),
+    ):
 
         @validate_call
         def foo(a: int, b: int, **kwargs: Unpack[TD]):
             pass
-
-    assert exc.value.code == 'overlapping-unpack-typed-dict'
-    assert exc.value.message == "Typed dictionary 'TD' overlaps with parameters 'a', 'b'"
 
     # Works for a pos-only argument
     @validate_call
@@ -807,7 +810,7 @@ def test_annotated_discriminator():
         food: str
         bark: int
 
-    Pet = Annotated[Union[Cat, Dog], Field(discriminator='type')]
+    Pet = Annotated[Cat | Dog, Field(discriminator='type')]
 
     @validate_call
     def f(pet: Pet):
@@ -1122,42 +1125,6 @@ def test_validate_call_with_slots() -> None:
     assert c.some_static_method == c.some_static_method
 
 
-def test_eval_type_backport():
-    @validate_call
-    def foo(bar: 'list[int | str]') -> 'list[int | str]':
-        return bar
-
-    assert foo([1, '2']) == [1, '2']
-    with pytest.raises(ValidationError) as exc_info:
-        foo('not a list')  # type: ignore
-    # insert_assert(exc_info.value.errors(include_url=False))
-    assert exc_info.value.errors(include_url=False) == [
-        {
-            'type': 'list_type',
-            'loc': (0,),
-            'msg': 'Input should be a valid list',
-            'input': 'not a list',
-        }
-    ]
-    with pytest.raises(ValidationError) as exc_info:
-        foo([{'not a str or int'}])  # type: ignore
-    # insert_assert(exc_info.value.errors(include_url=False))
-    assert exc_info.value.errors(include_url=False) == [
-        {
-            'type': 'int_type',
-            'loc': (0, 0, 'int'),
-            'msg': 'Input should be a valid integer',
-            'input': {'not a str or int'},
-        },
-        {
-            'type': 'string_type',
-            'loc': (0, 0, 'str'),
-            'msg': 'Input should be a valid string',
-            'input': {'not a str or int'},
-        },
-    ]
-
-
 def test_eval_namespace_basic(create_module):
     module = create_module(
         """
@@ -1342,3 +1309,23 @@ def test_validate_call_defer_build() -> None:
 
     with pytest.raises(ValidationError):
         DeferBuildClass.cls_meth(x='not_an_int')
+
+
+class _PickleTestModel(BaseModel):
+    number: float
+
+
+class _PickleTestDict(UserDict[int, _PickleTestModel]):
+    @validate_call
+    def __setitem__(self, key: int, value: _PickleTestModel):
+        super().__setitem__(key, value)
+
+
+def test_pickle_validate_call_with_basemodel() -> None:
+    """https://github.com/pydantic/pydantic/issues/7846."""
+    my_dict = _PickleTestDict({1: _PickleTestModel(number=1.0)})
+
+    unpickled = pickle.loads(pickle.dumps(my_dict))
+
+    assert unpickled == {1: _PickleTestModel(number=1.0)}
+    assert unpickled[1].number == 1.0

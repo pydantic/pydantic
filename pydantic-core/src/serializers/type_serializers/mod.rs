@@ -32,10 +32,10 @@ pub mod with_default;
 
 use super::computed_fields::ComputedFields;
 use super::config::utf8_py_error;
-use super::errors::{py_err_se_err, PydanticSerializationError};
+use super::errors::{PydanticSerializationError, py_err_se_err};
 use super::extra::{Extra, ExtraOwned, SerCheck, SerMode};
 use super::fields::{FieldsMode, GeneralFieldsSerializer, SerField};
 use super::filter::{AnyFilter, SchemaFilter};
 use super::infer::{infer_json_key, infer_json_key_known, infer_serialize, infer_to_python};
 use super::ob_type::{IsType, ObType};
-use super::shared::{to_json_bytes, BuildSerializer, CombinedSerializer, PydanticSerializer, TypeSerializer};
+use super::shared::{BuildSerializer, CombinedSerializer, PydanticSerializer, TypeSerializer, to_json_bytes};

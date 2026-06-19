@@ -8,12 +8,12 @@ use std::{
     collections::hash_map::Entry,
     fmt::Debug,
     sync::{
-        atomic::{AtomicBool, Ordering},
         Arc, OnceLock, Weak,
+        atomic::{AtomicBool, Ordering},
     },
 };
 
-use pyo3::{prelude::*, PyTraverseError, PyVisit};
+use pyo3::{PyTraverseError, PyVisit, prelude::*};
 
 use ahash::AHashMap;
 
@@ -132,13 +132,20 @@ impl<T: PyGcTraverse> PyGcTraverse for Definitions<T> {
 #[derive(Debug)]
 pub struct DefinitionsBuilder<T> {
     definitions: Definitions<T>,
+    use_prebuilt: bool,
 }
 
 impl<T: std::fmt::Debug> DefinitionsBuilder<T> {
-    pub fn new() -> Self {
+    pub fn new(use_prebuilt: bool) -> Self {
         Self {
             definitions: Definitions(AHashMap::new()),
+            use_prebuilt,
         }
+    }
+
+    /// Whether prebuilt validators/serializers should be used
+    pub fn use_prebuilt(&self) -> bool {
+        self.use_prebuilt
     }
 
     /// Get a ReferenceId for the given reference string.
@@ -169,7 +176,7 @@ impl<T: std::fmt::Debug> DefinitionsBuilder<T> {
                 let definition = entry.into_mut();
                 match definition.value.set(value) {
                     Ok(()) => definition,
-                    Err(_) => return py_schema_err!("Duplicate ref: `{}`", reference),
+                    Err(_) => return py_schema_err!("Duplicate ref: `{reference}`"),
                 }
             }
             Entry::Vacant(entry) => entry.insert(Definition {
@@ -188,7 +195,7 @@ impl<T: std::fmt::Debug> DefinitionsBuilder<T> {
     pub fn finish(self) -> PyResult<Definitions<T>> {
         for (reference, def) in &self.definitions.0 {
             if def.value.get().is_none() {
-                return py_schema_err!("Definitions error: definition `{}` was never filled", reference);
+                return py_schema_err!("Definitions error: definition `{reference}` was never filled");
             }
         }
         Ok(self.definitions)

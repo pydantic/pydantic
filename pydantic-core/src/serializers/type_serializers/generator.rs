@@ -1,12 +1,12 @@
 use std::borrow::Cow;
 use std::sync::Arc;
 
+use pyo3::IntoPyObjectExt;
+use pyo3::PyTraverseError;
 use pyo3::gc::PyVisit;
 use pyo3::intern;
 use pyo3::prelude::*;
 use pyo3::types::{PyDict, PyIterator};
-use pyo3::IntoPyObjectExt;
-use pyo3::PyTraverseError;
 
 use serde::ser::SerializeSeq;
 
@@ -17,8 +17,8 @@ use crate::tools::SchemaDict;
 
 use super::any::AnySerializer;
 use super::{
-    infer_serialize, infer_to_python, py_err_se_err, BuildSerializer, CombinedSerializer, ExtraOwned,
-    PydanticSerializer, SchemaFilter, SerMode, TypeSerializer,
+    BuildSerializer, CombinedSerializer, ExtraOwned, PydanticSerializer, SchemaFilter, SerMode, TypeSerializer,
+    infer_serialize, infer_to_python, py_err_se_err,
 };
 
 #[derive(Debug)]
@@ -51,11 +51,7 @@ impl BuildSerializer for GeneratorSerializer {
 impl_py_gc_traverse!(GeneratorSerializer { item_serializer });
 
 impl TypeSerializer for GeneratorSerializer {
-    fn to_python<'py>(
-        &self,
-        value: &Bound<'py, PyAny>,
-        state: &mut SerializationState<'_, 'py>,
-    ) -> PyResult<Py<PyAny>> {
+    fn to_python<'py>(&self, value: &Bound<'py, PyAny>, state: &mut SerializationState<'py>) -> PyResult<Py<PyAny>> {
         match value.cast::<PyIterator>() {
             Ok(py_iter) => {
                 let py = value.py();
@@ -69,9 +65,8 @@ impl TypeSerializer for GeneratorSerializer {
                         };
                         for (index, iter_result) in py_iter.clone().enumerate() {
                             let element = iter_result?;
-                            let op_next = self.filter.index_filter(index, state, None)?;
-                            if let Some((next_include, next_exclude)) = op_next {
-                                let state = &mut state.scoped_include_exclude(next_include, next_exclude);
+                            if let Some(next_include_exclude) = self.filter.index_filter(index, state, None)? {
+                                let state = &mut state.scoped_include_exclude(next_include_exclude);
                                 items.push(item_serializer.to_python(&element, state)?);
                             }
                         }
@@ -94,7 +89,7 @@ impl TypeSerializer for GeneratorSerializer {
     fn json_key<'a, 'py>(
         &self,
         key: &'a Bound<'py, PyAny>,
-        state: &mut SerializationState<'_, 'py>,
+        state: &mut SerializationState<'py>,
     ) -> PyResult<Cow<'a, str>> {
         self.invalid_as_json_key(key, state, Self::EXPECTED_TYPE)
     }
@@ -103,7 +98,7 @@ impl TypeSerializer for GeneratorSerializer {
         &self,
         value: &Bound<'py, PyAny>,
         serializer: S,
-        state: &mut SerializationState<'_, 'py>,
+        state: &mut SerializationState<'py>,
     ) -> Result<S::Ok, S::Error> {
         match value.cast::<PyIterator>() {
             Ok(py_iter) => {
@@ -114,8 +109,8 @@ impl TypeSerializer for GeneratorSerializer {
                 for (index, iter_result) in py_iter.clone().enumerate() {
                     let element = iter_result.map_err(py_err_se_err)?;
                     let op_next = self.filter.index_filter(index, state, None).map_err(py_err_se_err)?;
-                    if let Some((next_include, next_exclude)) = op_next {
-                        let state = &mut state.scoped_include_exclude(next_include, next_exclude);
+                    if let Some(next_include_exclude) = op_next {
+                        let state = &mut state.scoped_include_exclude(next_include_exclude);
                         let item_serialize = PydanticSerializer::new(&element, item_serializer, state);
                         seq.serialize_element(&item_serialize)?;
                     }
@@ -135,7 +130,6 @@ impl TypeSerializer for GeneratorSerializer {
 }
 
 #[pyclass(module = "pydantic_core._pydantic_core")]
-#[cfg_attr(debug_assertions, derive(Debug))]
 pub(crate) struct SerializationIterator {
     iterator: Py<PyIterator>,
     #[pyo3(get)]
@@ -156,7 +150,7 @@ impl SerializationIterator {
         py_iter: &Bound<'_, PyIterator>,
         item_serializer: &Arc<CombinedSerializer>,
         filter: SchemaFilter<usize>,
-        state: &mut SerializationState<'_, '_>,
+        state: &mut SerializationState<'_>,
     ) -> Self {
         Self {
             iterator: py_iter.clone().into(),
@@ -192,8 +186,8 @@ impl SerializationIterator {
             let element = iter_result?;
             let filter = self.filter.index_filter(self.index, state, None)?;
             self.index += 1;
-            if let Some((next_include, next_exclude)) = filter {
-                let state = &mut state.scoped_include_exclude(next_include, next_exclude);
+            if let Some(next_include_exclude) = filter {
+                let state = &mut state.scoped_include_exclude(next_include_exclude);
                 let v = self.item_serializer.to_python(&element, state)?;
                 state.warnings.final_check(py)?;
                 return Ok(Some(v));

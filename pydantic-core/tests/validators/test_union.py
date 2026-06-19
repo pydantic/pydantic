@@ -1,10 +1,8 @@
-import platform
-import sys
 from dataclasses import dataclass
 from datetime import date, time
 from enum import Enum, IntEnum
 from itertools import permutations
-from typing import Any, Optional, Union
+from typing import Any
 from uuid import UUID
 
 import pytest
@@ -24,8 +22,8 @@ from ..conftest import plain_repr
         ('false', False),
         (1, 1),
         (0, 0),
-        (123, 123),
-        ('123', 123),
+        pytest.param(123, 123, id='123_int-123_int'),
+        pytest.param('123', 123, id='123_str-123_int'),
         ('0', False),  # this case is different depending on the order of the choices
         ('1', True),  # this case is different depending on the order of the choices
     ],
@@ -42,12 +40,12 @@ def test_union_bool_int(input_value, expected_value):
         (False, False),
         ('true', True),
         ('false', False),
-        (1, 1),
-        (0, 0),
-        (123, 123),
-        ('123', 123),
-        ('0', 0),  # this case is different depending on the order of the choices
-        ('1', 1),  # this case is different depending on the order of the choices
+        pytest.param(1, 1, id='1_int-1_int'),
+        pytest.param(0, 0, id='0_int-0_int'),
+        pytest.param(123, 123, id='123_int-123_int'),
+        pytest.param('123', 123, id='123_str-123_int'),
+        pytest.param('0', 0, id='0_str-0_int'),  # this case is different depending on the order of the choices
+        pytest.param('1', 1, id='1_str-1_int'),  # this case is different depending on the order of the choices
     ],
 )
 def test_union_int_bool(input_value, expected_value):
@@ -233,9 +231,6 @@ def test_union_list_bool_int():
     ]
 
 
-@pytest.mark.xfail(
-    platform.python_implementation() == 'PyPy' and sys.version_info[:2] == (3, 11), reason='pypy 3.11 type formatting'
-)
 def test_empty_choices():
     msg = r'Error building "union" validator:\s+SchemaError: One or more union choices required'
     with pytest.raises(SchemaError, match=msg):
@@ -893,7 +888,7 @@ class TestSmartUnionWithDefaults:
     @pytest.mark.parametrize('choices', permute_choices([model_a_schema, model_b_schema]))
     def test_optional_union_with_members_having_defaults(self, choices) -> None:
         class WrapModel:
-            val: Optional[Union[self.ModelA, self.ModelB]] = None
+            val: self.ModelA | self.ModelB | None = None
 
         val = SchemaValidator(
             schema=core_schema.model_schema(
@@ -1213,10 +1208,10 @@ def test_nested_unions_bubble_up_field_count() -> None:
         w3: int = 0
 
     class ModelA:
-        a: Union[SubModelX, SubModelY]
+        a: SubModelX | SubModelY
 
     class ModelB:
-        b: Union[SubModelZ, SubModelW]
+        b: SubModelZ | SubModelW
 
     model_x_schema = core_schema.model_schema(
         SubModelX,
@@ -1305,7 +1300,7 @@ def test_smart_union_extra_behavior(extra_behavior) -> None:
         bar: str = 'bar'
 
     class Model:
-        x: Union[Foo, Bar]
+        x: Foo | Bar
 
     validator = SchemaValidator(
         core_schema.model_schema(
@@ -1408,7 +1403,7 @@ def test_smart_union_wrap_validator_should_not_change_nested_model_field_counts(
 
     # test validate_assignment
     class RootModel:
-        ab: Union[ModelA, ModelB]
+        ab: ModelA | ModelB
 
     root_model = core_schema.model_schema(
         RootModel,

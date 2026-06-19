@@ -1,6 +1,6 @@
 use std::fmt::Debug;
-use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::Arc;
+use std::sync::atomic::{AtomicUsize, Ordering};
 
 use pyo3::prelude::*;
 use pyo3::types::{PyBytes, PyDict, PyTuple, PyType};
@@ -13,8 +13,8 @@ use crate::py_gc::PyGcTraverse;
 pub(crate) use config::{BytesMode, SerializationConfig};
 pub use errors::{PydanticSerializationError, PydanticSerializationUnexpectedValue};
 pub(crate) use extra::{Extra, SerMode, SerializationState, WarningsMode};
-use shared::to_json_bytes;
 pub use shared::CombinedSerializer;
+use shared::{BuildSerializer, to_json_bytes};
 
 mod computed_fields;
 mod config;
@@ -24,6 +24,7 @@ mod fields;
 mod filter;
 mod infer;
 mod ob_type;
+mod polymorphism_trampoline;
 mod prebuilt;
 pub mod ser;
 mod shared;
@@ -58,10 +59,16 @@ impl_py_gc_traverse!(SchemaSerializer {
 #[pymethods]
 impl SchemaSerializer {
     #[new]
-    #[pyo3(signature = (schema, config=None))]
-    pub fn py_new(schema: Bound<'_, PyDict>, config: Option<&Bound<'_, PyDict>>) -> PyResult<Self> {
-        let mut definitions_builder = DefinitionsBuilder::new();
-        let serializer = CombinedSerializer::build_base(schema.cast()?, config, &mut definitions_builder)?;
+    #[pyo3(signature = (schema, config=None, _use_prebuilt=true))]
+    pub fn py_new(
+        schema: Bound<'_, PyDict>,
+        config: Option<&Bound<'_, PyDict>>,
+        _use_prebuilt: bool,
+    ) -> PyResult<Self> {
+        // use_prebuilt=true by default, but false during rebuilds to avoid stale references
+        // to old serializers (see https://github.com/pydantic/pydantic/issues/12446)
+        let mut definitions_builder = DefinitionsBuilder::new(_use_prebuilt);
+        let serializer = CombinedSerializer::build(schema.cast()?, config, &mut definitions_builder)?;
         Ok(Self {
             serializer,
             definitions: definitions_builder.finish()?,
@@ -78,7 +85,8 @@ impl SchemaSerializer {
     #[allow(clippy::too_many_arguments)]
     #[pyo3(signature = (value, *, mode = None, include = None, exclude = None, by_alias = None,
         exclude_unset = false, exclude_defaults = false, exclude_none = false, exclude_computed_fields = false,
-        round_trip = false, warnings = WarningsArg::Bool(true), fallback = None, serialize_as_any = false, context = None))]
+        round_trip = false, warnings = WarningsArg::Bool(true), fallback = None, serialize_as_any = false,
+        polymorphic_serialization = None, context = None))]
     pub fn to_python(
         &self,
         py: Python,
@@ -93,9 +101,10 @@ impl SchemaSerializer {
         exclude_computed_fields: bool,
         round_trip: bool,
         warnings: WarningsArg,
-        fallback: Option<&Bound<'_, PyAny>>,
+        fallback: Option<Bound<'_, PyAny>>,
         serialize_as_any: bool,
-        context: Option<&Bound<'_, PyAny>>,
+        polymorphic_serialization: Option<bool>,
+        context: Option<Bound<'_, PyAny>>,
     ) -> PyResult<Py<PyAny>> {
         let mode: SerMode = mode.into();
         let warnings_mode = match warnings {
@@ -104,7 +113,7 @@ impl SchemaSerializer {
         };
         let extra = Extra::new(
             py,
-            &mode,
+            mode,
             by_alias,
             exclude_unset,
             exclude_defaults,
@@ -114,6 +123,7 @@ impl SchemaSerializer {
             false,
             fallback,
             serialize_as_any,
+            polymorphic_serialization,
             context,
         );
         let mut state = SerializationState::new(self.config, warnings_mode, include, exclude, extra)?;
@@ -125,7 +135,8 @@ impl SchemaSerializer {
     #[allow(clippy::too_many_arguments)]
     #[pyo3(signature = (value, *, indent = None, ensure_ascii = false, include = None, exclude = None, by_alias = None,
         exclude_unset = false, exclude_defaults = false, exclude_none = false, exclude_computed_fields = false,
-        round_trip = false, warnings = WarningsArg::Bool(true), fallback = None, serialize_as_any = false, context = None))]
+        round_trip = false, warnings = WarningsArg::Bool(true), fallback = None, serialize_as_any = false,
+        polymorphic_serialization = None, context = None))]
     pub fn to_json(
         &self,
         py: Python,
@@ -141,9 +152,10 @@ impl SchemaSerializer {
         exclude_computed_fields: bool,
         round_trip: bool,
         warnings: WarningsArg,
-        fallback: Option<&Bound<'_, PyAny>>,
+        fallback: Option<Bound<'_, PyAny>>,
         serialize_as_any: bool,
-        context: Option<&Bound<'_, PyAny>>,
+        polymorphic_serialization: Option<bool>,
+        context: Option<Bound<'_, PyAny>>,
     ) -> PyResult<Py<PyAny>> {
         let warnings_mode = match warnings {
             WarningsArg::Bool(b) => b.into(),
@@ -151,7 +163,7 @@ impl SchemaSerializer {
         };
         let extra = Extra::new(
             py,
-            &SerMode::Json,
+            SerMode::Json,
             by_alias,
             exclude_unset,
             exclude_defaults,
@@ -161,6 +173,7 @@ impl SchemaSerializer {
             false,
             fallback,
             serialize_as_any,
+            polymorphic_serialization,
             context,
         );
         let mut state = SerializationState::new(self.config, warnings_mode, include, exclude, extra)?;
@@ -181,7 +194,8 @@ impl SchemaSerializer {
     }
 
     pub fn __reduce__<'py>(slf: &Bound<'py, Self>) -> PyResult<(Bound<'py, PyType>, Bound<'py, PyTuple>)> {
-        let init_args = (&slf.get().py_schema, &slf.get().py_config).into_pyobject(slf.py())?;
+        // Passing _use_prebuilt=false avoids reusing prebuilt serializers when unpickling
+        let init_args = (&slf.get().py_schema, &slf.get().py_config, false).into_pyobject(slf.py())?;
         Ok((slf.get_type(), init_args))
     }
 
@@ -202,7 +216,7 @@ impl SchemaSerializer {
 #[pyo3(signature = (value, *, indent = None, ensure_ascii = false, include = None, exclude = None, by_alias = true,
     exclude_none = false, round_trip = false, timedelta_mode = "iso8601", temporal_mode = "iso8601",
     bytes_mode = "utf8",  inf_nan_mode = "constants", serialize_unknown = false, fallback = None,
-    serialize_as_any = false, context = None))]
+    serialize_as_any = false, polymorphic_serialization = None, context = None))]
 pub fn to_json(
     py: Python,
     value: &Bound<'_, PyAny>,
@@ -218,14 +232,15 @@ pub fn to_json(
     bytes_mode: &str,
     inf_nan_mode: &str,
     serialize_unknown: bool,
-    fallback: Option<&Bound<'_, PyAny>>,
+    fallback: Option<Bound<'_, PyAny>>,
     serialize_as_any: bool,
-    context: Option<&Bound<'_, PyAny>>,
+    polymorphic_serialization: Option<bool>,
+    context: Option<Bound<'_, PyAny>>,
 ) -> PyResult<Py<PyAny>> {
     let config = SerializationConfig::from_args(timedelta_mode, temporal_mode, bytes_mode, inf_nan_mode)?;
     let extra = Extra::new(
         py,
-        &SerMode::Json,
+        SerMode::Json,
         Some(by_alias),
         false,
         false,
@@ -235,6 +250,7 @@ pub fn to_json(
         serialize_unknown,
         fallback,
         serialize_as_any,
+        polymorphic_serialization,
         context,
     );
     let mut state = SerializationState::new(config, WarningsMode::None, include, exclude, extra)?;
@@ -255,7 +271,7 @@ pub fn to_json(
 #[pyfunction]
 #[pyo3(signature = (value, *, include = None, exclude = None, by_alias = true, exclude_none = false, round_trip = false,
     timedelta_mode = "iso8601", temporal_mode = "iso8601", bytes_mode = "utf8", inf_nan_mode = "constants",
-    serialize_unknown = false, fallback = None, serialize_as_any = false, context = None))]
+    serialize_unknown = false, fallback = None, serialize_as_any = false, polymorphic_serialization = None, context = None))]
 pub fn to_jsonable_python(
     py: Python,
     value: &Bound<'_, PyAny>,
@@ -269,14 +285,15 @@ pub fn to_jsonable_python(
     bytes_mode: &str,
     inf_nan_mode: &str,
     serialize_unknown: bool,
-    fallback: Option<&Bound<'_, PyAny>>,
+    fallback: Option<Bound<'_, PyAny>>,
     serialize_as_any: bool,
-    context: Option<&Bound<'_, PyAny>>,
+    polymorphic_serialization: Option<bool>,
+    context: Option<Bound<'_, PyAny>>,
 ) -> PyResult<Py<PyAny>> {
     let config = SerializationConfig::from_args(timedelta_mode, temporal_mode, bytes_mode, inf_nan_mode)?;
     let extra = Extra::new(
         py,
-        &SerMode::Json,
+        SerMode::Json,
         Some(by_alias),
         false,
         false,
@@ -286,6 +303,7 @@ pub fn to_jsonable_python(
         serialize_unknown,
         fallback,
         serialize_as_any,
+        polymorphic_serialization,
         context,
     );
     let mut state = SerializationState::new(config, WarningsMode::None, include, exclude, extra)?;
