@@ -32,7 +32,7 @@ runs:
           --out dist
           --interpreter ${{ inputs.interpreter }}
         rust-toolchain: ${{ inputs.rust-toolchain }}
-        docker-options: -e CI
+        docker-options: -e CI -e UV_PYTHON
 
     - name: Find built wheel
       id: find_wheel

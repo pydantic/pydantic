@@ -92,7 +92,7 @@ bindings = 'pyo3'
 # when using `uv` to build `pydantic-core`, use the `dev` profile
 # can override by e.g. `make build-pgo` and then using `uv run --no-sync`
 editable-profile = 'dev'
-pgo-command = "uv sync --active --no-install-package pydantic-core --group testing-extra --inexact && uv run --active --no-sync pytest tests/benchmarks"
+pgo-command = "uv pip install --group testing-extra && uv run --active --no-sync pytest tests/benchmarks"
 
 [tool.ruff]
 line-length = 120
