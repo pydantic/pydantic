@@ -252,7 +252,9 @@ def fraction_validator(input_value: Any, /) -> Fraction:
 
     try:
         return Fraction(input_value)
-    except ValueError:
+    except (ValueError, ZeroDivisionError):
+        # Fraction raises ZeroDivisionError for a zero denominator (e.g. '6/0'),
+        # which must surface as a ValidationError like any other invalid input.
         raise PydanticCustomError('fraction_parsing', 'Input is not a valid fraction')
 
 
