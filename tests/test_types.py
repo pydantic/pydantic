@@ -4,6 +4,7 @@ import itertools
 import json
 import math
 import os
+import pathlib
 import platform
 import re
 import sys
@@ -3849,6 +3850,24 @@ def test_path_union_ser() -> None:
     model = Model(a=[Path('potato')], b=[Path('potato')])
     assert model.model_dump() == {'a': [Path('potato')], 'b': [Path('potato')]}
     assert model.model_dump_json() == '{"a":["potato"],"b":["potato"]}'
+
+
+def test_windows_path_schema_generation() -> None:
+    """WindowsPath must be recognised by PATH_TYPES so schema/default generation works (GH #13318)."""
+    ta = TypeAdapter(pathlib.WindowsPath)
+    schema = ta.json_schema()
+    assert schema == {'type': 'string', 'format': 'path'}
+
+
+@pytest.mark.skipif(sys.platform != 'win32', reason='WindowsPath can only be instantiated on Windows')
+def test_windows_path_default_in_json_schema() -> None:
+    """Path() on Windows returns WindowsPath; model_json_schema() must include the default (GH #13318)."""
+
+    class Config(BaseModel):
+        path: pathlib.Path = pathlib.Path('config.toml')
+
+    schema = Config.model_json_schema()
+    assert schema['properties']['path'].get('default') == 'config.toml'
 
 
 def test_ser_path_incorrect() -> None:

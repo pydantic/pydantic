@@ -153,6 +153,7 @@ PATH_TYPES: list[type] = [
     pathlib.PosixPath,
     pathlib.PurePosixPath,
     pathlib.PureWindowsPath,
+    pathlib.WindowsPath,
 ]
 MAPPING_TYPES = [
     typing.Mapping,
