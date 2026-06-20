@@ -83,7 +83,7 @@
 [GitHub release](https://github.com/pydantic/pydantic/releases/tag/v2.13.0)
 
 The highlights of the v2.13 release are available in the [blog post](https://pydantic.dev/articles/pydantic-v2-13-release).
-Several minor changes (considered non-breaking changes according to our [versioning policy](https://pydantic.dev/docs/validation/2.13/get-started/version-policy/#pydantic-v2))
+Several minor changes (considered non-breaking changes according to our [versioning policy](https://pydantic.dev/docs/validation/latest/get-started/version-policy/))
 are also included in this release. Make sure to look into them before upgrading.
 
 This release contains the updated `pydantic.v1` namespace, matching version 1.10.26 which includes support for Python 3.14.
