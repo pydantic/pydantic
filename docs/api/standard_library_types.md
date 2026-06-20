@@ -1494,6 +1494,7 @@ Standard library types:
 * [`pathlib.Path`][].
 * [`pathlib.PurePath`][].
 * [`pathlib.PosixPath`][].
+* [`pathlib.WindowsPath`][].
 * [`pathlib.PurePosixPath`][].
 * [`pathlib.PureWindowsPath`][].
 * [`os.PathLike`][] (must be parameterized with [`str`][], [`bytes`][] or [`Any`][typing.Any]).
