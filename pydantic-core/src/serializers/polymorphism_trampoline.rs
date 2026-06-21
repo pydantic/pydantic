@@ -91,4 +91,8 @@ impl TypeSerializer for PolymorphismTrampoline {
     fn retry_with_lax_check(&self) -> bool {
         self.serializer.retry_with_lax_check()
     }
+
+    fn retry_with_duck_typed_check(&self) -> bool {
+        self.serializer.retry_with_duck_typed_check()
+    }
 }

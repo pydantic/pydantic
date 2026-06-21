@@ -68,6 +68,10 @@ impl TypeSerializer for WithDefaultSerializer {
         self.serializer.retry_with_lax_check()
     }
 
+    fn retry_with_duck_typed_check(&self) -> bool {
+        self.serializer.retry_with_duck_typed_check()
+    }
+
     fn get_default(&self, py: Python) -> PyResult<Option<Py<PyAny>>> {
         if let DefaultType::DefaultFactory(_, _takes_data @ true) = self.default {
             // We currently don't compute the default if the default factory takes

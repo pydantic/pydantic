@@ -116,4 +116,9 @@ impl TypeSerializer for DefinitionRefSerializer {
             .retry_with_lax_check
             .get_or_init(|| self.definition.read(|s| s.unwrap().retry_with_lax_check()), &false)
     }
+
+    fn retry_with_duck_typed_check(&self) -> bool {
+        self.definition
+            .read(|s| s.is_some_and(|s| s.retry_with_duck_typed_check()))
+    }
 }

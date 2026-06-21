@@ -75,4 +75,8 @@ impl TypeSerializer for PrebuiltSerializer {
     fn retry_with_lax_check(&self) -> bool {
         self.schema_serializer.get().serializer.retry_with_lax_check()
     }
+
+    fn retry_with_duck_typed_check(&self) -> bool {
+        self.schema_serializer.get().serializer.retry_with_duck_typed_check()
+    }
 }

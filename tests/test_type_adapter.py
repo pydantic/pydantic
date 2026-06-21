@@ -674,3 +674,37 @@ def test_validate_strings_with_incorrect_configuration():
 
     with pytest.raises(PydanticUserError, check=lambda e: e.code == 'validate-by-alias-and-name-false'):
         ta.validate_strings(1, by_alias=False, by_name=False)
+
+
+def test_type_adapter_union_serializes_duck_typed_models() -> None:
+    """Regression test for https://github.com/pydantic/pydantic/issues/13327"""
+
+    @dataclass
+    class TestModel:
+        id: int
+        name: str
+        description: str | None = None
+        derived_from_id: int | None = None
+
+    class TestSchema(BaseModel):
+        derived_from_id: int | None = None
+
+    class DifferentTestSchema(BaseModel):
+        unique_field: str
+
+    objs = [
+        TestModel(id=1, name='Obj 1', description='First object'),
+        TestModel(id=2, name='Obj 2', description='Second object', derived_from_id=1),
+    ]
+    expected = b'[{"derived_from_id":null},{"derived_from_id":1}]'
+
+    assert TypeAdapter(list[TestSchema]).dump_json(objs) == expected  # pyright: ignore[reportArgumentType]
+
+    union_types = [
+        list[TestSchema] | DifferentTestSchema,
+        Union[list[TestSchema], DifferentTestSchema],  # noqa: UP007
+        list[TestSchema] | list[DifferentTestSchema],
+        list[TestSchema | DifferentTestSchema],
+    ]
+    for union_type in union_types:
+        assert TypeAdapter(union_type).dump_json(objs, warnings='none') == expected  # pyright: ignore[reportArgumentType]

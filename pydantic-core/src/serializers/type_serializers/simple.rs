@@ -125,7 +125,7 @@ macro_rules! build_simple_serializer {
                     IsType::Exact => Ok(value.clone().unbind()),
                     IsType::Subclass => match state.check {
                         SerCheck::Strict => Err(PydanticSerializationUnexpectedValue::new_from_msg(None).to_py_err()),
-                        SerCheck::Lax | SerCheck::None => match state.extra.mode {
+                        SerCheck::Lax | SerCheck::None | SerCheck::DuckTyped => match state.extra.mode {
                             SerMode::Json => value.extract::<$rust_type>()?.into_py_any(py),
                             _ => infer_to_python(value, state),
                         },

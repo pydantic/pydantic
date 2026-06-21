@@ -2,6 +2,7 @@ use std::borrow::Cow;
 use std::string::ToString;
 use std::sync::Arc;
 
+use pyo3::intern;
 use pyo3::prelude::*;
 use pyo3::pybacked::PyBackedStr;
 use pyo3::types::PyDict;
@@ -143,6 +144,21 @@ impl GeneralFieldsSerializer {
                 }
             }
         }
+    }
+
+    pub(super) fn has_any_field_in_value(&self, value: &Bound<'_, PyAny>) -> PyResult<bool> {
+        let py = value.py();
+        if !value.hasattr(intern!(py, "__dict__"))? {
+            return Ok(false);
+        }
+        let dict = value.getattr(intern!(py, "__dict__"))?;
+        let attrs = dict.cast::<PyDict>()?;
+        for key in self.fields.keys() {
+            if attrs.contains(key.as_str())? {
+                return Ok(true);
+            }
+        }
+        Ok(false)
     }
 
     fn serialize<'py, S: DoSerialize>(

@@ -238,11 +238,13 @@ pub(crate) enum SerCheck {
     Strict,
     // check but allow subclasses
     Lax,
+    // allow duck-typed serialization when the input has at least one matching field
+    DuckTyped,
 }
 
 impl SerCheck {
     pub fn enabled(self) -> bool {
-        self != SerCheck::None
+        !matches!(self, SerCheck::None)
     }
 }
 

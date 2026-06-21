@@ -111,6 +111,10 @@ impl TypeSerializer for UnionSerializer {
     fn retry_with_lax_check(&self) -> bool {
         self.choices.retry_with_lax_check()
     }
+
+    fn retry_with_duck_typed_check(&self) -> bool {
+        self.choices.retry_with_duck_typed_check()
+    }
 }
 
 #[derive(Debug)]
@@ -354,6 +358,10 @@ impl UnionChoices {
         self.choices.iter().any(|c| c.retry_with_lax_check())
     }
 
+    fn retry_with_duck_typed_check(&self) -> bool {
+        self.choices.iter().any(|c| c.retry_with_duck_typed_check())
+    }
+
     /// Try to serialize using the union choices from left to right
     fn serialize<'py, S>(
         &self,
@@ -385,6 +393,16 @@ impl UnionChoices {
         // otherwise, in a top level union, we retry with lax checking if any choice supports it
         if self.retry_with_lax_check() {
             let state = &mut scoped_check_level(state, SerCheck::Lax);
+            for comb_serializer in &self.choices {
+                if let Ok(v) = selector(comb_serializer, state) {
+                    return Ok(Some(v));
+                }
+            }
+        }
+
+        // retry with duck-typed checking, to allow serializing objects through model schemas
+        if self.retry_with_duck_typed_check() {
+            let state = &mut scoped_check_level(state, SerCheck::DuckTyped);
             for comb_serializer in &self.choices {
                 if let Ok(v) = selector(comb_serializer, state) {
                     return Ok(Some(v));

@@ -434,6 +434,11 @@ pub(crate) trait TypeSerializer: Send + Sync + Debug {
         false
     }
 
+    /// Used by union serializers to decide if it's worth trying duck-typed model/dataclass serialization
+    fn retry_with_duck_typed_check(&self) -> bool {
+        false
+    }
+
     fn get_default(&self, _py: Python) -> PyResult<Option<Py<PyAny>>> {
         Ok(None)
     }
