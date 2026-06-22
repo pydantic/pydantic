@@ -5005,7 +5005,7 @@ type as a convenience to <a href="../../concepts/strict_mode/#using-the-strict-m
 <ul>
 <li>Floats are validated as-is.</li>
 <li>String and bytes are attempted to be converted to floats and validated as-is.
-  (see the <a href="https://doc.rust-lang.org/src/core/num/dec2flt/mod.rs.html">Rust implementation</a> for details).</li>
+  (see the <a href="https://doc.rust-lang.org/src/core/num/float_parse.rs.html">Rust implementation</a> for details).</li>
 <li>If the input has a <a class="autorefs autorefs-external" href="https://docs.python.org/3/reference/datamodel.html#object.__float__"><code>__float__()</code></a> method, it will be called to convert the input into
   a float. If <code>__float__()</code> is not defined, it falls back to <a class="autorefs autorefs-external" href="https://docs.python.org/3/reference/datamodel.html#object.__index__"><code>__index__()</code></a>. This includes
   (but not limited to) the <a class="autorefs autorefs-external" href="https://docs.python.org/3/library/decimal.html#decimal.Decimal"><code>Decimal</code></a> and <a class="autorefs autorefs-external" href="https://docs.python.org/3/library/fractions.html#fractions.Fraction"><code>Fraction</code></a> types.</li>
