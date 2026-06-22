@@ -151,6 +151,7 @@ PATH_TYPES: list[type] = [
     pathlib.Path,
     pathlib.PurePath,
     pathlib.PosixPath,
+    pathlib.WindowsPath,
     pathlib.PurePosixPath,
     pathlib.PureWindowsPath,
 ]
