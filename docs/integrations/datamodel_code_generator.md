@@ -104,4 +104,4 @@ class Person(BaseModel):
 ```
 
 More information can be found on the
-[official documentation](https://koxudaxi.github.io/datamodel-code-generator/)
+[official documentation](https://datamodel-code-generator.koxudaxi.dev/).
