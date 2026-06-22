@@ -87,7 +87,7 @@ except ValidationError as ve:
     'loc': (),
     'msg': 'Assertion failed, Invalid tzinfo: Europe/London, expected: America/Los_Angeles',
     'type': 'assertion_error',
-    'url': 'https://errors.pydantic.dev/2.8/v/assertion_error'}]
+    'url': 'https://errors.pydantic.dev/2/v/assertion_error'}]
     """
 
 ```
@@ -168,7 +168,7 @@ except ValidationError as e:
     'loc': (),
     'msg': 'Assertion failed, Value out of bounds',
     'type': 'assertion_error',
-    'url': 'https://errors.pydantic.dev/2.8/v/assertion_error'}]
+    'url': 'https://errors.pydantic.dev/2/v/assertion_error'}]
     """
 
 ```
