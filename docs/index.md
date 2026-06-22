@@ -16,7 +16,7 @@ Fast and extensible, Pydantic plays nicely with your linters/IDE/brain. Define h
 
 **Sign up for our newsletter, *The Pydantic Stack*, with updates & tutorials on Pydantic, Logfire, and Pydantic AI:**
 
-<form method="POST" action="https://eu.customerioforms.com/forms/submit_action?site_id=53d2086c3c4214eaecaa&form_id=14b22611745b458&success_url=https://pydantic.dev/docs/validation/latest/get-started/" class="md-typeset" style="display: flex; align-items: center; gap: 0.5rem; max-width: 100%;">
+<form method="POST" action="https://www.pydantic.dev/newsletter" class="md-typeset" style="display: flex; align-items: center; gap: 0.5rem; max-width: 100%;">
     <input
     type="email"
     id="email_input"
@@ -33,6 +33,8 @@ Fast and extensible, Pydantic plays nicely with your linters/IDE/brain. Define h
     <input type="hidden" id="source_input" name="source" value="pydantic" />
     <button type="submit" class="md-button md-button--primary">Subscribe</button>
 </form>
+
+*(The old `eu.customerioforms.com` endpoint was retired; the new endpoint is `pydantic.dev/newsletter`. The `success_url` redirect was also removed since the destination `/docs/validation/latest/get-started/` no longer exists in the v2 docs site.)*
 
 ## Why use Pydantic?
 
