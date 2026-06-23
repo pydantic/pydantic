@@ -72,7 +72,7 @@ def test_fraction_validate_json(json_str, expected):
     'json_str,error',
     [
         ('"not a number"', ValidationError),
-        ('"1/0"', ZeroDivisionError),
+        ('"1/0"', ValidationError),
         (float('inf'), ValidationError),
         (float('nan'), ValidationError),
     ],
@@ -127,7 +127,7 @@ def test_fraction_strict_accepts_fraction(input_value):
     'input_value,error',
     [
         ('not a number', ValidationError),
-        ('1/0', ZeroDivisionError),
+        ('1/0', ValidationError),
         (float('inf'), OverflowError),
         (float('nan'), ValidationError),
         ([1, 2], TypeError),
@@ -213,3 +213,35 @@ def test_fraction_constraints_error(constraint, input_value):
 def test_fraction_json_schema():
     ta = TypeAdapter(Fraction)
     assert ta.json_schema() == {'type': 'string', 'format': 'fraction'}
+
+
+def test_fraction_zero_denominator_raises_validation_error():
+    """Regression test for https://github.com/pydantic/pydantic/issues/13257.
+
+    A zero-denominator string like '6/0' should raise a ValidationError,
+    not an unhandled ZeroDivisionError.
+    """
+    ta = TypeAdapter(Fraction)
+
+    # validate_strings path
+    with pytest.raises(ValidationError) as exc_info:
+        ta.validate_strings('6/0')
+    assert exc_info.value.errors(include_url=False)[0]['type'] == 'fraction_parsing'
+
+    # validate_python path (non-strict)
+    with pytest.raises(ValidationError) as exc_info:
+        ta.validate_python('6/0', strict=False)
+    assert exc_info.value.errors(include_url=False)[0]['type'] == 'fraction_parsing'
+
+    # validate_json path
+    with pytest.raises(ValidationError) as exc_info:
+        ta.validate_json('"6/0"')
+    assert exc_info.value.errors(include_url=False)[0]['type'] == 'fraction_parsing'
+
+    # BaseModel path
+    class Model(BaseModel):
+        v: Fraction
+
+    with pytest.raises(ValidationError) as exc_info:
+        Model(v='6/0')
+    assert exc_info.value.errors(include_url=False)[0]['type'] == 'fraction_parsing'
