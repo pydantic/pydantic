@@ -3345,3 +3345,62 @@ def test_polymorphic_serialization_with_model_serializer(config: bool, runtime: 
     else:
         assert serializer.to_python(ClassB(a=123, b='test'), **kwargs) == 'ClassA'
         assert serializer.to_json(ClassB(a=123, b='test'), **kwargs) == b'"ClassA"'
+
+
+# Regression test for https://github.com/pydantic/pydantic/issues/12553.
+#
+# When a `BaseModel` field uses a union with an arbitrary type (e.g. a
+# dataclass subclass) and `arbitrary_types_allowed=True`, and the runtime
+# value is a nested `BaseModel` containing that dataclass, `model_dump()`
+# previously returned the dataclass fields. The behavior changed in
+# pydantic-core#1857 to align with the `BaseModel` member of the union
+# (which serializes only its declared fields), producing an empty dict.
+#
+# `polymorphic_serialization=True` restores the prior behavior by serializing
+# against the runtime type. This test pins the current behavior so that any
+# future change is intentional.
+@pytest.mark.parametrize(
+    'kwargs',
+    [
+        {},
+        {'polymorphic_serialization': True},
+        {'polymorphic_serialization': False},
+    ],
+    ids=['default', 'polymorphic_true', 'polymorphic_false'],
+)
+def test_polymorphic_serialization_with_union_of_basemodel_and_arbitrary_type(kwargs: Any) -> None:
+    """Reproduces the scenario in https://github.com/pydantic/pydantic/issues/12553."""
+
+    @dataclasses.dataclass
+    class BaseError:
+        code: str
+        message: str
+
+    @dataclasses.dataclass
+    class NetworkError(BaseError):
+        code: str = dataclasses.field(default='network_error', init=False)
+
+    class Result(BaseModel):
+        error: BaseError
+
+    class Container(BaseModel):
+        model_config = ConfigDict(arbitrary_types_allowed=True)
+
+        message: BaseModel | BaseError
+
+    network_error = NetworkError(message='test')
+
+    container = Container(message=Result(error=network_error))
+    dumped = container.model_dump(**kwargs)
+
+    if kwargs.get('polymorphic_serialization') is True:
+        # When polymorphism is enabled, the runtime type (NetworkError via
+        # type inference) is used for serialization, so the dataclass fields
+        # are preserved.
+        assert dumped == {'message': {'error': {'code': 'network_error', 'message': 'test'}}}
+    else:
+        # Without polymorphism, the `BaseModel` member of the union is used
+        # for serialization, which discards the arbitrary dataclass fields.
+        # This is the current behavior per pydantic-core#1857 and is
+        # documented in the issue thread as the intended design.
+        assert dumped == {'message': {}}
