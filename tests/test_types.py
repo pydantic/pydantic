@@ -1883,17 +1883,6 @@ def test_invalid_schema_constraints(kwargs, type_, a):
         Foo(a=a)
 
 
-def test_fraction_validation():
-    class Model(BaseModel):
-        a: Fraction
-
-    with pytest.raises(ValidationError) as exc_info:
-        Model(a='wrong_format')
-    assert exc_info.value.errors(include_url=False) == [
-        {'type': 'fraction_parsing', 'loc': ('a',), 'msg': 'Input is not a valid fraction', 'input': 'wrong_format'}
-    ]
-
-
 @pytest.mark.skipif(not email_validator, reason='email_validator not installed')
 def test_string_success():
     class MoreStringsModel(BaseModel):

@@ -4,7 +4,7 @@ from typing import Annotated
 import annotated_types
 import pytest
 
-from pydantic import BaseModel, ConfigDict, TypeAdapter, ValidationError
+from pydantic import TypeAdapter, ValidationError
 
 
 class FractionSubclass(Fraction):
@@ -41,12 +41,6 @@ class FractionSubclass(Fraction):
     ],
 )
 def test_fraction(input_value, expected):
-    class Model(BaseModel):
-        v: Fraction
-
-    m = Model(v=input_value)
-    assert m.v == expected
-
     ta = TypeAdapter(Fraction)
     assert ta.validate_python(input_value) == expected
 
@@ -72,7 +66,7 @@ def test_fraction_validate_json(json_str, expected):
     'json_str,error',
     [
         ('"not a number"', ValidationError),
-        ('"1/0"', ZeroDivisionError),
+        ('"1/0"', ValidationError),
         (float('inf'), ValidationError),
         (float('nan'), ValidationError),
     ],
@@ -96,14 +90,6 @@ def test_fraction_validate_json_error(json_str, error):
     ],
 )
 def test_fraction_validation_error_strict(input_value):
-    class Model(BaseModel):
-        v: Fraction
-
-        model_config = ConfigDict(strict=True)
-
-    with pytest.raises(ValidationError):
-        Model(v=input_value)
-
     with pytest.raises(ValidationError):
         ta = TypeAdapter(Fraction)
         ta.validate_python(input_value, strict=True)
@@ -124,21 +110,21 @@ def test_fraction_strict_accepts_fraction(input_value):
 
 
 @pytest.mark.parametrize(
-    'input_value,error',
+    ['input', 'error_type'],
     [
-        ('not a number', ValidationError),
-        ('1/0', ZeroDivisionError),
-        (float('inf'), OverflowError),
-        (float('nan'), ValidationError),
-        ([1, 2], TypeError),
-        ({}, TypeError),
-        (None, TypeError),
+        ('wrong_format', 'fraction_parsing'),  # Raises `ValueError` internally
+        ('1/0', 'fraction_parsing'),  # Raises `ZeroDivisionError` internally
+        (float('inf'), 'fraction_parsing'),  # Raises `OverflowError` internally
+        (float('nan'), 'fraction_parsing'),  # Raises `ValueError` internally
+        (type, 'fraction_type'),  # Raises `TypeError` internally
     ],
 )
-def test_fraction_validation_error_non_strict(input_value, error):
-    with pytest.raises(error):
-        ta = TypeAdapter(Fraction)
-        ta.validate_python(input_value, strict=False)
+def test_fraction_validation_error(input: object, error_type: str):
+
+    ta = TypeAdapter(Fraction)
+
+    with pytest.raises(ValidationError, check=lambda e: e.errors()[0]['type'] == error_type):
+        ta.validate_python(input)
 
 
 @pytest.mark.parametrize(
