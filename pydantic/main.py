@@ -446,9 +446,19 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
                             copied.__pydantic_extra__ = {}
                         copied.__pydantic_extra__[k] = v
             else:
-                copied.__dict__.update(update)
+                # When `extra` is not 'allow', `update` keys that are not declared
+                # fields have no legitimate target. Writing them straight into
+                # `__dict__` (the previous behaviour) silently exposed them as
+                # attributes on the copy, bypassing the model's `extra` policy.
+                # Only update declared fields; track them in __pydantic_fields_set__
+                # so the copy has the same "user-set" semantics as a fresh construct.
+                for k, v in update.items():
+                    if k in self.__pydantic_fields__:
+                        copied.__dict__[k] = v
 
-            copied.__pydantic_fields_set__.update(update.keys())
+            copied.__pydantic_fields_set__.update(
+                k for k in update if k in self.__pydantic_fields__
+            )
 
         return copied
 
