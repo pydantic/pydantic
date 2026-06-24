@@ -252,7 +252,11 @@ def fraction_validator(input_value: Any, /) -> Fraction:
 
     try:
         return Fraction(input_value)
-    except ValueError:
+    except (ValueError, ZeroDivisionError):
+        # `fractions.Fraction('6/0')` raises `ZeroDivisionError`, not `ValueError`,
+        # because the underlying denominator is 0. Without this catch, a
+        # `"6/0"` string input would surface as a raw `ZeroDivisionError`
+        # instead of a `ValidationError`. See https://github.com/pydantic/pydantic/issues/13257.
         raise PydanticCustomError('fraction_parsing', 'Input is not a valid fraction')
 
 
