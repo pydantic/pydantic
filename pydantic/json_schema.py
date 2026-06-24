@@ -694,7 +694,24 @@ class GenerateJsonSchema:
 
         """
         json_schema: JsonSchemaValue = {'type': 'string', 'format': 'fraction'}
-        self.update_with_validations(json_schema, schema, self.ValidationsMapping.numeric)
+        if self.mode == 'validation':
+            le = schema.get('le')
+            ge = schema.get('ge')
+            lt = schema.get('lt')
+            gt = schema.get('gt')
+            json_schema = {
+                'anyOf': [
+                    self.float_schema(
+                        core_schema.float_schema(
+                            le=None if le is None else float(le),
+                            ge=None if ge is None else float(ge),
+                            lt=None if lt is None else float(lt),
+                            gt=None if gt is None else float(gt),
+                        )
+                    ),
+                    json_schema,
+                ],
+            }
         return json_schema
 
     def decimal_schema(self, schema: core_schema.DecimalSchema) -> JsonSchemaValue:

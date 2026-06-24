@@ -4,7 +4,7 @@ from typing import Annotated
 import annotated_types
 import pytest
 
-from pydantic import TypeAdapter, ValidationError
+from pydantic import Field, TypeAdapter, ValidationError
 
 
 class FractionSubclass(Fraction):
@@ -60,6 +60,23 @@ def test_fraction(input_value, expected):
 def test_fraction_validate_json(json_str, expected):
     ta = TypeAdapter(Fraction)
     assert ta.validate_json(json_str) == expected
+
+
+@pytest.mark.parametrize(
+    'str,expected',
+    [
+        ('1/3', Fraction(1, 3)),
+        ('42.5', Fraction('42.5')),
+        ('0', Fraction(0)),
+        ('42', Fraction(42)),
+        ('42.5', Fraction('42.5')),
+        ('0/100', Fraction(0)),
+        ('-47e-2', Fraction(-47, 100)),
+    ],
+)
+def test_fraction_validate_strings(str, expected):
+    ta = TypeAdapter(Fraction)
+    assert ta.validate_strings(str) == expected
 
 
 @pytest.mark.parametrize(
@@ -199,3 +216,7 @@ def test_fraction_constraints_error(constraint, input_value):
 def test_fraction_json_schema():
     ta = TypeAdapter(Fraction)
     assert ta.json_schema() == {'type': 'string', 'format': 'fraction'}
+
+    ta = TypeAdapter(Annotated[Fraction, Field(ge=Fraction(1))])
+
+    assert ta.json_schema() == {'anyOf': [{'minimum': 1.0, 'type': 'number'}, {'format': 'fraction', 'type': 'string'}]}

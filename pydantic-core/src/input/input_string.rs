@@ -161,7 +161,7 @@ impl<'py> Input<'py> for StringMapping<'py> {
     fn validate_fraction(&self, _strict: bool, _py: Python<'py>) -> ValMatch<Bound<'py, PyAny>> {
         match self {
             Self::String(s) => create_fraction(s, self).map(ValidationMatch::strict),
-            Self::Mapping(_) => Err(ValError::new(ErrorTypeDefaults::DecimalType, self)),
+            Self::Mapping(_) => Err(ValError::new(ErrorTypeDefaults::FractionType, self)),
         }
     }
 
