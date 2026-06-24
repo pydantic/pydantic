@@ -944,7 +944,13 @@ class MariaDBDsn(AnyUrl):
     """
 
     _constraints = UrlConstraints(
-        allowed_schemes=['mariadb', 'mariadb+mariadbconnector', 'mariadb+pymysql'],
+        allowed_schemes=[
+            'mariadb',
+            'mariadb+mariadbconnector',
+            'mariadb+pymysql',
+            'mariadb+mariadbconnector_async',
+            'mariadb+asyncmy',
+        ],
         default_port=3306,
     )
 

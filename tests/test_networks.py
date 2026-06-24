@@ -517,6 +517,8 @@ def test_mysql_dsns(dsn):
         'mariadb://user:pass@localhost:3306/app',
         'mariadb+mariadbconnector://user:pass@localhost:3306/app',
         'mariadb+pymysql://user:pass@localhost:3306/app',
+        'mariadb+mariadbconnector_async://user:pass@localhost:3306/app',
+        'mariadb+asyncmy://user:pass@localhost:3306/app',
     ],
 )
 def test_mariadb_dsns(dsn):
