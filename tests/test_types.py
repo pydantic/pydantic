@@ -17,7 +17,6 @@ from dataclasses import dataclass
 from datetime import date, datetime, time, timedelta, timezone
 from decimal import Decimal
 from enum import Enum, IntEnum
-from fractions import Fraction
 from numbers import Number
 from pathlib import Path
 from re import Pattern
@@ -7142,35 +7141,6 @@ def test_ser_ip_python_and_json() -> None:
     assert ta.dump_python(ip) == ip
     assert ta.dump_python(ip, mode='json') == '127.0.0.1'
     assert ta.dump_json(ip) == b'"127.0.0.1"'
-
-
-@pytest.mark.parametrize('input_data', ['1/3', 1.333, Fraction(1, 3), Decimal('1.333')])
-def test_fraction_validation_lax(input_data) -> None:
-    ta = TypeAdapter(Fraction)
-    fraction = ta.validate_python(input_data)
-    assert isinstance(fraction, Fraction)
-
-
-def test_fraction_validation_strict() -> None:
-    ta = TypeAdapter(Fraction, config=ConfigDict(strict=True))
-
-    assert ta.validate_python(Fraction(1 / 3)) == Fraction(1 / 3)
-
-    # only fractions accepted in strict mode
-    for lax_fraction in ['1/3', 1.333, Decimal('1.333')]:
-        with pytest.raises(ValidationError):
-            ta.validate_python(lax_fraction)
-
-
-def test_fraction_serialization() -> None:
-    ta = TypeAdapter(Fraction)
-    assert ta.dump_python(Fraction(1, 3)) == '1/3'
-    assert ta.dump_json(Fraction(1, 3)) == b'"1/3"'
-
-
-def test_fraction_json_schema() -> None:
-    ta = TypeAdapter(Fraction)
-    assert ta.json_schema() == {'type': 'string', 'format': 'fraction'}
 
 
 def test_annotated_metadata_any_order() -> None:

@@ -1,3 +1,4 @@
+from decimal import Decimal
 from fractions import Fraction
 from typing import Annotated
 
@@ -21,6 +22,7 @@ class FractionSubclass(Fraction):
         ('42.123', Fraction('42.123')),
         (42.0, Fraction(42)),
         (42.5, Fraction('42.5')),
+        (Decimal('1.333'), Fraction('1.333')),
         (1e10, Fraction('1E10')),
         (Fraction('42.0'), Fraction(42)),
         (Fraction('42.5'), Fraction('42.5')),
@@ -102,6 +104,9 @@ def test_fraction_validate_json_error(json_str, error):
         (False),
         ('not a number'),
         ('1/0'),
+        ('1/3'),
+        (1.333),
+        (Decimal('1.333')),
         (float('inf')),
         (float('nan')),
     ],
@@ -215,7 +220,7 @@ def test_fraction_constraints_error(constraint, input_value):
 
 def test_fraction_json_schema():
     ta = TypeAdapter(Fraction)
-    assert ta.json_schema() == {'type': 'string', 'format': 'fraction'}
+    assert ta.json_schema(mode='serialization') == {'type': 'string', 'format': 'fraction'}
 
     ta = TypeAdapter(Annotated[Fraction, Field(ge=Fraction(1))])
 
