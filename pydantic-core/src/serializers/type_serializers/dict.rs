@@ -15,8 +15,8 @@ use crate::tools::SchemaDict;
 
 use super::any::AnySerializer;
 use super::{
-    BuildSerializer, CombinedSerializer, PydanticSerializer, SchemaFilter, SerMode, TypeSerializer, infer_serialize,
-    infer_to_python, py_err_se_err,
+    BuildSerializer, CombinedSerializer, PydanticSerializer, SchemaFilter, SerCheck, SerMode, TypeSerializer,
+    infer_serialize, infer_to_python, py_err_se_err,
 };
 
 #[derive(Debug)]
@@ -87,12 +87,14 @@ impl TypeSerializer for DictSerializer {
                         let key = {
                             // disable include/exclude for keys
                             let state = &mut state.scoped_include_exclude(IncludeExclude::empty());
+                            let state = &mut state.scoped_set(|s| &mut s.check, SerCheck::None);
                             match state.extra.mode {
                                 SerMode::Json => self.key_serializer.json_key(&key, state)?.into_py_any(py)?,
                                 _ => self.key_serializer.to_python(&key, state)?,
                             }
                         };
                         let state = &mut state.scoped_include_exclude(next_include_exclude);
+                        let state = &mut state.scoped_set(|s| &mut s.check, SerCheck::None);
                         let value = value_serializer.to_python(&value, state)?;
                         new_dict.set_item(key, value)?;
                     }
@@ -129,6 +131,7 @@ impl TypeSerializer for DictSerializer {
                 for (key, value) in py_dict.iter() {
                     if let Some(next_include_exclude) = self.filter.key_filter(&key, state).map_err(py_err_se_err)? {
                         let state = &mut state.scoped_include_exclude(next_include_exclude);
+                        let state = &mut state.scoped_set(|s| &mut s.check, SerCheck::None);
                         let key = key_serializer.json_key(&key, state).map_err(py_err_se_err)?;
                         let value_serialize = PydanticSerializer::new(&value, value_serializer, state);
                         map.serialize_entry(&key, &value_serialize)?;

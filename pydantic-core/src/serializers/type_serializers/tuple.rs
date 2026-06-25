@@ -182,6 +182,7 @@ impl TupleSerializer {
                     };
                     if let Some(next_include_exclude) = self.filter.index_filter(index, state, Some(n_items))? {
                         let state = &mut state.scoped_include_exclude(next_include_exclude);
+                        let state = &mut state.scoped_set(|s| &mut s.check, SerCheck::None);
                         if let Err(e) = f(TupleSerializerEntry {
                             item: element,
                             serializer,
