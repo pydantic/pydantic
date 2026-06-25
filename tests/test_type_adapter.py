@@ -674,3 +674,51 @@ def test_validate_strings_with_incorrect_configuration():
 
     with pytest.raises(PydanticUserError, check=lambda e: e.code == 'validate-by-alias-and-name-false'):
         ta.validate_strings(1, by_alias=False, by_name=False)
+
+
+def test_union_serialization_with_dataclass():
+    """Regression test for https://github.com/pydantic/pydantic/issues/13327
+
+    When TypeAdapter is used with a union type like list[TestSchema] | DifferentTestSchema,
+    serialization should apply the schema filtering correctly, not fall back to raw inference.
+    """
+    from dataclasses import dataclass
+
+    @dataclass
+    class TestModel:
+        id: int
+        name: str
+        description: str | None = None
+        derived_from_id: int | None = None
+
+    class TestSchema(BaseModel):
+        derived_from_id: int | None = None
+
+    class DifferentTestSchema(BaseModel):
+        unique_field: str
+
+    objs = [
+        TestModel(id=1, name='Obj 1', description='First object'),
+        TestModel(id=2, name='Obj 2', description='Second object', derived_from_id=1),
+    ]
+
+    # list[TestSchema] alone should work fine
+    adapter_list = TypeAdapter(list[TestSchema])
+    result_list = adapter_list.dump_json(objs)
+    assert result_list == b'[{"derived_from_id":null},{"derived_from_id":1}]'
+
+    # Union type should serialize with the same schema filtering
+    adapter_union = TypeAdapter(list[TestSchema] | DifferentTestSchema)
+    result_union = adapter_union.dump_json(objs)
+    assert result_union == b'[{"derived_from_id":null},{"derived_from_id":1}]'
+
+    # dump_python should also work
+    result_python = adapter_union.dump_python(objs)
+    assert result_python == [{'derived_from_id': None}, {'derived_from_id': 1}]
+
+    # Test with Union syntax
+    from typing import Union
+
+    adapter_union2 = TypeAdapter(Union[list[TestSchema], DifferentTestSchema])
+    result_union2 = adapter_union2.dump_json(objs)
+    assert result_union2 == b'[{"derived_from_id":null},{"derived_from_id":1}]'

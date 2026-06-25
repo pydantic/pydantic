@@ -315,7 +315,7 @@ impl TaggedUnionSerializer {
 
 /// Whether currently in a top-level union serialization
 fn in_top_level_union(state: &SerializationState<'_>) -> bool {
-    state.check == SerCheck::None
+    state.check == SerCheck::None && !state.in_collection
 }
 
 /// Check level to use for the first pass of union serialization

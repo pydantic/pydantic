@@ -1116,3 +1116,56 @@ def test_discriminated_union_ser_with_typed_dict() -> None:
 
     assert v.to_python({'type': 'a', 'a': 1}, warnings='error') == {'type': 'a', 'a': 1}
     assert v.to_python({'type': 'b', 'b': 'foo'}, warnings='error') == {'type': 'b', 'b': 'foo'}
+
+
+@dataclasses.dataclass
+class DataclassModel:
+    id: int
+    name: str
+    description: str | None = None
+    derived_from_id: int | None = None
+
+
+def test_union_serialization_with_dataclass_in_list():
+    """Test that union serialization works when a dataclass is serialized through
+    a model schema in a list union member (GitHub issue pydantic/pydantic#13327)."""
+    schema = core_schema.union_schema(
+        [
+            core_schema.list_schema(
+                core_schema.model_schema(
+                    BaseModel,
+                    core_schema.model_fields_schema(
+                        {
+                            'derived_from_id': core_schema.model_field(
+                                core_schema.with_default_schema(
+                                    core_schema.nullable_schema(core_schema.int_schema()),
+                                    default=None,
+                                )
+                            ),
+                        }
+                    ),
+                )
+            ),
+            core_schema.model_schema(
+                BaseModel,
+                core_schema.model_fields_schema(
+                    {
+                        'unique_field': core_schema.model_field(core_schema.str_schema()),
+                    }
+                ),
+            ),
+        ]
+    )
+
+    s = SchemaSerializer(schema)
+
+    objs = [
+        DataclassModel(id=1, name='Obj 1', description='First object'),
+        DataclassModel(id=2, name='Obj 2', description='Second object', derived_from_id=1),
+    ]
+
+    result = s.to_json(objs, warnings='none')
+    assert result == b'[{"derived_from_id":null},{"derived_from_id":1}]'
+
+    result = s.to_python(objs, warnings='none')
+    assert result == [{'derived_from_id': None}, {'derived_from_id': 1}]

@@ -176,6 +176,7 @@ impl ModelSerializer {
         let inner_value = self.get_inner_value(value, &state.extra)?;
 
         let state = &mut state.scoped_set(|s| &mut s.model, Some(value.clone()));
+        let state = &mut state.scoped_set(|s| &mut s.in_collection, false);
         do_serialize.serialize_no_infer(&self.serializer, &inner_value, state)
     }
 

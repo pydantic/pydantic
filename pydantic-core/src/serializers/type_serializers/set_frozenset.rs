@@ -13,7 +13,8 @@ use crate::tools::SchemaDict;
 
 use super::any::AnySerializer;
 use super::{
-    BuildSerializer, CombinedSerializer, PydanticSerializer, SerMode, TypeSerializer, infer_serialize, infer_to_python,
+    BuildSerializer, CombinedSerializer, PydanticSerializer, SerCheck, SerMode, TypeSerializer, infer_serialize,
+    infer_to_python,
 };
 
 macro_rules! build_serializer {
@@ -63,6 +64,8 @@ macro_rules! build_serializer {
 
                         let mut items = Vec::with_capacity(py_set.len());
                         for element in py_set.iter() {
+                            let state = &mut state.scoped_set(|s| &mut s.check, SerCheck::None);
+                            let state = &mut state.scoped_set(|s| &mut s.in_collection, true);
                             items.push(item_serializer.to_python(&element, state)?);
                         }
                         match state.extra.mode {
@@ -97,6 +100,8 @@ macro_rules! build_serializer {
                         let item_serializer = self.item_serializer.as_ref();
 
                         for value in py_set.iter() {
+                            let state = &mut state.scoped_set(|s| &mut s.check, SerCheck::None);
+                            let state = &mut state.scoped_set(|s| &mut s.in_collection, true);
                             let item_serialize = PydanticSerializer::new(&value, item_serializer, state);
                             seq.serialize_element(&item_serialize)?;
                         }

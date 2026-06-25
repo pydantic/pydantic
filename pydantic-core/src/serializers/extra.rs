@@ -33,6 +33,10 @@ pub(crate) struct SerializationState<'py> {
     pub include_exclude: IncludeExclude<'py>,
     /// Global settings for the serialization process
     pub extra: Extra<'py>,
+    /// Whether we're inside a collection (list, dict, tuple, set) that has
+    /// reset the check level for items. This prevents inner unions from
+    /// incorrectly treating themselves as top-level unions.
+    pub in_collection: bool,
 }
 
 /// Values of include/exclude parameters passed to serialization functions
@@ -74,6 +78,7 @@ impl<'py> SerializationState<'py> {
             check: SerCheck::None,
             include_exclude: IncludeExclude { include, exclude },
             extra,
+            in_collection: false,
         })
     }
 
@@ -338,6 +343,7 @@ impl ExtraOwned {
                 exclude: self.exclude.as_ref().map(|m| m.bind(py).clone()),
             },
             extra,
+            in_collection: false,
         }
     }
 }

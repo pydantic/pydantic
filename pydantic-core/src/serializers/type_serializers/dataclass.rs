@@ -150,6 +150,7 @@ impl DataclassSerializer {
     ) -> Result<S::Ok, S::Error> {
         if self.allow_value(value, state)? {
             let state = &mut state.scoped_set(|s| &mut s.model, Some(value.clone()));
+            let state = &mut state.scoped_set(|s| &mut s.in_collection, false);
             if let CombinedSerializer::Fields(ref fields_serializer) = *self.serializer {
                 // Fast path uses known dataclass fields to avoid needing to create a dict of field values
                 fields_serializer.serialize_iterators(
