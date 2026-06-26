@@ -7265,3 +7265,57 @@ def test_nested_model_deduplication() -> None:
     assert 'Level1' in definitions
     assert 'Level1-Input' not in definitions
     assert 'Level1-Output' not in definitions
+
+
+def test_annotated_optional_field_with_pattern_and_before_validator() -> None:
+    """https://github.com/pydantic/pydantic/issues/12417
+
+    When combining Annotated type with BeforeValidator and Optional Field with pattern constraint,
+    the pattern should be preserved in the JSON schema.
+    """
+    from typing import Optional
+
+    regex = r'^[\da-fA-F]{32}$'
+
+    def _convert_bytes_to_str(value: Union[str, bytes]) -> str:
+        if isinstance(value, bytes):
+            return value.decode('utf8')
+        return value
+
+    bytes_to_str = Annotated[str, BeforeValidator(_convert_bytes_to_str)]
+
+    class TestModel(BaseModel):
+        str_mandatory: str = Field(..., pattern=regex)
+        annotated_mandatory: bytes_to_str = Field(..., pattern=regex)
+        str_optional: Optional[str] = Field(None, pattern=regex)
+        annotated_optional: Optional[bytes_to_str] = Field(None, pattern=regex)
+
+    schema = TestModel.model_json_schema()
+
+    # str_mandatory should have pattern
+    assert schema['properties']['str_mandatory'] == {
+        'pattern': regex,
+        'title': 'Str Mandatory',
+        'type': 'string',
+    }
+
+    # annotated_mandatory should have pattern
+    assert schema['properties']['annotated_mandatory'] == {
+        'pattern': regex,
+        'title': 'Annotated Mandatory',
+        'type': 'string',
+    }
+
+    # str_optional should have pattern in the string branch
+    assert schema['properties']['str_optional'] == {
+        'anyOf': [{'pattern': regex, 'type': 'string'}, {'type': 'null'}],
+        'default': None,
+        'title': 'Str Optional',
+    }
+
+    # annotated_optional should also have pattern in the string branch
+    assert schema['properties']['annotated_optional'] == {
+        'anyOf': [{'pattern': regex, 'type': 'string'}, {'type': 'null'}],
+        'default': None,
+        'title': 'Annotated Optional',
+    }
