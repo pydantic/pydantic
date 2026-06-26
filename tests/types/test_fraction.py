@@ -72,7 +72,7 @@ def test_fraction_validate_json(json_str, expected):
     'json_str,error',
     [
         ('"not a number"', ValidationError),
-        ('"1/0"', ZeroDivisionError),
+        ('"1/0"', ValidationError),
         (float('inf'), ValidationError),
         (float('nan'), ValidationError),
     ],
@@ -127,7 +127,7 @@ def test_fraction_strict_accepts_fraction(input_value):
     'input_value,error',
     [
         ('not a number', ValidationError),
-        ('1/0', ZeroDivisionError),
+        ('1/0', ValidationError),
         (float('inf'), OverflowError),
         (float('nan'), ValidationError),
         ([1, 2], TypeError),
@@ -213,3 +213,13 @@ def test_fraction_constraints_error(constraint, input_value):
 def test_fraction_json_schema():
     ta = TypeAdapter(Fraction)
     assert ta.json_schema() == {'type': 'string', 'format': 'fraction'}
+
+
+def test_fraction_zero_division_validate_strings():
+    """Test that validate_strings raises ValidationError for zero-denominator fractions.
+
+    Regression test for https://github.com/pydantic/pydantic/issues/13257
+    """
+    ta = TypeAdapter(Fraction)
+    with pytest.raises(ValidationError, match='Input is not a valid fraction'):
+        ta.validate_strings('6/0')
