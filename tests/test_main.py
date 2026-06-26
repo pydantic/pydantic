@@ -1696,6 +1696,33 @@ def test_custom_init_subclass_params():
     assert NewModel.something == 2
 
 
+def test_pydantic_init_subclass_with_custom_kwargs():
+    """Test that __pydantic_init_subclass__ receives custom kwargs from class definition.
+
+    This is a regression test for https://github.com/pydantic/pydantic/issues/13300
+    """
+
+    class Event(BaseModel):
+        e_type: str
+
+        @classmethod
+        def __pydantic_init_subclass__(cls, event_type: str | None = None, **kwargs: object) -> None:
+            super().__pydantic_init_subclass__(**kwargs)
+            cls._event_type = event_type
+
+    class CreatedEvent(Event, event_type='created'):
+        pass
+
+    class DeletedEvent(Event, event_type='deleted'):
+        pass
+
+    assert CreatedEvent._event_type == 'created'
+    assert DeletedEvent._event_type == 'deleted'
+
+    e = CreatedEvent(e_type='test')
+    assert e.e_type == 'test'
+
+
 def test_recursive_model():
     class MyModel(BaseModel):
         field: Optional['MyModel']

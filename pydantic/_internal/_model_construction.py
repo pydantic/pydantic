@@ -159,8 +159,25 @@ class ModelMetaclass(ABCMeta):
             namespace['__class_vars__'] = class_vars
             namespace['__private_attributes__'] = {**base_private_attributes, **private_attributes}
 
-            cls = cast('type[BaseModel]', super().__new__(mcs, cls_name, bases, namespace, **kwargs))
             BaseModel_ = import_cached_base_model()
+
+            # Check if any parent class defines a custom __init_subclass__ or __pydantic_init_subclass__.
+            has_custom_init_subclass = any(
+                '__init_subclass__' in base.__dict__ for base in bases if base is not BaseModel_
+            )
+            has_custom_pydantic_init_subclass = any(
+                '__pydantic_init_subclass__' in base.__dict__ for base in bases if base is not BaseModel_
+            )
+
+            if has_custom_init_subclass or not has_custom_pydantic_init_subclass:
+                # Pass kwargs to super().__new__() - either __init_subclass__ will handle them,
+                # or we want to maintain backward compatibility (TypeError if unknown kwargs)
+                cls = cast('type[BaseModel]', super().__new__(mcs, cls_name, bases, namespace, **kwargs))
+            else:
+                # Only __pydantic_init_subclass__ is custom, don't pass kwargs to super().__new__()
+                # to avoid TypeError in object.__init_subclass__().
+                # The kwargs will be passed to __pydantic_init_subclass__() instead.
+                cls = cast('type[BaseModel]', super().__new__(mcs, cls_name, bases, namespace))
 
             mro = cls.__mro__
             if Generic in mro and mro.index(Generic) < mro.index(BaseModel_):
