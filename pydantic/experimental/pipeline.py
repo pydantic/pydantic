@@ -424,10 +424,20 @@ def _apply_step(step: _Step, s: cs.CoreSchema | None, handler: GetCoreSchemaHand
     elif isinstance(step, _Constraint):
         s = _apply_constraint(s, step.constraint)
     elif isinstance(step, _PipelineOr):
-        s = cs.union_schema([step.left.__get_pydantic_core_schema__(source_type, handler), step.right.__get_pydantic_core_schema__(source_type, handler)])
+        s = cs.union_schema(
+            [
+                step.left.__get_pydantic_core_schema__(source_type, handler),
+                step.right.__get_pydantic_core_schema__(source_type, handler),
+            ]
+        )
     else:
         assert isinstance(step, _PipelineAnd)
-        s = cs.chain_schema([step.left.__get_pydantic_core_schema__(source_type, handler), step.right.__get_pydantic_core_schema__(source_type, handler)])
+        s = cs.chain_schema(
+            [
+                step.left.__get_pydantic_core_schema__(source_type, handler),
+                step.right.__get_pydantic_core_schema__(source_type, handler),
+            ]
+        )
     return s
 
 

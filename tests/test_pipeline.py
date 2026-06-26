@@ -501,7 +501,5 @@ def test_nested_or_and_operators() -> None:
     ta = TypeAdapter[int](Annotated[int, (validate_as(int) & validate_as(int)) | (validate_as(int) & validate_as(int))])
     assert ta.validate_python(42) == 42
 
-    ta = TypeAdapter[int](
-        Annotated[int, ((validate_as(int) | validate_as(int)) & validate_as(int)) | validate_as(int)]
-    )
+    ta = TypeAdapter[int](Annotated[int, ((validate_as(int) | validate_as(int)) & validate_as(int)) | validate_as(int)])
     assert ta.validate_python(42) == 42
