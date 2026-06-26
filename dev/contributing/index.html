@@ -4385,7 +4385,7 @@ git<span class="w"> </span>switch<span class="w"> </span>-c<span class="w"> </sp
 <p>Run tests and linting locally to make sure everything is working as expected.</p>
 <div class="language-bash highlight"><pre><span></span><code><span class="c1"># Run automated code formatting and linting</span>
 make<span class="w"> </span>format
-<span class="c1"># Pydantic uses ruff, an awesome Python linter written in rust</span>
+<span class="c1"># Pydantic uses ruff, an awesome Python linter written in Rust</span>
 <span class="c1"># https://github.com/astral-sh/ruff</span>
 
 <span class="c1"># Run tests and linting</span>
@@ -4434,8 +4434,8 @@ For example, if the latest release is <code>v2.9.2</code>, you should make sure 
 <li>Module-level variables</li>
 </ul>
 <p>Pydantic uses <a href="https://google.github.io/styleguide/pyguide.html#38-comments-and-docstrings">Google-style docstrings</a> formatted according to <a href="https://www.python.org/dev/peps/pep-0257/">PEP 257</a> guidelines. (See <a href="https://sphinxcontrib-napoleon.readthedocs.io/en/latest/example_google.html">Example Google Style Python Docstrings</a> for further examples.)</p>
-<p><a href="https://www.pydocstyle.org/en/stable/index.html">pydocstyle</a> is used for linting docstrings. You can run <code>make format</code> to check your docstrings.</p>
-<p>Where this is a conflict between Google-style docstrings and pydocstyle linting, follow the pydocstyle linting hints.</p>
+<p>Ruff lints docstrings automatically. You can run <code>make format</code> to auto-fix any docstring issues.</p>
+<p>Where there is a conflict between Google-style docstrings and Ruff linting, follow the Ruff linting hints.</p>
 <p>Class attributes and function arguments should be documented in the format "name: description." When applicable, a return type should be documented with just a description. Types are inferred from the signature.</p>
 <div class="language-python highlight"><pre><span></span><code><span class="k">class</span><span class="w"> </span><span class="nc">Foo</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;A class docstring.</span>
