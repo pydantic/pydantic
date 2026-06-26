@@ -167,7 +167,7 @@ Pydantic uses [Google-style docstrings](https://google.github.io/styleguide/pygu
 
 Ruff lints docstrings automatically. You can run `make format` to auto-fix any docstring issues.
 
-Where there is a conflict between Google-style docstrings and ruff linting, follow the ruff linting hints.
+Where there is a conflict between Google-style docstrings and Ruff linting, follow the Ruff linting hints.
 
 Class attributes and function arguments should be documented in the format "name: description." When applicable, a return type should be documented with just a description. Types are inferred from the signature.
 
