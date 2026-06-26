@@ -701,6 +701,8 @@ class GenerateJsonSchema:
                 r'^(?!^[-+.]*$)[+-]?0*'  # check it is not empty string and not one or sequence of ".+-" characters.
             )
 
+            exponent_part = r'(?:[eE][+-]?\d+)?'
+
             # Case 1: Both max_digits and decimal_places are set
             if max_digits is not None and decimal_places is not None:
                 integer_places = max(0, max_digits - decimal_places)
@@ -711,6 +713,7 @@ class GenerateJsonSchema:
                     rf'(?=[\d.]{{1,{max_digits + 1}}}0*$)'
                     rf'\d{{0,{integer_places}}}\.\d{{0,{decimal_places}}}0*$'
                     rf')'
+                    rf'{exponent_part}'
                 )
 
             # Case 2: Only max_digits is set
@@ -722,15 +725,16 @@ class GenerateJsonSchema:
                     rf'(?=[\d.]{{1,{max_digits + 1}}}0*$)'
                     rf'\d*\.\d*0*$'
                     rf')'
+                    rf'{exponent_part}'
                 )
 
             # Case 3: Only decimal_places is set
             elif max_digits is None and decimal_places is not None:
-                pattern += rf'\d*\.?\d{{0,{decimal_places}}}0*$'
+                pattern += rf'\d*\.?\d{{0,{decimal_places}}}0*{exponent_part}$'
 
             # Case 4: Both are None (no restrictions)
             else:
-                pattern += r'\d*\.?\d*$'  # look for arbitrary integer or decimal
+                pattern += rf'\d*\.?\d*{exponent_part}$'
 
             return pattern
 

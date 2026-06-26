@@ -7177,6 +7177,12 @@ def test_decimal_pattern_reject_invalid_not_numerical_values_with_decimal_places
     assert re.fullmatch(pattern, invalid_decimal) is None
 
 
+@pytest.mark.parametrize('valid_decimal', ['1E-7', '1e-7', '1.23E+4', '1.23e+4', '1E7', '1e7', '1.23E4', '1.23e4'])
+def test_decimal_pattern_accepts_scientific_notation(valid_decimal, get_decimal_pattern) -> None:
+    pattern = get_decimal_pattern()
+    assert re.fullmatch(pattern, valid_decimal) is not None
+
+
 def test_union_format_primitive_type_array() -> None:
     class Sub(BaseModel):
         pass
