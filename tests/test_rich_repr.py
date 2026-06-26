@@ -23,10 +23,33 @@ def test_rich_repr(User):
 
     assert rich_repr == [
         ('id', 22),
-        ('name', 'John Doe'),
-        ('signup_ts', None),
-        ('friends', []),
+        ('name', 'John Doe', 'John Doe'),
+        ('signup_ts', None, None),
+        ('friends', [], []),
     ]
+
+
+def test_rich_repr_non_default_fields(User):
+    user = User(id=22, name='Jane', friends=[1, 2])
+    rich_repr = list(user.__rich_repr__())
+
+    assert rich_repr == [
+        ('id', 22),
+        ('name', 'Jane', 'John Doe'),
+        ('signup_ts', None, None),
+        ('friends', [1, 2], []),
+    ]
+
+
+def test_rich_repr_with_rich(User):
+    pytest.importorskip('rich')
+    from rich.pretty import pretty_repr
+
+    user = User(id=22)
+    assert pretty_repr(user) == 'User(id=22)'
+
+    user = User(id=22, name='Jane')
+    assert pretty_repr(user) == "User(id=22, name='Jane')"
 
 
 @pytest.mark.filterwarnings('ignore::DeprecationWarning')

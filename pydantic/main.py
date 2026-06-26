@@ -1311,12 +1311,43 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
             yield from ((k, v) for k, v in pydantic_extra.items())
         yield from computed_fields_repr_args
 
+    def __rich_repr__(self) -> _repr.RichReprResult:
+        """Used by Rich (https://rich.readthedocs.io/en/stable/pretty.html) to pretty print objects.
+
+        Fields with defaults are yielded as 3-tuples so Rich omits them when the value equals the default.
+        """
+        computed_fields_repr_args = [
+            (k, getattr(self, k)) for k, v in self.__pydantic_computed_fields__.items() if v.repr
+        ]
+
+        for k, v in self.__dict__.items():
+            field = self.__pydantic_fields__.get(k)
+            if field and field.repr:
+                if v is not self:
+                    field_repr = v
+                else:
+                    field_repr = self.__repr_recursion__(v)
+                if field.is_required():
+                    yield k, field_repr
+                else:
+                    default = field.get_default(call_default_factory=True, validated_data=self.__dict__)
+                    yield k, field_repr, default
+        try:
+            pydantic_extra = object.__getattribute__(self, '__pydantic_extra__')
+        except AttributeError:
+            pydantic_extra = None
+
+        if pydantic_extra is not None:
+            for k, v in pydantic_extra.items():
+                yield k, v
+        for k, v in computed_fields_repr_args:
+            yield k, v
+
     # take logic from `_repr.Representation` without the side effects of inheritance, see #5740
     __repr_name__ = _repr.Representation.__repr_name__
     __repr_recursion__ = _repr.Representation.__repr_recursion__
     __repr_str__ = _repr.Representation.__repr_str__
     __pretty__ = _repr.Representation.__pretty__
-    __rich_repr__ = _repr.Representation.__rich_repr__
 
     def __str__(self) -> str:
         return self.__repr_str__(' ')
