@@ -475,3 +475,33 @@ def test_validate_as_ellipsis_preserves_other_steps() -> None:
     ta = TypeAdapter[float](Annotated[float, validate_as(str).transform(lambda v: v.split()[0]).validate_as(...)])
 
     assert ta.validate_python('12 ab') == 12.0
+
+
+def test_nested_or_and_operators() -> None:
+    """https://github.com/pydantic/pydantic/issues/13287"""
+    ta = TypeAdapter[int](Annotated[int, (validate_as(int) | validate_as(int)) & validate_as(int)])
+    assert ta.validate_python(42) == 42
+    with pytest.raises(ValidationError):
+        ta.validate_python('not_an_int')
+
+    ta = TypeAdapter[int](Annotated[int, validate_as(int) | validate_as(int) | validate_as(int)])
+    assert ta.validate_python(42) == 42
+
+    ta = TypeAdapter[int](Annotated[int, validate_as(int) & validate_as(int) & validate_as(int)])
+    assert ta.validate_python(42) == 42
+
+    ta = TypeAdapter[int](Annotated[int, (validate_as(int) | validate_as(int)) & (validate_as(int) | validate_as(int))])
+    assert ta.validate_python(42) == 42
+    with pytest.raises(ValidationError):
+        ta.validate_python('not_an_int')
+
+    ta = TypeAdapter[int](Annotated[int, (validate_as(int) & validate_as(int)) | validate_as(int)])
+    assert ta.validate_python(42) == 42
+
+    ta = TypeAdapter[int](Annotated[int, (validate_as(int) & validate_as(int)) | (validate_as(int) & validate_as(int))])
+    assert ta.validate_python(42) == 42
+
+    ta = TypeAdapter[int](
+        Annotated[int, ((validate_as(int) | validate_as(int)) & validate_as(int)) | validate_as(int)]
+    )
+    assert ta.validate_python(42) == 42
