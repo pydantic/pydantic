@@ -1,0 +1,5 @@
+[[disallowed-methods]]
+path = "std::vec::Vec::with_capacity"
+reason = "only use `with_capacity` if the length is known to not be likely to cause failed allocation"
+# FIXME: this isn't a 1:1 replacement, should create an internal helper like new_vec_with_capacity that does the try_reserve
+replacement = "Vec::try_reserve"

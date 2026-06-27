@@ -1,5 +1,6 @@
 use std::borrow::Cow;
 use std::cmp::Ordering;
+use std::collections::TryReserveError;
 use std::convert::Infallible;
 use std::ops::Rem;
 use std::str::FromStr;
@@ -7,6 +8,7 @@ use std::str::FromStr;
 use jiter::{JsonArray, JsonValue, PartialMode, StringCacheMode};
 use num_bigint::BigInt;
 
+use pyo3::exceptions::PyMemoryError;
 use pyo3::exceptions::PyTypeError;
 use pyo3::ffi;
 use pyo3::intern;
@@ -117,17 +119,28 @@ macro_rules! any_next_error {
     };
 }
 
+impl From<TryReserveError> for ValError {
+    fn from(_: TryReserveError) -> Self {
+        ValError::InternalErr(PyMemoryError::new_err(()))
+    }
+}
+
 #[allow(clippy::too_many_arguments)]
 pub(crate) fn validate_iter_to_vec<'py>(
     py: Python<'py>,
     iter: impl Iterator<Item = PyResult<impl BorrowInput<'py>>>,
-    capacity: usize,
+    mut capacity: usize,
     mut max_length_check: MaxLengthCheck<'_, impl Input<'py> + ?Sized>,
     validator: &CombinedValidator,
     state: &mut ValidationState<'_, 'py>,
     fail_fast: bool,
 ) -> ValResult<Vec<Py<PyAny>>> {
-    let mut output: Vec<Py<PyAny>> = Vec::with_capacity(capacity);
+    let mut output: Vec<Py<PyAny>> = Vec::new();
+    if let Some(max_length) = max_length_check.max_length {
+        capacity = capacity.min(max_length);
+    }
+    output.try_reserve(capacity)?;
+
     let mut errors: Vec<ValLineError> = Vec::new();
     let allow_partial = state.allow_partial;
 
