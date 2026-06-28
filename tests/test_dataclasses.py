@@ -2352,6 +2352,41 @@ def test_pydantic_dataclass_preserves_metadata(dataclass_decorator: Callable[[An
     assert FooPydantic.__qualname__ == FooStd.__qualname__
 
 
+def test_pydantic_dataclass_applied_twice_preserves_decorators() -> None:
+    """Re-applying the decorator to an existing Pydantic dataclass should keep its decorators.
+
+    See https://github.com/pydantic/pydantic/issues/12934.
+    """
+
+    @pydantic.dataclasses.dataclass
+    class Model:
+        x: int = 0
+
+        @field_validator('x')
+        @classmethod
+        def x_must_be_positive(cls, v: int) -> int:
+            if v < 0:
+                raise ValueError('x must be positive')
+            return v
+
+        @field_serializer('x')
+        def serialize_x(self, v: int) -> str:
+            return f'x={v}'
+
+    ReDecorated = pydantic.dataclasses.dataclass(Model)
+
+    decorators = ReDecorated.__pydantic_decorators__
+    assert 'x_must_be_positive' in decorators.field_validators
+    assert 'serialize_x' in decorators.field_serializers
+
+    # The field validator should still run:
+    with pytest.raises(ValidationError):
+        ReDecorated(x=-1)
+
+    # The field serializer should still run:
+    assert TypeAdapter(ReDecorated).dump_python(ReDecorated(x=1)) == {'x': 'x=1'}
+
+
 def test_recursive_dataclasses_gh_4509(create_module) -> None:
     @create_module
     def module():

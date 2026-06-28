@@ -145,7 +145,15 @@ def dataclass(
         # if config is not explicitly provided, try to read it from the type
         config_dict = config if config is not None else getattr(cls, '__pydantic_config__', None)
         config_wrapper = _config.ConfigWrapper(config_dict)
-        decorators = _decorators.DecoratorInfos.build(cls, replace_wrapped_methods=True)
+        # If the decorator is applied to an already existing Pydantic dataclass, the decorated methods
+        # (e.g. field validators and serializers) were already replaced by their plain functions during
+        # the first application, so rebuilding from scratch would discard them. We reuse the existing
+        # decorators instead. See https://github.com/pydantic/pydantic/issues/12934.
+        existing_decorators = cls.__dict__.get('__pydantic_decorators__')
+        if existing_decorators is not None:
+            decorators = existing_decorators
+        else:
+            decorators = _decorators.DecoratorInfos.build(cls, replace_wrapped_methods=True)
         decorators.update_from_config(config_wrapper)
 
         # Keep track of the original __doc__ so that we can restore it after applying the dataclasses decorator
