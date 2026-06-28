@@ -736,11 +736,15 @@ def set_deprecated_descriptors(cls: type[BaseModel]) -> None:
             setattr(cls, field, desc)
 
     for field, computed_field_info in cls.__pydantic_computed_fields__.items():
-        if (
-            (msg := computed_field_info.deprecation_message) is not None
-            # Avoid having two warnings emitted:
-            and not hasattr(unwrap_wrapped_function(computed_field_info.wrapped_property), '__deprecated__')
-        ):
+        if (msg := computed_field_info.deprecation_message) is not None:
+            # Avoid having two warnings emitted when the @deprecated() decorator
+            # was auto-detected (same object reference). If the user explicitly
+            # passed deprecated=... to @computed_field, the value differs from
+            # the underlying function's __deprecated__, so we still set the
+            # descriptor with the explicit message.
+            unwrapped = unwrap_wrapped_function(computed_field_info.wrapped_property)
+            if hasattr(unwrapped, '__deprecated__') and computed_field_info.deprecated is unwrapped.__deprecated__:
+                continue
             desc = _DeprecatedFieldDescriptor(msg, computed_field_info.wrapped_property)
             desc.__set_name__(cls, field)
             setattr(cls, field, desc)
