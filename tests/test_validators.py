@@ -1600,7 +1600,7 @@ def test_reuse_global_validators():
     assert dict(Model(x=1, y=1)) == {'x': 2, 'y': 2}
 
 
-@pytest.mark.parametrize('validator_classmethod,root_validator_classmethod', product(*[[True, False]] * 2))
+@pytest.mark.parametrize('validator_classmethod,root_validator_classmethod', list(product(*[[True, False]] * 2)))
 def test_root_validator_classmethod(validator_classmethod, root_validator_classmethod):
     root_val_values = []
 
