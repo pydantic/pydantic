@@ -9,8 +9,9 @@ In a nutshell, Pydantic is dataclasses with runtime validation. It leverages typ
 to understand how validation (and serialization) should be performed. It is mostly useful
 when dealing with external untrusted data, for example when defining an HTTP API.
 
-You shouldn't use Pydantic to define classes that are instantiated within the user code.
-It is usually better to use vanilla classes (or standard library dataclasses) in this case,
+It is generally *not* recommended to use Pydantic to define classes that are instantiated within the user code.
+By doing so, you will loose flexibility (e.g. can't use types not supported by Pydantic, harder to perform
+post init changes). It is usually better to use vanilla classes (or standard library dataclasses) in this case,
 as a static type checker will already catch type mismatches.
 
 ## Basic usage
