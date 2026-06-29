@@ -1754,6 +1754,17 @@ to help you monitor and understand your
 </li>
         
           <li class="md-nav__item">
+  <a href="#show-environment-variables-in-cli-help" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Show Environment Variables in CLI Help
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#change-the-cli-flag-prefix-character" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -5087,6 +5098,17 @@ to help you monitor and understand your
 </li>
         
           <li class="md-nav__item">
+  <a href="#show-environment-variables-in-cli-help" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Show Environment Variables in CLI Help
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#change-the-cli-flag-prefix-character" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -7207,6 +7229,42 @@ even if <code>cli_use_class_docs_for_groups</code> is set to <code>True</code>.<
 <span class="sd">  --sub_model.v1 int  the sub model v1 option (required)</span>
 <span class="sd">&quot;&quot;&quot;</span>
 </code></pre></div>
+<h4 id="show-environment-variables-in-cli-help">Show Environment Variables in CLI Help<a class="headerlink" href="#show-environment-variables-in-cli-help" title="Permanent link">&para;</a></h4>
+<p>Enable <code>cli_show_env_vars</code> to append the resolved environment variable name for each CLI option in help text. This is
+useful for ops runbooks, configuration discovery, and 12-factor apps where the same settings can be provided either by
+CLI flags or environment variables.</p>
+<div class="language-py highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">pydantic</span><span class="w"> </span><span class="kn">import</span> <span class="n">Field</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">pydantic_settings</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseSettings</span><span class="p">,</span> <span class="n">CliApp</span><span class="p">,</span> <span class="n">SettingsConfigDict</span>
+
+
+<span class="k">class</span><span class="w"> </span><span class="nc">Settings</span><span class="p">(</span><span class="n">BaseSettings</span><span class="p">):</span>
+    <span class="n">model_config</span> <span class="o">=</span> <span class="n">SettingsConfigDict</span><span class="p">(</span>
+        <span class="n">cli_parse_args</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+        <span class="n">cli_show_env_vars</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+        <span class="n">cli_prog_name</span><span class="o">=</span><span class="s1">&#39;example.py&#39;</span><span class="p">,</span>
+        <span class="n">env_prefix</span><span class="o">=</span><span class="s1">&#39;MYAPP_&#39;</span><span class="p">,</span>
+    <span class="p">)</span>
+
+    <span class="n">redis_host</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="n">description</span><span class="o">=</span><span class="s1">&#39;Redis hostname&#39;</span><span class="p">)</span>
+
+
+<span class="nb">print</span><span class="p">(</span><span class="n">CliApp</span><span class="o">.</span><span class="n">format_help</span><span class="p">(</span><span class="n">Settings</span><span class="p">))</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">usage: example.py [-h] [--redis_host str]</span>
+
+<span class="sd">options:</span>
+<span class="sd">  -h, --help        show this help message and exit</span>
+<span class="sd">  --redis_host str  Redis hostname (required) [env: MYAPP_REDIS_HOST]</span>
+<span class="sd">&quot;&quot;&quot;</span>
+</code></pre></div>
+<p>When a field uses <code>AliasChoices</code>, all resolved environment variable names are rendered in order, for example
+<code>[env: API_KEY | LEGACY_API_KEY]</code>. If you construct a <code>CliSettingsSource</code> directly with <code>cli_show_env_vars=True</code>, the
+same names are also available as a simple <code>env_var_names</code> mapping keyed by CLI destination.</p>
+<p>When <code>CliSettingsSource</code> is constructed directly without passing <code>_env_settings_source</code>, a fallback
+<code>EnvSettingsSource(settings_cls)</code> is used for help text resolution. This reflects model config values, but does not
+include source-level constructor overrides (for example, custom <code>env_prefix</code> or <code>env_nested_delimiter</code>) unless you
+pass that customized source explicitly.</p>
 <h4 id="change-the-cli-flag-prefix-character">Change the CLI Flag Prefix Character<a class="headerlink" href="#change-the-cli-flag-prefix-character" title="Permanent link">&para;</a></h4>
 <p>Change The CLI flag prefix character used in CLI optional arguments by settings <code>cli_flag_prefix_char</code>.</p>
 <div class="language-py highlight"><pre><span></span><code><span class="kn">import</span><span class="w"> </span><span class="nn">sys</span>
