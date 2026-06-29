@@ -338,7 +338,7 @@ impl<'py> Input<'py> for Bound<'py, PyAny> {
 
         // Check for fraction subclasses
         if self.is_instance(fraction_type)? {
-            return Ok(ValidationMatch::lax(self.to_owned().clone()));
+            return Ok(ValidationMatch::strict(self.to_owned().clone()));
         }
 
         if !strict {
