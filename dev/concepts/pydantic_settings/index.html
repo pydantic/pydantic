@@ -5894,8 +5894,12 @@ you like through <code>Field(validation_alias=...)</code>.</p>
 </ol>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
-<p>On Windows, Python's <code>os</code> module always treats environment variables as case-insensitive, so the
-<code>case_sensitive</code> config setting will have no effect - settings will always be updated ignoring case.</p>
+<p>On Windows, environment variable names exposed through Python's <code>os</code> module are case-insensitive
+and normalized to upper-case (e.g. setting <code>redis</code> results in <code>REDIS</code>). Because the original case
+cannot be recovered, the <code>case_sensitive</code> setting has <strong>no effect for environment variables</strong> on
+Windows — they are always matched ignoring case.</p>
+<p>This only applies to environment variables. Values loaded from dotenv (<code>.env</code>) files preserve
+case, so <code>case_sensitive=True</code> is still respected for those, including on Windows.</p>
 </div>
 <h2 id="parsing-environment-variable-values">Parsing environment variable values<a class="headerlink" href="#parsing-environment-variable-values" title="Permanent link">&para;</a></h2>
 <p>By default environment variables are parsed verbatim, including if the value is empty. You can choose to

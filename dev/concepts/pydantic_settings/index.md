@@ -293,7 +293,9 @@ except ValidationError as e:
 
 Note
 
-On Windows, Python's `os` module always treats environment variables as case-insensitive, so the `case_sensitive` config setting will have no effect - settings will always be updated ignoring case.
+On Windows, environment variable names exposed through Python's `os` module are case-insensitive and normalized to upper-case (e.g. setting `redis` results in `REDIS`). Because the original case cannot be recovered, the `case_sensitive` setting has **no effect for environment variables** on Windows — they are always matched ignoring case.
+
+This only applies to environment variables. Values loaded from dotenv (`.env`) files preserve case, so `case_sensitive=True` is still respected for those, including on Windows.
 
 ## Parsing environment variable values
 
