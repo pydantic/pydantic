@@ -121,12 +121,18 @@ impl Validator for ModelValidator {
         input: &(impl Input<'py> + ?Sized),
         state: &mut ValidationState<'_, 'py>,
     ) -> ValResult<Py<PyAny>> {
+        let class = self.class.bind(py);
         if let Some(self_instance) = state.self_instance {
-            // in the case that self_instance is Some, we're calling validation from within `BaseModel.__init__`
-            return self.validate_init(py, self_instance, input, state);
+            // During `BaseModel.__init__`, `self_instance` is set and the input is normally the kwargs dict.
+            // If a wrap validator calls `handler` more than once, the second call may pass an already-built
+            // model instance (the output of the first call). In that case we must not use `validate_init`
+            // (which only accepts dict-like input); fall through to normal validation / revalidation.
+            // See https://github.com/pydantic/pydantic/issues/12730
+            if input_as_python_instance(input, class).is_none() {
+                return self.validate_init(py, self_instance, input, state);
+            }
         }
 
-        let class = self.class.bind(py);
         let generic_origin_class = self.generic_origin.as_ref().map(|go| go.bind(py));
 
         // if we're in strict mode, we require an exact instance of the class (from python, with JSON an object is ok)

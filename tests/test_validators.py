@@ -3023,6 +3023,22 @@ def test_non_self_return_val_warns() -> None:
         assert c.name == 'name'
 
 
+def test_wrap_model_validator_handler_called_twice_via_init() -> None:
+    """Calling the wrap handler twice must work from `__init__`, not only `model_validate`.
+
+    See https://github.com/pydantic/pydantic/issues/12730
+    """
+
+    class MyModel(BaseModel):
+        @model_validator(mode='wrap')
+        @classmethod
+        def my_validator(cls, v, handler):
+            return handler(handler(v))
+
+    assert MyModel().model_dump() == {}
+    assert MyModel.model_validate({}).model_dump() == {}
+
+
 def test_wrap_val_called_once() -> None:
     """See https://github.com/pydantic/pydantic/issues/11505 for context.
 
