@@ -117,7 +117,7 @@ def test_computed_field_deprecated():
 
         @computed_field(deprecated='This is deprecated')
         @property
-        @deprecated('This is deprecated (this message is overridden)')
+        @deprecated('This is deprecated (this message is the one emitted)')
         def p2(self) -> int:
             return 1
 
@@ -153,10 +153,10 @@ def test_computed_field_deprecated():
 
     with pytest.warns(DeprecationWarning, match='^This is deprecated$'):
         instance.p1
-    # TODO: This should be match='^This is deprecated$' instead, but the
-    # overriding mechanism has apparently never worked:
-    # https://github.com/pydantic/pydantic/issues/13356
-    with pytest.warns(DeprecationWarning, match=r'^This is deprecated \(this message is overridden\)$'):
+    # Ideally, the deprecation message from `@computed_field` should take priority,
+    # but we can't safely unwrap the decorated property from `@deprecated` (see note in
+    # `set_deprecated_descriptors()`):
+    with pytest.warns(DeprecationWarning, match=r'^This is deprecated \(this message is the one emitted\)$'):
         instance.p2
     with pytest.warns(DeprecationWarning, match='^This is deprecated$'):
         instance.p4
