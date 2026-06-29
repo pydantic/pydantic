@@ -469,6 +469,18 @@ def test_composition() -> None:
     calls.clear()
 
 
+def test_nested_composition() -> None:
+    ta = TypeAdapter[int](Annotated[int, (validate_as(int) | validate_as(str)) & validate_as(int)])
+
+    assert ta.validate_python(42) == 42
+
+
+def test_nested_composition_transform() -> None:
+    ta = TypeAdapter[int](Annotated[int, (validate_as(int) | validate_as(str)) & transform(lambda v: v + 1)])
+
+    assert ta.validate_python(42) == 43
+
+
 def test_validate_as_ellipsis_preserves_other_steps() -> None:
     """https://github.com/pydantic/pydantic/issues/11624"""
 
