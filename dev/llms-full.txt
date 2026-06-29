@@ -23377,6 +23377,59 @@ def float_schema(self, schema: core_schema.FloatSchema) -> JsonSchemaValue:
 
 ```
 
+### fraction_schema
+
+```python
+fraction_schema(schema: FractionSchema) -> JsonSchemaValue
+
+```
+
+Generates a JSON schema that matches a fraction value.
+
+Parameters:
+
+| Name | Type | Description | Default | | --- | --- | --- | --- | | `schema` | `FractionSchema` | The core schema. | *required* |
+
+Returns:
+
+| Type | Description | | --- | --- | | `JsonSchemaValue` | The generated JSON schema. |
+
+Source code in `pydantic/json_schema.py`
+
+```python
+def fraction_schema(self, schema: core_schema.FractionSchema) -> JsonSchemaValue:
+    """Generates a JSON schema that matches a fraction value.
+
+    Args:
+        schema: The core schema.
+
+    Returns:
+        The generated JSON schema.
+
+    """
+    json_schema: JsonSchemaValue = {'type': 'string', 'format': 'fraction'}
+    if self.mode == 'validation':
+        le = schema.get('le')
+        ge = schema.get('ge')
+        lt = schema.get('lt')
+        gt = schema.get('gt')
+        json_schema = {
+            'anyOf': [
+                self.float_schema(
+                    core_schema.float_schema(
+                        le=None if le is None else float(le),
+                        ge=None if ge is None else float(ge),
+                        lt=None if lt is None else float(lt),
+                        gt=None if gt is None else float(gt),
+                    )
+                ),
+                json_schema,
+            ],
+        }
+    return json_schema
+
+```
+
 ### decimal_schema
 
 ```python
@@ -29958,6 +30011,89 @@ def decimal_schema(
         decimal_places=decimal_places,
         multiple_of=multiple_of,
         allow_inf_nan=allow_inf_nan,
+        strict=strict,
+        ref=ref,
+        metadata=metadata,
+        serialization=serialization,
+    )
+
+````
+
+## fraction_schema
+
+```python
+fraction_schema(
+    *,
+    le: Fraction | None = None,
+    ge: Fraction | None = None,
+    lt: Fraction | None = None,
+    gt: Fraction | None = None,
+    strict: bool | None = None,
+    ref: str | None = None,
+    metadata: dict[str, Any] | None = None,
+    serialization: SerSchema | None = None
+) -> FractionSchema
+
+```
+
+Returns a schema that matches a fraction value, e.g.:
+
+```py
+from fractions import Fraction
+from pydantic_core import SchemaValidator, core_schema
+
+schema = core_schema.fraction_schema(le=Fraction(3, 4), ge=Fraction(1, 4))
+v = SchemaValidator(schema)
+assert v.validate_python('1/2') == Fraction(1, 2)
+
+```
+
+Parameters:
+
+| Name | Type | Description | Default | | --- | --- | --- | --- | | `le` | `Fraction | None` | The value must be less than or equal to this number | `None` | | `ge` | `Fraction | None` | The value must be greater than or equal to this number | `None` | | `lt` | `Fraction | None` | The value must be strictly less than this number | `None` | | `gt` | `Fraction | None` | The value must be strictly greater than this number | `None` | | `strict` | `bool | None` | Whether the value should be a Fraction or a value that can be converted to a Fraction | `None` | | `ref` | `str | None` | optional unique identifier of the schema, used to reference the schema in other places | `None` | | `metadata` | `dict[str, Any] | None` | Any other information you want to include with the schema, not used by pydantic-core | `None` | | `serialization` | `SerSchema | None` | Custom serialization schema | `None` |
+
+Source code in `pydantic_core/core_schema.py`
+
+````python
+def fraction_schema(
+    *,
+    le: Fraction | None = None,
+    ge: Fraction | None = None,
+    lt: Fraction | None = None,
+    gt: Fraction | None = None,
+    strict: bool | None = None,
+    ref: str | None = None,
+    metadata: dict[str, Any] | None = None,
+    serialization: SerSchema | None = None,
+) -> FractionSchema:
+    """
+    Returns a schema that matches a fraction value, e.g.:
+
+    ```py
+    from fractions import Fraction
+    from pydantic_core import SchemaValidator, core_schema
+
+    schema = core_schema.fraction_schema(le=Fraction(3, 4), ge=Fraction(1, 4))
+    v = SchemaValidator(schema)
+    assert v.validate_python('1/2') == Fraction(1, 2)
+    ```
+
+    Args:
+        le: The value must be less than or equal to this number
+        ge: The value must be greater than or equal to this number
+        lt: The value must be strictly less than this number
+        gt: The value must be strictly greater than this number
+        strict: Whether the value should be a Fraction or a value that can be converted to a Fraction
+        ref: optional unique identifier of the schema, used to reference the schema in other places
+        metadata: Any other information you want to include with the schema, not used by pydantic-core
+        serialization: Custom serialization schema
+    """
+    return _dict_not_none(
+        type='fraction',
+        gt=gt,
+        ge=ge,
+        lt=lt,
+        le=le,
         strict=strict,
         ref=ref,
         metadata=metadata,
@@ -49335,6 +49471,50 @@ try:
 except ValidationError as exc:
     print(repr(exc.errors()[0]['type']))
     #> 'float_type'
+
+```
+
+## `fraction_parsing`
+
+This error is raised when the value provided for an input that could not be parsed as a fraction:
+
+```python
+from fractions import Fraction
+
+from pydantic import BaseModel, ValidationError
+
+
+class Model(BaseModel):
+    x: Fraction
+
+
+try:
+    Model(x='invalid')
+except ValidationError as exc:
+    print(repr(exc.errors()[0]['type']))
+    #> 'fraction_parsing'
+
+```
+
+## `fraction_type`
+
+This error is raised when the value provided for a Fraction is of the wrong type:
+
+```python
+from fractions import Fraction
+
+from pydantic import BaseModel, ValidationError
+
+
+class Model(BaseModel):
+    x: Fraction
+
+
+try:
+    Model.model_validate_json('{"x": [1, 2]}')
+except ValidationError as exc:
+    print(repr(exc.errors()[0]['type']))
+    #> 'fraction_type'
 
 ```
 

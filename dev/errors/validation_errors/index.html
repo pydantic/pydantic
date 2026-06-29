@@ -3556,6 +3556,28 @@ to help you monitor and understand your
 </li>
       
         <li class="md-nav__item">
+  <a href="#fraction_parsing" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        fraction_parsing
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#fraction_type" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        fraction_type
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#frozen_field" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -5356,6 +5378,28 @@ to help you monitor and understand your
 </li>
       
         <li class="md-nav__item">
+  <a href="#fraction_parsing" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        fraction_parsing
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#fraction_type" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        fraction_type
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#frozen_field" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -6782,6 +6826,40 @@ during validation:</p>
 <span class="k">except</span> <span class="n">ValidationError</span> <span class="k">as</span> <span class="n">exc</span><span class="p">:</span>
     <span class="nb">print</span><span class="p">(</span><span class="nb">repr</span><span class="p">(</span><span class="n">exc</span><span class="o">.</span><span class="n">errors</span><span class="p">()[</span><span class="mi">0</span><span class="p">][</span><span class="s1">&#39;type&#39;</span><span class="p">]))</span>
     <span class="c1">#&gt; &#39;float_type&#39;</span>
+</code></pre></div>
+<h2 id="fraction_parsing"><code>fraction_parsing</code><a class="headerlink" href="#fraction_parsing" title="Permanent link">&para;</a></h2>
+<p>This error is raised when the value provided for an input that could not be parsed as a fraction:</p>
+<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">fractions</span><span class="w"> </span><span class="kn">import</span> <span class="n">Fraction</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">pydantic</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ValidationError</span>
+
+
+<span class="k">class</span><span class="w"> </span><span class="nc">Model</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="n">x</span><span class="p">:</span> <span class="n">Fraction</span>
+
+
+<span class="k">try</span><span class="p">:</span>
+    <span class="n">Model</span><span class="p">(</span><span class="n">x</span><span class="o">=</span><span class="s1">&#39;invalid&#39;</span><span class="p">)</span>
+<span class="k">except</span> <span class="n">ValidationError</span> <span class="k">as</span> <span class="n">exc</span><span class="p">:</span>
+    <span class="nb">print</span><span class="p">(</span><span class="nb">repr</span><span class="p">(</span><span class="n">exc</span><span class="o">.</span><span class="n">errors</span><span class="p">()[</span><span class="mi">0</span><span class="p">][</span><span class="s1">&#39;type&#39;</span><span class="p">]))</span>
+    <span class="c1">#&gt; &#39;fraction_parsing&#39;</span>
+</code></pre></div>
+<h2 id="fraction_type"><code>fraction_type</code><a class="headerlink" href="#fraction_type" title="Permanent link">&para;</a></h2>
+<p>This error is raised when the value provided for a <a class="autorefs autorefs-external" href="https://docs.python.org/3/library/fractions.html#fractions.Fraction"><code>Fraction</code></a> is of the wrong type:</p>
+<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">fractions</span><span class="w"> </span><span class="kn">import</span> <span class="n">Fraction</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">pydantic</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ValidationError</span>
+
+
+<span class="k">class</span><span class="w"> </span><span class="nc">Model</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="n">x</span><span class="p">:</span> <span class="n">Fraction</span>
+
+
+<span class="k">try</span><span class="p">:</span>
+    <span class="n">Model</span><span class="o">.</span><span class="n">model_validate_json</span><span class="p">(</span><span class="s1">&#39;{&quot;x&quot;: [1, 2]}&#39;</span><span class="p">)</span>
+<span class="k">except</span> <span class="n">ValidationError</span> <span class="k">as</span> <span class="n">exc</span><span class="p">:</span>
+    <span class="nb">print</span><span class="p">(</span><span class="nb">repr</span><span class="p">(</span><span class="n">exc</span><span class="o">.</span><span class="n">errors</span><span class="p">()[</span><span class="mi">0</span><span class="p">][</span><span class="s1">&#39;type&#39;</span><span class="p">]))</span>
+    <span class="c1">#&gt; &#39;fraction_type&#39;</span>
 </code></pre></div>
 <h2 id="frozen_field"><code>frozen_field</code><a class="headerlink" href="#frozen_field" title="Permanent link">&para;</a></h2>
 <p>This error is raised when you attempt to assign a value to a field with <code>frozen=True</code>, or to delete such a field:</p>

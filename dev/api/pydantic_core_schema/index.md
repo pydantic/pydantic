@@ -970,6 +970,89 @@ def decimal_schema(
 
 ````
 
+## fraction_schema
+
+```python
+fraction_schema(
+    *,
+    le: Fraction | None = None,
+    ge: Fraction | None = None,
+    lt: Fraction | None = None,
+    gt: Fraction | None = None,
+    strict: bool | None = None,
+    ref: str | None = None,
+    metadata: dict[str, Any] | None = None,
+    serialization: SerSchema | None = None
+) -> FractionSchema
+
+```
+
+Returns a schema that matches a fraction value, e.g.:
+
+```py
+from fractions import Fraction
+from pydantic_core import SchemaValidator, core_schema
+
+schema = core_schema.fraction_schema(le=Fraction(3, 4), ge=Fraction(1, 4))
+v = SchemaValidator(schema)
+assert v.validate_python('1/2') == Fraction(1, 2)
+
+```
+
+Parameters:
+
+| Name | Type | Description | Default | | --- | --- | --- | --- | | `le` | `Fraction | None` | The value must be less than or equal to this number | `None` | | `ge` | `Fraction | None` | The value must be greater than or equal to this number | `None` | | `lt` | `Fraction | None` | The value must be strictly less than this number | `None` | | `gt` | `Fraction | None` | The value must be strictly greater than this number | `None` | | `strict` | `bool | None` | Whether the value should be a Fraction or a value that can be converted to a Fraction | `None` | | `ref` | `str | None` | optional unique identifier of the schema, used to reference the schema in other places | `None` | | `metadata` | `dict[str, Any] | None` | Any other information you want to include with the schema, not used by pydantic-core | `None` | | `serialization` | `SerSchema | None` | Custom serialization schema | `None` |
+
+Source code in `pydantic_core/core_schema.py`
+
+````python
+def fraction_schema(
+    *,
+    le: Fraction | None = None,
+    ge: Fraction | None = None,
+    lt: Fraction | None = None,
+    gt: Fraction | None = None,
+    strict: bool | None = None,
+    ref: str | None = None,
+    metadata: dict[str, Any] | None = None,
+    serialization: SerSchema | None = None,
+) -> FractionSchema:
+    """
+    Returns a schema that matches a fraction value, e.g.:
+
+    ```py
+    from fractions import Fraction
+    from pydantic_core import SchemaValidator, core_schema
+
+    schema = core_schema.fraction_schema(le=Fraction(3, 4), ge=Fraction(1, 4))
+    v = SchemaValidator(schema)
+    assert v.validate_python('1/2') == Fraction(1, 2)
+    ```
+
+    Args:
+        le: The value must be less than or equal to this number
+        ge: The value must be greater than or equal to this number
+        lt: The value must be strictly less than this number
+        gt: The value must be strictly greater than this number
+        strict: Whether the value should be a Fraction or a value that can be converted to a Fraction
+        ref: optional unique identifier of the schema, used to reference the schema in other places
+        metadata: Any other information you want to include with the schema, not used by pydantic-core
+        serialization: Custom serialization schema
+    """
+    return _dict_not_none(
+        type='fraction',
+        gt=gt,
+        ge=ge,
+        lt=lt,
+        le=le,
+        strict=strict,
+        ref=ref,
+        metadata=metadata,
+        serialization=serialization,
+    )
+
+````
+
 ## complex_schema
 
 ```python
