@@ -738,7 +738,11 @@ def set_deprecated_descriptors(cls: type[BaseModel]) -> None:
     for field, computed_field_info in cls.__pydantic_computed_fields__.items():
         if (
             (msg := computed_field_info.deprecation_message) is not None
-            # Avoid having two warnings emitted:
+            # If the property was already decorated with `@deprecated`, we avoid emitting the warning message
+            # from `@computed_field` and give priority to the other. Ideally, the deprecation message from
+            # `@computed_field` should take priority, but we can't safely unwrap (using `inspect.unwrap()`)
+            # to get the inner property decorated by `@deprecated`, as we might skip other user-defined decorators
+            # while doing so:
             and not hasattr(unwrap_wrapped_function(computed_field_info.wrapped_property), '__deprecated__')
         ):
             desc = _DeprecatedFieldDescriptor(msg, computed_field_info.wrapped_property)
