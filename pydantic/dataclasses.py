@@ -225,6 +225,8 @@ def dataclass(
                     attr.__set__(instance, value)
                 elif isinstance(attr, functools.cached_property):
                     instance.__dict__.__setitem__(name, value)
+                elif name in inst_cls.__dataclass_fields__ and name not in inst_cls.__pydantic_fields__:
+                    original_setattr(instance, name, value)  # pyright: ignore[reportCallIssue]
                 else:
                     inst_cls.__pydantic_validator__.validate_assignment(instance, name, value)
 

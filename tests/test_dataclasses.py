@@ -151,6 +151,17 @@ def test_validate_assignment_error():
     ]
 
 
+def test_validate_assignment_allows_init_false_field_post_init_assignment():
+    @pydantic.dataclasses.dataclass(config=ConfigDict(validate_assignment=True))
+    class MyDataclass:
+        a: int = dataclasses.field(init=False)
+
+        def __post_init__(self):
+            self.a = 1
+
+    assert MyDataclass().a == 1
+
+
 def test_not_validate_assignment():
     @pydantic.dataclasses.dataclass
     class MyDataclass:
