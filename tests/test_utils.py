@@ -368,7 +368,7 @@ def test_smart_deepcopy_immutable_non_sequence(obj, mocker):
     assert smart_deepcopy(obj) is deepcopy(obj) is obj
 
 
-@pytest.mark.parametrize('empty_collection', (collection() for collection in BUILTIN_COLLECTIONS))
+@pytest.mark.parametrize('empty_collection', [collection() for collection in BUILTIN_COLLECTIONS])
 def test_smart_deepcopy_empty_collection(empty_collection, mocker):
     mocker.patch('pydantic._internal._utils.deepcopy', side_effect=RuntimeError)  # make sure deepcopy is not used
     if not isinstance(empty_collection, (tuple, frozenset)):  # empty tuple or frozenset are always the same object
@@ -377,7 +377,7 @@ def test_smart_deepcopy_empty_collection(empty_collection, mocker):
 
 @pytest.mark.thread_unsafe(reason='Monkeypatching')
 @pytest.mark.parametrize(
-    'collection', (c.fromkeys((1,)) if issubclass(c, dict) else c((1,)) for c in BUILTIN_COLLECTIONS)
+    'collection', [c.fromkeys((1,)) if issubclass(c, dict) else c((1,)) for c in BUILTIN_COLLECTIONS]
 )
 def test_smart_deepcopy_collection(collection, mocker):
     expected_value = object()

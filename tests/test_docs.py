@@ -171,7 +171,7 @@ def run_example(example: CodeExample, eval_example: EvalExample, mocker: Any) ->
 @pytest.mark.thread_unsafe
 @pytest.mark.filterwarnings('ignore:(parse_obj_as|schema_json_of|schema_of) is deprecated.*:DeprecationWarning')
 @pytest.mark.skipif(bool(skip_reason), reason=skip_reason or 'not skipping')
-@pytest.mark.parametrize('example', find_examples(str(SOURCES_ROOT), skip=sys.platform == 'win32'), ids=str)
+@pytest.mark.parametrize('example', list(find_examples(str(SOURCES_ROOT), skip=sys.platform == 'win32')), ids=str)
 def test_docstrings_examples(example: CodeExample, eval_example: EvalExample, tmp_path: Path, mocker):
     if str(example.path).startswith(str(SOURCES_ROOT / 'v1')):
         pytest.skip('skip v1 examples')
@@ -195,7 +195,7 @@ def set_cwd():
 @pytest.mark.thread_unsafe
 @pytest.mark.filterwarnings('ignore:(parse_obj_as|schema_json_of|schema_of) is deprecated.*:DeprecationWarning')
 @pytest.mark.skipif(bool(skip_reason), reason=skip_reason or 'not skipping')
-@pytest.mark.parametrize('example', find_examples(str(DOCS_ROOT), skip=sys.platform == 'win32'), ids=str)
+@pytest.mark.parametrize('example', list(find_examples(str(DOCS_ROOT), skip=sys.platform == 'win32')), ids=str)
 def test_docs_examples(example: CodeExample, eval_example: EvalExample, tmp_path: Path, mocker):
     global INDEX_MAIN
     if example.path.name == 'index.md':
@@ -215,7 +215,7 @@ def test_docs_examples(example: CodeExample, eval_example: EvalExample, tmp_path
 @pytest.mark.skipif(bool(skip_reason), reason=skip_reason or 'not skipping')
 @pytest.mark.skipif(sys.version_info >= (3, 13), reason='python-devtools does not yet support python 3.13')
 @pytest.mark.parametrize(
-    'example', find_examples(str(DOCS_ROOT / 'integrations/devtools.md'), skip=sys.platform == 'win32'), ids=str
+    'example', list(find_examples(str(DOCS_ROOT / 'integrations/devtools.md'), skip=sys.platform == 'win32')), ids=str
 )
 def test_docs_devtools_example(example: CodeExample, eval_example: EvalExample, tmp_path: Path):
     from ansi2html import Ansi2HTMLConverter

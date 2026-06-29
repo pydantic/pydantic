@@ -25,7 +25,8 @@ def test_deprecated_fields():
 
     instance = Model(a=1, b=1, c=1)
 
-    pytest.warns(DeprecationWarning, lambda: instance.a, match='^$')
+    with pytest.warns(DeprecationWarning, match='^$'):
+        instance.a
 
     with pytest.warns(DeprecationWarning, match='^This is deprecated$'):
         b = instance.b
@@ -52,9 +53,12 @@ def test_deprecated_fields_deprecated_class():
 
     instance = Model(a=1)
 
-    pytest.warns(DeprecationWarning, lambda: instance.a, match='^$')
-    pytest.warns(DeprecationWarning, lambda: instance.b, match='^This is deprecated$')
-    pytest.warns(DeprecationWarning, lambda: instance.c, match='^This is deprecated$')
+    with pytest.warns(DeprecationWarning, match='^$'):
+        instance.a
+    with pytest.warns(DeprecationWarning, match='^This is deprecated$'):
+        instance.b
+    with pytest.warns(DeprecationWarning, match='^This is deprecated$'):
+        instance.c
 
 
 def test_deprecated_fields_field_validator():
@@ -147,10 +151,17 @@ def test_computed_field_deprecated():
 
     instance = Model()
 
-    pytest.warns(DeprecationWarning, lambda: instance.p1, match='^This is deprecated$')
-    pytest.warns(DeprecationWarning, lambda: instance.p2, match='^This is deprecated$')
-    pytest.warns(DeprecationWarning, lambda: instance.p4, match='^This is deprecated$')
-    pytest.warns(DeprecationWarning, lambda: instance.p5, match='^This is deprecated$')
+    with pytest.warns(DeprecationWarning, match='^This is deprecated$'):
+        instance.p1
+    # TODO: This should be match='^This is deprecated$' instead, but the
+    # overriding mechanism has apparently never worked:
+    # https://github.com/pydantic/pydantic/issues/13356
+    with pytest.warns(DeprecationWarning, match=r'^This is deprecated \(this message is overridden\)$'):
+        instance.p2
+    with pytest.warns(DeprecationWarning, match='^This is deprecated$'):
+        instance.p4
+    with pytest.warns(DeprecationWarning, match='^This is deprecated$'):
+        instance.p5
 
     with pytest.warns(DeprecationWarning, match='^$'):
         p3 = instance.p3
@@ -219,7 +230,8 @@ def test_deprecated_with_boolean() -> None:
 
     instance = Model(a=1, b=1)
 
-    pytest.warns(DeprecationWarning, lambda: instance.a, match='deprecated')
+    with pytest.warns(DeprecationWarning, match='deprecated'):
+        instance.a
 
 
 def test_computed_field_deprecated_class_access() -> None:
@@ -257,7 +269,8 @@ def test_deprecated_field_forward_annotation() -> None:
 
     m = Model()
 
-    pytest.warns(DeprecationWarning, lambda: m.a, match='test')
+    with pytest.warns(DeprecationWarning, match='test'):
+        m.a
 
 
 def test_deprecated_field_with_assignment() -> None:
