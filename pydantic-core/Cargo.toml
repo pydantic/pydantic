@@ -45,7 +45,7 @@ base64 = "0.22.1"
 num-bigint = "0.4.6"
 num-traits = "0.2.19"
 uuid = "1.23.2"
-jiter = { version = "0.15.0", features = ["python"] }
+jiter = { version = "0.16.0", features = ["python"] }
 hex = "0.4.3"
 percent-encoding = "2.3.2"
 hashbrown = { version = "0.16", default-features = false, features = ["inline-more"] }
@@ -106,6 +106,3 @@ too_many_lines = "allow"
 unnecessary_wraps = "allow"
 unused_self = "allow"
 used_underscore_binding = "allow"
-
-[patch.crates-io]
-jiter = { git = "https://github.com/pydantic/jiter", branch = "dh/pyo3-0.29" }
