@@ -2861,6 +2861,61 @@ def test_model_validate_strings_with_validate_fn_override() -> None:
     ]
 
 
+def test_model_dump_includes_runtime_extra_fields() -> None:
+    class ForbidModel(BaseModel, extra='forbid'):
+        a: int
+
+    class IgnoreModel(BaseModel):
+        a: int
+
+    class AllowModel(BaseModel, extra='allow'):
+        a: int
+
+    m = ForbidModel.model_validate({'a': 1, 'b': 'hello', 'c': None}, extra='allow')
+    assert m.model_extra == {'b': 'hello', 'c': None}
+    assert m.model_dump() == {'a': 1, 'b': 'hello', 'c': None}
+    assert m.model_dump(exclude={'b'}) == {'a': 1, 'c': None}
+    assert m.model_dump(include={'b'}) == {'b': 'hello'}
+    assert m.model_dump(exclude_none=True) == {'a': 1, 'b': 'hello'}
+
+    m2 = IgnoreModel.model_validate({'a': 1, 'b': 42}, extra='allow')
+    assert m2.model_dump() == {'a': 1, 'b': 42}
+
+    m3 = AllowModel.model_validate({'a': 1, 'b': 'test'})
+    assert m3.model_dump() == {'a': 1, 'b': 'test'}
+
+    m4 = ForbidModel.model_validate({'a': 1})
+    assert m4.model_dump() == {'a': 1}
+
+
+def test_model_dump_json_includes_runtime_extra_fields() -> None:
+    import json
+
+    class ForbidModel(BaseModel, extra='forbid'):
+        a: int
+
+    class IgnoreModel(BaseModel):
+        a: int
+
+    class AllowModel(BaseModel, extra='allow'):
+        a: int
+
+    m = ForbidModel.model_validate({'a': 1, 'b': 'hello', 'c': None}, extra='allow')
+    assert json.loads(m.model_dump_json()) == {'a': 1, 'b': 'hello', 'c': None}
+    assert json.loads(m.model_dump_json(exclude={'b'})) == {'a': 1, 'c': None}
+    assert json.loads(m.model_dump_json(include={'b'})) == {'b': 'hello'}
+    assert json.loads(m.model_dump_json(exclude_none=True)) == {'a': 1, 'b': 'hello'}
+
+    m2 = IgnoreModel.model_validate({'a': 1, 'b': 42}, extra='allow')
+    assert json.loads(m2.model_dump_json()) == {'a': 1, 'b': 42}
+
+    m3 = AllowModel.model_validate({'a': 1, 'b': 'test'})
+    assert json.loads(m3.model_dump_json()) == {'a': 1, 'b': 'test'}
+
+    m4 = ForbidModel.model_validate({'a': 1})
+    assert json.loads(m4.model_dump_json()) == {'a': 1}
+
+
 def test_pydantic_hooks() -> None:
     calls = []
 

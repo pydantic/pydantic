@@ -500,7 +500,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
         Returns:
             A dictionary representation of the model.
         """
-        return self.__pydantic_serializer__.to_python(
+        result = self.__pydantic_serializer__.to_python(
             self,
             mode=mode,
             by_alias=by_alias,
@@ -517,6 +517,17 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
             serialize_as_any=serialize_as_any,
             polymorphic_serialization=polymorphic_serialization,
         )
+        pydantic_extra = self.__pydantic_extra__
+        if pydantic_extra and self.model_config.get('extra') != 'allow':
+            for key, value in pydantic_extra.items():
+                if include is not None and key not in include:
+                    continue
+                if exclude is not None and key in exclude:
+                    continue
+                if exclude_none and value is None:
+                    continue
+                result[key] = value
+        return result
 
     def model_dump_json(
         self,
@@ -567,6 +578,27 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
         Returns:
             A JSON string representation of the model.
         """
+        pydantic_extra = self.__pydantic_extra__
+        if pydantic_extra and self.model_config.get('extra') != 'allow':
+            import json
+
+            result = self.model_dump(
+                mode='json',
+                include=include,
+                exclude=exclude,
+                context=context,
+                by_alias=by_alias,
+                exclude_unset=exclude_unset,
+                exclude_defaults=exclude_defaults,
+                exclude_none=exclude_none,
+                exclude_computed_fields=exclude_computed_fields,
+                round_trip=round_trip,
+                warnings=warnings,
+                fallback=fallback,
+                serialize_as_any=serialize_as_any,
+                polymorphic_serialization=polymorphic_serialization,
+            )
+            return json.dumps(result, indent=indent, ensure_ascii=ensure_ascii)
         return self.__pydantic_serializer__.to_json(
             self,
             indent=indent,
