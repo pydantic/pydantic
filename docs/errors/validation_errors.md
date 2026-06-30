@@ -1,3 +1,7 @@
+---
+title: "Pydantic Validation Errors: Types & Fixes"
+description: "Decode your data failures instantly. Pydantic’s ValidationError provides structured, machine-readable details to debug Python models with total precision."
+---
 Pydantic attempts to provide useful validation errors. Below are details on common validation errors users
 may encounter when working with pydantic, together with some suggestions on how to fix them.
 

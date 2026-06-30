@@ -1,7 +1,7 @@
 ---
-description: Support for common types from the Python standard library.
+title: Pydantic Validation Standard Library Types
+description: "Enums, UUIDs, Decimals, and more. Pydantic provides robust, Rust-backed validation for Python’s standard library types. Ensure your data is always valid."
 ---
-
 This section enumerates the supported built-in and standard library types: the allowed values,
 the possible constraints, and whether strictness can be configured.
 
