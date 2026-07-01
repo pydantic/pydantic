@@ -275,11 +275,17 @@ def test_private_attr():
 
 
 def test_validate_assignment_false():
+    """With validate_assignment=False (default), assignment bypasses validation.
+
+    So a RootModel[int] can hold a non-int after direct assignment — this asserts that
+    skip behavior, not that str is a valid int.
+    """
     Model = RootModel[int]
 
     m = Model(42)
     m.root = 'abc'
     assert m.root == 'abc'
+    assert type(m.root) is str  # noqa: E721 — explicit: validation was not applied
 
 
 def test_validate_assignment_true():

@@ -159,6 +159,7 @@ nav:
           - ULID: api/pydantic_extra_types_ulid.md
   - Internals:
       - Architecture: internals/architecture.md
+      - High-level architecture: internals/high-level-architecture.md
       - Resolving Annotations: internals/resolving_annotations.md
   - Examples:
       - Validating File Data: examples/files.md

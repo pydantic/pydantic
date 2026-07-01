@@ -11,8 +11,13 @@ import pytest
 import pytz
 from annotated_types import Interval
 
-from pydantic import TypeAdapter, ValidationError
-from pydantic.experimental.pipeline import _Pipeline, transform, validate_as  # pyright: ignore[reportPrivateUsage]
+from pydantic import BaseModel, TypeAdapter, ValidationError
+from pydantic.experimental.pipeline import (  # pyright: ignore[reportPrivateUsage]
+    _Pipeline,
+    transform,
+    validate_as,
+    validate_as_deferred,
+)
 
 
 @pytest.mark.parametrize('potato_variation', ['potato', ' potato ', ' potato', 'potato ', ' POTATO ', ' PoTatO '])
@@ -296,7 +301,7 @@ def test_predicates() -> None:
     with pytest.raises(ValidationError):
         ta_int.validate_python(1)
 
-    ta_str = TypeAdapter[int](Annotated[str, validate_as(str).predicate(lambda x: x != 'potato')])
+    ta_str = TypeAdapter[str](Annotated[str, validate_as(str).predicate(lambda x: x != 'potato')])
     assert ta_str.validate_python('tomato') == 'tomato'
     with pytest.raises(ValidationError):
         ta_str.validate_python('potato')
@@ -380,28 +385,28 @@ def test_transform_first_step() -> None:
 
 
 def test_not_eq() -> None:
-    ta = TypeAdapter[int](Annotated[str, validate_as(str).not_eq('potato')])
+    ta = TypeAdapter[str](Annotated[str, validate_as(str).not_eq('potato')])
     assert ta.validate_python('tomato') == 'tomato'
     with pytest.raises(ValidationError):
         ta.validate_python('potato')
 
 
 def test_eq() -> None:
-    ta = TypeAdapter[int](Annotated[str, validate_as(str).eq('potato')])
+    ta = TypeAdapter[str](Annotated[str, validate_as(str).eq('potato')])
     assert ta.validate_python('potato') == 'potato'
     with pytest.raises(ValidationError):
         ta.validate_python('tomato')
 
 
 def test_not_in() -> None:
-    ta = TypeAdapter[int](Annotated[str, validate_as(str).not_in(['potato', 'tomato'])])
+    ta = TypeAdapter[str](Annotated[str, validate_as(str).not_in(['potato', 'tomato'])])
     assert ta.validate_python('carrot') == 'carrot'
     with pytest.raises(ValidationError):
         ta.validate_python('potato')
 
 
 def test_in() -> None:
-    ta = TypeAdapter[int](Annotated[str, validate_as(str).in_(['potato', 'tomato'])])
+    ta = TypeAdapter[str](Annotated[str, validate_as(str).in_(['potato', 'tomato'])])
     assert ta.validate_python('potato') == 'potato'
     with pytest.raises(ValidationError):
         ta.validate_python('carrot')
@@ -473,12 +478,185 @@ def test_nested_composition() -> None:
     ta = TypeAdapter[int](Annotated[int, (validate_as(int) | validate_as(str)) & validate_as(int)])
 
     assert ta.validate_python(42) == 42
+    assert ta.validate_python('42') == 42
 
 
 def test_nested_composition_transform() -> None:
     ta = TypeAdapter[int](Annotated[int, (validate_as(int) | validate_as(str)) & transform(lambda v: v + 1)])
 
     assert ta.validate_python(42) == 43
+    assert ta.validate_python('41') == 42  # str arm of union, then +1
+
+
+def test_nested_composition_on_basemodel() -> None:
+    """Regression for https://github.com/pydantic/pydantic/issues/13287."""
+
+    class M(BaseModel):
+        some_int: Annotated[int, (validate_as(int) | validate_as(str)) & validate_as(int)]
+
+    assert M.model_validate({'some_int': 42}).some_int == 42
+    assert M.model_validate({'some_int': '42'}).some_int == 42
+
+
+def test_nested_composition_failures() -> None:
+    class M(BaseModel):
+        some_int: Annotated[int, (validate_as(int) | validate_as(str)) & validate_as(int)]
+
+    with pytest.raises(ValidationError):
+        M.model_validate({'some_int': None})
+    with pytest.raises(ValidationError):
+        M.model_validate({'some_int': [1]})
+    with pytest.raises(ValidationError):
+        M.model_validate({'some_int': {'x': 1}})
+
+
+def test_nested_composition_str_branch() -> None:
+    class M(BaseModel):
+        some_int: Annotated[int, (validate_as(int) | validate_as(str)) & validate_as(int)]
+
+    assert M.model_validate({'some_int': '42'}).some_int == 42
+    with pytest.raises(ValidationError):
+        M.model_validate({'some_int': 'not-an-int'})
+
+
+def test_nested_or_of_ands() -> None:
+    class M(BaseModel):
+        some_int: Annotated[
+            int,
+            validate_as(int).lt(0) | (validate_as(int).gt(10) & validate_as(int).lt(20)),
+        ]
+
+    assert M.model_validate({'some_int': -1}).some_int == -1
+    assert M.model_validate({'some_int': 15}).some_int == 15
+
+    with pytest.raises(ValidationError):
+        M.model_validate({'some_int': 5})
+    with pytest.raises(ValidationError):
+        M.model_validate({'some_int': 10})
+    with pytest.raises(ValidationError):
+        M.model_validate({'some_int': 20})
+
+
+def test_doubly_nested_pipelines() -> None:
+    class M(BaseModel):
+        some_int: Annotated[
+            int,
+            ((validate_as(int) | validate_as(str)) & validate_as(int)) | validate_as(int).gt(100),
+        ]
+
+    assert M.model_validate({'some_int': 1}).some_int == 1
+    assert M.model_validate({'some_int': 101}).some_int == 101
+
+    with pytest.raises(ValidationError):
+        M.model_validate({'some_int': None})
+
+
+def test_nested_composition_method_form() -> None:
+    pipe = validate_as(int).otherwise(validate_as(str)).then(validate_as(int))
+
+    class M(BaseModel):
+        some_int: Annotated[int, pipe]
+
+    assert M.model_validate({'some_int': 42}).some_int == 42
+    assert M.model_validate({'some_int': '7'}).some_int == 7
+
+
+def test_nested_composition_transform_failures() -> None:
+    class M(BaseModel):
+        some_int: Annotated[int, (validate_as(int) | validate_as(str)) & transform(lambda v: v + 1)]
+
+    with pytest.raises(ValidationError):
+        M.model_validate({'some_int': None})
+
+
+def test_nested_composition_with_constraints() -> None:
+    """Union accepts any int; chained not_eq(0) is what rejects zero (not the union alone)."""
+
+    class M(BaseModel):
+        some_int: Annotated[
+            int,
+            (validate_as(int) | validate_as(str).validate_as(int)) & validate_as(int).not_eq(0),
+        ]
+
+    assert M.model_validate({'some_int': 1}).some_int == 1
+    assert M.model_validate({'some_int': -1}).some_int == -1
+    assert M.model_validate({'some_int': '2'}).some_int == 2
+
+    with pytest.raises(ValidationError):
+        M.model_validate({'some_int': 0})
+    with pytest.raises(ValidationError):
+        M.model_validate({'some_int': '0'})
+
+
+def test_nested_composition_validate_as_deferred() -> None:
+    class M(BaseModel):
+        some_int: Annotated[
+            int,
+            (validate_as_deferred(lambda: int) | validate_as(str)) & validate_as(int),
+        ]
+
+    assert M.model_validate({'some_int': 42}).some_int == 42
+    assert M.model_validate({'some_int': '42'}).some_int == 42
+
+    with pytest.raises(ValidationError):
+        M.model_validate({'some_int': None})
+
+
+def test_nested_or_of_ands_validate_as_deferred() -> None:
+    class M(BaseModel):
+        some_int: Annotated[
+            int,
+            validate_as_deferred(lambda: int).lt(0)
+            | (validate_as(int).gt(10) & validate_as_deferred(lambda: int).lt(20)),
+        ]
+
+    assert M.model_validate({'some_int': -1}).some_int == -1
+    assert M.model_validate({'some_int': 15}).some_int == 15
+
+    with pytest.raises(ValidationError):
+        M.model_validate({'some_int': 5})
+
+
+def test_nested_composition_json() -> None:
+    class M(BaseModel):
+        some_int: Annotated[int, (validate_as(int) | validate_as(str)) & validate_as(int)]
+
+    assert M.model_validate_json('{"some_int": 42}').some_int == 42
+    assert M.model_validate_json('{"some_int": "42"}').some_int == 42
+    with pytest.raises(ValidationError):
+        M.model_validate_json('{"some_int": null}')
+
+
+def test_nested_composition_builds_schema() -> None:
+    class M(BaseModel):
+        some_int: Annotated[int, (validate_as(int) | validate_as(str)) & validate_as(int)]
+
+    def _schema_types(schema: Any, found: set[str] | None = None) -> set[str]:
+        found = found if found is not None else set()
+        if not isinstance(schema, dict):
+            return found
+        t = schema.get('type')
+        if isinstance(t, str):
+            found.add(t)
+        for key, value in schema.items():
+            if key == 'type':
+                continue
+            if isinstance(value, dict):
+                _schema_types(value, found)
+            elif isinstance(value, list):
+                for item in value:
+                    if isinstance(item, dict):
+                        _schema_types(item, found)
+        return found
+
+    types_found = _schema_types(M.__pydantic_core_schema__)
+    # Nested `|` / `&` compile to union and chain nodes somewhere in the schema tree
+    assert 'union' in types_found
+    assert 'chain' in types_found
+
+    json_schema = M.model_json_schema()
+    assert json_schema.get('type') == 'object'
+    assert 'some_int' in json_schema.get('properties', {})
 
 
 def test_validate_as_ellipsis_preserves_other_steps() -> None:

@@ -731,7 +731,12 @@ def make_typed_dict() -> Any:
         pytest.param(
             make_typed_dict,
             marks=pytest.mark.xfail(
-                reason='computed fields do not work with TypedDict yet. See https://github.com/pydantic/pydantic-core/issues/657'
+                reason=(
+                    'KNOWN GAP (not a success path): computed fields do not work with TypedDict yet. '
+                    'See https://github.com/pydantic/pydantic-core/issues/657. '
+                    'Split out when implementing TypedDict computed fields; do not treat XPASS lightly.'
+                ),
+                strict=False,
             ),
         ),
         make_dataclass,

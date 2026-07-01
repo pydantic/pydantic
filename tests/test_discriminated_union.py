@@ -43,17 +43,15 @@ def test_discriminated_union_type_invalid_single_variant():
             x: str = Field(discriminator='qwe')
 
 
-@pytest.mark.parametrize('union', [True, False])
-def test_discriminated_single_variant(union):
+def test_discriminated_single_variant():
+    """Single-variant discriminated model (not a union); invalid tag fails before field types."""
+
     class InnerModel(BaseModel):
         qwe: Literal['qwe']
         y: int
 
     class Model(BaseModel):
-        if union:
-            x: InnerModel = Field(discriminator='qwe')
-        else:
-            x: InnerModel = Field(discriminator='qwe')
+        x: InnerModel = Field(discriminator='qwe')
 
     assert Model(x={'qwe': 'qwe', 'y': 1}).x.qwe == 'qwe'
     with pytest.raises(ValidationError) as exc_info:

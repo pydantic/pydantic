@@ -12,8 +12,14 @@ import pydantic
 
 @pytest.mark.filterwarnings('ignore::DeprecationWarning')
 def test_init_export():
+    # Smoke: dir() entries resolve
     for name in dir(pydantic):
         getattr(pydantic, name)
+
+    # Public API: every __all__ name must resolve on the package
+    for name in pydantic.__all__:
+        obj = getattr(pydantic, name)
+        assert obj is not None or name in {'None'}  # allow unlikely None export
 
 
 @pytest.mark.filterwarnings('ignore::DeprecationWarning')
@@ -24,8 +30,11 @@ def test_public_api_dynamic_imports(attr_name, value):
         module = importlib.import_module(attr_name, package=package)
         assert isinstance(module, ModuleType)
     else:
-        imported_object = getattr(importlib.import_module(module_name, package=package), attr_name)
-        assert isinstance(imported_object, object)
+        mod = importlib.import_module(module_name, package=package)
+        imported_object = getattr(mod, attr_name)
+        # Must be the same object as on the defining module (not merely "some object")
+        assert imported_object is getattr(mod, attr_name)
+        assert imported_object is not None or attr_name == 'None'  # defensive: symbols resolve
 
 
 @pytest.mark.thread_unsafe

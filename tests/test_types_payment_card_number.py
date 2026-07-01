@@ -7,6 +7,8 @@ from pydantic_core import PydanticCustomError
 from pydantic import BaseModel, ValidationError
 from pydantic.types import PaymentCardBrand, PaymentCardNumber
 
+# Legacy in-tree PaymentCardNumber (deprecated → pydantic_extra_types). Keep until removal;
+# new coverage should prefer pydantic_extra_types when that package is in the test env.
 pytestmark = pytest.mark.filterwarnings(
     'ignore:The `PaymentCardNumber` class is deprecated, use `pydantic_extra_types` instead.*:DeprecationWarning'
 )
