@@ -3154,6 +3154,52 @@ def test_generic_with_allow_extra():
         data: T
 
 
+def test_generic_extra_validator_json_schema() -> None:
+    T = TypeVar('T')
+
+    class ExtraModel(BaseModel, Generic[T], extra='allow'):
+        __pydantic_extra__: dict[str, T] = Field(init=False)
+
+    assert ExtraModel[int].model_json_schema() == {
+        'additionalProperties': {'type': 'integer'},
+        'properties': {},
+        'title': 'ExtraModel[int]',
+        'type': 'object',
+    }
+
+    class Value(BaseModel):
+        x: int
+
+    class Wrapper(BaseModel, Generic[T]):
+        extra_model: ExtraModel[T]
+        values: dict[str, T]
+
+    value_qualname = Value.__qualname__
+    assert Wrapper[Value].model_json_schema() == {
+        '$defs': {
+            'ExtraModel_Value_': {
+                'additionalProperties': {'$ref': '#/$defs/Value'},
+                'properties': {},
+                'title': f'ExtraModel[{value_qualname}]',
+                'type': 'object',
+            },
+            'Value': {
+                'properties': {'x': {'title': 'X', 'type': 'integer'}},
+                'required': ['x'],
+                'title': 'Value',
+                'type': 'object',
+            },
+        },
+        'properties': {
+            'extra_model': {'$ref': '#/$defs/ExtraModel_Value_'},
+            'values': {'additionalProperties': {'$ref': '#/$defs/Value'}, 'title': 'Values', 'type': 'object'},
+        },
+        'required': ['extra_model', 'values'],
+        'title': f'Wrapper[{value_qualname}]',
+        'type': 'object',
+    }
+
+
 def test_generic_field():
     """Test for https://github.com/pydantic/pydantic/issues/10039.
 
