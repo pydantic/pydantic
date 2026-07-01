@@ -669,3 +669,60 @@ def test_model_construct_with_alias_choices_and_path() -> None:
     assert MyModel.model_construct(a='a_value').a == 'a_value'
     assert MyModel.model_construct(aaa='a_value').a == 'a_value'
     assert MyModel.model_construct(AAA={'aaa': 'a_value'}).a == 'a_value'
+
+
+def test_model_copy_update_ignores_unknown_keys_with_extra_not_allow() -> None:
+    """model_copy(update={...}) must not leak unknown keys into __dict__.
+
+    Previously, when `extra` was anything other than 'allow' (the default
+    'ignore' and the explicit 'forbid'), the `else` branch did
+    `copied.__dict__.update(update)`, which wrote unknown keys straight into
+    the copy's instance __dict__. The attribute was reachable via
+    `copy.unknown_key` even though `extra='forbid'` would reject that key
+    on a fresh construct. The fix routes unknown keys through the same
+    filtering as `extra='allow'`: only keys that are declared fields land
+    in __dict__; the rest are silently dropped (mirroring the
+    `extra='ignore'` behaviour for construction).
+    """
+    # extra='forbid': the strongest case — unknown keys must not become attributes
+    class ForbidModel(BaseModel):
+        model_config = ConfigDict(extra='forbid')
+        name: str
+
+    m = ForbidModel(name='hello')
+    copied = m.model_copy(update={'name': 'world', 'sneaky': 'evil'})
+    assert copied.name == 'world'
+    assert 'sneaky' not in copied.__dict__
+    with pytest.raises(AttributeError):
+        copied.sneaky
+    assert copied.model_fields_set == {'name'}
+
+    # extra='ignore' (the default): same rule — unknowns dropped, fields updated
+    class IgnoreModel(BaseModel):
+        name: str
+
+    m = IgnoreModel(name='hello')
+    copied = m.model_copy(update={'name': 'world', 'also_unknown': 'ignored'})
+    assert copied.name == 'world'
+    assert 'also_unknown' not in copied.__dict__
+    with pytest.raises(AttributeError):
+        copied.also_unknown
+
+    # extra='allow' is unchanged: unknown keys still land in __pydantic_extra__
+    class AllowModel(BaseModel):
+        model_config = ConfigDict(extra='allow')
+        name: str
+
+    m = AllowModel(name='hello', known_extra='original')
+    copied = m.model_copy(update={'name': 'world', 'known_extra': 'updated', 'new_extra': 'added'})
+    assert copied.name == 'world'
+    assert copied.__pydantic_extra__ == {'known_extra': 'updated', 'new_extra': 'added'}
+
+    # deep=True + update: same rule applies through the selective-deepcopy path
+    copied_deep = ForbidModel(name='hello').model_copy(
+        deep=True, update={'name': 'world', 'sneaky': 'evil'}
+    )
+    assert copied_deep.name == 'world'
+    assert 'sneaky' not in copied_deep.__dict__
+    with pytest.raises(AttributeError):
+        copied_deep.sneaky
