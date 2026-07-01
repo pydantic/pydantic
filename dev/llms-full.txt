@@ -20630,7 +20630,7 @@ PrivateAttr(
 PrivateAttr(
     *,
     default_factory: (
-        Callable[[], _T" optional hover>_T] | Callable[[dict[str, Any]], _T" optional hover>_T]
+        Callable[[], _T] | Callable[[dict[str, Any]], _T]
     ),
     init: Literal[False] = False
 ) -> _T
@@ -52753,7 +52753,7 @@ You'll see each successful and failed validation logged in Logfire:
 
 And you can investigate each of the corresponding spans to get validation details:
 
-Pydantic works well with [mypy](http://mypy-lang.org) right out of the box.
+Pydantic works well with [mypy](https://www.mypy-lang.org/) right out of the box.
 
 However, Pydantic also ships with a mypy plugin that adds a number of important Pydantic-specific features that improve its ability to type-check your code.
 
@@ -53017,7 +53017,7 @@ ERROR Cannot set field `x` [read-only]
 
 See the [Pyrefly documentation](https://pyrefly.org/en/docs/pydantic/) for more information.
 
-Pydantic models may be printed with the [Rich](https://github.com/willmcgugan/rich) library which will add additional formatting and color to the output. Here's an example:
+Pydantic models may be printed with the [Rich](https://github.com/Textualize/rich) library which will add additional formatting and color to the output. Here's an example:
 
 See the Rich documentation on [pretty printing](https://rich.readthedocs.io/en/latest/pretty.html) for more information.
 
