@@ -685,6 +685,7 @@ def is_valid_privateattr_name(name: str) -> bool:
     return name.startswith('_') and not name.startswith('__')
 
 
+@cache
 def takes_validated_data_argument(
     default_factory: Callable[[], Any] | Callable[[dict[str, Any]], Any],
 ) -> TypeIs[Callable[[dict[str, Any]], Any]]:
