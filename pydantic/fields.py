@@ -1413,7 +1413,7 @@ class ModelPrivateAttr(_repr.Representation):
             [`__dict__`][object.__dict__]) and the already initialized private attributes.
     """
 
-    __slots__ = ('default', 'default_factory')
+    __slots__ = ('default', 'default_factory', '_factory_takes_validated_data')
 
     def __init__(
         self,
@@ -1426,6 +1426,9 @@ class ModelPrivateAttr(_repr.Representation):
         else:
             self.default = default
         self.default_factory = default_factory
+        self._factory_takes_validated_data = (
+            _fields.takes_validated_data_argument(default_factory) if default_factory is not None else None
+        )
 
     if not TYPE_CHECKING:
         # We put `__getattr__` in a non-TYPE_CHECKING block because otherwise, mypy allows arbitrary attribute access
@@ -1454,8 +1457,7 @@ class ModelPrivateAttr(_repr.Representation):
 
         Returns `None` if no default factory is set.
         """
-        if self.default_factory is not None:
-            return _fields.takes_validated_data_argument(self.default_factory)
+        return self._factory_takes_validated_data
 
     @overload
     def get_default(
@@ -1484,6 +1486,7 @@ class ModelPrivateAttr(_repr.Representation):
             default_factory=self.default_factory,
             validated_data=validated_data,
             call_default_factory=call_default_factory,
+            factory_takes_validated_data=self._factory_takes_validated_data,
         )
 
     def __eq__(self, other: Any) -> bool:

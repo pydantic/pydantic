@@ -707,6 +707,7 @@ def resolve_default_value(
     *,
     validated_data: dict[str, Any] | None = None,
     call_default_factory: bool = False,
+    factory_takes_validated_data: bool | None = None,
 ) -> Any:
     """Resolve the default value using either a static default or a default_factory."""
     from ._utils import smart_deepcopy
@@ -714,7 +715,12 @@ def resolve_default_value(
     if default_factory is None:
         return smart_deepcopy(default)
     if call_default_factory:
-        if takes_validated_data_argument(default_factory=default_factory):
+        _takes_data = (
+            factory_takes_validated_data
+            if factory_takes_validated_data is not None
+            else takes_validated_data_argument(default_factory=default_factory)
+        )
+        if _takes_data:
             fac = cast('Callable[[dict[str, Any]], Any]', default_factory)
             if validated_data is None:
                 raise ValueError(

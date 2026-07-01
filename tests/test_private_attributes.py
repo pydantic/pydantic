@@ -632,3 +632,49 @@ def test_private_attribute_not_skipped_during_ns_inspection() -> None:
         _priv: object = Fullname
 
     assert isinstance(Full._priv, ModelPrivateAttr)
+
+
+def test_private_attribute_factory_signature_cached():
+    """PrivateAttr(default_factory=...) must not call inspect.signature on every instantiation.
+
+    Regression test for https://github.com/pydantic/pydantic/issues/13376:
+    takes_validated_data_argument() was called twice per model instantiation,
+    causing CPU overhead and cyclic-GC memory churn.
+    """
+    from pydantic._internal import _fields
+
+    calls = 0
+    _orig = _fields.takes_validated_data_argument
+
+    def _counting(*args, **kwargs):
+        nonlocal calls
+        calls += 1
+        return _orig(*args, **kwargs)
+
+    _fields.takes_validated_data_argument = _counting
+    try:
+
+        class M(BaseModel):
+            _items: list = PrivateAttr(default_factory=list)
+
+        calls = 0
+        for _ in range(10):
+            M()
+        assert calls == 0, f'Expected 0 per-instantiation calls, got {calls}'
+    finally:
+        _fields.takes_validated_data_argument = _orig
+
+    # Also verify the cached flag is stored correctly
+    pa = M.__private_attributes__['_items']
+    assert pa._factory_takes_validated_data is False
+    assert pa.default_factory_takes_validated_data is False
+
+    class N(BaseModel):
+        x: int = 1
+        _y: str = PrivateAttr(default_factory=lambda data: str(data['x']))
+
+    pa2 = N.__private_attributes__['_y']
+    assert pa2._factory_takes_validated_data is True
+    assert pa2.default_factory_takes_validated_data is True
+    n = N(x=7)
+    assert n._y == '7'
