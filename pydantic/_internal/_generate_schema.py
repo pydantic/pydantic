@@ -2551,7 +2551,6 @@ def apply_validators(
     Args:
         schema: The schema to apply validators on.
         validators: An iterable of validators.
-        field_name: The name of the field if validators are being applied to a model field.
 
     Returns:
         The updated schema.
