@@ -6940,6 +6940,14 @@ def test_warn_on_mixed_compose() -> None:
         class Model2(BaseModel):
             field: Annotated[int, Field(json_schema_extra=lambda x: x.pop('a')), Field(json_schema_extra={'a': 'dict'})]  # type: ignore
 
+    # The warning promises the `callable` is ignored, so the `dict` must survive in both orderings.
+    # Previously, when the `dict` came first (`Model1`), it was silently dropped in favor of the ignored
+    # `callable`, which also made schema generation raise `KeyError` as the lambda ran against a schema
+    # that no longer contained `'a'`.
+    expected = {'a': 'dict', 'title': 'Field', 'type': 'integer'}
+    assert Model1.model_json_schema()['properties']['field'] == expected
+    assert Model2.model_json_schema()['properties']['field'] == expected
+
 
 def test_blank_title_is_respected() -> None:
     class Model(BaseModel):
