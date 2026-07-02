@@ -85,7 +85,16 @@ class ValidateCallWrapper:
         )
         self.config_wrapper = ConfigWrapper(config)
         if not self.config_wrapper.defer_build:
-            self._create_validators()
+            try:
+                self._create_validators()
+            except NameError:
+                # A type annotation could not be resolved yet, e.g. a deferred
+                # annotation (`from __future__ import annotations`) referencing a
+                # name that is only defined after the decorated function. Mirror
+                # `BaseModel`'s behavior and defer building the validators until
+                # the function is first called, at which point the annotation can
+                # usually be resolved from the function's globals.
+                self.__pydantic_complete__ = False
         else:
             self.__pydantic_complete__ = False
 

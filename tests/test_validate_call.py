@@ -1311,6 +1311,33 @@ def test_validate_call_defer_build() -> None:
         DeferBuildClass.cls_meth(x='not_an_int')
 
 
+def test_validate_call_deferred_annotation(create_module):
+    """`@validate_call` should support deferred annotations that are only
+    resolvable after the decorated function is defined.
+
+    https://github.com/pydantic/pydantic/issues/12620
+    """
+    module = create_module(
+        """
+from __future__ import annotations
+
+from pydantic import BaseModel, validate_call
+
+@validate_call(validate_return=True)
+def foo(x: MyModel) -> MyModel:
+    return x
+
+class MyModel(BaseModel):
+    x: int
+        """
+    )
+
+    assert module.foo({'x': 1}) == module.MyModel(x=1)
+
+    with pytest.raises(ValidationError):
+        module.foo({'x': 'not_an_int'})
+
+
 class _PickleTestModel(BaseModel):
     number: float
 
