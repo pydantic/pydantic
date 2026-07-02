@@ -1648,7 +1648,11 @@ def test_frozen_field():
 )
 @pytest.mark.parametrize(
     'extras_schema_kw, expected_extra_value',
-    [({}, '123'), ({'extras_schema': None}, '123'), ({'extras_schema': core_schema.int_schema()}, 123)],
+    [
+        ({}, '123'),
+        ({'extras_schema': None}, '123'),
+        ({'extras_schema': core_schema.int_schema()}, 123),
+    ],
     ids=['extras_schema=unset', 'extras_schema=None', 'extras_schema=int'],
 )
 def test_extra_behavior_allow(

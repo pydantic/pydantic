@@ -344,6 +344,20 @@ def test_extra_custom_serializer():
     assert s.to_python(m) == {'extra': 'extra bam!'}
 
 
+def test_extra_serialization_exclude_if():
+    schema = core_schema.typed_dict_schema(
+        {},
+        extra_behavior='allow',
+        extras_schema=core_schema.any_schema(
+            serialization=core_schema.plain_serializer_function_ser_schema(lambda v: v + ' bam!')
+        ),
+        extras_serialization_exclude_if=lambda x: x == 'extra',
+    )
+    s = SchemaSerializer(schema)
+    m = {'extra': 'extra', 'extra-other': 'extra-other'}
+    assert s.to_python(m) == {'extra-other': 'extra-other bam!'}
+
+
 @pytest.mark.parametrize(
     'config,runtime,expected',
     [
