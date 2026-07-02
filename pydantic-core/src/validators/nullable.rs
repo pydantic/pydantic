@@ -4,6 +4,7 @@ use pyo3::intern;
 use pyo3::prelude::*;
 use pyo3::types::PyDict;
 
+use crate::build_tools::py_schema_err;
 use crate::errors::ValResult;
 use crate::input::Input;
 use crate::tools::SchemaDict;
@@ -49,5 +50,20 @@ impl Validator for NullableValidator {
 
     fn get_name(&self) -> &str {
         &self.name
+    }
+
+    fn children(&self) -> Vec<&Arc<CombinedValidator>> {
+        vec![&self.validator]
+    }
+
+    fn with_new_children(&self, children: Vec<Arc<CombinedValidator>>) -> PyResult<Arc<CombinedValidator>> {
+        if children.len() != 1 {
+            return py_schema_err!("Nullable must have exactly one child");
+        }
+        Ok(CombinedValidator::Nullable(Self {
+            validator: children.into_iter().next().unwrap(),
+            name: self.name.clone(),
+        })
+        .into())
     }
 }

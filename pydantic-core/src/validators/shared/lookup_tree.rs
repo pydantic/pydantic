@@ -17,7 +17,7 @@ pub struct LookupTree {
 }
 
 impl LookupTree {
-    /// Construct a `LookupTree` from a slice of fields and a function to get the `LookupKeyCollection` for each field.
+    /// Construct a `LookupTree` from a slice of fields and a function to get the `LookupPathCollection` for each field.
     pub fn from_fields<T>(fields: &[T], get_field_collection: impl Fn(&T) -> &LookupPathCollection) -> Self {
         let mut tree = Self {
             inner: AHashMap::with_capacity(fields.len()),

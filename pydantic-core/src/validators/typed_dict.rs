@@ -24,7 +24,7 @@ use super::{BuildValidator, CombinedValidator, DefinitionsBuilder, ValidationSta
 #[derive(Debug)]
 struct TypedDictField {
     name: PyBackedStr,
-    lookup_path_collection: LookupPathCollection,
+    lookup_path_collection: Arc<LookupPathCollection>,
     required: bool,
     validator: Arc<CombinedValidator>,
 }
@@ -117,7 +117,7 @@ impl BuildValidator for TypedDictValidator {
 
             fields.push(TypedDictField {
                 name,
-                lookup_path_collection,
+                lookup_path_collection: Arc::new(lookup_path_collection),
                 required,
                 validator,
             });
@@ -388,5 +388,51 @@ impl Validator for TypedDictValidator {
 
     fn get_name(&self) -> &str {
         self.cls_name.as_deref().unwrap_or(Self::EXPECTED_TYPE)
+    }
+
+    fn children(&self) -> Vec<&Arc<CombinedValidator>> {
+        let mut children: Vec<&Arc<CombinedValidator>> = self.fields.iter().map(|f| &f.validator).collect();
+        if let Some(extras_validator) = &self.extras_validator {
+            children.push(extras_validator);
+        }
+        children
+    }
+
+    fn with_new_children(&self, children: Vec<Arc<CombinedValidator>>) -> PyResult<Arc<CombinedValidator>> {
+        let expected_len = self.fields.len() + usize::from(self.extras_validator.is_some());
+        if children.len() != expected_len {
+            return py_schema_err!("Expected {} children for TypedDict validator", expected_len);
+        }
+
+        let (fields_validators, extras_validator) = if self.extras_validator.is_some() {
+            let (fields, extras) = children.split_at(self.fields.len());
+            (fields.to_vec(), Some(extras[0].clone()))
+        } else {
+            (children, None)
+        };
+
+        let new_fields: Vec<TypedDictField> = self
+            .fields
+            .iter()
+            .zip(fields_validators)
+            .map(|(field, validator)| TypedDictField {
+                name: field.name.clone(),
+                validator,
+                lookup_path_collection: field.lookup_path_collection.clone(),
+                required: field.required,
+            })
+            .collect();
+
+        Ok(CombinedValidator::TypedDict(Self {
+            fields: new_fields,
+            extra_behavior: self.extra_behavior,
+            extras_validator,
+            strict: self.strict,
+            loc_by_alias: self.loc_by_alias,
+            validate_by_alias: self.validate_by_alias,
+            validate_by_name: self.validate_by_name,
+            cls_name: self.cls_name.clone(),
+        })
+        .into())
     }
 }

@@ -30,7 +30,7 @@ struct Field {
     name: PyBackedStr,
     init: bool,
     init_only: bool,
-    lookup_path_collection: LookupPathCollection,
+    lookup_path_collection: Arc<LookupPathCollection>,
     validator: Arc<CombinedValidator>,
     frozen: bool,
 }
@@ -102,7 +102,7 @@ impl BuildValidator for DataclassArgsValidator {
             fields.push(Field {
                 kw_only,
                 name,
-                lookup_path_collection,
+                lookup_path_collection: Arc::new(lookup_path_collection),
                 validator,
                 init: field.get_as(intern!(py, "init"))?.unwrap_or(true),
                 init_only: field.get_as(intern!(py, "init_only"))?.unwrap_or(false),
@@ -445,6 +445,54 @@ impl Validator for DataclassArgsValidator {
     fn get_name(&self) -> &str {
         &self.validator_name
     }
+
+    fn children(&self) -> Vec<&Arc<CombinedValidator>> {
+        let mut children: Vec<&Arc<CombinedValidator>> = self.fields.iter().map(|f| &f.validator).collect();
+        if let Some(extras_validator) = &self.extras_validator {
+            children.push(extras_validator);
+        }
+        children
+    }
+
+    fn with_new_children(&self, children: Vec<Arc<CombinedValidator>>) -> PyResult<Arc<CombinedValidator>> {
+        let expected_len = self.fields.len() + usize::from(self.extras_validator.is_some());
+        if children.len() != expected_len {
+            return py_schema_err!("Expected {} children, got {}", expected_len, children.len());
+        }
+        let mut children_iter = children.into_iter();
+
+        let fields = self
+            .fields
+            .iter()
+            .map(|f| Field {
+                kw_only: f.kw_only,
+                name: f.name.clone(),
+                lookup_path_collection: f.lookup_path_collection.clone(),
+                validator: children_iter.next().unwrap(),
+                init: f.init,
+                init_only: f.init_only,
+                frozen: f.frozen,
+            })
+            .collect();
+
+        Ok(CombinedValidator::DataclassArgs(Self {
+            fields,
+            positional_count: self.positional_count,
+            init_only_count: self.init_only_count,
+            dataclass_name: self.dataclass_name.clone(),
+            validator_name: self.validator_name.clone(),
+            extra_behavior: self.extra_behavior,
+            extras_validator: if self.extras_validator.is_some() {
+                Some(children_iter.next().unwrap())
+            } else {
+                None
+            },
+            loc_by_alias: self.loc_by_alias,
+            validate_by_alias: self.validate_by_alias,
+            validate_by_name: self.validate_by_name,
+        })
+        .into())
+    }
 }
 
 #[derive(Debug)]
@@ -616,6 +664,30 @@ impl Validator for DataclassValidator {
 
     fn get_name(&self) -> &str {
         &self.name
+    }
+
+    fn children(&self) -> Vec<&Arc<CombinedValidator>> {
+        vec![&self.validator]
+    }
+
+    fn with_new_children(&self, children: Vec<Arc<CombinedValidator>>) -> PyResult<Arc<CombinedValidator>> {
+        if children.len() != 1 {
+            return py_schema_err!("Expected 1 child, got {}", children.len());
+        }
+
+        Ok(CombinedValidator::Dataclass(Self {
+            strict: self.strict,
+            validator: children.into_iter().next().unwrap(),
+            class: self.class.clone(),
+            generic_origin: self.generic_origin.clone(),
+            fields: self.fields.clone(),
+            post_init: self.post_init.clone(),
+            revalidate: self.revalidate,
+            name: self.name.clone(),
+            frozen: self.frozen,
+            slots: self.slots,
+        })
+        .into())
     }
 }
 

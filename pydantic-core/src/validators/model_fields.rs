@@ -28,7 +28,7 @@ use super::{BuildValidator, CombinedValidator, DefinitionsBuilder, ValidationSta
 #[derive(Debug)]
 struct Field {
     name: PyBackedStr,
-    lookup_path_collection: LookupPathCollection,
+    lookup_path_collection: Arc<LookupPathCollection>,
     validator: Arc<CombinedValidator>,
     frozen: bool,
 }
@@ -99,7 +99,7 @@ impl BuildValidator for ModelFieldsValidator {
 
             fields.push(Field {
                 name,
-                lookup_path_collection,
+                lookup_path_collection: Arc::new(lookup_path_collection),
                 validator,
                 frozen: field_info.get_as::<bool>(intern!(py, "frozen"))?.unwrap_or(false),
             });
@@ -294,6 +294,65 @@ impl Validator for ModelFieldsValidator {
 
     fn get_name(&self) -> &str {
         Self::EXPECTED_TYPE
+    }
+
+    fn children(&self) -> Vec<&Arc<CombinedValidator>> {
+        let mut children = Vec::with_capacity(self.fields.len() + 2);
+        for field in &self.fields {
+            children.push(&field.validator);
+        }
+        if let Some(ref v) = self.extras_validator {
+            children.push(v);
+        }
+        if let Some(ref v) = self.extras_keys_validator {
+            children.push(v);
+        }
+        children
+    }
+
+    fn with_new_children(&self, children: Vec<Arc<CombinedValidator>>) -> PyResult<Arc<CombinedValidator>> {
+        let expected_len = self.fields.len()
+            + usize::from(self.extras_validator.is_some())
+            + usize::from(self.extras_keys_validator.is_some());
+        if children.len() != expected_len {
+            return py_schema_err!("ModelFields must have exactly {} children", expected_len);
+        }
+        let mut iter = children.into_iter();
+        let new_fields: Vec<Field> = self
+            .fields
+            .iter()
+            .map(|field| Field {
+                name: field.name.clone(),
+                lookup_path_collection: field.lookup_path_collection.clone(),
+                validator: iter.next().unwrap(),
+                frozen: field.frozen,
+            })
+            .collect();
+        let lookup = LookupTree::from_fields(&new_fields, |field| &field.lookup_path_collection);
+        let extras_validator = if self.extras_validator.is_some() {
+            Some(iter.next().unwrap())
+        } else {
+            None
+        };
+        let extras_keys_validator = if self.extras_keys_validator.is_some() {
+            Some(iter.next().unwrap())
+        } else {
+            None
+        };
+        Ok(CombinedValidator::ModelFields(Self {
+            fields: new_fields,
+            model_name: self.model_name.clone(),
+            extra_behavior: self.extra_behavior,
+            extras_validator,
+            extras_keys_validator,
+            strict: self.strict,
+            from_attributes: self.from_attributes,
+            loc_by_alias: self.loc_by_alias,
+            lookup,
+            validate_by_alias: self.validate_by_alias,
+            validate_by_name: self.validate_by_name,
+        })
+        .into())
     }
 }
 

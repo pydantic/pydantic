@@ -82,6 +82,10 @@ impl Validator for FloatValidator {
     fn get_name(&self) -> &str {
         Self::EXPECTED_TYPE
     }
+
+    fn children(&self) -> Vec<&Arc<CombinedValidator>> {
+        vec![]
+    }
 }
 
 #[derive(Debug, Clone)]
@@ -172,6 +176,10 @@ impl Validator for ConstrainedFloatValidator {
 
     fn get_name(&self) -> &'static str {
         "constrained-float"
+    }
+
+    fn children(&self) -> Vec<&Arc<CombinedValidator>> {
+        vec![]
     }
 }
 
