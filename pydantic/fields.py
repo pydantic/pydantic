@@ -1404,7 +1404,7 @@ class ModelPrivateAttr(_repr.Representation):
 
     !!! warning
         You generally shouldn't be creating `ModelPrivateAttr` instances directly, instead use
-        `pydantic.fields.PrivateAttr`. (This is similar to `FieldInfo` vs. `Field`.)
+        the [`PrivateAttr()`][pydantic.fields.PrivateAttr] function.
 
     Attributes:
         default: The default value of the attribute if not provided.
@@ -1413,7 +1413,7 @@ class ModelPrivateAttr(_repr.Representation):
             [`__dict__`][object.__dict__]) and the already initialized private attributes.
     """
 
-    __slots__ = ('default', 'default_factory')
+    __slots__ = ('default', 'default_factory', '_default_factory_takes_validated_data')
 
     def __init__(
         self,
@@ -1426,6 +1426,7 @@ class ModelPrivateAttr(_repr.Representation):
         else:
             self.default = default
         self.default_factory = default_factory
+        self._default_factory_takes_validated_data: bool | None = _Unset
 
     if not TYPE_CHECKING:
         # We put `__getattr__` in a non-TYPE_CHECKING block because otherwise, mypy allows arbitrary attribute access
@@ -1454,8 +1455,15 @@ class ModelPrivateAttr(_repr.Representation):
 
         Returns `None` if no default factory is set.
         """
+        if self._default_factory_takes_validated_data is not _Unset:
+            return self._default_factory_takes_validated_data
+
+        value: int | None = None
         if self.default_factory is not None:
-            return _fields.takes_validated_data_argument(self.default_factory)
+            value = _fields.takes_validated_data_argument(self.default_factory)
+
+        self._default_factory_takes_validated_data = value
+        return value
 
     @overload
     def get_default(
