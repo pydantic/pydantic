@@ -1731,6 +1731,12 @@ ModelT = TypeVar('ModelT', bound=BaseModel)
 @overload
 def create_model(
     model_name: str,
+    """Create Model.
+
+    Returns:
+        Description of return value.
+
+    """
     /,
     *,
     __config__: ConfigDict | None = None,
