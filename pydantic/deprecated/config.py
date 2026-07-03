@@ -20,7 +20,7 @@ class _ConfigMetaclass(type):
     def __getattr__(self, item: str) -> Any:
         try:
             obj = _config.config_defaults[item]
-            warnings.warn(_config.DEPRECATION_MESSAGE, DeprecationWarning)
+            warnings.warn(_config.DEPRECATION_MESSAGE, DeprecationWarning, stacklevel=2)
             return obj
         except KeyError as exc:
             raise AttributeError(f"type object '{self.__name__}' has no attribute {exc}") from exc
@@ -37,7 +37,7 @@ class BaseConfig(metaclass=_ConfigMetaclass):
     def __getattr__(self, item: str) -> Any:
         try:
             obj = super().__getattribute__(item)
-            warnings.warn(_config.DEPRECATION_MESSAGE, DeprecationWarning)
+            warnings.warn(_config.DEPRECATION_MESSAGE, DeprecationWarning, stacklevel=2)
             return obj
         except AttributeError as exc:
             try:
@@ -47,7 +47,7 @@ class BaseConfig(metaclass=_ConfigMetaclass):
                 raise AttributeError(str(exc)) from exc
 
     def __init_subclass__(cls, **kwargs: Any) -> None:
-        warnings.warn(_config.DEPRECATION_MESSAGE, DeprecationWarning)
+        warnings.warn(_config.DEPRECATION_MESSAGE, DeprecationWarning, stacklevel=2)
         return super().__init_subclass__(**kwargs)
 
 

@@ -323,7 +323,7 @@ def _add_custom_serialization_from_json_encoders(
 
         warnings.warn(
             f'`json_encoders` is deprecated. See https://pydantic.dev/docs/validation/{version_short()}/concepts/serialization/#custom-serializers for alternatives',
-            PydanticDeprecatedSince20,
+            PydanticDeprecatedSince20, stacklevel=2,
         )
 
         # TODO: in theory we should check that the schema accepts a serialization key
@@ -647,7 +647,7 @@ class GenerateSchema:
                 ' Pydantic will allow any object with no validation since we cannot even'
                 ' enforce that the input is an instance of the given type.'
                 ' To get rid of this error wrap the type with `pydantic.SkipValidation`.',
-                ArbitraryTypeWarning,
+                ArbitraryTypeWarning, stacklevel=2,
             )
             return core_schema.any_schema()
         return core_schema.is_instance_schema(tp)
@@ -930,12 +930,12 @@ class GenerateSchema:
             if issubclass(obj, BaseModelV1):
                 warnings.warn(
                     f'Mixing V1 models and V2 models (or constructs, like `TypeAdapter`) is not supported. Please upgrade `{obj.__name__}` to V2.',
-                    UserWarning,
+                    UserWarning, stacklevel=2,
                 )
             else:
                 warnings.warn(
                     '`__get_validators__` is deprecated and will be removed, use `__get_pydantic_core_schema__` instead.',
-                    PydanticDeprecatedSince20,
+                    PydanticDeprecatedSince20, stacklevel=2,
                 )
             return core_schema.chain_schema([core_schema.with_info_plain_validator_function(v) for v in validators()])
 
@@ -1463,7 +1463,7 @@ class GenerateSchema:
                         f'Item{"s" if plural else ""} {fields_repr} on TypedDict class {typed_dict_cls.__name__!r} '
                         f'{"are" if plural else "is"} using the `ReadOnly` qualifier. Pydantic will not protect items '
                         'from any mutation on dictionary instances.',
-                        UserWarning,
+                        UserWarning, stacklevel=2,
                     )
 
                 extra_behavior: core_schema.ExtraBehavior = 'ignore'
@@ -1484,13 +1484,13 @@ class GenerateSchema:
                         warnings.warn(
                             f"TypedDict class {typed_dict_cls.__qualname__!r} is closed, but 'extra' configuration "
                             "is set to `'allow'`. The 'extra' configuration value will be ignored.",
-                            category=TypedDictExtraConfigWarning,
+                            stacklevel=2, category=TypedDictExtraConfigWarning,
                         )
                     elif not typing_objects.is_noextraitems(extra_items) and config_extra == 'forbid':
                         warnings.warn(
                             f"TypedDict class {typed_dict_cls.__qualname__!r} allows extra items, but 'extra' configuration "
                             "is set to `'forbid'`. The 'extra' configuration value will be ignored.",
-                            category=TypedDictExtraConfigWarning,
+                            stacklevel=2, category=TypedDictExtraConfigWarning,
                         )
                     else:
                         extra_behavior = config_extra
@@ -2259,7 +2259,7 @@ class GenerateSchema:
                         'and can only be attached to a model field using `Annotated` metadata or by assignment. '
                         'This may have happened because an `Annotated` type alias using the `type` statement was '
                         'used, or if the `Field()` function was attached to a single member of a union type.',
-                        category=UnsupportedFieldAttributeWarning,
+                        stacklevel=2, category=UnsupportedFieldAttributeWarning,
                     )
 
                 if (
@@ -2270,7 +2270,7 @@ class GenerateSchema:
                     warnings.warn(
                         "A 'default_factory' taking validated data as an argument was provided to the `Field()` function, "
                         'but no validated data is available in the context it was used.',
-                        category=UnsupportedFieldAttributeWarning,
+                        stacklevel=2, category=UnsupportedFieldAttributeWarning,
                     )
 
             for field_metadata in metadata.metadata:

@@ -528,14 +528,14 @@ class FieldInfo(_repr.Representation):
                                 'Composing `dict` and `callable` type `json_schema_extra` is not supported. '
                                 'The `callable` type is being ignored. '
                                 "If you'd like support for this behavior, please open an issue on pydantic.",
-                                UserWarning,
+                                UserWarning, stacklevel=2,
                             )
                     elif callable(existing_js_extra) and isinstance(current_js_extra, dict):
                         warn(
                             'Composing `dict` and `callable` type `json_schema_extra` is not supported. '
                             'The `callable` type is being ignored. '
                             "If you'd like support for this behavior, please open an issue on pydantic.",
-                            UserWarning,
+                            UserWarning, stacklevel=2,
                         )
 
                 # HACK: It is common for users to define "make model partial" (or similar) utilities, that
@@ -620,7 +620,7 @@ class FieldInfo(_repr.Representation):
                             'Composing `dict` and `callable` type `json_schema_extra` is not supported.'
                             'The `callable` type is being ignored.'
                             "If you'd like support for this behavior, please open an issue on pydantic.",
-                            PydanticJsonSchemaWarning,
+                            PydanticJsonSchemaWarning, stacklevel=2,
                         )
                 elif callable(json_schema_extra):
                     # if ever there's a case of a callable, we'll just keep the last json schema extra spec

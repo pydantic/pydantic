@@ -134,7 +134,7 @@ def complete_dataclass(
     if hasattr(cls, '__post_init_post_parse__'):
         warnings.warn(
             'Support for `__post_init_post_parse__` has been dropped, the method will not be called',
-            PydanticDeprecatedSince20,
+            PydanticDeprecatedSince20, stacklevel=2,
         )
 
     typevars_map = get_standard_typevars_map(cls)

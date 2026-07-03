@@ -90,7 +90,7 @@ def update_core_metadata(
                     'Composing `dict` and `callable` type `json_schema_extra` is not supported.'
                     'The `callable` type is being ignored.'
                     "If you'd like support for this behavior, please open an issue on pydantic.",
-                    PydanticJsonSchemaWarning,
+                    PydanticJsonSchemaWarning, stacklevel=2,
                 )
         if callable(existing_pydantic_js_extra):
             # if ever there's a case of a callable, we'll just keep the last json schema extra spec

@@ -2489,7 +2489,7 @@ class GenerateJsonSchema:
         """This method simply emits PydanticJsonSchemaWarnings based on handling in the `warning_message` method."""
         message = self.render_warning_message(kind, detail)
         if message is not None:
-            warnings.warn(message, PydanticJsonSchemaWarning)
+            warnings.warn(message, PydanticJsonSchemaWarning, stacklevel=2)
 
     def render_warning_message(self, kind: JsonSchemaWarningKind, detail: str) -> str | None:
         """This method is responsible for ignoring warnings as desired, and for formatting the warning messages.
@@ -2794,7 +2794,7 @@ class Examples:
                     'Updating existing JSON Schema examples of type dict with examples of type list. '
                     'Only the existing examples values will be retained. Note that dict support for '
                     'examples is deprecated and will be removed in v3.0.',
-                    UserWarning,
+                    UserWarning, stacklevel=2,
                 )
                 json_schema['examples'] = to_jsonable_python(
                     [ex for value in examples.values() for ex in value] + self.examples
@@ -2809,7 +2809,7 @@ class Examples:
                     'Updating existing JSON Schema examples of type list with examples of type dict. '
                     'Only the examples values will be retained. Note that dict support for '
                     'examples is deprecated and will be removed in v3.0.',
-                    UserWarning,
+                    UserWarning, stacklevel=2,
                 )
                 json_schema['examples'] = to_jsonable_python(
                     examples + [ex for value in self.examples.values() for ex in value]
