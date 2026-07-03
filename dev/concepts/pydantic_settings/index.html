@@ -6279,6 +6279,12 @@ it will raise <code>ValidationError</code> in settings construction.</p>
 <p>Pydantic settings loads all the values from dotenv file and passes it to the model, regardless of the model's <code>env_prefix</code>, unless <code>dotenv_filtering</code> is used.
 So if you provide extra values in a dotenv file, whether they start with <code>env_prefix</code> or not,
 a <code>ValidationError</code> will be raised.</p>
+<p>There is one exception to this. When <code>env_prefix</code> is set, an <em>unprefixed</em> dotenv entry whose name matches a
+field name is silently skipped rather than treated as an extra value. For example, with <code>env_prefix='app_'</code>
+and a <code>debug</code> field, a <code>debug=...</code> line in the dotenv file neither populates <code>debug</code> (only <code>app_debug</code> does
+that) nor raises a <code>ValidationError</code> — it is simply ignored. This asymmetry can be surprising, because a
+<em>non-matching</em> unprefixed entry such as <code>foo=...</code> <strong>would</strong> raise a <code>ValidationError</code> under the default
+<code>extra='forbid'</code>.</p>
 </div>
 <h2 id="command-line-support">Command Line Support<a class="headerlink" href="#command-line-support" title="Permanent link">&para;</a></h2>
 <p>Pydantic settings provides integrated CLI support, making it easy to quickly define CLI applications using Pydantic

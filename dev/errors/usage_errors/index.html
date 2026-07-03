@@ -5777,7 +5777,7 @@ but it is a dictionary instead of an object like it was in Pydantic V1.</p>
 
 <span class="c1"># an instance method with `mode=&#39;wrap&#39;`</span>
 <span class="nd">@model_serializer</span><span class="p">(</span><span class="n">mode</span><span class="o">=</span><span class="s1">&#39;wrap&#39;</span><span class="p">)</span>
-<span class="k">def</span><span class="w"> </span><span class="nf">mod_ser</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">handler</span><span class="p">:</span> <span class="n">SerializerFunctionWrapHandler</span><span class="p">,</span> <span class="n">info</span><span class="p">:</span> <span class="n">SerializationInfo</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">mod_ser</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">handler</span><span class="p">:</span> <span class="n">SerializerFunctionWrapHandler</span><span class="p">,</span> <span class="n">info</span><span class="p">:</span> <span class="n">SerializationInfo</span><span class="p">):</span> <span class="o">...</span>
 
 <span class="c1"># For all of these, you can also choose to omit the `info` argument, for example:</span>
 <span class="nd">@model_serializer</span><span class="p">(</span><span class="n">mode</span><span class="o">=</span><span class="s1">&#39;plain&#39;</span><span class="p">)</span>
