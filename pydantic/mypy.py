@@ -1227,6 +1227,15 @@ class ChangeExplicitTypeOfAny(TypeTranslator):
         super().__init__()
 
     def visit_any(self, t: AnyType) -> Type:  # noqa: D102
+    """Visit Any.
+
+    Args:
+        t: Description of t.
+
+    Returns:
+        Description of return value.
+
+    """
         if t.type_of_any == TypeOfAny.explicit:
             return t.copy_modified(type_of_any=self._type_of_any)
         else:
