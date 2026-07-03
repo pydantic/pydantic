@@ -3420,6 +3420,8 @@ def test_extra_generic_class() -> None:
 
     Mint = Model[int]
 
+    assert Mint.model_json_schema()['additionalProperties'] == {'type': 'integer'}
+
     with pytest.raises(ValidationError):
         Mint(extra_value='not_an_int')
 

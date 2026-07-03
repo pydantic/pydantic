@@ -1094,6 +1094,8 @@ def test_pydantic_extra_generic_forward_ref() -> None:
 
     assert Mint.model_rebuild()
 
+    assert Mint.model_json_schema()['additionalProperties'] == {'type': 'array', 'items': {'type': 'integer'}}
+
     with pytest.raises(ValidationError):
         Mint(extra_value=['not_an_int'])
 
