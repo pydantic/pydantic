@@ -3416,12 +3416,14 @@ def test_extra_generic_class() -> None:
     T = TypeVar('T')
 
     class Model(BaseModel, Generic[T], extra='allow'):
-        __pydantic_extra__: dict[str, int]
+        __pydantic_extra__: dict[str, T]
+
+    Mint = Model[int]
 
     with pytest.raises(ValidationError):
-        Model(extra_value='not_an_int')
+        Mint(extra_value='not_an_int')
 
-    assert Model(extra_value='1').model_extra == {'extra_value': 1}
+    assert Mint(extra_value='1').model_extra == {'extra_value': 1}
 
 
 def test_super_getattr_extra():
