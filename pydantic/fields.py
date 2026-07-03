@@ -68,7 +68,7 @@ class _FromFieldInfoInputs(TypedDict, total=False):
     ge: annotated_types.SupportsGe | None
     lt: annotated_types.SupportsLt | None
     le: annotated_types.SupportsLe | None
-    multiple_of: float | None
+    multiple_of: annotated_types.SupportsDiv | annotated_types.SupportsMod | None
     strict: bool | None
     min_length: int | None
     max_length: int | None
@@ -952,7 +952,7 @@ def Field(
     ge: annotated_types.SupportsGe | None = _Unset,
     lt: annotated_types.SupportsLt | None = _Unset,
     le: annotated_types.SupportsLe | None = _Unset,
-    multiple_of: float | None = _Unset,
+    multiple_of: annotated_types.SupportsDiv | annotated_types.SupportsMod | None = _Unset,
     allow_inf_nan: bool | None = _Unset,
     max_digits: int | None = _Unset,
     decimal_places: int | None = _Unset,
@@ -992,7 +992,7 @@ def Field(
     ge: annotated_types.SupportsGe | None = _Unset,
     lt: annotated_types.SupportsLt | None = _Unset,
     le: annotated_types.SupportsLe | None = _Unset,
-    multiple_of: float | None = _Unset,
+    multiple_of: annotated_types.SupportsDiv | annotated_types.SupportsMod | None = _Unset,
     allow_inf_nan: bool | None = _Unset,
     max_digits: int | None = _Unset,
     decimal_places: int | None = _Unset,
@@ -1035,7 +1035,7 @@ def Field(
     ge: annotated_types.SupportsGe | None = _Unset,
     lt: annotated_types.SupportsLt | None = _Unset,
     le: annotated_types.SupportsLe | None = _Unset,
-    multiple_of: float | None = _Unset,
+    multiple_of: annotated_types.SupportsDiv | annotated_types.SupportsMod | None = _Unset,
     allow_inf_nan: bool | None = _Unset,
     max_digits: int | None = _Unset,
     decimal_places: int | None = _Unset,
@@ -1075,7 +1075,7 @@ def Field(  # pyright: ignore[reportOverlappingOverload]
     ge: annotated_types.SupportsGe | None = _Unset,
     lt: annotated_types.SupportsLt | None = _Unset,
     le: annotated_types.SupportsLe | None = _Unset,
-    multiple_of: float | None = _Unset,
+    multiple_of: annotated_types.SupportsDiv | annotated_types.SupportsMod | None = _Unset,
     allow_inf_nan: bool | None = _Unset,
     max_digits: int | None = _Unset,
     decimal_places: int | None = _Unset,
@@ -1118,7 +1118,7 @@ def Field(
     ge: annotated_types.SupportsGe | None = _Unset,
     lt: annotated_types.SupportsLt | None = _Unset,
     le: annotated_types.SupportsLe | None = _Unset,
-    multiple_of: float | None = _Unset,
+    multiple_of: annotated_types.SupportsDiv | annotated_types.SupportsMod | None = _Unset,
     allow_inf_nan: bool | None = _Unset,
     max_digits: int | None = _Unset,
     decimal_places: int | None = _Unset,
@@ -1157,7 +1157,7 @@ def Field(  # No default set
     ge: annotated_types.SupportsGe | None = _Unset,
     lt: annotated_types.SupportsLt | None = _Unset,
     le: annotated_types.SupportsLe | None = _Unset,
-    multiple_of: float | None = _Unset,
+    multiple_of: annotated_types.SupportsDiv | annotated_types.SupportsMod | None = _Unset,
     allow_inf_nan: bool | None = _Unset,
     max_digits: int | None = _Unset,
     decimal_places: int | None = _Unset,
@@ -1197,7 +1197,7 @@ def Field(  # noqa: C901
     ge: annotated_types.SupportsGe | None = _Unset,
     lt: annotated_types.SupportsLt | None = _Unset,
     le: annotated_types.SupportsLe | None = _Unset,
-    multiple_of: float | None = _Unset,
+    multiple_of: annotated_types.SupportsDiv | annotated_types.SupportsMod | None = _Unset,
     allow_inf_nan: bool | None = _Unset,
     max_digits: int | None = _Unset,
     decimal_places: int | None = _Unset,
@@ -1255,6 +1255,8 @@ def Field(  # noqa: C901
         lt: Less than. If set, value must be less than this. Only applicable to numbers.
         le: Less than or equal. If set, value must be less than or equal to this. Only applicable to numbers.
         multiple_of: Value must be a multiple of this. Only applicable to numbers.
+            Accepts `int`, `float`, [`Decimal`][decimal.Decimal], or any type implementing
+            `__truediv__`/`__mod__` as described by [`annotated_types.MultipleOf`][].
         min_length: Minimum length for iterables.
         max_length: Maximum length for iterables.
         pattern: Pattern for strings (a regular expression).

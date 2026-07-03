@@ -1,3 +1,5 @@
+from decimal import Decimal
+
 from pydantic import BaseModel, Field, PrivateAttr
 
 
@@ -43,3 +45,9 @@ class Model(BaseModel):
     f15: int = Field(default_factory=str, validate_default=True)
     f16: int = Field(default='1', validate_default=False)  # type: ignore[assignment]  # pyright: ignore[reportAssignmentType]
     f17: int = Field(default_factory=str, validate_default=False)  # type: ignore[assignment]  # pyright: ignore[reportAssignmentType]
+
+    # `multiple_of` accepts int, float, and Decimal (see https://github.com/pydantic/pydantic/issues/6885):
+    f18: int = Field(multiple_of=5)
+    f19: float = Field(multiple_of=0.5)
+    f20: Decimal = Field(multiple_of=Decimal('0.01'))
+    f21: Decimal = Field(max_digits=8, decimal_places=2, gt=0, multiple_of=Decimal('0.01'))

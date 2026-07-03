@@ -1,6 +1,8 @@
 import copy
+from decimal import Decimal
 from typing import Annotated, Any, Final, Generic, TypeVar
 
+import annotated_types
 import pytest
 from annotated_types import Gt
 from pydantic_core import PydanticUndefined
@@ -459,3 +461,32 @@ def test_default_factory_without_validated_data_unsupported() -> None:
 
     with pytest.raises(ValueError):
         FooBar.model_fields['a'].get_default(call_default_factory=True)
+
+
+def test_field_multiple_of_accepts_decimal() -> None:
+    """`Field(multiple_of=...)` should accept int, float, and Decimal values.
+
+    See https://github.com/pydantic/pydantic/issues/6885.
+    """
+    multiple = Decimal('0.05')
+    field_info = Field(max_digits=8, decimal_places=2, gt=0, multiple_of=multiple)
+    assert any(isinstance(m, annotated_types.MultipleOf) and m.multiple_of == multiple for m in field_info.metadata)
+
+    class Model(BaseModel):
+        amount: Decimal = Field(max_digits=8, decimal_places=2, gt=0, multiple_of=multiple)
+        count: int = Field(multiple_of=5)
+        ratio: float = Field(multiple_of=0.5)
+
+    m = Model(amount='1.00', count=10, ratio=1.5)
+    assert m.amount == Decimal('1.00')
+    assert m.count == 10
+    assert m.ratio == 1.5
+
+    with pytest.raises(ValidationError) as exc_info:
+        Model(amount='1.03', count=10, ratio=1.5)
+    assert exc_info.value.errors(include_url=False)[0]['type'] == 'multiple_of'
+    assert exc_info.value.errors(include_url=False)[0]['ctx'] == {'multiple_of': multiple}
+
+    with pytest.raises(ValidationError) as exc_info:
+        Model(amount='1.00', count=7, ratio=1.5)
+    assert exc_info.value.errors(include_url=False)[0]['type'] == 'multiple_of'
