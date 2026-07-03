@@ -626,14 +626,14 @@ def complete_model_class(
         call_on_complete_hook: Whether to call the `__pydantic_on_complete__` hook.
         create_model_module: The module of the class to be created, if created by `create_model`.
         is_force_rebuild: Whether the model is being force-rebuilt (if True, pre-built serializers and
-                          validators are not used, to avoid stale references).
+            validators are not used, to avoid stale references).
 
     Returns:
         `True` if the model is successfully completed, else `False`.
 
     Raises:
-        PydanticUndefinedAnnotation: If PydanticUndefinedAnnotation occurs in __get_pydantic_core_schema__
-            and `raise_errors=True`.
+        PydanticUndefinedAnnotation: If `PydanticUndefinedAnnotation` occurs during core schema generation
+            and `raise_errors` is True.
     """
     typevars_map = get_model_typevars_map(cls)
 

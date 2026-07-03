@@ -1080,6 +1080,28 @@ class Foo(BaseModel):
     assert extras_schema == {'type': 'int'}
 
 
+def test_pydantic_extra_generic_forward_ref() -> None:
+    """https://github.com/pydantic/pydantic/issues/13369"""
+
+    T = TypeVar('T')
+
+    class Model(BaseModel, Generic[T], extra='allow'):
+        __pydantic_extra__: 'dict[str, MyList[T]]'
+
+    Mint = Model[int]
+
+    MyList = list
+
+    assert Mint.model_rebuild()
+
+    assert Mint.model_json_schema()['additionalProperties'] == {'type': 'array', 'items': {'type': 'integer'}}
+
+    with pytest.raises(ValidationError):
+        Mint(extra_value=['not_an_int'])
+
+    assert Mint(extra_value=['1']).model_extra == {'extra_value': [1]}
+
+
 def test_pydantic_extra_forward_ref_separate_module_subclass(create_module: Any) -> None:
     @create_module
     def module_1():
