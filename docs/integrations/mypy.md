@@ -1,4 +1,4 @@
-Pydantic works well with [mypy](http://mypy-lang.org) right out of the box.
+Pydantic works well with [mypy](https://www.mypy-lang.org/) right out of the box.
 
 However, Pydantic also ships with a mypy plugin that adds a number of important Pydantic-specific
 features that improve its ability to type-check your code.

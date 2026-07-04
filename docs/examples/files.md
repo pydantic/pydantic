@@ -245,7 +245,7 @@ age: 30
 email: john@example.com
 ```
 
-Here's how we validate that data:
+Here's how we validate that data using [PyYAML](https://pypi.org/project/PyYAML/):
 
 ```python {test="skip"}
 import yaml
