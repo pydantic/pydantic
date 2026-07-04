@@ -204,21 +204,26 @@ jobs:
     runs-on: ${{ matrix.platform.runs-on }}
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        background: true
         with:
           persist-credentials: false
 
       - uses: astral-sh/setup-uv@fac544c07dec837d0ccb6301d7b5580bf5edae39 # v8.2.0
+        background: true
         with:
           python-version: ${{ matrix.interpreter }}
           enable-cache: false
 
       - name: Install rust stable
         id: rust-toolchain
+        background: true
         # no release versioning, see https://github.com/dtolnay/rust-toolchain/issues/180
         uses: dtolnay/rust-toolchain@3c5f7ea28cd621ae0bf5283f0e981fb97b8a7af9
         with:
           components: llvm-tools
           toolchain: stable
+
+      - wait-all:
 
       - name: Build PGO wheel
         id: pgo-wheel
@@ -398,20 +403,25 @@ jobs:
     runs-on: ${{ matrix.platform.runs-on }}
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        background: true
         with:
           persist-credentials: false
 
       - name: install uv
         uses: astral-sh/setup-uv@fac544c07dec837d0ccb6301d7b5580bf5edae39 # v8.2.0
+        background: true
         with:
           enable-cache: true # zizmor: ignore[cache-poisoning] -- Job does not produce release artifacts and does not have sensitive permissions
 
       - name: get dist artifacts
         uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        background: true
         with:
           pattern: pydantic_core_pypi_files_*
           merge-multiple: true
           path: dist
+
+      - wait-all:
 
       # Until we move all dev dependencies to the main `pydantic` package, use this workaround:
       # Sync the pydantic-core workspace to get the dev dependencies (without the actual `pydantic-core` package),
@@ -435,23 +445,29 @@ jobs:
     runs-on: ${{ matrix.os }}-latest
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        background: true
         with:
           persist-credentials: false
 
       - name: Install rust stable
         # no release versioning, see https://github.com/dtolnay/rust-toolchain/issues/180
         uses: dtolnay/rust-toolchain@3c5f7ea28cd621ae0bf5283f0e981fb97b8a7af9
+        background: true
         with:
           toolchain: stable
+
+      - uses: astral-sh/setup-uv@fac544c07dec837d0ccb6301d7b5580bf5edae39 # v8.2.0
+        background: true
+        with:
+          enable-cache: true # zizmor: ignore[cache-poisoning] -- Job does not produce release artifacts and does not have sensitive permissions
+
+      - wait-all:
 
       - name: Cache rust
         uses: Swatinem/rust-cache@c19371144df3bb44fab255c43d04cbc2ab54d1c4 # v2.9.1
         with:
           lookup-only: false # zizmor: ignore[cache-poisoning] -- Job does not produce release artifacts and does not have sensitive permissions
 
-      - uses: astral-sh/setup-uv@fac544c07dec837d0ccb6301d7b5580bf5edae39 # v8.2.0
-        with:
-          enable-cache: true # zizmor: ignore[cache-poisoning] -- Job does not produce release artifacts and does not have sensitive permissions
 
       - name: Install dependencies
         run: uv sync --all-packages --group testing-extra
@@ -472,10 +488,6 @@ jobs:
         with:
           persist-credentials: false
 
-      - uses: astral-sh/setup-uv@fac544c07dec837d0ccb6301d7b5580bf5edae39 # v8.2.0
-        with:
-          enable-cache: true # zizmor: ignore[cache-poisoning] -- Job does not produce release artifacts and does not have sensitive permissions
-
       - name: Resolve MSRV
         id: resolve-msrv
         run: echo MSRV=`cargo metadata --format-version 1 --no-deps --frozen --quiet --offline --manifest-path pydantic-core/Cargo.toml | jq -r '.packages[0].rust_version'` >> $GITHUB_OUTPUT
@@ -483,8 +495,16 @@ jobs:
       - name: Install rust MSRV
         # no release versioning, see https://github.com/dtolnay/rust-toolchain/issues/180
         uses: dtolnay/rust-toolchain@3c5f7ea28cd621ae0bf5283f0e981fb97b8a7af9
+        background: true
         with:
           toolchain: ${{ steps.resolve-msrv.outputs.MSRV }}
+
+      - uses: astral-sh/setup-uv@fac544c07dec837d0ccb6301d7b5580bf5edae39 # v8.2.0
+        background: true
+        with:
+          enable-cache: true # zizmor: ignore[cache-poisoning] -- Job does not produce release artifacts and does not have sensitive permissions
+
+      - wait-all:
 
       - name: Cache rust
         uses: Swatinem/rust-cache@c19371144df3bb44fab255c43d04cbc2ab54d1c4 # v2.9.1
@@ -515,10 +535,12 @@ jobs:
 
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        background: true
         with:
           persist-credentials: false
 
       - uses: astral-sh/setup-uv@fac544c07dec837d0ccb6301d7b5580bf5edae39 # v8.2.0
+        background: true
         with:
           python-version: ${{ matrix.python-version }}
           enable-cache: true # zizmor: ignore[cache-poisoning] -- Job does not produce release artifacts and does not have sensitive permissions
@@ -526,8 +548,11 @@ jobs:
       - name: Install rust stable
         # no release versioning, see https://github.com/dtolnay/rust-toolchain/issues/180
         uses: dtolnay/rust-toolchain@3c5f7ea28cd621ae0bf5283f0e981fb97b8a7af9
+        background: true
         with:
           toolchain: stable
+
+      - wait-all:
 
       - name: Cache rust
         uses: Swatinem/rust-cache@c19371144df3bb44fab255c43d04cbc2ab54d1c4 # v2.9.1
@@ -556,20 +581,25 @@ jobs:
 
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        background: true
         with:
           persist-credentials: false
 
       - name: install uv
         uses: astral-sh/setup-uv@fac544c07dec837d0ccb6301d7b5580bf5edae39 # v8.2.0
+        background: true
         with:
           python-version: ${{ matrix.python-version }}
           enable-cache: true # zizmor: ignore[cache-poisoning] -- Job does not produce release artifacts and does not have sensitive permissions
 
       - name: get dist artifacts
         uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        background: true
         with:
           name: pydantic_core_pypi_files_pyemscripten_${{ matrix.python-version }}
           path: dist
+
+      - wait-all:
 
       - run: |
           uv sync --only-group pyodide-build
@@ -801,20 +831,25 @@ jobs:
 
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        background: true
         with:
           persist-credentials: false
 
       - uses: astral-sh/setup-uv@fac544c07dec837d0ccb6301d7b5580bf5edae39 # v8.2.0
+        background: true
         with:
           python-version: '3.14'
           enable-cache: false
 
       - name: Get coverage files
         uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        background: true
         with:
           merge-multiple: true
           pattern: coverage-*
           path: coverage
+
+      - wait-all:
 
       - run: uv sync --only-group coverage
 
