@@ -776,6 +776,7 @@ def get_default(self, *, call_default_factory: bool = False, validated_data: dic
     return _fields.resolve_default_value(
         default=self.default,
         default_factory=self.default_factory,
+        default_factory_takes_validated_data_argument=self.default_factory_takes_validated_data,
         validated_data=validated_data,
         call_default_factory=call_default_factory,
     )
@@ -967,7 +968,7 @@ A descriptor for private attributes in class models.
 
 Warning
 
-You generally shouldn't be creating `ModelPrivateAttr` instances directly, instead use `pydantic.fields.PrivateAttr`. (This is similar to `FieldInfo` vs. `Field`.)
+You generally shouldn't be creating `ModelPrivateAttr` instances directly, instead use the PrivateAttr() function.
 
 Attributes:
 
@@ -987,6 +988,7 @@ def __init__(
     else:
         self.default = default
     self.default_factory = default_factory
+    self._default_factory_takes_validated_data: bool | None = _Unset
 
 ```
 
@@ -1106,6 +1108,7 @@ def get_default(self, *, call_default_factory: bool = False, validated_data: dic
     return _fields.resolve_default_value(
         default=self.default,
         default_factory=self.default_factory,
+        default_factory_takes_validated_data_argument=self.default_factory_takes_validated_data,
         validated_data=validated_data,
         call_default_factory=call_default_factory,
     )
