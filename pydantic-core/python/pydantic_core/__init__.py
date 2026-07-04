@@ -41,7 +41,8 @@ else:
 if _sys.version_info < (3, 15):
     from typing_extensions import sentinel as _sentinel
 else:
-    _sentinel = sentinel
+    from builtins import sentinel as _sentinel
+
 
 __all__ = [
     '__version__',
