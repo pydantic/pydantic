@@ -122,7 +122,7 @@ class Person(BaseModel):
 
 person_list_adapter = TypeAdapter(list[Person])  # (1)!
 
-json_string = pathlib.Path('people.json').read_text()if line.strip()
+json_string = pathlib.Path('people.json').read_text()
 people = person_list_adapter.validate_json(json_string)
 print(people)
 #> [Person(name='John Doe', age=30, email='john@example.com'), Person(name='Jane Doe', age=25, email='jane@example.com')]
@@ -191,7 +191,7 @@ class Person(BaseModel):
     email: EmailStr
 
 
-with open('people.csv', newline='') as f:
+with open('people.csv') as f:
     reader = csv.DictReader(f)
     people = [Person.model_validate(row) for row in reader]
 
@@ -245,10 +245,9 @@ age: 30
 email: john@example.com
 ```
 
-Here's how we validate that data:
+Here's how we validate that data using [PyYAML](https://pypi.org/project/PyYAML/):
 
 ```python {test="skip"}
-bash\npip install pyyaml\n
 import yaml
 
 from pydantic import BaseModel, EmailStr, PositiveInt
