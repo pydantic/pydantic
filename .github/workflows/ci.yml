@@ -267,6 +267,8 @@ jobs:
 
       - name: Get pyodide config
         id: pyodide-config
+        env:
+          UV_NO_SYNC: 1
         run: |
           echo "rust-toolchain=$(uv run pyodide config get rust_toolchain)" >> "$GITHUB_OUTPUT"
           echo "emscripten-version=$(uv run pyodide config get emscripten_version)" >> "$GITHUB_OUTPUT"
@@ -467,7 +469,6 @@ jobs:
         uses: Swatinem/rust-cache@c19371144df3bb44fab255c43d04cbc2ab54d1c4 # v2.9.1
         with:
           lookup-only: false # zizmor: ignore[cache-poisoning] -- Job does not produce release artifacts and does not have sensitive permissions
-
 
       - name: Install dependencies
         run: uv sync --all-packages --group testing-extra
