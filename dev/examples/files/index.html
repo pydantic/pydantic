@@ -4198,7 +4198,7 @@ Jane Doe,25,jane@example.com
 <span class="nt">age</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">30</span>
 <span class="nt">email</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">john@example.com</span>
 </code></pre></div>
-<p>Here's how we validate that data:</p>
+<p>Here's how we validate that data using <a href="https://pypi.org/project/PyYAML/">PyYAML</a>:</p>
 <div class="language-python highlight"><pre><span></span><code><span class="kn">import</span><span class="w"> </span><span class="nn">yaml</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">pydantic</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">EmailStr</span><span class="p">,</span> <span class="n">PositiveInt</span>
