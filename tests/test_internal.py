@@ -244,19 +244,34 @@ def test_pydantic_js_functions():
 
 
 @pytest.mark.parametrize(
-    'default, default_factory, validated_data, call_default_factory, expected',
     [
-        ('foo', None, None, True, 'foo'),
-        ('foo', None, None, False, 'foo'),
-        ('foo-unused', lambda: 'foo', None, False, PydanticUndefined),
-        ('foo-unused', lambda: 'foo', None, True, 'foo'),
-        ('foo-unused', lambda data: data['foo'], {'foo': 'bar'}, True, 'bar'),
+        'default',
+        'default_factory',
+        'default_factory_takes_validated_data_argument',
+        'validated_data',
+        'call_default_factory',
+        'expected',
+    ],
+    [
+        ('foo', None, False, None, True, 'foo'),
+        ('foo', None, False, None, False, 'foo'),
+        ('foo-unused', lambda: 'foo', False, None, False, PydanticUndefined),
+        ('foo-unused', lambda: 'foo', False, None, True, 'foo'),
+        ('foo-unused', lambda data: data['foo'], True, {'foo': 'bar'}, True, 'bar'),
     ],
 )
-def test_resolve_default_value(default, default_factory, validated_data, call_default_factory, expected):
+def test_resolve_default_value(
+    default,
+    default_factory,
+    default_factory_takes_validated_data_argument,
+    validated_data,
+    call_default_factory,
+    expected,
+):
     result = resolve_default_value(
-        default,
-        default_factory,
+        default=default,
+        default_factory=default_factory,
+        default_factory_takes_validated_data_argument=default_factory_takes_validated_data_argument,
         validated_data=validated_data,
         call_default_factory=call_default_factory,
     )
@@ -266,4 +281,10 @@ def test_resolve_default_value(default, default_factory, validated_data, call_de
 def test_resolve_default_value_missing_validated_data():
     # When factory requires validated_data but none is provided, a ValueError should be raised.
     with pytest.raises(ValueError):
-        resolve_default_value('foo', lambda data: data['foo'], validated_data=None, call_default_factory=True)
+        resolve_default_value(
+            default='foo',
+            default_factory=lambda data: data['foo'],
+            default_factory_takes_validated_data_argument=True,
+            validated_data=None,
+            call_default_factory=True,
+        )

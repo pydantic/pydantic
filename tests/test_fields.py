@@ -12,6 +12,7 @@ from pydantic import (
     BaseModel,
     ConfigDict,
     Field,
+    PrivateAttr,
     PydanticUserError,
     RootModel,
     TypeAdapter,
@@ -20,7 +21,7 @@ from pydantic import (
     create_model,
     validate_call,
 )
-from pydantic.fields import FieldInfo
+from pydantic.fields import FieldInfo, ModelPrivateAttr
 from pydantic.warnings import UnsupportedFieldAttributeWarning
 
 
@@ -459,3 +460,15 @@ def test_default_factory_without_validated_data_unsupported() -> None:
 
     with pytest.raises(ValueError):
         FooBar.model_fields['a'].get_default(call_default_factory=True)
+
+
+@pytest.mark.parametrize(
+    ['private_attr', 'result'],
+    [
+        (PrivateAttr(), 'ModelPrivateAttr()'),
+        (PrivateAttr(default=1), 'ModelPrivateAttr(default=1)'),
+        (PrivateAttr(default_factory=int), "ModelPrivateAttr(default_factory=<class 'int'>)"),
+    ],
+)
+def test_privateattr_repr(private_attr: ModelPrivateAttr, result: str) -> None:
+    assert repr(private_attr) == result
