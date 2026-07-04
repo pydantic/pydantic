@@ -740,6 +740,7 @@ class FieldInfo(_repr.Representation):
         return _fields.resolve_default_value(
             default=self.default,
             default_factory=self.default_factory,
+            default_factory_takes_validated_data_argument=self.default_factory_takes_validated_data,
             validated_data=validated_data,
             call_default_factory=call_default_factory,
         )
@@ -1458,7 +1459,7 @@ class ModelPrivateAttr(_repr.Representation):
         if self._default_factory_takes_validated_data is not _Unset:
             return self._default_factory_takes_validated_data
 
-        value: int | None = None
+        value: bool | None = None
         if self.default_factory is not None:
             value = _fields.takes_validated_data_argument(self.default_factory)
 
@@ -1490,6 +1491,7 @@ class ModelPrivateAttr(_repr.Representation):
         return _fields.resolve_default_value(
             default=self.default,
             default_factory=self.default_factory,
+            default_factory_takes_validated_data_argument=self.default_factory_takes_validated_data,
             validated_data=validated_data,
             call_default_factory=call_default_factory,
         )
@@ -1499,6 +1501,12 @@ class ModelPrivateAttr(_repr.Representation):
             other.default,
             other.default_factory,
         )
+
+    def __repr_args__(self) -> ReprArgs:
+        if self.default is not PydanticUndefined:
+            yield 'default', self.default
+        if self.default_factory is not None:
+            yield 'default_factory', self.default_factory
 
 
 # NOTE: Actual return type is 'ModelPrivateAttr', but we want to help type checkers

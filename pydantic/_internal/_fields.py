@@ -702,9 +702,10 @@ def takes_validated_data_argument(
 
 
 def resolve_default_value(
+    *,
     default: Any,
     default_factory: Callable[[], Any] | Callable[[dict[str, Any]], Any] | None,
-    *,
+    default_factory_takes_validated_data_argument: bool | None,
     validated_data: dict[str, Any] | None = None,
     call_default_factory: bool = False,
 ) -> Any:
@@ -714,7 +715,7 @@ def resolve_default_value(
     if default_factory is None:
         return smart_deepcopy(default)
     if call_default_factory:
-        if takes_validated_data_argument(default_factory=default_factory):
+        if default_factory_takes_validated_data_argument:
             fac = cast('Callable[[dict[str, Any]], Any]', default_factory)
             if validated_data is None:
                 raise ValueError(
