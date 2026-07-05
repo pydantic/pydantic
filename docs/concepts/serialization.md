@@ -522,6 +522,54 @@ print(model.model_dump(context={'stopwords': ['this', 'is', 'an']}))
 #> {'text': 'example document'}
 ```
 
+Note that the context you pass is propagated to *every* serializer involved in the dump, including those
+of nested models. This means you can define several serialization "modes" for a model (and any submodels)
+ahead of time, then pick which one to apply at call time, without having to rebuild any serializer:
+
+```python
+from typing import Any
+
+from pydantic import BaseModel, SerializationInfo, model_serializer
+
+
+class Address(BaseModel):
+    street: str
+    city: str
+
+    @model_serializer(mode='wrap')
+    def serialize(self, handler, info: SerializationInfo) -> dict[str, Any]:
+        data = handler(self)
+        if (
+            isinstance(info.context, dict)
+            and info.context.get('mode') == 'summary'
+        ):
+            return {'city': data['city']}
+        return data
+
+
+class User(BaseModel):
+    name: str
+    address: Address
+
+    @model_serializer(mode='wrap')
+    def serialize(self, handler, info: SerializationInfo) -> dict[str, Any]:
+        data = handler(self)
+        if (
+            isinstance(info.context, dict)
+            and info.context.get('mode') == 'summary'
+        ):
+            return {'name': data['name'], 'address': data['address']}
+        return data
+
+
+user = User(name='John', address=Address(street='Main St', city='Springfield'))
+
+print(user.model_dump())
+#> {'name': 'John', 'address': {'street': 'Main St', 'city': 'Springfield'}}
+print(user.model_dump(context={'mode': 'summary'}))
+#> {'name': 'John', 'address': {'city': 'Springfield'}}
+```
+
 Similarly, you can [use a context for validation](../concepts/validators.md#validation-context).
 
 ## Serializing subclasses
