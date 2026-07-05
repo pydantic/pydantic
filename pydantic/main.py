@@ -164,6 +164,9 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
     __private_attributes__: ClassVar[Dict[str, ModelPrivateAttr]]  # noqa: UP006
     """Metadata about the private attributes of the model."""
 
+    __private_attributes_descriptors__: ClassVar[frozenset[str]]
+    """Names of private attributes whose defaults are descriptors."""
+
     __signature__: ClassVar[Signature]
     """The synthesized `__init__` [`Signature`][inspect.Signature] of the model."""
 
@@ -1043,8 +1046,8 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
         def __getattr__(self, item: str) -> Any:
             private_attributes = object.__getattribute__(self, '__private_attributes__')
             if item in private_attributes:
-                attribute = private_attributes[item]
-                if hasattr(attribute, '__get__'):
+                if item in object.__getattribute__(self, '__private_attributes_descriptors__'):
+                    attribute = private_attributes[item]
                     return attribute.__get__(self, type(self))  # type: ignore
 
                 try:

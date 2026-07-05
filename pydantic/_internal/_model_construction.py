@@ -157,7 +157,14 @@ class ModelMetaclass(ABCMeta):
                     namespace['model_post_init'] = init_private_attributes
 
             namespace['__class_vars__'] = class_vars
-            namespace['__private_attributes__'] = {**base_private_attributes, **private_attributes}
+            all_private_attributes = {**base_private_attributes, **private_attributes}
+            namespace['__private_attributes__'] = all_private_attributes
+            # Names of private attributes whose default is itself a descriptor.
+            # Precomputed here so `BaseModel.__getattr__` can avoid a per-read
+            # `hasattr(attribute, '__get__')` probe on the hot path.
+            namespace['__private_attributes_descriptors__'] = frozenset(
+                name for name, attr in all_private_attributes.items() if hasattr(attr, '__get__')
+            )
 
             cls = cast('type[BaseModel]', super().__new__(mcs, cls_name, bases, namespace, **kwargs))
             BaseModel_ = import_cached_base_model()

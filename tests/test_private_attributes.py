@@ -569,6 +569,44 @@ def test_private_descriptors(base, use_annotation):
     assert get_calls == [(a, A), (a, A), (a, A)]
 
 
+def test_private_descriptor_default_access_inherited_model() -> None:
+    get_calls = []
+
+    class Descriptor:
+        def __set_name__(self, owner, name):
+            self.name = name
+
+        def __get__(self, obj, type=None):
+            get_calls.append((obj, type))
+            if obj is None:
+                return self
+            return f'{self.name}:{obj.x}'
+
+    class Parent(BaseModel):
+        x: int
+        _descriptor = PrivateAttr(default=Descriptor())
+        _plain = PrivateAttr(default='plain')
+        _missing: str
+
+    class Child(Parent):
+        _child_plain = PrivateAttr(default='child')
+
+    assert Parent.__private_attributes_descriptors__ == frozenset({'_descriptor'})
+    assert Child.__private_attributes_descriptors__ == frozenset({'_descriptor'})
+
+    child = Child(x=1)
+    assert child._descriptor == '_descriptor:1'
+    assert get_calls == [(child, Child)]
+
+    assert child._plain == 'plain'
+    child._plain = 'changed'
+    assert child._plain == 'changed'
+    assert child._child_plain == 'child'
+
+    with pytest.raises(AttributeError, match="'Child' object has no attribute '_missing'"):
+        child._missing
+
+
 def test_private_attr_set_name():
     class SetNameInt(int):
         _owner_attr_name: str | None = None
