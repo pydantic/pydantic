@@ -524,6 +524,10 @@ class FieldInfo(_repr.Representation):
                                 **current_js_extra,
                             }
                         elif callable(current_js_extra):
+                            # The `callable` is ignored, so we keep the existing `dict`. This needs to be set
+                            # explicitly as `merged_kwargs` is otherwise overridden with `meta._attributes_set`
+                            # (which contains the `callable`) below.
+                            new_js_extra = existing_js_extra
                             warn(
                                 'Composing `dict` and `callable` type `json_schema_extra` is not supported. '
                                 'The `callable` type is being ignored. '
