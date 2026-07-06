@@ -716,8 +716,6 @@ class TypeAdapter(Generic[T]):
             schema_generator: To override the logic used to generate the JSON schema, as a subclass of
                 `GenerateJsonSchema` with your desired modifications
             mode: The mode in which to generate the schema.
-            schema_generator: The generator class used for creating the schema.
-            mode: The mode to use for schema generation.
 
         Returns:
             The JSON schema for the model as a dictionary.
