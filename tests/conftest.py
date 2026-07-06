@@ -276,8 +276,3 @@ def py_and_json(request) -> PyAndJson:
         __init__ = functools.partialmethod(PyAndJsonAdapter.__init__, validator_type=request.param)
 
     return ChosenPyAndJsonApapter
-
-
-@pytest.fixture
-def pydantic_version():
-    return '.'.join(pydantic.__version__.split('.')[:2])

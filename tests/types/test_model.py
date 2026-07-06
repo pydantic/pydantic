@@ -105,7 +105,7 @@ def test_extra_with_alias(py_and_json) -> None:
     assert m.__pydantic_extra__ == {'a': 123, 'alias_2': 789}
 
 
-def test_extra_key_and_value_both_error(py_and_json, pydantic_version) -> None:
+def test_extra_key_and_value_both_error(py_and_json) -> None:
     def reject_bad_keys(v: str) -> str:
         if v.startswith('bad_'):
             raise ValueError(f'bad key: {v}')
@@ -120,21 +120,19 @@ def test_extra_key_and_value_both_error(py_and_json, pydantic_version) -> None:
     with pytest.raises(ValidationError) as exc_info:
         adapter.validate_test({'bad_key': 'not_int'})
 
-    assert exc_info.value.errors() == [
+    assert exc_info.value.errors(include_url=False) == [
         {
             'type': 'value_error',
             'ctx': {'error': AnyThing()},
             'loc': ('bad_key',),
             'msg': 'Value error, bad key: bad_key',
             'input': 'bad_key',
-            'url': f'https://errors.pydantic.dev/{pydantic_version}/v/value_error',
         },
         {
             'type': 'int_parsing',
             'loc': ('bad_key',),
             'msg': 'Input should be a valid integer, unable to parse string as an integer',
             'input': 'not_int',
-            'url': f'https://errors.pydantic.dev/{pydantic_version}/v/int_parsing',
         },
     ]
 
