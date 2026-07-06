@@ -30,7 +30,7 @@ rust-version = "1.88"
 pyo3 = { version = "0.29", features = ["num-bigint", "py-clone", "smallvec"] }
 regex = "1.12.3"
 lru = "0.18.0"
-strum = { version = "0.27", features = ["derive"] }
+strum = { version = "0.28", features = ["derive"] }
 strum_macros = "0.27"
 serde_json = { version = "1.0.149", features = ["arbitrary_precision"] }
 enum_dispatch = "0.3.13"
