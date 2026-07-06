@@ -424,6 +424,9 @@ def collect_model_fields(  # noqa: C901
     pydantic_extra_info: PydanticExtraInfo | None = None
     if '__pydantic_extra__' in type_hints:
         ann, complete = type_hints['__pydantic_extra__']
+        if complete:
+            # If not complete, `rebuild_model_fields()` takes care of it:
+            ann = _generics.replace_types(ann, typevars_map)
         pydantic_extra_info = PydanticExtraInfo(
             annotation=ann,
             complete=complete,
@@ -467,10 +470,18 @@ def rebuild_model_fields(
                 rebuilt_fields[f_name] = new_field
 
         if cls.__pydantic_extra_info__ is not None and not cls.__pydantic_extra_info__.complete:
+            # Not the best pattern (see comment in `_recreate_field_info()`):
+            ann = _typing_extra.eval_type(
+                cls.__pydantic_extra_info__.annotation,
+                *ns_resolver.types_namespace,
+            )
+            ann = _generics.replace_types(ann, typevars_map)
+            ann = _typing_extra.eval_type(
+                ann,
+                *ns_resolver.types_namespace,
+            )
             rebuilt_extra_info = PydanticExtraInfo(
-                annotation=_typing_extra.eval_type(
-                    cls.__pydantic_extra_info__.annotation, *ns_resolver.types_namespace
-                ),
+                annotation=ann,
                 complete=True,
             )
         else:
@@ -702,9 +713,10 @@ def takes_validated_data_argument(
 
 
 def resolve_default_value(
+    *,
     default: Any,
     default_factory: Callable[[], Any] | Callable[[dict[str, Any]], Any] | None,
-    *,
+    default_factory_takes_validated_data_argument: bool | None,
     validated_data: dict[str, Any] | None = None,
     call_default_factory: bool = False,
 ) -> Any:
@@ -714,7 +726,7 @@ def resolve_default_value(
     if default_factory is None:
         return smart_deepcopy(default)
     if call_default_factory:
-        if takes_validated_data_argument(default_factory=default_factory):
+        if default_factory_takes_validated_data_argument:
             fac = cast('Callable[[dict[str, Any]], Any]', default_factory)
             if validated_data is None:
                 raise ValueError(

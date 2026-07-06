@@ -626,14 +626,14 @@ def complete_model_class(
         call_on_complete_hook: Whether to call the `__pydantic_on_complete__` hook.
         create_model_module: The module of the class to be created, if created by `create_model`.
         is_force_rebuild: Whether the model is being force-rebuilt (if True, pre-built serializers and
-                          validators are not used, to avoid stale references).
+            validators are not used, to avoid stale references).
 
     Returns:
         `True` if the model is successfully completed, else `False`.
 
     Raises:
-        PydanticUndefinedAnnotation: If PydanticUndefinedAnnotation occurs in __get_pydantic_core_schema__
-            and `raise_errors=True`.
+        PydanticUndefinedAnnotation: If `PydanticUndefinedAnnotation` occurs during core schema generation
+            and `raise_errors` is True.
     """
     typevars_map = get_model_typevars_map(cls)
 
@@ -738,7 +738,11 @@ def set_deprecated_descriptors(cls: type[BaseModel]) -> None:
     for field, computed_field_info in cls.__pydantic_computed_fields__.items():
         if (
             (msg := computed_field_info.deprecation_message) is not None
-            # Avoid having two warnings emitted:
+            # If the property was already decorated with `@deprecated`, we avoid emitting the warning message
+            # from `@computed_field` and give priority to the other. Ideally, the deprecation message from
+            # `@computed_field` should take priority, but we can't safely unwrap (using `inspect.unwrap()`)
+            # to get the inner property decorated by `@deprecated`, as we might skip other user-defined decorators
+            # while doing so:
             and not hasattr(unwrap_wrapped_function(computed_field_info.wrapped_property), '__deprecated__')
         ):
             desc = _DeprecatedFieldDescriptor(msg, computed_field_info.wrapped_property)

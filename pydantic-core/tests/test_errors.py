@@ -107,7 +107,7 @@ def test_pydantic_value_error_invalid_type():
 
     v = SchemaValidator(core_schema.with_info_plain_validator_function(f))
 
-    with pytest.raises(TypeError, match="argument 'context': 'list' object is not an instance of 'dict'"):
+    with pytest.raises(TypeError, match="'list' object is not an instance of 'dict'"):
         v.validate_python(42)
 
 
@@ -394,6 +394,8 @@ all_errors = [
     ('uuid_version', 'UUID version 42 expected', {'expected_version': 42}),
     ('decimal_type', 'Decimal input should be an integer, float, string or Decimal object', None),
     ('decimal_parsing', 'Input should be a valid decimal', None),
+    ('fraction_type', 'Fraction input should be an integer, float, string or Fraction object', None),
+    ('fraction_parsing', 'Input is not a valid fraction', None),
     ('decimal_max_digits', 'Decimal input should have no more than 42 digits in total', {'max_digits': 42}),
     ('decimal_max_digits', 'Decimal input should have no more than 1 digit in total', {'max_digits': 1}),
     ('decimal_max_places', 'Decimal input should have no more than 42 decimal places', {'decimal_places': 42}),

@@ -11,7 +11,6 @@ import re
 import typing
 from collections.abc import Callable, Sequence
 from decimal import Decimal
-from fractions import Fraction
 from ipaddress import IPv4Address, IPv4Interface, IPv4Network, IPv6Address, IPv6Interface, IPv6Network
 from typing import Any, TypeAlias, TypeVar, cast
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
@@ -244,16 +243,6 @@ def ip_v6_interface_validator(input_value: Any, /) -> IPv6Interface:
         return IPv6Interface(input_value)
     except ValueError:
         raise PydanticCustomError('ip_v6_interface', 'Input is not a valid IPv6 interface')
-
-
-def fraction_validator(input_value: Any, /) -> Fraction:
-    if isinstance(input_value, Fraction):
-        return input_value
-
-    try:
-        return Fraction(input_value)
-    except ValueError:
-        raise PydanticCustomError('fraction_parsing', 'Input is not a valid fraction')
 
 
 def forbid_inf_nan_check(x: Any) -> Any:

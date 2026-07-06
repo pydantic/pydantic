@@ -380,6 +380,9 @@ class _Pipeline(Generic[_InT, _OutT]):
     __and__ = then
 
     def __get_pydantic_core_schema__(self, source_type: Any, handler: GetCoreSchemaHandler) -> cs.CoreSchema:
+        return self._apply_pipeline(handler, source_type)
+
+    def _apply_pipeline(self, handler: GetCoreSchemaHandler, source_type: Any) -> cs.CoreSchema:
         queue = deque(self._steps)
 
         s = None
@@ -424,10 +427,14 @@ def _apply_step(step: _Step, s: cs.CoreSchema | None, handler: GetCoreSchemaHand
     elif isinstance(step, _Constraint):
         s = _apply_constraint(s, step.constraint)
     elif isinstance(step, _PipelineOr):
-        s = cs.union_schema([handler(step.left), handler(step.right)])
+        s = cs.union_schema(
+            [step.left._apply_pipeline(handler, source_type), step.right._apply_pipeline(handler, source_type)]
+        )
     else:
         assert isinstance(step, _PipelineAnd)
-        s = cs.chain_schema([handler(step.left), handler(step.right)])
+        s = cs.chain_schema(
+            [step.left._apply_pipeline(handler, source_type), step.right._apply_pipeline(handler, source_type)]
+        )
     return s
 
 

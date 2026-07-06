@@ -100,7 +100,7 @@ Run tests and linting locally to make sure everything is working as expected.
 ```bash
 # Run automated code formatting and linting
 make format
-# Pydantic uses ruff, an awesome Python linter written in rust
+# Pydantic uses ruff, an awesome Python linter written in Rust
 # https://github.com/astral-sh/ruff
 
 # Run tests and linting
@@ -165,9 +165,9 @@ When contributing to Pydantic, please make sure that all code is well documented
 
 Pydantic uses [Google-style docstrings](https://google.github.io/styleguide/pyguide.html#38-comments-and-docstrings) formatted according to [PEP 257](https://www.python.org/dev/peps/pep-0257/) guidelines. (See [Example Google Style Python Docstrings](https://sphinxcontrib-napoleon.readthedocs.io/en/latest/example_google.html) for further examples.)
 
-[pydocstyle](https://www.pydocstyle.org/en/stable/index.html) is used for linting docstrings. You can run `make format` to check your docstrings.
+Ruff lints docstrings automatically. You can run `make format` to auto-fix any docstring issues.
 
-Where this is a conflict between Google-style docstrings and pydocstyle linting, follow the pydocstyle linting hints.
+Where there is a conflict between Google-style docstrings and Ruff linting, follow the Ruff linting hints.
 
 Class attributes and function arguments should be documented in the format "name: description." When applicable, a return type should be documented with just a description. Types are inferred from the signature.
 
