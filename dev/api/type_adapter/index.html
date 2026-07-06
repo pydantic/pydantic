@@ -6783,38 +6783,6 @@ type (<code>string</code>, <code>boolean</code>, <code>null</code>, <code>intege
                   <code>&#39;validation&#39;</code>
             </td>
           </tr>
-          <tr class="doc-section-item">
-            <td>
-                <code>schema_generator</code>
-            </td>
-            <td>
-                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/glossary.html#term-type">type</a>[<a class="autorefs autorefs-internal" title="pydantic.json_schema.GenerateJsonSchema" href="../json_schema/#pydantic.json_schema.GenerateJsonSchema">GenerateJsonSchema</a>]</code>
-            </td>
-            <td>
-              <div class="doc-md-description">
-                <p>The generator class used for creating the schema.</p>
-              </div>
-            </td>
-            <td>
-                  <code><a class="autorefs autorefs-internal" title="pydantic.json_schema.GenerateJsonSchema" href="../json_schema/#pydantic.json_schema.GenerateJsonSchema">GenerateJsonSchema</a></code>
-            </td>
-          </tr>
-          <tr class="doc-section-item">
-            <td>
-                <code>mode</code>
-            </td>
-            <td>
-                  <code><a class="autorefs autorefs-internal" title="pydantic.json_schema.JsonSchemaMode" href="../json_schema/#pydantic.json_schema.JsonSchemaMode">JsonSchemaMode</a></code>
-            </td>
-            <td>
-              <div class="doc-md-description">
-                <p>The mode to use for schema generation.</p>
-              </div>
-            </td>
-            <td>
-                  <code>&#39;validation&#39;</code>
-            </td>
-          </tr>
       </tbody>
     </table>
 
@@ -6878,9 +6846,7 @@ type (<code>string</code>, <code>boolean</code>, <code>null</code>, <code>intege
 <span class="normal">726</span>
 <span class="normal">727</span>
 <span class="normal">728</span>
-<span class="normal">729</span>
-<span class="normal">730</span>
-<span class="normal">731</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">json_schema</span><span class="p">(</span>
+<span class="normal">729</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">json_schema</span><span class="p">(</span>
     <span class="bp">self</span><span class="p">,</span>
     <span class="o">*</span><span class="p">,</span>
     <span class="n">by_alias</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
@@ -6905,8 +6871,6 @@ type (<code>string</code>, <code>boolean</code>, <code>null</code>, <code>intege
 <span class="sd">        schema_generator: To override the logic used to generate the JSON schema, as a subclass of</span>
 <span class="sd">            `GenerateJsonSchema` with your desired modifications</span>
 <span class="sd">        mode: The mode in which to generate the schema.</span>
-<span class="sd">        schema_generator: The generator class used for creating the schema.</span>
-<span class="sd">        mode: The mode to use for schema generation.</span>
 
 <span class="sd">    Returns:</span>
 <span class="sd">        The JSON schema for the model as a dictionary.</span>
@@ -7136,7 +7100,9 @@ type (<code>string</code>, <code>boolean</code>, <code>null</code>, <code>intege
 
             <details class="quote">
               <summary>Source code in <code>pydantic/type_adapter.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">733</span>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">731</span>
+<span class="normal">732</span>
+<span class="normal">733</span>
 <span class="normal">734</span>
 <span class="normal">735</span>
 <span class="normal">736</span>
@@ -7200,9 +7166,7 @@ type (<code>string</code>, <code>boolean</code>, <code>null</code>, <code>intege
 <span class="normal">794</span>
 <span class="normal">795</span>
 <span class="normal">796</span>
-<span class="normal">797</span>
-<span class="normal">798</span>
-<span class="normal">799</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@staticmethod</span>
+<span class="normal">797</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@staticmethod</span>
 <span class="k">def</span><span class="w"> </span><span class="nf">json_schemas</span><span class="p">(</span>
     <span class="n">inputs</span><span class="p">:</span> <span class="n">Iterable</span><span class="p">[</span><span class="nb">tuple</span><span class="p">[</span><span class="n">JsonSchemaKeyT</span><span class="p">,</span> <span class="n">JsonSchemaMode</span><span class="p">,</span> <span class="n">TypeAdapter</span><span class="p">[</span><span class="n">Any</span><span class="p">]]],</span>
     <span class="o">/</span><span class="p">,</span>

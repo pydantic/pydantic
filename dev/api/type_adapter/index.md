@@ -751,7 +751,7 @@ Generate a JSON schema for the adapted type.
 
 Parameters:
 
-| Name | Type | Description | Default | | --- | --- | --- | --- | | `by_alias` | `bool` | Whether to use alias names for field names. | `True` | | `ref_template` | `str` | The format string used for generating $ref strings. | `DEFAULT_REF_TEMPLATE` | | `union_format` | `Literal['any_of', 'primitive_type_array']` | The format to use when combining schemas from unions together. Can be one of: 'any_of': Use the anyOf keyword to combine schemas (the default). 'primitive_type_array': Use the type keyword as an array of strings, containing each type of the combination. If any of the schemas is not a primitive type (string, boolean, null, integer or number) or contains constraints/metadata, falls back to any_of. | `'any_of'` | | `schema_generator` | `type[GenerateJsonSchema]` | To override the logic used to generate the JSON schema, as a subclass of GenerateJsonSchema with your desired modifications | `GenerateJsonSchema` | | `mode` | `JsonSchemaMode` | The mode in which to generate the schema. | `'validation'` | | `schema_generator` | `type[GenerateJsonSchema]` | The generator class used for creating the schema. | `GenerateJsonSchema` | | `mode` | `JsonSchemaMode` | The mode to use for schema generation. | `'validation'` |
+| Name | Type | Description | Default | | --- | --- | --- | --- | | `by_alias` | `bool` | Whether to use alias names for field names. | `True` | | `ref_template` | `str` | The format string used for generating $ref strings. | `DEFAULT_REF_TEMPLATE` | | `union_format` | `Literal['any_of', 'primitive_type_array']` | The format to use when combining schemas from unions together. Can be one of: 'any_of': Use the anyOf keyword to combine schemas (the default). 'primitive_type_array': Use the type keyword as an array of strings, containing each type of the combination. If any of the schemas is not a primitive type (string, boolean, null, integer or number) or contains constraints/metadata, falls back to any_of. | `'any_of'` | | `schema_generator` | `type[GenerateJsonSchema]` | To override the logic used to generate the JSON schema, as a subclass of GenerateJsonSchema with your desired modifications | `GenerateJsonSchema` | | `mode` | `JsonSchemaMode` | The mode in which to generate the schema. | `'validation'` |
 
 Returns:
 
@@ -785,8 +785,6 @@ def json_schema(
         schema_generator: To override the logic used to generate the JSON schema, as a subclass of
             `GenerateJsonSchema` with your desired modifications
         mode: The mode in which to generate the schema.
-        schema_generator: The generator class used for creating the schema.
-        mode: The mode to use for schema generation.
 
     Returns:
         The JSON schema for the model as a dictionary.
