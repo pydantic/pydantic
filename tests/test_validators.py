@@ -42,6 +42,7 @@ from pydantic import (
 )
 from pydantic.dataclasses import dataclass as pydantic_dataclass
 from pydantic.functional_validators import AfterValidator, BeforeValidator, PlainValidator, WrapValidator
+from pydantic.version import version_short
 
 V1_VALIDATOR_DEPRECATION_MATCH = r'Pydantic V1 style `@validator` validators are deprecated'
 
@@ -3017,10 +3018,13 @@ def test_non_self_return_val_warns() -> None:
         def validate_model(self) -> 'Child':
             return Child.model_construct(name='different')
 
-    with pytest.warns(UserWarning, match='A custom validator is returning a value other than `self`'):
+    with pytest.warns(UserWarning, match='A custom validator is returning a value other than `self`') as warning_info:
         c = Child(name='name')
         # confirmation of behavior: non-self return value is ignored
         assert c.name == 'name'
+    assert f'https://pydantic.dev/docs/validation/{version_short()}/concepts/validators/#model-validators' in str(
+        warning_info[0].message
+    )
 
 
 def test_wrap_val_called_once() -> None:
