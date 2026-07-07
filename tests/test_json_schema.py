@@ -2111,6 +2111,58 @@ def test_constraints_schema_validation(kwargs, type_, expected_extra):
     assert Foo.model_json_schema(mode='validation') == expected_schema
 
 
+@pytest.mark.parametrize(
+    'constraint,value,json_schema_key',
+    [
+        ('gt', 2, 'exclusiveMinimum'),
+        ('ge', 2, 'minimum'),
+        ('lt', 5, 'exclusiveMaximum'),
+        ('le', 5, 'maximum'),
+        ('multiple_of', 5, 'multipleOf'),
+    ],
+)
+def test_numeric_constraint_after_validator_uses_json_schema_key(
+    constraint: str, value: int, json_schema_key: str
+) -> None:
+    schema = TypeAdapter(
+        Annotated[int, BeforeValidator(lambda value: value), Field(**{constraint: value})]
+    ).json_schema()
+
+    assert schema == {'type': 'integer', json_schema_key: value}
+    assert constraint not in schema
+
+
+def test_decimal_constraint_after_validator_matches_direct_json_schema() -> None:
+    direct_schema = TypeAdapter(Annotated[Decimal, Field(gt=Decimal('9.5'))]).json_schema()
+    wrapped_schema = TypeAdapter(
+        Annotated[Decimal, BeforeValidator(lambda value: value), Field(gt=Decimal('9.5'))]
+    ).json_schema()
+
+    assert wrapped_schema == direct_schema
+
+
+@pytest.mark.parametrize(
+    'field_type,constraint,value',
+    [
+        (date, 'gt', date(2020, 1, 1)),
+        (datetime, 'lt', datetime(2020, 1, 1)),
+        (timedelta, 'le', timedelta(days=1)),
+    ],
+)
+def test_temporal_constraint_after_validator_omits_numeric_json_schema_keywords(
+    field_type: Any, constraint: str, value: Any
+) -> None:
+    direct_schema = TypeAdapter(Annotated[field_type, Field(**{constraint: value})]).json_schema()
+    wrapped_schema = TypeAdapter(
+        Annotated[field_type, BeforeValidator(lambda value: value), Field(**{constraint: value})]
+    ).json_schema()
+
+    assert wrapped_schema == direct_schema
+    for json_schema_key in ('exclusiveMinimum', 'minimum', 'exclusiveMaximum', 'maximum', 'multipleOf'):
+        assert json_schema_key not in wrapped_schema
+    assert constraint not in wrapped_schema
+
+
 # ADDTESTS: add test cases to check max_digits and decimal_places constrains
 @pytest.mark.parametrize(
     'kwargs,type_,expected_extra',

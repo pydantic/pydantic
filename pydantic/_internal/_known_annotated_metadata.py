@@ -3,7 +3,10 @@ from __future__ import annotations
 from collections import defaultdict
 from collections.abc import Iterable
 from copy import copy
+from decimal import Decimal
 from functools import lru_cache, partial
+from math import isinf
+from numbers import Real
 from typing import TYPE_CHECKING, Any
 
 from pydantic_core import CoreSchema, PydanticCustomError, ValidationError, to_jsonable_python
@@ -20,6 +23,13 @@ FAIL_FAST = {'fail_fast'}
 LENGTH_CONSTRAINTS = {'min_length', 'max_length'}
 INEQUALITY = {'le', 'ge', 'lt', 'gt'}
 NUMERIC_CONSTRAINTS = {'multiple_of', *INEQUALITY}
+JSON_SCHEMA_NUMERIC_CONSTRAINTS = {
+    'multiple_of': 'multipleOf',
+    'le': 'maximum',
+    'ge': 'minimum',
+    'lt': 'exclusiveMaximum',
+    'gt': 'exclusiveMinimum',
+}
 ALLOW_INF_NAN = {'allow_inf_nan'}
 
 STR_CONSTRAINTS = {
@@ -104,6 +114,63 @@ def as_jsonable_value(v: Any) -> Any:
     if type(v) not in (int, str, float, bytes, bool, type(None)):
         return to_jsonable_python(v)
     return v
+
+
+def _json_schema_numeric_value(value: Any) -> int | float | None:
+    if isinstance(value, bool):
+        return None
+    if isinstance(value, Decimal):
+        value = float(value)
+    elif isinstance(value, (int, float)):
+        pass
+    elif isinstance(value, Real):
+        value = float(value)
+    else:
+        return None
+    if isinstance(value, float) and isinf(value):
+        return None
+    return value
+
+
+def _strip_function_wrappers(schema: CoreSchema) -> CoreSchema:
+    while schema['type'] in {'function-before', 'function-wrap', 'function-after'}:
+        schema = schema['schema']  # type: ignore
+    return schema
+
+
+def _apply_json_schema_constraint_update(
+    metadata: dict[str, Any], schema: CoreSchema, constraint: str, value: Any
+) -> None:
+    json_schema_key = JSON_SCHEMA_NUMERIC_CONSTRAINTS.get(constraint)
+    if json_schema_key is None:
+        return
+    json_schema_value = _json_schema_numeric_value(value)
+    if json_schema_value is None:
+        return
+
+    inner_schema_type = _strip_function_wrappers(schema)['type']
+    if inner_schema_type in {'decimal', 'fraction'}:
+
+        def update_numeric_branch(
+            json_schema: dict[str, Any],
+            json_schema_key: str = json_schema_key,
+            json_schema_value: int | float = json_schema_value,
+        ) -> None:
+            for choice in json_schema.get('anyOf', ()):
+                if isinstance(choice, dict) and choice.get('type') == 'number':
+                    choice[json_schema_key] = json_schema_value
+                    return
+
+        metadata['pydantic_js_extra'] = update_numeric_branch
+        return
+
+    if (existing_json_schema_updates := metadata.get('pydantic_js_updates')) is not None:
+        metadata['pydantic_js_updates'] = {
+            **existing_json_schema_updates,
+            **{json_schema_key: json_schema_value},
+        }
+    else:
+        metadata['pydantic_js_updates'] = {json_schema_key: json_schema_value}
 
 
 def expand_grouped_metadata(annotations: Iterable[Any]) -> Iterable[Any]:
@@ -266,13 +333,15 @@ def apply_known_metadata(annotation: Any, schema: CoreSchema) -> CoreSchema | No
                 else:
                     js_constraint_key = 'minLength' if constraint == 'min_length' else 'maxLength'
             else:
-                js_constraint_key = constraint
+                js_constraint_key = None
 
             schema = cs.no_info_after_validator_function(
                 partial(NUMERIC_VALIDATOR_LOOKUP[constraint], **{constraint: value}), schema
             )
             metadata = schema.get('metadata', {})
-            if (existing_json_schema_updates := metadata.get('pydantic_js_updates')) is not None:
+            if js_constraint_key is None:
+                _apply_json_schema_constraint_update(metadata, schema, constraint, value)
+            elif (existing_json_schema_updates := metadata.get('pydantic_js_updates')) is not None:
                 metadata['pydantic_js_updates'] = {
                     **existing_json_schema_updates,
                     **{js_constraint_key: as_jsonable_value(value)},
