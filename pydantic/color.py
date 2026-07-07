@@ -24,7 +24,6 @@ from typing_extensions import deprecated
 from ._internal import _repr
 from ._internal._schema_generation_shared import GetJsonSchemaHandler as _GetJsonSchemaHandler
 from .json_schema import JsonSchemaValue
-from .version import version_short
 from .warnings import PydanticDeprecatedSince20
 
 ColorTuple: TypeAlias = tuple[int, int, int] | tuple[int, int, int, float]
@@ -73,7 +72,7 @@ rads = 2 * math.pi
 
 @deprecated(
     'The `Color` class is deprecated, use `pydantic_extra_types` instead. '
-    f'See https://pydantic.dev/docs/validation/{version_short()}/api/pydantic-extra-types/pydantic_extra_types_color/.',
+    'See https://pydantic.dev/docs/validation/latest/api/pydantic-extra-types/pydantic_extra_types_color/.',
     category=PydanticDeprecatedSince20,
 )
 class Color(_repr.Representation):

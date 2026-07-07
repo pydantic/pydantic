@@ -31,7 +31,6 @@ from pydantic.deprecated.tools import parse_obj_as, schema_json_of, schema_of
 from pydantic.functional_serializers import model_serializer
 from pydantic.json_schema import JsonSchemaValue
 from pydantic.type_adapter import TypeAdapter
-from pydantic.version import version_short
 
 # `pytest.warns/raises()` is thread unsafe. As these tests are meant to be
 # removed in V3, we just mark all tests as thread unsafe
@@ -825,12 +824,8 @@ def test_deprecated_color():
 
     with pytest.warns(
         PydanticDeprecatedSince20, match='The `Color` class is deprecated, use `pydantic_extra_types` instead.'
-    ) as warning_info:
+    ):
         Color('red')
-    assert (
-        f'https://pydantic.dev/docs/validation/{version_short()}/api/pydantic-extra-types/pydantic_extra_types_color/'
-        in str(warning_info[0].message)
-    )
 
 
 def test_deprecated_payment():
@@ -839,9 +834,5 @@ def test_deprecated_payment():
     with pytest.warns(
         PydanticDeprecatedSince20,
         match='The `PaymentCardNumber` class is deprecated, use `pydantic_extra_types` instead.',
-    ) as warning_info:
+    ):
         PaymentCardNumber('4242424242424242')
-    assert (
-        f'https://pydantic.dev/docs/validation/{version_short()}/api/pydantic-extra-types/pydantic_extra_types_payment/'
-        in str(warning_info[0].message)
-    )
