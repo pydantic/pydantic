@@ -533,7 +533,6 @@ As such, the following limitations currently apply:
   [1.1.402](https://github.com/microsoft/pyright/releases/tag/1.1.402)
   or greater, and the `enableExperimentalFeatures` type evaluation setting
   should be enabled.
-* Pickling of models containing `MISSING` as a value is not supported.
 
 !!! note
     When [applying constraints](./fields.md#field-constraints) to a union containing the `MISSING` sentinel,
