@@ -225,3 +225,77 @@ def test_fraction_json_schema():
     ta = TypeAdapter(Annotated[Fraction, Field(ge=Fraction(1))])
 
     assert ta.json_schema() == {'anyOf': [{'minimum': 1.0, 'type': 'number'}, {'format': 'fraction', 'type': 'string'}]}
+
+
+@pytest.mark.parametrize(
+    'multiple_of,input_value,expected',
+    [
+        # Float multiples that are not dyadic rationals — previously broken because
+        # multiple_of fell through to Python `x % float` with float precision noise.
+        (0.01, '1.00', Fraction(1)),
+        (0.01, '10.50', Fraction('10.50')),
+        (0.01, '0.01', Fraction(1, 100)),
+        (0.01, '3/100', Fraction(3, 100)),
+        (0.01, 1, Fraction(1)),
+        (0.01, Fraction(1), Fraction(1)),
+        (0.1, '1/2', Fraction(1, 2)),
+        (0.1, '3/10', Fraction(3, 10)),
+        (0.1, '1', Fraction(1)),
+        (0.5, '1', Fraction(1)),
+        (0.5, '1/2', Fraction(1, 2)),
+        # Exact Fraction / int multiples
+        (Fraction(1, 100), '1.00', Fraction(1)),
+        (Fraction(1, 100), '10.50', Fraction('10.50')),
+        (Fraction(1, 10), '3/10', Fraction(3, 10)),
+        (1, '2', Fraction(2)),
+        (1.0, '2', Fraction(2)),
+        # annotated_types form
+        (annotated_types.MultipleOf(0.01), '1.00', Fraction(1)),
+        (annotated_types.MultipleOf(Fraction(1, 10)), '3/10', Fraction(3, 10)),
+    ],
+)
+def test_fraction_multiple_of(multiple_of, input_value, expected):
+    if isinstance(multiple_of, annotated_types.MultipleOf):
+        ta = TypeAdapter(Annotated[Fraction, multiple_of])
+    else:
+        ta = TypeAdapter(Annotated[Fraction, Field(multiple_of=multiple_of)])
+    assert ta.validate_python(input_value) == expected
+
+
+@pytest.mark.parametrize(
+    'multiple_of,input_value',
+    [
+        (0.01, '1/3'),
+        (0.01, '0.001'),
+        (0.1, '1/3'),
+        (Fraction(1, 10), '1/3'),
+        (Fraction(1, 100), '1/1000'),
+        (1, '1/2'),
+        (annotated_types.MultipleOf(0.01), '1/3'),
+    ],
+)
+def test_fraction_multiple_of_error(multiple_of, input_value):
+    if isinstance(multiple_of, annotated_types.MultipleOf):
+        ta = TypeAdapter(Annotated[Fraction, multiple_of])
+    else:
+        ta = TypeAdapter(Annotated[Fraction, Field(multiple_of=multiple_of)])
+    with pytest.raises(ValidationError, check=lambda e: e.errors()[0]['type'] == 'multiple_of'):
+        ta.validate_python(input_value)
+
+
+def test_fraction_multiple_of_with_field_and_ge():
+    """Money-style constraint: non-negative cents precision."""
+    ta = TypeAdapter(Annotated[Fraction, Field(multiple_of=0.01, ge=0)])
+    assert ta.validate_python('10.50') == Fraction('10.50')
+    with pytest.raises(ValidationError):
+        ta.validate_python('-0.01')
+    with pytest.raises(ValidationError):
+        ta.validate_python('1/3')
+
+
+def test_fraction_multiple_of_json():
+    ta = TypeAdapter(Annotated[Fraction, Field(multiple_of=0.01)])
+    assert ta.validate_json('"10.50"') == Fraction('10.50')
+    assert ta.validate_json('1') == Fraction(1)
+    with pytest.raises(ValidationError, check=lambda e: e.errors()[0]['type'] == 'multiple_of'):
+        ta.validate_json('"1/3"')

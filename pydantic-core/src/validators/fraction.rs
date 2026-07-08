@@ -3,7 +3,7 @@ use std::sync::Arc;
 use pyo3::exceptions::{PyOverflowError, PyTypeError, PyValueError, PyZeroDivisionError};
 use pyo3::intern;
 use pyo3::sync::PyOnceLock;
-use pyo3::types::{IntoPyDict, PyDict, PyString, PyType};
+use pyo3::types::{IntoPyDict, PyDict, PyFloat, PyString, PyType};
 use pyo3::{PyTypeInfo, prelude::*};
 
 use crate::build_tools::is_strict;
@@ -34,12 +34,22 @@ fn validate_as_fraction(
     key: &Bound<'_, PyString>,
 ) -> PyResult<Option<Py<PyAny>>> {
     match schema.get_item(key)? {
-        Some(value) => match value.validate_fraction(false, py) {
-            Ok(v) => Ok(Some(v.into_inner().unbind())),
-            Err(_) => Err(PyValueError::new_err(format!(
-                "'{key}' must be coercible to a Fraction instance",
-            ))),
-        },
+        Some(value) => {
+            // Convert floats via their short string form (e.g. 0.01 → "0.01" → 1/100)
+            // so constraint values match user intent, like Decimal does. Direct
+            // Fraction(0.01) would use the binary float expansion and break multiple_of.
+            let value = if value.is_instance_of::<PyFloat>() {
+                value.str()?.into_any()
+            } else {
+                value
+            };
+            match value.validate_fraction(false, py) {
+                Ok(v) => Ok(Some(v.into_inner().unbind())),
+                Err(_) => Err(PyValueError::new_err(format!(
+                    "'{key}' must be coercible to a Fraction instance",
+                ))),
+            }
+        }
         None => Ok(None),
     }
 }
@@ -47,6 +57,7 @@ fn validate_as_fraction(
 #[derive(Debug, Clone)]
 pub struct FractionValidator {
     strict: bool,
+    multiple_of: Option<Py<PyAny>>,
     le: Option<Py<PyAny>>,
     lt: Option<Py<PyAny>>,
     ge: Option<Py<PyAny>>,
@@ -64,6 +75,7 @@ impl BuildValidator for FractionValidator {
 
         Ok(CombinedValidator::Fraction(Self {
             strict: is_strict(schema, config)?,
+            multiple_of: validate_as_fraction(py, schema, intern!(py, "multiple_of"))?,
             le: validate_as_fraction(py, schema, intern!(py, "le"))?,
             lt: validate_as_fraction(py, schema, intern!(py, "lt"))?,
             ge: validate_as_fraction(py, schema, intern!(py, "ge"))?,
@@ -73,7 +85,13 @@ impl BuildValidator for FractionValidator {
     }
 }
 
-impl_py_gc_traverse!(FractionValidator { le, lt, ge, gt });
+impl_py_gc_traverse!(FractionValidator {
+    multiple_of,
+    le,
+    lt,
+    ge,
+    gt
+});
 
 impl Validator for FractionValidator {
     fn validate<'py>(
@@ -83,6 +101,23 @@ impl Validator for FractionValidator {
         state: &mut ValidationState<'_, 'py>,
     ) -> ValResult<Py<PyAny>> {
         let fraction = input.validate_fraction(state.strict_or(self.strict), py)?.unpack(state);
+
+        if let Some(multiple_of) = &self.multiple_of {
+            // Exact rational check: (fraction / multiple_of) % 1 == 0
+            // Both sides are Fraction instances, so no float precision issues.
+            let quotient = fraction.div(multiple_of)?;
+            let remainder = quotient.rem(1)?;
+            let zero = 0u8.into_pyobject(py)?;
+            if !remainder.eq(&zero)? {
+                return Err(ValError::new(
+                    ErrorType::MultipleOf {
+                        multiple_of: multiple_of.to_string().into(),
+                        context: Some([("multiple_of", multiple_of)].into_py_dict(py)?.into()),
+                    },
+                    input,
+                ));
+            }
+        }
 
         if let Some(le) = &self.le
             && !fraction.le(le)?

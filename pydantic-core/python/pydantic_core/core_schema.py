@@ -837,6 +837,7 @@ def decimal_schema(
 
 class FractionSchema(TypedDict, total=False):
     type: Required[Literal['fraction']]
+    multiple_of: Fraction
     le: Fraction
     ge: Fraction
     lt: Fraction
@@ -849,6 +850,7 @@ class FractionSchema(TypedDict, total=False):
 
 def fraction_schema(
     *,
+    multiple_of: Fraction | None = None,
     le: Fraction | None = None,
     ge: Fraction | None = None,
     lt: Fraction | None = None,
@@ -871,6 +873,7 @@ def fraction_schema(
     ```
 
     Args:
+        multiple_of: The value must be a multiple of this Fraction
         le: The value must be less than or equal to this number
         ge: The value must be greater than or equal to this number
         lt: The value must be strictly less than this number
@@ -882,6 +885,7 @@ def fraction_schema(
     """
     return _dict_not_none(
         type='fraction',
+        multiple_of=multiple_of,
         gt=gt,
         ge=ge,
         lt=lt,
