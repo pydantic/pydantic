@@ -742,6 +742,23 @@ def test_datetime_from_date_str():
             b'1704070861000.023',
             'milliseconds',
         ),
+        # Aware datetimes must apply tz_offset when serializing to unix timestamps
+        # (https://github.com/pydantic/pydantic/issues/13423).
+        (
+            datetime(2026, 7, 9, 12, 0, 0, tzinfo=timezone(timedelta(hours=-5))),
+            b'1783616400.0',
+            'seconds',
+        ),
+        (
+            datetime(2026, 7, 9, 12, 0, 0, tzinfo=timezone(timedelta(hours=-5))),
+            b'1783616400000.0',
+            'milliseconds',
+        ),
+        (
+            datetime(2026, 7, 9, 12, 0, 0, tzinfo=timezone.utc),
+            b'1783598400.0',
+            'seconds',
+        ),
     ],
 )
 def test_config_datetime(dt: datetime, expected_to_json, mode):

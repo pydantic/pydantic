@@ -363,3 +363,74 @@ def test_union_time_respects_downcasts_correctly():
 
     s = SchemaSerializer(core_schema.union_schema(choices=[core_schema.time_schema(), test_custom_ser_schema]))
     assert s.to_python('foo') is None
+
+
+@pytest.mark.parametrize(
+    'dt,mode,expected',
+    [
+        # EST is UTC-5: 2026-07-09T12:00:00-05:00 == 2026-07-09T17:00:00Z
+        (
+            datetime(2026, 7, 9, 12, 0, 0, tzinfo=timezone(timedelta(hours=-5))),
+            'seconds',
+            1783616400.0,
+        ),
+        (
+            datetime(2026, 7, 9, 12, 0, 0, tzinfo=timezone(timedelta(hours=-5))),
+            'milliseconds',
+            1783616400000.0,
+        ),
+        (
+            datetime(2026, 7, 9, 12, 0, 0, tzinfo=timezone.utc),
+            'seconds',
+            1783598400.0,
+        ),
+        (
+            datetime(2026, 7, 9, 12, 0, 0, tzinfo=timezone(timedelta(hours=2))),
+            'seconds',
+            1783591200.0,
+        ),
+        (
+            datetime(2026, 7, 9, 12, 0, 0, 500_000, tzinfo=timezone(timedelta(hours=-5))),
+            'seconds',
+            1783616400.5,
+        ),
+        # Naive datetimes are treated as wall-clock / UTC-equivalent (unchanged).
+        (
+            datetime(2026, 7, 9, 12, 0, 0),
+            'seconds',
+            1783598400.0,
+        ),
+    ],
+)
+def test_config_datetime_applies_tz_offset(dt: datetime, mode: str, expected: float):
+    """Regression for https://github.com/pydantic/pydantic/issues/13423.
+
+    `ser_json_temporal='seconds'/'milliseconds'` must produce the true POSIX
+    timestamp for timezone-aware datetimes, not the wall-clock time treated as UTC.
+    """
+    s = SchemaSerializer(core_schema.datetime_schema(), config={'ser_json_temporal': mode})
+    assert s.to_python(dt, mode='json') == expected
+    assert float(s.to_json(dt)) == expected
+    # Also matches Python's datetime.timestamp() for aware values.
+    if dt.tzinfo is not None:
+        scale = 1.0 if mode == 'seconds' else 1000.0
+        assert s.to_python(dt, mode='json') == pytest.approx(dt.timestamp() * scale)
+
+
+@pytest.mark.parametrize(
+    't,mode,expected',
+    [
+        # 12:00 EST (UTC-5) is 17:00 UTC → 61200 seconds since midnight UTC.
+        (time(12, 0, 0, tzinfo=timezone(timedelta(hours=-5))), 'seconds', 61200.0),
+        (time(12, 0, 0, tzinfo=timezone(timedelta(hours=-5))), 'milliseconds', 61200000.0),
+        (time(12, 0, 0, tzinfo=timezone.utc), 'seconds', 43200.0),
+        (time(12, 0, 0, tzinfo=timezone(timedelta(hours=2))), 'seconds', 36000.0),
+        # Naive time is wall-clock seconds since midnight (unchanged).
+        (time(12, 0, 0), 'seconds', 43200.0),
+    ],
+)
+def test_config_time_applies_tz_offset(t: time, mode: str, expected: float):
+    """Regression for https://github.com/pydantic/pydantic/issues/13423 for `time`."""
+    s = SchemaSerializer(core_schema.time_schema(), config={'ser_json_temporal': mode})
+    assert s.to_python(t, mode='json') == expected
+    assert float(s.to_json(t)) == expected

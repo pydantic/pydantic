@@ -14,6 +14,7 @@ use crate::serializers::SerializationState;
 use crate::serializers::config::{FromConfig, TemporalMode};
 
 pub(crate) fn datetime_to_seconds(dt: DateTime) -> f64 {
+    // time_to_seconds applies tz_offset so aware datetimes become true POSIX timestamps.
     dt.date.timestamp() as f64 + time_to_seconds(dt.time)
 }
 
@@ -29,18 +30,31 @@ pub(crate) fn date_to_milliseconds(date: Date) -> f64 {
     date.timestamp_ms() as f64
 }
 
+/// Seconds since midnight, accounting for timezone offset when present.
+///
+/// `tz_offset` is seconds east of UTC (Python `utcoffset` convention). Subtracting
+/// it yields absolute time rather than wall-clock local time, matching
+/// `datetime.timestamp()` for aware datetimes (see pydantic#13423).
 pub(crate) fn time_to_seconds(time: Time) -> f64 {
-    f64::from(time.hour) * 3600.0
+    let mut seconds = f64::from(time.hour) * 3600.0
         + f64::from(time.minute) * 60.0
         + f64::from(time.second)
-        + f64::from(time.microsecond) / 1_000_000.0
+        + f64::from(time.microsecond) / 1_000_000.0;
+    if let Some(tz_offset) = time.tz_offset {
+        seconds -= f64::from(tz_offset);
+    }
+    seconds
 }
 
 pub(crate) fn time_to_milliseconds(time: Time) -> f64 {
-    f64::from(time.hour) * 3_600_000.0
+    let mut milliseconds = f64::from(time.hour) * 3_600_000.0
         + f64::from(time.minute) * 60_000.0
         + f64::from(time.second) * 1_000.0
-        + f64::from(time.microsecond) / 1_000.0
+        + f64::from(time.microsecond) / 1_000.0;
+    if let Some(tz_offset) = time.tz_offset {
+        milliseconds -= f64::from(tz_offset) * 1_000.0;
+    }
+    milliseconds
 }
 
 fn downcast_date_reject_datetime<'a, 'py>(py_date: &'a Bound<'py, PyAny>) -> PyResult<&'a Bound<'py, PyDate>> {
