@@ -814,7 +814,33 @@ def test_list_union_dict(field_type, expected_schema):
         (datetime, {'type': 'string', 'format': 'date-time'}),
         (date, {'type': 'string', 'format': 'date'}),
         (time, {'type': 'string', 'format': 'time'}),
-        (timedelta, {'type': 'string', 'format': 'duration'}),
+        (timedelta, {'anyOf': 
+            [
+                {
+                    'description': 'Duration in seconds.', 
+                    'format': 'duration', 
+                    'type': 'number'
+                }, 
+                {
+                    'description': 'Duration in ISO 8601.', 
+                    'format': 'duration', 
+                    'pattern': r'^[+-]?P(?:(?:\d+Y)?(?:\d+M)?(?:\d+D)?(?:T(?=.)(?:\d+H)?(?:\d+M)?(?:\d+(?:\.\d+)?S)?)?|\d+W)$', 
+                    'type': 'string'
+                }, 
+                {
+                    'format': 'duration', 
+                    'pattern': r'^[+-]?(?:(?:\d+:)?(?:[0-5]?\d):)?(?:[0-5]?\d)(?:\.\d{1,3})?$', 
+                    'type': 'string'
+                }, 
+                {
+                    'format': 'duration', 
+                    'pattern': r'^[+-]?(?:\d+\s*,?\s*[Dd](?:[Aa][Yy][Ss])?\s*,?\s*)?\d{1,2}:[0-5]\d:[0-5]\d(?:\.\d{1,3})?$', 
+                    'type': 'string'
+                }
+            ], 
+            'description': 'Duration in seconds or ISO 8601 duration string.'
+        }
+        )
     ],
 )
 def test_date_types(field_type, expected_schema):
@@ -1847,12 +1873,28 @@ def test_model_default():
         'type': 'object',
     }
 
-
 @pytest.mark.parametrize(
     'ser_json_timedelta,properties',
     [
-        ('float', {'duration': {'default': 300.0, 'title': 'Duration', 'type': 'number'}}),
-        ('iso8601', {'duration': {'default': 'PT5M', 'format': 'duration', 'title': 'Duration', 'type': 'string'}}),
+        ('float', {
+            'duration': {
+                'default': 300.0, 
+                'description': 'Duration in seconds.', 
+                'title': 'Duration', 
+                'type': 'number',
+                'format': 'duration',
+            }},
+        ),
+        ('iso8601', {
+            'duration': {
+                'default': 'PT5M', 
+                'description': 'Duration in ISO 8601.', 
+                'title': 'Duration', 
+                'type': 'string',
+                'format': 'duration',
+                'pattern': r'^[+-]?P(?:(?:\d+Y)?(?:\d+M)?(?:\d+D)?(?:T(?=.)(?:\d+H)?(?:\d+M)?(?:\d+(?:\.\d+)?S)?)?|\d+W)$',
+            }}, 
+        )
     ],
 )
 def test_model_default_timedelta(ser_json_timedelta: Literal['float', 'iso8601'], properties: dict[str, Any]):
@@ -1893,8 +1935,18 @@ def test_model_default_bytes(ser_json_bytes: Literal['base64', 'utf8'], properti
 @pytest.mark.parametrize(
     'ser_json_timedelta,properties',
     [
-        ('float', {'duration': {'default': 300.0, 'title': 'Duration', 'type': 'number'}}),
-        ('iso8601', {'duration': {'default': 'PT5M', 'format': 'duration', 'title': 'Duration', 'type': 'string'}}),
+        ('float', {'duration': {'default': 300.0, 'description': 'Duration in seconds.', 'format': 'duration', 'title': 'Duration', 'type': 'number'}}),
+        ('iso8601', {
+            'duration': {
+                'default': 'PT5M', 
+                'description': 'Duration in ISO 8601.', 
+                'format': 'duration',
+                'pattern': r'^[+-]?P(?:(?:\d+Y)?(?:\d+M)?(?:\d+D)?(?:T(?=.)(?:\d+H)?(?:\d+M)?(?:\d+(?:\.\d+)?S)?)?|\d+W)$', 
+                'title': 'Duration', 
+                'type': 'string',
+            }
+        }
+        ),
     ],
 )
 def test_dataclass_default_timedelta(ser_json_timedelta: Literal['float', 'iso8601'], properties: dict[str, Any]):
@@ -1933,8 +1985,18 @@ def test_dataclass_default_bytes(ser_json_bytes: Literal['base64', 'utf8'], prop
 @pytest.mark.parametrize(
     'ser_json_timedelta,properties',
     [
-        ('float', {'duration': {'default': 300.0, 'title': 'Duration', 'type': 'number'}}),
-        ('iso8601', {'duration': {'default': 'PT5M', 'format': 'duration', 'title': 'Duration', 'type': 'string'}}),
+        ('float', {'duration': {'default': 300.0, 'description': 'Duration in seconds.', 'format': 'duration', 'title': 'Duration', 'type': 'number'}}),
+        ('iso8601', {
+            'duration': {
+                'default': 'PT5M', 
+                'description': 'Duration in ISO 8601.', 
+                'format': 'duration',
+                'pattern': r'^[+-]?P(?:(?:\d+Y)?(?:\d+M)?(?:\d+D)?(?:T(?=.)(?:\d+H)?(?:\d+M)?(?:\d+(?:\.\d+)?S)?)?|\d+W)$', 
+                'title': 'Duration', 
+                'type': 'string'
+            }
+        }
+        ),
     ],
 )
 def test_typeddict_default_timedelta(ser_json_timedelta: Literal['float', 'iso8601'], properties: dict[str, Any]):

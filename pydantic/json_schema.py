@@ -860,9 +860,47 @@ class GenerateJsonSchema:
         Returns:
             The generated JSON schema.
         """
-        if self._config.ser_json_timedelta == 'float':
-            return {'type': 'number'}
-        return {'type': 'string', 'format': 'duration'}
+        json_schema_float = {'type': 'number', 'format': 'duration'}
+        json_schema_iso = {
+            'type': 'string', 
+            'format': 'duration',
+            'pattern': r'^[+-]?P(?:(?:\d+Y)?(?:\d+M)?(?:\d+D)?(?:T(?=.)(?:\d+H)?(?:\d+M)?(?:\d+(?:\.\d+)?S)?)?|\d+W)$',
+            }
+        json_schema_string = {
+            'type': 'string',
+            'format': 'duration',
+            'pattern': r'^[+-]?(?:(?:\d+:)?(?:[0-5]?\d):)?(?:[0-5]?\d)(?:\.\d{1,3})?$',
+
+        }
+        json_schema_string_prefix = {
+            'type': 'string', 
+            'format': 'duration',
+            'pattern': r'^[+-]?(?:\d+\s*,?\s*[Dd](?:[Aa][Yy][Ss])?\s*,?\s*)?\d{1,2}:[0-5]\d:[0-5]\d(?:\.\d{1,3})?$',
+            }
+        le = schema.get('le')
+        ge = schema.get('ge')
+        lt = schema.get('lt')
+        gt = schema.get('gt')
+        self.update_with_validations(
+            json_schema_float,  
+            core_schema.float_schema(
+            le=None if le is None else le.total_seconds(),
+            ge=None if ge is None else ge.total_seconds(),
+            lt=None if lt is None else lt.total_seconds(),
+            gt=None if gt is None else gt.total_seconds(),
+        ), self.ValidationsMapping.numeric)
+        if not json_schema_float.get('description'):
+            json_schema_float['description'] = 'Duration in seconds.'
+        if not json_schema_iso.get('description'):
+            json_schema_iso['description'] = 'Duration in ISO 8601.'
+        if self.mode == 'serialization': 
+            if self._config.ser_json_timedelta == 'float':
+                return json_schema_float
+            return json_schema_iso
+        else:
+            return {
+                'description': 'Duration in seconds or ISO 8601 duration string.',
+                'anyOf': [json_schema_float, json_schema_iso, json_schema_string, json_schema_string_prefix]}
 
     def literal_schema(self, schema: core_schema.LiteralSchema) -> JsonSchemaValue:
         """Generates a JSON schema that matches a literal value.
