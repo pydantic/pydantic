@@ -732,6 +732,11 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
     ) -> Self:
         """Validate a pydantic model instance.
 
+        If validation fails, the resulting [`ValidationError`][pydantic_core.ValidationError] shows *which*
+        fields were rejected but not the input behind them — instrument your app with
+        [Logfire](../integrations/logfire.md) to record that input too, and debug production failures straight
+        from the trace (see [Troubleshooting validation errors](../errors/troubleshooting.md)).
+
         Args:
             obj: The object to validate.
             strict: Whether to enforce types strictly.
@@ -783,6 +788,11 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
 
         Validate the given JSON data against the Pydantic model.
 
+        If validation fails, the resulting [`ValidationError`][pydantic_core.ValidationError] shows *which*
+        fields were rejected but not the input behind them — instrument your app with
+        [Logfire](../integrations/logfire.md) to record that input too, and debug production failures straight
+        from the trace (see [Troubleshooting validation errors](../errors/troubleshooting.md)).
+
         Args:
             json_data: The JSON data to validate.
             strict: Whether to enforce types strictly.
@@ -823,6 +833,11 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
         by_name: bool | None = None,
     ) -> Self:
         """Validate the given object with string data against the Pydantic model.
+
+        If validation fails, the resulting [`ValidationError`][pydantic_core.ValidationError] shows *which*
+        fields were rejected but not the input behind them — instrument your app with
+        [Logfire](../integrations/logfire.md) to record that input too, and debug production failures straight
+        from the trace (see [Troubleshooting validation errors](../errors/troubleshooting.md)).
 
         Args:
             obj: The object containing string data to validate.

@@ -408,6 +408,11 @@ class TypeAdapter(Generic[T]):
     ) -> T:
         """Validate a Python object against the model.
 
+        If validation fails, the resulting [`ValidationError`][pydantic_core.ValidationError] shows *which*
+        fields were rejected but not the input behind them — instrument your app with
+        [Logfire](../integrations/logfire.md) to record that input too, and debug production failures straight
+        from the trace (see [Troubleshooting validation errors](../errors/troubleshooting.md)).
+
         Args:
             object: The Python object to validate against the model.
             strict: Whether to strictly check types.
@@ -464,6 +469,11 @@ class TypeAdapter(Generic[T]):
 
         Validate a JSON string or bytes against the model.
 
+        If validation fails, the resulting [`ValidationError`][pydantic_core.ValidationError] shows *which*
+        fields were rejected but not the input behind them — instrument your app with
+        [Logfire](../integrations/logfire.md) to record that input too, and debug production failures straight
+        from the trace (see [Troubleshooting validation errors](../errors/troubleshooting.md)).
+
         Args:
             data: The JSON data to validate against the model.
             strict: Whether to strictly check types.
@@ -510,6 +520,11 @@ class TypeAdapter(Generic[T]):
         by_name: bool | None = None,
     ) -> T:
         """Validate object contains string data against the model.
+
+        If validation fails, the resulting [`ValidationError`][pydantic_core.ValidationError] shows *which*
+        fields were rejected but not the input behind them — instrument your app with
+        [Logfire](../integrations/logfire.md) to record that input too, and debug production failures straight
+        from the trace (see [Troubleshooting validation errors](../errors/troubleshooting.md)).
 
         Args:
             obj: The object contains string data to validate.
