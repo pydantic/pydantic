@@ -2,6 +2,9 @@
 
 In most cases Pydantic won't be your bottleneck, only follow this if you're sure it's necessary.
 
+To find where validation time actually goes in a running application, [Logfire](../integrations/logfire.md)
+records the duration of each Pydantic validation as a span.
+
 ## In general, use `model_validate_json()` not `model_validate(json.loads(...))`
 
 On `model_validate(json.loads(...))`, the JSON is parsed in Python, then converted to a dict, then it's validated internally.
