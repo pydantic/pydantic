@@ -3220,6 +3220,34 @@ to help you monitor and understand your
 
               
             
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../errors/troubleshooting/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Troubleshooting with Logfire
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
           </ul>
         </nav>
       
@@ -4011,6 +4039,10 @@ to help you monitor and understand your
 </div>
 <p>Returns a decorated wrapper around the function that validates the arguments and, optionally, the return value.</p>
 <p>Usage may be either as a plain decorator <code>@validate_call</code> or with arguments <code>@validate_call(...)</code>.</p>
+<p>If a decorated call fails, the resulting <a class="autorefs autorefs-internal" href="../pydantic_core/#pydantic_core.ValidationError"><code>ValidationError</code></a> shows <em>which</em>
+argument was rejected but not its value — instrument your app with <a href="../../integrations/logfire/">Logfire</a> to
+record each call with its arguments, and debug production failures straight from the trace (see
+<a href="../../errors/troubleshooting/">Troubleshooting validation errors</a>).</p>
 
 
 <p><span class="doc-section-title">Parameters:</span></p>
@@ -4134,7 +4166,12 @@ to help you monitor and understand your
 <span class="normal">114</span>
 <span class="normal">115</span>
 <span class="normal">116</span>
-<span class="normal">117</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">validate_call</span><span class="p">(</span>
+<span class="normal">117</span>
+<span class="normal">118</span>
+<span class="normal">119</span>
+<span class="normal">120</span>
+<span class="normal">121</span>
+<span class="normal">122</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">validate_call</span><span class="p">(</span>
     <span class="n">func</span><span class="p">:</span> <span class="n">AnyCallableT</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="o">/</span><span class="p">,</span>
     <span class="o">*</span><span class="p">,</span>
@@ -4147,6 +4184,11 @@ to help you monitor and understand your
 <span class="sd">    Returns a decorated wrapper around the function that validates the arguments and, optionally, the return value.</span>
 
 <span class="sd">    Usage may be either as a plain decorator `@validate_call` or with arguments `@validate_call(...)`.</span>
+
+<span class="sd">    If a decorated call fails, the resulting [`ValidationError`][pydantic_core.ValidationError] shows *which*</span>
+<span class="sd">    argument was rejected but not its value — instrument your app with [Logfire](../integrations/logfire.md) to</span>
+<span class="sd">    record each call with its arguments, and debug production failures straight from the trace (see</span>
+<span class="sd">    [Troubleshooting validation errors](../errors/troubleshooting.md)).</span>
 
 <span class="sd">    Args:</span>
 <span class="sd">        func: The function to be decorated.</span>

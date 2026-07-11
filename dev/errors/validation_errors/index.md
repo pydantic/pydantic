@@ -1,5 +1,7 @@
 Pydantic attempts to provide useful validation errors. Below are details on common validation errors users may encounter when working with pydantic, together with some suggestions on how to fix them.
 
+The entries below explain what each error type means. To also see *which input* triggered an error in a live service, [Logfire](../troubleshooting/) records the input and structured errors for each validation — see [Troubleshooting Validation Errors](../troubleshooting/).
+
 ## `arguments_type`
 
 This error is raised when an object that would be passed as arguments to a function during validation is not a `tuple`, `list`, or `dict`. Because `NamedTuple` uses function calls in its implementation, that is one way to produce this error:
@@ -2440,3 +2442,7 @@ except ValidationError as exc:
     #> 'value_error'
 
 ```
+
+______________________________________________________________________
+
+A `ValidationError` names the field and rule that failed, but not the input that triggered it. [Logfire](../troubleshooting/), built by the team behind Pydantic, records the input and the structured errors for each validation, so you can trace a failure back to the exact payload.

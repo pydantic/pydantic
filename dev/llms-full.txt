@@ -6117,6 +6117,8 @@ There are some situations where Pydantic does not copy attributes, such as when 
 
 In most cases Pydantic won't be your bottleneck, only follow this if you're sure it's necessary.
 
+To find where validation time actually goes in a running application, [Logfire](../../integrations/logfire/) records the duration of each Pydantic validation as a span.
+
 ## In general, use `model_validate_json()` not `model_validate(json.loads(...))`
 
 On `model_validate(json.loads(...))`, the JSON is parsed in Python, then converted to a dict, then it's validated internally. On the other hand, `model_validate_json()` already performs the validation internally.
@@ -6313,6 +6315,8 @@ Read more about `FailFast` here.
 # Settings Management
 
 [Pydantic Settings](https://github.com/pydantic/pydantic-settings) provides optional Pydantic features for loading a settings or config class from environment variables or secrets files.
+
+Settings are validated from environment variables and secrets files, so a ValidationError here points at an environment value that didn't match its field. [Logfire](../../errors/troubleshooting/) records each validation and its structured errors, so you can see which setting failed and why.
 
 ## Installation
 
@@ -6869,7 +6873,7 @@ print(Settings().model_dump())
 
 ## Nested model default partial updates
 
-By default, Pydantic settings does not allow partial updates to nested model default objects. This behavior can be overriden by setting the `nested_model_default_partial_update` flag to `True`, which will allow partial updates on nested model default object fields.
+By default, Pydantic settings does not allow partial updates to nested model default objects. This behavior can be overridden by setting the `nested_model_default_partial_update` flag to `True`, which will allow partial updates on nested model default object fields.
 
 ```py
 import os
@@ -7877,7 +7881,7 @@ except SettingsError as e:
 
 #### Enforce Required Arguments at CLI
 
-Pydantic settings is designed to pull values in from various sources when instantating a model. This means a field that is required is not strictly required from any single source (e.g. the CLI). Instead, all that matters is that one of the sources provides the required value.
+Pydantic settings is designed to pull values in from various sources when instantiating a model. This means a field that is required is not strictly required from any single source (e.g. the CLI). Instead, all that matters is that one of the sources provides the required value.
 
 However, if your use case [aligns more with #2](#command-line-support), using Pydantic models to define CLIs, you will likely want required fields to be *strictly required at the CLI*. We can enable this behavior by using `cli_enforce_required`.
 
@@ -8854,10 +8858,10 @@ class Settings(BaseSettings):
         gcp_settings = GoogleSecretManagerSettingsSource(
             settings_cls,
             # If not provided, will use google.auth.default()
-            # to get credentials from the environemnt
+            # to get credentials from the environment
             # credentials=your_credentials,
             # If not provided, will use google.auth.default()
-            # to get project_id from the environemnt
+            # to get project_id from the environment
             project_id='your-gcp-project-id',
         )
 
@@ -9078,6 +9082,10 @@ The files are merged shallowly in increasing order of priority. To enable deep m
 Warning
 
 The `deep_merge` option is **not available** through the `SettingsConfigDict`.
+
+Note
+
+In addition to `str` and `pathlib.Path`, the `json_file`, `toml_file`, and `yaml_file` options also accept a Traversable, such as the result of `importlib.resources.files(...).joinpath(...)`. This makes it possible to load a configuration file that is packaged inside your distribution, including cases where the resource does not live on the filesystem (e.g. inside a zip/wheel).
 
 ```py
 from pydantic import BaseModel
@@ -9458,7 +9466,7 @@ class MyCustomSource(PydanticBaseSettingsSource):
         current_state = self.current_state
         current_state.get('some_setting')
 
-        # Retrive settings from all sources individually
+        # Retrieve settings from all sources individually
         # self.settings_sources_data["SettingsSourceName"]: dict[str, Any]
         settings_sources_data = self.settings_sources_data
         settings_sources_data['SomeSettingsSource'].get('some_setting')
@@ -13165,6 +13173,8 @@ To raise a validation error, three types of exceptions can be used:
 
   ```
 
+When a validator rejects data in production, [Logfire](../../errors/troubleshooting/) records the input alongside each validation, so you can see the value that broke the rule.
+
 ## Validation info
 
 Both the field and model validators callables (in all modes) can optionally take an extra ValidationInfo argument, providing useful extra information, such as:
@@ -14470,6 +14480,11 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
     ) -> Self:
         """Validate a pydantic model instance.
 
+        If validation fails, the resulting [`ValidationError`][pydantic_core.ValidationError] shows *which*
+        fields were rejected but not the input behind them — instrument your app with
+        [Logfire](../integrations/logfire.md) to record that input too, and debug production failures straight
+        from the trace (see [Troubleshooting validation errors](../errors/troubleshooting.md)).
+
         Args:
             obj: The object to validate.
             strict: Whether to enforce types strictly.
@@ -14521,6 +14536,11 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
 
         Validate the given JSON data against the Pydantic model.
 
+        If validation fails, the resulting [`ValidationError`][pydantic_core.ValidationError] shows *which*
+        fields were rejected but not the input behind them — instrument your app with
+        [Logfire](../integrations/logfire.md) to record that input too, and debug production failures straight
+        from the trace (see [Troubleshooting validation errors](../errors/troubleshooting.md)).
+
         Args:
             json_data: The JSON data to validate.
             strict: Whether to enforce types strictly.
@@ -14561,6 +14581,11 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
         by_name: bool | None = None,
     ) -> Self:
         """Validate the given object with string data against the Pydantic model.
+
+        If validation fails, the resulting [`ValidationError`][pydantic_core.ValidationError] shows *which*
+        fields were rejected but not the input behind them — instrument your app with
+        [Logfire](../integrations/logfire.md) to record that input too, and debug production failures straight
+        from the trace (see [Troubleshooting validation errors](../errors/troubleshooting.md)).
 
         Args:
             obj: The object containing string data to validate.
@@ -16284,6 +16309,8 @@ model_validate(
 
 Validate a pydantic model instance.
 
+If validation fails, the resulting ValidationError shows *which* fields were rejected but not the input behind them — instrument your app with [Logfire](../../integrations/logfire/) to record that input too, and debug production failures straight from the trace (see [Troubleshooting validation errors](../../errors/troubleshooting/)).
+
 Parameters:
 
 | Name | Type | Description | Default | | --- | --- | --- | --- | | `obj` | `Any` | The object to validate. | *required* | | `strict` | `bool | None` | Whether to enforce types strictly. | `None` | | `extra` | `ExtraValues | None` | Whether to ignore, allow, or forbid extra data during model validation. See the extra configuration value for details. | `None` | | `from_attributes` | `bool | None` | Whether to extract data from object attributes. | `None` | | `context` | `Any | None` | Additional context to pass to the validator. | `None` | | `by_alias` | `bool | None` | Whether to use the field's alias when validating against the provided input data. | `None` | | `by_name` | `bool | None` | Whether to use the field's name when validating against the provided input data. | `None` |
@@ -16312,6 +16339,11 @@ def model_validate(
     by_name: bool | None = None,
 ) -> Self:
     """Validate a pydantic model instance.
+
+    If validation fails, the resulting [`ValidationError`][pydantic_core.ValidationError] shows *which*
+    fields were rejected but not the input behind them — instrument your app with
+    [Logfire](../integrations/logfire.md) to record that input too, and debug production failures straight
+    from the trace (see [Troubleshooting validation errors](../errors/troubleshooting.md)).
 
     Args:
         obj: The object to validate.
@@ -16371,6 +16403,8 @@ Usage Documentation
 
 Validate the given JSON data against the Pydantic model.
 
+If validation fails, the resulting ValidationError shows *which* fields were rejected but not the input behind them — instrument your app with [Logfire](../../integrations/logfire/) to record that input too, and debug production failures straight from the trace (see [Troubleshooting validation errors](../../errors/troubleshooting/)).
+
 Parameters:
 
 | Name | Type | Description | Default | | --- | --- | --- | --- | | `json_data` | `str | bytes | bytearray` | The JSON data to validate. | *required* | | `strict` | `bool | None` | Whether to enforce types strictly. | `None` | | `extra` | `ExtraValues | None` | Whether to ignore, allow, or forbid extra data during model validation. See the extra configuration value for details. | `None` | | `context` | `Any | None` | Extra variables to pass to the validator. | `None` | | `by_alias` | `bool | None` | Whether to use the field's alias when validating against the provided input data. | `None` | | `by_name` | `bool | None` | Whether to use the field's name when validating against the provided input data. | `None` |
@@ -16401,6 +16435,11 @@ def model_validate_json(
         [JSON Parsing](../concepts/json.md#json-parsing)
 
     Validate the given JSON data against the Pydantic model.
+
+    If validation fails, the resulting [`ValidationError`][pydantic_core.ValidationError] shows *which*
+    fields were rejected but not the input behind them — instrument your app with
+    [Logfire](../integrations/logfire.md) to record that input too, and debug production failures straight
+    from the trace (see [Troubleshooting validation errors](../errors/troubleshooting.md)).
 
     Args:
         json_data: The JSON data to validate.
@@ -16449,6 +16488,8 @@ model_validate_strings(
 
 Validate the given object with string data against the Pydantic model.
 
+If validation fails, the resulting ValidationError shows *which* fields were rejected but not the input behind them — instrument your app with [Logfire](../../integrations/logfire/) to record that input too, and debug production failures straight from the trace (see [Troubleshooting validation errors](../../errors/troubleshooting/)).
+
 Parameters:
 
 | Name | Type | Description | Default | | --- | --- | --- | --- | | `obj` | `Any` | The object containing string data to validate. | *required* | | `strict` | `bool | None` | Whether to enforce types strictly. | `None` | | `extra` | `ExtraValues | None` | Whether to ignore, allow, or forbid extra data during model validation. See the extra configuration value for details. | `None` | | `context` | `Any | None` | Extra variables to pass to the validator. | `None` | | `by_alias` | `bool | None` | Whether to use the field's alias when validating against the provided input data. | `None` | | `by_name` | `bool | None` | Whether to use the field's name when validating against the provided input data. | `None` |
@@ -16472,6 +16513,11 @@ def model_validate_strings(
     by_name: bool | None = None,
 ) -> Self:
     """Validate the given object with string data against the Pydantic model.
+
+    If validation fails, the resulting [`ValidationError`][pydantic_core.ValidationError] shows *which*
+    fields were rejected but not the input behind them — instrument your app with
+    [Logfire](../integrations/logfire.md) to record that input too, and debug production failures straight
+    from the trace (see [Troubleshooting validation errors](../errors/troubleshooting.md)).
 
     Args:
         obj: The object containing string data to validate.
@@ -19980,7 +20026,7 @@ Field(
 Field(
     *,
     default_factory: (
-        Callable[[], _T] | Callable[[dict[str, Any]], _T]
+        Callable[[], _T" optional hover>_T] | Callable[[dict[str, Any]], _T" optional hover>_T]
     ),
     alias: str | None = _Unset,
     alias_priority: int | None = _Unset,
@@ -40444,6 +40490,8 @@ validate_python(
 
 Validate a Python object against the model.
 
+If validation fails, the resulting ValidationError shows *which* fields were rejected but not the input behind them — instrument your app with [Logfire](../../integrations/logfire/) to record that input too, and debug production failures straight from the trace (see [Troubleshooting validation errors](../../errors/troubleshooting/)).
+
 Parameters:
 
 | Name | Type | Description | Default | | --- | --- | --- | --- | | `object` | `Any` | The Python object to validate against the model. | *required* | | `strict` | `bool | None` | Whether to strictly check types. | `None` | | `extra` | `ExtraValues | None` | Whether to ignore, allow, or forbid extra data during model validation. See the extra configuration value for details. | `None` | | `from_attributes` | `bool | None` | Whether to extract data from object attributes. | `None` | | `context` | `Any | None` | Additional context to pass to the validator. | `None` | | `experimental_allow_partial` | `bool | Literal['off', 'on', 'trailing-strings']` | Experimental whether to enable partial validation, e.g. to process streams. * False / 'off': Default behavior, no partial validation. * True / 'on': Enable partial validation. * 'trailing-strings': Enable partial validation and allow trailing strings in the input. | `False` | | `by_alias` | `bool | None` | Whether to use the field's alias when validating against the provided input data. | `None` | | `by_name` | `bool | None` | Whether to use the field's name when validating against the provided input data. | `None` |
@@ -40473,6 +40521,11 @@ def validate_python(
     by_name: bool | None = None,
 ) -> T:
     """Validate a Python object against the model.
+
+    If validation fails, the resulting [`ValidationError`][pydantic_core.ValidationError] shows *which*
+    fields were rejected but not the input behind them — instrument your app with
+    [Logfire](../integrations/logfire.md) to record that input too, and debug production failures straight
+    from the trace (see [Troubleshooting validation errors](../errors/troubleshooting.md)).
 
     Args:
         object: The Python object to validate against the model.
@@ -40540,6 +40593,8 @@ Usage Documentation
 
 Validate a JSON string or bytes against the model.
 
+If validation fails, the resulting ValidationError shows *which* fields were rejected but not the input behind them — instrument your app with [Logfire](../../integrations/logfire/) to record that input too, and debug production failures straight from the trace (see [Troubleshooting validation errors](../../errors/troubleshooting/)).
+
 Parameters:
 
 | Name | Type | Description | Default | | --- | --- | --- | --- | | `data` | `str | bytes | bytearray` | The JSON data to validate against the model. | *required* | | `strict` | `bool | None` | Whether to strictly check types. | `None` | | `extra` | `ExtraValues | None` | Whether to ignore, allow, or forbid extra data during model validation. See the extra configuration value for details. | `None` | | `context` | `Any | None` | Additional context to use during validation. | `None` | | `experimental_allow_partial` | `bool | Literal['off', 'on', 'trailing-strings']` | Experimental whether to enable partial validation, e.g. to process streams. * False / 'off': Default behavior, no partial validation. * True / 'on': Enable partial validation. * 'trailing-strings': Enable partial validation and allow trailing strings in the input. | `False` | | `by_alias` | `bool | None` | Whether to use the field's alias when validating against the provided input data. | `None` | | `by_name` | `bool | None` | Whether to use the field's name when validating against the provided input data. | `None` |
@@ -40567,6 +40622,11 @@ def validate_json(
         [JSON Parsing](../concepts/json.md#json-parsing)
 
     Validate a JSON string or bytes against the model.
+
+    If validation fails, the resulting [`ValidationError`][pydantic_core.ValidationError] shows *which*
+    fields were rejected but not the input behind them — instrument your app with
+    [Logfire](../integrations/logfire.md) to record that input too, and debug production failures straight
+    from the trace (see [Troubleshooting validation errors](../errors/troubleshooting.md)).
 
     Args:
         data: The JSON data to validate against the model.
@@ -40624,6 +40684,8 @@ validate_strings(
 
 Validate object contains string data against the model.
 
+If validation fails, the resulting ValidationError shows *which* fields were rejected but not the input behind them — instrument your app with [Logfire](../../integrations/logfire/) to record that input too, and debug production failures straight from the trace (see [Troubleshooting validation errors](../../errors/troubleshooting/)).
+
 Parameters:
 
 | Name | Type | Description | Default | | --- | --- | --- | --- | | `obj` | `Any` | The object contains string data to validate. | *required* | | `strict` | `bool | None` | Whether to strictly check types. | `None` | | `extra` | `ExtraValues | None` | Whether to ignore, allow, or forbid extra data during model validation. See the extra configuration value for details. | `None` | | `context` | `Any | None` | Additional context to use during validation. | `None` | | `experimental_allow_partial` | `bool | Literal['off', 'on', 'trailing-strings']` | Experimental whether to enable partial validation, e.g. to process streams. * False / 'off': Default behavior, no partial validation. * True / 'on': Enable partial validation. * 'trailing-strings': Enable partial validation and allow trailing strings in the input. | `False` | | `by_alias` | `bool | None` | Whether to use the field's alias when validating against the provided input data. | `None` | | `by_name` | `bool | None` | Whether to use the field's name when validating against the provided input data. | `None` |
@@ -40648,6 +40710,11 @@ def validate_strings(
     by_name: bool | None = None,
 ) -> T:
     """Validate object contains string data against the model.
+
+    If validation fails, the resulting [`ValidationError`][pydantic_core.ValidationError] shows *which*
+    fields were rejected but not the input behind them — instrument your app with
+    [Logfire](../integrations/logfire.md) to record that input too, and debug production failures straight
+    from the trace (see [Troubleshooting validation errors](../errors/troubleshooting.md)).
 
     Args:
         obj: The object contains string data to validate.
@@ -46311,6 +46378,8 @@ Returns a decorated wrapper around the function that validates the arguments and
 
 Usage may be either as a plain decorator `@validate_call` or with arguments `@validate_call(...)`.
 
+If a decorated call fails, the resulting ValidationError shows *which* argument was rejected but not its value — instrument your app with [Logfire](../../integrations/logfire/) to record each call with its arguments, and debug production failures straight from the trace (see [Troubleshooting validation errors](../../errors/troubleshooting/)).
+
 Parameters:
 
 | Name | Type | Description | Default | | --- | --- | --- | --- | | `func` | `AnyCallableT | None` | The function to be decorated. | `None` | | `config` | `ConfigDict | None` | The configuration dictionary. | `None` | | `validate_return` | `bool` | Whether to validate the return value. | `False` |
@@ -46335,6 +46404,11 @@ def validate_call(
     Returns a decorated wrapper around the function that validates the arguments and, optionally, the return value.
 
     Usage may be either as a plain decorator `@validate_call` or with arguments `@validate_call(...)`.
+
+    If a decorated call fails, the resulting [`ValidationError`][pydantic_core.ValidationError] shows *which*
+    argument was rejected but not its value — instrument your app with [Logfire](../integrations/logfire.md) to
+    record each call with its arguments, and debug production failures straight from the trace (see
+    [Troubleshooting validation errors](../errors/troubleshooting.md)).
 
     Args:
         func: The function to be decorated.
@@ -47100,6 +47174,67 @@ except ValidationError as e:
 
 1. By default, `e.errors()` produces a list of errors with `loc` values that take the form of tuples.
 1. With our custom `loc_to_dot_sep` function, we've modified the form of the `loc` representation.
+
+______________________________________________________________________
+
+A `ValidationError` names the field and rule that failed, but not the input that triggered it. [Logfire](../troubleshooting/), built by the team behind Pydantic, records the input and the structured errors for each validation, so you can trace a failure back to the exact payload.
+
+# Troubleshooting Validation Errors with Logfire
+
+When a ValidationError is raised, the message tells you *what* went wrong — which field, which rule, and the value that triggered it. In production, the hard part is usually everything the message *can't* show you: which input caused it, where that data came from, how often it happens, and what else your application was doing at the time. By the time you read the log, the payload that failed is often already gone.
+
+## Have Logfire explain the error
+
+Open a failed validation span in [Pydantic Logfire](../../integrations/logfire/) and it explains the failure in plain language (currently in beta) — reading the structured errors and, for each field, telling you what was expected and what it received, including the messages from your own [custom validators](../../concepts/validators/#raising-validation-errors). You get to the fix without memorising every `pydantic-core` error code.
+
+## Getting started
+
+If you find yourself troubleshooting Pydantic validation errors, you need a system that records them as they happen — capturing the input alongside the error. Logfire is that system: built by the same team as Pydantic, its integration captures every validation as it runs, so you can open the one that failed instead of reconstructing it from logs after the fact.
+
+If you haven't set it up yet, follow the three-step [getting started guide](https://logfire.pydantic.dev/docs/), then instrument your models:
+
+```python
+from datetime import date
+
+import logfire
+
+from pydantic import BaseModel
+
+logfire.configure()
+logfire.instrument_pydantic(record='failure')  # (1)!
+
+
+class User(BaseModel):
+    name: str
+    country_code: str
+    dob: date
+
+
+User(name='Anne', country_code='USA', dob='not-a-date')  # (2)!
+
+```
+
+1. `record='failure'` records a trace for each *failed* validation, while still collecting metrics for all of them. Drop it (the default is `record='all'`) if you also want a trace for every successful validation.
+1. This validation fails because `dob` is not a valid date. Logfire records the input, the error, and the surrounding context, so you can troubleshoot it without adding any logging of your own.
+
+Once instrumented, each failed validation shows up in the live view, recorded with:
+
+- **Its input** — the exact data passed to validation, so you don't have to reconstruct the payload from logs or guess what your model received.
+- **Its context** — a span alongside the surrounding request, task, or trace, so you can follow bad data back to its source.
+- **A queryable history** — every failure is stored, so you can ask "which field fails most often?" or "did this error spike after the last deploy?" in SQL.
+- **No extra logging code** — one `logfire.instrument_pydantic()` call covers all your models; you don't wrap each `model_validate` in a `try`/`except`.
+
+## Reading the error from the trace
+
+Beyond the plain-language explanation, each failed validation span shows the raw structured errors() list next to the input that produced it — the field path (`loc`), the machine-readable `type`, and the offending value — so you can see which field failed and with what value without parsing the rendered message string by hand.
+
+## Learn more
+
+- [Pydantic Logfire integration](../../integrations/logfire/) — how to install and configure Logfire with Pydantic.
+- [Logfire documentation](https://logfire.pydantic.dev/docs/) — the full Logfire docs.
+- [Why Logfire for Pydantic](https://logfire.pydantic.dev/docs/why-logfire/pydantic/) — a deeper look at the Pydantic integration.
+
+For a reference of the individual error types you may encounter, see [Validation Errors](../validation_errors/) and [Usage Errors](../usage_errors/).
 
 Pydantic attempts to provide useful errors. The following sections provide details on common errors developers may encounter when working with Pydantic, along with suggestions for addressing the error condition.
 
@@ -48658,7 +48793,13 @@ except PydanticUserError as exc_info:
 
 ```
 
+______________________________________________________________________
+
+A `ValidationError` names the field and rule that failed, but not the input that triggered it. [Logfire](../troubleshooting/), built by the team behind Pydantic, records the input and the structured errors for each validation, so you can trace a failure back to the exact payload.
+
 Pydantic attempts to provide useful validation errors. Below are details on common validation errors users may encounter when working with pydantic, together with some suggestions on how to fix them.
+
+The entries below explain what each error type means. To also see *which input* triggered an error in a live service, [Logfire](../troubleshooting/) records the input and structured errors for each validation — see [Troubleshooting Validation Errors](../troubleshooting/).
 
 ## `arguments_type`
 
@@ -51101,6 +51242,10 @@ except ValidationError as exc:
 
 ```
 
+______________________________________________________________________
+
+A `ValidationError` names the field and rule that failed, but not the input that triggered it. [Logfire](../troubleshooting/), built by the team behind Pydantic, records the input and the structured errors for each validation, so you can trace a failure back to the exact payload.
+
 This page provides example snippets for creating more complex, custom validators in Pydantic. Many of these examples are adapted from Pydantic issues and discussions, and are intended to showcase the flexibility and power of Pydantic's validation system.
 
 ## Custom `datetime` Validator via Annotated Metadata
@@ -52755,6 +52900,8 @@ User(name='David', country_code='GBR', dob='invalid-dob')
 You'll see each successful and failed validation logged in Logfire:
 
 And you can investigate each of the corresponding spans to get validation details:
+
+This is especially useful when a ValidationError shows up in production and you need the input that caused it — see [Troubleshooting Validation Errors with Logfire](../../errors/troubleshooting/).
 
 Pydantic works well with [mypy](https://www.mypy-lang.org/) right out of the box.
 

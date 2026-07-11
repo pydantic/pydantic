@@ -3213,6 +3213,34 @@ to help you monitor and understand your
 
               
             
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../troubleshooting/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Troubleshooting with Logfire
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
           </ul>
         </nav>
       
@@ -4211,6 +4239,10 @@ dictionary of translations.</p>
 <li>By default, <code>e.errors()</code> produces a list of errors with <code>loc</code> values that take the form of tuples.</li>
 <li>With our custom <code>loc_to_dot_sep</code> function, we've modified the form of the <code>loc</code> representation.</li>
 </ol>
+<hr />
+<p>A <code>ValidationError</code> names the field and rule that failed, but not the input that triggered it.
+<a href="../troubleshooting/">Logfire</a>, built by the team behind Pydantic, records the input and the structured
+errors for each validation, so you can trace a failure back to the exact payload.</p>
 
 
 

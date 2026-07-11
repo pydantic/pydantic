@@ -1554,3 +1554,7 @@ except PydanticUserError as exc_info:
     assert exc_info.code == 'validate-by-alias-and-name-false'
 
 ```
+
+______________________________________________________________________
+
+A `ValidationError` names the field and rule that failed, but not the input that triggered it. [Logfire](../troubleshooting/), built by the team behind Pydantic, records the input and the structured errors for each validation, so you can trace a failure back to the exact payload.

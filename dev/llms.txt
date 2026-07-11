@@ -75,6 +75,7 @@ Define how data should be in pure, canonical Python 3.10+; validate it with Pyda
 ## Optional
 
 - [Error Handling](https://docs.pydantic.dev/latest/errors/errors/index.md)
+- [Troubleshooting with Logfire](https://docs.pydantic.dev/latest/errors/troubleshooting/index.md)
 - [Usage Errors](https://docs.pydantic.dev/latest/errors/usage_errors/index.md)
 - [Validation Errors](https://docs.pydantic.dev/latest/errors/validation_errors/index.md)
 - [Custom Validators](https://docs.pydantic.dev/latest/examples/custom_validators/index.md)

@@ -2,6 +2,8 @@
 
 [Pydantic Settings](https://github.com/pydantic/pydantic-settings) provides optional Pydantic features for loading a settings or config class from environment variables or secrets files.
 
+Settings are validated from environment variables and secrets files, so a ValidationError here points at an environment value that didn't match its field. [Logfire](../../errors/troubleshooting/) records each validation and its structured errors, so you can see which setting failed and why.
+
 ## Installation
 
 Installation is as simple as:
@@ -557,7 +559,7 @@ print(Settings().model_dump())
 
 ## Nested model default partial updates
 
-By default, Pydantic settings does not allow partial updates to nested model default objects. This behavior can be overriden by setting the `nested_model_default_partial_update` flag to `True`, which will allow partial updates on nested model default object fields.
+By default, Pydantic settings does not allow partial updates to nested model default objects. This behavior can be overridden by setting the `nested_model_default_partial_update` flag to `True`, which will allow partial updates on nested model default object fields.
 
 ```py
 import os
@@ -1565,7 +1567,7 @@ except SettingsError as e:
 
 #### Enforce Required Arguments at CLI
 
-Pydantic settings is designed to pull values in from various sources when instantating a model. This means a field that is required is not strictly required from any single source (e.g. the CLI). Instead, all that matters is that one of the sources provides the required value.
+Pydantic settings is designed to pull values in from various sources when instantiating a model. This means a field that is required is not strictly required from any single source (e.g. the CLI). Instead, all that matters is that one of the sources provides the required value.
 
 However, if your use case [aligns more with #2](#command-line-support), using Pydantic models to define CLIs, you will likely want required fields to be *strictly required at the CLI*. We can enable this behavior by using `cli_enforce_required`.
 
@@ -2542,10 +2544,10 @@ class Settings(BaseSettings):
         gcp_settings = GoogleSecretManagerSettingsSource(
             settings_cls,
             # If not provided, will use google.auth.default()
-            # to get credentials from the environemnt
+            # to get credentials from the environment
             # credentials=your_credentials,
             # If not provided, will use google.auth.default()
-            # to get project_id from the environemnt
+            # to get project_id from the environment
             project_id='your-gcp-project-id',
         )
 
@@ -2766,6 +2768,10 @@ The files are merged shallowly in increasing order of priority. To enable deep m
 Warning
 
 The `deep_merge` option is **not available** through the `SettingsConfigDict`.
+
+Note
+
+In addition to `str` and `pathlib.Path`, the `json_file`, `toml_file`, and `yaml_file` options also accept a Traversable, such as the result of `importlib.resources.files(...).joinpath(...)`. This makes it possible to load a configuration file that is packaged inside your distribution, including cases where the resource does not live on the filesystem (e.g. inside a zip/wheel).
 
 ```py
 from pydantic import BaseModel
@@ -3146,7 +3152,7 @@ class MyCustomSource(PydanticBaseSettingsSource):
         current_state = self.current_state
         current_state.get('some_setting')
 
-        # Retrive settings from all sources individually
+        # Retrieve settings from all sources individually
         # self.settings_sources_data["SettingsSourceName"]: dict[str, Any]
         settings_sources_data = self.settings_sources_data
         settings_sources_data['SomeSettingsSource'].get('some_setting')

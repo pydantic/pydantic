@@ -13,7 +13,7 @@
         <link rel="canonical" href="https://docs.pydantic.dev/latest/integrations/logfire/">
       
       
-        <link rel="prev" href="../../errors/usage_errors/">
+        <link rel="prev" href="../../errors/troubleshooting/">
       
       
         <link rel="next" href="../llms/">
@@ -3135,6 +3135,34 @@ to help you monitor and understand your
 
               
             
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../errors/troubleshooting/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Troubleshooting with Logfire
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
           </ul>
         </nav>
       
@@ -3991,6 +4019,9 @@ using the builtin <a href="https://logfire.pydantic.dev/docs/why-logfire/pydanti
 <p><img alt="logfire instrumentation" src="../../img/logfire_instrument.png" /></p>
 <p>And you can investigate each of the corresponding spans to get validation details:</p>
 <p><img alt="logfire span details" src="../../img/logfire_span.png" /></p>
+<p>This is especially useful when a <a class="autorefs autorefs-internal" href="../../api/pydantic_core/#pydantic_core.ValidationError"><code>ValidationError</code></a> shows up in
+production and you need the input that caused it — see <a href="../../errors/troubleshooting/">Troubleshooting Validation Errors with
+Logfire</a>.</p>
 <!-- TODO: add examples re tracing performance issues - what kind of example do we want to use? -->
 
 

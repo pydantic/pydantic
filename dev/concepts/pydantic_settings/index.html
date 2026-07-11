@@ -4076,6 +4076,34 @@ to help you monitor and understand your
 
               
             
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../errors/troubleshooting/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Troubleshooting with Logfire
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
           </ul>
         </nav>
       
@@ -5624,6 +5652,10 @@ to help you monitor and understand your
 
 <h1 id="settings-management">Settings Management<a class="headerlink" href="#settings-management" title="Permanent link">&para;</a></h1>
 <p><a href="https://github.com/pydantic/pydantic-settings">Pydantic Settings</a> provides optional Pydantic features for loading a settings or config class from environment variables or secrets files.</p>
+<p>Settings are validated from environment variables and secrets files, so a
+<a class="autorefs autorefs-internal" href="../../api/pydantic_core/#pydantic_core.ValidationError"><code>ValidationError</code></a> here points at an environment value that didn't match
+its field. <a href="../../errors/troubleshooting/">Logfire</a> records each validation and its structured errors, so
+you can see which setting failed and why.</p>
 <h2 id="installation">Installation<a class="headerlink" href="#installation" title="Permanent link">&para;</a></h2>
 <p>Installation is as simple as:</p>
 <div class="language-bash highlight"><pre><span></span><code>pip<span class="w"> </span>install<span class="w"> </span>pydantic-settings
@@ -6149,7 +6181,7 @@ This will bypass the <code>enable_decoding</code> config setting:</p>
 </ol>
 <h2 id="nested-model-default-partial-updates">Nested model default partial updates<a class="headerlink" href="#nested-model-default-partial-updates" title="Permanent link">&para;</a></h2>
 <p>By default, Pydantic settings does not allow partial updates to nested model default objects. This behavior can be
-overriden by setting the <code>nested_model_default_partial_update</code> flag to <code>True</code>, which will allow partial updates on
+overridden by setting the <code>nested_model_default_partial_update</code> flag to <code>True</code>, which will allow partial updates on
 nested model default object fields.</p>
 <div class="language-py highlight"><pre><span></span><code><span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
 
@@ -7070,7 +7102,7 @@ enums, use <code>cli_kebab_case='all'</code>.</p>
     <span class="c1">#&gt; error parsing CLI: unrecognized arguments: --bad-arg</span>
 </code></pre></div>
 <h4 id="enforce-required-arguments-at-cli">Enforce Required Arguments at CLI<a class="headerlink" href="#enforce-required-arguments-at-cli" title="Permanent link">&para;</a></h4>
-<p>Pydantic settings is designed to pull values in from various sources when instantating a model. This means a field that
+<p>Pydantic settings is designed to pull values in from various sources when instantiating a model. This means a field that
 is required is not strictly required from any single source (e.g. the CLI). Instead, all that matters is that one of the
 sources provides the required value.</p>
 <p>However, if your use case <a href="#command-line-support">aligns more with #2</a>, using Pydantic models to define CLIs, you will
@@ -7941,10 +7973,10 @@ if not specified. Works in both plain and nested directory modes, like
         <span class="n">gcp_settings</span> <span class="o">=</span> <span class="n">GoogleSecretManagerSettingsSource</span><span class="p">(</span>
             <span class="n">settings_cls</span><span class="p">,</span>
             <span class="c1"># If not provided, will use google.auth.default()</span>
-            <span class="c1"># to get credentials from the environemnt</span>
+            <span class="c1"># to get credentials from the environment</span>
             <span class="c1"># credentials=your_credentials,</span>
             <span class="c1"># If not provided, will use google.auth.default()</span>
-            <span class="c1"># to get project_id from the environemnt</span>
+            <span class="c1"># to get project_id from the environment</span>
             <span class="n">project_id</span><span class="o">=</span><span class="s1">&#39;your-gcp-project-id&#39;</span><span class="p">,</span>
         <span class="p">)</span>
 
@@ -8139,6 +8171,13 @@ You can specify a different version using the <code>SecretVersion</code> annotat
 <div class="admonition warning">
 <p class="admonition-title">Warning</p>
 <p>The <code>deep_merge</code> option is <strong>not available</strong> through the <code>SettingsConfigDict</code>.</p>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>In addition to <code>str</code> and <code>pathlib.Path</code>, the <code>json_file</code>, <code>toml_file</code>, and <code>yaml_file</code> options also accept a
+<a class="autorefs autorefs-external" href="https://docs.python.org/3/library/importlib.resources.abc.html#importlib.resources.abc.Traversable"><code>Traversable</code></a>, such as the result of <code>importlib.resources.files(...).joinpath(...)</code>.
+This makes it possible to load a configuration file that is packaged inside your distribution, including cases where the
+resource does not live on the filesystem (e.g. inside a zip/wheel).</p>
 </div>
 <div class="language-py highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">pydantic</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseModel</span>
 
@@ -8475,7 +8514,7 @@ need to add your own custom sources, <code>settings_customise_sources</code> mak
         <span class="n">current_state</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">current_state</span>
         <span class="n">current_state</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;some_setting&#39;</span><span class="p">)</span>
 
-        <span class="c1"># Retrive settings from all sources individually</span>
+        <span class="c1"># Retrieve settings from all sources individually</span>
         <span class="c1"># self.settings_sources_data[&quot;SettingsSourceName&quot;]: dict[str, Any]</span>
         <span class="n">settings_sources_data</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">settings_sources_data</span>
         <span class="n">settings_sources_data</span><span class="p">[</span><span class="s1">&#39;SomeSettingsSource&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;some_setting&#39;</span><span class="p">)</span>

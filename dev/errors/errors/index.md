@@ -266,3 +266,7 @@ except ValidationError as e:
 
 1. By default, `e.errors()` produces a list of errors with `loc` values that take the form of tuples.
 1. With our custom `loc_to_dot_sep` function, we've modified the form of the `loc` representation.
+
+______________________________________________________________________
+
+A `ValidationError` names the field and rule that failed, but not the input that triggered it. [Logfire](../troubleshooting/), built by the team behind Pydantic, records the input and the structured errors for each validation, so you can trace a failure back to the exact payload.

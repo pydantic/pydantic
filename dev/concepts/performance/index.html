@@ -3288,6 +3288,34 @@ to help you monitor and understand your
 
               
             
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../errors/troubleshooting/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Troubleshooting with Logfire
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
           </ul>
         </nav>
       
@@ -4048,6 +4076,8 @@ to help you monitor and understand your
 
 <h1 id="performance-tips">Performance tips<a class="headerlink" href="#performance-tips" title="Permanent link">&para;</a></h1>
 <p>In most cases Pydantic won't be your bottleneck, only follow this if you're sure it's necessary.</p>
+<p>To find where validation time actually goes in a running application, <a href="../../integrations/logfire/">Logfire</a>
+records the duration of each Pydantic validation as a span.</p>
 <h2 id="in-general-use-model_validate_json-not-model_validatejsonloads">In general, use <code>model_validate_json()</code> not <code>model_validate(json.loads(...))</code><a class="headerlink" href="#in-general-use-model_validate_json-not-model_validatejsonloads" title="Permanent link">&para;</a></h2>
 <p>On <code>model_validate(json.loads(...))</code>, the JSON is parsed in Python, then converted to a dict, then it's validated internally.
 On the other hand, <code>model_validate_json()</code> already performs the validation internally.</p>

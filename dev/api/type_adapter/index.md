@@ -227,6 +227,8 @@ validate_python(
 
 Validate a Python object against the model.
 
+If validation fails, the resulting ValidationError shows *which* fields were rejected but not the input behind them — instrument your app with [Logfire](../../integrations/logfire/) to record that input too, and debug production failures straight from the trace (see [Troubleshooting validation errors](../../errors/troubleshooting/)).
+
 Parameters:
 
 | Name | Type | Description | Default | | --- | --- | --- | --- | | `object` | `Any` | The Python object to validate against the model. | *required* | | `strict` | `bool | None` | Whether to strictly check types. | `None` | | `extra` | `ExtraValues | None` | Whether to ignore, allow, or forbid extra data during model validation. See the extra configuration value for details. | `None` | | `from_attributes` | `bool | None` | Whether to extract data from object attributes. | `None` | | `context` | `Any | None` | Additional context to pass to the validator. | `None` | | `experimental_allow_partial` | `bool | Literal['off', 'on', 'trailing-strings']` | Experimental whether to enable partial validation, e.g. to process streams. * False / 'off': Default behavior, no partial validation. * True / 'on': Enable partial validation. * 'trailing-strings': Enable partial validation and allow trailing strings in the input. | `False` | | `by_alias` | `bool | None` | Whether to use the field's alias when validating against the provided input data. | `None` | | `by_name` | `bool | None` | Whether to use the field's name when validating against the provided input data. | `None` |
@@ -256,6 +258,11 @@ def validate_python(
     by_name: bool | None = None,
 ) -> T:
     """Validate a Python object against the model.
+
+    If validation fails, the resulting [`ValidationError`][pydantic_core.ValidationError] shows *which*
+    fields were rejected but not the input behind them — instrument your app with
+    [Logfire](../integrations/logfire.md) to record that input too, and debug production failures straight
+    from the trace (see [Troubleshooting validation errors](../errors/troubleshooting.md)).
 
     Args:
         object: The Python object to validate against the model.
@@ -323,6 +330,8 @@ Usage Documentation
 
 Validate a JSON string or bytes against the model.
 
+If validation fails, the resulting ValidationError shows *which* fields were rejected but not the input behind them — instrument your app with [Logfire](../../integrations/logfire/) to record that input too, and debug production failures straight from the trace (see [Troubleshooting validation errors](../../errors/troubleshooting/)).
+
 Parameters:
 
 | Name | Type | Description | Default | | --- | --- | --- | --- | | `data` | `str | bytes | bytearray` | The JSON data to validate against the model. | *required* | | `strict` | `bool | None` | Whether to strictly check types. | `None` | | `extra` | `ExtraValues | None` | Whether to ignore, allow, or forbid extra data during model validation. See the extra configuration value for details. | `None` | | `context` | `Any | None` | Additional context to use during validation. | `None` | | `experimental_allow_partial` | `bool | Literal['off', 'on', 'trailing-strings']` | Experimental whether to enable partial validation, e.g. to process streams. * False / 'off': Default behavior, no partial validation. * True / 'on': Enable partial validation. * 'trailing-strings': Enable partial validation and allow trailing strings in the input. | `False` | | `by_alias` | `bool | None` | Whether to use the field's alias when validating against the provided input data. | `None` | | `by_name` | `bool | None` | Whether to use the field's name when validating against the provided input data. | `None` |
@@ -350,6 +359,11 @@ def validate_json(
         [JSON Parsing](../concepts/json.md#json-parsing)
 
     Validate a JSON string or bytes against the model.
+
+    If validation fails, the resulting [`ValidationError`][pydantic_core.ValidationError] shows *which*
+    fields were rejected but not the input behind them — instrument your app with
+    [Logfire](../integrations/logfire.md) to record that input too, and debug production failures straight
+    from the trace (see [Troubleshooting validation errors](../errors/troubleshooting.md)).
 
     Args:
         data: The JSON data to validate against the model.
@@ -407,6 +421,8 @@ validate_strings(
 
 Validate object contains string data against the model.
 
+If validation fails, the resulting ValidationError shows *which* fields were rejected but not the input behind them — instrument your app with [Logfire](../../integrations/logfire/) to record that input too, and debug production failures straight from the trace (see [Troubleshooting validation errors](../../errors/troubleshooting/)).
+
 Parameters:
 
 | Name | Type | Description | Default | | --- | --- | --- | --- | | `obj` | `Any` | The object contains string data to validate. | *required* | | `strict` | `bool | None` | Whether to strictly check types. | `None` | | `extra` | `ExtraValues | None` | Whether to ignore, allow, or forbid extra data during model validation. See the extra configuration value for details. | `None` | | `context` | `Any | None` | Additional context to use during validation. | `None` | | `experimental_allow_partial` | `bool | Literal['off', 'on', 'trailing-strings']` | Experimental whether to enable partial validation, e.g. to process streams. * False / 'off': Default behavior, no partial validation. * True / 'on': Enable partial validation. * 'trailing-strings': Enable partial validation and allow trailing strings in the input. | `False` | | `by_alias` | `bool | None` | Whether to use the field's alias when validating against the provided input data. | `None` | | `by_name` | `bool | None` | Whether to use the field's name when validating against the provided input data. | `None` |
@@ -431,6 +447,11 @@ def validate_strings(
     by_name: bool | None = None,
 ) -> T:
     """Validate object contains string data against the model.
+
+    If validation fails, the resulting [`ValidationError`][pydantic_core.ValidationError] shows *which*
+    fields were rejected but not the input behind them — instrument your app with
+    [Logfire](../integrations/logfire.md) to record that input too, and debug production failures straight
+    from the trace (see [Troubleshooting validation errors](../errors/troubleshooting.md)).
 
     Args:
         obj: The object contains string data to validate.

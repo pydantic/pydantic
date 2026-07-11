@@ -69,3 +69,5 @@ User(name='David', country_code='GBR', dob='invalid-dob')
 You'll see each successful and failed validation logged in Logfire:
 
 And you can investigate each of the corresponding spans to get validation details:
+
+This is especially useful when a ValidationError shows up in production and you need the input that caused it — see [Troubleshooting Validation Errors with Logfire](../../errors/troubleshooting/).
