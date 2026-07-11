@@ -384,6 +384,9 @@ Some notable libraries that depend on Pydantic:
 
 More libraries using Pydantic can be found at [`Kludex/awesome-pydantic`](https://github.com/Kludex/awesome-pydantic).
 
+The team behind Pydantic also builds [Pydantic Logfire](integrations/logfire.md), an observability
+platform with a native Pydantic integration for tracing and debugging validation in production.
+
 ## Organisations using Pydantic {#using-pydantic}
 
 Some notable companies and organisations using Pydantic together with comments on why/how we know they're using Pydantic.

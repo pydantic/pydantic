@@ -75,4 +75,8 @@ And you can investigate each of the corresponding spans to get validation detail
 
 ![logfire span details](../img/logfire_span.png)
 
+This is especially useful when a [`ValidationError`][pydantic_core.ValidationError] shows up in
+production and you need the input that caused it — see [Troubleshooting Validation Errors with
+Logfire](../errors/troubleshooting.md).
+
 <!-- TODO: add examples re tracing performance issues - what kind of example do we want to use? -->
