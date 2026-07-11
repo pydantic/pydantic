@@ -158,6 +158,24 @@ def test_date_datetime_union():
             b'{"1704070861000.023":"foo"}',
             'milliseconds',
         ),
+        # rfc2822: naive datetime (treated as UTC)
+        (
+            datetime(2024, 1, 1, 0, 0, 0),
+            'Mon, 01 Jan 2024 00:00:00 GMT',
+            b'"Mon, 01 Jan 2024 00:00:00 GMT"',
+            {'Mon, 01 Jan 2024 00:00:00 GMT': 'foo'},
+            b'{"Mon, 01 Jan 2024 00:00:00 GMT":"foo"}',
+            'rfc2822',
+        ),
+        # rfc2822: UTC datetime
+        (
+            datetime(2024, 1, 1, 12, 0, 0, tzinfo=timezone.utc),
+            'Mon, 01 Jan 2024 12:00:00 GMT',
+            b'"Mon, 01 Jan 2024 12:00:00 GMT"',
+            {'Mon, 01 Jan 2024 12:00:00 GMT': 'foo'},
+            b'{"Mon, 01 Jan 2024 12:00:00 GMT":"foo"}',
+            'rfc2822',
+        ),
     ],
 )
 def test_config_datetime(
@@ -195,6 +213,22 @@ def test_config_datetime(
 
 
 @pytest.mark.parametrize(
+    'dt,expected',
+    [
+        # +02:00 offset: local 14:00 -> UTC 12:00
+        (datetime(2024, 1, 1, 14, 0, 0, tzinfo=tz(hours=2)), 'Mon, 01 Jan 2024 12:00:00 GMT'),
+        # -05:00 offset: local 07:00 -> UTC 12:00
+        (datetime(2024, 1, 1, 7, 0, 0, tzinfo=tz(hours=-5)), 'Mon, 01 Jan 2024 12:00:00 GMT'),
+    ],
+)
+def test_config_datetime_rfc2822_non_utc(dt: datetime, expected: str):
+    """Non-UTC datetimes are converted to UTC before RFC 2822 formatting."""
+    s = SchemaSerializer(core_schema.datetime_schema(), config={'ser_json_temporal': 'rfc2822'})
+    assert s.to_python(dt, mode='json') == expected
+    assert s.to_json(dt) == f'"{expected}"'.encode()
+
+
+@pytest.mark.parametrize(
     'dt,expected_to_python,expected_to_json,expected_to_python_dict,expected_to_json_dict,mode',
     [
         (
@@ -220,6 +254,15 @@ def test_config_datetime(
             {'1704067200000': 'foo'},
             b'{"1704067200000":"foo"}',
             'milliseconds',
+        ),
+        # rfc2822: bare `date` is treated as midnight UTC, matching email.utils.format_datetime
+        (
+            date(2024, 1, 1),
+            'Mon, 01 Jan 2024 00:00:00 GMT',
+            b'"Mon, 01 Jan 2024 00:00:00 GMT"',
+            {'Mon, 01 Jan 2024 00:00:00 GMT': 'foo'},
+            b'{"Mon, 01 Jan 2024 00:00:00 GMT":"foo"}',
+            'rfc2822',
         ),
     ],
 )
@@ -283,6 +326,15 @@ def test_config_date(
             {'11641059.263': 'foo'},
             b'{"11641059.263":"foo"}',
             'milliseconds',
+        ),
+        # rfc2822 has no standalone time format, so we fall back to ISO 8601
+        (
+            time(3, 14, 1, 59263),
+            '03:14:01.059263',
+            b'"03:14:01.059263"',
+            {'03:14:01.059263': 'foo'},
+            b'{"03:14:01.059263":"foo"}',
+            'rfc2822',
         ),
     ],
 )
