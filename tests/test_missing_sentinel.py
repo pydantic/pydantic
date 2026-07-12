@@ -3,7 +3,7 @@ from typing import Annotated
 
 import pytest
 import typing_extensions
-from annotated_types import Ge
+from annotated_types import Ge, Len
 from pydantic_core import MISSING, PydanticSerializationUnexpectedValue
 
 from pydantic import BaseModel, TypeAdapter, ValidationError
@@ -123,6 +123,26 @@ def test_missing_sentinel_constraints_pushdown() -> None:
         'anyOf': [{'anyOf': [{'type': 'integer'}, {'type': 'string'}], 'ge': 1}, {'type': 'null'}],
         'title': 'F4',
     }
+
+
+def test_missing_sentinel_union_error() -> None:
+    """https://github.com/pydantic/pydantic/issues/13431"""
+
+    class Model(BaseModel):
+        value: Annotated[str | MISSING, Len(max_length=3)] = MISSING
+
+    with pytest.raises(ValidationError) as exc_info:
+        Model(value='too long')
+
+    assert exc_info.value.errors(include_url=False) == [
+        {
+            'type': 'string_too_long',
+            'loc': ('value', 'constrained-str'),
+            'msg': 'String should have at most 3 characters',
+            'input': 'too long',
+            'ctx': {'max_length': 3},
+        }
+    ]
 
 
 def test_missing_sentinel_child_fields() -> None:

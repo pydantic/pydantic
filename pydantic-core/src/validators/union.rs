@@ -257,11 +257,15 @@ impl<'a> MaybeErrors<'a> {
     fn push(&mut self, choice: &'a CombinedValidator, label: Option<&'a str>, line_errors: Vec<ValLineError>) {
         match self {
             Self::Custom(_) => {}
-            Self::Errors(errors) => errors.push(ChoiceLineErrors {
-                choice,
-                label,
-                line_errors,
-            }),
+            Self::Errors(errors) => {
+                if !matches!(choice, CombinedValidator::MissingSentinel(_)) {
+                    errors.push(ChoiceLineErrors {
+                        choice,
+                        label,
+                        line_errors,
+                    });
+                }
+            }
         }
     }
 
