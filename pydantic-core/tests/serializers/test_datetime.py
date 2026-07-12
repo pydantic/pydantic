@@ -2,7 +2,7 @@ from datetime import date, datetime, time, timedelta, timezone
 
 import pytest
 
-from pydantic_core import SchemaSerializer, core_schema
+from pydantic_core import SchemaSerializer, core_schema, to_json
 
 
 def test_datetime():
@@ -192,6 +192,24 @@ def test_config_datetime(
         ),
     ):
         assert s.to_json({dt: 'foo'}) == expected_to_json_dict
+
+
+@pytest.mark.parametrize('mode, multiplier', [('seconds', 1), ('milliseconds', 1_000)])
+@pytest.mark.parametrize(
+    'dt',
+    [
+        datetime(2024, 1, 1, 12, tzinfo=timezone.utc),
+        datetime(2024, 1, 1, 12, 0, 0, 123_456, tzinfo=tz(hours=-5)),
+        datetime(2024, 1, 1, 0, 30, tzinfo=tz(hours=2)),
+    ],
+)
+def test_aware_datetime_numeric_serialization_uses_utc_timestamp(dt: datetime, mode: str, multiplier: int):
+    expected = dt.timestamp() * multiplier
+    serializer = SchemaSerializer(core_schema.datetime_schema(), config={'ser_json_temporal': mode})
+
+    assert float(to_json(dt, temporal_mode=mode)) == expected
+    assert serializer.to_python(dt, mode='json') == expected
+    assert float(serializer.to_json(dt)) == expected
 
 
 @pytest.mark.parametrize(

@@ -13,12 +13,15 @@ use crate::definitions::DefinitionsBuilder;
 use crate::serializers::SerializationState;
 use crate::serializers::config::{FromConfig, TemporalMode};
 
+const MILLISECONDS_PER_SECOND: f64 = 1_000.0;
+
 pub(crate) fn datetime_to_seconds(dt: DateTime) -> f64 {
-    dt.date.timestamp() as f64 + time_to_seconds(dt.time)
+    dt.date.timestamp() as f64 + time_to_seconds(dt.time) - f64::from(dt.time.tz_offset.unwrap_or(0))
 }
 
 pub(crate) fn datetime_to_milliseconds(dt: DateTime) -> f64 {
     dt.date.timestamp_ms() as f64 + time_to_milliseconds(dt.time)
+        - f64::from(dt.time.tz_offset.unwrap_or(0)) * MILLISECONDS_PER_SECOND
 }
 
 pub(crate) fn date_to_seconds(date: Date) -> f64 {

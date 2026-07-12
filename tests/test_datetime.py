@@ -753,6 +753,23 @@ def test_config_datetime(dt: datetime, expected_to_json, mode):
     assert ta.dump_json(instance) == expected_to_json
 
 
+@pytest.mark.parametrize('mode, multiplier', [('seconds', 1), ('milliseconds', 1_000)])
+@pytest.mark.parametrize(
+    'dt',
+    [
+        datetime(2024, 1, 1, 12, tzinfo=timezone.utc),
+        datetime(2024, 1, 1, 12, 0, 0, 123_456, tzinfo=timezone(timedelta(hours=-5))),
+        datetime(2024, 1, 1, 0, 30, tzinfo=timezone(timedelta(hours=2))),
+    ],
+)
+def test_config_aware_datetime_numeric_serialization_uses_utc_timestamp(
+    dt: datetime, mode: str, multiplier: int
+):
+    ta = TypeAdapter(datetime, config={'ser_json_temporal': mode})
+
+    assert float(ta.dump_json(dt)) == dt.timestamp() * multiplier
+
+
 @pytest.mark.parametrize(
     'dt,expected_to_json,mode',
     [
