@@ -79,13 +79,17 @@ IncEx: TypeAlias = set[int] | set[str] | Mapping[int, Union['IncEx', bool]] | Ma
 
 _object_setattr = _model_construction.object_setattr
 
-# Rebuilding a model isn't thread-safe (the class attributes are mutated during the rebuild,
-# while other threads may be reading them to perform validation/serialization), so `model_rebuild()`
-# calls are serialized using this lock. The lock is reentrant, as rebuilding a model can trigger the
-# rebuild of another one (e.g. when a generic origin is rebuilt during parametrization in
-# `__class_getitem__()`). For the same reason, the lock is global and not per-class: two threads
-# holding their own class's lock could otherwise request the other's and deadlock.
 _rebuild_lock = threading.RLock()
+"""
+A lock used to make model rebuilds thread-safe when first instantiating an incomplete model.
+
+Rebuilding a model isn't thread-safe (the class attributes are mutated during the rebuild,
+while other threads may be reading them to perform validation/serialization), so `model_rebuild()`
+calls are serialized using this lock. The lock is reentrant, as rebuilding a model can trigger the
+rebuild of another one (e.g. when a generic origin is rebuilt during parametrization in
+`__class_getitem__()`). For the same reason, the lock is global and not per-class: two threads
+holding their own class's lock could otherwise request the other's and deadlock.
+"""
 
 
 def _check_frozen(model_cls: type[BaseModel], name: str, value: Any) -> None:
