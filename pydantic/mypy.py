@@ -1,12 +1,9 @@
 """This module includes classes and functions designed specifically for use with the mypy plugin."""
-
 from __future__ import annotations
-
 import sys
 from collections.abc import Callable, Iterator
 from configparser import ConfigParser
 from typing import Any
-
 from mypy.errorcodes import ErrorCode
 from mypy.expandtype import expand_type, expand_type_by_instance
 from mypy.nodes import (
@@ -106,7 +103,7 @@ MYPY_VERSION_TUPLE = parse_mypy_version(mypy_version)
 BUILTINS_NAME = 'builtins'
 
 # Increment version if plugin changes and mypy caches should be invalidated
-__version__ = 2
+__version__ = 3
 
 
 def plugin(version: str) -> type[Plugin]:
@@ -498,6 +495,7 @@ class PydanticModelTransformer:
         'validate_by_name',
         'alias_generator',
         'strict',
+        'use_enum_values'
     }
 
     def __init__(
@@ -538,6 +536,8 @@ class PydanticModelTransformer:
         self.add_initializer(fields, config, is_settings, is_a_root_model)
         self.add_model_construct_method(fields, config, is_settings, is_a_root_model)
         self.set_frozen(fields, self._api, frozen=config.frozen is True)
+        if config.use_enum_values:
+            self.set_enum_value_types(fields, self._api)
 
         self.adjust_decorator_signatures()
 
@@ -1031,6 +1031,24 @@ class PydanticModelTransformer:
                 var._fullname = info.fullname + '.' + var.name
                 info.names[var.name] = SymbolTableNode(MDEF, var)
 
+    def set_enum_value_types(
+        self, fields: list[PydanticModelField], api: SemanticAnalyzerPluginInterface
+    ) -> None:
+        """When `use_enum_values=True`, enum fields store the enum member's `.value` at runtime
+        rather than the member itself. Rewrite the stored attribute type accordingly so that
+        mypy reflects the actual runtime type.
+        """
+        info = self._cls.info
+        for field in fields:
+            if field.type is None:
+                continue
+            value_type = _enum_value_type(field.type)
+            if value_type is None:
+                continue
+            sym_node = info.names.get(field.name)
+            if sym_node is not None and isinstance(sym_node.node, Var):
+                sym_node.node.type = value_type
+
     def get_config_update(self, name: str, arg: Expression, lax_extra: bool = False) -> ModelConfigData | None:
         """Determines the config update due to a single kwarg in the ConfigDict definition.
 
@@ -1246,6 +1264,7 @@ class ModelConfigData:
         validate_by_name: bool | None = None,
         has_alias_generator: bool | None = None,
         strict: bool | None = None,
+        use_enum_values: bool | None = None,
     ):
         self.forbid_extra = forbid_extra
         self.frozen = frozen
@@ -1255,6 +1274,8 @@ class ModelConfigData:
         self.validate_by_name = validate_by_name
         self.has_alias_generator = has_alias_generator
         self.strict = strict
+        self.use_enum_values = use_enum_values
+
 
     def get_values_dict(self) -> dict[str, Any]:
         """Returns a dict of Pydantic model config names to their values.
@@ -1274,6 +1295,29 @@ class ModelConfigData:
         """Set default value for Pydantic model config if config value is `None`."""
         if getattr(self, key) is None:
             setattr(self, key, value)
+
+
+def _enum_value_type(typ: Type) -> Type | None:
+    """Return the value type of an enum type, or `None` if `typ` is not an enum.
+
+    Handles the common mixin cases (e.g. `class C(str, Enum)`, `IntEnum`, `StrEnum`) by using the
+    non-enum base as the value type, and otherwise falls back to the declared type of `_value_`.
+    """
+    proper = get_proper_type(typ)
+    if not isinstance(proper, Instance) or not proper.type.has_base('enum.Enum'):
+        return None
+
+    # Mixin enums like `class C(str, Enum)` -> the value type is the builtin base (`str`, `int`, ...).
+    for base in proper.type.mro:
+        if base.fullname.startswith('builtins.') and base.fullname != 'builtins.object':
+            return Instance(base, [])
+
+    # Fallback: the declared type of `_value_`, if present.
+    value_sym = proper.type.get('_value_')
+    if value_sym is not None and value_sym.type is not None:
+        return value_sym.type
+
+    return None
 
 
 def is_root_model(info: TypeInfo) -> bool:
