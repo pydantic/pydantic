@@ -64,6 +64,12 @@ Once instrumented, each failed validation shows up in the live view, recorded wi
 * **No extra logging code** — one `logfire.instrument_pydantic()` call covers all your models; you don't
   wrap each `model_validate` in a `try`/`except`.
 
+Recording the input naturally raises the question of sensitive data, since the failing payload may
+contain it. The Logfire SDK
+[scrubs common sensitive values](https://logfire.pydantic.dev/docs/how-to-guides/scrubbing/) — things
+that look like passwords, tokens, or other secrets — from spans before they leave your machine, and you
+can extend the rules for your own fields.
+
 ![A failed Pydantic validation recorded in the Logfire live view](../img/logfire-validation-live-view.png)
 
 ## Reading the error from the trace
@@ -74,6 +80,29 @@ path (`loc`), the machine-readable `type`, and the offending value — so you ca
 and with what value without parsing the rendered message string by hand.
 
 ![A Pydantic validation failure in the Logfire live view, with the structured errors captured on the span](../img/logfire-validation-error-trace.png)
+
+## From one failure to the pattern
+
+A single trace tells you about one failure. Often the more useful question is whether it's a one-off or
+something recurring. Logfire
+[groups repeated exceptions into issues](https://logfire.pydantic.dev/docs/guides/web-ui/issues/), so a
+validation that fails a thousand times shows up as one entry with a count and a first-seen time, rather
+than a thousand lines to scroll through — which makes it easy to tell a genuine spike from background
+noise.
+
+Once you know which failures matter, you don't have to keep watching for them. Logfire
+[alerts](https://logfire.pydantic.dev/docs/guides/web-ui/alerts/) run a SQL query on a schedule and
+notify you (for example, in Slack) when it matches — "validation failures for this model crossed a
+threshold" — so the next occurrence finds you instead of a user reporting it.
+
+## Debugging with an AI coding agent
+
+If you use an AI coding agent, you can point it at the [Logfire MCP
+server](https://logfire.pydantic.dev/docs/how-to-guides/mcp-server/), which lets the agent query your
+telemetry directly — including the input and errors from a failed validation — so it can investigate a
+failure against your real data rather than a guess. There's also an [installable Logfire
+skill](https://logfire.pydantic.dev/docs/how-to-guides/skills/) that gives agents current guidance on
+instrumenting a codebase in the first place.
 
 ## Learn more
 

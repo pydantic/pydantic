@@ -834,10 +834,6 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
     ) -> Self:
         """Validate the given object with string data against the Pydantic model.
 
-        Like the other validation methods, validations performed here can be recorded by
-        [Logfire](../integrations/logfire.md), including the string data a failed validation received —
-        see [Troubleshooting validation errors](../errors/troubleshooting.md).
-
         Args:
             obj: The object containing string data to validate.
             strict: Whether to enforce types strictly.

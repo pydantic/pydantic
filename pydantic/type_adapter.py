@@ -408,9 +408,10 @@ class TypeAdapter(Generic[T]):
     ) -> T:
         """Validate a Python object against the model.
 
-        `TypeAdapter` validations are recorded by [Logfire](../integrations/logfire.md) the same way as
-        model validations, so a failure here can be traced back to the object that caused it — see
-        [Troubleshooting validation errors](../errors/troubleshooting.md).
+        A failure here names the fields that were rejected, but not the object they came from. If you
+        record validations with [Logfire](../integrations/logfire.md), that object is kept alongside the
+        error — `TypeAdapter` validations are captured the same way as model validations (see
+        [Troubleshooting validation errors](../errors/troubleshooting.md)).
 
         Args:
             object: The Python object to validate against the model.
@@ -519,10 +520,6 @@ class TypeAdapter(Generic[T]):
         by_name: bool | None = None,
     ) -> T:
         """Validate object contains string data against the model.
-
-        As with the other validation methods, failed validations here can be recorded with
-        [Logfire](../integrations/logfire.md), input included — see
-        [Troubleshooting validation errors](../errors/troubleshooting.md).
 
         Args:
             obj: The object contains string data to validate.
