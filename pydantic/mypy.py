@@ -58,6 +58,7 @@ from mypy.plugins.common import (
     deserialize_and_fixup_type,
 )
 from mypy.semanal import set_callable_name
+from mypy.semanal_shared import has_placeholder
 from mypy.server.trigger import make_wildcard_trigger
 from mypy.state import state
 from mypy.type_visitor import TypeTranslator
@@ -531,7 +532,12 @@ class PydanticModelTransformer:
             # Some definitions are not ready. We need another pass.
             return False
         for field in fields:
-            if field.type is None:
+            if field.type is None or has_placeholder(field.type):
+                # The field type may contain placeholders, e.g. when inheriting from a generic
+                # model parametrized with a forward reference to the class being defined.
+                # Request another pass so that they can be resolved:
+                if not self._api.final_iteration:
+                    self._api.defer()
                 return False
 
         is_settings = info.has_base(BASESETTINGS_FULLNAME)

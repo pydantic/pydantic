@@ -53,3 +53,22 @@ class DomainType(HistoryField[int]):
 
 thing = DomainType(value=None)
 assert_type(thing.value, Optional[int])
+
+
+TElement = TypeVar('TElement', bound='Element')
+
+
+class Element(BaseModel):
+    pass
+
+
+class ElementWithChildren(Element, Generic[TElement]):
+    children: list[TElement] = []
+
+
+class Child(ElementWithChildren['Child']):
+    """https://github.com/pydantic/pydantic/issues/11025"""
+
+
+child = Child(children=[Child()])
+assert_type(child.children, list[Child])
