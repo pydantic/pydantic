@@ -8,6 +8,7 @@ from __future__ import annotations as _annotations
 
 import operator
 import sys
+import threading
 import types
 import warnings
 from collections.abc import Generator, Mapping
@@ -77,6 +78,14 @@ TupleGenerator: TypeAlias = Generator[tuple[str, Any], None, None]
 IncEx: TypeAlias = set[int] | set[str] | Mapping[int, Union['IncEx', bool]] | Mapping[str, Union['IncEx', bool]]
 
 _object_setattr = _model_construction.object_setattr
+
+# Rebuilding a model isn't thread-safe (the class attributes are mutated during the rebuild,
+# while other threads may be reading them to perform validation/serialization), so `model_rebuild()`
+# calls are serialized using this lock. The lock is reentrant, as rebuilding a model can trigger the
+# rebuild of another one (e.g. when a generic origin is rebuilt during parametrization in
+# `__class_getitem__()`). For the same reason, the lock is global and not per-class: two threads
+# holding their own class's lock could otherwise request the other's and deadlock.
+_rebuild_lock = threading.RLock()
 
 
 def _check_frozen(model_cls: type[BaseModel], name: str, value: Any) -> None:
@@ -681,42 +690,52 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
             Returns `None` if the schema is already "complete" and rebuilding was not required.
             If rebuilding _was_ required, returns `True` if rebuilding was successful, otherwise `False`.
         """
-        already_complete = cls.__pydantic_complete__
-        if already_complete and not force:
+        # As the rebuild lock is global (not per model class), avoid needlessly holding it if the model is
+        # already complete:
+        if cls.__pydantic_complete__ and not force:
             return None
 
-        cls.__pydantic_complete__ = False
+        with _rebuild_lock:
+            # Re-check inside the lock, as another thread may have rebuilt the model while we were waiting:
+            already_complete = cls.__pydantic_complete__
+            if already_complete and not force:
+                return None
 
-        for attr in ('__pydantic_core_schema__', '__pydantic_validator__', '__pydantic_serializer__'):
-            if attr in cls.__dict__ and not isinstance(getattr(cls, attr), _mock_val_ser.MockValSer):
-                # Deleting the validator/serializer is necessary as otherwise they can get reused in
-                # pydantic-core. We do so only if they aren't mock instances, otherwise — as `model_rebuild()`
-                # isn't thread-safe — concurrent model instantiations can lead to the parent validator being used.
-                # Same applies for the core schema that can be reused in schema generation.
-                delattr(cls, attr)
+            cls.__pydantic_complete__ = False
 
-        if _types_namespace is not None:
-            rebuild_ns = _types_namespace
-        elif _parent_namespace_depth > 0:
-            rebuild_ns = _typing_extra.parent_frame_namespace(parent_depth=_parent_namespace_depth, force=True) or {}
-        else:
-            rebuild_ns = {}
+            for attr in ('__pydantic_core_schema__', '__pydantic_validator__', '__pydantic_serializer__'):
+                if attr in cls.__dict__ and not isinstance(getattr(cls, attr), _mock_val_ser.MockValSer):
+                    # Deleting the validator/serializer is necessary as otherwise they can get reused in
+                    # pydantic-core. We do so only if they aren't mock instances, otherwise concurrent model
+                    # instantiations — which read these attributes without holding the rebuild lock — can
+                    # lead to the parent validator being used. Same applies for the core schema that can be
+                    # reused in schema generation.
+                    delattr(cls, attr)
 
-        parent_ns = _model_construction.unpack_lenient_weakvaluedict(cls.__pydantic_parent_namespace__) or {}
+            if _types_namespace is not None:
+                rebuild_ns = _types_namespace
+            elif _parent_namespace_depth > 0:
+                rebuild_ns = (
+                    _typing_extra.parent_frame_namespace(parent_depth=_parent_namespace_depth, force=True) or {}
+                )
+            else:
+                rebuild_ns = {}
 
-        ns_resolver = _namespace_utils.NsResolver(
-            parent_namespace={**rebuild_ns, **parent_ns},
-        )
+            parent_ns = _model_construction.unpack_lenient_weakvaluedict(cls.__pydantic_parent_namespace__) or {}
 
-        return _model_construction.complete_model_class(
-            cls,
-            _config.ConfigWrapper(cls.model_config, check=False),
-            ns_resolver,
-            raise_errors=raise_errors,
-            # If the model was already complete, we don't need to call the hook again.
-            call_on_complete_hook=not already_complete,
-            is_force_rebuild=force,
-        )
+            ns_resolver = _namespace_utils.NsResolver(
+                parent_namespace={**rebuild_ns, **parent_ns},
+            )
+
+            return _model_construction.complete_model_class(
+                cls,
+                _config.ConfigWrapper(cls.model_config, check=False),
+                ns_resolver,
+                raise_errors=raise_errors,
+                # If the model was already complete, we don't need to call the hook again.
+                call_on_complete_hook=not already_complete,
+                is_force_rebuild=force,
+            )
 
     @classmethod
     def model_validate(

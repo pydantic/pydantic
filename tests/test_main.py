@@ -2,6 +2,8 @@ import json
 import platform
 import re
 import sys
+import threading
+import time
 import typing
 import warnings
 from collections import defaultdict
@@ -2539,6 +2541,80 @@ def test_model_rebuild_localns():
 
     with pytest.raises(PydanticUndefinedAnnotation, match="name 'Model' is not defined"):
         C.model_rebuild(_types_namespace={'A': A})
+
+
+@pytest.mark.timeout(5)
+def test_model_rebuild_nested_during_parametrization():
+    T = TypeVar('T')
+
+    class Model(BaseModel):
+        b: Optional['Box[Leaf]'] = None
+
+    class Box(BaseModel, Generic[T]):
+        leaf: Optional['Leaf'] = None
+
+    class Leaf(BaseModel):
+        x: int = 0
+
+    assert not Model.__pydantic_complete__
+    assert not Box.__pydantic_complete__
+
+    # Rebuilding `Model` evaluates `Box[Leaf]`, and `__class_getitem__` then calls
+    # `Box.model_rebuild()` on the same thread. Any locking added to the rebuild logic
+    # must support this reentrancy:
+    m = Model(b={'leaf': {'x': 1}})
+    assert m.b.leaf.x == 1
+    assert Model.__pydantic_complete__
+
+
+def test_model_rebuild_already_rebuilt_by_other_thread():
+    schema_gen_entered = threading.Event()
+    resume_schema_gen = threading.Event()
+    hook_calls: list[type] = []
+
+    class Model(BaseModel):
+        x: 'Gate'
+
+        @classmethod
+        def __pydantic_on_complete__(cls) -> None:
+            hook_calls.append(cls)
+
+    class Gate:
+        @classmethod
+        def __get_pydantic_core_schema__(cls, source_type, handler):
+            schema_gen_entered.set()
+            resume_schema_gen.wait(timeout=10)
+            return core_schema.int_schema()
+
+    assert not Model.__pydantic_complete__
+
+    results: dict[str, bool | None] = {}
+
+    def rebuild(key: str) -> None:
+        results[key] = Model.model_rebuild(_types_namespace={'Gate': Gate})
+
+    # The first thread acquires the rebuild lock and waits in schema generation:
+    t1 = threading.Thread(target=rebuild, args=('t1',), daemon=True)
+    t1.start()
+    assert schema_gen_entered.wait(timeout=10)
+
+    # While the first thread is waiting on `resume_schema_gen`, `Model` can't become complete,
+    # so the second thread is guaranteed to pass the unlocked completeness check and block on the lock:
+    t2 = threading.Thread(target=rebuild, args=('t2',), daemon=True)
+    t2.start()
+    # Give the second thread time to pass the unlocked completeness check and block on the
+    # lock, so that the *locked* completeness recheck is the early return taken:
+    time.sleep(0.1)
+
+    resume_schema_gen.set()
+    t1.join(timeout=10)
+    t2.join(timeout=10)
+    assert not t1.is_alive()
+    assert not t2.is_alive()
+
+    assert results == {'t1': True, 't2': None}
+    assert hook_calls == [Model]
+    assert Model(x=1).x == 1
 
 
 def test_model_rebuild_zero_depth():
