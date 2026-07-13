@@ -2566,6 +2566,7 @@ def test_model_rebuild_nested_during_parametrization():
     assert Model.__pydantic_complete__
 
 
+@pytest.mark.skipif(sys.platform == 'emscripten', reason='no threading on emscripten')
 def test_model_rebuild_already_rebuilt_by_other_thread():
     schema_gen_entered = threading.Event()
     resume_schema_gen = threading.Event()
