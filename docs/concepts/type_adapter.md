@@ -86,6 +86,11 @@ print(items)
 [`TypeAdapter`][pydantic.type_adapter.TypeAdapter] is capable of parsing data into any of the types Pydantic can
 handle as fields of a [`BaseModel`][pydantic.main.BaseModel].
 
+Data parsed this way often comes from a source you don't control — like the API call in the example
+above — so validation can fail long after the code has shipped. If your application is
+[instrumented with Logfire](../integrations/logfire.md), validations performed through a `TypeAdapter`
+are recorded just like model validations.
+
 !!! info "Performance considerations"
     When creating an instance of [`TypeAdapter`][pydantic.type_adapter.TypeAdapter], the provided type must be analyzed and converted into a pydantic-core
     schema. This comes with some non-trivial overhead, so it is recommended to create a `TypeAdapter` for a given type

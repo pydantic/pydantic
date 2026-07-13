@@ -85,6 +85,10 @@ def dataclass(
 
     This function should be used similarly to `dataclasses.dataclass`.
 
+    Validation of a Pydantic dataclass works the same way as validation of a `BaseModel`, including how
+    failures are recorded by [Logfire](../integrations/logfire.md) if you use it — see
+    [Troubleshooting validation errors](../errors/troubleshooting.md).
+
     Args:
         _cls: The target `dataclass`.
         init: Included for signature compatibility with `dataclasses.dataclass`, and is passed through to
