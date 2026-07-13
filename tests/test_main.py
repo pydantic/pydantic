@@ -2589,8 +2589,11 @@ def test_model_rebuild_already_rebuilt_by_other_thread():
     assert not Model.__pydantic_complete__
 
     results: dict[str, bool | None] = {}
+    t2_started = threading.Event()
 
     def rebuild(key: str) -> None:
+        if key == 't2':
+            t2_started.set()
         results[key] = Model.model_rebuild(_types_namespace={'Gate': Gate})
 
     # The first thread acquires the rebuild lock and waits in schema generation:
@@ -2602,9 +2605,9 @@ def test_model_rebuild_already_rebuilt_by_other_thread():
     # so the second thread is guaranteed to pass the unlocked completeness check and block on the lock:
     t2 = threading.Thread(target=rebuild, args=('t2',), daemon=True)
     t2.start()
-    # Give the second thread time to pass the unlocked completeness check and block on the
-    # lock, so that the *locked* completeness recheck is the early return taken:
-    time.sleep(0.1)
+    assert t2_started.wait(timeout=10)
+    assert t2.is_alive()
+    assert 't2' not in results
 
     resume_schema_gen.set()
     t1.join(timeout=10)
