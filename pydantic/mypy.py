@@ -88,6 +88,7 @@ CREATE_MODEL_FULLNAME = 'pydantic.main.create_model'
 BASESETTINGS_FULLNAME = 'pydantic_settings.main.BaseSettings'
 ROOT_MODEL_FULLNAME = 'pydantic.root_model.RootModel'
 MODEL_METACLASS_FULLNAME = 'pydantic._internal._model_construction.ModelMetaclass'
+ROOT_MODEL_METACLASS_FULLNAME = 'pydantic.root_model._RootModelMetaclass'
 FIELD_FULLNAME = 'pydantic.fields.Field'
 DATACLASS_FULLNAME = 'pydantic.dataclasses.dataclass'
 MODEL_VALIDATOR_FULLNAME = 'pydantic.functional_validators.model_validator'
@@ -143,7 +144,7 @@ class PydanticPlugin(Plugin):
 
     def get_metaclass_hook(self, fullname: str) -> Callable[[ClassDefContext], None] | None:
         """Update Pydantic `ModelMetaclass` definition."""
-        if fullname == MODEL_METACLASS_FULLNAME:
+        if fullname in (MODEL_METACLASS_FULLNAME, ROOT_MODEL_METACLASS_FULLNAME):
             return self._pydantic_model_metaclass_marker_callback
         return None
 
@@ -916,7 +917,13 @@ class PydanticModelTransformer:
 
         The added `__init__` will be annotated with types vs. all `Any` depending on the plugin settings.
         """
-        if '__init__' in self._cls.info.names and not self._cls.info.names['__init__'].plugin_generated:
+        if (
+            '__init__' in self._cls.info.names
+            and not self._cls.info.names['__init__'].plugin_generated
+            # `RootModel` declares a typed `__init__` for the benefit of type checkers when the plugin
+            # isn't used, but the plugin-generated one should take priority over it:
+            and self._cls.fullname != ROOT_MODEL_FULLNAME
+        ):
             return  # Don't generate an __init__ if one already exists
 
         typed = self.plugin_config.init_typed
