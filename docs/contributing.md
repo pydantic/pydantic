@@ -73,11 +73,11 @@ git clone git@github.com:<your username>/pydantic.git
 cd pydantic
 
 # Install UV and pre-commit
-# We use pipx here, for other options see:
+# We use uv here, for other options see:
 # https://docs.astral.sh/uv/getting-started/installation/
 # https://pre-commit.com/#install
 curl -LsSf https://astral.sh/uv/install.sh | sh
-uvx install pre-commit
+uv tool install pre-commit
 
 # Install pydantic, dependencies, test dependencies and doc dependencies
 make install
