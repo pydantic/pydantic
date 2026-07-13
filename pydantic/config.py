@@ -595,6 +595,7 @@ class ConfigDict(TypedDict, total=False):
     /// version-added | v2.12
     This setting replaces [`ser_json_timedelta`][pydantic.config.ConfigDict.ser_json_timedelta],
     which will be deprecated in v3. `ser_json_temporal` adds more configurability for the other temporal types.
+    It takes precedence over `ser_json_timedelta`.
     ///
     """
 
