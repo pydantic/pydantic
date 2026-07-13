@@ -1,9 +1,12 @@
 """This module includes classes and functions designed specifically for use with the mypy plugin."""
+
 from __future__ import annotations
+
 import sys
 from collections.abc import Callable, Iterator
 from configparser import ConfigParser
 from typing import Any
+
 from mypy.errorcodes import ErrorCode
 from mypy.expandtype import expand_type, expand_type_by_instance
 from mypy.nodes import (
@@ -495,7 +498,7 @@ class PydanticModelTransformer:
         'validate_by_name',
         'alias_generator',
         'strict',
-        'use_enum_values'
+        'use_enum_values',
     }
 
     def __init__(
@@ -1031,9 +1034,7 @@ class PydanticModelTransformer:
                 var._fullname = info.fullname + '.' + var.name
                 info.names[var.name] = SymbolTableNode(MDEF, var)
 
-    def set_enum_value_types(
-        self, fields: list[PydanticModelField], api: SemanticAnalyzerPluginInterface
-    ) -> None:
+    def set_enum_value_types(self, fields: list[PydanticModelField], api: SemanticAnalyzerPluginInterface) -> None:
         """When `use_enum_values=True`, enum fields store the enum member's `.value` at runtime
         rather than the member itself. Rewrite the stored attribute type accordingly so that
         mypy reflects the actual runtime type.
@@ -1275,7 +1276,6 @@ class ModelConfigData:
         self.has_alias_generator = has_alias_generator
         self.strict = strict
         self.use_enum_values = use_enum_values
-
 
     def get_values_dict(self) -> dict[str, Any]:
         """Returns a dict of Pydantic model config names to their values.
