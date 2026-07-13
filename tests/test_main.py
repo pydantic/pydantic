@@ -3,7 +3,6 @@ import platform
 import re
 import sys
 import threading
-import time
 import typing
 import warnings
 from collections import defaultdict
