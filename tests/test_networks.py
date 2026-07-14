@@ -12,6 +12,7 @@ from pydantic import (
     BaseModel,
     ClickHouseDsn,
     CockroachDsn,
+    ConfigDict,
     Field,
     FileUrl,
     FtpUrl,
@@ -1045,6 +1046,23 @@ def test_name_email_serialization():
 
     obj = json.loads(m.model_dump_json())
     Model(email=obj['email'])
+
+
+@pytest.mark.skipif(not email_validator, reason='email_validator not installed')
+def test_name_email_hashable():
+    a = NameEmail('foo bar', 'foobaR@example.com')
+    b = NameEmail('foo bar', 'foobaR@example.com')
+    c = NameEmail('foo bar', 'different@example.com')
+
+    assert hash(a) == hash(b)
+    assert {a, b, c} == {a, c}
+
+    class Model(BaseModel):
+        model_config = ConfigDict(frozen=True)
+
+        v: NameEmail
+
+    assert hash(Model(v=a)) == hash(Model(v=b))
 
 
 def test_specialized_urls() -> None:
