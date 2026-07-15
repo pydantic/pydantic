@@ -2174,6 +2174,17 @@ to help you monitor and understand your
 </li>
       
         <li class="md-nav__item">
+  <a href="#debugging-settings-sources" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Debugging settings sources
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#customise-settings-sources" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -2245,6 +2256,17 @@ to help you monitor and understand your
     <span class="md-ellipsis">
       
         In-place reloading
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#async-environments" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Async environments
       
     </span>
   </a>
@@ -5546,6 +5568,17 @@ to help you monitor and understand your
 </li>
       
         <li class="md-nav__item">
+  <a href="#debugging-settings-sources" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Debugging settings sources
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#customise-settings-sources" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -5617,6 +5650,17 @@ to help you monitor and understand your
     <span class="md-ellipsis">
       
         In-place reloading
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#async-environments" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Async environments
       
     </span>
   </a>
@@ -8382,6 +8426,30 @@ the selected value is determined as follows (in descending order of priority):</
 <li>Variables loaded from the secrets directory.</li>
 <li>The default field values for the <code>Settings</code> model.</li>
 </ol>
+<h2 id="debugging-settings-sources">Debugging settings sources<a class="headerlink" href="#debugging-settings-sources" title="Permanent link">&para;</a></h2>
+<p>When several sources are enabled, it can be hard to tell which source a given value came from — and
+why. Setting the <code>PYDANTIC_SETTINGS_DEBUG</code> environment variable to a truthy value (<code>1</code>, <code>true</code>, <code>yes</code>,
+or <code>on</code>) makes pydantic-settings log, at <code>DEBUG</code> level, the dictionary collected by every source in
+priority order (highest first):</p>
+<div class="language-bash highlight"><pre><span></span><code><span class="nv">PYDANTIC_SETTINGS_DEBUG</span><span class="o">=</span><span class="m">1</span><span class="w"> </span>python<span class="w"> </span>your_app.py
+</code></pre></div>
+<p>The output is emitted on the <code>pydantic_settings</code> logger, so make sure <code>DEBUG</code>-level logging is enabled
+(for example via <code>logging.basicConfig(level=logging.DEBUG)</code>). A typical report looks like:</p>
+<div class="language-text highlight"><pre><span></span><code>Resolving settings for &#39;Settings&#39; (sources in priority order, highest first):
+  InitSettingsSource: {&#39;port&#39;: 9000}
+  EnvSettingsSource: {&#39;name&#39;: &#39;from_env&#39;}
+  DotEnvSettingsSource: {}
+  SecretsSettingsSource: {}
+  DefaultSettingsSource: {}
+</code></pre></div>
+<p>Sources are listed from highest to lowest priority and merged using a deep update: higher-priority sources override lower-priority ones.
+For nested structures, lower-priority sources may still contribute missing sub-keys even when the top-level key is present in a higher-priority source.</p>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>The debug output includes the values loaded from every source, which may contain secrets loaded
+from environment variables, dotenv files, or the secrets directory. Only enable it in a trusted
+debugging context, and avoid leaving it on in production.</p>
+</div>
 <h2 id="customise-settings-sources">Customise settings sources<a class="headerlink" href="#customise-settings-sources" title="Permanent link">&para;</a></h2>
 <p>If the default order of priority doesn't match your needs, it's possible to change it by overriding
 the <code>settings_customise_sources</code> method of your <code>Settings</code> .</p>
@@ -8586,6 +8654,72 @@ need to add your own custom sources, <code>settings_customise_sources</code> mak
 <span class="nb">print</span><span class="p">(</span><span class="n">mutable_settings</span><span class="o">.</span><span class="n">foo</span><span class="p">)</span>
 <span class="c1">#&gt; foo</span>
 </code></pre></div>
+<h2 id="async-environments">Async environments<a class="headerlink" href="#async-environments" title="Permanent link">&para;</a></h2>
+<p>Settings are loaded synchronously. When you use sources that read from disk, such as dotenv, secrets, JSON, TOML, or
+YAML files, constructing a settings object in an async application can block the event loop while those files are read.
+To load or reload settings from an async context, run the construction in a worker thread:</p>
+<div class="language-py highlight"><pre><span></span><code><span class="kn">import</span><span class="w"> </span><span class="nn">asyncio</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pathlib</span><span class="w"> </span><span class="kn">import</span> <span class="n">Path</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">pydantic_settings</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseSettings</span><span class="p">,</span> <span class="n">SettingsConfigDict</span>
+
+<span class="n">env_path</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="s1">&#39;example.env&#39;</span><span class="p">)</span>
+<span class="n">env_path</span><span class="o">.</span><span class="n">write_text</span><span class="p">(</span><span class="s1">&#39;api_key=secret</span>
+<span class="s1">&#39;, encoding=&#39;</span><span class="n">utf</span><span class="o">-</span><span class="mi">8</span><span class="s1">&#39;)</span>
+
+
+<span class="k">class</span><span class="w"> </span><span class="nc">Settings</span><span class="p">(</span><span class="n">BaseSettings</span><span class="p">):</span>
+    <span class="n">api_key</span><span class="p">:</span> <span class="nb">str</span>
+
+    <span class="n">model_config</span> <span class="o">=</span> <span class="n">SettingsConfigDict</span><span class="p">(</span><span class="n">env_file</span><span class="o">=</span><span class="n">env_path</span><span class="p">)</span>
+
+
+<span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">load_settings</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="n">Settings</span><span class="p">:</span>
+    <span class="k">return</span> <span class="k">await</span> <span class="n">asyncio</span><span class="o">.</span><span class="n">to_thread</span><span class="p">(</span><span class="n">Settings</span><span class="p">)</span>
+
+
+<span class="n">settings</span> <span class="o">=</span> <span class="n">asyncio</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">load_settings</span><span class="p">())</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">settings</span><span class="o">.</span><span class="n">api_key</span><span class="p">)</span>
+<span class="c1">#&gt; secret</span>
+
+<span class="n">env_path</span><span class="o">.</span><span class="n">unlink</span><span class="p">(</span><span class="n">missing_ok</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+</code></pre></div>
+<p>To reload a cached settings object, prefer constructing a fresh instance in a worker thread and swapping the cached
+reference, rather than mutating a shared instance in place:</p>
+<div class="language-py highlight"><pre><span></span><code><span class="kn">import</span><span class="w"> </span><span class="nn">asyncio</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pathlib</span><span class="w"> </span><span class="kn">import</span> <span class="n">Path</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">pydantic_settings</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseSettings</span><span class="p">,</span> <span class="n">SettingsConfigDict</span>
+
+<span class="n">env_path</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="s1">&#39;example.env&#39;</span><span class="p">)</span>
+<span class="n">env_path</span><span class="o">.</span><span class="n">write_text</span><span class="p">(</span><span class="s1">&#39;api_key=secret</span>
+<span class="s1">&#39;, encoding=&#39;</span><span class="n">utf</span><span class="o">-</span><span class="mi">8</span><span class="s1">&#39;)</span>
+
+
+<span class="k">class</span><span class="w"> </span><span class="nc">Settings</span><span class="p">(</span><span class="n">BaseSettings</span><span class="p">):</span>
+    <span class="n">api_key</span><span class="p">:</span> <span class="nb">str</span>
+
+    <span class="n">model_config</span> <span class="o">=</span> <span class="n">SettingsConfigDict</span><span class="p">(</span><span class="n">env_file</span><span class="o">=</span><span class="n">env_path</span><span class="p">)</span>
+
+
+<span class="n">cached_settings</span> <span class="o">=</span> <span class="n">Settings</span><span class="p">()</span>
+
+
+<span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">reload_settings</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="k">global</span> <span class="n">cached_settings</span>
+    <span class="n">cached_settings</span> <span class="o">=</span> <span class="k">await</span> <span class="n">asyncio</span><span class="o">.</span><span class="n">to_thread</span><span class="p">(</span><span class="n">Settings</span><span class="p">)</span>
+
+
+<span class="n">asyncio</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">reload_settings</span><span class="p">())</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">cached_settings</span><span class="o">.</span><span class="n">api_key</span><span class="p">)</span>
+<span class="c1">#&gt; secret</span>
+
+<span class="n">env_path</span><span class="o">.</span><span class="n">unlink</span><span class="p">(</span><span class="n">missing_ok</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+</code></pre></div>
+<p>Rebinding the reference is atomic, so concurrent readers always observe a fully-initialized object. By contrast,
+<a href="#in-place-reloading">in-place reloading</a> (<code>settings.__init__()</code>) mutates the object while it runs, so a coroutine that
+reads the settings during a reload may see partially-updated state; if you rely on it, guard both the reload and every
+read with application-level locking.</p>
 
 
 

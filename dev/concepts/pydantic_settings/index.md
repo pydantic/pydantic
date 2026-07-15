@@ -3005,6 +3005,33 @@ In the case where a value is specified for the same `Settings` field in multiple
 1. Variables loaded from the secrets directory.
 1. The default field values for the `Settings` model.
 
+## Debugging settings sources
+
+When several sources are enabled, it can be hard to tell which source a given value came from — and why. Setting the `PYDANTIC_SETTINGS_DEBUG` environment variable to a truthy value (`1`, `true`, `yes`, or `on`) makes pydantic-settings log, at `DEBUG` level, the dictionary collected by every source in priority order (highest first):
+
+```bash
+PYDANTIC_SETTINGS_DEBUG=1 python your_app.py
+
+```
+
+The output is emitted on the `pydantic_settings` logger, so make sure `DEBUG`-level logging is enabled (for example via `logging.basicConfig(level=logging.DEBUG)`). A typical report looks like:
+
+```text
+Resolving settings for 'Settings' (sources in priority order, highest first):
+  InitSettingsSource: {'port': 9000}
+  EnvSettingsSource: {'name': 'from_env'}
+  DotEnvSettingsSource: {}
+  SecretsSettingsSource: {}
+  DefaultSettingsSource: {}
+
+```
+
+Sources are listed from highest to lowest priority and merged using a deep update: higher-priority sources override lower-priority ones. For nested structures, lower-priority sources may still contribute missing sub-keys even when the top-level key is present in a higher-priority source.
+
+Warning
+
+The debug output includes the values loaded from every source, which may contain secrets loaded from environment variables, dotenv files, or the secrets directory. Only enable it in a trusted debugging context, and avoid leaving it on in production.
+
 ## Customise settings sources
 
 If the default order of priority doesn't match your needs, it's possible to change it by overriding the `settings_customise_sources` method of your `Settings` .
@@ -3235,3 +3262,73 @@ print(mutable_settings.foo)
 #> foo
 
 ```
+
+## Async environments
+
+Settings are loaded synchronously. When you use sources that read from disk, such as dotenv, secrets, JSON, TOML, or YAML files, constructing a settings object in an async application can block the event loop while those files are read. To load or reload settings from an async context, run the construction in a worker thread:
+
+```py
+import asyncio
+from pathlib import Path
+
+from pydantic_settings import BaseSettings, SettingsConfigDict
+
+env_path = Path('example.env')
+env_path.write_text('api_key=secret
+', encoding='utf-8')
+
+
+class Settings(BaseSettings):
+    api_key: str
+
+    model_config = SettingsConfigDict(env_file=env_path)
+
+
+async def load_settings() -> Settings:
+    return await asyncio.to_thread(Settings)
+
+
+settings = asyncio.run(load_settings())
+print(settings.api_key)
+#> secret
+
+env_path.unlink(missing_ok=True)
+
+```
+
+To reload a cached settings object, prefer constructing a fresh instance in a worker thread and swapping the cached reference, rather than mutating a shared instance in place:
+
+```py
+import asyncio
+from pathlib import Path
+
+from pydantic_settings import BaseSettings, SettingsConfigDict
+
+env_path = Path('example.env')
+env_path.write_text('api_key=secret
+', encoding='utf-8')
+
+
+class Settings(BaseSettings):
+    api_key: str
+
+    model_config = SettingsConfigDict(env_file=env_path)
+
+
+cached_settings = Settings()
+
+
+async def reload_settings() -> None:
+    global cached_settings
+    cached_settings = await asyncio.to_thread(Settings)
+
+
+asyncio.run(reload_settings())
+print(cached_settings.api_key)
+#> secret
+
+env_path.unlink(missing_ok=True)
+
+```
+
+Rebinding the reference is atomic, so concurrent readers always observe a fully-initialized object. By contrast, [in-place reloading](#in-place-reloading) (`settings.__init__()`) mutates the object while it runs, so a coroutine that reads the settings during a reload may see partially-updated state; if you rely on it, guard both the reload and every read with application-level locking.

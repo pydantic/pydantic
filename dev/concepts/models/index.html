@@ -5873,27 +5873,6 @@ via the first and only argument.</p>
 <span class="nb">print</span><span class="p">(</span><span class="n">PetsByName</span><span class="o">.</span><span class="n">model_validate</span><span class="p">({</span><span class="s1">&#39;Otis&#39;</span><span class="p">:</span> <span class="s1">&#39;dog&#39;</span><span class="p">,</span> <span class="s1">&#39;Milo&#39;</span><span class="p">:</span> <span class="s1">&#39;cat&#39;</span><span class="p">}))</span>
 <span class="c1">#&gt; root={&#39;Otis&#39;: &#39;dog&#39;, &#39;Milo&#39;: &#39;cat&#39;}</span>
 </code></pre></div>
-<p>If you want to access items in the <code>root</code> field directly or to iterate over the items, you can implement
-custom <code>__iter__</code> and <code>__getitem__</code> functions, as shown in the following example.</p>
-<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">pydantic</span><span class="w"> </span><span class="kn">import</span> <span class="n">RootModel</span>
-
-
-<span class="k">class</span><span class="w"> </span><span class="nc">Pets</span><span class="p">(</span><span class="n">RootModel</span><span class="p">):</span>
-    <span class="n">root</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span>
-
-    <span class="k">def</span><span class="w"> </span><span class="fm">__iter__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="k">return</span> <span class="nb">iter</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">root</span><span class="p">)</span>
-
-    <span class="k">def</span><span class="w"> </span><span class="fm">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item</span><span class="p">):</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">root</span><span class="p">[</span><span class="n">item</span><span class="p">]</span>
-
-
-<span class="n">pets</span> <span class="o">=</span> <span class="n">Pets</span><span class="o">.</span><span class="n">model_validate</span><span class="p">([</span><span class="s1">&#39;dog&#39;</span><span class="p">,</span> <span class="s1">&#39;cat&#39;</span><span class="p">])</span>
-<span class="nb">print</span><span class="p">(</span><span class="n">pets</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
-<span class="c1">#&gt; dog</span>
-<span class="nb">print</span><span class="p">([</span><span class="n">pet</span> <span class="k">for</span> <span class="n">pet</span> <span class="ow">in</span> <span class="n">pets</span><span class="p">])</span>
-<span class="c1">#&gt; [&#39;dog&#39;, &#39;cat&#39;]</span>
-</code></pre></div>
 <p>You can also create subclasses of the parametrized root model directly:</p>
 <div class="language-python highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">pydantic</span><span class="w"> </span><span class="kn">import</span> <span class="n">RootModel</span>
 
