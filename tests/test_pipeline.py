@@ -40,6 +40,10 @@ def test_parse_str_with_pattern() -> None:
         (int, validate_as(...).gt(0), [1, 2, 100], [0, -1]),
         (float, validate_as(...).gt(0.0), [0.1, 1.8], [0.0, -1.0]),
         (Decimal, validate_as(...).gt(Decimal(0.0)), [Decimal(1)], [Decimal(0.0), Decimal(-1.0)]),
+        # `gt` value type differs from the schema type: the constraint must still be enforced
+        (float, validate_as(float).gt(0), [1.0, 2.5], [0.0, -1.0]),
+        (Decimal, validate_as(Decimal).gt(0), [Decimal(1)], [Decimal(0), Decimal(-1)]),
+        (int, validate_as(int).gt(0.5), [1, 2], [0, -3]),
         (int, validate_as(...).lt(5), [2, 4], [5, 6, 100]),
         (float, validate_as(...).lt(1.0), [0.5, 0.0], [1.0, 100.0]),
         (Decimal, validate_as(...).lt(Decimal(1.0)), [Decimal(0.5)], [Decimal(1.0), Decimal(5.0)]),
