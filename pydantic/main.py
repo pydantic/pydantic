@@ -341,7 +341,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
         fields_set = set()
 
         for name, field in cls.__pydantic_fields__.items():
-            if field.alias is not None and field.alias in values:
+            if field.validation_alias is None and field.alias is not None and field.alias in values:
                 fields_values[name] = values.pop(field.alias)
                 fields_set.add(name)
 

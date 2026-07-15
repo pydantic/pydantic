@@ -97,6 +97,21 @@ def test_construct_with_validation_aliases():
     assert my_model.model_dump() == {'x': 1}
 
 
+def test_construct_with_alias_and_distinct_validation_alias():
+    # When a field sets both `alias` and a distinct `validation_alias`, the
+    # `validation_alias` fully overrides `alias` for input, so `model_construct`
+    # (which builds from validation-shaped data) must use the validation alias
+    # and ignore the plain alias, matching validation.
+    class MyModel(BaseModel):
+        x: int = Field(alias='al', validation_alias='va')
+
+    assert MyModel.model_construct(va=2).x == 2
+    # both keys present -> validation_alias wins
+    assert MyModel.model_construct(al=1, va=2).x == 2
+    # only the plain alias -> ignored, just like validation rejects it
+    assert 'x' not in MyModel.model_construct(al=1).model_fields_set
+
+
 def test_large_any_str():
     class Model(BaseModel):
         a: bytes
