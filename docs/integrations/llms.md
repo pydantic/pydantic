@@ -17,4 +17,4 @@ Where `llms.txt` gives an AI tool the Pydantic *documentation*, the
 [Logfire MCP server](https://logfire.pydantic.dev/docs/how-to-guides/mcp-server/) gives it your
 application's *runtime data*: an agent can query the traces, metrics, and recorded validations from your
 own service and, for example, pull up the input behind a `ValidationError` while it's helping you fix
-it. Logfire is built by the Pydantic team.
+it.

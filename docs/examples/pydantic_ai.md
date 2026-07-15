@@ -35,8 +35,8 @@ print(result.output)
 #> [City(name='Tokyo', country='Japan', population=13960000), ...]
 ```
 
-When validation fails — say the model returns a country your validator rejects — Pydantic AI feeds the
+When validation fails (say the model returns a country your validator rejects), Pydantic AI feeds the
 validation errors back to the model and asks it to retry. To see this happening in a real application,
-instrument it with [Logfire](../integrations/logfire.md), which supports both
-[Pydantic AI](https://ai.pydantic.dev/logfire/) and Pydantic validation itself: each agent run shows the
-output the model produced, the errors your validators raised, and the retry that followed.
+instrument it with [Logfire](../integrations/logfire.md), which records
+[Pydantic AI](https://ai.pydantic.dev/logfire/) runs and the validations inside them: each agent run
+shows the output the model produced, the errors your validators raised, and the retry that followed.
