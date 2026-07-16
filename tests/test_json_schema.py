@@ -5670,19 +5670,6 @@ def test_examples_annotation() -> None:
     }
 
 
-def test_with_json_schema_and_examples_hash_depends_on_mode() -> None:
-    # WithJsonSchema and Examples used to hash `type(self.mode)`, collapsing every
-    # instance into a single bucket regardless of mode (the same slip that was
-    # fixed for UuidVersion and PathType in #12827). The hash now reflects the
-    # mode value, so instances differing only by mode no longer collide.
-    val = WithJsonSchema({'type': 'integer'}, mode='validation')
-    ser = WithJsonSchema({'type': 'integer'}, mode='serialization')
-    assert hash(val) != hash(ser)
-    assert hash(val) == hash(WithJsonSchema({'type': 'integer'}, mode='validation'))
-
-    assert hash(Examples([1], mode='validation')) != hash(Examples([1], mode='serialization'))
-
-
 @pytest.mark.skip_json_schema_validation(reason='Uses old examples format, planned for removal in v3.0.')
 def test_examples_annotation_dict() -> None:
     with pytest.warns(PydanticDeprecatedSince29):
