@@ -6382,7 +6382,8 @@ setting. <code>ser_json_timedelta</code> will be deprecated in v3.</span></p>
 <p>Defaults to <code>'iso8601'</code>.</p>
 <div style="border-left: .15rem solid rgb(79, 196, 100); padding: 0 .5rem;">
 <p><span style="font-style: italic; color: rgb(79, 196, 100);">Added in v2.12: </span><span>This setting replaces <a class="autorefs autorefs-internal" href="#pydantic.config.ConfigDict.ser_json_timedelta"><code>ser_json_timedelta</code></a>,
-which will be deprecated in v3. <code>ser_json_temporal</code> adds more configurability for the other temporal types.</span></p>
+which will be deprecated in v3. <code>ser_json_temporal</code> adds more configurability for the other temporal types.
+It takes precedence over <code>ser_json_timedelta</code>.</span></p>
 </div>
     </div>
 
@@ -7574,8 +7575,7 @@ especially with <code>TypedDict</code>.</p>
 
             <details class="quote">
               <summary>Source code in <code>pydantic/config.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1229</span>
-<span class="normal">1230</span>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1230</span>
 <span class="normal">1231</span>
 <span class="normal">1232</span>
 <span class="normal">1233</span>
@@ -7635,7 +7635,8 @@ especially with <code>TypedDict</code>.</p>
 <span class="normal">1287</span>
 <span class="normal">1288</span>
 <span class="normal">1289</span>
-<span class="normal">1290</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">with_config</span><span class="p">(</span><span class="n">config</span><span class="p">:</span> <span class="n">ConfigDict</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="o">/</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Callable</span><span class="p">[[</span><span class="n">_TypeT</span><span class="p">],</span> <span class="n">_TypeT</span><span class="p">]:</span>
+<span class="normal">1290</span>
+<span class="normal">1291</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">with_config</span><span class="p">(</span><span class="n">config</span><span class="p">:</span> <span class="n">ConfigDict</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="o">/</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Callable</span><span class="p">[[</span><span class="n">_TypeT</span><span class="p">],</span> <span class="n">_TypeT</span><span class="p">]:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;!!! abstract &quot;Usage Documentation&quot;</span>
 <span class="sd">        [Configuration with other types](../concepts/config.md#configuration-on-other-supported-types)</span>
 

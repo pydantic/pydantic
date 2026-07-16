@@ -10524,7 +10524,14 @@ If <code>False</code> (the default), these characters will be output as-is.</p>
             </td>
             <td>
               <div class="doc-md-description">
-                <p>How to serialize <code>timedelta</code> objects, either <code>'iso8601'</code> or <code>'float'</code>.</p>
+                <p>The format of serialized timedeltas. Accepts the string values of <code>'iso8601'</code> and <code>'float'</code>.</p>
+<ul>
+<li><code>'iso8601'</code> will serialize timedeltas to <a href="https://en.wikipedia.org/wiki/ISO_8601#Durations">ISO 8601 text format</a>.</li>
+<li><code>'float'</code> will serialize timedeltas to the total number of seconds.</li>
+</ul>
+<div style="border-left: .15rem solid rgb(244, 227, 76); padding: 0 .5rem;">
+<p><span style="font-style: italic; color: rgb(244, 227, 76);">Changed in v2.12: </span><span>It is now recommended to use the <code>temporal_mode</code> argument. <code>timedelta_mode</code> will be deprecated in v3.</span></p>
+</div>
               </div>
             </td>
             <td>
@@ -10540,8 +10547,23 @@ If <code>False</code> (the default), these characters will be output as-is.</p>
             </td>
             <td>
               <div class="doc-md-description">
-                <p>How to serialize datetime-like objects (<code>datetime</code>, <code>date</code>, <code>time</code>), either <code>'iso8601'</code>, <code>'seconds'</code>, or <code>'milliseconds'</code>.
-<code>iso8601</code> returns an ISO 8601 string; <code>seconds</code> returns the Unix timestamp in seconds as a float; <code>milliseconds</code> returns the Unix timestamp in milliseconds as a float.</p>
+                <p>The format of serialized temporal types from the <a class="autorefs autorefs-external" href="https://docs.python.org/3/library/datetime.html#module-datetime"><code>datetime</code></a> module. This includes:</p>
+<ul>
+<li><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/datetime.html#datetime.datetime"><code>datetime.datetime</code></a></li>
+<li><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/datetime.html#datetime.date"><code>datetime.date</code></a></li>
+<li><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/datetime.html#datetime.time"><code>datetime.time</code></a></li>
+<li><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/datetime.html#datetime.timedelta"><code>datetime.timedelta</code></a></li>
+</ul>
+<p>Can be one of:</p>
+<ul>
+<li><code>'iso8601'</code> will serialize date-like types to <a href="https://en.wikipedia.org/wiki/ISO_8601#Durations">ISO 8601 text format</a>.</li>
+<li><code>'milliseconds'</code> will serialize date-like types to a floating point number of milliseconds since the epoch.</li>
+<li><code>'seconds'</code> will serialize date-like types to a floating point number of seconds since the epoch.</li>
+</ul>
+<div style="border-left: .15rem solid rgb(79, 196, 100); padding: 0 .5rem;">
+<p><span style="font-style: italic; color: rgb(79, 196, 100);">Added in v2.12: </span><span>This argument replaces <code>timedelta_mode</code>, which will be deprecated in v3. <code>temporal_mode</code> adds more
+configurability for the other temporal types. It takes precedence over <code>timedelta_mode</code>.</span></p>
+</div>
               </div>
             </td>
             <td>
@@ -11030,7 +11052,14 @@ input is reached before the full object is deserialized, e.g. <code>["aa", "bb",
             </td>
             <td>
               <div class="doc-md-description">
-                <p>How to serialize <code>timedelta</code> objects, either <code>'iso8601'</code> or <code>'float'</code>.</p>
+                <p>The format of serialized timedeltas. Accepts the string values of <code>'iso8601'</code> and <code>'float'</code>.</p>
+<ul>
+<li><code>'iso8601'</code> will serialize timedeltas to <a href="https://en.wikipedia.org/wiki/ISO_8601#Durations">ISO 8601 text format</a>.</li>
+<li><code>'float'</code> will serialize timedeltas to the total number of seconds.</li>
+</ul>
+<div style="border-left: .15rem solid rgb(244, 227, 76); padding: 0 .5rem;">
+<p><span style="font-style: italic; color: rgb(244, 227, 76);">Changed in v2.12: </span><span>It is now recommended to use the <code>temporal_mode</code> argument. <code>timedelta_mode</code> will be deprecated in v3.</span></p>
+</div>
               </div>
             </td>
             <td>
@@ -11046,8 +11075,23 @@ input is reached before the full object is deserialized, e.g. <code>["aa", "bb",
             </td>
             <td>
               <div class="doc-md-description">
-                <p>How to serialize datetime-like objects (<code>datetime</code>, <code>date</code>, <code>time</code>), either <code>'iso8601'</code>, <code>'seconds'</code>, or <code>'milliseconds'</code>.
-<code>iso8601</code> returns an ISO 8601 string; <code>seconds</code> returns the Unix timestamp in seconds as a float; <code>milliseconds</code> returns the Unix timestamp in milliseconds as a float.</p>
+                <p>The format of serialized temporal types from the <a class="autorefs autorefs-external" href="https://docs.python.org/3/library/datetime.html#module-datetime"><code>datetime</code></a> module. This includes:</p>
+<ul>
+<li><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/datetime.html#datetime.datetime"><code>datetime.datetime</code></a></li>
+<li><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/datetime.html#datetime.date"><code>datetime.date</code></a></li>
+<li><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/datetime.html#datetime.time"><code>datetime.time</code></a></li>
+<li><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/datetime.html#datetime.timedelta"><code>datetime.timedelta</code></a></li>
+</ul>
+<p>Can be one of:</p>
+<ul>
+<li><code>'iso8601'</code> will serialize date-like types to <a href="https://en.wikipedia.org/wiki/ISO_8601#Durations">ISO 8601 text format</a>.</li>
+<li><code>'milliseconds'</code> will serialize date-like types to a floating point number of milliseconds since the epoch.</li>
+<li><code>'seconds'</code> will serialize date-like types to a floating point number of seconds since the epoch.</li>
+</ul>
+<div style="border-left: .15rem solid rgb(79, 196, 100); padding: 0 .5rem;">
+<p><span style="font-style: italic; color: rgb(79, 196, 100);">Added in v2.12: </span><span>This argument replaces <code>timedelta_mode</code>, which will be deprecated in v3. <code>temporal_mode</code> adds more
+configurability for the other temporal types. It takes precedence over <code>timedelta_mode</code>.</span></p>
+</div>
               </div>
             </td>
             <td>
