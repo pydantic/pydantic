@@ -2,6 +2,7 @@
 
 from __future__ import annotations as _annotations
 
+from collections.abc import Callable
 from copy import copy, deepcopy
 from typing import TYPE_CHECKING, Any, Generic, Literal, TypeVar
 
@@ -15,6 +16,7 @@ from .main import BaseModel, _object_setattr
 if TYPE_CHECKING:
     from .fields import Field as PydanticModelField
     from .fields import PrivateAttr as PydanticModelPrivateAttr
+    from .main import IncEx
 
     # dataclass_transform could be applied to RootModel directly, but `ModelMetaclass`'s dataclass_transform
     # takes priority (at least with pyright). We trick type checkers into thinking we apply dataclass_transform
@@ -116,14 +118,20 @@ class RootModel(BaseModel, Generic[RootModelRootType], metaclass=_RootModelMetac
         return m
 
     if TYPE_CHECKING:
+        # This `model_dump()` definition is only provided to get a more accurate return type for type checkers
+        # (no override is actually necessary at runtime). Generally, the return type will be `RootModelRootType`,
+        # assuming that `RootModelRootType` is not a `BaseModel` subclass. If `RootModelRootType` is a `BaseModel`
+        # subclass, then the return type will likely be `dict[str, Any]`, as `model_dump()` calls are recursive.
+        # The return type could even be something different, in the case of a custom serializer. Thus, `Any` is
+        # used here to catch all of these cases.
 
         def model_dump(  # type: ignore
             self,
             *,
             mode: Literal['json', 'python'] | str = 'python',
-            include: Any = None,
-            exclude: Any = None,
-            context: dict[str, Any] | None = None,
+            include: IncEx | None = None,
+            exclude: IncEx | None = None,
+            context: Any | None = None,
             by_alias: bool | None = None,
             exclude_unset: bool = False,
             exclude_defaults: bool = False,
@@ -131,18 +139,39 @@ class RootModel(BaseModel, Generic[RootModelRootType], metaclass=_RootModelMetac
             exclude_computed_fields: bool = False,
             round_trip: bool = False,
             warnings: bool | Literal['none', 'warn', 'error'] = True,
+            fallback: Callable[[Any], Any] | None = None,
             serialize_as_any: bool = False,
+            polymorphic_serialization: bool | None = None,
         ) -> Any:
-            """This method is included just to get a more accurate return type for type checkers.
-            It is included in this `if TYPE_CHECKING:` block since no override is actually necessary.
+            """!!! abstract "Usage Documentation"
+                [`model_dump`](../concepts/serialization.md#python-mode)
 
-            See the documentation of `BaseModel.model_dump` for more details about the arguments.
+            Generate a dictionary representation of the model, optionally specifying which fields to include or exclude.
 
-            Generally, this method will have a return type of `RootModelRootType`, assuming that `RootModelRootType` is
-            not a `BaseModel` subclass. If `RootModelRootType` is a `BaseModel` subclass, then the return
-            type will likely be `dict[str, Any]`, as `model_dump` calls are recursive. The return type could
-            even be something different, in the case of a custom serializer.
-            Thus, `Any` is used here to catch all of these cases.
+            Args:
+                mode: The mode in which `to_python` should run.
+                    If mode is 'json', the output will only contain JSON serializable types.
+                    If mode is 'python', the output may contain non-JSON-serializable Python objects.
+                include: A set of fields to include in the output.
+                exclude: A set of fields to exclude from the output.
+                context: Additional context to pass to the serializer.
+                by_alias: Whether to use the field's alias in the dictionary key if defined.
+                exclude_unset: Whether to exclude fields that have not been explicitly set.
+                exclude_defaults: Whether to exclude fields that are set to their default value.
+                exclude_none: Whether to exclude fields that have a value of `None`.
+                exclude_computed_fields: Whether to exclude computed fields.
+                    While this can be useful for round-tripping, it is usually recommended to use the dedicated
+                    `round_trip` parameter instead.
+                round_trip: If True, dumped values should be valid as input for non-idempotent types such as Json[T].
+                warnings: How to handle serialization errors. False/"none" ignores them, True/"warn" logs errors,
+                    "error" raises a [`PydanticSerializationError`][pydantic_core.PydanticSerializationError].
+                fallback: A function to call when an unknown value is encountered. If not provided,
+                    a [`PydanticSerializationError`][pydantic_core.PydanticSerializationError] error is raised.
+                serialize_as_any: Whether to serialize fields with duck-typing serialization behavior.
+                polymorphic_serialization: Whether to use model and dataclass polymorphic serialization for this call.
+
+            Returns:
+                A dictionary representation of the model.
             """
             ...
 
