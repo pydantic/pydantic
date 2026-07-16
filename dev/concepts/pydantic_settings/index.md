@@ -3028,6 +3028,15 @@ Resolving settings for 'Settings' (sources in priority order, highest first):
 
 Sources are listed from highest to lowest priority and merged using a deep update: higher-priority sources override lower-priority ones. For nested structures, lower-priority sources may still contribute missing sub-keys even when the top-level key is present in a higher-priority source.
 
+The same flag also traces file resolution, so you can see which dotenv and secret files were actually found and loaded — helpful when running the same code from a different working directory silently yields defaults because a relative `.env` path didn't resolve:
+
+```text
+Env file not found, skipping: /home/app/.env.production
+Loading env file: /home/app/.env
+Secret file not found, skipping: /run/secrets/api_key
+
+```
+
 Warning
 
 The debug output includes the values loaded from every source, which may contain secrets loaded from environment variables, dotenv files, or the secrets directory. Only enable it in a trusted debugging context, and avoid leaving it on in production.

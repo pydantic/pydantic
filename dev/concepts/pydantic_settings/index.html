@@ -8444,6 +8444,13 @@ priority order (highest first):</p>
 </code></pre></div>
 <p>Sources are listed from highest to lowest priority and merged using a deep update: higher-priority sources override lower-priority ones.
 For nested structures, lower-priority sources may still contribute missing sub-keys even when the top-level key is present in a higher-priority source.</p>
+<p>The same flag also traces file resolution, so you can see which dotenv and secret files were actually
+found and loaded — helpful when running the same code from a different working directory silently
+yields defaults because a relative <code>.env</code> path didn't resolve:</p>
+<div class="language-text highlight"><pre><span></span><code>Env file not found, skipping: /home/app/.env.production
+Loading env file: /home/app/.env
+Secret file not found, skipping: /run/secrets/api_key
+</code></pre></div>
 <div class="admonition warning">
 <p class="admonition-title">Warning</p>
 <p>The debug output includes the values loaded from every source, which may contain secrets loaded
