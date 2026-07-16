@@ -83,7 +83,6 @@ def test_parse_multipleOf(type_: Any, pipeline: Any, valid_cases: list[Any], inv
     [
         (int, validate_as(int).constrain(Interval(ge=0, le=10)), [0, 5, 10], [-5, 11]),
         (float, validate_as(float).constrain(Interval(gt=0.0, lt=10.0)), [0.1, 9.9], [0.0, -5.0, 10.0]),
-        # Zero bounds must not be silently dropped (truthiness vs. `is not None`) on any of the four sides.
         (int, validate_as(int).constrain(Interval(gt=0)), [1, 100], [0, -5]),
         (int, validate_as(int).constrain(Interval(le=0)), [0, -5], [1]),
         (int, validate_as(int).constrain(Interval(lt=0)), [-5], [0, 1]),
