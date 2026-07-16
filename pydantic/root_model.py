@@ -2,6 +2,7 @@
 
 from __future__ import annotations as _annotations
 
+from collections.abc import Callable
 from copy import copy, deepcopy
 from typing import TYPE_CHECKING, Any, Generic, Literal, TypeVar
 
@@ -123,7 +124,7 @@ class RootModel(BaseModel, Generic[RootModelRootType], metaclass=_RootModelMetac
             mode: Literal['json', 'python'] | str = 'python',
             include: Any = None,
             exclude: Any = None,
-            context: dict[str, Any] | None = None,
+            context: Any | None = None,
             by_alias: bool | None = None,
             exclude_unset: bool = False,
             exclude_defaults: bool = False,
@@ -131,7 +132,9 @@ class RootModel(BaseModel, Generic[RootModelRootType], metaclass=_RootModelMetac
             exclude_computed_fields: bool = False,
             round_trip: bool = False,
             warnings: bool | Literal['none', 'warn', 'error'] = True,
+            fallback: Callable[[Any], Any] | None = None,
             serialize_as_any: bool = False,
+            polymorphic_serialization: bool | None = None,
         ) -> Any:
             """This method is included just to get a more accurate return type for type checkers.
             It is included in this `if TYPE_CHECKING:` block since no override is actually necessary.
