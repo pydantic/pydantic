@@ -1,4 +1,5 @@
 from datetime import date, datetime, time, timedelta, timezone
+from typing import Literal
 
 import pytest
 
@@ -192,6 +193,62 @@ def test_config_datetime(
         ),
     ):
         assert s.to_json({dt: 'foo'}) == expected_to_json_dict
+
+
+@pytest.mark.parametrize(
+    ['dt', 'expected', 'expected_json', 'expected_key', 'mode'],
+    [
+        (datetime(2026, 1, 1, tzinfo=timezone.utc), 1767225600.0, b'1767225600.0', '1767225600', 'seconds'),
+        (
+            datetime(2026, 1, 1, tzinfo=timezone.utc),
+            1767225600000.0,
+            b'1767225600000.0',
+            '1767225600000',
+            'milliseconds',
+        ),
+        (datetime(2026, 1, 1, tzinfo=tz(hours=-5)), 1767243600.0, b'1767243600.0', '1767243600', 'seconds'),
+        (
+            datetime(2026, 1, 1, tzinfo=tz(hours=-5)),
+            1767243600000.0,
+            b'1767243600000.0',
+            '1767243600000',
+            'milliseconds',
+        ),
+        (datetime(2026, 1, 1, tzinfo=tz(hours=2, minutes=30)), 1767216600.0, b'1767216600.0', '1767216600', 'seconds'),
+        (
+            datetime(2026, 1, 1, 1, 1, 1, 23, tzinfo=tz(hours=-5)),
+            1767247261.000023,
+            b'1767247261.000023',
+            '1767247261.000023',
+            'seconds',
+        ),
+        (
+            datetime(2026, 1, 1, 1, 1, 1, 23, tzinfo=tz(hours=-5)),
+            1767247261000.023,
+            b'1767247261000.023',
+            '1767247261000.023',
+            'milliseconds',
+        ),
+    ],
+)
+def test_config_datetime_tz_aware(
+    dt: datetime, expected: float, expected_json: bytes, expected_key: str, mode: Literal['seconds', 'milliseconds']
+):
+    """https://github.com/pydantic/pydantic/issues/13423"""
+    if mode == 'seconds':
+        assert expected == dt.timestamp()
+
+    s = SchemaSerializer(core_schema.datetime_schema(), config={'ser_json_temporal': mode})
+    assert s.to_python(dt) == dt
+    assert s.to_python(dt, mode='json') == expected
+    assert s.to_json(dt) == expected_json
+
+    key_s = SchemaSerializer(
+        core_schema.dict_schema(core_schema.datetime_schema(), core_schema.str_schema()),
+        config={'ser_json_temporal': mode},
+    )
+    assert key_s.to_python({dt: 'foo'}, mode='json') == {expected_key: 'foo'}
+    assert key_s.to_json({dt: 'foo'}) == f'{{"{expected_key}":"foo"}}'.encode()
 
 
 @pytest.mark.parametrize(

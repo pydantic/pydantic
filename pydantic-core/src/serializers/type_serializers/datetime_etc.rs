@@ -14,11 +14,11 @@ use crate::serializers::SerializationState;
 use crate::serializers::config::{FromConfig, TemporalMode};
 
 pub(crate) fn datetime_to_seconds(dt: DateTime) -> f64 {
-    dt.date.timestamp() as f64 + time_to_seconds(dt.time)
+    dt.timestamp_tz() as f64 + f64::from(dt.time.microsecond) / 1_000_000.0
 }
 
 pub(crate) fn datetime_to_milliseconds(dt: DateTime) -> f64 {
-    dt.date.timestamp_ms() as f64 + time_to_milliseconds(dt.time)
+    dt.timestamp_tz() as f64 * 1_000.0 + f64::from(dt.time.microsecond) / 1_000.0
 }
 
 pub(crate) fn date_to_seconds(date: Date) -> f64 {
