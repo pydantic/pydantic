@@ -58,7 +58,7 @@ pub(crate) struct LookupPath {
 
 impl fmt::Display for LookupPath {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{first_key}", first_key = &self.first_item)?;
+        write!(f, "{first_key}", first_key = self.first_item)?;
         for item in &self.rest {
             write!(f, ".{item}")?;
         }
@@ -236,7 +236,7 @@ impl Borrow<str> for PathItemString {
 
 impl fmt::Display for PathItemString {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "'{key}'", key = &self.0)
+        write!(f, "'{key}'", key = self.0)
     }
 }
 
