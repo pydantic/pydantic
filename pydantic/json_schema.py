@@ -2744,7 +2744,7 @@ class WithJsonSchema:
             return self.json_schema.copy()
 
     def __hash__(self) -> int:
-        return hash(type(self.mode))
+        return hash(self.mode)
 
 
 class Examples:
@@ -2818,7 +2818,7 @@ class Examples:
         return json_schema
 
     def __hash__(self) -> int:
-        return hash(type(self.mode))
+        return hash(self.mode)
 
 
 def _get_all_json_refs(item: Any) -> set[JsonRef]:
