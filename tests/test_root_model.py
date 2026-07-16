@@ -1,4 +1,7 @@
+import importlib.util
+import inspect
 import pickle
+import typing
 from datetime import date, datetime
 from typing import Annotated, Any, Generic, Literal, TypeVar
 
@@ -721,3 +724,29 @@ def test_model_with_both_docstring_and_field_description() -> None:
         'type': 'integer',
         'description': 'More detailed description',
     }
+
+
+def test_type_checking_model_dump_signature_in_sync_with_base_model() -> None:
+
+    import pydantic.root_model
+
+    spec = importlib.util.spec_from_file_location('pydantic._root_model_type_checking', pydantic.root_model.__file__)
+    assert spec is not None and spec.loader is not None
+    module = importlib.util.module_from_spec(spec)
+
+    typing.TYPE_CHECKING = True
+    try:
+        spec.loader.exec_module(module)
+    finally:
+        typing.TYPE_CHECKING = False
+
+    base_sig = inspect.signature(BaseModel.model_dump)
+    root_sig = inspect.signature(module.RootModel.model_dump)
+
+    # The return annotation intentionally differs (`Any` instead of `dict[str, Any]`),
+    # but the parameters must match exactly:
+    assert list(root_sig.parameters.values()) == list(base_sig.parameters.values())
+
+    assert module.RootModel.model_dump.__doc__ is not None
+    assert BaseModel.model_dump.__doc__ is not None
+    assert inspect.cleandoc(module.RootModel.model_dump.__doc__) == inspect.cleandoc(BaseModel.model_dump.__doc__)
