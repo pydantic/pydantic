@@ -613,13 +613,13 @@ def _apply_constraint(  # noqa: C901
         else:
             raise NotImplementedError('Constraining to a specific timezone is not yet supported')
     elif isinstance(constraint, annotated_types.Interval):
-        if constraint.ge:
+        if constraint.ge is not None:
             s = _apply_constraint(s, annotated_types.Ge(constraint.ge))
-        if constraint.gt:
+        if constraint.gt is not None:
             s = _apply_constraint(s, annotated_types.Gt(constraint.gt))
-        if constraint.le:
+        if constraint.le is not None:
             s = _apply_constraint(s, annotated_types.Le(constraint.le))
-        if constraint.lt:
+        if constraint.lt is not None:
             s = _apply_constraint(s, annotated_types.Lt(constraint.lt))
         assert s is not None
     elif isinstance(constraint, annotated_types.Predicate):
