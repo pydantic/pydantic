@@ -295,6 +295,9 @@ impl GeneralFieldsSerializer {
         extras_serializer: &Arc<CombinedSerializer>,
         map: &mut Map,
     ) -> Result<(), Map::Error> {
+        // Match declared fields: expose the extra key as `field_name` so
+        // serialization warnings / custom serializers report a useful name.
+        let state = &mut state.scoped_set_field_name(Some(key.as_py_str().bind(value.py()).clone()));
         if let Some(next_include_exclude) = self.filter.key_filter(key.as_py_str().bind(value.py()), state)?
             && !exclude_field_by_value(
                 value,

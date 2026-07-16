@@ -1174,9 +1174,59 @@ def test_extra_custom_serializer():
     s = SchemaSerializer(schema)
 
     m = Model()
+    m.__dict__ = {}
     m.__pydantic_extra__ = {'extra': 'extra'}
 
     assert s.to_python(m) == {'extra': 'extra bam!'}
+    assert s.to_python(m, mode='json') == {'extra': 'extra bam!'}
+    assert s.to_json(m) == b'{"extra":"extra bam!"}'
+
+
+def test_extra_fields_schema_used_for_json_and_warnings():
+    """Regression for pydantic/pydantic#12385.
+
+    Typed `__pydantic_extra__` / `extras_schema` must drive serialization for extra
+    fields on both the Python and JSON paths, including warnings.
+    """
+
+    class Model:
+        __slots__ = ('__pydantic_extra__', '__dict__')
+        __pydantic_extra__: dict[str, Any]
+
+    schema = core_schema.model_schema(
+        Model,
+        core_schema.model_fields_schema(
+            {
+                'a': core_schema.model_field(core_schema.int_schema()),
+            },
+            extra_behavior='allow',
+            extras_schema=core_schema.int_schema(),
+        ),
+        extra_behavior='allow',
+    )
+    s = SchemaSerializer(schema)
+
+    m = Model()
+    m.__dict__ = {'a': 1}
+    m.__pydantic_extra__ = {'extra': 'not_an_int'}
+
+    with pytest.warns(
+        UserWarning,
+        match=r"Expected `int` - serialized value may not be as expected \[field_name='extra', input_value='not_an_int', input_type=str\]",
+    ):
+        assert s.to_python(m) == {'a': 1, 'extra': 'not_an_int'}
+
+    with pytest.warns(
+        UserWarning,
+        match=r"Expected `int` - serialized value may not be as expected \[field_name='extra', input_value='not_an_int', input_type=str\]",
+    ):
+        assert s.to_python(m, mode='json') == {'a': 1, 'extra': 'not_an_int'}
+
+    with pytest.warns(
+        UserWarning,
+        match=r"Expected `int` - serialized value may not be as expected \[field_name='extra', input_value='not_an_int', input_type=str\]",
+    ):
+        assert s.to_json(m) == b'{"a":1,"extra":"not_an_int"}'
 
 
 def test_no_warn_on_exclude() -> None:

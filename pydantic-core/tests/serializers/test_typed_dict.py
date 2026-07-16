@@ -342,6 +342,39 @@ def test_extra_custom_serializer():
     m = {'extra': 'extra'}
 
     assert s.to_python(m) == {'extra': 'extra bam!'}
+    assert s.to_python(m, mode='json') == {'extra': 'extra bam!'}
+    assert s.to_json(m) == b'{"extra":"extra bam!"}'
+
+
+def test_extra_fields_schema_used_for_json_and_warnings():
+    """Regression for pydantic/pydantic#12385 on typed dict extras."""
+    s = SchemaSerializer(
+        core_schema.typed_dict_schema(
+            {
+                'a': core_schema.typed_dict_field(core_schema.int_schema()),
+            },
+            extra_behavior='allow',
+            extras_schema=core_schema.int_schema(),
+        )
+    )
+
+    with pytest.warns(
+        UserWarning,
+        match=r"Expected `int` - serialized value may not be as expected \[field_name='extra', input_value='not_an_int', input_type=str\]",
+    ):
+        assert s.to_python({'a': 1, 'extra': 'not_an_int'}) == {'a': 1, 'extra': 'not_an_int'}
+
+    with pytest.warns(
+        UserWarning,
+        match=r"Expected `int` - serialized value may not be as expected \[field_name='extra', input_value='not_an_int', input_type=str\]",
+    ):
+        assert s.to_python({'a': 1, 'extra': 'not_an_int'}, mode='json') == {'a': 1, 'extra': 'not_an_int'}
+
+    with pytest.warns(
+        UserWarning,
+        match=r"Expected `int` - serialized value may not be as expected \[field_name='extra', input_value='not_an_int', input_type=str\]",
+    ):
+        assert s.to_json({'a': 1, 'extra': 'not_an_int'}) == b'{"a":1,"extra":"not_an_int"}'
 
 
 @pytest.mark.parametrize(
