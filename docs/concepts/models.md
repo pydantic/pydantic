@@ -1426,30 +1426,6 @@ print(PetsByName.model_validate({'Otis': 'dog', 'Milo': 'cat'}))
 #> root={'Otis': 'dog', 'Milo': 'cat'}
 ```
 
-If you want to access items in the `root` field directly or to iterate over the items, you can implement
-custom `__iter__` and `__getitem__` functions, as shown in the following example.
-
-```python
-from pydantic import RootModel
-
-
-class Pets(RootModel):
-    root: list[str]
-
-    def __iter__(self):
-        return iter(self.root)
-
-    def __getitem__(self, item):
-        return self.root[item]
-
-
-pets = Pets.model_validate(['dog', 'cat'])
-print(pets[0])
-#> dog
-print([pet for pet in pets])
-#> ['dog', 'cat']
-```
-
 You can also create subclasses of the parametrized root model directly:
 
 ```python
