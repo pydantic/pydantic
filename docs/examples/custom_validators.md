@@ -287,3 +287,8 @@ except ValidationError as e:
 Note that if the context property is not included in `model_validate`, then `info.context` will be `None` and the forbidden passwords list will not get added to the context in the above implementation. As such, `validate_user_passwords` would not carry out the desired password validation.
 
 More details about validation context can be found in the [validators documentation](../concepts/validators.md#validation-context).
+
+The messages you write in these `raise ValueError(...)` calls are worth crafting: they're what you'll
+read when the rule eventually rejects real data. They also carry through to tooling that consumes the
+structured errors: [Logfire's explanations of failed validations](../errors/troubleshooting.md), for
+example, include the messages from your custom validators.

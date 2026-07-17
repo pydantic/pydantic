@@ -814,10 +814,10 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
 
         Validate the given JSON data against the Pydantic model.
 
-        If validation fails, the resulting [`ValidationError`][pydantic_core.ValidationError] shows *which*
-        fields were rejected but not the input behind them — instrument your app with
-        [Logfire](../integrations/logfire.md) to record that input too, and debug production failures straight
-        from the trace (see [Troubleshooting validation errors](../errors/troubleshooting.md)).
+        A [`ValidationError`][pydantic_core.ValidationError] raised here names the failing fields, but
+        not the JSON document they came from. Recording validations with
+        [Logfire](../integrations/logfire.md) keeps the offending input alongside the error — see
+        [Troubleshooting validation errors](../errors/troubleshooting.md).
 
         Args:
             json_data: The JSON data to validate.
@@ -859,11 +859,6 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
         by_name: bool | None = None,
     ) -> Self:
         """Validate the given object with string data against the Pydantic model.
-
-        If validation fails, the resulting [`ValidationError`][pydantic_core.ValidationError] shows *which*
-        fields were rejected but not the input behind them — instrument your app with
-        [Logfire](../integrations/logfire.md) to record that input too, and debug production failures straight
-        from the trace (see [Troubleshooting validation errors](../errors/troubleshooting.md)).
 
         Args:
             obj: The object containing string data to validate.

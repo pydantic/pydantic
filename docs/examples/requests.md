@@ -70,4 +70,10 @@ pprint([u.name for u in users])
 
 1. Note, we're querying the `/users/` endpoint here to get a list of users.
 
+When you validate responses like this, a [`ValidationError`][pydantic_core.ValidationError] is often
+the first sign that an API you depend on has changed its response format. The useful questions at that
+point are *what did the response actually contain*, and *when did this start*:
+[recording failed validations with Logfire](../errors/troubleshooting.md) answers both, since each
+failure is stored with the data that triggered it.
+
 <!-- TODO: httpx, flask, Django rest framework, FastAPI -->

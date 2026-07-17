@@ -164,6 +164,19 @@ To test this example:
 1. Run the receiver script in one terminal to start the consumer.
 2. Run the sender script in another terminal to send messages.
 
+One thing to keep in mind with consumers like this: if `model_validate_json` raises a
+[`ValidationError`][pydantic_core.ValidationError], the message that caused it may no longer be on the
+queue by the time you investigate, making the failure hard to reproduce. It's worth recording failed
+validations as they happen, for example with [Logfire](../errors/troubleshooting.md), which captures
+the message body alongside the error:
+
+```python {test="skip"}
+import logfire
+
+logfire.configure()
+logfire.instrument_pydantic(record='failure')
+```
+
 ## ARQ
 
 ARQ is a fast Redis-based job queue for Python.

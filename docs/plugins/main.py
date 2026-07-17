@@ -57,7 +57,6 @@ def on_page_markdown(markdown: str, page: Page, config: MkDocsConfig, files: Fil
     """
     markdown = upgrade_python(markdown)
     markdown = insert_json_output(markdown)
-    markdown = add_error_troubleshooting_footer(markdown, page)
     if md := render_index(markdown, page):
         return md
     if md := render_why(markdown, page):
@@ -77,35 +76,6 @@ def on_page_markdown(markdown: str, page: Page, config: MkDocsConfig, files: Fil
 
 
 # End definition of MkDocs hooks
-
-
-# Pages that describe Pydantic validation errors and should show the shared
-# "troubleshoot with Logfire" footer. The troubleshooting page itself is excluded
-# so it doesn't link to itself.
-ERROR_PAGES_WITH_FOOTER = {
-    'errors/errors.md',
-    'errors/validation_errors.md',
-    'errors/usage_errors.md',
-}
-
-TROUBLESHOOTING_FOOTER = """
-
----
-
-A `ValidationError` names the field and rule that failed, but not the input that triggered it.
-[Logfire](troubleshooting.md), built by the team behind Pydantic, records the input and the structured
-errors for each validation, so you can trace a failure back to the exact payload.
-"""
-
-
-def add_error_troubleshooting_footer(markdown: str, page: Page) -> str:
-    """Append a shared footer linking to the Logfire troubleshooting page.
-
-    This is added to every page that describes a Pydantic validation error.
-    """
-    if page.file.src_uri in ERROR_PAGES_WITH_FOOTER:
-        return markdown + TROUBLESHOOTING_FOOTER
-    return markdown
 
 
 def add_changelog() -> None:

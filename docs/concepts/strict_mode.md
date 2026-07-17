@@ -43,6 +43,11 @@ except ValidationError as exc:
     """
 ```
 
+One caveat when enabling strict mode on models an existing application relies on: inputs that were
+being quietly coerced will start failing. If you can't audit every caller, it helps to watch validation
+failures while you roll the change out. [Logfire](../integrations/logfire.md) counts successful and
+failed validations as metrics, and records the inputs that were rejected.
+
 Strict mode can be enabled in various ways:
 
 * [As a validation parameter](#as-a-validation-parameter), such as when using [`model_validate()`][pydantic.BaseModel.model_validate],

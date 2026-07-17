@@ -145,6 +145,10 @@ Partial validation allows you to validate an incomplete JSON string, or a Python
 
 Partial validation is particularly helpful when processing the output of an LLM, where the model streams structured responses, and you may wish to begin validating the stream while you're still receiving data (e.g. to show partial data to users).
 
+Streaming pipelines like this can be fiddly to debug after the fact. If you run one in production,
+[Logfire](../integrations/logfire.md) can record each validation in the context of the surrounding
+request, which makes it easier to reconstruct how a given stream was handled.
+
 !!! warning
     Partial validation is an experimental feature and may change in future versions of Pydantic. The current implementation should be considered a proof of concept at this time and has a number of [limitations](#limitations-of-partial-validation).
 
