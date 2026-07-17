@@ -81,8 +81,11 @@ def test_parse_multipleOf(type_: Any, pipeline: Any, valid_cases: list[Any], inv
 @pytest.mark.parametrize(
     'type_, pipeline, valid_cases, invalid_cases',
     [
-        (int, validate_as(int).constrain(Interval(ge=0, le=10)), [0, 5, 10], [11]),
-        (float, validate_as(float).constrain(Interval(gt=0.0, lt=10.0)), [0.1, 9.9], [10.0]),
+        (int, validate_as(int).constrain(Interval(ge=0, le=10)), [0, 5, 10], [-5, 11]),
+        (float, validate_as(float).constrain(Interval(gt=0.0, lt=10.0)), [0.1, 9.9], [0.0, -5.0, 10.0]),
+        (int, validate_as(int).constrain(Interval(gt=0)), [1, 100], [0, -5]),
+        (int, validate_as(int).constrain(Interval(le=0)), [0, -5], [1]),
+        (int, validate_as(int).constrain(Interval(lt=0)), [-5], [0, 1]),
         (
             Decimal,
             validate_as(Decimal).constrain(Interval(ge=Decimal('1.0'), lt=Decimal('10.0'))),

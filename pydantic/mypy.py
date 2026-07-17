@@ -58,6 +58,7 @@ from mypy.plugins.common import (
     deserialize_and_fixup_type,
 )
 from mypy.semanal import set_callable_name
+from mypy.semanal_shared import has_placeholder
 from mypy.server.trigger import make_wildcard_trigger
 from mypy.state import state
 from mypy.type_visitor import TypeTranslator
@@ -88,6 +89,7 @@ CREATE_MODEL_FULLNAME = 'pydantic.main.create_model'
 BASESETTINGS_FULLNAME = 'pydantic_settings.main.BaseSettings'
 ROOT_MODEL_FULLNAME = 'pydantic.root_model.RootModel'
 MODEL_METACLASS_FULLNAME = 'pydantic._internal._model_construction.ModelMetaclass'
+ROOT_MODEL_METACLASS_FULLNAME = 'pydantic.root_model._RootModelMetaclass'
 FIELD_FULLNAME = 'pydantic.fields.Field'
 DATACLASS_FULLNAME = 'pydantic.dataclasses.dataclass'
 MODEL_VALIDATOR_FULLNAME = 'pydantic.functional_validators.model_validator'
@@ -143,7 +145,7 @@ class PydanticPlugin(Plugin):
 
     def get_metaclass_hook(self, fullname: str) -> Callable[[ClassDefContext], None] | None:
         """Update Pydantic `ModelMetaclass` definition."""
-        if fullname == MODEL_METACLASS_FULLNAME:
+        if fullname in (MODEL_METACLASS_FULLNAME, ROOT_MODEL_METACLASS_FULLNAME):
             return self._pydantic_model_metaclass_marker_callback
         return None
 
@@ -531,7 +533,12 @@ class PydanticModelTransformer:
             # Some definitions are not ready. We need another pass.
             return False
         for field in fields:
-            if field.type is None:
+            if field.type is None or has_placeholder(field.type):
+                # The field type may contain placeholders, e.g. when inheriting from a generic
+                # model parametrized with a forward reference to the class being defined.
+                # Request another pass so that they can be resolved:
+                if not self._api.final_iteration:
+                    self._api.defer()
                 return False
 
         is_settings = info.has_base(BASESETTINGS_FULLNAME)
@@ -916,7 +923,13 @@ class PydanticModelTransformer:
 
         The added `__init__` will be annotated with types vs. all `Any` depending on the plugin settings.
         """
-        if '__init__' in self._cls.info.names and not self._cls.info.names['__init__'].plugin_generated:
+        if (
+            '__init__' in self._cls.info.names
+            and not self._cls.info.names['__init__'].plugin_generated
+            # `RootModel` declares a typed `__init__` for the benefit of type checkers when the plugin
+            # isn't used, but the plugin-generated one should take priority over it:
+            and self._cls.fullname != ROOT_MODEL_FULLNAME
+        ):
             return  # Don't generate an __init__ if one already exists
 
         typed = self.plugin_config.init_typed
