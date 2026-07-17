@@ -107,7 +107,7 @@ def _check_frozen(model_cls: type[BaseModel], name: str, value: Any) -> None:
 
 
 def _model_field_setattr_handler(model: BaseModel, name: str, val: Any) -> None:
-    model.__dict__[name] = val
+    model.__dict__[name] = val  # pyright: ignore[reportIndexIssue] (https://github.com/microsoft/pyright/issues/11548)
     model.__pydantic_fields_set__.add(name)
 
 
@@ -125,7 +125,7 @@ _SIMPLE_SETATTR_HANDLERS: Mapping[str, Callable[[BaseModel, str, Any], None]] = 
     'model_field': _model_field_setattr_handler,
     'validate_assignment': lambda model, name, val: model.__pydantic_validator__.validate_assignment(model, name, val),  # pyright: ignore[reportAssignmentType]
     'private': _private_setattr_handler,
-    'cached_property': lambda model, name, val: model.__dict__.__setitem__(name, val),
+    'cached_property': lambda model, name, val: model.__dict__.__setitem__(name, val),  # pyright: ignore[reportAttributeAccessIssue] (https://github.com/microsoft/pyright/issues/11548)
     'extra_known': lambda model, name, val: _object_setattr(model, name, val),
 }
 
@@ -436,7 +436,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
             # Selectively deepcopy fields that are not being updated:
             for k, v in copied.__dict__.items():
                 if k not in update:
-                    copied.__dict__[k] = deepcopy(v, memo)
+                    copied.__dict__[k] = deepcopy(v, memo)  # pyright: ignore[reportIndexIssue] (https://github.com/microsoft/pyright/issues/11548)
             if copied.__pydantic_extra__ is not None:
                 for k, v in copied.__pydantic_extra__.items():
                     if k not in update:
@@ -454,13 +454,13 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
             if self.model_config.get('extra') == 'allow':
                 for k, v in update.items():
                     if k in self.__pydantic_fields__:
-                        copied.__dict__[k] = v
+                        copied.__dict__[k] = v  # pyright: ignore[reportIndexIssue] (https://github.com/microsoft/pyright/issues/11548)
                     else:
                         if copied.__pydantic_extra__ is None:
                             copied.__pydantic_extra__ = {}
                         copied.__pydantic_extra__[k] = v
             else:
-                copied.__dict__.update(update)
+                copied.__dict__.update(update)  # pyright: ignore[reportAttributeAccessIssue] (https://github.com/microsoft/pyright/issues/11548)
 
             copied.__pydantic_fields_set__.update(update.keys())
 
