@@ -17,7 +17,7 @@ from warnings import warn
 import annotated_types
 import typing_extensions
 from pydantic_core import MISSING, PydanticUndefined
-from typing_extensions import Self, TypedDict, Unpack, deprecated
+from typing_extensions import Self, TypedDict, TypeForm, Unpack, deprecated
 from typing_inspection import typing_objects
 from typing_inspection.introspection import UNKNOWN, AnnotationSource, ForbiddenQualifier, Qualifier, inspect_annotation
 
@@ -51,8 +51,7 @@ else:
 class _FromFieldInfoInputs(TypedDict, total=False):
     """This class exists solely to add type checking for the `**kwargs` in `FieldInfo.from_field`."""
 
-    # TODO PEP 747: use TypeForm:
-    annotation: type[Any] | None
+    annotation: TypeForm[Any]
     default_factory: Callable[[], Any] | Callable[[dict[str, Any]], Any] | None
     alias: str | None
     alias_priority: int | None
@@ -97,8 +96,7 @@ class _FieldInfoInputs(_FromFieldInfoInputs, total=False):
 
 
 class _FieldInfoAsDict(TypedDict, closed=True):
-    # TODO PEP 747: use TypeForm:
-    annotation: Any
+    annotation: TypeForm[Any] | None
     metadata: list[Any]
     attributes: dict[str, Any]
 
@@ -149,8 +147,7 @@ class FieldInfo(_repr.Representation):
               (e.g. [custom types handlers](../concepts/types.md#as-an-annotation) or any object not recognized by Pydantic).
     """
 
-    # TODO PEP 747: use TypeForm:
-    annotation: type[Any] | None
+    annotation: TypeForm[Any] | None
     default: Any
     default_factory: Callable[[], Any] | Callable[[dict[str, Any]], Any] | None
     alias: str | None

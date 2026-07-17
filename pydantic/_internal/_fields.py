@@ -11,7 +11,7 @@ from re import Pattern
 from typing import TYPE_CHECKING, Any, TypeVar, cast
 
 from pydantic_core import PydanticUndefined
-from typing_extensions import TypeIs
+from typing_extensions import TypeForm, TypeIs
 from typing_inspection.introspection import AnnotationSource
 
 from pydantic import PydanticDeprecatedSince211
@@ -43,8 +43,7 @@ class PydanticMetadata(Representation):
 
 @dataclasses.dataclass(slots=True, kw_only=True)
 class PydanticExtraInfo:
-    # TODO: make use of PEP 747:
-    annotation: Any
+    annotation: TypeForm[Any]
     complete: bool
 
 

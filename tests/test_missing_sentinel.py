@@ -33,8 +33,7 @@ def test_missing_sentinel_model() -> None:
 def test_missing_sentinel_type_adapter() -> None:
     """Note that this usage isn't explicitly supported (and useless in practice)."""
 
-    # TODO Remove annotation with PEP 747:
-    ta: TypeAdapter[object] = TypeAdapter(MISSING)
+    ta = TypeAdapter(MISSING)
 
     assert ta.validate_python(MISSING) is MISSING
 

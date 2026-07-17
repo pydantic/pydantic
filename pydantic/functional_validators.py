@@ -10,7 +10,7 @@ from functools import partialmethod
 from typing import TYPE_CHECKING, Annotated, Any, Literal, TypeAlias, TypeVar, cast, overload
 
 from pydantic_core import PydanticUndefined, core_schema
-from typing_extensions import Self
+from typing_extensions import Self, TypeForm
 
 from ._internal import _decorators, _generics
 from .annotated_handlers import GetCoreSchemaHandler
@@ -888,8 +888,7 @@ class ValidateAs:
         ```
     """
 
-    # TODO: make use of PEP 747
-    def __init__(self, from_type: type[_FromTypeT], /, instantiation_hook: Callable[[_FromTypeT], Any]) -> None:
+    def __init__(self, from_type: TypeForm[_FromTypeT], /, instantiation_hook: Callable[[_FromTypeT], Any]) -> None:
         self.from_type = from_type
         self.instantiation_hook = instantiation_hook
 

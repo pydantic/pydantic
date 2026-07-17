@@ -13,7 +13,7 @@ from itertools import islice
 from typing import TYPE_CHECKING, Any, ClassVar, Generic, Literal, TypeAlias, TypeVar
 
 from pydantic_core import PydanticUndefined, PydanticUndefinedType, core_schema
-from typing_extensions import Self, is_typeddict
+from typing_extensions import Self, TypeForm, is_typeddict
 
 from ..errors import PydanticUserError
 from ._core_utils import get_type_ref
@@ -106,7 +106,7 @@ class FieldSerializerDecoratorInfo:
     decorator_repr: ClassVar[str] = '@field_serializer'
     fields: tuple[str, ...]
     mode: Literal['plain', 'wrap']
-    return_type: Any
+    return_type: TypeForm[Any]
     when_used: core_schema.WhenUsed
     check_fields: bool | None
 
@@ -126,7 +126,7 @@ class ModelSerializerDecoratorInfo:
 
     decorator_repr: ClassVar[str] = '@model_serializer'
     mode: Literal['plain', 'wrap']
-    return_type: Any
+    return_type: TypeForm[Any]
     when_used: core_schema.WhenUsed
 
 
