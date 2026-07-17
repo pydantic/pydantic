@@ -1,7 +1,7 @@
 # Troubleshooting Validation Errors with Logfire
 
 When a [`ValidationError`][pydantic_core.ValidationError] is raised, the message tells you *what* went
-wrong — which field, which rule, and the value that triggered it. In production, the hard part is
+wrong: which field, which rule, and the value that triggered it. In production, the hard part is
 usually everything the message *can't* show you: which input caused it, where that data came from, how
 often it happens, and what else your application was doing at the time. By the time you read the log,
 the payload that failed is often already gone.
@@ -9,7 +9,7 @@ the payload that failed is often already gone.
 ## Have Logfire explain the error
 
 Open a failed validation span in [Pydantic Logfire](../integrations/logfire.md) and it explains the
-failure in plain language (currently in beta) — reading the structured errors and, for each field,
+failure in plain language (currently in beta), reading the structured errors and, for each field,
 telling you what was expected and what it received, including the messages from your own
 [custom validators](../concepts/validators.md#raising-validation-errors). You get to the fix without
 memorising every `pydantic-core` error code.
@@ -20,10 +20,10 @@ memorising every `pydantic-core` error code.
 
 ## Getting started
 
-If you find yourself troubleshooting Pydantic validation errors, you need a system that records them as
-they happen — capturing the input alongside the error. Logfire is that system: built by the same team as
-Pydantic, its integration captures every validation as it runs, so you can open the one that failed
-instead of reconstructing it from logs after the fact.
+Troubleshooting validation errors in production is much easier when something records them as they
+happen, capturing the input alongside the error. Logfire's Pydantic integration does this: it records
+each validation as it runs, so you can open the one that failed instead of reconstructing it from logs
+after the fact.
 
 If you haven't set it up yet, follow the three-step
 [getting started guide](https://logfire.pydantic.dev/docs/), then instrument your models:
@@ -55,33 +55,58 @@ User(name='Anne', country_code='USA', dob='not-a-date')  # (2)!
 
 Once instrumented, each failed validation shows up in the live view, recorded with:
 
-* **Its input** — the exact data passed to validation, so you don't have to reconstruct the payload from
+* **Its input**: the exact data passed to validation, so you don't have to reconstruct the payload from
   logs or guess what your model received.
-* **Its context** — a span alongside the surrounding request, task, or trace, so you can follow bad data
+* **Its context**: a span alongside the surrounding request, task, or trace, so you can follow bad data
   back to its source.
-* **A queryable history** — every failure is stored, so you can ask "which field fails most often?"
+* **A queryable history**: every failure is stored, so you can ask "which field fails most often?"
   or "did this error spike after the last deploy?" in SQL.
-* **No extra logging code** — one `logfire.instrument_pydantic()` call covers all your models; you don't
+* **No extra logging code**: one `logfire.instrument_pydantic()` call covers all your models; you don't
   wrap each `model_validate` in a `try`/`except`.
+
+Recording the input naturally raises the question of sensitive data, since the failing payload may
+contain it. The Logfire SDK
+[scrubs common sensitive values](https://logfire.pydantic.dev/docs/how-to-guides/scrubbing/) (things
+that look like passwords, tokens, or other secrets) from spans before they leave your machine, and you
+can extend the rules for your own fields.
 
 ![A failed Pydantic validation recorded in the Logfire live view](../img/logfire-validation-live-view.png)
 
 ## Reading the error from the trace
 
 Beyond the plain-language explanation, each failed validation span shows the raw structured
-[`errors()`][pydantic_core.ValidationError.errors] list next to the input that produced it — the field
-path (`loc`), the machine-readable `type`, and the offending value — so you can see which field failed
+[`errors()`][pydantic_core.ValidationError.errors] list next to the input that produced it: the field
+path (`loc`), the machine-readable `type`, and the offending value, so you can see which field failed
 and with what value without parsing the rendered message string by hand.
 
 ![A Pydantic validation failure in the Logfire live view, with the structured errors captured on the span](../img/logfire-validation-error-trace.png)
 
+## From one failure to the pattern
+
+A single trace tells you about one failure. Often the more useful question is whether it's a one-off or
+something recurring. Logfire
+[groups repeated exceptions into issues](https://logfire.pydantic.dev/docs/guides/web-ui/issues/), so a
+validation that fails a thousand times shows up as one entry with a count and a first-seen time, rather
+than a thousand lines to scroll through, which makes it easy to tell a genuine spike from background
+noise.
+
+Once you know which failures matter, you don't have to keep watching for them. Logfire
+[alerts](https://logfire.pydantic.dev/docs/guides/web-ui/alerts/) run a SQL query on a schedule and
+notify you (for example, in Slack) when it matches. A rule like "validation failures for this model
+crossed a threshold" means the next occurrence finds you instead of a user reporting it.
+
+## Debugging with an AI coding agent
+
+If you debug with an AI coding agent, the [Logfire MCP
+server](https://logfire.pydantic.dev/docs/how-to-guides/mcp-server/) lets the agent query your telemetry
+directly, including the input and errors from a failed validation, so it can investigate against your
+real data instead of guessing.
+
 ## Learn more
 
-* [Pydantic Logfire integration](../integrations/logfire.md) — how to install and configure Logfire
+* [Pydantic Logfire integration](../integrations/logfire.md): how to install and configure Logfire
   with Pydantic.
-* [Logfire documentation](https://logfire.pydantic.dev/docs/) — the full Logfire docs.
-* [Why Logfire for Pydantic](https://logfire.pydantic.dev/docs/why-logfire/pydantic/) — a deeper look
-  at the Pydantic integration.
+* [Logfire documentation](https://logfire.pydantic.dev/docs/): the full Logfire docs.
 
 For a reference of the individual error types you may encounter, see
 [Validation Errors](validation_errors.md) and [Usage Errors](usage_errors.md).

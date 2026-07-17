@@ -131,6 +131,11 @@ print(people)
 1. We use [`TypeAdapter`][pydantic.type_adapter.TypeAdapter] to validate a list of `Person` objects.
 [`TypeAdapter`][pydantic.type_adapter.TypeAdapter] is a Pydantic construct used to validate data against a single type.
 
+With two records, spotting a bad one is easy. In a pipeline processing files with thousands of records,
+the error's `loc` gives you the index of the failing one, and if the pipeline runs unattended,
+[Logfire](../errors/troubleshooting.md) records each failed validation with its input, so you can find
+the offending record after the run.
+
 ## JSON lines files
 
 Similar to validating a list of objects from a `.json` file, you can validate a list of objects from a `.jsonl` file.

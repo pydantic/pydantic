@@ -184,6 +184,26 @@ print(Model.model_config)
 
     [MRO]: https://docs.python.org/3/glossary.html#term-method-resolution-order
 
+## Plugin settings
+
+The [`plugin_settings`][pydantic.ConfigDict.plugin_settings] configuration value passes options to
+Pydantic plugins (code that hooks into validation, usually for tooling that observes it rather than for
+changing validation behaviour). Its value is a dictionary keyed by plugin name, so a given plugin reads
+only its own entry.
+
+The main plugin in use today is [Logfire](../integrations/logfire.md)'s, which records validations for
+observability. You can tune what it records per model, for instance recording only failures for one
+particular model:
+
+```python
+from pydantic import BaseModel
+
+
+class User(BaseModel, plugin_settings={'logfire': {'record': 'failure'}}):
+    name: str
+    email: str
+```
+
 ## Configuration propagation
 
 When using types that support configuration as field annotations, configuration may not be propagated:

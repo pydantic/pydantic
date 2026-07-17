@@ -95,6 +95,11 @@ print(dog_dict)
     This feature is particularly beneficial for validating LLM outputs.
     We've written some blog posts about this topic, which you can find on [our website](https://pydantic.dev/articles).
 
+    Even carefully prompted models produce output that fails validation some fraction of the time. If
+    you're validating LLM output in production, [Logfire](../integrations/logfire.md) can record just
+    the failures (`logfire.instrument_pydantic(record='failure')`), so you can see which generations
+    didn't match your schema, and why.
+
 In future versions of Pydantic, we expect to expand support for this feature through either Pydantic's other JSON validation functions
 ([`pydantic.main.BaseModel.model_validate_json`][pydantic.main.BaseModel.model_validate_json] and
 [`pydantic.type_adapter.TypeAdapter.validate_json`][pydantic.type_adapter.TypeAdapter.validate_json]) or model configuration. Stay tuned 🚀!

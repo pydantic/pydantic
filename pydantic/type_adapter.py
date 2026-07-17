@@ -410,6 +410,11 @@ class TypeAdapter(Generic[T]):
     ) -> T:
         """Validate a Python object against the model.
 
+        A failure here names the fields that were rejected, but not the object they came from. If you
+        record validations with [Logfire](../integrations/logfire.md), that object is kept alongside the
+        error — `TypeAdapter` validations are captured the same way as model validations (see
+        [Troubleshooting validation errors](../errors/troubleshooting.md)).
+
         Args:
             object: The Python object to validate against the model.
             strict: Whether to strictly check types.
@@ -465,6 +470,11 @@ class TypeAdapter(Generic[T]):
             [JSON Parsing](../concepts/json.md#json-parsing)
 
         Validate a JSON string or bytes against the model.
+
+        JSON validated this way often comes from an external source, where a
+        [`ValidationError`][pydantic_core.ValidationError] can be the first sign that the source changed
+        shape. [Logfire](../integrations/logfire.md) records the document that failed together with the
+        errors — see [Troubleshooting validation errors](../errors/troubleshooting.md).
 
         Args:
             data: The JSON data to validate against the model.
