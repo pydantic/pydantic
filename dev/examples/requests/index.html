@@ -3959,6 +3959,11 @@ handy when working with HTTP requests. Consider a similar example where we are v
 <ol>
 <li>Note, we're querying the <code>/users/</code> endpoint here to get a list of users.</li>
 </ol>
+<p>When you validate responses like this, a <a class="autorefs autorefs-internal" href="../../api/pydantic_core/#pydantic_core.ValidationError"><code>ValidationError</code></a> is often
+the first sign that an API you depend on has changed its response format. The useful questions at that
+point are <em>what did the response actually contain</em>, and <em>when did this start</em>:
+<a href="../../errors/troubleshooting/">recording failed validations with Logfire</a> answers both, since each
+failure is stored with the data that triggered it.</p>
 <!-- TODO: httpx, flask, Django rest framework, FastAPI -->
 
 

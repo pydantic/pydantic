@@ -6310,10 +6310,6 @@ overlapping with other parameters (unless <a class="autorefs autorefs-external" 
 <span class="k">except</span> <span class="n">PydanticUserError</span> <span class="k">as</span> <span class="n">exc_info</span><span class="p">:</span>
     <span class="k">assert</span> <span class="n">exc_info</span><span class="o">.</span><span class="n">code</span> <span class="o">==</span> <span class="s1">&#39;validate-by-alias-and-name-false&#39;</span>
 </code></pre></div>
-<hr />
-<p>A <code>ValidationError</code> names the field and rule that failed, but not the input that triggered it.
-<a href="../troubleshooting/">Logfire</a>, built by the team behind Pydantic, records the input and the structured
-errors for each validation, so you can trace a failure back to the exact payload.</p>
 
 
 

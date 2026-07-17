@@ -4039,10 +4039,10 @@ to help you monitor and understand your
 </div>
 <p>Returns a decorated wrapper around the function that validates the arguments and, optionally, the return value.</p>
 <p>Usage may be either as a plain decorator <code>@validate_call</code> or with arguments <code>@validate_call(...)</code>.</p>
-<p>If a decorated call fails, the resulting <a class="autorefs autorefs-internal" href="../pydantic_core/#pydantic_core.ValidationError"><code>ValidationError</code></a> shows <em>which</em>
-argument was rejected but not its value — instrument your app with <a href="../../integrations/logfire/">Logfire</a> to
-record each call with its arguments, and debug production failures straight from the trace (see
-<a href="../../errors/troubleshooting/">Troubleshooting validation errors</a>).</p>
+<p>When a decorated call fails, the <a class="autorefs autorefs-internal" href="../pydantic_core/#pydantic_core.ValidationError"><code>ValidationError</code></a> names the rejected
+argument, but the traceback won't show the value the caller passed.
+<a href="../../integrations/logfire/">Logfire</a> records failing calls along with their arguments — see
+<a href="../../errors/troubleshooting/">Troubleshooting validation errors</a>.</p>
 
 
 <p><span class="doc-section-title">Parameters:</span></p>
@@ -4185,10 +4185,10 @@ record each call with its arguments, and debug production failures straight from
 
 <span class="sd">    Usage may be either as a plain decorator `@validate_call` or with arguments `@validate_call(...)`.</span>
 
-<span class="sd">    If a decorated call fails, the resulting [`ValidationError`][pydantic_core.ValidationError] shows *which*</span>
-<span class="sd">    argument was rejected but not its value — instrument your app with [Logfire](../integrations/logfire.md) to</span>
-<span class="sd">    record each call with its arguments, and debug production failures straight from the trace (see</span>
-<span class="sd">    [Troubleshooting validation errors](../errors/troubleshooting.md)).</span>
+<span class="sd">    When a decorated call fails, the [`ValidationError`][pydantic_core.ValidationError] names the rejected</span>
+<span class="sd">    argument, but the traceback won&#39;t show the value the caller passed.</span>
+<span class="sd">    [Logfire](../integrations/logfire.md) records failing calls along with their arguments — see</span>
+<span class="sd">    [Troubleshooting validation errors](../errors/troubleshooting.md).</span>
 
 <span class="sd">    Args:</span>
 <span class="sd">        func: The function to be decorated.</span>

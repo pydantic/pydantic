@@ -3940,6 +3940,10 @@ as shown in the example below. In this case, we take advantage of Pydantic's ali
 <p>The example above works because aliases have priority over field names for
 field population. Accessing <code>SQLModel</code>'s <code>metadata</code> attribute would lead to a <code>ValidationError</code>.</p>
 </div>
+<p>Validating ORM objects can surface a less obvious class of failure: rows written before a constraint
+was added, or columns that allow <code>NULL</code> where your model doesn't. These only fail when the offending
+row is actually read, which may be long after a deploy, and
+<a href="../../errors/troubleshooting/">recording failed validations</a> tells you which rows they were.</p>
 <!-- TODO: add examples for Django with Pydantic models -->
 
 

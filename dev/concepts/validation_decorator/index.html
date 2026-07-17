@@ -4488,6 +4488,9 @@ This might be useful when a particular function is costly/time consuming.</p>
 <p>Currently upon validation failure, a standard Pydantic <a class="autorefs autorefs-internal" href="../../api/pydantic_core/#pydantic_core.ValidationError"><code>ValidationError</code></a> is raised
 (see <a href="../models/#error-handling">model error handling</a> for details). This is also true for missing required arguments,
 where Python normally raises a <a class="autorefs autorefs-external" href="https://docs.python.org/3/library/exceptions.html#TypeError"><code>TypeError</code></a>.</p>
+<p>The error names the argument that was rejected, but the traceback won't show you what value the caller
+actually passed. If that matters for your debugging, <a href="../../errors/troubleshooting/">Logfire</a> records
+decorated calls together with their arguments when validation fails.</p>
 <h3 id="performance">Performance<a class="headerlink" href="#performance" title="Permanent link">&para;</a></h3>
 <p>We've made a big effort to make Pydantic as performant as possible. While the inspection of the decorated
 function is only performed once, there will still be a performance impact when making calls to the function

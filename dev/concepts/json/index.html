@@ -4062,6 +4062,10 @@ in the original JSON input which contained the invalid value.</p>
 <p class="admonition-title">Validating LLM Output</p>
 <p>This feature is particularly beneficial for validating LLM outputs.
 We've written some blog posts about this topic, which you can find on <a href="https://pydantic.dev/articles">our website</a>.</p>
+<p>Even carefully prompted models produce output that fails validation some fraction of the time. If
+you're validating LLM output in production, <a href="../../integrations/logfire/">Logfire</a> can record just
+the failures (<code>logfire.instrument_pydantic(record='failure')</code>), so you can see which generations
+didn't match your schema, and why.</p>
 </div>
 <p>In future versions of Pydantic, we expect to expand support for this feature through either Pydantic's other JSON validation functions
 (<a class="autorefs autorefs-internal" href="../../api/base_model/#pydantic.BaseModel.model_validate_json"><code>pydantic.main.BaseModel.model_validate_json</code></a> and

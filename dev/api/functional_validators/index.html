@@ -5452,9 +5452,9 @@ the populated custom type.</p>
 
                   <details class="quote">
                     <summary>Source code in <code>pydantic/functional_validators.py</code></summary>
-                    <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">884</span>
-<span class="normal">885</span>
-<span class="normal">886</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">from_type</span><span class="p">:</span> <span class="nb">type</span><span class="p">[</span><span class="n">_FromTypeT</span><span class="p">],</span> <span class="o">/</span><span class="p">,</span> <span class="n">instantiation_hook</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[[</span><span class="n">_FromTypeT</span><span class="p">],</span> <span class="n">Any</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+                    <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">894</span>
+<span class="normal">895</span>
+<span class="normal">896</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">from_type</span><span class="p">:</span> <span class="nb">type</span><span class="p">[</span><span class="n">_FromTypeT</span><span class="p">],</span> <span class="o">/</span><span class="p">,</span> <span class="n">instantiation_hook</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[[</span><span class="n">_FromTypeT</span><span class="p">],</span> <span class="n">Any</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
     <span class="bp">self</span><span class="o">.</span><span class="n">from_type</span> <span class="o">=</span> <span class="n">from_type</span>
     <span class="bp">self</span><span class="o">.</span><span class="n">instantiation_hook</span> <span class="o">=</span> <span class="n">instantiation_hook</span>
 </code></pre></div></td></tr></table></div>
@@ -5570,6 +5570,10 @@ the populated custom type.</p>
 <span class="sd">    &#39;&#39;&#39;</span>
 </code></pre></div></p>
 <p>For more in depth examples, see <a href="../../concepts/validators/#field-validators">Field Validators</a>.</p>
+<p>Errors raised in a field validator become part of the model's
+<a class="autorefs autorefs-internal" href="../pydantic_core/#pydantic_core.ValidationError"><code>ValidationError</code></a>. In a running application,
+<a href="../../integrations/logfire/">Logfire</a> can record the input each failed validation rejected — see
+<a href="../../errors/troubleshooting/">Troubleshooting validation errors</a>.</p>
 
 
 <p><span class="doc-section-title">Parameters:</span></p>
@@ -5787,7 +5791,12 @@ when <code>mode</code> is either <code>'before'</code>, <code>'plain'</code> or 
 <span class="normal">512</span>
 <span class="normal">513</span>
 <span class="normal">514</span>
-<span class="normal">515</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">field_validator</span><span class="p">(</span>  <span class="c1"># noqa: D417</span>
+<span class="normal">515</span>
+<span class="normal">516</span>
+<span class="normal">517</span>
+<span class="normal">518</span>
+<span class="normal">519</span>
+<span class="normal">520</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">field_validator</span><span class="p">(</span>  <span class="c1"># noqa: D417</span>
     <span class="n">field</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
     <span class="o">/</span><span class="p">,</span>
     <span class="o">*</span><span class="n">fields</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
@@ -5835,6 +5844,11 @@ when <code>mode</code> is either <code>'before'</code>, <code>'plain'</code> or 
 <span class="sd">    ```</span>
 
 <span class="sd">    For more in depth examples, see [Field Validators](../concepts/validators.md#field-validators).</span>
+
+<span class="sd">    Errors raised in a field validator become part of the model&#39;s</span>
+<span class="sd">    [`ValidationError`][pydantic_core.ValidationError]. In a running application,</span>
+<span class="sd">    [Logfire](../integrations/logfire.md) can record the input each failed validation rejected — see</span>
+<span class="sd">    [Troubleshooting validation errors](../errors/troubleshooting.md).</span>
 
 <span class="sd">    Args:</span>
 <span class="sd">        *fields: The field names the validator should apply to.</span>
@@ -5962,6 +5976,10 @@ when <code>mode</code> is either <code>'before'</code>, <code>'plain'</code> or 
 <span class="sd">    &#39;&#39;&#39;</span>
 </code></pre></div></p>
 <p>For more in depth examples, see <a href="../../concepts/validators/#model-validators">Model Validators</a>.</p>
+<p>Cross-field rules like the one above tend to fail on combinations of values you didn't anticipate.
+To see the combination that failed in a running application, record validations with
+<a href="../../integrations/logfire/">Logfire</a> (see
+<a href="../../errors/troubleshooting/">Troubleshooting validation errors</a>).</p>
 
 
 <p><span class="doc-section-title">Parameters:</span></p>
@@ -6020,12 +6038,7 @@ It can be one of the following: 'wrap', 'before', or 'after'.</p>
 
             <details class="quote">
               <summary>Source code in <code>pydantic/functional_validators.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">672</span>
-<span class="normal">673</span>
-<span class="normal">674</span>
-<span class="normal">675</span>
-<span class="normal">676</span>
-<span class="normal">677</span>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">677</span>
 <span class="normal">678</span>
 <span class="normal">679</span>
 <span class="normal">680</span>
@@ -6085,7 +6098,17 @@ It can be one of the following: 'wrap', 'before', or 'after'.</p>
 <span class="normal">734</span>
 <span class="normal">735</span>
 <span class="normal">736</span>
-<span class="normal">737</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">model_validator</span><span class="p">(</span>
+<span class="normal">737</span>
+<span class="normal">738</span>
+<span class="normal">739</span>
+<span class="normal">740</span>
+<span class="normal">741</span>
+<span class="normal">742</span>
+<span class="normal">743</span>
+<span class="normal">744</span>
+<span class="normal">745</span>
+<span class="normal">746</span>
+<span class="normal">747</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">model_validator</span><span class="p">(</span>
     <span class="o">*</span><span class="p">,</span>
     <span class="n">mode</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s1">&#39;wrap&#39;</span><span class="p">,</span> <span class="s1">&#39;before&#39;</span><span class="p">,</span> <span class="s1">&#39;after&#39;</span><span class="p">],</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Any</span><span class="p">:</span>
@@ -6125,6 +6148,11 @@ It can be one of the following: 'wrap', 'before', or 'after'.</p>
 <span class="sd">    ```</span>
 
 <span class="sd">    For more in depth examples, see [Model Validators](../concepts/validators.md#model-validators).</span>
+
+<span class="sd">    Cross-field rules like the one above tend to fail on combinations of values you didn&#39;t anticipate.</span>
+<span class="sd">    To see the combination that failed in a running application, record validations with</span>
+<span class="sd">    [Logfire](../integrations/logfire.md) (see</span>
+<span class="sd">    [Troubleshooting validation errors](../errors/troubleshooting.md)).</span>
 
 <span class="sd">    Args:</span>
 <span class="sd">        mode: A required string literal that specifies the validation mode.</span>

@@ -4034,6 +4034,10 @@ but works with arbitrary Pydantic-compatible types.</p>
 </code></pre></div>
 <p><a class="autorefs autorefs-internal" href="../../api/type_adapter/#pydantic.type_adapter.TypeAdapter"><code>TypeAdapter</code></a> is capable of parsing data into any of the types Pydantic can
 handle as fields of a <a class="autorefs autorefs-internal" href="../../api/base_model/#pydantic.BaseModel"><code>BaseModel</code></a>.</p>
+<p>Data parsed this way often comes from a source you don't control, like the API call in the example
+above, so validation can fail long after the code has shipped. A <code>TypeAdapter</code> raises the same
+structured errors as a model, so tooling that records validation failures in production, such as
+<a href="../../integrations/logfire/">Logfire</a>, captures these too.</p>
 <div class="admonition info">
 <p class="admonition-title">Performance considerations</p>
 <p>When creating an instance of <a class="autorefs autorefs-internal" href="../../api/type_adapter/#pydantic.type_adapter.TypeAdapter"><code>TypeAdapter</code></a>, the provided type must be analyzed and converted into a pydantic-core

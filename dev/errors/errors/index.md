@@ -18,6 +18,8 @@ The ErrorDetails object is a dictionary. It contains the following:
 
 The first item in the loc list will be the field where the error occurred, and if the field is a [sub-model](../../concepts/models/#nested-models), subsequent items will be present to indicate the nested location of the error.
 
+Accessing errors this way requires a `try`/`except` around the validation call. For validations spread across a running service, [Logfire](../troubleshooting/) records the same structured error list on each failure, together with the input that produced it, without wrapping each call.
+
 As a demonstration:
 
 ```python
@@ -266,7 +268,3 @@ except ValidationError as e:
 
 1. By default, `e.errors()` produces a list of errors with `loc` values that take the form of tuples.
 1. With our custom `loc_to_dot_sep` function, we've modified the form of the `loc` representation.
-
-______________________________________________________________________
-
-A `ValidationError` names the field and rule that failed, but not the input that triggered it. [Logfire](../troubleshooting/), built by the team behind Pydantic, records the input and the structured errors for each validation, so you can trace a failure back to the exact payload.

@@ -93,6 +93,8 @@ Validating LLM Output
 
 This feature is particularly beneficial for validating LLM outputs. We've written some blog posts about this topic, which you can find on [our website](https://pydantic.dev/articles).
 
+Even carefully prompted models produce output that fails validation some fraction of the time. If you're validating LLM output in production, [Logfire](../../integrations/logfire/) can record just the failures (`logfire.instrument_pydantic(record='failure')`), so you can see which generations didn't match your schema, and why.
+
 In future versions of Pydantic, we expect to expand support for this feature through either Pydantic's other JSON validation functions (pydantic.main.BaseModel.model_validate_json and pydantic.type_adapter.TypeAdapter.validate_json) or model configuration. Stay tuned 🚀!
 
 For now, you can use pydantic_core.from_json in combination with pydantic.main.BaseModel.model_validate to achieve the same result. Here's an example:

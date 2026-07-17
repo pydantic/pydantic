@@ -699,10 +699,10 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
 
         Validate the given JSON data against the Pydantic model.
 
-        If validation fails, the resulting [`ValidationError`][pydantic_core.ValidationError] shows *which*
-        fields were rejected but not the input behind them — instrument your app with
-        [Logfire](../integrations/logfire.md) to record that input too, and debug production failures straight
-        from the trace (see [Troubleshooting validation errors](../errors/troubleshooting.md)).
+        A [`ValidationError`][pydantic_core.ValidationError] raised here names the failing fields, but
+        not the JSON document they came from. Recording validations with
+        [Logfire](../integrations/logfire.md) keeps the offending input alongside the error — see
+        [Troubleshooting validation errors](../errors/troubleshooting.md).
 
         Args:
             json_data: The JSON data to validate.
@@ -744,11 +744,6 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
         by_name: bool | None = None,
     ) -> Self:
         """Validate the given object with string data against the Pydantic model.
-
-        If validation fails, the resulting [`ValidationError`][pydantic_core.ValidationError] shows *which*
-        fields were rejected but not the input behind them — instrument your app with
-        [Logfire](../integrations/logfire.md) to record that input too, and debug production failures straight
-        from the trace (see [Troubleshooting validation errors](../errors/troubleshooting.md)).
 
         Args:
             obj: The object containing string data to validate.
@@ -2578,7 +2573,7 @@ Usage Documentation
 
 Validate the given JSON data against the Pydantic model.
 
-If validation fails, the resulting ValidationError shows *which* fields were rejected but not the input behind them — instrument your app with [Logfire](../../integrations/logfire/) to record that input too, and debug production failures straight from the trace (see [Troubleshooting validation errors](../../errors/troubleshooting/)).
+A ValidationError raised here names the failing fields, but not the JSON document they came from. Recording validations with [Logfire](../../integrations/logfire/) keeps the offending input alongside the error — see [Troubleshooting validation errors](../../errors/troubleshooting/).
 
 Parameters:
 
@@ -2611,10 +2606,10 @@ def model_validate_json(
 
     Validate the given JSON data against the Pydantic model.
 
-    If validation fails, the resulting [`ValidationError`][pydantic_core.ValidationError] shows *which*
-    fields were rejected but not the input behind them — instrument your app with
-    [Logfire](../integrations/logfire.md) to record that input too, and debug production failures straight
-    from the trace (see [Troubleshooting validation errors](../errors/troubleshooting.md)).
+    A [`ValidationError`][pydantic_core.ValidationError] raised here names the failing fields, but
+    not the JSON document they came from. Recording validations with
+    [Logfire](../integrations/logfire.md) keeps the offending input alongside the error — see
+    [Troubleshooting validation errors](../errors/troubleshooting.md).
 
     Args:
         json_data: The JSON data to validate.
@@ -2663,8 +2658,6 @@ model_validate_strings(
 
 Validate the given object with string data against the Pydantic model.
 
-If validation fails, the resulting ValidationError shows *which* fields were rejected but not the input behind them — instrument your app with [Logfire](../../integrations/logfire/) to record that input too, and debug production failures straight from the trace (see [Troubleshooting validation errors](../../errors/troubleshooting/)).
-
 Parameters:
 
 | Name | Type | Description | Default | | --- | --- | --- | --- | | `obj` | `Any` | The object containing string data to validate. | *required* | | `strict` | `bool | None` | Whether to enforce types strictly. | `None` | | `extra` | `ExtraValues | None` | Whether to ignore, allow, or forbid extra data during model validation. See the extra configuration value for details. | `None` | | `context` | `Any | None` | Extra variables to pass to the validator. | `None` | | `by_alias` | `bool | None` | Whether to use the field's alias when validating against the provided input data. | `None` | | `by_name` | `bool | None` | Whether to use the field's name when validating against the provided input data. | `None` |
@@ -2688,11 +2681,6 @@ def model_validate_strings(
     by_name: bool | None = None,
 ) -> Self:
     """Validate the given object with string data against the Pydantic model.
-
-    If validation fails, the resulting [`ValidationError`][pydantic_core.ValidationError] shows *which*
-    fields were rejected but not the input behind them — instrument your app with
-    [Logfire](../integrations/logfire.md) to record that input too, and debug production failures straight
-    from the trace (see [Troubleshooting validation errors](../errors/troubleshooting.md)).
 
     Args:
         obj: The object containing string data to validate.

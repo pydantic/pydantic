@@ -4270,6 +4270,9 @@ all the inherited fields.</p>
 <span class="sd">      Input should be a valid integer, unable to parse string as an integer [type=int_parsing, input_value=&#39;pika&#39;, input_type=str]</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 </code></pre></div>
+<p>Because a Pydantic dataclass validates its inputs just like a model, the same observability applies: if
+you use <a href="../../integrations/logfire/">Logfire</a>, validations of Pydantic dataclasses are
+<a href="../../errors/troubleshooting/">recorded alongside model validations</a>, input included.</p>
 <p>The decorator can also be applied directly on a stdlib dataclass, in which case a new subclass will be created:</p>
 <div class="language-python highlight"><pre><span></span><code><span class="kn">import</span><span class="w"> </span><span class="nn">dataclasses</span>
 

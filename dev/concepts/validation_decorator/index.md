@@ -393,6 +393,8 @@ print(foo())
 
 Currently upon validation failure, a standard Pydantic ValidationError is raised (see [model error handling](../models/#error-handling) for details). This is also true for missing required arguments, where Python normally raises a TypeError.
 
+The error names the argument that was rejected, but the traceback won't show you what value the caller actually passed. If that matters for your debugging, [Logfire](../../errors/troubleshooting/) records decorated calls together with their arguments when validation fails.
+
 ### Performance
 
 We've made a big effort to make Pydantic as performant as possible. While the inspection of the decorated function is only performed once, there will still be a performance impact when making calls to the function compared to using the original function.

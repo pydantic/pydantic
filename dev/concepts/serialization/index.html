@@ -4651,6 +4651,11 @@ JSON data. This is achievable by using the <a class="autorefs autorefs-internal"
 variety of types (<a class="autorefs autorefs-external" href="https://docs.python.org/3/library/datetime.html#module-datetime">date and time types</a>, <a class="autorefs autorefs-external" href="https://docs.python.org/3/library/uuid.html#uuid.UUID"><code>UUID</code></a> objects, <a class="autorefs autorefs-external" href="https://docs.python.org/3/reference/expressions.html#set">sets</a>, etc). If an unsupported type
 is used and can't be serialized to JSON, a <a class="autorefs autorefs-internal" href="../../api/pydantic_core/#pydantic_core.PydanticSerializationError"><code>PydanticSerializationError</code></a> exception
 is raised.</p>
+<p>A serialization error like this often only shows up when a particular object reaches the point of being
+serialized (commonly when building a response), so it can be easy to miss until it happens in
+production. Like any exception, it's captured by <a href="../../integrations/logfire/">Logfire</a> if you've
+instrumented your application, in the context of the request that triggered it, and grouped with other
+occurrences so you can tell a one-off from a recurring problem.</p>
 <div class="admonition info">
 <p class="admonition-title">See also</p>
 <p>The <a class="autorefs autorefs-internal" href="../../api/type_adapter/#pydantic.type_adapter.TypeAdapter.dump_json"><code>TypeAdapter.dump_json()</code></a> method, useful when <em>not</em> dealing with Pydantic models.</p>

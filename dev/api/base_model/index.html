@@ -6263,12 +6263,7 @@ is set to <code>'allow'</code>.</p>
 <span class="normal">1758</span>
 <span class="normal">1759</span>
 <span class="normal">1760</span>
-<span class="normal">1761</span>
-<span class="normal">1762</span>
-<span class="normal">1763</span>
-<span class="normal">1764</span>
-<span class="normal">1765</span>
-<span class="normal">1766</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span><span class="w"> </span><span class="nc">BaseModel</span><span class="p">(</span><span class="n">metaclass</span><span class="o">=</span><span class="n">_model_construction</span><span class="o">.</span><span class="n">ModelMetaclass</span><span class="p">):</span>
+<span class="normal">1761</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span><span class="w"> </span><span class="nc">BaseModel</span><span class="p">(</span><span class="n">metaclass</span><span class="o">=</span><span class="n">_model_construction</span><span class="o">.</span><span class="n">ModelMetaclass</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;!!! abstract &quot;Usage Documentation&quot;</span>
 <span class="sd">        [Models](../concepts/models.md)</span>
 
@@ -6952,10 +6947,10 @@ is set to <code>'allow'</code>.</p>
 
 <span class="sd">        Validate the given JSON data against the Pydantic model.</span>
 
-<span class="sd">        If validation fails, the resulting [`ValidationError`][pydantic_core.ValidationError] shows *which*</span>
-<span class="sd">        fields were rejected but not the input behind them — instrument your app with</span>
-<span class="sd">        [Logfire](../integrations/logfire.md) to record that input too, and debug production failures straight</span>
-<span class="sd">        from the trace (see [Troubleshooting validation errors](../errors/troubleshooting.md)).</span>
+<span class="sd">        A [`ValidationError`][pydantic_core.ValidationError] raised here names the failing fields, but</span>
+<span class="sd">        not the JSON document they came from. Recording validations with</span>
+<span class="sd">        [Logfire](../integrations/logfire.md) keeps the offending input alongside the error — see</span>
+<span class="sd">        [Troubleshooting validation errors](../errors/troubleshooting.md).</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            json_data: The JSON data to validate.</span>
@@ -6997,11 +6992,6 @@ is set to <code>'allow'</code>.</p>
         <span class="n">by_name</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Self</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Validate the given object with string data against the Pydantic model.</span>
-
-<span class="sd">        If validation fails, the resulting [`ValidationError`][pydantic_core.ValidationError] shows *which*</span>
-<span class="sd">        fields were rejected but not the input behind them — instrument your app with</span>
-<span class="sd">        [Logfire](../integrations/logfire.md) to record that input too, and debug production failures straight</span>
-<span class="sd">        from the trace (see [Troubleshooting validation errors](../errors/troubleshooting.md)).</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            obj: The object containing string data to validate.</span>
@@ -10764,10 +10754,10 @@ See the <a class="autorefs autorefs-internal" href="../config/#pydantic.config.C
 <p><a href="../../concepts/json/#json-parsing">JSON Parsing</a></p>
 </div>
 <p>Validate the given JSON data against the Pydantic model.</p>
-<p>If validation fails, the resulting <a class="autorefs autorefs-internal" href="../pydantic_core/#pydantic_core.ValidationError"><code>ValidationError</code></a> shows <em>which</em>
-fields were rejected but not the input behind them — instrument your app with
-<a href="../../integrations/logfire/">Logfire</a> to record that input too, and debug production failures straight
-from the trace (see <a href="../../errors/troubleshooting/">Troubleshooting validation errors</a>).</p>
+<p>A <a class="autorefs autorefs-internal" href="../pydantic_core/#pydantic_core.ValidationError"><code>ValidationError</code></a> raised here names the failing fields, but
+not the JSON document they came from. Recording validations with
+<a href="../../integrations/logfire/">Logfire</a> keeps the offending input alongside the error — see
+<a href="../../errors/troubleshooting/">Troubleshooting validation errors</a>.</p>
 
 
 <p><span class="doc-section-title">Parameters:</span></p>
@@ -10992,10 +10982,10 @@ See the <a class="autorefs autorefs-internal" href="../config/#pydantic.config.C
 
 <span class="sd">    Validate the given JSON data against the Pydantic model.</span>
 
-<span class="sd">    If validation fails, the resulting [`ValidationError`][pydantic_core.ValidationError] shows *which*</span>
-<span class="sd">    fields were rejected but not the input behind them — instrument your app with</span>
-<span class="sd">    [Logfire](../integrations/logfire.md) to record that input too, and debug production failures straight</span>
-<span class="sd">    from the trace (see [Troubleshooting validation errors](../errors/troubleshooting.md)).</span>
+<span class="sd">    A [`ValidationError`][pydantic_core.ValidationError] raised here names the failing fields, but</span>
+<span class="sd">    not the JSON document they came from. Recording validations with</span>
+<span class="sd">    [Logfire](../integrations/logfire.md) keeps the offending input alongside the error — see</span>
+<span class="sd">    [Troubleshooting validation errors](../errors/troubleshooting.md).</span>
 
 <span class="sd">    Args:</span>
 <span class="sd">        json_data: The JSON data to validate.</span>
@@ -11061,10 +11051,6 @@ See the <a class="autorefs autorefs-internal" href="../config/#pydantic.config.C
     <div class="doc doc-contents ">
 
         <p>Validate the given object with string data against the Pydantic model.</p>
-<p>If validation fails, the resulting <a class="autorefs autorefs-internal" href="../pydantic_core/#pydantic_core.ValidationError"><code>ValidationError</code></a> shows <em>which</em>
-fields were rejected but not the input behind them — instrument your app with
-<a href="../../integrations/logfire/">Logfire</a> to record that input too, and debug production failures straight
-from the trace (see <a href="../../errors/troubleshooting/">Troubleshooting validation errors</a>).</p>
 
 
 <p><span class="doc-section-title">Parameters:</span></p>
@@ -11239,12 +11225,7 @@ See the <a class="autorefs autorefs-internal" href="../config/#pydantic.config.C
 <span class="normal">883</span>
 <span class="normal">884</span>
 <span class="normal">885</span>
-<span class="normal">886</span>
-<span class="normal">887</span>
-<span class="normal">888</span>
-<span class="normal">889</span>
-<span class="normal">890</span>
-<span class="normal">891</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@classmethod</span>
+<span class="normal">886</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@classmethod</span>
 <span class="k">def</span><span class="w"> </span><span class="nf">model_validate_strings</span><span class="p">(</span>
     <span class="bp">cls</span><span class="p">,</span>
     <span class="n">obj</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span>
@@ -11256,11 +11237,6 @@ See the <a class="autorefs autorefs-internal" href="../config/#pydantic.config.C
     <span class="n">by_name</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Self</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Validate the given object with string data against the Pydantic model.</span>
-
-<span class="sd">    If validation fails, the resulting [`ValidationError`][pydantic_core.ValidationError] shows *which*</span>
-<span class="sd">    fields were rejected but not the input behind them — instrument your app with</span>
-<span class="sd">    [Logfire](../integrations/logfire.md) to record that input too, and debug production failures straight</span>
-<span class="sd">    from the trace (see [Troubleshooting validation errors](../errors/troubleshooting.md)).</span>
 
 <span class="sd">    Args:</span>
 <span class="sd">        obj: The object containing string data to validate.</span>
@@ -11589,7 +11565,12 @@ validators <a href="../../concepts/validators/#field-validators">here</a>.</p>
 
             <details class="quote">
               <summary>Source code in <code>pydantic/main.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1804</span>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1799</span>
+<span class="normal">1800</span>
+<span class="normal">1801</span>
+<span class="normal">1802</span>
+<span class="normal">1803</span>
+<span class="normal">1804</span>
 <span class="normal">1805</span>
 <span class="normal">1806</span>
 <span class="normal">1807</span>
@@ -11684,12 +11665,7 @@ validators <a href="../../concepts/validators/#field-validators">here</a>.</p>
 <span class="normal">1896</span>
 <span class="normal">1897</span>
 <span class="normal">1898</span>
-<span class="normal">1899</span>
-<span class="normal">1900</span>
-<span class="normal">1901</span>
-<span class="normal">1902</span>
-<span class="normal">1903</span>
-<span class="normal">1904</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">create_model</span><span class="p">(</span>  <span class="c1"># noqa: C901</span>
+<span class="normal">1899</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">create_model</span><span class="p">(</span>  <span class="c1"># noqa: C901</span>
     <span class="n">model_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
     <span class="o">/</span><span class="p">,</span>
     <span class="o">*</span><span class="p">,</span>

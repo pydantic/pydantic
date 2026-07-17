@@ -3841,6 +3841,11 @@ This format is defined in Markdown and suited for large language models.</p>
 <p>As of today, these files <em>cannot</em> be natively leveraged by LLM frameworks or IDEs. Alternatively,
 a <a href="https://modelcontextprotocol.io/">MCP server</a> can be implemented to properly parse the <code>llms.txt</code>
 file.</p>
+<p>Where <code>llms.txt</code> gives an AI tool the Pydantic <em>documentation</em>, the
+<a href="https://logfire.pydantic.dev/docs/how-to-guides/mcp-server/">Logfire MCP server</a> gives it your
+application's <em>runtime data</em>: an agent can query the traces, metrics, and recorded validations from your
+own service and, for example, pull up the input behind a <code>ValidationError</code> while it's helping you fix
+it.</p>
 
 
 

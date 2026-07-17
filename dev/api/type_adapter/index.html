@@ -4768,10 +4768,10 @@ from the parent frame. Defaults to <code>None</code>.</p>
     <div class="doc doc-contents ">
 
         <p>Validate a Python object against the model.</p>
-<p>If validation fails, the resulting <a class="autorefs autorefs-internal" href="../pydantic_core/#pydantic_core.ValidationError"><code>ValidationError</code></a> shows <em>which</em>
-fields were rejected but not the input behind them — instrument your app with
-<a href="../../integrations/logfire/">Logfire</a> to record that input too, and debug production failures straight
-from the trace (see <a href="../../errors/troubleshooting/">Troubleshooting validation errors</a>).</p>
+<p>A failure here names the fields that were rejected, but not the object they came from. If you
+record validations with <a href="../../integrations/logfire/">Logfire</a>, that object is kept alongside the
+error — <code>TypeAdapter</code> validations are captured the same way as model validations (see
+<a href="../../errors/troubleshooting/">Troubleshooting validation errors</a>).</p>
 
 
 <p><span class="doc-section-title">Parameters:</span></p>
@@ -5023,10 +5023,10 @@ argument is not supported.</p>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">T</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Validate a Python object against the model.</span>
 
-<span class="sd">    If validation fails, the resulting [`ValidationError`][pydantic_core.ValidationError] shows *which*</span>
-<span class="sd">    fields were rejected but not the input behind them — instrument your app with</span>
-<span class="sd">    [Logfire](../integrations/logfire.md) to record that input too, and debug production failures straight</span>
-<span class="sd">    from the trace (see [Troubleshooting validation errors](../errors/troubleshooting.md)).</span>
+<span class="sd">    A failure here names the fields that were rejected, but not the object they came from. If you</span>
+<span class="sd">    record validations with [Logfire](../integrations/logfire.md), that object is kept alongside the</span>
+<span class="sd">    error — `TypeAdapter` validations are captured the same way as model validations (see</span>
+<span class="sd">    [Troubleshooting validation errors](../errors/troubleshooting.md)).</span>
 
 <span class="sd">    Args:</span>
 <span class="sd">        object: The Python object to validate against the model.</span>
@@ -5102,10 +5102,10 @@ argument is not supported.</p>
 <p><a href="../../concepts/json/#json-parsing">JSON Parsing</a></p>
 </div>
 <p>Validate a JSON string or bytes against the model.</p>
-<p>If validation fails, the resulting <a class="autorefs autorefs-internal" href="../pydantic_core/#pydantic_core.ValidationError"><code>ValidationError</code></a> shows <em>which</em>
-fields were rejected but not the input behind them — instrument your app with
-<a href="../../integrations/logfire/">Logfire</a> to record that input too, and debug production failures straight
-from the trace (see <a href="../../errors/troubleshooting/">Troubleshooting validation errors</a>).</p>
+<p>JSON validated this way often comes from an external source, where a
+<a class="autorefs autorefs-internal" href="../pydantic_core/#pydantic_core.ValidationError"><code>ValidationError</code></a> can be the first sign that the source changed
+shape. <a href="../../integrations/logfire/">Logfire</a> records the document that failed together with the
+errors — see <a href="../../errors/troubleshooting/">Troubleshooting validation errors</a>.</p>
 
 
 <p><span class="doc-section-title">Parameters:</span></p>
@@ -5334,10 +5334,10 @@ See the <a class="autorefs autorefs-internal" href="../config/#pydantic.config.C
 
 <span class="sd">    Validate a JSON string or bytes against the model.</span>
 
-<span class="sd">    If validation fails, the resulting [`ValidationError`][pydantic_core.ValidationError] shows *which*</span>
-<span class="sd">    fields were rejected but not the input behind them — instrument your app with</span>
-<span class="sd">    [Logfire](../integrations/logfire.md) to record that input too, and debug production failures straight</span>
-<span class="sd">    from the trace (see [Troubleshooting validation errors](../errors/troubleshooting.md)).</span>
+<span class="sd">    JSON validated this way often comes from an external source, where a</span>
+<span class="sd">    [`ValidationError`][pydantic_core.ValidationError] can be the first sign that the source changed</span>
+<span class="sd">    shape. [Logfire](../integrations/logfire.md) records the document that failed together with the</span>
+<span class="sd">    errors — see [Troubleshooting validation errors](../errors/troubleshooting.md).</span>
 
 <span class="sd">    Args:</span>
 <span class="sd">        data: The JSON data to validate against the model.</span>
@@ -5403,10 +5403,6 @@ See the <a class="autorefs autorefs-internal" href="../config/#pydantic.config.C
     <div class="doc doc-contents ">
 
         <p>Validate object contains string data against the model.</p>
-<p>If validation fails, the resulting <a class="autorefs autorefs-internal" href="../pydantic_core/#pydantic_core.ValidationError"><code>ValidationError</code></a> shows <em>which</em>
-fields were rejected but not the input behind them — instrument your app with
-<a href="../../integrations/logfire/">Logfire</a> to record that input too, and debug production failures straight
-from the trace (see <a href="../../errors/troubleshooting/">Troubleshooting validation errors</a>).</p>
 
 
 <p><span class="doc-section-title">Parameters:</span></p>
@@ -5610,12 +5606,7 @@ See the <a class="autorefs autorefs-internal" href="../config/#pydantic.config.C
 <span class="normal">552</span>
 <span class="normal">553</span>
 <span class="normal">554</span>
-<span class="normal">555</span>
-<span class="normal">556</span>
-<span class="normal">557</span>
-<span class="normal">558</span>
-<span class="normal">559</span>
-<span class="normal">560</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">validate_strings</span><span class="p">(</span>
+<span class="normal">555</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">validate_strings</span><span class="p">(</span>
     <span class="bp">self</span><span class="p">,</span>
     <span class="n">obj</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span>
     <span class="o">/</span><span class="p">,</span>
@@ -5628,11 +5619,6 @@ See the <a class="autorefs autorefs-internal" href="../config/#pydantic.config.C
     <span class="n">by_name</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">T</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Validate object contains string data against the model.</span>
-
-<span class="sd">    If validation fails, the resulting [`ValidationError`][pydantic_core.ValidationError] shows *which*</span>
-<span class="sd">    fields were rejected but not the input behind them — instrument your app with</span>
-<span class="sd">    [Logfire](../integrations/logfire.md) to record that input too, and debug production failures straight</span>
-<span class="sd">    from the trace (see [Troubleshooting validation errors](../errors/troubleshooting.md)).</span>
 
 <span class="sd">    Args:</span>
 <span class="sd">        obj: The object contains string data to validate.</span>
@@ -5763,17 +5749,17 @@ See the <a class="autorefs autorefs-internal" href="../config/#pydantic.config.C
 
             <details class="quote">
               <summary>Source code in <code>pydantic/type_adapter.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">562</span>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">557</span>
+<span class="normal">558</span>
+<span class="normal">559</span>
+<span class="normal">560</span>
+<span class="normal">561</span>
+<span class="normal">562</span>
 <span class="normal">563</span>
 <span class="normal">564</span>
 <span class="normal">565</span>
 <span class="normal">566</span>
-<span class="normal">567</span>
-<span class="normal">568</span>
-<span class="normal">569</span>
-<span class="normal">570</span>
-<span class="normal">571</span>
-<span class="normal">572</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">get_default_value</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">strict</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">context</span><span class="p">:</span> <span class="n">Any</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Some</span><span class="p">[</span><span class="n">T</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span>
+<span class="normal">567</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">get_default_value</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">strict</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">context</span><span class="p">:</span> <span class="n">Any</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Some</span><span class="p">[</span><span class="n">T</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Get the default value for the wrapped type.</span>
 
 <span class="sd">    Args:</span>
@@ -6109,7 +6095,12 @@ a <a class="autorefs autorefs-internal" href="../pydantic_core/#pydantic_core.Py
 
             <details class="quote">
               <summary>Source code in <code>pydantic/type_adapter.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">574</span>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">569</span>
+<span class="normal">570</span>
+<span class="normal">571</span>
+<span class="normal">572</span>
+<span class="normal">573</span>
+<span class="normal">574</span>
 <span class="normal">575</span>
 <span class="normal">576</span>
 <span class="normal">577</span>
@@ -6166,12 +6157,7 @@ a <a class="autorefs autorefs-internal" href="../pydantic_core/#pydantic_core.Py
 <span class="normal">628</span>
 <span class="normal">629</span>
 <span class="normal">630</span>
-<span class="normal">631</span>
-<span class="normal">632</span>
-<span class="normal">633</span>
-<span class="normal">634</span>
-<span class="normal">635</span>
-<span class="normal">636</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">dump_python</span><span class="p">(</span>
+<span class="normal">631</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">dump_python</span><span class="p">(</span>
     <span class="bp">self</span><span class="p">,</span>
     <span class="n">instance</span><span class="p">:</span> <span class="n">T</span><span class="p">,</span>
     <span class="o">/</span><span class="p">,</span>
@@ -6581,7 +6567,12 @@ a <a class="autorefs autorefs-internal" href="../pydantic_core/#pydantic_core.Py
 
             <details class="quote">
               <summary>Source code in <code>pydantic/type_adapter.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">638</span>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">633</span>
+<span class="normal">634</span>
+<span class="normal">635</span>
+<span class="normal">636</span>
+<span class="normal">637</span>
+<span class="normal">638</span>
 <span class="normal">639</span>
 <span class="normal">640</span>
 <span class="normal">641</span>
@@ -6645,12 +6636,7 @@ a <a class="autorefs autorefs-internal" href="../pydantic_core/#pydantic_core.Py
 <span class="normal">699</span>
 <span class="normal">700</span>
 <span class="normal">701</span>
-<span class="normal">702</span>
-<span class="normal">703</span>
-<span class="normal">704</span>
-<span class="normal">705</span>
-<span class="normal">706</span>
-<span class="normal">707</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">dump_json</span><span class="p">(</span>
+<span class="normal">702</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">dump_json</span><span class="p">(</span>
     <span class="bp">self</span><span class="p">,</span>
     <span class="n">instance</span><span class="p">:</span> <span class="n">T</span><span class="p">,</span>
     <span class="o">/</span><span class="p">,</span>
@@ -6881,7 +6867,12 @@ type (<code>string</code>, <code>boolean</code>, <code>null</code>, <code>intege
 
             <details class="quote">
               <summary>Source code in <code>pydantic/type_adapter.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">709</span>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">704</span>
+<span class="normal">705</span>
+<span class="normal">706</span>
+<span class="normal">707</span>
+<span class="normal">708</span>
+<span class="normal">709</span>
 <span class="normal">710</span>
 <span class="normal">711</span>
 <span class="normal">712</span>
@@ -6911,12 +6902,7 @@ type (<code>string</code>, <code>boolean</code>, <code>null</code>, <code>intege
 <span class="normal">736</span>
 <span class="normal">737</span>
 <span class="normal">738</span>
-<span class="normal">739</span>
-<span class="normal">740</span>
-<span class="normal">741</span>
-<span class="normal">742</span>
-<span class="normal">743</span>
-<span class="normal">744</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">json_schema</span><span class="p">(</span>
+<span class="normal">739</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">json_schema</span><span class="p">(</span>
     <span class="bp">self</span><span class="p">,</span>
     <span class="o">*</span><span class="p">,</span>
     <span class="n">by_alias</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
@@ -7170,7 +7156,12 @@ type (<code>string</code>, <code>boolean</code>, <code>null</code>, <code>intege
 
             <details class="quote">
               <summary>Source code in <code>pydantic/type_adapter.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">746</span>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">741</span>
+<span class="normal">742</span>
+<span class="normal">743</span>
+<span class="normal">744</span>
+<span class="normal">745</span>
+<span class="normal">746</span>
 <span class="normal">747</span>
 <span class="normal">748</span>
 <span class="normal">749</span>
@@ -7231,12 +7222,7 @@ type (<code>string</code>, <code>boolean</code>, <code>null</code>, <code>intege
 <span class="normal">804</span>
 <span class="normal">805</span>
 <span class="normal">806</span>
-<span class="normal">807</span>
-<span class="normal">808</span>
-<span class="normal">809</span>
-<span class="normal">810</span>
-<span class="normal">811</span>
-<span class="normal">812</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@staticmethod</span>
+<span class="normal">807</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@staticmethod</span>
 <span class="k">def</span><span class="w"> </span><span class="nf">json_schemas</span><span class="p">(</span>
     <span class="n">inputs</span><span class="p">:</span> <span class="n">Iterable</span><span class="p">[</span><span class="nb">tuple</span><span class="p">[</span><span class="n">JsonSchemaKeyT</span><span class="p">,</span> <span class="n">JsonSchemaMode</span><span class="p">,</span> <span class="n">TypeAdapter</span><span class="p">[</span><span class="n">Any</span><span class="p">]]],</span>
     <span class="o">/</span><span class="p">,</span>

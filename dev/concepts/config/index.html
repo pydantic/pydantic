@@ -1175,6 +1175,17 @@ to help you monitor and understand your
 </li>
       
         <li class="md-nav__item">
+  <a href="#plugin-settings" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Plugin settings
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#configuration-propagation" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -3987,6 +3998,17 @@ to help you monitor and understand your
 </li>
       
         <li class="md-nav__item">
+  <a href="#plugin-settings" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Plugin settings
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#configuration-propagation" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -4189,6 +4211,21 @@ with a custom configuration, as the configuration is inherited:</p>
 <p>If your model inherits from multiple bases, Pydantic currently <em>doesn't</em> follow the
 <a href="https://docs.python.org/3/glossary.html#term-method-resolution-order">MRO</a>. For more details, see <a href="https://github.com/pydantic/pydantic/issues/9992">this issue</a>.</p>
 </div>
+<h2 id="plugin-settings">Plugin settings<a class="headerlink" href="#plugin-settings" title="Permanent link">&para;</a></h2>
+<p>The <a class="autorefs autorefs-internal" href="../../api/config/#pydantic.config.ConfigDict.plugin_settings"><code>plugin_settings</code></a> configuration value passes options to
+Pydantic plugins (code that hooks into validation, usually for tooling that observes it rather than for
+changing validation behaviour). Its value is a dictionary keyed by plugin name, so a given plugin reads
+only its own entry.</p>
+<p>The main plugin in use today is <a href="../../integrations/logfire/">Logfire</a>'s, which records validations for
+observability. You can tune what it records per model, for instance recording only failures for one
+particular model:</p>
+<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">pydantic</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseModel</span>
+
+
+<span class="k">class</span><span class="w"> </span><span class="nc">User</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">,</span> <span class="n">plugin_settings</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;logfire&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;record&#39;</span><span class="p">:</span> <span class="s1">&#39;failure&#39;</span><span class="p">}}):</span>
+    <span class="n">name</span><span class="p">:</span> <span class="nb">str</span>
+    <span class="n">email</span><span class="p">:</span> <span class="nb">str</span>
+</code></pre></div>
 <h2 id="configuration-propagation">Configuration propagation<a class="headerlink" href="#configuration-propagation" title="Permanent link">&para;</a></h2>
 <p>When using types that support configuration as field annotations, configuration may not be propagated:</p>
 <ul>

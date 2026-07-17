@@ -4002,6 +4002,9 @@ of the validators documentation.</p>
 </table>
 <p>The first item in the <a class="autorefs autorefs-internal" href="../../api/pydantic_core/#pydantic_core.ErrorDetails.loc"><code>loc</code></a> list will be the field where the error occurred, and if the field is a
 <a href="../../concepts/models/#nested-models">sub-model</a>, subsequent items will be present to indicate the nested location of the error.</p>
+<p>Accessing errors this way requires a <code>try</code>/<code>except</code> around the validation call. For validations spread
+across a running service, <a href="../troubleshooting/">Logfire</a> records the same structured error list on each
+failure, together with the input that produced it, without wrapping each call.</p>
 <p>As a demonstration:</p>
 <div class="language-python highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">pydantic</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">Field</span><span class="p">,</span> <span class="n">ValidationError</span><span class="p">,</span> <span class="n">field_validator</span>
 
@@ -4239,10 +4242,6 @@ dictionary of translations.</p>
 <li>By default, <code>e.errors()</code> produces a list of errors with <code>loc</code> values that take the form of tuples.</li>
 <li>With our custom <code>loc_to_dot_sep</code> function, we've modified the form of the <code>loc</code> representation.</li>
 </ol>
-<hr />
-<p>A <code>ValidationError</code> names the field and rule that failed, but not the input that triggered it.
-<a href="../troubleshooting/">Logfire</a>, built by the team behind Pydantic, records the input and the structured
-errors for each validation, so you can trace a failure back to the exact payload.</p>
 
 
 

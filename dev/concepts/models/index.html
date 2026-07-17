@@ -5014,6 +5014,11 @@ will contain information about all of the errors and how they happened.</p>
 <span class="sd">      Input should be a valid number, unable to parse string as a number [type=float_parsing, input_value=&#39;not a float&#39;, input_type=str]</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 </code></pre></div>
+<p>In an example like this one, the offending <code>data</code> is right there in the code. In a running application
+it usually isn't. The exception says which fields failed, but the input that produced it is whatever a
+user, API, or job happened to send at the time. If you need to see that input as well,
+<a href="../../errors/troubleshooting/">Logfire can record failed validations</a> together with the data that
+caused them.</p>
 <h2 id="arbitrary-class-instances">Arbitrary class instances<a class="headerlink" href="#arbitrary-class-instances" title="Permanent link">&para;</a></h2>
 <p>(Formerly known as "ORM Mode"/<code>from_orm()</code>).</p>
 <p>When using the <a class="autorefs autorefs-internal" href="../../api/base_model/#pydantic.BaseModel.model_validate"><code>model_validate()</code></a> method, Pydantic can also validate arbitrary objects,

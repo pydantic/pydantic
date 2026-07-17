@@ -4089,6 +4089,16 @@ and start your server up locally.</p>
 <li>Run the receiver script in one terminal to start the consumer.</li>
 <li>Run the sender script in another terminal to send messages.</li>
 </ol>
+<p>One thing to keep in mind with consumers like this: if <code>model_validate_json</code> raises a
+<a class="autorefs autorefs-internal" href="../../api/pydantic_core/#pydantic_core.ValidationError"><code>ValidationError</code></a>, the message that caused it may no longer be on the
+queue by the time you investigate, making the failure hard to reproduce. It's worth recording failed
+validations as they happen, for example with <a href="../../errors/troubleshooting/">Logfire</a>, which captures
+the message body alongside the error:</p>
+<div class="language-python highlight"><pre><span></span><code><span class="kn">import</span><span class="w"> </span><span class="nn">logfire</span>
+
+<span class="n">logfire</span><span class="o">.</span><span class="n">configure</span><span class="p">()</span>
+<span class="n">logfire</span><span class="o">.</span><span class="n">instrument_pydantic</span><span class="p">(</span><span class="n">record</span><span class="o">=</span><span class="s1">&#39;failure&#39;</span><span class="p">)</span>
+</code></pre></div>
 <h2 id="arq">ARQ<a class="headerlink" href="#arq" title="Permanent link">&para;</a></h2>
 <p>ARQ is a fast Redis-based job queue for Python.
 It's built on top of Redis and provides a simple way to handle background tasks.</p>
