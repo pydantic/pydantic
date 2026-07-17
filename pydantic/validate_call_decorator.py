@@ -90,17 +90,16 @@ def validate_call(
     """!!! abstract "Usage Documentation"
         [Validation Decorator](../concepts/validation_decorator.md)
 
-    Returns a decorated wrapper around the function that validates the arguments and, optionally, the return value.
+    Returns a wrapper around the function that validates the arguments and, optionally, the return value.
 
-    Usage may be either as a plain decorator `@validate_call` or with arguments `@validate_call(...)`.
+    Usage may be either as a plain decorator `@validate_call` or with arguments (`@validate_call(...)`).
 
-    When a decorated call fails, the [`ValidationError`][pydantic_core.ValidationError] names the rejected
-    argument, but the traceback won't show the value the caller passed.
-    [Logfire](../integrations/logfire.md) records failing calls along with their arguments — see
-    [Troubleshooting validation errors](../errors/troubleshooting.md).
+    !!! tip "Logfire integration"
+        Instrumentation of validation errors are supported by [Logfire](../integrations/logfire.md).
+        See [Troubleshooting validation errors](../errors/troubleshooting.md) for more details.
 
     Args:
-        func: The function to be decorated.
+        func: The function to be wrapped.
         config: The configuration dictionary.
         validate_return: Whether to validate the return value.
 

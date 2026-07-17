@@ -48,9 +48,10 @@ print(pydantic_model.model_dump(by_alias=True))
     The example above works because aliases have priority over field names for
     field population. Accessing `SQLModel`'s `metadata` attribute would lead to a `ValidationError`.
 
-Validating ORM objects can surface a less obvious class of failure: rows written before a constraint
-was added, or columns that allow `NULL` where your model doesn't. These only fail when the offending
-row is actually read, which may be long after a deploy, and
-[recording failed validations](../errors/troubleshooting.md) tells you which rows they were.
+!!! tip "Logfire integration"
+    Validating ORM objects can surface a less obvious class of failure: rows written before a constraint
+    was added, or columns that allow `NULL` where your model doesn't. These only fail when the offending
+    row is actually read, which may be long after a deploy, and
+    [recording failed validations](../errors/troubleshooting.md) tells you which rows they were.
 
 <!-- TODO: add examples for Django with Pydantic models -->

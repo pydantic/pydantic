@@ -133,11 +133,12 @@ variety of types ([date and time types][datetime], [`UUID`][uuid.UUID] objects, 
 is used and can't be serialized to JSON, a [`PydanticSerializationError`][pydantic_core.PydanticSerializationError] exception
 is raised.
 
-A serialization error like this often only shows up when a particular object reaches the point of being
-serialized (commonly when building a response), so it can be easy to miss until it happens in
-production. Like any exception, it's captured by [Logfire](../integrations/logfire.md) if you've
-instrumented your application, in the context of the request that triggered it, and grouped with other
-occurrences so you can tell a one-off from a recurring problem.
+!!! tip "Logfire integration"
+    A serialization error like this often only shows up when a particular object reaches the point of being
+    serialized (commonly when building a response), so it can be easy to miss until it happens in
+    production. Like any exception, it's captured by [Logfire](../integrations/logfire.md) if you've
+    instrumented your application, in the context of the request that triggered it, and grouped with other
+    occurrences so you can tell a one-off from a recurring problem.
 
 !!! info "See also"
     The [`TypeAdapter.dump_json()`][pydantic.TypeAdapter.dump_json] method, useful when *not* dealing with Pydantic models.

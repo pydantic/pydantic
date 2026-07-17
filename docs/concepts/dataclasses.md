@@ -4,6 +4,11 @@
 If you don't want to use Pydantic's [`BaseModel`][pydantic.BaseModel] you can instead get the same data validation
 on standard [dataclasses][dataclasses].
 
+!!! tip "Logfire integration"
+    Because a Pydantic dataclass validates its inputs just like a model, the same observability applies: if
+    you use [Logfire](../integrations/logfire.md), validations of Pydantic dataclasses are
+    [recorded alongside model validations](../errors/troubleshooting.md), input included.
+
 ```python
 from datetime import datetime
 
@@ -217,10 +222,6 @@ except pydantic.ValidationError as e:
       Input should be a valid integer, unable to parse string as an integer [type=int_parsing, input_value='pika', input_type=str]
     """
 ```
-
-Because a Pydantic dataclass validates its inputs just like a model, the same observability applies: if
-you use [Logfire](../integrations/logfire.md), validations of Pydantic dataclasses are
-[recorded alongside model validations](../errors/troubleshooting.md), input included.
 
 The decorator can also be applied directly on a stdlib dataclass, in which case a new subclass will be created:
 

@@ -49,9 +49,7 @@ Will output in your terminal:
 
 {{ devtools_example }}
 
-`debug()` is a development-time tool: it prints to the terminal of a process you're watching. The
-closest equivalent for a deployed application is [Logfire](logfire.md), where models and validations
-show up as structured output you can browse and query.
-
-!!! note
-    `python-devtools` doesn't yet support Python 3.13.
+!!! tip "Logfire integration"
+    `debug()` is a development-time tool: it prints to the terminal of a process you're watching. The
+    closest equivalent for a deployed application is [Logfire](logfire.md), where models and validations
+    show up as structured output you can browse and query.
