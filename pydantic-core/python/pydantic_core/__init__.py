@@ -3,8 +3,6 @@ from __future__ import annotations
 import sys as _sys
 from typing import Any as _Any
 
-from typing_extensions import Sentinel
-
 from ._pydantic_core import (
     ArgsKwargs,
     MultiHostUrl,
@@ -39,6 +37,12 @@ if _sys.version_info < (3, 12):
     from typing_extensions import TypedDict as _TypedDict
 else:
     from typing import TypedDict as _TypedDict
+
+if _sys.version_info < (3, 15):
+    from typing_extensions import sentinel as _sentinel
+else:
+    from builtins import sentinel as _sentinel
+
 
 __all__ = [
     '__version__',
@@ -145,7 +149,7 @@ class MultiHostHost(_TypedDict):
     """The port part of this host, or `None`."""
 
 
-MISSING = Sentinel('MISSING')
+MISSING = _sentinel('MISSING')
 """A singleton indicating a field value was not provided during validation.
 
 This singleton can be used a default value, as an alternative to `None` when it has

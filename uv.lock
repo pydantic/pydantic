@@ -243,10 +243,10 @@ name = "auditwheel-emscripten"
 version = "0.2.4"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "leb128", marker = "python_full_version >= '3.12'" },
-    { name = "packaging", marker = "python_full_version >= '3.12'" },
-    { name = "pyodide-cli", marker = "python_full_version >= '3.12'" },
-    { name = "wheel", marker = "python_full_version >= '3.12'" },
+    { name = "leb128" },
+    { name = "packaging" },
+    { name = "pyodide-cli" },
+    { name = "wheel" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/91/5f/93fcbc1d4654dca7d69272e3a82f058cbaeb092b098d190246a63d8b282e/auditwheel_emscripten-0.2.4.tar.gz", hash = "sha256:4553d646791afc1224d10119c978ce3fce8c53558d63bf49439a3f544b6040e6", size = 5835959, upload-time = "2026-04-03T03:38:39.729Z" }
 wheels = [
@@ -1962,11 +1962,11 @@ name = "pandas"
 version = "2.3.3"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "numpy", version = "2.2.6", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.11'" },
-    { name = "numpy", version = "2.3.4", source = { registry = "https://pypi.org/simple" }, marker = "(python_full_version >= '3.11' and python_full_version < '3.13') or (python_full_version >= '3.11' and implementation_name != 'cpython') or (python_full_version >= '3.14' and implementation_name == 'cpython')" },
-    { name = "python-dateutil", marker = "python_full_version != '3.13.*' or implementation_name != 'cpython'" },
-    { name = "pytz", marker = "python_full_version != '3.13.*' or implementation_name != 'cpython'" },
-    { name = "tzdata", marker = "python_full_version != '3.13.*' or implementation_name != 'cpython'" },
+    { name = "numpy", version = "2.2.6", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.11' or python_full_version >= '3.13'" },
+    { name = "numpy", version = "2.3.4", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.11' and python_full_version < '3.13'" },
+    { name = "python-dateutil" },
+    { name = "pytz" },
+    { name = "tzdata" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/33/01/d40b85317f86cf08d853a4f495195c73815fdf205eef3993821720274518/pandas-2.3.3.tar.gz", hash = "sha256:e05e1af93b977f7eafa636d043f9f94c7ee3ac81af99c13508215942e64c993b", size = 4495223, upload-time = "2025-09-29T23:34:51.853Z" }
 wheels = [
@@ -2364,7 +2364,7 @@ requires-dist = [
     { name = "annotated-types", specifier = ">=0.6.0" },
     { name = "email-validator", marker = "extra == 'email'", specifier = ">=2.0.0" },
     { name = "pydantic-core", editable = "pydantic-core" },
-    { name = "typing-extensions", specifier = ">=4.15.0" },
+    { name = "typing-extensions", specifier = ">=4.16.0" },
     { name = "typing-inspection", specifier = ">=0.4.2" },
     { name = "tzdata", marker = "sys_platform == 'win32' and extra == 'timezone'" },
 ]
@@ -2640,8 +2640,8 @@ resolution-markers = [
     "python_full_version < '3.11'",
 ]
 dependencies = [
-    { name = "cython", marker = "python_full_version < '3.12'" },
-    { name = "pyyaml", marker = "python_full_version < '3.12'" },
+    { name = "cython" },
+    { name = "pyyaml" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/5f/75/711f37a59dd29e8e52e2aac4b2dfe5a131fea70d903c7be127cd8eb916a1/pyodide-build-0.19.1.tar.gz", hash = "sha256:ec170a54da3d2758ce1c8b88c8cc4461e51e1d006474efccc4d2d5b6d3b99dc0", size = 28770, upload-time = "2022-02-22T14:07:22.957Z" }
 wheels = [
@@ -2657,19 +2657,19 @@ resolution-markers = [
     "(python_full_version >= '3.12' and implementation_name != 'cpython') or (python_full_version == '3.12.*' and implementation_name == 'cpython') or (python_full_version >= '3.14' and implementation_name == 'cpython')",
 ]
 dependencies = [
-    { name = "auditwheel-emscripten", marker = "python_full_version >= '3.12'" },
-    { name = "build", marker = "python_full_version >= '3.12'" },
-    { name = "click", marker = "python_full_version >= '3.12'" },
-    { name = "packaging", marker = "python_full_version >= '3.12'" },
-    { name = "platformdirs", marker = "python_full_version >= '3.12'" },
-    { name = "pydantic", marker = "python_full_version >= '3.12'" },
-    { name = "pyodide-cli", marker = "python_full_version >= '3.12'" },
-    { name = "pyodide-lock", marker = "python_full_version >= '3.12'" },
-    { name = "requests", marker = "python_full_version >= '3.12'" },
-    { name = "rich", marker = "python_full_version >= '3.12'" },
-    { name = "ruamel-yaml", marker = "python_full_version >= '3.12'" },
-    { name = "virtualenv", marker = "python_full_version >= '3.12'" },
-    { name = "wheel", marker = "python_full_version >= '3.12'" },
+    { name = "auditwheel-emscripten" },
+    { name = "build" },
+    { name = "click" },
+    { name = "packaging" },
+    { name = "platformdirs" },
+    { name = "pydantic" },
+    { name = "pyodide-cli" },
+    { name = "pyodide-lock" },
+    { name = "requests" },
+    { name = "rich" },
+    { name = "ruamel-yaml" },
+    { name = "virtualenv" },
+    { name = "wheel" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/02/ab/6a011f65b8adc4699ae5680f4f2dcf28a81fab86d09e6dcb87415aab64ef/pyodide_build-0.34.4.tar.gz", hash = "sha256:3f8f5a2628e3d69d00264328f64c39c0febcdc7d7de4e2da1b5220832c190f73", size = 380307, upload-time = "2026-05-18T05:57:11.134Z" }
 wheels = [
@@ -2681,8 +2681,8 @@ name = "pyodide-cli"
 version = "0.5.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "click", marker = "python_full_version >= '3.12'" },
-    { name = "rich", marker = "python_full_version >= '3.12'" },
+    { name = "click" },
+    { name = "rich" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/f1/44/fe74049e3e776bd56fae8bd9370900d6d6dc5e541299ae90cb2330a9a8a4/pyodide_cli-0.5.0.tar.gz", hash = "sha256:14df0797e791558b6976d4612f9df9619334f8914bfe3efbdd22e3886f5275b7", size = 12630, upload-time = "2026-01-28T03:29:06.623Z" }
 wheels = [
@@ -2694,7 +2694,7 @@ name = "pyodide-lock"
 version = "0.1.3"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "pydantic", marker = "python_full_version >= '3.12'" },
+    { name = "pydantic" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/7a/4c/80bf2cfa237c405d41730d4f86c53d2d4d49aea2aaa8c74894156bcf4f60/pyodide_lock-0.1.3.tar.gz", hash = "sha256:5ed700b4b1b88313d9c56bab721d5a4ed57304bbe83c172b647f74e1140e2177", size = 54432, upload-time = "2026-04-24T09:02:54.208Z" }
 wheels = [
@@ -3561,11 +3561,11 @@ wheels = [
 
 [[package]]
 name = "typing-extensions"
-version = "4.15.0"
+version = "4.16.0"
 source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/72/94/1a15dd82efb362ac84269196e94cf00f187f7ed21c242792a923cdb1c61f/typing_extensions-4.15.0.tar.gz", hash = "sha256:0cea48d173cc12fa28ecabc3b837ea3cf6f38c6d1136f85cbaaf598984861466", size = 109391, upload-time = "2025-08-25T13:49:26.313Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/f6/cc/6253133b5bb138fc3306cebfbda2c520f545d36b5be2c7255cc528bb45d6/typing_extensions-4.16.0.tar.gz", hash = "sha256:dc983d19a509c94dba722ee6abd33940f7c05a89e243c47e907eb4db6f1a43e5", size = 113555, upload-time = "2026-07-02T08:40:05.92Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/18/67/36e9267722cc04a6b9f15c7f3441c2363321a3ea07da7ae0c0707beb2a9c/typing_extensions-4.15.0-py3-none-any.whl", hash = "sha256:f0fa19c6845758ab08074a0cfa8b7aecb71c999ca73d62883bc25cc018c4e548", size = 44614, upload-time = "2025-08-25T13:49:24.86Z" },
+    { url = "https://files.pythonhosted.org/packages/49/d3/b8441a820a491ddfc024b0b0cf0393375b75ea13866d9c66727e54c2fc80/typing_extensions-4.16.0-py3-none-any.whl", hash = "sha256:481caa481374e813c1b176ada14e97f1f67a4539ce9cfeb3f350d78d6370c2e8", size = 45571, upload-time = "2026-07-02T08:40:04.659Z" },
 ]
 
 [[package]]
@@ -3677,7 +3677,7 @@ name = "wheel"
 version = "0.47.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "packaging", marker = "python_full_version >= '3.12'" },
+    { name = "packaging" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/39/62/75f18a0f03b4219c456652c7780e4d749b929eb605c098ce3a5b6b6bc081/wheel-0.47.0.tar.gz", hash = "sha256:cc72bd1009ba0cf63922e28f94d9d83b920aa2bb28f798a31d0691b02fa3c9b3", size = 63854, upload-time = "2026-04-22T15:51:27.727Z" }
 wheels = [
