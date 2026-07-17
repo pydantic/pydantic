@@ -102,7 +102,7 @@ class RootModel(BaseModel, Generic[RootModelRootType], metaclass=_RootModelMetac
         cls = type(self)
         m = cls.__new__(cls)
         new_dict = copy(self.__dict__)
-        new_dict['root'] = copy(self.__dict__['root'])
+        new_dict['root'] = copy(self.__dict__['root'])  # pyright: ignore[reportIndexIssue] (https://github.com/microsoft/pyright/issues/11548)
         _object_setattr(m, '__dict__', new_dict)
         _object_setattr(m, '__pydantic_fields_set__', copy(self.__pydantic_fields_set__))
         return m

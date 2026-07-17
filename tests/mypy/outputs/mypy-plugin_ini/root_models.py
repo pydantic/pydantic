@@ -15,7 +15,7 @@ Pets2 = RootModel[list[str]]
 
 
 class Pets3(RootModel):
-# MYPY: error: Missing type parameters for generic type "RootModel"  [type-arg]
+# MYPY: error: Missing type arguments for generic type "RootModel"  [type-arg]
     root: list[str]
 
 
@@ -53,7 +53,7 @@ class Model(BaseModel, Generic[V]):
     m1: Maybe[int]
     m2: Maybe[V]
     m3: Maybe
-# MYPY: error: Missing type parameters for generic type "Maybe"  [type-arg]
+# MYPY: error: Missing type arguments for generic type "Maybe"  [type-arg]
 
 
 Model[str](m1=1, m2='dog', m3=[])
