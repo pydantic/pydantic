@@ -64,13 +64,15 @@ Usage Documentation
 
 A decorator used to create a Pydantic-enhanced dataclass, similar to the standard Python `dataclass`, but with added validation.
 
-This function should be used similarly to `dataclasses.dataclass`.
+This decorator should be used similarly to the @dataclasses.dataclass decorator.
 
-A Pydantic dataclass validates its inputs like a `BaseModel` does, and a failed validation can leave you without the input that caused it. [Logfire](../../integrations/logfire/) records dataclass validations the same way as model validations, input included — see [Troubleshooting validation errors](../../errors/troubleshooting/).
+Logfire integration
+
+Instrumentation of dataclass validation errors is supported by [Logfire](../../integrations/logfire/).
 
 Parameters:
 
-| Name | Type | Description | Default | | --- | --- | --- | --- | | `_cls` | `type[_T] | None` | The target dataclass. | `None` | | `init` | `Literal[False]` | Included for signature compatibility with dataclasses.dataclass, and is passed through to dataclasses.dataclass when appropriate. If specified, must be set to False, as pydantic inserts its own __init__ function. | `False` | | `repr` | `bool` | A boolean indicating whether to include the field in the __repr__ output. | `True` | | `eq` | `bool` | Determines if a __eq__ method should be generated for the class. | `True` | | `order` | `bool` | Determines if comparison magic methods should be generated, such as __lt__, but not __eq__. | `False` | | `unsafe_hash` | `bool` | Determines if a __hash__ method should be included in the class, as in dataclasses.dataclass. | `False` | | `frozen` | `bool | None` | Determines if the generated class should be a 'frozen' dataclass, which does not allow its attributes to be modified after it has been initialized. If not set, the value from the provided config argument will be used (and will default to False otherwise). | `None` | | `config` | `ConfigDict | type[object] | None` | The Pydantic config to use for the dataclass. | `None` | | `validate_on_init` | `bool | None` | A deprecated parameter included for backwards compatibility; in V2, all Pydantic dataclasses are validated on init. | `None` | | `kw_only` | `bool` | Determines if __init__ method parameters must be specified by keyword only. Defaults to False. | `False` | | `slots` | `bool` | Determines if the generated class should be a 'slots' dataclass, which does not allow the addition of new attributes after instantiation. | `False` |
+| Name | Type | Description | Default | | --- | --- | --- | --- | | `_cls` | `type[_T] | None` | The target dataclass. | `None` | | `init` | `Literal[False]` | Included for signature compatibility with dataclasses.dataclass, and is passed through to dataclasses.dataclass when appropriate. If specified, must be set to False, as pydantic inserts its own __init__() function. | `False` | | `repr` | `bool` | A boolean indicating whether to include the field in the __repr__() output. | `True` | | `eq` | `bool` | Determines if a __eq__() method should be generated for the class. | `True` | | `order` | `bool` | Determines if comparison magic methods should be generated, such as __lt__(), but not __eq__(). | `False` | | `unsafe_hash` | `bool` | Determines if a __hash__() method should be included in the class, as in dataclasses.dataclass. | `False` | | `frozen` | `bool | None` | Determines if the generated class should be a 'frozen' dataclass, which does not allow its attributes to be modified after it has been initialized. If not set, the value from the provided config argument will be used (and will default to False otherwise). | `None` | | `config` | `ConfigDict | type[object] | None` | The Pydantic config to use for the dataclass. | `None` | | `validate_on_init` | `bool | None` | A deprecated parameter included for backwards compatibility; in V2, all Pydantic dataclasses are validated on init. | `None` | | `kw_only` | `bool` | Determines if __init__() method parameters must be specified by keyword only. Defaults to False. | `False` | | `slots` | `bool` | Determines if the generated class should be a 'slots' dataclass, which does not allow the addition of new attributes after instantiation. | `False` |
 
 Returns:
 
@@ -104,28 +106,26 @@ def dataclass(
     A decorator used to create a Pydantic-enhanced dataclass, similar to the standard Python `dataclass`,
     but with added validation.
 
-    This function should be used similarly to `dataclasses.dataclass`.
+    This decorator should be used similarly to the [`@dataclasses.dataclass`][dataclasses.dataclass] decorator.
 
-    A Pydantic dataclass validates its inputs like a `BaseModel` does, and a failed validation can leave
-    you without the input that caused it. [Logfire](../integrations/logfire.md) records dataclass
-    validations the same way as model validations, input included — see
-    [Troubleshooting validation errors](../errors/troubleshooting.md).
+    !!! tip "Logfire integration"
+        Instrumentation of dataclass validation errors is supported by [Logfire](../integrations/logfire.md).
 
     Args:
         _cls: The target `dataclass`.
         init: Included for signature compatibility with `dataclasses.dataclass`, and is passed through to
             `dataclasses.dataclass` when appropriate. If specified, must be set to `False`, as pydantic inserts its
-            own  `__init__` function.
-        repr: A boolean indicating whether to include the field in the `__repr__` output.
-        eq: Determines if a `__eq__` method should be generated for the class.
-        order: Determines if comparison magic methods should be generated, such as `__lt__`, but not `__eq__`.
-        unsafe_hash: Determines if a `__hash__` method should be included in the class, as in `dataclasses.dataclass`.
+            own  `__init__()` function.
+        repr: A boolean indicating whether to include the field in the `__repr__()` output.
+        eq: Determines if a `__eq__()` method should be generated for the class.
+        order: Determines if comparison magic methods should be generated, such as `__lt__()`, but not `__eq__()`.
+        unsafe_hash: Determines if a `__hash__()` method should be included in the class, as in `dataclasses.dataclass`.
         frozen: Determines if the generated class should be a 'frozen' `dataclass`, which does not allow its
             attributes to be modified after it has been initialized. If not set, the value from the provided `config` argument will be used (and will default to `False` otherwise).
         config: The Pydantic config to use for the `dataclass`.
         validate_on_init: A deprecated parameter included for backwards compatibility; in V2, all Pydantic dataclasses
             are validated on init.
-        kw_only: Determines if `__init__` method parameters must be specified by keyword only. Defaults to `False`.
+        kw_only: Determines if `__init__()` method parameters must be specified by keyword only. Defaults to `False`.
         slots: Determines if the generated class should be a 'slots' `dataclass`, which does not allow the addition of
             new attributes after instantiation.
 

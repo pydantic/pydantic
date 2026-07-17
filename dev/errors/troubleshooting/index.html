@@ -121,7 +121,7 @@ What's new &mdash; we've launched
 <a href="https://pydantic.dev/articles/logfire-announcement">Pydantic Logfire</a>
 <img alt="🔥" class="twemoji" src="https://cdn.jsdelivr.net/gh/jdecked/twemoji@15.0.3/assets/svg/1f525.svg" title=":fire:">
 to help you monitor and understand your
-<a href="https://logfire.pydantic.dev/docs/integrations/pydantic/" id="logfire-app-type" target="_blank">Pydantic validations.</a>
+<a href="https://pydantic.dev/docs/logfire/integrations/pydantic/" id="logfire-app-type" target="_blank">Pydantic validations.</a>
 
           </div>
           
@@ -3209,17 +3209,6 @@ to help you monitor and understand your
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#have-logfire-explain-the-error" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Have Logfire explain the error
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
   <a href="#getting-started" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -3253,10 +3242,10 @@ to help you monitor and understand your
 </li>
       
         <li class="md-nav__item">
-  <a href="#debugging-with-an-ai-coding-agent" class="md-nav__link">
+  <a href="#have-logfire-explain-the-error" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Debugging with an AI coding agent
+        Have Logfire explain the error
       
     </span>
   </a>
@@ -3916,17 +3905,6 @@ to help you monitor and understand your
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#have-logfire-explain-the-error" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Have Logfire explain the error
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
   <a href="#getting-started" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -3960,10 +3938,10 @@ to help you monitor and understand your
 </li>
       
         <li class="md-nav__item">
-  <a href="#debugging-with-an-ai-coding-agent" class="md-nav__link">
+  <a href="#have-logfire-explain-the-error" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Debugging with an AI coding agent
+        Have Logfire explain the error
       
     </span>
   </a>
@@ -4011,25 +3989,16 @@ to help you monitor and understand your
 <h1 id="troubleshooting-validation-errors-with-logfire">Troubleshooting Validation Errors with Logfire<a class="headerlink" href="#troubleshooting-validation-errors-with-logfire" title="Permanent link">&para;</a></h1>
 <p>When a <a class="autorefs autorefs-internal" href="../../api/pydantic_core/#pydantic_core.ValidationError"><code>ValidationError</code></a> is raised, the message tells you <em>what</em> went
 wrong: which field, which rule, and the value that triggered it. In production, the hard part is
-usually everything the message <em>can't</em> show you: which input caused it, where that data came from, how
+usually everything the message <em>can't</em> show you: where that data came from, how
 often it happens, and what else your application was doing at the time. By the time you read the log,
 the payload that failed is often already gone.</p>
-<h2 id="have-logfire-explain-the-error">Have Logfire explain the error<a class="headerlink" href="#have-logfire-explain-the-error" title="Permanent link">&para;</a></h2>
-<p>Open a failed validation span in <a href="../../integrations/logfire/">Pydantic Logfire</a> and it explains the
-failure in plain language (currently in beta), reading the structured errors and, for each field,
-telling you what was expected and what it received, including the messages from your own
-<a href="../../concepts/validators/#raising-validation-errors">custom validators</a>. You get to the fix without
-memorising every <code>pydantic-core</code> error code.</p>
-<figure>
-  <img alt="Logfire explaining a Pydantic validation error" src="../../img/logfire-validation-error-explained.png" width="500" />
-</figure>
 <h2 id="getting-started">Getting started<a class="headerlink" href="#getting-started" title="Permanent link">&para;</a></h2>
 <p>Troubleshooting validation errors in production is much easier when something records them as they
 happen, capturing the input alongside the error. Logfire's Pydantic integration does this: it records
 each validation as it runs, so you can open the one that failed instead of reconstructing it from logs
 after the fact.</p>
 <p>If you haven't set it up yet, follow the three-step
-<a href="https://logfire.pydantic.dev/docs/">getting started guide</a>, then instrument your models:</p>
+<a href="https://pydantic.dev/docs/logfire/get-started/">getting started guide</a>, then instrument your application:</p>
 <div class="language-python highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">datetime</span><span class="w"> </span><span class="kn">import</span> <span class="n">date</span>
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">logfire</span>
@@ -4063,11 +4032,11 @@ after the fact.</p>
 <li><strong>A queryable history</strong>: every failure is stored, so you can ask "which field fails most often?"
   or "did this error spike after the last deploy?" in SQL.</li>
 <li><strong>No extra logging code</strong>: one <code>logfire.instrument_pydantic()</code> call covers all your models; you don't
-  wrap each <code>model_validate</code> in a <code>try</code>/<code>except</code>.</li>
+  wrap each validation attempt in a <code>try</code>/<code>except</code>.</li>
 </ul>
 <p>Recording the input naturally raises the question of sensitive data, since the failing payload may
 contain it. The Logfire SDK
-<a href="https://logfire.pydantic.dev/docs/how-to-guides/scrubbing/">scrubs common sensitive values</a> (things
+<a href="https://pydantic.dev/docs/logfire/instrument/scrubbing/">scrubs common sensitive values</a> (things
 that look like passwords, tokens, or other secrets) from spans before they leave your machine, and you
 can extend the rules for your own fields.</p>
 <p><img alt="A failed Pydantic validation recorded in the Logfire live view" src="../../img/logfire-validation-live-view.png" /></p>
@@ -4080,24 +4049,31 @@ and with what value without parsing the rendered message string by hand.</p>
 <h2 id="from-one-failure-to-the-pattern">From one failure to the pattern<a class="headerlink" href="#from-one-failure-to-the-pattern" title="Permanent link">&para;</a></h2>
 <p>A single trace tells you about one failure. Often the more useful question is whether it's a one-off or
 something recurring. Logfire
-<a href="https://logfire.pydantic.dev/docs/guides/web-ui/issues/">groups repeated exceptions into issues</a>, so a
+<a href="https://pydantic.dev/docs/logfire/observe/issues/">groups repeated exceptions into issues</a>, so a
 validation that fails a thousand times shows up as one entry with a count and a first-seen time, rather
 than a thousand lines to scroll through, which makes it easy to tell a genuine spike from background
 noise.</p>
 <p>Once you know which failures matter, you don't have to keep watching for them. Logfire
-<a href="https://logfire.pydantic.dev/docs/guides/web-ui/alerts/">alerts</a> run a SQL query on a schedule and
+<a href="https://pydantic.dev/docs/logfire/observe/alerts/">alerts</a> run a SQL query on a schedule and
 notify you (for example, in Slack) when it matches. A rule like "validation failures for this model
 crossed a threshold" means the next occurrence finds you instead of a user reporting it.</p>
-<h2 id="debugging-with-an-ai-coding-agent">Debugging with an AI coding agent<a class="headerlink" href="#debugging-with-an-ai-coding-agent" title="Permanent link">&para;</a></h2>
-<p>If you debug with an AI coding agent, the <a href="https://logfire.pydantic.dev/docs/how-to-guides/mcp-server/">Logfire MCP
-server</a> lets the agent query your telemetry
-directly, including the input and errors from a failed validation, so it can investigate against your
+<h2 id="have-logfire-explain-the-error">Have Logfire explain the error<a class="headerlink" href="#have-logfire-explain-the-error" title="Permanent link">&para;</a></h2>
+<p>Open a failed validation span in <a href="../../integrations/logfire/">Pydantic Logfire</a> and it explains the
+failure in plain language (currently in beta), reading the structured errors and, for each field,
+telling you what was expected and what it received, including the messages from your own
+<a href="../../concepts/validators/#raising-validation-errors">custom validators</a>. You get to the fix without
+memorising every <a href="../validation_errors/">error code</a>.</p>
+<figure>
+  <img alt="Logfire explaining a Pydantic validation error" src="../../img/logfire-validation-error-explained.png" width="500" />
+</figure>
+<p>If you debug with an AI coding agent, the <a href="https://pydantic.dev/docs/logfire/guides/mcp-server/">Logfire MCP server</a>
+lets the agent query your telemetry directly, including the input and errors from a failed validation, so it can investigate against your
 real data instead of guessing.</p>
 <h2 id="learn-more">Learn more<a class="headerlink" href="#learn-more" title="Permanent link">&para;</a></h2>
 <ul>
 <li><a href="../../integrations/logfire/">Pydantic Logfire integration</a>: how to install and configure Logfire
   with Pydantic.</li>
-<li><a href="https://logfire.pydantic.dev/docs/">Logfire documentation</a>: the full Logfire docs.</li>
+<li><a href="https://pydantic.dev/docs/logfire/get-started/">Logfire documentation</a>: the full Logfire docs.</li>
 </ul>
 <p>For a reference of the individual error types you may encounter, see
 <a href="../validation_errors/">Validation Errors</a> and <a href="../usage_errors/">Usage Errors</a>.</p>

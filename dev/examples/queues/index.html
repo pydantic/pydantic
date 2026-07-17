@@ -121,7 +121,7 @@ What's new &mdash; we've launched
 <a href="https://pydantic.dev/articles/logfire-announcement">Pydantic Logfire</a>
 <img alt="🔥" class="twemoji" src="https://cdn.jsdelivr.net/gh/jdecked/twemoji@15.0.3/assets/svg/1f525.svg" title=":fire:">
 to help you monitor and understand your
-<a href="https://logfire.pydantic.dev/docs/integrations/pydantic/" id="logfire-app-type" target="_blank">Pydantic validations.</a>
+<a href="https://pydantic.dev/docs/logfire/integrations/pydantic/" id="logfire-app-type" target="_blank">Pydantic validations.</a>
 
           </div>
           
@@ -3940,6 +3940,11 @@ to help you monitor and understand your
 
 <p>Pydantic is quite helpful for validating data that goes into and comes out of queues. Below,
 we'll explore how to validate / serialize data with various queue systems.</p>
+<div class="admonition tip">
+<p class="admonition-title">Logfire integration</p>
+<p>Setting up observability for your queue system can be beneficial. Using <a href="../../integrations/logfire/">Logfire</a>,
+validation and serialization errors will be recorded, alongside the rest of your queue logic.</p>
+</div>
 <h2 id="redis-queue">Redis queue<a class="headerlink" href="#redis-queue" title="Permanent link">&para;</a></h2>
 <p>Redis is a popular in-memory data structure store.</p>
 <p>In order to run this example locally, you'll first need to <a href="https://redis.io/docs/latest/operate/oss_and_stack/install/install-redis/">install Redis</a>
@@ -4089,16 +4094,6 @@ and start your server up locally.</p>
 <li>Run the receiver script in one terminal to start the consumer.</li>
 <li>Run the sender script in another terminal to send messages.</li>
 </ol>
-<p>One thing to keep in mind with consumers like this: if <code>model_validate_json</code> raises a
-<a class="autorefs autorefs-internal" href="../../api/pydantic_core/#pydantic_core.ValidationError"><code>ValidationError</code></a>, the message that caused it may no longer be on the
-queue by the time you investigate, making the failure hard to reproduce. It's worth recording failed
-validations as they happen, for example with <a href="../../errors/troubleshooting/">Logfire</a>, which captures
-the message body alongside the error:</p>
-<div class="language-python highlight"><pre><span></span><code><span class="kn">import</span><span class="w"> </span><span class="nn">logfire</span>
-
-<span class="n">logfire</span><span class="o">.</span><span class="n">configure</span><span class="p">()</span>
-<span class="n">logfire</span><span class="o">.</span><span class="n">instrument_pydantic</span><span class="p">(</span><span class="n">record</span><span class="o">=</span><span class="s1">&#39;failure&#39;</span><span class="p">)</span>
-</code></pre></div>
 <h2 id="arq">ARQ<a class="headerlink" href="#arq" title="Permanent link">&para;</a></h2>
 <p>ARQ is a fast Redis-based job queue for Python.
 It's built on top of Redis and provides a simple way to handle background tasks.</p>

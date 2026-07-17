@@ -121,7 +121,7 @@ What's new &mdash; we've launched
 <a href="https://pydantic.dev/articles/logfire-announcement">Pydantic Logfire</a>
 <img alt="🔥" class="twemoji" src="https://cdn.jsdelivr.net/gh/jdecked/twemoji@15.0.3/assets/svg/1f525.svg" title=":fire:">
 to help you monitor and understand your
-<a href="https://logfire.pydantic.dev/docs/integrations/pydantic/" id="logfire-app-type" target="_blank">Pydantic validations.</a>
+<a href="https://pydantic.dev/docs/logfire/integrations/pydantic/" id="logfire-app-type" target="_blank">Pydantic validations.</a>
 
           </div>
           
@@ -4010,10 +4010,6 @@ and is summarized in the <a href="../conversion_table/">conversion table</a>.</p
 <span class="sd">      Input should be a valid integer [type=int_type, input_value=&#39;123&#39;, input_type=str]</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 </code></pre></div>
-<p>One caveat when enabling strict mode on models an existing application relies on: inputs that were
-being quietly coerced will start failing. If you can't audit every caller, it helps to watch validation
-failures while you roll the change out. <a href="../../integrations/logfire/">Logfire</a> counts successful and
-failed validations as metrics, and records the inputs that were rejected.</p>
 <p>Strict mode can be enabled in various ways:</p>
 <ul>
 <li><a href="#as-a-validation-parameter">As a validation parameter</a>, such as when using <a class="autorefs autorefs-internal" href="../../api/base_model/#pydantic.BaseModel.model_validate"><code>model_validate()</code></a>,

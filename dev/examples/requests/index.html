@@ -121,7 +121,7 @@ What's new &mdash; we've launched
 <a href="https://pydantic.dev/articles/logfire-announcement">Pydantic Logfire</a>
 <img alt="🔥" class="twemoji" src="https://cdn.jsdelivr.net/gh/jdecked/twemoji@15.0.3/assets/svg/1f525.svg" title=":fire:">
 to help you monitor and understand your
-<a href="https://logfire.pydantic.dev/docs/integrations/pydantic/" id="logfire-app-type" target="_blank">Pydantic validations.</a>
+<a href="https://pydantic.dev/docs/logfire/integrations/pydantic/" id="logfire-app-type" target="_blank">Pydantic validations.</a>
 
           </div>
           
@@ -3959,11 +3959,14 @@ handy when working with HTTP requests. Consider a similar example where we are v
 <ol>
 <li>Note, we're querying the <code>/users/</code> endpoint here to get a list of users.</li>
 </ol>
+<div class="admonition tip">
+<p class="admonition-title">Logfire integration</p>
 <p>When you validate responses like this, a <a class="autorefs autorefs-internal" href="../../api/pydantic_core/#pydantic_core.ValidationError"><code>ValidationError</code></a> is often
 the first sign that an API you depend on has changed its response format. The useful questions at that
 point are <em>what did the response actually contain</em>, and <em>when did this start</em>:
 <a href="../../errors/troubleshooting/">recording failed validations with Logfire</a> answers both, since each
 failure is stored with the data that triggered it.</p>
+</div>
 <!-- TODO: httpx, flask, Django rest framework, FastAPI -->
 
 

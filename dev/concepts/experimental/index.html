@@ -121,7 +121,7 @@ What's new &mdash; we've launched
 <a href="https://pydantic.dev/articles/logfire-announcement">Pydantic Logfire</a>
 <img alt="🔥" class="twemoji" src="https://cdn.jsdelivr.net/gh/jdecked/twemoji@15.0.3/assets/svg/1f525.svg" title=":fire:">
 to help you monitor and understand your
-<a href="https://logfire.pydantic.dev/docs/integrations/pydantic/" id="logfire-app-type" target="_blank">Pydantic validations.</a>
+<a href="https://pydantic.dev/docs/logfire/integrations/pydantic/" id="logfire-app-type" target="_blank">Pydantic validations.</a>
 
           </div>
           
@@ -4380,12 +4380,15 @@ Just be mindful of abusing advanced patterns like the pipeline API just because 
 </div>
 <p>Partial validation allows you to validate an incomplete JSON string, or a Python object representing incomplete input data.</p>
 <p>Partial validation is particularly helpful when processing the output of an LLM, where the model streams structured responses, and you may wish to begin validating the stream while you're still receiving data (e.g. to show partial data to users).</p>
-<p>Streaming pipelines like this can be fiddly to debug after the fact. If you run one in production,
-<a href="../../integrations/logfire/">Logfire</a> can record each validation in the context of the surrounding
-request, which makes it easier to reconstruct how a given stream was handled.</p>
 <div class="admonition warning">
 <p class="admonition-title">Warning</p>
 <p>Partial validation is an experimental feature and may change in future versions of Pydantic. The current implementation should be considered a proof of concept at this time and has a number of <a href="#limitations-of-partial-validation">limitations</a>.</p>
+</div>
+<div class="admonition tip">
+<p class="admonition-title">Logfire integration</p>
+<p>Streaming pipelines like this can be fiddly to debug after the fact. If you run one in production,
+<a href="../../integrations/logfire/">Logfire</a> can record each validation in the context of the surrounding
+request, which makes it easier to reconstruct how a given stream was handled.</p>
 </div>
 <p>Partial validation can be enabled when using the three validation methods on <code>TypeAdapter</code>: <a class="autorefs autorefs-internal" href="../../api/type_adapter/#pydantic.type_adapter.TypeAdapter.validate_json"><code>TypeAdapter.validate_json()</code></a>, <a class="autorefs autorefs-internal" href="../../api/type_adapter/#pydantic.type_adapter.TypeAdapter.validate_python"><code>TypeAdapter.validate_python()</code></a>, and <a class="autorefs autorefs-internal" href="../../api/type_adapter/#pydantic.type_adapter.TypeAdapter.validate_strings"><code>TypeAdapter.validate_strings()</code></a>. This allows you to parse and validation incomplete JSON, but also to validate Python objects created by parsing incomplete data of any format.</p>
 <p>The <code>experimental_allow_partial</code> flag can be passed to these methods to enable partial validation.

@@ -643,10 +643,9 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
     ) -> Self:
         """Validate a pydantic model instance.
 
-        If validation fails, the resulting [`ValidationError`][pydantic_core.ValidationError] shows *which*
-        fields were rejected but not the input behind them — instrument your app with
-        [Logfire](../integrations/logfire.md) to record that input too, and debug production failures straight
-        from the trace (see [Troubleshooting validation errors](../errors/troubleshooting.md)).
+        !!! tip "Logfire integration"
+            Instrumentation of validation errors are supported by [Logfire](../integrations/logfire.md).
+            See [Troubleshooting validation errors](../errors/troubleshooting.md) for more details.
 
         Args:
             obj: The object to validate.
@@ -699,10 +698,9 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
 
         Validate the given JSON data against the Pydantic model.
 
-        A [`ValidationError`][pydantic_core.ValidationError] raised here names the failing fields, but
-        not the JSON document they came from. Recording validations with
-        [Logfire](../integrations/logfire.md) keeps the offending input alongside the error — see
-        [Troubleshooting validation errors](../errors/troubleshooting.md).
+        !!! tip "Logfire integration"
+            Instrumentation of validation errors are supported by [Logfire](../integrations/logfire.md).
+            See [Troubleshooting validation errors](../errors/troubleshooting.md) for more details.
 
         Args:
             json_data: The JSON data to validate.
@@ -2479,7 +2477,9 @@ model_validate(
 
 Validate a pydantic model instance.
 
-If validation fails, the resulting ValidationError shows *which* fields were rejected but not the input behind them — instrument your app with [Logfire](../../integrations/logfire/) to record that input too, and debug production failures straight from the trace (see [Troubleshooting validation errors](../../errors/troubleshooting/)).
+Logfire integration
+
+Instrumentation of validation errors are supported by [Logfire](../../integrations/logfire/). See [Troubleshooting validation errors](../../errors/troubleshooting/) for more details.
 
 Parameters:
 
@@ -2510,10 +2510,9 @@ def model_validate(
 ) -> Self:
     """Validate a pydantic model instance.
 
-    If validation fails, the resulting [`ValidationError`][pydantic_core.ValidationError] shows *which*
-    fields were rejected but not the input behind them — instrument your app with
-    [Logfire](../integrations/logfire.md) to record that input too, and debug production failures straight
-    from the trace (see [Troubleshooting validation errors](../errors/troubleshooting.md)).
+    !!! tip "Logfire integration"
+        Instrumentation of validation errors are supported by [Logfire](../integrations/logfire.md).
+        See [Troubleshooting validation errors](../errors/troubleshooting.md) for more details.
 
     Args:
         obj: The object to validate.
@@ -2573,7 +2572,9 @@ Usage Documentation
 
 Validate the given JSON data against the Pydantic model.
 
-A ValidationError raised here names the failing fields, but not the JSON document they came from. Recording validations with [Logfire](../../integrations/logfire/) keeps the offending input alongside the error — see [Troubleshooting validation errors](../../errors/troubleshooting/).
+Logfire integration
+
+Instrumentation of validation errors are supported by [Logfire](../../integrations/logfire/). See [Troubleshooting validation errors](../../errors/troubleshooting/) for more details.
 
 Parameters:
 
@@ -2606,10 +2607,9 @@ def model_validate_json(
 
     Validate the given JSON data against the Pydantic model.
 
-    A [`ValidationError`][pydantic_core.ValidationError] raised here names the failing fields, but
-    not the JSON document they came from. Recording validations with
-    [Logfire](../integrations/logfire.md) keeps the offending input alongside the error — see
-    [Troubleshooting validation errors](../errors/troubleshooting.md).
+    !!! tip "Logfire integration"
+        Instrumentation of validation errors are supported by [Logfire](../integrations/logfire.md).
+        See [Troubleshooting validation errors](../errors/troubleshooting.md) for more details.
 
     Args:
         json_data: The JSON data to validate.

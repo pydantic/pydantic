@@ -121,7 +121,7 @@ What's new &mdash; we've launched
 <a href="https://pydantic.dev/articles/logfire-announcement">Pydantic Logfire</a>
 <img alt="🔥" class="twemoji" src="https://cdn.jsdelivr.net/gh/jdecked/twemoji@15.0.3/assets/svg/1f525.svg" title=":fire:">
 to help you monitor and understand your
-<a href="https://logfire.pydantic.dev/docs/integrations/pydantic/" id="logfire-app-type" target="_blank">Pydantic validations.</a>
+<a href="https://pydantic.dev/docs/logfire/integrations/pydantic/" id="logfire-app-type" target="_blank">Pydantic validations.</a>
 
           </div>
           
@@ -4066,6 +4066,12 @@ to help you monitor and understand your
 </details>
 <p>If you don't want to use Pydantic's <a class="autorefs autorefs-internal" href="../../api/base_model/#pydantic.BaseModel"><code>BaseModel</code></a> you can instead get the same data validation
 on standard <a class="autorefs autorefs-external" href="https://docs.python.org/3/library/dataclasses.html#module-dataclasses">dataclasses</a>.</p>
+<div class="admonition tip">
+<p class="admonition-title">Logfire integration</p>
+<p>Because a Pydantic dataclass validates its inputs just like a model, the same observability applies: if
+you use <a href="../../integrations/logfire/">Logfire</a>, validations of Pydantic dataclasses are
+<a href="../../errors/troubleshooting/">recorded alongside model validations</a>, input included.</p>
+</div>
 <div class="language-python highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">datetime</span><span class="w"> </span><span class="kn">import</span> <span class="n">datetime</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">pydantic.dataclasses</span><span class="w"> </span><span class="kn">import</span> <span class="n">dataclass</span>
@@ -4270,9 +4276,6 @@ all the inherited fields.</p>
 <span class="sd">      Input should be a valid integer, unable to parse string as an integer [type=int_parsing, input_value=&#39;pika&#39;, input_type=str]</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 </code></pre></div>
-<p>Because a Pydantic dataclass validates its inputs just like a model, the same observability applies: if
-you use <a href="../../integrations/logfire/">Logfire</a>, validations of Pydantic dataclasses are
-<a href="../../errors/troubleshooting/">recorded alongside model validations</a>, input included.</p>
 <p>The decorator can also be applied directly on a stdlib dataclass, in which case a new subclass will be created:</p>
 <div class="language-python highlight"><pre><span></span><code><span class="kn">import</span><span class="w"> </span><span class="nn">dataclasses</span>
 

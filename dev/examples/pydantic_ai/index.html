@@ -121,7 +121,7 @@ What's new &mdash; we've launched
 <a href="https://pydantic.dev/articles/logfire-announcement">Pydantic Logfire</a>
 <img alt="🔥" class="twemoji" src="https://cdn.jsdelivr.net/gh/jdecked/twemoji@15.0.3/assets/svg/1f525.svg" title=":fire:">
 to help you monitor and understand your
-<a href="https://logfire.pydantic.dev/docs/integrations/pydantic/" id="logfire-app-type" target="_blank">Pydantic validations.</a>
+<a href="https://pydantic.dev/docs/logfire/integrations/pydantic/" id="logfire-app-type" target="_blank">Pydantic validations.</a>
 
           </div>
           
@@ -3894,7 +3894,7 @@ to help you monitor and understand your
 
   <h1>Agent libraries – Pydantic AI</h1>
 
-<p><a href="https://ai.pydantic.dev/">Pydantic AI</a> is a Python agent framework built by the Pydantic team that uses Pydantic validation for <a href="https://ai.pydantic.dev/output/#structured-output">structured output</a> schema generation and validation.
+<p><a href="https://pydantic.dev/docs/ai/overview/">Pydantic AI</a> is a Python agent framework built by the Pydantic team that uses Pydantic validation for <a href="https://pydantic.dev/docs/ai/core-concepts/output/#structured-output">structured output</a> schema generation and validation.
 By specifying an <code>output_type</code> on an Agent, you can constrain the LLM to return data that matches your Pydantic model schema.</p>
 <h2 id="llm-structured-output">LLM Structured Output<a class="headerlink" href="#llm-structured-output" title="Permanent link">&para;</a></h2>
 <div class="language-python highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">pydantic_ai</span><span class="w"> </span><span class="kn">import</span> <span class="n">Agent</span>
@@ -3927,11 +3927,12 @@ By specifying an <code>output_type</code> on an Agent, you can constrain the LLM
 <span class="nb">print</span><span class="p">(</span><span class="n">result</span><span class="o">.</span><span class="n">output</span><span class="p">)</span>
 <span class="c1">#&gt; [City(name=&#39;Tokyo&#39;, country=&#39;Japan&#39;, population=13960000), ...]</span>
 </code></pre></div>
-<p>When validation fails (say the model returns a country your validator rejects), Pydantic AI feeds the
-validation errors back to the model and asks it to retry. To see this happening in a real application,
-instrument it with <a href="../../integrations/logfire/">Logfire</a>, which records
-<a href="https://ai.pydantic.dev/logfire/">Pydantic AI</a> runs and the validations inside them: each agent run
-shows the output the model produced, the errors your validators raised, and the retry that followed.</p>
+<div class="admonition tip">
+<p class="admonition-title">Logfire integration</p>
+<p>Pydantic AI has a complete integration with <a href="../../integrations/logfire/">Logfire</a>, which records
+agent runs and the validation inside them: each agent run shows the output the model produced,
+the errors your validators raised, and the retry that followed.</p>
+</div>
 
 
 

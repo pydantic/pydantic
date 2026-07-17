@@ -187,7 +187,3 @@ dumped = model.model_dump()  # (2)!
 
 1. The provided data is sent to `pydantic-core` by using the SchemaValidator.validate_python method. `pydantic-core` will validate (following the core schema of the model) the data and populate the model's `__dict__` attribute.
 1. The `model` instance is sent to `pydantic-core` by using the SchemaSerializer.to_python method. `pydantic-core` will read the instance's `__dict__` attribute and built the appropriate result (again, following the core schema of the model).
-
-### The plugin hook around validation
-
-Pydantic wraps the `SchemaValidator` in a plugin layer: when plugins are installed, each of the `validate_python`, `validate_json`, and `validate_strings` calls can be intercepted, letting a plugin observe the input, result, and any error for every validation. This is the mechanism behind observability tooling such as [Logfire](../../integrations/logfire/), which uses it to record validations without any per-call instrumentation. Plugins are configured per model through the plugin_settings configuration value.

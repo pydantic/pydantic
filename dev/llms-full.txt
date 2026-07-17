@@ -696,6 +696,10 @@ API Documentation
 
 If you don't want to use Pydantic's BaseModel you can instead get the same data validation on standard dataclasses.
 
+Logfire integration
+
+Because a Pydantic dataclass validates its inputs just like a model, the same observability applies: if you use [Logfire](../../integrations/logfire/), validations of Pydantic dataclasses are [recorded alongside model validations](../../errors/troubleshooting/), input included.
+
 ```python
 from datetime import datetime
 
@@ -907,8 +911,6 @@ except pydantic.ValidationError as e:
     """
 
 ```
-
-Because a Pydantic dataclass validates its inputs just like a model, the same observability applies: if you use [Logfire](../../integrations/logfire/), validations of Pydantic dataclasses are [recorded alongside model validations](../../errors/troubleshooting/), input included.
 
 The decorator can also be applied directly on a stdlib dataclass, in which case a new subclass will be created:
 
@@ -1285,11 +1287,13 @@ Partial validation allows you to validate an incomplete JSON string, or a Python
 
 Partial validation is particularly helpful when processing the output of an LLM, where the model streams structured responses, and you may wish to begin validating the stream while you're still receiving data (e.g. to show partial data to users).
 
-Streaming pipelines like this can be fiddly to debug after the fact. If you run one in production, [Logfire](../../integrations/logfire/) can record each validation in the context of the surrounding request, which makes it easier to reconstruct how a given stream was handled.
-
 Warning
 
 Partial validation is an experimental feature and may change in future versions of Pydantic. The current implementation should be considered a proof of concept at this time and has a number of [limitations](#limitations-of-partial-validation).
+
+Logfire integration
+
+Streaming pipelines like this can be fiddly to debug after the fact. If you run one in production, [Logfire](../../integrations/logfire/) can record each validation in the context of the surrounding request, which makes it easier to reconstruct how a given stream was handled.
 
 Partial validation can be enabled when using the three validation methods on `TypeAdapter`: TypeAdapter.validate_json(), TypeAdapter.validate_python(), and TypeAdapter.validate_strings(). This allows you to parse and validation incomplete JSON, but also to validate Python objects created by parsing incomplete data of any format.
 
@@ -2863,7 +2867,9 @@ The `jiter` JSON parser is almost entirely compatible with the `serde` JSON pars
 
 ### Partial JSON Parsing
 
-**Starting in v2.7.0**, Pydantic's [JSON parser](https://docs.rs/jiter/latest/jiter/) offers support for partial JSON parsing, which is exposed via pydantic_core.from_json. Here's an example of this feature in action:
+Added in v2.7.
+
+Pydantic's [JSON parser](https://docs.rs/jiter/latest/jiter/) offers support for partial JSON parsing, which is exposed via pydantic_core.from_json(). Here's an example of this feature in action:
 
 ```python
 from pydantic_core import from_json
@@ -2900,9 +2906,7 @@ print(dog_dict)
 
 Validating LLM Output
 
-This feature is particularly beneficial for validating LLM outputs. We've written some blog posts about this topic, which you can find on [our website](https://pydantic.dev/articles).
-
-Even carefully prompted models produce output that fails validation some fraction of the time. If you're validating LLM output in production, [Logfire](../../integrations/logfire/) can record just the failures (`logfire.instrument_pydantic(record='failure')`), so you can see which generations didn't match your schema, and why.
+This feature is particularly beneficial for validating LLM outputs. However, even carefully prompted models produce output that fails validation some fraction of the time. If you're validating LLM output in production, [Logfire](../../integrations/logfire/) can record just the failures, so you can see which generations didn't match your schema, and why.
 
 In future versions of Pydantic, we expect to expand support for this feature through either Pydantic's other JSON validation functions (pydantic.main.BaseModel.model_validate_json and pydantic.type_adapter.TypeAdapter.validate_json) or model configuration. Stay tuned 🚀!
 
@@ -4902,6 +4906,8 @@ except ValidationError as e:
     """
 
 ```
+
+Logfire integration
 
 In an example like this one, the offending `data` is right there in the code. In a running application it usually isn't. The exception says which fields failed, but the input that produced it is whatever a user, API, or job happened to send at the time. If you need to see that input as well, [Logfire can record failed validations](../../errors/troubleshooting/) together with the data that caused them.
 
@@ -9769,6 +9775,8 @@ print(m.model_dump_json(indent=2))
 
 In addition to the supported types by the standard library json module, Pydantic supports a wide variety of types (date and time types, UUID objects, sets, etc). If an unsupported type is used and can't be serialized to JSON, a PydanticSerializationError exception is raised.
 
+Logfire integration
+
 A serialization error like this often only shows up when a particular object reaches the point of being serialized (commonly when building a response), so it can be easy to miss until it happens in production. Like any exception, it's captured by [Logfire](../../integrations/logfire/) if you've instrumented your application, in the context of the request that triggered it, and grouped with other occurrences so you can tell a one-off from a recurring problem.
 
 See also
@@ -10553,8 +10561,6 @@ except ValidationError as exc:
 
 ```
 
-One caveat when enabling strict mode on models an existing application relies on: inputs that were being quietly coerced will start failing. If you can't audit every caller, it helps to watch validation failures while you roll the change out. [Logfire](../../integrations/logfire/) counts successful and failed validations as metrics, and records the inputs that were rejected.
-
 Strict mode can be enabled in various ways:
 
 - [As a validation parameter](#as-a-validation-parameter), such as when using model_validate(), on Pydantic models.
@@ -10776,11 +10782,13 @@ print(items)
 
 TypeAdapter is capable of parsing data into any of the types Pydantic can handle as fields of a BaseModel.
 
-Data parsed this way often comes from a source you don't control, like the API call in the example above, so validation can fail long after the code has shipped. A `TypeAdapter` raises the same structured errors as a model, so tooling that records validation failures in production, such as [Logfire](../../integrations/logfire/), captures these too.
-
 Performance considerations
 
 When creating an instance of TypeAdapter, the provided type must be analyzed and converted into a pydantic-core schema. This comes with some non-trivial overhead, so it is recommended to create a `TypeAdapter` for a given type just once and reuse it in loops or other performance-critical code.
+
+Logfire integration
+
+As with Pydantic models, the [Logfire integration](../../integrations/logfire/) records validation errors for type adapters.
 
 ## Rebuilding a `TypeAdapter`'s schema
 
@@ -12206,8 +12214,6 @@ print(repr(pet))
 
 When union validation fails, error messages can be quite verbose, as they will produce validation errors for each case in the union. This is especially noticeable when dealing with recursive models, where reasons may be generated at each level of recursion. Discriminated unions help to simplify error messages in this case, as validation errors are only produced for the case with a matching discriminator value.
 
-Making sense of a union failure means working out which member *should* have matched, and that's hard to do without the input in front of you. When the failure happens in a deployed service, [Logfire records the per-member errors next to the offending input](../../errors/troubleshooting/), so you can make that comparison after the fact.
-
 You can also customize the error type, message, and context for a `Discriminator` by passing these specifications as parameters to the `Discriminator` constructor, as seen in the example below.
 
 ```python
@@ -12745,7 +12751,9 @@ print(foo())
 
 Currently upon validation failure, a standard Pydantic ValidationError is raised (see [model error handling](../models/#error-handling) for details). This is also true for missing required arguments, where Python normally raises a TypeError.
 
-The error names the argument that was rejected, but the traceback won't show you what value the caller actually passed. If that matters for your debugging, [Logfire](../../errors/troubleshooting/) records decorated calls together with their arguments when validation fails.
+Logfire integration
+
+As with Pydantic models, the [Logfire integration](../../integrations/logfire/) records validation errors for @validate_call.
 
 ### Performance
 
@@ -14608,10 +14616,9 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
     ) -> Self:
         """Validate a pydantic model instance.
 
-        If validation fails, the resulting [`ValidationError`][pydantic_core.ValidationError] shows *which*
-        fields were rejected but not the input behind them — instrument your app with
-        [Logfire](../integrations/logfire.md) to record that input too, and debug production failures straight
-        from the trace (see [Troubleshooting validation errors](../errors/troubleshooting.md)).
+        !!! tip "Logfire integration"
+            Instrumentation of validation errors are supported by [Logfire](../integrations/logfire.md).
+            See [Troubleshooting validation errors](../errors/troubleshooting.md) for more details.
 
         Args:
             obj: The object to validate.
@@ -14664,10 +14671,9 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
 
         Validate the given JSON data against the Pydantic model.
 
-        A [`ValidationError`][pydantic_core.ValidationError] raised here names the failing fields, but
-        not the JSON document they came from. Recording validations with
-        [Logfire](../integrations/logfire.md) keeps the offending input alongside the error — see
-        [Troubleshooting validation errors](../errors/troubleshooting.md).
+        !!! tip "Logfire integration"
+            Instrumentation of validation errors are supported by [Logfire](../integrations/logfire.md).
+            See [Troubleshooting validation errors](../errors/troubleshooting.md) for more details.
 
         Args:
             json_data: The JSON data to validate.
@@ -16444,7 +16450,9 @@ model_validate(
 
 Validate a pydantic model instance.
 
-If validation fails, the resulting ValidationError shows *which* fields were rejected but not the input behind them — instrument your app with [Logfire](../../integrations/logfire/) to record that input too, and debug production failures straight from the trace (see [Troubleshooting validation errors](../../errors/troubleshooting/)).
+Logfire integration
+
+Instrumentation of validation errors are supported by [Logfire](../../integrations/logfire/). See [Troubleshooting validation errors](../../errors/troubleshooting/) for more details.
 
 Parameters:
 
@@ -16475,10 +16483,9 @@ def model_validate(
 ) -> Self:
     """Validate a pydantic model instance.
 
-    If validation fails, the resulting [`ValidationError`][pydantic_core.ValidationError] shows *which*
-    fields were rejected but not the input behind them — instrument your app with
-    [Logfire](../integrations/logfire.md) to record that input too, and debug production failures straight
-    from the trace (see [Troubleshooting validation errors](../errors/troubleshooting.md)).
+    !!! tip "Logfire integration"
+        Instrumentation of validation errors are supported by [Logfire](../integrations/logfire.md).
+        See [Troubleshooting validation errors](../errors/troubleshooting.md) for more details.
 
     Args:
         obj: The object to validate.
@@ -16538,7 +16545,9 @@ Usage Documentation
 
 Validate the given JSON data against the Pydantic model.
 
-A ValidationError raised here names the failing fields, but not the JSON document they came from. Recording validations with [Logfire](../../integrations/logfire/) keeps the offending input alongside the error — see [Troubleshooting validation errors](../../errors/troubleshooting/).
+Logfire integration
+
+Instrumentation of validation errors are supported by [Logfire](../../integrations/logfire/). See [Troubleshooting validation errors](../../errors/troubleshooting/) for more details.
 
 Parameters:
 
@@ -16571,10 +16580,9 @@ def model_validate_json(
 
     Validate the given JSON data against the Pydantic model.
 
-    A [`ValidationError`][pydantic_core.ValidationError] raised here names the failing fields, but
-    not the JSON document they came from. Recording validations with
-    [Logfire](../integrations/logfire.md) keeps the offending input alongside the error — see
-    [Troubleshooting validation errors](../errors/troubleshooting.md).
+    !!! tip "Logfire integration"
+        Instrumentation of validation errors are supported by [Logfire](../integrations/logfire.md).
+        See [Troubleshooting validation errors](../errors/troubleshooting.md) for more details.
 
     Args:
         json_data: The JSON data to validate.
@@ -18551,13 +18559,15 @@ Usage Documentation
 
 A decorator used to create a Pydantic-enhanced dataclass, similar to the standard Python `dataclass`, but with added validation.
 
-This function should be used similarly to `dataclasses.dataclass`.
+This decorator should be used similarly to the @dataclasses.dataclass decorator.
 
-A Pydantic dataclass validates its inputs like a `BaseModel` does, and a failed validation can leave you without the input that caused it. [Logfire](../../integrations/logfire/) records dataclass validations the same way as model validations, input included — see [Troubleshooting validation errors](../../errors/troubleshooting/).
+Logfire integration
+
+Instrumentation of dataclass validation errors is supported by [Logfire](../../integrations/logfire/).
 
 Parameters:
 
-| Name | Type | Description | Default | | --- | --- | --- | --- | | `_cls` | `type[_T] | None` | The target dataclass. | `None` | | `init` | `Literal[False]` | Included for signature compatibility with dataclasses.dataclass, and is passed through to dataclasses.dataclass when appropriate. If specified, must be set to False, as pydantic inserts its own __init__ function. | `False` | | `repr` | `bool` | A boolean indicating whether to include the field in the __repr__ output. | `True` | | `eq` | `bool` | Determines if a __eq__ method should be generated for the class. | `True` | | `order` | `bool` | Determines if comparison magic methods should be generated, such as __lt__, but not __eq__. | `False` | | `unsafe_hash` | `bool` | Determines if a __hash__ method should be included in the class, as in dataclasses.dataclass. | `False` | | `frozen` | `bool | None` | Determines if the generated class should be a 'frozen' dataclass, which does not allow its attributes to be modified after it has been initialized. If not set, the value from the provided config argument will be used (and will default to False otherwise). | `None` | | `config` | `ConfigDict | type[object] | None` | The Pydantic config to use for the dataclass. | `None` | | `validate_on_init` | `bool | None` | A deprecated parameter included for backwards compatibility; in V2, all Pydantic dataclasses are validated on init. | `None` | | `kw_only` | `bool` | Determines if __init__ method parameters must be specified by keyword only. Defaults to False. | `False` | | `slots` | `bool` | Determines if the generated class should be a 'slots' dataclass, which does not allow the addition of new attributes after instantiation. | `False` |
+| Name | Type | Description | Default | | --- | --- | --- | --- | | `_cls` | `type[_T] | None` | The target dataclass. | `None` | | `init` | `Literal[False]` | Included for signature compatibility with dataclasses.dataclass, and is passed through to dataclasses.dataclass when appropriate. If specified, must be set to False, as pydantic inserts its own __init__() function. | `False` | | `repr` | `bool` | A boolean indicating whether to include the field in the __repr__() output. | `True` | | `eq` | `bool` | Determines if a __eq__() method should be generated for the class. | `True` | | `order` | `bool` | Determines if comparison magic methods should be generated, such as __lt__(), but not __eq__(). | `False` | | `unsafe_hash` | `bool` | Determines if a __hash__() method should be included in the class, as in dataclasses.dataclass. | `False` | | `frozen` | `bool | None` | Determines if the generated class should be a 'frozen' dataclass, which does not allow its attributes to be modified after it has been initialized. If not set, the value from the provided config argument will be used (and will default to False otherwise). | `None` | | `config` | `ConfigDict | type[object] | None` | The Pydantic config to use for the dataclass. | `None` | | `validate_on_init` | `bool | None` | A deprecated parameter included for backwards compatibility; in V2, all Pydantic dataclasses are validated on init. | `None` | | `kw_only` | `bool` | Determines if __init__() method parameters must be specified by keyword only. Defaults to False. | `False` | | `slots` | `bool` | Determines if the generated class should be a 'slots' dataclass, which does not allow the addition of new attributes after instantiation. | `False` |
 
 Returns:
 
@@ -18591,28 +18601,26 @@ def dataclass(
     A decorator used to create a Pydantic-enhanced dataclass, similar to the standard Python `dataclass`,
     but with added validation.
 
-    This function should be used similarly to `dataclasses.dataclass`.
+    This decorator should be used similarly to the [`@dataclasses.dataclass`][dataclasses.dataclass] decorator.
 
-    A Pydantic dataclass validates its inputs like a `BaseModel` does, and a failed validation can leave
-    you without the input that caused it. [Logfire](../integrations/logfire.md) records dataclass
-    validations the same way as model validations, input included — see
-    [Troubleshooting validation errors](../errors/troubleshooting.md).
+    !!! tip "Logfire integration"
+        Instrumentation of dataclass validation errors is supported by [Logfire](../integrations/logfire.md).
 
     Args:
         _cls: The target `dataclass`.
         init: Included for signature compatibility with `dataclasses.dataclass`, and is passed through to
             `dataclasses.dataclass` when appropriate. If specified, must be set to `False`, as pydantic inserts its
-            own  `__init__` function.
-        repr: A boolean indicating whether to include the field in the `__repr__` output.
-        eq: Determines if a `__eq__` method should be generated for the class.
-        order: Determines if comparison magic methods should be generated, such as `__lt__`, but not `__eq__`.
-        unsafe_hash: Determines if a `__hash__` method should be included in the class, as in `dataclasses.dataclass`.
+            own  `__init__()` function.
+        repr: A boolean indicating whether to include the field in the `__repr__()` output.
+        eq: Determines if a `__eq__()` method should be generated for the class.
+        order: Determines if comparison magic methods should be generated, such as `__lt__()`, but not `__eq__()`.
+        unsafe_hash: Determines if a `__hash__()` method should be included in the class, as in `dataclasses.dataclass`.
         frozen: Determines if the generated class should be a 'frozen' `dataclass`, which does not allow its
             attributes to be modified after it has been initialized. If not set, the value from the provided `config` argument will be used (and will default to `False` otherwise).
         config: The Pydantic config to use for the `dataclass`.
         validate_on_init: A deprecated parameter included for backwards compatibility; in V2, all Pydantic dataclasses
             are validated on init.
-        kw_only: Determines if `__init__` method parameters must be specified by keyword only. Defaults to `False`.
+        kw_only: Determines if `__init__()` method parameters must be specified by keyword only. Defaults to `False`.
         slots: Determines if the generated class should be a 'slots' `dataclass`, which does not allow the addition of
             new attributes after instantiation.
 
@@ -22569,7 +22577,9 @@ except ValidationError as exc_info:
 
 For more in depth examples, see [Field Validators](../../concepts/validators/#field-validators).
 
-Errors raised in a field validator become part of the model's ValidationError. In a running application, [Logfire](../../integrations/logfire/) can record the input each failed validation rejected — see [Troubleshooting validation errors](../../errors/troubleshooting/).
+Logfire integration
+
+Instrumentation of validation errors from field validators is supported by [Logfire](../../integrations/logfire/). See [Troubleshooting validation errors](../../errors/troubleshooting/) for more details.
 
 Parameters:
 
@@ -22631,10 +22641,9 @@ def field_validator(  # noqa: D417
 
     For more in depth examples, see [Field Validators](../concepts/validators.md#field-validators).
 
-    Errors raised in a field validator become part of the model's
-    [`ValidationError`][pydantic_core.ValidationError]. In a running application,
-    [Logfire](../integrations/logfire.md) can record the input each failed validation rejected — see
-    [Troubleshooting validation errors](../errors/troubleshooting.md).
+    !!! tip "Logfire integration"
+        Instrumentation of validation errors from field validators is supported by [Logfire](../integrations/logfire.md).
+        See [Troubleshooting validation errors](../errors/troubleshooting.md) for more details.
 
     Args:
         *fields: The field names the validator should apply to.
@@ -22769,7 +22778,9 @@ except ValidationError as e:
 
 For more in depth examples, see [Model Validators](../../concepts/validators/#model-validators).
 
-Cross-field rules like the one above tend to fail on combinations of values you didn't anticipate. To see the combination that failed in a running application, record validations with [Logfire](../../integrations/logfire/) (see [Troubleshooting validation errors](../../errors/troubleshooting/)).
+Logfire integration
+
+Instrumentation of validation errors from model validators is supported by [Logfire](../../integrations/logfire/). See [Troubleshooting validation errors](../../errors/troubleshooting/) for more details.
 
 Parameters:
 
@@ -22823,10 +22834,9 @@ def model_validator(
 
     For more in depth examples, see [Model Validators](../concepts/validators.md#model-validators).
 
-    Cross-field rules like the one above tend to fail on combinations of values you didn't anticipate.
-    To see the combination that failed in a running application, record validations with
-    [Logfire](../integrations/logfire.md) (see
-    [Troubleshooting validation errors](../errors/troubleshooting.md)).
+    !!! tip "Logfire integration"
+        Instrumentation of validation errors from model validators is supported by [Logfire](../integrations/logfire.md).
+        See [Troubleshooting validation errors](../errors/troubleshooting.md) for more details.
 
     Args:
         mode: A required string literal that specifies the validation mode.
@@ -40674,7 +40684,9 @@ validate_python(
 
 Validate a Python object against the model.
 
-A failure here names the fields that were rejected, but not the object they came from. If you record validations with [Logfire](../../integrations/logfire/), that object is kept alongside the error — `TypeAdapter` validations are captured the same way as model validations (see [Troubleshooting validation errors](../../errors/troubleshooting/)).
+Logfire integration
+
+Instrumentation of validation errors are supported by [Logfire](../../integrations/logfire/). See [Troubleshooting validation errors](../../errors/troubleshooting/) for more details.
 
 Parameters:
 
@@ -40706,10 +40718,9 @@ def validate_python(
 ) -> T:
     """Validate a Python object against the model.
 
-    A failure here names the fields that were rejected, but not the object they came from. If you
-    record validations with [Logfire](../integrations/logfire.md), that object is kept alongside the
-    error — `TypeAdapter` validations are captured the same way as model validations (see
-    [Troubleshooting validation errors](../errors/troubleshooting.md)).
+    !!! tip "Logfire integration"
+        Instrumentation of validation errors are supported by [Logfire](../integrations/logfire.md).
+        See [Troubleshooting validation errors](../errors/troubleshooting.md) for more details.
 
     Args:
         object: The Python object to validate against the model.
@@ -40777,7 +40788,9 @@ Usage Documentation
 
 Validate a JSON string or bytes against the model.
 
-JSON validated this way often comes from an external source, where a ValidationError can be the first sign that the source changed shape. [Logfire](../../integrations/logfire/) records the document that failed together with the errors — see [Troubleshooting validation errors](../../errors/troubleshooting/).
+Logfire integration
+
+Instrumentation of validation errors are supported by [Logfire](../../integrations/logfire/). See [Troubleshooting validation errors](../../errors/troubleshooting/) for more details.
 
 Parameters:
 
@@ -40807,10 +40820,9 @@ def validate_json(
 
     Validate a JSON string or bytes against the model.
 
-    JSON validated this way often comes from an external source, where a
-    [`ValidationError`][pydantic_core.ValidationError] can be the first sign that the source changed
-    shape. [Logfire](../integrations/logfire.md) records the document that failed together with the
-    errors — see [Troubleshooting validation errors](../errors/troubleshooting.md).
+    !!! tip "Logfire integration"
+        Instrumentation of validation errors are supported by [Logfire](../integrations/logfire.md).
+        See [Troubleshooting validation errors](../errors/troubleshooting.md) for more details.
 
     Args:
         data: The JSON data to validate against the model.
@@ -46551,15 +46563,17 @@ Usage Documentation
 
 [Validation Decorator](../../concepts/validation_decorator/)
 
-Returns a decorated wrapper around the function that validates the arguments and, optionally, the return value.
+Returns a wrapper around the function that validates the arguments and, optionally, the return value.
 
-Usage may be either as a plain decorator `@validate_call` or with arguments `@validate_call(...)`.
+Usage may be either as a plain decorator `@validate_call` or with arguments (`@validate_call(...)`).
 
-When a decorated call fails, the ValidationError names the rejected argument, but the traceback won't show the value the caller passed. [Logfire](../../integrations/logfire/) records failing calls along with their arguments — see [Troubleshooting validation errors](../../errors/troubleshooting/).
+Logfire integration
+
+Instrumentation of validation errors are supported by [Logfire](../../integrations/logfire/). See [Troubleshooting validation errors](../../errors/troubleshooting/) for more details.
 
 Parameters:
 
-| Name | Type | Description | Default | | --- | --- | --- | --- | | `func` | `AnyCallableT | None` | The function to be decorated. | `None` | | `config` | `ConfigDict | None` | The configuration dictionary. | `None` | | `validate_return` | `bool` | Whether to validate the return value. | `False` |
+| Name | Type | Description | Default | | --- | --- | --- | --- | | `func` | `AnyCallableT | None` | The function to be wrapped. | `None` | | `config` | `ConfigDict | None` | The configuration dictionary. | `None` | | `validate_return` | `bool` | Whether to validate the return value. | `False` |
 
 Returns:
 
@@ -46578,17 +46592,16 @@ def validate_call(
     """!!! abstract "Usage Documentation"
         [Validation Decorator](../concepts/validation_decorator.md)
 
-    Returns a decorated wrapper around the function that validates the arguments and, optionally, the return value.
+    Returns a wrapper around the function that validates the arguments and, optionally, the return value.
 
-    Usage may be either as a plain decorator `@validate_call` or with arguments `@validate_call(...)`.
+    Usage may be either as a plain decorator `@validate_call` or with arguments (`@validate_call(...)`).
 
-    When a decorated call fails, the [`ValidationError`][pydantic_core.ValidationError] names the rejected
-    argument, but the traceback won't show the value the caller passed.
-    [Logfire](../integrations/logfire.md) records failing calls along with their arguments — see
-    [Troubleshooting validation errors](../errors/troubleshooting.md).
+    !!! tip "Logfire integration"
+        Instrumentation of validation errors are supported by [Logfire](../integrations/logfire.md).
+        See [Troubleshooting validation errors](../errors/troubleshooting.md) for more details.
 
     Args:
-        func: The function to be decorated.
+        func: The function to be wrapped.
         config: The configuration dictionary.
         validate_return: Whether to validate the return value.
 
@@ -46866,10 +46879,6 @@ dumped = model.model_dump()  # (2)!
 1. The provided data is sent to `pydantic-core` by using the SchemaValidator.validate_python method. `pydantic-core` will validate (following the core schema of the model) the data and populate the model's `__dict__` attribute.
 1. The `model` instance is sent to `pydantic-core` by using the SchemaSerializer.to_python method. `pydantic-core` will read the instance's `__dict__` attribute and built the appropriate result (again, following the core schema of the model).
 
-### The plugin hook around validation
-
-Pydantic wraps the `SchemaValidator` in a plugin layer: when plugins are installed, each of the `validate_python`, `validate_json`, and `validate_strings` calls can be intercepted, letting a plugin observe the input, result, and any error for every validation. This is the mechanism behind observability tooling such as [Logfire](../../integrations/logfire/), which uses it to record validations without any per-call instrumentation. Plugins are configured per model through the plugin_settings configuration value.
-
 Note
 
 This section is part of the *internals* documentation, and is partly targeted to contributors.
@@ -47107,7 +47116,9 @@ The ErrorDetails object is a dictionary. It contains the following:
 
 The first item in the loc list will be the field where the error occurred, and if the field is a [sub-model](../../concepts/models/#nested-models), subsequent items will be present to indicate the nested location of the error.
 
-Accessing errors this way requires a `try`/`except` around the validation call. For validations spread across a running service, [Logfire](../troubleshooting/) records the same structured error list on each failure, together with the input that produced it, without wrapping each call.
+Logfire integration
+
+[Logfire](../troubleshooting/) can be used to record validation errors, with the input that produced it.
 
 As a demonstration:
 
@@ -47360,17 +47371,13 @@ except ValidationError as e:
 
 # Troubleshooting Validation Errors with Logfire
 
-When a ValidationError is raised, the message tells you *what* went wrong: which field, which rule, and the value that triggered it. In production, the hard part is usually everything the message *can't* show you: which input caused it, where that data came from, how often it happens, and what else your application was doing at the time. By the time you read the log, the payload that failed is often already gone.
-
-## Have Logfire explain the error
-
-Open a failed validation span in [Pydantic Logfire](../../integrations/logfire/) and it explains the failure in plain language (currently in beta), reading the structured errors and, for each field, telling you what was expected and what it received, including the messages from your own [custom validators](../../concepts/validators/#raising-validation-errors). You get to the fix without memorising every `pydantic-core` error code.
+When a ValidationError is raised, the message tells you *what* went wrong: which field, which rule, and the value that triggered it. In production, the hard part is usually everything the message *can't* show you: where that data came from, how often it happens, and what else your application was doing at the time. By the time you read the log, the payload that failed is often already gone.
 
 ## Getting started
 
 Troubleshooting validation errors in production is much easier when something records them as they happen, capturing the input alongside the error. Logfire's Pydantic integration does this: it records each validation as it runs, so you can open the one that failed instead of reconstructing it from logs after the fact.
 
-If you haven't set it up yet, follow the three-step [getting started guide](https://logfire.pydantic.dev/docs/), then instrument your models:
+If you haven't set it up yet, follow the three-step [getting started guide](https://pydantic.dev/docs/logfire/get-started/), then instrument your application:
 
 ```python
 from datetime import date
@@ -47401,9 +47408,9 @@ Once instrumented, each failed validation shows up in the live view, recorded wi
 - **Its input**: the exact data passed to validation, so you don't have to reconstruct the payload from logs or guess what your model received.
 - **Its context**: a span alongside the surrounding request, task, or trace, so you can follow bad data back to its source.
 - **A queryable history**: every failure is stored, so you can ask "which field fails most often?" or "did this error spike after the last deploy?" in SQL.
-- **No extra logging code**: one `logfire.instrument_pydantic()` call covers all your models; you don't wrap each `model_validate` in a `try`/`except`.
+- **No extra logging code**: one `logfire.instrument_pydantic()` call covers all your models; you don't wrap each validation attempt in a `try`/`except`.
 
-Recording the input naturally raises the question of sensitive data, since the failing payload may contain it. The Logfire SDK [scrubs common sensitive values](https://logfire.pydantic.dev/docs/how-to-guides/scrubbing/) (things that look like passwords, tokens, or other secrets) from spans before they leave your machine, and you can extend the rules for your own fields.
+Recording the input naturally raises the question of sensitive data, since the failing payload may contain it. The Logfire SDK [scrubs common sensitive values](https://pydantic.dev/docs/logfire/instrument/scrubbing/) (things that look like passwords, tokens, or other secrets) from spans before they leave your machine, and you can extend the rules for your own fields.
 
 ## Reading the error from the trace
 
@@ -47411,18 +47418,20 @@ Beyond the plain-language explanation, each failed validation span shows the raw
 
 ## From one failure to the pattern
 
-A single trace tells you about one failure. Often the more useful question is whether it's a one-off or something recurring. Logfire [groups repeated exceptions into issues](https://logfire.pydantic.dev/docs/guides/web-ui/issues/), so a validation that fails a thousand times shows up as one entry with a count and a first-seen time, rather than a thousand lines to scroll through, which makes it easy to tell a genuine spike from background noise.
+A single trace tells you about one failure. Often the more useful question is whether it's a one-off or something recurring. Logfire [groups repeated exceptions into issues](https://pydantic.dev/docs/logfire/observe/issues/), so a validation that fails a thousand times shows up as one entry with a count and a first-seen time, rather than a thousand lines to scroll through, which makes it easy to tell a genuine spike from background noise.
 
-Once you know which failures matter, you don't have to keep watching for them. Logfire [alerts](https://logfire.pydantic.dev/docs/guides/web-ui/alerts/) run a SQL query on a schedule and notify you (for example, in Slack) when it matches. A rule like "validation failures for this model crossed a threshold" means the next occurrence finds you instead of a user reporting it.
+Once you know which failures matter, you don't have to keep watching for them. Logfire [alerts](https://pydantic.dev/docs/logfire/observe/alerts/) run a SQL query on a schedule and notify you (for example, in Slack) when it matches. A rule like "validation failures for this model crossed a threshold" means the next occurrence finds you instead of a user reporting it.
 
-## Debugging with an AI coding agent
+## Have Logfire explain the error
 
-If you debug with an AI coding agent, the [Logfire MCP server](https://logfire.pydantic.dev/docs/how-to-guides/mcp-server/) lets the agent query your telemetry directly, including the input and errors from a failed validation, so it can investigate against your real data instead of guessing.
+Open a failed validation span in [Pydantic Logfire](../../integrations/logfire/) and it explains the failure in plain language (currently in beta), reading the structured errors and, for each field, telling you what was expected and what it received, including the messages from your own [custom validators](../../concepts/validators/#raising-validation-errors). You get to the fix without memorising every [error code](../validation_errors/).
+
+If you debug with an AI coding agent, the [Logfire MCP server](https://pydantic.dev/docs/logfire/guides/mcp-server/) lets the agent query your telemetry directly, including the input and errors from a failed validation, so it can investigate against your real data instead of guessing.
 
 ## Learn more
 
 - [Pydantic Logfire integration](../../integrations/logfire/): how to install and configure Logfire with Pydantic.
-- [Logfire documentation](https://logfire.pydantic.dev/docs/): the full Logfire docs.
+- [Logfire documentation](https://pydantic.dev/docs/logfire/get-started/): the full Logfire docs.
 
 For a reference of the individual error types you may encounter, see [Validation Errors](../validation_errors/) and [Usage Errors](../usage_errors/).
 
@@ -51701,7 +51710,7 @@ except ValidationError as e:
 
 ```
 
-Alternatively, a custom validator can be used in the nested model class (`User`), with the forbidden passwords data from the parent model being passed in via validation context.
+Alternatively, a custom validator can be used in the nested model class (`User`), with the forbidden passwords data from the parent model being passed in via [validation context](../../concepts/validators/#validation-context).
 
 Warning
 
@@ -51761,11 +51770,13 @@ except ValidationError as e:
 
 ```
 
-Note that if the context property is not included in `model_validate`, then `info.context` will be `None` and the forbidden passwords list will not get added to the context in the above implementation. As such, `validate_user_passwords` would not carry out the desired password validation.
+Note that if the context property is not included in model_validate(), then context will be `None` and the forbidden passwords list will not get added to the context in the above implementation. As such, `validate_user_passwords()` would not carry out the desired password validation.
 
 More details about validation context can be found in the [validators documentation](../../concepts/validators/#validation-context).
 
-The messages you write in these `raise ValueError(...)` calls are worth crafting: they're what you'll read when the rule eventually rejects real data. They also carry through to tooling that consumes the structured errors: [Logfire's explanations of failed validations](../../errors/troubleshooting/), for example, include the messages from your custom validators.
+Logfire integration
+
+The [Logfire integration](../../integrations/logfire/) also records the message from your custom validators.
 
 Models can be [created dynamically](../../concepts/models/#dynamic-model-creation) using the create_model() factory function.
 
@@ -52043,6 +52054,8 @@ print(people)
 
 1. We use TypeAdapter to validate a list of `Person` objects. TypeAdapter is a Pydantic construct used to validate data against a single type.
 
+Logfire integration
+
 With two records, spotting a bad one is easy. In a pipeline processing files with thousands of records, the error's `loc` gives you the index of the failing one, and if the pipeline runs unattended, [Logfire](../../errors/troubleshooting/) records each failed validation with its input, so you can find the offending record after the run.
 
 ## JSON lines files
@@ -52309,9 +52322,11 @@ Note
 
 The example above works because aliases have priority over field names for field population. Accessing `SQLModel`'s `metadata` attribute would lead to a `ValidationError`.
 
+Logfire integration
+
 Validating ORM objects can surface a less obvious class of failure: rows written before a constraint was added, or columns that allow `NULL` where your model doesn't. These only fail when the offending row is actually read, which may be long after a deploy, and [recording failed validations](../../errors/troubleshooting/) tells you which rows they were.
 
-[Pydantic AI](https://ai.pydantic.dev/) is a Python agent framework built by the Pydantic team that uses Pydantic validation for [structured output](https://ai.pydantic.dev/output/#structured-output) schema generation and validation. By specifying an `output_type` on an Agent, you can constrain the LLM to return data that matches your Pydantic model schema.
+[Pydantic AI](https://pydantic.dev/docs/ai/overview/) is a Python agent framework built by the Pydantic team that uses Pydantic validation for [structured output](https://pydantic.dev/docs/ai/core-concepts/output/#structured-output) schema generation and validation. By specifying an `output_type` on an Agent, you can constrain the LLM to return data that matches your Pydantic model schema.
 
 ## LLM Structured Output
 
@@ -52348,9 +52363,15 @@ print(result.output)
 
 ```
 
-When validation fails (say the model returns a country your validator rejects), Pydantic AI feeds the validation errors back to the model and asks it to retry. To see this happening in a real application, instrument it with [Logfire](../../integrations/logfire/), which records [Pydantic AI](https://ai.pydantic.dev/logfire/) runs and the validations inside them: each agent run shows the output the model produced, the errors your validators raised, and the retry that followed.
+Logfire integration
+
+Pydantic AI has a complete integration with [Logfire](../../integrations/logfire/), which records agent runs and the validation inside them: each agent run shows the output the model produced, the errors your validators raised, and the retry that followed.
 
 Pydantic is quite helpful for validating data that goes into and comes out of queues. Below, we'll explore how to validate / serialize data with various queue systems.
+
+Logfire integration
+
+Setting up observability for your queue system can be beneficial. Using [Logfire](../../integrations/logfire/), validation and serialization errors will be recorded, alongside the rest of your queue logic.
 
 ## Redis queue
 
@@ -52517,16 +52538,6 @@ To test this example:
 1. Run the receiver script in one terminal to start the consumer.
 1. Run the sender script in another terminal to send messages.
 
-One thing to keep in mind with consumers like this: if `model_validate_json` raises a ValidationError, the message that caused it may no longer be on the queue by the time you investigate, making the failure hard to reproduce. It's worth recording failed validations as they happen, for example with [Logfire](../../errors/troubleshooting/), which captures the message body alongside the error:
-
-```python
-import logfire
-
-logfire.configure()
-logfire.instrument_pydantic(record='failure')
-
-```
-
 ## ARQ
 
 ARQ is a fast Redis-based job queue for Python. It's built on top of Redis and provides a simple way to handle background tasks.
@@ -52662,6 +52673,8 @@ pprint([u.name for u in users])
 
 1. Note, we're querying the `/users/` endpoint here to get a list of users.
 
+Logfire integration
+
 When you validate responses like this, a ValidationError is often the first sign that an API you depend on has changed its response format. The useful questions at that point are *what did the response actually contain*, and *when did this start*: [recording failed validations with Logfire](../../errors/troubleshooting/) answers both, since each failure is stored with the data that triggered it.
 
 `pydantic` integrates well with AWS Lambda functions. In this guide, we'll discuss how to setup `pydantic` for an AWS Lambda function.
@@ -52780,7 +52793,9 @@ If you're still struggling with installing `pydantic` for your AWS Lambda, you m
 
 Check out our [blog post](https://pydantic.dev/articles/lambda-intro) to learn more about how to use `pydantic` to validate `event` and `context` data in AWS Lambda functions.
 
-Validation failures are particularly awkward to debug in Lambda: you can't attach a debugger, and the event that caused the failure disappears with the invocation. If you record validations with [Logfire](../logfire/), each failed validation is stored with the payload that caused it, and its [AWS Lambda integration](https://logfire.pydantic.dev/docs/integrations/aws-lambda/) captures the surrounding invocation.
+Logfire integration
+
+Validation failures can be particularly hard to debug in Lambda: you can't attach a debugger, and the event that caused the failure disappears with the invocation. If you record validations with [Logfire](../logfire/), each failed validation is stored with the payload that caused it, and its [AWS Lambda integration](https://pydantic.dev/docs/logfire/integrations/aws-lambda/) captures the surrounding invocation.
 
 # Code Generation with datamodel-code-generator
 
@@ -52893,12 +52908,6 @@ class Person(BaseModel):
 
 More information can be found on the [official documentation](https://datamodel-code-generator.koxudaxi.dev/).
 
-## Catching drift from the source schema
-
-A model generated from an OpenAPI or JSON Schema document is a snapshot of that contract. When the upstream data stops matching it (a field changes type, a new required field appears), the mismatch surfaces as a ValidationError at runtime, often the first sign the source has drifted from the schema you generated against.
-
-If you [record validations with Logfire](../../errors/troubleshooting/), those failures are stored with the payload that caused them, so you can see *what* changed and *when* it started, useful when you don't own the schema and can't regenerate the models until you know what moved.
-
 Note
 
 **Admission:** I (the primary developer of Pydantic) also develop python-devtools.
@@ -52972,11 +52981,9 @@ should be much easier read than:
 user: id=123 name='John Doe' signup_ts=datetime.datetime(2019, 6, 1, 12, 22) friends=[1234, 4567, 7890] address=Address(street='Testing', country='uk', lat=51.5, lng=0.0)
 ```
 
+Logfire integration
+
 `debug()` is a development-time tool: it prints to the terminal of a process you're watching. The closest equivalent for a deployed application is [Logfire](../logfire/), where models and validations show up as structured output you can browse and query.
-
-Note
-
-`python-devtools` doesn't yet support Python 3.13.
 
 Pydantic uses [MkDocs](https://www.mkdocs.org/) for documentation, together with [mkdocstrings](https://mkdocstrings.github.io/). As such, you can make use of Pydantic's Sphinx object inventory to cross-reference the Pydantic API documentation.
 
@@ -53041,7 +53048,7 @@ Two formats are available:
 
 As of today, these files *cannot* be natively leveraged by LLM frameworks or IDEs. Alternatively, a [MCP server](https://modelcontextprotocol.io/) can be implemented to properly parse the `llms.txt` file.
 
-Where `llms.txt` gives an AI tool the Pydantic *documentation*, the [Logfire MCP server](https://logfire.pydantic.dev/docs/how-to-guides/mcp-server/) gives it your application's *runtime data*: an agent can query the traces, metrics, and recorded validations from your own service and, for example, pull up the input behind a `ValidationError` while it's helping you fix it.
+Where `llms.txt` gives an AI tool the Pydantic *documentation*, the [Logfire MCP server](https://pydantic.dev/docs/logfire/guides/mcp-server/) gives it your application's *runtime data*: an agent can query the traces, metrics, and recorded validations from your own service and, for example, pull up the input behind a ValidationError while it's helping you fix it.
 
 Pydantic integrates seamlessly with **Pydantic Logfire**, an observability platform built by us on the same belief as our open source library — that the most powerful tools can be easy to use.
 
@@ -53049,7 +53056,7 @@ Pydantic integrates seamlessly with **Pydantic Logfire**, an observability platf
 
 Logfire has an out-of-the-box Pydantic integration that lets you understand the data passing through your Pydantic models and get analytics on validations. For existing Pydantic users, it delivers unparalleled insights into your usage of Pydantic models.
 
-[Getting started](https://logfire.pydantic.dev/docs/) with Logfire can be done in three simple steps:
+[Getting started](https://pydantic.dev/docs/logfire/get-started/) with Logfire can be done in three simple steps:
 
 1. Set up your Logfire account.
 1. Install the Logfire SDK.
@@ -53085,7 +53092,7 @@ logfire.info('user processed: {user!r}', user=user)  # (2)!
 
 ### Pydantic Instrumentation
 
-You can even record information about the validation process automatically by using the builtin [Pydantic integration](https://logfire.pydantic.dev/docs/why-logfire/pydantic/):
+You can even record information about the validation process automatically by using the builtin [Pydantic integration](https://pydantic.dev/docs/logfire/get-started/why/#pydantic-integration):
 
 ```python
 from datetime import date

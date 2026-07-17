@@ -121,7 +121,7 @@ What's new &mdash; we've launched
 <a href="https://pydantic.dev/articles/logfire-announcement">Pydantic Logfire</a>
 <img alt="🔥" class="twemoji" src="https://cdn.jsdelivr.net/gh/jdecked/twemoji@15.0.3/assets/svg/1f525.svg" title=":fire:">
 to help you monitor and understand your
-<a href="https://logfire.pydantic.dev/docs/integrations/pydantic/" id="logfire-app-type" target="_blank">Pydantic validations.</a>
+<a href="https://pydantic.dev/docs/logfire/integrations/pydantic/" id="logfire-app-type" target="_blank">Pydantic validations.</a>
 
           </div>
           
@@ -4034,15 +4034,16 @@ but works with arbitrary Pydantic-compatible types.</p>
 </code></pre></div>
 <p><a class="autorefs autorefs-internal" href="../../api/type_adapter/#pydantic.type_adapter.TypeAdapter"><code>TypeAdapter</code></a> is capable of parsing data into any of the types Pydantic can
 handle as fields of a <a class="autorefs autorefs-internal" href="../../api/base_model/#pydantic.BaseModel"><code>BaseModel</code></a>.</p>
-<p>Data parsed this way often comes from a source you don't control, like the API call in the example
-above, so validation can fail long after the code has shipped. A <code>TypeAdapter</code> raises the same
-structured errors as a model, so tooling that records validation failures in production, such as
-<a href="../../integrations/logfire/">Logfire</a>, captures these too.</p>
 <div class="admonition info">
 <p class="admonition-title">Performance considerations</p>
 <p>When creating an instance of <a class="autorefs autorefs-internal" href="../../api/type_adapter/#pydantic.type_adapter.TypeAdapter"><code>TypeAdapter</code></a>, the provided type must be analyzed and converted into a pydantic-core
 schema. This comes with some non-trivial overhead, so it is recommended to create a <code>TypeAdapter</code> for a given type
 just once and reuse it in loops or other performance-critical code.</p>
+</div>
+<div class="admonition tip">
+<p class="admonition-title">Logfire integration</p>
+<p>As with Pydantic models, the <a href="../../integrations/logfire/">Logfire integration</a> records
+validation errors for type adapters.</p>
 </div>
 <h2 id="rebuilding-a-typeadapters-schema">Rebuilding a <code>TypeAdapter</code>'s schema<a class="headerlink" href="#rebuilding-a-typeadapters-schema" title="Permanent link">&para;</a></h2>
 <div style="border-left: .15rem solid rgb(79, 196, 100); padding: 0 .5rem;">

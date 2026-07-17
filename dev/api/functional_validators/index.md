@@ -478,7 +478,9 @@ except ValidationError as exc_info:
 
 For more in depth examples, see [Field Validators](../../concepts/validators/#field-validators).
 
-Errors raised in a field validator become part of the model's ValidationError. In a running application, [Logfire](../../integrations/logfire/) can record the input each failed validation rejected — see [Troubleshooting validation errors](../../errors/troubleshooting/).
+Logfire integration
+
+Instrumentation of validation errors from field validators is supported by [Logfire](../../integrations/logfire/). See [Troubleshooting validation errors](../../errors/troubleshooting/) for more details.
 
 Parameters:
 
@@ -540,10 +542,9 @@ def field_validator(  # noqa: D417
 
     For more in depth examples, see [Field Validators](../concepts/validators.md#field-validators).
 
-    Errors raised in a field validator become part of the model's
-    [`ValidationError`][pydantic_core.ValidationError]. In a running application,
-    [Logfire](../integrations/logfire.md) can record the input each failed validation rejected — see
-    [Troubleshooting validation errors](../errors/troubleshooting.md).
+    !!! tip "Logfire integration"
+        Instrumentation of validation errors from field validators is supported by [Logfire](../integrations/logfire.md).
+        See [Troubleshooting validation errors](../errors/troubleshooting.md) for more details.
 
     Args:
         *fields: The field names the validator should apply to.
@@ -678,7 +679,9 @@ except ValidationError as e:
 
 For more in depth examples, see [Model Validators](../../concepts/validators/#model-validators).
 
-Cross-field rules like the one above tend to fail on combinations of values you didn't anticipate. To see the combination that failed in a running application, record validations with [Logfire](../../integrations/logfire/) (see [Troubleshooting validation errors](../../errors/troubleshooting/)).
+Logfire integration
+
+Instrumentation of validation errors from model validators is supported by [Logfire](../../integrations/logfire/). See [Troubleshooting validation errors](../../errors/troubleshooting/) for more details.
 
 Parameters:
 
@@ -732,10 +735,9 @@ def model_validator(
 
     For more in depth examples, see [Model Validators](../concepts/validators.md#model-validators).
 
-    Cross-field rules like the one above tend to fail on combinations of values you didn't anticipate.
-    To see the combination that failed in a running application, record validations with
-    [Logfire](../integrations/logfire.md) (see
-    [Troubleshooting validation errors](../errors/troubleshooting.md)).
+    !!! tip "Logfire integration"
+        Instrumentation of validation errors from model validators is supported by [Logfire](../integrations/logfire.md).
+        See [Troubleshooting validation errors](../errors/troubleshooting.md) for more details.
 
     Args:
         mode: A required string literal that specifies the validation mode.

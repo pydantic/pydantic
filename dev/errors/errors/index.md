@@ -18,7 +18,9 @@ The ErrorDetails object is a dictionary. It contains the following:
 
 The first item in the loc list will be the field where the error occurred, and if the field is a [sub-model](../../concepts/models/#nested-models), subsequent items will be present to indicate the nested location of the error.
 
-Accessing errors this way requires a `try`/`except` around the validation call. For validations spread across a running service, [Logfire](../troubleshooting/) records the same structured error list on each failure, together with the input that produced it, without wrapping each call.
+Logfire integration
+
+[Logfire](../troubleshooting/) can be used to record validation errors, with the input that produced it.
 
 As a demonstration:
 

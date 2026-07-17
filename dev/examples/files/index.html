@@ -121,7 +121,7 @@ What's new &mdash; we've launched
 <a href="https://pydantic.dev/articles/logfire-announcement">Pydantic Logfire</a>
 <img alt="🔥" class="twemoji" src="https://cdn.jsdelivr.net/gh/jdecked/twemoji@15.0.3/assets/svg/1f525.svg" title=":fire:">
 to help you monitor and understand your
-<a href="https://logfire.pydantic.dev/docs/integrations/pydantic/" id="logfire-app-type" target="_blank">Pydantic validations.</a>
+<a href="https://pydantic.dev/docs/logfire/integrations/pydantic/" id="logfire-app-type" target="_blank">Pydantic validations.</a>
 
           </div>
           
@@ -4141,10 +4141,13 @@ For example, you might have a list of people:</p>
 <li>We use <a class="autorefs autorefs-internal" href="../../api/type_adapter/#pydantic.type_adapter.TypeAdapter"><code>TypeAdapter</code></a> to validate a list of <code>Person</code> objects.
 <a class="autorefs autorefs-internal" href="../../api/type_adapter/#pydantic.type_adapter.TypeAdapter"><code>TypeAdapter</code></a> is a Pydantic construct used to validate data against a single type.</li>
 </ol>
+<div class="admonition tip">
+<p class="admonition-title">Logfire integration</p>
 <p>With two records, spotting a bad one is easy. In a pipeline processing files with thousands of records,
 the error's <code>loc</code> gives you the index of the failing one, and if the pipeline runs unattended,
 <a href="../../errors/troubleshooting/">Logfire</a> records each failed validation with its input, so you can find
 the offending record after the run.</p>
+</div>
 <h2 id="json-lines-files">JSON lines files<a class="headerlink" href="#json-lines-files" title="Permanent link">&para;</a></h2>
 <p>Similar to validating a list of objects from a <code>.json</code> file, you can validate a list of objects from a <code>.jsonl</code> file.
 <code>.jsonl</code> files are a sequence of JSON objects separated by newlines.</p>

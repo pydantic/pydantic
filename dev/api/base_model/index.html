@@ -121,7 +121,7 @@ What's new &mdash; we've launched
 <a href="https://pydantic.dev/articles/logfire-announcement">Pydantic Logfire</a>
 <img alt="🔥" class="twemoji" src="https://cdn.jsdelivr.net/gh/jdecked/twemoji@15.0.3/assets/svg/1f525.svg" title=":fire:">
 to help you monitor and understand your
-<a href="https://logfire.pydantic.dev/docs/integrations/pydantic/" id="logfire-app-type" target="_blank">Pydantic validations.</a>
+<a href="https://pydantic.dev/docs/logfire/integrations/pydantic/" id="logfire-app-type" target="_blank">Pydantic validations.</a>
 
           </div>
           
@@ -6261,9 +6261,7 @@ is set to <code>'allow'</code>.</p>
 <span class="normal">1756</span>
 <span class="normal">1757</span>
 <span class="normal">1758</span>
-<span class="normal">1759</span>
-<span class="normal">1760</span>
-<span class="normal">1761</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span><span class="w"> </span><span class="nc">BaseModel</span><span class="p">(</span><span class="n">metaclass</span><span class="o">=</span><span class="n">_model_construction</span><span class="o">.</span><span class="n">ModelMetaclass</span><span class="p">):</span>
+<span class="normal">1759</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span><span class="w"> </span><span class="nc">BaseModel</span><span class="p">(</span><span class="n">metaclass</span><span class="o">=</span><span class="n">_model_construction</span><span class="o">.</span><span class="n">ModelMetaclass</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;!!! abstract &quot;Usage Documentation&quot;</span>
 <span class="sd">        [Models](../concepts/models.md)</span>
 
@@ -6891,10 +6889,9 @@ is set to <code>'allow'</code>.</p>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Self</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Validate a pydantic model instance.</span>
 
-<span class="sd">        If validation fails, the resulting [`ValidationError`][pydantic_core.ValidationError] shows *which*</span>
-<span class="sd">        fields were rejected but not the input behind them — instrument your app with</span>
-<span class="sd">        [Logfire](../integrations/logfire.md) to record that input too, and debug production failures straight</span>
-<span class="sd">        from the trace (see [Troubleshooting validation errors](../errors/troubleshooting.md)).</span>
+<span class="sd">        !!! tip &quot;Logfire integration&quot;</span>
+<span class="sd">            Instrumentation of validation errors are supported by [Logfire](../integrations/logfire.md).</span>
+<span class="sd">            See [Troubleshooting validation errors](../errors/troubleshooting.md) for more details.</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            obj: The object to validate.</span>
@@ -6947,10 +6944,9 @@ is set to <code>'allow'</code>.</p>
 
 <span class="sd">        Validate the given JSON data against the Pydantic model.</span>
 
-<span class="sd">        A [`ValidationError`][pydantic_core.ValidationError] raised here names the failing fields, but</span>
-<span class="sd">        not the JSON document they came from. Recording validations with</span>
-<span class="sd">        [Logfire](../integrations/logfire.md) keeps the offending input alongside the error — see</span>
-<span class="sd">        [Troubleshooting validation errors](../errors/troubleshooting.md).</span>
+<span class="sd">        !!! tip &quot;Logfire integration&quot;</span>
+<span class="sd">            Instrumentation of validation errors are supported by [Logfire](../integrations/logfire.md).</span>
+<span class="sd">            See [Troubleshooting validation errors](../errors/troubleshooting.md) for more details.</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            json_data: The JSON data to validate.</span>
@@ -10427,10 +10423,11 @@ the initial attempt to build the schema, and automatic rebuilding fails.</p>
     <div class="doc doc-contents ">
 
         <p>Validate a pydantic model instance.</p>
-<p>If validation fails, the resulting <a class="autorefs autorefs-internal" href="../pydantic_core/#pydantic_core.ValidationError"><code>ValidationError</code></a> shows <em>which</em>
-fields were rejected but not the input behind them — instrument your app with
-<a href="../../integrations/logfire/">Logfire</a> to record that input too, and debug production failures straight
-from the trace (see <a href="../../errors/troubleshooting/">Troubleshooting validation errors</a>).</p>
+<div class="admonition tip">
+<p class="admonition-title">Logfire integration</p>
+<p>Instrumentation of validation errors are supported by <a href="../../integrations/logfire/">Logfire</a>.
+See <a href="../../errors/troubleshooting/">Troubleshooting validation errors</a> for more details.</p>
+</div>
 
 
 <p><span class="doc-section-title">Parameters:</span></p>
@@ -10659,8 +10656,7 @@ See the <a class="autorefs autorefs-internal" href="../config/#pydantic.config.C
 <span class="normal">795</span>
 <span class="normal">796</span>
 <span class="normal">797</span>
-<span class="normal">798</span>
-<span class="normal">799</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@classmethod</span>
+<span class="normal">798</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@classmethod</span>
 <span class="k">def</span><span class="w"> </span><span class="nf">model_validate</span><span class="p">(</span>
     <span class="bp">cls</span><span class="p">,</span>
     <span class="n">obj</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span>
@@ -10674,10 +10670,9 @@ See the <a class="autorefs autorefs-internal" href="../config/#pydantic.config.C
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Self</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Validate a pydantic model instance.</span>
 
-<span class="sd">    If validation fails, the resulting [`ValidationError`][pydantic_core.ValidationError] shows *which*</span>
-<span class="sd">    fields were rejected but not the input behind them — instrument your app with</span>
-<span class="sd">    [Logfire](../integrations/logfire.md) to record that input too, and debug production failures straight</span>
-<span class="sd">    from the trace (see [Troubleshooting validation errors](../errors/troubleshooting.md)).</span>
+<span class="sd">    !!! tip &quot;Logfire integration&quot;</span>
+<span class="sd">        Instrumentation of validation errors are supported by [Logfire](../integrations/logfire.md).</span>
+<span class="sd">        See [Troubleshooting validation errors](../errors/troubleshooting.md) for more details.</span>
 
 <span class="sd">    Args:</span>
 <span class="sd">        obj: The object to validate.</span>
@@ -10754,10 +10749,11 @@ See the <a class="autorefs autorefs-internal" href="../config/#pydantic.config.C
 <p><a href="../../concepts/json/#json-parsing">JSON Parsing</a></p>
 </div>
 <p>Validate the given JSON data against the Pydantic model.</p>
-<p>A <a class="autorefs autorefs-internal" href="../pydantic_core/#pydantic_core.ValidationError"><code>ValidationError</code></a> raised here names the failing fields, but
-not the JSON document they came from. Recording validations with
-<a href="../../integrations/logfire/">Logfire</a> keeps the offending input alongside the error — see
-<a href="../../errors/troubleshooting/">Troubleshooting validation errors</a>.</p>
+<div class="admonition tip">
+<p class="admonition-title">Logfire integration</p>
+<p>Instrumentation of validation errors are supported by <a href="../../integrations/logfire/">Logfire</a>.
+See <a href="../../errors/troubleshooting/">Troubleshooting validation errors</a> for more details.</p>
+</div>
 
 
 <p><span class="doc-section-title">Parameters:</span></p>
@@ -10919,7 +10915,8 @@ See the <a class="autorefs autorefs-internal" href="../config/#pydantic.config.C
 
             <details class="quote">
               <summary>Source code in <code>pydantic/main.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">801</span>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">800</span>
+<span class="normal">801</span>
 <span class="normal">802</span>
 <span class="normal">803</span>
 <span class="normal">804</span>
@@ -10964,9 +10961,7 @@ See the <a class="autorefs autorefs-internal" href="../config/#pydantic.config.C
 <span class="normal">843</span>
 <span class="normal">844</span>
 <span class="normal">845</span>
-<span class="normal">846</span>
-<span class="normal">847</span>
-<span class="normal">848</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@classmethod</span>
+<span class="normal">846</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@classmethod</span>
 <span class="k">def</span><span class="w"> </span><span class="nf">model_validate_json</span><span class="p">(</span>
     <span class="bp">cls</span><span class="p">,</span>
     <span class="n">json_data</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="nb">bytes</span> <span class="o">|</span> <span class="nb">bytearray</span><span class="p">,</span>
@@ -10982,10 +10977,9 @@ See the <a class="autorefs autorefs-internal" href="../config/#pydantic.config.C
 
 <span class="sd">    Validate the given JSON data against the Pydantic model.</span>
 
-<span class="sd">    A [`ValidationError`][pydantic_core.ValidationError] raised here names the failing fields, but</span>
-<span class="sd">    not the JSON document they came from. Recording validations with</span>
-<span class="sd">    [Logfire](../integrations/logfire.md) keeps the offending input alongside the error — see</span>
-<span class="sd">    [Troubleshooting validation errors](../errors/troubleshooting.md).</span>
+<span class="sd">    !!! tip &quot;Logfire integration&quot;</span>
+<span class="sd">        Instrumentation of validation errors are supported by [Logfire](../integrations/logfire.md).</span>
+<span class="sd">        See [Troubleshooting validation errors](../errors/troubleshooting.md) for more details.</span>
 
 <span class="sd">    Args:</span>
 <span class="sd">        json_data: The JSON data to validate.</span>
@@ -11189,7 +11183,9 @@ See the <a class="autorefs autorefs-internal" href="../config/#pydantic.config.C
 
             <details class="quote">
               <summary>Source code in <code>pydantic/main.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">850</span>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">848</span>
+<span class="normal">849</span>
+<span class="normal">850</span>
 <span class="normal">851</span>
 <span class="normal">852</span>
 <span class="normal">853</span>
@@ -11223,9 +11219,7 @@ See the <a class="autorefs autorefs-internal" href="../config/#pydantic.config.C
 <span class="normal">881</span>
 <span class="normal">882</span>
 <span class="normal">883</span>
-<span class="normal">884</span>
-<span class="normal">885</span>
-<span class="normal">886</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@classmethod</span>
+<span class="normal">884</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@classmethod</span>
 <span class="k">def</span><span class="w"> </span><span class="nf">model_validate_strings</span><span class="p">(</span>
     <span class="bp">cls</span><span class="p">,</span>
     <span class="n">obj</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span>
@@ -11565,7 +11559,9 @@ validators <a href="../../concepts/validators/#field-validators">here</a>.</p>
 
             <details class="quote">
               <summary>Source code in <code>pydantic/main.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1799</span>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1797</span>
+<span class="normal">1798</span>
+<span class="normal">1799</span>
 <span class="normal">1800</span>
 <span class="normal">1801</span>
 <span class="normal">1802</span>
@@ -11663,9 +11659,7 @@ validators <a href="../../concepts/validators/#field-validators">here</a>.</p>
 <span class="normal">1894</span>
 <span class="normal">1895</span>
 <span class="normal">1896</span>
-<span class="normal">1897</span>
-<span class="normal">1898</span>
-<span class="normal">1899</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">create_model</span><span class="p">(</span>  <span class="c1"># noqa: C901</span>
+<span class="normal">1897</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">create_model</span><span class="p">(</span>  <span class="c1"># noqa: C901</span>
     <span class="n">model_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
     <span class="o">/</span><span class="p">,</span>
     <span class="o">*</span><span class="p">,</span>
