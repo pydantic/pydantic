@@ -321,7 +321,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
             # Selectively deepcopy fields that are not being updated:
             for k, v in copied.__dict__.items():
                 if k not in update:
-                    copied.__dict__[k] = deepcopy(v, memo)
+                    copied.__dict__[k] = deepcopy(v, memo)  # pyright: ignore[reportIndexIssue] (https://github.com/microsoft/pyright/issues/11548)
             if copied.__pydantic_extra__ is not None:
                 for k, v in copied.__pydantic_extra__.items():
                     if k not in update:
@@ -339,13 +339,13 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
             if self.model_config.get('extra') == 'allow':
                 for k, v in update.items():
                     if k in self.__pydantic_fields__:
-                        copied.__dict__[k] = v
+                        copied.__dict__[k] = v  # pyright: ignore[reportIndexIssue] (https://github.com/microsoft/pyright/issues/11548)
                     else:
                         if copied.__pydantic_extra__ is None:
                             copied.__pydantic_extra__ = {}
                         copied.__pydantic_extra__[k] = v
             else:
-                copied.__dict__.update(update)
+                copied.__dict__.update(update)  # pyright: ignore[reportAttributeAccessIssue] (https://github.com/microsoft/pyright/issues/11548)
 
             copied.__pydantic_fields_set__.update(update.keys())
 
@@ -1953,7 +1953,7 @@ def model_copy(self, *, update: Mapping[str, Any] | None = None, deep: bool = Fa
         # Selectively deepcopy fields that are not being updated:
         for k, v in copied.__dict__.items():
             if k not in update:
-                copied.__dict__[k] = deepcopy(v, memo)
+                copied.__dict__[k] = deepcopy(v, memo)  # pyright: ignore[reportIndexIssue] (https://github.com/microsoft/pyright/issues/11548)
         if copied.__pydantic_extra__ is not None:
             for k, v in copied.__pydantic_extra__.items():
                 if k not in update:
@@ -1971,13 +1971,13 @@ def model_copy(self, *, update: Mapping[str, Any] | None = None, deep: bool = Fa
         if self.model_config.get('extra') == 'allow':
             for k, v in update.items():
                 if k in self.__pydantic_fields__:
-                    copied.__dict__[k] = v
+                    copied.__dict__[k] = v  # pyright: ignore[reportIndexIssue] (https://github.com/microsoft/pyright/issues/11548)
                 else:
                     if copied.__pydantic_extra__ is None:
                         copied.__pydantic_extra__ = {}
                     copied.__pydantic_extra__[k] = v
         else:
-            copied.__dict__.update(update)
+            copied.__dict__.update(update)  # pyright: ignore[reportAttributeAccessIssue] (https://github.com/microsoft/pyright/issues/11548)
 
         copied.__pydantic_fields_set__.update(update.keys())
 
