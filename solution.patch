@@ -1,0 +1,468 @@
+diff --git a/pydantic-core/src/url.rs b/pydantic-core/src/url.rs
+index 7a92c259c..f34ca5dcc 100644
+--- a/pydantic-core/src/url.rs
++++ b/pydantic-core/src/url.rs
+@@ -97,6 +97,7 @@ impl PyUrl {
+                         StringCacheMode::None,
+                         None,
+                         None,
++                        None,
+                     ),
+                     &mut RecursionState::default(),
+                     PartialMode::Off,
+@@ -333,6 +334,7 @@ impl PyMultiHostUrl {
+                         StringCacheMode::None,
+                         None,
+                         None,
++                        None,
+                     ),
+                     &mut RecursionState::default(),
+                     PartialMode::Off,
+diff --git a/pydantic-core/src/validators/generator.rs b/pydantic-core/src/validators/generator.rs
+index 943d1363f..b631a79a0 100644
+--- a/pydantic-core/src/validators/generator.rs
++++ b/pydantic-core/src/validators/generator.rs
+@@ -290,6 +290,7 @@ impl InternalValidator {
+             cache_str: self.cache_str,
+             by_alias: None,
+             by_name: None,
++            aggregate_errors: None,
+         };
+         let mut state = ValidationState::new(
+             extra,
+@@ -333,6 +334,7 @@ impl InternalValidator {
+             cache_str: self.cache_str,
+             by_alias: None,
+             by_name: None,
++            aggregate_errors: None,
+         };
+         let mut state = ValidationState::new(
+             extra,
+diff --git a/pydantic-core/src/validators/mod.rs b/pydantic-core/src/validators/mod.rs
+index 27cd6d2b5..db974e9ff 100644
+--- a/pydantic-core/src/validators/mod.rs
++++ b/pydantic-core/src/validators/mod.rs
+@@ -177,7 +177,7 @@ impl SchemaValidator {
+     }
+ 
+     #[allow(clippy::too_many_arguments)]
+-    #[pyo3(signature = (input, *, strict=None, extra=None, from_attributes=None, context=None, self_instance=None, allow_partial=PartialMode::Off, by_alias=None, by_name=None))]
++    #[pyo3(signature = (input, *, strict=None, extra=None, from_attributes=None, context=None, self_instance=None, allow_partial=PartialMode::Off, by_alias=None, by_name=None, aggregate_errors=None))]
+     pub fn validate_python(
+         &self,
+         py: Python,
+@@ -190,6 +190,7 @@ impl SchemaValidator {
+         allow_partial: PartialMode,
+         by_alias: Option<bool>,
+         by_name: Option<bool>,
++        aggregate_errors: Option<bool>,
+     ) -> PyResult<Py<PyAny>> {
+         let extra_behavior = extra
+             .map(|e| ExtraBehavior::from_str(e.to_str()?).map_err(|err| PyValueError::new_err(err.to_string())))
+@@ -208,6 +209,7 @@ impl SchemaValidator {
+             allow_partial,
+             by_alias,
+             by_name,
++            aggregate_errors,
+         )
+         .map_err(|e| self.prepare_validation_err(py, e, InputType::Python))
+     }
+@@ -243,6 +245,7 @@ impl SchemaValidator {
+             false.into(),
+             by_alias,
+             by_name,
++            None,
+         ) {
+             Ok(_) => Ok(true),
+             Err(ValError::InternalErr(err)) => Err(err),
+@@ -253,7 +256,7 @@ impl SchemaValidator {
+     }
+ 
+     #[allow(clippy::too_many_arguments)]
+-    #[pyo3(signature = (input, *, strict=None, extra=None, context=None, self_instance=None, allow_partial=PartialMode::Off, by_alias=None, by_name=None))]
++    #[pyo3(signature = (input, *, strict=None, extra=None, context=None, self_instance=None, allow_partial=PartialMode::Off, by_alias=None, by_name=None, aggregate_errors=None))]
+     pub fn validate_json(
+         &self,
+         py: Python,
+@@ -265,6 +268,7 @@ impl SchemaValidator {
+         allow_partial: PartialMode,
+         by_alias: Option<bool>,
+         by_name: Option<bool>,
++        aggregate_errors: Option<bool>,
+     ) -> PyResult<Py<PyAny>> {
+         let extra_behavior = extra
+             .map(|e| ExtraBehavior::from_str(e.to_str()?).map_err(|err| PyValueError::new_err(err.to_string())))
+@@ -283,6 +287,7 @@ impl SchemaValidator {
+                 allow_partial,
+                 by_alias,
+                 by_name,
++                aggregate_errors,
+             ),
+             Err(err) => Err(err),
+         };
+@@ -290,7 +295,7 @@ impl SchemaValidator {
+     }
+ 
+     #[allow(clippy::too_many_arguments)]
+-    #[pyo3(signature = (input, *, strict=None, extra=None, context=None, allow_partial=PartialMode::Off, by_alias=None, by_name=None))]
++    #[pyo3(signature = (input, *, strict=None, extra=None, context=None, allow_partial=PartialMode::Off, by_alias=None, by_name=None, aggregate_errors=None))]
+     pub fn validate_strings(
+         &self,
+         py: Python,
+@@ -301,6 +306,7 @@ impl SchemaValidator {
+         allow_partial: PartialMode,
+         by_alias: Option<bool>,
+         by_name: Option<bool>,
++        aggregate_errors: Option<bool>,
+     ) -> PyResult<Py<PyAny>> {
+         let t = InputType::String;
+         let string_mapping = StringMapping::new_value(input).map_err(|e| self.prepare_validation_err(py, e, t))?;
+@@ -321,6 +327,7 @@ impl SchemaValidator {
+             allow_partial,
+             by_alias,
+             by_name,
++            aggregate_errors,
+         ) {
+             Ok(r) => Ok(r),
+             Err(e) => Err(self.prepare_validation_err(py, e, t)),
+@@ -357,6 +364,7 @@ impl SchemaValidator {
+             cache_str: self.cache_str,
+             by_alias,
+             by_name,
++            aggregate_errors: None,
+         };
+ 
+         let guard = &mut RecursionState::default();
+@@ -389,6 +397,7 @@ impl SchemaValidator {
+             cache_str: self.cache_str,
+             by_alias: None,
+             by_name: None,
++            aggregate_errors: None,
+         };
+         let recursion_guard = &mut RecursionState::default();
+         let mut state = ValidationState::new(extra, recursion_guard, false.into(), None);
+@@ -442,6 +451,7 @@ impl SchemaValidator {
+         allow_partial: PartialMode,
+         by_alias: Option<bool>,
+         by_name: Option<bool>,
++        aggregate_errors: Option<bool>,
+     ) -> ValResult<Py<PyAny>> {
+         let mut recursion_guard = RecursionState::default();
+         let mut state = ValidationState::new(
+@@ -455,6 +465,7 @@ impl SchemaValidator {
+                 self.cache_str,
+                 by_alias,
+                 by_name,
++                aggregate_errors,
+             ),
+             &mut recursion_guard,
+             allow_partial,
+@@ -476,6 +487,7 @@ impl SchemaValidator {
+         allow_partial: PartialMode,
+         by_alias: Option<bool>,
+         by_name: Option<bool>,
++        aggregate_errors: Option<bool>,
+     ) -> ValResult<Py<PyAny>> {
+         let json_value = jiter::JsonValue::parse_with_config(json_data, true, allow_partial)
+             .map_err(|e| json::map_json_err(input, e, json_data))?;
+@@ -492,6 +504,7 @@ impl SchemaValidator {
+             allow_partial,
+             by_alias,
+             by_name,
++            aggregate_errors,
+         )
+     }
+ 
+@@ -698,9 +711,11 @@ pub struct Extra<'a, 'py> {
+     /// Whether to use a cache of short strings to accelerate python string construction
+     cache_str: StringCacheMode,
+     /// Whether to use the field's alias to match the input data to an attribute.
+-    by_alias: Option<bool>,
++    pub by_alias: Option<bool>,
+     /// Whether to use the field's name to match the input data to an attribute.
+-    by_name: Option<bool>,
++    pub by_name: Option<bool>,
++    /// Whether to aggregate validation errors
++    pub aggregate_errors: Option<bool>,
+ }
+ 
+ impl<'a, 'py> Extra<'a, 'py> {
+@@ -715,6 +730,7 @@ impl<'a, 'py> Extra<'a, 'py> {
+         cache_str: StringCacheMode,
+         by_alias: Option<bool>,
+         by_name: Option<bool>,
++        aggregate_errors: Option<bool>,
+     ) -> Self {
+         Extra {
+             input_type,
+@@ -727,6 +743,7 @@ impl<'a, 'py> Extra<'a, 'py> {
+             cache_str,
+             by_alias,
+             by_name,
++            aggregate_errors,
+         }
+     }
+ }
+@@ -744,6 +761,7 @@ impl Extra<'_, '_> {
+             cache_str: self.cache_str,
+             by_alias: self.by_alias,
+             by_name: self.by_name,
++            aggregate_errors: self.aggregate_errors,
+         }
+     }
+ }
+diff --git a/pydantic-core/src/validators/string.rs b/pydantic-core/src/validators/string.rs
+index 395cd8777..11c572bf9 100644
+--- a/pydantic-core/src/validators/string.rs
++++ b/pydantic-core/src/validators/string.rs
+@@ -12,7 +12,7 @@ use regex::Regex;
+ 
+ use crate::build_tools::LazyLock;
+ use crate::build_tools::{is_strict, py_schema_error_type, schema_or_config, schema_or_config_same};
+-use crate::errors::{ErrorType, ValError, ValResult};
++use crate::errors::{ErrorType, ValError, ValLineError, ValResult};
+ use crate::input::Input;
+ use crate::tools::SchemaDict;
+ 
+@@ -132,39 +132,84 @@ impl Validator for StrConstrainedValidator {
+         } else {
+             None
+         };
+-        if let Some(min_length) = self.min_length
+-            && str_len.unwrap() < min_length
+-        {
+-            return Err(ValError::new(
+-                ErrorType::StringTooShort {
+-                    min_length,
+-                    context: None,
+-                },
+-                input,
+-            ));
+-        }
+-        if let Some(max_length) = self.max_length
+-            && str_len.unwrap() > max_length
+-        {
+-            return Err(ValError::new(
+-                ErrorType::StringTooLong {
+-                    max_length,
+-                    context: None,
+-                },
+-                input,
+-            ));
+-        }
++        let aggregate_errors = state.extra().aggregate_errors.unwrap_or(false);
++
++        if !aggregate_errors {
++            if let Some(min_length) = self.min_length
++                && str_len.unwrap() < min_length
++            {
++                return Err(ValError::new(
++                    ErrorType::StringTooShort {
++                        min_length,
++                        context: None,
++                    },
++                    input,
++                ));
++            }
++            if let Some(max_length) = self.max_length
++                && str_len.unwrap() > max_length
++            {
++                return Err(ValError::new(
++                    ErrorType::StringTooLong {
++                        max_length,
++                        context: None,
++                    },
++                    input,
++                ));
++            }
++
++            if let Some(pattern) = &self.pattern
++                && !pattern.is_match(py, str)?
++            {
++                return Err(ValError::new(
++                    ErrorType::StringPatternMismatch {
++                        pattern: pattern.pattern.clone(),
++                        context: None,
++                    },
++                    input,
++                ));
++            }
++        } else {
++            let mut errors = Vec::new();
++
++            if let Some(min_length) = self.min_length
++                && str_len.unwrap() < min_length
++            {
++                errors.push(ValLineError::new(
++                    ErrorType::StringTooShort {
++                        min_length,
++                        context: None,
++                    },
++                    input,
++                ));
++            }
++            if let Some(max_length) = self.max_length
++                && str_len.unwrap() > max_length
++            {
++                return Err(ValError::new(
++                    ErrorType::StringTooLong {
++                        max_length,
++                        context: None,
++                    },
++                    input,
++                ));
++            }
+ 
+-        if let Some(pattern) = &self.pattern
+-            && !pattern.is_match(py, str)?
+-        {
+-            return Err(ValError::new(
+-                ErrorType::StringPatternMismatch {
+-                    pattern: pattern.pattern.clone(),
+-                    context: None,
+-                },
+-                input,
+-            ));
++            if let Some(pattern) = &self.pattern
++                && !pattern.is_match(py, str)?
++            {
++                errors.push(ValLineError::new(
++                    ErrorType::StringPatternMismatch {
++                        pattern: pattern.pattern.clone(),
++                        context: None,
++                    },
++                    input,
++                ));
++            }
++
++            if !errors.is_empty() {
++                return Err(ValError::LineErrors(errors));
++            }
+         }
+ 
+         let py_string = if self.to_lower {
+diff --git a/pydantic/main.py b/pydantic/main.py
+index 2ed62e5f3..3c90ff52b 100644
+--- a/pydantic/main.py
++++ b/pydantic/main.py
+@@ -701,6 +701,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
+         context: Any | None = None,
+         by_alias: bool | None = None,
+         by_name: bool | None = None,
++        aggregate_errors: bool | None = None,
+     ) -> Self:
+         """Validate a pydantic model instance.
+ 
+@@ -737,6 +738,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
+             context=context,
+             by_alias=by_alias,
+             by_name=by_name,
++            aggregate_errors=aggregate_errors,
+         )
+ 
+     @classmethod
+@@ -749,6 +751,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
+         context: Any | None = None,
+         by_alias: bool | None = None,
+         by_name: bool | None = None,
++        aggregate_errors: bool | None = None,
+     ) -> Self:
+         """!!! abstract "Usage Documentation"
+             [JSON Parsing](../concepts/json.md#json-parsing)
+@@ -780,7 +783,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
+             )
+ 
+         return cls.__pydantic_validator__.validate_json(
+-            json_data, strict=strict, extra=extra, context=context, by_alias=by_alias, by_name=by_name
++            json_data, strict=strict, extra=extra, context=context, by_alias=by_alias, by_name=by_name, aggregate_errors=aggregate_errors
+         )
+ 
+     @classmethod
+@@ -793,6 +796,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
+         context: Any | None = None,
+         by_alias: bool | None = None,
+         by_name: bool | None = None,
++        aggregate_errors: bool | None = None,
+     ) -> Self:
+         """Validate the given object with string data against the Pydantic model.
+ 
+@@ -818,7 +822,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
+             )
+ 
+         return cls.__pydantic_validator__.validate_strings(
+-            obj, strict=strict, extra=extra, context=context, by_alias=by_alias, by_name=by_name
++            obj, strict=strict, extra=extra, context=context, by_alias=by_alias, by_name=by_name, aggregate_errors=aggregate_errors
+         )
+ 
+     @classmethod
+diff --git a/pydantic/plugin/_schema_validator.py b/pydantic/plugin/_schema_validator.py
+index 492cc39cb..34c430deb 100644
+--- a/pydantic/plugin/_schema_validator.py
++++ b/pydantic/plugin/_schema_validator.py
+@@ -107,8 +107,13 @@ def build_wrapper(func: Callable[P, R], event_handlers: list[BaseValidateHandler
+ 
+         @functools.wraps(func)
+         def wrapper(*args: P.args, **kwargs: P.kwargs) -> R:
++            plugin_kwargs = kwargs
++            # Keep new runtime-only validation options out of third-party plugin callbacks
++            # until the plugin protocol explicitly supports them.
++            if 'aggregate_errors' in plugin_kwargs:
++                plugin_kwargs = {k: v for k, v in kwargs.items() if k != 'aggregate_errors'}
+             for on_enter_handler in on_enters:
+-                on_enter_handler(*args, **kwargs)
++                on_enter_handler(*args, **plugin_kwargs)
+ 
+             try:
+                 result = func(*args, **kwargs)
+diff --git a/pydantic/type_adapter.py b/pydantic/type_adapter.py
+index d962305f2..3dcf898ef 100644
+--- a/pydantic/type_adapter.py
++++ b/pydantic/type_adapter.py
+@@ -407,6 +407,7 @@ class TypeAdapter(Generic[T]):
+         experimental_allow_partial: bool | Literal['off', 'on', 'trailing-strings'] = False,
+         by_alias: bool | None = None,
+         by_name: bool | None = None,
++        aggregate_errors: bool | None = None,
+     ) -> T:
+         """Validate a Python object against the model.
+ 
+@@ -447,6 +448,7 @@ class TypeAdapter(Generic[T]):
+             allow_partial=experimental_allow_partial,
+             by_alias=by_alias,
+             by_name=by_name,
++            aggregate_errors=aggregate_errors,
+         )
+ 
+     def validate_json(
+@@ -460,6 +462,7 @@ class TypeAdapter(Generic[T]):
+         experimental_allow_partial: bool | Literal['off', 'on', 'trailing-strings'] = False,
+         by_alias: bool | None = None,
+         by_name: bool | None = None,
++        aggregate_errors: bool | None = None,
+     ) -> T:
+         """!!! abstract "Usage Documentation"
+             [JSON Parsing](../concepts/json.md#json-parsing)
+@@ -497,6 +500,7 @@ class TypeAdapter(Generic[T]):
+             allow_partial=experimental_allow_partial,
+             by_alias=by_alias,
+             by_name=by_name,
++            aggregate_errors=aggregate_errors,
+         )
+ 
+     def validate_strings(
+@@ -510,6 +514,7 @@ class TypeAdapter(Generic[T]):
+         experimental_allow_partial: bool | Literal['off', 'on', 'trailing-strings'] = False,
+         by_alias: bool | None = None,
+         by_name: bool | None = None,
++        aggregate_errors: bool | None = None,
+     ) -> T:
+         """Validate object contains string data against the model.
+ 
+@@ -544,6 +549,7 @@ class TypeAdapter(Generic[T]):
+             allow_partial=experimental_allow_partial,
+             by_alias=by_alias,
+             by_name=by_name,
++            aggregate_errors=aggregate_errors,
+         )
+ 
+     def get_default_value(self, *, strict: bool | None = None, context: Any | None = None) -> Some[T] | None:
