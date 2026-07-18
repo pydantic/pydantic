@@ -872,6 +872,22 @@ class GenerateSchema:
 
                 schema = self._apply_model_serializers(model_schema, decorators.model_serializers.values())
                 schema = apply_model_validators(schema, model_validators, 'outer')
+
+                # When extra='allow' and the model has computed fields, a value
+                # passed at init/validation whose key matches a computed field
+                # name leaks into ``__pydantic_extra__``.  During serialization
+                # both the extra value and the computed value are emitted,
+                # producing inconsistent results (duplicate JSON keys etc.).
+                # Wrap the schema with an after-validator that drops such
+                # entries so the computed field is the single source of truth.
+                if computed_fields and core_config.get('extra_fields_behavior') == 'allow':
+                    ref = schema.get('ref')  # type: ignore[union-attr]
+                    schema = core_schema.no_info_after_validator_function(
+                        _remove_computed_field_names_from_extras, schema
+                    )
+                    if ref is not None:
+                        schema['ref'] = ref  # type: ignore[union-attr]
+
                 return self.defs.create_definition_reference_schema(schema)
 
     def _resolve_self_type(self, obj: Any) -> Any:
@@ -2590,6 +2606,31 @@ def _convert_to_aliases(
         return alias
 
 
+def _remove_computed_field_names_from_extras(model: Any) -> Any:
+    """After-validator that removes computed field names from ``__pydantic_extra__``.
+
+    When ``extra='allow'`` and a value whose key matches a computed field name is
+    passed at validation time, pydantic-core stores it in ``__pydantic_extra__``.
+    During serialization both the extra value and the computed value are emitted,
+    producing inconsistent results (duplicate JSON keys, ``exclude_none`` showing
+    the stale extra value, etc.).  This validator silently drops such entries so
+    that the computed field is the single source of truth, matching the behaviour
+    already seen when ``extra='ignore'``.
+    """
+    extra = getattr(model, '__pydantic_extra__', None)
+    if extra:
+        computed_field_names = type(model).__pydantic_computed_fields__.keys() if hasattr(type(model), '__pydantic_computed_fields__') else ()
+        computed_names: set[str] = set(computed_field_names)
+        if computed_names:
+            fields_set = getattr(model, '__pydantic_fields_set__', None)
+            for key in list(extra):
+                if key in computed_names:
+                    del extra[key]
+                    if fields_set is not None:
+                        fields_set.discard(key)
+    return model
+
+
 def apply_model_validators(
     schema: core_schema.CoreSchema,
     validators: Iterable[Decorator[ModelValidatorDecoratorInfo]],
@@ -2930,3 +2971,4 @@ class _ModelTypeStack:
             return self._stack[-1]
         else:
             return None
+
