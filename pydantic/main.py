@@ -388,6 +388,12 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
             _fields_set = fields_set
 
         _extra: dict[str, Any] | None = values if cls.model_config.get('extra') == 'allow' else None
+        if _extra is not None:
+            # Drop computed field names that leaked into extras so that
+            # serialization is consistent (computed field is the source of truth).
+            computed_field_names = cls.__pydantic_computed_fields__.keys() if cls.__pydantic_computed_fields__ else ()
+            if computed_field_names:
+                _extra = {k: v for k, v in _extra.items() if k not in computed_field_names}
         _object_setattr(m, '__dict__', fields_values)
         _object_setattr(m, '__pydantic_fields_set__', _fields_set)
         if not cls.__pydantic_root_model__:
@@ -1898,3 +1904,4 @@ def create_model(  # noqa: C901
 
 
 __getattr__ = getattr_migration(__name__)
+
