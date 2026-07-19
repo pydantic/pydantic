@@ -254,3 +254,20 @@ def test_namedtuple_inheritance_with_annotations():
             'input': 'c',
         }
     ]
+
+
+def test_namedtuple_serialization_with_deferred_build_field():
+    """https://github.com/pydantic/pydantic/issues/13448"""
+
+    class Lazy(BaseModel, defer_build=True):
+        x: int
+
+    class NT(NamedTuple):
+        bar: Lazy
+
+    class Model(BaseModel):
+        nt: NT
+
+    m = Model(nt=[{'x': 1}])
+    assert m.model_dump() == {'nt': ({'x': 1},)}
+    assert m.model_dump_json() == '{"nt":[{"x":1}]}'

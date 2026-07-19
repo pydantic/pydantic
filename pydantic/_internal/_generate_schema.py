@@ -1543,19 +1543,30 @@ class GenerateSchema:
                     for field_name, annotation in annotations.items()
                 }
 
+            parameter_schemas = [
+                self._generate_parameter_schema(
+                    field_name,
+                    annotation,
+                    source=AnnotationSource.NAMED_TUPLE,
+                    default=namedtuple_cls._field_defaults.get(field_name, Parameter.empty),
+                )
+                for field_name, annotation in annotations.items()
+            ]
             arguments_schema = core_schema.arguments_schema(
-                [
-                    self._generate_parameter_schema(
-                        field_name,
-                        annotation,
-                        source=AnnotationSource.NAMED_TUPLE,
-                        default=namedtuple_cls._field_defaults.get(field_name, Parameter.empty),
-                    )
-                    for field_name, annotation in annotations.items()
-                ],
+                parameter_schemas,
                 metadata={'pydantic_js_prefer_positional_arguments': True},
             )
-            schema = core_schema.call_schema(arguments_schema, namedtuple_cls, ref=namedtuple_ref)
+            # Serialize named tuples using an explicit tuple serializer built from the field schemas.
+            # Without it, the `'call'` schema falls back to an `AnySerializer` that relies on type
+            # inference, which uses the (possibly incomplete) `__pydantic_serializer__` of the field
+            # types and breaks when a field type is built with `defer_build=True` (see #13448).
+            serialization = core_schema.plain_serializer_function_ser_schema(
+                _serialize_namedtuple,
+                return_schema=core_schema.tuple_schema([parameter['schema'] for parameter in parameter_schemas]),
+            )
+            schema = core_schema.call_schema(
+                arguments_schema, namedtuple_cls, ref=namedtuple_ref, serialization=serialization
+            )
             return self.defs.create_definition_reference_schema(schema)
 
     def _generate_parameter_schema(
@@ -2635,6 +2646,15 @@ def apply_model_validators(
     if ref:
         schema['ref'] = ref  # type: ignore
     return schema
+
+
+def _serialize_namedtuple(value: Any) -> tuple[Any, ...]:
+    """Serialize a named tuple instance as a plain tuple.
+
+    Used as the serialization function of the `'call'` schema generated for named tuples, so that
+    the explicit tuple serializer (and not an `AnySerializer`) is used (see #13448).
+    """
+    return tuple(value)
 
 
 def wrap_default(field_info: FieldInfo, schema: core_schema.CoreSchema) -> core_schema.CoreSchema:
