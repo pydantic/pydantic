@@ -806,7 +806,7 @@ Pydantic provides a few special utilities that can be used to customize validati
     1. Note that the validation of the second item is skipped. If it has the wrong type it will emit a
        warning during serialization.
 
-* [`ValidateAs`][pydantic.functional_validators.ValidateAs] can be used to validate an custom type from a
+* [`ValidateAs`][pydantic.functional_validators.ValidateAs] can be used to validate a custom type from a
   type natively supported by Pydantic. This is particularly useful when using custom types with multiple fields.
 
     ```python {lint="skip"}
