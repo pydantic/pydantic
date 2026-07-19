@@ -61,6 +61,9 @@ def test_ge_le_gt_lt(
     [
         (int, validate_as(int).multiple_of(5), [5, 20, 0], [18, 7]),
         (float, validate_as(float).multiple_of(2.5), [2.5, 5.0, 7.5], [3.0, 1.1]),
+        # `multiple_of` on floats must agree with the native constraint, which tolerates float
+        # imprecision (e.g. `0.3 % 0.1 != 0`), instead of applying an exact Python `%` check.
+        (float, validate_as(float).multiple_of(0.1), [0.1, 0.2, 0.3, 0.5, 1.0], [0.15, 0.25, 0.35]),
         (
             Decimal,
             validate_as(Decimal).multiple_of(Decimal('1.5')),

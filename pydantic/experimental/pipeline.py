@@ -572,19 +572,28 @@ def _apply_constraint(  # noqa: C901
         s = _check_func(check_len, f'length >= {min_len} and length <= {max_len}', s)
     elif isinstance(constraint, annotated_types.MultipleOf):
         multiple_of = constraint.multiple_of
+        native_constraint_applied = False
         if s and s['type'] in {'int', 'float', 'decimal'}:
             s = s.copy()
             if s['type'] == 'int' and isinstance(multiple_of, int):
                 s['multiple_of'] = multiple_of
+                native_constraint_applied = True
             elif s['type'] == 'float' and isinstance(multiple_of, float):
                 s['multiple_of'] = multiple_of
+                native_constraint_applied = True
             elif s['type'] == 'decimal' and isinstance(multiple_of, Decimal):
                 s['multiple_of'] = multiple_of
+                native_constraint_applied = True
 
-        def check_multiple_of(v: Any) -> bool:
-            return v % multiple_of == 0
+        # Only fall back to an exact Python `%` check when the native (tolerant) constraint could not be
+        # applied. Layering the exact check on top of the native one diverges for floats, where e.g.
+        # `0.3 % 0.1 != 0`, wrongly rejecting values the native `multiple_of` accepts.
+        if not native_constraint_applied:
 
-        s = _check_func(check_multiple_of, f'% {multiple_of} == 0', s)
+            def check_multiple_of(v: Any) -> bool:
+                return v % multiple_of == 0
+
+            s = _check_func(check_multiple_of, f'% {multiple_of} == 0', s)
     elif isinstance(constraint, annotated_types.Timezone):
         tz = constraint.tz
 
