@@ -283,6 +283,11 @@ class _BaseUrl:
             query: The query part of the URL, or omit for no query.
             fragment: The fragment part of the URL, or omit for no fragment.
 
+        Note:
+            The components are NOT URL-encoded automatically. If a component (e.g., `password` or `path`)
+            contains special characters, it must be URL-encoded (e.g., using `urllib.parse.quote`) before
+            being passed to `build()`.
+
         Returns:
             An instance of URL
         """
@@ -497,6 +502,11 @@ class _BaseMultiHostUrl:
             path: The path part of the URL.
             query: The query part of the URL, or omit for no query.
             fragment: The fragment part of the URL, or omit for no fragment.
+
+        Note:
+            The components are NOT URL-encoded automatically. If a component (e.g., `password` or `path`)
+            contains special characters, it must be URL-encoded (e.g., using `urllib.parse.quote`) before
+            being passed to `build()`.
 
         Returns:
             An instance of `MultiHostUrl`
