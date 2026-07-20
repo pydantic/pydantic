@@ -12,6 +12,7 @@ from enum import Enum, IntEnum
 from ipaddress import IPv4Address, IPv4Interface, IPv4Network, IPv6Address, IPv6Interface, IPv6Network
 from pathlib import Path
 from re import Pattern
+from types import EllipsisType
 from typing import (
     Annotated,
     Any,
@@ -1317,6 +1318,14 @@ def test_callable_type(type_, default_value, base_json_schema, properties):
         ):
             model_schema = ModelWithOverride.model_json_schema()
     assert model_schema['properties'] == properties
+
+
+def test_ellipsis_schema() -> None:
+    class Model(BaseModel):
+        e: EllipsisType
+
+    with pytest.raises(PydanticInvalidForJsonSchema):
+        Model.model_json_schema()
 
 
 @pytest.mark.parametrize(

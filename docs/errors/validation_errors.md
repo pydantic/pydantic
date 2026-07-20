@@ -724,6 +724,27 @@ except ValidationError as exc:
     #> 'dict_type'
 ```
 
+## `ellipsis_error`
+
+This error is raised when the input isn't the [`Ellipsis`][] literal:
+
+```python
+from types import EllipsisType
+
+from pydantic import BaseModel, ValidationError
+
+
+class Model(BaseModel):
+    e: EllipsisType
+
+
+try:
+    Model(e=1)
+except ValidationError as exc:
+    print(repr(exc.errors()[0]['type']))
+    #> 'ellipsis_error'
+```
+
 ## `enum`
 
 This error is raised when the input value does not exist in an `enum` field members:

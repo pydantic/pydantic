@@ -37,6 +37,7 @@ mod datetime;
 pub(crate) mod decimal;
 mod definitions;
 mod dict;
+mod ellipsis;
 mod enum_;
 mod float;
 pub(crate) mod fraction;
@@ -610,6 +611,8 @@ fn build_validator_inner(
         literal::LiteralValidator,
         // missing sentinel
         missing_sentinel::MissingSentinelValidator,
+        // ellipsis
+        ellipsis::EllipsisValidator,
         // enums
         enum_::BuildEnumValidator,
         // any
@@ -775,6 +778,8 @@ pub enum CombinedValidator {
     Literal(literal::LiteralValidator),
     // Missing sentinel
     MissingSentinel(missing_sentinel::MissingSentinelValidator),
+    // Ellipsis
+    Ellipsis(ellipsis::EllipsisValidator),
     // enums
     IntEnum(enum_::EnumValidator<enum_::IntEnumValidator>),
     StrEnum(enum_::EnumValidator<enum_::StrEnumValidator>),
