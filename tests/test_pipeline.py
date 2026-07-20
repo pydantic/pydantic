@@ -28,6 +28,21 @@ def test_parse_str_with_pattern() -> None:
         ta_pattern.validate_python('POTATO')
 
 
+def test_gt_constraint_with_mismatched_numeric_bound_type() -> None:
+    # A numeric pipeline whose ``gt`` bound has a different Python type than the schema
+    # (e.g. a ``float`` schema with an ``int`` bound) must still enforce the constraint.
+    # Previously the ``Gt`` branch dropped it entirely in this case, unlike ge/lt/le.
+    ta_float = TypeAdapter[float](Annotated[float, validate_as(float).gt(0)])
+    assert ta_float.validate_python(1.0) == 1.0
+    with pytest.raises(ValidationError):
+        ta_float.validate_python(-5.0)
+
+    ta_decimal = TypeAdapter[Decimal](Annotated[Decimal, validate_as(Decimal).gt(0)])
+    assert ta_decimal.validate_python(Decimal(1)) == Decimal(1)
+    with pytest.raises(ValidationError):
+        ta_decimal.validate_python(Decimal(-3))
+
+
 @pytest.mark.parametrize(
     'type_, pipeline, valid_cases, invalid_cases',
     [

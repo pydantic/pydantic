@@ -486,15 +486,23 @@ def _apply_constraint(  # noqa: C901
     """Apply a single constraint to a schema."""
     if isinstance(constraint, annotated_types.Gt):
         gt = constraint.gt
+        applied = False
         if s and s['type'] in {'int', 'float', 'decimal'}:
             s = s.copy()
             if s['type'] == 'int' and isinstance(gt, int):
                 s['gt'] = gt
+                applied = True
             elif s['type'] == 'float' and isinstance(gt, float):
                 s['gt'] = gt
+                applied = True
             elif s['type'] == 'decimal' and isinstance(gt, Decimal):
                 s['gt'] = gt
-        else:
+                applied = True
+
+        # Fall back to a check function whenever the constraint could not be applied natively
+        # (non-numeric schema, or a bound whose type does not match the schema). Without this the
+        # constraint was silently dropped for e.g. a float schema with an int bound.
+        if not applied:
 
             def check_gt(v: Any) -> bool:
                 return v > gt
