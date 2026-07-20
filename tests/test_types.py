@@ -6077,7 +6077,7 @@ def test_skip_validation_json_schema():
     }
 
 
-def test_validate_from() -> None:
+def test_validate_as() -> None:
     class Arbitrary:
         def __init__(self, a: int) -> None:
             self.a = a
@@ -6091,6 +6091,37 @@ def test_validate_from() -> None:
     ta = TypeAdapter(Annotated[Arbitrary, ValidateAs(ArbitraryModel, instantiation_hook=lambda v: Arbitrary(a=v.a))])
 
     assert ta.validate_python({'a': 1}) == Arbitrary(1)
+
+
+def test_validate_as_known_serialization() -> None:
+    """https://github.com/pydantic/pydantic/issues/13460"""
+
+    def first_even(nums: list[int]) -> int:
+        for i in nums:
+            if i % 2 == 0:
+                return i
+        raise ValueError('Even not found.')
+
+    class Model(BaseModel):
+        x: Annotated[int, ValidateAs(list[int], first_even)]
+
+    m = Model(x=[1, 2])
+
+    assert m.model_dump() == {'x': 2}
+
+
+def test_validate_as_unknown_serialization() -> None:
+
+    class Arbitrary:
+        def __init__(self, a: int) -> None:
+            self.a = a
+
+        def __eq__(self, other) -> bool:
+            return self.a == other.a
+
+    ta = TypeAdapter(Annotated[Arbitrary, ValidateAs(int, instantiation_hook=Arbitrary)])
+
+    assert ta.dump_python(Arbitrary(1)) == Arbitrary(1)
 
 
 @pytest.mark.skipif(sys.version_info < (3, 12), reason="`Annotated` doesn't allow instances in <3.12")
