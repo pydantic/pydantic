@@ -158,11 +158,12 @@ fix = ["create", "fix"]
 required-version = '>=0.7.2'
 cache-keys = [
     { file = "pyproject.toml" },
-    { file = "setup.py" },
-    { file = "setup.cfg" },
     { file = "Cargo.toml" },
     { file = "Cargo.lock" },
-    { file = "**/*.rs" },
+    { file = "build.rs" },
+    { dir = ".cargo" },
+    { dir = "src" },
+    { dir = "python" },
     { env = "MATURIN_PEP517_ARGS" },
     { env = "RUSTFLAGS" }
 ]
