@@ -907,6 +907,19 @@ class GenerateJsonSchema:
         """
         raise PydanticOmit
 
+    def ellipsis_schema(self, schema: core_schema.EllipsisSchema) -> JsonSchemaValue:
+        """Handles JSON schema generation for a core schema that checks if a value is the [`Ellipsis`][] literal.
+
+        Unless overridden in a subclass, this raises an error.
+
+        Args:
+            schema: The core schema.
+
+        Returns:
+            The generated JSON schema.
+        """
+        return self.handle_invalid_for_json_schema(schema, 'core_schema.EllipsisSchema')
+
     def enum_schema(self, schema: core_schema.EnumSchema) -> JsonSchemaValue:
         """Generates a JSON schema that matches an Enum value.
 
