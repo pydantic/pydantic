@@ -3507,6 +3507,25 @@ def test_extra_generic_class() -> None:
     assert Mint(extra_value='1').model_extra == {'extra_value': 1}
 
 
+def test_extra_generic_class_subclass() -> None:
+    """https://github.com/pydantic/pydantic/issues/13465"""
+
+    T = TypeVar('T')
+
+    class Model(BaseModel, Generic[T], extra='allow'):
+        __pydantic_extra__: dict[str, T]
+
+    class Sub(Model[int]):
+        pass
+
+    assert Sub.model_json_schema()['additionalProperties'] == {'type': 'integer'}
+
+    with pytest.raises(ValidationError):
+        Sub(extra_value='not_an_int')
+
+    assert Sub(extra_value='1').model_extra == {'extra_value': 1}
+
+
 def test_super_getattr_extra():
     class Model(BaseModel):
         model_config = {'extra': 'allow'}
