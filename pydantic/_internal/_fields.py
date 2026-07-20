@@ -423,14 +423,35 @@ def collect_model_fields(  # noqa: C901
 
     pydantic_extra_info: PydanticExtraInfo | None = None
     if '__pydantic_extra__' in type_hints:
-        ann, complete = type_hints['__pydantic_extra__']
-        if complete:
-            # If not complete, `rebuild_model_fields()` takes care of it:
-            ann = _generics.replace_types(ann, typevars_map)
-        pydantic_extra_info = PydanticExtraInfo(
-            annotation=ann,
-            complete=complete,
-        )
+        parent_extra_info: PydanticExtraInfo | None = None
+        if '__pydantic_extra__' not in cls_annotations:
+            # The annotation is only present on parent classes. As with fields, we make use of the parent's
+            # extra info, where type variables are already substituted:
+            for base in bases:
+                parent_extra_info = getattr(base, '__pydantic_extra_info__', None)
+                if parent_extra_info is not None:
+                    break
+
+        if parent_extra_info is not None:
+            # As with fields, the only case where substituting the type variables is relevant (i.e. when
+            # `typevars_map` is not empty) is when a generic class is parameterized:
+            if typevars_map and parent_extra_info.complete:
+                # If not complete, `rebuild_model_fields()` takes care of it:
+                pydantic_extra_info = PydanticExtraInfo(
+                    annotation=_generics.replace_types(parent_extra_info.annotation, typevars_map),
+                    complete=True,
+                )
+            else:
+                pydantic_extra_info = parent_extra_info
+        else:
+            ann, complete = type_hints['__pydantic_extra__']
+            if complete:
+                # If not complete, `rebuild_model_fields()` takes care of it:
+                ann = _generics.replace_types(ann, typevars_map)
+            pydantic_extra_info = PydanticExtraInfo(
+                annotation=ann,
+                complete=complete,
+            )
 
     return fields, pydantic_extra_info, class_vars
 
