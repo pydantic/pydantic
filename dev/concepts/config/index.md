@@ -45,7 +45,7 @@ On Pydantic models, configuration can be specified in two ways:
 
   ```
 
-Unlike the model_config class attribute, static type checkers will recognize class arguments. For `frozen`, any instance mutation will be flagged as an type checking error.
+Unlike the model_config class attribute, static type checkers will recognize class arguments. For `frozen`, any instance mutation will be flagged as a type checking error.
 
 ## Configuration on Pydantic dataclasses
 
