@@ -615,7 +615,7 @@ print(m.model_dump())  # (1)!
 ### Polymorphic serialization
 
 /// version-added | v2.13
-Polymorphic serialization was added as an better alternative to the [serialize as any](#serializing-as-any) behavior, and only
+Polymorphic serialization was added as a better alternative to the [serialize as any](#serializing-as-any) behavior, and only
 applies to Pydantic models and Pydantic dataclasses.
 ///
 
