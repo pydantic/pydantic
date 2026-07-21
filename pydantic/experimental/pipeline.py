@@ -594,6 +594,8 @@ def _apply_constraint(  # noqa: C901
                 return v % multiple_of == 0
 
             s = _check_func(check_multiple_of, f'% {multiple_of} == 0', s)
+
+        assert s is not None
     elif isinstance(constraint, annotated_types.Timezone):
         tz = constraint.tz
 
