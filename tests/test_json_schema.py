@@ -1427,6 +1427,31 @@ def test_non_serializable_default(type_, default_value, properties):
     assert model_schema.get('required') is None
 
 
+def test_non_utf8_bytes_default():
+    # A non-UTF-8 `bytes` default cannot be encoded under the default `ser_json_bytes='utf8'`
+    # serialization mode. This should gracefully exclude the default (with a warning) rather than
+    # leaking a raw `UnicodeDecodeError`.
+    class Model(BaseModel):
+        x: bytes = b'\xff\xfe'
+
+    with pytest.warns(
+        PydanticJsonSchemaWarning,
+        match=(
+            'Default value .* is not JSON serializable; excluding default from JSON schema '
+            r'\[non-serializable-default\]'
+        ),
+    ):
+        model_schema = Model.model_json_schema()
+    assert 'default' not in model_schema['properties']['x']
+
+    # With a `bytes` serialization mode that can represent arbitrary bytes, the default is encoded.
+    class Base64Model(BaseModel):
+        model_config = ConfigDict(ser_json_bytes='base64')
+        x: bytes = b'\xff\xfe'
+
+    assert Base64Model.model_json_schema()['properties']['x']['default'] == '__4='
+
+
 def test_callable_fallback_with_non_serializable_default():
     class Model(BaseModel):
         callback: int | Callable[[int], int] = lambda x: x

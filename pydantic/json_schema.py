@@ -2382,10 +2382,21 @@ class GenerateJsonSchema:
             )
         except PydanticSchemaGenerationError:
             raise pydantic_core.PydanticSerializationError(f'Unable to encode default value {dft}')
+        except UnicodeDecodeError as exc:
+            # e.g. a non-UTF-8 `bytes` default under `ser_json_bytes='utf8'` raises a `UnicodeDecodeError`.
+            # Re-raise as a `PydanticSerializationError` so the caller can gracefully exclude the default.
+            raise pydantic_core.PydanticSerializationError(f'Unable to encode default value {dft}') from exc
 
-        return pydantic_core.to_jsonable_python(
-            default, timedelta_mode=config.ser_json_timedelta, bytes_mode=config.ser_json_bytes, by_alias=self.by_alias
-        )
+        try:
+            return pydantic_core.to_jsonable_python(
+                default,
+                timedelta_mode=config.ser_json_timedelta,
+                bytes_mode=config.ser_json_bytes,
+                by_alias=self.by_alias,
+            )
+        except UnicodeDecodeError as exc:
+            # Same non-UTF-8 `bytes` case reached via the `_type_has_config` branch above.
+            raise pydantic_core.PydanticSerializationError(f'Unable to encode default value {dft}') from exc
 
     def update_with_validations(
         self, json_schema: JsonSchemaValue, core_schema: CoreSchema, mapping: dict[str, str]
