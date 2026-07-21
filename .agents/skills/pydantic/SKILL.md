@@ -31,8 +31,9 @@ class Person(BaseModel):
 
 
 p = Person(name='John', age=20, birthdate='1970-01-01')
-## Constraints and field metadata
 ```
+
+## Constraints and field metadata
 
 The `Field()` function is used to provide metadata and constraints.
 You need to distinguish two types of of metadata:
