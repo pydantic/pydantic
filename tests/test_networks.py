@@ -971,6 +971,16 @@ def test_address_valid(value, name, email):
         ('foobar <foobar@example.com>>', None),
         ('foobar <<foobar<@example.com>', None),
         ('foobar <>', None),
+        pytest.param(
+            '"Alice\r\nBcc: victim@example.com" <alice@example.com>',
+            'The display name contains control characters',
+            id='crlf-in-display-name',
+        ),
+        pytest.param(
+            '"a\x00b" <alice@example.com>',
+            'The display name contains control characters',
+            id='nul-in-display-name',
+        ),
         pytest.param('foobar <' + 'a' * 4096 + '@example.com>', 'Length must not exceed 2048 characters', id='long'),
     ],
 )
