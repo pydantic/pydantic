@@ -4,6 +4,7 @@ use pyo3::intern;
 use pyo3::prelude::*;
 use pyo3::types::PyDict;
 
+use crate::build_tools::py_schema_err;
 use crate::definitions::DefinitionsBuilder;
 use crate::errors::ValResult;
 use crate::input::Input;
@@ -60,5 +61,21 @@ impl Validator for JsonOrPython {
 
     fn get_name(&self) -> &str {
         &self.name
+    }
+
+    fn children(&self) -> Vec<&Arc<CombinedValidator>> {
+        vec![&self.json, &self.python]
+    }
+
+    fn with_new_children(&self, children: Vec<Arc<CombinedValidator>>) -> PyResult<Arc<CombinedValidator>> {
+        if children.len() != 2 {
+            return py_schema_err!("JsonOrPython must have exactly two children: json and python");
+        }
+        Ok(CombinedValidator::JsonOrPython(Self {
+            json: children[0].clone(),
+            python: children[1].clone(),
+            name: self.name.clone(),
+        })
+        .into())
     }
 }

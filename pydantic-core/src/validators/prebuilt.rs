@@ -43,4 +43,10 @@ impl Validator for PrebuiltValidator {
     fn get_name(&self) -> &str {
         self.schema_validator.get().validator.get_name()
     }
+
+    fn children(&self) -> Vec<&std::sync::Arc<CombinedValidator>> {
+        // Treat "prebuilt" as a leaf node as it may contain config boundary etc, do not want to
+        // optimize through it
+        vec![]
+    }
 }

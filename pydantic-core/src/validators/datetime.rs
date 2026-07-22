@@ -140,6 +140,10 @@ impl Validator for DateTimeValidator {
     fn get_name(&self) -> &str {
         Self::EXPECTED_TYPE
     }
+
+    fn children(&self) -> Vec<&Arc<CombinedValidator>> {
+        vec![]
+    }
 }
 
 /// In lax mode, if the input is not a datetime, we try parsing the input as a date and add the "00:00:00" time.

@@ -113,6 +113,10 @@ impl Validator for TimeDeltaValidator {
     fn get_name(&self) -> &str {
         Self::EXPECTED_TYPE
     }
+
+    fn children(&self) -> Vec<&Arc<CombinedValidator>> {
+        vec![]
+    }
 }
 fn pydelta_to_human_readable(py_delta: Bound<'_, PyDelta>) -> String {
     let total_seconds = py_delta.get_seconds();
