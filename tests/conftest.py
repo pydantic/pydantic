@@ -1,7 +1,9 @@
 from __future__ import annotations
 
+import functools
 import importlib.util
 import inspect
+import json
 import os
 import re
 import secrets
@@ -12,14 +14,15 @@ from collections.abc import Callable
 from dataclasses import dataclass
 from pathlib import Path
 from types import FunctionType, ModuleType
-from typing import Any
+from typing import Any, Final, Generic, Literal, TypeVar
 
 import pytest
 from _pytest.assertion.rewrite import AssertionRewritingHook
 from _pytest.nodes import Item
 from typing_extensions import TypedDict
 
-from pydantic import BaseModel
+import pydantic
+from pydantic import BaseModel, TypeAdapter
 from pydantic._internal._generate_schema import GenerateSchema
 from pydantic.json_schema import GenerateJsonSchema
 
@@ -226,3 +229,50 @@ def pytest_itemcollected(item: Item) -> None:
     fixtures: tuple[str, ...] = getattr(item, 'fixturenames', ())
     if any(fixture in fixtures for fixture in _thread_unsafe_fixtures):
         item.add_marker('thread_unsafe')
+
+
+T = TypeVar('T')
+
+
+class PyAndJsonAdapter(Generic[T]):
+    def __init__(
+        self,
+        ty: type[T],
+        *,
+        validator_type: Literal['json', 'python'] | None = None,
+    ):
+        self.adapter: Final = TypeAdapter(ty)
+        self.validator_type = validator_type
+
+    def validate_python(self, py_input, strict: bool | None = None, context: Any = None):
+        return self.adapter.validate_python(py_input, strict=strict, context=context)
+
+    def validate_json(self, json_str: str, strict: bool | None = None, context: Any = None):
+        return self.adapter.validate_json(json_str, strict=strict, context=context)
+
+    def validate_test(
+        self,
+        py_input,
+        strict: bool | None = None,
+        context: Any = None,
+    ):
+        if self.validator_type == 'json':
+            return self.adapter.validate_json(
+                json.dumps(py_input),
+                strict=strict,
+                context=context,
+            )
+        else:
+            assert self.validator_type == 'python', self.validator_type
+            return self.adapter.validate_python(py_input, strict=strict, context=context)
+
+
+PyAndJson = type[PyAndJsonAdapter]
+
+
+@pytest.fixture(params=['python', 'json'])
+def py_and_json(request) -> PyAndJson:
+    class ChosenPyAndJsonApapter(PyAndJsonAdapter):
+        __init__ = functools.partialmethod(PyAndJsonAdapter.__init__, validator_type=request.param)
+
+    return ChosenPyAndJsonApapter
