@@ -51,7 +51,7 @@ impl BuildSerializer for DataclassArgsBuilder {
                 if field_info.get_as(intern!(py, "serialization_exclude"))? == Some(true) {
                     fields.insert(
                         key.clone_ref(py),
-                        SerField::new(key, None, None, true, serialize_by_alias, None),
+                        SerField::new(key, None, None, true, serialize_by_alias, None, None),
                     );
                 } else {
                     let schema = field_info.get_as_req(intern!(py, "schema"))?;
@@ -61,6 +61,7 @@ impl BuildSerializer for DataclassArgsBuilder {
                     let alias = field_info.get_as(intern!(py, "serialization_alias"))?;
                     let serialization_exclude_if: Option<Py<PyAny>> =
                         field_info.get_as(intern!(py, "serialization_exclude_if"))?;
+                    let compare_as: Option<Py<PyAny>> = field_info.get_as(intern!(py, "compare_as"))?;
                     fields.insert(
                         key.clone_ref(py),
                         SerField::new(
@@ -70,6 +71,7 @@ impl BuildSerializer for DataclassArgsBuilder {
                             true,
                             serialize_by_alias,
                             serialization_exclude_if,
+                            compare_as,
                         ),
                     );
                 }
