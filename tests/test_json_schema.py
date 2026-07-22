@@ -530,7 +530,7 @@ def test_decimal_json_schema():
                     {'type': 'number'},
                     {
                         'type': 'string',
-                        'pattern': '^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$',
+                        'pattern': '^(?=[^eE]*\\d)(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*(?:[eE][+-]?\\d+)?$',
                     },
                 ],
                 'default': '12.34',
@@ -547,7 +547,7 @@ def test_decimal_json_schema():
                 'default': '12.34',
                 'title': 'B',
                 'type': 'string',
-                'pattern': '^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$',
+                'pattern': '^(?=[^eE]*\\d)(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*(?:[eE][+-]?\\d+)?$',
             },
         },
         'title': 'Model',
@@ -1071,7 +1071,7 @@ def test_special_decimal_types(field_type, expected_schema):
                     {'type': 'number'},
                     {
                         'type': 'string',
-                        'pattern': '^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$',
+                        'pattern': '^(?=[^eE]*\\d)(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*(?:[eE][+-]?\\d+)?$',
                     },
                 ],
                 'title': 'A',
@@ -2038,7 +2038,7 @@ def test_docstring(docstring, description):
                     {'exclusiveMinimum': 2.0, 'type': 'number'},
                     {
                         'type': 'string',
-                        'pattern': '^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$',
+                        'pattern': '^(?=[^eE]*\\d)(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*(?:[eE][+-]?\\d+)?$',
                     },
                 ]
             },
@@ -2051,7 +2051,7 @@ def test_docstring(docstring, description):
                     {'type': 'number', 'exclusiveMaximum': 5},
                     {
                         'type': 'string',
-                        'pattern': '^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$',
+                        'pattern': '^(?=[^eE]*\\d)(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*(?:[eE][+-]?\\d+)?$',
                     },
                 ]
             },
@@ -2064,7 +2064,7 @@ def test_docstring(docstring, description):
                     {'type': 'number', 'minimum': 2},
                     {
                         'type': 'string',
-                        'pattern': '^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$',
+                        'pattern': '^(?=[^eE]*\\d)(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*(?:[eE][+-]?\\d+)?$',
                     },
                 ]
             },
@@ -2077,7 +2077,7 @@ def test_docstring(docstring, description):
                     {'type': 'number', 'maximum': 5},
                     {
                         'type': 'string',
-                        'pattern': '^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$',
+                        'pattern': '^(?=[^eE]*\\d)(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*(?:[eE][+-]?\\d+)?$',
                     },
                 ]
             },
@@ -2090,7 +2090,7 @@ def test_docstring(docstring, description):
                     {'type': 'number', 'multipleOf': 5},
                     {
                         'type': 'string',
-                        'pattern': '^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$',
+                        'pattern': '^(?=[^eE]*\\d)(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*(?:[eE][+-]?\\d+)?$',
                     },
                 ]
             },
@@ -2139,7 +2139,7 @@ def test_constraints_schema_validation(kwargs, type_, expected_extra):
             Decimal,
             {
                 'type': 'string',
-                'pattern': '^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$',
+                'pattern': '^(?=[^eE]*\\d)(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*(?:[eE][+-]?\\d+)?$',
             },
         ),
         (
@@ -2147,7 +2147,7 @@ def test_constraints_schema_validation(kwargs, type_, expected_extra):
             Decimal,
             {
                 'type': 'string',
-                'pattern': '^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$',
+                'pattern': '^(?=[^eE]*\\d)(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*(?:[eE][+-]?\\d+)?$',
             },
         ),
         (
@@ -2155,7 +2155,7 @@ def test_constraints_schema_validation(kwargs, type_, expected_extra):
             Decimal,
             {
                 'type': 'string',
-                'pattern': '^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$',
+                'pattern': '^(?=[^eE]*\\d)(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*(?:[eE][+-]?\\d+)?$',
             },
         ),
         (
@@ -2163,7 +2163,7 @@ def test_constraints_schema_validation(kwargs, type_, expected_extra):
             Decimal,
             {
                 'type': 'string',
-                'pattern': '^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$',
+                'pattern': '^(?=[^eE]*\\d)(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*(?:[eE][+-]?\\d+)?$',
             },
         ),
         (
@@ -2171,7 +2171,7 @@ def test_constraints_schema_validation(kwargs, type_, expected_extra):
             Decimal,
             {
                 'type': 'string',
-                'pattern': '^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$',
+                'pattern': '^(?=[^eE]*\\d)(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*(?:[eE][+-]?\\d+)?$',
             },
         ),
     ],
@@ -5976,14 +5976,14 @@ def test_generate_definitions_for_no_ref_schemas():
         {
             ('Decimal', 'serialization'): {
                 'type': 'string',
-                'pattern': '^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$',
+                'pattern': '^(?=[^eE]*\\d)(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*(?:[eE][+-]?\\d+)?$',
             },
             ('Decimal', 'validation'): {
                 'anyOf': [
                     {'type': 'number'},
                     {
                         'type': 'string',
-                        'pattern': '^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$',
+                        'pattern': '^(?=[^eE]*\\d)(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*(?:[eE][+-]?\\d+)?$',
                     },
                 ]
             },
@@ -7180,6 +7180,83 @@ def test_decimal_pattern_reject_invalid_not_numerical_values_with_decimal_places
 ) -> None:
     pattern = get_decimal_pattern()
     assert re.fullmatch(pattern, invalid_decimal) is None
+
+
+# Regression test for https://github.com/pydantic/pydantic/issues/13089:
+# pydantic-core serializes ``Decimal`` via ``str(d)``, which yields scientific
+# notation (e.g. ``Decimal('0.0000001') -> '1E-7'``) for values whose canonical
+# exponent makes fixed-point output verbose. The serialization-mode JSON-schema
+# pattern must therefore accept scientific notation, otherwise downstream
+# validators (OpenAPI, Zod codegen…) reject the very output ``model_dump_json``
+# emits.
+@pytest.mark.parametrize(
+    'valid_decimal',
+    ['1E-7', '1E+7', '1E0', '0E-10', '1.5E10', '1.5E+10', '1.5E-10', '-2E-5', '+1.234E+5', '1.5e-3'],
+)
+def test_decimal_pattern_accepts_scientific_notation(valid_decimal, get_decimal_pattern) -> None:
+    pattern = get_decimal_pattern()
+    assert re.fullmatch(pattern, valid_decimal) is not None
+
+
+@pytest.mark.parametrize(
+    'invalid_decimal',
+    [
+        'E5',  # exponent without a coefficient
+        '1E',  # exponent with no digits
+        '1E5E5',  # double exponent
+        '1.5E5.5',  # fractional exponent
+        '1E+',  # exponent sign without digits
+    ],
+)
+def test_decimal_pattern_rejects_malformed_scientific_notation(invalid_decimal, get_decimal_pattern) -> None:
+    pattern = get_decimal_pattern()
+    assert re.fullmatch(pattern, invalid_decimal) is None
+
+
+def test_decimal_serialization_round_trips_through_json_schema_pattern() -> None:
+    """End-to-end: every value pydantic itself serialises must satisfy its own
+    serialization-mode JSON-schema pattern. Asserts the round-trip property
+    that #13089 reported as broken — without this guarantee, OpenAPI/Zod-style
+    codegen-and-validate pipelines reject perfectly valid pydantic output.
+    """
+    import json
+    from decimal import Decimal
+
+    from pydantic import BaseModel
+
+    class M(BaseModel):
+        v: Decimal
+
+    schema = M.model_json_schema(mode='serialization')
+    # Schema shape depends on context: bare ``Decimal`` flattens to a single
+    # ``{"type": "string", "pattern": ...}`` object, while ``Decimal | None``
+    # (or other constraint-free unions) wraps it in an ``anyOf`` with a
+    # number branch alongside. Handle both.
+    field_schema = schema['properties']['v']
+    if 'anyOf' in field_schema:
+        string_branch = next(b for b in field_schema['anyOf'] if b.get('type') == 'string')
+    else:
+        string_branch = field_schema
+    pattern = re.compile(string_branch['pattern'])
+
+    # Mix of values that expand to fixed-point and values pydantic-core emits
+    # as scientific notation — both must round-trip.
+    cases = [
+        Decimal('0.0000001'),  # serialised as '1E-7' — the original repro
+        Decimal('1.5E10'),
+        Decimal('-2E-5'),  # str() is '-0.00002' (fixed-point)
+        Decimal('1234.5'),
+        Decimal('1E0'),  # str() is '1' (no exponent)
+        Decimal('0E-10'),  # zero with explicit exponent
+        Decimal('1.234E+5'),
+        Decimal('1.5e-3'),  # str() is '0.0015' (fixed-point)
+    ]
+    for value in cases:
+        serialized = json.loads(M(v=value).model_dump_json())['v']
+        assert pattern.fullmatch(serialized), (
+            f'pydantic serialised {value!r} as {serialized!r}, which does not match its own '
+            f'serialization-mode JSON-schema pattern {string_branch["pattern"]!r}'
+        )
 
 
 def test_union_format_primitive_type_array() -> None:
