@@ -22,7 +22,7 @@ The [API documentation](api/base_model.md) gives reference docs for all public P
 
 ## :simple-stackoverflow: Stack Overflow
 
-Use the [`pydantic`](https://stackoverflow.com/questions/tagged/pydantic) tag on Stack Overflow to ask questions, note this is not always monitored by the core Pydantic team.
+Use the [`pydantic`](https://stackoverflow.com/questions/tagged/pydantic) tag on Stack Overflow to ask questions; note that this is not always monitored by the core Pydantic team.
 
 ## :simple-youtube: YouTube
 
