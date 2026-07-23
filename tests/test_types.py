@@ -6107,7 +6107,7 @@ def test_validate_as_known_serialization() -> None:
 
     m = Model(x=[1, 2])
 
-    assert m.model_dump() == {'x': 2}
+    assert m.model_dump_json() == '{"x":2}'
 
 
 def test_validate_as_unknown_serialization() -> None:
