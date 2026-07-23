@@ -324,6 +324,9 @@ error_types! {
     // ---------------------
     // missing sentinel
     MissingSentinelError {},
+    // ---------------------
+    // ellipsis
+    EllipsisError {},
     // date errors
     DateType {},
     DateParsing {
@@ -552,6 +555,7 @@ impl ErrorType {
             Self::CustomError { .. } => "", // custom errors are handled separately
             Self::LiteralError { .. } => "Input should be {expected}",
             Self::MissingSentinelError { .. } => "Input should be the 'MISSING' sentinel",
+            Self::EllipsisError { .. } => "Input should be the 'Ellipsis' literal",
             Self::DateType { .. } => "Input should be a valid date",
             Self::DateParsing { .. } => "Input should be a valid date in the format YYYY-MM-DD, {error}",
             Self::DateFromDatetimeParsing { .. } => "Input should be a valid date or datetime, {error}",
