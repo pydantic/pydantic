@@ -938,6 +938,9 @@ def test_json():
         ('first.last <first.last@example.com>', 'first.last', 'first.last@example.com'),
         ("Shaquille O'Neal <shaq@example.com>", "Shaquille O'Neal", 'shaq@example.com'),
         ('Homer J. Simpson <homer@thesimpsons.com>', 'Homer J. Simpson', 'homer@thesimpsons.com'),
+        pytest.param(
+            '"Alice\tSmith" <alice@example.com>', 'Alice\tSmith', 'alice@example.com', id='htab-in-display-name'
+        ),
     ],
 )
 def test_address_valid(value, name, email):
@@ -980,6 +983,11 @@ def test_address_valid(value, name, email):
             '"a\x00b" <alice@example.com>',
             'The display name contains control characters',
             id='nul-in-display-name',
+        ),
+        pytest.param(
+            '"Alice\x85Bcc: victim@example.com" <alice@example.com>',
+            'The display name contains control characters',
+            id='c1-in-display-name',
         ),
         pytest.param('foobar <' + 'a' * 4096 + '@example.com>', 'Length must not exceed 2048 characters', id='long'),
     ],
