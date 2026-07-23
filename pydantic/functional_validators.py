@@ -794,6 +794,7 @@ else:
 
         @classmethod
         def __get_pydantic_core_schema__(cls, source: Any, handler: GetCoreSchemaHandler) -> core_schema.CoreSchema:
+            # Lazy import to avoid cycle:
             from pydantic._internal._generate_schema import GENERATE_SCHEMA_ERRORS
 
             # use the generic _origin_ as the second argument to isinstance when appropriate
@@ -894,8 +895,24 @@ class ValidateAs:
         self.instantiation_hook = instantiation_hook
 
     def __get_pydantic_core_schema__(self, source: Any, handler: GetCoreSchemaHandler) -> core_schema.CoreSchema:
-        schema = handler(self.from_type)
-        return core_schema.no_info_after_validator_function(
+        # Lazy import to avoid cycle:
+        from pydantic._internal._generate_schema import GENERATE_SCHEMA_ERRORS
+
+        from_type_schema = handler(self.from_type)
+        schema = core_schema.no_info_after_validator_function(
             self.instantiation_hook,
-            schema=schema,
+            schema=from_type_schema,
         )
+        try:
+            ser_schema = handler(source)
+        except GENERATE_SCHEMA_ERRORS:
+            ser_schema = core_schema.any_schema()
+
+        # TODO: pydantic-core currently doesn't accept it, but we should be able to provide an
+        # arbitrary core schema for serialization (currently `simple_ser_schema()` can be used,
+        # but only allow specifying a specific `'type`). Working around this with a wrap serializer
+        # is already done in other parts of the code base, so grep for similar cases when fixing:
+        schema['serialization'] = core_schema.wrap_serializer_function_ser_schema(
+            function=lambda v, h: h(v), schema=ser_schema
+        )
+        return schema
