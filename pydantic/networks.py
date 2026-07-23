@@ -1343,6 +1343,13 @@ def validate_email(value: str) -> tuple[str, str]:
     if m:
         unquoted_name, quoted_name, value = m.groups()
         name = unquoted_name or quoted_name
+        # HTAB is valid FWS in an RFC 5322 display name; other C0 controls, DEL and C1 controls are rejected:
+        if name is not None and any(c != '\t' and (ord(c) < 0x20 or 0x7F <= ord(c) <= 0x9F) for c in name):
+            raise PydanticCustomError(
+                'value_error',
+                'value is not a valid email address: {reason}',
+                {'reason': 'The display name contains control characters'},
+            )
 
     email = value.strip()
 
