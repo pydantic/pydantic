@@ -1,3 +1,9 @@
+## SettingsError
+
+Bases: `ValueError`
+
+Base exception for settings-related errors.
+
 ## BaseSettings
 
 ```python
@@ -8,10 +14,12 @@ BaseSettings(
         bool | None
     ) = None,
     _env_prefix: str | None = None,
+    _env_prefix_target: EnvPrefixTarget | None = None,
     _env_file: DotenvType | None = ENV_FILE_SENTINEL,
     _env_file_encoding: str | None = None,
     _env_ignore_empty: bool | None = None,
     _env_nested_delimiter: str | None = None,
+    _env_nested_max_split: int | None = None,
     _env_parse_none_str: str | None = None,
     _env_parse_enums: bool | None = None,
     _cli_prog_name: str | None = None,
@@ -29,10 +37,24 @@ BaseSettings(
     _cli_exit_on_error: bool | None = None,
     _cli_prefix: str | None = None,
     _cli_flag_prefix_char: str | None = None,
-    _cli_implicit_flags: bool | None = None,
+    _cli_implicit_flags: (
+        bool | Literal["dual", "toggle"] | None
+    ) = None,
     _cli_ignore_unknown_args: bool | None = None,
-    _cli_kebab_case: bool | None = None,
+    _cli_kebab_case: (
+        bool | Literal["all", "no_enums"] | None
+    ) = None,
+    _cli_shortcuts: (
+        Mapping[str, str | list[str]] | None
+    ) = None,
     _secrets_dir: PathType | None = None,
+    _build_sources: (
+        tuple[
+            tuple[PydanticBaseSettingsSource, ...],
+            dict[str, Any],
+        ]
+        | None
+    ) = None,
     **values: Any
 )
 
@@ -48,7 +70,7 @@ All the below attributes can be set via `model_config`.
 
 Parameters:
 
-| Name | Type | Description | Default | | --- | --- | --- | --- | | `_case_sensitive` | `bool | None` | Whether environment and CLI variable names should be read with case-sensitivity. Defaults to None. | `None` | | `_nested_model_default_partial_update` | `bool | None` | Whether to allow partial updates on nested model default object fields. Defaults to False. | `None` | | `_env_prefix` | `str | None` | Prefix for all environment variables. Defaults to None. | `None` | | `_env_file` | `DotenvType | None` | The env file(s) to load settings values from. Defaults to Path(''), which means that the value from model_config['env_file'] should be used. You can also pass None to indicate that environment variables should not be loaded from an env file. | `ENV_FILE_SENTINEL` | | `_env_file_encoding` | `str | None` | The env file encoding, e.g. 'latin-1'. Defaults to None. | `None` | | `_env_ignore_empty` | `bool | None` | Ignore environment variables where the value is an empty string. Default to False. | `None` | | `_env_nested_delimiter` | `str | None` | The nested env values delimiter. Defaults to None. | `None` | | `_env_parse_none_str` | `str | None` | The env string value that should be parsed (e.g. "null", "void", "None", etc.) into None type(None). Defaults to None type(None), which means no parsing should occur. | `None` | | `_env_parse_enums` | `bool | None` | Parse enum field names to values. Defaults to None., which means no parsing should occur. | `None` | | `_cli_prog_name` | `str | None` | The CLI program name to display in help text. Defaults to None if \_cli_parse_args is None. Otherwse, defaults to sys.argv[0]. | `None` | | `_cli_parse_args` | `bool | list[str] | tuple[str, ...] | None` | The list of CLI arguments to parse. Defaults to None. If set to True, defaults to sys.argv[1:]. | `None` | | `_cli_settings_source` | `CliSettingsSource[Any] | None` | Override the default CLI settings source with a user defined instance. Defaults to None. | `None` | | `_cli_parse_none_str` | `str | None` | The CLI string value that should be parsed (e.g. "null", "void", "None", etc.) into None type(None). Defaults to \_env_parse_none_str value if set. Otherwise, defaults to "null" if \_cli_avoid_json is False, and "None" if \_cli_avoid_json is True. | `None` | | `_cli_hide_none_type` | `bool | None` | Hide None values in CLI help text. Defaults to False. | `None` | | `_cli_avoid_json` | `bool | None` | Avoid complex JSON objects in CLI help text. Defaults to False. | `None` | | `_cli_enforce_required` | `bool | None` | Enforce required fields at the CLI. Defaults to False. | `None` | | `_cli_use_class_docs_for_groups` | `bool | None` | Use class docstrings in CLI group help text instead of field descriptions. Defaults to False. | `None` | | `_cli_exit_on_error` | `bool | None` | Determines whether or not the internal parser exits with error info when an error occurs. Defaults to True. | `None` | | `_cli_prefix` | `str | None` | The root parser command line arguments prefix. Defaults to "". | `None` | | `_cli_flag_prefix_char` | `str | None` | The flag prefix character to use for CLI optional arguments. Defaults to '-'. | `None` | | `_cli_implicit_flags` | `bool | None` | Whether bool fields should be implicitly converted into CLI boolean flags. (e.g. --flag, --no-flag). Defaults to False. | `None` | | `_cli_ignore_unknown_args` | `bool | None` | Whether to ignore unknown CLI args and parse only known ones. Defaults to False. | `None` | | `_cli_kebab_case` | `bool | None` | CLI args use kebab case. Defaults to False. | `None` | | `_secrets_dir` | `PathType | None` | The secret files directory or a sequence of directories. Defaults to None. | `None` |
+| Name | Type | Description | Default | | --- | --- | --- | --- | | `_case_sensitive` | `bool | None` | Whether environment and CLI variable names should be read with case-sensitivity. Defaults to None. | `None` | | `_nested_model_default_partial_update` | `bool | None` | Whether to allow partial updates on nested model default object fields. Defaults to False. | `None` | | `_env_prefix` | `str | None` | Prefix for all environment variables. Defaults to None. | `None` | | `_env_prefix_target` | `EnvPrefixTarget | None` | Targets to which \_env_prefix is applied. Default: variable. | `None` | | `_env_file` | `DotenvType | None` | The env file(s) to load settings values from. Defaults to Path(''), which means that the value from model_config['env_file'] should be used. You can also pass None to indicate that environment variables should not be loaded from an env file. | `ENV_FILE_SENTINEL` | | `_env_file_encoding` | `str | None` | The env file encoding, e.g. 'latin-1'. Defaults to None. | `None` | | `_env_ignore_empty` | `bool | None` | Ignore environment variables where the value is an empty string. Default to False. | `None` | | `_env_nested_delimiter` | `str | None` | The nested env values delimiter. Defaults to None. | `None` | | `_env_nested_max_split` | `int | None` | The nested env values maximum nesting. Defaults to None, which means no limit. | `None` | | `_env_parse_none_str` | `str | None` | The env string value that should be parsed (e.g. "null", "void", "None", etc.) into None type(None). Defaults to None type(None), which means no parsing should occur. | `None` | | `_env_parse_enums` | `bool | None` | Parse enum field names to values. Defaults to None., which means no parsing should occur. | `None` | | `_cli_prog_name` | `str | None` | The CLI program name to display in help text. Defaults to None if \_cli_parse_args is None. Otherwise, defaults to sys.argv[0]. | `None` | | `_cli_parse_args` | `bool | list[str] | tuple[str, ...] | None` | The list of CLI arguments to parse. Defaults to None. If set to True, defaults to sys.argv[1:]. | `None` | | `_cli_settings_source` | `CliSettingsSource[Any] | None` | Override the default CLI settings source with a user defined instance. Defaults to None. | `None` | | `_cli_parse_none_str` | `str | None` | The CLI string value that should be parsed (e.g. "null", "void", "None", etc.) into None type(None). Defaults to \_env_parse_none_str value if set. Otherwise, defaults to "null" if \_cli_avoid_json is False, and "None" if \_cli_avoid_json is True. | `None` | | `_cli_hide_none_type` | `bool | None` | Hide None values in CLI help text. Defaults to False. | `None` | | `_cli_avoid_json` | `bool | None` | Avoid complex JSON objects in CLI help text. Defaults to False. | `None` | | `_cli_enforce_required` | `bool | None` | Enforce required fields at the CLI. Defaults to False. | `None` | | `_cli_use_class_docs_for_groups` | `bool | None` | Use class docstrings in CLI group help text instead of field descriptions. Defaults to False. | `None` | | `_cli_exit_on_error` | `bool | None` | Determines whether or not the internal parser exits with error info when an error occurs. Defaults to True. | `None` | | `_cli_prefix` | `str | None` | The root parser command line arguments prefix. Defaults to "". | `None` | | `_cli_flag_prefix_char` | `str | None` | The flag prefix character to use for CLI optional arguments. Defaults to '-'. | `None` | | `_cli_implicit_flags` | `bool | Literal['dual', 'toggle'] | None` | Controls how bool fields are exposed as CLI flags. False (default): no implicit flags are generated; booleans must be set explicitly (e.g. --flag=true). True / 'dual': optional boolean fields generate both positive and negative forms (--flag and --no-flag). 'toggle': required boolean fields remain in 'dual' mode, while optional boolean fields generate a single flag aligned with the default value (if default=False, expose --flag; if default=True, expose --no-flag). | `None` | | `_cli_ignore_unknown_args` | `bool | None` | Whether to ignore unknown CLI args and parse only known ones. Defaults to False. | `None` | | `_cli_kebab_case` | `bool | Literal['all', 'no_enums'] | None` | CLI args use kebab case. Defaults to False. | `None` | | `_cli_shortcuts` | `Mapping[str, str | list[str]] | None` | Mapping of target field name to alias names. Defaults to None. | `None` | | `_secrets_dir` | `PathType | None` | The secret files directory or a sequence of directories. Defaults to None. | `None` | | `_build_sources` | `tuple[tuple[PydanticBaseSettingsSource, ...], dict[str, Any]] | None` | Pre-initialized sources and init kwargs to use for building instantiation values. Defaults to None. | `None` |
 
 Source code in `pydantic_settings/main.py`
 
@@ -58,10 +80,12 @@ def __init__(
     _case_sensitive: bool | None = None,
     _nested_model_default_partial_update: bool | None = None,
     _env_prefix: str | None = None,
+    _env_prefix_target: EnvPrefixTarget | None = None,
     _env_file: DotenvType | None = ENV_FILE_SENTINEL,
     _env_file_encoding: str | None = None,
     _env_ignore_empty: bool | None = None,
     _env_nested_delimiter: str | None = None,
+    _env_nested_max_split: int | None = None,
     _env_parse_none_str: str | None = None,
     _env_parse_enums: bool | None = None,
     _cli_prog_name: str | None = None,
@@ -75,23 +99,27 @@ def __init__(
     _cli_exit_on_error: bool | None = None,
     _cli_prefix: str | None = None,
     _cli_flag_prefix_char: str | None = None,
-    _cli_implicit_flags: bool | None = None,
+    _cli_implicit_flags: bool | Literal['dual', 'toggle'] | None = None,
     _cli_ignore_unknown_args: bool | None = None,
-    _cli_kebab_case: bool | None = None,
+    _cli_kebab_case: bool | Literal['all', 'no_enums'] | None = None,
+    _cli_shortcuts: Mapping[str, str | list[str]] | None = None,
     _secrets_dir: PathType | None = None,
+    _build_sources: tuple[tuple[PydanticBaseSettingsSource, ...], dict[str, Any]] | None = None,
     **values: Any,
 ) -> None:
-    # Uses something other than `self` the first arg to allow "self" as a settable attribute
-    super().__init__(
-        **__pydantic_self__._settings_build_values(
-            values,
+    sources, init_kwargs = (
+        _build_sources
+        if _build_sources is not None
+        else __pydantic_self__.__class__._settings_init_sources(
             _case_sensitive=_case_sensitive,
             _nested_model_default_partial_update=_nested_model_default_partial_update,
             _env_prefix=_env_prefix,
+            _env_prefix_target=_env_prefix_target,
             _env_file=_env_file,
             _env_file_encoding=_env_file_encoding,
             _env_ignore_empty=_env_ignore_empty,
             _env_nested_delimiter=_env_nested_delimiter,
+            _env_nested_max_split=_env_nested_max_split,
             _env_parse_none_str=_env_parse_none_str,
             _env_parse_enums=_env_parse_enums,
             _cli_prog_name=_cli_prog_name,
@@ -108,9 +136,13 @@ def __init__(
             _cli_implicit_flags=_cli_implicit_flags,
             _cli_ignore_unknown_args=_cli_ignore_unknown_args,
             _cli_kebab_case=_cli_kebab_case,
+            _cli_shortcuts=_cli_shortcuts,
             _secrets_dir=_secrets_dir,
+            _init_kwargs=values,
         )
     )
+
+    super().__init__(**__pydantic_self__.__class__._settings_build_values(sources, init_kwargs))
 
 ```
 
@@ -257,28 +289,36 @@ def run(
     elif isinstance(cli_parse_args, (Namespace, SimpleNamespace, dict)):
         raise SettingsError('Error: `cli_args` must be list[str] or None when `cli_settings_source` is not used')
 
-    model_init_data['_cli_parse_args'] = cli_parse_args
-    model_init_data['_cli_exit_on_error'] = cli_exit_on_error
-    model_init_data['_cli_settings_source'] = cli_settings
     if not issubclass(model_cls, BaseSettings):
-
-        class CliAppBaseSettings(BaseSettings, model_cls):  # type: ignore
-            model_config = SettingsConfigDict(
-                nested_model_default_partial_update=True,
-                case_sensitive=True,
-                cli_hide_none_type=True,
-                cli_avoid_json=True,
-                cli_enforce_required=True,
-                cli_implicit_flags=True,
-                cli_kebab_case=True,
-            )
-
-        model = CliAppBaseSettings(**model_init_data)
+        base_settings_cls = CliApp._get_base_settings_cls(model_cls)
+        sources, init_kwargs = base_settings_cls._settings_init_sources(
+            _cli_parse_args=cli_parse_args,  # type: ignore[arg-type]
+            _cli_exit_on_error=cli_exit_on_error,
+            _cli_settings_source=cli_settings,
+            _init_kwargs=model_init_data,
+        )
+        model = base_settings_cls(**base_settings_cls._settings_build_values(sources, init_kwargs))
         model_init_data = {}
-        for field_name, field_info in model.model_fields.items():
+        for field_name, field_info in base_settings_cls.model_fields.items():
             model_init_data[_field_name_for_signature(field_name, field_info)] = getattr(model, field_name)
+        command = model_cls(**model_init_data)
+    else:
+        sources, init_kwargs = model_cls._settings_init_sources(
+            _cli_parse_args=cli_parse_args,  # type: ignore[arg-type]
+            _cli_exit_on_error=cli_exit_on_error,
+            _cli_settings_source=cli_settings,
+            _init_kwargs=model_init_data,
+        )
+        command = model_cls(_build_sources=(sources, init_kwargs))
 
-    return CliApp._run_cli_cmd(model_cls(**model_init_data), cli_cmd_method_name, is_required=False)
+    subcommand_dest = ':subcommand'
+    cli_settings_source = [source for source in sources if isinstance(source, CliSettingsSource)][0]
+    CliApp._subcommand_stack[id(command)] = (cli_settings_source, cli_settings_source.root_parser, subcommand_dest)
+    try:
+        data_model = CliApp._run_cli_cmd(command, cli_cmd_method_name, is_required=False)
+    finally:
+        del CliApp._subcommand_stack[id(command)]
+    return data_model
 
 ```
 
@@ -332,14 +372,237 @@ def run_subcommand(
         SettingsError: When no subcommand is found and cli_exit_on_error=`False`.
     """
 
-    subcommand = get_subcommand(model, is_required=True, cli_exit_on_error=cli_exit_on_error)
-    return CliApp._run_cli_cmd(subcommand, cli_cmd_method_name, is_required=True)
+    if id(model) in CliApp._subcommand_stack:
+        cli_settings_source, parser, subcommand_dest = CliApp._subcommand_stack[id(model)]
+    else:
+        cli_settings_source = CliSettingsSource[Any](CliApp._get_base_settings_cls(type(model)))
+        parser = cli_settings_source.root_parser
+        subcommand_dest = ':subcommand'
+
+    cli_exit_on_error = cli_settings_source.cli_exit_on_error if cli_exit_on_error is None else cli_exit_on_error
+
+    errors: list[SettingsError | SystemExit] = []
+    subcommand = get_subcommand(
+        model, is_required=True, cli_exit_on_error=cli_exit_on_error, _suppress_errors=errors
+    )
+    if errors:
+        err = errors[0]
+        if err.__context__ is None and err.__cause__ is None and cli_settings_source._format_help is not None:
+            error_message = f'{err}\n{cli_settings_source._format_help(parser)}'
+            raise type(err)(error_message) from None
+        else:
+            raise err
+
+    subcommand_cls = cast(type[BaseModel], type(subcommand))
+    subcommand_arg = cli_settings_source._parser_map[subcommand_dest][subcommand_cls]
+    subcommand_dest = f'{subcommand_arg.dest}.:subcommand'
+    subcommand_parser = subcommand_arg.parser
+    CliApp._subcommand_stack[id(subcommand)] = (cli_settings_source, subcommand_parser, subcommand_dest)
+    try:
+        data_model = CliApp._run_cli_cmd(subcommand, cli_cmd_method_name, is_required=True)
+    finally:
+        del CliApp._subcommand_stack[id(subcommand)]
+    return data_model
+
+```
+
+### serialize
+
+```python
+serialize(
+    model: PydanticModel,
+    list_style: Literal[
+        "json", "argparse", "lazy"
+    ] = "json",
+    dict_style: Literal["json", "env"] = "json",
+    positionals_first: bool = False,
+) -> list[str]
+
+```
+
+Serializes the CLI arguments for a Pydantic data model.
+
+Parameters:
+
+| Name | Type | Description | Default | | --- | --- | --- | --- | | `model` | `PydanticModel` | The data model to serialize. | *required* | | `list_style` | `Literal['json', 'argparse', 'lazy']` | Controls how list-valued fields are serialized on the command line. - 'json' (default): Lists are encoded as a single JSON array. Example: --tags '["a","b","c"]' - 'argparse': Each list element becomes its own repeated flag, following typical argparse conventions. Example: --tags a --tags b --tags c - 'lazy': Lists are emitted as a single comma-separated string without JSON quoting or escaping. Example: --tags a,b,c | `'json'` | | `dict_style` | `Literal['json', 'env']` | Controls how dictionary-valued fields are serialized. - 'json' (default): The entire dictionary is emitted as a single JSON object. Example: --config '{"host": "localhost", "port": 5432}' - 'env': The dictionary is flattened into multiple CLI flags using environment-variable-style assignement. Example: --config host=localhost --config port=5432 | `'json'` | | `positionals_first` | `bool` | Controls whether positional arguments should be serialized first compared to optional arguments. Defaults to False. | `False` |
+
+Returns:
+
+| Type | Description | | --- | --- | | `list[str]` | The serialized CLI arguments for the data model. |
+
+Source code in `pydantic_settings/main.py`
+
+```python
+@staticmethod
+def serialize(
+    model: PydanticModel,
+    list_style: Literal['json', 'argparse', 'lazy'] = 'json',
+    dict_style: Literal['json', 'env'] = 'json',
+    positionals_first: bool = False,
+) -> list[str]:
+    """
+    Serializes the CLI arguments for a Pydantic data model.
+
+    Args:
+        model: The data model to serialize.
+        list_style:
+            Controls how list-valued fields are serialized on the command line.
+            - 'json' (default):
+              Lists are encoded as a single JSON array.
+              Example: `--tags '["a","b","c"]'`
+            - 'argparse':
+              Each list element becomes its own repeated flag, following
+              typical `argparse` conventions.
+              Example: `--tags a --tags b --tags c`
+            - 'lazy':
+              Lists are emitted as a single comma-separated string without JSON
+              quoting or escaping.
+              Example: `--tags a,b,c`
+        dict_style:
+            Controls how dictionary-valued fields are serialized.
+            - 'json' (default):
+              The entire dictionary is emitted as a single JSON object.
+              Example: `--config '{"host": "localhost", "port": 5432}'`
+            - 'env':
+              The dictionary is flattened into multiple CLI flags using
+              environment-variable-style assignement.
+              Example: `--config host=localhost --config port=5432`
+        positionals_first: Controls whether positional arguments should be serialized
+            first compared to optional arguments. Defaults to `False`.
+
+    Returns:
+        The serialized CLI arguments for the data model.
+    """
+
+    base_settings_cls = CliApp._get_base_settings_cls(type(model))
+    serialized_args = CliSettingsSource[Any](base_settings_cls)._serialized_args(
+        model,
+        list_style=list_style,
+        dict_style=dict_style,
+        positionals_first=positionals_first,
+    )
+    return CliSettingsSource._flatten_serialized_args(serialized_args, positionals_first)
+
+```
+
+### format_help
+
+```python
+format_help(
+    model: PydanticModel | type[T],
+    cli_settings_source: (
+        CliSettingsSource[Any] | None
+    ) = None,
+    strip_ansi_color: bool = False,
+) -> str
+
+```
+
+Return a string containing a help message for a Pydantic model.
+
+Parameters:
+
+| Name | Type | Description | Default | | --- | --- | --- | --- | | `model` | `PydanticModel | type[T]` | The model or model class. | *required* | | `cli_settings_source` | `CliSettingsSource[Any] | None` | Override the default CLI settings source with a user defined instance. Defaults to None. | `None` | | `strip_ansi_color` | `bool` | Strips ANSI color codes from the help message when set to True. | `False` |
+
+Returns:
+
+| Type | Description | | --- | --- | | `str` | The help message string for the model. |
+
+Source code in `pydantic_settings/main.py`
+
+```python
+@staticmethod
+def format_help(
+    model: PydanticModel | type[T],
+    cli_settings_source: CliSettingsSource[Any] | None = None,
+    strip_ansi_color: bool = False,
+) -> str:
+    """
+    Return a string containing a help message for a Pydantic model.
+
+    Args:
+        model: The model or model class.
+        cli_settings_source: Override the default CLI settings source with a user defined instance.
+            Defaults to `None`.
+        strip_ansi_color: Strips ANSI color codes from the help message when set to `True`.
+
+    Returns:
+        The help message string for the model.
+    """
+    model_cls = model if isinstance(model, type) else type(model)
+    if cli_settings_source is None:
+        if not isinstance(model, type) and id(model) in CliApp._subcommand_stack:
+            cli_settings_source, *_ = CliApp._subcommand_stack[id(model)]
+        else:
+            cli_settings_source = CliSettingsSource(CliApp._get_base_settings_cls(model_cls))
+    help_message = cli_settings_source._format_help(cli_settings_source.root_parser)
+    return help_message if not strip_ansi_color else CliApp._ansi_color.sub('', help_message)
+
+```
+
+### print_help
+
+```python
+print_help(
+    model: PydanticModel | type[T],
+    cli_settings_source: (
+        CliSettingsSource[Any] | None
+    ) = None,
+    file: TextIO | None = None,
+    strip_ansi_color: bool = False,
+) -> None
+
+```
+
+Print a help message for a Pydantic model.
+
+Parameters:
+
+| Name | Type | Description | Default | | --- | --- | --- | --- | | `model` | `PydanticModel | type[T]` | The model or model class. | *required* | | `cli_settings_source` | `CliSettingsSource[Any] | None` | Override the default CLI settings source with a user defined instance. Defaults to None. | `None` | | `file` | `TextIO | None` | A text stream to which the help message is written. If None, the output is sent to sys.stdout. | `None` | | `strip_ansi_color` | `bool` | Strips ANSI color codes from the help message when set to True. | `False` |
+
+Source code in `pydantic_settings/main.py`
+
+```python
+@staticmethod
+def print_help(
+    model: PydanticModel | type[T],
+    cli_settings_source: CliSettingsSource[Any] | None = None,
+    file: TextIO | None = None,
+    strip_ansi_color: bool = False,
+) -> None:
+    """
+    Print a help message for a Pydantic model.
+
+    Args:
+        model: The model or model class.
+        cli_settings_source: Override the default CLI settings source with a user defined instance.
+            Defaults to `None`.
+        file: A text stream to which the help message is written. If `None`, the output is sent to sys.stdout.
+        strip_ansi_color: Strips ANSI color codes from the help message when set to `True`.
+    """
+    print(
+        CliApp.format_help(
+            model,
+            cli_settings_source=cli_settings_source,
+            strip_ansi_color=strip_ansi_color,
+        ),
+        file=file,
+    )
 
 ```
 
 ## SettingsConfigDict
 
 Bases: `ConfigDict`
+
+### yaml_config_section
+
+```python
+yaml_config_section: str | None
+
+```
+
+Specifies the section in a YAML file from which to load the settings. Supports dot-notation for nested paths (e.g., 'config.app.settings'). If provided, the settings will be loaded from the specified section. This is useful when the YAML file contains multiple configuration sections and you only want to load a specific subset into your settings model.
 
 ### pyproject_toml_depth
 
@@ -382,9 +645,16 @@ CliSettingsSource(
     cli_exit_on_error: bool | None = None,
     cli_prefix: str | None = None,
     cli_flag_prefix_char: str | None = None,
-    cli_implicit_flags: bool | None = None,
+    cli_implicit_flags: (
+        bool | Literal["dual", "toggle"] | None
+    ) = None,
     cli_ignore_unknown_args: bool | None = None,
-    cli_kebab_case: bool | None = None,
+    cli_kebab_case: (
+        bool | Literal["all", "no_enums"] | None
+    ) = None,
+    cli_shortcuts: (
+        Mapping[str, str | list[str]] | None
+    ) = None,
     case_sensitive: bool | None = True,
     root_parser: Any = None,
     parse_args_method: Callable[..., Any] | None = None,
@@ -400,6 +670,9 @@ CliSettingsSource(
     add_subparsers_method: (
         Callable[..., Any] | None
     ) = add_subparsers,
+    format_help_method: (
+        Callable[..., Any] | None
+    ) = format_help,
     formatter_class: Any = RawDescriptionHelpFormatter,
 )
 
@@ -415,9 +688,9 @@ A `CliSettingsSource` connects with a `root_parser` object by using the parser m
 
 Parameters:
 
-| Name | Type | Description | Default | | --- | --- | --- | --- | | `cli_prog_name` | `str | None` | The CLI program name to display in help text. Defaults to None if cli_parse_args is None. Otherwse, defaults to sys.argv[0]. | `None` | | `cli_parse_args` | `bool | list[str] | tuple[str, ...] | None` | The list of CLI arguments to parse. Defaults to None. If set to True, defaults to sys.argv[1:]. | `None` | | `cli_parse_none_str` | `str | None` | The CLI string value that should be parsed (e.g. "null", "void", "None", etc.) into None type(None). Defaults to "null" if cli_avoid_json is False, and "None" if cli_avoid_json is True. | `None` | | `cli_hide_none_type` | `bool | None` | Hide None values in CLI help text. Defaults to False. | `None` | | `cli_avoid_json` | `bool | None` | Avoid complex JSON objects in CLI help text. Defaults to False. | `None` | | `cli_enforce_required` | `bool | None` | Enforce required fields at the CLI. Defaults to False. | `None` | | `cli_use_class_docs_for_groups` | `bool | None` | Use class docstrings in CLI group help text instead of field descriptions. Defaults to False. | `None` | | `cli_exit_on_error` | `bool | None` | Determines whether or not the internal parser exits with error info when an error occurs. Defaults to True. | `None` | | `cli_prefix` | `str | None` | Prefix for command line arguments added under the root parser. Defaults to "". | `None` | | `cli_flag_prefix_char` | `str | None` | The flag prefix character to use for CLI optional arguments. Defaults to '-'. | `None` | | `cli_implicit_flags` | `bool | None` | Whether bool fields should be implicitly converted into CLI boolean flags. (e.g. --flag, --no-flag). Defaults to False. | `None` | | `cli_ignore_unknown_args` | `bool | None` | Whether to ignore unknown CLI args and parse only known ones. Defaults to False. | `None` | | `cli_kebab_case` | `bool | None` | CLI args use kebab case. Defaults to False. | `None` | | `case_sensitive` | `bool | None` | Whether CLI "--arg" names should be read with case-sensitivity. Defaults to True. Note: Case-insensitive matching is only supported on the internal root parser and does not apply to CLI subcommands. | `True` | | `root_parser` | `Any` | The root parser object. | `None` | | `parse_args_method` | `Callable[..., Any] | None` | The root parser parse args method. Defaults to argparse.ArgumentParser.parse_args. | `None` | | `add_argument_method` | `Callable[..., Any] | None` | The root parser add argument method. Defaults to argparse.ArgumentParser.add_argument. | `add_argument` | | `add_argument_group_method` | `Callable[..., Any] | None` | The root parser add argument group method. Defaults to argparse.ArgumentParser.add_argument_group. | `add_argument_group` | | `add_parser_method` | `Callable[..., Any] | None` | The root parser add new parser (sub-command) method. Defaults to argparse.\_SubParsersAction.add_parser. | `add_parser` | | `add_subparsers_method` | `Callable[..., Any] | None` | The root parser add subparsers (sub-commands) method. Defaults to argparse.ArgumentParser.add_subparsers. | `add_subparsers` | | `formatter_class` | `Any` | A class for customizing the root parser help text. Defaults to argparse.RawDescriptionHelpFormatter. | `RawDescriptionHelpFormatter` |
+| Name | Type | Description | Default | | --- | --- | --- | --- | | `cli_prog_name` | `str | None` | The CLI program name to display in help text. Defaults to None if cli_parse_args is None. Otherwise, defaults to sys.argv[0]. | `None` | | `cli_parse_args` | `bool | list[str] | tuple[str, ...] | None` | The list of CLI arguments to parse. Defaults to None. If set to True, defaults to sys.argv[1:]. | `None` | | `cli_parse_none_str` | `str | None` | The CLI string value that should be parsed (e.g. "null", "void", "None", etc.) into None type(None). Defaults to "null" if cli_avoid_json is False, and "None" if cli_avoid_json is True. | `None` | | `cli_hide_none_type` | `bool | None` | Hide None values in CLI help text. Defaults to False. | `None` | | `cli_avoid_json` | `bool | None` | Avoid complex JSON objects in CLI help text. Defaults to False. | `None` | | `cli_enforce_required` | `bool | None` | Enforce required fields at the CLI. Defaults to False. | `None` | | `cli_use_class_docs_for_groups` | `bool | None` | Use class docstrings in CLI group help text instead of field descriptions. Defaults to False. | `None` | | `cli_exit_on_error` | `bool | None` | Determines whether or not the internal parser exits with error info when an error occurs. Defaults to True. | `None` | | `cli_prefix` | `str | None` | Prefix for command line arguments added under the root parser. Defaults to "". | `None` | | `cli_flag_prefix_char` | `str | None` | The flag prefix character to use for CLI optional arguments. Defaults to '-'. | `None` | | `cli_implicit_flags` | `bool | Literal['dual', 'toggle'] | None` | Controls how bool fields are exposed as CLI flags. False (default): no implicit flags are generated; booleans must be set explicitly (e.g. --flag=true). True / 'dual': optional boolean fields generate both positive and negative forms (--flag and --no-flag). 'toggle': required boolean fields remain in 'dual' mode, while optional boolean fields generate a single flag aligned with the default value (if default=False, expose --flag; if default=True, expose --no-flag). | `None` | | `cli_ignore_unknown_args` | `bool | None` | Whether to ignore unknown CLI args and parse only known ones. Defaults to False. | `None` | | `cli_kebab_case` | `bool | Literal['all', 'no_enums'] | None` | CLI args use kebab case. Defaults to False. | `None` | | `cli_shortcuts` | `Mapping[str, str | list[str]] | None` | Mapping of target field name to alias names. Defaults to None. | `None` | | `case_sensitive` | `bool | None` | Whether CLI "--arg" names should be read with case-sensitivity. Defaults to True. Note: Case-insensitive matching is only supported on the internal root parser and does not apply to CLI subcommands. | `True` | | `root_parser` | `Any` | The root parser object. | `None` | | `parse_args_method` | `Callable[..., Any] | None` | The root parser parse args method. Defaults to argparse.ArgumentParser.parse_args. | `None` | | `add_argument_method` | `Callable[..., Any] | None` | The root parser add argument method. Defaults to argparse.ArgumentParser.add_argument. | `add_argument` | | `add_argument_group_method` | `Callable[..., Any] | None` | The root parser add argument group method. Defaults to argparse.ArgumentParser.add_argument_group. | `add_argument_group` | | `add_parser_method` | `Callable[..., Any] | None` | The root parser add new parser (sub-command) method. Defaults to argparse.\_SubParsersAction.add_parser. | `add_parser` | | `add_subparsers_method` | `Callable[..., Any] | None` | The root parser add subparsers (sub-commands) method. Defaults to argparse.ArgumentParser.add_subparsers. | `add_subparsers` | | `format_help_method` | `Callable[..., Any] | None` | The root parser format help method. Defaults to argparse.ArgumentParser.format_help. | `format_help` | | `formatter_class` | `Any` | A class for customizing the root parser help text. Defaults to argparse.RawDescriptionHelpFormatter. | `RawDescriptionHelpFormatter` |
 
-Source code in `pydantic_settings/sources.py`
+Source code in `pydantic_settings/sources/providers/cli.py`
 
 ```python
 def __init__(
@@ -433,9 +706,10 @@ def __init__(
     cli_exit_on_error: bool | None = None,
     cli_prefix: str | None = None,
     cli_flag_prefix_char: str | None = None,
-    cli_implicit_flags: bool | None = None,
+    cli_implicit_flags: bool | Literal['dual', 'toggle'] | None = None,
     cli_ignore_unknown_args: bool | None = None,
-    cli_kebab_case: bool | None = None,
+    cli_kebab_case: bool | Literal['all', 'no_enums'] | None = None,
+    cli_shortcuts: Mapping[str, str | list[str]] | None = None,
     case_sensitive: bool | None = True,
     root_parser: Any = None,
     parse_args_method: Callable[..., Any] | None = None,
@@ -443,6 +717,7 @@ def __init__(
     add_argument_group_method: Callable[..., Any] | None = ArgumentParser.add_argument_group,
     add_parser_method: Callable[..., Any] | None = _SubParsersAction.add_parser,
     add_subparsers_method: Callable[..., Any] | None = ArgumentParser.add_subparsers,
+    format_help_method: Callable[..., Any] | None = ArgumentParser.format_help,
     formatter_class: Any = RawDescriptionHelpFormatter,
 ) -> None:
     self.cli_prog_name = (
@@ -498,6 +773,9 @@ def __init__(
     self.cli_kebab_case = (
         cli_kebab_case if cli_kebab_case is not None else settings_cls.model_config.get('cli_kebab_case', False)
     )
+    self.cli_shortcuts = (
+        cli_shortcuts if cli_shortcuts is not None else settings_cls.model_config.get('cli_shortcuts', None)
+    )
 
     case_sensitive = case_sensitive if case_sensitive is not None else True
     if not case_sensitive and root_parser is not None:
@@ -510,16 +788,18 @@ def __init__(
         env_parse_enums=True,
         env_prefix=self.cli_prefix,
         case_sensitive=case_sensitive,
+        env_nested_max_split=0,
     )
 
     root_parser = (
         _CliInternalArgParser(
             cli_exit_on_error=self.cli_exit_on_error,
             prog=self.cli_prog_name,
-            description=None if settings_cls.__doc__ is None else dedent(settings_cls.__doc__),
+            description=_get_model_description(settings_cls),
             formatter_class=formatter_class,
             prefix_chars=self.cli_flag_prefix_char,
             allow_abbrev=False,
+            add_help=False,
         )
         if root_parser is None
         else root_parser
@@ -531,6 +811,7 @@ def __init__(
         add_argument_group_method=add_argument_group_method,
         add_parser_method=add_parser_method,
         add_subparsers_method=add_subparsers_method,
+        format_help_method=format_help_method,
         formatter_class=formatter_class,
     )
 
@@ -539,7 +820,7 @@ def __init__(
             cli_parse_args = sys.argv[1:]
         elif not isinstance(cli_parse_args, (list, tuple)):
             raise SettingsError(
-                f'cli_parse_args must be List[str] or Tuple[str, ...], recieved {type(cli_parse_args)}'
+                f'cli_parse_args must be a list or tuple of strings, received {type(cli_parse_args)}'
             )
         self._load_env_vars(parsed_args=self._parse_args(self.root_parser, cli_parse_args))
 
@@ -561,9 +842,12 @@ DotEnvSettingsSource(
     settings_cls: type[BaseSettings],
     env_file: DotenvType | None = ENV_FILE_SENTINEL,
     env_file_encoding: str | None = None,
+    dotenv_filtering: DotenvFiltering | None = None,
     case_sensitive: bool | None = None,
     env_prefix: str | None = None,
+    env_prefix_target: EnvPrefixTarget | None = None,
     env_nested_delimiter: str | None = None,
+    env_nested_max_split: int | None = None,
     env_ignore_empty: bool | None = None,
     env_parse_none_str: str | None = None,
     env_parse_enums: bool | None = None,
@@ -575,7 +859,7 @@ Bases: `EnvSettingsSource`
 
 Source class for loading settings values from env files.
 
-Source code in `pydantic_settings/sources.py`
+Source code in `pydantic_settings/sources/providers/dotenv.py`
 
 ```python
 def __init__(
@@ -583,9 +867,12 @@ def __init__(
     settings_cls: type[BaseSettings],
     env_file: DotenvType | None = ENV_FILE_SENTINEL,
     env_file_encoding: str | None = None,
+    dotenv_filtering: DotenvFiltering | None = None,
     case_sensitive: bool | None = None,
     env_prefix: str | None = None,
+    env_prefix_target: EnvPrefixTarget | None = None,
     env_nested_delimiter: str | None = None,
+    env_nested_max_split: int | None = None,
     env_ignore_empty: bool | None = None,
     env_parse_none_str: str | None = None,
     env_parse_enums: bool | None = None,
@@ -594,11 +881,16 @@ def __init__(
     self.env_file_encoding = (
         env_file_encoding if env_file_encoding is not None else settings_cls.model_config.get('env_file_encoding')
     )
+    self.dotenv_filtering = (
+        dotenv_filtering if dotenv_filtering is not None else settings_cls.model_config.get('dotenv_filtering')
+    )
     super().__init__(
         settings_cls,
         case_sensitive,
         env_prefix,
+        env_prefix_target,
         env_nested_delimiter,
+        env_nested_max_split,
         env_ignore_empty,
         env_parse_none_str,
         env_parse_enums,
@@ -613,7 +905,9 @@ EnvSettingsSource(
     settings_cls: type[BaseSettings],
     case_sensitive: bool | None = None,
     env_prefix: str | None = None,
+    env_prefix_target: EnvPrefixTarget | None = None,
     env_nested_delimiter: str | None = None,
+    env_nested_max_split: int | None = None,
     env_ignore_empty: bool | None = None,
     env_parse_none_str: str | None = None,
     env_parse_enums: bool | None = None,
@@ -625,7 +919,7 @@ Bases: `PydanticBaseEnvSettingsSource`
 
 Source class for loading settings values from environment variables.
 
-Source code in `pydantic_settings/sources.py`
+Source code in `pydantic_settings/sources/providers/env.py`
 
 ```python
 def __init__(
@@ -633,17 +927,29 @@ def __init__(
     settings_cls: type[BaseSettings],
     case_sensitive: bool | None = None,
     env_prefix: str | None = None,
+    env_prefix_target: EnvPrefixTarget | None = None,
     env_nested_delimiter: str | None = None,
+    env_nested_max_split: int | None = None,
     env_ignore_empty: bool | None = None,
     env_parse_none_str: str | None = None,
     env_parse_enums: bool | None = None,
 ) -> None:
     super().__init__(
-        settings_cls, case_sensitive, env_prefix, env_ignore_empty, env_parse_none_str, env_parse_enums
+        settings_cls,
+        case_sensitive,
+        env_prefix,
+        env_prefix_target,
+        env_ignore_empty,
+        env_parse_none_str,
+        env_parse_enums,
     )
     self.env_nested_delimiter = (
         env_nested_delimiter if env_nested_delimiter is not None else self.config.get('env_nested_delimiter')
     )
+    self.env_nested_max_split = (
+        env_nested_max_split if env_nested_max_split is not None else self.config.get('env_nested_max_split')
+    )
+    self.maxsplit = (self.env_nested_max_split or 0) - 1
     self.env_prefix_len = len(self.env_prefix)
 
     self.env_vars = self._load_env_vars()
@@ -669,7 +975,7 @@ Returns:
 
 | Type | Description | | --- | --- | | `tuple[Any, str, bool]` | A tuple that contains the value (None if not found), key, and a flag to determine whether value is complex. |
 
-Source code in `pydantic_settings/sources.py`
+Source code in `pydantic_settings/sources/providers/env.py`
 
 ```python
 def get_field_value(self, field: FieldInfo, field_name: str) -> tuple[Any, str, bool]:
@@ -724,7 +1030,7 @@ Raises:
 
 | Type | Description | | --- | --- | | `ValuesError` | When There is an error in deserializing value for complex field. |
 
-Source code in `pydantic_settings/sources.py`
+Source code in `pydantic_settings/sources/providers/env.py`
 
 ```python
 def prepare_field_value(self, field_name: str, field: FieldInfo, value: Any, value_is_complex: bool) -> Any:
@@ -771,7 +1077,7 @@ def prepare_field_value(self, field_name: str, field: FieldInfo, value: Any, val
                 return value
     elif value is not None:
         # simplest case, field is not complex, we only need to add the value if it was found
-        return value
+        return self._coerce_env_val_strict(field, value)
 
 ```
 
@@ -824,7 +1130,7 @@ Returns:
 | --- | --- |
 | `FieldInfo | None` | Field if it finds the next field otherwise None. |
 
-Source code in `pydantic_settings/sources.py`
+Source code in `pydantic_settings/sources/providers/env.py`
 
 ```python
 def next_field(
@@ -863,12 +1169,14 @@ def next_field(
         return None
 
     annotation = field.annotation if isinstance(field, FieldInfo) else field
-    if origin_is_union(get_origin(annotation)) or isinstance(annotation, WithArgsTypes):
-        for type_ in get_args(annotation):
-            type_has_key = self.next_field(type_, key, case_sensitive)
-            if type_has_key:
-                return type_has_key
-    elif is_model_class(annotation) or is_pydantic_dataclass(annotation):
+    for type_ in get_args(annotation):
+        type_has_key = self.next_field(type_, key, case_sensitive)
+        if type_has_key:
+            return type_has_key
+    if _lenient_issubclass(get_origin(annotation), dict):
+        # get value type if it's a dict
+        return get_args(annotation)[-1]
+    elif is_model_class(annotation) or is_pydantic_dataclass(annotation):  # type: ignore[arg-type]
         fields = _get_model_fields(annotation)
         # `case_sensitive is None` is here to be compatible with the old behavior.
         # Has to be removed in V3.
@@ -906,10 +1214,10 @@ Returns:
 
 | Type | Description | | --- | --- | | `dict[str, Any]` | A dictionary contains extracted values from nested env values. |
 
-Source code in `pydantic_settings/sources.py`
+Source code in `pydantic_settings/sources/providers/env.py`
 
 ```python
-def explode_env_vars(self, field_name: str, field: FieldInfo, env_vars: Mapping[str, str | None]) -> dict[str, Any]:
+def explode_env_vars(self, field_name: str, field: FieldInfo, env_vars: Mapping[str, str | None]) -> dict[str, Any]:  # noqa: C901
     """
     Process env_vars and extract the values of keys containing env_nested_delimiter into nested dictionaries.
 
@@ -923,18 +1231,24 @@ def explode_env_vars(self, field_name: str, field: FieldInfo, env_vars: Mapping[
     Returns:
         A dictionary contains extracted values from nested env values.
     """
-    is_dict = lenient_issubclass(get_origin(field.annotation), dict)
+    if not self.env_nested_delimiter:
+        return {}
+
+    ann = field.annotation
+    is_dict = ann is dict or _lenient_issubclass(get_origin(ann), dict)
 
     prefixes = [
         f'{env_name}{self.env_nested_delimiter}' for _, env_name, _ in self._extract_field_info(field, field_name)
     ]
     result: dict[str, Any] = {}
     for env_name, env_val in env_vars.items():
-        if not any(env_name.startswith(prefix) for prefix in prefixes):
+        try:
+            prefix = next(prefix for prefix in prefixes if env_name.startswith(prefix))
+        except StopIteration:
             continue
         # we remove the prefix before splitting in case the prefix has characters in common with the delimiter
-        env_name_without_prefix = env_name[self.env_prefix_len :]
-        _, *keys, last_key = env_name_without_prefix.split(self.env_nested_delimiter)
+        env_name_without_prefix = env_name[len(prefix) :]
+        *keys, last_key = env_name_without_prefix.split(self.env_nested_delimiter, self.maxsplit)
         env_var = result
         target_field: FieldInfo | None = field
         for key in keys:
@@ -947,21 +1261,28 @@ def explode_env_vars(self, field_name: str, field: FieldInfo, env_vars: Mapping[
 
         # check if env_val maps to a complex field and if so, parse the env_val
         if (target_field or is_dict) and env_val:
-            if target_field:
+            if isinstance(target_field, FieldInfo):
                 is_complex, allow_json_failure = self._field_is_complex(target_field)
+                if self.env_parse_enums:
+                    enum_val = _annotation_enum_name_to_val(target_field.annotation, env_val)
+                    env_val = env_val if enum_val is None else enum_val
+            elif target_field:
+                # target_field is a raw type (e.g. from dict value type annotation)
+                is_complex = _annotation_is_complex(target_field, [])
+                allow_json_failure = True
             else:
                 # nested field type is dict
                 is_complex, allow_json_failure = True, True
             if is_complex:
                 try:
-                    env_val = self.decode_complex_value(last_key, target_field, env_val)  # type: ignore
+                    field_info = target_field if isinstance(target_field, FieldInfo) else None
+                    env_val = self.decode_complex_value(last_key, field_info, env_val)  # type: ignore
                 except ValueError as e:
                     if not allow_json_failure:
                         raise e
         if isinstance(env_var, dict):
             if last_key not in env_var or not isinstance(env_val, EnvNoneType) or env_var[last_key] == {}:
-                env_var[last_key] = env_val
-
+                env_var[last_key] = self._coerce_env_val_strict(target_field, env_val)
     return result
 
 ```
@@ -969,6 +1290,148 @@ def explode_env_vars(self, field_name: str, field: FieldInfo, env_vars: Mapping[
 ## ForceDecode
 
 Annotation to force decoding of a field value.
+
+## GoogleSecretManagerSettingsSource
+
+```python
+GoogleSecretManagerSettingsSource(
+    settings_cls: type[BaseSettings],
+    credentials: Credentials | None = None,
+    project_id: str | None = None,
+    env_prefix: str | None = None,
+    env_parse_none_str: str | None = None,
+    env_parse_enums: bool | None = None,
+    secret_client: SecretManagerServiceClient | None = None,
+    case_sensitive: bool | None = True,
+)
+
+```
+
+Bases: `EnvSettingsSource`
+
+Source code in `pydantic_settings/sources/providers/gcp.py`
+
+```python
+def __init__(
+    self,
+    settings_cls: type[BaseSettings],
+    credentials: Credentials | None = None,
+    project_id: str | None = None,
+    env_prefix: str | None = None,
+    env_parse_none_str: str | None = None,
+    env_parse_enums: bool | None = None,
+    secret_client: SecretManagerServiceClient | None = None,
+    case_sensitive: bool | None = True,
+) -> None:
+    # Import Google Packages if they haven't already been imported
+    if SecretManagerServiceClient is None or Credentials is None or google_auth_default is None:
+        import_gcp_secret_manager()
+
+    # If credentials or project_id are not passed, then
+    # try to get them from the default function
+    if not credentials or not project_id:
+        _creds, _project_id = google_auth_default()
+
+    # Set the credentials and/or project id if they weren't specified
+    if credentials is None:
+        credentials = _creds
+
+    if project_id is None:
+        if isinstance(_project_id, str):
+            project_id = _project_id
+        else:
+            raise AttributeError(
+                'project_id is required to be specified either as an argument or from the google.auth.default. See https://google-auth.readthedocs.io/en/master/reference/google.auth.html#google.auth.default'
+            )
+
+    self._credentials: Credentials = credentials
+    self._project_id: str = project_id
+
+    if secret_client:
+        self._secret_client = secret_client
+    else:
+        self._secret_client = SecretManagerServiceClient(credentials=self._credentials)
+
+    super().__init__(
+        settings_cls,
+        case_sensitive=case_sensitive,
+        env_prefix=env_prefix,
+        env_ignore_empty=False,
+        env_parse_none_str=env_parse_none_str,
+        env_parse_enums=env_parse_enums,
+    )
+
+```
+
+### get_field_value
+
+```python
+get_field_value(
+    field: FieldInfo, field_name: str
+) -> tuple[Any, str, bool]
+
+```
+
+Override get_field_value to get the secret value from GCP Secret Manager. Look for a SecretVersion metadata field to specify a particular SecretVersion.
+
+Parameters:
+
+| Name | Type | Description | Default | | --- | --- | --- | --- | | `field` | `FieldInfo` | The field to get the value for | *required* | | `field_name` | `str` | The declared name of the field | *required* |
+
+Returns:
+
+| Type | Description | | --- | --- | | `Any` | A tuple of (value, key, value_is_complex), where key is the identifier used | | `str` | to populate the model (either the field name or an alias, depending on | | `bool` | configuration). |
+
+Source code in `pydantic_settings/sources/providers/gcp.py`
+
+```python
+def get_field_value(self, field: FieldInfo, field_name: str) -> tuple[Any, str, bool]:
+    """Override get_field_value to get the secret value from GCP Secret Manager.
+    Look for a SecretVersion metadata field to specify a particular SecretVersion.
+
+    Args:
+        field: The field to get the value for
+        field_name: The declared name of the field
+
+    Returns:
+        A tuple of (value, key, value_is_complex), where `key` is the identifier used
+        to populate the model (either the field name or an alias, depending on
+        configuration).
+    """
+
+    secret_version = next((m.version for m in field.metadata if isinstance(m, SecretVersion)), None)
+
+    # If a secret version is specified, try to get that specific version of the secret from
+    # GCP Secret Manager via the GoogleSecretManagerMapping. This allows different versions
+    # of the same secret name to be retrieved independently and cached in the GoogleSecretManagerMapping
+    if secret_version and isinstance(self.env_vars, GoogleSecretManagerMapping):
+        for field_key, env_name, value_is_complex in self._extract_field_info(field, field_name):
+            gcp_secret_name = self.env_vars._secret_name_map.get(env_name)
+            if gcp_secret_name is None and not self.case_sensitive:
+                gcp_secret_name = self.env_vars._secret_name_map.get(env_name.lower())
+
+            if gcp_secret_name:
+                env_val = self.env_vars._get_secret_value(gcp_secret_name, secret_version)
+                if env_val is not None:
+                    # If populate_by_name is enabled, return field_name to allow multiple fields
+                    # with the same alias but different versions to be distinguished
+                    if self.settings_cls.model_config.get('populate_by_name'):
+                        return env_val, field_name, value_is_complex
+                    return env_val, field_key, value_is_complex
+
+        # If a secret version is specified but not found, we should not fall back to "latest" (default behavior)
+        # as that would be incorrect. We return None to indicate the value was not found.
+        return None, field_name, False
+
+    val, key, is_complex = super().get_field_value(field, field_name)
+
+    # If populate_by_name is enabled, we need to return the field_name as the key
+    # without this being enabled, you cannot load two secrets with the same name but different versions
+    if self.settings_cls.model_config.get('populate_by_name') and val is not None:
+        return val, field_name, is_complex
+    return val, key, is_complex
+
+```
 
 ## InitSettingsSource
 
@@ -985,7 +1448,7 @@ Bases: `PydanticBaseSettingsSource`
 
 Source class for loading values provided during settings class initialization.
 
-Source code in `pydantic_settings/sources.py`
+Source code in `pydantic_settings/sources/base.py`
 
 ```python
 def __init__(
@@ -994,7 +1457,35 @@ def __init__(
     init_kwargs: dict[str, Any],
     nested_model_default_partial_update: bool | None = None,
 ):
-    self.init_kwargs = init_kwargs
+    self.init_kwargs = {}
+    init_kwarg_names = set(init_kwargs.keys())
+    for field_name, field_info in settings_cls.model_fields.items():
+        alias_names, *_ = _get_alias_names(field_name, field_info)
+        # When populate_by_name is True, allow using the field name as an input key,
+        # but normalize to the preferred alias to keep keys consistent across sources.
+        matchable_names = set(alias_names)
+        include_name = settings_cls.model_config.get('populate_by_name', False) or settings_cls.model_config.get(
+            'validate_by_name', False
+        )
+        if include_name:
+            matchable_names.add(field_name)
+        init_kwarg_name = init_kwarg_names & matchable_names
+        if init_kwarg_name:
+            preferred_alias = alias_names[0] if alias_names else field_name
+            # Choose provided key deterministically: prefer the first alias in alias_names order;
+            # fall back to field_name if allowed and provided.
+            provided_key = next((alias for alias in alias_names if alias in init_kwarg_names), None)
+            if provided_key is None and include_name and field_name in init_kwarg_names:
+                provided_key = field_name
+            # provided_key should not be None here because init_kwarg_name is non-empty
+            assert provided_key is not None
+            init_kwarg_names -= init_kwarg_name
+            self.init_kwargs[preferred_alias] = init_kwargs[provided_key]
+    # Include any remaining init kwargs (e.g., extras) unchanged
+    # Note: If populate_by_name is True and the provided key is the field name, but
+    # no alias exists, we keep it as-is so it can be processed as extra if allowed.
+    self.init_kwargs.update({key: val for key, val in init_kwargs.items() if key in init_kwarg_names})
+
     super().__init__(settings_cls)
     self.nested_model_default_partial_update = (
         nested_model_default_partial_update
@@ -1011,6 +1502,7 @@ JsonConfigSettingsSource(
     settings_cls: type[BaseSettings],
     json_file: PathType | None = DEFAULT_PATH,
     json_file_encoding: str | None = None,
+    deep_merge: bool = False,
 )
 
 ```
@@ -1019,7 +1511,7 @@ Bases: `InitSettingsSource`, `ConfigFileSourceMixin`
 
 A source class that loads variables from a JSON file
 
-Source code in `pydantic_settings/sources.py`
+Source code in `pydantic_settings/sources/providers/json.py`
 
 ```python
 def __init__(
@@ -1027,6 +1519,7 @@ def __init__(
     settings_cls: type[BaseSettings],
     json_file: PathType | None = DEFAULT_PATH,
     json_file_encoding: str | None = None,
+    deep_merge: bool = False,
 ):
     self.json_file_path = json_file if json_file != DEFAULT_PATH else settings_cls.model_config.get('json_file')
     self.json_file_encoding = (
@@ -1034,8 +1527,149 @@ def __init__(
         if json_file_encoding is not None
         else settings_cls.model_config.get('json_file_encoding')
     )
-    self.json_data = self._read_files(self.json_file_path)
+    self.json_data = self._read_files(self.json_file_path, deep_merge=deep_merge)
     super().__init__(settings_cls, self.json_data)
+
+```
+
+## NestedSecretsSettingsSource
+
+```python
+NestedSecretsSettingsSource(
+    file_secret_settings: (
+        PydanticBaseSettingsSource | SecretsSettingsSource
+    ),
+    secrets_dir: Optional[PathType] = None,
+    secrets_dir_missing: (
+        Literal["ok", "warn", "error"] | None
+    ) = None,
+    secrets_dir_max_size: int | None = None,
+    secrets_case_sensitive: bool | None = None,
+    secrets_prefix: str | None = None,
+    secrets_nested_delimiter: str | None = None,
+    secrets_nested_subdir: bool | None = None,
+    case_sensitive: bool | None = None,
+    env_prefix: str | None = None,
+)
+
+```
+
+Bases: `EnvSettingsSource`
+
+Source code in `pydantic_settings/sources/providers/nested_secrets.py`
+
+```python
+def __init__(
+    self,
+    file_secret_settings: PydanticBaseSettingsSource | SecretsSettingsSource,
+    secrets_dir: Optional['PathType'] = None,
+    secrets_dir_missing: Literal['ok', 'warn', 'error'] | None = None,
+    secrets_dir_max_size: int | None = None,
+    secrets_case_sensitive: bool | None = None,
+    secrets_prefix: str | None = None,
+    secrets_nested_delimiter: str | None = None,
+    secrets_nested_subdir: bool | None = None,
+    # args for compatibility with SecretsSettingsSource, don't use directly
+    case_sensitive: bool | None = None,
+    env_prefix: str | None = None,
+) -> None:
+    # We allow the first argument to be settings_cls like original
+    # SecretsSettingsSource. However, it is recommended to pass
+    # SecretsSettingsSource instance instead (as it is shown in usage examples),
+    # otherwise `_secrets_dir` arg passed to Settings() constructor will be ignored.
+    settings_cls: type[BaseSettings] = getattr(
+        file_secret_settings,
+        'settings_cls',
+        file_secret_settings,  # type: ignore[arg-type]
+    )
+    # config options
+    conf = settings_cls.model_config
+    self.secrets_dir: PathType | None = first_not_none(
+        getattr(file_secret_settings, 'secrets_dir', None),
+        secrets_dir,
+        conf.get('secrets_dir'),
+    )
+    self.secrets_dir_missing: Literal['ok', 'warn', 'error'] = first_not_none(
+        secrets_dir_missing,
+        conf.get('secrets_dir_missing'),
+        'warn',
+    )
+    if self.secrets_dir_missing not in ('ok', 'warn', 'error'):
+        raise SettingsError(f'invalid secrets_dir_missing value: {self.secrets_dir_missing}')
+    self.secrets_dir_max_size: int = first_not_none(
+        secrets_dir_max_size,
+        conf.get('secrets_dir_max_size'),
+        SECRETS_DIR_MAX_SIZE,
+    )
+    self.case_sensitive: bool = first_not_none(
+        secrets_case_sensitive,
+        conf.get('secrets_case_sensitive'),
+        case_sensitive,
+        conf.get('case_sensitive'),
+        False,
+    )
+    self.secrets_prefix: str = first_not_none(
+        secrets_prefix,
+        conf.get('secrets_prefix'),
+        env_prefix,
+        conf.get('env_prefix'),
+        '',
+    )
+
+    # nested options
+    self.secrets_nested_delimiter: str | None = first_not_none(
+        secrets_nested_delimiter,
+        conf.get('secrets_nested_delimiter'),
+        conf.get('env_nested_delimiter'),
+    )
+    self.secrets_nested_subdir: bool = first_not_none(
+        secrets_nested_subdir,
+        conf.get('secrets_nested_subdir'),
+        False,
+    )
+    if self.secrets_nested_subdir:
+        if secrets_nested_delimiter or conf.get('secrets_nested_delimiter'):
+            raise SettingsError('Options secrets_nested_delimiter and secrets_nested_subdir are mutually exclusive')
+        else:
+            self.secrets_nested_delimiter = os.sep
+
+    # ensure valid secrets_path
+    if self.secrets_dir is None:
+        paths = []
+    elif isinstance(self.secrets_dir, (Path, str)):
+        paths = [self.secrets_dir]
+    else:
+        paths = list(self.secrets_dir)
+    self.secrets_paths: list[Path] = [Path(p).expanduser().resolve() for p in paths]
+    for path in self.secrets_paths:
+        self.validate_secrets_path(path)
+
+    # construct parent
+    super().__init__(
+        settings_cls,
+        case_sensitive=self.case_sensitive,
+        env_prefix=self.secrets_prefix,
+        env_nested_delimiter=self.secrets_nested_delimiter,
+        env_ignore_empty=False,  # match SecretsSettingsSource behaviour
+        env_parse_enums=True,  # we can pass everything here, it will still behave as "True"
+        env_parse_none_str=None,  # match SecretsSettingsSource behaviour
+    )
+    self.env_parse_none_str = None  # update manually because of None
+
+    # update parent members
+    if not len(self.secrets_paths):
+        self.env_vars = {}
+    else:
+        secrets = reduce(
+            lambda d1, d2: dict((*d1.items(), *d2.items())),
+            (self.load_secrets(p) for p in self.secrets_paths),
+        )
+        self.env_vars = parse_env_vars(
+            secrets,
+            self.case_sensitive,
+            self.env_ignore_empty,
+            self.env_parse_none_str,
+        )
 
 ```
 
@@ -1056,7 +1690,7 @@ Bases: `ABC`
 
 Abstract base class for settings sources, every settings source classes should inherit from it.
 
-Source code in `pydantic_settings/sources.py`
+Source code in `pydantic_settings/sources/base.py`
 
 ```python
 def __init__(self, settings_cls: type[BaseSettings]):
@@ -1106,7 +1740,7 @@ Returns:
 
 | Type | Description | | --- | --- | | `tuple[Any, str, bool]` | A tuple that contains the value, key and a flag to determine whether value is complex. |
 
-Source code in `pydantic_settings/sources.py`
+Source code in `pydantic_settings/sources/base.py`
 
 ```python
 @abstractmethod
@@ -1144,7 +1778,7 @@ Returns:
 
 | Type | Description | | --- | --- | | `bool` | Whether the field is complex. |
 
-Source code in `pydantic_settings/sources.py`
+Source code in `pydantic_settings/sources/base.py`
 
 ```python
 def field_is_complex(self, field: FieldInfo) -> bool:
@@ -1183,7 +1817,7 @@ Returns:
 
 | Type | Description | | --- | --- | | `Any` | The prepared value. |
 
-Source code in `pydantic_settings/sources.py`
+Source code in `pydantic_settings/sources/base.py`
 
 ```python
 def prepare_field_value(self, field_name: str, field: FieldInfo, value: Any, value_is_complex: bool) -> Any:
@@ -1224,7 +1858,7 @@ Returns:
 
 | Type | Description | | --- | --- | | `Any` | The decoded value for further preparation |
 
-Source code in `pydantic_settings/sources.py`
+Source code in `pydantic_settings/sources/base.py`
 
 ```python
 def decode_complex_value(self, field_name: str, field: FieldInfo, value: Any) -> Any:
@@ -1240,7 +1874,7 @@ def decode_complex_value(self, field_name: str, field: FieldInfo, value: Any) ->
         The decoded value for further preparation
     """
     if field and (
-        NoDecode in field.metadata
+        NoDecode in _get_field_metadata(field)
         or (self.config.get('enable_decoding') is False and ForceDecode not in field.metadata)
     ):
         return value
@@ -1263,7 +1897,7 @@ Bases: `TomlConfigSettingsSource`
 
 A source class that loads variables from a `pyproject.toml` file.
 
-Source code in `pydantic_settings/sources.py`
+Source code in `pydantic_settings/sources/providers/pyproject.py`
 
 ```python
 def __init__(
@@ -1292,6 +1926,7 @@ SecretsSettingsSource(
     secrets_dir: PathType | None = None,
     case_sensitive: bool | None = None,
     env_prefix: str | None = None,
+    env_prefix_target: EnvPrefixTarget | None = None,
     env_ignore_empty: bool | None = None,
     env_parse_none_str: str | None = None,
     env_parse_enums: bool | None = None,
@@ -1303,7 +1938,7 @@ Bases: `PydanticBaseEnvSettingsSource`
 
 Source class for loading settings values from secret files.
 
-Source code in `pydantic_settings/sources.py`
+Source code in `pydantic_settings/sources/providers/secrets.py`
 
 ```python
 def __init__(
@@ -1312,12 +1947,19 @@ def __init__(
     secrets_dir: PathType | None = None,
     case_sensitive: bool | None = None,
     env_prefix: str | None = None,
+    env_prefix_target: EnvPrefixTarget | None = None,
     env_ignore_empty: bool | None = None,
     env_parse_none_str: str | None = None,
     env_parse_enums: bool | None = None,
 ) -> None:
     super().__init__(
-        settings_cls, case_sensitive, env_prefix, env_ignore_empty, env_parse_none_str, env_parse_enums
+        settings_cls,
+        case_sensitive,
+        env_prefix,
+        env_prefix_target,
+        env_ignore_empty,
+        env_parse_none_str,
+        env_parse_enums,
     )
     self.secrets_dir = secrets_dir if secrets_dir is not None else self.config.get('secrets_dir')
 
@@ -1342,7 +1984,7 @@ Returns:
 
 | Type | Description | | --- | --- | | `Path | None` | Whether file path or None if file does not exist in directory. |
 
-Source code in `pydantic_settings/sources.py`
+Source code in `pydantic_settings/sources/providers/secrets.py`
 
 ```python
 @classmethod
@@ -1386,7 +2028,7 @@ Returns:
 
 | Type | Description | | --- | --- | | `tuple[Any, str, bool]` | A tuple that contains the value (None if the file does not exist), key, and a flag to determine whether value is complex. |
 
-Source code in `pydantic_settings/sources.py`
+Source code in `pydantic_settings/sources/providers/secrets.py`
 
 ```python
 def get_field_value(self, field: FieldInfo, field_name: str) -> tuple[Any, str, bool]:
@@ -1428,6 +2070,7 @@ def get_field_value(self, field: FieldInfo, field_name: str) -> tuple[Any, str, 
 TomlConfigSettingsSource(
     settings_cls: type[BaseSettings],
     toml_file: PathType | None = DEFAULT_PATH,
+    deep_merge: bool = False,
 )
 
 ```
@@ -1436,16 +2079,17 @@ Bases: `InitSettingsSource`, `ConfigFileSourceMixin`
 
 A source class that loads variables from a TOML file
 
-Source code in `pydantic_settings/sources.py`
+Source code in `pydantic_settings/sources/providers/toml.py`
 
 ```python
 def __init__(
     self,
     settings_cls: type[BaseSettings],
     toml_file: PathType | None = DEFAULT_PATH,
+    deep_merge: bool = False,
 ):
     self.toml_file_path = toml_file if toml_file != DEFAULT_PATH else settings_cls.model_config.get('toml_file')
-    self.toml_data = self._read_files(self.toml_file_path)
+    self.toml_data = self._read_files(self.toml_file_path, deep_merge=deep_merge)
     super().__init__(settings_cls, self.toml_data)
 
 ```
@@ -1457,6 +2101,8 @@ YamlConfigSettingsSource(
     settings_cls: type[BaseSettings],
     yaml_file: PathType | None = DEFAULT_PATH,
     yaml_file_encoding: str | None = None,
+    yaml_config_section: str | None = None,
+    deep_merge: bool = False,
 )
 
 ```
@@ -1465,7 +2111,7 @@ Bases: `InitSettingsSource`, `ConfigFileSourceMixin`
 
 A source class that loads variables from a yaml file
 
-Source code in `pydantic_settings/sources.py`
+Source code in `pydantic_settings/sources/providers/yaml.py`
 
 ```python
 def __init__(
@@ -1473,6 +2119,8 @@ def __init__(
     settings_cls: type[BaseSettings],
     yaml_file: PathType | None = DEFAULT_PATH,
     yaml_file_encoding: str | None = None,
+    yaml_config_section: str | None = None,
+    deep_merge: bool = False,
 ):
     self.yaml_file_path = yaml_file if yaml_file != DEFAULT_PATH else settings_cls.model_config.get('yaml_file')
     self.yaml_file_encoding = (
@@ -1480,7 +2128,17 @@ def __init__(
         if yaml_file_encoding is not None
         else settings_cls.model_config.get('yaml_file_encoding')
     )
-    self.yaml_data = self._read_files(self.yaml_file_path)
+    self.yaml_config_section = (
+        yaml_config_section
+        if yaml_config_section is not None
+        else settings_cls.model_config.get('yaml_config_section')
+    )
+    self.yaml_data = self._read_files(self.yaml_file_path, deep_merge=deep_merge)
+
+    if self.yaml_config_section is not None:
+        self.yaml_data = self._traverse_nested_section(
+            self.yaml_data, self.yaml_config_section, self.yaml_config_section
+        )
     super().__init__(settings_cls, self.yaml_data)
 
 ```
@@ -1492,7 +2150,10 @@ get_subcommand(
     model: PydanticModel,
     is_required: bool = True,
     cli_exit_on_error: bool | None = None,
-) -> Optional[PydanticModel]
+    _suppress_errors: (
+        list[SettingsError | SystemExit] | None
+    ) = None,
+) -> PydanticModel | None
 
 ```
 
@@ -1504,18 +2165,21 @@ Parameters:
 
 Returns:
 
-| Type | Description | | --- | --- | | `Optional[PydanticModel]` | The subcommand model if found, otherwise None. |
+| Type | Description | | --- | --- | | `PydanticModel | None` | The subcommand model if found, otherwise None. |
 
 Raises:
 
 | Type | Description | | --- | --- | | `SystemExit` | When no subcommand is found and is_required=True and cli_exit_on_error=True (the default). | | `SettingsError` | When no subcommand is found and is_required=True and cli_exit_on_error=False. |
 
-Source code in `pydantic_settings/sources.py`
+Source code in `pydantic_settings/sources/base.py`
 
 ```python
 def get_subcommand(
-    model: PydanticModel, is_required: bool = True, cli_exit_on_error: bool | None = None
-) -> Optional[PydanticModel]:
+    model: PydanticModel,
+    is_required: bool = True,
+    cli_exit_on_error: bool | None = None,
+    _suppress_errors: list[SettingsError | SystemExit] | None = None,
+) -> PydanticModel | None:
     """
     Get the subcommand from a model.
 
@@ -1557,7 +2221,10 @@ def get_subcommand(
             if subcommands
             else 'Error: CLI subcommand is required but no subcommands were found.'
         )
-        raise SystemExit(error_message) if cli_exit_on_error else SettingsError(error_message)
+        err = SystemExit(error_message) if cli_exit_on_error else SettingsError(error_message)
+        if _suppress_errors is None:
+            raise err
+        _suppress_errors.append(err)
 
     return None
 

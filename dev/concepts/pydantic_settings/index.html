@@ -5986,6 +5986,13 @@ environment.</p>
 the same way it would be if passed directly to the initialiser (as a string).</p>
 <p>Complex types like <code>list</code>, <code>set</code>, <code>dict</code>, and sub-models are populated from the environment by treating the
 environment variable's value as a JSON-encoded string.</p>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>Because these values are JSON-decoded, an environment variable whose value is not valid JSON raises a
+<a href="../../api/pydantic_settings/#pydantic_settings.SettingsError"><code>SettingsError</code></a>. For example, <code>NUMBERS=1,2,3</code>
+for a <code>numbers: list[int]</code> field fails, because <code>1,2,3</code> is not valid JSON. See
+<a href="#disabling-json-parsing">Disabling JSON parsing</a> if you want to parse such values with your own logic.</p>
+</div>
 <p>Another way to populate nested complex variables is to configure your model with the <code>env_nested_delimiter</code>
 config setting, then use an environment variable with a name pointing to the nested module fields.
 What it does is simply explodes your variable into nested models or dicts.
@@ -6141,9 +6148,26 @@ and it would raise a <code>ValidationError</code>.</p>
 <span class="c1">#&gt; {&#39;numbers&#39;: [1, 2, 3]}</span>
 </code></pre></div>
 <h3 id="disabling-json-parsing">Disabling JSON parsing<a class="headerlink" href="#disabling-json-parsing" title="Permanent link">&para;</a></h3>
-<p>pydantic-settings by default parses complex types from environment variables as JSON strings. If you want to disable
-this behavior for a field and parse the value in your own validator, you can annotate the field with
-<a href="../../api/pydantic_settings/#pydantic_settings.NoDecode"><code>NoDecode</code></a>:</p>
+<p>pydantic-settings by default parses complex types from environment variables as JSON strings. This means a value
+that is not valid JSON raises a <a href="../../api/pydantic_settings/#pydantic_settings.SettingsError"><code>SettingsError</code></a>:</p>
+<div class="language-py highlight"><pre><span></span><code><span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">pydantic_settings</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseSettings</span><span class="p">,</span> <span class="n">SettingsError</span>
+
+
+<span class="k">class</span><span class="w"> </span><span class="nc">Settings</span><span class="p">(</span><span class="n">BaseSettings</span><span class="p">):</span>
+    <span class="n">numbers</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span>
+
+
+<span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">[</span><span class="s1">&#39;numbers&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;1,2,3&#39;</span>
+<span class="k">try</span><span class="p">:</span>
+    <span class="n">Settings</span><span class="p">()</span>
+<span class="k">except</span> <span class="n">SettingsError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
+    <span class="c1">#&gt; error parsing value for field &quot;numbers&quot; from source &quot;EnvSettingsSource&quot;</span>
+</code></pre></div>
+<p>If you want to disable this behavior for a field and parse the value in your own validator, you can annotate the
+field with <a href="../../api/pydantic_settings/#pydantic_settings.NoDecode"><code>NoDecode</code></a>:</p>
 <div class="language-py highlight"><pre><span></span><code><span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Annotated</span>
 
@@ -6169,6 +6193,39 @@ this behavior for a field and parse the value in your own validator, you can ann
 <li>The <code>NoDecode</code> annotation disables JSON parsing for the <code>numbers</code> field. The <code>decode_numbers</code> field validator
    will be called to parse the value.</li>
 </ol>
+<p>To reuse the same parsing across multiple fields, combine <code>NoDecode</code> with a
+<a href="https://docs.pydantic.dev/latest/concepts/validators/#annotated-validators"><code>BeforeValidator</code></a> in a single
+annotated type. This is a common way to accept comma-separated values, for example for CORS origins or allowed
+hosts:</p>
+<div class="language-py highlight"><pre><span></span><code><span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Annotated</span><span class="p">,</span> <span class="n">Any</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">pydantic</span><span class="w"> </span><span class="kn">import</span> <span class="n">BeforeValidator</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">pydantic_settings</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseSettings</span><span class="p">,</span> <span class="n">NoDecode</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">split_comma</span><span class="p">(</span><span class="n">value</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Any</span><span class="p">:</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+        <span class="k">return</span> <span class="p">[</span><span class="n">item</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span> <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">value</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;,&#39;</span><span class="p">)]</span>
+    <span class="k">return</span> <span class="n">value</span>
+
+
+<span class="n">CommaSeparated</span> <span class="o">=</span> <span class="n">Annotated</span><span class="p">[</span><span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span> <span class="n">NoDecode</span><span class="p">,</span> <span class="n">BeforeValidator</span><span class="p">(</span><span class="n">split_comma</span><span class="p">)]</span>
+
+
+<span class="k">class</span><span class="w"> </span><span class="nc">Settings</span><span class="p">(</span><span class="n">BaseSettings</span><span class="p">):</span>
+    <span class="n">cors_origins</span><span class="p">:</span> <span class="n">CommaSeparated</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">trusted_hosts</span><span class="p">:</span> <span class="n">CommaSeparated</span> <span class="o">=</span> <span class="p">[]</span>
+
+
+<span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">[</span><span class="s1">&#39;cors_origins&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;https://a.com, https://b.com&#39;</span>
+<span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">[</span><span class="s1">&#39;trusted_hosts&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;a.internal&#39;</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">Settings</span><span class="p">()</span><span class="o">.</span><span class="n">model_dump</span><span class="p">())</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">{&#39;cors_origins&#39;: [&#39;https://a.com&#39;, &#39;https://b.com&#39;], &#39;trusted_hosts&#39;: [&#39;a.internal&#39;]}</span>
+<span class="sd">&quot;&quot;&quot;</span>
+</code></pre></div>
 <p>You can also disable JSON parsing for all fields by setting the <code>enable_decoding</code> config setting to <code>False</code>:</p>
 <div class="language-py highlight"><pre><span></span><code><span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
 
