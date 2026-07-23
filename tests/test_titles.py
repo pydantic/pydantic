@@ -137,6 +137,77 @@ def test_model_config_field_title_generator(field_title_generator):
     }
 
 
+def test_field_title_generator_inheritance():
+    class Model(BaseModel):
+        model_config = ConfigDict(field_title_generator=lambda name, _: name + 'a')
+
+        a: int
+
+    class Sub(Model):
+        model_config = ConfigDict(field_title_generator=lambda name, _: name + 'b')
+
+        b: int
+
+    assert Sub.model_fields['a'].title == 'ab'
+    assert Sub.model_fields['b'].title == 'bb'
+
+    assert Model.model_fields['a'].title == 'aa'
+
+
+def test_field_title_generator_inheritance_explicit_title_not_overridden():
+    class Model(BaseModel):
+        model_config = ConfigDict(field_title_generator=lambda name, _: name + 'a')
+
+        a: int = Field(title='Explicit A')
+        c: int
+
+    class Sub(Model):
+        model_config = ConfigDict(field_title_generator=lambda name, _: name + 'b')
+
+        b: int
+
+    assert Sub.model_fields['a'].title == 'Explicit A'
+    assert Sub.model_fields['b'].title == 'bb'
+    assert Sub.model_fields['c'].title == 'cb'
+
+
+def test_computed_field_title_generator_inheritance():
+    class Model(BaseModel):
+        model_config = ConfigDict(field_title_generator=lambda name, _: name + 'a')
+
+        a: int
+
+        @computed_field
+        def c(self) -> int:
+            return self.a
+
+    class Sub(Model):
+        model_config = ConfigDict(field_title_generator=lambda name, _: name + 'b')
+
+        b: int
+
+    assert Sub.model_computed_fields['c'].title == 'cb'
+    assert Model.model_computed_fields['c'].title == 'ca'
+
+
+def test_computed_field_title_generator_inheritance_explicit_title_not_overridden():
+    class Model(BaseModel):
+        model_config = ConfigDict(field_title_generator=lambda name, _: name + 'a')
+
+        a: int
+
+        @computed_field(title='Explicit C')
+        def c(self) -> int:
+            return self.a
+
+    class Sub(Model):
+        model_config = ConfigDict(field_title_generator=lambda name, _: name + 'b')
+
+        b: int
+
+    assert Sub.model_computed_fields['c'].title == 'Explicit C'
+
+
 @pytest.mark.parametrize('model_title_generator', MODEL_TITLE_GENERATORS)
 def test_dataclass_model_title_generator(model_title_generator):
     @pydantic.dataclasses.dataclass(config=ConfigDict(model_title_generator=model_title_generator))

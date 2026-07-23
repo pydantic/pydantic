@@ -1581,6 +1581,7 @@ class ComputedFieldInfo:
         alias: The alias of the property to be used during serialization.
         alias_priority: The priority of the alias. This affects whether an alias generator is used.
         title: Title of the computed field to include in the serialization JSON schema.
+        title_priority: The priority of the title. This affects whether a field title generator is used.
         field_title_generator: A callable that takes a field name and returns title for it.
         description: Description of the computed field to include in the serialization JSON schema.
         deprecated: A deprecation message, an instance of `warnings.deprecated` or the `typing_extensions.deprecated` backport,
@@ -1597,6 +1598,7 @@ class ComputedFieldInfo:
     alias_priority: int | None
     exclude_if: Callable[[Any], bool] | None
     title: str | None
+    title_priority: int | None
     field_title_generator: Callable[[str, ComputedFieldInfo], str] | None
     description: str | None
     deprecated: Deprecated | str | bool | None
@@ -1613,6 +1615,7 @@ class ComputedFieldInfo:
             alias_priority=self.alias_priority,
             exclude_if=self.exclude_if,
             title=self.title,
+            title_priority=self.title_priority,
             field_title_generator=self.field_title_generator,
             description=self.description,
             deprecated=self.deprecated,
@@ -1635,8 +1638,10 @@ class ComputedFieldInfo:
     def _update_from_config(self, config_wrapper: ConfigWrapper, name: str) -> None:
         """Update the instance from the configuration set on the class this computed field belongs to."""
         title_generator = self.field_title_generator or config_wrapper.field_title_generator
-        if title_generator is not None and self.title is None:
+        if title_generator is not None and (self.title_priority is None or self.title_priority <= 1):
             self.title = title_generator(name, self)
+            if self.title_priority is None or self.title_priority <= 1:
+                self.title_priority = 1
         if config_wrapper.alias_generator is not None:
             self._apply_alias_generator(config_wrapper.alias_generator, name)
 
@@ -1885,6 +1890,7 @@ def computed_field(
         # if the function isn't already decorated with `@property` (or another descriptor), then we wrap it now
         f = _decorators.ensure_property(f)
         alias_priority = (alias_priority or 2) if alias is not None else None
+        title_priority = 2 if title is not None else None
 
         if repr is None:
             repr_: bool = not _wrapped_property_is_private(property_=f)
@@ -1898,6 +1904,7 @@ def computed_field(
             alias_priority,
             exclude_if,
             title,
+            title_priority,
             field_title_generator,
             description,
             deprecated,
