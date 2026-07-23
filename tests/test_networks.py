@@ -1,4 +1,5 @@
 import json
+import operator
 from typing import Annotated, Any
 
 import pytest
@@ -1180,6 +1181,27 @@ def test_any_url_comparison() -> None:
     assert second_url > first_url
     assert first_url <= second_url
     assert second_url >= first_url
+
+
+@pytest.mark.parametrize('other', ['https://a.com', 5, None, HttpUrl('https://a.com')])
+def test_any_url_ordering_not_implemented(other: Any) -> None:
+    """Ordering against a different type is unsupported, rather than silently `False`."""
+    url = AnyUrl('https://a.com')
+
+    for op in (operator.lt, operator.gt, operator.le, operator.ge):
+        with pytest.raises(TypeError):
+            op(url, other)
+
+
+def test_any_url_ordering_is_consistent() -> None:
+    """`sorted()` on mixed URL types raises instead of returning a meaningless order."""
+    with pytest.raises(TypeError):
+        sorted([AnyUrl('https://z.com'), HttpUrl('https://b.com')])
+
+    # Equality is unaffected: unlike ordering, comparing against another type is well defined.
+    assert AnyUrl('https://a.com') != HttpUrl('https://a.com')
+    assert AnyUrl('https://a.com') != 'https://a.com'
+    assert AnyUrl('https://a.com') == AnyUrl('https://a.com')
 
 
 def test_max_length_base_url() -> None:
