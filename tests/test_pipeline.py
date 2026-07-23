@@ -10,6 +10,7 @@ from typing import Annotated, Any
 import pytest
 import pytz
 from annotated_types import Interval
+from dirty_equals import HasRepr
 
 from pydantic import TypeAdapter, ValidationError
 from pydantic.experimental.pipeline import _Pipeline, transform, validate_as  # pyright: ignore[reportPrivateUsage]
@@ -76,6 +77,32 @@ def test_parse_multipleOf(type_: Any, pipeline: Any, valid_cases: list[Any], inv
     for y in invalid_cases:
         with pytest.raises(ValueError):
             ta.validate_python(y)
+
+
+@pytest.mark.parametrize(
+    'type_, pipeline, value',
+    [
+        (float, validate_as(float).multiple_of(Decimal('0.1')), 0.3),
+        (Decimal, validate_as(Decimal).multiple_of(0.1), Decimal('0.3')),
+    ],
+)
+def test_multiple_of_incompatible_operands(type_: Any, pipeline: Any, value: Any) -> None:
+    """A bound the value can't be combined with fails validation instead of raising `TypeError`."""
+    ta = TypeAdapter[Any](Annotated[type_, pipeline])
+    with pytest.raises(ValidationError) as exc_info:
+        ta.validate_python(value)
+
+    # Assert on the `multiple_of` predicate specifically, so this stays tied to the constraint that
+    # failed rather than passing on any unrelated validation error.
+    assert exc_info.value.errors(include_url=False) == [
+        {
+            'type': 'value_error',
+            'loc': (),
+            'msg': 'Value error, Expected % 0.1 == 0',
+            'input': value,
+            'ctx': {'error': HasRepr(repr(ValueError('Expected % 0.1 == 0')))},
+        }
+    ]
 
 
 @pytest.mark.parametrize(
