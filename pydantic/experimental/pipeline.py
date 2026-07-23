@@ -582,7 +582,12 @@ def _apply_constraint(  # noqa: C901
                 s['multiple_of'] = multiple_of
 
         def check_multiple_of(v: Any) -> bool:
-            return v % multiple_of == 0
+            try:
+                return v % multiple_of == 0
+            except TypeError:
+                # The value and the bound aren't compatible operands (e.g. a `float` value against a
+                # `Decimal` bound), so the value can't be shown to be a multiple of it.
+                return False
 
         s = _check_func(check_multiple_of, f'% {multiple_of} == 0', s)
     elif isinstance(constraint, annotated_types.Timezone):

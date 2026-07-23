@@ -79,6 +79,20 @@ def test_parse_multipleOf(type_: Any, pipeline: Any, valid_cases: list[Any], inv
 
 
 @pytest.mark.parametrize(
+    'type_, pipeline, value',
+    [
+        (float, validate_as(float).multiple_of(Decimal('0.1')), 0.3),
+        (Decimal, validate_as(Decimal).multiple_of(0.1), Decimal('0.3')),
+    ],
+)
+def test_multiple_of_incompatible_operands(type_: Any, pipeline: Any, value: Any) -> None:
+    """A bound the value can't be combined with fails validation instead of raising `TypeError`."""
+    ta = TypeAdapter[Any](Annotated[type_, pipeline])
+    with pytest.raises(ValidationError):
+        ta.validate_python(value)
+
+
+@pytest.mark.parametrize(
     'type_, pipeline, valid_cases, invalid_cases',
     [
         (int, validate_as(int).constrain(Interval(ge=0, le=10)), [0, 5, 10], [-5, 11]),
