@@ -3,13 +3,14 @@
 from __future__ import annotations
 
 import datetime
+import math
 from collections.abc import Callable
 from decimal import Decimal
 from typing import Annotated, Any
 
 import pytest
 import pytz
-from annotated_types import Interval
+from annotated_types import Interval, MultipleOf
 
 from pydantic import TypeAdapter, ValidationError
 from pydantic.experimental.pipeline import _Pipeline, transform, validate_as  # pyright: ignore[reportPrivateUsage]
@@ -79,6 +80,28 @@ def test_parse_multipleOf(type_: Any, pipeline: Any, valid_cases: list[Any], inv
     for y in invalid_cases:
         with pytest.raises(ValueError):
             ta.validate_python(y)
+
+
+def test_multiple_of_float_matches_native_constraint() -> None:
+    """`multiple_of` on floats defers to the native constraint, including for non-finite values.
+
+    pydantic-core's `multiple_of` tolerates float imprecision and lets `nan`/`inf` through, so the
+    pipeline API matches it rather than layering a stricter Python `%` check on top.
+    """
+    pipe = TypeAdapter[float](Annotated[float, validate_as(float).multiple_of(0.1)])
+    native = TypeAdapter[float](Annotated[float, MultipleOf(0.1)])
+
+    for value in [0.1, 0.2, 0.3, 0.5, 1.0, math.inf, -math.inf]:
+        assert pipe.validate_python(value) == native.validate_python(value) == value
+
+    assert math.isnan(pipe.validate_python(math.nan))
+    assert math.isnan(native.validate_python(math.nan))
+
+    for value in [0.15, 0.25, 0.35]:
+        with pytest.raises(ValidationError):
+            native.validate_python(value)
+        with pytest.raises(ValidationError):
+            pipe.validate_python(value)
 
 
 @pytest.mark.parametrize(
