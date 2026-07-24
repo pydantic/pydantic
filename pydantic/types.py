@@ -4,6 +4,7 @@ from __future__ import annotations as _annotations
 
 import base64
 import dataclasses as _dataclasses
+import hmac
 import re
 from collections.abc import Callable, Hashable, Iterator
 from datetime import date, datetime
@@ -1557,7 +1558,18 @@ class _SecretBase(Generic[SecretType]):
         return self._secret_value
 
     def __eq__(self, other: Any) -> bool:
-        return isinstance(other, self.__class__) and self.get_secret_value() == other.get_secret_value()
+        if not isinstance(other, self.__class__):
+            return False
+        self_value = self.get_secret_value()
+        other_value = other.get_secret_value()
+        # Compare str/bytes payloads in constant time so verifying a secret (e.g. a token or
+        # password submitted by a client) against a stored one doesn't leak the length of the
+        # matching prefix through timing.
+        if isinstance(self_value, str) and isinstance(other_value, str):
+            return hmac.compare_digest(self_value.encode(), other_value.encode())
+        if isinstance(self_value, (bytes, bytearray)) and isinstance(other_value, (bytes, bytearray)):
+            return hmac.compare_digest(self_value, other_value)
+        return self_value == other_value
 
     def __hash__(self) -> int:
         return hash(self.get_secret_value())
