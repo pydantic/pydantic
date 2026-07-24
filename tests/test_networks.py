@@ -1,4 +1,5 @@
 import json
+import operator
 from typing import Annotated, Any
 
 import pytest
@@ -1180,6 +1181,20 @@ def test_any_url_comparison() -> None:
     assert second_url > first_url
     assert first_url <= second_url
     assert second_url >= first_url
+
+
+def test_any_url_comparison_incompatible_type() -> None:
+    # Ordering against an incomparable type must raise ``TypeError`` (Python's
+    # rich-comparison contract), not silently return ``False``.
+    url = AnyUrl('https://a.com')
+    for op in (operator.lt, operator.gt, operator.le, operator.ge):
+        with pytest.raises(TypeError):
+            op(url, 5)
+    # Different Url subclasses are not orderable with each other either.
+    with pytest.raises(TypeError):
+        url < HttpUrl('https://a.com')
+    with pytest.raises(TypeError):
+        HttpUrl('https://a.com') > url
 
 
 def test_max_length_base_url() -> None:
