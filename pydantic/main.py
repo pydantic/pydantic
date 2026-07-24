@@ -747,12 +747,12 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
     @classmethod
     def model_validate(
         cls,
-        obj: Any,
+        obj: object,
         *,
         strict: bool | None = None,
         extra: ExtraValues | None = None,
         from_attributes: bool | None = None,
-        context: Any | None = None,
+        context: object | None = None,
         by_alias: bool | None = None,
         by_name: bool | None = None,
     ) -> Self:
@@ -804,7 +804,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
         *,
         strict: bool | None = None,
         extra: ExtraValues | None = None,
-        context: Any | None = None,
+        context: object | None = None,
         by_alias: bool | None = None,
         by_name: bool | None = None,
     ) -> Self:
