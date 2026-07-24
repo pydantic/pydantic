@@ -689,6 +689,47 @@ print(m.model_dump_json())
 #> {"td":"P3DT12H30M5S"}
 ```
 
+### Timezones
+
+Standard library type: [`datetime.timezone`][].
+
+<h4>Validation</h4>
+
+* [`timezone`][datetime.timezone] instances are validated as is.
+* The string `'UTC'` and UTC-offset strings such as `'UTC+05:00'`, `'+05:00'` or `'-08:30'` (as accepted by the
+  [`%z` strptime directive](https://docs.python.org/3/library/datetime.html#strftime-and-strptime-format-codes)) are
+  validated into the corresponding fixed-offset [`timezone`][datetime.timezone].
+
+The [`tzinfo`][datetime.tzinfo] abstract base class and named timezones (such as [`ZoneInfo`][zoneinfo.ZoneInfo]) are
+not covered here; annotate the field with the concrete type you want instead.
+
+<h4>Serialization</h4>
+
+In [Python mode](../concepts/serialization.md#python-mode), [`timezone`][datetime.timezone] instances are serialized as is.
+
+In [JSON mode](../concepts/serialization.md#json-mode), they are serialized as `'UTC'` or a `'UTC±HH:MM[:SS]'`
+offset string. A custom [`timezone`][datetime.timezone] name is dropped in favor of the offset so that the value round-trips.
+
+<h4>Example</h4>
+
+```python
+from datetime import timezone
+
+from pydantic import BaseModel
+
+
+class Model(BaseModel):
+    tz: timezone
+
+
+m = Model(tz='UTC+05:00')
+
+print(m.model_dump())
+#> {'tz': datetime.timezone(datetime.timedelta(seconds=18000))}
+print(m.model_dump_json())
+#> {"tz":"UTC+05:00"}
+```
+
 <!-- old anchor added for backwards compatibility -->
 <!-- markdownlint-disable-next-line no-empty-links -->
 [](){#enum}

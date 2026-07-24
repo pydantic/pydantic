@@ -6,6 +6,7 @@ Import of this module is deferred since it contains imports of many standard lib
 from __future__ import annotations as _annotations
 
 import collections.abc
+import datetime
 import math
 import re
 import typing
@@ -481,6 +482,32 @@ def validate_str_is_valid_iana_tz(value: Any, /) -> ZoneInfo:
         return ZoneInfo(value)
     except (ZoneInfoNotFoundError, ValueError, TypeError):
         raise PydanticCustomError('zoneinfo_str', 'invalid timezone: {value}', {'value': value})
+
+
+def validate_timezone(value: Any, /) -> datetime.timezone:
+    """Validate a `datetime.timezone`, either passed directly or as a `'UTC'`/UTC-offset string."""
+    if isinstance(value, datetime.timezone):
+        return value
+    if isinstance(value, str):
+        if value.upper() == 'UTC':
+            return datetime.timezone.utc
+        offset_str = value[3:] if value[:3].upper() == 'UTC' else value
+        try:
+            offset = datetime.datetime.strptime(offset_str, '%z').utcoffset()
+        except ValueError:
+            offset = None
+        if offset is not None:
+            return datetime.timezone(offset)
+    raise PydanticCustomError('timezone_parsing', 'Input is not a valid timezone: {value}', {'value': value})
+
+
+def serialize_timezone(value: datetime.timezone, /) -> str:
+    """Serialize a `datetime.timezone` to its offset name (`'UTC'` or `'UTC±HH:MM[:SS]'`).
+
+    The timezone is rebuilt from its UTC offset so that any custom name is dropped in favor of
+    the offset, which is what round-trips through `validate_timezone`.
+    """
+    return datetime.timezone(value.utcoffset(None)).tzname(None)
 
 
 NUMERIC_VALIDATOR_LOOKUP: dict[str, Callable] = {

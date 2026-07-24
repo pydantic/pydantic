@@ -1132,6 +1132,8 @@ class GenerateSchema:
             return self._call_schema(obj)  # pyright: ignore[reportArgumentType]
         elif obj is ZoneInfo:
             return self._zoneinfo_schema()
+        elif obj is datetime.timezone:
+            return self._timezone_schema()
 
         # dataclasses.is_dataclass coerces dc instances to types, but we only handle
         # the case of a dc type here
@@ -1698,6 +1700,21 @@ class GenerateSchema:
         return core_schema.no_info_plain_validator_function(
             validate_str_is_valid_iana_tz,
             serialization=core_schema.to_string_ser_schema(),
+            metadata=metadata,
+        )
+
+    def _timezone_schema(self) -> core_schema.CoreSchema:
+        """Generate schema for a datetime.timezone object."""
+        from ._validators import serialize_timezone, validate_timezone
+
+        metadata = {'pydantic_js_functions': [lambda _1, _2: {'type': 'string', 'format': 'timezone'}]}
+        return core_schema.no_info_plain_validator_function(
+            validate_timezone,
+            serialization=core_schema.plain_serializer_function_ser_schema(
+                serialize_timezone,
+                return_schema=core_schema.str_schema(),
+                when_used='json-unless-none',
+            ),
             metadata=metadata,
         )
 
