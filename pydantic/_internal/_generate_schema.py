@@ -346,6 +346,29 @@ class InvalidSchemaError(Exception):
     """The core schema is invalid."""
 
 
+def _typed_dict_docstring_bases(typed_dict_cls: type[Any]) -> list[type[Any]]:
+    """Return the ``TypedDict`` classes contributing fields to *typed_dict_cls*.
+
+    The classes are ordered from the most base class to *typed_dict_cls* itself,
+    so that merging their attribute docstrings lets subclasses override parents.
+    ``TypedDict`` subclasses do not keep their parents in ``__mro__`` (the
+    runtime MRO is just ``(cls, dict, object)``), so the inheritance chain is
+    reconstructed from ``__orig_bases__``.
+    """
+    bases: list[type[Any]] = []
+
+    def collect(cls: type[Any]) -> None:
+        for base in getattr(cls, '__orig_bases__', ()):
+            base = get_origin(base) or base
+            if is_typeddict(base):
+                collect(base)
+        if cls not in bases:
+            bases.append(cls)
+
+    collect(typed_dict_cls)
+    return bases
+
+
 class GenerateSchema:
     """Generate core schema for a Pydantic model, dataclass and types like `str`, `datetime`, ... ."""
 
@@ -1423,7 +1446,14 @@ class GenerateSchema:
                 decorators.update_from_config(self._config_wrapper)
 
                 if self._config_wrapper.use_attribute_docstrings:
-                    field_docstrings = extract_docstrings_from_cls(typed_dict_cls, use_inspect=True)
+                    # Fields may be inherited from parent `TypedDict` classes,
+                    # which are not part of the runtime MRO (that is just
+                    # `(cls, dict, object)`). Walk the `TypedDict` bases so that
+                    # inherited fields keep their attribute docstrings, matching
+                    # the behavior of `BaseModel` (see #13468).
+                    field_docstrings = {}
+                    for base in _typed_dict_docstring_bases(typed_dict_cls):
+                        field_docstrings.update(extract_docstrings_from_cls(base, use_inspect=True))
                 else:
                     field_docstrings = None
 
