@@ -486,6 +486,10 @@ def _apply_constraint(  # noqa: C901
     """Apply a single constraint to a schema."""
     if isinstance(constraint, annotated_types.Gt):
         gt = constraint.gt
+
+        def check_gt(v: Any) -> bool:
+            return v > gt
+
         if s and s['type'] in {'int', 'float', 'decimal'}:
             s = s.copy()
             if s['type'] == 'int' and isinstance(gt, int):
@@ -494,11 +498,9 @@ def _apply_constraint(  # noqa: C901
                 s['gt'] = gt
             elif s['type'] == 'decimal' and isinstance(gt, Decimal):
                 s['gt'] = gt
+            else:
+                s = _check_func(check_gt, f'> {gt}', s)
         else:
-
-            def check_gt(v: Any) -> bool:
-                return v > gt
-
             s = _check_func(check_gt, f'> {gt}', s)
     elif isinstance(constraint, annotated_types.Ge):
         ge = constraint.ge
