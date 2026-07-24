@@ -15,6 +15,7 @@ from types import EllipsisType
 from typing import TYPE_CHECKING, Annotated, Any, Generic, Protocol, TypeAlias, TypeVar, overload
 
 import annotated_types
+from typing_extensions import TypeForm
 
 if TYPE_CHECKING:
     from pydantic import GetCoreSchemaHandler
@@ -29,16 +30,16 @@ __all__ = ['validate_as', 'validate_as_deferred', 'transform']
 
 @dataclass(frozen=True, slots=True)
 class _ValidateAs:
-    tp: type[Any]
+    tp: TypeForm[Any]
     strict: bool = False
 
 
 @dataclass
 class _ValidateAsDefer:
-    func: Callable[[], type[Any]]
+    func: Callable[[], TypeForm[Any]]
 
     @cached_property
-    def tp(self) -> type[Any]:
+    def tp(self) -> TypeForm[Any]:
         return self.func()
 
 
@@ -139,7 +140,7 @@ class _Pipeline(Generic[_InT, _OutT]):
         return _Pipeline[_InT, _NewOutT](self._steps + (_Transform(func),))
 
     @overload
-    def validate_as(self, tp: type[_NewOutT], *, strict: bool = False) -> _Pipeline[_InT, _NewOutT]: ...
+    def validate_as(self, tp: TypeForm[_NewOutT], *, strict: bool = False) -> _Pipeline[_InT, _NewOutT]: ...
 
     @overload
     def validate_as(
@@ -149,12 +150,7 @@ class _Pipeline(Generic[_InT, _OutT]):
         strict: bool = False,
     ) -> _Pipeline[_InT, Any]: ...
 
-    # TODO PEP 747: use TypeForm to properly type Annotated aliases (e.g. NewPath, FilePath).
-    # This fallback accepts any type expression but loses generic type inference.
-    @overload
-    def validate_as(self, tp: Any, *, strict: bool = ...) -> _Pipeline[_InT, Any]: ...
-
-    def validate_as(self, tp: type[_NewOutT] | EllipsisType | Any, *, strict: bool = False) -> _Pipeline[_InT, Any]:  # type: ignore
+    def validate_as(self, tp: TypeForm[_NewOutT] | EllipsisType, *, strict: bool = False) -> _Pipeline[_InT, Any]:  # type: ignore
         """Validate / parse the input into a new type.
 
         If no type is provided, the type of the field is used.
@@ -440,7 +436,7 @@ def _apply_step(step: _Step, s: cs.CoreSchema | None, handler: GetCoreSchemaHand
 
 def _apply_parse(
     s: cs.CoreSchema | None,
-    tp: type[Any],
+    tp: TypeForm[Any],
     strict: bool,
     handler: GetCoreSchemaHandler,
     source_type: Any,

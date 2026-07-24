@@ -21,7 +21,7 @@ a6 = Annotated[
     ),
 ]
 
-# Annotated types (e.g. NewPath, FilePath) should be accepted by validate_as.
-# Fixes https://github.com/pydantic/pydantic/issues/12845
+# TypeForm support:
 a7 = Annotated[Path, validate_as(NewPath)]
 a8 = Annotated[Path, validate_as(FilePath)]
+a9 = Annotated[int | str, validate_as(int | str)]
