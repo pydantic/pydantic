@@ -47,7 +47,7 @@ Funding = 'https://github.com/sponsors/samuelcolvin'
 Source = 'https://github.com/pydantic/pydantic/tree/main/pydantic-core'
 
 [dependency-groups]
-dev = ["maturin"]
+dev = ["maturin>=1.13"]
 testing-extra = [
     { include-group = "dev" },
     'coverage',
@@ -92,6 +92,9 @@ bindings = 'pyo3'
 # when using `uv` to build `pydantic-core`, use the `dev` profile
 # can override by e.g. `make build-pgo` and then using `uv run --no-sync`
 editable-profile = 'dev'
+# uses uv export followed by uv pip install to achieve a locked install
+# because uv sync will overwrite the temporary venv created by maturin
+pgo-command = "uv export --group testing-extra --no-emit-workspace --no-hashes --no-header --no-annotate -o target/pgo-requirements.txt && uv pip install -r target/pgo-requirements.txt && uv run --active --no-sync pytest tests/benchmarks"
 
 [tool.ruff]
 line-length = 120
