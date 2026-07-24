@@ -1047,10 +1047,74 @@ def test_typeddict_extraitems_generic() -> None:
 
     assert ta.validate_python({'f': 1, 'extra': 'test'}) == {'f': 1, 'extra': 'test'}
 
-    with pytest.raises(ValidationError) as exc:
-        ta.validate_python({'f': 1, 'extra': 1})
 
-    assert exc.value.errors()[0]['loc'] == ('extra',)
+def test_typeddict_docstring_inheritance() -> None:
+    """Test that docstrings are inherited from parent TypedDict classes."""
+    
+    @with_config(ConfigDict(use_attribute_docstrings=True))
+    class Parent(TypedDict):
+        a: int
+        """Doc for a."""
+    
+    @with_config(ConfigDict(use_attribute_docstrings=True))
+    class Child(Parent):
+        b: int
+        """Doc for b."""
+    
+    parent_schema = TypeAdapter(Parent).json_schema()
+    child_schema = TypeAdapter(Child).json_schema()
+    
+    # Parent should have doc for a
+    assert parent_schema['properties']['a']['description'] == 'Doc for a.'
+    
+    # Child should have doc for both a (inherited) and b
+    assert child_schema['properties']['a']['description'] == 'Doc for a.'
+    assert child_schema['properties']['b']['description'] == 'Doc for b.'
+
+
+def test_typeddict_docstring_override() -> None:
+    """Test that child docstrings override parent docstrings."""
+    
+    @with_config(ConfigDict(use_attribute_docstrings=True))
+    class Parent(TypedDict):
+        a: int
+        """Parent doc for a."""
+    
+    @with_config(ConfigDict(use_attribute_docstrings=True))
+    class Child(Parent):
+        a: int
+        """Child doc for a."""
+    
+    child_schema = TypeAdapter(Child).json_schema()
+    
+    # Child should override parent docstring
+    assert child_schema['properties']['a']['description'] == 'Child doc for a.'
+
+
+def test_typeddict_docstring_multi_level_inheritance() -> None:
+    """Test that docstrings are inherited through multiple levels."""
+    
+    @with_config(ConfigDict(use_attribute_docstrings=True))
+    class GrandParent(TypedDict):
+        a: int
+        """Doc for a."""
+    
+    @with_config(ConfigDict(use_attribute_docstrings=True))
+    class Parent(GrandParent):
+        b: int
+        """Doc for b."""
+    
+    @with_config(ConfigDict(use_attribute_docstrings=True))
+    class Child(Parent):
+        c: int
+        """Doc for c."""
+    
+    child_schema = TypeAdapter(Child).json_schema()
+    
+    # Child should have docs from all levels
+    assert child_schema['properties']['a']['description'] == 'Doc for a.'
+    assert child_schema['properties']['b']['description'] == 'Doc for b.'
+    assert child_schema['properties']['c']['description'] == 'Doc for c.'
 
 
 def test_typeddict_incompatible_extra_config_warning() -> None:

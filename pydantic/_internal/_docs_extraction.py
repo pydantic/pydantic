@@ -90,6 +90,14 @@ def extract_docstrings_from_cls(cls: type[Any], use_inspect: bool = False) -> di
     Returns:
         A mapping containing attribute names and their corresponding docstring.
     """
+    # For TypedDict, we need to collect docstrings from the entire MRO
+    # to handle inheritance properly, since TypedDict fields are re-derived
+    # from merged annotations rather than reusing parent FieldInfo instances.
+    from typing_extensions import is_typeddict
+
+    if is_typeddict(cls):
+        return _extract_docstrings_from_mro(cls, use_inspect)
+    
     if use_inspect or sys.version_info >= (3, 13):
         # On Python < 3.13, `inspect.getsourcelines()` might not work as expected
         # if two classes have the same name in the same source file.
@@ -111,3 +119,68 @@ def extract_docstrings_from_cls(cls: type[Any], use_inspect: bool = False) -> di
     visitor = DocstringVisitor()
     visitor.visit(ast.parse(dedent_source))
     return visitor.attrs
+
+
+def _extract_docstrings_from_mro(cls: type[Any], use_inspect: bool) -> dict[str, str]:
+    """Extract docstrings from a class and its bases in MRO order.
+    
+    For TypedDict classes, we need to walk the MRO to collect docstrings from
+    parent classes since field annotations are merged but docstrings are not
+    automatically inherited.
+    
+    Args:
+        cls: The TypedDict class to inspect.
+        use_inspect: Whether to use inspect module instead of frame inspection.
+        
+    Returns:
+        A mapping containing attribute names and their corresponding docstring,
+        with child class docstrings taking precedence over parent ones.
+    """
+    field_docstrings: dict[str, str] = {}
+    
+    # Walk the MRO in reverse order (parent to child) so child docstrings override parent ones
+    for base in reversed(cls.__mro__):
+        if base is cls or base is object:
+            continue
+            
+        # Only process TypedDict bases
+        from typing_extensions import is_typeddict
+        if not is_typeddict(base):
+            continue
+            
+        if use_inspect or sys.version_info >= (3, 13):
+            try:
+                source, _ = inspect.getsourcelines(base)
+            except OSError:  # pragma: no cover
+                continue
+        else:
+            source = _extract_source_from_frame(base)
+        
+        if not source:
+            continue
+            
+        dedent_source = _dedent_source_lines(source)
+        visitor = DocstringVisitor()
+        visitor.visit(ast.parse(dedent_source))
+        
+        # Merge docstrings from this base (child values will override later)
+        field_docstrings.update(visitor.attrs)
+    
+    # Finally extract from the class itself (this overrides any parent docstrings)
+    if use_inspect or sys.version_info >= (3, 13):
+        try:
+            source, _ = inspect.getsourcelines(cls)
+        except OSError:  # pragma: no cover
+            return field_docstrings
+    else:
+        source = _extract_source_from_frame(cls)
+    
+    if not source:
+        return field_docstrings
+        
+    dedent_source = _dedent_source_lines(source)
+    visitor = DocstringVisitor()
+    visitor.visit(ast.parse(dedent_source))
+    field_docstrings.update(visitor.attrs)
+    
+    return field_docstrings

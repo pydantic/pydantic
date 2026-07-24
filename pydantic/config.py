@@ -1043,10 +1043,12 @@ class ConfigDict(TypedDict, total=False):
 
     !!! warning "Usage with `TypedDict` and stdlib dataclasses"
         Due to current limitations, attribute docstrings detection may not work as expected when using
-        [`TypedDict`][typing.TypedDict] and stdlib dataclasses, in particular when:
+        stdlib dataclasses, in particular when:
 
         - inheritance is being used.
         - multiple classes have the same name in the same source file (unless Python 3.13 or greater is used).
+
+        Note: [`TypedDict`][typing.TypedDict] inheritance is fully supported for attribute docstrings.
 
     /// version-added | v2.7
     ///
