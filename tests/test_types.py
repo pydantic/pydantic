@@ -1,4 +1,5 @@
 import collections
+import hmac
 import ipaddress
 import itertools
 import json
@@ -4804,6 +4805,25 @@ def test_secretbytes_equality():
     assert SecretBytes(b'123') != SecretBytes(b'321')
     assert SecretBytes(b'123') != b'123'
     assert SecretBytes(b'123') is not SecretBytes(b'123')
+
+
+@pytest.mark.thread_unsafe
+def test_secret_constant_time_comparison(mocker):
+    spy = mocker.spy(hmac, 'compare_digest')
+
+    # str/bytes secrets are compared with a constant-time function
+    assert SecretStr('abc') == SecretStr('abc')
+    assert SecretStr('abc') != SecretStr('abcd')
+    assert SecretStr('naïve') == SecretStr('naïve')  # non-ASCII round-trips through the byte compare
+    assert SecretBytes(b'abc') == SecretBytes(b'abc')
+    assert SecretBytes(b'abc') != SecretBytes(b'abd')
+    assert spy.call_count == 5
+
+    # other Secret payload types fall back to plain equality
+    spy.reset_mock()
+    assert Secret[int](1) == Secret[int](1)
+    assert Secret[int](1) != Secret[int](2)
+    assert spy.call_count == 0
 
 
 def test_secretbytes_idempotent():
