@@ -2,13 +2,11 @@ use std::borrow::Cow;
 use std::sync::Arc;
 
 use pyo3::PyTraverseError;
-use pyo3::exceptions::{PyAttributeError, PyRecursionError, PyRuntimeError};
+use pyo3::exceptions::{PyAttributeError, PyRecursionError, PyRuntimeError, PyTypeError};
 use pyo3::gc::PyVisit;
 use pyo3::intern;
 use pyo3::prelude::*;
-use pyo3::types::PyDict;
-
-use pyo3::types::PyString;
+use pyo3::types::{PyDict, PyInt, PyString};
 
 use crate::definitions::DefinitionsBuilder;
 use crate::py_gc::PyGcTraverse;
@@ -474,6 +472,9 @@ impl SerializationCallable {
         let state = &mut self.extra_owned.to_state(py);
 
         if let Some(index_key) = index_key {
+            if !index_key.is_instance_of::<PyInt>() && !index_key.is_instance_of::<PyString>() {
+                return Err(PyTypeError::new_err("`index_key` must be an `int`, `str` or `None`"));
+            }
             let filter = if let Ok(index) = index_key.extract::<usize>() {
                 self.filter.index_filter(index, state, None)?
             } else {

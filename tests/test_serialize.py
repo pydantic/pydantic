@@ -513,6 +513,21 @@ def test_model_serializer_wrap_info():
     assert m.model_dump_json(exclude={'a'}) == '{"b":"boom","info":"mode=json exclude={\'a\'}"}'
 
 
+def test_model_serializer_wrap_rejects_info_as_index_key():
+    class MyModel(BaseModel):
+        value: int
+
+        @model_serializer(mode='wrap')
+        def _serialize(self, handler, info):
+            return handler(self, info)
+
+    with pytest.raises(
+        PydanticSerializationError,
+        match=r'Error calling function `_serialize`: TypeError: `index_key` must be an `int`, `str` or `None`',
+    ):
+        MyModel(value=1).model_dump(include={'value'})
+
+
 def test_model_serializer_plain_json_return_type():
     class MyModel(BaseModel):
         a: int

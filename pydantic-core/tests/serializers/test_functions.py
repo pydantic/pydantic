@@ -358,6 +358,21 @@ def test_function_wrap():
     assert s.to_json('foo') == b'"result=3 repr=SerializationCallable(serializer=int)"'
 
 
+def test_function_wrap_invalid_index_key():
+    def f(value, serializer, info):
+        return serializer(value, info)
+
+    s = SchemaSerializer(
+        core_schema.int_schema(serialization=core_schema.wrap_serializer_function_ser_schema(f, info_arg=True))
+    )
+
+    with pytest.raises(
+        PydanticSerializationError,
+        match=r'Error calling function `f`: TypeError: `index_key` must be an `int`, `str` or `None`',
+    ):
+        s.to_python(1)
+
+
 def test_function_wrap_return_scheam():
     def f(value, serializer):
         if value == 42:
