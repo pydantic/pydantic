@@ -268,6 +268,11 @@ all_errors = [
     ('dataclass_exact_type', 'Input should be an instance of Foobar', {'class_name': 'Foobar'}),
     ('dataclass_type', 'Input should be a dictionary or an instance of Foobar', {'class_name': 'Foobar'}),
     (
+        'named_tuple_type',
+        'Input should be a tuple, list, dictionary or an instance of Foobar',
+        {'class_name': 'Foobar'},
+    ),
+    (
         'default_factory_not_called',
         'The default factory uses validated data, but at least one validation error occurred',
         None,

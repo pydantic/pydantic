@@ -8,25 +8,19 @@ see [Troubleshooting Validation Errors](troubleshooting.md).
 ## `arguments_type`
 
 This error is raised when an object that would be passed as arguments to a function during validation is not
-a `tuple`, `list`, or `dict`. Because `NamedTuple` uses function calls in its implementation, that is one way to
-produce this error:
+a `tuple`, `list`, or `dict`:
 
 ```python
-from typing import NamedTuple
-
-from pydantic import BaseModel, ValidationError
+from pydantic import TypeAdapter, ValidationError
 
 
-class MyNamedTuple(NamedTuple):
-    x: int
+def func(x: int) -> None: ...
 
 
-class MyModel(BaseModel):
-    field: MyNamedTuple
-
+ta = TypeAdapter(func)
 
 try:
-    MyModel.model_validate({'field': 'invalid'})
+    ta.validate_python('invalid')
 except ValidationError as exc:
     print(repr(exc.errors()[0]['type']))
     #> 'arguments_type'
@@ -1579,6 +1573,32 @@ try:
 except ValidationError as exc:
     print(repr(exc.errors()[0]['type']))
     #> 'multiple_of'
+```
+
+## `named_tuple_type`
+
+This error is raised when the input value is not valid for a named tuple field:
+
+```python
+from typing import NamedTuple
+
+from pydantic import BaseModel, ValidationError
+
+
+class Point(NamedTuple):
+    x: int
+    y: int
+
+
+class Model(BaseModel):
+    p: Point
+
+
+try:
+    Model(p='invalid')
+except ValidationError as exc:
+    print(repr(exc.errors()[0]['type']))
+    #> 'named_tuple_type'
 ```
 
 ## `needs_python_object`
