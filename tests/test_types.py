@@ -23,6 +23,7 @@ from re import Pattern
 from typing import (
     Annotated,
     Any,
+    Generic,
     Literal,
     NamedTuple,
     NewType,
@@ -7097,6 +7098,19 @@ def test_fail_fast(tp, fail_fast, decl) -> None:
         )
 
     assert exc_info.value.errors(include_url=False) == errors
+
+
+def test_fail_fast_hashable() -> None:
+    """`FailFast` is used as `Annotated` metadata, so it has to be hashable."""
+    assert hash(FailFast()) == hash(FailFast(True))
+    assert hash(FailFast(False)) != hash(FailFast(True))
+
+    T = TypeVar('T')
+
+    class Foo(BaseModel, Generic[T]):
+        a: T
+
+    Foo[Annotated[list[int], FailFast()]]
 
 
 def test_mutable_mapping_userdict_subclass() -> None:
