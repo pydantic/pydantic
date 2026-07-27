@@ -1584,7 +1584,7 @@ class Secret(_SecretBase[SecretType]):
     """A generic base class used for defining a field with sensitive information that you do not want to be visible in logging or tracebacks.
 
     You may either directly parametrize `Secret` with a type, or subclass from `Secret` with a parametrized type. The benefit of subclassing
-    is that you can define a custom `_display()` method, which will be used for [`repr()`][] and [`str()`][str] methods. The examples below demonstrate both
+    is that you can define a custom `_display()` method, which will be used for [`repr()`][repr] and [`str()`][str] methods. The examples below demonstrate both
     ways of using `Secret` to create a new secret type.
 
     1. Directly parametrizing `Secret` with a type:
