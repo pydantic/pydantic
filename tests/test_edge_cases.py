@@ -3182,3 +3182,22 @@ def test_safe_get_annotations_from_dict() -> None:
         pass
 
     assert safe_get_annotations(Sub) == {}
+
+
+def test_interconnected_models_build_in_linear_time() -> None:
+    """Building models referencing other models must not traverse shared (already completed)
+    core schemas once per path during schema cleaning — doing so is exponential in the number
+    of interconnected models (this test would effectively never finish).
+    """
+    classes: list[type[BaseModel]] = []
+    for i in range(60):
+        namespace: dict[str, Any] = {'__annotations__': {'value': int}}
+        for j, prev in enumerate(classes[-3:]):
+            namespace['__annotations__'][f'ref{j}'] = prev | None
+            namespace[f'ref{j}'] = None
+        classes.append(type(f'Node{i}', (BaseModel,), namespace))
+
+    last = classes[-1]
+    instance = last.model_validate({'value': 1, 'ref2': {'value': 2, 'ref2': {'value': 3}}})
+    assert instance.ref2.ref2.value == 3
+    assert instance.model_dump(exclude_none=True) == {'value': 1, 'ref2': {'value': 2, 'ref2': {'value': 3}}}
