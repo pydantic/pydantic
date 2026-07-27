@@ -502,49 +502,82 @@ def _apply_constraint(  # noqa: C901
             s = _check_func(check_gt, f'> {gt}', s)
     elif isinstance(constraint, annotated_types.Ge):
         ge = constraint.ge
+        native_constraint_applied = False
         if s and s['type'] in {'int', 'float', 'decimal'}:
             s = s.copy()
             if s['type'] == 'int' and isinstance(ge, int):
                 s['ge'] = ge
+                native_constraint_applied = True
             elif s['type'] == 'float' and isinstance(ge, float):
                 s['ge'] = ge
+                native_constraint_applied = True
             elif s['type'] == 'decimal' and isinstance(ge, Decimal):
                 s['ge'] = ge
+                native_constraint_applied = True
 
-        def check_ge(v: Any) -> bool:
-            return v >= ge
+        # Only fall back to a function validator when the native constraint could not be applied.
+        # Layering one on top of a native constraint wraps the schema in `function-after`, which
+        # hides the numeric type from every constraint chained after this one - they can no longer
+        # set their own native field, so the bound survives only inside an opaque callable and
+        # disappears from the generated JSON schema.
+        if not native_constraint_applied:
 
-        s = _check_func(check_ge, f'>= {ge}', s)
+            def check_ge(v: Any) -> bool:
+                return v >= ge
+
+            s = _check_func(check_ge, f'>= {ge}', s)
     elif isinstance(constraint, annotated_types.Lt):
         lt = constraint.lt
+        native_constraint_applied = False
         if s and s['type'] in {'int', 'float', 'decimal'}:
             s = s.copy()
             if s['type'] == 'int' and isinstance(lt, int):
                 s['lt'] = lt
+                native_constraint_applied = True
             elif s['type'] == 'float' and isinstance(lt, float):
                 s['lt'] = lt
+                native_constraint_applied = True
             elif s['type'] == 'decimal' and isinstance(lt, Decimal):
                 s['lt'] = lt
+                native_constraint_applied = True
 
-        def check_lt(v: Any) -> bool:
-            return v < lt
+        # Only fall back to a function validator when the native constraint could not be applied.
+        # Layering one on top of a native constraint wraps the schema in `function-after`, which
+        # hides the numeric type from every constraint chained after this one - they can no longer
+        # set their own native field, so the bound survives only inside an opaque callable and
+        # disappears from the generated JSON schema.
+        if not native_constraint_applied:
 
-        s = _check_func(check_lt, f'< {lt}', s)
+            def check_lt(v: Any) -> bool:
+                return v < lt
+
+            s = _check_func(check_lt, f'< {lt}', s)
     elif isinstance(constraint, annotated_types.Le):
         le = constraint.le
+        native_constraint_applied = False
         if s and s['type'] in {'int', 'float', 'decimal'}:
             s = s.copy()
             if s['type'] == 'int' and isinstance(le, int):
                 s['le'] = le
+                native_constraint_applied = True
             elif s['type'] == 'float' and isinstance(le, float):
                 s['le'] = le
+                native_constraint_applied = True
             elif s['type'] == 'decimal' and isinstance(le, Decimal):
                 s['le'] = le
+                native_constraint_applied = True
 
-        def check_le(v: Any) -> bool:
-            return v <= le
+        # Only fall back to a function validator when the native constraint could not be applied.
+        # Layering one on top of a native constraint wraps the schema in `function-after`, which
+        # hides the numeric type from every constraint chained after this one - they can no longer
+        # set their own native field, so the bound survives only inside an opaque callable and
+        # disappears from the generated JSON schema.
+        if not native_constraint_applied:
 
-        s = _check_func(check_le, f'<= {le}', s)
+            def check_le(v: Any) -> bool:
+                return v <= le
+
+            s = _check_func(check_le, f'<= {le}', s)
     elif isinstance(constraint, annotated_types.Len):
         min_len = constraint.min_length
         max_len = constraint.max_length
