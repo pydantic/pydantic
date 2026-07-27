@@ -138,20 +138,21 @@ impl LookupPath {
     }
 
     pub fn json_get<'a, 'data>(&self, dict: &'a JsonObject<'data>) -> ValResult<Option<&'a JsonValue<'data>>> {
-        // FIXME: use of find_map in here probably leads to quadratic complexity
-
         // first step is different as the first step is a key lookup
-        if let Some(v) = dict
+        let first_value = dict
             .iter()
             .rev()
-            .find_map(|(k, v)| (k == self.first_key()).then_some(v))
-        // fold the rest of the path over the found value
-            && let Some(v) = self.rest.iter().try_fold(v, |d, loc| loc.json_get(d))
-        {
-            return Ok(Some(v));
-        }
+            .find_map(|(k, v)| (k == self.first_key()).then_some(v));
 
-        Ok(None)
+        Ok(self.json_get_from_value(first_value))
+    }
+
+    pub fn json_get_from_value<'a, 'data>(
+        &self,
+        first_value: Option<&'a JsonValue<'data>>,
+    ) -> Option<&'a JsonValue<'data>> {
+        // fold the rest of the path over the found value
+        first_value.and_then(|v| self.rest.iter().try_fold(v, |d, loc| loc.json_get(d)))
     }
 
     fn get_impl<'s, 'a, SourceT, OutputT: 'a>(
