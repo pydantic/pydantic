@@ -7,6 +7,7 @@ import inspect
 import re
 import sys
 from collections.abc import Callable, Mapping
+from collections.abc import Set as AbstractSet
 from copy import copy
 from dataclasses import Field as DataclassField
 from functools import cached_property
@@ -39,6 +40,8 @@ __all__ = 'Field', 'FieldInfo', 'PrivateAttr', 'computed_field'
 
 
 _Unset: Any = PydanticUndefined
+
+_EMPTY_QUALIFIERS: AbstractSet[Qualifier] = frozenset()
 
 if sys.version_info >= (3, 13):
     import warnings
@@ -278,7 +281,9 @@ class FieldInfo(_repr.Representation):
         self.metadata = self._collect_metadata(kwargs)  # type: ignore
 
         # Private attributes:
-        self._qualifiers: set[Qualifier] = set()
+        # Note: a shared (immutable) empty set is used, as in most cases no qualifiers are present
+        # (this attribute is only ever read, and the empty set would otherwise take up 216 bytes per field):
+        self._qualifiers: AbstractSet[Qualifier] = _EMPTY_QUALIFIERS
         # Used to rebuild FieldInfo instances:
         self._complete = True
         self._original_annotation: Any = PydanticUndefined
@@ -372,7 +377,7 @@ class FieldInfo(_repr.Representation):
         if final:
             attr_overrides['frozen'] = True
         field_info = FieldInfo._construct(metadata, **attr_overrides)
-        field_info._qualifiers = inspected_ann.qualifiers
+        field_info._qualifiers = inspected_ann.qualifiers or _EMPTY_QUALIFIERS
         field_info._final = True
         return field_info
 
@@ -473,7 +478,7 @@ class FieldInfo(_repr.Representation):
         field_info = FieldInfo._construct(
             prepend_metadata + metadata if prepend_metadata is not None else metadata, **attr_overrides
         )
-        field_info._qualifiers = inspected_ann.qualifiers
+        field_info._qualifiers = inspected_ann.qualifiers or _EMPTY_QUALIFIERS
         field_info._final = True
         return field_info
 
