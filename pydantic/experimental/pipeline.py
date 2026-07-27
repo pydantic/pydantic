@@ -510,11 +510,12 @@ def _apply_constraint(  # noqa: C901
                 s['ge'] = ge
             elif s['type'] == 'decimal' and isinstance(ge, Decimal):
                 s['ge'] = ge
+        else:
 
-        def check_ge(v: Any) -> bool:
-            return v >= ge
+            def check_ge(v: Any) -> bool:
+                return v >= ge
 
-        s = _check_func(check_ge, f'>= {ge}', s)
+            s = _check_func(check_ge, f'>= {ge}', s)
     elif isinstance(constraint, annotated_types.Lt):
         lt = constraint.lt
         if s and s['type'] in {'int', 'float', 'decimal'}:
@@ -525,11 +526,12 @@ def _apply_constraint(  # noqa: C901
                 s['lt'] = lt
             elif s['type'] == 'decimal' and isinstance(lt, Decimal):
                 s['lt'] = lt
+        else:
 
-        def check_lt(v: Any) -> bool:
-            return v < lt
+            def check_lt(v: Any) -> bool:
+                return v < lt
 
-        s = _check_func(check_lt, f'< {lt}', s)
+            s = _check_func(check_lt, f'< {lt}', s)
     elif isinstance(constraint, annotated_types.Le):
         le = constraint.le
         if s and s['type'] in {'int', 'float', 'decimal'}:
@@ -540,11 +542,12 @@ def _apply_constraint(  # noqa: C901
                 s['le'] = le
             elif s['type'] == 'decimal' and isinstance(le, Decimal):
                 s['le'] = le
+        else:
 
-        def check_le(v: Any) -> bool:
-            return v <= le
+            def check_le(v: Any) -> bool:
+                return v <= le
 
-        s = _check_func(check_le, f'<= {le}', s)
+            s = _check_func(check_le, f'<= {le}', s)
     elif isinstance(constraint, annotated_types.Len):
         min_len = constraint.min_length
         max_len = constraint.max_length
@@ -563,13 +566,14 @@ def _apply_constraint(  # noqa: C901
                 s['min_length'] = min_len
             if max_len is not None:
                 s['max_length'] = max_len
+        else:
 
-        def check_len(v: Any) -> bool:
-            if max_len is not None:
-                return (min_len <= len(v)) and (len(v) <= max_len)
-            return min_len <= len(v)
+            def check_len(v: Any) -> bool:
+                if max_len is not None:
+                    return (min_len <= len(v)) and (len(v) <= max_len)
+                return min_len <= len(v)
 
-        s = _check_func(check_len, f'length >= {min_len} and length <= {max_len}', s)
+            s = _check_func(check_len, f'length >= {min_len} and length <= {max_len}', s)
     elif isinstance(constraint, annotated_types.MultipleOf):
         multiple_of = constraint.multiple_of
         if s and s['type'] in {'int', 'float', 'decimal'}:
@@ -580,11 +584,12 @@ def _apply_constraint(  # noqa: C901
                 s['multiple_of'] = multiple_of
             elif s['type'] == 'decimal' and isinstance(multiple_of, Decimal):
                 s['multiple_of'] = multiple_of
+        else:
 
-        def check_multiple_of(v: Any) -> bool:
-            return v % multiple_of == 0
+            def check_multiple_of(v: Any) -> bool:
+                return v % multiple_of == 0
 
-        s = _check_func(check_multiple_of, f'% {multiple_of} == 0', s)
+            s = _check_func(check_multiple_of, f'% {multiple_of} == 0', s)
     elif isinstance(constraint, annotated_types.Timezone):
         tz = constraint.tz
 

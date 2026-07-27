@@ -490,3 +490,62 @@ def test_validate_as_ellipsis_preserves_other_steps() -> None:
     ta = TypeAdapter[float](Annotated[float, validate_as(str).transform(lambda v: v.split()[0]).validate_as(...)])
 
     assert ta.validate_python('12 ab') == 12.0
+
+
+def test_chained_constraints_all_appear_in_json_schema() -> None:
+    """Test for issue #13507: every constraint chained after ge/lt/le should appear in JSON schema.
+
+    Before the fix, only the first constraint's property showed in the schema
+    because subsequent constraints were always wrapped in _check_func (function-after),
+    hiding the underlying int/float/decimal schema type.
+    """
+    # ge + le
+    ta = TypeAdapter[int](Annotated[int, validate_as(int).ge(1).le(100)])
+    schema = ta.json_schema()
+    assert schema == {'minimum': 1, 'maximum': 100, 'type': 'integer'}
+
+    # le + ge (reverse order)
+    ta = TypeAdapter[int](Annotated[int, validate_as(int).le(100).ge(1)])
+    schema = ta.json_schema()
+    assert schema == {'minimum': 1, 'maximum': 100, 'type': 'integer'}
+
+    # gt + lt (already worked, but verify)
+    ta = TypeAdapter[int](Annotated[int, validate_as(int).gt(1).lt(100)])
+    schema = ta.json_schema()
+    assert schema == {'exclusiveMinimum': 1, 'exclusiveMaximum': 100, 'type': 'integer'}
+
+    # ge + gt (mixed)
+    ta = TypeAdapter[int](Annotated[int, validate_as(int).ge(1).gt(0)])
+    schema = ta.json_schema()
+    assert schema == {'minimum': 1, 'exclusiveMinimum': 0, 'type': 'integer'}
+
+    # three constraints chained
+    ta = TypeAdapter[int](Annotated[int, validate_as(int).ge(1).le(100).multiple_of(5)])
+    schema = ta.json_schema()
+    assert schema == {'minimum': 1, 'maximum': 100, 'multipleOf': 5, 'type': 'integer'}
+
+    # float constraints
+    ta = TypeAdapter[float](Annotated[float, validate_as(float).ge(0.5).le(1.0)])
+    schema = ta.json_schema()
+    assert schema == {'minimum': 0.5, 'maximum': 1.0, 'type': 'number'}
+
+    # Validation still works correctly
+    ta = TypeAdapter[int](Annotated[int, validate_as(int).ge(1).le(100)])
+    assert ta.validate_python(50) == 50
+    assert ta.validate_python(1) == 1
+    assert ta.validate_python(100) == 100
+    with pytest.raises(ValidationError):
+        ta.validate_python(0)
+    with pytest.raises(ValidationError):
+        ta.validate_python(101)
+
+
+def test_chained_len_constraints_in_json_schema() -> None:
+    """Chained len constraints should also both appear in the schema."""
+    ta = TypeAdapter[str](Annotated[str, validate_as(str).len(2)])
+    schema = ta.json_schema()
+    assert schema == {'type': 'string', 'minLength': 2}
+
+    ta = TypeAdapter[str](Annotated[str, validate_as(str).len(2, 10)])
+    schema = ta.json_schema()
+    assert schema == {'type': 'string', 'minLength': 2, 'maxLength': 10}
