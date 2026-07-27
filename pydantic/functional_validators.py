@@ -895,7 +895,12 @@ class ValidateAs:
 
     def __get_pydantic_core_schema__(self, source: Any, handler: GetCoreSchemaHandler) -> core_schema.CoreSchema:
         schema = handler(self.from_type)
+        return_schema = handler(source)
         return core_schema.no_info_after_validator_function(
             self.instantiation_hook,
             schema=schema,
+            serialization=core_schema.wrap_serializer_function_ser_schema(
+                lambda v, h: h(v),
+                return_schema=return_schema,
+            ),
         )
