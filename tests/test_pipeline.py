@@ -37,6 +37,9 @@ def test_parse_str_with_pattern() -> None:
         (float, validate_as(float).ge(0), [1.8, 0.0], [-1.0]),
         (Decimal, validate_as(Decimal).ge(0), [Decimal(1), Decimal(0)], [Decimal(-1)]),  # pyright: ignore[reportArgumentType]
         (int, validate_as(int).ge(0.0), [0, 1, 100], [-1, -100]),  # pyright: ignore[reportArgumentType]
+        # The `transform()` step results in a non-numeric core schema, meaning the constraint
+        # is applied as a function check:
+        (int, validate_as(int).transform(lambda x: x).ge(0), [0, 1, 100], [-1, -100]),
         (int, validate_as(...).le(5), [2, 4], [6, 100]),
         (float, validate_as(...).le(1.0), [0.5, 0.0], [100.0]),
         (Decimal, validate_as(...).le(Decimal(1.0)), [Decimal(1)], [Decimal(5.0)]),
@@ -76,6 +79,9 @@ def test_ge_le_gt_lt(
         (float, validate_as(float).multiple_of(2), [2.0, 4.0, 6.0], [3.0, 1.1]),
         (Decimal, validate_as(Decimal).multiple_of(2), [Decimal(2), Decimal(4)], [Decimal(3), Decimal('1.1')]),  # pyright: ignore[reportArgumentType]
         (int, validate_as(int).multiple_of(5.0), [5, 20, 0], [18, 7]),  # pyright: ignore[reportArgumentType]
+        # The `transform()` step results in a non-numeric core schema, meaning the constraint
+        # is applied as a function check:
+        (int, validate_as(int).transform(lambda x: x).multiple_of(5), [5, 20, 0], [18, 7]),
         (
             Decimal,
             validate_as(Decimal).multiple_of(Decimal('1.5')),
