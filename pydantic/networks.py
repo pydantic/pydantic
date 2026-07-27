@@ -1094,6 +1094,9 @@ class NameEmail(_repr.Representation):
     def __eq__(self, other: Any) -> bool:
         return isinstance(other, NameEmail) and (self.name, self.email) == (other.name, other.email)
 
+    def __hash__(self) -> int:
+        return hash((self.name, self.email))
+
     @classmethod
     def __get_pydantic_json_schema__(
         cls, core_schema: core_schema.CoreSchema, handler: _schema_generation_shared.GetJsonSchemaHandler

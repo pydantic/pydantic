@@ -1034,6 +1034,19 @@ def test_name_email():
     ]
 
 
+def test_name_email_hashable():
+    # `NameEmail` defines `__eq__` but historically not `__hash__`, which made it
+    # unhashable (unusable as a dict key / set member) despite being an immutable
+    # value object like every sibling type (`AnyUrl`, `SecretStr`, ...).
+    a = NameEmail('foo bar', 'foobaR@example.com')
+    b = NameEmail('foo bar', 'foobaR@example.com')
+    c = NameEmail('foo bar', 'different@example.com')
+
+    assert hash(a) == hash(b)
+    assert {a, b, c} == {a, c}
+    assert {a: 1}[b] == 1
+
+
 @pytest.mark.skipif(not email_validator, reason='email_validator not installed')
 def test_name_email_serialization():
     class Model(BaseModel):
