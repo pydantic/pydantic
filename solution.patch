@@ -1,0 +1,50 @@
+diff --git a/pydantic/_internal/_generate_schema.py b/pydantic/_internal/_generate_schema.py
+index 003920f8f..9f93668cf 100644
+--- a/pydantic/_internal/_generate_schema.py
++++ b/pydantic/_internal/_generate_schema.py
+@@ -16,7 +16,7 @@ from collections.abc import Callable, Generator, Iterable, Iterator, Mapping
+ from contextlib import contextmanager
+ from copy import copy
+ from decimal import Decimal
+-from enum import Enum
++from enum import Enum, Flag
+ from fractions import Fraction
+ from functools import partial
+ from inspect import Parameter, _ParameterKind
+@@ -433,8 +433,35 @@ class GenerateSchema:
+             # TODO this is an ugly hack, how do we trigger an Any schema for serialization?
+             value_ser_type = core_schema.plain_serializer_function_ser_schema(lambda x: x)
+ 
+-        if cases:
++        # Flag enums support arbitrary bitwise-OR combinations of their declared
++        # members, so the value space isn't limited to `cases`. Validate/serialize
++        # via the enum's own int reconstruction instead of the fixed-members schema.
++        if cases and issubclass(enum_type, Flag):
++
++            def validate_flag(value: Any) -> Any:
++                if isinstance(value, enum_type):
++                    return value
++                if isinstance(value, str) and value.lstrip('-').isdigit():
++                    value = int(value)
++                try:
++                    return enum_type(value)
++                except ValueError as e:
++                    raise PydanticCustomError(
++                        'enum',
++                        'Input should be a valid {enum_name} value',
++                        {'enum_name': enum_type.__name__},
++                    ) from e
+ 
++            def serialize_flag(value: Any) -> Any:
++                return value.value
++
++            return core_schema.no_info_plain_validator_function(
++                validate_flag,
++                serialization=core_schema.plain_serializer_function_ser_schema(serialize_flag),
++                ref=enum_ref,
++            )
++
++        if cases:
+             def get_json_schema(schema: CoreSchema, handler: GetJsonSchemaHandler) -> JsonSchemaValue:
+                 json_schema = handler(schema)
+                 original_schema = handler.resolve_ref_schema(json_schema)

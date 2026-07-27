@@ -1,0 +1,81 @@
+diff --git a/test.sh b/test.sh
+new file mode 100644
+index 000000000..41bedc214
+--- /dev/null
++++ b/test.sh
+@@ -0,0 +1,30 @@
++#!/usr/bin/env bash
++set -uo pipefail
++cd /app
++
++OUTPUT_PATH=""
++if [ "${1:-}" = "--output_path" ]; then
++  OUTPUT_PATH="$2"
++  shift 2
++fi
++
++MODE="${1:-new}"
++
++case "$MODE" in
++  base)
++    ARGS="tests/test_types.py -k flag or Flag"
++    ;;
++  new)
++    ARGS="tests/test_flag_enum_roundtrip.py"
++    ;;
++  *)
++    echo "unknown mode: $MODE" >&2
++    exit 2
++    ;;
++esac
++
++if [ -n "$OUTPUT_PATH" ]; then
++  python -m pytest $ARGS --junitxml="$OUTPUT_PATH" -v
++else
++  python -m pytest $ARGS -v
++fi
+\ No newline at end of file
+diff --git a/tests/test_flag_enum_roundtrip.py b/tests/test_flag_enum_roundtrip.py
+new file mode 100644
+index 000000000..41c85c4c4
+--- /dev/null
++++ b/tests/test_flag_enum_roundtrip.py
+@@ -0,0 +1,37 @@
++from enum import Flag, auto
++
++import pytest
++
++from pydantic import BaseModel
++
++
++class Color(Flag):
++    RED = auto()
++    GREEN = auto()
++    BLUE = auto()
++
++
++class Palette(BaseModel):
++    counts: dict[Color, int]
++
++
++def test_single_member_key_roundtrips():
++    m = Palette(counts={Color.RED: 1})
++    reloaded = Palette.model_validate_json(m.model_dump_json())
++    assert reloaded == m
++
++
++def test_combined_member_key_roundtrips():
++    m = Palette(counts={Color.RED | Color.BLUE: 5})
++    reloaded = Palette.model_validate_json(m.model_dump_json())
++    assert reloaded == m
++
++
++def test_multiple_keys_including_combined_roundtrip():
++    m = Palette(counts={
++        Color.RED: 1,
++        Color.GREEN | Color.BLUE: 2,
++        Color.RED | Color.GREEN | Color.BLUE: 3,
++    })
++    reloaded = Palette.model_validate_json(m.model_dump_json())
++    assert reloaded == m
+\ No newline at end of file
