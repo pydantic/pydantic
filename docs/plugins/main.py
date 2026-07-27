@@ -4,12 +4,11 @@ import json
 import logging
 import os
 import re
+import subprocess
 import textwrap
 from pathlib import Path
 from textwrap import indent
 
-import autoflake
-import pyupgrade._main as pyupgrade_main  # type: ignore
 import requests
 import tomli
 import yaml
@@ -134,7 +133,8 @@ def add_mkdocs_run_deps(site_url: str) -> None:
     </script>
 """
     path = DOCS_DIR / 'theme/mkdocs_run_deps.html'
-    path.write_text(html)
+    if not path.is_file() or path.read_text(encoding='utf-8') != html:
+        path.write_text(html, encoding='utf-8')
 
 
 MIN_MINOR_VERSION = 9
@@ -186,16 +186,31 @@ def upgrade_python(markdown: str) -> str:
 
 
 def _upgrade_code(code: str, min_version: int) -> str:
-    upgraded = pyupgrade_main._fix_plugins(
-        code,
-        settings=pyupgrade_main.Settings(
-            min_version=(3, min_version),
-            keep_percent_format=True,
-            keep_mock=False,
-            keep_runtime_typing=True,
-        ),
+    res_check = subprocess.run(
+        ['ruff', 'check', '--fix', '--select', 'UP,I,F401', '-', '--target-version', f'py3{min_version}'],
+        input=code,
+        capture_output=True,
+        text=True,
+        check=False,
     )
-    return autoflake.fix_code(upgraded, remove_all_unused_imports=True)
+    if res_check.returncode not in (0, 1):
+        logger.warning('ruff check failed: %s', res_check.stderr)
+        return code
+
+    code = res_check.stdout
+
+    res_format = subprocess.run(
+        ['ruff', 'format', '-', '--target-version', f'py3{min_version}'],
+        input=code,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    if res_format.returncode != 0:
+        logger.warning('ruff format failed: %s', res_format.stderr)
+        return code
+
+    return res_format.stdout
 
 
 def insert_json_output(markdown: str) -> str:

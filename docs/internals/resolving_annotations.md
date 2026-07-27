@@ -22,7 +22,7 @@ To circumvent this issue, forward references can be used (by wrapping the annota
 In Python 3.7, [PEP 563] introduced the concept of *postponed evaluation of annotations*, meaning
 with the `from __future__ import annotations` [future statement], type hints are stringified by default:
 
-```python {requires="3.12" lint="skip"}
+```python {requires="3.12"}
 from __future__ import annotations
 
 from pydantic import BaseModel

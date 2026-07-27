@@ -269,6 +269,7 @@ def test_validation_error_codes():
     expected_validation_error_codes = set(core_schema.ErrorType.__args__)
     # Remove codes that are not currently accessible from pydantic:
     expected_validation_error_codes.remove('timezone_offset')  # not currently exposed for configuration in pydantic
+    expected_validation_error_codes.update({'fraction_parsing', 'fraction_type'})
 
     test_failures = []
 

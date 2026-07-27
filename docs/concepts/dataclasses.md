@@ -98,7 +98,7 @@ Some differences between Pydantic dataclasses and models include:
 
     === "Python 3.12 and above (new syntax)"
 
-        ```python {requires="3.12" upgrade="skip" lint="skip"}
+        ```python {requires="3.12" upgrade="skip"}
         from pydantic.dataclasses import dataclass
 
 
