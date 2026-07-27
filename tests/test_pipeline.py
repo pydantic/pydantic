@@ -7,6 +7,7 @@ from collections.abc import Callable
 from decimal import Decimal
 from typing import Annotated, Any
 
+import annotated_types
 import pytest
 import pytz
 from annotated_types import Interval
@@ -490,3 +491,76 @@ def test_validate_as_ellipsis_preserves_other_steps() -> None:
     ta = TypeAdapter[float](Annotated[float, validate_as(str).transform(lambda v: v.split()[0]).validate_as(...)])
 
     assert ta.validate_python('12 ab') == 12.0
+
+
+@pytest.mark.parametrize(
+    'pipeline, expected',
+    [
+        pytest.param(
+            validate_as(int).ge(1).le(100),
+            {'type': 'integer', 'minimum': 1, 'maximum': 100},
+            id='ge-then-le',
+        ),
+        pytest.param(
+            validate_as(int).le(100).ge(1),
+            {'type': 'integer', 'minimum': 1, 'maximum': 100},
+            id='le-then-ge',
+        ),
+        pytest.param(
+            validate_as(int).lt(100).gt(1),
+            {'type': 'integer', 'exclusiveMinimum': 1, 'exclusiveMaximum': 100},
+            id='lt-then-gt',
+        ),
+        pytest.param(
+            validate_as(int).gt(1).lt(100),
+            {'type': 'integer', 'exclusiveMinimum': 1, 'exclusiveMaximum': 100},
+            id='gt-then-lt',
+        ),
+        pytest.param(
+            validate_as(int).ge(1).le(100).multiple_of(5),
+            {'type': 'integer', 'minimum': 1, 'maximum': 100, 'multipleOf': 5},
+            id='ge-le-multiple_of',
+        ),
+        pytest.param(
+            validate_as(int).constrain(annotated_types.Interval(ge=1, le=100)),
+            {'type': 'integer', 'minimum': 1, 'maximum': 100},
+            id='interval',
+        ),
+    ],
+)
+def test_chained_constraints_survive_in_json_schema(pipeline: Any, expected: dict[str, Any]) -> None:
+    """Every bound in a chain must reach the JSON schema, not just the first.
+
+    A constraint that layers a function validator on top of an already-applied
+    native constraint wraps the schema in `function-after`. Every constraint
+    chained after it then sees a non-numeric schema type, cannot set its own
+    native field, and survives only inside an opaque callable - so validation
+    stays correct while the published schema silently loses the bound.
+    """
+    assert TypeAdapter[Any](Annotated[int, pipeline]).json_schema() == expected
+
+
+def test_chained_constraints_match_the_equivalent_plain_annotation() -> None:
+    """The pipeline API and plain `Annotated` must publish the same schema."""
+    via_pipeline = TypeAdapter[Any](Annotated[int, validate_as(int).ge(1).le(100)]).json_schema()
+    via_annotated = TypeAdapter[Any](Annotated[int, annotated_types.Ge(1), annotated_types.Le(100)]).json_schema()
+
+    assert via_pipeline == via_annotated
+
+
+@pytest.mark.parametrize(
+    'pipeline, accepted, rejected',
+    [
+        (validate_as(int).ge(1).le(100), [1, 50, 100], [0, 101]),
+        (validate_as(int).le(100).ge(1), [1, 50, 100], [0, 101]),
+        (validate_as(int).lt(100).gt(1), [2, 50, 99], [1, 100]),
+    ],
+)
+def test_chained_constraints_still_validate(pipeline: Any, accepted: list[int], rejected: list[int]) -> None:
+    """Guard the other direction: the bounds must keep being enforced."""
+    ta = TypeAdapter[Any](Annotated[int, pipeline])
+    for value in accepted:
+        assert ta.validate_python(value) == value
+    for value in rejected:
+        with pytest.raises(ValueError):
+            ta.validate_python(value)
