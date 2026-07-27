@@ -14429,7 +14429,10 @@ validation will be more performant with the caveat that you get less information
 <span class="normal">3296</span>
 <span class="normal">3297</span>
 <span class="normal">3298</span>
-<span class="normal">3299</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@_dataclasses</span><span class="o">.</span><span class="n">dataclass</span>
+<span class="normal">3299</span>
+<span class="normal">3300</span>
+<span class="normal">3301</span>
+<span class="normal">3302</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@_dataclasses</span><span class="o">.</span><span class="n">dataclass</span>
 <span class="k">class</span><span class="w"> </span><span class="nc">FailFast</span><span class="p">(</span><span class="n">_fields</span><span class="o">.</span><span class="n">PydanticMetadata</span><span class="p">,</span> <span class="n">BaseMetadata</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;A `FailFast` annotation can be used to specify that validation should stop at the first error.</span>
 
@@ -14460,6 +14463,9 @@ validation will be more performant with the caveat that you get less information
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="n">fail_fast</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__hash__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+        <span class="k">return</span> <span class="nb">hash</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">fail_fast</span><span class="p">)</span>
 </code></pre></div></td></tr></table></div>
               </details>
 
