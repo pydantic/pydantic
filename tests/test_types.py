@@ -5068,6 +5068,20 @@ def test_bytesize_raises():
         m.size.to('1ZiB')
 
 
+@pytest.mark.parametrize('size', ['1KB junk', '1.5 MiB extra', '  12  kb  trailing'])
+def test_bytesize_rejects_trailing_data(size):
+    """Trailing data after the value/unit must be rejected, not silently ignored."""
+
+    class Model(BaseModel):
+        size: ByteSize
+
+    with pytest.raises(ValidationError, match='parse value'):
+        Model(size=size)
+
+    # surrounding whitespace remains valid
+    assert Model(size='  1MB  ').size == 1_000_000
+
+
 def test_deque_success():
     class Model(BaseModel):
         v: deque

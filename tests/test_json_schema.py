@@ -1351,14 +1351,14 @@ def test_byte_size_type():
         'properties': {
             'a': {
                 'anyOf': [
-                    {'pattern': '^\\s*(\\d*\\.?\\d+)\\s*(\\w+)?', 'type': 'string'},
+                    {'pattern': '^\\s*(\\d*\\.?\\d+)\\s*(\\w+)?\\s*$', 'type': 'string'},
                     {'minimum': 0, 'type': 'integer'},
                 ],
                 'title': 'A',
             },
             'b': {
                 'anyOf': [
-                    {'pattern': '^\\s*(\\d*\\.?\\d+)\\s*(\\w+)?', 'type': 'string'},
+                    {'pattern': '^\\s*(\\d*\\.?\\d+)\\s*(\\w+)?\\s*$', 'type': 'string'},
                     {'minimum': 0, 'type': 'integer'},
                 ],
                 'default': 1000000,
@@ -1366,7 +1366,7 @@ def test_byte_size_type():
             },
             'c': {
                 'anyOf': [
-                    {'pattern': '^\\s*(\\d*\\.?\\d+)\\s*(\\w+)?', 'type': 'string'},
+                    {'pattern': '^\\s*(\\d*\\.?\\d+)\\s*(\\w+)?\\s*$', 'type': 'string'},
                     {'minimum': 0, 'type': 'integer'},
                 ],
                 'default': '1MB',
