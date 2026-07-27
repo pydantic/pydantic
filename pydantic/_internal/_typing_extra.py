@@ -294,7 +294,10 @@ def safe_get_annotations(obj: Any) -> dict[str, Any]:
     if sys.version_info >= (3, 14):
         return annotationlib.get_annotations(obj, format=annotationlib.Format.FORWARDREF)
     else:
-        return getattr(obj, '__annotations__', {})
+        if isinstance(obj, type):
+            return obj.__dict__.get('__annotations__', {})
+        else:
+            return getattr(obj, '__annotations__', {})
 
 
 def get_model_type_hints(
