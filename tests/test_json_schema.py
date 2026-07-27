@@ -1780,6 +1780,26 @@ def test_enum_dict():
     }
 
 
+def test_int_enum_dict_key_no_property_names():
+    """A non-string enum key is serialized as a string, so referencing its
+    schema in `propertyNames` would reject our own output. See #11967.
+    """
+
+    class MyEnum(IntEnum):
+        FOO = 1
+        BAR = 2
+
+    class MyModel(BaseModel):
+        enum_dict: dict[MyEnum, str]
+
+    schema = MyModel.model_json_schema()
+    assert 'propertyNames' not in schema['properties']['enum_dict']
+
+    # the emitted JSON must satisfy the emitted schema
+    instance = json.loads(MyModel(enum_dict={MyEnum.FOO: 'a'}).model_dump_json())
+    assert instance == {'enum_dict': {'1': 'a'}}
+
+
 def test_property_names_constraint():
     class MyModel(BaseModel):
         my_dict: dict[Annotated[str, StringConstraints(max_length=1)], str]

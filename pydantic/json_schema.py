@@ -1132,11 +1132,19 @@ class GenerateJsonSchema:
         else:  # for `dict[str, Any]`, we allow any key and any value, since `str` is the default key type
             json_schema['additionalProperties'] = True
 
+        keys_core_schema = schema.get('keys_schema', {})
+        # A non-string enum is serialized as a string when used as a key, so a
+        # reference to its schema would reject the JSON we ourselves produce.
+        # `dict[int, Any]` gets no `propertyNames` for the same reason.
+        keys_ref_is_applicable = not (
+            keys_core_schema.get('type') == 'enum' and keys_core_schema.get('sub_type', 'str') != 'str'
+        )
+
         if (
             # The len check indicates that constraints are probably present:
             (keys_schema.get('type') == 'string' and len(keys_schema) > 1)
             # If this is a definition reference schema, it most likely has constraints:
-            or '$ref' in keys_schema
+            or ('$ref' in keys_schema and keys_ref_is_applicable)
         ):
             keys_schema.pop('type', None)
             json_schema['propertyNames'] = keys_schema
