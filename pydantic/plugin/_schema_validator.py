@@ -39,7 +39,7 @@ def create_schema_validator(
 
     plugins = get_plugins()
     if plugins:
-        return PluggableSchemaValidator(
+        pluggable_schema_validator = PluggableSchemaValidator(
             schema,
             schema_type,
             SchemaTypePath(schema_type_module, schema_type_name),
@@ -49,6 +49,15 @@ def create_schema_validator(
             plugin_settings or {},
             _use_prebuilt=_use_prebuilt,
         )
+        if pluggable_schema_validator._has_event_handlers:
+            return pluggable_schema_validator
+        else:
+            # No plugin provided any event handler for this schema, so the wrapper is functionally
+            # inert. Return the underlying `SchemaValidator` instead: an unnecessary wrapper isn't
+            # free — in particular, it prevents `pydantic-core` from reusing the already built
+            # validator when other models reference this schema's type (which can massively
+            # increase memory usage in applications with many interconnected models).
+            return pluggable_schema_validator._schema_validator
     else:
         return SchemaValidator(schema, config, _use_prebuilt=_use_prebuilt)
 
@@ -56,7 +65,7 @@ def create_schema_validator(
 class PluggableSchemaValidator:
     """Pluggable schema validator."""
 
-    __slots__ = '_schema_validator', 'validate_json', 'validate_python', 'validate_strings'
+    __slots__ = '_schema_validator', '_has_event_handlers', 'validate_json', 'validate_python', 'validate_strings'
 
     def __init__(
         self,
@@ -88,6 +97,7 @@ class PluggableSchemaValidator:
             if s is not None:
                 strings_event_handlers.append(s)
 
+        self._has_event_handlers = bool(python_event_handlers or json_event_handlers or strings_event_handlers)
         self.validate_python = build_wrapper(self._schema_validator.validate_python, python_event_handlers)
         self.validate_json = build_wrapper(self._schema_validator.validate_json, json_event_handlers)
         self.validate_strings = build_wrapper(self._schema_validator.validate_strings, strings_event_handlers)

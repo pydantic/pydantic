@@ -6,7 +6,7 @@ from functools import partial
 from typing import Any
 
 import pytest
-from pydantic_core import ValidationError
+from pydantic_core import SchemaValidator, ValidationError
 
 from pydantic import BaseModel, TypeAdapter, create_model, dataclasses, field_validator, validate_call
 from pydantic.config import ExtraValues
@@ -18,6 +18,7 @@ from pydantic.plugin import (
     ValidateStringsHandlerProtocol,
 )
 from pydantic.plugin._loader import _plugins
+from pydantic.plugin._schema_validator import PluggableSchemaValidator
 
 pytestmark = pytest.mark.thread_unsafe(reason='`install_plugin()` is thread unsafe')
 
@@ -500,3 +501,57 @@ def test_plugin_path_complex() -> None:
             'BaseModel',
         ),
     ]
+
+
+def test_plugin_no_event_handlers_returns_plain_schema_validator() -> None:
+    """A plugin providing no event handlers for a schema doesn't result in a `PluggableSchemaValidator`.
+
+    The wrapper would be functionally inert, and would prevent `pydantic-core` from reusing the
+    built validator when other models reference this model (see `PrebuiltValidator`), which can
+    massively increase memory usage in applications with many interconnected models.
+    """
+
+    class Plugin:
+        def new_schema_validator(self, schema, schema_type, schema_type_path, schema_kind, config, plugin_settings):
+            return None, None, None
+
+    plugin = Plugin()
+    with install_plugin(plugin):
+
+        class Inner(BaseModel):
+            a: int
+
+        class Outer(BaseModel):
+            inner: Inner
+
+        assert isinstance(Inner.__pydantic_validator__, SchemaValidator)
+        assert isinstance(Outer.__pydantic_validator__, SchemaValidator)
+        assert 'PrebuiltValidator' in repr(Outer.__pydantic_validator__)
+        assert Outer.model_validate({'inner': {'a': 1}}).inner.a == 1
+
+
+def test_plugin_with_event_handlers_still_reuses_prebuilt_validators() -> None:
+    """Even when validators are wrapped in a `PluggableSchemaValidator`, referencing models reuse
+    the underlying prebuilt validator (plugin callbacks only fire on top-level validation calls)."""
+
+    class CustomOnValidatePython(ValidatePythonHandlerProtocol):
+        def on_enter(self, input, **kwargs) -> None:
+            pass
+
+    class Plugin:
+        def new_schema_validator(self, schema, schema_type, schema_type_path, schema_kind, config, plugin_settings):
+            return CustomOnValidatePython(), None, None
+
+    plugin = Plugin()
+    with install_plugin(plugin):
+
+        class Inner(BaseModel):
+            a: int
+
+        class Outer(BaseModel):
+            inner: Inner
+
+        assert isinstance(Inner.__pydantic_validator__, PluggableSchemaValidator)
+        assert isinstance(Outer.__pydantic_validator__, PluggableSchemaValidator)
+        assert 'PrebuiltValidator' in repr(Outer.__pydantic_validator__._schema_validator)
+        assert Outer.model_validate({'inner': {'a': 1}}).inner.a == 1
