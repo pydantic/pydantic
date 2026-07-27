@@ -196,6 +196,20 @@ impl TypeSerializer for TaggedUnionSerializer {
         serializer: S,
         state: &mut SerializationState<'py>,
     ) -> Result<S::Ok, S::Error> {
+        if let Some(tag) = self.get_discriminator_value(value) {
+            let serializer_index = match self.lookup.get(&tag) {
+                Ok(Some(&serializer_index)) => Some(serializer_index),
+                Ok(None) => None,
+                Err(err) => return Err(serde::ser::Error::custom(err.to_string())),
+            };
+            if let Some(serializer_index) = serializer_index {
+                let choice = &self.choices.choices[serializer_index];
+                let state = &mut scoped_check_level(state, initial_check_level(state));
+                let state = &mut state.scoped_include_exclude(IncludeExclude::empty());
+                return choice.serde_serialize(value, serializer, state);
+            }
+        }
+
         match self.tagged_union_serialize(
             value,
             |comb_serializer, state| comb_serializer.to_python(value, state),

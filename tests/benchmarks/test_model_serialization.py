@@ -1,8 +1,33 @@
+from typing import Literal
+
 import pytest
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field, JsonValue
 
 from .shared import ComplexModel, NestedModel, OuterModel, SimpleModel
+
+
+class _UnionStringDataA(BaseModel):
+    buffer: str
+    encoding: Literal['a']
+
+
+class _UnionStringDataB(BaseModel):
+    buffer: str
+    encoding: Literal['b']
+
+
+class _UnionJsonData(BaseModel):
+    buffer: JsonValue
+    encoding: Literal['json']
+
+
+class _DiscriminatedUnionModel(BaseModel):
+    data: _UnionStringDataA | _UnionStringDataB | _UnionJsonData = Field(discriminator='encoding')
+
+
+class _ConcreteUnionModel(BaseModel):
+    data: _UnionJsonData
 
 
 @pytest.mark.benchmark(group='model_serialization')
@@ -37,4 +62,18 @@ def test_list_of_models_serialization(benchmark):
 @pytest.mark.benchmark(group='model_serialization')
 def test_model_json_serialization(benchmark):
     model = ComplexModel(field1='test', field2=[{'a': 1, 'b': 2.2}, {'c': 3, 'd': 4.4}], field3=['test', 1, 2, 'test2'])
+    benchmark(model.model_dump_json)
+
+
+@pytest.mark.benchmark(group='model_serialization_union')
+def test_model_json_serialization_discriminated_union(benchmark):
+    inner = _UnionJsonData.model_construct(buffer=[1.0] * 100_000, encoding='json')
+    model = _DiscriminatedUnionModel.model_construct(data=inner)
+    benchmark(model.model_dump_json)
+
+
+@pytest.mark.benchmark(group='model_serialization_union')
+def test_model_json_serialization_concrete(benchmark):
+    inner = _UnionJsonData.model_construct(buffer=[1.0] * 100_000, encoding='json')
+    model = _ConcreteUnionModel.model_construct(data=inner)
     benchmark(model.model_dump_json)
