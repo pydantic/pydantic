@@ -673,6 +673,8 @@ def test_tagged_union() -> None:
     model_b = ModelB(field=1)
     assert s.to_python(model_a) == {'field': 1, 'tag': 'a'}
     assert s.to_python(model_b) == {'field': 1, 'tag': 'b'}
+    assert s.to_json(model_a, include={'field'}) == b'{"field":1}'
+    assert s.to_json(model_a, exclude={'field'}) == b'{"tag":"a"}'
 
 
 def test_union_float_int() -> None:

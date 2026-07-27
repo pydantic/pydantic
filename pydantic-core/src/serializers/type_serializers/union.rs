@@ -205,7 +205,6 @@ impl TypeSerializer for TaggedUnionSerializer {
             if let Some(serializer_index) = serializer_index {
                 let choice = &self.choices.choices[serializer_index];
                 let state = &mut scoped_check_level(state, initial_check_level(state));
-                let state = &mut state.scoped_include_exclude(IncludeExclude::empty());
                 return choice.serde_serialize(value, serializer, state);
             }
         }
