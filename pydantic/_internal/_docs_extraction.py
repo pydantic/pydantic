@@ -79,6 +79,25 @@ def _extract_source_from_frame(cls: type[Any]) -> list[str] | None:
         frame = frame.f_back
 
 
+def _extract_docstrings_from_single_cls(cls: type[Any], use_inspect: bool = False) -> dict[str, str]:
+    if use_inspect or sys.version_info >= (3, 13):
+        try:
+            source, _ = inspect.getsourcelines(cls)
+        except OSError:  # pragma: no cover
+            return {}
+    else:
+        source = _extract_source_from_frame(cls)
+
+    if not source:
+        return {}
+
+    dedent_source = _dedent_source_lines(source)
+
+    visitor = DocstringVisitor()
+    visitor.visit(ast.parse(dedent_source))
+    return visitor.attrs
+
+
 def extract_docstrings_from_cls(cls: type[Any], use_inspect: bool = False) -> dict[str, str]:
     """Map model attributes and their corresponding docstring.
 
@@ -90,24 +109,9 @@ def extract_docstrings_from_cls(cls: type[Any], use_inspect: bool = False) -> di
     Returns:
         A mapping containing attribute names and their corresponding docstring.
     """
-    if use_inspect or sys.version_info >= (3, 13):
-        # On Python < 3.13, `inspect.getsourcelines()` might not work as expected
-        # if two classes have the same name in the same source file.
-        # On Python 3.13+, it will use the new `__firstlineno__` class attribute,
-        # making it way more robust.
-        try:
-            source, _ = inspect.getsourcelines(cls)
-        except OSError:  # pragma: no cover
-            return {}
-    else:
-        # TODO remove this implementation when we drop support for Python 3.12:
-        source = _extract_source_from_frame(cls)
-
-    if not source:
-        return {}
-
-    dedent_source = _dedent_source_lines(source)
-
-    visitor = DocstringVisitor()
-    visitor.visit(ast.parse(dedent_source))
-    return visitor.attrs
+    docstrings: dict[str, str] = {}
+    for base in reversed(cls.__mro__):
+        if base is object or base is tuple:
+            continue
+        docstrings.update(_extract_docstrings_from_single_cls(base, use_inspect=use_inspect))
+    return docstrings
