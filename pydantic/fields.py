@@ -6,6 +6,7 @@ import dataclasses
 import inspect
 import re
 import sys
+import threading
 from collections.abc import Callable, Mapping
 from copy import copy
 from dataclasses import Field as DataclassField
@@ -40,6 +41,10 @@ __all__ = 'Field', 'FieldInfo', 'PrivateAttr', 'computed_field'
 
 
 _Unset: Any = PydanticUndefined
+
+# Guards rebuilding the `FieldInfo._attributes_set` dict from its compact form. Only taken on the
+# first access to a given `FieldInfo`, and only long enough to build a small dict.
+_attributes_set_materialize_lock = threading.Lock()
 
 if sys.version_info >= (3, 13):
     import warnings
@@ -300,11 +305,17 @@ class FieldInfo(_repr.Representation):
     @property
     def _attributes_set(self) -> dict[str, Any]:
         storage = self._attributes_set_storage
-        if type(storage) is not dict:
-            items = iter(storage)
-            # The dict is stored back, so that callers mutating it (as several do) still work:
-            storage = dict(zip(items, items, strict=True))
-            self._attributes_set_storage = storage
+        if isinstance(storage, dict):
+            return storage
+        # The dict is stored back, so that callers mutating it (as several do) still work. Two
+        # threads materializing at once would each build their own dict, and whichever stored
+        # second would discard any mutation made through the first, so only one may do it:
+        with _attributes_set_materialize_lock:
+            storage = self._attributes_set_storage
+            if not isinstance(storage, dict):
+                items = iter(storage)
+                storage = dict(zip(items, items, strict=True))
+                self._attributes_set_storage = storage
         return storage
 
     @_attributes_set.setter
@@ -859,7 +870,7 @@ class FieldInfo(_repr.Representation):
             # Apply "deep-copy" behavior on collections attributes:
             setattr(copied, attr_name, getattr(copied, attr_name).copy())
 
-        if type(copied._attributes_set_storage) is dict:
+        if isinstance(copied._attributes_set_storage, dict):
             # (the compact form is an immutable tuple, so it doesn't need copying)
             copied._attributes_set_storage = copied._attributes_set_storage.copy()
 
