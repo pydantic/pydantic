@@ -10,7 +10,7 @@ That ValidationError will contain information about all the errors and how they 
 
 You can access these errors in several ways:
 
-| Method | Description | | --- | --- | | errors() | Returns a list of ErrorDetails errors found in the input data. | | error_count() | Returns the number of errors. | | json() | Returns a JSON representation of the list errors. | | `str(e)` | Returns a human-readable representation of the errors. |
+| Method | Description | | --- | --- | | errors() | Returns a list of ErrorDetails errors found in the input data. | | error_count() | Returns the number of errors. | | json() | Returns a JSON representation of the list of errors. | | `str(e)` | Returns a human-readable representation of the errors. |
 
 The ErrorDetails object is a dictionary. It contains the following:
 
