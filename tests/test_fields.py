@@ -321,6 +321,7 @@ def test_attributes_set_accepts_a_dict_subclass() -> None:
     assert isinstance(field._copy()._attributes_set, defaultdict)
 
 
+@pytest.mark.skipif(sys.platform == 'emscripten', reason='no threading on emscripten')
 def test_attributes_set_materializes_once_under_threads() -> None:
     """Concurrent first reads must not each build a dict and discard each other's mutations.
 
