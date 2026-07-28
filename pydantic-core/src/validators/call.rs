@@ -6,6 +6,7 @@ use pyo3::prelude::*;
 use pyo3::types::PyString;
 use pyo3::types::{PyDict, PyTuple};
 
+use crate::build_tools::py_schema_err;
 use crate::errors::ValResult;
 use crate::input::Input;
 
@@ -105,5 +106,37 @@ impl Validator for CallValidator {
 
     fn get_name(&self) -> &str {
         &self.name
+    }
+
+    fn children(&self) -> Vec<&Arc<CombinedValidator>> {
+        let mut children = vec![&self.arguments_validator];
+        if let Some(return_validator) = &self.return_validator {
+            children.push(return_validator);
+        }
+        children
+    }
+
+    fn with_new_children(&self, children: Vec<Arc<CombinedValidator>>) -> PyResult<Arc<CombinedValidator>> {
+        if children.len() != if self.return_validator.is_some() { 2 } else { 1 } {
+            return py_schema_err!(
+                "Expected {} children, got {}",
+                if self.return_validator.is_some() { 2 } else { 1 },
+                children.len()
+            );
+        }
+
+        let mut child_iter = children.into_iter();
+
+        Ok(CombinedValidator::FunctionCall(Self {
+            function: self.function.clone(),
+            arguments_validator: child_iter.next().unwrap(),
+            return_validator: if self.return_validator.is_some() {
+                Some(child_iter.next().unwrap())
+            } else {
+                None
+            },
+            name: self.name.clone(),
+        })
+        .into())
     }
 }

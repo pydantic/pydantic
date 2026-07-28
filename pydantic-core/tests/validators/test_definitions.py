@@ -16,6 +16,8 @@ def test_list_with_def():
     assert v.validate_json(b'[1, 2, "3"]') == [1, 2, 3]
     r = plain_repr(v)
     assert r.startswith('SchemaValidator(title="list[int]",')
+    # definition should have been inlined, not recursive
+    assert 'DefinitionRef' not in r
 
 
 def test_ignored_def():

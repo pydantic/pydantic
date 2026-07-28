@@ -295,6 +295,10 @@ impl Validator for LiteralValidator {
     fn get_name(&self) -> &str {
         &self.name
     }
+
+    fn children(&self) -> Vec<&Arc<CombinedValidator>> {
+        vec![]
+    }
 }
 
 /// Formats strings according to (`base_name[arg1,arg2,...,argN]`)

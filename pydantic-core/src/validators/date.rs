@@ -107,6 +107,10 @@ impl Validator for DateValidator {
     fn get_name(&self) -> &str {
         Self::EXPECTED_TYPE
     }
+
+    fn children(&self) -> Vec<&Arc<CombinedValidator>> {
+        vec![]
+    }
 }
 
 /// In lax mode, if the input is not a date, we try parsing the input as a datetime, then check it is an

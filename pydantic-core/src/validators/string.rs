@@ -89,6 +89,10 @@ impl Validator for StrValidator {
     fn get_name(&self) -> &str {
         Self::EXPECTED_TYPE
     }
+
+    fn children(&self) -> Vec<&Arc<CombinedValidator>> {
+        vec![]
+    }
 }
 
 /// Any new properties set here must be reflected in `has_constraints_set`
@@ -181,6 +185,10 @@ impl Validator for StrConstrainedValidator {
 
     fn get_name(&self) -> &'static str {
         "constrained-str"
+    }
+
+    fn children(&self) -> Vec<&Arc<CombinedValidator>> {
+        vec![]
     }
 }
 

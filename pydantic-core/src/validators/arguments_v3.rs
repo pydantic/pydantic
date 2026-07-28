@@ -24,7 +24,7 @@ use crate::tools::SchemaDict;
 use super::validation_state::ValidationState;
 use super::{BuildValidator, CombinedValidator, DefinitionsBuilder, Validator, build_validator};
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone, Copy)]
 enum ParameterMode {
     PositionalOnly,
     PositionalOrKeyword,
@@ -54,7 +54,7 @@ impl FromStr for ParameterMode {
 struct Parameter {
     name: PyBackedStr,
     mode: ParameterMode,
-    lookup_path_collection: LookupPathCollection,
+    lookup_path_collection: Arc<LookupPathCollection>,
     validator: Arc<CombinedValidator>,
 }
 
@@ -188,7 +188,7 @@ impl BuildValidator for ArgumentsV3Validator {
             parameters.push(Parameter {
                 name,
                 mode,
-                lookup_path_collection,
+                lookup_path_collection: Arc::new(lookup_path_collection),
                 validator,
             });
         }
@@ -762,5 +762,35 @@ impl Validator for ArgumentsV3Validator {
 
     fn get_name(&self) -> &str {
         Self::EXPECTED_TYPE
+    }
+
+    fn children(&self) -> Vec<&Arc<CombinedValidator>> {
+        self.parameters.iter().map(|p| &p.validator).collect()
+    }
+
+    fn with_new_children(&self, children: Vec<Arc<CombinedValidator>>) -> PyResult<Arc<CombinedValidator>> {
+        if children.len() != self.parameters.len() {
+            return py_schema_err!("Expected {} children, got {}", self.parameters.len(), children.len());
+        }
+
+        Ok(CombinedValidator::ArgumentsV3(Self {
+            parameters: self
+                .parameters
+                .iter()
+                .zip(children)
+                .map(|(p, v)| Parameter {
+                    name: p.name.clone(),
+                    mode: p.mode,
+                    lookup_path_collection: p.lookup_path_collection.clone(),
+                    validator: v,
+                })
+                .collect(),
+            positional_params_count: self.positional_params_count,
+            loc_by_alias: self.loc_by_alias,
+            extra: self.extra,
+            validate_by_alias: self.validate_by_alias,
+            validate_by_name: self.validate_by_name,
+        })
+        .into())
     }
 }

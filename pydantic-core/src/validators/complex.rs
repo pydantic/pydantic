@@ -61,6 +61,10 @@ impl Validator for ComplexValidator {
     fn get_name(&self) -> &'static str {
         "complex"
     }
+
+    fn children(&self) -> Vec<&Arc<CombinedValidator>> {
+        vec![]
+    }
 }
 
 pub(crate) fn string_to_complex<'py>(

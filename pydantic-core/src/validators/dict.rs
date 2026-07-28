@@ -5,6 +5,7 @@ use pyo3::prelude::*;
 use pyo3::types::PyDict;
 
 use crate::build_tools::is_strict;
+use crate::build_tools::py_schema_err;
 use crate::errors::{LocItem, ValError, ValLineError, ValResult};
 use crate::input::BorrowInput;
 use crate::input::ConsumeIterator;
@@ -91,6 +92,26 @@ impl Validator for DictValidator {
 
     fn get_name(&self) -> &str {
         &self.name
+    }
+
+    fn children(&self) -> Vec<&Arc<CombinedValidator>> {
+        vec![&self.key_validator, &self.value_validator]
+    }
+
+    fn with_new_children(&self, children: Vec<Arc<CombinedValidator>>) -> PyResult<Arc<CombinedValidator>> {
+        if children.len() != 2 {
+            return py_schema_err!("DictValidator expected 2 children, got {}", children.len());
+        }
+        Ok(CombinedValidator::Dict(Self {
+            strict: self.strict,
+            key_validator: children[0].clone(),
+            value_validator: children[1].clone(),
+            min_length: self.min_length,
+            max_length: self.max_length,
+            fail_fast: self.fail_fast,
+            name: self.name.clone(),
+        })
+        .into())
     }
 }
 
