@@ -10,6 +10,7 @@ from collections.abc import Callable, Mapping
 from copy import copy
 from dataclasses import Field as DataclassField
 from functools import cached_property
+from itertools import chain
 from types import EllipsisType
 from typing import TYPE_CHECKING, Annotated, Any, ClassVar, Literal, TypeAlias, TypeVar, final, overload
 from warnings import warn
@@ -173,6 +174,9 @@ class FieldInfo(_repr.Representation):
     init_var: bool | None
     kw_only: bool | None
     metadata: list[Any]
+    # Either the `_attributes_set` dict itself, or its key/value pairs flattened into a tuple.
+    # See the `_attributes_set` property.
+    _attributes_set_storage: dict[str, Any] | tuple[Any, ...]
 
     __slots__ = (
         'annotation',
@@ -198,7 +202,7 @@ class FieldInfo(_repr.Representation):
         'init_var',
         'kw_only',
         'metadata',
-        '_attributes_set',
+        '_attributes_set_storage',
         '_qualifiers',
         '_complete',
         '_original_assignment',
@@ -235,7 +239,7 @@ class FieldInfo(_repr.Representation):
         # Tracking the explicitly set attributes is necessary to correctly merge `Field()` functions
         # (e.g. with `Annotated[int, Field(alias='a'), Field(alias=None)]`, even though `None` is the default value,
         # we need to track that `alias=None` was explicitly set):
-        self._attributes_set = {k: v for k, v in kwargs.items() if v is not _Unset and k not in self.metadata_lookup}
+        attributes_set = {k: v for k, v in kwargs.items() if v is not _Unset and k not in self.metadata_lookup}
         kwargs = {k: _DefaultValues.get(k) if v is _Unset else v for k, v in kwargs.items()}  # type: ignore
         self.annotation = kwargs.get('annotation')
 
@@ -243,7 +247,7 @@ class FieldInfo(_repr.Representation):
         default = kwargs.pop('default', PydanticUndefined)
         if default is Ellipsis:
             self.default = PydanticUndefined
-            self._attributes_set.pop('default', None)
+            attributes_set.pop('default', None)
         else:
             self.default = default
 
@@ -287,6 +291,25 @@ class FieldInfo(_repr.Representation):
         # or if it is the result of the `Field()` function being used as metadata in an `Annotated` type/as an assignment
         # (not an ideal pattern, see https://github.com/pydantic/pydantic/issues/11122):
         self._final = False
+
+        # A dict is allocated for every field of every model, but is only read again for a small
+        # fraction of them, so it is stored flattened into a tuple and only rebuilt on demand
+        # (a tuple of three key/value pairs is 88 bytes against 184 for the equivalent dict):
+        self._attributes_set_storage = tuple(chain.from_iterable(attributes_set.items()))
+
+    @property
+    def _attributes_set(self) -> dict[str, Any]:
+        storage = self._attributes_set_storage
+        if type(storage) is not dict:
+            items = iter(storage)
+            # The dict is stored back, so that callers mutating it (as several do) still work:
+            storage = dict(zip(items, items, strict=True))
+            self._attributes_set_storage = storage
+        return storage
+
+    @_attributes_set.setter
+    def _attributes_set(self, value: dict[str, Any]) -> None:
+        self._attributes_set_storage = value
 
     @staticmethod
     def from_field(default: Any = PydanticUndefined, **kwargs: Unpack[_FromFieldInfoInputs]) -> FieldInfo:
@@ -832,9 +855,13 @@ class FieldInfo(_repr.Representation):
         else:
             copied = copy(self)
 
-        for attr_name in ('metadata', '_attributes_set', '_qualifiers'):
+        for attr_name in ('metadata', '_qualifiers'):
             # Apply "deep-copy" behavior on collections attributes:
             setattr(copied, attr_name, getattr(copied, attr_name).copy())
+
+        if type(copied._attributes_set_storage) is dict:
+            # (the compact form is an immutable tuple, so it doesn't need copying)
+            copied._attributes_set_storage = copied._attributes_set_storage.copy()
 
         return copied  # pyright: ignore[reportReturnType]
 
@@ -847,7 +874,7 @@ class FieldInfo(_repr.Representation):
             # By yielding a three-tuple:
             if s in (
                 'annotation',
-                '_attributes_set',
+                '_attributes_set_storage',
                 '_qualifiers',
                 '_complete',
                 '_original_assignment',

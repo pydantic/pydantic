@@ -285,6 +285,29 @@ def test_fastapi_compatibility_hack() -> None:
     assert not model_field.is_required()
 
 
+def test_attributes_set_is_a_mutable_dict() -> None:
+    """`_attributes_set` is stored compactly, but must behave as a plain mutable dict."""
+    field = FieldInfo(annotation=int, alias='a', description='d')
+
+    assert field._attributes_set == {'annotation': int, 'alias': 'a', 'description': 'd'}
+    # A second read must return the same (materialized) dict, so that mutations stick:
+    assert field._attributes_set is field._attributes_set
+
+    field._attributes_set['alias'] = 'b'
+    assert field._attributes_set['alias'] == 'b'
+
+    # Explicitly setting `None` is tracked, and a value assigned after construction is not:
+    field = FieldInfo(annotation=int, description=None)
+    field.title = 'set later'
+    assert field._attributes_set == {'annotation': int, 'description': None}
+
+    # A copy must not share the dict with the original:
+    field = FieldInfo(annotation=int, alias='a')
+    copied = field._copy()
+    copied._attributes_set['alias'] = 'b'
+    assert field._attributes_set['alias'] == 'a'
+
+
 _unsupported_standalone_fieldinfo_attributes = (
     ('alias', 'alias'),
     ('validation_alias', 'alias'),
