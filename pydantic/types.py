@@ -1888,7 +1888,8 @@ class SecretStr(_SecretField[str]):
         if not isinstance(other, self.__class__):
             return False
 
-        return secrets.compare_digest(self.get_secret_value(), other.get_secret_value())
+        # `secrets.compare_digest()` only supports ASCII strings, so encode to bytes first:
+        return secrets.compare_digest(self.get_secret_value().encode(), other.get_secret_value().encode())
 
     def _display(self) -> str:
         return _secret_display(self._secret_value)
