@@ -297,10 +297,12 @@ def _field_info_from_template(ann_type: Any, default: Any, evaluated: bool) -> F
     field_info = template._copy()
     # The template's annotation and default are equal to the provided ones, but possibly
     # distinct objects (e.g. a different — but equal — spelling of the same union, or an
-    # equal string default), so set the actual objects on the copy:
-    if field_info.annotation is not ann_type:
-        field_info.annotation = ann_type
-        field_info._attributes_set['annotation'] = ann_type
+    # equal string default), so set the actual objects on the copy. For `Annotated` forms,
+    # `FieldInfo.annotation` holds the wrapped source type:
+    source_type = ann_type.__origin__ if typing_objects.is_annotated(get_origin(ann_type)) else ann_type
+    if field_info.annotation is not source_type:
+        field_info.annotation = source_type
+        field_info._attributes_set['annotation'] = source_type
     field_info._original_annotation = ann_type
     if default is not PydanticUndefined:
         if field_info.default is not default:
