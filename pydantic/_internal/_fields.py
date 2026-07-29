@@ -24,6 +24,7 @@ from ._docs_extraction import extract_docstrings_from_cls
 from ._import_utils import import_cached_base_model, import_cached_field_info
 from ._namespace_utils import NsResolver
 from ._repr import Representation
+from ._schema_cache import IMMUTABLE_DEFAULT_TYPES, field_info_template_cache, pure_annotation_cache_key
 from ._utils import can_be_positional, get_first_not_none
 
 if TYPE_CHECKING:
@@ -220,6 +221,55 @@ _deprecated_classmethod_names = {
 }
 
 
+def _field_info_from_template(ann_type: Any, default: Any, evaluated: bool) -> FieldInfo | None:
+    """Create a `FieldInfo` from a cached template, or return `None` if no template applies.
+
+    Templates exist for fields defined by an evaluated pure annotation and, at most, a simple
+    immutable default value: the `FieldInfo` instances created for such fields are identical
+    every time (see the `_schema_cache` module docstring), so the (rather involved) creation
+    process can be skipped by copying a cached instance.
+    """
+    if not evaluated or (default is not PydanticUndefined and type(default) not in IMMUTABLE_DEFAULT_TYPES):
+        return None
+    try:
+        annotation_key = pure_annotation_cache_key(ann_type)
+    except TypeError:  # unhashable annotation (or part of it)
+        return None
+    if annotation_key is None:
+        return None
+    template = field_info_template_cache.get((annotation_key, type(default), default))
+    if template is None:
+        return None
+
+    field_info = template._copy()
+    # The template's annotation and default are equal to the provided ones, but possibly
+    # distinct objects (e.g. a different — but equal — spelling of the same union, or an
+    # equal string default), so set the actual objects on the copy:
+    if field_info.annotation is not ann_type:
+        field_info.annotation = ann_type
+        field_info._attributes_set['annotation'] = ann_type
+    field_info._original_annotation = ann_type
+    if default is not PydanticUndefined:
+        if field_info.default is not default:
+            field_info.default = default
+            field_info._attributes_set['default'] = default
+        field_info._original_assignment = default
+    return field_info
+
+
+def _store_field_info_template(ann_type: Any, default: Any, field_info: FieldInfo) -> None:
+    """Store a pristine copy of a just-created `FieldInfo` as a template, if eligible."""
+    if default is not PydanticUndefined and type(default) not in IMMUTABLE_DEFAULT_TYPES:
+        return
+    try:
+        annotation_key = pure_annotation_cache_key(ann_type)
+    except TypeError:  # unhashable annotation (or part of it)
+        return
+    if annotation_key is None:
+        return
+    field_info_template_cache[(annotation_key, type(default), default)] = field_info._copy()
+
+
 def collect_model_fields(  # noqa: C901
     cls: type[BaseModel],
     config_wrapper: ConfigWrapper,
@@ -345,12 +395,16 @@ def collect_model_fields(  # noqa: C901
                 # - not found on any base classes; this seems to be caused by fields not getting
                 #   generated due to models not being fully defined while initializing recursive models.
                 #   Nothing stops us from just creating a `FieldInfo` for this type hint, so we do this.
-                field_info = FieldInfo_.from_annotation(ann_type, _source=AnnotationSource.CLASS)
-                field_info._original_annotation = ann_type
-                if not evaluated:
-                    field_info._complete = False
-                    # Store the original annotation that should be used to rebuild
-                    # the field info later:
+                field_info = _field_info_from_template(ann_type, PydanticUndefined, evaluated)
+                if field_info is None:
+                    field_info = FieldInfo_.from_annotation(ann_type, _source=AnnotationSource.CLASS)
+                    field_info._original_annotation = ann_type
+                    if not evaluated:
+                        field_info._complete = False
+                        # Store the original annotation that should be used to rebuild
+                        # the field info later:
+                    else:
+                        _store_field_info_template(ann_type, PydanticUndefined, field_info)
             else:
                 # The field was present on one of the (possibly multiple) base classes, we make a copy directly from it.
                 parent_field_info = parent_fields_lookup[ann_name]._copy()
@@ -377,11 +431,18 @@ def collect_model_fields(  # noqa: C901
                 assigned_value.default = default
                 assigned_value._attributes_set['default'] = default
 
-            field_info = FieldInfo_.from_annotated_attribute(ann_type, assigned_value, _source=AnnotationSource.CLASS)
+            field_info = _field_info_from_template(ann_type, assigned_value, evaluated)
+            if field_info is None:
+                field_info = FieldInfo_.from_annotated_attribute(
+                    ann_type, assigned_value, _source=AnnotationSource.CLASS
+                )
 
-            # Store the original annotation and assignment value that could be used to rebuild the field info later.
-            field_info._original_assignment = assigned_value
-            field_info._original_annotation = ann_type
+                # Store the original annotation and assignment value that could be used to rebuild the field info later.
+                field_info._original_assignment = assigned_value
+                field_info._original_annotation = ann_type
+                if evaluated:
+                    _store_field_info_template(ann_type, assigned_value, field_info)
+
             if not evaluated:
                 field_info._complete = False
             elif 'final' in field_info._qualifiers and not field_info.is_required():

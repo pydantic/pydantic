@@ -113,6 +113,21 @@ from ._generics import get_standard_typevars_map, replace_types
 from ._import_utils import import_cached_base_model, import_cached_field_info
 from ._mock_val_ser import MockCoreSchema
 from ._namespace_utils import NamespacesTuple, NsResolver
+from ._schema_cache import (
+    IMMUTABLE_DEFAULT_TYPES,
+)
+from ._schema_cache import (
+    copy_pure_schema as _copy_pure_schema,
+)
+from ._schema_cache import (
+    model_field_schema_cache as _model_field_schema_cache,
+)
+from ._schema_cache import (
+    pure_annotation_cache_key as _pure_annotation_cache_key,
+)
+from ._schema_cache import (
+    pure_annotation_schema_cache as _pure_annotation_schema_cache,
+)
 from ._schema_gather import MissingDefinitionError, gather_schemas_for_cleaning
 from ._schema_generation_shared import CallbackGetCoreSchemaHandler
 from ._utils import lenient_issubclass, smart_deepcopy
@@ -167,142 +182,6 @@ MAPPING_TYPES = [
 ]
 COUNTER_TYPES = [collections.Counter, typing.Counter]
 DEQUE_TYPES: list[type] = [collections.deque, typing.Deque]  # noqa: UP006
-
-# The leaf types of "pure" annotations (see `_pure_annotation_cache_key()`). These are immutable
-# C types only, guaranteeing that no custom `__get_pydantic_core_schema__`/`__get_pydantic_json_schema__`
-# hook can ever be attached to them.
-#
-# Note: membership of these collections is tested by identity (through `_ids()` below) and not with
-# a plain `in`. A user-defined class whose metaclass implements `__eq__`/`__hash__` so that the
-# class compares equal to e.g. `int` would otherwise be classified as pure and share `int`'s cache
-# entry, letting its `__get_pydantic_core_schema__` hook poison the schema used for `int` fields
-# (and vice versa):
-_PURE_LEAF_TYPES: frozenset[Any] = frozenset(
-    [
-        str,
-        bytes,
-        int,
-        float,
-        bool,
-        complex,
-        None,
-        NoneType,
-        Any,
-        typing_extensions.Any,
-        object,
-        datetime.date,
-        datetime.datetime,
-        datetime.time,
-        datetime.timedelta,
-        Decimal,
-        # The bare container forms (their schemas don't depend on configuration or context either):
-        list,
-        set,
-        frozenset,
-        dict,
-        tuple,
-    ]
-)
-_PURE_CONTAINER_ORIGINS: frozenset[Any] = frozenset([list, set, frozenset, dict, tuple])
-_PURE_LITERAL_VALUE_TYPES: frozenset[type[Any]] = frozenset([str, bytes, int, bool, NoneType])
-
-
-def _ids(objects: frozenset[Any], /) -> frozenset[int]:
-    """The ids of the provided objects, for identity-based membership tests.
-
-    The objects are all builtin/stdlib singletons kept alive for the lifetime of the process by the
-    (module-global) sets above, so their ids are stable and can't be reused by another object.
-    """
-    return frozenset(id(obj) for obj in objects)
-
-
-_PURE_LEAF_TYPE_IDS = _ids(_PURE_LEAF_TYPES)
-_PURE_CONTAINER_ORIGIN_IDS = _ids(_PURE_CONTAINER_ORIGINS)
-_PURE_LITERAL_VALUE_TYPE_IDS = _ids(_PURE_LITERAL_VALUE_TYPES)
-
-# Returned by `_pure_annotation_cache_key()` for annotations that aren't pure. A dedicated sentinel
-# is required as `None` is itself a valid (and pure) annotation, and so a valid cache key:
-_NOT_PURE: Any = object()
-
-
-def _pure_annotation_cache_key(tp: Any) -> Any:
-    """Return a cache key for the annotation if it is "pure", `_NOT_PURE` otherwise.
-
-    An annotation is pure if it is composed only of immutable C leaf types and of typing
-    constructs (unions, literals of primitive values, builtin containers) of pure annotations.
-    The generated core schema for a pure annotation is guaranteed to be identical every time
-    it is generated: no custom schema hooks can be involved, and the schema can't be affected
-    by configuration (assuming no `json_encoders`, checked separately) or by generation context
-    (namespaces, type variable maps, reference definitions). This makes it safe to cache.
-
-    Note that the annotation objects themselves can't be used as cache keys: unions and literals
-    compare (and hash) equal regardless of the order of their arguments, while their generated
-    schemas are order-sensitive. The returned key is a nested tuple structure preserving order.
-
-    The returned key only ever holds builtin/stdlib types and literal values of such types (both
-    guaranteed by the identity-based membership tests), so it is always hashable. Callers still
-    guard against `TypeError` in case an unhashable annotation reaches a `get_args()` call.
-    """
-    if id(tp) in _PURE_LEAF_TYPE_IDS:
-        return tp
-    origin = get_origin(tp)
-    if origin is None:
-        return _NOT_PURE
-    if is_union_origin(origin):
-        arg_keys: list[Any] = ['union']
-    elif id(origin) in _PURE_CONTAINER_ORIGIN_IDS:
-        arg_keys = [origin]
-    elif typing_objects.is_literal(origin):
-        arg_keys = ['literal']
-        for arg in get_args(tp):
-            if id(type(arg)) not in _PURE_LITERAL_VALUE_TYPE_IDS:
-                return _NOT_PURE
-            # The type is included to discriminate between equal values of different
-            # types (e.g. `Literal[1]` and `Literal[True]`):
-            arg_keys.append((type(arg), arg))
-        return tuple(arg_keys)
-    else:
-        return _NOT_PURE
-
-    for arg in get_args(tp):
-        if arg is Ellipsis:
-            arg_keys.append(Ellipsis)
-            continue
-        arg_key = _pure_annotation_cache_key(arg)
-        if arg_key is _NOT_PURE:
-            return _NOT_PURE
-        arg_keys.append(arg_key)
-    return tuple(arg_keys)
-
-
-def _copy_pure_schema(schema: Any) -> Any:
-    """Copy a core schema generated from a pure annotation.
-
-    Only containers are copied; all other values appearing in such a schema are immutable.
-    """
-    if isinstance(schema, dict):
-        return {k: _copy_pure_schema(v) for k, v in schema.items()}
-    if isinstance(schema, list):
-        return [_copy_pure_schema(v) for v in schema]
-    if isinstance(schema, tuple):
-        return tuple(_copy_pure_schema(v) for v in schema)
-    return schema
-
-
-# A process-wide cache of the core schemas generated for pure field annotations, keyed by
-# `_pure_annotation_cache_key()` keys. Values are the pristine generated schemas — they are
-# never handed out directly, only `_copy_pure_schema()` copies of them are. Keys only ever
-# hold (small) typing constructs and builtin types, so entries are cheap and can't keep user
-# classes alive:
-_pure_annotation_schema_cache: dict[Any, core_schema.CoreSchema] = {}
-
-# The number of entries above which `_pure_annotation_schema_cache` is reset. The set of pure
-# annotations is unbounded (`Literal[...]` in particular can hold arbitrary values), so a process
-# building models from dynamically generated schemas would otherwise grow the cache forever.
-# Real-world libraries stay far below this limit — measured over a whole import, the Google GenAI
-# SDK (766 models) uses 118 entries and the MCP Python SDK (643 models) 139 — so the reset only
-# ever trips for workloads that wouldn't benefit from the cached entries anyway:
-_PURE_ANNOTATION_CACHE_SIZE = 512
 
 # Note: This does not play very well with type checkers. For example,
 # `a: LambdaType = lambda x: x` will raise a type error by Pyright.
@@ -925,14 +804,15 @@ class GenerateSchema:
 
                 decorators = cls.__pydantic_decorators__
                 computed_fields = decorators.computed_fields
-                check_decorator_fields_exist(
-                    chain(
-                        decorators.field_validators.values(),
-                        decorators.field_serializers.values(),
-                        decorators.validators.values(),
-                    ),
-                    {*fields.keys(), *computed_fields.keys()},
-                )
+                if decorators.field_validators or decorators.field_serializers or decorators.validators:
+                    check_decorator_fields_exist(
+                        chain(
+                            decorators.field_validators.values(),
+                            decorators.field_serializers.values(),
+                            decorators.validators.values(),
+                        ),
+                        {*fields.keys(), *computed_fields.keys()},
+                    )
 
                 model_validators = decorators.model_validators.values()
 
@@ -1360,8 +1240,14 @@ class GenerateSchema:
         decorators: DecoratorInfos,
     ) -> core_schema.ModelField:
         """Prepare a ModelField to represent a model field."""
+        cache_key = self._field_schema_cache_key(field_info, decorators)
+        if cache_key is not None:
+            cached = _model_field_schema_cache.get(cache_key)
+            if cached is not None:
+                return _copy_pure_schema(cached)
+
         schema, metadata = self._common_field_schema(name, field_info, decorators)
-        return core_schema.model_field(
+        field_schema = core_schema.model_field(
             schema,
             serialization_exclude=field_info.exclude,
             validation_alias=_convert_to_aliases(field_info.validation_alias),
@@ -1370,6 +1256,61 @@ class GenerateSchema:
             frozen=field_info.frozen,
             metadata=metadata,
         )
+        if cache_key is not None:
+            # Store a pristine copy, as the returned schema may be mutated downstream:
+            _model_field_schema_cache[cache_key] = _copy_pure_schema(field_schema)
+        return field_schema
+
+    def _field_schema_cache_key(self, field_info: FieldInfo, decorators: DecoratorInfos) -> Any | None:
+        """Return a cache key for the complete `model-field` schema node, or `None` if not cacheable.
+
+        The complete node for a field is cacheable when nothing besides the (pure) annotation and a
+        possible immutable default value can influence it:
+
+        - no decorator (field/V1-style validator, field serializer) applies to any field,
+        - no other `FieldInfo` attribute feeding the node is set — checked on the attributes
+          themselves (and not e.g. on `FieldInfo._attributes_set`), as they can also be set by
+          title/alias generators or by users mutating `model_fields` entries before a rebuild,
+        - the configuration doesn't set `json_encoders` (which alter the generated schema).
+        """
+        if (
+            decorators.field_validators
+            or decorators.validators
+            or decorators.field_serializers
+            or field_info.metadata
+            or field_info._qualifiers
+        ):
+            return None
+        if not (
+            field_info.default_factory is None
+            and field_info.validate_default is None
+            and field_info.discriminator is None
+            and field_info.exclude is None
+            and field_info.exclude_if is None
+            and field_info.alias is None
+            and field_info.validation_alias is None
+            and field_info.serialization_alias is None
+            and field_info.frozen is None
+            and field_info.title is None
+            and field_info.description is None
+            and field_info.examples is None
+            and field_info.deprecated is None
+            and field_info.json_schema_extra is None
+            and field_info.field_title_generator is None
+        ):
+            return None
+        default = field_info.default
+        if default is not PydanticUndefined and id(type(default)) not in IMMUTABLE_DEFAULT_TYPE_IDS:
+            return None
+        if self._config_wrapper.config_dict.get('json_encoders'):
+            return None
+        try:
+            annotation_key = _pure_annotation_cache_key(field_info.annotation)
+        except TypeError:  # unhashable annotation (or part of it)
+            return None
+        if annotation_key is None:
+            return None
+        return (annotation_key, type(default), default)
 
     def _generate_dc_field_schema(
         self,

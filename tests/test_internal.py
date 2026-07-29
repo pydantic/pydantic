@@ -473,3 +473,52 @@ def test_pure_annotation_schema_cache_none_annotations():
     assert B(w=[None], x=(2, None)).x == (2, None)
     with pytest.raises(ValidationError):
         B(v=1)
+
+
+def test_field_info_template_cache_instances_are_independent():
+    """Models sharing a field definition must not share `FieldInfo` state."""
+
+    class A(BaseModel):
+        v: 'int | None' = None
+
+    class B(BaseModel):
+        v: 'int | None' = None
+
+    assert A.model_fields['v'] is not B.model_fields['v']
+    A.model_fields['v'].description = 'mutated'
+    assert B.model_fields['v'].description is None
+
+
+def test_field_info_template_cache_annotation_spelling_preserved():
+    """Equal-but-distinct annotation spellings must be preserved on `FieldInfo.annotation`."""
+    from typing import Optional, Union, get_args
+
+    class A(BaseModel):
+        v: Union[int, str] = 1  # noqa: UP007
+        w: Optional[str] = None  # noqa: UP045
+
+    class B(BaseModel):
+        v: Union[str, int] = 1  # noqa: UP007
+        w: 'str | None' = None
+
+    assert get_args(A.model_fields['v'].annotation) == (int, str)
+    assert get_args(B.model_fields['v'].annotation) == (str, int)
+    assert A.model_fields['w'].annotation == B.model_fields['w'].annotation
+
+
+def test_model_field_schema_cache_respects_field_info_mutation_on_rebuild():
+    """Directly mutating a `model_fields` entry and rebuilding must bypass the field schema cache."""
+
+    class Model(BaseModel):
+        a: int = 1
+
+    Model.model_fields['a'].serialization_alias = 'A'
+    Model.model_rebuild(force=True)
+    assert Model(a=2).model_dump(by_alias=True) == {'A': 2}
+
+
+def test_none_annotation_still_evaluates_to_none_type():
+    class Model(BaseModel):
+        v: None = None
+
+    assert Model.model_fields['v'].annotation is type(None)
