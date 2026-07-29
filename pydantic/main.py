@@ -38,7 +38,6 @@ from ._internal import (
     _config,
     _decorators,
     _fields,
-    _forward_ref,
     _generics,
     _mock_val_ser,
     _model_construction,
@@ -51,7 +50,7 @@ from ._migration import getattr_migration
 from .aliases import AliasChoices, AliasPath
 from .annotated_handlers import GetCoreSchemaHandler, GetJsonSchemaHandler
 from .config import ConfigDict, ExtraValues
-from .errors import PydanticUndefinedAnnotation, PydanticUserError
+from .errors import PydanticUserError
 from .json_schema import DEFAULT_REF_TEMPLATE, GenerateJsonSchema, JsonSchemaMode, JsonSchemaValue, model_json_schema
 from .plugin._schema_validator import PluggableSchemaValidator
 from .version import version_short
@@ -963,72 +962,60 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
         [`model_rebuild()`][pydantic.main.BaseModel.model_rebuild].
         """
 
-    def __class_getitem__(
-        cls, typevar_values: type[Any] | tuple[type[Any], ...]
-    ) -> type[BaseModel] | _forward_ref.PydanticRecursiveRef:
-        cached = _generics.get_cached_generic_type_early(cls, typevar_values)
-        if cached is not None:
-            return cached
+    def __class_getitem__(cls, typevar_values: type[Any] | tuple[type[Any], ...]) -> type[BaseModel]:
+        with _rebuild_lock:  # TODO maybe rename _rebuild_lock to _model_build_lock ?
+            cached = _generics.get_cached_generic_type_early(cls, typevar_values)
+            if cached is not None:
+                return cached
 
-        if cls is BaseModel:
-            raise TypeError('Type parameters should be placed on typing.Generic, not BaseModel')
-        if not hasattr(cls, '__parameters__'):
-            raise TypeError(f'{cls} cannot be parametrized because it does not inherit from typing.Generic')
-        if not cls.__pydantic_generic_metadata__['parameters'] and Generic not in cls.__bases__:
-            raise TypeError(f'{cls} is not a generic class')
+            if cls is BaseModel:
+                raise TypeError('Type parameters should be placed on typing.Generic, not BaseModel')
+            if not hasattr(cls, '__parameters__'):
+                raise TypeError(f'{cls} cannot be parametrized because it does not inherit from typing.Generic')
+            if not cls.__pydantic_generic_metadata__['parameters'] and Generic not in cls.__bases__:
+                raise TypeError(f'{cls} is not a generic class')
 
-        if not isinstance(typevar_values, tuple):
-            typevar_values = (typevar_values,)
+            if not isinstance(typevar_values, tuple):
+                typevar_values = (typevar_values,)
 
-        # For a model `class Model[T, U, V = int](BaseModel): ...` parametrized with `(str, bool)`,
-        # this gives us `{T: str, U: bool, V: int}`:
-        typevars_map = _generics.map_generic_model_arguments(cls, typevar_values)
-        # We also update the provided args to use defaults values (`(str, bool)` becomes `(str, bool, int)`):
-        typevar_values = tuple(v for v in typevars_map.values())
+            # For a model `class Model[T, U, V = int](BaseModel): ...` parametrized with `(str, bool)`,
+            # this gives us `{T: str, U: bool, V: int}`:
+            typevars_map = _generics.map_generic_model_arguments(cls, typevar_values)
+            # We also update the provided args to use defaults values (`(str, bool)` becomes `(str, bool, int)`):
+            typevar_values = tuple(v for v in typevars_map.values())
 
-        if _utils.all_identical(typevars_map.keys(), typevars_map.values()) and typevars_map:
-            submodel = cls  # if arguments are equal to parameters it's the same object
-            _generics.set_cached_generic_type(cls, typevar_values, submodel)
-        else:
-            parent_args = cls.__pydantic_generic_metadata__['args']
-            if not parent_args:
-                args = typevar_values
+            if _utils.all_identical(typevars_map.keys(), typevars_map.values()) and typevars_map:
+                submodel = cls  # if arguments are equal to parameters it's the same object
+                _generics.set_early_cached_generic_type(cls, typevar_values, submodel)
             else:
-                args = tuple(_generics.replace_types(arg, typevars_map) for arg in parent_args)
+                parent_args = cls.__pydantic_generic_metadata__['args']
+                if not parent_args:
+                    args = typevar_values
+                else:
+                    args = tuple(_generics.replace_types(arg, typevars_map) for arg in parent_args)
 
-            origin = cls.__pydantic_generic_metadata__['origin'] or cls
-            model_name = origin.model_parametrized_name(args)
-            params = tuple(
-                dict.fromkeys(_generics.iter_contained_typevars(typevars_map.values()))
-            )  # use dict as ordered set
+                origin = cls.__pydantic_generic_metadata__['origin'] or cls
+                model_name = origin.model_parametrized_name(args)
+                params = tuple(
+                    dict.fromkeys(_generics.iter_contained_typevars(typevars_map.values()))
+                )  # use dict as ordered set
 
-            with _generics.generic_recursion_self_type(origin, args) as maybe_self_type:
                 cached = _generics.get_cached_generic_type_late(cls, typevar_values, origin, args)
                 if cached is not None:
                     return cached
 
-                if maybe_self_type is not None:
-                    return maybe_self_type
+                # depth 2 gets you above this __class_getitem__ call.
+                # Note that we explicitly provide the parent ns, otherwise
+                # `model_rebuild` will use the parent ns no matter if it is the ns of a module.
+                # We don't want this here, as this has unexpected effects when a model
+                # is being parametrized during a forward annotation evaluation.
+                parent_ns = _typing_extra.parent_frame_namespace(parent_depth=2) or {}
 
-                # Attempt to rebuild the origin in case new types have been defined
-                try:
-                    # depth 2 gets you above this __class_getitem__ call.
-                    # Note that we explicitly provide the parent ns, otherwise
-                    # `model_rebuild` will use the parent ns no matter if it is the ns of a module.
-                    # We don't want this here, as this has unexpected effects when a model
-                    # is being parametrized during a forward annotation evaluation.
-                    parent_ns = _typing_extra.parent_frame_namespace(parent_depth=2) or {}
-                    origin.model_rebuild(_types_namespace=parent_ns)
-                except PydanticUndefinedAnnotation:
-                    # It's okay if it fails, it just means there are still undefined types
-                    # that could be evaluated later.
-                    pass
+                submodel = _generics.create_generic_submodel(
+                    model_name, origin, args, params, cls, typevar_values, parent_ns
+                )
 
-                submodel = _generics.create_generic_submodel(model_name, origin, args, params)
-
-                _generics.set_cached_generic_type(cls, typevar_values, submodel, origin, args)
-
-        return submodel
+            return submodel
 
     def __copy__(self) -> Self:
         """Returns a shallow copy of the model."""

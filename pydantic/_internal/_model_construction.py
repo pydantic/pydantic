@@ -30,10 +30,16 @@ from ._config import ConfigWrapper
 from ._decorators import DecoratorInfos, PydanticDescriptorProxy, get_attribute_from_bases, unwrap_wrapped_function
 from ._fields import collect_model_fields, is_valid_field_name, is_valid_privateattr_name, rebuild_model_fields
 from ._generate_schema import GenerateSchema, InvalidSchemaError
-from ._generics import PydanticGenericMetadata, get_model_typevars_map
+from ._generics import (
+    PydanticGenericMetadata,
+    PydanticGenericTypeCacheKeyData,
+    get_model_typevars_map,
+    rollback_cached_generic_type,
+    set_cached_generic_type,
+)
 from ._import_utils import import_cached_base_model, import_cached_field_info
 from ._mock_val_ser import set_model_mocks
-from ._namespace_utils import NsResolver
+from ._namespace_utils import MappingNamespace, NsResolver
 from ._signature import generate_pydantic_signature
 from ._typing_extra import (
     eval_type,
@@ -94,6 +100,8 @@ class ModelMetaclass(ABCMeta):
         namespace: dict[str, Any],
         __pydantic_generic_metadata__: PydanticGenericMetadata | None = None,
         __pydantic_reset_parent_namespace__: bool = True,
+        __pydantic_generic_cache_key_data__: PydanticGenericTypeCacheKeyData | None = None,
+        __pydantic_origin_namespace__: MappingNamespace | None = None,
         _create_model_module: str | None = None,
         **kwargs: Any,
     ) -> type:
@@ -105,8 +113,14 @@ class ModelMetaclass(ABCMeta):
             namespace: The attribute dictionary of the class to be created.
             __pydantic_generic_metadata__: Metadata for generic models.
             __pydantic_reset_parent_namespace__: Reset parent namespace.
+            __pydantic_generic_cache_key_data__: Cache key data for generic models.
+            __pydantic_origin_namespace__: The namespace to rebuild the origin.
             _create_model_module: The module of the class to be created, if created by `create_model`.
             **kwargs: Catch-all for any other keyword arguments.
+
+        Both `__pydantic_generic_cache_key_data__` and `__pydantic_origin_namespace__` are passed by
+        `BaseModel.__class_getitem__` to feed appropriate information to populate the generic cache
+        eagerly so that cycles can be resolved.
 
         Returns:
             The new class created by the metaclass.
@@ -233,48 +247,74 @@ class ModelMetaclass(ABCMeta):
 
             cls.__pydantic_complete__ = False  # Ensure this specific class gets completed
 
-            # preserve `__set_name__` protocol defined in https://peps.python.org/pep-0487
-            # for attributes not in `new_namespace` (e.g. private attributes)
-            for name, obj in private_attributes.items():
-                obj.__set_name__(cls, name)
+            try:
+                # if creating a parameterized generic model, cache at this point so that resolving
+                # fields can create cycles with types in the generic cache
+                if __pydantic_generic_cache_key_data__:
+                    set_cached_generic_type(type_=cls, **__pydantic_generic_cache_key_data__)
 
-            if __pydantic_reset_parent_namespace__:
-                cls.__pydantic_parent_namespace__ = build_lenient_weakvaluedict(parent_frame_namespace())
-            parent_namespace: dict[str, Any] | None = getattr(cls, '__pydantic_parent_namespace__', None)
-            if isinstance(parent_namespace, dict):
-                parent_namespace = unpack_lenient_weakvaluedict(parent_namespace)
+                    if __pydantic_origin_namespace__ is not None:
+                        origin = __pydantic_generic_cache_key_data__['origin']
+                        # As a new type has just been introduced into the generic cache, rebuild
+                        # the origin model as this may resolve missing components and enable
+                        # a full build.
 
-            ns_resolver = NsResolver(parent_namespace=parent_namespace)
+                        try:
+                            origin.model_rebuild(_types_namespace=__pydantic_origin_namespace__)
+                        except PydanticUndefinedAnnotation:
+                            # It's okay if it fails, it just means there are still undefined types
+                            # that could be evaluated later.
+                            pass
 
-            set_model_fields(cls, config_wrapper=config_wrapper, ns_resolver=ns_resolver)
+                # preserve `__set_name__` protocol defined in https://peps.python.org/pep-0487
+                # for attributes not in `new_namespace` (e.g. private attributes)
+                for name, obj in private_attributes.items():
+                    obj.__set_name__(cls, name)
 
-            # This is also set in `complete_model_class()`, after schema gen because they are recreated.
-            # We set them here as well for backwards compatibility:
-            cls.__pydantic_computed_fields__ = {
-                k: v.info for k, v in cls.__pydantic_decorators__.computed_fields.items()
-            }
+                if __pydantic_reset_parent_namespace__:
+                    cls.__pydantic_parent_namespace__ = build_lenient_weakvaluedict(parent_frame_namespace())
+                parent_namespace: dict[str, Any] | None = getattr(cls, '__pydantic_parent_namespace__', None)
+                if isinstance(parent_namespace, dict):
+                    parent_namespace = unpack_lenient_weakvaluedict(parent_namespace)
 
-            if config_wrapper.defer_build:
-                set_model_mocks(cls)
-            else:
-                # Any operation that requires accessing the field infos instances should be put inside
-                # `complete_model_class()`:
-                complete_model_class(
-                    cls,
-                    config_wrapper,
-                    ns_resolver,
-                    raise_errors=False,
-                    create_model_module=_create_model_module,
-                )
+                ns_resolver = NsResolver(parent_namespace=parent_namespace)
 
-            if config_wrapper.frozen and '__hash__' not in namespace:
-                set_default_hash_func(cls, bases)
+                set_model_fields(cls, config_wrapper=config_wrapper, ns_resolver=ns_resolver)
 
-            # using super(cls, cls) on the next line ensures we only call the parent class's __pydantic_init_subclass__
-            # I believe the `type: ignore` is only necessary because mypy doesn't realize that this code branch is
-            # only hit for _proper_ subclasses of BaseModel
-            super(cls, cls).__pydantic_init_subclass__(**kwargs)  # type: ignore[misc]
-            return cls
+                # This is also set in `complete_model_class()`, after schema gen because they are recreated.
+                # We set them here as well for backwards compatibility:
+                cls.__pydantic_computed_fields__ = {
+                    k: v.info for k, v in cls.__pydantic_decorators__.computed_fields.items()
+                }
+
+                if config_wrapper.defer_build:
+                    set_model_mocks(cls)
+                else:
+                    # Any operation that requires accessing the field infos instances should be put inside
+                    # `complete_model_class()`:
+                    complete_model_class(
+                        cls,
+                        config_wrapper,
+                        ns_resolver,
+                        raise_errors=False,
+                        create_model_module=_create_model_module,
+                    )
+
+                if config_wrapper.frozen and '__hash__' not in namespace:
+                    set_default_hash_func(cls, bases)
+
+                # using super(cls, cls) on the next line ensures we only call the parent class's __pydantic_init_subclass__
+                # I believe the `type: ignore` is only necessary because mypy doesn't realize that this code branch is
+                # only hit for _proper_ subclasses of BaseModel
+                super(cls, cls).__pydantic_init_subclass__(**kwargs)  # type: ignore[misc]
+                return cls
+            except BaseException:
+                # if there was an error creating the class, roll back the generic cache so that
+                # future attempts to create the same generic parameterization fail the same way
+                # rather than returning a cached class that is in an invalid state
+                if __pydantic_generic_cache_key_data__:
+                    rollback_cached_generic_type(cls)
+                raise
         else:
             # These are instance variables, but have been assigned to `NoInitField` to trick the type checker.
             for instance_slot in '__pydantic_fields_set__', '__pydantic_extra__', '__pydantic_private__':

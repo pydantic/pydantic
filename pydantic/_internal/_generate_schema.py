@@ -108,7 +108,6 @@ from ._fields import (
     takes_validated_data_argument,
     update_field_from_config,
 )
-from ._forward_ref import PydanticRecursiveRef
 from ._generics import get_standard_typevars_map, replace_types
 from ._import_utils import import_cached_base_model, import_cached_field_info
 from ._mock_val_ser import MockCoreSchema
@@ -1018,9 +1017,6 @@ class GenerateSchema:
         if lenient_issubclass(obj, BaseModel):
             with self.model_type_stack.push(obj):
                 return self._model_schema(obj)
-
-        if isinstance(obj, PydanticRecursiveRef):
-            return core_schema.definition_reference_schema(schema_ref=obj.type_ref)
 
         return self.match_type(obj)
 

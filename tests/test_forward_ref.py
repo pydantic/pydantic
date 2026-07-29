@@ -700,25 +700,6 @@ class Foobar(BaseModel):
     assert f.y.model_fields_set == {'x'}
 
 
-def test_recursive_models_union() -> None:
-    """Test that `PydanticRecursiveRef.__(r)or__` is implemented."""
-
-    T = TypeVar('T')
-
-    class Foo(BaseModel):
-        bar: 'Bar[str] | None' = None
-        bar2: 'int | Bar[float]'
-
-    class Bar(BaseModel, Generic[T]):
-        foo: Foo
-
-    Foo.model_rebuild()
-
-    assert Foo.model_fields['bar'].annotation == Bar[str] | None
-    assert Foo.model_fields['bar2'].annotation == int | Bar[float]
-    assert Bar.model_fields['foo'].annotation == Foo
-
-
 def test_force_rebuild():
     class Foobar(BaseModel):
         b: int

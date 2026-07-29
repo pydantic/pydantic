@@ -5,6 +5,7 @@ import platform
 import re
 import subprocess
 import sys
+import threading
 import weakref
 from collections import Counter, OrderedDict, defaultdict, deque
 from collections.abc import Callable, Iterable, Mapping, Sequence
@@ -58,9 +59,7 @@ from pydantic._internal._generics import (
     _LIMITED_DICT_SIZE,
     GenericTypesCache,
     LimitedDict,
-    generic_recursion_self_type,
     iter_contained_typevars,
-    recursively_defined_type_refs,
     replace_types,
 )
 from pydantic.warnings import GenericBeforeBaseModelWarning
@@ -1806,7 +1805,94 @@ def test_generic_recursive_models_parametrized_with_model_subclass() -> None:
     Base[Other].model_validate({'t': {'child': {'t': {'child': None}}}})
 
 
-@pytest.mark.xfail(reason='Core schema generation is missing the M1 definition')
+def test_generic_recursive_models_refs() -> None:
+    """The global generic cache should enable cycles in parameterized generic to
+    be resolved and built incrementally."""
+
+    T = TypeVar('T')
+
+    class M1(BaseModel, Generic[T]):
+        bar: 'M2[T]'
+
+    class M2(BaseModel, Generic[T]):
+        baz: M1[T] | T
+
+    assert M1[str].model_fields['bar'].annotation is M2[str]
+    assert M2[str].model_fields['baz'].annotation == (M1[str] | str)
+
+    M1[str].model_rebuild()
+    M2[str].model_rebuild(raise_errors=True)
+
+    assert M1[str].__pydantic_complete__
+    assert M2[str].__pydantic_complete__
+
+    TypeAdapter(M2[str]).validate_python({'baz': {'bar': {'baz': 'hi'}}})
+
+
+def test_generic_recursive_model_with_union_bound_across_modules(create_module) -> None:
+    """https://github.com/pydantic/pydantic/issues/13085"""
+
+    module2 = create_module(
+        """
+from typing import Generic, TypeVar, Union
+
+from pydantic import BaseModel
+
+TBaseItem = Union['GroupSpec', 'ArraySpec']
+TItem = TypeVar('TItem', bound=TBaseItem)
+
+class ArraySpec(BaseModel):
+    pass
+
+class GroupSpec(BaseModel, Generic[TItem]):
+    members: TItem
+        """
+    )
+    module1 = create_module(
+        f"""
+from {module2.__name__} import GroupSpec, TBaseItem
+
+class BaseGroup(GroupSpec[TBaseItem]):
+    pass
+        """
+    )
+
+    BaseGroup = module1.BaseGroup
+
+    assert BaseGroup.__pydantic_complete__
+    group_spec, array_spec = get_args(BaseGroup.model_fields['members'].annotation)
+    assert group_spec.__pydantic_generic_metadata__['origin'] is module2.GroupSpec
+    assert array_spec is module2.ArraySpec
+    assert isinstance(BaseGroup(members={}).members, module2.ArraySpec)
+
+
+@pytest.mark.skipif(sys.version_info < (3, 12), reason='Requires PEP 695 syntax')
+def test_recursive_generic_type_alias_with_type_field(create_module) -> None:
+    """https://github.com/pydantic/pydantic/issues/11550"""
+
+    module = create_module(
+        """
+from pydantic import BaseModel, TypeAdapter
+
+class Foo(BaseModel):
+    pass
+
+class Bar(Foo):
+    pass
+
+class Baz[T: Foo](Foo):
+    t: type[T]
+
+type Qux = Foo | Bar | Baz[Qux]
+
+type_adapter = TypeAdapter(Qux)
+        """
+    )
+
+    assert module.Baz[module.Qux].__pydantic_complete__
+    assert module.Baz[module.Qux].model_fields['t'].annotation == type[module.Qux]
+
+
 def test_generic_recursive_models_inheritance() -> None:
     """https://github.com/pydantic/pydantic/issues/9969"""
 
@@ -2085,6 +2171,41 @@ def test_generic_recursive_models_in_container(create_module):
     MyGenericModel = module.MyGenericModel
     instance = MyGenericModel[int](foobar=[{'foobar': [], 'spam': 1}], spam=1)
     assert type(instance.foobar[0]) == MyGenericModel[int]
+
+
+def test_generic_cache_doesnt_hide_build_failure():
+    """Because generic models are cached partway through `ModelMetaclass.__new__`
+    before fields are collected (to allow for recursion), a failed field build
+    should re-raise on subsequent attempts rather than lead to corrupt state."""
+
+    T = TypeVar('T')
+
+    evaluated_model = None
+
+    class InvalidField:
+        @classmethod
+        def __get_pydantic_core_schema__(cls, source_type, handler):
+            nonlocal evaluated_model
+            if evaluated_model is None:
+                # first time through, capture the model from the generic cache
+                evaluated_model = Model[InvalidField]
+                # sanity check the caching applied
+                assert evaluated_model is Model[InvalidField]
+                raise TypeError('First')
+            else:
+                # second time through, the model should be a different new object
+                # under construction
+                assert evaluated_model is not Model[InvalidField]
+                raise TypeError('Second')
+
+    class Model(BaseModel, Generic[T]):
+        x: T
+
+    with pytest.raises(TypeError, match='First'):
+        Model[InvalidField]
+
+    with pytest.raises(TypeError, match='Second'):
+        Model[InvalidField]
 
 
 def test_generic_enum():
@@ -2441,35 +2562,6 @@ def test_double_typevar_substitution() -> None:
         x: T = []
 
     assert GenericPydanticModel[list[T]](x=[1, 2, 3]).model_dump() == {'x': [1, 2, 3]}
-
-
-@pytest.fixture(autouse=True)
-def ensure_contextvar_gets_reset():
-    # Ensure that the generic recursion contextvar is empty at the start of every test
-    assert not recursively_defined_type_refs()
-
-
-def test_generic_recursion_contextvar():
-    T = TypeVar('T')
-
-    class TestingException(Exception):
-        pass
-
-    class Model(BaseModel, Generic[T]):
-        pass
-
-    # Make sure that the contextvar-managed recursive types cache begins empty
-    assert not recursively_defined_type_refs()
-    try:
-        with generic_recursion_self_type(Model, (int,)):
-            # Make sure that something has been added to the contextvar-managed recursive types cache
-            assert recursively_defined_type_refs()
-            raise TestingException
-    except TestingException:
-        pass
-
-    # Make sure that an exception causes the contextvar-managed recursive types cache to be reset
-    assert not recursively_defined_type_refs()
 
 
 def test_limited_dict():
@@ -3285,3 +3377,57 @@ def test_generics_parameterization_not_hashable() -> None:
     Mint = Model[Annotated[int, NoHash()]]
 
     assert Mint(f='1').f == 1
+
+
+@pytest.mark.skipif(sys.platform == 'emscripten', reason='no threading on emscripten')
+def test_generic_already_built_by_other_thread():
+    schema_gen_entered = threading.Event()
+    resume_schema_gen = threading.Event()
+    hook_calls: list[type] = []
+
+    T = TypeVar('T')
+
+    class Model(BaseModel, Generic[T]):
+        x: T
+
+        @classmethod
+        def __pydantic_on_complete__(cls) -> None:
+            hook_calls.append(cls)
+
+    class Gate:
+        @classmethod
+        def __get_pydantic_core_schema__(cls, source_type, handler):
+            schema_gen_entered.set()
+            resume_schema_gen.wait(timeout=10)
+            return core_schema.int_schema()
+
+    results: dict[str, type] = {}
+    t2_started = threading.Event()
+
+    def build(key: str) -> None:
+        if key == 't2':
+            t2_started.set()
+        results[key] = Model[Gate]
+
+    # The first thread acquires the rebuild lock and waits in schema generation:
+    t1 = threading.Thread(target=build, args=('t1',), daemon=True)
+    t1.start()
+    assert schema_gen_entered.wait(timeout=10)
+
+    # While the first thread is waiting on `resume_schema_gen`, `Model[Gate]` can't enter
+    # generic parameterization
+    t2 = threading.Thread(target=build, args=('t2',), daemon=True)
+    t2.start()
+    assert t2_started.wait(timeout=10)
+    assert t2.is_alive()
+    assert 't2' not in results
+
+    resume_schema_gen.set()
+    t1.join(timeout=10)
+    t2.join(timeout=10)
+    assert not t1.is_alive()
+    assert not t2.is_alive()
+
+    assert results['t1'] is results['t2']
+    assert hook_calls == [Model, Model[Gate]]
+    assert Model(x=1).x == 1

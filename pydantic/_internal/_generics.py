@@ -6,8 +6,6 @@ import types
 import typing
 from collections import ChainMap
 from collections.abc import Generator, Mapping
-from contextlib import contextmanager
-from contextvars import ContextVar
 from functools import reduce
 from itertools import zip_longest
 from types import prepare_class
@@ -19,8 +17,7 @@ from typing_inspection import typing_objects
 from typing_inspection.introspection import is_union_origin
 
 from . import _typing_extra
-from ._core_utils import get_type_ref
-from ._forward_ref import PydanticRecursiveRef
+from ._namespace_utils import MappingNamespace
 from ._utils import all_identical, is_model_class
 
 if TYPE_CHECKING:
@@ -103,7 +100,13 @@ class PydanticGenericMetadata(TypedDict):
 
 
 def create_generic_submodel(
-    model_name: str, origin: type[BaseModel], args: tuple[Any, ...], params: tuple[Any, ...]
+    model_name: str,
+    origin: type[BaseModel],
+    args: tuple[Any, ...],
+    params: tuple[Any, ...],
+    parent: type[BaseModel],
+    typevar_values: tuple[Any, ...],
+    origin_ns: MappingNamespace | None,
 ) -> type[BaseModel]:
     """Dynamically create a submodel of a provided (generic) BaseModel.
 
@@ -116,6 +119,9 @@ def create_generic_submodel(
         origin: The base class for the new model to inherit from.
         args: A tuple of generic metadata arguments.
         params: A tuple of generic metadata parameters.
+        parent: the cls hosting the `__class_getitem__` call that creating this model
+        origin_ns: The namespace of the origin model, to use for rebuilding once the new model is defined in the generic cache.
+        typevar_values: The concrete type values for the generic parameters.
 
     Returns:
         The created submodel.
@@ -147,6 +153,13 @@ def create_generic_submodel(
             'parameters': params,
         },
         __pydantic_reset_parent_namespace__=False,
+        __pydantic_generic_cache_key_data__={
+            'parent': parent,
+            'typevar_values': typevar_values,
+            'origin': origin,
+            'args': args,
+        },
+        __pydantic_origin_namespace__=origin_ns,
         **kwds,
     )
 
@@ -405,49 +418,6 @@ def map_generic_model_arguments(cls: type[BaseModel], args: tuple[Any, ...]) -> 
     return typevars_map
 
 
-_generic_recursion_cache: ContextVar[set[str] | None] = ContextVar('_generic_recursion_cache', default=None)
-
-
-@contextmanager
-def generic_recursion_self_type(
-    origin: type[BaseModel], args: tuple[Any, ...]
-) -> Generator[PydanticRecursiveRef | None]:
-    """This contextmanager should be placed around the recursive calls used to build a generic type,
-    and accept as arguments the generic origin type and the type arguments being passed to it.
-
-    If the same origin and arguments are observed twice, it implies that a self-reference placeholder
-    can be used while building the core schema, and will produce a schema_ref that will be valid in the
-    final parent schema.
-    """
-    previously_seen_type_refs = _generic_recursion_cache.get()
-    if previously_seen_type_refs is None:
-        previously_seen_type_refs = set()
-        token = _generic_recursion_cache.set(previously_seen_type_refs)
-    else:
-        token = None
-
-    try:
-        type_ref = get_type_ref(origin, args_override=args)
-        if type_ref in previously_seen_type_refs:
-            self_type = PydanticRecursiveRef(type_ref=type_ref)
-            yield self_type
-        else:
-            previously_seen_type_refs.add(type_ref)
-            yield
-            previously_seen_type_refs.remove(type_ref)
-    finally:
-        if token:
-            _generic_recursion_cache.reset(token)
-
-
-def recursively_defined_type_refs() -> set[str]:
-    visited = _generic_recursion_cache.get()
-    if not visited:
-        return set()  # not in a generic recursion, so there are no types
-
-    return visited.copy()  # don't allow modifications
-
-
 def _generic_cache_get(key: GenericTypesCacheKey) -> type[BaseModel] | None:
     try:
         return _GENERIC_TYPES_CACHE.get(key)
@@ -492,12 +462,19 @@ def get_cached_generic_type_late(
     return cached
 
 
-def set_cached_generic_type(
+class PydanticGenericTypeCacheKeyData(TypedDict):
+    """Information to create generic cache entries, excluding the type itself to cache."""
+
+    parent: type[BaseModel]
+    typevar_values: tuple[Any, ...]
+    origin: type[BaseModel]
+    args: tuple[Any, ...]
+
+
+def set_early_cached_generic_type(
     parent: type[BaseModel],
     typevar_values: tuple[Any, ...],
     type_: type[BaseModel],
-    origin: type[BaseModel] | None = None,
-    args: tuple[Any, ...] | None = None,
 ) -> None:
     """See the docstring of `get_cached_generic_type_early` for more information about why items are cached with
     two different keys.
@@ -505,8 +482,35 @@ def set_cached_generic_type(
     _generic_cache_set(_early_cache_key(parent, typevar_values), type_)
     if len(typevar_values) == 1:
         _generic_cache_set(_early_cache_key(parent, typevar_values[0]), type_)
-    if origin and args:
-        _generic_cache_set(_late_cache_key(origin, args, typevar_values), type_)
+
+
+def set_cached_generic_type(
+    parent: type[BaseModel],
+    typevar_values: tuple[Any, ...],
+    type_: type[BaseModel],
+    origin: type[BaseModel],
+    args: tuple[Any, ...],
+) -> None:
+    """Set a cached generic with fully resolved origin & args for the "late" cache key"""
+    set_early_cached_generic_type(parent, typevar_values, type_)
+    _generic_cache_set(_late_cache_key(origin, args, typevar_values), type_)
+
+
+def rollback_cached_generic_type(
+    type_: type[BaseModel],
+) -> None:
+    """Remove a cached generic type from the cache.
+
+    This is used when `ModelMetaclass.__new__` fails to create a new type, we want to
+    avoid leaving an invalid type in the cache.
+    """
+    to_delete = []
+    for key, value in _GENERIC_TYPES_CACHE.items():
+        if value is type_:
+            to_delete.append(key)
+
+    for key in to_delete:
+        del _GENERIC_TYPES_CACHE[key]
 
 
 def _union_orderings_key(typevar_values: Any) -> Any:
