@@ -25,7 +25,13 @@ from ._docs_extraction import extract_docstrings_from_cls
 from ._import_utils import import_cached_base_model, import_cached_field_info
 from ._namespace_utils import NsResolver
 from ._repr import Representation
-from ._schema_cache import IMMUTABLE_DEFAULT_TYPES, field_info_template_cache, pure_annotation_cache_key
+from ._schema_cache import (
+    IMMUTABLE_DEFAULT_TYPE_IDS,
+    NOT_PURE,
+    field_info_template_cache,
+    pure_annotation_cache_key,
+)
+from ._schema_cache import store as _store_in_cache
 from ._utils import can_be_positional, get_first_not_none
 
 if TYPE_CHECKING:
@@ -230,13 +236,13 @@ def _field_info_from_template(ann_type: Any, default: Any, evaluated: bool) -> F
     every time (see the `_schema_cache` module docstring), so the (rather involved) creation
     process can be skipped by copying a cached instance.
     """
-    if not evaluated or (default is not PydanticUndefined and type(default) not in IMMUTABLE_DEFAULT_TYPES):
+    if not evaluated or (default is not PydanticUndefined and id(type(default)) not in IMMUTABLE_DEFAULT_TYPE_IDS):
         return None
     try:
         annotation_key = pure_annotation_cache_key(ann_type)
     except TypeError:  # unhashable annotation (or part of it)
         return None
-    if annotation_key is None:
+    if annotation_key is NOT_PURE:
         return None
     template = field_info_template_cache.get((annotation_key, type(default), default))
     if template is None:
@@ -262,15 +268,15 @@ def _field_info_from_template(ann_type: Any, default: Any, evaluated: bool) -> F
 
 def _store_field_info_template(ann_type: Any, default: Any, field_info: FieldInfo) -> None:
     """Store a pristine copy of a just-created `FieldInfo` as a template, if eligible."""
-    if default is not PydanticUndefined and type(default) not in IMMUTABLE_DEFAULT_TYPES:
+    if default is not PydanticUndefined and id(type(default)) not in IMMUTABLE_DEFAULT_TYPE_IDS:
         return
     try:
         annotation_key = pure_annotation_cache_key(ann_type)
     except TypeError:  # unhashable annotation (or part of it)
         return
-    if annotation_key is None:
+    if annotation_key is NOT_PURE:
         return
-    field_info_template_cache[(annotation_key, type(default), default)] = field_info._copy()
+    _store_in_cache(field_info_template_cache, (annotation_key, type(default), default), field_info._copy())
 
 
 def collect_model_fields(  # noqa: C901

@@ -401,20 +401,25 @@ def test_pure_annotation_schema_cache_json_encoders_bypass():
     assert B(v='x').model_dump_json() == '{"v":"enc:x"}'
 
 
-def test_pure_annotation_schema_cache_is_bounded():
-    """The set of pure annotations is unbounded (`Literal[...]` can hold arbitrary values), so a
-    process building models from dynamically generated schemas must not grow the cache forever.
+def test_pure_annotation_caches_are_bounded():
+    """The set of pure annotations is unbounded (`Literal[...]` can hold arbitrary values, and
+    metadata and defaults take part in some keys), so a process building models from dynamically
+    generated schemas must not grow the caches forever.
     """
     from typing import Literal
 
-    from pydantic._internal._generate_schema import (
-        _PURE_ANNOTATION_CACHE_SIZE,
-        _pure_annotation_schema_cache,
-    )
+    from pydantic._internal import _schema_cache
 
-    for i in range(2 * _PURE_ANNOTATION_CACHE_SIZE):
-        create_model(f'M{i}', v=(Literal[f'a{i}', f'b{i}'], ...))
-        assert len(_pure_annotation_schema_cache) <= _PURE_ANNOTATION_CACHE_SIZE
+    caches = (
+        _schema_cache.pure_annotation_schema_cache,
+        _schema_cache.field_info_template_cache,
+        _schema_cache.model_field_schema_cache,
+        _schema_cache._pure_annotations_seen,
+    )
+    for i in range(2 * _schema_cache.CACHE_SIZE_LIMIT):
+        create_model(f'M{i}', v=(Literal[f'a{i}', f'b{i}'], f'a{i}'))
+        for cache in caches:
+            assert len(cache) <= _schema_cache.CACHE_SIZE_LIMIT
 
 
 def test_pure_annotation_cache_key_membership_is_identity_based():
@@ -585,3 +590,60 @@ def test_trusted_leaf_class_hook_patching_bypasses_cache():
         v: uuid.UUID | None = None
 
     assert C.__pydantic_core_schema__['schema']['fields']['v']['schema']['schema']['schema']['type'] == 'uuid'
+
+
+def test_trusted_leaf_class_rejects_monkeypatched_hook(monkeypatch):
+    """A hook monkeypatched onto a trusted leaf class must not be absorbed into the baseline.
+
+    The expected hooks are pinned to `None` / pydantic's own functions rather than snapshotted from
+    whatever is present on first use, which would trust a patch applied before the first build and
+    then reuse one model's schema for every later one.
+    """
+    from pathlib import Path
+
+    from pydantic._internal._schema_cache import NOT_PURE, _verified_leaf_class_key
+
+    assert _verified_leaf_class_key(Path) is Path
+
+    calls: list[Any] = []
+
+    def custom_hook(cls, source, handler):
+        calls.append(source)
+        return cs.str_schema()
+
+    monkeypatch.setattr(Path, '__get_pydantic_core_schema__', classmethod(custom_hook), raising=False)
+    assert _verified_leaf_class_key(Path) is NOT_PURE
+
+    class A(BaseModel):
+        p: Path
+
+    class B(BaseModel):
+        p: Path
+
+    # Both models must go through the custom hook, rather than the second reusing the first's schema:
+    assert len(calls) == 2
+
+
+def test_trusted_url_class_key_covers_mutable_class_attributes():
+    """The URL schema hook reads `cls._constraints` and `cls.serialize_url`, so a change to either
+    must not be served a schema cached before it.
+    """
+    from pydantic import HttpUrl
+    from pydantic.networks import UrlConstraints
+
+    original = HttpUrl._constraints
+    try:
+
+        class Before(BaseModel):
+            u: HttpUrl
+
+        HttpUrl._constraints = UrlConstraints(allowed_schemes=['https'])
+
+        class After(BaseModel):
+            u: HttpUrl
+
+        Before(u='http://example.com')  # still valid under the constraints it was built with
+        with pytest.raises(ValidationError):
+            After(u='http://example.com')
+    finally:
+        HttpUrl._constraints = original

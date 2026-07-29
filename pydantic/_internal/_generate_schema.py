@@ -114,8 +114,11 @@ from ._import_utils import import_cached_base_model, import_cached_field_info
 from ._mock_val_ser import MockCoreSchema
 from ._namespace_utils import NamespacesTuple, NsResolver
 from ._schema_cache import (
-    IMMUTABLE_DEFAULT_TYPES,
+    IMMUTABLE_DEFAULT_TYPE_IDS,
     encode_metadata_item,
+)
+from ._schema_cache import (
+    NOT_PURE as _NOT_PURE,
 )
 from ._schema_cache import (
     copy_pure_schema as _copy_pure_schema,
@@ -128,6 +131,9 @@ from ._schema_cache import (
 )
 from ._schema_cache import (
     pure_annotation_schema_cache as _pure_annotation_schema_cache,
+)
+from ._schema_cache import (
+    store as _store_in_cache,
 )
 from ._schema_gather import MissingDefinitionError, gather_schemas_for_cleaning
 from ._schema_generation_shared import CallbackGetCoreSchemaHandler
@@ -1259,7 +1265,7 @@ class GenerateSchema:
         )
         if cache_key is not None:
             # Store a pristine copy, as the returned schema may be mutated downstream:
-            _model_field_schema_cache[cache_key] = _copy_pure_schema(field_schema)
+            _store_in_cache(_model_field_schema_cache, cache_key, _copy_pure_schema(field_schema))
         return field_schema
 
     def _field_schema_cache_key(self, field_info: FieldInfo, decorators: DecoratorInfos) -> Any | None:
@@ -1330,7 +1336,7 @@ class GenerateSchema:
             annotation_key = _pure_annotation_cache_key(field_info.annotation)
         except TypeError:  # unhashable annotation (or part of it)
             return None
-        if annotation_key is None:
+        if annotation_key is _NOT_PURE:
             return None
         return (
             annotation_key,
@@ -2366,13 +2372,8 @@ class GenerateSchema:
             update_core_metadata(core_metadata, pydantic_js_annotation_functions=pydantic_js_annotation_functions)
 
         if cache_key is not _NOT_PURE:
-            if len(_pure_annotation_schema_cache) >= _PURE_ANNOTATION_CACHE_SIZE:
-                # Keep the cache bounded (see `_PURE_ANNOTATION_CACHE_SIZE`). Clearing it wholesale
-                # (rather than evicting individual entries) keeps this a single atomic `dict`
-                # operation, so no locking is required on free-threaded builds:
-                _pure_annotation_schema_cache.clear()
             # Store a pristine copy, as the returned schema may be mutated downstream:
-            _pure_annotation_schema_cache[cache_key] = _copy_pure_schema(schema)
+            _store_in_cache(_pure_annotation_schema_cache, cache_key, _copy_pure_schema(schema))
             return schema
 
         return _add_custom_serialization_from_json_encoders(self._config_wrapper.json_encoders, source_type, schema)
