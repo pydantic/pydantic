@@ -4465,6 +4465,7 @@ def test_secretstr_equality():
     assert SecretStr('123') is not SecretStr('123')
     assert SecretStr('café') == SecretStr('café')
     assert SecretStr('café') != SecretStr('cafe')
+    assert SecretStr('\ud800') == SecretStr('\ud800')  # lone surrogate, unencodable with strict utf-8
 
 
 def test_secretstr_idempotent():
