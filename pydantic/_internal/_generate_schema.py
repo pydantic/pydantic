@@ -168,6 +168,108 @@ MAPPING_TYPES = [
 COUNTER_TYPES = [collections.Counter, typing.Counter]
 DEQUE_TYPES: list[type] = [collections.deque, typing.Deque]  # noqa: UP006
 
+# The leaf types of "pure" annotations (see `_pure_annotation_cache_key()`). These are immutable
+# C types only, guaranteeing that no custom `__get_pydantic_core_schema__`/`__get_pydantic_json_schema__`
+# hook can ever be attached to them:
+_PURE_LEAF_TYPES: frozenset[Any] = frozenset(
+    [
+        str,
+        bytes,
+        int,
+        float,
+        bool,
+        complex,
+        None,
+        NoneType,
+        Any,
+        typing_extensions.Any,
+        object,
+        datetime.date,
+        datetime.datetime,
+        datetime.time,
+        datetime.timedelta,
+        Decimal,
+        # The bare container forms (their schemas don't depend on configuration or context either):
+        list,
+        set,
+        frozenset,
+        dict,
+        tuple,
+    ]
+)
+_PURE_CONTAINER_ORIGINS: frozenset[Any] = frozenset([list, set, frozenset, dict, tuple])
+_PURE_LITERAL_VALUE_TYPES: frozenset[type[Any]] = frozenset([str, bytes, int, bool, NoneType])
+
+
+def _pure_annotation_cache_key(tp: Any) -> Any | None:
+    """Return a cache key for the annotation if it is "pure", `None` otherwise.
+
+    An annotation is pure if it is composed only of immutable C leaf types and of typing
+    constructs (unions, literals of primitive values, builtin containers) of pure annotations.
+    The generated core schema for a pure annotation is guaranteed to be identical every time
+    it is generated: no custom schema hooks can be involved, and the schema can't be affected
+    by configuration (assuming no `json_encoders`, checked separately) or by generation context
+    (namespaces, type variable maps, reference definitions). This makes it safe to cache.
+
+    Note that the annotation objects themselves can't be used as cache keys: unions and literals
+    compare (and hash) equal regardless of the order of their arguments, while their generated
+    schemas are order-sensitive. The returned key is a nested tuple structure preserving order.
+
+    May raise `TypeError` if the annotation (or a part of it) is unhashable.
+    """
+    if tp in _PURE_LEAF_TYPES:
+        return tp
+    origin = get_origin(tp)
+    if origin is None:
+        return None
+    if is_union_origin(origin):
+        arg_keys: list[Any] = ['union']
+    elif origin in _PURE_CONTAINER_ORIGINS:
+        arg_keys = [origin]
+    elif typing_objects.is_literal(origin):
+        arg_keys = ['literal']
+        for arg in get_args(tp):
+            if type(arg) not in _PURE_LITERAL_VALUE_TYPES:
+                return None
+            # The type is included to discriminate between equal values of different
+            # types (e.g. `Literal[1]` and `Literal[True]`):
+            arg_keys.append((type(arg), arg))
+        return tuple(arg_keys)
+    else:
+        return None
+
+    for arg in get_args(tp):
+        if arg is Ellipsis:
+            arg_keys.append(Ellipsis)
+            continue
+        arg_key = _pure_annotation_cache_key(arg)
+        if arg_key is None:
+            return None
+        arg_keys.append(arg_key)
+    return tuple(arg_keys)
+
+
+def _copy_pure_schema(schema: Any) -> Any:
+    """Copy a core schema generated from a pure annotation.
+
+    Only containers are copied; all other values appearing in such a schema are immutable.
+    """
+    if isinstance(schema, dict):
+        return {k: _copy_pure_schema(v) for k, v in schema.items()}
+    if isinstance(schema, list):
+        return [_copy_pure_schema(v) for v in schema]
+    if isinstance(schema, tuple):
+        return tuple(_copy_pure_schema(v) for v in schema)
+    return schema
+
+
+# A process-wide cache of the core schemas generated for pure field annotations, keyed by
+# `_pure_annotation_cache_key()` keys. Values are the pristine generated schemas — they are
+# never handed out directly, only `_copy_pure_schema()` copies of them are. Keys only ever
+# hold (small) typing constructs and builtin types, so entries are cheap and can't keep user
+# classes alive:
+_pure_annotation_schema_cache: dict[Any, core_schema.CoreSchema] = {}
+
 # Note: This does not play very well with type checkers. For example,
 # `a: LambdaType = lambda x: x` will raise a type error by Pyright.
 ValidateCallSupportedTypes: TypeAlias = LambdaType | FunctionType | MethodType | partial
@@ -2193,7 +2295,7 @@ class GenerateSchema:
         self,
         source_type: Any,
         annotations: list[Any],
-        transform_inner_schema: Callable[[CoreSchema], CoreSchema] = lambda x: x,
+        transform_inner_schema: Callable[[CoreSchema], CoreSchema] | None = None,
         check_unsupported_field_info_attributes: bool = True,
     ) -> CoreSchema:
         """Apply arguments from `Annotated` or from `FieldInfo` to a schema.
@@ -2203,6 +2305,23 @@ class GenerateSchema:
         (in other words, `GenerateSchema._annotated_schema` just unpacks `Annotated`, this process it).
         """
         annotations = list(_known_annotated_metadata.expand_grouped_metadata(annotations))
+
+        cache_key = None
+        if (
+            not annotations
+            and transform_inner_schema is None
+            and not self._config_wrapper.config_dict.get('json_encoders')
+        ):
+            # With no annotations to apply, the schema generated below for a pure annotation
+            # only depends on the annotation itself, so it can be cached:
+            try:
+                cache_key = _pure_annotation_cache_key(source_type)
+            except TypeError:  # unhashable annotation (or part of it)
+                cache_key = None
+            if cache_key is not None:
+                cached = _pure_annotation_schema_cache.get(cache_key)
+                if cached is not None:
+                    return _copy_pure_schema(cached)
 
         pydantic_js_annotation_functions: list[GetJsonSchemaFunction] = []
 
@@ -2217,7 +2336,9 @@ class GenerateSchema:
                 metadata_schema = resolve_original_schema(schema, self.defs)
                 if metadata_schema is not None:
                     self._add_js_function(metadata_schema, metadata_js_function)
-            return transform_inner_schema(schema)
+            if transform_inner_schema is not None:
+                return transform_inner_schema(schema)
+            return schema
 
         get_inner_schema = CallbackGetCoreSchemaHandler(inner_handler, self)
 
@@ -2235,6 +2356,12 @@ class GenerateSchema:
         if pydantic_js_annotation_functions:
             core_metadata = schema.setdefault('metadata', {})
             update_core_metadata(core_metadata, pydantic_js_annotation_functions=pydantic_js_annotation_functions)
+
+        if cache_key is not None:
+            # Store a pristine copy, as the returned schema may be mutated downstream:
+            _pure_annotation_schema_cache[cache_key] = _copy_pure_schema(schema)
+            return schema
+
         return _add_custom_serialization_from_json_encoders(self._config_wrapper.json_encoders, source_type, schema)
 
     def _apply_single_annotation(
