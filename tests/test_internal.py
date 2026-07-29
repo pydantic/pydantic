@@ -13,7 +13,7 @@ from dirty_equals import Contains, IsPartialDict
 from pydantic_core import CoreSchema, PydanticUndefined
 from pydantic_core import core_schema as cs
 
-from pydantic import BaseModel, TypeAdapter
+from pydantic import BaseModel, TypeAdapter, ValidationError, create_model
 from pydantic._internal._config import ConfigWrapper
 from pydantic._internal._core_metadata import update_core_metadata
 from pydantic._internal._fields import resolve_default_value
@@ -305,6 +305,12 @@ class _NotPure:
         ('dict[str, list[int | None]]', True),
         ('tuple[int, ...]', True),
         ('Literal["a", "b"]', True),
+        # `None` is a valid annotation, and must not be confused with the "not pure" sentinel.
+        # Note that unlike `typing.Tuple[int, None]`, the builtin generic alias form does *not*
+        # normalize `None` to `NoneType`, so the key builder has to cope with a literal `None` arg:
+        (None, True),
+        ('list[None]', True),
+        ('tuple[int, None]', True),
         (_NotPure, False),
         ('list[_NotPure]', False),
         ('int | _NotPure', False),
@@ -316,7 +322,7 @@ def test_pure_annotation_cache_key(annotation, pure):
     import enum
     from typing import Literal  # noqa: F401
 
-    from pydantic._internal._generate_schema import _pure_annotation_cache_key
+    from pydantic._internal._generate_schema import _NOT_PURE, _pure_annotation_cache_key
 
     class _AnEnum(enum.Enum):
         A = 'a'
@@ -325,7 +331,7 @@ def test_pure_annotation_cache_key(annotation, pure):
         annotation = eval(annotation)
 
     key = _pure_annotation_cache_key(annotation)
-    assert (key is not None) is pure
+    assert (key is not _NOT_PURE) is pure
 
 
 def test_pure_annotation_cache_key_is_order_sensitive():
@@ -393,3 +399,43 @@ def test_pure_annotation_schema_cache_json_encoders_bypass():
 
     assert A(v='x').model_dump_json() == '{"v":"x"}'
     assert B(v='x').model_dump_json() == '{"v":"enc:x"}'
+
+
+def test_pure_annotation_schema_cache_is_bounded():
+    """The set of pure annotations is unbounded (`Literal[...]` can hold arbitrary values), so a
+    process building models from dynamically generated schemas must not grow the cache forever.
+    """
+    from typing import Literal
+
+    from pydantic._internal._generate_schema import (
+        _PURE_ANNOTATION_CACHE_SIZE,
+        _pure_annotation_schema_cache,
+    )
+
+    for i in range(2 * _PURE_ANNOTATION_CACHE_SIZE):
+        create_model(f'M{i}', v=(Literal[f'a{i}', f'b{i}'], ...))
+        assert len(_pure_annotation_schema_cache) <= _PURE_ANNOTATION_CACHE_SIZE
+
+
+def test_pure_annotation_schema_cache_none_annotations():
+    """`None` is a valid (and pure) annotation, so it can't double as the "not pure" sentinel."""
+
+    class A(BaseModel):
+        v: None = None
+        w: 'list[None]' = []
+        x: 'tuple[int, None]' = (1, None)
+
+    class B(BaseModel):
+        v: None = None
+        w: 'list[None]' = []
+        x: 'tuple[int, None]' = (1, None)
+
+    for name in ('v', 'w', 'x'):
+        schema_a = A.__pydantic_core_schema__['schema']['fields'][name]['schema']
+        schema_b = B.__pydantic_core_schema__['schema']['fields'][name]['schema']
+        assert schema_a == schema_b
+        assert schema_a is not schema_b
+
+    assert B(w=[None], x=(2, None)).x == (2, None)
+    with pytest.raises(ValidationError):
+        B(v=1)

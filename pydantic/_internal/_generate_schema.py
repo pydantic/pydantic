@@ -200,9 +200,13 @@ _PURE_LEAF_TYPES: frozenset[Any] = frozenset(
 _PURE_CONTAINER_ORIGINS: frozenset[Any] = frozenset([list, set, frozenset, dict, tuple])
 _PURE_LITERAL_VALUE_TYPES: frozenset[type[Any]] = frozenset([str, bytes, int, bool, NoneType])
 
+# Returned by `_pure_annotation_cache_key()` for annotations that aren't pure. A dedicated sentinel
+# is required as `None` is itself a valid (and pure) annotation, and so a valid cache key:
+_NOT_PURE: Any = object()
 
-def _pure_annotation_cache_key(tp: Any) -> Any | None:
-    """Return a cache key for the annotation if it is "pure", `None` otherwise.
+
+def _pure_annotation_cache_key(tp: Any) -> Any:
+    """Return a cache key for the annotation if it is "pure", `_NOT_PURE` otherwise.
 
     An annotation is pure if it is composed only of immutable C leaf types and of typing
     constructs (unions, literals of primitive values, builtin containers) of pure annotations.
@@ -221,7 +225,7 @@ def _pure_annotation_cache_key(tp: Any) -> Any | None:
         return tp
     origin = get_origin(tp)
     if origin is None:
-        return None
+        return _NOT_PURE
     if is_union_origin(origin):
         arg_keys: list[Any] = ['union']
     elif origin in _PURE_CONTAINER_ORIGINS:
@@ -230,21 +234,21 @@ def _pure_annotation_cache_key(tp: Any) -> Any | None:
         arg_keys = ['literal']
         for arg in get_args(tp):
             if type(arg) not in _PURE_LITERAL_VALUE_TYPES:
-                return None
+                return _NOT_PURE
             # The type is included to discriminate between equal values of different
             # types (e.g. `Literal[1]` and `Literal[True]`):
             arg_keys.append((type(arg), arg))
         return tuple(arg_keys)
     else:
-        return None
+        return _NOT_PURE
 
     for arg in get_args(tp):
         if arg is Ellipsis:
             arg_keys.append(Ellipsis)
             continue
         arg_key = _pure_annotation_cache_key(arg)
-        if arg_key is None:
-            return None
+        if arg_key is _NOT_PURE:
+            return _NOT_PURE
         arg_keys.append(arg_key)
     return tuple(arg_keys)
 
@@ -269,6 +273,14 @@ def _copy_pure_schema(schema: Any) -> Any:
 # hold (small) typing constructs and builtin types, so entries are cheap and can't keep user
 # classes alive:
 _pure_annotation_schema_cache: dict[Any, core_schema.CoreSchema] = {}
+
+# The number of entries above which `_pure_annotation_schema_cache` is reset. The set of pure
+# annotations is unbounded (`Literal[...]` in particular can hold arbitrary values), so a process
+# building models from dynamically generated schemas would otherwise grow the cache forever.
+# Real-world libraries stay far below this limit — measured over a whole import, the Google GenAI
+# SDK (766 models) uses 118 entries and the MCP Python SDK (643 models) 139 — so the reset only
+# ever trips for workloads that wouldn't benefit from the cached entries anyway:
+_PURE_ANNOTATION_CACHE_SIZE = 512
 
 # Note: This does not play very well with type checkers. For example,
 # `a: LambdaType = lambda x: x` will raise a type error by Pyright.
@@ -2306,7 +2318,7 @@ class GenerateSchema:
         """
         annotations = list(_known_annotated_metadata.expand_grouped_metadata(annotations))
 
-        cache_key = None
+        cache_key = _NOT_PURE
         if (
             not annotations
             and transform_inner_schema is None
@@ -2317,8 +2329,8 @@ class GenerateSchema:
             try:
                 cache_key = _pure_annotation_cache_key(source_type)
             except TypeError:  # unhashable annotation (or part of it)
-                cache_key = None
-            if cache_key is not None:
+                cache_key = _NOT_PURE
+            if cache_key is not _NOT_PURE:
                 cached = _pure_annotation_schema_cache.get(cache_key)
                 if cached is not None:
                     return _copy_pure_schema(cached)
@@ -2357,7 +2369,12 @@ class GenerateSchema:
             core_metadata = schema.setdefault('metadata', {})
             update_core_metadata(core_metadata, pydantic_js_annotation_functions=pydantic_js_annotation_functions)
 
-        if cache_key is not None:
+        if cache_key is not _NOT_PURE:
+            if len(_pure_annotation_schema_cache) >= _PURE_ANNOTATION_CACHE_SIZE:
+                # Keep the cache bounded (see `_PURE_ANNOTATION_CACHE_SIZE`). Clearing it wholesale
+                # (rather than evicting individual entries) keeps this a single atomic `dict`
+                # operation, so no locking is required on free-threaded builds:
+                _pure_annotation_schema_cache.clear()
             # Store a pristine copy, as the returned schema may be mutated downstream:
             _pure_annotation_schema_cache[cache_key] = _copy_pure_schema(schema)
             return schema
