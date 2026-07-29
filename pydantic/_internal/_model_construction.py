@@ -10,8 +10,8 @@ import weakref
 from abc import ABCMeta
 from collections.abc import Callable, MutableMapping
 from functools import cache, partial, wraps
-from types import FunctionType
-from typing import TYPE_CHECKING, Any, Generic, Literal, NoReturn, TypeVar, cast
+from types import FunctionType, NoneType
+from typing import TYPE_CHECKING, Any, ForwardRef, Generic, Literal, NoReturn, TypeVar, cast
 
 from pydantic_core import PydanticUndefined, SchemaSerializer
 from typing_extensions import (
@@ -394,7 +394,15 @@ def get_model_post_init(namespace: dict[str, Any], bases: tuple[type[Any], ...])
         return model_post_init
 
 
-def inspect_namespace(
+# Namespace value types that can never match any of the `isinstance`-based branches of
+# `inspect_namespace()` (in particular, they can never be classes, `ModelPrivateAttr` or
+# `FieldInfo` instances, or `functools` objects):
+_simple_default_types: frozenset[type[Any]] = frozenset(
+    [NoneType, bool, int, float, complex, str, bytes, list, dict, set, tuple, frozenset]
+)
+
+
+def inspect_namespace(  # noqa C901
     namespace: dict[str, Any],
     ignored_types: tuple[type[Any], ...],
     *,
@@ -436,6 +444,17 @@ def inspect_namespace(
 
     for var_name, value in namespace.items():
         if var_name == 'model_config' or var_name == '__pydantic_extra__':
+            continue
+        elif type(value) in _simple_default_types and var_name in raw_annotations and is_valid_field_name(var_name):
+            # Fast path: an annotated field with a simple default value. No branch below can
+            # match it (its type rules out every `isinstance` check, and the annotation rules
+            # out the "non-annotated attribute" errors), except possibly the `ignored_names`
+            # tracking — which is only consulted for private attribute names:
+            continue
+        elif var_name.startswith('__') and not isinstance(value, (ModelPrivateAttr, FieldInfo)):
+            # Fast path: a dunder attribute (e.g. `__module__`, `__qualname__`, `__doc__`).
+            # `ModelPrivateAttr`/`FieldInfo` values are excluded as they are reported as errors
+            # when using dunder names (see below):
             continue
         elif (
             isinstance(value, type)
