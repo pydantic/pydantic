@@ -1,6 +1,9 @@
 import copy
+import os
+import signal
 import sys
 import threading
+import time
 from collections import defaultdict
 from typing import Annotated, Any, Final, Generic, TypeVar
 
@@ -10,6 +13,7 @@ from pydantic_core import PydanticUndefined
 from typing_extensions import TypeAliasType
 
 import pydantic.dataclasses
+import pydantic.fields as fields_module
 from pydantic import (
     AfterValidator,
     BaseModel,
@@ -350,6 +354,53 @@ def test_attributes_set_materializes_once_under_threads() -> None:
     # Every thread must have got the *same* dict object for each field:
     for dicts in zip(*seen):
         assert len({id(d) for d in dicts}) == 1
+
+
+@pytest.mark.skipif(sys.platform == 'emscripten', reason='no threading on emscripten')
+@pytest.mark.skipif(not hasattr(os, 'fork'), reason='requires fork()')
+def test_attributes_set_materialize_lock_survives_fork() -> None:
+    """Forking while another thread holds the materialize lock must not deadlock the child.
+
+    The child inherits the lock held with no owner thread, so without an at-fork reset its first
+    materialization would block forever.
+    """
+    field = FieldInfo(annotation=int, alias='a', description='d')
+    assert not isinstance(field._attributes_set_storage, dict), 'must still be in compact form'
+
+    holder_ready = threading.Event()
+    release_holder = threading.Event()
+
+    def hold_lock() -> None:
+        with fields_module._attributes_set_materialize_lock:
+            holder_ready.set()
+            release_holder.wait(timeout=10)
+
+    holder = threading.Thread(target=hold_lock, daemon=True)
+    holder.start()
+    assert holder_ready.wait(timeout=10)
+
+    pid = os.fork()
+    if pid == 0:  # pragma: no cover (child process)
+        try:
+            field._attributes_set
+            os._exit(0)
+        except BaseException:
+            os._exit(2)
+
+    try:
+        for _ in range(100):
+            waited_pid, status = os.waitpid(pid, os.WNOHANG)
+            if waited_pid:
+                assert os.waitstatus_to_exitcode(status) == 0
+                break
+            time.sleep(0.1)
+        else:
+            os.kill(pid, signal.SIGKILL)
+            os.waitpid(pid, 0)
+            pytest.fail('child deadlocked on the lock inherited from the fork')
+    finally:
+        release_holder.set()
+        holder.join(timeout=10)
 
 
 _unsupported_standalone_fieldinfo_attributes = (

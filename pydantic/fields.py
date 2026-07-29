@@ -4,6 +4,7 @@ from __future__ import annotations as _annotations
 
 import dataclasses
 import inspect
+import os
 import re
 import sys
 import threading
@@ -45,6 +46,23 @@ _Unset: Any = PydanticUndefined
 # Guards rebuilding the `FieldInfo._attributes_set` dict from its compact form. Only taken on the
 # first access to a given `FieldInfo`, and only long enough to build a small dict.
 _attributes_set_materialize_lock = threading.Lock()
+
+
+def _reset_attributes_set_materialize_lock() -> None:
+    """Replace the materialize lock in a freshly forked child process.
+
+    A multi-threaded process can fork while another thread holds the lock, in which case the child
+    inherits it held with no owner thread, and the first materialization there would deadlock. The
+    child only has the forking thread, so nothing can be mid-materialization and a fresh lock is
+    always safe.
+    """
+    global _attributes_set_materialize_lock
+
+    _attributes_set_materialize_lock = threading.Lock()
+
+
+if hasattr(os, 'register_at_fork'):  # not available on Windows
+    os.register_at_fork(after_in_child=_reset_attributes_set_materialize_lock)
 
 if sys.version_info >= (3, 13):
     import warnings
