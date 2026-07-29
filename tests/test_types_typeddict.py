@@ -570,6 +570,84 @@ def test_generic_typeddict_in_generic_model():
     ]
 
 
+def test_generic_typeddict_partial_reparametrization(TypedDict):
+    """https://github.com/pydantic/pydantic/issues/7988
+
+    Typevars maps must be composed per base class through `__orig_bases__`. Note that
+    a single flat map cannot work here: `T` maps to `str` for annotations declared in
+    `Foo`, but to the concrete parametrization of `Bar` for annotations declared in `Bar`.
+    """
+    T = TypeVar('T')
+    U = TypeVar('U')
+
+    class Foo(TypedDict, Generic[T, U]):
+        type: T
+        info: U
+
+    class Bar(Foo[str, T], Generic[T]):
+        value: T
+
+    ta = TypeAdapter(Bar[bool])
+
+    assert ta.validate_python({'type': 'x', 'info': False, 'value': False}) == {
+        'type': 'x',
+        'info': False,
+        'value': False,
+    }
+
+    with pytest.raises(ValidationError) as exc_info:
+        ta.validate_python({'type': False, 'info': 'oops', 'value': False})
+    assert {e['loc'] for e in exc_info.value.errors(include_url=False)} == {('type',), ('info',)}
+
+
+def test_generic_typeddict_non_generic_subclass(TypedDict):
+    """https://github.com/pydantic/pydantic/issues/10648
+
+    A plain (non-generic) subclass of a parametrized generic TypedDict must use
+    the parametrization from `__orig_bases__` for the inherited keys.
+    """
+    T = TypeVar('T')
+
+    class Inner(TypedDict, Generic[T]):
+        field0: T
+
+    class InnerInt(Inner[int]):
+        pass
+
+    ta = TypeAdapter(InnerInt)
+
+    assert ta.validate_python({'field0': 1}) == {'field0': 1}
+
+    with pytest.raises(ValidationError) as exc_info:
+        ta.validate_python({'field0': 'not_an_int'})
+    assert [e['loc'] for e in exc_info.value.errors(include_url=False)] == [('field0',)]
+
+
+def test_generic_typeddict_subclass_with_not_required(TypedDict):
+    """https://github.com/pydantic/pydantic/issues/7988"""
+    T = TypeVar('T')
+    U = TypeVar('U')
+
+    class Foo(TypedDict, Generic[T], total=False):
+        type: T
+
+    class Bar(Foo[U], Generic[U]):
+        value: Required[U]
+
+    ta = TypeAdapter(Bar[int])
+
+    assert ta.validate_python({'value': 1}) == {'value': 1}
+    assert ta.validate_python({'type': 1, 'value': 2}) == {'type': 1, 'value': 2}
+
+    with pytest.raises(ValidationError) as exc_info:
+        ta.validate_python({'type': 'not_an_int', 'value': 1})
+    assert [e['loc'] for e in exc_info.value.errors(include_url=False)] == [('type',)]
+
+    with pytest.raises(ValidationError) as exc_info:
+        ta.validate_python({'type': 1})
+    assert [e['loc'] for e in exc_info.value.errors(include_url=False)] == [('value',)]
+
+
 def test_recursive_generic_typeddict_in_module(create_module):
     @create_module
     def module():

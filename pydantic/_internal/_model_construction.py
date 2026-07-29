@@ -95,6 +95,7 @@ class ModelMetaclass(ABCMeta):
         __pydantic_generic_metadata__: PydanticGenericMetadata | None = None,
         __pydantic_reset_parent_namespace__: bool = True,
         _create_model_module: str | None = None,
+        _creation_hook: Callable[[type[BaseModel]], None] | None = None,
         **kwargs: Any,
     ) -> type:
         """Metaclass for creating Pydantic models.
@@ -232,6 +233,13 @@ class ModelMetaclass(ABCMeta):
                 }
 
             cls.__pydantic_complete__ = False  # Ensure this specific class gets completed
+
+            if _creation_hook is not None:
+                # Used by generic model parametrization: the parametrized class is registered
+                # in the generic types cache *before* fields and schema are built, so that
+                # recursive references to the same parametrization resolve to this class
+                # (instead of requiring a `PydanticRecursiveRef` placeholder).
+                _creation_hook(cast('type[BaseModel]', cls))
 
             # preserve `__set_name__` protocol defined in https://peps.python.org/pep-0487
             # for attributes not in `new_namespace` (e.g. private attributes)

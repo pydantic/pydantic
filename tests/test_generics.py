@@ -34,6 +34,7 @@ from typing_extensions import (  # noqa: UP035 (for `get_args`)
     TypeVarTuple,
     Unpack,
     get_args,
+    get_origin,
 )
 from typing_extensions import (
     TypeVar as TypingExtensionsTypeVar,
@@ -429,7 +430,10 @@ def test_caches_get_cleaned_up_with_aliased_parametrized_bases(mocker: MockerFix
 
         B = A[int, T2]
         C = B[str]
-        assert len(cache) == types_cache_size + 5
+        # Note: `B` is a (partial parametrization) alias, cached under a single early key.
+        # Subscripting the alias (`B[str]`) re-dispatches to `A[int, str]`, so `C` is a
+        # concrete class cached under an early and a late key for `A`:
+        assert len(cache) == types_cache_size + 3
         del C
         del B
         gc.collect()
@@ -1240,9 +1244,15 @@ def test_nested_identity_parameterization():
     class Model(BaseModel, Generic[T]):
         a: T
 
-    assert Model[T][T][T] is Model
-    assert Model[T] is Model
+    # Identity parametrizations are represented as generic aliases (preserving the arguments,
+    # so that `fld: Model[T]` annotations can be told apart from bare `fld: Model` ones), and
+    # are no longer collapsed to the origin class itself:
+    assert Model[T][T][T] == Model[T]
+    assert Model[T] is not Model
+    assert get_origin(Model[T]) is Model
+    assert get_args(Model[T]) == (T,)
     assert Model[T2] is not Model
+    assert get_args(Model[T2]) == (T2,)
 
 
 def test_replace_types():
@@ -1371,7 +1381,9 @@ def test_replace_types_with_user_defined_generic_type_field():  # noqa: C901
         tuple_field: CustomTuple[T]
         long_tuple_field: CustomLongTuple[T, VT]
 
-    assert replace_types(Model, {T: bool, KT: str, VT: int}) == Model[bool, str, int]
+    # A *bare* generic model class is left untouched (its type variables are not in scope of
+    # the substitution — see https://github.com/pydantic/pydantic/issues/11223):
+    assert replace_types(Model, {T: bool, KT: str, VT: int}) is Model
     assert replace_types(Model[T, KT, VT], {T: bool, KT: str, VT: int}) == Model[bool, str, int]
     assert replace_types(Model[T, VT, KT], {T: bool, KT: str, VT: int}) == Model[T, VT, KT][bool, int, str]
 
@@ -1806,7 +1818,6 @@ def test_generic_recursive_models_parametrized_with_model_subclass() -> None:
     Base[Other].model_validate({'t': {'child': {'t': {'child': None}}}})
 
 
-@pytest.mark.xfail(reason='Core schema generation is missing the M1 definition')
 def test_generic_recursive_models_inheritance() -> None:
     """https://github.com/pydantic/pydantic/issues/9969"""
 
@@ -2220,11 +2231,11 @@ def test_generic_subclass_with_extra_type_requires_all_params():
 
     class A(BaseModel, Generic[T]): ...
 
+    # Note: now that `A[T]` is represented as a generic alias, the error is raised by the
+    # standard `typing.Generic` machinery itself (instead of a custom pydantic check):
     with pytest.raises(
         TypeError,
-        match=re.escape(
-            'All parameters must be present on typing.Generic; you should inherit from typing.Generic[~T, ~S]'
-        ),
+        match=re.escape('Some type variables (~T) are not listed in Generic[~S]'),
     ):
 
         class B(A[T], Generic[S]): ...
@@ -2423,7 +2434,6 @@ def test_generics_memory_use():
 @pytest.mark.skipif(
     sys.version_info < (3, 11), reason='list implementation is inconsistent between python versions here'
 )
-@pytest.mark.xfail(reason='Generic models are not type aliases', raises=TypeError)
 def test_generic_model_as_parameter_to_generic_type_alias() -> None:
     T = TypeVar('T')
 

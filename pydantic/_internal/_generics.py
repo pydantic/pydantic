@@ -102,8 +102,88 @@ class PydanticGenericMetadata(TypedDict):
     parameters: tuple[TypeVar, ...]  # analogous to typing.Generic.__parameters__
 
 
+class PydanticGenericAlias(types.GenericAlias):
+    """A generic alias representing a generic model parametrized with non-concrete arguments.
+
+    When a generic model is parametrized and the resulting arguments still contain type variables
+    (e.g. `Model[T]`, `Model[T, str]`, `Model[list[T]]`), the parametrization is represented as an
+    alias (and not as a concrete class, which is only created for fully concrete parametrizations).
+    This has two important benefits over the historical "concrete class everywhere" representation:
+
+    - The arguments are preserved. `Model[T]` used to be collapsed to `Model` itself, making it
+      impossible to distinguish an explicitly parametrized annotation (`fld: Model[T]`, where `T`
+      must be substituted when the outer model is parametrized) from a bare one (`fld: Model`,
+      where `T` is out of scope and must be left alone) — see issue #11223.
+    - The alias participates in the standard typing machinery: `list[Model[T]]` correctly reports
+      `(T,)` as its `__parameters__` and can be re-parametrized (`list[Model[T]][int]`), which is
+      impossible when `Model[T]` is a plain class — see issue #6994.
+
+    For backwards compatibility, operational uses of the alias (instantiation, attribute access,
+    subclassing, `isinstance()`) are delegated to a lazily *materialized* concrete class, which
+    is the class that `Model[args]` historically evaluated to.
+    """
+
+    # Note: `types.GenericAlias` instances are weakref-able and support subclassing.
+    # `__origin__`, `__args__` and `__parameters__` are provided by the base class.
+
+    @property
+    def __pydantic_generic_metadata__(self) -> PydanticGenericMetadata:
+        # Defining this as a property (instead of relying on the default attribute proxying to
+        # the origin) makes the pydantic-aware `get_origin()`/`get_args()`/`iter_contained_typevars()`
+        # functions work transparently on alias instances.
+        return {'origin': self.__origin__, 'args': self.__args__, 'parameters': self.__parameters__}
+
+    def _materialize(self) -> type[BaseModel]:
+        """Create (or fetch) the concrete class historically associated with this parametrization."""
+        return materialize_generic_parametrization(self.__origin__, self.__args__)
+
+    def __getitem__(self, item: Any) -> Any:
+        # Let `types.GenericAlias` perform the (typing-spec compliant) substitution, then
+        # re-dispatch to the origin's `__class_getitem__` so that fully concrete results
+        # produce a proper class:
+        substituted = super().__getitem__(item)
+        return self.__origin__[substituted.__args__]
+
+    def __call__(self, *args: Any, **kwargs: Any) -> Any:
+        return self._materialize()(*args, **kwargs)
+
+    def __mro_entries__(self, bases: tuple[Any, ...]) -> tuple[type[Any], ...]:
+        # Subclassing `class Sub(Model[T, str])` historically used the concrete class as the
+        # actual base (with partially substituted fields); preserve that:
+        return (self._materialize(),)
+
+    def __instancecheck__(self, obj: Any) -> bool:
+        return isinstance(obj, self._materialize())
+
+    def __subclasscheck__(self, cls: type) -> bool:
+        return issubclass(cls, self._materialize())
+
+    # Attribute names always resolved on the alias itself (never proxied to the
+    # materialized class). Anything dunder-like is additionally resolved through the
+    # default `types.GenericAlias` behavior, except for the names in
+    # `_MATERIALIZED_DUNDER_ATTRS` below:
+    _MATERIALIZED_DUNDER_ATTRS: typing.ClassVar[frozenset[str]] = frozenset(
+        {'__name__', '__qualname__', '__fields__'}
+    )
+
+    def __getattribute__(self, name: str) -> Any:
+        # `types.GenericAlias` proxies unknown attributes to the *origin* (even the ones defined
+        # on this subclass, as the C implementation is unaware of them); we proxy them to the
+        # *materialized* class instead, so that e.g. `Model[T, str].model_fields` reflects the
+        # (partial) parametrization, as it did when parametrization always created a class.
+        if name in ('_materialize', '_MATERIALIZED_DUNDER_ATTRS', '__pydantic_generic_metadata__'):
+            return object.__getattribute__(self, name)
+        if name.startswith('__') and name not in PydanticGenericAlias._MATERIALIZED_DUNDER_ATTRS:
+            return super().__getattribute__(name)
+        return getattr(object.__getattribute__(self, '_materialize')(), name)
+
+
 def create_generic_submodel(
-    model_name: str, origin: type[BaseModel], args: tuple[Any, ...], params: tuple[Any, ...]
+    model_name: str,
+    origin: type[BaseModel],
+    args: tuple[Any, ...],
+    params: tuple[Any, ...],
+    creation_hook: typing.Callable[[type[BaseModel]], None] | None = None,
 ) -> type[BaseModel]:
     """Dynamically create a submodel of a provided (generic) BaseModel.
 
@@ -147,6 +227,7 @@ def create_generic_submodel(
             'parameters': params,
         },
         __pydantic_reset_parent_namespace__=False,
+        _creation_hook=creation_hook,
         **kwds,
     )
 
@@ -160,6 +241,31 @@ def create_generic_submodel(
             reference_name += '_'
 
     return created_model
+
+
+def materialize_generic_parametrization(origin: type[BaseModel], args: tuple[Any, ...]) -> type[BaseModel]:
+    """Create (or fetch from cache) the concrete class for a parametrization of a generic model.
+
+    For an identity parametrization (`Model[T]` where `(T,)` are exactly `Model`'s parameters),
+    the origin itself is returned (matching the historical behavior where such parametrizations
+    were collapsed to the origin class).
+    """
+    parameters = origin.__pydantic_generic_metadata__['parameters']
+    if args == parameters:
+        return origin
+
+    cache_key = (origin, args, ('materialized', _union_orderings_key(args)))
+    cached = _GENERIC_TYPES_CACHE.get(cache_key)
+    if cached is not None:
+        return cached
+
+    model_name = origin.model_parametrized_name(args)
+    params = tuple(dict.fromkeys(iter_contained_typevars(args)))
+
+    def _register_in_cache(submodel: type[BaseModel]) -> None:
+        _GENERIC_TYPES_CACHE[cache_key] = submodel
+
+    return create_generic_submodel(model_name, origin, args, params, creation_hook=_register_in_cache)
 
 
 def _get_caller_frame_info(depth: int = 2) -> tuple[str | None, bool]:
@@ -235,6 +341,104 @@ def get_standard_typevars_map(cls: Any) -> dict[TypeVar, Any] | None:
     args: tuple[Any, ...] = cls.__args__  # type: ignore
     parameters: tuple[TypeVar, ...] = origin.__parameters__
     return dict(zip(parameters, args, strict=True))
+
+
+def get_original_bases(cls: Any) -> tuple[Any, ...]:
+    """Return the original bases of the provided class, i.e. the bases as they appear in the class definition,
+    *before* `__mro_entries__` was called on them (e.g. `Foo[int]`, and not `Foo`).
+
+    This is functionally equivalent to `types.get_original_bases` (only available in Python 3.12+), and
+    is careful *not* to use plain attribute access for `__orig_bases__`, as it would return the attribute
+    from a parent class if not set on the class itself.
+    """
+    try:
+        return cls.__dict__.get('__orig_bases__', cls.__bases__)
+    except AttributeError:
+        return getattr(cls, '__bases__', ())
+
+
+def get_composed_typevars_maps(
+    tp: Any, typevars_map: Mapping[TypeVar, Any] | None = None
+) -> dict[Any, dict[TypeVar, Any]]:
+    """Build the typevars maps of every class in the generic inheritance chain of `tp`,
+    composed transitively through the original bases of each class.
+
+    Args:
+        tp: A class or a parametrization of a generic class (i.e. a generic alias).
+        typevars_map: The typevars map for `tp`'s own type parameters, if already known
+            (in which case `tp` is expected to be a class). If not provided, it is inferred
+            from `tp` (using `get_standard_typevars_map`).
+
+    Returns:
+        A dictionary mapping each class of the inheritance chain to the typevars map that is
+        valid for the annotations *declared* on that specific class. The returned dictionary
+        is ordered from the most derived class to the least derived one.
+
+    Example:
+        ```python {test="skip" lint="skip"}
+        class A(Generic[T]):
+            a: T
+
+        class B(A[list[U]], Generic[U]):
+            b: U
+
+        get_composed_typevars_maps(B[int])
+        #> {B: {U: int}, A: {T: list[int]}}
+        ```
+
+    Note:
+        A single flat map (instead of per-class maps) would be incorrect when the same `TypeVar`
+        instance has different meanings in different classes of the hierarchy, e.g. with
+        `class Bar(Foo[str, T], Generic[T])`, `T` maps to `str` for annotations declared on `Foo`
+        (if `Foo`'s first parameter is `T` as well), but to `Bar`'s parametrization for annotations
+        declared on `Bar`.
+    """
+    if typevars_map is None:
+        typevars_map = get_standard_typevars_map(tp)
+    origin = get_origin(tp)
+    cls = origin if origin is not None else tp
+
+    maps: dict[Any, dict[TypeVar, Any]] = {}
+    _compose_typevars_maps(cls, dict(typevars_map) if typevars_map else {}, maps)
+    return maps
+
+
+def _compose_typevars_maps(cls: Any, typevars_map: dict[TypeVar, Any], maps: dict[Any, dict[TypeVar, Any]]) -> None:
+    """Recursively compose `typevars_map` (the map valid for `cls`) with the parametrization
+    of each of `cls`'s original bases, populating `maps`.
+    """
+    if cls in maps:
+        # The class was already visited from a more derived parametrization
+        # (e.g. diamond inheritance), which takes priority:
+        return
+    maps[cls] = typevars_map
+
+    for base in get_original_bases(cls):
+        base_origin = typing_extensions.get_origin(base)
+        if base_origin is None:
+            if isinstance(base, type) and base is not object:
+                # A plain (non-subscripted) base class. If it is a generic class, its type
+                # parameters are shared with `cls` (e.g. with `class B(A): ...`, `B[int]`
+                # parametrizes `A`'s type parameters as well), so the relevant entries of
+                # the current map are propagated:
+                base_params: tuple[TypeVar, ...] = getattr(base, '__parameters__', ())
+                base_map = {p: typevars_map[p] for p in base_params if p in typevars_map}
+                _compose_typevars_maps(base, base_map, maps)
+        elif base_origin is typing.Generic:
+            # `Generic[T]` only declares the type parameters of `cls`, nothing to compose:
+            continue
+        else:
+            parameters: tuple[TypeVar, ...] | None = getattr(base_origin, '__parameters__', None)
+            if parameters:
+                # Substitute the base's arguments with the current map, e.g. for `B(A[list[U]])`
+                # with a map of `{U: int}`, `A`'s map becomes `{T: list[int]}`:
+                args = tuple(replace_types(arg, typevars_map) for arg in typing_extensions.get_args(base))
+                # Be lenient regarding a length mismatch, which can happen with `TypeVarTuple`
+                # or PEP 696 defaults (in which case substitution is best effort):
+                base_map = dict(zip(parameters, args, strict=False))
+            else:
+                base_map = {}
+            _compose_typevars_maps(base_origin, base_map, maps)
 
 
 def get_model_typevars_map(cls: type[BaseModel]) -> dict[TypeVar, Any]:
@@ -327,17 +531,11 @@ def replace_types(type_: Any, type_map: Mapping[TypeVar, Any] | None) -> Any:
         # NotRequired[T] and Required[T] don't support tuple type resolved_type_args, hence the condition below
         return origin_type[resolved_type_args[0] if len(resolved_type_args) == 1 else resolved_type_args]
 
-    # We handle pydantic generic models separately as they don't have the same
-    # semantics as "typing" classes or generic aliases
-
-    if not origin_type and is_model_class(type_):
-        parameters = type_.__pydantic_generic_metadata__['parameters']
-        if not parameters:
-            return type_
-        resolved_type_args = tuple(replace_types(t, type_map) for t in parameters)
-        if all_identical(parameters, resolved_type_args):
-            return type_
-        return type_[resolved_type_args]
+    # Note: a *bare* generic model class (with unfilled parameters) is deliberately left
+    # untouched: per the typing spec, its type variables are out of scope of the current
+    # substitution (see https://github.com/pydantic/pydantic/issues/11223). Explicitly
+    # parametrized models (`Model[T]`) are represented as `PydanticGenericAlias` instances
+    # and handled by the generic-alias branch above.
 
     # Handle special case for typehints that can have lists as arguments.
     # `typing.Callable[[int, str], int]` is an example for this.
@@ -400,12 +598,91 @@ def map_generic_model_arguments(cls: type[BaseModel], args: tuple[Any, ...]) -> 
                 raise TypeError(f'Too few arguments for {cls}; actual {len(args)}, expected at least {expected_len}')
         else:
             param = cast(TypeVar, parameter)
+            _check_typevar_argument(cls, param, argument)
             typevars_map[param] = argument
 
     return typevars_map
 
 
+def _check_typevar_argument(cls: type[BaseModel], param: TypeVar, argument: Any) -> None:
+    """Best-effort validation of a parametrization argument against the type variable's upper bound or constraints.
+
+    The check is lenient: it only fails when we can confidently tell the argument is invalid
+    (both the argument and the bound/constraints are runtime-checkable classes). Type checkers
+    already flag invalid parametrizations statically; this runtime check catches the cases from
+    https://github.com/pydantic/pydantic/issues/7703 where an invalid parametrization would
+    otherwise silently produce a model validating against the wrong type.
+    """
+    if isinstance(argument, typing.TypeVar) or typing_objects.is_any(argument):
+        # Rebinding to another type variable (or explicit `Any`) is always allowed:
+        return
+
+    if param.__constraints__:
+        for constraint in param.__constraints__:
+            if argument is constraint:
+                return
+            if isinstance(argument, type) and isinstance(constraint, type):
+                try:
+                    if issubclass(argument, constraint):
+                        return
+                except TypeError:  # pragma: no cover
+                    return  # non-runtime-checkable constraint, be lenient
+            else:
+                # At least one constraint (or the argument) isn't a plain class
+                # (e.g. a parametrized generic or special form) — be lenient:
+                return
+        raise TypeError(
+            f'{argument!r} is not a valid parametrization of {param!r} in {cls.__name__!r}; '
+            f'it must be one of: {", ".join(repr(c) for c in param.__constraints__)}'
+        )
+
+    bound = param.__bound__
+    if bound is not None and isinstance(bound, type) and isinstance(argument, type):
+        try:
+            valid = issubclass(argument, bound)
+        except TypeError:  # pragma: no cover
+            return  # non-runtime-checkable bound, be lenient
+        if not valid:
+            raise TypeError(
+                f'{argument!r} is not a valid parametrization of {param!r} in {cls.__name__!r}; '
+                f'it must be a subclass of {bound!r}'
+            )
+
+
 _generic_recursion_cache: ContextVar[set[str] | None] = ContextVar('_generic_recursion_cache', default=None)
+
+_in_flight_origin_rebuilds: ContextVar[set[int] | None] = ContextVar('_in_flight_origin_rebuilds', default=None)
+
+
+@contextmanager
+def origin_rebuild_guard(origin: type[BaseModel]) -> Iterator[bool]:
+    """Guard against reentrant rebuilds of a generic origin model during parametrization.
+
+    `BaseModel.__class_getitem__()` attempts to rebuild the generic origin before creating the
+    parametrized class (so that newly defined types are taken into account). If evaluating an
+    annotation during that rebuild recursively parametrizes the same origin, attempting the
+    origin rebuild again would recurse forever. Yields `True` if the origin rebuild can proceed
+    (i.e. it is not already being rebuilt higher up in the stack), `False` otherwise.
+    """
+    in_flight = _in_flight_origin_rebuilds.get()
+    token = None
+    if in_flight is None:
+        in_flight = set()
+        token = _in_flight_origin_rebuilds.set(in_flight)
+
+    key = id(origin)
+    try:
+        if key in in_flight:
+            yield False
+        else:
+            in_flight.add(key)
+            try:
+                yield True
+            finally:
+                in_flight.discard(key)
+    finally:
+        if token is not None:
+            _in_flight_origin_rebuilds.reset(token)
 
 
 @contextmanager
@@ -507,6 +784,23 @@ def set_cached_generic_type(
         _generic_cache_set(_early_cache_key(parent, typevar_values[0]), type_)
     if origin and args:
         _generic_cache_set(_late_cache_key(origin, args, typevar_values), type_)
+
+
+def drop_cached_generic_type(
+    parent: type[BaseModel],
+    typevar_values: tuple[Any, ...],
+    origin: type[BaseModel] | None = None,
+    args: tuple[Any, ...] | None = None,
+) -> None:
+    """Remove the cache entries registered by `set_cached_generic_type`.
+
+    Used to avoid leaving partially-built classes in the cache if parametrization fails.
+    """
+    _GENERIC_TYPES_CACHE.pop(_early_cache_key(parent, typevar_values), None)
+    if len(typevar_values) == 1:
+        _GENERIC_TYPES_CACHE.pop(_early_cache_key(parent, typevar_values[0]), None)
+    if origin and args:
+        _GENERIC_TYPES_CACHE.pop(_late_cache_key(origin, args, typevar_values), None)
 
 
 def _union_orderings_key(typevar_values: Any) -> Any:

@@ -577,8 +577,14 @@ def collect_dataclass_fields(
     FieldInfo_ = import_cached_field_info()
 
     fields: dict[str, FieldInfo] = {}
+    # Maps each field name to the base class that declared its annotation:
+    field_bases: dict[str, type[Any]] = {}
     ns_resolver = ns_resolver or NsResolver()
     dataclass_fields = cls.__dataclass_fields__
+    # The typevars map applied to a field must be the one valid for the base class
+    # that declared the field's annotation, composed transitively through the generic
+    # inheritance chain (see https://github.com/pydantic/pydantic/issues/11363):
+    base_typevars_maps = _generics.get_composed_typevars_maps(cls, typevars_map)
 
     # The logic here is similar to `_typing_extra.get_cls_type_hints`,
     # although we do it manually as stdlib dataclasses already have annotations
@@ -636,6 +642,7 @@ def collect_dataclass_fields(
                     field_info._original_annotation = ann_type
 
                 fields[ann_name] = field_info
+                field_bases[ann_name] = base
                 update_field_from_config(config_wrapper, ann_name, field_info)
 
                 if field_info.default is not PydanticUndefined and isinstance(
@@ -644,12 +651,13 @@ def collect_dataclass_fields(
                     # We need this to fix the default when the "default" from __dataclass_fields__ is a pydantic.FieldInfo
                     setattr(cls, ann_name, field_info.default)
 
-    if typevars_map:
-        for field in fields.values():
+    for ann_name, field in fields.items():
+        base_typevars_map = base_typevars_maps.get(field_bases[ann_name])
+        if base_typevars_map:
             # We don't pass any ns, as `field.annotation`
             # was already evaluated. TODO: is this method relevant?
             # Can't we juste use `_generics.replace_types`?
-            field.apply_typevars_map(typevars_map)
+            field.apply_typevars_map(base_typevars_map)
 
     if config_wrapper.use_attribute_docstrings:
         _update_fields_from_docstrings(

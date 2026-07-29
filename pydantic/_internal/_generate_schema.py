@@ -109,7 +109,13 @@ from ._fields import (
     update_field_from_config,
 )
 from ._forward_ref import PydanticRecursiveRef
-from ._generics import get_standard_typevars_map, replace_types
+from ._generics import (
+    PydanticGenericAlias,
+    get_composed_typevars_maps,
+    get_original_bases,
+    get_standard_typevars_map,
+    replace_types,
+)
 from ._import_utils import import_cached_base_model, import_cached_field_info
 from ._mock_val_ser import MockCoreSchema
 from ._namespace_utils import NamespacesTuple, NsResolver
@@ -331,6 +337,20 @@ def _add_custom_serialization_from_json_encoders(
         return schema
 
     return schema
+
+
+def _typed_dict_own_annotation_keys(cls: type[Any]) -> set[str]:
+    """Return the annotation keys *declared* on the (`TypedDict`) class itself, excluding inherited ones.
+
+    `TypedDict` classes merge the annotations of their bases into `__annotations__`, so the
+    inherited keys are subtracted using the (annotations of the) original bases.
+    """
+    keys = set(_typing_extra.safe_get_annotations(cls))
+    for base in get_original_bases(cls):
+        base_origin = get_origin(base) or base
+        if isinstance(base_origin, type):
+            keys -= set(_typing_extra.safe_get_annotations(base_origin))
+    return keys
 
 
 GENERATE_SCHEMA_ERRORS = (
@@ -1015,6 +1035,14 @@ class GenerateSchema:
 
         BaseModel = import_cached_base_model()
 
+        if isinstance(obj, PydanticGenericAlias):
+            # A parametrization of a generic model with non-concrete arguments. Any relevant
+            # type variable substitution already happened (via `self._typevars_map`), so the
+            # remaining type variables are unbound in this context; the schema is the one of
+            # the materialized class (as was generated when such parametrizations eagerly
+            # created concrete classes):
+            obj = obj._materialize()
+
         if lenient_issubclass(obj, BaseModel):
             with self.model_type_stack.push(obj):
                 return self._model_schema(obj)
@@ -1395,9 +1423,22 @@ class GenerateSchema:
             if maybe_schema is not None:
                 return maybe_schema
 
-            typevars_map = get_standard_typevars_map(typed_dict_cls)
+            typevars_maps = get_composed_typevars_maps(typed_dict_cls)
             if origin is not None:
                 typed_dict_cls = origin
+
+            # The typevars map for the `TypedDict` class itself:
+            typevars_map = typevars_maps.get(typed_dict_cls)
+            # `__annotations__` on a `TypedDict` includes *all* the (inherited) annotations, but the
+            # typevars map to apply to an annotation is the one of the base class that *declared* it
+            # (see https://github.com/pydantic/pydantic/issues/7988). Map each key to the relevant
+            # typevars map, from the most derived class to the least derived one:
+            field_typevars_maps: dict[str, Mapping[TypeVar, Any]] = {}
+            for base, base_typevars_map in typevars_maps.items():
+                if not isinstance(base, type):
+                    continue
+                for key in _typed_dict_own_annotation_keys(base):
+                    field_typevars_maps.setdefault(key, base_typevars_map)
 
             if not _SUPPORTS_TYPEDDICT and type(typed_dict_cls).__module__ == 'typing':
                 raise PydanticUserError(
@@ -1436,7 +1477,9 @@ class GenerateSchema:
 
                 for field_name, annotation in annotations.items():
                     field_info = FieldInfo.from_annotation(annotation, _source=AnnotationSource.TYPED_DICT)
-                    field_info.annotation = replace_types(field_info.annotation, typevars_map)
+                    field_info.annotation = replace_types(
+                        field_info.annotation, field_typevars_maps.get(field_name, typevars_map)
+                    )
 
                     required = (
                         field_name in required_keys or 'required' in field_info._qualifiers

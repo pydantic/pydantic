@@ -986,47 +986,72 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
         # We also update the provided args to use defaults values (`(str, bool)` becomes `(str, bool, int)`):
         typevar_values = tuple(v for v in typevars_map.values())
 
-        if _utils.all_identical(typevars_map.keys(), typevars_map.values()) and typevars_map:
-            submodel = cls  # if arguments are equal to parameters it's the same object
-            _generics.set_cached_generic_type(cls, typevar_values, submodel)
+        parent_args = cls.__pydantic_generic_metadata__['args']
+        if not parent_args:
+            args = typevar_values
         else:
-            parent_args = cls.__pydantic_generic_metadata__['args']
-            if not parent_args:
-                args = typevar_values
-            else:
-                args = tuple(_generics.replace_types(arg, typevars_map) for arg in parent_args)
+            args = tuple(_generics.replace_types(arg, typevars_map) for arg in parent_args)
 
-            origin = cls.__pydantic_generic_metadata__['origin'] or cls
+        origin = cls.__pydantic_generic_metadata__['origin'] or cls
+        params = tuple(
+            dict.fromkeys(_generics.iter_contained_typevars(typevars_map.values()))
+        )  # use dict as ordered set
+
+        if params:
+            # The parametrization is not fully concrete (the arguments still contain type
+            # variables, e.g. `Model[T]`, `Model[T, str]`, `Model[list[T]]`): it is represented
+            # as a generic alias, so that the arguments are preserved (allowing the alias to be
+            # substituted or re-parametrized later). A concrete class is only materialized
+            # lazily, if the alias is instantiated, subclassed or otherwise used as a class.
+            alias = _generics.PydanticGenericAlias(origin, args)
+            _generics.set_cached_generic_type(cls, typevar_values, alias)  # pyright: ignore[reportArgumentType]
+            return alias  # pyright: ignore[reportReturnType]
+        else:
             model_name = origin.model_parametrized_name(args)
-            params = tuple(
-                dict.fromkeys(_generics.iter_contained_typevars(typevars_map.values()))
-            )  # use dict as ordered set
 
-            with _generics.generic_recursion_self_type(origin, args) as maybe_self_type:
-                cached = _generics.get_cached_generic_type_late(cls, typevar_values, origin, args)
-                if cached is not None:
-                    return cached
+            cached = _generics.get_cached_generic_type_late(cls, typevar_values, origin, args)
+            if cached is not None:
+                return cached
 
-                if maybe_self_type is not None:
-                    return maybe_self_type
+            # Attempt to rebuild the origin in case new types have been defined
+            with _generics.origin_rebuild_guard(origin) as can_rebuild:
+                if can_rebuild:
+                    try:
+                        # depth 2 gets you above this __class_getitem__ call.
+                        # Note that we explicitly provide the parent ns, otherwise
+                        # `model_rebuild` will use the parent ns no matter if it is the ns of a module.
+                        # We don't want this here, as this has unexpected effects when a model
+                        # is being parametrized during a forward annotation evaluation.
+                        parent_ns = _typing_extra.parent_frame_namespace(parent_depth=2) or {}
+                        origin.model_rebuild(_types_namespace=parent_ns)
+                    except PydanticUndefinedAnnotation:
+                        # It's okay if it fails, it just means there are still undefined types
+                        # that could be evaluated later.
+                        pass
 
-                # Attempt to rebuild the origin in case new types have been defined
-                try:
-                    # depth 2 gets you above this __class_getitem__ call.
-                    # Note that we explicitly provide the parent ns, otherwise
-                    # `model_rebuild` will use the parent ns no matter if it is the ns of a module.
-                    # We don't want this here, as this has unexpected effects when a model
-                    # is being parametrized during a forward annotation evaluation.
-                    parent_ns = _typing_extra.parent_frame_namespace(parent_depth=2) or {}
-                    origin.model_rebuild(_types_namespace=parent_ns)
-                except PydanticUndefinedAnnotation:
-                    # It's okay if it fails, it just means there are still undefined types
-                    # that could be evaluated later.
-                    pass
+                    # The rebuild may have recursively created (and cached) this exact
+                    # parametrization while evaluating annotations:
+                    cached = _generics.get_cached_generic_type_late(cls, typevar_values, origin, args)
+                    if cached is not None:
+                        return cached
 
-                submodel = _generics.create_generic_submodel(model_name, origin, args, params)
-
+            # The parametrized class is registered in the cache *before* its fields and schema
+            # are built (via this hook, called by the metaclass as soon as the shell class and
+            # its generic metadata exist). This way, recursive references to the same
+            # parametrization encountered during field collection or schema generation resolve
+            # to the class being built, and the schema cycle is handled with regular
+            # definition references (as done for non-generic recursive models).
+            def _register_in_cache(submodel: type[BaseModel]) -> None:
                 _generics.set_cached_generic_type(cls, typevar_values, submodel, origin, args)
+
+            try:
+                submodel = _generics.create_generic_submodel(
+                    model_name, origin, args, params, creation_hook=_register_in_cache
+                )
+            except Exception:
+                # Don't leave a partially-built class in the cache if creation failed:
+                _generics.drop_cached_generic_type(cls, typevar_values, origin, args)
+                raise
 
         return submodel
 

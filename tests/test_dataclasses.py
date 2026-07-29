@@ -2339,6 +2339,100 @@ def test_multiple_parametrized_generic_dataclasses():
     ]
 
 
+@pytest.mark.parametrize('dataclass_decorator', **dataclass_decorators())
+def test_parametrized_generic_dataclass_subclass(dataclass_decorator):
+    """https://github.com/pydantic/pydantic/issues/11363
+
+    The parent's typevars map must be composed through `__orig_bases__` so that
+    fields inherited from the generic parent are parametrized as well.
+    """
+    T = TypeVar('T')
+    U = TypeVar('U')
+
+    @dataclass_decorator
+    class A(Generic[T]):
+        a: T
+
+    @dataclass_decorator
+    class B(A[U]):
+        b: U
+
+    validator = pydantic.TypeAdapter(B[int])
+
+    result = validator.validate_python({'a': '1', 'b': '2'})
+    assert result.a == 1
+    assert result.b == 2
+
+    with pytest.raises(ValidationError) as exc_info:
+        validator.validate_python({'a': ['not', 'an', 'int'], 'b': '42'})
+    assert [e['loc'] for e in exc_info.value.errors(include_url=False)] == [('a',)]
+
+
+@pytest.mark.parametrize('dataclass_decorator', **dataclass_decorators())
+def test_non_generic_subclass_of_parametrized_generic_dataclass(dataclass_decorator):
+    """https://github.com/pydantic/pydantic/issues/10648
+
+    A plain (non-generic) subclass of a parametrized generic dataclass must use
+    the parametrization from `__orig_bases__` for the inherited fields.
+    """
+    T = TypeVar('T', int, str)
+
+    @dataclass_decorator
+    class Inner(Generic[T]):
+        field0: T
+
+    @dataclass_decorator
+    class InnerInt(Inner[int]):
+        pass
+
+    validator = pydantic.TypeAdapter(InnerInt)
+
+    assert validator.validate_python({'field0': 1}).field0 == 1
+
+    with pytest.raises(ValidationError) as exc_info:
+        validator.validate_python({'field0': 'not_an_int'})
+    assert [e['loc'] for e in exc_info.value.errors(include_url=False)] == [('field0',)]
+
+
+@pytest.mark.parametrize('dataclass_decorator', **dataclass_decorators())
+def test_generic_dataclass_deep_inheritance_chain(dataclass_decorator):
+    """https://github.com/pydantic/pydantic/issues/11363
+
+    Typevars maps must be composed transitively through multiple levels of generic inheritance.
+    """
+    T = TypeVar('T')
+    U = TypeVar('U')
+    V = TypeVar('V')
+
+    @dataclass_decorator
+    class A(Generic[T]):
+        a: T
+
+    @dataclass_decorator
+    class B(A[list[U]], Generic[U]):
+        b: U
+
+    @dataclass_decorator
+    class C(B[V]):
+        c: V
+
+    validator = pydantic.TypeAdapter(C[int])
+
+    result = validator.validate_python({'a': ['1', 2], 'b': '3', 'c': 4})
+    assert result.a == [1, 2]
+    assert result.b == 3
+    assert result.c == 4
+
+    with pytest.raises(ValidationError) as exc_info:
+        validator.validate_python({'a': ['not an int'], 'b': 1, 'c': 2})
+    assert [e['loc'] for e in exc_info.value.errors(include_url=False)] == [('a', 0)]
+
+    # Partial parametrization: `B` is still generic, so `a` is validated as `list[Any]`:
+    partial_validator = pydantic.TypeAdapter(B[U])
+    result = partial_validator.validate_python({'a': ['anything'], 'b': object()})
+    assert result.a == ['anything']
+
+
 @pytest.mark.parametrize('dataclass_decorator', **dataclass_decorators(include_identity=True))
 def test_pydantic_dataclass_preserves_metadata(dataclass_decorator: Callable[[Any], Any]) -> None:
     @dataclass_decorator
