@@ -34,7 +34,9 @@ from pydantic import (
     ValidationInfo,
     ValidatorFunctionWrapHandler,
     errors,
+    field_serializer,
     field_validator,
+    model_serializer,
     model_validator,
     root_validator,
     validate_call,
@@ -3177,3 +3179,166 @@ def test_model_validate_json_default_value_validator_with_validation_info() -> N
     f2 = Foo.model_validate_json('{"field1": 1}', context='context')
 
     assert f1.field == f2.field == 2
+
+
+def test_validator_method_override_field_then_model() -> None:
+    """Reusing an inherited field validator's name for a model validator is an error.
+
+    The registries are keyed by method name and rebound to the owning class, so the
+    inherited entry would otherwise point at the override and a single method would run
+    in two different roles. See #11299.
+    """
+    with pytest.raises(
+        PydanticUserError,
+        match=re.escape("Validator method 'transform' overrides an existing validator method, this is not allowed."),
+    ) as exc_info:
+
+        class Parent(BaseModel):
+            x: int
+
+            @field_validator('x')
+            @classmethod
+            def transform(cls, value: Any) -> Any:
+                return value
+
+        class Child(Parent):
+            @model_validator(mode='before')
+            @classmethod
+            def transform(cls, data: Any) -> Any:
+                return data
+
+    assert exc_info.value.code == 'validator-method-override'
+
+
+def test_validator_method_override_model_then_field() -> None:
+    """The check is direction agnostic."""
+    with pytest.raises(PydanticUserError, check=lambda e: e.code == 'validator-method-override'):
+
+        class Parent(BaseModel):
+            x: int
+
+            @model_validator(mode='before')
+            @classmethod
+            def transform(cls, data: Any) -> Any:
+                return data
+
+        class Child(Parent):
+            @field_validator('x')
+            @classmethod
+            def transform(cls, value: Any) -> Any:
+                return value
+
+
+def test_validator_method_override_serializer() -> None:
+    """Serializers share the same namespace, so they clash the same way."""
+    with pytest.raises(PydanticUserError, check=lambda e: e.code == 'validator-method-override'):
+
+        class Parent(BaseModel):
+            x: int
+
+            @field_validator('x')
+            @classmethod
+            def transform(cls, value: Any) -> Any:
+                return value
+
+        class Child(Parent):
+            @field_serializer('x')
+            def transform(self, value: Any) -> Any:
+                return value
+
+
+def test_validator_method_override_field_serializer_then_model_serializer() -> None:
+    with pytest.raises(PydanticUserError, check=lambda e: e.code == 'validator-method-override'):
+
+        class Parent(BaseModel):
+            x: int
+
+            @field_serializer('x')
+            def transform(self, value: Any) -> Any:
+                return value
+
+        class Child(Parent):
+            @model_serializer
+            def transform(self) -> Any:
+                return {}
+
+
+def test_validator_method_override_multiple_names() -> None:
+    """Every clashing name is reported, sorted, in a single error."""
+    with pytest.raises(
+        PydanticUserError,
+        match=re.escape(
+            "Validator methods 'first', 'second' override existing validator methods, this is not allowed."
+        ),
+    ) as exc_info:
+
+        class Parent(BaseModel):
+            x: int
+            y: int
+
+            @field_validator('x')
+            @classmethod
+            def first(cls, value: Any) -> Any:
+                return value
+
+            @field_validator('y')
+            @classmethod
+            def second(cls, value: Any) -> Any:
+                return value
+
+        class Child(Parent):
+            @model_validator(mode='before')
+            @classmethod
+            def first(cls, data: Any) -> Any:
+                return data
+
+            @model_validator(mode='before')
+            @classmethod
+            def second(cls, data: Any) -> Any:
+                return data
+
+    assert exc_info.value.code == 'validator-method-override'
+
+
+def test_validator_method_same_kind_override_allowed() -> None:
+    """Overriding a validator with one of the same kind is ordinary subclassing."""
+
+    class Parent(BaseModel):
+        x: int
+
+        @field_validator('x')
+        @classmethod
+        def transform(cls, value: Any) -> Any:
+            return value
+
+    class Child(Parent):
+        @field_validator('x')
+        @classmethod
+        def transform(cls, value: Any) -> Any:
+            return value * 2
+
+    assert Parent(x=2).x == 2
+    # Only the override runs, so the value is doubled exactly once.
+    assert Child(x=2).x == 4
+
+
+def test_validator_method_name_reuse_in_unrelated_models_allowed() -> None:
+    """The same method name in unrelated classes is not a clash."""
+
+    class First(BaseModel):
+        x: int
+
+        @field_validator('x')
+        @classmethod
+        def transform(cls, value: Any) -> Any:
+            return value + 1
+
+    class Second(BaseModel):
+        y: int
+
+        @model_validator(mode='after')
+        def transform(self) -> 'Second':
+            return self
+
+    assert First(x=1).x == 2
+    assert Second(y=1).y == 1

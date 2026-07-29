@@ -984,6 +984,73 @@ except PydanticUserError as exc_info:
     assert exc_info.code == 'multiple-field-serializers'
 ```
 
+## Overriding a validator method {#validator-method-override}
+
+This error is raised when a class reuses the name of an inherited validator or serializer method
+for a *different* kind of validator or serializer.
+
+Each validator is registered under its method name, and that name is resolved again on the class
+it is bound to. Reusing a name across two kinds of validator would therefore leave the inherited
+one pointing at the override, silently running a single method in two different roles.
+
+```python
+from typing import Any
+
+from pydantic import (
+    BaseModel,
+    PydanticUserError,
+    field_validator,
+    model_validator,
+)
+
+try:
+
+    class Parent(BaseModel):
+        x: int
+
+        @field_validator('x')
+        @classmethod
+        def transform(cls, value: Any) -> Any:
+            return value
+
+    class Child(Parent):
+        @model_validator(mode='before')
+        @classmethod
+        def transform(cls, data: Any) -> Any:
+            return data
+
+except PydanticUserError as exc_info:
+    assert exc_info.code == 'validator-method-override'
+```
+
+Overriding an inherited validator with a validator of the *same* kind is ordinary subclassing and
+remains allowed:
+
+```python
+from typing import Any
+
+from pydantic import BaseModel, field_validator
+
+
+class Parent(BaseModel):
+    x: int
+
+    @field_validator('x')
+    @classmethod
+    def transform(cls, value: Any) -> Any:
+        return value
+
+
+class Child(Parent):
+    @field_validator('x')
+    @classmethod
+    def transform(cls, value: Any) -> Any:
+        return value * 2
+
+
+assert Child(x=2).x == 4
+```
+
 ## Invalid annotated type {#invalid-annotated-type}
 
 This error is raised when an annotation cannot annotate a type.

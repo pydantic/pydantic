@@ -3,7 +3,7 @@
 from __future__ import annotations as _annotations
 
 import types
-from collections import deque
+from collections import Counter, deque
 from collections.abc import Callable, Iterable
 from copy import copy
 from dataclasses import dataclass, field
@@ -476,6 +476,33 @@ class DecoratorInfos:
         res._validate()
         return res
 
+    def find_duplicates(self) -> list[str]:
+        """Return the names registered under more than one kind of decorator.
+
+        Every registry is keyed by the attribute name in the class namespace, and
+        [`Decorator.bind_to_cls()`][pydantic._internal._decorators.Decorator.bind_to_cls]
+        re-resolves that attribute on the target class. So when a subclass reuses the name of
+        an inherited validator for a *different* kind of validator, the inherited entry is
+        rebound to the override, and a single function silently ends up being invoked in two
+        different roles.
+
+        Overriding a validator with one of the same kind only replaces the existing entry,
+        which is ordinary subclassing, so those names are not reported.
+        """
+        counts = Counter(
+            name
+            for registry in (
+                self.validators,
+                self.field_validators,
+                self.root_validators,
+                self.field_serializers,
+                self.model_serializers,
+                self.model_validators,
+            )
+            for name in registry
+        )
+        return sorted(name for name, count in counts.items() if count > 1)
+
     def _validate(self) -> None:
         seen: set[str] = set()
         for field_ser in self.field_serializers.values():
@@ -486,6 +513,16 @@ class DecoratorInfos:
                         code='multiple-field-serializers',
                     )
                 seen.add(f_name)
+
+        if duplicates := self.find_duplicates():
+            if len(duplicates) == 1:
+                message = (
+                    f'Validator method {duplicates[0]!r} overrides an existing validator method, this is not allowed.'
+                )
+            else:
+                names = ', '.join(repr(name) for name in duplicates)
+                message = f'Validator methods {names} override existing validator methods, this is not allowed.'
+            raise PydanticUserError(message, code='validator-method-override')
 
     def update_from_config(self, config_wrapper: ConfigWrapper) -> None:
         """Update the decorator infos from the configuration of the class they are attached to."""
