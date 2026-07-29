@@ -65,25 +65,26 @@ class GatherContext:
     """
 
     visited: dict[int, tuple[int, int | None]] = field(init=False, default_factory=dict)
-    """A mapping between the traversed core schema IDs and their span in the `encountered_refs` log.
+    """A mapping between the traversed core schema IDs and their span in the `encountered_refs`.
 
     Core schemas are stored (and thus shared) on successfully completed Pydantic models (and other
     referenceable types), meaning the same core schema object can appear multiple times in the
-    traversed schema. Every schema object only needs to be *traversed* once: traversing per *path*
-    can result in exponential blowup with highly interconnected models.
+    traversed schema. Every schema object only needs to be traversed once: traversing per path
+    can result in exponential blowup with highly interconnected models (e.g. `Model3` references
+    `Model2` and `Model1`, while `Model2` also references `Model1`).
 
-    However, the `collected_references` bookkeeping is per *encounter*: seeing a reference a second
+    However, the `collected_references` bookkeeping is per encounter: seeing a reference a second
     time (even through a shared schema object) means it can't be inlined. To preserve this without
     re-traversing, the references encountered while traversing each schema (i.e. the schema's span
-    of the `encountered_refs` log) are marked as non-inlinable when the schema is visited again.
+    of the `encountered_refs`) are marked as non-inlinable when the schema is visited again.
     A `None` end index means the schema is currently being traversed (in which case every reference
-    encountered since the start index is marked as non-inlinable — this happens when a
+    encountered since the start index is marked as non-inlinable. This happens when a
     `'definition-ref'` schema object is reachable from the definition it points to, and inlining
     would then create a cycle).
     """
 
     encountered_refs: list[str] = field(init=False, default_factory=list)
-    """A log of the definition references encountered during the traversal, used with `visited`."""
+    """A list of the definition references encountered during the traversal, used with `visited`."""
 
 
 def traverse_metadata(schema: AllSchemas, ctx: GatherContext) -> None:
