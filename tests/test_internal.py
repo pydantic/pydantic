@@ -13,7 +13,7 @@ from dirty_equals import Contains, IsPartialDict
 from pydantic_core import CoreSchema, PydanticUndefined
 from pydantic_core import core_schema as cs
 
-from pydantic import BaseModel, TypeAdapter
+from pydantic import BaseModel, ConfigDict, TypeAdapter, ValidationError
 from pydantic._internal._config import ConfigWrapper
 from pydantic._internal._core_metadata import update_core_metadata
 from pydantic._internal._fields import resolve_default_value
@@ -288,3 +288,32 @@ def test_resolve_default_value_missing_validated_data():
             validated_data=None,
             call_default_factory=True,
         )
+
+
+def test_match_type_dispatch_is_identity_based():
+    """A class comparing equal to a simple type must not be handed that type's schema.
+
+    `match_type()` dispatches through a table; keying it by the types themselves would match by
+    equality, where the chain of `obj is <type>` checks it replaces matched by identity.
+    """
+
+    class EqualsIntMeta(type):
+        def __eq__(cls, other):
+            return other is int or super().__eq__(other)
+
+        def __hash__(cls):
+            return hash(int)
+
+    class LooksLikeInt(metaclass=EqualsIntMeta):
+        pass
+
+    assert LooksLikeInt == int and hash(LooksLikeInt) == hash(int)
+
+    class Model(BaseModel):
+        model_config = ConfigDict(arbitrary_types_allowed=True)
+
+        a: LooksLikeInt
+
+    assert Model.__pydantic_core_schema__['schema']['fields']['a']['schema']['type'] == 'is-instance'
+    with pytest.raises(ValidationError):
+        Model(a=1)

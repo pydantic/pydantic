@@ -1049,11 +1049,7 @@ class GenerateSchema:
         elif obj is datetime.timedelta:
             return core_schema.timedelta_schema()
 
-        try:
-            handler = _SIMPLE_TYPES_DISPATCH.get(obj)
-        except TypeError:
-            # `obj` is unhashable, so it can't be one of the (hashable) dispatch keys either:
-            handler = None
+        handler = _SIMPLE_TYPES_DISPATCH.get(id(obj))
         if handler is not None:
             return handler(self, obj)
 
@@ -2479,12 +2475,10 @@ class GenerateSchema:
         return schema
 
 
-# The dispatch table used by `GenerateSchema.match_type()` for types matched by identity or
-# equality (avoiding a long chain of comparisons). Most entries are keyed by (hashable) exact
-# types; the `*_TYPES` lists members were previously matched with `in` containment checks
-# (i.e. by equality), which dict lookups also provide (assuming hash equality, which holds
-# for the keys here as they define no custom `__eq__`/`__hash__`):
-_SIMPLE_TYPES_DISPATCH: dict[Any, Callable[[GenerateSchema, Any], core_schema.CoreSchema]] = {
+# The types handled by `GenerateSchema.match_type()` through a table lookup rather than a long
+# chain of comparisons, mapped to their handler. This mapping also owns the strong references
+# that keep the `_SIMPLE_TYPES_DISPATCH` ids below valid:
+_SIMPLE_TYPES_BY_TYPE: dict[Any, Callable[[GenerateSchema, Any], core_schema.CoreSchema]] = {
     str: lambda self, obj: core_schema.str_schema(),
     bytes: lambda self, obj: core_schema.bytes_schema(),
     int: lambda self, obj: core_schema.int_schema(),
@@ -2517,31 +2511,46 @@ _SIMPLE_TYPES_DISPATCH: dict[Any, Callable[[GenerateSchema, Any], core_schema.Co
 }
 
 for _tp in IP_TYPES:
-    _SIMPLE_TYPES_DISPATCH[_tp] = GenerateSchema._ip_schema
+    _SIMPLE_TYPES_BY_TYPE[_tp] = GenerateSchema._ip_schema
 for _tp in TUPLE_TYPES:
-    _SIMPLE_TYPES_DISPATCH[_tp] = GenerateSchema._tuple_schema
+    _SIMPLE_TYPES_BY_TYPE[_tp] = GenerateSchema._tuple_schema
 for _tp in LIST_TYPES:
-    _SIMPLE_TYPES_DISPATCH[_tp] = lambda self, obj: self._list_schema(Any)
+    _SIMPLE_TYPES_BY_TYPE[_tp] = lambda self, obj: self._list_schema(Any)
 for _tp in SET_TYPES:
-    _SIMPLE_TYPES_DISPATCH[_tp] = lambda self, obj: self._set_schema(Any)
+    _SIMPLE_TYPES_BY_TYPE[_tp] = lambda self, obj: self._set_schema(Any)
 for _tp in FROZEN_SET_TYPES:
-    _SIMPLE_TYPES_DISPATCH[_tp] = lambda self, obj: self._frozenset_schema(Any)
+    _SIMPLE_TYPES_BY_TYPE[_tp] = lambda self, obj: self._frozenset_schema(Any)
 for _tp in SEQUENCE_TYPES:
-    _SIMPLE_TYPES_DISPATCH[_tp] = lambda self, obj: self._sequence_schema(Any)
+    _SIMPLE_TYPES_BY_TYPE[_tp] = lambda self, obj: self._sequence_schema(Any)
 for _tp in ITERABLE_TYPES:
-    _SIMPLE_TYPES_DISPATCH[_tp] = GenerateSchema._iterable_schema
+    _SIMPLE_TYPES_BY_TYPE[_tp] = GenerateSchema._iterable_schema
 for _tp in DICT_TYPES:
-    _SIMPLE_TYPES_DISPATCH[_tp] = lambda self, obj: self._dict_schema(Any, Any)
+    _SIMPLE_TYPES_BY_TYPE[_tp] = lambda self, obj: self._dict_schema(Any, Any)
 for _tp in PATH_TYPES:
-    _SIMPLE_TYPES_DISPATCH[_tp] = lambda self, obj: self._path_schema(obj, Any)
+    _SIMPLE_TYPES_BY_TYPE[_tp] = lambda self, obj: self._path_schema(obj, Any)
 for _tp in DEQUE_TYPES:
-    _SIMPLE_TYPES_DISPATCH[_tp] = lambda self, obj: self._deque_schema(Any)
+    _SIMPLE_TYPES_BY_TYPE[_tp] = lambda self, obj: self._deque_schema(Any)
 for _tp in MAPPING_TYPES:
-    _SIMPLE_TYPES_DISPATCH[_tp] = lambda self, obj: self._mapping_schema(obj, Any, Any)
+    _SIMPLE_TYPES_BY_TYPE[_tp] = lambda self, obj: self._mapping_schema(obj, Any, Any)
 for _tp in COUNTER_TYPES:
-    _SIMPLE_TYPES_DISPATCH[_tp] = lambda self, obj: self._mapping_schema(obj, Any, int)
+    _SIMPLE_TYPES_BY_TYPE[_tp] = lambda self, obj: self._mapping_schema(obj, Any, int)
 for _tp in PATTERN_TYPES:
-    _SIMPLE_TYPES_DISPATCH[_tp] = GenerateSchema._pattern_schema
+    _SIMPLE_TYPES_BY_TYPE[_tp] = GenerateSchema._pattern_schema
+
+# The dispatch table `match_type()` actually uses, keyed by `id()` so that lookups match by
+# identity, as the chain of `obj is <type>` checks it replaces did: a user-defined class whose
+# metaclass implements `__eq__`/`__hash__` so that the class compares equal to e.g. `int` would
+# otherwise be handed `int`'s schema instead of being treated as the arbitrary type it is. Keying
+# by `id()` also means an unhashable annotation simply doesn't match, rather than raising.
+#
+# The keys are builtin/stdlib singletons kept alive for the lifetime of the process by
+# `_SIMPLE_TYPES_BY_TYPE`, so their ids are stable and can't be reused by another object. Note that
+# the `*_TYPES` list members were previously matched by equality (`obj in LIST_TYPES`); identity is
+# stricter, but every spelling that mattered is present in those lists as its exact object (e.g.
+# both `list` and `typing.List`):
+_SIMPLE_TYPES_DISPATCH: dict[int, Callable[[GenerateSchema, Any], core_schema.CoreSchema]] = {
+    id(_tp): _handler for _tp, _handler in _SIMPLE_TYPES_BY_TYPE.items()
+}
 
 
 _VALIDATOR_F_MATCH: Mapping[
