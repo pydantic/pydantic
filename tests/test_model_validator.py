@@ -193,3 +193,141 @@ def test_after_validator_wrong_signature() -> None:
     Model2()
     Model3()
     Model4()
+
+
+def test_after_and_wrap_model_validators_run_once_when_reused_as_prebuilt() -> None:
+    """`pydantic-core` reuses the already built ("prebuilt") validator of a completed model when other
+    models reference it. `'after'`/`'wrap'` model validators are applied outside of the `model` core
+    schema, and are compiled inline by the referencing model, so the prebuilt validator is stripped
+    down to the inner `model` validator to avoid running the function validators twice.
+    """
+    after_calls: list[Any] = []
+    wrap_calls: list[Any] = []
+
+    class InnerAfter(BaseModel):
+        x: int
+
+        @model_validator(mode='after')
+        def after_validator(self) -> InnerAfter:
+            after_calls.append(self.x)
+            return self
+
+    class InnerWrap(BaseModel):
+        x: int
+
+        @model_validator(mode='wrap')
+        @classmethod
+        def wrap_validator(cls, data: Any, handler: ValidatorFunctionWrapHandler) -> InnerWrap:
+            wrap_calls.append(data)
+            return cast(InnerWrap, handler(data))
+
+    class Outer(BaseModel):
+        after: InnerAfter
+        wrap: InnerWrap
+
+    # the inner models' validators are reused, stripped of the model validators:
+    assert repr(Outer.__pydantic_validator__).count('PrebuiltValidator') == 2
+
+    Outer.model_validate({'after': {'x': 1}, 'wrap': {'x': 2}})
+    assert after_calls == [1]
+    assert wrap_calls == [{'x': 2}]
+
+
+def test_model_config_isolated_when_validator_reused_as_prebuilt() -> None:
+    """Nested validation delegating to a referenced model's prebuilt validator must apply the
+    referenced model's own config, not the referencing model's (the `'model'` core schema carries
+    its own `'config'`, so this also holds for inline compilation)."""
+    from pydantic import ConfigDict, ValidationError
+
+    class StrictChild(BaseModel):
+        model_config = ConfigDict(strict=True)
+
+        x: int
+
+        @model_validator(mode='after')
+        def validate_model(self) -> StrictChild:
+            return self
+
+    class LaxParent(BaseModel):
+        model_config = ConfigDict(strict=False)
+
+        child: StrictChild
+        y: int
+
+    assert 'PrebuiltValidator' in repr(LaxParent.__pydantic_validator__)
+
+    # The parent's lax config still applies to its own fields:
+    validated = LaxParent.model_validate({'child': {'x': 1}, 'y': '2'})
+    assert validated.y == 2
+
+    # The child's strict config applies to the child, even when nested in a lax parent:
+    with pytest.raises(ValidationError, match='int_type'):
+        LaxParent.model_validate({'child': {'x': '1'}, 'y': 2})
+
+    class LaxChild(BaseModel):
+        model_config = ConfigDict(strict=False)
+
+        x: int
+
+        @model_validator(mode='after')
+        def validate_model(self) -> LaxChild:
+            return self
+
+    class StrictParent(BaseModel):
+        model_config = ConfigDict(strict=True)
+
+        child: LaxChild
+
+    assert 'PrebuiltValidator' in repr(StrictParent.__pydantic_validator__)
+
+    # The child's lax config applies to the child, even when nested in a strict parent:
+    assert StrictParent.model_validate({'child': {'x': '1'}}).child.x == 1
+
+
+def test_after_and_wrap_model_validators_run_once_when_recursive_model_reused_as_prebuilt() -> None:
+    """A recursive model stores its schema in a core schema definition, making the root of its own
+    validator a reference to that definition, with the `'after'`/`'wrap'` model validators inside
+    the definition. The validator reused by a referencing model must still be the inner `model`
+    validator, so that the model validators (compiled inline by the referencing model) run exactly
+    once.
+
+    This was broken before the reuse logic resolved definition references: the full prebuilt
+    validator, including the model validators, was reused, running them a second time.
+    """
+    after_calls: list[Any] = []
+    wrap_calls: list[Any] = []
+
+    class NodeAfter(BaseModel):
+        child: NodeAfter | None = None
+
+        @model_validator(mode='after')
+        def after_validator(self) -> NodeAfter:
+            after_calls.append(None)
+            return self
+
+    class NodeWrap(BaseModel):
+        child: NodeWrap | None = None
+
+        @model_validator(mode='wrap')
+        @classmethod
+        def wrap_validator(cls, data: Any, handler: ValidatorFunctionWrapHandler) -> NodeWrap:
+            wrap_calls.append(None)
+            return cast(NodeWrap, handler(data))
+
+    class Outer(BaseModel):
+        after: NodeAfter
+        wrap: NodeWrap
+
+    # the recursive models' validators are still reused, stripped of the model validators:
+    assert repr(Outer.__pydantic_validator__).count('PrebuiltValidator') == 2
+
+    Outer.model_validate({'after': {}, 'wrap': {}})
+    assert after_calls == [None]
+    assert wrap_calls == [None]
+
+    # the model validators also run exactly once per node of a nested input:
+    after_calls.clear()
+    wrap_calls.clear()
+    Outer.model_validate({'after': {'child': {'child': {}}}, 'wrap': {'child': {}}})
+    assert after_calls == [None] * 3
+    assert wrap_calls == [None] * 2

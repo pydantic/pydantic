@@ -461,6 +461,13 @@ pub struct DataclassValidator {
     slots: bool,
 }
 
+impl DataclassValidator {
+    /// The dataclass, used by `PrebuiltValidator`.
+    pub fn class(&self) -> &Py<PyType> {
+        &self.class
+    }
+}
+
 impl BuildValidator for DataclassValidator {
     const EXPECTED_TYPE: &'static str = "dataclass";
 

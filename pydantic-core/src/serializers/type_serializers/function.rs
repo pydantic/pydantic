@@ -334,6 +334,13 @@ pub struct FunctionWrapSerializer {
     info_arg: bool,
 }
 
+impl FunctionWrapSerializer {
+    /// The serializer that the function wraps, used by `PrebuiltSerializer`.
+    pub fn inner_serializer(&self) -> &Arc<CombinedSerializer> {
+        &self.serializer
+    }
+}
+
 impl BuildSerializer for FunctionWrapSerializer {
     const EXPECTED_TYPE: &'static str = "function-wrap";
 

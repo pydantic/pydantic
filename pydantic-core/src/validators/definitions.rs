@@ -52,6 +52,13 @@ impl DefinitionRefValidator {
     pub fn new(definition: DefinitionRef<Arc<CombinedValidator>>) -> Self {
         Self { definition }
     }
+
+    /// The validator this reference points to, if the definition has been filled and is still
+    /// alive (always the case for references inside a fully built `SchemaValidator`).
+    #[allow(clippy::redundant_closure_for_method_calls)] // `Option::cloned` is ambiguous here
+    pub fn resolved_validator(&self) -> Option<Arc<CombinedValidator>> {
+        self.definition.read(|validator| validator.cloned())
+    }
 }
 
 impl BuildValidator for DefinitionRefValidator {

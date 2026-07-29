@@ -17,7 +17,7 @@ use crate::serializers::{
 /// inner serializer may just be a function serializer and so cannot handle polymorphism itself.
 #[derive(Debug)]
 pub struct PolymorphismTrampoline {
-    class: Py<PyType>,
+    pub(crate) class: Py<PyType>,
     /// Inner serializer used when the type is not a subclass (responsible for any fallback etc)
     pub(crate) serializer: Arc<CombinedSerializer>,
     /// Whether polymorphic serialization is enabled from config

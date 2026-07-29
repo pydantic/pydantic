@@ -1394,3 +1394,109 @@ def test_wrap_ser_called_once() -> None:
 
     my_model = MyParentModel.model_validate({'nested': {'inner_value': 'foo'}})
     assert my_model.model_dump() == {'nested': {'inner_value': 'my_prefix:foo'}}
+
+
+def test_wrap_model_serializer_runs_once_when_reused_as_prebuilt() -> None:
+    """`pydantic-core` reuses the already built ("prebuilt") serializer of a completed model when
+    other models reference it. A `'wrap'` model serializer is applied around the `model` core
+    schema serializer, and is compiled inline by the referencing model, so the prebuilt serializer
+    is stripped down to the wrapped serializer to avoid applying the function twice.
+    """
+    calls: list[int] = []
+
+    class Inner(BaseModel):
+        x: int
+
+        @model_serializer(mode='wrap')
+        def ser(self, handler: SerializerFunctionWrapHandler) -> dict[str, Any]:
+            calls.append(self.x)
+            data = handler(self)
+            data['extra'] = True
+            return data
+
+    class Outer(BaseModel):
+        inner: Inner
+
+    assert 'PrebuiltSerializer' in repr(Outer.__pydantic_serializer__)
+
+    outer = Outer.model_validate({'inner': {'x': 1}})
+    assert outer.model_dump() == {'inner': {'x': 1, 'extra': True}}
+    assert calls == [1]
+
+    calls.clear()
+    assert outer.model_dump_json() == '{"inner":{"x":1,"extra":true}}'
+    assert calls == [1]
+
+
+def test_polymorphic_serialization_preserved_when_wrap_serializer_model_reused_as_prebuilt() -> None:
+    """The prebuilt serializer of a model with a `'wrap'` model serializer delegates to the
+    serializer that the wrap function wraps. That serializer must retain the polymorphism
+    trampoline, so that serializing a subclass instance still dispatches to the subclass's own
+    serializer."""
+
+    class Inner(BaseModel):
+        model_config = ConfigDict(polymorphic_serialization=True)
+
+        x: int
+
+        @model_serializer(mode='wrap')
+        def ser(self, handler: SerializerFunctionWrapHandler) -> dict[str, Any]:
+            data = handler(self)
+            data['which'] = 'base'
+            return data
+
+    class Sub(Inner):
+        @model_serializer(mode='wrap')
+        def ser(self, handler: SerializerFunctionWrapHandler) -> dict[str, Any]:
+            data = handler(self)
+            data['which'] = 'sub'
+            return data
+
+    class Outer(BaseModel):
+        inner: Inner
+
+    # the prebuilt serializer of `Inner` is reused (stripped of the wrap function):
+    assert 'PrebuiltSerializer' in repr(Outer.__pydantic_serializer__)
+
+    outer = Outer(inner=Sub(x=1))
+    assert outer.model_dump() == {'inner': {'x': 1, 'which': 'sub'}}
+    assert outer.model_dump(polymorphic_serialization=False) == {'inner': {'x': 1, 'which': 'base'}}
+
+
+def test_wrap_model_serializer_runs_once_when_recursive_model_reused_as_prebuilt() -> None:
+    """A recursive model stores its schema in a core schema definition, making the root of its own
+    serializer a reference to that definition, with the `'wrap'` model serializer inside the
+    definition. The serializer reused by a referencing model must still be the one that the wrap
+    function wraps, so that the wrap function (compiled inline by the referencing model) runs
+    exactly once.
+
+    This was broken before the reuse logic resolved definition references: the full prebuilt
+    serializer, including the wrap function, was reused, applying it a second time.
+    """
+    calls: list[Any] = []
+
+    class Node(BaseModel):
+        child: 'Node | None' = None
+
+        @model_serializer(mode='wrap')
+        def ser(self, handler: SerializerFunctionWrapHandler) -> dict[str, Any]:
+            calls.append(None)
+            data = handler(self)
+            data['extra'] = True
+            return data
+
+    class Outer(BaseModel):
+        node: Node
+
+    # the recursive model's serializer is still reused, stripped of the wrap function:
+    assert 'PrebuiltSerializer' in repr(Outer.__pydantic_serializer__)
+
+    outer = Outer.model_validate({'node': {}})
+    assert outer.model_dump() == {'node': {'child': None, 'extra': True}}
+    assert calls == [None]
+
+    # the wrap serializer also runs exactly once per node of a nested value:
+    calls.clear()
+    nested = Outer.model_validate({'node': {'child': {}}})
+    assert nested.model_dump() == {'node': {'child': {'child': None, 'extra': True}, 'extra': True}}
+    assert calls == [None] * 2

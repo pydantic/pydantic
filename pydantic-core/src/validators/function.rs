@@ -167,6 +167,11 @@ pub struct FunctionAfterValidator {
 impl_build!(FunctionAfterValidator, "function-after");
 
 impl FunctionAfterValidator {
+    /// The validator that the function is applied after, used by `PrebuiltValidator`.
+    pub fn inner_validator(&self) -> &Arc<CombinedValidator> {
+        &self.validator
+    }
+
     fn _validate<'py, I: Input<'py> + ?Sized>(
         &self,
         call: impl FnOnce(&I, &mut ValidationState<'_, 'py>) -> ValResult<Py<PyAny>>,
@@ -331,6 +336,11 @@ impl BuildValidator for FunctionWrapValidator {
 }
 
 impl FunctionWrapValidator {
+    /// The validator that the function wraps, used by `PrebuiltValidator`.
+    pub fn inner_validator(&self) -> &Arc<CombinedValidator> {
+        &self.validator
+    }
+
     fn _validate<'py>(
         &self,
         handler: &Bound<'_, PyAny>,

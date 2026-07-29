@@ -64,6 +64,13 @@ pub struct ModelValidator {
     name: String,
 }
 
+impl ModelValidator {
+    /// The model class, used by `PrebuiltValidator`.
+    pub fn class(&self) -> &Py<PyType> {
+        &self.class
+    }
+}
+
 impl BuildValidator for ModelValidator {
     const EXPECTED_TYPE: &'static str = "model";
 

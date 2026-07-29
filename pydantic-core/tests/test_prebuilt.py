@@ -48,7 +48,7 @@ def test_prebuilt_val_and_ser_used() -> None:
     assert outer_serializer.to_python(result) == {'inner': {'x': 1}}
 
 
-def test_prebuilt_not_used_for_wrap_serializer_functions() -> None:
+def test_prebuilt_reuse_strips_wrap_serializer_functions() -> None:
     class InnerModel:
         x: str
 
@@ -101,12 +101,15 @@ def test_prebuilt_not_used_for_wrap_serializer_functions() -> None:
     inner_instance = InnerModel(x='hello')
     assert inner_serializer.to_python(inner_instance) == {'x': 'hello modified'}
 
-    # but the outer model doesn't reuse the custom wrap serializer function, so we see simple str ser
+    # the outer model reuses the prebuilt serializer of the inner model, but with the wrap
+    # serializer function stripped off (the referencing schema is responsible for applying it,
+    # and this hand-crafted one does not), so we see simple str ser
     outer_instance = OuterModel(inner=InnerModel(x='hello'))
+    assert 'PrebuiltSerializer' in repr(outer_serializer)
     assert outer_serializer.to_python(outer_instance) == {'inner': {'x': 'hello'}}
 
 
-def test_prebuilt_not_used_for_wrap_validator_functions() -> None:
+def test_prebuilt_reuse_strips_wrap_validator_functions() -> None:
     class InnerModel:
         x: str
 
@@ -161,12 +164,15 @@ def test_prebuilt_not_used_for_wrap_validator_functions() -> None:
     result_inner = inner_validator.validate_python({'x': 'hello'})
     assert result_inner.x == 'hello modified'
 
-    # but the outer model doesn't reuse the custom wrap validator function, so we see simple str val
+    # the outer model reuses the prebuilt validator of the inner model, but with the wrap
+    # validator function stripped off (the referencing schema is responsible for applying it,
+    # and this hand-crafted one does not), so we see simple str val
+    assert 'PrebuiltValidator' in repr(outer_validator)
     result_outer = outer_validator.validate_python({'inner': {'x': 'hello'}})
     assert result_outer.inner.x == 'hello'
 
 
-def test_prebuilt_not_used_for_after_validator_functions() -> None:
+def test_prebuilt_reuse_strips_after_validator_functions() -> None:
     class InnerModel:
         x: str
 
@@ -221,7 +227,10 @@ def test_prebuilt_not_used_for_after_validator_functions() -> None:
     result_inner = inner_validator.validate_python({'x': 'hello'})
     assert result_inner.x == 'hello modified'
 
-    # but the outer model doesn't reuse the custom after validator function, so we see simple str val
+    # the outer model reuses the prebuilt validator of the inner model, but with the after
+    # validator function stripped off (the referencing schema is responsible for applying it,
+    # and this hand-crafted one does not), so we see simple str val
+    assert 'PrebuiltValidator' in repr(outer_validator)
     result_outer = outer_validator.validate_python({'inner': {'x': 'hello'}})
     assert result_outer.inner.x == 'hello'
 
@@ -401,3 +410,96 @@ def test_reuse_before_validator_ok() -> None:
     result_outer = outer_validator.validate_python({'inner': {'x': 'hello'}})
     assert result_outer.inner.x == 'hello modified'
     assert 'PrebuiltValidator' in repr(outer_validator)
+
+
+def test_prebuilt_validator_used_through_pluggable_schema_validator_wrapper() -> None:
+    """When Pydantic plugins are installed, `__pydantic_validator__` is a
+    `pydantic.plugin._schema_validator.PluggableSchemaValidator` exposing the actual
+    `SchemaValidator` via its `_schema_validator` attribute. Prebuilt reuse should still work.
+    """
+
+    class PluggableSchemaValidatorStandIn:
+        def __init__(self, schema_validator: SchemaValidator) -> None:
+            self._schema_validator = schema_validator
+
+        def __getattr__(self, name: str):
+            return getattr(self._schema_validator, name)
+
+    class InnerModel:
+        x: int
+
+    inner_schema = core_schema.model_schema(
+        InnerModel,
+        schema=core_schema.model_fields_schema(
+            {'x': core_schema.model_field(schema=core_schema.int_schema())},
+        ),
+    )
+
+    InnerModel.__pydantic_complete__ = True  # pyright: ignore[reportAttributeAccessIssue]
+    InnerModel.__pydantic_validator__ = PluggableSchemaValidatorStandIn(  # pyright: ignore[reportAttributeAccessIssue]
+        SchemaValidator(inner_schema)
+    )
+
+    class OuterModel:
+        inner: InnerModel
+
+    outer_schema = core_schema.model_schema(
+        OuterModel,
+        schema=core_schema.model_fields_schema(
+            {
+                'inner': core_schema.model_field(
+                    schema=core_schema.model_schema(
+                        InnerModel,
+                        schema=core_schema.model_fields_schema(
+                            # note, we use str schema here even though that's incorrect
+                            # in order to verify that the prebuilt validator is used
+                            # off of InnerModel with the correct int schema, not this str schema
+                            {'x': core_schema.model_field(schema=core_schema.str_schema())},
+                        ),
+                    )
+                )
+            }
+        ),
+    )
+
+    outer_validator = SchemaValidator(outer_schema)
+    assert 'PrebuiltValidator' in repr(outer_validator)
+
+    result = outer_validator.validate_python({'inner': {'x': 1}})
+    assert result.inner.x == 1
+
+
+def test_prebuilt_validator_ignores_unrecognized_wrapper() -> None:
+    """An unknown `__pydantic_validator__` object (no `_schema_validator` attribute) is ignored,
+    and the schema is compiled inline as before."""
+
+    class InnerModel:
+        x: int
+
+    InnerModel.__pydantic_complete__ = True  # pyright: ignore[reportAttributeAccessIssue]
+    InnerModel.__pydantic_validator__ = object()  # pyright: ignore[reportAttributeAccessIssue]
+
+    class OuterModel:
+        inner: InnerModel
+
+    outer_schema = core_schema.model_schema(
+        OuterModel,
+        schema=core_schema.model_fields_schema(
+            {
+                'inner': core_schema.model_field(
+                    schema=core_schema.model_schema(
+                        InnerModel,
+                        schema=core_schema.model_fields_schema(
+                            {'x': core_schema.model_field(schema=core_schema.int_schema())},
+                        ),
+                    )
+                )
+            }
+        ),
+    )
+
+    outer_validator = SchemaValidator(outer_schema)
+    assert 'PrebuiltValidator' not in repr(outer_validator)
+
+    result = outer_validator.validate_python({'inner': {'x': 1}})
+    assert result.inner.x == 1

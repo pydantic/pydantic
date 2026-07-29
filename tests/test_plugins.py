@@ -8,7 +8,7 @@ from typing import Any
 import pytest
 from pydantic_core import SchemaValidator, ValidationError
 
-from pydantic import BaseModel, TypeAdapter, create_model, dataclasses, field_validator, validate_call
+from pydantic import BaseModel, TypeAdapter, create_model, dataclasses, field_validator, model_validator, validate_call
 from pydantic.config import ExtraValues
 from pydantic.plugin import (
     PydanticPluginProtocol,
@@ -555,3 +555,37 @@ def test_plugin_with_event_handlers_still_reuses_prebuilt_validators() -> None:
         assert isinstance(Outer.__pydantic_validator__, PluggableSchemaValidator)
         assert 'PrebuiltValidator' in repr(Outer.__pydantic_validator__._schema_validator)
         assert Outer.model_validate({'inner': {'a': 1}}).inner.a == 1
+
+
+def test_plugin_prebuilt_recursive_model_validator_runs_once() -> None:
+    """https://github.com/pydantic/pydantic/pull/13535#issuecomment-5115875059
+
+    A recursive model with an `'after'` model validator, referenced by another model while a plugin
+    is installed, must run the model validator exactly once.
+    """
+    calls: list[None] = []
+
+    class CustomOnValidatePython(ValidatePythonHandlerProtocol):
+        def on_enter(self, input, **kwargs) -> None:
+            pass
+
+    class Plugin:
+        def new_schema_validator(self, schema, schema_type, schema_type_path, schema_kind, config, plugin_settings):
+            return CustomOnValidatePython(), None, None
+
+    with install_plugin(Plugin()):
+
+        class Node(BaseModel):
+            child: Node | None = None
+
+            @model_validator(mode='after')
+            def validate_model(self) -> Node:
+                calls.append(None)
+                return self
+
+        class Outer(BaseModel):
+            node: Node
+
+        Outer.model_validate({'node': {}})
+
+    assert calls == [None]

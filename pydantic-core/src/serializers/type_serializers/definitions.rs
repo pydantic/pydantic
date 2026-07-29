@@ -73,6 +73,15 @@ impl BuildSerializer for DefinitionRefSerializer {
     }
 }
 
+impl DefinitionRefSerializer {
+    /// The serializer this reference points to, if the definition has been filled and is still
+    /// alive (always the case for references inside a fully built `SchemaSerializer`).
+    #[allow(clippy::redundant_closure_for_method_calls)] // `Option::cloned` is ambiguous here
+    pub fn resolved_serializer(&self) -> Option<Arc<CombinedSerializer>> {
+        self.definition.read(|serializer| serializer.cloned())
+    }
+}
+
 impl_py_gc_traverse!(DefinitionRefSerializer {});
 
 impl TypeSerializer for DefinitionRefSerializer {
