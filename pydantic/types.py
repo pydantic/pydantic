@@ -1889,7 +1889,10 @@ class SecretStr(_SecretField[str]):
             return False
 
         # `secrets.compare_digest()` only supports ASCII strings, so encode to bytes first:
-        return secrets.compare_digest(self.get_secret_value().encode(), other.get_secret_value().encode())
+        return secrets.compare_digest(
+            self.get_secret_value().encode('utf-8', errors='surrogatepass'),
+            other.get_secret_value().encode('utf-8', errors='surrogatepass'),
+        )
 
     def _display(self) -> str:
         return _secret_display(self._secret_value)
