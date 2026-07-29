@@ -8,7 +8,7 @@ from typing import Any
 import pytest
 from pydantic_core import ValidationError
 
-from pydantic import BaseModel, TypeAdapter, create_model, dataclasses, field_validator, validate_call
+from pydantic import BaseModel, TypeAdapter, create_model, dataclasses, field_validator, model_validator, validate_call
 from pydantic.config import ExtraValues
 from pydantic.plugin import (
     PydanticPluginProtocol,
@@ -500,3 +500,39 @@ def test_plugin_path_complex() -> None:
             'BaseModel',
         ),
     ]
+
+
+def test_plugin_prebuilt_recursive_model_validator_runs_once() -> None:
+    """https://github.com/pydantic/pydantic/pull/13535#issuecomment-5115875059
+
+    Regression test contributed by davidhewitt: a plugin causes recursive model schemas to skip
+    the "prebuilt validator" reuse path, so their `model_validator(mode='after')` must still run
+    exactly once when the model is referenced from another model.
+    """
+
+    calls: list[None] = []
+
+    class CustomOnValidatePython(ValidatePythonHandlerProtocol):
+        def on_enter(self, input, **kwargs) -> None:
+            pass
+
+    class Plugin:
+        def new_schema_validator(self, schema, schema_type, schema_type_path, schema_kind, config, plugin_settings):
+            return CustomOnValidatePython(), None, None
+
+    with install_plugin(Plugin()):
+
+        class Node(BaseModel):
+            child: Node | None = None
+
+            @model_validator(mode='after')
+            def validate_model(self) -> Node:
+                calls.append(None)
+                return self
+
+        class Outer(BaseModel):
+            node: Node
+
+        Outer.model_validate({'node': {}})
+
+    assert calls == [None]
