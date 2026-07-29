@@ -1571,7 +1571,7 @@ Bases: `_SecretBase[SecretType]`
 
 A generic base class used for defining a field with sensitive information that you do not want to be visible in logging or tracebacks.
 
-You may either directly parametrize `Secret` with a type, or subclass from `Secret` with a parametrized type. The benefit of subclassing is that you can define a custom `_display` method, which will be used for `repr()` and `str()` methods. The examples below demonstrate both ways of using `Secret` to create a new secret type.
+You may either directly parametrize `Secret` with a type, or subclass from `Secret` with a parametrized type. The benefit of subclassing is that you can define a custom `_display()` method, which will be used for repr() and str() methods. The examples below demonstrate both ways of using `Secret` to create a new secret type.
 
 1. Directly parametrizing `Secret` with a type:
 
@@ -1621,7 +1621,7 @@ print(m.secret_date.get_secret_value())
 
 ```
 
-The value returned by the `_display` method will be used for `repr()` and `str()`.
+The value returned by the `_display()` method will be used for repr() and str().
 
 You can enforce constraints on the underlying type through annotations: For example:
 
@@ -1673,6 +1673,8 @@ except ValidationError as exc_info:
 1. The input value is not greater than 0, so it raises a validation error.
 1. The input value is not an integer, so it raises a validation error because the `SecretPosInt` type has strict mode enabled.
 
+Two `Secret` types compare equal if the secret values are equal. For the SecretStr and SecretBytes implementations, constant-time comparison is achieved (using secrets.compare_digest()). If you need constant-time comparison on your `Secret` subclass, you can do so by overriding __eq__().
+
 Source code in `pydantic/types.py`
 
 ````python
@@ -1680,7 +1682,7 @@ class Secret(_SecretBase[SecretType]):
     """A generic base class used for defining a field with sensitive information that you do not want to be visible in logging or tracebacks.
 
     You may either directly parametrize `Secret` with a type, or subclass from `Secret` with a parametrized type. The benefit of subclassing
-    is that you can define a custom `_display` method, which will be used for `repr()` and `str()` methods. The examples below demonstrate both
+    is that you can define a custom `_display()` method, which will be used for [`repr()`][repr] and [`str()`][str] methods. The examples below demonstrate both
     ways of using `Secret` to create a new secret type.
 
     1. Directly parametrizing `Secret` with a type:
@@ -1729,7 +1731,7 @@ class Secret(_SecretBase[SecretType]):
     #> 2022-01-01
     ```
 
-    The value returned by the `_display` method will be used for `repr()` and `str()`.
+    The value returned by the `_display()` method will be used for [`repr()`][repr] and [`str()`][str].
 
     You can enforce constraints on the underlying type through annotations:
     For example:
@@ -1780,6 +1782,11 @@ class Secret(_SecretBase[SecretType]):
 
     1. The input value is not greater than 0, so it raises a validation error.
     2. The input value is not an integer, so it raises a validation error because the `SecretPosInt` type has strict mode enabled.
+
+    Two `Secret` types compare equal if the secret values are equal. For the [`SecretStr`][pydantic.types.SecretStr] and
+    [`SecretBytes`][pydantic.types.SecretBytes] implementations, constant-time comparison is achieved
+    (using [`secrets.compare_digest()`][secrets.compare_digest]). If you need constant-time comparison on your `Secret`
+    subclass, you can do so by overriding [`__eq__()`][object.__eq__].
     """
 
     def _display(self) -> str | bytes:
@@ -1843,7 +1850,9 @@ Bases: `_SecretField[str]`
 
 A string used for storing sensitive information that you do not want to be visible in logging or tracebacks.
 
-When the secret value is nonempty, it is displayed as `'**********'` instead of the underlying value in calls to `repr()` and `str()`. If the value *is* empty, it is displayed as `''`.
+When the secret value is nonempty, it is displayed as `'**********'` instead of the underlying value in calls to repr() and str(). If the value *is* empty, it is displayed as `''`.
+
+Two `SecretStr` types compare equal if the secret values are equal. Constant-time comparison is achieved (using secrets.compare_digest()).
 
 ```python
 from pydantic import BaseModel, SecretStr
@@ -1865,7 +1874,7 @@ print((SecretStr('password'), SecretStr('')))
 
 As seen above, by default, SecretStr (and SecretBytes) will be serialized as `**********` when serializing to json.
 
-You can use the field_serializer to dump the secret as plain-text when serializing to json.
+You can use a [field serializer](../../concepts/serialization/#field-serializers) to dump the secret as plain-text when serializing to json.
 
 ```python
 from pydantic import BaseModel, SecretBytes, SecretStr, field_serializer
@@ -1902,7 +1911,10 @@ class SecretStr(_SecretField[str]):
     """A string used for storing sensitive information that you do not want to be visible in logging or tracebacks.
 
     When the secret value is nonempty, it is displayed as `'**********'` instead of the underlying value in
-    calls to `repr()` and `str()`. If the value _is_ empty, it is displayed as `''`.
+    calls to [`repr()`][repr] and [`str()`][str]. If the value _is_ empty, it is displayed as `''`.
+
+    Two `SecretStr` types compare equal if the secret values are equal. Constant-time comparison is achieved
+    (using [`secrets.compare_digest()`][secrets.compare_digest]).
 
     ```python
     from pydantic import BaseModel, SecretStr
@@ -1924,7 +1936,7 @@ class SecretStr(_SecretField[str]):
     As seen above, by default, [`SecretStr`][pydantic.types.SecretStr] (and [`SecretBytes`][pydantic.types.SecretBytes])
     will be serialized as `**********` when serializing to json.
 
-    You can use the [`field_serializer`][pydantic.functional_serializers.field_serializer] to dump the
+    You can use a [field serializer](../concepts/serialization.md#field-serializers) to dump the
     secret as plain-text when serializing to json.
 
     ```python
@@ -1961,6 +1973,15 @@ class SecretStr(_SecretField[str]):
     def __len__(self) -> int:
         return len(self._secret_value)
 
+    def __hash__(self) -> int:
+        return hash(self.get_secret_value())
+
+    def __eq__(self, other: Any) -> bool:
+        if not isinstance(other, self.__class__):
+            return False
+
+        return secrets.compare_digest(self.get_secret_value(), other.get_secret_value())
+
     def _display(self) -> str:
         return _secret_display(self._secret_value)
 
@@ -1972,7 +1993,9 @@ Bases: `_SecretField[bytes]`
 
 A bytes used for storing sensitive information that you do not want to be visible in logging or tracebacks.
 
-It displays `b'**********'` instead of the string value on `repr()` and `str()` calls. When the secret value is nonempty, it is displayed as `b'**********'` instead of the underlying value in calls to `repr()` and `str()`. If the value *is* empty, it is displayed as `b''`.
+When the secret value is nonempty, it is displayed as `b'**********'` instead of the underlying value in calls to repr() and str(). If the value *is* empty, it is displayed as `b''`.
+
+Two `SecretBytes` types compare equal if the secret values are equal. Constant-time comparison is achieved (using secrets.compare_digest()).
 
 ```python
 from pydantic import BaseModel, SecretBytes
@@ -1996,9 +2019,11 @@ Source code in `pydantic/types.py`
 class SecretBytes(_SecretField[bytes]):
     """A bytes used for storing sensitive information that you do not want to be visible in logging or tracebacks.
 
-    It displays `b'**********'` instead of the string value on `repr()` and `str()` calls.
     When the secret value is nonempty, it is displayed as `b'**********'` instead of the underlying value in
-    calls to `repr()` and `str()`. If the value _is_ empty, it is displayed as `b''`.
+    calls to [`repr()`][repr] and [`str()`][str]. If the value _is_ empty, it is displayed as `b''`.
+
+    Two `SecretBytes` types compare equal if the secret values are equal. Constant-time comparison is achieved
+    (using [`secrets.compare_digest()`][secrets.compare_digest]).
 
     ```python
     from pydantic import BaseModel, SecretBytes
@@ -2021,6 +2046,15 @@ class SecretBytes(_SecretField[bytes]):
 
     def __len__(self) -> int:
         return len(self._secret_value)
+
+    def __hash__(self) -> int:
+        return hash(self.get_secret_value())
+
+    def __eq__(self, other: Any) -> bool:
+        if not isinstance(other, self.__class__):
+            return False
+
+        return secrets.compare_digest(self.get_secret_value(), other.get_secret_value())
 
     def _display(self) -> bytes:
         return _secret_display(self._secret_value).encode()
