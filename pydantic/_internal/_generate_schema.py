@@ -115,6 +115,7 @@ from ._mock_val_ser import MockCoreSchema
 from ._namespace_utils import NamespacesTuple, NsResolver
 from ._schema_cache import (
     IMMUTABLE_DEFAULT_TYPES,
+    encode_metadata_item,
 )
 from ._schema_cache import (
     copy_pure_schema as _copy_pure_schema,
@@ -1264,20 +1265,22 @@ class GenerateSchema:
     def _field_schema_cache_key(self, field_info: FieldInfo, decorators: DecoratorInfos) -> Any | None:
         """Return a cache key for the complete `model-field` schema node, or `None` if not cacheable.
 
-        The complete node for a field is cacheable when nothing besides the (pure) annotation and a
-        possible immutable default value can influence it:
+        The complete node for a field is cacheable when everything that can influence it is captured
+        by the key: the (pure) annotation, encodable metadata, string aliases, title, description,
+        the `frozen` flag and an immutable default value. Additionally:
 
-        - no decorator (field/V1-style validator, field serializer) applies to any field,
-        - no other `FieldInfo` attribute feeding the node is set — checked on the attributes
+        - no decorator (field/V1-style validator, field serializer) must apply to any field,
+        - no other `FieldInfo` attribute feeding the node may be set — checked on the attributes
           themselves (and not e.g. on `FieldInfo._attributes_set`), as they can also be set by
-          title/alias generators or by users mutating `model_fields` entries before a rebuild,
-        - the configuration doesn't set `json_encoders` (which alter the generated schema).
+          title/alias generators or by users mutating `model_fields` entries before a rebuild
+          (attributes participating in the key are safe regardless of how they were set, as any
+          difference in their values produces a different key),
+        - the configuration must not set `json_encoders` (which alter the generated schema).
         """
         if (
             decorators.field_validators
             or decorators.validators
             or decorators.field_serializers
-            or field_info.metadata
             or field_info._qualifiers
         ):
             return None
@@ -1287,16 +1290,25 @@ class GenerateSchema:
             and field_info.discriminator is None
             and field_info.exclude is None
             and field_info.exclude_if is None
-            and field_info.alias is None
-            and field_info.validation_alias is None
-            and field_info.serialization_alias is None
-            and field_info.frozen is None
-            and field_info.title is None
-            and field_info.description is None
             and field_info.examples is None
             and field_info.deprecated is None
             and field_info.json_schema_extra is None
             and field_info.field_title_generator is None
+        ):
+            return None
+        alias = field_info.alias
+        validation_alias = field_info.validation_alias
+        serialization_alias = field_info.serialization_alias
+        title = field_info.title
+        description = field_info.description
+        frozen = field_info.frozen
+        if not (
+            (alias is None or type(alias) is str)
+            and (validation_alias is None or type(validation_alias) is str)
+            and (serialization_alias is None or type(serialization_alias) is str)
+            and (title is None or type(title) is str)
+            and (description is None or type(description) is str)
+            and (frozen is None or frozen is False or frozen is True)
         ):
             return None
         default = field_info.default
@@ -1304,13 +1316,34 @@ class GenerateSchema:
             return None
         if self._config_wrapper.config_dict.get('json_encoders'):
             return None
+        if field_info.metadata:
+            metadata_keys: list[Any] = []
+            for item in field_info.metadata:
+                item_key = encode_metadata_item(item)
+                if item_key is None:
+                    return None
+                metadata_keys.append(item_key)
+            metadata_key = tuple(metadata_keys)
+        else:
+            metadata_key = ()
         try:
             annotation_key = _pure_annotation_cache_key(field_info.annotation)
         except TypeError:  # unhashable annotation (or part of it)
             return None
         if annotation_key is None:
             return None
-        return (annotation_key, type(default), default)
+        return (
+            annotation_key,
+            metadata_key,
+            alias,
+            validation_alias,
+            serialization_alias,
+            title,
+            description,
+            frozen,
+            type(default),
+            default,
+        )
 
     def _generate_dc_field_schema(
         self,

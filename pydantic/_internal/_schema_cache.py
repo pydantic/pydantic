@@ -170,6 +170,74 @@ def _import_cached_field_info() -> type[Any]:
     return FieldInfo
 
 
+@cache
+def _trusted_class_hooks() -> dict[type[Any], tuple[Any, Any, Any]]:
+    """Trusted leaf classes, mapped to a snapshot of their (normalized) schema hooks.
+
+    These are stdlib value classes (with no schema hooks) and pydantic's own URL classes (whose
+    `__get_pydantic_core_schema__` output is deterministic per class and context-free — no
+    references, no configuration reads). As these are regular Python classes, hooks *could* be
+    monkeypatched onto (or off of) them at runtime, so `_verified_leaf_class_key()` re-verifies
+    the snapshot on every use: any difference makes the class uncacheable from that point on.
+    """
+    from fractions import Fraction
+    from ipaddress import IPv4Address, IPv4Interface, IPv4Network, IPv6Address, IPv6Interface, IPv6Network
+    from pathlib import Path, PosixPath, PurePath, PurePosixPath, PureWindowsPath, WindowsPath
+    from uuid import UUID
+
+    from ..networks import AnyHttpUrl, AnyUrl, AnyWebsocketUrl, FileUrl, FtpUrl, HttpUrl, WebsocketUrl
+
+    return {
+        cls: (
+            _normalize_hook(getattr(cls, '__get_pydantic_core_schema__', None)),
+            _normalize_hook(getattr(cls, '__get_pydantic_json_schema__', None)),
+            _normalize_hook(getattr(cls, '__modify_schema__', None)),
+        )
+        for cls in (
+            UUID,
+            Fraction,
+            IPv4Address,
+            IPv4Interface,
+            IPv4Network,
+            IPv6Address,
+            IPv6Interface,
+            IPv6Network,
+            Path,
+            PosixPath,
+            PurePath,
+            PurePosixPath,
+            PureWindowsPath,
+            WindowsPath,
+            AnyUrl,
+            AnyHttpUrl,
+            HttpUrl,
+            AnyWebsocketUrl,
+            WebsocketUrl,
+            FileUrl,
+            FtpUrl,
+        )
+    }
+
+
+def _normalize_hook(hook: Any) -> Any:
+    """Normalize a schema hook for identity comparison (bound classmethods are recreated on each access)."""
+    return getattr(hook, '__func__', hook)
+
+
+def _verified_leaf_class_key(tp: Any) -> Any | None:
+    """Return `tp` as a cache key if it is a trusted leaf class with unchanged hooks, else `None`."""
+    hooks = _trusted_class_hooks().get(tp)
+    if hooks is None:
+        return None
+    if (
+        _normalize_hook(getattr(tp, '__get_pydantic_core_schema__', None)) is hooks[0]
+        and _normalize_hook(getattr(tp, '__get_pydantic_json_schema__', None)) is hooks[1]
+        and _normalize_hook(getattr(tp, '__modify_schema__', None)) is hooks[2]
+    ):
+        return tp
+    return None
+
+
 def pure_annotation_cache_key(tp: Any, /) -> Any | None:
     """Return a cache key for the annotation if it is pure, `None` otherwise.
 
@@ -185,6 +253,8 @@ def pure_annotation_cache_key(tp: Any, /) -> Any | None:
     if origin is None:
         if tp in _PURE_LEAF_TYPES:
             return tp
+        if isinstance(tp, type):
+            return _verified_leaf_class_key(tp)
         return None
     if typing_objects.is_annotated(origin):
         source_key = pure_annotation_cache_key(tp.__origin__)
