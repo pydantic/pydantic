@@ -11,7 +11,7 @@ from re import Pattern
 from typing import TYPE_CHECKING, Any, TypeVar, cast
 
 from pydantic_core import PydanticUndefined
-from typing_extensions import TypeIs, get_origin
+from typing_extensions import TypeIs, get_origin  # noqa: UP035 (`typing.get_origin` doesn't handle all cases)
 from typing_inspection import typing_objects
 from typing_inspection.introspection import AnnotationSource
 

@@ -522,3 +522,66 @@ def test_none_annotation_still_evaluates_to_none_type():
         v: None = None
 
     assert Model.model_fields['v'].annotation is type(None)
+
+
+def test_encode_metadata_item_discriminates_value_types():
+    import annotated_types
+
+    from pydantic._internal._schema_cache import encode_metadata_item
+
+    assert encode_metadata_item(annotated_types.Gt(1)) != encode_metadata_item(annotated_types.Gt(True))
+    assert encode_metadata_item(annotated_types.Gt(0.0)) != encode_metadata_item(annotated_types.Gt(-0.0))
+    assert encode_metadata_item(annotated_types.Gt(1)) == encode_metadata_item(annotated_types.Gt(1))
+    # Items holding arbitrary objects (e.g. functions) are not encodable:
+    assert encode_metadata_item(annotated_types.Predicate(bool)) is None
+
+
+def test_field_schema_cache_with_constraints_and_aliases():
+    from typing import Annotated
+
+    from pydantic import Field, ValidationError
+
+    class A(BaseModel):
+        v: Annotated[int, Field(gt=0, le=10)] = 5
+        w: Annotated[str, Field(alias='wAlias')] = 'x'
+
+    class B(BaseModel):
+        v: Annotated[int, Field(gt=0, le=10)] = 5
+        w: Annotated[str, Field(alias='otherAlias')] = 'x'
+
+    node_a = A.__pydantic_core_schema__['schema']['fields']['v']
+    node_b = B.__pydantic_core_schema__['schema']['fields']['v']
+    assert node_a == node_b
+    assert node_a is not node_b
+
+    # constraints are enforced through the cached node:
+    with pytest.raises(ValidationError):
+        B(v=11)
+
+    # aliases take part in the cache key, so equal shapes with different aliases don't collide:
+    assert A.__pydantic_core_schema__['schema']['fields']['w']['validation_alias'] == 'wAlias'
+    assert B.__pydantic_core_schema__['schema']['fields']['w']['validation_alias'] == 'otherAlias'
+
+
+def test_trusted_leaf_class_hook_patching_bypasses_cache():
+    import uuid
+
+    class A(BaseModel):
+        v: uuid.UUID | None = None
+
+    assert A.__pydantic_core_schema__['schema']['fields']['v']['schema']['schema']['schema']['type'] == 'uuid'
+
+    uuid.UUID.__get_pydantic_core_schema__ = classmethod(lambda cls, source, handler: {'type': 'int'})
+    try:
+
+        class B(BaseModel):
+            v: uuid.UUID | None = None
+
+        assert B.__pydantic_core_schema__['schema']['fields']['v']['schema']['schema']['schema']['type'] == 'int'
+    finally:
+        del uuid.UUID.__get_pydantic_core_schema__
+
+    class C(BaseModel):
+        v: uuid.UUID | None = None
+
+    assert C.__pydantic_core_schema__['schema']['fields']['v']['schema']['schema']['schema']['type'] == 'uuid'
