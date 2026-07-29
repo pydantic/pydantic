@@ -1037,21 +1037,10 @@ class GenerateSchema:
         The idea is that we'll evolve this into adding more and more user facing methods over time
         as they get requested and we figure out what the right API for them is.
         """
-        if obj is str:
-            return core_schema.str_schema()
-        elif obj is bytes:
-            return core_schema.bytes_schema()
-        elif obj is int:
-            return core_schema.int_schema()
-        elif obj is float:
-            return core_schema.float_schema()
-        elif obj is bool:
-            return core_schema.bool_schema()
-        elif obj is complex:
-            return core_schema.complex_schema()
-        elif typing_objects.is_any(obj) or obj is object:
-            return core_schema.any_schema()
-        elif obj is datetime.date:
+        # The `datetime` classes are compared as (late-bound) module attributes, and not included
+        # in the dispatch table, to support the (rare, but exercised by our own documentation tests)
+        # pattern of patching e.g. `datetime.datetime` with a subclass:
+        if obj is datetime.date:
             return core_schema.date_schema()
         elif obj is datetime.datetime:
             return core_schema.datetime_schema()
@@ -1059,52 +1048,35 @@ class GenerateSchema:
             return core_schema.time_schema()
         elif obj is datetime.timedelta:
             return core_schema.timedelta_schema()
-        elif obj is Decimal:
-            return core_schema.decimal_schema()
-        elif obj is UUID:
-            return core_schema.uuid_schema()
-        elif obj is Url:
-            return core_schema.url_schema()
-        elif obj is Fraction:
-            return core_schema.fraction_schema()
-        elif obj is MultiHostUrl:
-            return core_schema.multi_host_url_schema()
-        elif obj is None or obj is NoneType:
-            return core_schema.none_schema()
-        if obj is MISSING:
-            return core_schema.missing_sentinel_schema()
-        elif obj in IP_TYPES:
-            return self._ip_schema(obj)
-        elif obj in TUPLE_TYPES:
-            return self._tuple_schema(obj)
-        elif obj in LIST_TYPES:
-            return self._list_schema(Any)
-        elif obj in SET_TYPES:
-            return self._set_schema(Any)
-        elif obj in FROZEN_SET_TYPES:
-            return self._frozenset_schema(Any)
-        elif obj in SEQUENCE_TYPES:
-            return self._sequence_schema(Any)
-        elif obj in ITERABLE_TYPES:
-            return self._iterable_schema(obj)
-        elif obj in DICT_TYPES:
-            return self._dict_schema(Any, Any)
-        elif obj in PATH_TYPES:
-            return self._path_schema(obj, Any)
-        elif obj in DEQUE_TYPES:
-            return self._deque_schema(Any)
-        elif obj in MAPPING_TYPES:
-            return self._mapping_schema(obj, Any, Any)
-        elif obj in COUNTER_TYPES:
-            return self._mapping_schema(obj, Any, int)
-        elif typing_objects.is_typealiastype(obj):
+
+        try:
+            handler = _SIMPLE_TYPES_DISPATCH.get(obj)
+        except TypeError:
+            # `obj` is unhashable, so it can't be one of the (hashable) dispatch keys either:
+            handler = None
+        if handler is not None:
+            return handler(self, obj)
+
+        origin = get_origin(obj)
+        if origin is not None:
+            if typing_objects.is_literal(origin):
+                return self._literal_schema(obj)
+            elif origin is collections.abc.Callable:
+                # parametrized `Callable[...]` (the bare forms are handled by the dispatch table):
+                return core_schema.callable_schema()
+            elif origin is Final or origin is typing_extensions.Final:
+                # parametrized `Final[tp]`:
+                return self.generate_schema(
+                    self._get_first_arg_or_any(obj),
+                )
+            elif origin is collections.abc.Hashable:
+                # `Hashable` aliases not present in the dispatch table (`get_origin()` normalizes
+                # typing-module aliases to the `collections` classes):
+                return self._hashable_schema()
+            return self._match_generic_type(obj, origin)
+
+        if typing_objects.is_typealiastype(obj):
             return self._type_alias_type_schema(obj)
-        elif obj is type:
-            return self._type_schema()
-        elif _typing_extra.is_callable(obj):
-            return core_schema.callable_schema()
-        elif typing_objects.is_literal(get_origin(obj)):
-            return self._literal_schema(obj)
         elif is_typeddict(obj):
             return self._typed_dict_schema(obj, None)
         elif inspect.isclass(obj) and issubclass(obj, Enum):
@@ -1116,31 +1088,15 @@ class GenerateSchema:
         elif typing_objects.is_newtype(obj):
             # NewType, can't use isinstance because it fails <3.10
             return self.generate_schema(obj.__supertype__)
-        elif obj in PATTERN_TYPES:
-            return self._pattern_schema(obj)
-        elif _typing_extra.is_hashable(obj):
-            return self._hashable_schema()
         elif isinstance(obj, typing.TypeVar):
             return self._unsubstituted_typevar_schema(obj)
-        elif _typing_extra.is_finalvar(obj):
-            if obj is Final:
-                return core_schema.any_schema()
-            return self.generate_schema(
-                self._get_first_arg_or_any(obj),
-            )
         elif isinstance(obj, VALIDATE_CALL_SUPPORTED_TYPES):
             return self._call_schema(obj)  # pyright: ignore[reportArgumentType]
-        elif obj is ZoneInfo:
-            return self._zoneinfo_schema()
 
         # dataclasses.is_dataclass coerces dc instances to types, but we only handle
         # the case of a dc type here
         if dataclasses.is_dataclass(obj):
             return self._dataclass_schema(obj, None)  # pyright: ignore[reportArgumentType]
-
-        origin = get_origin(obj)
-        if origin is not None:
-            return self._match_generic_type(obj, origin)
 
         if self._arbitrary_types:
             return self._arbitrary_type_schema(obj)
@@ -2521,6 +2477,71 @@ class GenerateSchema:
         if ref:
             schema['ref'] = ref  # type: ignore
         return schema
+
+
+# The dispatch table used by `GenerateSchema.match_type()` for types matched by identity or
+# equality (avoiding a long chain of comparisons). Most entries are keyed by (hashable) exact
+# types; the `*_TYPES` lists members were previously matched with `in` containment checks
+# (i.e. by equality), which dict lookups also provide (assuming hash equality, which holds
+# for the keys here as they define no custom `__eq__`/`__hash__`):
+_SIMPLE_TYPES_DISPATCH: dict[Any, Callable[[GenerateSchema, Any], core_schema.CoreSchema]] = {
+    str: lambda self, obj: core_schema.str_schema(),
+    bytes: lambda self, obj: core_schema.bytes_schema(),
+    int: lambda self, obj: core_schema.int_schema(),
+    float: lambda self, obj: core_schema.float_schema(),
+    bool: lambda self, obj: core_schema.bool_schema(),
+    complex: lambda self, obj: core_schema.complex_schema(),
+    Any: lambda self, obj: core_schema.any_schema(),
+    typing_extensions.Any: lambda self, obj: core_schema.any_schema(),
+    object: lambda self, obj: core_schema.any_schema(),
+    Decimal: lambda self, obj: core_schema.decimal_schema(),
+    UUID: lambda self, obj: core_schema.uuid_schema(),
+    Url: lambda self, obj: core_schema.url_schema(),
+    Fraction: lambda self, obj: core_schema.fraction_schema(),
+    MultiHostUrl: lambda self, obj: core_schema.multi_host_url_schema(),
+    None: lambda self, obj: core_schema.none_schema(),
+    NoneType: lambda self, obj: core_schema.none_schema(),
+    MISSING: lambda self, obj: core_schema.missing_sentinel_schema(),
+    type: lambda self, obj: self._type_schema(),
+    ZoneInfo: lambda self, obj: self._zoneinfo_schema(),
+    # The bare `Callable`/`Hashable`/`Final` forms (their parametrized versions are
+    # handled in `match_type()`, based on their origin):
+    collections.abc.Callable: lambda self, obj: core_schema.callable_schema(),
+    typing.Callable: lambda self, obj: core_schema.callable_schema(),
+    typing_extensions.Callable: lambda self, obj: core_schema.callable_schema(),
+    collections.abc.Hashable: lambda self, obj: self._hashable_schema(),
+    typing.Hashable: lambda self, obj: self._hashable_schema(),
+    typing_extensions.Hashable: lambda self, obj: self._hashable_schema(),
+    Final: lambda self, obj: core_schema.any_schema(),
+    typing_extensions.Final: lambda self, obj: core_schema.any_schema(),
+}
+
+for _tp in IP_TYPES:
+    _SIMPLE_TYPES_DISPATCH[_tp] = GenerateSchema._ip_schema
+for _tp in TUPLE_TYPES:
+    _SIMPLE_TYPES_DISPATCH[_tp] = GenerateSchema._tuple_schema
+for _tp in LIST_TYPES:
+    _SIMPLE_TYPES_DISPATCH[_tp] = lambda self, obj: self._list_schema(Any)
+for _tp in SET_TYPES:
+    _SIMPLE_TYPES_DISPATCH[_tp] = lambda self, obj: self._set_schema(Any)
+for _tp in FROZEN_SET_TYPES:
+    _SIMPLE_TYPES_DISPATCH[_tp] = lambda self, obj: self._frozenset_schema(Any)
+for _tp in SEQUENCE_TYPES:
+    _SIMPLE_TYPES_DISPATCH[_tp] = lambda self, obj: self._sequence_schema(Any)
+for _tp in ITERABLE_TYPES:
+    _SIMPLE_TYPES_DISPATCH[_tp] = GenerateSchema._iterable_schema
+for _tp in DICT_TYPES:
+    _SIMPLE_TYPES_DISPATCH[_tp] = lambda self, obj: self._dict_schema(Any, Any)
+for _tp in PATH_TYPES:
+    _SIMPLE_TYPES_DISPATCH[_tp] = lambda self, obj: self._path_schema(obj, Any)
+for _tp in DEQUE_TYPES:
+    _SIMPLE_TYPES_DISPATCH[_tp] = lambda self, obj: self._deque_schema(Any)
+for _tp in MAPPING_TYPES:
+    _SIMPLE_TYPES_DISPATCH[_tp] = lambda self, obj: self._mapping_schema(obj, Any, Any)
+for _tp in COUNTER_TYPES:
+    _SIMPLE_TYPES_DISPATCH[_tp] = lambda self, obj: self._mapping_schema(obj, Any, int)
+for _tp in PATTERN_TYPES:
+    _SIMPLE_TYPES_DISPATCH[_tp] = GenerateSchema._pattern_schema
 
 
 _VALIDATOR_F_MATCH: Mapping[
