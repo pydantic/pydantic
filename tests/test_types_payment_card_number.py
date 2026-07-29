@@ -20,6 +20,9 @@ VALID_VISA_19 = '4050000000000000001'
 VALID_OTHER = '2000000000000000008'
 LUHN_INVALID = '4000000000000000'
 LEN_INVALID = '40000000000000006'
+# `LEN_INVALID` with its leading digit swapped for FULLWIDTH DIGIT FOUR: still luhn valid,
+# but the Visa prefix check no longer matches, so the length check for the brand is skipped.
+LEN_INVALID_NON_ASCII = '４' + LEN_INVALID[1:]
 
 
 # Mock PaymentCardNumber
@@ -40,6 +43,19 @@ def test_validate_digits():
     assert PaymentCardNumber.validate_digits(digits) is None
     with pytest.raises(PydanticCustomError, match='Card number is not all digits'):
         PaymentCardNumber.validate_digits('hello')
+
+
+@pytest.mark.parametrize(
+    'card_number',
+    [
+        '１２３４５',  # fullwidth
+        '٤٢٤٢٤',  # arabic-indic
+        LEN_INVALID_NON_ASCII,
+    ],
+)
+def test_validate_digits_non_ascii(card_number: str):
+    with pytest.raises(PydanticCustomError, match='Card number is not all digits'):
+        PaymentCardNumber.validate_digits(card_number)
 
 
 @pytest.mark.parametrize(
@@ -129,6 +145,7 @@ def test_valid(PaymentCard):
         ('1' * 11, 'type=string_too_short,'),
         ('1' * 20, 'type=string_too_long,'),
         ('h' * 16, 'type=payment_card_number_digits'),
+        (LEN_INVALID_NON_ASCII, 'type=payment_card_number_digits'),
         (LUHN_INVALID, 'type=payment_card_number_luhn,'),
         (LEN_INVALID, 'type=payment_card_number_brand,'),
     ],

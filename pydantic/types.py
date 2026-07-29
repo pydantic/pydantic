@@ -1973,7 +1973,9 @@ class PaymentCardNumber(str):
     @classmethod
     def validate_digits(cls, card_number: str) -> None:
         """Validate that the card number is all digits."""
-        if not card_number.isdigit():
+        # `str.isdigit()` is true for non-ASCII digits, which `int()` reads numerically but the
+        # brand prefix comparisons read as literals, so restrict to ASCII.
+        if not (card_number.isascii() and card_number.isdigit()):
             raise PydanticCustomError('payment_card_number_digits', 'Card number is not all digits')
 
     @classmethod
