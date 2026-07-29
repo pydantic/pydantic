@@ -417,6 +417,40 @@ def test_pure_annotation_schema_cache_is_bounded():
         assert len(_pure_annotation_schema_cache) <= _PURE_ANNOTATION_CACHE_SIZE
 
 
+def test_pure_annotation_cache_key_membership_is_identity_based():
+    """A class comparing equal to a pure leaf type must not be classified as pure.
+
+    It would otherwise share the leaf type's cache entry, letting its custom
+    `__get_pydantic_core_schema__` hook poison the schema generated for that leaf type
+    (and vice versa).
+    """
+    from pydantic._internal._generate_schema import _NOT_PURE, _pure_annotation_cache_key
+
+    class EqualsIntMeta(type):
+        def __eq__(cls, other):
+            return other is int or super().__eq__(other)
+
+        def __hash__(cls):
+            return hash(int)
+
+    class LooksLikeInt(metaclass=EqualsIntMeta):
+        @classmethod
+        def __get_pydantic_core_schema__(cls, source_type, handler):
+            return cs.str_schema()
+
+    assert LooksLikeInt == int and hash(LooksLikeInt) == hash(int)
+    assert _pure_annotation_cache_key(LooksLikeInt) is _NOT_PURE
+    assert _pure_annotation_cache_key(list[LooksLikeInt]) is _NOT_PURE
+
+    class Model(BaseModel):
+        a: LooksLikeInt
+        b: int
+
+    assert Model(a='x', b=1).a == 'x'
+    with pytest.raises(ValidationError):
+        Model(a='x', b='not an int')
+
+
 def test_pure_annotation_schema_cache_none_annotations():
     """`None` is a valid (and pure) annotation, so it can't double as the "not pure" sentinel."""
 

@@ -170,7 +170,13 @@ DEQUE_TYPES: list[type] = [collections.deque, typing.Deque]  # noqa: UP006
 
 # The leaf types of "pure" annotations (see `_pure_annotation_cache_key()`). These are immutable
 # C types only, guaranteeing that no custom `__get_pydantic_core_schema__`/`__get_pydantic_json_schema__`
-# hook can ever be attached to them:
+# hook can ever be attached to them.
+#
+# Note: membership of these collections is tested by identity (through `_ids()` below) and not with
+# a plain `in`. A user-defined class whose metaclass implements `__eq__`/`__hash__` so that the
+# class compares equal to e.g. `int` would otherwise be classified as pure and share `int`'s cache
+# entry, letting its `__get_pydantic_core_schema__` hook poison the schema used for `int` fields
+# (and vice versa):
 _PURE_LEAF_TYPES: frozenset[Any] = frozenset(
     [
         str,
@@ -200,6 +206,20 @@ _PURE_LEAF_TYPES: frozenset[Any] = frozenset(
 _PURE_CONTAINER_ORIGINS: frozenset[Any] = frozenset([list, set, frozenset, dict, tuple])
 _PURE_LITERAL_VALUE_TYPES: frozenset[type[Any]] = frozenset([str, bytes, int, bool, NoneType])
 
+
+def _ids(objects: frozenset[Any], /) -> frozenset[int]:
+    """The ids of the provided objects, for identity-based membership tests.
+
+    The objects are all builtin/stdlib singletons kept alive for the lifetime of the process by the
+    (module-global) sets above, so their ids are stable and can't be reused by another object.
+    """
+    return frozenset(id(obj) for obj in objects)
+
+
+_PURE_LEAF_TYPE_IDS = _ids(_PURE_LEAF_TYPES)
+_PURE_CONTAINER_ORIGIN_IDS = _ids(_PURE_CONTAINER_ORIGINS)
+_PURE_LITERAL_VALUE_TYPE_IDS = _ids(_PURE_LITERAL_VALUE_TYPES)
+
 # Returned by `_pure_annotation_cache_key()` for annotations that aren't pure. A dedicated sentinel
 # is required as `None` is itself a valid (and pure) annotation, and so a valid cache key:
 _NOT_PURE: Any = object()
@@ -219,21 +239,23 @@ def _pure_annotation_cache_key(tp: Any) -> Any:
     compare (and hash) equal regardless of the order of their arguments, while their generated
     schemas are order-sensitive. The returned key is a nested tuple structure preserving order.
 
-    May raise `TypeError` if the annotation (or a part of it) is unhashable.
+    The returned key only ever holds builtin/stdlib types and literal values of such types (both
+    guaranteed by the identity-based membership tests), so it is always hashable. Callers still
+    guard against `TypeError` in case an unhashable annotation reaches a `get_args()` call.
     """
-    if tp in _PURE_LEAF_TYPES:
+    if id(tp) in _PURE_LEAF_TYPE_IDS:
         return tp
     origin = get_origin(tp)
     if origin is None:
         return _NOT_PURE
     if is_union_origin(origin):
         arg_keys: list[Any] = ['union']
-    elif origin in _PURE_CONTAINER_ORIGINS:
+    elif id(origin) in _PURE_CONTAINER_ORIGIN_IDS:
         arg_keys = [origin]
     elif typing_objects.is_literal(origin):
         arg_keys = ['literal']
         for arg in get_args(tp):
-            if type(arg) not in _PURE_LITERAL_VALUE_TYPES:
+            if id(type(arg)) not in _PURE_LITERAL_VALUE_TYPE_IDS:
                 return _NOT_PURE
             # The type is included to discriminate between equal values of different
             # types (e.g. `Literal[1]` and `Literal[True]`):
