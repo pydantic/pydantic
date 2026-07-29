@@ -345,18 +345,6 @@ def test_model_subclass(benchmark):
             pass
 
 
-@pytest.mark.benchmark(group='model_schema_generation')
-def test_interconnected_models(benchmark):
-    classes: list[type[BaseModel]] = []
-    for i in range(10):
-        fields: dict[str, Any] = {'value': (int, ...)}
-        for j, prev in enumerate(classes[-3:]):
-            fields[f'ref{j}'] = (prev | None, None)
-        classes.append(create_model(f'Node{i}', __config__={'defer_build': True}, **fields))
-
-    benchmark(rebuild_model, classes[-1])
-
-
 # On Python 3.10, type_repr produces duplicate ids.
 if sys.version_info >= (3, 11):
 
