@@ -989,6 +989,11 @@ def test_address_valid(value, name, email):
             'The display name contains control characters',
             id='c1-in-display-name',
         ),
+        pytest.param(
+            '"a@b.com" <evil@x.com>, x" <real@r.com>',
+            'The display name contains an unescaped double quote',
+            id='quote-in-display-name',
+        ),
         pytest.param('foobar <' + 'a' * 4096 + '@example.com>', 'Length must not exceed 2048 characters', id='long'),
     ],
 )
@@ -1063,6 +1068,13 @@ def test_name_email_serialization():
 
     obj = json.loads(m.model_dump_json())
     Model(email=obj['email'])
+
+
+def test_name_email_rejects_unsafe_display_names():
+    with pytest.raises(PydanticCustomError, match='The display name contains control characters'):
+        NameEmail('Alice\r\nBcc: victim@example.com', 'alice@example.com')
+    with pytest.raises(PydanticCustomError, match='The display name contains an unescaped double quote'):
+        NameEmail('a@b.com" <evil@x.com>, x', 'real@r.com')
 
 
 def test_specialized_urls() -> None:

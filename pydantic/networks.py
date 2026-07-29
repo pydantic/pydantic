@@ -1088,6 +1088,7 @@ class NameEmail(_repr.Representation):
     __slots__ = 'name', 'email'
 
     def __init__(self, name: str, email: str):
+        _validate_display_name(name)
         self.name = name
         self.email = email
 
@@ -1311,6 +1312,24 @@ A somewhat arbitrary but very generous number compared to what is allowed by mos
 """
 
 
+def _validate_display_name(name: str) -> None:
+    """Reject display names that cannot be safely re-emitted in RFC 5322 name-addr form."""
+    # HTAB is valid FWS in an RFC 5322 display name; other C0 controls, DEL and C1 controls are rejected:
+    if any(c != '\t' and (ord(c) < 0x20 or 0x7F <= ord(c) <= 0x9F) for c in name):
+        raise PydanticCustomError(
+            'value_error',
+            'value is not a valid email address: {reason}',
+            {'reason': 'The display name contains control characters'},
+        )
+    # An embedded '"' would prematurely terminate the quoted form produced by `NameEmail.__str__`:
+    if '"' in name:
+        raise PydanticCustomError(
+            'value_error',
+            'value is not a valid email address: {reason}',
+            {'reason': 'The display name contains an unescaped double quote'},
+        )
+
+
 def validate_email(value: str) -> tuple[str, str]:
     """Email address validation using [email-validator](https://pypi.org/project/email-validator/).
 
@@ -1343,13 +1362,8 @@ def validate_email(value: str) -> tuple[str, str]:
     if m:
         unquoted_name, quoted_name, value = m.groups()
         name = unquoted_name or quoted_name
-        # HTAB is valid FWS in an RFC 5322 display name; other C0 controls, DEL and C1 controls are rejected:
-        if name is not None and any(c != '\t' and (ord(c) < 0x20 or 0x7F <= ord(c) <= 0x9F) for c in name):
-            raise PydanticCustomError(
-                'value_error',
-                'value is not a valid email address: {reason}',
-                {'reason': 'The display name contains control characters'},
-            )
+        if name is not None:
+            _validate_display_name(name)
 
     email = value.strip()
 
