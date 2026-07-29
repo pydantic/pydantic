@@ -29,6 +29,7 @@ from __future__ import annotations
 import datetime
 import typing
 from decimal import Decimal
+from functools import cache
 from types import NoneType
 from typing import Any
 
@@ -79,23 +80,125 @@ _PURE_LITERAL_VALUE_TYPES: frozenset[type[Any]] = frozenset([str, bytes, int, bo
 IMMUTABLE_DEFAULT_TYPES: frozenset[type[Any]] = frozenset([NoneType, bool, int, str, bytes])
 
 
+# The value types allowed to appear in encoded metadata (constraint values, `Field()` attribute
+# values). Immutable builtins only; floats are encoded together with their `repr()` (see
+# `_encode_metadata_value()`):
+_ENCODABLE_METADATA_VALUE_TYPES: frozenset[type[Any]] = frozenset([NoneType, bool, int, str, bytes, float])
+
+
+@cache
+def _encodable_constraint_types() -> frozenset[type[Any]]:
+    """The `annotated_types` constraint classes that can take part in cache keys.
+
+    These are frozen dataclasses holding a single value, compared and hashed by value.
+    Imported lazily, as `annotated_types` is not imported at `pydantic` import time.
+    """
+    import annotated_types
+
+    return frozenset(
+        [
+            annotated_types.Gt,
+            annotated_types.Ge,
+            annotated_types.Lt,
+            annotated_types.Le,
+            annotated_types.MultipleOf,
+            annotated_types.MinLen,
+            annotated_types.MaxLen,
+        ]
+    )
+
+
+def _encode_metadata_value(value: Any) -> Any | None:
+    """Encode a metadata value for use in a cache key, or return `None` if not encodable.
+
+    The value type is included to discriminate equal values of different types (`1` vs `True`),
+    and floats additionally include their `repr()` (`0.0` and `-0.0` are equal yet distinct).
+    """
+    value_type = type(value)
+    if value_type not in _ENCODABLE_METADATA_VALUE_TYPES:
+        return None
+    if value_type is float:
+        return (float, repr(value), value)
+    return (value_type, value)
+
+
+def encode_metadata_item(item: Any, /) -> Any | None:
+    """Encode a single annotation metadata item for use in a cache key, or `None` if not encodable.
+
+    Supported items are the single-value `annotated_types` constraints (`Gt(0)`, `MaxLen(10)`, …)
+    and plain `Field()` functions (`FieldInfo` instances — not subclasses) whose explicitly set
+    attributes (and collected constraints) are all encodable values. Such items are fully
+    described by their values: the state they contribute to a `FieldInfo` (and to the generated
+    schema) is identical for equal encodings, and no object sharing can result from reusing a
+    cached result, as the items themselves don't end up in the derived objects.
+    """
+    item_type = type(item)
+    if item_type in _encodable_constraint_types():
+        import dataclasses
+
+        encoded_values: list[Any] = [item_type]
+        for field in dataclasses.fields(item):
+            encoded = _encode_metadata_value(getattr(item, field.name))
+            if encoded is None:
+                return None
+            encoded_values.append(encoded)
+        return tuple(encoded_values)
+
+    FieldInfo = _import_cached_field_info()
+    if item_type is FieldInfo:
+        encoded_attrs: list[Any] = []
+        for attr, value in item._attributes_set.items():
+            encoded = _encode_metadata_value(value)
+            if encoded is None:
+                return None
+            encoded_attrs.append((attr, encoded))
+        encoded_metadata: list[Any] = ['fieldinfo', tuple(encoded_attrs)]
+        for sub_item in item.metadata:
+            encoded = encode_metadata_item(sub_item)
+            if encoded is None:
+                return None
+            encoded_metadata.append(encoded)
+        return tuple(encoded_metadata)
+
+    return None
+
+
+@cache
+def _import_cached_field_info() -> type[Any]:
+    from ..fields import FieldInfo
+
+    return FieldInfo
+
+
 def pure_annotation_cache_key(tp: Any, /) -> Any | None:
     """Return a cache key for the annotation if it is pure, `None` otherwise.
 
     Note that the annotation objects themselves can't be used as cache keys: unions and literals
     compare (and hash) equal regardless of the order of their arguments, while the results derived
-    from them (core schemas, `FieldInfo` instances) are order-sensitive. The returned key is a
-    nested tuple structure preserving order.
+    from them (core schemas, `FieldInfo` instances) are order-sensitive (and `Annotated` forms
+    holding `Field()` metadata aren't even hashable). The returned key is a nested tuple structure
+    preserving order.
 
     May raise `TypeError` if the annotation (or a part of it) is unhashable.
     """
-    if tp in _PURE_LEAF_TYPES:
-        return tp
     origin = get_origin(tp)
     if origin is None:
+        if tp in _PURE_LEAF_TYPES:
+            return tp
         return None
+    if typing_objects.is_annotated(origin):
+        source_key = pure_annotation_cache_key(tp.__origin__)
+        if source_key is None:
+            return None
+        arg_keys: list[Any] = ['annotated', source_key]
+        for item in tp.__metadata__:
+            item_key = encode_metadata_item(item)
+            if item_key is None:
+                return None
+            arg_keys.append(item_key)
+        return tuple(arg_keys)
     if is_union_origin(origin):
-        arg_keys: list[Any] = ['union']
+        arg_keys = ['union']
     elif origin in _PURE_CONTAINER_ORIGINS:
         arg_keys = [origin]
     elif typing_objects.is_literal(origin):
