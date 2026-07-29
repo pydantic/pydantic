@@ -5,7 +5,7 @@ import sys
 import types
 import typing
 from collections import ChainMap
-from collections.abc import Iterator, Mapping
+from collections.abc import Generator, Mapping
 from contextlib import contextmanager
 from contextvars import ContextVar
 from functools import reduce
@@ -187,7 +187,7 @@ def _get_caller_frame_info(depth: int = 2) -> tuple[str | None, bool]:
 DictValues: type[Any] = {}.values().__class__
 
 
-def iter_contained_typevars(v: Any) -> Iterator[TypeVar]:
+def iter_contained_typevars(v: Any) -> Generator[TypeVar]:
     """Recursively iterate through all subtypes and type args of `v` and yield any typevars that are found.
 
     This is inspired as an alternative to directly accessing the `__parameters__` attribute of a GenericAlias,
@@ -411,7 +411,7 @@ _generic_recursion_cache: ContextVar[set[str] | None] = ContextVar('_generic_rec
 @contextmanager
 def generic_recursion_self_type(
     origin: type[BaseModel], args: tuple[Any, ...]
-) -> Iterator[PydanticRecursiveRef | None]:
+) -> Generator[PydanticRecursiveRef | None]:
     """This contextmanager should be placed around the recursive calls used to build a generic type,
     and accept as arguments the generic origin type and the type arguments being passed to it.
 
@@ -448,6 +448,20 @@ def recursively_defined_type_refs() -> set[str]:
     return visited.copy()  # don't allow modifications
 
 
+def _generic_cache_get(key: GenericTypesCacheKey) -> type[BaseModel] | None:
+    try:
+        return _GENERIC_TYPES_CACHE.get(key)
+    except TypeError:  # unhashable typevar values
+        return None
+
+
+def _generic_cache_set(key: GenericTypesCacheKey, value: type[BaseModel]) -> None:
+    try:
+        _GENERIC_TYPES_CACHE[key] = value
+    except TypeError:  # unhashable typevar values
+        pass
+
+
 def get_cached_generic_type_early(parent: type[BaseModel], typevar_values: Any) -> type[BaseModel] | None:
     """The use of a two-stage cache lookup approach was necessary to have the highest performance possible for
     repeated calls to `__class_getitem__` on generic types (which may happen in tighter loops during runtime),
@@ -465,14 +479,14 @@ def get_cached_generic_type_early(parent: type[BaseModel], typevar_values: Any) 
     during validation, I think it is worthwhile to ensure that types that are functionally equivalent are actually
     equal.
     """
-    return _GENERIC_TYPES_CACHE.get(_early_cache_key(parent, typevar_values))
+    return _generic_cache_get(_early_cache_key(parent, typevar_values))
 
 
 def get_cached_generic_type_late(
     parent: type[BaseModel], typevar_values: Any, origin: type[BaseModel], args: tuple[Any, ...]
 ) -> type[BaseModel] | None:
     """See the docstring of `get_cached_generic_type_early` for more information about the two-stage cache lookup."""
-    cached = _GENERIC_TYPES_CACHE.get(_late_cache_key(origin, args, typevar_values))
+    cached = _generic_cache_get(_late_cache_key(origin, args, typevar_values))
     if cached is not None:
         set_cached_generic_type(parent, typevar_values, cached, origin, args)
     return cached
@@ -488,11 +502,11 @@ def set_cached_generic_type(
     """See the docstring of `get_cached_generic_type_early` for more information about why items are cached with
     two different keys.
     """
-    _GENERIC_TYPES_CACHE[_early_cache_key(parent, typevar_values)] = type_
+    _generic_cache_set(_early_cache_key(parent, typevar_values), type_)
     if len(typevar_values) == 1:
-        _GENERIC_TYPES_CACHE[_early_cache_key(parent, typevar_values[0])] = type_
+        _generic_cache_set(_early_cache_key(parent, typevar_values[0]), type_)
     if origin and args:
-        _GENERIC_TYPES_CACHE[_late_cache_key(origin, args, typevar_values)] = type_
+        _generic_cache_set(_late_cache_key(origin, args, typevar_values), type_)
 
 
 def _union_orderings_key(typevar_values: Any) -> Any:
