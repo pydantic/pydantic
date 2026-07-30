@@ -277,10 +277,10 @@ jobs:
 
     steps:
       - name: Checkout ODMantic
-        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
-        with:
-          repository: art049/odmantic
-          persist-credentials: false
+        # Not using actions/checkout, as the ODMantic repository has a stale gitlink entry
+        # ('.mongodb-cluster-action', with no matching '.gitmodules' entry) that makes the
+        # action's 'git submodule foreach' auth cleanup fail with exit code 128.
+        run: git clone --depth=1 https://github.com/art049/odmantic.git .
 
       - name: Checkout Pydantic
         uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
@@ -641,7 +641,7 @@ jobs:
         run: uv pip --directory api list
 
       - name: Run Dify unit tests
-        run: uv run --no-sync --project api bash dev/pytest/pytest_unit_tests.sh
+        run: uv run --no-sync --project api pytest tests/unit_tests/
 
   test-cadwyn:
     name: Test Cadwyn (main branch) on Python ${{ matrix.python-version }}
