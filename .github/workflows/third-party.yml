@@ -641,7 +641,7 @@ jobs:
         run: uv pip --directory api list
 
       - name: Run Dify unit tests
-        run: uv run --no-sync --project api pytest tests/unit_tests/
+        run: uv run --no-sync --directory api --project api pytest tests/unit_tests/
 
   test-cadwyn:
     name: Test Cadwyn (main branch) on Python ${{ matrix.python-version }}
