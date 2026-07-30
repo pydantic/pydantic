@@ -3545,6 +3545,23 @@ def test_decimal_invalid():
             v: condecimal(allow_inf_nan=True, max_digits=4)
 
 
+@pytest.mark.parametrize(
+    'type_args,value',
+    [
+        (dict(max_digits=30), Decimal('1.' + '1' * 40)),
+        (dict(decimal_places=30), Decimal('1.' + '1' * 40)),
+        (dict(max_digits=30), Decimal('1E+1000000')),
+    ],
+)
+def test_decimal_constraints_wrapped_schema(type_args, value):
+    class Model(BaseModel):
+        # wrapping the decimal schema means the constraints are applied by pydantic, not pydantic-core
+        foo: Annotated[Decimal, AfterValidator(lambda v: v), Field(**type_args)]
+
+    with pytest.raises(ValidationError):
+        Model(foo=value)
+
+
 @pytest.mark.parametrize('value,result', (('/test/path', Path('/test/path')), (Path('/test/path'), Path('/test/path'))))
 def test_path_validation_success(value, result):
     class Model(BaseModel):
