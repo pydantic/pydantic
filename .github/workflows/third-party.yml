@@ -167,7 +167,7 @@ jobs:
         run: pip list
 
       - name: Run Beanie tests
-        run: pytest -v
+        run: pytest -v tests/
 
   test-openapi-python-client:
     name: Test openapi-python-client (main branch) on Python ${{ matrix.python-version }}
@@ -277,10 +277,10 @@ jobs:
 
     steps:
       - name: Checkout ODMantic
-        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
-        with:
-          repository: art049/odmantic
-          persist-credentials: false
+        # Not using actions/checkout, as the ODMantic repository has a stale gitlink entry
+        # ('.mongodb-cluster-action', with no matching '.gitmodules' entry) that makes the
+        # action's 'git submodule foreach' auth cleanup fail with exit code 128.
+        run: git clone --depth=1 https://github.com/art049/odmantic.git .
 
       - name: Checkout Pydantic
         uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
@@ -313,7 +313,7 @@ jobs:
 
       - name: Run ODMantic tests
         # Disabled tests, as per https://github.com/art049/odmantic/issues/512:
-        run: uv run --no-sync pytest tests -k 'not test_custom_bson_serializable and not test_sync_custom_bson_serializable and not test_with_bson_serializer_override_builtin_bson'
+        run: uv run --no-sync pytest tests -k 'not test_custom_bson_serializable and not test_sync_custom_bson_serializable and not test_with_bson_serializer_override_builtin_bson' tests/
         env:
           TEST_MONGO_URI: mongodb://localhost:27017/
           TEST_MONGO_MODE: standalone
@@ -349,6 +349,16 @@ jobs:
           --health-retries 5
         ports:
           - 5432:5432
+
+      redis:
+        image: redis:7.4-alpine
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 6379:6379
 
       minio:
         image: bitnamilegacy/minio:2024.5.28
@@ -435,7 +445,7 @@ jobs:
 
       - name: 🐍 Run polar tests (pytest)
         working-directory: ./server
-        run: uv run --no-sync pytest -n auto --no-cov
+        run: uv run --no-sync pytest -n auto --no-cov tests/
 
   test-bentoml:
     name: Test BentoML (main branch) on Python ${{ matrix.python-version }}
@@ -627,9 +637,8 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
 
-      - name: Install uv
-        shell: bash
-        run: pip install uv~=0.7.0
+      - name: Set up uv
+        uses: astral-sh/setup-uv@fac544c07dec837d0ccb6301d7b5580bf5edae39 # v8.2.0
 
       - name: Install Dify dependencies
         run: |
@@ -641,7 +650,7 @@ jobs:
         run: uv pip --directory api list
 
       - name: Run Dify unit tests
-        run: uv run --no-sync --project api bash dev/pytest/pytest_unit_tests.sh
+        run: uv run --no-sync --directory api pytest tests/unit_tests/
 
   test-cadwyn:
     name: Test Cadwyn (main branch) on Python ${{ matrix.python-version }}
@@ -833,7 +842,7 @@ jobs:
         run: pip list
 
       - name: Run Django Ninja tests
-        run: pytest
+        run: pytest tests/
 
   test-fastdepends:
     name: Test FastDepends (main branch) on Python ${{ matrix.python-version }}
@@ -875,7 +884,107 @@ jobs:
         run: uv pip list
 
       - name: Run FastDepends tests
-        run: uv run --no-sync pytest
+        run: uv run --no-sync pytest tests/
+
+  test-mcp-python-sdk:
+    name: Test MCP Python SDK (main branch) on Python ${{ matrix.python-version }}
+    if: |
+      github.event_name == 'workflow_dispatch' ||
+      (github.event_name == 'schedule' && github.repository == 'pydantic/pydantic') ||
+      (github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'third-party-tests'))
+
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ['3.10', '3.11', '3.12', '3.13', '3.14']
+    steps:
+      - name: Checkout MCP Python SDK
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          repository: modelcontextprotocol/python-sdk
+          persist-credentials: false
+
+      - name: Checkout Pydantic
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          path: pydantic-latest
+          persist-credentials: false
+
+      - uses: astral-sh/setup-uv@fac544c07dec837d0ccb6301d7b5580bf5edae39 # v8.2.0
+        with:
+          enable-cache: true
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install MCP Python SDK dependencies
+        run: |
+          uv venv --python ${{ matrix.python-version }}
+          uv sync --all-extras --python ${{ matrix.python-version }}
+          uv pip uninstall pydantic
+          uv pip install -e ./pydantic-latest
+
+      - name: List installed dependencies
+        run: uv pip list
+
+      - name: Run MCP Python SDK tests
+        shell: bash
+        env:
+          # tests/examples/test_stories_smoke.py is gated on this var; it spawns real
+          # stdio + uvicorn subprocesses, so we don't run it for third-party tests:
+          MCP_EXAMPLES_SMOKE: '0'
+        run: uv run --frozen --no-sync pytest -n auto tests/
+
+  test-fastmcp:
+    name: Test FastMCP (main branch) on Python ${{ matrix.python-version }}
+    if: |
+      github.event_name == 'workflow_dispatch' ||
+      (github.event_name == 'schedule' && github.repository == 'pydantic/pydantic') ||
+      (github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'third-party-tests'))
+
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ['3.10', '3.13']
+    steps:
+      - name: Checkout FastMCP
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          repository: PrefectHQ/fastmcp
+          persist-credentials: false
+
+      - name: Checkout Pydantic
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          path: pydantic-latest
+          persist-credentials: false
+
+      - uses: astral-sh/setup-uv@fac544c07dec837d0ccb6301d7b5580bf5edae39 # v8.2.0
+        with:
+          enable-cache: true
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install FastMCP dependencies
+        run: |
+          uv sync --no-progress
+          uv pip uninstall pydantic
+          uv pip install -e ./pydantic-latest
+
+      - name: List installed dependencies
+        run: uv pip list
+
+      # unit tests only (see https://github.com/PrefectHQ/fastmcp/blob/main/.github/actions/run-pytest/action.yml):
+      - name: Run FastMCP tests
+        # The workflow-level FORCE_COLOR makes Rich emit ANSI codes in captured output,
+        # breaking FastMCP's CLI tests (which assert on plain text/JSON output):
+        run: |
+          unset FORCE_COLOR
+          uv run --frozen --no-sync pytest \
+            --inline-snapshot=disable \
+            --timeout=5 \
+            --durations=50 \
+            -m "not integration and not client_process and not subprocess_heavy and not conformance" \
+            tests/
 
   create-issue-on-failure:
     name: Create an issue if tests failed
@@ -897,6 +1006,8 @@ jobs:
       - test-redis-om
       - test-django-ninja
       - test-fastdepends
+      - test-mcp-python-sdk
+      - test-fastmcp
     # Issue report disabled for now due to flakiness:
     if: |
       always() &&
@@ -919,7 +1030,9 @@ jobs:
         needs.test-pydantic-xml.result == 'failure' ||
         needs.test-redis-om.result == 'failure' ||
         needs.test-django-ninja.result == 'failure' ||
-        needs.test-fastdepends.result == 'failure'
+        needs.test-fastdepends.result == 'failure' ||
+        needs.test-mcp-python-sdk.result == 'failure' ||
+        needs.test-fastmcp.result == 'failure'
       )
     permissions:
       issues: write
