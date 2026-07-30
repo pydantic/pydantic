@@ -627,9 +627,8 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
 
-      - name: Install uv
-        shell: bash
-        run: pip install uv~=0.7.0
+      - name: Set up uv
+        uses: astral-sh/setup-uv@fac544c07dec837d0ccb6301d7b5580bf5edae39 # v8.2.0
 
       - name: Install Dify dependencies
         run: |
@@ -965,8 +964,11 @@ jobs:
         run: uv pip list
 
       # unit tests only (see https://github.com/PrefectHQ/fastmcp/blob/main/.github/actions/run-pytest/action.yml):
-      - name: Run MCP Python SDK tests
+      - name: Run FastMCP tests
+        # The workflow-level FORCE_COLOR makes Rich emit ANSI codes in captured output,
+        # breaking FastMCP's CLI tests (which assert on plain text/JSON output):
         run: |
+          unset FORCE_COLOR
           uv run --frozen --no-sync pytest \
             --inline-snapshot=disable \
             --timeout=5 \
