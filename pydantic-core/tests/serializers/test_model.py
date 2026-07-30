@@ -506,6 +506,40 @@ def test_function_plain_field_serializer_to_python():
     assert s.to_python(Model(x=1000)) == {'x': '1_000'}
 
 
+def test_field_serializer_info_serialization_flags():
+    @dataclasses.dataclass
+    class Model:
+        x: int
+
+        def ser_x(self, v: Any, info: core_schema.FieldSerializationInfo) -> dict[str, bool]:
+            return {
+                'exclude_none': info.exclude_none,
+                'exclude_computed_fields': info.exclude_computed_fields,
+            }
+
+    s = SchemaSerializer(
+        core_schema.model_schema(
+            Model,
+            core_schema.model_fields_schema(
+                {
+                    'x': core_schema.model_field(
+                        core_schema.int_schema(
+                            serialization=core_schema.plain_serializer_function_ser_schema(
+                                Model.ser_x, is_field_serializer=True, info_arg=True
+                            )
+                        )
+                    )
+                }
+            ),
+        )
+    )
+
+    assert s.to_python(Model(x=1), exclude_computed_fields=True) == {
+        'x': {'exclude_none': False, 'exclude_computed_fields': True}
+    }
+    assert s.to_python(Model(x=1), exclude_none=True) == {'x': {'exclude_none': True, 'exclude_computed_fields': False}}
+
+
 def test_field_serializer_cached_property():
     @dataclasses.dataclass
     class Model:
