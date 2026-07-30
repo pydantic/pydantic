@@ -350,6 +350,16 @@ jobs:
         ports:
           - 5432:5432
 
+      redis:
+        image: redis:7.4-alpine
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 6379:6379
+
       minio:
         image: bitnamilegacy/minio:2024.5.28
         ports:
@@ -640,7 +650,7 @@ jobs:
         run: uv pip --directory api list
 
       - name: Run Dify unit tests
-        run: uv run --no-sync --directory api --project api pytest tests/unit_tests/
+        run: uv run --no-sync --directory api pytest tests/unit_tests/
 
   test-cadwyn:
     name: Test Cadwyn (main branch) on Python ${{ matrix.python-version }}
