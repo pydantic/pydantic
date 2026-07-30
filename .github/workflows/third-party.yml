@@ -877,6 +877,102 @@ jobs:
       - name: Run FastDepends tests
         run: uv run --no-sync pytest
 
+  test-mcp-python-sdk:
+    name: Test MCP Python SDK (main branch) on Python ${{ matrix.python-version }}
+    if: |
+      github.event_name == 'workflow_dispatch' ||
+      (github.event_name == 'schedule' && github.repository == 'pydantic/pydantic') ||
+      (github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'third-party-tests'))
+
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ['3.10', '3.11', '3.12', '3.13', '3.14']
+    steps:
+      - name: Checkout MCP Python SDK
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          repository: modelcontextprotocol/python-sdk
+          persist-credentials: false
+
+      - name: Checkout Pydantic
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          path: pydantic-latest
+          persist-credentials: false
+
+      - uses: astral-sh/setup-uv@fac544c07dec837d0ccb6301d7b5580bf5edae39 # v8.2.0
+        with:
+          enable-cache: true
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install MCP Python SDK dependencies
+        run: |
+          uv venv --python ${{ matrix.python-version }}
+          uv sync --all-extras --python ${{ matrix.python-version }}
+          uv pip uninstall pydantic
+          uv pip install -e ./pydantic-latest
+
+      - name: List installed dependencies
+        run: uv pip list
+
+      - name: Run MCP Python SDK tests
+        shell: bash
+        env:
+          # tests/examples/test_stories_smoke.py is gated on this var; it spawns real
+          # stdio + uvicorn subprocesses, so we don't run it for third-party tests:
+          MCP_EXAMPLES_SMOKE: '0'
+        run: uv run --frozen --no-sync pytest -n auto
+
+  test-fastmcp:
+    name: Test FastMCP (main branch) on Python ${{ matrix.python-version }}
+    if: |
+      github.event_name == 'workflow_dispatch' ||
+      (github.event_name == 'schedule' && github.repository == 'pydantic/pydantic') ||
+      (github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'third-party-tests'))
+
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ['3.10', '3.13']
+    steps:
+      - name: Checkout FastMCP
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          repository: PrefectHQ/fastmcp
+          persist-credentials: false
+
+      - name: Checkout Pydantic
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          path: pydantic-latest
+          persist-credentials: false
+
+      - uses: astral-sh/setup-uv@fac544c07dec837d0ccb6301d7b5580bf5edae39 # v8.2.0
+        with:
+          enable-cache: true
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install FastMCP dependencies
+        run: |
+          uv sync --no-progress
+          uv pip uninstall pydantic
+          uv pip install -e ./pydantic-latest
+
+      - name: List installed dependencies
+        run: uv pip list
+
+      # unit tests only (see https://github.com/PrefectHQ/fastmcp/blob/main/.github/actions/run-pytest/action.yml):
+      - name: Run MCP Python SDK tests
+        run: |
+          uv run --frozen --no-sync pytest \
+            --inline-snapshot=disable \
+            --timeout=5 \
+            --durations=50 \
+            -m "not integration and not client_process and not subprocess_heavy and not conformance"
+
   create-issue-on-failure:
     name: Create an issue if tests failed
     runs-on: ubuntu-latest
@@ -897,6 +993,8 @@ jobs:
       - test-redis-om
       - test-django-ninja
       - test-fastdepends
+      - test-mcp-python-sdk
+      - test-fastmcp
     # Issue report disabled for now due to flakiness:
     if: |
       always() &&
@@ -919,7 +1017,9 @@ jobs:
         needs.test-pydantic-xml.result == 'failure' ||
         needs.test-redis-om.result == 'failure' ||
         needs.test-django-ninja.result == 'failure' ||
-        needs.test-fastdepends.result == 'failure'
+        needs.test-fastdepends.result == 'failure' ||
+        needs.test-mcp-python-sdk.result == 'failure' ||
+        needs.test-fastmcp.result == 'failure'
       )
     permissions:
       issues: write
