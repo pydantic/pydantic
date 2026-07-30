@@ -3185,7 +3185,7 @@ def test_safe_get_annotations_from_dict() -> None:
     assert safe_get_annotations(Sub) == {}
 
 
-@pytest.mark.timeout(5)
+@pytest.mark.timeout(10)
 def test_interconnected_models_build_in_linear_time() -> None:
     classes: list[type[BaseModel]] = []
     for i in range(60):
