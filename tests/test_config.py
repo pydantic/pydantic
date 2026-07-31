@@ -588,7 +588,7 @@ def test_config_is_not_inherited_in_model_fields():
         a: str
 
     class Outer(BaseModel):
-        # this cause the inner model incorrectly dumpped:
+        # this cause the inner model incorrectly dumped:
         model_config = ConfigDict(str_to_lower=True)
 
         x: list[str]  # should be converted to lower
