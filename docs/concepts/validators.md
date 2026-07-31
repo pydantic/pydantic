@@ -314,10 +314,38 @@ In its simplest form, a field validator is a callable taking the value to be val
   process the input, or you can terminate validation immediately, either by returning the value early or by raising an
   error.
   {#field-wrap-validator}
-
     Such validators must be defined with a **mandatory** extra *handler* parameter: a callable taking the value to be validated
     as an argument. Internally, this handler will delegate validation of the value to Pydantic. You are free to wrap the call
     to the handler in a [`try..except`][handling exceptions] block, or not call it at all.
+
+    The order of metadata in the [`Annotated`](https://docs.python.org/3/library/typing.html#typing.Annotated) pattern
+    affects what the `handler` inside a [`WrapValidator`][pydantic.functional_validators.WrapValidator] receives.
+
+    `WrapValidator` is applied from right to left. Its `handler()` call includes validation metadata that appears to the
+    left of `WrapValidator` in the `Annotated` metadata list.
+
+    For example, put `Field()` before `WrapValidator()` when the validator needs to catch errors from field constraints:
+
+    ```python
+    from decimal import Decimal
+    from typing import Annotated
+
+    from pydantic import Field, WrapValidator
+
+
+    def round_decimal(value, handler):
+        try:
+            return handler(value)
+        except Exception:
+            return Decimal('0')
+
+
+    RoundedDecimal = Annotated[
+        Decimal,
+        Field(decimal_places=2),
+        WrapValidator(round_decimal),
+    ]
+    ```
 
     [handling exceptions]: https://docs.python.org/3/tutorial/errors.html#handling-exceptions
 
