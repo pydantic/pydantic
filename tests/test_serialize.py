@@ -884,7 +884,7 @@ def test_serialize_with_extra():
         a: str = 'a'
 
     class Outer(BaseModel):
-        # this cause the inner model incorrectly dumpped:
+        # this cause the inner model incorrectly dumped:
         model_config = ConfigDict(extra='allow')
         inner: Inner = Field(default_factory=Inner)
 
