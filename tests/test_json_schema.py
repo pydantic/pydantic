@@ -328,6 +328,43 @@ def test_enum_modify_schema():
     }
 
 
+def test_custom_json_schema_with_embedded_defs():
+    """A custom ``__get_pydantic_json_schema__`` may return a schema that carries its
+    own ``$defs`` and internal ``$ref``s. Pydantic must not assume every ``$ref``
+    resolves in its own definitions registry. See #12145."""
+
+    schema = {
+        '$defs': {
+            'Tire': {
+                'properties': {'brand': {'title': 'Brand', 'type': 'string'}},
+                'required': ['brand'],
+                'title': 'Tire',
+                'type': 'object',
+            }
+        },
+        'properties': {'tires': {'items': {'$ref': '#/$defs/Tire'}, 'title': 'Tires', 'type': 'array'}},
+        'required': ['tires'],
+        'title': 'Car',
+        'type': 'object',
+    }
+
+    class CarDict:
+        @classmethod
+        def __get_pydantic_core_schema__(cls, source_type: Any, handler: GetCoreSchemaHandler) -> CoreSchema:
+            return core_schema.dict_schema(
+                keys_schema=core_schema.str_schema(),
+                values_schema=core_schema.any_schema(),
+            )
+
+        @classmethod
+        def __get_pydantic_json_schema__(
+            cls, core_schema: CoreSchema, handler: GetJsonSchemaHandler
+        ) -> JsonSchemaValue:
+            return schema
+
+    assert TypeAdapter(CarDict).json_schema() == schema
+
+
 def test_enum_schema_custom_field():
     class FooBarEnum(str, Enum):
         foo = 'foo'
