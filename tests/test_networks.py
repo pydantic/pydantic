@@ -941,6 +941,9 @@ def test_json():
         pytest.param(
             '"Alice\tSmith" <alice@example.com>', 'Alice\tSmith', 'alice@example.com', id='htab-in-display-name'
         ),
+        pytest.param(
+            '"Smith, Alice" <alice@example.com>', 'Smith, Alice', 'alice@example.com', id='comma-in-quoted-name'
+        ),
     ],
 )
 def test_address_valid(value, name, email):
@@ -1075,6 +1078,19 @@ def test_name_email_rejects_unsafe_display_names():
         NameEmail('Alice\r\nBcc: victim@example.com', 'alice@example.com')
     with pytest.raises(PydanticCustomError, match='The display name contains an unescaped double quote'):
         NameEmail('a@b.com" <evil@x.com>, x', 'real@r.com')
+
+
+@pytest.mark.skipif(not email_validator, reason='email_validator not installed')
+def test_name_email_quotes_names_containing_specials():
+    # A bare `,`, `<` or `>` in an unquoted display name splits or terminates the address list
+    # when the serialized form is re-parsed, e.g. by `email.utils.getaddresses`:
+    assert str(NameEmail('Smith, Alice', 'alice@example.com')) == '"Smith, Alice" <alice@example.com>'
+    assert str(NameEmail('Alice <bob', 'alice@example.com')) == '"Alice <bob" <alice@example.com>'
+    assert str(NameEmail('Homer J. Simpson', 'homer@thesimpsons.com')) == 'Homer J. Simpson <homer@thesimpsons.com>'
+
+    ta = TypeAdapter(NameEmail)
+    for name in ('Smith, Alice', 'Alice <bob', 'x>', 'a; b', 'c (d)'):
+        assert ta.validate_python(str(NameEmail(name, 'alice@example.com'))) == NameEmail(name, 'alice@example.com')
 
 
 def test_specialized_urls() -> None:

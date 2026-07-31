@@ -1133,7 +1133,9 @@ class NameEmail(_repr.Representation):
             return input_value
 
     def __str__(self) -> str:
-        if '@' in self.name:
+        # A bare name containing RFC 5322 specials would parse as address-list, group or comment
+        # syntax rather than as a display name, so it must be emitted in the quoted form:
+        if not _display_name_specials.isdisjoint(self.name):
             return f'"{self.name}" <{self.email}>'
 
         return f'{self.name} <{self.email}>'
@@ -1310,6 +1312,11 @@ MAX_EMAIL_LENGTH = 2048
 """Maximum length for an email.
 A somewhat arbitrary but very generous number compared to what is allowed by most implementations.
 """
+
+
+_display_name_specials = frozenset('()<>[]:;@\\,')
+"""RFC 5322 specials (except `.`, kept bare for compatibility, and DQUOTE, rejected at validation)
+that make a display name unsafe to emit outside a quoted string."""
 
 
 def _validate_display_name(name: str) -> None:
