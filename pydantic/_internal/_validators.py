@@ -10,7 +10,7 @@ import math
 import re
 import typing
 from collections.abc import Callable, Sequence
-from decimal import MAX_EMAX, MAX_PREC, MIN_EMIN, Context, Decimal
+from decimal import Decimal
 from ipaddress import IPv4Address, IPv4Interface, IPv4Network, IPv6Address, IPv6Interface, IPv6Network
 from typing import Any, TypeAlias, TypeVar, cast
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
@@ -372,17 +372,31 @@ def _extract_decimal_digits_info(decimal: Decimal) -> tuple[int, int]:
         raise TypeError(f'Unable to extract decimal digits info from supplied value {decimal}')
 
 
-# The constraints below normalize a value only to drop trailing zeros before counting its digits.
-# `Decimal.normalize()` uses the active context, which rounds to `prec` significant digits (28 by
-# default) and signals `Overflow` outside `Emax`/`Emin`, so it is given a context wide enough to leave
-# every `Decimal` untouched.
-_NORMALIZE_CONTEXT = Context(prec=MAX_PREC, Emax=MAX_EMAX, Emin=MIN_EMIN)
+def _drop_trailing_zeros(value: Decimal) -> Decimal:
+    """Return `value` with trailing zeros removed from its coefficient, without rounding.
+
+    The constraints below only discount trailing zeros before counting digits. `Decimal.normalize()`
+    is not suitable for this: it uses the active (thread-local) context, which rounds to `prec`
+    significant digits and signals `Overflow` outside `Emax`/`Emin`, and the pure Python `decimal`
+    can construct exponents beyond any context's bounds. Working on the `as_tuple()` representation
+    involves no context at all.
+    """
+    sign, digits, exponent = value.as_tuple()
+    if not isinstance(exponent, int):
+        # a special value (`NaN`/`sNaN`/`Infinity`) has no trailing zeros to drop
+        return value
+    if digits == (0,) * len(digits):
+        return Decimal((sign, (0,), 0))
+    n = 0
+    while n < len(digits) - 1 and digits[-1 - n] == 0:
+        n += 1
+    return Decimal((sign, digits[: len(digits) - n], exponent + n))
 
 
 def max_digits_validator(x: Any, max_digits: Any) -> Any:
     try:
         _, num_digits = _extract_decimal_digits_info(x)
-        _, normalized_num_digits = _extract_decimal_digits_info(x.normalize(_NORMALIZE_CONTEXT))
+        _, normalized_num_digits = _extract_decimal_digits_info(_drop_trailing_zeros(x))
         if (num_digits > max_digits) and (normalized_num_digits > max_digits):
             raise PydanticKnownError(
                 'decimal_max_digits',
@@ -397,7 +411,7 @@ def decimal_places_validator(x: Any, decimal_places: Any) -> Any:
     try:
         decimal_places_, _ = _extract_decimal_digits_info(x)
         if decimal_places_ > decimal_places:
-            normalized_decimal_places, _ = _extract_decimal_digits_info(x.normalize(_NORMALIZE_CONTEXT))
+            normalized_decimal_places, _ = _extract_decimal_digits_info(_drop_trailing_zeros(x))
             if normalized_decimal_places > decimal_places:
                 raise PydanticKnownError(
                     'decimal_max_places',
