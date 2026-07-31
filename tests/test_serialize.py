@@ -199,7 +199,7 @@ def test_serialize_decorator_always():
         x: int | None
 
         @field_serializer('x')
-        def customise_x_serialization(v, _info) -> str:
+        def customise_x_serialization(v, _info: SerializationInfo) -> str:
             return f'{v:,}'
 
     assert MyModel(x=1234).model_dump() == {'x': '1,234'}
@@ -402,7 +402,7 @@ def test_serialize_decorator_self_info():
         x: int | None
 
         @field_serializer('x')
-        def customise_x_serialization(self, v, info) -> str:
+        def customise_x_serialization(self, v, info: SerializationInfo) -> str:
             return f'{info.mode}:{v:,}'
 
     assert MyModel(x=1234).model_dump() == {'x': 'python:1,234'}
@@ -453,7 +453,7 @@ def test_model_serializer_plain_info():
         b: bytes
 
         @model_serializer
-        def _serialize(self, info):
+        def _serialize(self, info: SerializationInfo):
             if info.exclude:
                 return {k: v for k, v in self.__dict__.items() if k not in info.exclude}
             else:
@@ -498,7 +498,7 @@ def test_model_serializer_wrap_info():
         c: bytes = Field(exclude=True)
 
         @model_serializer(mode='wrap')
-        def _serialize(self, handler, info):
+        def _serialize(self, handler, info: SerializationInfo):
             d = handler(self)
             d['info'] = f'mode={info.mode} exclude={info.exclude}'
             return d
@@ -1394,3 +1394,28 @@ def test_wrap_ser_called_once() -> None:
 
     my_model = MyParentModel.model_validate({'nested': {'inner_value': 'foo'}})
     assert my_model.model_dump() == {'nested': {'inner_value': 'my_prefix:foo'}}
+
+
+def test_serialization_info_properties() -> None:
+
+    class Model(BaseModel):
+        f: int
+
+        @field_serializer('f', mode='plain')
+        def ser_number(self, value: Any, info: SerializationInfo) -> Any:
+            return info
+
+    m = Model(f=1)
+
+    for property in (
+        'context',
+        'by_alias',
+        'exclude_unset',
+        'exclude_defaults',
+        'exclude_none',
+        'exclude_computed_fields',
+        'serialize_as_any',
+        'polymorphic_serialization',
+        'round_trip',
+    ):
+        assert getattr(m.model_dump(**{property: True})['f'], property) is True, f'{property!r} check failed'

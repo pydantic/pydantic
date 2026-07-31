@@ -556,7 +556,7 @@ impl SerializationInfo {
                     exclude_unset: extra.exclude_unset,
                     exclude_defaults: extra.exclude_defaults,
                     exclude_none: extra.exclude_none,
-                    exclude_computed_fields: extra.exclude_none,
+                    exclude_computed_fields: extra.exclude_computed_fields,
                     round_trip: extra.round_trip,
                     field_name: Some(field_name.to_string()),
                     serialize_as_any: extra.serialize_as_any,
