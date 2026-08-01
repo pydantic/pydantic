@@ -41,8 +41,8 @@ ahash = "0.8.12"
 url = "2.5.8"
 # idna is already required by url, added here to be explicit
 idna = "1.1.0"
-base64 = "0.22.1"
-num-bigint = "0.4.6"
+base64 = "0.23.0"
+num-bigint = "0.5.1"
 num-traits = "0.2.19"
 uuid = "1.23.2"
 jiter = { version = "0.16.0", features = ["python"] }
