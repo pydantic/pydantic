@@ -1538,7 +1538,9 @@ class GenerateJsonSchema:
     def _name_required_computed_fields(
         computed_fields: list[ComputedField],
     ) -> list[tuple[str, bool, core_schema.ComputedField]]:
-        return [(field['property_name'], True, field) for field in computed_fields]
+        return [
+            (field['property_name'], field.get('serialization_exclude_if') is None, field) for field in computed_fields
+        ]
 
     def _named_required_fields_schema(
         self, named_required_fields: Sequence[tuple[str, bool, CoreSchemaField]]
