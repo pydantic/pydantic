@@ -4857,7 +4857,7 @@ This is often used for things like converting between snake and camel case.</p>
             </td>
             <td>
               <div class="doc-md-description">
-                <p>A callable that takes a field name and returns title for it.</p>
+                <p>A callable that takes a field's name and info and returns title for it.</p>
               </div>
             </td>
             <td>
@@ -5655,7 +5655,7 @@ type-annotated fields without causing a type error.</p>
 <span class="sd">        validation_alias: Like `alias`, but only affects validation, not serialization.</span>
 <span class="sd">        serialization_alias: Like `alias`, but only affects serialization, not validation.</span>
 <span class="sd">        title: Human-readable title.</span>
-<span class="sd">        field_title_generator: A callable that takes a field name and returns title for it.</span>
+<span class="sd">        field_title_generator: A callable that takes a field&#39;s name and info and returns title for it.</span>
 <span class="sd">        description: Human-readable description.</span>
 <span class="sd">        examples: Example values for this field.</span>
 <span class="sd">        exclude: Whether to exclude the field from the model serialization.</span>
@@ -5966,7 +5966,7 @@ refer to this <a href="../../examples/dynamic_models/">dynamic model example</a>
             </td>
             <td>
               <div class="doc-md-description">
-                <p>A callable that takes a field name and returns title for it.</p>
+                <p>A callable that takes a field's name and info and returns title for it.</p>
               </div>
             </td>
           </tr>
@@ -7538,7 +7538,7 @@ See the example below:</p>
             </td>
             <td>
               <div class="doc-md-description">
-                <p>A callable that takes a field name and returns title for it.</p>
+                <p>A callable that takes a field's name and info and returns title for it.</p>
               </div>
             </td>
             <td>
@@ -8019,7 +8019,7 @@ objects.</p>
 <span class="sd">        alias_priority: priority of the alias. This affects whether an alias generator is used</span>
 <span class="sd">        exclude_if: A callable that determines whether to exclude this computed field during serialization based on its value.</span>
 <span class="sd">        title: Title to use when including this computed field in JSON Schema</span>
-<span class="sd">        field_title_generator: A callable that takes a field name and returns title for it.</span>
+<span class="sd">        field_title_generator: A callable that takes a field&#39;s name and info and returns title for it.</span>
 <span class="sd">        description: Description to use when including this computed field in JSON Schema, defaults to the function&#39;s</span>
 <span class="sd">            docstring</span>
 <span class="sd">        deprecated: A deprecation message (or an instance of `warnings.deprecated` or the `typing_extensions.deprecated` backport).</span>
@@ -8210,7 +8210,7 @@ objects.</p>
             </td>
             <td>
               <div class="doc-md-description">
-                <p>A callable that takes a field name and returns title for it.</p>
+                <p>A callable that takes a field's name and info and returns title for it.</p>
               </div>
             </td>
           </tr>
