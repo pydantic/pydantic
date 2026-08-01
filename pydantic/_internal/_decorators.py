@@ -141,7 +141,7 @@ class ModelValidatorDecoratorInfo:
     """
 
     decorator_repr: ClassVar[str] = '@model_validator'
-    mode: Literal['wrap', 'before', 'after']
+    mode: Literal['wrap', 'before', 'after', 'outer']
 
 
 DecoratorInfo: TypeAlias = 'ValidatorDecoratorInfo | FieldValidatorDecoratorInfo | RootValidatorDecoratorInfo | FieldSerializerDecoratorInfo | ModelSerializerDecoratorInfo | ModelValidatorDecoratorInfo | ComputedFieldInfo'
@@ -539,7 +539,7 @@ def _decorator_infos_for_class(
 
 
 def inspect_validator(
-    validator: Callable[..., Any], *, mode: FieldValidatorModes, type: Literal['field', 'model']
+    validator: Callable[..., Any], *, mode: FieldValidatorModes | Literal['outer'], type: Literal['field', 'model']
 ) -> bool:
     """Look at a field or model validator function and determine whether it takes an info argument.
 
@@ -560,7 +560,7 @@ def inspect_validator(
         # In this case, we assume no info argument is present:
         return False
     n_positional = count_positional_required_params(sig)
-    if mode == 'wrap':
+    if mode in ('wrap', 'outer'):
         if n_positional == 3:
             return True
         elif n_positional == 2:

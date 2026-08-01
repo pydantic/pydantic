@@ -872,6 +872,7 @@ class GenerateSchema:
 
                 schema = self._apply_model_serializers(model_schema, decorators.model_serializers.values())
                 schema = apply_model_validators(schema, model_validators, 'outer')
+                schema = apply_model_validators(schema, model_validators, 'outermost')
                 return self.defs.create_definition_reference_schema(schema)
 
     def _resolve_self_type(self, obj: Any) -> Any:
@@ -2593,12 +2594,13 @@ def _convert_to_aliases(
 def apply_model_validators(
     schema: core_schema.CoreSchema,
     validators: Iterable[Decorator[ModelValidatorDecoratorInfo]],
-    mode: Literal['inner', 'outer', 'all'],
+    mode: Literal['inner', 'outer', 'outermost', 'all'],
 ) -> core_schema.CoreSchema:
     """Apply model validators to a schema.
 
     If mode == 'inner', only "before" validators are applied
-    If mode == 'outer', validators other than "before" are applied
+    If mode == 'outer', validators other than "before" and "outer" are applied
+    If mode == 'outermost', only "outer" validators are applied
     If mode == 'all', all validators are applied
 
     Args:
@@ -2613,10 +2615,12 @@ def apply_model_validators(
     for validator in validators:
         if mode == 'inner' and validator.info.mode != 'before':
             continue
-        if mode == 'outer' and validator.info.mode == 'before':
+        if mode == 'outer' and validator.info.mode not in ('wrap', 'after'):
+            continue
+        if mode == 'outermost' and validator.info.mode != 'outer':
             continue
         info_arg = inspect_validator(validator.func, mode=validator.info.mode, type='model')
-        if validator.info.mode == 'wrap':
+        if validator.info.mode in ('wrap', 'outer'):
             if info_arg:
                 schema = core_schema.with_info_wrap_validator_function(function=validator.func, schema=schema)
             else:

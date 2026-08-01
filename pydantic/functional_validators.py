@@ -658,6 +658,15 @@ def model_validator(
 @overload
 def model_validator(
     *,
+    mode: Literal['outer'],
+) -> Callable[
+    [_AnyModelWrapValidator[_ModelType]], _decorators.PydanticDescriptorProxy[_decorators.ModelValidatorDecoratorInfo]
+]: ...
+
+
+@overload
+def model_validator(
+    *,
     mode: Literal['before'],
 ) -> Callable[
     [_AnyModelBeforeValidator], _decorators.PydanticDescriptorProxy[_decorators.ModelValidatorDecoratorInfo]
@@ -675,7 +684,7 @@ def model_validator(
 
 def model_validator(
     *,
-    mode: Literal['wrap', 'before', 'after'],
+    mode: Literal['wrap', 'outer', 'before', 'after'],
 ) -> Any:
     """!!! abstract "Usage Documentation"
         [Model Validators](../concepts/validators.md#model-validators)
@@ -720,7 +729,7 @@ def model_validator(
 
     Args:
         mode: A required string literal that specifies the validation mode.
-            It can be one of the following: 'wrap', 'before', or 'after'.
+            It can be one of the following: 'wrap', 'outer', 'before', or 'after'.
 
     Returns:
         A decorator that can be used to decorate a function to be used as a model validator.

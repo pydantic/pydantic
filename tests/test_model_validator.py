@@ -193,3 +193,238 @@ def test_after_validator_wrong_signature() -> None:
     Model2()
     Model3()
     Model4()
+
+
+def test_model_validator_outer_ordering() -> None:
+    calls: list[str] = []
+
+    class Model(BaseModel):
+        x: int
+
+        @model_validator(mode='before')
+        @classmethod
+        def val_before(cls, values: Any) -> Any:
+            calls.append('before')
+            return values
+
+        @model_validator(mode='wrap')
+        @classmethod
+        def val_wrap(cls, values: Any, handler: ValidatorFunctionWrapHandler) -> Any:
+            calls.append('wrap_enter')
+            res = handler(values)
+            calls.append('wrap_exit')
+            return res
+
+        @model_validator(mode='after')
+        def val_after(self) -> Model:
+            calls.append('after')
+            return self
+
+        @model_validator(mode='outer')
+        @classmethod
+        def val_outer(cls, values: Any, handler: ValidatorFunctionWrapHandler) -> Any:
+            calls.append('outer_enter')
+            res = handler(values)
+            calls.append('outer_exit')
+            return res
+
+    Model(x=1)
+    assert calls == ['outer_enter', 'wrap_enter', 'before', 'wrap_exit', 'after', 'outer_exit']
+
+
+def test_model_validator_outer_catches_after_error() -> None:
+    from pydantic import ValidationError
+
+    caught_errors: list[str] = []
+
+    class Model(BaseModel):
+        x: int
+
+        @model_validator(mode='after')
+        def val_after(self) -> Model:
+            if self.x < 0:
+                raise ValueError('x must be non-negative')
+            return self
+
+        @model_validator(mode='outer')
+        @classmethod
+        def val_outer(cls, values: Any, handler: ValidatorFunctionWrapHandler) -> Any:
+            try:
+                return handler(values)
+            except ValidationError as e:
+                caught_errors.append(e.errors()[0]['msg'])
+                raise
+
+    with pytest.raises(ValidationError):
+        Model(x=-1)
+
+    assert caught_errors == ['Value error, x must be non-negative']
+
+
+def test_model_validator_outer_inheritance() -> None:
+    calls: list[str] = []
+
+    class Base(BaseModel):
+        @model_validator(mode='outer')
+        @classmethod
+        def base_outer(cls, values: Any, handler: ValidatorFunctionWrapHandler) -> Any:
+            calls.append('base_outer_enter')
+            res = handler(values)
+            calls.append('base_outer_exit')
+            return res
+
+    class Child(Base):
+        x: int
+
+        @model_validator(mode='after')
+        def child_after(self) -> Child:
+            calls.append('child_after')
+            return self
+
+    Child(x=1)
+    assert calls == ['base_outer_enter', 'child_after', 'base_outer_exit']
+
+
+def test_model_validator_outer_nested() -> None:
+    from pydantic import ValidationError
+
+    error_locs: list[tuple[str | int, ...]] = []
+
+    class Inner(BaseModel):
+        val: int
+
+    class Outer(BaseModel):
+        inner: Inner
+
+        @model_validator(mode='outer')
+        @classmethod
+        def outer_val(cls, values: Any, handler: ValidatorFunctionWrapHandler) -> Any:
+            try:
+                return handler(values)
+            except ValidationError as e:
+                error_locs.extend(err['loc'] for err in e.errors())
+                raise
+
+    with pytest.raises(ValidationError):
+        Outer(inner={'val': 'invalid'})
+
+    assert error_locs == [('inner', 'val')]
+
+
+def test_model_validator_outer_root_model() -> None:
+    from pydantic import RootModel
+
+    calls: list[str] = []
+
+    class MyRoot(RootModel[int]):
+        @model_validator(mode='after')
+        def root_after(self) -> MyRoot:
+            calls.append('root_after')
+            return self
+
+        @model_validator(mode='outer')
+        @classmethod
+        def root_outer(cls, values: Any, handler: ValidatorFunctionWrapHandler) -> Any:
+            calls.append('root_outer_enter')
+            res = handler(values)
+            calls.append('root_outer_exit')
+            return res
+
+    r = MyRoot(42)
+    assert r.root == 42
+    assert calls == ['root_outer_enter', 'root_after', 'root_outer_exit']
+
+
+def test_model_validator_outer_generic_model() -> None:
+    from typing import Generic, TypeVar
+
+    T = TypeVar('T')
+    calls: list[str] = []
+
+    class GenericModel(BaseModel, Generic[T]):
+        value: T
+
+        @model_validator(mode='after')
+        def generic_after(self) -> GenericModel[T]:
+            calls.append('generic_after')
+            return self
+
+        @model_validator(mode='outer')
+        @classmethod
+        def generic_outer(cls, values: Any, handler: ValidatorFunctionWrapHandler) -> Any:
+            calls.append('generic_outer_enter')
+            res = handler(values)
+            calls.append('generic_outer_exit')
+            return res
+
+    m = GenericModel[int](value=10)
+    assert m.value == 10
+    assert calls == ['generic_outer_enter', 'generic_after', 'generic_outer_exit']
+
+
+def test_model_validator_outer_multiple() -> None:
+    calls: list[str] = []
+
+    class Model(BaseModel):
+        x: int
+
+        @model_validator(mode='outer')
+        @classmethod
+        def outer1(cls, values: Any, handler: ValidatorFunctionWrapHandler) -> Any:
+            calls.append('outer1_enter')
+            res = handler(values)
+            calls.append('outer1_exit')
+            return res
+
+        @model_validator(mode='outer')
+        @classmethod
+        def outer2(cls, values: Any, handler: ValidatorFunctionWrapHandler) -> Any:
+            calls.append('outer2_enter')
+            res = handler(values)
+            calls.append('outer2_exit')
+            return res
+
+    Model(x=1)
+    assert calls == ['outer2_enter', 'outer1_enter', 'outer1_exit', 'outer2_exit']
+
+
+def test_model_validator_outer_validation_info() -> None:
+    info_received: list[dict[str, Any]] = []
+
+    class Model(BaseModel):
+        x: int
+
+        @model_validator(mode='outer')
+        @classmethod
+        def val_outer(cls, values: Any, handler: ValidatorFunctionWrapHandler, info: ValidationInfo) -> Any:
+            info_received.append({'mode': info.mode, 'context': info.context})
+            return handler(values)
+
+    Model.model_validate({'x': 1}, context={'foo': 'bar'})
+    assert info_received == [{'mode': 'python', 'context': {'foo': 'bar'}}]
+
+
+def test_model_validator_outer_serializer_interaction() -> None:
+    from pydantic import model_serializer
+
+    calls: list[str] = []
+
+    class Model(BaseModel):
+        x: int
+
+        @model_validator(mode='outer')
+        @classmethod
+        def val_outer(cls, values: Any, handler: ValidatorFunctionWrapHandler) -> Any:
+            calls.append('outer')
+            return handler(values)
+
+        @model_serializer
+        def ser(self) -> dict[str, int]:
+            calls.append('serializer')
+            return {'x': self.x * 2}
+
+    m = Model(x=5)
+    assert calls == ['outer']
+    dumped = m.model_dump()
+    assert dumped == {'x': 10}
+    assert calls == ['outer', 'serializer']
