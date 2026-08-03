@@ -1859,6 +1859,35 @@ def missing_sentinel_schema(
 
 ```
 
+## ellipsis_schema
+
+```python
+ellipsis_schema(
+    metadata: dict[str, Any] | None = None,
+    serialization: SerSchema | None = None,
+) -> EllipsisSchema
+
+```
+
+Returns a schema for the Ellipsis literal.
+
+Source code in `pydantic_core/core_schema.py`
+
+```python
+def ellipsis_schema(
+    metadata: dict[str, Any] | None = None,
+    serialization: SerSchema | None = None,
+) -> EllipsisSchema:
+    """Returns a schema for the [`Ellipsis`][] literal."""
+
+    return _dict_not_none(
+        type='ellipsis',
+        metadata=metadata,
+        serialization=serialization,
+    )
+
+```
+
 ## is_instance_schema
 
 ```python

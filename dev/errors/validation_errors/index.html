@@ -3501,6 +3501,17 @@ to help you monitor and understand your
 </li>
       
         <li class="md-nav__item">
+  <a href="#ellipsis_error" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        ellipsis_error
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#enum" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -5351,6 +5362,17 @@ to help you monitor and understand your
 </li>
       
         <li class="md-nav__item">
+  <a href="#ellipsis_error" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        ellipsis_error
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#enum" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -6772,6 +6794,23 @@ can't be called, because validation failed on previous fields:</p>
 <span class="k">except</span> <span class="n">ValidationError</span> <span class="k">as</span> <span class="n">exc</span><span class="p">:</span>
     <span class="nb">print</span><span class="p">(</span><span class="nb">repr</span><span class="p">(</span><span class="n">exc</span><span class="o">.</span><span class="n">errors</span><span class="p">()[</span><span class="mi">0</span><span class="p">][</span><span class="s1">&#39;type&#39;</span><span class="p">]))</span>
     <span class="c1">#&gt; &#39;dict_type&#39;</span>
+</code></pre></div>
+<h2 id="ellipsis_error"><code>ellipsis_error</code><a class="headerlink" href="#ellipsis_error" title="Permanent link">&para;</a></h2>
+<p>This error is raised when the input isn't the <a class="autorefs autorefs-external" href="https://docs.python.org/3/library/constants.html#Ellipsis"><code>Ellipsis</code></a> literal:</p>
+<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">types</span><span class="w"> </span><span class="kn">import</span> <span class="n">EllipsisType</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">pydantic</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ValidationError</span>
+
+
+<span class="k">class</span><span class="w"> </span><span class="nc">Model</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="n">e</span><span class="p">:</span> <span class="n">EllipsisType</span>
+
+
+<span class="k">try</span><span class="p">:</span>
+    <span class="n">Model</span><span class="p">(</span><span class="n">e</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+<span class="k">except</span> <span class="n">ValidationError</span> <span class="k">as</span> <span class="n">exc</span><span class="p">:</span>
+    <span class="nb">print</span><span class="p">(</span><span class="nb">repr</span><span class="p">(</span><span class="n">exc</span><span class="o">.</span><span class="n">errors</span><span class="p">()[</span><span class="mi">0</span><span class="p">][</span><span class="s1">&#39;type&#39;</span><span class="p">]))</span>
+    <span class="c1">#&gt; &#39;ellipsis_error&#39;</span>
 </code></pre></div>
 <h2 id="enum"><code>enum</code><a class="headerlink" href="#enum" title="Permanent link">&para;</a></h2>
 <p>This error is raised when the input value does not exist in an <code>enum</code> field members:</p>

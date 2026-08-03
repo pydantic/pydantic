@@ -1209,6 +1209,43 @@ def missing_sentinel_schema(self, schema: core_schema.MissingSentinelSchema) -> 
 
 ```
 
+### ellipsis_schema
+
+```python
+ellipsis_schema(schema: EllipsisSchema) -> JsonSchemaValue
+
+```
+
+Handles JSON schema generation for a core schema that checks if a value is the Ellipsis literal.
+
+Unless overridden in a subclass, this raises an error.
+
+Parameters:
+
+| Name | Type | Description | Default | | --- | --- | --- | --- | | `schema` | `EllipsisSchema` | The core schema. | *required* |
+
+Returns:
+
+| Type | Description | | --- | --- | | `JsonSchemaValue` | The generated JSON schema. |
+
+Source code in `pydantic/json_schema.py`
+
+```python
+def ellipsis_schema(self, schema: core_schema.EllipsisSchema) -> JsonSchemaValue:
+    """Handles JSON schema generation for a core schema that checks if a value is the [`Ellipsis`][] literal.
+
+    Unless overridden in a subclass, this raises an error.
+
+    Args:
+        schema: The core schema.
+
+    Returns:
+        The generated JSON schema.
+    """
+    return self.handle_invalid_for_json_schema(schema, 'core_schema.EllipsisSchema')
+
+```
+
 ### enum_schema
 
 ```python

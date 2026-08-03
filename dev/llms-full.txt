@@ -20230,7 +20230,7 @@ Field(
 Field(
     *,
     default_factory: (
-        Callable[[], _T] | Callable[[dict[str, Any]], _T]
+        Callable[[], _T" optional hover>_T] | Callable[[dict[str, Any]], _T]
     ),
     alias: str | None = _Unset,
     alias_priority: int | None = _Unset,
@@ -24131,6 +24131,43 @@ def missing_sentinel_schema(self, schema: core_schema.MissingSentinelSchema) -> 
         The generated JSON schema.
     """
     raise PydanticOmit
+
+```
+
+### ellipsis_schema
+
+```python
+ellipsis_schema(schema: EllipsisSchema) -> JsonSchemaValue
+
+```
+
+Handles JSON schema generation for a core schema that checks if a value is the Ellipsis literal.
+
+Unless overridden in a subclass, this raises an error.
+
+Parameters:
+
+| Name | Type | Description | Default | | --- | --- | --- | --- | | `schema` | `EllipsisSchema` | The core schema. | *required* |
+
+Returns:
+
+| Type | Description | | --- | --- | | `JsonSchemaValue` | The generated JSON schema. |
+
+Source code in `pydantic/json_schema.py`
+
+```python
+def ellipsis_schema(self, schema: core_schema.EllipsisSchema) -> JsonSchemaValue:
+    """Handles JSON schema generation for a core schema that checks if a value is the [`Ellipsis`][] literal.
+
+    Unless overridden in a subclass, this raises an error.
+
+    Args:
+        schema: The core schema.
+
+    Returns:
+        The generated JSON schema.
+    """
+    return self.handle_invalid_for_json_schema(schema, 'core_schema.EllipsisSchema')
 
 ```
 
@@ -31211,6 +31248,35 @@ def missing_sentinel_schema(
 
     return _dict_not_none(
         type='missing-sentinel',
+        metadata=metadata,
+        serialization=serialization,
+    )
+
+```
+
+## ellipsis_schema
+
+```python
+ellipsis_schema(
+    metadata: dict[str, Any] | None = None,
+    serialization: SerSchema | None = None,
+) -> EllipsisSchema
+
+```
+
+Returns a schema for the Ellipsis literal.
+
+Source code in `pydantic_core/core_schema.py`
+
+```python
+def ellipsis_schema(
+    metadata: dict[str, Any] | None = None,
+    serialization: SerSchema | None = None,
+) -> EllipsisSchema:
+    """Returns a schema for the [`Ellipsis`][] literal."""
+
+    return _dict_not_none(
+        type='ellipsis',
         metadata=metadata,
         serialization=serialization,
     )
@@ -50500,6 +50566,28 @@ try:
 except ValidationError as exc:
     print(repr(exc.errors()[0]['type']))
     #> 'dict_type'
+
+```
+
+## `ellipsis_error`
+
+This error is raised when the input isn't the Ellipsis literal:
+
+```python
+from types import EllipsisType
+
+from pydantic import BaseModel, ValidationError
+
+
+class Model(BaseModel):
+    e: EllipsisType
+
+
+try:
+    Model(e=1)
+except ValidationError as exc:
+    print(repr(exc.errors()[0]['type']))
+    #> 'ellipsis_error'
 
 ```
 
