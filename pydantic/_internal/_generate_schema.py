@@ -23,7 +23,7 @@ from inspect import Parameter, _ParameterKind
 from ipaddress import IPv4Address, IPv4Interface, IPv4Network, IPv6Address, IPv6Interface, IPv6Network
 from itertools import chain
 from operator import attrgetter
-from types import FunctionType, GenericAlias, LambdaType, MethodType, NoneType
+from types import EllipsisType, FunctionType, GenericAlias, LambdaType, MethodType, NoneType
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -364,6 +364,7 @@ class GenerateSchema:
         None: lambda self, obj: core_schema.none_schema(),
         NoneType: lambda self, obj: core_schema.none_schema(),
         MISSING: lambda self, obj: core_schema.missing_sentinel_schema(),
+        EllipsisType: lambda self, obj: core_schema.ellipsis_schema(),
         type: lambda self, obj: self._type_schema(),
         dict: lambda self, obj: self._dict_schema(Any, Any),
         tuple: lambda self, obj: self._tuple_schema(obj),

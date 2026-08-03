@@ -1453,6 +1453,25 @@ def missing_sentinel_schema(
     )
 
 
+class EllipsisSchema(TypedDict, total=False):
+    type: Required[Literal['ellipsis']]
+    metadata: dict[str, Any]
+    serialization: SerSchema
+
+
+def ellipsis_schema(
+    metadata: dict[str, Any] | None = None,
+    serialization: SerSchema | None = None,
+) -> EllipsisSchema:
+    """Returns a schema for the [`Ellipsis`][] literal."""
+
+    return _dict_not_none(
+        type='ellipsis',
+        metadata=metadata,
+        serialization=serialization,
+    )
+
+
 # must match input/parse_json.rs::JsonType::try_from
 JsonType = Literal['null', 'bool', 'int', 'float', 'str', 'list', 'dict']
 
@@ -4201,6 +4220,7 @@ if not MYPY:
         | TimedeltaSchema
         | LiteralSchema
         | MissingSentinelSchema
+        | EllipsisSchema
         | EnumSchema
         | IsInstanceSchema
         | IsSubclassSchema
@@ -4261,6 +4281,7 @@ CoreSchemaType: TypeAlias = Literal[
     'timedelta',
     'literal',
     'missing-sentinel',
+    'ellipsis',
     'enum',
     'is-instance',
     'is-subclass',
@@ -4363,6 +4384,7 @@ ErrorType: TypeAlias = Literal[
     'assertion_error',
     'literal_error',
     'missing_sentinel_error',
+    'ellipsis_error',
     'date_type',
     'date_parsing',
     'date_from_datetime_parsing',
