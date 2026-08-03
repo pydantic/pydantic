@@ -17003,7 +17003,7 @@ str_min_length: int
 
 ```
 
-The minimum length for str types. Defaults to `None`.
+The minimum length for str types. Defaults to `0`.
 
 ### str_max_length
 
@@ -20230,7 +20230,7 @@ Field(
 Field(
     *,
     default_factory: (
-        Callable[[], _T" optional hover>_T] | Callable[[dict[str, Any]], _T]
+        Callable[[], _T] | Callable[[dict[str, Any]], _T]
     ),
     alias: str | None = _Unset,
     alias_priority: int | None = _Unset,
