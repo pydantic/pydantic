@@ -27,6 +27,7 @@ from types import FunctionType, GenericAlias, LambdaType, MethodType, NoneType
 from typing import (
     TYPE_CHECKING,
     Any,
+    ClassVar,
     Final,
     ForwardRef,
     Literal,
@@ -323,8 +324,6 @@ class GenerateSchema:
         '_config_wrapper_stack',
         '_ns_resolver',
         '_typevars_map',
-        '_handlers',
-        '_generic_handlers',
         'field_name_stack',
         'model_type_stack',
         'defs',
@@ -343,110 +342,109 @@ class GenerateSchema:
         self.field_name_stack = _FieldNameStack()
         self.model_type_stack = _ModelTypeStack()
         self.defs = _Definitions()
-        self._handlers = self._get_handlers()
-        self._generic_handlers = self._get_generic_handlers()
 
-    def _get_handlers(self) -> dict[Any, Callable[[Any], core_schema.CoreSchema]]:
-        return {
-            str: lambda _: core_schema.str_schema(),
-            bytes: lambda _: core_schema.bytes_schema(),
-            int: lambda _: core_schema.int_schema(),
-            float: lambda _: core_schema.float_schema(),
-            bool: lambda _: core_schema.bool_schema(),
-            complex: lambda _: core_schema.complex_schema(),
-            object: lambda _: core_schema.any_schema(),
-            datetime.date: lambda _: core_schema.date_schema(),
-            datetime.datetime: lambda _: core_schema.datetime_schema(),
-            datetime.time: lambda _: core_schema.time_schema(),
-            datetime.timedelta: lambda _: core_schema.timedelta_schema(),
-            Decimal: lambda _: core_schema.decimal_schema(),
-            UUID: lambda _: core_schema.uuid_schema(),
-            Url: lambda _: core_schema.url_schema(),
-            Fraction: lambda _: core_schema.fraction_schema(),
-            MultiHostUrl: lambda _: core_schema.multi_host_url_schema(),
-            None: lambda _: core_schema.none_schema(),
-            NoneType: lambda _: core_schema.none_schema(),
-            MISSING: lambda _: core_schema.missing_sentinel_schema(),
-            type: lambda _: self._type_schema(),
-            dict: lambda _: self._dict_schema(Any, Any),
-            tuple: lambda obj: self._tuple_schema(obj),
-            list: lambda _: self._list_schema(Any),
-            set: lambda _: self._set_schema(Any),
-            collections.abc.MutableSet: lambda _: self._set_schema(Any),
-            frozenset: lambda _: self._frozenset_schema(Any),
-            collections.abc.Set: lambda _: self._frozenset_schema(Any),
-            collections.abc.Sequence: lambda _: self._sequence_schema(Any),
-            collections.deque: lambda _: self._deque_schema(Any),
-            collections.abc.Iterable: lambda obj: self._iterable_schema(obj),
-            collections.abc.Generator: lambda obj: self._iterable_schema(obj),
-            collections.abc.Mapping: lambda obj: self._mapping_schema(obj, Any, Any),
-            collections.abc.MutableMapping: lambda obj: self._mapping_schema(obj, Any, Any),
-            collections.OrderedDict: lambda obj: self._mapping_schema(obj, Any, Any),
-            collections.defaultdict: lambda obj: self._mapping_schema(obj, Any, Any),
-            collections.Counter: lambda obj: self._mapping_schema(obj, Any, int),
-            collections.abc.Callable: lambda _: core_schema.callable_schema(),
-            collections.abc.Hashable: lambda _: self._hashable_schema(),
-            IPv4Address: lambda obj: self._ip_schema(obj),
-            IPv4Interface: lambda obj: self._ip_schema(obj),
-            IPv4Network: lambda obj: self._ip_schema(obj),
-            IPv6Address: lambda obj: self._ip_schema(obj),
-            IPv6Interface: lambda obj: self._ip_schema(obj),
-            IPv6Network: lambda obj: self._ip_schema(obj),
-            os.PathLike: lambda obj: self._path_schema(obj, Any),
-            pathlib.Path: lambda obj: self._path_schema(obj, Any),
-            pathlib.PurePath: lambda obj: self._path_schema(obj, Any),
-            pathlib.PosixPath: lambda obj: self._path_schema(obj, Any),
-            pathlib.WindowsPath: lambda obj: self._path_schema(obj, Any),
-            pathlib.PurePosixPath: lambda obj: self._path_schema(obj, Any),
-            pathlib.PureWindowsPath: lambda obj: self._path_schema(obj, Any),
-            re.Pattern: lambda obj: self._pattern_schema(obj),
-            ZoneInfo: lambda _: self._zoneinfo_schema(),
-        }
+    # The handler lambdas take the `GenerateSchema` instance as their first argument, so that
+    # the dicts can be built once at class creation time and shared by all instances:
+    _handlers: ClassVar[dict[Any, Callable[[GenerateSchema, Any], core_schema.CoreSchema]]] = {
+        str: lambda self, obj: core_schema.str_schema(),
+        bytes: lambda self, obj: core_schema.bytes_schema(),
+        int: lambda self, obj: core_schema.int_schema(),
+        float: lambda self, obj: core_schema.float_schema(),
+        bool: lambda self, obj: core_schema.bool_schema(),
+        complex: lambda self, obj: core_schema.complex_schema(),
+        object: lambda self, obj: core_schema.any_schema(),
+        datetime.date: lambda self, obj: core_schema.date_schema(),
+        datetime.datetime: lambda self, obj: core_schema.datetime_schema(),
+        datetime.time: lambda self, obj: core_schema.time_schema(),
+        datetime.timedelta: lambda self, obj: core_schema.timedelta_schema(),
+        Decimal: lambda self, obj: core_schema.decimal_schema(),
+        UUID: lambda self, obj: core_schema.uuid_schema(),
+        Url: lambda self, obj: core_schema.url_schema(),
+        Fraction: lambda self, obj: core_schema.fraction_schema(),
+        MultiHostUrl: lambda self, obj: core_schema.multi_host_url_schema(),
+        None: lambda self, obj: core_schema.none_schema(),
+        NoneType: lambda self, obj: core_schema.none_schema(),
+        MISSING: lambda self, obj: core_schema.missing_sentinel_schema(),
+        type: lambda self, obj: self._type_schema(),
+        dict: lambda self, obj: self._dict_schema(Any, Any),
+        tuple: lambda self, obj: self._tuple_schema(obj),
+        list: lambda self, obj: self._list_schema(Any),
+        set: lambda self, obj: self._set_schema(Any),
+        collections.abc.MutableSet: lambda self, obj: self._set_schema(Any),
+        frozenset: lambda self, obj: self._frozenset_schema(Any),
+        collections.abc.Set: lambda self, obj: self._frozenset_schema(Any),
+        collections.abc.MutableSequence: lambda self, obj: self._sequence_schema(Any),
+        collections.abc.Sequence: lambda self, obj: self._sequence_schema(Any),
+        collections.deque: lambda self, obj: self._deque_schema(Any),
+        collections.abc.Iterable: lambda self, obj: self._iterable_schema(obj),
+        collections.abc.Generator: lambda self, obj: self._iterable_schema(obj),
+        collections.abc.Mapping: lambda self, obj: self._mapping_schema(obj, Any, Any),
+        collections.abc.MutableMapping: lambda self, obj: self._mapping_schema(obj, Any, Any),
+        collections.OrderedDict: lambda self, obj: self._mapping_schema(obj, Any, Any),
+        collections.defaultdict: lambda self, obj: self._mapping_schema(obj, Any, Any),
+        collections.Counter: lambda self, obj: self._mapping_schema(obj, Any, int),
+        collections.abc.Callable: lambda self, obj: core_schema.callable_schema(),
+        collections.abc.Hashable: lambda self, obj: self._hashable_schema(),
+        IPv4Address: lambda self, obj: self._ip_schema(obj),
+        IPv4Interface: lambda self, obj: self._ip_schema(obj),
+        IPv4Network: lambda self, obj: self._ip_schema(obj),
+        IPv6Address: lambda self, obj: self._ip_schema(obj),
+        IPv6Interface: lambda self, obj: self._ip_schema(obj),
+        IPv6Network: lambda self, obj: self._ip_schema(obj),
+        os.PathLike: lambda self, obj: self._path_schema(obj, Any),
+        pathlib.Path: lambda self, obj: self._path_schema(obj, Any),
+        pathlib.PurePath: lambda self, obj: self._path_schema(obj, Any),
+        pathlib.PosixPath: lambda self, obj: self._path_schema(obj, Any),
+        pathlib.WindowsPath: lambda self, obj: self._path_schema(obj, Any),
+        pathlib.PurePosixPath: lambda self, obj: self._path_schema(obj, Any),
+        pathlib.PureWindowsPath: lambda self, obj: self._path_schema(obj, Any),
+        re.Pattern: lambda self, obj: self._pattern_schema(obj),
+        ZoneInfo: lambda self, obj: self._zoneinfo_schema(),
+    }
 
-    def _get_generic_handlers(self) -> dict[Any, Callable[[Any], core_schema.CoreSchema]]:
-        return {
-            tuple: lambda obj: self._tuple_schema(obj),
-            list: lambda obj: self._list_schema(self._get_first_arg_or_any(obj)),
-            dict: lambda obj: self._dict_schema(*self._get_first_two_args_or_any(obj)),
-            set: lambda obj: self._set_schema(self._get_first_arg_or_any(obj)),
-            frozenset: lambda obj: self._frozenset_schema(self._get_first_arg_or_any(obj)),
-            type: lambda obj: self._subclass_schema(obj),
-            collections.abc.MutableSequence: lambda obj: self._list_schema(self._get_first_arg_or_any(obj)),
-            collections.abc.MutableSet: lambda obj: self._set_schema(self._get_first_arg_or_any(obj)),
-            collections.abc.Set: lambda obj: self._frozenset_schema(self._get_first_arg_or_any(obj)),
-            collections.deque: lambda obj: self._deque_schema(self._get_first_arg_or_any(obj)),
-            collections.abc.Mapping: lambda obj: self._mapping_schema(
-                collections.abc.Mapping, *self._get_first_two_args_or_any(obj)
-            ),
-            collections.abc.MutableMapping: lambda obj: self._mapping_schema(
-                collections.abc.MutableMapping, *self._get_first_two_args_or_any(obj)
-            ),
-            collections.OrderedDict: lambda obj: self._mapping_schema(
-                collections.OrderedDict, *self._get_first_two_args_or_any(obj)
-            ),
-            collections.defaultdict: lambda obj: self._mapping_schema(
-                collections.defaultdict, *self._get_first_two_args_or_any(obj)
-            ),
-            collections.Counter: lambda obj: self._mapping_schema(
-                collections.Counter, self._get_first_arg_or_any(obj), int
-            ),
-            os.PathLike: lambda obj: self._path_schema(os.PathLike, self._get_first_arg_or_any(obj)),
-            pathlib.Path: lambda obj: self._path_schema(pathlib.Path, self._get_first_arg_or_any(obj)),
-            pathlib.PurePath: lambda obj: self._path_schema(pathlib.PurePath, self._get_first_arg_or_any(obj)),
-            pathlib.PosixPath: lambda obj: self._path_schema(pathlib.PosixPath, self._get_first_arg_or_any(obj)),
-            pathlib.WindowsPath: lambda obj: self._path_schema(pathlib.WindowsPath, self._get_first_arg_or_any(obj)),
-            pathlib.PurePosixPath: lambda obj: self._path_schema(
-                pathlib.PurePosixPath, self._get_first_arg_or_any(obj)
-            ),
-            pathlib.PureWindowsPath: lambda obj: self._path_schema(
-                pathlib.PureWindowsPath, self._get_first_arg_or_any(obj)
-            ),
-            collections.abc.Sequence: lambda obj: self._sequence_schema(self._get_first_arg_or_any(obj)),
-            collections.abc.Iterable: lambda obj: self._iterable_schema(obj),
-            collections.abc.Generator: lambda obj: self._iterable_schema(obj),
-            re.Pattern: lambda obj: self._pattern_schema(obj),
-            collections.abc.Callable: lambda _: core_schema.callable_schema(),
-        }
+    _generic_handlers: ClassVar[dict[Any, Callable[[GenerateSchema, Any], core_schema.CoreSchema]]] = {
+        tuple: lambda self, obj: self._tuple_schema(obj),
+        list: lambda self, obj: self._list_schema(self._get_first_arg_or_any(obj)),
+        dict: lambda self, obj: self._dict_schema(*self._get_first_two_args_or_any(obj)),
+        set: lambda self, obj: self._set_schema(self._get_first_arg_or_any(obj)),
+        frozenset: lambda self, obj: self._frozenset_schema(self._get_first_arg_or_any(obj)),
+        type: lambda self, obj: self._subclass_schema(obj),
+        collections.abc.MutableSequence: lambda self, obj: self._list_schema(self._get_first_arg_or_any(obj)),
+        collections.abc.MutableSet: lambda self, obj: self._set_schema(self._get_first_arg_or_any(obj)),
+        collections.abc.Set: lambda self, obj: self._frozenset_schema(self._get_first_arg_or_any(obj)),
+        collections.deque: lambda self, obj: self._deque_schema(self._get_first_arg_or_any(obj)),
+        collections.abc.Mapping: lambda self, obj: self._mapping_schema(
+            collections.abc.Mapping, *self._get_first_two_args_or_any(obj)
+        ),
+        collections.abc.MutableMapping: lambda self, obj: self._mapping_schema(
+            collections.abc.MutableMapping, *self._get_first_two_args_or_any(obj)
+        ),
+        collections.OrderedDict: lambda self, obj: self._mapping_schema(
+            collections.OrderedDict, *self._get_first_two_args_or_any(obj)
+        ),
+        collections.defaultdict: lambda self, obj: self._mapping_schema(
+            collections.defaultdict, *self._get_first_two_args_or_any(obj)
+        ),
+        collections.Counter: lambda self, obj: self._mapping_schema(
+            collections.Counter, self._get_first_arg_or_any(obj), int
+        ),
+        os.PathLike: lambda self, obj: self._path_schema(os.PathLike, self._get_first_arg_or_any(obj)),
+        pathlib.Path: lambda self, obj: self._path_schema(pathlib.Path, self._get_first_arg_or_any(obj)),
+        pathlib.PurePath: lambda self, obj: self._path_schema(pathlib.PurePath, self._get_first_arg_or_any(obj)),
+        pathlib.PosixPath: lambda self, obj: self._path_schema(pathlib.PosixPath, self._get_first_arg_or_any(obj)),
+        pathlib.WindowsPath: lambda self, obj: self._path_schema(pathlib.WindowsPath, self._get_first_arg_or_any(obj)),
+        pathlib.PurePosixPath: lambda self, obj: self._path_schema(
+            pathlib.PurePosixPath, self._get_first_arg_or_any(obj)
+        ),
+        pathlib.PureWindowsPath: lambda self, obj: self._path_schema(
+            pathlib.PureWindowsPath, self._get_first_arg_or_any(obj)
+        ),
+        collections.abc.Sequence: lambda self, obj: self._sequence_schema(self._get_first_arg_or_any(obj)),
+        collections.abc.Iterable: lambda self, obj: self._iterable_schema(obj),
+        collections.abc.Generator: lambda self, obj: self._iterable_schema(obj),
+        re.Pattern: lambda self, obj: self._pattern_schema(obj),
+        collections.abc.Callable: lambda self, obj: core_schema.callable_schema(),
+    }
 
     def __init_subclass__(cls) -> None:
         super().__init_subclass__()
@@ -1139,7 +1137,7 @@ class GenerateSchema:
                 pass
             else:
                 if handler is not None:
-                    return handler(obj)
+                    return handler(self, obj)
 
             if typing_objects.is_typealiastype(obj):
                 return self._type_alias_type_schema(obj)
@@ -1196,7 +1194,7 @@ class GenerateSchema:
             pass
         else:
             if handler is not None:
-                return handler(obj)
+                return handler(self, obj)
 
         if typing_objects.is_typealiastype(origin):
             return self._type_alias_type_schema(obj)
