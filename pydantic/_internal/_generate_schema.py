@@ -1113,6 +1113,9 @@ class GenerateSchema:
             origin = None
 
         if origin is None:
+            # Thanks to the checks before this point, no origin means `obj` is a
+            # simple type (not a generic alias, a union, an `Annotated` form).
+            # examples: int, str, list, dict, collections.abc.Mapping, a `TypeAliasType` instance.
             try:
                 handler = self._handlers.get(obj)
             except TypeError:
@@ -1121,33 +1124,33 @@ class GenerateSchema:
                 if handler is not None:
                     return handler(obj)
 
-        if typing_objects.is_typealiastype(obj):
-            return self._type_alias_type_schema(obj)
-        elif is_typeddict(obj):
-            return self._typed_dict_schema(obj, None)
-        elif inspect.isclass(obj) and issubclass(obj, Enum):
-            # NOTE: this must come before the `is_namedtuple()` check as enums values
-            # can be namedtuples:
-            return self._enum_schema(obj)
-        elif _typing_extra.is_namedtuple(obj):
-            return self._namedtuple_schema(obj, None)
-        elif typing_objects.is_newtype(obj):
-            return self.generate_schema(obj.__supertype__)
-        elif isinstance(obj, typing.TypeVar):
-            return self._unsubstituted_typevar_schema(obj)
-        elif _typing_extra.is_finalvar(obj):
+            if typing_objects.is_typealiastype(obj):
+                return self._type_alias_type_schema(obj)
+            elif is_typeddict(obj):
+                return self._typed_dict_schema(obj, None)
+            elif inspect.isclass(obj) and issubclass(obj, Enum):
+                # NOTE: this must come before the `is_namedtuple()` check as enums values
+                # can be namedtuples:
+                return self._enum_schema(obj)
+            elif _typing_extra.is_namedtuple(obj):
+                return self._namedtuple_schema(obj, None)
+            elif typing_objects.is_newtype(obj):
+                return self.generate_schema(obj.__supertype__)
+            elif isinstance(obj, typing.TypeVar):
+                return self._unsubstituted_typevar_schema(obj)
+            elif isinstance(obj, VALIDATE_CALL_SUPPORTED_TYPES):
+                return self._call_schema(obj)  # pyright: ignore[reportArgumentType]
+            # dataclasses.is_dataclass coerces dc instances to types, but we only handle
+            # the case of a dc type here
+            elif dataclasses.is_dataclass(obj):
+                return self._dataclass_schema(obj, None)  # pyright: ignore[reportArgumentType]
+
+        if _typing_extra.is_finalvar(obj):
             if obj is Final:
                 return core_schema.any_schema()
             return self.generate_schema(
                 self._get_first_arg_or_any(obj),
             )
-        elif isinstance(obj, VALIDATE_CALL_SUPPORTED_TYPES):
-            return self._call_schema(obj)  # pyright: ignore[reportArgumentType]
-
-        # dataclasses.is_dataclass coerces dc instances to types, but we only handle
-        # the case of a dc type here
-        if dataclasses.is_dataclass(obj):
-            return self._dataclass_schema(obj, None)  # pyright: ignore[reportArgumentType]
 
         if origin is not None:
             return self._match_generic_type(obj, origin)
