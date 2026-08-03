@@ -353,6 +353,7 @@ class GenerateSchema:
         '_config_wrapper_stack',
         '_ns_resolver',
         '_typevars_map',
+        '_handlers',
         'field_name_stack',
         'model_type_stack',
         'defs',
@@ -371,6 +372,64 @@ class GenerateSchema:
         self.field_name_stack = _FieldNameStack()
         self.model_type_stack = _ModelTypeStack()
         self.defs = _Definitions()
+        self._handlers = self._get_handlers()
+
+    def _get_handlers(self) -> dict[Any, Callable[[Any], core_schema.CoreSchema]]:
+        return {
+            str: lambda _: core_schema.str_schema(),
+            bytes: lambda _: core_schema.bytes_schema(),
+            int: lambda _: core_schema.int_schema(),
+            float: lambda _: core_schema.float_schema(),
+            bool: lambda _: core_schema.bool_schema(),
+            complex: lambda _: core_schema.complex_schema(),
+            object: lambda _: core_schema.any_schema(),
+            datetime.date: lambda _: core_schema.date_schema(),
+            datetime.datetime: lambda _: core_schema.datetime_schema(),
+            datetime.time: lambda _: core_schema.time_schema(),
+            datetime.timedelta: lambda _: core_schema.timedelta_schema(),
+            Decimal: lambda _: core_schema.decimal_schema(),
+            UUID: lambda _: core_schema.uuid_schema(),
+            Url: lambda _: core_schema.url_schema(),
+            Fraction: lambda _: core_schema.fraction_schema(),
+            MultiHostUrl: lambda _: core_schema.multi_host_url_schema(),
+            None: lambda _: core_schema.none_schema(),
+            NoneType: lambda _: core_schema.none_schema(),
+            MISSING: lambda _: core_schema.missing_sentinel_schema(),
+            type: lambda _: self._type_schema(),
+            dict: lambda _: self._dict_schema(Any, Any),
+            tuple: lambda obj: self._tuple_schema(obj),
+            list: lambda _: self._list_schema(Any),
+            set: lambda _: self._set_schema(Any),
+            collections.abc.MutableSet: lambda _: self._set_schema(Any),
+            frozenset: lambda _: self._frozenset_schema(Any),
+            collections.abc.Set: lambda _: self._frozenset_schema(Any),
+            collections.abc.Sequence: lambda _: self._sequence_schema(Any),
+            collections.deque: lambda _: self._deque_schema(Any),
+            collections.abc.Iterable: lambda obj: self._iterable_schema(obj),
+            collections.abc.Generator: lambda obj: self._iterable_schema(obj),
+            collections.abc.Mapping: lambda obj: self._mapping_schema(obj, Any, Any),
+            collections.abc.MutableMapping: lambda obj: self._mapping_schema(obj, Any, Any),
+            collections.OrderedDict: lambda obj: self._mapping_schema(obj, Any, Any),
+            collections.defaultdict: lambda obj: self._mapping_schema(obj, Any, Any),
+            collections.Counter: lambda obj: self._mapping_schema(obj, Any, int),
+            collections.abc.Callable: lambda _: core_schema.callable_schema(),
+            collections.abc.Hashable: lambda _: self._hashable_schema(),
+            IPv4Address: lambda obj: self._ip_schema(obj),
+            IPv4Interface: lambda obj: self._ip_schema(obj),
+            IPv4Network: lambda obj: self._ip_schema(obj),
+            IPv6Address: lambda obj: self._ip_schema(obj),
+            IPv6Interface: lambda obj: self._ip_schema(obj),
+            IPv6Network: lambda obj: self._ip_schema(obj),
+            os.PathLike: lambda obj: self._path_schema(obj, Any),
+            pathlib.Path: lambda obj: self._path_schema(obj, Any),
+            pathlib.PurePath: lambda obj: self._path_schema(obj, Any),
+            pathlib.PosixPath: lambda obj: self._path_schema(obj, Any),
+            pathlib.WindowsPath: lambda obj: self._path_schema(obj, Any),
+            pathlib.PurePosixPath: lambda obj: self._path_schema(obj, Any),
+            pathlib.PureWindowsPath: lambda obj: self._path_schema(obj, Any),
+            re.Pattern: lambda obj: self._pattern_schema(obj),
+            ZoneInfo: lambda _: self._zoneinfo_schema(),
+        }
 
     def __init_subclass__(cls) -> None:
         super().__init_subclass__()
@@ -1000,8 +1059,16 @@ class GenerateSchema:
         if typing_objects.is_self(obj):
             obj = self._resolve_self_type(obj)
 
-        if typing_objects.is_annotated(get_origin(obj)):
+        origin = get_origin(obj)
+
+        if is_union_origin(origin):
+            return self._union_schema(obj)
+
+        if typing_objects.is_annotated(origin):
             return self._annotated_schema(obj)
+
+        if typing_objects.is_literal(origin):
+            return self._literal_schema(obj)
 
         if isinstance(obj, dict):
             # we assume this is already a valid schema
@@ -1022,9 +1089,9 @@ class GenerateSchema:
         if isinstance(obj, PydanticRecursiveRef):
             return core_schema.definition_reference_schema(schema_ref=obj.type_ref)
 
-        return self.match_type(obj)
+        return self.match_type(obj, origin)
 
-    def match_type(self, obj: Any) -> core_schema.CoreSchema:  # noqa: C901
+    def match_type(self, obj: Any, origin: Any) -> core_schema.CoreSchema:  # noqa: C901
         """Main mapping of types to schemas.
 
         The general structure is a series of if statements starting with the simple cases
@@ -1037,74 +1104,25 @@ class GenerateSchema:
         The idea is that we'll evolve this into adding more and more user facing methods over time
         as they get requested and we figure out what the right API for them is.
         """
-        if obj is str:
-            return core_schema.str_schema()
-        elif obj is bytes:
-            return core_schema.bytes_schema()
-        elif obj is int:
-            return core_schema.int_schema()
-        elif obj is float:
-            return core_schema.float_schema()
-        elif obj is bool:
-            return core_schema.bool_schema()
-        elif obj is complex:
-            return core_schema.complex_schema()
-        elif typing_objects.is_any(obj) or obj is object:
+        if typing_objects.is_any(obj):
             return core_schema.any_schema()
-        elif obj is datetime.date:
-            return core_schema.date_schema()
-        elif obj is datetime.datetime:
-            return core_schema.datetime_schema()
-        elif obj is datetime.time:
-            return core_schema.time_schema()
-        elif obj is datetime.timedelta:
-            return core_schema.timedelta_schema()
-        elif obj is Decimal:
-            return core_schema.decimal_schema()
-        elif obj is UUID:
-            return core_schema.uuid_schema()
-        elif obj is Url:
-            return core_schema.url_schema()
-        elif obj is Fraction:
-            return core_schema.fraction_schema()
-        elif obj is MultiHostUrl:
-            return core_schema.multi_host_url_schema()
-        elif obj is None or obj is NoneType:
-            return core_schema.none_schema()
-        if obj is MISSING:
-            return core_schema.missing_sentinel_schema()
-        elif obj in IP_TYPES:
-            return self._ip_schema(obj)
-        elif obj in TUPLE_TYPES:
-            return self._tuple_schema(obj)
-        elif obj in LIST_TYPES:
-            return self._list_schema(Any)
-        elif obj in SET_TYPES:
-            return self._set_schema(Any)
-        elif obj in FROZEN_SET_TYPES:
-            return self._frozenset_schema(Any)
-        elif obj in SEQUENCE_TYPES:
-            return self._sequence_schema(Any)
-        elif obj in ITERABLE_TYPES:
-            return self._iterable_schema(obj)
-        elif obj in DICT_TYPES:
-            return self._dict_schema(Any, Any)
-        elif obj in PATH_TYPES:
-            return self._path_schema(obj, Any)
-        elif obj in DEQUE_TYPES:
-            return self._deque_schema(Any)
-        elif obj in MAPPING_TYPES:
-            return self._mapping_schema(obj, Any, Any)
-        elif obj in COUNTER_TYPES:
-            return self._mapping_schema(obj, Any, int)
-        elif typing_objects.is_typealiastype(obj):
+
+        if origin is not None and (aliased_obj := typing_objects.DEPRECATED_ALIASES.get(obj)):
+            # See https://typing-inspection.pydantic.dev/dev/usage/#inspecting-the-type-expression:
+            obj = aliased_obj
+            origin = None
+
+        if origin is None:
+            try:
+                handler = self._handlers.get(obj)
+            except TypeError:
+                pass
+            else:
+                if handler is not None:
+                    return handler(obj)
+
+        if typing_objects.is_typealiastype(obj):
             return self._type_alias_type_schema(obj)
-        elif obj is type:
-            return self._type_schema()
-        elif _typing_extra.is_callable(obj):
-            return core_schema.callable_schema()
-        elif typing_objects.is_literal(get_origin(obj)):
-            return self._literal_schema(obj)
         elif is_typeddict(obj):
             return self._typed_dict_schema(obj, None)
         elif inspect.isclass(obj) and issubclass(obj, Enum):
@@ -1114,12 +1132,7 @@ class GenerateSchema:
         elif _typing_extra.is_namedtuple(obj):
             return self._namedtuple_schema(obj, None)
         elif typing_objects.is_newtype(obj):
-            # NewType, can't use isinstance because it fails <3.10
             return self.generate_schema(obj.__supertype__)
-        elif obj in PATTERN_TYPES:
-            return self._pattern_schema(obj)
-        elif _typing_extra.is_hashable(obj):
-            return self._hashable_schema()
         elif isinstance(obj, typing.TypeVar):
             return self._unsubstituted_typevar_schema(obj)
         elif _typing_extra.is_finalvar(obj):
@@ -1130,15 +1143,12 @@ class GenerateSchema:
             )
         elif isinstance(obj, VALIDATE_CALL_SUPPORTED_TYPES):
             return self._call_schema(obj)  # pyright: ignore[reportArgumentType]
-        elif obj is ZoneInfo:
-            return self._zoneinfo_schema()
 
         # dataclasses.is_dataclass coerces dc instances to types, but we only handle
         # the case of a dc type here
         if dataclasses.is_dataclass(obj):
             return self._dataclass_schema(obj, None)  # pyright: ignore[reportArgumentType]
 
-        origin = get_origin(obj)
         if origin is not None:
             return self._match_generic_type(obj, origin)
 
@@ -1162,8 +1172,6 @@ class GenerateSchema:
 
         if typing_objects.is_typealiastype(origin):
             return self._type_alias_type_schema(obj)
-        elif is_union_origin(origin):
-            return self._union_schema(obj)
         elif origin in TUPLE_TYPES:
             return self._tuple_schema(obj)
         elif origin in LIST_TYPES:
@@ -1192,6 +1200,8 @@ class GenerateSchema:
             return self._iterable_schema(obj)
         elif origin in PATTERN_TYPES:
             return self._pattern_schema(obj)
+        elif origin is collections.abc.Callable:
+            return core_schema.callable_schema()
 
         if self._arbitrary_types:
             return self._arbitrary_type_schema(origin)
