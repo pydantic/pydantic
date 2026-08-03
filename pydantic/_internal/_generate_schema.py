@@ -354,6 +354,7 @@ class GenerateSchema:
         '_ns_resolver',
         '_typevars_map',
         '_handlers',
+        '_generic_handlers',
         'field_name_stack',
         'model_type_stack',
         'defs',
@@ -373,6 +374,7 @@ class GenerateSchema:
         self.model_type_stack = _ModelTypeStack()
         self.defs = _Definitions()
         self._handlers = self._get_handlers()
+        self._generic_handlers = self._get_generic_handlers()
 
     def _get_handlers(self) -> dict[Any, Callable[[Any], core_schema.CoreSchema]]:
         return {
@@ -429,6 +431,51 @@ class GenerateSchema:
             pathlib.PureWindowsPath: lambda obj: self._path_schema(obj, Any),
             re.Pattern: lambda obj: self._pattern_schema(obj),
             ZoneInfo: lambda _: self._zoneinfo_schema(),
+        }
+
+    def _get_generic_handlers(self) -> dict[Any, Callable[[Any], core_schema.CoreSchema]]:
+        return {
+            tuple: lambda obj: self._tuple_schema(obj),
+            list: lambda obj: self._list_schema(self._get_first_arg_or_any(obj)),
+            dict: lambda obj: self._dict_schema(*self._get_first_two_args_or_any(obj)),
+            set: lambda obj: self._set_schema(self._get_first_arg_or_any(obj)),
+            frozenset: lambda obj: self._frozenset_schema(self._get_first_arg_or_any(obj)),
+            type: lambda obj: self._subclass_schema(obj),
+            collections.abc.MutableSequence: lambda obj: self._list_schema(self._get_first_arg_or_any(obj)),
+            collections.abc.MutableSet: lambda obj: self._set_schema(self._get_first_arg_or_any(obj)),
+            collections.abc.Set: lambda obj: self._frozenset_schema(self._get_first_arg_or_any(obj)),
+            collections.deque: lambda obj: self._deque_schema(self._get_first_arg_or_any(obj)),
+            collections.abc.Mapping: lambda obj: self._mapping_schema(
+                collections.abc.Mapping, *self._get_first_two_args_or_any(obj)
+            ),
+            collections.abc.MutableMapping: lambda obj: self._mapping_schema(
+                collections.abc.MutableMapping, *self._get_first_two_args_or_any(obj)
+            ),
+            collections.OrderedDict: lambda obj: self._mapping_schema(
+                collections.OrderedDict, *self._get_first_two_args_or_any(obj)
+            ),
+            collections.defaultdict: lambda obj: self._mapping_schema(
+                collections.defaultdict, *self._get_first_two_args_or_any(obj)
+            ),
+            collections.Counter: lambda obj: self._mapping_schema(
+                collections.Counter, self._get_first_arg_or_any(obj), int
+            ),
+            os.PathLike: lambda obj: self._path_schema(os.PathLike, self._get_first_arg_or_any(obj)),
+            pathlib.Path: lambda obj: self._path_schema(pathlib.Path, self._get_first_arg_or_any(obj)),
+            pathlib.PurePath: lambda obj: self._path_schema(pathlib.PurePath, self._get_first_arg_or_any(obj)),
+            pathlib.PosixPath: lambda obj: self._path_schema(pathlib.PosixPath, self._get_first_arg_or_any(obj)),
+            pathlib.WindowsPath: lambda obj: self._path_schema(pathlib.WindowsPath, self._get_first_arg_or_any(obj)),
+            pathlib.PurePosixPath: lambda obj: self._path_schema(
+                pathlib.PurePosixPath, self._get_first_arg_or_any(obj)
+            ),
+            pathlib.PureWindowsPath: lambda obj: self._path_schema(
+                pathlib.PureWindowsPath, self._get_first_arg_or_any(obj)
+            ),
+            collections.abc.Sequence: lambda obj: self._sequence_schema(self._get_first_arg_or_any(obj)),
+            collections.abc.Iterable: lambda obj: self._iterable_schema(obj),
+            collections.abc.Generator: lambda obj: self._iterable_schema(obj),
+            re.Pattern: lambda obj: self._pattern_schema(obj),
+            collections.abc.Callable: lambda _: core_schema.callable_schema(),
         }
 
     def __init_subclass__(cls) -> None:
@@ -1173,38 +1220,18 @@ class GenerateSchema:
         if schema is not None:
             return schema
 
+        try:
+            handler = self._generic_handlers.get(origin)
+        except TypeError:
+            pass
+        else:
+            if handler is not None:
+                return handler(obj)
+
         if typing_objects.is_typealiastype(origin):
             return self._type_alias_type_schema(obj)
-        elif origin in TUPLE_TYPES:
-            return self._tuple_schema(obj)
-        elif origin in LIST_TYPES:
-            return self._list_schema(self._get_first_arg_or_any(obj))
-        elif origin in SET_TYPES:
-            return self._set_schema(self._get_first_arg_or_any(obj))
-        elif origin in FROZEN_SET_TYPES:
-            return self._frozenset_schema(self._get_first_arg_or_any(obj))
-        elif origin in DICT_TYPES:
-            return self._dict_schema(*self._get_first_two_args_or_any(obj))
-        elif origin in PATH_TYPES:
-            return self._path_schema(origin, self._get_first_arg_or_any(obj))
-        elif origin in DEQUE_TYPES:
-            return self._deque_schema(self._get_first_arg_or_any(obj))
-        elif origin in MAPPING_TYPES:
-            return self._mapping_schema(origin, *self._get_first_two_args_or_any(obj))
-        elif origin in COUNTER_TYPES:
-            return self._mapping_schema(origin, self._get_first_arg_or_any(obj), int)
         elif is_typeddict(origin):
             return self._typed_dict_schema(obj, origin)
-        elif origin in TYPE_TYPES:
-            return self._subclass_schema(obj)
-        elif origin in SEQUENCE_TYPES:
-            return self._sequence_schema(self._get_first_arg_or_any(obj))
-        elif origin in ITERABLE_TYPES:
-            return self._iterable_schema(obj)
-        elif origin in PATTERN_TYPES:
-            return self._pattern_schema(obj)
-        elif origin is collections.abc.Callable:
-            return core_schema.callable_schema()
 
         if self._arbitrary_types:
             return self._arbitrary_type_schema(origin)
