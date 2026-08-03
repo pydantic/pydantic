@@ -3330,6 +3330,3 @@ class FailFast(_fields.PydanticMetadata, BaseMetadata):
     """
 
     fail_fast: bool = True
-
-    def __hash__(self) -> int:
-        return hash(self.fail_fast)

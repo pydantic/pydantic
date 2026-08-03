@@ -224,8 +224,7 @@ impl CombinedSerializer {
             }
         }
 
-        let serializer = Self::find_serializer(type_, schema, config, definitions)?;
-        Self::maybe_wrap_in_polymorphism_trampoline(serializer, schema)
+        Self::find_serializer(type_, schema, config, definitions)
     }
 
     fn maybe_wrap_in_polymorphism_trampoline(
