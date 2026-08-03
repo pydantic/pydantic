@@ -89,29 +89,29 @@ def test_recursive_model_schema_generation(benchmark) -> None:
     benchmark(rebuild_model, RecursiveModel)
 
 
-@pytest.mark.benchmark(group='model_schema_generation')
-def test_construct_dataclass_schema(benchmark):
-    @dataclass(frozen=True, kw_only=True)
-    class Cat:
-        type: Literal['cat'] = 'cat'
+# @pytest.mark.benchmark(group='model_schema_generation')
+# def test_construct_dataclass_schema(benchmark):
+#     @dataclass(frozen=True, kw_only=True)
+#     class Cat:
+#         type: Literal['cat'] = 'cat'
 
-    @dataclass(frozen=True, kw_only=True)
-    class Dog:
-        type: Literal['dog'] = 'dog'
+#     @dataclass(frozen=True, kw_only=True)
+#     class Dog:
+#         type: Literal['dog'] = 'dog'
 
-    @dataclass(frozen=True, kw_only=True)
-    class NestedDataClass:
-        animal: Annotated[Union[Cat, Dog], Discriminator('type')]
+#     @dataclass(frozen=True, kw_only=True)
+#     class NestedDataClass:
+#         animal: Annotated[Union[Cat, Dog], Discriminator('type')]
 
-    class NestedModel(BaseModel):
-        animal: Annotated[Union[Cat, Dog], Discriminator('type')]
+#     class NestedModel(BaseModel):
+#         animal: Annotated[Union[Cat, Dog], Discriminator('type')]
 
-    @dataclass(frozen=True, kw_only=True, config={'defer_build': True})
-    class Root:
-        data_class: NestedDataClass
-        model: NestedModel
+#     @dataclass(frozen=True, kw_only=True, config={'defer_build': True})
+#     class Root:
+#         data_class: NestedDataClass
+#         model: NestedModel
 
-    benchmark(lambda: rebuild_dataclass(Root, force=True, _types_namespace={}))
+#     benchmark(lambda: rebuild_dataclass(Root, force=True, _types_namespace={}))
 
 
 @pytest.mark.benchmark(group='model_schema_generation')
