@@ -137,36 +137,6 @@ GetCoreSchemaFunction: TypeAlias = Callable[[Any, ModifyCoreSchemaWrapHandler], 
 ParametersCallback: TypeAlias = Callable[[int, str, Any], Literal['skip'] | None]
 
 TUPLE_TYPES: list[type] = [typing.Tuple, tuple]  # noqa: UP006
-LIST_TYPES: list[type] = [typing.List, list, collections.abc.MutableSequence]  # noqa: UP006
-SET_TYPES: list[type] = [typing.Set, set, collections.abc.MutableSet]  # noqa: UP006
-FROZEN_SET_TYPES: list[type] = [typing.FrozenSet, frozenset, collections.abc.Set]  # noqa: UP006
-DICT_TYPES: list[type] = [typing.Dict, dict]  # noqa: UP006
-IP_TYPES: list[type] = [IPv4Address, IPv4Interface, IPv4Network, IPv6Address, IPv6Interface, IPv6Network]
-SEQUENCE_TYPES: list[type] = [typing.Sequence, collections.abc.Sequence]
-ITERABLE_TYPES: list[type] = [typing.Iterable, collections.abc.Iterable, typing.Generator, collections.abc.Generator]
-TYPE_TYPES: list[type] = [typing.Type, type]  # noqa: UP006
-PATTERN_TYPES: list[type] = [typing.Pattern, re.Pattern]
-PATH_TYPES: list[type] = [
-    os.PathLike,
-    pathlib.Path,
-    pathlib.PurePath,
-    pathlib.PosixPath,
-    pathlib.WindowsPath,
-    pathlib.PurePosixPath,
-    pathlib.PureWindowsPath,
-]
-MAPPING_TYPES = [
-    typing.Mapping,
-    typing.MutableMapping,
-    collections.abc.Mapping,
-    collections.abc.MutableMapping,
-    collections.OrderedDict,
-    typing_extensions.OrderedDict,
-    typing.DefaultDict,  # noqa: UP006
-    collections.defaultdict,
-]
-COUNTER_TYPES = [collections.Counter, typing.Counter]
-DEQUE_TYPES: list[type] = [collections.deque, typing.Deque]  # noqa: UP006
 
 # Note: This does not play very well with type checkers. For example,
 # `a: LambdaType = lambda x: x` will raise a type error by Pyright.
@@ -910,7 +880,7 @@ class GenerateSchema:
                 extras_keys_schema = None
                 if core_config.get('extra_fields_behavior') == 'allow' and extra_info is not None:
                     tp = get_origin(extra_info.annotation)
-                    if tp not in DICT_TYPES:
+                    if tp is not dict:
                         raise PydanticSchemaGenerationError(
                             'The type annotation for `__pydantic_extra__` must be `dict[str, ...]`'
                         )
