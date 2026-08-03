@@ -28,7 +28,6 @@ from typing import (
     TYPE_CHECKING,
     Any,
     ClassVar,
-    Final,
     ForwardRef,
     Literal,
     TypeAlias,
@@ -1119,7 +1118,9 @@ class GenerateSchema:
         The idea is that we'll evolve this into adding more and more user facing methods over time
         as they get requested and we figure out what the right API for them is.
         """
-        if typing_objects.is_any(obj):
+        if typing_objects.is_any(obj) or typing_objects.is_final(obj):
+            # TODO: I'm not sure obj can be `Final` here, we call `typing_inspection.introspection.inspect_annotation()`
+            # early for model-like fields, which handles it already.
             return core_schema.any_schema()
 
         if origin is not None and (aliased_obj := typing_objects.DEPRECATED_ALIASES.get(obj)):
@@ -1160,13 +1161,6 @@ class GenerateSchema:
             elif dataclasses.is_dataclass(obj):
                 return self._dataclass_schema(obj, None)  # pyright: ignore[reportArgumentType]
 
-        if _typing_extra.is_finalvar(obj):
-            if obj is Final:
-                return core_schema.any_schema()
-            return self.generate_schema(
-                self._get_first_arg_or_any(obj),
-            )
-
         if origin is not None:
             return self._match_generic_type(obj, origin)
 
@@ -1181,8 +1175,12 @@ class GenerateSchema:
         # to resolve by modifying the value returned by `Generic.__class_getitem__`, but that is a dangerous game.
         if dataclasses.is_dataclass(origin):
             return self._dataclass_schema(obj, origin)  # pyright: ignore[reportArgumentType]
-        if _typing_extra.is_namedtuple(origin):
+        elif _typing_extra.is_namedtuple(origin):
             return self._namedtuple_schema(obj, origin)
+        elif typing_objects.is_final(origin):
+            # TODO: I'm not sure obj can be `Final` here, we call `typing_inspection.introspection.inspect_annotation()`
+            # early for model-like fields, which handles it already.
+            return self.generate_schema(self._get_first_arg_or_any(obj))
 
         schema = self._generate_schema_from_get_schema_method(origin, obj)
         if schema is not None:
