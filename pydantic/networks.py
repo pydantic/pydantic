@@ -1314,9 +1314,9 @@ A somewhat arbitrary but very generous number compared to what is allowed by mos
 """
 
 
-_display_name_specials = frozenset('()<>[]:;@\\,')
-"""RFC 5322 specials (except `.`, kept bare for compatibility, and DQUOTE, rejected at validation)
-that make a display name unsafe to emit outside a quoted string."""
+_display_name_specials = frozenset('()<>[]:;@,')
+"""RFC 5322 specials (except `.`, kept bare for compatibility, and DQUOTE and backslash, rejected
+at validation) that make a display name unsafe to emit outside a quoted string."""
 
 
 def _validate_display_name(name: str) -> None:
@@ -1334,6 +1334,14 @@ def _validate_display_name(name: str) -> None:
             'value_error',
             'value is not a valid email address: {reason}',
             {'reason': 'The display name contains an unescaped double quote'},
+        )
+    # A '\' in the quoted form starts an RFC 5322 quoted-pair, escaping the following character
+    # (including the closing DQUOTE), and quoted-pairs are not processed when parsing:
+    if '\\' in name:
+        raise PydanticCustomError(
+            'value_error',
+            'value is not a valid email address: {reason}',
+            {'reason': 'The display name contains a backslash'},
         )
 
 
