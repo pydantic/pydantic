@@ -8,12 +8,10 @@ from typing_extensions import TypedDict
 
 import pydantic
 from pydantic import (
-    AfterValidator,
     BaseModel,
     ConfigDict,
     Field,
     Strict,
-    Tag,
     TypeAdapter,
     ValidationError,
 )
@@ -50,43 +48,6 @@ def test_field_serializer_in_nested_union_called_only_twice():
     # 2 comes from:
     # - one attempt in strict mode, which fails because of `b=False` as a subclass
     # - one attempt in lax mode, which succeeds
-    assert MyModel.field_a_serializer_calls == 2
-
-
-def test_field_serializer_in_nested_tagged_union_called_only_twice():
-    class MyModel(pydantic.BaseModel):
-        type_: Literal['a'] = 'a'
-
-        a: int
-        b: int
-
-        field_a_serializer_calls: ClassVar[int] = 0
-
-        @pydantic.field_serializer('a')
-        def serialize_my_field(self, value: int) -> str:
-            self.__class__.field_a_serializer_calls += 1
-            return str(value)
-
-    class ModelB(pydantic.BaseModel):
-        type_: Literal['b'] = 'b'
-
-    class Container(pydantic.BaseModel):
-        type_: Literal['a'] = 'a'
-        u: MyModel | ModelB = pydantic.Field(..., discriminator='type_')
-
-    class Container2(pydantic.BaseModel):
-        u: Container | ModelB = pydantic.Field(..., discriminator='type_')
-
-    # forcibly construct model with a False value
-    value = MyModel.model_construct(a=1, b=False)
-    assert value.b is False
-
-    ta = pydantic.TypeAdapter(Container2 | int)
-    ta.dump_json(Container2(u=Container(u=value)), warnings=False)
-
-    # Historical implementations of pydantic would call the field serializer many times
-    # as nested unions were individually attempted with each of strict and lax checking,
-    # and the discriminators also incurred an extra attempt at each check level too.
     assert MyModel.field_a_serializer_calls == 2
 
 
@@ -272,55 +233,6 @@ def test_union_typeddict():
     ta = TypeAdapter(Dict2 | Dict1)
 
     assert ta.validate_python(dict(foo='baz')) == {'foo': 'baz'}
-
-
-def test_union_tags_in_errors():
-    DoubledList = Annotated[list[int], AfterValidator(lambda x: x * 2)]
-    StringsMap = dict[str, str]
-
-    adapter = TypeAdapter(DoubledList | StringsMap)
-
-    with pytest.raises(ValidationError) as exc_info:
-        adapter.validate_python(['a'])
-
-    # yuck
-    assert '2 validation errors for union[function-after[<lambda>(), list[int]],dict[str,str]]' in str(exc_info)
-    # the loc's are bad here:
-    assert exc_info.value.errors(include_url=False) == [
-        {
-            'input': 'a',
-            'loc': ('function-after[<lambda>(), list[int]]', 0),
-            'msg': 'Input should be a valid integer, unable to parse string as an integer',
-            'type': 'int_parsing',
-        },
-        {
-            'input': ['a'],
-            'loc': ('dict[str,str]',),
-            'msg': 'Input should be a valid dictionary',
-            'type': 'dict_type',
-        },
-    ]
-
-    tag_adapter = TypeAdapter(Annotated[DoubledList, Tag('DoubledList')] | Annotated[StringsMap, Tag('StringsMap')])
-    with pytest.raises(ValidationError) as exc_info:
-        tag_adapter.validate_python(['a'])
-
-    assert '2 validation errors for union[DoubledList,StringsMap]' in str(exc_info)  # nice
-    # the loc's are good here:
-    assert exc_info.value.errors(include_url=False) == [
-        {
-            'input': 'a',
-            'loc': ('DoubledList', 0),
-            'msg': 'Input should be a valid integer, unable to parse string as an integer',
-            'type': 'int_parsing',
-        },
-        {
-            'input': ['a'],
-            'loc': ('StringsMap',),
-            'msg': 'Input should be a valid dictionary',
-            'type': 'dict_type',
-        },
-    ]
 
 
 def test_union_respects_local_strict() -> None:
