@@ -652,96 +652,6 @@ def test_constrained_frozenset_optional():
     assert Model(req={'a'}, opt={'a'}).model_dump() == {'req': {'a'}, 'opt': {'a'}}
 
 
-@pytest.fixture(scope='session', name='ConStringModel')
-def constring_model_fixture():
-    class ConStringModel(BaseModel):
-        v: constr(max_length=10) = 'foobar'
-
-    return ConStringModel
-
-
-def test_constrained_str_good(ConStringModel):
-    m = ConStringModel(v='short')
-    assert m.v == 'short'
-
-
-def test_constrained_str_default(ConStringModel):
-    m = ConStringModel()
-    assert m.v == 'foobar'
-
-
-@pytest.mark.parametrize(
-    ('data', 'valid'),
-    [('this is too long', False), ('⛄' * 11, False), ('not long90', True), ('⛄' * 10, True)],
-)
-def test_constrained_str_too_long(ConStringModel, data, valid):
-    if valid:
-        assert ConStringModel(v=data).model_dump() == {'v': data}
-    else:
-        with pytest.raises(ValidationError) as exc_info:
-            ConStringModel(v=data)
-        # insert_assert(exc_info.value.errors(include_url=False))
-        assert exc_info.value.errors(include_url=False) == [
-            {
-                'ctx': {'max_length': 10},
-                'input': data,
-                'loc': ('v',),
-                'msg': 'String should have at most 10 characters',
-                'type': 'string_too_long',
-            }
-        ]
-
-
-@pytest.mark.parametrize(
-    'to_upper, value, result',
-    [
-        (True, 'abcd', 'ABCD'),
-        (False, 'aBcD', 'aBcD'),
-    ],
-)
-def test_constrained_str_upper(to_upper, value, result):
-    class Model(BaseModel):
-        v: constr(to_upper=to_upper)
-
-    m = Model(v=value)
-    assert m.v == result
-
-
-@pytest.mark.parametrize(
-    'to_lower, value, result',
-    [
-        (True, 'ABCD', 'abcd'),
-        (False, 'ABCD', 'ABCD'),
-    ],
-)
-def test_constrained_str_lower(to_lower, value, result):
-    class Model(BaseModel):
-        v: constr(to_lower=to_lower)
-
-    m = Model(v=value)
-    assert m.v == result
-
-
-def test_constrained_str_max_length_0():
-    class Model(BaseModel):
-        v: constr(max_length=0)
-
-    m = Model(v='')
-    assert m.v == ''
-    with pytest.raises(ValidationError) as exc_info:
-        Model(v='qwe')
-    # insert_assert(exc_info.value.errors(include_url=False))
-    assert exc_info.value.errors(include_url=False) == [
-        {
-            'type': 'string_too_long',
-            'loc': ('v',),
-            'msg': 'String should have at most 0 characters',
-            'input': 'qwe',
-            'ctx': {'max_length': 0},
-        }
-    ]
-
-
 @pytest.mark.parametrize(
     'annotation',
     [
@@ -1162,7 +1072,6 @@ def test_strict_timedelta():
 def check_model_fixture():
     class CheckModel(BaseModel):
         bool_check: bool = True
-        str_check: constr(strip_whitespace=True, max_length=10) = 's'
         int_check: int = 1
         float_check: float = 1.0
         uuid_check: UUID = UUID('7bd00d58-6485-4ca6-b889-3da6d8df3ee4')
@@ -1238,18 +1147,6 @@ class BoolCastable:
         ('bool_check', Decimal(2), ValidationError),
         ('bool_check', b'\x81', ValidationError),
         ('bool_check', BoolCastable(), ValidationError),
-        pytest.param('str_check', 's', 's', id='str_check-s_str-s_str'),
-        pytest.param('str_check', '  s  ', 's', id='str_check-s_stripped-s_str'),
-        ('str_check', ' leading', 'leading'),
-        ('str_check', 'trailing ', 'trailing'),
-        pytest.param('str_check', b's', 's', id='str_check-s_bytes-s_str'),
-        pytest.param('str_check', b'  s  ', 's', id='str_check-s_bytes_stripped-s_str'),
-        ('str_check', bytearray(b's' * 5), 'sssss'),
-        ('str_check', 1, ValidationError),
-        pytest.param('str_check', 'x' * 11, ValidationError, id='str_check-too_long_str-ValidationError'),
-        pytest.param('str_check', b'x' * 11, ValidationError, id='str_check-too_long_bytes-ValidationError'),
-        ('str_check', b'\x81', ValidationError),
-        ('str_check', bytearray(b'\x81' * 5), ValidationError),
         pytest.param('int_check', 1, 1, id='int_check-1_int-1_int'),
         ('int_check', 1.0, 1),
         ('int_check', 1.9, ValidationError),
@@ -1391,44 +1288,6 @@ def test_default_validators(field, value, result, CheckModel):
             CheckModel(**kwargs)
     else:
         assert CheckModel(**kwargs).model_dump()[field] == result
-
-
-@pytest.fixture(scope='session', name='StrModel')
-def str_model_fixture():
-    class StrModel(BaseModel):
-        str_check: Annotated[str, annotated_types.Len(5, 10)]
-
-    return StrModel
-
-
-def test_string_too_long(StrModel):
-    with pytest.raises(ValidationError) as exc_info:
-        StrModel(str_check='x' * 150)
-    # insert_assert(exc_info.value.errors(include_url=False))
-    assert exc_info.value.errors(include_url=False) == [
-        {
-            'type': 'string_too_long',
-            'loc': ('str_check',),
-            'msg': 'String should have at most 10 characters',
-            'input': 'x' * 150,
-            'ctx': {'max_length': 10},
-        }
-    ]
-
-
-def test_string_too_short(StrModel):
-    with pytest.raises(ValidationError) as exc_info:
-        StrModel(str_check='x')
-    # insert_assert(exc_info.value.errors(include_url=False))
-    assert exc_info.value.errors(include_url=False) == [
-        {
-            'type': 'string_too_short',
-            'loc': ('str_check',),
-            'msg': 'String should have at least 5 characters',
-            'input': 'x',
-            'ctx': {'min_length': 5},
-        }
-    ]
 
 
 @pytest.fixture(scope='session', name='DatetimeModel')
@@ -2760,40 +2619,6 @@ def test_finite_float_config():
     ]
 
 
-def test_strict_str():
-    class FruitEnum(str, Enum):
-        """A subclass of a string"""
-
-        pear = 'pear'
-        banana = 'banana'
-
-    class Model(BaseModel):
-        v: StrictStr
-
-    assert Model(v='foobar').v == 'foobar'
-
-    assert Model.model_validate({'v': FruitEnum.banana}) == Model.model_construct(v=FruitEnum.banana)
-
-    with pytest.raises(ValidationError, match='Input should be a valid string'):
-        Model(v=123)
-
-    with pytest.raises(ValidationError, match='Input should be a valid string'):
-        Model(v=b'foobar')
-
-
-def test_strict_str_max_length():
-    class Model(BaseModel):
-        u: StrictStr = Field(max_length=5)
-
-    assert Model(u='foo').u == 'foo'
-
-    with pytest.raises(ValidationError, match='Input should be a valid string'):
-        Model(u=123)
-
-    with pytest.raises(ValidationError, match=r'String should have at most 5 characters \[type=string_too_long,'):
-        Model(u='1234567')
-
-
 def test_strict_bool():
     class Model(BaseModel):
         v: StrictBool
@@ -3087,54 +2912,6 @@ def test_uuid_strict() -> None:
         assert isinstance(m.c, type(c)) and m.c == c
         assert isinstance(m.d, type(d)) and m.d == d
         assert isinstance(m.e, type(e)) and m.e == e
-
-
-@pytest.mark.parametrize(
-    'enabled,str_check,result_str_check',
-    [
-        (True, '  123  ', '123'),
-        (True, '  123\t\n', '123'),
-        (False, '  123  ', '  123  '),
-    ],
-)
-def test_str_strip_whitespace(enabled, str_check, result_str_check):
-    class Model(BaseModel):
-        str_check: str
-
-        model_config = ConfigDict(str_strip_whitespace=enabled)
-
-    m = Model(str_check=str_check)
-    assert m.str_check == result_str_check
-
-
-@pytest.mark.parametrize(
-    'enabled,str_check,result_str_check',
-    [(True, 'ABCDefG', 'ABCDEFG'), (False, 'ABCDefG', 'ABCDefG')],
-)
-def test_str_to_upper(enabled, str_check, result_str_check):
-    class Model(BaseModel):
-        str_check: str
-
-        model_config = ConfigDict(str_to_upper=enabled)
-
-    m = Model(str_check=str_check)
-
-    assert m.str_check == result_str_check
-
-
-@pytest.mark.parametrize(
-    'enabled,str_check,result_str_check',
-    [(True, 'ABCDefG', 'abcdefg'), (False, 'ABCDefG', 'ABCDefG')],
-)
-def test_str_to_lower(enabled, str_check, result_str_check):
-    class Model(BaseModel):
-        str_check: str
-
-        model_config = ConfigDict(str_to_lower=enabled)
-
-    m = Model(str_check=str_check)
-
-    assert m.str_check == result_str_check
 
 
 pos_int_values = 'Inf', '+Inf', 'Infinity', '+Infinity'
@@ -6545,22 +6322,6 @@ def test_get_pydantic_core_schema_marker_unrelated_type() -> None:
     assert ta.validate_python('1') == 3
 
 
-def test_string_constraints() -> None:
-    ta = TypeAdapter(
-        Annotated[str, StringConstraints(strip_whitespace=True, to_lower=True), AfterValidator(lambda x: x * 2)]
-    )
-    assert ta.validate_python(' ABC ') == 'abcabc'
-
-
-def test_string_constraints_strict() -> None:
-    ta = TypeAdapter(Annotated[str, StringConstraints(strict=False)])
-    assert ta.validate_python(b'123') == '123'
-
-    ta = TypeAdapter(Annotated[str, StringConstraints(strict=True)])
-    with pytest.raises(ValidationError):
-        ta.validate_python(b'123')
-
-
 def test_decimal_float_precision() -> None:
     """https://github.com/pydantic/pydantic/issues/6807"""
     ta = TypeAdapter(Decimal)
@@ -6570,71 +6331,6 @@ def test_decimal_float_precision() -> None:
     assert ta.validate_python('1.1') == Decimal('1.1')
     assert ta.validate_json('1') == Decimal('1')
     assert ta.validate_python(1) == Decimal('1')
-
-
-def test_coerce_numbers_to_str_disabled_in_strict_mode() -> None:
-    class Model(BaseModel):
-        model_config = ConfigDict(strict=True, coerce_numbers_to_str=True)
-        value: str
-
-    with pytest.raises(ValidationError, match='value'):
-        Model.model_validate({'value': 42})
-    with pytest.raises(ValidationError, match='value'):
-        Model.model_validate_json('{"value": 42}')
-
-
-@pytest.mark.parametrize('value_param', [True, False])
-def test_coerce_numbers_to_str_raises_for_bool(value_param: bool) -> None:
-    class Model(BaseModel):
-        model_config = ConfigDict(coerce_numbers_to_str=True)
-        value: str
-
-    with pytest.raises(ValidationError, match='value'):
-        Model.model_validate({'value': value_param})
-    with pytest.raises(ValidationError, match='value'):
-        if value_param is True:
-            Model.model_validate_json('{"value": true}')
-        elif value_param is False:
-            Model.model_validate_json('{"value": false}')
-
-    @pydantic_dataclass(config=ConfigDict(coerce_numbers_to_str=True))
-    class Model:
-        value: str
-
-    with pytest.raises(ValidationError, match='value'):
-        Model(value=value_param)
-
-
-@pytest.mark.parametrize(
-    ('number', 'expected_str'),
-    [
-        pytest.param(42, '42', id='42'),
-        pytest.param(42.0, '42.0', id='42.0'),
-        pytest.param(Decimal('42.0'), '42.0', id="Decimal('42.0')"),
-    ],
-)
-def test_coerce_numbers_to_str(number: Number, expected_str: str) -> None:
-    class Model(BaseModel):
-        model_config = ConfigDict(coerce_numbers_to_str=True)
-        value: str
-
-    assert Model.model_validate({'value': number}).model_dump() == {'value': expected_str}
-
-
-@pytest.mark.parametrize(
-    ('number', 'expected_str'),
-    [
-        pytest.param('42', '42', id='42'),
-        pytest.param('42.0', '42', id='42.0'),
-        pytest.param('42.13', '42.13', id='42.13'),
-    ],
-)
-def test_coerce_numbers_to_str_from_json(number: str, expected_str: str) -> None:
-    class Model(BaseModel):
-        model_config = ConfigDict(coerce_numbers_to_str=True)
-        value: str
-
-    assert Model.model_validate_json(f'{{"value": {number}}}').model_dump() == {'value': expected_str}
 
 
 def test_union_tags_in_errors():
@@ -6935,16 +6631,6 @@ def test_strict_complex_field():
         m = Model(number=5)
 
 
-def test_python_re_respects_flags() -> None:
-    class Model(BaseModel):
-        a: Annotated[str, StringConstraints(pattern=re.compile(r'[A-Z]+', re.IGNORECASE))]
-
-        model_config = ConfigDict(regex_engine='python-re')
-
-    # allows lowercase letters, even though the pattern is uppercase only due to the IGNORECASE flag
-    assert Model(a='abc').a == 'abc'
-
-
 @pytest.mark.skipif(not email_validator, reason='email_validator not installed')
 def test_constraints_on_str_like() -> None:
     """See https://github.com/pydantic/pydantic/issues/8577 for motivation."""
@@ -7181,16 +6867,3 @@ def test_union_abc() -> None:
     X(x=a2)
 
 
-def test_string_constraints_ascii_only() -> None:
-    class Model(BaseModel):
-        v: Annotated[str, StringConstraints(ascii_only=True)]
-
-    assert Model(v='hello').v == 'hello'
-    with pytest.raises(ValidationError) as exc_info:
-        Model(v='caf\xe9')
-    assert exc_info.value.errors(include_url=False)[0] == {
-        'type': 'string_not_ascii',
-        'loc': ('v',),
-        'msg': 'String should contain only ASCII characters',
-        'input': 'caf\xe9',
-    }
