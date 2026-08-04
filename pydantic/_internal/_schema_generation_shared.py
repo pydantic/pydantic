@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from collections.abc import Callable
-from typing import TYPE_CHECKING, Any, Literal
+from typing import TYPE_CHECKING, Any, ForwardRef, Literal
 
 from pydantic_core import core_schema
 
@@ -81,6 +81,9 @@ class CallbackGetCoreSchemaHandler(GetCoreSchemaHandler):
         self._ref_mode = ref_mode
 
     def __call__(self, source_type: Any, /) -> core_schema.CoreSchema:
+        if isinstance(source_type, (str, ForwardRef)):
+            # `source_type` may be lazily provided (e.g. an incomplete stdlib dataclass field annotation):
+            source_type = self._generate_schema._resolve_forward_ref(source_type)
         schema = self._handler(source_type)
         if self._ref_mode == 'to-def':
             ref = schema.get('ref')
@@ -94,6 +97,10 @@ class CallbackGetCoreSchemaHandler(GetCoreSchemaHandler):
         return self._generate_schema._types_namespace
 
     def generate_schema(self, source_type: Any, /) -> core_schema.CoreSchema:
+        if isinstance(source_type, (str, ForwardRef)):
+            # `source_type` may be lazily provided (e.g. `json_schema_input_type` supports
+            # string annotations, resolved when generating the core schema):
+            source_type = self._generate_schema._resolve_forward_ref(source_type)
         return self._generate_schema.generate_schema(source_type)
 
     @property

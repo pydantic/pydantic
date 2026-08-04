@@ -13,7 +13,7 @@ from ..plugin._schema_validator import create_schema_validator
 from ._config import ConfigWrapper
 from ._generate_schema import GenerateSchema, ValidateCallSupportedTypes
 from ._namespace_utils import MappingNamespace, NsResolver, ns_for_function
-from ._typing_extra import signature_no_eval
+from ._typing_extra import get_function_type_hints, signature_no_eval
 
 
 def extract_function_name(func: ValidateCallSupportedTypes) -> str:
@@ -105,7 +105,16 @@ class ValidateCallWrapper:
         )
         if self.validate_return:
             signature = signature_no_eval(self.function)
-            return_type = signature.return_annotation if signature.return_annotation is not signature.empty else Any
+            if signature.return_annotation is not signature.empty:
+                # `generate_schema()` expects an evaluated type; the return annotation
+                # may be (or contain) a string annotation or `ForwardRef` instance:
+                globalns, localns = self.ns_resolver.types_namespace
+                type_hints = get_function_type_hints(
+                    self.function, include_keys={'return'}, globalns=globalns, localns=localns
+                )
+                return_type = type_hints['return']
+            else:
+                return_type = Any
             gen_schema = GenerateSchema(self.config_wrapper, self.ns_resolver)
             schema = gen_schema.clean_schema(gen_schema.generate_schema(return_type))
             validator = create_schema_validator(

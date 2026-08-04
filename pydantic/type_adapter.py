@@ -301,7 +301,13 @@ class TypeAdapter(Generic[T]):
             schema_generator = _generate_schema.GenerateSchema(config_wrapper, ns_resolver=ns_resolver)
 
             try:
-                core_schema = schema_generator.generate_schema(self._type)
+                try:
+                    # `generate_schema()` expects an evaluated type; the adapted type may be (or contain)
+                    # a string annotation or `ForwardRef` instance (e.g. `TypeAdapter('MyType')`):
+                    tp = _typing_extra.eval_type(self._type, *ns_resolver.types_namespace)
+                except NameError as e:
+                    raise PydanticUndefinedAnnotation.from_name_error(e) from e
+                core_schema = schema_generator.generate_schema(tp)
             except PydanticUndefinedAnnotation:
                 if raise_errors:
                     raise

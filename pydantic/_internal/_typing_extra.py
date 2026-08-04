@@ -405,6 +405,51 @@ def eval_type_lenient(
     return ev
 
 
+if sys.version_info < (3, 11):
+    import functools
+    import operator
+
+    def _convert_585_forward_arguments(tp: Any, /) -> Any:
+        """Recursively convert string arguments of PEP 585 generic aliases to `ForwardRef` instances.
+
+        On Python 3.10, string arguments of PEP 585 generic aliases (e.g. `list['Foo']`) are *not*
+        converted to `ForwardRef` instances at creation time, and as such aren't evaluated by
+        `typing._eval_type()` (which only evaluates `ForwardRef` arguments). This was fixed in
+        Python 3.11 (see https://github.com/python/cpython/pull/30900).
+        """
+        if isinstance(tp, types.GenericAlias):
+            converted = tuple(
+                ForwardRef(arg) if isinstance(arg, str) else _convert_585_forward_arguments(arg) for arg in tp.__args__
+            )
+            if converted != tp.__args__:
+                return types.GenericAlias(tp.__origin__, converted)
+        elif isinstance(tp, typing._GenericAlias):  # pyright: ignore[reportAttributeAccessIssue]
+            converted = tuple(_convert_585_forward_arguments(arg) for arg in tp.__args__)
+            if converted != tp.__args__:
+                return tp.copy_with(converted)
+        elif isinstance(tp, types.UnionType):
+            converted = tuple(_convert_585_forward_arguments(arg) for arg in tp.__args__)
+            if converted != tp.__args__:
+                return functools.reduce(operator.or_, converted)
+        return tp
+
+    def _eval_type_backport(
+        value: Any,
+        globalns: GlobalsNamespace | None = None,
+        localns: MappingNamespace | None = None,
+    ) -> Any:
+        converted = _convert_585_forward_arguments(value)
+        evaluated = typing._eval_type(converted, globalns, localns)  # pyright: ignore[reportAttributeAccessIssue]
+        # A forward reference may have resolved to a PEP 585 generic alias itself containing
+        # string arguments (e.g. `ForwardRef('MyAlias')` with `MyAlias = dict[str, 'Other']`),
+        # which `typing._eval_type()` won't have evaluated. In this case, re-apply the conversion
+        # and evaluation on the result (note that implicit recursive type aliases -- e.g.
+        # `Json = list['Json']` -- will result in a `RecursionError`, handled by `eval_type()`):
+        if _convert_585_forward_arguments(evaluated) is not evaluated:
+            return _eval_type_backport(evaluated, globalns, localns)
+        return evaluated
+
+
 def _eval_type(
     value: Any,
     globalns: GlobalsNamespace | None = None,
@@ -439,6 +484,8 @@ def _eval_type(
             value, globalns, localns, type_params=type_params
         )
     else:
+        if sys.version_info < (3, 11):
+            return _eval_type_backport(value, globalns, localns)
         return typing._eval_type(  # type: ignore
             value, globalns, localns
         )

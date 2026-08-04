@@ -1037,10 +1037,7 @@ def test_invalid_forward_ref() -> None:
         class Model(BaseModel):
             foo: 'CustomType[int]'
 
-    if sys.version_info < (3, 11):
-        msg = "Unable to evaluate type annotation 'CustomType[int]'."
-    else:
-        msg = "Unable to evaluate type annotation list['CustomType[int]']."
+    msg = "Unable to evaluate type annotation list['CustomType[int]']."
 
     with pytest.raises(TypeError, match=re.escape(msg)):
 
