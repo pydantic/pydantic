@@ -281,3 +281,30 @@ def test_number_multiple_of_int_invalid(value):
             'ctx': {'multiple_of': 5},
         }
     ]
+
+
+# A number well outside of i64 range
+_BIG_NUMBER_STR = '1' + ('0' * 40)
+
+
+@pytest.mark.parametrize(
+    'input_value,expected',
+    [
+        ('123', 123),
+        ('"123"', 123),
+        ('123.0', 123),
+        ('"123.0"', 123),
+        (_BIG_NUMBER_STR, int(_BIG_NUMBER_STR)),
+        pytest.param('123.4', ValidationError, id='123.4_number'),
+        pytest.param('"123.4"', ValidationError, id='123.4_str'),
+        ('"string"', ValidationError),
+    ],
+)
+def test_int_validate_json(input_value, expected):
+    ta = TypeAdapter(int)
+
+    if expected is ValidationError:
+        with pytest.raises(ValidationError, match=r'Input should be a valid integer'):
+            ta.validate_json(input_value)
+    else:
+        assert ta.validate_json(input_value) == expected

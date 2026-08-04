@@ -100,3 +100,13 @@ def test_bool_unhashable_fails():
     assert exc_info.value.errors(include_url=False) == [
         {'type': 'bool_type', 'loc': (), 'msg': 'Input should be a valid boolean', 'input': {}}
     ]
+
+
+@pytest.mark.parametrize(
+    'input_value,output_value',
+    [('false', False), ('true', True), ('0', False), ('1', True), ('"yes"', True), ('"no"', False)],
+)
+def test_bool_validate_json(input_value, output_value):
+    ta = TypeAdapter(bool)
+
+    assert ta.validate_json(input_value) is output_value
