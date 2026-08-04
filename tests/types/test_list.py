@@ -1,10 +1,59 @@
+from collections import deque
 from typing import Annotated
 
 import annotated_types
 import dirty_equals
 import pytest
+from dirty_equals import IsOneOf
 
 from pydantic import BaseModel, ConfigDict, Field, ValidationError
+
+
+@pytest.mark.parametrize(
+    'value,result',
+    (
+        ([1, 2, '3'], [1, 2, '3']),
+        ((1, 2, '3'), [1, 2, '3']),
+        pytest.param((i**2 for i in range(5)), [0, 1, 4, 9, 16], marks=pytest.mark.thread_unsafe),
+        (deque([1, 2, 3]), [1, 2, 3]),
+        ({1, '2'}, IsOneOf([1, '2'], ['2', 1])),
+    ),
+)
+def test_list_success(value, result):
+    class Model(BaseModel):
+        v: list
+
+    assert Model(v=value).v == result
+
+
+@pytest.mark.parametrize('value', (pytest.param(123, id='int-123'), pytest.param('123', id='str-123')))
+def test_list_fails(value):
+    class Model(BaseModel):
+        v: list
+
+    with pytest.raises(ValidationError) as exc_info:
+        Model(v=value)
+    # insert_assert(exc_info.value.errors(include_url=False))
+    assert exc_info.value.errors(include_url=False) == [
+        {
+            'type': 'list_type',
+            'loc': ('v',),
+            'msg': 'Input should be a valid list',
+            'input': value,
+        }
+    ]
+
+
+def test_list_type_fails():
+    class Model(BaseModel):
+        v: list[int]
+
+    with pytest.raises(ValidationError) as exc_info:
+        Model(v='123')
+    # insert_assert(exc_info.value.errors(include_url=False))
+    assert exc_info.value.errors(include_url=False) == [
+        {'type': 'list_type', 'loc': ('v',), 'msg': 'Input should be a valid list', 'input': '123'}
+    ]
 
 
 @pytest.mark.parametrize(
