@@ -324,3 +324,13 @@ def test_python_re_respects_flags() -> None:
 
     # allows lowercase letters, even though the pattern is uppercase only due to the IGNORECASE flag
     assert ta.validate_python('abc') == 'abc'
+
+
+def test_str_validate_json():
+    ta = TypeAdapter(str)
+
+    assert ta.validate_json('"foobar"') == 'foobar'
+    with pytest.raises(ValidationError, match=r'Input should be a valid string \[type=string_type,'):
+        ta.validate_json('false')
+    with pytest.raises(ValidationError, match=r'Input should be a valid string \[type=string_type,'):
+        ta.validate_json('123')

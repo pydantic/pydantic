@@ -140,3 +140,13 @@ def test_strict_bytes_max_length():
         ta.validate_python(123)
     with pytest.raises(ValidationError, match=r'Data should have at most 5 bytes \[type=bytes_too_long,'):
         ta.validate_python(b'1234567')
+
+
+def test_bytes_validate_json():
+    ta = TypeAdapter(bytes)
+
+    assert ta.validate_json('"foobar"') == b'foobar'
+    with pytest.raises(ValidationError, match=r'Input should be a valid bytes \[type=bytes_type,'):
+        ta.validate_json('false')
+    with pytest.raises(ValidationError, match=r'Input should be a valid bytes \[type=bytes_type,'):
+        ta.validate_json('123')
