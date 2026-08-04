@@ -6,7 +6,7 @@ import re
 import sys
 import types
 import typing
-from collections.abc import Callable
+from collections.abc import Callable, MutableMapping
 from functools import partial
 from inspect import Signature, signature
 from types import NoneType
@@ -131,7 +131,7 @@ typing_base: Any = typing._Final  # pyright: ignore[reportAttributeAccessIssue]
 ### Annotation evaluations functions:
 
 
-def parent_frame_namespace(*, parent_depth: int = 2, force: bool = False) -> dict[str, Any] | None:
+def parent_frame_namespace(*, parent_depth: int = 2, force: bool = False) -> MutableMapping[str, Any] | None:
     """Fetch the local namespace of the parent frame where this function is called.
 
     Using this function is mostly useful to resolve forward annotations pointing to members defined in a local namespace,
