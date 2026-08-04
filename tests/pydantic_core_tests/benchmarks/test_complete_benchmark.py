@@ -8,7 +8,6 @@ from decimal import Decimal
 from uuid import UUID
 
 import pytest
-
 from pydantic_core import SchemaSerializer, SchemaValidator, ValidationError
 
 from .complete_schema import input_data_lax, input_data_strict, input_data_wrong, schema, wrap_schema_in_root_model

@@ -4,7 +4,6 @@ from datetime import date, datetime
 from uuid import UUID
 
 import pytest
-
 from pydantic_core import SchemaSerializer, SchemaValidator, core_schema, to_json
 
 

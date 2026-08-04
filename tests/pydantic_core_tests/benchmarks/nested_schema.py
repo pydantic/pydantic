@@ -31,7 +31,7 @@ def schema_using_defs() -> cs.CoreSchema:
     ]
     level = N
     for level in reversed(range(N)):
-        definitions.append(
+        definitions.append(  # noqa: PERF401
             {
                 'type': 'model',
                 'cls': MyModel,

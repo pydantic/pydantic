@@ -12,10 +12,9 @@ from enum import Enum
 from typing import Any
 from uuid import UUID
 
+import pydantic_core
 import pytest
 from dirty_equals import IsStr
-
-import pydantic_core
 from pydantic_core import (
     ArgsKwargs,
     CoreConfig,

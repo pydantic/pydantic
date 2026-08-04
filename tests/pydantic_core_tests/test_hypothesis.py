@@ -7,10 +7,9 @@ from typing import Optional
 import pytest
 from dirty_equals import AnyThing, IsBytes, IsStr, IsTuple
 from hypothesis import given, strategies
-from typing_extensions import TypedDict
-
 from pydantic_core import SchemaSerializer, SchemaValidator, ValidationError
 from pydantic_core import core_schema as cs
+from typing_extensions import TypedDict
 
 
 @pytest.fixture(scope='module')
