@@ -1,3 +1,4 @@
+import json
 from decimal import Decimal
 from typing import Annotated
 
@@ -10,6 +11,7 @@ from pydantic import (
     NonNegativeInt,
     NonPositiveInt,
     PositiveInt,
+    Strict,
     StrictInt,
     TypeAdapter,
     ValidationError,
@@ -109,6 +111,44 @@ def test_int_validation():
             'ctx': {'multiple_of': 5},
         },
     ]
+
+
+@pytest.mark.parametrize(
+    'strict_argument,strict_in_type,input_value,expected',
+    [
+        pytest.param(False, False, 123, 123, id='False-False-123_int-123_int'),
+        pytest.param(False, False, '123', 123, id='False-False-123_str-123_int'),
+        pytest.param(None, False, 123, 123, id='None-False-123_int-123_int'),
+        pytest.param(None, False, '123', 123, id='None-False-123_str-123_int'),
+        (True, False, 123, 123),
+        (True, False, '123', ValidationError),
+        pytest.param(False, True, 123, 123, id='False-True-123_int-123_int'),
+        pytest.param(False, True, '123', 123, id='False-True-123_str-123_int'),
+        (None, True, 123, 123),
+        (None, True, '123', ValidationError),
+        (True, True, 123, 123),
+        (True, True, '123', ValidationError),
+        pytest.param(False, None, 123, 123, id='False-None-123_int-123_int'),
+        pytest.param(False, None, '123', 123, id='False-None-123_str-123_int'),
+        pytest.param(None, None, 123, 123, id='None-None-123_int-123_int'),
+        pytest.param(None, None, '123', 123, id='None-None-123_str-123_int'),
+        (True, None, 123, 123),
+        (True, None, '123', ValidationError),
+    ],
+)
+def test_int_strict_argument(strict_argument, strict_in_type, input_value, expected):
+    """Test the interaction between the `strict` validation argument and the `Strict` metadata."""
+    tp = int if strict_in_type is None else Annotated[int, Strict(strict_in_type)]
+    ta = TypeAdapter(tp)
+
+    if expected is ValidationError:
+        with pytest.raises(ValidationError, match=r'Input should be a valid integer \[type=int_type'):
+            ta.validate_python(input_value, strict=strict_argument)
+        with pytest.raises(ValidationError, match=r'Input should be a valid integer \[type=int_type'):
+            ta.validate_json(json.dumps(input_value), strict=strict_argument)
+    else:
+        assert ta.validate_python(input_value, strict=strict_argument) == expected
+        assert ta.validate_json(json.dumps(input_value), strict=strict_argument) == expected
 
 
 def test_strict_int():
