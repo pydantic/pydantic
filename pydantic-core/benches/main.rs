@@ -506,7 +506,9 @@ fn typed_dict_deep_error(bench: &mut Bencher) {
 fn complete_model(bench: &mut Bencher) {
     Python::attach(|py| {
         let sys_path = py.import("sys").unwrap().getattr("path").unwrap();
-        sys_path.call_method1("append", ("../tests/pydantic_core/benchmarks/",)).unwrap();
+        sys_path
+            .call_method1("append", ("../tests/pydantic_core/benchmarks/",))
+            .unwrap();
 
         let complete_schema = py.import("complete_schema").unwrap();
         let schema = complete_schema.call_method0("schema").unwrap();
@@ -529,7 +531,9 @@ fn complete_model(bench: &mut Bencher) {
 fn nested_model_using_definitions(bench: &mut Bencher) {
     Python::attach(|py| {
         let sys_path = py.import("sys").unwrap().getattr("path").unwrap();
-        sys_path.call_method1("append", ("../tests/pydantic_core/benchmarks/",)).unwrap();
+        sys_path
+            .call_method1("append", ("../tests/pydantic_core/benchmarks/",))
+            .unwrap();
 
         let complete_schema = py.import("nested_schema").unwrap();
         let schema = complete_schema.call_method0("schema_using_defs").unwrap();
@@ -556,7 +560,9 @@ fn nested_model_using_definitions(bench: &mut Bencher) {
 fn nested_model_inlined(bench: &mut Bencher) {
     Python::attach(|py| {
         let sys_path = py.import("sys").unwrap().getattr("path").unwrap();
-        sys_path.call_method1("append", ("../tests/pydantic_core/benchmarks/",)).unwrap();
+        sys_path
+            .call_method1("append", ("../tests/pydantic_core/benchmarks/",))
+            .unwrap();
 
         let complete_schema = py.import("nested_schema").unwrap();
         let schema = complete_schema.call_method0("inlined_schema").unwrap();
