@@ -1274,10 +1274,13 @@ class GenerateSchema:
             return schema
 
         # Convert `@field_validator` decorators to `Before/After/Plain/WrapValidator` instances:
-        validators_from_decorators = [
-            _mode_to_validator[decorator.info.mode]._from_decorator(decorator)
-            for decorator in filter_field_decorator_info_by_field(decorators.field_validators.values(), name)
-        ]
+        if decorators.field_validators:
+            validators_from_decorators = [
+                _mode_to_validator[decorator.info.mode]._from_decorator(decorator)
+                for decorator in filter_field_decorator_info_by_field(decorators.field_validators.values(), name)
+            ]
+        else:
+            validators_from_decorators = []
 
         with self.field_name_stack.push(name):
             if field_info.discriminator is not None:
@@ -1290,18 +1293,19 @@ class GenerateSchema:
                     annotations + validators_from_decorators,
                 )
 
-        # This V1 compatibility shim should eventually be removed
-        # push down any `each_item=True` validators
-        # note that this won't work for any Annotated types that get wrapped by a function validator
-        # but that's okay because that didn't exist in V1
-        this_field_validators = filter_field_decorator_info_by_field(decorators.validators.values(), name)
-        if _validators_require_validate_default(this_field_validators):
-            field_info.validate_default = True
-        each_item_validators = [v for v in this_field_validators if v.info.each_item is True]
-        this_field_validators = [v for v in this_field_validators if v not in each_item_validators]
-        schema = apply_each_item_validators(schema, each_item_validators)
+        if decorators.validators:
+            # This V1 compatibility shim should eventually be removed
+            # push down any `each_item=True` validators
+            # note that this won't work for any Annotated types that get wrapped by a function validator
+            # but that's okay because that didn't exist in V1
+            this_field_validators = filter_field_decorator_info_by_field(decorators.validators.values(), name)
+            if _validators_require_validate_default(this_field_validators):
+                field_info.validate_default = True
+            each_item_validators = [v for v in this_field_validators if v.info.each_item is True]
+            this_field_validators = [v for v in this_field_validators if v not in each_item_validators]
+            schema = apply_each_item_validators(schema, each_item_validators)
 
-        schema = apply_validators(schema, this_field_validators)
+            schema = apply_validators(schema, this_field_validators)
 
         # the default validator needs to go outside of any other validators
         # so that it is the topmost validator for the field validator
@@ -1309,9 +1313,10 @@ class GenerateSchema:
         if not field_info.is_required():
             schema = wrap_default(field_info, schema)
 
-        schema = self._apply_field_serializers(
-            schema, filter_field_decorator_info_by_field(decorators.field_serializers.values(), name)
-        )
+        if decorators.field_serializers:
+            schema = self._apply_field_serializers(
+                schema, filter_field_decorator_info_by_field(decorators.field_serializers.values(), name)
+            )
 
         pydantic_js_updates, pydantic_js_extra = _extract_json_schema_info_from_field_info(field_info)
         core_metadata: dict[str, Any] = {}
