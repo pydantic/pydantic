@@ -1,0 +1,264 @@
+from typing import Annotated
+
+import annotated_types
+import dirty_equals
+import pytest
+
+from pydantic import BaseModel, ConfigDict, Field, ValidationError
+
+
+@pytest.mark.parametrize(
+    'value,expected',
+    [
+        (['1', '2'], ['1', '2']),
+        (('1', '2'), ['1', '2']),
+        ({'1': 1, '2': 2}.keys(), ['1', '2']),
+        ({'1': '1', '2': '2'}.values(), ['1', '2']),
+        ({'1', '2'}, dirty_equals.IsOneOf(['1', '2'], ['2', '1'])),
+        (frozenset(['1', '2']), dirty_equals.IsOneOf(['1', '2'], ['2', '1'])),
+        ({'1': 1, '2': 2}, ValidationError),
+    ],
+)
+def test_list_validation(value, expected):
+    class Model(BaseModel):
+        v: list[str]
+
+    if expected is ValidationError:
+        with pytest.raises(ValidationError):
+            Model(v=value)
+    else:
+        assert Model(v=value).v == expected
+
+
+def test_constrained_list_good():
+    class ConListModelMax(BaseModel):
+        v: list[int] = []
+
+    m = ConListModelMax(v=[1, 2, 3])
+    assert m.v == [1, 2, 3]
+
+
+def test_constrained_list_default():
+    class ConListModelMax(BaseModel):
+        v: list[int] = []
+
+    m = ConListModelMax()
+    assert m.v == []
+
+
+def test_constrained_list_too_long():
+    class ConListModelMax(BaseModel):
+        v: Annotated[list[int], annotated_types.Len(0, 10)] = []
+
+    with pytest.raises(ValidationError) as exc_info:
+        ConListModelMax(v=list(str(i) for i in range(11)))
+    # insert_assert(exc_info.value.errors(include_url=False))
+    assert exc_info.value.errors(include_url=False) == [
+        {
+            'type': 'too_long',
+            'loc': ('v',),
+            'msg': 'List should have at most 10 items after validation, not 11',
+            'input': ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '10'],
+            'ctx': {'field_type': 'List', 'max_length': 10, 'actual_length': 11},
+        }
+    ]
+
+
+def test_constrained_list_too_short():
+    class ConListModelMin(BaseModel):
+        v: Annotated[list[int], annotated_types.Len(1)]
+
+    with pytest.raises(ValidationError) as exc_info:
+        ConListModelMin(v=[])
+    # insert_assert(exc_info.value.errors(include_url=False))
+    assert exc_info.value.errors(include_url=False) == [
+        {
+            'type': 'too_short',
+            'loc': ('v',),
+            'msg': 'List should have at least 1 item after validation, not 0',
+            'input': [],
+            'ctx': {'field_type': 'List', 'min_length': 1, 'actual_length': 0},
+        }
+    ]
+
+
+def test_constrained_list_optional():
+    class Model(BaseModel):
+        req: Annotated[list[str], annotated_types.Len(1)] | None
+        opt: Annotated[list[str], annotated_types.Len(1)] | None = None
+
+    assert Model(req=None).model_dump() == {'req': None, 'opt': None}
+    assert Model(req=None, opt=None).model_dump() == {'req': None, 'opt': None}
+
+    with pytest.raises(ValidationError) as exc_info:
+        Model(req=[], opt=[])
+    # insert_assert(exc_info.value.errors(include_url=False))
+    assert exc_info.value.errors(include_url=False) == [
+        {
+            'type': 'too_short',
+            'loc': ('req',),
+            'msg': 'List should have at least 1 item after validation, not 0',
+            'input': [],
+            'ctx': {'field_type': 'List', 'min_length': 1, 'actual_length': 0},
+        },
+        {
+            'type': 'too_short',
+            'loc': ('opt',),
+            'msg': 'List should have at least 1 item after validation, not 0',
+            'input': [],
+            'ctx': {'field_type': 'List', 'min_length': 1, 'actual_length': 0},
+        },
+    ]
+
+    assert Model(req=['a'], opt=['a']).model_dump() == {'req': ['a'], 'opt': ['a']}
+
+
+def test_constrained_list_constraints():
+    class ConListModelBoth(BaseModel):
+        v: Annotated[list[int], annotated_types.Len(7, 11)]
+
+    m = ConListModelBoth(v=list(range(7)))
+    assert m.v == list(range(7))
+
+    m = ConListModelBoth(v=list(range(11)))
+    assert m.v == list(range(11))
+
+    with pytest.raises(ValidationError) as exc_info:
+        ConListModelBoth(v=list(range(6)))
+    # insert_assert(exc_info.value.errors(include_url=False))
+    assert exc_info.value.errors(include_url=False) == [
+        {
+            'type': 'too_short',
+            'loc': ('v',),
+            'msg': 'List should have at least 7 items after validation, not 6',
+            'input': [0, 1, 2, 3, 4, 5],
+            'ctx': {'field_type': 'List', 'min_length': 7, 'actual_length': 6},
+        }
+    ]
+
+    with pytest.raises(ValidationError) as exc_info:
+        ConListModelBoth(v=list(range(12)))
+    # insert_assert(exc_info.value.errors(include_url=False))
+    assert exc_info.value.errors(include_url=False) == [
+        {
+            'type': 'too_long',
+            'loc': ('v',),
+            'msg': 'List should have at most 11 items after validation, not 12',
+            'input': [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11],
+            'ctx': {'field_type': 'List', 'max_length': 11, 'actual_length': 12},
+        }
+    ]
+
+    with pytest.raises(ValidationError) as exc_info:
+        ConListModelBoth(v=1)
+    # insert_assert(exc_info.value.errors(include_url=False))
+    assert exc_info.value.errors(include_url=False) == [
+        {'type': 'list_type', 'loc': ('v',), 'msg': 'Input should be a valid list', 'input': 1}
+    ]
+
+
+def test_constrained_list_item_type_fails():
+    class ConListModel(BaseModel):
+        v: list[int] = []
+
+    with pytest.raises(ValidationError) as exc_info:
+        ConListModel(v=['a', 'b', 'c'])
+    # insert_assert(exc_info.value.errors(include_url=False))
+    assert exc_info.value.errors(include_url=False) == [
+        {
+            'type': 'int_parsing',
+            'loc': ('v', 0),
+            'msg': 'Input should be a valid integer, unable to parse string as an integer',
+            'input': 'a',
+        },
+        {
+            'type': 'int_parsing',
+            'loc': ('v', 1),
+            'msg': 'Input should be a valid integer, unable to parse string as an integer',
+            'input': 'b',
+        },
+        {
+            'type': 'int_parsing',
+            'loc': ('v', 2),
+            'msg': 'Input should be a valid integer, unable to parse string as an integer',
+            'input': 'c',
+        },
+    ]
+
+
+def test_conlist():
+    class Model(BaseModel):
+        foo: list[int] = Field(min_length=2, max_length=4)
+        bar: Annotated[list[str], annotated_types.Len(1, 4)] = None
+
+    assert Model(foo=[1, 2], bar=['spoon']).model_dump() == {'foo': [1, 2], 'bar': ['spoon']}
+
+    msg = r'List should have at least 2 items after validation, not 1 \[type=too_short,'
+    with pytest.raises(ValidationError, match=msg):
+        Model(foo=[1])
+
+    msg = r'List should have at most 4 items after validation, not 5 \[type=too_long,'
+    with pytest.raises(ValidationError, match=msg):
+        Model(foo=list(range(5)))
+
+    with pytest.raises(ValidationError) as exc_info:
+        Model(foo=[1, 'x', 'y'])
+    # insert_assert(exc_info.value.errors(include_url=False))
+    assert exc_info.value.errors(include_url=False) == [
+        {
+            'type': 'int_parsing',
+            'loc': ('foo', 1),
+            'msg': 'Input should be a valid integer, unable to parse string as an integer',
+            'input': 'x',
+        },
+        {
+            'type': 'int_parsing',
+            'loc': ('foo', 2),
+            'msg': 'Input should be a valid integer, unable to parse string as an integer',
+            'input': 'y',
+        },
+    ]
+
+    with pytest.raises(ValidationError) as exc_info:
+        Model(foo=1)
+    # insert_assert(exc_info.value.errors(include_url=False))
+    assert exc_info.value.errors(include_url=False) == [
+        {'type': 'list_type', 'loc': ('foo',), 'msg': 'Input should be a valid list', 'input': 1}
+    ]
+
+
+def test_conlist_wrong_type_default():
+    """It should not validate default value by default"""
+
+    class Model(BaseModel):
+        v: list[int] = 'a'
+
+    m = Model()
+    assert m.v == 'a'
+
+
+def test_list_strict() -> None:
+    class LaxModel(BaseModel):
+        v: list[int]
+
+        model_config = ConfigDict(strict=False)
+
+    class StrictModel(BaseModel):
+        v: list[int]
+
+        model_config = ConfigDict(strict=True)
+
+    assert LaxModel(v=(1, 2)).v == [1, 2]
+    assert LaxModel(v=('1', 2)).v == [1, 2]
+    # Tuple should be rejected
+    with pytest.raises(ValidationError) as exc_info:
+        StrictModel(v=(1, 2))
+    assert exc_info.value.errors(include_url=False) == [
+        {'type': 'list_type', 'loc': ('v',), 'msg': 'Input should be a valid list', 'input': (1, 2)}
+    ]
+    # Strict in each list item
+    with pytest.raises(ValidationError) as exc_info:
+        StrictModel(v=['1', 2])
+    assert exc_info.value.errors(include_url=False) == [
+        {'type': 'int_type', 'loc': ('v', 0), 'msg': 'Input should be a valid integer', 'input': '1'}
+    ]
