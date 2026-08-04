@@ -1,5 +1,5 @@
 .DEFAULT_GOAL := all
-sources = python/pydantic_core tests wasm-preview/run_tests.py
+sources = python/pydantic_core wasm-preview/run_tests.py
 
 mypy-stubtest = uv run python -m mypy.stubtest pydantic_core._pydantic_core --allowlist .mypy-stubtest-allowlist
 # using --no-sync to avoid uv automatically rebuilding pydantic-core
@@ -59,7 +59,7 @@ build-pgo:
 	@rm -f python/pydantic_core/*.so
 	$(eval PROFDATA := $(shell mktemp -d))
 	RUSTFLAGS='-Cprofile-generate=$(PROFDATA)' $(uv-run-no-sync) maturin develop --uv --release
-	$(uv-run-no-sync) pytest tests/benchmarks
+	$(uv-run-no-sync) pytest ../tests/pydantic_core/benchmarks
 	$(eval LLVM_PROFDATA := $(shell rustup run stable bash -c 'echo $$RUSTUP_HOME/toolchains/$$RUSTUP_TOOLCHAIN/lib/rustlib/$$(rustc -Vv | grep host | cut -d " " -f 2)/bin/llvm-profdata'))
 	$(LLVM_PROFDATA) merge -o $(PROFDATA)/merged.profdata $(PROFDATA)
 	RUSTFLAGS='-Cprofile-use=$(PROFDATA)/merged.profdata' $(uv-run-no-sync) maturin develop --uv --release
