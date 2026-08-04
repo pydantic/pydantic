@@ -119,8 +119,8 @@ testing-extra = [
     'devtools',
     # used in docs tests
     'sqlalchemy',
-    'pytest-memray; platform_python_implementation == "CPython" and platform_system != "Windows"',
-    'memray; platform_python_implementation == "CPython" and platform_system != "Windows"',
+    'pytest-memray; platform_python_implementation == "CPython" and platform_system != "Windows" and python_version < "3.15"',
+    'memray; platform_python_implementation == "CPython" and platform_system != "Windows" and python_version < "3.15"',
 ]
 typechecking = [
     'mypy',
@@ -206,7 +206,6 @@ default-groups = ['dev']
 required-version = '>=0.8.4'
 
 [tool.uv.sources]
-memray = { git = "https://github.com/bloomberg/memray" }  # Until 3.15 wheels are published
 pydantic-core = { workspace = true }
 pydantic-docs = { git = "https://github.com/pydantic/pydantic-docs" }
 
