@@ -133,29 +133,11 @@ except ImportError:
 # TODO add back tests for Iterator
 
 
-@pytest.fixture(scope='session', name='ConBytesModel')
-def con_bytes_model_fixture():
-    class ConBytesModel(BaseModel):
-        v: conbytes(max_length=10) = b'foobar'
-
-    return ConBytesModel
-
-
 def test_optional():
     ta = TypeAdapter(Optional[int])  # noqa: UP045
 
     assert ta.validate_python(None) is None
     assert ta.validate_python(1) == 1
-
-
-def test_constrained_bytes_good(ConBytesModel):
-    m = ConBytesModel(v=b'short')
-    assert m.v == b'short'
-
-
-def test_constrained_bytes_default(ConBytesModel):
-    m = ConBytesModel()
-    assert m.v == b'foobar'
 
 
 def test_strict_raw_type():
@@ -165,76 +147,6 @@ def test_strict_raw_type():
     assert Model(v='foo').v == 'foo'
     with pytest.raises(ValidationError, match=r'Input should be a valid string \[type=string_type,'):
         Model(v=b'fo')
-
-
-@pytest.mark.parametrize(
-    ('data', 'valid'),
-    [(b'this is too long', False), ('⪶⓲⽷01'.encode(), False), (b'not long90', True), ('⪶⓲⽷0'.encode(), True)],
-)
-def test_constrained_bytes_too_long(ConBytesModel, data: bytes, valid: bool):
-    if valid:
-        assert ConBytesModel(v=data).model_dump() == {'v': data}
-    else:
-        with pytest.raises(ValidationError) as exc_info:
-            ConBytesModel(v=data)
-        # insert_assert(exc_info.value.errors(include_url=False))
-        assert exc_info.value.errors(include_url=False) == [
-            {
-                'ctx': {'max_length': 10},
-                'input': data,
-                'loc': ('v',),
-                'msg': 'Data should have at most 10 bytes',
-                'type': 'bytes_too_long',
-            }
-        ]
-
-
-def test_constrained_bytes_strict_true():
-    class Model(BaseModel):
-        v: conbytes(strict=True)
-
-    assert Model(v=b'foobar').v == b'foobar'
-    with pytest.raises(ValidationError):
-        Model(v=bytearray('foobar', 'utf-8'))
-
-    with pytest.raises(ValidationError):
-        Model(v='foostring')
-
-    with pytest.raises(ValidationError):
-        Model(v=42)
-
-    with pytest.raises(ValidationError):
-        Model(v=0.42)
-
-
-def test_constrained_bytes_strict_false():
-    class Model(BaseModel):
-        v: conbytes(strict=False)
-
-    assert Model(v=b'foobar').v == b'foobar'
-    assert Model(v=bytearray('foobar', 'utf-8')).v == b'foobar'
-    assert Model(v='foostring').v == b'foostring'
-
-    with pytest.raises(ValidationError):
-        Model(v=42)
-
-    with pytest.raises(ValidationError):
-        Model(v=0.42)
-
-
-def test_constrained_bytes_strict_default():
-    class Model(BaseModel):
-        v: conbytes()
-
-    assert Model(v=b'foobar').v == b'foobar'
-    assert Model(v=bytearray('foobar', 'utf-8')).v == b'foobar'
-    assert Model(v='foostring').v == b'foostring'
-
-    with pytest.raises(ValidationError):
-        Model(v=42)
-
-    with pytest.raises(ValidationError):
-        Model(v=0.42)
 
 
 def test_constrained_list_good():
@@ -1251,7 +1163,6 @@ def check_model_fixture():
     class CheckModel(BaseModel):
         bool_check: bool = True
         str_check: constr(strip_whitespace=True, max_length=10) = 's'
-        bytes_check: bytes = b's'
         int_check: int = 1
         float_check: float = 1.0
         uuid_check: UUID = UUID('7bd00d58-6485-4ca6-b889-3da6d8df3ee4')
@@ -1339,16 +1250,6 @@ class BoolCastable:
         pytest.param('str_check', b'x' * 11, ValidationError, id='str_check-too_long_bytes-ValidationError'),
         ('str_check', b'\x81', ValidationError),
         ('str_check', bytearray(b'\x81' * 5), ValidationError),
-        pytest.param('bytes_check', 's', b's', id='bytes_check-s_str-s_bytes'),
-        pytest.param('bytes_check', '  s  ', b'  s  ', id='bytes_check-s_stripped-s_bytes'),
-        pytest.param('bytes_check', b's', b's', id='bytes_check-s_bytes-s_bytes'),
-        ('bytes_check', 1, ValidationError),
-        ('bytes_check', bytearray('xx', encoding='utf8'), b'xx'),
-        ('bytes_check', True, ValidationError),
-        ('bytes_check', False, ValidationError),
-        ('bytes_check', {}, ValidationError),
-        pytest.param('bytes_check', 'x' * 11, b'x' * 11, id='bytes_check-too_long_str-b_bytes'),
-        pytest.param('bytes_check', b'x' * 11, b'x' * 11, id='bytes_check-too_long_bytes-b_bytes'),
         pytest.param('int_check', 1, 1, id='int_check-1_int-1_int'),
         ('int_check', 1.0, 1),
         ('int_check', 1.9, ValidationError),
@@ -2857,36 +2758,6 @@ def test_finite_float_config():
             'input': HasRepr('nan'),
         }
     ]
-
-
-def test_strict_bytes():
-    class Model(BaseModel):
-        v: StrictBytes
-
-    assert Model(v=b'foobar').v == b'foobar'
-    with pytest.raises(ValidationError, match='Input should be a valid bytes'):
-        Model(v=bytearray('foobar', 'utf-8'))
-
-    with pytest.raises(ValidationError, match='Input should be a valid bytes'):
-        Model(v='foostring')
-
-    with pytest.raises(ValidationError, match='Input should be a valid bytes'):
-        Model(v=42)
-
-    with pytest.raises(ValidationError, match='Input should be a valid bytes'):
-        Model(v=0.42)
-
-
-def test_strict_bytes_max_length():
-    class Model(BaseModel):
-        u: StrictBytes = Field(max_length=5)
-
-    assert Model(u=b'foo').u == b'foo'
-
-    with pytest.raises(ValidationError, match=r'Input should be a valid bytes \[type=bytes_type'):
-        Model(u=123)
-    with pytest.raises(ValidationError, match=r'Data should have at most 5 bytes \[type=bytes_too_long,'):
-        Model(u=b'1234567')
 
 
 def test_strict_str():
