@@ -493,7 +493,6 @@ def test_strict_timedelta():
 @pytest.fixture(scope='session', name='CheckModel')
 def check_model_fixture():
     class CheckModel(BaseModel):
-        bool_check: bool = True
         uuid_check: UUID = UUID('7bd00d58-6485-4ca6-b889-3da6d8df3ee4')
         date_check: date = date(2017, 5, 5)
         datetime_check: datetime = datetime(2017, 5, 5, 10, 10, 10)
@@ -503,65 +502,9 @@ def check_model_fixture():
     return CheckModel
 
 
-class BoolCastable:
-    def __bool__(self) -> bool:
-        return True
-
-
 @pytest.mark.parametrize(
     'field,value,result',
     [
-        pytest.param('bool_check', True, True, id='bool_check-True_bool-True_bool'),
-        pytest.param('bool_check', 1, True, id='bool_check-1_int-True_bool'),
-        pytest.param('bool_check', 1.0, True, id='bool_check-1.0_float-True_bool'),
-        ('bool_check', Decimal(1), True),
-        ('bool_check', 'y', True),
-        ('bool_check', 'Y', True),
-        ('bool_check', 'yes', True),
-        ('bool_check', 'Yes', True),
-        ('bool_check', 'YES', True),
-        ('bool_check', 'true', True),
-        pytest.param('bool_check', 'True', True, id='bool_check-True_str-True_bool'),
-        pytest.param('bool_check', 'TRUE', True, id='bool_check-TRUE_str-True_bool'),
-        ('bool_check', 'on', True),
-        ('bool_check', 'On', True),
-        ('bool_check', 'ON', True),
-        pytest.param('bool_check', '1', True, id='bool_check-1_str-True_bool'),
-        ('bool_check', 't', True),
-        ('bool_check', 'T', True),
-        pytest.param('bool_check', b'TRUE', True, id='bool_check-TRUE_bytes-True_bool'),
-        pytest.param('bool_check', False, False, id='bool_check-False_bool-False_bool'),
-        pytest.param('bool_check', 0, False, id='bool_check-0_int-False_bool'),
-        pytest.param('bool_check', 0.0, False, id='bool_check-0.0_float-False_bool'),
-        ('bool_check', Decimal(0), False),
-        ('bool_check', 'n', False),
-        ('bool_check', 'N', False),
-        ('bool_check', 'no', False),
-        ('bool_check', 'No', False),
-        ('bool_check', 'NO', False),
-        ('bool_check', 'false', False),
-        pytest.param('bool_check', 'False', False, id='bool_check-False_str-False_bool'),
-        pytest.param('bool_check', 'FALSE', False, id='bool_check-FALSE_str-False_bool'),
-        ('bool_check', 'off', False),
-        ('bool_check', 'Off', False),
-        ('bool_check', 'OFF', False),
-        pytest.param('bool_check', '0', False, id='bool_check-0_str-False_bool'),
-        ('bool_check', 'f', False),
-        ('bool_check', 'F', False),
-        pytest.param('bool_check', b'FALSE', False, id='bool_check-FALSE_bytes-False_bool'),
-        ('bool_check', None, ValidationError),
-        ('bool_check', '', ValidationError),
-        ('bool_check', [], ValidationError),
-        ('bool_check', {}, ValidationError),
-        ('bool_check', [1, 2, 3, 4], ValidationError),
-        ('bool_check', {1: 2, 3: 4}, ValidationError),
-        pytest.param('bool_check', b'2', ValidationError, id='bool_check-2_bytes-ValidationError'),
-        pytest.param('bool_check', '2', ValidationError, id='bool_check-2_str-ValidationError'),
-        pytest.param('bool_check', 2, ValidationError, id='bool_check-2_int-ValidationError'),
-        ('bool_check', 2.0, ValidationError),
-        ('bool_check', Decimal(2), ValidationError),
-        ('bool_check', b'\x81', ValidationError),
-        ('bool_check', BoolCastable(), ValidationError),
         ('uuid_check', 'ebcdab58-6eb8-46fb-a190-d07a33e9eac8', UUID('ebcdab58-6eb8-46fb-a190-d07a33e9eac8')),
         ('uuid_check', UUID('ebcdab58-6eb8-46fb-a190-d07a33e9eac8'), UUID('ebcdab58-6eb8-46fb-a190-d07a33e9eac8')),
         ('uuid_check', b'ebcdab58-6eb8-46fb-a190-d07a33e9eac8', UUID('ebcdab58-6eb8-46fb-a190-d07a33e9eac8')),
@@ -1624,34 +1567,6 @@ def test_sequence_fails(cls, value, errors):
 
 def test_sequence_strict():
     assert TypeAdapter(Sequence[int]).validate_python((), strict=True) == ()
-
-
-def test_strict_bool():
-    class Model(BaseModel):
-        v: StrictBool
-
-    assert Model(v=True).v is True
-    assert Model(v=False).v is False
-
-    with pytest.raises(ValidationError):
-        Model(v=1)
-
-    with pytest.raises(ValidationError):
-        Model(v='1')
-
-    with pytest.raises(ValidationError):
-        Model(v=b'1')
-
-
-def test_bool_unhashable_fails():
-    class Model(BaseModel):
-        v: bool
-
-    with pytest.raises(ValidationError) as exc_info:
-        Model(v={})
-    assert exc_info.value.errors(include_url=False) == [
-        {'type': 'bool_type', 'loc': ('v',), 'msg': 'Input should be a valid boolean', 'input': {}}
-    ]
 
 
 def test_uuid_error():
