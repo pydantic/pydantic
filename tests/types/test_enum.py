@@ -17,41 +17,33 @@ from pydantic import (
 )
 
 
-@pytest.fixture(scope='session')
-def cooking_model():
-    class FruitEnum(str, Enum):
-        pear = 'pear'
-        banana = 'banana'
-
+def test_enum_successful():
     class ToolEnum(IntEnum):
         spanner = 1
         wrench = 2
 
-    class CookingModel(BaseModel):
-        fruit: FruitEnum = FruitEnum.pear
-        tool: ToolEnum = ToolEnum.spanner
+    ta = TypeAdapter(ToolEnum)
 
-    return FruitEnum, ToolEnum, CookingModel
-
-
-def test_enum_successful(cooking_model):
-    FruitEnum, ToolEnum, CookingModel = cooking_model
-    m = CookingModel(tool=2)
-    assert m.fruit == FruitEnum.pear
-    assert m.tool == ToolEnum.wrench
-    assert repr(m.tool) == '<ToolEnum.wrench: 2>'
+    v = ta.validate_python(2)
+    assert v == ToolEnum.wrench
+    assert repr(v) == '<ToolEnum.wrench: 2>'
 
 
-def test_enum_fails(cooking_model):
-    FruitEnum, ToolEnum, CookingModel = cooking_model
+def test_enum_fails():
+    class ToolEnum(IntEnum):
+        spanner = 1
+        wrench = 2
+
+    ta = TypeAdapter(ToolEnum)
+
     with pytest.raises(ValueError) as exc_info:
-        CookingModel(tool=3)
+        ta.validate_python(3)
     # insert_assert(exc_info.value.errors(include_url=False))
     assert exc_info.value.errors(include_url=False) == [
         {
             'ctx': {'expected': '1 or 2'},
             'input': 3,
-            'loc': ('tool',),
+            'loc': (),
             'msg': 'Input should be 1 or 2',
             'type': 'enum',
         }
@@ -64,16 +56,15 @@ def test_enum_fails_error_msg():
         two = 2
         three = 3
 
-    class Model(BaseModel):
-        num: Number
+    ta = TypeAdapter(Number)
 
     with pytest.raises(ValueError) as exc_info:
-        Model(num=4)
+        ta.validate_python(4)
     # insert_assert(exc_info.value.errors(include_url=False))
     assert exc_info.value.errors(include_url=False) == [
         {
             'type': 'enum',
-            'loc': ('num',),
+            'loc': (),
             'msg': 'Input should be 1, 2 or 3',
             'input': 4,
             'ctx': {'expected': '1, 2 or 3'},
@@ -81,11 +72,16 @@ def test_enum_fails_error_msg():
     ]
 
 
-def test_int_enum_successful_for_str_int(cooking_model):
-    FruitEnum, ToolEnum, CookingModel = cooking_model
-    m = CookingModel(tool='2')
-    assert m.tool == ToolEnum.wrench
-    assert repr(m.tool) == '<ToolEnum.wrench: 2>'
+def test_int_enum_successful_for_str_int():
+    class ToolEnum(IntEnum):
+        spanner = 1
+        wrench = 2
+
+    ta = TypeAdapter(ToolEnum)
+
+    v = ta.validate_python('2')
+    assert v == ToolEnum.wrench
+    assert repr(v) == '<ToolEnum.wrench: 2>'
 
 
 def test_plain_enum_validate():

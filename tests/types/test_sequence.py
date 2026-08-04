@@ -19,24 +19,22 @@ from pydantic import BaseModel, PydanticSchemaGenerationError, TypeAdapter, Vali
     ),
 )
 def test_sequence_success(cls, value, result):
-    class Model(BaseModel):
-        v: Sequence[cls]
+    ta = TypeAdapter(Sequence[cls])
 
-    assert Model(v=value).v == result
+    assert ta.validate_python(value) == result
 
 
 def test_sequence_generator_fails():
-    class Model(BaseModel):
-        v: Sequence[int]
+    ta = TypeAdapter(Sequence[int])
 
     gen = (i for i in [1, 2, 3])
     with pytest.raises(ValidationError) as exc_info:
-        Model(v=gen)
+        ta.validate_python(gen)
     # insert_assert(exc_info.value.errors(include_url=False))
     assert exc_info.value.errors(include_url=False) == [
         {
             'type': 'is_instance_of',
-            'loc': ('v',),
+            'loc': (),
             'msg': 'Input should be an instance of Sequence',
             'input': gen,
             'ctx': {'class': 'Sequence'},
@@ -53,7 +51,7 @@ def test_sequence_generator_fails():
             [
                 {
                     'type': 'int_parsing',
-                    'loc': ('v', 1),
+                    'loc': (1,),
                     'msg': 'Input should be a valid integer, unable to parse string as an integer',
                     'input': 'a',
                 },
@@ -65,7 +63,7 @@ def test_sequence_generator_fails():
             [
                 {
                     'type': 'int_parsing',
-                    'loc': ('v', 2),
+                    'loc': (2,),
                     'msg': 'Input should be a valid integer, unable to parse string as an integer',
                     'input': 'a',
                 },
@@ -77,7 +75,7 @@ def test_sequence_generator_fails():
             [
                 {
                     'type': 'float_parsing',
-                    'loc': ('v', 0),
+                    'loc': (0,),
                     'msg': 'Input should be a valid number, unable to parse string as a number',
                     'input': 'a',
                 },
@@ -89,7 +87,7 @@ def test_sequence_generator_fails():
             [
                 {
                     'type': 'float_parsing',
-                    'loc': ('v', 2),
+                    'loc': (2,),
                     'msg': 'Input should be a valid number, unable to parse string as a number',
                     'input': 'a',
                 },
@@ -101,7 +99,7 @@ def test_sequence_generator_fails():
             [
                 {
                     'type': 'is_instance_of',
-                    'loc': ('v',),
+                    'loc': (),
                     'msg': 'Input should be an instance of Sequence',
                     'input': {
                         1.0,
@@ -120,7 +118,7 @@ def test_sequence_generator_fails():
             [
                 {
                     'type': 'int_parsing',
-                    'loc': ('v', 2, 0),
+                    'loc': (2, 0),
                     'msg': 'Input should be a valid integer, unable to parse string as an integer',
                     'input': 'd',
                 }
@@ -132,7 +130,7 @@ def test_sequence_generator_fails():
             [
                 {
                     'type': 'int_parsing',
-                    'loc': ('v', 1, 0),
+                    'loc': (1, 0),
                     'msg': 'Input should be a valid integer, unable to parse string as an integer',
                     'input': 'a',
                 }
@@ -144,7 +142,7 @@ def test_sequence_generator_fails():
             [
                 {
                     'type': 'list_type',
-                    'loc': ('v', 0),
+                    'loc': (0,),
                     'msg': 'Input should be a valid list',
                     'input': {'a': 1, 'b': 2},
                 }
@@ -154,11 +152,10 @@ def test_sequence_generator_fails():
     ids=repr,
 )
 def test_sequence_fails(cls, value, errors):
-    class Model(BaseModel):
-        v: Sequence[cls]
+    ta = TypeAdapter(Sequence[cls])
 
     with pytest.raises(ValidationError) as exc_info:
-        Model(v=value)
+        ta.validate_python(value)
     assert exc_info.value.errors(include_url=False) == errors
 
 
@@ -183,9 +180,7 @@ def test_sequence_subclass_without_core_schema() -> None:
     with pytest.raises(
         PydanticSchemaGenerationError, match='implement `__get_pydantic_core_schema__` on your type to fully support it'
     ):
-
-        class _(BaseModel):
-            x: MyList
+        TypeAdapter(MyList)
 
 
 def test_can_serialize_deque_passed_to_sequence() -> None:
@@ -202,8 +197,7 @@ def test_sequence_with_nested_type(sequence_type: type) -> None:
     class Model(BaseModel):
         a: int
 
-    class OuterModel(BaseModel):
-        inner: Sequence[Model]
+    ta = TypeAdapter(Sequence[Model])
 
     models = sequence_type([Model(a=1), Model(a=2)])
-    assert OuterModel(inner=models).model_dump() == {'inner': sequence_type([{'a': 1}, {'a': 2}])}
+    assert ta.dump_python(ta.validate_python(models)) == sequence_type([{'a': 1}, {'a': 2}])

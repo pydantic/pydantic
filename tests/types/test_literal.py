@@ -4,21 +4,20 @@ from typing import Literal
 import pytest
 import typing_extensions
 
-from pydantic import BaseModel, ValidationError
+from pydantic import TypeAdapter, ValidationError
 
 
 def test_literal_single():
-    class Model(BaseModel):
-        a: Literal['a']
+    ta = TypeAdapter(Literal['a'])
 
-    Model(a='a')
+    assert ta.validate_python('a') == 'a'
     with pytest.raises(ValidationError) as exc_info:
-        Model(a='b')
+        ta.validate_python('b')
     # insert_assert(exc_info.value.errors(include_url=False))
     assert exc_info.value.errors(include_url=False) == [
         {
             'type': 'literal_error',
-            'loc': ('a',),
+            'loc': (),
             'msg': "Input should be 'a'",
             'input': 'b',
             'ctx': {'expected': "'a'"},
@@ -27,18 +26,17 @@ def test_literal_single():
 
 
 def test_literal_multiple():
-    class Model(BaseModel):
-        a_or_b: Literal['a', 'b']
+    ta = TypeAdapter(Literal['a', 'b'])
 
-    Model(a_or_b='a')
-    Model(a_or_b='b')
+    assert ta.validate_python('a') == 'a'
+    assert ta.validate_python('b') == 'b'
     with pytest.raises(ValidationError) as exc_info:
-        Model(a_or_b='c')
+        ta.validate_python('c')
     # insert_assert(exc_info.value.errors(include_url=False))
     assert exc_info.value.errors(include_url=False) == [
         {
             'type': 'literal_error',
-            'loc': ('a_or_b',),
+            'loc': (),
             'msg': "Input should be 'a' or 'b'",
             'input': 'c',
             'ctx': {'expected': "'a' or 'b'"},
@@ -54,7 +52,6 @@ def test_literal_multiple():
     ],
 )
 def test_literal_field(typing_literal):
-    class Model(BaseModel):
-        foo: typing_literal['foo']  # noqa: F821
+    ta = TypeAdapter(typing_literal['foo'])
 
-    assert Model(foo='foo').foo == 'foo'
+    assert ta.validate_python('foo') == 'foo'

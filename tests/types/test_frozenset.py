@@ -4,7 +4,7 @@ from typing import Annotated
 import annotated_types
 import pytest
 
-from pydantic import BaseModel, ConfigDict, Field, ValidationError
+from pydantic import BaseModel, Field, TypeAdapter, ValidationError
 
 
 @pytest.mark.parametrize(
@@ -20,57 +20,53 @@ from pydantic import BaseModel, ConfigDict, Field, ValidationError
     ],
 )
 def test_frozenset_validation(value, expected):
-    class Model(BaseModel):
-        v: frozenset[str]
+    ta = TypeAdapter(frozenset[str])
 
     if expected is ValidationError:
         with pytest.raises(ValidationError):
-            Model(v=value)
+            ta.validate_python(value)
     else:
-        assert Model(v=value).v == expected
+        assert ta.validate_python(value) == expected
 
 
 def test_constrained_frozenset():
-    class Model(BaseModel):
-        foo: frozenset[int] = Field(min_length=2, max_length=4)
-        bar: Annotated[frozenset[str], annotated_types.Len(1, 4)] = None
+    ta = TypeAdapter(Annotated[frozenset[int], Field(min_length=2, max_length=4)])
 
-    m = Model(foo=[1, 2], bar=['spoon'])
-    assert m.model_dump() == {'foo': {1, 2}, 'bar': {'spoon'}}
-    assert isinstance(m.foo, frozenset)
-    assert isinstance(m.bar, frozenset)
+    v = ta.validate_python([1, 2])
+    assert v == {1, 2}
+    assert isinstance(v, frozenset)
 
-    assert Model(foo=[1, 1, 1, 2, 2], bar=['spoon']).model_dump() == {'foo': {1, 2}, 'bar': {'spoon'}}
+    assert ta.validate_python([1, 1, 1, 2, 2]) == {1, 2}
 
     with pytest.raises(ValidationError, match='Frozenset should have at least 2 items after validation, not 1'):
-        Model(foo=[1])
+        ta.validate_python([1])
 
     with pytest.raises(ValidationError, match='Frozenset should have at most 4 items after validation, not more'):
-        Model(foo=list(range(5)))
+        ta.validate_python(list(range(5)))
 
     with pytest.raises(ValidationError) as exc_info:
-        Model(foo=[1, 'x', 'y'])
+        ta.validate_python([1, 'x', 'y'])
     # insert_assert(exc_info.value.errors(include_url=False))
     assert exc_info.value.errors(include_url=False) == [
         {
             'type': 'int_parsing',
-            'loc': ('foo', 1),
+            'loc': (1,),
             'msg': 'Input should be a valid integer, unable to parse string as an integer',
             'input': 'x',
         },
         {
             'type': 'int_parsing',
-            'loc': ('foo', 2),
+            'loc': (2,),
             'msg': 'Input should be a valid integer, unable to parse string as an integer',
             'input': 'y',
         },
     ]
 
     with pytest.raises(ValidationError) as exc_info:
-        Model(foo=1)
+        ta.validate_python(1)
     # insert_assert(exc_info.value.errors(include_url=False))
     assert exc_info.value.errors(include_url=False) == [
-        {'type': 'frozen_set_type', 'loc': ('foo',), 'msg': 'Input should be a valid frozenset', 'input': 1}
+        {'type': 'frozen_set_type', 'loc': (), 'msg': 'Input should be a valid frozenset', 'input': 1}
     ]
 
 
@@ -114,32 +110,24 @@ def test_constrained_frozenset_optional():
 
 
 def test_frozenset_strict() -> None:
-    class LaxModel(BaseModel):
-        v: frozenset[int]
+    ta = TypeAdapter(frozenset[int])
 
-        model_config = ConfigDict(strict=False)
-
-    class StrictModel(BaseModel):
-        v: frozenset[int]
-
-        model_config = ConfigDict(strict=True)
-
-    assert LaxModel(v=(1, 2)).v == frozenset((1, 2))
-    assert LaxModel(v=('1', 2)).v == frozenset((1, 2))
+    assert ta.validate_python((1, 2)) == frozenset((1, 2))
+    assert ta.validate_python(('1', 2)) == frozenset((1, 2))
     # Tuple should be rejected
     with pytest.raises(ValidationError) as exc_info:
-        StrictModel(v=(1, 2))
+        ta.validate_python((1, 2), strict=True)
     assert exc_info.value.errors(include_url=False) == [
         {
             'type': 'frozen_set_type',
-            'loc': ('v',),
+            'loc': (),
             'msg': 'Input should be a valid frozenset',
             'input': (1, 2),
         }
     ]
     # Strict in each set item
     with pytest.raises(ValidationError) as exc_info:
-        StrictModel(v=frozenset(('1', 2)))
+        ta.validate_python(frozenset(('1', 2)), strict=True)
     err_info = exc_info.value.errors(include_url=False)
     # Sets are not ordered
     del err_info[0]['loc']
@@ -147,13 +135,10 @@ def test_frozenset_strict() -> None:
 
 
 def test_frozenset_field():
-    class FrozenSetModel(BaseModel):
-        set: frozenset[int]
+    ta = TypeAdapter(frozenset[int])
 
     test_set = frozenset({1, 2, 3})
-    object_under_test = FrozenSetModel(set=test_set)
-
-    assert object_under_test.set == test_set
+    assert ta.validate_python(test_set) == test_set
 
 
 @pytest.mark.parametrize(
@@ -166,17 +151,13 @@ def test_frozenset_field():
     ],
 )
 def test_frozenset_field_conversion(value, result):
-    class FrozenSetModel(BaseModel):
-        set: frozenset[int]
+    ta = TypeAdapter(frozenset[int])
 
-    object_under_test = FrozenSetModel(set=value)
-
-    assert object_under_test.set == result
+    assert ta.validate_python(value) == result
 
 
 def test_frozenset_field_not_convertible():
-    class FrozenSetModel(BaseModel):
-        set: frozenset[int]
+    ta = TypeAdapter(frozenset[int])
 
     with pytest.raises(ValidationError, match=r'frozenset'):
-        FrozenSetModel(set=42)
+        ta.validate_python(42)

@@ -138,39 +138,25 @@ def test_typed_dict_union_omit():
 
 
 def test_default_union_types():
-    class DefaultModel(BaseModel):
-        v: int | bool | str
+    ta = TypeAdapter(int | bool | str)
 
     # do it this way since `1 == True`
-    assert repr(DefaultModel(v=True).v) == 'True'
-    assert repr(DefaultModel(v=1).v) == '1'
-    assert repr(DefaultModel(v='1').v) == "'1'"
+    assert repr(ta.validate_python(True)) == 'True'
+    assert repr(ta.validate_python(1)) == '1'
+    assert repr(ta.validate_python('1')) == "'1'"
 
-    assert DefaultModel.model_json_schema() == {
-        'title': 'DefaultModel',
-        'type': 'object',
-        'properties': {'v': {'title': 'V', 'anyOf': [{'type': t} for t in ('integer', 'boolean', 'string')]}},
-        'required': ['v'],
-    }
+    assert ta.json_schema() == {'anyOf': [{'type': t} for t in ('integer', 'boolean', 'string')]}
 
 
 def test_default_union_types_left_to_right():
-    class DefaultModel(BaseModel):
-        v: Annotated[int | bool | str, Field(union_mode='left_to_right')]
-
-    print(DefaultModel.__pydantic_core_schema__)
+    ta = TypeAdapter(Annotated[int | bool | str, Field(union_mode='left_to_right')])
 
     # int will coerce everything in left-to-right mode
-    assert repr(DefaultModel(v=True).v) == '1'
-    assert repr(DefaultModel(v=1).v) == '1'
-    assert repr(DefaultModel(v='1').v) == '1'
+    assert repr(ta.validate_python(True)) == '1'
+    assert repr(ta.validate_python(1)) == '1'
+    assert repr(ta.validate_python('1')) == '1'
 
-    assert DefaultModel.model_json_schema() == {
-        'title': 'DefaultModel',
-        'type': 'object',
-        'properties': {'v': {'title': 'V', 'anyOf': [{'type': t} for t in ('integer', 'boolean', 'string')]}},
-        'required': ['v'],
-    }
+    assert ta.json_schema() == {'anyOf': [{'type': t} for t in ('integer', 'boolean', 'string')]}
 
 
 def test_union_enum_int_left_to_right():
@@ -219,53 +205,49 @@ def test_default_union_class():
     class B(BaseModel):
         x: str
 
-    class Model(BaseModel):
-        y: A | B
+    ta = TypeAdapter(A | B)
 
-    assert isinstance(Model(y=A(x='a')).y, A)
-    assert isinstance(Model(y=B(x='b')).y, B)
+    assert isinstance(ta.validate_python(A(x='a')), A)
+    assert isinstance(ta.validate_python(B(x='b')), B)
 
 
 @pytest.mark.parametrize('max_length', [10, None])
 def test_union_subclass(max_length: int | None):
     class MyStr(str): ...
 
-    class Model(BaseModel):
-        x: int | Annotated[str, Field(max_length=max_length)]
+    ta = TypeAdapter(int | Annotated[str, Field(max_length=max_length)])
 
-    v = Model(x=MyStr('1')).x
+    v = ta.validate_python(MyStr('1'))
     assert type(v) is str
     assert v == '1'
 
 
 def test_union_compound_types():
-    class Model(BaseModel):
-        values: dict[str, str] | list[str] | dict[str, list[str]]
+    ta = TypeAdapter(dict[str, str] | list[str] | dict[str, list[str]])
 
-    assert Model(values={'L': '1'}).model_dump() == {'values': {'L': '1'}}
-    assert Model(values=['L1']).model_dump() == {'values': ['L1']}
-    assert Model(values=('L1',)).model_dump() == {'values': ['L1']}
-    assert Model(values={'x': ['pika']}) != {'values': {'x': ['pika']}}
-    assert Model(values={'x': ('pika',)}).model_dump() == {'values': {'x': ['pika']}}
+    assert ta.validate_python({'L': '1'}) == {'L': '1'}
+    assert ta.validate_python(['L1']) == ['L1']
+    assert ta.validate_python(('L1',)) == ['L1']
+    assert ta.validate_python({'x': ('pika',)}) == {'x': ['pika']}
     with pytest.raises(ValidationError) as e:
-        Model(values={'x': {'a': 'b'}})
+        ta.validate_python({'x': {'a': 'b'}})
     # insert_assert(e.value.errors(include_url=False))
     assert e.value.errors(include_url=False) == [
         {
             'type': 'string_type',
-            'loc': ('values', 'dict[str,str]', 'x'),
+            'loc': ('dict[str,str]', 'x'),
             'msg': 'Input should be a valid string',
             'input': {'a': 'b'},
         },
         {
             'type': 'list_type',
-            'loc': ('values', 'list[str]'),
+            'loc': ('list[str]',),
             'msg': 'Input should be a valid list',
             'input': {'x': {'a': 'b'}},
         },
         {
             'type': 'list_type',
-            'loc': ('values', 'dict[str,list[str]]', 'x'),
+            'loc': ('dict[str,list[str]]', 'x'),
             'msg': 'Input should be a valid list',
             'input': {'a': 'b'},
         },
@@ -273,12 +255,11 @@ def test_union_compound_types():
 
 
 def test_smart_union_compounded_types_edge_case():
-    class Model(BaseModel):
-        x: list[str] | list[int]
+    ta = TypeAdapter(list[str] | list[int])
 
-    assert Model(x=[1, 2]).x == [1, 2]
-    assert Model(x=['1', '2']).x == ['1', '2']
-    assert Model(x=[1, '2']).x == [1, 2]
+    assert ta.validate_python([1, 2]) == [1, 2]
+    assert ta.validate_python(['1', '2']) == ['1', '2']
+    assert ta.validate_python([1, '2']) == [1, 2]
 
 
 def test_union_typeddict():
@@ -288,10 +269,9 @@ def test_union_typeddict():
     class Dict2(TypedDict):
         bar: str
 
-    class M(BaseModel):
-        d: Dict2 | Dict1
+    ta = TypeAdapter(Dict2 | Dict1)
 
-    assert M(d=dict(foo='baz')).d == {'foo': 'baz'}
+    assert ta.validate_python(dict(foo='baz')) == {'foo': 'baz'}
 
 
 def test_union_tags_in_errors():

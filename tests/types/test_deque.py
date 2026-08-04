@@ -3,14 +3,13 @@ from typing import Annotated, Any
 
 import pytest
 
-from pydantic import BaseModel, ConfigDict, Field, ValidationError
+from pydantic import BaseModel, ConfigDict, Field, TypeAdapter, ValidationError
 
 
 def test_deque_success():
-    class Model(BaseModel):
-        v: deque
+    ta = TypeAdapter(deque)
 
-    assert Model(v=[1, 2, 3]).v == deque([1, 2, 3])
+    assert ta.validate_python([1, 2, 3]) == deque([1, 2, 3])
 
 
 @pytest.mark.parametrize(
@@ -51,10 +50,9 @@ def test_deque_success():
     ),
 )
 def test_deque_generic_success(cls, value, result):
-    class Model(BaseModel):
-        v: deque[cls]
+    ta = TypeAdapter(deque[cls])
 
-    assert Model(v=value).v == result
+    assert ta.validate_python(value) == result
 
 
 @pytest.mark.parametrize(
@@ -65,12 +63,9 @@ def test_deque_generic_success(cls, value, result):
     ),
 )
 def test_deque_generic_success_strict(cls, value: Any, result):
-    class Model(BaseModel):
-        v: deque[cls]
+    ta = TypeAdapter(deque[cls], config=ConfigDict(strict=True))
 
-        model_config = ConfigDict(strict=True)
-
-    assert Model(v=value).v == result
+    assert ta.validate_python(value) == result
 
 
 @pytest.mark.parametrize(
@@ -81,7 +76,7 @@ def test_deque_generic_success_strict(cls, value: Any, result):
             [1, 'a', 3],
             {
                 'type': 'int_parsing',
-                'loc': ('v', 1),
+                'loc': (1,),
                 'msg': 'Input should be a valid integer, unable to parse string as an integer',
                 'input': 'a',
             },
@@ -91,7 +86,7 @@ def test_deque_generic_success_strict(cls, value: Any, result):
             (1, 2, 'a'),
             {
                 'type': 'int_parsing',
-                'loc': ('v', 2),
+                'loc': (2,),
                 'msg': 'Input should be a valid integer, unable to parse string as an integer',
                 'input': 'a',
             },
@@ -101,7 +96,7 @@ def test_deque_generic_success_strict(cls, value: Any, result):
             ((1, 'a'), ('a', 'a'), (3, 'c')),
             {
                 'type': 'int_parsing',
-                'loc': ('v', 1, 0),
+                'loc': (1, 0),
                 'msg': 'Input should be a valid integer, unable to parse string as an integer',
                 'input': 'a',
             },
@@ -111,7 +106,7 @@ def test_deque_generic_success_strict(cls, value: Any, result):
             [{'a': 1, 'b': 2}, [1, 2], [2, 3]],
             {
                 'type': 'list_type',
-                'loc': ('v', 0),
+                'loc': (0,),
                 'msg': 'Input should be a valid list',
                 'input': {
                     'a': 1,
@@ -122,11 +117,10 @@ def test_deque_generic_success_strict(cls, value: Any, result):
     ),
 )
 def test_deque_fails(cls, value, expected_error):
-    class Model(BaseModel):
-        v: deque[cls]
+    ta = TypeAdapter(deque[cls])
 
     with pytest.raises(ValidationError) as exc_info:
-        Model(v=value)
+        ta.validate_python(value)
     # debug(exc_info.value.errors(include_url=False))
     assert len(exc_info.value.errors(include_url=False)) == 1
     assert expected_error == exc_info.value.errors(include_url=False)[0]
@@ -136,18 +130,16 @@ def test_deque_model():
     class Model2(BaseModel):
         x: int
 
-    class Model(BaseModel):
-        v: deque[Model2]
+    ta = TypeAdapter(deque[Model2])
 
     seq = [Model2(x=1), Model2(x=2)]
-    assert Model(v=seq).v == deque(seq)
+    assert ta.validate_python(seq) == deque(seq)
 
 
 def test_deque_json():
-    class Model(BaseModel):
-        v: deque[int]
+    ta = TypeAdapter(deque[int])
 
-    assert Model(v=deque((1, 2, 3))).model_dump_json() == '{"v":[1,2,3]}'
+    assert ta.dump_json(ta.validate_python((1, 2, 3))) == b'[1,2,3]'
 
 
 def test_deque_any_maxlen():
@@ -195,8 +187,7 @@ def test_deque_typed_maxlen():
 
 
 def test_deque_enforces_maxlen():
-    class DequeModel1(BaseModel):
-        field: Annotated[deque[int], Field(max_length=3)]
+    ta = TypeAdapter(Annotated[deque[int], Field(max_length=3)])
 
     with pytest.raises(ValidationError):
-        DequeModel1(field=deque([1, 2, 3, 4]))
+        ta.validate_python(deque([1, 2, 3, 4]))

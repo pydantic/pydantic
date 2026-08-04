@@ -4,7 +4,7 @@ from typing import Any
 
 import pytest
 
-from pydantic import BaseModel, ConfigDict, PydanticSchemaGenerationError, TypeAdapter, ValidationError
+from pydantic import ConfigDict, PydanticSchemaGenerationError, TypeAdapter, ValidationError
 
 
 def test_mapping_subclass_without_core_schema() -> None:
@@ -24,9 +24,7 @@ def test_mapping_subclass_without_core_schema() -> None:
     with pytest.raises(
         PydanticSchemaGenerationError, match='implement `__get_pydantic_core_schema__` on your type to fully support it'
     ):
-
-        class _(BaseModel):
-            x: MyDict
+        TypeAdapter(MyDict)
 
 
 def test_mutable_mapping_userdict_subclass() -> None:

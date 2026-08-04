@@ -4,7 +4,7 @@ from typing import Annotated
 
 import pytest
 
-from pydantic import BaseModel, Field, ValidationError
+from pydantic import Field, TypeAdapter, ValidationError
 
 
 @pytest.mark.parametrize(
@@ -22,27 +22,25 @@ from pydantic import BaseModel, Field, ValidationError
     ],
 )
 def test_timedelta_validation(value, expected):
-    class Model(BaseModel):
-        v: timedelta
+    ta = TypeAdapter(timedelta)
 
     if expected is ValidationError:
         with pytest.raises(ValidationError):
-            Model(v=value)
+            ta.validate_python(value)
     else:
-        assert Model(v=value).v == expected
+        assert ta.validate_python(value) == expected
 
 
 def test_timedelta_parsing_error():
-    class Model(BaseModel):
-        v: timedelta
+    ta = TypeAdapter(timedelta)
 
     with pytest.raises(ValidationError) as exc_info:
-        Model(v='15:30.0001broken')
+        ta.validate_python('15:30.0001broken')
     # insert_assert(exc_info.value.errors(include_url=False))
     assert exc_info.value.errors(include_url=False) == [
         {
             'type': 'time_delta_parsing',
-            'loc': ('v',),
+            'loc': (),
             'msg': 'Input should be a valid timedelta, unexpected extra characters at the end of the input',
             'input': '15:30.0001broken',
             'ctx': {'error': 'unexpected extra characters at the end of the input'},
@@ -51,17 +49,16 @@ def test_timedelta_parsing_error():
 
 
 def test_strict_timedelta():
-    class Model(BaseModel):
-        v: Annotated[timedelta, Field(strict=True)]
+    ta = TypeAdapter(Annotated[timedelta, Field(strict=True)])
 
-    assert Model(v=timedelta(days=1)).v == timedelta(days=1)
+    assert ta.validate_python(timedelta(days=1)) == timedelta(days=1)
 
     with pytest.raises(ValidationError) as exc_info:
-        Model(v='1 days')
+        ta.validate_python('1 days')
     assert exc_info.value.errors(include_url=False) == [
         {
             'type': 'time_delta_type',
-            'loc': ('v',),
+            'loc': (),
             'msg': 'Input should be a valid timedelta',
             'input': '1 days',
         }

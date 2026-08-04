@@ -1,7 +1,7 @@
 import itertools
 import re
 from collections.abc import Iterable
-from typing import Any
+from typing import Annotated, Any
 
 import pytest
 
@@ -10,45 +10,42 @@ from pydantic import (
     ConfigDict,
     Field,
     PydanticSchemaGenerationError,
+    TypeAdapter,
     ValidationError,
     field_validator,
 )
 
 
-def int_iterable():
-    i = 0
-    while True:
-        i += 1
-        yield str(i)
-
-
-def str_iterable():
-    while True:
-        yield from 'foobarbaz'
-
-
 def test_infinite_iterable_int():
-    class Model(BaseModel):
-        it: Iterable[int]
+    def int_iterable():
+        i = 0
+        while True:
+            i += 1
+            yield str(i)
 
-    m = Model(it=int_iterable())
+    def str_iterable():
+        while True:
+            yield from 'foobarbaz'
 
-    assert repr(m.it) == 'ValidatorIterator(index=0, schema=Some(Int(IntValidator { strict: false })))'
+    ta = TypeAdapter(Iterable[int])
+
+    it = ta.validate_python(int_iterable())
+
+    assert repr(it) == 'ValidatorIterator(index=0, schema=Some(Int(IntValidator { strict: false })))'
 
     output = []
-    for i in m.it:
+    for i in it:
         output.append(i)
         if i == 10:
             break
 
     assert output == [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
 
-    m = Model(it=[1, 2, 3])
-    assert list(m.it) == [1, 2, 3]
+    assert list(ta.validate_python([1, 2, 3])) == [1, 2, 3]
 
-    m = Model(it=str_iterable())
+    it = ta.validate_python(str_iterable())
     with pytest.raises(ValidationError) as exc_info:
-        next(m.it)
+        next(it)
     # insert_assert(exc_info.value.errors(include_url=False))
     assert exc_info.value.errors(include_url=False) == [
         {
@@ -64,35 +61,38 @@ def test_infinite_iterable_int():
     'type_annotation', (pytest.param(Iterable[Any], id='Iterable[Any]'), pytest.param(Iterable, id='Iterable'))
 )
 def test_iterable_any(type_annotation):
-    class Model(BaseModel):
-        it: type_annotation
+    def int_iterable():
+        i = 0
+        while True:
+            i += 1
+            yield str(i)
 
-    m = Model(it=int_iterable())
+    ta = TypeAdapter(type_annotation)
+
+    it = ta.validate_python(int_iterable())
 
     output = []
-    for i in m.it:
+    for i in it:
         output.append(i)
         if int(i) == 10:
             break
 
     assert output == ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10']
 
-    m = Model(it=[1, '2', b'three'])
-    assert list(m.it) == [1, '2', b'three']
+    assert list(ta.validate_python([1, '2', b'three'])) == [1, '2', b'three']
 
     with pytest.raises(ValidationError) as exc_info:
-        Model(it=3)
+        ta.validate_python(3)
     # insert_assert(exc_info.value.errors(include_url=False))
     assert exc_info.value.errors(include_url=False) == [
-        {'type': 'iterable_type', 'loc': ('it',), 'msg': 'Input should be iterable', 'input': 3}
+        {'type': 'iterable_type', 'loc': (), 'msg': 'Input should be iterable', 'input': 3}
     ]
 
-    class MaxLenModel(BaseModel):
-        it: type_annotation = Field(max_length=2)
+    max_len_ta = TypeAdapter(Annotated[type_annotation, Field(max_length=2)])
 
-    m = MaxLenModel(it=[1, 2, 3])
+    it = max_len_ta.validate_python([1, 2, 3])
     with pytest.raises(ValidationError) as exc_info:
-        list(m.it)
+        list(it)
     assert exc_info.value.errors(include_url=False) == [
         {
             'type': 'too_long',
@@ -105,14 +105,13 @@ def test_iterable_any(type_annotation):
 
 
 def test_invalid_iterable():
-    class Model(BaseModel):
-        it: Iterable[int]
+    ta = TypeAdapter(Iterable[int])
 
     with pytest.raises(ValidationError) as exc_info:
-        Model(it=3)
+        ta.validate_python(3)
     # insert_assert(exc_info.value.errors(include_url=False))
     assert exc_info.value.errors(include_url=False) == [
-        {'type': 'iterable_type', 'loc': ('it',), 'msg': 'Input should be iterable', 'input': 3}
+        {'type': 'iterable_type', 'loc': (), 'msg': 'Input should be iterable', 'input': 3}
     ]
 
 
@@ -125,16 +124,23 @@ def test_invalid_iterable():
     ),
 )
 def test_iterable_error_hide_input(config, input_str):
-    class Model(BaseModel):
-        it: Iterable[int]
-
-        model_config = ConfigDict(**config)
+    ta = TypeAdapter(Iterable[int], config=ConfigDict(**config))
 
     with pytest.raises(ValidationError, match=re.escape(f'Input should be iterable [{input_str}]')):
-        Model(it=5)
+        ta.validate_python(5)
 
 
 def test_infinite_iterable_validate_first():
+    def int_iterable():
+        i = 0
+        while True:
+            i += 1
+            yield str(i)
+
+    def str_iterable():
+        while True:
+            yield from 'foobarbaz'
+
     class Model(BaseModel):
         it: Iterable[int]
         b: int
@@ -182,6 +188,4 @@ def test_iterable_arbitrary_type():
         PydanticSchemaGenerationError,
         match='Unable to generate pydantic-core schema for .*CustomIterable.*. Set `arbitrary_types_allowed=True`',
     ):
-
-        class Model(BaseModel):
-            x: CustomIterable
+        TypeAdapter(CustomIterable)

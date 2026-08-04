@@ -4,12 +4,7 @@ from typing import Annotated
 import pytest
 from pydantic_core import SchemaError
 
-from pydantic import AllowInfNan, BaseModel, ConfigDict, Field, TypeAdapter, ValidationError
-
-
-class AllowInfModel(BaseModel):
-    v: Annotated[Decimal, AllowInfNan(True)]
-
+from pydantic import AllowInfNan, BaseModel, Field, TypeAdapter, ValidationError
 
 pos_int_values = 'Inf', '+Inf', 'Infinity', '+Infinity'
 neg_int_values = '-Inf', '-Infinity'
@@ -32,24 +27,21 @@ ANY_THING = object()
     ],
 )
 def test_decimal_coercions(value, expected):
-    class Model(BaseModel):
-        v: Annotated[Decimal, AllowInfNan(False)]
+    ta = TypeAdapter(Annotated[Decimal, AllowInfNan(False)])
 
     if expected is ValidationError:
         with pytest.raises(ValidationError):
-            Model(v=value)
+            ta.validate_python(value)
     else:
-        assert Model(v=value).v == expected
+        assert ta.validate_python(value) == expected
 
 
 def test_decimal():
-    class Model(BaseModel):
-        v: Decimal
+    ta = TypeAdapter(Decimal)
 
-    m = Model(v='1.234')
-    assert m.v == Decimal('1.234')
-    assert isinstance(m.v, Decimal)
-    assert m.model_dump() == {'v': Decimal('1.234')}
+    v = ta.validate_python('1.234')
+    assert v == Decimal('1.234')
+    assert isinstance(v, Decimal)
 
 
 def test_decimal_constraint_coerced() -> None:
@@ -60,40 +52,32 @@ def test_decimal_constraint_coerced() -> None:
 
 
 def test_decimal_allow_inf():
-    class MyModel(BaseModel):
-        value: Annotated[Decimal, AllowInfNan(True)]
+    ta = TypeAdapter(Annotated[Decimal, AllowInfNan(True)])
 
-    m = MyModel(value='inf')
-    assert m.value == Decimal('inf')
-
-    m = MyModel(value=Decimal('inf'))
-    assert m.value == Decimal('inf')
+    assert ta.validate_python('inf') == Decimal('inf')
+    assert ta.validate_python(Decimal('inf')) == Decimal('inf')
 
 
 def test_decimal_dont_allow_inf():
-    class MyModel(BaseModel):
-        value: Decimal
+    ta = TypeAdapter(Decimal)
 
     with pytest.raises(ValidationError, match=r'Input should be a finite number \[type=finite_number'):
-        MyModel(value='inf')
+        ta.validate_python('inf')
     with pytest.raises(ValidationError, match=r'Input should be a finite number \[type=finite_number'):
-        MyModel(value=Decimal('inf'))
+        ta.validate_python(Decimal('inf'))
 
 
 def test_decimal_strict():
-    class Model(BaseModel):
-        v: Decimal
-
-        model_config = ConfigDict(strict=True)
+    ta = TypeAdapter(Decimal)
 
     with pytest.raises(ValidationError) as exc_info:
-        Model(v=1.23)
+        ta.validate_python(1.23, strict=True)
 
     # insert_assert(exc_info.value.errors(include_url=False))
     assert exc_info.value.errors(include_url=False) == [
         {
             'type': 'is_instance_of',
-            'loc': ('v',),
+            'loc': (),
             'msg': 'Input should be an instance of Decimal',
             'input': 1.23,
             'ctx': {'class': 'Decimal'},
@@ -101,10 +85,9 @@ def test_decimal_strict():
     ]
 
     v = Decimal(1.23)
-    assert Model(v=v).v == v
-    assert Model(v=v).model_dump() == {'v': v}
+    assert ta.validate_python(v, strict=True) == v
 
-    assert Model.model_validate_json('{"v": "1.23"}').v == Decimal('1.23')
+    assert ta.validate_json('"1.23"', strict=True) == Decimal('1.23')
 
 
 def test_decimal_precision() -> None:
@@ -372,20 +355,20 @@ def test_decimal_validation(mode, type_args, value, result):
     ],
 )
 def test_decimal_not_finite(value, result):
-    m = AllowInfModel(v=value)
+    ta = TypeAdapter(Annotated[Decimal, AllowInfNan(True)])
+
+    v = ta.validate_python(value)
     if result == 'unchanged':
-        assert m.v == value
+        assert v == value
     elif result == 'is_nan':
-        assert m.v.is_nan(), m.v
+        assert v.is_nan(), v
     elif result == 'is_pos_inf':
-        assert m.v.is_infinite() and m.v > 0, m.v
+        assert v.is_infinite() and v > 0, v
     else:
         assert result == 'is_neg_inf'
-        assert m.v.is_infinite() and m.v < 0, m.v
+        assert v.is_infinite() and v < 0, v
 
 
 def test_decimal_invalid():
     with pytest.raises(SchemaError, match='allow_inf_nan=True cannot be used with max_digits or decimal_places'):
-
-        class Model(BaseModel):
-            v: Annotated[Decimal, Field(allow_inf_nan=True, max_digits=4)]
+        TypeAdapter(Annotated[Decimal, Field(allow_inf_nan=True, max_digits=4)])

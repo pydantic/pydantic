@@ -4,100 +4,64 @@ from typing import Annotated
 
 import pytest
 
-from pydantic import BaseModel, Field, ValidationError
+from pydantic import Field, TypeAdapter, ValidationError
 
 
 @pytest.mark.skipif(
     platform.python_implementation() == 'PyPy',
     reason='PyPy has a bug in complex string parsing. A fix is implemented but not yet released.',
 )
-def test_complex_field():
-    class Model(BaseModel):
-        number: complex
+def test_complex_validation():
+    ta = TypeAdapter(complex)
 
-    m = Model(number=complex(1, 2))
-    assert repr(m) == 'Model(number=(1+2j))'
-    assert m.model_dump() == {'number': complex(1, 2)}
-    assert m.model_dump_json() == '{"number":"1+2j"}'
+    assert ta.validate_python(complex(1, 2)) == complex(1, 2)
+    assert ta.dump_json(complex(1, 2)) == b'"1+2j"'
 
     # Complex numbers presented as strings are also acceptable
-    m = Model(number='1+2j')
-    assert repr(m) == 'Model(number=(1+2j))'
-    assert m.model_dump() == {'number': complex(1, 2)}
-    assert m.model_dump_json() == '{"number":"1+2j"}'
+    assert ta.validate_python('1+2j') == complex(1, 2)
 
     # The part that is 0 can be omitted
-    m = Model(number='1')
-    assert repr(m) == 'Model(number=(1+0j))'
-    assert m.model_dump() == {'number': complex(1, 0)}
-    assert m.model_dump_json() == '{"number":"1+0j"}'
+    assert ta.validate_python('1') == complex(1, 0)
+    assert ta.validate_python('1j') == complex(0, 1)
+    assert ta.validate_python('0') == complex(0, 0)
 
-    m = Model(number='1j')
-    assert repr(m) == 'Model(number=1j)'
-    assert m.model_dump() == {'number': complex(0, 1)}
-    assert m.model_dump_json() == '{"number":"1j"}'
+    assert ta.validate_python('infj') == complex(0, float('inf'))
 
-    m = Model(number='0')
-    assert repr(m) == 'Model(number=0j)'
-    assert m.model_dump() == {'number': complex(0, 0)}
-    assert m.model_dump_json() == '{"number":"0j"}'
-
-    m = Model(number='infj')
-    assert repr(m) == 'Model(number=infj)'
-    assert m.model_dump() == {'number': complex(0, float('inf'))}
-    assert m.model_dump_json() == '{"number":"infj"}'
-
-    m = Model(number='-nanj')
-    assert repr(m) == 'Model(number=nanj)'
-    d = m.model_dump()
-    assert d['number'].real == 0
-    assert math.isnan(d['number'].imag)
-    assert m.model_dump_json() == '{"number":"NaNj"}'
+    v = ta.validate_python('-nanj')
+    assert v.real == 0
+    assert math.isnan(v.imag)
+    assert ta.dump_json(v) == b'"NaNj"'
 
     # strings with brackets and space characters are allowed as long as
     # they follow the rule
-    m = Model(number='\t( -1.23+4.5J )\n')
-    assert repr(m) == 'Model(number=(-1.23+4.5j))'
-    assert m.model_dump() == {'number': complex(-1.23, 4.5)}
-    assert m.model_dump_json() == '{"number":"-1.23+4.5j"}'
+    assert ta.validate_python('\t( -1.23+4.5J )\n') == complex(-1.23, 4.5)
 
     # int and float are also accepted (with imaginary part == 0)
-    m = Model(number=2)
-    assert repr(m) == 'Model(number=(2+0j))'
-    assert m.model_dump() == {'number': complex(2, 0)}
-    assert m.model_dump_json() == '{"number":"2+0j"}'
-
-    m = Model(number=1.5)
-    assert repr(m) == 'Model(number=(1.5+0j))'
-    assert m.model_dump() == {'number': complex(1.5, 0)}
-    assert m.model_dump_json() == '{"number":"1.5+0j"}'
+    assert ta.validate_python(2) == complex(2, 0)
+    assert ta.validate_python(1.5) == complex(1.5, 0)
 
     # Empty strings are not allowed
     with pytest.raises(ValidationError):
-        Model(number='')
+        ta.validate_python('')
     with pytest.raises(ValidationError):
-        Model(number='foo')
+        ta.validate_python('foo')
     # Bracket missing
     with pytest.raises(ValidationError):
-        Model(number='\t( -1.23+4.5J \n')
+        ta.validate_python('\t( -1.23+4.5J \n')
     # Space between numbers
     with pytest.raises(ValidationError):
-        Model(number='\t( -1.23 +4.5J \n')
+        ta.validate_python('\t( -1.23 +4.5J \n')
 
 
-def test_strict_complex_field():
-    class Model(BaseModel):
-        # Only complex objects are accepted
-        number: Annotated[complex, Field(strict=True)]
+def test_strict_complex():
+    # Only complex objects are accepted
+    ta = TypeAdapter(Annotated[complex, Field(strict=True)])
 
-    m = Model(number=complex(1, 2))
-    assert repr(m) == 'Model(number=(1+2j))'
-    assert m.model_dump() == {'number': complex(1, 2)}
-    assert m.model_dump_json() == '{"number":"1+2j"}'
+    assert ta.validate_python(complex(1, 2)) == complex(1, 2)
 
     with pytest.raises(ValidationError):
-        m = Model(number='1+2j')
+        ta.validate_python('1+2j')
     with pytest.raises(ValidationError):
-        m = Model(number=1.0)
+        ta.validate_python(1.0)
     with pytest.raises(ValidationError):
-        m = Model(number=5)
+        ta.validate_python(5)

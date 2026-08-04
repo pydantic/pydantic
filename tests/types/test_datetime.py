@@ -4,7 +4,7 @@ from typing import Annotated
 
 import pytest
 
-from pydantic import BaseModel, Field, ValidationError
+from pydantic import Field, TypeAdapter, ValidationError
 
 
 @pytest.mark.parametrize(
@@ -33,27 +33,25 @@ from pydantic import BaseModel, Field, ValidationError
     ],
 )
 def test_datetime_validation(value, expected):
-    class Model(BaseModel):
-        v: datetime
+    ta = TypeAdapter(datetime)
 
     if expected is ValidationError:
         with pytest.raises(ValidationError):
-            Model(v=value)
+            ta.validate_python(value)
     else:
-        assert Model(v=value).v == expected
+        assert ta.validate_python(value) == expected
 
 
 def test_datetime_parsing_error():
-    class Model(BaseModel):
-        v: datetime
+    ta = TypeAdapter(datetime)
 
     with pytest.raises(ValidationError) as exc_info:
-        Model(v='2017-13-05T19:47:07')
+        ta.validate_python('2017-13-05T19:47:07')
     # insert_assert(exc_info.value.errors(include_url=False))
     assert exc_info.value.errors(include_url=False) == [
         {
             'type': 'datetime_from_date_parsing',
-            'loc': ('v',),
+            'loc': (),
             'msg': 'Input should be a valid datetime or date, month value is outside expected range of 1-12',
             'input': '2017-13-05T19:47:07',
             'ctx': {'error': 'month value is outside expected range of 1-12'},
@@ -62,28 +60,27 @@ def test_datetime_parsing_error():
 
 
 def test_strict_datetime():
-    class Model(BaseModel):
-        v: Annotated[datetime, Field(strict=True)]
+    ta = TypeAdapter(Annotated[datetime, Field(strict=True)])
 
-    assert Model(v=datetime(2017, 5, 5, 10, 10, 10)).v == datetime(2017, 5, 5, 10, 10, 10)
+    assert ta.validate_python(datetime(2017, 5, 5, 10, 10, 10)) == datetime(2017, 5, 5, 10, 10, 10)
 
     with pytest.raises(ValidationError) as exc_info:
-        Model(v=date(2017, 5, 5))
+        ta.validate_python(date(2017, 5, 5))
     assert exc_info.value.errors(include_url=False) == [
         {
             'type': 'datetime_type',
-            'loc': ('v',),
+            'loc': (),
             'msg': 'Input should be a valid datetime',
             'input': date(2017, 5, 5),
         }
     ]
 
     with pytest.raises(ValidationError) as exc_info:
-        Model(v='2017-05-05T10:10:10')
+        ta.validate_python('2017-05-05T10:10:10')
     assert exc_info.value.errors(include_url=False) == [
         {
             'type': 'datetime_type',
-            'loc': ('v',),
+            'loc': (),
             'msg': 'Input should be a valid datetime',
             'input': '2017-05-05T10:10:10',
         }

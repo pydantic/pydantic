@@ -30,11 +30,10 @@ def test_path_default():
 
 @pytest.mark.parametrize('value,result', (('/test/path', Path('/test/path')), (Path('/test/path'), Path('/test/path'))))
 def test_path_validation_success(value, result):
-    class Model(BaseModel):
-        foo: Path
+    ta = TypeAdapter(Path)
 
-    assert Model(foo=value).foo == result
-    assert Model.model_validate_json(json.dumps({'foo': str(value)})).foo == result
+    assert ta.validate_python(value) == result
+    assert ta.validate_json(json.dumps(str(value))) == result
 
 
 def test_path_like():
@@ -136,40 +135,36 @@ def test_path_strict_override():
 
 
 def test_path_validation_fails():
-    class Model(BaseModel):
-        foo: Path
+    ta = TypeAdapter(Path)
 
     with pytest.raises(ValidationError) as exc_info:
-        Model(foo=123)
+        ta.validate_python(123)
     # insert_assert(exc_info.value.errors(include_url=False))[0]['type']
     assert exc_info.value.errors(include_url=False)[0]['type'] == 'path_type'
 
     with pytest.raises(ValidationError) as exc_info:
-        Model(foo=None)
+        ta.validate_python(None)
     # insert_assert(exc_info.value.errors(include_url=False))[0]['type']
     assert exc_info.value.errors(include_url=False)[0]['type'] == 'path_type'
 
 
 def test_path_validation_strict():
-    class Model(BaseModel):
-        foo: Path
-
-        model_config = ConfigDict(strict=True)
+    ta = TypeAdapter(Path)
 
     with pytest.raises(ValidationError) as exc_info:
-        Model(foo='/test/path')
+        ta.validate_python('/test/path', strict=True)
     # insert_assert(exc_info.value.errors(include_url=False))
     assert exc_info.value.errors(include_url=False) == [
         {
             'type': 'is_instance_of',
-            'loc': ('foo',),
+            'loc': (),
             'msg': 'Input should be an instance of Path',
             'input': '/test/path',
             'ctx': {'class': 'Path'},
         }
     ]
 
-    assert Model(foo=Path('/test/path')).foo == Path('/test/path')
+    assert ta.validate_python(Path('/test/path'), strict=True) == Path('/test/path')
 
 
 @pytest.mark.parametrize(
@@ -177,23 +172,21 @@ def test_path_validation_strict():
     (('tests/test_types.py', Path('tests/test_types.py')), (Path('tests/test_types.py'), Path('tests/test_types.py'))),
 )
 def test_file_path_validation_success(value, result):
-    class Model(BaseModel):
-        foo: FilePath
+    ta = TypeAdapter(FilePath)
 
-    assert Model(foo=value).foo == result
+    assert ta.validate_python(value) == result
 
 
 @pytest.mark.parametrize('value', ['nonexistentfile', Path('nonexistentfile'), 'tests', Path('tests')])
 def test_file_path_validation_fails(value):
-    class Model(BaseModel):
-        foo: FilePath
+    ta = TypeAdapter(FilePath)
 
     with pytest.raises(ValidationError) as exc_info:
-        Model(foo=value)
+        ta.validate_python(value)
     assert exc_info.value.errors(include_url=False) == [
         {
             'type': 'path_not_file',
-            'loc': ('foo',),
+            'loc': (),
             'msg': 'Path does not point to a file',
             'input': value,
         }
@@ -202,25 +195,23 @@ def test_file_path_validation_fails(value):
 
 @pytest.mark.parametrize('value,result', (('tests', Path('tests')), (Path('tests'), Path('tests'))))
 def test_directory_path_validation_success(value, result):
-    class Model(BaseModel):
-        foo: DirectoryPath
+    ta = TypeAdapter(DirectoryPath)
 
-    assert Model(foo=value).foo == result
+    assert ta.validate_python(value) == result
 
 
 @pytest.mark.parametrize(
     'value', ['nonexistentdirectory', Path('nonexistentdirectory'), 'tests/test_t.py', Path('tests/test_ypestypes.py')]
 )
 def test_directory_path_validation_fails(value):
-    class Model(BaseModel):
-        foo: DirectoryPath
+    ta = TypeAdapter(DirectoryPath)
 
     with pytest.raises(ValidationError) as exc_info:
-        Model(foo=value)
+        ta.validate_python(value)
     assert exc_info.value.errors(include_url=False) == [
         {
             'type': 'path_not_directory',
-            'loc': ('foo',),
+            'loc': (),
             'msg': 'Path does not point to a directory',
             'input': value,
         }
@@ -229,15 +220,14 @@ def test_directory_path_validation_fails(value):
 
 @pytest.mark.parametrize('value', ('tests/test_types.py', Path('tests/test_types.py')))
 def test_new_path_validation_path_already_exists(value):
-    class Model(BaseModel):
-        foo: NewPath
+    ta = TypeAdapter(NewPath)
 
     with pytest.raises(ValidationError) as exc_info:
-        Model(foo=value)
+        ta.validate_python(value)
     assert exc_info.value.errors(include_url=False) == [
         {
             'type': 'path_exists',
-            'loc': ('foo',),
+            'loc': (),
             'msg': 'Path already exists',
             'input': value,
         }
@@ -256,25 +246,23 @@ def test_socket_exists(tmp_path):
     with socket.socket(socket.AF_UNIX, socket.SOCK_STREAM) as sock:
         sock.bind(str(target))
 
-        class Model(BaseModel):
-            path: SocketPath
+        ta = TypeAdapter(SocketPath)
 
-        assert Model(path=target).path == target
+        assert ta.validate_python(target) == target
 
 
 def test_socket_not_exists(tmp_path):
     target = tmp_path / 's'
 
-    class Model(BaseModel):
-        path: SocketPath
+    ta = TypeAdapter(SocketPath)
 
     with pytest.raises(ValidationError) as exc_info:
-        Model(path=target)
+        ta.validate_python(target)
 
     assert exc_info.value.errors(include_url=False) == [
         {
             'type': 'path_not_socket',
-            'loc': ('path',),
+            'loc': (),
             'msg': 'Path does not point to a socket',
             'input': target,
         }
@@ -283,15 +271,14 @@ def test_socket_not_exists(tmp_path):
 
 @pytest.mark.parametrize('value', ('/nonexistentdir/foo.py', Path('/nonexistentdir/foo.py')))
 def test_new_path_validation_parent_does_not_exist(value):
-    class Model(BaseModel):
-        foo: NewPath
+    ta = TypeAdapter(NewPath)
 
     with pytest.raises(ValidationError) as exc_info:
-        Model(foo=value)
+        ta.validate_python(value)
     assert exc_info.value.errors(include_url=False) == [
         {
             'type': 'parent_does_not_exist',
-            'loc': ('foo',),
+            'loc': (),
             'msg': 'Parent directory does not exist',
             'input': value,
         }
@@ -302,10 +289,9 @@ def test_new_path_validation_parent_does_not_exist(value):
     'value,result', (('tests/foo.py', Path('tests/foo.py')), (Path('tests/foo.py'), Path('tests/foo.py')))
 )
 def test_new_path_validation_success(value, result):
-    class Model(BaseModel):
-        foo: NewPath
+    ta = TypeAdapter(NewPath)
 
-    assert Model(foo=value).foo == result
+    assert ta.validate_python(value) == result
 
 
 def test_path_union_ser() -> None:

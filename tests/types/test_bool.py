@@ -2,7 +2,7 @@ from decimal import Decimal
 
 import pytest
 
-from pydantic import BaseModel, StrictBool, ValidationError
+from pydantic import StrictBool, TypeAdapter, ValidationError
 
 
 class BoolCastable:
@@ -67,39 +67,36 @@ class BoolCastable:
     ],
 )
 def test_bool_validation(value, expected):
-    class Model(BaseModel):
-        v: bool
+    ta = TypeAdapter(bool)
 
     if expected is ValidationError:
         with pytest.raises(ValidationError):
-            Model(v=value)
+            ta.validate_python(value)
     else:
-        assert Model(v=value).v is expected
+        assert ta.validate_python(value) is expected
 
 
 def test_strict_bool():
-    class Model(BaseModel):
-        v: StrictBool
+    ta = TypeAdapter(StrictBool)
 
-    assert Model(v=True).v is True
-    assert Model(v=False).v is False
-
-    with pytest.raises(ValidationError):
-        Model(v=1)
+    assert ta.validate_python(True) is True
+    assert ta.validate_python(False) is False
 
     with pytest.raises(ValidationError):
-        Model(v='1')
+        ta.validate_python(1)
 
     with pytest.raises(ValidationError):
-        Model(v=b'1')
+        ta.validate_python('1')
+
+    with pytest.raises(ValidationError):
+        ta.validate_python(b'1')
 
 
 def test_bool_unhashable_fails():
-    class Model(BaseModel):
-        v: bool
+    ta = TypeAdapter(bool)
 
     with pytest.raises(ValidationError) as exc_info:
-        Model(v={})
+        ta.validate_python({})
     assert exc_info.value.errors(include_url=False) == [
-        {'type': 'bool_type', 'loc': ('v',), 'msg': 'Input should be a valid boolean', 'input': {}}
+        {'type': 'bool_type', 'loc': (), 'msg': 'Input should be a valid boolean', 'input': {}}
     ]

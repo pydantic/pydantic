@@ -6,7 +6,6 @@ from pydantic_core import CoreSchema, core_schema
 from typing_extensions import get_args  # noqa: UP035 (for `get_args`)
 
 from pydantic import (
-    BaseModel,
     Field,
     GetCoreSchemaHandler,
     PydanticSchemaGenerationError,
@@ -15,14 +14,13 @@ from pydantic import (
 
 
 def test_typing_coercion_defaultdict():
-    class Model(BaseModel):
-        x: defaultdict[int, str]
+    ta = TypeAdapter(defaultdict[int, str])
 
     d = defaultdict(str)
     d['1']
-    m = Model(x=d)
-    assert isinstance(m.x, defaultdict)
-    assert repr(m.x) == "defaultdict(<class 'str'>, {1: ''})"
+    v = ta.validate_python(d)
+    assert isinstance(v, defaultdict)
+    assert repr(v) == "defaultdict(<class 'str'>, {1: ''})"
 
 
 def test_defaultdict_unknown_default_factory() -> None:
@@ -33,48 +31,46 @@ def test_defaultdict_unknown_default_factory() -> None:
         PydanticSchemaGenerationError,
         match=r'Unable to infer a default factory for keys of type collections.defaultdict\[int, int\]',
     ):
-
-        class Model(BaseModel):
-            d: defaultdict[int, defaultdict[int, int]]
+        TypeAdapter(defaultdict[int, defaultdict[int, int]])
 
 
 def test_defaultdict_infer_default_factory() -> None:
-    class Model(BaseModel):
-        a: defaultdict[int, list[int]]
-        b: defaultdict[int, int]
-        c: defaultdict[int, set]
+    ta_list = TypeAdapter(defaultdict[int, list[int]])
+    v = ta_list.validate_python({})
+    assert v.default_factory is not None
+    assert v.default_factory() == []
 
-    m = Model(a={}, b={}, c={})
-    assert m.a.default_factory is not None
-    assert m.a.default_factory() == []
-    assert m.b.default_factory is not None
-    assert m.b.default_factory() == 0
-    assert m.c.default_factory is not None
-    assert m.c.default_factory() == set()
+    ta_int = TypeAdapter(defaultdict[int, int])
+    v = ta_int.validate_python({})
+    assert v.default_factory is not None
+    assert v.default_factory() == 0
+
+    ta_set = TypeAdapter(defaultdict[int, set])
+    v = ta_set.validate_python({})
+    assert v.default_factory is not None
+    assert v.default_factory() == set()
 
 
 def test_defaultdict_explicit_default_factory() -> None:
     class MyList(list[int]):
         pass
 
-    class Model(BaseModel):
-        a: defaultdict[int, Annotated[list[int], Field(default_factory=lambda: MyList())]]
+    ta = TypeAdapter(defaultdict[int, Annotated[list[int], Field(default_factory=lambda: MyList())]])
 
-    m = Model(a={})
-    assert m.a.default_factory is not None
-    assert isinstance(m.a.default_factory(), MyList)
+    v = ta.validate_python({})
+    assert v.default_factory is not None
+    assert isinstance(v.default_factory(), MyList)
 
 
 def test_defaultdict_default_factory_preserved() -> None:
-    class Model(BaseModel):
-        a: defaultdict[int, list[int]]
-
     class MyList(list[int]):
         pass
 
-    m = Model(a=defaultdict(lambda: MyList()))
-    assert m.a.default_factory is not None
-    assert isinstance(m.a.default_factory(), MyList)
+    ta = TypeAdapter(defaultdict[int, list[int]])
+
+    v = ta.validate_python(defaultdict(lambda: MyList()))
+    assert v.default_factory is not None
+    assert isinstance(v.default_factory(), MyList)
 
 
 def test_custom_default_dict() -> None:

@@ -17,6 +17,7 @@ from pydantic import (
     NonPositiveFloat,
     PositiveFloat,
     StrictFloat,
+    TypeAdapter,
     ValidationError,
 )
 
@@ -38,14 +39,13 @@ from pydantic import (
     ],
 )
 def test_float_coercions(value, expected):
-    class Model(BaseModel):
-        v: float
+    ta = TypeAdapter(float)
 
     if expected is ValidationError:
         with pytest.raises(ValidationError):
-            Model(v=value)
+            ta.validate_python(value)
     else:
-        assert Model(v=value).v == expected
+        assert ta.validate_python(value) == expected
 
 
 def test_float_validation():
@@ -142,12 +142,11 @@ def test_float_validation():
 
 
 def test_infinite_float_validation():
-    class Model(BaseModel):
-        a: float = None
+    ta = TypeAdapter(float)
 
-    assert Model(a=float('inf')).a == float('inf')
-    assert Model(a=float('-inf')).a == float('-inf')
-    assert math.isnan(Model(a=float('nan')).a)
+    assert ta.validate_python(float('inf')) == float('inf')
+    assert ta.validate_python(float('-inf')) == float('-inf')
+    assert math.isnan(ta.validate_python(float('nan')))
 
 
 @pytest.mark.parametrize(
@@ -162,28 +161,25 @@ def test_infinite_float_validation():
     ),
 )
 def test_infinite_float_json_serialization(ser_json_inf_nan, input, output, python_roundtrip):
-    class Model(BaseModel):
-        model_config = ConfigDict(ser_json_inf_nan=ser_json_inf_nan)
-        a: float
+    ta = TypeAdapter(float, config=ConfigDict(ser_json_inf_nan=ser_json_inf_nan))
 
-    json_string = Model(a=input).model_dump_json()
-    assert json_string == f'{{"a":{output}}}'
-    assert json.loads(json_string) == {'a': python_roundtrip}
+    json_string = ta.dump_json(input).decode()
+    assert json_string == output
+    assert json.loads(json_string) == python_roundtrip
 
 
 @pytest.mark.parametrize('value', [float('inf'), float('-inf'), float('nan')])
 def test_finite_float_validation_error(value):
-    class Model(BaseModel):
-        a: FiniteFloat
+    ta = TypeAdapter(FiniteFloat)
 
-    assert Model(a=42).a == 42
+    assert ta.validate_python(42) == 42
     with pytest.raises(ValidationError) as exc_info:
-        Model(a=value)
+        ta.validate_python(value)
     # insert_assert(exc_info.value.errors(include_url=False))
     assert exc_info.value.errors(include_url=False) == [
         {
             'type': 'finite_number',
-            'loc': ('a',),
+            'loc': (),
             'msg': 'Input should be a finite number',
             'input': HasRepr(repr(value)),
         }
@@ -191,19 +187,16 @@ def test_finite_float_validation_error(value):
 
 
 def test_finite_float_config():
-    class Model(BaseModel):
-        a: float
+    ta = TypeAdapter(float, config=ConfigDict(allow_inf_nan=False))
 
-        model_config = ConfigDict(allow_inf_nan=False)
-
-    assert Model(a=42).a == 42
+    assert ta.validate_python(42) == 42
     with pytest.raises(ValidationError) as exc_info:
-        Model(a=float('nan'))
+        ta.validate_python(float('nan'))
     # insert_assert(exc_info.value.errors(include_url=False))
     assert exc_info.value.errors(include_url=False) == [
         {
             'type': 'finite_number',
-            'loc': ('a',),
+            'loc': (),
             'msg': 'Input should be a finite number',
             'input': HasRepr('nan'),
         }
@@ -211,39 +204,36 @@ def test_finite_float_config():
 
 
 def test_strict_float():
-    class Model(BaseModel):
-        v: StrictFloat
+    ta = TypeAdapter(StrictFloat)
 
-    assert Model(v=3.14159).v == 3.14159
-    assert Model(v=123456).v == 123456
-
-    with pytest.raises(ValidationError, match=r'Input should be a valid number \[type=float_type,'):
-        Model(v='3.14159')
+    assert ta.validate_python(3.14159) == 3.14159
+    assert ta.validate_python(123456) == 123456
 
     with pytest.raises(ValidationError, match=r'Input should be a valid number \[type=float_type,'):
-        Model(v=True)
+        ta.validate_python('3.14159')
+
+    with pytest.raises(ValidationError, match=r'Input should be a valid number \[type=float_type,'):
+        ta.validate_python(True)
 
 
 @pytest.mark.parametrize('value', [0.2, 0.3, 0.4, 0.5, 1])
 def test_number_multiple_of_float_valid(value):
-    class Model(BaseModel):
-        a: Annotated[float, annotated_types.MultipleOf(0.1)]
+    ta = TypeAdapter(Annotated[float, annotated_types.MultipleOf(0.1)])
 
-    assert Model(a=value).model_dump() == {'a': value}
+    assert ta.validate_python(value) == value
 
 
 @pytest.mark.parametrize('value', [0.07, 1.27, 1.003])
 def test_number_multiple_of_float_invalid(value):
-    class Model(BaseModel):
-        a: Annotated[float, annotated_types.MultipleOf(0.1)]
+    ta = TypeAdapter(Annotated[float, annotated_types.MultipleOf(0.1)])
 
     with pytest.raises(ValidationError) as exc_info:
-        Model(a=value)
+        ta.validate_python(value)
     # insert_assert(exc_info.value.errors(include_url=False))
     assert exc_info.value.errors(include_url=False) == [
         {
             'type': 'multiple_of',
-            'loc': ('a',),
+            'loc': (),
             'msg': 'Input should be a multiple of 0.1',
             'input': value,
             'ctx': {'multiple_of': 0.1},

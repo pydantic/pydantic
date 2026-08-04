@@ -19,14 +19,13 @@ from pydantic import UUID1, UUID3, UUID4, UUID5, BaseModel, ConfigDict, Field, T
     ],
 )
 def test_uuid_coercions(value, expected):
-    class Model(BaseModel):
-        v: UUID
+    ta = TypeAdapter(UUID)
 
     if expected is ValidationError:
         with pytest.raises(ValidationError):
-            Model(v=value)
+            ta.validate_python(value)
     else:
-        assert Model(v=value).v == expected
+        assert ta.validate_python(value) == expected
 
 
 def test_uuid_error():

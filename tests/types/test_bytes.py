@@ -3,11 +3,7 @@ from typing import Annotated
 import annotated_types
 import pytest
 
-from pydantic import BaseModel, Field, Strict, StrictBytes, ValidationError
-
-
-class ConBytesModel(BaseModel):
-    v: Annotated[bytes, annotated_types.Len(0, 10)] = b'foobar'
+from pydantic import BaseModel, Field, Strict, StrictBytes, TypeAdapter, ValidationError
 
 
 @pytest.mark.parametrize(
@@ -26,23 +22,26 @@ class ConBytesModel(BaseModel):
     ],
 )
 def test_bytes_validation(value, expected):
-    class Model(BaseModel):
-        v: bytes
+    ta = TypeAdapter(bytes)
 
     if expected is ValidationError:
         with pytest.raises(ValidationError):
-            Model(v=value)
+            ta.validate_python(value)
     else:
-        assert Model(v=value).v == expected
+        assert ta.validate_python(value) == expected
 
 
 def test_constrained_bytes_good():
-    m = ConBytesModel(v=b'short')
-    assert m.v == b'short'
+    ta = TypeAdapter(Annotated[bytes, annotated_types.Len(0, 10)])
+
+    assert ta.validate_python(b'short') == b'short'
 
 
 def test_constrained_bytes_default():
-    m = ConBytesModel()
+    class Model(BaseModel):
+        v: Annotated[bytes, annotated_types.Len(0, 10)] = b'foobar'
+
+    m = Model()
     assert m.v == b'foobar'
 
 
@@ -51,17 +50,19 @@ def test_constrained_bytes_default():
     [(b'this is too long', False), ('⪶⓲⽷01'.encode(), False), (b'not long90', True), ('⪶⓲⽷0'.encode(), True)],
 )
 def test_constrained_bytes_too_long(data: bytes, valid: bool):
+    ta = TypeAdapter(Annotated[bytes, annotated_types.Len(0, 10)])
+
     if valid:
-        assert ConBytesModel(v=data).model_dump() == {'v': data}
+        assert ta.validate_python(data) == data
     else:
         with pytest.raises(ValidationError) as exc_info:
-            ConBytesModel(v=data)
+            ta.validate_python(data)
         # insert_assert(exc_info.value.errors(include_url=False))
         assert exc_info.value.errors(include_url=False) == [
             {
                 'ctx': {'max_length': 10},
                 'input': data,
-                'loc': ('v',),
+                'loc': (),
                 'msg': 'Data should have at most 10 bytes',
                 'type': 'bytes_too_long',
             }
@@ -69,78 +70,73 @@ def test_constrained_bytes_too_long(data: bytes, valid: bool):
 
 
 def test_constrained_bytes_strict_true():
-    class Model(BaseModel):
-        v: Annotated[bytes, Strict()]
+    ta = TypeAdapter(Annotated[bytes, Strict()])
 
-    assert Model(v=b'foobar').v == b'foobar'
+    assert ta.validate_python(b'foobar') == b'foobar'
     with pytest.raises(ValidationError):
-        Model(v=bytearray('foobar', 'utf-8'))
-
-    with pytest.raises(ValidationError):
-        Model(v='foostring')
+        ta.validate_python(bytearray('foobar', 'utf-8'))
 
     with pytest.raises(ValidationError):
-        Model(v=42)
+        ta.validate_python('foostring')
 
     with pytest.raises(ValidationError):
-        Model(v=0.42)
+        ta.validate_python(42)
+
+    with pytest.raises(ValidationError):
+        ta.validate_python(0.42)
 
 
 def test_constrained_bytes_strict_false():
-    class Model(BaseModel):
-        v: Annotated[bytes, Strict(False)]
+    ta = TypeAdapter(Annotated[bytes, Strict(False)])
 
-    assert Model(v=b'foobar').v == b'foobar'
-    assert Model(v=bytearray('foobar', 'utf-8')).v == b'foobar'
-    assert Model(v='foostring').v == b'foostring'
-
-    with pytest.raises(ValidationError):
-        Model(v=42)
+    assert ta.validate_python(b'foobar') == b'foobar'
+    assert ta.validate_python(bytearray('foobar', 'utf-8')) == b'foobar'
+    assert ta.validate_python('foostring') == b'foostring'
 
     with pytest.raises(ValidationError):
-        Model(v=0.42)
+        ta.validate_python(42)
+
+    with pytest.raises(ValidationError):
+        ta.validate_python(0.42)
 
 
 def test_constrained_bytes_strict_default():
-    class Model(BaseModel):
-        v: bytes
+    ta = TypeAdapter(bytes)
 
-    assert Model(v=b'foobar').v == b'foobar'
-    assert Model(v=bytearray('foobar', 'utf-8')).v == b'foobar'
-    assert Model(v='foostring').v == b'foostring'
-
-    with pytest.raises(ValidationError):
-        Model(v=42)
+    assert ta.validate_python(b'foobar') == b'foobar'
+    assert ta.validate_python(bytearray('foobar', 'utf-8')) == b'foobar'
+    assert ta.validate_python('foostring') == b'foostring'
 
     with pytest.raises(ValidationError):
-        Model(v=0.42)
+        ta.validate_python(42)
+
+    with pytest.raises(ValidationError):
+        ta.validate_python(0.42)
 
 
 def test_strict_bytes():
-    class Model(BaseModel):
-        v: StrictBytes
+    ta = TypeAdapter(StrictBytes)
 
-    assert Model(v=b'foobar').v == b'foobar'
+    assert ta.validate_python(b'foobar') == b'foobar'
     with pytest.raises(ValidationError, match='Input should be a valid bytes'):
-        Model(v=bytearray('foobar', 'utf-8'))
-
-    with pytest.raises(ValidationError, match='Input should be a valid bytes'):
-        Model(v='foostring')
+        ta.validate_python(bytearray('foobar', 'utf-8'))
 
     with pytest.raises(ValidationError, match='Input should be a valid bytes'):
-        Model(v=42)
+        ta.validate_python('foostring')
 
     with pytest.raises(ValidationError, match='Input should be a valid bytes'):
-        Model(v=0.42)
+        ta.validate_python(42)
+
+    with pytest.raises(ValidationError, match='Input should be a valid bytes'):
+        ta.validate_python(0.42)
 
 
 def test_strict_bytes_max_length():
-    class Model(BaseModel):
-        u: StrictBytes = Field(max_length=5)
+    ta = TypeAdapter(Annotated[StrictBytes, Field(max_length=5)])
 
-    assert Model(u=b'foo').u == b'foo'
+    assert ta.validate_python(b'foo') == b'foo'
 
     with pytest.raises(ValidationError, match=r'Input should be a valid bytes \[type=bytes_type'):
-        Model(u=123)
+        ta.validate_python(123)
     with pytest.raises(ValidationError, match=r'Data should have at most 5 bytes \[type=bytes_too_long,'):
-        Model(u=b'1234567')
+        ta.validate_python(b'1234567')

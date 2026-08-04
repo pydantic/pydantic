@@ -4,7 +4,7 @@ from typing import Annotated
 
 import pytest
 
-from pydantic import BaseModel, Field, ValidationError
+from pydantic import Field, TypeAdapter, ValidationError
 
 
 @pytest.mark.parametrize(
@@ -25,27 +25,25 @@ from pydantic import BaseModel, Field, ValidationError
     ],
 )
 def test_time_validation(value, expected):
-    class Model(BaseModel):
-        v: time
+    ta = TypeAdapter(time)
 
     if expected is ValidationError:
         with pytest.raises(ValidationError):
-            Model(v=value)
+            ta.validate_python(value)
     else:
-        assert Model(v=value).v == expected
+        assert ta.validate_python(value) == expected
 
 
 def test_time_parsing_error():
-    class Model(BaseModel):
-        v: time
+    ta = TypeAdapter(time)
 
     with pytest.raises(ValidationError) as exc_info:
-        Model(v='25:20:30.400')
+        ta.validate_python('25:20:30.400')
     # insert_assert(exc_info.value.errors(include_url=False))
     assert exc_info.value.errors(include_url=False) == [
         {
             'type': 'time_parsing',
-            'loc': ('v',),
+            'loc': (),
             'msg': 'Input should be in a valid time format, hour value is outside expected range of 0-23',
             'input': '25:20:30.400',
             'ctx': {'error': 'hour value is outside expected range of 0-23'},
@@ -54,17 +52,16 @@ def test_time_parsing_error():
 
 
 def test_strict_time():
-    class Model(BaseModel):
-        v: Annotated[time, Field(strict=True)]
+    ta = TypeAdapter(Annotated[time, Field(strict=True)])
 
-    assert Model(v=time(10, 10, 10)).v == time(10, 10, 10)
+    assert ta.validate_python(time(10, 10, 10)) == time(10, 10, 10)
 
     with pytest.raises(ValidationError) as exc_info:
-        Model(v='10:10:10')
+        ta.validate_python('10:10:10')
     assert exc_info.value.errors(include_url=False) == [
         {
             'type': 'time_type',
-            'loc': ('v',),
+            'loc': (),
             'msg': 'Input should be a valid time',
             'input': '10:10:10',
         }

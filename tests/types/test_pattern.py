@@ -4,7 +4,7 @@ from typing import Annotated
 
 import pytest
 
-from pydantic import BaseModel, Field, PydanticSchemaGenerationError, StringConstraints, ValidationError
+from pydantic import BaseModel, Field, PydanticSchemaGenerationError, StringConstraints, TypeAdapter, ValidationError
 
 
 @pytest.mark.parametrize(
@@ -17,26 +17,19 @@ from pydantic import BaseModel, Field, PydanticSchemaGenerationError, StringCons
     ],
 )
 def test_pattern(pattern_type, pattern_value, matching_value, non_matching_value):
-    class Foobar(BaseModel):
-        pattern: pattern_type
+    ta = TypeAdapter(pattern_type)
 
-    f = Foobar(pattern=pattern_value)
-    assert f.pattern.__class__.__name__ == 'Pattern'
+    pattern = ta.validate_python(pattern_value)
+    assert pattern.__class__.__name__ == 'Pattern'
     # check it's really a proper pattern
-    assert f.pattern.match(matching_value)
-    assert not f.pattern.match(non_matching_value)
+    assert pattern.match(matching_value)
+    assert not pattern.match(non_matching_value)
 
     # Check that pre-compiled patterns are accepted unchanged
     p = re.compile(pattern_value)
-    f2 = Foobar(pattern=p)
-    assert f2.pattern is p
+    assert ta.validate_python(p) is p
 
-    assert Foobar.model_json_schema() == {
-        'type': 'object',
-        'title': 'Foobar',
-        'properties': {'pattern': {'type': 'string', 'format': 'regex', 'title': 'Pattern'}},
-        'required': ['pattern'],
-    }
+    assert ta.json_schema() == {'type': 'string', 'format': 'regex'}
 
 
 @pytest.mark.parametrize(
@@ -90,9 +83,7 @@ def test_pattern_with_invalid_param():
         PydanticSchemaGenerationError,
         match=re.escape('Unable to generate pydantic-core schema for re.Pattern[int].'),
     ):
-
-        class Foo(BaseModel):
-            pattern: Pattern[int]
+        TypeAdapter(Pattern[int])
 
 
 @pytest.mark.parametrize(
@@ -147,12 +138,11 @@ def test_pattern_with_invalid_param():
     ],
 )
 def test_pattern_error(pattern_type, pattern_value, error_type, error_msg):
-    class Foobar(BaseModel):
-        pattern: pattern_type
+    ta = TypeAdapter(pattern_type)
 
     with pytest.raises(ValidationError) as exc_info:
-        Foobar(pattern=pattern_value)
+        ta.validate_python(pattern_value)
     # insert_assert(exc_info.value.errors(include_url=False))
     assert exc_info.value.errors(include_url=False) == [
-        {'type': error_type, 'loc': ('pattern',), 'msg': error_msg, 'input': pattern_value}
+        {'type': error_type, 'loc': (), 'msg': error_msg, 'input': pattern_value}
     ]

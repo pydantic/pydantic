@@ -33,14 +33,13 @@ from pydantic import (
     ],
 )
 def test_int_coercions(value, expected):
-    class Model(BaseModel):
-        v: int
+    ta = TypeAdapter(int)
 
     if expected is ValidationError:
         with pytest.raises(ValidationError):
-            Model(v=value)
+            ta.validate_python(value)
     else:
-        assert Model(v=value).v == expected
+        assert ta.validate_python(value) == expected
 
 
 def test_int_validation():
@@ -113,19 +112,18 @@ def test_int_validation():
 
 
 def test_strict_int():
-    class Model(BaseModel):
-        v: StrictInt
+    ta = TypeAdapter(StrictInt)
 
-    assert Model(v=123456).v == 123456
-
-    with pytest.raises(ValidationError, match=r'Input should be a valid integer \[type=int_type,'):
-        Model(v='123456')
+    assert ta.validate_python(123456) == 123456
 
     with pytest.raises(ValidationError, match=r'Input should be a valid integer \[type=int_type,'):
-        Model(v=3.14159)
+        ta.validate_python('123456')
 
     with pytest.raises(ValidationError, match=r'Input should be a valid integer \[type=int_type,'):
-        Model(v=True)
+        ta.validate_python(3.14159)
+
+    with pytest.raises(ValidationError, match=r'Input should be a valid integer \[type=int_type,'):
+        ta.validate_python(True)
 
 
 @pytest.mark.parametrize(
@@ -145,18 +143,17 @@ def test_big_int_json(input, expected_json):
 
 
 def test_number_gt():
-    class Model(BaseModel):
-        a: Annotated[int, annotated_types.Gt(-1)] = 0
+    ta = TypeAdapter(Annotated[int, annotated_types.Gt(-1)])
 
-    assert Model(a=0).model_dump() == {'a': 0}
+    assert ta.validate_python(0) == 0
 
     with pytest.raises(ValidationError) as exc_info:
-        Model(a=-1)
+        ta.validate_python(-1)
     # insert_assert(exc_info.value.errors(include_url=False))
     assert exc_info.value.errors(include_url=False) == [
         {
             'type': 'greater_than',
-            'loc': ('a',),
+            'loc': (),
             'msg': 'Input should be greater than -1',
             'input': -1,
             'ctx': {'gt': -1},
@@ -165,18 +162,17 @@ def test_number_gt():
 
 
 def test_number_ge():
-    class Model(BaseModel):
-        a: Annotated[int, annotated_types.Ge(0)] = 0
+    ta = TypeAdapter(Annotated[int, annotated_types.Ge(0)])
 
-    assert Model(a=0).model_dump() == {'a': 0}
+    assert ta.validate_python(0) == 0
 
     with pytest.raises(ValidationError) as exc_info:
-        Model(a=-1)
+        ta.validate_python(-1)
     # insert_assert(exc_info.value.errors(include_url=False))
     assert exc_info.value.errors(include_url=False) == [
         {
             'type': 'greater_than_equal',
-            'loc': ('a',),
+            'loc': (),
             'msg': 'Input should be greater than or equal to 0',
             'input': -1,
             'ctx': {'ge': 0},
@@ -185,18 +181,17 @@ def test_number_ge():
 
 
 def test_number_lt():
-    class Model(BaseModel):
-        a: Annotated[int, annotated_types.Lt(5)] = 0
+    ta = TypeAdapter(Annotated[int, annotated_types.Lt(5)])
 
-    assert Model(a=4).model_dump() == {'a': 4}
+    assert ta.validate_python(4) == 4
 
     with pytest.raises(ValidationError) as exc_info:
-        Model(a=5)
+        ta.validate_python(5)
     # insert_assert(exc_info.value.errors(include_url=False))
     assert exc_info.value.errors(include_url=False) == [
         {
             'type': 'less_than',
-            'loc': ('a',),
+            'loc': (),
             'msg': 'Input should be less than 5',
             'input': 5,
             'ctx': {'lt': 5},
@@ -205,18 +200,17 @@ def test_number_lt():
 
 
 def test_number_le():
-    class Model(BaseModel):
-        a: Annotated[int, annotated_types.Le(5)] = 0
+    ta = TypeAdapter(Annotated[int, annotated_types.Le(5)])
 
-    assert Model(a=5).model_dump() == {'a': 5}
+    assert ta.validate_python(5) == 5
 
     with pytest.raises(ValidationError) as exc_info:
-        Model(a=6)
+        ta.validate_python(6)
     # insert_assert(exc_info.value.errors(include_url=False))
     assert exc_info.value.errors(include_url=False) == [
         {
             'type': 'less_than_equal',
-            'loc': ('a',),
+            'loc': (),
             'msg': 'Input should be less than or equal to 5',
             'input': 6,
             'ctx': {'le': 5},
@@ -226,24 +220,22 @@ def test_number_le():
 
 @pytest.mark.parametrize('value', (10, 100, 20))
 def test_number_multiple_of_int_valid(value):
-    class Model(BaseModel):
-        a: Annotated[int, annotated_types.MultipleOf(5)]
+    ta = TypeAdapter(Annotated[int, annotated_types.MultipleOf(5)])
 
-    assert Model(a=value).model_dump() == {'a': value}
+    assert ta.validate_python(value) == value
 
 
 @pytest.mark.parametrize('value', [1337, 23, 6, 14])
 def test_number_multiple_of_int_invalid(value):
-    class Model(BaseModel):
-        a: Annotated[int, annotated_types.MultipleOf(5)]
+    ta = TypeAdapter(Annotated[int, annotated_types.MultipleOf(5)])
 
     with pytest.raises(ValidationError) as exc_info:
-        Model(a=value)
+        ta.validate_python(value)
     # insert_assert(exc_info.value.errors(include_url=False))
     assert exc_info.value.errors(include_url=False) == [
         {
             'type': 'multiple_of',
-            'loc': ('a',),
+            'loc': (),
             'msg': 'Input should be a multiple of 5',
             'input': value,
             'ctx': {'multiple_of': 5},
