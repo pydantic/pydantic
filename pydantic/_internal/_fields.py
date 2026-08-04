@@ -289,7 +289,6 @@ def collect_model_fields(  # noqa: C901
     fields: dict[str, FieldInfo] = {}
 
     deprecated_method_ids, deprecated_classmethod_func_ids = _deprecated_base_model_method_ids()
-    protected_namespaces = config_wrapper.protected_namespaces
 
     class_vars: set[str] = set()
     for ann_name, (ann_type, evaluated) in type_hints.items():
@@ -300,7 +299,7 @@ def collect_model_fields(  # noqa: C901
             continue
 
         _check_protected_namespaces(
-            protected_namespaces=protected_namespaces,
+            protected_namespaces=config_wrapper.protected_namespaces,
             ann_name=ann_name,
             bases=bases,
             cls_name=cls.__name__,
