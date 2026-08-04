@@ -38,15 +38,41 @@ impl BuildSerializer for ListSerializer {
             Some(items_schema) => CombinedSerializer::build(&items_schema, config, definitions)?,
             None => AnySerializer::build(schema, config, definitions)?,
         };
-        let name = format!("{}[{}]", Self::EXPECTED_TYPE, item_serializer.get_name());
-        Ok(Arc::new(
-            Self {
-                item_serializer,
-                filter: SchemaFilter::from_schema(schema)?,
-                name,
-            }
-            .into(),
-        ))
+        let filter = SchemaFilter::from_schema(schema)?;
+
+        let build = move |item_serializer: Arc<CombinedSerializer>| {
+            let name = format!("{}[{}]", Self::EXPECTED_TYPE, item_serializer.get_name());
+            Arc::new(
+                Self {
+                    item_serializer,
+                    filter,
+                    name,
+                }
+                .into(),
+            )
+        };
+
+        // Only intern when there is no `serialization` key on the schema, as it may
+        // customize the filter (which is not part of the intern key):
+        if schema.contains(intern!(py, "serialization"))? {
+            return Ok(build(item_serializer));
+        }
+        let make_key = |item| crate::definitions::InternKey::List {
+            item: Some(item),
+            strict: false,
+            min_length: None,
+            max_length: None,
+            fail_fast: false,
+        };
+        let global_child = crate::serializers::shared::global_child_key(&item_serializer);
+        let ptr_key = make_key(crate::definitions::ChildKey::Ptr(Arc::as_ptr(&item_serializer) as usize));
+        match global_child {
+            // data-free subtree: shared across all builds in the process
+            Some(child) => Ok(crate::serializers::shared::get_or_intern_global(make_key(child), move || {
+                build(item_serializer)
+            })),
+            None => Ok(definitions.get_or_intern(ptr_key, move || build(item_serializer))),
+        }
     }
 }
 

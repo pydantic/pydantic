@@ -13,7 +13,7 @@ from functools import cache, partial, wraps
 from types import FunctionType
 from typing import TYPE_CHECKING, Any, ForwardRef, Generic, Literal, NoReturn, TypeVar, cast
 
-from pydantic_core import PydanticUndefined, SchemaSerializer
+from pydantic_core import PydanticUndefined, SchemaCore
 from typing_extensions import (  # noqa: UP035 (for `get_args` and `get_origin`)
     TypeAliasType,
     dataclass_transform,
@@ -693,6 +693,8 @@ def complete_model_class(
 
     cls.__pydantic_core_schema__ = schema
 
+    # A single `SchemaCore` owns both the validator and serializer, so common data is shared:
+    schema_core = SchemaCore(schema, core_config, _use_prebuilt=not is_force_rebuild)
     cls.__pydantic_validator__ = create_schema_validator(
         schema,
         cls,
@@ -701,9 +703,9 @@ def complete_model_class(
         'create_model' if create_model_module else 'BaseModel',
         core_config,
         config_wrapper.plugin_settings,
-        _use_prebuilt=not is_force_rebuild,
+        _validator=schema_core.validator,
     )
-    cls.__pydantic_serializer__ = SchemaSerializer(schema, core_config, _use_prebuilt=not is_force_rebuild)
+    cls.__pydantic_serializer__ = schema_core.serializer
 
     # set __signature__ attr only for model class, but not for its instances
     # (because instances can define `__call__`, and `inspect.signature` shouldn't

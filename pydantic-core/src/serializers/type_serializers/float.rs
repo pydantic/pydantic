@@ -23,6 +23,13 @@ pub struct FloatSerializer {
     inf_nan_mode: InfNanMode,
 }
 
+impl FloatSerializer {
+    /// Build flags for global interning of this data-free node.
+    pub(crate) fn intern_flags(&self) -> u8 {
+        self.inf_nan_mode as u8
+    }
+}
+
 static FLOAT_SERIALIZER_NULL: LazyLock<Arc<CombinedSerializer>> = LazyLock::new(|| {
     Arc::new(CombinedSerializer::Float(FloatSerializer {
         inf_nan_mode: InfNanMode::Null,

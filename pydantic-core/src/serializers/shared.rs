@@ -31,6 +31,41 @@ use super::extra::SerializationState;
 use super::infer::{infer_json_key, infer_serialize, infer_to_python};
 use super::ob_type::{IsType, ObType};
 
+/// Process-wide pool of data-free serializer nodes shared across all builds.
+static GLOBAL_INTERN_POOL: std::sync::LazyLock<
+    std::sync::Mutex<crate::definitions::GlobalInternPool<Arc<CombinedSerializer>>>,
+> = std::sync::LazyLock::new(Default::default);
+
+/// The [`ChildKey`] identifying `serializer` in the global intern pool, if it is eligible
+/// to be referenced from globally interned nodes (i.e. it is itself data-free).
+pub(crate) fn global_child_key(serializer: &Arc<CombinedSerializer>) -> Option<crate::definitions::ChildKey> {
+    use crate::definitions::{ChildKey, LeafKind};
+    let leaf = |kind, flags| Some(ChildKey::Leaf { kind, flags });
+    match serializer.as_ref() {
+        CombinedSerializer::Str(_) => leaf(LeafKind::Str, 0),
+        CombinedSerializer::Int(_) => leaf(LeafKind::Int, 0),
+        CombinedSerializer::Bool(_) => leaf(LeafKind::Bool, 0),
+        CombinedSerializer::Float(s) => leaf(LeafKind::Float, s.intern_flags()),
+        CombinedSerializer::None(_) => leaf(LeafKind::None, 0),
+        CombinedSerializer::Any(_) => leaf(LeafKind::Any, 0),
+        _ => {
+            let ptr = Arc::as_ptr(serializer) as usize;
+            GLOBAL_INTERN_POOL
+                .lock()
+                .unwrap()
+                .contains_ptr(ptr)
+                .then_some(ChildKey::Ptr(ptr))
+        }
+    }
+}
+
+pub(crate) fn get_or_intern_global(
+    key: crate::definitions::InternKey,
+    build: impl FnOnce() -> Arc<CombinedSerializer>,
+) -> Arc<CombinedSerializer> {
+    GLOBAL_INTERN_POOL.lock().unwrap().get_or_intern(key, build)
+}
+
 pub(crate) trait BuildSerializer: Sized {
     const EXPECTED_TYPE: &'static str;
 

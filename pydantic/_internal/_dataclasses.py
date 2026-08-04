@@ -13,6 +13,7 @@ from typing import TYPE_CHECKING, Any, ClassVar, Protocol, TypeAlias, cast
 
 from pydantic_core import (
     ArgsKwargs,
+    SchemaCore,
     SchemaSerializer,
     SchemaValidator,
     core_schema,
@@ -182,10 +183,19 @@ def complete_dataclass(
     cls = cast('type[PydanticDataclass]', cls)
 
     cls.__pydantic_core_schema__ = schema
+    # A single `SchemaCore` owns both the validator and serializer, so common data is shared:
+    schema_core = SchemaCore(schema, core_config)
     cls.__pydantic_validator__ = create_schema_validator(
-        schema, cls, cls.__module__, cls.__qualname__, 'dataclass', core_config, config_wrapper.plugin_settings
+        schema,
+        cls,
+        cls.__module__,
+        cls.__qualname__,
+        'dataclass',
+        core_config,
+        config_wrapper.plugin_settings,
+        _validator=schema_core.validator,
     )
-    cls.__pydantic_serializer__ = SchemaSerializer(schema, core_config)
+    cls.__pydantic_serializer__ = schema_core.serializer
     cls.__pydantic_complete__ = True
     return True
 

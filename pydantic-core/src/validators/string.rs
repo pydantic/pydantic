@@ -23,6 +23,13 @@ pub struct StrValidator {
     coerce_numbers_to_str: bool,
 }
 
+impl StrValidator {
+    /// Build flags for global interning of this data-free node.
+    pub(crate) fn intern_flags(&self) -> u8 {
+        u8::from(self.strict) | (u8::from(self.coerce_numbers_to_str) << 1)
+    }
+}
+
 static STRICT_STR_VALIDATOR: LazyLock<Arc<CombinedValidator>> = LazyLock::new(|| {
     CombinedValidator::Str(StrValidator {
         strict: true,

@@ -25,10 +25,19 @@ impl BuildSerializer for NullableSerializer {
         definitions: &mut DefinitionsBuilder<Arc<CombinedSerializer>>,
     ) -> PyResult<Arc<CombinedSerializer>> {
         let sub_schema = schema.get_as_req(intern!(schema.py(), "schema"))?;
-        Ok(CombinedSerializer::Nullable(Self {
-            serializer: CombinedSerializer::build(&sub_schema, config, definitions)?,
-        })
-        .into())
+        let serializer = CombinedSerializer::build(&sub_schema, config, definitions)?;
+        let global_child = crate::serializers::shared::global_child_key(&serializer);
+        let ptr_key =
+            crate::definitions::InternKey::Nullable(crate::definitions::ChildKey::Ptr(Arc::as_ptr(&serializer) as usize));
+        let build_node = move || CombinedSerializer::Nullable(Self { serializer }).into();
+        match global_child {
+            // data-free subtree: shared across all builds in the process
+            Some(child) => Ok(crate::serializers::shared::get_or_intern_global(
+                crate::definitions::InternKey::Nullable(child),
+                build_node,
+            )),
+            None => Ok(definitions.get_or_intern(ptr_key, build_node)),
+        }
     }
 }
 

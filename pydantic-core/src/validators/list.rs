@@ -104,15 +104,43 @@ impl BuildValidator for ListValidator {
     ) -> PyResult<Arc<CombinedValidator>> {
         let py = schema.py();
         let item_validator = get_items_schema(schema, config, definitions)?;
-        Ok(CombinedValidator::List(Self {
-            strict: crate::build_tools::is_strict(schema, config)?,
-            item_validator,
-            min_length: schema.get_as(pyo3::intern!(py, "min_length"))?,
-            max_length: schema.get_as(pyo3::intern!(py, "max_length"))?,
-            name: OnceLock::new(),
-            fail_fast: schema.get_as(pyo3::intern!(py, "fail_fast"))?.unwrap_or(false),
-        })
-        .into())
+        let strict = crate::build_tools::is_strict(schema, config)?;
+        let min_length = schema.get_as(pyo3::intern!(py, "min_length"))?;
+        let max_length = schema.get_as(pyo3::intern!(py, "max_length"))?;
+        let fail_fast = schema.get_as(pyo3::intern!(py, "fail_fast"))?.unwrap_or(false);
+        let make_key = |item| crate::definitions::InternKey::List {
+            item,
+            strict,
+            min_length,
+            max_length,
+            fail_fast,
+        };
+        // `None` is a valid global child key here (a plain `list` with any items):
+        let global_item = match &item_validator {
+            Some(v) => super::global_child_key(v).map(Some),
+            None => Some(None),
+        };
+        let ptr_key = make_key(
+            item_validator
+                .as_ref()
+                .map(|v| crate::definitions::ChildKey::Ptr(Arc::as_ptr(v) as usize)),
+        );
+        let build_node = move || {
+            CombinedValidator::List(Self {
+                strict,
+                item_validator,
+                min_length,
+                max_length,
+                name: OnceLock::new(),
+                fail_fast,
+            })
+            .into()
+        };
+        match global_item {
+            // data-free subtree: shared across all builds in the process
+            Some(item) => Ok(super::get_or_intern_global(make_key(item), build_node)),
+            None => Ok(definitions.get_or_intern(ptr_key, build_node)),
+        }
     }
 }
 

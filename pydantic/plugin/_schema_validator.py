@@ -28,8 +28,12 @@ def create_schema_validator(
     config: CoreConfig | None = None,
     plugin_settings: dict[str, Any] | None = None,
     _use_prebuilt: bool = True,
+    _validator: SchemaValidator | None = None,
 ) -> SchemaValidator | PluggableSchemaValidator:
     """Create a `SchemaValidator` or `PluggableSchemaValidator` if plugins are installed.
+
+    If `_validator` is provided (e.g. the validator view of a `SchemaCore`), it is used
+    instead of constructing a new `SchemaValidator`.
 
     Returns:
         If plugins are installed then return `PluggableSchemaValidator`, otherwise return `SchemaValidator`.
@@ -48,7 +52,10 @@ def create_schema_validator(
             plugins,
             plugin_settings or {},
             _use_prebuilt=_use_prebuilt,
+            _validator=_validator,
         )
+    elif _validator is not None:
+        return _validator
     else:
         return SchemaValidator(schema, config, _use_prebuilt=_use_prebuilt)
 
@@ -68,8 +75,11 @@ class PluggableSchemaValidator:
         plugins: Iterable[PydanticPluginProtocol],
         plugin_settings: dict[str, Any],
         _use_prebuilt: bool = True,
+        _validator: SchemaValidator | None = None,
     ) -> None:
-        self._schema_validator = SchemaValidator(schema, config, _use_prebuilt=_use_prebuilt)
+        self._schema_validator = (
+            _validator if _validator is not None else SchemaValidator(schema, config, _use_prebuilt=_use_prebuilt)
+        )
 
         python_event_handlers: list[BaseValidateHandlerProtocol] = []
         json_event_handlers: list[BaseValidateHandlerProtocol] = []

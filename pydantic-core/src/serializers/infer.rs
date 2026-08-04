@@ -618,11 +618,11 @@ pub(crate) fn call_pydantic_serializer<'py, S: DoSerialize>(
     state: &mut SerializationState<'py>,
     do_serialize: S,
 ) -> Result<S::Ok, S::Error> {
-    let state = &mut state.scoped_set(|s| &mut s.config, serializer.get().config);
+    let state = &mut state.scoped_set(|s| &mut s.config, serializer.get().config());
 
     // Avoid falling immediately back into inference because we need to use the serializer
     // to drive the next step of serialization
-    do_serialize.serialize_no_infer(&serializer.get().serializer, value, state)
+    do_serialize.serialize_no_infer(serializer.get().serializer(), value, state)
 }
 
 fn serialize_pattern<S: DoSerialize>(value: &Bound<'_, PyAny>, do_serialize: S) -> Result<S::Ok, S::Error> {

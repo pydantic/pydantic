@@ -12,11 +12,12 @@ use pyo3::{IntoPyObjectExt, prelude::*};
 use pyo3::{PyTraverseError, PyVisit, intern};
 
 use crate::build_tools::{ExtraBehavior, py_schema_error_type};
-use crate::definitions::{Definitions, DefinitionsBuilder};
+use crate::definitions::{ChildKey, Definitions, DefinitionsBuilder, GlobalInternPool, InternKey, LeafKind};
 use crate::errors::{LocItem, ValError, ValResult, ValidationError};
 use crate::input::{Input, InputType, StringMapping};
 use crate::py_gc::PyGcTraverse;
 use crate::recursion_guard::RecursionState;
+use crate::schema_core::{SchemaCore, SchemaCoreData};
 use crate::tools::SchemaDict;
 pub(crate) use config::{TemporalUnitMode, ValBytesMode};
 
@@ -74,6 +75,39 @@ mod with_default;
 pub use self::validation_state::{Exactness, ValidationState};
 pub use with_default::DefaultType;
 
+/// Process-wide pool of data-free validator nodes shared across all builds.
+static GLOBAL_INTERN_POOL: std::sync::LazyLock<std::sync::Mutex<GlobalInternPool<Arc<CombinedValidator>>>> =
+    std::sync::LazyLock::new(Default::default);
+
+/// The [`ChildKey`] identifying `validator` in the global intern pool, if it is eligible
+/// to be referenced from globally interned nodes (i.e. it is itself data-free).
+pub(crate) fn global_child_key(validator: &Arc<CombinedValidator>) -> Option<ChildKey> {
+    let leaf = |kind, flags| Some(ChildKey::Leaf { kind, flags });
+    match validator.as_ref() {
+        CombinedValidator::Str(v) => leaf(LeafKind::Str, v.intern_flags()),
+        CombinedValidator::Int(v) => leaf(LeafKind::Int, v.intern_flags()),
+        CombinedValidator::Bool(v) => leaf(LeafKind::Bool, v.intern_flags()),
+        CombinedValidator::Float(v) => leaf(LeafKind::Float, v.intern_flags()),
+        CombinedValidator::None(_) => leaf(LeafKind::None, 0),
+        CombinedValidator::Any(_) => leaf(LeafKind::Any, 0),
+        _ => {
+            let ptr = Arc::as_ptr(validator) as usize;
+            GLOBAL_INTERN_POOL
+                .lock()
+                .unwrap()
+                .contains_ptr(ptr)
+                .then_some(ChildKey::Ptr(ptr))
+        }
+    }
+}
+
+pub(crate) fn get_or_intern_global(
+    key: InternKey,
+    build: impl FnOnce() -> Arc<CombinedValidator>,
+) -> Arc<CombinedValidator> {
+    GLOBAL_INTERN_POOL.lock().unwrap().get_or_intern(key, build)
+}
+
 #[pyclass(module = "pydantic_core._pydantic_core", name = "Some")]
 pub struct PySome {
     #[pyo3(get)]
@@ -109,50 +143,36 @@ impl PySome {
     }
 }
 
-#[pyclass(module = "pydantic_core._pydantic_core", frozen)]
+/// The validation half of a [`SchemaCoreData`]: the built validator tree plus
+/// validation-specific configuration.
 #[derive(Debug)]
-pub struct SchemaValidator {
-    validator: Arc<CombinedValidator>,
+pub struct ValidatorPart {
+    pub(crate) validator: Arc<CombinedValidator>,
     definitions: Definitions<Arc<CombinedValidator>>,
-    // References to the Python schema and config objects are saved to enable
-    // reconstructing the object for cloudpickle support (see `__reduce__`).
-    py_schema: Py<PyAny>,
-    py_config: Option<Py<PyDict>>,
-    #[pyo3(get)]
-    title: Py<PyAny>,
+    pub(crate) title: Py<PyAny>,
     hide_input_in_errors: bool,
     validation_error_cause: bool,
     cache_str: StringCacheMode,
 }
 
-impl_py_gc_traverse!(SchemaValidator {
+impl_py_gc_traverse!(ValidatorPart {
     validator,
     definitions,
-    py_schema,
-    py_config,
 });
 
-#[pymethods]
-impl SchemaValidator {
-    #[new]
-    #[pyo3(signature = (schema, config=None, _use_prebuilt=true))]
-    pub fn py_new(
+impl ValidatorPart {
+    pub fn build(
         py: Python,
         schema: &Bound<'_, PyAny>,
         config: Option<&Bound<'_, PyDict>>,
-        _use_prebuilt: bool,
+        use_prebuilt: bool,
     ) -> PyResult<Self> {
-        // _use_prebuilt=true by default, but false during rebuilds to avoid stale references
+        // use_prebuilt=true by default, but false during rebuilds to avoid stale references
         // to old validators (see pydantic-core issue #1894)
-        let mut definitions_builder = DefinitionsBuilder::new(_use_prebuilt);
+        let mut definitions_builder = DefinitionsBuilder::new(use_prebuilt);
 
         let validator = build_validator(schema, config, &mut definitions_builder)?;
         let definitions = definitions_builder.finish()?;
-        let py_schema = schema.clone().unbind();
-        let py_config = match config {
-            Some(c) if !c.is_empty() => Some(c.clone().into()),
-            _ => None,
-        };
         let config_title = match config {
             Some(c) => c.get_item("title")?,
             None => None,
@@ -169,13 +189,64 @@ impl SchemaValidator {
         Ok(Self {
             validator,
             definitions,
-            py_schema,
-            py_config,
             title,
             hide_input_in_errors,
             validation_error_cause,
             cache_str,
         })
+    }
+}
+
+#[pyclass(module = "pydantic_core._pydantic_core", frozen)]
+#[derive(Debug)]
+pub struct SchemaValidator {
+    // The `SchemaCore` Python object owns the validator data; this view holds (and
+    // reports to the GC) a single reference to it. See the GC note on `SchemaCoreData`.
+    core: Py<SchemaCore>,
+}
+
+impl_py_gc_traverse!(SchemaValidator { core });
+
+impl SchemaValidator {
+    /// Create a validator view over an existing core. The core must have a validator part.
+    pub(crate) fn from_core(core: Py<SchemaCore>) -> Self {
+        debug_assert!(core.get().data.validator.is_some());
+        Self { core }
+    }
+
+    pub(crate) fn core_data(&self) -> &SchemaCoreData {
+        &self.core.get().data
+    }
+
+    fn part(&self) -> &ValidatorPart {
+        self.core_data().validator_part()
+    }
+
+    /// The root validator of the tree, used by prebuilt validators.
+    pub(crate) fn validator(&self) -> &Arc<CombinedValidator> {
+        &self.part().validator
+    }
+}
+
+#[pymethods]
+impl SchemaValidator {
+    #[new]
+    #[pyo3(signature = (schema, config=None, _use_prebuilt=true))]
+    pub fn py_new(
+        py: Python,
+        schema: &Bound<'_, PyAny>,
+        config: Option<&Bound<'_, PyDict>>,
+        _use_prebuilt: bool,
+    ) -> PyResult<Self> {
+        let data = SchemaCoreData::build(py, schema, config, _use_prebuilt, true, false)?;
+        Ok(Self {
+            core: SchemaCore::new_py(py, data)?,
+        })
+    }
+
+    #[getter]
+    pub fn title(&self, py: Python) -> Py<PyAny> {
+        self.part().title.clone_ref(py)
     }
 
     #[allow(clippy::too_many_arguments)]
@@ -348,13 +419,14 @@ impl SchemaValidator {
             .map(|e| ExtraBehavior::from_str(e.to_str()?).map_err(|err| PyValueError::new_err(err.to_string())))
             .transpose()?;
 
+        let part = self.part();
         let extra = Extra {
             input_type: InputType::Python,
             strict,
             extra_behavior,
             from_attributes,
             context,
-            cache_str: self.cache_str,
+            cache_str: part.cache_str,
             by_alias,
             by_name,
         };
@@ -367,7 +439,7 @@ impl SchemaValidator {
             Some(field_name.as_py_str().bind(py).clone()),
             None,
         );
-        self.validator
+        part.validator
             .validate_assignment(py, &obj, &field_name, &field_value, &mut state)
             .map_err(|e| self.prepare_validation_err(py, e, InputType::Python))
     }
@@ -379,19 +451,20 @@ impl SchemaValidator {
         strict: Option<bool>,
         context: Option<&Bound<'_, PyAny>>,
     ) -> PyResult<Py<PyAny>> {
+        let part = self.part();
         let extra = Extra {
             input_type: InputType::Python,
             strict,
             extra_behavior: None,
             from_attributes: None,
             context,
-            cache_str: self.cache_str,
+            cache_str: part.cache_str,
             by_alias: None,
             by_name: None,
         };
         let recursion_guard = &mut RecursionState::default();
         let mut state = ValidationState::new(extra, recursion_guard, false.into(), None, None);
-        let r = self.validator.default_value(py, None::<i64>, &mut state);
+        let r = part.validator.default_value(py, None::<i64>, &mut state);
         match r {
             Ok(maybe_default) => match maybe_default {
                 Some(v) => PySome::new(v).into_py_any(py),
@@ -403,17 +476,19 @@ impl SchemaValidator {
 
     pub fn __reduce__<'py>(slf: &Bound<'py, Self>) -> PyResult<(Bound<'py, PyType>, Bound<'py, PyTuple>)> {
         // Passing _use_prebuilt=false avoids reusing prebuilt serializers when unpickling
-        let init_args = (&slf.get().py_schema, &slf.get().py_config, false).into_pyobject(slf.py())?;
+        let core = slf.get().core_data();
+        let init_args = (&core.py_schema, &core.py_config, false).into_pyobject(slf.py())?;
         Ok((slf.get_type(), init_args))
     }
 
     pub fn __repr__(&self, py: Python) -> String {
+        let part = self.part();
         format!(
             "SchemaValidator(title={:?}, validator={:#?}, definitions={:#?}, cache_strings={})",
-            self.title.extract::<&str>(py).unwrap(),
-            self.validator,
-            self.definitions,
-            match self.cache_str {
+            part.title.extract::<&str>(py).unwrap(),
+            part.validator,
+            part.definitions,
+            match part.cache_str {
                 StringCacheMode::All => "True",
                 StringCacheMode::Keys => "'keys'",
                 StringCacheMode::None => "False",
@@ -442,6 +517,7 @@ impl SchemaValidator {
         by_alias: Option<bool>,
         by_name: Option<bool>,
     ) -> ValResult<Py<PyAny>> {
+        let part = self.part();
         let mut recursion_guard = RecursionState::default();
         let mut state = ValidationState::new(
             Extra::new(
@@ -450,7 +526,7 @@ impl SchemaValidator {
                 from_attributes,
                 context,
                 input_type,
-                self.cache_str,
+                part.cache_str,
                 by_alias,
                 by_name,
             ),
@@ -459,7 +535,7 @@ impl SchemaValidator {
             None,
             self_instance,
         );
-        self.validator.validate(py, input, &mut state)
+        part.validator.validate(py, input, &mut state)
     }
 
     #[allow(clippy::too_many_arguments)]
@@ -495,14 +571,15 @@ impl SchemaValidator {
     }
 
     fn prepare_validation_err(&self, py: Python, error: ValError, input_type: InputType) -> PyErr {
+        let part = self.part();
         ValidationError::from_val_error(
             py,
-            self.title.clone_ref(py),
+            part.title.clone_ref(py),
             input_type,
             error,
             None,
-            self.hide_input_in_errors,
-            self.validation_error_cause,
+            part.hide_input_in_errors,
+            part.validation_error_cause,
         )
     }
 }

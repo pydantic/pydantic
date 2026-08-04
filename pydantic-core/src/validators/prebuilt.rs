@@ -30,7 +30,7 @@ impl PrebuiltValidator {
                 },
             };
             if matches!(
-                schema_validator.get().validator.as_ref(),
+                schema_validator.get().validator().as_ref(),
                 CombinedValidator::FunctionWrap(_) | CombinedValidator::FunctionAfter(_)
             ) {
                 return Ok(None);
@@ -49,10 +49,10 @@ impl Validator for PrebuiltValidator {
         input: &(impl Input<'py> + ?Sized),
         state: &mut ValidationState<'_, 'py>,
     ) -> ValResult<Py<PyAny>> {
-        self.schema_validator.get().validator.validate(py, input, state)
+        self.schema_validator.get().validator().validate(py, input, state)
     }
 
     fn get_name(&self) -> &str {
-        self.schema_validator.get().validator.get_name()
+        self.schema_validator.get().validator().get_name()
     }
 }

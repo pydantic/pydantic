@@ -17,7 +17,7 @@ from typing import (
     overload,
 )
 
-from pydantic_core import CoreSchema, SchemaSerializer, SchemaValidator, Some
+from pydantic_core import CoreSchema, SchemaCore, SchemaSerializer, SchemaValidator, Some
 from typing_extensions import ParamSpec, is_typeddict
 
 from pydantic.errors import PydanticUserError
@@ -316,6 +316,8 @@ class TypeAdapter(Generic[T]):
 
             core_config = config_wrapper.core_config(None)
 
+            # A single `SchemaCore` owns both the validator and serializer, so common data is shared:
+            schema_core = SchemaCore(self.core_schema, core_config)
             self.validator = create_schema_validator(
                 schema=self.core_schema,
                 schema_type=self._type,
@@ -324,8 +326,9 @@ class TypeAdapter(Generic[T]):
                 schema_kind='TypeAdapter',
                 config=core_config,
                 plugin_settings=config_wrapper.plugin_settings,
+                _validator=schema_core.validator,
             )
-            self.serializer = SchemaSerializer(self.core_schema, core_config)
+            self.serializer = schema_core.serializer
 
         self.pydantic_complete = True
         return True

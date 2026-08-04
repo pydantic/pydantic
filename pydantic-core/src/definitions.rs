@@ -129,10 +129,103 @@ impl<T: PyGcTraverse> PyGcTraverse for Definitions<T> {
     }
 }
 
+/// Data-free leaf node kinds, used for semantic (pointer-free) identity in [`ChildKey`].
+#[derive(Debug, Hash, PartialEq, Eq, Clone, Copy)]
+pub enum LeafKind {
+    Str,
+    Int,
+    Bool,
+    Float,
+    None,
+    Any,
+}
+
+/// Identity of a child node inside an [`InternKey`].
+#[derive(Debug, Hash, PartialEq, Eq, Clone, Copy)]
+pub enum ChildKey {
+    /// Pointer identity. Used for per-build interning, and for children which are
+    /// themselves in the global intern pool (whose pointers are stable for the process
+    /// lifetime because the pool keeps them alive).
+    Ptr(usize),
+    /// Semantic identity of a data-free leaf node (kind + build flags). Used for global
+    /// interning, where pointer identity of leaves is not stable across builds.
+    Leaf { kind: LeafKind, flags: u8 },
+}
+
+/// Key identifying structurally identical compound validator/serializer nodes. Children
+/// are keyed by [`ChildKey`] and Python objects by object identity, so two equal keys are
+/// guaranteed to describe interchangeable nodes.
+///
+/// Schemas frequently repeat the same shapes (e.g. dozens of `str | None = None` fields
+/// in one model or across a module of models), so sharing one allocation for all of them
+/// saves memory.
+#[derive(Debug, Hash, PartialEq, Eq)]
+pub enum InternKey {
+    /// `nullable` wrapper around a child node.
+    Nullable(ChildKey),
+    /// `list` of a child node (`None` = any item).
+    List {
+        item: Option<ChildKey>,
+        strict: bool,
+        min_length: Option<usize>,
+        max_length: Option<usize>,
+        fail_fast: bool,
+    },
+    /// `default` wrapper around a child node. `default_kind` discriminates
+    /// no-default/default/factory (and whether the factory takes data), `default_obj`
+    /// is the identity of the default object or factory.
+    WithDefault {
+        child: ChildKey,
+        default_kind: u8,
+        default_obj: usize,
+        on_error: u8,
+        validate_default: bool,
+    },
+}
+
+/// Process-wide intern pool for nodes whose entire subtree is data-free: no Python
+/// references (other than immortal singletons like `None`) and no per-build state.
+/// Such nodes are interchangeable across builds, so e.g. every `str | None = None`
+/// field of every model in the process shares a single node.
+///
+/// The pool grows with the number of *distinct node shapes* used by the application,
+/// not with the number of builds, so it stays small and never pins user objects.
+pub struct GlobalInternPool<T> {
+    map: AHashMap<InternKey, T>,
+    ptrs: ahash::AHashSet<usize>,
+}
+
+impl<T> Default for GlobalInternPool<T> {
+    fn default() -> Self {
+        Self {
+            map: AHashMap::new(),
+            ptrs: ahash::AHashSet::new(),
+        }
+    }
+}
+
+impl<V> GlobalInternPool<Arc<V>> {
+    /// Whether `ptr` is a node owned by this pool (and therefore has a stable address).
+    pub fn contains_ptr(&self, ptr: usize) -> bool {
+        self.ptrs.contains(&ptr)
+    }
+
+    pub fn get_or_intern(&mut self, key: InternKey, build: impl FnOnce() -> Arc<V>) -> Arc<V> {
+        if let Some(value) = self.map.get(&key) {
+            return value.clone();
+        }
+        let value = build();
+        self.ptrs.insert(Arc::as_ptr(&value) as usize);
+        self.map.insert(key, value.clone());
+        value
+    }
+}
+
 #[derive(Debug)]
 pub struct DefinitionsBuilder<T> {
     definitions: Definitions<T>,
     use_prebuilt: bool,
+    interned: AHashMap<InternKey, T>,
 }
 
 impl<T: std::fmt::Debug> DefinitionsBuilder<T> {
@@ -140,7 +233,17 @@ impl<T: std::fmt::Debug> DefinitionsBuilder<T> {
         Self {
             definitions: Definitions(AHashMap::new()),
             use_prebuilt,
+            interned: AHashMap::new(),
         }
+    }
+
+    /// Deduplicate structurally identical compound nodes within this build: returns the
+    /// cached node for `key`, or builds, caches and returns a new one.
+    pub fn get_or_intern(&mut self, key: InternKey, build: impl FnOnce() -> T) -> T
+    where
+        T: Clone,
+    {
+        self.interned.entry(key).or_insert_with(build).clone()
     }
 
     /// Whether prebuilt validators/serializers should be used

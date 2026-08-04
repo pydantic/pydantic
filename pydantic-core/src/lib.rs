@@ -22,6 +22,7 @@ mod errors;
 mod input;
 mod lookup_key;
 mod recursion_guard;
+mod schema_core;
 mod serializers;
 mod tools;
 mod url;
@@ -39,6 +40,7 @@ pub use serializers::{
     PydanticSerializationError, PydanticSerializationUnexpectedValue, SchemaSerializer, WarningsArg, to_json,
     to_jsonable_python,
 };
+pub use schema_core::SchemaCore;
 pub use validators::{PySome, SchemaValidator};
 
 use crate::input::Input;
@@ -115,8 +117,8 @@ pub mod _pydantic_core {
     use crate::{
         ArgsKwargs, PyMultiHostUrl, PySome, PyUrl, PydanticCustomError, PydanticKnownError, PydanticOmit,
         PydanticSerializationError, PydanticSerializationUnexpectedValue, PydanticUndefinedType, PydanticUseDefault,
-        SchemaError, SchemaSerializer, SchemaValidator, TzInfo, ValidationError, from_json, list_all_errors, to_json,
-        to_jsonable_python,
+        SchemaCore, SchemaError, SchemaSerializer, SchemaValidator, TzInfo, ValidationError, from_json,
+        list_all_errors, to_json, to_jsonable_python,
     };
 
     #[pymodule_init]

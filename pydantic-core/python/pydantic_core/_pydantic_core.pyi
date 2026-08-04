@@ -14,6 +14,7 @@ __all__ = [
     'build_info',
     '_recursion_limit',
     'ArgsKwargs',
+    'SchemaCore',
     'SchemaValidator',
     'SchemaSerializer',
     'Url',
@@ -410,6 +411,34 @@ class SchemaSerializer:
         Returns:
            JSON bytes.
         """
+
+@final
+class SchemaCore:
+    """Unified owner of the validation and serialization machinery built from a single core schema.
+
+    The `validator` and `serializer` attributes expose regular `SchemaValidator` / `SchemaSerializer`
+    objects which share the same underlying data, making this cheaper than constructing the two
+    separately when both are needed.
+    """
+
+    def __init__(self, schema: CoreSchema, config: CoreConfig | None = None, _use_prebuilt: bool = True) -> None:
+        """Initializes the `SchemaCore`.
+
+        Arguments:
+            schema: The `CoreSchema` to use for validation and serialization.
+            config: Optionally a [`CoreConfig`][pydantic_core.core_schema.CoreConfig] to configure
+                validation and serialization.
+            _use_prebuilt: Whether to use pre-built validators and serializers (False during rebuilds
+                to avoid stale references).
+        """
+
+    def __new__(cls, schema: CoreSchema, config: CoreConfig | None = None, _use_prebuilt: bool = True) -> Self: ...
+    @property
+    def validator(self) -> SchemaValidator:
+        """The `SchemaValidator` view over this core."""
+    @property
+    def serializer(self) -> SchemaSerializer:
+        """The `SchemaSerializer` view over this core."""
 
 def to_json(
     value: Any,

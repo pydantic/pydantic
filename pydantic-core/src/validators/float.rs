@@ -46,6 +46,13 @@ pub struct FloatValidator {
     allow_inf_nan: bool,
 }
 
+impl FloatValidator {
+    /// Build flags for global interning of this data-free node.
+    pub(crate) fn intern_flags(&self) -> u8 {
+        u8::from(self.strict) | (u8::from(self.allow_inf_nan) << 1)
+    }
+}
+
 impl BuildValidator for FloatValidator {
     const EXPECTED_TYPE: &'static str = "float";
 

@@ -14,6 +14,13 @@ pub struct BoolValidator {
     strict: bool,
 }
 
+impl BoolValidator {
+    /// Build flags for global interning of this data-free node.
+    pub(crate) fn intern_flags(&self) -> u8 {
+        u8::from(self.strict)
+    }
+}
+
 static STRICT_BOOL_VALIDATOR: LazyLock<Arc<CombinedValidator>> =
     LazyLock::new(|| Arc::new(BoolValidator { strict: true }.into()));
 

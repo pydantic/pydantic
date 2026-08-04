@@ -32,7 +32,41 @@ impl BuildSerializer for WithDefaultSerializer {
         let sub_schema = schema.get_as_req(intern!(py, "schema"))?;
         let serializer = CombinedSerializer::build(&sub_schema, config, definitions)?;
 
-        Ok(Arc::new(Self { default, serializer }.into()))
+        // key the default by kind + object identity: the same default object always
+        // yields an interchangeable node
+        let (default_kind, default_obj) = match &default {
+            DefaultType::None => (0u8, 0usize),
+            DefaultType::Default(obj) => (1, obj.as_ptr() as usize),
+            DefaultType::DefaultFactory(obj, takes_data) => (if *takes_data { 3 } else { 2 }, obj.as_ptr() as usize),
+        };
+        let make_key = move |child| crate::definitions::InternKey::WithDefault {
+            child,
+            default_kind,
+            default_obj,
+            on_error: 0,
+            validate_default: false,
+        };
+        // the node is only data-free (eligible for cross-build sharing) if the default
+        // is absent or the immortal `None` singleton — never pin arbitrary user objects
+        let data_free_default = match &default {
+            DefaultType::None => true,
+            DefaultType::Default(obj) => obj.bind(py).is_none(),
+            DefaultType::DefaultFactory(..) => false,
+        };
+        let global_child = if data_free_default {
+            crate::serializers::shared::global_child_key(&serializer)
+        } else {
+            None
+        };
+        let ptr_key = make_key(crate::definitions::ChildKey::Ptr(Arc::as_ptr(&serializer) as usize));
+        let build_node = move || Arc::new(Self { default, serializer }.into());
+        match global_child {
+            Some(child) => Ok(crate::serializers::shared::get_or_intern_global(
+                make_key(child),
+                build_node,
+            )),
+            None => Ok(definitions.get_or_intern(ptr_key, build_node)),
+        }
     }
 }
 
