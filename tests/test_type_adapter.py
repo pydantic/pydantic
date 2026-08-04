@@ -487,6 +487,41 @@ def test_validate_strings_dict(strict):
     }
 
 
+@pytest.mark.parametrize('strict', [True, False])
+def test_validate_strings_model(strict):
+    class Model(BaseModel):
+        field_a: int
+        field_b: date
+
+    assert TypeAdapter(Model).validate_strings({'field_a': '1', 'field_b': '2017-01-01'}, strict=strict) == Model(
+        field_a=1, field_b=date(2017, 1, 1)
+    )
+
+
+@pytest.mark.parametrize('strict', [True, False])
+def test_validate_strings_dataclass(strict):
+    @dataclass
+    class MyDataclass:
+        field_a: int
+        field_b: date
+
+    assert TypeAdapter(MyDataclass).validate_strings(
+        {'field_a': '1', 'field_b': '2017-01-01'}, strict=strict
+    ) == MyDataclass(field_a=1, field_b=date(2017, 1, 1))
+
+
+@pytest.mark.parametrize('strict', [True, False])
+def test_validate_strings_typed_dict(strict):
+    class MyTypedDict(TypedDict):
+        field_a: int
+        field_b: date
+
+    assert TypeAdapter(MyTypedDict).validate_strings({'field_a': '1', 'field_b': '2017-01-01'}, strict=strict) == {
+        'field_a': 1,
+        'field_b': date(2017, 1, 1),
+    }
+
+
 def test_annotated_type_disallows_config() -> None:
     class Model(BaseModel):
         x: int
