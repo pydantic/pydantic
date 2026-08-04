@@ -13,7 +13,7 @@ else:
         return []
 
 
-PYDANTIC_CORE_DIR = Path(__file__).resolve().parent.parent
+PYDANTIC_CORE_DIR = Path(__file__).resolve().parents[2] / 'pydantic-core'
 
 
 @pytest.mark.skipif(CodeExample is None or sys.platform not in {'linux', 'darwin'}, reason='Only on linux and macos')

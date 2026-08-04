@@ -5,7 +5,6 @@ from typing import Any
 from weakref import WeakValueDictionary
 
 import pytest
-
 from pydantic_core import SchemaSerializer, SchemaValidator, core_schema
 
 from .conftest import assert_gc, is_free_threaded

@@ -4,10 +4,9 @@ from enum import Enum
 from typing import Any
 
 import pytest
+from pydantic_core import SchemaError, SchemaSerializer, SchemaValidator, ValidationError, core_schema
 from typing_extensions import get_args, get_type_hints  # noqa: UP035
 from typing_inspection.introspection import UNKNOWN, AnnotationSource, inspect_annotation
-
-from pydantic_core import SchemaError, SchemaSerializer, SchemaValidator, ValidationError, core_schema
 
 
 def val_function(x, *args: Any):

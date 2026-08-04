@@ -3,7 +3,6 @@ import re
 
 import pytest
 from dirty_equals import FunctionCheck, HasAttributes, IsInstance
-
 from pydantic_core import CoreConfig, SchemaValidator, ValidationError
 from pydantic_core import core_schema as cs
 

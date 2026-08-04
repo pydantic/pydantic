@@ -9,8 +9,6 @@ from typing import Any
 
 import pytest
 from dirty_equals import HasRepr, IsInstance, IsJson, IsStr
-from pytest_mock import MockerFixture
-
 from pydantic_core import (
     CoreConfig,
     PydanticCustomError,
@@ -21,6 +19,7 @@ from pydantic_core import (
     core_schema,
 )
 from pydantic_core._pydantic_core import list_all_errors
+from pytest_mock import MockerFixture
 
 from .conftest import PyAndJson
 
