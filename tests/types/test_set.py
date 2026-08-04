@@ -235,7 +235,7 @@ def test_constrained_set_item_type_fails():
     ]
 
 
-def test_conset():
+def test_constrained_set():
     class Model(BaseModel):
         foo: set[int] = Field(min_length=2, max_length=4)
         bar: Annotated[set[str], annotated_types.Len(1, 4)] = None
@@ -276,7 +276,7 @@ def test_conset():
     ]
 
 
-def test_conset_not_required():
+def test_set_not_required():
     class Model(BaseModel):
         foo: set[int] | None = None
 

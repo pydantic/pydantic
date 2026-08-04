@@ -30,7 +30,7 @@ def test_frozenset_validation(value, expected):
         assert Model(v=value).v == expected
 
 
-def test_confrozenset():
+def test_constrained_frozenset():
     class Model(BaseModel):
         foo: frozenset[int] = Field(min_length=2, max_length=4)
         bar: Annotated[frozenset[str], annotated_types.Len(1, 4)] = None
@@ -74,7 +74,7 @@ def test_confrozenset():
     ]
 
 
-def test_confrozenset_not_required():
+def test_frozenset_not_required():
     class Model(BaseModel):
         foo: frozenset[int] | None = None
 

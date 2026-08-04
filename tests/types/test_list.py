@@ -235,7 +235,7 @@ def test_constrained_list_item_type_fails():
     ]
 
 
-def test_conlist():
+def test_constrained_list():
     class Model(BaseModel):
         foo: list[int] = Field(min_length=2, max_length=4)
         bar: Annotated[list[str], annotated_types.Len(1, 4)] = None
@@ -276,7 +276,7 @@ def test_conlist():
     ]
 
 
-def test_conlist_wrong_type_default():
+def test_list_wrong_type_default():
     """It should not validate default value by default"""
 
     class Model(BaseModel):
