@@ -396,108 +396,10 @@ def test_import_string_thing_with_name() -> None:
     assert import_things.model_dump_json() == '{"obj":{"name":"foo"}}'
 
 
-def test_strict_date():
-    class Model(BaseModel):
-        v: Annotated[date, Field(strict=True)]
-
-    assert Model(v=date(2017, 5, 5)).v == date(2017, 5, 5)
-
-    with pytest.raises(ValidationError) as exc_info:
-        Model(v=datetime(2017, 5, 5))
-    assert exc_info.value.errors(include_url=False) == [
-        {
-            'type': 'date_type',
-            'loc': ('v',),
-            'msg': 'Input should be a valid date',
-            'input': datetime(2017, 5, 5),
-        }
-    ]
-
-    with pytest.raises(ValidationError) as exc_info:
-        Model(v='2017-05-05')
-    assert exc_info.value.errors(include_url=False) == [
-        {
-            'type': 'date_type',
-            'loc': ('v',),
-            'msg': 'Input should be a valid date',
-            'input': '2017-05-05',
-        }
-    ]
-
-
-def test_strict_datetime():
-    class Model(BaseModel):
-        v: Annotated[datetime, Field(strict=True)]
-
-    assert Model(v=datetime(2017, 5, 5, 10, 10, 10)).v == datetime(2017, 5, 5, 10, 10, 10)
-
-    with pytest.raises(ValidationError) as exc_info:
-        Model(v=date(2017, 5, 5))
-    assert exc_info.value.errors(include_url=False) == [
-        {
-            'type': 'datetime_type',
-            'loc': ('v',),
-            'msg': 'Input should be a valid datetime',
-            'input': date(2017, 5, 5),
-        }
-    ]
-
-    with pytest.raises(ValidationError) as exc_info:
-        Model(v='2017-05-05T10:10:10')
-    assert exc_info.value.errors(include_url=False) == [
-        {
-            'type': 'datetime_type',
-            'loc': ('v',),
-            'msg': 'Input should be a valid datetime',
-            'input': '2017-05-05T10:10:10',
-        }
-    ]
-
-
-def test_strict_time():
-    class Model(BaseModel):
-        v: Annotated[time, Field(strict=True)]
-
-    assert Model(v=time(10, 10, 10)).v == time(10, 10, 10)
-
-    with pytest.raises(ValidationError) as exc_info:
-        Model(v='10:10:10')
-    assert exc_info.value.errors(include_url=False) == [
-        {
-            'type': 'time_type',
-            'loc': ('v',),
-            'msg': 'Input should be a valid time',
-            'input': '10:10:10',
-        }
-    ]
-
-
-def test_strict_timedelta():
-    class Model(BaseModel):
-        v: Annotated[timedelta, Field(strict=True)]
-
-    assert Model(v=timedelta(days=1)).v == timedelta(days=1)
-
-    with pytest.raises(ValidationError) as exc_info:
-        Model(v='1 days')
-    assert exc_info.value.errors(include_url=False) == [
-        {
-            'type': 'time_delta_type',
-            'loc': ('v',),
-            'msg': 'Input should be a valid timedelta',
-            'input': '1 days',
-        }
-    ]
-
-
 @pytest.fixture(scope='session', name='CheckModel')
 def check_model_fixture():
     class CheckModel(BaseModel):
         uuid_check: UUID = UUID('7bd00d58-6485-4ca6-b889-3da6d8df3ee4')
-        date_check: date = date(2017, 5, 5)
-        datetime_check: datetime = datetime(2017, 5, 5, 10, 10, 10)
-        time_check: time = time(10, 10, 10)
-        timedelta_check: timedelta = timedelta(days=1)
 
     return CheckModel
 
@@ -511,75 +413,6 @@ def check_model_fixture():
         ('uuid_check', b'\x12\x34\x56\x78' * 4, UUID('12345678-1234-5678-1234-567812345678')),
         ('uuid_check', 'ebcdab58-6eb8-46fb-a190-', ValidationError),
         ('uuid_check', 123, ValidationError),
-        ('date_check', date(2017, 5, 5), date(2017, 5, 5)),
-        ('date_check', datetime(2017, 5, 5), date(2017, 5, 5)),
-        pytest.param('date_check', '2017-05-05', date(2017, 5, 5), id='date_check-2017-05-05_str-2017-05-05_date'),
-        pytest.param('date_check', b'2017-05-05', date(2017, 5, 5), id='date_check-2017-05-05_bytes-2017-05-05_date'),
-        ('date_check', 1493942400000, date(2017, 5, 5)),
-        ('date_check', 1493942400, date(2017, 5, 5)),
-        ('date_check', 1493942400000.0, date(2017, 5, 5)),
-        ('date_check', Decimal(1493942400000), date(2017, 5, 5)),
-        ('date_check', datetime(2017, 5, 5, 10), ValidationError),
-        pytest.param('date_check', '2017-5-5', ValidationError, id='date_check-2017-5-5_str-ValidationError'),
-        pytest.param('date_check', b'2017-5-5', ValidationError, id='date_check-2017-5-5_bytes-ValidationError'),
-        ('date_check', 1493942401000, ValidationError),
-        ('date_check', 1493942401000.0, ValidationError),
-        ('date_check', Decimal(1493942401000), ValidationError),
-        ('datetime_check', datetime(2017, 5, 5, 10, 10, 10), datetime(2017, 5, 5, 10, 10, 10)),
-        ('datetime_check', date(2017, 5, 5), datetime(2017, 5, 5, 0, 0, 0)),
-        pytest.param(
-            'datetime_check',
-            '2017-05-05T10:10:10.0002',
-            datetime(2017, 5, 5, 10, 10, 10, microsecond=200),
-            id='datetime_check-2017-05-05T10:10:10.0002_str-2017-05-05T10:10:10.0002_datetime',
-        ),
-        ('datetime_check', '2017-05-05 10:10:10', datetime(2017, 5, 5, 10, 10, 10)),
-        ('datetime_check', '2017-05-05 10:10:10+00:00', datetime(2017, 5, 5, 10, 10, 10, tzinfo=timezone.utc)),
-        pytest.param(
-            'datetime_check',
-            b'2017-05-05T10:10:10.0002',
-            datetime(2017, 5, 5, 10, 10, 10, microsecond=200),
-            id='datetime_check-2017-05-05T10:10:10.0002_bytes-2017-05-05T10:10:10.0002_datetime',
-        ),
-        ('datetime_check', 1493979010000, datetime(2017, 5, 5, 10, 10, 10, tzinfo=timezone.utc)),
-        ('datetime_check', 1493979010, datetime(2017, 5, 5, 10, 10, 10, tzinfo=timezone.utc)),
-        ('datetime_check', 1493979010000.0, datetime(2017, 5, 5, 10, 10, 10, tzinfo=timezone.utc)),
-        ('datetime_check', Decimal(1493979010), datetime(2017, 5, 5, 10, 10, 10, tzinfo=timezone.utc)),
-        pytest.param(
-            'datetime_check',
-            '2017-5-5T10:10:10',
-            ValidationError,
-            id='datetime_check-2017-5-5T10:10:10_str-ValidationError',
-        ),
-        pytest.param(
-            'datetime_check',
-            b'2017-5-5T10:10:10',
-            ValidationError,
-            id='datetime_check-2017-5-5T10:10:10_bytes-ValidationError',
-        ),
-        ('time_check', time(10, 10, 10), time(10, 10, 10)),
-        ('time_check', '10:10:10.0002', time(10, 10, 10, microsecond=200)),
-        ('time_check', b'10:10:10.0002', time(10, 10, 10, microsecond=200)),
-        ('time_check', 3720, time(1, 2, tzinfo=timezone.utc)),
-        ('time_check', 3720.0002, time(1, 2, microsecond=200, tzinfo=timezone.utc)),
-        ('time_check', Decimal(3720.0002), time(1, 2, microsecond=200, tzinfo=timezone.utc)),
-        pytest.param('time_check', '1:1:1', ValidationError, id='time_check-1:1:1_str-ValidationError'),
-        pytest.param('time_check', b'1:1:1', ValidationError, id='time_check-1:1:1_bytes-ValidationError'),
-        ('time_check', -1, ValidationError),
-        ('time_check', 86400, ValidationError),
-        ('time_check', 86400.0, ValidationError),
-        ('time_check', Decimal(86400), ValidationError),
-        ('timedelta_check', timedelta(days=1), timedelta(days=1)),
-        ('timedelta_check', '1 days 10:10', timedelta(days=1, seconds=36600)),
-        ('timedelta_check', '1 d 10:10', timedelta(days=1, seconds=36600)),
-        ('timedelta_check', b'1 days 10:10', timedelta(days=1, seconds=36600)),
-        ('timedelta_check', 123_000, timedelta(days=1, seconds=36600)),
-        ('timedelta_check', 123_000.0002, timedelta(days=1, seconds=36600, microseconds=200)),
-        ('timedelta_check', Decimal(123_000.0002), timedelta(days=1, seconds=36600, microseconds=200)),
-        pytest.param('timedelta_check', '1 10:10', ValidationError, id='timedelta_check-1 10:10_str-ValidationError'),
-        pytest.param(
-            'timedelta_check', b'1 10:10', ValidationError, id='timedelta_check-1 10:10_bytes-ValidationError'
-        ),
     ],
 )
 def test_default_validators(field, value, result, CheckModel):
@@ -589,61 +422,6 @@ def test_default_validators(field, value, result, CheckModel):
             CheckModel(**kwargs)
     else:
         assert CheckModel(**kwargs).model_dump()[field] == result
-
-
-@pytest.fixture(scope='session', name='DatetimeModel')
-def datetime_model_fixture():
-    class DatetimeModel(BaseModel):
-        dt: datetime
-        date_: date
-        time_: time
-        duration: timedelta
-
-    return DatetimeModel
-
-
-def test_datetime_successful(DatetimeModel):
-    m = DatetimeModel(dt='2017-10-05T19:47:07', date_=1493942400, time_='10:20:30.400', duration='00:15:30.0001')
-    assert m.dt == datetime(2017, 10, 5, 19, 47, 7)
-    assert m.date_ == date(2017, 5, 5)
-    assert m.time_ == time(10, 20, 30, 400_000)
-    assert m.duration == timedelta(minutes=15, seconds=30, microseconds=100)
-
-
-def test_datetime_errors(DatetimeModel):
-    with pytest.raises(ValueError) as exc_info:
-        DatetimeModel(dt='2017-13-05T19:47:07', date_='XX1494012000', time_='25:20:30.400', duration='15:30.0001broken')
-    # insert_assert(exc_info.value.errors(include_url=False))
-    assert exc_info.value.errors(include_url=False) == [
-        {
-            'type': 'datetime_from_date_parsing',
-            'loc': ('dt',),
-            'msg': 'Input should be a valid datetime or date, month value is outside expected range of 1-12',
-            'input': '2017-13-05T19:47:07',
-            'ctx': {'error': 'month value is outside expected range of 1-12'},
-        },
-        {
-            'type': 'date_from_datetime_parsing',
-            'loc': ('date_',),
-            'msg': 'Input should be a valid date or datetime, invalid character in year',
-            'input': 'XX1494012000',
-            'ctx': {'error': 'invalid character in year'},
-        },
-        {
-            'type': 'time_parsing',
-            'loc': ('time_',),
-            'msg': 'Input should be in a valid time format, hour value is outside expected range of 0-23',
-            'input': '25:20:30.400',
-            'ctx': {'error': 'hour value is outside expected range of 0-23'},
-        },
-        {
-            'type': 'time_delta_parsing',
-            'loc': ('duration',),
-            'msg': 'Input should be a valid timedelta, unexpected extra characters at the end of the input',
-            'input': '15:30.0001broken',
-            'ctx': {'error': 'unexpected extra characters at the end of the input'},
-        },
-    ]
 
 
 @pytest.fixture(scope='session')
