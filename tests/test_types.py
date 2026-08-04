@@ -1,42 +1,26 @@
-import collections
 import ipaddress
-import itertools
 import json
 import math
 import os
-import platform
 import re
 import sys
-import typing
-import uuid
 import warnings
-from abc import ABC, abstractmethod
-from collections import Counter, OrderedDict, UserDict, defaultdict, deque
-from collections.abc import Callable, Iterable, Mapping, MutableMapping, Sequence
+from collections.abc import Callable, Sequence
 from dataclasses import dataclass
-from datetime import date, datetime, time, timedelta, timezone
+from datetime import date, datetime, timedelta
 from decimal import Decimal
-from enum import Enum, IntEnum
-from numbers import Number
-from pathlib import Path
-from re import Pattern
+from enum import Enum
 from typing import (
     Annotated,
     Any,
     Literal,
-    NamedTuple,
     NewType,
-    Optional,
     TypeVar,
     Union,
 )
-from uuid import UUID
 
 import annotated_types
-import dirty_equals
 import pytest
-import typing_extensions
-from dirty_equals import HasRepr, IsFloatNan, IsOneOf, IsStr
 from pydantic_core import (
     CoreSchema,
     PydanticCustomError,
@@ -51,7 +35,6 @@ from pydantic import (
     UUID4,
     UUID5,
     AfterValidator,
-    AllowInfNan,
     AwareDatetime,
     Base64Bytes,
     Base64Str,
@@ -91,21 +74,17 @@ from pydantic import (
     PositiveFloat,
     PositiveInt,
     PydanticInvalidForJsonSchema,
-    PydanticSchemaGenerationError,
     Secret,
     SecretBytes,
     SecretStr,
     SerializeAsAny,
     SkipValidation,
-    SocketPath,
     Strict,
     StrictBool,
-    StrictBytes,
     StrictFloat,
     StrictInt,
     StrictStr,
     StringConstraints,
-    Tag,
     TypeAdapter,
     ValidateAs,
     ValidationError,
@@ -122,7 +101,6 @@ from pydantic import (
     field_validator,
     validate_call,
 )
-from pydantic.dataclasses import dataclass as pydantic_dataclass
 
 try:
     import email_validator
@@ -2423,5 +2401,3 @@ def test_custom_serializer_override_secret_str() -> None:
 
     u = User(name='sam', password='hi')
     assert u.model_dump()['password'] == 'secret: **********'
-
-
