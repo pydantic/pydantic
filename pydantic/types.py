@@ -2837,11 +2837,10 @@ Base64UrlBytes = Annotated[bytes, EncodedBytes(encoder=Base64UrlEncoder)]
 """A bytes type that is encoded and decoded using the URL-safe base64 encoder.
 
 Note:
-    Under the hood, `Base64UrlBytes` use standard library `base64.urlsafe_b64encode` and `base64.urlsafe_b64decode`
-    functions.
+    Under the hood, `Base64UrlBytes` uses the standard library [`base64.urlsafe_b64encode()`][base64.urlsafe_b64encode]
+    and [`base64.urlsafe_b64decode()`][base64.urlsafe_b64decode] functions.
 
-    As a result, the `Base64UrlBytes` type can be used to faithfully decode "vanilla" base64 data
-    (using `'+'` and `'/'`).
+    As a result, it can be used to faithfully decode "vanilla" base64 data (using `'+'` and `'/'`).
 
 ```python
 from pydantic import Base64UrlBytes, BaseModel
@@ -2859,8 +2858,8 @@ Base64UrlStr = Annotated[str, EncodedStr(encoder=Base64UrlEncoder)]
 """A str type that is encoded and decoded using the URL-safe base64 encoder.
 
 Note:
-    Under the hood, `Base64UrlStr` use standard library `base64.urlsafe_b64encode` and `base64.urlsafe_b64decode`
-    functions.
+    Under the hood, `Base64UrlStr` uses the standard library [`base64.urlsafe_b64encode()`][base64.urlsafe_b64encode]
+    and [`base64.urlsafe_b64decode()`][base64.urlsafe_b64decode] functions.
 
     As a result, the `Base64UrlStr` type can be used to faithfully decode "vanilla" base64 data (using `'+'` and `'/'`).
 
