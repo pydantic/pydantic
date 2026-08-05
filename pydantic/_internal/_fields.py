@@ -277,7 +277,7 @@ def _store_field_info_template(ann_type: Any, default: Any, field_info: FieldInf
     if annotation_key is NOT_PURE:
         return
     _store_in_cache(field_info_template_cache, (annotation_key, type(default), default), field_info._copy())
-    
+
 
 @cache
 def _deprecated_base_model_method_ids() -> tuple[frozenset[int], frozenset[int]]:
