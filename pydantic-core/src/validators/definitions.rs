@@ -52,6 +52,11 @@ impl DefinitionRefValidator {
     pub fn new(definition: DefinitionRef<Arc<CombinedValidator>>) -> Self {
         Self { definition }
     }
+
+    /// Read the validator this definition reference points to, if it was already built.
+    pub fn read_definition<R>(&self, f: impl FnOnce(Option<&CombinedValidator>) -> R) -> R {
+        self.definition.read(|validator| f(validator.map(Arc::as_ref)))
+    }
 }
 
 impl BuildValidator for DefinitionRefValidator {

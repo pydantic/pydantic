@@ -3112,6 +3112,55 @@ def test_after_and_wrap_combo_called_once() -> None:
     assert my_model.nested.inner_value == 'after_prefix:wrap_prefix:foo'
 
 
+def test_recursive_model_after_val_called_once() -> None:
+    """See https://github.com/pydantic/pydantic/issues/13581 for context.
+
+    This is effectively confirming that prebuilt validators aren't used for after validators
+    on recursive models, where the model validator is behind a definition reference.
+    """
+    validator_calls = 0
+
+    class NodeVal(BaseModel):
+        child: 'NodeVal | None' = None
+
+        @model_validator(mode='after')
+        def validate_model(self) -> 'NodeVal':
+            nonlocal validator_calls
+            validator_calls += 1
+            return self
+
+    class OuterVal(BaseModel):
+        node: NodeVal
+
+    OuterVal.model_validate({'node': {}})
+    assert validator_calls == 1
+
+
+def test_recursive_model_wrap_val_called_once() -> None:
+    """See https://github.com/pydantic/pydantic/issues/13581 for context.
+
+    This is effectively confirming that prebuilt validators aren't used for wrap validators
+    on recursive models, where the model validator is behind a definition reference.
+    """
+    validator_calls = 0
+
+    class NodeVal(BaseModel):
+        child: 'NodeVal | None' = None
+
+        @model_validator(mode='wrap')
+        @classmethod
+        def validate_model(cls, data, handler) -> 'NodeVal':
+            nonlocal validator_calls
+            validator_calls += 1
+            return handler(data)
+
+    class OuterVal(BaseModel):
+        node: NodeVal
+
+    OuterVal.model_validate({'node': {}})
+    assert validator_calls == 1
+
+
 @pytest.mark.xfail(
     reason="Bug: Nested 'after' model_validator is re-executed. See issue #8452.", raises=ValidationError
 )

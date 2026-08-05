@@ -29,10 +29,26 @@ impl PrebuiltValidator {
                     Err(_) => return Ok(None),
                 },
             };
-            if matches!(
-                schema_validator.get().validator.as_ref(),
-                CombinedValidator::FunctionWrap(_) | CombinedValidator::FunctionAfter(_)
-            ) {
+            // Don't reuse the prebuilt validator if the model has `wrap` or `after` model validators:
+            // these wrap the class's root `model` validator, and the schema referencing the class
+            // applies the same wrappers around the reused `model` schema, so the model validators
+            // would run twice. For recursive models, the wrappers are behind a definition reference,
+            // so peek through it before checking.
+            // See https://github.com/pydantic/pydantic/issues/11505 and
+            // https://github.com/pydantic/pydantic/issues/13581.
+            let has_model_function_validator = match schema_validator.get().validator.as_ref() {
+                CombinedValidator::FunctionWrap(_) | CombinedValidator::FunctionAfter(_) => true,
+                CombinedValidator::DefinitionRef(definition_ref) => definition_ref.read_definition(|validator| {
+                    validator.is_some_and(|validator| {
+                        matches!(
+                            validator,
+                            CombinedValidator::FunctionWrap(_) | CombinedValidator::FunctionAfter(_)
+                        )
+                    })
+                }),
+                _ => false,
+            };
+            if has_model_function_validator {
                 return Ok(None);
             }
             Ok(Some(Self { schema_validator }.into()))
