@@ -159,6 +159,7 @@ combined_serializer! {
         Tuple: super::type_serializers::tuple::TupleSerializer;
         Complex: super::type_serializers::complex::ComplexSerializer;
         TypedDict: super::type_serializers::typed_dict::TypedDictSerializer;
+        NamedTuple: super::type_serializers::named_tuple::NamedTupleSerializer;
     }
 }
 
@@ -393,6 +394,7 @@ impl PyGcTraverse for CombinedSerializer {
             CombinedSerializer::Uuid(inner) => inner.py_gc_traverse(visit),
             CombinedSerializer::Complex(inner) => inner.py_gc_traverse(visit),
             CombinedSerializer::TypedDict(inner) => inner.py_gc_traverse(visit),
+            CombinedSerializer::NamedTuple(inner) => inner.py_gc_traverse(visit),
             CombinedSerializer::PolymorphismTrampoline(inner) => inner.py_gc_traverse(visit),
         }
     }

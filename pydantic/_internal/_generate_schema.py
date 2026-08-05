@@ -1555,20 +1555,55 @@ class GenerateSchema:
                     for field_name, annotation in annotations.items()
                 }
 
-            arguments_schema = core_schema.arguments_schema(
+            schema = core_schema.named_tuple_schema(
+                namedtuple_cls,
                 [
-                    self._generate_parameter_schema(
+                    self._generate_namedtuple_field_schema(
                         field_name,
                         annotation,
-                        source=AnnotationSource.NAMED_TUPLE,
                         default=namedtuple_cls._field_defaults.get(field_name, Parameter.empty),
                     )
                     for field_name, annotation in annotations.items()
                 ],
-                metadata={'pydantic_js_prefer_positional_arguments': True},
+                ref=namedtuple_ref,
             )
-            schema = core_schema.call_schema(arguments_schema, namedtuple_cls, ref=namedtuple_ref)
             return self.defs.create_definition_reference_schema(schema)
+
+    def _generate_namedtuple_field_schema(
+        self,
+        name: str,
+        annotation: Any,
+        default: Any = Parameter.empty,
+    ) -> core_schema.NamedTupleField:
+        """Generate the definition of a field in a named tuple."""
+        FieldInfo = import_cached_field_info()
+
+        if default is Parameter.empty:
+            field = FieldInfo.from_annotation(annotation, _source=AnnotationSource.NAMED_TUPLE)
+        else:
+            field = FieldInfo.from_annotated_attribute(annotation, default, _source=AnnotationSource.NAMED_TUPLE)
+
+        assert field.annotation is not None, 'field.annotation should not be None when generating a schema'
+        update_field_from_config(self._config_wrapper, name, field)
+
+        with self.field_name_stack.push(name):
+            schema = self._apply_annotations(
+                field.annotation,
+                [field],
+                # Because we pass `field` as metadata above (required for attributes relevant for
+                # JSON Scheme generation), we need to ignore the potential warnings about `FieldInfo`
+                # attributes that will not be used:
+                check_unsupported_field_info_attributes=False,
+            )
+
+        if not field.is_required():
+            schema = wrap_default(field, schema)
+
+        return core_schema.named_tuple_field(
+            name,
+            schema,
+            validation_alias=_convert_to_aliases(field.validation_alias),
+        )
 
     def _generate_parameter_schema(
         self,
@@ -1578,7 +1613,7 @@ class GenerateSchema:
         default: Any = Parameter.empty,
         mode: Literal['positional_only', 'positional_or_keyword', 'keyword_only'] | None = None,
     ) -> core_schema.ArgumentsParameter:
-        """Generate the definition of a field in a namedtuple or a parameter in a function signature.
+        """Generate the definition of a parameter in a function signature.
 
         This definition is meant to be used for the `'arguments'` core schema, which will be replaced
         in V3 by the `'arguments-v3`'.

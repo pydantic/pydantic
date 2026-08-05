@@ -55,6 +55,7 @@ mod literal;
 mod missing_sentinel;
 mod model;
 mod model_fields;
+mod named_tuple;
 mod none;
 mod nullable;
 mod prebuilt;
@@ -578,6 +579,8 @@ fn build_validator_inner(
         // dataclasses
         dataclass::DataclassArgsValidator,
         dataclass::DataclassValidator,
+        // named tuples
+        named_tuple::NamedTupleValidator,
         // strings
         string::StrValidator,
         // integers
@@ -742,6 +745,8 @@ pub enum CombinedValidator {
     // dataclasses
     DataclassArgs(dataclass::DataclassArgsValidator),
     Dataclass(dataclass::DataclassValidator),
+    // named tuples
+    NamedTuple(named_tuple::NamedTupleValidator),
     // strings
     Str(string::StrValidator),
     StrConstrained(string::StrConstrainedValidator),
