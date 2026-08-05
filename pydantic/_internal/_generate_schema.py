@@ -101,6 +101,7 @@ from ._decorators import (
 )
 from ._docs_extraction import extract_docstrings_from_cls
 from ._fields import (
+    PydanticExtraInfo,
     collect_dataclass_fields,
     rebuild_dataclass_fields,
     rebuild_model_fields,
@@ -791,17 +792,15 @@ class GenerateSchema:
         """Generate core schema.
 
         Args:
-            obj: The object to generate core schema for. The type is expected to be *fully evaluated*
-                (i.e. no string annotations or `ForwardRef` instances, even in nested type arguments).
-                Lazily provided annotations (e.g. type variable bounds, explicitly provided
-                `return_type`s) should be evaluated first using `_resolve_forward_ref()`.
+            obj: The object to generate core schema for. If this is a type, it is expected to be *fully evaluated*.
+                Use the `evaluate_type()` method first if the type isn't guaranteed to be fully evaluated.
 
         Returns:
             The generated core schema.
 
         Raises:
             PydanticUndefinedAnnotation:
-                If it is not possible to evaluate forward reference.
+                If it is not possible to evaluate forward references.
             PydanticSchemaGenerationError:
                 If it is not possible to generate pydantic-core schema.
             TypeError:
@@ -850,8 +849,8 @@ class GenerateSchema:
                 core_config = self._config_wrapper.core_config(title=cls.__name__)
 
                 if cls.__pydantic_fields_complete__ or cls is BaseModel_:
-                    fields = getattr(cls, '__pydantic_fields__', {})
-                    extra_info = getattr(cls, '__pydantic_extra_info__', None)
+                    fields: dict[str, FieldInfo] = getattr(cls, '__pydantic_fields__', {})
+                    extra_info: PydanticExtraInfo | None = getattr(cls, '__pydantic_extra_info__', None)
                 else:
                     if '__pydantic_fields__' not in cls.__dict__:
                         # This happens when we have a loop in the schema generation:
@@ -1025,22 +1024,27 @@ class GenerateSchema:
                 )
             return core_schema.chain_schema([core_schema.with_info_plain_validator_function(v) for v in validators()])
 
-    def _resolve_forward_ref(self, obj: str | ForwardRef) -> Any:
-        """Evaluate a lazily provided annotation (either a string or a `ForwardRef` instance).
+    def evaluate_type(self, obj: Any) -> Any:
+        """Evaluate an annotation using the current types namespace.
 
         Types passed to `generate_schema()` are expected to be fully evaluated. However, some
         annotations are provided lazily by design and can only be evaluated during schema
-        generation, such as type variable bounds/constraints/defaults, explicitly provided
-        `return_type`s/`json_schema_input_type`s, or types passed as strings to `handler.generate_schema()`.
+        generation.
 
-        We assume that `types_namespace` has the target of forward references in its scope,
-        but this could fail, for example, if calling `TypeAdapter` on an imported type which contains
-        forward references to other types only defined in the module from which it was imported, i.e.
-        `TypeAdapter(SomeImportedTypeAliasWithAForwardReference)` or the equivalent for `BaseModel`:
+        One example is `TypeVar` bounds. Note that because the current types namespace is used,
+        some forward references may fail to resolve:
 
         ```python {test="skip" lint="skip"}
-        class Model(BaseModel):
-            x: SomeImportedTypeAliasWithAForwardReference
+        # module1.py:
+        MyAlias = int
+
+        T = TypeVar('T', bound=list['MyAlias'])
+
+        # module2.py
+        from module1 import T
+
+        class Model(BaseModel, Generic[T]):
+            f: T  # <-- will fail to evaluate bound
         ```
         """
         try:
@@ -1060,6 +1064,14 @@ class GenerateSchema:
     def _generate_schema_inner(self, obj: Any) -> core_schema.CoreSchema:
         if typing_objects.is_self(obj):
             obj = self._resolve_self_type(obj)
+
+        if isinstance(obj, ForwardRef):
+            # As per the docstring on `generate_schema()`, types are expected to be fully evaluated.
+            # However, for recursive types that can't be evaluated (e.g. `Json = list['Json']`), the inner
+            # arg stays as a `ForwardRef`. In this case, we delegate to `evaluate_type()`. As a result,
+            # if `obj` was `ForwardRef('Json')`, `evaluate_type()` will return `list[ForwardRef('Json')]`,
+            # and so we'll eventually reach a `RecursionError`:
+            obj = self.evaluate_type(obj)
 
         origin = get_origin(obj)
 
@@ -2137,18 +2149,15 @@ class GenerateSchema:
             pass
         else:
             if has_default:
-                default = typevar.__default__  # pyright: ignore[reportAttributeAccessIssue]
-                if isinstance(default, ForwardRef):
-                    default = self._resolve_forward_ref(default)
+                default = self.evaluate_type(typevar.__default__)  # pyright: ignore[reportAttributeAccessIssue]
                 return self.generate_schema(default)
 
         if constraints := typevar.__constraints__:
-            constraints = tuple(self._resolve_forward_ref(c) if isinstance(c, ForwardRef) else c for c in constraints)
+            constraints = tuple(self.evaluate_type(c) for c in constraints)
             return self._union_schema(typing.Union[constraints])  # noqa: UP007
 
         if bound := typevar.__bound__:
-            if isinstance(bound, ForwardRef):
-                bound = self._resolve_forward_ref(bound)
+            bound = self.evaluate_type(bound)
             schema = self.generate_schema(bound)
             schema['serialization'] = core_schema.simple_ser_schema('any')
             return schema
@@ -2161,7 +2170,7 @@ class GenerateSchema:
         field_serializers: dict[str, Decorator[FieldSerializerDecoratorInfo]],
     ) -> core_schema.ComputedField:
         if d.info.return_type is not PydanticUndefined:
-            return_type = d.info.return_type
+            return_type = self.evaluate_type(d.info.return_type)
         else:
             try:
                 # Do not pass in globals as the function could be defined in a different module.
@@ -2177,9 +2186,6 @@ class GenerateSchema:
                 code='model-field-missing-annotation',
             )
 
-        if isinstance(return_type, (str, ForwardRef)):
-            # The `return_type` may be provided lazily as a string or `ForwardRef` instance:
-            return_type = self._resolve_forward_ref(return_type)
         return_type = replace_types(return_type, self._typevars_map)
         # Create a new ComputedFieldInfo so that different type parametrizations of the same
         # generic model's computed field can have different return types.
@@ -2470,7 +2476,7 @@ class GenerateSchema:
             is_field_serializer, info_arg = inspect_field_serializer(serializer.func, serializer.info.mode)
 
             if serializer.info.return_type is not PydanticUndefined:
-                return_type = serializer.info.return_type
+                return_type = self.evaluate_type(serializer.info.return_type)
             else:
                 try:
                     # Do not pass in globals as the function could be defined in a different module.
@@ -2485,9 +2491,6 @@ class GenerateSchema:
             if return_type is PydanticUndefined:
                 return_schema = None
             else:
-                if isinstance(return_type, (str, ForwardRef)):
-                    # The `return_type` may be provided lazily as a string or `ForwardRef` instance:
-                    return_type = self._resolve_forward_ref(return_type)
                 return_schema = self.generate_schema(return_type)
 
             if serializer.info.mode == 'wrap':
@@ -2519,7 +2522,7 @@ class GenerateSchema:
             info_arg = inspect_model_serializer(serializer.func, serializer.info.mode)
 
             if serializer.info.return_type is not PydanticUndefined:
-                return_type = serializer.info.return_type
+                return_type = self.evaluate_type(serializer.info.return_type)
             else:
                 try:
                     # Do not pass in globals as the function could be defined in a different module.
@@ -2534,9 +2537,6 @@ class GenerateSchema:
             if return_type is PydanticUndefined:
                 return_schema = None
             else:
-                if isinstance(return_type, (str, ForwardRef)):
-                    # The `return_type` may be provided lazily as a string or `ForwardRef` instance:
-                    return_type = self._resolve_forward_ref(return_type)
                 return_schema = self.generate_schema(return_type)
 
             if serializer.info.mode == 'wrap':

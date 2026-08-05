@@ -3,14 +3,23 @@ import platform
 import re
 import sys
 import typing
-from typing import Annotated, Any, Generic, Optional, TypeVar, Union
+from typing import Annotated, Any, Generic, Optional, Union
 
 import pytest
 from annotated_types import Gt
-from typing_extensions import get_args, get_origin  # noqa: UP035
+from typing_extensions import TypeVar, get_args, get_origin  # noqa: UP035
 from typing_inspection import typing_objects
 
-from pydantic import BaseModel, Field, PydanticUserError, TypeAdapter, ValidationError
+from pydantic import (
+    BaseModel,
+    Field,
+    PydanticUserError,
+    TypeAdapter,
+    ValidationError,
+    computed_field,
+    field_serializer,
+    model_serializer,
+)
 from pydantic._internal._namespace_utils import LazyLocalNamespace
 
 
@@ -1554,6 +1563,11 @@ def test_implicit_type_alias_recursive_error_message() -> None:
     with pytest.raises(RecursionError, match='.*If you made use of an implicit recursive type alias.*'):
         TypeAdapter(Json)
 
+    with pytest.raises(RecursionError, match='.*If you made use of an implicit recursive type alias.*'):
+
+        class Model(BaseModel):
+            j: Json
+
 
 def test_none_converted_as_none_type() -> None:
     """https://github.com/pydantic/pydantic/issues/12368.
@@ -1680,3 +1694,77 @@ def test_string_annotation_union_type() -> None:
 
     assert typing_objects.is_union(get_origin(annotation))
     assert get_args(annotation)[0] is Main
+
+
+def test_typevar_nested_forward_ref() -> None:
+    Tconstraint = TypeVar('Tconstraint', list['str'], list['int'])
+    Tbound = TypeVar('Tbound', bound=list['str'])
+    Tdefault = TypeVar('Tdefault', default=list['str'])
+
+    class Model(BaseModel, Generic[Tconstraint, Tbound, Tdefault]):
+        tc: Tconstraint
+        tb: Tbound
+        td: Tdefault
+
+    assert Model.model_json_schema() == {
+        'properties': {
+            'tc': {
+                'anyOf': [
+                    {'items': {'type': 'string'}, 'type': 'array'},
+                    {'items': {'type': 'integer'}, 'type': 'array'},
+                ],
+                'title': 'Tc',
+            },
+            'tb': {'items': {'type': 'string'}, 'title': 'Tb', 'type': 'array'},
+            'td': {'items': {'type': 'string'}, 'title': 'Td', 'type': 'array'},
+        },
+        'required': ['tc', 'tb', 'td'],
+        'title': 'Model',
+        'type': 'object',
+    }
+
+
+def test_decorators_return_type_nested_forward_ref() -> None:
+    class Model(BaseModel):
+        a: int
+
+        @computed_field(return_type=list['str'])
+        @property
+        def prop(self):
+            return ['a']
+
+        @field_serializer('a', return_type=list['str'])
+        def ser_a(self, v: int):
+            return ['b']
+
+    assert Model.model_json_schema(mode='serialization') == {
+        'properties': {
+            'a': {'items': {'type': 'string'}, 'title': 'A', 'type': 'array'},
+            'prop': {'items': {'type': 'string'}, 'readOnly': True, 'title': 'Prop', 'type': 'array'},
+        },
+        'required': ['a', 'prop'],
+        'title': 'Model',
+        'type': 'object',
+    }
+
+    class ModelWithSerializer(BaseModel):
+        @model_serializer(mode='plain', return_type=dict['str', 'str'])
+        def ser(self):
+            return {'a': 'b'}
+
+    assert ModelWithSerializer.model_json_schema(mode='serialization') == {
+        'additionalProperties': {'type': 'string'},
+        'type': 'object',
+    }
+
+
+def test_pep585_generic_alias_str_evaluated() -> None:
+    """https://github.com/pydantic/pydantic/issues/12610"""
+
+    class Model(BaseModel):
+        ls: list['int']
+
+    annotation = Model.model_fields['ls'].annotation
+
+    assert get_origin(annotation) is list
+    assert get_args(annotation)[0] is int

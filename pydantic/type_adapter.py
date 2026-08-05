@@ -302,8 +302,9 @@ class TypeAdapter(Generic[T]):
 
             try:
                 try:
-                    # `generate_schema()` expects an evaluated type; the adapted type may be (or contain)
-                    # a string annotation or `ForwardRef` instance (e.g. `TypeAdapter('MyType')`):
+                    # `generate_schema()` expects an evaluated type, and the adapted type may contain string annotations.
+                    # TODO: what if the adapted type is itself a string forward ref (e.g. `TypeAdapter('MyAnn')`)?
+                    # The previous checks (looking for config, core schema, validator/serializer) won't work.
                     tp = _typing_extra.eval_type(self._type, *ns_resolver.types_namespace)
                 except NameError as e:
                     raise PydanticUndefinedAnnotation.from_name_error(e) from e

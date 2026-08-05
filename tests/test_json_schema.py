@@ -6890,6 +6890,12 @@ def test_json_schema_input_type_with_recursive_refs(validator) -> None:
     assert json_schema['$ref'] == '#/$defs/Model'
 
 
+def test_json_schema_input_type_nested_forward_ref() -> None:
+    ta = TypeAdapter(Annotated[list[str], BeforeValidator(lambda v: v, json_schema_input_type=list['str'])])
+
+    assert ta.json_schema() == {'items': {'type': 'string'}, 'type': 'array'}
+
+
 def test_title_strip() -> None:
     class Model(BaseModel):
         some_field: str = Field(alias='_some_field')
