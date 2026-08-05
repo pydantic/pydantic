@@ -20,6 +20,7 @@ from typing_inspection.introspection import is_union_origin
 from pydantic.version import version_short
 
 from ._namespace_utils import GlobalsNamespace, MappingNamespace, NsResolver, get_module_ns_of
+from ._schema_cache import is_pure_annotation
 
 if sys.version_info >= (3, 14):
     import annotationlib
@@ -280,6 +281,11 @@ def get_model_type_hints(
                         # We use the `annotation` attribute here, but in reality could put anything here,
                         # As we are guaranteed to not make use of it:
                         hints[name] = (base_model_fields[name].annotation, True)
+                    elif value is not None and is_pure_annotation(value):
+                        # Pure annotations are guaranteed to be fully evaluated (they can't contain
+                        # strings or forward references), so the evaluation can be skipped entirely
+                        # (`None` is excluded, as evaluation converts it to `NoneType`):
+                        hints[name] = (value, True)
                     else:
                         globalns, localns = ns_resolver.types_namespace
 

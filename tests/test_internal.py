@@ -401,20 +401,25 @@ def test_pure_annotation_schema_cache_json_encoders_bypass():
     assert B(v='x').model_dump_json() == '{"v":"enc:x"}'
 
 
-def test_pure_annotation_schema_cache_is_bounded():
-    """The set of pure annotations is unbounded (`Literal[...]` can hold arbitrary values), so a
-    process building models from dynamically generated schemas must not grow the cache forever.
+def test_pure_annotation_caches_are_bounded():
+    """The set of pure annotations is unbounded (`Literal[...]` can hold arbitrary values, and
+    metadata and defaults take part in some keys), so a process building models from dynamically
+    generated schemas must not grow the caches forever.
     """
     from typing import Literal
 
-    from pydantic._internal._generate_schema import (
-        _PURE_ANNOTATION_CACHE_SIZE,
-        _pure_annotation_schema_cache,
-    )
+    from pydantic._internal import _schema_cache
 
-    for i in range(2 * _PURE_ANNOTATION_CACHE_SIZE):
-        create_model(f'M{i}', v=(Literal[f'a{i}', f'b{i}'], ...))
-        assert len(_pure_annotation_schema_cache) <= _PURE_ANNOTATION_CACHE_SIZE
+    caches = (
+        _schema_cache.pure_annotation_schema_cache,
+        _schema_cache.field_info_template_cache,
+        _schema_cache.model_field_schema_cache,
+        _schema_cache._pure_annotations_seen,
+    )
+    for i in range(2 * _schema_cache.CACHE_SIZE_LIMIT):
+        create_model(f'M{i}', v=(Literal[f'a{i}', f'b{i}'], f'a{i}'))
+        for cache in caches:
+            assert len(cache) <= _schema_cache.CACHE_SIZE_LIMIT
 
 
 def test_pure_annotation_cache_key_membership_is_identity_based():
@@ -473,3 +478,172 @@ def test_pure_annotation_schema_cache_none_annotations():
     assert B(w=[None], x=(2, None)).x == (2, None)
     with pytest.raises(ValidationError):
         B(v=1)
+
+
+def test_field_info_template_cache_instances_are_independent():
+    """Models sharing a field definition must not share `FieldInfo` state."""
+
+    class A(BaseModel):
+        v: 'int | None' = None
+
+    class B(BaseModel):
+        v: 'int | None' = None
+
+    assert A.model_fields['v'] is not B.model_fields['v']
+    A.model_fields['v'].description = 'mutated'
+    assert B.model_fields['v'].description is None
+
+
+def test_field_info_template_cache_annotation_spelling_preserved():
+    """Equal-but-distinct annotation spellings must be preserved on `FieldInfo.annotation`."""
+    from typing import Optional, Union, get_args
+
+    class A(BaseModel):
+        v: Union[int, str] = 1  # noqa: UP007
+        w: Optional[str] = None  # noqa: UP045
+
+    class B(BaseModel):
+        v: Union[str, int] = 1  # noqa: UP007
+        w: 'str | None' = None
+
+    assert get_args(A.model_fields['v'].annotation) == (int, str)
+    assert get_args(B.model_fields['v'].annotation) == (str, int)
+    assert A.model_fields['w'].annotation == B.model_fields['w'].annotation
+
+
+def test_model_field_schema_cache_respects_field_info_mutation_on_rebuild():
+    """Directly mutating a `model_fields` entry and rebuilding must bypass the field schema cache."""
+
+    class Model(BaseModel):
+        a: int = 1
+
+    Model.model_fields['a'].serialization_alias = 'A'
+    Model.model_rebuild(force=True)
+    assert Model(a=2).model_dump(by_alias=True) == {'A': 2}
+
+
+def test_none_annotation_still_evaluates_to_none_type():
+    class Model(BaseModel):
+        v: None = None
+
+    assert Model.model_fields['v'].annotation is type(None)
+
+
+def test_encode_metadata_item_discriminates_value_types():
+    import annotated_types
+
+    from pydantic._internal._schema_cache import encode_metadata_item
+
+    assert encode_metadata_item(annotated_types.Gt(1)) != encode_metadata_item(annotated_types.Gt(True))
+    assert encode_metadata_item(annotated_types.Gt(0.0)) != encode_metadata_item(annotated_types.Gt(-0.0))
+    assert encode_metadata_item(annotated_types.Gt(1)) == encode_metadata_item(annotated_types.Gt(1))
+    # Items holding arbitrary objects (e.g. functions) are not encodable:
+    assert encode_metadata_item(annotated_types.Predicate(bool)) is None
+
+
+def test_field_schema_cache_with_constraints_and_aliases():
+    from typing import Annotated
+
+    from pydantic import Field, ValidationError
+
+    class A(BaseModel):
+        v: Annotated[int, Field(gt=0, le=10)] = 5
+        w: Annotated[str, Field(alias='wAlias')] = 'x'
+
+    class B(BaseModel):
+        v: Annotated[int, Field(gt=0, le=10)] = 5
+        w: Annotated[str, Field(alias='otherAlias')] = 'x'
+
+    node_a = A.__pydantic_core_schema__['schema']['fields']['v']
+    node_b = B.__pydantic_core_schema__['schema']['fields']['v']
+    assert node_a == node_b
+    assert node_a is not node_b
+
+    # constraints are enforced through the cached node:
+    with pytest.raises(ValidationError):
+        B(v=11)
+
+    # aliases take part in the cache key, so equal shapes with different aliases don't collide:
+    assert A.__pydantic_core_schema__['schema']['fields']['w']['validation_alias'] == 'wAlias'
+    assert B.__pydantic_core_schema__['schema']['fields']['w']['validation_alias'] == 'otherAlias'
+
+
+def test_trusted_leaf_class_hook_patching_bypasses_cache():
+    import uuid
+
+    class A(BaseModel):
+        v: uuid.UUID | None = None
+
+    assert A.__pydantic_core_schema__['schema']['fields']['v']['schema']['schema']['schema']['type'] == 'uuid'
+
+    uuid.UUID.__get_pydantic_core_schema__ = classmethod(lambda cls, source, handler: {'type': 'int'})
+    try:
+
+        class B(BaseModel):
+            v: uuid.UUID | None = None
+
+        assert B.__pydantic_core_schema__['schema']['fields']['v']['schema']['schema']['schema']['type'] == 'int'
+    finally:
+        del uuid.UUID.__get_pydantic_core_schema__
+
+    class C(BaseModel):
+        v: uuid.UUID | None = None
+
+    assert C.__pydantic_core_schema__['schema']['fields']['v']['schema']['schema']['schema']['type'] == 'uuid'
+
+
+def test_trusted_leaf_class_rejects_monkeypatched_hook(monkeypatch):
+    """A hook monkeypatched onto a trusted leaf class must not be absorbed into the baseline.
+
+    The expected hooks are pinned to `None` / pydantic's own functions rather than snapshotted from
+    whatever is present on first use, which would trust a patch applied before the first build and
+    then reuse one model's schema for every later one.
+    """
+    from pathlib import Path
+
+    from pydantic._internal._schema_cache import NOT_PURE, _verified_leaf_class_key
+
+    assert _verified_leaf_class_key(Path) is Path
+
+    calls: list[Any] = []
+
+    def custom_hook(cls, source, handler):
+        calls.append(source)
+        return cs.str_schema()
+
+    monkeypatch.setattr(Path, '__get_pydantic_core_schema__', classmethod(custom_hook), raising=False)
+    assert _verified_leaf_class_key(Path) is NOT_PURE
+
+    class A(BaseModel):
+        p: Path
+
+    class B(BaseModel):
+        p: Path
+
+    # Both models must go through the custom hook, rather than the second reusing the first's schema:
+    assert len(calls) == 2
+
+
+def test_trusted_url_class_key_covers_mutable_class_attributes():
+    """The URL schema hook reads `cls._constraints` and `cls.serialize_url`, so a change to either
+    must not be served a schema cached before it.
+    """
+    from pydantic import HttpUrl
+    from pydantic.networks import UrlConstraints
+
+    original = HttpUrl._constraints
+    try:
+
+        class Before(BaseModel):
+            u: HttpUrl
+
+        HttpUrl._constraints = UrlConstraints(allowed_schemes=['https'])
+
+        class After(BaseModel):
+            u: HttpUrl
+
+        Before(u='http://example.com')  # still valid under the constraints it was built with
+        with pytest.raises(ValidationError):
+            After(u='http://example.com')
+    finally:
+        HttpUrl._constraints = original
