@@ -530,6 +530,7 @@ pub struct ValidationInfo {
     data: Option<Py<PyDict>>,
     field_name: Option<Py<PyString>>,
     mode: InputType,
+    strict: Option<bool>,
 }
 
 impl_py_gc_traverse!(ValidationInfo {
@@ -548,6 +549,7 @@ impl ValidationInfo {
             field_name,
             data: state.data.as_ref().map(|data| data.clone().into()),
             mode: extra.input_type,
+            strict: extra.strict,
         }
     }
 

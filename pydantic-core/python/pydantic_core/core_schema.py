@@ -231,6 +231,11 @@ class ValidationInfo(Protocol[ContextT]):
         ...
 
     @property
+    def strict(self) -> bool | None:
+        """The value of the `strict` argument provided at validation time, if any."""
+        ...
+
+    @property
     def data(self) -> dict[str, Any]:
         """The data being validated for this model."""
         ...

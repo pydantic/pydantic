@@ -3177,3 +3177,24 @@ def test_model_validate_json_default_value_validator_with_validation_info() -> N
     f2 = Foo.model_validate_json('{"field1": 1}', context='context')
 
     assert f1.field == f2.field == 2
+
+
+def test_validation_info_properties() -> None:
+    class Model(BaseModel):
+        f: int
+
+        @field_validator('f', mode='after')
+        @classmethod
+        def ser_number(cls, value: int, info: ValidationInfo) -> Any:
+            return info
+
+    for property, value in (
+        ('context', 'context_value'),
+        ('strict', True),
+    ):
+        assert getattr(Model.model_validate({'f': 1}, **{property: value}).f, property) == value, (
+            f'{property!r} check failed'
+        )
+        assert getattr(Model.model_validate_json('{"f": 1}', **{property: value}).f, property) == value, (
+            f'{property!r} check failed'
+        )
