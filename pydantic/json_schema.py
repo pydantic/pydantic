@@ -907,6 +907,19 @@ class GenerateJsonSchema:
         """
         raise PydanticOmit
 
+    def ellipsis_schema(self, schema: core_schema.EllipsisSchema) -> JsonSchemaValue:
+        """Handles JSON schema generation for a core schema that checks if a value is the [`Ellipsis`][] literal.
+
+        Unless overridden in a subclass, this raises an error.
+
+        Args:
+            schema: The core schema.
+
+        Returns:
+            The generated JSON schema.
+        """
+        return self.handle_invalid_for_json_schema(schema, 'core_schema.EllipsisSchema')
+
     def enum_schema(self, schema: core_schema.EnumSchema) -> JsonSchemaValue:
         """Generates a JSON schema that matches an Enum value.
 
@@ -1859,6 +1872,55 @@ class GenerateJsonSchema:
             json_schema = self.generate_inner(schema['schema']).copy()
 
         self._update_class_schema(json_schema, cls, config)
+
+        return json_schema
+
+    def named_tuple_field_schema(self, schema: core_schema.NamedTupleField) -> JsonSchemaValue:
+        """Generates a JSON schema that matches a schema that defines a named tuple field.
+
+        Args:
+            schema: The core schema.
+
+        Returns:
+            The generated JSON schema.
+        """
+        return self.generate_inner(schema['schema'])
+
+    def named_tuple_schema(self, schema: core_schema.NamedTupleSchema) -> JsonSchemaValue:
+        """Generates a JSON schema that matches a schema that defines a named tuple.
+
+        Args:
+            schema: The core schema.
+
+        Returns:
+            The generated JSON schema.
+        """
+        prefix_items: list[JsonSchemaValue] = []
+        min_items = 0
+
+        for field in schema['fields']:
+            name = field['name']
+            if self.by_alias:
+                alias = field.get('validation_alias')
+                if isinstance(alias, str):
+                    name = alias
+
+            field_schema = self.generate_inner(field['schema']).copy()
+            if 'title' not in field_schema and self.field_title_should_be_set(field['schema']):
+                field_schema['title'] = self.get_title_from_name(name)
+            prefix_items.append(field_schema)
+
+            if field['schema']['type'] != 'default':
+                # This assumes that if the field has a default value,
+                # the inner schema must be of type WithDefaultSchema.
+                min_items += 1
+
+        json_schema: JsonSchemaValue = {'type': 'array'}
+        if prefix_items:
+            json_schema['prefixItems'] = prefix_items
+        if min_items:
+            json_schema['minItems'] = min_items
+        json_schema['maxItems'] = len(prefix_items)
 
         return json_schema
 

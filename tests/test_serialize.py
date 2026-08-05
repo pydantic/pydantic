@@ -1419,3 +1419,21 @@ def test_serialization_info_properties() -> None:
         'round_trip',
     ):
         assert getattr(m.model_dump(**{property: True})['f'], property) is True, f'{property!r} check failed'
+
+
+def test_model_serializer_index_key_type_error() -> None:
+    """https://github.com/pydantic/pydantic/issues/11862"""
+
+    class Model(BaseModel):
+        f: int
+
+        @model_serializer(mode='wrap')
+        def _serialize(self, handler: SerializerFunctionWrapHandler):
+            return handler(self, b'not_a_valid_type_for_index_key')
+
+    m = Model(f=1)
+    with pytest.raises(
+        PydanticSerializationError,
+        match="Error calling function `_serialize`: TypeError: 'index_key' is expected to be an integer or a string, got 'b'not_a_valid_type_for_index_key''",
+    ):
+        m.model_dump(include={'f'})
