@@ -32,7 +32,6 @@ def test_namedtuple():
         d: str
 
     class Model(BaseModel):
-        # pos: Position
         event: Event
 
     model = Model(event=(b'1', '2', 3, 'qwe'))
