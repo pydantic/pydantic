@@ -4666,50 +4666,41 @@ logic, and can modify the resulting value before returning it as the final outpu
 <div class="language-python highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">datetime</span><span class="w"> </span><span class="kn">import</span> <span class="n">datetime</span><span class="p">,</span> <span class="n">timezone</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Annotated</span><span class="p">,</span> <span class="n">Any</span>
 
-<span class="kn">from</span><span class="w"> </span><span class="nn">pydantic</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">WrapSerializer</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pydantic</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+    <span class="n">BaseModel</span><span class="p">,</span>
+    <span class="n">SerializationInfo</span><span class="p">,</span>
+    <span class="n">SerializerFunctionWrapHandler</span><span class="p">,</span>
+    <span class="n">WrapSerializer</span><span class="p">,</span>
+<span class="p">)</span>
 
-<span class="k">class</span><span class="w"> </span><span class="nc">EventDatetime</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
-    <span class="n">start</span><span class="p">:</span> <span class="n">datetime</span>
-    <span class="n">end</span><span class="p">:</span> <span class="n">datetime</span>
-
-<span class="k">def</span><span class="w"> </span><span class="nf">convert_to_utc</span><span class="p">(</span><span class="n">value</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">handler</span><span class="p">,</span> <span class="n">info</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">datetime</span><span class="p">]:</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">convert_to_utc</span><span class="p">(</span>
+    <span class="n">value</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">handler</span><span class="p">:</span> <span class="n">SerializerFunctionWrapHandler</span><span class="p">,</span> <span class="n">info</span><span class="p">:</span> <span class="n">SerializationInfo</span>
+<span class="p">):</span>
     <span class="c1"># Note that `handler` can actually help serialize the `value` for</span>
     <span class="c1"># further custom serialization in case it&#39;s a subclass.</span>
-    <span class="n">partial_result</span> <span class="o">=</span> <span class="n">handler</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="n">info</span><span class="p">)</span>
+    <span class="n">serialized</span> <span class="o">=</span> <span class="n">handler</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
     <span class="k">if</span> <span class="n">info</span><span class="o">.</span><span class="n">mode</span> <span class="o">==</span> <span class="s1">&#39;json&#39;</span><span class="p">:</span>
-        <span class="k">return</span> <span class="p">{</span>
-            <span class="n">k</span><span class="p">:</span> <span class="n">datetime</span><span class="o">.</span><span class="n">fromisoformat</span><span class="p">(</span><span class="n">v</span><span class="p">)</span><span class="o">.</span><span class="n">astimezone</span><span class="p">(</span><span class="n">timezone</span><span class="o">.</span><span class="n">utc</span><span class="p">)</span>
-            <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">partial_result</span><span class="o">.</span><span class="n">items</span><span class="p">()</span>
-        <span class="p">}</span>
-    <span class="k">return</span> <span class="p">{</span><span class="n">k</span><span class="p">:</span> <span class="n">v</span><span class="o">.</span><span class="n">astimezone</span><span class="p">(</span><span class="n">timezone</span><span class="o">.</span><span class="n">utc</span><span class="p">)</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">partial_result</span><span class="o">.</span><span class="n">items</span><span class="p">()}</span>
+        <span class="k">return</span> <span class="n">datetime</span><span class="o">.</span><span class="n">fromisoformat</span><span class="p">(</span><span class="n">serialized</span><span class="p">)</span><span class="o">.</span><span class="n">astimezone</span><span class="p">(</span><span class="n">timezone</span><span class="o">.</span><span class="n">utc</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">serialized</span><span class="o">.</span><span class="n">astimezone</span><span class="p">(</span><span class="n">timezone</span><span class="o">.</span><span class="n">utc</span><span class="p">)</span>
 
-<span class="n">UTCEventDatetime</span> <span class="o">=</span> <span class="n">Annotated</span><span class="p">[</span><span class="n">EventDatetime</span><span class="p">,</span> <span class="n">WrapSerializer</span><span class="p">(</span><span class="n">convert_to_utc</span><span class="p">)]</span>
+<span class="n">UTCDatetime</span> <span class="o">=</span> <span class="n">Annotated</span><span class="p">[</span><span class="n">datetime</span><span class="p">,</span> <span class="n">WrapSerializer</span><span class="p">(</span><span class="n">convert_to_utc</span><span class="p">)]</span>
 
 <span class="k">class</span><span class="w"> </span><span class="nc">EventModel</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
-    <span class="n">event_datetime</span><span class="p">:</span> <span class="n">UTCEventDatetime</span>
+    <span class="n">event_datetime</span><span class="p">:</span> <span class="n">UTCDatetime</span>
 
-<span class="n">dt</span> <span class="o">=</span> <span class="n">EventDatetime</span><span class="p">(</span>
-    <span class="n">start</span><span class="o">=</span><span class="s1">&#39;2024-01-01T07:00:00-08:00&#39;</span><span class="p">,</span> <span class="n">end</span><span class="o">=</span><span class="s1">&#39;2024-01-03T20:00:00+06:00&#39;</span>
-<span class="p">)</span>
-<span class="n">event</span> <span class="o">=</span> <span class="n">EventModel</span><span class="p">(</span><span class="n">event_datetime</span><span class="o">=</span><span class="n">dt</span><span class="p">)</span>
+<span class="n">event</span> <span class="o">=</span> <span class="n">EventModel</span><span class="p">(</span><span class="n">event_datetime</span><span class="o">=</span><span class="s1">&#39;2024-01-01T07:00:00-08:00&#39;</span><span class="p">)</span>
 <span class="nb">print</span><span class="p">(</span><span class="n">event</span><span class="o">.</span><span class="n">model_dump</span><span class="p">())</span>
 <span class="sd">&#39;&#39;&#39;</span>
 <span class="sd">{</span>
-<span class="sd">    &#39;event_datetime&#39;: {</span>
-<span class="sd">        &#39;start&#39;: datetime.datetime(</span>
-<span class="sd">            2024, 1, 1, 15, 0, tzinfo=datetime.timezone.utc</span>
-<span class="sd">        ),</span>
-<span class="sd">        &#39;end&#39;: datetime.datetime(</span>
-<span class="sd">            2024, 1, 3, 14, 0, tzinfo=datetime.timezone.utc</span>
-<span class="sd">        ),</span>
-<span class="sd">    }</span>
+<span class="sd">    &#39;event_datetime&#39;: datetime.datetime(</span>
+<span class="sd">        2024, 1, 1, 15, 0, tzinfo=datetime.timezone.utc</span>
+<span class="sd">    )</span>
 <span class="sd">}</span>
 <span class="sd">&#39;&#39;&#39;</span>
 
 <span class="nb">print</span><span class="p">(</span><span class="n">event</span><span class="o">.</span><span class="n">model_dump_json</span><span class="p">())</span>
-<span class="sd">&#39;&#39;&#39;</span>
-<span class="sd">{&quot;event_datetime&quot;:{&quot;start&quot;:&quot;2024-01-01T15:00:00Z&quot;,&quot;end&quot;:&quot;2024-01-03T14:00:00Z&quot;}}</span>
-<span class="sd">&#39;&#39;&#39;</span>
+<span class="c1">#&gt; {&quot;event_datetime&quot;:&quot;2024-01-01T15:00:00Z&quot;}</span>
 </code></pre></div>
 
 
@@ -5038,7 +5029,16 @@ logic, and can modify the resulting value before returning it as the final outpu
 
             <details class="quote">
               <summary>Source code in <code>pydantic/functional_serializers.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">232</span>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">223</span>
+<span class="normal">224</span>
+<span class="normal">225</span>
+<span class="normal">226</span>
+<span class="normal">227</span>
+<span class="normal">228</span>
+<span class="normal">229</span>
+<span class="normal">230</span>
+<span class="normal">231</span>
+<span class="normal">232</span>
 <span class="normal">233</span>
 <span class="normal">234</span>
 <span class="normal">235</span>
@@ -5112,16 +5112,7 @@ logic, and can modify the resulting value before returning it as the final outpu
 <span class="normal">303</span>
 <span class="normal">304</span>
 <span class="normal">305</span>
-<span class="normal">306</span>
-<span class="normal">307</span>
-<span class="normal">308</span>
-<span class="normal">309</span>
-<span class="normal">310</span>
-<span class="normal">311</span>
-<span class="normal">312</span>
-<span class="normal">313</span>
-<span class="normal">314</span>
-<span class="normal">315</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">field_serializer</span><span class="p">(</span>  <span class="c1"># noqa: D417</span>
+<span class="normal">306</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">field_serializer</span><span class="p">(</span>  <span class="c1"># noqa: D417</span>
     <span class="n">field</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
     <span class="o">/</span><span class="p">,</span>
     <span class="o">*</span><span class="n">fields</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
@@ -5408,7 +5399,16 @@ logic, and can modify the resulting value before returning it as the final outpu
 
             <details class="quote">
               <summary>Source code in <code>pydantic/functional_serializers.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">364</span>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">355</span>
+<span class="normal">356</span>
+<span class="normal">357</span>
+<span class="normal">358</span>
+<span class="normal">359</span>
+<span class="normal">360</span>
+<span class="normal">361</span>
+<span class="normal">362</span>
+<span class="normal">363</span>
+<span class="normal">364</span>
 <span class="normal">365</span>
 <span class="normal">366</span>
 <span class="normal">367</span>
@@ -5470,16 +5470,7 @@ logic, and can modify the resulting value before returning it as the final outpu
 <span class="normal">423</span>
 <span class="normal">424</span>
 <span class="normal">425</span>
-<span class="normal">426</span>
-<span class="normal">427</span>
-<span class="normal">428</span>
-<span class="normal">429</span>
-<span class="normal">430</span>
-<span class="normal">431</span>
-<span class="normal">432</span>
-<span class="normal">433</span>
-<span class="normal">434</span>
-<span class="normal">435</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">model_serializer</span><span class="p">(</span>
+<span class="normal">426</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">model_serializer</span><span class="p">(</span>
     <span class="n">f</span><span class="p">:</span> <span class="n">_ModelPlainSerializerT</span> <span class="o">|</span> <span class="n">_ModelWrapSerializerT</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="o">/</span><span class="p">,</span>
     <span class="o">*</span><span class="p">,</span>
