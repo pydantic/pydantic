@@ -15,7 +15,7 @@ use crate::py_gc::PyGcTraverse;
 use crate::serializers::SerializationState;
 use crate::serializers::extra::IncludeExclude;
 use crate::tools::SchemaDict;
-use crate::tools::{function_name, py_err, py_error_type};
+use crate::tools::{function_name, py_err, py_error_type, safe_repr};
 use crate::{PydanticOmit, PydanticSerializationUnexpectedValue};
 
 use super::format::WhenUsed;
@@ -481,7 +481,7 @@ impl SerializationCallable {
             } else {
                 return Err(PyTypeError::new_err(format!(
                     "'index_key' is expected to be an integer or a string, got '{}'",
-                    index_key.repr()?
+                    safe_repr(index_key),
                 )));
             };
             if let Some(next_include_exclude) = filter {
