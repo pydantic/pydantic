@@ -19,6 +19,7 @@ pub mod list;
 pub mod literal;
 pub mod missing_sentinel;
 pub mod model;
+pub mod named_tuple;
 pub mod nullable;
 pub mod other;
 pub mod set_frozenset;

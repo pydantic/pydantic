@@ -239,3 +239,35 @@ def test_number_multiple_of_float_invalid(value):
             'ctx': {'multiple_of': 0.1},
         }
     ]
+
+
+@pytest.mark.parametrize(
+    'input_value,expected',
+    [
+        ('123.4', 123.4),
+        pytest.param('123.0', 123.0, id='123.0_number'),
+        pytest.param('123', 123.0, id='123_number'),
+        ('"123.4"', 123.4),
+        pytest.param('"123.0"', 123.0, id='123.0_str'),
+        pytest.param('"123"', 123.0, id='123_str'),
+        ('"string"', ValidationError),
+    ],
+)
+def test_float_validate_json(input_value, expected):
+    ta = TypeAdapter(float)
+
+    if expected is ValidationError:
+        with pytest.raises(
+            ValidationError, match=r'Input should be a valid number, unable to parse string as a number'
+        ):
+            ta.validate_json(input_value)
+    else:
+        assert ta.validate_json(input_value) == expected
+
+
+def test_float_validate_json_inf_nan():
+    ta = TypeAdapter(Annotated[float, AllowInfNan(True)])
+
+    assert ta.validate_json('Infinity') == float('inf')
+    assert ta.validate_json('-Infinity') == float('-inf')
+    assert math.isnan(ta.validate_json('NaN'))

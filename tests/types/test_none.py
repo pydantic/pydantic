@@ -156,3 +156,7 @@ def test_none_literal():
             'ctx': {'expected': 'None'},
         },
     ]
+
+
+def test_none_validate_json():
+    assert TypeAdapter(None).validate_json('null') is None

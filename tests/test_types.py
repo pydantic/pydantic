@@ -24,6 +24,7 @@ import pytest
 from pydantic_core import (
     CoreSchema,
     PydanticCustomError,
+    PydanticOmit,
     SchemaError,
     core_schema,
 )
@@ -71,6 +72,7 @@ from pydantic import (
     PastDate,
     PastDatetime,
     PlainSerializer,
+    PlainValidator,
     PositiveFloat,
     PositiveInt,
     PydanticInvalidForJsonSchema,
@@ -2237,6 +2239,27 @@ def test_on_error_omit_top_level() -> None:
     # if it hits the top level, but this documents the current behavior at least
     with pytest.raises(SchemaError, match='Uncaught Omit error'):
         ta.validate_python('a')
+
+
+def test_omit() -> None:
+    def omit_func(v):
+        if v == 'omit':
+            raise PydanticOmit
+        elif v == 'error':
+            raise ValueError('error')
+        else:
+            return v
+
+    ta = TypeAdapter(Annotated[str, PlainValidator(omit_func)])
+
+    assert ta.validate_python('foo') == 'foo'
+    assert ta.validate_json('"foo"') == 'foo'
+
+    with pytest.raises(ValidationError):
+        ta.validate_python('error')
+
+    with pytest.raises(SchemaError, match='Uncaught Omit error, please check your usage of `default` validators.'):
+        ta.validate_python('omit')
 
 
 @pytest.mark.skipif(not email_validator, reason='email_validator not installed')
