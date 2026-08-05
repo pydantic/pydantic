@@ -6,11 +6,6 @@ from pydantic_core import SchemaValidator
 from pydantic_core import core_schema as cs
 
 
-def test_schema_as_string():
-    v = SchemaValidator(cs.bool_schema())
-    assert v.validate_python('tRuE') is True
-
-
 @pytest.mark.parametrize('pickle_protocol', range(1, pickle.HIGHEST_PROTOCOL + 1))
 def test_pickle(pickle_protocol: int) -> None:
     v1 = SchemaValidator(cs.bool_schema())

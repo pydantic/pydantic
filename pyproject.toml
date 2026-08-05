@@ -80,6 +80,7 @@ dev = [
     'pytest-run-parallel>=0.3.1',
     'packaging',
     'jsonschema',
+    'time-machine; platform_python_implementation != "PyPy"',
 ]
 coverage = [
     'coverage[toml]',

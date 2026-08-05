@@ -18,6 +18,7 @@ from pydantic.plugin import (
     ValidateStringsHandlerProtocol,
 )
 from pydantic.plugin._loader import _plugins
+from pydantic.plugin._schema_validator import PluggableSchemaValidator
 
 pytestmark = pytest.mark.thread_unsafe(reason='`install_plugin()` is thread unsafe')
 
@@ -500,3 +501,40 @@ def test_plugin_path_complex() -> None:
             'BaseModel',
         ),
     ]
+
+
+def test_prebuilt_validator_used_for_nested_models() -> None:
+    """With plugins installed, `__pydantic_validator__` is a `PluggableSchemaValidator`. pydantic-core
+    should still be able to reuse the underlying prebuilt `SchemaValidator` for nested models,
+    through the `__pydantic_schema_validator__` property.
+    """
+    stack: list[Any] = []
+
+    class CustomOnValidatePython(ValidatePythonHandlerProtocol):
+        def on_enter(self, input, **kwargs) -> None:
+            stack.append(input)
+
+    class Plugin(PydanticPluginProtocol):
+        def new_schema_validator(self, schema, schema_type, schema_type_path, schema_kind, config, plugin_settings):
+            return CustomOnValidatePython(), None, None
+
+    plugin = Plugin()
+    with install_plugin(plugin):
+
+        class Model(BaseModel):
+            a: int
+
+        class Main(BaseModel):
+            m: Model
+
+    assert isinstance(Main.__pydantic_validator__, PluggableSchemaValidator)
+    assert 'PrebuiltValidator' in repr(Main.__pydantic_validator__.__pydantic_schema_validator__)
+
+    main = Main.model_validate({'m': {'a': 1}})
+    assert main.m.a == 1
+    # Plugin handlers only fire for the top-level validator, not for the nested (reused) one:
+    assert stack == [{'m': {'a': 1}}]
+
+    stack.clear()
+    Model.model_validate({'a': 1})
+    assert stack == [{'a': 1}]

@@ -97,50 +97,41 @@ class WrapSerializer:
     from datetime import datetime, timezone
     from typing import Annotated, Any
 
-    from pydantic import BaseModel, WrapSerializer
+    from pydantic import (
+        BaseModel,
+        SerializationInfo,
+        SerializerFunctionWrapHandler,
+        WrapSerializer,
+    )
 
-    class EventDatetime(BaseModel):
-        start: datetime
-        end: datetime
-
-    def convert_to_utc(value: Any, handler, info) -> dict[str, datetime]:
+    def convert_to_utc(
+        value: Any, handler: SerializerFunctionWrapHandler, info: SerializationInfo
+    ):
         # Note that `handler` can actually help serialize the `value` for
         # further custom serialization in case it's a subclass.
-        partial_result = handler(value, info)
+        serialized = handler(value)
         if info.mode == 'json':
-            return {
-                k: datetime.fromisoformat(v).astimezone(timezone.utc)
-                for k, v in partial_result.items()
-            }
-        return {k: v.astimezone(timezone.utc) for k, v in partial_result.items()}
+            return datetime.fromisoformat(serialized).astimezone(timezone.utc)
+        else:
+            return serialized.astimezone(timezone.utc)
 
-    UTCEventDatetime = Annotated[EventDatetime, WrapSerializer(convert_to_utc)]
+    UTCDatetime = Annotated[datetime, WrapSerializer(convert_to_utc)]
 
     class EventModel(BaseModel):
-        event_datetime: UTCEventDatetime
+        event_datetime: UTCDatetime
 
-    dt = EventDatetime(
-        start='2024-01-01T07:00:00-08:00', end='2024-01-03T20:00:00+06:00'
-    )
-    event = EventModel(event_datetime=dt)
+    event = EventModel(event_datetime='2024-01-01T07:00:00-08:00')
     print(event.model_dump())
     '''
     {
-        'event_datetime': {
-            'start': datetime.datetime(
-                2024, 1, 1, 15, 0, tzinfo=datetime.timezone.utc
-            ),
-            'end': datetime.datetime(
-                2024, 1, 3, 14, 0, tzinfo=datetime.timezone.utc
-            ),
-        }
+        'event_datetime': datetime.datetime(
+            2024, 1, 1, 15, 0, tzinfo=datetime.timezone.utc
+        )
     }
     '''
 
     print(event.model_dump_json())
-    '''
-    {"event_datetime":{"start":"2024-01-01T15:00:00Z","end":"2024-01-03T14:00:00Z"}}
-    '''
+    #> {"event_datetime":"2024-01-01T15:00:00Z"}
     ```
 
     Attributes:

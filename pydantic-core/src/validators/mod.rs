@@ -37,6 +37,7 @@ mod datetime;
 pub(crate) mod decimal;
 mod definitions;
 mod dict;
+mod ellipsis;
 mod enum_;
 mod float;
 pub(crate) mod fraction;
@@ -54,6 +55,7 @@ mod literal;
 mod missing_sentinel;
 mod model;
 mod model_fields;
+mod named_tuple;
 mod none;
 mod nullable;
 mod prebuilt;
@@ -577,6 +579,8 @@ fn build_validator_inner(
         // dataclasses
         dataclass::DataclassArgsValidator,
         dataclass::DataclassValidator,
+        // named tuples
+        named_tuple::NamedTupleValidator,
         // strings
         string::StrValidator,
         // integers
@@ -610,6 +614,8 @@ fn build_validator_inner(
         literal::LiteralValidator,
         // missing sentinel
         missing_sentinel::MissingSentinelValidator,
+        // ellipsis
+        ellipsis::EllipsisValidator,
         // enums
         enum_::BuildEnumValidator,
         // any
@@ -739,6 +745,8 @@ pub enum CombinedValidator {
     // dataclasses
     DataclassArgs(dataclass::DataclassArgsValidator),
     Dataclass(dataclass::DataclassValidator),
+    // named tuples
+    NamedTuple(named_tuple::NamedTupleValidator),
     // strings
     Str(string::StrValidator),
     StrConstrained(string::StrConstrainedValidator),
@@ -775,6 +783,8 @@ pub enum CombinedValidator {
     Literal(literal::LiteralValidator),
     // Missing sentinel
     MissingSentinel(missing_sentinel::MissingSentinelValidator),
+    // Ellipsis
+    Ellipsis(ellipsis::EllipsisValidator),
     // enums
     IntEnum(enum_::EnumValidator<enum_::IntEnumValidator>),
     StrEnum(enum_::EnumValidator<enum_::StrEnumValidator>),

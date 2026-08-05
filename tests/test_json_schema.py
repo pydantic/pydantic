@@ -12,6 +12,7 @@ from enum import Enum, IntEnum
 from ipaddress import IPv4Address, IPv4Interface, IPv4Network, IPv6Address, IPv6Interface, IPv6Network
 from pathlib import Path
 from re import Pattern
+from types import EllipsisType
 from typing import (
     Annotated,
     Any,
@@ -1317,6 +1318,14 @@ def test_callable_type(type_, default_value, base_json_schema, properties):
         ):
             model_schema = ModelWithOverride.model_json_schema()
     assert model_schema['properties'] == properties
+
+
+def test_ellipsis_schema() -> None:
+    class Model(BaseModel):
+        e: EllipsisType
+
+    with pytest.raises(PydanticInvalidForJsonSchema):
+        Model.model_json_schema()
 
 
 @pytest.mark.parametrize(
@@ -3524,7 +3533,8 @@ def test_namedtuple_modify_schema():
         @classmethod
         def __get_pydantic_core_schema__(cls, source: Any, handler: GetCoreSchemaHandler) -> core_schema.CoreSchema:
             schema = handler(source)
-            schema['arguments_schema']['metadata']['pydantic_js_prefer_positional_arguments'] = False
+            assert schema['type'] == 'named-tuple'
+            schema['fields'][0]['schema'] = core_schema.int_schema()
             return schema
 
     class Location(BaseModel):
@@ -3533,13 +3543,13 @@ def test_namedtuple_modify_schema():
     assert Location.model_json_schema() == {
         '$defs': {
             'CustomCoordinates': {
-                'additionalProperties': False,
-                'properties': {'x': {'title': 'X', 'type': 'number'}, 'y': {'title': 'Y', 'type': 'number'}},
-                'required': ['x', 'y'],
-                'type': 'object',
+                'maxItems': 2,
+                'minItems': 2,
+                'prefixItems': [{'title': 'X', 'type': 'integer'}, {'title': 'Y', 'type': 'number'}],
+                'type': 'array',
             }
         },
-        'properties': {'coords': {'$ref': '#/$defs/CustomCoordinates', 'default': [34, 42]}},
+        'properties': {'coords': {'$ref': '#/$defs/CustomCoordinates', 'default': [34, 42.0]}},
         'title': 'Location',
         'type': 'object',
     }

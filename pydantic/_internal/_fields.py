@@ -277,6 +277,27 @@ def _store_field_info_template(ann_type: Any, default: Any, field_info: FieldInf
     if annotation_key is NOT_PURE:
         return
     _store_in_cache(field_info_template_cache, (annotation_key, type(default), default), field_info._copy())
+    
+
+@cache
+def _deprecated_base_model_method_ids() -> tuple[frozenset[int], frozenset[int]]:
+    """IDs of the deprecated `BaseModel` methods (and the underlying functions of the deprecated classmethods).
+
+    These are used to check if an assigned field value is one of the deprecated methods by identity.
+    The `BaseModel` class (and thus the methods) stays alive for the lifetime of the process, so the
+    IDs are guaranteed to be stable.
+    """
+    BaseModel_ = import_cached_base_model()
+    return (
+        frozenset(
+            id(method) for name in _deprecated_method_names if (method := getattr(BaseModel_, name, None)) is not None
+        ),
+        frozenset(
+            id(func)
+            for name in _deprecated_classmethod_names
+            if (func := getattr(getattr(BaseModel_, name, None), '__func__', None)) is not None
+        ),
+    )
 
 
 def collect_model_fields(  # noqa: C901
@@ -312,7 +333,6 @@ def collect_model_fields(  # noqa: C901
             - If a field shadows an attribute in the parent model.
     """
     FieldInfo_ = import_cached_field_info()
-    BaseModel_ = import_cached_base_model()
 
     bases = cls.__bases__
     parent_fields_lookup: dict[str, FieldInfo] = {}
@@ -326,6 +346,8 @@ def collect_model_fields(  # noqa: C901
     cls_annotations = _typing_extra.safe_get_annotations(cls)
 
     fields: dict[str, FieldInfo] = {}
+
+    deprecated_method_ids, deprecated_classmethod_func_ids = _deprecated_base_model_method_ids()
 
     class_vars: set[str] = set()
     for ann_name, (ann_type, evaluated) in type_hints.items():
@@ -349,14 +371,11 @@ def collect_model_fields(  # noqa: C901
         assigned_value = getattr(cls, ann_name, PydanticUndefined)
         if assigned_value is not PydanticUndefined and (
             # One of the deprecated instance methods was used as a field name (e.g. `dict()`):
-            any(getattr(BaseModel_, depr_name, None) is assigned_value for depr_name in _deprecated_method_names)
+            id(assigned_value) in deprecated_method_ids
             # One of the deprecated class methods was used as a field name (e.g. `schema()`):
             or (
-                hasattr(assigned_value, '__func__')
-                and any(
-                    getattr(getattr(BaseModel_, depr_name, None), '__func__', None) is assigned_value.__func__  # pyright: ignore[reportAttributeAccessIssue]
-                    for depr_name in _deprecated_classmethod_names
-                )
+                (assigned_func := getattr(assigned_value, '__func__', None)) is not None
+                and id(assigned_func) in deprecated_classmethod_func_ids
             )
         ):
             # Then `assigned_value` would be the method, even though no default was specified:
