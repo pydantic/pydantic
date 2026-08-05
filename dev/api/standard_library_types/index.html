@@ -5810,6 +5810,7 @@ The strict constraint must be applied to the parameter types for this to work.</
 <ul>
 <li>Allows <a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#tuple"><code>tuple</code></a> and <a class="autorefs autorefs-external" href="https://docs.python.org/3/glossary.html#term-list"><code>list</code></a> instances. Validate each item according to the field definition.</li>
 <li>Allows <a class="autorefs autorefs-external" href="https://docs.python.org/3/reference/expressions.html#dict"><code>dict</code></a> instances. Keys must match the named tuple field names, and values are validated according to the field definition.</li>
+<li>Allows instances of the named tuple class (fields are revalidated).</li>
 </ul>
 <h4>Serialization</h4>
 

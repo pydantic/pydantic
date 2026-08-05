@@ -3930,6 +3930,17 @@ to help you monitor and understand your
 </li>
       
         <li class="md-nav__item">
+  <a href="#named_tuple_type" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        named_tuple_type
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#needs_python_object" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -5791,6 +5802,17 @@ to help you monitor and understand your
 </li>
       
         <li class="md-nav__item">
+  <a href="#named_tuple_type" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        named_tuple_type
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#needs_python_object" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -6211,23 +6233,17 @@ live service, <a href="../troubleshooting/">Logfire</a> records the input and st
 see <a href="../troubleshooting/">Troubleshooting Validation Errors</a>.</p>
 <h2 id="arguments_type"><code>arguments_type</code><a class="headerlink" href="#arguments_type" title="Permanent link">&para;</a></h2>
 <p>This error is raised when an object that would be passed as arguments to a function during validation is not
-a <code>tuple</code>, <code>list</code>, or <code>dict</code>. Because <code>NamedTuple</code> uses function calls in its implementation, that is one way to
-produce this error:</p>
-<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">NamedTuple</span>
-
-<span class="kn">from</span><span class="w"> </span><span class="nn">pydantic</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ValidationError</span>
+a <code>tuple</code>, <code>list</code>, or <code>dict</code>:</p>
+<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">pydantic</span><span class="w"> </span><span class="kn">import</span> <span class="n">TypeAdapter</span><span class="p">,</span> <span class="n">ValidationError</span>
 
 
-<span class="k">class</span><span class="w"> </span><span class="nc">MyNamedTuple</span><span class="p">(</span><span class="n">NamedTuple</span><span class="p">):</span>
-    <span class="n">x</span><span class="p">:</span> <span class="nb">int</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">func</span><span class="p">(</span><span class="n">x</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span> <span class="o">...</span>
 
 
-<span class="k">class</span><span class="w"> </span><span class="nc">MyModel</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
-    <span class="n">field</span><span class="p">:</span> <span class="n">MyNamedTuple</span>
-
+<span class="n">ta</span> <span class="o">=</span> <span class="n">TypeAdapter</span><span class="p">(</span><span class="n">func</span><span class="p">)</span>
 
 <span class="k">try</span><span class="p">:</span>
-    <span class="n">MyModel</span><span class="o">.</span><span class="n">model_validate</span><span class="p">({</span><span class="s1">&#39;field&#39;</span><span class="p">:</span> <span class="s1">&#39;invalid&#39;</span><span class="p">})</span>
+    <span class="n">ta</span><span class="o">.</span><span class="n">validate_python</span><span class="p">(</span><span class="s1">&#39;invalid&#39;</span><span class="p">)</span>
 <span class="k">except</span> <span class="n">ValidationError</span> <span class="k">as</span> <span class="n">exc</span><span class="p">:</span>
     <span class="nb">print</span><span class="p">(</span><span class="nb">repr</span><span class="p">(</span><span class="n">exc</span><span class="o">.</span><span class="n">errors</span><span class="p">()[</span><span class="mi">0</span><span class="p">][</span><span class="s1">&#39;type&#39;</span><span class="p">]))</span>
     <span class="c1">#&gt; &#39;arguments_type&#39;</span>
@@ -7515,6 +7531,28 @@ provided during validation:</p>
 <span class="k">except</span> <span class="n">ValidationError</span> <span class="k">as</span> <span class="n">exc</span><span class="p">:</span>
     <span class="nb">print</span><span class="p">(</span><span class="nb">repr</span><span class="p">(</span><span class="n">exc</span><span class="o">.</span><span class="n">errors</span><span class="p">()[</span><span class="mi">0</span><span class="p">][</span><span class="s1">&#39;type&#39;</span><span class="p">]))</span>
     <span class="c1">#&gt; &#39;multiple_of&#39;</span>
+</code></pre></div>
+<h2 id="named_tuple_type"><code>named_tuple_type</code><a class="headerlink" href="#named_tuple_type" title="Permanent link">&para;</a></h2>
+<p>This error is raised when the input value is not valid for a named tuple field:</p>
+<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">NamedTuple</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">pydantic</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ValidationError</span>
+
+
+<span class="k">class</span><span class="w"> </span><span class="nc">Point</span><span class="p">(</span><span class="n">NamedTuple</span><span class="p">):</span>
+    <span class="n">x</span><span class="p">:</span> <span class="nb">int</span>
+    <span class="n">y</span><span class="p">:</span> <span class="nb">int</span>
+
+
+<span class="k">class</span><span class="w"> </span><span class="nc">Model</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="n">p</span><span class="p">:</span> <span class="n">Point</span>
+
+
+<span class="k">try</span><span class="p">:</span>
+    <span class="n">Model</span><span class="p">(</span><span class="n">p</span><span class="o">=</span><span class="s1">&#39;invalid&#39;</span><span class="p">)</span>
+<span class="k">except</span> <span class="n">ValidationError</span> <span class="k">as</span> <span class="n">exc</span><span class="p">:</span>
+    <span class="nb">print</span><span class="p">(</span><span class="nb">repr</span><span class="p">(</span><span class="n">exc</span><span class="o">.</span><span class="n">errors</span><span class="p">()[</span><span class="mi">0</span><span class="p">][</span><span class="s1">&#39;type&#39;</span><span class="p">]))</span>
+    <span class="c1">#&gt; &#39;named_tuple_type&#39;</span>
 </code></pre></div>
 <h2 id="needs_python_object"><code>needs_python_object</code><a class="headerlink" href="#needs_python_object" title="Permanent link">&para;</a></h2>
 <p>This type of error is raised when validation is attempted from a format that cannot be converted to a Python object.

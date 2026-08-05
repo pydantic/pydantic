@@ -680,11 +680,11 @@ The following table provides details on how Pydantic converts data during valida
 
 The "Strict" column contains checkmarks for type conversions that are allowed when validating in [Strict Mode](../strict_mode/).
 
-| Field Type | Input | Strict | Input Source | Conditions | | --- | --- | --- | --- | --- | | `bool` | `bool` | ✓ | Python & JSON | | | `bool` | `float` | | Python & JSON | Allowed values: `0.0, 1.0`. | | `bool` | `int` | | Python & JSON | Allowed values: `0, 1`. | | `bool` | `str` | | Python & JSON | Allowed values: `'f'`, `'n'`, `'no'`, `'off'`, `'false'`, `'False'`, `'t'`, `'y'`, `'on'`, `'yes'`, `'true'`, `'True'`. | | `bool` | `Decimal` | | Python | Allowed values: `Decimal(0), Decimal(1)`. | | `bytes` | `bytearray` | | Python | | | `bytes` | `bytes` | ✓ | Python | | | `bytes` | `str` | ✓ | JSON | | | `bytes` | `str` | | Python | | | `callable` | `-` | | JSON | Never valid. | | `callable` | `Any` | ✓ | Python | `callable()` check must return `True`. | | `date` | `bytes` | | Python | Format: `YYYY-MM-DD` (UTF-8). | | `date` | `date` | ✓ | Python | | | `date` | `datetime` | | Python | Must be exact date, eg. no `H`, `M`, `S`, `f`. | | `date` | `float` | | Python & JSON | Interpreted as seconds or ms from epoch. See [speedate](https://docs.rs/speedate/latest/speedate/). Must be exact date. | | `date` | `int` | | Python & JSON | Interpreted as seconds or ms from epoch. See [speedate](https://docs.rs/speedate/latest/speedate/). Must be exact date. | | `date` | `str` | | Python & JSON | Format: `YYYY-MM-DD`. | | `date` | `Decimal` | | Python | Interpreted as seconds or ms from epoch. See [speedate](https://docs.rs/speedate/latest/speedate/). Must be exact date. | | `datetime` | `bytes` | | Python | Format: `YYYY-MM-DDTHH:MM:SS.f` or `YYYY-MM-DD`. See [speedate](https://docs.rs/speedate/latest/speedate/), (UTF-8). | | `datetime` | `date` | | Python | | | `datetime` | `datetime` | ✓ | Python | | | `datetime` | `float` | | Python & JSON | Interpreted as seconds or ms from epoch, see [speedate](https://docs.rs/speedate/latest/speedate/). | | `datetime` | `int` | | Python & JSON | Interpreted as seconds or ms from epoch, see [speedate](https://docs.rs/speedate/latest/speedate/). | | `datetime` | `str` | | Python & JSON | Format: `YYYY-MM-DDTHH:MM:SS.f` or `YYYY-MM-DD`. See [speedate](https://docs.rs/speedate/latest/speedate/). | | `datetime` | `Decimal` | | Python | Interpreted as seconds or ms from epoch, see [speedate](https://docs.rs/speedate/latest/speedate/). | | `deque` | `deque` | ✓ | Python | | | `deque` | `frozenset` | | Python | | | `deque` | `list` | | Python | | | `deque` | `set` | | Python | | | `deque` | `tuple` | | Python | | | `deque` | `Array` | ✓ | JSON | | | `dict` | `dict` | ✓ | Python | | | `dict` | `Mapping` | | Python | Must implement the mapping interface and have an `items()` method. | | `dict` | `Object` | ✓ | JSON | | | `float` | `bool` | | Python & JSON | | | `float` | `bytes` | | Python | Must match `[0-9]+(\.[0-9]+)?`. | | `float` | `float` | ✓ | Python & JSON | `bool` is explicitly forbidden. | | `float` | `int` | ✓ | Python & JSON | | | `float` | `str` | | Python & JSON | Must match `[0-9]+(\.[0-9]+)?`. | | `float` | `Decimal` | | Python | | | `frozenset` | `deque` | | Python | | | `frozenset` | `dict_keys` | | Python | | | `frozenset` | `dict_values` | | Python | | | `frozenset` | `frozenset` | ✓ | Python | | | `frozenset` | `list` | | Python | | | `frozenset` | `set` | | Python | | | `frozenset` | `tuple` | | Python | | | `frozenset` | `Array` | ✓ | JSON | | | `int` | `bool` | | Python & JSON | | | `int` | `bytes` | | Python | Must be numeric only, e.g. `[0-9]+`. | | `int` | `float` | | Python & JSON | Must be exact int, e.g. `val % 1 == 0`, raises error for `nan`, `inf`. | | `int` | `int` | ✓ | Python & JSON | `bool` is explicitly forbidden. | | `int` | `int` | | Python & JSON | | | `int` | `str` | | Python & JSON | Must be numeric only, e.g. `[0-9]+`. | | `int` | `Decimal` | | Python | Must be exact int, e.g. `val % 1 == 0`. | | `list` | `deque` | | Python | | | `list` | `dict_keys` | | Python | | | `list` | `dict_values` | | Python | | | `list` | `frozenset` | | Python | | | `list` | `list` | ✓ | Python | | | `list` | `set` | | Python | | | `list` | `tuple` | | Python | | | `list` | `Array` | ✓ | JSON | | | `namedtuple` | `dict` | ✓ | Python | | | `namedtuple` | `list` | ✓ | Python | | | `namedtuple` | `namedtuple` | ✓ | Python | | | `namedtuple` | `tuple` | ✓ | Python | | | `namedtuple` | `Array` | ✓ | JSON | | | `namedtuple` | `NamedTuple` | ✓ | Python | | | `set` | `deque` | | Python | | | `set` | `dict_keys` | | Python | | | `set` | `dict_values` | | Python | | | `set` | `frozenset` | | Python | | | `set` | `list` | | Python | | | `set` | `set` | ✓ | Python | | | `set` | `tuple` | | Python | | | `set` | `Array` | ✓ | JSON | | | `str` | `bytearray` | | Python | Assumes UTF-8, error on unicode decoding error. | | `str` | `bytes` | | Python | Assumes UTF-8, error on unicode decoding error. | | `str` | `str` | ✓ | Python & JSON | | | `time` | `bytes` | | Python | Format: `HH:MM:SS.FFFFFF`. See [speedate](https://docs.rs/speedate/latest/speedate/). | | `time` | `float` | | Python & JSON | Interpreted as seconds, range `0 - 86399.9*`. | | `time` | `int` | | Python & JSON | Interpreted as seconds, range `0 - 86399`. | | `time` | `str` | | Python & JSON | Format: `HH:MM:SS.FFFFFF`. See [speedate](https://docs.rs/speedate/latest/speedate/). | | `time` | `time` | ✓ | Python | | | `time` | `Decimal` | | Python | Interpreted as seconds, range `0 - 86399.9*`. | | `timedelta` | `bytes` | | Python | Format: `ISO8601`. See [speedate](https://docs.rs/speedate/latest/speedate/), (UTF-8). | | `timedelta` | `float` | | Python & JSON | Interpreted as seconds. | | `timedelta` | `int` | | Python & JSON | Interpreted as seconds. | | `timedelta` | `str` | | Python & JSON | Format: `ISO8601`. See [speedate](https://docs.rs/speedate/latest/speedate/). | | `timedelta` | `timedelta` | ✓ | Python | | | `timedelta` | `Decimal` | | Python | Interpreted as seconds. | | `tuple` | `deque` | | Python | | | `tuple` | `dict_keys` | | Python | | | `tuple` | `dict_values` | | Python | | | `tuple` | `frozenset` | | Python | | | `tuple` | `list` | | Python | | | `tuple` | `set` | | Python | | | `tuple` | `tuple` | ✓ | Python | | | `tuple` | `Array` | ✓ | JSON | | | `type` | `type` | ✓ | Python | | | `Any` | `Any` | ✓ | Python & JSON | | | `ByteSize` | `float` | ✓ | Python & JSON | | | `ByteSize` | `int` | ✓ | Python & JSON | | | `ByteSize` | `str` | ✓ | Python & JSON | | | `ByteSize` | `Decimal` | ✓ | Python | | | `Decimal` | `float` | ✓ | JSON | | | `Decimal` | `float` | | Python & JSON | | | `Decimal` | `int` | ✓ | JSON | | | `Decimal` | `int` | | Python & JSON | | | `Decimal` | `str` | ✓ | JSON | | | `Decimal` | `str` | | Python & JSON | Must match `[0-9]+(\.[0-9]+)?`. | | `Decimal` | `Decimal` | ✓ | Python | | | `Enum` | `Any` | ✓ | JSON | Input value must be convertible to enum values. | | `Enum` | `Any` | | Python | Input value must be convertible to enum values. | | `Enum` | `Enum` | ✓ | Python | | | `IPv4Address` | `bytes` | | Python | | | `IPv4Address` | `int` | | Python | integer representing the IP address, must be less than `2**32` | | `IPv4Address` | `str` | ✓ | JSON | | | `IPv4Address` | `str` | | Python & JSON | | | `IPv4Address` | `IPv4Address` | ✓ | Python | | | `IPv4Address` | `IPv4Interface` | ✓ | Python | | | `IPv4Interface` | `bytes` | | Python | | | `IPv4Interface` | `int` | | Python | integer representing the IP address, must be less than `2**32` | | `IPv4Interface` | `str` | ✓ | JSON | | | `IPv4Interface` | `str` | | Python & JSON | | | `IPv4Interface` | `tuple` | | Python | | | `IPv4Interface` | `IPv4Address` | | Python | | | `IPv4Interface` | `IPv4Interface` | ✓ | Python | | | `IPv4Network` | `bytes` | | Python | | | `IPv4Network` | `int` | | Python | integer representing the IP network, must be less than `2**32` | | `IPv4Network` | `str` | ✓ | JSON | | | `IPv4Network` | `str` | | Python & JSON | | | `IPv4Network` | `IPv4Address` | | Python | | | `IPv4Network` | `IPv4Interface` | | Python | | | `IPv4Network` | `IPv4Network` | ✓ | Python | | | `IPv6Address` | `bytes` | | Python | | | `IPv6Address` | `int` | | Python | integer representing the IP address, must be less than `2**128` | | `IPv6Address` | `str` | ✓ | JSON | | | `IPv6Address` | `str` | | Python & JSON | | | `IPv6Address` | `IPv6Address` | ✓ | Python | | | `IPv6Address` | `IPv6Interface` | ✓ | Python | | | `IPv6Interface` | `bytes` | | Python | | | `IPv6Interface` | `int` | | Python | integer representing the IP address, must be less than `2**128` | | `IPv6Interface` | `str` | ✓ | JSON | | | `IPv6Interface` | `str` | | Python & JSON | | | `IPv6Interface` | `tuple` | | Python | | | `IPv6Interface` | `IPv6Address` | | Python | | | `IPv6Interface` | `IPv6Interface` | ✓ | Python | | | `IPv6Network` | `bytes` | | Python | | | `IPv6Network` | `int` | | Python | integer representing the IP address, must be less than `2**128` | | `IPv6Network` | `str` | ✓ | JSON | | | `IPv6Network` | `str` | | Python & JSON | | | `IPv6Network` | `IPv6Address` | | Python | | | `IPv6Network` | `IPv6Interface` | | Python | | | `IPv6Network` | `IPv6Network` | ✓ | Python | | | `InstanceOf` | `-` | | JSON | Never valid. | | `InstanceOf` | `Any` | ✓ | Python | `isinstance()` check must return `True`. | | `IntEnum` | `Any` | ✓ | JSON | Input value must be convertible to enum values. | | `IntEnum` | `Any` | | Python | Input value must be convertible to enum values. | | `IntEnum` | `IntEnum` | ✓ | Python | | | `Iterable` | `deque` | ✓ | Python | | | `Iterable` | `frozenset` | ✓ | Python | | | `Iterable` | `list` | ✓ | Python | | | `Iterable` | `set` | ✓ | Python | | | `Iterable` | `tuple` | ✓ | Python | | | `Iterable` | `Array` | ✓ | JSON | | | `NamedTuple` | `dict` | ✓ | Python | | | `NamedTuple` | `list` | ✓ | Python | | | `NamedTuple` | `namedtuple` | ✓ | Python | | | `NamedTuple` | `tuple` | ✓ | Python | | | `NamedTuple` | `Array` | ✓ | JSON | | | `NamedTuple` | `NamedTuple` | ✓ | Python | | | `None` | `None` | ✓ | Python & JSON | | | `Path` | `str` | ✓ | JSON | | | `Path` | `str` | | Python | | | `Path` | `Path` | ✓ | Python | | | `Pattern` | `bytes` | ✓ | Python | Input must be a valid pattern. | | `Pattern` | `str` | ✓ | Python & JSON | Input must be a valid pattern. | | `Sequence` | `deque` | | Python | | | `Sequence` | `list` | ✓ | Python | | | `Sequence` | `tuple` | | Python | | | `Sequence` | `Array` | ✓ | JSON | | | `TypedDict` | `dict` | ✓ | Python | | | `TypedDict` | `Any` | ✓ | Python | | | `TypedDict` | `Mapping` | | Python | Must implement the mapping interface and have an `items()` method. | | `TypedDict` | `Object` | ✓ | JSON | | | `UUID` | `str` | ✓ | JSON | | | `UUID` | `str` | | Python | | | `UUID` | `UUID` | ✓ | Python | |
+| Field Type | Input | Strict | Input Source | Conditions | | --- | --- | --- | --- | --- | | `bool` | `bool` | ✓ | Python & JSON | | | `bool` | `float` | | Python & JSON | Allowed values: `0.0, 1.0`. | | `bool` | `int` | | Python & JSON | Allowed values: `0, 1`. | | `bool` | `str` | | Python & JSON | Allowed values: `'f'`, `'n'`, `'no'`, `'off'`, `'false'`, `'False'`, `'t'`, `'y'`, `'on'`, `'yes'`, `'true'`, `'True'`. | | `bool` | `Decimal` | | Python | Allowed values: `Decimal(0), Decimal(1)`. | | `bytes` | `bytearray` | | Python | | | `bytes` | `bytes` | ✓ | Python | | | `bytes` | `str` | ✓ | JSON | | | `bytes` | `str` | | Python | | | `callable` | `-` | | JSON | Never valid. | | `callable` | `Any` | ✓ | Python | `callable()` check must return `True`. | | `date` | `bytes` | | Python | Format: `YYYY-MM-DD` (UTF-8). | | `date` | `date` | ✓ | Python | | | `date` | `datetime` | | Python | Must be exact date, eg. no `H`, `M`, `S`, `f`. | | `date` | `float` | | Python & JSON | Interpreted as seconds or ms from epoch. See [speedate](https://docs.rs/speedate/latest/speedate/). Must be exact date. | | `date` | `int` | | Python & JSON | Interpreted as seconds or ms from epoch. See [speedate](https://docs.rs/speedate/latest/speedate/). Must be exact date. | | `date` | `str` | | Python & JSON | Format: `YYYY-MM-DD`. | | `date` | `Decimal` | | Python | Interpreted as seconds or ms from epoch. See [speedate](https://docs.rs/speedate/latest/speedate/). Must be exact date. | | `datetime` | `bytes` | | Python | Format: `YYYY-MM-DDTHH:MM:SS.f` or `YYYY-MM-DD`. See [speedate](https://docs.rs/speedate/latest/speedate/), (UTF-8). | | `datetime` | `date` | | Python | | | `datetime` | `datetime` | ✓ | Python | | | `datetime` | `float` | | Python & JSON | Interpreted as seconds or ms from epoch, see [speedate](https://docs.rs/speedate/latest/speedate/). | | `datetime` | `int` | | Python & JSON | Interpreted as seconds or ms from epoch, see [speedate](https://docs.rs/speedate/latest/speedate/). | | `datetime` | `str` | | Python & JSON | Format: `YYYY-MM-DDTHH:MM:SS.f` or `YYYY-MM-DD`. See [speedate](https://docs.rs/speedate/latest/speedate/). | | `datetime` | `Decimal` | | Python | Interpreted as seconds or ms from epoch, see [speedate](https://docs.rs/speedate/latest/speedate/). | | `deque` | `deque` | ✓ | Python | | | `deque` | `frozenset` | | Python | | | `deque` | `list` | | Python | | | `deque` | `set` | | Python | | | `deque` | `tuple` | | Python | | | `deque` | `Array` | ✓ | JSON | | | `dict` | `dict` | ✓ | Python | | | `dict` | `Mapping` | | Python | Must implement the mapping interface and have an `items()` method. | | `dict` | `Object` | ✓ | JSON | | | `float` | `bool` | | Python & JSON | | | `float` | `bytes` | | Python | Must match `[0-9]+(\.[0-9]+)?`. | | `float` | `float` | ✓ | Python & JSON | `bool` is explicitly forbidden. | | `float` | `int` | ✓ | Python & JSON | | | `float` | `str` | | Python & JSON | Must match `[0-9]+(\.[0-9]+)?`. | | `float` | `Decimal` | | Python | | | `frozenset` | `deque` | | Python | | | `frozenset` | `dict_keys` | | Python | | | `frozenset` | `dict_values` | | Python | | | `frozenset` | `frozenset` | ✓ | Python | | | `frozenset` | `list` | | Python | | | `frozenset` | `set` | | Python | | | `frozenset` | `tuple` | | Python | | | `frozenset` | `Array` | ✓ | JSON | | | `int` | `bool` | | Python & JSON | | | `int` | `bytes` | | Python | Must be numeric only, e.g. `[0-9]+`. | | `int` | `float` | | Python & JSON | Must be exact int, e.g. `val % 1 == 0`, raises error for `nan`, `inf`. | | `int` | `int` | ✓ | Python & JSON | `bool` is explicitly forbidden. | | `int` | `int` | | Python & JSON | | | `int` | `str` | | Python & JSON | Must be numeric only, e.g. `[0-9]+`. | | `int` | `Decimal` | | Python | Must be exact int, e.g. `val % 1 == 0`. | | `list` | `deque` | | Python | | | `list` | `dict_keys` | | Python | | | `list` | `dict_values` | | Python | | | `list` | `frozenset` | | Python | | | `list` | `list` | ✓ | Python | | | `list` | `set` | | Python | | | `list` | `tuple` | | Python | | | `list` | `Array` | ✓ | JSON | | | `namedtuple` | `dict` | ✓ | Python | | | `namedtuple` | `list` | ✓ | Python | | | `namedtuple` | `namedtuple` | ✓ | Python | | | `namedtuple` | `tuple` | ✓ | Python | | | `namedtuple` | `Array` | ✓ | JSON | | | `namedtuple` | `NamedTuple` | ✓ | Python | | | `namedtuple` | `Object` | ✓ | JSON | | | `set` | `deque` | | Python | | | `set` | `dict_keys` | | Python | | | `set` | `dict_values` | | Python | | | `set` | `frozenset` | | Python | | | `set` | `list` | | Python | | | `set` | `set` | ✓ | Python | | | `set` | `tuple` | | Python | | | `set` | `Array` | ✓ | JSON | | | `str` | `bytearray` | | Python | Assumes UTF-8, error on unicode decoding error. | | `str` | `bytes` | | Python | Assumes UTF-8, error on unicode decoding error. | | `str` | `str` | ✓ | Python & JSON | | | `time` | `bytes` | | Python | Format: `HH:MM:SS.FFFFFF`. See [speedate](https://docs.rs/speedate/latest/speedate/). | | `time` | `float` | | Python & JSON | Interpreted as seconds, range `0 - 86399.9*`. | | `time` | `int` | | Python & JSON | Interpreted as seconds, range `0 - 86399`. | | `time` | `str` | | Python & JSON | Format: `HH:MM:SS.FFFFFF`. See [speedate](https://docs.rs/speedate/latest/speedate/). | | `time` | `time` | ✓ | Python | | | `time` | `Decimal` | | Python | Interpreted as seconds, range `0 - 86399.9*`. | | `timedelta` | `bytes` | | Python | Format: `ISO8601`. See [speedate](https://docs.rs/speedate/latest/speedate/), (UTF-8). | | `timedelta` | `float` | | Python & JSON | Interpreted as seconds. | | `timedelta` | `int` | | Python & JSON | Interpreted as seconds. | | `timedelta` | `str` | | Python & JSON | Format: `ISO8601`. See [speedate](https://docs.rs/speedate/latest/speedate/). | | `timedelta` | `timedelta` | ✓ | Python | | | `timedelta` | `Decimal` | | Python | Interpreted as seconds. | | `tuple` | `deque` | | Python | | | `tuple` | `dict_keys` | | Python | | | `tuple` | `dict_values` | | Python | | | `tuple` | `frozenset` | | Python | | | `tuple` | `list` | | Python | | | `tuple` | `set` | | Python | | | `tuple` | `tuple` | ✓ | Python | | | `tuple` | `Array` | ✓ | JSON | | | `type` | `type` | ✓ | Python | | | `Any` | `Any` | ✓ | Python & JSON | | | `ByteSize` | `float` | ✓ | Python & JSON | | | `ByteSize` | `int` | ✓ | Python & JSON | | | `ByteSize` | `str` | ✓ | Python & JSON | | | `ByteSize` | `Decimal` | ✓ | Python | | | `Decimal` | `float` | ✓ | JSON | | | `Decimal` | `float` | | Python & JSON | | | `Decimal` | `int` | ✓ | JSON | | | `Decimal` | `int` | | Python & JSON | | | `Decimal` | `str` | ✓ | JSON | | | `Decimal` | `str` | | Python & JSON | Must match `[0-9]+(\.[0-9]+)?`. | | `Decimal` | `Decimal` | ✓ | Python | | | `Enum` | `Any` | ✓ | JSON | Input value must be convertible to enum values. | | `Enum` | `Any` | | Python | Input value must be convertible to enum values. | | `Enum` | `Enum` | ✓ | Python | | | `IPv4Address` | `bytes` | | Python | | | `IPv4Address` | `int` | | Python | integer representing the IP address, must be less than `2**32` | | `IPv4Address` | `str` | ✓ | JSON | | | `IPv4Address` | `str` | | Python & JSON | | | `IPv4Address` | `IPv4Address` | ✓ | Python | | | `IPv4Address` | `IPv4Interface` | ✓ | Python | | | `IPv4Interface` | `bytes` | | Python | | | `IPv4Interface` | `int` | | Python | integer representing the IP address, must be less than `2**32` | | `IPv4Interface` | `str` | ✓ | JSON | | | `IPv4Interface` | `str` | | Python & JSON | | | `IPv4Interface` | `tuple` | | Python | | | `IPv4Interface` | `IPv4Address` | | Python | | | `IPv4Interface` | `IPv4Interface` | ✓ | Python | | | `IPv4Network` | `bytes` | | Python | | | `IPv4Network` | `int` | | Python | integer representing the IP network, must be less than `2**32` | | `IPv4Network` | `str` | ✓ | JSON | | | `IPv4Network` | `str` | | Python & JSON | | | `IPv4Network` | `IPv4Address` | | Python | | | `IPv4Network` | `IPv4Interface` | | Python | | | `IPv4Network` | `IPv4Network` | ✓ | Python | | | `IPv6Address` | `bytes` | | Python | | | `IPv6Address` | `int` | | Python | integer representing the IP address, must be less than `2**128` | | `IPv6Address` | `str` | ✓ | JSON | | | `IPv6Address` | `str` | | Python & JSON | | | `IPv6Address` | `IPv6Address` | ✓ | Python | | | `IPv6Address` | `IPv6Interface` | ✓ | Python | | | `IPv6Interface` | `bytes` | | Python | | | `IPv6Interface` | `int` | | Python | integer representing the IP address, must be less than `2**128` | | `IPv6Interface` | `str` | ✓ | JSON | | | `IPv6Interface` | `str` | | Python & JSON | | | `IPv6Interface` | `tuple` | | Python | | | `IPv6Interface` | `IPv6Address` | | Python | | | `IPv6Interface` | `IPv6Interface` | ✓ | Python | | | `IPv6Network` | `bytes` | | Python | | | `IPv6Network` | `int` | | Python | integer representing the IP address, must be less than `2**128` | | `IPv6Network` | `str` | ✓ | JSON | | | `IPv6Network` | `str` | | Python & JSON | | | `IPv6Network` | `IPv6Address` | | Python | | | `IPv6Network` | `IPv6Interface` | | Python | | | `IPv6Network` | `IPv6Network` | ✓ | Python | | | `InstanceOf` | `-` | | JSON | Never valid. | | `InstanceOf` | `Any` | ✓ | Python | `isinstance()` check must return `True`. | | `IntEnum` | `Any` | ✓ | JSON | Input value must be convertible to enum values. | | `IntEnum` | `Any` | | Python | Input value must be convertible to enum values. | | `IntEnum` | `IntEnum` | ✓ | Python | | | `Iterable` | `deque` | ✓ | Python | | | `Iterable` | `frozenset` | ✓ | Python | | | `Iterable` | `list` | ✓ | Python | | | `Iterable` | `set` | ✓ | Python | | | `Iterable` | `tuple` | ✓ | Python | | | `Iterable` | `Array` | ✓ | JSON | | | `NamedTuple` | `dict` | ✓ | Python | | | `NamedTuple` | `list` | ✓ | Python | | | `NamedTuple` | `namedtuple` | ✓ | Python | | | `NamedTuple` | `tuple` | ✓ | Python | | | `NamedTuple` | `Array` | ✓ | JSON | | | `NamedTuple` | `NamedTuple` | ✓ | Python | | | `NamedTuple` | `Object` | ✓ | JSON | | | `None` | `None` | ✓ | Python & JSON | | | `Path` | `str` | ✓ | JSON | | | `Path` | `str` | | Python | | | `Path` | `Path` | ✓ | Python | | | `Pattern` | `bytes` | ✓ | Python | Input must be a valid pattern. | | `Pattern` | `str` | ✓ | Python & JSON | Input must be a valid pattern. | | `Sequence` | `deque` | | Python | | | `Sequence` | `list` | ✓ | Python | | | `Sequence` | `tuple` | | Python | | | `Sequence` | `Array` | ✓ | JSON | | | `TypedDict` | `dict` | ✓ | Python | | | `TypedDict` | `Any` | ✓ | Python | | | `TypedDict` | `Mapping` | | Python | Must implement the mapping interface and have an `items()` method. | | `TypedDict` | `Object` | ✓ | JSON | | | `UUID` | `str` | ✓ | JSON | | | `UUID` | `str` | | Python | | | `UUID` | `UUID` | ✓ | Python | |
 
-| Field Type | Input | Strict | Input Source | Conditions | | --- | --- | --- | --- | --- | | `bool` | `bool` | ✓ | Python & JSON | | | `bool` | `float` | | Python & JSON | Allowed values: `0.0, 1.0`. | | `bool` | `int` | | Python & JSON | Allowed values: `0, 1`. | | `bool` | `str` | | Python & JSON | Allowed values: `'f'`, `'n'`, `'no'`, `'off'`, `'false'`, `'False'`, `'t'`, `'y'`, `'on'`, `'yes'`, `'true'`, `'True'`. | | `bytes` | `str` | ✓ | JSON | | | `callable` | `-` | | JSON | Never valid. | | `date` | `float` | | Python & JSON | Interpreted as seconds or ms from epoch. See [speedate](https://docs.rs/speedate/latest/speedate/). Must be exact date. | | `date` | `int` | | Python & JSON | Interpreted as seconds or ms from epoch. See [speedate](https://docs.rs/speedate/latest/speedate/). Must be exact date. | | `date` | `str` | | Python & JSON | Format: `YYYY-MM-DD`. | | `datetime` | `float` | | Python & JSON | Interpreted as seconds or ms from epoch, see [speedate](https://docs.rs/speedate/latest/speedate/). | | `datetime` | `int` | | Python & JSON | Interpreted as seconds or ms from epoch, see [speedate](https://docs.rs/speedate/latest/speedate/). | | `datetime` | `str` | | Python & JSON | Format: `YYYY-MM-DDTHH:MM:SS.f` or `YYYY-MM-DD`. See [speedate](https://docs.rs/speedate/latest/speedate/). | | `deque` | `Array` | ✓ | JSON | | | `dict` | `Object` | ✓ | JSON | | | `float` | `bool` | | Python & JSON | | | `float` | `float` | ✓ | Python & JSON | `bool` is explicitly forbidden. | | `float` | `int` | ✓ | Python & JSON | | | `float` | `str` | | Python & JSON | Must match `[0-9]+(\.[0-9]+)?`. | | `frozenset` | `Array` | ✓ | JSON | | | `int` | `bool` | | Python & JSON | | | `int` | `float` | | Python & JSON | Must be exact int, e.g. `val % 1 == 0`, raises error for `nan`, `inf`. | | `int` | `int` | ✓ | Python & JSON | `bool` is explicitly forbidden. | | `int` | `int` | | Python & JSON | | | `int` | `str` | | Python & JSON | Must be numeric only, e.g. `[0-9]+`. | | `list` | `Array` | ✓ | JSON | | | `namedtuple` | `Array` | ✓ | JSON | | | `set` | `Array` | ✓ | JSON | | | `str` | `str` | ✓ | Python & JSON | | | `time` | `float` | | Python & JSON | Interpreted as seconds, range `0 - 86399.9*`. | | `time` | `int` | | Python & JSON | Interpreted as seconds, range `0 - 86399`. | | `time` | `str` | | Python & JSON | Format: `HH:MM:SS.FFFFFF`. See [speedate](https://docs.rs/speedate/latest/speedate/). | | `timedelta` | `float` | | Python & JSON | Interpreted as seconds. | | `timedelta` | `int` | | Python & JSON | Interpreted as seconds. | | `timedelta` | `str` | | Python & JSON | Format: `ISO8601`. See [speedate](https://docs.rs/speedate/latest/speedate/). | | `tuple` | `Array` | ✓ | JSON | | | `Any` | `Any` | ✓ | Python & JSON | | | `ByteSize` | `float` | ✓ | Python & JSON | | | `ByteSize` | `int` | ✓ | Python & JSON | | | `ByteSize` | `str` | ✓ | Python & JSON | | | `Decimal` | `float` | ✓ | JSON | | | `Decimal` | `float` | | Python & JSON | | | `Decimal` | `int` | ✓ | JSON | | | `Decimal` | `int` | | Python & JSON | | | `Decimal` | `str` | ✓ | JSON | | | `Decimal` | `str` | | Python & JSON | Must match `[0-9]+(\.[0-9]+)?`. | | `Enum` | `Any` | ✓ | JSON | Input value must be convertible to enum values. | | `IPv4Address` | `str` | ✓ | JSON | | | `IPv4Address` | `str` | | Python & JSON | | | `IPv4Interface` | `str` | ✓ | JSON | | | `IPv4Interface` | `str` | | Python & JSON | | | `IPv4Network` | `str` | ✓ | JSON | | | `IPv4Network` | `str` | | Python & JSON | | | `IPv6Address` | `str` | ✓ | JSON | | | `IPv6Address` | `str` | | Python & JSON | | | `IPv6Interface` | `str` | ✓ | JSON | | | `IPv6Interface` | `str` | | Python & JSON | | | `IPv6Network` | `str` | ✓ | JSON | | | `IPv6Network` | `str` | | Python & JSON | | | `InstanceOf` | `-` | | JSON | Never valid. | | `IntEnum` | `Any` | ✓ | JSON | Input value must be convertible to enum values. | | `Iterable` | `Array` | ✓ | JSON | | | `NamedTuple` | `Array` | ✓ | JSON | | | `None` | `None` | ✓ | Python & JSON | | | `Path` | `str` | ✓ | JSON | | | `Pattern` | `str` | ✓ | Python & JSON | Input must be a valid pattern. | | `Sequence` | `Array` | ✓ | JSON | | | `TypedDict` | `Object` | ✓ | JSON | | | `UUID` | `str` | ✓ | JSON | |
+| Field Type | Input | Strict | Input Source | Conditions | | --- | --- | --- | --- | --- | | `bool` | `bool` | ✓ | Python & JSON | | | `bool` | `float` | | Python & JSON | Allowed values: `0.0, 1.0`. | | `bool` | `int` | | Python & JSON | Allowed values: `0, 1`. | | `bool` | `str` | | Python & JSON | Allowed values: `'f'`, `'n'`, `'no'`, `'off'`, `'false'`, `'False'`, `'t'`, `'y'`, `'on'`, `'yes'`, `'true'`, `'True'`. | | `bytes` | `str` | ✓ | JSON | | | `callable` | `-` | | JSON | Never valid. | | `date` | `float` | | Python & JSON | Interpreted as seconds or ms from epoch. See [speedate](https://docs.rs/speedate/latest/speedate/). Must be exact date. | | `date` | `int` | | Python & JSON | Interpreted as seconds or ms from epoch. See [speedate](https://docs.rs/speedate/latest/speedate/). Must be exact date. | | `date` | `str` | | Python & JSON | Format: `YYYY-MM-DD`. | | `datetime` | `float` | | Python & JSON | Interpreted as seconds or ms from epoch, see [speedate](https://docs.rs/speedate/latest/speedate/). | | `datetime` | `int` | | Python & JSON | Interpreted as seconds or ms from epoch, see [speedate](https://docs.rs/speedate/latest/speedate/). | | `datetime` | `str` | | Python & JSON | Format: `YYYY-MM-DDTHH:MM:SS.f` or `YYYY-MM-DD`. See [speedate](https://docs.rs/speedate/latest/speedate/). | | `deque` | `Array` | ✓ | JSON | | | `dict` | `Object` | ✓ | JSON | | | `float` | `bool` | | Python & JSON | | | `float` | `float` | ✓ | Python & JSON | `bool` is explicitly forbidden. | | `float` | `int` | ✓ | Python & JSON | | | `float` | `str` | | Python & JSON | Must match `[0-9]+(\.[0-9]+)?`. | | `frozenset` | `Array` | ✓ | JSON | | | `int` | `bool` | | Python & JSON | | | `int` | `float` | | Python & JSON | Must be exact int, e.g. `val % 1 == 0`, raises error for `nan`, `inf`. | | `int` | `int` | ✓ | Python & JSON | `bool` is explicitly forbidden. | | `int` | `int` | | Python & JSON | | | `int` | `str` | | Python & JSON | Must be numeric only, e.g. `[0-9]+`. | | `list` | `Array` | ✓ | JSON | | | `namedtuple` | `Array` | ✓ | JSON | | | `namedtuple` | `Object` | ✓ | JSON | | | `set` | `Array` | ✓ | JSON | | | `str` | `str` | ✓ | Python & JSON | | | `time` | `float` | | Python & JSON | Interpreted as seconds, range `0 - 86399.9*`. | | `time` | `int` | | Python & JSON | Interpreted as seconds, range `0 - 86399`. | | `time` | `str` | | Python & JSON | Format: `HH:MM:SS.FFFFFF`. See [speedate](https://docs.rs/speedate/latest/speedate/). | | `timedelta` | `float` | | Python & JSON | Interpreted as seconds. | | `timedelta` | `int` | | Python & JSON | Interpreted as seconds. | | `timedelta` | `str` | | Python & JSON | Format: `ISO8601`. See [speedate](https://docs.rs/speedate/latest/speedate/). | | `tuple` | `Array` | ✓ | JSON | | | `Any` | `Any` | ✓ | Python & JSON | | | `ByteSize` | `float` | ✓ | Python & JSON | | | `ByteSize` | `int` | ✓ | Python & JSON | | | `ByteSize` | `str` | ✓ | Python & JSON | | | `Decimal` | `float` | ✓ | JSON | | | `Decimal` | `float` | | Python & JSON | | | `Decimal` | `int` | ✓ | JSON | | | `Decimal` | `int` | | Python & JSON | | | `Decimal` | `str` | ✓ | JSON | | | `Decimal` | `str` | | Python & JSON | Must match `[0-9]+(\.[0-9]+)?`. | | `Enum` | `Any` | ✓ | JSON | Input value must be convertible to enum values. | | `IPv4Address` | `str` | ✓ | JSON | | | `IPv4Address` | `str` | | Python & JSON | | | `IPv4Interface` | `str` | ✓ | JSON | | | `IPv4Interface` | `str` | | Python & JSON | | | `IPv4Network` | `str` | ✓ | JSON | | | `IPv4Network` | `str` | | Python & JSON | | | `IPv6Address` | `str` | ✓ | JSON | | | `IPv6Address` | `str` | | Python & JSON | | | `IPv6Interface` | `str` | ✓ | JSON | | | `IPv6Interface` | `str` | | Python & JSON | | | `IPv6Network` | `str` | ✓ | JSON | | | `IPv6Network` | `str` | | Python & JSON | | | `InstanceOf` | `-` | | JSON | Never valid. | | `IntEnum` | `Any` | ✓ | JSON | Input value must be convertible to enum values. | | `Iterable` | `Array` | ✓ | JSON | | | `NamedTuple` | `Array` | ✓ | JSON | | | `NamedTuple` | `Object` | ✓ | JSON | | | `None` | `None` | ✓ | Python & JSON | | | `Path` | `str` | ✓ | JSON | | | `Pattern` | `str` | ✓ | Python & JSON | Input must be a valid pattern. | | `Sequence` | `Array` | ✓ | JSON | | | `TypedDict` | `Object` | ✓ | JSON | | | `UUID` | `str` | ✓ | JSON | |
 
-| Field Type | Input | Strict | Input Source | Conditions | | --- | --- | --- | --- | --- | | `bool` | `bool` | ✓ | Python & JSON | | | `bytes` | `str` | ✓ | JSON | | | `deque` | `Array` | ✓ | JSON | | | `dict` | `Object` | ✓ | JSON | | | `float` | `float` | ✓ | Python & JSON | `bool` is explicitly forbidden. | | `float` | `int` | ✓ | Python & JSON | | | `frozenset` | `Array` | ✓ | JSON | | | `int` | `int` | ✓ | Python & JSON | `bool` is explicitly forbidden. | | `list` | `Array` | ✓ | JSON | | | `namedtuple` | `Array` | ✓ | JSON | | | `set` | `Array` | ✓ | JSON | | | `str` | `str` | ✓ | Python & JSON | | | `tuple` | `Array` | ✓ | JSON | | | `Any` | `Any` | ✓ | Python & JSON | | | `ByteSize` | `float` | ✓ | Python & JSON | | | `ByteSize` | `int` | ✓ | Python & JSON | | | `ByteSize` | `str` | ✓ | Python & JSON | | | `Decimal` | `float` | ✓ | JSON | | | `Decimal` | `int` | ✓ | JSON | | | `Decimal` | `str` | ✓ | JSON | | | `Enum` | `Any` | ✓ | JSON | Input value must be convertible to enum values. | | `IPv4Address` | `str` | ✓ | JSON | | | `IPv4Interface` | `str` | ✓ | JSON | | | `IPv4Network` | `str` | ✓ | JSON | | | `IPv6Address` | `str` | ✓ | JSON | | | `IPv6Interface` | `str` | ✓ | JSON | | | `IPv6Network` | `str` | ✓ | JSON | | | `IntEnum` | `Any` | ✓ | JSON | Input value must be convertible to enum values. | | `Iterable` | `Array` | ✓ | JSON | | | `NamedTuple` | `Array` | ✓ | JSON | | | `None` | `None` | ✓ | Python & JSON | | | `Path` | `str` | ✓ | JSON | | | `Pattern` | `str` | ✓ | Python & JSON | Input must be a valid pattern. | | `Sequence` | `Array` | ✓ | JSON | | | `TypedDict` | `Object` | ✓ | JSON | | | `UUID` | `str` | ✓ | JSON | |
+| Field Type | Input | Strict | Input Source | Conditions | | --- | --- | --- | --- | --- | | `bool` | `bool` | ✓ | Python & JSON | | | `bytes` | `str` | ✓ | JSON | | | `deque` | `Array` | ✓ | JSON | | | `dict` | `Object` | ✓ | JSON | | | `float` | `float` | ✓ | Python & JSON | `bool` is explicitly forbidden. | | `float` | `int` | ✓ | Python & JSON | | | `frozenset` | `Array` | ✓ | JSON | | | `int` | `int` | ✓ | Python & JSON | `bool` is explicitly forbidden. | | `list` | `Array` | ✓ | JSON | | | `namedtuple` | `Array` | ✓ | JSON | | | `namedtuple` | `Object` | ✓ | JSON | | | `set` | `Array` | ✓ | JSON | | | `str` | `str` | ✓ | Python & JSON | | | `tuple` | `Array` | ✓ | JSON | | | `Any` | `Any` | ✓ | Python & JSON | | | `ByteSize` | `float` | ✓ | Python & JSON | | | `ByteSize` | `int` | ✓ | Python & JSON | | | `ByteSize` | `str` | ✓ | Python & JSON | | | `Decimal` | `float` | ✓ | JSON | | | `Decimal` | `int` | ✓ | JSON | | | `Decimal` | `str` | ✓ | JSON | | | `Enum` | `Any` | ✓ | JSON | Input value must be convertible to enum values. | | `IPv4Address` | `str` | ✓ | JSON | | | `IPv4Interface` | `str` | ✓ | JSON | | | `IPv4Network` | `str` | ✓ | JSON | | | `IPv6Address` | `str` | ✓ | JSON | | | `IPv6Interface` | `str` | ✓ | JSON | | | `IPv6Network` | `str` | ✓ | JSON | | | `IntEnum` | `Any` | ✓ | JSON | Input value must be convertible to enum values. | | `Iterable` | `Array` | ✓ | JSON | | | `NamedTuple` | `Array` | ✓ | JSON | | | `NamedTuple` | `Object` | ✓ | JSON | | | `None` | `None` | ✓ | Python & JSON | | | `Path` | `str` | ✓ | JSON | | | `Pattern` | `str` | ✓ | Python & JSON | Input must be a valid pattern. | | `Sequence` | `Array` | ✓ | JSON | | | `TypedDict` | `Object` | ✓ | JSON | | | `UUID` | `str` | ✓ | JSON | |
 
 | Field Type | Input | Strict | Input Source | Conditions | | --- | --- | --- | --- | --- | | `bool` | `bool` | ✓ | Python & JSON | | | `bool` | `float` | | Python & JSON | Allowed values: `0.0, 1.0`. | | `bool` | `int` | | Python & JSON | Allowed values: `0, 1`. | | `bool` | `str` | | Python & JSON | Allowed values: `'f'`, `'n'`, `'no'`, `'off'`, `'false'`, `'False'`, `'t'`, `'y'`, `'on'`, `'yes'`, `'true'`, `'True'`. | | `bool` | `Decimal` | | Python | Allowed values: `Decimal(0), Decimal(1)`. | | `bytes` | `bytearray` | | Python | | | `bytes` | `bytes` | ✓ | Python | | | `bytes` | `str` | | Python | | | `callable` | `Any` | ✓ | Python | `callable()` check must return `True`. | | `date` | `bytes` | | Python | Format: `YYYY-MM-DD` (UTF-8). | | `date` | `date` | ✓ | Python | | | `date` | `datetime` | | Python | Must be exact date, eg. no `H`, `M`, `S`, `f`. | | `date` | `float` | | Python & JSON | Interpreted as seconds or ms from epoch. See [speedate](https://docs.rs/speedate/latest/speedate/). Must be exact date. | | `date` | `int` | | Python & JSON | Interpreted as seconds or ms from epoch. See [speedate](https://docs.rs/speedate/latest/speedate/). Must be exact date. | | `date` | `str` | | Python & JSON | Format: `YYYY-MM-DD`. | | `date` | `Decimal` | | Python | Interpreted as seconds or ms from epoch. See [speedate](https://docs.rs/speedate/latest/speedate/). Must be exact date. | | `datetime` | `bytes` | | Python | Format: `YYYY-MM-DDTHH:MM:SS.f` or `YYYY-MM-DD`. See [speedate](https://docs.rs/speedate/latest/speedate/), (UTF-8). | | `datetime` | `date` | | Python | | | `datetime` | `datetime` | ✓ | Python | | | `datetime` | `float` | | Python & JSON | Interpreted as seconds or ms from epoch, see [speedate](https://docs.rs/speedate/latest/speedate/). | | `datetime` | `int` | | Python & JSON | Interpreted as seconds or ms from epoch, see [speedate](https://docs.rs/speedate/latest/speedate/). | | `datetime` | `str` | | Python & JSON | Format: `YYYY-MM-DDTHH:MM:SS.f` or `YYYY-MM-DD`. See [speedate](https://docs.rs/speedate/latest/speedate/). | | `datetime` | `Decimal` | | Python | Interpreted as seconds or ms from epoch, see [speedate](https://docs.rs/speedate/latest/speedate/). | | `deque` | `deque` | ✓ | Python | | | `deque` | `frozenset` | | Python | | | `deque` | `list` | | Python | | | `deque` | `set` | | Python | | | `deque` | `tuple` | | Python | | | `dict` | `dict` | ✓ | Python | | | `dict` | `Mapping` | | Python | Must implement the mapping interface and have an `items()` method. | | `float` | `bool` | | Python & JSON | | | `float` | `bytes` | | Python | Must match `[0-9]+(\.[0-9]+)?`. | | `float` | `float` | ✓ | Python & JSON | `bool` is explicitly forbidden. | | `float` | `int` | ✓ | Python & JSON | | | `float` | `str` | | Python & JSON | Must match `[0-9]+(\.[0-9]+)?`. | | `float` | `Decimal` | | Python | | | `frozenset` | `deque` | | Python | | | `frozenset` | `dict_keys` | | Python | | | `frozenset` | `dict_values` | | Python | | | `frozenset` | `frozenset` | ✓ | Python | | | `frozenset` | `list` | | Python | | | `frozenset` | `set` | | Python | | | `frozenset` | `tuple` | | Python | | | `int` | `bool` | | Python & JSON | | | `int` | `bytes` | | Python | Must be numeric only, e.g. `[0-9]+`. | | `int` | `float` | | Python & JSON | Must be exact int, e.g. `val % 1 == 0`, raises error for `nan`, `inf`. | | `int` | `int` | ✓ | Python & JSON | `bool` is explicitly forbidden. | | `int` | `int` | | Python & JSON | | | `int` | `str` | | Python & JSON | Must be numeric only, e.g. `[0-9]+`. | | `int` | `Decimal` | | Python | Must be exact int, e.g. `val % 1 == 0`. | | `list` | `deque` | | Python | | | `list` | `dict_keys` | | Python | | | `list` | `dict_values` | | Python | | | `list` | `frozenset` | | Python | | | `list` | `list` | ✓ | Python | | | `list` | `set` | | Python | | | `list` | `tuple` | | Python | | | `namedtuple` | `dict` | ✓ | Python | | | `namedtuple` | `list` | ✓ | Python | | | `namedtuple` | `namedtuple` | ✓ | Python | | | `namedtuple` | `tuple` | ✓ | Python | | | `namedtuple` | `NamedTuple` | ✓ | Python | | | `set` | `deque` | | Python | | | `set` | `dict_keys` | | Python | | | `set` | `dict_values` | | Python | | | `set` | `frozenset` | | Python | | | `set` | `list` | | Python | | | `set` | `set` | ✓ | Python | | | `set` | `tuple` | | Python | | | `str` | `bytearray` | | Python | Assumes UTF-8, error on unicode decoding error. | | `str` | `bytes` | | Python | Assumes UTF-8, error on unicode decoding error. | | `str` | `str` | ✓ | Python & JSON | | | `time` | `bytes` | | Python | Format: `HH:MM:SS.FFFFFF`. See [speedate](https://docs.rs/speedate/latest/speedate/). | | `time` | `float` | | Python & JSON | Interpreted as seconds, range `0 - 86399.9*`. | | `time` | `int` | | Python & JSON | Interpreted as seconds, range `0 - 86399`. | | `time` | `str` | | Python & JSON | Format: `HH:MM:SS.FFFFFF`. See [speedate](https://docs.rs/speedate/latest/speedate/). | | `time` | `time` | ✓ | Python | | | `time` | `Decimal` | | Python | Interpreted as seconds, range `0 - 86399.9*`. | | `timedelta` | `bytes` | | Python | Format: `ISO8601`. See [speedate](https://docs.rs/speedate/latest/speedate/), (UTF-8). | | `timedelta` | `float` | | Python & JSON | Interpreted as seconds. | | `timedelta` | `int` | | Python & JSON | Interpreted as seconds. | | `timedelta` | `str` | | Python & JSON | Format: `ISO8601`. See [speedate](https://docs.rs/speedate/latest/speedate/). | | `timedelta` | `timedelta` | ✓ | Python | | | `timedelta` | `Decimal` | | Python | Interpreted as seconds. | | `tuple` | `deque` | | Python | | | `tuple` | `dict_keys` | | Python | | | `tuple` | `dict_values` | | Python | | | `tuple` | `frozenset` | | Python | | | `tuple` | `list` | | Python | | | `tuple` | `set` | | Python | | | `tuple` | `tuple` | ✓ | Python | | | `type` | `type` | ✓ | Python | | | `Any` | `Any` | ✓ | Python & JSON | | | `ByteSize` | `float` | ✓ | Python & JSON | | | `ByteSize` | `int` | ✓ | Python & JSON | | | `ByteSize` | `str` | ✓ | Python & JSON | | | `ByteSize` | `Decimal` | ✓ | Python | | | `Decimal` | `float` | | Python & JSON | | | `Decimal` | `int` | | Python & JSON | | | `Decimal` | `str` | | Python & JSON | Must match `[0-9]+(\.[0-9]+)?`. | | `Decimal` | `Decimal` | ✓ | Python | | | `Enum` | `Any` | | Python | Input value must be convertible to enum values. | | `Enum` | `Enum` | ✓ | Python | | | `IPv4Address` | `bytes` | | Python | | | `IPv4Address` | `int` | | Python | integer representing the IP address, must be less than `2**32` | | `IPv4Address` | `str` | | Python & JSON | | | `IPv4Address` | `IPv4Address` | ✓ | Python | | | `IPv4Address` | `IPv4Interface` | ✓ | Python | | | `IPv4Interface` | `bytes` | | Python | | | `IPv4Interface` | `int` | | Python | integer representing the IP address, must be less than `2**32` | | `IPv4Interface` | `str` | | Python & JSON | | | `IPv4Interface` | `tuple` | | Python | | | `IPv4Interface` | `IPv4Address` | | Python | | | `IPv4Interface` | `IPv4Interface` | ✓ | Python | | | `IPv4Network` | `bytes` | | Python | | | `IPv4Network` | `int` | | Python | integer representing the IP network, must be less than `2**32` | | `IPv4Network` | `str` | | Python & JSON | | | `IPv4Network` | `IPv4Address` | | Python | | | `IPv4Network` | `IPv4Interface` | | Python | | | `IPv4Network` | `IPv4Network` | ✓ | Python | | | `IPv6Address` | `bytes` | | Python | | | `IPv6Address` | `int` | | Python | integer representing the IP address, must be less than `2**128` | | `IPv6Address` | `str` | | Python & JSON | | | `IPv6Address` | `IPv6Address` | ✓ | Python | | | `IPv6Address` | `IPv6Interface` | ✓ | Python | | | `IPv6Interface` | `bytes` | | Python | | | `IPv6Interface` | `int` | | Python | integer representing the IP address, must be less than `2**128` | | `IPv6Interface` | `str` | | Python & JSON | | | `IPv6Interface` | `tuple` | | Python | | | `IPv6Interface` | `IPv6Address` | | Python | | | `IPv6Interface` | `IPv6Interface` | ✓ | Python | | | `IPv6Network` | `bytes` | | Python | | | `IPv6Network` | `int` | | Python | integer representing the IP address, must be less than `2**128` | | `IPv6Network` | `str` | | Python & JSON | | | `IPv6Network` | `IPv6Address` | | Python | | | `IPv6Network` | `IPv6Interface` | | Python | | | `IPv6Network` | `IPv6Network` | ✓ | Python | | | `InstanceOf` | `Any` | ✓ | Python | `isinstance()` check must return `True`. | | `IntEnum` | `Any` | | Python | Input value must be convertible to enum values. | | `IntEnum` | `IntEnum` | ✓ | Python | | | `Iterable` | `deque` | ✓ | Python | | | `Iterable` | `frozenset` | ✓ | Python | | | `Iterable` | `list` | ✓ | Python | | | `Iterable` | `set` | ✓ | Python | | | `Iterable` | `tuple` | ✓ | Python | | | `NamedTuple` | `dict` | ✓ | Python | | | `NamedTuple` | `list` | ✓ | Python | | | `NamedTuple` | `namedtuple` | ✓ | Python | | | `NamedTuple` | `tuple` | ✓ | Python | | | `NamedTuple` | `NamedTuple` | ✓ | Python | | | `None` | `None` | ✓ | Python & JSON | | | `Path` | `str` | | Python | | | `Path` | `Path` | ✓ | Python | | | `Pattern` | `bytes` | ✓ | Python | Input must be a valid pattern. | | `Pattern` | `str` | ✓ | Python & JSON | Input must be a valid pattern. | | `Sequence` | `deque` | | Python | | | `Sequence` | `list` | ✓ | Python | | | `Sequence` | `tuple` | | Python | | | `TypedDict` | `dict` | ✓ | Python | | | `TypedDict` | `Any` | ✓ | Python | | | `TypedDict` | `Mapping` | | Python | Must implement the mapping interface and have an `items()` method. | | `UUID` | `str` | | Python | | | `UUID` | `UUID` | ✓ | Python | |
 
@@ -20230,7 +20230,7 @@ Field(
 Field(
     *,
     default_factory: (
-        Callable[[], _T" optional hover>_T] | Callable[[dict[str, Any]], _T]
+        Callable[[], _T] | Callable[[dict[str, Any]], _T]
     ),
     alias: str | None = _Unset,
     alias_priority: int | None = _Unset,
@@ -25802,6 +25802,103 @@ def dataclass_schema(self, schema: core_schema.DataclassSchema) -> JsonSchemaVal
         json_schema = self.generate_inner(schema['schema']).copy()
 
     self._update_class_schema(json_schema, cls, config)
+
+    return json_schema
+
+```
+
+### named_tuple_field_schema
+
+```python
+named_tuple_field_schema(
+    schema: NamedTupleField,
+) -> JsonSchemaValue
+
+```
+
+Generates a JSON schema that matches a schema that defines a named tuple field.
+
+Parameters:
+
+| Name | Type | Description | Default | | --- | --- | --- | --- | | `schema` | `NamedTupleField` | The core schema. | *required* |
+
+Returns:
+
+| Type | Description | | --- | --- | | `JsonSchemaValue` | The generated JSON schema. |
+
+Source code in `pydantic/json_schema.py`
+
+```python
+def named_tuple_field_schema(self, schema: core_schema.NamedTupleField) -> JsonSchemaValue:
+    """Generates a JSON schema that matches a schema that defines a named tuple field.
+
+    Args:
+        schema: The core schema.
+
+    Returns:
+        The generated JSON schema.
+    """
+    return self.generate_inner(schema['schema'])
+
+```
+
+### named_tuple_schema
+
+```python
+named_tuple_schema(
+    schema: NamedTupleSchema,
+) -> JsonSchemaValue
+
+```
+
+Generates a JSON schema that matches a schema that defines a named tuple.
+
+Parameters:
+
+| Name | Type | Description | Default | | --- | --- | --- | --- | | `schema` | `NamedTupleSchema` | The core schema. | *required* |
+
+Returns:
+
+| Type | Description | | --- | --- | | `JsonSchemaValue` | The generated JSON schema. |
+
+Source code in `pydantic/json_schema.py`
+
+```python
+def named_tuple_schema(self, schema: core_schema.NamedTupleSchema) -> JsonSchemaValue:
+    """Generates a JSON schema that matches a schema that defines a named tuple.
+
+    Args:
+        schema: The core schema.
+
+    Returns:
+        The generated JSON schema.
+    """
+    prefix_items: list[JsonSchemaValue] = []
+    min_items = 0
+
+    for field in schema['fields']:
+        name = field['name']
+        if self.by_alias:
+            alias = field.get('validation_alias')
+            if isinstance(alias, str):
+                name = alias
+
+        field_schema = self.generate_inner(field['schema']).copy()
+        if 'title' not in field_schema and self.field_title_should_be_set(field['schema']):
+            field_schema['title'] = self.get_title_from_name(name)
+        prefix_items.append(field_schema)
+
+        if field['schema']['type'] != 'default':
+            # This assumes that if the field has a default value,
+            # the inner schema must be of type WithDefaultSchema.
+            min_items += 1
+
+    json_schema: JsonSchemaValue = {'type': 'array'}
+    if prefix_items:
+        json_schema['prefixItems'] = prefix_items
+    if min_items:
+        json_schema['minItems'] = min_items
+    json_schema['maxItems'] = len(prefix_items)
 
     return json_schema
 
@@ -34374,6 +34471,174 @@ def dataclass_schema(
 
 ```
 
+## named_tuple_field
+
+```python
+named_tuple_field(
+    name: str,
+    schema: CoreSchema,
+    *,
+    validation_alias: (
+        str | list[str | int] | list[list[str | int]] | None
+    ) = None,
+    metadata: dict[str, Any] | None = None
+) -> NamedTupleField
+
+```
+
+Returns a schema for a named tuple field, e.g.:
+
+```py
+from pydantic_core import core_schema
+
+field = core_schema.named_tuple_field(name='x', schema=core_schema.int_schema())
+
+```
+
+Parameters:
+
+| Name | Type | Description | Default | | --- | --- | --- | --- | | `name` | `str` | The name of the field | *required* | | `schema` | `CoreSchema` | The schema to use for the field | *required* | | `validation_alias` | `str | list[str | int] | list[list[str | int]] | None` | The alias(es) to use to find the field in the validation data, only used when validating from a dictionary or mapping | `None` | | `metadata` | `dict[str, Any] | None` | Any other information you want to include with the schema, not used by pydantic-core | `None` |
+
+Source code in `pydantic_core/core_schema.py`
+
+````python
+def named_tuple_field(
+    name: str,
+    schema: CoreSchema,
+    *,
+    validation_alias: str | list[str | int] | list[list[str | int]] | None = None,
+    metadata: dict[str, Any] | None = None,
+) -> NamedTupleField:
+    """
+    Returns a schema for a named tuple field, e.g.:
+
+    ```py
+    from pydantic_core import core_schema
+
+    field = core_schema.named_tuple_field(name='x', schema=core_schema.int_schema())
+    ```
+
+    Args:
+        name: The name of the field
+        schema: The schema to use for the field
+        validation_alias: The alias(es) to use to find the field in the validation data, only used
+            when validating from a dictionary or mapping
+        metadata: Any other information you want to include with the schema, not used by pydantic-core
+    """
+    return _dict_not_none(
+        type='named-tuple-field',
+        name=name,
+        schema=schema,
+        validation_alias=validation_alias,
+        metadata=metadata,
+    )
+
+````
+
+## named_tuple_schema
+
+```python
+named_tuple_schema(
+    cls: type[Any],
+    fields: list[NamedTupleField],
+    *,
+    cls_name: str | None = None,
+    ref: str | None = None,
+    metadata: dict[str, Any] | None = None,
+    serialization: SerSchema | None = None
+) -> NamedTupleSchema
+
+```
+
+Returns a schema for a named tuple, e.g.:
+
+```py
+from typing import NamedTuple
+
+from pydantic_core import SchemaValidator, core_schema
+
+class Point(NamedTuple):
+    x: int
+    y: int
+
+schema = core_schema.named_tuple_schema(
+    Point,
+    [
+        core_schema.named_tuple_field(name='x', schema=core_schema.int_schema()),
+        core_schema.named_tuple_field(name='y', schema=core_schema.int_schema()),
+    ],
+)
+v = SchemaValidator(schema)
+assert v.validate_python((1, '2')) == Point(x=1, y=2)
+
+```
+
+Fields are validated positionally when the input is a (named) tuple, list or JSON array, and by name when the input is a dictionary, mapping or JSON object. Instances of `cls` always revalidate. Strict mode is currently ignored, matching the behavior of the `'call'` core schema previously used for named tuples.
+
+Parameters:
+
+| Name | Type | Description | Default | | --- | --- | --- | --- | | `cls` | `type[Any]` | The named tuple class, used to construct instances and perform instance checks | *required* | | `fields` | `list[NamedTupleField]` | The fields to use for the named tuple, in order | *required* | | `cls_name` | `str | None` | The name to use in error locs, etc; this is useful for generics (default: cls.__name__) | `None` | | `ref` | `str | None` | optional unique identifier of the schema, used to reference the schema in other places | `None` | | `metadata` | `dict[str, Any] | None` | Any other information you want to include with the schema, not used by pydantic-core | `None` | | `serialization` | `SerSchema | None` | Custom serialization schema | `None` |
+
+Source code in `pydantic_core/core_schema.py`
+
+````python
+def named_tuple_schema(
+    cls: type[Any],
+    fields: list[NamedTupleField],
+    *,
+    cls_name: str | None = None,
+    ref: str | None = None,
+    metadata: dict[str, Any] | None = None,
+    serialization: SerSchema | None = None,
+) -> NamedTupleSchema:
+    """
+    Returns a schema for a named tuple, e.g.:
+
+    ```py
+    from typing import NamedTuple
+
+    from pydantic_core import SchemaValidator, core_schema
+
+    class Point(NamedTuple):
+        x: int
+        y: int
+
+    schema = core_schema.named_tuple_schema(
+        Point,
+        [
+            core_schema.named_tuple_field(name='x', schema=core_schema.int_schema()),
+            core_schema.named_tuple_field(name='y', schema=core_schema.int_schema()),
+        ],
+    )
+    v = SchemaValidator(schema)
+    assert v.validate_python((1, '2')) == Point(x=1, y=2)
+    ```
+
+    Fields are validated positionally when the input is a (named) tuple, list or JSON array,
+    and by name when the input is a dictionary, mapping or JSON object. Instances of `cls`
+    always revalidate. Strict mode is currently ignored, matching the behavior of the
+    `'call'` core schema previously used for named tuples.
+
+    Args:
+        cls: The named tuple class, used to construct instances and perform instance checks
+        fields: The fields to use for the named tuple, in order
+        cls_name: The name to use in error locs, etc; this is useful for generics (default: `cls.__name__`)
+        ref: optional unique identifier of the schema, used to reference the schema in other places
+        metadata: Any other information you want to include with the schema, not used by pydantic-core
+        serialization: Custom serialization schema
+    """
+    return _dict_not_none(
+        type='named-tuple',
+        cls=cls,
+        fields=fields,
+        cls_name=cls_name,
+        ref=ref,
+        metadata=metadata,
+        serialization=serialization,
+    )
+
+````
+
 ## arguments_parameter
 
 ```python
@@ -40662,6 +40927,7 @@ Standard library type: typing.NamedTuple (and types created by the collections.n
 
 - Allows tuple and list instances. Validate each item according to the field definition.
 - Allows dict instances. Keys must match the named tuple field names, and values are validated according to the field definition.
+- Allows instances of the named tuple class (fields are revalidated).
 
 #### Serialization
 
@@ -49826,24 +50092,19 @@ The entries below explain what each error type means. To also see *which input* 
 
 ## `arguments_type`
 
-This error is raised when an object that would be passed as arguments to a function during validation is not a `tuple`, `list`, or `dict`. Because `NamedTuple` uses function calls in its implementation, that is one way to produce this error:
+This error is raised when an object that would be passed as arguments to a function during validation is not a `tuple`, `list`, or `dict`:
 
 ```python
-from typing import NamedTuple
-
-from pydantic import BaseModel, ValidationError
+from pydantic import TypeAdapter, ValidationError
 
 
-class MyNamedTuple(NamedTuple):
-    x: int
+def func(x: int) -> None: ...
 
 
-class MyModel(BaseModel):
-    field: MyNamedTuple
-
+ta = TypeAdapter(func)
 
 try:
-    MyModel.model_validate({'field': 'invalid'})
+    ta.validate_python('invalid')
 except ValidationError as exc:
     print(repr(exc.errors()[0]['type']))
     #> 'arguments_type'
@@ -51475,6 +51736,33 @@ try:
 except ValidationError as exc:
     print(repr(exc.errors()[0]['type']))
     #> 'multiple_of'
+
+```
+
+## `named_tuple_type`
+
+This error is raised when the input value is not valid for a named tuple field:
+
+```python
+from typing import NamedTuple
+
+from pydantic import BaseModel, ValidationError
+
+
+class Point(NamedTuple):
+    x: int
+    y: int
+
+
+class Model(BaseModel):
+    p: Point
+
+
+try:
+    Model(p='invalid')
+except ValidationError as exc:
+    print(repr(exc.errors()[0]['type']))
+    #> 'named_tuple_type'
 
 ```
 

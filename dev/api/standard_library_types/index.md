@@ -687,6 +687,7 @@ Standard library type: typing.NamedTuple (and types created by the collections.n
 
 - Allows tuple and list instances. Validate each item according to the field definition.
 - Allows dict instances. Keys must match the named tuple field names, and values are validated according to the field definition.
+- Allows instances of the named tuple class (fields are revalidated).
 
 #### Serialization
 
