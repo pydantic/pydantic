@@ -931,7 +931,7 @@ class GenerateSchema:
                         model_name=cls.__name__,
                     )
                     inner_schema = apply_validators(fields_schema, decorators.root_validators.values())
-                    inner_schema = apply_model_validators(inner_schema, model_validators, 'inner')
+                    inner_schema = apply_model_validators(inner_schema, model_validators, 'all')
 
                     model_schema = core_schema.model_schema(
                         cls,
@@ -945,7 +945,6 @@ class GenerateSchema:
                     )
 
                 schema = self._apply_model_serializers(model_schema, decorators.model_serializers.values())
-                schema = apply_model_validators(schema, model_validators, 'outer')
                 return self.defs.create_definition_reference_schema(schema)
 
     def _resolve_self_type(self, obj: Any) -> Any:

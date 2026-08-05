@@ -193,3 +193,21 @@ def test_after_validator_wrong_signature() -> None:
     Model2()
     Model3()
     Model4()
+
+
+def test_recursive_model_validator_single_execution() -> None:
+    calls = []
+
+    class NodeVal(BaseModel):
+        child: 'NodeVal | None' = None
+
+        @model_validator(mode='after')
+        def validate_model(self) -> 'NodeVal':
+            calls.append(self)
+            return self
+
+    class OuterVal(BaseModel):
+        node: NodeVal
+
+    OuterVal.model_validate({'node': {}})
+    assert len(calls) == 1
