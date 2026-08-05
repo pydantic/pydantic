@@ -2256,7 +2256,11 @@ class GenerateSchema:
                     self._add_js_function(metadata_schema, metadata_js_function)
             return transform_inner_schema(schema)
 
-        get_inner_schema = CallbackGetCoreSchemaHandler(inner_handler, self)
+        get_inner_schema = CallbackGetCoreSchemaHandler(
+            inner_handler,
+            self,
+            source_type=source_type,
+        )
 
         for annotation in annotations:
             if annotation is None:
@@ -2264,6 +2268,7 @@ class GenerateSchema:
             get_inner_schema = self._get_wrapped_inner_schema(
                 get_inner_schema,
                 annotation,
+                source_type,
                 pydantic_js_annotation_functions,
                 check_unsupported_field_info_attributes=check_unsupported_field_info_attributes,
             )
@@ -2432,6 +2437,7 @@ class GenerateSchema:
         self,
         get_inner_schema: GetCoreSchemaHandler,
         annotation: Any,
+        source_type: Any,
         pydantic_js_annotation_functions: list[GetJsonSchemaFunction],
         check_unsupported_field_info_attributes: bool = False,
     ) -> CallbackGetCoreSchemaHandler:
@@ -2454,7 +2460,7 @@ class GenerateSchema:
                 pydantic_js_annotation_functions.append(metadata_js_function)
             return schema
 
-        return CallbackGetCoreSchemaHandler(new_handler, self)
+        return CallbackGetCoreSchemaHandler(new_handler, self, source_type=source_type)
 
     def _apply_field_serializers(
         self,
