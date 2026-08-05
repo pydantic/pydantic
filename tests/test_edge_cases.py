@@ -44,6 +44,7 @@ from pydantic import (
     TypeAdapter,
     ValidationError,
     constr,
+    create_model,
     errors,
     field_validator,
     model_validator,
@@ -51,6 +52,7 @@ from pydantic import (
     validator,
 )
 from pydantic._internal._model_construction import ModelMetaclass
+from pydantic._internal._typing_extra import safe_get_annotations
 from pydantic.fields import Field, computed_field
 from pydantic.functional_serializers import (
     field_serializer,
@@ -3161,3 +3163,38 @@ def test_model_fields_set_includes_extra_after_assignment():
     m.extra_after_init = 3
     assert m.model_fields_set == {'field', 'extra_at_init', 'extra_after_init'}
     assert m.model_extra == {'extra_at_init': 2, 'extra_after_init': 3}
+
+
+def test_safe_get_annotations_from_dict() -> None:
+    """https://github.com/pydantic/pydantic/issues/13520"""
+
+    class Meta(type):
+        pass
+
+    Meta.__annotations__
+
+    class Base(metaclass=Meta):
+        pass
+
+    class Main(Base):
+        f: int
+
+    class Sub(Main):
+        pass
+
+    assert safe_get_annotations(Sub) == {}
+
+
+@pytest.mark.timeout(10)
+def test_interconnected_models_build_in_linear_time() -> None:
+    classes: list[type[BaseModel]] = []
+    for i in range(60):
+        fields: dict[str, Any] = {'value': (int, ...)}
+        for j, prev in enumerate(classes[-3:]):
+            fields[f'ref{j}'] = (prev | None, None)
+        classes.append(create_model(f'Node{i}', **fields))
+
+    last = classes[-1]
+    instance = last.model_validate({'value': 1, 'ref2': {'value': 2, 'ref2': {'value': 3}}})
+    assert instance.ref2.ref2.value == 3
+    assert instance.model_dump(exclude_none=True) == {'value': 1, 'ref2': {'value': 2, 'ref2': {'value': 3}}}

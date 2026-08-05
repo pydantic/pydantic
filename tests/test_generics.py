@@ -3271,3 +3271,17 @@ def test_slots_forwarded_from_generic_class() -> None:
         with pytest.raises(TypeError):
             # As per https://docs.python.org/3/reference/datamodel.html#slots:
             weakref.ref(BaseInt())
+
+
+def test_generics_parameterization_not_hashable() -> None:
+    class NoHash:
+        __hash__ = None
+
+    T = TypeVar('T')
+
+    class Model(BaseModel, Generic[T]):
+        f: T
+
+    Mint = Model[Annotated[int, NoHash()]]
+
+    assert Mint(f='1').f == 1

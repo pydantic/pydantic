@@ -34,15 +34,30 @@ def test_parse_str_with_pattern() -> None:
         (int, validate_as(...).ge(0), [0, 1, 100], [-1, -100]),
         (float, validate_as(...).ge(0.0), [1.8, 0.0], [-1.0]),
         (Decimal, validate_as(...).ge(Decimal(0.0)), [Decimal(1), Decimal(0.0)], [Decimal(-1.0)]),
+        (float, validate_as(float).ge(0), [1.8, 0.0], [-1.0]),
+        (Decimal, validate_as(Decimal).ge(0), [Decimal(1), Decimal(0)], [Decimal(-1)]),  # pyright: ignore[reportArgumentType]
+        (int, validate_as(int).ge(0.0), [0, 1, 100], [-1, -100]),  # pyright: ignore[reportArgumentType]
+        # The `transform()` step results in a non-numeric core schema, meaning the constraint
+        # is applied as a function check:
+        (int, validate_as(int).transform(lambda x: x).ge(0), [0, 1, 100], [-1, -100]),
         (int, validate_as(...).le(5), [2, 4], [6, 100]),
         (float, validate_as(...).le(1.0), [0.5, 0.0], [100.0]),
         (Decimal, validate_as(...).le(Decimal(1.0)), [Decimal(1)], [Decimal(5.0)]),
+        (float, validate_as(float).le(1), [0.5, 0.0], [100.0]),
+        (Decimal, validate_as(Decimal).le(1), [Decimal(1)], [Decimal(5)]),  # pyright: ignore[reportArgumentType]
+        (int, validate_as(int).le(5.0), [2, 4], [6, 100]),  # pyright: ignore[reportArgumentType]
         (int, validate_as(...).gt(0), [1, 2, 100], [0, -1]),
         (float, validate_as(...).gt(0.0), [0.1, 1.8], [0.0, -1.0]),
         (Decimal, validate_as(...).gt(Decimal(0.0)), [Decimal(1)], [Decimal(0.0), Decimal(-1.0)]),
+        (float, validate_as(float).gt(0), [1.0, 2.5], [0.0, -1.0]),
+        (Decimal, validate_as(Decimal).gt(0), [Decimal(1)], [Decimal(0), Decimal(-1)]),  # pyright: ignore[reportArgumentType]
+        (int, validate_as(int).gt(0.0), [1, 2], [0, -3]),  # pyright: ignore[reportArgumentType]
         (int, validate_as(...).lt(5), [2, 4], [5, 6, 100]),
         (float, validate_as(...).lt(1.0), [0.5, 0.0], [1.0, 100.0]),
         (Decimal, validate_as(...).lt(Decimal(1.0)), [Decimal(0.5)], [Decimal(1.0), Decimal(5.0)]),
+        (float, validate_as(float).lt(1), [0.5, 0.0], [1.0, 100.0]),
+        (Decimal, validate_as(Decimal).lt(1), [Decimal('0.5')], [Decimal(1), Decimal(5)]),  # pyright: ignore[reportArgumentType]
+        (int, validate_as(int).lt(5.0), [2, 4], [5, 6, 100]),  # pyright: ignore[reportArgumentType]
     ],
 )
 def test_ge_le_gt_lt(
@@ -61,6 +76,12 @@ def test_ge_le_gt_lt(
     [
         (int, validate_as(int).multiple_of(5), [5, 20, 0], [18, 7]),
         (float, validate_as(float).multiple_of(2.5), [2.5, 5.0, 7.5], [3.0, 1.1]),
+        (float, validate_as(float).multiple_of(2), [2.0, 4.0, 6.0], [3.0, 1.1]),
+        (Decimal, validate_as(Decimal).multiple_of(2), [Decimal(2), Decimal(4)], [Decimal(3), Decimal('1.1')]),  # pyright: ignore[reportArgumentType]
+        (int, validate_as(int).multiple_of(5.0), [5, 20, 0], [18, 7]),  # pyright: ignore[reportArgumentType]
+        # The `transform()` step results in a non-numeric core schema, meaning the constraint
+        # is applied as a function check:
+        (int, validate_as(int).transform(lambda x: x).multiple_of(5), [5, 20, 0], [18, 7]),
         (
             Decimal,
             validate_as(Decimal).multiple_of(Decimal('1.5')),
@@ -337,6 +358,31 @@ def test_predicates() -> None:
             Annotated[int, validate_as(int).gt(0).lt(100)],
             {'type': 'integer', 'exclusiveMinimum': 0, 'exclusiveMaximum': 100},
             {'type': 'integer', 'exclusiveMinimum': 0, 'exclusiveMaximum': 100},
+        ),
+        (
+            Annotated[int, validate_as(int).ge(1).le(100)],
+            {'type': 'integer', 'minimum': 1, 'maximum': 100},
+            {'type': 'integer', 'minimum': 1, 'maximum': 100},
+        ),
+        (
+            Annotated[int, validate_as(int).le(100).ge(1)],
+            {'type': 'integer', 'minimum': 1, 'maximum': 100},
+            {'type': 'integer', 'minimum': 1, 'maximum': 100},
+        ),
+        (
+            Annotated[int, validate_as(int).constrain(Interval(ge=1, le=100))],
+            {'type': 'integer', 'minimum': 1, 'maximum': 100},
+            {'type': 'integer', 'minimum': 1, 'maximum': 100},
+        ),
+        (
+            Annotated[int, validate_as(int).ge(1).le(100).multiple_of(5)],
+            {'type': 'integer', 'minimum': 1, 'maximum': 100, 'multipleOf': 5},
+            {'type': 'integer', 'minimum': 1, 'maximum': 100, 'multipleOf': 5},
+        ),
+        (
+            Annotated[int, validate_as(int).lt(100).gt(1)],
+            {'type': 'integer', 'exclusiveMinimum': 1, 'exclusiveMaximum': 100},
+            {'type': 'integer', 'exclusiveMinimum': 1, 'exclusiveMaximum': 100},
         ),
         (
             Annotated[int, validate_as(int).gt(0) | validate_as(int).lt(100)],
