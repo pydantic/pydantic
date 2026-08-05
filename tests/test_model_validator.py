@@ -211,3 +211,17 @@ def test_recursive_model_validator_single_execution() -> None:
 
     OuterVal.model_validate({'node': {}})
     assert len(calls) == 1
+
+
+def test_root_model_validator_execution() -> None:
+    calls = []
+
+    class MyRoot(RootModel[int]):
+        @model_validator(mode='after')
+        def validate_root(self) -> 'MyRoot':
+            calls.append(self)
+            return self
+
+    r = MyRoot.model_validate(42)
+    assert len(calls) == 1
+    assert r.root == 42

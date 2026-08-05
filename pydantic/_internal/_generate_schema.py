@@ -907,7 +907,7 @@ class GenerateSchema:
                             metadata, pydantic_js_updates={'description': inspect.cleandoc(cls.__doc__)}
                         )
 
-                    inner_schema = apply_model_validators(inner_schema, model_validators, 'inner')
+                    inner_schema = apply_model_validators(inner_schema, model_validators, 'all')
                     model_schema = core_schema.model_schema(
                         cls,
                         inner_schema,
