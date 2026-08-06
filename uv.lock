@@ -442,6 +442,19 @@ wheels = [
 ]
 
 [[package]]
+name = "cattrs"
+version = "25.2.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "attrs" },
+    { name = "typing-extensions" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/e3/42/988b3a667967e9d2d32346e7ed7edee540ef1cee829b53ef80aa8d4a0222/cattrs-25.2.0.tar.gz", hash = "sha256:f46c918e955db0177be6aa559068390f71988e877c603ae2e56c71827165cc06", size = 506531, upload-time = "2025-08-31T20:41:59.301Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/20/a5/b3771ac30b590026b9d721187110194ade05bfbea3d98b423a9cafd80959/cattrs-25.2.0-py3-none-any.whl", hash = "sha256:539d7eedee7d2f0706e4e109182ad096d608ba84633c32c75ef3458f1d11e8f1", size = 70040, upload-time = "2025-08-31T20:41:57.543Z" },
+]
+
+[[package]]
 name = "certifi"
 version = "2024.12.14"
 source = { registry = "https://pypi.org/simple" }
@@ -2442,7 +2455,7 @@ all = [
     { name = "pydantic-extra-types" },
     { name = "pydantic-settings" },
     { name = "pyodide-build", version = "0.19.1", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.12'" },
-    { name = "pyodide-build", version = "0.34.4", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.12'" },
+    { name = "pyodide-build", version = "0.39.0", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.12'" },
     { name = "pyrefly" },
     { name = "pyright" },
     { name = "pytest" },
@@ -2512,7 +2525,7 @@ linting = [
 ]
 pyodide-build = [
     { name = "pyodide-build", version = "0.19.1", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.12'" },
-    { name = "pyodide-build", version = "0.34.4", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.12'" },
+    { name = "pyodide-build", version = "0.39.0", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.12'" },
 ]
 testing-extra = [
     { name = "ansi2html" },
@@ -2828,7 +2841,7 @@ wheels = [
 
 [[package]]
 name = "pyodide-build"
-version = "0.34.4"
+version = "0.39.0"
 source = { registry = "https://pypi.org/simple" }
 resolution-markers = [
     "python_full_version == '3.13.*' and implementation_name == 'cpython'",
@@ -2836,12 +2849,13 @@ resolution-markers = [
     "(python_full_version >= '3.12' and python_full_version < '3.15' and implementation_name != 'cpython') or (python_full_version == '3.12.*' and implementation_name == 'cpython') or (python_full_version == '3.14.*' and implementation_name == 'cpython')",
 ]
 dependencies = [
+    { name = "attrs" },
     { name = "auditwheel-emscripten" },
     { name = "build" },
+    { name = "cattrs" },
     { name = "click" },
     { name = "packaging" },
     { name = "platformdirs" },
-    { name = "pydantic" },
     { name = "pyodide-cli" },
     { name = "pyodide-lock" },
     { name = "requests" },
@@ -2850,9 +2864,9 @@ dependencies = [
     { name = "virtualenv" },
     { name = "wheel" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/02/ab/6a011f65b8adc4699ae5680f4f2dcf28a81fab86d09e6dcb87415aab64ef/pyodide_build-0.34.4.tar.gz", hash = "sha256:3f8f5a2628e3d69d00264328f64c39c0febcdc7d7de4e2da1b5220832c190f73", size = 380307, upload-time = "2026-05-18T05:57:11.134Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/e3/aa/b32d950bc3baffe0c6be7e43458a1c30f686c65029bd4075ffb554ed6666/pyodide_build-0.39.0.tar.gz", hash = "sha256:2003985abd9b7cf7acf5236d9c7aa049973f5bf1cc1b36ca1031e63477ba3ca4", size = 389944, upload-time = "2026-08-03T18:07:01.404Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/b3/0e/dab3f809be960a2b753b3aedd2edf4aa74d86cf8d9cc42d4a982fb840904/pyodide_build-0.34.4-py3-none-any.whl", hash = "sha256:d97dcac70ab6c9c2ec53d21ad3387eec75442d7d630ca3e52a887fbd0b669b94", size = 122899, upload-time = "2026-05-18T05:57:09.18Z" },
+    { url = "https://files.pythonhosted.org/packages/15/f8/4b1ebcdcf3107a8867afd399d330e45170d909e8a8ca674f1bf6eb59969f/pyodide_build-0.39.0-py3-none-any.whl", hash = "sha256:88f645880baac9a983b63216f6fff631bb74ccd29c60eea13caa8e3ef358385e", size = 137255, upload-time = "2026-08-03T18:07:00.093Z" },
 ]
 
 [[package]]
@@ -2870,14 +2884,15 @@ wheels = [
 
 [[package]]
 name = "pyodide-lock"
-version = "0.1.3"
+version = "0.2.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "pydantic" },
+    { name = "attrs" },
+    { name = "cattrs" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/7a/4c/80bf2cfa237c405d41730d4f86c53d2d4d49aea2aaa8c74894156bcf4f60/pyodide_lock-0.1.3.tar.gz", hash = "sha256:5ed700b4b1b88313d9c56bab721d5a4ed57304bbe83c172b647f74e1140e2177", size = 54432, upload-time = "2026-04-24T09:02:54.208Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/73/d6/95f7d6edb66c7f99be3a573c130b7318c02a676acea8a9fcee9c71bf1724/pyodide_lock-0.2.0.tar.gz", hash = "sha256:eb85eac9266a4bbff34c31158337b89f4d27305d93eb8908ca3ec324d2c278ef", size = 55127, upload-time = "2026-07-24T08:27:57.259Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/c4/28/5afbe23595edf79560ca5237ba9f008594cdf36b9cbf90e06df06ca04ce7/pyodide_lock-0.1.3-py3-none-any.whl", hash = "sha256:71d3e8ef72cc020e45eabd35cb36480437d2639bc756392f02ca3bd709504103", size = 15442, upload-time = "2026-04-24T09:02:52.764Z" },
+    { url = "https://files.pythonhosted.org/packages/10/32/f9f5f2a80c48f666d1c5bfbda301247242edb9fd98dde7d1007b614f6dea/pyodide_lock-0.2.0-py3-none-any.whl", hash = "sha256:462679d58c0d542ca830c832b7fe2ad5c7d00982d86a9d00d2ef93b36c2624d8", size = 16048, upload-time = "2026-07-24T08:27:56.38Z" },
 ]
 
 [[package]]
