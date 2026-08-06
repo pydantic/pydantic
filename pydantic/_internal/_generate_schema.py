@@ -23,7 +23,7 @@ from inspect import Parameter, _ParameterKind
 from ipaddress import IPv4Address, IPv4Interface, IPv4Network, IPv6Address, IPv6Interface, IPv6Network
 from itertools import chain
 from operator import attrgetter
-from types import EllipsisType, FunctionType, GenericAlias, LambdaType, MethodType, NoneType
+from types import EllipsisType, FunctionType, LambdaType, MethodType, NoneType
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -33,7 +33,6 @@ from typing import (
     TypeAlias,
     TypeVar,
     cast,
-    overload,
 )
 from uuid import UUID
 from zoneinfo import ZoneInfo
@@ -102,6 +101,7 @@ from ._decorators import (
 )
 from ._docs_extraction import extract_docstrings_from_cls
 from ._fields import (
+    PydanticExtraInfo,
     collect_dataclass_fields,
     rebuild_dataclass_fields,
     rebuild_model_fields,
@@ -303,6 +303,23 @@ def _add_custom_serialization_from_json_encoders(
     return schema
 
 
+def _get_first_arg_or_any(obj: Any) -> Any:
+    args = get_args(obj)
+    if not args:
+        return Any
+    return args[0]
+
+
+def _get_first_two_args_or_any(obj: Any) -> tuple[Any, Any]:
+    args = get_args(obj)
+    if not args:
+        return (Any, Any)
+    if len(args) < 2:
+        origin = get_origin(obj)
+        raise TypeError(f'Expected two type arguments for {origin}, got 1')
+    return args[0], args[1]
+
+
 GENERATE_SCHEMA_ERRORS = (
     PydanticForbiddenQualifier,
     PydanticInvalidForJsonSchema,
@@ -404,42 +421,40 @@ class GenerateSchema:
 
     _generic_handlers: ClassVar[dict[Any, Callable[[GenerateSchema, Any], core_schema.CoreSchema]]] = {
         tuple: lambda self, obj: self._tuple_schema(obj),
-        list: lambda self, obj: self._list_schema(self._get_first_arg_or_any(obj)),
-        dict: lambda self, obj: self._dict_schema(*self._get_first_two_args_or_any(obj)),
-        set: lambda self, obj: self._set_schema(self._get_first_arg_or_any(obj)),
-        frozenset: lambda self, obj: self._frozenset_schema(self._get_first_arg_or_any(obj)),
+        list: lambda self, obj: self._list_schema(_get_first_arg_or_any(obj)),
+        dict: lambda self, obj: self._dict_schema(*_get_first_two_args_or_any(obj)),
+        set: lambda self, obj: self._set_schema(_get_first_arg_or_any(obj)),
+        frozenset: lambda self, obj: self._frozenset_schema(_get_first_arg_or_any(obj)),
         type: lambda self, obj: self._subclass_schema(obj),
-        collections.abc.MutableSequence: lambda self, obj: self._list_schema(self._get_first_arg_or_any(obj)),
-        collections.abc.MutableSet: lambda self, obj: self._set_schema(self._get_first_arg_or_any(obj)),
-        collections.abc.Set: lambda self, obj: self._frozenset_schema(self._get_first_arg_or_any(obj)),
-        collections.deque: lambda self, obj: self._deque_schema(self._get_first_arg_or_any(obj)),
+        collections.abc.MutableSequence: lambda self, obj: self._list_schema(_get_first_arg_or_any(obj)),
+        collections.abc.MutableSet: lambda self, obj: self._set_schema(_get_first_arg_or_any(obj)),
+        collections.abc.Set: lambda self, obj: self._frozenset_schema(_get_first_arg_or_any(obj)),
+        collections.deque: lambda self, obj: self._deque_schema(_get_first_arg_or_any(obj)),
         collections.abc.Mapping: lambda self, obj: self._mapping_schema(
-            collections.abc.Mapping, *self._get_first_two_args_or_any(obj)
+            collections.abc.Mapping, *_get_first_two_args_or_any(obj)
         ),
         collections.abc.MutableMapping: lambda self, obj: self._mapping_schema(
-            collections.abc.MutableMapping, *self._get_first_two_args_or_any(obj)
+            collections.abc.MutableMapping, *_get_first_two_args_or_any(obj)
         ),
         collections.OrderedDict: lambda self, obj: self._mapping_schema(
-            collections.OrderedDict, *self._get_first_two_args_or_any(obj)
+            collections.OrderedDict, *_get_first_two_args_or_any(obj)
         ),
         collections.defaultdict: lambda self, obj: self._mapping_schema(
-            collections.defaultdict, *self._get_first_two_args_or_any(obj)
+            collections.defaultdict, *_get_first_two_args_or_any(obj)
         ),
         collections.Counter: lambda self, obj: self._mapping_schema(
-            collections.Counter, self._get_first_arg_or_any(obj), int
+            collections.Counter, _get_first_arg_or_any(obj), int
         ),
-        os.PathLike: lambda self, obj: self._path_schema(os.PathLike, self._get_first_arg_or_any(obj)),
-        pathlib.Path: lambda self, obj: self._path_schema(pathlib.Path, self._get_first_arg_or_any(obj)),
-        pathlib.PurePath: lambda self, obj: self._path_schema(pathlib.PurePath, self._get_first_arg_or_any(obj)),
-        pathlib.PosixPath: lambda self, obj: self._path_schema(pathlib.PosixPath, self._get_first_arg_or_any(obj)),
-        pathlib.WindowsPath: lambda self, obj: self._path_schema(pathlib.WindowsPath, self._get_first_arg_or_any(obj)),
-        pathlib.PurePosixPath: lambda self, obj: self._path_schema(
-            pathlib.PurePosixPath, self._get_first_arg_or_any(obj)
-        ),
+        os.PathLike: lambda self, obj: self._path_schema(os.PathLike, _get_first_arg_or_any(obj)),
+        pathlib.Path: lambda self, obj: self._path_schema(pathlib.Path, _get_first_arg_or_any(obj)),
+        pathlib.PurePath: lambda self, obj: self._path_schema(pathlib.PurePath, _get_first_arg_or_any(obj)),
+        pathlib.PosixPath: lambda self, obj: self._path_schema(pathlib.PosixPath, _get_first_arg_or_any(obj)),
+        pathlib.WindowsPath: lambda self, obj: self._path_schema(pathlib.WindowsPath, _get_first_arg_or_any(obj)),
+        pathlib.PurePosixPath: lambda self, obj: self._path_schema(pathlib.PurePosixPath, _get_first_arg_or_any(obj)),
         pathlib.PureWindowsPath: lambda self, obj: self._path_schema(
-            pathlib.PureWindowsPath, self._get_first_arg_or_any(obj)
+            pathlib.PureWindowsPath, _get_first_arg_or_any(obj)
         ),
-        collections.abc.Sequence: lambda self, obj: self._sequence_schema(self._get_first_arg_or_any(obj)),
+        collections.abc.Sequence: lambda self, obj: self._sequence_schema(_get_first_arg_or_any(obj)),
         collections.abc.Iterable: lambda self, obj: self._iterable_schema(obj),
         collections.abc.Generator: lambda self, obj: self._iterable_schema(obj),
         re.Pattern: lambda self, obj: self._pattern_schema(obj),
@@ -777,14 +792,15 @@ class GenerateSchema:
         """Generate core schema.
 
         Args:
-            obj: The object to generate core schema for.
+            obj: The object to generate core schema for. If this is a type, it is expected to be *fully evaluated*.
+                Use the `evaluate_type()` method first if the type isn't guaranteed to be fully evaluated.
 
         Returns:
             The generated core schema.
 
         Raises:
             PydanticUndefinedAnnotation:
-                If it is not possible to evaluate forward reference.
+                If it is not possible to evaluate forward references.
             PydanticSchemaGenerationError:
                 If it is not possible to generate pydantic-core schema.
             TypeError:
@@ -833,8 +849,8 @@ class GenerateSchema:
                 core_config = self._config_wrapper.core_config(title=cls.__name__)
 
                 if cls.__pydantic_fields_complete__ or cls is BaseModel_:
-                    fields = getattr(cls, '__pydantic_fields__', {})
-                    extra_info = getattr(cls, '__pydantic_extra_info__', None)
+                    fields: dict[str, FieldInfo] = getattr(cls, '__pydantic_fields__', {})
+                    extra_info: PydanticExtraInfo | None = getattr(cls, '__pydantic_extra_info__', None)
                 else:
                     if '__pydantic_fields__' not in cls.__dict__:
                         # This happens when we have a loop in the schema generation:
@@ -882,12 +898,7 @@ class GenerateSchema:
                         raise PydanticSchemaGenerationError(
                             'The type annotation for `__pydantic_extra__` must be `dict[str, ...]`'
                         )
-                    # See the comments in `_get_args_resolving_forward_refs()` for why we need
-                    # to re-evaluate the annotation:
-                    extra_keys_type, extra_items_type = self._get_args_resolving_forward_refs(
-                        extra_info.annotation,
-                        required=True,
-                    )
+                    extra_keys_type, extra_items_type = get_args(extra_info.annotation)
                     if extra_keys_type is not str:
                         extras_keys_schema = self.generate_schema(extra_keys_type)
                     if not typing_objects.is_any(extra_items_type):
@@ -1013,14 +1024,29 @@ class GenerateSchema:
                 )
             return core_schema.chain_schema([core_schema.with_info_plain_validator_function(v) for v in validators()])
 
-    def _resolve_forward_ref(self, obj: Any) -> Any:
-        # we assume that types_namespace has the target of forward references in its scope,
-        # but this could fail, for example, if calling Validator on an imported type which contains
-        # forward references to other types only defined in the module from which it was imported
-        # `Validator(SomeImportedTypeAliasWithAForwardReference)`
-        # or the equivalent for BaseModel
-        # class Model(BaseModel):
-        #   x: SomeImportedTypeAliasWithAForwardReference
+    def evaluate_type(self, obj: Any) -> Any:
+        """Evaluate an annotation using the current types namespace.
+
+        Types passed to `generate_schema()` are expected to be fully evaluated. However, some
+        annotations are provided lazily by design and can only be evaluated during schema
+        generation.
+
+        One example is `TypeVar` bounds. Note that because the current types namespace is used,
+        some forward references may fail to resolve:
+
+        ```python {test="skip" lint="skip"}
+        # module1.py:
+        MyAlias = int
+
+        T = TypeVar('T', bound=list['MyAlias'])
+
+        # module2.py
+        from module1 import T
+
+        class Model(BaseModel, Generic[T]):
+            f: T  # <-- will fail to evaluate bound
+        ```
+        """
         try:
             obj = _typing_extra.eval_type(obj, *self._types_namespace)
         except NameError as e:
@@ -1035,44 +1061,17 @@ class GenerateSchema:
 
         return obj
 
-    @overload
-    def _get_args_resolving_forward_refs(self, obj: Any, required: Literal[True]) -> tuple[Any, ...]: ...
-
-    @overload
-    def _get_args_resolving_forward_refs(self, obj: Any) -> tuple[Any, ...] | None: ...
-
-    def _get_args_resolving_forward_refs(self, obj: Any, required: bool = False) -> tuple[Any, ...] | None:
-        args = get_args(obj)
-        if args:
-            if isinstance(obj, GenericAlias):
-                # PEP 585 generic aliases don't convert args to ForwardRefs, unlike `typing.List/Dict` etc.
-                # This was fixed in https://github.com/python/cpython/pull/30900 (Python 3.11).
-                # TODO: this shouldn't be necessary (probably even this `_get_args_resolving_forward_refs()` function)
-                # once we drop support for Python 3.10 *or* if we implement our own `typing._eval_type()` implementation.
-                args = (ForwardRef(a) if isinstance(a, str) else a for a in args)
-            args = tuple(self._resolve_forward_ref(a) if isinstance(a, ForwardRef) else a for a in args)
-        elif required:  # pragma: no cover
-            raise TypeError(f'Expected {obj} to have generic parameters but it had none')
-        return args
-
-    def _get_first_arg_or_any(self, obj: Any) -> Any:
-        args = self._get_args_resolving_forward_refs(obj)
-        if not args:
-            return Any
-        return args[0]
-
-    def _get_first_two_args_or_any(self, obj: Any) -> tuple[Any, Any]:
-        args = self._get_args_resolving_forward_refs(obj)
-        if not args:
-            return (Any, Any)
-        if len(args) < 2:
-            origin = get_origin(obj)
-            raise TypeError(f'Expected two type arguments for {origin}, got 1')
-        return args[0], args[1]
-
     def _generate_schema_inner(self, obj: Any) -> core_schema.CoreSchema:
         if typing_objects.is_self(obj):
             obj = self._resolve_self_type(obj)
+
+        if isinstance(obj, ForwardRef):
+            # As per the docstring on `generate_schema()`, types are expected to be fully evaluated.
+            # However, for recursive types that can't be evaluated (e.g. `Json = list['Json']`), the inner
+            # arg stays as a `ForwardRef`. In this case, we delegate to `evaluate_type()`. As a result,
+            # if `obj` was `ForwardRef('Json')`, `evaluate_type()` will return `list[ForwardRef('Json')]`,
+            # and so we'll eventually reach a `RecursionError`:
+            obj = self.evaluate_type(obj)
 
         origin = get_origin(obj)
 
@@ -1088,12 +1087,6 @@ class GenerateSchema:
         if isinstance(obj, dict):
             # we assume this is already a valid schema
             return obj  # type: ignore[return-value]
-
-        if isinstance(obj, str):
-            obj = ForwardRef(obj)
-
-        if isinstance(obj, ForwardRef):
-            return self.generate_schema(self._resolve_forward_ref(obj))
 
         BaseModel = import_cached_base_model()
 
@@ -1181,7 +1174,7 @@ class GenerateSchema:
         elif typing_objects.is_final(origin):
             # TODO: I'm not sure obj can be `Final` here, we call `typing_inspection.introspection.inspect_annotation()`
             # early for model-like fields, which handles it already.
-            return self.generate_schema(self._get_first_arg_or_any(obj))
+            return self.generate_schema(_get_first_arg_or_any(obj))
 
         schema = self._generate_schema_from_get_schema_method(origin, obj)
         if schema is not None:
@@ -1328,7 +1321,7 @@ class GenerateSchema:
 
     def _union_schema(self, union_type: Any) -> core_schema.CoreSchema:
         """Generate schema for a Union."""
-        args = self._get_args_resolving_forward_refs(union_type, required=True)
+        args = get_args(union_type)
         choices: list[CoreSchema] = []
         nullable = False
         for arg in args:
@@ -1704,7 +1697,7 @@ class GenerateSchema:
         """Generate schema for a Tuple, e.g. `tuple[int, str]` or `tuple[int, ...]`."""
         # TODO: do we really need to resolve type vars here?
         typevars_map = get_standard_typevars_map(tuple_type)
-        params = self._get_args_resolving_forward_refs(tuple_type)
+        params = get_args(tuple_type)
 
         if typevars_map and params:
             params = tuple(replace_types(param, typevars_map) for param in params)
@@ -1750,12 +1743,12 @@ class GenerateSchema:
 
     def _union_is_subclass_schema(self, union_type: Any) -> core_schema.CoreSchema:
         """Generate schema for `type[Union[X, ...]]`."""
-        args = self._get_args_resolving_forward_refs(union_type, required=True)
+        args = get_args(union_type)
         return core_schema.union_schema([self.generate_schema(type[args]) for args in args])
 
     def _subclass_schema(self, type_: Any) -> core_schema.CoreSchema:
         """Generate schema for a type, e.g. `type[int]`."""
-        type_param = self._get_first_arg_or_any(type_)
+        type_param = _get_first_arg_or_any(type_)
 
         # Assume `type[Annotated[<typ>, ...]]` is equivalent to `type[<typ>]`:
         type_param = _typing_extra.annotated_type(type_param) or type_param
@@ -1817,7 +1810,7 @@ class GenerateSchema:
 
     def _iterable_schema(self, type_: Any) -> core_schema.GeneratorSchema:
         """Generate a schema for an `Iterable`."""
-        item_type = self._get_first_arg_or_any(type_)
+        item_type = _get_first_arg_or_any(type_)
 
         return core_schema.generator_schema(self.generate_schema(item_type))
 
@@ -1834,10 +1827,7 @@ class GenerateSchema:
                 _validators.pattern_either_validator, serialization=ser, metadata=metadata
             )
 
-        param = self._get_args_resolving_forward_refs(
-            pattern_type,
-            required=True,
-        )[0]
+        param = get_args(pattern_type)[0]
         if param is str:
             return core_schema.no_info_plain_validator_function(
                 _validators.pattern_str_validator, serialization=ser, metadata=metadata
@@ -2159,12 +2149,15 @@ class GenerateSchema:
             pass
         else:
             if has_default:
-                return self.generate_schema(typevar.__default__)  # pyright: ignore[reportAttributeAccessIssue]
+                default = self.evaluate_type(typevar.__default__)  # pyright: ignore[reportAttributeAccessIssue]
+                return self.generate_schema(default)
 
         if constraints := typevar.__constraints__:
+            constraints = tuple(self.evaluate_type(c) for c in constraints)
             return self._union_schema(typing.Union[constraints])  # noqa: UP007
 
         if bound := typevar.__bound__:
+            bound = self.evaluate_type(bound)
             schema = self.generate_schema(bound)
             schema['serialization'] = core_schema.simple_ser_schema('any')
             return schema
@@ -2177,7 +2170,7 @@ class GenerateSchema:
         field_serializers: dict[str, Decorator[FieldSerializerDecoratorInfo]],
     ) -> core_schema.ComputedField:
         if d.info.return_type is not PydanticUndefined:
-            return_type = d.info.return_type
+            return_type = self.evaluate_type(d.info.return_type)
         else:
             try:
                 # Do not pass in globals as the function could be defined in a different module.
@@ -2224,10 +2217,7 @@ class GenerateSchema:
     def _annotated_schema(self, annotated_type: Any) -> core_schema.CoreSchema:
         """Generate schema for an Annotated type, e.g. `Annotated[int, Field(...)]` or `Annotated[int, Gt(0)]`."""
         FieldInfo = import_cached_field_info()
-        source_type, *annotations = self._get_args_resolving_forward_refs(
-            annotated_type,
-            required=True,
-        )
+        source_type, *annotations = get_args(annotated_type)
         schema = self._apply_annotations(source_type, annotations)
         # put the default validator last so that TypeAdapter.get_default_value() works
         # even if there are function validators involved
@@ -2266,7 +2256,11 @@ class GenerateSchema:
                     self._add_js_function(metadata_schema, metadata_js_function)
             return transform_inner_schema(schema)
 
-        get_inner_schema = CallbackGetCoreSchemaHandler(inner_handler, self)
+        get_inner_schema = CallbackGetCoreSchemaHandler(
+            inner_handler,
+            self,
+            source_type=source_type,
+        )
 
         for annotation in annotations:
             if annotation is None:
@@ -2274,6 +2268,7 @@ class GenerateSchema:
             get_inner_schema = self._get_wrapped_inner_schema(
                 get_inner_schema,
                 annotation,
+                source_type,
                 pydantic_js_annotation_functions,
                 check_unsupported_field_info_attributes=check_unsupported_field_info_attributes,
             )
@@ -2442,6 +2437,7 @@ class GenerateSchema:
         self,
         get_inner_schema: GetCoreSchemaHandler,
         annotation: Any,
+        source_type: Any,
         pydantic_js_annotation_functions: list[GetJsonSchemaFunction],
         check_unsupported_field_info_attributes: bool = False,
     ) -> CallbackGetCoreSchemaHandler:
@@ -2464,7 +2460,7 @@ class GenerateSchema:
                 pydantic_js_annotation_functions.append(metadata_js_function)
             return schema
 
-        return CallbackGetCoreSchemaHandler(new_handler, self)
+        return CallbackGetCoreSchemaHandler(new_handler, self, source_type=source_type)
 
     def _apply_field_serializers(
         self,
@@ -2486,7 +2482,7 @@ class GenerateSchema:
             is_field_serializer, info_arg = inspect_field_serializer(serializer.func, serializer.info.mode)
 
             if serializer.info.return_type is not PydanticUndefined:
-                return_type = serializer.info.return_type
+                return_type = self.evaluate_type(serializer.info.return_type)
             else:
                 try:
                     # Do not pass in globals as the function could be defined in a different module.
@@ -2532,7 +2528,7 @@ class GenerateSchema:
             info_arg = inspect_model_serializer(serializer.func, serializer.info.mode)
 
             if serializer.info.return_type is not PydanticUndefined:
-                return_type = serializer.info.return_type
+                return_type = self.evaluate_type(serializer.info.return_type)
             else:
                 try:
                     # Do not pass in globals as the function could be defined in a different module.

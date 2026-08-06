@@ -2,12 +2,13 @@
 
 from __future__ import annotations
 
+import functools
+import operator
 import re
 import sys
 import types
 import typing
 from collections.abc import Callable
-from functools import partial
 from inspect import Signature, signature
 from types import NoneType
 from typing import TYPE_CHECKING, Any, ForwardRef, cast
@@ -438,10 +439,55 @@ def _eval_type(
         return typing._eval_type(  # type: ignore
             value, globalns, localns, type_params=type_params
         )
-    else:
+    elif sys.version_info >= (3, 11):
         return typing._eval_type(  # type: ignore
             value, globalns, localns
         )
+    else:
+        return _eval_type_backport(value, globalns, localns)
+
+
+if sys.version_info < (3, 11):
+
+    def _convert_585_forward_arguments(tp: Any, /) -> Any:
+        """Recursively convert string arguments of PEP 585 generic aliases to `ForwardRef` instances.
+
+        On Python 3.10, string arguments of PEP 585 generic aliases (e.g. `list['Foo']`) are *not*
+        converted to `ForwardRef` instances at creation time, and as such aren't evaluated by
+        `typing._eval_type()` (which only evaluates `ForwardRef` arguments). This was fixed in
+        Python 3.11 (see https://github.com/python/cpython/pull/30900).
+        """
+        if isinstance(tp, types.GenericAlias):
+            converted = tuple(
+                ForwardRef(arg) if isinstance(arg, str) else _convert_585_forward_arguments(arg) for arg in tp.__args__
+            )
+            if converted != tp.__args__:
+                return tp.__origin__[converted]
+        elif isinstance(tp, typing._GenericAlias):  # pyright: ignore[reportAttributeAccessIssue]
+            converted = tuple(_convert_585_forward_arguments(arg) for arg in tp.__args__)
+            if converted != tp.__args__:
+                return tp.copy_with(converted)
+        elif isinstance(tp, types.UnionType):
+            converted = tuple(_convert_585_forward_arguments(arg) for arg in tp.__args__)
+            if converted != tp.__args__:
+                return functools.reduce(operator.or_, converted)
+        return tp
+
+    def _eval_type_backport(
+        value: Any,
+        globalns: GlobalsNamespace | None = None,
+        localns: MappingNamespace | None = None,
+    ) -> Any:
+        converted = _convert_585_forward_arguments(value)
+        evaluated = typing._eval_type(converted, globalns, localns)  # pyright: ignore[reportAttributeAccessIssue]
+        # A forward reference may have resolved to a PEP 585 generic alias itself containing
+        # string arguments (e.g. `list['MyAlias']` with `MyAlias = dict[str, 'Other']`),
+        # which `typing._eval_type()` won't have evaluated. In this case, re-apply the conversion
+        # and evaluation on the result (note that implicit recursive type aliases (e.g.
+        # `Json = list['Json']`) will result in a `RecursionError`, handled by our `eval_type()`):
+        if _convert_585_forward_arguments(evaluated) is not evaluated:
+            return _eval_type_backport(evaluated, globalns, localns)
+        return evaluated
 
 
 def signature_no_eval(f: Callable[..., Any]) -> Signature:
@@ -468,7 +514,7 @@ def get_function_type_hints(
     - Do not wrap type annotation of a parameter with `Optional` if it has a default value of `None`
       (related bug: https://github.com/python/cpython/issues/90353, only fixed in 3.11+).
     """
-    if isinstance(function, partial):
+    if isinstance(function, functools.partial):
         annotations = safe_get_annotations(function.func)
     else:
         annotations = safe_get_annotations(function)

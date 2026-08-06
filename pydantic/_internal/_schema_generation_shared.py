@@ -75,12 +75,17 @@ class CallbackGetCoreSchemaHandler(GetCoreSchemaHandler):
         handler: Callable[[Any], core_schema.CoreSchema],
         generate_schema: GenerateSchema,
         ref_mode: Literal['to-def', 'unpack'] = 'to-def',
+        source_type: Any = None,
     ) -> None:
         self._handler = handler
         self._generate_schema = generate_schema
         self._ref_mode = ref_mode
+        self._source_type = source_type
 
     def __call__(self, source_type: Any, /) -> core_schema.CoreSchema:
+        if self._source_type is not source_type:
+            # `GenerateSchema()` expects an evaluated type:
+            source_type = self._generate_schema.evaluate_type(source_type)
         schema = self._handler(source_type)
         if self._ref_mode == 'to-def':
             ref = schema.get('ref')
@@ -94,6 +99,8 @@ class CallbackGetCoreSchemaHandler(GetCoreSchemaHandler):
         return self._generate_schema._types_namespace
 
     def generate_schema(self, source_type: Any, /) -> core_schema.CoreSchema:
+        # `GenerateSchema()` expects an evaluated type:
+        source_type = self._generate_schema.evaluate_type(source_type)
         return self._generate_schema.generate_schema(source_type)
 
     @property
