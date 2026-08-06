@@ -185,6 +185,9 @@ def traverse_schema(schema: AllSchemas, context: GatherContext) -> None:
                 traverse_schema(s, context)
         for s in schema['fields']:
             traverse_schema(s, context)
+    elif schema_type == 'named-tuple':
+        for s in schema['fields']:
+            traverse_schema(s, context)
     elif schema_type == 'arguments':
         for s in schema['arguments_schema']:
             traverse_schema(s['schema'], context)

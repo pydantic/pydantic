@@ -198,6 +198,11 @@ error_types! {
         class_name: {ctx_type: String, ctx_fn: field_from_context},
     },
     // ---------------------
+    // namedtuple errors
+    NamedTupleType {
+        class_name: {ctx_type: String, ctx_fn: field_from_context},
+    },
+    // ---------------------
     // Default factory not called (happens when there's already an error and the factory takes data)
     DefaultFactoryNotCalled {},
     // ---------------------
@@ -504,6 +509,7 @@ impl ErrorType {
             Self::ModelAttributesType { .. } => "Input should be a valid dictionary or object to extract fields from",
             Self::DataclassType { .. } => "Input should be a dictionary or an instance of {class_name}",
             Self::DataclassExactType { .. } => "Input should be an instance of {class_name}",
+            Self::NamedTupleType { .. } => "Input should be a tuple, list, dictionary or an instance of {class_name}",
             Self::DefaultFactoryNotCalled { .. } => {
                 "The default factory uses validated data, but at least one validation error occurred"
             }
@@ -634,6 +640,7 @@ impl ErrorType {
             | Self::ModelAttributesType { .. }
             | Self::DictType { .. }
             | Self::DataclassType { .. } => "Input should be an object",
+            Self::NamedTupleType { .. } => "Input should be an array or an object",
             Self::TimeDeltaType { .. } => "Input should be a valid duration",
             Self::TimeDeltaParsing { .. } => "Input should be a valid duration, {error}",
             Self::ArgumentsType { .. } => "Arguments must be an array or an object",
@@ -687,7 +694,8 @@ impl ErrorType {
             Self::NeedsPythonObject { method_name, .. } => render!(tmpl, method_name),
             Self::ModelType { class_name, .. }
             | Self::DataclassType { class_name, .. }
-            | Self::DataclassExactType { class_name, .. } => render!(tmpl, class_name),
+            | Self::DataclassExactType { class_name, .. }
+            | Self::NamedTupleType { class_name, .. } => render!(tmpl, class_name),
             Self::GreaterThan { gt, .. } => to_string_render!(tmpl, gt),
             Self::GreaterThanEqual { ge, .. } => to_string_render!(tmpl, ge),
             Self::LessThan { lt, .. } => to_string_render!(tmpl, lt),

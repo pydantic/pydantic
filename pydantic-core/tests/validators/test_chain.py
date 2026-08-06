@@ -1,0 +1,109 @@
+from decimal import Decimal
+
+import pytest
+
+from pydantic_core import SchemaError, SchemaValidator, ValidationError, core_schema
+from pydantic_core import core_schema as cs
+
+from ..conftest import PyAndJson
+
+
+def test_chain():
+    validator = SchemaValidator(
+        cs.chain_schema(
+            steps=[cs.str_schema(), core_schema.with_info_plain_validator_function(lambda v, info: Decimal(v))]
+        )
+    )
+
+    assert validator.validate_python('1.44') == Decimal('1.44')
+    assert validator.validate_python(b'1.44') == Decimal('1.44')
+
+
+def test_chain_many():
+    validator = SchemaValidator(
+        cs.chain_schema(
+            steps=[
+                core_schema.with_info_plain_validator_function(lambda v, info: f'{v}-1'),
+                core_schema.with_info_plain_validator_function(lambda v, info: f'{v}-2'),
+                core_schema.with_info_plain_validator_function(lambda v, info: f'{v}-3'),
+                core_schema.with_info_plain_validator_function(lambda v, info: f'{v}-4'),
+            ]
+        )
+    )
+
+    assert validator.validate_python('input') == 'input-1-2-3-4'
+
+
+def test_chain_error():
+    validator = SchemaValidator(cs.chain_schema(steps=[cs.str_schema(), cs.int_schema()]))
+
+    assert validator.validate_python('123') == 123
+    assert validator.validate_python(b'123') == 123
+
+    with pytest.raises(ValidationError) as exc_info:
+        validator.validate_python('abc')
+    # insert_assert(exc_info.value.errors(include_url=False))
+    assert exc_info.value.errors(include_url=False) == [
+        {
+            'type': 'int_parsing',
+            'loc': (),
+            'msg': 'Input should be a valid integer, unable to parse string as an integer',
+            'input': 'abc',
+        }
+    ]
+
+
+@pytest.mark.parametrize(
+    'input_value,expected', [('1.44', Decimal('1.44')), (1, Decimal(1)), (1.44, pytest.approx(1.44))]
+)
+def test_json(py_and_json: PyAndJson, input_value, expected):
+    validator = py_and_json(
+        {
+            'type': 'chain',
+            'steps': [
+                {'type': 'union', 'choices': [{'type': 'str'}, {'type': 'float'}]},
+                core_schema.with_info_plain_validator_function(lambda v, info: Decimal(v)),
+            ],
+        }
+    )
+    output = validator.validate_test(input_value)
+    assert output == expected
+    assert isinstance(output, Decimal)
+
+
+def test_flatten():
+    validator = SchemaValidator(
+        cs.chain_schema(
+            steps=[
+                core_schema.with_info_plain_validator_function(lambda v, info: f'{v}-1'),
+                cs.chain_schema(
+                    steps=[
+                        {
+                            'type': 'function-plain',
+                            'function': {'type': 'with-info', 'function': lambda v, info: f'{v}-2'},
+                        },
+                        {
+                            'type': 'function-plain',
+                            'function': {'type': 'with-info', 'function': lambda v, info: f'{v}-3'},
+                        },
+                    ]
+                ),
+            ]
+        )
+    )
+
+    assert validator.validate_python('input') == 'input-1-2-3'
+    assert validator.title == 'chain[function-plain[<lambda>()],function-plain[<lambda>()],function-plain[<lambda>()]]'
+
+
+def test_chain_empty():
+    with pytest.raises(SchemaError, match='One or more steps are required for a chain validator'):
+        SchemaValidator(cs.chain_schema(steps=[]))
+
+
+def test_chain_one():
+    validator = SchemaValidator(
+        cs.chain_schema(steps=[core_schema.with_info_plain_validator_function(lambda v, info: f'{v}-1')])
+    )
+    assert validator.validate_python('input') == 'input-1'
+    assert validator.title == 'function-plain[<lambda>()]'
