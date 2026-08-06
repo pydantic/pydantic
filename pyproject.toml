@@ -68,8 +68,11 @@ Changelog = 'https://pydantic.dev/docs/validation/latest/get-started/changelog/'
 [dependency-groups]
 dev = [
     'coverage[toml]',
+    'exceptiongroup; python_version < "3.11"',
     'pytz',
     'dirty-equals',
+    'hypothesis',
+    'inline-snapshot',
     'pytest',
     'pytest-mock',
     'pytest-pretty',
@@ -78,8 +81,12 @@ dev = [
     'pytest-benchmark',
     'pytest-codspeed',
     'pytest-run-parallel>=0.3.1',
+    'pytest-timeout',
+    'python-dateutil',
     'packaging',
     'jsonschema',
+    'tzdata',
+    'maturin',
     'time-machine; platform_python_implementation != "PyPy"',
 ]
 coverage = [
@@ -112,6 +119,8 @@ linting = [
     'pyright',
 ]
 testing-extra = [
+    'numpy',
+    'pandas',
     'cloudpickle',
     # used when generate devtools docs example
     'ansi2html',
