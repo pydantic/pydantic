@@ -1,6 +1,6 @@
 import functools
 from enum import Enum
-from typing import ClassVar, Generic, TypeVar
+from typing import Annotated, ClassVar, Generic, TypeVar
 
 import pytest
 from pydantic_core import PydanticUndefined
@@ -641,3 +641,23 @@ def test_private_attribute_fake_classvar() -> None:
         _priv: 'ClassVar[int]'
 
     assert isinstance(Model._priv, ModelPrivateAttr)
+
+
+def test_private_attribute_from_annotated_metadata_set_name() -> None:
+    # Unlike private attributes assigned a value (where `type.__new__()` natively invokes
+    # `__set_name__` on the value present in the namespace), annotation-only private attributes
+    # are never seen during class creation, so `collect_model_fields()` is responsible
+    # for calling `__set_name__()`:
+    set_name_calls: list[tuple[type, str]] = []
+
+    class SetNameInt(int):
+        def __set_name__(self, owner: type, name: str) -> None:
+            set_name_calls.append((owner, name))
+
+    default = SetNameInt(1)
+
+    class Model(BaseModel):
+        _priv: Annotated[int, PrivateAttr(default=default)]
+
+    assert set_name_calls == [(Model, '_priv')]
+    assert Model()._priv == 1

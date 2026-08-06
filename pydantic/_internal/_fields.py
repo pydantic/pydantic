@@ -342,6 +342,9 @@ def collect_model_fields(  # noqa: C901
             # unless annotated as a class variable:
             hint = type_hints.get(var_name)
             if hint is None or not _typing_extra.is_classvar_annotation(hint[0]):
+                # Unlike for the annotation-only private attributes below, `__set_name__()` must not be
+                # called on the wrapping `PrivateAttr()` here: the assigned value stayed in the namespace
+                # during class creation, so `type.__new__()` already invoked the protocol on it natively:
                 private_attributes[var_name] = cast('ModelPrivateAttr', PrivateAttr(default=cls.__dict__[var_name]))
                 delattr(cls, var_name)
 
