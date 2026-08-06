@@ -1,4 +1,10 @@
 import copy
+import os
+import signal
+import sys
+import threading
+import time
+from collections import defaultdict
 from typing import Annotated, Any, Final, Generic, TypeVar
 
 import pytest
@@ -7,6 +13,7 @@ from pydantic_core import PydanticUndefined
 from typing_extensions import TypeAliasType
 
 import pydantic.dataclasses
+import pydantic.fields as fields_module
 from pydantic import (
     AfterValidator,
     BaseModel,
@@ -283,6 +290,117 @@ def test_fastapi_compatibility_hack() -> None:
 
     assert isinstance(model_field, Body)
     assert not model_field.is_required()
+
+
+def test_attributes_set_is_a_mutable_dict() -> None:
+    """`_attributes_set` is stored compactly, but must behave as a plain mutable dict."""
+    field = FieldInfo(annotation=int, alias='a', description='d')
+
+    assert field._attributes_set == {'annotation': int, 'alias': 'a', 'description': 'd'}
+    # A second read must return the same (materialized) dict, so that mutations stick:
+    assert field._attributes_set is field._attributes_set
+
+    field._attributes_set['alias'] = 'b'
+    assert field._attributes_set['alias'] == 'b'
+
+    # Explicitly setting `None` is tracked, and a value assigned after construction is not:
+    field = FieldInfo(annotation=int, description=None)
+    field.title = 'set later'
+    assert field._attributes_set == {'annotation': int, 'description': None}
+
+    # A copy must not share the dict with the original:
+    field = FieldInfo(annotation=int, alias='a')
+    copied = field._copy()
+    copied._attributes_set['alias'] = 'b'
+    assert field._attributes_set['alias'] == 'a'
+
+
+def test_attributes_set_accepts_a_dict_subclass() -> None:
+    """A `dict` subclass assigned to `_attributes_set` must be returned as-is, not decoded."""
+    field = FieldInfo(annotation=int, alias='a')
+    field._attributes_set = defaultdict(list, {'annotation': int, 'alias': 'a'})
+
+    assert field._attributes_set == {'annotation': int, 'alias': 'a'}
+    assert isinstance(field._attributes_set, defaultdict)
+    assert isinstance(field._copy()._attributes_set, defaultdict)
+
+
+@pytest.mark.skipif(sys.platform == 'emscripten', reason='no threading on emscripten')
+def test_attributes_set_materializes_once_under_threads() -> None:
+    """Concurrent first reads must not each build a dict and discard each other's mutations.
+
+    Without synchronization this reproduces at around 5% of fields; a tiny switch interval is
+    needed to make the window between reading the compact form and storing the dict hittable.
+    """
+    fields = [FieldInfo(annotation=int, alias=f'a{i}', description='d') for i in range(3000)]
+    barrier = threading.Barrier(6)
+    seen: list[list[dict[str, Any]]] = []
+
+    def read_all() -> None:
+        barrier.wait()
+        seen.append([f._attributes_set for f in fields])
+
+    threads = [threading.Thread(target=read_all) for _ in range(6)]
+    original_interval = sys.getswitchinterval()
+    sys.setswitchinterval(1e-9)
+    try:
+        for thread in threads:
+            thread.start()
+        for thread in threads:
+            thread.join()
+    finally:
+        sys.setswitchinterval(original_interval)
+
+    # Every thread must have got the *same* dict object for each field:
+    for dicts in zip(*seen):
+        assert len({id(d) for d in dicts}) == 1
+
+
+@pytest.mark.skipif(sys.platform == 'emscripten', reason='no threading on emscripten')
+@pytest.mark.skipif(not hasattr(os, 'fork'), reason='requires fork()')
+def test_attributes_set_materialize_lock_survives_fork() -> None:
+    """Forking while another thread holds the materialize lock must not deadlock the child.
+
+    The child inherits the lock held with no owner thread, so without an at-fork reset its first
+    materialization would block forever.
+    """
+    field = FieldInfo(annotation=int, alias='a', description='d')
+    assert not isinstance(field._attributes_set_storage, dict), 'must still be in compact form'
+
+    holder_ready = threading.Event()
+    release_holder = threading.Event()
+
+    def hold_lock() -> None:
+        with fields_module._attributes_set_materialize_lock:
+            holder_ready.set()
+            release_holder.wait(timeout=10)
+
+    holder = threading.Thread(target=hold_lock, daemon=True)
+    holder.start()
+    assert holder_ready.wait(timeout=10)
+
+    pid = os.fork()
+    if pid == 0:  # pragma: no cover (child process)
+        try:
+            field._attributes_set
+            os._exit(0)
+        except BaseException:
+            os._exit(2)
+
+    try:
+        for _ in range(100):
+            waited_pid, status = os.waitpid(pid, os.WNOHANG)
+            if waited_pid:
+                assert os.waitstatus_to_exitcode(status) == 0
+                break
+            time.sleep(0.1)
+        else:
+            os.kill(pid, signal.SIGKILL)
+            os.waitpid(pid, 0)
+            pytest.fail('child deadlocked on the lock inherited from the fork')
+    finally:
+        release_holder.set()
+        holder.join(timeout=10)
 
 
 _unsupported_standalone_fieldinfo_attributes = (
