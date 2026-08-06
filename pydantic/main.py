@@ -31,7 +31,7 @@ from typing import (
 import pydantic_core
 import typing_extensions
 from pydantic_core import PydanticUndefined, ValidationError
-from typing_extensions import Self, TypeAlias, Unpack
+from typing_extensions import Self, TypeAlias, TypeForm, Unpack
 
 from . import PydanticDeprecatedSince20, PydanticDeprecatedSince211
 from ._internal import (
@@ -640,7 +640,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
         )
 
     @classmethod
-    def model_parametrized_name(cls, params: tuple[type[Any], ...]) -> str:
+    def model_parametrized_name(cls, params: tuple[TypeForm[Any], ...]) -> str:
         """Compute the class name for parametrizations of generic classes.
 
         This method can be overridden to achieve a custom naming scheme for generic BaseModels.
@@ -964,7 +964,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
         """
 
     def __class_getitem__(
-        cls, typevar_values: type[Any] | tuple[type[Any], ...]
+        cls, typevar_values: TypeForm[Any] | tuple[TypeForm[Any], ...]
     ) -> type[BaseModel] | _forward_ref.PydanticRecursiveRef:
         cached = _generics.get_cached_generic_type_early(cls, typevar_values)
         if cached is not None:
@@ -1774,7 +1774,7 @@ def create_model(
     __validators__: dict[str, Callable[..., Any]] | None = None,
     __cls_kwargs__: dict[str, Any] | None = None,
     __qualname__: str | None = None,
-    **field_definitions: Any | tuple[Any, Any],
+    **field_definitions: TypeForm[Any] | tuple[TypeForm[Any], Any],
 ) -> type[BaseModel]: ...
 
 
@@ -1790,7 +1790,7 @@ def create_model(
     __validators__: dict[str, Callable[..., Any]] | None = None,
     __cls_kwargs__: dict[str, Any] | None = None,
     __qualname__: str | None = None,
-    **field_definitions: Any | tuple[Any, Any],
+    **field_definitions: TypeForm[Any] | tuple[TypeForm[Any], Any],
 ) -> type[ModelT]: ...
 
 
@@ -1805,8 +1805,7 @@ def create_model(  # noqa: C901
     __validators__: dict[str, Callable[..., Any]] | None = None,
     __cls_kwargs__: dict[str, Any] | None = None,
     __qualname__: str | None = None,
-    # TODO PEP 747: replace `Any` by the TypeForm:
-    **field_definitions: Any | tuple[Any, Any],
+    **field_definitions: TypeForm[Any] | tuple[TypeForm[Any], Any],
 ) -> type[ModelT]:
     """!!! abstract "Usage Documentation"
         [Dynamic Model Creation](../concepts/models.md#dynamic-model-creation)
