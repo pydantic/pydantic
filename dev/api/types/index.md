@@ -818,9 +818,7 @@ A bytes type that is encoded and decoded using the URL-safe base64 encoder.
 
 Note
 
-Under the hood, `Base64UrlBytes` use standard library `base64.urlsafe_b64encode` and `base64.urlsafe_b64decode` functions.
-
-As a result, the `Base64UrlBytes` type can be used to faithfully decode "vanilla" base64 data (using `'+'` and `'/'`).
+Under the hood, `Base64UrlBytes` uses the standard library base64.urlsafe_b64encode() and base64.urlsafe_b64decode() functions.
 
 ```python
 from pydantic import Base64UrlBytes, BaseModel
@@ -848,9 +846,7 @@ A str type that is encoded and decoded using the URL-safe base64 encoder.
 
 Note
 
-Under the hood, `Base64UrlStr` use standard library `base64.urlsafe_b64encode` and `base64.urlsafe_b64decode` functions.
-
-As a result, the `Base64UrlStr` type can be used to faithfully decode "vanilla" base64 data (using `'+'` and `'/'`).
+Under the hood, `Base64UrlStr` uses the standard library base64.urlsafe_b64encode() and base64.urlsafe_b64decode() functions.
 
 ```python
 from pydantic import Base64UrlStr, BaseModel
@@ -3097,7 +3093,15 @@ class Base64UrlEncoder(EncoderProtocol):
             The decoded data.
         """
         try:
-            return base64.urlsafe_b64decode(data)
+            if sys.version_info >= (3, 15):
+                # In Python >= 3.15, `urlsafe_b64decode()` doesn't require padded input anymore.
+                # It also raises a `FutureWarning` if '+' or '/' is found in input (and translates it
+                # to '-' and '_'). We can't have this warning raised while validating, so we do the translation
+                # ourselves.
+                data = data.translate(_urlsafe_translation)
+                return base64.urlsafe_b64decode(data, padded=True)
+            else:
+                return base64.urlsafe_b64decode(data)
         except ValueError as e:
             raise PydanticCustomError('base64_decode', "Base64 decoding error: '{error}'", {'error': str(e)})
 
@@ -3155,7 +3159,15 @@ def decode(cls, data: bytes) -> bytes:
         The decoded data.
     """
     try:
-        return base64.urlsafe_b64decode(data)
+        if sys.version_info >= (3, 15):
+            # In Python >= 3.15, `urlsafe_b64decode()` doesn't require padded input anymore.
+            # It also raises a `FutureWarning` if '+' or '/' is found in input (and translates it
+            # to '-' and '_'). We can't have this warning raised while validating, so we do the translation
+            # ourselves.
+            data = data.translate(_urlsafe_translation)
+            return base64.urlsafe_b64decode(data, padded=True)
+        else:
+            return base64.urlsafe_b64decode(data)
     except ValueError as e:
         raise PydanticCustomError('base64_decode', "Base64 decoding error: '{error}'", {'error': str(e)})
 
