@@ -68,7 +68,8 @@ def test_init_var_field():
 
 def test_root_model_arbitrary_field_name_error():
     with pytest.raises(
-        NameError, match="Unexpected field with name 'a_field'; only 'root' is allowed as a field of a `RootModel`"
+        PydanticUserError,
+        match="Unexpected field with name 'a_field'; only 'root' is allowed as a field of a `RootModel`",
     ):
 
         class Model(RootModel[int]):

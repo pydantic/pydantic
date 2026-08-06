@@ -5,7 +5,7 @@ from typing import ClassVar, Generic, TypeVar
 import pytest
 from pydantic_core import PydanticUndefined
 
-from pydantic import BaseModel, ConfigDict, PrivateAttr, computed_field
+from pydantic import BaseModel, ConfigDict, PrivateAttr, PydanticUserError, computed_field
 from pydantic.fields import ModelPrivateAttr
 
 
@@ -206,7 +206,7 @@ def test_private_attribute_intersection_with_extra_field():
 
 def test_private_attribute_invalid_name():
     with pytest.raises(
-        NameError,
+        PydanticUserError,
         match="Private attributes must not use valid field names; use sunder names, e.g. '_foo' instead of 'foo'.",
     ):
 
@@ -332,7 +332,7 @@ def test_private_attribute_multiple_inheritance():
 
 def test_private_attributes_not_dunder() -> None:
     with pytest.raises(
-        NameError,
+        PydanticUserError,
         match="Private attributes must not use dunder names; use a single underscore prefix instead of '__foo__'.",
     ):
 
@@ -632,3 +632,12 @@ def test_private_attribute_not_skipped_during_ns_inspection() -> None:
         _priv: object = Fullname
 
     assert isinstance(Full._priv, ModelPrivateAttr)
+
+
+def test_private_attribute_fake_classvar() -> None:
+    ClassVar = list  # noqa: F841
+
+    class Model(BaseModel):
+        _priv: 'ClassVar[int]'
+
+    assert isinstance(Model._priv, ModelPrivateAttr)
