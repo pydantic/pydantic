@@ -56,7 +56,7 @@ NO_DEFAULT = Sentinel('NO_DEFAULT')
         pytest.param(
             Annotated[int, Lt(2)],
             Field(5, gt=0),
-            'FieldInfo(annotation=int, required=False, default=5, metadata=[Gt(gt=0), Lt(lt=2)])',
+            'FieldInfo(annotation=int, required=False, default=5, metadata=[Lt(lt=2), Gt(gt=0)])',
             id='Annotated[int, Lt(2)]-Field(5, gt=0)',
         ),
         pytest.param(
@@ -193,7 +193,7 @@ def test_annotated_alias() -> None:
         'b': 'FieldInfo(annotation=str, required=True, metadata=[MaxLen(max_length=3)])',
         'c': 'FieldInfo(annotation=int, required=False, default_factory=<lambda>)',
         'd': 'FieldInfo(annotation=int, required=False, default_factory=<lambda>)',
-        'e': "FieldInfo(annotation=list[Annotated[str, FieldInfo(annotation=NoneType, required=True, metadata=[MaxLen(max_length=3)])]], required=True, description='foo')",
+        'e': "FieldInfo(annotation=list[Annotated[str, FieldSpec(max_length=3)]], required=True, description='foo')",
     }
     assert MyModel(b='def', e=['xyz']).model_dump() == dict(a='abc', b='def', c=2, d=2, e=['xyz'])
 

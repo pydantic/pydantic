@@ -31,7 +31,7 @@ from ._decorators import DecoratorInfos, PydanticDescriptorProxy, get_attribute_
 from ._fields import collect_model_fields, is_valid_field_name, is_valid_privateattr_name, rebuild_model_fields
 from ._generate_schema import GenerateSchema, InvalidSchemaError
 from ._generics import PydanticGenericMetadata, get_model_typevars_map
-from ._import_utils import import_cached_base_model, import_cached_field_info
+from ._import_utils import import_cached_base_model, import_cached_field_info, import_cached_field_spec
 from ._mock_val_ser import set_model_mocks
 from ._namespace_utils import NsResolver
 from ._signature import generate_pydantic_signature
@@ -438,6 +438,7 @@ def inspect_namespace(  # noqa C901
     from ..fields import ModelPrivateAttr, PrivateAttr
 
     FieldInfo = import_cached_field_info()
+    FieldSpec = import_cached_field_spec()
 
     all_ignored_types = ignored_types + default_ignored_types()
 
@@ -474,7 +475,7 @@ def inspect_namespace(  # noqa C901
                 )
             private_attributes[var_name] = value
             del namespace[var_name]
-        elif isinstance(value, FieldInfo) and not is_valid_field_name(var_name):
+        elif isinstance(value, (FieldSpec, FieldInfo)) and not is_valid_field_name(var_name):
             suggested_name = var_name.lstrip('_') or 'my_field'  # don't suggest '' for all-underscore name
             raise NameError(
                 f'Fields must not use names with leading underscores;'
@@ -496,7 +497,7 @@ def inspect_namespace(  # noqa C901
                     f'All field definitions, including overrides, require a type annotation.',
                     code='model-field-overridden',
                 )
-            elif isinstance(value, FieldInfo):
+            elif isinstance(value, (FieldSpec, FieldInfo)):
                 raise PydanticUserError(
                     f'Field {var_name!r} requires a type annotation', code='model-field-missing-annotation'
                 )

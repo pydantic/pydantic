@@ -20,7 +20,7 @@ from pydantic_core import (
 from typing_extensions import TypeIs
 
 from ..errors import PydanticUndefinedAnnotation
-from ..fields import FieldInfo
+from ..fields import FieldInfo, FieldSpec
 from ..plugin._schema_validator import PluggableSchemaValidator, create_schema_validator
 from ..warnings import PydanticDeprecatedSince20
 from . import _config, _decorators
@@ -205,20 +205,21 @@ def is_stdlib_dataclass(cls: type[Any], /) -> TypeIs[type[StandardDataclass]]:
     return '__dataclass_fields__' in cls.__dict__ and not hasattr(cls, '__pydantic_validator__')
 
 
-def as_dataclass_field(pydantic_field: FieldInfo) -> dataclasses.Field[Any]:
-    field_args: dict[str, Any] = {'default': pydantic_field}
+def as_dataclass_field(field_spec: FieldSpec) -> dataclasses.Field[Any]:
+    field_args: dict[str, Any] = {'default': field_spec}
+    spec_kwargs = field_spec.kwargs
 
     # Needed because if `doc` is set, the dataclass slots will be a dict (field name -> doc) instead of a tuple:
-    if sys.version_info >= (3, 14) and pydantic_field.description is not None:
-        field_args['doc'] = pydantic_field.description
+    if sys.version_info >= (3, 14) and spec_kwargs.get('description') is not None:
+        field_args['doc'] = spec_kwargs['description']
 
     # Needed as the stdlib dataclass module processes kw_only in a specific way during class construction:
-    if pydantic_field.kw_only is not None:
-        field_args['kw_only'] = pydantic_field.kw_only
+    if spec_kwargs.get('kw_only') is not None:
+        field_args['kw_only'] = spec_kwargs['kw_only']
 
     # Needed as the stdlib dataclass modules generates `__repr__()` during class construction:
-    if pydantic_field.repr is not True:
-        field_args['repr'] = pydantic_field.repr
+    if spec_kwargs.get('repr', True) is not True:
+        field_args['repr'] = spec_kwargs['repr']
 
     return dataclasses.field(**field_args)
 
@@ -288,23 +289,27 @@ def patch_base_fields(cls: type[Any]) -> Generator[None]:
         dc_fields_with_pydantic_field_defaults = {
             field_name: field
             for field_name, field in dc_fields.items()
-            if isinstance(field.default, FieldInfo)
+            if isinstance(field.default, FieldSpec)
             # Only do the patching if one of the affected attributes is set:
-            and (field.default.description is not None or field.default.kw_only or field.default.repr is not True)
+            and (
+                field.default.kwargs.get('description') is not None
+                or field.default.kwargs.get('kw_only')
+                or field.default.kwargs.get('repr', True) is not True
+            )
         }
         if dc_fields_with_pydantic_field_defaults:
             original_fields_list.append((dc_fields, dc_fields_with_pydantic_field_defaults))
             for field_name, field in dc_fields_with_pydantic_field_defaults.items():
-                default = cast(FieldInfo, field.default)
+                spec_kwargs = cast(FieldSpec, field.default).kwargs
                 # `dataclasses.Field` isn't documented as working with `copy.copy()`.
                 # It is a class with `__slots__`, so should work (and we hope for the best):
                 new_dc_field = copy.copy(field)
-                # For base fields, no need to set `doc` from `FieldInfo.description`, this is only relevant
+                # For base fields, no need to set `doc` from the `description`, this is only relevant
                 # for the class under construction and handled in `as_dataclass_field()`.
-                if default.kw_only:
+                if spec_kwargs.get('kw_only'):
                     new_dc_field.kw_only = True
-                if default.repr is not True:
-                    new_dc_field.repr = default.repr
+                if spec_kwargs.get('repr', True) is not True:
+                    new_dc_field.repr = spec_kwargs['repr']
                 dc_fields[field_name] = new_dc_field
 
     try:

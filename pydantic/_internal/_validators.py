@@ -20,7 +20,7 @@ from pydantic_core import PydanticCustomError, PydanticKnownError, core_schema
 from typing_extensions import get_args, get_origin  # noqa: UP035
 from typing_inspection import typing_objects
 
-from pydantic._internal._import_utils import import_cached_field_info
+from pydantic._internal._import_utils import import_cached_field_info, import_cached_field_spec
 from pydantic.errors import PydanticSchemaGenerationError
 
 
@@ -417,6 +417,7 @@ def defaultdict_validator(
 
 def get_defaultdict_default_default_factory(values_source_type: Any) -> Callable[[], Any]:
     FieldInfo = import_cached_field_info()
+    FieldSpec = import_cached_field_spec()
 
     values_type_origin = get_origin(values_source_type)
 
@@ -462,13 +463,16 @@ def get_defaultdict_default_default_factory(values_source_type: Any) -> Callable
         return allowed_default_types[values_type]
 
     # Assume Annotated[..., Field(...)]
+    default_factory: Any = None
     if typing_objects.is_annotated(values_type_origin):
-        field_info = next((v for v in get_args(values_source_type) if isinstance(v, FieldInfo)), None)
-    else:
-        field_info = None
-    if field_info and field_info.default_factory:
+        for v in get_args(values_source_type):
+            if isinstance(v, FieldSpec):
+                default_factory = v.kwargs.get('default_factory')
+            elif isinstance(v, FieldInfo):
+                default_factory = v.default_factory
+    if default_factory is not None:
         # Assume the default factory does not take any argument:
-        default_default_factory = cast(Callable[[], Any], field_info.default_factory)
+        default_default_factory = cast(Callable[[], Any], default_factory)
     else:
         default_default_factory = infer_default()
     return default_default_factory

@@ -17,7 +17,7 @@ from ._internal import _dataclasses as _pydantic_dataclasses
 from ._migration import getattr_migration
 from .config import ConfigDict
 from .errors import PydanticUserError
-from .fields import Field, FieldInfo, PrivateAttr
+from .fields import Field, FieldSpec, PrivateAttr
 
 if TYPE_CHECKING:
     from ._internal._dataclasses import PydanticDataclass
@@ -195,7 +195,7 @@ def dataclass(
             # We should look for assignments in `__dict__` instead, but for now we follow
             # the same behavior as stdlib dataclasses (see https://github.com/python/cpython/issues/88609)
             field_value = getattr(cls, field_name, None)
-            if isinstance(field_value, FieldInfo):
+            if isinstance(field_value, FieldSpec):
                 setattr(cls, field_name, _pydantic_dataclasses.as_dataclass_field(field_value))
 
         # 2. For bases of `cls` that are stdlib dataclasses, we temporarily patch their fields

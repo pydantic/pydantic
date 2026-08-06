@@ -46,7 +46,7 @@ def _field_name_for_signature(field_name: str, field_info: FieldInfo) -> str:
 
 
 def _process_param_defaults(param: Parameter) -> Parameter:
-    """Modify the signature for a parameter in a dataclass where the default value is a FieldInfo instance.
+    """Modify the signature for a parameter in a dataclass where the default value is a `FieldSpec` instance.
 
     Args:
         param (Parameter): The parameter
@@ -54,10 +54,11 @@ def _process_param_defaults(param: Parameter) -> Parameter:
     Returns:
         Parameter: The custom processed parameter
     """
-    from ..fields import FieldInfo
+    from ..fields import FieldSpec
 
     param_default = param.default
-    if isinstance(param_default, FieldInfo):
+    if isinstance(param_default, FieldSpec):
+        spec_kwargs = param_default.kwargs
         annotation = param.annotation
         # Replace the annotation if appropriate
         # inspect does "clever" things to show annotations as strings because we have
@@ -66,16 +67,23 @@ def _process_param_defaults(param: Parameter) -> Parameter:
             annotation = Any
 
         # Replace the field default
-        default = param_default.default
+        default = spec_kwargs.get('default', PydanticUndefined)
         if default is PydanticUndefined:
-            if param_default.default_factory is None:
+            if spec_kwargs.get('default_factory') is None:
                 default = Signature.empty
             else:
                 # this is used by dataclasses to indicate a factory exists:
                 default = dataclasses._HAS_DEFAULT_FACTORY  # type: ignore
-        return param.replace(
-            annotation=annotation, name=_field_name_for_signature(param.name, param_default), default=default
-        )
+
+        name = param.name
+        alias = spec_kwargs.get('alias')
+        validation_alias = spec_kwargs.get('validation_alias')
+        if isinstance(alias, str) and is_valid_identifier(alias):
+            name = alias
+        elif isinstance(validation_alias, str) and is_valid_identifier(validation_alias):
+            name = validation_alias
+
+        return param.replace(annotation=annotation, name=name, default=default)
     return param
 
 

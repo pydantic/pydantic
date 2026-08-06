@@ -267,22 +267,21 @@ def test_no_duplicate_metadata_with_assignment_and_rebuild() -> None:
     assert len(Model.model_fields['f'].metadata) == 1
 
 
-def test_fastapi_compatibility_hack() -> None:
-    class Body(FieldInfo):
-        """A reproduction of the FastAPI's `Body` param."""
+def test_field_info_instance_used_as_assignment() -> None:
+    """Directly mutating a (final) `FieldInfo` instance and reusing it in a new model picks up the mutations.
 
-    field = Body()
-    # Assigning after doesn't update `_attributes_set`, which is currently
-    # relied on to merge `FieldInfo` instances during field creation.
-    # This is also what the FastAPI code is doing in some places.
-    # The FastAPI compatibility hack makes it so that it still works.
+    Note that unlike previously, the actual `FieldInfo` (sub)class of the assignment is *not* preserved
+    (a plain `FieldInfo` instance is recreated; the previous behavior existed for FastAPI compatibility).
+    """
+
+    field = FieldInfo()
     field.default = 1
 
     Model = create_model('Model', f=(int, field))
     model_field = Model.model_fields['f']
 
-    assert isinstance(model_field, Body)
     assert not model_field.is_required()
+    assert model_field.default == 1
 
 
 _unsupported_standalone_fieldinfo_attributes = (
@@ -389,8 +388,8 @@ def test_parametrized_with_annotated_unpacked() -> None:
 
     assert Sub.model_fields['a'].metadata == [3]
     assert Sub.model_fields['b'].metadata == [3, 1]
-    # Might look unexpected, but it is until v3 (https://github.com/pydantic/pydantic/issues/10507):
-    assert Sub.model_fields['c'].metadata == [Gt(2), 3, 2]
+    # The `Field()` assignment is merged last (https://github.com/pydantic/pydantic/issues/10507):
+    assert Sub.model_fields['c'].metadata == [3, 2, Gt(2)]
 
 
 def test_field_info_mutation_create_model() -> None:

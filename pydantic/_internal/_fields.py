@@ -21,7 +21,7 @@ from ..aliases import AliasGenerator
 from . import _generics, _typing_extra
 from ._config import ConfigWrapper
 from ._docs_extraction import extract_docstrings_from_cls
-from ._import_utils import import_cached_base_model, import_cached_field_info
+from ._import_utils import import_cached_base_model, import_cached_field_info, import_cached_field_spec
 from ._namespace_utils import NsResolver
 from ._repr import Representation
 from ._utils import can_be_positional, get_first_not_none
@@ -29,7 +29,7 @@ from ._utils import can_be_positional, get_first_not_none
 if TYPE_CHECKING:
     from annotated_types import BaseMetadata
 
-    from ..fields import FieldInfo
+    from ..fields import FieldInfo, FieldSpec
     from ..main import BaseModel
     from ._dataclasses import PydanticDataclass, StandardDataclass
     from ._decorators import DecoratorInfos
@@ -274,6 +274,7 @@ def collect_model_fields(  # noqa: C901
             - If a field shadows an attribute in the parent model.
     """
     FieldInfo_ = import_cached_field_info()
+    FieldSpec_ = import_cached_field_spec()
 
     bases = cls.__bases__
     parent_fields_lookup: dict[str, FieldInfo] = {}
@@ -386,15 +387,16 @@ def collect_model_fields(  # noqa: C901
                     field_info = parent_field_info
 
         else:  # An assigned value is present (either the default value, or a `Field()` function)
-            if isinstance(assigned_value, FieldInfo_) and ismethoddescriptor(assigned_value.default):
-                # `assigned_value` was fetched using `getattr`, which triggers a call to `__get__`
-                # for descriptors, so we do the same if the `= field(default=...)` form is used.
-                # Note that we only do this for method descriptors for now, we might want to
-                # extend this to any descriptor in the future (by simply checking for
-                # `hasattr(assigned_value.default, '__get__')`).
-                default = assigned_value.default.__get__(None, cls)
-                assigned_value.default = default
-                assigned_value._attributes_set['default'] = default
+            if type(assigned_value) is FieldSpec_:
+                spec_kwargs = cast('FieldSpec', assigned_value).kwargs
+                spec_default = spec_kwargs.get('default')
+                if ismethoddescriptor(spec_default):
+                    # `assigned_value` was fetched using `getattr`, which triggers a call to `__get__`
+                    # for descriptors, so we do the same if the `= field(default=...)` form is used.
+                    # Note that we only do this for method descriptors for now, we might want to
+                    # extend this to any descriptor in the future (by simply checking for
+                    # `hasattr(spec_default, '__get__')`).
+                    spec_kwargs['default'] = spec_default.__get__(None, cls)
 
             field_info = FieldInfo_.from_annotated_attribute(ann_type, assigned_value, _source=AnnotationSource.CLASS)
 
@@ -594,6 +596,7 @@ def collect_dataclass_fields(
         The dataclass fields.
     """
     FieldInfo_ = import_cached_field_info()
+    FieldSpec_ = import_cached_field_spec()
 
     fields: dict[str, FieldInfo] = {}
     ns_resolver = ns_resolver or NsResolver()
@@ -630,9 +633,16 @@ def collect_dataclass_fields(
                     #   Issue: https://github.com/pydantic/pydantic/issues/5470
                     continue
 
-                if isinstance(dataclass_field.default, FieldInfo_):
-                    if dataclass_field.default.init_var:
-                        if dataclass_field.default.init is False:
+                dc_field_default = dataclass_field.default
+                if isinstance(dc_field_default, (FieldSpec_, FieldInfo_)):
+                    if isinstance(dc_field_default, FieldSpec_):
+                        init_var = dc_field_default.kwargs.get('init_var')
+                        init = dc_field_default.kwargs.get('init')
+                    else:
+                        init_var = dc_field_default.init_var
+                        init = dc_field_default.init
+                    if init_var:
+                        if init is False:
                             raise PydanticUserError(
                                 f'Dataclass field {ann_name} has init=False and init_var=True, but these are mutually exclusive.',
                                 code='clashing-init-and-init-var',
@@ -641,9 +651,9 @@ def collect_dataclass_fields(
                         # TODO: same note as above re validate_assignment
                         continue
                     field_info = FieldInfo_.from_annotated_attribute(
-                        ann_type, dataclass_field.default, _source=AnnotationSource.DATACLASS
+                        ann_type, dc_field_default, _source=AnnotationSource.DATACLASS
                     )
-                    field_info._original_assignment = dataclass_field.default
+                    field_info._original_assignment = dc_field_default
                 else:
                     field_info = FieldInfo_.from_annotated_attribute(
                         ann_type, dataclass_field, _source=AnnotationSource.DATACLASS
@@ -658,9 +668,9 @@ def collect_dataclass_fields(
                 update_field_from_config(config_wrapper, ann_name, field_info)
 
                 if field_info.default is not PydanticUndefined and isinstance(
-                    getattr(cls, ann_name, field_info), FieldInfo_
+                    getattr(cls, ann_name, field_info), (FieldSpec_, FieldInfo_)
                 ):
-                    # We need this to fix the default when the "default" from __dataclass_fields__ is a pydantic.FieldInfo
+                    # We need this to fix the default when the "default" from __dataclass_fields__ is a `Field()` function
                     setattr(cls, ann_name, field_info.default)
 
     if typevars_map:

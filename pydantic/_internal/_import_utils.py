@@ -3,7 +3,7 @@ from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from pydantic import BaseModel
-    from pydantic.fields import FieldInfo
+    from pydantic.fields import FieldInfo, FieldSpec
 
 
 @cache
@@ -18,3 +18,10 @@ def import_cached_field_info() -> type['FieldInfo']:
     from pydantic.fields import FieldInfo
 
     return FieldInfo
+
+
+@cache
+def import_cached_field_spec() -> type['FieldSpec']:
+    from pydantic.fields import FieldSpec
+
+    return FieldSpec

@@ -110,7 +110,7 @@ from ._fields import (
 )
 from ._forward_ref import PydanticRecursiveRef
 from ._generics import get_standard_typevars_map, replace_types
-from ._import_utils import import_cached_base_model, import_cached_field_info
+from ._import_utils import import_cached_base_model, import_cached_field_info, import_cached_field_spec
 from ._mock_val_ser import MockCoreSchema
 from ._namespace_utils import NamespacesTuple, NsResolver
 from ._schema_gather import MissingDefinitionError, gather_schemas_for_cleaning
@@ -2224,10 +2224,13 @@ class GenerateSchema:
     def _annotated_schema(self, annotated_type: Any) -> core_schema.CoreSchema:
         """Generate schema for an Annotated type, e.g. `Annotated[int, Field(...)]` or `Annotated[int, Gt(0)]`."""
         FieldInfo = import_cached_field_info()
+        FieldSpec = import_cached_field_spec()
         source_type, *annotations = self._get_args_resolving_forward_refs(
             annotated_type,
             required=True,
         )
+        # Standalone `Field()` usages are converted to final `FieldInfo` instances:
+        annotations = [FieldInfo._construct([ann], None) if type(ann) is FieldSpec else ann for ann in annotations]
         schema = self._apply_annotations(source_type, annotations)
         # put the default validator last so that TypeAdapter.get_default_value() works
         # even if there are function validators involved
@@ -2291,6 +2294,12 @@ class GenerateSchema:
         check_unsupported_field_info_attributes: bool = True,
     ) -> core_schema.CoreSchema:
         FieldInfo = import_cached_field_info()
+        FieldSpec = import_cached_field_spec()
+
+        if type(metadata) is FieldSpec:
+            # Can happen when a `Field()` specification ends up here without having been converted to a
+            # final `FieldInfo` first (e.g. when yielded from a user-defined `GroupedMetadata` implementation):
+            metadata = FieldInfo._construct([metadata], None)
 
         if isinstance(metadata, FieldInfo):
             if (
@@ -2404,6 +2413,10 @@ class GenerateSchema:
         self, schema: core_schema.CoreSchema, metadata: Any
     ) -> core_schema.CoreSchema:
         FieldInfo = import_cached_field_info()
+        FieldSpec = import_cached_field_spec()
+
+        if type(metadata) is FieldSpec:
+            metadata = FieldInfo._construct([metadata], None)
 
         if isinstance(metadata, FieldInfo):
             for field_metadata in metadata.metadata:
@@ -2430,8 +2443,7 @@ class GenerateSchema:
                 )
                 # Setting `alias` will set `validation/serialization_alias` as well, so we want to avoid duplicate warnings:
                 and (
-                    unused_metadata_name not in ('validation_alias', 'serialization_alias')
-                    or 'alias' not in field_info._attributes_set
+                    unused_metadata_name not in ('validation_alias', 'serialization_alias') or field_info.alias is None
                 )
             ):
                 unused_metadata.append((unused_metadata_name, unused_metadata_value))

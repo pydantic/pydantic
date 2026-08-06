@@ -10,7 +10,7 @@ from pydantic_core import CoreSchema, PydanticCustomError, ValidationError, to_j
 from pydantic_core import core_schema as cs
 
 from ._fields import PydanticMetadata
-from ._import_utils import import_cached_field_info
+from ._import_utils import import_cached_field_info, import_cached_field_spec
 
 if TYPE_CHECKING:
     pass
@@ -128,10 +128,18 @@ def expand_grouped_metadata(annotations: Iterable[Any]) -> Iterable[Any]:
     import annotated_types as at
 
     FieldInfo = import_cached_field_info()
+    FieldSpec = import_cached_field_spec()
 
     for annotation in annotations:
         if isinstance(annotation, at.GroupedMetadata):
             yield from annotation
+        elif type(annotation) is FieldSpec:
+            # Standalone `Field()` usage (e.g. in a type adapter): convert the specification
+            # to a final `FieldInfo` instance:
+            annotation = FieldInfo._construct([annotation], None)
+            yield from annotation.metadata
+            annotation.metadata = []
+            yield annotation
         elif isinstance(annotation, FieldInfo):
             yield from annotation.metadata
             # this is a bit problematic in that it results in duplicate metadata

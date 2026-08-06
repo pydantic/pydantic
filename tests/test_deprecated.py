@@ -468,9 +468,8 @@ def test_field_include_deprecation():
         class Model(BaseModel):
             x: int = Field(include=True)
 
-    assert len(all_warnings) == 2
+    assert len(all_warnings) == 1
     expected_warnings = [
-        "Using extra keyword arguments on `Field` is deprecated and will be removed. Use `json_schema_extra` instead. (Extra keys: 'include')",
         '`include` is deprecated and does nothing. It will be removed, use `exclude` instead',
     ]
     assert [w.message.message for w in all_warnings] == expected_warnings
