@@ -11,35 +11,34 @@ from abc import ABCMeta
 from collections.abc import Callable, MutableMapping
 from functools import cache, partial, wraps
 from types import FunctionType
-from typing import TYPE_CHECKING, Any, ForwardRef, Generic, Literal, NoReturn, TypeVar, cast
+from typing import TYPE_CHECKING, Any, Generic, Literal, NoReturn, TypeVar, cast
 
 from pydantic_core import PydanticUndefined, SchemaSerializer
-from typing_extensions import (  # noqa: UP035 (for `get_args` and `get_origin`)
+from typing_extensions import (
     TypeAliasType,
     dataclass_transform,
     deprecated,
-    get_args,
-    get_origin,
 )
-from typing_inspection import typing_objects
 
 from ..errors import PydanticUndefinedAnnotation, PydanticUserError
 from ..plugin._schema_validator import create_schema_validator
 from ..warnings import GenericBeforeBaseModelWarning, PydanticDeprecatedSince20
 from ._config import ConfigWrapper
 from ._decorators import DecoratorInfos, PydanticDescriptorProxy, get_attribute_from_bases, unwrap_wrapped_function
-from ._fields import collect_model_fields, is_valid_field_name, is_valid_privateattr_name, rebuild_model_fields
+from ._fields import (
+    ModelNamespaceInfo,
+    collect_model_fields,
+    is_valid_field_name,
+    is_valid_privateattr_name,
+    rebuild_model_fields,
+)
 from ._generate_schema import GenerateSchema, InvalidSchemaError
 from ._generics import PydanticGenericMetadata, get_model_typevars_map
 from ._import_utils import import_cached_base_model, import_cached_field_info
 from ._mock_val_ser import set_model_mocks
 from ._namespace_utils import NsResolver
 from ._signature import generate_pydantic_signature
-from ._typing_extra import (
-    eval_type,
-    is_classvar_annotation,
-    parent_frame_namespace,
-)
+from ._typing_extra import parent_frame_namespace
 from ._utils import LazyClassAttribute, SafeGetItemProxy
 
 if TYPE_CHECKING:
@@ -115,51 +114,19 @@ class ModelMetaclass(ABCMeta):
         # that `BaseModel` itself won't have any bases, but any subclass of it will, to determine whether the `__new__`
         # call we're in the middle of is for the `BaseModel` class.
         if bases:
-            raw_annotations: dict[str, Any]
-            if sys.version_info >= (3, 14):
-                if (
-                    '__annotations__' in namespace
-                ):  # `from __future__ import annotations` was used in the model's module
-                    raw_annotations = namespace['__annotations__']
-                else:
-                    # See https://docs.python.org/3.14/library/annotationlib.html#using-annotations-in-a-metaclass:
-                    from annotationlib import Format, call_annotate_function, get_annotate_from_class_namespace
-
-                    if annotate := get_annotate_from_class_namespace(namespace):
-                        try:
-                            # Try the VALUE format first, as it is way more expensive to use the FORWARDREF format:
-                            raw_annotations = call_annotate_function(annotate, format=Format.VALUE)
-                        except Exception:
-                            raw_annotations = call_annotate_function(annotate, format=Format.FORWARDREF)
-                    else:
-                        raw_annotations = {}
-            else:
-                raw_annotations = namespace.get('__annotations__', {})
-
             base_field_names, class_vars, base_private_attributes = mcs._collect_bases_data(bases)
 
-            config_wrapper = ConfigWrapper.for_model(bases, namespace, raw_annotations, kwargs)
-            namespace['model_config'] = config_wrapper.config_dict
-            private_attributes = inspect_namespace(
-                namespace, raw_annotations, config_wrapper.ignored_types, class_vars, base_field_names
+            config_wrapper = ConfigWrapper.for_model(bases, namespace, kwargs)
+            namespace_info = inspect_namespace(
+                namespace,
+                config_wrapper.ignored_types,
+                base_class_fields=base_field_names,
+                base_class_vars=class_vars,
             )
-            if private_attributes or base_private_attributes:
-                original_model_post_init = get_model_post_init(namespace, bases)
-                if original_model_post_init is not None:
-                    # if there are private attributes and a model_post_init function, we handle both
-
-                    @wraps(original_model_post_init)
-                    def wrapped_model_post_init(self: BaseModel, context: Any, /) -> None:
-                        """We need to both initialize private attributes and call the user-defined model_post_init
-                        method.
-                        """
-                        init_private_attributes(self, context)
-                        original_model_post_init(self, context)
-
-                    namespace['model_post_init'] = wrapped_model_post_init
-                else:
-                    namespace['model_post_init'] = init_private_attributes
-
+            private_attributes = namespace_info.private_attributes
+            # Must be done after `inspect_namespace()` is called, as it checks for the
+            # user-assigned `model_config`:
+            namespace['model_config'] = config_wrapper.config_dict
             namespace['__class_vars__'] = class_vars
             namespace['__private_attributes__'] = {**base_private_attributes, **private_attributes}
 
@@ -177,9 +144,6 @@ class ModelMetaclass(ABCMeta):
                 )
 
             cls.__pydantic_custom_init__ = not getattr(cls.__init__, '__pydantic_base_init__', False)
-            cls.__pydantic_post_init__ = (
-                None if cls.model_post_init is BaseModel_.model_post_init else 'model_post_init'
-            )
 
             cls.__pydantic_setattr_handlers__ = {}
 
@@ -250,7 +214,30 @@ class ModelMetaclass(ABCMeta):
 
             ns_resolver = NsResolver(parent_namespace=parent_namespace)
 
-            set_model_fields(cls, config_wrapper=config_wrapper, ns_resolver=ns_resolver)
+            set_model_fields(cls, config_wrapper=config_wrapper, ns_resolver=ns_resolver, namespace_info=namespace_info)
+
+            # This can only be done after fields collection, as private attributes may be
+            # discovered from the (evaluated) class annotations:
+            if cls.__private_attributes__:
+                original_model_post_init = get_model_post_init(namespace, bases)
+                if original_model_post_init is not None:
+                    # if there are private attributes and a model_post_init function, we handle both
+
+                    @wraps(original_model_post_init)
+                    def wrapped_model_post_init(self: BaseModel, context: Any, /) -> None:
+                        """We need to both initialize private attributes and call the user-defined model_post_init
+                        method.
+                        """
+                        init_private_attributes(self, context)
+                        original_model_post_init(self, context)
+
+                    cls.model_post_init = wrapped_model_post_init  # pyright: ignore[reportAttributeAccessIssue]
+                else:
+                    cls.model_post_init = init_private_attributes  # pyright: ignore[reportAttributeAccessIssue]
+
+            cls.__pydantic_post_init__ = (
+                None if cls.model_post_init is BaseModel_.model_post_init else 'model_post_init'
+            )
 
             # This is also set in `complete_model_class()`, after schema gen because they are recreated.
             # We set them here as well for backwards compatibility:
@@ -407,47 +394,47 @@ def get_model_post_init(namespace: dict[str, Any], bases: tuple[type[Any], ...])
         return model_post_init
 
 
-def inspect_namespace(  # noqa C901
+def inspect_namespace(
     namespace: dict[str, Any],
-    raw_annotations: dict[str, Any],
     ignored_types: tuple[type[Any], ...],
+    *,
     base_class_vars: set[str],
     base_class_fields: set[str],
-) -> dict[str, ModelPrivateAttr]:
-    """Iterate over the namespace and:
-    * gather private attributes
-    * check for items which look like fields but are not (e.g. have no annotation) and warn.
+) -> ModelNamespaceInfo:
+    """Inspect the namespace prior to class creation.
+
+    Most of the collected information is then used by `collect_model_fields()` to perform checks.
 
     Args:
         namespace: The attribute dictionary of the class to be created.
-        raw_annotations: The (non-evaluated) annotations of the model.
-        ignored_types: A tuple of ignore types.
-        base_class_vars: A set of base class variables.
-        base_class_fields: A set of base class fields.
+        ignored_types: Tuple of ignore types.
+        base_class_vars: The set of base class variables.
+        base_class_fields: The set of base class fields.
 
     Returns:
-        A dict containing private attributes info.
+        A `ModelNamespaceInfo` instance.
 
     Raises:
-        TypeError: If there is a `__root__` field in model.
-        NameError: If private attribute name is invalid.
-        PydanticUserError:
-            - If a field does not have a type annotation.
-            - If a field on base class was overridden by a non-annotated attribute.
+        PydanticUserError: If there is a `__root__` field in model, or if a private attribute name is invalid.
     """
-    from ..fields import ModelPrivateAttr, PrivateAttr
+    from ..fields import ModelPrivateAttr
 
     FieldInfo = import_cached_field_info()
 
     all_ignored_types = ignored_types + default_ignored_types()
 
     private_attributes: dict[str, ModelPrivateAttr] = {}
-
-    if '__root__' in raw_annotations or '__root__' in namespace:
-        raise TypeError("To define root models, use `pydantic.RootModel` rather than a field called '__root__'")
-
     ignored_names: set[str] = set()
-    for var_name, value in list(namespace.items()):
+    private_candidates: list[str] = []
+    field_candidates: list[str] = []
+
+    if '__root__' in namespace:
+        # This only checks for assignment, `collect_model_fields()` will raise if only an annotated `__root__` is defined:
+        raise PydanticUserError(
+            "To define root models, use `pydantic.RootModel` rather than a field called '__root__'", code=None
+        )
+
+    for var_name, value in namespace.items():
         if var_name == 'model_config' or var_name == '__pydantic_extra__':
             continue
         elif (
@@ -463,85 +450,50 @@ def inspect_namespace(  # noqa C901
             continue
         elif isinstance(value, ModelPrivateAttr):
             if var_name.startswith('__'):
-                raise NameError(
+                raise PydanticUserError(
                     'Private attributes must not use dunder names;'
-                    f' use a single underscore prefix instead of {var_name!r}.'
+                    f' use a single underscore prefix instead of {var_name!r}.',
+                    code=None,
                 )
             elif is_valid_field_name(var_name):
-                raise NameError(
+                raise PydanticUserError(
                     'Private attributes must not use valid field names;'
-                    f' use sunder names, e.g. {"_" + var_name!r} instead of {var_name!r}.'
+                    f' use sunder names, e.g. {"_" + var_name!r} instead of {var_name!r}.',
+                    code=None,
                 )
             private_attributes[var_name] = value
-            del namespace[var_name]
         elif isinstance(value, FieldInfo) and not is_valid_field_name(var_name):
             suggested_name = var_name.lstrip('_') or 'my_field'  # don't suggest '' for all-underscore name
-            raise NameError(
+            raise PydanticUserError(
                 f'Fields must not use names with leading underscores;'
-                f' e.g., use {suggested_name!r} instead of {var_name!r}.'
+                f' e.g., use {suggested_name!r} instead of {var_name!r}.',
+                code=None,
             )
-
         elif var_name.startswith('__'):
             continue
         elif is_valid_privateattr_name(var_name):
-            if var_name not in raw_annotations or not is_classvar_annotation(raw_annotations[var_name]):
-                private_attributes[var_name] = cast(ModelPrivateAttr, PrivateAttr(default=value))
-                del namespace[var_name]
+            # A private attribute, unless annotated as a class variable (only known
+            # once annotations are evaluated during fields collection):
+            private_candidates.append(var_name)
         elif var_name in base_class_vars:
             continue
-        elif var_name not in raw_annotations:
-            if var_name in base_class_fields:
-                raise PydanticUserError(
-                    f'Field {var_name!r} defined on a base class was overridden by a non-annotated attribute. '
-                    f'All field definitions, including overrides, require a type annotation.',
-                    code='model-field-overridden',
-                )
-            elif isinstance(value, FieldInfo):
-                raise PydanticUserError(
-                    f'Field {var_name!r} requires a type annotation', code='model-field-missing-annotation'
-                )
-            else:
-                raise PydanticUserError(
-                    f'A non-annotated attribute was detected: `{var_name} = {value!r}`. All model fields require a '
-                    f'type annotation; if `{var_name}` is not meant to be a field, you may be able to resolve this '
-                    f"error by annotating it as a `ClassVar` or updating `model_config['ignored_types']`.",
-                    code='model-field-missing-annotation',
-                )
+        else:
+            # A field default or an invalid non-annotated attribute (only known
+            # once annotations are evaluated during fields collection):
+            field_candidates.append(var_name)
 
-    for ann_name, ann_type in raw_annotations.items():
-        if (
-            is_valid_privateattr_name(ann_name)
-            and ann_name not in private_attributes
-            and ann_name not in ignored_names
-            # This condition can be a false negative when `ann_type` is stringified,
-            # but it is handled in most cases in `set_model_fields`:
-            and not is_classvar_annotation(ann_type)
-            and ann_type not in all_ignored_types
-            and getattr(ann_type, '__module__', None) != 'functools'
-        ):
-            if isinstance(ann_type, str):
-                # Walking up the frames to get the module namespace where the model is defined
-                # (as the model class wasn't created yet, we unfortunately can't use `cls.__module__`):
-                frame = sys._getframe(2)
-                if frame is not None:
-                    try:
-                        ann_type = eval_type(
-                            ForwardRef(ann_type, is_argument=False, is_class=True),
-                            globalns=frame.f_globals,
-                            localns=frame.f_locals,
-                        )
-                    except (NameError, TypeError):
-                        pass
+    for var_name in private_attributes:
+        del namespace[var_name]
 
-            if typing_objects.is_annotated(get_origin(ann_type)):
-                _, *metadata = get_args(ann_type)
-                private_attr = next((v for v in metadata if isinstance(v, ModelPrivateAttr)), None)
-                if private_attr is not None:
-                    private_attributes[ann_name] = private_attr
-                    continue
-            private_attributes[ann_name] = PrivateAttr()
-
-    return private_attributes
+    return ModelNamespaceInfo(
+        private_attributes=private_attributes,
+        ignored_names=ignored_names,
+        ignored_types=all_ignored_types,
+        private_candidates=private_candidates,
+        field_candidates=field_candidates,
+        base_field_names=base_class_fields,
+        model_config_assigned=namespace.get('model_config') is not None,
+    )
 
 
 def set_default_hash_func(cls: type[BaseModel], bases: tuple[type[Any], ...]) -> None:
@@ -577,31 +529,30 @@ def set_model_fields(
     cls: type[BaseModel],
     config_wrapper: ConfigWrapper,
     ns_resolver: NsResolver,
+    namespace_info: ModelNamespaceInfo | None = None,
 ) -> None:
-    """Collect and set `cls.__pydantic_fields__` and `cls.__class_vars__`.
+    """Collect and set `cls.__pydantic_fields__`, `cls.__class_vars__` and `cls.__private_attributes__`.
 
     Args:
         cls: BaseModel or dataclass.
         config_wrapper: The config wrapper instance.
         ns_resolver: Namespace resolver to use when getting model annotations.
+        namespace_info: The result of inspecting the class namespace before the class was created.
     """
     typevars_map = get_model_typevars_map(cls)
-    fields, pydantic_extra_info, class_vars = collect_model_fields(
-        cls, config_wrapper, ns_resolver, typevars_map=typevars_map
+    fields, pydantic_extra_info, class_vars, private_attributes = collect_model_fields(
+        cls, config_wrapper, ns_resolver, typevars_map=typevars_map, namespace_info=namespace_info
     )
 
     cls.__pydantic_fields__ = fields
     cls.__pydantic_extra_info__ = pydantic_extra_info
     cls.__class_vars__.update(class_vars)
+    cls.__private_attributes__.update(private_attributes)
 
     for k in class_vars:
-        # Class vars should not be private attributes
-        #     We remove them _here_ and not earlier because we rely on inspecting the class to determine its classvars,
-        #     but private attributes are determined by inspecting the namespace _prior_ to class creation.
-        #     In the case that a classvar with a leading-'_' is defined via a ForwardRef (e.g., when using
-        #     `__future__.annotations`), we want to remove the private attribute which was detected _before_ we knew it
-        #     evaluated to a classvar
-
+        # Class vars should not be private attributes (this can happen when a class variable
+        # of a base class shadows a private attribute, e.g. when annotated as a `ClassVar`
+        # in a subclass):
         value = cls.__private_attributes__.pop(k, None)
         if value is not None and value.default is not PydanticUndefined:
             setattr(cls, k, value.default)
