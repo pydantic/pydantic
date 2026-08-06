@@ -57,13 +57,8 @@ build-coverage:
 .PHONY: build-pgo  ## Build the PGO version of the package
 build-pgo:
 	@rm -f python/pydantic_core/*.so
-	$(eval PROFDATA := $(shell mktemp -d))
-	RUSTFLAGS='-Cprofile-generate=$(PROFDATA)' $(uv-run-no-sync) maturin develop --uv --release
-	$(uv-run-no-sync) pytest tests/benchmarks
-	$(eval LLVM_PROFDATA := $(shell rustup run stable bash -c 'echo $$RUSTUP_HOME/toolchains/$$RUSTUP_TOOLCHAIN/lib/rustlib/$$(rustc -Vv | grep host | cut -d " " -f 2)/bin/llvm-profdata'))
-	$(LLVM_PROFDATA) merge -o $(PROFDATA)/merged.profdata $(PROFDATA)
-	RUSTFLAGS='-Cprofile-use=$(PROFDATA)/merged.profdata' $(uv-run-no-sync) maturin develop --uv --release
-	@rm -rf $(PROFDATA)
+	$(uv-run-no-sync) maturin build --pgo --release
+	uv pip install --force-reinstall pydantic-core --no-index --no-deps --find-links target/wheels
 
 
 .PHONY: build-wasm  ## Build the WebAssembly version of the package
