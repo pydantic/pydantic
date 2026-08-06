@@ -1,6 +1,8 @@
 use std::borrow::Cow;
+use std::cell::{Cell, RefCell};
 use std::collections::HashSet;
 
+use ahash::AHashMap;
 use jiter::{JsonArray, JsonObject, JsonValue};
 use num_traits::cast::ToPrimitive;
 use pyo3::prelude::*;
@@ -646,25 +648,64 @@ impl<'a, 'data> ValidatedSet<'_> for &'a JsonArray<'data> {
 #[cfg_attr(debug_assertions, derive(Debug))]
 pub struct JsonArgs<'a, 'data> {
     args: Option<&'a [JsonValue<'data>]>,
-    kwargs: Option<&'a JsonObject<'data>>,
+    kwargs: Option<JsonKwargs<'a, 'data>>,
 }
 
 impl<'a, 'data> JsonArgs<'a, 'data> {
     fn new(args: Option<&'a [JsonValue<'data>]>, kwargs: Option<&'a JsonObject<'data>>) -> Self {
-        Self { args, kwargs }
+        Self {
+            args,
+            kwargs: kwargs.map(JsonKwargs::new),
+        }
     }
 }
 
-impl<'data> Arguments<'_> for JsonArgs<'_, 'data> {
+impl<'a, 'data> Arguments<'_> for JsonArgs<'a, 'data> {
     type Args = [JsonValue<'data>];
-    type Kwargs = JsonObject<'data>;
+    type Kwargs = JsonKwargs<'a, 'data>;
 
     fn args(&self) -> Option<&Self::Args> {
         self.args
     }
 
     fn kwargs(&self) -> Option<&Self::Kwargs> {
-        self.kwargs
+        self.kwargs.as_ref()
+    }
+}
+
+#[derive(Debug)]
+pub struct JsonKwargs<'a, 'data> {
+    object: &'a JsonObject<'data>,
+    // jiter preserves duplicate keys in a vector. Cache the final index for each key once
+    // argument validation performs enough lookups to make repeated scans expensive.
+    lookup_cache: RefCell<Option<AHashMap<String, usize>>>,
+    lookup_count: Cell<usize>,
+}
+
+impl<'a, 'data> JsonKwargs<'a, 'data> {
+    const LOOKUP_CACHE_THRESHOLD: usize = 16;
+
+    fn new(object: &'a JsonObject<'data>) -> Self {
+        Self {
+            object,
+            lookup_cache: RefCell::new(None),
+            lookup_count: Cell::new(0),
+        }
+    }
+
+    fn lookup_index(&self, key: &str) -> Option<usize> {
+        if self.lookup_cache.borrow().is_none() {
+            let mut lookup = AHashMap::with_capacity(self.object.len());
+            for (index, (key, _)) in self.object.iter().enumerate() {
+                // Forward insertion intentionally keeps the final occurrence, matching json_get.
+                lookup.insert(key.as_ref().to_owned(), index);
+            }
+            *self.lookup_cache.borrow_mut() = Some(lookup);
+        }
+        self.lookup_cache
+            .borrow()
+            .as_ref()
+            .and_then(|lookup| lookup.get(key).copied())
     }
 }
 
@@ -685,7 +726,7 @@ impl<'data> PositionalArgs<'_> for [JsonValue<'data>] {
     }
 }
 
-impl<'data> KeywordArgs<'_> for JsonObject<'data> {
+impl<'data> KeywordArgs<'_> for JsonKwargs<'_, 'data> {
     type Key<'a>
         = &'a str
     where
@@ -696,12 +737,27 @@ impl<'data> KeywordArgs<'_> for JsonObject<'data> {
         Self: 'a;
 
     fn len(&self) -> usize {
-        Vec::len(self)
+        self.object.len()
     }
     fn get_item<'k>(&self, key: &LookupPath) -> ValResult<Option<Self::Item<'_>>> {
-        key.json_get(self)
+        if self.object.len() < Self::LOOKUP_CACHE_THRESHOLD {
+            return key.json_get(self.object);
+        }
+
+        if self.lookup_cache.borrow().is_none() {
+            let lookup_count = self.lookup_count.get();
+            if lookup_count < 3 {
+                self.lookup_count.set(lookup_count + 1);
+                return key.json_get(self.object);
+            }
+        }
+
+        let value = self
+            .lookup_index(key.first_key())
+            .and_then(|index| self.object.get(index).map(|(_, value)| value));
+        Ok(key.json_get_from_value(value))
     }
     fn iter(&self) -> impl Iterator<Item = ValResult<(Self::Key<'_>, Self::Item<'_>)>> {
-        self.as_slice().iter().map(|(k, v)| Ok((k.as_ref(), v)))
+        self.object.iter().map(|(k, v)| Ok((k.as_ref(), v)))
     }
 }
