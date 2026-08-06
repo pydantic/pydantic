@@ -8,7 +8,7 @@ import typing
 import warnings
 import weakref
 from abc import ABCMeta
-from collections.abc import Callable
+from collections.abc import Callable, MutableMapping
 from functools import cache, partial, wraps
 from types import FunctionType
 from typing import TYPE_CHECKING, Any, ForwardRef, Generic, Literal, NoReturn, TypeVar, cast
@@ -826,7 +826,7 @@ class _PydanticWeakRef:
         return _PydanticWeakRef, (self(),)
 
 
-def build_lenient_weakvaluedict(d: dict[str, Any] | None) -> dict[str, Any] | None:
+def build_lenient_weakvaluedict(d: MutableMapping[str, Any] | None) -> dict[str, Any] | None:
     """Takes an input dictionary, and produces a new value that (invertibly) replaces the values with weakrefs.
 
     We can't just use a WeakValueDictionary because many types (including int, str, etc.) can't be stored as values

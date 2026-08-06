@@ -2366,6 +2366,7 @@ def test_parse_generic_json():
     }
 
 
+@pytest.mark.skipif(sys.version_info >= (3, 15), reason="memray doesn't yet support Python 3.15")
 def memray_limit_memory(limit):
     if '--memray' in sys.argv:
         return pytest.mark.limit_memory(limit)
