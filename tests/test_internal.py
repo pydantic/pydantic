@@ -13,7 +13,7 @@ from dirty_equals import Contains, IsPartialDict
 from pydantic_core import CoreSchema, PydanticUndefined
 from pydantic_core import core_schema as cs
 
-from pydantic import BaseModel, TypeAdapter
+from pydantic import BaseModel, TypeAdapter, ValidationError, create_model
 from pydantic._internal._config import ConfigWrapper
 from pydantic._internal._core_metadata import update_core_metadata
 from pydantic._internal._fields import resolve_default_value
@@ -288,3 +288,188 @@ def test_resolve_default_value_missing_validated_data():
             validated_data=None,
             call_default_factory=True,
         )
+
+
+class _NotPure:
+    pass
+
+
+@pytest.mark.parametrize(
+    ['annotation', 'pure'],
+    [
+        (int, True),
+        (str, True),
+        (type(None), True),
+        ('int | None', True),
+        ('list[int]', True),
+        ('dict[str, list[int | None]]', True),
+        ('tuple[int, ...]', True),
+        ('Literal["a", "b"]', True),
+        # `None` is a valid annotation, and must not be confused with the "not pure" sentinel.
+        # Note that unlike `typing.Tuple[int, None]`, the builtin generic alias form does *not*
+        # normalize `None` to `NoneType`, so the key builder has to cope with a literal `None` arg:
+        (None, True),
+        ('list[None]', True),
+        ('tuple[int, None]', True),
+        (_NotPure, False),
+        ('list[_NotPure]', False),
+        ('int | _NotPure', False),
+        ('Literal[_AnEnum.A]', False),
+        ('list["Forward"]', False),
+    ],
+)
+def test_pure_annotation_cache_key(annotation, pure):
+    import enum
+    from typing import Literal  # noqa: F401
+
+    from pydantic._internal._generate_schema import _NOT_PURE, _pure_annotation_cache_key
+
+    class _AnEnum(enum.Enum):
+        A = 'a'
+
+    if isinstance(annotation, str):
+        annotation = eval(annotation)
+
+    key = _pure_annotation_cache_key(annotation)
+    assert (key is not _NOT_PURE) is pure
+
+
+def test_pure_annotation_cache_key_is_order_sensitive():
+    """Unions and literals compare (and hash) equal regardless of argument order,
+    so the annotations themselves would be unsound cache keys."""
+    from typing import Literal, Union
+
+    from pydantic._internal._generate_schema import _pure_annotation_cache_key
+
+    assert _pure_annotation_cache_key(Union[int, str]) != _pure_annotation_cache_key(Union[str, int])  # noqa: UP007
+    assert _pure_annotation_cache_key(Literal['a', 'b']) != _pure_annotation_cache_key(Literal['b', 'a'])
+    # `1 == True`, so the value types must take part in the key:
+    assert _pure_annotation_cache_key(Literal[1]) != _pure_annotation_cache_key(Literal[True])
+    # The same annotation spelled differently must produce equal keys:
+    assert _pure_annotation_cache_key(Union[int, None]) == _pure_annotation_cache_key(int | None)  # noqa: UP007
+
+
+def test_pure_annotation_schema_cache_schemas_are_independent():
+    """Models sharing an annotation must not share (mutable parts of) their core schemas."""
+
+    class A(BaseModel):
+        v: 'int | None' = None
+
+    class B(BaseModel):
+        v: 'int | None' = None
+
+    schema_a = A.__pydantic_core_schema__['schema']['fields']['v']['schema']
+    schema_b = B.__pydantic_core_schema__['schema']['fields']['v']['schema']
+    assert schema_a == schema_b
+    assert schema_a is not schema_b
+    assert schema_a['schema'] is not schema_b['schema']
+
+    schema_a['schema']['type'] = 'mutated'
+    assert schema_b['schema']['type'] == 'nullable'
+
+
+def test_pure_annotation_schema_cache_union_order():
+    """Regression test: `Union[int, str]` and `Union[str, int]` compare equal but their
+    schemas differ, so they must not share a cache entry."""
+    from typing import Union
+
+    class A(BaseModel):
+        v: Union[int, str] = 1  # noqa: UP007
+
+    class B(BaseModel):
+        v: Union[str, int] = 'a'  # noqa: UP007
+
+    choices_a = [c['type'] for c in A.__pydantic_core_schema__['schema']['fields']['v']['schema']['schema']['choices']]
+    choices_b = [c['type'] for c in B.__pydantic_core_schema__['schema']['fields']['v']['schema']['schema']['choices']]
+    assert choices_a == ['int', 'str']
+    assert choices_b == ['str', 'int']
+
+
+@pytest.mark.filterwarnings('ignore:`json_encoders` is deprecated.*:DeprecationWarning')
+def test_pure_annotation_schema_cache_json_encoders_bypass():
+    """`json_encoders` alter the generated schema, so configs setting them bypass the cache."""
+
+    class A(BaseModel):
+        v: 'str | None' = None
+
+    class B(BaseModel):
+        model_config = {'json_encoders': {str: lambda v: f'enc:{v}'}}
+
+        v: 'str | None' = None
+
+    assert A(v='x').model_dump_json() == '{"v":"x"}'
+    assert B(v='x').model_dump_json() == '{"v":"enc:x"}'
+
+
+def test_pure_annotation_schema_cache_is_bounded():
+    """The set of pure annotations is unbounded (`Literal[...]` can hold arbitrary values), so a
+    process building models from dynamically generated schemas must not grow the cache forever.
+    """
+    from typing import Literal
+
+    from pydantic._internal._generate_schema import (
+        _PURE_ANNOTATION_CACHE_SIZE,
+        _pure_annotation_schema_cache,
+    )
+
+    for i in range(2 * _PURE_ANNOTATION_CACHE_SIZE):
+        create_model(f'M{i}', v=(Literal[f'a{i}', f'b{i}'], ...))
+        assert len(_pure_annotation_schema_cache) <= _PURE_ANNOTATION_CACHE_SIZE
+
+
+def test_pure_annotation_cache_key_membership_is_identity_based():
+    """A class comparing equal to a pure leaf type must not be classified as pure.
+
+    It would otherwise share the leaf type's cache entry, letting its custom
+    `__get_pydantic_core_schema__` hook poison the schema generated for that leaf type
+    (and vice versa).
+    """
+    from pydantic._internal._generate_schema import _NOT_PURE, _pure_annotation_cache_key
+
+    class EqualsIntMeta(type):
+        def __eq__(cls, other):
+            return other is int or super().__eq__(other)
+
+        def __hash__(cls):
+            return hash(int)
+
+    class LooksLikeInt(metaclass=EqualsIntMeta):
+        @classmethod
+        def __get_pydantic_core_schema__(cls, source_type, handler):
+            return cs.str_schema()
+
+    assert LooksLikeInt == int and hash(LooksLikeInt) == hash(int)
+    assert _pure_annotation_cache_key(LooksLikeInt) is _NOT_PURE
+    assert _pure_annotation_cache_key(list[LooksLikeInt]) is _NOT_PURE
+
+    class Model(BaseModel):
+        a: LooksLikeInt
+        b: int
+
+    assert Model(a='x', b=1).a == 'x'
+    with pytest.raises(ValidationError):
+        Model(a='x', b='not an int')
+
+
+def test_pure_annotation_schema_cache_none_annotations():
+    """`None` is a valid (and pure) annotation, so it can't double as the "not pure" sentinel."""
+
+    class A(BaseModel):
+        v: None = None
+        w: 'list[None]' = []
+        x: 'tuple[int, None]' = (1, None)
+
+    class B(BaseModel):
+        v: None = None
+        w: 'list[None]' = []
+        x: 'tuple[int, None]' = (1, None)
+
+    for name in ('v', 'w', 'x'):
+        schema_a = A.__pydantic_core_schema__['schema']['fields'][name]['schema']
+        schema_b = B.__pydantic_core_schema__['schema']['fields'][name]['schema']
+        assert schema_a == schema_b
+        assert schema_a is not schema_b
+
+    assert B(w=[None], x=(2, None)).x == (2, None)
+    with pytest.raises(ValidationError):
+        B(v=1)
