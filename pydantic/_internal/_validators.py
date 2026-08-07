@@ -452,7 +452,7 @@ def get_defaultdict_default_default_factory(values_source_type: Any) -> Callable
             return type_var_default_factory
         elif values_type not in allowed_default_types:
             # a somewhat subjective set of types that have reasonable default values
-            allowed_msg = ', '.join([t.__name__ for t in set(allowed_default_types.values())])
+            allowed_msg = ', '.join([t.__name__ for t in set(allowed_default_types.keys())])
             raise PydanticSchemaGenerationError(
                 f'Unable to infer a default factory for keys of type {values_source_type}.'
                 f' Only {allowed_msg} are supported, other types require an explicit default factory'
