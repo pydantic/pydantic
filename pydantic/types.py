@@ -3112,12 +3112,19 @@ class Discriminator:
             return self._convert_schema(original_schema, handler)
 
     def _convert_schema(
-        self, original_schema: core_schema.CoreSchema, handler: GetCoreSchemaHandler | None = None
+        self,
+        original_schema: core_schema.CoreSchema,
+        handler: GetCoreSchemaHandler | None = None,
+        definitions: dict[str, core_schema.CoreSchema] | None = None,
     ) -> core_schema.TaggedUnionSchema:
-        if handler is not None and original_schema['type'] == 'definition-ref':
+        if original_schema['type'] == 'definition-ref' and (handler is not None or definitions is not None):
             # Same logic as `_ApplyInferredDiscriminator._apply_to_root()`
             try:
-                def_schema = handler.resolve_ref_schema(original_schema)
+                if handler is not None:
+                    def_schema = handler.resolve_ref_schema(original_schema)
+                else:
+                    assert definitions is not None
+                    def_schema = definitions[original_schema['schema_ref']]
             except LookupError:  # pragma: no cover
                 from pydantic._internal._discriminated_union import MissingDefinitionForUnionRef
 

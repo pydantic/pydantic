@@ -65,7 +65,7 @@ def apply_discriminator(
         if isinstance(discriminator.discriminator, str):
             discriminator = discriminator.discriminator
         else:
-            return discriminator._convert_schema(schema)
+            return discriminator._convert_schema(schema, definitions=definitions)
 
     return _ApplyInferredDiscriminator(discriminator, definitions or {}).apply(schema)
 

@@ -2338,6 +2338,37 @@ def test_discriminated_union_type_alias_type_separate_callable_discriminator() -
     assert m.g == Bar(type='bar')
 
 
+@pytest.mark.skipif(sys.version_info < (3, 12), reason='Requires PEP 695 syntax')
+def test_discriminated_union_pep695_type_alias_field_callable_discriminator(create_module) -> None:
+    """https://github.com/pydantic/pydantic/issues/13599"""
+    module = create_module(
+        """\
+from typing import Annotated, Any, Literal
+
+from pydantic import BaseModel, Discriminator, Field, Tag
+
+class Foo(BaseModel):
+    type: Literal['foo']
+
+class Bar(BaseModel):
+    type: Literal['bar']
+
+def get_discriminator_value(value: Any) -> str:
+    if isinstance(value, dict):
+        return value['type']
+    return value.type
+
+type FooBar = Annotated[Foo, Tag('foo')] | Annotated[Bar, Tag('bar')]
+
+class Main(BaseModel):
+    f: FooBar = Field(discriminator=Discriminator(get_discriminator_value))
+"""
+    )
+
+    assert module.Main(f={'type': 'foo'}).f == module.Foo(type='foo')
+    assert module.Main(f={'type': 'bar'}).f == module.Bar(type='bar')
+
+
 @pytest.mark.xfail(
     reason="Nested references aren't flattened (see comment in `_ApplyInferredDiscriminator._handle_choice()`)",
 )
