@@ -2,7 +2,6 @@ import pickle
 from typing import Annotated
 
 import pytest
-import typing_extensions
 from annotated_types import Ge
 from pydantic_core import MISSING, PydanticSerializationUnexpectedValue
 
@@ -54,11 +53,6 @@ class ModelPickle(BaseModel):
     f: int | MISSING = MISSING
 
 
-@pytest.mark.xfail(
-    # Unreleased typing-extensions has the final sentinel implementation with pickle support:
-    condition=not hasattr(typing_extensions, 'sentinel'),
-    reason="PEP 661 sentinels aren't picklable yet in the experimental typing-extensions implementation",
-)
 def test_missing_sentinel_pickle() -> None:
     m = ModelPickle()
     m_reconstructed = pickle.loads(pickle.dumps(m))
