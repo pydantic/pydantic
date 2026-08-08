@@ -2338,6 +2338,27 @@ def test_discriminated_union_type_alias_type_separate_callable_discriminator() -
     assert m.g == Bar(type='bar')
 
 
+def test_discriminated_union_type_alias_type_separate_callable_discriminator_field() -> None:
+    """https://github.com/pydantic/pydantic/issues/13599"""
+
+    class Foo(BaseModel):
+        type: Literal['foo']
+
+    class Bar(BaseModel):
+        type: Literal['bar']
+
+    FooBar = TypeAliasType('FooBar', Annotated[Foo, Tag('foo')] | Annotated[Bar, Tag('bar')])
+
+    discriminator = Discriminator(lambda v: v['type'])
+
+    class Main(BaseModel):
+        f: FooBar = Field(discriminator=discriminator)
+
+    m = Main(f={'type': 'foo'})
+
+    assert m.f == Foo(type='foo')
+
+
 @pytest.mark.xfail(
     reason="Nested references aren't flattened (see comment in `_ApplyInferredDiscriminator._handle_choice()`)",
 )

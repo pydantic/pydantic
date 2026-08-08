@@ -3112,13 +3112,29 @@ class Discriminator:
             return self._convert_schema(original_schema, handler)
 
     def _convert_schema(
-        self, original_schema: core_schema.CoreSchema, handler: GetCoreSchemaHandler | None = None
+        self,
+        original_schema: core_schema.CoreSchema,
+        handler: GetCoreSchemaHandler | None = None,
+        definitions: dict[str, core_schema.CoreSchema] | None = None,
     ) -> core_schema.TaggedUnionSchema:
-        if handler is not None and original_schema['type'] == 'definition-ref':
+        def _resolve_ref(schema: core_schema.CoreSchema) -> core_schema.CoreSchema | None:
+            # `handler` is set when this method is called while generating the schema for the field
+            # (e.g. via `Annotated[<type>, Discriminator(...)]`). `definitions` is set instead when
+            # this method is called from `apply_discriminator()` (deferred/callable discriminators).
+            if handler is not None:
+                try:
+                    return handler.resolve_ref_schema(schema)
+                except LookupError:  # pragma: no cover
+                    return None
+            elif definitions is not None:
+                schema_ref = cast(core_schema.DefinitionReferenceSchema, schema)['schema_ref']
+                return definitions.get(schema_ref)
+            return None
+
+        if original_schema['type'] == 'definition-ref':
             # Same logic as `_ApplyInferredDiscriminator._apply_to_root()`
-            try:
-                def_schema = handler.resolve_ref_schema(original_schema)
-            except LookupError:  # pragma: no cover
+            def_schema = _resolve_ref(original_schema)
+            if def_schema is None:
                 from pydantic._internal._discriminated_union import MissingDefinitionForUnionRef
 
                 raise MissingDefinitionForUnionRef(original_schema['schema_ref'])
@@ -3144,14 +3160,11 @@ class Discriminator:
             if metadata is not None:
                 tag = metadata.get('pydantic_internal_union_tag_key') or tag
             if tag is None:
-                # `handler` is None when this method is called from `apply_discriminator()` (deferred discriminators)
-                if handler is not None and choice['type'] == 'definition-ref':
+                if choice['type'] == 'definition-ref':
                     # If choice was built from a PEP 695 type alias, try to resolve the def:
-                    try:
-                        choice = handler.resolve_ref_schema(choice)
-                    except LookupError:
-                        pass
-                    else:
+                    resolved_choice = _resolve_ref(choice)
+                    if resolved_choice is not None:
+                        choice = resolved_choice
                         metadata = cast('CoreMetadata | None', choice.get('metadata'))
                         if metadata is not None:
                             tag = metadata.get('pydantic_internal_union_tag_key')
