@@ -393,9 +393,7 @@ print(foo())
 
 Currently upon validation failure, a standard Pydantic ValidationError is raised (see [model error handling](../models/#error-handling) for details). This is also true for missing required arguments, where Python normally raises a TypeError.
 
-Logfire integration
-
-As with Pydantic models, the [Logfire integration](../../integrations/logfire/) records validation errors for @validate_call.
+The error identifies the argument and value that were rejected. If you also need the complete call input and its surrounding trace context, [Logfire](../../errors/troubleshooting/) records both when a decorated call fails.
 
 ### Performance
 

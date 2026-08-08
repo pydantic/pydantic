@@ -643,9 +643,10 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
     ) -> Self:
         """Validate a pydantic model instance.
 
-        !!! tip "Logfire integration"
-            Instrumentation of validation errors are supported by [Logfire](../integrations/logfire.md).
-            See [Troubleshooting validation errors](../errors/troubleshooting.md) for more details.
+        If validation fails, the resulting [`ValidationError`][pydantic_core.ValidationError] reports the
+        rejected locations and values. [Logfire](../integrations/logfire.md) can retain the complete validation
+        input and surrounding trace context for production debugging (see
+        [Troubleshooting validation errors](../errors/troubleshooting.md)).
 
         Args:
             obj: The object to validate.
@@ -698,9 +699,10 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
 
         Validate the given JSON data against the Pydantic model.
 
-        !!! tip "Logfire integration"
-            Instrumentation of validation errors are supported by [Logfire](../integrations/logfire.md).
-            See [Troubleshooting validation errors](../errors/troubleshooting.md) for more details.
+        A [`ValidationError`][pydantic_core.ValidationError] raised here reports the rejected locations and
+        values, but may not retain the complete source document. Recording validations with
+        [Logfire](../integrations/logfire.md) keeps the complete JSON input alongside the error — see
+        [Troubleshooting validation errors](../errors/troubleshooting.md).
 
         Args:
             json_data: The JSON data to validate.
@@ -2477,9 +2479,7 @@ model_validate(
 
 Validate a pydantic model instance.
 
-Logfire integration
-
-Instrumentation of validation errors are supported by [Logfire](../../integrations/logfire/). See [Troubleshooting validation errors](../../errors/troubleshooting/) for more details.
+If validation fails, the resulting ValidationError reports the rejected locations and values. [Logfire](../../integrations/logfire/) can retain the complete validation input and surrounding trace context for production debugging (see [Troubleshooting validation errors](../../errors/troubleshooting/)).
 
 Parameters:
 
@@ -2510,9 +2510,10 @@ def model_validate(
 ) -> Self:
     """Validate a pydantic model instance.
 
-    !!! tip "Logfire integration"
-        Instrumentation of validation errors are supported by [Logfire](../integrations/logfire.md).
-        See [Troubleshooting validation errors](../errors/troubleshooting.md) for more details.
+    If validation fails, the resulting [`ValidationError`][pydantic_core.ValidationError] reports the
+    rejected locations and values. [Logfire](../integrations/logfire.md) can retain the complete validation
+    input and surrounding trace context for production debugging (see
+    [Troubleshooting validation errors](../errors/troubleshooting.md)).
 
     Args:
         obj: The object to validate.
@@ -2572,9 +2573,7 @@ Usage Documentation
 
 Validate the given JSON data against the Pydantic model.
 
-Logfire integration
-
-Instrumentation of validation errors are supported by [Logfire](../../integrations/logfire/). See [Troubleshooting validation errors](../../errors/troubleshooting/) for more details.
+A ValidationError raised here reports the rejected locations and values, but may not retain the complete source document. Recording validations with [Logfire](../../integrations/logfire/) keeps the complete JSON input alongside the error — see [Troubleshooting validation errors](../../errors/troubleshooting/).
 
 Parameters:
 
@@ -2607,9 +2606,10 @@ def model_validate_json(
 
     Validate the given JSON data against the Pydantic model.
 
-    !!! tip "Logfire integration"
-        Instrumentation of validation errors are supported by [Logfire](../integrations/logfire.md).
-        See [Troubleshooting validation errors](../errors/troubleshooting.md) for more details.
+    A [`ValidationError`][pydantic_core.ValidationError] raised here reports the rejected locations and
+    values, but may not retain the complete source document. Recording validations with
+    [Logfire](../integrations/logfire.md) keeps the complete JSON input alongside the error — see
+    [Troubleshooting validation errors](../errors/troubleshooting.md).
 
     Args:
         json_data: The JSON data to validate.

@@ -71,6 +71,4 @@ should be much easier read than:
 user: id=123 name='John Doe' signup_ts=datetime.datetime(2019, 6, 1, 12, 22) friends=[1234, 4567, 7890] address=Address(street='Testing', country='uk', lat=51.5, lng=0.0)
 ```
 
-Logfire integration
-
 `debug()` is a development-time tool: it prints to the terminal of a process you're watching. The closest equivalent for a deployed application is [Logfire](../logfire/), where models and validations show up as structured output you can browse and query.

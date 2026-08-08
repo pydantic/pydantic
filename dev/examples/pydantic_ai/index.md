@@ -35,6 +35,4 @@ print(result.output)
 
 ```
 
-Logfire integration
-
-Pydantic AI has a complete integration with [Logfire](../../integrations/logfire/), which records agent runs and the validation inside them: each agent run shows the output the model produced, the errors your validators raised, and the retry that followed.
+When validation fails (say the model returns a country your validator rejects), Pydantic AI feeds the validation errors back to the model and asks it to retry. To see this happening in a real application, instrument it with [Logfire](../../integrations/logfire/), which records [Pydantic AI](https://pydantic.dev/docs/ai/integrations/logfire/) runs and the validations inside them: each agent run shows the output the model produced, the errors your validators raised, and the retry that followed.

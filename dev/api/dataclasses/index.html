@@ -4115,10 +4115,10 @@ to help you monitor and understand your
 <p>A decorator used to create a Pydantic-enhanced dataclass, similar to the standard Python <code>dataclass</code>,
 but with added validation.</p>
 <p>This decorator should be used similarly to the <a class="autorefs autorefs-external" href="https://docs.python.org/3/library/dataclasses.html#dataclasses.dataclass"><code>@dataclasses.dataclass</code></a> decorator.</p>
-<div class="admonition tip">
-<p class="admonition-title">Logfire integration</p>
-<p>Instrumentation of dataclass validation errors is supported by <a href="../../integrations/logfire/">Logfire</a>.</p>
-</div>
+<p>A Pydantic dataclass validates its inputs like a <code>BaseModel</code> does. Its
+<a class="autorefs autorefs-internal" href="../pydantic_core/#pydantic_core.ValidationError"><code>ValidationError</code></a> includes each rejected value, while
+<a href="../../integrations/logfire/">Logfire</a> can retain the complete validation input and surrounding trace
+context — see <a href="../../errors/troubleshooting/">Troubleshooting validation errors</a>.</p>
 
 
 <p><span class="doc-section-title">Parameters:</span></p>
@@ -4578,7 +4578,9 @@ new attributes after instantiation.</p>
 <span class="normal">276</span>
 <span class="normal">277</span>
 <span class="normal">278</span>
-<span class="normal">279</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@dataclass_transform</span><span class="p">(</span><span class="n">field_specifiers</span><span class="o">=</span><span class="p">(</span><span class="n">dataclasses</span><span class="o">.</span><span class="n">field</span><span class="p">,</span> <span class="n">Field</span><span class="p">,</span> <span class="n">PrivateAttr</span><span class="p">))</span>
+<span class="normal">279</span>
+<span class="normal">280</span>
+<span class="normal">281</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@dataclass_transform</span><span class="p">(</span><span class="n">field_specifiers</span><span class="o">=</span><span class="p">(</span><span class="n">dataclasses</span><span class="o">.</span><span class="n">field</span><span class="p">,</span> <span class="n">Field</span><span class="p">,</span> <span class="n">PrivateAttr</span><span class="p">))</span>
 <span class="k">def</span><span class="w"> </span><span class="nf">dataclass</span><span class="p">(</span>
     <span class="n">_cls</span><span class="p">:</span> <span class="nb">type</span><span class="p">[</span><span class="n">_T</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="o">*</span><span class="p">,</span>
@@ -4601,8 +4603,10 @@ new attributes after instantiation.</p>
 
 <span class="sd">    This decorator should be used similarly to the [`@dataclasses.dataclass`][dataclasses.dataclass] decorator.</span>
 
-<span class="sd">    !!! tip &quot;Logfire integration&quot;</span>
-<span class="sd">        Instrumentation of dataclass validation errors is supported by [Logfire](../integrations/logfire.md).</span>
+<span class="sd">    A Pydantic dataclass validates its inputs like a `BaseModel` does. Its</span>
+<span class="sd">    [`ValidationError`][pydantic_core.ValidationError] includes each rejected value, while</span>
+<span class="sd">    [Logfire](../integrations/logfire.md) can retain the complete validation input and surrounding trace</span>
+<span class="sd">    context — see [Troubleshooting validation errors](../errors/troubleshooting.md).</span>
 
 <span class="sd">    Args:</span>
 <span class="sd">        _cls: The target `dataclass`.</span>
@@ -4954,9 +4958,7 @@ the initial attempt to build the schema, and automatic rebuilding fails.</p>
 
             <details class="quote">
               <summary>Source code in <code>pydantic/dataclasses.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">306</span>
-<span class="normal">307</span>
-<span class="normal">308</span>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">308</span>
 <span class="normal">309</span>
 <span class="normal">310</span>
 <span class="normal">311</span>
@@ -5016,7 +5018,9 @@ the initial attempt to build the schema, and automatic rebuilding fails.</p>
 <span class="normal">365</span>
 <span class="normal">366</span>
 <span class="normal">367</span>
-<span class="normal">368</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">rebuild_dataclass</span><span class="p">(</span>
+<span class="normal">368</span>
+<span class="normal">369</span>
+<span class="normal">370</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">rebuild_dataclass</span><span class="p">(</span>
     <span class="bp">cls</span><span class="p">:</span> <span class="nb">type</span><span class="p">[</span><span class="n">PydanticDataclass</span><span class="p">],</span>
     <span class="o">*</span><span class="p">,</span>
     <span class="n">force</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
@@ -5158,9 +5162,7 @@ the initial attempt to build the schema, and automatic rebuilding fails.</p>
 
             <details class="quote">
               <summary>Source code in <code>pydantic/dataclasses.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">371</span>
-<span class="normal">372</span>
-<span class="normal">373</span>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">373</span>
 <span class="normal">374</span>
 <span class="normal">375</span>
 <span class="normal">376</span>
@@ -5170,7 +5172,9 @@ the initial attempt to build the schema, and automatic rebuilding fails.</p>
 <span class="normal">380</span>
 <span class="normal">381</span>
 <span class="normal">382</span>
-<span class="normal">383</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">is_pydantic_dataclass</span><span class="p">(</span><span class="n">class_</span><span class="p">:</span> <span class="nb">type</span><span class="p">[</span><span class="n">Any</span><span class="p">],</span> <span class="o">/</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">TypeGuard</span><span class="p">[</span><span class="nb">type</span><span class="p">[</span><span class="n">PydanticDataclass</span><span class="p">]]:</span>
+<span class="normal">383</span>
+<span class="normal">384</span>
+<span class="normal">385</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">is_pydantic_dataclass</span><span class="p">(</span><span class="n">class_</span><span class="p">:</span> <span class="nb">type</span><span class="p">[</span><span class="n">Any</span><span class="p">],</span> <span class="o">/</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">TypeGuard</span><span class="p">[</span><span class="nb">type</span><span class="p">[</span><span class="n">PydanticDataclass</span><span class="p">]]:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Whether a class is a pydantic dataclass.</span>
 
 <span class="sd">    Args:</span>

@@ -4239,10 +4239,10 @@ via <a href="../../concepts/validators/#validation-context">validation context</
 <p>Note that if the context property is not included in <a class="autorefs autorefs-internal" href="../../api/base_model/#pydantic.BaseModel.model_validate"><code>model_validate()</code></a>, then <a class="autorefs autorefs-internal" href="../../api/pydantic_core_schema/#pydantic_core.core_schema.ValidationInfo.context"><code>context</code></a> will be <code>None</code>
 and the forbidden passwords list will not get added to the context in the above implementation. As such, <code>validate_user_passwords()</code> would not carry out the desired password validation.</p>
 <p>More details about validation context can be found in the <a href="../../concepts/validators/#validation-context">validators documentation</a>.</p>
-<div class="admonition tip">
-<p class="admonition-title">Logfire integration</p>
-<p>The <a href="../../integrations/logfire/">Logfire integration</a> also records the message from your custom validators.</p>
-</div>
+<p>The messages you write in these <code>raise ValueError(...)</code> calls are worth crafting: they're what you'll
+read when the rule eventually rejects real data. They also carry through to tooling that consumes the
+structured errors: <a href="../../errors/troubleshooting/">Logfire's explanations of failed validations</a>, for
+example, include the messages from your custom validators.</p>
 
 
 

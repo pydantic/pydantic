@@ -3570,6 +3570,17 @@ to help you monitor and understand your
   
 </li>
       
+        <li class="md-nav__item">
+  <a href="#catching-drift-from-the-source-schema" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Catching drift from the source schema
+      
+    </span>
+  </a>
+  
+</li>
+      
     </ul>
   
 </nav>
@@ -3901,6 +3912,17 @@ to help you monitor and understand your
   
 </li>
       
+        <li class="md-nav__item">
+  <a href="#catching-drift-from-the-source-schema" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Catching drift from the source schema
+      
+    </span>
+  </a>
+  
+</li>
+      
     </ul>
   
 </nav>
@@ -4063,6 +4085,14 @@ to help you monitor and understand your
 </code></pre></div>
 <p>More information can be found on the
 <a href="https://datamodel-code-generator.koxudaxi.dev/">official documentation</a>.</p>
+<h2 id="catching-drift-from-the-source-schema">Catching drift from the source schema<a class="headerlink" href="#catching-drift-from-the-source-schema" title="Permanent link">&para;</a></h2>
+<p>A model generated from an OpenAPI or JSON Schema document is a snapshot of that contract. When the
+upstream data stops matching it (a field changes type, a new required field appears), the mismatch
+surfaces as a <a class="autorefs autorefs-internal" href="../../api/pydantic_core/#pydantic_core.ValidationError"><code>ValidationError</code></a> at runtime, often the first sign the
+source has drifted from the schema you generated against.</p>
+<p>If you <a href="../../errors/troubleshooting/">record validations with Logfire</a>, those failures are stored with
+the payload that caused them, so you can see <em>what</em> changed and <em>when</em> it started, useful when you
+don't own the schema and can't regenerate the models until you know what moved.</p>
 
 
 

@@ -4002,10 +4002,9 @@ of the validators documentation.</p>
 </table>
 <p>The first item in the <a class="autorefs autorefs-internal" href="../../api/pydantic_core/#pydantic_core.ErrorDetails.loc"><code>loc</code></a> list will be the field where the error occurred, and if the field is a
 <a href="../../concepts/models/#nested-models">sub-model</a>, subsequent items will be present to indicate the nested location of the error.</p>
-<div class="admonition tip">
-<p class="admonition-title">Logfire integration</p>
-<p><a href="../troubleshooting/">Logfire</a> can be used to record validation errors, with the input that produced it.</p>
-</div>
+<p>For validations spread across a running service, <a href="../troubleshooting/">Logfire</a> records this same
+structured error list together with the complete validation input and trace context, without wrapping
+each call in <code>try</code>/<code>except</code>.</p>
 <p>As a demonstration:</p>
 <div class="language-python highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">pydantic</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">Field</span><span class="p">,</span> <span class="n">ValidationError</span><span class="p">,</span> <span class="n">field_validator</span>
 

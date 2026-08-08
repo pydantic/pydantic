@@ -2809,6 +2809,23 @@ to help you monitor and understand your
     </span>
   </a>
   
+    <nav class="md-nav" aria-label="Model validation and serialization">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#the-plugin-hook-around-validation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The plugin hook around validation
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
 </li>
       
     </ul>
@@ -3963,6 +3980,23 @@ to help you monitor and understand your
     </span>
   </a>
   
+    <nav class="md-nav" aria-label="Model validation and serialization">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#the-plugin-hook-around-validation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The plugin hook around validation
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
 </li>
       
     </ul>
@@ -4181,6 +4215,13 @@ and serialization happens at the <em>instance</em> level. Both these concepts ar
    <code>pydantic-core</code> will read the instance's <code>__dict__</code> attribute and built the appropriate result
    (again, following the core schema of the model).</li>
 </ol>
+<h3 id="the-plugin-hook-around-validation">The plugin hook around validation<a class="headerlink" href="#the-plugin-hook-around-validation" title="Permanent link">&para;</a></h3>
+<p>Pydantic wraps the <code>SchemaValidator</code> in a plugin layer: when plugins are installed, each of the
+<code>validate_python</code>, <code>validate_json</code>, and <code>validate_strings</code> calls can be intercepted, letting a plugin
+observe the input, result, and any error for every validation. This is the mechanism behind
+observability tooling such as <a href="../../integrations/logfire/">Logfire</a>, which uses it to record validations
+without any per-call instrumentation. Plugins are configured per model through the
+<a class="autorefs autorefs-internal" href="../../api/config/#pydantic.config.ConfigDict.plugin_settings"><code>plugin_settings</code></a> configuration value.</p>
 
 
 

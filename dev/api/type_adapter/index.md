@@ -227,9 +227,7 @@ validate_python(
 
 Validate a Python object against the model.
 
-Logfire integration
-
-Instrumentation of validation errors are supported by [Logfire](../../integrations/logfire/). See [Troubleshooting validation errors](../../errors/troubleshooting/) for more details.
+A ValidationError reports the rejected locations and values. If you record validations with [Logfire](../../integrations/logfire/), the complete object and trace context are retained alongside the error — `TypeAdapter` validations are captured the same way as model validations (see [Troubleshooting validation errors](../../errors/troubleshooting/)).
 
 Parameters:
 
@@ -261,9 +259,10 @@ def validate_python(
 ) -> T:
     """Validate a Python object against the model.
 
-    !!! tip "Logfire integration"
-        Instrumentation of validation errors are supported by [Logfire](../integrations/logfire.md).
-        See [Troubleshooting validation errors](../errors/troubleshooting.md) for more details.
+    A [`ValidationError`][pydantic_core.ValidationError] reports the rejected locations and values.
+    If you record validations with [Logfire](../integrations/logfire.md), the complete object and trace
+    context are retained alongside the error — `TypeAdapter` validations are captured the same way as
+    model validations (see [Troubleshooting validation errors](../errors/troubleshooting.md)).
 
     Args:
         object: The Python object to validate against the model.
@@ -331,9 +330,7 @@ Usage Documentation
 
 Validate a JSON string or bytes against the model.
 
-Logfire integration
-
-Instrumentation of validation errors are supported by [Logfire](../../integrations/logfire/). See [Troubleshooting validation errors](../../errors/troubleshooting/) for more details.
+JSON validated this way often comes from an external source, where a ValidationError can be the first sign that the source changed shape. [Logfire](../../integrations/logfire/) retains the complete document and trace context alongside the errors — see [Troubleshooting validation errors](../../errors/troubleshooting/).
 
 Parameters:
 
@@ -363,9 +360,10 @@ def validate_json(
 
     Validate a JSON string or bytes against the model.
 
-    !!! tip "Logfire integration"
-        Instrumentation of validation errors are supported by [Logfire](../integrations/logfire.md).
-        See [Troubleshooting validation errors](../errors/troubleshooting.md) for more details.
+    JSON validated this way often comes from an external source, where a
+    [`ValidationError`][pydantic_core.ValidationError] can be the first sign that the source changed
+    shape. [Logfire](../integrations/logfire.md) retains the complete document and trace context
+    alongside the errors — see [Troubleshooting validation errors](../errors/troubleshooting.md).
 
     Args:
         data: The JSON data to validate against the model.

@@ -335,6 +335,4 @@ Note that if the context property is not included in model_validate(), then cont
 
 More details about validation context can be found in the [validators documentation](../../concepts/validators/#validation-context).
 
-Logfire integration
-
-The [Logfire integration](../../integrations/logfire/) also records the message from your custom validators.
+The messages you write in these `raise ValueError(...)` calls are worth crafting: they're what you'll read when the rule eventually rejects real data. They also carry through to tooling that consumes the structured errors: [Logfire's explanations of failed validations](../../errors/troubleshooting/), for example, include the messages from your custom validators.
