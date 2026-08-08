@@ -456,9 +456,10 @@ def field_validator(  # noqa: D417
 
     For more in depth examples, see [Field Validators](../concepts/validators.md#field-validators).
 
-    !!! tip "Logfire integration"
-        Instrumentation of validation errors from field validators is supported by [Logfire](../integrations/logfire.md).
-        See [Troubleshooting validation errors](../errors/troubleshooting.md) for more details.
+    Errors raised in a field validator become part of the model's
+    [`ValidationError`][pydantic_core.ValidationError]. In a running application,
+    [Logfire](../integrations/logfire.md) can record the input each failed validation rejected — see
+    [Troubleshooting validation errors](../errors/troubleshooting.md).
 
     Args:
         *fields: The field names the validator should apply to.
@@ -714,9 +715,10 @@ def model_validator(
 
     For more in depth examples, see [Model Validators](../concepts/validators.md#model-validators).
 
-    !!! tip "Logfire integration"
-        Instrumentation of validation errors from model validators is supported by [Logfire](../integrations/logfire.md).
-        See [Troubleshooting validation errors](../errors/troubleshooting.md) for more details.
+    Cross-field rules like the one above tend to fail on combinations of values you didn't anticipate.
+    To see the combination that failed in a running application, record validations with
+    [Logfire](../integrations/logfire.md) (see
+    [Troubleshooting validation errors](../errors/troubleshooting.md)).
 
     Args:
         mode: A required string literal that specifies the validation mode.

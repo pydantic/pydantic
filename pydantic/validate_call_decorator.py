@@ -94,9 +94,10 @@ def validate_call(
 
     Usage may be either as a plain decorator `@validate_call` or with arguments (`@validate_call(...)`).
 
-    !!! tip "Logfire integration"
-        Instrumentation of validation errors are supported by [Logfire](../integrations/logfire.md).
-        See [Troubleshooting validation errors](../errors/troubleshooting.md) for more details.
+    When a decorated call fails, the [`ValidationError`][pydantic_core.ValidationError] names the rejected
+    argument, but the traceback won't show the value the caller passed.
+    [Logfire](../integrations/logfire.md) records failing calls along with their arguments — see
+    [Troubleshooting validation errors](../errors/troubleshooting.md).
 
     Args:
         func: The function to be wrapped.
