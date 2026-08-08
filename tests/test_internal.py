@@ -16,6 +16,7 @@ from pydantic_core import core_schema as cs
 from pydantic import BaseModel, TypeAdapter
 from pydantic._internal._config import ConfigWrapper
 from pydantic._internal._core_metadata import update_core_metadata
+from pydantic._internal._core_utils import get_type_ref
 from pydantic._internal._fields import resolve_default_value
 from pydantic._internal._generate_schema import GenerateSchema
 from pydantic._internal._repr import Representation
@@ -31,6 +32,16 @@ def init_schema_and_cleaned_schema(type_: Any) -> tuple[CoreSchema, CoreSchema]:
     cleaned_schema = gen.clean_schema(cleaned_schema)
     assert TypeAdapter(type_).pydantic_complete  # Just to make sure it works and test setup is sane
     return schema, cleaned_schema
+
+
+def test_get_type_ref_when_repr_fails() -> None:
+    class Origin:
+        def __repr__(self) -> str:
+            raise RuntimeError('repr unavailable')
+
+    origin = Origin()
+
+    assert get_type_ref(origin).endswith(f'.<No __qualname__>:{id(origin)}')
 
 
 def test_simple_core_schema_with_no_references() -> None:
