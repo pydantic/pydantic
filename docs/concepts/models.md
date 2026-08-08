@@ -557,12 +557,10 @@ except ValidationError as e:
     """
 ```
 
-!!! tip "Logfire integration"
-    In an example like this one, the offending `data` is right there in the code. In a running application
-    it usually isn't. The exception says which fields failed, but the input that produced it is whatever a
-    user, API, or job happened to send at the time. If you need to see that input as well,
-    [Logfire can record failed validations](../errors/troubleshooting.md) together with the data that
-    caused them.
+In an example like this one, the offending `data` is right there in the code. A
+[`ValidationError`][pydantic_core.ValidationError] includes the value rejected at each failing
+location, but in a running application you may also need the complete validation input and its request
+or job context. [Logfire records failed validations](../errors/troubleshooting.md) with both.
 
 ## Arbitrary class instances
 
