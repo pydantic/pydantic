@@ -544,6 +544,51 @@ def test_model_serializer_plain_json_return_type():
         assert m.model_dump_json() == '666'
 
 
+def test_model_serializer_wrap_json_exclude_python():
+    """https://github.com/pydantic/pydantic/issues/13601 — when_used='json' model serializer
+    should not cause exclude/include to be ignored in python mode (fallback path)."""
+
+    class MyModel(BaseModel):
+        a: int
+        b: int
+
+        @model_serializer(mode='wrap', when_used='json')
+        def _serialize(self, handler, info):
+            return handler(self)
+
+    m = MyModel(a=1, b=2)
+    assert m.model_dump(exclude={'b'}) == {'a': 1}
+    assert m.model_dump(mode='json', exclude={'b'}) == {'a': 1}
+    assert m.model_dump_json(exclude={'b'}) == '{"a":1}'
+
+    assert m.model_dump(include={'a'}) == {'a': 1}
+    assert m.model_dump(mode='json', include={'a'}) == {'a': 1}
+
+    assert m.model_dump() == {'a': 1, 'b': 2}
+    assert m.model_dump(mode='json') == {'a': 1, 'b': 2}
+
+
+def test_model_serializer_plain_json_exclude_python():
+    """Same as above but for plain mode — the fallback (default model serializer)
+    must honour exclude/include in python mode."""
+
+    class MyModel(BaseModel):
+        a: int
+        b: int
+
+        @model_serializer(when_used='json')
+        def _serialize(self) -> dict:
+            return {'a': self.a, 'b': self.b}
+
+    m = MyModel(a=1, b=2)
+    # In python mode the serializer is skipped, fallback honours exclude
+    assert m.model_dump(exclude={'b'}) == {'a': 1}
+    assert m.model_dump(include={'a'}) == {'a': 1}
+    assert m.model_dump() == {'a': 1, 'b': 2}
+    # In json mode the serializer is used, returns a plain dict (exclude not applied to custom output)
+    assert m.model_dump(mode='json') == {'a': 1, 'b': 2}
+
+
 def test_model_serializer_wrong_args():
     m = (
         r'Unrecognized model_serializer function signature for '
