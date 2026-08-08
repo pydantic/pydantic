@@ -389,13 +389,12 @@ def max_digits_validator(x: Any, max_digits: Any) -> Any:
 def decimal_places_validator(x: Any, decimal_places: Any) -> Any:
     try:
         decimal_places_, _ = _extract_decimal_digits_info(x)
-        if decimal_places_ > decimal_places:
-            normalized_decimal_places, _ = _extract_decimal_digits_info(x.normalize())
-            if normalized_decimal_places > decimal_places:
-                raise PydanticKnownError(
-                    'decimal_max_places',
-                    {'decimal_places': decimal_places},
-                )
+        normalized_decimal_places, _ = _extract_decimal_digits_info(x.normalize())
+        if (decimal_places_ > decimal_places) and (normalized_decimal_places > decimal_places):
+            raise PydanticKnownError(
+                'decimal_max_places',
+                {'decimal_places': decimal_places},
+            )
         return x
     except TypeError:
         raise TypeError(f"Unable to apply constraint 'decimal_places' to supplied value {x}")
@@ -453,7 +452,7 @@ def get_defaultdict_default_default_factory(values_source_type: Any) -> Callable
             return type_var_default_factory
         elif values_type not in allowed_default_types:
             # a somewhat subjective set of types that have reasonable default values
-            allowed_msg = ', '.join([t.__name__ for t in set(allowed_default_types.values())])
+            allowed_msg = ', '.join([t.__name__ for t in set(allowed_default_types.keys())])
             raise PydanticSchemaGenerationError(
                 f'Unable to infer a default factory for keys of type {values_source_type}.'
                 f' Only {allowed_msg} are supported, other types require an explicit default factory'
