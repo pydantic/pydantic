@@ -34,9 +34,9 @@ The [`ErrorDetails`][pydantic_core.ErrorDetails] object is a dictionary. It cont
 The first item in the [`loc`][pydantic_core.ErrorDetails.loc] list will be the field where the error occurred, and if the field is a
 [sub-model](../concepts/models.md#nested-models), subsequent items will be present to indicate the nested location of the error.
 
-Accessing errors this way requires a `try`/`except` around the validation call. For validations spread
-across a running service, [Logfire](troubleshooting.md) records the same structured error list on each
-failure, together with the input that produced it, without wrapping each call.
+For validations spread across a running service, [Logfire](troubleshooting.md) records this same
+structured error list together with the complete validation input and trace context, without wrapping
+each call in `try`/`except`.
 
 As a demonstration:
 

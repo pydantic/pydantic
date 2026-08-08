@@ -716,8 +716,9 @@ def model_validator(
     For more in depth examples, see [Model Validators](../concepts/validators.md#model-validators).
 
     Cross-field rules like the one above tend to fail on combinations of values you didn't anticipate.
-    To see the combination that failed in a running application, record validations with
-    [Logfire](../integrations/logfire.md) (see
+    The resulting [`ValidationError`][pydantic_core.ValidationError] includes the input that failed;
+    [Logfire](../integrations/logfire.md) can retain these failures with their trace context so you can
+    investigate patterns in a running application (see
     [Troubleshooting validation errors](../errors/troubleshooting.md)).
 
     Args:
