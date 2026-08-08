@@ -217,17 +217,26 @@ macro_rules! function_type_serializer {
                 state: &mut SerializationState<'py>,
             ) -> PyResult<Py<PyAny>> {
                 let py = value.py();
-                let (ret_serializer, v) = match self.call(value, state) {
-                    Ok((true, v)) => (&*self.return_serializer, v),
-                    Ok((false, v)) => (self.get_fallback_serializer(), v),
+                match self.call(value, state) {
+                    Ok((true, v)) => {
+                        // The user function was called and is responsible for filtering
+                        // (via `SerializationCallable` / `SerializationInfo`), so reset
+                        // include/exclude here to avoid double-filtering downstream.
+                        let state = &mut state.scoped_include_exclude(IncludeExclude::empty());
+                        self.return_serializer.to_python(v.bind(py), state)
+                    }
+                    Ok((false, v)) => {
+                        // `when_used` decided not to use this serializer, so the user
+                        // function was *not* called and no filtering has happened yet.
+                        // Preserve the original include/exclude so the fallback
+                        // serializer still applies field filtering (see #13601).
+                        self.get_fallback_serializer().to_python(v.bind(py), state)
+                    }
                     Err(err) => {
                         on_error(py, err, &self.function_name, state)?;
-                        return infer_to_python(value, state);
+                        infer_to_python(value, state)
                     }
-                };
-                // None for include/exclude here, as filtering should be done
-                let state = &mut state.scoped_include_exclude(IncludeExclude::empty());
-                ret_serializer.to_python(v.bind(py), state)
+                }
             }
 
             fn json_key<'a, 'py>(
@@ -236,19 +245,23 @@ macro_rules! function_type_serializer {
                 state: &mut SerializationState<'py>,
             ) -> PyResult<Cow<'a, str>> {
                 let py = key.py();
-                let (ret_serializer, v) = match self.call(key, state) {
-                    Ok((true, v)) => (&*self.return_serializer, v),
-                    Ok((false, v)) => (self.get_fallback_serializer(), v),
+                match self.call(key, state) {
+                    Ok((true, v)) => {
+                        let state = &mut state.scoped_include_exclude(IncludeExclude::empty());
+                        self.return_serializer
+                            .json_key(v.bind(py), state)
+                            .map(|cow| Cow::Owned(cow.into_owned()))
+                    }
+                    Ok((false, v)) => {
+                        self.get_fallback_serializer()
+                            .json_key(v.bind(py), state)
+                            .map(|cow| Cow::Owned(cow.into_owned()))
+                    }
                     Err(err) => {
                         on_error(py, err, &self.function_name, state)?;
-                        return infer_json_key(key, state);
+                        infer_json_key(key, state)
                     }
-                };
-                // None for include/exclude here, as filtering should be done
-                let state = &mut state.scoped_include_exclude(IncludeExclude::empty());
-                ret_serializer
-                    .json_key(v.bind(py), state)
-                    .map(|cow| Cow::Owned(cow.into_owned()))
+                }
             }
 
             fn serde_serialize<'py, S: serde::ser::Serializer>(
@@ -258,17 +271,19 @@ macro_rules! function_type_serializer {
                 state: &mut SerializationState<'py>,
             ) -> Result<S::Ok, S::Error> {
                 let py = value.py();
-                let (ret_serializer, v) = match self.call(value, state) {
-                    Ok((true, v)) => (&*self.return_serializer, v),
-                    Ok((false, v)) => (self.get_fallback_serializer(), v),
+                match self.call(value, state) {
+                    Ok((true, v)) => {
+                        let mut state = state.scoped_include_exclude(IncludeExclude::empty());
+                        self.return_serializer.serde_serialize(v.bind(py), serializer, &mut state)
+                    }
+                    Ok((false, v)) => {
+                        self.get_fallback_serializer().serde_serialize(v.bind(py), serializer, state)
+                    }
                     Err(err) => {
                         on_error(py, err, &self.function_name, state).map_err(py_err_se_err)?;
-                        return infer_serialize(value, serializer, state);
+                        infer_serialize(value, serializer, state)
                     }
-                };
-                // None for include/exclude here, as filtering should be done
-                let mut state = state.scoped_include_exclude(IncludeExclude::empty());
-                ret_serializer.serde_serialize(v.bind(py), serializer, &mut state)
+                }
             }
 
             fn get_name(&self) -> &str {

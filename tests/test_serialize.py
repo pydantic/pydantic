@@ -544,6 +544,60 @@ def test_model_serializer_plain_json_return_type():
         assert m.model_dump_json() == '666'
 
 
+def test_model_serializer_wrap_when_used_json_exclude():
+    """Regression test for https://github.com/pydantic/pydantic/issues/13601.
+
+    When a wrap ``model_serializer`` is gated with ``when_used='json'``, the
+    serializer is skipped in python mode and the fallback path is used.
+    ``exclude`` / ``include`` must still be honoured in that fallback path.
+    """
+    class Gated(BaseModel):
+        a: int
+        b: int
+
+        @model_serializer(mode='wrap', when_used='json')
+        def _serialize(self, handler):
+            return handler(self)
+
+    class Always(BaseModel):
+        a: int
+        b: int
+
+        @model_serializer(mode='wrap')
+        def _serialize(self, handler):
+            return handler(self)
+
+    m = Gated(a=1, b=2)
+    # python mode: serializer is skipped via when_used='json', exclude must still work
+    assert m.model_dump(exclude={'b'}) == {'a': 1}
+    assert m.model_dump(include={'a'}) == {'a': 1}
+    # json mode: serializer runs, exclude must work too
+    assert m.model_dump(mode='json', exclude={'b'}) == {'a': 1}
+    assert m.model_dump_json(exclude={'b'}) == '{"a":1}'
+
+    # control: an always-on wrap serializer honours exclude in both modes
+    am = Always(a=1, b=2)
+    assert am.model_dump(exclude={'b'}) == {'a': 1}
+    assert am.model_dump(mode='json', exclude={'b'}) == {'a': 1}
+
+
+def test_model_serializer_plain_when_used_json_exclude():
+    """The fallback-path include/exclude fix also covers plain model serializers
+    that share the ``function_type_serializer!`` macro (see #13601)."""
+    class M(BaseModel):
+        a: int
+        b: int
+
+        @model_serializer(when_used='json')
+        def _serialize(self):
+            return {'a': self.a, 'b': self.b, 'extra': 1}
+
+    m = M(a=1, b=2)
+    # python mode: plain serializer is skipped, exclude applies to the fallback (model fields)
+    assert m.model_dump(exclude={'b'}) == {'a': 1}
+    assert m.model_dump(include={'a'}) == {'a': 1}
+
+
 def test_model_serializer_wrong_args():
     m = (
         r'Unrecognized model_serializer function signature for '
