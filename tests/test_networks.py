@@ -939,6 +939,12 @@ def test_json():
         ('first.last <first.last@example.com>', 'first.last', 'first.last@example.com'),
         ("Shaquille O'Neal <shaq@example.com>", "Shaquille O'Neal", 'shaq@example.com'),
         ('Homer J. Simpson <homer@thesimpsons.com>', 'Homer J. Simpson', 'homer@thesimpsons.com'),
+        pytest.param(
+            '"Alice\tSmith" <alice@example.com>', 'Alice\tSmith', 'alice@example.com', id='htab-in-display-name'
+        ),
+        pytest.param(
+            '"Smith, Alice" <alice@example.com>', 'Smith, Alice', 'alice@example.com', id='comma-in-quoted-name'
+        ),
     ],
 )
 def test_address_valid(value, name, email):
@@ -972,6 +978,31 @@ def test_address_valid(value, name, email):
         ('foobar <foobar@example.com>>', None),
         ('foobar <<foobar<@example.com>', None),
         ('foobar <>', None),
+        pytest.param(
+            '"Alice\r\nBcc: victim@example.com" <alice@example.com>',
+            'The display name contains control characters',
+            id='crlf-in-display-name',
+        ),
+        pytest.param(
+            '"a\x00b" <alice@example.com>',
+            'The display name contains control characters',
+            id='nul-in-display-name',
+        ),
+        pytest.param(
+            '"Alice\x85Bcc: victim@example.com" <alice@example.com>',
+            'The display name contains control characters',
+            id='c1-in-display-name',
+        ),
+        pytest.param(
+            '"a@b.com" <evil@x.com>, x" <real@r.com>',
+            'The display name contains an unescaped double quote',
+            id='quote-in-display-name',
+        ),
+        pytest.param(
+            '"Alice\\" <alice@example.com>',
+            'The display name contains a backslash',
+            id='backslash-in-display-name',
+        ),
         pytest.param('foobar <' + 'a' * 4096 + '@example.com>', 'Length must not exceed 2048 characters', id='long'),
     ],
 )
@@ -1046,6 +1077,28 @@ def test_name_email_serialization():
 
     obj = json.loads(m.model_dump_json())
     Model(email=obj['email'])
+
+
+def test_name_email_rejects_unsafe_display_names():
+    with pytest.raises(PydanticCustomError, match='The display name contains control characters'):
+        NameEmail('Alice\r\nBcc: victim@example.com', 'alice@example.com')
+    with pytest.raises(PydanticCustomError, match='The display name contains an unescaped double quote'):
+        NameEmail('a@b.com" <evil@x.com>, x', 'real@r.com')
+    with pytest.raises(PydanticCustomError, match='The display name contains a backslash'):
+        NameEmail('Alice\\', 'alice@example.com')
+
+
+@pytest.mark.skipif(not email_validator, reason='email_validator not installed')
+def test_name_email_quotes_names_containing_specials():
+    # A bare `,`, `<` or `>` in an unquoted display name splits or terminates the address list
+    # when the serialized form is re-parsed, e.g. by `email.utils.getaddresses`:
+    assert str(NameEmail('Smith, Alice', 'alice@example.com')) == '"Smith, Alice" <alice@example.com>'
+    assert str(NameEmail('Alice <bob', 'alice@example.com')) == '"Alice <bob" <alice@example.com>'
+    assert str(NameEmail('Homer J. Simpson', 'homer@thesimpsons.com')) == 'Homer J. Simpson <homer@thesimpsons.com>'
+
+    ta = TypeAdapter(NameEmail)
+    for name in ('Smith, Alice', 'Alice <bob', 'x>', 'a; b', 'c (d)'):
+        assert ta.validate_python(str(NameEmail(name, 'alice@example.com'))) == NameEmail(name, 'alice@example.com')
 
 
 def test_specialized_urls() -> None:

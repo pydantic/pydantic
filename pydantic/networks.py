@@ -1096,6 +1096,7 @@ class NameEmail(_repr.Representation):
     __slots__ = 'name', 'email'
 
     def __init__(self, name: str, email: str):
+        _validate_display_name(name)
         self.name = name
         self.email = email
 
@@ -1140,7 +1141,9 @@ class NameEmail(_repr.Representation):
             return input_value
 
     def __str__(self) -> str:
-        if '@' in self.name:
+        # A bare name containing RFC 5322 specials would parse as address-list, group or comment
+        # syntax rather than as a display name, so it must be emitted in the quoted form:
+        if not _display_name_specials.isdisjoint(self.name):
             return f'"{self.name}" <{self.email}>'
 
         return f'{self.name} <{self.email}>'
@@ -1319,6 +1322,37 @@ A somewhat arbitrary but very generous number compared to what is allowed by mos
 """
 
 
+_display_name_specials = frozenset('()<>[]:;@,')
+"""RFC 5322 specials (except `.`, kept bare for compatibility, and DQUOTE and backslash, rejected
+at validation) that make a display name unsafe to emit outside a quoted string."""
+
+
+def _validate_display_name(name: str) -> None:
+    """Reject display names that cannot be safely re-emitted in RFC 5322 name-addr form."""
+    # HTAB is valid FWS in an RFC 5322 display name; other C0 controls, DEL and C1 controls are rejected:
+    if any(c != '\t' and (ord(c) < 0x20 or 0x7F <= ord(c) <= 0x9F) for c in name):
+        raise PydanticCustomError(
+            'value_error',
+            'value is not a valid email address: {reason}',
+            {'reason': 'The display name contains control characters'},
+        )
+    # An embedded '"' would prematurely terminate the quoted form produced by `NameEmail.__str__`:
+    if '"' in name:
+        raise PydanticCustomError(
+            'value_error',
+            'value is not a valid email address: {reason}',
+            {'reason': 'The display name contains an unescaped double quote'},
+        )
+    # A '\' in the quoted form starts an RFC 5322 quoted-pair, escaping the following character
+    # (including the closing DQUOTE), and quoted-pairs are not processed when parsing:
+    if '\\' in name:
+        raise PydanticCustomError(
+            'value_error',
+            'value is not a valid email address: {reason}',
+            {'reason': 'The display name contains a backslash'},
+        )
+
+
 def validate_email(value: str) -> tuple[str, str]:
     """Email address validation using [email-validator](https://pypi.org/project/email-validator/).
 
@@ -1351,6 +1385,8 @@ def validate_email(value: str) -> tuple[str, str]:
     if m:
         unquoted_name, quoted_name, value = m.groups()
         name = unquoted_name or quoted_name
+        if name is not None:
+            _validate_display_name(name)
 
     email = value.strip()
 
