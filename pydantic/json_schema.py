@@ -220,6 +220,64 @@ class _DefinitionsRemapping:
         return schema
 
 
+@dataclasses.dataclass(slots=True)
+class _JsUpdatesHandler:
+    """Callable wrapper that applies `pydantic_js_updates` dictionary overrides."""
+
+    current_handler: GetJsonSchemaHandler
+    js_updates: JsonDict
+
+    def __call__(self, schema_or_field: CoreSchemaOrField) -> JsonSchemaValue:
+        return {**self.current_handler(schema_or_field), **self.js_updates}
+
+
+@dataclasses.dataclass(slots=True)
+class _JsExtraHandler:
+    """Callable wrapper that applies `pydantic_js_extra` dictionary or callable modifications."""
+
+    current_handler: GetJsonSchemaHandler
+    js_extra: Any
+
+    def __call__(self, schema_or_field: CoreSchemaOrField) -> JsonSchemaValue:
+        json_schema = self.current_handler(schema_or_field)
+        if isinstance(self.js_extra, dict):
+            json_schema.update(to_jsonable_python(self.js_extra))
+        elif callable(self.js_extra):
+            # similar to typing issue in _update_class_schema when we're working with callable js extra
+            self.js_extra(json_schema)  # type: ignore
+        return json_schema
+
+
+@dataclasses.dataclass(slots=True)
+class _JsFunctionHandler:
+    """Callable wrapper for functions in `pydantic_js_functions`."""
+
+    current_handler: GetJsonSchemaHandler
+    js_modify_function: GetJsonSchemaFunction
+    generate_json_schema: GenerateJsonSchema
+
+    def __call__(self, schema_or_field: CoreSchemaOrField) -> JsonSchemaValue:
+        json_schema = self.js_modify_function(schema_or_field, self.current_handler)
+        if _core_utils.is_core_schema(schema_or_field):
+            json_schema = self.generate_json_schema._populate_defs(schema_or_field, json_schema)
+        original_schema = self.current_handler.resolve_ref_schema(json_schema)
+        ref = json_schema.pop('$ref', None)
+        if ref and json_schema:
+            original_schema.update(json_schema)
+        return original_schema
+
+
+@dataclasses.dataclass(slots=True)
+class _JsAnnotationFunctionHandler:
+    """Callable wrapper for functions in `pydantic_js_annotation_functions`."""
+
+    current_handler: GetJsonSchemaHandler
+    js_modify_function: GetJsonSchemaFunction
+
+    def __call__(self, schema_or_field: CoreSchemaOrField) -> JsonSchemaValue:
+        return self.js_modify_function(schema_or_field, self.current_handler)
+
+
 class GenerateJsonSchema:
     """!!! abstract "Usage Documentation"
         [Customizing the JSON Schema Generation Process](../concepts/json_schema.md#customizing-the-json-schema-generation-process)
@@ -445,7 +503,67 @@ class GenerateJsonSchema:
         self._used = True
         return self.sort(json_schema)
 
-    def generate_inner(self, schema: CoreSchemaOrField) -> JsonSchemaValue:  # noqa: C901
+    def _populate_defs(self, core_schema: CoreSchema, json_schema: JsonSchemaValue) -> JsonSchemaValue:
+        """Populate definitions for a core schema containing a reference.
+
+        Args:
+            core_schema: The core schema to populate definitions from.
+            json_schema: The generated JSON schema value.
+
+        Returns:
+            The schema value, replaced by reference schema if appropriate.
+        """
+        if 'ref' in core_schema:
+            core_ref = CoreRef(core_schema['ref'])  # type: ignore[typeddict-item]
+            defs_ref, ref_json_schema = self.get_cache_defs_ref_schema(core_ref)
+            json_ref = JsonRef(ref_json_schema['$ref'])
+            # Replace the schema if it's not a reference to itself
+            # What we want to avoid is having the def be just a ref to itself
+            # which is what would happen if we blindly assigned any
+            if json_schema.get('$ref', None) != json_ref:
+                self.definitions[defs_ref] = json_schema
+                self._core_defs_invalid_for_json_schema.pop(defs_ref, None)
+            json_schema = ref_json_schema
+        return json_schema
+
+    def _handle_schema(self, schema_or_field: CoreSchemaOrField) -> JsonSchemaValue:
+        """Generate a JSON schema based on the input schema.
+
+        Args:
+            schema_or_field: The core schema to generate a JSON schema from.
+
+        Returns:
+            The generated JSON schema.
+
+        Raises:
+            TypeError: If an unexpected schema type is encountered.
+        """
+        # Generate the core-schema-type-specific bits of the schema generation:
+        json_schema: JsonSchemaValue | None = None
+        if self.mode == 'serialization' and 'serialization' in schema_or_field:
+            # In this case, we skip the JSON Schema generation of the schema
+            # and use the `'serialization'` schema instead (canonical example:
+            # `Annotated[int, PlainSerializer(str)]`).
+            ser_schema = schema_or_field['serialization']  # type: ignore
+            json_schema = self.ser_schema(ser_schema)
+
+            # It might be that the 'serialization'` is skipped depending on `when_used`.
+            # This is only relevant for `nullable` schemas though, so we special case here.
+            if (
+                json_schema is not None
+                and ser_schema.get('when_used') in ('unless-none', 'json-unless-none')
+                and schema_or_field['type'] == 'nullable'
+            ):
+                json_schema = self.get_union_of_schemas([{'type': 'null'}, json_schema])
+        if json_schema is None:
+            if _core_utils.is_core_schema(schema_or_field) or _core_utils.is_core_schema_field(schema_or_field):
+                generate_for_schema_type = self._schema_type_to_method[schema_or_field['type']]
+                json_schema = generate_for_schema_type(schema_or_field)
+            else:
+                raise TypeError(f'Unexpected schema type: schema={schema_or_field}')
+        return json_schema
+
+    def generate_inner(self, schema: CoreSchemaOrField) -> JsonSchemaValue:
         """Generates a JSON schema for a given core schema.
 
         Args:
@@ -453,10 +571,6 @@ class GenerateJsonSchema:
 
         Returns:
             The generated JSON schema.
-
-        TODO: the nested function definitions here seem like bad practice, I'd like to unpack these
-        in a future PR. It'd be great if we could shorten the call stack a bit for JSON schema generation,
-        and I think there's potential for that here.
         """
         # If a schema with the same CoreRef has been handled, just return a reference to it
         # Note that this assumes that it will _never_ be the case that the same CoreRef is used
@@ -467,123 +581,48 @@ class GenerateJsonSchema:
             if core_mode_ref in self.core_to_defs_refs and self.core_to_defs_refs[core_mode_ref] in self.definitions:
                 return {'$ref': self.core_to_json_refs[core_mode_ref]}
 
-        def populate_defs(core_schema: CoreSchema, json_schema: JsonSchemaValue) -> JsonSchemaValue:
-            if 'ref' in core_schema:
-                core_ref = CoreRef(core_schema['ref'])  # type: ignore[typeddict-item]
-                defs_ref, ref_json_schema = self.get_cache_defs_ref_schema(core_ref)
-                json_ref = JsonRef(ref_json_schema['$ref'])
-                # Replace the schema if it's not a reference to itself
-                # What we want to avoid is having the def be just a ref to itself
-                # which is what would happen if we blindly assigned any
-                if json_schema.get('$ref', None) != json_ref:
-                    self.definitions[defs_ref] = json_schema
-                    self._core_defs_invalid_for_json_schema.pop(defs_ref, None)
-                json_schema = ref_json_schema
-            return json_schema
-
-        def handler_func(schema_or_field: CoreSchemaOrField) -> JsonSchemaValue:
-            """Generate a JSON schema based on the input schema.
-
-            Args:
-                schema_or_field: The core schema to generate a JSON schema from.
-
-            Returns:
-                The generated JSON schema.
-
-            Raises:
-                TypeError: If an unexpected schema type is encountered.
-            """
-            # Generate the core-schema-type-specific bits of the schema generation:
-            json_schema: JsonSchemaValue | None = None
-            if self.mode == 'serialization' and 'serialization' in schema_or_field:
-                # In this case, we skip the JSON Schema generation of the schema
-                # and use the `'serialization'` schema instead (canonical example:
-                # `Annotated[int, PlainSerializer(str)]`).
-                ser_schema = schema_or_field['serialization']  # type: ignore
-                json_schema = self.ser_schema(ser_schema)
-
-                # It might be that the 'serialization'` is skipped depending on `when_used`.
-                # This is only relevant for `nullable` schemas though, so we special case here.
-                if (
-                    json_schema is not None
-                    and ser_schema.get('when_used') in ('unless-none', 'json-unless-none')
-                    and schema_or_field['type'] == 'nullable'
-                ):
-                    json_schema = self.get_union_of_schemas([{'type': 'null'}, json_schema])
-            if json_schema is None:
-                if _core_utils.is_core_schema(schema_or_field) or _core_utils.is_core_schema_field(schema_or_field):
-                    generate_for_schema_type = self._schema_type_to_method[schema_or_field['type']]
-                    json_schema = generate_for_schema_type(schema_or_field)
-                else:
-                    raise TypeError(f'Unexpected schema type: schema={schema_or_field}')
-            return json_schema
-
-        current_handler = _schema_generation_shared.GenerateJsonSchemaHandler(self, handler_func)
-
         metadata = cast(_core_metadata.CoreMetadata, schema.get('metadata', {}))
 
-        # TODO: I dislike that we have to wrap these basic dict updates in callables, is there any way around this?
+        js_updates = metadata.get('pydantic_js_updates')
+        js_extra = metadata.get('pydantic_js_extra')
+        js_functions = metadata.get('pydantic_js_functions')
+        js_annotation_functions = metadata.get('pydantic_js_annotation_functions')
 
-        if js_updates := metadata.get('pydantic_js_updates'):
+        if not js_updates and not js_extra and not js_functions and not js_annotation_functions:
+            json_schema = self._handle_schema(schema)
+            if _core_utils.is_core_schema(schema):
+                json_schema = self._populate_defs(schema, json_schema)
+            return json_schema
 
-            def js_updates_handler_func(
-                schema_or_field: CoreSchemaOrField,
-                current_handler: GetJsonSchemaHandler = current_handler,
-            ) -> JsonSchemaValue:
-                json_schema = {**current_handler(schema_or_field), **js_updates}
-                return json_schema
+        current_handler = _schema_generation_shared.GenerateJsonSchemaHandler(self, self._handle_schema)
 
-            current_handler = _schema_generation_shared.GenerateJsonSchemaHandler(self, js_updates_handler_func)
+        if js_updates:
+            current_handler = _schema_generation_shared.GenerateJsonSchemaHandler(
+                self, _JsUpdatesHandler(current_handler, js_updates)
+            )
 
-        if js_extra := metadata.get('pydantic_js_extra'):
+        if js_extra:
+            current_handler = _schema_generation_shared.GenerateJsonSchemaHandler(
+                self, _JsExtraHandler(current_handler, js_extra)
+            )
 
-            def js_extra_handler_func(
-                schema_or_field: CoreSchemaOrField,
-                current_handler: GetJsonSchemaHandler = current_handler,
-            ) -> JsonSchemaValue:
-                json_schema = current_handler(schema_or_field)
-                if isinstance(js_extra, dict):
-                    json_schema.update(to_jsonable_python(js_extra))
-                elif callable(js_extra):
-                    # similar to typing issue in _update_class_schema when we're working with callable js extra
-                    js_extra(json_schema)  # type: ignore
-                return json_schema
+        if js_functions:
+            for js_modify_function in js_functions:
+                current_handler = _schema_generation_shared.GenerateJsonSchemaHandler(
+                    self, _JsFunctionHandler(current_handler, js_modify_function, self)
+                )
 
-            current_handler = _schema_generation_shared.GenerateJsonSchemaHandler(self, js_extra_handler_func)
-
-        for js_modify_function in metadata.get('pydantic_js_functions', ()):
-
-            def new_handler_func(
-                schema_or_field: CoreSchemaOrField,
-                current_handler: GetJsonSchemaHandler = current_handler,
-                js_modify_function: GetJsonSchemaFunction = js_modify_function,
-            ) -> JsonSchemaValue:
-                json_schema = js_modify_function(schema_or_field, current_handler)
-                if _core_utils.is_core_schema(schema_or_field):
-                    json_schema = populate_defs(schema_or_field, json_schema)
-                original_schema = current_handler.resolve_ref_schema(json_schema)
-                ref = json_schema.pop('$ref', None)
-                if ref and json_schema:
-                    original_schema.update(json_schema)
-                return original_schema
-
-            current_handler = _schema_generation_shared.GenerateJsonSchemaHandler(self, new_handler_func)
-
-        for js_modify_function in metadata.get('pydantic_js_annotation_functions', ()):
-
-            def new_handler_func(
-                schema_or_field: CoreSchemaOrField,
-                current_handler: GetJsonSchemaHandler = current_handler,
-                js_modify_function: GetJsonSchemaFunction = js_modify_function,
-            ) -> JsonSchemaValue:
-                return js_modify_function(schema_or_field, current_handler)
-
-            current_handler = _schema_generation_shared.GenerateJsonSchemaHandler(self, new_handler_func)
+        if js_annotation_functions:
+            for js_modify_function in js_annotation_functions:
+                current_handler = _schema_generation_shared.GenerateJsonSchemaHandler(
+                    self, _JsAnnotationFunctionHandler(current_handler, js_modify_function)
+                )
 
         json_schema = current_handler(schema)
         if _core_utils.is_core_schema(schema):
-            json_schema = populate_defs(schema, json_schema)
+            json_schema = self._populate_defs(schema, json_schema)
         return json_schema
+
 
     def sort(self, value: JsonSchemaValue, parent_key: str | None = None) -> JsonSchemaValue:
         """Override this method to customize the sorting of the JSON schema (e.g., don't sort at all, sort all keys unconditionally, etc.)
