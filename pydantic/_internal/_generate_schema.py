@@ -794,12 +794,18 @@ class GenerateSchema:
                 - If `typing.TypedDict` is used instead of `typing_extensions.TypedDict` on Python < 3.12.
                 - If `__modify_schema__` method is used instead of `__get_pydantic_json_schema__`.
         """
-        schema = self._generate_schema_from_get_schema_method(obj, obj)
+        origin = get_origin(obj)
+        schema: CoreSchema | None = None
+        if origin is None:
+            # If the type has an origin, it is guaranteed to *not* be an ordinary class that could have
+            # a `__get_pydantic_core_schema__()` method:
+            schema = self._generate_schema_from_get_schema_method(obj, obj)
 
         if schema is None:
-            schema = self._generate_schema_inner(obj)
+            schema = self._generate_schema_inner(obj, origin)
 
-        metadata_js_function = _extract_get_pydantic_json_schema(obj)
+        # `__get_pydantic_json_schema__()` is checked on the origin if it exists:
+        metadata_js_function = _extract_get_pydantic_json_schema(origin if origin is not None else obj)
         if metadata_js_function is not None:
             metadata_schema = resolve_original_schema(schema, self.defs)
             if metadata_schema:
@@ -958,9 +964,6 @@ class GenerateSchema:
         BaseModel_ = import_cached_base_model()
 
         get_schema = getattr(obj, '__get_pydantic_core_schema__', None)
-        is_base_model_get_schema = (
-            getattr(get_schema, '__func__', None) is BaseModel_.__get_pydantic_core_schema__.__func__  # pyright: ignore[reportFunctionMemberAccess]
-        )
 
         if (
             get_schema is not None
@@ -969,7 +972,7 @@ class GenerateSchema:
             # model that overrides `__get_pydantic_core_schema__`. However, it raises a deprecation
             # warning stating that the method will be removed, and during the core schema gen we actually
             # don't call the method:
-            and not is_base_model_get_schema
+            and getattr(get_schema, '__func__', None) is not BaseModel_.__get_pydantic_core_schema__.__func__  # pyright: ignore[reportFunctionMemberAccess]
         ):
             # Some referenceable types might have a `__get_pydantic_core_schema__` method
             # defined on it by users (e.g. on a dataclass). This generally doesn't play well
@@ -1070,11 +1073,11 @@ class GenerateSchema:
             raise TypeError(f'Expected two type arguments for {origin}, got 1')
         return args[0], args[1]
 
-    def _generate_schema_inner(self, obj: Any) -> core_schema.CoreSchema:
+    def _generate_schema_inner(self, obj: Any, origin: Any | None = PydanticUndefined) -> core_schema.CoreSchema:
         if typing_objects.is_self(obj):
             obj = self._resolve_self_type(obj)
 
-        origin = get_origin(obj)
+        origin = origin if origin is not PydanticUndefined else get_origin(obj)
 
         if is_union_origin(origin):
             return self._union_schema(obj)
@@ -2254,12 +2257,18 @@ class GenerateSchema:
         pydantic_js_annotation_functions: list[GetJsonSchemaFunction] = []
 
         def inner_handler(obj: Any) -> CoreSchema:
-            schema = self._generate_schema_from_get_schema_method(obj, source_type)
+            origin = get_origin(obj)
+            schema: CoreSchema | None = None
+            if origin is None:
+                # If the type has an origin, it is guaranteed to *not* be an ordinary class that could have
+                # a `__get_pydantic_core_schema__()` method:
+                schema = self._generate_schema_from_get_schema_method(obj, source_type)
 
             if schema is None:
-                schema = self._generate_schema_inner(obj)
+                schema = self._generate_schema_inner(obj, origin)
 
-            metadata_js_function = _extract_get_pydantic_json_schema(obj)
+            # `__get_pydantic_json_schema__()` is checked on the origin if it exists:
+            metadata_js_function = _extract_get_pydantic_json_schema(origin if origin is not None else obj)
             if metadata_js_function is not None:
                 metadata_schema = resolve_original_schema(schema, self.defs)
                 if metadata_schema is not None:
@@ -2729,11 +2738,6 @@ def _extract_get_pydantic_json_schema(tp: Any) -> GetJsonSchemaFunction | None:
                 f'Use `__get_pydantic_json_schema__` instead{f" in class `{cls_name}`" if cls_name else ""}.',
                 code='custom-json-schema',
             )
-
-    if (origin := get_origin(tp)) is not None:
-        # Generic aliases proxy attribute access to the origin, *except* dunder attributes,
-        # such as `__get_pydantic_json_schema__`, hence the explicit check.
-        return _extract_get_pydantic_json_schema(origin)
 
     if js_modify_function is None:
         return None
