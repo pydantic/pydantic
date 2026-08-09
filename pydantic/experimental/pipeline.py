@@ -651,7 +651,12 @@ def _apply_constraint(  # noqa: C901
         assert isinstance(constraint, Pattern)
         if s and s['type'] == 'str':
             s = s.copy()
-            s['pattern'] = constraint.pattern
+            # Keep the compiled pattern rather than reducing it to `constraint.pattern`: the source
+            # string alone drops the `re` flags, and pydantic-core's regex defaults differ from
+            # Python's (e.g. Unicode-mode `\w`), so a pattern compiled with re.ASCII would silently
+            # stop being ASCII-only. The string schema accepts a compiled pattern and honors its
+            # flags, same as `StringConstraints`.
+            s['pattern'] = constraint
         else:
 
             def check_pattern(v: object) -> bool:
