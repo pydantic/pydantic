@@ -492,3 +492,37 @@ def test_field_title_generator_returns_invalid_type(invalid_return_value, TypedD
             field_a: Annotated[str, Field(field_title_generator=lambda f, _: invalid_return_value)]
 
         TypeAdapter(MyTypedDict)
+
+
+def test_submodel_field_title_generator_inheritance():
+    class Model(BaseModel, field_title_generator=lambda v, _: v + 'a'):
+        a: int
+        explicit: int = Field(title='ExplicitTitle')
+        field_gen: int = Field(field_title_generator=lambda v, _: 'field_' + v)
+
+        @computed_field
+        def c(self) -> int:
+            return 1
+
+        @computed_field(title='ExplicitComputedTitle')
+        def explicit_c(self) -> int:
+            return 2
+
+    class Sub(Model, field_title_generator=lambda v, _: v + 'b'):
+        b: int
+
+        @computed_field
+        def d(self) -> int:
+            return 3
+
+    assert Model.model_fields['a'].title == 'aa'
+    assert Sub.model_fields['a'].title == 'ab'
+    assert Sub.model_fields['b'].title == 'bb'
+    assert Sub.model_fields['explicit'].title == 'ExplicitTitle'
+    assert Sub.model_fields['field_gen'].title == 'field_field_gen'
+
+    assert Model.model_computed_fields['c'].title == 'ca'
+    assert Sub.model_computed_fields['c'].title == 'cb'
+    assert Sub.model_computed_fields['d'].title == 'db'
+    assert Sub.model_computed_fields['explicit_c'].title == 'ExplicitComputedTitle'
+
