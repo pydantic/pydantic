@@ -2,7 +2,7 @@ use pyo3::intern;
 use pyo3::prelude::*;
 use pyo3::types::PyDict;
 
-use crate::common::prebuilt::get_prebuilt;
+use crate::common::prebuilt::{PrebuiltAttr, get_prebuilt};
 use crate::errors::ValResult;
 use crate::input::Input;
 
@@ -16,7 +16,7 @@ pub struct PrebuiltValidator {
 
 impl PrebuiltValidator {
     pub fn try_get_from_schema(type_: &str, schema: &Bound<'_, PyDict>) -> PyResult<Option<CombinedValidator>> {
-        get_prebuilt(type_, schema, "__pydantic_validator__", |py_any| {
+        get_prebuilt(type_, schema, PrebuiltAttr::Validator, |py_any| {
             let schema_validator: Py<SchemaValidator> = match py_any.extract() {
                 Ok(schema_validator) => schema_validator,
                 // `__pydantic_validator__` may be a `PluggableSchemaValidator` instance (from `pydantic.plugin`),

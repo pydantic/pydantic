@@ -4,8 +4,9 @@ use pyo3::prelude::*;
 use pyo3::types::PyDict;
 
 use crate::SchemaSerializer;
+use crate::common::prebuilt::{PrebuiltAttr, get_prebuilt};
 use crate::serializers::SerializationState;
-use crate::{common::prebuilt::get_prebuilt, serializers::polymorphism_trampoline::PolymorphismTrampoline};
+use crate::serializers::polymorphism_trampoline::PolymorphismTrampoline;
 
 use super::shared::{CombinedSerializer, TypeSerializer};
 
@@ -16,7 +17,7 @@ pub struct PrebuiltSerializer {
 
 impl PrebuiltSerializer {
     pub fn try_get_from_schema(type_: &str, schema: &Bound<'_, PyDict>) -> PyResult<Option<CombinedSerializer>> {
-        get_prebuilt(type_, schema, "__pydantic_serializer__", |py_any| {
+        get_prebuilt(type_, schema, PrebuiltAttr::Serializer, |py_any| {
             let schema_serializer = py_any.extract::<Py<SchemaSerializer>>()?;
 
             let mut serializer = schema_serializer.get().serializer.as_ref();

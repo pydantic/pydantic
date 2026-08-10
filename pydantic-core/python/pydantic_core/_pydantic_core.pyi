@@ -1113,3 +1113,61 @@ class TzInfo(datetime.tzinfo):
         More info can be found at [`tzinfo.fromutc`][datetime.tzinfo.fromutc]."""
 
     def __deepcopy__(self, _memo: dict[Any, Any]) -> TzInfo: ...
+
+def _model_class_getattr(cls: type[Any], name: str, default: Any, /) -> Any:
+    """
+    Private helper used by `pydantic._internal._fields`: the equivalent of `getattr(cls, name, default)`
+    for classes whose metaclass is Pydantic's `ModelMetaclass`, cheaper for missing attributes.
+    Only available on CPython.
+    """
+
+def _model_class_hasattr(cls: type[Any], name: str, /) -> bool:
+    """
+    Private helper used by `pydantic._internal._fields`: the equivalent of `hasattr(cls, name)`
+    for classes whose metaclass is Pydantic's `ModelMetaclass`, cheaper for missing attributes.
+    Only available on CPython.
+    """
+
+def _type_own_dict_get(cls: type[Any], name: str, default: Any, /) -> Any:
+    """
+    Private helper used by `pydantic._internal`: the equivalent of `cls.__dict__.get(name, default)`,
+    cheaper for classes with the standard `__dict__` attribute. Only available on CPython.
+    """
+
+def _type_own_namespace_instances(
+    cls: type[Any], class_or_tuple: Any, skipped_types: set[type[Any]] | frozenset[type[Any]], /
+) -> list[tuple[str, Any]]:
+    """
+    Private helper used by `pydantic._internal`: the equivalent of
+    `[(k, v) for k, v in vars(cls).items() if type(v) not in skipped_types and isinstance(v, class_or_tuple)]`.
+    Only available on CPython.
+    """
+
+def _type_lookup(cls: type[Any], name: str, default: Any, /) -> Any:
+    """
+    Private helper used by `pydantic._internal`: the object `name` is bound to in the namespace of the
+    first class of the MRO of `cls` having it (what the interpreter looks up before invoking any descriptor),
+    or `default`. Only available on CPython.
+    """
+
+def _copy_slots_object(obj: _T, /) -> _T:
+    """
+    Private helper used by `pydantic.fields`: a shallow copy of an instance of a class only made of `__slots__`,
+    i.e. a new instance (`__init__()` not called) with every member set to the same object (an `AttributeError`
+    is raised for an unset one). Only available on CPython.
+    """
+
+def _install_model_metaclass_getattro(metaclass: type[type], /) -> None:
+    """
+    Private helper used by `pydantic._internal._model_construction`: implement the class attributes access
+    of Pydantic's `ModelMetaclass` (`type.__getattribute__()`, and for missing attributes the private
+    attributes fallback of its Python `__getattr__()`) as the C-level slot of that exact type object
+    (metaclasses deriving from it are unaffected). Only available on CPython.
+    """
+
+class _ModelNamespaceDict(dict[str, Any]):
+    """
+    Private helper used by `pydantic._internal._model_construction`: the class namespace returned by
+    `ModelMetaclass.__prepare__()`, a `dict` subclass whose (native) `__setitem__()` warns when a name
+    overrides an existing Pydantic decorator. Only available on CPython.
+    """

@@ -21,8 +21,14 @@ mod definitions;
 mod errors;
 mod input;
 mod lookup_key;
+#[cfg(not(any(PyPy, GraalPy, Py_LIMITED_API)))]
+mod model_class_lookup;
+#[cfg(not(any(PyPy, GraalPy, Py_LIMITED_API)))]
+mod model_namespace_dict;
 mod recursion_guard;
 mod serializers;
+#[cfg(not(any(PyPy, GraalPy, Py_LIMITED_API)))]
+mod slots_object;
 mod tools;
 mod url;
 mod validators;
@@ -126,6 +132,22 @@ pub mod _pydantic_core {
         m.add("build_info", build_info())?;
         m.add("_recursion_limit", recursion_guard::RECURSION_GUARD_LIMIT)?;
         m.add("PydanticUndefined", PydanticUndefinedType::get(m.py()))?;
+        #[cfg(not(any(PyPy, GraalPy, Py_LIMITED_API)))]
+        {
+            let objects = model_class_lookup::make_model_class_lookup_objects(m)?;
+            m.add("_model_class_getattr", objects.model_class_getattr)?;
+            m.add("_model_class_hasattr", objects.model_class_hasattr)?;
+            m.add("_type_own_dict_get", objects.type_own_dict_get)?;
+            m.add("_type_own_namespace_instances", objects.type_own_namespace_instances)?;
+            m.add("_type_lookup", objects.type_lookup)?;
+            m.add(
+                "_install_model_metaclass_getattro",
+                objects.install_model_metaclass_getattro,
+            )?;
+            m.add("_copy_slots_object", slots_object::make_copy_slots_object(m)?)?;
+        }
+        #[cfg(not(any(PyPy, GraalPy, Py_LIMITED_API)))]
+        m.add_class::<model_namespace_dict::ModelNamespaceDict>()?;
         Ok(())
     }
 }

@@ -494,3 +494,92 @@ def test_reuse_before_validator_ok() -> None:
     result_outer = outer_validator.validate_python({'inner': {'x': 'hello'}})
     assert result_outer.inner.x == 'hello modified'
     assert 'PrebuiltValidator' in repr(outer_validator)
+
+
+def test_prebuilt_lookup_goes_through_the_metaclass_dict_attribute() -> None:
+    """The class namespace is what `cls.__dict__` gives: a metaclass-level `__dict__` descriptor is honoured
+    (whatever it returns or raises just means no usable prebuilt validator/serializer)."""
+    import warnings
+
+    class MetaPlain(type):
+        pass
+
+    class MetaHide(type):
+        @property
+        def __dict__(cls):
+            return {}
+
+    class MetaRaise(type):
+        @property
+        def __dict__(cls):
+            raise RuntimeError('no peeking')
+
+    def prebuilt_used(meta: type) -> tuple[bool, bool]:
+        class K(metaclass=meta):
+            __slots__ = ('__dict__', '__pydantic_fields_set__', '__pydantic_extra__', '__pydantic_private__')
+
+        fields_int = core_schema.model_fields_schema(
+            {'a': core_schema.model_field(core_schema.int_schema(strict=True))}
+        )
+        fields_str = core_schema.model_fields_schema({'a': core_schema.model_field(core_schema.str_schema())})
+        type.__setattr__(
+            K, '__pydantic_validator__', SchemaValidator(core_schema.model_schema(cls=K, schema=fields_int))
+        )
+        type.__setattr__(
+            K, '__pydantic_serializer__', SchemaSerializer(core_schema.model_schema(cls=K, schema=fields_int))
+        )
+        type.__setattr__(K, '__pydantic_complete__', True)
+        outer = core_schema.list_schema(core_schema.model_schema(cls=K, schema=fields_str))
+        validator, serializer = SchemaValidator(outer), SchemaSerializer(outer)
+        try:
+            validator.validate_python([{'a': 'hello'}])
+            validator_prebuilt = False
+        except Exception:
+            validator_prebuilt = True  # (the prebuilt strict int validator rejected the str)
+        instance = K()
+        instance.__dict__['a'] = 'hello'
+        object.__setattr__(instance, '__pydantic_fields_set__', {'a'})
+        object.__setattr__(instance, '__pydantic_extra__', None)
+        object.__setattr__(instance, '__pydantic_private__', None)
+        with warnings.catch_warnings(record=True) as caught:
+            warnings.simplefilter('always')
+            serializer.to_python([instance])
+        return validator_prebuilt, bool(caught)  # (the prebuilt int serializer warns about the str)
+
+    assert prebuilt_used(MetaPlain) == (True, True)
+    assert prebuilt_used(MetaHide) == (False, False)
+    assert prebuilt_used(MetaRaise) == (False, False)
+
+
+def test_model_name_read_through_the_attribute_protocol() -> None:
+    """The model name used in error titles/locs and reprs is `getattr(cls, '__name__')`, so a metaclass-level
+    override applies (on every Python version)."""
+
+    class Meta(type):
+        @property
+        def __name__(cls) -> str:
+            return 'FancyName'
+
+    class Plain(metaclass=Meta):
+        __slots__ = ('__dict__', '__pydantic_fields_set__', '__pydantic_extra__', '__pydantic_private__')
+
+    schema = core_schema.model_schema(
+        cls=Plain, schema=core_schema.model_fields_schema({'a': core_schema.model_field(core_schema.int_schema())})
+    )
+    validator = SchemaValidator(schema)
+    assert validator.title == 'FancyName'
+    assert 'FancyName' in repr(validator)
+    union_validator = SchemaValidator(core_schema.union_schema([schema, core_schema.int_schema()]))
+    try:
+        union_validator.validate_python('bad')
+    except Exception as e:
+        assert [err['loc'] for err in e.errors(include_url=False)] == [('FancyName',), ('int',)]  # pyright: ignore[reportAttributeAccessIssue]
+    else:
+        raise AssertionError('did not raise')
+    serializer = SchemaSerializer(schema)
+    import warnings
+
+    with warnings.catch_warnings(record=True) as caught:
+        warnings.simplefilter('always')
+        serializer.to_python(42)
+    assert 'Expected `FancyName`' in str(caught[0].message)
