@@ -39,6 +39,7 @@ def test_constrain_compiled_pattern_keeps_flags() -> None:
     ta_ci = TypeAdapter[str](Annotated[str, validate_as(str).constrain(re.compile(r'^admin$', re.IGNORECASE))])
     assert ta_ci.validate_python('ADMIN') == 'ADMIN'
 
+
 @pytest.mark.parametrize(
     'type_, pipeline, valid_cases, invalid_cases',
     [
