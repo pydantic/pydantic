@@ -1355,6 +1355,26 @@ def test_bytesize_raises():
         m.size.to('1ZiB')
 
 
+@pytest.mark.parametrize(
+    'input_value',
+    (
+        '1kb; rm -rf /',  # trailing content after a valid size
+        '1kb\nHost: evil',  # trailing content after a newline
+        '1kb    junk',
+        '٤kb',  # ARABIC-INDIC DIGIT FOUR as the scalar
+        '１kb',  # FULLWIDTH DIGIT ONE as the scalar
+        '1Kb',  # KELVIN SIGN case-folds to 'k' but is not ASCII
+    ),
+)
+def test_bytesize_rejects_non_ascii_and_trailing(input_value):
+    class Model(BaseModel):
+        size: ByteSize
+
+    with pytest.raises(ValidationError, match='parse value') as exc_info:
+        Model(size=input_value)
+    assert exc_info.value.errors(include_url=False)[0]['type'] == 'byte_size'
+
+
 def test_custom_generic_containers():
     T = TypeVar('T')
 

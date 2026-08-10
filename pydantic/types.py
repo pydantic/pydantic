@@ -2135,7 +2135,7 @@ class ByteSize(int):
     byte_sizes.update({k.lower()[0]: v for k, v in byte_sizes.items() if 'i' not in k})
 
     byte_string_pattern = r'^\s*(\d*\.?\d+)\s*(\w+)?'
-    byte_string_re = re.compile(byte_string_pattern, re.IGNORECASE)
+    byte_string_re = re.compile(byte_string_pattern + r'\s*$', re.IGNORECASE | re.ASCII)
 
     @classmethod
     def __get_pydantic_core_schema__(cls, source: type[Any], handler: GetCoreSchemaHandler) -> core_schema.CoreSchema:
