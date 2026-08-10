@@ -456,9 +456,10 @@ def field_validator(  # noqa: D417
 
     For more in depth examples, see [Field Validators](../concepts/validators.md#field-validators).
 
-    !!! tip "Logfire integration"
-        Instrumentation of validation errors from field validators is supported by [Logfire](../integrations/logfire.md).
-        See [Troubleshooting validation errors](../errors/troubleshooting.md) for more details.
+    Errors raised in a field validator become part of the model's
+    [`ValidationError`][pydantic_core.ValidationError]. In a running application,
+    [Logfire](../integrations/logfire.md) can record the input each failed validation rejected — see
+    [Troubleshooting validation errors](../errors/troubleshooting.md).
 
     Args:
         *fields: The field names the validator should apply to.
@@ -714,9 +715,11 @@ def model_validator(
 
     For more in depth examples, see [Model Validators](../concepts/validators.md#model-validators).
 
-    !!! tip "Logfire integration"
-        Instrumentation of validation errors from model validators is supported by [Logfire](../integrations/logfire.md).
-        See [Troubleshooting validation errors](../errors/troubleshooting.md) for more details.
+    Cross-field rules like the one above tend to fail on combinations of values you didn't anticipate.
+    The resulting [`ValidationError`][pydantic_core.ValidationError] includes the input that failed;
+    [Logfire](../integrations/logfire.md) can retain these failures with their trace context so you can
+    investigate patterns in a running application (see
+    [Troubleshooting validation errors](../errors/troubleshooting.md)).
 
     Args:
         mode: A required string literal that specifies the validation mode.
@@ -794,6 +797,7 @@ else:
 
         @classmethod
         def __get_pydantic_core_schema__(cls, source: Any, handler: GetCoreSchemaHandler) -> core_schema.CoreSchema:
+            # Lazy import to avoid cycle:
             from pydantic._internal._generate_schema import GENERATE_SCHEMA_ERRORS
 
             # use the generic _origin_ as the second argument to isinstance when appropriate
@@ -894,8 +898,24 @@ class ValidateAs:
         self.instantiation_hook = instantiation_hook
 
     def __get_pydantic_core_schema__(self, source: Any, handler: GetCoreSchemaHandler) -> core_schema.CoreSchema:
-        schema = handler(self.from_type)
-        return core_schema.no_info_after_validator_function(
+        # Lazy import to avoid cycle:
+        from pydantic._internal._generate_schema import GENERATE_SCHEMA_ERRORS
+
+        from_type_schema = handler(self.from_type)
+        schema = core_schema.no_info_after_validator_function(
             self.instantiation_hook,
-            schema=schema,
+            schema=from_type_schema,
         )
+        try:
+            ser_schema = handler(source)
+        except GENERATE_SCHEMA_ERRORS:
+            ser_schema = core_schema.any_schema()
+
+        # TODO: pydantic-core currently doesn't accept it, but we should be able to provide an
+        # arbitrary core schema for serialization (currently `simple_ser_schema()` can be used,
+        # but only allow specifying a specific `'type`). Working around this with a wrap serializer
+        # is already done in other parts of the code base, so grep for similar cases when fixing:
+        schema['serialization'] = core_schema.wrap_serializer_function_ser_schema(
+            function=lambda v, h: h(v), schema=ser_schema
+        )
+        return schema

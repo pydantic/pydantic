@@ -92,6 +92,15 @@ class PluggableSchemaValidator:
         self.validate_json = build_wrapper(self._schema_validator.validate_json, json_event_handlers)
         self.validate_strings = build_wrapper(self._schema_validator.validate_strings, strings_event_handlers)
 
+    # Used to allow reuse of validators in pydantic-core (see pydantic-core/src/validators/prebuilt.rs):
+    @property
+    def __pydantic_schema_validator__(self) -> SchemaValidator:
+        """The underlying pydantic-core `SchemaValidator`.
+
+        This is a private attribute, not meant to be used outside Pydantic.
+        """
+        return self._schema_validator
+
     def __getattr__(self, name: str) -> Any:
         return getattr(self._schema_validator, name)
 

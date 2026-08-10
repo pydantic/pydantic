@@ -98,14 +98,14 @@ pub struct ConstrainedIntValidator {
 impl ConstrainedIntValidator {
     fn build(schema: &Bound<'_, PyDict>, config: Option<&Bound<'_, PyDict>>) -> PyResult<Arc<CombinedValidator>> {
         let py = schema.py();
-        Ok(CombinedValidator::ConstrainedInt(Self {
+        Ok(CombinedValidator::ConstrainedInt(Box::new(Self {
             strict: is_strict(schema, config)?,
             multiple_of: validate_as_int(schema, intern!(py, "multiple_of"))?,
             le: validate_as_int(schema, intern!(py, "le"))?,
             lt: validate_as_int(schema, intern!(py, "lt"))?,
             ge: validate_as_int(schema, intern!(py, "ge"))?,
             gt: validate_as_int(schema, intern!(py, "gt"))?,
-        })
+        }))
         .into())
     }
 }
