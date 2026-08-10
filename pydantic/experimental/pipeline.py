@@ -651,7 +651,7 @@ def _apply_constraint(  # noqa: C901
         assert isinstance(constraint, Pattern)
         if s and s['type'] == 'str':
             s = s.copy()
-            s['pattern'] = constraint.pattern
+            s['pattern'] = constraint
         else:
 
             def check_pattern(v: object) -> bool:
