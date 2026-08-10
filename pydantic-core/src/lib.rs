@@ -22,6 +22,7 @@ mod errors;
 mod input;
 mod lookup_key;
 mod recursion_guard;
+mod schema_keys;
 mod serializers;
 mod tools;
 mod url;

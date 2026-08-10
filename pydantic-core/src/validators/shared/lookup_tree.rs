@@ -1,11 +1,10 @@
+use jiter::{JsonArray, JsonValue};
+use smallvec::SmallVec;
 use std::hash::Hash;
 use std::{borrow::Cow, collections::hash_map::Entry};
 
-use ahash::AHashMap;
-use jiter::{JsonArray, JsonValue};
-use smallvec::SmallVec;
-
 use crate::lookup_key::{LookupPath, LookupPathCollection, LookupType, PathItem, PathItemString};
+use crate::tools::{BuildHashMap, build_map_with_capacity};
 
 /// A tree of paths for lookups when trying to find fields from input.
 ///
@@ -13,14 +12,14 @@ use crate::lookup_key::{LookupPath, LookupPathCollection, LookupType, PathItem, 
 /// which require deeper lookups.
 #[derive(Debug)]
 pub struct LookupTree {
-    inner: AHashMap<PathItemString, LookupTreeNode>,
+    inner: BuildHashMap<PathItemString, LookupTreeNode>,
 }
 
 impl LookupTree {
     /// Construct a `LookupTree` from a slice of fields and a function to get the `LookupKeyCollection` for each field.
     pub fn from_fields<T>(fields: &[T], get_field_collection: impl Fn(&T) -> &LookupPathCollection) -> Self {
         let mut tree = Self {
-            inner: AHashMap::with_capacity(fields.len()),
+            inner: build_map_with_capacity(fields.len()),
         };
 
         for (field_index, field) in fields.iter().enumerate() {
@@ -127,12 +126,12 @@ pub struct LookupTreeNode {
     /// All fields which wanted _exactly_ this key, typically this is just a single entry
     fields: SmallVec<[LookupFieldInfo; 1]>,
     /// For nested lookups by name, e.g. `['foo', 'bar']`, typically empty
-    pub map: AHashMap<PathItemString, LookupTreeNode>,
+    pub map: BuildHashMap<PathItemString, LookupTreeNode>,
     /// For nested lookups by integer index, e.g. `['foo', 0]`, typically empty
-    pub list: AHashMap<i64, LookupTreeNode>,
+    pub list: BuildHashMap<i64, LookupTreeNode>,
 }
 
-fn add_field_to_map<K: Hash + Eq>(map: &mut AHashMap<K, LookupTreeNode>, key: K, info: LookupFieldInfo) {
+fn add_field_to_map<K: Hash + Eq>(map: &mut BuildHashMap<K, LookupTreeNode>, key: K, info: LookupFieldInfo) {
     match map.entry(key) {
         Entry::Occupied(entry) => {
             entry.into_mut().fields.push(info);
@@ -140,14 +139,14 @@ fn add_field_to_map<K: Hash + Eq>(map: &mut AHashMap<K, LookupTreeNode>, key: K,
         Entry::Vacant(entry) => {
             entry.insert(LookupTreeNode {
                 fields: SmallVec::from_buf([info]),
-                map: AHashMap::new(),
-                list: AHashMap::new(),
+                map: BuildHashMap::default(),
+                list: BuildHashMap::default(),
             });
         }
     }
 }
 
-fn add_path_to_map(map: &mut AHashMap<PathItemString, LookupTreeNode>, path: &LookupPath, info: LookupFieldInfo) {
+fn add_path_to_map(map: &mut BuildHashMap<PathItemString, LookupTreeNode>, path: &LookupPath, info: LookupFieldInfo) {
     let base_key = path.first_item().to_owned();
     let mut path_iter = path.rest().iter();
 

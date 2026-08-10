@@ -13,11 +13,10 @@ use std::{
     },
 };
 
-use pyo3::{PyTraverseError, PyVisit, prelude::*};
+use pyo3::{PyTraverseError, PyVisit, prelude::*, types::PyDict};
 
-use ahash::AHashMap;
-
-use crate::{build_tools::py_schema_err, py_gc::PyGcTraverse};
+use crate::schema_keys::{ConfigKeys, DetachedSchemaKeys, SchemaKeys};
+use crate::{build_tools::py_schema_err, py_gc::PyGcTraverse, tools::BuildHashMap};
 
 /// Definitions are validators and serializers that are
 /// shared by reference.
@@ -29,7 +28,7 @@ use crate::{build_tools::py_schema_err, py_gc::PyGcTraverse};
 /// They get indexed by a ReferenceId, which are integer identifiers
 /// that are handed out and managed by DefinitionsBuilder when the Schema{Validator,Serializer}
 /// gets build.
-pub struct Definitions<T>(AHashMap<Arc<String>, Definition<T>>);
+pub struct Definitions<T>(BuildHashMap<Arc<String>, Definition<T>>);
 
 struct Definition<T> {
     value: Arc<OnceLock<T>>,
@@ -133,13 +132,56 @@ impl<T: PyGcTraverse> PyGcTraverse for Definitions<T> {
 pub struct DefinitionsBuilder<T> {
     definitions: Definitions<T>,
     use_prebuilt: bool,
+    /// the known keys of each config dict met during this build (each dict is queried many times over)
+    config_keys: Vec<(Py<PyDict>, ConfigKeys)>,
+    /// see `dispatch`
+    dispatched: Option<DetachedSchemaKeys>,
+}
+
+impl<T> DefinitionsBuilder<T> {
+    /// Run `build` — the type-specific builder for the schema dict of `keys`, found by dispatch on its `'type'` —
+    /// letting the `SchemaKeys::new_typed` of that builder carry on from `keys` (the dispatcher's lookups on the same
+    /// dict) rather than start counting afresh.
+    pub fn dispatch<R>(&mut self, keys: SchemaKeys<'_, '_>, build: impl FnOnce(&mut Self) -> R) -> R {
+        self.dispatched = Some(keys.detach());
+        let result = build(self);
+        // (normally taken by the builder straight away; never left behind past the build of that dict, during which
+        // the dict is certainly alive, so the address comparison in `take_dispatched` can't be fooled)
+        self.dispatched = None;
+        result
+    }
+
+    /// The bookkeeping left by `dispatch` for `dict`, if that is the dict being dispatched on.
+    pub fn take_dispatched(&mut self, dict: &Bound<'_, PyDict>) -> Option<DetachedSchemaKeys> {
+        match &self.dispatched {
+            Some(detached) if detached.is_for(dict) => self.dispatched.take(),
+            _ => None,
+        }
+    }
+
+    /// Which known config keys `config` contains; established once per dict and build.
+    pub fn config_keys(&mut self, config: &Bound<'_, PyDict>) -> ConfigKeys {
+        // (identity is a sound cache key here: the vec holds a reference to each dict, so none can go away and have
+        // its address reused while cached)
+        if let Some((_, keys)) = self.config_keys.iter().find(|(d, _)| d.as_ptr() == config.as_ptr()) {
+            return *keys;
+        }
+        let keys = ConfigKeys::of_dict(config);
+        if self.config_keys.len() >= 64 {
+            self.config_keys.clear();
+        }
+        self.config_keys.push((config.clone().unbind(), keys));
+        keys
+    }
 }
 
 impl<T: std::fmt::Debug> DefinitionsBuilder<T> {
     pub fn new(use_prebuilt: bool) -> Self {
         Self {
-            definitions: Definitions(AHashMap::new()),
+            definitions: Definitions(BuildHashMap::default()),
             use_prebuilt,
+            config_keys: Vec::new(),
+            dispatched: None,
         }
     }
 

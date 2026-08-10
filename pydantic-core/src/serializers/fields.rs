@@ -6,7 +6,6 @@ use pyo3::prelude::*;
 use pyo3::pybacked::PyBackedStr;
 use pyo3::types::PyDict;
 
-use ahash::AHashMap;
 use smallvec::SmallVec;
 
 use crate::PydanticSerializationUnexpectedValue;
@@ -17,6 +16,7 @@ use crate::serializers::extra::{IncludeExclude, SerCheck};
 use crate::serializers::shared::{DoSerialize, SerializeMap, serialize_to_json, serialize_to_python};
 use crate::serializers::type_serializers::any::AnySerializer;
 use crate::serializers::type_serializers::function::{FunctionPlainSerializer, FunctionWrapSerializer};
+use crate::tools::BuildHashMap;
 
 use super::computed_fields::ComputedFields;
 use super::extra::Extra;
@@ -105,7 +105,7 @@ pub(super) enum FieldsMode {
 /// General purpose serializer for fields - used by dataclasses, models and typed_dicts
 #[derive(Debug)]
 pub struct GeneralFieldsSerializer {
-    fields: AHashMap<PyBackedStr, SerField>,
+    fields: BuildHashMap<PyBackedStr, SerField>,
     computed_fields: Option<ComputedFields>,
     mode: FieldsMode,
     extra_serializer: Option<Arc<CombinedSerializer>>,
@@ -116,7 +116,7 @@ pub struct GeneralFieldsSerializer {
 
 impl GeneralFieldsSerializer {
     pub(super) fn new(
-        fields: AHashMap<PyBackedStr, SerField>,
+        fields: BuildHashMap<PyBackedStr, SerField>,
         mode: FieldsMode,
         extra_serializer: Option<Arc<CombinedSerializer>>,
         computed_fields: Option<ComputedFields>,

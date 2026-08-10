@@ -10,14 +10,15 @@ use pyo3::prelude::*;
 use pyo3::pybacked::PyBackedStr;
 use pyo3::types::{PyDict, PySet, PyString, PyType};
 
+use crate::build_tools::ExtraBehavior;
 use crate::build_tools::py_schema_err;
-use crate::build_tools::{ExtraBehavior, is_strict, schema_or_config_same};
 use crate::errors::LocItem;
 use crate::errors::{ErrorType, ErrorTypeDefaults, ValError, ValLineError, ValResult};
 use crate::input::ConsumeIterator;
 use crate::input::{BorrowInput, Input, ValidatedDict, ValidationMatch};
 use crate::lookup_key::LookupPathCollection;
 use crate::lookup_key::LookupType;
+use crate::schema_keys::{BuildConfig, ConfigKey, SchemaKeys};
 use crate::tools::SchemaDict;
 use crate::tools::new_py_string;
 use crate::validators::shared::lookup_tree::LookupFieldInfo;
@@ -60,27 +61,41 @@ impl BuildValidator for ModelFieldsValidator {
     ) -> PyResult<Arc<CombinedValidator>> {
         let py = schema.py();
 
-        let strict = is_strict(schema, config)?;
+        let schema = &SchemaKeys::new_typed(schema, definitions)?;
+        let config_dict = config;
+        let config = BuildConfig::new(config, definitions);
+        // The items used further down are looked up first (`computed_fields` isn't used at all by the validator),
+        // so that for the usual `{'type', 'fields', 'model_name', 'computed_fields'}` node all the optional keys
+        // are known to be absent by the time they are asked for:
+        let fields_dict = schema.get_item(intern!(py, "fields"))?;
+        let model_name = schema.get_item(intern!(py, "model_name"))?;
+        schema.contains(intern!(py, "computed_fields"))?;
 
-        let from_attributes = schema_or_config_same(schema, config, intern!(py, "from_attributes"))?.unwrap_or(false);
+        let strict = schema.is_strict(config)?;
 
-        let extra_behavior = ExtraBehavior::from_schema_or_config(py, schema, config, ExtraBehavior::Ignore)?;
+        let from_attributes = schema
+            .get_as_or_config(intern!(py, "from_attributes"), config, ConfigKey::FromAttributes)?
+            .unwrap_or(false);
+
+        let extra_behavior = ExtraBehavior::from_keys_or_config(schema, config, ExtraBehavior::Ignore)?;
 
         let extras_validator = match (schema.get_item(intern!(py, "extras_schema"))?, &extra_behavior) {
-            (Some(v), ExtraBehavior::Allow) => Some(build_validator(&v, config, definitions)?),
+            (Some(v), ExtraBehavior::Allow) => Some(build_validator(&v, config_dict, definitions)?),
             (Some(_), _) => return py_schema_err!("extras_schema can only be used if extra_behavior=allow"),
             (_, _) => None,
         };
         let extras_keys_validator = match (schema.get_item(intern!(py, "extras_keys_schema"))?, &extra_behavior) {
-            (Some(v), ExtraBehavior::Allow) => Some(build_validator(&v, config, definitions)?),
+            (Some(v), ExtraBehavior::Allow) => Some(build_validator(&v, config_dict, definitions)?),
             (Some(_), _) => return py_schema_err!("extras_keys_schema can only be used if extra_behavior=allow"),
             (_, _) => None,
         };
-        let model_name: String = schema
-            .get_as(intern!(py, "model_name"))?
-            .unwrap_or_else(|| "Model".to_string());
+        let model_name: String = match model_name {
+            Some(name) => name.extract()?,
+            None => "Model".to_string(),
+        };
 
-        let fields_dict: Bound<'_, PyDict> = schema.get_as_req(intern!(py, "fields"))?;
+        let fields_dict = SchemaKeys::required(fields_dict, intern!(py, "fields"))?;
+        let fields_dict = fields_dict.cast::<PyDict>()?;
         let mut fields: Vec<Field> = Vec::with_capacity(fields_dict.len());
 
         for (key, value) in fields_dict {
@@ -89,7 +104,7 @@ impl BuildValidator for ModelFieldsValidator {
 
             let schema = field_info.get_as_req(intern!(py, "schema"))?;
 
-            let validator = match build_validator(&schema, config, definitions) {
+            let validator = match build_validator(&schema, config_dict, definitions) {
                 Ok(v) => v,
                 Err(err) => return py_schema_err!("Field \"{name}\":\n  {err}"),
             };
@@ -115,10 +130,10 @@ impl BuildValidator for ModelFieldsValidator {
             extras_keys_validator,
             strict,
             from_attributes,
-            loc_by_alias: config.get_as(intern!(py, "loc_by_alias"))?.unwrap_or(true),
+            loc_by_alias: config.get_as(ConfigKey::LocByAlias)?.unwrap_or(true),
             lookup,
-            validate_by_alias: config.get_as(intern!(py, "validate_by_alias"))?,
-            validate_by_name: config.get_as(intern!(py, "validate_by_name"))?,
+            validate_by_alias: config.get_as(ConfigKey::ValidateByAlias)?,
+            validate_by_name: config.get_as(ConfigKey::ValidateByName)?,
         })
         .into())
     }

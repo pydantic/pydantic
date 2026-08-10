@@ -5,18 +5,20 @@ use std::cell::OnceCell;
 use std::sync::Arc;
 
 use pyo3::prelude::*;
-use pyo3::types::{PyDict, PyInt, PyList, PyString};
+use pyo3::types::{PyBool, PyDict, PyInt, PyList, PyString};
 use pyo3::{PyTraverseError, PyVisit, intern};
-
-use ahash::AHashMap;
 
 use crate::build_tools::{py_schema_err, py_schema_error_type};
 use crate::errors::{ErrorType, ValError, ValResult};
 use crate::input::{Input, ValidationMatch};
 use crate::py_gc::PyGcTraverse;
-use crate::tools::SchemaDict;
+use crate::tools::{BuildHashMap, SchemaDict};
 
 use super::{BuildValidator, CombinedValidator, DefinitionsBuilder, ValidationState, Validator};
+
+fn lazy_dict<'a, 'py>(py: Python<'py>, slot: &'a mut Option<Bound<'py, PyDict>>) -> &'a Bound<'py, PyDict> {
+    slot.get_or_insert_with(|| PyDict::new(py))
+}
 
 #[derive(Debug, Clone, Default)]
 struct BoolLiteral {
@@ -31,8 +33,8 @@ pub struct LiteralLookup<T: Debug> {
     // (2) hashing them in Rust is very fast
     // (3) are the most commonly used things in Literal[...]
     expected_bool: Option<BoolLiteral>,
-    expected_int: Option<AHashMap<i64, usize>>,
-    expected_str: Option<AHashMap<String, usize>>,
+    expected_int: Option<BuildHashMap<i64, usize>>,
+    expected_str: Option<BuildHashMap<String, usize>>,
     // Catch all for hashable types like Enum and bytes (the latter only because it is seldom used)
     expected_py_dict: Option<Py<PyDict>>,
     // Catch all for unhashable types like list
@@ -48,39 +50,41 @@ pub struct LiteralLookup<T: Debug> {
 impl<T: Debug> LiteralLookup<T> {
     pub fn new<'py>(py: Python<'py>, expected: impl Iterator<Item = (Bound<'py, PyAny>, T)>) -> PyResult<Self> {
         let mut expected_bool = BoolLiteral::default();
-        let mut expected_int = AHashMap::new();
-        let mut expected_str: AHashMap<String, usize> = AHashMap::new();
-        let expected_py_dict = PyDict::new(py);
+        let mut expected_int = BuildHashMap::default();
+        let mut expected_str: BuildHashMap<String, usize> = BuildHashMap::default();
+        // both dicts are created on first use, most literals only need one of them
+        let mut expected_py_dict: Option<Bound<'py, PyDict>> = None;
         let mut expected_py_values = Vec::new();
-        let expected_py_primitives = PyDict::new(py);
-        let mut values = Vec::new();
+        let mut expected_py_primitives: Option<Bound<'py, PyDict>> = None;
+        let mut values = Vec::with_capacity(expected.size_hint().0);
         for (k, v) in expected {
             let id = values.len();
             values.push(v);
 
-            if let Ok(bool_value) = k.validate_bool(true) {
-                if bool_value.into_inner() {
+            // (strict bool validation of a Python object is exactly a `PyBool` check)
+            if let Ok(bool_value) = k.cast::<PyBool>() {
+                if bool_value.is_true() {
                     expected_bool.true_id = Some(id);
                 } else {
                     expected_bool.false_id = Some(id);
                 }
-                expected_py_primitives.set_item(&k, id)?;
+                lazy_dict(py, &mut expected_py_primitives).set_item(&k, id)?;
             }
             if k.is_exact_instance_of::<PyInt>() {
                 if let Ok(int_64) = k.extract::<i64>() {
                     expected_int.insert(int_64, id);
-                    expected_py_primitives.set_item(&k, id)?;
+                    lazy_dict(py, &mut expected_py_primitives).set_item(&k, id)?;
                 } else {
                     // cover the case of an int that's > i64::MAX etc.
-                    expected_py_dict.set_item(k, id)?;
+                    lazy_dict(py, &mut expected_py_dict).set_item(k, id)?;
                 }
-            } else if let Ok(either_str) = k.exact_str() {
-                let str = either_str
-                    .as_cow()
+            } else if let Ok(py_str) = k.cast_exact::<PyString>() {
+                let str = py_str
+                    .to_str()
                     .map_err(|_| py_schema_error_type!("error extracting str {k:?}"))?;
                 expected_str.insert(str.to_string(), id);
-                expected_py_primitives.set_item(&k, id)?;
-            } else if expected_py_dict.set_item(&k, id).is_err() {
+                lazy_dict(py, &mut expected_py_primitives).set_item(&k, id)?;
+            } else if lazy_dict(py, &mut expected_py_dict).set_item(&k, id).is_err() {
                 expected_py_values.push((k.as_unbound().clone_ref(py), id));
             }
         }
@@ -90,9 +94,9 @@ impl<T: Debug> LiteralLookup<T> {
                 .then_some(expected_bool),
             expected_int: (!expected_int.is_empty()).then_some(expected_int),
             expected_str: (!expected_str.is_empty()).then_some(expected_str),
-            expected_py_dict: (!expected_py_dict.is_empty()).then_some(expected_py_dict.into()),
+            expected_py_dict: expected_py_dict.filter(|d| !d.is_empty()).map(Into::into),
             expected_py_values: (!expected_py_values.is_empty()).then_some(expected_py_values),
-            expected_py_primitives: (!expected_py_primitives.is_empty()).then_some(expected_py_primitives.into()),
+            expected_py_primitives: expected_py_primitives.filter(|d| !d.is_empty()).map(Into::into),
             values,
         })
     }

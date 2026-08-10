@@ -7,6 +7,7 @@ use pyo3::{IntoPyObjectExt, intern};
 
 use serde::ser::SerializeSeq;
 
+use crate::build_tools::composed_name;
 use crate::definitions::DefinitionsBuilder;
 use crate::serializers::SerializationState;
 use crate::tools::SchemaDict;
@@ -37,7 +38,7 @@ macro_rules! build_serializer {
                     Some(items_schema) => CombinedSerializer::build(&items_schema, config, definitions)?,
                     None => AnySerializer::build(schema, config, definitions)?,
                 };
-                let name = format!("{}[{}]", Self::EXPECTED_TYPE, item_serializer.get_name());
+                let name = composed_name(Self::EXPECTED_TYPE, &[item_serializer.get_name()], "");
                 Ok(Arc::new(
                     Self {
                         item_serializer,

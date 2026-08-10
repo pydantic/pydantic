@@ -34,7 +34,7 @@ macro_rules! set_build {
             };
             let inner_name = item_validator.get_name();
             let max_length = schema.get_as(pyo3::intern!(py, "max_length"))?;
-            let name = format!("{}[{}]", Self::EXPECTED_TYPE, inner_name);
+            let name = crate::build_tools::composed_name(Self::EXPECTED_TYPE, &[inner_name], "");
             Ok(Arc::new(
                 Self {
                     strict: crate::build_tools::is_strict(schema, config)?,

@@ -4,11 +4,12 @@ use pyo3::intern;
 use pyo3::prelude::*;
 use pyo3::types::PyDict;
 
-use crate::build_tools::is_strict;
+use crate::build_tools::composed_name;
 use crate::errors::{LocItem, ValError, ValLineError, ValResult};
 use crate::input::BorrowInput;
 use crate::input::ConsumeIterator;
 use crate::input::{Input, ValidatedDict};
+use crate::schema_keys::{BuildConfig, SchemaKeys};
 
 use crate::tools::SchemaDict;
 
@@ -36,27 +37,28 @@ impl BuildValidator for DictValidator {
         definitions: &mut DefinitionsBuilder<Arc<CombinedValidator>>,
     ) -> PyResult<Arc<CombinedValidator>> {
         let py = schema.py();
-        let key_validator = match schema.get_item(intern!(py, "keys_schema"))? {
+        let keys = SchemaKeys::new_typed(schema, definitions)?;
+        let key_validator = match keys.get_item(intern!(py, "keys_schema"))? {
             Some(schema) => build_validator(&schema, config, definitions)?,
             None => AnyValidator::build(schema, config, definitions)?,
         };
-        let value_validator = match schema.get_item(intern!(py, "values_schema"))? {
+        let value_validator = match keys.get_item(intern!(py, "values_schema"))? {
             Some(d) => build_validator(&d, config, definitions)?,
             None => AnyValidator::build(schema, config, definitions)?,
         };
-        let name = format!(
-            "{}[{},{}]",
+        let name = composed_name(
             Self::EXPECTED_TYPE,
-            key_validator.get_name(),
-            value_validator.get_name()
+            &[key_validator.get_name(), value_validator.get_name()],
+            ",",
         );
+        let config = BuildConfig::new(config, definitions);
         Ok(CombinedValidator::Dict(Self {
-            strict: is_strict(schema, config)?,
+            strict: keys.is_strict(config)?,
             key_validator,
             value_validator,
-            min_length: schema.get_as(intern!(py, "min_length"))?,
-            max_length: schema.get_as(intern!(py, "max_length"))?,
-            fail_fast: schema.get_as(intern!(py, "fail_fast"))?.unwrap_or(false),
+            min_length: keys.get_as(intern!(py, "min_length"))?,
+            max_length: keys.get_as(intern!(py, "max_length"))?,
+            fail_fast: keys.get_as(intern!(py, "fail_fast"))?.unwrap_or(false),
             name,
         })
         .into())

@@ -1,6 +1,6 @@
 use std::fmt::Debug;
 use std::str::FromStr;
-use std::sync::Arc;
+use std::sync::{Arc, OnceLock};
 
 use enum_dispatch::enum_dispatch;
 use jiter::{PartialMode, StringCacheMode};
@@ -15,8 +15,9 @@ use crate::build_tools::{ExtraBehavior, py_schema_error_type};
 use crate::definitions::{Definitions, DefinitionsBuilder};
 use crate::errors::{LocItem, ValError, ValResult, ValidationError};
 use crate::input::{Input, InputType, StringMapping};
-use crate::py_gc::PyGcTraverse;
+use crate::py_gc::{PyGcSnapshot, PyGcTraverse};
 use crate::recursion_guard::RecursionState;
+use crate::schema_keys::{BuildConfig, ConfigKey, SchemaKeys};
 use crate::tools::SchemaDict;
 pub(crate) use config::{TemporalUnitMode, ValBytesMode};
 
@@ -124,6 +125,8 @@ pub struct SchemaValidator {
     hide_input_in_errors: bool,
     validation_error_cause: bool,
     cache_str: StringCacheMode,
+    /// What `py_gc_traverse` reports (it never changes once built), see `__traverse__`.
+    gc_snapshot: OnceLock<PyGcSnapshot>,
 }
 
 impl_py_gc_traverse!(SchemaValidator {
@@ -137,46 +140,17 @@ impl_py_gc_traverse!(SchemaValidator {
 impl SchemaValidator {
     #[new]
     #[pyo3(signature = (schema, config=None, _use_prebuilt=true))]
-    pub fn py_new(
-        py: Python,
-        schema: &Bound<'_, PyAny>,
-        config: Option<&Bound<'_, PyDict>>,
+    fn new_object<'py>(
+        py: Python<'py>,
+        schema: &Bound<'py, PyAny>,
+        config: Option<&Bound<'py, PyDict>>,
         _use_prebuilt: bool,
-    ) -> PyResult<Self> {
-        // _use_prebuilt=true by default, but false during rebuilds to avoid stale references
-        // to old validators (see pydantic-core issue #1894)
-        let mut definitions_builder = DefinitionsBuilder::new(_use_prebuilt);
-
-        let validator = build_validator(schema, config, &mut definitions_builder)?;
-        let definitions = definitions_builder.finish()?;
-        let py_schema = schema.clone().unbind();
-        let py_config = match config {
-            Some(c) if !c.is_empty() => Some(c.clone().into()),
-            _ => None,
-        };
-        let config_title = match config {
-            Some(c) => c.get_item("title")?,
-            None => None,
-        };
-        let title = match config_title {
-            Some(t) => t.unbind(),
-            None => validator.get_name().into_py_any(py)?,
-        };
-        let hide_input_in_errors: bool = config.get_as(intern!(py, "hide_input_in_errors"))?.unwrap_or(false);
-        let validation_error_cause: bool = config.get_as(intern!(py, "validation_error_cause"))?.unwrap_or(false);
-        let cache_str: StringCacheMode = config
-            .get_as(intern!(py, "cache_strings"))?
-            .unwrap_or(StringCacheMode::All);
-        Ok(Self {
-            validator,
-            definitions,
-            py_schema,
-            py_config,
-            title,
-            hide_input_in_errors,
-            validation_error_cause,
-            cache_str,
-        })
+    ) -> PyResult<Bound<'py, Self>> {
+        let slf = Bound::new(py, Self::py_new(py, schema, config, _use_prebuilt)?)?;
+        if let Some(snapshot) = PyGcSnapshot::take(slf.as_any()) {
+            let _ = slf.get().gc_snapshot.set(snapshot);
+        }
+        Ok(slf)
     }
 
     #[allow(clippy::too_many_arguments)]
@@ -423,11 +397,56 @@ impl SchemaValidator {
     }
 
     fn __traverse__(&self, visit: PyVisit<'_>) -> Result<(), PyTraverseError> {
-        self.py_gc_traverse(&visit)
+        match self.gc_snapshot.get() {
+            Some(snapshot) => snapshot.traverse(&visit),
+            // (only while taking the snapshot, right after construction)
+            None => self.py_gc_traverse(&visit),
+        }
     }
 }
 
 impl SchemaValidator {
+    pub fn py_new(
+        py: Python,
+        schema: &Bound<'_, PyAny>,
+        config: Option<&Bound<'_, PyDict>>,
+        _use_prebuilt: bool,
+    ) -> PyResult<Self> {
+        // _use_prebuilt=true by default, but false during rebuilds to avoid stale references
+        // to old validators (see pydantic-core issue #1894)
+        let mut definitions_builder = DefinitionsBuilder::new(_use_prebuilt);
+
+        let validator = build_validator(schema, config, &mut definitions_builder)?;
+        let build_config = BuildConfig::new(config, &mut definitions_builder);
+        let definitions = definitions_builder.finish()?;
+        let py_schema = schema.clone().unbind();
+        let py_config = match config {
+            Some(c) if !c.is_empty() => Some(c.clone().into()),
+            _ => None,
+        };
+        let config_title: Option<Bound<'_, PyAny>> = build_config.get_as(ConfigKey::Title)?;
+        let title = match config_title {
+            Some(t) => t.unbind(),
+            None => validator.get_name().into_py_any(py)?,
+        };
+        let hide_input_in_errors: bool = build_config.get_as(ConfigKey::HideInputInErrors)?.unwrap_or(false);
+        let validation_error_cause: bool = build_config.get_as(ConfigKey::ValidationErrorCause)?.unwrap_or(false);
+        let cache_str: StringCacheMode = build_config
+            .get_as(ConfigKey::CacheStrings)?
+            .unwrap_or(StringCacheMode::All);
+        Ok(Self {
+            validator,
+            definitions,
+            py_schema,
+            py_config,
+            title,
+            hide_input_in_errors,
+            validation_error_cause,
+            cache_str,
+            gc_snapshot: OnceLock::new(),
+        })
+    }
+
     #[allow(clippy::too_many_arguments)]
     fn _validate<'py>(
         &self,
@@ -539,7 +558,8 @@ fn build_validator_inner(
 ) -> PyResult<Arc<CombinedValidator>> {
     let dict = schema.cast::<PyDict>()?;
     let py = schema.py();
-    let type_: Bound<'_, PyString> = dict.get_as_req(intern!(py, "type"))?;
+    let keys = SchemaKeys::new(dict);
+    let type_: Bound<'_, PyString> = keys.get_as_req(intern!(py, "type"))?;
     let type_ = type_.to_str()?;
 
     // if we have a SchemaValidator on the type already, use it
@@ -553,7 +573,9 @@ fn build_validator_inner(
         ($type:ident, $dict:ident, $config:ident, $definitions:ident, $($validator:path,)+) => {
             match $type {
                 $(
-                    <$validator>::EXPECTED_TYPE => <$validator>::build($dict, $config, $definitions),
+                    <$validator>::EXPECTED_TYPE => {
+                        $definitions.dispatch(keys, |definitions| <$validator>::build($dict, $config, definitions))
+                    },
                 )+
                 "invalid" => return Err(invalid_schema_type()),
                 _ => return Err(unknown_schema_type($type)),

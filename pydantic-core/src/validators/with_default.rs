@@ -10,11 +10,12 @@ use pyo3::types::PyString;
 
 use super::{BuildValidator, CombinedValidator, DefinitionsBuilder, ValidationState, Validator, build_validator};
 use crate::PydanticUndefinedType;
+use crate::build_tools::composed_name;
 use crate::build_tools::py_schema_err;
-use crate::build_tools::schema_or_config_same;
 use crate::errors::{ErrorTypeDefaults, LocItem, ValError, ValResult};
 use crate::input::Input;
 use crate::py_gc::PyGcTraverse;
+use crate::schema_keys::{BuildConfig, ConfigKey, SchemaKeys};
 use crate::tools::SchemaDict;
 
 static COPY_DEEPCOPY: PyOnceLock<Py<PyAny>> = PyOnceLock::new();
@@ -32,7 +33,10 @@ pub enum DefaultType {
 
 impl DefaultType {
     pub fn new(schema: &Bound<'_, PyDict>) -> PyResult<Self> {
-        let py = schema.py();
+        Self::from_schema(schema.py(), schema)
+    }
+
+    pub fn from_schema<'py>(py: Python<'py>, schema: &impl SchemaDict<'py>) -> PyResult<Self> {
         match (
             schema.get_as(intern!(py, "default"))?,
             schema.get_as(intern!(py, "default_factory"))?,
@@ -106,7 +110,12 @@ impl BuildValidator for WithDefaultValidator {
         definitions: &mut DefinitionsBuilder<Arc<CombinedValidator>>,
     ) -> PyResult<Arc<CombinedValidator>> {
         let py = schema.py();
-        let default = DefaultType::new(schema)?;
+        let schema = &SchemaKeys::new_typed(schema, definitions)?;
+        let config = BuildConfig::new(config, definitions);
+        // (looked up first — used below — so that for the usual `{'type', 'schema', 'default'}` node all the
+        // optional keys are known to be absent by the time they are asked for)
+        let sub_schema = schema.get_item(intern!(py, "schema"))?;
+        let default = DefaultType::from_schema(py, schema)?;
         let on_error = match schema
             .get_as::<Bound<'_, PyString>>(intern!(py, "on_error"))?
             .as_ref()
@@ -125,8 +134,8 @@ impl BuildValidator for WithDefaultValidator {
             _ => unreachable!(),
         };
 
-        let sub_schema = schema.get_as_req(intern!(schema.py(), "schema"))?;
-        let validator = build_validator(&sub_schema, config, definitions)?;
+        let sub_schema = SchemaKeys::required(sub_schema, intern!(py, "schema"))?;
+        let validator = build_validator(&sub_schema, config.dict(), definitions)?;
 
         let copy_default = if let DefaultType::Default(default_obj) = &default {
             default_obj.bind(py).hash().is_err()
@@ -134,13 +143,15 @@ impl BuildValidator for WithDefaultValidator {
             false
         };
 
-        let name = format!("{}[{}]", Self::EXPECTED_TYPE, validator.get_name());
+        let name = composed_name(Self::EXPECTED_TYPE, &[validator.get_name()], "");
 
         Ok(CombinedValidator::WithDefault(Self {
             default,
             on_error,
             validator,
-            validate_default: schema_or_config_same(schema, config, intern!(py, "validate_default"))?.unwrap_or(false),
+            validate_default: schema
+                .get_as_or_config(intern!(py, "validate_default"), config, ConfigKey::ValidateDefault)?
+                .unwrap_or(false),
             copy_default,
             name,
             undefined: PydanticUndefinedType::get(py).clone_ref(schema.py()).into_any(),

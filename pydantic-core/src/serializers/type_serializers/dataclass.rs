@@ -5,8 +5,6 @@ use pyo3::types::{PyDict, PyList, PyString, PyType};
 use std::borrow::Cow;
 use std::sync::Arc;
 
-use ahash::AHashMap;
-
 use crate::build_tools::{ExtraBehavior, py_schema_error_type};
 use crate::definitions::DefinitionsBuilder;
 use crate::serializers::SerializationState;
@@ -14,7 +12,7 @@ use crate::serializers::errors::unwrap_ser_error;
 use crate::serializers::shared::DoSerialize;
 use crate::serializers::shared::serialize_to_json;
 use crate::serializers::shared::serialize_to_python;
-use crate::tools::SchemaDict;
+use crate::tools::{SchemaDict, build_map_with_capacity};
 
 use super::{
     BuildSerializer, CombinedSerializer, ComputedFields, FieldsMode, GeneralFieldsSerializer, ObType, SerCheck,
@@ -34,7 +32,7 @@ impl BuildSerializer for DataclassArgsBuilder {
         let py = schema.py();
 
         let fields_list: Bound<'_, PyList> = schema.get_as_req(intern!(py, "fields"))?;
-        let mut fields = AHashMap::with_capacity(fields_list.len());
+        let mut fields = build_map_with_capacity(fields_list.len());
 
         let fields_mode = match ExtraBehavior::from_schema_or_config(py, schema, config, ExtraBehavior::Ignore)? {
             ExtraBehavior::Allow => FieldsMode::TypedDictAllow,

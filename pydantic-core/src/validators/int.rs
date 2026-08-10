@@ -10,6 +10,7 @@ use pyo3::types::{PyDict, PyString};
 use crate::build_tools::is_strict;
 use crate::errors::{ErrorType, ValError, ValResult};
 use crate::input::{Input, Int};
+use crate::schema_keys::{BuildConfig, SchemaKeys};
 
 use super::{BuildValidator, CombinedValidator, DefinitionsBuilder, ValidationState, Validator};
 
@@ -47,18 +48,19 @@ impl BuildValidator for IntValidator {
     fn build(
         schema: &Bound<'_, PyDict>,
         config: Option<&Bound<'_, PyDict>>,
-        _definitions: &mut DefinitionsBuilder<Arc<CombinedValidator>>,
+        definitions: &mut DefinitionsBuilder<Arc<CombinedValidator>>,
     ) -> PyResult<Arc<CombinedValidator>> {
         let py = schema.py();
-        let use_constrained = schema.get_item(intern!(py, "multiple_of"))?.is_some()
-            || schema.get_item(intern!(py, "le"))?.is_some()
-            || schema.get_item(intern!(py, "lt"))?.is_some()
-            || schema.get_item(intern!(py, "ge"))?.is_some()
-            || schema.get_item(intern!(py, "gt"))?.is_some();
+        let keys = SchemaKeys::new_typed(schema, definitions)?;
+        let use_constrained = keys.contains(intern!(py, "multiple_of"))?
+            || keys.contains(intern!(py, "le"))?
+            || keys.contains(intern!(py, "lt"))?
+            || keys.contains(intern!(py, "ge"))?
+            || keys.contains(intern!(py, "gt"))?;
 
         if use_constrained {
             ConstrainedIntValidator::build(schema, config)
-        } else if is_strict(schema, config)? {
+        } else if keys.is_strict(BuildConfig::new(config, definitions))? {
             Ok(STRICT_INT_VALIDATOR.clone())
         } else {
             Ok(LAX_INT_VALIDATOR.clone())

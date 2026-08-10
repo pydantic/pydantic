@@ -3,16 +3,15 @@ use std::sync::Arc;
 
 use pyo3::intern;
 use pyo3::prelude::*;
-use pyo3::types::{PyBool, PyDict, PyList, PyString};
+use pyo3::types::{PyBool, PyDict, PyInt, PyList, PyString};
 
-use ahash::AHashSet;
 use pyo3::IntoPyObjectExt;
 use serde::Serialize;
 
-use crate::build_tools::py_schema_err;
+use crate::build_tools::{composed_name, py_schema_err};
 use crate::definitions::DefinitionsBuilder;
 use crate::serializers::SerializationState;
-use crate::tools::SchemaDict;
+use crate::tools::{BuildHashSet, SchemaDict};
 
 use super::{
     BuildSerializer, CombinedSerializer, SerMode, TypeSerializer, infer_json_key, infer_serialize, infer_to_python,
@@ -21,8 +20,8 @@ use super::{
 
 #[derive(Debug)]
 pub struct LiteralSerializer {
-    expected_int: Box<AHashSet<i64>>,
-    expected_str: Box<AHashSet<String>>,
+    expected_int: Box<BuildHashSet<i64>>,
+    expected_str: Box<BuildHashSet<String>>,
     expected_py: Option<Py<PyList>>,
     name: String,
 }
@@ -40,21 +39,22 @@ impl BuildSerializer for LiteralSerializer {
         if expected.is_empty() {
             return py_schema_err!("`expected` should have length > 0");
         }
-        let mut expected_int = AHashSet::new();
-        let mut expected_str = AHashSet::new();
+        let mut expected_int = BuildHashSet::default();
+        let mut expected_str = BuildHashSet::default();
         let py = expected.py();
-        let expected_py = PyList::empty(py);
-        let mut repr_args: Vec<String> = Vec::new();
+        // only created if needed (bools and non int/str values)
+        let mut expected_py: Option<Bound<'_, PyList>> = None;
+        let mut repr_args: Vec<String> = Vec::with_capacity(expected.len());
         for item in expected {
-            repr_args.push(item.repr()?.extract()?);
+            repr_args.push(item.repr()?.to_cow()?.into_owned());
             if let Ok(bool) = item.cast::<PyBool>() {
-                expected_py.append(bool)?;
-            } else if let Ok(int) = item.extract() {
+                expected_py.get_or_insert_with(|| PyList::empty(py)).append(bool)?;
+            } else if let Some(int) = extract_int(&item) {
                 expected_int.insert(int);
             } else if let Ok(py_str) = item.cast::<PyString>() {
                 expected_str.insert(py_str.to_str()?.to_string());
             } else {
-                expected_py.append(item)?;
+                expected_py.get_or_insert_with(|| PyList::empty(py)).append(item)?;
             }
         }
 
@@ -62,14 +62,26 @@ impl BuildSerializer for LiteralSerializer {
             Self {
                 expected_int: Box::new(expected_int),
                 expected_str: Box::new(expected_str),
-                expected_py: match expected_py.is_empty() {
-                    true => None,
-                    false => Some(expected_py.into()),
-                },
-                name: format!("{}[{}]", Self::EXPECTED_TYPE, repr_args.join(",")),
+                expected_py: expected_py.map(Into::into),
+                name: composed_name(
+                    Self::EXPECTED_TYPE,
+                    &repr_args.iter().map(String::as_str).collect::<Vec<_>>(),
+                    ",",
+                ),
             }
             .into(),
         ))
+    }
+}
+
+/// `item.extract::<i64>().ok()`, without creating (and discarding) a Python `TypeError` for the very
+/// common case of objects that cannot be interpreted as an integer at all (e.g. `str` literals).
+fn extract_int(item: &Bound<'_, PyAny>) -> Option<i64> {
+    // SAFETY: PyIndex_Check only inspects the type's slots
+    if item.is_instance_of::<PyInt>() || unsafe { pyo3::ffi::PyIndex_Check(item.as_ptr()) } != 0 {
+        item.extract().ok()
+    } else {
+        None
     }
 }
 

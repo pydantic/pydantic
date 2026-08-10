@@ -3,10 +3,12 @@ use std::sync::{Arc, OnceLock};
 use pyo3::types::PyDict;
 use pyo3::{IntoPyObjectExt, prelude::*};
 
+use crate::build_tools::composed_name;
 use crate::errors::ValResult;
 use crate::input::{
     BorrowInput, ConsumeIterator, Input, MaxLengthCheck, ValidatedList, no_validator_iter_to_vec, validate_iter_to_vec,
 };
+use crate::schema_keys::{BuildConfig, SchemaKeys};
 use crate::tools::SchemaDict;
 
 use super::{BuildValidator, CombinedValidator, DefinitionsBuilder, ValidationState, Validator, build_validator};
@@ -103,14 +105,21 @@ impl BuildValidator for ListValidator {
         definitions: &mut DefinitionsBuilder<Arc<CombinedValidator>>,
     ) -> PyResult<Arc<CombinedValidator>> {
         let py = schema.py();
-        let item_validator = get_items_schema(schema, config, definitions)?;
+        let keys = SchemaKeys::new_typed(schema, definitions)?;
+        let item_validator = match keys.get_item(pyo3::intern!(py, "items_schema"))? {
+            Some(d) => {
+                Some(build_validator(&d, config, definitions)?).filter(|v| !matches!(**v, CombinedValidator::Any(_)))
+            }
+            None => None,
+        };
+        let config = BuildConfig::new(config, definitions);
         Ok(CombinedValidator::List(Self {
-            strict: crate::build_tools::is_strict(schema, config)?,
+            strict: keys.is_strict(config)?,
             item_validator,
-            min_length: schema.get_as(pyo3::intern!(py, "min_length"))?,
-            max_length: schema.get_as(pyo3::intern!(py, "max_length"))?,
+            min_length: keys.get_as(pyo3::intern!(py, "min_length"))?,
+            max_length: keys.get_as(pyo3::intern!(py, "max_length"))?,
             name: OnceLock::new(),
-            fail_fast: schema.get_as(pyo3::intern!(py, "fail_fast"))?.unwrap_or(false),
+            fail_fast: keys.get_as(pyo3::intern!(py, "fail_fast"))?.unwrap_or(false),
         })
         .into())
     }
@@ -172,7 +181,7 @@ impl Validator for ListValidator {
                     // when inner name is not initialized yet, don't cache it here
                     "list[...]"
                 } else {
-                    self.name.get_or_init(|| format!("list[{name}]")).as_str()
+                    self.name.get_or_init(|| composed_name("list", &[name], "")).as_str()
                 }
             }
         }

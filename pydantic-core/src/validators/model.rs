@@ -14,9 +14,9 @@ use super::{
 };
 use crate::PydanticUndefinedType;
 use crate::build_tools::py_schema_err;
-use crate::build_tools::schema_or_config_same;
 use crate::errors::{ErrorType, ErrorTypeDefaults, ValError, ValResult};
 use crate::input::{Input, input_as_python_instance, py_error_on_minusone};
+use crate::schema_keys::{BuildConfig, ConfigKey, SchemaKeys};
 use crate::tools::{ROOT_FIELD, SchemaDict, py_err, root_field_py_str};
 
 const DUNDER_DICT: &str = "__dict__";
@@ -73,33 +73,43 @@ impl BuildValidator for ModelValidator {
         definitions: &mut DefinitionsBuilder<Arc<CombinedValidator>>,
     ) -> PyResult<Arc<CombinedValidator>> {
         let py = schema.py();
+        let schema = &SchemaKeys::new_typed(schema, definitions)?;
         // models ignore the parent config and always use the config from this model
-        let config = schema.get_as(intern!(py, "config"))?;
+        let config_dict: Option<Bound<'_, PyDict>> = schema.get_as(intern!(py, "config"))?;
+        let config = BuildConfig::new(config_dict.as_ref(), definitions);
 
         let class: Bound<'_, PyType> = schema.get_as_req(intern!(py, "cls"))?;
+        // (items used further down looked up early, and `ref` / `metadata` — not used here — accounted for, so that
+        // for the usual model node all the optional keys are known to be absent by the time they are asked for)
+        let custom_init = schema.get_item(intern!(py, "custom_init"))?;
+        let root_model = schema.get_item(intern!(py, "root_model"))?;
+        let sub_schema = schema.get_item(intern!(py, "schema"))?;
+        schema.contains(intern!(py, "ref"))?;
+        schema.contains(intern!(py, "metadata"))?;
         let generic_origin: Option<Bound<'_, PyType>> = schema.get_as(intern!(py, "generic_origin"))?;
-        let sub_schema = schema.get_as_req(intern!(py, "schema"))?;
-        let validator = build_validator(&sub_schema, config.as_ref(), definitions)?;
+        let sub_schema = SchemaKeys::required(sub_schema, intern!(py, "schema"))?;
+        let validator = build_validator(&sub_schema, config_dict.as_ref(), definitions)?;
         let name = class.getattr(intern!(py, "__name__"))?.extract()?;
 
         Ok(CombinedValidator::Model(Self {
             revalidate: Revalidate::from_str(
-                schema_or_config_same::<Bound<'_, PyString>>(
-                    schema,
-                    config.as_ref(),
-                    intern!(py, "revalidate_instances"),
-                )?
-                .as_ref()
-                .map(|s| s.to_str())
-                .transpose()?,
+                schema
+                    .get_as_or_config::<Bound<'_, PyString>>(
+                        intern!(py, "revalidate_instances"),
+                        config,
+                        ConfigKey::RevalidateInstances,
+                    )?
+                    .as_ref()
+                    .map(|s| s.to_str())
+                    .transpose()?,
             )?,
             validator,
             class: class.into(),
             generic_origin: generic_origin.map(std::convert::Into::into),
             post_init: schema.get_as(intern!(py, "post_init"))?,
             frozen: schema.get_as(intern!(py, "frozen"))?.unwrap_or(false),
-            custom_init: schema.get_as(intern!(py, "custom_init"))?.unwrap_or(false),
-            root_model: schema.get_as(intern!(py, "root_model"))?.unwrap_or(false),
+            custom_init: custom_init.map(|v| v.extract()).transpose()?.unwrap_or(false),
+            root_model: root_model.map(|v| v.extract()).transpose()?.unwrap_or(false),
             undefined: PydanticUndefinedType::get(py).clone_ref(schema.py()).into_any(),
             // Get the class's `__name__`, not using `class.qualname()`
             name,

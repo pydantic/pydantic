@@ -10,9 +10,10 @@ use pyo3::sync::MutexExt;
 use pyo3::types::{PyDict, PyString};
 use regex::Regex;
 
-use crate::build_tools::{is_strict, py_schema_error_type, schema_or_config, schema_or_config_same};
+use crate::build_tools::py_schema_error_type;
 use crate::errors::{ErrorType, ValError, ValResult};
 use crate::input::Input;
+use crate::schema_keys::{BuildConfig, ConfigKey, SchemaKeys};
 use crate::tools::SchemaDict;
 
 use super::{BuildValidator, CombinedValidator, DefinitionsBuilder, ValidationState, Validator};
@@ -45,14 +46,18 @@ impl BuildValidator for StrValidator {
     fn build(
         schema: &Bound<'_, PyDict>,
         config: Option<&Bound<'_, PyDict>>,
-        _definitions: &mut DefinitionsBuilder<Arc<CombinedValidator>>,
+        definitions: &mut DefinitionsBuilder<Arc<CombinedValidator>>,
     ) -> PyResult<Arc<CombinedValidator>> {
+        // (`{'type': 'str'}` is the single most common schema node: `SchemaKeys` / `BuildConfig` spare it the ~17
+        // lookups of absent optional keys below)
+        let schema = &SchemaKeys::new_typed(schema, definitions)?;
+        let config = BuildConfig::new(config, definitions);
         let con_str_validator = StrConstrainedValidator::build(schema, config)?;
 
         if con_str_validator.has_constraints_set() {
             Ok(Arc::new(con_str_validator.into()))
         } else if !con_str_validator.coerce_numbers_to_str {
-            if is_strict(schema, config)? {
+            if con_str_validator.strict {
                 Ok(STRICT_STR_VALIDATOR.clone())
             } else {
                 Ok(LAX_STR_VALIDATOR.clone())
@@ -185,17 +190,16 @@ impl Validator for StrConstrainedValidator {
 }
 
 impl StrConstrainedValidator {
-    fn build(schema: &Bound<'_, PyDict>, config: Option<&Bound<'_, PyDict>>) -> PyResult<Self> {
+    fn build(schema: &SchemaKeys<'_, '_>, config: BuildConfig<'_, '_>) -> PyResult<Self> {
         let py = schema.py();
 
         let pattern = schema
             .get_as(intern!(py, "pattern"))?
             .map(|s| {
-                let regex_engine = schema_or_config::<Bound<'_, PyString>>(
-                    schema,
+                let regex_engine = schema.get_as_or_config::<Bound<'_, PyString>>(
+                    intern!(py, "regex_engine"),
                     config,
-                    intern!(py, "regex_engine"),
-                    intern!(py, "regex_engine"),
+                    ConfigKey::RegexEngine,
                 )?;
                 let regex_engine = regex_engine
                     .as_ref()
@@ -206,28 +210,33 @@ impl StrConstrainedValidator {
             })
             .transpose()?;
         let min_length: Option<usize> =
-            schema_or_config(schema, config, intern!(py, "min_length"), intern!(py, "str_min_length"))?;
+            schema.get_as_or_config(intern!(py, "min_length"), config, ConfigKey::StrMinLength)?;
         let max_length: Option<usize> =
-            schema_or_config(schema, config, intern!(py, "max_length"), intern!(py, "str_max_length"))?;
+            schema.get_as_or_config(intern!(py, "max_length"), config, ConfigKey::StrMaxLength)?;
 
-        let strip_whitespace: bool = schema_or_config(
-            schema,
-            config,
-            intern!(py, "strip_whitespace"),
-            intern!(py, "str_strip_whitespace"),
-        )?
-        .unwrap_or(false);
-        let to_lower: bool =
-            schema_or_config(schema, config, intern!(py, "to_lower"), intern!(py, "str_to_lower"))?.unwrap_or(false);
-        let to_upper: bool =
-            schema_or_config(schema, config, intern!(py, "to_upper"), intern!(py, "str_to_upper"))?.unwrap_or(false);
+        let strip_whitespace: bool = schema
+            .get_as_or_config(intern!(py, "strip_whitespace"), config, ConfigKey::StrStripWhitespace)?
+            .unwrap_or(false);
+        let to_lower: bool = schema
+            .get_as_or_config(intern!(py, "to_lower"), config, ConfigKey::StrToLower)?
+            .unwrap_or(false);
+        let to_upper: bool = schema
+            .get_as_or_config(intern!(py, "to_upper"), config, ConfigKey::StrToUpper)?
+            .unwrap_or(false);
 
-        let coerce_numbers_to_str: bool =
-            schema_or_config_same(schema, config, intern!(py, "coerce_numbers_to_str"))?.unwrap_or(false);
-        let ascii_only: bool = schema_or_config_same(schema, config, intern!(py, "ascii_only"))?.unwrap_or(false);
+        let coerce_numbers_to_str: bool = schema
+            .get_as_or_config(
+                intern!(py, "coerce_numbers_to_str"),
+                config,
+                ConfigKey::CoerceNumbersToStr,
+            )?
+            .unwrap_or(false);
+        let ascii_only: bool = schema
+            .get_as_or_config(intern!(py, "ascii_only"), config, ConfigKey::AsciiOnly)?
+            .unwrap_or(false);
 
         Ok(Self {
-            strict: is_strict(schema, config)?,
+            strict: schema.is_strict(config)?,
             pattern,
             min_length,
             max_length,

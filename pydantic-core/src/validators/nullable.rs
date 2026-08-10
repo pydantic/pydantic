@@ -4,6 +4,7 @@ use pyo3::intern;
 use pyo3::prelude::*;
 use pyo3::types::PyDict;
 
+use crate::build_tools::composed_name;
 use crate::errors::ValResult;
 use crate::input::Input;
 use crate::tools::SchemaDict;
@@ -27,7 +28,7 @@ impl BuildValidator for NullableValidator {
     ) -> PyResult<Arc<CombinedValidator>> {
         let schema = schema.get_as_req(intern!(schema.py(), "schema"))?;
         let validator = build_validator(&schema, config, definitions)?;
-        let name = format!("{}[{}]", Self::EXPECTED_TYPE, validator.get_name());
+        let name = composed_name(Self::EXPECTED_TYPE, &[validator.get_name()], "");
         Ok(CombinedValidator::Nullable(Self { validator, name }).into())
     }
 }

@@ -165,6 +165,7 @@ combined_serializer! {
 
 impl CombinedSerializer {
     fn _build(
+        type_: Option<&Bound<'_, PyAny>>,
         schema: &Bound<'_, PyDict>,
         config: Option<&Bound<'_, PyDict>>,
         definitions: &mut DefinitionsBuilder<Arc<CombinedSerializer>>,
@@ -214,7 +215,7 @@ impl CombinedSerializer {
             }
         }
 
-        let type_: Bound<'_, PyString> = schema.get_as_req(type_key)?;
+        let type_ = required_type(type_, type_key)?;
         let type_ = type_.to_str()?;
 
         if use_prebuilt {
@@ -231,11 +232,11 @@ impl CombinedSerializer {
 
     fn maybe_wrap_in_polymorphism_trampoline(
         serializer: Arc<CombinedSerializer>,
+        type_: Option<&Bound<'_, PyAny>>,
         schema: &Bound<'_, PyDict>,
     ) -> PyResult<Arc<CombinedSerializer>> {
         let py = schema.py();
-        let type_: Bound<'_, PyString> = schema.get_as_req(intern!(py, "type"))?;
-        let type_ = type_.to_str()?;
+        let type_ = required_type(type_, intern!(py, "type"))?;
 
         // Note: it could make sense to generalize this behavior for any type that may have subclasses,
         // but apart from models and dataclasses, that would be for arbitrary types where custom serialization
@@ -342,8 +343,22 @@ impl BuildSerializer for CombinedSerializer {
         // Read use_prebuilt from the definitions builder - this ensures all nested
         // serializers respect the same setting as the top-level build
         let use_prebuilt = definitions.use_prebuilt();
-        let serializer = Self::_build(schema, config, definitions, use_prebuilt)?;
-        Self::maybe_wrap_in_polymorphism_trampoline(serializer, schema)
+        // looked up once here and shared by `_build` and the polymorphism wrapping below; a missing `type`
+        // is only reported at the point where it is actually required, as before.
+        let type_ = schema.get_item(intern!(schema.py(), "type"))?;
+        let serializer = Self::_build(type_.as_ref(), schema, config, definitions, use_prebuilt)?;
+        Self::maybe_wrap_in_polymorphism_trampoline(serializer, type_.as_ref(), schema)
+    }
+}
+
+/// Equivalent of `schema.get_as_req::<Bound<'_, PyString>>("type")` given the already looked-up item.
+fn required_type<'a, 'py>(
+    type_: Option<&'a Bound<'py, PyAny>>,
+    type_key: &Bound<'py, PyString>,
+) -> PyResult<&'a Bound<'py, PyString>> {
+    match type_ {
+        Some(t) => t.cast::<PyString>().map_err(Into::into),
+        None => py_err!(pyo3::exceptions::PyKeyError; "{}", type_key),
     }
 }
 

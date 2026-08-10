@@ -1,6 +1,6 @@
 use std::fmt::Debug;
-use std::sync::Arc;
 use std::sync::atomic::{AtomicUsize, Ordering};
+use std::sync::{Arc, OnceLock};
 
 use pyo3::prelude::*;
 use pyo3::types::{PyBytes, PyDict, PyTuple, PyType};
@@ -8,7 +8,7 @@ use pyo3::{PyTraverseError, PyVisit};
 use type_serializers::any::AnySerializer;
 
 use crate::definitions::{Definitions, DefinitionsBuilder};
-use crate::py_gc::PyGcTraverse;
+use crate::py_gc::{PyGcSnapshot, PyGcTraverse};
 
 pub(crate) use config::{BytesMode, SerializationConfig};
 pub use errors::{PydanticSerializationError, PydanticSerializationUnexpectedValue};
@@ -47,6 +47,8 @@ pub struct SchemaSerializer {
     // reconstructing the object for pickle support (see `__reduce__`).
     py_schema: Py<PyDict>,
     py_config: Option<Py<PyDict>>,
+    /// What `py_gc_traverse` reports (it never changes once built), see `__traverse__`.
+    gc_snapshot: OnceLock<PyGcSnapshot>,
 }
 
 impl_py_gc_traverse!(SchemaSerializer {
@@ -56,10 +58,7 @@ impl_py_gc_traverse!(SchemaSerializer {
     py_config,
 });
 
-#[pymethods]
 impl SchemaSerializer {
-    #[new]
-    #[pyo3(signature = (schema, config=None, _use_prebuilt=true))]
     pub fn py_new(
         schema: Bound<'_, PyDict>,
         config: Option<&Bound<'_, PyDict>>,
@@ -79,7 +78,26 @@ impl SchemaSerializer {
                 Some(c) if !c.is_empty() => Some(c.clone().into()),
                 _ => None,
             },
+            gc_snapshot: OnceLock::new(),
         })
+    }
+}
+
+#[pymethods]
+impl SchemaSerializer {
+    #[new]
+    #[pyo3(signature = (schema, config=None, _use_prebuilt=true))]
+    fn new_object<'py>(
+        schema: Bound<'py, PyDict>,
+        config: Option<&Bound<'py, PyDict>>,
+        _use_prebuilt: bool,
+    ) -> PyResult<Bound<'py, Self>> {
+        let py = schema.py();
+        let slf = Bound::new(py, Self::py_new(schema, config, _use_prebuilt)?)?;
+        if let Some(snapshot) = PyGcSnapshot::take(slf.as_any()) {
+            let _ = slf.get().gc_snapshot.set(snapshot);
+        }
+        Ok(slf)
     }
 
     #[allow(clippy::too_many_arguments)]
@@ -207,7 +225,11 @@ impl SchemaSerializer {
     }
 
     fn __traverse__(&self, visit: PyVisit<'_>) -> Result<(), PyTraverseError> {
-        self.py_gc_traverse(&visit)
+        match self.gc_snapshot.get() {
+            Some(snapshot) => snapshot.traverse(&visit),
+            // (only while taking the snapshot, right after construction)
+            None => self.py_gc_traverse(&visit),
+        }
     }
 }
 

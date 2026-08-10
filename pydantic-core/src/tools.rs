@@ -1,5 +1,8 @@
 use core::fmt;
+use std::collections::{HashMap, HashSet};
+use std::hash::BuildHasherDefault;
 
+use ahash::AHasher;
 use hashbrown::HashTable;
 use pyo3::PyTraverseError;
 use pyo3::PyVisit;
@@ -11,6 +14,17 @@ use pyo3::types::{PyDict, PyMapping, PyString};
 use crate::PydanticUndefinedType;
 use crate::py_gc::PyGcTraverse;
 use jiter::{StringCacheMode, cached_py_string};
+
+/// `HashMap` / `HashSet` using aHash with the process-wide (randomly initialised) fixed keys instead of a
+/// freshly seeded `RandomState` per map. Creating one is free (no seeding), which matters because schema
+/// building creates many small maps. Only use these for maps whose *inserted* keys come from the schema,
+/// never from untrusted input.
+pub type BuildHashMap<K, V> = HashMap<K, V, BuildHasherDefault<AHasher>>;
+pub type BuildHashSet<K> = HashSet<K, BuildHasherDefault<AHasher>>;
+
+pub fn build_map_with_capacity<K, V>(capacity: usize) -> BuildHashMap<K, V> {
+    BuildHashMap::with_capacity_and_hasher(capacity, BuildHasherDefault::default())
+}
 
 pub trait SchemaDict<'py> {
     fn get_as<T>(&self, key: &Bound<'py, PyString>) -> PyResult<Option<T>>

@@ -6,7 +6,6 @@ use pyo3::prelude::*;
 use pyo3::pybacked::PyBackedStr;
 use pyo3::types::{PyDict, PySet, PyType};
 
-use ahash::AHashMap;
 use pyo3::IntoPyObjectExt;
 
 use super::{
@@ -24,8 +23,8 @@ use crate::serializers::shared::serialize_to_python;
 use crate::serializers::type_serializers::any::AnySerializer;
 use crate::serializers::type_serializers::function::FunctionPlainSerializer;
 use crate::serializers::type_serializers::function::FunctionWrapSerializer;
-use crate::tools::SchemaDict;
 use crate::tools::root_field_py_str;
+use crate::tools::{SchemaDict, build_map_with_capacity};
 
 pub struct ModelFieldsBuilder;
 
@@ -45,7 +44,7 @@ impl BuildSerializer for ModelFieldsBuilder {
         };
 
         let fields_dict: Bound<'_, PyDict> = schema.get_as_req(intern!(py, "fields"))?;
-        let mut fields = AHashMap::with_capacity(fields_dict.len());
+        let mut fields = build_map_with_capacity(fields_dict.len());
 
         let extra_serializer = match (schema.get_item(intern!(py, "extras_schema"))?, &fields_mode) {
             (Some(v), FieldsMode::ModelExtra) => Some(CombinedSerializer::build(&v.extract()?, config, definitions)?),

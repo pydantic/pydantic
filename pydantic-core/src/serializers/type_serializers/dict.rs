@@ -8,6 +8,7 @@ use pyo3::types::PyDict;
 use pyo3::IntoPyObjectExt;
 use serde::ser::SerializeMap;
 
+use crate::build_tools::composed_name;
 use crate::definitions::DefinitionsBuilder;
 use crate::serializers::SerializationState;
 use crate::serializers::extra::IncludeExclude;
@@ -53,11 +54,10 @@ impl BuildSerializer for DictSerializer {
             }
             None => SchemaFilter::default(),
         };
-        let name = format!(
-            "{}[{}, {}]",
+        let name = composed_name(
             Self::EXPECTED_TYPE,
-            key_serializer.get_name(),
-            value_serializer.get_name()
+            &[key_serializer.get_name(), value_serializer.get_name()],
+            ", ",
         );
         Ok(CombinedSerializer::Dict(Self {
             key_serializer,

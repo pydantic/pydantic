@@ -10,6 +10,7 @@ use pyo3::{PyErrArguments, intern};
 use crate::ValidationError;
 use crate::errors::{PyLineError, ValError};
 use crate::input::InputType;
+use crate::schema_keys::{BuildConfig, ConfigKey, SchemaKeys};
 use crate::tools::SchemaDict;
 
 pub fn schema_or_config<'py, T>(
@@ -178,6 +179,27 @@ pub enum ExtraBehavior {
 }
 
 impl ExtraBehavior {
+    /// [`Self::from_schema_or_config`] over `SchemaKeys` / `BuildConfig`.
+    pub fn from_keys_or_config(
+        schema: &SchemaKeys<'_, '_>,
+        config: BuildConfig<'_, '_>,
+        default: Self,
+    ) -> PyResult<Self> {
+        let py = schema.py();
+        let extra_behavior = schema
+            .get_as_or_config::<Option<Bound<'_, PyString>>>(
+                intern!(py, "extra_behavior"),
+                config,
+                ConfigKey::ExtraFieldsBehavior,
+            )?
+            .flatten();
+        let res = match extra_behavior.as_ref().map(|s| s.to_str()).transpose()? {
+            Some(s) => Self::from_str(s)?,
+            None => default,
+        };
+        Ok(res)
+    }
+
     pub fn from_schema_or_config(
         py: Python,
         schema: &Bound<'_, PyDict>,
@@ -210,4 +232,21 @@ impl FromStr for ExtraBehavior {
             s => py_schema_err!("Invalid extra_behavior: `{s}`"),
         }
     }
+}
+
+/// Build `"{outer}[{parts joined by sep}]"` without going through the `format!` machinery,
+/// used for the many validator / serializer names composed while building a schema.
+pub fn composed_name(outer: &str, parts: &[&str], sep: &str) -> String {
+    let inner_len: usize = parts.iter().map(|p| p.len()).sum::<usize>() + sep.len() * parts.len().saturating_sub(1);
+    let mut name = String::with_capacity(outer.len() + inner_len + 2);
+    name.push_str(outer);
+    name.push('[');
+    for (i, part) in parts.iter().enumerate() {
+        if i != 0 {
+            name.push_str(sep);
+        }
+        name.push_str(part);
+    }
+    name.push(']');
+    name
 }
