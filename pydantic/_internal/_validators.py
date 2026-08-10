@@ -429,6 +429,8 @@ def get_defaultdict_default_default_factory(values_source_type: Any) -> Callable
             set: set,
             collections.abc.MutableSet: set,
             collections.abc.Set: frozenset,
+            frozenset: frozenset,
+            dict: dict,
             collections.abc.Mapping: dict,
             collections.abc.MutableMapping: dict,
             float: float,

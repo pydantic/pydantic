@@ -6,6 +6,7 @@ from pydantic_core import CoreSchema, core_schema
 from typing_extensions import get_args  # noqa: UP035 (for `get_args`)
 
 from pydantic import (
+    BaseModel,
     Field,
     GetCoreSchemaHandler,
     PydanticSchemaGenerationError,
@@ -49,6 +50,54 @@ def test_defaultdict_infer_default_factory() -> None:
     v = ta_set.validate_python({})
     assert v.default_factory is not None
     assert v.default_factory() == set()
+
+    ta_dict = TypeAdapter(defaultdict[str, dict])
+    v = ta_dict.validate_python({})
+    assert v.default_factory is not None
+    assert v.default_factory() == {}
+    v['a']['b'] = 1
+    assert v == {'a': {'b': 1}}
+
+    ta_dict_params = TypeAdapter(defaultdict[str, dict[str, int]])
+    v = ta_dict_params.validate_python({})
+    assert v.default_factory is not None
+    assert v.default_factory() == {}
+
+    ta_frozenset = TypeAdapter(defaultdict[str, frozenset])
+    v = ta_frozenset.validate_python({})
+    assert v.default_factory is not None
+    assert v.default_factory() == frozenset()
+
+    ta_frozenset_params = TypeAdapter(defaultdict[str, frozenset[int]])
+    v = ta_frozenset_params.validate_python({})
+    assert v.default_factory is not None
+    assert v.default_factory() == frozenset()
+
+
+def test_defaultdict_dict_value_on_model() -> None:
+    """https://github.com/pydantic/pydantic/issues/13617"""
+
+    class ModelWithDefault(BaseModel):
+        prop: defaultdict[str, dict] = defaultdict(dict)
+
+    # Schema generation used to fail while constructing the class.
+    m = ModelWithDefault()
+    m.prop['a']['b'] = 1
+    assert m.prop == {'a': {'b': 1}}
+    # Class-level defaultdict default is copied per instance.
+    assert ModelWithDefault().prop == {}
+
+    class Model(BaseModel):
+        prop: defaultdict[str, dict]
+
+    # Plain mapping input uses the inferred factory (not factory preservation).
+    m2 = Model.model_validate({'prop': {'x': {'y': 2}}})
+    assert isinstance(m2.prop, defaultdict)
+    assert m2.prop['x'] == {'y': 2}
+    assert m2.prop.default_factory is not None
+    assert m2.prop.default_factory() == {}
+    m2.prop['missing']['k'] = 1
+    assert m2.prop['missing'] == {'k': 1}
 
 
 def test_defaultdict_explicit_default_factory() -> None:
