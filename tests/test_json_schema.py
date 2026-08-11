@@ -531,7 +531,7 @@ def test_decimal_json_schema():
                     {'type': 'number'},
                     {
                         'type': 'string',
-                        'pattern': '^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$',
+                        'pattern': '^[+-]?(?:\\d+(?:\\.\\d*)?|\\.\\d+)$',
                     },
                 ],
                 'default': '12.34',
@@ -548,7 +548,7 @@ def test_decimal_json_schema():
                 'default': '12.34',
                 'title': 'B',
                 'type': 'string',
-                'pattern': '^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$',
+                'pattern': '^[+-]?(?:\\d+(?:\\.\\d*)?|\\.\\d+)$',
             },
         },
         'title': 'Model',
@@ -1072,7 +1072,7 @@ def test_special_decimal_types(field_type, expected_schema):
                     {'type': 'number'},
                     {
                         'type': 'string',
-                        'pattern': '^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$',
+                        'pattern': '^[+-]?(?:\\d+(?:\\.\\d*)?|\\.\\d+)$',
                     },
                 ],
                 'title': 'A',
@@ -2047,7 +2047,7 @@ def test_docstring(docstring, description):
                     {'exclusiveMinimum': 2.0, 'type': 'number'},
                     {
                         'type': 'string',
-                        'pattern': '^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$',
+                        'pattern': '^[+-]?(?:\\d+(?:\\.\\d*)?|\\.\\d+)$',
                     },
                 ]
             },
@@ -2060,7 +2060,7 @@ def test_docstring(docstring, description):
                     {'type': 'number', 'exclusiveMaximum': 5},
                     {
                         'type': 'string',
-                        'pattern': '^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$',
+                        'pattern': '^[+-]?(?:\\d+(?:\\.\\d*)?|\\.\\d+)$',
                     },
                 ]
             },
@@ -2073,7 +2073,7 @@ def test_docstring(docstring, description):
                     {'type': 'number', 'minimum': 2},
                     {
                         'type': 'string',
-                        'pattern': '^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$',
+                        'pattern': '^[+-]?(?:\\d+(?:\\.\\d*)?|\\.\\d+)$',
                     },
                 ]
             },
@@ -2086,7 +2086,7 @@ def test_docstring(docstring, description):
                     {'type': 'number', 'maximum': 5},
                     {
                         'type': 'string',
-                        'pattern': '^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$',
+                        'pattern': '^[+-]?(?:\\d+(?:\\.\\d*)?|\\.\\d+)$',
                     },
                 ]
             },
@@ -2099,7 +2099,7 @@ def test_docstring(docstring, description):
                     {'type': 'number', 'multipleOf': 5},
                     {
                         'type': 'string',
-                        'pattern': '^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$',
+                        'pattern': '^[+-]?(?:\\d+(?:\\.\\d*)?|\\.\\d+)$',
                     },
                 ]
             },
@@ -2148,7 +2148,7 @@ def test_constraints_schema_validation(kwargs, type_, expected_extra):
             Decimal,
             {
                 'type': 'string',
-                'pattern': '^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$',
+                'pattern': '^[+-]?(?:\\d+(?:\\.\\d*)?|\\.\\d+)$',
             },
         ),
         (
@@ -2156,7 +2156,7 @@ def test_constraints_schema_validation(kwargs, type_, expected_extra):
             Decimal,
             {
                 'type': 'string',
-                'pattern': '^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$',
+                'pattern': '^[+-]?(?:\\d+(?:\\.\\d*)?|\\.\\d+)$',
             },
         ),
         (
@@ -2164,7 +2164,7 @@ def test_constraints_schema_validation(kwargs, type_, expected_extra):
             Decimal,
             {
                 'type': 'string',
-                'pattern': '^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$',
+                'pattern': '^[+-]?(?:\\d+(?:\\.\\d*)?|\\.\\d+)$',
             },
         ),
         (
@@ -2172,7 +2172,7 @@ def test_constraints_schema_validation(kwargs, type_, expected_extra):
             Decimal,
             {
                 'type': 'string',
-                'pattern': '^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$',
+                'pattern': '^[+-]?(?:\\d+(?:\\.\\d*)?|\\.\\d+)$',
             },
         ),
         (
@@ -2180,7 +2180,7 @@ def test_constraints_schema_validation(kwargs, type_, expected_extra):
             Decimal,
             {
                 'type': 'string',
-                'pattern': '^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$',
+                'pattern': '^[+-]?(?:\\d+(?:\\.\\d*)?|\\.\\d+)$',
             },
         ),
     ],
@@ -5986,14 +5986,14 @@ def test_generate_definitions_for_no_ref_schemas():
         {
             ('Decimal', 'serialization'): {
                 'type': 'string',
-                'pattern': '^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$',
+                'pattern': '^[+-]?(?:\\d+(?:\\.\\d*)?|\\.\\d+)$',
             },
             ('Decimal', 'validation'): {
                 'anyOf': [
                     {'type': 'number'},
                     {
                         'type': 'string',
-                        'pattern': '^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$',
+                        'pattern': '^[+-]?(?:\\d+(?:\\.\\d*)?|\\.\\d+)$',
                     },
                 ]
             },
@@ -7190,6 +7190,41 @@ def test_decimal_pattern_reject_invalid_not_numerical_values_with_decimal_places
 ) -> None:
     pattern = get_decimal_pattern()
     assert re.fullmatch(pattern, invalid_decimal) is None
+
+
+@pytest.mark.parametrize(
+    'max_digits, decimal_places',
+    [
+        (None, None),
+        (None, 2),
+        (3, None),
+        (4, 2),
+        (4, 4),
+    ],
+)
+def test_decimal_pattern_has_no_lookaround(max_digits, decimal_places, get_decimal_pattern) -> None:
+    # Regression test for https://github.com/pydantic/pydantic/issues/13630
+    # The generated pattern must not use look-around assertions: the regex
+    # engine used for validation does not support them, so a pattern with a
+    # look-around would be rejected when reused as an explicit pattern.
+    pattern = get_decimal_pattern(max_digits=max_digits, decimal_places=decimal_places)
+    assert '(?=' not in pattern
+    assert '(?!' not in pattern
+    assert re.fullmatch(pattern, '0.1') is not None
+    assert re.fullmatch(pattern, '-0.') is not None
+
+
+def test_decimal_pattern_reusable_as_explicit_pattern() -> None:
+    # Regression test for https://github.com/pydantic/pydantic/issues/13630
+    # The generated pattern must be usable as an explicit ``pattern``
+    # constraint with the default regex engine.
+    class Model(BaseModel):
+        bar: Decimal
+
+    schema = Model.model_json_schema()
+    pattern = schema['properties']['bar']['anyOf'][1]['pattern']
+    assert '(?!' not in pattern
+    RootModel[Annotated[str, Field(pattern=pattern)]].model_validate_json('"1.4"')
 
 
 def test_union_format_primitive_type_array() -> None:
