@@ -267,6 +267,7 @@ error_types! {
     // ---------------------
     // dict errors
     DictType {},
+    FrozenDictType {},
     MappingType {
         error: {ctx_type: Cow<'static, str>, ctx_fn: cow_field_from_context<String, _>},
     },
@@ -539,6 +540,7 @@ impl ErrorType {
             Self::StringNotAscii { .. } => "String should contain only ASCII characters",
             Self::Enum { .. } => "Input should be {expected}",
             Self::DictType { .. } => "Input should be a valid dictionary",
+            Self::FrozenDictType { .. } => "Input should be a valid frozendict",
             Self::MappingType { .. } => "Input should be a valid mapping, error: {error}",
             Self::ListType { .. } => "Input should be a valid list",
             Self::TupleType { .. } => "Input should be a valid tuple",
@@ -639,6 +641,7 @@ impl ErrorType {
             Self::ModelType { .. }
             | Self::ModelAttributesType { .. }
             | Self::DictType { .. }
+            | Self::FrozenDictType { .. }
             | Self::DataclassType { .. } => "Input should be an object",
             Self::NamedTupleType { .. } => "Input should be an array or an object",
             Self::TimeDeltaType { .. } => "Input should be a valid duration",

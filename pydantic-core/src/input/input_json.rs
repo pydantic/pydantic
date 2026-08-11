@@ -236,6 +236,13 @@ impl<'py, 'data> Input<'py> for JsonValue<'data> {
         self.validate_dict(false)
     }
 
+    fn validate_frozendict(&self, _strict: bool) -> ValMatch<Self::Dict<'_>> {
+        match self {
+            JsonValue::Object(dict) => Ok(ValidationMatch::strict(dict)),
+            _ => Err(ValError::new(ErrorTypeDefaults::FrozenDictType, self)),
+        }
+    }
+
     type List<'a>
         = &'a JsonArray<'data>
     where
@@ -484,6 +491,11 @@ impl<'py> Input<'py> for str {
     #[cfg_attr(has_coverage_attribute, coverage(off))]
     fn strict_dict(&self) -> ValResult<Never> {
         Err(ValError::new(ErrorTypeDefaults::DictType, self))
+    }
+
+    #[cfg_attr(has_coverage_attribute, coverage(off))]
+    fn validate_frozendict(&self, _strict: bool) -> ValMatch<Never> {
+        Err(ValError::new(ErrorTypeDefaults::FrozenDictType, self))
     }
 
     type List<'a> = Never;

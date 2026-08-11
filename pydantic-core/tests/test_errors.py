@@ -312,6 +312,7 @@ all_errors = [
     ('string_too_long', 'String should have at most 42 characters', {'max_length': 42}),
     ('string_too_long', 'String should have at most 1 character', {'max_length': 1}),
     ('dict_type', 'Input should be a valid dictionary', None),
+    ('frozen_dict_type', 'Input should be a valid frozendict', None),
     ('mapping_type', 'Input should be a valid mapping, error: foobar', {'error': 'foobar'}),
     ('iterable_type', 'Input should be iterable', None),
     ('iteration_error', 'Error iterating over object, error: foobar', {'error': 'foobar'}),

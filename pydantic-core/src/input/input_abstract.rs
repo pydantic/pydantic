@@ -139,6 +139,8 @@ pub(crate) trait Input<'py>: fmt::Debug {
         self.validate_dict(strict)
     }
 
+    fn validate_frozendict(&self, strict: bool) -> ValMatch<Self::Dict<'_>>;
+
     type List<'a>: ValidatedList<'py>
     where
         Self: 'a;
