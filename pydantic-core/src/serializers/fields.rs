@@ -117,6 +117,12 @@ pub struct GeneralFieldsSerializer {
     required_fields: usize,
 }
 
+impl_py_gc_traverse!(GeneralFieldsSerializer {
+    fields,
+    computed_fields,
+    extra_serializer,
+});
+
 impl GeneralFieldsSerializer {
     pub(super) fn new(
         fields: AHashMap<PyBackedStr, SerField>,
@@ -337,11 +343,6 @@ pub fn exclude_field_by_value<'py>(
 
     Ok(false)
 }
-
-impl_py_gc_traverse!(GeneralFieldsSerializer {
-    fields,
-    computed_fields
-});
 
 impl TypeSerializer for GeneralFieldsSerializer {
     fn to_python<'py>(&self, value: &Bound<'py, PyAny>, state: &mut SerializationState<'py>) -> PyResult<Py<PyAny>> {
