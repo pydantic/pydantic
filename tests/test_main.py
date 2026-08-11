@@ -66,6 +66,13 @@ def test_success():
     assert m.b == 10
 
 
+def test_class_getitem_with_none() -> None:
+    """https://github.com/pydantic/pydantic/issues/13207"""
+    parametrized = BaseModel[None]
+    assert isinstance(parametrized, type)
+    assert parametrized is not BaseModel
+
+
 @pytest.fixture(name='UltraSimpleModel', scope='session')
 def ultra_simple_model_fixture():
     class UltraSimpleModel(BaseModel):
