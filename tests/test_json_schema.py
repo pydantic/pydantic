@@ -3973,7 +3973,8 @@ def test_discriminated_annotated_union():
     }
 
 
-def test_bool_discriminated_union():
+def test_bool_discriminated_union() -> None:
+    """https://github.com/pydantic/pydantic/issues/13631"""
     class Enabled(BaseModel):
         enabled: Literal[True]
         config: str
@@ -3984,7 +3985,6 @@ def test_bool_discriminated_union():
     class Model(BaseModel):
         setting: Enabled | Disabled = Field(discriminator='enabled')
 
-    # insert_assert(Model.model_json_schema())
     assert Model.model_json_schema() == {
         '$defs': {
             'Disabled': {
