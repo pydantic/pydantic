@@ -3975,6 +3975,7 @@ def test_discriminated_annotated_union():
 
 def test_bool_discriminated_union() -> None:
     """https://github.com/pydantic/pydantic/issues/13631"""
+
     class Enabled(BaseModel):
         enabled: Literal[True]
         config: str
