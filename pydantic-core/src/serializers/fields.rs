@@ -35,7 +35,10 @@ pub(super) struct SerField {
     pub serialization_exclude_if: Option<Py<PyAny>>,
 }
 
-impl_py_gc_traverse!(SerField { serializer });
+impl_py_gc_traverse!(SerField {
+    serializer,
+    serialization_exclude_if
+});
 
 impl SerField {
     pub fn new(
