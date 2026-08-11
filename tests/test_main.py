@@ -71,6 +71,8 @@ def test_class_getitem_with_none() -> None:
     parametrized = BaseModel[None]
     assert isinstance(parametrized, type)
     assert parametrized is not BaseModel
+    assert parametrized.__args__ == (None,)
+    assert BaseModel[None] is parametrized
 
 
 @pytest.fixture(name='UltraSimpleModel', scope='session')

@@ -966,7 +966,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
         """
 
     def __class_getitem__(
-        cls, typevar_values: Any
+        cls, typevar_values: type[Any] | tuple[type[Any], ...] | None
     ) -> type[BaseModel] | _forward_ref.PydanticRecursiveRef:
         cached = _generics.get_cached_generic_type_early(cls, typevar_values)
         if cached is not None:
