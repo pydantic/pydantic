@@ -1,3 +1,4 @@
+import sys
 from collections import defaultdict
 from typing import Annotated, Any, TypeVar
 
@@ -24,9 +25,7 @@ def test_typing_coercion_defaultdict():
 
 
 def test_defaultdict_unknown_default_factory() -> None:
-    """
-    https://github.com/pydantic/pydantic/issues/4687
-    """
+    """https://github.com/pydantic/pydantic/issues/4687"""
     with pytest.raises(
         PydanticSchemaGenerationError,
         match=r'Unable to infer a default factory for keys of type collections.defaultdict\[int, int\]',
@@ -34,21 +33,32 @@ def test_defaultdict_unknown_default_factory() -> None:
         TypeAdapter(defaultdict[int, defaultdict[int, int]])
 
 
-def test_defaultdict_infer_default_factory() -> None:
-    ta_list = TypeAdapter(defaultdict[int, list[int]])
+defaultdict_types_params = [
+    (int, 0),
+    (float, 0.0),
+    (str, ''),
+    (bool, False),
+    (tuple, ()),
+    (list[int], []),
+    (list, []),
+    (set, set()),
+    (frozenset, frozenset()),
+    (dict, {}),
+]
+
+if sys.version_info >= (3, 15):
+    defaultdict_types_params.append((frozendict, frozendict()))  # noqa: F821
+
+
+@pytest.mark.parametrize(
+    ['default_factory_type', 'value'],
+    defaultdict_types_params,
+)
+def test_defaultdict_infer_default_factory(default_factory_type: Any, value: Any) -> None:
+    ta_list = TypeAdapter(defaultdict[int, default_factory_type])
     v = ta_list.validate_python({})
     assert v.default_factory is not None
-    assert v.default_factory() == []
-
-    ta_int = TypeAdapter(defaultdict[int, int])
-    v = ta_int.validate_python({})
-    assert v.default_factory is not None
-    assert v.default_factory() == 0
-
-    ta_set = TypeAdapter(defaultdict[int, set])
-    v = ta_set.validate_python({})
-    assert v.default_factory is not None
-    assert v.default_factory() == set()
+    assert v.default_factory() == value
 
 
 def test_defaultdict_explicit_default_factory() -> None:
