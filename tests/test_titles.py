@@ -491,3 +491,15 @@ def test_field_title_generator_returns_invalid_type(invalid_return_value, TypedD
             field_a: Annotated[str, Field(field_title_generator=lambda f, _: invalid_return_value)]
 
         TypeAdapter(MyTypedDict)
+
+
+def test_subclass_field_title_generator_inheritance():
+    class Model(BaseModel, field_title_generator=lambda v, _: v + 'a'):
+        a: int
+
+    class Sub(Model, field_title_generator=lambda v, _: v + 'b'):
+        b: int
+
+    assert Sub.model_fields['a'].title == 'ab'
+    assert Sub.model_fields['b'].title == 'bb'
+
