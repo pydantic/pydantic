@@ -1,9 +1,19 @@
 import pickle
+import sys
 
 import pytest
 
-from pydantic_core import SchemaValidator
+from pydantic_core import SchemaError, SchemaSerializer, SchemaValidator
 from pydantic_core import core_schema as cs
+
+
+@pytest.mark.skipif(sys.version_info >= (3, 15), reason='The `frozendict` builtin type is available in Python 3.15+')
+def test_frozendict_schema_old_python() -> None:
+    with pytest.raises(SchemaError, match='The `frozendict` builtin type is only available on Python 3.15 and above'):
+        SchemaValidator(cs.frozendict_schema())
+
+    with pytest.raises(SchemaError, match='The `frozendict` builtin type is only available on Python 3.15 and above'):
+        SchemaSerializer(cs.frozendict_schema())
 
 
 @pytest.mark.parametrize('pickle_protocol', range(1, pickle.HIGHEST_PROTOCOL + 1))
