@@ -1,0 +1,17 @@
+[package]
+name = "pydantic-core-derive"
+version = "2.48.0"
+edition = "2024"
+license = "MIT"
+homepage = "https://github.com/pydantic/pydantic"
+repository = "https://github.com/pydantic/pydantic.git"
+description = "Internal derive macros for pydantic-core"
+rust-version = "1.88"
+
+[lib]
+proc-macro = true
+
+[dependencies]
+proc-macro2 = "1"
+quote = "1"
+syn = "2"

@@ -7,11 +7,12 @@ use pyo3::intern;
 use pyo3::prelude::*;
 use pyo3::types::{PyBool, PyDict, PySet};
 
+use crate::py_gc::PyGcTraverse;
 use crate::serializers::SerializationState;
 use crate::serializers::extra::IncludeExclude;
 use crate::tools::SchemaDict;
 
-#[derive(Debug, Clone, Default)]
+#[derive(Debug, Clone, Default, PyGcTraverse)]
 pub(crate) struct SchemaFilter<T> {
     include: Option<Box<AHashSet<T>>>,
     exclude: Option<Box<AHashSet<T>>>,
@@ -256,7 +257,7 @@ where
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PyGcTraverse)]
 pub(super) struct AnyFilter;
 
 impl AnyFilter {

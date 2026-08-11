@@ -18,17 +18,16 @@ use crate::validators::function::convert_err;
 
 use super::validation_state::Exactness;
 use super::{BuildValidator, CombinedValidator, DefinitionsBuilder, ValidationState, Validator, build_validator};
+use crate::py_gc::PyGcTraverse;
 
-#[derive(Debug)]
+#[derive(Debug, PyGcTraverse)]
 struct NamedTupleField {
     name: PyBackedStr,
     lookup_path_collection: LookupPathCollection,
     validator: Arc<CombinedValidator>,
 }
 
-impl_py_gc_traverse!(NamedTupleField { validator });
-
-#[derive(Debug)]
+#[derive(Debug, PyGcTraverse)]
 pub struct NamedTupleValidator {
     class: Py<PyType>,
     fields: Vec<NamedTupleField>,
@@ -95,8 +94,6 @@ impl BuildValidator for NamedTupleValidator {
         .into())
     }
 }
-
-impl_py_gc_traverse!(NamedTupleValidator { class, fields });
 
 impl Validator for NamedTupleValidator {
     fn validate<'py>(

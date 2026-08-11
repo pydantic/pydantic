@@ -8,8 +8,9 @@ use crate::errors::ValResult;
 use crate::input::Input;
 
 use super::{BuildValidator, CombinedValidator, DefinitionsBuilder, ValidationState, Validator};
+use crate::py_gc::PyGcTraverse;
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PyGcTraverse)]
 pub struct BoolValidator {
     strict: bool,
 }
@@ -35,8 +36,6 @@ impl BuildValidator for BoolValidator {
         }
     }
 }
-
-impl_py_gc_traverse!(BoolValidator {});
 
 impl Validator for BoolValidator {
     fn validate<'py>(

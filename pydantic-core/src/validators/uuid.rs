@@ -21,6 +21,7 @@ use super::config::ValBytesMode;
 use super::model::create_class;
 use super::model::force_setattr;
 use super::{BuildValidator, CombinedValidator, DefinitionsBuilder, Exactness, ValidationState, Validator};
+use crate::py_gc::PyGcTraverse;
 
 const UUID_INT: &str = "int";
 const UUID_IS_SAFE: &str = "is_safe";
@@ -63,7 +64,7 @@ impl From<u8> for Version {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PyGcTraverse)]
 pub struct UuidValidator {
     strict: bool,
     version: Option<usize>,
@@ -87,8 +88,6 @@ impl BuildValidator for UuidValidator {
         .into())
     }
 }
-
-impl_py_gc_traverse!(UuidValidator {});
 
 impl Validator for UuidValidator {
     fn validate<'py>(

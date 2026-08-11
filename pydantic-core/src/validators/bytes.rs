@@ -13,8 +13,9 @@ use crate::tools::SchemaDict;
 
 use super::config::ValBytesMode;
 use super::{BuildValidator, CombinedValidator, DefinitionsBuilder, ValidationState, Validator};
+use crate::py_gc::PyGcTraverse;
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PyGcTraverse)]
 pub struct BytesValidator {
     strict: bool,
     bytes_mode: ValBytesMode,
@@ -43,8 +44,6 @@ impl BuildValidator for BytesValidator {
     }
 }
 
-impl_py_gc_traverse!(BytesValidator {});
-
 impl Validator for BytesValidator {
     fn validate<'py>(
         &self,
@@ -62,15 +61,13 @@ impl Validator for BytesValidator {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PyGcTraverse)]
 pub struct BytesConstrainedValidator {
     strict: bool,
     bytes_mode: ValBytesMode,
     max_length: Option<usize>,
     min_length: Option<usize>,
 }
-
-impl_py_gc_traverse!(BytesConstrainedValidator {});
 
 impl Validator for BytesConstrainedValidator {
     fn validate<'py>(

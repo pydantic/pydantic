@@ -1,5 +1,6 @@
 use std::{borrow::Cow, sync::Arc};
 
+use crate::py_gc::PyGcTraverse;
 use pyo3::{prelude::*, types::PyType};
 
 use crate::serializers::{
@@ -15,7 +16,7 @@ use crate::serializers::{
 ///
 /// This exists as a separate structure to allow for cases such as model serializers where the
 /// inner serializer may just be a function serializer and so cannot handle polymorphism itself.
-#[derive(Debug)]
+#[derive(Debug, PyGcTraverse)]
 pub struct PolymorphismTrampoline {
     class: Py<PyType>,
     /// Inner serializer used when the type is not a subclass (responsible for any fallback etc)
@@ -23,8 +24,6 @@ pub struct PolymorphismTrampoline {
     /// Whether polymorphic serialization is enabled from config
     enabled_from_config: bool,
 }
-
-impl_py_gc_traverse!(PolymorphismTrampoline { class, serializer });
 
 impl PolymorphismTrampoline {
     pub fn new(class: Py<PyType>, serializer: Arc<CombinedSerializer>, enabled_from_config: bool) -> Self {

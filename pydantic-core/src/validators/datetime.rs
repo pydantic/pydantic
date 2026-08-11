@@ -16,10 +16,11 @@ use crate::input::{EitherDateTime, Input};
 
 use super::Exactness;
 use super::{BuildValidator, CombinedValidator, DefinitionsBuilder, ValidationState, Validator};
+use crate::py_gc::PyGcTraverse;
 use crate::tools::SchemaDict;
 use crate::validators::config::TemporalUnitMode;
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PyGcTraverse)]
 pub struct DateTimeValidator {
     strict: bool,
     constraints: Option<DateTimeConstraints>,
@@ -58,8 +59,6 @@ impl BuildValidator for DateTimeValidator {
         .into())
     }
 }
-
-impl_py_gc_traverse!(DateTimeValidator {});
 
 impl Validator for DateTimeValidator {
     fn validate<'py>(
@@ -183,7 +182,7 @@ fn datetime_from_date<'py>(input: &(impl Input<'py> + ?Sized)) -> Result<Option<
     Ok(Some(EitherDateTime::Raw(datetime)))
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PyGcTraverse)]
 struct DateTimeConstraints {
     le: Option<DateTime>,
     lt: Option<DateTime>,
@@ -228,7 +227,7 @@ fn py_datetime_as_datetime(schema: &Bound<'_, PyDict>, key: &Bound<'_, PyString>
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PyGcTraverse)]
 pub enum NowOp {
     Past,
     Future,
@@ -252,7 +251,7 @@ impl NowOp {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PyGcTraverse)]
 pub struct NowConstraint {
     pub op: NowOp,
     utc_offset: Option<i32>,
@@ -285,7 +284,7 @@ impl NowConstraint {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PyGcTraverse)]
 pub(super) enum TZConstraint {
     Naive,
     Aware(Option<i32>),

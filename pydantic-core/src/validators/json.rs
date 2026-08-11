@@ -13,8 +13,9 @@ use crate::tools::SchemaDict;
 
 use super::config::ValBytesMode;
 use super::{BuildValidator, CombinedValidator, DefinitionsBuilder, ValidationState, Validator, build_validator};
+use crate::py_gc::PyGcTraverse;
 
-#[derive(Debug)]
+#[derive(Debug, PyGcTraverse)]
 pub struct JsonValidator {
     validator: Option<Arc<CombinedValidator>>,
     name: String,
@@ -46,8 +47,6 @@ impl BuildValidator for JsonValidator {
         Ok(CombinedValidator::Json(Self { validator, name }).into())
     }
 }
-
-impl_py_gc_traverse!(JsonValidator { validator });
 
 impl Validator for JsonValidator {
     fn validate<'py>(

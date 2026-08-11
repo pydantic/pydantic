@@ -17,8 +17,9 @@ use crate::serializers::type_serializers::datetime_etc::{
 use crate::tools::SchemaDict;
 
 use super::errors::py_err_se_err;
+use crate::py_gc::PyGcTraverse;
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, PyGcTraverse)]
 #[allow(clippy::struct_field_names)]
 pub(crate) struct SerializationConfig {
     pub temporal_mode: TemporalMode,
@@ -82,7 +83,7 @@ pub trait FromConfig {
 
 macro_rules! serialization_mode {
     ($name:ident, $config_key:expr, $($variant:ident => $value:expr),* $(,)?) => {
-        #[derive(Default, Debug, Clone, Copy, PartialEq, Eq)]
+        #[derive(Default, Debug, Clone, Copy, PartialEq, Eq, crate::py_gc::PyGcTraverse)]
         pub enum $name {
             #[default]
             $($variant,)*

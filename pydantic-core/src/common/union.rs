@@ -1,11 +1,10 @@
 use pyo3::prelude::*;
-use pyo3::{PyTraverseError, PyVisit};
 use smallvec::SmallVec;
 
 use crate::lookup_key::{LookupPath, ValidationAlias};
 use crate::py_gc::PyGcTraverse;
 
-#[derive(Debug)]
+#[derive(Debug, PyGcTraverse)]
 pub enum Discriminator {
     /// use `LookupPaths` to find the tag, same as we do to find values in typed_dict aliases
     LookupPaths(SmallVec<[LookupPath; 1]>),
@@ -28,16 +27,6 @@ impl Discriminator {
             Self::Function(f) => Ok(format!("{}()", f.getattr(py, "__name__")?)),
             Self::LookupPaths(paths) => Ok(paths.iter().map(ToString::to_string).collect::<Vec<_>>().join(" | ")),
         }
-    }
-}
-
-impl PyGcTraverse for Discriminator {
-    fn py_gc_traverse(&self, visit: &PyVisit<'_>) -> Result<(), PyTraverseError> {
-        match self {
-            Self::Function(obj) => visit.call(obj)?,
-            Self::LookupPaths(_) => {}
-        }
-        Ok(())
     }
 }
 

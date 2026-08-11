@@ -18,8 +18,9 @@ use crate::tools::SchemaDict;
 
 use super::simple::none_json_key;
 use super::{BuildSerializer, CombinedSerializer, Extra, PydanticSerializationError, TypeSerializer, py_err_se_err};
+use crate::py_gc::PyGcTraverse;
 
-#[derive(Debug, Clone, Eq, PartialEq)]
+#[derive(Debug, Clone, Eq, PartialEq, PyGcTraverse)]
 pub(super) enum WhenUsed {
     Always,
     UnlessNone,
@@ -58,7 +59,7 @@ impl WhenUsed {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, PyGcTraverse)]
 pub struct FormatSerializer {
     format_func: Py<PyAny>,
     formatting_string: Py<PyString>,
@@ -109,8 +110,6 @@ impl FormatSerializer {
     }
 }
 
-impl_py_gc_traverse!(FormatSerializer { format_func });
-
 impl TypeSerializer for FormatSerializer {
     fn to_python(&self, value: &Bound<'_, PyAny>, state: &mut SerializationState<'_>) -> PyResult<Py<PyAny>> {
         if self.when_used.should_use(value, &state.extra) {
@@ -159,7 +158,7 @@ impl TypeSerializer for FormatSerializer {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, PyGcTraverse)]
 pub struct ToStringSerializer {
     when_used: WhenUsed,
 }
@@ -178,8 +177,6 @@ impl BuildSerializer for ToStringSerializer {
         .into())
     }
 }
-
-impl_py_gc_traverse!(ToStringSerializer {});
 
 impl TypeSerializer for ToStringSerializer {
     fn to_python(&self, value: &Bound<'_, PyAny>, state: &mut SerializationState<'_>) -> PyResult<Py<PyAny>> {

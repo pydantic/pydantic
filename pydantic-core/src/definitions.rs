@@ -109,11 +109,13 @@ impl<T: Debug> Debug for Definition<T> {
     }
 }
 
-impl<T: PyGcTraverse> PyGcTraverse for DefinitionRef<T> {
-    fn py_gc_traverse(&self, visit: &PyVisit<'_>) -> Result<(), PyTraverseError> {
-        if let Some(value) = self.value.upgrade().as_ref().and_then(|v| v.get()) {
-            value.py_gc_traverse(visit)?;
-        }
+/// Deliberately a no-op: definition references can be cyclic (e.g. for recursive schemas),
+/// so recursing into the target would never terminate. This is sound because every
+/// definition's content is traversed through the [`Definitions`] container, held by the
+/// top-level `SchemaValidator`/`SchemaSerializer`.
+impl<T> PyGcTraverse for DefinitionRef<T> {
+    #[inline]
+    fn py_gc_traverse(&self, _visit: &PyVisit<'_>) -> Result<(), PyTraverseError> {
         Ok(())
     }
 }
@@ -205,6 +207,7 @@ impl<T: std::fmt::Debug> DefinitionsBuilder<T> {
 /// Because definitions can create recursive structures, we often need to be able to populate
 /// values lazily from these structures in a way that avoids infinite recursion. This structure
 /// avoids infinite recursion by returning a default value when a recursion loop is detected.
+#[derive(PyGcTraverse)]
 pub(crate) struct RecursionSafeCache<T> {
     cache: OnceLock<T>,
     in_recursion: AtomicBool,

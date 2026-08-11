@@ -11,8 +11,9 @@ use serde::ser::Serializer;
 use crate::{definitions::DefinitionsBuilder, serializers::SerializationState};
 
 use super::{BuildSerializer, CombinedSerializer, TypeSerializer, infer_json_key, infer_serialize, infer_to_python};
+use crate::py_gc::PyGcTraverse;
 
-#[derive(Debug, Clone, Default)]
+#[derive(Debug, Clone, Default, PyGcTraverse)]
 pub struct AnySerializer;
 
 impl AnySerializer {
@@ -33,8 +34,6 @@ impl BuildSerializer for AnySerializer {
         Ok(Self::get().clone())
     }
 }
-
-impl_py_gc_traverse!(AnySerializer {});
 
 impl TypeSerializer for AnySerializer {
     fn to_python<'py>(&self, value: &Bound<'py, PyAny>, state: &mut SerializationState<'py>) -> PyResult<Py<PyAny>> {

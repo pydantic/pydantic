@@ -12,8 +12,9 @@ use crate::tools::SchemaDict;
 
 use super::validation_state::ValidationState;
 use super::{BuildValidator, CombinedValidator, DefinitionsBuilder, Validator, build_validator};
+use crate::py_gc::PyGcTraverse;
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PyGcTraverse)]
 pub enum CustomError {
     Custom(PydanticCustomError),
     KnownError(PydanticKnownError),
@@ -59,7 +60,7 @@ impl CustomError {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, PyGcTraverse)]
 pub struct CustomErrorValidator {
     validator: Arc<CombinedValidator>,
     custom_error: CustomError,
@@ -86,8 +87,6 @@ impl BuildValidator for CustomErrorValidator {
         .into())
     }
 }
-
-impl_py_gc_traverse!(CustomErrorValidator { validator });
 
 impl Validator for CustomErrorValidator {
     fn validate<'py>(

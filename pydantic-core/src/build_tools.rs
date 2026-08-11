@@ -10,6 +10,7 @@ use pyo3::{PyErrArguments, intern};
 use crate::ValidationError;
 use crate::errors::{PyLineError, ValError};
 use crate::input::InputType;
+use crate::py_gc::PyGcTraverse;
 use crate::tools::SchemaDict;
 
 pub fn schema_or_config<'py, T>(
@@ -170,7 +171,7 @@ macro_rules! py_schema_err {
 }
 pub(crate) use py_schema_err;
 
-#[derive(Debug, Clone, Copy, Eq, PartialEq)]
+#[derive(Debug, Clone, Copy, Eq, PartialEq, PyGcTraverse)]
 pub enum ExtraBehavior {
     Allow,
     Forbid,

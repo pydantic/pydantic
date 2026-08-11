@@ -81,7 +81,7 @@ macro_rules! impl_build {
     };
 }
 
-#[derive(Debug)]
+#[derive(Debug, PyGcTraverse)]
 pub struct FunctionBeforeValidator {
     validator: Arc<CombinedValidator>,
     func: Py<PyAny>,
@@ -117,12 +117,6 @@ impl FunctionBeforeValidator {
     }
 }
 
-impl_py_gc_traverse!(FunctionBeforeValidator {
-    validator,
-    func,
-    config
-});
-
 impl Validator for FunctionBeforeValidator {
     fn validate<'py>(
         &self,
@@ -154,7 +148,7 @@ impl Validator for FunctionBeforeValidator {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, PyGcTraverse)]
 pub struct FunctionAfterValidator {
     validator: Arc<CombinedValidator>,
     func: Py<PyAny>,
@@ -190,12 +184,6 @@ impl FunctionAfterValidator {
     }
 }
 
-impl_py_gc_traverse!(FunctionAfterValidator {
-    validator,
-    func,
-    config
-});
-
 impl Validator for FunctionAfterValidator {
     fn validate<'py>(
         &self,
@@ -227,7 +215,7 @@ impl Validator for FunctionAfterValidator {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PyGcTraverse)]
 pub struct FunctionPlainValidator {
     func: Py<PyAny>,
     config: Py<PyAny>,
@@ -260,8 +248,6 @@ impl BuildValidator for FunctionPlainValidator {
     }
 }
 
-impl_py_gc_traverse!(FunctionPlainValidator { func, config });
-
 impl Validator for FunctionPlainValidator {
     fn validate<'py>(
         &self,
@@ -288,7 +274,7 @@ impl Validator for FunctionPlainValidator {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, PyGcTraverse)]
 pub struct FunctionWrapValidator {
     validator: Arc<CombinedValidator>,
     func: Py<PyAny>,
@@ -352,12 +338,6 @@ impl FunctionWrapValidator {
         r.map_err(|e| convert_err(py, e, input))
     }
 }
-
-impl_py_gc_traverse!(FunctionWrapValidator {
-    validator,
-    func,
-    config
-});
 
 impl Validator for FunctionWrapValidator {
     fn validate<'py>(
@@ -524,6 +504,7 @@ pub fn convert_err(py: Python<'_>, err: PyErr, input: impl ToErrorValue) -> ValE
 }
 
 #[pyclass(module = "pydantic_core._pydantic_core", get_all)]
+#[derive(PyGcTraverse)]
 pub struct ValidationInfo {
     config: Py<PyAny>,
     context: Option<Py<PyAny>>,
@@ -531,13 +512,6 @@ pub struct ValidationInfo {
     field_name: Option<Py<PyString>>,
     mode: InputType,
 }
-
-impl_py_gc_traverse!(ValidationInfo {
-    config,
-    context,
-    data,
-    field_name
-});
 
 impl ValidationInfo {
     fn new(py: Python, state: &ValidationState<'_, '_>, config: &Py<PyAny>, field_name: Option<Py<PyString>>) -> Self {

@@ -10,8 +10,9 @@ use crate::tools::SchemaDict;
 
 use super::ValidationState;
 use super::{BuildValidator, CombinedValidator, DefinitionsBuilder, Validator, build_validator};
+use crate::py_gc::PyGcTraverse;
 
-#[derive(Debug)]
+#[derive(Debug, PyGcTraverse)]
 pub struct NullableValidator {
     validator: Arc<CombinedValidator>,
     name: String,
@@ -31,8 +32,6 @@ impl BuildValidator for NullableValidator {
         Ok(CombinedValidator::Nullable(Self { validator, name }).into())
     }
 }
-
-impl_py_gc_traverse!(NullableValidator { validator });
 
 impl Validator for NullableValidator {
     fn validate<'py>(

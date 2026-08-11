@@ -12,6 +12,7 @@ use crate::errors::{ErrorType, ValError, ValResult};
 use crate::input::{Input, Int};
 
 use super::{BuildValidator, CombinedValidator, DefinitionsBuilder, ValidationState, Validator};
+use crate::py_gc::PyGcTraverse;
 
 fn validate_as_int(schema: &Bound<'_, PyDict>, key: &Bound<'_, PyString>) -> PyResult<Option<Int>> {
     match schema.get_item(key)? {
@@ -30,7 +31,7 @@ fn validate_as_int(schema: &Bound<'_, PyDict>, key: &Bound<'_, PyString>) -> PyR
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PyGcTraverse)]
 pub struct IntValidator {
     strict: bool,
 }
@@ -66,8 +67,6 @@ impl BuildValidator for IntValidator {
     }
 }
 
-impl_py_gc_traverse!(IntValidator {});
-
 impl Validator for IntValidator {
     fn validate<'py>(
         &self,
@@ -85,7 +84,7 @@ impl Validator for IntValidator {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PyGcTraverse)]
 pub struct ConstrainedIntValidator {
     strict: bool,
     multiple_of: Option<Int>,
@@ -109,8 +108,6 @@ impl ConstrainedIntValidator {
         .into())
     }
 }
-
-impl_py_gc_traverse!(ConstrainedIntValidator {});
 
 impl Validator for ConstrainedIntValidator {
     fn validate<'py>(

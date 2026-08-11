@@ -15,6 +15,7 @@ use super::config::SerializationConfig;
 use super::errors::{PydanticSerializationUnexpectedValue, UNEXPECTED_TYPE_SER_MARKER};
 use super::ob_type::ObTypeLookup;
 use crate::PydanticSerializationError;
+use crate::py_gc::PyGcTraverse;
 use crate::recursion_guard::ContainsRecursionState;
 use crate::recursion_guard::RecursionError;
 use crate::recursion_guard::RecursionGuard;
@@ -230,7 +231,7 @@ impl<'py> Extra<'py> {
     }
 }
 
-#[derive(Clone, Copy, PartialEq, Eq)]
+#[derive(Clone, Copy, PartialEq, Eq, PyGcTraverse)]
 pub(crate) enum SerCheck {
     // no checks, used everywhere except in union choices
     None,
@@ -246,7 +247,7 @@ impl SerCheck {
     }
 }
 
-#[derive(Clone)]
+#[derive(Clone, PyGcTraverse)]
 pub(crate) struct ExtraOwned {
     mode: SerMode,
     warnings: CollectWarnings,
@@ -269,14 +270,6 @@ pub(crate) struct ExtraOwned {
     include: Option<Py<PyAny>>,
     exclude: Option<Py<PyAny>>,
 }
-
-impl_py_gc_traverse!(ExtraOwned {
-    model,
-    fallback,
-    context,
-    include,
-    exclude,
-});
 
 impl ExtraOwned {
     pub fn new(state: &SerializationState<'_>) -> Self {
@@ -342,7 +335,7 @@ impl ExtraOwned {
     }
 }
 
-#[derive(Clone)]
+#[derive(Clone, PyGcTraverse)]
 #[cfg_attr(debug_assertions, derive(Debug))]
 pub(crate) enum SerMode {
     Python,
@@ -390,7 +383,7 @@ impl<'py> IntoPyObject<'py> for &'_ SerMode {
     }
 }
 
-#[derive(Debug, Clone, Copy, Eq, PartialEq)]
+#[derive(Debug, Clone, Copy, Eq, PartialEq, PyGcTraverse)]
 pub enum WarningsMode {
     None,
     Warn,
@@ -426,7 +419,7 @@ impl From<bool> for WarningsMode {
 }
 
 #[cfg_attr(debug_assertions, derive(Debug))]
-#[derive(Clone)]
+#[derive(Clone, PyGcTraverse)]
 pub(crate) struct CollectWarnings {
     mode: WarningsMode,
     warnings: Vec<PydanticSerializationUnexpectedValue>,

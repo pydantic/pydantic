@@ -16,8 +16,9 @@ use crate::input::Input;
 use crate::tools::SchemaDict;
 
 use super::{BuildValidator, CombinedValidator, DefinitionsBuilder, ValidationState, Validator};
+use crate::py_gc::PyGcTraverse;
 
-#[derive(Debug)]
+#[derive(Debug, PyGcTraverse)]
 pub struct StrValidator {
     strict: bool,
     coerce_numbers_to_str: bool,
@@ -67,8 +68,6 @@ impl BuildValidator for StrValidator {
     }
 }
 
-impl_py_gc_traverse!(StrValidator {});
-
 impl Validator for StrValidator {
     fn validate<'py>(
         &self,
@@ -92,7 +91,7 @@ impl Validator for StrValidator {
 }
 
 /// Any new properties set here must be reflected in `has_constraints_set`
-#[derive(Debug, Clone, Default)]
+#[derive(Debug, Clone, Default, PyGcTraverse)]
 pub struct StrConstrainedValidator {
     strict: bool,
     pattern: Option<Pattern>,
@@ -104,8 +103,6 @@ pub struct StrConstrainedValidator {
     coerce_numbers_to_str: bool,
     ascii_only: bool,
 }
-
-impl_py_gc_traverse!(StrConstrainedValidator {});
 
 impl Validator for StrConstrainedValidator {
     fn validate<'py>(
@@ -258,13 +255,13 @@ impl StrConstrainedValidator {
 static REGEX_CACHE: LazyLock<Mutex<LruCache<String, Regex>>> =
     LazyLock::new(|| Mutex::new(LruCache::new(NonZeroUsize::new(50).unwrap())));
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PyGcTraverse)]
 struct Pattern {
     pattern: String,
     engine: RegexEngine,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PyGcTraverse)]
 enum RegexEngine {
     RustRegex(Regex),
     PythonRe(Py<PyAny>),

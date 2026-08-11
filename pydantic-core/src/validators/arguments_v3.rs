@@ -23,8 +23,9 @@ use crate::tools::SchemaDict;
 
 use super::validation_state::ValidationState;
 use super::{BuildValidator, CombinedValidator, DefinitionsBuilder, Validator, build_validator};
+use crate::py_gc::PyGcTraverse;
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, PyGcTraverse)]
 enum ParameterMode {
     PositionalOnly,
     PositionalOrKeyword,
@@ -50,7 +51,7 @@ impl FromStr for ParameterMode {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, PyGcTraverse)]
 struct Parameter {
     name: PyBackedStr,
     mode: ParameterMode,
@@ -67,7 +68,7 @@ impl Parameter {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, PyGcTraverse)]
 pub struct ArgumentsV3Validator {
     parameters: Vec<Parameter>,
     positional_params_count: usize,
@@ -214,10 +215,6 @@ impl BuildValidator for ArgumentsV3Validator {
         .into())
     }
 }
-
-impl_py_gc_traverse!(Parameter { validator });
-
-impl_py_gc_traverse!(ArgumentsV3Validator { parameters });
 
 impl ArgumentsV3Validator {
     /// Validate the arguments from a mapping:

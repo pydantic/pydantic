@@ -9,8 +9,9 @@ use crate::errors::{ErrorType, ValError, ValResult};
 use crate::input::Input;
 
 use super::{BuildValidator, CombinedValidator, DefinitionsBuilder, ValidationState, Validator};
+use crate::py_gc::PyGcTraverse;
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PyGcTraverse)]
 pub struct MissingSentinelValidator {}
 
 static MISSING_SENTINEL_VALIDATOR: LazyLock<Arc<CombinedValidator>> =
@@ -27,8 +28,6 @@ impl BuildValidator for MissingSentinelValidator {
         Ok(MISSING_SENTINEL_VALIDATOR.clone())
     }
 }
-
-impl_py_gc_traverse!(MissingSentinelValidator {});
 
 impl Validator for MissingSentinelValidator {
     fn validate<'py>(

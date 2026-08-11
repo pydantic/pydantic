@@ -8,8 +8,9 @@ use crate::input::Input;
 
 use super::validation_state::Exactness;
 use super::{BuildValidator, CombinedValidator, DefinitionsBuilder, ValidationState, Validator};
+use crate::py_gc::PyGcTraverse;
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PyGcTraverse)]
 pub struct CallableValidator;
 
 static CALLABLE_VALIDATOR: LazyLock<Arc<CombinedValidator>> = LazyLock::new(|| Arc::new(CallableValidator.into()));
@@ -25,8 +26,6 @@ impl BuildValidator for CallableValidator {
         Ok(CALLABLE_VALIDATOR.clone())
     }
 }
-
-impl_py_gc_traverse!(CallableValidator {});
 
 impl Validator for CallableValidator {
     fn validate<'py>(

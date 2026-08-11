@@ -18,7 +18,7 @@ use super::{
 
 macro_rules! build_serializer {
     ($struct_name:ident, $expected_type:literal, $py_type:ty) => {
-        #[derive(Debug)]
+        #[derive(Debug, crate::py_gc::PyGcTraverse)]
         pub struct $struct_name {
             item_serializer: Arc<CombinedSerializer>,
             name: String,
@@ -47,8 +47,6 @@ macro_rules! build_serializer {
                 ))
             }
         }
-
-        impl_py_gc_traverse!($struct_name { item_serializer });
 
         impl TypeSerializer for $struct_name {
             fn to_python<'py>(

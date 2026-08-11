@@ -14,8 +14,9 @@ use crate::validators::{TemporalUnitMode, ValBytesMode};
 use super::datetime::{EitherDate, EitherDateTime, EitherTime, EitherTimedelta};
 use super::return_enums::{EitherBytes, EitherComplex, EitherInt, EitherString};
 use super::{EitherFloat, GenericIterator, ValidationMatch};
+use crate::py_gc::PyGcTraverse;
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, PyGcTraverse)]
 pub enum InputType {
     Python,
     Json,

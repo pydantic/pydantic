@@ -24,8 +24,9 @@ use crate::validators::shared::lookup_tree::LookupFieldInfo;
 use crate::validators::shared::lookup_tree::LookupTree;
 
 use super::{BuildValidator, CombinedValidator, DefinitionsBuilder, ValidationState, Validator, build_validator};
+use crate::py_gc::PyGcTraverse;
 
-#[derive(Debug)]
+#[derive(Debug, PyGcTraverse)]
 struct Field {
     name: PyBackedStr,
     lookup_path_collection: LookupPathCollection,
@@ -33,9 +34,7 @@ struct Field {
     frozen: bool,
 }
 
-impl_py_gc_traverse!(Field { validator });
-
-#[derive(Debug)]
+#[derive(Debug, PyGcTraverse)]
 pub struct ModelFieldsValidator {
     fields: Vec<Field>,
     model_name: String,
@@ -123,11 +122,6 @@ impl BuildValidator for ModelFieldsValidator {
         .into())
     }
 }
-
-impl_py_gc_traverse!(ModelFieldsValidator {
-    fields,
-    extras_validator
-});
 
 impl Validator for ModelFieldsValidator {
     fn validate<'py>(

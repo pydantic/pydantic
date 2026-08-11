@@ -12,15 +12,16 @@ use crate::input::{Input, duration_as_pytimedelta};
 
 use super::datetime::extract_microseconds_precision;
 use super::{BuildValidator, CombinedValidator, DefinitionsBuilder, ValidationState, Validator};
+use crate::py_gc::PyGcTraverse;
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PyGcTraverse)]
 pub struct TimeDeltaValidator {
     strict: bool,
     constraints: Option<TimedeltaConstraints>,
     microseconds_precision: speedate::MicrosecondsPrecisionOverflowBehavior,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PyGcTraverse)]
 struct TimedeltaConstraints {
     le: Option<Duration>,
     lt: Option<Duration>,
@@ -68,8 +69,6 @@ impl BuildValidator for TimeDeltaValidator {
         .into())
     }
 }
-
-impl_py_gc_traverse!(TimeDeltaValidator {});
 
 impl Validator for TimeDeltaValidator {
     fn validate<'py>(

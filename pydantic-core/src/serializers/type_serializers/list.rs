@@ -17,8 +17,9 @@ use super::{
     BuildSerializer, CombinedSerializer, PydanticSerializer, SchemaFilter, TypeSerializer, infer_serialize,
     infer_to_python, py_err_se_err,
 };
+use crate::py_gc::PyGcTraverse;
 
-#[derive(Debug)]
+#[derive(Debug, PyGcTraverse)]
 pub struct ListSerializer {
     item_serializer: Arc<CombinedSerializer>,
     filter: SchemaFilter<usize>,
@@ -49,8 +50,6 @@ impl BuildSerializer for ListSerializer {
         ))
     }
 }
-
-impl_py_gc_traverse!(ListSerializer { item_serializer });
 
 impl TypeSerializer for ListSerializer {
     fn to_python<'py>(&self, value: &Bound<'py, PyAny>, state: &mut SerializationState<'py>) -> PyResult<Py<PyAny>> {

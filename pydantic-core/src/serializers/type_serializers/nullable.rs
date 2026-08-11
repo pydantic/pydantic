@@ -10,8 +10,9 @@ use crate::serializers::SerializationState;
 use crate::tools::SchemaDict;
 
 use super::{BuildSerializer, CombinedSerializer, IsType, ObType, TypeSerializer, infer_json_key_known};
+use crate::py_gc::PyGcTraverse;
 
-#[derive(Debug)]
+#[derive(Debug, PyGcTraverse)]
 pub struct NullableSerializer {
     serializer: Arc<CombinedSerializer>,
 }
@@ -31,8 +32,6 @@ impl BuildSerializer for NullableSerializer {
         .into())
     }
 }
-
-impl_py_gc_traverse!(NullableSerializer { serializer });
 
 impl TypeSerializer for NullableSerializer {
     fn to_python<'py>(&self, value: &Bound<'py, PyAny>, state: &mut SerializationState<'py>) -> PyResult<Py<PyAny>> {

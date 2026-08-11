@@ -13,6 +13,7 @@ use crate::errors::{ErrorType, Number, ToErrorValue, ValError};
 use crate::input::Input;
 
 use super::{BuildValidator, CombinedValidator, DefinitionsBuilder, ValidationState, Validator};
+use crate::py_gc::PyGcTraverse;
 
 static FRACTION_TYPE: PyOnceLock<Py<PyType>> = PyOnceLock::new();
 
@@ -44,7 +45,7 @@ fn validate_as_fraction(
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PyGcTraverse)]
 pub struct FractionValidator {
     strict: bool,
     le: Option<Py<PyAny>>,
@@ -72,8 +73,6 @@ impl BuildValidator for FractionValidator {
         .into())
     }
 }
-
-impl_py_gc_traverse!(FractionValidator { le, lt, ge, gt });
 
 impl Validator for FractionValidator {
     fn validate<'py>(

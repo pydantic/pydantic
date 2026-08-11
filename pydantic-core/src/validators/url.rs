@@ -24,10 +24,11 @@ use crate::validators::literal::expected_repr;
 
 use super::Exactness;
 use super::{BuildValidator, CombinedValidator, DefinitionsBuilder, ValidationState, Validator};
+use crate::py_gc::PyGcTraverse;
 
 type AllowedSchemes = Option<(AHashSet<String>, String)>;
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PyGcTraverse)]
 pub struct UrlValidator {
     strict: bool,
     max_length: Option<usize>,
@@ -142,8 +143,6 @@ impl BuildValidator for UrlValidator {
         Ok(CombinedValidator::Url(Box::new(validator)).into())
     }
 }
-
-impl_py_gc_traverse!(UrlValidator {});
 
 impl Validator for UrlValidator {
     fn validate<'py>(
@@ -281,7 +280,7 @@ impl CopyFromPyUrl for EitherUrl<'_> {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PyGcTraverse)]
 pub struct MultiHostUrlValidator {
     strict: bool,
     max_length: Option<usize>,
@@ -393,8 +392,6 @@ impl BuildValidator for MultiHostUrlValidator {
         Ok(CombinedValidator::MultiHostUrl(Box::new(validator)).into())
     }
 }
-
-impl_py_gc_traverse!(MultiHostUrlValidator {});
 
 impl Validator for MultiHostUrlValidator {
     fn validate<'py>(

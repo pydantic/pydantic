@@ -8,8 +8,9 @@ use crate::input::Input;
 
 use super::ValidationState;
 use super::{CombinedValidator, SchemaValidator, Validator};
+use crate::py_gc::PyGcTraverse;
 
-#[derive(Debug)]
+#[derive(Debug, PyGcTraverse)]
 pub struct PrebuiltValidator {
     schema_validator: Py<SchemaValidator>,
 }
@@ -39,8 +40,6 @@ impl PrebuiltValidator {
         })
     }
 }
-
-impl_py_gc_traverse!(PrebuiltValidator { schema_validator });
 
 impl Validator for PrebuiltValidator {
     fn validate<'py>(

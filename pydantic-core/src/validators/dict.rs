@@ -15,8 +15,9 @@ use crate::tools::SchemaDict;
 use super::any::AnyValidator;
 use super::list::length_check;
 use super::{BuildValidator, CombinedValidator, DefinitionsBuilder, ValidationState, Validator, build_validator};
+use crate::py_gc::PyGcTraverse;
 
-#[derive(Debug)]
+#[derive(Debug, PyGcTraverse)]
 pub struct DictValidator {
     strict: bool,
     key_validator: Arc<CombinedValidator>,
@@ -62,11 +63,6 @@ impl BuildValidator for DictValidator {
         .into())
     }
 }
-
-impl_py_gc_traverse!(DictValidator {
-    key_validator,
-    value_validator
-});
 
 impl Validator for DictValidator {
     fn validate<'py>(

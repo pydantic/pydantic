@@ -19,8 +19,9 @@ use crate::definitions::DefinitionsBuilder;
 use crate::serializers::SerializationState;
 
 use super::{BuildSerializer, CombinedSerializer, TypeSerializer};
+use crate::py_gc::PyGcTraverse;
 
-#[derive(Debug)]
+#[derive(Debug, PyGcTraverse)]
 pub struct MissingSentinelSerializer {}
 
 static MISSING_SENTINEL_SERIALIZER: LazyLock<Arc<CombinedSerializer>> =
@@ -37,8 +38,6 @@ impl BuildSerializer for MissingSentinelSerializer {
         Ok(MISSING_SENTINEL_SERIALIZER.clone())
     }
 }
-
-impl_py_gc_traverse!(MissingSentinelSerializer {});
 
 impl TypeSerializer for MissingSentinelSerializer {
     fn to_python(&self, value: &Bound<'_, PyAny>, _state: &mut SerializationState<'_>) -> PyResult<Py<PyAny>> {

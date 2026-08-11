@@ -1,8 +1,6 @@
 use core::fmt;
 
 use hashbrown::HashTable;
-use pyo3::PyTraverseError;
-use pyo3::PyVisit;
 use pyo3::exceptions::PyKeyError;
 use pyo3::intern;
 use pyo3::prelude::*;
@@ -203,23 +201,16 @@ pub fn mapping_get<'py>(
 }
 
 /// A hash table which uses (hashable) Python objects as keys
-#[derive(Debug)]
+#[derive(Debug, PyGcTraverse)]
 pub struct PyHashTable<T>(HashTable<PyHashTableEntry<T>>);
 
-#[derive(Debug)]
+#[derive(Debug, PyGcTraverse)]
 struct PyHashTableEntry<T> {
     key: Py<PyAny>,
     /// Precomputed hash value (from Python hash) - this avoids possibility of Python
     /// dynamic nature causing rehashing to fail
     hash: u64,
     value: T,
-}
-
-impl PyGcTraverse for PyHashTable<usize> {
-    fn py_gc_traverse(&self, visit: &PyVisit<'_>) -> Result<(), PyTraverseError> {
-        // traverse only the keys, as the values are just usize indices
-        self.0.iter().try_for_each(|entry| entry.key.py_gc_traverse(visit))
-    }
 }
 
 impl<T> PyHashTable<T> {
@@ -296,21 +287,6 @@ fn hash_object(value: &Bound<'_, PyAny>) -> PyResult<u64> {
 // TODO: replace with isize::cast_unsigned on MSRV 1.87
 fn cast_unsigned(x: isize) -> usize {
     x as usize
-}
-
-impl<T: PyGcTraverse> PyGcTraverse for PyHashTableEntry<T> {
-    fn py_gc_traverse(&self, visit: &PyVisit<'_>) -> Result<(), PyTraverseError> {
-        self.key.py_gc_traverse(visit)?;
-        self.value.py_gc_traverse(visit)?;
-        Ok(())
-    }
-}
-
-impl PyGcTraverse for usize {
-    #[inline]
-    fn py_gc_traverse(&self, _visit: &PyVisit<'_>) -> Result<(), PyTraverseError> {
-        Ok(())
-    }
 }
 
 pub const ROOT_FIELD: &str = "root";

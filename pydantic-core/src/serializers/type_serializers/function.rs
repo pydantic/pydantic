@@ -75,7 +75,7 @@ impl BuildSerializer for FunctionPlainSerializerBuilder {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, PyGcTraverse)]
 pub struct FunctionPlainSerializer {
     func: Py<PyAny>,
     name: String,
@@ -282,12 +282,6 @@ macro_rules! function_type_serializer {
     };
 }
 
-impl_py_gc_traverse!(FunctionPlainSerializer {
-    func,
-    return_serializer,
-    fallback_serializer
-});
-
 function_type_serializer!(FunctionPlainSerializer);
 
 fn copy_outer_schema<'py>(schema: &Bound<'py, PyDict>) -> PyResult<Bound<'py, PyDict>> {
@@ -322,7 +316,7 @@ impl BuildSerializer for FunctionWrapSerializerBuilder {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, PyGcTraverse)]
 pub struct FunctionWrapSerializer {
     serializer: Arc<CombinedSerializer>,
     func: Py<PyAny>,
@@ -418,25 +412,15 @@ impl FunctionWrapSerializer {
     }
 }
 
-impl_py_gc_traverse!(FunctionWrapSerializer {
-    serializer,
-    func,
-    return_serializer
-});
-
 function_type_serializer!(FunctionWrapSerializer);
 
 #[pyclass(module = "pydantic_core._pydantic_core")]
+#[derive(PyGcTraverse)]
 pub(crate) struct SerializationCallable {
     serializer: Arc<CombinedSerializer>,
     extra_owned: ExtraOwned,
     filter: AnyFilter,
 }
-
-impl_py_gc_traverse!(SerializationCallable {
-    serializer,
-    extra_owned
-});
 
 impl SerializationCallable {
     pub fn new(serializer: &Arc<CombinedSerializer>, state: &SerializationState<'_>) -> Self {
@@ -513,6 +497,7 @@ impl SerializationCallable {
 
 #[pyclass(module = "pydantic_core._pydantic_core")]
 #[cfg_attr(debug_assertions, derive(Debug))]
+#[derive(PyGcTraverse)]
 struct SerializationInfo {
     #[pyo3(get)]
     include: Option<Py<PyAny>>,
@@ -540,12 +525,6 @@ struct SerializationInfo {
     #[pyo3(get)]
     polymorphic_serialization: Option<bool>,
 }
-
-impl_py_gc_traverse!(SerializationInfo {
-    include,
-    exclude,
-    context
-});
 
 impl SerializationInfo {
     fn new(state: &SerializationState<'_>, is_field_serializer: bool) -> PyResult<Self> {

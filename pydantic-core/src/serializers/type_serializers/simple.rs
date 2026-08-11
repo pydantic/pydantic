@@ -10,6 +10,7 @@ use serde::Serialize;
 use crate::PydanticSerializationUnexpectedValue;
 use crate::{definitions::DefinitionsBuilder, input::Int};
 
+use crate::py_gc::PyGcTraverse;
 use crate::serializers::SerializationState;
 
 use super::{
@@ -17,7 +18,7 @@ use super::{
     infer_serialize, infer_to_python,
 };
 
-#[derive(Debug)]
+#[derive(Debug, PyGcTraverse)]
 pub struct NoneSerializer;
 
 static NONE_SERIALIZER: LazyLock<Arc<CombinedSerializer>> = LazyLock::new(|| Arc::new(NoneSerializer.into()));
@@ -37,8 +38,6 @@ impl BuildSerializer for NoneSerializer {
 pub(crate) fn none_json_key() -> PyResult<Cow<'static, str>> {
     Ok(Cow::Borrowed("None"))
 }
-
-impl_py_gc_traverse!(NoneSerializer {});
 
 impl TypeSerializer for NoneSerializer {
     fn to_python<'py>(&self, value: &Bound<'py, PyAny>, state: &mut SerializationState<'py>) -> PyResult<Py<PyAny>> {
@@ -89,7 +88,7 @@ impl TypeSerializer for NoneSerializer {
 
 macro_rules! build_simple_serializer {
     ($struct_name:ident, $expected_type:literal, $rust_type:ty, $ob_type:expr, $key_method:ident, $subtypes_allowed:expr) => {
-        #[derive(Debug)]
+        #[derive(Debug, crate::py_gc::PyGcTraverse)]
         pub struct $struct_name;
 
         impl $struct_name {
@@ -111,8 +110,6 @@ macro_rules! build_simple_serializer {
                 Ok(Self::get().clone())
             }
         }
-
-        impl_py_gc_traverse!($struct_name {});
 
         impl TypeSerializer for $struct_name {
             fn to_python<'py>(

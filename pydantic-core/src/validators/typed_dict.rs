@@ -20,8 +20,9 @@ use ahash::AHashSet;
 use jiter::PartialMode;
 
 use super::{BuildValidator, CombinedValidator, DefinitionsBuilder, ValidationState, Validator, build_validator};
+use crate::py_gc::PyGcTraverse;
 
-#[derive(Debug)]
+#[derive(Debug, PyGcTraverse)]
 struct TypedDictField {
     name: PyBackedStr,
     lookup_path_collection: LookupPathCollection,
@@ -29,9 +30,7 @@ struct TypedDictField {
     validator: Arc<CombinedValidator>,
 }
 
-impl_py_gc_traverse!(TypedDictField { validator });
-
-#[derive(Debug)]
+#[derive(Debug, PyGcTraverse)]
 pub struct TypedDictValidator {
     fields: Vec<TypedDictField>,
     extra_behavior: ExtraBehavior,
@@ -135,11 +134,6 @@ impl BuildValidator for TypedDictValidator {
         .into())
     }
 }
-
-impl_py_gc_traverse!(TypedDictValidator {
-    fields,
-    extras_validator
-});
 
 impl Validator for TypedDictValidator {
     fn validate<'py>(

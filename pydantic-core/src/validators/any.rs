@@ -5,13 +5,14 @@ use pyo3::types::PyDict;
 
 use crate::errors::ValResult;
 use crate::input::Input;
+use crate::py_gc::PyGcTraverse;
 
 use super::{
     BuildValidator, CombinedValidator, DefinitionsBuilder, ValidationState, Validator, validation_state::Exactness,
 };
 
 /// This might seem useless, but it's useful in DictValidator to avoid Option<Validator> a lot
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PyGcTraverse)]
 pub struct AnyValidator;
 
 static ANY_VALIDATOR: LazyLock<Arc<CombinedValidator>> = LazyLock::new(|| Arc::new(AnyValidator.into()));
@@ -27,8 +28,6 @@ impl BuildValidator for AnyValidator {
         Ok(ANY_VALIDATOR.clone())
     }
 }
-
-impl_py_gc_traverse!(AnyValidator {});
 
 impl Validator for AnyValidator {
     fn validate<'py>(

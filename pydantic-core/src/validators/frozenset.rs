@@ -11,8 +11,9 @@ use super::list::min_length_check;
 use super::set::set_build;
 use super::validation_state::ValidationState;
 use super::{BuildValidator, CombinedValidator, DefinitionsBuilder, Validator};
+use crate::py_gc::PyGcTraverse;
 
-#[derive(Debug)]
+#[derive(Debug, PyGcTraverse)]
 pub struct FrozenSetValidator {
     strict: bool,
     item_validator: Arc<CombinedValidator>,
@@ -26,8 +27,6 @@ impl BuildValidator for FrozenSetValidator {
     const EXPECTED_TYPE: &'static str = "frozenset";
     set_build!();
 }
-
-impl_py_gc_traverse!(FrozenSetValidator { item_validator });
 
 impl Validator for FrozenSetValidator {
     fn validate<'py>(

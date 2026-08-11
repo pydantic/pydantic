@@ -17,6 +17,7 @@ use crate::build_tools::py_schema_err;
 use crate::build_tools::{ExtraBehavior, py_schema_error_type};
 use crate::common::missing_sentinel::get_missing_sentinel_object;
 use crate::definitions::DefinitionsBuilder;
+use crate::py_gc::PyGcTraverse;
 use crate::serializers::SerializationState;
 use crate::serializers::shared::DoSerialize;
 use crate::serializers::shared::serialize_to_json;
@@ -94,7 +95,7 @@ impl BuildSerializer for ModelFieldsBuilder {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, PyGcTraverse)]
 pub struct ModelSerializer {
     class: Py<PyType>,
     serializer: Arc<CombinedSerializer>,
@@ -253,8 +254,6 @@ impl ModelSerializer {
         }
     }
 }
-
-impl_py_gc_traverse!(ModelSerializer { class, serializer });
 
 impl TypeSerializer for ModelSerializer {
     fn to_python<'py>(&self, value: &Bound<'py, PyAny>, state: &mut SerializationState<'py>) -> PyResult<Py<PyAny>> {

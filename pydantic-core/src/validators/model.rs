@@ -17,6 +17,7 @@ use crate::build_tools::py_schema_err;
 use crate::build_tools::schema_or_config_same;
 use crate::errors::{ErrorType, ErrorTypeDefaults, ValError, ValResult};
 use crate::input::{Input, input_as_python_instance, py_error_on_minusone};
+use crate::py_gc::PyGcTraverse;
 use crate::tools::{ROOT_FIELD, SchemaDict, py_err, root_field_py_str};
 
 const DUNDER_DICT: &str = "__dict__";
@@ -24,7 +25,7 @@ const DUNDER_FIELDS_SET_KEY: &str = "__pydantic_fields_set__";
 const DUNDER_MODEL_EXTRA_KEY: &str = "__pydantic_extra__";
 const DUNDER_MODEL_PRIVATE_KEY: &str = "__pydantic_private__";
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PyGcTraverse)]
 pub(super) enum Revalidate {
     Always,
     Never,
@@ -50,7 +51,7 @@ impl Revalidate {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, PyGcTraverse)]
 pub struct ModelValidator {
     revalidate: Revalidate,
     validator: Arc<CombinedValidator>,
@@ -107,12 +108,6 @@ impl BuildValidator for ModelValidator {
         .into())
     }
 }
-
-impl_py_gc_traverse!(ModelValidator {
-    class,
-    generic_origin,
-    validator
-});
 
 impl Validator for ModelValidator {
     fn validate<'py>(

@@ -10,8 +10,9 @@ use crate::serializers::infer::{infer_json_key_known, infer_serialize_known, inf
 use crate::serializers::ob_type::{IsType, ObType};
 
 use super::{BuildSerializer, CombinedSerializer, TypeSerializer, infer_json_key, infer_serialize, infer_to_python};
+use crate::py_gc::PyGcTraverse;
 
-#[derive(Debug)]
+#[derive(Debug, PyGcTraverse)]
 pub struct DecimalSerializer {}
 
 static DECIMAL_SERIALIZER: LazyLock<Arc<CombinedSerializer>> = LazyLock::new(|| Arc::new(DecimalSerializer {}.into()));
@@ -27,8 +28,6 @@ impl BuildSerializer for DecimalSerializer {
         Ok(DECIMAL_SERIALIZER.clone())
     }
 }
-
-impl_py_gc_traverse!(DecimalSerializer {});
 
 impl TypeSerializer for DecimalSerializer {
     fn to_python<'py>(&self, value: &Bound<'py, PyAny>, state: &mut SerializationState<'py>) -> PyResult<Py<PyAny>> {

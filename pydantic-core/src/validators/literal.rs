@@ -4,9 +4,9 @@ use core::fmt::Debug;
 use std::cell::OnceCell;
 use std::sync::Arc;
 
+use pyo3::intern;
 use pyo3::prelude::*;
 use pyo3::types::{PyDict, PyInt, PyList, PyString};
-use pyo3::{PyTraverseError, PyVisit, intern};
 
 use ahash::AHashMap;
 
@@ -18,13 +18,13 @@ use crate::tools::SchemaDict;
 
 use super::{BuildValidator, CombinedValidator, DefinitionsBuilder, ValidationState, Validator};
 
-#[derive(Debug, Clone, Default)]
+#[derive(Debug, Clone, Default, PyGcTraverse)]
 struct BoolLiteral {
     pub true_id: Option<usize>,
     pub false_id: Option<usize>,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PyGcTraverse)]
 pub struct LiteralLookup<T: Debug> {
     // Specialized lookups for ints, bools and strings because they
     // (1) are easy to convert between Rust and Python
@@ -227,15 +227,7 @@ impl<T: Debug> LiteralLookup<T> {
     }
 }
 
-impl<T: PyGcTraverse + Debug> PyGcTraverse for LiteralLookup<T> {
-    fn py_gc_traverse(&self, visit: &PyVisit<'_>) -> Result<(), PyTraverseError> {
-        self.expected_py_dict.py_gc_traverse(visit)?;
-        self.values.py_gc_traverse(visit)?;
-        Ok(())
-    }
-}
-
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PyGcTraverse)]
 pub struct LiteralValidator {
     lookup: Box<LiteralLookup<Py<PyAny>>>,
     expected_repr: String,
@@ -270,8 +262,6 @@ impl BuildValidator for LiteralValidator {
         .into())
     }
 }
-
-impl_py_gc_traverse!(LiteralValidator { lookup });
 
 impl Validator for LiteralValidator {
     fn validate<'py>(

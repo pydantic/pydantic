@@ -18,7 +18,7 @@ use super::{
     BuildValidator, CombinedValidator, DefinitionsBuilder, Exactness, Extra, InputType, ValidationState, Validator,
 };
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PyGcTraverse)]
 pub struct GeneratorValidator {
     item_validator: Option<Arc<CombinedValidator>>,
     min_length: Option<usize>,
@@ -58,8 +58,6 @@ impl BuildValidator for GeneratorValidator {
         .into())
     }
 }
-
-impl_py_gc_traverse!(GeneratorValidator { item_validator });
 
 impl Validator for GeneratorValidator {
     fn validate<'py>(
@@ -216,6 +214,7 @@ impl ValidatorIterator {
 
 /// Owned validator wrapper for use in generators in functions, this can be passed back to python
 /// mid-validation
+#[derive(PyGcTraverse)]
 pub struct InternalValidator {
     name: String,
     validator: Arc<CombinedValidator>,
@@ -358,10 +357,3 @@ impl InternalValidator {
         result
     }
 }
-
-impl_py_gc_traverse!(InternalValidator {
-    validator,
-    data,
-    context,
-    self_instance
-});

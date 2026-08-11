@@ -6,6 +6,7 @@ use std::sync::Arc;
 
 use crate::definitions::DefinitionsBuilder;
 use crate::input::EitherTimedelta;
+use crate::py_gc::PyGcTraverse;
 use crate::serializers::SerializationState;
 use crate::serializers::config::{FromConfig, TemporalMode, TimedeltaMode};
 
@@ -13,7 +14,7 @@ use super::{
     BuildSerializer, CombinedSerializer, SerMode, TypeSerializer, infer_json_key, infer_serialize, infer_to_python,
 };
 
-#[derive(Debug)]
+#[derive(Debug, PyGcTraverse)]
 pub struct TimeDeltaSerializer {
     temporal_mode: TemporalMode,
 }
@@ -39,8 +40,6 @@ impl BuildSerializer for TimeDeltaSerializer {
         Ok(Arc::new(Self { temporal_mode }.into()))
     }
 }
-
-impl_py_gc_traverse!(TimeDeltaSerializer {});
 
 impl TypeSerializer for TimeDeltaSerializer {
     fn to_python<'py>(&self, value: &Bound<'py, PyAny>, state: &mut SerializationState<'py>) -> PyResult<Py<PyAny>> {

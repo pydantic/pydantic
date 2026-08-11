@@ -15,8 +15,9 @@ use crate::input::Input;
 use super::datetime::TZConstraint;
 use super::datetime::extract_microseconds_precision;
 use super::{BuildValidator, CombinedValidator, DefinitionsBuilder, ValidationState, Validator};
+use crate::py_gc::PyGcTraverse;
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PyGcTraverse)]
 pub struct TimeValidator {
     strict: bool,
     constraints: Option<TimeConstraints>,
@@ -39,8 +40,6 @@ impl BuildValidator for TimeValidator {
         Ok(Arc::new(s.into()))
     }
 }
-
-impl_py_gc_traverse!(TimeValidator {});
 
 impl Validator for TimeValidator {
     fn validate<'py>(
@@ -100,7 +99,7 @@ fn convert_pytime(schema: &Bound<'_, PyDict>, key: &Bound<'_, PyString>) -> PyRe
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PyGcTraverse)]
 struct TimeConstraints {
     le: Option<Time>,
     lt: Option<Time>,

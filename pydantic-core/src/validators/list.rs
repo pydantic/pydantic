@@ -10,8 +10,9 @@ use crate::input::{
 use crate::tools::SchemaDict;
 
 use super::{BuildValidator, CombinedValidator, DefinitionsBuilder, ValidationState, Validator, build_validator};
+use crate::py_gc::PyGcTraverse;
 
-#[derive(Debug)]
+#[derive(Debug, PyGcTraverse)]
 pub struct ListValidator {
     strict: bool,
     item_validator: Option<Arc<CombinedValidator>>,
@@ -115,8 +116,6 @@ impl BuildValidator for ListValidator {
         .into())
     }
 }
-
-impl_py_gc_traverse!(ListValidator { item_validator });
 
 impl Validator for ListValidator {
     fn validate<'py>(

@@ -9,6 +9,7 @@ use std::sync::OnceLock;
 use crate::build_tools::py_schema_err;
 use crate::common::union::{Discriminator, SMALL_UNION_THRESHOLD};
 use crate::definitions::DefinitionsBuilder;
+use crate::py_gc::PyGcTraverse;
 use crate::serializers::PydanticSerializationUnexpectedValue;
 use crate::serializers::SerializationState;
 use crate::serializers::extra::IncludeExclude;
@@ -20,7 +21,7 @@ use super::{
     BuildSerializer, CombinedSerializer, SerCheck, TypeSerializer, infer_json_key, infer_serialize, infer_to_python,
 };
 
-#[derive(Debug)]
+#[derive(Debug, PyGcTraverse)]
 pub struct UnionSerializer {
     choices: UnionChoices,
     name: String,
@@ -65,8 +66,6 @@ impl BuildSerializer for UnionSerializer {
         .into())
     }
 }
-
-impl_py_gc_traverse!(UnionSerializer { choices });
 
 impl TypeSerializer for UnionSerializer {
     fn to_python<'py>(&self, value: &Bound<'py, PyAny>, state: &mut SerializationState<'py>) -> PyResult<Py<PyAny>> {
@@ -113,7 +112,7 @@ impl TypeSerializer for UnionSerializer {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, PyGcTraverse)]
 pub struct TaggedUnionSerializer {
     discriminator: Box<Discriminator>,
     lookup: PyHashTable<usize>,
@@ -160,12 +159,6 @@ impl BuildSerializer for TaggedUnionSerializer {
         .into())
     }
 }
-
-impl_py_gc_traverse!(TaggedUnionSerializer {
-    discriminator,
-    lookup,
-    choices
-});
 
 impl TypeSerializer for TaggedUnionSerializer {
     fn to_python<'py>(&self, value: &Bound<'py, PyAny>, state: &mut SerializationState<'py>) -> PyResult<Py<PyAny>> {
@@ -329,12 +322,10 @@ fn initial_check_level(state: &SerializationState<'_>) -> SerCheck {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, PyGcTraverse)]
 struct UnionChoices {
     choices: Vec<Arc<CombinedSerializer>>,
 }
-
-impl_py_gc_traverse!(UnionChoices { choices });
 
 enum FromChoicesOutput {
     Single(Arc<CombinedSerializer>),

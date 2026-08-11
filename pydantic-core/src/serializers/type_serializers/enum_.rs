@@ -16,14 +16,13 @@ use super::float::FloatSerializer;
 use super::simple::IntSerializer;
 use super::string::StrSerializer;
 use super::{BuildSerializer, CombinedSerializer, TypeSerializer};
+use crate::py_gc::PyGcTraverse;
 
-#[derive(Debug)]
+#[derive(Debug, PyGcTraverse)]
 pub struct EnumSerializer {
     class: Py<PyType>,
     serializer: Option<Arc<CombinedSerializer>>,
 }
-
-impl_py_gc_traverse!(EnumSerializer { class, serializer });
 
 impl BuildSerializer for EnumSerializer {
     const EXPECTED_TYPE: &'static str = "enum";
