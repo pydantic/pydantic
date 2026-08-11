@@ -28,7 +28,7 @@ def test_defaultdict_unknown_default_factory() -> None:
     """https://github.com/pydantic/pydantic/issues/4687"""
     with pytest.raises(
         PydanticSchemaGenerationError,
-        match=r'Unable to infer a default factory for keys of type collections.defaultdict\[int, int\]',
+        match=r'Unable to infer a default factory for values of type collections.defaultdict\[int, int\]',
     ):
         TypeAdapter(defaultdict[int, defaultdict[int, int]])
 
