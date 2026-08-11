@@ -1380,6 +1380,10 @@ class GenerateJsonSchema:
         for k, v in schema['choices'].items():
             if isinstance(k, Enum):
                 k = k.value
+            elif isinstance(k, bool):
+                # Use the JSON representation so that the discriminator mapping
+                # can be matched against the serialized payload value
+                k = 'true' if k else 'false'
             try:
                 # Use str(k) since keys must be strings for json; while not technically correct,
                 # it's the closest that can be represented in valid JSON

@@ -3973,6 +3973,52 @@ def test_discriminated_annotated_union():
     }
 
 
+def test_bool_discriminated_union():
+    class Enabled(BaseModel):
+        enabled: Literal[True]
+        config: str
+
+    class Disabled(BaseModel):
+        enabled: Literal[False]
+
+    class Model(BaseModel):
+        setting: Enabled | Disabled = Field(discriminator='enabled')
+
+    # insert_assert(Model.model_json_schema())
+    assert Model.model_json_schema() == {
+        '$defs': {
+            'Disabled': {
+                'properties': {'enabled': {'const': False, 'title': 'Enabled', 'type': 'boolean'}},
+                'required': ['enabled'],
+                'title': 'Disabled',
+                'type': 'object',
+            },
+            'Enabled': {
+                'properties': {
+                    'config': {'title': 'Config', 'type': 'string'},
+                    'enabled': {'const': True, 'title': 'Enabled', 'type': 'boolean'},
+                },
+                'required': ['enabled', 'config'],
+                'title': 'Enabled',
+                'type': 'object',
+            },
+        },
+        'properties': {
+            'setting': {
+                'discriminator': {
+                    'mapping': {'false': '#/$defs/Disabled', 'true': '#/$defs/Enabled'},
+                    'propertyName': 'enabled',
+                },
+                'oneOf': [{'$ref': '#/$defs/Enabled'}, {'$ref': '#/$defs/Disabled'}],
+                'title': 'Setting',
+            }
+        },
+        'required': ['setting'],
+        'title': 'Model',
+        'type': 'object',
+    }
+
+
 def test_nested_discriminated_union():
     class BlackCatWithHeight(BaseModel):
         color: Literal['black']
