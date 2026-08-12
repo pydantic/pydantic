@@ -1603,10 +1603,11 @@ class ComputedFieldInfo:
     examples: list[Any] | None
     json_schema_extra: JsonDict | Callable[[JsonDict], None] | None
     repr: bool
+    _title_from_generator: bool = dataclasses.field(default=False, init=False, repr=False)
     # NOTE: if you add a new field, add it to the `__copy__()` implementation.
 
     def __copy__(self) -> Self:
-        return type(self)(
+        cp = type(self)(
             wrapped_property=self.wrapped_property,
             return_type=self.return_type,
             alias=self.alias,
@@ -1622,6 +1623,8 @@ class ComputedFieldInfo:
             else self.json_schema_extra,
             repr=self.repr,
         )
+        cp._title_from_generator = self._title_from_generator
+        return cp
 
     @property
     def deprecation_message(self) -> str | None:
@@ -1635,8 +1638,9 @@ class ComputedFieldInfo:
     def _update_from_config(self, config_wrapper: ConfigWrapper, name: str) -> None:
         """Update the instance from the configuration set on the class this computed field belongs to."""
         title_generator = self.field_title_generator or config_wrapper.field_title_generator
-        if title_generator is not None and self.title is None:
+        if title_generator is not None and (self.title is None or self._title_from_generator):
             self.title = title_generator(name, self)
+            self._title_from_generator = True
         if config_wrapper.alias_generator is not None:
             self._apply_alias_generator(config_wrapper.alias_generator, name)
 
