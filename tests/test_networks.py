@@ -1115,6 +1115,32 @@ def test_custom_constraints() -> None:
         ta.validate_python('ftp://example.com')
 
 
+def test_custom_constraints_applied_to_url_instances() -> None:
+    Https = Annotated[AnyUrl, UrlConstraints(allowed_schemes=['https'], max_length=25)]
+    ta = TypeAdapter(Https)
+
+    # a url instance must be held to the same constraints as its string form
+    with pytest.raises(ValidationError, match='url_scheme'):
+        ta.validate_python(AnyUrl('http://example.com'))
+    with pytest.raises(ValidationError, match='url_too_long'):
+        ta.validate_python(AnyUrl('https://example.com/some/long/path'))
+
+    # revalidating an already validated (looser) model must not bypass the constraints
+    class Loose(BaseModel):
+        url: AnyUrl
+
+    loose = Loose(url='ftp://internal/etc/passwd')
+    with pytest.raises(ValidationError, match='url_scheme'):
+        ta.validate_python(loose.model_dump()['url'])
+
+    valid = ta.validate_python(AnyUrl('https://example.com'))
+    assert str(valid) == 'https://example.com/'
+
+    Postgres = Annotated[PostgresDsn, UrlConstraints(allowed_schemes=['postgresql'])]
+    with pytest.raises(ValidationError, match='url_scheme'):
+        TypeAdapter(Postgres).validate_python(PostgresDsn('postgres://user:pass@host/db'))
+
+
 def test_url_constraints_invalid_annotated_type() -> None:
     with pytest.raises(PydanticUserError):
         TypeAdapter(Annotated[str, UrlConstraints(max_length=1)])
