@@ -323,7 +323,6 @@ def test_stdlib_docs_extraction_duplicate_class():
     assert ta.json_schema()['properties']['a']['description'] == 'A docs'
 
 
-@pytest.mark.xfail(reason='Current implementation does not take inheritance into account.')
 def test_stdlib_docs_extraction_inheritance():
     @dataclass
     @with_config({'use_attribute_docstrings': True})
@@ -347,6 +346,26 @@ def test_stdlib_docs_extraction_inheritance():
         'required': ['a', 'b'],
         'title': 'MyStdlibDataclass',
         'type': 'object',
+    }
+
+
+def test_typeddict_docs_extraction_inheritance():
+    @with_config(ConfigDict(use_attribute_docstrings=True))
+    class Parent(TypedDict):
+        a: int
+        """Doc for a."""
+
+    @with_config(ConfigDict(use_attribute_docstrings=True))
+    class Child(Parent):
+        b: int
+        """Doc for b."""
+
+    assert TypeAdapter(Parent).json_schema()['properties'] == {
+        'a': {'description': 'Doc for a.', 'title': 'A', 'type': 'integer'}
+    }
+    assert TypeAdapter(Child).json_schema()['properties'] == {
+        'a': {'description': 'Doc for a.', 'title': 'A', 'type': 'integer'},
+        'b': {'description': 'Doc for b.', 'title': 'B', 'type': 'integer'},
     }
 
 
