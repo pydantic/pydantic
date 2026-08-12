@@ -3198,3 +3198,14 @@ def test_interconnected_models_build_in_linear_time() -> None:
     instance = last.model_validate({'value': 1, 'ref2': {'value': 2, 'ref2': {'value': 3}}})
     assert instance.ref2.ref2.value == 3
     assert instance.model_dump(exclude_none=True) == {'value': 1, 'ref2': {'value': 2, 'ref2': {'value': 3}}}
+
+
+def test_unhasbable_generic_alias() -> None:
+    """https://github.com/pydantic/pydantic/issues/13645"""
+
+    class Meta:
+        __hash__ = None
+
+    ta = TypeAdapter(list[Annotated[int, Meta()]])
+
+    assert ta.validate_python(['1']) == [1]
