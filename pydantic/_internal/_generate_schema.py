@@ -78,12 +78,11 @@ from ..warnings import (
     TypedDictExtraConfigWarning,
     UnsupportedFieldAttributeWarning,
 )
-from . import _decorators, _discriminated_union, _known_annotated_metadata, _repr, _typing_extra
+from . import _decorators, _discriminated_union, _known_annotated_metadata, _repr, _type_refs, _typing_extra
 from ._config import ConfigWrapper, ConfigWrapperStack
 from ._core_metadata import CoreMetadata, update_core_metadata
 from ._core_utils import (
     get_ref,
-    get_type_ref,
     is_list_like_schema_with_items_schema,
 )
 from ._decorators import (
@@ -483,7 +482,7 @@ class GenerateSchema:
     def _enum_schema(self, enum_type: type[Enum]) -> CoreSchema:
         cases: list[Any] = list(enum_type.__members__.values())
 
-        enum_ref = get_type_ref(enum_type)
+        enum_ref = _type_refs.enum_type_ref(enum_type)
         description = None if not enum_type.__doc__ else inspect.cleandoc(enum_type.__doc__)
         if (
             description == 'An enumeration.'
@@ -813,7 +812,8 @@ class GenerateSchema:
         """Generate schema for a Pydantic model."""
         BaseModel_ = import_cached_base_model()
 
-        with self.defs.get_schema_or_ref(cls) as (model_ref, maybe_schema):
+        model_ref = _type_refs.model_type_ref(cls)
+        with self.defs.get_definition_ref_schema(ref=model_ref) as maybe_schema:
             if maybe_schema is not None:
                 return maybe_schema
 
@@ -974,9 +974,11 @@ class GenerateSchema:
             # Some referenceable types might have a `__get_pydantic_core_schema__` method
             # defined on it by users (e.g. on a dataclass). This generally doesn't play well
             # as these types are already recognized by the `GenerateSchema` class and isn't ideal
-            # as we might end up calling `get_schema_or_ref` (expensive) on types that are actually
+            # as we might end up calling `any_class_type_ref()` (relatively expensive) on types that are actually
             # not referenceable:
-            with self.defs.get_schema_or_ref(obj) as (_, maybe_schema):
+            with self.defs.get_definition_ref_schema(
+                ref=_type_refs.any_class_type_ref(obj, get_origin(obj))
+            ) as maybe_schema:
                 if maybe_schema is not None:
                     return maybe_schema
 
@@ -1354,7 +1356,8 @@ class GenerateSchema:
         return s
 
     def _type_alias_type_schema(self, obj: TypeAliasType) -> CoreSchema:
-        with self.defs.get_schema_or_ref(obj) as (ref, maybe_schema):
+        ref = _type_refs.type_alias_type_ref(obj)
+        with self.defs.get_definition_ref_schema(ref=ref) as maybe_schema:
             if maybe_schema is not None:
                 return maybe_schema
 
@@ -1397,12 +1400,10 @@ class GenerateSchema:
         """
         FieldInfo = import_cached_field_info()
 
+        typed_dict_ref = _type_refs.class_type_ref(typed_dict_cls, origin)
         with (
             self.model_type_stack.push(typed_dict_cls),
-            self.defs.get_schema_or_ref(typed_dict_cls) as (
-                typed_dict_ref,
-                maybe_schema,
-            ),
+            self.defs.get_definition_ref_schema(ref=typed_dict_ref) as maybe_schema,
         ):
             if maybe_schema is not None:
                 return maybe_schema
@@ -1526,12 +1527,10 @@ class GenerateSchema:
 
     def _namedtuple_schema(self, namedtuple_cls: Any, origin: Any) -> core_schema.CoreSchema:
         """Generate schema for a NamedTuple."""
+        namedtuple_ref = _type_refs.class_type_ref(namedtuple_cls, origin)
         with (
             self.model_type_stack.push(namedtuple_cls),
-            self.defs.get_schema_or_ref(namedtuple_cls) as (
-                namedtuple_ref,
-                maybe_schema,
-            ),
+            self.defs.get_definition_ref_schema(ref=namedtuple_ref) as maybe_schema,
         ):
             if maybe_schema is not None:
                 return maybe_schema
@@ -1865,12 +1864,10 @@ class GenerateSchema:
         self, dataclass: type[StandardDataclass], origin: type[StandardDataclass] | None
     ) -> core_schema.CoreSchema:
         """Generate schema for a dataclass."""
+        dataclass_ref = _type_refs.class_type_ref(dataclass, origin)
         with (
             self.model_type_stack.push(dataclass),
-            self.defs.get_schema_or_ref(dataclass) as (
-                dataclass_ref,
-                maybe_schema,
-            ),
+            self.defs.get_definition_ref_schema(ref=dataclass_ref) as maybe_schema,
         ):
             if maybe_schema is not None:
                 return maybe_schema
@@ -2796,14 +2793,9 @@ class _Definitions:
         self._definitions = {}
 
     @contextmanager
-    def get_schema_or_ref(self, tp: Any, /) -> Generator[tuple[str, core_schema.DefinitionReferenceSchema | None]]:
-        """Get a definition for `tp` if one exists.
-
-        If a definition exists, a tuple of `(ref_string, CoreSchema)` is returned.
-        If no definition exists yet, a tuple of `(ref_string, None)` is returned.
-
-        Note that the returned `CoreSchema` will always be a `DefinitionReferenceSchema`,
-        not the actual definition itself.
+    def get_definition_ref_schema(self, *, ref: str) -> Generator[core_schema.DefinitionReferenceSchema | None]:
+        """Get a `'definition-ref'` schema for `ref`, if the reference was already encountered (or if we are in a cycle).
+        Get a definition for `tp` if one exists.
 
         This should be called for any type that can be identified by reference.
         This includes any recursive types.
@@ -2817,14 +2809,13 @@ class _Definitions:
         - `TypeAliasType` instances
         - Enums
         """
-        ref = get_type_ref(tp)
         # return the reference if we're either (1) in a cycle or (2) it the reference was already encountered:
         if ref in self._recursively_seen or ref in self._definitions:
-            yield (ref, core_schema.definition_reference_schema(ref))
+            yield core_schema.definition_reference_schema(ref)
         else:
             self._recursively_seen.add(ref)
             try:
-                yield (ref, None)
+                yield None
             finally:
                 self._recursively_seen.discard(ref)
 

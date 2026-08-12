@@ -18,8 +18,7 @@ import typing_extensions
 from typing_inspection import typing_objects
 from typing_inspection.introspection import is_union_origin
 
-from . import _typing_extra
-from ._core_utils import get_type_ref
+from . import _type_refs, _typing_extra
 from ._forward_ref import PydanticRecursiveRef
 from ._utils import all_identical, is_model_class
 
@@ -427,7 +426,7 @@ def generic_recursion_self_type(
         token = None
 
     try:
-        type_ref = get_type_ref(origin, args_override=args)
+        type_ref = _type_refs.model_type_ref(origin, args_override=args)
         if type_ref in previously_seen_type_refs:
             self_type = PydanticRecursiveRef(type_ref=type_ref)
             yield self_type

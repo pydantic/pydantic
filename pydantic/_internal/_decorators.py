@@ -16,7 +16,7 @@ from pydantic_core import PydanticUndefined, PydanticUndefinedType, core_schema
 from typing_extensions import Self, is_typeddict
 
 from ..errors import PydanticUserError
-from ._core_utils import get_type_ref
+from . import _type_refs
 from ._namespace_utils import GlobalsNamespace, MappingNamespace
 from ._typing_extra import get_function_type_hints, signature_no_eval
 from ._utils import can_be_positional
@@ -231,6 +231,7 @@ class Decorator(Generic[DecoratorInfoType]):
     def build(
         cls_: Any,
         *,
+        cls_ref: str,
         cls_var_name: str,
         shim: Callable[[Any], Any] | None,
         info: DecoratorInfoType,
@@ -239,6 +240,7 @@ class Decorator(Generic[DecoratorInfoType]):
 
         Args:
             cls_: The class.
+            cls_ref: The type ref of the class.
             cls_var_name: The decorated function name.
             shim: A wrapper function to wrap V1 style function.
             info: The decorator info.
@@ -257,24 +259,26 @@ class Decorator(Generic[DecoratorInfoType]):
             if isinstance(attribute, PydanticDescriptorProxy):
                 func = unwrap_wrapped_function(attribute.wrapped)
         return Decorator(
-            cls_ref=get_type_ref(cls_),
+            cls_ref=cls_ref,
             cls_var_name=cls_var_name,
             func=func,
             shim=shim,
             info=info,
         )
 
-    def bind_to_cls(self, cls: Any) -> Decorator[DecoratorInfoType]:
+    def bind_to_cls(self, cls: Any, cls_ref: str) -> Decorator[DecoratorInfoType]:
         """Bind the decorator to a class.
 
         Args:
             cls: the class.
+            cls_ref: The type ref of the class.
 
         Returns:
             The new decorator instance.
         """
         return self.build(
             cls,
+            cls_ref=cls_ref,
             cls_var_name=self.cls_var_name,
             shim=self.shim,
             info=copy(self.info),
@@ -445,21 +449,46 @@ class DecoratorInfos:
         """
         # reminder: dicts are ordered and replacement does not alter the order
         res = cls()
+
+        type_ref: str | None = None
+
+        def cls_ref() -> str:
+            # The type ref is only required if at least one decorator is collected,
+            # so only compute it lazily (and only once):
+            nonlocal type_ref
+            if type_ref is None:
+                type_ref = _type_refs.any_class_type_ref(typ)
+            return type_ref
+
         # Iterate over the bases, without the actual `typ`.
         # `1:-1` because we don't need to include `object`/`TypedDict`:
         for base in reversed(mro(typ)[1:-1]):
             existing: DecoratorInfos | None = base.__dict__.get('__pydantic_decorators__')
             if existing is None:
-                existing, _ = _decorator_infos_for_class(base, collect_to_replace=False)
-            res.validators.update({k: v.bind_to_cls(typ) for k, v in existing.validators.items()})
-            res.field_validators.update({k: v.bind_to_cls(typ) for k, v in existing.field_validators.items()})
-            res.root_validators.update({k: v.bind_to_cls(typ) for k, v in existing.root_validators.items()})
-            res.field_serializers.update({k: v.bind_to_cls(typ) for k, v in existing.field_serializers.items()})
-            res.model_serializers.update({k: v.bind_to_cls(typ) for k, v in existing.model_serializers.items()})
-            res.model_validators.update({k: v.bind_to_cls(typ) for k, v in existing.model_validators.items()})
-            res.computed_fields.update({k: v.bind_to_cls(typ) for k, v in existing.computed_fields.items()})
+                existing, _ = _decorator_infos_for_class(
+                    base,
+                    # The class refs of the built decorators are irrelevant here, as `bind_to_cls()`
+                    # below rebinds every decorator to `typ` with the correct ref:
+                    cls_ref=lambda: '',
+                    collect_to_replace=False,
+                )
+            res.validators.update({k: v.bind_to_cls(typ, cls_ref()) for k, v in existing.validators.items()})
+            res.field_validators.update(
+                {k: v.bind_to_cls(typ, cls_ref()) for k, v in existing.field_validators.items()}
+            )
+            res.root_validators.update({k: v.bind_to_cls(typ, cls_ref()) for k, v in existing.root_validators.items()})
+            res.field_serializers.update(
+                {k: v.bind_to_cls(typ, cls_ref()) for k, v in existing.field_serializers.items()}
+            )
+            res.model_serializers.update(
+                {k: v.bind_to_cls(typ, cls_ref()) for k, v in existing.model_serializers.items()}
+            )
+            res.model_validators.update(
+                {k: v.bind_to_cls(typ, cls_ref()) for k, v in existing.model_validators.items()}
+            )
+            res.computed_fields.update({k: v.bind_to_cls(typ, cls_ref()) for k, v in existing.computed_fields.items()})
 
-        decorator_infos, to_replace = _decorator_infos_for_class(typ, collect_to_replace=True)
+        decorator_infos, to_replace = _decorator_infos_for_class(typ, cls_ref=cls_ref, collect_to_replace=True)
 
         res.validators.update(decorator_infos.validators)
         res.field_validators.update(decorator_infos.field_validators)
@@ -496,6 +525,7 @@ class DecoratorInfos:
 def _decorator_infos_for_class(
     typ: type[Any],
     *,
+    cls_ref: Callable[[], str],
     collect_to_replace: bool,
 ) -> tuple[DecoratorInfos, list[tuple[str, Any]]]:
     """Collect a `DecoratorInfos` for class, without looking into bases."""
@@ -506,32 +536,36 @@ def _decorator_infos_for_class(
         if isinstance(var_value, PydanticDescriptorProxy):
             info = var_value.decorator_info
             if isinstance(info, ValidatorDecoratorInfo):
-                res.validators[var_name] = Decorator.build(typ, cls_var_name=var_name, shim=var_value.shim, info=info)
+                res.validators[var_name] = Decorator.build(
+                    typ, cls_ref=cls_ref(), cls_var_name=var_name, shim=var_value.shim, info=info
+                )
             elif isinstance(info, FieldValidatorDecoratorInfo):
                 res.field_validators[var_name] = Decorator.build(
-                    typ, cls_var_name=var_name, shim=var_value.shim, info=info
+                    typ, cls_ref=cls_ref(), cls_var_name=var_name, shim=var_value.shim, info=info
                 )
             elif isinstance(info, RootValidatorDecoratorInfo):
                 res.root_validators[var_name] = Decorator.build(
-                    typ, cls_var_name=var_name, shim=var_value.shim, info=info
+                    typ, cls_ref=cls_ref(), cls_var_name=var_name, shim=var_value.shim, info=info
                 )
             elif isinstance(info, FieldSerializerDecoratorInfo):
                 res.field_serializers[var_name] = Decorator.build(
-                    typ, cls_var_name=var_name, shim=var_value.shim, info=info
+                    typ, cls_ref=cls_ref(), cls_var_name=var_name, shim=var_value.shim, info=info
                 )
             elif isinstance(info, ModelValidatorDecoratorInfo):
                 res.model_validators[var_name] = Decorator.build(
-                    typ, cls_var_name=var_name, shim=var_value.shim, info=info
+                    typ, cls_ref=cls_ref(), cls_var_name=var_name, shim=var_value.shim, info=info
                 )
             elif isinstance(info, ModelSerializerDecoratorInfo):
                 res.model_serializers[var_name] = Decorator.build(
-                    typ, cls_var_name=var_name, shim=var_value.shim, info=info
+                    typ, cls_ref=cls_ref(), cls_var_name=var_name, shim=var_value.shim, info=info
                 )
             else:
                 from ..fields import ComputedFieldInfo
 
                 isinstance(var_value, ComputedFieldInfo)
-                res.computed_fields[var_name] = Decorator.build(typ, cls_var_name=var_name, shim=None, info=info)
+                res.computed_fields[var_name] = Decorator.build(
+                    typ, cls_ref=cls_ref(), cls_var_name=var_name, shim=None, info=info
+                )
             if collect_to_replace:
                 to_replace.append((var_name, var_value.wrapped))
 
