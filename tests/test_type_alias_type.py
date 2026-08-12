@@ -1,11 +1,11 @@
 import datetime
 from collections.abc import Sequence
 from dataclasses import dataclass
-from typing import Annotated, Generic, Literal, TypeVar, Union
+from typing import Annotated, Any, Generic, Literal, TypeVar, Union
 
 import pytest
 from annotated_types import MaxLen
-from typing_extensions import TypeAliasType
+from typing_extensions import ParamSpec, TypeAliasType
 
 from pydantic import BaseModel, PlainSerializer, PydanticUserError, TypeAdapter, ValidationError, WithJsonSchema
 
@@ -488,3 +488,19 @@ def test_type_alias_type_with_metadata() -> None:
 
     ta = TypeAdapter(B)
     assert ta.json_schema() == {'type': 'int', 'extra': 1}
+
+
+def test_unhashable_type_alias_type() -> None:
+    """https://github.com/pydantic/pydantic/issues/13645
+
+    Subscripting a `TypeAliasType` with a `ParamSpec` using a list (e.g. `Alias[[], int]`)
+    produces an unhashable `types.GenericAlias` (its `__args__` contain a `list`).
+    Schema building should not assume annotations are hashable.
+    """
+    P = ParamSpec('P')
+    Alias = TypeAliasType('Alias', Any, type_params=(P, T))
+
+    class Model(BaseModel):
+        f: Alias[[], int] | None = None
+
+    assert Model(f=1).f == 1

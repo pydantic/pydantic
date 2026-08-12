@@ -1124,10 +1124,18 @@ class GenerateSchema:
             # early for model-like fields, which handles it already.
             return core_schema.any_schema()
 
-        if origin is not None and (aliased_obj := typing_objects.DEPRECATED_ALIASES.get(obj)):
-            # See https://typing-inspection.pydantic.dev/dev/usage/#inspecting-the-type-expression:
-            obj = aliased_obj
-            origin = None
+        if origin is not None:
+            try:
+                aliased_obj = typing_objects.DEPRECATED_ALIASES.get(obj)
+            except TypeError:
+                # `obj` may be unhashable (e.g. a `types.GenericAlias` with a list argument,
+                # such as a PEP 695 alias with a `ParamSpec` parameterized by `[]`), in which
+                # case it can't be a deprecated alias.
+                aliased_obj = None
+            if aliased_obj is not None:
+                # See https://typing-inspection.pydantic.dev/dev/usage/#inspecting-the-type-expression:
+                obj = aliased_obj
+                origin = None
 
         if origin is None:
             # Thanks to the checks before this point, no origin means `obj` is a
