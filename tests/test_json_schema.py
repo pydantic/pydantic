@@ -7239,6 +7239,21 @@ def test_decimal_pattern_reject_invalid_not_numerical_values_with_decimal_places
     assert re.fullmatch(pattern, invalid_decimal) is None
 
 
+def test_decimal_pattern_no_look_around() -> None:
+    """Test that generated decimal patterns contain no look-around assertions (#13630)."""
+    class Foo(BaseModel):
+        bar: Decimal
+
+    schema = Foo.model_json_schema()
+    pattern = schema['properties']['bar']['anyOf'][1]['pattern']
+    assert '(?=' not in pattern
+    assert '(?!' not in pattern
+    assert '(?<' not in pattern
+
+    root = RootModel[Annotated[str, Field(pattern=pattern)]]
+    assert root.model_validate_json('"1.4"').root == '1.4'
+
+
 def test_union_format_primitive_type_array() -> None:
     class Sub(BaseModel):
         pass
