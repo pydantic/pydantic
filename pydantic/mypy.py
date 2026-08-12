@@ -7,6 +7,8 @@ from collections.abc import Iterator
 from configparser import ConfigParser
 from typing import Any, Callable
 
+# To avoid import error (https://github.com/python/mypy/issues/17726):
+import mypy.types  # noqa: F401
 from mypy.errorcodes import ErrorCode
 from mypy.expandtype import expand_type, expand_type_by_instance
 from mypy.nodes import (
