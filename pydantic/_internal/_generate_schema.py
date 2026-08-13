@@ -1255,7 +1255,11 @@ class GenerateSchema:
             schema,
             init=field_info.init,
             init_only=field_info.init_var or None,
-            kw_only=None if field_info.kw_only else False,
+            # An `init=False` field is never supplied by the caller, so it must not
+            # take a positional slot. Emitting `kw_only=False` for it keeps it in the
+            # positional ordering (see the sort in `_dataclass_schema`), which shifts
+            # every later positional argument by one.
+            kw_only=None if field_info.kw_only or field_info.init is False else False,
             serialization_exclude=field_info.exclude,
             validation_alias=_convert_to_aliases(field_info.validation_alias),
             serialization_alias=field_info.serialization_alias,

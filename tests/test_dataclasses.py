@@ -2927,6 +2927,47 @@ def test_init_false_not_in_signature(extra, field_constructor):
     assert 'b' in signature.parameters.keys()
 
 
+@pytest.mark.parametrize('field_constructor', [dataclasses.field, pydantic.dataclasses.Field])
+def test_init_false_does_not_take_a_positional_slot(field_constructor):
+    # An `init=False` field is absent from the signature, so it must not occupy a
+    # positional slot either. It used to, which shifted every positional argument
+    # by one: the first was dropped and the rest landed on the wrong field.
+    @pydantic.dataclasses.dataclass
+    class MyDataclass:
+        a: int = field_constructor(init=False, default=-1)
+        b: str = 'b_default'
+        c: int = 0
+
+    assert list(inspect.signature(MyDataclass).parameters) == ['b', 'c']
+
+    obj = MyDataclass('given')
+    assert (obj.a, obj.b, obj.c) == (-1, 'given', 0)
+
+    obj = MyDataclass('given', 5)
+    assert (obj.a, obj.b, obj.c) == (-1, 'given', 5)
+
+
+@pytest.mark.parametrize('default_kind', ['default', 'default_factory'])
+def test_init_false_inherited_does_not_break_subclass_positional(default_kind):
+    # An `init=False` field on the parent shifted the subclass's positional
+    # arguments, so a required subclass field reported itself as missing.
+    kwargs = {'default': 2} if default_kind == 'default' else {'default_factory': lambda: 2}
+
+    @pydantic.dataclasses.dataclass
+    class Parent:
+        a: int = dataclasses.field(init=False, **kwargs)
+
+    @pydantic.dataclasses.dataclass
+    class Child(Parent):
+        b: str
+
+    assert list(inspect.signature(Child).parameters) == ['b']
+
+    obj = Child('given')
+    assert (obj.a, obj.b) == (2, 'given')
+    assert Child(b='given') == obj
+
+
 init_test_cases = [
     ({'a': 2, 'b': -1}, 'ignore', {'a': 2, 'b': 1}),
     ({'a': 2}, 'ignore', {'a': 2, 'b': 1}),
