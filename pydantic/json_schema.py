@@ -2227,6 +2227,11 @@ class GenerateJsonSchema:
             return_schema = schema.get('return_schema')
             if return_schema is not None:
                 return self.generate_inner(return_schema)
+            if schema_type == 'function-wrap' and (inner_schema := schema.get('schema')) is not None:
+                # The wrap serializer function delegates serialization to `inner_schema` (this is used
+                # internally to serialize a value using a schema different from the one it was validated
+                # against, e.g. with `PlainValidator`).
+                return self.generate_inner(inner_schema)
         elif schema_type == 'format' or schema_type == 'to-string':
             # FormatSerSchema or ToStringSerSchema
             return self.str_schema(core_schema.str_schema())

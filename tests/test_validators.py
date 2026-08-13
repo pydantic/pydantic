@@ -35,6 +35,7 @@ from pydantic import (
     ValidatorFunctionWrapHandler,
     errors,
     field_validator,
+    model_serializer,
     model_validator,
     root_validator,
     validate_call,
@@ -2946,6 +2947,32 @@ def test_plain_validator_plain_serializer_single_ser_call() -> None:
 
     assert data == {'foo': True}
     assert ser_count == 1
+
+
+def test_plain_validator_model_serializer_single_ser_call() -> None:
+    """https://github.com/pydantic/pydantic/issues/11917"""
+
+    ser_count = 0
+
+    class Child(BaseModel):
+        foo: str
+
+        @model_serializer(mode='plain')
+        def ser(self) -> str:
+            nonlocal ser_count
+            ser_count += 1
+            return self.foo
+
+    class Model(BaseModel):
+        child: Annotated[Child, PlainValidator(lambda v: v)]
+
+    model = Model(child=Child(foo='bar'))
+
+    assert model.model_dump() == {'child': 'bar'}
+    assert ser_count == 1
+
+    assert model.model_dump_json() == '{"child":"bar"}'
+    assert ser_count == 2
 
 
 @pytest.mark.xfail(reason='https://github.com/pydantic/pydantic/issues/10428')

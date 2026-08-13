@@ -219,10 +219,11 @@ class PlainValidator:
             # schema validation will fail. That's why we use 'type ignore' comments below.
             serialization = schema.get(
                 'serialization',
+                # No `return_schema` is provided on purpose: the wrap function already serializes
+                # the value using `schema`, so applying it again on the result would serialize twice.
                 core_schema.wrap_serializer_function_ser_schema(
                     function=lambda v, h: h(v),
                     schema=schema,
-                    return_schema=handler.generate_schema(source_type),
                 ),
             )
         except PydanticSchemaGenerationError:
