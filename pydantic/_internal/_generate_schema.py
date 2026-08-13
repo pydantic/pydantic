@@ -876,7 +876,9 @@ class GenerateSchema:
 
                 extras_schema = None
                 extras_keys_schema = None
-                if core_config.get('extra_fields_behavior') == 'allow' and extra_info is not None:
+                # Note that the schemas are built even if extra data isn't allowed on the model, as the
+                # `extra` configuration value can be overridden at runtime (e.g. in `model_validate()`):
+                if extra_info is not None:
                     tp = get_origin(extra_info.annotation)
                     if tp is not dict:
                         raise PydanticSchemaGenerationError(

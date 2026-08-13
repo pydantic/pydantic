@@ -3482,6 +3482,35 @@ def test_extra_validator_named() -> None:
     }
 
 
+def test_extra_validator_with_extra_overridden_at_runtime() -> None:
+    """https://github.com/pydantic/pydantic/issues/13024"""
+
+    class Model(BaseModel, extra='forbid'):
+        __pydantic_extra__: dict[str, int]
+
+        a: int
+
+    with pytest.raises(ValidationError) as exc_info:
+        Model.model_validate({'a': 1, 'b': 'not_an_int'}, extra='allow')
+    assert exc_info.value.errors(include_url=False) == [
+        {
+            'input': 'not_an_int',
+            'loc': ('b',),
+            'msg': 'Input should be a valid integer, unable to parse string as an integer',
+            'type': 'int_parsing',
+        }
+    ]
+
+    assert Model.model_validate({'a': 1, 'b': '2'}, extra='allow').model_extra == {'b': 2}
+
+    # Extra data is still forbidden by default, and the annotation doesn't affect the JSON Schema:
+    with pytest.raises(ValidationError) as exc_info:
+        Model.model_validate({'a': 1, 'b': 2})
+    assert exc_info.value.errors(include_url=False)[0]['type'] == 'extra_forbidden'
+
+    assert Model.model_json_schema()['additionalProperties'] is False
+
+
 def test_extra_behavior_not_a_dict() -> None:
     with pytest.raises(PydanticSchemaGenerationError):
 

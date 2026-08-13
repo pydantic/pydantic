@@ -1787,7 +1787,11 @@ class GenerateJsonSchema:
             named_required_fields.extend(self._name_required_computed_fields(schema.get('computed_fields', [])))
         json_schema = self._named_required_fields_schema(named_required_fields)
         extras_schema = schema.get('extras_schema', None)
-        if extras_schema is not None:
+        # The extras schema is present even if extra data isn't allowed on the model (as the `extra`
+        # configuration value can be overridden at runtime), so the extra behavior is checked as well.
+        # As during validation, the schema's extra behavior takes priority over the configuration value:
+        extra_behavior = schema.get('extra_behavior') or self._config.extra
+        if extras_schema is not None and extra_behavior == 'allow':
             schema_to_update = self.resolve_ref_schema(json_schema)
             schema_to_update['additionalProperties'] = self.generate_inner(extras_schema)
         return json_schema

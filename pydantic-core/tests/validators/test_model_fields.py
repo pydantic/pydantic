@@ -211,20 +211,18 @@ def test_forbid_extra():
     ]
 
 
-def test_allow_extra_invalid():
-    with pytest.raises(SchemaError, match='extras_schema can only be used if extra_behavior=allow'):
-        SchemaValidator(
-            schema=core_schema.model_fields_schema(
-                fields={}, extras_schema=core_schema.int_schema(), extra_behavior='ignore'
-            )
+def test_extras_schemas_unused_if_extra_not_allowed():
+    """The extras schemas are ignored if extra data isn't allowed, as the extra behavior can be overridden."""
+    v = SchemaValidator(
+        schema=core_schema.model_fields_schema(
+            fields={},
+            extras_schema=core_schema.int_schema(),
+            extras_keys_schema=core_schema.str_schema(),
+            extra_behavior='ignore',
         )
+    )
 
-    with pytest.raises(SchemaError, match='extras_keys_schema can only be used if extra_behavior=allow'):
-        SchemaValidator(
-            schema=core_schema.model_fields_schema(
-                fields={}, extras_keys_schema=core_schema.int_schema(), extra_behavior='ignore'
-            )
-        )
+    assert v.validate_python({'extra_field': 'not_an_int'}) == ({}, None, set())
 
 
 def test_allow_extra_wrong():
@@ -1678,9 +1676,8 @@ def test_extra_behavior_allow(
     assert new_fields_set == {'not_f'}
 
 
-# We can't test the extra parameter of the validate_* functions above, since the
-# extras_schema parameter isn't valid unless the models are configured with extra='allow'.
-# Test the validate_* extra parameter separately instead:
+# Test the validate_* extra parameter separately, as the extra behavior of the schema
+# (or the config) isn't the one being applied in this case:
 @pytest.mark.parametrize(
     'config,schema_extra_behavior_kw',
     [
@@ -1694,20 +1691,27 @@ def test_extra_behavior_allow(
         (None, {'extra_behavior': None}),
     ],
 )
+@pytest.mark.parametrize(
+    'extras_schema_kw, expected_extra_value',
+    [({}, '123'), ({'extras_schema': None}, '123'), ({'extras_schema': core_schema.int_schema()}, 123)],
+    ids=['extras_schema=unset', 'extras_schema=None', 'extras_schema=int'],
+)
 def test_extra_behavior_allow_with_validate_fn_override(
     config: core_schema.CoreConfig | None,
     schema_extra_behavior_kw: dict[str, Any],
+    extras_schema_kw: dict[str, Any],
+    expected_extra_value: Any,
 ):
     v = SchemaValidator(
         core_schema.model_fields_schema(
-            {'f': core_schema.model_field(core_schema.str_schema())}, **schema_extra_behavior_kw
+            {'f': core_schema.model_field(core_schema.str_schema())}, **schema_extra_behavior_kw, **extras_schema_kw
         ),
         config=config,
     )
 
     m, model_extra, fields_set = v.validate_python({'f': 'x', 'extra_field': '123'}, extra='allow')
     assert m == {'f': 'x'}
-    assert model_extra == {'extra_field': '123'}
+    assert model_extra == {'extra_field': expected_extra_value}
     assert fields_set == {'f', 'extra_field'}
 
     v.validate_assignment(m, 'f', 'y', extra='allow')
@@ -1715,7 +1719,7 @@ def test_extra_behavior_allow_with_validate_fn_override(
 
     new_m, new_model_extra, new_fields_set = v.validate_assignment({**m, **model_extra}, 'not_f', '123', extra='allow')
     assert new_m == {'f': 'y'}
-    assert new_model_extra == {'extra_field': '123', 'not_f': '123'}
+    assert new_model_extra == {'extra_field': expected_extra_value, 'not_f': expected_extra_value}
     assert new_fields_set == {'not_f'}
 
 

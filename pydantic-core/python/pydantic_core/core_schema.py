@@ -3250,8 +3250,10 @@ def model_fields_schema(
         model_name: The name of the model, used for error messages, defaults to "Model"
         computed_fields: Computed fields to use when serializing the model, only applies when directly inside a model
         strict: Whether the model is strict
-        extras_schema: The schema to use when validating extra input data
-        extras_keys_schema: The schema to use when validating the keys of extra input data
+        extras_schema: The schema to use when validating extra input data. Only used if extra data is
+            allowed, either from the extra behavior or as overridden when validating
+        extras_keys_schema: The schema to use when validating the keys of extra input data. Only used if
+            extra data is allowed, either from the extra behavior or as overridden when validating
         ref: optional unique identifier of the schema, used to reference the schema in other places
         metadata: Any other information you want to include with the schema, not used by pydantic-core
         extra_behavior: The extra behavior to use for the model fields
