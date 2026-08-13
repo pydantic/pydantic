@@ -547,13 +547,15 @@ def _apply_constraint(  # noqa: C901
                 s['min_length'] = min_len
             if max_len is not None:
                 s['max_length'] = max_len
+        else:
 
-        def check_len(v: Any) -> bool:
-            if max_len is not None:
-                return (min_len <= len(v)) and (len(v) <= max_len)
-            return min_len <= len(v)
+            def check_len(v: Any) -> bool:
+                if max_len is not None:
+                    return (min_len <= len(v)) and (len(v) <= max_len)
+                return min_len <= len(v)
 
-        s = _check_func(check_len, f'length >= {min_len} and length <= {max_len}', s)
+            s = _check_func(check_len, f'length >= {min_len} and length <= {max_len}', s)
+
     elif isinstance(constraint, annotated_types.MultipleOf):
         multiple_of = constraint.multiple_of
         if s and s['type'] in {'int', 'float', 'decimal'}:
