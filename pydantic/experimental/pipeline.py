@@ -479,6 +479,12 @@ def _apply_transform(
     return cs.no_info_after_validator_function(func, s)
 
 
+# Core schema types with native support for the `gt`/`ge`/`lt`/`le` constraints:
+_ORDERING_SCHEMA_TYPES = frozenset({'int', 'float', 'decimal', 'fraction', 'date', 'time', 'datetime', 'timedelta'})
+# Core schema types with native support for the `min_length`/`max_length` constraints:
+_LENGTH_SCHEMA_TYPES = frozenset({'str', 'bytes', 'list', 'tuple', 'set', 'frozenset', 'dict', 'generator'})
+
+
 def _apply_constraint(  # noqa: C901
     s: cs.CoreSchema | None, constraint: _ConstraintAnnotation
 ) -> cs.CoreSchema:
@@ -487,7 +493,7 @@ def _apply_constraint(  # noqa: C901
     # when building the validator from the core schema:
     if isinstance(constraint, annotated_types.Gt):
         gt = constraint.gt
-        if s and s['type'] in {'int', 'float', 'decimal'}:
+        if s and s['type'] in _ORDERING_SCHEMA_TYPES:
             s = s.copy()
             s['gt'] = gt  # pyright: ignore[reportGeneralTypeIssues]
         else:
@@ -498,7 +504,7 @@ def _apply_constraint(  # noqa: C901
             s = _check_func(check_gt, f'> {gt}', s)
     elif isinstance(constraint, annotated_types.Ge):
         ge = constraint.ge
-        if s and s['type'] in {'int', 'float', 'decimal'}:
+        if s and s['type'] in _ORDERING_SCHEMA_TYPES:
             s = s.copy()
             s['ge'] = ge  # pyright: ignore[reportGeneralTypeIssues]
         else:
@@ -509,7 +515,7 @@ def _apply_constraint(  # noqa: C901
             s = _check_func(check_ge, f'>= {ge}', s)
     elif isinstance(constraint, annotated_types.Lt):
         lt = constraint.lt
-        if s and s['type'] in {'int', 'float', 'decimal'}:
+        if s and s['type'] in _ORDERING_SCHEMA_TYPES:
             s = s.copy()
             s['lt'] = lt  # pyright: ignore[reportGeneralTypeIssues]
         else:
@@ -520,7 +526,7 @@ def _apply_constraint(  # noqa: C901
             s = _check_func(check_lt, f'< {lt}', s)
     elif isinstance(constraint, annotated_types.Le):
         le = constraint.le
-        if s and s['type'] in {'int', 'float', 'decimal'}:
+        if s and s['type'] in _ORDERING_SCHEMA_TYPES:
             s = s.copy()
             s['le'] = le  # pyright: ignore[reportGeneralTypeIssues]
         else:
@@ -533,27 +539,20 @@ def _apply_constraint(  # noqa: C901
         min_len = constraint.min_length
         max_len = constraint.max_length
 
-        if s and s['type'] in {'str', 'list', 'tuple', 'set', 'frozenset', 'dict'}:
-            assert (
-                s['type'] == 'str'
-                or s['type'] == 'list'
-                or s['type'] == 'tuple'
-                or s['type'] == 'set'
-                or s['type'] == 'dict'
-                or s['type'] == 'frozenset'
-            )
+        if s and s['type'] in _LENGTH_SCHEMA_TYPES:
             s = s.copy()
             if min_len != 0:
-                s['min_length'] = min_len
+                s['min_length'] = min_len  # pyright: ignore[reportGeneralTypeIssues]
             if max_len is not None:
-                s['max_length'] = max_len
+                s['max_length'] = max_len  # pyright: ignore[reportGeneralTypeIssues]
+        else:
 
-        def check_len(v: Any) -> bool:
-            if max_len is not None:
-                return (min_len <= len(v)) and (len(v) <= max_len)
-            return min_len <= len(v)
+            def check_len(v: Any) -> bool:
+                if max_len is not None:
+                    return (min_len <= len(v)) and (len(v) <= max_len)
+                return min_len <= len(v)
 
-        s = _check_func(check_len, f'length >= {min_len} and length <= {max_len}', s)
+            s = _check_func(check_len, f'length >= {min_len} and length <= {max_len}', s)
     elif isinstance(constraint, annotated_types.MultipleOf):
         multiple_of = constraint.multiple_of
         if s and s['type'] in {'int', 'float', 'decimal'}:

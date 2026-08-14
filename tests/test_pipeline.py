@@ -4,13 +4,14 @@ from __future__ import annotations
 
 import datetime
 import re
-from collections.abc import Callable
+from collections.abc import Callable, Iterable
 from decimal import Decimal
+from fractions import Fraction
 from typing import Annotated, Any
 
 import pytest
 import pytz
-from annotated_types import Interval
+from annotated_types import Interval, Len
 
 from pydantic import TypeAdapter, ValidationError
 from pydantic.experimental.pipeline import _Pipeline, transform, validate_as  # pyright: ignore[reportPrivateUsage]
@@ -70,6 +71,36 @@ def test_constrain_compiled_pattern_keeps_flags() -> None:
         (float, validate_as(float).lt(1), [0.5, 0.0], [1.0, 100.0]),
         (Decimal, validate_as(Decimal).lt(1), [Decimal('0.5')], [Decimal(1), Decimal(5)]),  # pyright: ignore[reportArgumentType]
         (int, validate_as(int).lt(5.0), [2, 4], [5, 6, 100]),  # pyright: ignore[reportArgumentType]
+        (
+            Fraction,
+            validate_as(Fraction).gt(Fraction(1, 2)),
+            [Fraction(3, 4)],
+            [Fraction(1, 2), Fraction(1, 4)],
+        ),
+        (
+            datetime.date,
+            validate_as(datetime.date).ge(datetime.date(2020, 1, 1)),
+            [datetime.date(2020, 1, 1), datetime.date(2021, 1, 1)],
+            [datetime.date(2019, 12, 31)],
+        ),
+        (
+            datetime.datetime,
+            validate_as(datetime.datetime).gt(datetime.datetime(2020, 1, 1)),
+            [datetime.datetime(2020, 1, 2)],
+            [datetime.datetime(2020, 1, 1), datetime.datetime(2019, 12, 31)],
+        ),
+        (
+            datetime.time,
+            validate_as(datetime.time).lt(datetime.time(12, 0)),
+            [datetime.time(11, 59)],
+            [datetime.time(12, 0), datetime.time(13, 0)],
+        ),
+        (
+            datetime.timedelta,
+            validate_as(datetime.timedelta).le(datetime.timedelta(hours=1)),
+            [datetime.timedelta(minutes=30), datetime.timedelta(hours=1)],
+            [datetime.timedelta(hours=2)],
+        ),
     ],
 )
 def test_ge_le_gt_lt(
@@ -148,6 +179,12 @@ def test_interval_constraints(type_: Any, pipeline: Any, valid_cases: list[Any],
             ['a', 'abcdef'],
         ),
         (
+            bytes,
+            validate_as(bytes).len(min_len=2, max_len=5),
+            [b'ab', b'abcde'],
+            [b'a', b'abcdef'],
+        ),
+        (
             list[int],
             validate_as(list[int]).len(min_len=1, max_len=3),
             [[1], [1, 2], [1, 2, 3]],
@@ -178,6 +215,20 @@ def test_interval_constraints(type_: Any, pipeline: Any, valid_cases: list[Any],
             ['ab', 'abc', 'abcd', 'abcde', 'abcdef'],
             ['a'],
         ),
+        # The `transform()` step results in a core schema not supporting length constraints,
+        # meaning the constraint is applied as a function check:
+        (
+            str,
+            validate_as(str).transform(lambda x: x).len(min_len=2, max_len=5),
+            ['ab', 'abcde'],
+            ['a', 'abcdef'],
+        ),
+        (
+            str,
+            validate_as(str).transform(lambda x: x).len(min_len=2),  # max_len is None
+            ['ab', 'abcdef'],
+            ['a'],
+        ),
     ],
 )
 def test_len_constraints(type_: Any, pipeline: Any, valid_cases: list[Any], invalid_cases: list[Any]) -> None:
@@ -187,6 +238,57 @@ def test_len_constraints(type_: Any, pipeline: Any, valid_cases: list[Any], inva
     for y in invalid_cases:
         with pytest.raises(ValueError):
             ta.validate_python(y)
+
+
+def test_len_constraint_on_generator() -> None:
+    ta = TypeAdapter[Iterable[int]](Annotated[Iterable[int], validate_as(Iterable[int]).constrain(Len(2, 3))])  # pyright: ignore[reportCallIssue, reportArgumentType]
+
+    assert list(ta.validate_python([1, 2, 3])) == [1, 2, 3]
+    with pytest.raises(ValidationError):
+        list(ta.validate_python([1]))
+    with pytest.raises(ValidationError):
+        list(ta.validate_python([1, 2, 3, 4]))
+
+
+@pytest.mark.parametrize(
+    ['type_', 'pipeline', 'expected_subset'],
+    [
+        (str, validate_as(str).len(2, 5), {'type': 'str', 'min_length': 2, 'max_length': 5}),
+        (bytes, validate_as(bytes).len(2, 5), {'type': 'bytes', 'min_length': 2, 'max_length': 5}),
+        (list[int], validate_as(list[int]).len(2, 5), {'type': 'list', 'min_length': 2, 'max_length': 5}),
+        (
+            Fraction,
+            validate_as(Fraction).gt(Fraction(1, 2)),
+            {'type': 'fraction', 'gt': Fraction(1, 2)},
+        ),
+        (
+            datetime.date,
+            validate_as(datetime.date).ge(datetime.date(2020, 1, 1)),
+            {'type': 'date', 'ge': datetime.date(2020, 1, 1)},
+        ),
+        (
+            datetime.time,
+            validate_as(datetime.time).lt(datetime.time(12, 0)),
+            {'type': 'time', 'lt': datetime.time(12, 0)},
+        ),
+        (
+            datetime.datetime,
+            validate_as(datetime.datetime).gt(datetime.datetime(2020, 1, 1)),
+            {'type': 'datetime', 'gt': datetime.datetime(2020, 1, 1)},
+        ),
+        (
+            datetime.timedelta,
+            validate_as(datetime.timedelta).le(datetime.timedelta(hours=1)),
+            {'type': 'timedelta', 'le': datetime.timedelta(hours=1)},
+        ),
+    ],
+)
+def test_constraints_applied_on_core_schema(type_: Any, pipeline: Any, expected_subset: dict[str, Any]) -> None:
+    """https://github.com/pydantic/pydantic/issues/13653"""
+    ta = TypeAdapter[Any](Annotated[type_, pipeline])
+    schema = ta.core_schema
+
+    assert {k: schema.get(k) for k in expected_subset} == expected_subset
 
 
 def test_parse_tz() -> None:
