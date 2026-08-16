@@ -11,6 +11,7 @@ pub mod enum_;
 pub mod float;
 pub mod format;
 pub mod fraction;
+pub mod frozendict;
 pub mod function;
 pub mod generator;
 pub mod json;

@@ -7,11 +7,12 @@ use pyo3::prelude::*;
 use pyo3::sync::PyOnceLock;
 use pyo3::sync::critical_section::with_critical_section;
 use pyo3::types::PyComplex;
-use pyo3::types::{PyByteArray, PyBytes, PyDict, PyFrozenSet, PyIterator, PyList, PySet, PyString, PyTuple};
+use pyo3::types::{PyByteArray, PyBytes, PyDict, PyFrozenSet, PyIterator, PyList, PyMapping, PySet, PyString, PyTuple};
 
 use pyo3::IntoPyObjectExt;
 use serde::ser::{Error, Serialize, SerializeSeq, Serializer};
 
+use crate::common::frozendict::get_frozendict_type;
 use crate::input::{EitherTimedelta, Int};
 use crate::serializers::SerializationState;
 use crate::serializers::errors::unwrap_ser_error;
@@ -150,6 +151,10 @@ pub(crate) fn infer_to_python_known<'py>(
                 let dict = value.cast::<PyDict>()?;
                 serialize_pairs(dict.iter().map(Ok), state, serialize_to_python(py))?
             }
+            ObType::Frozendict => {
+                let mapping = value.cast::<PyMapping>()?;
+                serialize_pairs(mapping_pairs(mapping)?, state, serialize_to_python(py))?
+            }
             ObType::Datetime => {
                 let datetime = state.config.temporal_mode.datetime_to_json(value.py(), value.cast()?)?;
                 datetime.into_py_any(py)?
@@ -235,6 +240,11 @@ pub(crate) fn infer_to_python_known<'py>(
             ObType::Dict => {
                 let dict = value.cast::<PyDict>()?;
                 serialize_pairs(dict.iter().map(Ok), state, serialize_to_python(py))?
+            }
+            ObType::Frozendict => {
+                let mapping = value.cast::<PyMapping>()?;
+                let new_dict = serialize_pairs(mapping_pairs(mapping)?, state, serialize_to_python(py))?;
+                get_frozendict_type(py)?.call1((new_dict,))?.unbind()
             }
             ObType::PydanticSerializable => serialize_pydantic_serializable(value, state, serialize_to_python(py))?,
             ObType::Dataclass => infer_serialize_dataclass(value, state, serialize_to_python(py))?,
@@ -393,6 +403,11 @@ pub(crate) fn infer_serialize_known<'py, S: Serializer>(
         ObType::Dict => {
             let dict = value.cast::<PyDict>().map_err(py_err_se_err)?;
             serialize_pairs(dict.iter().map(Ok), state, serialize_to_json(serializer)).map_err(unwrap_ser_error)
+        }
+        ObType::Frozendict => {
+            let mapping = value.cast::<PyMapping>().map_err(py_err_se_err)?;
+            let pairs = mapping_pairs(mapping).map_err(py_err_se_err)?;
+            serialize_pairs(pairs, state, serialize_to_json(serializer)).map_err(unwrap_ser_error)
         }
         ObType::List => serialize_seq_filter!(PyList),
         ObType::Tuple => serialize_seq_filter!(PyTuple),
@@ -557,7 +572,7 @@ pub(crate) fn infer_json_key_known<'a, 'py>(
             }
             Ok(Cow::Owned(key_build.finish()))
         }
-        ObType::List | ObType::Set | ObType::Frozenset | ObType::Dict | ObType::Generator => {
+        ObType::List | ObType::Set | ObType::Frozenset | ObType::Dict | ObType::Frozendict | ObType::Generator => {
             py_err!(PyTypeError; "`{ob_type}` not valid as object key")
         }
         ObType::Dataclass | ObType::PydanticSerializable => {
@@ -663,6 +678,12 @@ fn get_field_marker(py: Python<'_>) -> PyResult<&Bound<'_, PyAny>> {
     static DC_FIELD_MARKER: PyOnceLock<Py<PyAny>> = PyOnceLock::new();
 
     DC_FIELD_MARKER.import(py, "dataclasses", "_FIELD")
+}
+
+fn mapping_pairs<'py>(
+    mapping: &Bound<'py, PyMapping>,
+) -> PyResult<impl Iterator<Item = PyResult<(Bound<'py, PyAny>, Bound<'py, PyAny>)>>> {
+    Ok(mapping.items()?.into_iter().map(|item| item.extract()))
 }
 
 fn serialize_pairs<'py, S: DoSerialize>(

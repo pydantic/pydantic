@@ -1132,6 +1132,63 @@ except ValidationError as e:
     """
 ```
 
+### Frozen dictionaries
+
+Built-in type: `frozendict`.
+
+/// version-added | v2.14
+The `frozendict` type, new in Python 3.15, is supported by Pydantic.
+///
+
+<h4>Validation</h4>
+
+* `frozendict` instances are accepted as is.
+* [`dict`][] and [mappings][mapping] instances are accepted and coerced to a `frozendict`.
+* If generic parameters for keys and values are provided, the appropriate validation is applied.
+
+<h4>Constraints</h4>
+
+As with [dictionaries](#dictionaries), frozen dictionaries support the following constraints:
+
+| Constraint   | Description                                       | JSON Schema                                                                                    |
+|--------------|---------------------------------------------------|------------------------------------------------------------------------------------------------|
+| `min_length` | The dictionary must have at least this many items | [`minItems`](https://json-schema.org/understanding-json-schema/reference/array#length) keyword |
+| `max_length` | The dictionary must have at most this many items  | [`maxItems`](https://json-schema.org/understanding-json-schema/reference/array#length) keyword |
+
+These constraints can be provided using the [`Field()`][pydantic.Field] function.
+The `MinLen` and `MaxLen` metadata types from the [`annotated-types`](https://github.com/annotated-types/annotated-types)
+library can also be used.
+
+<h4>Strictness</h4>
+
+In [strict mode](../concepts/strict_mode.md), only `frozendict` instances are valid. Strict mode does *not* apply to the keys and values of the frozen dictionaries.
+The strict constraint must be applied to the parameter types for this to work.
+
+<h4>Example</h4>
+
+```python {requires="3.15" lint="skip"}
+from pydantic import BaseModel, ValidationError
+
+
+class Model(BaseModel):
+    x: frozendict[str, int]
+
+
+m = Model(x={'foo': 1})
+print(m.model_dump())
+#> {'x': frozendict({'foo': 1})}
+
+try:
+    Model(x='test')
+except ValidationError as e:
+    print(e)
+    """
+    1 validation error for Model
+    x
+      Input should be a valid frozendict [type=frozen_dict_type, input_value='test', input_type=str]
+    """
+```
+
 <!-- old anchor added for backwards compatibility -->
 <!-- markdownlint-disable-next-line no-empty-links -->
 [](){#typeddict}

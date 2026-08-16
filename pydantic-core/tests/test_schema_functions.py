@@ -1,4 +1,5 @@
 import dataclasses
+import sys
 from datetime import date
 from enum import Enum
 from typing import Any, NamedTuple
@@ -114,6 +115,12 @@ all_schema_functions = [
         core_schema.dict_schema,
         args({'type': 'str'}, {'type': 'int'}),
         {'type': 'dict', 'keys_schema': {'type': 'str'}, 'values_schema': {'type': 'int'}},
+    ),
+    (core_schema.frozendict_schema, args(), {'type': 'frozendict'}),
+    (
+        core_schema.frozendict_schema,
+        args({'type': 'str'}, {'type': 'int'}),
+        {'type': 'frozendict', 'keys_schema': {'type': 'str'}, 'values_schema': {'type': 'int'}},
     ),
     (
         core_schema.with_info_before_validator_function,
@@ -336,6 +343,9 @@ def test_schema_functions(function, args_kwargs, expected_schema):
     schema = function(*args, **kwargs)
     assert schema == expected_schema
     if schema.get('type') in {None, 'definition-ref', 'typed-dict-field', 'model-field', 'invalid'}:
+        return
+    if schema['type'] == 'frozendict' and sys.version_info < (3, 15):
+        # the validator/serializer can only be built on Python 3.15+:
         return
 
     v = SchemaValidator(schema)

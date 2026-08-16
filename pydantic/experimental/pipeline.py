@@ -533,7 +533,7 @@ def _apply_constraint(  # noqa: C901
         min_len = constraint.min_length
         max_len = constraint.max_length
 
-        if s and s['type'] in {'str', 'list', 'tuple', 'set', 'frozenset', 'dict'}:
+        if s and s['type'] in {'str', 'list', 'tuple', 'set', 'frozenset', 'dict', 'frozendict'}:
             assert (
                 s['type'] == 'str'
                 or s['type'] == 'list'
@@ -541,6 +541,7 @@ def _apply_constraint(  # noqa: C901
                 or s['type'] == 'set'
                 or s['type'] == 'dict'
                 or s['type'] == 'frozenset'
+                or s['type'] == 'frozendict'
             )
             s = s.copy()
             if min_len != 0:

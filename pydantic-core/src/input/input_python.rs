@@ -14,6 +14,7 @@ use pyo3::PyTypeInfo;
 use speedate::MicrosecondsPrecisionOverflowBehavior;
 
 use crate::ArgsKwargs;
+use crate::common::frozendict::get_frozendict_type;
 use crate::errors::{ErrorType, ErrorTypeDefaults, InputValue, LocItem, ValError, ValResult};
 use crate::lookup_key::LookupPath;
 use crate::tools::safe_repr;
@@ -428,6 +429,24 @@ impl<'py> Input<'py> for Bound<'py, PyAny> {
         } else {
             Err(ValError::new(ErrorTypeDefaults::DictType, self))
         }
+    }
+
+    fn validate_frozendict<'a>(&'a self, strict: bool) -> ValMatch<GenericPyMapping<'a, 'py>> {
+        if let Ok(frozendict_type) = get_frozendict_type(self.py())
+            && self.is_instance(frozendict_type)?
+        {
+            return Ok(ValidationMatch::exact(GenericPyMapping::Mapping(
+                self.cast::<PyMapping>()?,
+            )));
+        }
+        if !strict {
+            if let Ok(dict) = self.cast_exact::<PyDict>() {
+                return Ok(ValidationMatch::lax(GenericPyMapping::Dict(dict)));
+            } else if let Ok(mapping) = self.cast::<PyMapping>() {
+                return Ok(ValidationMatch::lax(GenericPyMapping::Mapping(mapping)));
+            }
+        }
+        Err(ValError::new(ErrorTypeDefaults::FrozenDictType, self))
     }
 
     fn validate_model_fields<'a>(

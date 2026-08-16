@@ -151,7 +151,7 @@ def traverse_schema(schema: AllSchemas, context: GatherContext) -> None:
         if 'items_schema' in schema:
             for s in schema['items_schema']:
                 traverse_schema(s, context)
-    elif schema_type == 'dict':
+    elif schema_type in {'dict', 'frozendict'}:
         if 'keys_schema' in schema:
             traverse_schema(schema['keys_schema'], context)
         if 'values_schema' in schema:
