@@ -858,8 +858,6 @@ def test_date_types_ser_json_temporal(field_type, iso8601_format, ser_json_tempo
 
 @pytest.mark.parametrize('ser_json_temporal', ['iso8601', 'seconds', 'milliseconds'])
 def test_date_types_ser_json_temporal_matches_serialized_output(ser_json_temporal):
-    """The serialization schema must describe the values `model_dump_json()` actually emits."""
-
     class Model(BaseModel):
         model_config = ConfigDict(ser_json_temporal=ser_json_temporal)
 
@@ -874,7 +872,10 @@ def test_date_types_ser_json_temporal_matches_serialized_output(ser_json_tempora
 
     for field_name, value in json.loads(model.model_dump_json()).items():
         assert properties[field_name]['type'] == expected_type
-        assert isinstance(value, str if ser_json_temporal == 'iso8601' else float)
+        if ser_json_temporal == 'iso8601':
+            assert isinstance(value, str)
+        else:
+            assert isinstance(value, float)
 
 
 @pytest.mark.parametrize(
@@ -887,10 +888,8 @@ def test_date_types_ser_json_temporal_matches_serialized_output(ser_json_tempora
     ],
 )
 def test_timedelta_ser_json_temporal_takes_precedence(config, expected_schema):
-    """`ser_json_temporal` supersedes `ser_json_timedelta`, but only when it is explicitly set."""
-
     class Model(BaseModel):
-        model_config = ConfigDict(**config)
+        model_config = config
 
         a: timedelta
 
