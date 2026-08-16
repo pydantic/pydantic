@@ -20,6 +20,7 @@ def deepcopy_info(info: core_schema.ValidationInfo) -> dict[str, Any]:
         'data': deepcopy(info.data),
         'field_name': deepcopy(info.field_name),
         'config': deepcopy(info.config),
+        'strict': info.strict,
     }
 
 
@@ -381,7 +382,13 @@ def test_function_after_config():
     )
 
     assert v.validate_python({'test_field': b'321'}) == {'test_field': '321 Changed'}
-    assert f_kwargs == {'data': {}, 'config': {'allow_inf_nan': True}, 'context': None, 'field_name': 'test_field'}
+    assert f_kwargs == {
+        'data': {},
+        'config': {'allow_inf_nan': True},
+        'context': None,
+        'field_name': 'test_field',
+        'strict': None,
+    }
 
 
 def test_config_no_model():
@@ -395,7 +402,7 @@ def test_config_no_model():
     v = SchemaValidator(core_schema.with_info_after_validator_function(f, core_schema.str_schema()))
 
     assert v.validate_python(b'abc') == 'abc Changed'
-    assert f_kwargs == {'data': None, 'config': None, 'context': None, 'field_name': None}
+    assert f_kwargs == {'data': None, 'config': None, 'context': None, 'field_name': None, 'strict': None}
 
 
 def test_function_plain():
