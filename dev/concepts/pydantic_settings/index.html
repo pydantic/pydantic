@@ -5853,6 +5853,82 @@ dotenv files, secrets, and other sources.</p>
 <li>Using <code>Field(validation_alias=...)</code> (see <code>auth_key</code> above)</li>
 </ul>
 <p>Check the <a href="../fields/#field-aliases"><code>Field</code> aliases documentation</a> for more information about aliases.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>By default, setting an alias on a nested model field <em>narrows</em> which environment variables can reach it: its
+sub-fields are then looked up using only that alias as the prefix, in every source. The field's own name
+is not accepted as a lookup prefix unless <code>populate_by_name=True</code> (or <code>validate_by_name=True</code>) is enabled,
+including for dotenv files and other non-env sources.</p>
+<p>This matters most when sources disagree on naming. If a higher-priority source uses the alias and a
+lower-priority one uses the field name, only the alias-based values are found — the others were never
+associated with the field, so there is nothing to merge and the lower-priority values appear to be
+ignored. What happens to them depends on <code>extra</code>: with the default <code>extra='forbid'</code> an unmatched dotenv
+entry is kept as an extra input and raises a <code>ValidationError</code>, while a plain environment variable is
+simply not picked up; with <code>extra='ignore'</code> both are dropped silently.</p>
+<p>To accept both spellings, widen the set of accepted names — either globally with <code>populate_by_name=True</code>
+(or <code>validate_by_name=True</code>), or per field with <a class="autorefs autorefs-internal" href="../../api/aliases/#pydantic.aliases.AliasChoices"><code>AliasChoices</code></a>. Both let
+mixed-naming sources merge:</p>
+<div class="language-py highlight"><pre><span></span><code><span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pathlib</span><span class="w"> </span><span class="kn">import</span> <span class="n">Path</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">pydantic</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">Field</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">pydantic_settings</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseSettings</span><span class="p">,</span> <span class="n">SettingsConfigDict</span>
+
+
+<span class="k">class</span><span class="w"> </span><span class="nc">SubModel</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="n">var1</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">var2</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+
+
+<span class="k">class</span><span class="w"> </span><span class="nc">Settings</span><span class="p">(</span><span class="n">BaseSettings</span><span class="p">):</span>
+    <span class="n">model_config</span> <span class="o">=</span> <span class="n">SettingsConfigDict</span><span class="p">(</span><span class="n">env_nested_delimiter</span><span class="o">=</span><span class="s1">&#39;_&#39;</span><span class="p">,</span> <span class="n">populate_by_name</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="n">submodel</span><span class="p">:</span> <span class="n">SubModel</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="n">alias</span><span class="o">=</span><span class="s1">&#39;SUB&#39;</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
+
+
+<span class="n">dotenv_file</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="s1">&#39;example.env&#39;</span><span class="p">)</span>
+<span class="n">dotenv_file</span><span class="o">.</span><span class="n">write_text</span><span class="p">(</span><span class="s2">&quot;SUBMODEL_VAR2=&#39;var2 from dotenv&#39;&quot;</span><span class="p">)</span>
+<span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">[</span><span class="s1">&#39;SUB_VAR1&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;var1 from env&#39;</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="n">Settings</span><span class="p">(</span><span class="n">_env_file</span><span class="o">=</span><span class="n">dotenv_file</span><span class="p">)</span><span class="o">.</span><span class="n">model_dump</span><span class="p">())</span>
+<span class="c1">#&gt; {&#39;submodel&#39;: {&#39;var1&#39;: &#39;var1 from env&#39;, &#39;var2&#39;: &#39;var2 from dotenv&#39;}}</span>
+<span class="n">dotenv_file</span><span class="o">.</span><span class="n">unlink</span><span class="p">(</span><span class="n">missing_ok</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="k">del</span> <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">[</span><span class="s1">&#39;SUB_VAR1&#39;</span><span class="p">]</span>
+</code></pre></div>
+<p><code>AliasChoices</code> is often the better fit when only some fields need both spellings — for example a
+configuration file that spells section names out in full alongside abbreviated environment variables.
+It states per field exactly which names are accepted, instead of accepting every field name globally,
+and lets you opt each nesting level into both spellings independently:</p>
+<div class="language-py highlight"><pre><span></span><code><span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pathlib</span><span class="w"> </span><span class="kn">import</span> <span class="n">Path</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">pydantic</span><span class="w"> </span><span class="kn">import</span> <span class="n">AliasChoices</span><span class="p">,</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">Field</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">pydantic_settings</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseSettings</span><span class="p">,</span> <span class="n">SettingsConfigDict</span>
+
+
+<span class="k">class</span><span class="w"> </span><span class="nc">SubModel</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="n">var1</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">var2</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+
+
+<span class="k">class</span><span class="w"> </span><span class="nc">Settings</span><span class="p">(</span><span class="n">BaseSettings</span><span class="p">):</span>
+    <span class="n">model_config</span> <span class="o">=</span> <span class="n">SettingsConfigDict</span><span class="p">(</span><span class="n">env_nested_delimiter</span><span class="o">=</span><span class="s1">&#39;_&#39;</span><span class="p">)</span>
+    <span class="n">submodel</span><span class="p">:</span> <span class="n">SubModel</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span>
+        <span class="n">validation_alias</span><span class="o">=</span><span class="n">AliasChoices</span><span class="p">(</span><span class="s1">&#39;SUB&#39;</span><span class="p">,</span> <span class="s1">&#39;SUBMODEL&#39;</span><span class="p">),</span> <span class="n">default</span><span class="o">=</span><span class="kc">None</span>
+    <span class="p">)</span>
+
+
+<span class="n">dotenv_file</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="s1">&#39;example.env&#39;</span><span class="p">)</span>
+<span class="n">dotenv_file</span><span class="o">.</span><span class="n">write_text</span><span class="p">(</span><span class="s2">&quot;SUBMODEL_VAR2=&#39;var2 from dotenv&#39;&quot;</span><span class="p">)</span>
+<span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">[</span><span class="s1">&#39;SUB_VAR1&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;var1 from env&#39;</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="n">Settings</span><span class="p">(</span><span class="n">_env_file</span><span class="o">=</span><span class="n">dotenv_file</span><span class="p">)</span><span class="o">.</span><span class="n">model_dump</span><span class="p">())</span>
+<span class="c1">#&gt; {&#39;submodel&#39;: {&#39;var1&#39;: &#39;var1 from env&#39;, &#39;var2&#39;: &#39;var2 from dotenv&#39;}}</span>
+<span class="n">dotenv_file</span><span class="o">.</span><span class="n">unlink</span><span class="p">(</span><span class="n">missing_ok</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="k">del</span> <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">[</span><span class="s1">&#39;SUB_VAR1&#39;</span><span class="p">]</span>
+</code></pre></div>
+</div>
 <p>To apply <code>env_prefix</code> not only to variable names but also to aliases, set <code>env_prefix_target='all'</code>.
 To apply <code>env_prefix</code> only to aliases and not to variable names, set <code>env_prefix_target='alias'</code>.
 To apply <code>env_prefix</code> only to variable names (the default behavior), set <code>env_prefix_target='variable'</code>.</p>

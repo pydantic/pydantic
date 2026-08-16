@@ -169,6 +169,78 @@ There are two ways to do this:
 
 Check the [`Field` aliases documentation](../fields/#field-aliases) for more information about aliases.
 
+Note
+
+By default, setting an alias on a nested model field *narrows* which environment variables can reach it: its sub-fields are then looked up using only that alias as the prefix, in every source. The field's own name is not accepted as a lookup prefix unless `populate_by_name=True` (or `validate_by_name=True`) is enabled, including for dotenv files and other non-env sources.
+
+This matters most when sources disagree on naming. If a higher-priority source uses the alias and a lower-priority one uses the field name, only the alias-based values are found — the others were never associated with the field, so there is nothing to merge and the lower-priority values appear to be ignored. What happens to them depends on `extra`: with the default `extra='forbid'` an unmatched dotenv entry is kept as an extra input and raises a `ValidationError`, while a plain environment variable is simply not picked up; with `extra='ignore'` both are dropped silently.
+
+To accept both spellings, widen the set of accepted names — either globally with `populate_by_name=True` (or `validate_by_name=True`), or per field with AliasChoices. Both let mixed-naming sources merge:
+
+```py
+import os
+from pathlib import Path
+
+from pydantic import BaseModel, Field
+
+from pydantic_settings import BaseSettings, SettingsConfigDict
+
+
+class SubModel(BaseModel):
+    var1: str | None = None
+    var2: str | None = None
+
+
+class Settings(BaseSettings):
+    model_config = SettingsConfigDict(env_nested_delimiter='_', populate_by_name=True)
+    submodel: SubModel | None = Field(alias='SUB', default=None)
+
+
+dotenv_file = Path('example.env')
+dotenv_file.write_text("SUBMODEL_VAR2='var2 from dotenv'")
+os.environ['SUB_VAR1'] = 'var1 from env'
+
+print(Settings(_env_file=dotenv_file).model_dump())
+#> {'submodel': {'var1': 'var1 from env', 'var2': 'var2 from dotenv'}}
+dotenv_file.unlink(missing_ok=True)
+del os.environ['SUB_VAR1']
+
+```
+
+`AliasChoices` is often the better fit when only some fields need both spellings — for example a configuration file that spells section names out in full alongside abbreviated environment variables. It states per field exactly which names are accepted, instead of accepting every field name globally, and lets you opt each nesting level into both spellings independently:
+
+```py
+import os
+from pathlib import Path
+
+from pydantic import AliasChoices, BaseModel, Field
+
+from pydantic_settings import BaseSettings, SettingsConfigDict
+
+
+class SubModel(BaseModel):
+    var1: str | None = None
+    var2: str | None = None
+
+
+class Settings(BaseSettings):
+    model_config = SettingsConfigDict(env_nested_delimiter='_')
+    submodel: SubModel | None = Field(
+        validation_alias=AliasChoices('SUB', 'SUBMODEL'), default=None
+    )
+
+
+dotenv_file = Path('example.env')
+dotenv_file.write_text("SUBMODEL_VAR2='var2 from dotenv'")
+os.environ['SUB_VAR1'] = 'var1 from env'
+
+print(Settings(_env_file=dotenv_file).model_dump())
+#> {'submodel': {'var1': 'var1 from env', 'var2': 'var2 from dotenv'}}
+dotenv_file.unlink(missing_ok=True)
+del os.environ['SUB_VAR1']
+
+```
+
 To apply `env_prefix` not only to variable names but also to aliases, set `env_prefix_target='all'`. To apply `env_prefix` only to aliases and not to variable names, set `env_prefix_target='alias'`. To apply `env_prefix` only to variable names (the default behavior), set `env_prefix_target='variable'`.
 
 ```py
