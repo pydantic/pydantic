@@ -1384,6 +1384,8 @@ class GenerateJsonSchema:
                 # Use the JSON representation so that the discriminator mapping
                 # can be matched against the serialized payload value
                 k = 'true' if k else 'false'
+            elif k is None:
+                k = 'null'
             try:
                 # Use str(k) since keys must be strings for json; while not technically correct,
                 # it's the closest that can be represented in valid JSON
