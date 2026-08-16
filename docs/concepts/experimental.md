@@ -529,6 +529,46 @@ Configuration.model_json_schema()['properties']['timeout']
 timeout = conf.timeout if conf.timeout is not MISSING else defaults['timeout']
 ```
 
+### Partial updates
+
+`MISSING` can be useful for partial-update models, such as a PATCH request model, when an omitted field needs to be
+distinguished from a field that was explicitly set to `None`:
+
+```python
+from pydantic import BaseModel, ValidationError
+from pydantic.experimental.missing_sentinel import MISSING
+
+
+class UserUpdate(BaseModel):
+    name: str | MISSING = MISSING
+    bio: str | None | MISSING = MISSING
+
+
+no_update = UserUpdate()
+print(no_update.name is MISSING, no_update.bio is MISSING)
+#> True True
+print(no_update.model_dump())
+#> {}
+
+name_update = UserUpdate(name='Ada')
+print(name_update.model_dump())
+#> {'name': 'Ada'}
+
+bio_update = UserUpdate(bio=None)
+print(bio_update.model_dump())
+#> {'bio': None}
+
+try:
+    UserUpdate.model_validate({'name': None})
+except ValidationError as exc:
+    print(repr(exc.errors()[0]['type']))
+    #> 'string_type'
+```
+
+Here, `str | MISSING = MISSING` allows omission or a string value, but rejects `None`. Adding `None` to the union allows
+it as an explicit value. Because fields with a value of `MISSING` are excluded during serialization, `model_dump()`
+omits fields that were not provided while retaining explicitly provided `None` values.
+
 This feature is marked as experimental because it relies on the draft [PEP 661](https://peps.python.org/pep-0661/), introducing sentinels in the standard library.
 
 As such, the following limitations currently apply:
