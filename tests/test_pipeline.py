@@ -240,6 +240,18 @@ def test_len_constraints(type_: Any, pipeline: Any, valid_cases: list[Any], inva
             ta.validate_python(y)
 
 
+def test_len_fallback_error_message() -> None:
+    ta_min = TypeAdapter[str](Annotated[str, validate_as(str).transform(lambda x: x).len(min_len=2)])
+    with pytest.raises(ValidationError) as exc_info:
+        ta_min.validate_python('a')
+    assert exc_info.value.errors()[0]['msg'] == 'Value error, Expected length >= 2'
+
+    ta_min_max = TypeAdapter[str](Annotated[str, validate_as(str).transform(lambda x: x).len(min_len=2, max_len=5)])
+    with pytest.raises(ValidationError) as exc_info:
+        ta_min_max.validate_python('a')
+    assert exc_info.value.errors()[0]['msg'] == 'Value error, Expected length >= 2 and length <= 5'
+
+
 def test_len_constraint_on_generator() -> None:
     ta = TypeAdapter[Iterable[int]](Annotated[Iterable[int], validate_as(Iterable[int]).constrain(Len(2, 3))])  # pyright: ignore[reportCallIssue, reportArgumentType]
 
