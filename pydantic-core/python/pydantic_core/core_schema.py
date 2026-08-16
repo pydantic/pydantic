@@ -7,7 +7,7 @@ from __future__ import annotations as _annotations
 
 import sys
 import warnings
-from collections.abc import Callable, Generator, Hashable, Mapping
+from collections.abc import Callable, Generator, Mapping
 from datetime import date, datetime, time, timedelta
 from decimal import Decimal
 from fractions import Fraction
@@ -2761,8 +2761,8 @@ def union_schema(
 
 class TaggedUnionSchema(TypedDict, total=False):
     type: Required[Literal['tagged-union']]
-    choices: Required[dict[Hashable, CoreSchema]]
-    discriminator: Required[str | list[str | int] | list[list[str | int]] | Callable[[Any], Hashable]]
+    choices: Required[dict[Any, CoreSchema]]
+    discriminator: Required[str | list[str | int] | list[list[str | int]] | Callable[[Any], Any]]
     custom_error_type: str
     custom_error_message: str
     custom_error_context: dict[str, str | int | float]
