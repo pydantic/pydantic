@@ -322,7 +322,7 @@ class _ApplyInferredDiscriminator:
             )
 
         elif choice['type'] == 'tagged-union':
-            values: list[str | int] = []
+            values: list[Any] = []
             # Ignore str/int "choices" since these are just references to other choices
             subchoices = [x for x in choice['choices'].values() if not isinstance(x, (str, int))]
             for subchoice in subchoices:
