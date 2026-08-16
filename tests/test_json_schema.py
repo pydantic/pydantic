@@ -4009,6 +4009,12 @@ def test_none_discriminated_union() -> None:
         'propertyName': 'field',
     }
 
+    m = Model.model_validate({'a_or_b': {'field': None}})
+    assert isinstance(m.a_or_b, B)
+
+    m2 = Model.model_validate({'a_or_b': {'field': 'A'}})
+    assert isinstance(m2.a_or_b, A)
+
 
 def test_nested_discriminated_union():
     class BlackCatWithHeight(BaseModel):
