@@ -864,7 +864,7 @@ class GenerateJsonSchema:
             temporal_format = self._config.ser_json_temporal
         else:
             # `ser_json_temporal` supersedes `ser_json_timedelta`, which only applies when the former isn't
-            # explicitly set. This mirrors the resolution done in `pydantic-core`:
+            # explicitly set.
             temporal_format = 'seconds' if self._config.ser_json_timedelta == 'float' else 'iso8601'
         return self._common_temporal_schema('duration', temporal_format)
 
