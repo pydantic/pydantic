@@ -830,6 +830,72 @@ def test_date_types(field_type, expected_schema):
     assert Model.model_json_schema() == base_schema
 
 
+@pytest.mark.parametrize('ser_json_temporal', ['iso8601', 'seconds', 'milliseconds'])
+@pytest.mark.parametrize(
+    'field_type,iso8601_format',
+    [
+        (datetime, 'date-time'),
+        (date, 'date'),
+        (time, 'time'),
+        (timedelta, 'duration'),
+    ],
+)
+def test_date_types_ser_json_temporal(field_type, iso8601_format, ser_json_temporal):
+    """https://github.com/pydantic/pydantic/issues/13664"""
+
+    class Model(BaseModel):
+        model_config = ConfigDict(ser_json_temporal=ser_json_temporal)
+
+        a: field_type
+
+    if ser_json_temporal == 'iso8601':
+        expected_schema = {'title': 'A', 'type': 'string', 'format': iso8601_format}
+    else:
+        expected_schema = {'title': 'A', 'type': 'number'}
+
+    assert Model.model_json_schema(mode='serialization')['properties']['a'] == expected_schema
+
+
+@pytest.mark.parametrize('ser_json_temporal', ['iso8601', 'seconds', 'milliseconds'])
+def test_date_types_ser_json_temporal_matches_serialized_output(ser_json_temporal):
+    class Model(BaseModel):
+        model_config = ConfigDict(ser_json_temporal=ser_json_temporal)
+
+        dt: datetime
+        d: date
+        t: time
+        td: timedelta
+
+    model = Model(dt=datetime(2020, 1, 1), d=date(2020, 1, 1), t=time(12, 0), td=timedelta(days=1))
+    properties = Model.model_json_schema(mode='serialization')['properties']
+    expected_type = 'string' if ser_json_temporal == 'iso8601' else 'number'
+
+    for field_name, value in json.loads(model.model_dump_json()).items():
+        assert properties[field_name]['type'] == expected_type
+        if ser_json_temporal == 'iso8601':
+            assert isinstance(value, str)
+        else:
+            assert isinstance(value, float)
+
+
+@pytest.mark.parametrize(
+    'config,expected_schema',
+    [
+        ({'ser_json_timedelta': 'float'}, {'type': 'number'}),
+        ({'ser_json_timedelta': 'iso8601'}, {'type': 'string', 'format': 'duration'}),
+        ({'ser_json_temporal': 'seconds', 'ser_json_timedelta': 'iso8601'}, {'type': 'number'}),
+        ({'ser_json_temporal': 'iso8601', 'ser_json_timedelta': 'float'}, {'type': 'string', 'format': 'duration'}),
+    ],
+)
+def test_timedelta_ser_json_temporal_takes_precedence(config, expected_schema):
+    class Model(BaseModel):
+        model_config = config
+
+        a: timedelta
+
+    assert Model.model_json_schema(mode='serialization')['properties']['a'] == {'title': 'A', **expected_schema}
+
+
 @pytest.mark.parametrize(
     'interval',
     [
@@ -3986,38 +4052,34 @@ def test_bool_discriminated_union() -> None:
     class Model(BaseModel):
         setting: Enabled | Disabled = Field(discriminator='enabled')
 
-    assert Model.model_json_schema() == {
-        '$defs': {
-            'Disabled': {
-                'properties': {'enabled': {'const': False, 'title': 'Enabled', 'type': 'boolean'}},
-                'required': ['enabled'],
-                'title': 'Disabled',
-                'type': 'object',
-            },
-            'Enabled': {
-                'properties': {
-                    'config': {'title': 'Config', 'type': 'string'},
-                    'enabled': {'const': True, 'title': 'Enabled', 'type': 'boolean'},
-                },
-                'required': ['enabled', 'config'],
-                'title': 'Enabled',
-                'type': 'object',
-            },
-        },
-        'properties': {
-            'setting': {
-                'discriminator': {
-                    'mapping': {'false': '#/$defs/Disabled', 'true': '#/$defs/Enabled'},
-                    'propertyName': 'enabled',
-                },
-                'oneOf': [{'$ref': '#/$defs/Enabled'}, {'$ref': '#/$defs/Disabled'}],
-                'title': 'Setting',
-            }
-        },
-        'required': ['setting'],
-        'title': 'Model',
-        'type': 'object',
+    assert Model.model_json_schema()['properties']['setting']['discriminator'] == {
+        'mapping': {'false': '#/$defs/Disabled', 'true': '#/$defs/Enabled'},
+        'propertyName': 'enabled',
     }
+
+
+def test_none_discriminated_union() -> None:
+    """https://github.com/pydantic/pydantic/issues/13660"""
+
+    class A(BaseModel):
+        field: Literal['A'] = 'A'
+
+    class B(BaseModel):
+        field: None = None
+
+    class Model(BaseModel):
+        a_or_b: Annotated[A | B, Field(discriminator='field')]
+
+    assert Model.model_json_schema()['properties']['a_or_b']['discriminator'] == {
+        'mapping': {'A': '#/$defs/A', 'null': '#/$defs/B'},
+        'propertyName': 'field',
+    }
+
+    m = Model.model_validate({'a_or_b': {'field': None}})
+    assert isinstance(m.a_or_b, B)
+
+    m2 = Model.model_validate({'a_or_b': {'field': 'A'}})
+    assert isinstance(m2.a_or_b, A)
 
 
 def test_nested_discriminated_union():

@@ -827,7 +827,7 @@ class GenerateJsonSchema:
         Returns:
             The generated JSON schema.
         """
-        return {'type': 'string', 'format': 'date'}
+        return self._common_temporal_schema('date', self._config.ser_json_temporal)
 
     def time_schema(self, schema: core_schema.TimeSchema) -> JsonSchemaValue:
         """Generates a JSON schema that matches a time value.
@@ -838,7 +838,7 @@ class GenerateJsonSchema:
         Returns:
             The generated JSON schema.
         """
-        return {'type': 'string', 'format': 'time'}
+        return self._common_temporal_schema('time', self._config.ser_json_temporal)
 
     def datetime_schema(self, schema: core_schema.DatetimeSchema) -> JsonSchemaValue:
         """Generates a JSON schema that matches a datetime value.
@@ -849,7 +849,7 @@ class GenerateJsonSchema:
         Returns:
             The generated JSON schema.
         """
-        return {'type': 'string', 'format': 'date-time'}
+        return self._common_temporal_schema('date-time', self._config.ser_json_temporal)
 
     def timedelta_schema(self, schema: core_schema.TimedeltaSchema) -> JsonSchemaValue:
         """Generates a JSON schema that matches a timedelta value.
@@ -860,9 +860,21 @@ class GenerateJsonSchema:
         Returns:
             The generated JSON schema.
         """
-        if self._config.ser_json_timedelta == 'float':
+        if 'ser_json_temporal' in self._config.config_dict:
+            temporal_format = self._config.ser_json_temporal
+        else:
+            # `ser_json_temporal` supersedes `ser_json_timedelta`, which only applies when the former isn't
+            # explicitly set.
+            temporal_format = 'seconds' if self._config.ser_json_timedelta == 'float' else 'iso8601'
+        return self._common_temporal_schema('duration', temporal_format)
+
+    def _common_temporal_schema(
+        self, format: str, temporal_format: Literal['iso8601', 'seconds', 'milliseconds']
+    ) -> JsonSchemaValue:
+        if temporal_format != 'iso8601':
+            # Both `'seconds'` and `'milliseconds'` serialize to a number:
             return {'type': 'number'}
-        return {'type': 'string', 'format': 'duration'}
+        return {'type': 'string', 'format': format}
 
     def literal_schema(self, schema: core_schema.LiteralSchema) -> JsonSchemaValue:
         """Generates a JSON schema that matches a literal value.
@@ -1384,6 +1396,8 @@ class GenerateJsonSchema:
                 # Use the JSON representation so that the discriminator mapping
                 # can be matched against the serialized payload value
                 k = 'true' if k else 'false'
+            elif k is None:
+                k = 'null'
             try:
                 # Use str(k) since keys must be strings for json; while not technically correct,
                 # it's the closest that can be represented in valid JSON

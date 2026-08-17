@@ -1124,7 +1124,7 @@ class GenerateSchema:
             # early for model-like fields, which handles it already.
             return core_schema.any_schema()
 
-        if origin is not None and (aliased_obj := typing_objects.DEPRECATED_ALIASES.get(obj)):
+        if origin is not None and (aliased_obj := typing_objects.DEPRECATED_ALIASES_IDS.get(id(obj))):
             # See https://typing-inspection.pydantic.dev/dev/usage/#inspecting-the-type-expression:
             obj = aliased_obj
             origin = None

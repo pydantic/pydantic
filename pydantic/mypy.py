@@ -1105,7 +1105,7 @@ class PydanticModelTransformer:
 
     @staticmethod
     def get_strict(stmt: AssignmentStmt) -> bool | None:
-        """Returns a the `strict` value of a field if defined, otherwise `None`."""
+        """Returns the `strict` value of a field if defined, otherwise `None`."""
         expr = stmt.rvalue
         if isinstance(expr, CallExpr) and isinstance(expr.callee, RefExpr) and expr.callee.fullname == FIELD_FULLNAME:
             for arg, name in zip(expr.args, expr.arg_names, strict=True):

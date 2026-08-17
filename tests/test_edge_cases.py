@@ -3200,6 +3200,17 @@ def test_interconnected_models_build_in_linear_time() -> None:
     assert instance.model_dump(exclude_none=True) == {'value': 1, 'ref2': {'value': 2, 'ref2': {'value': 3}}}
 
 
+def test_unhasbable_generic_alias() -> None:
+    """https://github.com/pydantic/pydantic/issues/13645"""
+
+    class Meta:
+        __hash__ = None
+
+    ta = TypeAdapter(list[Annotated[int, Meta()]])
+
+    assert ta.validate_python(['1']) == [1]
+
+
 def test_get_pydantic_core_schema_instance() -> None:
     class SchemaProvider:
         def __get_pydantic_core_schema__(self, source: Any, handler: GetCoreSchemaHandler) -> CoreSchema:
