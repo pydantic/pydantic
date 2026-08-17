@@ -343,7 +343,6 @@ print(
 The generated pattern also no longer uses lookahead assertions, and takes exponents and `allow_inf_nan` into account.
 ///
 
-
 These constraints can be provided using the [`Field()`][pydantic.Field] function.
 The `Le`, `Ge`, `Lt`, `Gt` and `MultipleOf` metadata types from the [`annotated-types`](https://github.com/annotated-types/annotated-types)
 library and the [`AllowInfNan`][pydantic.types.AllowInfNan] type can also be used.
