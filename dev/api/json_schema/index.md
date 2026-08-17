@@ -1013,7 +1013,7 @@ def date_schema(self, schema: core_schema.DateSchema) -> JsonSchemaValue:
     Returns:
         The generated JSON schema.
     """
-    return {'type': 'string', 'format': 'date'}
+    return self._common_temporal_schema('date', self._config.ser_json_temporal)
 
 ```
 
@@ -1046,7 +1046,7 @@ def time_schema(self, schema: core_schema.TimeSchema) -> JsonSchemaValue:
     Returns:
         The generated JSON schema.
     """
-    return {'type': 'string', 'format': 'time'}
+    return self._common_temporal_schema('time', self._config.ser_json_temporal)
 
 ```
 
@@ -1079,7 +1079,7 @@ def datetime_schema(self, schema: core_schema.DatetimeSchema) -> JsonSchemaValue
     Returns:
         The generated JSON schema.
     """
-    return {'type': 'string', 'format': 'date-time'}
+    return self._common_temporal_schema('date-time', self._config.ser_json_temporal)
 
 ```
 
@@ -1114,9 +1114,13 @@ def timedelta_schema(self, schema: core_schema.TimedeltaSchema) -> JsonSchemaVal
     Returns:
         The generated JSON schema.
     """
-    if self._config.ser_json_timedelta == 'float':
-        return {'type': 'number'}
-    return {'type': 'string', 'format': 'duration'}
+    if 'ser_json_temporal' in self._config.config_dict:
+        temporal_format = self._config.ser_json_temporal
+    else:
+        # `ser_json_temporal` supersedes `ser_json_timedelta`, which only applies when the former isn't
+        # explicitly set.
+        temporal_format = 'seconds' if self._config.ser_json_timedelta == 'float' else 'iso8601'
+    return self._common_temporal_schema('duration', temporal_format)
 
 ```
 
