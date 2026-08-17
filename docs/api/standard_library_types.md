@@ -300,11 +300,49 @@ Decimals support the following constraints (numbers must be coercible to decimal
 | `gt`             | The value must be strictly greater than this number                                                                 | [`exclusiveMinimum`](https://json-schema.org/understanding-json-schema/reference/numeric#range) keyword                        |
 | `multiple_of`    | The value must be a multiple of this number                                                                         | [`multipleOf`](https://json-schema.org/understanding-json-schema/reference/numeric#multiples) keyword                          |
 | `allow_inf_nan`  | Whether to allow NaN (not-a-number) and infinite values                                                             | N/A                                                                                                                            |
-| `max_digits`     | The maximum number of decimal digits allowed. The zero before the decimal point and trailing zeros are not counted. | [`pattern`](https://json-schema.org/understanding-json-schema/reference/string#regexp) keyword, to describe the string pattern |
-| `decimal_places` | The maximum number of decimal places allowed. Trailing zeros are not counted.                                       | [`pattern`](https://json-schema.org/understanding-json-schema/reference/string#regexp) keyword, to describe the string pattern |
+| `max_digits`     | The maximum number of decimal digits allowed. The zero before the decimal point and trailing zeros are not counted. | N/A (see below)                                                                                                           |
+| `decimal_places` | The maximum number of decimal places allowed. Trailing zeros are not counted.                                       | N/A (see below)                                                                                                           |
 
-Note that the JSON Schema [`pattern`](https://json-schema.org/understanding-json-schema/reference/string#regexp) keyword will be specified
-in the JSON Schema to describe the string pattern in all cases (and can vary if `max_digits` and/or `decimal_places` is specified).
+/// version-changed | v2.12
+The JSON Schema includes a [`pattern`](https://json-schema.org/understanding-json-schema/reference/string#regexp) matching the `max_digits`
+and `decimal_places` constraints.
+///
+
+/// version-changed | v2.14
+The JSON Schema no longer includes a [`pattern`](https://json-schema.org/understanding-json-schema/reference/string#regexp) by default,
+as the generated pattern can cause issues for downstream consumers due to its complexity.
+
+The pattern can be included by subclassing [`GenerateJsonSchema`][pydantic.json_schema.GenerateJsonSchema] and overriding the
+[`get_decimal_pattern()`][pydantic.json_schema.GenerateJsonSchema.get_decimal_pattern] method:
+
+```python
+from decimal import Decimal
+from typing import Annotated
+
+from pydantic import Field, TypeAdapter
+from pydantic.json_schema import GenerateJsonSchema
+
+
+class MyGenerateJsonSchema(GenerateJsonSchema):
+    def get_decimal_pattern(self, schema):
+        return self.build_decimal_pattern(schema)
+
+
+ta = TypeAdapter(Annotated[Decimal, Field(max_digits=5, decimal_places=2)])
+print(
+    ta.json_schema(schema_generator=MyGenerateJsonSchema, mode='serialization')
+)
+"""
+{
+    'pattern': '^-?(?:(?:0|[1-9][0-9]{0,2})(?:\\.[0-9]{1,2}0*)?|0E[+-][1-9][0-9]*|[1-9](?:\\.[0-9]+)?E\\+[1-2])$',
+    'type': 'string',
+}
+"""
+```
+
+The generated pattern also no longer uses lookahead assertions, and adds support for exponents.
+///
+
 
 These constraints can be provided using the [`Field()`][pydantic.Field] function.
 The `Le`, `Ge`, `Lt`, `Gt` and `MultipleOf` metadata types from the [`annotated-types`](https://github.com/annotated-types/annotated-types)
