@@ -231,8 +231,8 @@ class Decorator(Generic[DecoratorInfoType]):
     def build(
         cls_: Any,
         *,
-        cls_ref: str,
         cls_var_name: str,
+        cls_ref: str | None = None,
         shim: Callable[[Any], Any] | None,
         info: DecoratorInfoType,
     ) -> Decorator[DecoratorInfoType]:
@@ -248,6 +248,9 @@ class Decorator(Generic[DecoratorInfoType]):
         Returns:
             The new decorator instance.
         """
+        # For backwards compatibility for users using this (private!) method. TODO v3: make `cls_ref` required:
+        cls_ref = cls_ref if cls_ref is not None else _type_refs.any_class_type_ref(cls_)
+
         func = get_attribute_from_bases(cls_, cls_var_name)
         if shim is not None:
             func = shim(func)
