@@ -379,6 +379,34 @@ def test_typeddict():
     }
 
 
+def test_typeddict_inheritance():
+    # Fields inherited from a parent `TypedDict` should keep their attribute
+    # docstrings, consistent with `BaseModel` (see #13468).
+    class Base(TypedDict):
+        a: int
+        """A docs"""
+
+    class Child(Base):
+        __pydantic_config__ = ConfigDict(use_attribute_docstrings=True)
+
+        b: int
+        """B docs"""
+
+    props = TypeAdapter(Child).json_schema()['properties']
+    assert props['a']['description'] == 'A docs'
+    assert props['b']['description'] == 'B docs'
+
+    # A subclass may override the docstring of an inherited field.
+    class Override(Base):
+        __pydantic_config__ = ConfigDict(use_attribute_docstrings=True)
+
+        a: int
+        """New A docs"""
+
+    props = TypeAdapter(Override).json_schema()['properties']
+    assert props['a']['description'] == 'New A docs'
+
+
 def test_typeddict_as_field():
     class ModelTDAsField(TypedDict):
         a: int
