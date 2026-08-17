@@ -3198,3 +3198,12 @@ def test_interconnected_models_build_in_linear_time() -> None:
     instance = last.model_validate({'value': 1, 'ref2': {'value': 2, 'ref2': {'value': 3}}})
     assert instance.ref2.ref2.value == 3
     assert instance.model_dump(exclude_none=True) == {'value': 1, 'ref2': {'value': 2, 'ref2': {'value': 3}}}
+
+
+def test_get_pydantic_core_schema_instance() -> None:
+    class SchemaProvider:
+        def __get_pydantic_core_schema__(self, source: Any, handler: GetCoreSchemaHandler) -> CoreSchema:
+            return core_schema.int_schema()
+
+    ta = TypeAdapter(SchemaProvider())
+    assert ta.validate_python('1') == 1

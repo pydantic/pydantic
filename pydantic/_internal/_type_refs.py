@@ -80,6 +80,28 @@ def any_class_type_ref(type_: Any, origin: type[Any] | None | _NOT_PROVIDED = _N
     return class_type_ref(type_, origin)  # pyright: ignore[reportArgumentType] (https://github.com/microsoft/pyright/issues/11115)
 
 
+def any_type_ref(type_: Any, origin: Any | _NOT_PROVIDED = _NOT_PROVIDED) -> str:
+    """Produce a reference for any object, including non-class objects."""
+    BaseModel_ = import_cached_base_model()
+
+    if lenient_issubclass(type_, BaseModel_):
+        return model_type_ref(type_)  # pyright: ignore[reportArgumentType]
+
+    origin = get_origin(type_) if origin is _NOT_PROVIDED else origin
+    tp: Any = origin if origin is not None else type_
+
+    module_name = getattr(tp, '__module__', None)
+    if module_name is None:
+        module_name = '<No __module__>'
+
+    try:
+        qualname = getattr(tp, '__qualname__', f'<No __qualname__: {tp}>')
+    except Exception:
+        qualname = getattr(tp, '__qualname__', '<No __qualname__>')
+
+    return f'{module_name}.{qualname}:{id(tp)}{_args_ref(get_args(type_))}'
+
+
 def enum_type_ref(type_: type[Enum]) -> str:
     """Produce a reference for an enum class."""
     # While it is typed as `str`, `__module__` could in theory be `None`:

@@ -974,11 +974,9 @@ class GenerateSchema:
             # Some referenceable types might have a `__get_pydantic_core_schema__` method
             # defined on it by users (e.g. on a dataclass). This generally doesn't play well
             # as these types are already recognized by the `GenerateSchema` class and isn't ideal
-            # as we might end up calling `any_class_type_ref()` (relatively expensive) on types that are actually
+            # as we might end up calling `any_type_ref()` (relatively expensive) on types that are actually
             # not referenceable:
-            with self.defs.get_definition_ref_schema(
-                ref=_type_refs.any_class_type_ref(obj, get_origin(obj))
-            ) as maybe_schema:
+            with self.defs.get_definition_ref_schema(ref=_type_refs.any_type_ref(obj, get_origin(obj))) as maybe_schema:
                 if maybe_schema is not None:
                     return maybe_schema
 
