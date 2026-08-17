@@ -2751,8 +2751,9 @@ def models_json_schema(
 # Note: while we could use `\d` to represent digits (`Decimal` objects allow Unicode decimal digits), we use [0-9] instead:
 # - to reduce complexity (`\d` expands to a large set, and with `max_digits`/`decimal_places` constraints set, it can blow
 #   the compile limit on some engines).
-# - [0-9] is a portable pattern (e.g. `\d` is equivalent to `[0-9]` in ECMA (https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Regular_expressions/Character_class_escape#d)
+# - [0-9] is a portable pattern (e.g. `\d` is equivalent to `[0-9]` in ECMA (https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Regular_expressions/Character_class_escape#d)
 #   while it allows any Unicode decimal digit in Python.
+
 
 def _repeat(atom: str, min_count: int, max_count: int) -> str:
     """Build a regex repetition of `atom` between `min_count` and `max_count` times (inclusive), using the shortest quantifier."""
@@ -2784,7 +2785,7 @@ def _decimal_validation_pattern(max_digits: int | None, decimal_places: int | No
     """Build the decimal pattern for the `'validation'` mode."""
 
     number = r'(?:[0-9]+\.?[0-9]*|\.[0-9]+)'  # e.g. 1, 1., .5
-    exponent = r'[eE][+-]?[0-9]+'  # e.g. e5, E5, e-7
+    exponent = r'[eE][+-]?[0-9]+'  # e.g. e5, E5, e-7
     if max_digits is None and decimal_places is None:
         return rf'^[+-]?{number}(?:{exponent})?$'
 

@@ -7286,7 +7286,7 @@ def test_decimal_pattern_reject_invalid_not_numerical_values_with_decimal_places
     assert re.fullmatch(pattern, invalid_decimal) is None
 
 
-@pytest.mark.parametrize(['max_digits','decimal_places'], [(None, None), (3, None), (None, 2), (4, 2)])
+@pytest.mark.parametrize(['max_digits', 'decimal_places'], [(None, None), (3, None), (None, 2), (4, 2)])
 @pytest.mark.parametrize(
     'valid_decimal', ['1e5', '1E5', '1E+5', '1e-5', '-1.5E1', '+.5e1', '1.e5', '01.10E01', '1.234E+1', '12345E-3']
 )
@@ -7296,7 +7296,7 @@ def test_decimal_pattern_with_exponent(max_digits, decimal_places, valid_decimal
     assert re.fullmatch(pattern, valid_decimal) is not None
 
 
-@pytest.mark.parametrize(['max_digits','decimal_places'], [(None, None), (3, None), (None, 2), (4, 2)])
+@pytest.mark.parametrize(['max_digits', 'decimal_places'], [(None, None), (3, None), (None, 2), (4, 2)])
 @pytest.mark.parametrize('invalid_decimal', ['e5', '.e5', '1e', '1e+', '1E5.0', '1.5.E5', '1e5e5', '1e1.5', '1f5'])
 def test_decimal_pattern_reject_invalid_with_exponent(
     max_digits, decimal_places, invalid_decimal, get_decimal_pattern
