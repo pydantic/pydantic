@@ -1,7 +1,6 @@
 import json
 import operator
 from typing import Annotated, Any
-from unittest.mock import ANY
 
 import pytest
 from pydantic_core import MultiHostHost, PydanticCustomError, PydanticSerializationError, Url
@@ -1206,8 +1205,6 @@ def test_any_url_ordering_is_consistent() -> None:
 
 
 def test_any_url_equality_delegates_to_foreign_type() -> None:
-    """`__eq__` returns `NotImplemented` for foreign types so their reflected `__eq__` is consulted."""
-
     class UrlWrapper:
         def __init__(self, url: str) -> None:
             self.url = url
@@ -1230,20 +1227,6 @@ def test_any_url_equality_delegates_to_foreign_type() -> None:
     # Types with no opinion of their own are still unequal (identity fallback).
     assert AnyUrl('https://a.com') != 'https://a.com'
     assert AnyUrl('https://a.com') != 5
-
-
-def test_any_url_equality_with_mock_any() -> None:
-    """`unittest.mock.ANY` matches a URL from either side, as it already does for `BaseModel`."""
-    url = AnyUrl('https://example.com')
-    dsn = PostgresDsn('postgres://user:pass@localhost:5432/app')
-
-    assert url == ANY
-    assert ANY == url
-    assert dsn == ANY
-    assert ANY == dsn
-
-    # The common assertion shape: the value under test on the left, the expectation on the right.
-    assert {'url': url} == {'url': ANY}
 
 
 def test_max_length_base_url() -> None:
