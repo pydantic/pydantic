@@ -3209,3 +3209,12 @@ def test_unhasbable_generic_alias() -> None:
     ta = TypeAdapter(list[Annotated[int, Meta()]])
 
     assert ta.validate_python(['1']) == [1]
+
+
+def test_get_pydantic_core_schema_instance() -> None:
+    class SchemaProvider:
+        def __get_pydantic_core_schema__(self, source: Any, handler: GetCoreSchemaHandler) -> CoreSchema:
+            return core_schema.int_schema()
+
+    ta = TypeAdapter(SchemaProvider())
+    assert ta.validate_python('1') == 1
