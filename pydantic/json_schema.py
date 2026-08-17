@@ -727,41 +727,49 @@ class GenerateJsonSchema:
         def get_decimal_pattern(schema: core_schema.DecimalSchema) -> str:
             max_digits = schema.get('max_digits')
             decimal_places = schema.get('decimal_places')
-
+            # Allow optional scientific notation suffix
+            sci = r'(?:[eE][+-]?\d+)?'
+            # Ensure at least one digit or dot exists (not just sign/empty)
+            has_digit = r'(?=[\d.])'
             pattern = (
                 r'^(?!^[-+.]*$)[+-]?0*'  # check it is not empty string and not one or sequence of ".+-" characters.
             )
-
             # Case 1: Both max_digits and decimal_places are set
             if max_digits is not None and decimal_places is not None:
                 integer_places = max(0, max_digits - decimal_places)
                 pattern += (
-                    rf'(?:'
-                    rf'\d{{0,{integer_places}}}'
-                    rf'|'
-                    rf'(?=[\d.]{{1,{max_digits + 1}}}0*$)'
-                    rf'\d{{0,{integer_places}}}\.\d{{0,{decimal_places}}}0*$'
-                    rf')'
+                    has_digit
+                    + rf'(?:'
+                    + rf'\d{{0,{integer_places}}}'
+                    + rf'|'
+                    + rf'(?=[\d.]{{1,{max_digits + 1}}}0*(?:[eE][+-]?\d+)?0*$)'
+                    + rf'\d{{0,{integer_places}}}\.\d{{0,{decimal_places}}}0*'
+                    + rf')'
+                    + sci
+                    + r'$'
                 )
 
             # Case 2: Only max_digits is set
             elif max_digits is not None and decimal_places is None:
                 pattern += (
-                    rf'(?:'
-                    rf'\d{{0,{max_digits}}}'
-                    rf'|'
-                    rf'(?=[\d.]{{1,{max_digits + 1}}}0*$)'
-                    rf'\d*\.\d*0*$'
-                    rf')'
+                    has_digit
+                    + rf'(?:'
+                    + rf'\d{{0,{max_digits}}}'
+                    + rf'|'
+                    + rf'(?=[\d.]{{1,{max_digits + 1}}}0*(?:[eE][+-]?\d+)?0*$)'
+                    + rf'\d*\.\d*0*'
+                    + rf')'
+                    + sci
+                    + r'$'
                 )
 
             # Case 3: Only decimal_places is set
             elif max_digits is None and decimal_places is not None:
-                pattern += rf'\d*\.?\d{{0,{decimal_places}}}0*$'
+                pattern += has_digit + rf'\d*\.?\d{{0,{decimal_places}}}0*' + sci + r'$'
 
             # Case 4: Both are None (no restrictions)
             else:
-                pattern += r'\d*\.?\d*$'  # look for arbitrary integer or decimal
+                pattern += has_digit + r'\d*\.?\d*' + sci + r'$'  # look for arbitrary integer or decimal
 
             return pattern
 

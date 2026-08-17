@@ -7235,6 +7235,22 @@ def test_decimal_pattern_reject_invalid_not_numerical_values_with_decimal_places
     assert re.fullmatch(pattern, invalid_decimal) is None
 
 
+@pytest.mark.parametrize(
+    'valid_decimal', ['1e10', '1E10', '1e+10', '1E-3', '1.5e10', '1.5E-3', '-1e10', '-1.5e10', '+1e10', '0.1e10']
+)
+def test_decimal_pattern_scientific_notation_valid(valid_decimal, get_decimal_pattern) -> None:
+    """Test that scientific notation is accepted by the decimal pattern (issue #13089)."""
+    pattern = get_decimal_pattern()
+    assert re.fullmatch(pattern, valid_decimal) is not None
+
+
+@pytest.mark.parametrize('invalid_decimal', ['1e', '1E', '1e+', '1e-', '1ee10', '1e10e10', 'e10'])
+def test_decimal_pattern_scientific_notation_invalid(invalid_decimal, get_decimal_pattern) -> None:
+    """Test that malformed scientific notation is rejected by the decimal pattern."""
+    pattern = get_decimal_pattern()
+    assert re.fullmatch(pattern, invalid_decimal) is None
+
+
 def test_union_format_primitive_type_array() -> None:
     class Sub(BaseModel):
         pass
