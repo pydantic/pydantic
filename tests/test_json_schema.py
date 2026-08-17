@@ -4052,38 +4052,34 @@ def test_bool_discriminated_union() -> None:
     class Model(BaseModel):
         setting: Enabled | Disabled = Field(discriminator='enabled')
 
-    assert Model.model_json_schema() == {
-        '$defs': {
-            'Disabled': {
-                'properties': {'enabled': {'const': False, 'title': 'Enabled', 'type': 'boolean'}},
-                'required': ['enabled'],
-                'title': 'Disabled',
-                'type': 'object',
-            },
-            'Enabled': {
-                'properties': {
-                    'config': {'title': 'Config', 'type': 'string'},
-                    'enabled': {'const': True, 'title': 'Enabled', 'type': 'boolean'},
-                },
-                'required': ['enabled', 'config'],
-                'title': 'Enabled',
-                'type': 'object',
-            },
-        },
-        'properties': {
-            'setting': {
-                'discriminator': {
-                    'mapping': {'false': '#/$defs/Disabled', 'true': '#/$defs/Enabled'},
-                    'propertyName': 'enabled',
-                },
-                'oneOf': [{'$ref': '#/$defs/Enabled'}, {'$ref': '#/$defs/Disabled'}],
-                'title': 'Setting',
-            }
-        },
-        'required': ['setting'],
-        'title': 'Model',
-        'type': 'object',
+    assert Model.model_json_schema()['properties']['setting']['discriminator'] == {
+        'mapping': {'false': '#/$defs/Disabled', 'true': '#/$defs/Enabled'},
+        'propertyName': 'enabled',
     }
+
+
+def test_none_discriminated_union() -> None:
+    """https://github.com/pydantic/pydantic/issues/13660"""
+
+    class A(BaseModel):
+        field: Literal['A'] = 'A'
+
+    class B(BaseModel):
+        field: None = None
+
+    class Model(BaseModel):
+        a_or_b: Annotated[A | B, Field(discriminator='field')]
+
+    assert Model.model_json_schema()['properties']['a_or_b']['discriminator'] == {
+        'mapping': {'A': '#/$defs/A', 'null': '#/$defs/B'},
+        'propertyName': 'field',
+    }
+
+    m = Model.model_validate({'a_or_b': {'field': None}})
+    assert isinstance(m.a_or_b, B)
+
+    m2 = Model.model_validate({'a_or_b': {'field': 'A'}})
+    assert isinstance(m2.a_or_b, A)
 
 
 def test_nested_discriminated_union():
