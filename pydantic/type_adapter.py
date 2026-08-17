@@ -736,7 +736,10 @@ class TypeAdapter(Generic[T]):
         if isinstance(self.core_schema, _mock_val_ser.MockCoreSchema):
             self.core_schema.rebuild()
             assert not isinstance(self.core_schema, _mock_val_ser.MockCoreSchema), 'this is a bug! please report it'
-        return schema_generator_instance.generate(self.core_schema, mode=mode)
+        # The configuration provided to the type adapter (if any) is not part of the core schema,
+        # so we need to explicitly make it available to the JSON Schema generator:
+        with schema_generator_instance._config_wrapper_stack.push(self._config):
+            return schema_generator_instance.generate(self.core_schema, mode=mode)
 
     @staticmethod
     def json_schemas(
