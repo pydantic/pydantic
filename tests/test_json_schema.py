@@ -5331,6 +5331,34 @@ def test_serialization_schema_with_exclude_exclude_if():
     }
 
 
+def test_serialization_schema_with_computed_field_exclude_if():
+    class Model(BaseModel):
+        a: int
+
+        @computed_field
+        @property
+        def b(self) -> int:
+            return 1
+
+        @computed_field(exclude_if=lambda v: v == 1)
+        @property
+        def c(self) -> int:
+            return 1
+
+    assert Model(a=1).model_dump() == {'a': 1, 'b': 1}
+
+    assert Model.model_json_schema(mode='serialization') == {
+        'properties': {
+            'a': {'title': 'A', 'type': 'integer'},
+            'b': {'readOnly': True, 'title': 'B', 'type': 'integer'},
+            'c': {'readOnly': True, 'title': 'C', 'type': 'integer'},
+        },
+        'required': ['a', 'b'],
+        'title': 'Model',
+        'type': 'object',
+    }
+
+
 @pytest.mark.parametrize('mapping_type', [dict, typing.Mapping])
 def test_mappings_str_int_json_schema(mapping_type: Any):
     class Model(BaseModel):
