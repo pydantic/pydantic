@@ -44,6 +44,7 @@ from pydantic import (
     TypeAdapter,
     ValidationError,
     constr,
+    create_model,
     errors,
     field_validator,
     model_validator,
@@ -3182,3 +3183,29 @@ def test_safe_get_annotations_from_dict() -> None:
         pass
 
     assert safe_get_annotations(Sub) == {}
+
+
+@pytest.mark.timeout(10)
+def test_interconnected_models_build_in_linear_time() -> None:
+    classes: list[type[BaseModel]] = []
+    for i in range(60):
+        fields: dict[str, Any] = {'value': (int, ...)}
+        for j, prev in enumerate(classes[-3:]):
+            fields[f'ref{j}'] = (prev | None, None)
+        classes.append(create_model(f'Node{i}', **fields))
+
+    last = classes[-1]
+    instance = last.model_validate({'value': 1, 'ref2': {'value': 2, 'ref2': {'value': 3}}})
+    assert instance.ref2.ref2.value == 3
+    assert instance.model_dump(exclude_none=True) == {'value': 1, 'ref2': {'value': 2, 'ref2': {'value': 3}}}
+
+
+def test_unhasbable_generic_alias() -> None:
+    """https://github.com/pydantic/pydantic/issues/13645"""
+
+    class Meta:
+        __hash__ = None
+
+    ta = TypeAdapter(list[Annotated[int, Meta()]])
+
+    assert ta.validate_python(['1']) == [1]

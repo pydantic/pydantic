@@ -238,7 +238,9 @@ class _BaseUrl:
         return self.__class__(self._url)
 
     def __eq__(self, other: Any) -> bool:
-        return self.__class__ is other.__class__ and self._url == other._url
+        if self.__class__ is not other.__class__:
+            return NotImplemented
+        return self._url == other._url
 
     def __lt__(self, other: Any) -> bool:
         if self.__class__ is not other.__class__:
@@ -438,7 +440,9 @@ class _BaseMultiHostUrl:
         return self.__class__(self._url)
 
     def __eq__(self, other: Any) -> bool:
-        return self.__class__ is other.__class__ and self._url == other._url
+        if self.__class__ is not other.__class__:
+            return NotImplemented
+        return self._url == other._url
 
     def __hash__(self) -> int:
         return hash(self._url)

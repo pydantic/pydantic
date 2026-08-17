@@ -33,6 +33,7 @@ classifiers = [
     'Programming Language :: Python :: 3.12',
     'Programming Language :: Python :: 3.13',
     'Programming Language :: Python :: 3.14',
+    'Programming Language :: Python :: 3.15',
     'Intended Audience :: Developers',
     'Intended Audience :: Information Technology',
     'Operating System :: OS Independent',
@@ -46,8 +47,8 @@ dependencies = [
     'typing-extensions>=4.15.0',
     'annotated-types>=0.6.0',
     # Keep this in sync with the version in the `check_pydantic_core_version()` function:
-    'pydantic-core==2.47.0',
-    'typing-inspection>=0.4.2',
+    'pydantic-core==2.48.0',
+    'typing-inspection>=0.4.4',
 ]
 dynamic = ['version', 'readme']
 
@@ -80,6 +81,7 @@ dev = [
     'pytest-run-parallel>=0.3.1',
     'packaging',
     'jsonschema',
+    'time-machine; platform_python_implementation != "PyPy"',
 ]
 coverage = [
     'coverage[toml]',
@@ -117,7 +119,8 @@ testing-extra = [
     'devtools',
     # used in docs tests
     'sqlalchemy',
-    'pytest-memray; platform_python_implementation == "CPython" and platform_system != "Windows"',
+    'pytest-memray; platform_python_implementation == "CPython" and platform_system != "Windows" and python_version < "3.15"',
+    'memray; platform_python_implementation == "CPython" and platform_system != "Windows" and python_version < "3.15"',
 ]
 typechecking = [
     'mypy',

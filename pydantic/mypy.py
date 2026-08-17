@@ -7,6 +7,8 @@ from collections.abc import Callable, Iterator
 from configparser import ConfigParser
 from typing import Any
 
+# To avoid import error (https://github.com/python/mypy/issues/17726):
+import mypy.types  # noqa: F401
 from mypy.errorcodes import ErrorCode
 from mypy.expandtype import expand_type, expand_type_by_instance
 from mypy.nodes import (
@@ -1103,7 +1105,7 @@ class PydanticModelTransformer:
 
     @staticmethod
     def get_strict(stmt: AssignmentStmt) -> bool | None:
-        """Returns a the `strict` value of a field if defined, otherwise `None`."""
+        """Returns the `strict` value of a field if defined, otherwise `None`."""
         expr = stmt.rvalue
         if isinstance(expr, CallExpr) and isinstance(expr.callee, RefExpr) and expr.callee.fullname == FIELD_FULLNAME:
             for arg, name in zip(expr.args, expr.arg_names, strict=True):

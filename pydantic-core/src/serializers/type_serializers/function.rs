@@ -2,20 +2,20 @@ use std::borrow::Cow;
 use std::sync::Arc;
 
 use pyo3::PyTraverseError;
-use pyo3::exceptions::{PyAttributeError, PyRecursionError, PyRuntimeError};
+use pyo3::exceptions::{PyAttributeError, PyRecursionError, PyRuntimeError, PyTypeError};
 use pyo3::gc::PyVisit;
 use pyo3::intern;
 use pyo3::prelude::*;
 use pyo3::types::PyDict;
 
-use pyo3::types::PyString;
+use pyo3::types::{PyInt, PyString};
 
 use crate::definitions::DefinitionsBuilder;
 use crate::py_gc::PyGcTraverse;
 use crate::serializers::SerializationState;
 use crate::serializers::extra::IncludeExclude;
 use crate::tools::SchemaDict;
-use crate::tools::{function_name, py_err, py_error_type};
+use crate::tools::{function_name, py_err, py_error_type, safe_repr};
 use crate::{PydanticOmit, PydanticSerializationUnexpectedValue};
 
 use super::format::WhenUsed;
@@ -476,8 +476,13 @@ impl SerializationCallable {
         if let Some(index_key) = index_key {
             let filter = if let Ok(index) = index_key.extract::<usize>() {
                 self.filter.index_filter(index, state, None)?
-            } else {
+            } else if index_key.is_instance_of::<PyString>() || index_key.is_instance_of::<PyInt>() {
                 self.filter.key_filter(index_key, state)?
+            } else {
+                return Err(PyTypeError::new_err(format!(
+                    "'index_key' is expected to be an integer or a string, got '{}'",
+                    safe_repr(index_key),
+                )));
             };
             if let Some(next_include_exclude) = filter {
                 let state = &mut state.scoped_include_exclude(next_include_exclude);

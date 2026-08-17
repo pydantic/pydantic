@@ -403,9 +403,9 @@ Currently upon validation failure, a standard Pydantic [`ValidationError`][pydan
 (see [model error handling](models.md#error-handling) for details). This is also true for missing required arguments,
 where Python normally raises a [`TypeError`][].
 
-!!! tip "Logfire integration"
-    As with Pydantic models, the [Logfire integration](../integrations/logfire.md) records
-    validation errors for [`@validate_call`][pydantic.validate_call].
+The error identifies the argument and value that were rejected. If you also need the complete call
+input and its surrounding trace context, [Logfire](../errors/troubleshooting.md) records both when a
+decorated call fails.
 
 ### Performance
 

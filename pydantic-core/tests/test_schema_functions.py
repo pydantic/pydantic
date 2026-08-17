@@ -1,7 +1,7 @@
 import dataclasses
 from datetime import date
 from enum import Enum
-from typing import Any
+from typing import Any, NamedTuple
 
 import pytest
 from typing_extensions import get_args, get_type_hints  # noqa: UP035
@@ -26,6 +26,10 @@ class MyModel:
 class MyDataclass:
     x: int
     y: str
+
+
+class MyNamedTuple(NamedTuple):
+    foo: int
 
 
 class MyEnum(int, Enum):
@@ -83,6 +87,7 @@ all_schema_functions = [
     ),
     (core_schema.literal_schema, args(['a', 'b']), {'type': 'literal', 'expected': ['a', 'b']}),
     (core_schema.missing_sentinel_schema, args(), {'type': 'missing-sentinel'}),
+    (core_schema.ellipsis_schema, args(), {'type': 'ellipsis'}),
     (
         core_schema.enum_schema,
         args(MyEnum, list(MyEnum.__members__.values())),
@@ -306,6 +311,15 @@ all_schema_functions = [
         core_schema.dataclass_schema,
         args(MyDataclass, {'type': 'int'}, ['foobar'], slots=True),
         {'type': 'dataclass', 'schema': {'type': 'int'}, 'fields': ['foobar'], 'cls': MyDataclass, 'slots': True},
+    ),
+    (
+        core_schema.named_tuple_schema,
+        args(MyNamedTuple, [{'name': 'foo', 'type': 'named-tuple-field', 'schema': {'type': 'int'}}]),
+        {
+            'type': 'named-tuple',
+            'cls': MyNamedTuple,
+            'fields': [{'name': 'foo', 'type': 'named-tuple-field', 'schema': {'type': 'int'}}],
+        },
     ),
     (core_schema.uuid_schema, args(), {'type': 'uuid'}),
     (core_schema.decimal_schema, args(), {'type': 'decimal'}),

@@ -827,7 +827,7 @@ class GenerateJsonSchema:
         Returns:
             The generated JSON schema.
         """
-        return {'type': 'string', 'format': 'date'}
+        return self._common_temporal_schema('date', self._config.ser_json_temporal)
 
     def time_schema(self, schema: core_schema.TimeSchema) -> JsonSchemaValue:
         """Generates a JSON schema that matches a time value.
@@ -838,7 +838,7 @@ class GenerateJsonSchema:
         Returns:
             The generated JSON schema.
         """
-        return {'type': 'string', 'format': 'time'}
+        return self._common_temporal_schema('time', self._config.ser_json_temporal)
 
     def datetime_schema(self, schema: core_schema.DatetimeSchema) -> JsonSchemaValue:
         """Generates a JSON schema that matches a datetime value.
@@ -849,7 +849,7 @@ class GenerateJsonSchema:
         Returns:
             The generated JSON schema.
         """
-        return {'type': 'string', 'format': 'date-time'}
+        return self._common_temporal_schema('date-time', self._config.ser_json_temporal)
 
     def timedelta_schema(self, schema: core_schema.TimedeltaSchema) -> JsonSchemaValue:
         """Generates a JSON schema that matches a timedelta value.
@@ -860,9 +860,21 @@ class GenerateJsonSchema:
         Returns:
             The generated JSON schema.
         """
-        if self._config.ser_json_timedelta == 'float':
+        if 'ser_json_temporal' in self._config.config_dict:
+            temporal_format = self._config.ser_json_temporal
+        else:
+            # `ser_json_temporal` supersedes `ser_json_timedelta`, which only applies when the former isn't
+            # explicitly set.
+            temporal_format = 'seconds' if self._config.ser_json_timedelta == 'float' else 'iso8601'
+        return self._common_temporal_schema('duration', temporal_format)
+
+    def _common_temporal_schema(
+        self, format: str, temporal_format: Literal['iso8601', 'seconds', 'milliseconds']
+    ) -> JsonSchemaValue:
+        if temporal_format != 'iso8601':
+            # Both `'seconds'` and `'milliseconds'` serialize to a number:
             return {'type': 'number'}
-        return {'type': 'string', 'format': 'duration'}
+        return {'type': 'string', 'format': format}
 
     def literal_schema(self, schema: core_schema.LiteralSchema) -> JsonSchemaValue:
         """Generates a JSON schema that matches a literal value.
@@ -906,6 +918,19 @@ class GenerateJsonSchema:
             The generated JSON schema.
         """
         raise PydanticOmit
+
+    def ellipsis_schema(self, schema: core_schema.EllipsisSchema) -> JsonSchemaValue:
+        """Handles JSON schema generation for a core schema that checks if a value is the [`Ellipsis`][] literal.
+
+        Unless overridden in a subclass, this raises an error.
+
+        Args:
+            schema: The core schema.
+
+        Returns:
+            The generated JSON schema.
+        """
+        return self.handle_invalid_for_json_schema(schema, 'core_schema.EllipsisSchema')
 
     def enum_schema(self, schema: core_schema.EnumSchema) -> JsonSchemaValue:
         """Generates a JSON schema that matches an Enum value.
@@ -1367,6 +1392,12 @@ class GenerateJsonSchema:
         for k, v in schema['choices'].items():
             if isinstance(k, Enum):
                 k = k.value
+            elif isinstance(k, bool):
+                # Use the JSON representation so that the discriminator mapping
+                # can be matched against the serialized payload value
+                k = 'true' if k else 'false'
+            elif k is None:
+                k = 'null'
             try:
                 # Use str(k) since keys must be strings for json; while not technically correct,
                 # it's the closest that can be represented in valid JSON
@@ -1861,6 +1892,55 @@ class GenerateJsonSchema:
             json_schema = self.generate_inner(schema['schema']).copy()
 
         self._update_class_schema(json_schema, cls, config)
+
+        return json_schema
+
+    def named_tuple_field_schema(self, schema: core_schema.NamedTupleField) -> JsonSchemaValue:
+        """Generates a JSON schema that matches a schema that defines a named tuple field.
+
+        Args:
+            schema: The core schema.
+
+        Returns:
+            The generated JSON schema.
+        """
+        return self.generate_inner(schema['schema'])
+
+    def named_tuple_schema(self, schema: core_schema.NamedTupleSchema) -> JsonSchemaValue:
+        """Generates a JSON schema that matches a schema that defines a named tuple.
+
+        Args:
+            schema: The core schema.
+
+        Returns:
+            The generated JSON schema.
+        """
+        prefix_items: list[JsonSchemaValue] = []
+        min_items = 0
+
+        for field in schema['fields']:
+            name = field['name']
+            if self.by_alias:
+                alias = field.get('validation_alias')
+                if isinstance(alias, str):
+                    name = alias
+
+            field_schema = self.generate_inner(field['schema']).copy()
+            if 'title' not in field_schema and self.field_title_should_be_set(field['schema']):
+                field_schema['title'] = self.get_title_from_name(name)
+            prefix_items.append(field_schema)
+
+            if field['schema']['type'] != 'default':
+                # This assumes that if the field has a default value,
+                # the inner schema must be of type WithDefaultSchema.
+                min_items += 1
+
+        json_schema: JsonSchemaValue = {'type': 'array'}
+        if prefix_items:
+            json_schema['prefixItems'] = prefix_items
+        if min_items:
+            json_schema['minItems'] = min_items
+        json_schema['maxItems'] = len(prefix_items)
 
         return json_schema
 
