@@ -789,7 +789,8 @@ class GenerateJsonSchema:
           including the ones using scientific notation (e.g. `'1E-7'`, `'1.5E+3'`).
 
         In both modes, trailing zeros in the decimal part are not counted (e.g. `'1.10'` is accepted with
-        `decimal_places=1`), consistent with the validation behavior.
+        `decimal_places=1`), consistent with the validation behavior. If `allow_inf_nan` is enabled (on the
+        core schema or in the configuration), the string representations of infinity and NaN are also accepted.
 
         Args:
             schema: The core schema.
@@ -799,10 +800,13 @@ class GenerateJsonSchema:
         """
         max_digits = schema.get('max_digits')
         decimal_places = schema.get('decimal_places')
+        allow_inf_nan = schema.get('allow_inf_nan')
+        if allow_inf_nan is None:
+            allow_inf_nan = self._config.config_dict.get('allow_inf_nan', False)
         if self.mode == 'validation':
-            return _decimal_validation_pattern(max_digits, decimal_places)
+            return _decimal_validation_pattern(max_digits, decimal_places, allow_inf_nan)
         else:
-            return _decimal_serialization_pattern(max_digits, decimal_places)
+            return _decimal_serialization_pattern(max_digits, decimal_places, allow_inf_nan)
 
     def str_schema(self, schema: core_schema.StringSchema) -> JsonSchemaValue:
         """Generates a JSON schema that matches a string value.
@@ -2781,13 +2785,16 @@ def _int_range_pattern(max_value: int) -> str:
     return alts[0] if len(alts) == 1 else f'(?:{"|".join(alts)})'
 
 
-def _decimal_validation_pattern(max_digits: int | None, decimal_places: int | None) -> str:
+def _decimal_validation_pattern(max_digits: int | None, decimal_places: int | None, allow_inf_nan: bool) -> str:
     """Build the decimal pattern for the `'validation'` mode."""
 
     number = r'(?:[0-9]+\.?[0-9]*|\.[0-9]+)'  # e.g. 1, 1., .5
     exponent = r'[eE][+-]?[0-9]+'  # e.g. e5, E5, e-7
+    # e.g. Infinity, inf, NaN, sNaN, NaN123 (case-insensitive). Spelled out explicitly, as inline flags
+    # aren't supported by all regular expression engines:
+    non_finite = r'|[iI][nN][fF](?:[iI][nN][iI][tT][yY])?|[sS]?[nN][aA][nN][0-9]*' if allow_inf_nan else ''
     if max_digits is None and decimal_places is None:
-        return rf'^[+-]?{number}(?:{exponent})?$'
+        return rf'^[+-]?(?:{number}(?:{exponent})?{non_finite})$'
 
     alts: list[str] = []
     if max_digits is not None and decimal_places is not None:
@@ -2815,10 +2822,10 @@ def _decimal_validation_pattern(max_digits: int | None, decimal_places: int | No
         alts += [f'[0-9]+(?:{opt_frac_part})?', f'[0-9]*{frac_part}']
 
     alts.append(f'{number}{exponent}')
-    return rf'^[+-]?(?:{"|".join(alts)})$'
+    return rf'^[+-]?(?:{"|".join(alts)}{non_finite})$'
 
 
-def _decimal_serialization_pattern(max_digits: int | None, decimal_places: int | None) -> str:
+def _decimal_serialization_pattern(max_digits: int | None, decimal_places: int | None, allow_inf_nan: bool) -> str:
     """Build the decimal pattern for the `'serialization'` mode.
 
     Decimals are serialized using `str()`, producing either:
@@ -2874,6 +2881,10 @@ def _decimal_serialization_pattern(max_digits: int | None, decimal_places: int |
     else:
         max_places = min(c for c in (max_digits, decimal_places) if c is not None)
         alts += [f'[1-9](?:{frac_part(max_places - k)})?E-{k}' for k in range(7, max_places + 1)]
+
+    if allow_inf_nan:
+        # `str()` produces `'Infinity'`, `'NaN'` and `'sNaN'` (with an optional payload):
+        alts += ['Infinity', 's?NaN[0-9]*']
 
     return rf'^-?(?:{"|".join(alts)})$'
 

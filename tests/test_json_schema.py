@@ -36,6 +36,7 @@ from typing_extensions import TypeAliasType, TypedDict, deprecated
 import pydantic
 from pydantic import (
     AfterValidator,
+    AllowInfNan,
     BaseModel,
     BeforeValidator,
     Field,
@@ -7394,6 +7395,52 @@ def test_decimal_pattern_serialization_reject_invalid(
 
     for invalid_decimal in invalid_decimals:
         assert re.fullmatch(pattern, invalid_decimal) is None, invalid_decimal
+
+
+def test_decimal_pattern_allow_inf_nan() -> None:
+    class Model(BaseModel):
+        model_config = ConfigDict(allow_inf_nan=True)
+
+        a: Decimal
+        b: Annotated[Decimal, AllowInfNan(False)] = Decimal(0)
+
+    class ModelNoConfig(BaseModel):
+        a: Annotated[Decimal, AllowInfNan()]
+
+    non_finite = ['Infinity', '-Infinity', 'inf', 'INF', '+Inf', 'NaN', 'nan', '-NaN', 'sNaN', 'snan', 'NaN123']
+
+    for model, field in [(Model, 'a'), (ModelNoConfig, 'a')]:
+        validation_pattern = model.model_json_schema(schema_generator=DecimalPatternGenerateJsonSchema)['properties'][
+            field
+        ]['anyOf'][1]['pattern']
+        serialization_pattern = model.model_json_schema(
+            schema_generator=DecimalPatternGenerateJsonSchema, mode='serialization'
+        )['properties'][field]['pattern']
+
+        for value in ['1.5', *non_finite]:
+            assert re.fullmatch(validation_pattern, value) is not None, value
+            serialized = model.model_validate({field: value}).model_dump(mode='json')[field]
+            assert re.fullmatch(serialization_pattern, serialized) is not None, serialized
+
+        for value in ['Infinity1', 'inf.0', 'in', 'NaN1.5', 'sInf', 'i n f']:
+            assert re.fullmatch(validation_pattern, value) is None, value
+        for value in ['inf', 'nan', 'INFINITY', '+Infinity', 'sNaN1.5', 'sInf']:
+            assert re.fullmatch(serialization_pattern, value) is None, value
+
+    # The schema takes precedence over the config:
+    for mode in ('validation', 'serialization'):
+        json_schema = Model.model_json_schema(schema_generator=DecimalPatternGenerateJsonSchema, mode=mode)
+        pattern = json_schema['properties']['b']
+        pattern = (pattern['anyOf'][1] if mode == 'validation' else pattern)['pattern']
+        for value in non_finite:
+            assert re.fullmatch(pattern, value) is None, value
+
+
+def test_decimal_pattern_allow_inf_nan_disabled_by_default(get_decimal_pattern) -> None:
+    for mode in ('validation', 'serialization'):
+        pattern = get_decimal_pattern(mode=mode)
+        for value in ['Infinity', '-Infinity', 'inf', 'NaN', 'sNaN']:
+            assert re.fullmatch(pattern, value) is None, value
 
 
 def test_union_format_primitive_type_array() -> None:

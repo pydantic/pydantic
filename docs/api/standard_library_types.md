@@ -340,7 +340,7 @@ print(
 """
 ```
 
-The generated pattern also no longer uses lookahead assertions, and adds support for exponents.
+The generated pattern also no longer uses lookahead assertions, and takes exponents and `allow_inf_nan` into account.
 ///
 
 
