@@ -94,6 +94,26 @@ impl LookupFieldPriority {
         // lower alias indices are higher priority
         self.alias_index < other.alias_index
     }
+
+    /// Whether this is the highest priority lookup available for the given lookup type.
+    /// - `lookup_type` is the type of lookup being performed (i.e. validating by name, by alias, or both)
+    pub fn is_maximum_priority_for_lookup_type(&self, lookup_type: LookupType) -> bool {
+        #[expect(clippy::match_same_arms, reason = "clearer to separate invalid from name/both case")]
+        match (self.lookup_type, lookup_type) {
+            // Both for self only relevant if the collection has no aliases, so
+            // always maximum priority as there's no other possible matches.
+            //
+            // Similarly if performing name-only lookup, there's only one possible match
+            (LookupType::Both, _) | (LookupType::Name, LookupType::Name) => true,
+            // by-alias match requires the alias index to be 0
+            (LookupType::Alias, LookupType::Alias | LookupType::Both) => self.alias_index == 0,
+            // invalid pairs can never be maximum priority
+            (LookupType::Name, LookupType::Alias) | (LookupType::Alias, LookupType::Name) => false,
+            // if this LookupType is by-name then there are aliases, so if using `Both` lookup
+            // type then this isn't maximum priority because the alias would be preferred
+            (LookupType::Name, LookupType::Both) => false,
+        }
+    }
 }
 
 /// Represents a location in the lookup tree which corresponds to data for a specific field.
