@@ -36,6 +36,7 @@ from typing_extensions import TypeAliasType, TypedDict, deprecated
 import pydantic
 from pydantic import (
     AfterValidator,
+    AllowInfNan,
     BaseModel,
     BeforeValidator,
     Field,
@@ -64,6 +65,7 @@ from pydantic.json_schema import (
     DEFAULT_REF_TEMPLATE,
     Examples,
     GenerateJsonSchema,
+    JsonSchemaMode,
     JsonSchemaValue,
     NoDefault,
     PydanticJsonSchemaWarning,
@@ -529,10 +531,7 @@ def test_decimal_json_schema():
             'b': {
                 'anyOf': [
                     {'type': 'number'},
-                    {
-                        'type': 'string',
-                        'pattern': '^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$',
-                    },
+                    {'type': 'string'},
                 ],
                 'default': '12.34',
                 'title': 'B',
@@ -548,7 +547,6 @@ def test_decimal_json_schema():
                 'default': '12.34',
                 'title': 'B',
                 'type': 'string',
-                'pattern': '^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$',
             },
         },
         'title': 'Model',
@@ -1136,10 +1134,7 @@ def test_special_decimal_types(field_type, expected_schema):
             'a': {
                 'anyOf': [
                     {'type': 'number'},
-                    {
-                        'type': 'string',
-                        'pattern': '^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$',
-                    },
+                    {'type': 'string'},
                 ],
                 'title': 'A',
             }
@@ -2111,10 +2106,7 @@ def test_docstring(docstring, description):
             {
                 'anyOf': [
                     {'exclusiveMinimum': 2.0, 'type': 'number'},
-                    {
-                        'type': 'string',
-                        'pattern': '^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$',
-                    },
+                    {'type': 'string'},
                 ]
             },
         ),
@@ -2124,10 +2116,7 @@ def test_docstring(docstring, description):
             {
                 'anyOf': [
                     {'type': 'number', 'exclusiveMaximum': 5},
-                    {
-                        'type': 'string',
-                        'pattern': '^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$',
-                    },
+                    {'type': 'string'},
                 ]
             },
         ),
@@ -2137,10 +2126,7 @@ def test_docstring(docstring, description):
             {
                 'anyOf': [
                     {'type': 'number', 'minimum': 2},
-                    {
-                        'type': 'string',
-                        'pattern': '^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$',
-                    },
+                    {'type': 'string'},
                 ]
             },
         ),
@@ -2150,10 +2136,7 @@ def test_docstring(docstring, description):
             {
                 'anyOf': [
                     {'type': 'number', 'maximum': 5},
-                    {
-                        'type': 'string',
-                        'pattern': '^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$',
-                    },
+                    {'type': 'string'},
                 ]
             },
         ),
@@ -2163,10 +2146,7 @@ def test_docstring(docstring, description):
             {
                 'anyOf': [
                     {'type': 'number', 'multipleOf': 5},
-                    {
-                        'type': 'string',
-                        'pattern': '^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$',
-                    },
+                    {'type': 'string'},
                 ]
             },
         ),
@@ -2212,42 +2192,27 @@ def test_constraints_schema_validation(kwargs, type_, expected_extra):
         (
             {'gt': 2},
             Decimal,
-            {
-                'type': 'string',
-                'pattern': '^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$',
-            },
+            {'type': 'string'},
         ),
         (
             {'lt': 5},
             Decimal,
-            {
-                'type': 'string',
-                'pattern': '^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$',
-            },
+            {'type': 'string'},
         ),
         (
             {'ge': 2},
             Decimal,
-            {
-                'type': 'string',
-                'pattern': '^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$',
-            },
+            {'type': 'string'},
         ),
         (
             {'le': 5},
             Decimal,
-            {
-                'type': 'string',
-                'pattern': '^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$',
-            },
+            {'type': 'string'},
         ),
         (
             {'multiple_of': 5},
             Decimal,
-            {
-                'type': 'string',
-                'pattern': '^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$',
-            },
+            {'type': 'string'},
         ),
     ],
 )
@@ -6121,17 +6086,11 @@ def test_generate_definitions_for_no_ref_schemas():
     )
     assert result == (
         {
-            ('Decimal', 'serialization'): {
-                'type': 'string',
-                'pattern': '^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$',
-            },
+            ('Decimal', 'serialization'): {'type': 'string'},
             ('Decimal', 'validation'): {
                 'anyOf': [
                     {'type': 'number'},
-                    {
-                        'type': 'string',
-                        'pattern': '^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$',
-                    },
+                    {'type': 'string'},
                 ]
             },
             ('Model', 'validation'): {'$ref': '#/$defs/Model'},
@@ -7219,13 +7178,40 @@ def test_json_schema_arguments_v3_aliases() -> None:
     }
 
 
+class DecimalPatternGenerateJsonSchema(GenerateJsonSchema):
+    def get_decimal_pattern(self, schema: core_schema.DecimalSchema) -> str | None:
+        return self.build_decimal_pattern(schema)
+
+
 @pytest.fixture
 def get_decimal_pattern():
-    def pattern(max_digits=None, decimal_places=None) -> str:
-        filed = TypeAdapter(Annotated[Decimal, Field(max_digits=max_digits, decimal_places=decimal_places)])
-        return filed.json_schema()['anyOf'][1]['pattern']
+    def pattern(max_digits=None, decimal_places=None, mode: JsonSchemaMode = 'validation') -> str:
+        ta = TypeAdapter(Annotated[Decimal, Field(max_digits=max_digits, decimal_places=decimal_places)])
+        json_schema = ta.json_schema(schema_generator=DecimalPatternGenerateJsonSchema, mode=mode)
+        if mode == 'validation':
+            json_schema = json_schema['anyOf'][1]
+        return json_schema['pattern']
 
     return pattern
+
+
+def test_decimal_pattern_not_set_by_default() -> None:
+    ta = TypeAdapter(Annotated[Decimal, Field(max_digits=4, decimal_places=2)])
+
+    assert ta.json_schema() == {'anyOf': [{'type': 'number'}, {'type': 'string'}]}
+    assert ta.json_schema(mode='serialization') == {'type': 'string'}
+
+
+def test_decimal_pattern_custom() -> None:
+    class CustomGenerateJsonSchema(GenerateJsonSchema):
+        def get_decimal_pattern(self, schema: core_schema.DecimalSchema) -> str | None:
+            return rf'^\d{{1,{schema["max_digits"]}}}$'
+
+    ta = TypeAdapter(Annotated[Decimal, Field(max_digits=4)])
+
+    assert ta.json_schema(schema_generator=CustomGenerateJsonSchema) == {
+        'anyOf': [{'type': 'number'}, {'type': 'string', 'pattern': r'^\d{1,4}$'}]
+    }
 
 
 @pytest.mark.parametrize('valid_decimal', ['0.1', '0000.1', '11.1', '001.1', '11111111.1', '0.100000', '0.01', '0.11'])
@@ -7327,6 +7313,162 @@ def test_decimal_pattern_reject_invalid_not_numerical_values_with_decimal_places
 ) -> None:
     pattern = get_decimal_pattern()
     assert re.fullmatch(pattern, invalid_decimal) is None
+
+
+@pytest.mark.parametrize(['max_digits', 'decimal_places'], [(None, None), (3, None), (None, 2), (4, 2)])
+@pytest.mark.parametrize(
+    'valid_decimal', ['1e5', '1E5', '1E+5', '1e-5', '-1.5E1', '+.5e1', '1.e5', '01.10E01', '1.234E+1', '12345E-3']
+)
+def test_decimal_pattern_with_exponent(max_digits, decimal_places, valid_decimal, get_decimal_pattern) -> None:
+    pattern = get_decimal_pattern(max_digits, decimal_places)
+
+    assert re.fullmatch(pattern, valid_decimal) is not None
+
+
+@pytest.mark.parametrize(['max_digits', 'decimal_places'], [(None, None), (3, None), (None, 2), (4, 2)])
+@pytest.mark.parametrize('invalid_decimal', ['e5', '.e5', '1e', '1e+', '1E5.0', '1.5.E5', '1e5e5', '1e1.5', '1f5'])
+def test_decimal_pattern_reject_invalid_with_exponent(
+    max_digits, decimal_places, invalid_decimal, get_decimal_pattern
+) -> None:
+    pattern = get_decimal_pattern(max_digits, decimal_places)
+
+    assert re.fullmatch(pattern, invalid_decimal) is None
+
+
+@pytest.mark.parametrize(
+    ['max_digits', 'decimal_places', 'valid_decimals'],
+    [
+        (
+            None,
+            None,
+            [
+                '0',
+                '-0',
+                '-0.0',
+                '0.00',
+                '12.34',
+                '100',
+                '0.000001',
+                '1E-7',
+                '1.5E-7',
+                '0E-10',
+                '0E+5',
+                '1E+2',
+                '1.0E+3',
+                '-1.5E-100',
+                '1E+100',
+            ],
+        ),
+        (3, None, ['0', '0.100', '100', '10.0', '1.23', '0.001', '0.001000', '1E+2', '0E-10', '0E+15']),
+        (None, 2, ['0', '1.23', '1.230000', '123456789.12', '0.10', '1E+2', '1.5E+3', '0E-10', '1E+100']),
+        (5, 2, ['0', '-0.10', '123.45', '123.450', '999', '99.9', '1E+2', '1.5E+2', '0E-10']),
+        (2, 3, ['0.0', '0.01', '0.010', '-0.01', '0E-10']),
+        (10, 8, ['0', '99.12345678', '99.1234567800', '0.00000001', '1E-7', '1.5E-7', '1E-8', '1E+1', '0E-20']),
+        (30, None, ['1E-7', '1.2345678901234567890123E-7', '1E-30', '1E+29', '123456789012345678901234567890']),
+        (4, 0, ['0', '9999', '9999.0', '1E+3', '1.5E+3', '0E-10']),
+    ],
+)
+def test_decimal_pattern_serialization(max_digits, decimal_places, valid_decimals, get_decimal_pattern) -> None:
+    pattern = get_decimal_pattern(max_digits, decimal_places, mode='serialization')
+    ta = TypeAdapter(Annotated[Decimal, Field(max_digits=max_digits, decimal_places=decimal_places)])
+
+    for valid_decimal in valid_decimals:
+        serialized = json.loads(ta.dump_json(ta.validate_python(valid_decimal)))
+        assert serialized == str(Decimal(valid_decimal))
+        assert re.fullmatch(pattern, serialized) is not None, valid_decimal
+
+
+@pytest.mark.parametrize(
+    ['max_digits', 'decimal_places', 'invalid_decimals'],
+    [
+        # Not produced by `str()` (or not a decimal):
+        (
+            None,
+            None,
+            [
+                '',
+                '.',
+                '-',
+                '+1',
+                '01',
+                '1.',
+                '.1',
+                '-01.5',
+                '1e5',
+                '1E5',
+                '1E-05',
+                '1E+0',
+                '0E-0',
+                '00E-10',
+                '10E+2',
+                '0.0E+2',
+                'E5',
+                'Infinity',
+                'NaN',
+            ],
+        ),
+        # Doesn't satisfy the constraints:
+        (3, None, ['1000', '1.234', '0.0001', '1E+3', '1E-4', '1.5E+3', '1.5E-7']),
+        (None, 2, ['1.234', '0.001', '1E-7', '1.5E-7', '0.001E+2']),
+        (5, 2, ['1234', '123.456', '1000.5', '0.001', '1E+3', '1E-7']),
+        (2, 3, ['1', '0.001', '1.0', '1E+1', '1E-7']),
+        (10, 8, ['100', '99.123456789', '0.000000001', '1E-9', '1.5E-8', '1.23E-7', '1E+2']),
+        (4, 0, ['0.1', '10000', '1E+4', '1E-7']),
+    ],
+)
+def test_decimal_pattern_serialization_reject_invalid(
+    max_digits, decimal_places, invalid_decimals, get_decimal_pattern
+) -> None:
+    pattern = get_decimal_pattern(max_digits, decimal_places, mode='serialization')
+
+    for invalid_decimal in invalid_decimals:
+        assert re.fullmatch(pattern, invalid_decimal) is None, invalid_decimal
+
+
+def test_decimal_pattern_allow_inf_nan() -> None:
+    class Model(BaseModel):
+        model_config = ConfigDict(allow_inf_nan=True)
+
+        a: Decimal
+        b: Annotated[Decimal, AllowInfNan(False)] = Decimal(0)
+
+    class ModelNoConfig(BaseModel):
+        a: Annotated[Decimal, AllowInfNan()]
+
+    non_finite = ['Infinity', '-Infinity', 'inf', 'INF', '+Inf', 'NaN', 'nan', '-NaN', 'sNaN', 'snan', 'NaN123']
+
+    for model, field in [(Model, 'a'), (ModelNoConfig, 'a')]:
+        validation_pattern = model.model_json_schema(schema_generator=DecimalPatternGenerateJsonSchema)['properties'][
+            field
+        ]['anyOf'][1]['pattern']
+        serialization_pattern = model.model_json_schema(
+            schema_generator=DecimalPatternGenerateJsonSchema, mode='serialization'
+        )['properties'][field]['pattern']
+
+        for value in ['1.5', *non_finite]:
+            assert re.fullmatch(validation_pattern, value) is not None, value
+            serialized = model.model_validate({field: value}).model_dump(mode='json')[field]
+            assert re.fullmatch(serialization_pattern, serialized) is not None, serialized
+
+        for value in ['Infinity1', 'inf.0', 'in', 'NaN1.5', 'sInf', 'i n f']:
+            assert re.fullmatch(validation_pattern, value) is None, value
+        for value in ['inf', 'nan', 'INFINITY', '+Infinity', 'sNaN1.5', 'sInf']:
+            assert re.fullmatch(serialization_pattern, value) is None, value
+
+    # The schema takes precedence over the config:
+    for mode in ('validation', 'serialization'):
+        json_schema = Model.model_json_schema(schema_generator=DecimalPatternGenerateJsonSchema, mode=mode)
+        pattern = json_schema['properties']['b']
+        pattern = (pattern['anyOf'][1] if mode == 'validation' else pattern)['pattern']
+        for value in non_finite:
+            assert re.fullmatch(pattern, value) is None, value
+
+
+def test_decimal_pattern_allow_inf_nan_disabled_by_default(get_decimal_pattern) -> None:
+    for mode in ('validation', 'serialization'):
+        pattern = get_decimal_pattern(mode=mode)
+        for value in ['Infinity', '-Infinity', 'inf', 'NaN', 'sNaN']:
+            assert re.fullmatch(pattern, value) is None, value
 
 
 def test_union_format_primitive_type_array() -> None:

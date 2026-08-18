@@ -723,49 +723,11 @@ class GenerateJsonSchema:
         Returns:
             The generated JSON schema.
         """
-
-        def get_decimal_pattern(schema: core_schema.DecimalSchema) -> str:
-            max_digits = schema.get('max_digits')
-            decimal_places = schema.get('decimal_places')
-
-            pattern = (
-                r'^(?!^[-+.]*$)[+-]?0*'  # check it is not empty string and not one or sequence of ".+-" characters.
-            )
-
-            # Case 1: Both max_digits and decimal_places are set
-            if max_digits is not None and decimal_places is not None:
-                integer_places = max(0, max_digits - decimal_places)
-                pattern += (
-                    rf'(?:'
-                    rf'\d{{0,{integer_places}}}'
-                    rf'|'
-                    rf'(?=[\d.]{{1,{max_digits + 1}}}0*$)'
-                    rf'\d{{0,{integer_places}}}\.\d{{0,{decimal_places}}}0*$'
-                    rf')'
-                )
-
-            # Case 2: Only max_digits is set
-            elif max_digits is not None and decimal_places is None:
-                pattern += (
-                    rf'(?:'
-                    rf'\d{{0,{max_digits}}}'
-                    rf'|'
-                    rf'(?=[\d.]{{1,{max_digits + 1}}}0*$)'
-                    rf'\d*\.\d*0*$'
-                    rf')'
-                )
-
-            # Case 3: Only decimal_places is set
-            elif max_digits is None and decimal_places is not None:
-                pattern += rf'\d*\.?\d{{0,{decimal_places}}}0*$'
-
-            # Case 4: Both are None (no restrictions)
-            else:
-                pattern += r'\d*\.?\d*$'  # look for arbitrary integer or decimal
-
-            return pattern
-
-        json_schema = self.str_schema(core_schema.str_schema(pattern=get_decimal_pattern(schema)))
+        str_schema = core_schema.str_schema()
+        pattern = self.get_decimal_pattern(schema)
+        if pattern is not None:
+            str_schema['pattern'] = pattern
+        json_schema = self.str_schema(str_schema)
         if self.mode == 'validation':
             multiple_of = schema.get('multiple_of')
             le = schema.get('le')
@@ -788,6 +750,63 @@ class GenerateJsonSchema:
                 ],
             }
         return json_schema
+
+    def get_decimal_pattern(self, schema: core_schema.DecimalSchema) -> str | None:
+        """Get the regular expression pattern to apply to the string representation of a decimal.
+
+        By default, no pattern is applied (`None` is returned). Subclasses can override this method
+        to return a custom pattern, or [`build_decimal_pattern()`][pydantic.json_schema.GenerateJsonSchema.build_decimal_pattern]
+        can be used to get a pattern reflecting the `max_digits` and `decimal_places` constraints:
+
+        ```python
+        from pydantic.json_schema import GenerateJsonSchema
+
+        class MyGenerateJsonSchema(GenerateJsonSchema):
+            def get_decimal_pattern(self, schema):
+                return self.build_decimal_pattern(schema)
+        ```
+
+        Args:
+            schema: The core schema.
+
+        Returns:
+            The regular expression pattern, or `None` if no pattern should be applied.
+        """
+        return None
+
+    def build_decimal_pattern(self, schema: core_schema.DecimalSchema) -> str:
+        """Build a regular expression pattern for the string representation of a decimal.
+
+        The pattern takes into account the `max_digits` and `decimal_places` constraints, and the current
+        mode:
+
+        - In `'validation'` mode, the pattern accepts the string syntax understood by the [`Decimal`][decimal.Decimal]
+          constructor. The `max_digits` and `decimal_places` constraints are only reflected for strings
+          *without* an exponent: strings using an exponent are accepted as long as they are syntactically valid,
+          as the constraints can't be expressed with a regular expression in this case.
+        - In `'serialization'` mode, the pattern exactly describes the strings produced by pydantic
+          (i.e. by `str(decimal)`) for decimals satisfying the constraints,
+          including the ones using scientific notation (e.g. `'1E-7'`, `'1.5E+3'`).
+
+        In both modes, trailing zeros in the decimal part are not counted (e.g. `'1.10'` is accepted with
+        `decimal_places=1`), consistent with the validation behavior. If `allow_inf_nan` is enabled (on the
+        core schema or in the configuration), the string representations of infinity and NaN are also accepted.
+
+        Args:
+            schema: The core schema.
+
+        Returns:
+            The regular expression pattern.
+        """
+        max_digits = schema.get('max_digits')
+        decimal_places = schema.get('decimal_places')
+        allow_inf_nan = schema.get('allow_inf_nan')
+        if allow_inf_nan is None:
+            allow_inf_nan = self._config.config_dict.get('allow_inf_nan', False)
+        if self.mode == 'validation':
+            return _decimal_validation_pattern(max_digits, decimal_places, allow_inf_nan)
+        else:
+            return _decimal_serialization_pattern(max_digits, decimal_places, allow_inf_nan)
 
     def str_schema(self, schema: core_schema.StringSchema) -> JsonSchemaValue:
         """Generates a JSON schema that matches a string value.
@@ -2734,13 +2753,151 @@ def models_json_schema(
 # ##### End JSON Schema Generation Functions #####
 
 
-_HashableJsonValue: TypeAlias = (
-    int | float | str | bool | None | tuple['_HashableJsonValue', ...] | tuple[tuple[str, '_HashableJsonValue'], ...]
-)
+# Decimal JSON Schema pattern utilities.
+# Note: while we could use `\d` to represent digits (`Decimal` objects allow Unicode decimal digits), we use [0-9] instead:
+# - to reduce complexity (`\d` expands to a large set, and with `max_digits`/`decimal_places` constraints set, it can blow
+#   the compile limit on some engines).
+# - [0-9] is a portable pattern (e.g. `\d` is equivalent to `[0-9]` in ECMA (https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Regular_expressions/Character_class_escape#d)
+#   while it allows any Unicode decimal digit in Python.
+
+
+def _repeat(atom: str, min_count: int, max_count: int) -> str:
+    """Build a regex repetition of `atom` between `min_count` and `max_count` times (inclusive), using the shortest quantifier."""
+    if min_count > max_count or max_count == 0:
+        return ''
+    if min_count == max_count:
+        return atom if min_count == 1 else f'{atom}{{{min_count}}}'
+    if (min_count, max_count) == (0, 1):
+        return f'{atom}?'
+    return f'{atom}{{{min_count},{max_count}}}'
+
+
+def _int_range_pattern(max_value: int) -> str:
+    """Build a regex matching the integers between 1 and `max_value` (inclusive), without leading zeros."""
+    digits = str(max_value)
+    length = len(digits)
+    alts: list[str] = [f'[1-9]{_repeat("[0-9]", k - 1, k - 1)}' for k in range(1, length)]
+    for i, char in enumerate(digits):
+        d = int(char)
+        low = 1 if i == 0 else 0
+        high = d if i == length - 1 else d - 1
+        if high >= low:
+            char_class = str(low) if low == high else f'[{low}-{high}]'
+            alts.append(f'{digits[:i]}{char_class}{_repeat("[0-9]", length - i - 1, length - i - 1)}')
+    return alts[0] if len(alts) == 1 else f'(?:{"|".join(alts)})'
+
+
+def _decimal_validation_pattern(max_digits: int | None, decimal_places: int | None, allow_inf_nan: bool) -> str:
+    """Build the decimal pattern for the `'validation'` mode."""
+
+    number = r'(?:[0-9]+\.?[0-9]*|\.[0-9]+)'  # e.g. 1, 1., .5
+    exponent = r'[eE][+-]?[0-9]+'  # e.g. e5, E5, e-7
+    # e.g. Infinity, inf, NaN, sNaN, NaN123 (case-insensitive). Spelled out explicitly, as inline flags
+    # aren't supported by all regular expression engines:
+    non_finite = r'|[iI][nN][fF](?:[iI][nN][iI][tT][yY])?|[sS]?[nN][aA][nN][0-9]*' if allow_inf_nan else ''
+    if max_digits is None and decimal_places is None:
+        return rf'^[+-]?(?:{number}(?:{exponent})?{non_finite})$'
+
+    alts: list[str] = []
+    if max_digits is not None and decimal_places is not None:
+        # If `decimal_places > max_digits`, no whole digits are allowed and `max_digits` bounds the decimal places:
+        whole = max(0, max_digits - decimal_places)
+        places = min(max_digits, decimal_places)
+        int_part = f'0*{_repeat("[0-9]", 1, whole)}' if whole else '0+'
+        opt_int_part = f'0*{_repeat("[0-9]", 0, whole)}'
+        opt_frac_part = rf'\.{_repeat("[0-9]", 0, places)}0*'
+        frac_part = rf'\.{_repeat("[0-9]", 1, places)}0*' if places else r'\.0+'
+        alts += [f'{int_part}(?:{opt_frac_part})?', f'{opt_int_part}{frac_part}']
+    elif max_digits is not None:
+        # The whole part and decimal part must have at most `max_digits` digits in total,
+        # so we enumerate the possible widths of the whole part:
+        int_part = f'0*{_repeat("[0-9]", 1, max_digits)}' if max_digits else '0+'
+        alts.append(rf'{int_part}(?:\.0*)?')
+        alts += [
+            rf'0*{_repeat("[0-9]", whole, whole)}\.{_repeat("[0-9]", 1, max_digits - whole)}0*'
+            for whole in range(max_digits)
+        ] or [r'0*\.0+']
+    else:
+        assert decimal_places is not None
+        opt_frac_part = rf'\.{_repeat("[0-9]", 0, decimal_places)}0*'
+        frac_part = rf'\.{_repeat("[0-9]", 1, decimal_places)}0*' if decimal_places else r'\.0+'
+        alts += [f'[0-9]+(?:{opt_frac_part})?', f'[0-9]*{frac_part}']
+
+    alts.append(f'{number}{exponent}')
+    return rf'^[+-]?(?:{"|".join(alts)}{non_finite})$'
+
+
+def _decimal_serialization_pattern(max_digits: int | None, decimal_places: int | None, allow_inf_nan: bool) -> str:
+    """Build the decimal pattern for the `'serialization'` mode.
+
+    Decimals are serialized using `str()`, producing either:
+
+    - The plain notation (`'123.45'`), when the exponent is lower than or equal to 0 and the adjusted
+      exponent is greater than or equal to -6.
+    - The scientific notation otherwise (`'1E+3'`, `'1.5E-7'`, `'0E-10'`), with a single digit before
+      the optional decimal point and an always signed exponent.
+
+    Trailing zeros of the decimal part are preserved by `str()`, but aren't counted by the validation logic.
+    """
+
+    def frac_part(places: int) -> str:
+        return rf'\.{_repeat("[0-9]", 1, places)}0*' if places else r'\.0+'
+
+    alts: list[str] = []
+
+    # Plain notation:
+    if max_digits is not None and decimal_places is not None:
+        whole = max(0, max_digits - decimal_places)
+        places = min(max_digits, decimal_places)
+        int_part = f'(?:0|[1-9]{_repeat("[0-9]", 0, whole - 1)})' if whole else '0'
+        alts.append(f'{int_part}(?:{frac_part(places)})?')
+    elif max_digits is not None:
+        # The whole part and decimal part must have at most `max_digits` digits in total,
+        # so we enumerate the possible widths of the whole part:
+        alts.append(rf'0(?:\.{_repeat("[0-9]", 1, max_digits)}0*)?')
+        alts += [
+            f'[1-9]{_repeat("[0-9]", whole - 1, whole - 1)}(?:{frac_part(max_digits - whole)})?'
+            for whole in range(1, max_digits + 1)
+        ]
+    elif decimal_places is not None:
+        alts.append(f'(?:0|[1-9][0-9]*)(?:{frac_part(decimal_places)})?')
+    else:
+        alts.append(r'(?:0|[1-9][0-9]*)(?:\.[0-9]+)?')
+
+    # Zero with an exponent (e.g. `'0E-10'`), which normalizes to zero and thus satisfies any constraint:
+    alts.append(r'0E[+-][1-9][0-9]*')
+
+    # Scientific notation with a positive exponent `k` (e.g. `'1.5E+3'`): the value has `k + 1` whole digits
+    # and no decimal places:
+    if max_digits is None:
+        alts.append(r'[1-9](?:\.[0-9]+)?E\+[1-9][0-9]*')
+    else:
+        max_exponent = max_digits - (decimal_places or 0) - 1
+        if max_exponent >= 1:
+            alts.append(rf'[1-9](?:\.[0-9]+)?E\+{_int_range_pattern(max_exponent)}')
+
+    # Scientific notation with a negative exponent `k` (`k >= 7`, e.g. `'1.5E-7'`): the value has no whole digits,
+    # and `k` + (the number of significant decimal digits of the coefficient) decimal places:
+    if max_digits is None and decimal_places is None:
+        alts.append(r'[1-9](?:\.[0-9]+)?E-[1-9][0-9]*')
+    else:
+        max_places = min(c for c in (max_digits, decimal_places) if c is not None)
+        alts += [f'[1-9](?:{frac_part(max_places - k)})?E-{k}' for k in range(7, max_places + 1)]
+
+    if allow_inf_nan:
+        # `str()` produces `'Infinity'`, `'NaN'` and `'sNaN'` (with an optional payload):
+        alts += ['Infinity', 's?NaN[0-9]*']
+
+    return rf'^-?(?:{"|".join(alts)})$'
 
 
 def _deduplicate_schemas(schemas: Iterable[JsonDict]) -> list[JsonDict]:
     return list({_make_json_hashable(schema): schema for schema in schemas}.values())
+
+
+_HashableJsonValue: TypeAlias = (
+    int | float | str | bool | None | tuple['_HashableJsonValue', ...] | tuple[tuple[str, '_HashableJsonValue'], ...]
+)
 
 
 def _make_json_hashable(value: JsonValue) -> _HashableJsonValue:
