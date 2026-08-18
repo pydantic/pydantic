@@ -423,7 +423,7 @@ Standard library type: [`datetime.datetime`][].
 * Strings and bytes are validated in two ways:
     * Strings complying to the [RFC 3339](https://datatracker.ietf.org/doc/html/rfc3339) format (both datetime and date).
       See the [speedate](https://docs.rs/speedate/) documentation for more details.
-    * Unix timestamps, both as seconds or milliseconds sinch the [epoch](https://en.wikipedia.org/wiki/Unix_time).
+    * Unix timestamps, both as seconds or milliseconds since the [epoch](https://en.wikipedia.org/wiki/Unix_time).
       See the [`val_temporal_unit`][pydantic.ConfigDict.val_temporal_unit] configuration value for more details.
 * Integers and floats (or types that can be coerced as integers or floats) are validated as unix timestamps, following the
   same semantics as strings.
@@ -506,7 +506,7 @@ Standard library type: [`datetime.date`][].
 * Strings and bytes are validated in two ways:
     * Strings complying to the [RFC 3339](https://datatracker.ietf.org/doc/html/rfc3339) date format.
       See the [speedate](https://docs.rs/speedate/) documentation for more details.
-    * Unix timestamps, both as seconds or milliseconds sinch the [epoch](https://en.wikipedia.org/wiki/Unix_time).
+    * Unix timestamps, both as seconds or milliseconds since the [epoch](https://en.wikipedia.org/wiki/Unix_time).
       See the [`val_temporal_unit`][pydantic.ConfigDict.val_temporal_unit] configuration value for more details.
 * If the validation fails, the input can be [validated as a datetime](#datetimes) (including as numbers),
   provided that the time component is 0 and that it is naive.
