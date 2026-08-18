@@ -12,7 +12,7 @@ from datetime import date, datetime, time, timedelta
 from decimal import Decimal
 from fractions import Fraction
 from re import Pattern
-from typing import TYPE_CHECKING, Any, Literal
+from typing import TYPE_CHECKING, Any, Literal, Union
 
 from typing_extensions import TypeVar, deprecated
 
@@ -1627,7 +1627,7 @@ def filter_seq_schema(*, include: set[int] | None = None, exclude: set[int] | No
     return _dict_not_none(type='include-exclude-sequence', include=include, exclude=exclude)
 
 
-IncExSeqOrElseSerSchema: TypeAlias = 'IncExSeqSerSchema | SerSchema'
+IncExSeqOrElseSerSchema: TypeAlias = Union[IncExSeqSerSchema, SerSchema]  # noqa: UP007 (TypeError when evaluating)
 
 
 class ListSchema(TypedDict, total=False):
@@ -2033,7 +2033,7 @@ def filter_dict_schema(*, include: IncExDict | None = None, exclude: IncExDict |
     return _dict_not_none(type='include-exclude-dict', include=include, exclude=exclude)
 
 
-IncExDictOrElseSerSchema: TypeAlias = 'IncExDictSerSchema | SerSchema'
+IncExDictOrElseSerSchema: TypeAlias = Union[IncExDictSerSchema, SerSchema]  # noqa: UP007 (TypeError when evaluating)
 
 
 class DictSchema(TypedDict, total=False):
