@@ -3612,18 +3612,18 @@ def ser_schema(
     Returns:
         The generated JSON schema.
     """
-    schema_type = schema['type']
-    if schema_type == 'function-plain' or schema_type == 'function-wrap':
-        # PlainSerializerFunctionSerSchema or WrapSerializerFunctionSerSchema
-        return_schema = schema.get('return_schema')
-        if return_schema is not None:
-            return self.generate_inner(return_schema)
-    elif schema_type == 'format' or schema_type == 'to-string':
-        # FormatSerSchema or ToStringSerSchema
-        return self.str_schema(core_schema.str_schema())
-    elif schema['type'] == 'model':
-        # ModelSerSchema
-        return self.generate_inner(schema['schema'])
+    match schema:
+        case {'type': 'function-plain' | 'function-wrap'}:
+            # PlainSerializerFunctionSerSchema or WrapSerializerFunctionSerSchema
+            return_schema = schema.get('return_schema')
+            if return_schema is not None:
+                return self.generate_inner(return_schema)
+        case {'type': 'format' | 'to-string'}:
+            # FormatSerSchema or ToStringSerSchema
+            return self.str_schema(core_schema.str_schema())
+        case {'type': 'model'}:
+            # ModelSerSchema
+            return self.generate_inner(schema['schema'])
     return None
 
 ```

@@ -15679,7 +15679,7 @@ explicitly specify <code>required=False</code> are required.</p>
 <a href="#pydantic.json_schema.GenerateJsonSchema.ser_schema" class="headerlink" title="Permanent link">&para;</a></h3>
 <div class="language-python doc-signature highlight"><pre><span></span><code><span class="nf">ser_schema</span><span class="p">(</span>
     <span class="n">schema</span><span class="p">:</span> <span class="p">(</span>
-        <span class="n"><span title="pydantic_core.core_schema.SerSchema">SerSchema</span></span> <span class="o">|</span> <span class="n"><span title="pydantic_core.core_schema.IncExSeqSerSchema">IncExSeqSerSchema</span></span> <span class="o">|</span> <span class="n"><span title="pydantic_core.core_schema.IncExDictSerSchema">IncExDictSerSchema</span></span>
+        <span class="n"><a class="autorefs autorefs-internal" title="pydantic_core.core_schema.SerSchema" href="../pydantic_core_schema/#pydantic_core.core_schema.SerSchema">SerSchema</a></span> <span class="o">|</span> <span class="n"><span title="pydantic_core.core_schema.IncExSeqSerSchema">IncExSeqSerSchema</span></span> <span class="o">|</span> <span class="n"><span title="pydantic_core.core_schema.IncExDictSerSchema">IncExDictSerSchema</span></span>
     <span class="p">),</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><a class="autorefs autorefs-internal" title="pydantic.json_schema.JsonSchemaValue" href="#pydantic.json_schema.JsonSchemaValue">JsonSchemaValue</a></span> <span class="o">|</span> <span class="kc">None</span>
 </code></pre></div>
@@ -15705,7 +15705,7 @@ explicitly specify <code>required=False</code> are required.</p>
                 <code>schema</code>
             </td>
             <td>
-                  <code><span title="pydantic_core.core_schema.SerSchema">SerSchema</span> | <span title="pydantic_core.core_schema.IncExSeqSerSchema">IncExSeqSerSchema</span> | <span title="pydantic_core.core_schema.IncExDictSerSchema">IncExDictSerSchema</span></code>
+                  <code><a class="autorefs autorefs-internal" title="pydantic_core.core_schema.SerSchema" href="../pydantic_core_schema/#pydantic_core.core_schema.SerSchema">SerSchema</a> | <span title="pydantic_core.core_schema.IncExSeqSerSchema">IncExSeqSerSchema</span> | <span title="pydantic_core.core_schema.IncExDictSerSchema">IncExDictSerSchema</span></code>
             </td>
             <td>
               <div class="doc-md-description">
@@ -15778,18 +15778,18 @@ explicitly specify <code>required=False</code> are required.</p>
 <span class="sd">    Returns:</span>
 <span class="sd">        The generated JSON schema.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="n">schema_type</span> <span class="o">=</span> <span class="n">schema</span><span class="p">[</span><span class="s1">&#39;type&#39;</span><span class="p">]</span>
-    <span class="k">if</span> <span class="n">schema_type</span> <span class="o">==</span> <span class="s1">&#39;function-plain&#39;</span> <span class="ow">or</span> <span class="n">schema_type</span> <span class="o">==</span> <span class="s1">&#39;function-wrap&#39;</span><span class="p">:</span>
-        <span class="c1"># PlainSerializerFunctionSerSchema or WrapSerializerFunctionSerSchema</span>
-        <span class="n">return_schema</span> <span class="o">=</span> <span class="n">schema</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;return_schema&#39;</span><span class="p">)</span>
-        <span class="k">if</span> <span class="n">return_schema</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">generate_inner</span><span class="p">(</span><span class="n">return_schema</span><span class="p">)</span>
-    <span class="k">elif</span> <span class="n">schema_type</span> <span class="o">==</span> <span class="s1">&#39;format&#39;</span> <span class="ow">or</span> <span class="n">schema_type</span> <span class="o">==</span> <span class="s1">&#39;to-string&#39;</span><span class="p">:</span>
-        <span class="c1"># FormatSerSchema or ToStringSerSchema</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">str_schema</span><span class="p">(</span><span class="n">core_schema</span><span class="o">.</span><span class="n">str_schema</span><span class="p">())</span>
-    <span class="k">elif</span> <span class="n">schema</span><span class="p">[</span><span class="s1">&#39;type&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;model&#39;</span><span class="p">:</span>
-        <span class="c1"># ModelSerSchema</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">generate_inner</span><span class="p">(</span><span class="n">schema</span><span class="p">[</span><span class="s1">&#39;schema&#39;</span><span class="p">])</span>
+    <span class="k">match</span> <span class="n">schema</span><span class="p">:</span>
+        <span class="k">case</span> <span class="p">{</span><span class="s1">&#39;type&#39;</span><span class="p">:</span> <span class="s1">&#39;function-plain&#39;</span> <span class="o">|</span> <span class="s1">&#39;function-wrap&#39;</span><span class="p">}:</span>
+            <span class="c1"># PlainSerializerFunctionSerSchema or WrapSerializerFunctionSerSchema</span>
+            <span class="n">return_schema</span> <span class="o">=</span> <span class="n">schema</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;return_schema&#39;</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">return_schema</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">generate_inner</span><span class="p">(</span><span class="n">return_schema</span><span class="p">)</span>
+        <span class="k">case</span> <span class="p">{</span><span class="s1">&#39;type&#39;</span><span class="p">:</span> <span class="s1">&#39;format&#39;</span> <span class="o">|</span> <span class="s1">&#39;to-string&#39;</span><span class="p">}:</span>
+            <span class="c1"># FormatSerSchema or ToStringSerSchema</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">str_schema</span><span class="p">(</span><span class="n">core_schema</span><span class="o">.</span><span class="n">str_schema</span><span class="p">())</span>
+        <span class="k">case</span> <span class="p">{</span><span class="s1">&#39;type&#39;</span><span class="p">:</span> <span class="s1">&#39;model&#39;</span><span class="p">}:</span>
+            <span class="c1"># ModelSerSchema</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">generate_inner</span><span class="p">(</span><span class="n">schema</span><span class="p">[</span><span class="s1">&#39;schema&#39;</span><span class="p">])</span>
     <span class="k">return</span> <span class="kc">None</span>
 </code></pre></div></td></tr></table></div>
             </details>

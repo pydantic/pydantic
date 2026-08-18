@@ -16,6 +16,17 @@ Values have the following meanings:
 - `'json'` means use when serializing to JSON
 - `'json-unless-none'` means use when serializing to JSON and the value is not `None`
 
+## SerSchema
+
+```python
+SerSchema: TypeAlias = (
+    "SimpleSerSchema | PlainSerializerFunctionSerSchema | WrapSerializerFunctionSerSchema | FormatSerSchema | ToStringSerSchema | ModelSerSchema | CoreSchema"
+)
+
+```
+
+The schemas that can be used as the `serialization` key of a core schema.
+
 ## CoreConfig
 
 Bases: `TypedDict`
@@ -217,6 +228,8 @@ simple_ser_schema(
 
 Returns a schema for serialization with a custom type.
 
+Note that any core schema can be used as a serialization schema, e.g. `int_schema()` is equivalent to `simple_ser_schema('int')`.
+
 Parameters:
 
 | Name | Type | Description | Default | | --- | --- | --- | --- | | `type` | `ExpectedSerializationTypes` | The type to use for serialization | *required* |
@@ -227,6 +240,9 @@ Source code in `pydantic_core/core_schema.py`
 def simple_ser_schema(type: ExpectedSerializationTypes) -> SimpleSerSchema:
     """
     Returns a schema for serialization with a custom type.
+
+    Note that any core schema can be used as a serialization schema, e.g. `int_schema()`
+    is equivalent to `simple_ser_schema('int')`.
 
     Args:
         type: The type to use for serialization
@@ -430,6 +446,8 @@ model_ser_schema(
 
 Returns a schema for serialization using a model.
 
+Note that any core schema can be used as a serialization schema, e.g. `model_schema()` can be used instead.
+
 Parameters:
 
 | Name | Type | Description | Default | | --- | --- | --- | --- | | `cls` | `type[Any]` | The expected class type, used to generate warnings if the wrong type is passed | *required* | | `schema` | `CoreSchema` | Internal schema to use to serialize the model dict | *required* |
@@ -440,6 +458,9 @@ Source code in `pydantic_core/core_schema.py`
 def model_ser_schema(cls: type[Any], schema: CoreSchema) -> ModelSerSchema:
     """
     Returns a schema for serialization using a model.
+
+    Note that any core schema can be used as a serialization schema, e.g. `model_schema()`
+    can be used instead.
 
     Args:
         cls: The expected class type, used to generate warnings if the wrong type is passed
