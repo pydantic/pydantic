@@ -78,7 +78,15 @@ from ..warnings import (
     TypedDictExtraConfigWarning,
     UnsupportedFieldAttributeWarning,
 )
-from . import _decorators, _discriminated_union, _known_annotated_metadata, _repr, _type_refs, _typing_extra
+from . import (
+    _core_utils,
+    _decorators,
+    _discriminated_union,
+    _known_annotated_metadata,
+    _repr,
+    _type_refs,
+    _typing_extra,
+)
 from ._config import ConfigWrapper, ConfigWrapperStack
 from ._core_metadata import CoreMetadata, update_core_metadata
 from ._core_utils import (
@@ -706,9 +714,7 @@ class GenerateSchema:
             schema = core_schema.lax_or_strict_schema(
                 lax_schema=lax_schema,
                 strict_schema=strict_schema,
-                serialization=core_schema.wrap_serializer_function_ser_schema(
-                    lambda v, h: h(v), schema=dict_schema, info_arg=False
-                ),
+                serialization=_core_utils.as_ser_schema(dict_schema),
             )
 
         return schema
