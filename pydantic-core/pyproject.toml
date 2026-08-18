@@ -118,6 +118,9 @@ log_format = '%(name)s %(levelname)s: %(message)s'
 filterwarnings = ['error']
 timeout = 30
 xfail_strict = true
+markers = [
+    'skip_gc_traverse_check: skip the automatic GC traversal completeness check (see tests/conftest.py)',
+]
 # min, max, mean, stddev, median, iqr, outliers, ops, rounds, iterations
 addopts = [
     '--benchmark-columns',
