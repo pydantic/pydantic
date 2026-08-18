@@ -16,13 +16,12 @@ use crate::serializers::shared::TypeSerializer;
 use crate::tools::SchemaDict;
 
 use super::{BuildSerializer, CombinedSerializer, ComputedFields, FieldsMode, GeneralFieldsSerializer, SerField};
+use crate::py_gc::PyGcTraverse;
 
-#[derive(Debug)]
+#[derive(Debug, PyGcTraverse)]
 pub struct TypedDictSerializer {
     serializer: GeneralFieldsSerializer,
 }
-
-impl_py_gc_traverse!(TypedDictSerializer { serializer });
 
 impl BuildSerializer for TypedDictSerializer {
     const EXPECTED_TYPE: &'static str = "typed-dict";

@@ -16,9 +16,10 @@ use super::{
     BuildSerializer, CombinedSerializer, IsType, ObType, SerCheck, SerMode, TypeSerializer, infer_json_key,
     infer_serialize, infer_to_python,
 };
+use crate::py_gc::PyGcTraverse;
 use crate::serializers::errors::PydanticSerializationUnexpectedValue;
 
-#[derive(Debug)]
+#[derive(Debug, PyGcTraverse)]
 pub struct FloatSerializer {
     inf_nan_mode: InfNanMode,
 }
@@ -85,8 +86,6 @@ impl BuildSerializer for FloatSerializer {
         Self::get(schema.py(), config).cloned()
     }
 }
-
-impl_py_gc_traverse!(FloatSerializer {});
 
 impl TypeSerializer for FloatSerializer {
     fn to_python<'py>(&self, value: &Bound<'py, PyAny>, state: &mut SerializationState<'py>) -> PyResult<Py<PyAny>> {

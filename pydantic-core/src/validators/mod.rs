@@ -111,7 +111,7 @@ impl PySome {
 }
 
 #[pyclass(module = "pydantic_core._pydantic_core", frozen)]
-#[derive(Debug)]
+#[derive(Debug, PyGcTraverse)]
 pub struct SchemaValidator {
     validator: Arc<CombinedValidator>,
     definitions: Definitions<Arc<CombinedValidator>>,
@@ -125,13 +125,6 @@ pub struct SchemaValidator {
     validation_error_cause: bool,
     cache_str: StringCacheMode,
 }
-
-impl_py_gc_traverse!(SchemaValidator {
-    validator,
-    definitions,
-    py_schema,
-    py_config,
-});
 
 #[pymethods]
 impl SchemaValidator {

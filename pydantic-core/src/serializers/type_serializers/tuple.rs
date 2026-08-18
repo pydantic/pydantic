@@ -9,6 +9,7 @@ use serde::ser::SerializeSeq;
 
 use crate::PydanticSerializationUnexpectedValue;
 use crate::definitions::DefinitionsBuilder;
+use crate::py_gc::PyGcTraverse;
 use crate::serializers::SerializationState;
 use crate::serializers::extra::IncludeExclude;
 use crate::serializers::extra::SerCheck;
@@ -20,7 +21,7 @@ use super::{
     infer_serialize, infer_to_python, py_err_se_err,
 };
 
-#[derive(Debug)]
+#[derive(Debug, PyGcTraverse)]
 pub struct TupleSerializer {
     serializers: Vec<Arc<CombinedSerializer>>,
     variadic_item_index: Option<usize>,
@@ -59,8 +60,6 @@ impl BuildSerializer for TupleSerializer {
         .into())
     }
 }
-
-impl_py_gc_traverse!(TupleSerializer { serializers });
 
 impl TypeSerializer for TupleSerializer {
     fn to_python<'py>(&self, value: &Bound<'py, PyAny>, state: &mut SerializationState<'py>) -> PyResult<Py<PyAny>> {

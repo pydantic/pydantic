@@ -14,6 +14,7 @@ use crate::recursion_guard::RecursionGuard;
 use crate::tools::SchemaDict;
 
 use super::{BuildValidator, CombinedValidator, DefinitionsBuilder, ValidationState, Validator, build_validator};
+use crate::py_gc::PyGcTraverse;
 
 #[derive(Debug, Clone)]
 pub struct DefinitionsValidatorBuilder;
@@ -43,7 +44,7 @@ impl BuildValidator for DefinitionsValidatorBuilder {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PyGcTraverse)]
 pub struct DefinitionRefValidator {
     definition: DefinitionRef<Arc<CombinedValidator>>,
 }
@@ -68,8 +69,6 @@ impl BuildValidator for DefinitionRefValidator {
         Ok(CombinedValidator::DefinitionRef(Self::new(definition)).into())
     }
 }
-
-impl_py_gc_traverse!(DefinitionRefValidator {});
 
 impl Validator for DefinitionRefValidator {
     fn validate<'py>(

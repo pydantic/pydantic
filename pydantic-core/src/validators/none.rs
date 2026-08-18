@@ -7,8 +7,9 @@ use crate::errors::{ErrorTypeDefaults, ValError, ValResult};
 use crate::input::Input;
 
 use super::{BuildValidator, CombinedValidator, DefinitionsBuilder, ValidationState, Validator};
+use crate::py_gc::PyGcTraverse;
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PyGcTraverse)]
 pub struct NoneValidator;
 
 static NONE_VALIDATOR: LazyLock<Arc<CombinedValidator>> = LazyLock::new(|| Arc::new(NoneValidator.into()));
@@ -24,8 +25,6 @@ impl BuildValidator for NoneValidator {
         Ok(NONE_VALIDATOR.clone())
     }
 }
-
-impl_py_gc_traverse!(NoneValidator {});
 
 impl Validator for NoneValidator {
     fn validate<'py>(

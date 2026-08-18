@@ -4,6 +4,7 @@ use std::str::FromStr;
 use crate::build_tools::py_schema_err;
 use crate::errors::ErrorType;
 use crate::input::EitherBytes;
+use crate::py_gc::PyGcTraverse;
 use crate::serializers::BytesMode;
 use crate::tools::SchemaDict;
 use base64::engine::general_purpose::GeneralPurpose;
@@ -22,7 +23,7 @@ const STANDARD_OPTIONAL_PADDING: GeneralPurpose = GeneralPurpose::new(
     GeneralPurposeConfig::new().with_decode_padding_mode(DecodePaddingMode::Indifferent),
 );
 
-#[derive(Default, Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Default, Debug, Clone, Copy, PartialEq, Eq, PyGcTraverse)]
 pub enum TemporalUnitMode {
     Seconds,
     Milliseconds,
@@ -70,7 +71,7 @@ impl From<TemporalUnitMode> for TimestampUnit {
     }
 }
 
-#[derive(Default, Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Default, Debug, Clone, Copy, PartialEq, Eq, PyGcTraverse)]
 pub struct ValBytesMode {
     pub ser: BytesMode,
 }

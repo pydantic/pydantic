@@ -11,6 +11,7 @@ use serde::Serialize;
 
 use crate::build_tools::py_schema_err;
 use crate::definitions::DefinitionsBuilder;
+use crate::py_gc::PyGcTraverse;
 use crate::serializers::SerializationState;
 use crate::tools::SchemaDict;
 
@@ -19,7 +20,7 @@ use super::{
     py_err_se_err,
 };
 
-#[derive(Debug)]
+#[derive(Debug, PyGcTraverse)]
 pub struct LiteralSerializer {
     expected_int: Box<AHashSet<i64>>,
     expected_str: Box<AHashSet<String>>,
@@ -110,8 +111,6 @@ impl LiteralSerializer {
         }
     }
 }
-
-impl_py_gc_traverse!(LiteralSerializer { expected_py });
 
 impl TypeSerializer for LiteralSerializer {
     fn to_python<'py>(&self, value: &Bound<'py, PyAny>, state: &mut SerializationState<'py>) -> PyResult<Py<PyAny>> {

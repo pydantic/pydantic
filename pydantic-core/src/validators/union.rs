@@ -3,9 +3,9 @@ use std::str::FromStr;
 use std::sync::Arc;
 
 use crate::py_gc::PyGcTraverse;
+use pyo3::intern;
 use pyo3::prelude::*;
 use pyo3::types::{PyDict, PyList, PyString, PyTuple};
-use pyo3::{PyTraverseError, PyVisit, intern};
 use smallvec::SmallVec;
 
 use crate::build_tools::py_schema_err;
@@ -21,7 +21,7 @@ use super::{
     BuildValidator, CombinedValidator, DefinitionsBuilder, Exactness, ValidationState, Validator, build_validator,
 };
 
-#[derive(Debug)]
+#[derive(Debug, PyGcTraverse)]
 enum UnionMode {
     Smart,
     LeftToRight,
@@ -39,7 +39,7 @@ impl FromStr for UnionMode {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, PyGcTraverse)]
 pub struct UnionValidator {
     mode: UnionMode,
     choices: Vec<(Arc<CombinedValidator>, Option<String>)>,
@@ -210,13 +210,6 @@ impl UnionValidator {
     }
 }
 
-impl PyGcTraverse for UnionValidator {
-    fn py_gc_traverse(&self, visit: &PyVisit<'_>) -> Result<(), PyTraverseError> {
-        self.choices.iter().try_for_each(|(v, _)| v.py_gc_traverse(visit))?;
-        Ok(())
-    }
-}
-
 impl Validator for UnionValidator {
     fn validate<'py>(
         &self,
@@ -289,7 +282,7 @@ impl<'a> MaybeErrors<'a> {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, PyGcTraverse)]
 pub struct TaggedUnionValidator {
     discriminator: Box<Discriminator>,
     lookup: Box<LiteralLookup<Arc<CombinedValidator>>>,
@@ -350,8 +343,6 @@ impl BuildValidator for TaggedUnionValidator {
         .into())
     }
 }
-
-impl_py_gc_traverse!(TaggedUnionValidator { discriminator, lookup });
 
 impl Validator for TaggedUnionValidator {
     fn validate<'py>(

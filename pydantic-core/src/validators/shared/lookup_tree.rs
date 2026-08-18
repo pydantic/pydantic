@@ -6,12 +6,13 @@ use jiter::{JsonArray, JsonValue};
 use smallvec::SmallVec;
 
 use crate::lookup_key::{LookupPath, LookupPathCollection, LookupType, PathItem, PathItemString};
+use crate::py_gc::PyGcTraverse;
 
 /// A tree of paths for lookups when trying to find fields from input.
 ///
 /// The structure is nested maps, typically there is only one level unless there are `AliasPath` aliases
 /// which require deeper lookups.
-#[derive(Debug)]
+#[derive(Debug, PyGcTraverse)]
 pub struct LookupTree {
     inner: AHashMap<PathItemString, LookupTreeNode>,
 }
@@ -72,7 +73,7 @@ impl LookupTree {
 }
 
 /// When resolving data for a field, aliases are preferred over names, and earlier aliases are preferred over later ones.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PyGcTraverse)]
 pub struct LookupFieldPriority {
     /// The type of lookups that will match this lookup
     lookup_type: LookupType,
@@ -97,7 +98,7 @@ impl LookupFieldPriority {
 }
 
 /// Represents a location in the lookup tree which corresponds to data for a specific field.
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, PyGcTraverse)]
 pub struct LookupFieldInfo {
     /// The field which this lookup will populate.
     pub field_index: usize,
@@ -122,7 +123,7 @@ impl LookupFieldInfo {
 }
 
 /// Represents a point in the lookup tree, containing exact matches plus possible nested lookups.
-#[derive(Debug, Default)]
+#[derive(Debug, Default, PyGcTraverse)]
 pub struct LookupTreeNode {
     /// All fields which wanted _exactly_ this key, typically this is just a single entry
     fields: SmallVec<[LookupFieldInfo; 1]>,

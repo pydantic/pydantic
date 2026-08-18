@@ -16,6 +16,7 @@ use crate::validators::literal::expected_repr;
 use super::is_instance::class_repr;
 use super::literal::LiteralLookup;
 use super::{BuildValidator, CombinedValidator, DefinitionsBuilder, Exactness, ValidationState, Validator};
+use crate::py_gc::PyGcTraverse;
 
 #[derive(Debug, Clone)]
 pub struct BuildEnumValidator;
@@ -83,7 +84,7 @@ pub trait EnumValidateValue: std::fmt::Debug + Clone + Send + Sync {
     ) -> ValResult<Option<Py<PyAny>>>;
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PyGcTraverse)]
 pub struct EnumValidator<T: EnumValidateValue> {
     phantom: PhantomData<T>,
     class: Py<PyType>,
@@ -168,8 +169,6 @@ impl<T: EnumValidateValue> Validator for EnumValidator<T> {
 #[derive(Debug, Clone)]
 pub struct PlainEnumValidator;
 
-impl_py_gc_traverse!(EnumValidator<PlainEnumValidator> { class, lookup, missing });
-
 impl EnumValidateValue for PlainEnumValidator {
     fn validate_value<'py, I: Input<'py> + ?Sized>(
         py: Python<'py>,
@@ -200,8 +199,6 @@ impl EnumValidateValue for PlainEnumValidator {
 #[derive(Debug, Clone)]
 pub struct IntEnumValidator;
 
-impl_py_gc_traverse!(EnumValidator<IntEnumValidator> { class, lookup, missing });
-
 impl EnumValidateValue for IntEnumValidator {
     fn validate_value<'py, I: Input<'py> + ?Sized>(
         py: Python<'py>,
@@ -216,8 +213,6 @@ impl EnumValidateValue for IntEnumValidator {
 #[derive(Debug, Clone)]
 pub struct StrEnumValidator;
 
-impl_py_gc_traverse!(EnumValidator<StrEnumValidator> { class, lookup, missing });
-
 impl EnumValidateValue for StrEnumValidator {
     fn validate_value<'py, I: Input<'py> + ?Sized>(
         py: Python,
@@ -231,8 +226,6 @@ impl EnumValidateValue for StrEnumValidator {
 
 #[derive(Debug, Clone)]
 pub struct FloatEnumValidator;
-
-impl_py_gc_traverse!(EnumValidator<FloatEnumValidator> { class, lookup, missing });
 
 impl EnumValidateValue for FloatEnumValidator {
     fn validate_value<'py, I: Input<'py> + ?Sized>(

@@ -6,6 +6,7 @@ use crate::input::InputType;
 
 use super::line_error::ToErrorValue;
 use super::{ErrorType, ValError};
+use crate::py_gc::PyGcTraverse;
 
 #[pyclass(extends=PyException, module="pydantic_core._pydantic_core", skip_from_py_object)]
 #[derive(Debug, Clone)]
@@ -54,7 +55,7 @@ impl PydanticUseDefault {
 }
 
 #[pyclass(extends=PyValueError, module="pydantic_core._pydantic_core", subclass, frozen, skip_from_py_object)]
-#[derive(Debug, Clone, Default)]
+#[derive(Debug, Clone, Default, PyGcTraverse)]
 pub struct PydanticCustomError {
     error_type: String,
     message_template: String,
@@ -135,7 +136,7 @@ impl PydanticCustomError {
 }
 
 #[pyclass(extends=PyValueError, module="pydantic_core._pydantic_core", skip_from_py_object, frozen)]
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PyGcTraverse)]
 pub struct PydanticKnownError {
     error_type: ErrorType,
 }

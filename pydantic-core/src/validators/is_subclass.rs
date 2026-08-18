@@ -9,8 +9,9 @@ use crate::input::Input;
 use crate::tools::SchemaDict;
 
 use super::{BuildValidator, CombinedValidator, DefinitionsBuilder, ValidationState, Validator};
+use crate::py_gc::PyGcTraverse;
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PyGcTraverse)]
 pub struct IsSubclassValidator {
     class: Py<PyType>,
     class_repr: String,
@@ -41,8 +42,6 @@ impl BuildValidator for IsSubclassValidator {
         .into())
     }
 }
-
-impl_py_gc_traverse!(IsSubclassValidator { class });
 
 impl Validator for IsSubclassValidator {
     fn validate<'py>(

@@ -5,6 +5,7 @@ use pyo3::types::{PyBytes, PyDict};
 use pyo3::{IntoPyObjectExt, prelude::*};
 
 use crate::definitions::DefinitionsBuilder;
+use crate::py_gc::PyGcTraverse;
 use crate::serializers::SerializationState;
 use crate::serializers::config::{BytesMode, FromConfig};
 
@@ -12,7 +13,7 @@ use super::{
     BuildSerializer, CombinedSerializer, SerMode, TypeSerializer, infer_json_key, infer_serialize, infer_to_python,
 };
 
-#[derive(Debug)]
+#[derive(Debug, PyGcTraverse)]
 pub struct BytesSerializer {
     bytes_mode: BytesMode,
 }
@@ -60,8 +61,6 @@ impl BuildSerializer for BytesSerializer {
         }
     }
 }
-
-impl_py_gc_traverse!(BytesSerializer {});
 
 impl TypeSerializer for BytesSerializer {
     fn to_python<'py>(&self, value: &Bound<'py, PyAny>, state: &mut SerializationState<'py>) -> PyResult<Py<PyAny>> {

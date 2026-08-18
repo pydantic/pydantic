@@ -21,7 +21,7 @@ use super::{
     infer_serialize, infer_to_python, py_err_se_err,
 };
 
-#[derive(Debug)]
+#[derive(Debug, PyGcTraverse)]
 pub struct GeneratorSerializer {
     item_serializer: Arc<CombinedSerializer>,
     filter: SchemaFilter<usize>,
@@ -47,8 +47,6 @@ impl BuildSerializer for GeneratorSerializer {
         .into())
     }
 }
-
-impl_py_gc_traverse!(GeneratorSerializer { item_serializer });
 
 impl TypeSerializer for GeneratorSerializer {
     fn to_python<'py>(&self, value: &Bound<'py, PyAny>, state: &mut SerializationState<'py>) -> PyResult<Py<PyAny>> {
@@ -130,6 +128,7 @@ impl TypeSerializer for GeneratorSerializer {
 }
 
 #[pyclass(module = "pydantic_core._pydantic_core")]
+#[derive(PyGcTraverse)]
 pub(crate) struct SerializationIterator {
     iterator: Py<PyIterator>,
     #[pyo3(get)]
@@ -138,12 +137,6 @@ pub(crate) struct SerializationIterator {
     extra_owned: ExtraOwned,
     filter: SchemaFilter<usize>,
 }
-
-impl_py_gc_traverse!(SerializationIterator {
-    iterator,
-    item_serializer,
-    extra_owned,
-});
 
 impl SerializationIterator {
     pub fn new(

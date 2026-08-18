@@ -9,8 +9,9 @@ use crate::tools::SchemaDict;
 
 use super::list::min_length_check;
 use super::{BuildValidator, CombinedValidator, DefinitionsBuilder, ValidationState, Validator};
+use crate::py_gc::PyGcTraverse;
 
-#[derive(Debug)]
+#[derive(Debug, PyGcTraverse)]
 pub struct SetValidator {
     strict: bool,
     item_validator: Arc<CombinedValidator>,
@@ -55,8 +56,6 @@ impl BuildValidator for SetValidator {
     const EXPECTED_TYPE: &'static str = "set";
     set_build!();
 }
-
-impl_py_gc_traverse!(SetValidator { item_validator });
 
 impl Validator for SetValidator {
     fn validate<'py>(

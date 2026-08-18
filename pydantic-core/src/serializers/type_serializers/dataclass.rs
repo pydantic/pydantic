@@ -9,6 +9,7 @@ use ahash::AHashMap;
 
 use crate::build_tools::{ExtraBehavior, py_schema_error_type};
 use crate::definitions::DefinitionsBuilder;
+use crate::py_gc::PyGcTraverse;
 use crate::serializers::SerializationState;
 use crate::serializers::errors::unwrap_ser_error;
 use crate::serializers::shared::DoSerialize;
@@ -81,7 +82,7 @@ impl BuildSerializer for DataclassArgsBuilder {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, PyGcTraverse)]
 pub struct DataclassSerializer {
     class: Py<PyType>,
     serializer: Arc<CombinedSerializer>,
@@ -168,8 +169,6 @@ impl DataclassSerializer {
         }
     }
 }
-
-impl_py_gc_traverse!(DataclassSerializer { class, serializer });
 
 impl TypeSerializer for DataclassSerializer {
     fn to_python<'py>(&self, value: &Bound<'py, PyAny>, state: &mut SerializationState<'py>) -> PyResult<Py<PyAny>> {

@@ -15,8 +15,9 @@ use crate::validators::datetime::{NowConstraint, NowOp};
 
 use super::{BuildValidator, CombinedValidator, DefinitionsBuilder, ValidationState, Validator};
 use super::{Exactness, TemporalUnitMode};
+use crate::py_gc::PyGcTraverse;
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PyGcTraverse)]
 pub struct DateValidator {
     strict: bool,
     constraints: Option<DateConstraints>,
@@ -39,8 +40,6 @@ impl BuildValidator for DateValidator {
         .into())
     }
 }
-
-impl_py_gc_traverse!(DateValidator {});
 
 impl Validator for DateValidator {
     fn validate<'py>(
@@ -156,7 +155,7 @@ fn date_from_datetime<'py>(
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PyGcTraverse)]
 struct DateConstraints {
     le: Option<Date>,
     lt: Option<Date>,

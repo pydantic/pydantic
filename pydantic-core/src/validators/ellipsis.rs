@@ -8,8 +8,9 @@ use crate::errors::{ErrorType, ValError, ValResult};
 use crate::input::Input;
 
 use super::{BuildValidator, CombinedValidator, DefinitionsBuilder, ValidationState, Validator};
+use crate::py_gc::PyGcTraverse;
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PyGcTraverse)]
 pub struct EllipsisValidator {}
 
 static ELLIPSIS_VALIDATOR: LazyLock<Arc<CombinedValidator>> =
@@ -26,8 +27,6 @@ impl BuildValidator for EllipsisValidator {
         Ok(ELLIPSIS_VALIDATOR.clone())
     }
 }
-
-impl_py_gc_traverse!(EllipsisValidator {});
 
 impl Validator for EllipsisValidator {
     fn validate<'py>(

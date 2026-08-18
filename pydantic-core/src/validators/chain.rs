@@ -11,8 +11,9 @@ use crate::tools::SchemaDict;
 
 use super::validation_state::ValidationState;
 use super::{BuildValidator, CombinedValidator, DefinitionsBuilder, Validator, build_validator};
+use crate::py_gc::PyGcTraverse;
 
-#[derive(Debug)]
+#[derive(Debug, PyGcTraverse)]
 pub struct ChainValidator {
     steps: Vec<Arc<CombinedValidator>>,
     name: String,
@@ -68,8 +69,6 @@ fn build_validator_steps(
         Ok(vec![validator])
     }
 }
-
-impl_py_gc_traverse!(ChainValidator { steps });
 
 impl Validator for ChainValidator {
     fn validate<'py>(

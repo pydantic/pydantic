@@ -19,8 +19,9 @@ use crate::tools::SchemaDict;
 
 use super::validation_state::ValidationState;
 use super::{BuildValidator, CombinedValidator, DefinitionsBuilder, Validator, build_validator};
+use crate::py_gc::PyGcTraverse;
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, PyGcTraverse)]
 enum VarKwargsMode {
     Uniform,
     UnpackedTypedDict,
@@ -41,7 +42,7 @@ impl FromStr for VarKwargsMode {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, PyGcTraverse)]
 struct Parameter {
     positional: bool,
     name: PyBackedStr,
@@ -51,7 +52,7 @@ struct Parameter {
     lookup_path_collection: Option<LookupPathCollection>,
 }
 
-#[derive(Debug)]
+#[derive(Debug, PyGcTraverse)]
 pub struct ArgumentsValidator {
     parameters: Vec<Parameter>,
     positional_params_count: usize,
@@ -176,14 +177,6 @@ impl BuildValidator for ArgumentsValidator {
         .into())
     }
 }
-
-impl_py_gc_traverse!(Parameter { validator });
-
-impl_py_gc_traverse!(ArgumentsValidator {
-    parameters,
-    var_args_validator,
-    var_kwargs_validator
-});
 
 impl Validator for ArgumentsValidator {
     fn validate<'py>(

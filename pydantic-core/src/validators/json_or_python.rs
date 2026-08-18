@@ -10,8 +10,9 @@ use crate::input::Input;
 use crate::tools::SchemaDict;
 
 use super::{BuildValidator, CombinedValidator, InputType, ValidationState, Validator, build_validator};
+use crate::py_gc::PyGcTraverse;
 
-#[derive(Debug)]
+#[derive(Debug, PyGcTraverse)]
 pub struct JsonOrPython {
     json: Arc<CombinedValidator>,
     python: Arc<CombinedValidator>,
@@ -42,8 +43,6 @@ impl BuildValidator for JsonOrPython {
         Ok(CombinedValidator::JsonOrPython(Self { json, python, name }).into())
     }
 }
-
-impl_py_gc_traverse!(JsonOrPython { json, python });
 
 impl Validator for JsonOrPython {
     fn validate<'py>(

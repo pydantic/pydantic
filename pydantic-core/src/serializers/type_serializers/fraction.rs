@@ -11,8 +11,9 @@ use crate::serializers::ob_type::{IsType, ObType};
 use crate::serializers::SerializationState;
 
 use super::{BuildSerializer, CombinedSerializer, TypeSerializer, infer_json_key, infer_serialize, infer_to_python};
+use crate::py_gc::PyGcTraverse;
 
-#[derive(Debug)]
+#[derive(Debug, PyGcTraverse)]
 pub struct FractionSerializer {}
 
 static FRACTION_SERIALIZER: LazyLock<Arc<CombinedSerializer>> =
@@ -29,8 +30,6 @@ impl BuildSerializer for FractionSerializer {
         Ok(FRACTION_SERIALIZER.clone())
     }
 }
-
-impl_py_gc_traverse!(FractionSerializer {});
 
 impl TypeSerializer for FractionSerializer {
     fn to_python<'py>(&self, value: &Bound<'py, PyAny>, state: &mut SerializationState<'py>) -> PyResult<Py<PyAny>> {

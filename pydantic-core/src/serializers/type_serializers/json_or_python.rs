@@ -7,10 +7,11 @@ use pyo3::types::PyDict;
 
 use super::{BuildSerializer, CombinedSerializer, TypeSerializer};
 use crate::definitions::DefinitionsBuilder;
+use crate::py_gc::PyGcTraverse;
 use crate::serializers::SerializationState;
 use crate::tools::SchemaDict;
 
-#[derive(Debug)]
+#[derive(Debug, PyGcTraverse)]
 pub struct JsonOrPythonSerializer {
     json: Arc<CombinedSerializer>,
     python: Arc<CombinedSerializer>,
@@ -41,8 +42,6 @@ impl BuildSerializer for JsonOrPythonSerializer {
         Ok(Arc::new(Self { json, python, name }.into()))
     }
 }
-
-impl_py_gc_traverse!(JsonOrPythonSerializer { json, python });
 
 impl TypeSerializer for JsonOrPythonSerializer {
     fn to_python<'py>(&self, value: &Bound<'py, PyAny>, state: &mut SerializationState<'py>) -> PyResult<Py<PyAny>> {

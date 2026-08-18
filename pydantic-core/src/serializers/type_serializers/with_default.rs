@@ -11,8 +11,9 @@ use crate::tools::SchemaDict;
 use crate::validators::DefaultType;
 
 use super::{BuildSerializer, CombinedSerializer, TypeSerializer};
+use crate::py_gc::PyGcTraverse;
 
-#[derive(Debug)]
+#[derive(Debug, PyGcTraverse)]
 pub struct WithDefaultSerializer {
     default: DefaultType,
     serializer: Arc<CombinedSerializer>,
@@ -35,8 +36,6 @@ impl BuildSerializer for WithDefaultSerializer {
         Ok(Arc::new(Self { default, serializer }.into()))
     }
 }
-
-impl_py_gc_traverse!(WithDefaultSerializer { default, serializer });
 
 impl TypeSerializer for WithDefaultSerializer {
     fn to_python<'py>(&self, value: &Bound<'py, PyAny>, state: &mut SerializationState<'py>) -> PyResult<Py<PyAny>> {

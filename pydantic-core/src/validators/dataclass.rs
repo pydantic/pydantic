@@ -23,8 +23,9 @@ use crate::validators::function::convert_err;
 use super::model::{Revalidate, create_class, force_setattr};
 use super::validation_state::Exactness;
 use super::{BuildValidator, CombinedValidator, DefinitionsBuilder, ValidationState, Validator, build_validator};
+use crate::py_gc::PyGcTraverse;
 
-#[derive(Debug)]
+#[derive(Debug, PyGcTraverse)]
 struct Field {
     kw_only: bool,
     name: PyBackedStr,
@@ -35,7 +36,7 @@ struct Field {
     frozen: bool,
 }
 
-#[derive(Debug)]
+#[derive(Debug, PyGcTraverse)]
 pub struct DataclassArgsValidator {
     fields: Vec<Field>,
     positional_count: usize,
@@ -133,10 +134,6 @@ impl BuildValidator for DataclassArgsValidator {
         .into())
     }
 }
-
-impl_py_gc_traverse!(Field { validator });
-
-impl_py_gc_traverse!(DataclassArgsValidator { fields });
 
 impl Validator for DataclassArgsValidator {
     fn validate<'py>(
@@ -447,7 +444,7 @@ impl Validator for DataclassArgsValidator {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, PyGcTraverse)]
 pub struct DataclassValidator {
     strict: bool,
     validator: Arc<CombinedValidator>,
@@ -512,12 +509,6 @@ impl BuildValidator for DataclassValidator {
         .into())
     }
 }
-
-impl_py_gc_traverse!(DataclassValidator {
-    class,
-    generic_origin,
-    validator
-});
 
 impl Validator for DataclassValidator {
     fn validate<'py>(

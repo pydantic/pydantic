@@ -22,9 +22,10 @@ use super::computed_fields::ComputedFields;
 use super::extra::Extra;
 use super::filter::SchemaFilter;
 use super::shared::{CombinedSerializer, TypeSerializer};
+use crate::py_gc::PyGcTraverse;
 
 /// representation of a field for serialization
-#[derive(Debug)]
+#[derive(Debug, PyGcTraverse)]
 pub(super) struct SerField {
     pub key: PyBackedStr,
     pub alias: Option<PyBackedStr>,
@@ -34,11 +35,6 @@ pub(super) struct SerField {
     pub serialize_by_alias: Option<bool>,
     pub serialization_exclude_if: Option<Py<PyAny>>,
 }
-
-impl_py_gc_traverse!(SerField {
-    serializer,
-    serialization_exclude_if
-});
 
 impl SerField {
     pub fn new(
@@ -95,7 +91,7 @@ fn exclude_default<'py>(
     Ok(false)
 }
 
-#[derive(Debug, Clone, Eq, PartialEq)]
+#[derive(Debug, Clone, Eq, PartialEq, PyGcTraverse)]
 pub(super) enum FieldsMode {
     // typeddict with no extra items
     SimpleDict,
@@ -106,7 +102,7 @@ pub(super) enum FieldsMode {
 }
 
 /// General purpose serializer for fields - used by dataclasses, models and typed_dicts
-#[derive(Debug)]
+#[derive(Debug, PyGcTraverse)]
 pub struct GeneralFieldsSerializer {
     fields: AHashMap<PyBackedStr, SerField>,
     computed_fields: Option<ComputedFields>,

@@ -6,6 +6,7 @@ use pyo3::{IntoPyObjectExt, intern, prelude::*};
 use uuid::Uuid;
 
 use crate::definitions::DefinitionsBuilder;
+use crate::py_gc::PyGcTraverse;
 use crate::serializers::SerializationState;
 
 use super::{
@@ -20,13 +21,11 @@ pub(crate) fn uuid_to_string(py_uuid: &Bound<'_, PyAny>) -> PyResult<String> {
     Ok(uuid.to_string())
 }
 
-#[derive(Debug)]
+#[derive(Debug, PyGcTraverse)]
 pub struct UuidSerializer;
 
 static UUID_SERIALIZER: LazyLock<Arc<CombinedSerializer>> =
     LazyLock::new(|| Arc::new(CombinedSerializer::from(UuidSerializer {})));
-
-impl_py_gc_traverse!(UuidSerializer {});
 
 impl BuildSerializer for UuidSerializer {
     const EXPECTED_TYPE: &'static str = "uuid";

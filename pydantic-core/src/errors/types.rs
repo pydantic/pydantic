@@ -16,6 +16,7 @@ use crate::input::{InputType, Int};
 use crate::tools::{py_err, py_error_type};
 
 use super::PydanticCustomError;
+use crate::py_gc::PyGcTraverse;
 
 #[pyfunction]
 pub fn list_all_errors(py: Python<'_>) -> PyResult<Bound<'_, PyList>> {
@@ -89,7 +90,7 @@ macro_rules! error_types {
             },
         )+
     ) => {
-        #[derive(Clone, Debug, Display, EnumMessage, EnumIter)]
+        #[derive(Clone, Debug, Display, EnumMessage, EnumIter, PyGcTraverse)]
         #[strum(serialize_all = "snake_case")]
         pub enum ErrorType {
             $(
@@ -806,7 +807,7 @@ impl ErrorType {
     }
 }
 
-#[derive(Clone, Debug, IntoPyObject, IntoPyObjectRef)]
+#[derive(Clone, Debug, IntoPyObject, IntoPyObjectRef, PyGcTraverse)]
 pub enum Number {
     Int(i64),
     BigInt(BigInt),

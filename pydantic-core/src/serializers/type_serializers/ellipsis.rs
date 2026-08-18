@@ -16,8 +16,9 @@ use crate::definitions::DefinitionsBuilder;
 use crate::serializers::SerializationState;
 
 use super::{BuildSerializer, CombinedSerializer, TypeSerializer};
+use crate::py_gc::PyGcTraverse;
 
-#[derive(Debug)]
+#[derive(Debug, PyGcTraverse)]
 pub struct EllipsisSerializer {}
 
 static ELLIPSIS_SERIALIZER: LazyLock<Arc<CombinedSerializer>> =
@@ -34,8 +35,6 @@ impl BuildSerializer for EllipsisSerializer {
         Ok(ELLIPSIS_SERIALIZER.clone())
     }
 }
-
-impl_py_gc_traverse!(EllipsisSerializer {});
 
 impl TypeSerializer for EllipsisSerializer {
     fn to_python(&self, value: &Bound<'_, PyAny>, _state: &mut SerializationState<'_>) -> PyResult<Py<PyAny>> {

@@ -37,7 +37,7 @@ pub enum WarningsArg {
 }
 
 #[pyclass(module = "pydantic_core._pydantic_core", frozen)]
-#[derive(Debug)]
+#[derive(Debug, PyGcTraverse)]
 pub struct SchemaSerializer {
     serializer: Arc<CombinedSerializer>,
     definitions: Definitions<Arc<CombinedSerializer>>,
@@ -48,13 +48,6 @@ pub struct SchemaSerializer {
     py_schema: Py<PyDict>,
     py_config: Option<Py<PyDict>>,
 }
-
-impl_py_gc_traverse!(SchemaSerializer {
-    serializer,
-    definitions,
-    py_schema,
-    py_config,
-});
 
 #[pymethods]
 impl SchemaSerializer {

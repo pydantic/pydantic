@@ -79,14 +79,14 @@ impl PyGcTraverse for DefaultType {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PyGcTraverse)]
 enum OnError {
     Raise,
     Omit,
     Default,
 }
 
-#[derive(Debug)]
+#[derive(Debug, PyGcTraverse)]
 pub struct WithDefaultValidator {
     default: DefaultType,
     on_error: OnError,
@@ -148,8 +148,6 @@ impl BuildValidator for WithDefaultValidator {
         .into())
     }
 }
-
-impl_py_gc_traverse!(WithDefaultValidator { default, validator });
 
 impl Validator for WithDefaultValidator {
     fn validate<'py>(

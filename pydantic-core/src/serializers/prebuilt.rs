@@ -8,8 +8,9 @@ use crate::serializers::SerializationState;
 use crate::{common::prebuilt::get_prebuilt, serializers::polymorphism_trampoline::PolymorphismTrampoline};
 
 use super::shared::{CombinedSerializer, TypeSerializer};
+use crate::py_gc::PyGcTraverse;
 
-#[derive(Debug)]
+#[derive(Debug, PyGcTraverse)]
 pub struct PrebuiltSerializer {
     schema_serializer: Py<SchemaSerializer>,
 }
@@ -40,8 +41,6 @@ impl PrebuiltSerializer {
         })
     }
 }
-
-impl_py_gc_traverse!(PrebuiltSerializer { schema_serializer });
 
 impl TypeSerializer for PrebuiltSerializer {
     fn to_python<'py>(&self, value: &Bound<'py, PyAny>, state: &mut SerializationState<'py>) -> PyResult<Py<PyAny>> {

@@ -353,19 +353,11 @@ pub(crate) fn iterate_attributes<'a, 'py>(
     }))
 }
 
-#[derive(Debug)]
+#[derive(Debug, PyGcTraverse)]
 pub enum GenericIterator<'data> {
     PyIterator(GenericPyIterator),
-    JsonArray(GenericJsonIterator<'data>),
-}
-
-impl PyGcTraverse for GenericIterator<'_> {
-    fn py_gc_traverse(&self, visit: &pyo3::PyVisit<'_>) -> Result<(), pyo3::PyTraverseError> {
-        if let Self::PyIterator(iter) = self {
-            iter.py_gc_traverse(visit)?;
-        }
-        Ok(())
-    }
+    // JSON data cannot hold references to Python objects:
+    JsonArray(#[py_gc(skip)] GenericJsonIterator<'data>),
 }
 
 impl GenericIterator<'_> {
@@ -395,7 +387,7 @@ impl From<&Bound<'_, PyAny>> for GenericIterator<'_> {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PyGcTraverse)]
 pub struct GenericPyIterator {
     obj: Py<PyAny>,
     iter: Py<PyIterator>,
@@ -425,8 +417,6 @@ impl GenericPyIterator {
         self.index
     }
 }
-
-impl_py_gc_traverse!(GenericPyIterator { obj, iter });
 
 #[derive(Debug, Clone)]
 pub struct GenericJsonIterator<'data> {
@@ -653,7 +643,7 @@ impl EitherFloat<'_> {
     }
 }
 
-#[derive(Debug, Clone, Serialize, IntoPyObject)]
+#[derive(Debug, Clone, Serialize, IntoPyObject, PyGcTraverse)]
 #[serde(untagged)]
 pub enum Int {
     I64(i64),

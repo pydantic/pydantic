@@ -18,8 +18,9 @@ use super::{
     BuildSerializer, CombinedSerializer, PydanticSerializer, SchemaFilter, SerMode, TypeSerializer, infer_serialize,
     infer_to_python, py_err_se_err,
 };
+use crate::py_gc::PyGcTraverse;
 
-#[derive(Debug)]
+#[derive(Debug, PyGcTraverse)]
 pub struct DictSerializer {
     key_serializer: Arc<CombinedSerializer>,
     value_serializer: Arc<CombinedSerializer>,
@@ -68,11 +69,6 @@ impl BuildSerializer for DictSerializer {
         .into())
     }
 }
-
-impl_py_gc_traverse!(DictSerializer {
-    key_serializer,
-    value_serializer
-});
 
 impl TypeSerializer for DictSerializer {
     fn to_python<'py>(&self, value: &Bound<'py, PyAny>, state: &mut SerializationState<'py>) -> PyResult<Py<PyAny>> {

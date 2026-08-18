@@ -461,6 +461,7 @@ dependencies = [
  "num-bigint",
  "num-traits",
  "percent-encoding",
+ "pydantic-core-derive",
  "pyo3",
  "pyo3-build-config",
  "regex",
@@ -473,6 +474,15 @@ dependencies = [
  "url",
  "uuid",
  "version_check",
+]
+
+[[package]]
+name = "pydantic-core-derive"
+version = "2.48.0"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn",
 ]
 
 [[package]]

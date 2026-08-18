@@ -14,6 +14,7 @@ include = [
     "/build.rs",
     "/rust-toolchain",
     "/src",
+    "/derive",
     "/python/pydantic_core",
     "/tests",
     "/.cargo",
@@ -49,6 +50,10 @@ jiter = { version = "0.16.0", features = ["python"] }
 hex = "0.4.3"
 percent-encoding = "2.3.2"
 hashbrown = { version = "0.17", default-features = false, features = ["inline-more"] }
+pydantic-core-derive = { path = "derive" }
+
+[workspace]
+members = ["derive"]
 
 [lib]
 name = "_pydantic_core"

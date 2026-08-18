@@ -12,6 +12,7 @@ use crate::input::Input;
 use crate::tools::SchemaDict;
 
 use super::{BuildValidator, CombinedValidator, DefinitionsBuilder, ValidationState, Validator};
+use crate::py_gc::PyGcTraverse;
 
 pub struct FloatBuilder;
 
@@ -40,7 +41,7 @@ impl BuildValidator for FloatBuilder {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PyGcTraverse)]
 pub struct FloatValidator {
     strict: bool,
     allow_inf_nan: bool,
@@ -63,8 +64,6 @@ impl BuildValidator for FloatValidator {
     }
 }
 
-impl_py_gc_traverse!(FloatValidator {});
-
 impl Validator for FloatValidator {
     fn validate<'py>(
         &self,
@@ -84,7 +83,7 @@ impl Validator for FloatValidator {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PyGcTraverse)]
 pub struct ConstrainedFloatValidator {
     strict: bool,
     allow_inf_nan: bool,
@@ -94,8 +93,6 @@ pub struct ConstrainedFloatValidator {
     ge: Option<f64>,
     gt: Option<f64>,
 }
-
-impl_py_gc_traverse!(ConstrainedFloatValidator {});
 
 impl Validator for ConstrainedFloatValidator {
     fn validate<'py>(

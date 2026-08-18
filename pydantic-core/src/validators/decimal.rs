@@ -15,6 +15,7 @@ use crate::input::Input;
 use crate::tools::SchemaDict;
 
 use super::{BuildValidator, CombinedValidator, DefinitionsBuilder, ValidationState, Validator};
+use crate::py_gc::PyGcTraverse;
 
 static DECIMAL_TYPE: PyOnceLock<Py<PyType>> = PyOnceLock::new();
 
@@ -46,7 +47,7 @@ fn validate_as_decimal(
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PyGcTraverse)]
 pub struct DecimalValidator {
     strict: bool,
     allow_inf_nan: bool,
@@ -93,14 +94,6 @@ impl BuildValidator for DecimalValidator {
         .into())
     }
 }
-
-impl_py_gc_traverse!(DecimalValidator {
-    multiple_of,
-    le,
-    lt,
-    ge,
-    gt
-});
 
 fn extract_decimal_digits_info(decimal: &Bound<'_, PyAny>, normalized: bool) -> ValResult<(u64, u64)> {
     let py = decimal.py();

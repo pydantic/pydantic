@@ -64,7 +64,7 @@ macro_rules! build_temporal_serializer {
         $json_key_fn:ident,
         $serialize_fn:ident
     ) => {
-        #[derive(Debug)]
+        #[derive(Debug, crate::py_gc::PyGcTraverse)]
         pub struct $Struct {
             temporal_mode: TemporalMode,
         }
@@ -81,8 +81,6 @@ macro_rules! build_temporal_serializer {
                 Ok(Arc::new(Self { temporal_mode }.into()))
             }
         }
-
-        impl_py_gc_traverse!($Struct {});
 
         impl TypeSerializer for $Struct {
             fn to_python<'py>(

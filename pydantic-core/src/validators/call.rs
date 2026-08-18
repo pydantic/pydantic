@@ -13,8 +13,9 @@ use crate::tools::SchemaDict;
 
 use super::validation_state::ValidationState;
 use super::{BuildValidator, CombinedValidator, DefinitionsBuilder, Validator, build_validator};
+use crate::py_gc::PyGcTraverse;
 
-#[derive(Debug)]
+#[derive(Debug, PyGcTraverse)]
 pub struct CallValidator {
     function: Py<PyAny>,
     arguments_validator: Arc<CombinedValidator>,
@@ -69,12 +70,6 @@ impl BuildValidator for CallValidator {
         .into())
     }
 }
-
-impl_py_gc_traverse!(CallValidator {
-    function,
-    arguments_validator,
-    return_validator
-});
 
 impl Validator for CallValidator {
     fn validate<'py>(

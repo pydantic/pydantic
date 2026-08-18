@@ -12,8 +12,9 @@ use crate::tools::SchemaDict;
 use super::Exactness;
 use super::ValidationState;
 use super::{BuildValidator, CombinedValidator, DefinitionsBuilder, Validator, build_validator};
+use crate::py_gc::PyGcTraverse;
 
-#[derive(Debug)]
+#[derive(Debug, PyGcTraverse)]
 pub struct LaxOrStrictValidator {
     strict: bool,
     lax_validator: Arc<CombinedValidator>,
@@ -51,11 +52,6 @@ impl BuildValidator for LaxOrStrictValidator {
         .into())
     }
 }
-
-impl_py_gc_traverse!(LaxOrStrictValidator {
-    lax_validator,
-    strict_validator
-});
 
 impl Validator for LaxOrStrictValidator {
     fn validate<'py>(

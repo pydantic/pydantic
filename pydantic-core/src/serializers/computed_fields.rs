@@ -1,9 +1,9 @@
 use std::sync::Arc;
 
+use pyo3::intern;
 use pyo3::prelude::*;
 use pyo3::pybacked::PyBackedStr;
 use pyo3::types::{PyDict, PyList};
-use pyo3::{PyTraverseError, PyVisit, intern};
 
 use crate::build_tools::py_schema_error_type;
 use crate::definitions::DefinitionsBuilder;
@@ -14,7 +14,7 @@ use crate::serializers::filter::SchemaFilter;
 use crate::serializers::shared::{BuildSerializer, CombinedSerializer, SerializeMap};
 use crate::tools::SchemaDict;
 
-#[derive(Debug)]
+#[derive(Debug, PyGcTraverse)]
 pub(super) struct ComputedFields(Vec<ComputedField>);
 
 impl ComputedFields {
@@ -76,7 +76,7 @@ impl ComputedFields {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, PyGcTraverse)]
 struct ComputedField {
     property_name: PyBackedStr,
     serializer: Arc<CombinedSerializer>,
@@ -107,13 +107,5 @@ impl ComputedField {
             serialize_by_alias: config.get_as(intern!(py, "serialize_by_alias"))?,
             serialization_exclude_if: schema.get_as(intern!(py, "serialization_exclude_if"))?,
         })
-    }
-}
-
-impl_py_gc_traverse!(ComputedField { serializer });
-
-impl PyGcTraverse for ComputedFields {
-    fn py_gc_traverse(&self, visit: &PyVisit<'_>) -> Result<(), PyTraverseError> {
-        self.0.py_gc_traverse(visit)
     }
 }

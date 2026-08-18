@@ -12,8 +12,9 @@ use crate::input::{BorrowInput, Input, ValidatedTuple};
 use crate::tools::SchemaDict;
 
 use super::{BuildValidator, CombinedValidator, DefinitionsBuilder, ValidationState, Validator, build_validator};
+use crate::py_gc::PyGcTraverse;
 
-#[derive(Debug)]
+#[derive(Debug, PyGcTraverse)]
 pub struct TupleValidator {
     strict: bool,
     validators: Vec<Arc<CombinedValidator>>,
@@ -58,8 +59,6 @@ impl BuildValidator for TupleValidator {
         .into())
     }
 }
-
-impl_py_gc_traverse!(TupleValidator { validators });
 
 impl TupleValidator {
     #[allow(clippy::too_many_arguments)]

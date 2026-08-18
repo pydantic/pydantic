@@ -13,6 +13,7 @@ use crate::serializers::SerializationState;
 use crate::tools::SchemaDict;
 
 use super::{BuildSerializer, CombinedSerializer, TypeSerializer, py_err_se_err};
+use crate::py_gc::PyGcTraverse;
 
 #[derive(Debug)]
 pub struct DefinitionsSerializerBuilder;
@@ -41,6 +42,7 @@ impl BuildSerializer for DefinitionsSerializerBuilder {
     }
 }
 
+#[derive(PyGcTraverse)]
 pub struct DefinitionRefSerializer {
     definition: DefinitionRef<Arc<CombinedSerializer>>,
     retry_with_lax_check: RecursionSafeCache<bool>,
@@ -72,8 +74,6 @@ impl BuildSerializer for DefinitionRefSerializer {
         .into())
     }
 }
-
-impl_py_gc_traverse!(DefinitionRefSerializer {});
 
 impl TypeSerializer for DefinitionRefSerializer {
     fn to_python<'py>(&self, value: &Bound<'py, PyAny>, state: &mut SerializationState<'py>) -> PyResult<Py<PyAny>> {

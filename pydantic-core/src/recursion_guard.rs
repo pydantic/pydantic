@@ -1,3 +1,4 @@
+use crate::py_gc::PyGcTraverse;
 use ahash::AHashSet;
 use std::mem::MaybeUninit;
 
@@ -63,7 +64,7 @@ pub(crate) trait ContainsRecursionState {
 }
 
 /// State for the RecursionGuard. Can also be used directly to increase / decrease depth.
-#[derive(Debug, Clone, Default)]
+#[derive(Debug, Clone, Default, PyGcTraverse)]
 pub struct RecursionState {
     ids: RecursionStack,
     // depth could be a hashmap {validator_id => depth} but for simplicity and performance it's easier to just
@@ -142,9 +143,11 @@ impl RecursionState {
 // trial and error suggests this is a good value, going higher causes array lookups to get significantly slower
 const ARRAY_SIZE: usize = 16;
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PyGcTraverse)]
 enum RecursionStack {
     Array {
+        // Not traversed as partially uninitialized (and `RecursionKey` is plain data):
+        #[py_gc(skip)]
         data: [MaybeUninit<RecursionKey>; ARRAY_SIZE],
         len: usize,
     },

@@ -10,8 +10,9 @@ use crate::recursion_guard::{ContainsRecursionState, RecursionState};
 use crate::tools::new_py_string;
 
 use super::Extra;
+use crate::py_gc::PyGcTraverse;
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Ord, PartialOrd, Hash)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Ord, PartialOrd, Hash, PyGcTraverse)]
 pub enum Exactness {
     Lax,
     Strict,

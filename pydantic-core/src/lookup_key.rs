@@ -14,6 +14,7 @@ use smallvec::SmallVec;
 use crate::build_tools::py_schema_err;
 use crate::errors::{ErrorType, LocItem, Location, ValError, ValLineError, ValResult, py_err_string};
 use crate::input::StringMapping;
+use crate::py_gc::PyGcTraverse;
 use crate::tools::{mapping_get, py_err};
 
 /// The possible choices for an alias value in Python
@@ -48,7 +49,7 @@ impl FromPyObject<'_, '_> for LookupPath {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, PyGcTraverse)]
 pub(crate) struct LookupPath {
     /// All paths must start with a string key
     first_item: PathItemString,
@@ -213,7 +214,7 @@ impl LookupPath {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PyGcTraverse)]
 pub(crate) enum PathItem {
     S(PathItemString),
     /// integer key, used to get items from a list, tuple OR a dict with int keys `dict[int, ...]` (python only)
@@ -222,7 +223,7 @@ pub(crate) enum PathItem {
 }
 
 /// String type key, used to get or identify items from a dict or anything that implements `__getitem__`
-#[derive(Debug, Clone, Eq, PartialEq, Hash)]
+#[derive(Debug, Clone, Eq, PartialEq, Hash, PyGcTraverse)]
 pub(crate) struct PathItemString(
     // stores the original Python value, easily accessible as a Rust &str
     pub PyBackedStr,
@@ -371,7 +372,7 @@ impl PathItemString {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, PyGcTraverse)]
 #[allow(clippy::struct_field_names)]
 pub struct LookupPathCollection {
     pub by_name: LookupPath,
@@ -430,7 +431,7 @@ impl LookupPathCollection {
 }
 
 /// Whether this lookup represents a name or an alias
-#[derive(Debug, Clone, Copy, Eq, PartialEq)]
+#[derive(Debug, Clone, Copy, Eq, PartialEq, PyGcTraverse)]
 #[repr(u8)]
 pub enum LookupType {
     Name = 1,

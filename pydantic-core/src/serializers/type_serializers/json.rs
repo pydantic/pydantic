@@ -17,8 +17,9 @@ use super::any::AnySerializer;
 use super::{
     BuildSerializer, CombinedSerializer, TypeSerializer, infer_json_key, py_err_se_err, to_json_bytes, utf8_py_error,
 };
+use crate::py_gc::PyGcTraverse;
 
-#[derive(Debug)]
+#[derive(Debug, PyGcTraverse)]
 pub struct JsonSerializer {
     serializer: Arc<CombinedSerializer>,
 }
@@ -40,8 +41,6 @@ impl BuildSerializer for JsonSerializer {
         Ok(Arc::new(Self { serializer }.into()))
     }
 }
-
-impl_py_gc_traverse!(JsonSerializer { serializer });
 
 impl TypeSerializer for JsonSerializer {
     fn to_python<'py>(&self, value: &Bound<'py, PyAny>, state: &mut SerializationState<'py>) -> PyResult<Py<PyAny>> {

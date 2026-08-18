@@ -20,8 +20,9 @@ use super::{
     BuildSerializer, CombinedSerializer, PydanticSerializer, SchemaFilter, SerMode, TypeSerializer, infer_json_key,
     infer_serialize, infer_to_python, py_err_se_err,
 };
+use crate::py_gc::PyGcTraverse;
 
-#[derive(Debug)]
+#[derive(Debug, PyGcTraverse)]
 pub struct NamedTupleSerializer {
     class: Py<PyType>,
     serializers: Vec<Arc<CombinedSerializer>>,
@@ -66,8 +67,6 @@ impl BuildSerializer for NamedTupleSerializer {
         .into())
     }
 }
-
-impl_py_gc_traverse!(NamedTupleSerializer { class, serializers });
 
 impl TypeSerializer for NamedTupleSerializer {
     fn to_python<'py>(&self, value: &Bound<'py, PyAny>, state: &mut SerializationState<'py>) -> PyResult<Py<PyAny>> {

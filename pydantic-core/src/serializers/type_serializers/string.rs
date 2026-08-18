@@ -5,6 +5,7 @@ use pyo3::types::{PyDict, PyString};
 use pyo3::{IntoPyObjectExt, prelude::*};
 
 use crate::definitions::DefinitionsBuilder;
+use crate::py_gc::PyGcTraverse;
 use crate::serializers::SerializationState;
 use crate::serializers::errors::unwrap_ser_error;
 use crate::serializers::shared::{DoSerialize, serialize_to_json};
@@ -14,7 +15,7 @@ use super::{
     infer_to_python,
 };
 
-#[derive(Debug)]
+#[derive(Debug, PyGcTraverse)]
 pub struct StrSerializer;
 
 static STR_SERIALIZER: LazyLock<Arc<CombinedSerializer>> = LazyLock::new(|| Arc::new(StrSerializer.into()));
@@ -36,8 +37,6 @@ impl BuildSerializer for StrSerializer {
         Ok(Self::get().clone())
     }
 }
-
-impl_py_gc_traverse!(StrSerializer {});
 
 impl TypeSerializer for StrSerializer {
     fn to_python<'py>(&self, value: &Bound<'py, PyAny>, state: &mut SerializationState<'py>) -> PyResult<Py<PyAny>> {

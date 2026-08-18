@@ -7,6 +7,7 @@ use pyo3::types::PyString;
 
 use crate::tools::truncate_safe_repr;
 
+use crate::py_gc::PyGcTraverse;
 use serde::ser;
 
 /// `UNEXPECTED_TYPE_SER` is a special prefix to denote a `PydanticSerializationUnexpectedValue` error.
@@ -109,7 +110,7 @@ impl PydanticSerializationError {
 }
 
 #[pyclass(extends=PyValueError, module="pydantic_core._pydantic_core", skip_from_py_object, frozen)]
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PyGcTraverse)]
 pub struct PydanticSerializationUnexpectedValue {
     message: Option<String>,
     field_name: Option<Py<PyString>>,

@@ -8,8 +8,9 @@ use crate::definitions::DefinitionsBuilder;
 use crate::serializers::SerializationState;
 
 use super::{BuildSerializer, CombinedSerializer, SerMode, TypeSerializer, infer_serialize, infer_to_python};
+use crate::py_gc::PyGcTraverse;
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PyGcTraverse)]
 pub struct ComplexSerializer {}
 
 static COMPLEX_SERIALIZER: LazyLock<Arc<CombinedSerializer>> = LazyLock::new(|| Arc::new(ComplexSerializer {}.into()));
@@ -24,8 +25,6 @@ impl BuildSerializer for ComplexSerializer {
         Ok(COMPLEX_SERIALIZER.clone())
     }
 }
-
-impl_py_gc_traverse!(ComplexSerializer {});
 
 impl TypeSerializer for ComplexSerializer {
     fn to_python<'py>(&self, value: &Bound<'py, PyAny>, state: &mut SerializationState<'py>) -> PyResult<Py<PyAny>> {

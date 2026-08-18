@@ -10,6 +10,7 @@ use crate::errors::{ErrorTypeDefaults, ToErrorValue, ValError, ValResult};
 use crate::input::Input;
 
 use super::{BuildValidator, CombinedValidator, DefinitionsBuilder, ValidationState, Validator};
+use crate::py_gc::PyGcTraverse;
 
 static COMPLEX_TYPE: PyOnceLock<Py<PyType>> = PyOnceLock::new();
 
@@ -19,7 +20,7 @@ pub fn get_complex_type(py: Python<'_>) -> &Bound<'_, PyType> {
         .bind(py)
 }
 
-#[derive(Debug)]
+#[derive(Debug, PyGcTraverse)]
 pub struct ComplexValidator {
     strict: bool,
 }
@@ -44,8 +45,6 @@ impl BuildValidator for ComplexValidator {
         }
     }
 }
-
-impl_py_gc_traverse!(ComplexValidator {});
 
 impl Validator for ComplexValidator {
     fn validate<'py>(
