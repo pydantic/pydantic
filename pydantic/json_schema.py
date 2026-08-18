@@ -2237,18 +2237,18 @@ class GenerateJsonSchema:
         Returns:
             The generated JSON schema.
         """
-        schema_type = schema['type']
-        if schema_type == 'function-plain' or schema_type == 'function-wrap':
-            # PlainSerializerFunctionSerSchema or WrapSerializerFunctionSerSchema
-            return_schema = schema.get('return_schema')
-            if return_schema is not None:
-                return self.generate_inner(return_schema)
-        elif schema_type == 'format' or schema_type == 'to-string':
-            # FormatSerSchema or ToStringSerSchema
-            return self.str_schema(core_schema.str_schema())
-        elif schema['type'] == 'model':
-            # ModelSerSchema
-            return self.generate_inner(schema['schema'])
+        match schema:
+            case {'type': 'function-plain' | 'function-wrap'}:
+                # PlainSerializerFunctionSerSchema or WrapSerializerFunctionSerSchema
+                return_schema = schema.get('return_schema')
+                if return_schema is not None:
+                    return self.generate_inner(return_schema)
+            case {'type': 'format' | 'to-string'}:
+                # FormatSerSchema or ToStringSerSchema
+                return self.str_schema(core_schema.str_schema())
+            case {'type': 'model'}:
+                # ModelSerSchema
+                return self.generate_inner(schema['schema'])
         return None
 
     def complex_schema(self, schema: core_schema.ComplexSchema) -> JsonSchemaValue:
@@ -3014,8 +3014,10 @@ def _get_ser_schema_for_default_value(schema: CoreSchema) -> core_schema.PlainSe
     if (
         (ser_schema := schema.get('serialization'))
         and ser_schema['type'] == 'function-plain'
+        # A `'function-plain'` *validator* schema can also be used as a serialization schema:
+        and callable(ser_schema.get('function'))
         and not ser_schema.get('info_arg')
     ):
-        return ser_schema
+        return cast('core_schema.PlainSerializerFunctionSerSchema', ser_schema)
     if _core_utils.is_function_with_inner_schema(schema):
         return _get_ser_schema_for_default_value(schema['schema'])
