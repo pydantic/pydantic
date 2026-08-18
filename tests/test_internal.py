@@ -16,6 +16,7 @@ from pydantic_core import core_schema as cs
 from pydantic import BaseModel, TypeAdapter
 from pydantic._internal._config import ConfigWrapper
 from pydantic._internal._core_metadata import update_core_metadata
+from pydantic._internal._core_utils import as_ser_schema
 from pydantic._internal._fields import resolve_default_value
 from pydantic._internal._generate_schema import GenerateSchema
 from pydantic._internal._repr import Representation
@@ -288,3 +289,58 @@ def test_resolve_default_value_missing_validated_data():
             validated_data=None,
             call_default_factory=True,
         )
+
+
+def _identity(v: Any) -> Any:
+    return v
+
+
+def _wrap_identity(v: Any, handler: Any) -> Any:
+    return handler(v)
+
+
+@pytest.mark.parametrize(
+    ['schema', 'expected'],
+    [
+        # Any non-function schema is returned as is:
+        (cs.int_schema(), cs.int_schema()),
+        (
+            cs.no_info_after_validator_function(_identity, cs.int_schema()),
+            cs.no_info_after_validator_function(_identity, cs.int_schema()),
+        ),
+        # The `'serialization'` schema of a plain/wrap function schema takes precedence:
+        (
+            cs.no_info_plain_validator_function(_identity, serialization=cs.simple_ser_schema('str')),
+            cs.simple_ser_schema('str'),
+        ),
+        (
+            cs.no_info_wrap_validator_function(
+                _wrap_identity, cs.int_schema(), serialization=cs.simple_ser_schema('str')
+            ),
+            cs.simple_ser_schema('str'),
+        ),
+        # Otherwise, plain function schemas are serialized as `'any'`, wrap function schemas using the inner schema:
+        (cs.no_info_plain_validator_function(_identity), cs.any_schema()),
+        (cs.no_info_wrap_validator_function(_wrap_identity, cs.int_schema()), cs.int_schema()),
+        # Nested plain/wrap function schemas are unwrapped:
+        (
+            cs.no_info_wrap_validator_function(
+                _wrap_identity, cs.no_info_wrap_validator_function(_wrap_identity, cs.int_schema())
+            ),
+            cs.int_schema(),
+        ),
+        (
+            cs.no_info_wrap_validator_function(_wrap_identity, cs.no_info_plain_validator_function(_identity)),
+            cs.any_schema(),
+        ),
+        (
+            cs.no_info_wrap_validator_function(
+                _wrap_identity,
+                cs.no_info_plain_validator_function(_identity, serialization=cs.simple_ser_schema('str')),
+            ),
+            cs.simple_ser_schema('str'),
+        ),
+    ],
+)
+def test_as_ser_schema(schema: CoreSchema, expected: cs.SerSchema) -> None:
+    assert as_ser_schema(schema) == expected
