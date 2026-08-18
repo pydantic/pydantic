@@ -163,14 +163,6 @@ combined_serializer! {
     }
 }
 
-/// Whether the `'function-plain'`/`'function-wrap'` schema is a function *validator* schema
-/// (i.e. a core schema), as opposed to a function *ser* schema.
-fn is_function_validator_schema(schema: &Bound<'_, PyDict>) -> PyResult<bool> {
-    Ok(schema
-        .get_item(intern!(schema.py(), "function"))?
-        .is_some_and(|function| function.is_instance_of::<PyDict>()))
-}
-
 impl CombinedSerializer {
     fn _build(
         schema: &Bound<'_, PyDict>,
@@ -184,12 +176,9 @@ impl CombinedSerializer {
         if let Some(ser_schema) = schema.get_as::<Bound<'_, PyDict>>(intern!(py, "serialization"))? {
             let op_ser_type: Option<Bound<'_, PyString>> = ser_schema.get_as(type_key)?;
             match op_ser_type.as_ref().map(|py_str| py_str.to_str()).transpose()? {
-                // `'function-plain'` and `'function-wrap'` are special cases, not included in `find_serializer()`
-                // since they mean something different in `schema.type`. As core schemas of the same type
-                // are also accepted as `schema.serialization` (see the last match arm below), we need to
-                // distinguish between the two: function *ser* schemas have a callable as `function`, while
-                // function *validator* schemas have a validator function core schema as `function`.
-                Some("function-plain") if !is_function_validator_schema(&ser_schema)? => {
+                Some("function-plain") => {
+                    // `function-plain` is a special case, not included in `find_serializer` since it means
+                    // something different in `schema.type`
                     // NOTE! we use the `schema` here, not `ser_schema`
                     return super::type_serializers::function::FunctionPlainSerializer::build(
                         schema,
@@ -198,7 +187,9 @@ impl CombinedSerializer {
                     )
                     .map_err(|err| py_schema_error_type!("Error building `function-plain` serializer:\n  {err}"));
                 }
-                Some("function-wrap") if !is_function_validator_schema(&ser_schema)? => {
+                Some("function-wrap") => {
+                    // `function-wrap` is also a special case, not included in `find_serializer` since it mean
+                    // something different in `schema.type`
                     // NOTE! we use the `schema` here, not `ser_schema`
                     return super::type_serializers::function::FunctionWrapSerializer::build(
                         schema,
@@ -221,6 +212,8 @@ impl CombinedSerializer {
                     // the main schema (this ensures nested `serialization` schemas, prebuilt serializers
                     // and polymorphic serialization are handled). In this case, it's an error if a
                     // serializer isn't found.
+                    // Note that as a consequence, `function-plain`/`function-wrap` *validator* schemas can't
+                    // be used as `schema.serialization`, as they are interpreted as the function *ser* schemas.
                     return Self::build(&ser_schema, config, definitions);
                 }
             }

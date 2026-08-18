@@ -53,6 +53,29 @@ def is_function_with_inner_schema(
     return schema['type'] in _FUNCTION_WITH_INNER_SCHEMA_TYPES
 
 
+def as_ser_schema(schema: CoreSchema) -> core_schema.SerSchema:
+    """Return a schema suitable for the `'serialization'` key of a core schema, from an arbitrary core schema.
+
+    Any core schema can be used as a serialization schema, except `'function-plain'` and `'function-wrap'`
+    schemas, as these types are already used by the plain and wrap serializer *function* schemas.
+    For these, mimic what pydantic-core would do if they were used as the *main* schema:
+
+    - if the function schema has a `'serialization'` schema, use it.
+    - otherwise, a `'function-plain'` schema is serialized as `'any'`, and a `'function-wrap'` schema
+      is serialized using its inner schema.
+
+    Note that `schema` is expected to be a *core* schema (e.g. as returned by the schema generator),
+    not an existing `'serialization'` schema.
+    """
+    if schema['type'] == 'function-plain' or schema['type'] == 'function-wrap':
+        if (ser_schema := schema.get('serialization')) is not None:
+            return ser_schema
+        if schema['type'] == 'function-plain':
+            return core_schema.any_schema()
+        return as_ser_schema(schema['schema'])
+    return schema
+
+
 def is_list_like_schema_with_items_schema(
     schema: CoreSchema,
 ) -> TypeGuard[core_schema.ListSchema | core_schema.SetSchema | core_schema.FrozenSetSchema]:

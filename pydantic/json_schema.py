@@ -3014,8 +3014,6 @@ def _get_ser_schema_for_default_value(schema: CoreSchema) -> core_schema.PlainSe
     if (
         (ser_schema := schema.get('serialization'))
         and ser_schema['type'] == 'function-plain'
-        # A `'function-plain'` *validator* schema can also be used as a serialization schema:
-        and callable(ser_schema.get('function'))
         and not ser_schema.get('info_arg')
     ):
         return cast('core_schema.PlainSerializerFunctionSerSchema', ser_schema)

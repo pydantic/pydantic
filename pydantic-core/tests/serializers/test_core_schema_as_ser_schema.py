@@ -49,20 +49,6 @@ from ..conftest import plain_repr
             1,
             b'1',
         ),
-        # `'function-plain'`/`'function-wrap'` core validator schemas are distinguished from the
-        # function *ser* schemas (whose `function` value is a callable, not a dict):
-        (
-            core_schema.no_info_plain_validator_function(lambda v: v),
-            {'a': 1},
-            {'a': 1},
-            b'{"a":1}',
-        ),
-        (
-            core_schema.no_info_wrap_validator_function(lambda v, h: h(v), core_schema.str_schema()),
-            'a',
-            'a',
-            b'"a"',
-        ),
     ],
 )
 def test_core_schema_as_ser_schema(ser_schema: Any, value: Any, expected_python: Any, expected_json: bytes) -> None:
@@ -84,19 +70,6 @@ def test_core_schema_as_ser_schema_nested_serialization() -> None:
     s = SchemaSerializer(
         core_schema.any_schema(
             serialization=core_schema.int_schema(
-                serialization=core_schema.plain_serializer_function_ser_schema(lambda v: v * 2),
-            ),
-        )
-    )
-
-    assert s.to_python(3) == 6
-    assert s.to_json(3) == b'6'
-
-    # Also for function *validator* schemas, which have a special handling:
-    s = SchemaSerializer(
-        core_schema.any_schema(
-            serialization=core_schema.no_info_plain_validator_function(
-                lambda v: v,
                 serialization=core_schema.plain_serializer_function_ser_schema(lambda v: v * 2),
             ),
         )
