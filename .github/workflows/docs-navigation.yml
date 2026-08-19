@@ -58,6 +58,7 @@ jobs:
           permission-contents: write
 
       - name: Dispatch navigation check
+        id: dispatch
         env:
           GH_TOKEN: ${{ steps.app-token.outputs.token }}
           HEAD_SHA: ${{ github.event.pull_request.head.sha }}
@@ -73,6 +74,7 @@ jobs:
             -f "client_payload[source_sha]=${HEAD_SHA}"
 
       - name: Acknowledge on PR
+        id: acknowledge
         env:
           GH_TOKEN: ${{ github.token }}
           HEAD_SHA: ${{ github.event.pull_request.head.sha }}
@@ -96,7 +98,7 @@ jobs:
           fi
 
       - name: Comment failure on PR
-        if: failure()
+        if: failure() && (steps.app-token.outcome == 'failure' || steps.dispatch.outcome == 'failure')
         env:
           GH_TOKEN: ${{ github.token }}
           PR_NUMBER: ${{ github.event.pull_request.number }}
@@ -109,6 +111,22 @@ jobs:
           The navigation check could not be queued. See [the workflow run](${RUN_URL}) for details.
 
           <sub>Re-add the \`trigger:docs\` label to retry.</sub>
+          EOF
+          )
+          gh api "repos/${REPO}/issues/${PR_NUMBER}/comments" -f body="$body"
+
+      - name: Report acknowledgement failure on PR
+        if: failure() && steps.dispatch.outcome == 'success' && steps.acknowledge.outcome == 'failure'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          REPO: ${{ github.repository }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          body=$(cat <<EOF
+          ## Docs Navigation Check — queued
+
+          Navigation validation was queued, but this workflow could not post its normal acknowledgement. See [the workflow run](${RUN_URL}) for details.
           EOF
           )
           gh api "repos/${REPO}/issues/${PR_NUMBER}/comments" -f body="$body"
