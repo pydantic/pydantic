@@ -313,8 +313,16 @@ def collect_model_fields(  # noqa: C901
 
     bases = cls.__bases__
     parent_fields_lookup: dict[str, FieldInfo] = {}
-    for base in reversed(bases):
+    def _is_field_defined(base, k):
+        if k in _typing_extra.safe_get_annotations(base):
+            return True
+        if getattr(base, '__pydantic_generic_metadata__', {}).get('origin') is not None:
+            return True
+        return False
+
+    for base in reversed(cls.__mro__[1:]):
         if model_fields := getattr(base, '__pydantic_fields__', None):
+            model_fields = {k: v for k, v in model_fields.items() if _is_field_defined(base, k)}
             parent_fields_lookup.update(model_fields)
 
     type_hints = _typing_extra.get_model_type_hints(cls, ns_resolver=ns_resolver)
