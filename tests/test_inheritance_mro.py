@@ -1,4 +1,6 @@
 from pydantic import BaseModel
+
+
 def test_multiple_inheritance_mro_fields():
     class Base(BaseModel):
         f: str = "base"
