@@ -172,6 +172,7 @@ nav:
       - Error Handling: errors/errors.md
       - Validation Errors: errors/validation_errors.md
       - Usage Errors: errors/usage_errors.md
+      - Troubleshooting with Logfire: errors/troubleshooting.md
   - Integrations:
       - Pydantic Logfire: integrations/logfire.md
       - LLMs: integrations/llms.md
