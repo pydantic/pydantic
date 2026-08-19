@@ -33,6 +33,7 @@ jobs:
 
     steps:
       - name: Verify a maintainer triggered the check
+        id: verify
         env:
           ACTOR: ${{ github.actor }}
           GH_TOKEN: ${{ github.token }}
@@ -90,7 +91,7 @@ jobs:
           )
 
           existing=$(gh api --paginate --slurp "repos/${REPO}/issues/${PR_NUMBER}/comments?per_page=100" \
-            --jq '[.[][] | select(.user.login == "github-actions[bot]" and ((.body | startswith("## Docs Navigation Check")) or (.body | startswith("## Docs Preview"))))][0].url // empty')
+            --jq '([.[][] | select(.user.login == "github-actions[bot]" and ((.body | startswith("## Docs Navigation Check")) or (.body | startswith("## Docs Preview"))))] | last).url // empty')
           if [ -n "$existing" ]; then
             gh api -X PATCH "$existing" -f body="$body"
           else
@@ -98,7 +99,7 @@ jobs:
           fi
 
       - name: Comment failure on PR
-        if: failure() && (steps.app-token.outcome == 'failure' || steps.dispatch.outcome == 'failure')
+        if: failure() && (steps.verify.outcome == 'failure' || steps.app-token.outcome == 'failure' || steps.dispatch.outcome == 'failure')
         env:
           GH_TOKEN: ${{ github.token }}
           PR_NUMBER: ${{ github.event.pull_request.number }}

@@ -29,5 +29,7 @@ def test_public_comments_describe_data_only_navigation_validation() -> None:
     assert 'preview URL' not in workflow
     assert '--paginate --slurp' in workflow
     assert 'startswith("## Docs Preview")' in workflow
+    assert '| last).url // empty' in workflow
+    assert "steps.verify.outcome == 'failure'" in workflow
     assert "steps.app-token.outcome == 'failure' || steps.dispatch.outcome == 'failure'" in workflow
     assert "steps.acknowledge.outcome == 'failure'" in workflow
