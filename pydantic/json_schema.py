@@ -1675,7 +1675,8 @@ class GenerateJsonSchema:
         # We do not use schema['model'].model_json_schema() here
         # because it could lead to inconsistent refs handling, etc.
         cls = cast('type[BaseModel]', schema['cls'])
-        config = cls.model_config
+        # `cls` might not be a model in the case of a `ModelSerSchema`, hence the `getattr()`:
+        config = cast('ConfigDict', getattr(cls, 'model_config', {}))
 
         with self._config_wrapper_stack.push(config):
             json_schema = self.generate_inner(schema['schema'])
@@ -2243,13 +2244,21 @@ class GenerateJsonSchema:
                 return_schema = schema.get('return_schema')
                 if return_schema is not None:
                     return self.generate_inner(return_schema)
+                return None
             case {'type': 'format' | 'to-string'}:
                 # FormatSerSchema or ToStringSerSchema
                 return self.str_schema(core_schema.str_schema())
-            case {'type': 'model'}:
-                # ModelSerSchema
-                return self.generate_inner(schema['schema'])
-        return None
+            case {'type': 'include-exclude-sequence' | 'include-exclude-dict'}:
+                # IncExSeqSerSchema or IncExDictSerSchema, no impact on the JSON Schema
+                return None
+            case {'type': 'any'}:
+                # An `'any'` serialization schema doesn't provide any information about the serialized value,
+                # so use the main schema instead, which is a more precise description in practice.
+                return None
+            case _:
+                # An arbitrary core schema (this includes `SimpleSerSchema` and `ModelSerSchema`, which are
+                # subsets of the corresponding core schemas, hence the cast):
+                return self.generate_inner(cast('CoreSchema', schema))
 
     def complex_schema(self, schema: core_schema.ComplexSchema) -> JsonSchemaValue:
         """Generates a JSON schema that matches a complex number.
