@@ -8,6 +8,7 @@ def test_privileged_dispatcher_never_executes_pull_request_code() -> None:
 
     assert 'pull_request_target:' in workflow
     assert "github.event.label.name == 'trigger:docs'" in workflow
+    assert 'docs-navigation-${{ github.event.pull_request.number }}-${{ github.event.label.name }}' in workflow
     assert 'timeout-minutes: 5' in workflow
     assert 'actions/checkout@' not in workflow
     assert '/collaborators/${ACTOR}/permission' in workflow

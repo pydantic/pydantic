@@ -18,7 +18,7 @@ on:
 permissions: {}
 
 concurrency:
-  group: docs-navigation-${{ github.event.pull_request.number }}
+  group: docs-navigation-${{ github.event.pull_request.number }}-${{ github.event.label.name }}
   cancel-in-progress: true
 
 jobs:
