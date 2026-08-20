@@ -372,7 +372,7 @@ class GenerateSchema:
         collections.abc.MutableSet: lambda self, obj: self._set_schema(Any),
         frozenset: lambda self, obj: self._frozenset_schema(Any),
         collections.abc.Set: lambda self, obj: self._frozenset_schema(Any),
-        collections.abc.MutableSequence: lambda self, obj: self._sequence_schema(Any),
+        collections.abc.MutableSequence: lambda self, obj: self._list_schema(Any),
         collections.abc.Sequence: lambda self, obj: self._sequence_schema(Any),
         collections.deque: lambda self, obj: self._deque_schema(Any),
         collections.abc.Iterable: lambda self, obj: self._iterable_schema(obj),
