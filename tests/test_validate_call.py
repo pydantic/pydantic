@@ -929,6 +929,29 @@ def test_validate_by_name():
     assert foo(a=10, c=1) == 11
 
 
+def test_populate_by_name_still_effective():
+    """The deprecated `populate_by_name` setting should behave as `validate_by_name=True`."""
+
+    @validate_call(config=dict(populate_by_name=True))
+    def foo(a: Annotated[int, Field(alias='b')]):
+        return a
+
+    assert foo(b=1) == 1
+    assert foo(a=2) == 2
+
+
+def test_validate_by_alias_disabled():
+    """Setting `validate_by_alias=False` should implicitly enable validation by name."""
+
+    @validate_call(config=dict(validate_by_alias=False))
+    def foo(a: Annotated[int, Field(alias='b')]):
+        return a
+
+    assert foo(a=1) == 1
+    with pytest.raises(ValidationError):
+        foo(b=1)
+
+
 def test_validate_return():
     @validate_call(config=dict(validate_return=True))
     def foo(a: int, b: int) -> int:

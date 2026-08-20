@@ -185,6 +185,24 @@ class ConfigWrapper:
                 except KeyError:
                     raise AttributeError(f'Config has no attribute {name!r}') from None
 
+        @property
+        def validate_by_name(self) -> bool:
+            """The effective `validate_by_name` value, taking deprecated/related settings into account.
+
+            This mirrors the backwards compatibility patches applied in `core_config()`, so that direct
+            attribute accesses (e.g. when generating an arguments core schema, where the value is embedded
+            in the schema itself) stay consistent with the emitted pydantic-core configuration.
+            """
+            validate_by_name = self.config_dict.get('validate_by_name')
+            if validate_by_name is not None:
+                return validate_by_name
+            populate_by_name = self.config_dict.get('populate_by_name')
+            if populate_by_name is not None:
+                return populate_by_name
+            # `validate_by_name` defaults to `True` if `validate_by_alias` is explicitly set to `False`
+            # (otherwise no value could be provided for the field/argument):
+            return self.config_dict.get('validate_by_alias') is False
+
     def core_config(self, title: str | None) -> core_schema.CoreConfig:
         """Create a pydantic-core config.
 
