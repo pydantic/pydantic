@@ -2025,6 +2025,8 @@ class GenerateSchema:
         var_kwargs_schema: core_schema.CoreSchema | None = None
         var_kwargs_mode: core_schema.VarKwargsMode | None = None
 
+        core_config = self._config_wrapper.core_config(title=None)
+
         for i, (name, p) in enumerate(sig.parameters.items()):
             if p.annotation is sig.empty:
                 annotation = typing.cast(Any, Any)
@@ -2078,7 +2080,7 @@ class GenerateSchema:
             var_args_schema=var_args_schema,
             var_kwargs_mode=var_kwargs_mode,
             var_kwargs_schema=var_kwargs_schema,
-            validate_by_name=self._config_wrapper.validate_by_name,
+            validate_by_name=core_config.get('validate_by_name'),
         )
 
     def _arguments_v3_schema(
@@ -2098,6 +2100,7 @@ class GenerateSchema:
         type_hints = _typing_extra.get_function_type_hints(function, globalns=globalns, localns=localns)
 
         parameters_list: list[core_schema.ArgumentsV3Parameter] = []
+        core_config = self._config_wrapper.core_config(title=None)
 
         for i, (name, p) in enumerate(sig.parameters.items()):
             if parameters_callback is not None:
@@ -2146,7 +2149,7 @@ class GenerateSchema:
 
         return core_schema.arguments_v3_schema(
             parameters_list,
-            validate_by_name=self._config_wrapper.validate_by_name,
+            validate_by_name=core_config.get('validate_by_name'),
         )
 
     def _unsubstituted_typevar_schema(self, typevar: typing.TypeVar) -> core_schema.CoreSchema:
