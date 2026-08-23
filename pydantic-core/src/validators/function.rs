@@ -20,14 +20,14 @@ use super::{
     BuildValidator, CombinedValidator, DefinitionsBuilder, InputType, ValidationState, Validator, build_validator,
 };
 
-struct FunctionInfo {
+pub(crate) struct FunctionInfo {
     /// The actual function object that will get called
     pub function: Py<PyAny>,
     pub field_name: Option<Py<PyString>>,
     pub info_arg: bool,
 }
 
-fn destructure_function_schema(schema: &Bound<'_, PyDict>) -> PyResult<FunctionInfo> {
+pub(crate) fn destructure_function_schema(schema: &Bound<'_, PyDict>) -> PyResult<FunctionInfo> {
     let func_dict: Bound<'_, PyDict> = schema.get_as_req(intern!(schema.py(), "function"))?;
     let function = func_dict.get_as_req(intern!(schema.py(), "function"))?;
     let func_type: Bound<'_, PyString> = func_dict.get_as_req(intern!(schema.py(), "type"))?;
@@ -167,6 +167,30 @@ pub struct FunctionAfterValidator {
 impl_build!(FunctionAfterValidator, "function-after");
 
 impl FunctionAfterValidator {
+    /// Build a `function-after` validator directly from Rust, without going through a schema dict.
+    /// Used by `ModelValidator` to apply `mode="after"` model validators as part of its own build,
+    /// so their execution can be gated on `self_instance` instead of being a generic wrapping node.
+    pub(crate) fn new_for_model(
+        py: Python<'_>,
+        validator: Arc<CombinedValidator>,
+        func_info: FunctionInfo,
+        config: Py<PyAny>,
+    ) -> PyResult<Self> {
+        let name = format!(
+            "function-after[{}(), {}]",
+            function_name(func_info.function.bind(py))?,
+            validator.get_name()
+        );
+        Ok(Self {
+            validator,
+            func: func_info.function,
+            config,
+            name,
+            field_name: func_info.field_name,
+            info_arg: func_info.info_arg,
+        })
+    }
+
     fn _validate<'py, I: Input<'py> + ?Sized>(
         &self,
         call: impl FnOnce(&I, &mut ValidationState<'_, 'py>) -> ValResult<Py<PyAny>>,
@@ -331,6 +355,30 @@ impl BuildValidator for FunctionWrapValidator {
 }
 
 impl FunctionWrapValidator {
+    /// Build a `function-wrap` validator directly from Rust, without going through a schema dict.
+    /// Used by `ModelValidator` to apply `mode="wrap"` model validators as part of its own build,
+    /// so their execution can be gated on `self_instance` instead of being a generic wrapping node.
+    pub(crate) fn new_for_model(
+        py: Python<'_>,
+        validator: Arc<CombinedValidator>,
+        func_info: FunctionInfo,
+        config: Py<PyAny>,
+        hide_input_in_errors: bool,
+        validation_error_cause: bool,
+    ) -> PyResult<Self> {
+        let name = format!("function-wrap[{}()]", function_name(func_info.function.bind(py))?);
+        Ok(Self {
+            validator,
+            func: func_info.function,
+            config,
+            name,
+            field_name: func_info.field_name,
+            info_arg: func_info.info_arg,
+            hide_input_in_errors,
+            validation_error_cause,
+        })
+    }
+
     fn _validate<'py>(
         &self,
         handler: &Bound<'_, PyAny>,

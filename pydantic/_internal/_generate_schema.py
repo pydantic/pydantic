@@ -924,6 +924,7 @@ class GenerateSchema:
                         config=core_config,
                         ref=model_ref,
                         metadata=metadata,
+                        model_validators=build_outer_model_validators(model_validators),
                     )
                 else:
                     fields_schema: core_schema.CoreSchema = core_schema.model_fields_schema(
@@ -948,10 +949,10 @@ class GenerateSchema:
                         post_init=getattr(cls, '__pydantic_post_init__', None),
                         config=core_config,
                         ref=model_ref,
+                        model_validators=build_outer_model_validators(model_validators),
                     )
 
                 schema = self._apply_model_serializers(model_schema, decorators.model_serializers.values())
-                schema = apply_model_validators(schema, model_validators, 'outer')
                 return self.defs.create_definition_reference_schema(schema)
 
     def _resolve_self_type(self, obj: Any) -> Any:
@@ -2686,6 +2687,42 @@ def apply_model_validators(
     if ref:
         schema['ref'] = ref  # type: ignore
     return schema
+
+
+def build_outer_model_validators(
+    validators: Iterable[Decorator[ModelValidatorDecoratorInfo]],
+) -> list[core_schema.ModelValidatorFunctionSchema] | None:
+    """Build the `model_validators` entries consumed by `core_schema.model_schema`'s own `model_validators` key.
+
+    This covers the same "outer" (`mode="after"`/`mode="wrap"`) validators as
+    `apply_model_validators(schema, validators, 'outer')`, but instead of compiling them as schema nodes
+    wrapping the `model` schema from the outside, they're passed to `ModelValidator` itself, which applies
+    them gated on whether the current validation pass is genuinely constructing the instance. This avoids
+    them running twice when the model has a custom `__init__`: previously, `custom_init` would bounce
+    validation through `BaseModel.__init__`, which re-entered the *entire* wrapped schema - including the
+    outer validators - a second time. See https://github.com/pydantic/pydantic/issues/13471.
+    """
+    result: list[core_schema.ModelValidatorFunctionSchema] = []
+    for validator in validators:
+        if validator.info.mode == 'before':
+            continue
+        info_arg = inspect_validator(validator.func, mode=validator.info.mode, type='model')
+        if validator.info.mode == 'wrap':
+            wrap_function: core_schema.WrapValidatorFunction = (
+                {'type': 'with-info', 'function': validator.func}
+                if info_arg
+                else {'type': 'no-info', 'function': validator.func}
+            )
+            result.append({'type': 'wrap', 'function': wrap_function})
+        else:
+            assert validator.info.mode == 'after'
+            after_function: core_schema.ValidationFunction = (
+                {'type': 'with-info', 'function': validator.func}
+                if info_arg
+                else {'type': 'no-info', 'function': validator.func}
+            )
+            result.append({'type': 'after', 'function': after_function})
+    return result or None
 
 
 def wrap_default(field_info: FieldInfo, schema: core_schema.CoreSchema) -> core_schema.CoreSchema:

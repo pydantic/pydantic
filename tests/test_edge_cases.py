@@ -1383,6 +1383,116 @@ def test_nested_custom_init():
     assert m.nest.modified_number == 1
 
 
+def test_custom_init_model_validator_runs_once():
+    """https://github.com/pydantic/pydantic/issues/13471
+
+    A custom `__init__` bounces validation through `BaseModel.__init__`, which used to cause any
+    `mode='after'`/`mode='wrap'` model validator to run twice: once before the bounce and once
+    after. This should happen exactly once, whether the model is validated directly, as a nested
+    field, via `model_validate`, or via `TypeAdapter`.
+    """
+    after_calls: list[str] = []
+    wrap_calls: list[str] = []
+
+    class Inner(BaseModel):
+        id: int
+
+        def __init__(self, **kwargs: Any) -> None:
+            super().__init__(**kwargs)
+
+        @model_validator(mode='after')
+        def _after(self) -> 'Inner':
+            after_calls.append('inner')
+            return self
+
+    class Outer(BaseModel):
+        item: Inner
+
+        def __init__(self, **kwargs: Any) -> None:
+            super().__init__(**kwargs)
+
+        @model_validator(mode='wrap')
+        @classmethod
+        def _wrap(cls, value: Any, handler: Any) -> 'Outer':
+            wrap_calls.append('before')
+            result = handler(value)
+            wrap_calls.append('after')
+            return result
+
+    data = {'item': {'id': 1}}
+
+    for construct in (
+        lambda: Outer.model_validate(data),
+        lambda: Outer(**data),
+        lambda: TypeAdapter(Outer).validate_python(data),
+    ):
+        after_calls.clear()
+        wrap_calls.clear()
+        construct()
+        assert after_calls == ['inner']
+        assert wrap_calls == ['before', 'after']
+
+    after_calls.clear()
+    Inner(id=1)
+    assert after_calls == ['inner']
+
+
+def test_custom_init_without_super_skips_model_validators():
+    """A custom `__init__` that never calls `super().__init__()` performs no validation at all -
+    including outer (`mode='after'`/`mode='wrap'`) model validators - matching the documented
+    behavior that validation is entirely delegated to `super().__init__()`.
+    """
+    calls: list[str] = []
+
+    class Model(BaseModel):
+        x: int = 0
+
+        def __init__(self, **kwargs: Any) -> None:
+            # deliberately never calls super().__init__()
+            built = Model.model_construct(**kwargs)
+            object.__setattr__(self, '__dict__', built.__dict__)
+            object.__setattr__(self, '__pydantic_fields_set__', built.__pydantic_fields_set__)
+            object.__setattr__(self, '__pydantic_extra__', built.__pydantic_extra__)
+            object.__setattr__(self, '__pydantic_private__', built.__pydantic_private__)
+
+        @model_validator(mode='after')
+        def _after(self) -> 'Model':
+            calls.append('after')
+            return self
+
+    m = Model(x=1)
+    assert calls == []
+    assert m.x == 1
+
+
+def test_custom_init_model_validator_and_serializer():
+    """A `@model_serializer` alongside an outer `@model_validator` on a custom-`__init__` model
+    should be unaffected by moving outer model validators to be applied by `ModelValidator`
+    itself (https://github.com/pydantic/pydantic/issues/13471) - `_apply_model_serializers` sets
+    `schema['serialization']` directly on the `model` schema node, not via a wrapping node.
+    """
+    calls: list[str] = []
+
+    class Model(BaseModel):
+        x: int
+
+        def __init__(self, **kwargs: Any) -> None:
+            super().__init__(**kwargs)
+
+        @model_validator(mode='after')
+        def _after(self) -> 'Model':
+            calls.append('after')
+            return self
+
+        @model_serializer
+        def _ser(self) -> dict[str, Any]:
+            return {'x': self.x, 'serialized': True}
+
+    m = Model.model_validate({'x': 1})
+    assert calls == ['after']
+    assert m.model_dump() == {'x': 1, 'serialized': True}
+
+
 def test_init_inspection():
     calls = []
 

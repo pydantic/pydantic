@@ -304,6 +304,233 @@ def test_model_custom_init_nested():
     assert calls == ["outer: {'a': 2, 'b': {'b': 3}}", "inner: {'b': 3}"]
 
 
+def test_model_custom_init_with_after_model_validator_runs_once():
+    """https://github.com/pydantic/pydantic/issues/13471
+
+    Outer (`model_validators`) validators used to run twice on a `custom_init` model: once before
+    `validate_construct` bounced validation through `__init__`, and once again on the resumed
+    `self_instance` pass. They should run exactly once, for both direct construction and
+    `validate_python`.
+    """
+    calls = []
+
+    class Model:
+        __slots__ = '__dict__', '__pydantic_fields_set__', '__pydantic_extra__', '__pydantic_private__'
+        a: int
+
+        def __init__(self, **kwargs):
+            self.__pydantic_validator__.validate_python(kwargs, self_instance=self)
+
+    def after_validator(m, info):
+        calls.append('after')
+        return m
+
+    Model.__pydantic_validator__ = SchemaValidator(
+        core_schema.model_schema(
+            Model,
+            core_schema.model_fields_schema({'a': core_schema.model_field(core_schema.int_schema())}),
+            custom_init=True,
+            model_validators=[{'type': 'after', 'function': {'type': 'with-info', 'function': after_validator}}],
+        )
+    )
+
+    m = Model(a=1)
+    assert calls == ['after']
+    assert m.a == 1
+
+    calls.clear()
+    Model.__pydantic_validator__.validate_python({'a': 2})
+    assert calls == ['after']
+
+
+def test_model_custom_init_with_wrap_model_validator_runs_once():
+    """https://github.com/pydantic/pydantic/issues/13471 - `mode="wrap"` variant."""
+    calls = []
+
+    class Model:
+        __slots__ = '__dict__', '__pydantic_fields_set__', '__pydantic_extra__', '__pydantic_private__'
+        a: int
+
+        def __init__(self, **kwargs):
+            self.__pydantic_validator__.validate_python(kwargs, self_instance=self)
+
+    def wrap_validator(value, handler, info):
+        calls.append('before')
+        result = handler(value)
+        calls.append('after')
+        return result
+
+    Model.__pydantic_validator__ = SchemaValidator(
+        core_schema.model_schema(
+            Model,
+            core_schema.model_fields_schema({'a': core_schema.model_field(core_schema.int_schema())}),
+            custom_init=True,
+            model_validators=[{'type': 'wrap', 'function': {'type': 'with-info', 'function': wrap_validator}}],
+        )
+    )
+
+    m = Model(a=1)
+    assert calls == ['before', 'after']
+    assert m.a == 1
+
+    calls.clear()
+    Model.__pydantic_validator__.validate_python({'a': 2})
+    assert calls == ['before', 'after']
+
+
+def test_model_custom_init_nested_with_after_model_validator_runs_once():
+    """Nested-field variant of the fix in https://github.com/pydantic/pydantic/issues/13471."""
+    calls = []
+
+    class ModelInner:
+        __slots__ = '__dict__', '__pydantic_fields_set__', '__pydantic_extra__', '__pydantic_private__'
+        a: int
+
+        def __init__(self, **data):
+            self.__pydantic_validator__.validate_python(data, self_instance=self)
+
+    def after_validator(m, info):
+        calls.append('inner')
+        return m
+
+    inner_schema = core_schema.model_schema(
+        ModelInner,
+        core_schema.model_fields_schema({'a': core_schema.model_field(core_schema.int_schema())}),
+        custom_init=True,
+        model_validators=[{'type': 'after', 'function': {'type': 'with-info', 'function': after_validator}}],
+    )
+    ModelInner.__pydantic_validator__ = SchemaValidator(inner_schema)
+
+    class ModelOuter:
+        __slots__ = '__dict__', '__pydantic_fields_set__'
+        b: ModelInner
+
+        def __init__(self, **data):
+            self.__pydantic_validator__.validate_python(data, self_instance=self)
+
+    ModelOuter.__pydantic_validator__ = SchemaValidator(
+        core_schema.model_schema(
+            ModelOuter,
+            core_schema.model_fields_schema({'b': core_schema.model_field(inner_schema)}),
+            custom_init=True,
+        )
+    )
+
+    m = ModelOuter(b={'a': 1})
+    assert calls == ['inner']
+    assert m.b.a == 1
+
+
+def test_model_custom_init_wrap_model_validator_revalidates_different_instance():
+    """Regression test for a follow-up bug introduced while fixing
+    https://github.com/pydantic/pydantic/issues/13471.
+
+    A `mode="wrap"` model validator's `handler` can be called with a value other than the model's
+    own input - including an *existing instance* of the model that needs revalidating. For a
+    `custom_init` model with `revalidate_instances='always'`, this used to work (pre-#13471-fix)
+    because `ModelValidator::validate` always extracted `__dict__` from an existing instance before
+    handing it to `validate_construct`, regardless of how it was reached. After the #13471 fix moved
+    that extraction into `ModelValidator`'s own (`self_instance=None`-only) code path, a `handler`
+    call landing in `ModelInstanceBuilder`'s `self_instance=Some` branch (the *only* branch a
+    `mode="wrap"` validator's `handler` can reach for a `custom_init` model, since outer model
+    validators now only run during that resumed pass) received the raw instance directly and failed
+    with a `model_type` error instead of revalidating it.
+    """
+    calls = []
+
+    class Model:
+        __slots__ = '__dict__', '__pydantic_fields_set__', '__pydantic_extra__', '__pydantic_private__'
+        a: int
+
+        def __init__(self, **kwargs):
+            calls.append(('init', dict(kwargs)))
+            self.__pydantic_validator__.validate_python(kwargs, self_instance=self)
+
+    built_once = {'v': False}
+
+    def wrap_validator(value, handler, info):
+        calls.append(('wrap-before', type(value).__name__))
+        if isinstance(value, dict) and not built_once['v']:
+            built_once['v'] = True
+            # a different, already-existing instance that needs revalidation (not the raw `value`
+            # this validator itself was called with)
+            other = Model.__new__(Model)
+            object.__setattr__(other, '__dict__', {'a': 999})
+            object.__setattr__(other, '__pydantic_fields_set__', {'a'})
+            object.__setattr__(other, '__pydantic_extra__', None)
+            object.__setattr__(other, '__pydantic_private__', None)
+            result = handler(other)
+        else:
+            result = handler(value)
+        calls.append(('wrap-after', result.a))
+        return result
+
+    Model.__pydantic_validator__ = SchemaValidator(
+        core_schema.model_schema(
+            Model,
+            core_schema.model_fields_schema({'a': core_schema.model_field(core_schema.int_schema())}),
+            custom_init=True,
+            config=CoreConfig(revalidate_instances='always'),
+            model_validators=[{'type': 'wrap', 'function': {'type': 'with-info', 'function': wrap_validator}}],
+        )
+    )
+
+    m = Model(a=1)
+    assert m.a == 999
+    # the wrap validator itself still runs exactly once (the #13471 fix stays intact)
+    assert calls == [('init', {'a': 1}), ('wrap-before', 'dict'), ('wrap-after', 999)]
+
+
+def test_model_wrap_model_validator_revalidates_different_instance_no_custom_init():
+    """Second confirmed regression from the same fix as
+    `test_model_custom_init_wrap_model_validator_revalidates_different_instance`, found during
+    final review: a *non*-`custom_init` model has the identical bug in the `self_instance=None`
+    branch of `ModelInstanceBuilder::validate` (specifically its `NotAnInstance`/`NeedsRevalidation`
+    fallthrough) - this is a genuinely different code path from the `custom_init` case (that one is
+    only ever reachable via the `self_instance=Some` branch, since outer model validators only run
+    during the resumed pass for `custom_init` models; a non-`custom_init` model's outer validators
+    run with `self_instance=None` throughout, so a `handler` call here never touches `self_instance`
+    at all), so it is intentionally kept as a separate test.
+    """
+    calls = []
+
+    class Model:
+        __slots__ = '__dict__', '__pydantic_fields_set__', '__pydantic_extra__', '__pydantic_private__'
+        a: int
+
+    built_once = {'v': False}
+
+    def wrap_validator(value, handler, info):
+        calls.append(('wrap-before', type(value).__name__))
+        if isinstance(value, dict) and not built_once['v']:
+            built_once['v'] = True
+            # a different, already-existing instance that needs revalidation (not the raw `value`
+            # this validator itself was called with)
+            other = Model.__new__(Model)
+            object.__setattr__(other, '__dict__', {'a': 999})
+            object.__setattr__(other, '__pydantic_fields_set__', {'a'})
+            object.__setattr__(other, '__pydantic_extra__', None)
+            object.__setattr__(other, '__pydantic_private__', None)
+            result = handler(other)
+        else:
+            result = handler(value)
+        calls.append(('wrap-after', result.a))
+        return result
+
+    Model.__pydantic_validator__ = SchemaValidator(
+        core_schema.model_schema(
+            Model,
+            core_schema.model_fields_schema({'a': core_schema.model_field(core_schema.int_schema())}),
+            config=CoreConfig(revalidate_instances='always'),
+            model_validators=[{'type': 'wrap', 'function': {'type': 'with-info', 'function': wrap_validator}}],
+        )
+    )
+
+    m = Model.__pydantic_validator__.validate_python({'a': 1})
+    assert m.a == 999
+    assert calls == [('wrap-before', 'dict'), ('wrap-after', 999)]
+
+
 def test_model_custom_init_extra():
     calls = []
 

@@ -229,6 +229,7 @@ pub struct InternalValidator {
     by_name: Option<bool>,
     field_name: Option<Py<PyString>>,
     self_instance: Option<Py<PyAny>>,
+    existing_fields_set: Option<Py<PyAny>>,
     recursion_guard: RecursionState,
     pub(crate) exactness: Option<Exactness>,
     pub(crate) fields_set_count: Option<usize>,
@@ -265,6 +266,7 @@ impl InternalValidator {
             by_name: extra.by_name,
             field_name: state.field_name().map(|d| d.clone().unbind()),
             self_instance: state.self_instance.map(|d| d.clone().unbind()),
+            existing_fields_set: state.existing_fields_set.as_ref().map(|d| d.clone().unbind()),
             recursion_guard: state.recursion_guard.clone(),
             exactness: state.exactness,
             fields_set_count: state.fields_set_count,
@@ -344,6 +346,7 @@ impl InternalValidator {
             self.self_instance.as_ref().map(|data| data.bind(py)),
         );
         state.data = self.data.as_ref().map(|data| data.bind(py).clone());
+        state.existing_fields_set = self.existing_fields_set.as_ref().map(|data| data.bind(py).clone());
         state.exactness = self.exactness;
         state.fields_set_count = self.fields_set_count;
         let result = self.validator.validate(py, input, &mut state).map_err(|e| {
@@ -367,5 +370,6 @@ impl_py_gc_traverse!(InternalValidator {
     validator,
     data,
     context,
-    self_instance
+    self_instance,
+    existing_fields_set
 });

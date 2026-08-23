@@ -741,6 +741,9 @@ pub enum CombinedValidator {
     Nullable(nullable::NullableValidator),
     // create new model classes
     Model(model::ModelValidator),
+    // terminal instance-construction step for a model, wrapped by any outer (after/wrap) model
+    // validators; never built from a schema dict directly, only constructed by `ModelValidator::build`
+    ModelInstanceBuilder(model::ModelInstanceBuilder),
     ModelFields(model_fields::ModelFieldsValidator),
     // dataclasses
     DataclassArgs(dataclass::DataclassArgsValidator),

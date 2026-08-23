@@ -3275,6 +3275,21 @@ def model_fields_schema(
     )
 
 
+class ModelAfterValidatorFunctionSchema(TypedDict, total=False):
+    type: Required[Literal['after']]
+    function: Required[ValidationFunction]
+
+
+class ModelWrapValidatorFunctionSchema(TypedDict, total=False):
+    type: Required[Literal['wrap']]
+    function: Required[WrapValidatorFunction]
+
+
+# a `mode="after"` or `mode="wrap"` `@model_validator`, applied by `ModelValidator` itself rather
+# than as an external wrapping schema node - see `model_validators` on `model_schema` below.
+ModelValidatorFunctionSchema: TypeAlias = ModelAfterValidatorFunctionSchema | ModelWrapValidatorFunctionSchema
+
+
 class ModelSchema(TypedDict, total=False):
     type: Required[Literal['model']]
     cls: Required[type[Any]]
@@ -3291,6 +3306,7 @@ class ModelSchema(TypedDict, total=False):
     ref: str
     metadata: dict[str, Any]
     serialization: SerSchema
+    model_validators: list[ModelValidatorFunctionSchema]
 
 
 def model_schema(
@@ -3309,6 +3325,7 @@ def model_schema(
     ref: str | None = None,
     metadata: dict[str, Any] | None = None,
     serialization: SerSchema | None = None,
+    model_validators: list[ModelValidatorFunctionSchema] | None = None,
 ) -> ModelSchema:
     """
     A model schema generally contains a typed-dict schema.
@@ -3358,6 +3375,10 @@ def model_schema(
         ref: optional unique identifier of the schema, used to reference the schema in other places
         metadata: Any other information you want to include with the schema, not used by pydantic-core
         serialization: Custom serialization schema
+        model_validators: `mode="after"`/`mode="wrap"` `@model_validator`s for this model, applied by
+            `ModelValidator` itself once the instance has actually been built - keeping their execution
+            gated on whether this pass is the one doing real construction, rather than a `custom_init`
+            bounce through `__init__`, so they run exactly once
     """
     return _dict_not_none(
         type='model',
@@ -3375,6 +3396,7 @@ def model_schema(
         ref=ref,
         metadata=metadata,
         serialization=serialization,
+        model_validators=model_validators,
     )
 
 

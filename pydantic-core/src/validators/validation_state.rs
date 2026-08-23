@@ -41,6 +41,10 @@ pub struct ValidationState<'a, 'py> {
     pub data: Option<Bound<'py, PyDict>>,
     /// This is an instance of the model or dataclass being validated, when validation is performed from `__init__`
     pub self_instance: Option<&'a Bound<'py, PyAny>>,
+    /// The `__pydantic_fields_set__` of an existing model instance being revalidated (e.g. via
+    /// `revalidate_instances`), threaded through to `ModelValidator`'s outer (`after`/`wrap`) model
+    /// validators the same way it used to be passed as a direct argument to `validate_construct`.
+    pub existing_fields_set: Option<Bound<'py, PyAny>>,
     // deliberately make Extra readonly
     extra: Extra<'a, 'py>,
 }
@@ -63,6 +67,7 @@ impl<'a, 'py> ValidationState<'a, 'py> {
             extra,
             data: None,
             self_instance,
+            existing_fields_set: None,
         }
     }
 
@@ -115,6 +120,14 @@ impl<'a, 'py> ValidationState<'a, 'py> {
     /// Set `self_instance` to `None`, reset on exit of the scope.
     pub fn scoped_clear_self_instance(&mut self) -> ScopedSelfInstanceState<'_, 'a, 'py> {
         self.scoped_set(Self::self_instance_mut, None)
+    }
+
+    /// Set `existing_fields_set` within state for the given scope.
+    pub fn scoped_set_existing_fields_set(
+        &mut self,
+        new_value: Option<Bound<'py, PyAny>>,
+    ) -> ScopedExistingFieldsSetState<'_, 'a, 'py> {
+        self.scoped_set(Self::existing_fields_set_mut, new_value)
     }
 
     pub fn field_name(&self) -> Option<&Bound<'py, PyString>> {
@@ -188,6 +201,10 @@ impl<'a, 'py> ValidationState<'a, 'py> {
 
     fn self_instance_mut(&mut self) -> &mut Option<&'a Bound<'py, PyAny>> {
         &mut self.self_instance
+    }
+
+    fn existing_fields_set_mut(&mut self) -> &mut Option<Bound<'py, PyAny>> {
+        &mut self.existing_fields_set
     }
 }
 
@@ -304,3 +321,4 @@ type ScopedFieldNameState<'scope, 'a, 'py> = ScopedSetStateT<'scope, 'a, 'py, Op
 type ScopedDataState<'scope, 'a, 'py> = ScopedSetStateT<'scope, 'a, 'py, Option<Bound<'py, PyDict>>>;
 type ScopedHasFieldErrorState<'scope, 'a, 'py> = ScopedSetStateT<'scope, 'a, 'py, bool>;
 type ScopedSelfInstanceState<'scope, 'a, 'py> = ScopedSetStateT<'scope, 'a, 'py, Option<&'a Bound<'py, PyAny>>>;
+type ScopedExistingFieldsSetState<'scope, 'a, 'py> = ScopedSetStateT<'scope, 'a, 'py, Option<Bound<'py, PyAny>>>;
