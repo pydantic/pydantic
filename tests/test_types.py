@@ -2424,3 +2424,14 @@ def test_custom_serializer_override_secret_str() -> None:
 
     u = User(name='sam', password='hi')
     assert u.model_dump()['password'] == 'secret: **********'
+
+def test_secret_with_none_default() -> None:
+    # issue https://github.com/pydantic/pydantic/issues/13692
+    class M(BaseModel):
+        s1: SecretStr = None
+        s2: SecretBytes = None
+        s3: Secret[int] = None
+
+    m = M()
+    assert m.model_dump() == {'s1': None, 's2': None, 's3': None}
+    assert m.model_dump_json() == '{"s1":null,"s2":null,"s3":null}'

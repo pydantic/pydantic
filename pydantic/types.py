@@ -1574,7 +1574,11 @@ class _SecretBase(Generic[SecretType]):
         raise NotImplementedError
 
 
-def _serialize_secret(value: Secret[SecretType], info: core_schema.SerializationInfo) -> str | Secret[SecretType]:
+def _serialize_secret(
+    value: Secret[SecretType] | None, info: core_schema.SerializationInfo
+) -> str | Secret[SecretType] | None:
+    if value is None:
+        return None
     if info.mode == 'json':
         return str(value)
     else:
@@ -1751,8 +1755,10 @@ def _secret_display(value: SecretType) -> str:  # type: ignore
 
 
 def _serialize_secret_field(
-    value: _SecretField[SecretType], info: core_schema.SerializationInfo
-) -> str | _SecretField[SecretType]:
+    value: _SecretField[SecretType] | None, info: core_schema.SerializationInfo
+) -> str | _SecretField[SecretType] | None:
+    if value is None:
+        return None
     if info.mode == 'json':
         # we want the output to always be string without the `b'` prefix for bytes,
         # hence we just use `secret_display`
