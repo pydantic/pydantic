@@ -2432,5 +2432,5 @@ def test_secret_str_none() -> None:
     class Model(BaseModel):
         f: SecretStr = None
 
-    assert Model.model_dump() == {'f': None}
-    assert Model.model_dump_json() == '{"f":null}'
+    assert Model().model_dump() == {'f': None}
+    assert Model().model_dump_json() == '{"f":null}'
