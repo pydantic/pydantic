@@ -1095,6 +1095,17 @@ def test_secret_bytes_hashable():
     assert type(hash(SecretBytes(b'abs'))) is int
 
 
+def test_secret_field_none_default_model_dump_json():
+    class M(BaseModel):
+        s: SecretStr = None
+        b: SecretBytes = None
+
+    m = M()
+    assert m.model_dump() == {'s': None, 'b': None}
+    assert m.model_dump_json() == '{"s":null,"b":null}'
+
+
+
 def test_secret_str_min_max_length():
     class Foobar(BaseModel):
         password: SecretStr = Field(min_length=6, max_length=10)
