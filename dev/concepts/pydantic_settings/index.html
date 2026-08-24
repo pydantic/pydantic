@@ -2002,6 +2002,17 @@ to help you monitor and understand your
 </li>
       
         <li class="md-nav__item">
+  <a href="#aws-systems-manager-parameter-store" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        AWS Systems Manager Parameter Store
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#azure-key-vault" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -5396,6 +5407,17 @@ to help you monitor and understand your
 </li>
       
         <li class="md-nav__item">
+  <a href="#aws-systems-manager-parameter-store" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        AWS Systems Manager Parameter Store
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#azure-key-vault" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -6440,7 +6462,16 @@ validating them.</li>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
 <p>If a filename is specified for <code>env_file</code>, Pydantic will only check the current working directory and
-won't check any parent directories for the <code>.env</code> file.</p>
+won't check any parent directories for the <code>.env</code> file. Set <code>env_file_depth</code> to the number of
+directory levels <strong>up</strong> from the current working directory that should also be checked:</p>
+<div class="language-py highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">pydantic_settings</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseSettings</span><span class="p">,</span> <span class="n">SettingsConfigDict</span>
+
+
+<span class="k">class</span><span class="w"> </span><span class="nc">Settings</span><span class="p">(</span><span class="n">BaseSettings</span><span class="p">):</span>
+    <span class="n">model_config</span> <span class="o">=</span> <span class="n">SettingsConfigDict</span><span class="p">(</span><span class="n">env_file</span><span class="o">=</span><span class="s1">&#39;.env&#39;</span><span class="p">,</span> <span class="n">env_file_depth</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+</code></pre></div>
+<p>This is only used when the file is not found in the current working directory, and only applies to
+relative paths. It can also be set via the <code>_env_file_depth</code> keyword argument on instantiation.</p>
 </div>
 <div class="admonition tip">
 <p class="admonition-title">Tip</p>
@@ -7974,6 +8005,58 @@ if not specified. Works in both plain and nested directory modes, like
             <span class="n">dotenv_settings</span><span class="p">,</span>
             <span class="n">file_secret_settings</span><span class="p">,</span>
             <span class="n">aws_secrets_manager_settings</span><span class="p">,</span>
+        <span class="p">)</span>
+</code></pre></div>
+<h2 id="aws-systems-manager-parameter-store">AWS Systems Manager Parameter Store<a class="headerlink" href="#aws-systems-manager-parameter-store" title="Permanent link">&para;</a></h2>
+<p>You may set the following parameters:</p>
+<ul>
+<li><code>ssm_path</code>: The path hierarchy the parameters live under, for example <code>/prod/my-app</code>. Must start with <code>/</code>, and defaults to <code>/</code>.</li>
+</ul>
+<p>All parameters below <code>ssm_path</code> are read recursively with the <a href="https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/ssm/client/get_parameters_by_path.html"><code>get_parameters_by_path</code></a>
+API (with <code>WithDecryption=True</code>, so <code>SecureString</code> parameters are decrypted). The <code>ssm_path</code> prefix is stripped from
+each parameter name, and the remaining path is used as the field name.</p>
+<p>Because Parameter Store already uses a <code>/</code>-delimited hierarchy, nested models are supported with the <code>/</code> separator.
+For example, a parameter named <code>/prod/my-app/sub/a</code> populates the <code>a</code> field of the <code>sub</code> model. You must have the same
+naming convention in the field name as in the parameter name, or use an alias.</p>
+<div class="language-py highlight"><pre><span></span><code><span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">pydantic</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseModel</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">pydantic_settings</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+    <span class="n">AWSSystemsManagerSettingsSource</span><span class="p">,</span>
+    <span class="n">BaseSettings</span><span class="p">,</span>
+    <span class="n">PydanticBaseSettingsSource</span><span class="p">,</span>
+<span class="p">)</span>
+
+
+<span class="k">class</span><span class="w"> </span><span class="nc">SubModel</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="n">a</span><span class="p">:</span> <span class="nb">str</span>
+
+
+<span class="k">class</span><span class="w"> </span><span class="nc">AWSSystemsManagerSettings</span><span class="p">(</span><span class="n">BaseSettings</span><span class="p">):</span>
+    <span class="n">foo</span><span class="p">:</span> <span class="nb">str</span>
+    <span class="n">bar</span><span class="p">:</span> <span class="nb">int</span>
+    <span class="n">sub</span><span class="p">:</span> <span class="n">SubModel</span>
+
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">settings_customise_sources</span><span class="p">(</span>
+        <span class="bp">cls</span><span class="p">,</span>
+        <span class="n">settings_cls</span><span class="p">:</span> <span class="nb">type</span><span class="p">[</span><span class="n">BaseSettings</span><span class="p">],</span>
+        <span class="n">init_settings</span><span class="p">:</span> <span class="n">PydanticBaseSettingsSource</span><span class="p">,</span>
+        <span class="n">env_settings</span><span class="p">:</span> <span class="n">PydanticBaseSettingsSource</span><span class="p">,</span>
+        <span class="n">dotenv_settings</span><span class="p">:</span> <span class="n">PydanticBaseSettingsSource</span><span class="p">,</span>
+        <span class="n">file_secret_settings</span><span class="p">:</span> <span class="n">PydanticBaseSettingsSource</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">PydanticBaseSettingsSource</span><span class="p">,</span> <span class="o">...</span><span class="p">]:</span>
+        <span class="n">aws_systems_manager_settings</span> <span class="o">=</span> <span class="n">AWSSystemsManagerSettingsSource</span><span class="p">(</span>
+            <span class="n">settings_cls</span><span class="p">,</span>
+            <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">[</span><span class="s1">&#39;AWS_SSM_PATH&#39;</span><span class="p">],</span>
+        <span class="p">)</span>
+        <span class="k">return</span> <span class="p">(</span>
+            <span class="n">init_settings</span><span class="p">,</span>
+            <span class="n">env_settings</span><span class="p">,</span>
+            <span class="n">dotenv_settings</span><span class="p">,</span>
+            <span class="n">file_secret_settings</span><span class="p">,</span>
+            <span class="n">aws_systems_manager_settings</span><span class="p">,</span>
         <span class="p">)</span>
 </code></pre></div>
 <h2 id="azure-key-vault">Azure Key Vault<a class="headerlink" href="#azure-key-vault" title="Permanent link">&para;</a></h2>

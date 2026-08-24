@@ -785,7 +785,18 @@ Once you have your `.env` file filled with variables, *pydantic* supports loadin
 
 Note
 
-If a filename is specified for `env_file`, Pydantic will only check the current working directory and won't check any parent directories for the `.env` file.
+If a filename is specified for `env_file`, Pydantic will only check the current working directory and won't check any parent directories for the `.env` file. Set `env_file_depth` to the number of directory levels **up** from the current working directory that should also be checked:
+
+```py
+from pydantic_settings import BaseSettings, SettingsConfigDict
+
+
+class Settings(BaseSettings):
+    model_config = SettingsConfigDict(env_file='.env', env_file_depth=2)
+
+```
+
+This is only used when the file is not found in the current working directory, and only applies to relative paths. It can also be set via the `_env_file_depth` keyword argument on instantiation.
 
 Tip
 
@@ -2468,6 +2479,60 @@ class AWSSecretsManagerSettings(BaseSettings):
             dotenv_settings,
             file_secret_settings,
             aws_secrets_manager_settings,
+        )
+
+```
+
+## AWS Systems Manager Parameter Store
+
+You may set the following parameters:
+
+- `ssm_path`: The path hierarchy the parameters live under, for example `/prod/my-app`. Must start with `/`, and defaults to `/`.
+
+All parameters below `ssm_path` are read recursively with the [`get_parameters_by_path`](https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/ssm/client/get_parameters_by_path.html) API (with `WithDecryption=True`, so `SecureString` parameters are decrypted). The `ssm_path` prefix is stripped from each parameter name, and the remaining path is used as the field name.
+
+Because Parameter Store already uses a `/`-delimited hierarchy, nested models are supported with the `/` separator. For example, a parameter named `/prod/my-app/sub/a` populates the `a` field of the `sub` model. You must have the same naming convention in the field name as in the parameter name, or use an alias.
+
+```py
+import os
+
+from pydantic import BaseModel
+
+from pydantic_settings import (
+    AWSSystemsManagerSettingsSource,
+    BaseSettings,
+    PydanticBaseSettingsSource,
+)
+
+
+class SubModel(BaseModel):
+    a: str
+
+
+class AWSSystemsManagerSettings(BaseSettings):
+    foo: str
+    bar: int
+    sub: SubModel
+
+    @classmethod
+    def settings_customise_sources(
+        cls,
+        settings_cls: type[BaseSettings],
+        init_settings: PydanticBaseSettingsSource,
+        env_settings: PydanticBaseSettingsSource,
+        dotenv_settings: PydanticBaseSettingsSource,
+        file_secret_settings: PydanticBaseSettingsSource,
+    ) -> tuple[PydanticBaseSettingsSource, ...]:
+        aws_systems_manager_settings = AWSSystemsManagerSettingsSource(
+            settings_cls,
+            os.environ['AWS_SSM_PATH'],
+        )
+        return (
+            init_settings,
+            env_settings,
+            dotenv_settings,
+            file_secret_settings,
+            aws_systems_manager_settings,
         )
 
 ```
