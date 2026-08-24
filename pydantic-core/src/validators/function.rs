@@ -17,8 +17,7 @@ use crate::tools::{SchemaDict, function_name, safe_repr};
 
 use super::generator::InternalValidator;
 use super::{
-    BuildValidator, CombinedValidator, DefinitionsBuilder, Extra, InputType, ValidationState, Validator,
-    build_validator,
+    BuildValidator, CombinedValidator, DefinitionsBuilder, InputType, ValidationState, Validator, build_validator,
 };
 
 struct FunctionInfo {
@@ -108,7 +107,7 @@ impl FunctionBeforeValidator {
                 .cloned()
                 .map(Bound::unbind)
                 .or_else(|| self.field_name.clone());
-            let info = ValidationInfo::new(py, state.extra(), &self.config, field_name);
+            let info = ValidationInfo::new(py, state, &self.config, field_name);
             self.func.call1(py, (input.to_object(py)?, info))
         } else {
             self.func.call1(py, (input.to_object(py)?,))
@@ -182,7 +181,7 @@ impl FunctionAfterValidator {
                 .cloned()
                 .map(Bound::unbind)
                 .or_else(|| self.field_name.clone());
-            let info = ValidationInfo::new(py, state.extra(), &self.config, field_name);
+            let info = ValidationInfo::new(py, state, &self.config, field_name);
             self.func.call1(py, (v, info))
         } else {
             self.func.call1(py, (v,))
@@ -276,7 +275,7 @@ impl Validator for FunctionPlainValidator {
                 .cloned()
                 .map(Bound::unbind)
                 .or_else(|| self.field_name.clone());
-            let info = ValidationInfo::new(py, state.extra(), &self.config, field_name);
+            let info = ValidationInfo::new(py, state, &self.config, field_name);
             self.func.call1(py, (input.to_object(py)?, info))
         } else {
             self.func.call1(py, (input.to_object(py)?,))
@@ -345,7 +344,7 @@ impl FunctionWrapValidator {
                 .cloned()
                 .map(Bound::unbind)
                 .or_else(|| self.field_name.clone());
-            let info = ValidationInfo::new(py, state.extra(), &self.config, field_name);
+            let info = ValidationInfo::new(py, state, &self.config, field_name);
             self.func.call1(py, (input.to_object(py)?, handler, info))
         } else {
             self.func.call1(py, (input.to_object(py)?, handler))
@@ -504,12 +503,12 @@ macro_rules! py_err_string {
 pub fn convert_err(py: Python<'_>, err: PyErr, input: impl ToErrorValue) -> ValError {
     if err.is_instance_of::<PyValueError>(py) {
         let error_value = err.value(py);
-        if let Ok(pydantic_value_error) = error_value.extract::<PydanticCustomError>() {
-            pydantic_value_error.into_val_error(input)
-        } else if let Ok(pydantic_error_type) = error_value.extract::<PydanticKnownError>() {
-            pydantic_error_type.into_val_error(input)
-        } else if let Ok(validation_error) = err.value(py).extract::<ValidationError>() {
-            validation_error.into_val_error()
+        if let Ok(pydantic_value_error) = error_value.cast::<PydanticCustomError>() {
+            pydantic_value_error.get().clone().into_val_error(input)
+        } else if let Ok(pydantic_error_type) = error_value.cast::<PydanticKnownError>() {
+            pydantic_error_type.get().clone().into_val_error(input)
+        } else if let Ok(validation_error) = err.value(py).cast::<ValidationError>() {
+            validation_error.get().clone().into_val_error()
         } else {
             py_err_string!(py, err, error_value, ValueError, input)
         }
@@ -541,12 +540,13 @@ impl_py_gc_traverse!(ValidationInfo {
 });
 
 impl ValidationInfo {
-    fn new(py: Python, extra: &Extra<'_, '_>, config: &Py<PyAny>, field_name: Option<Py<PyString>>) -> Self {
+    fn new(py: Python, state: &ValidationState<'_, '_>, config: &Py<PyAny>, field_name: Option<Py<PyString>>) -> Self {
+        let extra = state.extra();
         Self {
             config: config.clone_ref(py),
             context: extra.context.map(|ctx| ctx.clone().into()),
             field_name,
-            data: extra.data.as_ref().map(|data| data.clone().into()),
+            data: state.data.as_ref().map(|data| data.clone().into()),
             mode: extra.input_type,
         }
     }

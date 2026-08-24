@@ -45,7 +45,7 @@ impl BuildSerializer for TypedDictSerializer {
         let serialize_by_alias = config.get_as(intern!(py, "serialize_by_alias"))?;
 
         let fields_dict: Bound<'_, PyDict> = schema.get_as_req(intern!(py, "fields"))?;
-        let mut fields: AHashMap<String, SerField> = AHashMap::with_capacity(fields_dict.len());
+        let mut fields = AHashMap::with_capacity(fields_dict.len());
 
         let extra_serializer = match (schema.get_item(intern!(py, "extras_schema"))?, &fields_mode) {
             (Some(v), FieldsMode::TypedDictAllow) => {
@@ -56,16 +56,15 @@ impl BuildSerializer for TypedDictSerializer {
         };
 
         for (key, value) in fields_dict {
-            let key_py: PyBackedStr = key.extract()?;
-            let key: String = key_py.to_string();
+            let key: PyBackedStr = key.extract()?;
             let field_info = value.cast()?;
 
             let required = field_info.get_as(intern!(py, "required"))?.unwrap_or(total);
 
             if field_info.get_as(intern!(py, "serialization_exclude"))? == Some(true) {
                 fields.insert(
-                    key,
-                    SerField::new(key_py, None, None, required, serialize_by_alias, None),
+                    key.clone_ref(py),
+                    SerField::new(key, None, None, required, serialize_by_alias, None),
                 );
             } else {
                 let alias = field_info.get_as(intern!(py, "serialization_alias"))?;
@@ -75,9 +74,9 @@ impl BuildSerializer for TypedDictSerializer {
                 let serializer = CombinedSerializer::build(&schema, config, definitions)
                     .map_err(|e| py_schema_error_type!("Field `{key}`:\n  {e}"))?;
                 fields.insert(
-                    key,
+                    key.clone_ref(py),
                     SerField::new(
-                        key_py,
+                        key,
                         alias,
                         Some(serializer),
                         required,

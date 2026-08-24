@@ -544,7 +544,6 @@ def test_dataclass_classvar(any_serializer):
     assert any_serializer.to_json(foo2) == b'{"a":2,"b":"b"}'
 
 
-@pytest.mark.skipif(sys.version_info < (3, 10), reason='slots are only supported for dataclasses in Python >= 3.10')
 def test_dataclass_slots(any_serializer):
     @dataclasses.dataclass(slots=True)
     class Foo:
@@ -564,7 +563,6 @@ def test_dataclass_slots(any_serializer):
     assert any_serializer.to_json(foo2) == b'{"a":2,"b":"b"}'
 
 
-@pytest.mark.skipif(sys.version_info < (3, 10), reason='slots are only supported for dataclasses in Python >= 3.10')
 def test_dataclass_slots_init_vars(any_serializer):
     @dataclasses.dataclass(slots=True)
     class Foo:
@@ -578,7 +576,6 @@ def test_dataclass_slots_init_vars(any_serializer):
     assert any_serializer.to_json(foo) == b'{"a":1,"b":"a"}'
 
 
-@pytest.mark.skipif(sys.version_info < (3, 10), reason='slots are only supported for dataclasses in Python > 3.10')
 def test_slots_mixed(any_serializer):
     @dataclasses.dataclass(slots=True)
     class Model:

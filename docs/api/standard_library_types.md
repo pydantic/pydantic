@@ -79,8 +79,9 @@ Strings support the following constraints:
 | `strip_whitespace` | Whether to remove leading and trailing whitespace | N/A                                                                                                                                           |
 | `to_upper`         | Whether to convert the string to uppercase        | N/A                                                                                                                                           |
 | `to_lower`         | Whether to convert the string to lowercase        | N/A                                                                                                                                           |
+| `ascii_only`       | Whether to allow only ASCII characters            | N/A                                                                                                                                           |
 
-These constraints can be provided using the [`StringConstraints`][pydantic.types.StringConstraints] metadata type, or using the [`Field()`][pydantic.Field] function (except for `to_upper` and `to_lower`).
+These constraints can be provided using the [`StringConstraints`][pydantic.types.StringConstraints] metadata type, or using the [`Field()`][pydantic.Field] function (except for `strip_whitespace`, `to_upper`, `to_lower` and `ascii_only`).
 
 The [`annotated-types`](https://github.com/annotated-types/annotated-types) library also provides the `MinLen`, `MaxLen` and `Len` metadata types, as well
 as the `LowerCase`, `UpperCase`, `IsDigit` and `IsAscii` predicates (must be parameterized with `str`, e.g. `LowerCase[str]`).
@@ -219,7 +220,7 @@ Built-in type: [`float`][].
 
 * Floats are validated as-is.
 * String and bytes are attempted to be converted to floats and validated as-is.
-  (see the [Rust implementation](https://doc.rust-lang.org/src/core/num/dec2flt/mod.rs.html) for details).
+  (see the [Rust implementation](https://doc.rust-lang.org/src/core/num/float_parse.rs.html) for details).
 * If the input has a [`__float__()`][object.__float__] method, it will be called to convert the input into
   a float. If `__float__()` is not defined, it falls back to [`__index__()`][object.__index__]. This includes
   (but not limited to) the [`Decimal`][decimal.Decimal] and [`Fraction`][fractions.Fraction] types.
@@ -422,7 +423,7 @@ Standard library type: [`datetime.datetime`][].
 * Strings and bytes are validated in two ways:
     * Strings complying to the [RFC 3339](https://datatracker.ietf.org/doc/html/rfc3339) format (both datetime and date).
       See the [speedate](https://docs.rs/speedate/) documentation for more details.
-    * Unix timestamps, both as seconds or milliseconds sinch the [epoch](https://en.wikipedia.org/wiki/Unix_time).
+    * Unix timestamps, both as seconds or milliseconds since the [epoch](https://en.wikipedia.org/wiki/Unix_time).
       See the [`val_temporal_unit`][pydantic.ConfigDict.val_temporal_unit] configuration value for more details.
 * Integers and floats (or types that can be coerced as integers or floats) are validated as unix timestamps, following the
   same semantics as strings.
@@ -505,7 +506,7 @@ Standard library type: [`datetime.date`][].
 * Strings and bytes are validated in two ways:
     * Strings complying to the [RFC 3339](https://datatracker.ietf.org/doc/html/rfc3339) date format.
       See the [speedate](https://docs.rs/speedate/) documentation for more details.
-    * Unix timestamps, both as seconds or milliseconds sinch the [epoch](https://en.wikipedia.org/wiki/Unix_time).
+    * Unix timestamps, both as seconds or milliseconds since the [epoch](https://en.wikipedia.org/wiki/Unix_time).
       See the [`val_temporal_unit`][pydantic.ConfigDict.val_temporal_unit] configuration value for more details.
 * If the validation fails, the input can be [validated as a datetime](#datetimes) (including as numbers),
   provided that the time component is 0 and that it is naive.
@@ -798,14 +799,12 @@ The strict constraint must be applied to the parameter type for this to work.
 <h4>Example</h4>
 
 ```python
-from typing import Optional
-
 from pydantic import BaseModel, Field
 
 
 class Model(BaseModel):
-    simple_list: Optional[list[object]] = None
-    list_of_ints: Optional[list[int]] = Field(default=None, strict=True)
+    simple_list: list[object] | None = None
+    list_of_ints: list[int] | None = Field(default=None, strict=True)
 
 
 print(Model(simple_list=('1', '2', '3')).simple_list)
@@ -854,14 +853,12 @@ The strict constraint must be applied to the parameter types for this to work.
 <h4>Example</h4>
 
 ```python
-from typing import Optional
-
 from pydantic import BaseModel
 
 
 class Model(BaseModel):
-    simple_tuple: Optional[tuple] = None
-    tuple_of_different_types: Optional[tuple[int, float, bool]] = None
+    simple_tuple: tuple | None = None
+    tuple_of_different_types: tuple[int, float, bool] | None = None
 
 
 print(Model(simple_tuple=[1, 2, 3, 4]).simple_tuple)
@@ -883,6 +880,7 @@ Standard library type: [`typing.NamedTuple`][] (and types created by the [`colle
 
 * Allows [`tuple`][] and [`list`][] instances. Validate each item according to the field definition.
 * Allows [`dict`][] instances. Keys must match the named tuple field names, and values are validated according to the field definition.
+* Allows instances of the named tuple class (fields are revalidated).
 
 <h4>Serialization</h4>
 
@@ -949,14 +947,12 @@ they are serialized as arrays.
 <h4>Example</h4>
 
 ```python
-from typing import Optional
-
 from pydantic import BaseModel
 
 
 class Model(BaseModel):
-    simple_set: Optional[set] = None
-    set_of_ints: Optional[frozenset[int]] = None
+    simple_set: set | None = None
+    set_of_ints: frozenset[int] | None = None
 
 
 print(Model(simple_set=['1', '2', '3']).simple_set)
@@ -964,6 +960,10 @@ print(Model(simple_set=['1', '2', '3']).simple_set)
 print(Model(set_of_ints=['1', '2', '3']).set_of_ints)
 #> frozenset({1, 2, 3})
 ```
+
+<h4>JSON Schema</h4>
+
+Pydantic does best effort to sort default values that are [`collections.abc.Set`][] instances.
 
 ### Deque
 
@@ -1029,7 +1029,7 @@ Any [`collections.abc.Sequence`][] instance (expect strings and bytes) is accept
 constructor, and then converted back to the original input type.
 
 !!! warning "Strings aren't treated as sequences"
-    While strings are technically valid sequence instances, this is frequently not intended as is a common source of bugs.
+    While strings are technically valid sequence instances, this is frequently not intended, and is a common source of bugs.
 
     As a result, Pydantic will *not* accept strings and bytes for the [`Sequence`][collections.abc.Sequence] type (see example below).
 
@@ -1238,7 +1238,7 @@ Pydantic only validates that the input is a [callable][] (using the [`callable()
 It does *not* validate the number of parameters or their type, nor the type of the return value.
 
 ```python
-from typing import Callable
+from collections.abc import Callable
 
 from pydantic import BaseModel
 
@@ -1495,6 +1495,7 @@ Standard library types:
 * [`pathlib.Path`][].
 * [`pathlib.PurePath`][].
 * [`pathlib.PosixPath`][].
+* [`pathlib.WindowsPath`][].
 * [`pathlib.PurePosixPath`][].
 * [`pathlib.PureWindowsPath`][].
 * [`os.PathLike`][] (must be parameterized with [`str`][], [`bytes`][] or [`Any`][typing.Any]).

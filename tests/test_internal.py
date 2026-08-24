@@ -6,16 +6,18 @@ import sys
 from copy import deepcopy
 from dataclasses import dataclass
 from decimal import Decimal
-from typing import Any, Union
+from typing import Any
 
 import pytest
 from dirty_equals import Contains, IsPartialDict
-from pydantic_core import CoreSchema
+from pydantic_core import CoreSchema, PydanticUndefined
 from pydantic_core import core_schema as cs
 
 from pydantic import BaseModel, TypeAdapter
 from pydantic._internal._config import ConfigWrapper
 from pydantic._internal._core_metadata import update_core_metadata
+from pydantic._internal._core_utils import as_ser_schema
+from pydantic._internal._fields import resolve_default_value
 from pydantic._internal._generate_schema import GenerateSchema
 from pydantic._internal._repr import Representation
 from pydantic._internal._validators import _extract_decimal_digits_info
@@ -125,7 +127,7 @@ def test_core_schema_with_model_used_in_multiple_places(nested_ref: bool) -> Non
         b: M1
 
     class M3(BaseModel):
-        c: Union[M2, M1]
+        c: M2 | M1
         d: M1
 
     init, cleaned = init_schema_and_cleaned_schema(list[M3] if nested_ref else M3)
@@ -240,3 +242,105 @@ def test_pydantic_js_functions():
     )
 
     assert metadata['pydantic_js_functions'] == [func]
+
+
+@pytest.mark.parametrize(
+    [
+        'default',
+        'default_factory',
+        'default_factory_takes_validated_data_argument',
+        'validated_data',
+        'call_default_factory',
+        'expected',
+    ],
+    [
+        ('foo', None, False, None, True, 'foo'),
+        ('foo', None, False, None, False, 'foo'),
+        ('foo-unused', lambda: 'foo', False, None, False, PydanticUndefined),
+        ('foo-unused', lambda: 'foo', False, None, True, 'foo'),
+        ('foo-unused', lambda data: data['foo'], True, {'foo': 'bar'}, True, 'bar'),
+    ],
+)
+def test_resolve_default_value(
+    default,
+    default_factory,
+    default_factory_takes_validated_data_argument,
+    validated_data,
+    call_default_factory,
+    expected,
+):
+    result = resolve_default_value(
+        default=default,
+        default_factory=default_factory,
+        default_factory_takes_validated_data_argument=default_factory_takes_validated_data_argument,
+        validated_data=validated_data,
+        call_default_factory=call_default_factory,
+    )
+    assert result == expected
+
+
+def test_resolve_default_value_missing_validated_data():
+    # When factory requires validated_data but none is provided, a ValueError should be raised.
+    with pytest.raises(ValueError):
+        resolve_default_value(
+            default='foo',
+            default_factory=lambda data: data['foo'],
+            default_factory_takes_validated_data_argument=True,
+            validated_data=None,
+            call_default_factory=True,
+        )
+
+
+def _identity(v: Any) -> Any:
+    return v
+
+
+def _wrap_identity(v: Any, handler: Any) -> Any:
+    return handler(v)
+
+
+@pytest.mark.parametrize(
+    ['schema', 'expected'],
+    [
+        # Any non-function schema is returned as is:
+        (cs.int_schema(), cs.int_schema()),
+        (
+            cs.no_info_after_validator_function(_identity, cs.int_schema()),
+            cs.no_info_after_validator_function(_identity, cs.int_schema()),
+        ),
+        # The `'serialization'` schema of a plain/wrap function schema takes precedence:
+        (
+            cs.no_info_plain_validator_function(_identity, serialization=cs.simple_ser_schema('str')),
+            cs.simple_ser_schema('str'),
+        ),
+        (
+            cs.no_info_wrap_validator_function(
+                _wrap_identity, cs.int_schema(), serialization=cs.simple_ser_schema('str')
+            ),
+            cs.simple_ser_schema('str'),
+        ),
+        # Otherwise, plain function schemas are serialized as `'any'`, wrap function schemas using the inner schema:
+        (cs.no_info_plain_validator_function(_identity), cs.any_schema()),
+        (cs.no_info_wrap_validator_function(_wrap_identity, cs.int_schema()), cs.int_schema()),
+        # Nested plain/wrap function schemas are unwrapped:
+        (
+            cs.no_info_wrap_validator_function(
+                _wrap_identity, cs.no_info_wrap_validator_function(_wrap_identity, cs.int_schema())
+            ),
+            cs.int_schema(),
+        ),
+        (
+            cs.no_info_wrap_validator_function(_wrap_identity, cs.no_info_plain_validator_function(_identity)),
+            cs.any_schema(),
+        ),
+        (
+            cs.no_info_wrap_validator_function(
+                _wrap_identity,
+                cs.no_info_plain_validator_function(_identity, serialization=cs.simple_ser_schema('str')),
+            ),
+            cs.simple_ser_schema('str'),
+        ),
+    ],
+)
+def test_as_ser_schema(schema: CoreSchema, expected: cs.SerSchema) -> None:
+    assert as_ser_schema(schema) == expected

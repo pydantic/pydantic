@@ -1,11 +1,11 @@
 import functools
 from enum import Enum
-from typing import ClassVar, Generic, Optional, TypeVar
+from typing import Annotated, ClassVar, Generic, TypeVar
 
 import pytest
 from pydantic_core import PydanticUndefined
 
-from pydantic import BaseModel, ConfigDict, PrivateAttr, computed_field
+from pydantic import BaseModel, ConfigDict, PrivateAttr, PydanticUserError, computed_field
 from pydantic.fields import ModelPrivateAttr
 
 
@@ -68,7 +68,7 @@ def test_private_attribute_nested():
 def test_private_attribute_factory():
     default = {'a': {}}
 
-    def factory():
+    def factory() -> dict[str, dict]:
         return default
 
     class Model(BaseModel):
@@ -86,6 +86,48 @@ def test_private_attribute_factory():
 
     assert m.model_dump() == {}
     assert m.__dict__ == {}
+
+
+def test_private_attribute_factory_uses_validated_data():
+    def factory(data: dict[str, str]) -> str:
+        return data['foo'] + data['bar']
+
+    class Model(BaseModel):
+        foo: str
+        bar: str
+        _foobaz = PrivateAttr(default_factory=factory)
+
+    m = Model(foo='foo', bar='bar')
+    assert m._foobaz == 'foobar'
+
+
+def test_private_attribute_factory_uses_other_private_attribute():
+    def factory(data: dict[str, str]) -> str:
+        return data['foo'] + data['bar'] + data['_foobaz']
+
+    class Model(BaseModel):
+        foo: str
+        bar: str
+        _foobaz = PrivateAttr(default='foobaz')
+        _foobazfoo = PrivateAttr(default_factory=factory)
+
+    m = Model(foo='foo', bar='bar')
+    assert m._foobaz == 'foobaz'
+    assert m._foobazfoo == 'foobarfoobaz'
+
+
+def test_private_attribute_factory_unset_private():
+    def factory(data: dict[str, str]) -> str:
+        return data['foo'] + data['bar'] + data['_foobazfoo']
+
+    class Model(BaseModel):
+        foo: str
+        bar: str
+        _foobaz = PrivateAttr(default_factory=factory)
+        _foobazfoo = PrivateAttr(default='foobazfoo')
+
+    with pytest.raises(KeyError, match='_foobazfoo'):
+        Model(foo='foo', bar='bar')
 
 
 def test_private_attribute_annotation():
@@ -164,7 +206,7 @@ def test_private_attribute_intersection_with_extra_field():
 
 def test_private_attribute_invalid_name():
     with pytest.raises(
-        NameError,
+        PydanticUserError,
         match="Private attributes must not use valid field names; use sunder names, e.g. '_foo' instead of 'foo'.",
     ):
 
@@ -290,7 +332,7 @@ def test_private_attribute_multiple_inheritance():
 
 def test_private_attributes_not_dunder() -> None:
     with pytest.raises(
-        NameError,
+        PydanticUserError,
         match="Private attributes must not use dunder names; use a single underscore prefix instead of '__foo__'.",
     ):
 
@@ -342,16 +384,15 @@ def test_none_as_private_attr():
 
 
 def test_layout_compatible_multiple_private_parents():
-    import typing as t
 
     import pydantic
 
     class ModelMixin(pydantic.BaseModel):
-        _mixin_private: t.Optional[str] = pydantic.PrivateAttr(None)
+        _mixin_private: str | None = pydantic.PrivateAttr(None)
 
     class Model(pydantic.BaseModel):
         public: str = 'default'
-        _private: t.Optional[str] = pydantic.PrivateAttr(None)
+        _private: str | None = pydantic.PrivateAttr(None)
 
     class NewModel(ModelMixin, Model):
         pass
@@ -530,7 +571,7 @@ def test_private_descriptors(base, use_annotation):
 
 def test_private_attr_set_name():
     class SetNameInt(int):
-        _owner_attr_name: Optional[str] = None
+        _owner_attr_name: str | None = None
 
         def __set_name__(self, owner, name):
             self._owner_attr_name = f'{owner.__name__}.{name}'
@@ -591,3 +632,32 @@ def test_private_attribute_not_skipped_during_ns_inspection() -> None:
         _priv: object = Fullname
 
     assert isinstance(Full._priv, ModelPrivateAttr)
+
+
+def test_private_attribute_fake_classvar() -> None:
+    ClassVar = list  # noqa: F841
+
+    class Model(BaseModel):
+        _priv: 'ClassVar[int]'
+
+    assert isinstance(Model._priv, ModelPrivateAttr)
+
+
+def test_private_attribute_from_annotated_metadata_set_name() -> None:
+    # Unlike private attributes assigned a value (where `type.__new__()` natively invokes
+    # `__set_name__` on the value present in the namespace), annotation-only private attributes
+    # are never seen during class creation, so `collect_model_fields()` is responsible
+    # for calling `__set_name__()`:
+    set_name_calls: list[tuple[type, str]] = []
+
+    class SetNameInt(int):
+        def __set_name__(self, owner: type, name: str) -> None:
+            set_name_calls.append((owner, name))
+
+    default = SetNameInt(1)
+
+    class Model(BaseModel):
+        _priv: Annotated[int, PrivateAttr(default=default)]
+
+    assert set_name_calls == [(Model, '_priv')]
+    assert Model()._priv == 1

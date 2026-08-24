@@ -109,7 +109,9 @@ cases: list[ParameterSet | tuple[str, str]] = [
         ('mypy-plugin.ini', 'root_models.py'),
         ('mypy-plugin.ini', 'plugin_strict_fields.py'),
         ('mypy-plugin.ini', 'final_with_default.py'),
+        ('mypy-plugin.ini', 'create_model_var.py'),
         ('mypy-plugin-strict-no-any.ini', 'dataclass_no_any.py'),
+        ('mypy-plugin-strict-no-any.ini', 'plugin_no_any_dynamic_alias.py'),
         ('mypy-plugin-very-strict.ini', 'metaclass_args.py'),
         ('pyproject-plugin-no-strict-optional.toml', 'no_strict_optional.py'),
         ('pyproject-plugin-strict-equality.toml', 'strict_equality.py'),
@@ -193,6 +195,26 @@ def test_bad_toml_config() -> None:
         mypy_api.run(command)
 
     assert str(e.value) == 'Configuration value must be a boolean for key: init_forbid_extra'
+
+
+def test_unknown_toml_config_key(capsys: pytest.CaptureFixture[str]) -> None:
+    full_config_filename = 'tests/mypy/configs/pyproject-plugin-unknown-param.toml'
+    full_filename = 'tests/mypy/modules/generics.py'  # File doesn't matter
+
+    command = [full_filename, '--config-file', full_config_filename, '--show-error-codes']
+    mypy_api.run(command)
+    captured = capsys.readouterr()
+    assert '[pydantic-mypy]: Unrecognized option: warn_untyped_fields = True' in captured.err
+
+
+def test_unknown_ini_config_key(capsys: pytest.CaptureFixture[str]) -> None:
+    full_config_filename = 'tests/mypy/configs/mypy-plugin-unknown-param.ini'
+    full_filename = 'tests/mypy/modules/generics.py'  # File doesn't matter
+
+    command = [full_filename, '--config-file', full_config_filename, '--show-error-codes']
+    mypy_api.run(command)
+    captured = capsys.readouterr()
+    assert '[pydantic-mypy]: Unrecognized option: warn_untyped_fields = True' in captured.err
 
 
 @pytest.mark.parametrize('module', ['dataclass_no_any', 'plugin_success', 'plugin_success_baseConfig'])

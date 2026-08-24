@@ -13,8 +13,8 @@ use crate::tools::SchemaDict;
 
 #[derive(Debug, Clone, Default)]
 pub(crate) struct SchemaFilter<T> {
-    include: Option<AHashSet<T>>,
-    exclude: Option<AHashSet<T>>,
+    include: Option<Box<AHashSet<T>>>,
+    exclude: Option<Box<AHashSet<T>>>,
 }
 
 fn map_negative_index<'py>(value: &Bound<'py, PyAny>, len: Option<usize>) -> PyResult<Bound<'py, PyAny>> {
@@ -74,7 +74,7 @@ impl SchemaFilter<usize> {
         }
     }
 
-    fn build_set_ints(v: Option<Bound<'_, PyAny>>) -> PyResult<Option<AHashSet<usize>>> {
+    fn build_set_ints(v: Option<Bound<'_, PyAny>>) -> PyResult<Option<Box<AHashSet<usize>>>> {
         match v {
             Some(value) => {
                 if value.is_none() {
@@ -86,7 +86,7 @@ impl SchemaFilter<usize> {
                     for item in py_set {
                         set.insert(item.extract()?);
                     }
-                    Ok(Some(set))
+                    Ok(Some(Box::new(set)))
                 }
             }
             None => Ok(None),
@@ -112,7 +112,7 @@ impl SchemaFilter<isize> {
         Ok(Self { include, exclude })
     }
 
-    fn build_set_hashes(v: Option<&Bound<'_, PyAny>>) -> PyResult<Option<AHashSet<isize>>> {
+    fn build_set_hashes(v: Option<&Bound<'_, PyAny>>) -> PyResult<Option<Box<AHashSet<isize>>>> {
         match v {
             Some(value) => {
                 if value.is_none() {
@@ -124,7 +124,7 @@ impl SchemaFilter<isize> {
                     for item in py_set.iter() {
                         set.insert(item.hash()?);
                     }
-                    Ok(Some(set))
+                    Ok(Some(Box::new(set)))
                 }
             }
             None => Ok(None),

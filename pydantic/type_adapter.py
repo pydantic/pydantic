@@ -110,11 +110,9 @@ class TypeAdapter(Generic[T]):
         annotate your variable:
 
         ```py
-        from typing import Union
-
         from pydantic import TypeAdapter
 
-        ta: TypeAdapter[Union[str, int]] = TypeAdapter(Union[str, int])  # type: ignore[arg-type]
+        ta: TypeAdapter[str | int] = TypeAdapter(str | int)  # type: ignore[arg-type]
         ```
 
     ??? info "Namespace management nuances and implementation details"
@@ -410,6 +408,11 @@ class TypeAdapter(Generic[T]):
     ) -> T:
         """Validate a Python object against the model.
 
+        A [`ValidationError`][pydantic_core.ValidationError] reports the rejected locations and values.
+        If you record validations with [Logfire](../integrations/logfire.md), the complete object and trace
+        context are retained alongside the error — `TypeAdapter` validations are captured the same way as
+        model validations (see [Troubleshooting validation errors](../errors/troubleshooting.md)).
+
         Args:
             object: The Python object to validate against the model.
             strict: Whether to strictly check types.
@@ -465,6 +468,11 @@ class TypeAdapter(Generic[T]):
             [JSON Parsing](../concepts/json.md#json-parsing)
 
         Validate a JSON string or bytes against the model.
+
+        JSON validated this way often comes from an external source, where a
+        [`ValidationError`][pydantic_core.ValidationError] can be the first sign that the source changed
+        shape. [Logfire](../integrations/logfire.md) retains the complete document and trace context
+        alongside the errors — see [Troubleshooting validation errors](../errors/troubleshooting.md).
 
         Args:
             data: The JSON data to validate against the model.
@@ -575,6 +583,7 @@ class TypeAdapter(Generic[T]):
         warnings: bool | Literal['none', 'warn', 'error'] = True,
         fallback: Callable[[Any], Any] | None = None,
         serialize_as_any: bool = False,
+        polymorphic_serialization: bool | None = None,
         context: Any | None = None,
     ) -> Any:
         """Dump an instance of the adapted type to a Python object.
@@ -597,6 +606,7 @@ class TypeAdapter(Generic[T]):
             fallback: A function to call when an unknown value is encountered. If not provided,
                 a [`PydanticSerializationError`][pydantic_core.PydanticSerializationError] error is raised.
             serialize_as_any: Whether to serialize fields with duck-typing serialization behavior.
+            polymorphic_serialization: Whether to use model and dataclass polymorphic serialization for this call.
             context: Additional context to pass to the serializer.
 
         Returns:
@@ -616,6 +626,7 @@ class TypeAdapter(Generic[T]):
             warnings=warnings,
             fallback=fallback,
             serialize_as_any=serialize_as_any,
+            polymorphic_serialization=polymorphic_serialization,
             context=context,
         )
 
@@ -637,6 +648,7 @@ class TypeAdapter(Generic[T]):
         warnings: bool | Literal['none', 'warn', 'error'] = True,
         fallback: Callable[[Any], Any] | None = None,
         serialize_as_any: bool = False,
+        polymorphic_serialization: bool | None = None,
         context: Any | None = None,
     ) -> bytes:
         """!!! abstract "Usage Documentation"
@@ -664,6 +676,7 @@ class TypeAdapter(Generic[T]):
             fallback: A function to call when an unknown value is encountered. If not provided,
                 a [`PydanticSerializationError`][pydantic_core.PydanticSerializationError] error is raised.
             serialize_as_any: Whether to serialize fields with duck-typing serialization behavior.
+            polymorphic_serialization: Whether to use model and dataclass polymorphic serialization for this call.
             context: Additional context to pass to the serializer.
 
         Returns:
@@ -684,6 +697,7 @@ class TypeAdapter(Generic[T]):
             warnings=warnings,
             fallback=fallback,
             serialize_as_any=serialize_as_any,
+            polymorphic_serialization=polymorphic_serialization,
             context=context,
         )
 
@@ -712,8 +726,6 @@ class TypeAdapter(Generic[T]):
             schema_generator: To override the logic used to generate the JSON schema, as a subclass of
                 `GenerateJsonSchema` with your desired modifications
             mode: The mode in which to generate the schema.
-            schema_generator: The generator class used for creating the schema.
-            mode: The mode to use for schema generation.
 
         Returns:
             The JSON schema for the model as a dictionary.
@@ -724,7 +736,10 @@ class TypeAdapter(Generic[T]):
         if isinstance(self.core_schema, _mock_val_ser.MockCoreSchema):
             self.core_schema.rebuild()
             assert not isinstance(self.core_schema, _mock_val_ser.MockCoreSchema), 'this is a bug! please report it'
-        return schema_generator_instance.generate(self.core_schema, mode=mode)
+        # The configuration provided to the type adapter (if any) is not part of the core schema,
+        # so we need to explicitly make it available to the JSON Schema generator:
+        with schema_generator_instance._config_wrapper_stack.push(self._config):
+            return schema_generator_instance.generate(self.core_schema, mode=mode)
 
     @staticmethod
     def json_schemas(

@@ -28,7 +28,7 @@ use super::types::ErrorType;
 use super::value_exception::PydanticCustomError;
 use super::{InputValue, ValError};
 
-#[pyclass(extends=PyValueError, module="pydantic_core._pydantic_core", subclass)]
+#[pyclass(extends=PyValueError, module="pydantic_core._pydantic_core", subclass, skip_from_py_object, frozen)]
 #[derive(Clone)]
 #[cfg_attr(debug_assertions, derive(Debug))]
 pub struct ValidationError {
@@ -355,6 +355,7 @@ impl ValidationError {
             None,
             false,
             None,
+            None,
         );
         let mut state = SerializationState::new(config, WarningsMode::None, None, None, extra)?;
         let mut serializer = ValidationErrorSerializer {
@@ -424,7 +425,7 @@ pub fn pretty_py_line_errors<'a>(
 }
 
 /// `PyLineError` are the public version of `ValLineError`, as help and used in `ValidationError`s
-#[pyclass]
+#[pyclass(from_py_object)]
 #[derive(Clone)]
 #[cfg_attr(debug_assertions, derive(Debug))]
 pub struct PyLineError {
@@ -458,8 +459,8 @@ impl TryFrom<&Bound<'_, PyAny>> for PyLineError {
         let error_type = if let Ok(type_str) = type_raw.cast::<PyString>() {
             let context: Option<Bound<'_, PyDict>> = dict.get_as(intern!(py, "ctx"))?;
             ErrorType::new(py, type_str.to_str()?, context)?
-        } else if let Ok(custom_error) = type_raw.extract::<PydanticCustomError>() {
-            ErrorType::new_custom_error(py, custom_error)
+        } else if let Ok(custom_error) = type_raw.cast::<PydanticCustomError>() {
+            ErrorType::new_custom_error(py, custom_error.get().clone())
         } else {
             return Err(PyTypeError::new_err(
                 "`type` should be a `str` or `PydanticCustomError`",

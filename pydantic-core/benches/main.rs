@@ -90,7 +90,7 @@ fn list_int_json(bench: &mut Bencher) {
     })
 }
 
-fn list_int_input(py: Python<'_>) -> (SchemaValidator, PyObject) {
+fn list_int_input(py: Python<'_>) -> (SchemaValidator, Py<PyAny>) {
     let validator = build_schema_validator(py, c"{'type': 'list', 'items_schema': {'type': 'int'}}");
     let code = CString::new(format!(
         "[{}]",
@@ -167,7 +167,7 @@ fn list_error_json(bench: &mut Bencher) {
     })
 }
 
-fn list_error_python_input(py: Python<'_>) -> (SchemaValidator, PyObject) {
+fn list_error_python_input(py: Python<'_>) -> (SchemaValidator, Py<PyAny>) {
     let validator = build_schema_validator(py, c"{'type': 'list', 'items_schema': {'type': 'int'}}");
     let code = CString::new(format!(
         "[{}]",

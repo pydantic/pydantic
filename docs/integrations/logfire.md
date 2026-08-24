@@ -4,7 +4,7 @@ Pydantic integrates seamlessly with **Pydantic Logfire**, an observability platf
 
 Logfire has an out-of-the-box Pydantic integration that lets you understand the data passing through your Pydantic models and get analytics on validations. For existing Pydantic users, it delivers unparalleled insights into your usage of Pydantic models.
 
-[Getting started](https://logfire.pydantic.dev/docs/) with Logfire can be done in three simple steps:
+[Getting started](https://pydantic.dev/docs/logfire/get-started/) with Logfire can be done in three simple steps:
 
 1. Set up your Logfire account.
 2. Install the Logfire SDK.
@@ -42,7 +42,7 @@ logfire.info('user processed: {user!r}', user=user)  # (2)!
 ### Pydantic Instrumentation
 
 You can even record information about the validation process automatically by
-using the builtin [Pydantic integration](https://logfire.pydantic.dev/docs/why-logfire/pydantic/):
+using the builtin [Pydantic integration](https://pydantic.dev/docs/logfire/get-started/why/#pydantic-integration):
 
 ```python {test="skip"}
 from datetime import date
@@ -74,5 +74,9 @@ You'll see each successful and failed validation logged in Logfire:
 And you can investigate each of the corresponding spans to get validation details:
 
 ![logfire span details](../img/logfire_span.png)
+
+This is especially useful when a [`ValidationError`][pydantic_core.ValidationError] shows up in
+production and you need the input that caused it — see [Troubleshooting Validation Errors with
+Logfire](../errors/troubleshooting.md).
 
 <!-- TODO: add examples re tracing performance issues - what kind of example do we want to use? -->

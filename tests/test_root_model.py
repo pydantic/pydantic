@@ -1,6 +1,9 @@
+import importlib.util
+import inspect
 import pickle
+import typing
 from datetime import date, datetime
-from typing import Annotated, Any, Generic, Literal, Optional, TypeVar, Union
+from typing import Annotated, Any, Generic, Literal, TypeVar
 
 import pytest
 from pydantic_core import CoreSchema
@@ -114,7 +117,7 @@ def test_root_model_recursive():
         def my_a_method(self):
             pass
 
-    class B(RootModel[dict[str, Optional[A]]]):
+    class B(RootModel[dict[str, A | None]]):
         def my_b_method(self):
             pass
 
@@ -475,12 +478,12 @@ def test_root_model_dump_with_base_model(order):
     if order == 'BR':
 
         class Model(RootModel):
-            root: list[Union[BModel, RModel]]
+            root: list[BModel | RModel]
 
     elif order == 'RB':
 
         class Model(RootModel):
-            root: list[Union[RModel, BModel]]
+            root: list[RModel | BModel]
 
     m = Model([1, 2, {'value': 'abc'}])
 
@@ -509,7 +512,7 @@ def test_mixed_discriminated_union(data):
         str_value: str
 
     class Model(RootModel):
-        root: Union[SModel, RModel] = Field(discriminator='kind')
+        root: SModel | RModel = Field(discriminator='kind')
 
     if data['kind'] == 'IModel':
         with pytest.warns(
@@ -532,7 +535,7 @@ def test_list_rootmodel():
         type: Literal['b']
         b: str
 
-    class D(RootModel[Annotated[Union[A, B], Field(discriminator='type')]]):
+    class D(RootModel[Annotated[A | B, Field(discriminator='type')]]):
         pass
 
     LD = RootModel[list[D]]
@@ -698,7 +701,7 @@ def test_model_construction_with_invalid_generic_specification() -> None:
     with pytest.raises(TypeError, match='You should parametrize RootModel directly'):
 
         class GenericRootModel(RootModel, Generic[T_]):
-            root: Union[T_, int]
+            root: T_ | int
 
 
 def test_model_with_field_description() -> None:
@@ -721,3 +724,29 @@ def test_model_with_both_docstring_and_field_description() -> None:
         'type': 'integer',
         'description': 'More detailed description',
     }
+
+
+def test_type_checking_model_dump_signature_in_sync_with_base_model() -> None:
+
+    import pydantic.root_model
+
+    spec = importlib.util.spec_from_file_location('pydantic._root_model_type_checking', pydantic.root_model.__file__)
+    assert spec is not None and spec.loader is not None
+    module = importlib.util.module_from_spec(spec)
+
+    typing.TYPE_CHECKING = True
+    try:
+        spec.loader.exec_module(module)
+    finally:
+        typing.TYPE_CHECKING = False
+
+    base_sig = inspect.signature(BaseModel.model_dump)
+    root_sig = inspect.signature(module.RootModel.model_dump)
+
+    # The return annotation intentionally differs (`Any` instead of `dict[str, Any]`),
+    # but the parameters must match exactly:
+    assert list(root_sig.parameters.values()) == list(base_sig.parameters.values())
+
+    assert module.RootModel.model_dump.__doc__ is not None
+    assert BaseModel.model_dump.__doc__ is not None
+    assert inspect.cleandoc(module.RootModel.model_dump.__doc__) == inspect.cleandoc(BaseModel.model_dump.__doc__)

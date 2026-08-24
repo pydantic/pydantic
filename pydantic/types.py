@@ -5,7 +5,9 @@ from __future__ import annotations as _annotations
 import base64
 import dataclasses as _dataclasses
 import re
-from collections.abc import Hashable, Iterator
+import secrets
+import sys
+from collections.abc import Callable, Hashable, Iterator
 from datetime import date, datetime
 from decimal import Decimal
 from enum import Enum
@@ -16,12 +18,11 @@ from typing import (
     TYPE_CHECKING,
     Annotated,
     Any,
-    Callable,
     ClassVar,
     Generic,
     Literal,
+    TypeAlias,
     TypeVar,
-    Union,
     cast,
 )
 from uuid import UUID
@@ -29,10 +30,15 @@ from uuid import UUID
 import annotated_types
 from annotated_types import BaseMetadata, MaxLen, MinLen
 from pydantic_core import CoreSchema, PydanticCustomError, SchemaSerializer, core_schema
-from typing_extensions import Protocol, TypeAlias, TypeAliasType, deprecated, get_args, get_origin
-from typing_inspection.introspection import is_union_origin
+from typing_extensions import (  # noqa: UP035 (for `get_args` and `get_origin`)
+    Protocol,
+    TypeAliasType,
+    deprecated,
+    get_args,
+    get_origin,
+)
 
-from ._internal import _fields, _internal_dataclass, _utils, _validators
+from ._internal import _fields, _utils, _validators
 from ._migration import getattr_migration
 from .annotated_handlers import GetCoreSchemaHandler, GetJsonSchemaHandler
 from .errors import PydanticUserError
@@ -706,6 +712,7 @@ class StringConstraints(annotated_types.GroupedMetadata):
         min_length: The minimum length of the string.
         max_length: The maximum length of the string.
         pattern: A regex pattern that the string must match.
+        ascii_only: Whether the string should contain only ASCII characters.
 
     Example:
         ```python
@@ -724,6 +731,7 @@ class StringConstraints(annotated_types.GroupedMetadata):
     min_length: int | None = None
     max_length: int | None = None
     pattern: str | Pattern[str] | None = None
+    ascii_only: bool | None = None
 
     def __iter__(self) -> Iterator[BaseMetadata]:
         if self.min_length is not None:
@@ -737,12 +745,14 @@ class StringConstraints(annotated_types.GroupedMetadata):
             or self.pattern is not None
             or self.to_lower is not None
             or self.to_upper is not None
+            or self.ascii_only is not None
         ):
             yield _fields.pydantic_general_metadata(
                 strip_whitespace=self.strip_whitespace,
                 to_upper=self.to_upper,
                 to_lower=self.to_lower,
                 pattern=self.pattern,
+                ascii_only=self.ascii_only,
             )
 
 
@@ -755,6 +765,7 @@ def constr(
     min_length: int | None = None,
     max_length: int | None = None,
     pattern: str | Pattern[str] | None = None,
+    ascii_only: bool | None = None,
 ) -> type[str]:
     """
     !!! warning "Discouraged"
@@ -810,6 +821,7 @@ def constr(
         min_length: The minimum length of the string.
         max_length: The maximum length of the string.
         pattern: A regex pattern to validate the string against.
+        ascii_only: Whether the string should contain only ASCII characters.
 
     Returns:
         The wrapped string type.
@@ -824,6 +836,7 @@ def constr(
             min_length=min_length,
             max_length=max_length,
             pattern=pattern,
+            ascii_only=ascii_only,
         ),
     ]
 
@@ -944,7 +957,7 @@ else:
             '''
             1 validation error for ImportThings
             obj
-              Invalid python path: No module named 'foo.bar' [type=import_error, input_value='foo.bar', input_type=str]
+              Invalid python path: No module named 'foo' [type=import_error, input_value='foo.bar', input_type=str]
             '''
 
         # Actual python objects can be assigned as well
@@ -1134,7 +1147,7 @@ def condecimal(
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ UUID TYPES ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 
-@_dataclasses.dataclass(**_internal_dataclass.slots_true)
+@_dataclasses.dataclass(slots=True)
 class UuidVersion:
     """A field metadata class to indicate a [UUID](https://docs.python.org/3/library/uuid.html) version.
 
@@ -1171,7 +1184,7 @@ class UuidVersion:
         return schema
 
     def __hash__(self) -> int:
-        return hash(type(self.uuid_version))
+        return hash(self.uuid_version)
 
 
 UUID1 = Annotated[UUID, UuidVersion(1)]
@@ -1332,7 +1345,7 @@ class PathType:
             return path
 
     def __hash__(self) -> int:
-        return hash(type(self.path_type))
+        return hash(self.path_type)
 
 
 FilePath = Annotated[Path, PathType('file')]
@@ -1572,7 +1585,7 @@ class Secret(_SecretBase[SecretType]):
     """A generic base class used for defining a field with sensitive information that you do not want to be visible in logging or tracebacks.
 
     You may either directly parametrize `Secret` with a type, or subclass from `Secret` with a parametrized type. The benefit of subclassing
-    is that you can define a custom `_display` method, which will be used for `repr()` and `str()` methods. The examples below demonstrate both
+    is that you can define a custom `_display()` method, which will be used for [`repr()`][repr] and [`str()`][str] methods. The examples below demonstrate both
     ways of using `Secret` to create a new secret type.
 
     1. Directly parametrizing `Secret` with a type:
@@ -1621,7 +1634,7 @@ class Secret(_SecretBase[SecretType]):
     #> 2022-01-01
     ```
 
-    The value returned by the `_display` method will be used for `repr()` and `str()`.
+    The value returned by the `_display()` method will be used for [`repr()`][repr] and [`str()`][str].
 
     You can enforce constraints on the underlying type through annotations:
     For example:
@@ -1672,6 +1685,11 @@ class Secret(_SecretBase[SecretType]):
 
     1. The input value is not greater than 0, so it raises a validation error.
     2. The input value is not an integer, so it raises a validation error because the `SecretPosInt` type has strict mode enabled.
+
+    Two `Secret` types compare equal if the secret values are equal. For the [`SecretStr`][pydantic.types.SecretStr] and
+    [`SecretBytes`][pydantic.types.SecretBytes] implementations, constant-time comparison is achieved
+    (using [`secrets.compare_digest()`][secrets.compare_digest]). If you need constant-time comparison on your `Secret`
+    subclass, you can do so by overriding [`__eq__()`][object.__eq__].
     """
 
     def _display(self) -> str | bytes:
@@ -1777,7 +1795,7 @@ class _SecretField(_SecretBase[SecretType]):
                 serialization=core_schema.plain_serializer_function_ser_schema(
                     _serialize_secret_field,
                     info_arg=True,
-                    when_used='always',
+                    when_used='unless-none',
                 ),
             )
 
@@ -1802,7 +1820,10 @@ class SecretStr(_SecretField[str]):
     """A string used for storing sensitive information that you do not want to be visible in logging or tracebacks.
 
     When the secret value is nonempty, it is displayed as `'**********'` instead of the underlying value in
-    calls to `repr()` and `str()`. If the value _is_ empty, it is displayed as `''`.
+    calls to [`repr()`][repr] and [`str()`][str]. If the value _is_ empty, it is displayed as `''`.
+
+    Two `SecretStr` types compare equal if the secret values are equal. Constant-time comparison is achieved
+    (using [`secrets.compare_digest()`][secrets.compare_digest]).
 
     ```python
     from pydantic import BaseModel, SecretStr
@@ -1824,7 +1845,7 @@ class SecretStr(_SecretField[str]):
     As seen above, by default, [`SecretStr`][pydantic.types.SecretStr] (and [`SecretBytes`][pydantic.types.SecretBytes])
     will be serialized as `**********` when serializing to json.
 
-    You can use the [`field_serializer`][pydantic.functional_serializers.field_serializer] to dump the
+    You can use a [field serializer](../concepts/serialization.md#field-serializers) to dump the
     secret as plain-text when serializing to json.
 
     ```python
@@ -1861,6 +1882,19 @@ class SecretStr(_SecretField[str]):
     def __len__(self) -> int:
         return len(self._secret_value)
 
+    def __hash__(self) -> int:
+        return hash(self.get_secret_value())
+
+    def __eq__(self, other: Any) -> bool:
+        if not isinstance(other, self.__class__):
+            return False
+
+        # `secrets.compare_digest()` only supports ASCII strings, so encode to bytes first:
+        return secrets.compare_digest(
+            self.get_secret_value().encode('utf-8', errors='surrogatepass'),
+            other.get_secret_value().encode('utf-8', errors='surrogatepass'),
+        )
+
     def _display(self) -> str:
         return _secret_display(self._secret_value)
 
@@ -1868,9 +1902,11 @@ class SecretStr(_SecretField[str]):
 class SecretBytes(_SecretField[bytes]):
     """A bytes used for storing sensitive information that you do not want to be visible in logging or tracebacks.
 
-    It displays `b'**********'` instead of the string value on `repr()` and `str()` calls.
     When the secret value is nonempty, it is displayed as `b'**********'` instead of the underlying value in
-    calls to `repr()` and `str()`. If the value _is_ empty, it is displayed as `b''`.
+    calls to [`repr()`][repr] and [`str()`][str]. If the value _is_ empty, it is displayed as `b''`.
+
+    Two `SecretBytes` types compare equal if the secret values are equal. Constant-time comparison is achieved
+    (using [`secrets.compare_digest()`][secrets.compare_digest]).
 
     ```python
     from pydantic import BaseModel, SecretBytes
@@ -1894,6 +1930,15 @@ class SecretBytes(_SecretField[bytes]):
     def __len__(self) -> int:
         return len(self._secret_value)
 
+    def __hash__(self) -> int:
+        return hash(self.get_secret_value())
+
+    def __eq__(self, other: Any) -> bool:
+        if not isinstance(other, self.__class__):
+            return False
+
+        return secrets.compare_digest(self.get_secret_value(), other.get_secret_value())
+
     def _display(self) -> bytes:
         return _secret_display(self._secret_value).encode()
 
@@ -1913,7 +1958,7 @@ class PaymentCardBrand(str, Enum):
 
 @deprecated(
     'The `PaymentCardNumber` class is deprecated, use `pydantic_extra_types` instead. '
-    'See https://docs.pydantic.dev/latest/api/pydantic_extra_types_payment/#pydantic_extra_types.payment.PaymentCardNumber.',
+    'See https://pydantic.dev/docs/validation/latest/api/pydantic-extra-types/pydantic_extra_types_payment/#pydantic_extra_types.payment.PaymentCardNumber.',
     category=PydanticDeprecatedSince20,
 )
 class PaymentCardNumber(str):
@@ -2428,6 +2473,9 @@ class Base64Encoder(EncoderProtocol):
         return 'base64'
 
 
+_urlsafe_translation = bytes.maketrans(b'+/', b'-_')
+
+
 class Base64UrlEncoder(EncoderProtocol):
     """URL-safe Base64 encoder."""
 
@@ -2442,7 +2490,15 @@ class Base64UrlEncoder(EncoderProtocol):
             The decoded data.
         """
         try:
-            return base64.urlsafe_b64decode(data)
+            if sys.version_info >= (3, 15):
+                # In Python >= 3.15, `urlsafe_b64decode()` doesn't require padded input anymore.
+                # It also raises a `FutureWarning` if '+' or '/' is found in input (and translates it
+                # to '-' and '_'). We can't have this warning raised while validating, so we do the translation
+                # ourselves.
+                data = data.translate(_urlsafe_translation)
+                return base64.urlsafe_b64decode(data, padded=True)
+            else:
+                return base64.urlsafe_b64decode(data)
         except ValueError as e:
             raise PydanticCustomError('base64_decode', "Base64 decoding error: '{error}'", {'error': str(e)})
 
@@ -2468,7 +2524,7 @@ class Base64UrlEncoder(EncoderProtocol):
         return 'base64url'
 
 
-@_dataclasses.dataclass(**_internal_dataclass.slots_true)
+@_dataclasses.dataclass(slots=True)
 class EncodedBytes:
     """A bytes type that is encoded and decoded using the specified encoder.
 
@@ -2567,7 +2623,7 @@ class EncodedBytes:
         return hash(self.encoder)
 
 
-@_dataclasses.dataclass(**_internal_dataclass.slots_true)
+@_dataclasses.dataclass(slots=True)
 class EncodedStr:
     """A str type that is encoded and decoded using the specified encoder.
 
@@ -2793,11 +2849,8 @@ Base64UrlBytes = Annotated[bytes, EncodedBytes(encoder=Base64UrlEncoder)]
 """A bytes type that is encoded and decoded using the URL-safe base64 encoder.
 
 Note:
-    Under the hood, `Base64UrlBytes` use standard library `base64.urlsafe_b64encode` and `base64.urlsafe_b64decode`
-    functions.
-
-    As a result, the `Base64UrlBytes` type can be used to faithfully decode "vanilla" base64 data
-    (using `'+'` and `'/'`).
+    Under the hood, `Base64UrlBytes` uses the standard library [`base64.urlsafe_b64encode()`][base64.urlsafe_b64encode]
+    and [`base64.urlsafe_b64decode()`][base64.urlsafe_b64decode] functions.
 
 ```python
 from pydantic import Base64UrlBytes, BaseModel
@@ -2815,10 +2868,8 @@ Base64UrlStr = Annotated[str, EncodedStr(encoder=Base64UrlEncoder)]
 """A str type that is encoded and decoded using the URL-safe base64 encoder.
 
 Note:
-    Under the hood, `Base64UrlStr` use standard library `base64.urlsafe_b64encode` and `base64.urlsafe_b64decode`
-    functions.
-
-    As a result, the `Base64UrlStr` type can be used to faithfully decode "vanilla" base64 data (using `'+'` and `'/'`).
+    Under the hood, `Base64UrlStr` uses the standard library [`base64.urlsafe_b64encode()`][base64.urlsafe_b64encode]
+    and [`base64.urlsafe_b64decode()`][base64.urlsafe_b64decode] functions.
 
 ```python
 from pydantic import Base64UrlStr, BaseModel
@@ -2837,7 +2888,7 @@ print(m)
 __getattr__ = getattr_migration(__name__)
 
 
-@_dataclasses.dataclass(**_internal_dataclass.slots_true)
+@_dataclasses.dataclass(slots=True)
 class GetPydanticSchema:
     """!!! abstract "Usage Documentation"
         [Using `GetPydanticSchema` to Reduce Boilerplate](../concepts/types.md#using-getpydanticschema-to-reduce-boilerplate)
@@ -2884,22 +2935,22 @@ class GetPydanticSchema:
     __hash__ = object.__hash__
 
 
-@_dataclasses.dataclass(**_internal_dataclass.slots_true, frozen=True)
+@_dataclasses.dataclass(slots=True, frozen=True)
 class Tag:
     """Provides a way to specify the expected tag to use for a case of a (callable) discriminated union.
 
     Also provides a way to label a union case in error messages.
 
-    When using a callable `Discriminator`, attach a `Tag` to each case in the `Union` to specify the tag that
+    When using a callable `Discriminator`, attach a `Tag` to each case in the union to specify the tag that
     should be used to identify that case. For example, in the below example, the `Tag` is used to specify that
     if `get_discriminator_value` returns `'apple'`, the input should be validated as an `ApplePie`, and if it
     returns `'pumpkin'`, the input should be validated as a `PumpkinPie`.
 
     The primary role of the `Tag` here is to map the return value from the callable `Discriminator` function to
-    the appropriate member of the `Union` in question.
+    the appropriate member of the union in question.
 
-    ```python
-    from typing import Annotated, Any, Literal, Union
+    ```python {lint="skip"}
+    from typing import Annotated, Any, Literal
 
     from pydantic import BaseModel, Discriminator, Tag
 
@@ -2920,10 +2971,7 @@ class Tag:
 
     class ThanksgivingDinner(BaseModel):
         dessert: Annotated[
-            Union[
-                Annotated[ApplePie, Tag('apple')],
-                Annotated[PumpkinPie, Tag('pumpkin')],
-            ],
+            Annotated[ApplePie, Tag('apple')] | Annotated[PumpkinPie, Tag('pumpkin')],
             Discriminator(get_discriminator_value),
         ]
 
@@ -2969,7 +3017,7 @@ class Tag:
         return schema
 
 
-@_dataclasses.dataclass(**_internal_dataclass.slots_true, frozen=True)
+@_dataclasses.dataclass(slots=True, frozen=True)
 class Discriminator:
     """!!! abstract "Usage Documentation"
         [Discriminated Unions with `Callable` `Discriminator`](../concepts/unions.md#discriminated-unions-with-callable-discriminator)
@@ -2983,10 +3031,10 @@ class Discriminator:
     belongs to, while still seeing all the performance benefits of a discriminated union.
 
     Consider this example, which is much more performant with the use of `Discriminator` and thus a `TaggedUnion`
-    than it would be as a normal `Union`.
+    than it would be as a normal union.
 
-    ```python
-    from typing import Annotated, Any, Literal, Union
+    ```python {lint="skip"}
+    from typing import Annotated, Any, Literal
 
     from pydantic import BaseModel, Discriminator, Tag
 
@@ -3007,10 +3055,7 @@ class Discriminator:
 
     class ThanksgivingDinner(BaseModel):
         dessert: Annotated[
-            Union[
-                Annotated[ApplePie, Tag('apple')],
-                Annotated[PumpkinPie, Tag('pumpkin')],
-            ],
+            Annotated[ApplePie, Tag('apple')] | Annotated[PumpkinPie, Tag('pumpkin')],
             Discriminator(get_discriminator_value),
         ]
 
@@ -3058,9 +3103,6 @@ class Discriminator:
     """Context to use in custom errors."""
 
     def __get_pydantic_core_schema__(self, source_type: Any, handler: GetCoreSchemaHandler) -> CoreSchema:
-        if not is_union_origin(get_origin(source_type)):
-            raise TypeError(f'{type(self).__name__} must be used with a Union type, not {source_type}')
-
         if isinstance(self.discriminator, str):
             from pydantic import Field
 
@@ -3070,8 +3112,38 @@ class Discriminator:
             return self._convert_schema(original_schema, handler)
 
     def _convert_schema(
-        self, original_schema: core_schema.CoreSchema, handler: GetCoreSchemaHandler | None = None
+        self,
+        original_schema: core_schema.CoreSchema,
+        handler: GetCoreSchemaHandler | None = None,
+        definitions: dict[str, core_schema.CoreSchema] | None = None,
     ) -> core_schema.TaggedUnionSchema:
+        def _resolve_ref(schema: core_schema.CoreSchema) -> core_schema.CoreSchema | None:
+            # `handler` is set when this method is called while generating the schema for the field
+            # (e.g. via `Annotated[<type>, Discriminator(...)]`). `definitions` is set instead when
+            # this method is called from `apply_discriminator()` (deferred/callable discriminators).
+            if handler is not None:
+                try:
+                    return handler.resolve_ref_schema(schema)
+                except LookupError:  # pragma: no cover
+                    return None
+            elif definitions is not None:
+                schema_ref = cast(core_schema.DefinitionReferenceSchema, schema)['schema_ref']
+                return definitions.get(schema_ref)
+            return None
+
+        if original_schema['type'] == 'definition-ref':
+            # Same logic as `_ApplyInferredDiscriminator._apply_to_root()`
+            def_schema = _resolve_ref(original_schema)
+            if def_schema is None:
+                from pydantic._internal._discriminated_union import MissingDefinitionForUnionRef
+
+                raise MissingDefinitionForUnionRef(original_schema['schema_ref'])
+
+            # If using a referenceable union as discriminated (e.g. `type Pet = Cat | Dog; field: Pet = Field(discriminator=...)`):
+            if def_schema['type'] == 'union':
+                original_schema = def_schema.copy()
+                original_schema.pop('ref')
+
         if original_schema['type'] != 'union':
             # This likely indicates that the schema was a single-item union that was simplified.
             # In this case, we do the same thing we do in
@@ -3088,14 +3160,11 @@ class Discriminator:
             if metadata is not None:
                 tag = metadata.get('pydantic_internal_union_tag_key') or tag
             if tag is None:
-                # `handler` is None when this method is called from `apply_discriminator()` (deferred discriminators)
-                if handler is not None and choice['type'] == 'definition-ref':
+                if choice['type'] == 'definition-ref':
                     # If choice was built from a PEP 695 type alias, try to resolve the def:
-                    try:
-                        choice = handler.resolve_ref_schema(choice)
-                    except LookupError:
-                        pass
-                    else:
+                    resolved_choice = _resolve_ref(choice)
+                    if resolved_choice is not None:
+                        choice = resolved_choice
                         metadata = cast('CoreMetadata | None', choice.get('metadata'))
                         if metadata is not None:
                             tag = metadata.get('pydantic_internal_union_tag_key')
@@ -3167,15 +3236,7 @@ class _AllowAnyJson:
 
 if TYPE_CHECKING:
     # This seems to only be necessary for mypy
-    JsonValue: TypeAlias = Union[
-        list['JsonValue'],
-        dict[str, 'JsonValue'],
-        str,
-        bool,
-        int,
-        float,
-        None,
-    ]
+    JsonValue: TypeAlias = 'list[JsonValue] | dict[str, JsonValue] | str | bool | int | float | None'
     """A `JsonValue` is used to represent a value that can be serialized to JSON.
 
     It may be one of:
@@ -3223,15 +3284,13 @@ else:
     JsonValue = TypeAliasType(
         'JsonValue',
         Annotated[
-            Union[
-                Annotated[list['JsonValue'], Tag('list')],
-                Annotated[dict[str, 'JsonValue'], Tag('dict')],
-                Annotated[str, Tag('str')],
-                Annotated[bool, Tag('bool')],
-                Annotated[int, Tag('int')],
-                Annotated[float, Tag('float')],
-                Annotated[None, Tag('NoneType')],
-            ],
+            Annotated[list['JsonValue'], Tag('list')]
+            | Annotated[dict[str, 'JsonValue'], Tag('dict')]
+            | Annotated[str, Tag('str')]
+            | Annotated[bool, Tag('bool')]
+            | Annotated[int, Tag('int')]
+            | Annotated[float, Tag('float')]
+            | Annotated[None, Tag('NoneType')],
             Discriminator(
                 _get_type_name,
                 custom_error_type='invalid-json-value',

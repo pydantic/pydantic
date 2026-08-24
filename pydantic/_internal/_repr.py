@@ -4,19 +4,17 @@ from __future__ import annotations as _annotations
 
 import types
 from collections.abc import Callable, Collection, Generator, Iterable
-from typing import TYPE_CHECKING, Any, ForwardRef, cast
+from typing import TYPE_CHECKING, Any, ForwardRef, TypeAlias, cast
 
 import typing_extensions
-from typing_extensions import TypeAlias
 from typing_inspection import typing_objects
 from typing_inspection.introspection import is_union_origin
 
 from . import _typing_extra
 
 if TYPE_CHECKING:
-    # TODO remove type error comments when we drop support for Python 3.9
-    ReprArgs: TypeAlias = Iterable[tuple[str | None, Any]]  # pyright: ignore[reportGeneralTypeIssues]
-    RichReprResult: TypeAlias = Iterable[Any | tuple[Any] | tuple[str, Any] | tuple[str, Any, Any]]  # pyright: ignore[reportGeneralTypeIssues]
+    ReprArgs: TypeAlias = Iterable[tuple[str | None, Any]]
+    RichReprResult: TypeAlias = Iterable[Any | tuple[Any] | tuple[str, Any] | tuple[str, Any, Any]]
 
 
 class PlainRepr(str):

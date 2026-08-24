@@ -9,16 +9,15 @@ import collections.abc
 import math
 import re
 import typing
-from collections.abc import Sequence
+from collections.abc import Callable, Sequence
 from decimal import Decimal
-from fractions import Fraction
 from ipaddress import IPv4Address, IPv4Interface, IPv4Network, IPv6Address, IPv6Interface, IPv6Network
-from typing import Any, Callable, TypeVar, Union, cast
+from typing import Any, TypeAlias, TypeVar, cast
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 import typing_extensions
 from pydantic_core import PydanticCustomError, PydanticKnownError, core_schema
-from typing_extensions import get_args, get_origin
+from typing_extensions import get_args, get_origin  # noqa: UP035
 from typing_inspection import typing_objects
 
 from pydantic._internal._import_utils import import_cached_field_info
@@ -78,7 +77,7 @@ def import_string(value: Any) -> Any:
 
 def _import_string_logic(dotted_path: str) -> Any:
     """Inspired by uvicorn — dotted paths should include a colon before the final item if that item is not a module.
-    (This is necessary to distinguish between a submodule and an attribute when there is a conflict.).
+    (This is necessary to distinguish between a submodule and an attribute when there is a conflict.)
 
     If the dotted path does not include a colon and the final item is not a valid module, importing as an attribute
     rather than a submodule will be attempted automatically.
@@ -99,26 +98,27 @@ def _import_string_logic(dotted_path: str) -> Any:
     components = dotted_path.strip().split(':')
     if len(components) > 2:
         raise ImportError(f"Import strings should have at most one ':'; received {dotted_path!r}")
-
+    attribute = None
+    if len(components) == 2:
+        attribute = components[1]
     module_path = components[0]
     if not module_path:
         raise ImportError(f'Import strings should have a nonempty module name; received {dotted_path!r}')
 
     try:
         module = import_module(module_path)
-    except ModuleNotFoundError as e:
-        if '.' in module_path:
-            # Check if it would be valid if the final item was separated from its module with a `:`
-            maybe_module_path, maybe_attribute = dotted_path.strip().rsplit('.', 1)
+    except ModuleNotFoundError:
+        if attribute is None and '.' in module_path:
+            # Try interpreting the final dotted segment as an attribute, not a submodule
+            maybe_module_path, maybe_attribute = module_path.rsplit('.', 1)
+
             try:
                 return _import_string_logic(f'{maybe_module_path}:{maybe_attribute}')
             except ImportError:
                 pass
-            raise ImportError(f'No module named {module_path!r}') from e
-        raise e
+        raise
 
-    if len(components) > 1:
-        attribute = components[1]
+    if attribute is not None:
         try:
             return getattr(module, attribute)
         except AttributeError as e:
@@ -245,16 +245,6 @@ def ip_v6_interface_validator(input_value: Any, /) -> IPv6Interface:
         raise PydanticCustomError('ip_v6_interface', 'Input is not a valid IPv6 interface')
 
 
-def fraction_validator(input_value: Any, /) -> Fraction:
-    if isinstance(input_value, Fraction):
-        return input_value
-
-    try:
-        return Fraction(input_value)
-    except ValueError:
-        raise PydanticCustomError('fraction_parsing', 'Input is not a valid fraction')
-
-
 def forbid_inf_nan_check(x: Any) -> Any:
     if not math.isfinite(x):
         raise PydanticKnownError('finite_number')
@@ -340,10 +330,10 @@ def max_length_validator(x: Any, max_length: Any) -> Any:
 
 
 def _extract_decimal_digits_info(decimal: Decimal) -> tuple[int, int]:
-    """Compute the total number of digits and decimal places for a given [`Decimal`][decimal.Decimal] instance.
+    """Compute the number of decimal places and total digits for a given [`Decimal`][decimal.Decimal] instance.
 
     This function handles both normalized and non-normalized Decimal instances.
-    Example: Decimal('1.230') -> 4 digits, 3 decimal places
+    Example: `Decimal('1.230')` returns `(3, 4)` — 3 decimal places, 4 total digits.
 
     Args:
         decimal (Decimal): The decimal number to analyze.
@@ -436,13 +426,9 @@ def get_defaultdict_default_default_factory(values_source_type: Any) -> Callable
             collections.abc.Sequence: tuple,
             collections.abc.MutableSequence: list,
             list: list,
-            typing.Sequence: list,
             set: set,
-            typing.MutableSet: set,
             collections.abc.MutableSet: set,
             collections.abc.Set: frozenset,
-            typing.MutableMapping: dict,
-            typing.Mapping: dict,
             collections.abc.Mapping: dict,
             collections.abc.MutableMapping: dict,
             float: float,
@@ -463,7 +449,7 @@ def get_defaultdict_default_default_factory(values_source_type: Any) -> Callable
             return type_var_default_factory
         elif values_type not in allowed_default_types:
             # a somewhat subjective set of types that have reasonable default values
-            allowed_msg = ', '.join([t.__name__ for t in set(allowed_default_types.values())])
+            allowed_msg = ', '.join([t.__name__ for t in set(allowed_default_types.keys())])
             raise PydanticSchemaGenerationError(
                 f'Unable to infer a default factory for keys of type {values_source_type}.'
                 f' Only {allowed_msg} are supported, other types require an explicit default factory'
@@ -505,7 +491,7 @@ NUMERIC_VALIDATOR_LOOKUP: dict[str, Callable] = {
     'decimal_places': decimal_places_validator,
 }
 
-IpType = Union[IPv4Address, IPv6Address, IPv4Network, IPv6Network, IPv4Interface, IPv6Interface]
+IpType: TypeAlias = IPv4Address | IPv6Address | IPv4Network | IPv6Network | IPv4Interface | IPv6Interface
 
 IP_VALIDATOR_LOOKUP: dict[type[IpType], Callable] = {
     IPv4Address: ip_v4_address_validator,

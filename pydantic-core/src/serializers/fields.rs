@@ -17,7 +17,6 @@ use crate::serializers::extra::{IncludeExclude, SerCheck};
 use crate::serializers::shared::{DoSerialize, SerializeMap, serialize_to_json, serialize_to_python};
 use crate::serializers::type_serializers::any::AnySerializer;
 use crate::serializers::type_serializers::function::{FunctionPlainSerializer, FunctionWrapSerializer};
-use crate::tools::pybackedstr_to_pystring;
 
 use super::computed_fields::ComputedFields;
 use super::extra::Extra;
@@ -36,7 +35,10 @@ pub(super) struct SerField {
     pub serialization_exclude_if: Option<Py<PyAny>>,
 }
 
-impl_py_gc_traverse!(SerField { serializer });
+impl_py_gc_traverse!(SerField {
+    serializer,
+    serialization_exclude_if
+});
 
 impl SerField {
     pub fn new(
@@ -106,8 +108,7 @@ pub(super) enum FieldsMode {
 /// General purpose serializer for fields - used by dataclasses, models and typed_dicts
 #[derive(Debug)]
 pub struct GeneralFieldsSerializer {
-    // TODO: use PyBackedStr in the keys
-    fields: AHashMap<String, SerField>,
+    fields: AHashMap<PyBackedStr, SerField>,
     computed_fields: Option<ComputedFields>,
     mode: FieldsMode,
     extra_serializer: Option<Arc<CombinedSerializer>>,
@@ -116,9 +117,15 @@ pub struct GeneralFieldsSerializer {
     required_fields: usize,
 }
 
+impl_py_gc_traverse!(GeneralFieldsSerializer {
+    fields,
+    computed_fields,
+    extra_serializer,
+});
+
 impl GeneralFieldsSerializer {
     pub(super) fn new(
-        fields: AHashMap<String, SerField>,
+        fields: AHashMap<PyBackedStr, SerField>,
         mode: FieldsMode,
         extra_serializer: Option<Arc<CombinedSerializer>>,
         computed_fields: Option<ComputedFields>,
@@ -193,8 +200,7 @@ impl GeneralFieldsSerializer {
             let (key, value) = result?;
             let key_str: PyBackedStr = key.extract()?;
 
-            let field_name = pybackedstr_to_pystring(py, &key_str);
-            let state = &mut state.scoped_set(|s| &mut s.field_name, Some(field_name));
+            let state = &mut state.scoped_set_field_name(Some(key_str.as_py_str().bind(py).clone()));
 
             if let Some(field) = self.fields.get(&*key_str) {
                 if field.required {
@@ -298,8 +304,7 @@ impl GeneralFieldsSerializer {
         extras_serializer: &Arc<CombinedSerializer>,
         map: &mut Map,
     ) -> Result<(), Map::Error> {
-        let key_py_string = pybackedstr_to_pystring(value.py(), key);
-        if let Some(next_include_exclude) = self.filter.key_filter(&key_py_string, state)?
+        if let Some(next_include_exclude) = self.filter.key_filter(key.as_py_str().bind(value.py()), state)?
             && !exclude_field_by_value(
                 value,
                 state,
@@ -338,11 +343,6 @@ pub fn exclude_field_by_value<'py>(
 
     Ok(false)
 }
-
-impl_py_gc_traverse!(GeneralFieldsSerializer {
-    fields,
-    computed_fields
-});
 
 impl TypeSerializer for GeneralFieldsSerializer {
     fn to_python<'py>(&self, value: &Bound<'py, PyAny>, state: &mut SerializationState<'py>) -> PyResult<Py<PyAny>> {
@@ -401,7 +401,7 @@ fn model_type_name(model: &Bound<'_, PyAny>) -> Option<String> {
 fn unexpected_field(key: &PyBackedStr, model: &Bound<'_, PyAny>) -> PyErr {
     PydanticSerializationUnexpectedValue::new(
         Some(format!("Unexpected field `{key}`")),
-        Some(pybackedstr_to_pystring(model.py(), key).unbind()),
+        Some(key.as_py_str().clone_ref(model.py())),
         model_type_name(model),
         None,
     )
@@ -417,7 +417,7 @@ fn incorrect_field_count(
 ) -> PyErr {
     PydanticSerializationUnexpectedValue::new(
         Some(format!("Expected {expected_fields} fields but got {used_fields}").to_string()),
-        state.field_name.as_ref().map(|name| name.clone().unbind()),
+        state.field_name().map(|name| name.clone().unbind()),
         model_type_name(model),
         Some(model.clone().unbind()),
     )

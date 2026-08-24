@@ -237,7 +237,7 @@ impl<T: PyGcTraverse + Debug> PyGcTraverse for LiteralLookup<T> {
 
 #[derive(Debug, Clone)]
 pub struct LiteralValidator {
-    lookup: LiteralLookup<Py<PyAny>>,
+    lookup: Box<LiteralLookup<Py<PyAny>>>,
     expected_repr: String,
     name: String,
 }
@@ -258,7 +258,10 @@ impl BuildValidator for LiteralValidator {
         let repr_args = expected.iter().map(|item| item.repr()).collect::<PyResult<Vec<_>>>()?;
         let expected_repr = expected_repr(&repr_args)?;
         let name = expected_name(&repr_args, Self::EXPECTED_TYPE)?;
-        let lookup = LiteralLookup::new(py, expected.into_iter().map(|v| (v.clone(), v.into())))?;
+        let lookup = Box::new(LiteralLookup::new(
+            py,
+            expected.into_iter().map(|v| (v.clone(), v.into())),
+        )?);
         Ok(CombinedValidator::Literal(Self {
             lookup,
             expected_repr,

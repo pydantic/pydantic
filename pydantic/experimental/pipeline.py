@@ -5,14 +5,13 @@ from __future__ import annotations
 import datetime
 import operator
 import re
-import sys
 from collections import deque
-from collections.abc import Container
+from collections.abc import Callable, Container
 from dataclasses import dataclass
-from decimal import Decimal
 from functools import cached_property, partial
 from re import Pattern
-from typing import TYPE_CHECKING, Annotated, Any, Callable, Generic, Protocol, TypeVar, Union, overload
+from types import EllipsisType
+from typing import TYPE_CHECKING, Annotated, Any, Generic, Protocol, TypeAlias, TypeVar, overload
 
 import annotated_types
 
@@ -23,19 +22,11 @@ from pydantic_core import PydanticCustomError
 from pydantic_core import core_schema as cs
 
 from pydantic import Strict
-from pydantic._internal._internal_dataclass import slots_true as _slots_true
-
-if sys.version_info < (3, 10):
-    EllipsisType = type(Ellipsis)
-else:
-    from types import EllipsisType
 
 __all__ = ['validate_as', 'validate_as_deferred', 'transform']
 
-_slots_frozen = {**_slots_true, 'frozen': True}
 
-
-@dataclass(**_slots_frozen)
+@dataclass(frozen=True, slots=True)
 class _ValidateAs:
     tp: type[Any]
     strict: bool = False
@@ -50,69 +41,71 @@ class _ValidateAsDefer:
         return self.func()
 
 
-@dataclass(**_slots_frozen)
+@dataclass(frozen=True, slots=True)
 class _Transform:
     func: Callable[[Any], Any]
 
 
-@dataclass(**_slots_frozen)
+@dataclass(frozen=True, slots=True)
 class _PipelineOr:
     left: _Pipeline[Any, Any]
     right: _Pipeline[Any, Any]
 
 
-@dataclass(**_slots_frozen)
+@dataclass(frozen=True, slots=True)
 class _PipelineAnd:
     left: _Pipeline[Any, Any]
     right: _Pipeline[Any, Any]
 
 
-@dataclass(**_slots_frozen)
+@dataclass(frozen=True, slots=True)
 class _Eq:
     value: Any
 
 
-@dataclass(**_slots_frozen)
+@dataclass(frozen=True, slots=True)
 class _NotEq:
     value: Any
 
 
-@dataclass(**_slots_frozen)
+@dataclass(frozen=True, slots=True)
 class _In:
     values: Container[Any]
 
 
-@dataclass(**_slots_frozen)
+@dataclass(frozen=True, slots=True)
 class _NotIn:
     values: Container[Any]
 
 
-_ConstraintAnnotation = Union[
-    annotated_types.Le,
-    annotated_types.Ge,
-    annotated_types.Lt,
-    annotated_types.Gt,
-    annotated_types.Len,
-    annotated_types.MultipleOf,
-    annotated_types.Timezone,
-    annotated_types.Interval,
-    annotated_types.Predicate,
+_ConstraintAnnotation: TypeAlias = (
+    annotated_types.Le
+    | annotated_types.Ge
+    | annotated_types.Lt
+    | annotated_types.Gt
+    | annotated_types.Len
+    | annotated_types.MultipleOf
+    | annotated_types.Timezone
+    | annotated_types.Interval
+    | annotated_types.Predicate
+    |
     # common predicates not included in annotated_types
-    _Eq,
-    _NotEq,
-    _In,
-    _NotIn,
+    _Eq
+    | _NotEq
+    | _In
+    | _NotIn
+    |
     # regular expressions
-    Pattern[str],
-]
+    Pattern[str]
+)
 
 
-@dataclass(**_slots_frozen)
+@dataclass(frozen=True, slots=True)
 class _Constraint:
     constraint: _ConstraintAnnotation
 
 
-_Step = Union[_ValidateAs, _ValidateAsDefer, _Transform, _PipelineOr, _PipelineAnd, _Constraint]
+_Step: TypeAlias = _ValidateAs | _ValidateAsDefer | _Transform | _PipelineOr | _PipelineAnd | _Constraint
 
 _InT = TypeVar('_InT')
 _OutT = TypeVar('_OutT')
@@ -127,7 +120,7 @@ class _FieldTypeMarker:
 # Also, make this frozen eventually, but that doesn't work right now because of the generic base
 # Which attempts to modify __orig_base__ and such.
 # We could go with a manual freeze, but that seems overkill for now.
-@dataclass(**_slots_true)
+@dataclass(slots=True)
 class _Pipeline(Generic[_InT, _OutT]):
     """Abstract representation of a chain of validation, transformation, and parsing steps."""
 
@@ -145,13 +138,22 @@ class _Pipeline(Generic[_InT, _OutT]):
         return _Pipeline[_InT, _NewOutT](self._steps + (_Transform(func),))
 
     @overload
-    def validate_as(self, tp: type[_NewOutT], *, strict: bool = ...) -> _Pipeline[_InT, _NewOutT]: ...
+    def validate_as(self, tp: type[_NewOutT], *, strict: bool = False) -> _Pipeline[_InT, _NewOutT]: ...
 
     @overload
-    def validate_as(self, tp: EllipsisType, *, strict: bool = ...) -> _Pipeline[_InT, Any]:  # type: ignore
-        ...
+    def validate_as(
+        self,
+        tp: EllipsisType,
+        *,
+        strict: bool = False,
+    ) -> _Pipeline[_InT, Any]: ...
 
-    def validate_as(self, tp: type[_NewOutT] | EllipsisType, *, strict: bool = False) -> _Pipeline[_InT, Any]:  # type: ignore
+    # TODO PEP 747: use TypeForm to properly type Annotated aliases (e.g. NewPath, FilePath).
+    # This fallback accepts any type expression but loses generic type inference.
+    @overload
+    def validate_as(self, tp: Any, *, strict: bool = ...) -> _Pipeline[_InT, Any]: ...
+
+    def validate_as(self, tp: type[_NewOutT] | EllipsisType | Any, *, strict: bool = False) -> _Pipeline[_InT, Any]:  # type: ignore
         """Validate / parse the input into a new type.
 
         If no type is provided, the type of the field is used.
@@ -284,44 +286,83 @@ class _Pipeline(Generic[_InT, _OutT]):
 
     # timezone methods
     def datetime_tz_naive(self: _Pipeline[_InT, datetime.datetime]) -> _Pipeline[_InT, datetime.datetime]:
+        """Constrain a datetime value to be timezone-naive (i.e. have no tzinfo)."""
         return self.constrain(annotated_types.Timezone(None))
 
     def datetime_tz_aware(self: _Pipeline[_InT, datetime.datetime]) -> _Pipeline[_InT, datetime.datetime]:
+        """Constrain a datetime value to be timezone-aware (i.e. have a non-None tzinfo)."""
         return self.constrain(annotated_types.Timezone(...))
 
     def datetime_tz(
         self: _Pipeline[_InT, datetime.datetime], tz: datetime.tzinfo
     ) -> _Pipeline[_InT, datetime.datetime]:
+        """Constrain a datetime value to have a specific timezone.
+
+        Args:
+            tz: The required timezone.
+        """
         return self.constrain(annotated_types.Timezone(tz))  # type: ignore
 
     def datetime_with_tz(
         self: _Pipeline[_InT, datetime.datetime], tz: datetime.tzinfo | None
     ) -> _Pipeline[_InT, datetime.datetime]:
+        """Transform a datetime value by replacing its timezone with the given value.
+
+        Unlike `datetime_tz()`, this does not validate the existing timezone, it
+        unconditionally sets [`tzinfo`][datetime.datetime.tzinfo] to `tz`.
+
+        Args:
+            tz: The timezone to attach to the datetime, or `None` to make it naive.
+        """
         return self.transform(partial(datetime.datetime.replace, tzinfo=tz))
 
     # string methods
     def str_lower(self: _Pipeline[_InT, str]) -> _Pipeline[_InT, str]:
+        """Transform a string value to [lowercase][str.lower]."""
         return self.transform(str.lower)
 
     def str_upper(self: _Pipeline[_InT, str]) -> _Pipeline[_InT, str]:
+        """Transform a string value to [uppercase][str.upper]."""
         return self.transform(str.upper)
 
     def str_title(self: _Pipeline[_InT, str]) -> _Pipeline[_InT, str]:
+        """Transform a string value to [title case][str.title]."""
         return self.transform(str.title)
 
     def str_strip(self: _Pipeline[_InT, str]) -> _Pipeline[_InT, str]:
+        """Strip leading and trailing whitespace from a string value."""
         return self.transform(str.strip)
 
     def str_pattern(self: _Pipeline[_InT, str], pattern: str) -> _Pipeline[_InT, str]:
+        """Constrain a string value to match a regular expression pattern.
+
+        Args:
+            pattern: The regular expression pattern the string must match.
+        """
         return self.constrain(re.compile(pattern))
 
     def str_contains(self: _Pipeline[_InT, str], substring: str) -> _Pipeline[_InT, str]:
+        """Constrain a string value to contain a given substring.
+
+        Args:
+            substring: The substring that must be present in the string.
+        """
         return self.predicate(lambda v: substring in v)
 
     def str_starts_with(self: _Pipeline[_InT, str], prefix: str) -> _Pipeline[_InT, str]:
+        """Constrain a string value to start with a given prefix.
+
+        Args:
+            prefix: The prefix the string must start with.
+        """
         return self.predicate(lambda v: v.startswith(prefix))
 
     def str_ends_with(self: _Pipeline[_InT, str], suffix: str) -> _Pipeline[_InT, str]:
+        """Constrain a string value to end with a given suffix.
+
+        Args:
+            suffix: The suffix the string must end with.
+        """
         return self.predicate(lambda v: v.endswith(suffix))
 
     # operators
@@ -338,6 +379,9 @@ class _Pipeline(Generic[_InT, _OutT]):
     __and__ = then
 
     def __get_pydantic_core_schema__(self, source_type: Any, handler: GetCoreSchemaHandler) -> cs.CoreSchema:
+        return self._apply_pipeline(handler, source_type)
+
+    def _apply_pipeline(self, handler: GetCoreSchemaHandler, source_type: Any) -> cs.CoreSchema:
         queue = deque(self._steps)
 
         s = None
@@ -382,10 +426,14 @@ def _apply_step(step: _Step, s: cs.CoreSchema | None, handler: GetCoreSchemaHand
     elif isinstance(step, _Constraint):
         s = _apply_constraint(s, step.constraint)
     elif isinstance(step, _PipelineOr):
-        s = cs.union_schema([handler(step.left), handler(step.right)])
+        s = cs.union_schema(
+            [step.left._apply_pipeline(handler, source_type), step.right._apply_pipeline(handler, source_type)]
+        )
     else:
         assert isinstance(step, _PipelineAnd)
-        s = cs.chain_schema([handler(step.left), handler(step.right)])
+        s = cs.chain_schema(
+            [step.left._apply_pipeline(handler, source_type), step.right._apply_pipeline(handler, source_type)]
+        )
     return s
 
 
@@ -431,20 +479,23 @@ def _apply_transform(
     return cs.no_info_after_validator_function(func, s)
 
 
+# Core schema types with native support for the `gt`/`ge`/`lt`/`le` constraints:
+_ORDERING_SCHEMA_TYPES = frozenset({'int', 'float', 'decimal', 'fraction', 'date', 'time', 'datetime', 'timedelta'})
+# Core schema types with native support for the `min_length`/`max_length` constraints:
+_LENGTH_SCHEMA_TYPES = frozenset({'str', 'bytes', 'list', 'tuple', 'set', 'frozenset', 'dict', 'generator'})
+
+
 def _apply_constraint(  # noqa: C901
     s: cs.CoreSchema | None, constraint: _ConstraintAnnotation
 ) -> cs.CoreSchema:
     """Apply a single constraint to a schema."""
+    # No casting of the constraints is necessary, as pydantic-core does it
+    # when building the validator from the core schema:
     if isinstance(constraint, annotated_types.Gt):
         gt = constraint.gt
-        if s and s['type'] in {'int', 'float', 'decimal'}:
+        if s and s['type'] in _ORDERING_SCHEMA_TYPES:
             s = s.copy()
-            if s['type'] == 'int' and isinstance(gt, int):
-                s['gt'] = gt
-            elif s['type'] == 'float' and isinstance(gt, float):
-                s['gt'] = gt
-            elif s['type'] == 'decimal' and isinstance(gt, Decimal):
-                s['gt'] = gt
+            s['gt'] = gt  # pyright: ignore[reportGeneralTypeIssues]
         else:
 
             def check_gt(v: Any) -> bool:
@@ -453,89 +504,70 @@ def _apply_constraint(  # noqa: C901
             s = _check_func(check_gt, f'> {gt}', s)
     elif isinstance(constraint, annotated_types.Ge):
         ge = constraint.ge
-        if s and s['type'] in {'int', 'float', 'decimal'}:
+        if s and s['type'] in _ORDERING_SCHEMA_TYPES:
             s = s.copy()
-            if s['type'] == 'int' and isinstance(ge, int):
-                s['ge'] = ge
-            elif s['type'] == 'float' and isinstance(ge, float):
-                s['ge'] = ge
-            elif s['type'] == 'decimal' and isinstance(ge, Decimal):
-                s['ge'] = ge
+            s['ge'] = ge  # pyright: ignore[reportGeneralTypeIssues]
+        else:
 
-        def check_ge(v: Any) -> bool:
-            return v >= ge
+            def check_ge(v: Any) -> bool:
+                return v >= ge
 
-        s = _check_func(check_ge, f'>= {ge}', s)
+            s = _check_func(check_ge, f'>= {ge}', s)
     elif isinstance(constraint, annotated_types.Lt):
         lt = constraint.lt
-        if s and s['type'] in {'int', 'float', 'decimal'}:
+        if s and s['type'] in _ORDERING_SCHEMA_TYPES:
             s = s.copy()
-            if s['type'] == 'int' and isinstance(lt, int):
-                s['lt'] = lt
-            elif s['type'] == 'float' and isinstance(lt, float):
-                s['lt'] = lt
-            elif s['type'] == 'decimal' and isinstance(lt, Decimal):
-                s['lt'] = lt
+            s['lt'] = lt  # pyright: ignore[reportGeneralTypeIssues]
+        else:
 
-        def check_lt(v: Any) -> bool:
-            return v < lt
+            def check_lt(v: Any) -> bool:
+                return v < lt
 
-        s = _check_func(check_lt, f'< {lt}', s)
+            s = _check_func(check_lt, f'< {lt}', s)
     elif isinstance(constraint, annotated_types.Le):
         le = constraint.le
-        if s and s['type'] in {'int', 'float', 'decimal'}:
+        if s and s['type'] in _ORDERING_SCHEMA_TYPES:
             s = s.copy()
-            if s['type'] == 'int' and isinstance(le, int):
-                s['le'] = le
-            elif s['type'] == 'float' and isinstance(le, float):
-                s['le'] = le
-            elif s['type'] == 'decimal' and isinstance(le, Decimal):
-                s['le'] = le
+            s['le'] = le  # pyright: ignore[reportGeneralTypeIssues]
+        else:
 
-        def check_le(v: Any) -> bool:
-            return v <= le
+            def check_le(v: Any) -> bool:
+                return v <= le
 
-        s = _check_func(check_le, f'<= {le}', s)
+            s = _check_func(check_le, f'<= {le}', s)
     elif isinstance(constraint, annotated_types.Len):
         min_len = constraint.min_length
         max_len = constraint.max_length
 
-        if s and s['type'] in {'str', 'list', 'tuple', 'set', 'frozenset', 'dict'}:
-            assert (
-                s['type'] == 'str'
-                or s['type'] == 'list'
-                or s['type'] == 'tuple'
-                or s['type'] == 'set'
-                or s['type'] == 'dict'
-                or s['type'] == 'frozenset'
-            )
+        if s and s['type'] in _LENGTH_SCHEMA_TYPES:
             s = s.copy()
             if min_len != 0:
-                s['min_length'] = min_len
+                s['min_length'] = min_len  # pyright: ignore[reportGeneralTypeIssues]
             if max_len is not None:
-                s['max_length'] = max_len
+                s['max_length'] = max_len  # pyright: ignore[reportGeneralTypeIssues]
+        else:
 
-        def check_len(v: Any) -> bool:
-            if max_len is not None:
-                return (min_len <= len(v)) and (len(v) <= max_len)
-            return min_len <= len(v)
+            def check_len(v: Any) -> bool:
+                len_v = len(v)
+                if max_len is not None:
+                    return min_len <= len_v <= max_len
+                return min_len <= len_v
 
-        s = _check_func(check_len, f'length >= {min_len} and length <= {max_len}', s)
+            predicate_err = (
+                f'length >= {min_len}' if max_len is None else f'length >= {min_len} and length <= {max_len}'
+            )
+            s = _check_func(check_len, predicate_err, s)
     elif isinstance(constraint, annotated_types.MultipleOf):
         multiple_of = constraint.multiple_of
         if s and s['type'] in {'int', 'float', 'decimal'}:
             s = s.copy()
-            if s['type'] == 'int' and isinstance(multiple_of, int):
-                s['multiple_of'] = multiple_of
-            elif s['type'] == 'float' and isinstance(multiple_of, float):
-                s['multiple_of'] = multiple_of
-            elif s['type'] == 'decimal' and isinstance(multiple_of, Decimal):
-                s['multiple_of'] = multiple_of
+            s['multiple_of'] = multiple_of  # pyright: ignore[reportGeneralTypeIssues]
+        else:
 
-        def check_multiple_of(v: Any) -> bool:
-            return v % multiple_of == 0
+            def check_multiple_of(v: Any) -> bool:
+                return v % multiple_of == 0
 
-        s = _check_func(check_multiple_of, f'% {multiple_of} == 0', s)
+            s = _check_func(check_multiple_of, f'% {multiple_of} == 0', s)
     elif isinstance(constraint, annotated_types.Timezone):
         tz = constraint.tz
 
@@ -564,13 +596,13 @@ def _apply_constraint(  # noqa: C901
         else:
             raise NotImplementedError('Constraining to a specific timezone is not yet supported')
     elif isinstance(constraint, annotated_types.Interval):
-        if constraint.ge:
+        if constraint.ge is not None:
             s = _apply_constraint(s, annotated_types.Ge(constraint.ge))
-        if constraint.gt:
+        if constraint.gt is not None:
             s = _apply_constraint(s, annotated_types.Gt(constraint.gt))
-        if constraint.le:
+        if constraint.le is not None:
             s = _apply_constraint(s, annotated_types.Le(constraint.le))
-        if constraint.lt:
+        if constraint.lt is not None:
             s = _apply_constraint(s, annotated_types.Lt(constraint.lt))
         assert s is not None
     elif isinstance(constraint, annotated_types.Predicate):
@@ -622,7 +654,7 @@ def _apply_constraint(  # noqa: C901
         assert isinstance(constraint, Pattern)
         if s and s['type'] == 'str':
             s = s.copy()
-            s['pattern'] = constraint.pattern
+            s['pattern'] = constraint
         else:
 
             def check_pattern(v: object) -> bool:

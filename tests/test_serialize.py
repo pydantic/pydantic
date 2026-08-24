@@ -5,10 +5,11 @@ New tests for v2 of serialization logic.
 import json
 import re
 import sys
+from collections.abc import Callable
 from enum import Enum
 from functools import partial, partialmethod
 from re import Pattern
-from typing import Annotated, Any, Callable, ClassVar, Optional, Union
+from typing import Annotated, Any, ClassVar, Optional
 
 import pytest
 from pydantic_core import PydanticSerializationError, core_schema, to_jsonable_python
@@ -141,13 +142,13 @@ def test_serializer_annotated_typing_cache(serializer, func):
     FancyInt = Annotated[int, serializer(func)]
 
     class FancyIntModel(BaseModel):
-        x: Optional[FancyInt]
+        x: FancyInt | None
 
     assert FancyIntModel(x=1234).model_dump() == {'x': '1,235'}
 
 
 def test_use_bare_field_serializer():
-    with pytest.raises(PydanticUserError) as exc:
+    with pytest.raises(PydanticUserError, check=lambda e: e.code == 'decorator-missing-arguments'):
 
         class Model(BaseModel):
             a: str
@@ -155,8 +156,6 @@ def test_use_bare_field_serializer():
             @field_serializer
             def checker(cls, v):
                 return v
-
-    assert exc.value.code == 'decorator-missing-arguments'
 
 
 def test_use_no_fields_field_serializer():
@@ -173,7 +172,7 @@ def test_use_no_fields_field_serializer():
 
 
 def test_field_serializer_bad_fields_throws_configerror():
-    with pytest.raises(PydanticUserError) as exc:
+    with pytest.raises(PydanticUserError, check=lambda e: e.code == 'decorator-invalid-fields'):
 
         class Model1(BaseModel):
             a: str
@@ -183,9 +182,7 @@ def test_field_serializer_bad_fields_throws_configerror():
             def check_fields(cls, v):
                 return v
 
-    assert exc.value.code == 'decorator-invalid-fields'
-
-    with pytest.raises(PydanticUserError) as exc:
+    with pytest.raises(PydanticUserError, check=lambda e: e.code == 'decorator-invalid-fields'):
 
         class Model2(BaseModel):
             a: str
@@ -196,15 +193,13 @@ def test_field_serializer_bad_fields_throws_configerror():
             def check_fields(cls, v):
                 return v
 
-    assert exc.value.code == 'decorator-invalid-fields'
-
 
 def test_serialize_decorator_always():
     class MyModel(BaseModel):
-        x: Optional[int]
+        x: int | None
 
         @field_serializer('x')
-        def customise_x_serialization(v, _info) -> str:
+        def customise_x_serialization(v, _info: SerializationInfo) -> str:
             return f'{v:,}'
 
     assert MyModel(x=1234).model_dump() == {'x': '1,234'}
@@ -237,7 +232,7 @@ def test_serialize_decorator_json():
 
 def test_serialize_decorator_unless_none():
     class MyModel(BaseModel):
-        x: Optional[int]
+        x: int | None
 
         @field_serializer('x', when_used='unless-none')
         def customise_x_serialization(v):
@@ -404,10 +399,10 @@ def test_serialize_ignore_info_wrap():
 
 def test_serialize_decorator_self_info():
     class MyModel(BaseModel):
-        x: Optional[int]
+        x: int | None
 
         @field_serializer('x')
-        def customise_x_serialization(self, v, info) -> str:
+        def customise_x_serialization(self, v, info: SerializationInfo) -> str:
             return f'{info.mode}:{v:,}'
 
     assert MyModel(x=1234).model_dump() == {'x': 'python:1,234'}
@@ -416,7 +411,7 @@ def test_serialize_decorator_self_info():
 
 def test_serialize_decorator_self_no_info():
     class MyModel(BaseModel):
-        x: Optional[int]
+        x: int | None
 
         @field_serializer('x')
         def customise_x_serialization(self, v) -> str:
@@ -458,7 +453,7 @@ def test_model_serializer_plain_info():
         b: bytes
 
         @model_serializer
-        def _serialize(self, info):
+        def _serialize(self, info: SerializationInfo):
             if info.exclude:
                 return {k: v for k, v in self.__dict__.items() if k not in info.exclude}
             else:
@@ -503,7 +498,7 @@ def test_model_serializer_wrap_info():
         c: bytes = Field(exclude=True)
 
         @model_serializer(mode='wrap')
-        def _serialize(self, handler, info):
+        def _serialize(self, handler, info: SerializationInfo):
             d = handler(self)
             d['info'] = f'mode={info.mode} exclude={info.exclude}'
             return d
@@ -889,7 +884,7 @@ def test_serialize_with_extra():
         a: str = 'a'
 
     class Outer(BaseModel):
-        # this cause the inner model incorrectly dumpped:
+        # this cause the inner model incorrectly dumped:
         model_config = ConfigDict(extra='allow')
         inner: Inner = Field(default_factory=Inner)
 
@@ -1196,7 +1191,7 @@ def test_subclass_support_unions() -> None:
         age: str
 
     class Home(BaseModel):
-        little_guys: Union[list[Pet], list[Kid]]
+        little_guys: list[Pet] | list[Kid]
 
     class Shelter(BaseModel):
         pets: list[Pet]
@@ -1220,7 +1215,7 @@ def test_subclass_support_unions_with_forward_ref() -> None:
         baz_id: int
 
     class Foo(BaseModel):
-        items: Union[list['Foo'], list[Bar]]
+        items: list['Foo'] | list[Bar]
 
     foo = Foo(items=[Baz(bar_id=1, baz_id=2), Baz(bar_id=3, baz_id=4)])
     assert foo.model_dump() == {'items': [{'bar_id': 1}, {'bar_id': 3}]}
@@ -1312,10 +1307,10 @@ def smart_union_serialization() -> None:
     """Initially reported via https://github.com/pydantic/pydantic/issues/9417, effectively a round tripping problem with type consistency."""
 
     class FloatThenInt(BaseModel):
-        value: Union[float, int, str] = Field(union_mode='smart')
+        value: float | int | str = Field(union_mode='smart')
 
     class IntThenFloat(BaseModel):
-        value: Union[int, float, str] = Field(union_mode='smart')
+        value: int | float | str = Field(union_mode='smart')
 
     float_then_int = FloatThenInt(value=100)
     assert type(json.loads(float_then_int.model_dump_json())['value']) is int
@@ -1333,7 +1328,7 @@ def test_serialize_with_custom_ser() -> None:
             return {'id': self.id}
 
     class ItemContainer(BaseModel):
-        item_or_items: Union[Item, list[Item]]
+        item_or_items: Item | list[Item]
 
     items = [Item(id=i) for i in range(5)]
     assert (
@@ -1399,3 +1394,71 @@ def test_wrap_ser_called_once() -> None:
 
     my_model = MyParentModel.model_validate({'nested': {'inner_value': 'foo'}})
     assert my_model.model_dump() == {'nested': {'inner_value': 'my_prefix:foo'}}
+
+
+def test_serialization_info_properties() -> None:
+
+    class Model(BaseModel):
+        f: int
+
+        @field_serializer('f', mode='plain')
+        def ser_number(self, value: Any, info: SerializationInfo) -> Any:
+            return info
+
+    m = Model(f=1)
+
+    for property in (
+        'context',
+        'by_alias',
+        'exclude_unset',
+        'exclude_defaults',
+        'exclude_none',
+        'exclude_computed_fields',
+        'serialize_as_any',
+        'polymorphic_serialization',
+        'round_trip',
+    ):
+        assert getattr(m.model_dump(**{property: True})['f'], property) is True, f'{property!r} check failed'
+
+
+def test_model_serializer_index_key_type_error() -> None:
+    """https://github.com/pydantic/pydantic/issues/11862"""
+
+    class Model(BaseModel):
+        f: int
+
+        @model_serializer(mode='wrap')
+        def _serialize(self, handler: SerializerFunctionWrapHandler):
+            return handler(self, b'not_a_valid_type_for_index_key')
+
+    m = Model(f=1)
+    with pytest.raises(
+        PydanticSerializationError,
+        match="Error calling function `_serialize`: TypeError: 'index_key' is expected to be an integer or a string, got 'b'not_a_valid_type_for_index_key''",
+    ):
+        m.model_dump(include={'f'})
+
+
+def test_model_serializer_when_used_fallback_respects_include_exclude() -> None:
+    """https://github.com/pydantic/pydantic/issues/13601"""
+
+    class Plain(BaseModel):
+        a: int
+        b: int
+
+        @model_serializer(mode='plain', when_used='json')
+        def _serialize(self) -> Any:
+            return {'ser': True}
+
+    class Wrap(BaseModel):
+        a: int
+        b: int
+
+        @model_serializer(mode='wrap', when_used='json')
+        def _serialize(self, handler: SerializerFunctionWrapHandler) -> Any:
+            return {'ser': True}
+
+    for m in (Plain(a=1, b=2), Wrap(a=1, b=2)):
+        assert m.model_dump(exclude={'b'}) == {'a': 1}
+        assert m.model_dump(include={'a'}) == {'a': 1}
+        assert m.model_dump(mode='json', exclude={'b'}) == {'ser': True}

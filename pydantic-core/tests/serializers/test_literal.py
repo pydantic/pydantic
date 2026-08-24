@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 from enum import Enum
-from typing import Literal, Union
+from typing import Literal
 
 import pytest
 
@@ -94,7 +94,7 @@ def test_literal_with_enum() -> None:
 
     @dataclass
     class Yard:
-        pet: Union[Dog, Cat]
+        pet: Dog | Cat
 
     serializer = SchemaSerializer(
         core_schema.model_schema(

@@ -57,7 +57,6 @@ def test_time(input_value, expected):
         pytest.param('12:13:14', time(12, 13, 14), id='str'),
         pytest.param('12:13:14.123', time(12, 13, 14, 123_000), id='str-micro'),
         pytest.param('12:13:14.123456', time(12, 13, 14, 123_456), id='str-micro-6dig'),
-        pytest.param('12:13:14.123456', time(12, 13, 14, 123_456), id='str-micro-6dig'),
         pytest.param('12:13:14.1234561', time(12, 13, 14, 123_456), id='str-micro-7dig'),
         pytest.param(123, time(0, 2, 3, tzinfo=timezone.utc), id='int'),
         pytest.param(123.4, time(0, 2, 3, 400_000, tzinfo=timezone.utc), id='float'),

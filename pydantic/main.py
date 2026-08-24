@@ -8,6 +8,7 @@ from __future__ import annotations as _annotations
 
 import operator
 import sys
+import threading
 import types
 import warnings
 from collections.abc import Generator, Mapping
@@ -53,6 +54,7 @@ from .config import ConfigDict, ExtraValues
 from .errors import PydanticUndefinedAnnotation, PydanticUserError
 from .json_schema import DEFAULT_REF_TEMPLATE, GenerateJsonSchema, JsonSchemaMode, JsonSchemaValue, model_json_schema
 from .plugin._schema_validator import PluggableSchemaValidator
+from .version import version_short
 
 if TYPE_CHECKING:
     from inspect import Signature
@@ -74,9 +76,21 @@ TupleGenerator: TypeAlias = Generator[tuple[str, Any], None, None]
 # NOTE: In reality, `bool` should be replaced by `Literal[True]` but mypy fails to correctly apply bidirectional
 # type inference (e.g. when using `{'a': {'b': True}}`):
 # NOTE: Keep this type alias in sync with the stub definition in `pydantic-core`:
-IncEx: TypeAlias = Union[set[int], set[str], Mapping[int, Union['IncEx', bool]], Mapping[str, Union['IncEx', bool]]]
+IncEx: TypeAlias = set[int] | set[str] | Mapping[int, Union['IncEx', bool]] | Mapping[str, Union['IncEx', bool]]
 
 _object_setattr = _model_construction.object_setattr
+
+_rebuild_lock = threading.RLock()
+"""
+A lock used to make model rebuilds thread-safe when first instantiating an incomplete model.
+
+Rebuilding a model isn't thread-safe (the class attributes are mutated during the rebuild,
+while other threads may be reading them to perform validation/serialization), so `model_rebuild()`
+calls are serialized using this lock. The lock is reentrant, as rebuilding a model can trigger the
+rebuild of another one (e.g. when a generic origin is rebuilt during parametrization in
+`__class_getitem__()`). For the same reason, the lock is global and not per-class: two threads
+holding their own class's lock could otherwise request the other's and deadlock.
+"""
 
 
 def _check_frozen(model_cls: type[BaseModel], name: str, value: Any) -> None:
@@ -93,7 +107,7 @@ def _check_frozen(model_cls: type[BaseModel], name: str, value: Any) -> None:
 
 
 def _model_field_setattr_handler(model: BaseModel, name: str, val: Any) -> None:
-    model.__dict__[name] = val
+    model.__dict__[name] = val  # pyright: ignore[reportIndexIssue] (https://github.com/microsoft/pyright/issues/11548)
     model.__pydantic_fields_set__.add(name)
 
 
@@ -111,7 +125,7 @@ _SIMPLE_SETATTR_HANDLERS: Mapping[str, Callable[[BaseModel, str, Any], None]] = 
     'model_field': _model_field_setattr_handler,
     'validate_assignment': lambda model, name, val: model.__pydantic_validator__.validate_assignment(model, name, val),  # pyright: ignore[reportAssignmentType]
     'private': _private_setattr_handler,
-    'cached_property': lambda model, name, val: model.__dict__.__setitem__(name, val),
+    'cached_property': lambda model, name, val: model.__dict__.__setitem__(name, val),  # pyright: ignore[reportAttributeAccessIssue] (https://github.com/microsoft/pyright/issues/11548)
     'extra_known': lambda model, name, val: _object_setattr(model, name, val),
 }
 
@@ -265,7 +279,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
             warnings.warn(
                 'A custom validator is returning a value other than `self`.\n'
                 "Returning anything other than `self` from a top level model validator isn't supported when validating via `__init__`.\n"
-                'See the `model_validator` docs (https://docs.pydantic.dev/latest/concepts/validators/#model-validators) for more details.',
+                f'See the `model_validator` docs (https://pydantic.dev/docs/validation/{version_short()}/concepts/validators/#model-validators) for more details.',
                 stacklevel=2,
             )
 
@@ -378,6 +392,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
         _object_setattr(m, '__pydantic_fields_set__', _fields_set)
         if not cls.__pydantic_root_model__:
             _object_setattr(m, '__pydantic_extra__', _extra)
+            _object_setattr(m, '__pydantic_private__', None)
 
         if cls.__pydantic_post_init__:
             m.model_post_init(None)
@@ -386,11 +401,6 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
                 for k, v in values.items():
                     if k in m.__private_attributes__:
                         m.__pydantic_private__[k] = v
-
-        elif not cls.__pydantic_root_model__:
-            # Note: if there are any private attributes, cls.__pydantic_post_init__ would exist
-            # Since it doesn't, that means that `__pydantic_private__` should be set to None
-            _object_setattr(m, '__pydantic_private__', None)
 
         return m
 
@@ -406,26 +416,54 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
             fields (e.g. the value of [cached properties][functools.cached_property]).
 
         Args:
-            update: Values to change/add in the new model. Note: the data is not validated
-                before creating the new model. You should trust this data.
-            deep: Set to `True` to make a deep copy of the model.
+            update: A mapping of values to update the copied model. Updates are *not*
+                applied recursively, and no validation is performed on updated values.
+                Only the known fields are updated (if unknown keys are being passed and
+                the model has [`extra`][pydantic.ConfigDict.extra] set to `'allow'`, they
+                are added as extra data).
+            deep: Whether a [deep copy][copy.deepcopy] of the model should be performed.
 
         Returns:
             New model instance.
         """
-        copied = self.__deepcopy__() if deep else self.__copy__()
+        if deep and update:
+            # Only deep copy the fields that won't be updated:
+            copied = self.__copy__()
+
+            # As we make separate `deepcopy()` calls, use a shared memo:
+            memo: dict[int, Any] = {}
+
+            # Selectively deepcopy fields that are not being updated:
+            for k, v in copied.__dict__.items():
+                if k not in update:
+                    copied.__dict__[k] = deepcopy(v, memo)  # pyright: ignore[reportIndexIssue] (https://github.com/microsoft/pyright/issues/11548)
+            if copied.__pydantic_extra__ is not None:
+                for k, v in copied.__pydantic_extra__.items():
+                    if k not in update:
+                        copied.__pydantic_extra__[k] = deepcopy(v, memo)
+            if copied.__pydantic_private__ is not None:
+                # Same logic as `BaseModel.__deepcopy__()`:
+                copied.__pydantic_private__ = deepcopy(
+                    {k: v for k, v in copied.__pydantic_private__.items() if v is not PydanticUndefined},
+                    memo,
+                )
+        else:
+            copied = self.__deepcopy__() if deep else self.__copy__()
+
         if update:
             if self.model_config.get('extra') == 'allow':
                 for k, v in update.items():
                     if k in self.__pydantic_fields__:
-                        copied.__dict__[k] = v
+                        copied.__dict__[k] = v  # pyright: ignore[reportIndexIssue] (https://github.com/microsoft/pyright/issues/11548)
                     else:
                         if copied.__pydantic_extra__ is None:
                             copied.__pydantic_extra__ = {}
                         copied.__pydantic_extra__[k] = v
             else:
-                copied.__dict__.update(update)
+                copied.__dict__.update(update)  # pyright: ignore[reportAttributeAccessIssue] (https://github.com/microsoft/pyright/issues/11548)
+
             copied.__pydantic_fields_set__.update(update.keys())
+
         return copied
 
     def model_dump(
@@ -444,6 +482,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
         warnings: bool | Literal['none', 'warn', 'error'] = True,
         fallback: Callable[[Any], Any] | None = None,
         serialize_as_any: bool = False,
+        polymorphic_serialization: bool | None = None,
     ) -> dict[str, Any]:
         """!!! abstract "Usage Documentation"
             [`model_dump`](../concepts/serialization.md#python-mode)
@@ -470,6 +509,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
             fallback: A function to call when an unknown value is encountered. If not provided,
                 a [`PydanticSerializationError`][pydantic_core.PydanticSerializationError] error is raised.
             serialize_as_any: Whether to serialize fields with duck-typing serialization behavior.
+            polymorphic_serialization: Whether to use model and dataclass polymorphic serialization for this call.
 
         Returns:
             A dictionary representation of the model.
@@ -489,6 +529,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
             warnings=warnings,
             fallback=fallback,
             serialize_as_any=serialize_as_any,
+            polymorphic_serialization=polymorphic_serialization,
         )
 
     def model_dump_json(
@@ -508,6 +549,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
         warnings: bool | Literal['none', 'warn', 'error'] = True,
         fallback: Callable[[Any], Any] | None = None,
         serialize_as_any: bool = False,
+        polymorphic_serialization: bool | None = None,
     ) -> str:
         """!!! abstract "Usage Documentation"
             [`model_dump_json`](../concepts/serialization.md#json-mode)
@@ -534,6 +576,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
             fallback: A function to call when an unknown value is encountered. If not provided,
                 a [`PydanticSerializationError`][pydantic_core.PydanticSerializationError] error is raised.
             serialize_as_any: Whether to serialize fields with duck-typing serialization behavior.
+            polymorphic_serialization: Whether to use model and dataclass polymorphic serialization for this call.
 
         Returns:
             A JSON string representation of the model.
@@ -554,6 +597,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
             warnings=warnings,
             fallback=fallback,
             serialize_as_any=serialize_as_any,
+            polymorphic_serialization=polymorphic_serialization,
         ).decode()
 
     @classmethod
@@ -651,42 +695,54 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
             Returns `None` if the schema is already "complete" and rebuilding was not required.
             If rebuilding _was_ required, returns `True` if rebuilding was successful, otherwise `False`.
         """
-        already_complete = cls.__pydantic_complete__
-        if already_complete and not force:
+        # As the rebuild lock is global (not per model class), avoid needlessly holding it if the model is
+        # already complete:
+        if cls.__pydantic_complete__ and not force:
             return None
 
-        cls.__pydantic_complete__ = False
+        with _rebuild_lock:
+            # Re-check inside the lock, as another thread may have rebuilt the model while we were waiting:
+            already_complete = cls.__pydantic_complete__
+            if already_complete and not force:
+                return None
 
-        for attr in ('__pydantic_core_schema__', '__pydantic_validator__', '__pydantic_serializer__'):
-            if attr in cls.__dict__ and not isinstance(getattr(cls, attr), _mock_val_ser.MockValSer):
-                # Deleting the validator/serializer is necessary as otherwise they can get reused in
-                # pydantic-core. We do so only if they aren't mock instances, otherwise — as `model_rebuild()`
-                # isn't thread-safe — concurrent model instantiations can lead to the parent validator being used.
-                # Same applies for the core schema that can be reused in schema generation.
-                delattr(cls, attr)
+            cls.__pydantic_complete__ = False
 
-        if _types_namespace is not None:
-            rebuild_ns = _types_namespace
-        elif _parent_namespace_depth > 0:
-            rebuild_ns = _typing_extra.parent_frame_namespace(parent_depth=_parent_namespace_depth, force=True) or {}
-        else:
-            rebuild_ns = {}
+            for attr in ('__pydantic_core_schema__', '__pydantic_validator__', '__pydantic_serializer__'):
+                if attr in cls.__dict__ and not isinstance(
+                    getattr(cls, attr), (_mock_val_ser.MockCoreSchema, _mock_val_ser.MockValSer)
+                ):
+                    # Deleting the validator/serializer is necessary as otherwise they can get reused in
+                    # pydantic-core. Same applies for the core schema that can be reused in schema generation.
+                    # We do so only if they aren't mock instances, otherwise concurrent reads of these attributes
+                    # — performed without holding the rebuild lock (e.g. when instantiating the model) — can
+                    # resolve them from the parent class.
+                    delattr(cls, attr)
 
-        parent_ns = _model_construction.unpack_lenient_weakvaluedict(cls.__pydantic_parent_namespace__) or {}
+            if _types_namespace is not None:
+                rebuild_ns = _types_namespace
+            elif _parent_namespace_depth > 0:
+                rebuild_ns = (
+                    _typing_extra.parent_frame_namespace(parent_depth=_parent_namespace_depth, force=True) or {}
+                )
+            else:
+                rebuild_ns = {}
 
-        ns_resolver = _namespace_utils.NsResolver(
-            parent_namespace={**rebuild_ns, **parent_ns},
-        )
+            parent_ns = _model_construction.unpack_lenient_weakvaluedict(cls.__pydantic_parent_namespace__) or {}
 
-        return _model_construction.complete_model_class(
-            cls,
-            _config.ConfigWrapper(cls.model_config, check=False),
-            ns_resolver,
-            raise_errors=raise_errors,
-            # If the model was already complete, we don't need to call the hook again.
-            call_on_complete_hook=not already_complete,
-            is_force_rebuild=force,
-        )
+            ns_resolver = _namespace_utils.NsResolver(
+                parent_namespace={**rebuild_ns, **parent_ns},
+            )
+
+            return _model_construction.complete_model_class(
+                cls,
+                _config.ConfigWrapper(cls.model_config, check=False),
+                ns_resolver,
+                raise_errors=raise_errors,
+                # If the model was already complete, we don't need to call the hook again.
+                call_on_complete_hook=not already_complete,
+                is_force_rebuild=force,
+            )
 
     @classmethod
     def model_validate(
@@ -701,6 +757,11 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
         by_name: bool | None = None,
     ) -> Self:
         """Validate a pydantic model instance.
+
+        If validation fails, the resulting [`ValidationError`][pydantic_core.ValidationError] reports the
+        rejected locations and values. [Logfire](../integrations/logfire.md) can retain the complete validation
+        input and surrounding trace context for production debugging (see
+        [Troubleshooting validation errors](../errors/troubleshooting.md)).
 
         Args:
             obj: The object to validate.
@@ -752,6 +813,11 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
             [JSON Parsing](../concepts/json.md#json-parsing)
 
         Validate the given JSON data against the Pydantic model.
+
+        A [`ValidationError`][pydantic_core.ValidationError] raised here reports the rejected locations and
+        values, but may not retain the complete source document. Recording validations with
+        [Logfire](../integrations/logfire.md) keeps the complete JSON input alongside the error — see
+        [Troubleshooting validation errors](../errors/troubleshooting.md).
 
         Args:
             json_data: The JSON data to validate.
@@ -1094,6 +1160,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
                 elif attr is None:
                     # attribute does not exist, so put it in extra
                     self.__pydantic_extra__[name] = value
+                    self.__pydantic_fields_set__.add(name)
                     return None  # Can not return memoized handler with possibly freeform attr names
                 else:
                     # attribute _does_ exist, and was not in extra, so update it
@@ -1168,9 +1235,11 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
 
                 # Perform common checks first
                 if not (
-                    self_type == other_type
+                    self_type is other_type
                     and getattr(self, '__pydantic_private__', None) == getattr(other, '__pydantic_private__', None)
-                    and self.__pydantic_extra__ == other.__pydantic_extra__
+                    # We need to assume `None` and `{}` are equivalent, because extra behavior
+                    # can be controlled at validation time:
+                    and (self.__pydantic_extra__ or {}) == (other.__pydantic_extra__ or {})
                 ):
                     return False
 
@@ -1744,7 +1813,7 @@ def create_model(  # noqa: C901
     """!!! abstract "Usage Documentation"
         [Dynamic Model Creation](../concepts/models.md#dynamic-model-creation)
 
-    Dynamically creates and returns a new Pydantic model, in other words, `create_model` dynamically creates a
+    Dynamically creates and returns a new Pydantic model. In other words, `create_model()` dynamically creates a
     subclass of [`BaseModel`][pydantic.BaseModel].
 
     !!! warning
@@ -1761,7 +1830,7 @@ def create_model(  # noqa: C901
             if `None`, the value is taken from `sys._getframe(1)`
         __validators__: A dictionary of methods that validate fields. The keys are the names of the validation methods to
             be added to the model, and the values are the validation methods themselves. You can read more about functional
-            validators [here](https://docs.pydantic.dev/2.9/concepts/validators/#field-validators).
+            validators [here](../concepts/validators.md#field-validators).
         __cls_kwargs__: A dictionary of keyword arguments for class creation, such as `metaclass`.
         __qualname__: The qualified name of the newly created model.
         **field_definitions: Field definitions of the new model. Either:

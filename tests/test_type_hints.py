@@ -4,12 +4,10 @@ queried by :py:meth:`typing.get_type_hints`.
 """
 
 import inspect
-import sys
 from functools import lru_cache
 from typing import (
     Any,
     Generic,
-    Optional,
     TypeVar,
 )
 
@@ -36,10 +34,8 @@ DEPRECATED_MODEL_MEMBERS = {
 # Disable deprecation warnings, as we enumerate members that may be
 # i.e. pydantic.warnings.PydanticDeprecatedSince20: The `__fields__` attribute is deprecated,
 #      use `model_fields` instead.
-# Additionally, only run these tests for 3.10+
 pytestmark = [
     pytest.mark.filterwarnings('ignore::DeprecationWarning'),
-    pytest.mark.skipif(sys.version_info < (3, 10), reason='requires python3.10 or higher to work properly'),
 ]
 
 
@@ -84,7 +80,7 @@ def get_type_checking_only_ns():
 
 
 def inspect_type_hints(
-    obj_type, members: Optional[set[str]] = None, exclude_members: Optional[set[str]] = None, recursion_limit: int = 3
+    obj_type, members: set[str] | None = None, exclude_members: set[str] | None = None, recursion_limit: int = 3
 ):
     """
     Test an object and its members to make sure type hints can be resolved.
@@ -124,7 +120,7 @@ def inspect_type_hints(
         (RootModel, None, DEPRECATED_MODEL_MEMBERS),
     ],
 )
-def test_obj_type_hints(obj_type, members: Optional[set[str]], exclude_members: Optional[set[str]]):
+def test_obj_type_hints(obj_type, members: set[str] | None, exclude_members: set[str] | None):
     """
     Test an object and its members to make sure type hints can be resolved.
     :param obj_type: Type to check

@@ -121,7 +121,7 @@ impl Validator for ModelValidator {
         input: &(impl Input<'py> + ?Sized),
         state: &mut ValidationState<'_, 'py>,
     ) -> ValResult<Py<PyAny>> {
-        if let Some(self_instance) = state.extra().self_instance {
+        if let Some(self_instance) = state.self_instance {
             // in the case that self_instance is Some, we're calling validation from within `BaseModel.__init__`
             return self.validate_init(py, self_instance, input, state);
         }
@@ -255,7 +255,7 @@ impl ModelValidator {
     ) -> ValResult<Py<PyAny>> {
         // we need to set `self_instance` to None for nested validators as we don't want to operate on self_instance
         // anymore
-        let state = &mut state.rebind_extra(|extra| extra.self_instance = None);
+        let state = &mut state.scoped_clear_self_instance();
 
         if self.root_model {
             let root_field = root_field_py_str(py);

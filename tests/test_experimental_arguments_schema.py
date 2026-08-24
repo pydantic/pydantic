@@ -100,13 +100,11 @@ def test_arguments_v3_kwargs_uniform() -> None:
 def test_unpacked_typed_dict_kwargs_invalid_type() -> None:
     def func(**kwargs: Unpack[int]): ...
 
-    with pytest.raises(PydanticUserError) as exc:
+    with pytest.raises(PydanticUserError, check=lambda e: e.code == 'unpack-typed-dict'):
         generate_arguments_schema(
             func=func,
             schema_type='arguments-v3',
         )
-
-    assert exc.value.code == 'unpack-typed-dict'
 
 
 def test_unpacked_typed_dict_kwargs_overlaps() -> None:
@@ -117,14 +115,17 @@ def test_unpacked_typed_dict_kwargs_overlaps() -> None:
 
     def func(a: int, b: int, **kwargs: Unpack[TD]): ...
 
-    with pytest.raises(PydanticUserError) as exc:
+    with pytest.raises(
+        PydanticUserError,
+        check=lambda e: (
+            e.code == 'overlapping-unpack-typed-dict'
+            and e.message == "Typed dictionary 'TD' overlaps with parameters 'a', 'b'"
+        ),
+    ):
         generate_arguments_schema(
             func=func,
             schema_type='arguments-v3',
         )
-
-    assert exc.value.code == 'overlapping-unpack-typed-dict'
-    assert exc.value.message == "Typed dictionary 'TD' overlaps with parameters 'a', 'b'"
 
     # Works for a pos-only argument
     def func(a: int, /, **kwargs: Unpack[TD]): ...
@@ -184,4 +185,20 @@ def test_multiple_references() -> None:
     val = SchemaValidator(arguments_schema)
     args, kwargs = val.validate_python({'a': {}, 'b': {}})
     assert args == ({}, {})
+    assert kwargs == {}
+
+
+def test_populate_by_name() -> None:
+    """https://github.com/pydantic/pydantic/issues/13687"""
+
+    def func(a: Annotated[int, Field(alias='b')]) -> None: ...
+
+    arguments_schema = generate_arguments_schema(
+        func=func,
+        schema_type='arguments-v3',
+        config={'populate_by_name': True},
+    )
+    val = SchemaValidator(arguments_schema)
+    args, kwargs = val.validate_python({'a': 1})
+    assert args == (1,)
     assert kwargs == {}

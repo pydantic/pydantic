@@ -32,14 +32,12 @@ Within the model, you can either add the `from __future__ import annotations` im
 in a string:
 
 ```python
-from typing import Optional
-
 from pydantic import BaseModel
 
 
 class Foo(BaseModel):
     a: int = 123
-    sibling: 'Optional[Foo]' = None
+    sibling: 'Foo | None' = None
 
 
 print(Foo())
@@ -58,17 +56,15 @@ Rather than raising a [`RecursionError`][] while attempting to validate data wit
 to detect the cyclic reference and raise an appropriate [`ValidationError`][pydantic_core.ValidationError]:
 
 ```python
-from typing import Optional
-
 from pydantic import BaseModel, ValidationError
 
 
 class ModelA(BaseModel):
-    b: 'Optional[ModelB]' = None
+    b: 'ModelB | None' = None
 
 
 class ModelB(BaseModel):
-    a: Optional[ModelA] = None
+    a: ModelA | None = None
 
 
 cyclic_data = {}

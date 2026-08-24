@@ -2,30 +2,24 @@
 
 from __future__ import annotations
 
-import collections.abc
 import re
 import sys
 import types
 import typing
+from collections.abc import Callable, MutableMapping
 from functools import partial
 from inspect import Signature, signature
-from typing import TYPE_CHECKING, Any, Callable, cast
+from types import NoneType
+from typing import TYPE_CHECKING, Any, ForwardRef, cast
 
 import typing_extensions
-from typing_extensions import deprecated, get_args, get_origin
+from typing_extensions import deprecated, get_args, get_origin  # noqa: UP035 (for `get_args` and `get_origin`)
 from typing_inspection import typing_objects
 from typing_inspection.introspection import is_union_origin
 
 from pydantic.version import version_short
 
 from ._namespace_utils import GlobalsNamespace, MappingNamespace, NsResolver, get_module_ns_of
-
-if sys.version_info < (3, 10):
-    NoneType = type(None)
-    EllipsisType = type(Ellipsis)
-else:
-    from types import EllipsisType as EllipsisType
-    from types import NoneType as NoneType
 
 if sys.version_info >= (3, 14):
     import annotationlib
@@ -64,36 +58,6 @@ def annotated_type(tp: Any, /) -> Any | None:
 def unpack_type(tp: Any, /) -> Any | None:
     """Return the type wrapped by the `Unpack` special form, or `None`."""
     return get_args(tp)[0] if typing_objects.is_unpack(get_origin(tp)) else None
-
-
-def is_hashable(tp: Any, /) -> bool:
-    """Return whether the provided argument is the `Hashable` class.
-
-    ```python {test="skip" lint="skip"}
-    is_hashable(Hashable)
-    #> True
-    ```
-    """
-    # `get_origin` is documented as normalizing any typing-module aliases to `collections` classes,
-    # hence the second check:
-    return tp is collections.abc.Hashable or get_origin(tp) is collections.abc.Hashable
-
-
-def is_callable(tp: Any, /) -> bool:
-    """Return whether the provided argument is a `Callable`, parametrized or not.
-
-    ```python {test="skip" lint="skip"}
-    is_callable(Callable[[int], str])
-    #> True
-    is_callable(typing.Callable)
-    #> True
-    is_callable(collections.abc.Callable)
-    #> True
-    ```
-    """
-    # `get_origin` is documented as normalizing any typing-module aliases to `collections` classes,
-    # hence the second check:
-    return tp is collections.abc.Callable or get_origin(tp) is collections.abc.Callable
 
 
 _classvar_re = re.compile(r'((\w+\.)?Annotated\[)?(\w+\.)?ClassVar\[')
@@ -137,46 +101,6 @@ def is_classvar_annotation(tp: Any, /) -> bool:
     return False
 
 
-_t_final = typing.Final
-_te_final = typing_extensions.Final
-
-
-# TODO implement `is_finalvar_annotation` as Final can be wrapped with other special forms:
-def is_finalvar(tp: Any, /) -> bool:
-    """Return whether the provided argument is a `Final` special form, parametrized or not.
-
-    ```python {test="skip" lint="skip"}
-    is_finalvar(Final[int])
-    #> True
-    is_finalvar(Final)
-    #> True
-    """
-    # Final is not necessarily parametrized:
-    if tp is _t_final or tp is _te_final:
-        return True
-    origin = get_origin(tp)
-    return origin is _t_final or origin is _te_final
-
-
-_NONE_TYPES: tuple[Any, ...] = (None, NoneType, typing.Literal[None], typing_extensions.Literal[None])
-
-
-def is_none_type(tp: Any, /) -> bool:
-    """Return whether the argument represents the `None` type as part of an annotation.
-
-    ```python {test="skip" lint="skip"}
-    is_none_type(None)
-    #> True
-    is_none_type(NoneType)
-    #> True
-    is_none_type(Literal[None])
-    #> True
-    is_none_type(type[None])
-    #> False
-    """
-    return tp in _NONE_TYPES
-
-
 def is_namedtuple(tp: Any, /) -> bool:
     """Return whether the provided argument is a named tuple class.
 
@@ -198,12 +122,7 @@ def is_generic_alias(tp: Any, /) -> bool:
 
 
 # TODO: Ideally, we should avoid relying on the private `typing` constructs:
-
-if sys.version_info < (3, 10):
-    WithArgsTypes: tuple[Any, ...] = (typing._GenericAlias, types.GenericAlias)  # pyright: ignore[reportAttributeAccessIssue]
-else:
-    WithArgsTypes: tuple[Any, ...] = (typing._GenericAlias, types.GenericAlias, types.UnionType)  # pyright: ignore[reportAttributeAccessIssue]
-
+WithArgsTypes: tuple[Any, ...] = (typing._GenericAlias, types.GenericAlias, types.UnionType)  # pyright: ignore[reportAttributeAccessIssue]
 
 # Similarly, we shouldn't rely on this `_Final` class, which is even more private than `_GenericAlias`:
 typing_base: Any = typing._Final  # pyright: ignore[reportAttributeAccessIssue]
@@ -212,7 +131,7 @@ typing_base: Any = typing._Final  # pyright: ignore[reportAttributeAccessIssue]
 ### Annotation evaluations functions:
 
 
-def parent_frame_namespace(*, parent_depth: int = 2, force: bool = False) -> dict[str, Any] | None:
+def parent_frame_namespace(*, parent_depth: int = 2, force: bool = False) -> MutableMapping[str, Any] | None:
     """Fetch the local namespace of the parent frame where this function is called.
 
     Using this function is mostly useful to resolve forward annotations pointing to members defined in a local namespace,
@@ -279,18 +198,18 @@ def parent_frame_namespace(*, parent_depth: int = 2, force: bool = False) -> dic
 def _type_convert(arg: Any) -> Any:
     """Convert `None` to `NoneType` and strings to `ForwardRef` instances.
 
-    This is a backport of the private `typing._type_convert` function. When
-    evaluating a type, `ForwardRef._evaluate` ends up being called, and is
+    This is a vendored version of the private `typing._type_convert()` function. When
+    evaluating a type, `ForwardRef._evaluate()` ends up being called, and is
     responsible for making this conversion. However, we still have to apply
     it for the first argument passed to our type evaluation functions, similarly
-    to the `typing.get_type_hints` function.
+    to the `typing.get_type_hints()` function.
     """
     if arg is None:
         return NoneType
     if isinstance(arg, str):
-        # Like `typing.get_type_hints`, assume the arg can be in any context,
+        # Like `typing.get_type_hints()`, assume the arg can be in any context,
         # hence the proper `is_argument` and `is_class` args:
-        return _make_forward_ref(arg, is_argument=False, is_class=True)
+        return ForwardRef(arg, is_argument=False, is_class=True)
     return arg
 
 
@@ -304,7 +223,6 @@ def safe_get_annotations(obj: Any) -> dict[str, Any]:
     if sys.version_info >= (3, 14):
         return annotationlib.get_annotations(obj, format=annotationlib.Format.FORWARDREF)
     else:
-        # TODO just do getattr(obj, '__annotations__', {}) when dropping support for Python 3.9:
         if isinstance(obj, type):
             return obj.__dict__.get('__annotations__', {})
         else:
@@ -420,7 +338,7 @@ def try_eval_type(
     value = _type_convert(value)
 
     try:
-        return eval_type_backport(value, globalns, localns), True
+        return eval_type(value, globalns, localns), True
     except NameError:
         return value, False
 
@@ -429,70 +347,43 @@ def eval_type(
     value: Any,
     globalns: GlobalsNamespace | None = None,
     localns: MappingNamespace | None = None,
+    type_params: tuple[Any, ...] | None = None,
 ) -> Any:
     """Evaluate the annotation using the provided namespaces.
 
+    This function relies on our vendored `typing._eval_type()` function, and provide better error messages
+    if possible.
+
     Args:
-        value: The value to evaluate. If `None`, it will be replaced by `type[None]`. If an instance
-            of `str`, it will be converted to a `ForwardRef`.
+        value: The value to evaluate (will be converted to `NoneType` if `None`, and to a `ForwardRef` instance if a string).
         localns: The global namespace to use during annotation evaluation.
         globalns: The local namespace to use during annotation evaluation.
+        type_params: The type params belonging to the object being evaluated.
     """
     value = _type_convert(value)
-    return eval_type_backport(value, globalns, localns)
-
-
-@deprecated(
-    '`eval_type_lenient` is deprecated, use `try_eval_type` instead.',
-    category=None,
-)
-def eval_type_lenient(
-    value: Any,
-    globalns: GlobalsNamespace | None = None,
-    localns: MappingNamespace | None = None,
-) -> Any:
-    ev, _ = try_eval_type(value, globalns, localns)
-    return ev
-
-
-def eval_type_backport(
-    value: Any,
-    globalns: GlobalsNamespace | None = None,
-    localns: MappingNamespace | None = None,
-    type_params: tuple[Any, ...] | None = None,
-) -> Any:
-    """An enhanced version of `typing._eval_type` which will fall back to using the `eval_type_backport`
-    package if it's installed to let older Python versions use newer typing constructs.
-
-    Specifically, this transforms `X | Y` into `typing.Union[X, Y]` and `list[X]` into `typing.List[X]`
-    (as well as all the types made generic in PEP 585) if the original syntax is not supported in the
-    current Python version.
-
-    This function will also display a helpful error if the value passed fails to evaluate.
-    """
     try:
-        return _eval_type_backport(value, globalns, localns, type_params)
+        return _eval_type(value, globalns, localns, type_params)
     except TypeError as e:
         if 'Unable to evaluate type annotation' in str(e):
             raise
 
-        # If it is a `TypeError` and value isn't a `ForwardRef`, it would have failed during annotation definition.
-        # Thus we assert here for type checking purposes:
-        assert isinstance(value, typing.ForwardRef)
-
-        message = f'Unable to evaluate type annotation {value.__forward_arg__!r}.'
+        # In most cases, value is a `ForwardRef`, otherwise the `TypeError` would have been raised when the annotation
+        # was defined (at least on Python < 3.14). However, in rare cases, the `TypeError` can also appear when evaluating nested
+        # parts of the annotation (e.g. `list["1 + 'a'"]`).
+        if isinstance(value, ForwardRef):
+            message = f'Unable to evaluate type annotation {value.__forward_arg__!r}.'
+        else:
+            message = f'Unable to evaluate type annotation {value!r}.'
         if sys.version_info >= (3, 11):
             e.add_note(message)
             raise
         else:
             raise TypeError(message) from e
     except RecursionError as e:
-        # TODO ideally recursion errors should be checked in `eval_type` above, but `eval_type_backport`
-        # is used directly in some places.
         message = (
             "If you made use of an implicit recursive type alias (e.g. `MyType = list['MyType']), "
             'consider using PEP 695 type aliases instead. For more details, refer to the documentation: '
-            f'https://docs.pydantic.dev/{version_short()}/concepts/types/#named-recursive-types'
+            f'https://pydantic.dev/docs/validation/{version_short()}/concepts/types/#named-recursive-types'
         )
         if sys.version_info >= (3, 11):
             e.add_note(message)
@@ -501,34 +392,17 @@ def eval_type_backport(
             raise RecursionError(f'{e.args[0]}\n{message}')
 
 
-def _eval_type_backport(
+@deprecated(
+    '`eval_type_lenient()` is deprecated, use `try_eval_type()` instead.',
+    category=None,
+)
+def eval_type_lenient(
     value: Any,
     globalns: GlobalsNamespace | None = None,
     localns: MappingNamespace | None = None,
-    type_params: tuple[Any, ...] | None = None,
-) -> Any:
-    try:
-        return _eval_type(value, globalns, localns, type_params)
-    except TypeError as e:
-        if not (isinstance(value, typing.ForwardRef) and is_backport_fixable_error(e)):
-            raise
-
-        try:
-            from eval_type_backport import eval_type_backport
-        except ImportError:
-            raise TypeError(
-                f'Unable to evaluate type annotation {value.__forward_arg__!r}. If you are making use '
-                'of the new typing syntax (unions using `|` since Python 3.10 or builtins subscripting '
-                'since Python 3.9), you should either replace the use of new syntax with the existing '
-                '`typing` constructs or install the `eval_type_backport` package.'
-            ) from e
-
-        return eval_type_backport(
-            value,
-            globalns,
-            localns,  # pyright: ignore[reportArgumentType], waiting on a new `eval_type_backport` release.
-            try_default=False,
-        )
+) -> Any:  # pragma: no cover
+    ev, _ = try_eval_type(value, globalns, localns)
+    return ev
 
 
 def _eval_type(
@@ -537,9 +411,13 @@ def _eval_type(
     localns: MappingNamespace | None = None,
     type_params: tuple[Any, ...] | None = None,
 ) -> Any:
+    """Evaluate all forward references for a given type.
+
+    This is a vendored version of the private `typing._eval_type()` function, adapted to work for all supported Python versions.
+    """
     if sys.version_info >= (3, 14):
         # Starting in 3.14, `_eval_type()` does *not* apply `_type_convert()`
-        # anymore. This means the `None` -> `type(None)` conversion does not apply:
+        # anymore. This means the `None` -> `NoneType` conversion does not apply:
         evaluated = typing._eval_type(  # type: ignore
             value,
             globalns,
@@ -554,7 +432,7 @@ def _eval_type(
             prefer_fwd_module=True,
         )
         if evaluated is None:
-            evaluated = type(None)
+            evaluated = NoneType
         return evaluated
     elif sys.version_info >= (3, 13):
         return typing._eval_type(  # type: ignore
@@ -564,12 +442,6 @@ def _eval_type(
         return typing._eval_type(  # type: ignore
             value, globalns, localns
         )
-
-
-def is_backport_fixable_error(e: TypeError) -> bool:
-    msg = str(e)
-
-    return sys.version_info < (3, 10) and msg.startswith('unsupported operand type(s) for |: ')
 
 
 def signature_no_eval(f: Callable[..., Any]) -> Signature:
@@ -613,173 +485,7 @@ def get_function_type_hints(
     for name, value in annotations.items():
         if include_keys is not None and name not in include_keys:
             continue
-        if value is None:
-            value = NoneType
-        elif isinstance(value, str):
-            value = _make_forward_ref(value)
 
-        type_hints[name] = eval_type_backport(value, globalns, localns, type_params)
+        type_hints[name] = eval_type(value, globalns, localns, type_params)
 
     return type_hints
-
-
-# TODO use typing.ForwardRef directly when we stop supporting 3.9:
-if sys.version_info < (3, 9, 8) or (3, 10) <= sys.version_info < (3, 10, 1):
-
-    def _make_forward_ref(
-        arg: Any,
-        is_argument: bool = True,
-        *,
-        is_class: bool = False,
-    ) -> typing.ForwardRef:
-        """Wrapper for ForwardRef that accounts for the `is_class` argument missing in older versions.
-        The `module` argument is omitted as it breaks <3.9.8, =3.10.0 and isn't used in the calls below.
-
-        See https://github.com/python/cpython/pull/28560 for some background.
-        The backport happened on 3.9.8, see:
-        https://github.com/pydantic/pydantic/discussions/6244#discussioncomment-6275458,
-        and on 3.10.1 for the 3.10 branch, see:
-        https://github.com/pydantic/pydantic/issues/6912
-
-        Implemented as EAFP with memory.
-        """
-        return typing.ForwardRef(arg, is_argument)  # pyright: ignore[reportCallIssue]
-
-else:
-    _make_forward_ref = typing.ForwardRef  # pyright: ignore[reportAssignmentType]
-
-
-if sys.version_info >= (3, 10):
-    get_type_hints = typing.get_type_hints
-
-else:
-    """
-    For older versions of python, we have a custom implementation of `get_type_hints` which is a close as possible to
-    the implementation in CPython 3.10.8.
-    """
-
-    @typing.no_type_check
-    def get_type_hints(  # noqa: C901
-        obj: Any,
-        globalns: dict[str, Any] | None = None,
-        localns: dict[str, Any] | None = None,
-        include_extras: bool = False,
-    ) -> dict[str, Any]:  # pragma: no cover
-        """Taken verbatim from python 3.10.8 unchanged, except:
-        * type annotations of the function definition above.
-        * prefixing `typing.` where appropriate
-        * Use `_make_forward_ref` instead of `typing.ForwardRef` to handle the `is_class` argument.
-
-        https://github.com/python/cpython/blob/aaaf5174241496afca7ce4d4584570190ff972fe/Lib/typing.py#L1773-L1875
-
-        DO NOT CHANGE THIS METHOD UNLESS ABSOLUTELY NECESSARY.
-        ======================================================
-
-        Return type hints for an object.
-
-        This is often the same as obj.__annotations__, but it handles
-        forward references encoded as string literals, adds Optional[t] if a
-        default value equal to None is set and recursively replaces all
-        'Annotated[T, ...]' with 'T' (unless 'include_extras=True').
-
-        The argument may be a module, class, method, or function. The annotations
-        are returned as a dictionary. For classes, annotations include also
-        inherited members.
-
-        TypeError is raised if the argument is not of a type that can contain
-        annotations, and an empty dictionary is returned if no annotations are
-        present.
-
-        BEWARE -- the behavior of globalns and localns is counterintuitive
-        (unless you are familiar with how eval() and exec() work).  The
-        search order is locals first, then globals.
-
-        - If no dict arguments are passed, an attempt is made to use the
-          globals from obj (or the respective module's globals for classes),
-          and these are also used as the locals.  If the object does not appear
-          to have globals, an empty dictionary is used.  For classes, the search
-          order is globals first then locals.
-
-        - If one dict argument is passed, it is used for both globals and
-          locals.
-
-        - If two dict arguments are passed, they specify globals and
-          locals, respectively.
-        """
-        if getattr(obj, '__no_type_check__', None):
-            return {}
-        # Classes require a special treatment.
-        if isinstance(obj, type):
-            hints = {}
-            for base in reversed(obj.__mro__):
-                if globalns is None:
-                    base_globals = getattr(sys.modules.get(base.__module__, None), '__dict__', {})
-                else:
-                    base_globals = globalns
-                ann = base.__dict__.get('__annotations__', {})
-                if isinstance(ann, types.GetSetDescriptorType):
-                    ann = {}
-                base_locals = dict(vars(base)) if localns is None else localns
-                if localns is None and globalns is None:
-                    # This is surprising, but required.  Before Python 3.10,
-                    # get_type_hints only evaluated the globalns of
-                    # a class.  To maintain backwards compatibility, we reverse
-                    # the globalns and localns order so that eval() looks into
-                    # *base_globals* first rather than *base_locals*.
-                    # This only affects ForwardRefs.
-                    base_globals, base_locals = base_locals, base_globals
-                for name, value in ann.items():
-                    if value is None:
-                        value = type(None)
-                    if isinstance(value, str):
-                        value = _make_forward_ref(value, is_argument=False, is_class=True)
-
-                    value = eval_type_backport(value, base_globals, base_locals)
-                    hints[name] = value
-            if not include_extras and hasattr(typing, '_strip_annotations'):
-                return {
-                    k: typing._strip_annotations(t)  # type: ignore
-                    for k, t in hints.items()
-                }
-            else:
-                return hints
-
-        if globalns is None:
-            if isinstance(obj, types.ModuleType):
-                globalns = obj.__dict__
-            else:
-                nsobj = obj
-                # Find globalns for the unwrapped object.
-                while hasattr(nsobj, '__wrapped__'):
-                    nsobj = nsobj.__wrapped__
-                globalns = getattr(nsobj, '__globals__', {})
-            if localns is None:
-                localns = globalns
-        elif localns is None:
-            localns = globalns
-        hints = getattr(obj, '__annotations__', None)
-        if hints is None:
-            # Return empty annotations for something that _could_ have them.
-            if isinstance(obj, typing._allowed_types):  # type: ignore
-                return {}
-            else:
-                raise TypeError(f'{obj!r} is not a module, class, method, or function.')
-        defaults = typing._get_defaults(obj)  # type: ignore
-        hints = dict(hints)
-        for name, value in hints.items():
-            if value is None:
-                value = type(None)
-            if isinstance(value, str):
-                # class-level forward refs were handled above, this must be either
-                # a module-level annotation or a function argument annotation
-
-                value = _make_forward_ref(
-                    value,
-                    is_argument=not isinstance(obj, types.ModuleType),
-                    is_class=False,
-                )
-            value = eval_type_backport(value, globalns, localns)
-            if name in defaults and defaults[name] is None:
-                value = typing.Optional[value]
-            hints[name] = value
-        return hints if include_extras else {k: typing._strip_annotations(t) for k, t in hints.items()}  # type: ignore

@@ -30,8 +30,8 @@ def _one_pos_required_arg_one_optional(a, b=1):
         (str, 'plain', False),
         (float, 'plain', False),
         (int, 'plain', False),
-        (lambda a: str(a), 'plain', False),
-        (lambda a='': str(a), 'plain', False),
+        pytest.param(lambda a: str(a), 'plain', False, id='lambda_str-plain-False'),
+        pytest.param(lambda a='': str(a), 'plain', False, id='lambda_default_str-plain-False'),
         (_two_pos_required_args, 'plain', True),
         (_two_pos_required_args, 'wrap', False),
         (_two_pos_required_args_extra_optional, 'plain', True),
@@ -51,15 +51,11 @@ def test_inspect_validator_error_wrap():
     def validator4(arg1, arg2, arg3, arg4):
         pass
 
-    with pytest.raises(PydanticUserError) as e:
+    with pytest.raises(PydanticUserError, check=lambda e: e.code == 'validator-signature'):
         inspect_validator(validator1, mode='wrap', type='field')
 
-    assert e.value.code == 'validator-signature'
-
-    with pytest.raises(PydanticUserError) as e:
+    with pytest.raises(PydanticUserError, check=lambda e: e.code == 'validator-signature'):
         inspect_validator(validator4, mode='wrap', type='field')
-
-    assert e.value.code == 'validator-signature'
 
 
 @pytest.mark.parametrize('mode', ['before', 'after', 'plain'])
@@ -70,15 +66,11 @@ def test_inspect_validator_error(mode):
     def validator3(arg1, arg2, arg3):
         pass
 
-    with pytest.raises(PydanticUserError) as e:
+    with pytest.raises(PydanticUserError, check=lambda e: e.code == 'validator-signature'):
         inspect_validator(validator, mode=mode, type='field')
 
-    assert e.value.code == 'validator-signature'
-
-    with pytest.raises(PydanticUserError) as e:
+    with pytest.raises(PydanticUserError, check=lambda e: e.code == 'validator-signature'):
         inspect_validator(validator3, mode=mode, type='field')
-
-    assert e.value.code == 'validator-signature'
 
 
 def test_inspect_field_serializer_no_signature() -> None:
@@ -95,8 +87,8 @@ def test_inspect_field_serializer_no_signature() -> None:
         (str, 'plain', False),
         (float, 'plain', False),
         (int, 'plain', False),
-        (lambda a: str(a), 'plain', False),
-        (lambda a='': str(a), 'plain', False),
+        pytest.param(lambda a: str(a), 'plain', False, id='lambda_str-plain-False'),
+        pytest.param(lambda a='': str(a), 'plain', False, id='lambda_default_str-plain-False'),
         (_two_pos_required_args, 'plain', True),
         (_two_pos_required_args, 'wrap', False),
         (_two_pos_required_args_extra_optional, 'plain', True),
@@ -115,10 +107,8 @@ def test_inspect_annotated_serializer_invalid_number_of_arguments(mode):
     def serializer():
         pass
 
-    with pytest.raises(PydanticUserError) as e:
+    with pytest.raises(PydanticUserError, check=lambda e: e.code == 'field-serializer-signature'):
         inspect_annotated_serializer(serializer, mode=mode)
-
-    assert e.value.code == 'field-serializer-signature'
 
 
 def test_plain_class_not_mutated() -> None:

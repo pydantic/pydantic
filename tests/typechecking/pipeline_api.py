@@ -1,6 +1,8 @@
 import datetime
+from pathlib import Path
 from typing import Annotated
 
+from pydantic import FilePath, NewPath
 from pydantic.experimental.pipeline import validate_as
 
 # TODO: since Pyright 1.1.384, support for PEP 746 was disabled.
@@ -18,3 +20,8 @@ a6 = Annotated[
         | validate_as(int).transform(datetime.datetime.fromtimestamp).datetime_tz_aware()
     ),
 ]
+
+# Annotated types (e.g. NewPath, FilePath) should be accepted by validate_as.
+# Fixes https://github.com/pydantic/pydantic/issues/12845
+a7 = Annotated[Path, validate_as(NewPath)]
+a8 = Annotated[Path, validate_as(FilePath)]

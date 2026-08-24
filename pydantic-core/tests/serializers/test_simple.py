@@ -32,7 +32,7 @@ _BIG_NUMBER_BYTES = b'1' + (b'0' * 40)
 @pytest.mark.parametrize(
     'schema_type,value,expected_python,expected_json',
     [
-        ('int', 1, 1, b'1'),
+        pytest.param('int', 1, 1, b'1', id='int-1_int-1_int-1_bytes'),
         ('int', int(_BIG_NUMBER_BYTES), int(_BIG_NUMBER_BYTES), _BIG_NUMBER_BYTES),
         ('bool', True, True, b'true'),
         ('bool', False, False, b'false'),
@@ -40,7 +40,7 @@ _BIG_NUMBER_BYTES = b'1' + (b'0' * 40)
         ('float', 42.31415, 42.31415, b'42.31415'),
         ('none', None, None, b'null'),
         ('int', IntSubClass(42), IntSubClass(42), b'42'),
-        ('int', MyIntEnum.one, MyIntEnum.one, b'1'),
+        pytest.param('int', MyIntEnum.one, MyIntEnum.one, b'1', id='int-MyIntEnum.one_int-MyIntEnum.one_int-1_bytes'),
         ('float', FloatSubClass(42), FloatSubClass(42), b'42.0'),
     ],
 )

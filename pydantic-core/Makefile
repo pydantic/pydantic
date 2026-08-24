@@ -68,8 +68,8 @@ build-pgo:
 
 .PHONY: build-wasm  ## Build the WebAssembly version of the package
 build-wasm:
-	@echo 'This requires python 3.12, maturin and emsdk to be installed'
-	uvx maturin build --release --target wasm32-unknown-emscripten --out dist -i 3.12
+	@echo 'This requires python 3.13, maturin and emsdk to be installed'
+	uvx maturin build --release --target wasm32-unknown-emscripten --out dist -i 3.13
 	ls -lh dist
 
 .PHONY: format  ## Auto-format rust and python source files

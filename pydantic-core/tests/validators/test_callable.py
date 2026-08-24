@@ -34,8 +34,8 @@ def test_callable():
     'input_value,expected',
     [
         (func, True),
-        (lambda: 42, True),
-        (lambda x: 2 * 42, True),
+        pytest.param(lambda: 42, True, id='lambda-no-arg'),
+        pytest.param(lambda x: 2 * 42, True, id='lambda-with-arg'),
         (dict, True),
         (Foo, True),
         (Foo(), False),

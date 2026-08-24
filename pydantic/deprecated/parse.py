@@ -3,9 +3,10 @@ from __future__ import annotations
 import json
 import pickle
 import warnings
+from collections.abc import Callable
 from enum import Enum
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Callable
+from typing import TYPE_CHECKING, Any
 
 from typing_extensions import deprecated
 

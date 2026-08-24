@@ -1,8 +1,9 @@
 import json
-from typing import Annotated, Any, Union
+import operator
+from typing import Annotated, Any
 
 import pytest
-from pydantic_core import PydanticCustomError, PydanticSerializationError, Url
+from pydantic_core import MultiHostHost, PydanticCustomError, PydanticSerializationError, Url
 
 from pydantic import (
     AfterValidator,
@@ -23,6 +24,7 @@ from pydantic import (
     NameEmail,
     NatsDsn,
     PostgresDsn,
+    PydanticUserError,
     RedisDsn,
     SnowflakeDsn,
     Strict,
@@ -72,7 +74,6 @@ except ImportError:
         'foo.bar://example.org',
         'foo0bar://example.org',
         'https://example.org',
-        'http://localhost',
         'http://localhost/',
         'http://localhost:8000',
         'http://localhost:8000/',
@@ -290,7 +291,7 @@ def test_http_url_success(value, expected):
 
 def test_nullable_http_url():
     class Model(BaseModel):
-        v: Union[HttpUrl, None]
+        v: HttpUrl | None
 
     assert Model(v=None).v is None
     assert str(Model(v='http://example.org').v) == 'http://example.org/'
@@ -445,8 +446,6 @@ def test_websocket_url_path_success(value, expected):
         ('ftp://example.com/path/to/ftp', 'ftp://example.com/path/to/ftp'),
         ('ftp://example.com:21', 'ftp://example.com/'),
         ('ftp://example.com:21/path/to/ftp', 'ftp://example.com/path/to/ftp'),
-        ('ftp://example.com', 'ftp://example.com/'),
-        ('ftp://example.com/path/to/ftp', 'ftp://example.com/path/to/ftp'),
         ('ftp://example.com:990', 'ftp://example.com:990/'),
         ('ftp://example.com:990/path/to/ftp', 'ftp://example.com:990/path/to/ftp'),
     ],
@@ -937,7 +936,9 @@ def test_json():
         ('xn--80ak6aa92e@example.com', 'xn--80ak6aa92e', 'xn--80ak6aa92e@example.com'),
         ('葉士豪@臺網中心.tw', '葉士豪', '葉士豪@臺網中心.tw'),
         ('"first.last" <first.last@example.com>', 'first.last', 'first.last@example.com'),
+        ('first.last <first.last@example.com>', 'first.last', 'first.last@example.com'),
         ("Shaquille O'Neal <shaq@example.com>", "Shaquille O'Neal", 'shaq@example.com'),
+        ('Homer J. Simpson <homer@thesimpsons.com>', 'Homer J. Simpson', 'homer@thesimpsons.com'),
     ],
 )
 def test_address_valid(value, name, email):
@@ -959,23 +960,22 @@ def test_address_valid(value, name, email):
         ('foobar@.com', None),
         ('foo bar@example.com', None),
         ('foo@bar@example.com', None),
-        ('\n@example.com', None),
-        ('\r@example.com', None),
-        ('\f@example.com', None),
-        (' @example.com', None),
-        ('\u0020@example.com', None),
-        ('\u001f@example.com', None),
+        pytest.param('\n@example.com', None, id='\\n@example.com-None'),
+        pytest.param('\r@example.com', None, id='\\r@example.com-None'),
+        pytest.param('\f@example.com', None, id='\\f@example.com-None'),
+        pytest.param(' @example.com', None, id=' @example.com-None'),
+        pytest.param('\u0020@example.com', None, id='\\u0020@example.com-None'),
+        pytest.param('\u001f@example.com', None, id='\\u001f@example.com-None'),
         ('"@example.com', None),
         (',@example.com', None),
         ('foobar <foobar<@example.com>', None),
         ('foobar <foobar@example.com>>', None),
         ('foobar <<foobar<@example.com>', None),
         ('foobar <>', None),
-        ('first.last <first.last@example.com>', None),
         pytest.param('foobar <' + 'a' * 4096 + '@example.com>', 'Length must not exceed 2048 characters', id='long'),
     ],
 )
-def test_address_invalid(value: str, reason: Union[str, None]):
+def test_address_invalid(value: str, reason: str | None):
     with pytest.raises(PydanticCustomError, match=f'value is not a valid email address: {reason or ""}'):
         validate_email(value)
 
@@ -1010,6 +1010,12 @@ def test_name_email():
 
     assert str(Model(v=NameEmail('foo bar', 'foobaR@example.com')).v) == 'foo bar <foobaR@example.com>'
     assert str(Model(v='foo bar  <foobaR@example.com>').v) == 'foo bar <foobaR@example.com>'
+    assert Model(v='Homer J. Simpson <homer@thesimpsons.com>').v == NameEmail(
+        'Homer J. Simpson', 'homer@thesimpsons.com'
+    )
+    assert TypeAdapter(NameEmail).validate_python('Homer J. Simpson <homer@thesimpsons.com>') == NameEmail(
+        'Homer J. Simpson', 'homer@thesimpsons.com'
+    )
     assert str(Model(v='foobaR@example.com').v) == 'foobaR <foobaR@example.com>'
     assert NameEmail('foo bar', 'foobaR@example.com') == NameEmail('foo bar', 'foobaR@example.com')
     assert NameEmail('foo bar', 'foobaR@example.com') != NameEmail('foo bar', 'different@example.com')
@@ -1109,6 +1115,11 @@ def test_custom_constraints() -> None:
         ta.validate_python('ftp://example.com')
 
 
+def test_url_constraints_invalid_annotated_type() -> None:
+    with pytest.raises(PydanticUserError):
+        TypeAdapter(Annotated[str, UrlConstraints(max_length=1)])
+
+
 def test_after_validator() -> None:
     def remove_trailing_slash(url: AnyUrl) -> str:
         """Custom url -> str transformer that removes trailing slash."""
@@ -1172,6 +1183,52 @@ def test_any_url_comparison() -> None:
     assert second_url >= first_url
 
 
+@pytest.mark.parametrize('other', ['https://a.com', 5, None, HttpUrl('https://a.com')])
+def test_any_url_ordering_not_implemented(other: Any) -> None:
+    """Ordering against a different type is unsupported, rather than silently `False`."""
+    url = AnyUrl('https://a.com')
+
+    for op in (operator.lt, operator.gt, operator.le, operator.ge):
+        with pytest.raises(TypeError):
+            op(url, other)
+
+
+def test_any_url_ordering_is_consistent() -> None:
+    """`sorted()` on mixed URL types raises instead of returning a meaningless order."""
+    with pytest.raises(TypeError):
+        sorted([AnyUrl('https://z.com'), HttpUrl('https://b.com')])
+
+    # Equality against types with no cross-type `__eq__` of their own still compares unequal.
+    assert AnyUrl('https://a.com') != HttpUrl('https://a.com')
+    assert AnyUrl('https://a.com') != 'https://a.com'
+    assert AnyUrl('https://a.com') == AnyUrl('https://a.com')
+
+
+def test_any_url_equality_delegates_to_foreign_type() -> None:
+    class UrlWrapper:
+        def __init__(self, url: str) -> None:
+            self.url = url
+
+        def __eq__(self, other: object) -> bool:
+            if isinstance(other, (AnyUrl, PostgresDsn)):
+                return self.url == str(other)
+            return NotImplemented
+
+    # `_BaseUrl`: equality is symmetric regardless of operand order.
+    assert AnyUrl('https://a.com') == UrlWrapper('https://a.com/')
+    assert UrlWrapper('https://a.com/') == AnyUrl('https://a.com')
+    assert AnyUrl('https://b.com') != UrlWrapper('https://a.com/')
+
+    # `_BaseMultiHostUrl`: same delegation.
+    dsn = PostgresDsn('postgres://user:pass@localhost:5432/app')
+    assert dsn == UrlWrapper('postgres://user:pass@localhost:5432/app')
+    assert UrlWrapper('postgres://user:pass@localhost:5432/app') == dsn
+
+    # Types with no opinion of their own are still unequal (identity fallback).
+    assert AnyUrl('https://a.com') != 'https://a.com'
+    assert AnyUrl('https://a.com') != 5
+
+
 def test_max_length_base_url() -> None:
     class Model(BaseModel):
         url: AnyUrl = Field(max_length=20)
@@ -1230,3 +1287,20 @@ def test_url_preserve_empty_path(type) -> None:
     ta_constraint = TypeAdapter(Annotated[type, UrlConstraints(preserve_empty_path=True)])
 
     assert str(ta_constraint.validate_python('http://example.com')) == 'http://example.com'
+
+
+def test_multi_url_build_hosts_with_none_values() -> None:
+    """https://github.com/pydantic/pydantic/issues/13007"""
+
+    hosts: list[MultiHostHost] = [
+        {'host': 'host-1.com', 'password': 'pass', 'username': 'user', 'port': 27017},
+        {'host': 'host-2.com', 'password': None, 'username': None, 'port': 27017},
+    ]
+    url = MongoDsn.build(
+        scheme='mongodb',
+        hosts=hosts,
+        path='db',
+        query='replicaSet=xxx&authSource=admin',
+    )
+    assert str(url) == 'mongodb://user:pass@host-1.com:27017,host-2.com:27017/db?replicaSet=xxx&authSource=admin'
+    assert url.hosts() == hosts

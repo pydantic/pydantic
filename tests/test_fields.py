@@ -1,5 +1,5 @@
 import copy
-from typing import Annotated, Any, Final, Generic, TypeVar, Union
+from typing import Annotated, Any, Final, Generic, TypeVar
 
 import pytest
 from annotated_types import Gt
@@ -12,6 +12,7 @@ from pydantic import (
     BaseModel,
     ConfigDict,
     Field,
+    PrivateAttr,
     PydanticUserError,
     RootModel,
     TypeAdapter,
@@ -20,7 +21,7 @@ from pydantic import (
     create_model,
     validate_call,
 )
-from pydantic.fields import FieldInfo
+from pydantic.fields import FieldInfo, ModelPrivateAttr
 from pydantic.warnings import UnsupportedFieldAttributeWarning
 
 
@@ -67,7 +68,8 @@ def test_init_var_field():
 
 def test_root_model_arbitrary_field_name_error():
     with pytest.raises(
-        NameError, match="Unexpected field with name 'a_field'; only 'root' is allowed as a field of a `RootModel`"
+        PydanticUserError,
+        match="Unexpected field with name 'a_field'; only 'root' is allowed as a field of a `RootModel`",
     ):
 
         class Model(RootModel[int]):
@@ -133,8 +135,8 @@ def test_model_field_default_info():
     """Test that __repr_args__ of FieldInfo includes the default value when it's set to None."""
 
     class Model(BaseModel):
-        a: Union[int, None] = Field(default=None)
-        b: Union[int, None] = None
+        a: int | None = Field(default=None)
+        b: int | None = None
 
     assert str(Model.model_fields) == (
         "{'a': FieldInfo(annotation=Union[int, NoneType], required=False, default=None), "
@@ -430,7 +432,7 @@ def test_optional_model_using_asdict() -> None:
         for f_name, f_info in model_cls.model_fields.items():
             f_dct = f_info.asdict()
             new_fields[f_name] = (
-                Annotated[(Union[f_dct['annotation'], None], *f_dct['metadata'], Field(**f_dct['attributes']))],  # noqa: F821
+                Annotated[(f_dct['annotation'] | None, *f_dct['metadata'], Field(**f_dct['attributes']))],  # noqa: F821
                 None,
             )
 
@@ -455,7 +457,19 @@ def test_default_factory_without_validated_data_unsupported() -> None:
     class FooBar(BaseModel):
         a: int = Field(default_factory=lambda x: x)
 
-    assert FooBar.model_fields['a'].get_default() is None
+    assert FooBar.model_fields['a'].get_default() is PydanticUndefined
 
     with pytest.raises(ValueError):
         FooBar.model_fields['a'].get_default(call_default_factory=True)
+
+
+@pytest.mark.parametrize(
+    ['private_attr', 'result'],
+    [
+        (PrivateAttr(), 'ModelPrivateAttr()'),
+        (PrivateAttr(default=1), 'ModelPrivateAttr(default=1)'),
+        (PrivateAttr(default_factory=int), "ModelPrivateAttr(default_factory=<class 'int'>)"),
+    ],
+)
+def test_privateattr_repr(private_attr: ModelPrivateAttr, result: str) -> None:
+    assert repr(private_attr) == result

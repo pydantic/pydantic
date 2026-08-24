@@ -2,7 +2,7 @@ import json
 import os
 import platform
 from pathlib import Path
-from typing import Any, Union
+from typing import Any
 
 import pytest
 
@@ -154,14 +154,14 @@ def test_root_model_dump_with_base_model(order):
     if order == 'BR':
 
         class Model(RootModel):
-            root: list[Union[BModel, RModel]]
+            root: list[BModel | RModel]
 
         choices = [b_schema, r_schema]
 
     elif order == 'RB':
 
         class Model(RootModel):
-            root: list[Union[RModel, BModel]]
+            root: list[RModel | BModel]
 
         choices = [r_schema, b_schema]
 

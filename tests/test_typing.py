@@ -1,6 +1,5 @@
-import sys
 from collections import namedtuple
-from typing import Annotated, Callable, ClassVar, ForwardRef, Literal, NamedTuple
+from typing import Annotated, ClassVar, ForwardRef, NamedTuple
 
 import pytest
 
@@ -10,7 +9,6 @@ from pydantic._internal._typing_extra import (
     get_function_type_hints,
     is_classvar_annotation,
     is_namedtuple,
-    is_none_type,
     parent_frame_namespace,
 )
 
@@ -43,18 +41,6 @@ def test_is_namedtuple():
     assert is_namedtuple(Other) is False
 
 
-def test_is_none_type():
-    assert is_none_type(Literal[None]) is True
-    assert is_none_type(None) is True
-    assert is_none_type(type(None)) is True
-    assert is_none_type(6) is False
-    assert is_none_type({}) is False
-    # WARNING: It's important to test `typing.Callable` not
-    # `collections.abc.Callable` (even with python >= 3.9) as they behave
-    # differently
-    assert is_none_type(Callable) is False
-
-
 @pytest.mark.parametrize(
     ['ann_type', 'expected'],
     (
@@ -80,26 +66,6 @@ def test_get_function_type_hints_none_type():
         return x
 
     assert get_function_type_hints(f) == {'return': int, 'x': int, 'y': NoneType}
-
-
-@pytest.mark.skipif(sys.version_info >= (3, 10), reason='testing using a feature not supported by older Python')
-def test_eval_type_backport_not_installed():
-    sys.modules['eval_type_backport'] = None
-    try:
-        with pytest.raises(TypeError) as exc_info:
-
-            class _Model(BaseModel):
-                foo: 'int | str'
-
-        assert str(exc_info.value) == (
-            "Unable to evaluate type annotation 'int | str'. If you are making use "
-            'of the new typing syntax (unions using `|` since Python 3.10 or builtins subscripting '
-            'since Python 3.9), you should either replace the use of new syntax with the existing '
-            '`typing` constructs or install the `eval_type_backport` package.'
-        )
-
-    finally:
-        del sys.modules['eval_type_backport']
 
 
 def test_func_ns_excludes_default_globals() -> None:

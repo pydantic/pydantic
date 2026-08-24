@@ -6,7 +6,7 @@ import sys
 from collections import UserDict
 from datetime import datetime, timezone
 from functools import partial
-from typing import Annotated, Any, Generic, Literal, TypeVar, Union
+from typing import Annotated, Any, Generic, Literal, TypeVar
 
 import pytest
 from pydantic_core import ArgsKwargs
@@ -287,13 +287,11 @@ def test_var_args_kwargs(validated):
 
 
 def test_unpacked_typed_dict_kwargs_invalid_type() -> None:
-    with pytest.raises(PydanticUserError) as exc:
+    with pytest.raises(PydanticUserError, check=lambda e: e.code == 'unpack-typed-dict'):
 
         @validate_call
         def foo(**kwargs: Unpack[int]):
             pass
-
-    assert exc.value.code == 'unpack-typed-dict'
 
 
 def test_unpacked_typed_dict_kwargs_overlaps() -> None:
@@ -302,14 +300,17 @@ def test_unpacked_typed_dict_kwargs_overlaps() -> None:
         b: int
         c: int
 
-    with pytest.raises(PydanticUserError) as exc:
+    with pytest.raises(
+        PydanticUserError,
+        check=lambda e: (
+            e.code == 'overlapping-unpack-typed-dict'
+            and e.message == "Typed dictionary 'TD' overlaps with parameters 'a', 'b'"
+        ),
+    ):
 
         @validate_call
         def foo(a: int, b: int, **kwargs: Unpack[TD]):
             pass
-
-    assert exc.value.code == 'overlapping-unpack-typed-dict'
-    assert exc.value.message == "Typed dictionary 'TD' overlaps with parameters 'a', 'b'"
 
     # Works for a pos-only argument
     @validate_call
@@ -809,7 +810,7 @@ def test_annotated_discriminator():
         food: str
         bark: int
 
-    Pet = Annotated[Union[Cat, Dog], Field(discriminator='type')]
+    Pet = Annotated[Cat | Dog, Field(discriminator='type')]
 
     @validate_call
     def f(pet: Pet):
@@ -918,7 +919,7 @@ def test_use_of_alias():
 
 
 def test_validate_by_name():
-    @validate_call(config=dict(validate_by_name=True))
+    @validate_call(config={'validate_by_name': True})
     def foo(a: Annotated[int, Field(alias='b')], c: Annotated[int, Field(alias='d')]):
         return a + c
 
@@ -928,8 +929,18 @@ def test_validate_by_name():
     assert foo(a=10, c=1) == 11
 
 
+def test_populate_by_name() -> None:
+    """https://github.com/pydantic/pydantic/issues/13687"""
+
+    @validate_call(config={'populate_by_name': True})
+    def foo(a: Annotated[int, Field(alias='b')]):
+        return a
+
+    assert foo(a=1) == 1
+
+
 def test_validate_return():
-    @validate_call(config=dict(validate_return=True))
+    @validate_call(config={'validate_return': True})
     def foo(a: int, b: int) -> int:
         return a + b
 
@@ -937,7 +948,7 @@ def test_validate_return():
 
 
 def test_validate_all():
-    @validate_call(config=dict(validate_default=True))
+    @validate_call(config={'validate_default': True})
     def foo(dt: datetime = Field(default_factory=lambda: 946684800)):
         return dt
 
@@ -1122,42 +1133,6 @@ def test_validate_call_with_slots() -> None:
     assert c.some_instance_method == c.some_instance_method
     assert c.some_class_method == c.some_class_method
     assert c.some_static_method == c.some_static_method
-
-
-def test_eval_type_backport():
-    @validate_call
-    def foo(bar: 'list[int | str]') -> 'list[int | str]':
-        return bar
-
-    assert foo([1, '2']) == [1, '2']
-    with pytest.raises(ValidationError) as exc_info:
-        foo('not a list')  # type: ignore
-    # insert_assert(exc_info.value.errors(include_url=False))
-    assert exc_info.value.errors(include_url=False) == [
-        {
-            'type': 'list_type',
-            'loc': (0,),
-            'msg': 'Input should be a valid list',
-            'input': 'not a list',
-        }
-    ]
-    with pytest.raises(ValidationError) as exc_info:
-        foo([{'not a str or int'}])  # type: ignore
-    # insert_assert(exc_info.value.errors(include_url=False))
-    assert exc_info.value.errors(include_url=False) == [
-        {
-            'type': 'int_type',
-            'loc': (0, 0, 'int'),
-            'msg': 'Input should be a valid integer',
-            'input': {'not a str or int'},
-        },
-        {
-            'type': 'string_type',
-            'loc': (0, 0, 'str'),
-            'msg': 'Input should be a valid string',
-            'input': {'not a str or int'},
-        },
-    ]
 
 
 def test_eval_namespace_basic(create_module):

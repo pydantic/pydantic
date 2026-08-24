@@ -9,7 +9,7 @@ Sphinx object inventory to cross-reference the Pydantic API documentation.
 
     ```python {test="skip"}
     intersphinx_mapping = {
-        'pydantic': ('https://docs.pydantic.dev/latest', None),  # (1)!
+        'pydantic': ('https://pydantic.dev/docs/validation/latest', None),  # (1)!
     }
     ```
 
@@ -27,7 +27,7 @@ Sphinx object inventory to cross-reference the Pydantic API documentation.
         handlers:
           python:
             import:
-            - https://docs.pydantic.dev/latest/objects.inv  # (1)!
+            - https://pydantic.dev/docs/validation/latest/objects.inv  # (1)!
     ```
 
     1. You can also use `dev` instead of `latest` to target the latest documentation build, up to date

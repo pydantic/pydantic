@@ -10,18 +10,19 @@ from collections.abc import Callable, Mapping
 from copy import copy
 from dataclasses import Field as DataclassField
 from functools import cached_property
-from typing import TYPE_CHECKING, Annotated, Any, ClassVar, Literal, TypeVar, cast, final, overload
+from types import EllipsisType
+from typing import TYPE_CHECKING, Annotated, Any, ClassVar, Literal, TypeAlias, TypeVar, final, overload
 from warnings import warn
 
 import annotated_types
 import typing_extensions
 from pydantic_core import MISSING, PydanticUndefined
-from typing_extensions import Self, TypeAlias, TypedDict, Unpack, deprecated
+from typing_extensions import Self, TypedDict, Unpack, deprecated
 from typing_inspection import typing_objects
 from typing_inspection.introspection import UNKNOWN, AnnotationSource, ForbiddenQualifier, Qualifier, inspect_annotation
 
 from . import types
-from ._internal import _decorators, _fields, _generics, _internal_dataclass, _repr, _typing_extra, _utils
+from ._internal import _decorators, _fields, _generics, _repr, _typing_extra, _utils
 from ._internal._namespace_utils import GlobalsNamespace, MappingNamespace
 from .aliases import AliasChoices, AliasGenerator, AliasPath
 from .config import JsonDict
@@ -126,7 +127,7 @@ class FieldInfo(_repr.Representation):
         validation_alias: The validation alias of the field.
         serialization_alias: The serialization alias of the field.
         title: The title of the field.
-        field_title_generator: A callable that takes a field name and returns title for it.
+        field_title_generator: A callable that takes a field's name and info and returns title for it.
         description: The description of the field.
         examples: List of examples of the field.
         exclude: Whether to exclude the field from the model serialization.
@@ -217,7 +218,7 @@ class FieldInfo(_repr.Representation):
         'min_length': annotated_types.MinLen,
         'max_length': annotated_types.MaxLen,
         'pattern': None,
-        'allow_inf_nan': None,
+        'allow_inf_nan': types.AllowInfNan,
         'max_digits': None,
         'decimal_places': None,
         'union_mode': None,
@@ -523,6 +524,10 @@ class FieldInfo(_repr.Representation):
                                 **current_js_extra,
                             }
                         elif callable(current_js_extra):
+                            # The `callable` is ignored, so we keep the existing `dict`. This needs to be set
+                            # explicitly as `merged_kwargs` is otherwise overridden with `meta._attributes_set`
+                            # (which contains the `callable`) below.
+                            new_js_extra = existing_js_extra
                             warn(
                                 'Composing `dict` and `callable` type `json_schema_extra` is not supported. '
                                 'The `callable` type is being ignored. '
@@ -734,23 +739,15 @@ class FieldInfo(_repr.Representation):
             validated_data: The already validated data to be passed to the default factory.
 
         Returns:
-            The default value, calling the default factory if requested or `None` if not set.
+            The default value, calling the default factory if requested or `PydanticUndefined` if not set.
         """
-        if self.default_factory is None:
-            return _utils.smart_deepcopy(self.default)
-        elif call_default_factory:
-            if self.default_factory_takes_validated_data:
-                fac = cast('Callable[[dict[str, Any]], Any]', self.default_factory)
-                if validated_data is None:
-                    raise ValueError(
-                        "The default factory requires the 'validated_data' argument, which was not provided when calling 'get_default'."
-                    )
-                return fac(validated_data)
-            else:
-                fac = cast('Callable[[], Any]', self.default_factory)
-                return fac()
-        else:
-            return None
+        return _fields.resolve_default_value(
+            default=self.default,
+            default_factory=self.default_factory,
+            default_factory_takes_validated_data_argument=self.default_factory_takes_validated_data,
+            validated_data=validated_data,
+            call_default_factory=call_default_factory,
+        )
 
     def is_required(self) -> bool:
         """Check if the field is required (i.e., does not have a default value or factory).
@@ -932,7 +929,7 @@ _T = TypeVar('_T')
 # to understand the magic that happens at runtime with the following overloads:
 @overload  # type hint the return value as `Any` to avoid type checking regressions when using `...`.
 def Field(
-    default: ellipsis,  # noqa: F821  # TODO: use `_typing_extra.EllipsisType` when we drop Py3.9
+    default: EllipsisType,
     *,
     alias: str | None = _Unset,
     alias_priority: int | None = _Unset,
@@ -1236,7 +1233,7 @@ def Field(  # noqa: C901
         validation_alias: Like `alias`, but only affects validation, not serialization.
         serialization_alias: Like `alias`, but only affects serialization, not validation.
         title: Human-readable title.
-        field_title_generator: A callable that takes a field name and returns title for it.
+        field_title_generator: A callable that takes a field's name and info and returns title for it.
         description: Human-readable description.
         examples: Example values for this field.
         exclude: Whether to exclude the field from the model serialization.
@@ -1267,7 +1264,7 @@ def Field(  # noqa: C901
         max_length: Maximum length for iterables.
         pattern: Pattern for strings (a regular expression).
         allow_inf_nan: Allow `inf`, `-inf`, `nan`. Only applicable to float and [`Decimal`][decimal.Decimal] numbers.
-        max_digits: Maximum number of allow digits for strings.
+        max_digits: Maximum number of allowed digits for [`Decimal`][decimal.Decimal] numbers.
         decimal_places: Maximum number of decimal places allowed for numbers.
         union_mode: The strategy to apply when validating a union. Can be `smart` (the default), or `left_to_right`.
             See [Union Mode](../concepts/unions.md#union-modes) for details.
@@ -1412,22 +1409,29 @@ class ModelPrivateAttr(_repr.Representation):
 
     !!! warning
         You generally shouldn't be creating `ModelPrivateAttr` instances directly, instead use
-        `pydantic.fields.PrivateAttr`. (This is similar to `FieldInfo` vs. `Field`.)
+        the [`PrivateAttr()`][pydantic.fields.PrivateAttr] function.
 
     Attributes:
         default: The default value of the attribute if not provided.
-        default_factory: A callable function that generates the default value of the
-            attribute if not provided.
+        default_factory: A callable to generate the default value. The callable can either take 0 arguments
+            (in which case it is called as is) or a single argument containing the validated data (the model's
+            [`__dict__`][object.__dict__]) and the already initialized private attributes.
     """
 
-    __slots__ = ('default', 'default_factory')
+    __slots__ = ('default', 'default_factory', '_default_factory_takes_validated_data')
 
-    def __init__(self, default: Any = PydanticUndefined, *, default_factory: Callable[[], Any] | None = None) -> None:
+    def __init__(
+        self,
+        default: Any = PydanticUndefined,
+        *,
+        default_factory: Callable[[], Any] | Callable[[dict[str, Any]], Any] | None = None,
+    ) -> None:
         if default is Ellipsis:
             self.default = PydanticUndefined
         else:
             self.default = default
         self.default_factory = default_factory
+        self._default_factory_takes_validated_data: bool | None = _Unset
 
     if not TYPE_CHECKING:
         # We put `__getattr__` in a non-TYPE_CHECKING block because otherwise, mypy allows arbitrary attribute access
@@ -1450,23 +1454,63 @@ class ModelPrivateAttr(_repr.Representation):
         if callable(set_name):
             set_name(cls, name)
 
-    def get_default(self) -> Any:
-        """Retrieve the default value of the object.
+    @property
+    def default_factory_takes_validated_data(self) -> bool | None:
+        """Whether the provided default factory callable has a validated data parameter.
 
-        If `self.default_factory` is `None`, the method will return a deep copy of the `self.default` object.
+        Returns `None` if no default factory is set.
+        """
+        if self._default_factory_takes_validated_data is not _Unset:
+            return self._default_factory_takes_validated_data
 
-        If `self.default_factory` is not `None`, it will call `self.default_factory` and return the value returned.
+        value: bool | None = None
+        if self.default_factory is not None:
+            value = _fields.takes_validated_data_argument(self.default_factory)
+
+        self._default_factory_takes_validated_data = value
+        return value
+
+    @overload
+    def get_default(
+        self, *, call_default_factory: Literal[True], validated_data: dict[str, Any] | None = None
+    ) -> Any: ...
+
+    @overload
+    def get_default(self, *, call_default_factory: Literal[False] = ...) -> Any: ...
+
+    def get_default(self, *, call_default_factory: bool = False, validated_data: dict[str, Any] | None = None) -> Any:
+        """Get the default value.
+
+        We expose an option for whether to call the default_factory (if present), as calling it may
+        result in side effects that we want to avoid. However, there are times when it really should
+        be called (namely, when instantiating a model via `model_construct`).
+
+        Args:
+            call_default_factory: Whether to call the default factory or not.
+            validated_data: The already validated data to be passed to the default factory.
 
         Returns:
-            The default value of the object.
+            The default value, calling the default factory if requested or `None` if not set.
         """
-        return _utils.smart_deepcopy(self.default) if self.default_factory is None else self.default_factory()
+        return _fields.resolve_default_value(
+            default=self.default,
+            default_factory=self.default_factory,
+            default_factory_takes_validated_data_argument=self.default_factory_takes_validated_data,
+            validated_data=validated_data,
+            call_default_factory=call_default_factory,
+        )
 
     def __eq__(self, other: Any) -> bool:
         return isinstance(other, self.__class__) and (self.default, self.default_factory) == (
             other.default,
             other.default_factory,
         )
+
+    def __repr_args__(self) -> ReprArgs:
+        if self.default is not PydanticUndefined:
+            yield 'default', self.default
+        if self.default_factory is not None:
+            yield 'default_factory', self.default_factory
 
 
 # NOTE: Actual return type is 'ModelPrivateAttr', but we want to help type checkers
@@ -1480,7 +1524,7 @@ def PrivateAttr(
 @overload  # `default_factory` argument set
 def PrivateAttr(
     *,
-    default_factory: Callable[[], _T],
+    default_factory: Callable[[], _T] | Callable[[dict[str, Any]], _T],
     init: Literal[False] = False,
 ) -> _T: ...
 @overload  # No default set
@@ -1491,7 +1535,7 @@ def PrivateAttr(
 def PrivateAttr(
     default: Any = PydanticUndefined,
     *,
-    default_factory: Callable[[], Any] | None = None,
+    default_factory: Callable[[], Any] | Callable[[dict[str, Any]], Any] | None = None,
     init: Literal[False] = False,
 ) -> Any:
     """!!! abstract "Usage Documentation"
@@ -1505,8 +1549,9 @@ def PrivateAttr(
 
     Args:
         default: The attribute's default value. Defaults to Undefined.
-        default_factory: Callable that will be
-            called when a default value is needed for this attribute.
+        default_factory: A callable to generate the default value. The callable can either take 0 arguments
+            (in which case it is called as is) or a single argument containing the validated data (the model's
+            [`__dict__`][object.__dict__]) and the already initialized private attributes.
             If both `default` and `default_factory` are set, an error will be raised.
         init: Whether the attribute should be included in the constructor of the dataclass. Always `False`.
 
@@ -1514,7 +1559,7 @@ def PrivateAttr(
         An instance of [`ModelPrivateAttr`][pydantic.fields.ModelPrivateAttr] class.
 
     Raises:
-        ValueError: If both `default` and `default_factory` are set.
+        TypeError: If both `default` and `default_factory` are set.
     """
     if default is not PydanticUndefined and default_factory is not None:
         raise TypeError('cannot specify both default and default_factory')
@@ -1525,7 +1570,7 @@ def PrivateAttr(
     )
 
 
-@dataclasses.dataclass(**_internal_dataclass.slots_true)
+@dataclasses.dataclass(slots=True)
 class ComputedFieldInfo:
     """A container for data from `@computed_field` so that we can access it while building the pydantic-core schema.
 
@@ -1536,7 +1581,7 @@ class ComputedFieldInfo:
         alias: The alias of the property to be used during serialization.
         alias_priority: The priority of the alias. This affects whether an alias generator is used.
         title: Title of the computed field to include in the serialization JSON schema.
-        field_title_generator: A callable that takes a field name and returns title for it.
+        field_title_generator: A callable that takes a field's name and info and returns title for it.
         description: Description of the computed field to include in the serialization JSON schema.
         deprecated: A deprecation message, an instance of `warnings.deprecated` or the `typing_extensions.deprecated` backport,
             or a boolean. If `True`, a default deprecation message will be emitted when accessing the field.
@@ -1550,6 +1595,7 @@ class ComputedFieldInfo:
     return_type: Any
     alias: str | None
     alias_priority: int | None
+    exclude_if: Callable[[Any], bool] | None
     title: str | None
     field_title_generator: Callable[[str, ComputedFieldInfo], str] | None
     description: str | None
@@ -1565,6 +1611,7 @@ class ComputedFieldInfo:
             return_type=self.return_type,
             alias=self.alias,
             alias_priority=self.alias_priority,
+            exclude_if=self.exclude_if,
             title=self.title,
             field_title_generator=self.field_title_generator,
             description=self.description,
@@ -1651,6 +1698,7 @@ def computed_field(
     *,
     alias: str | None = None,
     alias_priority: int | None = None,
+    exclude_if: Callable[[Any], bool] | None = None,
     title: str | None = None,
     field_title_generator: Callable[[str, ComputedFieldInfo], str] | None = None,
     description: str | None = None,
@@ -1668,6 +1716,7 @@ def computed_field(
     *,
     alias: str | None = None,
     alias_priority: int | None = None,
+    exclude_if: Callable[[Any], bool] | None = None,
     title: str | None = None,
     field_title_generator: Callable[[str, ComputedFieldInfo], str] | None = None,
     description: str | None = None,
@@ -1802,8 +1851,9 @@ def computed_field(
         func: the function to wrap.
         alias: alias to use when serializing this computed field, only used when `by_alias=True`
         alias_priority: priority of the alias. This affects whether an alias generator is used
+        exclude_if: A callable that determines whether to exclude this computed field during serialization based on its value.
         title: Title to use when including this computed field in JSON Schema
-        field_title_generator: A callable that takes a field name and returns title for it.
+        field_title_generator: A callable that takes a field's name and info and returns title for it.
         description: Description to use when including this computed field in JSON Schema, defaults to the function's
             docstring
         deprecated: A deprecation message (or an instance of `warnings.deprecated` or the `typing_extensions.deprecated` backport).
@@ -1846,6 +1896,7 @@ def computed_field(
             return_type,
             alias,
             alias_priority,
+            exclude_if,
             title,
             field_title_generator,
             description,

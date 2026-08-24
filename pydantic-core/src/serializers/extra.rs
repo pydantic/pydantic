@@ -20,8 +20,6 @@ use crate::recursion_guard::RecursionError;
 use crate::recursion_guard::RecursionGuard;
 use crate::recursion_guard::RecursionState;
 
-/// this is ugly, would be much better if extra could be stored in `SerializationState`
-/// then `SerializationState` got a `serialize_infer` method, but I couldn't get it to work
 pub(crate) struct SerializationState<'py> {
     pub warnings: CollectWarnings,
     pub rec_guard: RecursionState,
@@ -29,7 +27,7 @@ pub(crate) struct SerializationState<'py> {
     /// The model currently being serialized, if any
     pub model: Option<Bound<'py, PyAny>>,
     /// The name of the field currently being serialized, if any
-    pub field_name: Option<Bound<'py, PyString>>,
+    field_name: Option<Bound<'py, PyString>>,
     /// Inside unions, checks are applied to attempt to select a preferred branch
     pub check: SerCheck,
     pub include_exclude: IncludeExclude<'py>,
@@ -133,11 +131,23 @@ impl<'py> SerializationState<'py> {
         }
     }
 
+    pub fn scoped_set_field_name(&mut self, new_value: Option<Bound<'py, PyString>>) -> ScopedFieldNameState<'_, 'py> {
+        self.scoped_set(Self::field_name_mut, new_value)
+    }
+
     pub fn scoped_include_exclude<'scope>(
         &'scope mut self,
         next_include_exclude: IncludeExclude<'py>,
     ) -> ScopedIncludeExcludeState<'scope, 'py> {
         self.scoped_set(Self::include_exclude_mut, next_include_exclude)
+    }
+
+    pub fn field_name(&self) -> Option<&Bound<'py, PyString>> {
+        self.field_name.as_ref()
+    }
+
+    pub fn include_exclude(&self) -> IncludeExclude<'py> {
+        self.include_exclude.clone()
     }
 
     pub fn include(&self) -> Option<&Bound<'py, PyAny>> {
@@ -153,6 +163,10 @@ impl<'py> SerializationState<'py> {
         value: &'slf Bound<'py, PyAny>,
     ) -> super::infer::SerializeInfer<'slf, 'py> {
         super::infer::SerializeInfer::new(value, self)
+    }
+
+    fn field_name_mut(&mut self) -> &mut Option<Bound<'py, PyString>> {
+        &mut self.field_name
     }
 
     fn include_exclude_mut(&mut self) -> &mut IncludeExclude<'py> {
@@ -175,6 +189,8 @@ pub(crate) struct Extra<'py> {
     pub serialize_unknown: bool,
     pub fallback: Option<Bound<'py, PyAny>>,
     pub serialize_as_any: bool,
+    /// Whether `polymorphic_serialization` is globally enabled / disabled for this serialization process
+    pub polymorphic_serialization: Option<bool>,
     pub context: Option<Bound<'py, PyAny>>,
 }
 
@@ -192,6 +208,7 @@ impl<'py> Extra<'py> {
         serialize_unknown: bool,
         fallback: Option<Bound<'py, PyAny>>,
         serialize_as_any: bool,
+        polymorphic_serialization: Option<bool>,
         context: Option<Bound<'py, PyAny>>,
     ) -> Self {
         Self {
@@ -207,6 +224,7 @@ impl<'py> Extra<'py> {
             serialize_unknown,
             fallback,
             serialize_as_any,
+            polymorphic_serialization,
             context,
         }
     }
@@ -250,6 +268,7 @@ pub(crate) struct ExtraOwned {
     serialize_unknown: bool,
     pub fallback: Option<Py<PyAny>>,
     serialize_as_any: bool,
+    polymorphic_serialization: Option<bool>,
     pub context: Option<Py<PyAny>>,
     include: Option<Py<PyAny>>,
     exclude: Option<Py<PyAny>>,
@@ -284,6 +303,7 @@ impl ExtraOwned {
             fallback: extra.fallback.clone().map(Bound::unbind),
             serialize_as_any: extra.serialize_as_any,
             context: extra.context.clone().map(Bound::unbind),
+            polymorphic_serialization: extra.polymorphic_serialization,
             include: state.include().map(|m| m.clone().into()),
             exclude: state.exclude().map(|m| m.clone().into()),
         }
@@ -304,6 +324,7 @@ impl ExtraOwned {
             fallback: self.fallback.as_ref().map(|m| m.bind(py).clone()),
             serialize_as_any: self.serialize_as_any,
             context: self.context.as_ref().map(|m| m.bind(py).clone()),
+            polymorphic_serialization: self.polymorphic_serialization,
         }
     }
 
@@ -555,6 +576,13 @@ where
         self.state
     }
 }
+
+type ScopedFieldNameState<'scope, 'py> = ScopedSetState<
+    'scope,
+    'py,
+    for<'s> fn(&'s mut SerializationState<'py>) -> &'s mut Option<Bound<'py, PyString>>,
+    Option<Bound<'py, PyString>>,
+>;
 
 type ScopedIncludeExcludeState<'scope, 'py> = ScopedSetState<
     'scope,
