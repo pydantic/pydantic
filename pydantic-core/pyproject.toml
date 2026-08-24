@@ -96,7 +96,7 @@ editable-profile = 'dev'
 # because uv sync will overwrite the temporary venv created by maturin
 # numpy not needed by the benchmarks and doesn't support the manylinux
 # versions we build PGO wheels for anyway
-pgo-command = "uv export --group testing-extra --no-emit-workspace --no-emit-package numpy --no-hashes --no-header --no-annotate -o target/pgo-requirements.txt && uv pip install -r target/pgo-requirements.txt && uv run --active --no-sync pytest tests/benchmarks"
+pgo-command = "uv export --group testing-extra --no-emit-workspace --no-emit-package numpy --no-emit-package pandas --no-hashes --no-header --no-annotate -o target/pgo-requirements.txt && uv pip install -r target/pgo-requirements.txt && uv run --active --no-sync pytest tests/benchmarks"
 
 [tool.ruff]
 line-length = 120
