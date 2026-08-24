@@ -292,7 +292,7 @@ def test_list_strict() -> None:
 
 
 def test_bare_mutable_sequence() -> None:
-    """A bare `MutableSequence` should behave as a bare `list`, as `MutableSequence[int]` does."""
+    """Regression test for https://github.com/pydantic/pydantic/pull/13573."""
     ta = TypeAdapter(MutableSequence)
 
     assert ta.validate_python([1, '2']) == [1, '2']
