@@ -2,8 +2,8 @@ version = 1
 revision = 3
 requires-python = ">=3.10"
 resolution-markers = [
-    "python_full_version == '3.13.*' and implementation_name == 'cpython'",
     "python_full_version >= '3.15'",
+    "python_full_version == '3.13.*' and implementation_name == 'cpython'",
     "(python_full_version >= '3.12' and python_full_version < '3.15' and implementation_name != 'cpython') or (python_full_version == '3.12.*' and implementation_name == 'cpython') or (python_full_version == '3.14.*' and implementation_name == 'cpython')",
     "python_full_version == '3.11.*'",
     "python_full_version < '3.11'",
@@ -2717,10 +2717,10 @@ requires-dist = [{ name = "typing-extensions", specifier = ">=4.14.1" }]
 
 [package.metadata.requires-dev]
 codspeed = [{ name = "pytest-codspeed", marker = "python_full_version == '3.13.*' and implementation_name == 'cpython'" }]
-dev = [{ name = "maturin" }]
+dev = [{ name = "maturin", specifier = ">=1.13" }]
 linting = [
     { name = "griffe" },
-    { name = "maturin" },
+    { name = "maturin", specifier = ">=1.13" },
     { name = "mypy" },
     { name = "pre-commit" },
     { name = "pyright" },
@@ -2732,7 +2732,7 @@ testing-extra = [
     { name = "exceptiongroup", marker = "python_full_version < '3.11'" },
     { name = "hypothesis" },
     { name = "inline-snapshot" },
-    { name = "maturin" },
+    { name = "maturin", specifier = ">=1.13" },
     { name = "numpy", marker = "python_full_version < '3.13' and implementation_name == 'cpython' and platform_machine == 'x86_64'" },
     { name = "pandas", marker = "python_full_version < '3.13' and implementation_name == 'cpython' and platform_machine == 'x86_64'" },
     { name = "pytest" },
@@ -2747,7 +2747,7 @@ testing-extra = [
     { name = "tzdata" },
 ]
 wasm = [
-    { name = "maturin" },
+    { name = "maturin", specifier = ">=1.13" },
     { name = "ruff" },
 ]
 
@@ -2844,8 +2844,8 @@ name = "pyodide-build"
 version = "0.39.0"
 source = { registry = "https://pypi.org/simple" }
 resolution-markers = [
-    "python_full_version == '3.13.*' and implementation_name == 'cpython'",
     "python_full_version >= '3.15'",
+    "python_full_version == '3.13.*' and implementation_name == 'cpython'",
     "(python_full_version >= '3.12' and python_full_version < '3.15' and implementation_name != 'cpython') or (python_full_version == '3.12.*' and implementation_name == 'cpython') or (python_full_version == '3.14.*' and implementation_name == 'cpython')",
 ]
 dependencies = [
@@ -3469,8 +3469,8 @@ name = "rpds-py"
 version = "2026.6.3"
 source = { registry = "https://pypi.org/simple" }
 resolution-markers = [
-    "python_full_version == '3.13.*' and implementation_name == 'cpython'",
     "python_full_version >= '3.15'",
+    "python_full_version == '3.13.*' and implementation_name == 'cpython'",
     "(python_full_version >= '3.12' and python_full_version < '3.15' and implementation_name != 'cpython') or (python_full_version == '3.12.*' and implementation_name == 'cpython') or (python_full_version == '3.14.*' and implementation_name == 'cpython')",
     "python_full_version == '3.11.*'",
 ]

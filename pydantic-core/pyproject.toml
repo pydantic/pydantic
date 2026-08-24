@@ -94,7 +94,9 @@ bindings = 'pyo3'
 editable-profile = 'dev'
 # uses uv export followed by uv pip install to achieve a locked install
 # because uv sync will overwrite the temporary venv created by maturin
-pgo-command = "uv export --group testing-extra --no-emit-workspace --no-hashes --no-header --no-annotate -o target/pgo-requirements.txt && uv pip install -r target/pgo-requirements.txt && uv run --active --no-sync pytest tests/benchmarks"
+# numpy not needed by the benchmarks and doesn't support the manylinux
+# versions we build PGO wheels for anyway
+pgo-command = "uv export --group testing-extra --no-emit-workspace --no-emit-package numpy --no-hashes --no-header --no-annotate -o target/pgo-requirements.txt && uv pip install -r target/pgo-requirements.txt && uv run --active --no-sync pytest tests/benchmarks"
 
 [tool.ruff]
 line-length = 120
