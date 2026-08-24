@@ -2,6 +2,7 @@ import json
 import platform
 import re
 import sys
+import threading
 import typing
 import warnings
 from collections import defaultdict
@@ -26,7 +27,7 @@ from typing import (
 from uuid import UUID, uuid4
 
 import pytest
-from pydantic_core import CoreSchema, core_schema
+from pydantic_core import CoreSchema, PydanticUndefined, core_schema
 
 from pydantic import (
     AfterValidator,
@@ -1870,6 +1871,104 @@ def test_default_factory_validated_data_arg_not_required() -> None:
     assert model.b == 3
 
 
+def test_default_factory_validated_data_not_called_if_input_validation_error(container_class) -> None:
+
+    class Model(container_class):
+        a: int
+        b: Annotated[int, Field(default_factory=lambda data: data['a'])]
+
+    ta = TypeAdapter(Model)
+
+    with pytest.raises(ValidationError) as exc:
+        ta.validate_python({'a': 'not_an_int'})
+
+    assert exc.value.errors(include_url=False) == [
+        {
+            'type': 'int_parsing',
+            'loc': ('a',),
+            'msg': 'Input should be a valid integer, unable to parse string as an integer',
+            'input': 'not_an_int',
+        },
+        {
+            'input': PydanticUndefined,
+            'loc': ('b',),
+            'msg': 'The default factory uses validated data, but at least one validation error occurred',
+            'type': 'default_factory_not_called',
+        },
+    ]
+
+
+def test_default_factory_validated_data_not_called_if_validate_default_validation_error(container_class) -> None:
+
+    class Model(container_class):
+        a: Annotated[int, Field(default='not_an_int', validate_default=True)]
+        b: Annotated[int, Field(default_factory=lambda data: data['a'])]
+
+    ta = TypeAdapter(Model)
+
+    with pytest.raises(ValidationError) as exc:
+        ta.validate_python({})
+
+    assert exc.value.errors(include_url=False) == [
+        {
+            'type': 'int_parsing',
+            'loc': ('a',),
+            'msg': 'Input should be a valid integer, unable to parse string as an integer',
+            'input': 'not_an_int',
+        },
+        {
+            'input': PydanticUndefined,
+            'loc': ('b',),
+            'msg': 'The default factory uses validated data, but at least one validation error occurred',
+            'type': 'default_factory_not_called',
+        },
+    ]
+
+
+def test_default_factory_validated_data_not_called_if_missing_value_validation_error(container_class) -> None:
+
+    class Model(container_class):
+        a: int
+        b: Annotated[int, Field(default_factory=lambda data: data['a'])]
+
+    ta = TypeAdapter(Model)
+
+    with pytest.raises(ValidationError) as exc:
+        ta.validate_python({})
+
+    assert exc.value.errors(include_url=False) == [
+        {
+            'type': 'missing',
+            'loc': ('a',),
+            'msg': 'Field required',
+            'input': {},
+        },
+        {
+            'input': PydanticUndefined,
+            'loc': ('b',),
+            'msg': 'The default factory uses validated data, but at least one validation error occurred',
+            'type': 'default_factory_not_called',
+        },
+    ]
+
+
+def test_default_factory_not_called_union_ok(container_class) -> None:
+
+    class ModelFail(container_class):
+        a: None
+        b: Annotated[int, Field(default_factory=lambda data: data['a'])]
+
+    class ModelOk(container_class):
+        a: int
+        b: Annotated[int, Field(default_factory=lambda data: data['a'] + 1)]
+        # this is used to show that this union member was selected
+        c: Annotated[int, Field(default=3)]
+
+    ta = TypeAdapter(ModelFail | ModelOk)
+
+    assert ta.dump_python(ta.validate_python({'a': 1}), mode='json') == {'a': 1, 'b': 2, 'c': 3}
+
+
 def test_reuse_same_field():
     required_field = Field()
 
@@ -2441,6 +2540,84 @@ def test_model_rebuild_localns():
 
     with pytest.raises(PydanticUndefinedAnnotation, match="name 'Model' is not defined"):
         C.model_rebuild(_types_namespace={'A': A})
+
+
+@pytest.mark.timeout(5)
+def test_model_rebuild_nested_during_parametrization():
+    T = TypeVar('T')
+
+    class Model(BaseModel):
+        b: Optional['Box[Leaf]'] = None
+
+    class Box(BaseModel, Generic[T]):
+        leaf: Optional['Leaf'] = None
+
+    class Leaf(BaseModel):
+        x: int = 0
+
+    assert not Model.__pydantic_complete__
+    assert not Box.__pydantic_complete__
+
+    # Rebuilding `Model` evaluates `Box[Leaf]`, and `__class_getitem__` then calls
+    # `Box.model_rebuild()` on the same thread. Any locking added to the rebuild logic
+    # must support this reentrancy:
+    m = Model(b={'leaf': {'x': 1}})
+    assert m.b.leaf.x == 1
+    assert Model.__pydantic_complete__
+
+
+@pytest.mark.skipif(sys.platform == 'emscripten', reason='no threading on emscripten')
+def test_model_rebuild_already_rebuilt_by_other_thread():
+    schema_gen_entered = threading.Event()
+    resume_schema_gen = threading.Event()
+    hook_calls: list[type] = []
+
+    class Model(BaseModel):
+        x: 'Gate'
+
+        @classmethod
+        def __pydantic_on_complete__(cls) -> None:
+            hook_calls.append(cls)
+
+    class Gate:
+        @classmethod
+        def __get_pydantic_core_schema__(cls, source_type, handler):
+            schema_gen_entered.set()
+            resume_schema_gen.wait(timeout=10)
+            return core_schema.int_schema()
+
+    assert not Model.__pydantic_complete__
+
+    results: dict[str, bool | None] = {}
+    t2_started = threading.Event()
+
+    def rebuild(key: str) -> None:
+        if key == 't2':
+            t2_started.set()
+        results[key] = Model.model_rebuild(_types_namespace={'Gate': Gate})
+
+    # The first thread acquires the rebuild lock and waits in schema generation:
+    t1 = threading.Thread(target=rebuild, args=('t1',), daemon=True)
+    t1.start()
+    assert schema_gen_entered.wait(timeout=10)
+
+    # While the first thread is waiting on `resume_schema_gen`, `Model` can't become complete,
+    # so the second thread is guaranteed to pass the unlocked completeness check and block on the lock:
+    t2 = threading.Thread(target=rebuild, args=('t2',), daemon=True)
+    t2.start()
+    assert t2_started.wait(timeout=10)
+    assert t2.is_alive()
+    assert 't2' not in results
+
+    resume_schema_gen.set()
+    t1.join(timeout=10)
+    t2.join(timeout=10)
+    assert not t1.is_alive()
+    assert not t2.is_alive()
+
+    assert results == {'t1': True, 't2': None}
+    assert hook_calls == [Model]
+    assert Model(x=1).x == 1
 
 
 def test_model_rebuild_zero_depth():
@@ -3312,6 +3489,43 @@ def test_extra_behavior_not_a_dict() -> None:
             __pydantic_extra__: int
 
 
+def test_extra_generic_class() -> None:
+    """https://github.com/pydantic/pydantic/issues/13369"""
+
+    T = TypeVar('T')
+
+    class Model(BaseModel, Generic[T], extra='allow'):
+        __pydantic_extra__: dict[str, T]
+
+    Mint = Model[int]
+
+    assert Mint.model_json_schema()['additionalProperties'] == {'type': 'integer'}
+
+    with pytest.raises(ValidationError):
+        Mint(extra_value='not_an_int')
+
+    assert Mint(extra_value='1').model_extra == {'extra_value': 1}
+
+
+def test_extra_generic_class_subclass() -> None:
+    """https://github.com/pydantic/pydantic/issues/13465"""
+
+    T = TypeVar('T')
+
+    class Model(BaseModel, Generic[T], extra='allow'):
+        __pydantic_extra__: dict[str, T]
+
+    class Sub(Model[int]):
+        pass
+
+    assert Sub.model_json_schema()['additionalProperties'] == {'type': 'integer'}
+
+    with pytest.raises(ValidationError):
+        Sub(extra_value='not_an_int')
+
+    assert Sub(extra_value='1').model_extra == {'extra_value': 1}
+
+
 def test_super_getattr_extra():
     class Model(BaseModel):
         model_config = {'extra': 'allow'}
@@ -3450,21 +3664,23 @@ help_result_string = pydoc.render_doc(Model)
 
 def test_cannot_use_leading_underscore_field_names():
     with pytest.raises(
-        NameError, match="Fields must not use names with leading underscores; e.g., use 'x' instead of '_x'"
+        PydanticUserError, match="Fields must not use names with leading underscores; e.g., use 'x' instead of '_x'"
     ):
 
         class Model1(BaseModel):
             _x: int = Field(alias='x')
 
     with pytest.raises(
-        NameError, match="Fields must not use names with leading underscores; e.g., use 'x__' instead of '__x__'"
+        PydanticUserError,
+        match="Fields must not use names with leading underscores; e.g., use 'x__' instead of '__x__'",
     ):
 
         class Model2(BaseModel):
             __x__: int = Field()
 
     with pytest.raises(
-        NameError, match="Fields must not use names with leading underscores; e.g., use 'my_field' instead of '___'"
+        PydanticUserError,
+        match="Fields must not use names with leading underscores; e.g., use 'my_field' instead of '___'",
     ):
 
         class Model3(BaseModel):

@@ -42,6 +42,7 @@ from pydantic import (
 )
 from pydantic.dataclasses import dataclass as pydantic_dataclass
 from pydantic.functional_validators import AfterValidator, BeforeValidator, PlainValidator, WrapValidator
+from pydantic.version import version_short
 
 V1_VALIDATOR_DEPRECATION_MATCH = r'Pydantic V1 style `@validator` validators are deprecated'
 
@@ -1600,7 +1601,7 @@ def test_reuse_global_validators():
     assert dict(Model(x=1, y=1)) == {'x': 2, 'y': 2}
 
 
-@pytest.mark.parametrize('validator_classmethod,root_validator_classmethod', product(*[[True, False]] * 2))
+@pytest.mark.parametrize('validator_classmethod,root_validator_classmethod', list(product(*[[True, False]] * 2)))
 def test_root_validator_classmethod(validator_classmethod, root_validator_classmethod):
     root_val_values = []
 
@@ -3017,10 +3018,13 @@ def test_non_self_return_val_warns() -> None:
         def validate_model(self) -> 'Child':
             return Child.model_construct(name='different')
 
-    with pytest.warns(UserWarning, match='A custom validator is returning a value other than `self`'):
+    with pytest.warns(UserWarning, match='A custom validator is returning a value other than `self`') as warning_info:
         c = Child(name='name')
         # confirmation of behavior: non-self return value is ignored
         assert c.name == 'name'
+    assert f'https://pydantic.dev/docs/validation/{version_short()}/concepts/validators/#model-validators' in str(
+        warning_info[0].message
+    )
 
 
 def test_wrap_val_called_once() -> None:
@@ -3173,3 +3177,80 @@ def test_model_validate_json_default_value_validator_with_validation_info() -> N
     f2 = Foo.model_validate_json('{"field1": 1}', context='context')
 
     assert f1.field == f2.field == 2
+
+
+def test_wrap_validator_forwards_by_alias_by_name() -> None:
+    """https://github.com/pydantic/pydantic/issues/13661"""
+
+    class Inner(BaseModel):
+        model_config = ConfigDict(validate_by_name=True)
+
+        build_depends: list[str] = Field(default=[], alias='build-depends')
+
+        @model_validator(mode='wrap')
+        @classmethod
+        def _wrap(cls, data: Any, handler: ValidatorFunctionWrapHandler) -> Any:
+            return handler(data)
+
+    class Outer(BaseModel):
+        inner: Inner
+
+        @field_validator('inner', mode='wrap')
+        @classmethod
+        def _wrap(cls, v: Any, handler: ValidatorFunctionWrapHandler) -> Any:
+            return handler(v)
+
+    by_name = {'build_depends': ['x']}
+    by_alias = {'build-depends': ['x']}
+
+    assert Inner.model_validate(by_name, by_alias=True, by_name=False).build_depends == []
+    assert Inner.model_validate(by_alias, by_alias=True, by_name=False).build_depends == ['x']
+    assert Inner.model_validate(by_name, by_alias=False, by_name=True).build_depends == ['x']
+    assert Inner.model_validate(by_alias, by_alias=False, by_name=True).build_depends == []
+
+    assert Outer.model_validate({'inner': by_name}, by_alias=True, by_name=False).inner.build_depends == []
+    assert Outer.model_validate({'inner': by_alias}, by_alias=False, by_name=True).inner.build_depends == []
+
+
+def test_wrap_validator_forwards_runtime_settings() -> None:
+    class Inner(BaseModel):
+        a: int
+
+        @model_validator(mode='wrap')
+        @classmethod
+        def _wrap(cls, data: Any, handler: ValidatorFunctionWrapHandler, info: ValidationInfo) -> Any:
+            assert info.context == 'ctx'
+            return handler(data)
+
+        @field_validator('a', mode='wrap')
+        @classmethod
+        def _wrap_a(cls, v: Any, handler: ValidatorFunctionWrapHandler, info: ValidationInfo) -> Any:
+            assert info.context == 'ctx'
+            return handler(v)
+
+    class Outer(BaseModel):
+        inner: Inner
+
+        @field_validator('inner', mode='wrap')
+        @classmethod
+        def _wrap(cls, v: Any, handler: ValidatorFunctionWrapHandler) -> Any:
+            return handler(v)
+
+    # strict:
+    assert Outer.model_validate({'inner': {'a': '1'}}, context='ctx').inner.a == 1
+    with pytest.raises(ValidationError, match='Input should be a valid integer'):
+        Outer.model_validate({'inner': {'a': '1'}}, strict=True, context='ctx')
+
+    # extra:
+    m = Outer.model_validate({'inner': {'a': 1, 'b': 2}}, extra='allow', context='ctx')
+    assert m.inner.model_extra == {'b': 2}
+    with pytest.raises(ValidationError, match='Extra inputs are not permitted'):
+        Outer.model_validate({'inner': {'a': 1, 'b': 2}}, extra='forbid', context='ctx')
+
+    # from_attributes:
+    class InnerObj:
+        a = 1
+
+    with pytest.raises(ValidationError, match='Input should be a valid dictionary'):
+        Outer.model_validate({'inner': InnerObj()}, context='ctx')
+    assert Outer.model_validate({'inner': InnerObj()}, from_attributes=True, context='ctx').inner.a == 1

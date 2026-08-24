@@ -264,6 +264,7 @@ impl Validator for DataclassArgsValidator {
                             set_item!(field, value);
                         }
                         Ok(None) => {
+                            state.has_field_error = true;
                             let error_type = ErrorTypeDefaults::Missing;
                             let error_loc = field.lookup_path_collection.error_loc(lookup_type, self.loc_by_alias);
                             // This means there was no default value

@@ -73,7 +73,7 @@ You can also import functions that have been removed from Pydantic V2, such as `
 from pydantic.v1.utils import lenient_isinstance
 ```
 
-Pydantic V1 documentation is available at [https://docs.pydantic.dev/1.10/](https://docs.pydantic.dev/1.10/).
+See the [Pydantic V1 documentation](https://pydantic.dev/docs/validation/1.10/overview/).
 
 ### Using Pydantic v1 features in a v1/v2 environment
 

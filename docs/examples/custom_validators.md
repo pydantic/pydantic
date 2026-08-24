@@ -90,7 +90,7 @@ except ValidationError as ve:
     'loc': (),
     'msg': 'Assertion failed, Invalid tzinfo: Europe/London, expected: America/Los_Angeles',
     'type': 'assertion_error',
-    'url': 'https://errors.pydantic.dev/2.8/v/assertion_error'}]
+    'url': 'https://errors.pydantic.dev/2/v/assertion_error'}]
     """
 ```
 
@@ -170,7 +170,7 @@ except ValidationError as e:
     'loc': (),
     'msg': 'Assertion failed, Value out of bounds',
     'type': 'assertion_error',
-    'url': 'https://errors.pydantic.dev/2.8/v/assertion_error'}]
+    'url': 'https://errors.pydantic.dev/2/v/assertion_error'}]
     """
 ```
 
@@ -226,7 +226,8 @@ except ValidationError as e:
     """
 ```
 
-Alternatively, a custom validator can be used in the nested model class (`User`), with the forbidden passwords data from the parent model being passed in via validation context.
+Alternatively, a custom validator can be used in the nested model class (`User`), with the forbidden passwords data from the parent model being passed in
+via [validation context](../concepts/validators.md#validation-context).
 
 !!! warning
     The ability to mutate the context within a validator adds a lot of power to nested validation, but can also lead to confusing or hard-to-debug code. Use this approach at your own risk!
@@ -284,6 +285,12 @@ except ValidationError as e:
     """
 ```
 
-Note that if the context property is not included in `model_validate`, then `info.context` will be `None` and the forbidden passwords list will not get added to the context in the above implementation. As such, `validate_user_passwords` would not carry out the desired password validation.
+Note that if the context property is not included in [`model_validate()`][pydantic.main.BaseModel.model_validate], then [`context`][pydantic.ValidationInfo.context] will be `None`
+and the forbidden passwords list will not get added to the context in the above implementation. As such, `validate_user_passwords()` would not carry out the desired password validation.
 
 More details about validation context can be found in the [validators documentation](../concepts/validators.md#validation-context).
+
+The messages you write in these `raise ValueError(...)` calls are worth crafting: they're what you'll
+read when the rule eventually rejects real data. They also carry through to tooling that consumes the
+structured errors: [Logfire's explanations of failed validations](../errors/troubleshooting.md), for
+example, include the messages from your custom validators.

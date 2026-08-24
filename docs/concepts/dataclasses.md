@@ -218,6 +218,10 @@ except pydantic.ValidationError as e:
     """
 ```
 
+Because a Pydantic dataclass validates its inputs just like a model, the same observability applies: if
+you use [Logfire](../integrations/logfire.md), validations of Pydantic dataclasses are
+[recorded alongside model validations](../errors/troubleshooting.md), input included.
+
 The decorator can also be applied directly on a stdlib dataclass, in which case a new subclass will be created:
 
 ```python

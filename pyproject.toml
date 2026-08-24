@@ -33,6 +33,7 @@ classifiers = [
     'Programming Language :: Python :: 3.12',
     'Programming Language :: Python :: 3.13',
     'Programming Language :: Python :: 3.14',
+    'Programming Language :: Python :: 3.15',
     'Intended Audience :: Developers',
     'Intended Audience :: Information Technology',
     'Operating System :: OS Independent',
@@ -46,8 +47,8 @@ dependencies = [
     'typing-extensions>=4.15.0',
     'annotated-types>=0.6.0',
     # Keep this in sync with the version in the `check_pydantic_core_version()` function:
-    'pydantic-core==2.47.0',
-    'typing-inspection>=0.4.2',
+    'pydantic-core==2.48.0',
+    'typing-inspection>=0.4.4',
 ]
 dynamic = ['version', 'readme']
 
@@ -60,10 +61,10 @@ timezone = [
 
 [project.urls]
 Homepage = 'https://github.com/pydantic/pydantic'
-Documentation = 'https://docs.pydantic.dev'
+Documentation = 'https://pydantic.dev/docs/validation/latest/get-started/'
 Funding = 'https://github.com/sponsors/samuelcolvin'
 Source = 'https://github.com/pydantic/pydantic'
-Changelog = 'https://docs.pydantic.dev/latest/changelog/'
+Changelog = 'https://pydantic.dev/docs/validation/latest/get-started/changelog/'
 
 [dependency-groups]
 dev = [
@@ -80,6 +81,10 @@ dev = [
     'pytest-run-parallel>=0.3.1',
     'packaging',
     'jsonschema',
+    'time-machine; platform_python_implementation != "PyPy"',
+]
+coverage = [
+    'coverage[toml]',
 ]
 docs = [
     'autoflake',
@@ -114,7 +119,8 @@ testing-extra = [
     'devtools',
     # used in docs tests
     'sqlalchemy',
-    'pytest-memray; platform_python_implementation == "CPython" and platform_system != "Windows"',
+    'pytest-memray; platform_python_implementation == "CPython" and platform_system != "Windows" and python_version < "3.15"',
+    'memray; platform_python_implementation == "CPython" and platform_system != "Windows" and python_version < "3.15"',
 ]
 typechecking = [
     'mypy',
@@ -128,6 +134,9 @@ build = [
 ]
 pyodide-build = [
     "pyodide-build",
+]
+tweet = [
+    "tweepy",
 ]
 
 all = [
@@ -164,7 +173,7 @@ fragments = [
     {path = 'README.md'},
     {text = "\n## Changelog\n\n"},
     {path = 'HISTORY.md', pattern = '(.+?)<!-- package description limit -->'},
-    {text = "\n... see [here](https://docs.pydantic.dev/changelog/#v0322-2019-08-17) for earlier changes.\n"},
+    {text = "\n... see [here](https://pydantic.dev/docs/validation/latest/get-started/changelog/#v2100b1-2024-11-06) for earlier changes.\n"},
 ]
 # convert GitHub issue/PR numbers and handles to links
 substitutions = [

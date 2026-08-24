@@ -10,7 +10,8 @@ from pydantic_core import SchemaSerializer, SchemaValidator, core_schema, to_jso
 
 class TestBenchmarkSimpleModel:
     @pytest.fixture(scope='class')
-    def core_schema(self):
+    @classmethod
+    def core_schema(cls):
         class CoreModel:
             __slots__ = '__dict__', '__pydantic_fields_set__', '__pydantic_extra__', '__pydantic_private__'
 
@@ -32,11 +33,13 @@ class TestBenchmarkSimpleModel:
         }
 
     @pytest.fixture(scope='class')
-    def core_validator(self, core_schema):
+    @classmethod
+    def core_validator(cls, core_schema):
         return SchemaValidator(core_schema)
 
     @pytest.fixture(scope='class')
-    def core_serializer(self, core_schema):
+    @classmethod
+    def core_serializer(cls, core_schema):
         return SchemaSerializer(core_schema)
 
     data = {'name': 'John', 'age': 42, 'friends': list(range(200)), 'settings': {f'v_{i}': i / 2.0 for i in range(50)}}

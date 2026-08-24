@@ -5,7 +5,7 @@ import sys
 import types
 import typing
 from collections import ChainMap
-from collections.abc import Iterator, Mapping
+from collections.abc import Generator, Mapping
 from contextlib import contextmanager
 from contextvars import ContextVar
 from functools import reduce
@@ -18,8 +18,7 @@ import typing_extensions
 from typing_inspection import typing_objects
 from typing_inspection.introspection import is_union_origin
 
-from . import _typing_extra
-from ._core_utils import get_type_ref
+from . import _type_refs, _typing_extra
 from ._forward_ref import PydanticRecursiveRef
 from ._utils import all_identical, is_model_class
 
@@ -121,6 +120,19 @@ def create_generic_submodel(
         The created submodel.
     """
     namespace: dict[str, Any] = {'__module__': origin.__module__}
+    # As per https://docs.python.org/3/reference/datamodel.html#slots:
+    # "The action of a __slots__ declaration is not limited to the class where it is defined.
+    # __slots__ declared in parents are available in child classes. However, instances of a
+    # child subclass will get a __dict__ and __weakref__ unless the subclass also defines
+    # __slots__".
+    # Because when users parameterize a generic model, we create a subclass of such generic model
+    # (what happens in this function), they can't control the fact that no slots is defined on the
+    # dynamic subclass, and so even if they defined extra __slots__ on the generic class (which results
+    # in the class *not* being weakref-able), the parameterized class *will* be weakref-able.
+    # For this reason (and to make Pydantic generic models behavior closer to generic aliases),
+    # we forward any slots from the origin:
+    if '__slots__' in origin.__dict__:
+        namespace['__slots__'] = origin.__dict__['__slots__']
     bases = (origin,)
     meta, ns, kwds = prepare_class(model_name, bases)
     namespace.update(ns)
@@ -141,7 +153,7 @@ def create_generic_submodel(
     if called_globally:  # create global reference and therefore allow pickling
         object_by_reference = None
         reference_name = model_name
-        reference_module_globals = sys.modules[created_model.__module__].__dict__
+        reference_module_globals = sys.modules[model_module or created_model.__module__].__dict__
         while object_by_reference is not created_model:
             object_by_reference = reference_module_globals.setdefault(reference_name, created_model)
             reference_name += '_'
@@ -174,7 +186,7 @@ def _get_caller_frame_info(depth: int = 2) -> tuple[str | None, bool]:
 DictValues: type[Any] = {}.values().__class__
 
 
-def iter_contained_typevars(v: Any) -> Iterator[TypeVar]:
+def iter_contained_typevars(v: Any) -> Generator[TypeVar]:
     """Recursively iterate through all subtypes and type args of `v` and yield any typevars that are found.
 
     This is inspired as an alternative to directly accessing the `__parameters__` attribute of a GenericAlias,
@@ -398,7 +410,7 @@ _generic_recursion_cache: ContextVar[set[str] | None] = ContextVar('_generic_rec
 @contextmanager
 def generic_recursion_self_type(
     origin: type[BaseModel], args: tuple[Any, ...]
-) -> Iterator[PydanticRecursiveRef | None]:
+) -> Generator[PydanticRecursiveRef | None]:
     """This contextmanager should be placed around the recursive calls used to build a generic type,
     and accept as arguments the generic origin type and the type arguments being passed to it.
 
@@ -414,7 +426,7 @@ def generic_recursion_self_type(
         token = None
 
     try:
-        type_ref = get_type_ref(origin, args_override=args)
+        type_ref = _type_refs.model_type_ref(origin, args_override=args)
         if type_ref in previously_seen_type_refs:
             self_type = PydanticRecursiveRef(type_ref=type_ref)
             yield self_type
@@ -435,6 +447,20 @@ def recursively_defined_type_refs() -> set[str]:
     return visited.copy()  # don't allow modifications
 
 
+def _generic_cache_get(key: GenericTypesCacheKey) -> type[BaseModel] | None:
+    try:
+        return _GENERIC_TYPES_CACHE.get(key)
+    except TypeError:  # unhashable typevar values
+        return None
+
+
+def _generic_cache_set(key: GenericTypesCacheKey, value: type[BaseModel]) -> None:
+    try:
+        _GENERIC_TYPES_CACHE[key] = value
+    except TypeError:  # unhashable typevar values
+        pass
+
+
 def get_cached_generic_type_early(parent: type[BaseModel], typevar_values: Any) -> type[BaseModel] | None:
     """The use of a two-stage cache lookup approach was necessary to have the highest performance possible for
     repeated calls to `__class_getitem__` on generic types (which may happen in tighter loops during runtime),
@@ -452,14 +478,14 @@ def get_cached_generic_type_early(parent: type[BaseModel], typevar_values: Any) 
     during validation, I think it is worthwhile to ensure that types that are functionally equivalent are actually
     equal.
     """
-    return _GENERIC_TYPES_CACHE.get(_early_cache_key(parent, typevar_values))
+    return _generic_cache_get(_early_cache_key(parent, typevar_values))
 
 
 def get_cached_generic_type_late(
     parent: type[BaseModel], typevar_values: Any, origin: type[BaseModel], args: tuple[Any, ...]
 ) -> type[BaseModel] | None:
     """See the docstring of `get_cached_generic_type_early` for more information about the two-stage cache lookup."""
-    cached = _GENERIC_TYPES_CACHE.get(_late_cache_key(origin, args, typevar_values))
+    cached = _generic_cache_get(_late_cache_key(origin, args, typevar_values))
     if cached is not None:
         set_cached_generic_type(parent, typevar_values, cached, origin, args)
     return cached
@@ -475,11 +501,11 @@ def set_cached_generic_type(
     """See the docstring of `get_cached_generic_type_early` for more information about why items are cached with
     two different keys.
     """
-    _GENERIC_TYPES_CACHE[_early_cache_key(parent, typevar_values)] = type_
+    _generic_cache_set(_early_cache_key(parent, typevar_values), type_)
     if len(typevar_values) == 1:
-        _GENERIC_TYPES_CACHE[_early_cache_key(parent, typevar_values[0])] = type_
+        _generic_cache_set(_early_cache_key(parent, typevar_values[0]), type_)
     if origin and args:
-        _GENERIC_TYPES_CACHE[_late_cache_key(origin, args, typevar_values)] = type_
+        _generic_cache_set(_late_cache_key(origin, args, typevar_values), type_)
 
 
 def _union_orderings_key(typevar_values: Any) -> Any:

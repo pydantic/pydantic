@@ -11,7 +11,8 @@ from re import Pattern
 from typing import TYPE_CHECKING, Any, TypeVar, cast
 
 from pydantic_core import PydanticUndefined
-from typing_extensions import TypeIs
+from typing_extensions import TypeIs, get_args, get_origin  # noqa: UP035 (for `get_args` and `get_origin`)
+from typing_inspection import typing_objects
 from typing_inspection.introspection import AnnotationSource
 
 from pydantic import PydanticDeprecatedSince211
@@ -29,7 +30,7 @@ from ._utils import can_be_positional, get_first_not_none
 if TYPE_CHECKING:
     from annotated_types import BaseMetadata
 
-    from ..fields import FieldInfo
+    from ..fields import FieldInfo, ModelPrivateAttr
     from ..main import BaseModel
     from ._dataclasses import PydanticDataclass, StandardDataclass
     from ._decorators import DecoratorInfos
@@ -46,6 +47,38 @@ class PydanticExtraInfo:
     # TODO: make use of PEP 747:
     annotation: Any
     complete: bool
+
+
+@dataclasses.dataclass(slots=True, kw_only=True)
+class ModelNamespaceInfo:
+    """Information gathered by inspecting the namespace of a model class before it is created.
+
+    Decisions requiring the (possibly unevaluatable at class creation time) annotations (such as
+    whether a sunder-named attribute is a private attribute or a class variable) are deferred to
+    `collect_model_fields()`, where evaluated annotations are available.
+    """
+
+    private_attributes: dict[str, ModelPrivateAttr]
+    """Private attributes explicitly assigned a `ModelPrivateAttr` instance (removed from the namespace)."""
+
+    ignored_names: set[str]
+    """Names of the namespace attributes with a value of an ignored type."""
+
+    ignored_types: tuple[type[Any], ...]
+    """The ignored types (the `ignored_types` config value, together with the implicitly ignored types)."""
+
+    private_candidates: list[str]
+    """Sunder-named attributes assigned in the namespace, to be converted to private attributes
+    unless annotated as class variables."""
+
+    field_candidates: list[str]
+    """Namespace attributes with a valid field name, required to have a type annotation."""
+
+    base_field_names: set[str]
+    """The field names of the model's bases."""
+
+    model_config_assigned: bool
+    """Whether `model_config` was assigned a value in the namespace."""
 
 
 def pydantic_general_metadata(**metadata: Any) -> BaseMetadata:
@@ -220,14 +253,36 @@ _deprecated_classmethod_names = {
 }
 
 
+@cache
+def _deprecated_base_model_method_ids() -> tuple[frozenset[int], frozenset[int]]:
+    """IDs of the deprecated `BaseModel` methods (and the underlying functions of the deprecated classmethods).
+
+    These are used to check if an assigned field value is one of the deprecated methods by identity.
+    The `BaseModel` class (and thus the methods) stays alive for the lifetime of the process, so the
+    IDs are guaranteed to be stable.
+    """
+    BaseModel_ = import_cached_base_model()
+    return (
+        frozenset(
+            id(method) for name in _deprecated_method_names if (method := getattr(BaseModel_, name, None)) is not None
+        ),
+        frozenset(
+            id(func)
+            for name in _deprecated_classmethod_names
+            if (func := getattr(getattr(BaseModel_, name, None), '__func__', None)) is not None
+        ),
+    )
+
+
 def collect_model_fields(  # noqa: C901
     cls: type[BaseModel],
     config_wrapper: ConfigWrapper,
     ns_resolver: NsResolver,
     *,
     typevars_map: Mapping[TypeVar, Any] | None = None,
-) -> tuple[dict[str, FieldInfo], PydanticExtraInfo | None, set[str]]:
-    """Collect the fields and class variables names of a nascent Pydantic model.
+    namespace_info: ModelNamespaceInfo | None = None,
+) -> tuple[dict[str, FieldInfo], PydanticExtraInfo | None, set[str], dict[str, ModelPrivateAttr]]:
+    """Collect the fields, class variables names and private attributes of a nascent Pydantic model.
 
     The fields collection process is *lenient*, meaning it won't error if string annotations
     fail to evaluate. If this happens, the original annotation (and assigned value, if any)
@@ -241,19 +296,20 @@ def collect_model_fields(  # noqa: C901
         config_wrapper: The config wrapper instance.
         ns_resolver: Namespace resolver to use when getting model annotations.
         typevars_map: A dictionary mapping type variables to their concrete types.
+        namespace_info: The result of inspecting the class namespace before the class was created.
 
     Returns:
-        A three-tuple containing the model fields, the `PydanticExtraInfo` instance if the `__pydantic_extra__` annotation is set,
-        and class variables names.
+        A four-tuple containing the model fields, the `PydanticExtraInfo` instance if the `__pydantic_extra__` annotation is set,
+        the class variables names, and the private attributes discovered from the namespace and annotations.
 
     Raises:
-        NameError:
-            - If there is a conflict between a field name and protected namespaces.
-            - If there is a field other than `root` in `RootModel`.
-            - If a field shadows an attribute in the parent model.
+        NameError: If there is a conflict between a field name and protected namespaces.
+        PydanticUserError: If there is a field other than `root` in `RootModel`, or if one of
+            the namespace checks performed with `namespace_info` fails.
     """
     FieldInfo_ = import_cached_field_info()
-    BaseModel_ = import_cached_base_model()
+
+    from ..fields import ModelPrivateAttr, PrivateAttr
 
     bases = cls.__bases__
     parent_fields_lookup: dict[str, FieldInfo] = {}
@@ -266,7 +322,57 @@ def collect_model_fields(  # noqa: C901
     # `cls_annotations` is only used to determine if an annotation comes from a parent class
     cls_annotations = _typing_extra.safe_get_annotations(cls)
 
+    private_attributes: dict[str, ModelPrivateAttr] = {}
+
+    if namespace_info is not None:
+        if '__root__' in cls_annotations:
+            # This check also exists in `inspect_namespace()`, but for assignments only:
+            raise PydanticUserError(
+                "To define root models, use `pydantic.RootModel` rather than a field called '__root__'", code=None
+            )
+
+        if 'model_config' in cls_annotations and not namespace_info.model_config_assigned:
+            raise PydanticUserError(
+                '`model_config` cannot be used as a model field name. Use `model_config` for model configuration.',
+                code='model-config-invalid-field-name',
+            )
+
+        for var_name in namespace_info.private_candidates:
+            # A sunder-named attribute with an assigned value is a private attribute,
+            # unless annotated as a class variable:
+            hint = type_hints.get(var_name)
+            if hint is None or not _typing_extra.is_classvar_annotation(hint[0]):
+                # Unlike for the annotation-only private attributes below, `__set_name__()` must not be
+                # called on the wrapping `PrivateAttr()` here: the assigned value stayed in the namespace
+                # during class creation, so `type.__new__()` already invoked the protocol on it natively:
+                private_attributes[var_name] = cast('ModelPrivateAttr', PrivateAttr(default=cls.__dict__[var_name]))
+                delattr(cls, var_name)
+
+        for var_name in namespace_info.field_candidates:
+            if var_name in cls_annotations:
+                continue
+            if var_name in namespace_info.base_field_names:
+                raise PydanticUserError(
+                    f'Field {var_name!r} defined on a base class was overridden by a non-annotated attribute. '
+                    f'All field definitions, including overrides, require a type annotation.',
+                    code='model-field-overridden',
+                )
+            value = cls.__dict__[var_name]
+            if isinstance(value, FieldInfo_):
+                raise PydanticUserError(
+                    f'Field {var_name!r} requires a type annotation', code='model-field-missing-annotation'
+                )
+            else:
+                raise PydanticUserError(
+                    f'A non-annotated attribute was detected: `{var_name} = {value!r}`. All model fields require a '
+                    f'type annotation; if `{var_name}` is not meant to be a field, you may be able to resolve this '
+                    f"error by annotating it as a `ClassVar` or updating `model_config['ignored_types']`.",
+                    code='model-field-missing-annotation',
+                )
+
     fields: dict[str, FieldInfo] = {}
+
+    deprecated_method_ids, deprecated_classmethod_func_ids = _deprecated_base_model_method_ids()
 
     class_vars: set[str] = set()
     for ann_name, (ann_type, evaluated) in type_hints.items():
@@ -287,27 +393,46 @@ def collect_model_fields(  # noqa: C901
             class_vars.add(ann_name)
             continue
 
+        if not is_valid_field_name(ann_name):
+            if (
+                namespace_info is not None
+                and is_valid_privateattr_name(ann_name)
+                and ann_name in cls_annotations
+                and ann_name not in private_attributes
+                and ann_name not in namespace_info.private_attributes
+                and ann_name not in namespace_info.ignored_names
+                and ann_type not in namespace_info.ignored_types
+                and getattr(ann_type, '__module__', None) != 'functools'
+            ):
+                # A sunder-named annotation (with no assigned value, as this case is handled above)
+                # defines a private attribute:
+                private_attr: ModelPrivateAttr | None = None
+                if typing_objects.is_annotated(get_origin(ann_type)):
+                    _, *metadata = get_args(ann_type)
+                    private_attr = next((v for v in metadata if isinstance(v, ModelPrivateAttr)), None)
+                if private_attr is None:
+                    private_attr = cast('ModelPrivateAttr', PrivateAttr())
+                private_attr.__set_name__(cls, ann_name)
+                private_attributes[ann_name] = private_attr
+            continue
+
         assigned_value = getattr(cls, ann_name, PydanticUndefined)
         if assigned_value is not PydanticUndefined and (
             # One of the deprecated instance methods was used as a field name (e.g. `dict()`):
-            any(getattr(BaseModel_, depr_name, None) is assigned_value for depr_name in _deprecated_method_names)
+            id(assigned_value) in deprecated_method_ids
             # One of the deprecated class methods was used as a field name (e.g. `schema()`):
             or (
-                hasattr(assigned_value, '__func__')
-                and any(
-                    getattr(getattr(BaseModel_, depr_name, None), '__func__', None) is assigned_value.__func__  # pyright: ignore[reportAttributeAccessIssue]
-                    for depr_name in _deprecated_classmethod_names
-                )
+                (assigned_func := getattr(assigned_value, '__func__', None)) is not None
+                and id(assigned_func) in deprecated_classmethod_func_ids
             )
         ):
             # Then `assigned_value` would be the method, even though no default was specified:
             assigned_value = PydanticUndefined
 
-        if not is_valid_field_name(ann_name):
-            continue
         if cls.__pydantic_root_model__ and ann_name != 'root':
-            raise NameError(
-                f"Unexpected field with name {ann_name!r}; only 'root' is allowed as a field of a `RootModel`"
+            raise PydanticUserError(
+                f"Unexpected field with name {ann_name!r}; only 'root' is allowed as a field of a `RootModel`",
+                code=None,
             )
 
         for base in bases:
@@ -423,13 +548,37 @@ def collect_model_fields(  # noqa: C901
 
     pydantic_extra_info: PydanticExtraInfo | None = None
     if '__pydantic_extra__' in type_hints:
-        ann, complete = type_hints['__pydantic_extra__']
-        pydantic_extra_info = PydanticExtraInfo(
-            annotation=ann,
-            complete=complete,
-        )
+        parent_extra_info: PydanticExtraInfo | None = None
+        if '__pydantic_extra__' not in cls_annotations:
+            # The annotation is only present on parent classes. As with fields, we make use of the parent's
+            # extra info, where type variables are already substituted:
+            for base in bases:
+                parent_extra_info = getattr(base, '__pydantic_extra_info__', None)
+                if parent_extra_info is not None:
+                    break
 
-    return fields, pydantic_extra_info, class_vars
+        if parent_extra_info is not None:
+            # As with fields, the only case where substituting the type variables is relevant (i.e. when
+            # `typevars_map` is not empty) is when a generic class is parameterized:
+            if typevars_map and parent_extra_info.complete:
+                # If not complete, `rebuild_model_fields()` takes care of it:
+                pydantic_extra_info = PydanticExtraInfo(
+                    annotation=_generics.replace_types(parent_extra_info.annotation, typevars_map),
+                    complete=True,
+                )
+            else:
+                pydantic_extra_info = parent_extra_info
+        else:
+            ann, complete = type_hints['__pydantic_extra__']
+            if complete:
+                # If not complete, `rebuild_model_fields()` takes care of it:
+                ann = _generics.replace_types(ann, typevars_map)
+            pydantic_extra_info = PydanticExtraInfo(
+                annotation=ann,
+                complete=complete,
+            )
+
+    return fields, pydantic_extra_info, class_vars, private_attributes
 
 
 def rebuild_model_fields(
@@ -467,10 +616,18 @@ def rebuild_model_fields(
                 rebuilt_fields[f_name] = new_field
 
         if cls.__pydantic_extra_info__ is not None and not cls.__pydantic_extra_info__.complete:
+            # Not the best pattern (see comment in `_recreate_field_info()`):
+            ann = _typing_extra.eval_type(
+                cls.__pydantic_extra_info__.annotation,
+                *ns_resolver.types_namespace,
+            )
+            ann = _generics.replace_types(ann, typevars_map)
+            ann = _typing_extra.eval_type(
+                ann,
+                *ns_resolver.types_namespace,
+            )
             rebuilt_extra_info = PydanticExtraInfo(
-                annotation=_typing_extra.eval_type(
-                    cls.__pydantic_extra_info__.annotation, *ns_resolver.types_namespace
-                ),
+                annotation=ann,
                 complete=True,
             )
         else:
@@ -702,9 +859,10 @@ def takes_validated_data_argument(
 
 
 def resolve_default_value(
+    *,
     default: Any,
     default_factory: Callable[[], Any] | Callable[[dict[str, Any]], Any] | None,
-    *,
+    default_factory_takes_validated_data_argument: bool | None,
     validated_data: dict[str, Any] | None = None,
     call_default_factory: bool = False,
 ) -> Any:
@@ -714,7 +872,7 @@ def resolve_default_value(
     if default_factory is None:
         return smart_deepcopy(default)
     if call_default_factory:
-        if takes_validated_data_argument(default_factory=default_factory):
+        if default_factory_takes_validated_data_argument:
             fac = cast('Callable[[dict[str, Any]], Any]', default_factory)
             if validated_data is None:
                 raise ValueError(

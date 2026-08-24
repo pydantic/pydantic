@@ -1,11 +1,11 @@
-use std::sync::Arc;
+use std::sync::{Arc, LazyLock};
 
 use pyo3::exceptions::PyValueError;
 use pyo3::prelude::*;
 use pyo3::sync::PyOnceLock;
 use pyo3::types::{PyComplex, PyDict, PyString, PyType};
 
-use crate::build_tools::{LazyLock, is_strict};
+use crate::build_tools::is_strict;
 use crate::errors::{ErrorTypeDefaults, ToErrorValue, ValError, ValResult};
 use crate::input::Input;
 

@@ -38,7 +38,7 @@ class MyStr(str): ...
         (UUID('12345678-1234-5678-1234-567812345678'), UUID('12345678-1234-5678-1234-567812345678')),
         (UUID('550e8400-e29b-41d4-a716-446655440000'), UUID('550e8400-e29b-41d4-a716-446655440000')),
         # Invalid UUIDs
-        ('not-a-valid-uuid', Err('Input should be a valid UUID, invalid character: found `n` at 1')),
+        ('not-a-valid-uuid', Err('Input should be a valid UUID, invalid character: found `n` at 0')),
         (
             '12345678-1234-5678-1234-5678123456789',
             Err('Input should be a valid UUID, invalid group length in group 4: expected 12, found 13'),

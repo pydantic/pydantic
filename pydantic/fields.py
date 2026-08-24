@@ -127,7 +127,7 @@ class FieldInfo(_repr.Representation):
         validation_alias: The validation alias of the field.
         serialization_alias: The serialization alias of the field.
         title: The title of the field.
-        field_title_generator: A callable that takes a field name and returns title for it.
+        field_title_generator: A callable that takes a field's name and info and returns title for it.
         description: The description of the field.
         examples: List of examples of the field.
         exclude: Whether to exclude the field from the model serialization.
@@ -218,7 +218,7 @@ class FieldInfo(_repr.Representation):
         'min_length': annotated_types.MinLen,
         'max_length': annotated_types.MaxLen,
         'pattern': None,
-        'allow_inf_nan': None,
+        'allow_inf_nan': types.AllowInfNan,
         'max_digits': None,
         'decimal_places': None,
         'union_mode': None,
@@ -524,6 +524,10 @@ class FieldInfo(_repr.Representation):
                                 **current_js_extra,
                             }
                         elif callable(current_js_extra):
+                            # The `callable` is ignored, so we keep the existing `dict`. This needs to be set
+                            # explicitly as `merged_kwargs` is otherwise overridden with `meta._attributes_set`
+                            # (which contains the `callable`) below.
+                            new_js_extra = existing_js_extra
                             warn(
                                 'Composing `dict` and `callable` type `json_schema_extra` is not supported. '
                                 'The `callable` type is being ignored. '
@@ -740,6 +744,7 @@ class FieldInfo(_repr.Representation):
         return _fields.resolve_default_value(
             default=self.default,
             default_factory=self.default_factory,
+            default_factory_takes_validated_data_argument=self.default_factory_takes_validated_data,
             validated_data=validated_data,
             call_default_factory=call_default_factory,
         )
@@ -1228,7 +1233,7 @@ def Field(  # noqa: C901
         validation_alias: Like `alias`, but only affects validation, not serialization.
         serialization_alias: Like `alias`, but only affects serialization, not validation.
         title: Human-readable title.
-        field_title_generator: A callable that takes a field name and returns title for it.
+        field_title_generator: A callable that takes a field's name and info and returns title for it.
         description: Human-readable description.
         examples: Example values for this field.
         exclude: Whether to exclude the field from the model serialization.
@@ -1259,7 +1264,7 @@ def Field(  # noqa: C901
         max_length: Maximum length for iterables.
         pattern: Pattern for strings (a regular expression).
         allow_inf_nan: Allow `inf`, `-inf`, `nan`. Only applicable to float and [`Decimal`][decimal.Decimal] numbers.
-        max_digits: Maximum number of allow digits for strings.
+        max_digits: Maximum number of allowed digits for [`Decimal`][decimal.Decimal] numbers.
         decimal_places: Maximum number of decimal places allowed for numbers.
         union_mode: The strategy to apply when validating a union. Can be `smart` (the default), or `left_to_right`.
             See [Union Mode](../concepts/unions.md#union-modes) for details.
@@ -1404,7 +1409,7 @@ class ModelPrivateAttr(_repr.Representation):
 
     !!! warning
         You generally shouldn't be creating `ModelPrivateAttr` instances directly, instead use
-        `pydantic.fields.PrivateAttr`. (This is similar to `FieldInfo` vs. `Field`.)
+        the [`PrivateAttr()`][pydantic.fields.PrivateAttr] function.
 
     Attributes:
         default: The default value of the attribute if not provided.
@@ -1413,7 +1418,7 @@ class ModelPrivateAttr(_repr.Representation):
             [`__dict__`][object.__dict__]) and the already initialized private attributes.
     """
 
-    __slots__ = ('default', 'default_factory')
+    __slots__ = ('default', 'default_factory', '_default_factory_takes_validated_data')
 
     def __init__(
         self,
@@ -1426,6 +1431,7 @@ class ModelPrivateAttr(_repr.Representation):
         else:
             self.default = default
         self.default_factory = default_factory
+        self._default_factory_takes_validated_data: bool | None = _Unset
 
     if not TYPE_CHECKING:
         # We put `__getattr__` in a non-TYPE_CHECKING block because otherwise, mypy allows arbitrary attribute access
@@ -1454,8 +1460,15 @@ class ModelPrivateAttr(_repr.Representation):
 
         Returns `None` if no default factory is set.
         """
+        if self._default_factory_takes_validated_data is not _Unset:
+            return self._default_factory_takes_validated_data
+
+        value: bool | None = None
         if self.default_factory is not None:
-            return _fields.takes_validated_data_argument(self.default_factory)
+            value = _fields.takes_validated_data_argument(self.default_factory)
+
+        self._default_factory_takes_validated_data = value
+        return value
 
     @overload
     def get_default(
@@ -1482,6 +1495,7 @@ class ModelPrivateAttr(_repr.Representation):
         return _fields.resolve_default_value(
             default=self.default,
             default_factory=self.default_factory,
+            default_factory_takes_validated_data_argument=self.default_factory_takes_validated_data,
             validated_data=validated_data,
             call_default_factory=call_default_factory,
         )
@@ -1491,6 +1505,12 @@ class ModelPrivateAttr(_repr.Representation):
             other.default,
             other.default_factory,
         )
+
+    def __repr_args__(self) -> ReprArgs:
+        if self.default is not PydanticUndefined:
+            yield 'default', self.default
+        if self.default_factory is not None:
+            yield 'default_factory', self.default_factory
 
 
 # NOTE: Actual return type is 'ModelPrivateAttr', but we want to help type checkers
@@ -1539,7 +1559,7 @@ def PrivateAttr(
         An instance of [`ModelPrivateAttr`][pydantic.fields.ModelPrivateAttr] class.
 
     Raises:
-        ValueError: If both `default` and `default_factory` are set.
+        TypeError: If both `default` and `default_factory` are set.
     """
     if default is not PydanticUndefined and default_factory is not None:
         raise TypeError('cannot specify both default and default_factory')
@@ -1561,7 +1581,7 @@ class ComputedFieldInfo:
         alias: The alias of the property to be used during serialization.
         alias_priority: The priority of the alias. This affects whether an alias generator is used.
         title: Title of the computed field to include in the serialization JSON schema.
-        field_title_generator: A callable that takes a field name and returns title for it.
+        field_title_generator: A callable that takes a field's name and info and returns title for it.
         description: Description of the computed field to include in the serialization JSON schema.
         deprecated: A deprecation message, an instance of `warnings.deprecated` or the `typing_extensions.deprecated` backport,
             or a boolean. If `True`, a default deprecation message will be emitted when accessing the field.
@@ -1833,7 +1853,7 @@ def computed_field(
         alias_priority: priority of the alias. This affects whether an alias generator is used
         exclude_if: A callable that determines whether to exclude this computed field during serialization based on its value.
         title: Title to use when including this computed field in JSON Schema
-        field_title_generator: A callable that takes a field name and returns title for it.
+        field_title_generator: A callable that takes a field's name and info and returns title for it.
         description: Description to use when including this computed field in JSON Schema, defaults to the function's
             docstring
         deprecated: A deprecation message (or an instance of `warnings.deprecated` or the `typing_extensions.deprecated` backport).

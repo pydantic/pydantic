@@ -3,10 +3,13 @@ import itertools
 import json
 import platform
 import re
+import subprocess
 import sys
+import weakref
 from collections import Counter, OrderedDict, defaultdict, deque
 from collections.abc import Callable, Iterable, Mapping, Sequence
 from enum import Enum, IntEnum
+from textwrap import dedent
 from typing import (
     Annotated,
     Any,
@@ -1017,6 +1020,78 @@ def test_generic_model_from_function_pickle_fail(create_module):
         original = get_generic(Model)(value=Model(a='24'))
         with pytest.raises(pickle.PicklingError):
             pickle.dumps(original)
+
+
+@pytest.mark.skipif(
+    sys.platform == 'emscripten' or platform.python_implementation() == 'PyPy',
+    reason='no subprocesses on emscripten and PyPy pickle issue',
+)
+def test_generic_model_pickle_different_module(tmp_path) -> None:
+    """https://github.com/pydantic/pydantic/issues/9390#issuecomment-4561654742
+
+    This can't be reliably tested using the `create_module` fixture, so use subprocesses instead.
+    """
+
+    tmp_path.joinpath('module.py').write_text(
+        dedent(
+            """
+            from typing import Generic, TypeVar
+
+            from pydantic import BaseModel
+
+            T = TypeVar("T")
+
+            class Model(BaseModel, Generic[T]):
+                value: T
+            """
+        )
+    )
+
+    creator_code = dedent(
+        f"""
+        import base64
+        import sys
+
+        import cloudpickle
+
+        sys.path.insert(0, {str(tmp_path)!r})
+        from module import Model
+
+        value = Model[int](value=5)
+        print(base64.b64encode(cloudpickle.dumps(value, protocol=5)).decode())
+        """
+    )
+
+    creator = subprocess.run(
+        [sys.executable, '-c', creator_code],
+        capture_output=True,
+        text=True,
+        timeout=30,
+    )
+
+    payload = creator.stdout.splitlines()[0]
+
+    loader_code = dedent(
+        f"""
+        import base64
+        import sys
+
+        import cloudpickle
+
+        sys.path.insert(0, {str(tmp_path)!r})
+
+        print(cloudpickle.loads(base64.b64decode({payload!r})))
+        """
+    )
+
+    loader = subprocess.run(
+        [sys.executable, '-c', loader_code],
+        capture_output=True,
+        text=True,
+        timeout=30,
+    )
+
+    assert loader.stdout.rstrip() == 'value=5'
 
 
 def test_generic_model_redefined_without_cache_fail(create_module, monkeypatch):
@@ -2291,6 +2366,7 @@ def test_parse_generic_json():
     }
 
 
+@pytest.mark.skipif(sys.version_info >= (3, 15), reason="memray doesn't yet support Python 3.15")
 def memray_limit_memory(limit):
     if '--memray' in sys.argv:
         return pytest.mark.limit_memory(limit)
@@ -3178,3 +3254,35 @@ def test_revalidation_with_basic_inference() -> None:
     holder2 = Holder(inner=Inner(inner=1))
     # implies that validation succeeds for both
     assert holder1 == holder2
+
+
+def test_slots_forwarded_from_generic_class() -> None:
+    """https://github.com/pydantic/pydantic/issues/13215"""
+
+    T = TypeVar('T')
+
+    class Base(BaseModel, Generic[T]):
+        __slots__ = ()
+
+    BaseInt = Base[int]
+
+    assert BaseInt.__dict__['__slots__'] == ()
+
+    if platform.python_implementation() != 'PyPy':
+        with pytest.raises(TypeError):
+            # As per https://docs.python.org/3/reference/datamodel.html#slots:
+            weakref.ref(BaseInt())
+
+
+def test_generics_parameterization_not_hashable() -> None:
+    class NoHash:
+        __hash__ = None
+
+    T = TypeVar('T')
+
+    class Model(BaseModel, Generic[T]):
+        f: T
+
+    Mint = Model[Annotated[int, NoHash()]]
+
+    assert Mint(f='1').f == 1

@@ -17,7 +17,7 @@ You can access these errors in several ways:
 |--------------------------------------------------------------|------------------------------------------------------------------------------------------------|
 | [`errors()`][pydantic_core.ValidationError.errors]           | Returns a list of [`ErrorDetails`][pydantic_core.ErrorDetails] errors found in the input data. |
 | [`error_count()`][pydantic_core.ValidationError.error_count] | Returns the number of errors.                                                                  |
-| [`json()`][pydantic_core.ValidationError.json]               | Returns a JSON representation of the list errors.                                              |
+| [`json()`][pydantic_core.ValidationError.json]               | Returns a JSON representation of the list of errors.                                              |
 | `str(e)`                                                     | Returns a human-readable representation of the errors.                                         |
 
 The [`ErrorDetails`][pydantic_core.ErrorDetails] object is a dictionary. It contains the following:
@@ -33,6 +33,10 @@ The [`ErrorDetails`][pydantic_core.ErrorDetails] object is a dictionary. It cont
 
 The first item in the [`loc`][pydantic_core.ErrorDetails.loc] list will be the field where the error occurred, and if the field is a
 [sub-model](../concepts/models.md#nested-models), subsequent items will be present to indicate the nested location of the error.
+
+For validations spread across a running service, [Logfire](troubleshooting.md) records this same
+structured error list together with the complete validation input and trace context, without wrapping
+each call in `try`/`except`.
 
 As a demonstration:
 

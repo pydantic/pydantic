@@ -43,6 +43,7 @@ SEQUENCE_CONSTRAINTS = {*LENGTH_CONSTRAINTS, *FAIL_FAST}
 
 FLOAT_CONSTRAINTS = {*NUMERIC_CONSTRAINTS, *ALLOW_INF_NAN, *STRICT}
 DECIMAL_CONSTRAINTS = {'max_digits', 'decimal_places', *FLOAT_CONSTRAINTS}
+FRACTION_CONSTRAINTS = {*INEQUALITY, *STRICT}
 INT_CONSTRAINTS = {*NUMERIC_CONSTRAINTS, *ALLOW_INF_NAN, *STRICT}
 BOOL_CONSTRAINTS = STRICT
 UUID_CONSTRAINTS = STRICT
@@ -91,6 +92,7 @@ constraint_schema_pairings: list[tuple[set[str], tuple[str, ...]]] = [
     (ENUM_CONSTRAINTS, ('enum',)),
     (DECIMAL_CONSTRAINTS, ('decimal',)),
     (COMPLEX_CONSTRAINTS, ('complex',)),
+    (FRACTION_CONSTRAINTS, ('fraction',)),
 ]
 
 for constraints, schemas in constraint_schema_pairings:

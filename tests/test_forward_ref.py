@@ -11,6 +11,7 @@ from typing_extensions import get_args, get_origin  # noqa: UP035
 from typing_inspection import typing_objects
 
 from pydantic import BaseModel, Field, PydanticUserError, TypeAdapter, ValidationError
+from pydantic._internal._namespace_utils import LazyLocalNamespace
 
 
 def test_postponed_annotations(create_module):
@@ -1079,6 +1080,28 @@ class Foo(BaseModel):
     assert extras_schema == {'type': 'int'}
 
 
+def test_pydantic_extra_generic_forward_ref() -> None:
+    """https://github.com/pydantic/pydantic/issues/13369"""
+
+    T = TypeVar('T')
+
+    class Model(BaseModel, Generic[T], extra='allow'):
+        __pydantic_extra__: 'dict[str, MyList[T]]'
+
+    Mint = Model[int]
+
+    MyList = list
+
+    assert Mint.model_rebuild()
+
+    assert Mint.model_json_schema()['additionalProperties'] == {'type': 'array', 'items': {'type': 'integer'}}
+
+    with pytest.raises(ValidationError):
+        Mint(extra_value=['not_an_int'])
+
+    assert Mint(extra_value=['1']).model_extra == {'extra_value': [1]}
+
+
 def test_pydantic_extra_forward_ref_separate_module_subclass(create_module: Any) -> None:
     @create_module
     def module_1():
@@ -1113,6 +1136,12 @@ def test_pydantic_extra_forward_ref_evaluated_pep585() -> None:
     # `GenerateSchema._get_args_resolving_forward_refs()`) and as such `extra_keys_schema` isn't
     # set because `str` is the default.
     assert 'extras_keys_schema' not in Bar.__pydantic_core_schema__['schema']
+
+
+def test_lazy_local_namespace_len() -> None:
+    namespace = LazyLocalNamespace({'a': int}, {'b': str, 'a': str})
+
+    assert len(namespace) == 2
 
 
 @pytest.mark.xfail(
@@ -1162,6 +1191,54 @@ def test_can_resolve_forward_refs_in_parent_frame_after_class_definition():
     Model = func()
 
     Model.model_rebuild()
+
+
+@pytest.mark.xfail(
+    reason='Due to backwards compatibility reasons, the actual Main model resolves from the wrong module.'
+)
+def test_does_not_pollute_other_module_model_name(create_module) -> None:
+    @create_module
+    def module_1():
+        from pydantic import BaseModel
+
+        class Sub(BaseModel):
+            m: 'Main | None' = None
+
+        class Main(BaseModel):
+            # An annotation that shouldn't resolve, which should lead
+            # to module_2.Main to be incomplete:
+            x: 'Never'
+
+    module_2 = create_module(
+        f"""
+from pydantic import BaseModel
+
+
+from {module_1.__name__} import Sub
+
+class Main(BaseModel):        # resolved for Sub via the first_type-on-stack hack
+    sub: Sub
+        """
+    )
+
+    assert not module_2.Main.__pydantic_complete__
+
+
+def test_nested_incomplete_model_completed_during_referencing_model_definition() -> None:
+    def inner():
+        class Foo(BaseModel):
+            a: 'Bar | None' = None
+
+        class Bar(BaseModel):
+            b: Foo
+
+        return Foo, Bar
+
+    # Rebound names: after `inner()` returns, 'Bar' is not resolvable
+    # in any namespace, so `Bar` must have been completed eagerly:
+    Model1, Model2 = inner()
+    assert Model2.__pydantic_complete__ is True
+    assert Model2(b={'a': None}).b.a is None
 
 
 def test_uses_correct_global_ns_for_type_defined_in_separate_module(create_module):

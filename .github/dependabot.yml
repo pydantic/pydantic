@@ -16,8 +16,11 @@ updates:
       rust-deps:
         patterns:
           - '*'
-        # pyo3 updates will require jiter updates, we'll handle them manually anyway
         exclude-patterns:
+          # pyo3 updates will require jiter updates, we'll handle them manually anyway
           - 'pyo3*'
+          # strum updates will require speedate updates
+          - 'strum'
+          - 'strum_macros'
     cooldown:
       default-days: 7

@@ -23,6 +23,7 @@ pub struct ObTypeLookup {
     dict: usize,
     // other numeric types
     decimal_object: Py<PyAny>,
+    fraction_object: Py<PyAny>,
     // other string types
     bytes: usize,
     bytearray: usize,
@@ -76,6 +77,7 @@ impl ObTypeLookup {
             list: PyList::type_object_raw(py) as usize,
             dict: PyDict::type_object_raw(py) as usize,
             decimal_object: py.import("decimal").unwrap().getattr("Decimal").unwrap().unbind(),
+            fraction_object: py.import("fractions").unwrap().getattr("Fraction").unwrap().unbind(),
             string: PyString::type_object_raw(py) as usize,
             bytes: PyBytes::type_object_raw(py) as usize,
             bytearray: PyByteArray::type_object_raw(py) as usize,
@@ -148,6 +150,7 @@ impl ObTypeLookup {
             ObType::List => self.list == ob_type,
             ObType::Dict => self.dict == ob_type,
             ObType::Decimal => self.decimal_object.as_ptr() as usize == ob_type,
+            ObType::Fraction => self.fraction_object.as_ptr() as usize == ob_type,
             ObType::StrSubclass => self.string == ob_type && op_value.is_none(),
             ObType::Tuple => self.tuple == ob_type,
             ObType::Set => self.set == ob_type,
@@ -229,6 +232,8 @@ impl ObTypeLookup {
             ObType::Dict
         } else if ob_type == self.decimal_object.as_ptr() as usize {
             ObType::Decimal
+        } else if ob_type == self.fraction_object.as_ptr() as usize {
+            ObType::Fraction
         } else if ob_type == self.bytes {
             ObType::Bytes
         } else if ob_type == self.tuple {
@@ -341,6 +346,8 @@ impl ObTypeLookup {
             ObType::MultiHostUrl
         } else if value.is_instance(self.decimal_object.bind(py)).unwrap_or(false) {
             ObType::Decimal
+        } else if value.is_instance(self.fraction_object.bind(py)).unwrap_or(false) {
+            ObType::Fraction
         } else if value.is_instance(self.uuid_object.bind(py)).unwrap_or(false) {
             ObType::Uuid
         } else if value.is_instance(self.enum_object.bind(py)).unwrap_or(false) {
@@ -408,6 +415,7 @@ pub enum ObType {
     Float,
     FloatSubclass,
     Decimal,
+    Fraction,
     // string types
     Str,
     StrSubclass,

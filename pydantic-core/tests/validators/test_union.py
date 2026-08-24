@@ -61,12 +61,13 @@ class TestModelClass:
         pass
 
     @pytest.fixture(scope='class')
-    def schema_validator(self) -> SchemaValidator:
+    @classmethod
+    def schema_validator(cls) -> SchemaValidator:
         return SchemaValidator(
             schema=core_schema.union_schema(
                 choices=[
                     core_schema.model_schema(
-                        cls=self.ModelA,
+                        cls=cls.ModelA,
                         schema=core_schema.model_fields_schema(
                             fields={
                                 'a': core_schema.model_field(schema=core_schema.int_schema()),
@@ -75,7 +76,7 @@ class TestModelClass:
                         ),
                     ),
                     core_schema.model_schema(
-                        cls=self.ModelB,
+                        cls=cls.ModelB,
                         schema=core_schema.model_fields_schema(
                             fields={
                                 'c': core_schema.model_field(schema=core_schema.int_schema()),
@@ -124,12 +125,13 @@ class TestModelClassSimilar:
         pass
 
     @pytest.fixture(scope='class')
-    def schema_validator(self) -> SchemaValidator:
+    @classmethod
+    def schema_validator(cls) -> SchemaValidator:
         return SchemaValidator(
             schema=core_schema.union_schema(
                 choices=[
                     core_schema.model_schema(
-                        cls=self.ModelA,
+                        cls=cls.ModelA,
                         schema=core_schema.model_fields_schema(
                             fields={
                                 'a': core_schema.model_field(schema=core_schema.int_schema()),
@@ -138,7 +140,7 @@ class TestModelClassSimilar:
                         ),
                     ),
                     core_schema.model_schema(
-                        cls=self.ModelB,
+                        cls=cls.ModelB,
                         schema=core_schema.model_fields_schema(
                             fields={
                                 'a': core_schema.model_field(schema=core_schema.int_schema()),

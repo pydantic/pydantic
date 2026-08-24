@@ -158,7 +158,7 @@ class _BaseUrl:
     def host(self) -> str | None:
         """The host part of the URL, or `None`.
 
-        If the URL must be punycode encoded, this is the encoded host, e.g if the input URL is `https://£££.com`,
+        If the URL must be punycode encoded, this is the encoded host, e.g. if the input URL is `https://£££.com`,
         `host` will be `xn--9aaa.com`
         """
         return self._url.host
@@ -168,7 +168,7 @@ class _BaseUrl:
 
         e.g. `host` in `https://user:pass@host:port/path?query#fragment`
 
-        If the URL must be punycode encoded, this is the decoded host, e.g if the input URL is `https://£££.com`,
+        If the URL must be punycode encoded, this is the decoded host, e.g. if the input URL is `https://£££.com`,
         `unicode_host()` will be `£££.com`
         """
         return self._url.unicode_host()
@@ -215,7 +215,7 @@ class _BaseUrl:
     def unicode_string(self) -> str:
         """The URL as a unicode string, unlike `__str__()` this will not punycode encode the host.
 
-        If the URL must be punycode encoded, this is the decoded string, e.g if the input URL is `https://£££.com`,
+        If the URL must be punycode encoded, this is the decoded string, e.g. if the input URL is `https://£££.com`,
         `unicode_string()` will be `https://£££.com`
         """
         return self._url.unicode_string()
@@ -238,19 +238,29 @@ class _BaseUrl:
         return self.__class__(self._url)
 
     def __eq__(self, other: Any) -> bool:
-        return self.__class__ is other.__class__ and self._url == other._url
+        if self.__class__ is not other.__class__:
+            return NotImplemented
+        return self._url == other._url
 
     def __lt__(self, other: Any) -> bool:
-        return self.__class__ is other.__class__ and self._url < other._url
+        if self.__class__ is not other.__class__:
+            return NotImplemented
+        return self._url < other._url
 
     def __gt__(self, other: Any) -> bool:
-        return self.__class__ is other.__class__ and self._url > other._url
+        if self.__class__ is not other.__class__:
+            return NotImplemented
+        return self._url > other._url
 
     def __le__(self, other: Any) -> bool:
-        return self.__class__ is other.__class__ and self._url <= other._url
+        if self.__class__ is not other.__class__:
+            return NotImplemented
+        return self._url <= other._url
 
     def __ge__(self, other: Any) -> bool:
-        return self.__class__ is other.__class__ and self._url >= other._url
+        if self.__class__ is not other.__class__:
+            return NotImplemented
+        return self._url >= other._url
 
     def __hash__(self) -> int:
         return hash(self._url)
@@ -430,7 +440,9 @@ class _BaseMultiHostUrl:
         return self.__class__(self._url)
 
     def __eq__(self, other: Any) -> bool:
-        return self.__class__ is other.__class__ and self._url == other._url
+        if self.__class__ is not other.__class__:
+            return NotImplemented
+        return self._url == other._url
 
     def __hash__(self) -> int:
         return hash(self._url)
@@ -1296,7 +1308,7 @@ else:
 
 
 def _build_pretty_email_regex() -> re.Pattern[str]:
-    name_chars = r'[\w!#$%&\'*+\-/=?^_`{|}~]'
+    name_chars = r'[\w.!#$%&\'*+\-/=?^_`{|}~]'
     unquoted_name_group = rf'((?:{name_chars}+\s+)*{name_chars}+)'
     quoted_name_group = r'"((?:[^"]|\")+)"'
     email_group = r'<(.+)>'

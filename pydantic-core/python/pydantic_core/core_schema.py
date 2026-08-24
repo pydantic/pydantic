@@ -7,11 +7,12 @@ from __future__ import annotations as _annotations
 
 import sys
 import warnings
-from collections.abc import Callable, Generator, Hashable, Mapping
+from collections.abc import Callable, Generator, Mapping
 from datetime import date, datetime, time, timedelta
 from decimal import Decimal
+from fractions import Fraction
 from re import Pattern
-from typing import TYPE_CHECKING, Any, Literal
+from typing import TYPE_CHECKING, Any, Literal, Union
 
 from typing_extensions import TypeVar, deprecated
 
@@ -277,6 +278,9 @@ def simple_ser_schema(type: ExpectedSerializationTypes) -> SimpleSerSchema:
     """
     Returns a schema for serialization with a custom type.
 
+    Note that any core schema can be used as a serialization schema, e.g. `int_schema()`
+    is equivalent to `simple_ser_schema('int')`.
+
     Args:
         type: The type to use for serialization
     """
@@ -468,6 +472,9 @@ def model_ser_schema(cls: type[Any], schema: CoreSchema) -> ModelSerSchema:
     """
     Returns a schema for serialization using a model.
 
+    Note that any core schema can be used as a serialization schema, e.g. `model_schema()`
+    can be used instead.
+
     Args:
         cls: The expected class type, used to generate warnings if the wrong type is passed
         schema: Internal schema to use to serialize the model dict
@@ -475,14 +482,9 @@ def model_ser_schema(cls: type[Any], schema: CoreSchema) -> ModelSerSchema:
     return ModelSerSchema(type='model', cls=cls, schema=schema)
 
 
-SerSchema: TypeAlias = (
-    SimpleSerSchema
-    | PlainSerializerFunctionSerSchema
-    | WrapSerializerFunctionSerSchema
-    | FormatSerSchema
-    | ToStringSerSchema
-    | ModelSerSchema
-)
+SerSchema: TypeAlias = 'SimpleSerSchema | PlainSerializerFunctionSerSchema | WrapSerializerFunctionSerSchema | FormatSerSchema | ToStringSerSchema | ModelSerSchema | CoreSchema'
+
+"""The schemas that can be used as the `serialization` key of a core schema."""
 
 
 class InvalidSchema(TypedDict, total=False):
@@ -827,6 +829,64 @@ def decimal_schema(
         decimal_places=decimal_places,
         multiple_of=multiple_of,
         allow_inf_nan=allow_inf_nan,
+        strict=strict,
+        ref=ref,
+        metadata=metadata,
+        serialization=serialization,
+    )
+
+
+class FractionSchema(TypedDict, total=False):
+    type: Required[Literal['fraction']]
+    le: Fraction
+    ge: Fraction
+    lt: Fraction
+    gt: Fraction
+    strict: bool
+    ref: str
+    metadata: dict[str, Any]
+    serialization: SerSchema
+
+
+def fraction_schema(
+    *,
+    le: Fraction | None = None,
+    ge: Fraction | None = None,
+    lt: Fraction | None = None,
+    gt: Fraction | None = None,
+    strict: bool | None = None,
+    ref: str | None = None,
+    metadata: dict[str, Any] | None = None,
+    serialization: SerSchema | None = None,
+) -> FractionSchema:
+    """
+    Returns a schema that matches a fraction value, e.g.:
+
+    ```py
+    from fractions import Fraction
+    from pydantic_core import SchemaValidator, core_schema
+
+    schema = core_schema.fraction_schema(le=Fraction(3, 4), ge=Fraction(1, 4))
+    v = SchemaValidator(schema)
+    assert v.validate_python('1/2') == Fraction(1, 2)
+    ```
+
+    Args:
+        le: The value must be less than or equal to this number
+        ge: The value must be greater than or equal to this number
+        lt: The value must be strictly less than this number
+        gt: The value must be strictly greater than this number
+        strict: Whether the value should be a Fraction or a value that can be converted to a Fraction
+        ref: optional unique identifier of the schema, used to reference the schema in other places
+        metadata: Any other information you want to include with the schema, not used by pydantic-core
+        serialization: Custom serialization schema
+    """
+    return _dict_not_none(
+        type='fraction',
+        gt=gt,
+        ge=ge,
+        lt=lt,
+        le=le,
         strict=strict,
         ref=ref,
         metadata=metadata,
@@ -1394,6 +1454,25 @@ def missing_sentinel_schema(
     )
 
 
+class EllipsisSchema(TypedDict, total=False):
+    type: Required[Literal['ellipsis']]
+    metadata: dict[str, Any]
+    serialization: SerSchema
+
+
+def ellipsis_schema(
+    metadata: dict[str, Any] | None = None,
+    serialization: SerSchema | None = None,
+) -> EllipsisSchema:
+    """Returns a schema for the [`Ellipsis`][] literal."""
+
+    return _dict_not_none(
+        type='ellipsis',
+        metadata=metadata,
+        serialization=serialization,
+    )
+
+
 # must match input/parse_json.rs::JsonType::try_from
 JsonType = Literal['null', 'bool', 'int', 'float', 'str', 'list', 'dict']
 
@@ -1548,7 +1627,7 @@ def filter_seq_schema(*, include: set[int] | None = None, exclude: set[int] | No
     return _dict_not_none(type='include-exclude-sequence', include=include, exclude=exclude)
 
 
-IncExSeqOrElseSerSchema: TypeAlias = IncExSeqSerSchema | SerSchema
+IncExSeqOrElseSerSchema: TypeAlias = Union[IncExSeqSerSchema, SerSchema]  # noqa: UP007 (TypeError when evaluating)
 
 
 class ListSchema(TypedDict, total=False):
@@ -1954,7 +2033,7 @@ def filter_dict_schema(*, include: IncExDict | None = None, exclude: IncExDict |
     return _dict_not_none(type='include-exclude-dict', include=include, exclude=exclude)
 
 
-IncExDictOrElseSerSchema: TypeAlias = IncExDictSerSchema | SerSchema
+IncExDictOrElseSerSchema: TypeAlias = Union[IncExDictSerSchema, SerSchema]  # noqa: UP007 (TypeError when evaluating)
 
 
 class DictSchema(TypedDict, total=False):
@@ -2683,8 +2762,8 @@ def union_schema(
 
 class TaggedUnionSchema(TypedDict, total=False):
     type: Required[Literal['tagged-union']]
-    choices: Required[dict[Hashable, CoreSchema]]
-    discriminator: Required[str | list[str | int] | list[list[str | int]] | Callable[[Any], Hashable]]
+    choices: Required[dict[Any, CoreSchema]]
+    discriminator: Required[str | list[str | int] | list[list[str | int]] | Callable[[Any], Any]]
     custom_error_type: str
     custom_error_message: str
     custom_error_context: dict[str, str | int | float]
@@ -3511,6 +3590,112 @@ def dataclass_schema(
     )
 
 
+class NamedTupleField(TypedDict, total=False):
+    type: Required[Literal['named-tuple-field']]
+    name: Required[str]
+    schema: Required[CoreSchema]
+    validation_alias: str | list[str | int] | list[list[str | int]]
+    metadata: dict[str, Any]
+
+
+def named_tuple_field(
+    name: str,
+    schema: CoreSchema,
+    *,
+    validation_alias: str | list[str | int] | list[list[str | int]] | None = None,
+    metadata: dict[str, Any] | None = None,
+) -> NamedTupleField:
+    """
+    Returns a schema for a named tuple field, e.g.:
+
+    ```py
+    from pydantic_core import core_schema
+
+    field = core_schema.named_tuple_field(name='x', schema=core_schema.int_schema())
+    ```
+
+    Args:
+        name: The name of the field
+        schema: The schema to use for the field
+        validation_alias: The alias(es) to use to find the field in the validation data, only used
+            when validating from a dictionary or mapping
+        metadata: Any other information you want to include with the schema, not used by pydantic-core
+    """
+    return _dict_not_none(
+        type='named-tuple-field',
+        name=name,
+        schema=schema,
+        validation_alias=validation_alias,
+        metadata=metadata,
+    )
+
+
+class NamedTupleSchema(TypedDict, total=False):
+    type: Required[Literal['named-tuple']]
+    cls: Required[type[Any]]
+    fields: Required[list[NamedTupleField]]
+    cls_name: str
+    ref: str
+    metadata: dict[str, Any]
+    serialization: SerSchema
+
+
+def named_tuple_schema(
+    cls: type[Any],
+    fields: list[NamedTupleField],
+    *,
+    cls_name: str | None = None,
+    ref: str | None = None,
+    metadata: dict[str, Any] | None = None,
+    serialization: SerSchema | None = None,
+) -> NamedTupleSchema:
+    """
+    Returns a schema for a named tuple, e.g.:
+
+    ```py
+    from typing import NamedTuple
+
+    from pydantic_core import SchemaValidator, core_schema
+
+    class Point(NamedTuple):
+        x: int
+        y: int
+
+    schema = core_schema.named_tuple_schema(
+        Point,
+        [
+            core_schema.named_tuple_field(name='x', schema=core_schema.int_schema()),
+            core_schema.named_tuple_field(name='y', schema=core_schema.int_schema()),
+        ],
+    )
+    v = SchemaValidator(schema)
+    assert v.validate_python((1, '2')) == Point(x=1, y=2)
+    ```
+
+    Fields are validated positionally when the input is a (named) tuple, list or JSON array,
+    and by name when the input is a dictionary, mapping or JSON object. Instances of `cls`
+    always revalidate. Strict mode is currently ignored, matching the behavior of the
+    `'call'` core schema previously used for named tuples.
+
+    Args:
+        cls: The named tuple class, used to construct instances and perform instance checks
+        fields: The fields to use for the named tuple, in order
+        cls_name: The name to use in error locs, etc; this is useful for generics (default: `cls.__name__`)
+        ref: optional unique identifier of the schema, used to reference the schema in other places
+        metadata: Any other information you want to include with the schema, not used by pydantic-core
+        serialization: Custom serialization schema
+    """
+    return _dict_not_none(
+        type='named-tuple',
+        cls=cls,
+        fields=fields,
+        cls_name=cls_name,
+        ref=ref,
+        metadata=metadata,
+        serialization=serialization,
+    )
+
+
 class ArgumentsParameter(TypedDict, total=False):
     name: Required[str]
     schema: Required[CoreSchema]
@@ -4133,6 +4318,7 @@ if not MYPY:
         | IntSchema
         | FloatSchema
         | DecimalSchema
+        | FractionSchema
         | StringSchema
         | BytesSchema
         | DateSchema
@@ -4141,6 +4327,7 @@ if not MYPY:
         | TimedeltaSchema
         | LiteralSchema
         | MissingSentinelSchema
+        | EllipsisSchema
         | EnumSchema
         | IsInstanceSchema
         | IsSubclassSchema
@@ -4167,6 +4354,7 @@ if not MYPY:
         | ModelSchema
         | DataclassArgsSchema
         | DataclassSchema
+        | NamedTupleSchema
         | ArgumentsSchema
         | ArgumentsV3Schema
         | CallSchema
@@ -4192,6 +4380,7 @@ CoreSchemaType: TypeAlias = Literal[
     'int',
     'float',
     'decimal',
+    'fraction',
     'str',
     'bytes',
     'date',
@@ -4200,6 +4389,7 @@ CoreSchemaType: TypeAlias = Literal[
     'timedelta',
     'literal',
     'missing-sentinel',
+    'ellipsis',
     'enum',
     'is-instance',
     'is-subclass',
@@ -4226,6 +4416,7 @@ CoreSchemaType: TypeAlias = Literal[
     'model',
     'dataclass-args',
     'dataclass',
+    'named-tuple',
     'arguments',
     'arguments-v3',
     'call',
@@ -4239,7 +4430,9 @@ CoreSchemaType: TypeAlias = Literal[
     'complex',
 ]
 
-CoreSchemaFieldType: TypeAlias = Literal['model-field', 'dataclass-field', 'typed-dict-field', 'computed-field']
+CoreSchemaFieldType: TypeAlias = Literal[
+    'model-field', 'dataclass-field', 'typed-dict-field', 'named-tuple-field', 'computed-field'
+]
 
 
 # used in _pydantic_core.pyi::PydanticKnownError
@@ -4260,6 +4453,7 @@ ErrorType: TypeAlias = Literal[
     'model_attributes_type',
     'dataclass_type',
     'dataclass_exact_type',
+    'named_tuple_type',
     'default_factory_not_called',
     'none_required',
     'greater_than',
@@ -4302,6 +4496,7 @@ ErrorType: TypeAlias = Literal[
     'assertion_error',
     'literal_error',
     'missing_sentinel_error',
+    'ellipsis_error',
     'date_type',
     'date_parsing',
     'date_from_datetime_parsing',
@@ -4347,6 +4542,8 @@ ErrorType: TypeAlias = Literal[
     'decimal_max_digits',
     'decimal_max_places',
     'decimal_whole_digits',
+    'fraction_type',
+    'fraction_parsing',
     'complex_type',
     'complex_str_parsing',
 ]

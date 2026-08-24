@@ -220,7 +220,7 @@ Built-in type: [`float`][].
 
 * Floats are validated as-is.
 * String and bytes are attempted to be converted to floats and validated as-is.
-  (see the [Rust implementation](https://doc.rust-lang.org/src/core/num/dec2flt/mod.rs.html) for details).
+  (see the [Rust implementation](https://doc.rust-lang.org/src/core/num/float_parse.rs.html) for details).
 * If the input has a [`__float__()`][object.__float__] method, it will be called to convert the input into
   a float. If `__float__()` is not defined, it falls back to [`__index__()`][object.__index__]. This includes
   (but not limited to) the [`Decimal`][decimal.Decimal] and [`Fraction`][fractions.Fraction] types.
@@ -423,7 +423,7 @@ Standard library type: [`datetime.datetime`][].
 * Strings and bytes are validated in two ways:
     * Strings complying to the [RFC 3339](https://datatracker.ietf.org/doc/html/rfc3339) format (both datetime and date).
       See the [speedate](https://docs.rs/speedate/) documentation for more details.
-    * Unix timestamps, both as seconds or milliseconds sinch the [epoch](https://en.wikipedia.org/wiki/Unix_time).
+    * Unix timestamps, both as seconds or milliseconds since the [epoch](https://en.wikipedia.org/wiki/Unix_time).
       See the [`val_temporal_unit`][pydantic.ConfigDict.val_temporal_unit] configuration value for more details.
 * Integers and floats (or types that can be coerced as integers or floats) are validated as unix timestamps, following the
   same semantics as strings.
@@ -506,7 +506,7 @@ Standard library type: [`datetime.date`][].
 * Strings and bytes are validated in two ways:
     * Strings complying to the [RFC 3339](https://datatracker.ietf.org/doc/html/rfc3339) date format.
       See the [speedate](https://docs.rs/speedate/) documentation for more details.
-    * Unix timestamps, both as seconds or milliseconds sinch the [epoch](https://en.wikipedia.org/wiki/Unix_time).
+    * Unix timestamps, both as seconds or milliseconds since the [epoch](https://en.wikipedia.org/wiki/Unix_time).
       See the [`val_temporal_unit`][pydantic.ConfigDict.val_temporal_unit] configuration value for more details.
 * If the validation fails, the input can be [validated as a datetime](#datetimes) (including as numbers),
   provided that the time component is 0 and that it is naive.
@@ -880,6 +880,7 @@ Standard library type: [`typing.NamedTuple`][] (and types created by the [`colle
 
 * Allows [`tuple`][] and [`list`][] instances. Validate each item according to the field definition.
 * Allows [`dict`][] instances. Keys must match the named tuple field names, and values are validated according to the field definition.
+* Allows instances of the named tuple class (fields are revalidated).
 
 <h4>Serialization</h4>
 
@@ -1028,7 +1029,7 @@ Any [`collections.abc.Sequence`][] instance (expect strings and bytes) is accept
 constructor, and then converted back to the original input type.
 
 !!! warning "Strings aren't treated as sequences"
-    While strings are technically valid sequence instances, this is frequently not intended as is a common source of bugs.
+    While strings are technically valid sequence instances, this is frequently not intended, and is a common source of bugs.
 
     As a result, Pydantic will *not* accept strings and bytes for the [`Sequence`][collections.abc.Sequence] type (see example below).
 
@@ -1494,6 +1495,7 @@ Standard library types:
 * [`pathlib.Path`][].
 * [`pathlib.PurePath`][].
 * [`pathlib.PosixPath`][].
+* [`pathlib.WindowsPath`][].
 * [`pathlib.PurePosixPath`][].
 * [`pathlib.PureWindowsPath`][].
 * [`os.PathLike`][] (must be parameterized with [`str`][], [`bytes`][] or [`Any`][typing.Any]).

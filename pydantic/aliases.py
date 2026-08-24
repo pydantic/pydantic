@@ -113,9 +113,11 @@ class AliasGenerator:
             TypeError: If the alias generator produces an invalid type.
         """
         alias = None
-        if alias_generator := getattr(self, alias_kind):
+        alias_generator = getattr(self, alias_kind)
+
+        if alias_generator is not None:
             alias = alias_generator(field_name)
-            if alias and not isinstance(alias, allowed_types):
+            if alias is not None and not isinstance(alias, allowed_types):
                 raise TypeError(
                     f'Invalid `{alias_kind}` type. `{alias_kind}` generator must produce one of `{allowed_types}`'
                 )
@@ -125,7 +127,7 @@ class AliasGenerator:
         """Generate `alias`, `validation_alias`, and `serialization_alias` for a field.
 
         Returns:
-            A tuple of three aliases - validation, alias, and serialization.
+            A tuple of three aliases - alias, validation, and serialization.
         """
         alias = self._generate_alias('alias', (str,), field_name)
         validation_alias = self._generate_alias('validation_alias', (str, AliasChoices, AliasPath), field_name)
