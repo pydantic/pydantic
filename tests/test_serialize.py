@@ -1437,3 +1437,20 @@ def test_model_serializer_index_key_type_error() -> None:
         match="Error calling function `_serialize`: TypeError: 'index_key' is expected to be an integer or a string, got 'b'not_a_valid_type_for_index_key''",
     ):
         m.model_dump(include={'f'})
+
+
+def test_model_serializer_wrap_gated_when_used_json_exclude() -> None:
+    """https://github.com/pydantic/pydantic/issues/13601"""
+
+    class Gated(BaseModel):
+        a: int
+        b: int
+
+        @model_serializer(mode='wrap', when_used='json')
+        def _serialize(self, handler: SerializerFunctionWrapHandler) -> object:
+            return handler(self)
+
+    m = Gated(a=1, b=2)
+    assert m.model_dump(exclude={'b'}) == {'a': 1}
+    assert m.model_dump(mode='json', exclude={'b'}) == {'a': 1}
+

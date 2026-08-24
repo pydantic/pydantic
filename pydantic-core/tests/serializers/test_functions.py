@@ -710,3 +710,22 @@ def test_serialize_pattern():
     assert s.to_python(pattern) == pattern
     assert s.to_python(pattern, mode='json') == '^regex$'
     assert s.to_json(pattern) == b'"^regex$"'
+
+
+def test_wrap_serializer_when_used_json_preserves_exclude():
+    """https://github.com/pydantic/pydantic/issues/13601"""
+
+    def wrap_fn(value, handler):
+        return handler(value)
+
+    schema = core_schema.model_fields_schema(
+        fields={
+            'a': core_schema.model_field(core_schema.int_schema()),
+            'b': core_schema.model_field(core_schema.int_schema()),
+        },
+        serialization=core_schema.wrap_serializer_function_ser_schema(wrap_fn, when_used='json'),
+    )
+    s = SchemaSerializer(schema)
+    assert s.to_python({'a': 1, 'b': 2}, exclude={'b'}) == {'a': 1}
+    assert s.to_python({'a': 1, 'b': 2}, mode='json', exclude={'b'}) == {'a': 1}
+
