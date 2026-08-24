@@ -18,7 +18,3 @@ Where `llms.txt` gives an AI tool the Pydantic *documentation*, the
 application's *runtime data*: an agent can query the traces, metrics, and recorded validations from your
 own service and, for example, pull up the input behind a [`ValidationError`][pydantic_core.ValidationError]
 while it's helping you fix it.
-
-## PydanticAI
-
-For building production-grade agentic applications, structured LLM outputs, and multi-agent workflows with Pydantic validation, see [PydanticAI](https://ai.pydantic.dev/).
