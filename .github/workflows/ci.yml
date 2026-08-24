@@ -212,6 +212,9 @@ jobs:
           python-version: ${{ matrix.interpreter }}
           enable-cache: false
 
+      # make sure UV has the desired interpreter installed so PGO can use it
+      - run: uv python install
+
       - name: Install rust stable
         id: rust-toolchain
         # no release versioning, see https://github.com/dtolnay/rust-toolchain/issues/180
