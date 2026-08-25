@@ -457,7 +457,9 @@ As with [field serializers](#field-serializers), **two** different types of mode
     ```
 
       1. `'plain'` is the default mode for the decorator, and can be omitted.
-      2. You are free to return a value that *isn't* a dictionary.
+      2. You are free to return a value that *isn't* a dictionary. However, note that this may cause
+         type checking issues (as the return type of [`model_dump()`][pydantic.main.BaseModel.model_dump]
+         is `dict[str, Any]`).
 
 * ***Wrap* serializers**: give more flexibility to customize the serialization behavior. You can run code before or after
   the Pydantic serialization logic.
