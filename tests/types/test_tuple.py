@@ -1,4 +1,5 @@
 import re
+import sys
 from collections import deque
 from dataclasses import dataclass
 
@@ -66,6 +67,33 @@ def test_tuple_prefix_variadic_suffix(input, expected):
         assert adapter.validate_python(input) == expected
 
 
+def test_tuple_finite_unpack():
+    adapter = TypeAdapter(tuple[Unpack[tuple[int, str]], bool])
+
+    assert adapter.validate_python(['1', '2', 1]) == (1, '2', True)
+
+
+def test_tuple_unpack_serialization():
+    adapter = TypeAdapter(tuple[int, Unpack[tuple[str, ...]], bool])
+    value = (1, 'a', 'b', True)
+
+    assert adapter.dump_python(value) == value
+    assert adapter.dump_python(value, mode='json') == [1, 'a', 'b', True]
+    assert adapter.dump_json(value) == b'[1,"a","b",true]'
+
+
+@pytest.mark.skipif(sys.version_info < (3, 11), reason='Starred tuple syntax requires Python 3.11')
+def test_tuple_starred_unpack(create_module):
+    create_module(
+        """\
+from pydantic import TypeAdapter
+
+adapter = TypeAdapter(tuple[int, *tuple[str, ...], bool])
+assert adapter.validate_python(['1', '2', 1]) == (1, '2', True)
+"""
+    )
+
+
 @pytest.mark.parametrize(
     ('input', 'expected'),
     [
@@ -106,6 +134,7 @@ def test_tuple_invalid_forms(input, expected):
 
 # repeats of the above with the input as a string to to test *tuple[str, ...] syntax, can
 # remove the stringification and merge with the above when Python 3.10 support dropped
+@pytest.mark.skipif(sys.version_info < (3, 11), reason='Starred tuple syntax requires Python 3.11')
 @pytest.mark.parametrize(
     ('input', 'expected'),
     [

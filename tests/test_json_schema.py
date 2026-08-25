@@ -31,7 +31,7 @@ from annotated_types import Interval
 from dirty_equals import HasRepr
 from pydantic_core import CoreSchema, SchemaValidator, core_schema, to_jsonable_python
 from pydantic_core.core_schema import ValidatorFunctionWrapHandler
-from typing_extensions import TypeAliasType, TypedDict, deprecated
+from typing_extensions import TypeAliasType, TypedDict, Unpack, deprecated
 
 import pydantic
 from pydantic import (
@@ -663,6 +663,24 @@ def test_set():
             id='tuple[str, int, Union[str, int, float], float]',
         ),
         pytest.param(tuple[str], {'prefixItems': [{'type': 'string'}], 'minItems': 1, 'maxItems': 1}, id='tuple[str]'),
+        pytest.param(
+            tuple[Unpack[tuple[int, str]]],
+            {
+                'prefixItems': [{'type': 'integer'}, {'type': 'string'}],
+                'minItems': 2,
+                'maxItems': 2,
+            },
+            id='tuple[Unpack[tuple[int, str]]]',
+        ),
+        pytest.param(
+            tuple[int, Unpack[tuple[str, ...]], bool],
+            {
+                'prefixItems': [{'type': 'integer'}],
+                'minItems': 2,
+                'items': True,
+            },
+            id='tuple[int, Unpack[tuple[str, ...]], bool]',
+        ),
         pytest.param(tuple[()], {'maxItems': 0, 'minItems': 0}, id='tuple[()]'),
         pytest.param(tuple[str, ...], {'items': {'type': 'string'}, 'type': 'array'}, id='tuple[str, ...]'),
     ],
