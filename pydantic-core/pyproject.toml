@@ -47,7 +47,7 @@ Funding = 'https://github.com/sponsors/samuelcolvin'
 Source = 'https://github.com/pydantic/pydantic/tree/main/pydantic-core'
 
 [dependency-groups]
-dev = ["maturin>=1.13"]
+dev = ["maturin>=1.15"]
 testing-extra = [
     { include-group = "dev" },
     'coverage',
