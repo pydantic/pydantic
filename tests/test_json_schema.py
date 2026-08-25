@@ -7417,3 +7417,25 @@ def test_nested_model_deduplication() -> None:
     assert 'Level1' in definitions
     assert 'Level1-Input' not in definitions
     assert 'Level1-Output' not in definitions
+
+
+def test_container_length_constraints_schema() -> None:
+    from collections import Counter, OrderedDict, deque
+
+    class ContainerModel(BaseModel):
+        d: deque[int] = Field(min_length=2, max_length=5)
+        c: Counter[str] = Field(min_length=1, max_length=3)
+        o: OrderedDict[str, int] = Field(min_length=1, max_length=4)
+
+    schema = ContainerModel.model_json_schema()
+    assert schema["properties"]["d"]["minItems"] == 2
+    assert schema["properties"]["d"]["maxItems"] == 5
+    assert "minLength" not in schema["properties"]["d"]
+
+    assert schema["properties"]["c"]["minProperties"] == 1
+    assert schema["properties"]["c"]["maxProperties"] == 3
+    assert "minLength" not in schema["properties"]["c"]
+
+    assert schema["properties"]["o"]["minProperties"] == 1
+    assert schema["properties"]["o"]["maxProperties"] == 4
+    assert "minLength" not in schema["properties"]["o"]
