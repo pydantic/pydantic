@@ -30,7 +30,7 @@ class Person(BaseModel):
     birthdate: date | None = None
 
 
-p: Person = Person(name='John', age=20, birthdate='1970-01-01')
+p = Person(name='John', age=20, birthdate='1970-01-01')
 ```
 
 Pydantic coerces compatible input: the ISO date string `'1970-01-01'` is parsed into a `date`.
