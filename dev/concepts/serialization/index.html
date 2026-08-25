@@ -4947,7 +4947,9 @@ to ensure that the serialized model value complies with this return type.</p>
 </code></pre></div>
 <ol>
 <li><code>'plain'</code> is the default mode for the decorator, and can be omitted.</li>
-<li>You are free to return a value that <em>isn't</em> a dictionary.</li>
+<li>You are free to return a value that <em>isn't</em> a dictionary. However, note that this may cause
+     type checking issues (as the return type of <a class="autorefs autorefs-internal" href="../../api/base_model/#pydantic.BaseModel.model_dump"><code>model_dump()</code></a>
+     is <code>dict[str, Any]</code>).</li>
 </ol>
 </li>
 <li>
