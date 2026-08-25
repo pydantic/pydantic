@@ -95,7 +95,7 @@ def test_tuple_prefix_variadic_suffix(input, expected):
         # invalid unpack type
         (
             tuple[int, Unpack[int]],
-            Err("Unpacked type <class 'int'> is not a tuple", TypeError),
+            Err("Unpacked type `<class 'int'>` is not a tuple", TypeError),
         ),
     ],
 )
@@ -105,7 +105,7 @@ def test_tuple_invalid_forms(input, expected):
 
 
 # repeats of the above with the input as a string to to test *tuple[str, ...] syntax, can
-# remove the stringification when Python 3.10 support dropped
+# remove the stringification and merge with the above when Python 3.10 support dropped
 @pytest.mark.parametrize(
     ('input', 'expected'),
     [
@@ -122,7 +122,7 @@ def test_tuple_invalid_forms(input, expected):
             Err('Variable tuples must only have one type before the ellipsis', TypeError),
         ),
         ('tuple[int, *tuple[..., int]]', Err('Variable tuples must end with an ellipsis', TypeError)),
-        ('tuple[*list[int]]', Err("Unpacked type <class 'list'> is not a tuple", TypeError)),
+        ('tuple[*list[int]]', Err('Expected tuple type for `*` unpacking, got `*list[int]`', TypeError)),
     ],
 )
 def test_tuple_starred_invalid_forms(create_module, input, expected):

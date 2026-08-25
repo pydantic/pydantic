@@ -1735,25 +1735,37 @@ class GenerateSchema:
             new_params = []
 
             for param in params:
-                # Unpack the parameter if it's an Unpack, else it could be `*tuple[int, ...]` starred form
-                inner = _typing_extra.unpack_type(param) or getattr(param, '__typing_unpacked_tuple_args__', None)
-                if inner is not None and get_origin(inner) in TUPLE_TYPES:
-                    args = get_args(inner)
-                    if any(e is Ellipsis for e in args):
-                        if variadic_item_index is not None:
-                            raise TypeError('More than one variadic Unpack in a type is not allowed')
-                        if len(args) != 2:
-                            raise TypeError('Variable tuples must only have one type before the ellipsis')
-                        if args[0] is Ellipsis or args[1] is not Ellipsis:
-                            raise TypeError('Variable tuples must end with an ellipsis')
-                        variadic_item_index = len(new_params)
-                        new_params.append(args[0])
-                    else:
-                        new_params.extend(args)
-                elif inner is not None or getattr(param, '__unpacked__', False):
-                    raise TypeError(f'Unpacked type {param!r} is not a tuple')
+                if (inner := _typing_extra.unpack_type(param)) is not None:
+                    # Unpack[tuple[int, ...]]
+                    if get_origin(inner) not in TUPLE_TYPES:
+                        raise TypeError(f'Unpacked type `{inner!r}` is not a tuple')
+                    unpacked_args = get_args(inner)
+                elif (args := getattr(param, '__typing_unpacked_tuple_args__', None)) is not None:
+                    # *tuple[int, ...] form
+                    if not isinstance(args, tuple):
+                        raise TypeError(f'Unpacked type `{param!r}` is not a tuple')
+                    unpacked_args = args
+                elif getattr(param, '__unpacked__', False):
+                    # *list[int] or similar
+                    args = get_args(param)
+                    raise TypeError(f'Expected tuple type for `*` unpacking, got `{param!r}`')
                 else:
+                    # not an unpacked form
                     new_params.append(param)
+                    continue
+
+                if any(e is Ellipsis for e in unpacked_args):
+                    # variadic unpack
+                    if variadic_item_index is not None:
+                        raise TypeError('More than one variadic Unpack in a type is not allowed')
+                    if len(unpacked_args) != 2:
+                        raise TypeError('Variable tuples must only have one type before the ellipsis')
+                    if unpacked_args[0] is Ellipsis or unpacked_args[1] is not Ellipsis:
+                        raise TypeError('Variable tuples must end with an ellipsis')
+                    variadic_item_index = len(new_params)
+                    new_params.append(unpacked_args[0])
+                else:
+                    new_params.extend(unpacked_args)
 
             params = tuple(new_params)
 
