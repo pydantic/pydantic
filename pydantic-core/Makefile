@@ -57,9 +57,7 @@ build-coverage:
 .PHONY: build-pgo  ## Build the PGO version of the package
 build-pgo:
 	@rm -f python/pydantic_core/*.so
-	$(uv-run-no-sync) maturin build --pgo --release
-	uv pip install --force-reinstall pydantic-core --no-index --no-deps --find-links target/wheels
-
+	$(uv-run-no-sync) maturin develop --uv --pgo
 
 .PHONY: build-wasm  ## Build the WebAssembly version of the package
 build-wasm:
