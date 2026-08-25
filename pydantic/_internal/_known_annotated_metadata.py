@@ -106,6 +106,41 @@ def as_jsonable_value(v: Any) -> Any:
     return v
 
 
+# Core schema types that render as a JSON array or a JSON object, and so take the
+# `*Items` / `*Properties` length keywords rather than the string `*Length` ones.
+ARRAY_SCHEMA_TYPES = frozenset({'list', 'tuple', 'set', 'frozenset', 'generator'})
+OBJECT_SCHEMA_TYPES = frozenset({'dict'})
+
+# Wrappers a length constraint may sit outside of, mapped to the key holding the schema
+# that determines the JSON representation.
+_WRAPPER_SCHEMA_KEYS = {
+    'function-before': 'schema',
+    'function-wrap': 'schema',
+    'function-after': 'schema',
+    'lax-or-strict': 'lax_schema',
+    'json-or-python': 'json_schema',
+}
+
+
+def _length_constraint_js_key(schema: CoreSchema, constraint: str) -> str:
+    """Pick the JSON Schema keyword for a length constraint enforced by a wrapper validator.
+
+    When a schema does not support `min_length`/`max_length` natively the constraint is
+    applied as a validator function wrapped around it, so the keyword has to be chosen
+    from whatever the wrapped schema renders as: `minItems`/`maxItems` for an array,
+    `minProperties`/`maxProperties` for an object, `minLength`/`maxLength` for a string.
+    """
+    while (key := _WRAPPER_SCHEMA_KEYS.get(schema['type'])) is not None:
+        schema = schema[key]  # type: ignore[literal-required]
+
+    is_min = constraint == 'min_length'
+    if schema['type'] in ARRAY_SCHEMA_TYPES:
+        return 'minItems' if is_min else 'maxItems'
+    if schema['type'] in OBJECT_SCHEMA_TYPES:
+        return 'minProperties' if is_min else 'maxProperties'
+    return 'minLength' if is_min else 'maxLength'
+
+
 def expand_grouped_metadata(annotations: Iterable[Any]) -> Iterable[Any]:
     """Expand the annotations.
 
@@ -255,16 +290,7 @@ def apply_known_metadata(annotation: Any, schema: CoreSchema) -> CoreSchema | No
             )
         elif constraint in NUMERIC_VALIDATOR_LOOKUP:
             if constraint in LENGTH_CONSTRAINTS:
-                inner_schema = schema
-                while inner_schema['type'] in {'function-before', 'function-wrap', 'function-after'}:
-                    inner_schema = inner_schema['schema']  # type: ignore
-                inner_schema_type = inner_schema['type']
-                if inner_schema_type == 'list' or (
-                    inner_schema_type == 'json-or-python' and inner_schema['json_schema']['type'] == 'list'  # type: ignore
-                ):
-                    js_constraint_key = 'minItems' if constraint == 'min_length' else 'maxItems'
-                else:
-                    js_constraint_key = 'minLength' if constraint == 'min_length' else 'maxLength'
+                js_constraint_key = _length_constraint_js_key(schema, constraint)
             else:
                 js_constraint_key = constraint
 

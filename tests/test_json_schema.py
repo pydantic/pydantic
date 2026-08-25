@@ -4,7 +4,7 @@ import math
 import re
 import sys
 import typing
-from collections import deque
+from collections import Counter, OrderedDict, deque
 from collections.abc import Callable, Iterable, Sequence
 from datetime import date, datetime, time, timedelta
 from decimal import Decimal
@@ -5421,6 +5421,56 @@ def test_sequence_schema_with_min_length(sequence_type):
         'title': 'Model',
         'type': 'object',
     }
+
+
+@pytest.mark.parametrize(
+    'container_type',
+    [list, Sequence, Iterable, set, frozenset, deque],
+)
+def test_array_length_constraints_use_items_keywords(container_type):
+    """Length constraints on any array-like container use `minItems`/`maxItems`.
+
+    Containers whose core schema is wrapped — `deque` in particular — used to
+    get the string keywords `minLength`/`maxLength` on a schema of type
+    `array`, which JSON Schema validators ignore.
+    """
+
+    class Model(BaseModel):
+        field: container_type[int] = Field(min_length=1, max_length=5)
+
+    field_schema = Model.model_json_schema()['properties']['field']
+    assert field_schema['type'] == 'array'
+    assert field_schema['minItems'] == 1
+    assert field_schema['maxItems'] == 5
+    assert 'minLength' not in field_schema
+    assert 'maxLength' not in field_schema
+
+
+@pytest.mark.parametrize('container_type', [dict, Counter, OrderedDict])
+def test_mapping_length_constraints_use_properties_keywords(container_type):
+    """Length constraints on any mapping use `minProperties`/`maxProperties`."""
+    annotation = container_type[str] if container_type is Counter else container_type[str, int]
+
+    class Model(BaseModel):
+        field: annotation = Field(min_length=1, max_length=5)
+
+    field_schema = Model.model_json_schema()['properties']['field']
+    assert field_schema['type'] == 'object'
+    assert field_schema['minProperties'] == 1
+    assert field_schema['maxProperties'] == 5
+    assert 'minLength' not in field_schema
+    assert 'maxLength' not in field_schema
+
+
+@pytest.mark.parametrize('scalar_type', [str, bytes])
+def test_string_length_constraints_still_use_length_keywords(scalar_type):
+    class Model(BaseModel):
+        field: scalar_type = Field(min_length=1, max_length=5)
+
+    field_schema = Model.model_json_schema()['properties']['field']
+    assert field_schema['type'] == 'string'
+    assert field_schema['minLength'] == 1
+    assert field_schema['maxLength'] == 5
 
 
 @pytest.mark.parametrize(('sequence_type',), [pytest.param(list), pytest.param(Sequence)])
