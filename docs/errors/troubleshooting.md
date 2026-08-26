@@ -8,8 +8,8 @@ the payload that failed is often already gone.
 
 ## Record a production failure
 
-You need a [free Logfire account](https://logfire.pydantic.dev/login) and a project. Install the SDK
-and sign in from your project's terminal:
+You need a [free Logfire account](https://logfire.pydantic.dev/login) and a project. From your project
+directory, install the SDK and sign in:
 
 ```bash
 pip install logfire
@@ -63,7 +63,10 @@ the path from separate logs.
 !!! warning "Review validation data before exporting it"
     Failed-validation records contain the rejected values from Pydantic's structured errors. The
     Logfire SDK [scrubs common sensitive values](https://pydantic.dev/docs/logfire/instrument/scrubbing/)
-    before export, but you should add rules for sensitive field names used by your application.
+    before export, but the field name is stored separately from the rejected value. If those values
+    can contain secrets or personal data, pass
+    `scrubbing=logfire.ScrubbingOptions(extra_patterns=['^input$'])` to `logfire.configure()` to scrub
+    rejected inputs, or use `record='metrics'` so individual failures are not exported.
 
 ![A failed Pydantic validation recorded in the Logfire live view](../img/logfire-validation-live-view.png)
 
@@ -109,8 +112,8 @@ so it can investigate against your real data instead of guessing.
 
 * [Pydantic Logfire integration](../integrations/logfire.md): choose what to record and add the
   surrounding application trace.
-* [Scrubbing](https://pydantic.dev/docs/logfire/instrument/scrubbing/): add rules for sensitive fields
-  used by your application.
+* [Scrubbing](https://pydantic.dev/docs/logfire/instrument/scrubbing/): review and redact sensitive
+  validation data before export.
 * [Alerts](https://pydantic.dev/docs/logfire/observe/alerts/): get notified when failures cross a
   threshold.
 

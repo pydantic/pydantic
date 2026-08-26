@@ -114,5 +114,5 @@ surfaces as a [`ValidationError`][pydantic_core.ValidationError] at runtime, oft
 source has drifted from the schema you generated against.
 
 If you [record validations with Logfire](../errors/troubleshooting.md), those failures are stored with
-the payload that caused them, so you can see *what* changed and *when* it started, useful when you
-don't own the schema and can't regenerate the models until you know what moved.
+their structured errors and rejected values, so you can see *what* changed and *when* it started,
+useful when you don't own the schema and can't regenerate the models until you know what moved.

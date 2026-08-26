@@ -168,7 +168,7 @@ One thing to keep in mind with consumers like this: if `model_validate_json` rai
 [`ValidationError`][pydantic_core.ValidationError], the message that caused it may no longer be on the
 queue by the time you investigate, making the failure hard to reproduce. It's worth recording failed
 validations as they happen, for example with [Logfire](../errors/troubleshooting.md), which captures
-the message body alongside the error:
+their field locations and rejected values in structured errors:
 
 ```python {test="skip"}
 import logfire

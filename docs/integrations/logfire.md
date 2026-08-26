@@ -6,8 +6,8 @@ what failed, where the input came from, and whether the same problem keeps happe
 
 ## Record failed validations
 
-You need a [free Logfire account](https://logfire.pydantic.dev/login) and project. Install the SDK and
-sign in from your project's terminal:
+You need a [free Logfire account](https://logfire.pydantic.dev/login) and project. From your project
+directory, install the SDK and sign in:
 
 ```bash
 pip install logfire
@@ -44,7 +44,10 @@ User(name='Anne', country_code='USA', dob='not-a-date')  # (2)!
 !!! warning "Review validation data before exporting it"
     Failed-validation records contain the rejected values from Pydantic's structured errors. Logfire
     [scrubs common sensitive values](https://pydantic.dev/docs/logfire/instrument/scrubbing/) before
-    export, but you should add rules for sensitive field names used by your application.
+    export, but the field name is stored separately from the rejected value. If those values can
+    contain secrets or personal data, pass
+    `scrubbing=logfire.ScrubbingOptions(extra_patterns=['^input$'])` to `logfire.configure()` to scrub
+    rejected inputs, or use `record='metrics'` so individual failures are not exported.
 
 ![A failed Pydantic validation recorded in the Logfire live view](../img/logfire-validation-live-view.png)
 
@@ -98,6 +101,8 @@ from datetime import date
 import logfire
 
 from pydantic import BaseModel
+
+logfire.configure()
 
 
 class User(BaseModel):
