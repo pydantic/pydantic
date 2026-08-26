@@ -2048,6 +2048,29 @@ def test_typeddict_default_bytes(ser_json_bytes: Literal['base64', 'utf8'], prop
     }
 
 
+def test_str_length_config() -> None:
+    class Model(BaseModel):
+        model_config = ConfigDict(str_min_length=3, str_max_length=5)
+
+        from_config: str
+        from_field: Annotated[str, Field(min_length=1, max_length=10)]
+
+    properties = Model.model_json_schema()['properties']
+    assert properties['from_config'] == {
+        'title': 'From Config',
+        'type': 'string',
+        'minLength': 3,
+        'maxLength': 5,
+    }
+    # A field-level length replaces the config one rather than narrowing it:
+    assert properties['from_field'] == {
+        'title': 'From Field',
+        'type': 'string',
+        'minLength': 1,
+        'maxLength': 10,
+    }
+
+
 def test_model_subclass_metadata():
     class A(BaseModel):
         """A Model docstring"""

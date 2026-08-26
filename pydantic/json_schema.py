@@ -798,8 +798,12 @@ class GenerateJsonSchema:
         Returns:
             The generated JSON schema.
         """
-        json_schema = {'type': 'string'}
+        json_schema: JsonSchemaValue = {'type': 'string'}
         self.update_with_validations(json_schema, schema, self.ValidationsMapping.string)
+        if 'minLength' not in json_schema and self._config.str_min_length:
+            json_schema['minLength'] = self._config.str_min_length
+        if 'maxLength' not in json_schema and self._config.str_max_length is not None:
+            json_schema['maxLength'] = self._config.str_max_length
         if isinstance(json_schema.get('pattern'), Pattern):
             # TODO: should we add regex flags to the pattern?
             json_schema['pattern'] = json_schema.get('pattern').pattern  # type: ignore
