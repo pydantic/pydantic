@@ -871,7 +871,10 @@ class GenerateJsonSchema:
     def _common_temporal_schema(
         self, format: str, temporal_format: Literal['iso8601', 'seconds', 'milliseconds']
     ) -> JsonSchemaValue:
-        if temporal_format != 'iso8601':
+        # `ser_json_temporal` and `ser_json_timedelta` only change what is emitted; validation keeps
+        # accepting ISO 8601 strings whatever they are set to, so a validation schema built from them
+        # would forbid input the model takes.
+        if self.mode == 'serialization' and temporal_format != 'iso8601':
             # Both `'seconds'` and `'milliseconds'` serialize to a number:
             return {'type': 'number'}
         return {'type': 'string', 'format': format}
