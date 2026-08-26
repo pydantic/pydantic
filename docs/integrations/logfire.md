@@ -44,11 +44,12 @@ User(name='Anne', country_code='USA', dob='not-a-date')  # (2)!
 !!! warning "Review validation data before exporting it"
     Failed-validation records contain the rejected values from Pydantic's structured errors. Logfire
     [scrubs common sensitive values](https://pydantic.dev/docs/logfire/instrument/scrubbing/) before
-    export, but Logfire stores every rejected value under the attribute key `input`, separately from
-    its field path. If those values can contain secrets or personal data, pass
-    `scrubbing=logfire.ScrubbingOptions(extra_patterns=['^input$'])` to `logfire.configure()`. The
-    pattern matches that attribute key and scrubs every rejected value; it is not one of your model's
-    field names. Alternatively, use `record='metrics'` so individual failures are not exported.
+    export, but Logfire stores every rejected value under the key `input` inside the serialized
+    `errors` attribute, separately from its field path. If those values can contain secrets or personal
+    data, pass `scrubbing=logfire.ScrubbingOptions(extra_patterns=[r'(?:^input$|"input"\s*:)'])` to
+    `logfire.configure()`. The two alternatives tell the scrubber to inspect serialized validation
+    errors and redact every value whose exact key is `input`; neither refers to your model's field
+    names. Alternatively, use `record='metrics'` so individual failures are not exported.
 
 ![A failed Pydantic validation recorded in the Logfire live view](../img/logfire-validation-live-view.png)
 
