@@ -51,7 +51,7 @@ print(pydantic_model.model_dump(by_alias=True))
 Validating ORM objects can surface a less obvious class of failure: rows written before a constraint
 was added, or columns that allow `NULL` where your model doesn't. These only fail when the offending
 row is actually read, which may be long after a deploy, and
-[recording failed validations](../errors/troubleshooting.md) retains the input object alongside the
-error, which can help identify the offending row.
+[recording failed validations](../errors/troubleshooting.md) retains their structured errors and
+rejected values, which can help identify the offending data.
 
 <!-- TODO: add examples for Django with Pydantic models -->

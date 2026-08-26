@@ -476,8 +476,8 @@ the case with a matching discriminator value.
 
 Making sense of a union failure means working out which member *should* have matched. A
 [`ValidationError`][pydantic_core.ValidationError] includes each member's errors and rejected values;
-when the failure happens in a deployed service, [Logfire retains those details with the complete
-validation input](../errors/troubleshooting.md), so you can make that comparison after the fact.
+when the failure happens in a deployed service, [Logfire retains those details with the surrounding
+trace](../errors/troubleshooting.md), so you can make that comparison after the fact.
 
 You can also customize the error type, message, and context for a `Discriminator` by passing
 these specifications as parameters to the `Discriminator` constructor, as seen in the example below.

@@ -35,8 +35,7 @@ The first item in the [`loc`][pydantic_core.ErrorDetails.loc] list will be the f
 [sub-model](../concepts/models.md#nested-models), subsequent items will be present to indicate the nested location of the error.
 
 For validations spread across a running service, [Logfire](troubleshooting.md) records this same
-structured error list together with the complete validation input and trace context, without wrapping
-each call in `try`/`except`.
+structured error list and surrounding trace context, without wrapping each call in `try`/`except`.
 
 As a demonstration:
 
