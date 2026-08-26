@@ -1606,7 +1606,9 @@ class GenerateJsonSchema:
         if field['type'] == 'computed-field':
             alias: Any = field.get('alias', name)
         elif self.mode == 'validation':
-            alias = field.get('validation_alias', name)
+            # With `validate_by_alias=False` there is no validation alias in effect, so the field
+            # name is the only key accepted.
+            alias = name if self._config.validate_by_alias is False else field.get('validation_alias', name)
         else:
             alias = field.get('serialization_alias', name)
         if isinstance(alias, str):
