@@ -256,13 +256,27 @@ def apply_known_metadata(annotation: Any, schema: CoreSchema) -> CoreSchema | No
         elif constraint in NUMERIC_VALIDATOR_LOOKUP:
             if constraint in LENGTH_CONSTRAINTS:
                 inner_schema = schema
-                while inner_schema['type'] in {'function-before', 'function-wrap', 'function-after'}:
-                    inner_schema = inner_schema['schema']  # type: ignore
+                while inner_schema['type'] in {
+                    'function-before',
+                    'function-wrap',
+                    'function-after',
+                    'lax-or-strict',
+                    'chain',
+                }:
+                    if inner_schema['type'] == 'lax-or-strict':
+                        inner_schema = inner_schema['lax_schema']
+                    elif inner_schema['type'] == 'chain':
+                        inner_schema = inner_schema['steps'][-1]
+                    else:
+                        inner_schema = inner_schema['schema']  # type: ignore
                 inner_schema_type = inner_schema['type']
-                if inner_schema_type == 'list' or (
-                    inner_schema_type == 'json-or-python' and inner_schema['json_schema']['type'] == 'list'  # type: ignore
-                ):
+                if inner_schema_type == 'json-or-python':
+                    inner_schema_type = inner_schema['json_schema']['type']
+
+                if inner_schema_type in {'list', 'set', 'frozenset', 'tuple', 'generator'}:
                     js_constraint_key = 'minItems' if constraint == 'min_length' else 'maxItems'
+                elif inner_schema_type == 'dict':
+                    js_constraint_key = 'minProperties' if constraint == 'min_length' else 'maxProperties'
                 else:
                     js_constraint_key = 'minLength' if constraint == 'min_length' else 'maxLength'
             else:

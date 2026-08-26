@@ -7417,3 +7417,28 @@ def test_nested_model_deduplication() -> None:
     assert 'Level1' in definitions
     assert 'Level1-Input' not in definitions
     assert 'Level1-Output' not in definitions
+
+
+def test_json_schema_collection_length_constraints() -> None:
+    from collections import Counter, OrderedDict, deque
+    from typing import Annotated
+
+    from pydantic import Field, TypeAdapter
+
+    assert TypeAdapter(Annotated[deque[int], Field(min_length=1)]).json_schema() == {
+        'items': {'type': 'integer'},
+        'minItems': 1,
+        'type': 'array',
+    }
+
+    assert TypeAdapter(Annotated[Counter[str], Field(min_length=1)]).json_schema() == {
+        'additionalProperties': {'type': 'integer'},
+        'minProperties': 1,
+        'type': 'object',
+    }
+
+    assert TypeAdapter(Annotated[OrderedDict[str, int], Field(min_length=1)]).json_schema() == {
+        'additionalProperties': {'type': 'integer'},
+        'minProperties': 1,
+        'type': 'object',
+    }
