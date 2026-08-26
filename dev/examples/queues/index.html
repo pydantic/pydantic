@@ -4093,7 +4093,7 @@ and start your server up locally.</p>
 <a class="autorefs autorefs-internal" href="../../api/pydantic_core/#pydantic_core.ValidationError"><code>ValidationError</code></a>, the message that caused it may no longer be on the
 queue by the time you investigate, making the failure hard to reproduce. It's worth recording failed
 validations as they happen, for example with <a href="../../errors/troubleshooting/">Logfire</a>, which captures
-the message body alongside the error:</p>
+their field locations and rejected values in structured errors:</p>
 <div class="language-python highlight"><pre><span></span><code><span class="kn">import</span><span class="w"> </span><span class="nn">logfire</span>
 
 <span class="n">logfire</span><span class="o">.</span><span class="n">configure</span><span class="p">()</span>

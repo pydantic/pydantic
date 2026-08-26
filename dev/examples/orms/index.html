@@ -3943,8 +3943,8 @@ field population. Accessing <code>SQLModel</code>'s <code>metadata</code> attrib
 <p>Validating ORM objects can surface a less obvious class of failure: rows written before a constraint
 was added, or columns that allow <code>NULL</code> where your model doesn't. These only fail when the offending
 row is actually read, which may be long after a deploy, and
-<a href="../../errors/troubleshooting/">recording failed validations</a> retains the input object alongside the
-error, which can help identify the offending row.</p>
+<a href="../../errors/troubleshooting/">recording failed validations</a> retains their structured errors and
+rejected values, which can help identify the offending data.</p>
 <!-- TODO: add examples for Django with Pydantic models -->
 
 

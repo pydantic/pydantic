@@ -6228,9 +6228,10 @@ to help you monitor and understand your
 
 <p>Pydantic attempts to provide useful validation errors. Below are details on common validation errors users
 may encounter when working with pydantic, together with some suggestions on how to fix them.</p>
-<p>The entries below explain what each error type means. To also see <em>which input</em> triggered an error in a
-live service, <a href="../troubleshooting/">Logfire</a> records the input and structured errors for each validation —
-see <a href="../troubleshooting/">Troubleshooting Validation Errors</a>.</p>
+<p>The entries below explain what each error type means. To see the rejected values and surrounding trace
+when one occurs in a live service, <a href="../troubleshooting/">Logfire</a> can record failed validations with their
+structured errors. See <a href="../troubleshooting/">Troubleshooting Validation Errors</a> for setup and
+sensitive-data considerations.</p>
 <h2 id="arguments_type"><code>arguments_type</code><a class="headerlink" href="#arguments_type" title="Permanent link">&para;</a></h2>
 <p>This error is raised when an object that would be passed as arguments to a function during validation is not
 a <code>tuple</code>, <code>list</code>, or <code>dict</code>:</p>

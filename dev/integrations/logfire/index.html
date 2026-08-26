@@ -99,7 +99,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#getting-started" class="md-skip">
+        <a href="#pydantic-logfire" class="md-skip">
           Skip to content
         </a>
       
@@ -3240,6 +3240,8 @@ to help you monitor and understand your
       <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
       
       
+        
+      
       
         <label class="md-nav__link md-nav__link--active" for="__toc">
           
@@ -3284,6 +3286,8 @@ to help you monitor and understand your
   
   
   
+    
+  
   
     <label class="md-nav__title" for="__toc">
       <span class="md-nav__icon md-icon"></span>
@@ -3292,41 +3296,57 @@ to help you monitor and understand your
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#getting-started" class="md-nav__link">
+  <a href="#record-failed-validations" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Getting Started
-      
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="Getting Started">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#basic-usage" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Basic Usage
+        Record failed validations
       
     </span>
   </a>
   
 </li>
-        
-          <li class="md-nav__item">
-  <a href="#pydantic-instrumentation" class="md-nav__link">
+      
+        <li class="md-nav__item">
+  <a href="#choose-how-much-to-record" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Pydantic Instrumentation
+        Choose how much to record
       
     </span>
   </a>
   
 </li>
-        
-      </ul>
-    </nav>
+      
+        <li class="md-nav__item">
+  <a href="#add-the-surrounding-application-trace" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Add the surrounding application trace
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#log-a-validated-model-explicitly" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Log a validated model explicitly
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#troubleshooting" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Troubleshooting
+      
+    </span>
+  </a>
   
 </li>
       
@@ -3881,6 +3901,8 @@ to help you monitor and understand your
   
   
   
+    
+  
   
     <label class="md-nav__title" for="__toc">
       <span class="md-nav__icon md-icon"></span>
@@ -3889,41 +3911,57 @@ to help you monitor and understand your
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#getting-started" class="md-nav__link">
+  <a href="#record-failed-validations" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Getting Started
-      
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="Getting Started">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#basic-usage" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Basic Usage
+        Record failed validations
       
     </span>
   </a>
   
 </li>
-        
-          <li class="md-nav__item">
-  <a href="#pydantic-instrumentation" class="md-nav__link">
+      
+        <li class="md-nav__item">
+  <a href="#choose-how-much-to-record" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Pydantic Instrumentation
+        Choose how much to record
       
     </span>
   </a>
   
 </li>
-        
-      </ul>
-    </nav>
+      
+        <li class="md-nav__item">
+  <a href="#add-the-surrounding-application-trace" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Add the surrounding application trace
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#log-a-validated-model-explicitly" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Log a validated model explicitly
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#troubleshooting" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Troubleshooting
+      
+    </span>
+  </a>
   
 </li>
       
@@ -3954,26 +3992,116 @@ to help you monitor and understand your
   
 
 
-  <h1>Pydantic Logfire</h1>
-
-<p>Pydantic integrates seamlessly with <strong>Pydantic Logfire</strong>, an observability platform built by us on the same belief as our open source library — that the most powerful tools can be easy to use.</p>
-<h2 id="getting-started">Getting Started<a class="headerlink" href="#getting-started" title="Permanent link">&para;</a></h2>
-<p>Logfire has an out-of-the-box Pydantic integration that lets you understand the data passing through your Pydantic models and get analytics on validations. For existing Pydantic users, it delivers unparalleled insights into your usage of Pydantic models.</p>
-<p><a href="https://pydantic.dev/docs/logfire/get-started/">Getting started</a> with Logfire can be done in three simple steps:</p>
-<ol>
-<li>Set up your Logfire account.</li>
-<li>Install the Logfire SDK.</li>
-<li>Instrument your project.</li>
-</ol>
-<h3 id="basic-usage">Basic Usage<a class="headerlink" href="#basic-usage" title="Permanent link">&para;</a></h3>
-<p>Once you've got Logfire set up, you can start using it to monitor your Pydantic models and get insights into your data validation:</p>
+<h1 id="pydantic-logfire">Pydantic Logfire<a class="headerlink" href="#pydantic-logfire" title="Permanent link">&para;</a></h1>
+<p>Find the data behind production <code>ValidationError</code>s. Logfire records failed Pydantic validations with
+their structured errors and can keep them inside the surrounding request or job trace, so you can see
+what failed, where the input came from, and whether the same problem keeps happening.</p>
+<h2 id="record-failed-validations">Record failed validations<a class="headerlink" href="#record-failed-validations" title="Permanent link">&para;</a></h2>
+<p>You need a <a href="https://logfire.pydantic.dev/login">free Logfire account</a> and project. From your project
+directory, install the SDK and sign in:</p>
+<div class="language-bash highlight"><pre><span></span><code>pip<span class="w"> </span>install<span class="w"> </span>logfire
+logfire<span class="w"> </span>auth
+</code></pre></div>
+<p>Call <code>instrument_pydantic()</code> before defining or importing the models you want to monitor:</p>
 <div class="language-python highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">datetime</span><span class="w"> </span><span class="kn">import</span> <span class="n">date</span>
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">logfire</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">pydantic</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseModel</span>
 
-<span class="n">logfire</span><span class="o">.</span><span class="n">configure</span><span class="p">()</span>  <span class="c1"># (1)!</span>
+<span class="n">logfire</span><span class="o">.</span><span class="n">configure</span><span class="p">()</span>
+<span class="n">logfire</span><span class="o">.</span><span class="n">instrument_pydantic</span><span class="p">(</span><span class="n">record</span><span class="o">=</span><span class="s1">&#39;failure&#39;</span><span class="p">)</span>  <span class="c1"># (1)!</span>
+
+
+<span class="k">class</span><span class="w"> </span><span class="nc">User</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="n">name</span><span class="p">:</span> <span class="nb">str</span>
+    <span class="n">country_code</span><span class="p">:</span> <span class="nb">str</span>
+    <span class="n">dob</span><span class="p">:</span> <span class="n">date</span>
+
+
+<span class="n">User</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;Anne&#39;</span><span class="p">,</span> <span class="n">country_code</span><span class="o">=</span><span class="s1">&#39;USA&#39;</span><span class="p">,</span> <span class="n">dob</span><span class="o">=</span><span class="s1">&#39;not-a-date&#39;</span><span class="p">)</span>  <span class="c1"># (2)!</span>
+</code></pre></div>
+<ol>
+<li>Successful validations stay as aggregate metrics. Failed validations create individual warning
+   records with their structured errors.</li>
+<li>Run the example and choose or create a Logfire project when prompted. The invalid date produces
+   a warning record in Logfire's Live view.</li>
+</ol>
+<div class="admonition warning">
+<p class="admonition-title">Review validation data before exporting it</p>
+<p>Failed-validation records contain the rejected values from Pydantic's structured errors. Logfire
+<a href="https://pydantic.dev/docs/logfire/instrument/scrubbing/">scrubs common sensitive values</a> before
+export, but Logfire stores every rejected value under the key <code>input</code> inside the serialized
+<code>errors</code> attribute, separately from its field path. If those values can contain secrets or personal
+data, pass <code>scrubbing=logfire.ScrubbingOptions(extra_patterns=[r'(?:^input$|"input"\s*:)'])</code> to
+<code>logfire.configure()</code>. The two alternatives tell the scrubber to inspect serialized validation
+errors and redact every value whose exact key is <code>input</code>; neither refers to your model's field
+names. Alternatively, use <code>record='metrics'</code> so individual failures are not exported.</p>
+</div>
+<p><img alt="A failed Pydantic validation recorded in the Logfire live view" src="../../img/logfire-validation-live-view.png" /></p>
+<p>Open the warning to inspect the rejected values, error type and field path, and any request or job
+trace active when validation ran. For a deeper walkthrough, see
+<a href="../../errors/troubleshooting/">Troubleshooting Validation Errors</a>.</p>
+<h2 id="choose-how-much-to-record">Choose how much to record<a class="headerlink" href="#choose-how-much-to-record" title="Permanent link">&para;</a></h2>
+<p>The <code>record</code> argument controls the balance between detail and data volume:</p>
+<table>
+<thead>
+<tr>
+<th>Setting</th>
+<th>Individual records</th>
+<th>Metrics</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>failure</code></td>
+<td>Failed validations only</td>
+<td>All validations</td>
+</tr>
+<tr>
+<td><code>all</code> (default)</td>
+<td>Every successful and failed validation</td>
+<td>All validations</td>
+</tr>
+<tr>
+<td><code>metrics</code></td>
+<td>None</td>
+<td>All validations</td>
+</tr>
+<tr>
+<td><code>off</code></td>
+<td>None</td>
+<td>None</td>
+</tr>
+</tbody>
+</table>
+<p>Use <code>failure</code> for production troubleshooting without creating an individual record for every
+successful validation. Use <code>all</code> while developing when you want to inspect successful inputs and
+validated results too.</p>
+<div class="language-python highlight"><pre><span></span><code><span class="kn">import</span><span class="w"> </span><span class="nn">logfire</span>
+
+<span class="n">logfire</span><span class="o">.</span><span class="n">instrument_pydantic</span><span class="p">(</span><span class="n">record</span><span class="o">=</span><span class="s1">&#39;all&#39;</span><span class="p">)</span>
+</code></pre></div>
+<p>For per-model settings, third-party model inclusion, and configuration through environment variables
+or <code>pyproject.toml</code>, see the full
+<a href="https://pydantic.dev/docs/logfire/integrations/pydantic/">Logfire Pydantic integration reference</a>.</p>
+<h2 id="add-the-surrounding-application-trace">Add the surrounding application trace<a class="headerlink" href="#add-the-surrounding-application-trace" title="Permanent link">&para;</a></h2>
+<p>Pydantic tells you which value failed. Instrument your web framework, database client, or task queue
+to see where that value came from and what happened around it. For example, a FastAPI trace can show
+the request that reached your endpoint, the failed model validation, and the response returned to the
+caller in one timeline.</p>
+<p>See <a href="https://pydantic.dev/docs/logfire/integrations/">Logfire integrations</a> for FastAPI, Django,
+Celery, SQLAlchemy, HTTPX, and more.</p>
+<h2 id="log-a-validated-model-explicitly">Log a validated model explicitly<a class="headerlink" href="#log-a-validated-model-explicitly" title="Permanent link">&para;</a></h2>
+<p>You can also attach a Pydantic model to your own structured log or span. Logfire preserves the
+model's fields so you can inspect and query them:</p>
+<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">datetime</span><span class="w"> </span><span class="kn">import</span> <span class="n">date</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">logfire</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">pydantic</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseModel</span>
+
+<span class="n">logfire</span><span class="o">.</span><span class="n">configure</span><span class="p">()</span>
 
 
 <span class="k">class</span><span class="w"> </span><span class="nc">User</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
@@ -3983,46 +4111,18 @@ to help you monitor and understand your
 
 
 <span class="n">user</span> <span class="o">=</span> <span class="n">User</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;Anne&#39;</span><span class="p">,</span> <span class="n">country_code</span><span class="o">=</span><span class="s1">&#39;USA&#39;</span><span class="p">,</span> <span class="n">dob</span><span class="o">=</span><span class="s1">&#39;2000-01-01&#39;</span><span class="p">)</span>
-<span class="n">logfire</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;user processed: </span><span class="si">{user!r}</span><span class="s1">&#39;</span><span class="p">,</span> <span class="n">user</span><span class="o">=</span><span class="n">user</span><span class="p">)</span>  <span class="c1"># (2)!</span>
+<span class="n">logfire</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;user processed: </span><span class="si">{user!r}</span><span class="s1">&#39;</span><span class="p">,</span> <span class="n">user</span><span class="o">=</span><span class="n">user</span><span class="p">)</span>
 </code></pre></div>
-<ol>
-<li>The <code>logfire.configure()</code> call is all you need to instrument your project with Logfire.</li>
-<li>The <code>logfire.info()</code> call logs the <code>user</code> object to Logfire, with builtin support for Pydantic models.</li>
-</ol>
-<p><img alt="basic pydantic logfire usage" src="../../img/basic_logfire.png" /></p>
-<h3 id="pydantic-instrumentation">Pydantic Instrumentation<a class="headerlink" href="#pydantic-instrumentation" title="Permanent link">&para;</a></h3>
-<p>You can even record information about the validation process automatically by
-using the builtin <a href="https://pydantic.dev/docs/logfire/get-started/why/#pydantic-integration">Pydantic integration</a>:</p>
-<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">datetime</span><span class="w"> </span><span class="kn">import</span> <span class="n">date</span>
-
-<span class="kn">import</span><span class="w"> </span><span class="nn">logfire</span>
-
-<span class="kn">from</span><span class="w"> </span><span class="nn">pydantic</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseModel</span>
-
-<span class="n">logfire</span><span class="o">.</span><span class="n">configure</span><span class="p">()</span>
-<span class="n">logfire</span><span class="o">.</span><span class="n">instrument_pydantic</span><span class="p">()</span>  <span class="c1"># (1)!</span>
-
-
-<span class="k">class</span><span class="w"> </span><span class="nc">User</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
-    <span class="n">name</span><span class="p">:</span> <span class="nb">str</span>
-    <span class="n">country_code</span><span class="p">:</span> <span class="nb">str</span>
-    <span class="n">dob</span><span class="p">:</span> <span class="n">date</span>
-
-
-<span class="n">User</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;Anne&#39;</span><span class="p">,</span> <span class="n">country_code</span><span class="o">=</span><span class="s1">&#39;USA&#39;</span><span class="p">,</span> <span class="n">dob</span><span class="o">=</span><span class="s1">&#39;2000-01-01&#39;</span><span class="p">)</span>
-<span class="n">User</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;David&#39;</span><span class="p">,</span> <span class="n">country_code</span><span class="o">=</span><span class="s1">&#39;GBR&#39;</span><span class="p">,</span> <span class="n">dob</span><span class="o">=</span><span class="s1">&#39;invalid-dob&#39;</span><span class="p">)</span>
-</code></pre></div>
-<ol>
-<li>The <code>logfire.instrument_pydantic()</code> call automatically logs validation information for all Pydantic models in your project.</li>
-</ol>
-<p>You'll see each successful and failed validation logged in Logfire:</p>
-<p><img alt="logfire instrumentation" src="../../img/logfire_instrument.png" /></p>
-<p>And you can investigate each of the corresponding spans to get validation details:</p>
-<p><img alt="logfire span details" src="../../img/logfire_span.png" /></p>
-<p>This is especially useful when a <a class="autorefs autorefs-internal" href="../../api/pydantic_core/#pydantic_core.ValidationError"><code>ValidationError</code></a> shows up in
-production and you need the input that caused it — see <a href="../../errors/troubleshooting/">Troubleshooting Validation Errors with
-Logfire</a>.</p>
-<!-- TODO: add examples re tracing performance issues - what kind of example do we want to use? -->
+<h2 id="troubleshooting">Troubleshooting<a class="headerlink" href="#troubleshooting" title="Permanent link">&para;</a></h2>
+<ul>
+<li><strong>No validation records appear:</strong> make sure <code>logfire.configure()</code> runs and that
+  <code>instrument_pydantic()</code> runs before the model class is defined or imported.</li>
+<li><strong>Successful validations do not appear:</strong> <code>record='failure'</code> keeps them as metrics only. Use
+  <code>record='all'</code> when you need an individual span for each success.</li>
+<li><strong>You need to inspect successful validations too:</strong> use <code>record='all'</code>. This creates an individual
+  span for every validation, so review its data-volume and privacy implications before using it in
+  production.</li>
+</ul>
 
 
 

@@ -5016,8 +5016,8 @@ will contain information about all of the errors and how they happened.</p>
 </code></pre></div>
 <p>In an example like this one, the offending <code>data</code> is right there in the code. A
 <a class="autorefs autorefs-internal" href="../../api/pydantic_core/#pydantic_core.ValidationError"><code>ValidationError</code></a> includes the value rejected at each failing
-location, but in a running application you may also need the complete validation input and its request
-or job context. <a href="../../errors/troubleshooting/">Logfire records failed validations</a> with both.</p>
+location, but in a running application you may also need those details in their request or job
+context. <a href="../../errors/troubleshooting/">Logfire records failed validations</a> with both.</p>
 <h2 id="arbitrary-class-instances">Arbitrary class instances<a class="headerlink" href="#arbitrary-class-instances" title="Permanent link">&para;</a></h2>
 <p>(Formerly known as "ORM Mode"/<code>from_orm()</code>).</p>
 <p>When using the <a class="autorefs autorefs-internal" href="../../api/base_model/#pydantic.BaseModel.model_validate"><code>model_validate()</code></a> method, Pydantic can also validate arbitrary objects,

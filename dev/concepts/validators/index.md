@@ -534,7 +534,7 @@ To raise a validation error, three types of exceptions can be used:
 
   ```
 
-When a validator rejects data in production, [Logfire](../../errors/troubleshooting/) records the input alongside each validation, so you can see the value that broke the rule.
+When a validator rejects data in production, [Logfire](../../errors/troubleshooting/) can record the rejected value in its structured errors, so you can see what broke the rule.
 
 ## Validation info
 

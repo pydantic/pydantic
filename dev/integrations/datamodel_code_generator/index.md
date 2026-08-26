@@ -113,4 +113,4 @@ More information can be found on the [official documentation](https://datamodel-
 
 A model generated from an OpenAPI or JSON Schema document is a snapshot of that contract. When the upstream data stops matching it (a field changes type, a new required field appears), the mismatch surfaces as a ValidationError at runtime, often the first sign the source has drifted from the schema you generated against.
 
-If you [record validations with Logfire](../../errors/troubleshooting/), those failures are stored with the payload that caused them, so you can see *what* changed and *when* it started, useful when you don't own the schema and can't regenerate the models until you know what moved.
+If you [record validations with Logfire](../../errors/troubleshooting/), those failures are stored with their structured errors and rejected values, so you can see *what* changed and *when* it started, useful when you don't own the schema and can't regenerate the models until you know what moved.

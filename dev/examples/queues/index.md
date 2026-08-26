@@ -165,7 +165,7 @@ To test this example:
 1. Run the receiver script in one terminal to start the consumer.
 1. Run the sender script in another terminal to send messages.
 
-One thing to keep in mind with consumers like this: if `model_validate_json` raises a ValidationError, the message that caused it may no longer be on the queue by the time you investigate, making the failure hard to reproduce. It's worth recording failed validations as they happen, for example with [Logfire](../../errors/troubleshooting/), which captures the message body alongside the error:
+One thing to keep in mind with consumers like this: if `model_validate_json` raises a ValidationError, the message that caused it may no longer be on the queue by the time you investigate, making the failure hard to reproduce. It's worth recording failed validations as they happen, for example with [Logfire](../../errors/troubleshooting/), which captures their field locations and rejected values in structured errors:
 
 ```python
 import logfire

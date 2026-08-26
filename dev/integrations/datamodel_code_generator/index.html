@@ -4091,8 +4091,8 @@ upstream data stops matching it (a field changes type, a new required field appe
 surfaces as a <a class="autorefs autorefs-internal" href="../../api/pydantic_core/#pydantic_core.ValidationError"><code>ValidationError</code></a> at runtime, often the first sign the
 source has drifted from the schema you generated against.</p>
 <p>If you <a href="../../errors/troubleshooting/">record validations with Logfire</a>, those failures are stored with
-the payload that caused them, so you can see <em>what</em> changed and <em>when</em> it started, useful when you
-don't own the schema and can't regenerate the models until you know what moved.</p>
+their structured errors and rejected values, so you can see <em>what</em> changed and <em>when</em> it started,
+useful when you don't own the schema and can't regenerate the models until you know what moved.</p>
 
 
 

@@ -216,7 +216,7 @@ except pydantic.ValidationError as e:
 
 ```
 
-Because a Pydantic dataclass validates its inputs just like a model, the same observability applies: if you use [Logfire](../../integrations/logfire/), validations of Pydantic dataclasses are [recorded alongside model validations](../../errors/troubleshooting/), input included.
+Because a Pydantic dataclass validates its inputs just like a model, the same observability applies: if you use [Logfire](../../integrations/logfire/), validations of Pydantic dataclasses are [recorded alongside model validations](../../errors/troubleshooting/), with rejected values in their structured errors.
 
 The decorator can also be applied directly on a stdlib dataclass, in which case a new subclass will be created:
 

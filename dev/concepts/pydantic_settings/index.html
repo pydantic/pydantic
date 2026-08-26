@@ -5720,8 +5720,8 @@ to help you monitor and understand your
 <p><a href="https://github.com/pydantic/pydantic-settings">Pydantic Settings</a> provides optional Pydantic features for loading a settings or config class from environment variables or secrets files.</p>
 <p>Settings are validated from environment variables and secrets files, so a
 <a class="autorefs autorefs-internal" href="../../api/pydantic_core/#pydantic_core.ValidationError"><code>ValidationError</code></a> here points at an environment value that didn't match
-its field. <a href="../../errors/troubleshooting/">Logfire</a> records each validation and its structured errors, so
-you can see which setting failed and why.</p>
+its field. <a href="../../errors/troubleshooting/">Logfire</a> can record failed validations and their structured
+errors, so you can see which setting failed and why.</p>
 <h2 id="installation">Installation<a class="headerlink" href="#installation" title="Permanent link">&para;</a></h2>
 <p>Installation is as simple as:</p>
 <div class="language-bash highlight"><pre><span></span><code>pip<span class="w"> </span>install<span class="w"> </span>pydantic-settings
