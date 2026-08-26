@@ -31,7 +31,7 @@ from typing import (
 import pydantic_core
 import typing_extensions
 from pydantic_core import PydanticUndefined, ValidationError
-from typing_extensions import Self, TypeAlias, Unpack
+from typing_extensions import Self, Sentinel, TypeAlias, Unpack
 
 from . import PydanticDeprecatedSince20, PydanticDeprecatedSince211
 from ._internal import (
@@ -119,6 +119,14 @@ def _private_setattr_handler(model: BaseModel, name: str, val: Any) -> None:
         # the `model_post_init()` call. Ideally we should find a better way to init private attrs.
         object.__setattr__(model, '__pydantic_private__', {})
     model.__pydantic_private__[name] = val  # pyright: ignore[reportOptionalSubscript]
+
+
+_ATTRIBUTE_MISSING = Sentinel('_ATTRIBUTE_MISSING')
+"""Sentinel used as the default of `getattr()` calls looking up class attributes.
+
+Using `None` instead would make it impossible to tell a missing attribute apart from
+an attribute that is present and legitimately set to `None`.
+"""
 
 
 _SIMPLE_SETATTR_HANDLERS: Mapping[str, Callable[[BaseModel, str, Any], None]] = {
@@ -1137,7 +1145,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
                     _object_setattr(self, name, value)
                     return None  # Can not return memoized handler with possibly freeform attr names
 
-            attr = getattr(cls, name, None)
+            attr = getattr(cls, name, _ATTRIBUTE_MISSING)
             # NOTE: We currently special case properties and `cached_property`, but we might need
             # to generalize this to all data/non-data descriptors at some point. For non-data descriptors
             # (such as `cached_property`), it isn't obvious though. `cached_property` caches the value
@@ -1157,7 +1165,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
                 if cls.model_config.get('extra') != 'allow':
                     # TODO - matching error
                     raise ValueError(f'"{cls.__name__}" object has no field "{name}"')
-                elif attr is None:
+                elif attr is _ATTRIBUTE_MISSING:
                     # attribute does not exist, so put it in extra
                     self.__pydantic_extra__[name] = value
                     self.__pydantic_fields_set__.add(name)
