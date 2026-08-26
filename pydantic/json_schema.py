@@ -798,7 +798,7 @@ class GenerateJsonSchema:
         Returns:
             The generated JSON schema.
         """
-        json_schema = {'type': 'string'}
+        json_schema: JsonSchemaValue = {'type': 'string'}
         self.update_with_validations(json_schema, schema, self.ValidationsMapping.string)
         # `str_min_length`/`str_max_length` are applied by pydantic-core straight from the model
         # config, so unlike a field-level constraint they never reach this core schema node. A
