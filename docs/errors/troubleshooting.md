@@ -63,10 +63,11 @@ the path from separate logs.
 !!! warning "Review validation data before exporting it"
     Failed-validation records contain the rejected values from Pydantic's structured errors. The
     Logfire SDK [scrubs common sensitive values](https://pydantic.dev/docs/logfire/instrument/scrubbing/)
-    before export, but the field name is stored separately from the rejected value. If those values
-    can contain secrets or personal data, pass
-    `scrubbing=logfire.ScrubbingOptions(extra_patterns=['^input$'])` to `logfire.configure()` to scrub
-    rejected inputs, or use `record='metrics'` so individual failures are not exported.
+    before export, but Logfire stores every rejected value under the attribute key `input`, separately
+    from its field path. If those values can contain secrets or personal data, pass
+    `scrubbing=logfire.ScrubbingOptions(extra_patterns=['^input$'])` to `logfire.configure()`. The
+    pattern matches that attribute key and scrubs every rejected value; it is not one of your model's
+    field names. Alternatively, use `record='metrics'` so individual failures are not exported.
 
 ![A failed Pydantic validation recorded in the Logfire live view](../img/logfire-validation-live-view.png)
 
