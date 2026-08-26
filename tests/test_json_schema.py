@@ -854,6 +854,7 @@ def test_date_types_ser_json_temporal(field_type, iso8601_format, ser_json_tempo
         expected_schema = {'title': 'A', 'type': 'number'}
 
     assert Model.model_json_schema(mode='serialization')['properties']['a'] == expected_schema
+    assert Model.model_json_schema(mode='validation')['properties']['a']['type'] == 'string'
 
 
 @pytest.mark.parametrize('ser_json_temporal', ['iso8601', 'seconds', 'milliseconds'])

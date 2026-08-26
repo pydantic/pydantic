@@ -871,7 +871,7 @@ class GenerateJsonSchema:
     def _common_temporal_schema(
         self, format: str, temporal_format: Literal['iso8601', 'seconds', 'milliseconds']
     ) -> JsonSchemaValue:
-        if temporal_format != 'iso8601':
+        if self.mode == 'serialization' and temporal_format != 'iso8601':
             # Both `'seconds'` and `'milliseconds'` serialize to a number:
             return {'type': 'number'}
         return {'type': 'string', 'format': format}
