@@ -1,6 +1,11 @@
 Pydantic attempts to provide useful validation errors. Below are details on common validation errors users
 may encounter when working with pydantic, together with some suggestions on how to fix them.
 
+The entries below explain what each error type means. To see the rejected values and surrounding trace
+when one occurs in a live service, [Logfire](troubleshooting.md) can record failed validations with their
+structured errors. See [Troubleshooting Validation Errors](troubleshooting.md) for setup and
+sensitive-data considerations.
+
 ## `arguments_type`
 
 This error is raised when an object that would be passed as arguments to a function during validation is not

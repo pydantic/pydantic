@@ -117,6 +117,6 @@ Check out our [blog post](https://pydantic.dev/articles/lambda-intro) to learn m
 
 Validation failures are particularly awkward to debug in Lambda: you can't attach a debugger, and the
 event that caused the failure disappears with the invocation. If you record validations with
-[Logfire](../integrations/logfire.md), each failed validation is stored with the payload that caused
-it, and its [AWS Lambda integration](https://logfire.pydantic.dev/docs/integrations/aws-lambda/)
+[Logfire](../integrations/logfire.md), each failed validation is stored with its structured errors and
+rejected values, and its [AWS Lambda integration](https://pydantic.dev/docs/logfire/integrations/aws-lambda/)
 captures the surrounding invocation.

@@ -74,6 +74,6 @@ When you validate responses like this, a [`ValidationError`][pydantic_core.Valid
 the first sign that an API you depend on has changed its response format. The useful questions at that
 point are *what did the response actually contain*, and *when did this start*:
 [recording failed validations with Logfire](../errors/troubleshooting.md) answers both, since each
-failure is stored with the data that triggered it.
+failure is stored with its structured errors and rejected values.
 
 <!-- TODO: httpx, flask, Django rest framework, FastAPI -->
