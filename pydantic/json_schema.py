@@ -800,6 +800,14 @@ class GenerateJsonSchema:
         """
         json_schema = {'type': 'string'}
         self.update_with_validations(json_schema, schema, self.ValidationsMapping.string)
+        # `str_min_length`/`str_max_length` are applied by pydantic-core straight from the model
+        # config, so unlike a field-level constraint they never reach this core schema node. A
+        # field that sets its own length overrides the config one rather than combining with it,
+        # and that value is already here, so only fill in what the field left unset.
+        if 'minLength' not in json_schema and self._config.str_min_length:
+            json_schema['minLength'] = self._config.str_min_length
+        if 'maxLength' not in json_schema and self._config.str_max_length is not None:
+            json_schema['maxLength'] = self._config.str_max_length
         if isinstance(json_schema.get('pattern'), Pattern):
             # TODO: should we add regex flags to the pattern?
             json_schema['pattern'] = json_schema.get('pattern').pattern  # type: ignore
