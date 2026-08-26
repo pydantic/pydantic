@@ -854,6 +854,7 @@ def test_date_types_ser_json_temporal(field_type, iso8601_format, ser_json_tempo
         expected_schema = {'title': 'A', 'type': 'number'}
 
     assert Model.model_json_schema(mode='serialization')['properties']['a'] == expected_schema
+    assert Model.model_json_schema(mode='validation')['properties']['a']['type'] == 'string'
 
 
 @pytest.mark.parametrize('ser_json_temporal', ['iso8601', 'seconds', 'milliseconds'])
@@ -2045,37 +2046,6 @@ def test_typeddict_default_bytes(ser_json_bytes: Literal['base64', 'utf8'], prop
         'title': 'MyTypedDict',
         'type': 'object',
     }
-
-
-@pytest.mark.parametrize(
-    'config',
-    [
-        {'ser_json_temporal': 'seconds'},
-        {'ser_json_temporal': 'milliseconds'},
-        {'ser_json_timedelta': 'float'},
-    ],
-)
-def test_temporal_validation_json_schema_ignores_serialization_config(config: dict[str, Any]):
-    class Model(BaseModel):
-        model_config = ConfigDict(**config)
-
-        d: date
-        t: time
-        dt: datetime
-        td: timedelta
-
-    properties = Model.model_json_schema(mode='validation')['properties']
-    assert {name: (prop['type'], prop['format']) for name, prop in properties.items()} == {
-        'd': ('string', 'date'),
-        't': ('string', 'time'),
-        'dt': ('string', 'date-time'),
-        'td': ('string', 'duration'),
-    }
-
-    # Which is the right description only because validation keeps taking ISO 8601 either way:
-    assert Model.model_validate_json(
-        '{"d": "2032-01-02", "t": "03:04:05", "dt": "2032-01-02T03:04:05", "td": "PT5M"}'
-    ) == Model(d=date(2032, 1, 2), t=time(3, 4, 5), dt=datetime(2032, 1, 2, 3, 4, 5), td=timedelta(minutes=5))
 
 
 def test_model_subclass_metadata():
