@@ -4506,7 +4506,7 @@ CoreSchemaFieldType: TypeAlias = Literal[
 ]
 
 
-# used in _pydantic_core.pyi::PydanticKnownError
+# used in _pydantic_core/__init__.pyi::PydanticKnownError
 # to update this, call `pytest -k test_all_errors` and copy the output
 ErrorType: TypeAlias = Literal[
     'no_such_attribute',
