@@ -2791,6 +2791,104 @@ def dict_schema(
 
 ````
 
+## frozendict_schema
+
+```python
+frozendict_schema(
+    keys_schema: CoreSchema | None = None,
+    values_schema: CoreSchema | None = None,
+    *,
+    min_length: int | None = None,
+    max_length: int | None = None,
+    fail_fast: bool | None = None,
+    strict: bool | None = None,
+    ref: str | None = None,
+    metadata: dict[str, Any] | None = None,
+    serialization: SerSchema | None = None
+) -> FrozenDictSchema
+
+```
+
+Returns a schema that matches a `frozendict` value, e.g.:
+
+```py
+from pydantic_core import SchemaValidator, core_schema
+
+schema = core_schema.frozendict_schema(
+    keys_schema=core_schema.str_schema(), values_schema=core_schema.int_schema()
+)
+v = SchemaValidator(schema)
+assert v.validate_python({'a': '1', 'b': 2}) == frozendict({'a': 1, 'b': 2})
+
+```
+
+Note
+
+The `frozendict` builtin type is only available in Python 3.15 and above. Using this schema on older Python versions will raise a SchemaError when the validator or serializer is built.
+
+Parameters:
+
+| Name | Type | Description | Default | | --- | --- | --- | --- | | `keys_schema` | `CoreSchema | None` | The value must be a frozendict with keys that match this schema | `None` | | `values_schema` | `CoreSchema | None` | The value must be a frozendict with values that match this schema | `None` | | `min_length` | `int | None` | The value must be a frozendict with at least this many items | `None` | | `max_length` | `int | None` | The value must be a frozendict with at most this many items | `None` | | `fail_fast` | `bool | None` | Stop validation on the first error | `None` | | `strict` | `bool | None` | Whether the input should be validated with strict mode | `None` | | `ref` | `str | None` | optional unique identifier of the schema, used to reference the schema in other places | `None` | | `metadata` | `dict[str, Any] | None` | Any other information you want to include with the schema, not used by pydantic-core | `None` | | `serialization` | `SerSchema | None` | Custom serialization schema | `None` |
+
+Source code in `pydantic_core/core_schema.py`
+
+````python
+def frozendict_schema(
+    keys_schema: CoreSchema | None = None,
+    values_schema: CoreSchema | None = None,
+    *,
+    min_length: int | None = None,
+    max_length: int | None = None,
+    fail_fast: bool | None = None,
+    strict: bool | None = None,
+    ref: str | None = None,
+    metadata: dict[str, Any] | None = None,
+    serialization: SerSchema | None = None,
+) -> FrozenDictSchema:
+    """
+    Returns a schema that matches a `frozendict` value, e.g.:
+
+    ```py {requires="3.15" lint="skip"}
+    from pydantic_core import SchemaValidator, core_schema
+
+    schema = core_schema.frozendict_schema(
+        keys_schema=core_schema.str_schema(), values_schema=core_schema.int_schema()
+    )
+    v = SchemaValidator(schema)
+    assert v.validate_python({'a': '1', 'b': 2}) == frozendict({'a': 1, 'b': 2})
+    ```
+
+    !!! note
+        The `frozendict` builtin type is only available in Python 3.15 and above.
+        Using this schema on older Python versions will raise a [`SchemaError`][pydantic_core.SchemaError]
+        when the validator or serializer is built.
+
+    Args:
+        keys_schema: The value must be a frozendict with keys that match this schema
+        values_schema: The value must be a frozendict with values that match this schema
+        min_length: The value must be a frozendict with at least this many items
+        max_length: The value must be a frozendict with at most this many items
+        fail_fast: Stop validation on the first error
+        strict: Whether the input should be validated with strict mode
+        ref: optional unique identifier of the schema, used to reference the schema in other places
+        metadata: Any other information you want to include with the schema, not used by pydantic-core
+        serialization: Custom serialization schema
+    """
+    return _dict_not_none(
+        type='frozendict',
+        keys_schema=keys_schema,
+        values_schema=values_schema,
+        min_length=min_length,
+        max_length=max_length,
+        fail_fast=fail_fast,
+        strict=strict,
+        ref=ref,
+        metadata=metadata,
+        serialization=serialization,
+    )
+
+````
+
 ## no_info_before_validator_function
 
 ```python

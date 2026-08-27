@@ -910,6 +910,32 @@ except ValidationError as e:
 
 ```
 
+### Frozen dictionaries
+
+Built-in type: `frozendict`.
+
+Added in v2.14: The `frozendict` type, new in Python 3.15, is supported by Pydantic.
+
+#### Validation
+
+- `frozendict` instances are accepted as is.
+- dict and mappings instances are accepted and coerced to a `frozendict`.
+- If generic parameters for keys and values are provided, the appropriate validation is applied.
+
+#### Constraints
+
+As with [dictionaries](#dictionaries), frozen dictionaries support the following constraints:
+
+| Constraint | Description | JSON Schema | | --- | --- | --- | | `min_length` | The dictionary must have at least this many items | [`minItems`](https://json-schema.org/understanding-json-schema/reference/array#length) keyword | | `max_length` | The dictionary must have at most this many items | [`maxItems`](https://json-schema.org/understanding-json-schema/reference/array#length) keyword |
+
+These constraints can be provided using the Field() function. The `MinLen` and `MaxLen` metadata types from the [`annotated-types`](https://github.com/annotated-types/annotated-types) library can also be used.
+
+#### Strictness
+
+In [strict mode](../../concepts/strict_mode/), only `frozendict` instances are valid. Strict mode does *not* apply to the keys and values of the frozen dictionaries. The strict constraint must be applied to the parameter types for this to work.
+
+#### Example
+
 ### Typed dictionaries
 
 Standard library type: typing.TypedDict (see also: the [typing specification](https://typing.python.org/en/latest/spec/typeddict.html)).

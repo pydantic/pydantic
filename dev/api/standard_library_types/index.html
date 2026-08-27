@@ -2187,6 +2187,17 @@ to help you monitor and understand your
 </li>
         
           <li class="md-nav__item">
+  <a href="#frozen-dictionaries" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Frozen dictionaries
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#typed-dictionaries" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -4559,6 +4570,17 @@ to help you monitor and understand your
 </li>
         
           <li class="md-nav__item">
+  <a href="#frozen-dictionaries" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Frozen dictionaries
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#typed-dictionaries" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -6090,6 +6112,51 @@ The strict constraint must be applied to the parameter types for this to work.</
 <span class="sd">      Input should be a valid dictionary [type=dict_type, input_value=&#39;test&#39;, input_type=str]</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 </code></pre></div>
+<h3 id="frozen-dictionaries">Frozen dictionaries<a class="headerlink" href="#frozen-dictionaries" title="Permanent link">&para;</a></h3>
+<p>Built-in type: <code>frozendict</code>.</p>
+<div style="border-left: .15rem solid rgb(79, 196, 100); padding: 0 .5rem;">
+<p><span style="font-style: italic; color: rgb(79, 196, 100);">Added in v2.14: </span><span>The <code>frozendict</code> type, new in Python 3.15, is supported by Pydantic.</span></p>
+</div>
+<h4>Validation</h4>
+
+<ul>
+<li><code>frozendict</code> instances are accepted as is.</li>
+<li><a class="autorefs autorefs-external" href="https://docs.python.org/3/reference/expressions.html#dict"><code>dict</code></a> and <a class="autorefs autorefs-external" href="https://docs.python.org/3/glossary.html#term-mapping">mappings</a> instances are accepted and coerced to a <code>frozendict</code>.</li>
+<li>If generic parameters for keys and values are provided, the appropriate validation is applied.</li>
+</ul>
+<h4>Constraints</h4>
+
+<p>As with <a href="#dictionaries">dictionaries</a>, frozen dictionaries support the following constraints:</p>
+<table>
+<thead>
+<tr>
+<th>Constraint</th>
+<th>Description</th>
+<th>JSON Schema</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>min_length</code></td>
+<td>The dictionary must have at least this many items</td>
+<td><a href="https://json-schema.org/understanding-json-schema/reference/array#length"><code>minItems</code></a> keyword</td>
+</tr>
+<tr>
+<td><code>max_length</code></td>
+<td>The dictionary must have at most this many items</td>
+<td><a href="https://json-schema.org/understanding-json-schema/reference/array#length"><code>maxItems</code></a> keyword</td>
+</tr>
+</tbody>
+</table>
+<p>These constraints can be provided using the <a class="autorefs autorefs-internal" href="../fields/#pydantic.fields.Field"><code>Field()</code></a> function.
+The <code>MinLen</code> and <code>MaxLen</code> metadata types from the <a href="https://github.com/annotated-types/annotated-types"><code>annotated-types</code></a>
+library can also be used.</p>
+<h4>Strictness</h4>
+
+<p>In <a href="../../concepts/strict_mode/">strict mode</a>, only <code>frozendict</code> instances are valid. Strict mode does <em>not</em> apply to the keys and values of the frozen dictionaries.
+The strict constraint must be applied to the parameter types for this to work.</p>
+<h4>Example</h4>
+
 <!-- old anchor added for backwards compatibility -->
 <!-- markdownlint-disable-next-line no-empty-links -->
 <p><a href="" id="typeddict"></a></p>

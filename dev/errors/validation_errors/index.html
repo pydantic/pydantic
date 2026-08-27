@@ -3589,6 +3589,17 @@ to help you monitor and understand your
 </li>
       
         <li class="md-nav__item">
+  <a href="#frozen_dict_type" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        frozen_dict_type
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#frozen_field" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -5461,6 +5472,17 @@ to help you monitor and understand your
 </li>
       
         <li class="md-nav__item">
+  <a href="#frozen_dict_type" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        frozen_dict_type
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#frozen_field" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -6948,6 +6970,8 @@ during validation:</p>
     <span class="nb">print</span><span class="p">(</span><span class="nb">repr</span><span class="p">(</span><span class="n">exc</span><span class="o">.</span><span class="n">errors</span><span class="p">()[</span><span class="mi">0</span><span class="p">][</span><span class="s1">&#39;type&#39;</span><span class="p">]))</span>
     <span class="c1">#&gt; &#39;fraction_type&#39;</span>
 </code></pre></div>
+<h2 id="frozen_dict_type"><code>frozen_dict_type</code><a class="headerlink" href="#frozen_dict_type" title="Permanent link">&para;</a></h2>
+<p>This error is raised when the input value's type is not valid for a <code>frozendict</code> field:</p>
 <h2 id="frozen_field"><code>frozen_field</code><a class="headerlink" href="#frozen_field" title="Permanent link">&para;</a></h2>
 <p>This error is raised when you attempt to assign a value to a field with <code>frozen=True</code>, or to delete such a field:</p>
 <div class="language-python highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">pydantic</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">Field</span><span class="p">,</span> <span class="n">ValidationError</span>

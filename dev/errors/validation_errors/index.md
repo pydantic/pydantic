@@ -918,6 +918,10 @@ except ValidationError as exc:
 
 ```
 
+## `frozen_dict_type`
+
+This error is raised when the input value's type is not valid for a `frozendict` field:
+
 ## `frozen_field`
 
 This error is raised when you attempt to assign a value to a field with `frozen=True`, or to delete such a field:

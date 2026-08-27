@@ -1710,44 +1710,42 @@ def dict_schema(self, schema: core_schema.DictSchema) -> JsonSchemaValue:
     Returns:
         The generated JSON schema.
     """
-    json_schema: JsonSchemaValue = {'type': 'object'}
+    return self._common_dict_schema(schema)
 
-    keys_schema = self.generate_inner(schema['keys_schema']).copy() if 'keys_schema' in schema else {}
-    if '$ref' not in keys_schema:
-        keys_pattern = keys_schema.pop('pattern', None)
-        # Don't give a title to patternProperties/propertyNames:
-        keys_schema.pop('title', None)
-    else:
-        # Here, we assume that if the keys schema is a definition reference,
-        # it can't be a simple string core schema (and thus no pattern can exist).
-        # However, this is only in practice (in theory, a definition reference core
-        # schema could be generated for a simple string schema).
-        # Note that we avoid calling `self.resolve_ref_schema`, as it might not exist yet.
-        keys_pattern = None
+```
 
-    values_schema = self.generate_inner(schema['values_schema']).copy() if 'values_schema' in schema else {}
-    # don't give a title to additionalProperties:
-    values_schema.pop('title', None)
+### frozendict_schema
 
-    if values_schema or keys_pattern is not None:
-        if keys_pattern is None:
-            json_schema['additionalProperties'] = values_schema
-        else:
-            json_schema['patternProperties'] = {keys_pattern: values_schema}
-    else:  # for `dict[str, Any]`, we allow any key and any value, since `str` is the default key type
-        json_schema['additionalProperties'] = True
+```python
+frozendict_schema(
+    schema: FrozenDictSchema,
+) -> JsonSchemaValue
 
-    if (
-        # The len check indicates that constraints are probably present:
-        (keys_schema.get('type') == 'string' and len(keys_schema) > 1)
-        # If this is a definition reference schema, it most likely has constraints:
-        or '$ref' in keys_schema
-    ):
-        keys_schema.pop('type', None)
-        json_schema['propertyNames'] = keys_schema
+```
 
-    self.update_with_validations(json_schema, schema, self.ValidationsMapping.object)
-    return json_schema
+Generates a JSON schema that matches a frozendict schema.
+
+Parameters:
+
+| Name | Type | Description | Default | | --- | --- | --- | --- | | `schema` | `FrozenDictSchema` | The core schema. | *required* |
+
+Returns:
+
+| Type | Description | | --- | --- | | `JsonSchemaValue` | The generated JSON schema. |
+
+Source code in `pydantic/json_schema.py`
+
+```python
+def frozendict_schema(self, schema: core_schema.FrozenDictSchema) -> JsonSchemaValue:
+    """Generates a JSON schema that matches a frozendict schema.
+
+    Args:
+        schema: The core schema.
+
+    Returns:
+        The generated JSON schema.
+    """
+    return self._common_dict_schema(schema)
 
 ```
 
