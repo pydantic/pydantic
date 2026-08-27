@@ -29,7 +29,7 @@ from uuid import UUID
 import pytest
 from annotated_types import Interval
 from dirty_equals import HasRepr
-from pydantic_core import CoreSchema, SchemaValidator, core_schema, to_jsonable_python
+from pydantic_core import CoreSchema, PydanticOmit, SchemaValidator, core_schema, to_jsonable_python
 from pydantic_core.core_schema import ValidatorFunctionWrapHandler
 from typing_extensions import TypeAliasType, TypedDict, deprecated
 
@@ -5966,6 +5966,114 @@ def test_skip_json_schema_annotation() -> None:
         'title': 'Model',
         'type': 'object',
     }
+
+
+def test_omit_json_schema_definition_used_by_multiple_fields() -> None:
+    """https://github.com/pydantic/pydantic/issues/11553"""
+
+    class OmittedModel(BaseModel):
+        @classmethod
+        def __get_pydantic_json_schema__(
+            cls, core_schema: CoreSchema, handler: GetJsonSchemaHandler
+        ) -> JsonSchemaValue:
+            raise PydanticOmit
+
+    class Model(BaseModel):
+        first: list[float | OmittedModel]
+        second: list[float | OmittedModel]
+
+    assert Model.model_json_schema() == {
+        'properties': {
+            'first': {'items': {'type': 'number'}, 'title': 'First', 'type': 'array'},
+            'second': {'items': {'type': 'number'}, 'title': 'Second', 'type': 'array'},
+        },
+        'required': ['first', 'second'],
+        'title': 'Model',
+        'type': 'object',
+    }
+
+
+def test_omit_json_schema_definition_propagates_to_dependent_definition() -> None:
+    def omit_json_schema(core_schema: CoreSchema, handler: GetJsonSchemaHandler) -> JsonSchemaValue:
+        raise PydanticOmit
+
+    omitted = core_schema.none_schema(
+        ref='omitted',
+        metadata={'pydantic_js_functions': [omit_json_schema]},
+    )
+    container = core_schema.list_schema(
+        core_schema.definition_reference_schema('omitted'),
+        ref='container',
+    )
+    root = core_schema.typed_dict_schema(
+        {
+            'field': core_schema.typed_dict_field(core_schema.definition_reference_schema('container')),
+        }
+    )
+    schema = core_schema.definitions_schema(root, [container, omitted])
+
+    assert GenerateJsonSchema().generate(schema) == {'properties': {}, 'type': 'object'}
+
+
+def test_omit_json_schema_definition_preserves_valid_union_choice() -> None:
+    def omit_json_schema(core_schema: CoreSchema, handler: GetJsonSchemaHandler) -> JsonSchemaValue:
+        raise PydanticOmit
+
+    omitted = core_schema.none_schema(
+        ref='omitted',
+        metadata={'pydantic_js_functions': [omit_json_schema]},
+    )
+    container = core_schema.list_schema(
+        core_schema.union_schema(
+            [core_schema.str_schema(), core_schema.definition_reference_schema('omitted')],
+        ),
+        ref='container',
+    )
+    root = core_schema.typed_dict_schema(
+        {
+            'field': core_schema.typed_dict_field(core_schema.definition_reference_schema('container')),
+        }
+    )
+    schema = core_schema.definitions_schema(root, [container, omitted])
+
+    assert GenerateJsonSchema().generate(schema) == {
+        '$defs': {'container': {'items': {'type': 'string'}, 'type': 'array'}},
+        'properties': {'field': {'$ref': '#/$defs/container'}},
+        'required': ['field'],
+        'type': 'object',
+    }
+
+
+def test_omit_json_schema_definition_propagates_from_nested_definitions() -> None:
+    def omit_json_schema(core_schema: CoreSchema, handler: GetJsonSchemaHandler) -> JsonSchemaValue:
+        raise PydanticOmit
+
+    omitted = core_schema.none_schema(
+        ref='omitted',
+        metadata={'pydantic_js_functions': [omit_json_schema]},
+    )
+    container = core_schema.list_schema(
+        core_schema.definition_reference_schema('omitted'),
+        ref='container',
+    )
+    wrapper = core_schema.with_default_schema(
+        core_schema.definitions_schema(
+            core_schema.union_schema(
+                [core_schema.str_schema(), core_schema.definition_reference_schema('omitted')],
+            ),
+            [omitted],
+        ),
+        ref='wrapper',
+    )
+    root = core_schema.typed_dict_schema(
+        {
+            'field': core_schema.typed_dict_field(core_schema.definition_reference_schema('container')),
+        }
+    )
+    schema = core_schema.definitions_schema(root, [container, wrapper])
+
+    SchemaValidator(schema)
+    assert GenerateJsonSchema().generate(schema) == {'properties': {}, 'type': 'object'}
 
 
 def test_skip_json_schema_exclude_default():
