@@ -482,7 +482,9 @@ def _apply_transform(
 # Core schema types with native support for the `gt`/`ge`/`lt`/`le` constraints:
 _ORDERING_SCHEMA_TYPES = frozenset({'int', 'float', 'decimal', 'fraction', 'date', 'time', 'datetime', 'timedelta'})
 # Core schema types with native support for the `min_length`/`max_length` constraints:
-_LENGTH_SCHEMA_TYPES = frozenset({'str', 'bytes', 'list', 'tuple', 'set', 'frozenset', 'dict', 'frozendict', 'generator'})
+_LENGTH_SCHEMA_TYPES = frozenset(
+    {'str', 'bytes', 'list', 'tuple', 'set', 'frozenset', 'dict', 'frozendict', 'generator'}
+)
 
 
 def _apply_constraint(  # noqa: C901
