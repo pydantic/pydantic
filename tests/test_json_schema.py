@@ -154,6 +154,17 @@ def test_validate_by_alias_false_uses_the_field_name():
     with pytest.raises(ValidationError):
         Model.model_validate({'myAlias': 'x'})
 
+    # The alias is resolved in the shared generator, so a dataclass carrying the same config
+    # is described the same way:
+    @pydantic.dataclasses.dataclass(config=ConfigDict(validate_by_alias=False, validate_by_name=True))
+    class Dataclass:
+        my_field: str = Field(alias='myAlias')
+
+    adapter = TypeAdapter(Dataclass)
+    assert list(adapter.json_schema()['properties']) == ['my_field']
+    with pytest.raises(ValidationError):
+        adapter.validate_python({'myAlias': 'x'})
+
 
 def test_validate_by_alias_false_is_scoped_to_its_own_model():
     class Inner(BaseModel):
