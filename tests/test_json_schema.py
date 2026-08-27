@@ -4,7 +4,7 @@ import math
 import re
 import sys
 import typing
-from collections import deque
+from collections import Counter, OrderedDict, deque
 from collections.abc import Callable, Iterable, Sequence
 from datetime import date, datetime, time, timedelta
 from decimal import Decimal
@@ -693,6 +693,20 @@ def test_deque():
         'properties': {'a': {'title': 'A', 'type': 'array', 'items': {'type': 'string'}}},
         'required': ['a'],
     }
+
+
+@pytest.mark.parametrize(
+    'field_type,expected_length_keys',
+    [
+        pytest.param(deque[int], {'minItems': 2, 'maxItems': 3}, id='deque'),
+        pytest.param(Counter[str], {'minProperties': 2, 'maxProperties': 3}, id='Counter'),
+        pytest.param(OrderedDict[str, int], {'minProperties': 2, 'maxProperties': 3}, id='OrderedDict'),
+    ],
+)
+def test_wrapped_collection_length_constraints_json_schema(field_type, expected_length_keys):
+    ta = TypeAdapter(Annotated[field_type, Field(min_length=2, max_length=3)])
+
+    assert ta.json_schema().items() >= expected_length_keys.items()
 
 
 def test_bool():
