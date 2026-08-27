@@ -416,7 +416,7 @@ def defaultdict_validator(
         return collections.defaultdict(default_default_factory, handler(input_value))
 
 
-_defaultdict_allowed_default_types = {
+_defaultdict_allowed_default_types: dict[type[Any], type[Any]] = {
     float: float,
     int: int,
     str: str,
@@ -435,6 +435,7 @@ _defaultdict_allowed_default_types = {
 }
 
 if sys.version_info >= (3, 15):
+    _defaultdict_allowed_default_types[collections.abc.Mapping] = frozendict  # noqa: F821
     _defaultdict_allowed_default_types[frozendict] = frozendict  # noqa: F821
 
 
@@ -457,7 +458,7 @@ def get_defaultdict_default_default_factory(values_source_type: Any) -> Callable
             return type_var_default_factory
         elif values_type not in _defaultdict_allowed_default_types:
             # a somewhat subjective set of types that have reasonable default values
-            allowed_msg = ', '.join([t.__name__ for t in set(_defaultdict_allowed_default_types.keys())])
+            allowed_msg = ', '.join([t.__name__ for t in _defaultdict_allowed_default_types.keys()])
             raise PydanticSchemaGenerationError(
                 f'Unable to infer a default factory for values of type {values_source_type}.'
                 f' Only {allowed_msg} are supported, other types require an explicit default factory'
