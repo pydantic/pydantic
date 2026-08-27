@@ -158,6 +158,7 @@ def complete_dataclass(
             validate_by_name=config_wrapper.validate_by_name,
             extra=config_wrapper.extra,
             is_dataclass=True,
+            validate_by_alias=config_wrapper.validate_by_alias,
         ),
     )
 

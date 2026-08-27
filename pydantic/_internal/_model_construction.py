@@ -671,6 +671,7 @@ def complete_model_class(
             fields=cls.__pydantic_fields__,
             validate_by_name=config_wrapper.validate_by_name,
             extra=config_wrapper.extra,
+            validate_by_alias=config_wrapper.validate_by_alias,
         ),
     )
 
