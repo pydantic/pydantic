@@ -888,6 +888,25 @@ except ValidationError as exc:
     #> 'fraction_type'
 ```
 
+## `frozen_dict_type`
+
+This error is raised when the input value's type is not valid for a `frozendict` field:
+
+```python {requires="3.15" lint="skip"}
+from pydantic import BaseModel, ValidationError
+
+
+class Model(BaseModel):
+    x: frozendict
+
+
+try:
+    model = Model(x='test')
+except ValidationError as exc:
+    print(repr(exc.errors()[0]['type']))
+    #> 'frozen_dict_type'
+```
+
 ## `frozen_field`
 
 This error is raised when you attempt to assign a value to a field with `frozen=True`, or to delete such a field:

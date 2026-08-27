@@ -123,6 +123,9 @@ if TYPE_CHECKING:
     from ._dataclasses import StandardDataclass
     from ._schema_generation_shared import GetJsonSchemaFunction
 
+if sys.version_info >= (3, 15):
+    from builtins import frozendict
+
 _SUPPORTS_TYPEDDICT = sys.version_info >= (3, 12)
 
 FieldDecoratorInfo: TypeAlias = ValidatorDecoratorInfo | FieldValidatorDecoratorInfo | FieldSerializerDecoratorInfo
@@ -445,6 +448,10 @@ class GenerateSchema:
         collections.abc.Callable: lambda self, obj: core_schema.callable_schema(),
     }
 
+    if sys.version_info >= (3, 15):
+        _handlers[frozendict] = lambda self, obj: self._frozendict_schema(Any, Any)
+        _generic_handlers[frozendict] = lambda self, obj: self._frozendict_schema(*self._get_first_two_args_or_any(obj))
+
     def __init_subclass__(cls) -> None:
         super().__init_subclass__()
         warnings.warn(
@@ -472,6 +479,9 @@ class GenerateSchema:
 
     def _dict_schema(self, keys_type: Any, values_type: Any) -> CoreSchema:
         return core_schema.dict_schema(self.generate_schema(keys_type), self.generate_schema(values_type))
+
+    def _frozendict_schema(self, keys_type: Any, values_type: Any) -> CoreSchema:
+        return core_schema.frozendict_schema(self.generate_schema(keys_type), self.generate_schema(values_type))
 
     def _set_schema(self, items_type: Any) -> CoreSchema:
         return core_schema.set_schema(self.generate_schema(items_type))
