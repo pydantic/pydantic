@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import sys
 from typing import Any
 
 import pytest
@@ -239,6 +240,7 @@ def test_iterables() -> None:
     assert result['collected_references'] == {'a': def_ref}
 
 
+@pytest.mark.skipif(sys.platform == 'emscripten', reason='Deallocating the deeply nested schema overflows the JS stack')
 def test_deeply_nested_schema() -> None:
     schema: Any = cs.definition_reference_schema('a')
     for _ in range(10_000):
