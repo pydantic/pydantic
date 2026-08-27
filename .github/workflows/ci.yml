@@ -702,12 +702,19 @@ jobs:
       - run: mkdir coverage
 
       - name: Run pytest
+        if: '!startsWith(matrix.python-version, ''pypy'')'
         run: make test NUM_THREADS=${{ endsWith(matrix.python-version, 't') && '4' || '1' }}
         env:
           COVERAGE_FILE: coverage/.coverage.${{ runner.os }}-py${{ matrix.python-version }}
           CONTEXT: ${{ runner.os }}-py${{ matrix.python-version }}-without-deps
 
+      # Coverage is very slow on PyPy and it covers roughly the same lines as CPython tests:
+      - name: Run pytest (no coverage)
+        if: startsWith(matrix.python-version, 'pypy')
+        run: uv run pytest --durations=10
+
       - name: Store coverage files
+        if: '!startsWith(matrix.python-version, ''pypy'')'
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: coverage-${{ matrix.os }}-${{ matrix.python-version }}
