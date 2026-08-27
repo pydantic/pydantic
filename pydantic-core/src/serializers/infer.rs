@@ -680,6 +680,8 @@ fn get_field_marker(py: Python<'_>) -> PyResult<&Bound<'_, PyAny>> {
     DC_FIELD_MARKER.import(py, "dataclasses", "_FIELD")
 }
 
+// TODO: remove when https://github.com/PyO3/pyo3/pull/6174 gets released, and iterate
+// directly over `PyFrozenDict` in the `ObType::Frozendict` arms, like `ObType::Dict` does:
 fn mapping_pairs<'py>(
     mapping: &Bound<'py, PyMapping>,
 ) -> PyResult<impl Iterator<Item = PyResult<(Bound<'py, PyAny>, Bound<'py, PyAny>)>>> {

@@ -236,7 +236,7 @@ impl<'py, 'data> Input<'py> for JsonValue<'data> {
         self.validate_dict(false)
     }
 
-    fn validate_frozendict(&self, _strict: bool) -> ValMatch<Self::Dict<'_>> {
+    fn strict_frozendict(&self) -> ValMatch<Self::Dict<'_>> {
         match self {
             JsonValue::Object(dict) => Ok(ValidationMatch::strict(dict)),
             _ => Err(ValError::new(ErrorTypeDefaults::FrozenDictType, self)),
@@ -494,7 +494,7 @@ impl<'py> Input<'py> for str {
     }
 
     #[cfg_attr(has_coverage_attribute, coverage(off))]
-    fn validate_frozendict(&self, _strict: bool) -> ValMatch<Never> {
+    fn strict_frozendict(&self) -> ValMatch<Never> {
         Err(ValError::new(ErrorTypeDefaults::FrozenDictType, self))
     }
 

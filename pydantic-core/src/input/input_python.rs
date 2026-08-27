@@ -431,22 +431,32 @@ impl<'py> Input<'py> for Bound<'py, PyAny> {
         }
     }
 
-    fn validate_frozendict<'a>(&'a self, strict: bool) -> ValMatch<GenericPyMapping<'a, 'py>> {
+    fn strict_frozendict<'a>(&'a self) -> ValMatch<GenericPyMapping<'a, 'py>> {
         if let Ok(frozendict_type) = get_frozendict_type(self.py())
             && self.is_instance(frozendict_type)?
         {
-            return Ok(ValidationMatch::exact(GenericPyMapping::Mapping(
+            Ok(ValidationMatch::exact(GenericPyMapping::Mapping(
                 self.cast::<PyMapping>()?,
-            )));
+            )))
+        } else {
+            Err(ValError::new(ErrorTypeDefaults::FrozenDictType, self))
         }
-        if !strict {
-            if let Ok(dict) = self.cast_exact::<PyDict>() {
-                return Ok(ValidationMatch::lax(GenericPyMapping::Dict(dict)));
-            } else if let Ok(mapping) = self.cast::<PyMapping>() {
-                return Ok(ValidationMatch::lax(GenericPyMapping::Mapping(mapping)));
-            }
+    }
+
+    fn lax_frozendict<'a>(&'a self) -> ValMatch<GenericPyMapping<'a, 'py>> {
+        if let Ok(frozendict_type) = get_frozendict_type(self.py())
+            && self.is_instance(frozendict_type)?
+        {
+            Ok(ValidationMatch::exact(GenericPyMapping::Mapping(
+                self.cast::<PyMapping>()?,
+            )))
+        } else if let Ok(dict) = self.cast_exact::<PyDict>() {
+            Ok(ValidationMatch::lax(GenericPyMapping::Dict(dict)))
+        } else if let Ok(mapping) = self.cast::<PyMapping>() {
+            Ok(ValidationMatch::lax(GenericPyMapping::Mapping(mapping)))
+        } else {
+            Err(ValError::new(ErrorTypeDefaults::FrozenDictType, self))
         }
-        Err(ValError::new(ErrorTypeDefaults::FrozenDictType, self))
     }
 
     fn validate_model_fields<'a>(

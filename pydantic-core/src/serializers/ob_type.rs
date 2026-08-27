@@ -22,6 +22,8 @@ pub struct ObTypeLookup {
     list: usize,
     dict: usize,
     // `frozendict` builtin, only available on Python 3.15+ (`None` on older versions)
+    // TODO: remove when https://github.com/PyO3/pyo3/pull/6174 gets released, and use a
+    // `frozendict: usize` field from `PyFrozenDict::type_object_raw()` instead, like `dict`:
     frozendict_object: Option<Py<PyAny>>,
     // other numeric types
     decimal_object: Py<PyAny>,
