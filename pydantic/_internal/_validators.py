@@ -8,6 +8,7 @@ from __future__ import annotations as _annotations
 import collections.abc
 import math
 import re
+import sys
 import typing
 from collections.abc import Callable, Sequence
 from decimal import Decimal
@@ -415,27 +416,35 @@ def defaultdict_validator(
         return collections.defaultdict(default_default_factory, handler(input_value))
 
 
+_defaultdict_allowed_default_types: dict[type[Any], type[Any]] = {
+    float: float,
+    int: int,
+    str: str,
+    bool: bool,
+    tuple: tuple,
+    collections.abc.Sequence: tuple,
+    collections.abc.MutableSequence: list,
+    list: list,
+    set: set,
+    collections.abc.MutableSet: set,
+    frozenset: frozenset,
+    collections.abc.Set: frozenset,
+    dict: dict,
+    collections.abc.Mapping: dict,
+    collections.abc.MutableMapping: dict,
+}
+
+if sys.version_info >= (3, 15):
+    _defaultdict_allowed_default_types[collections.abc.Mapping] = frozendict  # noqa: F821
+    _defaultdict_allowed_default_types[frozendict] = frozendict  # noqa: F821
+
+
 def get_defaultdict_default_default_factory(values_source_type: Any) -> Callable[[], Any]:
     FieldInfo = import_cached_field_info()
 
     values_type_origin = get_origin(values_source_type)
 
     def infer_default() -> Callable[[], Any]:
-        allowed_default_types: dict[Any, Any] = {
-            tuple: tuple,
-            collections.abc.Sequence: tuple,
-            collections.abc.MutableSequence: list,
-            list: list,
-            set: set,
-            collections.abc.MutableSet: set,
-            collections.abc.Set: frozenset,
-            collections.abc.Mapping: dict,
-            collections.abc.MutableMapping: dict,
-            float: float,
-            int: int,
-            str: str,
-            bool: bool,
-        }
         values_type = values_type_origin or values_source_type
         instructions = 'set using `DefaultDict[..., Annotated[..., Field(default_factory=...)]]`'
         if typing_objects.is_typevar(values_type):
@@ -447,15 +456,15 @@ def get_defaultdict_default_default_factory(values_source_type: Any) -> Callable
                 )
 
             return type_var_default_factory
-        elif values_type not in allowed_default_types:
+        elif values_type not in _defaultdict_allowed_default_types:
             # a somewhat subjective set of types that have reasonable default values
-            allowed_msg = ', '.join([t.__name__ for t in set(allowed_default_types.keys())])
+            allowed_msg = ', '.join([t.__name__ for t in _defaultdict_allowed_default_types.keys()])
             raise PydanticSchemaGenerationError(
-                f'Unable to infer a default factory for keys of type {values_source_type}.'
+                f'Unable to infer a default factory for values of type {values_source_type}.'
                 f' Only {allowed_msg} are supported, other types require an explicit default factory'
                 ' ' + instructions
             )
-        return allowed_default_types[values_type]
+        return _defaultdict_allowed_default_types[values_type]
 
     # Assume Annotated[..., Field(...)]
     if typing_objects.is_annotated(values_type_origin):
