@@ -661,3 +661,30 @@ def test_private_attribute_from_annotated_metadata_set_name() -> None:
 
     assert set_name_calls == [(Model, '_priv')]
     assert Model()._priv == 1
+
+
+def test_multiple_inheritance_mro_shadowing() -> None:
+    """Verify that a base class that only inherits a field does not shadow an override in another base (issue #13678)."""
+
+    class Base(BaseModel):
+        f: str = 'base'
+        _knob: str = 'base'
+
+    class Override(Base):
+        f: str = 'override'
+        _knob: str = 'override'
+
+    class Plain(Base):
+        pass
+
+    class Swapped(Plain, Override):
+        pass
+
+    class Composed(Override, Plain):
+        pass
+
+    assert Swapped().f == 'override'
+    assert Swapped()._knob == 'override'
+    assert Composed().f == 'override'
+    assert Composed()._knob == 'override'
+
