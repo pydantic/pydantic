@@ -122,11 +122,6 @@ def _private_setattr_handler(model: BaseModel, name: str, val: Any) -> None:
 
 
 _ATTRIBUTE_MISSING = Sentinel('_ATTRIBUTE_MISSING')
-"""Sentinel used as the default of `getattr()` calls looking up class attributes.
-
-Using `None` instead would make it impossible to tell a missing attribute apart from
-an attribute that is present and legitimately set to `None`.
-"""
 
 
 _SIMPLE_SETATTR_HANDLERS: Mapping[str, Callable[[BaseModel, str, Any], None]] = {
