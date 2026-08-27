@@ -23,7 +23,7 @@ else:
         ('not a mapping', ValidationError),
     ],
 )
-def test_frozendict_validation(value, expected):
+def test_frozendict_validation(value, expected) -> None:
     ta = TypeAdapter(frozendict[str, int])
 
     if expected is ValidationError:
@@ -35,7 +35,7 @@ def test_frozendict_validation(value, expected):
         assert isinstance(result, frozendict)
 
 
-def test_frozendict_bare():
+def test_frozendict_bare() -> None:
     ta = TypeAdapter(frozendict)
 
     result = ta.validate_python({'a': 1, 2: 'b'})
@@ -43,7 +43,7 @@ def test_frozendict_bare():
     assert isinstance(result, frozendict)
 
 
-def test_frozendict_json():
+def test_frozendict_json() -> None:
     ta = TypeAdapter(frozendict[str, int])
 
     result = ta.validate_json('{"a": 1}')
@@ -53,7 +53,7 @@ def test_frozendict_json():
     assert ta.dump_json(result) == b'{"a":1}'
 
 
-def test_frozendict_strict():
+def test_frozendict_strict() -> None:
     ta = TypeAdapter(frozendict[str, int], config={'strict': True})
 
     result = ta.validate_python(frozendict({'a': 1}))
@@ -67,7 +67,7 @@ def test_frozendict_strict():
     assert ta.validate_json('{"a": 1}') == frozendict({'a': 1})
 
 
-def test_constrained_frozendict():
+def test_constrained_frozendict() -> None:
     ta = TypeAdapter(Annotated[frozendict[str, int], Field(min_length=1, max_length=2)])
 
     assert ta.validate_python({'a': 1}) == frozendict({'a': 1})
@@ -81,7 +81,7 @@ def test_constrained_frozendict():
     assert exc_info.value.errors()[0]['type'] == 'too_long'
 
 
-def test_frozendict_field():
+def test_frozendict_field() -> None:
     class Model(BaseModel):
         x: frozendict[str, int]
         y: frozendict = frozendict()
@@ -97,7 +97,7 @@ def test_frozendict_field():
     assert m.model_dump_json() == '{"x":{"a":1},"y":{}}'
 
 
-def test_frozendict_nested():
+def test_frozendict_nested() -> None:
     ta = TypeAdapter(frozendict[str, frozendict[str, int]])
 
     result = ta.validate_python({'a': {'b': '1'}})
@@ -105,7 +105,7 @@ def test_frozendict_nested():
     assert isinstance(result['a'], frozendict)
 
 
-def test_frozendict_as_dict_key():
+def test_frozendict_as_dict_key() -> None:
     # `frozendict` is hashable, so it can be used as a `dict` key:
     ta = TypeAdapter(dict[frozendict[str, int], int])
 
@@ -113,7 +113,7 @@ def test_frozendict_as_dict_key():
     assert result == {frozendict({'a': 1}): 2}
 
 
-def test_frozendict_json_schema():
+def test_frozendict_json_schema() -> None:
     ta = TypeAdapter(frozendict[str, int])
     assert ta.json_schema() == {'type': 'object', 'additionalProperties': {'type': 'integer'}}
 
@@ -129,7 +129,7 @@ def test_frozendict_json_schema():
     assert ta.json_schema() == {'type': 'object', 'additionalProperties': True}
 
 
-def test_frozendict_serialization_any():
+def test_frozendict_serialization_any() -> None:
     ta = TypeAdapter(Any)
 
     result = ta.dump_python(frozendict({'a': 1}))

@@ -16,7 +16,7 @@ else:
     from builtins import frozendict
 
 
-def test_frozendict(py_and_json: PyAndJson):
+def test_frozendict(py_and_json: PyAndJson) -> None:
     v = py_and_json({'type': 'frozendict', 'keys_schema': {'type': 'int'}, 'values_schema': {'type': 'int'}})
     output = v.validate_test({'1': 2, '3': 4})
     assert output == frozendict({1: 2, 3: 4})
@@ -27,7 +27,7 @@ def test_frozendict(py_and_json: PyAndJson):
         v.validate_test([])
 
 
-def test_frozendict_json_object():
+def test_frozendict_json_object() -> None:
     # a JSON object is the only way to create a frozendict from JSON, so it is allowed in strict mode:
     v = SchemaValidator(cs.frozendict_schema(cs.str_schema(), cs.int_schema(), strict=True))
     output = v.validate_json('{"a": 1}')
@@ -52,7 +52,7 @@ def test_frozendict_json_object():
     ],
     ids=repr,
 )
-def test_frozendict_cases(input_value, expected):
+def test_frozendict_cases(input_value, expected) -> None:
     v = SchemaValidator(cs.frozendict_schema(keys_schema=cs.str_schema(), values_schema=cs.str_schema()))
     if isinstance(expected, Err):
         with pytest.raises(ValidationError, match=re.escape(expected.message)):
@@ -63,14 +63,14 @@ def test_frozendict_cases(input_value, expected):
         assert isinstance(output, frozendict)
 
 
-def test_frozendict_input():
+def test_frozendict_input() -> None:
     v = SchemaValidator(cs.frozendict_schema(keys_schema=cs.str_schema(), values_schema=cs.int_schema()))
     output = v.validate_python(frozendict({'a': '1'}))
     assert output == frozendict({'a': 1})
     assert isinstance(output, frozendict)
 
 
-def test_frozendict_strict():
+def test_frozendict_strict() -> None:
     v = SchemaValidator(cs.frozendict_schema(keys_schema=cs.str_schema(), values_schema=cs.int_schema(), strict=True))
     output = v.validate_python(frozendict({'a': 1}))
     assert output == frozendict({'a': 1})
@@ -79,7 +79,7 @@ def test_frozendict_strict():
             v.validate_python(wrong)
 
 
-def test_frozendict_subclass():
+def test_frozendict_subclass() -> None:
     class FrozenDictSubclass(frozendict):
         pass
 
@@ -87,7 +87,7 @@ def test_frozendict_subclass():
     assert v.validate_python(FrozenDictSubclass({'a': 1})) == frozendict({'a': 1})
 
 
-def test_frozendict_any_mapping():
+def test_frozendict_any_mapping() -> None:
     class MyMapping(Mapping):
         def __init__(self, d):
             self._d = d
@@ -107,7 +107,7 @@ def test_frozendict_any_mapping():
     assert isinstance(output, frozendict)
 
 
-def test_frozendict_key_value_errors(py_and_json: PyAndJson):
+def test_frozendict_key_value_errors(py_and_json: PyAndJson) -> None:
     v = py_and_json({'type': 'frozendict', 'keys_schema': {'type': 'int'}, 'values_schema': {'type': 'int'}})
     with pytest.raises(ValidationError) as exc_info:
         v.validate_test({'wrong': 1, '2': 'also wrong'})
@@ -127,7 +127,7 @@ def test_frozendict_key_value_errors(py_and_json: PyAndJson):
     ]
 
 
-def test_frozendict_length_constraints():
+def test_frozendict_length_constraints() -> None:
     v = SchemaValidator(cs.frozendict_schema(min_length=2, max_length=3))
     assert v.validate_python({'a': 1, 'b': 2}) == frozendict({'a': 1, 'b': 2})
     with pytest.raises(ValidationError) as exc_info:
@@ -138,26 +138,26 @@ def test_frozendict_length_constraints():
     assert exc_info.value.errors(include_url=False)[0]['type'] == 'too_long'
 
 
-def test_frozendict_fail_fast():
+def test_frozendict_fail_fast() -> None:
     v = SchemaValidator(cs.frozendict_schema(cs.str_schema(), cs.int_schema(), fail_fast=True))
     with pytest.raises(ValidationError) as exc_info:
         v.validate_python({'a': 'x', 'b': 'y'})
     assert len(exc_info.value.errors(include_url=False)) == 1
 
 
-def test_frozendict_hashable_output():
+def test_frozendict_hashable_output() -> None:
     v = SchemaValidator(cs.frozendict_schema())
     output = v.validate_python({'a': 1})
     assert hash(output) == hash(frozendict({'a': 1}))
 
 
-def test_frozendict_smart_union():
+def test_frozendict_smart_union() -> None:
     v = SchemaValidator(cs.union_schema([cs.frozendict_schema(), cs.dict_schema()]))
     assert type(v.validate_python({'a': 1})) is dict
     assert type(v.validate_python(frozendict({'a': 1}))) is frozendict
 
 
-def test_frozendict_validate_strings():
+def test_frozendict_validate_strings() -> None:
     v = SchemaValidator(cs.frozendict_schema(cs.int_schema(), cs.int_schema()))
     output = v.validate_strings({'1': '2'})
     assert output == frozendict({1: 2})
