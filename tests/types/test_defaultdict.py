@@ -29,9 +29,21 @@ def test_defaultdict_unknown_default_factory() -> None:
     """
     with pytest.raises(
         PydanticSchemaGenerationError,
-        match=r'Unable to infer a default factory for keys of type collections.defaultdict\[int, int\]',
+        match=r'Unable to infer a default factory for values of type collections.defaultdict\[int, int\]',
     ):
         TypeAdapter(defaultdict[int, defaultdict[int, int]])
+
+
+def test_defaultdict_unknown_default_factory_message_is_stable() -> None:
+    """The list of supported types is built from a dict, not a set, so that the
+    message does not reorder itself between runs."""
+    with pytest.raises(PydanticSchemaGenerationError) as exc_info:
+        TypeAdapter(defaultdict[int, defaultdict[int, int]])
+
+    assert (
+        'Only tuple, Sequence, MutableSequence, list, set, MutableSet, Set, Mapping, '
+        'MutableMapping, float, int, str, bool are supported'
+    ) in str(exc_info.value)
 
 
 def test_defaultdict_infer_default_factory() -> None:
