@@ -15181,7 +15181,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
                     _object_setattr(self, name, value)
                     return None  # Can not return memoized handler with possibly freeform attr names
 
-            attr = getattr(cls, name, None)
+            attr = getattr(cls, name, _ATTRIBUTE_MISSING)
             # NOTE: We currently special case properties and `cached_property`, but we might need
             # to generalize this to all data/non-data descriptors at some point. For non-data descriptors
             # (such as `cached_property`), it isn't obvious though. `cached_property` caches the value
@@ -15201,7 +15201,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
                 if cls.model_config.get('extra') != 'allow':
                     # TODO - matching error
                     raise ValueError(f'"{cls.__name__}" object has no field "{name}"')
-                elif attr is None:
+                elif attr is _ATTRIBUTE_MISSING:
                     # attribute does not exist, so put it in extra
                     self.__pydantic_extra__[name] = value
                     self.__pydantic_fields_set__.add(name)
