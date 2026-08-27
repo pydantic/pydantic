@@ -64,12 +64,13 @@ impl BuildSerializer for TypedDictSerializer {
             if field_info.get_as(intern!(py, "serialization_exclude"))? == Some(true) {
                 fields.insert(
                     key.clone_ref(py),
-                    SerField::new(key, None, None, required, serialize_by_alias, None),
+                    SerField::new(key, None, None, required, serialize_by_alias, None, None),
                 );
             } else {
                 let alias = field_info.get_as(intern!(py, "serialization_alias"))?;
                 let serialization_exclude_if: Option<Py<PyAny>> =
                     field_info.get_as(intern!(py, "serialization_exclude_if"))?;
+                let compare_as: Option<Py<PyAny>> = field_info.get_as(intern!(py, "compare_as"))?;
                 let schema = field_info.get_as_req(intern!(py, "schema"))?;
                 let serializer = CombinedSerializer::build(&schema, config, definitions)
                     .map_err(|e| py_schema_error_type!("Field `{key}`:\n  {e}"))?;
@@ -82,6 +83,7 @@ impl BuildSerializer for TypedDictSerializer {
                         required,
                         serialize_by_alias,
                         serialization_exclude_if,
+                        compare_as,
                     ),
                 );
             }
