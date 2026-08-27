@@ -6876,6 +6876,19 @@ def test_min_and_max_in_schema() -> None:
     TSeq = TypeAdapter(Annotated[Sequence[int], Field(min_length=2, max_length=5)])
     assert TSeq.json_schema() == {'items': {'type': 'integer'}, 'maxItems': 5, 'minItems': 2, 'type': 'array'}
 
+    from collections import Counter, OrderedDict, deque
+    from typing import Deque, Mapping
+
+    TDeque = TypeAdapter(Annotated[Deque[int], Field(min_length=2, max_length=5)])
+    assert TDeque.json_schema() == {'items': {'type': 'integer'}, 'maxItems': 5, 'minItems': 2, 'type': 'array'}
+
+    TCounter = TypeAdapter(Annotated[Counter[str], Field(min_length=1)])
+    assert TCounter.json_schema() == {'additionalProperties': {'type': 'integer'}, 'minProperties': 1, 'type': 'object'}
+
+    TMapping = TypeAdapter(Annotated[Mapping[str, int], Field(min_length=1, max_length=10)])
+    assert TMapping.json_schema() == {'additionalProperties': {'type': 'integer'}, 'maxProperties': 10, 'minProperties': 1, 'type': 'object'}
+
+
 
 def test_plain_field_validator_serialization() -> None:
     """`PlainValidator` internally creates a wrap ser. schema. This tests that we can
