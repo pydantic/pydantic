@@ -702,12 +702,19 @@ jobs:
       - run: mkdir coverage
 
       - name: Run pytest
+        if: '!startsWith(matrix.python-version, ''pypy'')'
         run: make test NUM_THREADS=${{ endsWith(matrix.python-version, 't') && '4' || '1' }}
         env:
           COVERAGE_FILE: coverage/.coverage.${{ runner.os }}-py${{ matrix.python-version }}
           CONTEXT: ${{ runner.os }}-py${{ matrix.python-version }}-without-deps
 
+      # Coverage is very slow on PyPy and it covers roughly the same lines as CPython tests:
+      - name: Run pytest (no coverage)
+        if: startsWith(matrix.python-version, 'pypy')
+        run: uv run pytest --durations=10
+
       - name: Store coverage files
+        if: '!startsWith(matrix.python-version, ''pypy'')'
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: coverage-${{ matrix.os }}-${{ matrix.python-version }}
@@ -907,6 +914,28 @@ jobs:
         id: all-green
         with:
           jobs: ${{ toJSON(needs) }}
+
+  deploy-docs:
+    needs: [check]
+    if: needs.check.outputs.result == 'success' && (github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/'))
+    runs-on: ubuntu-latest
+    steps:
+      - name: Generate app token
+        uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
+        id: app-token
+        with:
+          client-id: ${{ vars.DOCS_APP_CLIENT_ID }}
+          private-key: ${{ secrets.DOCS_APP_PRIVATE_KEY }}
+          owner: ${{ github.repository_owner }}
+          repositories: unified-docs
+
+      - name: Trigger unified-docs deployment
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+        run: |
+          gh api repos/pydantic/unified-docs/dispatches \
+            --method POST \
+            -f event_type=docs-update
 
   release-pydantic-core:
     needs: [core-test-builds-arch, core-test-builds-os, core-build-sdist, check]

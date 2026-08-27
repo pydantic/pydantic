@@ -7,12 +7,12 @@ from __future__ import annotations as _annotations
 
 import sys
 import warnings
-from collections.abc import Callable, Generator, Hashable, Mapping
+from collections.abc import Callable, Generator, Mapping
 from datetime import date, datetime, time, timedelta
 from decimal import Decimal
 from fractions import Fraction
 from re import Pattern
-from typing import TYPE_CHECKING, Any, Literal
+from typing import TYPE_CHECKING, Any, Literal, Union
 
 from typing_extensions import TypeVar, deprecated
 
@@ -258,6 +258,7 @@ ExpectedSerializationTypes: TypeAlias = Literal[
     'frozenset',
     'generator',
     'dict',
+    'frozendict',
     'datetime',
     'date',
     'time',
@@ -277,6 +278,9 @@ class SimpleSerSchema(TypedDict, total=False):
 def simple_ser_schema(type: ExpectedSerializationTypes) -> SimpleSerSchema:
     """
     Returns a schema for serialization with a custom type.
+
+    Note that any core schema can be used as a serialization schema, e.g. `int_schema()`
+    is equivalent to `simple_ser_schema('int')`.
 
     Args:
         type: The type to use for serialization
@@ -469,6 +473,9 @@ def model_ser_schema(cls: type[Any], schema: CoreSchema) -> ModelSerSchema:
     """
     Returns a schema for serialization using a model.
 
+    Note that any core schema can be used as a serialization schema, e.g. `model_schema()`
+    can be used instead.
+
     Args:
         cls: The expected class type, used to generate warnings if the wrong type is passed
         schema: Internal schema to use to serialize the model dict
@@ -476,14 +483,9 @@ def model_ser_schema(cls: type[Any], schema: CoreSchema) -> ModelSerSchema:
     return ModelSerSchema(type='model', cls=cls, schema=schema)
 
 
-SerSchema: TypeAlias = (
-    SimpleSerSchema
-    | PlainSerializerFunctionSerSchema
-    | WrapSerializerFunctionSerSchema
-    | FormatSerSchema
-    | ToStringSerSchema
-    | ModelSerSchema
-)
+SerSchema: TypeAlias = 'SimpleSerSchema | PlainSerializerFunctionSerSchema | WrapSerializerFunctionSerSchema | FormatSerSchema | ToStringSerSchema | ModelSerSchema | CoreSchema'
+
+"""The schemas that can be used as the `serialization` key of a core schema."""
 
 
 class InvalidSchema(TypedDict, total=False):
@@ -1626,7 +1628,7 @@ def filter_seq_schema(*, include: set[int] | None = None, exclude: set[int] | No
     return _dict_not_none(type='include-exclude-sequence', include=include, exclude=exclude)
 
 
-IncExSeqOrElseSerSchema: TypeAlias = IncExSeqSerSchema | SerSchema
+IncExSeqOrElseSerSchema: TypeAlias = Union[IncExSeqSerSchema, SerSchema]  # noqa: UP007 (TypeError when evaluating)
 
 
 class ListSchema(TypedDict, total=False):
@@ -2032,7 +2034,7 @@ def filter_dict_schema(*, include: IncExDict | None = None, exclude: IncExDict |
     return _dict_not_none(type='include-exclude-dict', include=include, exclude=exclude)
 
 
-IncExDictOrElseSerSchema: TypeAlias = IncExDictSerSchema | SerSchema
+IncExDictOrElseSerSchema: TypeAlias = Union[IncExDictSerSchema, SerSchema]  # noqa: UP007 (TypeError when evaluating)
 
 
 class DictSchema(TypedDict, total=False):
@@ -2086,6 +2088,74 @@ def dict_schema(
     """
     return _dict_not_none(
         type='dict',
+        keys_schema=keys_schema,
+        values_schema=values_schema,
+        min_length=min_length,
+        max_length=max_length,
+        fail_fast=fail_fast,
+        strict=strict,
+        ref=ref,
+        metadata=metadata,
+        serialization=serialization,
+    )
+
+
+class FrozenDictSchema(TypedDict, total=False):
+    type: Required[Literal['frozendict']]
+    keys_schema: CoreSchema  # default: AnySchema
+    values_schema: CoreSchema  # default: AnySchema
+    min_length: int
+    max_length: int
+    fail_fast: bool
+    strict: bool
+    ref: str
+    metadata: dict[str, Any]
+    serialization: IncExDictOrElseSerSchema
+
+
+def frozendict_schema(
+    keys_schema: CoreSchema | None = None,
+    values_schema: CoreSchema | None = None,
+    *,
+    min_length: int | None = None,
+    max_length: int | None = None,
+    fail_fast: bool | None = None,
+    strict: bool | None = None,
+    ref: str | None = None,
+    metadata: dict[str, Any] | None = None,
+    serialization: SerSchema | None = None,
+) -> FrozenDictSchema:
+    """
+    Returns a schema that matches a `frozendict` value, e.g.:
+
+    ```py {requires="3.15" lint="skip"}
+    from pydantic_core import SchemaValidator, core_schema
+
+    schema = core_schema.frozendict_schema(
+        keys_schema=core_schema.str_schema(), values_schema=core_schema.int_schema()
+    )
+    v = SchemaValidator(schema)
+    assert v.validate_python({'a': '1', 'b': 2}) == frozendict({'a': 1, 'b': 2})
+    ```
+
+    !!! note
+        The `frozendict` builtin type is only available in Python 3.15 and above.
+        Using this schema on older Python versions will raise a [`SchemaError`][pydantic_core.SchemaError]
+        when the validator or serializer is built.
+
+    Args:
+        keys_schema: The value must be a frozendict with keys that match this schema
+        values_schema: The value must be a frozendict with values that match this schema
+        min_length: The value must be a frozendict with at least this many items
+        max_length: The value must be a frozendict with at most this many items
+        fail_fast: Stop validation on the first error
+        strict: Whether the input should be validated with strict mode
+        ref: optional unique identifier of the schema, used to reference the schema in other places
+        metadata: Any other information you want to include with the schema, not used by pydantic-core
+        serialization: Custom serialization schema
+    """
+    return _dict_not_none(
+        type='frozendict',
         keys_schema=keys_schema,
         values_schema=values_schema,
         min_length=min_length,
@@ -2761,8 +2831,8 @@ def union_schema(
 
 class TaggedUnionSchema(TypedDict, total=False):
     type: Required[Literal['tagged-union']]
-    choices: Required[dict[Hashable, CoreSchema]]
-    discriminator: Required[str | list[str | int] | list[list[str | int]] | Callable[[Any], Hashable]]
+    choices: Required[dict[Any, CoreSchema]]
+    discriminator: Required[str | list[str | int] | list[list[str | int]] | Callable[[Any], Any]]
     custom_error_type: str
     custom_error_message: str
     custom_error_context: dict[str, str | int | float]
@@ -4337,6 +4407,7 @@ if not MYPY:
         | FrozenSetSchema
         | GeneratorSchema
         | DictSchema
+        | FrozenDictSchema
         | AfterValidatorFunctionSchema
         | BeforeValidatorFunctionSchema
         | WrapValidatorFunctionSchema
@@ -4399,6 +4470,7 @@ CoreSchemaType: TypeAlias = Literal[
     'frozenset',
     'generator',
     'dict',
+    'frozendict',
     'function-after',
     'function-before',
     'function-wrap',
@@ -4474,6 +4546,7 @@ ErrorType: TypeAlias = Literal[
     'string_not_ascii',
     'enum',
     'dict_type',
+    'frozen_dict_type',
     'mapping_type',
     'list_type',
     'tuple_type',

@@ -1198,10 +1198,35 @@ def test_any_url_ordering_is_consistent() -> None:
     with pytest.raises(TypeError):
         sorted([AnyUrl('https://z.com'), HttpUrl('https://b.com')])
 
-    # Equality is unaffected: unlike ordering, comparing against another type is well defined.
+    # Equality against types with no cross-type `__eq__` of their own still compares unequal.
     assert AnyUrl('https://a.com') != HttpUrl('https://a.com')
     assert AnyUrl('https://a.com') != 'https://a.com'
     assert AnyUrl('https://a.com') == AnyUrl('https://a.com')
+
+
+def test_any_url_equality_delegates_to_foreign_type() -> None:
+    class UrlWrapper:
+        def __init__(self, url: str) -> None:
+            self.url = url
+
+        def __eq__(self, other: object) -> bool:
+            if isinstance(other, (AnyUrl, PostgresDsn)):
+                return self.url == str(other)
+            return NotImplemented
+
+    # `_BaseUrl`: equality is symmetric regardless of operand order.
+    assert AnyUrl('https://a.com') == UrlWrapper('https://a.com/')
+    assert UrlWrapper('https://a.com/') == AnyUrl('https://a.com')
+    assert AnyUrl('https://b.com') != UrlWrapper('https://a.com/')
+
+    # `_BaseMultiHostUrl`: same delegation.
+    dsn = PostgresDsn('postgres://user:pass@localhost:5432/app')
+    assert dsn == UrlWrapper('postgres://user:pass@localhost:5432/app')
+    assert UrlWrapper('postgres://user:pass@localhost:5432/app') == dsn
+
+    # Types with no opinion of their own are still unequal (identity fallback).
+    assert AnyUrl('https://a.com') != 'https://a.com'
+    assert AnyUrl('https://a.com') != 5
 
 
 def test_max_length_base_url() -> None:

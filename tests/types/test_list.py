@@ -1,4 +1,5 @@
 from collections import deque
+from collections.abc import MutableSequence
 from typing import Annotated
 
 import annotated_types
@@ -287,4 +288,18 @@ def test_list_strict() -> None:
         ta.validate_python(['1', 2], strict=True)
     assert exc_info.value.errors(include_url=False) == [
         {'type': 'int_type', 'loc': (0,), 'msg': 'Input should be a valid integer', 'input': '1'}
+    ]
+
+
+def test_bare_mutable_sequence() -> None:
+    """Regression test for https://github.com/pydantic/pydantic/pull/13573."""
+    ta = TypeAdapter(MutableSequence)
+
+    assert ta.validate_python([1, '2']) == [1, '2']
+    assert ta.validate_python((1, '2')) == [1, '2']
+
+    with pytest.raises(ValidationError) as exc_info:
+        ta.validate_python('abc')
+    assert exc_info.value.errors(include_url=False) == [
+        {'type': 'list_type', 'loc': (), 'msg': 'Input should be a valid list', 'input': 'abc'}
     ]

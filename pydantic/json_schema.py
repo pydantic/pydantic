@@ -798,8 +798,12 @@ class GenerateJsonSchema:
         Returns:
             The generated JSON schema.
         """
-        json_schema = {'type': 'string'}
+        json_schema: JsonSchemaValue = {'type': 'string'}
         self.update_with_validations(json_schema, schema, self.ValidationsMapping.string)
+        if 'minLength' not in json_schema and self._config.str_min_length:
+            json_schema['minLength'] = self._config.str_min_length
+        if 'maxLength' not in json_schema and self._config.str_max_length is not None:
+            json_schema['maxLength'] = self._config.str_max_length
         if isinstance(json_schema.get('pattern'), Pattern):
             # TODO: should we add regex flags to the pattern?
             json_schema['pattern'] = json_schema.get('pattern').pattern  # type: ignore
@@ -827,7 +831,7 @@ class GenerateJsonSchema:
         Returns:
             The generated JSON schema.
         """
-        return {'type': 'string', 'format': 'date'}
+        return self._common_temporal_schema('date', self._config.ser_json_temporal)
 
     def time_schema(self, schema: core_schema.TimeSchema) -> JsonSchemaValue:
         """Generates a JSON schema that matches a time value.
@@ -838,7 +842,7 @@ class GenerateJsonSchema:
         Returns:
             The generated JSON schema.
         """
-        return {'type': 'string', 'format': 'time'}
+        return self._common_temporal_schema('time', self._config.ser_json_temporal)
 
     def datetime_schema(self, schema: core_schema.DatetimeSchema) -> JsonSchemaValue:
         """Generates a JSON schema that matches a datetime value.
@@ -849,7 +853,7 @@ class GenerateJsonSchema:
         Returns:
             The generated JSON schema.
         """
-        return {'type': 'string', 'format': 'date-time'}
+        return self._common_temporal_schema('date-time', self._config.ser_json_temporal)
 
     def timedelta_schema(self, schema: core_schema.TimedeltaSchema) -> JsonSchemaValue:
         """Generates a JSON schema that matches a timedelta value.
@@ -860,9 +864,21 @@ class GenerateJsonSchema:
         Returns:
             The generated JSON schema.
         """
-        if self._config.ser_json_timedelta == 'float':
+        if 'ser_json_temporal' in self._config.config_dict:
+            temporal_format = self._config.ser_json_temporal
+        else:
+            # `ser_json_temporal` supersedes `ser_json_timedelta`, which only applies when the former isn't
+            # explicitly set.
+            temporal_format = 'seconds' if self._config.ser_json_timedelta == 'float' else 'iso8601'
+        return self._common_temporal_schema('duration', temporal_format)
+
+    def _common_temporal_schema(
+        self, format: str, temporal_format: Literal['iso8601', 'seconds', 'milliseconds']
+    ) -> JsonSchemaValue:
+        if self.mode == 'serialization' and temporal_format != 'iso8601':
+            # Both `'seconds'` and `'milliseconds'` serialize to a number:
             return {'type': 'number'}
-        return {'type': 'string', 'format': 'duration'}
+        return {'type': 'string', 'format': format}
 
     def literal_schema(self, schema: core_schema.LiteralSchema) -> JsonSchemaValue:
         """Generates a JSON schema that matches a literal value.
@@ -1118,6 +1134,20 @@ class GenerateJsonSchema:
         Returns:
             The generated JSON schema.
         """
+        return self._common_dict_schema(schema)
+
+    def frozendict_schema(self, schema: core_schema.FrozenDictSchema) -> JsonSchemaValue:
+        """Generates a JSON schema that matches a frozendict schema.
+
+        Args:
+            schema: The core schema.
+
+        Returns:
+            The generated JSON schema.
+        """
+        return self._common_dict_schema(schema)
+
+    def _common_dict_schema(self, schema: core_schema.DictSchema | core_schema.FrozenDictSchema) -> JsonSchemaValue:
         json_schema: JsonSchemaValue = {'type': 'object'}
 
         keys_schema = self.generate_inner(schema['keys_schema']).copy() if 'keys_schema' in schema else {}
@@ -1380,6 +1410,12 @@ class GenerateJsonSchema:
         for k, v in schema['choices'].items():
             if isinstance(k, Enum):
                 k = k.value
+            elif isinstance(k, bool):
+                # Use the JSON representation so that the discriminator mapping
+                # can be matched against the serialized payload value
+                k = 'true' if k else 'false'
+            elif k is None:
+                k = 'null'
             try:
                 # Use str(k) since keys must be strings for json; while not technically correct,
                 # it's the closest that can be represented in valid JSON
@@ -1551,7 +1587,9 @@ class GenerateJsonSchema:
     def _name_required_computed_fields(
         computed_fields: list[ComputedField],
     ) -> list[tuple[str, bool, core_schema.ComputedField]]:
-        return [(field['property_name'], True, field) for field in computed_fields]
+        return [
+            (field['property_name'], field.get('serialization_exclude_if') is None, field) for field in computed_fields
+        ]
 
     def _named_required_fields_schema(
         self, named_required_fields: Sequence[tuple[str, bool, CoreSchemaField]]
@@ -1582,7 +1620,7 @@ class GenerateJsonSchema:
         if field['type'] == 'computed-field':
             alias: Any = field.get('alias', name)
         elif self.mode == 'validation':
-            alias = field.get('validation_alias', name)
+            alias = name if not self._config.validate_by_alias else field.get('validation_alias', name)
         else:
             alias = field.get('serialization_alias', name)
         if isinstance(alias, str):
@@ -2217,18 +2255,18 @@ class GenerateJsonSchema:
         Returns:
             The generated JSON schema.
         """
-        schema_type = schema['type']
-        if schema_type == 'function-plain' or schema_type == 'function-wrap':
-            # PlainSerializerFunctionSerSchema or WrapSerializerFunctionSerSchema
-            return_schema = schema.get('return_schema')
-            if return_schema is not None:
-                return self.generate_inner(return_schema)
-        elif schema_type == 'format' or schema_type == 'to-string':
-            # FormatSerSchema or ToStringSerSchema
-            return self.str_schema(core_schema.str_schema())
-        elif schema['type'] == 'model':
-            # ModelSerSchema
-            return self.generate_inner(schema['schema'])
+        match schema:
+            case {'type': 'function-plain' | 'function-wrap'}:
+                # PlainSerializerFunctionSerSchema or WrapSerializerFunctionSerSchema
+                return_schema = schema.get('return_schema')
+                if return_schema is not None:
+                    return self.generate_inner(return_schema)
+            case {'type': 'format' | 'to-string'}:
+                # FormatSerSchema or ToStringSerSchema
+                return self.str_schema(core_schema.str_schema())
+            case {'type': 'model'}:
+                # ModelSerSchema
+                return self.generate_inner(schema['schema'])
         return None
 
     def complex_schema(self, schema: core_schema.ComplexSchema) -> JsonSchemaValue:
@@ -2996,6 +3034,6 @@ def _get_ser_schema_for_default_value(schema: CoreSchema) -> core_schema.PlainSe
         and ser_schema['type'] == 'function-plain'
         and not ser_schema.get('info_arg')
     ):
-        return ser_schema
+        return cast('core_schema.PlainSerializerFunctionSerSchema', ser_schema)
     if _core_utils.is_function_with_inner_schema(schema):
         return _get_ser_schema_for_default_value(schema['schema'])

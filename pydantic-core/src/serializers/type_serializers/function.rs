@@ -217,16 +217,16 @@ macro_rules! function_type_serializer {
                 state: &mut SerializationState<'py>,
             ) -> PyResult<Py<PyAny>> {
                 let py = value.py();
-                let (ret_serializer, v) = match self.call(value, state) {
-                    Ok((true, v)) => (&*self.return_serializer, v),
-                    Ok((false, v)) => (self.get_fallback_serializer(), v),
+                let (ret_serializer, v, include_exclude) = match self.call(value, state) {
+                    // Filtering was done by the function, so drop include/exclude for the return serializer:
+                    Ok((true, v)) => (&*self.return_serializer, v, IncludeExclude::empty()),
+                    Ok((false, v)) => (self.get_fallback_serializer(), v, state.include_exclude()),
                     Err(err) => {
                         on_error(py, err, &self.function_name, state)?;
                         return infer_to_python(value, state);
                     }
                 };
-                // None for include/exclude here, as filtering should be done
-                let state = &mut state.scoped_include_exclude(IncludeExclude::empty());
+                let state = &mut state.scoped_include_exclude(include_exclude);
                 ret_serializer.to_python(v.bind(py), state)
             }
 
@@ -236,16 +236,16 @@ macro_rules! function_type_serializer {
                 state: &mut SerializationState<'py>,
             ) -> PyResult<Cow<'a, str>> {
                 let py = key.py();
-                let (ret_serializer, v) = match self.call(key, state) {
-                    Ok((true, v)) => (&*self.return_serializer, v),
-                    Ok((false, v)) => (self.get_fallback_serializer(), v),
+                let (ret_serializer, v, include_exclude) = match self.call(key, state) {
+                    // Filtering was done by the function, so drop include/exclude for the return serializer:
+                    Ok((true, v)) => (&*self.return_serializer, v, IncludeExclude::empty()),
+                    Ok((false, v)) => (self.get_fallback_serializer(), v, state.include_exclude()),
                     Err(err) => {
                         on_error(py, err, &self.function_name, state)?;
                         return infer_json_key(key, state);
                     }
                 };
-                // None for include/exclude here, as filtering should be done
-                let state = &mut state.scoped_include_exclude(IncludeExclude::empty());
+                let state = &mut state.scoped_include_exclude(include_exclude);
                 ret_serializer
                     .json_key(v.bind(py), state)
                     .map(|cow| Cow::Owned(cow.into_owned()))
@@ -258,16 +258,16 @@ macro_rules! function_type_serializer {
                 state: &mut SerializationState<'py>,
             ) -> Result<S::Ok, S::Error> {
                 let py = value.py();
-                let (ret_serializer, v) = match self.call(value, state) {
-                    Ok((true, v)) => (&*self.return_serializer, v),
-                    Ok((false, v)) => (self.get_fallback_serializer(), v),
+                let (ret_serializer, v, include_exclude) = match self.call(value, state) {
+                    // Filtering was done by the function, so drop include/exclude for the return serializer:
+                    Ok((true, v)) => (&*self.return_serializer, v, IncludeExclude::empty()),
+                    Ok((false, v)) => (self.get_fallback_serializer(), v, state.include_exclude()),
                     Err(err) => {
                         on_error(py, err, &self.function_name, state).map_err(py_err_se_err)?;
                         return infer_serialize(value, serializer, state);
                     }
                 };
-                // None for include/exclude here, as filtering should be done
-                let mut state = state.scoped_include_exclude(IncludeExclude::empty());
+                let mut state = state.scoped_include_exclude(include_exclude);
                 ret_serializer.serde_serialize(v.bind(py), serializer, &mut state)
             }
 

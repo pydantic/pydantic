@@ -21,6 +21,10 @@ pub struct ObTypeLookup {
     string: usize,
     list: usize,
     dict: usize,
+    // `frozendict` builtin, only available on Python 3.15+ (`None` on older versions)
+    // TODO: remove when https://github.com/PyO3/pyo3/pull/6174 gets released, and use a
+    // `frozendict: usize` field from `PyFrozenDict::type_object_raw()` instead, like `dict`:
+    frozendict_object: Option<Py<PyAny>>,
     // other numeric types
     decimal_object: Py<PyAny>,
     fraction_object: Py<PyAny>,
@@ -76,6 +80,12 @@ impl ObTypeLookup {
             float: PyFloat::type_object_raw(py) as usize,
             list: PyList::type_object_raw(py) as usize,
             dict: PyDict::type_object_raw(py) as usize,
+            frozendict_object: py
+                .import("builtins")
+                .unwrap()
+                .getattr("frozendict")
+                .ok()
+                .map(Bound::unbind),
             decimal_object: py.import("decimal").unwrap().getattr("Decimal").unwrap().unbind(),
             fraction_object: py.import("fractions").unwrap().getattr("Fraction").unwrap().unbind(),
             string: PyString::type_object_raw(py) as usize,
@@ -149,6 +159,10 @@ impl ObTypeLookup {
             ObType::Str => self.string == ob_type,
             ObType::List => self.list == ob_type,
             ObType::Dict => self.dict == ob_type,
+            ObType::Frozendict => self
+                .frozendict_object
+                .as_ref()
+                .is_some_and(|t| t.as_ptr() as usize == ob_type),
             ObType::Decimal => self.decimal_object.as_ptr() as usize == ob_type,
             ObType::Fraction => self.fraction_object.as_ptr() as usize == ob_type,
             ObType::StrSubclass => self.string == ob_type && op_value.is_none(),
@@ -230,6 +244,12 @@ impl ObTypeLookup {
             ObType::List
         } else if ob_type == self.dict {
             ObType::Dict
+        } else if self
+            .frozendict_object
+            .as_ref()
+            .is_some_and(|t| t.as_ptr() as usize == ob_type)
+        {
+            ObType::Frozendict
         } else if ob_type == self.decimal_object.as_ptr() as usize {
             ObType::Decimal
         } else if ob_type == self.fraction_object.as_ptr() as usize {
@@ -322,6 +342,12 @@ impl ObTypeLookup {
             ObType::Tuple
         } else if value.is_instance_of::<PyDict>() {
             ObType::Dict
+        } else if self
+            .frozendict_object
+            .as_ref()
+            .is_some_and(|t| value.is_instance(t.bind(py)).unwrap_or(false))
+        {
+            ObType::Frozendict
         } else if value.is_instance_of::<PyBool>() {
             ObType::Bool
         } else if value.is_instance_of::<PyFloat>() {
@@ -428,6 +454,7 @@ pub enum ObType {
     Frozenset,
     // mapping types
     Dict,
+    Frozendict,
     // datetime types
     Datetime,
     Date,

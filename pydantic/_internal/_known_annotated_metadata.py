@@ -77,7 +77,7 @@ constraint_schema_pairings: list[tuple[set[str], tuple[str, ...]]] = [
     (LIST_CONSTRAINTS, ('list',)),
     (TUPLE_CONSTRAINTS, ('tuple',)),
     (SET_CONSTRAINTS, ('set', 'frozenset')),
-    (DICT_CONSTRAINTS, ('dict',)),
+    (DICT_CONSTRAINTS, ('dict', 'frozendict')),
     (GENERATOR_CONSTRAINTS, ('generator',)),
     (FLOAT_CONSTRAINTS, ('float',)),
     (INT_CONSTRAINTS, ('int',)),

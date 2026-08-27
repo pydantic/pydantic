@@ -401,6 +401,31 @@ def test_reassign_instance_method_with_extra_allow():
     assert 'not_extra_func' in m.__dict__
 
 
+def test_set_class_attribute_set_to_none_with_extra_allow():
+    class Mixin:
+        # Plain class attributes, not Pydantic fields. `None` is a legitimate value here.
+        a = None
+        b = 'b'
+
+    class Model(Mixin, BaseModel):
+        model_config = ConfigDict(extra='allow')
+
+    m = Model()
+
+    # `b` exists on the class, so the assignment shadows it on the instance:
+    m.b = 'set'
+    assert m.b == 'set'
+    assert m.__dict__ == {'b': 'set'}
+    assert m.model_extra == {}
+
+    # `a` exists on the class as well and must behave the same, even though it is `None`
+    # (otherwise the class attribute keeps shadowing the assigned value on reads):
+    m.a = 'set'
+    assert m.a == 'set'
+    assert m.__dict__ == {'a': 'set', 'b': 'set'}
+    assert m.model_extra == {}
+
+
 def test_extra_ignored():
     class Model(BaseModel):
         model_config = ConfigDict(extra='ignore')

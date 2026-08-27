@@ -601,6 +601,41 @@ table_rows: list[Row] = [
         core_schemas=[core_schema.DictSchema],
     ),
     Row(
+        'frozendict',
+        'frozendict',
+        strict=True,
+        python_input=True,
+        condition='`frozendict` is only available in Python 3.15 and above.',
+        core_schemas=[core_schema.FrozenDictSchema],
+    ),
+    Row(
+        'frozendict',
+        'Object',
+        strict=True,
+        json_input=True,
+        condition='`frozendict` is only available in Python 3.15 and above.',
+        valid_examples=['{"v": {"1": 1, "2": 2}}'],
+        core_schemas=[core_schema.FrozenDictSchema],
+    ),
+    Row(
+        'frozendict',
+        dict,
+        python_input=True,
+        condition='`frozendict` is only available in Python 3.15 and above.',
+        core_schemas=[core_schema.FrozenDictSchema],
+    ),
+    Row(
+        'frozendict',
+        Mapping,
+        python_input=True,
+        condition=(
+            '`frozendict` is only available in Python 3.15 and above. '
+            'The input must implement the mapping interface and have an `items()` method.'
+        ),
+        valid_examples=[],
+        core_schemas=[core_schema.FrozenDictSchema],
+    ),
+    Row(
         TypedDict,
         dict,
         strict=True,

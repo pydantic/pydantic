@@ -41,6 +41,7 @@ mod ellipsis;
 mod enum_;
 mod float;
 pub(crate) mod fraction;
+mod frozendict;
 mod frozenset;
 mod function;
 mod generator;
@@ -601,6 +602,8 @@ fn build_validator_inner(
         set::SetValidator,
         // dicts/objects (recursive)
         dict::DictValidator,
+        // frozendicts
+        frozendict::FrozenDictValidator,
         // None/null
         none::NoneValidator,
         // functions - before, after, plain & wrap
@@ -770,6 +773,8 @@ pub enum CombinedValidator {
     Tuple(tuple::TupleValidator),
     // dicts/objects (recursive)
     Dict(dict::DictValidator),
+    // frozendicts
+    FrozenDict(frozendict::FrozenDictValidator),
     // None/null
     None(none::NoneValidator),
     // functions

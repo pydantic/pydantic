@@ -919,7 +919,7 @@ def test_use_of_alias():
 
 
 def test_validate_by_name():
-    @validate_call(config=dict(validate_by_name=True))
+    @validate_call(config={'validate_by_name': True})
     def foo(a: Annotated[int, Field(alias='b')], c: Annotated[int, Field(alias='d')]):
         return a + c
 
@@ -929,8 +929,18 @@ def test_validate_by_name():
     assert foo(a=10, c=1) == 11
 
 
+def test_populate_by_name() -> None:
+    """https://github.com/pydantic/pydantic/issues/13687"""
+
+    @validate_call(config={'populate_by_name': True})
+    def foo(a: Annotated[int, Field(alias='b')]):
+        return a
+
+    assert foo(a=1) == 1
+
+
 def test_validate_return():
-    @validate_call(config=dict(validate_return=True))
+    @validate_call(config={'validate_return': True})
     def foo(a: int, b: int) -> int:
         return a + b
 
@@ -938,7 +948,7 @@ def test_validate_return():
 
 
 def test_validate_all():
-    @validate_call(config=dict(validate_default=True))
+    @validate_call(config={'validate_default': True})
     def foo(dt: datetime = Field(default_factory=lambda: 946684800)):
         return dt
 
