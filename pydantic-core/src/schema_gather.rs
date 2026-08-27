@@ -399,7 +399,7 @@ impl<'py> GatherCtx<'_, 'py> {
 /// - Validated: the reference must point to an existing definition. If this is not the case, a
 ///   `MissingDefinitionError` exception is raised.
 /// - Stored in the context: the actual reference is stored in the context. Depending on whether
-///   the `'definition-ref'` schema is encountered more that once, the schema itself is also
+///   the `'definition-ref'` schema is encountered more than once, the schema itself is also
 ///   saved in the context to be inlined (i.e. replaced by the definition it points to).
 #[pyfunction]
 pub fn gather_schemas_for_cleaning<'py>(
