@@ -179,7 +179,6 @@ impl Validator for ModelFieldsValidator {
             };
             self.validate_by_get_item(py, input, dict, state)?
         };
-        state.add_fields_set(fields_set.len());
 
         // if we have extra=allow, but we didn't create a dict because we were validating
         // from attributes, set it now so __pydantic_extra__ is always a dict if extra=allow
@@ -559,6 +558,7 @@ impl ModelFieldsValidator {
             (0..self.fields.len()).map(|_| None).collect();
         let mut errors: Vec<ValLineError> = Vec::new();
         let fields_set = PySet::empty(py)?;
+        let mut fields_set_count: usize = 0;
 
         let state = &mut state.rebind_extra(|extra| extra.data = Some(model_dict.clone()));
         let state = &mut state.scoped_set(|state| &mut state.has_field_error, false);
@@ -635,6 +635,7 @@ impl ModelFieldsValidator {
                 match field.validator.validate(py, field_json_value, state) {
                     Ok(value) => {
                         fields_set.add(&field.name)?;
+                        fields_set_count += 1;
                         value
                     }
                     Err(ValError::Omit) => continue,
@@ -696,6 +697,7 @@ impl ModelFieldsValidator {
             return Err(ValError::LineErrors(errors));
         }
 
+        state.add_fields_set(fields_set_count);
         Ok((model_dict, model_extra_dict_op, fields_set))
     }
 }
