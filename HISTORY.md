@@ -2,6 +2,19 @@
 <!-- markdownlint-disable descriptive-link-text -->
 <!-- markdownlint-disable-next-line first-line-heading -->
 
+## v2.13.5 (2026-08-28)
+
+[GitHub release](https://github.com/pydantic/pydantic/releases/tag/v2.13.5)
+
+### What's Changed
+
+#### Fixes
+
+* Allow reuse of validators when plugins are set by @Viicos in [#13535](https://github.com/pydantic/pydantic/pull/13535)
+* Fix missing GC traversal on some `pydantic-core` struct fields by @Viicos in [#13624](https://github.com/pydantic/pydantic/pull/13624)
+* Fix missing GC traversal in `pydantic-core` for `GeneralFieldsSerializer` by @Viicos in [#13629](https://github.com/pydantic/pydantic/pull/13629)
+* Count validated model fields once in smart unions by @tamird in [#13731](https://github.com/pydantic/pydantic/pull/13731)
+
 ## v2.13.4 (2026-05-06)
 
 [GitHub release](https://github.com/pydantic/pydantic/releases/tag/v2.13.4)
