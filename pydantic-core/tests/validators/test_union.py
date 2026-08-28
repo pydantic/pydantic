@@ -10,7 +10,7 @@ from dirty_equals import IsFloat, IsInt
 
 from pydantic_core import CoreConfig, SchemaError, SchemaValidator, ValidationError, core_schema
 
-from ..conftest import plain_repr
+from ..conftest import PyAndJson, plain_repr
 
 
 @pytest.mark.parametrize(
@@ -856,6 +856,42 @@ class TestSmartUnionWithSubclass:
         assert isinstance(validator.validate_python({'a': '1', 'b': '2'}), self.ModelB)
         assert isinstance(validator.validate_python({'a': '1', 'b': 2}), self.ModelB)
         assert isinstance(validator.validate_python({'a': 1, 'b': '2'}), self.ModelB)
+
+
+@pytest.mark.parametrize('extra_behavior', ['ignore', 'allow'])
+@pytest.mark.parametrize('reverse_choices', [False, True])
+def test_smart_union_before_validator_field_count(
+    py_and_json: PyAndJson, extra_behavior: core_schema.ExtraBehavior, reverse_choices: bool
+) -> None:
+    class ModelA:
+        a: int
+        b: int
+
+    class ModelB(ModelA):
+        c: int
+
+    model_a_schema = core_schema.model_schema(
+        ModelA,
+        core_schema.no_info_before_validator_function(
+            lambda value: value,
+            core_schema.model_fields_schema(
+                fields={name: core_schema.model_field(core_schema.int_schema()) for name in ('a', 'b')},
+                extra_behavior=extra_behavior,
+            ),
+        ),
+    )
+    model_b_schema = core_schema.model_schema(
+        ModelB,
+        core_schema.model_fields_schema(
+            fields={name: core_schema.model_field(core_schema.int_schema()) for name in ('a', 'b', 'c')}
+        ),
+    )
+    choices = [model_a_schema, model_b_schema]
+    if reverse_choices:
+        choices.reverse()
+    validator = py_and_json(core_schema.union_schema(choices))
+
+    assert isinstance(validator.validate_test({'a': 1, 'b': 2, 'c': 3}), ModelB)
 
 
 class TestSmartUnionWithDefaults:
