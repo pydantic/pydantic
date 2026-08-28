@@ -198,11 +198,11 @@ format = "regex"
 [bytes]
 py_type = "bytes"
 json_type = "string"
-defined_in = "OpenAPI"
-notes = ""
+defined_in = "JSON Schema Validation"
+notes = "`\"contentEncoding\": \"base64\"` is also added if `ser_json_bytes` (in serialization mode) or `val_json_bytes` (in validation mode) is set to `'base64'`."
 
 [bytes.additional]
-format = "binary"
+contentMediaType = "application/octet-stream"
 
 [Decimal]
 py_type = "Decimal"

@@ -314,7 +314,11 @@ Pydantic provides four ways to create schemas and perform validation and seriali
     {
         'properties': {
             'when': {'format': 'date-time', 'title': 'When', 'type': 'string'},
-            'where': {'format': 'binary', 'title': 'Where', 'type': 'string'},
+            'where': {
+                'contentMediaType': 'application/octet-stream',
+                'title': 'Where',
+                'type': 'string',
+            },
             'why': {'title': 'Why', 'type': 'string'},
         },
         'required': ['when', 'where'],
