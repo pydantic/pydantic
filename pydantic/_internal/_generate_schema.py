@@ -140,6 +140,45 @@ ParametersCallback: TypeAlias = Callable[[int, str, Any], Literal['skip'] | None
 
 TUPLE_TYPES: list[type] = [typing.Tuple, tuple]  # noqa: UP006
 
+_PURE_SCHEMA_CACHE_MAX_SIZE = 1000
+"""The pure schema cache is cleared when reaching this size (this could happen with dynamically created `Literal` types)."""
+
+_pure_schema_cache: dict[Any, CoreSchema] = {}
+"""The cache of core schemas for *pure* annotations, keyed by the `pure_key` computed during annotations evaluation
+(see `_annotation_evaluator.py`).
+
+Values must never be used directly (as core schemas may be mutated), and copied with `_copy_schema()` instead.
+"""
+
+_SCHEMA_CONTAINER_TYPES: tuple[type[Any], ...] = (dict, list, tuple)
+
+
+def _copy_schema(value: Any) -> Any:
+    """Deep copy a core schema generated from a pure annotation (way faster than `deepcopy()`).
+
+    Such core schemas only contain dicts, lists, tuples and immutable leaf values.
+    """
+    if type(value) is dict:
+        if len(value) == 1:
+            # Leaf schemas (e.g. `{'type': 'str'}`) are common; values of `'type'` are strings:
+            return value.copy() if 'type' in value else {k: _copy_schema(v) for k, v in value.items()}
+        return {k: _copy_schema(v) if type(v) in _SCHEMA_CONTAINER_TYPES else v for k, v in value.items()}
+    elif type(value) is list:
+        return [_copy_schema(v) if type(v) in _SCHEMA_CONTAINER_TYPES else v for v in value]
+    elif type(value) is tuple:
+        return tuple([_copy_schema(v) if type(v) in _SCHEMA_CONTAINER_TYPES else v for v in value])
+    else:
+        return value
+
+
+def _cache_pure_schema(key: Any, schema: CoreSchema) -> None:
+    if len(_pure_schema_cache) >= _PURE_SCHEMA_CACHE_MAX_SIZE:
+        # Cleared as a whole (atomic operation, no locking required):
+        _pure_schema_cache.clear()
+    # A copy is stored, as `schema` is going to be handed out to the caller:
+    _pure_schema_cache[key] = _copy_schema(schema)
+
+
 # Note: This does not play very well with type checkers. For example,
 # `a: LambdaType = lambda x: x` will raise a type error by Pyright.
 ValidateCallSupportedTypes: TypeAlias = LambdaType | FunctionType | MethodType | partial
@@ -1300,6 +1339,21 @@ class GenerateSchema:
                 schema = self._apply_annotations(
                     source_type, annotations + validators_from_decorators, transform_inner_schema=set_discriminator
                 )
+            elif (
+                (pure_key := field_info._pure_key) is not None
+                # (the `annotation` attribute may have been mutated since the key was computed)
+                and pure_key[0] is source_type
+                and not annotations
+                and not validators_from_decorators
+                and not self._config_wrapper.json_encoders
+            ):
+                # The core schema of the field type only depends on the (pure) type: it is cached process-wide.
+                cached_schema = _pure_schema_cache.get(pure_key[1])
+                if cached_schema is not None:
+                    schema = _copy_schema(cached_schema)
+                else:
+                    schema = self._apply_annotations(source_type, [])
+                    _cache_pure_schema(pure_key[1], schema)
             else:
                 schema = self._apply_annotations(
                     source_type,

@@ -2551,7 +2551,7 @@ requires-dist = [
     { name = "email-validator", marker = "extra == 'email'", specifier = ">=2.0.0" },
     { name = "pydantic-core", editable = "pydantic-core" },
     { name = "typing-extensions", specifier = ">=4.15.0" },
-    { name = "typing-inspection", specifier = ">=0.4.4" },
+    { name = "typing-inspection", git = "https://github.com/pydantic/typing-inspection?rev=8b3139b275cdfb4f1f447e9ccf6a8e590dd9dfdf" },
     { name = "tzdata", marker = "sys_platform == 'win32' and extra == 'timezone'" },
 ]
 provides-extras = ["email", "timezone"]
@@ -2743,7 +2743,7 @@ testing-extra = [
     { name = "pytest-run-parallel" },
     { name = "pytest-timeout" },
     { name = "python-dateutil" },
-    { name = "typing-inspection", specifier = ">=0.4.1" },
+    { name = "typing-inspection", git = "https://github.com/pydantic/typing-inspection?rev=8b3139b275cdfb4f1f447e9ccf6a8e590dd9dfdf" },
     { name = "tzdata" },
 ]
 wasm = [
@@ -3950,13 +3950,9 @@ wheels = [
 [[package]]
 name = "typing-inspection"
 version = "0.4.4"
-source = { registry = "https://pypi.org/simple" }
+source = { git = "https://github.com/pydantic/typing-inspection?rev=8b3139b275cdfb4f1f447e9ccf6a8e590dd9dfdf#8b3139b275cdfb4f1f447e9ccf6a8e590dd9dfdf" }
 dependencies = [
     { name = "typing-extensions" },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/a3/26/b09b8010994eccc3c09092e6b34058f36a460eea2d4c3e8b910c695975a0/typing_inspection-0.4.4.tar.gz", hash = "sha256:547274fa6b0a561ccf549cc9524b999a578e737d015d8709d021f9d0d13bea47", size = 76928, upload-time = "2026-08-12T12:37:25.997Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/67/81/4add07e5172b7ac40d8ed5ff580409a7801a4fe26d529bdd915401dabfbe/typing_inspection-0.4.4-py3-none-any.whl", hash = "sha256:65b8397ba37ccbce054456aaccddfc91e6e3083c92824df348d96ca832f3f147", size = 14750, upload-time = "2026-08-12T12:37:24.648Z" },
 ]
 
 [[package]]

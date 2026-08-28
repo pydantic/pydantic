@@ -208,6 +208,7 @@ required-version = '>=0.8.4'
 [tool.uv.sources]
 pydantic-core = { workspace = true }
 pydantic-docs = { git = "https://github.com/pydantic/pydantic-docs" }
+typing-inspection = { git = "https://github.com/pydantic/typing-inspection", rev = "8b3139b275cdfb4f1f447e9ccf6a8e590dd9dfdf" }
 
 [tool.uv.workspace]
 members = [

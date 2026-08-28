@@ -10,7 +10,7 @@ from collections.abc import Callable, MutableMapping
 from functools import partial
 from inspect import Signature, signature
 from types import NoneType
-from typing import TYPE_CHECKING, Any, ForwardRef, cast
+from typing import TYPE_CHECKING, Any, ForwardRef, NoReturn, cast
 
 import typing_extensions
 from typing_extensions import deprecated, get_args, get_origin  # noqa: UP035 (for `get_args` and `get_origin`)
@@ -27,6 +27,8 @@ if sys.version_info >= (3, 14):
 if TYPE_CHECKING:
     from pydantic import BaseModel
     from pydantic.fields import FieldInfo
+
+    from ._annotation_evaluator import EvaluatedAnnotation
 
 # As per https://typing-extensions.readthedocs.io/en/latest/#runtime-use-of-types,
 # always check for both `typing` and `typing_extensions` variants of a typing construct.
@@ -233,7 +235,7 @@ def get_model_type_hints(
     model_class: type[BaseModel],
     *,
     ns_resolver: NsResolver | None = None,
-) -> dict[str, tuple[Any, bool]]:
+) -> dict[str, EvaluatedAnnotation]:
     """Collect annotations from a Pydantic model class, including those from parent classes.
 
     Args:
@@ -241,11 +243,17 @@ def get_model_type_hints(
         ns_resolver: A namespace resolver instance to use. Defaults to an empty instance.
 
     Returns:
-        A dictionary mapping annotation names to a two-tuple: the first element is the evaluated
-        type or the original annotation if a `NameError` occurred, the second element is a boolean
-        indicating if whether the evaluation succeeded.
+        A dictionary mapping annotation names to the evaluated (and inspected) annotations. If the evaluation
+        failed because of a `NameError`, the `evaluated` attribute of the result is `False`.
+
+    Raises:
+        PydanticForbiddenQualifier: If a type qualifier not allowed in a class body is used for a field.
     """
-    hints: dict[str, Any] | dict[str, tuple[Any, bool]] = {}
+    from typing_inspection.introspection import AnnotationSource, ForbiddenQualifier
+
+    from ._annotation_evaluator import NOT_PURE, AnnotationEvaluator, EvaluatedAnnotation
+
+    hints: dict[str, EvaluatedAnnotation] = {}
     ns_resolver = ns_resolver or NsResolver()
 
     for base in reversed(model_class.__mro__[:-1]):
@@ -259,31 +267,33 @@ def get_model_type_hints(
 
         with ns_resolver.push(base):
             base_model_fields: dict[str, FieldInfo] | None = base.__dict__.get('__pydantic_fields__')
+            evaluator = AnnotationEvaluator(*ns_resolver.types_namespace, annotation_source=AnnotationSource.CLASS)
 
             for name, value in ann.items():
                 if name.startswith('_'):
-                    globalns, localns = ns_resolver.types_namespace
-
                     # For private attributes, we only need the annotation to detect the `ClassVar` special form.
                     # For this reason, we still try to evaluate it, but we also catch any possible exception (on
-                    # top of the `NameError`s caught in `try_eval_type`) that could happen so that users are free
+                    # top of the `NameError`s handled by the evaluator) that could happen so that users are free
                     # to use any kind of forward annotation for private fields (e.g. circular imports, new typing
                     # syntax, etc).
                     try:
-                        hints[name] = try_eval_type(value, globalns, localns)
+                        hints[name] = evaluator.evaluate(value)
                     except Exception:
-                        hints[name] = (value, False)
+                        hints[name] = EvaluatedAnnotation(value, value, set(), [], False, NOT_PURE)
+                elif base_model_fields is not None and name in base_model_fields:
+                    # Avoid unnecessarily evaluating annotations from parent models, as we'll end up
+                    # copying the `FieldInfo` instance from it anyway if we need to.
+                    # We use the `annotation` attribute here, but in reality could put anything here,
+                    # As we are guaranteed to not make use of it:
+                    parent_ann = base_model_fields[name].annotation
+                    hints[name] = EvaluatedAnnotation(parent_ann, parent_ann, set(), [], True, NOT_PURE)
                 else:
-                    if base_model_fields is not None and name in base_model_fields:
-                        # Avoid unnecessarily evaluating annotations from parent models, as we'll end up
-                        # copying the `FieldInfo` instance from it anyway if we need to.
-                        # We use the `annotation` attribute here, but in reality could put anything here,
-                        # As we are guaranteed to not make use of it:
-                        hints[name] = (base_model_fields[name].annotation, True)
-                    else:
-                        globalns, localns = ns_resolver.types_namespace
+                    try:
+                        hints[name] = evaluator.evaluate(value)
+                    except ForbiddenQualifier as e:
+                        from ..errors import PydanticForbiddenQualifier
 
-                        hints[name] = try_eval_type(value, globalns, localns)
+                        raise PydanticForbiddenQualifier(e.qualifier, value)
 
     return hints
 
@@ -363,6 +373,10 @@ def eval_type(
     value = _type_convert(value)
     try:
         return _eval_type(value, globalns, localns, type_params)
+    # Note: this function can be called while the recursion limit is (almost) reached (e.g. when
+    # resolving forward references of implicit recursive type aliases during schema generation).
+    # As such, no Python function is called in the `except` clauses below (this would result in
+    # a new `RecursionError` being raised, without the extra note):
     except TypeError as e:
         if 'Unable to evaluate type annotation' in str(e):
             raise
@@ -380,16 +394,43 @@ def eval_type(
         else:
             raise TypeError(message) from e
     except RecursionError as e:
-        message = (
-            "If you made use of an implicit recursive type alias (e.g. `MyType = list['MyType']), "
-            'consider using PEP 695 type aliases instead. For more details, refer to the documentation: '
-            f'https://pydantic.dev/docs/validation/{version_short()}/concepts/types/#named-recursive-types'
-        )
         if sys.version_info >= (3, 11):
-            e.add_note(message)
+            e.add_note(_RECURSIVE_TYPE_ALIAS_NOTE)
             raise
         else:
-            raise RecursionError(f'{e.args[0]}\n{message}')
+            raise RecursionError(f'{e.args[0]}\n{_RECURSIVE_TYPE_ALIAS_NOTE}')
+
+
+_RECURSIVE_TYPE_ALIAS_NOTE = (
+    "If you made use of an implicit recursive type alias (e.g. `MyType = list['MyType']), "
+    'consider using PEP 695 type aliases instead. For more details, refer to the documentation: '
+    f'https://pydantic.dev/docs/validation/{version_short()}/concepts/types/#named-recursive-types'
+)
+
+
+def raise_eval_type_error(e: TypeError | RecursionError, value: Any, /) -> NoReturn:
+    """Re-raise the error raised during the evaluation of `value`, with a better error message if possible.
+
+    This mirrors the error handling of `eval_type()`, for use by the annotation evaluator.
+    """
+    if isinstance(e, TypeError):
+        if 'Unable to evaluate type annotation' in str(e):
+            raise e
+        if isinstance(value, ForwardRef):
+            message = f'Unable to evaluate type annotation {value.__forward_arg__!r}.'
+        else:
+            message = f'Unable to evaluate type annotation {value!r}.'
+        if sys.version_info >= (3, 11):
+            e.add_note(message)
+            raise e
+        else:
+            raise TypeError(message) from e
+    else:
+        if sys.version_info >= (3, 11):
+            e.add_note(_RECURSIVE_TYPE_ALIAS_NOTE)
+            raise e
+        else:
+            raise RecursionError(f'{e.args[0]}\n{_RECURSIVE_TYPE_ALIAS_NOTE}')
 
 
 @deprecated(

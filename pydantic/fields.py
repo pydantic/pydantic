@@ -19,7 +19,14 @@ import typing_extensions
 from pydantic_core import MISSING, PydanticUndefined
 from typing_extensions import Self, TypedDict, Unpack, deprecated
 from typing_inspection import typing_objects
-from typing_inspection.introspection import UNKNOWN, AnnotationSource, ForbiddenQualifier, Qualifier, inspect_annotation
+from typing_inspection.introspection import (
+    UNKNOWN,
+    AnnotationSource,
+    ForbiddenQualifier,
+    InspectedAnnotation,
+    Qualifier,
+    inspect_annotation,
+)
 
 from . import types
 from ._internal import _decorators, _fields, _generics, _repr, _typing_extra, _utils
@@ -31,6 +38,7 @@ from .json_schema import PydanticJsonSchemaWarning
 from .warnings import PydanticDeprecatedSince20
 
 if TYPE_CHECKING:
+    from ._internal._annotation_evaluator import EvaluatedAnnotation
     from ._internal._config import ConfigWrapper
     from ._internal._repr import ReprArgs
 
@@ -198,6 +206,7 @@ class FieldInfo(_repr.Representation):
         '_original_assignment',
         '_original_annotation',
         '_final',
+        '_pure_key',
     )
 
     # used to convert kwargs to metadata/constraints,
@@ -457,6 +466,10 @@ class FieldInfo(_repr.Representation):
         self._complete = True
         self._original_annotation: Any = PydanticUndefined
         self._original_assignment: Any = PydanticUndefined
+        # A two-tuple of the annotation and its cache key, used to fetch/store the core schema of the field type
+        # if pure (see `_annotation_evaluator.py`). The annotation is included to invalidate the key if the
+        # `annotation` attribute is mutated:
+        self._pure_key: tuple[Any, Any] | None = None
         # Used to track whether the `FieldInfo` instance represents the data about a field (and is exposed in `model_fields`/`__pydantic_fields__`),
         # or if it is the result of the `Field()` function being used as metadata in an `Annotated` type/as an assignment
         # (not an ideal pattern, see https://github.com/pydantic/pydantic/issues/11122):
@@ -533,6 +546,11 @@ class FieldInfo(_repr.Representation):
         except ForbiddenQualifier as e:
             raise PydanticForbiddenQualifier(e.qualifier, annotation)
 
+        return FieldInfo._from_inspected_annotation(inspected_ann)
+
+    @staticmethod
+    def _from_inspected_annotation(inspected_ann: InspectedAnnotation | EvaluatedAnnotation) -> FieldInfo:
+        """Create a `FieldInfo` instance from an already inspected annotation (see `from_annotation()`)."""
         # TODO check for classvar and error?
 
         # No assigned value, this happens when using a bare `Final` qualifier (also for other
@@ -594,6 +612,15 @@ class FieldInfo(_repr.Representation):
         except ForbiddenQualifier as e:
             raise PydanticForbiddenQualifier(e.qualifier, annotation)
 
+        return FieldInfo._from_inspected_annotated_attribute(inspected_ann, default)
+
+    @staticmethod
+    def _from_inspected_annotated_attribute(
+        inspected_ann: InspectedAnnotation | EvaluatedAnnotation, default: Any
+    ) -> FieldInfo:
+        """Create a `FieldInfo` instance from an already inspected annotation and a default value
+        (see `from_annotated_attribute()`).
+        """
         # TODO check for classvar and error?
 
         # TODO infer from the default, this can be done in v3 once we treat final fields with
@@ -1027,6 +1054,7 @@ class FieldInfo(_repr.Representation):
                 '_original_assignment',
                 '_original_annotation',
                 '_final',
+                '_pure_key',
             ):
                 continue
             elif s == 'metadata' and not self.metadata:

@@ -11,8 +11,7 @@ from re import Pattern
 from typing import TYPE_CHECKING, Any, TypeVar, cast
 
 from pydantic_core import PydanticUndefined
-from typing_extensions import TypeIs, get_args, get_origin  # noqa: UP035 (for `get_args` and `get_origin`)
-from typing_inspection import typing_objects
+from typing_extensions import TypeIs  # noqa: UP035 (for `get_args` and `get_origin`)
 from typing_inspection.introspection import AnnotationSource
 
 from pydantic import PydanticDeprecatedSince211
@@ -20,6 +19,7 @@ from pydantic.errors import PydanticUserError
 
 from ..aliases import AliasGenerator
 from . import _generics, _typing_extra
+from ._annotation_evaluator import NOT_PURE
 from ._config import ConfigWrapper
 from ._docs_extraction import extract_docstrings_from_cls
 from ._import_utils import import_cached_base_model, import_cached_field_info
@@ -32,6 +32,7 @@ if TYPE_CHECKING:
 
     from ..fields import FieldInfo, ModelPrivateAttr
     from ..main import BaseModel
+    from ._annotation_evaluator import EvaluatedAnnotation
     from ._dataclasses import PydanticDataclass, StandardDataclass
     from ._decorators import DecoratorInfos
 
@@ -341,7 +342,7 @@ def collect_model_fields(  # noqa: C901
             # A sunder-named attribute with an assigned value is a private attribute,
             # unless annotated as a class variable:
             hint = type_hints.get(var_name)
-            if hint is None or not _typing_extra.is_classvar_annotation(hint[0]):
+            if hint is None or not _is_classvar_annotation(hint):
                 # Unlike for the annotation-only private attributes below, `__set_name__()` must not be
                 # called on the wrapping `PrivateAttr()` here: the assigned value stayed in the namespace
                 # during class creation, so `type.__new__()` already invoked the protocol on it natively:
@@ -375,7 +376,8 @@ def collect_model_fields(  # noqa: C901
     deprecated_method_ids, deprecated_classmethod_func_ids = _deprecated_base_model_method_ids()
 
     class_vars: set[str] = set()
-    for ann_name, (ann_type, evaluated) in type_hints.items():
+    for ann_name, evaluated_ann in type_hints.items():
+        ann_type, evaluated = evaluated_ann.annotation, evaluated_ann.evaluated
         if ann_name == 'model_config':
             # We never want to treat `model_config` as a field
             # Note: we may need to change this logic if/when we introduce a `BareModel` class with no
@@ -389,7 +391,7 @@ def collect_model_fields(  # noqa: C901
             cls_name=cls.__name__,
         )
 
-        if _typing_extra.is_classvar_annotation(ann_type):
+        if _is_classvar_annotation(evaluated_ann):
             class_vars.add(ann_name)
             continue
 
@@ -406,10 +408,9 @@ def collect_model_fields(  # noqa: C901
             ):
                 # A sunder-named annotation (with no assigned value, as this case is handled above)
                 # defines a private attribute:
-                private_attr: ModelPrivateAttr | None = None
-                if typing_objects.is_annotated(get_origin(ann_type)):
-                    _, *metadata = get_args(ann_type)
-                    private_attr = next((v for v in metadata if isinstance(v, ModelPrivateAttr)), None)
+                private_attr: ModelPrivateAttr | None = next(
+                    (v for v in evaluated_ann.metadata if isinstance(v, ModelPrivateAttr)), None
+                )
                 if private_attr is None:
                     private_attr = cast('ModelPrivateAttr', PrivateAttr())
                 private_attr.__set_name__(cls, ann_name)
@@ -470,8 +471,10 @@ def collect_model_fields(  # noqa: C901
                 # - not found on any base classes; this seems to be caused by fields not getting
                 #   generated due to models not being fully defined while initializing recursive models.
                 #   Nothing stops us from just creating a `FieldInfo` for this type hint, so we do this.
-                field_info = FieldInfo_.from_annotation(ann_type, _source=AnnotationSource.CLASS)
+                field_info = FieldInfo_._from_inspected_annotation(evaluated_ann)
                 field_info._original_annotation = ann_type
+                if evaluated_ann.pure_key is not NOT_PURE:
+                    field_info._pure_key = (field_info.annotation, evaluated_ann.pure_key)
                 if not evaluated:
                     field_info._complete = False
                     # Store the original annotation that should be used to rebuild
@@ -502,11 +505,13 @@ def collect_model_fields(  # noqa: C901
                 assigned_value.default = default
                 assigned_value._attributes_set['default'] = default
 
-            field_info = FieldInfo_.from_annotated_attribute(ann_type, assigned_value, _source=AnnotationSource.CLASS)
+            field_info = FieldInfo_._from_inspected_annotated_attribute(evaluated_ann, assigned_value)
 
             # Store the original annotation and assignment value that could be used to rebuild the field info later.
             field_info._original_assignment = assigned_value
             field_info._original_annotation = ann_type
+            if evaluated_ann.pure_key is not NOT_PURE:
+                field_info._pure_key = (field_info.annotation, evaluated_ann.pure_key)
             if not evaluated:
                 field_info._complete = False
             elif 'final' in field_info._qualifiers and not field_info.is_required():
@@ -569,7 +574,8 @@ def collect_model_fields(  # noqa: C901
             else:
                 pydantic_extra_info = parent_extra_info
         else:
-            ann, complete = type_hints['__pydantic_extra__']
+            extra_ann = type_hints['__pydantic_extra__']
+            ann, complete = extra_ann.annotation, extra_ann.evaluated
             if complete:
                 # If not complete, `rebuild_model_fields()` takes care of it:
                 ann = _generics.replace_types(ann, typevars_map)
@@ -579,6 +585,17 @@ def collect_model_fields(  # noqa: C901
             )
 
     return fields, pydantic_extra_info, class_vars, private_attributes
+
+
+def _is_classvar_annotation(evaluated_ann: EvaluatedAnnotation) -> bool:
+    """Whether the evaluated annotation represents a class variable.
+
+    If the annotation couldn't be evaluated, `_typing_extra.is_classvar_annotation()` is used as it
+    tries to be as accurate as possible when facing unevaluated forward references.
+    """
+    return 'class_var' in evaluated_ann.qualifiers or (
+        not evaluated_ann.evaluated and _typing_extra.is_classvar_annotation(evaluated_ann.type)
+    )
 
 
 def rebuild_model_fields(
