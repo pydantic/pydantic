@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 from enum import IntEnum
-from typing import Annotated, ClassVar, Literal
+from typing import Annotated, Any, ClassVar, Literal
 from uuid import UUID
 
 import pytest
@@ -14,6 +14,7 @@ from pydantic import (
     Strict,
     TypeAdapter,
     ValidationError,
+    model_validator,
 )
 
 
@@ -233,6 +234,54 @@ def test_union_typeddict():
     ta = TypeAdapter(Dict2 | Dict1)
 
     assert ta.validate_python(dict(foo='baz')) == {'foo': 'baz'}
+
+
+@pytest.mark.parametrize('extra', ['ignore', 'allow'])
+@pytest.mark.parametrize('reverse_members', [False, True])
+def test_smart_union_fields_set_count_consistent_between_json_and_python(
+    extra: Literal['ignore', 'allow'], reverse_members: bool
+) -> None:
+    """https://github.com/pydantic/pydantic/issues/13729"""
+
+    class Smaller(BaseModel):
+        model_config = ConfigDict(extra=extra)
+
+        a: int
+        b: int
+
+        @model_validator(mode='before')
+        @classmethod
+        def keep_input(cls, value: Any) -> Any:
+            return value
+
+    class Larger(BaseModel):
+        a: int
+        b: int
+        c: int
+
+    ta = TypeAdapter(Larger | Smaller if reverse_members else Smaller | Larger)
+
+    assert isinstance(ta.validate_python({'a': 1, 'b': 2, 'c': 3}), Larger)
+    assert isinstance(ta.validate_json('{"a": 1, "b": 2, "c": 3}'), Larger)
+
+
+@pytest.mark.parametrize('reverse_members', [False, True])
+def test_smart_union_fields_set_count_ignores_extra(reverse_members: bool) -> None:
+    """https://github.com/pydantic/pydantic/issues/13729"""
+
+    class WithExtra(BaseModel):
+        model_config = ConfigDict(extra='allow')
+
+        a: int
+
+    class Explicit(BaseModel):
+        a: int
+        b: int
+
+    ta = TypeAdapter(Explicit | WithExtra if reverse_members else WithExtra | Explicit)
+
+    assert isinstance(ta.validate_python({'a': 1, 'b': 2}), Explicit)
+    assert isinstance(ta.validate_json('{"a": 1, "b": 2}'), Explicit)
 
 
 def test_union_respects_local_strict() -> None:
