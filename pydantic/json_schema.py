@@ -306,6 +306,10 @@ class GenerateJsonSchema:
         # store the error raised and re-throw it if we end up needing that def
         self._core_defs_invalid_for_json_schema: dict[DefsRef, PydanticInvalidForJsonSchema] = {}
 
+        # Same idea for definitions that asked to be omitted: the omission has to be re-raised
+        # where the definition is referenced, so the surrounding union or field can drop it.
+        self._core_defs_omitted_from_json_schema: set[DefsRef] = set()
+
         # This changes to True after generating a schema, to prevent issues caused by accidental reuse
         # of a single instance of a schema generator
         self._used = False
@@ -478,6 +482,7 @@ class GenerateJsonSchema:
                 if json_schema.get('$ref', None) != json_ref:
                     self.definitions[defs_ref] = json_schema
                     self._core_defs_invalid_for_json_schema.pop(defs_ref, None)
+                    self._core_defs_omitted_from_json_schema.discard(defs_ref)
                 json_schema = ref_json_schema
             return json_schema
 
@@ -2229,6 +2234,10 @@ class GenerateJsonSchema:
                 core_ref: CoreRef = CoreRef(definition['ref'])  # type: ignore
                 self._core_defs_invalid_for_json_schema[self.get_defs_ref((core_ref, self.mode))] = e
                 continue
+            except PydanticOmit:
+                omitted_ref: CoreRef = CoreRef(definition['ref'])  # type: ignore
+                self._core_defs_omitted_from_json_schema.add(self.get_defs_ref((omitted_ref, self.mode)))
+                continue
         return self.generate_inner(schema['schema'])
 
     def definition_ref_schema(self, schema: core_schema.DefinitionReferenceSchema) -> JsonSchemaValue:
@@ -2241,7 +2250,11 @@ class GenerateJsonSchema:
             The generated JSON schema.
         """
         core_ref = CoreRef(schema['schema_ref'])
-        _, ref_json_schema = self.get_cache_defs_ref_schema(core_ref)
+        defs_ref, ref_json_schema = self.get_cache_defs_ref_schema(core_ref)
+        if defs_ref in self._core_defs_omitted_from_json_schema:
+            # Raise here rather than at the definition, so that whatever holds the reference —
+            # a union member, a field — gets to decide what an omission means for it.
+            raise PydanticOmit
         return ref_json_schema
 
     def ser_schema(

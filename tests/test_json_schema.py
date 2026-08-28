@@ -29,7 +29,7 @@ from uuid import UUID
 import pytest
 from annotated_types import Interval
 from dirty_equals import HasRepr
-from pydantic_core import CoreSchema, SchemaValidator, core_schema, to_jsonable_python
+from pydantic_core import CoreSchema, PydanticOmit, SchemaValidator, core_schema, to_jsonable_python
 from pydantic_core.core_schema import ValidatorFunctionWrapHandler
 from typing_extensions import TypeAliasType, TypedDict, deprecated
 
@@ -5981,6 +5981,59 @@ def test_skip_json_schema_exclude_default():
         'title': 'Model',
         'type': 'object',
     }
+
+
+def test_skip_json_schema_referenced_twice() -> None:
+    """https://github.com/pydantic/pydantic/issues/11553"""
+
+    class Inner(BaseModel):
+        x: int
+
+    class Model(BaseModel):
+        first: list[float | SkipJsonSchema[Inner]]
+        second: list[float | SkipJsonSchema[Inner]]
+
+    # Referencing it twice moves `Inner` into the core schema definitions, which used to let the
+    # omission escape instead of dropping the union member.
+    assert Model.model_json_schema() == {
+        'properties': {
+            'first': {'items': {'type': 'number'}, 'title': 'First', 'type': 'array'},
+            'second': {'items': {'type': 'number'}, 'title': 'Second', 'type': 'array'},
+        },
+        'required': ['first', 'second'],
+        'title': 'Model',
+        'type': 'object',
+    }
+
+
+def test_omitted_definition_referenced_twice() -> None:
+    """https://github.com/pydantic/pydantic/issues/11553"""
+
+    class Omitted(BaseModel):
+        @classmethod
+        def __get_pydantic_json_schema__(cls, core_schema, handler):
+            raise PydanticOmit
+
+    class Model(BaseModel):
+        first: list[float | Omitted]
+        second: list[float | Omitted]
+
+    schema = Model.model_json_schema()
+    assert list(schema['properties']) == ['first', 'second']
+    assert schema['properties']['first'] == {
+        'items': {'type': 'number'},
+        'title': 'First',
+        'type': 'array',
+    }
+    assert '$defs' not in schema
+
+    # A field that is nothing but the omitted type is dropped, as it is with a single reference.
+    class WithBareField(BaseModel):
+        kept: int
+        first: Omitted
+        second: Omitted
+
+    assert list(WithBareField.model_json_schema()['properties']) == ['kept']
 
 
 def test_typeddict_field_required_missing() -> None:
