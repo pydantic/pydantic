@@ -1,5 +1,6 @@
 import dataclasses
 import ipaddress
+import unittest.mock
 import json
 import platform
 import re
@@ -773,3 +774,22 @@ def test_ipaddress_type_inference(any_serializer, value, expected_json):
     assert any_serializer.to_python(value) == value
     assert any_serializer.to_python(value, mode='json') == expected_json
     assert any_serializer.to_json(value) == f'"{expected_json}"'.encode()
+
+
+def test_fabricated_pydantic_serializer_attribute(any_serializer: SchemaSerializer):
+    # https://github.com/pydantic/pydantic-core/issues/1866
+    # unittest.mock.call fabricates arbitrary attributes through __getattr__, which used to
+    # route it into the pydantic-serializable pathway, crashing with
+    # ;
+    # instead, it should serialize as the tuple subclass it actually is
+    c = unittest.mock.call('foo', bar=1)
+
+    assert any_serializer.to_python(c) == ('', ('foo',), {'bar': 1})
+    assert any_serializer.to_json(c) == b'["",["foo"],{"bar":1}]'
+
+    # a Mock which pretends to have __pydantic_serializer__ must not be mistaken for
+    # pydantic-serializable either
+    m = unittest.mock.Mock()
+    assert any_serializer.to_python(m, fallback=lambda v: 'fallback') == 'fallback'
+    with pytest.raises(PydanticSerializationError, match='Unable to serialize unknown type'):
+        any_serializer.to_json(m)

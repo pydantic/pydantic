@@ -9,6 +9,7 @@ use pyo3::{PyTypeInfo, intern};
 use strum::Display;
 use strum_macros::EnumString;
 
+use crate::SchemaSerializer;
 use crate::url::{PyMultiHostUrl, PyUrl};
 
 #[derive(Debug, Clone)]
@@ -403,8 +404,8 @@ impl ObTypeLookup {
 fn is_dataclass(op_value: Option<&Bound<'_, PyAny>>) -> bool {
     if let Some(value) = op_value {
         value
-            .hasattr(intern!(value.py(), "__dataclass_fields__"))
-            .unwrap_or(false)
+            .getattr(intern!(value.py(), "__dataclass_fields__"))
+            .is_ok_and(|fields| fields.is_instance_of::<PyDict>())
             && !value.is_instance_of::<PyType>()
     } else {
         false
@@ -414,8 +415,8 @@ fn is_dataclass(op_value: Option<&Bound<'_, PyAny>>) -> bool {
 fn is_pydantic_serializable(op_value: Option<&Bound<'_, PyAny>>) -> bool {
     if let Some(value) = op_value {
         value
-            .hasattr(intern!(value.py(), "__pydantic_serializer__"))
-            .unwrap_or(false)
+            .getattr(intern!(value.py(), "__pydantic_serializer__"))
+            .is_ok_and(|serializer| serializer.is_instance_of::<SchemaSerializer>())
             && !value.is_instance_of::<PyType>()
     } else {
         false
