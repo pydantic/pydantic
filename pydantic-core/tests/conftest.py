@@ -31,11 +31,13 @@ except AttributeError:
     is_free_threaded = False
 
 
-# --- GC traversal completeness check -----------------------------------------------------------------------
-# Every `SchemaValidator`/`SchemaSerializer` construction during tests verifies that the Python objects
-# retained from the core schema are reported to the garbage collector by `__traverse__`. A missing field in
-# an `impl_py_gc_traverse!()` call in the Rust sources results in reference cycles through the validator or
-# serializer never being collected (see https://github.com/pydantic/pydantic/issues/13625).
+# -- GC traversal completeness check --
+# A field holding a Python object that is missing from an `impl_py_gc_traverse!()` call in the Rust
+# sources leaves reference cycles through the validator or serializer uncollectable by the garbage
+# collector.
+# Until we get a proper PyO3 API for this (https://github.com/PyO3/pyo3/issues/5663), a test fixture
+# checks, on every `SchemaValidator`/`SchemaSerializer` construction during tests, that the Python
+# objects retained from the core schema are reported to the garbage collector by `__traverse__()`.
 
 _gc_traverse_check_active = False
 
@@ -65,13 +67,13 @@ def _collect_gc_check_candidates(obj: Any, candidates: dict[int, Any], seen: set
 
 
 def _gc_traverse_reachable(obj: Any, exclude_id: int) -> dict[int, Any]:
-    """Objects reported to the garbage collector by ``obj``'s ``tp_traverse``.
+    """Objects reported to the garbage collector by `obj`'s `tp_traverse`.
 
-    ``gc.get_referents()`` returns exactly what ``tp_traverse`` reports. Plain Python containers are
-    recursed into, as the GC tracks their contents through the containers' own ``tp_traverse``. The
-    retained core schema (``exclude_id``) is deliberately ignored: reachability through ``py_schema``
-    isn't enough for cycles to be collectable -- CPython requires every strong reference held by the
-    Rust structures to be reported individually.
+    `gc.get_referents()` returns exactly what `tp_traverse` reports. Plain Python containers are
+    recursed into, as the GC tracks their contents through the containers' own `tp_traverse`. The
+    retained core schema (`exclude_id`) is deliberately ignored: reachability through `py_schema`
+    isn't enough for cycles to be collectable (CPython requires every strong reference held by the
+    Rust structures to be reported individually).
     """
     reachable: dict[int, Any] = {}
     stack = [obj]
@@ -86,7 +88,7 @@ def _gc_traverse_reachable(obj: Any, exclude_id: int) -> dict[int, Any]:
 
 
 class _GcTraverseChecked:
-    """Callable standing in for `SchemaValidator`/`SchemaSerializer` during tests.
+    """Wrapper around `SchemaValidator`/`SchemaSerializer` during tests.
 
     On every construction, Python objects from the core schema retained by the instance (detected
     with `sys.getrefcount()` deltas) are checked to be reported to the garbage collector.
