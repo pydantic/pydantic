@@ -24,14 +24,11 @@ class _HAS_DEFAULT_FACTORY_CLASS:
 _HAS_DEFAULT_FACTORY = _HAS_DEFAULT_FACTORY_CLASS()
 
 
-def _field_name_for_signature(field_name: str, field_info: FieldInfo, validate_by_alias: bool = True) -> str:
+def _field_name_for_signature(field_name: str, field_info: FieldInfo, validate_by_alias: bool) -> str:
     """Extract the correct name to use for the field when generating a signature.
 
     Assuming the field has a valid alias, this will return the alias. Otherwise, it will return the field name.
     First priority is given to the alias, then the validation_alias, then the field name.
-
-    If `validate_by_alias` is `False`, aliases are not accepted by validation at all, so the field name
-    is always used.
 
     Args:
         field_name: The name of the field
@@ -50,7 +47,7 @@ def _field_name_for_signature(field_name: str, field_info: FieldInfo, validate_b
     return field_name
 
 
-def _process_param_defaults(param: Parameter, validate_by_alias: bool = True) -> Parameter:
+def _process_param_defaults(param: Parameter, validate_by_alias: bool) -> Parameter:
     """Modify the signature for a parameter in a dataclass where the default value is a FieldInfo instance.
 
     Args:
@@ -92,7 +89,7 @@ def _generate_signature_parameters(  # noqa: C901 (ignore complexity, could use 
     fields: dict[str, FieldInfo],
     validate_by_name: bool,
     extra: ExtraValues | None,
-    validate_by_alias: bool = True,
+    validate_by_alias: bool,
 ) -> dict[str, Parameter]:
     """Generate a mapping of parameter names to Parameter objects for a pydantic BaseModel or dataclass."""
     from itertools import islice
@@ -173,12 +170,13 @@ def _generate_signature_parameters(  # noqa: C901 (ignore complexity, could use 
 
 
 def generate_pydantic_signature(
+    *,
     init: Callable[..., None],
     fields: dict[str, FieldInfo],
     validate_by_name: bool,
+    validate_by_alias: bool,
     extra: ExtraValues | None,
     is_dataclass: bool = False,
-    validate_by_alias: bool = True,
 ) -> Signature:
     """Generate signature for a pydantic BaseModel or dataclass.
 
@@ -186,9 +184,9 @@ def generate_pydantic_signature(
         init: The class init.
         fields: The model fields.
         validate_by_name: The `validate_by_name` value of the config.
+        validate_by_alias: The `validate_by_alias` value of the config.
         extra: The `extra` value of the config.
         is_dataclass: Whether the model is a dataclass.
-        validate_by_alias: The `validate_by_alias` value of the config.
 
     Returns:
         The dataclass/BaseModel subclass signature.
