@@ -1506,23 +1506,28 @@ def test_byte_size_type():
 
 
 @pytest.mark.parametrize(
-    'type_,default_value,properties',
+    ['type_', 'default_value', 'properties'],
     (
         (
             dict[Any, Any],
             {(lambda x: x): 1},
-            {'callback': {'title': 'Callback', 'type': 'object', 'additionalProperties': True}},
+            {'field': {'title': 'Field', 'type': 'object', 'additionalProperties': True}},
         ),
         (
             int | Callable[[int], int],
             lambda x: x,
-            {'callback': {'title': 'Callback', 'type': 'integer'}},
+            {'field': {'title': 'Field', 'type': 'integer'}},
+        ),
+        (
+            bytes,
+            b'\xff\xfe',
+            {'field': {'title': 'Field', 'format': 'binary', 'type': 'string'}},
         ),
     ),
 )
 def test_non_serializable_default(type_, default_value, properties):
     class Model(BaseModel):
-        callback: type_ = default_value
+        field: type_ = default_value
 
     with pytest.warns(
         PydanticJsonSchemaWarning,

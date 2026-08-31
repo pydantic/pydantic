@@ -54,7 +54,7 @@ from ._internal import (
 )
 from .annotated_handlers import GetJsonSchemaHandler
 from .config import JsonDict, JsonValue
-from .errors import PydanticInvalidForJsonSchema, PydanticSchemaGenerationError, PydanticUserError
+from .errors import PydanticInvalidForJsonSchema, PydanticUserError
 
 if TYPE_CHECKING:
     from . import ConfigDict
@@ -2480,12 +2480,14 @@ class GenerateJsonSchema:
                     dft, by_alias=self.by_alias, mode='json'
                 )
             )
-        except PydanticSchemaGenerationError:
-            raise pydantic_core.PydanticSerializationError(f'Unable to encode default value {dft}')
-
-        return pydantic_core.to_jsonable_python(
-            default, timedelta_mode=config.ser_json_timedelta, bytes_mode=config.ser_json_bytes, by_alias=self.by_alias
-        )
+            return pydantic_core.to_jsonable_python(
+                default,
+                timedelta_mode=config.ser_json_timedelta,
+                bytes_mode=config.ser_json_bytes,
+                by_alias=self.by_alias,
+            )
+        except Exception as e:
+            raise pydantic_core.PydanticSerializationError(f'Unable to encode default value {dft}') from e
 
     def update_with_validations(
         self, json_schema: JsonSchemaValue, core_schema: CoreSchema, mapping: dict[str, str]
