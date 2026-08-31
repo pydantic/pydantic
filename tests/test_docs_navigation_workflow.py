@@ -13,6 +13,8 @@ def test_privileged_dispatcher_never_executes_pull_request_code() -> None:
     assert 'actions/checkout@' not in workflow
     assert '/collaborators/${ACTOR}/permission' in workflow
     assert 'admin|maintain|write)' in workflow
+    assert 'client-id: ${{ vars.DOCS_APP_CLIENT_ID }}' in workflow
+    assert 'vars.DOCS_APP_ID' not in workflow
     assert 'permission-contents: write' in workflow
     assert workflow.index('Verify a maintainer triggered the check') < workflow.index('Generate app token')
     assert '-f "client_payload[library]=validation"' in workflow
