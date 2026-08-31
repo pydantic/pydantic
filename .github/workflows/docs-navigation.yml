@@ -5,34 +5,40 @@ name: Docs Navigation Check
 # Markdown files without executing pull-request content.
 #
 # This workflow is purely a dispatcher. The data-only validation and final
-# comment happen in unified-docs. The `trigger:docs` label is removed at the
-# end so re-adding it reruns the check.
+# comment happen in unified-docs. After a successful dispatch, the label stays
+# present until unified-docs reaches a terminal result so a pushed commit can
+# supersede an in-flight exact-SHA run.
 
 on:
   # zizmor: ignore[dangerous-triggers] -- pull_request_target is required so fork PRs can
-  # access the DOCS_APP credentials. The dispatch explicitly verifies that the label
-  # actor has write access, and this workflow does not check out or execute PR code.
+  # access the DOCS_APP credentials. The labeled event verifies that the label actor
+  # has write access. While that trusted label remains present, synchronize events
+  # supersede an in-flight dispatch so the receiver never gets stranded on a stale
+  # SHA. This workflow never checks out or executes PR code.
   pull_request_target:
-    types: [labeled]
+    types: [labeled, synchronize]
 
 permissions: {}
 
 concurrency:
-  group: docs-navigation-${{ github.event.pull_request.number }}-${{ github.event.label.name }}
+  group: docs-navigation-${{ github.event.pull_request.number }}
   cancel-in-progress: true
 
 jobs:
   dispatch:
     name: Dispatch Docs Navigation Check
-    if: github.event.label.name == 'trigger:docs'
+    if: >-
+      (github.event.action == 'labeled' && github.event.label.name == 'trigger:docs') ||
+      (github.event.action == 'synchronize' && contains(github.event.pull_request.labels.*.name, 'trigger:docs'))
     runs-on: ubuntu-latest
     timeout-minutes: 5
     permissions:
-      # Needed to post the queued comment and remove the trigger label.
+      # Needed to post the queued comment and clean up a failed dispatch.
       pull-requests: write
 
     steps:
       - name: Verify a maintainer triggered the check
+        if: github.event.action == 'labeled'
         id: verify
         env:
           ACTOR: ${{ github.actor }}
@@ -132,8 +138,8 @@ jobs:
           )
           gh api "repos/${REPO}/issues/${PR_NUMBER}/comments" -f body="$body"
 
-      - name: Remove trigger:docs label
-        if: always()
+      - name: Remove trigger:docs label after dispatch failure
+        if: always() && steps.dispatch.outcome != 'success'
         env:
           GH_TOKEN: ${{ github.token }}
           PR_NUMBER: ${{ github.event.pull_request.number }}

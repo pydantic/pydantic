@@ -7,12 +7,17 @@ def test_privileged_dispatcher_never_executes_pull_request_code() -> None:
     workflow = WORKFLOW.read_text(encoding='utf-8')
 
     assert 'pull_request_target:' in workflow
-    assert "github.event.label.name == 'trigger:docs'" in workflow
-    assert 'docs-navigation-${{ github.event.pull_request.number }}-${{ github.event.label.name }}' in workflow
+    assert 'types: [labeled, synchronize]' in workflow
+    assert "github.event.action == 'labeled' && github.event.label.name == 'trigger:docs'" in workflow
+    assert "github.event.action == 'synchronize'" in workflow
+    assert "contains(github.event.pull_request.labels.*.name, 'trigger:docs')" in workflow
+    assert 'docs-navigation-${{ github.event.pull_request.number }}' in workflow
+    assert 'docs-navigation-${{ github.event.pull_request.number }}-${{' not in workflow
     assert 'timeout-minutes: 5' in workflow
     assert 'actions/checkout@' not in workflow
     assert '/collaborators/${ACTOR}/permission' in workflow
     assert 'admin|maintain|write)' in workflow
+    assert "if: github.event.action == 'labeled'" in workflow
     assert 'client-id: ${{ vars.DOCS_APP_CLIENT_ID }}' in workflow
     assert 'vars.DOCS_APP_ID' not in workflow
     assert 'permission-contents: write' in workflow
@@ -35,3 +40,4 @@ def test_public_comments_describe_data_only_navigation_validation() -> None:
     assert "steps.verify.outcome == 'failure'" in workflow
     assert "steps.app-token.outcome == 'failure' || steps.dispatch.outcome == 'failure'" in workflow
     assert "steps.acknowledge.outcome == 'failure'" in workflow
+    assert "if: always() && steps.dispatch.outcome != 'success'" in workflow
