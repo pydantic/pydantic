@@ -119,11 +119,11 @@ jobs:
           - os: linux
             manylinux: auto
             target: x86_64
-            interpreter: pypy3.11 graalpy3.11 graalpy3.12
+            interpreter: pypy3.11 graalpy3.12 graalpy3.13
           - os: linux
             manylinux: auto
             target: aarch64
-            interpreter: graalpy3.11 graalpy3.12
+            interpreter: graalpy3.12 graalpy3.13
             # PyPy 8.0 (`pp80` ABI) requires glibc 2.28:
           - os: linux
             manylinux: '2_28'
@@ -148,10 +148,10 @@ jobs:
           # arm pypy and older pythons which can't be run on the arm hardware for PGO
           - os: macos
             target: x86_64
-            interpreter: 3.10 3.11 3.12 3.13 3.14 3.14t 3.15 3.15t pypy3.11 graalpy3.11 graalpy3.12
+            interpreter: 3.10 3.11 3.12 3.13 3.14 3.14t 3.15 3.15t pypy3.11 graalpy3.12
           - os: macos
             target: aarch64
-            interpreter: pypy3.11 graalpy3.11 graalpy3.12
+            interpreter: pypy3.11 graalpy3.12 graalpy3.13
           - os: macos
             target: x86_64
             interpreter: pypy3.11-pp80
