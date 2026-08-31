@@ -11,10 +11,11 @@ name: Docs Navigation Check
 
 on:
   # zizmor: ignore[dangerous-triggers] -- pull_request_target is required so fork PRs can
-  # access the DOCS_APP credentials. The labeled event verifies that the label actor
-  # has write access. While that trusted label remains present, synchronize events
-  # supersede an in-flight dispatch so the receiver never gets stranded on a stale
-  # SHA. This workflow never checks out or executes PR code.
+  # access the DOCS_APP credentials. Every run verifies that the actor who most
+  # recently applied the label has write access. While that trusted label remains
+  # present, synchronize events supersede an in-flight dispatch so the receiver
+  # never gets stranded on a stale SHA. This workflow never checks out or executes
+  # PR code.
   pull_request_target:
     types: [labeled, synchronize]
 
@@ -37,19 +38,26 @@ jobs:
       pull-requests: write
 
     steps:
-      - name: Verify a maintainer triggered the check
-        if: github.event.action == 'labeled'
+      - name: Verify a maintainer owns the trigger label
         id: verify
         env:
-          ACTOR: ${{ github.actor }}
           GH_TOKEN: ${{ github.token }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
           REPO: ${{ github.repository }}
         run: |
-          permission=$(gh api "repos/${REPO}/collaborators/${ACTOR}/permission" --jq .permission)
+          label_actor=$(gh api --paginate --slurp \
+            "repos/${REPO}/issues/${PR_NUMBER}/timeline?per_page=100" \
+            --jq '([.[][] | select(.event == "labeled" and .label.name == "trigger:docs")] | last | .actor.login) // empty')
+          if [ -z "$label_actor" ]; then
+            echo "Could not identify who applied trigger:docs" >&2
+            exit 1
+          fi
+
+          permission=$(gh api "repos/${REPO}/collaborators/${label_actor}/permission" --jq .permission)
           case "$permission" in
             admin|maintain|write) ;;
             *)
-              echo "${ACTOR} does not have permission to dispatch a docs navigation check" >&2
+              echo "${label_actor} does not have permission to dispatch a docs navigation check" >&2
               exit 1
               ;;
           esac

@@ -15,13 +15,15 @@ def test_privileged_dispatcher_never_executes_pull_request_code() -> None:
     assert 'docs-navigation-${{ github.event.pull_request.number }}-${{' not in workflow
     assert 'timeout-minutes: 5' in workflow
     assert 'actions/checkout@' not in workflow
-    assert '/collaborators/${ACTOR}/permission' in workflow
+    assert '/issues/${PR_NUMBER}/timeline?per_page=100' in workflow
+    assert '.event == "labeled" and .label.name == "trigger:docs"' in workflow
+    assert '| last | .actor.login' in workflow
+    assert '/collaborators/${label_actor}/permission' in workflow
     assert 'admin|maintain|write)' in workflow
-    assert "if: github.event.action == 'labeled'" in workflow
     assert 'client-id: ${{ vars.DOCS_APP_CLIENT_ID }}' in workflow
     assert 'vars.DOCS_APP_ID' not in workflow
     assert 'permission-contents: write' in workflow
-    assert workflow.index('Verify a maintainer triggered the check') < workflow.index('Generate app token')
+    assert workflow.index('Verify a maintainer owns the trigger label') < workflow.index('Generate app token')
     assert '-f "client_payload[library]=validation"' in workflow
     assert '-f "client_payload[source_repo]=${REPO}"' in workflow
     assert '-f "client_payload[source_sha]=${HEAD_SHA}"' in workflow
