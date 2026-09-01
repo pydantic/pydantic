@@ -7474,3 +7474,55 @@ def test_nested_model_deduplication() -> None:
     assert 'Level1' in definitions
     assert 'Level1-Input' not in definitions
     assert 'Level1-Output' not in definitions
+
+
+def test_container_length_constraints_json_schema() -> None:
+    from collections import Counter, OrderedDict, deque
+
+    class DequeModel(BaseModel):
+        items: deque[int] = Field(min_length=2, max_length=5)
+
+    assert DequeModel.model_json_schema() == {
+        'properties': {
+            'items': {'items': {'type': 'integer'}, 'maxItems': 5, 'minItems': 2, 'title': 'Items', 'type': 'array'},
+        },
+        'required': ['items'],
+        'title': 'DequeModel',
+        'type': 'object',
+    }
+
+    class CounterModel(BaseModel):
+        items: Counter[str] = Field(min_length=1, max_length=10)
+
+    assert CounterModel.model_json_schema() == {
+        'properties': {
+            'items': {
+                'additionalProperties': {'type': 'integer'},
+                'maxProperties': 10,
+                'minProperties': 1,
+                'title': 'Items',
+                'type': 'object',
+            },
+        },
+        'required': ['items'],
+        'title': 'CounterModel',
+        'type': 'object',
+    }
+
+    class OrderedDictModel(BaseModel):
+        items: OrderedDict[str, int] = Field(min_length=1)
+
+    assert OrderedDictModel.model_json_schema() == {
+        'properties': {
+            'items': {
+                'additionalProperties': {'type': 'integer'},
+                'minProperties': 1,
+                'title': 'Items',
+                'type': 'object',
+            },
+        },
+        'required': ['items'],
+        'title': 'OrderedDictModel',
+        'type': 'object',
+    }
+
