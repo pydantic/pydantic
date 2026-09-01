@@ -330,20 +330,31 @@ def max_length_validator(x: Any, max_length: Any) -> Any:
         raise TypeError(f"Unable to apply constraint 'max_length' to supplied value {x}")
 
 
-def _extract_decimal_digits_info(decimal: Decimal) -> tuple[int, int]:
+def _count_digits(num_digits: int, exponent: int) -> tuple[int, int]:
+    if exponent >= 0:
+        # A positive exponent adds that many trailing zeros
+        # Ex: digit_tuple=(1, 2, 3), exponent=2 -> 12300 -> 0 decimal places, 5 digits
+        return 0, num_digits + exponent
+    else:
+        # If the absolute value of the negative exponent is larger than the
+        # number of digits, then it's the same as the number of digits,
+        # because it'll consume all the digits in digit_tuple and then
+        # add abs(exponent) - len(digit_tuple) leading zeros after the decimal point.
+        # Ex: digit_tuple=(1, 2, 3), exponent=-2 -> 1.23 -> 2 decimal places, 3 digits
+        # Ex: digit_tuple=(1, 2, 3), exponent=-4 -> 0.0123 -> 4 decimal places, 4 digits
+        decimal_places = abs(exponent)
+        return decimal_places, max(num_digits, decimal_places)
+
+
+def _extract_decimal_digits_info(decimal: Decimal) -> tuple[tuple[int, int], tuple[int, int]]:
     """Compute the number of decimal places and total digits for a given [`Decimal`][decimal.Decimal] instance.
 
-    This function handles both normalized and non-normalized Decimal instances.
-    Example: `Decimal('1.230')` returns `(3, 4)` — 3 decimal places, 4 total digits.
+    Returns a tuple of two `(decimal_places, num_digits)` pairs: the first one for the decimal as is,
+    the second one for its normalized form (i.e. with trailing zeros stripped).
+    Example: `Decimal('1.230')` returns `((3, 4), (2, 3))`.
 
-    Args:
-        decimal (Decimal): The decimal number to analyze.
-
-    Returns:
-        tuple[int, int]: A tuple containing the number of decimal places and total digits.
-
-    Though this could be divided into two separate functions, the logic is easier to follow if we couple the computation
-    of the number of decimals and digits together.
+    Trailing zeros are stripped by hand rather than by calling [`Decimal.normalize()`][decimal.Decimal.normalize],
+    as the latter also rounds the value to the precision of the current decimal context.
     """
     try:
         decimal_tuple = decimal.as_tuple()
@@ -351,32 +362,30 @@ def _extract_decimal_digits_info(decimal: Decimal) -> tuple[int, int]:
         assert isinstance(decimal_tuple.exponent, int)
 
         exponent = decimal_tuple.exponent
-        num_digits = len(decimal_tuple.digits)
+        digits = decimal_tuple.digits
+        num_digits = len(digits)
 
-        if exponent >= 0:
-            # A positive exponent adds that many trailing zeros
-            # Ex: digit_tuple=(1, 2, 3), exponent=2 -> 12300 -> 0 decimal places, 5 digits
-            num_digits += exponent
-            decimal_places = 0
+        trailing_zeros = 0
+        for digit in reversed(digits):
+            if digit != 0:
+                break
+            trailing_zeros += 1
+
+        if trailing_zeros == num_digits:
+            # All digits are zero: `Decimal.normalize()` canonicalizes any zero to `0E0`.
+            normalized = (0, 1)
         else:
-            # If the absolute value of the negative exponent is larger than the
-            # number of digits, then it's the same as the number of digits,
-            # because it'll consume all the digits in digit_tuple and then
-            # add abs(exponent) - len(digit_tuple) leading zeros after the decimal point.
-            # Ex: digit_tuple=(1, 2, 3), exponent=-2 -> 1.23 -> 2 decimal places, 3 digits
-            # Ex: digit_tuple=(1, 2, 3), exponent=-4 -> 0.0123 -> 4 decimal places, 4 digits
-            decimal_places = abs(exponent)
-            num_digits = max(num_digits, decimal_places)
+            # Each stripped trailing zero is compensated by incrementing the exponent.
+            normalized = _count_digits(num_digits - trailing_zeros, exponent + trailing_zeros)
 
-        return decimal_places, num_digits
+        return _count_digits(num_digits, exponent), normalized
     except (AssertionError, AttributeError):
         raise TypeError(f'Unable to extract decimal digits info from supplied value {decimal}')
 
 
 def max_digits_validator(x: Any, max_digits: Any) -> Any:
     try:
-        _, num_digits = _extract_decimal_digits_info(x)
-        _, normalized_num_digits = _extract_decimal_digits_info(x.normalize())
+        (_, num_digits), (_, normalized_num_digits) = _extract_decimal_digits_info(x)
         if (num_digits > max_digits) and (normalized_num_digits > max_digits):
             raise PydanticKnownError(
                 'decimal_max_digits',
@@ -389,14 +398,12 @@ def max_digits_validator(x: Any, max_digits: Any) -> Any:
 
 def decimal_places_validator(x: Any, decimal_places: Any) -> Any:
     try:
-        decimal_places_, _ = _extract_decimal_digits_info(x)
-        if decimal_places_ > decimal_places:
-            normalized_decimal_places, _ = _extract_decimal_digits_info(x.normalize())
-            if normalized_decimal_places > decimal_places:
-                raise PydanticKnownError(
-                    'decimal_max_places',
-                    {'decimal_places': decimal_places},
-                )
+        (decimal_places_, _), (normalized_decimal_places, _) = _extract_decimal_digits_info(x)
+        if (decimal_places_ > decimal_places) and (normalized_decimal_places > decimal_places):
+            raise PydanticKnownError(
+                'decimal_max_places',
+                {'decimal_places': decimal_places},
+            )
         return x
     except TypeError:
         raise TypeError(f"Unable to apply constraint 'decimal_places' to supplied value {x}")

@@ -102,37 +102,53 @@ impl_py_gc_traverse!(DecimalValidator {
     gt
 });
 
-fn extract_decimal_digits_info(decimal: &Bound<'_, PyAny>, normalized: bool) -> ValResult<(u64, u64)> {
-    let py = decimal.py();
-    let mut normalized_decimal: Option<Bound<'_, PyAny>> = None;
-    if normalized {
-        normalized_decimal = decimal.call_method0(intern!(py, "normalize")).ok();
-    }
-    let (_, digit_tuple, exponent): (Bound<'_, PyAny>, Bound<'_, PyTuple>, Bound<'_, PyAny>) = normalized_decimal
-        .as_ref()
-        .unwrap_or(decimal)
-        .call_method0(intern!(py, "as_tuple"))?
-        .extract()?;
-
-    // finite values have numeric exponent, we checked is_finite above
-    let exponent: i64 = exponent.extract()?;
-    let mut digits: u64 = u64::try_from(digit_tuple.len()).map_err(|e| ValError::InternalErr(e.into()))?;
-    let decimals;
+fn count_digits(num_digits: u64, exponent: i64) -> (u64, u64) {
     if exponent >= 0 {
         // A positive exponent adds that many trailing zeros.
-        digits += exponent as u64;
-        decimals = 0;
+        (0, num_digits + exponent as u64)
     } else {
         // If the absolute value of the negative exponent is larger than the
         // number of digits, then it's the same as the number of digits,
         // because it'll consume all the digits in digit_tuple and then
         // add abs(exponent) - len(digit_tuple) leading zeros after the
         // decimal point.
-        decimals = exponent.unsigned_abs();
-        digits = digits.max(decimals);
+        let decimals = exponent.unsigned_abs();
+        (decimals, num_digits.max(decimals))
+    }
+}
+
+fn extract_decimal_digits_info(decimal: &Bound<'_, PyAny>) -> ValResult<((u64, u64), (u64, u64))> {
+    let py = decimal.py();
+    let (_, digit_tuple, exponent): (Bound<'_, PyAny>, Bound<'_, PyTuple>, Bound<'_, PyAny>) =
+        decimal.call_method0(intern!(py, "as_tuple"))?.extract()?;
+
+    // finite values have numeric exponent, we checked `Decimal.is_finite()`
+    // method before calling `extract_decimal_digits_info()`.
+    // Safe to cast to i64 as exponent is guaranteed to be within a range
+    // (see docs.python.org/3/library/decimal.html#constants):
+    let exponent: i64 = exponent.extract()?;
+    let num_digits: u64 = u64::try_from(digit_tuple.len()).map_err(|e| ValError::InternalErr(e.into()))?;
+
+    // While we could use `Decimal.normalize()` to strip trailing zeros, this method also
+    // rounds according to current context (with default precision of 28). Instead, we
+    // strip them manually:
+    let mut trailing_zeros: u64 = 0;
+    for digit in digit_tuple.iter().rev() {
+        if digit.extract::<u8>()? != 0 {
+            break;
+        }
+        trailing_zeros += 1;
     }
 
-    Ok((decimals, digits))
+    let normalized = if trailing_zeros == num_digits {
+        // All digits are zero: `Decimal.normalize()` canonicalizes any zero to `0E0`.
+        (0, 1)
+    } else {
+        // Each stripped trailing zero is compensated by incrementing the exponent.
+        count_digits(num_digits - trailing_zeros, exponent + trailing_zeros as i64)
+    };
+
+    Ok((count_digits(num_digits, exponent), normalized))
 }
 
 impl Validator for DecimalValidator {
@@ -151,8 +167,8 @@ impl Validator for DecimalValidator {
 
             if self.check_digits
                 // TODO: should errors be raised if extract_decimal_digits_info fails?
-                && let Ok((normalized_decimals, normalized_digits)) = extract_decimal_digits_info(&decimal, true)
-                && let Ok((decimals, digits)) = extract_decimal_digits_info(&decimal, false)
+                && let Ok(((decimals, digits), (normalized_decimals, normalized_digits))) =
+                    extract_decimal_digits_info(&decimal)
             {
                 if let Some(max_digits) = self.max_digits
                     && (digits > max_digits)
