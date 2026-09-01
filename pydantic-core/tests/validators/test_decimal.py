@@ -3,6 +3,8 @@ from __future__ import annotations
 import json
 import math
 import re
+import subprocess
+import sys
 from decimal import Decimal
 from typing import Any
 
@@ -546,6 +548,41 @@ def test_validate_max_digits_and_decimal_places(
         with pytest.raises(ValidationError) as exc_info:
             v.validate_python(input_value)
         assert exc_info.value.errors()[0]['type'] == error_type
+
+
+@pytest.mark.skipif(sys.platform == 'emscripten', reason='no subprocesses on emscripten')
+@pytest.mark.parametrize(
+    ('schema_kwargs', 'input_value', 'error_type'),
+    [
+        ({'max_digits': 1}, '1e9223372036854775808', 'decimal_max_digits'),
+        ({'max_digits': 1}, '1e-9223372036854775809', 'decimal_max_digits'),
+        ({'decimal_places': 1}, '1e-9223372036854775809', 'decimal_max_places'),
+        ({'decimal_places': 1}, '1e9223372036854775808', None),
+        ({'max_digits': 1, 'decimal_places': 0}, '0e9223372036854775808', None),
+        ({'max_digits': 1, 'decimal_places': 0}, '0e-9223372036854775809', None),
+    ],
+)
+def test_validate_max_digits_and_decimal_places_pydecimal_huge_exponent(
+    schema_kwargs: dict[str, Any], input_value: str, error_type: str | None
+) -> None:
+    pytest.importorskip('_pydecimal')
+
+    code = f"""
+import sys, _pydecimal
+sys.modules['decimal'] = _pydecimal
+import decimal
+from pydantic_core import SchemaValidator, ValidationError, core_schema as cs
+
+v = SchemaValidator(cs.decimal_schema(**{schema_kwargs!r}))
+try:
+    v.validate_python(decimal.Decimal({input_value!r}))
+except ValidationError as e:
+    print(e.errors()[0]['type'])
+else:
+    print(None)
+"""
+    result = subprocess.run([sys.executable, '-c', code], capture_output=True, text=True, check=True)
+    assert result.stdout.strip() == str(error_type)
 
 
 def test_str_validation_w_strict() -> None:

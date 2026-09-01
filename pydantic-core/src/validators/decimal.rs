@@ -105,7 +105,7 @@ impl_py_gc_traverse!(DecimalValidator {
 fn count_digits(num_digits: u64, exponent: i64) -> (u64, u64) {
     if exponent >= 0 {
         // A positive exponent adds that many trailing zeros.
-        (0, num_digits + exponent as u64)
+        (0, num_digits.saturating_add(exponent as u64))
     } else {
         // If the absolute value of the negative exponent is larger than the
         // number of digits, then it's the same as the number of digits,
@@ -122,11 +122,6 @@ fn extract_decimal_digits_info(decimal: &Bound<'_, PyAny>) -> ValResult<((u64, u
     let (_, digit_tuple, exponent): (Bound<'_, PyAny>, Bound<'_, PyTuple>, Bound<'_, PyAny>) =
         decimal.call_method0(intern!(py, "as_tuple"))?.extract()?;
 
-    // finite values have numeric exponent, we checked `Decimal.is_finite()`
-    // method before calling `extract_decimal_digits_info()`.
-    // Safe to cast to i64 as exponent is guaranteed to be within a range
-    // (see docs.python.org/3/library/decimal.html#constants):
-    let exponent: i64 = exponent.extract()?;
     let num_digits: u64 = u64::try_from(digit_tuple.len()).map_err(|e| ValError::InternalErr(e.into()))?;
 
     // While we could use `Decimal.normalize()` to strip trailing zeros, this method also
@@ -139,16 +134,47 @@ fn extract_decimal_digits_info(decimal: &Bound<'_, PyAny>) -> ValResult<((u64, u
         }
         trailing_zeros += 1;
     }
+    // `Decimal.normalize()` canonicalizes any zero to `0E0`, whatever the exponent is:
+    let is_zero = trailing_zeros == num_digits;
 
-    let normalized = if trailing_zeros == num_digits {
-        // All digits are zero: `Decimal.normalize()` canonicalizes any zero to `0E0`.
+    // Finite values have a numeric exponent (we checked `Decimal.is_finite()` before calling
+    // `extract_decimal_digits_info()`). The C implementation of the `decimal` module bounds
+    // the exponent (see https://docs.python.org/3/library/decimal.html#constants), so it always fits
+    // in an `i64`. However, the pure Python implementation does not, and the exponent can be an arbitrarily
+    // large integer.
+    let Ok(exponent) = exponent.extract::<i64>() else {
+        // We don't need the exact number of digits and decimal places: they are only ever compared
+        // against the `max_digits` and `decimal_places` constraints, which are `u64`s. If the exponent
+        // doesn't fit in an `i64`, the value has more than `i64::MAX` digits (when the exponent is
+        // positive) or more than `i64::MAX` decimal places and digits (when the exponent is negative),
+        // so the result of these comparisons is already known: any constraint one can set is exceeded.
+        // Saturating the counts to `u64::MAX` gives that outcome (except for the theoretical `u64::MAX`
+        // constraint) without having to represent the actual exponent.
+        let is_negative: bool = exponent.lt(0)?;
+        let counts = if is_negative {
+            (u64::MAX, u64::MAX)
+        } else {
+            (0, u64::MAX)
+        };
+        let normalized = if is_zero { (0, 1) } else { counts };
+        return Ok((counts, normalized));
+    };
+
+    let counts = count_digits(num_digits, exponent);
+    let normalized = if is_zero {
         (0, 1)
+    } else if exponent >= 0 {
+        // Stripping `k` trailing zeros increments the exponent by `k`, and the number of digits is
+        // `num_digits + exponent` for a non-negative exponent, so the counts are unchanged. Reusing
+        // them also avoids overflowing the exponent when it is close to `i64::MAX`.
+        counts
     } else {
-        // Each stripped trailing zero is compensated by incrementing the exponent.
+        // Each stripped trailing zero is compensated by incrementing the exponent. This can't
+        // overflow, as the exponent is negative and `trailing_zeros <= num_digits`.
         count_digits(num_digits - trailing_zeros, exponent + trailing_zeros as i64)
     };
 
-    Ok((count_digits(num_digits, exponent), normalized))
+    Ok((counts, normalized))
 }
 
 impl Validator for DecimalValidator {
