@@ -306,6 +306,54 @@ print(TargetVarSettings().model_dump())
 
 1. `env_prefix` will be ignored and the value will be read from `FooAlias` environment variable.
 
+The same applies to an alias on a nested model field:
+
+```py
+import os
+
+from pydantic import BaseModel, Field
+
+from pydantic_settings import BaseSettings, SettingsConfigDict
+
+
+class SubModel(BaseModel):
+    var1: str | None = None
+
+
+class NestedSettings(BaseSettings):
+    # default
+    model_config = SettingsConfigDict(env_prefix='APP_', env_nested_delimiter='_')
+    submodel: SubModel | None = Field(alias='SUB', default=None)
+
+
+os.environ['APP_SUB_VAR1'] = 'ignored'  # (1)!
+print(NestedSettings().model_dump())
+#> {'submodel': {'var1': None}}
+del os.environ['APP_SUB_VAR1']
+
+os.environ['SUB_VAR1'] = 'unprefixed alias value'
+print(NestedSettings().model_dump())
+#> {'submodel': {'var1': 'unprefixed alias value'}}
+del os.environ['SUB_VAR1']
+
+
+class NestedTargetAllSettings(NestedSettings):
+    model_config = SettingsConfigDict(
+        env_prefix='APP_',
+        env_nested_delimiter='_',
+        env_prefix_target='all',
+    )
+
+
+os.environ['APP_SUB_VAR1'] = 'prefixed alias value'
+print(NestedTargetAllSettings().model_dump())
+#> {'submodel': {'var1': 'prefixed alias value'}}
+del os.environ['APP_SUB_VAR1']
+
+```
+
+1. `env_prefix` will be ignored and the alias is looked up under `SUB_VAR1`, not `APP_SUB_VAR1`.
+
 ### Case-sensitivity
 
 By default, environment variable names are case-insensitive.
@@ -3465,6 +3513,51 @@ print(mutable_settings.foo)
 #> foo
 
 ```
+
+## Caching settings
+
+Constructing a settings model reads and validates its configured settings sources each time. This can be costly when sources read from disk, such as dotenv, secrets, JSON, TOML, or YAML files, or retrieve secrets from cloud secret managers and parameter stores. Use `settings_cached()` when an application needs one default settings instance per settings class and process:
+
+```py
+import os
+
+from pydantic_settings import BaseSettings
+
+
+class Settings(BaseSettings):
+    foo: str = 'foo'
+
+
+settings = Settings.settings_cached()
+
+print(settings.foo)
+#> foo
+
+os.environ['foo'] = 'bar'
+print(Settings.settings_cached().foo)
+#> foo
+
+print(Settings().foo)
+#> bar
+
+Settings.settings_clear_cache()
+reloaded_settings = Settings.settings_cached()
+
+print(reloaded_settings.foo)
+#> bar
+
+os.environ.pop('foo')
+Settings.settings_clear_cache()
+
+```
+
+Calling the settings class directly continues to create a fresh instance. Calling `settings_clear_cache()` removes the cached instance for that class, so that the next `settings_cached()` call loads the settings sources again.
+
+Each class is cached under its own key, so a subclass never shares an instance with its parent. This also applies when clearing: `settings_clear_cache()` only removes the entry for the exact class it is called on. If you reload settings through a base class, clear each subclass you have cached as well, otherwise those subclasses keep serving their existing instances.
+
+The cache is local to each process. The cached object is shared, so any change to it is seen by every caller. Configuring the model as frozen only prevents assigning to its attributes; it does not freeze the values themselves, so a mutable field such as a list or dict can still be updated in place and that change is shared process-wide. A cached instance keeps its own class alive for the lifetime of the process, which is what makes it a singleton. If you build settings classes dynamically and need them collected, call `settings_clear_cache()` when you are done with one, and its cache entry is dropped.
+
+Since `settings_cached` and `settings_clear_cache` are added to `protected_namespaces`, defining a field whose name starts with either of those raises a `UserWarning`. If you already have such a field, rename it or override `protected_namespaces` in your model config.
 
 ## Async environments
 

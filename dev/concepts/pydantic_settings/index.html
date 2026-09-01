@@ -2274,6 +2274,17 @@ to help you monitor and understand your
 </li>
       
         <li class="md-nav__item">
+  <a href="#caching-settings" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Caching settings
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#async-environments" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -5679,6 +5690,17 @@ to help you monitor and understand your
 </li>
       
         <li class="md-nav__item">
+  <a href="#caching-settings" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Caching settings
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#async-environments" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -6014,6 +6036,51 @@ To apply <code>env_prefix</code> only to variable names (the default behavior), 
 </code></pre></div>
 <ol>
 <li><code>env_prefix</code> will be ignored and the value will be read from <code>FooAlias</code> environment variable.</li>
+</ol>
+<p>The same applies to an alias on a nested model field:</p>
+<div class="language-py highlight"><pre><span></span><code><span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">pydantic</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">Field</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">pydantic_settings</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseSettings</span><span class="p">,</span> <span class="n">SettingsConfigDict</span>
+
+
+<span class="k">class</span><span class="w"> </span><span class="nc">SubModel</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="n">var1</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+
+
+<span class="k">class</span><span class="w"> </span><span class="nc">NestedSettings</span><span class="p">(</span><span class="n">BaseSettings</span><span class="p">):</span>
+    <span class="c1"># default</span>
+    <span class="n">model_config</span> <span class="o">=</span> <span class="n">SettingsConfigDict</span><span class="p">(</span><span class="n">env_prefix</span><span class="o">=</span><span class="s1">&#39;APP_&#39;</span><span class="p">,</span> <span class="n">env_nested_delimiter</span><span class="o">=</span><span class="s1">&#39;_&#39;</span><span class="p">)</span>
+    <span class="n">submodel</span><span class="p">:</span> <span class="n">SubModel</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="n">alias</span><span class="o">=</span><span class="s1">&#39;SUB&#39;</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
+
+
+<span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">[</span><span class="s1">&#39;APP_SUB_VAR1&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;ignored&#39;</span>  <span class="c1"># (1)!</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">NestedSettings</span><span class="p">()</span><span class="o">.</span><span class="n">model_dump</span><span class="p">())</span>
+<span class="c1">#&gt; {&#39;submodel&#39;: {&#39;var1&#39;: None}}</span>
+<span class="k">del</span> <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">[</span><span class="s1">&#39;APP_SUB_VAR1&#39;</span><span class="p">]</span>
+
+<span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">[</span><span class="s1">&#39;SUB_VAR1&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;unprefixed alias value&#39;</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">NestedSettings</span><span class="p">()</span><span class="o">.</span><span class="n">model_dump</span><span class="p">())</span>
+<span class="c1">#&gt; {&#39;submodel&#39;: {&#39;var1&#39;: &#39;unprefixed alias value&#39;}}</span>
+<span class="k">del</span> <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">[</span><span class="s1">&#39;SUB_VAR1&#39;</span><span class="p">]</span>
+
+
+<span class="k">class</span><span class="w"> </span><span class="nc">NestedTargetAllSettings</span><span class="p">(</span><span class="n">NestedSettings</span><span class="p">):</span>
+    <span class="n">model_config</span> <span class="o">=</span> <span class="n">SettingsConfigDict</span><span class="p">(</span>
+        <span class="n">env_prefix</span><span class="o">=</span><span class="s1">&#39;APP_&#39;</span><span class="p">,</span>
+        <span class="n">env_nested_delimiter</span><span class="o">=</span><span class="s1">&#39;_&#39;</span><span class="p">,</span>
+        <span class="n">env_prefix_target</span><span class="o">=</span><span class="s1">&#39;all&#39;</span><span class="p">,</span>
+    <span class="p">)</span>
+
+
+<span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">[</span><span class="s1">&#39;APP_SUB_VAR1&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;prefixed alias value&#39;</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">NestedTargetAllSettings</span><span class="p">()</span><span class="o">.</span><span class="n">model_dump</span><span class="p">())</span>
+<span class="c1">#&gt; {&#39;submodel&#39;: {&#39;var1&#39;: &#39;prefixed alias value&#39;}}</span>
+<span class="k">del</span> <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">[</span><span class="s1">&#39;APP_SUB_VAR1&#39;</span><span class="p">]</span>
+</code></pre></div>
+<ol>
+<li><code>env_prefix</code> will be ignored and the alias is looked up under <code>SUB_VAR1</code>, not <code>APP_SUB_VAR1</code>.</li>
 </ol>
 <h3 id="case-sensitivity">Case-sensitivity<a class="headerlink" href="#case-sensitivity" title="Permanent link">&para;</a></h3>
 <p>By default, environment variable names are case-insensitive.</p>
@@ -8875,6 +8942,56 @@ need to add your own custom sources, <code>settings_customise_sources</code> mak
 <span class="nb">print</span><span class="p">(</span><span class="n">mutable_settings</span><span class="o">.</span><span class="n">foo</span><span class="p">)</span>
 <span class="c1">#&gt; foo</span>
 </code></pre></div>
+<h2 id="caching-settings">Caching settings<a class="headerlink" href="#caching-settings" title="Permanent link">&para;</a></h2>
+<p>Constructing a settings model reads and validates its configured settings sources each time. This can be costly when
+sources read from disk, such as dotenv, secrets, JSON, TOML, or YAML files, or retrieve secrets from cloud secret
+managers and parameter stores. Use <code>settings_cached()</code> when an application needs one default settings instance per
+settings class and process:</p>
+<div class="language-py highlight"><pre><span></span><code><span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">pydantic_settings</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseSettings</span>
+
+
+<span class="k">class</span><span class="w"> </span><span class="nc">Settings</span><span class="p">(</span><span class="n">BaseSettings</span><span class="p">):</span>
+    <span class="n">foo</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;foo&#39;</span>
+
+
+<span class="n">settings</span> <span class="o">=</span> <span class="n">Settings</span><span class="o">.</span><span class="n">settings_cached</span><span class="p">()</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="n">settings</span><span class="o">.</span><span class="n">foo</span><span class="p">)</span>
+<span class="c1">#&gt; foo</span>
+
+<span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">[</span><span class="s1">&#39;foo&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;bar&#39;</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">Settings</span><span class="o">.</span><span class="n">settings_cached</span><span class="p">()</span><span class="o">.</span><span class="n">foo</span><span class="p">)</span>
+<span class="c1">#&gt; foo</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="n">Settings</span><span class="p">()</span><span class="o">.</span><span class="n">foo</span><span class="p">)</span>
+<span class="c1">#&gt; bar</span>
+
+<span class="n">Settings</span><span class="o">.</span><span class="n">settings_clear_cache</span><span class="p">()</span>
+<span class="n">reloaded_settings</span> <span class="o">=</span> <span class="n">Settings</span><span class="o">.</span><span class="n">settings_cached</span><span class="p">()</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="n">reloaded_settings</span><span class="o">.</span><span class="n">foo</span><span class="p">)</span>
+<span class="c1">#&gt; bar</span>
+
+<span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s1">&#39;foo&#39;</span><span class="p">)</span>
+<span class="n">Settings</span><span class="o">.</span><span class="n">settings_clear_cache</span><span class="p">()</span>
+</code></pre></div>
+<p>Calling the settings class directly continues to create a fresh instance. Calling <code>settings_clear_cache()</code> removes the
+cached instance for that class, so that the next <code>settings_cached()</code> call loads the settings sources again.</p>
+<p>Each class is cached under its own key, so a subclass never shares an instance with its parent. This also applies when
+clearing: <code>settings_clear_cache()</code> only removes the entry for the exact class it is called on. If you reload settings
+through a base class, clear each subclass you have cached as well, otherwise those subclasses keep serving their
+existing instances.</p>
+<p>The cache is local to each process. The cached object is shared, so any change to it is seen by every caller.
+Configuring the model as frozen only prevents assigning to its attributes; it does not freeze the values themselves, so
+a mutable field such as a list or dict can still be updated in place and that change is shared process-wide. A cached
+instance keeps its own class alive for the lifetime of the process, which is what makes it a singleton. If you build
+settings classes dynamically and need them collected, call <code>settings_clear_cache()</code> when you are done with one, and its
+cache entry is dropped.</p>
+<p>Since <code>settings_cached</code> and <code>settings_clear_cache</code> are added to <code>protected_namespaces</code>, defining a field whose name
+starts with either of those raises a <code>UserWarning</code>. If you already have such a field, rename it or override
+<code>protected_namespaces</code> in your model config.</p>
 <h2 id="async-environments">Async environments<a class="headerlink" href="#async-environments" title="Permanent link">&para;</a></h2>
 <p>Settings are loaded synchronously. When you use sources that read from disk, such as dotenv, secrets, JSON, TOML, or
 YAML files, constructing a settings object in an async application can block the event loop while those files are read.
