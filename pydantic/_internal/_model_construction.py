@@ -312,12 +312,16 @@ class ModelMetaclass(ABCMeta):
         field_names: set[str] = set()
         class_vars: set[str] = set()
         private_attributes: dict[str, ModelPrivateAttr] = {}
-        for base in bases:
+        for base in reversed(bases):
             if issubclass(base, BaseModel) and base is not BaseModel:
                 # model_fields might not be defined yet in the case of generics, so we use getattr here:
                 field_names.update(getattr(base, '__pydantic_fields__', {}).keys())
                 class_vars.update(base.__class_vars__)
-                private_attributes.update(base.__private_attributes__)
+                base_annos = getattr(base, '__dict__', {}).get('__annotations__', {})
+                base_dict = getattr(base, '__dict__', {})
+                for k, v in base.__private_attributes__.items():
+                    if k in base_annos or k in base_dict or k not in private_attributes:
+                        private_attributes[k] = v
         return field_names, class_vars, private_attributes
 
     @property

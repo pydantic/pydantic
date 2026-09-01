@@ -669,3 +669,28 @@ def test_model_construct_with_alias_choices_and_path() -> None:
     assert MyModel.model_construct(a='a_value').a == 'a_value'
     assert MyModel.model_construct(aaa='a_value').a == 'a_value'
     assert MyModel.model_construct(AAA={'aaa': 'a_value'}).a == 'a_value'
+
+
+def test_multiple_inheritance_field_and_private_attr_mro() -> None:
+    class Base(BaseModel):
+        f: str = 'base'
+        _knob: str = 'base'
+
+    class Override(Base):
+        f: str = 'override'
+        _knob: str = 'override'
+
+    class Plain(Base):
+        pass
+
+    class Swapped(Plain, Override):
+        pass
+
+    class Composed(Override, Plain):
+        pass
+
+    assert Swapped().f == 'override'
+    assert Swapped()._knob == 'override'
+    assert Composed().f == 'override'
+    assert Composed()._knob == 'override'
+

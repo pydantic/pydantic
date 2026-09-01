@@ -311,11 +311,19 @@ def collect_model_fields(  # noqa: C901
 
     from ..fields import ModelPrivateAttr, PrivateAttr
 
+    BaseModel_ = import_cached_base_model()
     bases = cls.__bases__
     parent_fields_lookup: dict[str, FieldInfo] = {}
-    for base in reversed(bases):
-        if model_fields := getattr(base, '__pydantic_fields__', None):
-            parent_fields_lookup.update(model_fields)
+    for base in reversed(cls.__mro__):
+        if base is cls or not issubclass(base, BaseModel_) or base is BaseModel_:
+            continue
+        base_fields = getattr(base, '__pydantic_fields__', None)
+        if not base_fields:
+            continue
+        base_annos = getattr(base, '__dict__', {}).get('__annotations__', {})
+        for k, v in base_fields.items():
+            if k in base_annos or k not in parent_fields_lookup:
+                parent_fields_lookup[k] = v
 
     type_hints = _typing_extra.get_model_type_hints(cls, ns_resolver=ns_resolver)
 
