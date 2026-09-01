@@ -171,19 +171,31 @@ def test_representation_integrations():
 
 
 @pytest.mark.parametrize(
-    'decimal,decimal_places,digits',
+    'decimal,decimal_places,digits,normalized_decimal_places,normalized_digits',
     [
-        (Decimal('0.0'), 1, 1),
-        (Decimal('0.'), 0, 1),
-        (Decimal('0.000'), 3, 3),
-        (Decimal('0.0001'), 4, 4),
-        (Decimal('.0001'), 4, 4),
-        (Decimal('123.123'), 3, 6),
-        (Decimal('123.1230'), 4, 7),
+        (Decimal('0.0'), 1, 1, 0, 1),
+        (Decimal('0.'), 0, 1, 0, 1),
+        (Decimal('0.000'), 3, 3, 0, 1),
+        (Decimal('0E+5'), 0, 6, 0, 1),
+        (Decimal('0.0001'), 4, 4, 4, 4),
+        (Decimal('.0001'), 4, 4, 4, 4),
+        (Decimal('100'), 0, 3, 0, 3),
+        (Decimal('1E+2'), 0, 3, 0, 3),
+        (Decimal('1.00'), 2, 3, 0, 1),
+        (Decimal('100.00'), 2, 5, 0, 3),
+        (Decimal('123.123'), 3, 6, 3, 6),
+        (Decimal('123.1230'), 4, 7, 3, 6),
+        # More significant digits than the precision of the (default) decimal context, no rounding should happen:
+        (Decimal('1234567890123456789012345678.910'), 3, 31, 2, 30),
     ],
 )
-def test_decimal_digits_calculation(decimal: Decimal, decimal_places: int, digits: int) -> None:
-    assert _extract_decimal_digits_info(decimal) == (decimal_places, digits)
+def test_decimal_digits_calculation(
+    decimal: Decimal, decimal_places: int, digits: int, normalized_decimal_places: int, normalized_digits: int
+) -> None:
+    assert _extract_decimal_digits_info(decimal) == (
+        (decimal_places, digits),
+        (normalized_decimal_places, normalized_digits),
+    )
 
 
 @pytest.mark.parametrize(
