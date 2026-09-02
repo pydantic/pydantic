@@ -66,13 +66,24 @@ URL_CONSTRAINTS = {
 }
 
 TEXT_SCHEMA_TYPES = ('str', 'bytes', 'url', 'multi-host-url')
+# The schema types that accept the string-only constraints in `STR_CONSTRAINTS`.
+# `bytes` is deliberately absent: the `bytes` validator implements none of them, so
+# listing it here made `pattern`, `to_lower`, `to_upper`, `strip_whitespace`,
+# `coerce_numbers_to_str` and `ascii_only` silent no-ops on `bytes` fields.
+# `BYTES_CONSTRAINTS` is what `bytes` accepts.
+STR_SCHEMA_TYPES = ('str', 'url', 'multi-host-url')
+# Schema types whose validated value must not be re-validated as a string. The fallback in
+# `apply_known_metadata()` chains a `str_schema(...)` step to enforce a string-only constraint,
+# but in lax mode that step decodes `bytes` to `str`, which would silently change the type of
+# the field. These constraints have no meaning for `bytes`, so report them instead.
+CHAIN_INCOMPATIBLE_SCHEMA_TYPES = frozenset({'bytes'})
 SEQUENCE_SCHEMA_TYPES = ('list', 'tuple', 'set', 'frozenset', 'generator', *TEXT_SCHEMA_TYPES)
 NUMERIC_SCHEMA_TYPES = ('float', 'int', 'date', 'time', 'timedelta', 'datetime')
 
 CONSTRAINTS_TO_ALLOWED_SCHEMAS: dict[str, set[str]] = defaultdict(set)
 
 constraint_schema_pairings: list[tuple[set[str], tuple[str, ...]]] = [
-    (STR_CONSTRAINTS, TEXT_SCHEMA_TYPES),
+    (STR_CONSTRAINTS, STR_SCHEMA_TYPES),
     (BYTES_CONSTRAINTS, ('bytes',)),
     (LIST_CONSTRAINTS, ('list',)),
     (TUPLE_CONSTRAINTS, ('tuple',)),
@@ -228,7 +239,7 @@ def apply_known_metadata(annotation: Any, schema: CoreSchema) -> CoreSchema | No
             continue
 
         #  else, apply a function after validator to the schema to enforce the corresponding constraint
-        if constraint in chain_schema_constraints:
+        if constraint in chain_schema_constraints and schema_type not in CHAIN_INCOMPATIBLE_SCHEMA_TYPES:
 
             def _apply_constraint_with_incompatibility_info(
                 value: Any, handler: cs.ValidatorFunctionWrapHandler

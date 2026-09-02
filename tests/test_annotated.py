@@ -16,6 +16,7 @@ from pydantic import (
     Field,
     GetCoreSchemaHandler,
     PydanticUserError,
+    StringConstraints,
     TypeAdapter,
     ValidationError,
 )
@@ -614,6 +615,38 @@ def test_incompatible_metadata_error() -> None:
     ta = TypeAdapter(Annotated[list[int], Field(pattern='abc')])
     with pytest.raises(TypeError, match="Unable to apply constraint 'pattern'"):
         ta.validate_python([1, 2, 3])
+
+
+@pytest.mark.parametrize(
+    'constraint',
+    [
+        {'pattern': 'abc'},
+        {'strip_whitespace': True},
+        {'to_lower': True},
+        {'to_upper': True},
+        {'ascii_only': True},
+    ],
+)
+def test_str_only_metadata_on_bytes_is_reported(constraint: dict[str, Any]) -> None:
+    """String-only constraints have no `bytes` implementation, so they must be reported, not ignored."""
+    (name,) = constraint
+    with pytest.raises(RuntimeError, match=f"Unable to apply constraint '{name}' to schema of type 'bytes'"):
+        TypeAdapter(Annotated[bytes, StringConstraints(**constraint)])
+
+
+@pytest.mark.parametrize(
+    'constraint,valid,invalid',
+    [
+        ({'min_length': 2}, b'ab', b'a'),
+        ({'max_length': 2}, b'ab', b'abc'),
+        ({'strict': True}, b'ab', 'ab'),
+    ],
+)
+def test_bytes_metadata_still_applies(constraint: dict[str, Any], valid: bytes, invalid: Any) -> None:
+    ta = TypeAdapter(Annotated[bytes, StringConstraints(**constraint)])
+    assert ta.validate_python(valid) == valid
+    with pytest.raises(ValidationError):
+        ta.validate_python(invalid)
 
 
 def test_compatible_metadata_raises_correct_validation_error() -> None:
