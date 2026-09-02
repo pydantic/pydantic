@@ -146,8 +146,8 @@ def test_validate_by_alias_false_uses_the_field_name():
         my_field: str = Field(alias='myAlias')
 
     assert list(Model.model_json_schema()['properties']) == ['my_field']
-    # Serialization is governed by `serialize_by_alias`, which this leaves alone:
-    assert list(Model.model_json_schema(mode='serialization')['properties']) == ['myAlias']
+    # Serialization is governed by `serialize_by_alias` (default False, so the field name is used):
+    assert list(Model.model_json_schema(mode='serialization')['properties']) == ['my_field']
 
     @pydantic.dataclasses.dataclass(config=ConfigDict(validate_by_alias=False, validate_by_name=True))
     class Dataclass:
@@ -171,6 +171,86 @@ def test_validate_by_alias_false_is_scoped_to_its_own_model():
     assert list(json_schema['$defs']['Inner']['properties']) == ['inner_field']
 
     assert Outer.model_validate({'outerAlias': 'x', 'inner': {'inner_field': 'y'}}).outer_field == 'x'
+
+
+def test_serialize_by_alias_false_uses_the_field_name():
+    # With serialize_by_alias=False (the default), serialization emits the field name, so the
+    # serialization JSON schema must key by the field name too, mirroring what model_dump() produces.
+    class Model(BaseModel):
+        model_config = ConfigDict(serialize_by_alias=False)
+        my_field: str = Field(serialization_alias='myAlias')
+
+    assert list(Model.model_json_schema(mode='serialization')['properties']) == ['my_field']
+    # Validation is governed by validate_by_alias, which is unaffected by this setting:
+    assert list(Model.model_json_schema()['properties']) == ['my_field']
+
+    @pydantic.dataclasses.dataclass(config=ConfigDict(serialize_by_alias=False))
+    class Dataclass:
+        my_field: str = Field(serialization_alias='myAlias')
+
+    adapter = TypeAdapter(Dataclass)
+    assert list(adapter.json_schema(mode='serialization')['properties']) == ['my_field']
+
+
+def test_serialize_by_alias_true_uses_the_serialization_alias():
+    class Model(BaseModel):
+        model_config = ConfigDict(serialize_by_alias=True)
+        my_field: str = Field(serialization_alias='myAlias')
+
+    assert list(Model.model_json_schema(mode='serialization')['properties']) == ['myAlias']
+    assert list(Model.model_json_schema(mode='validation')['properties']) == ['my_field']
+
+
+def test_serialize_by_alias_false_is_scoped_to_its_own_model():
+    class Inner(BaseModel):
+        model_config = ConfigDict(serialize_by_alias=False)
+        inner_field: str = Field(serialization_alias='innerAlias')
+
+    class Outer(BaseModel):
+        outer_field: str = Field(serialization_alias='outerAlias')
+        inner: Inner
+
+    json_schema = Outer.model_json_schema(mode='serialization')
+    assert list(json_schema['properties']) == ['outer_field', 'inner']
+    assert list(json_schema['$defs']['Inner']['properties']) == ['inner_field']
+
+
+def test_serialization_schema_matches_dump_without_alias_config():
+    # By default serialize_by_alias is False, so the serialization schema must agree with the
+    # actual output of model_dump() rather than naming keys the model will never emit.
+    class Model(BaseModel):
+        my_field: str = Field(serialization_alias='myAlias')
+        plain: int
+
+    m = Model(my_field='foo', plain=1)
+    schema = Model.model_json_schema(mode='serialization')
+    assert list(schema['properties']) == ['my_field', 'plain']
+    assert list(m.model_dump().keys()) == ['my_field', 'plain']
+
+
+def test_computed_field_serialization_alias_respects_serialize_by_alias():
+    class Model(BaseModel):
+        model_config = ConfigDict(serialize_by_alias=False)
+        x: str = 'a'
+
+        @pydantic.computed_field(alias='computedAlias')
+        @property
+        def computed(self) -> str:
+            return self.x + '!'
+
+    assert list(Model.model_json_schema(mode='serialization')['properties']) == ['x', 'computed']
+    assert list(Model(x='v').model_dump().keys()) == ['x', 'computed']
+
+    class WithAlias(BaseModel):
+        model_config = ConfigDict(serialize_by_alias=True)
+        x: str = 'a'
+
+        @pydantic.computed_field(alias='computedAlias')
+        @property
+        def computed(self) -> str:
+            return self.x + '!'
+
+    assert list(WithAlias.model_json_schema(mode='serialization')['properties']) == ['x', 'computedAlias']
 
 
 def test_ref_template():
@@ -3429,11 +3509,11 @@ def test_mode_name_causes_no_conflict():
             'OrganizationOutput': {'properties': {}, 'title': 'OrganizationOutput', 'type': 'object'},
         },
         'properties': {
-            'x_serialization': {'$ref': '#/$defs/Organization'},
+            'x': {'$ref': '#/$defs/Organization'},
             'y': {'$ref': '#/$defs/OrganizationInput'},
             'z': {'$ref': '#/$defs/OrganizationOutput'},
         },
-        'required': ['x_serialization', 'y', 'z'],
+        'required': ['x', 'y', 'z'],
         'title': 'Model',
         'type': 'object',
     }

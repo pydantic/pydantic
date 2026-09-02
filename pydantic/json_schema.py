@@ -1618,11 +1618,11 @@ class GenerateJsonSchema:
 
     def _get_alias_name(self, field: CoreSchemaField, name: str) -> str:
         if field['type'] == 'computed-field':
-            alias: Any = field.get('alias', name)
+            alias: Any = name if not self._config.serialize_by_alias else field.get('alias', name)
         elif self.mode == 'validation':
             alias = name if not self._config.validate_by_alias else field.get('validation_alias', name)
         else:
-            alias = field.get('serialization_alias', name)
+            alias = name if not self._config.serialize_by_alias else field.get('serialization_alias', name)
         if isinstance(alias, str):
             name = alias
         elif isinstance(alias, list):
