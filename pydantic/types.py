@@ -2432,6 +2432,15 @@ class EncoderProtocol(Protocol):
         """
         ...
 
+    @classmethod
+    def get_content_encoding(cls) -> str | None:
+        """Get the JSON Schema `contentEncoding` value for the encoded data.
+
+        Returns:
+            The content encoding, or `None` if no `contentEncoding` keyword should be set.
+        """
+        ...
+
 
 class Base64Encoder(EncoderProtocol):
     """Standard (non-URL-safe) Base64 encoder."""
@@ -2469,6 +2478,15 @@ class Base64Encoder(EncoderProtocol):
 
         Returns:
             The JSON format for the encoded data.
+        """
+        return 'base64'
+
+    @classmethod
+    def get_content_encoding(cls) -> Literal['base64']:
+        """Get the JSON Schema `contentEncoding` value for the encoded data.
+
+        Returns:
+            The content encoding for the encoded data.
         """
         return 'base64'
 
@@ -2520,6 +2538,15 @@ class Base64UrlEncoder(EncoderProtocol):
 
         Returns:
             The JSON format for the encoded data.
+        """
+        return 'base64url'
+
+    @classmethod
+    def get_content_encoding(cls) -> Literal['base64url']:
+        """Get the JSON Schema `contentEncoding` value for the encoded data.
+
+        Returns:
+            The content encoding for the encoded data.
         """
         return 'base64url'
 
@@ -2586,6 +2613,9 @@ class EncodedBytes:
     ) -> JsonSchemaValue:
         field_schema = handler(core_schema)
         field_schema.update(type='string', format=self.encoder.get_json_format())
+        content_encoding = self.encoder.get_content_encoding()
+        if content_encoding is not None:
+            field_schema['contentEncoding'] = content_encoding
         return field_schema
 
     def __get_pydantic_core_schema__(self, source: type[Any], handler: GetCoreSchemaHandler) -> core_schema.CoreSchema:
@@ -2685,6 +2715,9 @@ class EncodedStr:
     ) -> JsonSchemaValue:
         field_schema = handler(core_schema)
         field_schema.update(type='string', format=self.encoder.get_json_format())
+        content_encoding = self.encoder.get_content_encoding()
+        if content_encoding is not None:
+            field_schema['contentEncoding'] = content_encoding
         return field_schema
 
     def __get_pydantic_core_schema__(self, source: type[Any], handler: GetCoreSchemaHandler) -> core_schema.CoreSchema:

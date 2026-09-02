@@ -818,7 +818,10 @@ class GenerateJsonSchema:
         Returns:
             The generated JSON schema.
         """
-        json_schema = {'type': 'string', 'format': 'base64url' if self._config.ser_json_bytes == 'base64' else 'binary'}
+        json_schema: JsonSchemaValue = {'type': 'string', 'contentMediaType': 'application/octet-stream'}
+        bytes_mode = self._config.val_json_bytes if self.mode == 'validation' else self._config.ser_json_bytes
+        if bytes_mode == 'base64':
+            json_schema['contentEncoding'] = 'base64'
         self.update_with_validations(json_schema, schema, self.ValidationsMapping.bytes)
         return json_schema
 
