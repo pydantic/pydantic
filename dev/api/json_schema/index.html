@@ -16833,7 +16833,9 @@ and returns both the produced defs_ref and the JSON schema that will refer to th
 <span class="normal">2485</span>
 <span class="normal">2486</span>
 <span class="normal">2487</span>
-<span class="normal">2488</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">encode_default</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dft</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Any</span><span class="p">:</span>
+<span class="normal">2488</span>
+<span class="normal">2489</span>
+<span class="normal">2490</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">encode_default</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dft</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Any</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Encode a default value to a JSON-serializable value.</span>
 
 <span class="sd">    This is used to encode default values for fields in the generated JSON schema.</span>
@@ -16855,12 +16857,14 @@ and returns both the produced defs_ref and the JSON schema that will refer to th
                 <span class="n">dft</span><span class="p">,</span> <span class="n">by_alias</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">by_alias</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s1">&#39;json&#39;</span>
             <span class="p">)</span>
         <span class="p">)</span>
-    <span class="k">except</span> <span class="n">PydanticSchemaGenerationError</span><span class="p">:</span>
-        <span class="k">raise</span> <span class="n">pydantic_core</span><span class="o">.</span><span class="n">PydanticSerializationError</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Unable to encode default value </span><span class="si">{</span><span class="n">dft</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
-
-    <span class="k">return</span> <span class="n">pydantic_core</span><span class="o">.</span><span class="n">to_jsonable_python</span><span class="p">(</span>
-        <span class="n">default</span><span class="p">,</span> <span class="n">timedelta_mode</span><span class="o">=</span><span class="n">config</span><span class="o">.</span><span class="n">ser_json_timedelta</span><span class="p">,</span> <span class="n">bytes_mode</span><span class="o">=</span><span class="n">config</span><span class="o">.</span><span class="n">ser_json_bytes</span><span class="p">,</span> <span class="n">by_alias</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">by_alias</span>
-    <span class="p">)</span>
+        <span class="k">return</span> <span class="n">pydantic_core</span><span class="o">.</span><span class="n">to_jsonable_python</span><span class="p">(</span>
+            <span class="n">default</span><span class="p">,</span>
+            <span class="n">timedelta_mode</span><span class="o">=</span><span class="n">config</span><span class="o">.</span><span class="n">ser_json_timedelta</span><span class="p">,</span>
+            <span class="n">bytes_mode</span><span class="o">=</span><span class="n">config</span><span class="o">.</span><span class="n">ser_json_bytes</span><span class="p">,</span>
+            <span class="n">by_alias</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">by_alias</span><span class="p">,</span>
+        <span class="p">)</span>
+    <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="n">pydantic_core</span><span class="o">.</span><span class="n">PydanticSerializationError</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Unable to encode default value </span><span class="si">{</span><span class="n">dft</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span> <span class="kn">from</span><span class="w"> </span><span class="nn">e</span>
 </code></pre></div></td></tr></table></div>
             </details>
     </div>
@@ -16952,9 +16956,7 @@ using the provided mapping to translate keys in core_schema to the appropriate k
 
             <details class="quote">
               <summary>Source code in <code>pydantic/json_schema.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">2490</span>
-<span class="normal">2491</span>
-<span class="normal">2492</span>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">2492</span>
 <span class="normal">2493</span>
 <span class="normal">2494</span>
 <span class="normal">2495</span>
@@ -16965,7 +16967,9 @@ using the provided mapping to translate keys in core_schema to the appropriate k
 <span class="normal">2500</span>
 <span class="normal">2501</span>
 <span class="normal">2502</span>
-<span class="normal">2503</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">update_with_validations</span><span class="p">(</span>
+<span class="normal">2503</span>
+<span class="normal">2504</span>
+<span class="normal">2505</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">update_with_validations</span><span class="p">(</span>
     <span class="bp">self</span><span class="p">,</span> <span class="n">json_schema</span><span class="p">:</span> <span class="n">JsonSchemaValue</span><span class="p">,</span> <span class="n">core_schema</span><span class="p">:</span> <span class="n">CoreSchema</span><span class="p">,</span> <span class="n">mapping</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Update the json_schema with the corresponding validations specified in the core_schema,</span>
@@ -17004,9 +17008,7 @@ using the provided mapping to translate keys in core_schema to the appropriate k
 
             <details class="quote">
               <summary>Source code in <code>pydantic/json_schema.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">2549</span>
-<span class="normal">2550</span>
-<span class="normal">2551</span>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">2551</span>
 <span class="normal">2552</span>
 <span class="normal">2553</span>
 <span class="normal">2554</span>
@@ -17038,7 +17040,9 @@ using the provided mapping to translate keys in core_schema to the appropriate k
 <span class="normal">2580</span>
 <span class="normal">2581</span>
 <span class="normal">2582</span>
-<span class="normal">2583</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">get_json_ref_counts</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">json_schema</span><span class="p">:</span> <span class="n">JsonSchemaValue</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="n">JsonRef</span><span class="p">,</span> <span class="nb">int</span><span class="p">]:</span>
+<span class="normal">2583</span>
+<span class="normal">2584</span>
+<span class="normal">2585</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">get_json_ref_counts</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">json_schema</span><span class="p">:</span> <span class="n">JsonSchemaValue</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="n">JsonRef</span><span class="p">,</span> <span class="nb">int</span><span class="p">]:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Get all values corresponding to the key &#39;$ref&#39; anywhere in the json_schema.&quot;&quot;&quot;</span>
     <span class="n">json_refs</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="n">JsonRef</span><span class="p">,</span> <span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="n">Counter</span><span class="p">()</span>
 
@@ -17098,11 +17102,11 @@ using the provided mapping to translate keys in core_schema to the appropriate k
 
             <details class="quote">
               <summary>Source code in <code>pydantic/json_schema.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">2588</span>
-<span class="normal">2589</span>
-<span class="normal">2590</span>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">2590</span>
 <span class="normal">2591</span>
-<span class="normal">2592</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">emit_warning</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">kind</span><span class="p">:</span> <span class="n">JsonSchemaWarningKind</span><span class="p">,</span> <span class="n">detail</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="normal">2592</span>
+<span class="normal">2593</span>
+<span class="normal">2594</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">emit_warning</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">kind</span><span class="p">:</span> <span class="n">JsonSchemaWarningKind</span><span class="p">,</span> <span class="n">detail</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;This method simply emits PydanticJsonSchemaWarnings based on handling in the `warning_message` method.&quot;&quot;&quot;</span>
     <span class="n">message</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">render_warning_message</span><span class="p">(</span><span class="n">kind</span><span class="p">,</span> <span class="n">detail</span><span class="p">)</span>
     <span class="k">if</span> <span class="n">message</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
@@ -17209,9 +17213,7 @@ just return None in situations where you don't want warnings to be emitted.</p>
 
             <details class="quote">
               <summary>Source code in <code>pydantic/json_schema.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">2594</span>
-<span class="normal">2595</span>
-<span class="normal">2596</span>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">2596</span>
 <span class="normal">2597</span>
 <span class="normal">2598</span>
 <span class="normal">2599</span>
@@ -17228,7 +17230,9 @@ just return None in situations where you don't want warnings to be emitted.</p>
 <span class="normal">2610</span>
 <span class="normal">2611</span>
 <span class="normal">2612</span>
-<span class="normal">2613</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">render_warning_message</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">kind</span><span class="p">:</span> <span class="n">JsonSchemaWarningKind</span><span class="p">,</span> <span class="n">detail</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span>
+<span class="normal">2613</span>
+<span class="normal">2614</span>
+<span class="normal">2615</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">render_warning_message</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">kind</span><span class="p">:</span> <span class="n">JsonSchemaWarningKind</span><span class="p">,</span> <span class="n">detail</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;This method is responsible for ignoring warnings as desired, and for formatting the warning messages.</span>
 
 <span class="sd">    You can override the value of `ignored_warning_kinds` in a subclass of GenerateJsonSchema</span>
@@ -17414,9 +17418,7 @@ allowing you to add different examples for validation and serialization.</p>
 
                   <details class="quote">
                     <summary>Source code in <code>pydantic/json_schema.py</code></summary>
-                    <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">2869</span>
-<span class="normal">2870</span>
-<span class="normal">2871</span>
+                    <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">2871</span>
 <span class="normal">2872</span>
 <span class="normal">2873</span>
 <span class="normal">2874</span>
@@ -17424,7 +17426,9 @@ allowing you to add different examples for validation and serialization.</p>
 <span class="normal">2876</span>
 <span class="normal">2877</span>
 <span class="normal">2878</span>
-<span class="normal">2879</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
+<span class="normal">2879</span>
+<span class="normal">2880</span>
+<span class="normal">2881</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
     <span class="bp">self</span><span class="p">,</span> <span class="n">examples</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span> <span class="o">|</span> <span class="nb">list</span><span class="p">[</span><span class="n">Any</span><span class="p">],</span> <span class="n">mode</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s1">&#39;validation&#39;</span><span class="p">,</span> <span class="s1">&#39;serialization&#39;</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
     <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">examples</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
@@ -17727,9 +17731,7 @@ If <code>False</code>, fields will be serialized according to their attribute na
 
             <details class="quote">
               <summary>Source code in <code>pydantic/json_schema.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">2647</span>
-<span class="normal">2648</span>
-<span class="normal">2649</span>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">2649</span>
 <span class="normal">2650</span>
 <span class="normal">2651</span>
 <span class="normal">2652</span>
@@ -17772,7 +17774,9 @@ If <code>False</code>, fields will be serialized according to their attribute na
 <span class="normal">2689</span>
 <span class="normal">2690</span>
 <span class="normal">2691</span>
-<span class="normal">2692</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">model_json_schema</span><span class="p">(</span>
+<span class="normal">2692</span>
+<span class="normal">2693</span>
+<span class="normal">2694</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">model_json_schema</span><span class="p">(</span>
     <span class="bp">cls</span><span class="p">:</span> <span class="nb">type</span><span class="p">[</span><span class="n">BaseModel</span><span class="p">]</span> <span class="o">|</span> <span class="nb">type</span><span class="p">[</span><span class="n">PydanticDataclass</span><span class="p">],</span>
     <span class="n">by_alias</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
     <span class="n">ref_template</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">DEFAULT_REF_TEMPLATE</span><span class="p">,</span>
@@ -18031,9 +18035,7 @@ If <code>False</code>, fields will be serialized according to their attribute na
 
             <details class="quote">
               <summary>Source code in <code>pydantic/json_schema.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">2695</span>
-<span class="normal">2696</span>
-<span class="normal">2697</span>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">2697</span>
 <span class="normal">2698</span>
 <span class="normal">2699</span>
 <span class="normal">2700</span>
@@ -18085,7 +18087,9 @@ If <code>False</code>, fields will be serialized according to their attribute na
 <span class="normal">2746</span>
 <span class="normal">2747</span>
 <span class="normal">2748</span>
-<span class="normal">2749</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">models_json_schema</span><span class="p">(</span>
+<span class="normal">2749</span>
+<span class="normal">2750</span>
+<span class="normal">2751</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">models_json_schema</span><span class="p">(</span>
     <span class="n">models</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">[</span><span class="nb">tuple</span><span class="p">[</span><span class="nb">type</span><span class="p">[</span><span class="n">BaseModel</span><span class="p">]</span> <span class="o">|</span> <span class="nb">type</span><span class="p">[</span><span class="n">PydanticDataclass</span><span class="p">],</span> <span class="n">JsonSchemaMode</span><span class="p">]],</span>
     <span class="o">*</span><span class="p">,</span>
     <span class="n">by_alias</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>

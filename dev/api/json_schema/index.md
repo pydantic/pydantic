@@ -4014,12 +4014,14 @@ def encode_default(self, dft: Any) -> Any:
                 dft, by_alias=self.by_alias, mode='json'
             )
         )
-    except PydanticSchemaGenerationError:
-        raise pydantic_core.PydanticSerializationError(f'Unable to encode default value {dft}')
-
-    return pydantic_core.to_jsonable_python(
-        default, timedelta_mode=config.ser_json_timedelta, bytes_mode=config.ser_json_bytes, by_alias=self.by_alias
-    )
+        return pydantic_core.to_jsonable_python(
+            default,
+            timedelta_mode=config.ser_json_timedelta,
+            bytes_mode=config.ser_json_bytes,
+            by_alias=self.by_alias,
+        )
+    except Exception as e:
+        raise pydantic_core.PydanticSerializationError(f'Unable to encode default value {dft}') from e
 
 ```
 
