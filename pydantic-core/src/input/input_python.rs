@@ -14,7 +14,7 @@ use pyo3::PyTypeInfo;
 use speedate::MicrosecondsPrecisionOverflowBehavior;
 
 use crate::ArgsKwargs;
-use crate::common::deque::get_deque_type;
+use crate::common::deque::{deque_maxlen, get_deque_type};
 use crate::common::frozendict::get_frozendict_type;
 use crate::errors::{ErrorType, ErrorTypeDefaults, InputValue, LocItem, ValError, ValResult};
 use crate::lookup_key::LookupPath;
@@ -509,8 +509,10 @@ impl<'py> Input<'py> for Bound<'py, PyAny> {
 
     fn validate_deque<'a>(&'a self, strict: bool) -> ValMatch<(PySequenceIterable<'a, 'py>, Option<usize>)> {
         if self.is_instance(get_deque_type(self.py())?)? {
-            let maxlen: Option<usize> = self.getattr(intern!(self.py(), "maxlen"))?.extract()?;
-            return Ok(ValidationMatch::exact((PySequenceIterable::Deque(self), maxlen)));
+            return Ok(ValidationMatch::exact((
+                PySequenceIterable::Deque(self),
+                deque_maxlen(self)?,
+            )));
         } else if !strict && let Ok(other) = extract_sequence_iterable(self) {
             return Ok(ValidationMatch::lax((other, None)));
         }

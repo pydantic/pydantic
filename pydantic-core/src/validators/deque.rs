@@ -4,7 +4,7 @@ use pyo3::intern;
 use pyo3::prelude::*;
 use pyo3::types::{PyDict, PyList};
 
-use crate::common::deque::get_deque_type;
+use crate::common::deque::new_deque;
 use crate::errors::ValResult;
 use crate::input::{Input, ValidatedList};
 use crate::tools::SchemaDict;
@@ -77,19 +77,9 @@ impl Validator for DequeValidator {
         };
         min_length_check!(input, "Deque", self.min_length, output);
 
-        let deque_type = get_deque_type(py)?;
-        let items = PyList::new(py, output)?;
-        let deque = match maxlen {
-            // `maxlen` is preserved from the input deque (if any). The validated output can't have
-            // more items than the input, so the deque constructor will never truncate `items` here.
-            Some(maxlen) => {
-                let kwargs = PyDict::new(py);
-                kwargs.set_item(intern!(py, "maxlen"), maxlen)?;
-                deque_type.call((items,), Some(&kwargs))?
-            }
-            None => deque_type.call1((items,))?,
-        };
-        Ok(deque.unbind())
+        // `maxlen` is preserved from the input deque (if any). The validated output can't have
+        // more items than the input, so the deque constructor will never truncate the items here.
+        Ok(new_deque(py, PyList::new(py, output)?, maxlen)?)
     }
 
     fn get_name(&self) -> &str {

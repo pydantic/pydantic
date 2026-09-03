@@ -7,7 +7,7 @@ use pyo3::types::{PyDict, PyList};
 
 use serde::ser::SerializeSeq;
 
-use crate::common::deque::get_deque_type;
+use crate::common::deque::{deque_maxlen, get_deque_type, new_deque};
 use crate::definitions::DefinitionsBuilder;
 use crate::serializers::SerializationState;
 use crate::tools::SchemaDict;
@@ -56,8 +56,7 @@ impl_py_gc_traverse!(DequeSerializer { item_serializer });
 fn as_deque(value: &Bound<'_, PyAny>) -> PyResult<Option<(usize, Option<usize>)>> {
     let py = value.py();
     if value.is_instance(get_deque_type(py)?)? {
-        let maxlen: Option<usize> = value.getattr(intern!(py, "maxlen"))?.extract()?;
-        Ok(Some((value.len()?, maxlen)))
+        Ok(Some((value.len()?, deque_maxlen(value)?)))
     } else {
         Ok(None)
     }
@@ -82,18 +81,7 @@ impl TypeSerializer for DequeSerializer {
                 let items = PyList::new(py, items)?;
                 match state.extra.mode {
                     SerMode::Json => Ok(items.into()),
-                    _ => {
-                        let deque_type = get_deque_type(py)?;
-                        let deque = match maxlen {
-                            Some(maxlen) => {
-                                let kwargs = PyDict::new(py);
-                                kwargs.set_item(intern!(py, "maxlen"), maxlen)?;
-                                deque_type.call((items,), Some(&kwargs))?
-                            }
-                            None => deque_type.call1((items,))?,
-                        };
-                        Ok(deque.unbind())
-                    }
+                    _ => new_deque(py, items, maxlen),
                 }
             }
             None => {
