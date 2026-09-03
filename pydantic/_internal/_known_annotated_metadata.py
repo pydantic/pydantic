@@ -66,7 +66,7 @@ URL_CONSTRAINTS = {
 }
 
 TEXT_SCHEMA_TYPES = ('str', 'bytes', 'url', 'multi-host-url')
-SEQUENCE_SCHEMA_TYPES = ('list', 'tuple', 'set', 'frozenset', 'generator', *TEXT_SCHEMA_TYPES)
+SEQUENCE_SCHEMA_TYPES = ('list', 'deque', 'tuple', 'set', 'frozenset', 'generator', *TEXT_SCHEMA_TYPES)
 NUMERIC_SCHEMA_TYPES = ('float', 'int', 'date', 'time', 'timedelta', 'datetime')
 
 CONSTRAINTS_TO_ALLOWED_SCHEMAS: dict[str, set[str]] = defaultdict(set)
@@ -74,7 +74,7 @@ CONSTRAINTS_TO_ALLOWED_SCHEMAS: dict[str, set[str]] = defaultdict(set)
 constraint_schema_pairings: list[tuple[set[str], tuple[str, ...]]] = [
     (STR_CONSTRAINTS, TEXT_SCHEMA_TYPES),
     (BYTES_CONSTRAINTS, ('bytes',)),
-    (LIST_CONSTRAINTS, ('list',)),
+    (LIST_CONSTRAINTS, ('list', 'deque')),
     (TUPLE_CONSTRAINTS, ('tuple',)),
     (SET_CONSTRAINTS, ('set', 'frozenset')),
     (DICT_CONSTRAINTS, ('dict', 'frozendict')),

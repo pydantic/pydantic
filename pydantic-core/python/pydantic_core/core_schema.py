@@ -253,6 +253,7 @@ ExpectedSerializationTypes: TypeAlias = Literal[
     'bytes',
     'bytearray',
     'list',
+    'deque',
     'tuple',
     'set',
     'frozenset',
@@ -1677,6 +1678,68 @@ def list_schema(
     """
     return _dict_not_none(
         type='list',
+        items_schema=items_schema,
+        min_length=min_length,
+        max_length=max_length,
+        fail_fast=fail_fast,
+        strict=strict,
+        ref=ref,
+        metadata=metadata,
+        serialization=serialization,
+    )
+
+
+class DequeSchema(TypedDict, total=False):
+    type: Required[Literal['deque']]
+    items_schema: CoreSchema
+    min_length: int
+    max_length: int
+    fail_fast: bool
+    strict: bool
+    ref: str
+    metadata: dict[str, Any]
+    serialization: IncExSeqOrElseSerSchema
+
+
+def deque_schema(
+    items_schema: CoreSchema | None = None,
+    *,
+    min_length: int | None = None,
+    max_length: int | None = None,
+    fail_fast: bool | None = None,
+    strict: bool | None = None,
+    ref: str | None = None,
+    metadata: dict[str, Any] | None = None,
+    serialization: IncExSeqOrElseSerSchema | None = None,
+) -> DequeSchema:
+    """
+    Returns a schema that matches a [`collections.deque`][] value, e.g.:
+
+    ```py
+    from collections import deque
+
+    from pydantic_core import SchemaValidator, core_schema
+
+    schema = core_schema.deque_schema(core_schema.int_schema(), min_length=0, max_length=10)
+    v = SchemaValidator(schema)
+    assert v.validate_python(['4']) == deque([4])
+    ```
+
+    In lax mode, any iterable (except strings, bytes and mappings) is accepted and converted to a deque.
+    If the input is a deque instance, its `maxlen` is preserved on the output.
+
+    Args:
+        items_schema: The value must be a deque of items that match this schema
+        min_length: The value must be a deque with at least this many items
+        max_length: The value must be a deque with at most this many items
+        fail_fast: Stop validation on the first error
+        strict: The value must be a deque instance
+        ref: optional unique identifier of the schema, used to reference the schema in other places
+        metadata: Any other information you want to include with the schema, not used by pydantic-core
+        serialization: Custom serialization schema
+    """
+    return _dict_not_none(
+        type='deque',
         items_schema=items_schema,
         min_length=min_length,
         max_length=max_length,
@@ -4402,6 +4465,7 @@ if not MYPY:
         | IsSubclassSchema
         | CallableSchema
         | ListSchema
+        | DequeSchema
         | TupleSchema
         | SetSchema
         | FrozenSetSchema
@@ -4465,6 +4529,7 @@ CoreSchemaType: TypeAlias = Literal[
     'is-subclass',
     'callable',
     'list',
+    'deque',
     'tuple',
     'set',
     'frozenset',
@@ -4549,6 +4614,7 @@ ErrorType: TypeAlias = Literal[
     'frozen_dict_type',
     'mapping_type',
     'list_type',
+    'deque_type',
     'tuple_type',
     'set_type',
     'set_item_not_hashable',

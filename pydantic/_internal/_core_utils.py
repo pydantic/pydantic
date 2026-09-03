@@ -32,7 +32,7 @@ CoreSchemaOrField: TypeAlias = core_schema.CoreSchema | CoreSchemaField
 
 _CORE_SCHEMA_FIELD_TYPES = {'typed-dict-field', 'dataclass-field', 'model-field', 'computed-field'}
 _FUNCTION_WITH_INNER_SCHEMA_TYPES = {'function-before', 'function-after', 'function-wrap'}
-_LIST_LIKE_SCHEMA_WITH_ITEMS_TYPES = {'list', 'set', 'frozenset'}
+_LIST_LIKE_SCHEMA_WITH_ITEMS_TYPES = {'list', 'deque', 'set', 'frozenset'}
 
 
 def is_core_schema(

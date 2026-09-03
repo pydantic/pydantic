@@ -409,10 +409,6 @@ def decimal_places_validator(x: Any, decimal_places: Any) -> Any:
         raise TypeError(f"Unable to apply constraint 'decimal_places' to supplied value {x}")
 
 
-def deque_validator(input_value: Any, handler: core_schema.ValidatorFunctionWrapHandler) -> collections.deque[Any]:
-    return collections.deque(handler(input_value), maxlen=getattr(input_value, 'maxlen', None))
-
-
 def defaultdict_validator(
     input_value: Any, handler: core_schema.ValidatorFunctionWrapHandler, default_default_factory: Callable[[], Any]
 ) -> collections.defaultdict[Any, Any]:
