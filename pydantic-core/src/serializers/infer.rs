@@ -81,12 +81,17 @@ pub(crate) fn infer_to_python_known<'py>(
     macro_rules! serialize_seq_filter {
         ($t:ty) => {{
             let py_seq = value.cast::<$t>()?;
-            let mut items = Vec::with_capacity(py_seq.len());
+            serialize_seq_filter!(@iter py_seq.len(), py_seq.iter().map(PyResult::Ok))
+        }};
+        // `$iter` must yield `PyResult<Bound<PyAny>>` items
+        (@iter $len:expr, $iter:expr) => {{
+            let len = $len;
+            let mut items = Vec::with_capacity(len);
             let filter = AnyFilter::new();
-            let len = value.len().ok();
 
-            for (index, element) in py_seq.iter().enumerate() {
-                if let Some(next_include_exclude) = filter.index_filter(index, state, len)? {
+            for (index, element) in $iter.enumerate() {
+                let element: Bound<'_, PyAny> = element?;
+                if let Some(next_include_exclude) = filter.index_filter(index, state, Some(len))? {
                     let state = &mut state.scoped_include_exclude(next_include_exclude);
                     items.push(infer_to_python(&element, state)?);
                 }
@@ -149,7 +154,7 @@ pub(crate) fn infer_to_python_known<'py>(
                 PyList::new(py, elements)?.into()
             }
             ObType::Deque => {
-                let elements = infer_deque_items(value, state)?;
+                let elements = serialize_seq_filter!(@iter value.len()?, value.try_iter()?);
                 PyList::new(py, elements)?.into()
             }
             ObType::Dict => {
@@ -243,7 +248,7 @@ pub(crate) fn infer_to_python_known<'py>(
                 PyFrozenSet::new(py, &elements)?.into()
             }
             ObType::Deque => {
-                let elements = infer_deque_items(value, state)?;
+                let elements = serialize_seq_filter!(@iter value.len()?, value.try_iter()?);
                 new_deque(py, PyList::new(py, elements)?, deque_maxlen(value)?)?
             }
             ObType::Dict => {
@@ -359,15 +364,23 @@ pub(crate) fn infer_serialize_known<'py, S: Serializer>(
     macro_rules! serialize_seq_filter {
         ($t:ty) => {{
             let py_seq = value.cast::<$t>().map_err(py_err_se_err)?;
-            let mut seq = serializer.serialize_seq(Some(py_seq.len()))?;
+            serialize_seq_filter!(@iter py_seq.len(), py_seq.iter().map(PyResult::Ok))
+        }};
+        // `$iter` must yield `PyResult<Bound<PyAny>>` items
+        (@iter $len:expr, $iter:expr) => {{
+            let len = $len;
+            let mut seq = serializer.serialize_seq(Some(len))?;
             let filter = AnyFilter::new();
-            let len = value.len().ok();
 
-            for (index, element) in py_seq.iter().enumerate() {
-                if let Some(next_include_exclude) = filter.index_filter(index, state, len).map_err(py_err_se_err)? {
+            for (index, element) in $iter.enumerate() {
+                let element: Bound<'_, PyAny> = element.map_err(py_err_se_err)?;
+                if let Some(next_include_exclude) = filter
+                    .index_filter(index, state, Some(len))
+                    .map_err(py_err_se_err)?
+                {
                     let state = &mut state.scoped_include_exclude(next_include_exclude);
                     let item_serializer = SerializeInfer::new(&element, state);
-                    seq.serialize_element(&item_serializer)?
+                    seq.serialize_element(&item_serializer)?;
                 }
             }
             seq.end()
@@ -422,23 +435,10 @@ pub(crate) fn infer_serialize_known<'py, S: Serializer>(
         ObType::Tuple => serialize_seq_filter!(PyTuple),
         ObType::Set => serialize_seq!(PySet),
         ObType::Frozenset => serialize_seq!(PyFrozenSet),
-        ObType::Deque => {
-            let len = value.len().map_err(py_err_se_err)?;
-            let mut seq = serializer.serialize_seq(Some(len))?;
-            let filter = AnyFilter::new();
-
-            for (index, element) in value.try_iter().map_err(py_err_se_err)?.enumerate() {
-                let element = element.map_err(py_err_se_err)?;
-                if let Some(next_include_exclude) =
-                    filter.index_filter(index, state, Some(len)).map_err(py_err_se_err)?
-                {
-                    let state = &mut state.scoped_include_exclude(next_include_exclude);
-                    let item_serializer = SerializeInfer::new(&element, state);
-                    seq.serialize_element(&item_serializer)?;
-                }
-            }
-            seq.end()
-        }
+        ObType::Deque => serialize_seq_filter!(
+            @iter value.len().map_err(py_err_se_err)?,
+            value.try_iter().map_err(py_err_se_err)?
+        ),
         ObType::Datetime => {
             let py_datetime = value.cast().map_err(py_err_se_err)?;
             state.config.temporal_mode.datetime_serialize(py_datetime, serializer)
@@ -737,20 +737,4 @@ fn serialize_pairs<'py, S: DoSerialize>(
         }
     }
     map_serializer.end()
-}
-
-/// Serialize the items of a `deque` instance in Python mode, applying index-based include/exclude filters.
-fn infer_deque_items<'py>(value: &Bound<'py, PyAny>, state: &mut SerializationState<'py>) -> PyResult<Vec<Py<PyAny>>> {
-    let len = value.len()?;
-    let mut items = Vec::with_capacity(len);
-    let filter = AnyFilter::new();
-
-    for (index, element) in value.try_iter()?.enumerate() {
-        let element = element?;
-        if let Some(next_include_exclude) = filter.index_filter(index, state, Some(len))? {
-            let state = &mut state.scoped_include_exclude(next_include_exclude);
-            items.push(infer_to_python(&element, state)?);
-        }
-    }
-    Ok(items)
 }
