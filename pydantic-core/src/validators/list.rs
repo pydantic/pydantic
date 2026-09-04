@@ -179,15 +179,15 @@ impl Validator for ListValidator {
     }
 }
 
-struct ValidateToVec<'a, 's, 'py, I: Input<'py> + ?Sized> {
-    py: Python<'py>,
-    input: &'a I,
-    actual_length: Option<usize>,
-    max_length: Option<usize>,
-    field_type: &'static str,
-    item_validator: &'a CombinedValidator,
-    state: &'a mut ValidationState<'s, 'py>,
-    fail_fast: bool,
+pub(super) struct ValidateToVec<'a, 's, 'py, I: Input<'py> + ?Sized> {
+    pub(super) py: Python<'py>,
+    pub(super) input: &'a I,
+    pub(super) actual_length: Option<usize>,
+    pub(super) max_length: Option<usize>,
+    pub(super) field_type: &'static str,
+    pub(super) item_validator: &'a CombinedValidator,
+    pub(super) state: &'a mut ValidationState<'s, 'py>,
+    pub(super) fail_fast: bool,
 }
 
 // pretty arbitrary default capacity when creating vecs from iteration
@@ -213,12 +213,12 @@ where
     }
 }
 
-struct ToVec<'a, 'py, I: Input<'py> + ?Sized> {
-    py: Python<'py>,
-    input: &'a I,
-    actual_length: Option<usize>,
-    max_length: Option<usize>,
-    field_type: &'static str,
+pub(super) struct ToVec<'a, 'py, I: Input<'py> + ?Sized> {
+    pub(super) py: Python<'py>,
+    pub(super) input: &'a I,
+    pub(super) actual_length: Option<usize>,
+    pub(super) max_length: Option<usize>,
+    pub(super) field_type: &'static str,
 }
 
 impl<'py, T, I: Input<'py> + ?Sized> ConsumeIterator<PyResult<T>> for ToVec<'_, 'py, I>

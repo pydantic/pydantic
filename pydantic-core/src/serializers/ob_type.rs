@@ -35,6 +35,7 @@ pub struct ObTypeLookup {
     tuple: usize,
     set: usize,
     frozenset: usize,
+    deque_object: Py<PyAny>,
     // datetime types
     datetime: usize,
     date: usize,
@@ -94,6 +95,7 @@ impl ObTypeLookup {
             tuple: PyTuple::type_object_raw(py) as usize,
             set: PySet::type_object_raw(py) as usize,
             frozenset: PyFrozenSet::type_object_raw(py) as usize,
+            deque_object: py.import("collections").unwrap().getattr("deque").unwrap().unbind(),
             datetime: PyDateTime::type_object_raw(py) as usize,
             date: PyDate::type_object_raw(py) as usize,
             time: PyTime::type_object_raw(py) as usize,
@@ -169,6 +171,7 @@ impl ObTypeLookup {
             ObType::Tuple => self.tuple == ob_type,
             ObType::Set => self.set == ob_type,
             ObType::Frozenset => self.frozenset == ob_type,
+            ObType::Deque => self.deque_object.as_ptr() as usize == ob_type,
             ObType::Bytes => self.bytes == ob_type,
             ObType::Datetime => self.datetime == ob_type,
             ObType::Date => self.date == ob_type,
@@ -262,6 +265,8 @@ impl ObTypeLookup {
             ObType::Set
         } else if ob_type == self.frozenset {
             ObType::Frozenset
+        } else if ob_type == self.deque_object.as_ptr() as usize {
+            ObType::Deque
         } else if ob_type == self.datetime {
             ObType::Datetime
         } else if ob_type == self.date {
@@ -358,6 +363,8 @@ impl ObTypeLookup {
             ObType::Set
         } else if value.is_instance_of::<PyFrozenSet>() {
             ObType::Frozenset
+        } else if value.is_instance(self.deque_object.bind(py)).unwrap_or(false) {
+            ObType::Deque
         } else if value.is_instance_of::<PyDateTime>() {
             ObType::Datetime
         } else if value.is_instance_of::<PyDate>() {
@@ -452,6 +459,7 @@ pub enum ObType {
     Tuple,
     Set,
     Frozenset,
+    Deque,
     // mapping types
     Dict,
     Frozendict,

@@ -653,29 +653,7 @@ class GenerateSchema:
         return schema
 
     def _deque_schema(self, items_type: Any) -> CoreSchema:
-        from ._serializers import serialize_sequence_via_list
-        from ._validators import deque_validator
-
-        item_type_schema = self.generate_schema(items_type)
-
-        # we have to use a lax list schema here, because we need to validate the deque's
-        # items via a list schema, but it's ok if the deque itself is not a list
-        list_schema = core_schema.list_schema(item_type_schema, strict=False)
-
-        check_instance = core_schema.json_or_python_schema(
-            json_schema=list_schema,
-            python_schema=core_schema.is_instance_schema(collections.deque, cls_repr='Deque'),
-        )
-
-        lax_schema = core_schema.no_info_wrap_validator_function(deque_validator, list_schema)
-
-        return core_schema.lax_or_strict_schema(
-            lax_schema=lax_schema,
-            strict_schema=core_schema.chain_schema([check_instance, lax_schema]),
-            serialization=core_schema.wrap_serializer_function_ser_schema(
-                serialize_sequence_via_list, schema=item_type_schema, info_arg=True
-            ),
-        )
+        return core_schema.deque_schema(self.generate_schema(items_type))
 
     def _mapping_schema(self, tp: Any, keys_type: Any, values_type: Any) -> CoreSchema:
         from ._validators import MAPPING_ORIGIN_MAP, defaultdict_validator, get_defaultdict_default_default_factory

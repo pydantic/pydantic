@@ -134,6 +134,7 @@ combined_serializer! {
         Date: super::type_serializers::datetime_etc::DateSerializer;
         Time: super::type_serializers::datetime_etc::TimeSerializer;
         List: super::type_serializers::list::ListSerializer;
+        Deque: super::type_serializers::deque::DequeSerializer;
         Set: super::type_serializers::set_frozenset::SetSerializer;
         FrozenSet: super::type_serializers::set_frozenset::FrozenSetSerializer;
         Generator: super::type_serializers::generator::GeneratorSerializer;
@@ -375,6 +376,7 @@ impl PyGcTraverse for CombinedSerializer {
             CombinedSerializer::Date(inner) => inner.py_gc_traverse(visit),
             CombinedSerializer::Time(inner) => inner.py_gc_traverse(visit),
             CombinedSerializer::List(inner) => inner.py_gc_traverse(visit),
+            CombinedSerializer::Deque(inner) => inner.py_gc_traverse(visit),
             CombinedSerializer::Set(inner) => inner.py_gc_traverse(visit),
             CombinedSerializer::FrozenSet(inner) => inner.py_gc_traverse(visit),
             CombinedSerializer::Generator(inner) => inner.py_gc_traverse(visit),

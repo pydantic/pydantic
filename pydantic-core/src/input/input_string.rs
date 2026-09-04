@@ -193,6 +193,10 @@ impl<'py> Input<'py> for StringMapping<'py> {
         Err(ValError::new(ErrorTypeDefaults::ListType, self))
     }
 
+    fn validate_deque(&self, _strict: bool) -> ValMatch<(Never, Option<usize>)> {
+        Err(ValError::new(ErrorTypeDefaults::DequeType, self))
+    }
+
     type Tuple<'a>
         = Never
     where

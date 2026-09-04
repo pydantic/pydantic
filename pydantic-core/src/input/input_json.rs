@@ -255,6 +255,14 @@ impl<'py, 'data> Input<'py> for JsonValue<'data> {
         }
     }
 
+    fn validate_deque(&self, _strict: bool) -> ValMatch<(&JsonArray<'data>, Option<usize>)> {
+        // we allow a list here since otherwise it would be impossible to create a deque from JSON
+        match self {
+            JsonValue::Array(a) => Ok(ValidationMatch::strict((a, None))),
+            _ => Err(ValError::new(ErrorTypeDefaults::DequeType, self)),
+        }
+    }
+
     type Tuple<'a>
         = &'a JsonArray<'data>
     where
@@ -502,6 +510,11 @@ impl<'py> Input<'py> for str {
 
     fn validate_list(&self, _strict: bool) -> ValMatch<Never> {
         Err(ValError::new(ErrorTypeDefaults::ListType, self))
+    }
+
+    #[cfg_attr(has_coverage_attribute, coverage(off))]
+    fn validate_deque(&self, _strict: bool) -> ValMatch<(Never, Option<usize>)> {
+        Err(ValError::new(ErrorTypeDefaults::DequeType, self))
     }
 
     type Tuple<'a> = Never;

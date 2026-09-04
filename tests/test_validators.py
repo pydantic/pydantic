@@ -281,7 +281,7 @@ def test_deque_validation():
     with pytest.raises(ValidationError) as exc_info:
         Model(a='snap')
     assert exc_info.value.errors(include_url=False) == [
-        {'type': 'list_type', 'loc': ('a',), 'msg': 'Input should be a valid list', 'input': 'snap'}
+        {'type': 'deque_type', 'loc': ('a',), 'msg': 'Input should be a valid deque', 'input': 'snap'}
     ]
     with pytest.raises(ValidationError) as exc_info:
         Model(a=['a'])

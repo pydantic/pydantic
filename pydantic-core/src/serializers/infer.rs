@@ -12,6 +12,7 @@ use pyo3::types::{PyByteArray, PyBytes, PyDict, PyFrozenSet, PyIterator, PyList,
 use pyo3::IntoPyObjectExt;
 use serde::ser::{Error, Serialize, SerializeSeq, Serializer};
 
+use crate::common::deque::{deque_maxlen, new_deque};
 use crate::common::frozendict::get_frozendict_type;
 use crate::input::{EitherTimedelta, Int};
 use crate::serializers::SerializationState;
@@ -80,12 +81,17 @@ pub(crate) fn infer_to_python_known<'py>(
     macro_rules! serialize_seq_filter {
         ($t:ty) => {{
             let py_seq = value.cast::<$t>()?;
-            let mut items = Vec::with_capacity(py_seq.len());
+            serialize_seq_filter!(@iter py_seq.len(), py_seq.iter().map(PyResult::Ok))
+        }};
+        // `$iter` must yield `PyResult<Bound<PyAny>>` items
+        (@iter $len:expr, $iter:expr) => {{
+            let len = $len;
+            let mut items = Vec::with_capacity(len);
             let filter = AnyFilter::new();
-            let len = value.len().ok();
 
-            for (index, element) in py_seq.iter().enumerate() {
-                if let Some(next_include_exclude) = filter.index_filter(index, state, len)? {
+            for (index, element) in $iter.enumerate() {
+                let element: Bound<'_, PyAny> = element?;
+                if let Some(next_include_exclude) = filter.index_filter(index, state, Some(len))? {
                     let state = &mut state.scoped_include_exclude(next_include_exclude);
                     items.push(infer_to_python(&element, state)?);
                 }
@@ -145,6 +151,10 @@ pub(crate) fn infer_to_python_known<'py>(
             }
             ObType::Frozenset => {
                 let elements = serialize_seq!(PyFrozenSet);
+                PyList::new(py, elements)?.into()
+            }
+            ObType::Deque => {
+                let elements = serialize_seq_filter!(@iter value.len()?, value.try_iter()?);
                 PyList::new(py, elements)?.into()
             }
             ObType::Dict => {
@@ -236,6 +246,10 @@ pub(crate) fn infer_to_python_known<'py>(
             ObType::Frozenset => {
                 let elements = serialize_seq!(PyFrozenSet);
                 PyFrozenSet::new(py, &elements)?.into()
+            }
+            ObType::Deque => {
+                let elements = serialize_seq_filter!(@iter value.len()?, value.try_iter()?);
+                new_deque(py, PyList::new(py, elements)?, deque_maxlen(value)?)?
             }
             ObType::Dict => {
                 let dict = value.cast::<PyDict>()?;
@@ -350,15 +364,23 @@ pub(crate) fn infer_serialize_known<'py, S: Serializer>(
     macro_rules! serialize_seq_filter {
         ($t:ty) => {{
             let py_seq = value.cast::<$t>().map_err(py_err_se_err)?;
-            let mut seq = serializer.serialize_seq(Some(py_seq.len()))?;
+            serialize_seq_filter!(@iter py_seq.len(), py_seq.iter().map(PyResult::Ok))
+        }};
+        // `$iter` must yield `PyResult<Bound<PyAny>>` items
+        (@iter $len:expr, $iter:expr) => {{
+            let len = $len;
+            let mut seq = serializer.serialize_seq(Some(len))?;
             let filter = AnyFilter::new();
-            let len = value.len().ok();
 
-            for (index, element) in py_seq.iter().enumerate() {
-                if let Some(next_include_exclude) = filter.index_filter(index, state, len).map_err(py_err_se_err)? {
+            for (index, element) in $iter.enumerate() {
+                let element: Bound<'_, PyAny> = element.map_err(py_err_se_err)?;
+                if let Some(next_include_exclude) = filter
+                    .index_filter(index, state, Some(len))
+                    .map_err(py_err_se_err)?
+                {
                     let state = &mut state.scoped_include_exclude(next_include_exclude);
                     let item_serializer = SerializeInfer::new(&element, state);
-                    seq.serialize_element(&item_serializer)?
+                    seq.serialize_element(&item_serializer)?;
                 }
             }
             seq.end()
@@ -413,6 +435,10 @@ pub(crate) fn infer_serialize_known<'py, S: Serializer>(
         ObType::Tuple => serialize_seq_filter!(PyTuple),
         ObType::Set => serialize_seq!(PySet),
         ObType::Frozenset => serialize_seq!(PyFrozenSet),
+        ObType::Deque => serialize_seq_filter!(
+            @iter value.len().map_err(py_err_se_err)?,
+            value.try_iter().map_err(py_err_se_err)?
+        ),
         ObType::Datetime => {
             let py_datetime = value.cast().map_err(py_err_se_err)?;
             state.config.temporal_mode.datetime_serialize(py_datetime, serializer)
@@ -572,7 +598,13 @@ pub(crate) fn infer_json_key_known<'a, 'py>(
             }
             Ok(Cow::Owned(key_build.finish()))
         }
-        ObType::List | ObType::Set | ObType::Frozenset | ObType::Dict | ObType::Frozendict | ObType::Generator => {
+        ObType::List
+        | ObType::Set
+        | ObType::Frozenset
+        | ObType::Deque
+        | ObType::Dict
+        | ObType::Frozendict
+        | ObType::Generator => {
             py_err!(PyTypeError; "`{ob_type}` not valid as object key")
         }
         ObType::Dataclass | ObType::PydanticSerializable => {

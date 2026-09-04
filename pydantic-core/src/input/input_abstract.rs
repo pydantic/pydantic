@@ -158,6 +158,8 @@ pub(crate) trait Input<'py>: fmt::Debug {
 
     fn validate_list(&self, strict: bool) -> ValMatch<Self::List<'_>>;
 
+    fn validate_deque(&self, strict: bool) -> ValMatch<(Self::List<'_>, Option<usize>)>;
+
     type Tuple<'a>: ValidatedTuple<'py>
     where
         Self: 'a;
