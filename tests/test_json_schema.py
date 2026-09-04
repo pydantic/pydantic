@@ -49,6 +49,7 @@ from pydantic import (
     PydanticDeprecatedSince29,
     PydanticUserError,
     RootModel,
+    SerializeAsAny,
     ValidationError,
     WithJsonSchema,
     WrapValidator,
@@ -6916,7 +6917,7 @@ def test_min_and_max_in_schema() -> None:
 
 
 def test_plain_field_validator_serialization() -> None:
-    """`PlainValidator` internally creates a wrap ser. schema. This tests that we can
+    """`PlainValidator` internally uses the source type's schema as the ser. schema. This tests that we can
     still generate a JSON Schema in `'serialization'` mode.
     """
 
@@ -6929,6 +6930,107 @@ def test_plain_field_validator_serialization() -> None:
         'title': 'Foo',
         'type': 'object',
     }
+
+
+def test_core_schema_as_ser_schema() -> None:
+    """In `'serialization'` mode, the JSON Schema is generated from the (arbitrary) core schema used as a serialization schema."""
+
+    class Model(BaseModel):
+        a: int
+
+    class ListOfInts:
+        @classmethod
+        def __get_pydantic_core_schema__(cls, source: Any, handler: GetCoreSchemaHandler) -> CoreSchema:
+            return core_schema.str_schema(serialization=core_schema.list_schema(core_schema.int_schema()))
+
+    class AsModel:
+        @classmethod
+        def __get_pydantic_core_schema__(cls, source: Any, handler: GetCoreSchemaHandler) -> CoreSchema:
+            return core_schema.str_schema(serialization=handler(Model))
+
+    class Foo(BaseModel):
+        a: ListOfInts
+        b: AsModel
+
+    assert Foo.model_json_schema(mode='validation') == {
+        'properties': {'a': {'title': 'A', 'type': 'string'}, 'b': {'title': 'B', 'type': 'string'}},
+        'required': ['a', 'b'],
+        'title': 'Foo',
+        'type': 'object',
+    }
+    assert Foo.model_json_schema(mode='serialization') == {
+        '$defs': {
+            'Model': {
+                'properties': {'a': {'title': 'A', 'type': 'integer'}},
+                'required': ['a'],
+                'title': 'Model',
+                'type': 'object',
+            }
+        },
+        'properties': {
+            'a': {'items': {'type': 'integer'}, 'title': 'A', 'type': 'array'},
+            'b': {'$ref': '#/$defs/Model', 'title': 'B'},
+        },
+        'required': ['a', 'b'],
+        'title': 'Foo',
+        'type': 'object',
+    }
+
+
+def test_model_ser_schema() -> None:
+    """A `ModelSerSchema` (a subset of the model schema) is handled by `model_schema()`, even with a non-model class."""
+
+    class NotAModel:
+        """A class."""
+
+    class WithModelSerSchema:
+        @classmethod
+        def __get_pydantic_core_schema__(cls, source: Any, handler: GetCoreSchemaHandler) -> CoreSchema:
+            return core_schema.any_schema(
+                serialization=core_schema.model_ser_schema(
+                    NotAModel,
+                    core_schema.model_fields_schema({'a': core_schema.model_field(core_schema.int_schema())}),
+                )
+            )
+
+    assert TypeAdapter(WithModelSerSchema).json_schema(mode='serialization') == {
+        'description': 'A class.',
+        'properties': {'a': {'title': 'A', 'type': 'integer'}},
+        'required': ['a'],
+        'title': 'NotAModel',
+        'type': 'object',
+    }
+
+
+def test_any_ser_schema_uses_main_schema() -> None:
+    """An `'any'` serialization schema (as used by `SerializeAsAny` or TypeVars with a bound) doesn't
+    provide any information about the serialized value, so the main schema is used instead."""
+
+    class Model(BaseModel):
+        a: int
+
+    T = TypeVar('T', bound=int)
+
+    class Foo(BaseModel, Generic[T]):
+        a: SerializeAsAny[Model]
+        t: T
+
+    expected = {
+        '$defs': {
+            'Model': {
+                'properties': {'a': {'title': 'A', 'type': 'integer'}},
+                'required': ['a'],
+                'title': 'Model',
+                'type': 'object',
+            }
+        },
+        'properties': {'a': {'$ref': '#/$defs/Model'}, 't': {'title': 'T', 'type': 'integer'}},
+        'required': ['a', 't'],
+        'title': 'Foo',
+        'type': 'object',
+    }
+    assert Foo.model_json_schema(mode='validation') == expected
+    assert Foo.model_json_schema(mode='serialization') == expected
 
 
 def test_annotated_field_validator_input_type() -> None:

@@ -12,7 +12,7 @@ from typing import TYPE_CHECKING, Annotated, Any, Literal, TypeAlias, TypeVar, c
 from pydantic_core import PydanticUndefined, core_schema
 from typing_extensions import Self
 
-from ._internal import _decorators, _generics
+from ._internal import _core_utils, _decorators, _generics
 from .annotated_handlers import GetCoreSchemaHandler
 from .errors import PydanticUserError
 from .version import version_short
@@ -92,7 +92,13 @@ class BeforeValidator:
     """!!! abstract "Usage Documentation"
         [field *before* validators](../concepts/validators.md#field-before-validator)
 
-    A metadata class that indicates that a validation should be applied **before** the inner validation logic.
+    A class used as [annotated metadata](../concepts/fields.md#the-annotated-pattern) that indicates
+    that a validation should be applied **before** the inner validation logic.
+
+    /// version-added | v2.9
+    The `json_schema_input_type` parameter can be used to specify the input type of the function to be used in the
+    JSON Schema (in `'validation'` mode, the default).
+    ///
 
     Attributes:
         func: The validator function.
@@ -159,12 +165,13 @@ class PlainValidator:
     """!!! abstract "Usage Documentation"
         [field *plain* validators](../concepts/validators.md#field-plain-validator)
 
-    A metadata class that indicates that a validation should be applied **instead** of the inner validation logic.
+    A class used as [annotated metadata](../concepts/fields.md#the-annotated-pattern) that indicates that
+    a validation should be applied **instead** of the inner validation logic.
 
-    !!! note
-        Before v2.9, `PlainValidator` wasn't always compatible with JSON Schema generation for `mode='validation'`.
-        You can now use the `json_schema_input_type` argument to specify the input type of the function
-        to be used in the JSON schema when `mode='validation'` (the default). See the example below for more details.
+    /// version-added | v2.9
+    The `json_schema_input_type` parameter can be used to specify the input type of the function to be used in the
+    JSON Schema (in `'validation'` mode, the default).
+    ///
 
     Attributes:
         func: The validator function.
@@ -206,26 +213,16 @@ class PlainValidator:
     json_schema_input_type: Any = Any
 
     def __get_pydantic_core_schema__(self, source_type: Any, handler: GetCoreSchemaHandler) -> core_schema.CoreSchema:
-        # Note that for some valid uses of PlainValidator, it is not possible to generate a core schema for the
-        # source_type, so calling `handler(source_type)` will error, which prevents us from generating a proper
-        # serialization schema. To work around this for use cases that will not involve serialization, we simply
-        # catch any PydanticSchemaGenerationError that may be raised while attempting to build the serialization schema
-        # and abort any attempts to handle special serialization.
-        from pydantic import PydanticSchemaGenerationError
+        # For some valid uses of PlainValidator, it is not possible to generate a core schema for the
+        # `source_type`, so calling `handler(source_type)` will error, so we handle errors gracefully
+        # by not including any serialization schema.
+        # Lazy import to avoid cycle:
+        from pydantic._internal._generate_schema import GENERATE_SCHEMA_ERRORS
 
         try:
             schema = handler(source_type)
-            # TODO if `schema['serialization']` is one of `'include-exclude-dict/sequence',
-            # schema validation will fail. That's why we use 'type ignore' comments below.
-            serialization = schema.get(
-                'serialization',
-                core_schema.wrap_serializer_function_ser_schema(
-                    function=lambda v, h: h(v),
-                    schema=schema,
-                    return_schema=handler.generate_schema(source_type),
-                ),
-            )
-        except PydanticSchemaGenerationError:
+            serialization = _core_utils.as_ser_schema(schema)
+        except GENERATE_SCHEMA_ERRORS:
             serialization = None
 
         input_schema = handler.generate_schema(self.json_schema_input_type)
@@ -235,14 +232,14 @@ class PlainValidator:
             func = cast(core_schema.WithInfoValidatorFunction, self.func)
             return core_schema.with_info_plain_validator_function(
                 func,
-                serialization=serialization,  # pyright: ignore[reportArgumentType]
+                serialization=serialization,
                 json_schema_input_schema=input_schema,
             )
         else:
             func = cast(core_schema.NoInfoValidatorFunction, self.func)
             return core_schema.no_info_plain_validator_function(
                 func,
-                serialization=serialization,  # pyright: ignore[reportArgumentType]
+                serialization=serialization,
                 json_schema_input_schema=input_schema,
             )
 
@@ -259,7 +256,13 @@ class WrapValidator:
     """!!! abstract "Usage Documentation"
         [field *wrap* validators](../concepts/validators.md#field-wrap-validator)
 
-    A metadata class that indicates that a validation should be applied **around** the inner validation logic.
+    A class used as [annotated metadata](../concepts/fields.md#the-annotated-pattern) that indicates that
+    a validation should be applied **around** the inner validation logic.
+
+    /// version-added | v2.9
+    The `json_schema_input_type` parameter can be used to specify the input type of the function to be used in the
+    JSON Schema (in `'validation'` mode, the default).
+    ///
 
     Attributes:
         func: The validator function.
@@ -825,15 +828,13 @@ else:
 
     @dataclasses.dataclass(slots=True)
     class SkipValidation:
-        """If this is applied as an annotation (e.g., via `x: Annotated[int, SkipValidation]`), validation will be
-            skipped. You can also use `SkipValidation[int]` as a shorthand for `Annotated[int, SkipValidation]`.
+        """A helper class to skip validation.
 
-        This can be useful if you want to use a type annotation for documentation/IDE/type-checking purposes,
-        and know that it is safe to skip validation for one or more of the fields.
+        This helper can be used as a parameterized annotation, e.g. `SkipValidation[int]`, which is a shorthand
+        for `Annotated[int, SkipValidation()]`.
 
-        Because this converts the validation schema to `any_schema`, subsequent annotation-applied transformations
-        may not have the expected effects. Therefore, when used, this annotation should generally be the final
-        annotation applied to a type.
+        Internally, this helper will treat the type as if it was [`Any`][typing.Any], while still advertizing the
+        original type to tools such as type checkers and IDEs.
         """
 
         def __class_getitem__(cls, item: Any) -> Any:
@@ -847,9 +848,7 @@ else:
             metadata = {'pydantic_js_annotation_functions': [lambda _c, h: h(original_schema)]}
             return core_schema.any_schema(
                 metadata=metadata,
-                serialization=core_schema.wrap_serializer_function_ser_schema(
-                    function=lambda v, h: h(v), schema=original_schema
-                ),
+                serialization=_core_utils.as_ser_schema(original_schema),
             )
 
         __hash__ = object.__hash__
@@ -911,11 +910,5 @@ class ValidateAs:
         except GENERATE_SCHEMA_ERRORS:
             ser_schema = core_schema.any_schema()
 
-        # TODO: pydantic-core now accepts an arbitrary core schema for serialization, so the
-        # wrap serializer workaround below can be replaced with
-        # `schema['serialization'] = _core_utils.as_ser_schema(ser_schema)`.
-        # The same workaround is used in other parts of the code base, so grep for similar cases when fixing:
-        schema['serialization'] = core_schema.wrap_serializer_function_ser_schema(
-            function=lambda v, h: h(v), schema=ser_schema
-        )
+        schema['serialization'] = _core_utils.as_ser_schema(ser_schema)
         return schema
