@@ -23,7 +23,7 @@
       
       
       <link rel="icon" href="../../favicon.png">
-      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.6">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.7">
     
     
       
@@ -31,7 +31,7 @@
       
     
     
-      <link rel="stylesheet" href="../../assets/stylesheets/main.484c7ddc.min.css">
+      <link rel="stylesheet" href="../../assets/stylesheets/main.ec1eaa64.min.css">
       
         
         <link rel="stylesheet" href="../../assets/stylesheets/palette.ab4e12ef.min.css">
@@ -1545,6 +1545,17 @@ to help you monitor and understand your
         
       </ul>
     </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#variadic-named-options" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Variadic named options
+      
+    </span>
+  </a>
   
 </li>
         
@@ -4965,6 +4976,17 @@ to help you monitor and understand your
 </li>
         
           <li class="md-nav__item">
+  <a href="#variadic-named-options" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Variadic named options
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#subcommands-and-positional-arguments" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -6796,6 +6818,14 @@ is customised</a>:</p>
 <span class="nb">print</span><span class="p">(</span><span class="n">User</span><span class="p">()</span><span class="o">.</span><span class="n">model_dump</span><span class="p">())</span>
 <span class="c1">#&gt; {&#39;first_name&#39;: &#39;John&#39;, &#39;last_name&#39;: &#39;Doe&#39;}</span>
 </code></pre></div>
+<h3 id="variadic-named-options">Variadic named options<a class="headerlink" href="#variadic-named-options" title="Permanent link">&para;</a></h3>
+<p>List fields are repeated options by default (<code>--param a --param b</code>). Wrap a collection
+field in <code>CliVariadicArg</code> to accept remaining values after a single option
+(<code>--param a b c</code>).</p>
+<p>Repeating the option <strong>replaces</strong> the previous values (<code>--param a b --param c</code> becomes
+<code>['c']</code>), which is the opposite of <code>action=append</code>. <code>nargs='*'</code> is greedy: it consumes
+values until the next option flag, so a following subcommand name can be swallowed.</p>
+<p><code>CliVariadicArg</code> is ignored on <code>AliasPath</code> fields; those still use <code>action=append</code>.</p>
 <h3 id="subcommands-and-positional-arguments">Subcommands and Positional Arguments<a class="headerlink" href="#subcommands-and-positional-arguments" title="Permanent link">&para;</a></h3>
 <p>Subcommands and positional arguments are expressed using the <code>CliSubCommand</code> and <code>CliPositionalArg</code> annotations. The
 subcommand annotation can only be applied to required fields (i.e. fields that do not have a default value).
@@ -9180,7 +9210,7 @@ read with application-level locking.</p>
       <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": ["content.tabs.link", "content.code.annotate", "content.code.copy", "announce.dismiss", "navigation.tabs", "navigation.instant", "navigation.instant.prefetch", "navigation.instant.preview", "navigation.instant.progress", "navigation.path", "navigation.sections", "navigation.top", "navigation.tracking", "search.suggest", "toc.follow"], "search": "../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"provider": "mike"}}</script>
     
     
-      <script src="../../assets/javascripts/bundle.79ae519e.min.js"></script>
+      <script src="../../assets/javascripts/bundle.d7400e89.min.js"></script>
       
         <script src="https://cdn.jsdelivr.net/npm/algoliasearch@5.20.0/dist/lite/builds/browser.umd.js"></script>
       
