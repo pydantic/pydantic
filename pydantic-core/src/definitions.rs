@@ -129,9 +129,40 @@ impl<T: PyGcTraverse> PyGcTraverse for Definitions<T> {
     }
 }
 
+/// Identifies a node which can be shared with any structurally identical node built during the same
+/// schema build, rather than being built again.
+///
+/// Wrapper nodes like `nullable` and `default` are by far the most common shape in applications with
+/// many models (`Optional[str] = None` is three nodes, two of which are wrappers), and the same handful
+/// of shapes recur across every field. Sharing them cuts both the node itself and the `String` name it
+/// carries.
+///
+/// The inner values are identified by address: this is sound because the node stored in the cache holds
+/// a strong reference to everything its key names, so an address can't be reused while it is a key. The
+/// addresses are only ever compared, never dereferenced.
+#[derive(PartialEq, Eq, Hash, Debug)]
+pub struct SharedNodeKey {
+    kind: &'static str,
+    inner: usize,
+    object: usize,
+    flags: u32,
+}
+
+impl SharedNodeKey {
+    pub fn new<T>(kind: &'static str, inner: &Arc<T>, object: Option<&Py<PyAny>>, flags: u32) -> Self {
+        Self {
+            kind,
+            inner: Arc::as_ptr(inner) as usize,
+            object: object.map_or(0, |obj| obj.as_ptr() as usize),
+            flags,
+        }
+    }
+}
+
 #[derive(Debug)]
 pub struct DefinitionsBuilder<T> {
     definitions: Definitions<T>,
+    shared_nodes: AHashMap<SharedNodeKey, T>,
     use_prebuilt: bool,
 }
 
@@ -139,6 +170,7 @@ impl<T: std::fmt::Debug> DefinitionsBuilder<T> {
     pub fn new(use_prebuilt: bool) -> Self {
         Self {
             definitions: Definitions(AHashMap::new()),
+            shared_nodes: AHashMap::new(),
             use_prebuilt,
         }
     }
@@ -146,6 +178,16 @@ impl<T: std::fmt::Debug> DefinitionsBuilder<T> {
     /// Whether prebuilt validators/serializers should be used
     pub fn use_prebuilt(&self) -> bool {
         self.use_prebuilt
+    }
+
+    /// Get the node previously built for `key` during this build, if any.
+    pub fn get_shared_node(&self, key: &SharedNodeKey) -> Option<&T> {
+        self.shared_nodes.get(key)
+    }
+
+    /// Record a node so that structurally identical nodes later in this build can reuse it.
+    pub fn set_shared_node(&mut self, key: SharedNodeKey, value: T) {
+        self.shared_nodes.insert(key, value);
     }
 
     /// Get a ReferenceId for the given reference string.
