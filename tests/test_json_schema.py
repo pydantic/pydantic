@@ -1894,6 +1894,35 @@ def test_enum_dict():
     }
 
 
+def test_enum_dict_non_string_keys():
+    # https://github.com/pydantic/pydantic/issues/11967
+    # JSON object keys are always strings, so a non-string enum used as a dict key must be
+    # described in `propertyNames` by the string form of its values, not the integer enum schema.
+    class MyEnum(IntEnum):
+        FOO = 1
+        BAR = 2
+
+    class MyModel(BaseModel):
+        enum_dict: dict[MyEnum, str]
+
+    assert MyModel.model_json_schema() == {
+        'title': 'MyModel',
+        'type': 'object',
+        'properties': {
+            'enum_dict': {
+                'title': 'Enum Dict',
+                'type': 'object',
+                'additionalProperties': {'type': 'string'},
+                'propertyNames': {'enum': ['1', '2']},
+            }
+        },
+        'required': ['enum_dict'],
+    }
+
+    dumped = MyModel(enum_dict={MyEnum.FOO: 'a', MyEnum.BAR: 'b'}).model_dump(mode='json')
+    assert set(dumped['enum_dict']) == {'1', '2'}
+
+
 def test_property_names_constraint():
     class MyModel(BaseModel):
         my_dict: dict[Annotated[str, StringConstraints(max_length=1)], str]

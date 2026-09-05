@@ -1175,7 +1175,21 @@ class GenerateJsonSchema:
         else:  # for `dict[str, Any]`, we allow any key and any value, since `str` is the default key type
             json_schema['additionalProperties'] = True
 
+        keys_core_schema = schema.get('keys_schema')
         if (
+            keys_core_schema is not None
+            and keys_core_schema['type'] == 'enum'
+            and keys_core_schema.get('sub_type') != 'str'
+        ):
+            # JSON object keys are always strings, and pydantic serializes a non-string enum
+            # key to the string form of its value, so `propertyNames` must describe those
+            # stringified values instead of referencing the (non-string) enum schema.
+            json_schema['propertyNames'] = {
+                'enum': [
+                    str(member.value if isinstance(member, Enum) else member) for member in keys_core_schema['members']
+                ]
+            }
+        elif (
             # The len check indicates that constraints are probably present:
             (keys_schema.get('type') == 'string' and len(keys_schema) > 1)
             # If this is a definition reference schema, it most likely has constraints:
