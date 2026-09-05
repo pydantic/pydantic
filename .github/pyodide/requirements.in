@@ -20,5 +20,5 @@ pytest-run-parallel>=0.3.1
 python-dateutil
 pytz
 typing-extensions>=4.15.0
-typing-inspection>=0.4.2
+typing-inspection>=0.4.4
 tzdata

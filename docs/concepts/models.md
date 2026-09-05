@@ -559,8 +559,8 @@ except ValidationError as e:
 
 In an example like this one, the offending `data` is right there in the code. A
 [`ValidationError`][pydantic_core.ValidationError] includes the value rejected at each failing
-location, but in a running application you may also need the complete validation input and its request
-or job context. [Logfire records failed validations](../errors/troubleshooting.md) with both.
+location, but in a running application you may also need those details in their request or job
+context. [Logfire records failed validations](../errors/troubleshooting.md) with both.
 
 ## Arbitrary class instances
 

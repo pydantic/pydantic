@@ -16,6 +16,7 @@ from pydantic_core import core_schema as cs
 from pydantic import BaseModel, TypeAdapter
 from pydantic._internal._config import ConfigWrapper
 from pydantic._internal._core_metadata import update_core_metadata
+from pydantic._internal._core_utils import as_ser_schema
 from pydantic._internal._fields import resolve_default_value
 from pydantic._internal._generate_schema import GenerateSchema
 from pydantic._internal._repr import Representation
@@ -170,19 +171,31 @@ def test_representation_integrations():
 
 
 @pytest.mark.parametrize(
-    'decimal,decimal_places,digits',
+    'decimal,decimal_places,digits,normalized_decimal_places,normalized_digits',
     [
-        (Decimal('0.0'), 1, 1),
-        (Decimal('0.'), 0, 1),
-        (Decimal('0.000'), 3, 3),
-        (Decimal('0.0001'), 4, 4),
-        (Decimal('.0001'), 4, 4),
-        (Decimal('123.123'), 3, 6),
-        (Decimal('123.1230'), 4, 7),
+        (Decimal('0.0'), 1, 1, 0, 1),
+        (Decimal('0.'), 0, 1, 0, 1),
+        (Decimal('0.000'), 3, 3, 0, 1),
+        (Decimal('0E+5'), 0, 6, 0, 1),
+        (Decimal('0.0001'), 4, 4, 4, 4),
+        (Decimal('.0001'), 4, 4, 4, 4),
+        (Decimal('100'), 0, 3, 0, 3),
+        (Decimal('1E+2'), 0, 3, 0, 3),
+        (Decimal('1.00'), 2, 3, 0, 1),
+        (Decimal('100.00'), 2, 5, 0, 3),
+        (Decimal('123.123'), 3, 6, 3, 6),
+        (Decimal('123.1230'), 4, 7, 3, 6),
+        # More significant digits than the precision of the (default) decimal context, no rounding should happen:
+        (Decimal('1234567890123456789012345678.910'), 3, 31, 2, 30),
     ],
 )
-def test_decimal_digits_calculation(decimal: Decimal, decimal_places: int, digits: int) -> None:
-    assert _extract_decimal_digits_info(decimal) == (decimal_places, digits)
+def test_decimal_digits_calculation(
+    decimal: Decimal, decimal_places: int, digits: int, normalized_decimal_places: int, normalized_digits: int
+) -> None:
+    assert _extract_decimal_digits_info(decimal) == (
+        (decimal_places, digits),
+        (normalized_decimal_places, normalized_digits),
+    )
 
 
 @pytest.mark.parametrize(
@@ -288,3 +301,58 @@ def test_resolve_default_value_missing_validated_data():
             validated_data=None,
             call_default_factory=True,
         )
+
+
+def _identity(v: Any) -> Any:
+    return v
+
+
+def _wrap_identity(v: Any, handler: Any) -> Any:
+    return handler(v)
+
+
+@pytest.mark.parametrize(
+    ['schema', 'expected'],
+    [
+        # Any non-function schema is returned as is:
+        (cs.int_schema(), cs.int_schema()),
+        (
+            cs.no_info_after_validator_function(_identity, cs.int_schema()),
+            cs.no_info_after_validator_function(_identity, cs.int_schema()),
+        ),
+        # The `'serialization'` schema of a plain/wrap function schema takes precedence:
+        (
+            cs.no_info_plain_validator_function(_identity, serialization=cs.simple_ser_schema('str')),
+            cs.simple_ser_schema('str'),
+        ),
+        (
+            cs.no_info_wrap_validator_function(
+                _wrap_identity, cs.int_schema(), serialization=cs.simple_ser_schema('str')
+            ),
+            cs.simple_ser_schema('str'),
+        ),
+        # Otherwise, plain function schemas are serialized as `'any'`, wrap function schemas using the inner schema:
+        (cs.no_info_plain_validator_function(_identity), cs.any_schema()),
+        (cs.no_info_wrap_validator_function(_wrap_identity, cs.int_schema()), cs.int_schema()),
+        # Nested plain/wrap function schemas are unwrapped:
+        (
+            cs.no_info_wrap_validator_function(
+                _wrap_identity, cs.no_info_wrap_validator_function(_wrap_identity, cs.int_schema())
+            ),
+            cs.int_schema(),
+        ),
+        (
+            cs.no_info_wrap_validator_function(_wrap_identity, cs.no_info_plain_validator_function(_identity)),
+            cs.any_schema(),
+        ),
+        (
+            cs.no_info_wrap_validator_function(
+                _wrap_identity,
+                cs.no_info_plain_validator_function(_identity, serialization=cs.simple_ser_schema('str')),
+            ),
+            cs.simple_ser_schema('str'),
+        ),
+    ],
+)
+def test_as_ser_schema(schema: CoreSchema, expected: cs.SerSchema) -> None:
+    assert as_ser_schema(schema) == expected

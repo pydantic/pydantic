@@ -555,6 +555,12 @@ def test_ta_config_with_annotated_type() -> None:
     ]
 
 
+def test_ta_config_used_for_json_schema() -> None:
+    """https://github.com/pydantic/pydantic/issues/13675"""
+    ta = TypeAdapter(list[bytes], config=ConfigDict(ser_json_bytes='base64'))
+    assert ta.json_schema() == {'type': 'array', 'items': {'type': 'string', 'format': 'base64url'}}
+
+
 def defer_build_test_models(config: ConfigDict) -> list[Any]:
     class Model(BaseModel):
         model_config = config

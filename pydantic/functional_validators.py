@@ -911,10 +911,10 @@ class ValidateAs:
         except GENERATE_SCHEMA_ERRORS:
             ser_schema = core_schema.any_schema()
 
-        # TODO: pydantic-core currently doesn't accept it, but we should be able to provide an
-        # arbitrary core schema for serialization (currently `simple_ser_schema()` can be used,
-        # but only allow specifying a specific `'type`). Working around this with a wrap serializer
-        # is already done in other parts of the code base, so grep for similar cases when fixing:
+        # TODO: pydantic-core now accepts an arbitrary core schema for serialization, so the
+        # wrap serializer workaround below can be replaced with
+        # `schema['serialization'] = _core_utils.as_ser_schema(ser_schema)`.
+        # The same workaround is used in other parts of the code base, so grep for similar cases when fixing:
         schema['serialization'] = core_schema.wrap_serializer_function_ser_schema(
             function=lambda v, h: h(v), schema=ser_schema
         )

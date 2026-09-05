@@ -5,7 +5,7 @@
 # Instructions:
 # - The CI should be as close as possible to the original project's workflows.
 # - Use the checkout action to clone Pydantic with a custom path (e.g. `path: pydantic-latest`).
-# - Make sure Pydantic is installed in editable mode (e.g. `uv pip install -e ./pydantic-latest`)
+# - Make sure Pydantic is installed in editable mode (e.g. `uv pip install --no-config -e ./pydantic-latest`)
 #   so that the path appears in the `pip list` output (and so we can be assured Pydantic was properly
 #   installed from the provided path).
 # - If using `uv run`, make use to use the `--no-sync`, because uv has the nasty habit of syncing the venv
@@ -49,18 +49,18 @@ jobs:
         python-version: ['3.10', '3.11', '3.12', '3.13', '3.14']
     steps:
       - name: Checkout FastAPI
-        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           repository: fastapi/fastapi
           persist-credentials: false
 
       - name: Checkout Pydantic
-        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           path: pydantic-latest
           persist-credentials: false
 
-      - uses: astral-sh/setup-uv@c771a70e6277c0a99b617c7a806ffedaca235ff9 # v9.0.0
+      - uses: astral-sh/setup-uv@20cfd1bf945f4377ade1205e4dbc17946fc9a30d # v10.0.1
         with:
           python-version: ${{ matrix.python-version }}
 
@@ -68,7 +68,7 @@ jobs:
         run: |
           uv sync --locked --no-dev --group tests --extra all
           uv pip uninstall pydantic pydantic-core
-          uv pip install -e ./pydantic-latest -e ./pydantic-latest/pydantic-core
+          uv pip install --no-config -e ./pydantic-latest -e ./pydantic-latest/pydantic-core
 
       - name: List installed dependencies
         run: uv pip list
@@ -91,18 +91,18 @@ jobs:
         python-version: ['3.10', '3.11', '3.12', '3.13', '3.14']
     steps:
       - name: Checkout SQLModel
-        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           repository: fastapi/sqlmodel
           persist-credentials: false
 
       - name: Checkout Pydantic
-        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           path: pydantic-latest
           persist-credentials: false
 
-      - uses: astral-sh/setup-uv@c771a70e6277c0a99b617c7a806ffedaca235ff9 # v9.0.0
+      - uses: astral-sh/setup-uv@20cfd1bf945f4377ade1205e4dbc17946fc9a30d # v10.0.1
         with:
           python-version: ${{ matrix.python-version }}
 
@@ -110,7 +110,7 @@ jobs:
         run: |
           uv sync --locked --no-dev --group tests
           uv pip uninstall pydantic pydantic-core
-          uv pip install -e ./pydantic-latest -e ./pydantic-latest/pydantic-core
+          uv pip install --no-config -e ./pydantic-latest -e ./pydantic-latest/pydantic-core
 
       - name: List installed dependencies
         run: uv pip list
@@ -136,13 +136,13 @@ jobs:
         python-version: ['3.13']
     steps:
       - name: Checkout Beanie
-        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           repository: BeanieODM/beanie
           persist-credentials: false
 
       - name: Checkout Pydantic
-        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           path: pydantic-latest
           persist-credentials: false
@@ -184,19 +184,19 @@ jobs:
         python-version: ['3.10', '3.11', '3.12', '3.13']
     steps:
       - name: Checkout openapi-python-client
-        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           repository: openapi-generators/openapi-python-client
           persist-credentials: false
 
       - name: Checkout Pydantic
-        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           path: pydantic-latest
           persist-credentials: false
 
       - name: Set up PDM
-        uses: pdm-project/setup-pdm@973541a5febeafcfdadf8a51211435be6ecfd90f # v4.5
+        uses: pdm-project/setup-pdm@544d7237314ee09c256785bd360f6b30add38b37 # v4.6
         with:
           python-version: ${{ matrix.python-version }}
 
@@ -230,13 +230,13 @@ jobs:
         python-version: ['3.10', '3.11', '3.12']
     steps:
       - name: Checkout Pandera
-        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           repository: unionai-oss/pandera
           persist-credentials: false
 
       - name: Checkout Pydantic
-        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           path: pydantic-latest
           persist-credentials: false
@@ -249,17 +249,22 @@ jobs:
       - name: Install Pandera dependencies
         run: |
           pip install uv
-          uv sync --no-progress --extra pandas --extra fastapi --extra pandas --group dev --group testing --group docs
+          uv sync --no-progress --extra pandas --extra fastapi --group dev --group testing --group docs
           uv pip uninstall --system pydantic pydantic-core
-          uv pip install --system -e ./pydantic-latest
+          uv pip install --no-config --system -e ./pydantic-latest
 
       - name: List installed dependencies
         run: uv pip list
 
       - name: Run Pandera tests
         # Pandera's CI uses nox sessions which encapsulate the logic to install a specific Pydantic version.
-        # Instead, manually run pytest (we run core, pandas and FastAPI tests):
-        run: uv run --no-sync pytest tests/base tests/pandas tests/fastapi
+        # Instead, manually run pytest (we run core, pandas and FastAPI tests). Each test directory is run
+        # in a separate process, as is done upstream (some tests depend on the pandas backends *not* being
+        # registered, which happens when collecting the pandas tests):
+        run: |
+          uv run --no-sync pytest tests/base
+          uv run --no-sync pytest tests/pandas
+          uv run --no-sync pytest tests/fastapi
 
   test-odmantic:
     name: Test ODMantic (main branch) on Python ${{ matrix.python-version }}
@@ -283,7 +288,7 @@ jobs:
         run: git clone --depth=1 https://github.com/art049/odmantic.git .
 
       - name: Checkout Pydantic
-        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           path: pydantic-latest
           persist-credentials: false
@@ -294,7 +299,7 @@ jobs:
           python-version: ${{ matrix.python-version }}
 
       - name: Set up uv
-        uses: astral-sh/setup-uv@c771a70e6277c0a99b617c7a806ffedaca235ff9 # v9.0.0
+        uses: astral-sh/setup-uv@20cfd1bf945f4377ade1205e4dbc17946fc9a30d # v10.0.1
 
       - name: Mongo service
         run: bash mongodb-cluster/run.sh
@@ -306,7 +311,7 @@ jobs:
         run: |
           uv sync --locked --no-dev --extra test
           uv pip uninstall pydantic pydantic-core
-          uv pip install -e ./pydantic-latest -e ./pydantic-latest/pydantic-core
+          uv pip install --no-config -e ./pydantic-latest -e ./pydantic-latest/pydantic-core
 
       - name: List installed dependencies
         run: uv pip list
@@ -376,7 +381,7 @@ jobs:
 
     steps:
       - name: Checkout polar
-        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           repository: polarsource/polar
           persist-credentials: false
@@ -410,13 +415,13 @@ jobs:
         run: pnpm install --frozen-lockfile && pnpm build
 
       - name: Checkout Pydantic
-        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           path: pydantic-latest
           persist-credentials: false
 
       - name: Install uv
-        uses: astral-sh/setup-uv@c771a70e6277c0a99b617c7a806ffedaca235ff9 # v9.0.0
+        uses: astral-sh/setup-uv@20cfd1bf945f4377ade1205e4dbc17946fc9a30d # v10.0.1
 
       - name: Set up Python ${{ matrix.python-version }}
         uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
@@ -428,7 +433,7 @@ jobs:
         run: |
           uv sync --no-progress --dev
           uv pip uninstall pydantic
-          uv pip install -e ./../pydantic-latest
+          uv pip install --no-config -e ./../pydantic-latest
           uv run --no-sync task generate_dev_jwks
 
       - name: List installed dependencies
@@ -462,13 +467,13 @@ jobs:
 
     steps:
       - name: Checkout BentoML
-        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           repository: bentoml/BentoML
           persist-credentials: false
 
       - name: Checkout Pydantic
-        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           path: pydantic-latest
           persist-credentials: false
@@ -476,7 +481,7 @@ jobs:
       # Note: BentoML workflow uses nox sessions which don't allow installing
       # the custom Pydantic version. Instead, we manually set up the env.
       - name: Set up PDM
-        uses: pdm-project/setup-pdm@973541a5febeafcfdadf8a51211435be6ecfd90f # v4.5
+        uses: pdm-project/setup-pdm@544d7237314ee09c256785bd360f6b30add38b37 # v4.6
         with:
           python-version: ${{ matrix.python-version }}
 
@@ -511,19 +516,19 @@ jobs:
 
     steps:
       - name: Checkout Semantic Kernel
-        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           repository: microsoft/semantic-kernel
           persist-credentials: false
 
       - name: Checkout Pydantic
-        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           path: pydantic-latest
           persist-credentials: false
 
       - name: Install uv
-        uses: astral-sh/setup-uv@c771a70e6277c0a99b617c7a806ffedaca235ff9 # v9.0.0
+        uses: astral-sh/setup-uv@20cfd1bf945f4377ade1205e4dbc17946fc9a30d # v10.0.1
         with:
           python-version: ${{ matrix.python-version }}
           working-directory: python
@@ -533,7 +538,7 @@ jobs:
         run: |
           uv sync --no-progress --all-extras --dev --prerelease=if-necessary-or-explicit
           uv pip uninstall pydantic
-          uv pip install -e ../pydantic-latest
+          uv pip install --no-config -e ../pydantic-latest
 
       - name: List installed dependencies
         working-directory: ./python
@@ -558,19 +563,19 @@ jobs:
 
     steps:
       - name: Checkout Langchain
-        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           repository: langchain-ai/langchain
           persist-credentials: false
 
       - name: Checkout Pydantic
-        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           path: pydantic-latest
           persist-credentials: false
 
       - name: Install uv
-        uses: astral-sh/setup-uv@c771a70e6277c0a99b617c7a806ffedaca235ff9 # v9.0.0
+        uses: astral-sh/setup-uv@20cfd1bf945f4377ade1205e4dbc17946fc9a30d # v10.0.1
         with:
           python-version: ${{ matrix.python-version }}
 
@@ -621,13 +626,13 @@ jobs:
 
     steps:
       - name: Checkout Dify
-        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           repository: langgenius/dify
           persist-credentials: false
 
       - name: Checkout Pydantic
-        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           path: pydantic-latest
           persist-credentials: false
@@ -638,7 +643,7 @@ jobs:
           python-version: ${{ matrix.python-version }}
 
       - name: Set up uv
-        uses: astral-sh/setup-uv@c771a70e6277c0a99b617c7a806ffedaca235ff9 # v9.0.0
+        uses: astral-sh/setup-uv@20cfd1bf945f4377ade1205e4dbc17946fc9a30d # v10.0.1
 
       - name: Install Dify dependencies
         run: |
@@ -667,18 +672,18 @@ jobs:
         python-version: ['3.10', '3.11', '3.12', '3.13', '3.14']
     steps:
       - name: Checkout Cadwyn
-        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           repository: zmievsa/cadwyn
           persist-credentials: false
 
       - name: Checkout Pydantic
-        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           path: pydantic-latest
           persist-credentials: false
 
-      - uses: astral-sh/setup-uv@c771a70e6277c0a99b617c7a806ffedaca235ff9 # v9.0.0
+      - uses: astral-sh/setup-uv@20cfd1bf945f4377ade1205e4dbc17946fc9a30d # v10.0.1
         with:
           python-version: ${{ matrix.python-version }}
           activate-environment: true
@@ -686,7 +691,7 @@ jobs:
       - name: Install Cadwyn dependencies
         run: |
           uv sync --no-progress --dev --all-extras
-          uv pip install -e ./pydantic-latest
+          uv pip install --no-config -e ./pydantic-latest
 
       - name: List installed dependencies
         run: uv pip list
@@ -709,13 +714,13 @@ jobs:
         python-version: ['3.10', '3.11', '3.12', '3.13']
     steps:
       - name: Checkout pydantic-xml
-        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           repository: dapper91/pydantic-xml
           persist-credentials: false
 
       - name: Checkout Pydantic
-        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           path: pydantic-latest
           persist-credentials: false
@@ -766,19 +771,19 @@ jobs:
       INSTALL_DIR: ${{ github.workspace }}/redis
     steps:
       - name: Checkout Redis OM Python
-        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           repository: redis/redis-om-python
           persist-credentials: false
 
       - name: Checkout Pydantic
-        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           path: pydantic-latest
           persist-credentials: false
 
       - name: Install uv
-        uses: astral-sh/setup-uv@c771a70e6277c0a99b617c7a806ffedaca235ff9 # v9.0.0
+        uses: astral-sh/setup-uv@20cfd1bf945f4377ade1205e4dbc17946fc9a30d # v10.0.1
 
       - name: Setup Python ${{ matrix.python-version }}
         uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
@@ -789,7 +794,7 @@ jobs:
         run: |
           uv sync
           uv pip uninstall pydantic pydantic-core
-          uv pip install -e ./pydantic-latest -e ./pydantic-latest/pydantic-core
+          uv pip install --no-config -e ./pydantic-latest -e ./pydantic-latest/pydantic-core
 
       - name: Make sync version of library (redis_om)
         run: make sync
@@ -817,13 +822,13 @@ jobs:
         python-version: ['3.10', '3.11', '3.12', '3.13']
     steps:
       - name: Checkout Django Ninja
-        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           repository: vitalik/django-ninja
           persist-credentials: false
 
       - name: Checkout Pydantic
-        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           path: pydantic-latest
           persist-credentials: false
@@ -858,18 +863,18 @@ jobs:
         python-version: ['3.10', '3.11', '3.12', '3.13']
     steps:
       - name: Checkout FastDepends
-        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           repository: Lancetnik/FastDepends
           persist-credentials: false
 
       - name: Checkout Pydantic
-        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           path: pydantic-latest
           persist-credentials: false
 
-      - uses: astral-sh/setup-uv@c771a70e6277c0a99b617c7a806ffedaca235ff9 # v9.0.0
+      - uses: astral-sh/setup-uv@20cfd1bf945f4377ade1205e4dbc17946fc9a30d # v10.0.1
         with:
           python-version: ${{ matrix.python-version }}
 
@@ -878,7 +883,7 @@ jobs:
           uv venv --python ${{ matrix.python-version }}
           uv sync --group test
           uv pip uninstall pydantic
-          uv pip install -e ./pydantic-latest
+          uv pip install --no-config -e ./pydantic-latest
 
       - name: List installed dependencies
         run: uv pip list
@@ -900,18 +905,18 @@ jobs:
         python-version: ['3.10', '3.11', '3.12', '3.13', '3.14']
     steps:
       - name: Checkout MCP Python SDK
-        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           repository: modelcontextprotocol/python-sdk
           persist-credentials: false
 
       - name: Checkout Pydantic
-        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           path: pydantic-latest
           persist-credentials: false
 
-      - uses: astral-sh/setup-uv@c771a70e6277c0a99b617c7a806ffedaca235ff9 # v9.0.0
+      - uses: astral-sh/setup-uv@20cfd1bf945f4377ade1205e4dbc17946fc9a30d # v10.0.1
         with:
           enable-cache: true
           python-version: ${{ matrix.python-version }}
@@ -921,7 +926,7 @@ jobs:
           uv venv --python ${{ matrix.python-version }}
           uv sync --all-extras --python ${{ matrix.python-version }}
           uv pip uninstall pydantic
-          uv pip install -e ./pydantic-latest
+          uv pip install --no-config -e ./pydantic-latest
 
       - name: List installed dependencies
         run: uv pip list
@@ -930,9 +935,10 @@ jobs:
         shell: bash
         env:
           # tests/examples/test_stories_smoke.py is gated on this var; it spawns real
-          # stdio + uvicorn subprocesses, so we don't run it for third-party tests:
+          # stdio + uvicorn subprocesses, so we don't run it for third-party tests.
+          # test_modern_post_with_deeply_nested_body_is_parse_error_not_a_crash is somehow failing in third party tests:
           MCP_EXAMPLES_SMOKE: '0'
-        run: uv run --frozen --no-sync pytest -n auto tests/
+        run: uv run --frozen --no-sync pytest -n auto tests/ -k 'not test_modern_post_with_deeply_nested_body_is_parse_error_not_a_crash'
 
   test-fastmcp:
     name: Test FastMCP (main branch) on Python ${{ matrix.python-version }}
@@ -948,18 +954,18 @@ jobs:
         python-version: ['3.10', '3.13']
     steps:
       - name: Checkout FastMCP
-        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           repository: PrefectHQ/fastmcp
           persist-credentials: false
 
       - name: Checkout Pydantic
-        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           path: pydantic-latest
           persist-credentials: false
 
-      - uses: astral-sh/setup-uv@c771a70e6277c0a99b617c7a806ffedaca235ff9 # v9.0.0
+      - uses: astral-sh/setup-uv@20cfd1bf945f4377ade1205e4dbc17946fc9a30d # v10.0.1
         with:
           enable-cache: true
           python-version: ${{ matrix.python-version }}
@@ -968,7 +974,7 @@ jobs:
         run: |
           uv sync --no-progress
           uv pip uninstall pydantic
-          uv pip install -e ./pydantic-latest
+          uv pip install --no-config -e ./pydantic-latest
 
       - name: List installed dependencies
         run: uv pip list

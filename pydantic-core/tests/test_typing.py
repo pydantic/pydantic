@@ -247,6 +247,11 @@ def test_ser_function_wrap():
     )
 
 
+def test_ser_core_schema():
+    s = SchemaSerializer(core_schema.any_schema(serialization=core_schema.list_schema(core_schema.int_schema())))
+    assert s.to_python([1, 2]) == [1, 2]
+
+
 def test_error_details() -> None:
     # Test that the ErrorDetails type is correctly exported.
     def act_on_error_details(_: ErrorDetails) -> None:
