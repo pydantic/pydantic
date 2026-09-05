@@ -819,7 +819,7 @@ Built-in type: [`tuple`][] (deprecated alias: [`typing.Tuple`][]).
 
 !!! note
     [Unpacked tuple types](https://typing.python.org/en/latest/spec/generics.html#unpacking-tuple-types)
-    (as specified by [PEP 646](https://peps.python.org/pep-0646/)) are *not* yet supported, and can be
+    (as specified by [PEP 646](https://peps.python.org/pep-0646/)) are a work in progress. Support can be
     tracked in [this issue](https://github.com/pydantic/pydantic/issues/5952).
 
 <h4>Validation</h4>

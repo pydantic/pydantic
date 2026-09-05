@@ -1712,12 +1712,7 @@ class GenerateSchema:
 
     def _tuple_schema(self, tuple_type: Any) -> core_schema.CoreSchema:
         """Generate schema for a Tuple, e.g. `tuple[int, str]` or `tuple[int, ...]`."""
-        # TODO: do we really need to resolve type vars here?
-        typevars_map = get_standard_typevars_map(tuple_type)
         params = self._get_args_resolving_forward_refs(tuple_type)
-
-        if typevars_map and params:
-            params = tuple(replace_types(param, typevars_map) for param in params)
 
         # NOTE: subtle difference: `tuple[()]` gives `params=()`, whereas `typing.Tuple[()]` gives `params=((),)`
         # This is only true for <3.11, on Python 3.11+ `typing.Tuple[()]` gives `params=()`
@@ -1727,18 +1722,77 @@ class GenerateSchema:
             else:
                 # special case for `tuple[()]` which means `tuple[]` - an empty tuple
                 return core_schema.tuple_schema([])
-        elif params[-1] is Ellipsis:
-            if len(params) == 2:
-                return core_schema.tuple_schema([self.generate_schema(params[0])], variadic_item_index=0)
-            else:
-                # TODO: something like https://github.com/pydantic/pydantic/issues/5952
-                raise ValueError('Variable tuples can only have one type')
-        elif len(params) == 1 and params[0] == ():
+
+        # TODO: do we really need to resolve type vars here?
+        typevars_map = get_standard_typevars_map(tuple_type)
+        if typevars_map and params:
+            params = tuple(replace_types(param, typevars_map) for param in params)
+
+        if len(params) == 1 and params[0] == ():
             # special case for `tuple[()]` which means `tuple[]` - an empty tuple
             # NOTE: This conditional can be removed when we drop support for Python 3.10.
             return core_schema.tuple_schema([])
-        else:
-            return core_schema.tuple_schema([self.generate_schema(param) for param in params])
+
+        # flatten params for any typing.Unpack[] cases and `*tuple[int, ...]` starred form
+        #
+        # The starred form are `types.GenericAlias` instances with `__unpacked__ = True` and
+        # `__typing_unpacked_tuple_args__` attributes.
+        variadic_item_index = None
+
+        if any(
+            typing_objects.is_unpack(get_origin(param)) or getattr(param, '__unpacked__', False) for param in params
+        ):
+            new_params = []
+
+            for param in params:
+                if (inner := _typing_extra.unpack_type(param)) is not None:
+                    # Unpack[tuple[int, ...]]
+                    if get_origin(inner) not in TUPLE_TYPES:
+                        raise TypeError(f'Unpacked type `{inner!r}` is not a tuple')
+                    unpacked_args = get_args(inner)
+                elif (args := getattr(param, '__typing_unpacked_tuple_args__', None)) is not None:
+                    # *tuple[int, ...] form
+                    if not isinstance(args, tuple):
+                        raise TypeError(f'Unpacked type `{param!r}` is not a tuple')
+                    unpacked_args = args
+                elif getattr(param, '__unpacked__', False):
+                    # *list[int] or similar
+                    args = get_args(param)
+                    raise TypeError(f'Expected tuple type for `*` unpacking, got `{param!r}`')
+                else:
+                    # not an unpacked form
+                    new_params.append(param)
+                    continue
+
+                if any(e is Ellipsis for e in unpacked_args):
+                    # variadic unpack
+                    if variadic_item_index is not None:
+                        raise TypeError('More than one variadic Unpack in a type is not allowed')
+                    if len(unpacked_args) != 2:
+                        raise TypeError('Variable tuples must only have one type before the ellipsis')
+                    if unpacked_args[0] is Ellipsis or unpacked_args[1] is not Ellipsis:
+                        raise TypeError('Variable tuples must end with an ellipsis')
+                    variadic_item_index = len(new_params)
+                    new_params.append(unpacked_args[0])
+                else:
+                    new_params.extend(unpacked_args)
+
+            params = tuple(new_params)
+
+        if any(param is Ellipsis for param in params):
+            if variadic_item_index is not None:
+                raise TypeError('Cannot have a variadic Unpack and an ellipsis in the same tuple type')
+            if len(params) != 2:
+                raise TypeError('Variable tuples must only have one type before the ellipsis')
+            if params[0] is Ellipsis or params[1] is not Ellipsis:
+                raise TypeError('Variable tuples must end with an ellipsis')
+            # special form: variadic tuple without any unpacking, e.g. tuple[int, ...]
+            variadic_item_index = 0
+            params = (params[0],)
+
+        return core_schema.tuple_schema(
+            [self.generate_schema(param) for param in params], variadic_item_index=variadic_item_index
+        )
 
     def _type_schema(self) -> core_schema.CoreSchema:
         return core_schema.custom_error_schema(
