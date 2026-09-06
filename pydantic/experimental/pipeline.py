@@ -485,6 +485,8 @@ _ORDERING_SCHEMA_TYPES = frozenset({'int', 'float', 'decimal', 'fraction', 'date
 _LENGTH_SCHEMA_TYPES = frozenset(
     {'str', 'bytes', 'list', 'tuple', 'set', 'frozenset', 'dict', 'frozendict', 'generator'}
 )
+# Core schema types with native support for the `multiple_of` constraint:
+_MULTIPLE_OF_SCHEMA_TYPES = frozenset({'int', 'float', 'decimal', 'date', 'time', 'datetime', 'timedelta'})
 
 
 def _apply_constraint(  # noqa: C901
@@ -561,7 +563,7 @@ def _apply_constraint(  # noqa: C901
             s = _check_func(check_len, predicate_err, s)
     elif isinstance(constraint, annotated_types.MultipleOf):
         multiple_of = constraint.multiple_of
-        if s and s['type'] in {'int', 'float', 'decimal'}:
+        if s and s['type'] in _MULTIPLE_OF_SCHEMA_TYPES:
             s = s.copy()
             s['multiple_of'] = multiple_of  # pyright: ignore[reportGeneralTypeIssues]
         else:

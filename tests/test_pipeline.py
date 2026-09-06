@@ -13,7 +13,7 @@ import pytest
 import pytz
 from annotated_types import Interval, Len
 
-from pydantic import TypeAdapter, ValidationError
+from pydantic import Field, TypeAdapter, ValidationError
 from pydantic.experimental.pipeline import _Pipeline, transform, validate_as  # pyright: ignore[reportPrivateUsage]
 
 
@@ -131,6 +131,16 @@ def test_ge_le_gt_lt(
             [Decimal('1.5'), Decimal('3.0'), Decimal('4.5')],
             [Decimal('1.4'), Decimal('2.1')],
         ),
+        # Temporal core schemas accept the `multiple_of` key, which `pydantic-core` does not
+        # enforce. The constraint must still be applied natively rather than falling back to a
+        # Python predicate, which never holds for `timedelta` (`timedelta(0) == 0` is `False`).
+        # `date`, `time` and `datetime` are covered by `test_multiple_of_temporal_parity()`.
+        (
+            datetime.timedelta,
+            validate_as(datetime.timedelta).multiple_of(datetime.timedelta(seconds=5)),
+            [datetime.timedelta(seconds=10), datetime.timedelta(seconds=7)],
+            [],
+        ),
     ],
 )
 def test_parse_multipleOf(type_: Any, pipeline: Any, valid_cases: list[Any], invalid_cases: list[Any]) -> None:
@@ -140,6 +150,29 @@ def test_parse_multipleOf(type_: Any, pipeline: Any, valid_cases: list[Any], inv
     for y in invalid_cases:
         with pytest.raises(ValueError):
             ta.validate_python(y)
+
+
+@pytest.mark.parametrize(
+    'type_, multiple_of, value',
+    [
+        (datetime.timedelta, datetime.timedelta(seconds=5), datetime.timedelta(seconds=10)),
+        (datetime.timedelta, datetime.timedelta(seconds=5), datetime.timedelta(seconds=7)),
+        (datetime.date, 2, datetime.date(2020, 1, 1)),
+        (datetime.time, 2, datetime.time(1, 0, 0)),
+        (datetime.datetime, 2, datetime.datetime(2020, 1, 1)),
+    ],
+)
+def test_multiple_of_temporal_parity(type_: Any, multiple_of: Any, value: Any) -> None:
+    """The pipeline API must apply `multiple_of` to temporal types as the `Field()` API does.
+
+    Previously the constraint fell back to a Python predicate evaluating `v % multiple_of == 0`,
+    which is never true for `timedelta` (`timedelta(0) == 0` is `False`) and raises `TypeError`
+    for `date`, `time` and `datetime`.
+    """
+    field_ta = TypeAdapter[Any](Annotated[type_, Field(multiple_of=multiple_of)])
+    pipeline_ta = TypeAdapter[Any](Annotated[type_, validate_as(type_).multiple_of(multiple_of)])
+
+    assert pipeline_ta.validate_python(value) == field_ta.validate_python(value) == value
 
 
 @pytest.mark.parametrize(
