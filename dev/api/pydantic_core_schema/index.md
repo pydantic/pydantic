@@ -1152,6 +1152,7 @@ str_schema(
     strip_whitespace: bool | None = None,
     to_lower: bool | None = None,
     to_upper: bool | None = None,
+    ascii_only: bool | None = None,
     regex_engine: (
         Literal["rust-regex", "python-re"] | None
     ) = None,
@@ -1177,7 +1178,7 @@ assert v.validate_python('hello') == 'hello'
 
 Parameters:
 
-| Name | Type | Description | Default | | --- | --- | --- | --- | | `pattern` | `str | Pattern[str] | None` | A regex pattern that the value must match | `None` | | `max_length` | `int | None` | The value must be at most this length | `None` | | `min_length` | `int | None` | The value must be at least this length | `None` | | `strip_whitespace` | `bool | None` | Whether to strip whitespace from the value | `None` | | `to_lower` | `bool | None` | Whether to convert the value to lowercase | `None` | | `to_upper` | `bool | None` | Whether to convert the value to uppercase | `None` | | `regex_engine` | `Literal['rust-regex', 'python-re'] | None` | The regex engine to use for pattern validation. Default is 'rust-regex'. - rust-regex uses the regex Rust crate, which is non-backtracking and therefore more DDoS resistant, but does not support all regex features. - python-re use the re module, which supports all regex features, but may be slower. | `None` | | `strict` | `bool | None` | Whether the value should be a string or a value that can be converted to a string | `None` | | `coerce_numbers_to_str` | `bool | None` | Whether to enable coercion of any Number type to str (not applicable in strict mode). | `None` | | `ref` | `str | None` | optional unique identifier of the schema, used to reference the schema in other places | `None` | | `metadata` | `dict[str, Any] | None` | Any other information you want to include with the schema, not used by pydantic-core | `None` | | `serialization` | `SerSchema | None` | Custom serialization schema | `None` |
+| Name | Type | Description | Default | | --- | --- | --- | --- | | `pattern` | `str | Pattern[str] | None` | A regex pattern that the value must match | `None` | | `max_length` | `int | None` | The value must be at most this length | `None` | | `min_length` | `int | None` | The value must be at least this length | `None` | | `strip_whitespace` | `bool | None` | Whether to strip whitespace from the value | `None` | | `to_lower` | `bool | None` | Whether to convert the value to lowercase | `None` | | `to_upper` | `bool | None` | Whether to convert the value to uppercase | `None` | | `ascii_only` | `bool | None` | Whether the value must contain only ASCII characters | `None` | | `regex_engine` | `Literal['rust-regex', 'python-re'] | None` | The regex engine to use for pattern validation. Default is 'rust-regex'. - rust-regex uses the regex Rust crate, which is non-backtracking and therefore more DDoS resistant, but does not support all regex features. - python-re use the re module, which supports all regex features, but may be slower. | `None` | | `strict` | `bool | None` | Whether the value should be a string or a value that can be converted to a string | `None` | | `coerce_numbers_to_str` | `bool | None` | Whether to enable coercion of any Number type to str (not applicable in strict mode). | `None` | | `ref` | `str | None` | optional unique identifier of the schema, used to reference the schema in other places | `None` | | `metadata` | `dict[str, Any] | None` | Any other information you want to include with the schema, not used by pydantic-core | `None` | | `serialization` | `SerSchema | None` | Custom serialization schema | `None` |
 
 Source code in `pydantic_core/core_schema.py`
 
@@ -1190,6 +1191,7 @@ def str_schema(
     strip_whitespace: bool | None = None,
     to_lower: bool | None = None,
     to_upper: bool | None = None,
+    ascii_only: bool | None = None,
     regex_engine: Literal['rust-regex', 'python-re'] | None = None,
     strict: bool | None = None,
     coerce_numbers_to_str: bool | None = None,
@@ -1215,6 +1217,7 @@ def str_schema(
         strip_whitespace: Whether to strip whitespace from the value
         to_lower: Whether to convert the value to lowercase
         to_upper: Whether to convert the value to uppercase
+        ascii_only: Whether the value must contain only ASCII characters
         regex_engine: The regex engine to use for pattern validation. Default is 'rust-regex'.
             - `rust-regex` uses the [`regex`](https://docs.rs/regex) Rust
               crate, which is non-backtracking and therefore more DDoS
@@ -1235,6 +1238,7 @@ def str_schema(
         strip_whitespace=strip_whitespace,
         to_lower=to_lower,
         to_upper=to_upper,
+        ascii_only=ascii_only,
         regex_engine=regex_engine,
         strict=strict,
         coerce_numbers_to_str=coerce_numbers_to_str,
