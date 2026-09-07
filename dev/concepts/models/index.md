@@ -1702,4 +1702,4 @@ print(f'{id(c1.arr) == id(c2.arr)=}')
 
 Note
 
-There are some situations where Pydantic does not copy attributes, such as when passing models — we use the model as is. You can override this behaviour by setting [`model_config['revalidate_instances'] = 'always'`](../../api/config/#pydantic.config.ConfigDict).
+There are some situations where Pydantic does not copy attributes, such as when passing models — we use the model as is. You can override this behaviour by setting [`model_config['revalidate_instances'] = 'always'`](../../api/config/#pydantic.config.ConfigDict.revalidate_instances).

@@ -5039,7 +5039,7 @@ will be merged, and for any settings defined in both, those from <code>Model2</c
 <li>
 <p>The following config settings have been removed:</p>
 <ul>
-<li><code>allow_mutation</code> — this has been removed. You should be able to use <a href="../api/config/#pydantic.config.ConfigDict">frozen</a> equivalently (inverse of current use).</li>
+<li><code>allow_mutation</code> — this has been removed. You should be able to use <a href="../api/config/#pydantic.config.ConfigDict.frozen"><code>frozen</code></a> equivalently (inverse of current use).</li>
 <li><code>error_msg_templates</code></li>
 <li><code>fields</code> — this was the source of various bugs, so has been removed.
   You should be able to use <code>Annotated</code> on fields to modify them as desired.</li>

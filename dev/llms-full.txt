@@ -6111,7 +6111,7 @@ print(f'{id(c1.arr) == id(c2.arr)=}')
 
 Note
 
-There are some situations where Pydantic does not copy attributes, such as when passing models — we use the model as is. You can override this behaviour by setting [`model_config['revalidate_instances'] = 'always'`](../../api/config/#pydantic.config.ConfigDict).
+There are some situations where Pydantic does not copy attributes, such as when passing models — we use the model as is. You can override this behaviour by setting [`model_config['revalidate_instances'] = 'always'`](../../api/config/#pydantic.config.ConfigDict.revalidate_instances).
 
 # Performance tips
 
@@ -13597,7 +13597,7 @@ Both the field and model validators callables (in all modes) can optionally take
 
 ### Validation data
 
-For field validators, the already validated data can be accessed using the data property. Here is an example than can be used as an alternative to the [*after* model validator](#model-after-validator) example:
+For field validators, the already validated data can be accessed using the data property. Here is an example that can be used as an alternative to the [*after* model validator](#model-after-validator) example:
 
 ```python
 from pydantic import BaseModel, ValidationInfo, field_validator

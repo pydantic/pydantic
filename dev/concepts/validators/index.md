@@ -547,7 +547,7 @@ Both the field and model validators callables (in all modes) can optionally take
 
 ### Validation data
 
-For field validators, the already validated data can be accessed using the data property. Here is an example than can be used as an alternative to the [*after* model validator](#model-after-validator) example:
+For field validators, the already validated data can be accessed using the data property. Here is an example that can be used as an alternative to the [*after* model validator](#model-after-validator) example:
 
 ```python
 from pydantic import BaseModel, ValidationInfo, field_validator
