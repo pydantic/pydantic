@@ -11,16 +11,16 @@ use pyo3::IntoPyObjectExt;
 
 use crate::build_tools::py_schema_err;
 use crate::build_tools::{ExtraBehavior, schema_or_config_same};
-use crate::errors::LocItem;
 use crate::errors::{ErrorTypeDefaults, ValError, ValLineError, ValResult};
-use crate::input::ConsumeIterator;
 use crate::input::{
-    Arguments, BorrowInput, Input, KeywordArgs, PositionalArgs, ValidatedDict, ValidatedTuple, ValidationMatch,
+    Arguments, BorrowInput, Input, KeywordArgs, PositionalArgs, PreparedFieldResults, ValidatedDict, ValidatedTuple,
+    ValidationMatch,
 };
-use crate::lookup_key::LookupPathCollection;
+use crate::lookup_key::FieldLookupPaths;
 use crate::lookup_key::LookupType;
 use crate::tools::SchemaDict;
 
+use super::shared::lookup_tree::LookupTree;
 use super::validation_state::ValidationState;
 use super::{BuildValidator, CombinedValidator, DefinitionsBuilder, Validator, build_validator};
 
@@ -54,7 +54,7 @@ impl FromStr for ParameterMode {
 struct Parameter {
     name: PyBackedStr,
     mode: ParameterMode,
-    lookup_path_collection: LookupPathCollection,
+    lookup_path_collection: FieldLookupPaths,
     validator: Arc<CombinedValidator>,
 }
 
@@ -70,6 +70,7 @@ impl Parameter {
 #[derive(Debug)]
 pub struct ArgumentsV3Validator {
     parameters: Vec<Parameter>,
+    lookup: LookupTree,
     positional_params_count: usize,
     loc_by_alias: bool,
     extra: ExtraBehavior,
@@ -183,7 +184,7 @@ impl BuildValidator for ArgumentsV3Validator {
             }
 
             let validation_alias = arg.get_as(intern!(py, "alias"))?;
-            let lookup_path_collection = LookupPathCollection::new(validation_alias, name.clone())?;
+            let lookup_path_collection = FieldLookupPaths::new(validation_alias, name.clone())?;
 
             parameters.push(Parameter {
                 name,
@@ -203,8 +204,10 @@ impl BuildValidator for ArgumentsV3Validator {
             })
             .count();
 
+        let lookup = LookupTree::from_fields(&parameters, |parameter| &parameter.lookup_path_collection);
         Ok(CombinedValidator::ArgumentsV3(Self {
             parameters,
+            lookup,
             positional_params_count,
             loc_by_alias: config.get_as(intern!(py, "loc_by_alias"))?.unwrap_or(true),
             extra: ExtraBehavior::from_schema_or_config(py, schema, config, ExtraBehavior::Forbid)?,
@@ -243,26 +246,10 @@ impl ArgumentsV3Validator {
         let lookup_type = LookupType::from_bools(validate_by_alias, validate_by_name)?;
         let extra_behavior = state.extra_behavior_or(self.extra);
 
-        // Keep track of used keys for extra behavior:
-        let mut used_keys: Option<AHashSet<&str>> =
-            if extra_behavior == ExtraBehavior::Ignore || mapping.is_py_get_attr() {
-                None
-            } else {
-                Some(AHashSet::with_capacity(self.parameters.len()))
-            };
-
-        for parameter in &self.parameters {
+        let mut prepared = mapping.prepare_fields(&self.lookup, lookup_type, extra_behavior);
+        for (index, parameter) in self.parameters.iter().enumerate() {
             // A value is present in the mapping:
-            if let Some((lookup_path, dict_value)) = parameter
-                .lookup_path_collection
-                .try_lookup(lookup_type, |path| mapping.get_item(path))?
-            {
-                if let Some(ref mut used_keys) = used_keys {
-                    // key is "used" whether or not validation passes, since we want to skip this key in
-                    // extra logic either way
-                    used_keys.insert(lookup_path.first_key());
-                }
-
+            if let Some((lookup_path, dict_value)) = prepared.lookup(index, &parameter.lookup_path_collection)? {
                 match parameter.mode {
                     ParameterMode::PositionalOnly | ParameterMode::PositionalOrKeyword => {
                         match parameter.validator.validate(py, dict_value.borrow_input(), state) {
@@ -434,65 +421,32 @@ impl ArgumentsV3Validator {
             }
         }
 
-        if let Some(used_keys) = used_keys {
-            struct ValidateExtra<'a> {
-                used_keys: AHashSet<&'a str>,
-                errors: &'a mut Vec<ValLineError>,
-                extra_behavior: ExtraBehavior,
-            }
-
-            impl<'py, Key, Value> ConsumeIterator<ValResult<(Key, Value)>> for ValidateExtra<'_>
-            where
-                Key: BorrowInput<'py> + Clone + Into<LocItem>,
-                Value: BorrowInput<'py>,
-            {
-                type Output = ValResult<()>;
-                fn consume_iterator(self, iterator: impl Iterator<Item = ValResult<(Key, Value)>>) -> Self::Output {
-                    for item_result in iterator {
-                        let (raw_key, value) = item_result?;
-                        let either_str = match raw_key
-                            .borrow_input()
-                            .validate_str(true, false)
-                            .map(ValidationMatch::into_inner)
-                        {
-                            Ok(k) => k,
-                            Err(ValError::LineErrors(line_errors)) => {
-                                for err in line_errors {
-                                    self.errors.push(
-                                        err.with_outer_location(raw_key.clone())
-                                            .with_type(ErrorTypeDefaults::InvalidKey),
-                                    );
-                                }
-                                continue;
-                            }
-                            Err(err) => return Err(err),
-                        };
-                        let cow = either_str.as_cow()?;
-                        if self.used_keys.contains(cow.as_ref()) {
-                            continue;
-                        }
-
-                        let value = value.borrow_input();
-
-                        if self.extra_behavior == ExtraBehavior::Forbid {
-                            self.errors.push(ValLineError::new_with_loc(
-                                ErrorTypeDefaults::ExtraForbidden,
-                                value,
-                                raw_key.clone(),
-                            ));
-                        }
+        prepared.for_each_extra(|raw_key, value| {
+            match raw_key.borrow_input().validate_str(true, false) {
+                Ok(_) => {}
+                Err(ValError::LineErrors(line_errors)) => {
+                    for err in line_errors {
+                        errors.push(
+                            err.with_outer_location(raw_key.clone())
+                                .with_type(ErrorTypeDefaults::InvalidKey),
+                        );
                     }
-
-                    Ok(())
+                    return Ok(());
                 }
+                Err(err) => return Err(err),
             }
 
-            mapping.iterate(ValidateExtra {
-                used_keys,
-                errors: &mut errors,
-                extra_behavior,
-            })??;
-        }
+            let value = value.borrow_input();
+
+            if extra_behavior == ExtraBehavior::Forbid {
+                errors.push(ValLineError::new_with_loc(
+                    ErrorTypeDefaults::ExtraForbidden,
+                    value,
+                    raw_key.clone(),
+                ));
+            }
+            Ok(())
+        })?;
 
         if !errors.is_empty() {
             Err(ValError::LineErrors(errors))
@@ -518,15 +472,38 @@ impl ArgumentsV3Validator {
         let mut output_args: Vec<Py<PyAny>> = Vec::with_capacity(self.positional_params_count);
         let output_kwargs = PyDict::new(py);
         let mut errors: Vec<ValLineError> = Vec::new();
-        let mut used_kwargs: AHashSet<&str> = AHashSet::with_capacity(self.parameters.len());
 
         let validate_by_alias = state.validate_by_alias_or(self.validate_by_alias);
         let validate_by_name = state.validate_by_name_or(self.validate_by_name);
         let lookup_type = LookupType::from_bools(validate_by_alias, validate_by_name)?;
         let extra_behavior = state.extra_behavior_or(self.extra);
 
+        let has_var_kwargs = self.parameters.iter().any(|p| {
+            matches!(
+                p.mode,
+                ParameterMode::VarKwargsUniform | ParameterMode::VarKwargsUnpackedTypedDict
+            )
+        });
+        let mut prepared = args_kwargs.kwargs().map(|kwargs| {
+            kwargs.prepare_fields(
+                &self.lookup,
+                lookup_type,
+                if has_var_kwargs {
+                    ExtraBehavior::Allow
+                } else {
+                    extra_behavior
+                },
+            )
+        });
+
         // go through non variadic parameters, getting the value from args or kwargs and validating it
-        for (index, parameter) in self.parameters.iter().filter(|p| !p.is_variadic()).enumerate() {
+        for (index, (field_index, parameter)) in self
+            .parameters
+            .iter()
+            .enumerate()
+            .filter(|(_, p)| !p.is_variadic())
+            .enumerate()
+        {
             let mut pos_value = None;
             if let Some(args) = args_kwargs.args()
                 && matches!(
@@ -538,16 +515,13 @@ impl ArgumentsV3Validator {
             }
 
             let mut kw_value = None;
-            if let Some(kwargs) = args_kwargs.kwargs()
+            if let Some(prepared) = &mut prepared
                 && matches!(
                     parameter.mode,
                     ParameterMode::PositionalOrKeyword | ParameterMode::KeywordOnly
                 )
-                && let Some((lookup_path, value)) = parameter
-                    .lookup_path_collection
-                    .try_lookup(lookup_type, |path| kwargs.get_item(path))?
+                && let Some((lookup_path, value)) = prepared.lookup(field_index, &parameter.lookup_path_collection)?
             {
-                used_kwargs.insert(lookup_path.first_key());
                 kw_value = Some((lookup_path, value));
             }
 
@@ -640,11 +614,8 @@ impl ArgumentsV3Validator {
         let remaining_kwargs = PyDict::new(py);
 
         // if there are kwargs check any that haven't been processed yet
-        if let Some(kwargs) = args_kwargs.kwargs()
-            && kwargs.len() > used_kwargs.len()
-        {
-            for result in kwargs.iter() {
-                let (raw_key, value) = result?;
+        if let Some(prepared) = prepared {
+            prepared.for_each_extra(|raw_key, value| {
                 let either_str = match raw_key
                     .borrow_input()
                     .validate_str(true, false)
@@ -658,57 +629,56 @@ impl ArgumentsV3Validator {
                                     .with_type(ErrorTypeDefaults::InvalidKey),
                             );
                         }
-                        continue;
+                        return Ok(());
                     }
                     Err(err) => return Err(err),
                 };
-                if !used_kwargs.contains(either_str.as_cow()?.as_ref()) {
-                    let maybe_var_kwargs_parameter = self.parameters.iter().find(|p| {
-                        matches!(
-                            p.mode,
-                            ParameterMode::VarKwargsUniform | ParameterMode::VarKwargsUnpackedTypedDict
-                        )
-                    });
+                let maybe_var_kwargs_parameter = self.parameters.iter().find(|p| {
+                    matches!(
+                        p.mode,
+                        ParameterMode::VarKwargsUniform | ParameterMode::VarKwargsUnpackedTypedDict
+                    )
+                });
 
-                    match maybe_var_kwargs_parameter {
-                        None => {
-                            if extra_behavior == ExtraBehavior::Forbid {
-                                errors.push(ValLineError::new_with_loc(
-                                    ErrorTypeDefaults::UnexpectedKeywordArgument,
-                                    value,
-                                    raw_key.clone(),
-                                ));
-                            }
+                match maybe_var_kwargs_parameter {
+                    None => {
+                        if extra_behavior == ExtraBehavior::Forbid {
+                            errors.push(ValLineError::new_with_loc(
+                                ErrorTypeDefaults::UnexpectedKeywordArgument,
+                                value,
+                                raw_key.clone(),
+                            ));
                         }
-                        Some(var_kwargs_parameter) => {
-                            match var_kwargs_parameter.mode {
-                                ParameterMode::VarKwargsUniform => {
-                                    match var_kwargs_parameter.validator.validate(py, value.borrow_input(), state) {
-                                        Ok(value) => {
-                                            output_kwargs
-                                                .set_item(either_str.as_py_string(py, state.cache_str()), value)?;
-                                        }
-                                        Err(ValError::LineErrors(line_errors)) => {
-                                            for err in line_errors {
-                                                errors.push(err.with_outer_location(raw_key.clone()));
-                                            }
-                                        }
-                                        Err(err) => return Err(err),
+                    }
+                    Some(var_kwargs_parameter) => {
+                        match var_kwargs_parameter.mode {
+                            ParameterMode::VarKwargsUniform => {
+                                match var_kwargs_parameter.validator.validate(py, value.borrow_input(), state) {
+                                    Ok(value) => {
+                                        output_kwargs
+                                            .set_item(either_str.as_py_string(py, state.cache_str()), value)?;
                                     }
+                                    Err(ValError::LineErrors(line_errors)) => {
+                                        for err in line_errors {
+                                            errors.push(err.with_outer_location(raw_key.clone()));
+                                        }
+                                    }
+                                    Err(err) => return Err(err),
                                 }
-                                ParameterMode::VarKwargsUnpackedTypedDict => {
-                                    // Save to the remaining kwargs, we will validate as a single dict:
-                                    remaining_kwargs.set_item(
-                                        either_str.as_py_string(py, state.cache_str()),
-                                        value.borrow_input().to_object(py)?,
-                                    )?;
-                                }
-                                _ => unreachable!(),
                             }
+                            ParameterMode::VarKwargsUnpackedTypedDict => {
+                                // Save to the remaining kwargs, we will validate as a single dict:
+                                remaining_kwargs.set_item(
+                                    either_str.as_py_string(py, state.cache_str()),
+                                    value.borrow_input().to_object(py)?,
+                                )?;
+                            }
+                            _ => unreachable!(),
                         }
                     }
                 }
-            }
+                Ok(())
+            })?;
         }
 
         let maybe_var_kwargs_parameter = self

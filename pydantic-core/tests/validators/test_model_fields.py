@@ -1,3 +1,4 @@
+import json
 import math
 import os
 import re
@@ -1408,6 +1409,112 @@ def test_alias_extra(py_and_json: PyAndJson):
             'input': '...',
         }
     ]
+
+
+@pytest.mark.parametrize('extra_behavior', ['allow', 'forbid'])
+@pytest.mark.parametrize('data', [{'a': 1, 'b': 2}, {'b': 2, 'a': 1}])
+def test_unused_alias_choice_is_extra(py_and_json: PyAndJson, extra_behavior: ExtraBehavior, data):
+    v = py_and_json(
+        core_schema.model_fields_schema(
+            {'x': core_schema.model_field(core_schema.int_schema(), validation_alias=[['a'], ['b']])},
+            extra_behavior=extra_behavior,
+        )
+    )
+    if extra_behavior == 'allow':
+        assert v.validate_test(data) == ({'x': 1}, {'b': 2}, {'x', 'b'})
+    else:
+        with pytest.raises(ValidationError) as exc_info:
+            v.validate_test(data)
+        assert exc_info.value.errors(include_url=False) == [
+            {'type': 'extra_forbidden', 'loc': ('b',), 'msg': 'Extra inputs are not permitted', 'input': 2}
+        ]
+
+
+def test_fields_validated_before_extras(py_and_json: PyAndJson):
+    calls = []
+
+    def recording_schema(name):
+        def record(value):
+            calls.append((name, value))
+            return value
+
+        return core_schema.no_info_before_validator_function(record, core_schema.int_schema())
+
+    v = py_and_json(
+        core_schema.model_fields_schema(
+            {
+                'a': core_schema.model_field(recording_schema('a')),
+                'b': core_schema.model_field(recording_schema('b')),
+            },
+            extras_schema=recording_schema('extra'),
+            extra_behavior='allow',
+        )
+    )
+    assert v.validate_test({'extra_first': 3, 'b': 2, 'extra_second': 4, 'a': 1}) == (
+        {'a': 1, 'b': 2},
+        {'extra_first': 3, 'extra_second': 4},
+        {'a', 'b', 'extra_first', 'extra_second'},
+    )
+    assert calls == [('a', 1), ('b', 2), ('extra', 3), ('extra', 4)]
+
+
+@pytest.mark.parametrize('extra_behavior', ['allow', 'forbid'])
+def test_field_errors_before_extra_errors(py_and_json: PyAndJson, extra_behavior: ExtraBehavior):
+    v = py_and_json(
+        core_schema.model_fields_schema(
+            {
+                'a': core_schema.model_field(core_schema.int_schema()),
+                'b': core_schema.model_field(core_schema.int_schema()),
+            },
+            extras_schema=core_schema.int_schema() if extra_behavior == 'allow' else None,
+            extra_behavior=extra_behavior,
+        )
+    )
+    with pytest.raises(ValidationError) as exc_info:
+        v.validate_test({'extra_first': 'bad-extra', 'b': 'bad-b', 'extra_second': 'bad-other', 'a': 'bad-a'})
+    assert [(error['loc'], error['type']) for error in exc_info.value.errors()] == [
+        (('a',), 'int_parsing'),
+        (('b',), 'int_parsing'),
+        (('extra_first',), 'int_parsing' if extra_behavior == 'allow' else 'extra_forbidden'),
+        (('extra_second',), 'int_parsing' if extra_behavior == 'allow' else 'extra_forbidden'),
+    ]
+
+
+@pytest.mark.parametrize('mode', ['python', 'json'])
+@pytest.mark.parametrize('fallback', [False, True])
+@pytest.mark.parametrize(
+    'path,json_data',
+    [
+        (['payload', 'x'], '{"payload": {"x": 1}, "payload": {}}'),
+        (['payload', 'x'], '{"payload": {"x": 1}, "payload": null}'),
+        (['payload', 'x'], '{"payload": {"x": 1}, "payload": {"y": 2}}'),
+        (['payload', 'branch', 'x'], '{"payload": {"branch": {"x": 1}, "branch": {}}}'),
+    ],
+)
+def test_duplicate_parent_replaces_subtree(mode, fallback, path, json_data):
+    v = SchemaValidator(
+        core_schema.model_fields_schema(
+            {
+                'x': core_schema.model_field(
+                    core_schema.int_schema(), validation_alias=[path, ['fallback']] if fallback else path
+                )
+            },
+            extra_behavior='ignore',
+        )
+    )
+    if fallback:
+        json_data = json_data[:-1] + ', "fallback": 9}'
+    data = json.loads(json_data)
+    validate = getattr(v, f'validate_{mode}')
+    input_value = json_data if mode == 'json' else data
+    if fallback:
+        assert validate(input_value) == ({'x': 9}, None, {'x'})
+    else:
+        with pytest.raises(ValidationError) as exc_info:
+            validate(input_value)
+        assert exc_info.value.errors(include_url=False) == [
+            {'type': 'missing', 'loc': tuple(path), 'msg': 'Field required', 'input': data}
+        ]
 
 
 def test_alias_extra_from_attributes():

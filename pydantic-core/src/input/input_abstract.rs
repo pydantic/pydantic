@@ -1,17 +1,19 @@
 use std::convert::Infallible;
 use std::fmt;
 
-use jiter::JsonValue;
 use pyo3::exceptions::PyValueError;
 use pyo3::types::{PyDict, PyList, PyString};
 use pyo3::{IntoPyObjectExt, intern, prelude::*};
 
+use crate::build_tools::ExtraBehavior;
 use crate::errors::{ErrorTypeDefaults, InputValue, LocItem, ValError, ValResult};
-use crate::lookup_key::LookupPath;
+use crate::lookup_key::{FieldLookupPaths, LookupPath, LookupType};
 use crate::tools::py_err;
+use crate::validators::LookupTree;
 use crate::validators::{TemporalUnitMode, ValBytesMode};
 
 use super::datetime::{EitherDate, EitherDateTime, EitherTime, EitherTimedelta};
+use super::prepared::{DictExtras, KwargsExtras, LazyFieldResults, PreparedFieldResults};
 use super::return_enums::{EitherBytes, EitherComplex, EitherInt, EitherString};
 use super::{EitherFloat, GenericIterator, ValidationMatch};
 
@@ -71,10 +73,6 @@ pub(crate) trait Input<'py>: fmt::Debug {
     }
 
     fn as_python(&self) -> Option<&Bound<'py, PyAny>> {
-        None
-    }
-
-    fn as_json(&self) -> Option<&JsonValue<'_>> {
         None
     }
 
@@ -240,6 +238,19 @@ pub trait KeywordArgs<'py> {
         Self: 'a;
     fn len(&self) -> usize;
     fn get_item(&self, key: &LookupPath) -> ValResult<Option<Self::Item<'_>>>;
+    fn prepare_fields<'a>(
+        &'a self,
+        _tree: &LookupTree,
+        lookup_type: LookupType,
+        extra_behavior: ExtraBehavior,
+    ) -> impl PreparedFieldResults<'a, 'py, Key = Self::Key<'a>, Item = Self::Item<'a>> {
+        // Keyword argument keys must be validated even when extra values are ignored.
+        LazyFieldResults::new(
+            move |paths: &'a FieldLookupPaths| paths.try_lookup(lookup_type, |path| self.get_item(path)),
+            Some(KwargsExtras(self)),
+            extra_behavior,
+        )
+    }
     fn iter(&self) -> impl Iterator<Item = ValResult<(Self::Key<'_>, Self::Item<'_>)>>;
 }
 
@@ -260,9 +271,17 @@ pub(crate) trait ValidatedDict<'py> {
     where
         Self: 'a;
     fn get_item(&self, key: &LookupPath) -> ValResult<Option<Self::Item<'_>>>;
-    // FIXME this is a bit of a leaky abstraction
-    fn is_py_get_attr(&self) -> bool {
-        false
+    fn prepare_fields<'a>(
+        &'a self,
+        _tree: &LookupTree,
+        lookup_type: LookupType,
+        extra_behavior: ExtraBehavior,
+    ) -> impl PreparedFieldResults<'a, 'py, Key = Self::Key<'a>, Item = Self::Item<'a>> {
+        LazyFieldResults::new(
+            move |paths: &'a FieldLookupPaths| paths.try_lookup(lookup_type, |path| self.get_item(path)),
+            (extra_behavior != ExtraBehavior::Ignore).then_some(DictExtras(self)),
+            extra_behavior,
+        )
     }
     fn iterate<'a, R>(
         &'a self,

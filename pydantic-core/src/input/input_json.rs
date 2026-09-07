@@ -8,12 +8,14 @@ use pyo3::types::{PyDict, PyList, PyString};
 use speedate::MicrosecondsPrecisionOverflowBehavior;
 use strum::EnumMessage;
 
+use crate::build_tools::ExtraBehavior;
 use crate::errors::{ErrorType, ErrorTypeDefaults, InputValue, ValError, ValResult};
 use crate::input::return_enums::EitherComplex;
-use crate::lookup_key::LookupPath;
+use crate::lookup_key::{FieldLookupPaths, LookupPath, LookupResult, LookupType};
 use crate::validators::complex::string_to_complex;
 use crate::validators::decimal::create_decimal;
 use crate::validators::fraction::create_fraction;
+use crate::validators::{JsonFieldResults, LookupTree};
 use crate::validators::{TemporalUnitMode, ValBytesMode};
 
 use super::datetime::{
@@ -25,14 +27,10 @@ use super::return_enums::ValidationMatch;
 use super::shared::{float_as_int, int_as_bool, str_as_bool, str_as_float, str_as_int};
 use super::{
     Arguments, BorrowInput, EitherBytes, EitherFloat, EitherInt, EitherString, EitherTimedelta, GenericIterator, Input,
-    KeywordArgs, PositionalArgs, ValidatedDict, ValidatedList, ValidatedSet, ValidatedTuple,
+    KeywordArgs, PositionalArgs, PreparedFieldResults, ValidatedDict, ValidatedList, ValidatedSet, ValidatedTuple,
 };
 
 impl<'py, 'data> Input<'py> for JsonValue<'data> {
-    fn as_json(&self) -> Option<&JsonValue<'_>> {
-        Some(self)
-    }
-
     #[inline]
     fn py_converter(&self) -> impl IntoPyObject<'py> + '_ {
         self
@@ -589,7 +587,7 @@ fn string_to_vec(s: &str) -> JsonArray<'static> {
     JsonArray::new(s.chars().map(|c| JsonValue::Str(c.to_string().into())).collect())
 }
 
-impl<'data> ValidatedDict<'_> for &'_ JsonObject<'data> {
+impl<'py, 'data> ValidatedDict<'py> for &'_ JsonObject<'data> {
     type Key<'a>
         = &'a str
     where
@@ -604,6 +602,15 @@ impl<'data> ValidatedDict<'_> for &'_ JsonObject<'data> {
         key.json_get(self)
     }
 
+    fn prepare_fields<'a>(
+        &'a self,
+        tree: &LookupTree,
+        lookup_type: LookupType,
+        extra_behavior: ExtraBehavior,
+    ) -> impl PreparedFieldResults<'a, 'py, Key = Self::Key<'a>, Item = Self::Item<'a>> {
+        tree.prepare_json(self, lookup_type, extra_behavior)
+    }
+
     fn iterate<'a, R>(
         &'a self,
         consumer: impl ConsumeIterator<ValResult<(Self::Key<'a>, Self::Item<'a>)>, Output = R>,
@@ -613,6 +620,19 @@ impl<'data> ValidatedDict<'_> for &'_ JsonObject<'data> {
 
     fn last_key(&self) -> Option<Self::Key<'_>> {
         self.last().map(|(k, _)| k.as_ref())
+    }
+}
+
+impl<'a, 'data> PreparedFieldResults<'a, '_> for JsonFieldResults<'a, 'data> {
+    type Key = &'a str;
+    type Item = &'a JsonValue<'data>;
+
+    fn lookup(&mut self, index: usize, paths: &'a FieldLookupPaths) -> LookupResult<'a, Self::Item> {
+        JsonFieldResults::lookup(self, index, paths)
+    }
+
+    fn for_each_extra(self, mut f: impl FnMut(Self::Key, Self::Item) -> ValResult<()>) -> ValResult<()> {
+        self.extras.into_iter().try_for_each(|(key, value)| f(key, value))
     }
 }
 
@@ -697,7 +717,7 @@ impl<'data> PositionalArgs<'_> for [JsonValue<'data>] {
     }
 }
 
-impl<'data> KeywordArgs<'_> for JsonObject<'data> {
+impl<'py, 'data> KeywordArgs<'py> for JsonObject<'data> {
     type Key<'a>
         = &'a str
     where
@@ -712,6 +732,14 @@ impl<'data> KeywordArgs<'_> for JsonObject<'data> {
     }
     fn get_item<'k>(&self, key: &LookupPath) -> ValResult<Option<Self::Item<'_>>> {
         key.json_get(self)
+    }
+    fn prepare_fields<'a>(
+        &'a self,
+        tree: &LookupTree,
+        lookup_type: LookupType,
+        extra_behavior: ExtraBehavior,
+    ) -> impl PreparedFieldResults<'a, 'py, Key = Self::Key<'a>, Item = Self::Item<'a>> {
+        tree.prepare_json(self, lookup_type, extra_behavior)
     }
     fn iter(&self) -> impl Iterator<Item = ValResult<(Self::Key<'_>, Self::Item<'_>)>> {
         self.as_slice().iter().map(|(k, v)| Ok((k.as_ref(), v)))

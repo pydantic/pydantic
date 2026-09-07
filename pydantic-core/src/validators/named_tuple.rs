@@ -5,24 +5,23 @@ use pyo3::prelude::*;
 use pyo3::pybacked::PyBackedStr;
 use pyo3::types::{PyDict, PyList, PyTuple, PyType};
 
-use ahash::AHashSet;
-
-use crate::build_tools::py_schema_err;
+use crate::build_tools::{ExtraBehavior, py_schema_err};
 use crate::errors::{ErrorType, ErrorTypeDefaults, LocItem, ValError, ValLineError, ValResult, py_err_string};
 use crate::input::{
-    BorrowInput, ConsumeIterator, Input, ValidatedDict, ValidatedTuple, ValidationMatch, input_as_python_instance,
+    BorrowInput, ConsumeIterator, Input, PreparedFieldResults, ValidatedDict, ValidatedTuple, input_as_python_instance,
 };
-use crate::lookup_key::{LookupPathCollection, LookupType};
+use crate::lookup_key::{FieldLookupPaths, LookupType};
 use crate::tools::SchemaDict;
 use crate::validators::function::convert_err;
 
+use super::shared::lookup_tree::LookupTree;
 use super::validation_state::Exactness;
 use super::{BuildValidator, CombinedValidator, DefinitionsBuilder, ValidationState, Validator, build_validator};
 
 #[derive(Debug)]
 struct NamedTupleField {
     name: PyBackedStr,
-    lookup_path_collection: LookupPathCollection,
+    lookup_path_collection: FieldLookupPaths,
     validator: Arc<CombinedValidator>,
 }
 
@@ -32,6 +31,7 @@ impl_py_gc_traverse!(NamedTupleField { validator });
 pub struct NamedTupleValidator {
     class: Py<PyType>,
     fields: Vec<NamedTupleField>,
+    lookup: LookupTree,
     loc_by_alias: bool,
     validate_by_alias: Option<bool>,
     validate_by_name: Option<bool>,
@@ -75,7 +75,7 @@ impl BuildValidator for NamedTupleValidator {
             }
 
             let validation_alias = field.get_as(intern!(py, "validation_alias"))?;
-            let lookup_path_collection = LookupPathCollection::new(validation_alias, field_name.clone())?;
+            let lookup_path_collection = FieldLookupPaths::new(validation_alias, field_name.clone())?;
 
             fields.push(NamedTupleField {
                 name: field_name,
@@ -84,9 +84,11 @@ impl BuildValidator for NamedTupleValidator {
             });
         }
 
+        let lookup = LookupTree::from_fields(&fields, |field| &field.lookup_path_collection);
         Ok(CombinedValidator::NamedTuple(Self {
             class: class.into(),
             fields,
+            lookup,
             loc_by_alias: config.get_as(intern!(py, "loc_by_alias"))?.unwrap_or(true),
             validate_by_alias: config.get_as(intern!(py, "validate_by_alias"))?,
             validate_by_name: config.get_as(intern!(py, "validate_by_name"))?,
@@ -184,21 +186,14 @@ impl NamedTupleValidator {
     ) -> ValResult<Vec<Py<PyAny>>> {
         let mut output: Vec<Py<PyAny>> = Vec::with_capacity(self.fields.len());
         let mut errors: Vec<ValLineError> = Vec::new();
-        let mut used_keys: AHashSet<&str> = AHashSet::with_capacity(self.fields.len());
 
         let validate_by_alias = state.validate_by_alias_or(self.validate_by_alias);
         let validate_by_name = state.validate_by_name_or(self.validate_by_name);
         let lookup_type = LookupType::from_bools(validate_by_alias, validate_by_name)?;
 
-        for field in &self.fields {
-            if let Some((lookup_path, lookup_result)) = field
-                .lookup_path_collection
-                .lookup_paths(lookup_type)
-                .find_map(|path| Some((path, dict.get_item(path).transpose()?)))
-            {
-                let value = lookup_result?;
-                used_keys.insert(lookup_path.first_key());
-
+        let mut prepared = dict.prepare_fields(&self.lookup, lookup_type, ExtraBehavior::Forbid);
+        for (index, field) in self.fields.iter().enumerate() {
+            if let Some((lookup_path, value)) = prepared.lookup(index, &field.lookup_path_collection)? {
                 let state = &mut state.scoped_set_field_name(Some(field.name.as_py_str().bind(py).clone()));
 
                 match field.validator.validate(py, value.borrow_input(), state) {
@@ -235,10 +230,28 @@ impl NamedTupleValidator {
             }
         }
 
-        dict.iterate(CheckExtras {
-            used_keys,
-            errors: &mut errors,
-        })??;
+        prepared.for_each_extra(|raw_key, value| {
+            match raw_key.borrow_input().validate_str(true, false) {
+                Ok(_) => {}
+                Err(ValError::LineErrors(line_errors)) => {
+                    for err in line_errors {
+                        errors.push(
+                            err.with_outer_location(raw_key.clone())
+                                .with_type(ErrorTypeDefaults::InvalidKey),
+                        );
+                    }
+                    return Ok(());
+                }
+                Err(err) => return Err(err),
+            }
+            // Named tuples cannot hold extra fields, so extra keys are always forbidden:
+            errors.push(ValLineError::new_with_loc(
+                ErrorTypeDefaults::ExtraForbidden,
+                value.borrow_input(),
+                raw_key.clone(),
+            ));
+            Ok(())
+        })?;
 
         if errors.is_empty() {
             Ok(output)
@@ -258,50 +271,6 @@ impl NamedTupleValidator {
             Ok(instance) => Ok(instance.unbind()),
             Err(e) => Err(convert_err(py, e, input)),
         }
-    }
-}
-
-struct CheckExtras<'a> {
-    used_keys: AHashSet<&'a str>,
-    errors: &'a mut Vec<ValLineError>,
-}
-
-impl<'py, Key, Value> ConsumeIterator<ValResult<(Key, Value)>> for CheckExtras<'_>
-where
-    Key: BorrowInput<'py> + Clone + Into<LocItem>,
-    Value: BorrowInput<'py>,
-{
-    type Output = ValResult<()>;
-    fn consume_iterator(self, iterator: impl Iterator<Item = ValResult<(Key, Value)>>) -> ValResult<()> {
-        for item_result in iterator {
-            let (raw_key, value) = item_result?;
-            let either_str = match raw_key
-                .borrow_input()
-                .validate_str(true, false)
-                .map(ValidationMatch::into_inner)
-            {
-                Ok(k) => k,
-                Err(ValError::LineErrors(line_errors)) => {
-                    for err in line_errors {
-                        self.errors.push(
-                            err.with_outer_location(raw_key.clone())
-                                .with_type(ErrorTypeDefaults::InvalidKey),
-                        );
-                    }
-                    continue;
-                }
-                Err(err) => return Err(err),
-            };
-            if !self.used_keys.contains(either_str.as_cow()?.as_ref()) {
-                // Named tuples cannot hold extra fields, so extra keys are always forbidden:
-                self.errors.push(ValLineError::new_with_loc(
-                    ErrorTypeDefaults::ExtraForbidden,
-                    value.borrow_input(),
-                    raw_key.clone(),
-                ));
-            }
-        }
-        Ok(())
     }
 }
 

@@ -7,6 +7,7 @@ mod input_abstract;
 mod input_json;
 mod input_python;
 mod input_string;
+mod prepared;
 mod return_enums;
 mod shared;
 
@@ -21,6 +22,7 @@ pub(crate) use input_abstract::{
 };
 pub(crate) use input_python::{downcast_python_input, input_as_python_instance};
 pub(crate) use input_string::StringMapping;
+pub(crate) use prepared::PreparedFieldResults;
 pub(crate) use return_enums::{
     EitherBytes, EitherFloat, EitherInt, EitherString, GenericIterator, Int, MaxLengthCheck, ValidationMatch,
     no_validator_iter_to_vec, py_string_str, validate_iter_to_set, validate_iter_to_vec,

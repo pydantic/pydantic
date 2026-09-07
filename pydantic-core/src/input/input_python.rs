@@ -14,11 +14,13 @@ use pyo3::PyTypeInfo;
 use speedate::MicrosecondsPrecisionOverflowBehavior;
 
 use crate::ArgsKwargs;
+use crate::build_tools::ExtraBehavior;
 use crate::common::frozendict::get_frozendict_type;
 use crate::errors::{ErrorType, ErrorTypeDefaults, InputValue, LocItem, ValError, ValResult};
-use crate::lookup_key::LookupPath;
+use crate::lookup_key::{FieldLookupPaths, LookupPath, LookupType};
 use crate::tools::safe_repr;
 use crate::validators::Exactness;
+use crate::validators::LookupTree;
 use crate::validators::TemporalUnitMode;
 use crate::validators::ValBytesMode;
 use crate::validators::complex::{get_complex_type, string_to_complex};
@@ -39,6 +41,7 @@ use super::datetime::{
     int_as_time,
 };
 use super::input_abstract::ValMatch;
+use super::prepared::{DictExtras, LazyFieldResults, PreparedFieldResults};
 use super::return_enums::EitherComplex;
 use super::return_enums::{ValidationMatch, iterate_attributes, iterate_mapping_items};
 use super::shared::{
@@ -907,8 +910,19 @@ impl<'py> ValidatedDict<'py> for GenericPyMapping<'_, 'py> {
         }
     }
 
-    fn is_py_get_attr(&self) -> bool {
-        matches!(self, Self::GetAttr(..))
+    fn prepare_fields<'a>(
+        &'a self,
+        _tree: &LookupTree,
+        lookup_type: LookupType,
+        extra_behavior: ExtraBehavior,
+    ) -> impl PreparedFieldResults<'a, 'py, Key = Self::Key<'a>, Item = Self::Item<'a>> {
+        let extras =
+            (extra_behavior != ExtraBehavior::Ignore && !matches!(self, Self::GetAttr(..))).then_some(DictExtras(self));
+        LazyFieldResults::new(
+            move |paths: &'a FieldLookupPaths| paths.try_lookup(lookup_type, |path| self.get_item(path)),
+            extras,
+            extra_behavior,
+        )
     }
 
     fn iterate<'a, R>(

@@ -6,17 +6,17 @@ use pyo3::prelude::*;
 use pyo3::pybacked::PyBackedStr;
 use pyo3::types::{PyDict, PyList, PyString, PyTuple};
 
-use ahash::AHashSet;
 use pyo3::IntoPyObjectExt;
 
 use crate::build_tools::py_schema_err;
 use crate::build_tools::{ExtraBehavior, schema_or_config_same};
 use crate::errors::{ErrorTypeDefaults, ValError, ValLineError, ValResult};
-use crate::input::{Arguments, BorrowInput, Input, KeywordArgs, PositionalArgs, ValidationMatch};
-use crate::lookup_key::LookupPathCollection;
+use crate::input::{Arguments, BorrowInput, Input, KeywordArgs, PositionalArgs, PreparedFieldResults, ValidationMatch};
+use crate::lookup_key::FieldLookupPaths;
 use crate::lookup_key::LookupType;
 use crate::tools::SchemaDict;
 
+use super::shared::lookup_tree::LookupTree;
 use super::validation_state::ValidationState;
 use super::{BuildValidator, CombinedValidator, DefinitionsBuilder, Validator, build_validator};
 
@@ -48,12 +48,13 @@ struct Parameter {
     kwarg_key: Option<Py<PyString>>,
     validator: Arc<CombinedValidator>,
     // lookup keys, only populated for keyword or positional_or_keyword parameters
-    lookup_path_collection: Option<LookupPathCollection>,
+    lookup_path_collection: Option<FieldLookupPaths>,
 }
 
 #[derive(Debug)]
 pub struct ArgumentsValidator {
     parameters: Vec<Parameter>,
+    lookup: LookupTree,
     positional_params_count: usize,
     var_args_validator: Option<Arc<CombinedValidator>>,
     var_kwargs_mode: VarKwargsMode,
@@ -104,7 +105,7 @@ impl BuildValidator for ArgumentsValidator {
             let (lookup_path_collection, kwarg_key) = if matches!(mode, "keyword_only" | "positional_or_keyword") {
                 let validation_alias = arg.get_as(intern!(py, "alias"))?;
                 (
-                    Some(LookupPathCollection::new(validation_alias, name.clone())?),
+                    Some(FieldLookupPaths::new(validation_alias, name.clone())?),
                     Some(py_name.unbind()),
                 )
             } else {
@@ -159,8 +160,11 @@ impl BuildValidator for ArgumentsValidator {
             );
         }
 
+        let lookup =
+            LookupTree::from_optional_fields(&parameters, |parameter| parameter.lookup_path_collection.as_ref());
         Ok(CombinedValidator::Arguments(Self {
             parameters,
+            lookup,
             positional_params_count,
             var_args_validator: match schema.get_item(intern!(py, "var_args_schema"))? {
                 Some(v) => Some(build_validator(&v, config, definitions)?),
@@ -200,14 +204,20 @@ impl Validator for ArgumentsValidator {
         let mut output_args: Vec<Py<PyAny>> = Vec::with_capacity(self.positional_params_count);
         let output_kwargs = PyDict::new(py);
         let mut errors: Vec<ValLineError> = Vec::new();
-        let mut used_kwargs: AHashSet<&str> = AHashSet::with_capacity(self.parameters.len());
 
         let validate_by_alias = state.validate_by_alias_or(self.validate_by_alias);
         let validate_by_name = state.validate_by_name_or(self.validate_by_name);
         let lookup_type = LookupType::from_bools(validate_by_alias, validate_by_name)?;
 
         let pos_args = args.args();
-        let kw_args = args.kwargs();
+        let extra_behavior = if self.var_kwargs_validator.is_some() {
+            ExtraBehavior::Allow
+        } else {
+            self.extra
+        };
+        let mut prepared = args
+            .kwargs()
+            .map(|kwargs| kwargs.prepare_fields(&self.lookup, lookup_type, extra_behavior));
 
         // go through arguments getting the value from args or kwargs and validating it
         for (index, parameter) in self.parameters.iter().enumerate() {
@@ -218,12 +228,10 @@ impl Validator for ArgumentsValidator {
                 pos_value = args.get_item(index);
             }
             let mut kw_value = None;
-            if let Some(kwargs) = kw_args
+            if let Some(prepared) = &mut prepared
                 && let Some(lookup_path_collection) = &parameter.lookup_path_collection
-                && let Some((lookup_path, value)) =
-                    lookup_path_collection.try_lookup(lookup_type, |path| kwargs.get_item(path))?
+                && let Some((lookup_path, value)) = prepared.lookup(index, lookup_path_collection)?
             {
-                used_kwargs.insert(lookup_path.first_key());
                 kw_value = Some((lookup_path, value));
             }
 
@@ -313,11 +321,8 @@ impl Validator for ArgumentsValidator {
         let remaining_kwargs = PyDict::new(py);
 
         // if there are kwargs check any that haven't been processed yet
-        if let Some(kwargs) = kw_args
-            && kwargs.len() > used_kwargs.len()
-        {
-            for result in kwargs.iter() {
-                let (raw_key, value) = result?;
+        if let Some(prepared) = prepared {
+            prepared.for_each_extra(|raw_key, value| {
                 let either_str = match raw_key
                     .borrow_input()
                     .validate_str(true, false)
@@ -331,44 +336,43 @@ impl Validator for ArgumentsValidator {
                                     .with_type(ErrorTypeDefaults::InvalidKey),
                             );
                         }
-                        continue;
+                        return Ok(());
                     }
                     Err(err) => return Err(err),
                 };
-                if !used_kwargs.contains(either_str.as_cow()?.as_ref()) {
-                    match self.var_kwargs_mode {
-                        VarKwargsMode::Uniform => match &self.var_kwargs_validator {
-                            Some(validator) => match validator.validate(py, value.borrow_input(), state) {
-                                Ok(value) => {
-                                    output_kwargs.set_item(either_str.as_py_string(py, state.cache_str()), value)?;
-                                }
-                                Err(ValError::LineErrors(line_errors)) => {
-                                    for err in line_errors {
-                                        errors.push(err.with_outer_location(raw_key.clone()));
-                                    }
-                                }
-                                Err(err) => return Err(err),
-                            },
-                            None => {
-                                if let ExtraBehavior::Forbid = self.extra {
-                                    errors.push(ValLineError::new_with_loc(
-                                        ErrorTypeDefaults::UnexpectedKeywordArgument,
-                                        value,
-                                        raw_key.clone(),
-                                    ));
+                match self.var_kwargs_mode {
+                    VarKwargsMode::Uniform => match &self.var_kwargs_validator {
+                        Some(validator) => match validator.validate(py, value.borrow_input(), state) {
+                            Ok(value) => {
+                                output_kwargs.set_item(either_str.as_py_string(py, state.cache_str()), value)?;
+                            }
+                            Err(ValError::LineErrors(line_errors)) => {
+                                for err in line_errors {
+                                    errors.push(err.with_outer_location(raw_key.clone()));
                                 }
                             }
+                            Err(err) => return Err(err),
                         },
-                        VarKwargsMode::UnpackedTypedDict => {
-                            // Save to the remaining kwargs, we will validate as a single dict:
-                            remaining_kwargs.set_item(
-                                either_str.as_py_string(py, state.cache_str()),
-                                value.borrow_input().to_object(py)?,
-                            )?;
+                        None => {
+                            if let ExtraBehavior::Forbid = self.extra {
+                                errors.push(ValLineError::new_with_loc(
+                                    ErrorTypeDefaults::UnexpectedKeywordArgument,
+                                    value,
+                                    raw_key.clone(),
+                                ));
+                            }
                         }
+                    },
+                    VarKwargsMode::UnpackedTypedDict => {
+                        // Save to the remaining kwargs, we will validate as a single dict:
+                        remaining_kwargs.set_item(
+                            either_str.as_py_string(py, state.cache_str()),
+                            value.borrow_input().to_object(py)?,
+                        )?;
                     }
                 }
-            }
+                Ok(())
+            })?;
         }
 
         if self.var_kwargs_mode == VarKwargsMode::UnpackedTypedDict {

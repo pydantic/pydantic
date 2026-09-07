@@ -1,11 +1,12 @@
+use std::collections::hash_map::Entry;
 use std::hash::Hash;
-use std::{borrow::Cow, collections::hash_map::Entry};
 
 use ahash::AHashMap;
-use jiter::{JsonArray, JsonValue};
+use jiter::{JsonObject, JsonValue};
 use smallvec::SmallVec;
 
-use crate::lookup_key::{LookupPath, LookupPathCollection, LookupType, PathItem, PathItemString};
+use crate::build_tools::ExtraBehavior;
+use crate::lookup_key::{FieldLookupPaths, LookupPath, LookupResult, LookupType, PathItem, PathItemString};
 
 /// A tree of paths for lookups when trying to find fields from input.
 ///
@@ -14,17 +15,31 @@ use crate::lookup_key::{LookupPath, LookupPathCollection, LookupType, PathItem, 
 #[derive(Debug)]
 pub struct LookupTree {
     inner: AHashMap<PathItemString, LookupTreeNode>,
+    field_count: usize,
+    node_count: usize,
 }
 
 impl LookupTree {
     /// Construct a `LookupTree` from a slice of fields and a function to get the `LookupKeyCollection` for each field.
-    pub fn from_fields<T>(fields: &[T], get_field_collection: impl Fn(&T) -> &LookupPathCollection) -> Self {
+    pub fn from_fields<T>(fields: &[T], get_field_collection: impl Fn(&T) -> &FieldLookupPaths) -> Self {
+        Self::from_optional_fields(fields, |field| Some(get_field_collection(field)))
+    }
+
+    /// Variant of the above for cases where not all fields permit path-based lookup (and only accept indexing).
+    pub fn from_optional_fields<T>(
+        fields: &[T],
+        get_field_collection: impl Fn(&T) -> Option<&FieldLookupPaths>,
+    ) -> Self {
         let mut tree = Self {
             inner: AHashMap::with_capacity(fields.len()),
+            field_count: fields.len(),
+            node_count: 0,
         };
 
         for (field_index, field) in fields.iter().enumerate() {
-            let collection = get_field_collection(field);
+            let Some(collection) = get_field_collection(field) else {
+                continue;
+            };
 
             add_path_to_map(
                 &mut tree.inner,
@@ -56,18 +71,59 @@ impl LookupTree {
                 );
             }
         }
+        for node in tree.inner.values_mut() {
+            node.assign_indices(&mut tree.node_count);
+        }
         tree
     }
 
-    /// Given a root key and JSON object representing the structure at that key, iterates through all
-    /// paths in the lookup tree where there is a field which matches that path.
-    pub fn iter_matches<'a, 'j>(
-        &'a self,
-        root_key: &'a str,
-        json_value: &'a JsonValue<'j>,
-    ) -> LookupMatchesIter<'a, 'j> {
-        let node = self.inner.get(root_key);
-        LookupMatchesIter::new(node, json_value)
+    /// Resolve fields using alias priority and last-duplicate-key semantics.
+    pub fn prepare_json<'a, 'data>(
+        &self,
+        object: &'a JsonObject<'data>,
+        lookup_type: LookupType,
+        extra_behavior: ExtraBehavior,
+    ) -> JsonFieldResults<'a, 'data> {
+        let mut results = vec![None; self.field_count];
+        let mut seen = vec![false; self.node_count];
+        for (key, value) in object.iter().rev() {
+            if let Some(node) = self.inner.get(key.as_ref()) {
+                node.collect_json(value, lookup_type, node.index, &mut seen, &mut results);
+            }
+        }
+        let extras = if extra_behavior == ExtraBehavior::Ignore {
+            Vec::new()
+        } else {
+            seen.fill(false);
+            for (_, _, root_index) in results.iter().flatten() {
+                seen[*root_index] = true;
+            }
+            object
+                .iter()
+                .filter(|(key, _)| self.inner.get(key.as_ref()).is_none_or(|node| !seen[node.index]))
+                .map(|(key, value)| (key.as_ref(), value))
+                .collect()
+        };
+        JsonFieldResults { results, extras }
+    }
+}
+
+type JsonFieldResult<'a, 'data> = (LookupFieldInfo, &'a JsonValue<'data>, usize);
+
+pub struct JsonFieldResults<'a, 'data> {
+    results: Vec<Option<JsonFieldResult<'a, 'data>>>,
+    pub extras: Vec<(&'a str, &'a JsonValue<'data>)>,
+}
+
+impl<'a, 'data> JsonFieldResults<'a, 'data> {
+    pub fn lookup(&self, index: usize, paths: &'a FieldLookupPaths) -> LookupResult<'a, &'a JsonValue<'data>> {
+        Ok(self.results[index].map(|(info, value, _)| {
+            let path = match info.alias_index() {
+                Some(index) => &paths.by_alias[index],
+                None => &paths.by_name,
+            };
+            (path, value)
+        }))
     }
 }
 
@@ -124,12 +180,73 @@ impl LookupFieldInfo {
 /// Represents a point in the lookup tree, containing exact matches plus possible nested lookups.
 #[derive(Debug, Default)]
 pub struct LookupTreeNode {
+    index: usize,
     /// All fields which wanted _exactly_ this key, typically this is just a single entry
     fields: SmallVec<[LookupFieldInfo; 1]>,
     /// For nested lookups by name, e.g. `['foo', 'bar']`, typically empty
     pub map: AHashMap<PathItemString, LookupTreeNode>,
-    /// For nested lookups by integer index, e.g. `['foo', 0]`, typically empty
-    pub list: AHashMap<i64, LookupTreeNode>,
+    /// For nested lookups by integer index, e.g. `['foo', 0]`, typically empty.
+    /// Uses i128 to accommodate both usize and negative isize path items.
+    pub list: AHashMap<i128, LookupTreeNode>,
+}
+
+impl LookupTreeNode {
+    fn assign_indices(&mut self, next_index: &mut usize) {
+        self.index = *next_index;
+        *next_index += 1;
+        for node in self.map.values_mut().chain(self.list.values_mut()) {
+            node.assign_indices(next_index);
+        }
+    }
+
+    fn collect_json<'a, 'data>(
+        &self,
+        value: &'a JsonValue<'data>,
+        lookup_type: LookupType,
+        root_index: usize,
+        seen: &mut [bool],
+        results: &mut [Option<JsonFieldResult<'a, 'data>>],
+    ) {
+        // Objects are visited backwards so a duplicate replaces the whole subtree,
+        // even if the last occurrence no longer contains a matching alias path.
+        if std::mem::replace(&mut seen[self.index], true) {
+            return;
+        }
+        for info in &self.fields {
+            if !info.matches_lookup(lookup_type) {
+                continue;
+            }
+            let result = &mut results[info.field_index];
+            if let Some((existing, _, _)) = result
+                && existing.lookup_priority.is_higher_priority_than(&info.lookup_priority)
+            {
+                continue;
+            }
+            *result = Some((*info, value, root_index));
+        }
+        match value {
+            JsonValue::Object(object) if !self.map.is_empty() => {
+                for (key, value) in object.iter().rev() {
+                    if let Some(node) = self.map.get(key.as_ref()) {
+                        node.collect_json(value, lookup_type, root_index, seen, results);
+                    }
+                }
+            }
+            JsonValue::Array(array) => {
+                for (index, node) in &self.list {
+                    let index = if *index < 0 {
+                        *index + array.len() as i128
+                    } else {
+                        *index
+                    };
+                    if let Some(value) = array.get(index as usize) {
+                        node.collect_json(value, lookup_type, root_index, seen, results);
+                    }
+                }
+            }
+            _ => {}
+        }
+    }
 }
 
 fn add_field_to_map<K: Hash + Eq>(map: &mut AHashMap<K, LookupTreeNode>, key: K, info: LookupFieldInfo) {
@@ -139,6 +256,7 @@ fn add_field_to_map<K: Hash + Eq>(map: &mut AHashMap<K, LookupTreeNode>, key: K,
         }
         Entry::Vacant(entry) => {
             entry.insert(LookupTreeNode {
+                index: 0,
                 fields: SmallVec::from_buf([info]),
                 map: AHashMap::new(),
                 list: AHashMap::new(),
@@ -162,8 +280,8 @@ fn add_path_to_map(map: &mut AHashMap<PathItemString, LookupTreeNode>, path: &Lo
     for next in path_iter {
         tree_node = match current {
             PathItem::S(s) => tree_node.map.entry(s.clone()).or_default(),
-            PathItem::Pos(i) => tree_node.list.entry(*i as i64).or_default(),
-            PathItem::Neg(i) => tree_node.list.entry(-(*i as i64)).or_default(),
+            PathItem::Pos(i) => tree_node.list.entry(*i as i128).or_default(),
+            PathItem::Neg(i) => tree_node.list.entry(-(*i as i128)).or_default(),
         };
 
         current = next;
@@ -175,136 +293,10 @@ fn add_path_to_map(map: &mut AHashMap<PathItemString, LookupTreeNode>, path: &Lo
             add_field_to_map(&mut tree_node.map, s.clone(), info);
         }
         PathItem::Pos(i) => {
-            add_field_to_map(&mut tree_node.list, *i as i64, info);
+            add_field_to_map(&mut tree_node.list, *i as i128, info);
         }
         PathItem::Neg(i) => {
-            add_field_to_map(&mut tree_node.list, -(*i as i64), info);
+            add_field_to_map(&mut tree_node.list, -(*i as i128), info);
         }
-    }
-}
-
-/// Iterator for matching fields in a lookup tree against JSON values, retrurn value of `iter_matches`.
-///
-/// Call `next_match` to get the next matching field along with the JSON value and the path taken to reach it.
-///
-/// This isn't a typical `Iterator` because `next_match` returns data which borrows from the iterator itself,
-/// not yet supported by Rust's `Iterator` trait.
-pub struct LookupMatchesIter<'a, 'j> {
-    stack: SmallVec<[NestedFrame<'a, 'j>; 1]>,
-}
-
-/// State of the iterator at a given depth in the lookup tree
-struct NestedFrame<'a, 'j> {
-    json_value: &'a JsonValue<'j>,
-    node: &'a LookupTreeNode,
-    state: FrameState<'a, 'j>,
-}
-
-enum FrameState<'a, 'j> {
-    /// Iterating through all fields that match exactly this path
-    Fields {
-        fields: std::slice::Iter<'a, LookupFieldInfo>,
-    },
-    /// Iterating through a JSON object at this path which might have matches on its keys
-    NestedObject {
-        iter: std::slice::Iter<'a, (Cow<'j, str>, JsonValue<'j>)>,
-    },
-    /// Iterating through a JSON array at this path which might have matches on its indices
-    NestedArray {
-        // NB we iterate the interesting entries in the lookup map, not the JSON array itself
-        iter: std::collections::hash_map::Iter<'a, i64, LookupTreeNode>,
-        json_array: &'a JsonArray<'j>,
-    },
-}
-
-impl<'a, 'j> LookupMatchesIter<'a, 'j> {
-    fn new(node: Option<&'a LookupTreeNode>, json_value: &'a JsonValue<'j>) -> Self {
-        let stack = if let Some(node) = node {
-            SmallVec::from_buf([NestedFrame {
-                json_value,
-                node,
-                state: FrameState::Fields {
-                    fields: node.fields.iter(),
-                },
-            }])
-        } else {
-            SmallVec::new()
-        };
-
-        Self { stack }
-    }
-}
-
-impl<'a, 'j> Iterator for LookupMatchesIter<'a, 'j> {
-    type Item = (&'a LookupFieldInfo, &'a JsonValue<'j>);
-
-    fn next(&mut self) -> Option<Self::Item> {
-        'top_level: while let Some(frame) = self.stack.last_mut() {
-            // Initialize exploration state if needed
-            match &mut frame.state {
-                FrameState::Fields { fields } => {
-                    if let Some(field_info) = fields.next() {
-                        return Some((field_info, frame.json_value));
-                    }
-
-                    // no more fields, possibly explore nested structures if there are complex aliases
-                    match frame.json_value {
-                        JsonValue::Object(obj) if !frame.node.map.is_empty() => {
-                            frame.state = FrameState::NestedObject { iter: obj.iter() };
-                        }
-                        JsonValue::Array(arr) if !frame.node.list.is_empty() => {
-                            frame.state = FrameState::NestedArray {
-                                json_array: arr,
-                                iter: frame.node.list.iter(),
-                            };
-                        }
-                        _ => {
-                            self.stack.pop();
-                        }
-                    }
-                }
-                FrameState::NestedObject { iter } => {
-                    if let Some(next_frame) = iter.by_ref().find_map(|(key, value)| {
-                        let nested_node = frame.node.map.get(key.as_ref())?;
-                        Some(NestedFrame {
-                            json_value: value,
-                            node: nested_node,
-                            state: FrameState::Fields {
-                                fields: nested_node.fields.iter(),
-                            },
-                        })
-                    }) {
-                        self.stack.push(next_frame);
-                        continue 'top_level;
-                    }
-
-                    self.stack.pop();
-                }
-                FrameState::NestedArray { json_array, iter } => {
-                    if let Some(next_frame) = iter.by_ref().find_map(|(list_item, nested_node)| {
-                        let index = if *list_item < 0 {
-                            list_item + json_array.len() as i64
-                        } else {
-                            *list_item
-                        };
-
-                        let value = json_array.get(index as usize)?;
-                        Some(NestedFrame {
-                            json_value: value,
-                            node: nested_node,
-                            state: FrameState::Fields {
-                                fields: nested_node.fields.iter(),
-                            },
-                        })
-                    }) {
-                        self.stack.push(next_frame);
-                        continue 'top_level;
-                    }
-
-                    self.stack.pop();
-                }
-            }
-        }
-        None
     }
 }

@@ -19,6 +19,7 @@ use crate::py_gc::PyGcTraverse;
 use crate::recursion_guard::RecursionState;
 use crate::tools::SchemaDict;
 pub(crate) use config::{TemporalUnitMode, ValBytesMode};
+pub(crate) use shared::lookup_tree::{JsonFieldResults, LookupTree};
 
 mod any;
 mod arguments;

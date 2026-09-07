@@ -16,6 +16,8 @@ use crate::errors::{ErrorType, LocItem, Location, ValError, ValLineError, ValRes
 use crate::input::StringMapping;
 use crate::tools::{mapping_get, py_err};
 
+pub(crate) type LookupResult<'a, T> = ValResult<Option<(&'a LookupPath, T)>>;
+
 /// The possible choices for an alias value in Python
 #[derive(FromPyObject)]
 pub(crate) enum ValidationAlias {
@@ -373,12 +375,12 @@ impl PathItemString {
 
 #[derive(Debug)]
 #[allow(clippy::struct_field_names)]
-pub struct LookupPathCollection {
+pub struct FieldLookupPaths {
     pub by_name: LookupPath,
     pub by_alias: SmallVec<[LookupPath; 1]>,
 }
 
-impl LookupPathCollection {
+impl FieldLookupPaths {
     pub fn new(validation_alias: Option<ValidationAlias>, field_name: PyBackedStr) -> PyResult<Self> {
         let by_name = LookupPath {
             first_item: PathItemString(field_name),

@@ -6,21 +6,22 @@ use pyo3::prelude::*;
 use pyo3::pybacked::PyBackedStr;
 use pyo3::types::{PyDict, PyList, PyString, PyTuple, PyType};
 
-use ahash::AHashSet;
 use pyo3::IntoPyObjectExt;
 
 use crate::build_tools::py_schema_err;
 use crate::build_tools::{ExtraBehavior, is_strict, schema_or_config_same};
 use crate::errors::{ErrorType, ErrorTypeDefaults, ValError, ValLineError, ValResult};
 use crate::input::{
-    Arguments, BorrowInput, Input, InputType, KeywordArgs, PositionalArgs, ValidationMatch, input_as_python_instance,
+    Arguments, BorrowInput, Input, InputType, KeywordArgs, PositionalArgs, PreparedFieldResults, ValidationMatch,
+    input_as_python_instance,
 };
-use crate::lookup_key::LookupPathCollection;
+use crate::lookup_key::FieldLookupPaths;
 use crate::lookup_key::LookupType;
 use crate::tools::SchemaDict;
 use crate::validators::function::convert_err;
 
 use super::model::{Revalidate, create_class, force_setattr};
+use super::shared::lookup_tree::LookupTree;
 use super::validation_state::Exactness;
 use super::{BuildValidator, CombinedValidator, DefinitionsBuilder, ValidationState, Validator, build_validator};
 
@@ -30,7 +31,7 @@ struct Field {
     name: PyBackedStr,
     init: bool,
     init_only: bool,
-    lookup_path_collection: LookupPathCollection,
+    lookup_path_collection: FieldLookupPaths,
     validator: Arc<CombinedValidator>,
     frozen: bool,
 }
@@ -38,6 +39,7 @@ struct Field {
 #[derive(Debug)]
 pub struct DataclassArgsValidator {
     fields: Vec<Field>,
+    lookup: LookupTree,
     positional_count: usize,
     init_only_count: Option<usize>,
     dataclass_name: String,
@@ -97,7 +99,7 @@ impl BuildValidator for DataclassArgsValidator {
             }
 
             let validation_alias = field.get_as(intern!(py, "validation_alias"))?;
-            let lookup_path_collection = LookupPathCollection::new(validation_alias, name.clone())?;
+            let lookup_path_collection = FieldLookupPaths::new(validation_alias, name.clone())?;
 
             fields.push(Field {
                 kw_only,
@@ -118,8 +120,11 @@ impl BuildValidator for DataclassArgsValidator {
         let dataclass_name: String = schema.get_as_req(intern!(py, "dataclass_name"))?;
         let validator_name = format!("dataclass-args[{dataclass_name}]");
 
+        let lookup =
+            LookupTree::from_optional_fields(&fields, |field| field.init.then_some(&field.lookup_path_collection));
         Ok(CombinedValidator::DataclassArgs(Self {
             fields,
+            lookup,
             positional_count,
             init_only_count,
             dataclass_name,
@@ -154,7 +159,6 @@ impl Validator for DataclassArgsValidator {
         let mut init_only_args = self.init_only_count.map(Vec::with_capacity);
 
         let mut errors: Vec<ValLineError> = Vec::new();
-        let mut used_keys: AHashSet<&str> = AHashSet::with_capacity(self.fields.len());
 
         let state = &mut state.scoped_set_data(Some(output_dict.clone()));
         let state = &mut state.scoped_clear_field_error();
@@ -164,6 +168,9 @@ impl Validator for DataclassArgsValidator {
         let validate_by_alias = state.validate_by_alias_or(self.validate_by_alias);
         let validate_by_name = state.validate_by_name_or(self.validate_by_name);
         let lookup_type = LookupType::from_bools(validate_by_alias, validate_by_name)?;
+        let mut prepared = args
+            .kwargs()
+            .map(|kwargs| kwargs.prepare_fields(&self.lookup, lookup_type, extra_behavior));
 
         let mut fields_set_count: usize = 0;
 
@@ -207,12 +214,9 @@ impl Validator for DataclassArgsValidator {
             }
 
             let mut kw_value = None;
-            if let Some(kwargs) = args.kwargs()
-                && let Some((lookup_path, value)) = field
-                    .lookup_path_collection
-                    .try_lookup(lookup_type, |path| kwargs.get_item(path))?
+            if let Some(prepared) = &mut prepared
+                && let Some((lookup_path, value)) = prepared.lookup(index, &field.lookup_path_collection)?
             {
-                used_keys.insert(lookup_path.first_key());
                 kw_value = Some((lookup_path, value));
             }
             let kw_value = kw_value.as_ref().map(|(path, value)| (path, value.borrow_input()));
@@ -299,48 +303,43 @@ impl Validator for DataclassArgsValidator {
             }
         }
         // if there are kwargs check any that haven't been processed yet
-        if let Some(kwargs) = args.kwargs()
-            && kwargs.len() != used_keys.len()
-        {
-            for result in kwargs.iter() {
-                let (raw_key, value) = result?;
+        if let Some(prepared) = prepared {
+            prepared.for_each_extra(|raw_key, value| {
                 match raw_key
                     .borrow_input()
                     .validate_str(true, false)
                     .map(ValidationMatch::into_inner)
                 {
                     Ok(either_str) => {
-                        if !used_keys.contains(either_str.as_cow()?.as_ref()) {
-                            // Unknown / extra field
-                            match extra_behavior {
-                                ExtraBehavior::Forbid => {
-                                    errors.push(ValLineError::new_with_loc(
-                                        ErrorTypeDefaults::UnexpectedKeywordArgument,
-                                        value,
-                                        raw_key.clone(),
-                                    ));
-                                }
-                                ExtraBehavior::Ignore => {}
-                                ExtraBehavior::Allow => {
-                                    if let Some(ref validator) = self.extras_validator {
-                                        match validator.validate(py, value.borrow_input(), state) {
-                                            Ok(value) => {
-                                                output_dict
-                                                    .set_item(either_str.as_py_string(py, state.cache_str()), value)?;
-                                            }
-                                            Err(ValError::LineErrors(line_errors)) => {
-                                                for err in line_errors {
-                                                    errors.push(err.with_outer_location(raw_key.clone()));
-                                                }
-                                            }
-                                            Err(err) => return Err(err),
+                        // Unknown / extra field
+                        match extra_behavior {
+                            ExtraBehavior::Forbid => {
+                                errors.push(ValLineError::new_with_loc(
+                                    ErrorTypeDefaults::UnexpectedKeywordArgument,
+                                    value,
+                                    raw_key.clone(),
+                                ));
+                            }
+                            ExtraBehavior::Ignore => {}
+                            ExtraBehavior::Allow => {
+                                if let Some(ref validator) = self.extras_validator {
+                                    match validator.validate(py, value.borrow_input(), state) {
+                                        Ok(value) => {
+                                            output_dict
+                                                .set_item(either_str.as_py_string(py, state.cache_str()), value)?;
                                         }
-                                    } else {
-                                        output_dict.set_item(
-                                            either_str.as_py_string(py, state.cache_str()),
-                                            value.borrow_input().to_object(py)?,
-                                        )?;
+                                        Err(ValError::LineErrors(line_errors)) => {
+                                            for err in line_errors {
+                                                errors.push(err.with_outer_location(raw_key.clone()));
+                                            }
+                                        }
+                                        Err(err) => return Err(err),
                                     }
+                                } else {
+                                    output_dict.set_item(
+                                        either_str.as_py_string(py, state.cache_str()),
+                                        value.borrow_input().to_object(py)?,
+                                    )?;
                                 }
                             }
                         }
@@ -355,7 +354,8 @@ impl Validator for DataclassArgsValidator {
                     }
                     Err(err) => return Err(err),
                 }
-            }
+                Ok(())
+            })?;
         }
 
         state.add_fields_set(fields_set_count);
