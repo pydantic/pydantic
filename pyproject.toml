@@ -308,4 +308,4 @@ enableExperimentalFeatures = true
 skip = '.git,env*,pydantic/v1/*,uv.lock'
 # `ser` - abbreviation for "ser"ialisation
 # `crate` - a rust crate
-ignore-words-list = 'gir,ser,crate,deques'
+ignore-words-list = 'gir,ser,crate,deques,nam'
