@@ -42093,7 +42093,7 @@ Standard library type: re.Pattern (deprecated alias: typing.Pattern).
 
 In [Python mode](../../concepts/serialization/#python-mode), Pattern instances are serialized as is.
 
-In [JSON mode](../../concepts/serialization/#json-mode), they are serialized as strings.
+In [JSON mode](../../concepts/serialization/#json-mode), they are serialized as strings (note that flags are currently *not* preserved).
 
 ## Paths
 
