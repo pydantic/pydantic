@@ -1421,7 +1421,7 @@ def Field(  # noqa: C901
         allow_inf_nan: Allow `inf`, `-inf`, `nan`. Only applicable to float and [`Decimal`][decimal.Decimal] numbers.
         max_digits: Maximum number of allowed digits for [`Decimal`][decimal.Decimal] numbers.
         decimal_places: Maximum number of decimal places allowed for numbers.
-        union_mode: The strategy to apply when validating a union. Can be `smart` (the default), or `left_to_right`.
+        union_mode: The strategy to apply when validating or serializing a union. Can be `smart` (the default), or `left_to_right`.
             See [Union Mode](../concepts/unions.md#union-modes) for details.
         fail_fast: If `True`, validation will stop on the first error. If `False`, all validation errors will be collected.
             This option can be applied only to iterable types (list, tuple, set, and frozenset).

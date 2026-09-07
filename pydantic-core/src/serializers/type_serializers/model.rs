@@ -292,4 +292,8 @@ impl TypeSerializer for ModelSerializer {
     fn retry_with_lax_check(&self) -> bool {
         true
     }
+
+    fn exact_type_match(&self, value: &Bound<'_, PyAny>) -> bool {
+        value.get_type().is(&self.class)
+    }
 }

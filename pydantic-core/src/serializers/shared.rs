@@ -446,6 +446,14 @@ pub(crate) trait TypeSerializer: Send + Sync + Debug {
         false
     }
 
+    /// Whether this serializer's expected type exactly matches `value`'s runtime type.
+    ///
+    /// Used by smart union serialization during the Lax retry to prefer exact
+    /// model/dataclass class matches over isinstance/base-class matches.
+    fn exact_type_match(&self, _value: &Bound<'_, PyAny>) -> bool {
+        false
+    }
+
     fn get_default(&self, _py: Python) -> PyResult<Option<Py<PyAny>>> {
         Ok(None)
     }

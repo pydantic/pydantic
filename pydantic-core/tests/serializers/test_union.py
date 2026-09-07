@@ -1116,3 +1116,86 @@ def test_discriminated_union_ser_with_typed_dict() -> None:
 
     assert v.to_python({'type': 'a', 'a': 1}, warnings='error') == {'type': 'a', 'a': 1}
     assert v.to_python({'type': 'b', 'b': 'foo'}, warnings='error') == {'type': 'b', 'b': 'foo'}
+
+
+def test_union_smart_prefers_exact_model_type_with_int_as_float_field():
+    """https://github.com/pydantic/pydantic/issues/12099
+
+    Child with an inherited ``a: float`` field holding an int fails Strict float
+    serialization. The Lax retry must prefer the exact Child class over Parent's
+    isinstance match, otherwise Child-only fields are dropped.
+    """
+
+    class Parent:
+        def __init__(self, a=0):
+            self.a = a
+
+    class Child(Parent):
+        def __init__(self, a=0, b=0):
+            super().__init__(a)
+            self.b = b
+
+    parent_schema = core_schema.model_schema(
+        Parent,
+        core_schema.model_fields_schema(
+            {
+                'a': core_schema.model_field(core_schema.float_schema()),
+            }
+        ),
+    )
+    child_schema = core_schema.model_schema(
+        Child,
+        core_schema.model_fields_schema(
+            {
+                'a': core_schema.model_field(core_schema.float_schema()),
+                'b': core_schema.model_field(core_schema.int_schema()),
+            }
+        ),
+    )
+
+    s = SchemaSerializer(core_schema.union_schema([parent_schema, child_schema]))
+    child = Child(a=0, b=3)
+    assert s.to_python(child) == {'a': 0, 'b': 3}
+    assert json.loads(s.to_json(child)) == {'a': 0.0, 'b': 3}
+    assert s.to_python(Parent(a=1.5)) == {'a': 1.5}
+
+    s_ltr = SchemaSerializer(core_schema.union_schema([parent_schema, child_schema], mode='left_to_right'))
+    # left-to-right Lax still picks Parent first via isinstance and drops ``b``
+    assert s_ltr.to_python(child) == {'a': 0}
+
+
+def test_union_smart_prefers_exact_dataclass_type_with_int_as_float_field():
+    """Same as the model case in #12099, for dataclasses."""
+
+    @dataclasses.dataclass
+    class Parent:
+        a: float = 0
+
+    @dataclasses.dataclass
+    class Child(Parent):
+        b: int = 0
+
+    parent_schema = core_schema.dataclass_schema(
+        Parent,
+        core_schema.dataclass_args_schema(
+            'Parent',
+            [core_schema.dataclass_field(name='a', schema=core_schema.float_schema())],
+        ),
+        ['a'],
+    )
+    child_schema = core_schema.dataclass_schema(
+        Child,
+        core_schema.dataclass_args_schema(
+            'Child',
+            [
+                core_schema.dataclass_field(name='a', schema=core_schema.float_schema()),
+                core_schema.dataclass_field(name='b', schema=core_schema.int_schema()),
+            ],
+        ),
+        ['a', 'b'],
+    )
+
+    s = SchemaSerializer(core_schema.union_schema([parent_schema, child_schema]))
+    child = Child(a=0, b=3)
+    assert s.to_python(child) == {'a': 0, 'b': 3}
+    assert json.loads(s.to_json(child)) == {'a': 0.0, 'b': 3}

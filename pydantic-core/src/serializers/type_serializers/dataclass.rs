@@ -206,6 +206,10 @@ impl TypeSerializer for DataclassSerializer {
     fn retry_with_lax_check(&self) -> bool {
         true
     }
+
+    fn exact_type_match(&self, value: &Bound<'_, PyAny>) -> bool {
+        value.get_type().is(self.class.bind(value.py()))
+    }
 }
 
 fn known_dataclass_iter<'a, 'py>(

@@ -1,6 +1,6 @@
 use pyo3::intern;
 use pyo3::prelude::*;
-use pyo3::types::{PyDict, PyList, PyTuple};
+use pyo3::types::{PyDict, PyList, PyString, PyTuple};
 use smallvec::SmallVec;
 use std::borrow::Cow;
 use std::sync::Arc;
@@ -20,10 +20,18 @@ use super::{
     BuildSerializer, CombinedSerializer, SerCheck, TypeSerializer, infer_json_key, infer_serialize, infer_to_python,
 };
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+enum UnionMode {
+    #[default]
+    Smart,
+    LeftToRight,
+}
+
 #[derive(Debug)]
 pub struct UnionSerializer {
     choices: UnionChoices,
     name: String,
+    mode: UnionMode,
 }
 
 impl BuildSerializer for UnionSerializer {
@@ -51,6 +59,14 @@ impl BuildSerializer for UnionSerializer {
             FromChoicesOutput::Multiple(m) => m,
         };
 
+        let mode = schema
+            .get_as::<Bound<'_, PyString>>(intern!(py, "mode"))?
+            .map_or(Ok(UnionMode::Smart), |mode| match mode.to_str()? {
+                "smart" => Ok(UnionMode::Smart),
+                "left_to_right" => Ok(UnionMode::LeftToRight),
+                s => py_schema_err!("Invalid union mode: `{s}`, expected `smart` or `left_to_right`"),
+            })?;
+
         let descr = choices
             .choices
             .iter()
@@ -61,6 +77,7 @@ impl BuildSerializer for UnionSerializer {
         Ok(CombinedSerializer::Union(Self {
             choices,
             name: format!("Union[{descr}]"),
+            mode,
         })
         .into())
     }
@@ -71,7 +88,12 @@ impl_py_gc_traverse!(UnionSerializer { choices });
 impl TypeSerializer for UnionSerializer {
     fn to_python<'py>(&self, value: &Bound<'py, PyAny>, state: &mut SerializationState<'py>) -> PyResult<Py<PyAny>> {
         self.choices
-            .serialize(|comb_serializer, state| comb_serializer.to_python(value, state), state)?
+            .serialize(
+                value,
+                self.mode,
+                |comb_serializer, state| comb_serializer.to_python(value, state),
+                state,
+            )?
             .map_or_else(|| infer_to_python(value, state), Ok)
     }
 
@@ -81,7 +103,12 @@ impl TypeSerializer for UnionSerializer {
         state: &mut SerializationState<'py>,
     ) -> PyResult<Cow<'a, str>> {
         self.choices
-            .serialize(|comb_serializer, state| comb_serializer.json_key(key, state), state)?
+            .serialize(
+                key,
+                self.mode,
+                |comb_serializer, state| comb_serializer.json_key(key, state),
+                state,
+            )?
             .map_or_else(|| infer_json_key(key, state), Ok)
     }
 
@@ -91,10 +118,12 @@ impl TypeSerializer for UnionSerializer {
         serializer: S,
         state: &mut SerializationState<'py>,
     ) -> Result<S::Ok, S::Error> {
-        match self
-            .choices
-            .serialize(|comb_serializer, state| comb_serializer.to_python(value, state), state)
-        {
+        match self.choices.serialize(
+            value,
+            self.mode,
+            |comb_serializer, state| comb_serializer.to_python(value, state),
+            state,
+        ) {
             Ok(Some(v)) => {
                 let state = &mut state.scoped_include_exclude(IncludeExclude::empty());
                 infer_serialize(v.bind(value.py()), serializer, state)
@@ -275,7 +304,7 @@ impl TaggedUnionSerializer {
             if in_top_level_union(state) {
                 register_tagged_union_fallback_warning(value, state);
             }
-            return self.choices.serialize(selector, state);
+            return self.choices.serialize(value, UnionMode::Smart, selector, state);
         };
 
         // Try a first pass with the appropriate checking level
@@ -354,9 +383,16 @@ impl UnionChoices {
         self.choices.iter().any(|c| c.retry_with_lax_check())
     }
 
-    /// Try to serialize using the union choices from left to right
+    /// Try to serialize using the union choices.
+    ///
+    /// Strict pass is always left-to-right. For the Lax retry:
+    /// - `smart` (default): prefer choices whose type exactly matches `value`
+    ///   (e.g. exact model/dataclass class) before isinstance/base-class matches.
+    /// - `left_to_right`: keep trying choices in schema order.
     fn serialize<'py, S>(
         &self,
+        value: &Bound<'py, PyAny>,
+        mode: UnionMode,
         mut selector: impl FnMut(&CombinedSerializer, &mut SerializationState<'py>) -> PyResult<S>,
         state: &mut SerializationState<'py>,
     ) -> PyResult<Option<S>> {
@@ -385,7 +421,20 @@ impl UnionChoices {
         // otherwise, in a top level union, we retry with lax checking if any choice supports it
         if self.retry_with_lax_check() {
             let state = &mut scoped_check_level(state, SerCheck::Lax);
+            let prefer_exact_type = mode == UnionMode::Smart;
+            if prefer_exact_type {
+                for comb_serializer in &self.choices {
+                    if comb_serializer.exact_type_match(value)
+                        && let Ok(v) = selector(comb_serializer, state)
+                    {
+                        return Ok(Some(v));
+                    }
+                }
+            }
             for comb_serializer in &self.choices {
+                if prefer_exact_type && comb_serializer.exact_type_match(value) {
+                    continue;
+                }
                 if let Ok(v) = selector(comb_serializer, state) {
                     return Ok(Some(v));
                 }

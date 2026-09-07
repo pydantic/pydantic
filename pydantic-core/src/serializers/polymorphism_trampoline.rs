@@ -91,4 +91,8 @@ impl TypeSerializer for PolymorphismTrampoline {
     fn retry_with_lax_check(&self) -> bool {
         self.serializer.retry_with_lax_check()
     }
+
+    fn exact_type_match(&self, value: &Bound<'_, PyAny>) -> bool {
+        value.get_type().is(&self.class)
+    }
 }

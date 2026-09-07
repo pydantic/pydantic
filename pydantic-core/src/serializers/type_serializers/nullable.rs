@@ -74,4 +74,8 @@ impl TypeSerializer for NullableSerializer {
     fn retry_with_lax_check(&self) -> bool {
         self.serializer.retry_with_lax_check()
     }
+
+    fn exact_type_match(&self, value: &Bound<'_, PyAny>) -> bool {
+        self.serializer.exact_type_match(value)
+    }
 }

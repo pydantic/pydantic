@@ -1,3 +1,4 @@
+import json
 from abc import ABC, abstractmethod
 from enum import IntEnum
 from typing import Annotated, Any, ClassVar, Literal
@@ -324,3 +325,38 @@ def test_union_abc() -> None:
 
     X(x=a1)
     X(x=a2)
+
+
+def test_union_serialization_prefers_exact_subclass_with_int_float_default() -> None:
+    """https://github.com/pydantic/pydantic/issues/12099
+
+    ``Parent | Child`` must serialize a Child instance as Child even when Parent has
+    ``a: float = 0`` (int default). Strict float serialization rejects that int, and
+    the Lax retry must not pick Parent first via isinstance (which drops Child-only fields).
+    """
+
+    class Parent(BaseModel):
+        a: float = 0
+
+    class Child(Parent):
+        b: int
+
+    class Container(BaseModel):
+        union: Parent | Child
+
+    container = Container(union=Child(b=3))
+    assert container.model_dump() == {'union': {'a': 0.0, 'b': 3}}
+    assert json.loads(container.model_dump_json()) == {'union': {'a': 0.0, 'b': 3}}
+
+    assert Container(union=Parent()).model_dump() == {'union': {'a': 0.0}}
+
+    class ContainerReversed(BaseModel):
+        union: Child | Parent
+
+    assert ContainerReversed(union=Child(b=3)).model_dump() == {'union': {'a': 0.0, 'b': 3}}
+
+    class ContainerLeftToRight(BaseModel):
+        union: Annotated[Parent | Child, Field(union_mode='left_to_right')]
+
+    # left-to-right keeps schema order; Parent still wins via isinstance
+    assert ContainerLeftToRight(union=Child(b=3)).model_dump() == {'union': {'a': 0.0}}

@@ -86,6 +86,8 @@ Because of the potentially surprising results of `union_mode='left_to_right'`, i
 
 In this mode, pydantic attempts to select the best match for the input from the union members. The exact algorithm may change between Pydantic minor releases to allow for improvements in both performance and accuracy.
 
+The same `union_mode` is used for serialization. In `smart` mode, if no union member matches during strict serialization, the lax retry prefers members whose type exactly matches the value (for example a `Child` instance against `Parent | Child`) over isinstance/base-class matches. This avoids serializing a subclass as its parent and dropping subclass-only fields.
+
 !!! note
 
     We reserve the right to tweak the internal `smart` matching algorithm in future versions of Pydantic. If you rely on very specific
