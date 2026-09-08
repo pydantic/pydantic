@@ -69,7 +69,7 @@ CONSTRAINTS_TO_ALLOWED_SCHEMAS: dict[str, set[str]] = defaultdict(set)
 constraint_schema_pairings: list[tuple[set[str], tuple[str, ...]]] = [
     (STR_CONSTRAINTS, ('str',)),
     (BYTES_CONSTRAINTS, ('bytes',)),
-    (LIST_CONSTRAINTS, ('list',)),
+    (LIST_CONSTRAINTS, ('list', 'deque')),
     (TUPLE_CONSTRAINTS, ('tuple',)),
     (SET_CONSTRAINTS, ('set', 'frozenset')),
     (DICT_CONSTRAINTS, ('dict', 'frozendict')),

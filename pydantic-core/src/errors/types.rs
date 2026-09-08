@@ -275,6 +275,9 @@ error_types! {
     // list errors
     ListType {},
     // ---------------------
+    // deque errors
+    DequeType {},
+    // ---------------------
     // tuple errors
     TupleType {},
     // ---------------------
@@ -543,6 +546,7 @@ impl ErrorType {
             Self::FrozenDictType { .. } => "Input should be a valid frozendict",
             Self::MappingType { .. } => "Input should be a valid mapping, error: {error}",
             Self::ListType { .. } => "Input should be a valid list",
+            Self::DequeType { .. } => "Input should be a valid deque",
             Self::TupleType { .. } => "Input should be a valid tuple",
             Self::SetType { .. } => "Input should be a valid set",
             Self::SetItemNotHashable { .. } => "Set items should be hashable",
@@ -634,6 +638,7 @@ impl ErrorType {
         match self {
             Self::NoneRequired { .. } => "Input should be null",
             Self::ListType { .. }
+            | Self::DequeType { .. }
             | Self::TupleType { .. }
             | Self::IterableType { .. }
             | Self::SetType { .. }

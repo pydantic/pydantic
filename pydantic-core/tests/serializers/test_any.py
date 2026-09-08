@@ -4,7 +4,7 @@ import json
 import platform
 import re
 import sys
-from collections import namedtuple
+from collections import deque, namedtuple
 from datetime import date, datetime, time, timedelta, timezone
 from decimal import Decimal
 from enum import Enum
@@ -22,6 +22,7 @@ from pydantic_core import (
     SchemaValidator,
     core_schema,
     to_json,
+    to_jsonable_python,
 )
 
 from ..conftest import plain_repr
@@ -435,6 +436,8 @@ def test_base64():
         (lambda: timedelta(seconds=-1), dict(timedelta_mode='float'), b'-1.0'),
         (lambda: {1, 2, 3}, {}, b'[1,2,3]'),
         (lambda: frozenset([1, 2, 3]), {}, b'[1,2,3]'),
+        (lambda: deque([1, 2, 3]), {}, b'[1,2,3]'),
+        (lambda: deque([1, 2, 3], maxlen=5), {}, b'[1,2,3]'),
         (lambda: (v for v in range(4)), {}, b'[0,1,2,3]'),
         (lambda: iter([0, 1, 2, 3]), {}, b'[0,1,2,3]'),
         (lambda: iter((0, 1, 2, 3)), {}, b'[0,1,2,3]'),
@@ -773,3 +776,36 @@ def test_ipaddress_type_inference(any_serializer, value, expected_json):
     assert any_serializer.to_python(value) == value
     assert any_serializer.to_python(value, mode='json') == expected_json
     assert any_serializer.to_json(value) == f'"{expected_json}"'.encode()
+
+
+def test_deque(any_serializer):
+    d = deque([1, 2, 3], maxlen=5)
+    output = any_serializer.to_python(d)
+
+    assert output == d
+    assert type(output) is deque
+    assert output is not d
+    assert output.maxlen == 5
+    assert any_serializer.to_python(deque([1, 2, 3])).maxlen is None
+    assert any_serializer.to_python(d, mode='json') == [1, 2, 3]
+    assert any_serializer.to_json(d) == b'[1,2,3]'
+    assert to_jsonable_python(d) == [1, 2, 3]
+
+    # index-based include/exclude, like lists and tuples:
+    assert any_serializer.to_python(d, include={0, 2}) == deque([1, 3], maxlen=5)
+    assert any_serializer.to_python(d, exclude={0}, mode='json') == [2, 3]
+    assert any_serializer.to_json(d, exclude={-1}) == b'[1,2]'
+
+    # nested values are inferred as well:
+    assert any_serializer.to_json(deque([MyModel(a=1, b='b')])) == b'[{"a":1,"b":"b"}]'
+
+
+def test_deque_subclass(any_serializer):
+    class MyDeque(deque):
+        pass
+
+    output = any_serializer.to_python(MyDeque([1, 2]))
+
+    assert output == deque([1, 2])
+    assert type(output) is deque
+    assert any_serializer.to_json(MyDeque([1, 2])) == b'[1,2]'

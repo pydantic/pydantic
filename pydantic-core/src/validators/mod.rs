@@ -36,6 +36,7 @@ mod date;
 mod datetime;
 pub(crate) mod decimal;
 mod definitions;
+mod deque;
 mod dict;
 mod ellipsis;
 mod enum_;
@@ -598,6 +599,8 @@ fn build_validator_inner(
         tuple::TupleValidator,
         // list/arrays
         list::ListValidator,
+        // deques
+        deque::DequeValidator,
         // sets - unique lists
         set::SetValidator,
         // dicts/objects (recursive)
@@ -767,6 +770,8 @@ pub enum CombinedValidator {
     Fraction(fraction::FractionValidator),
     // lists
     List(list::ListValidator),
+    // deques
+    Deque(deque::DequeValidator),
     // sets - unique lists
     Set(set::SetValidator),
     // tuples

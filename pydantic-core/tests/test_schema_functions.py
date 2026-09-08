@@ -98,6 +98,12 @@ all_schema_functions = [
     (core_schema.callable_schema, args(), {'type': 'callable'}),
     (core_schema.list_schema, args(), {'type': 'list'}),
     (core_schema.list_schema, args({'type': 'int'}), {'type': 'list', 'items_schema': {'type': 'int'}}),
+    (core_schema.deque_schema, args(), {'type': 'deque'}),
+    (
+        core_schema.deque_schema,
+        args({'type': 'int'}, min_length=1),
+        {'type': 'deque', 'items_schema': {'type': 'int'}, 'min_length': 1},
+    ),
     (core_schema.tuple_schema, args([]), {'type': 'tuple', 'items_schema': []}),
     (
         core_schema.set_schema,

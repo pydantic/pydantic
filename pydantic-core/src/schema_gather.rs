@@ -137,7 +137,7 @@ fn collect_child_schemas<'py>(
             child_required(children, schema, intern!(py, "schema"))?;
             children_required(children, schema, intern!(py, "definitions"))?;
         }
-        "list" | "set" | "frozenset" | "generator" => {
+        "list" | "deque" | "set" | "frozenset" | "generator" => {
             child_optional(children, schema, intern!(py, "items_schema"))?;
         }
         "tuple" => {

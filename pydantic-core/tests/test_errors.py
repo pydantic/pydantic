@@ -317,6 +317,7 @@ all_errors = [
     ('iterable_type', 'Input should be iterable', None),
     ('iteration_error', 'Error iterating over object, error: foobar', {'error': 'foobar'}),
     ('list_type', 'Input should be a valid list', None),
+    ('deque_type', 'Input should be a valid deque', None),
     ('tuple_type', 'Input should be a valid tuple', None),
     ('set_item_not_hashable', 'Set items should be hashable', None),
     ('set_type', 'Input should be a valid set', None),

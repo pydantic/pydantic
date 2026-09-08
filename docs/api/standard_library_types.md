@@ -971,7 +971,9 @@ Standard library type: [`collections.deque`][] (deprecated alias: [`typing.Deque
 
 <h4>Validation</h4>
 
-Values are first validated as a [list](#lists), and then passed to the [`deque`][collections.deque] constructor.
+Any iterable (except strings, bytes and mappings) is accepted and converted to a [`deque`][collections.deque],
+with each item validated against the parameter type. If the input is already a `deque` instance, its
+[`maxlen`][collections.deque.maxlen] attribute is preserved.
 
 <h4>Constraints</h4>
 

@@ -6,7 +6,7 @@ import pytest
 from pydantic import BaseModel, ConfigDict, Field, TypeAdapter, ValidationError
 
 
-def test_deque_success():
+def test_deque_success() -> None:
     ta = TypeAdapter(deque)
 
     assert ta.validate_python([1, 2, 3]) == deque([1, 2, 3])
@@ -49,7 +49,7 @@ def test_deque_success():
         ),
     ),
 )
-def test_deque_generic_success(cls, value, result):
+def test_deque_generic_success(cls, value, result) -> None:
     ta = TypeAdapter(deque[cls])
 
     assert ta.validate_python(value) == result
@@ -62,7 +62,7 @@ def test_deque_generic_success(cls, value, result):
         (str, deque(('1', '2', '3')), deque(('1', '2', '3'))),
     ),
 )
-def test_deque_generic_success_strict(cls, value: Any, result):
+def test_deque_generic_success_strict(cls, value: Any, result) -> None:
     ta = TypeAdapter(deque[cls], config=ConfigDict(strict=True))
 
     assert ta.validate_python(value) == result
@@ -116,7 +116,7 @@ def test_deque_generic_success_strict(cls, value: Any, result):
         ),
     ),
 )
-def test_deque_fails(cls, value, expected_error):
+def test_deque_fails(cls, value, expected_error) -> None:
     ta = TypeAdapter(deque[cls])
 
     with pytest.raises(ValidationError) as exc_info:
@@ -126,7 +126,7 @@ def test_deque_fails(cls, value, expected_error):
     assert expected_error == exc_info.value.errors(include_url=False)[0]
 
 
-def test_deque_model():
+def test_deque_model() -> None:
     class Model2(BaseModel):
         x: int
 
@@ -136,13 +136,13 @@ def test_deque_model():
     assert ta.validate_python(seq) == deque(seq)
 
 
-def test_deque_json():
+def test_deque_json() -> None:
     ta = TypeAdapter(deque[int])
 
     assert ta.dump_json(ta.validate_python((1, 2, 3))) == b'[1,2,3]'
 
 
-def test_deque_any_maxlen():
+def test_deque_any_maxlen() -> None:
     class DequeModel1(BaseModel):
         field: deque
 
@@ -164,7 +164,7 @@ def test_deque_any_maxlen():
     assert DequeModel3(field=deque(maxlen=8)).field.maxlen == 8
 
 
-def test_deque_typed_maxlen():
+def test_deque_typed_maxlen() -> None:
     class DequeModel1(BaseModel):
         field: deque[int]
 
@@ -186,8 +186,61 @@ def test_deque_typed_maxlen():
     assert DequeModel3(field=deque(maxlen=8)).field.maxlen == 8
 
 
-def test_deque_enforces_maxlen():
+def test_deque_enforces_maxlen() -> None:
     ta = TypeAdapter(Annotated[deque[int], Field(max_length=3)])
 
     with pytest.raises(ValidationError):
         ta.validate_python(deque([1, 2, 3, 4]))
+
+
+def test_deque_strict_fails() -> None:
+    ta = TypeAdapter(deque[int], config=ConfigDict(strict=True))
+
+    with pytest.raises(ValidationError) as exc_info:
+        ta.validate_python([1, 2])
+    assert exc_info.value.errors(include_url=False) == [
+        {'type': 'deque_type', 'loc': (), 'msg': 'Input should be a valid deque', 'input': [1, 2]}
+    ]
+
+    # JSON arrays are always accepted:
+    assert ta.validate_json('[1, 2]') == deque([1, 2])
+
+
+def test_deque_constraints_core_schema() -> None:
+    ta = TypeAdapter(Annotated[deque[int], Field(min_length=1, max_length=3, fail_fast=True)])
+
+    with pytest.raises(ValidationError, match='Deque should have at least 1 item after validation, not 0'):
+        ta.validate_python([])
+    with pytest.raises(ValidationError, match='Deque should have at most 3 items after validation, not 4'):
+        ta.validate_python(deque([1, 2, 3, 4]))
+
+    with pytest.raises(ValidationError) as exc_info:
+        ta.validate_python([1, 'a', 'b'])
+    assert len(exc_info.value.errors()) == 1
+
+
+def test_deque_constraints_json_schema() -> None:
+    ta = TypeAdapter(Annotated[deque[int], Field(min_length=1, max_length=3)])
+
+    assert ta.json_schema() == {'type': 'array', 'items': {'type': 'integer'}, 'minItems': 1, 'maxItems': 3}
+
+
+def test_deque_maxlen_preserved_with_constraints() -> None:
+    ta = TypeAdapter(Annotated[deque[int], Field(max_length=3)])
+
+    assert ta.validate_python(deque([1, 2], maxlen=5)).maxlen == 5
+    assert ta.validate_python([1, 2]).maxlen is None
+
+
+def test_deque_serialization() -> None:
+    ta = TypeAdapter(deque[int])
+
+    dq = deque([1, 2, 3], maxlen=5)
+    assert ta.dump_python(dq) == dq
+    assert ta.dump_python(dq).maxlen == 5
+    assert ta.dump_python(dq) is not dq
+    assert ta.dump_python(dq, mode='json') == [1, 2, 3]
+    assert ta.dump_json(dq) == b'[1,2,3]'
+
+    with pytest.warns(UserWarning, match=r'Expected `deque\[int\]` - serialized value may not be as expected'):
+        assert ta.dump_python([1, 2, 3]) == [1, 2, 3]

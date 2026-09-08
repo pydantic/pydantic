@@ -5,6 +5,7 @@ pub mod dataclass;
 pub mod datetime_etc;
 pub mod decimal;
 pub mod definitions;
+pub mod deque;
 pub mod dict;
 pub mod ellipsis;
 pub mod enum_;
