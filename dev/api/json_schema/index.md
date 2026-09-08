@@ -1464,6 +1464,42 @@ def list_schema(self, schema: core_schema.ListSchema) -> JsonSchemaValue:
 
 ```
 
+### deque_schema
+
+```python
+deque_schema(schema: DequeSchema) -> JsonSchemaValue
+
+```
+
+Returns a schema that matches a deque schema.
+
+Parameters:
+
+| Name | Type | Description | Default | | --- | --- | --- | --- | | `schema` | `DequeSchema` | The core schema. | *required* |
+
+Returns:
+
+| Type | Description | | --- | --- | | `JsonSchemaValue` | The generated JSON schema. |
+
+Source code in `pydantic/json_schema.py`
+
+```python
+def deque_schema(self, schema: core_schema.DequeSchema) -> JsonSchemaValue:
+    """Returns a schema that matches a deque schema.
+
+    Args:
+        schema: The core schema.
+
+    Returns:
+        The generated JSON schema.
+    """
+    items_schema = {} if 'items_schema' not in schema else self.generate_inner(schema['items_schema'])
+    json_schema = {'type': 'array', 'items': items_schema}
+    self.update_with_validations(json_schema, schema, self.ValidationsMapping.array)
+    return json_schema
+
+```
+
 ### tuple_positional_schema
 
 ```python

@@ -770,7 +770,7 @@ Standard library type: collections.deque (deprecated alias: typing.Deque).
 
 #### Validation
 
-Values are first validated as a [list](#lists), and then passed to the deque constructor.
+Any iterable (except strings, bytes and mappings) is accepted and converted to a deque, with each item validated against the parameter type. If the input is already a `deque` instance, its maxlen attribute is preserved.
 
 #### Constraints
 

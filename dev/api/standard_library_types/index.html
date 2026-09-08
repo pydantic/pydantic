@@ -5926,7 +5926,9 @@ they are serialized as arrays.</p>
 <p>Standard library type: <a class="autorefs autorefs-external" href="https://docs.python.org/3/library/collections.html#collections.deque"><code>collections.deque</code></a> (deprecated alias: <a class="autorefs autorefs-external" href="https://docs.python.org/3/library/typing.html#typing.Deque"><code>typing.Deque</code></a>).</p>
 <h4>Validation</h4>
 
-<p>Values are first validated as a <a href="#lists">list</a>, and then passed to the <a class="autorefs autorefs-external" href="https://docs.python.org/3/library/collections.html#collections.deque"><code>deque</code></a> constructor.</p>
+<p>Any iterable (except strings, bytes and mappings) is accepted and converted to a <a class="autorefs autorefs-external" href="https://docs.python.org/3/library/collections.html#collections.deque"><code>deque</code></a>,
+with each item validated against the parameter type. If the input is already a <code>deque</code> instance, its
+<a class="autorefs autorefs-external" href="https://docs.python.org/3/library/collections.html#collections.deque.maxlen"><code>maxlen</code></a> attribute is preserved.</p>
 <h4>Constraints</h4>
 
 <p>Deques support the following constraints:</p>

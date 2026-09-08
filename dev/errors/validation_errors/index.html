@@ -3490,6 +3490,17 @@ to help you monitor and understand your
 </li>
       
         <li class="md-nav__item">
+  <a href="#deque_type" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        deque_type
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#dict_type" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -5373,6 +5384,17 @@ to help you monitor and understand your
 </li>
       
         <li class="md-nav__item">
+  <a href="#deque_type" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        deque_type
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#dict_type" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -6818,6 +6840,23 @@ can't be called, because validation failed on previous fields:</p>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="nb">print</span><span class="p">(</span><span class="nb">repr</span><span class="p">(</span><span class="n">exc</span><span class="o">.</span><span class="n">errors</span><span class="p">()[</span><span class="mi">1</span><span class="p">][</span><span class="s1">&#39;type&#39;</span><span class="p">]))</span>
     <span class="c1">#&gt; &#39;default_factory_not_called&#39;</span>
+</code></pre></div>
+<h2 id="deque_type"><code>deque_type</code><a class="headerlink" href="#deque_type" title="Permanent link">&para;</a></h2>
+<p>This error is raised when the input value's type is not valid for a <a class="autorefs autorefs-external" href="https://docs.python.org/3/library/collections.html#collections.deque"><code>deque</code></a> field:</p>
+<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">collections</span><span class="w"> </span><span class="kn">import</span> <span class="n">deque</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">pydantic</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ValidationError</span>
+
+
+<span class="k">class</span><span class="w"> </span><span class="nc">Model</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="n">x</span><span class="p">:</span> <span class="n">deque</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span>
+
+
+<span class="k">try</span><span class="p">:</span>
+    <span class="n">Model</span><span class="p">(</span><span class="n">x</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+<span class="k">except</span> <span class="n">ValidationError</span> <span class="k">as</span> <span class="n">exc</span><span class="p">:</span>
+    <span class="nb">print</span><span class="p">(</span><span class="nb">repr</span><span class="p">(</span><span class="n">exc</span><span class="o">.</span><span class="n">errors</span><span class="p">()[</span><span class="mi">0</span><span class="p">][</span><span class="s1">&#39;type&#39;</span><span class="p">]))</span>
+    <span class="c1">#&gt; &#39;deque_type&#39;</span>
 </code></pre></div>
 <h2 id="dict_type"><code>dict_type</code><a class="headerlink" href="#dict_type" title="Permanent link">&para;</a></h2>
 <p>This error is raised when the input value's type is not <code>dict</code> for a <code>dict</code> field:</p>

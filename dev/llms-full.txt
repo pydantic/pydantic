@@ -24841,6 +24841,42 @@ def list_schema(self, schema: core_schema.ListSchema) -> JsonSchemaValue:
 
 ```
 
+### deque_schema
+
+```python
+deque_schema(schema: DequeSchema) -> JsonSchemaValue
+
+```
+
+Returns a schema that matches a deque schema.
+
+Parameters:
+
+| Name | Type | Description | Default | | --- | --- | --- | --- | | `schema` | `DequeSchema` | The core schema. | *required* |
+
+Returns:
+
+| Type | Description | | --- | --- | | `JsonSchemaValue` | The generated JSON schema. |
+
+Source code in `pydantic/json_schema.py`
+
+```python
+def deque_schema(self, schema: core_schema.DequeSchema) -> JsonSchemaValue:
+    """Returns a schema that matches a deque schema.
+
+    Args:
+        schema: The core schema.
+
+    Returns:
+        The generated JSON schema.
+    """
+    items_schema = {} if 'items_schema' not in schema else self.generate_inner(schema['items_schema'])
+    json_schema = {'type': 'array', 'items': items_schema}
+    self.update_with_validations(json_schema, schema, self.ValidationsMapping.array)
+    return json_schema
+
+```
+
 ### tuple_positional_schema
 
 ```python
@@ -32139,6 +32175,96 @@ def list_schema(
     """
     return _dict_not_none(
         type='list',
+        items_schema=items_schema,
+        min_length=min_length,
+        max_length=max_length,
+        fail_fast=fail_fast,
+        strict=strict,
+        ref=ref,
+        metadata=metadata,
+        serialization=serialization,
+    )
+
+````
+
+## deque_schema
+
+```python
+deque_schema(
+    items_schema: CoreSchema | None = None,
+    *,
+    min_length: int | None = None,
+    max_length: int | None = None,
+    fail_fast: bool | None = None,
+    strict: bool | None = None,
+    ref: str | None = None,
+    metadata: dict[str, Any] | None = None,
+    serialization: IncExSeqOrElseSerSchema | None = None
+) -> DequeSchema
+
+```
+
+Returns a schema that matches a collections.deque value, e.g.:
+
+```py
+from collections import deque
+
+from pydantic_core import SchemaValidator, core_schema
+
+schema = core_schema.deque_schema(core_schema.int_schema(), min_length=0, max_length=10)
+v = SchemaValidator(schema)
+assert v.validate_python(['4']) == deque([4])
+
+```
+
+In lax mode, any iterable (except strings, bytes and mappings) is accepted and converted to a deque. If the input is a deque instance, its `maxlen` is preserved on the output.
+
+Parameters:
+
+| Name | Type | Description | Default | | --- | --- | --- | --- | | `items_schema` | `CoreSchema | None` | The value must be a deque of items that match this schema | `None` | | `min_length` | `int | None` | The value must be a deque with at least this many items | `None` | | `max_length` | `int | None` | The value must be a deque with at most this many items | `None` | | `fail_fast` | `bool | None` | Stop validation on the first error | `None` | | `strict` | `bool | None` | The value must be a deque instance | `None` | | `ref` | `str | None` | optional unique identifier of the schema, used to reference the schema in other places | `None` | | `metadata` | `dict[str, Any] | None` | Any other information you want to include with the schema, not used by pydantic-core | `None` | | `serialization` | `IncExSeqOrElseSerSchema | None` | Custom serialization schema | `None` |
+
+Source code in `pydantic_core/core_schema.py`
+
+````python
+def deque_schema(
+    items_schema: CoreSchema | None = None,
+    *,
+    min_length: int | None = None,
+    max_length: int | None = None,
+    fail_fast: bool | None = None,
+    strict: bool | None = None,
+    ref: str | None = None,
+    metadata: dict[str, Any] | None = None,
+    serialization: IncExSeqOrElseSerSchema | None = None,
+) -> DequeSchema:
+    """
+    Returns a schema that matches a [`collections.deque`][] value, e.g.:
+
+    ```py
+    from collections import deque
+
+    from pydantic_core import SchemaValidator, core_schema
+
+    schema = core_schema.deque_schema(core_schema.int_schema(), min_length=0, max_length=10)
+    v = SchemaValidator(schema)
+    assert v.validate_python(['4']) == deque([4])
+    ```
+
+    In lax mode, any iterable (except strings, bytes and mappings) is accepted and converted to a deque.
+    If the input is a deque instance, its `maxlen` is preserved on the output.
+
+    Args:
+        items_schema: The value must be a deque of items that match this schema
+        min_length: The value must be a deque with at least this many items
+        max_length: The value must be a deque with at most this many items
+        fail_fast: Stop validation on the first error
+        strict: The value must be a deque instance
+        ref: optional unique identifier of the schema, used to reference the schema in other places
+        metadata: Any other information you want to include with the schema, not used by pydantic-core
+        serialization: Custom serialization schema
+    """
+    return _dict_not_none(
+        type='deque',
         items_schema=items_schema,
         min_length=min_length,
         max_length=max_length,
@@ -41599,7 +41725,7 @@ Standard library type: collections.deque (deprecated alias: typing.Deque).
 
 #### Validation
 
-Values are first validated as a [list](#lists), and then passed to the deque constructor.
+Any iterable (except strings, bytes and mappings) is accepted and converted to a deque, with each item validated against the parameter type. If the input is already a `deque` instance, its maxlen attribute is preserved.
 
 #### Constraints
 
@@ -51459,6 +51585,28 @@ except ValidationError as exc:
     """
     print(repr(exc.errors()[1]['type']))
     #> 'default_factory_not_called'
+
+```
+
+## `deque_type`
+
+This error is raised when the input value's type is not valid for a deque field:
+
+```python
+from collections import deque
+
+from pydantic import BaseModel, ValidationError
+
+
+class Model(BaseModel):
+    x: deque[int]
+
+
+try:
+    Model(x=1)
+except ValidationError as exc:
+    print(repr(exc.errors()[0]['type']))
+    #> 'deque_type'
 
 ```
 
