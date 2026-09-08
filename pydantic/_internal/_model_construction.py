@@ -20,7 +20,7 @@ from ..errors import PydanticUndefinedAnnotation, PydanticUserError
 from ..plugin._schema_validator import create_schema_validator
 from ..warnings import GenericBeforeBaseModelWarning, PydanticDeprecatedSince20
 from ._config import ConfigWrapper
-from ._decorators import DecoratorInfos, PydanticDescriptorProxy, get_attribute_from_bases, unwrap_wrapped_function
+from ._decorators import DecoratorInfos, PydanticDescriptorProxy, get_attribute_from_bases, mro_for_bases, unwrap_wrapped_function
 from ._fields import collect_model_fields, is_valid_field_name, is_valid_privateattr_name, rebuild_model_fields
 from ._generate_schema import GenerateSchema, InvalidSchemaError
 from ._generics import PydanticGenericMetadata, get_model_typevars_map
@@ -312,15 +312,31 @@ class ModelMetaclass(ABCMeta):
     def _collect_bases_data(bases: tuple[type[Any], ...]) -> tuple[set[str], set[str], dict[str, ModelPrivateAttr]]:
         BaseModel = import_cached_base_model()
 
+        def _is_declared(base: type[Any], name: str, attr: ModelPrivateAttr) -> bool:
+            # A base that merely inherits a private attribute re-exposes its ancestor's
+            # `ModelPrivateAttr` instance through its flattened `__private_attributes__`
+            # (identical object); only a new object counts as a declaration (see #13678).
+            for ancestor in base.__mro__[1:]:
+                ancestor_attrs = ancestor.__dict__.get('__private_attributes__')
+                if ancestor_attrs and name in ancestor_attrs:
+                    return ancestor_attrs[name] is not attr
+            return True
+
         field_names: set[str] = set()
         class_vars: set[str] = set()
         private_attributes: dict[str, ModelPrivateAttr] = {}
-        for base in bases:
+        for base in reversed(mro_for_bases(bases)):
             if issubclass(base, BaseModel) and base is not BaseModel:
                 # model_fields might not be defined yet in the case of generics, so we use getattr here:
                 field_names.update(getattr(base, '__pydantic_fields__', {}).keys())
                 class_vars.update(base.__class_vars__)
-                private_attributes.update(base.__private_attributes__)
+                # Only private attributes *declared* on a base may shadow other bases. Merging in
+                # reverse MRO order means the MRO-earliest declarer wins (see #13678, #11700):
+                inherited = getattr(base, '__private_attributes__', None)
+                if inherited:
+                    private_attributes.update(
+                        {name: attr for name, attr in inherited.items() if _is_declared(base, name, attr)}
+                    )
         return field_names, class_vars, private_attributes
 
     @property

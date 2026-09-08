@@ -258,9 +258,35 @@ def collect_model_fields(  # noqa: C901
 
     bases = cls.__bases__
     parent_fields_lookup: dict[str, FieldInfo] = {}
-    for base in reversed(bases):
-        if model_fields := getattr(base, '__pydantic_fields__', None):
-            parent_fields_lookup.update(model_fields)
+
+    # Find all fields declared across parent classes in MRO order.
+    # The first class in MRO to explicitly declare a field is the winning declarer (see #13678, #11700).
+    declared_fields: dict[str, type[Any]] = {}
+    for base in cls.__mro__[1:]:
+        if not issubclass(base, BaseModel_) or base is BaseModel_:
+            continue
+        for name in _typing_extra.safe_get_annotations(base):
+            if name not in declared_fields and name in getattr(base, '__pydantic_fields__', {}):
+                declared_fields[name] = base
+
+    # For each declared field, check if an intervening parameterized generic submodel
+    # specialized the field (e.g. `Model[int]`), preserving concrete type arguments:
+    for name, declarer in declared_fields.items():
+        found = False
+        for base in cls.__mro__[1:]:
+            if base is declarer:
+                break
+            if not issubclass(base, BaseModel_) or base is BaseModel_:
+                continue
+            origin = getattr(base, '__pydantic_generic_metadata__', {}).get('origin')
+            if origin is not None and issubclass(origin, declarer):
+                model_fields = getattr(base, '__pydantic_fields__', {})
+                if name in model_fields:
+                    parent_fields_lookup[name] = model_fields[name]
+                    found = True
+                    break
+        if not found:
+            parent_fields_lookup[name] = getattr(declarer, '__pydantic_fields__')[name]
 
     type_hints = _typing_extra.get_model_type_hints(cls, ns_resolver=ns_resolver)
 

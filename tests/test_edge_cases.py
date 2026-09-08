@@ -3170,3 +3170,148 @@ def test_model_fields_set_includes_extra_after_assignment():
     m.extra_after_init = 3
     assert m.model_fields_set == {'field', 'extra_at_init', 'extra_after_init'}
     assert m.model_extra == {'extra_at_init': 2, 'extra_after_init': 3}
+
+
+def test_multiple_inheritance_merely_inherited_field_does_not_shadow_override():
+    """Regression test for https://github.com/pydantic/pydantic/issues/13678.
+
+    A base that merely inherits a field/private attribute (re-exposed through its
+    flattened `__pydantic_fields__`/`__private_attributes__`) must not shadow another
+    base's override; the winner follows the MRO in both base orders.
+    """
+
+    class Base(BaseModel):
+        f: str = 'base'
+        _knob: str = 'base'
+
+    class Override(Base):
+        f: str = 'override'
+        _knob: str = 'override'
+
+    class Plain(Base):
+        pass
+
+    class Swapped(Plain, Override):
+        pass
+
+    class Composed(Override, Plain):
+        pass
+
+    assert Swapped().f == 'override'
+    assert Swapped()._knob == 'override'
+    assert Composed().f == 'override'
+    assert Composed()._knob == 'override'
+
+
+def test_multiple_inheritance_mro_adversarial_cases():
+    """Comprehensive tests for multiple inheritance MRO resolution with fields and private attrs.
+
+    Covers:
+    - Issue #11700: both bases declare the same field / private attr (first base in MRO wins)
+    - Deep pass-through inheritance chains
+    - Diamond inheritance with override on one branch
+    - Parameterized generic submodels in multiple inheritance
+    """
+    from typing import Generic, TypeVar
+
+    # 1. Both bases declare: first in MRO must win (#11700)
+    class DeclA(BaseModel):
+        x: str = 'a'
+        _p: str = 'priv_a'
+
+    class DeclB(BaseModel):
+        x: str = 'b'
+        _p: str = 'priv_b'
+
+    class SubAB(DeclA, DeclB):
+        pass
+
+    class SubBA(DeclB, DeclA):
+        pass
+
+    assert SubAB().x == 'a'
+    assert SubAB()._p == 'priv_a'
+    assert SubBA().x == 'b'
+    assert SubBA()._p == 'priv_b'
+
+    # 2. Deep pass-through inheritance chain
+    class Grandparent(BaseModel):
+        f: str = 'grandparent'
+        _k: str = 'grandparent'
+
+    class Parent(Grandparent):
+        pass
+
+    class Child(Parent):
+        pass
+
+    class GrandparentOverride(Grandparent):
+        f: str = 'override'
+        _k: str = 'override'
+
+    class DeepMix1(Child, GrandparentOverride):
+        pass
+
+    class DeepMix2(GrandparentOverride, Child):
+        pass
+
+    assert DeepMix1().f == 'override'
+    assert DeepMix1()._k == 'override'
+    assert DeepMix2().f == 'override'
+    assert DeepMix2()._k == 'override'
+
+    # 3. Diamond inheritance: Root -> (LeftOverride, RightPlain) -> Diamond
+    class Root(BaseModel):
+        f: str = 'root'
+        _k: str = 'root'
+
+    class LeftOverride(Root):
+        f: str = 'left'
+        _k: str = 'left'
+
+    class RightPlain(Root):
+        pass
+
+    class DiamondRightLeft(RightPlain, LeftOverride):
+        pass
+
+    class DiamondLeftRight(LeftOverride, RightPlain):
+        pass
+
+    assert DiamondRightLeft().f == 'left'
+    assert DiamondRightLeft()._k == 'left'
+    assert DiamondLeftRight().f == 'left'
+    assert DiamondLeftRight()._k == 'left'
+
+    # 4. Parameterized generic submodel with multiple inheritance
+    T = TypeVar('T')
+
+    class GenBase(BaseModel, Generic[T]):
+        val: T = 'base'
+
+    class GenPlain(GenBase[T], Generic[T]):
+        pass
+
+    class ValOverride(GenBase[str]):
+        val: str = 'override'
+
+    # GenPlain merely inherits val; ValOverride overrides it
+    class GenDerived(GenPlain[int], ValOverride):
+        pass
+
+    assert GenDerived().val == 'override'
+
+    # And direct subclassing of a parameterized generic preserves concrete type substitution
+    class DirectGenSub(GenBase[int]):
+        pass
+
+    assert DirectGenSub(val=42).val == 42
+
+    # Subclassing a parameterized generic child that merely inherited from a generic root
+    # must preserve the concrete type substitution on the inherited field:
+    class SubGenChild(GenPlain[int]):
+        pass
+    assert SubGenChild(val=123).val == 123
+    assert SubGenChild.model_fields['val'].annotation is int
+    with pytest.raises(ValidationError):
+        SubGenChild(val='not_an_int')
