@@ -317,8 +317,80 @@ print(m.model_dump())
 """
 ```
 
-Self-referencing models are supported. For more details, see  the documentation related to
-[forward annotations](forward_annotations.md#self-referencing-or-recursive-models).
+### Cyclic references
+
+When working with self-referencing recursive models, it is possible that you might encounter cyclic references
+in validation inputs. For example, this can happen when validating ORM instances with back-references from
+attributes.
+
+Rather than raising a [`RecursionError`][] while attempting to validate data with cyclic references, Pydantic is able
+to detect the cyclic reference and raise an appropriate [`ValidationError`][pydantic_core.ValidationError]:
+
+=== "Python 3.10 and above"
+
+    ```python
+    from pydantic import BaseModel, ValidationError
+
+
+    class ModelA(BaseModel):
+        b: 'ModelB | None' = None  # (1)!
+
+
+    class ModelB(BaseModel):
+        a: ModelA | None = None
+
+
+    cyclic_data = {}
+    cyclic_data['a'] = {'b': cyclic_data}
+    print(cyclic_data)
+    #> {'a': {'b': {...}}}
+
+    try:
+        ModelB.model_validate(cyclic_data)
+    except ValidationError as exc:
+        print(exc)
+        """
+        1 validation error for ModelB
+        a.b
+          Recursion error - cyclic reference detected [type=recursion_loop, input_value={'a': {'b': {...}}}, input_type=dict]
+        """
+    ```
+
+    1. As `ModelB` is not yet defined, a [forward annotation](forward_annotations.md) needs to be used.
+
+=== "Python 3.14 and above"
+
+    ```python {requires="3.14" lint="skip"}
+    from pydantic import BaseModel, ValidationError
+
+
+    class ModelA(BaseModel):
+        b: ModelB | None = None
+
+
+    class ModelB(BaseModel):
+        a: ModelA | None = None
+
+
+    cyclic_data = {}
+    cyclic_data['a'] = {'b': cyclic_data}
+    print(cyclic_data)
+    #> {'a': {'b': {...}}}
+
+    try:
+        ModelB.model_validate(cyclic_data)
+    except ValidationError as exc:
+        print(exc)
+        """
+        1 validation error for ModelB
+        a.b
+          Recursion error - cyclic reference detected [type=recursion_loop, input_value={'a': {'b': {...}}}, input_type=dict]
+        """
+    ```
+
+See also: the [cyclic references example](../examples/cyclic_references.md), showing how to handle such
+cyclic references during validation and serialization, and the [cyclic imports](forward_annotations.md#cyclic-imports)
+section, for models referencing each other from separate modules.
 
 ## Rebuilding model schema
 
