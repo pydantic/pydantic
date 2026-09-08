@@ -168,7 +168,7 @@ impl<T: EnumValidateValue> Validator for EnumValidator<T> {
 #[derive(Debug, Clone)]
 pub struct PlainEnumValidator;
 
-impl_py_gc_traverse!(EnumValidator<PlainEnumValidator> { class, missing });
+impl_py_gc_traverse!(EnumValidator<PlainEnumValidator> { class, lookup, missing });
 
 impl EnumValidateValue for PlainEnumValidator {
     fn validate_value<'py, I: Input<'py> + ?Sized>(
@@ -200,7 +200,7 @@ impl EnumValidateValue for PlainEnumValidator {
 #[derive(Debug, Clone)]
 pub struct IntEnumValidator;
 
-impl_py_gc_traverse!(EnumValidator<IntEnumValidator> { class, missing });
+impl_py_gc_traverse!(EnumValidator<IntEnumValidator> { class, lookup, missing });
 
 impl EnumValidateValue for IntEnumValidator {
     fn validate_value<'py, I: Input<'py> + ?Sized>(
@@ -216,7 +216,7 @@ impl EnumValidateValue for IntEnumValidator {
 #[derive(Debug, Clone)]
 pub struct StrEnumValidator;
 
-impl_py_gc_traverse!(EnumValidator<StrEnumValidator> { class, missing });
+impl_py_gc_traverse!(EnumValidator<StrEnumValidator> { class, lookup, missing });
 
 impl EnumValidateValue for StrEnumValidator {
     fn validate_value<'py, I: Input<'py> + ?Sized>(
@@ -232,7 +232,7 @@ impl EnumValidateValue for StrEnumValidator {
 #[derive(Debug, Clone)]
 pub struct FloatEnumValidator;
 
-impl_py_gc_traverse!(EnumValidator<FloatEnumValidator> { class, missing });
+impl_py_gc_traverse!(EnumValidator<FloatEnumValidator> { class, lookup, missing });
 
 impl EnumValidateValue for FloatEnumValidator {
     fn validate_value<'py, I: Input<'py> + ?Sized>(

@@ -557,12 +557,10 @@ except ValidationError as e:
     """
 ```
 
-!!! tip "Logfire integration"
-    In an example like this one, the offending `data` is right there in the code. In a running application
-    it usually isn't. The exception says which fields failed, but the input that produced it is whatever a
-    user, API, or job happened to send at the time. If you need to see that input as well,
-    [Logfire can record failed validations](../errors/troubleshooting.md) together with the data that
-    caused them.
+In an example like this one, the offending `data` is right there in the code. A
+[`ValidationError`][pydantic_core.ValidationError] includes the value rejected at each failing
+location, but in a running application you may also need those details in their request or job
+context. [Logfire records failed validations](../errors/troubleshooting.md) with both.
 
 ## Arbitrary class instances
 
@@ -1736,4 +1734,4 @@ print(f'{id(c1.arr) == id(c2.arr)=}')
 !!! note
     There are some situations where Pydantic does not copy attributes, such as when passing models &mdash; we use the
     model as is. You can override this behaviour by setting
-    [`model_config['revalidate_instances'] = 'always'`](../api/config.md#pydantic.config.ConfigDict).
+    [`model_config['revalidate_instances'] = 'always'`](../api/config.md#pydantic.config.ConfigDict.revalidate_instances).

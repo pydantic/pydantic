@@ -14,6 +14,7 @@ use pyo3::PyTypeInfo;
 use speedate::MicrosecondsPrecisionOverflowBehavior;
 
 use crate::ArgsKwargs;
+use crate::common::frozendict::get_frozendict_type;
 use crate::errors::{ErrorType, ErrorTypeDefaults, InputValue, LocItem, ValError, ValResult};
 use crate::lookup_key::LookupPath;
 use crate::tools::safe_repr;
@@ -427,6 +428,34 @@ impl<'py> Input<'py> for Bound<'py, PyAny> {
             Ok(GenericPyMapping::Mapping(mapping))
         } else {
             Err(ValError::new(ErrorTypeDefaults::DictType, self))
+        }
+    }
+
+    fn strict_frozendict<'a>(&'a self) -> ValMatch<GenericPyMapping<'a, 'py>> {
+        if let Ok(frozendict_type) = get_frozendict_type(self.py())
+            && self.is_instance(frozendict_type)?
+        {
+            Ok(ValidationMatch::exact(GenericPyMapping::Mapping(
+                self.cast::<PyMapping>()?,
+            )))
+        } else {
+            Err(ValError::new(ErrorTypeDefaults::FrozenDictType, self))
+        }
+    }
+
+    fn lax_frozendict<'a>(&'a self) -> ValMatch<GenericPyMapping<'a, 'py>> {
+        if let Ok(frozendict_type) = get_frozendict_type(self.py())
+            && self.is_instance(frozendict_type)?
+        {
+            Ok(ValidationMatch::exact(GenericPyMapping::Mapping(
+                self.cast::<PyMapping>()?,
+            )))
+        } else if let Ok(dict) = self.cast_exact::<PyDict>() {
+            Ok(ValidationMatch::lax(GenericPyMapping::Dict(dict)))
+        } else if let Ok(mapping) = self.cast::<PyMapping>() {
+            Ok(ValidationMatch::lax(GenericPyMapping::Mapping(mapping)))
+        } else {
+            Err(ValError::new(ErrorTypeDefaults::FrozenDictType, self))
         }
     }
 

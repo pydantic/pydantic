@@ -2784,6 +2784,23 @@ def test_signature():
     )
 
 
+def test_signature_validate_by_alias_false():
+    @pydantic.dataclasses.dataclass(config=ConfigDict(validate_by_alias=False, validate_by_name=True))
+    class Model:
+        x: int = Field(alias='xAlias')
+        y: int = Field(default=1, alias='yAlias')
+
+    sig = inspect.signature(Model)
+    assert str(sig) == '(x: int, y: int = 1) -> None'
+
+    # The signature must describe the arguments `__init__` actually accepts:
+    sig.bind(x=1)
+    with pytest.raises(TypeError):
+        sig.bind(xAlias=1)
+
+    assert Model(x=1) == Model(x=1, y=1)
+
+
 def test_inherited_dataclass_signature():
     @pydantic.dataclasses.dataclass
     class A:

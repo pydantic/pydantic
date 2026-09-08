@@ -8,6 +8,8 @@ from typing_extensions import LiteralString, Self
 from pydantic_core import ErrorDetails, ErrorTypeInfo, InitErrorDetails, MultiHostHost
 from pydantic_core.core_schema import CoreConfig, CoreSchema, ErrorType, ExtraBehavior
 
+from . import _schema_gather as _schema_gather
+
 __all__ = [
     '__version__',
     'build_profile',
@@ -34,6 +36,7 @@ __all__ = [
     'to_jsonable_python',
     'list_all_errors',
     'TzInfo',
+    '_schema_gather',
 ]
 __version__: str
 build_profile: str

@@ -592,8 +592,8 @@ To raise a validation error, three types of exceptions can be used:
         """
     ```
 
-When a validator rejects data in production, [Logfire](../errors/troubleshooting.md) records the input
-alongside each validation, so you can see the value that broke the rule.
+When a validator rejects data in production, [Logfire](../errors/troubleshooting.md) can record the
+rejected value in its structured errors, so you can see what broke the rule.
 
 ## Validation info
 
@@ -608,7 +608,7 @@ Both the field and model validators callables (in all modes) can optionally take
 ### Validation data
 
 For field validators, the already validated data can be accessed using the [`data`][pydantic.ValidationInfo.data]
-property. Here is an example than can be used as an alternative to the [*after* model validator](#model-after-validator)
+property. Here is an example that can be used as an alternative to the [*after* model validator](#model-after-validator)
 example:
 
 ```python
@@ -806,7 +806,7 @@ Pydantic provides a few special utilities that can be used to customize validati
     1. Note that the validation of the second item is skipped. If it has the wrong type it will emit a
        warning during serialization.
 
-* [`ValidateAs`][pydantic.functional_validators.ValidateAs] can be used to validate an custom type from a
+* [`ValidateAs`][pydantic.functional_validators.ValidateAs] can be used to validate a custom type from a
   type natively supported by Pydantic. This is particularly useful when using custom types with multiple fields.
 
     ```python {lint="skip"}

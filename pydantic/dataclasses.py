@@ -85,8 +85,10 @@ def dataclass(
 
     This decorator should be used similarly to the [`@dataclasses.dataclass`][dataclasses.dataclass] decorator.
 
-    !!! tip "Logfire integration"
-        Instrumentation of dataclass validation errors is supported by [Logfire](../integrations/logfire.md).
+    A Pydantic dataclass validates its inputs like a `BaseModel` does. Its
+    [`ValidationError`][pydantic_core.ValidationError] includes each rejected value, while
+    [Logfire](../integrations/logfire.md) can retain the complete validation input and surrounding trace
+    context — see [Troubleshooting validation errors](../errors/troubleshooting.md).
 
     Args:
         _cls: The target `dataclass`.

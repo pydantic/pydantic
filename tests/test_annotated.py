@@ -623,18 +623,42 @@ def test_compatible_metadata_raises_correct_validation_error() -> None:
         ta.validate_python('def')
 
 
-def test_decimal_constraints_after_annotation() -> None:
-    DecimalAnnotation = Annotated[Decimal, BeforeValidator(lambda v: v), Field(max_digits=10, decimal_places=4)]
+@pytest.mark.parametrize(
+    ['field_kwargs', 'input_value', 'error_type'],
+    [
+        ({'max_digits': 10, 'decimal_places': 4}, '123.4567', None),
+        ({'max_digits': 10, 'decimal_places': 4}, '123.45678', 'decimal_max_places'),
+        ({'max_digits': 10, 'decimal_places': 4}, '12345678.901', 'decimal_max_digits'),
+        # Trailing zeros should not count towards the constraints:
+        ({'max_digits': 3}, '1.00', None),
+        ({'max_digits': 3}, '100.00', None),
+        ({'decimal_places': 1}, '1.00', None),
+        ({'decimal_places': 0}, '0.000', None),
+        ({'max_digits': 1, 'decimal_places': 0}, '0.000', None),
+        ({'max_digits': 1, 'decimal_places': 0}, '0E+5', None),
+        ({'max_digits': 3, 'decimal_places': 1}, '10.10', None),
+        ({'max_digits': 3, 'decimal_places': 1}, '1000.0', 'decimal_max_digits'),
+        ({'max_digits': 3, 'decimal_places': 1}, '1.150', 'decimal_max_places'),
+        # Values with more significant digits than the precision of the (default) decimal context
+        # must not be rounded when counting digits and decimal places:
+        ({'max_digits': 29}, '1234567890123456789012345678.91', 'decimal_max_digits'),
+        ({'max_digits': 30}, '1234567890123456789012345678.91', None),
+        ({'decimal_places': 30}, '0.1234567890123456789012345678901', 'decimal_max_places'),
+        ({'decimal_places': 31}, '0.1234567890123456789012345678901', None),
+        ({'max_digits': 30, 'decimal_places': 1}, '1234567890123456789012345678.91', 'decimal_max_places'),
+        ({'max_digits': 30, 'decimal_places': 2}, '1234567890123456789012345678.91', None),
+    ],
+)
+def test_decimal_constraints_after_annotation(
+    field_kwargs: dict[str, Any], input_value: str, error_type: str | None
+) -> None:
+    DecimalAnnotation = Annotated[Decimal, BeforeValidator(lambda v: v), Field(**field_kwargs)]
 
     ta = TypeAdapter(DecimalAnnotation)
-    assert ta.validate_python(Decimal('123.4567')) == Decimal('123.4567')
 
-    with pytest.raises(ValidationError) as e:
-        ta.validate_python(Decimal('123.45678'))
-
-    assert e.value.errors()[0]['type'] == 'decimal_max_places'
-
-    with pytest.raises(ValidationError) as e:
-        ta.validate_python(Decimal('12345678.901'))
-
-    assert e.value.errors()[0]['type'] == 'decimal_max_digits'
+    if error_type is None:
+        assert ta.validate_python(Decimal(input_value)) == Decimal(input_value)
+    else:
+        with pytest.raises(ValidationError) as exc_info:
+            ta.validate_python(Decimal(input_value))
+        assert exc_info.value.errors()[0]['type'] == error_type

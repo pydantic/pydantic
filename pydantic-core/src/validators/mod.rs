@@ -37,9 +37,11 @@ mod datetime;
 pub(crate) mod decimal;
 mod definitions;
 mod dict;
+mod ellipsis;
 mod enum_;
 mod float;
 pub(crate) mod fraction;
+mod frozendict;
 mod frozenset;
 mod function;
 mod generator;
@@ -54,6 +56,7 @@ mod literal;
 mod missing_sentinel;
 mod model;
 mod model_fields;
+mod named_tuple;
 mod none;
 mod nullable;
 mod prebuilt;
@@ -577,6 +580,8 @@ fn build_validator_inner(
         // dataclasses
         dataclass::DataclassArgsValidator,
         dataclass::DataclassValidator,
+        // named tuples
+        named_tuple::NamedTupleValidator,
         // strings
         string::StrValidator,
         // integers
@@ -597,6 +602,8 @@ fn build_validator_inner(
         set::SetValidator,
         // dicts/objects (recursive)
         dict::DictValidator,
+        // frozendicts
+        frozendict::FrozenDictValidator,
         // None/null
         none::NoneValidator,
         // functions - before, after, plain & wrap
@@ -610,6 +617,8 @@ fn build_validator_inner(
         literal::LiteralValidator,
         // missing sentinel
         missing_sentinel::MissingSentinelValidator,
+        // ellipsis
+        ellipsis::EllipsisValidator,
         // enums
         enum_::BuildEnumValidator,
         // any
@@ -730,7 +739,7 @@ pub enum CombinedValidator {
     TypedDict(typed_dict::TypedDictValidator),
     // unions
     Union(union::UnionValidator),
-    TaggedUnion(union::TaggedUnionValidator),
+    TaggedUnion(Box<union::TaggedUnionValidator>),
     // nullables
     Nullable(nullable::NullableValidator),
     // create new model classes
@@ -739,12 +748,14 @@ pub enum CombinedValidator {
     // dataclasses
     DataclassArgs(dataclass::DataclassArgsValidator),
     Dataclass(dataclass::DataclassValidator),
+    // named tuples
+    NamedTuple(named_tuple::NamedTupleValidator),
     // strings
     Str(string::StrValidator),
     StrConstrained(string::StrConstrainedValidator),
     // integers
     Int(int::IntValidator),
-    ConstrainedInt(int::ConstrainedIntValidator),
+    ConstrainedInt(Box<int::ConstrainedIntValidator>),
     // booleans
     Bool(bool::BoolValidator),
     // floats
@@ -762,6 +773,8 @@ pub enum CombinedValidator {
     Tuple(tuple::TupleValidator),
     // dicts/objects (recursive)
     Dict(dict::DictValidator),
+    // frozendicts
+    FrozenDict(frozendict::FrozenDictValidator),
     // None/null
     None(none::NoneValidator),
     // functions
@@ -775,6 +788,8 @@ pub enum CombinedValidator {
     Literal(literal::LiteralValidator),
     // Missing sentinel
     MissingSentinel(missing_sentinel::MissingSentinelValidator),
+    // Ellipsis
+    Ellipsis(ellipsis::EllipsisValidator),
     // enums
     IntEnum(enum_::EnumValidator<enum_::IntEnumValidator>),
     StrEnum(enum_::EnumValidator<enum_::StrEnumValidator>),
@@ -815,8 +830,8 @@ pub enum CombinedValidator {
     // json data
     Json(json::JsonValidator),
     // url types
-    Url(url::UrlValidator),
-    MultiHostUrl(url::MultiHostUrlValidator),
+    Url(Box<url::UrlValidator>),
+    MultiHostUrl(Box<url::MultiHostUrlValidator>),
     // uuid types
     Uuid(uuid::UuidValidator),
     // reference to definition, useful for recursive (self-referencing) models
@@ -867,4 +882,60 @@ pub trait Validator: Send + Sync + Debug {
     /// `get_name` generally returns `Self::EXPECTED_TYPE` or some other clear identifier of the validator
     /// this is used in the error location in unions, and in the top level message in `ValidationError`
     fn get_name(&self) -> &str;
+}
+
+/// Rarely-used validators which are much larger than the rest are stored boxed in `CombinedValidator`,
+/// so that they don't inflate the size of *every* validator node. Delegate straight through to the inner
+/// validator so that `enum_dispatch` can treat `Box<V>` as a variant type.
+impl<T: Validator> Validator for Box<T> {
+    fn validate<'py>(
+        &self,
+        py: Python<'py>,
+        input: &(impl Input<'py> + ?Sized),
+        state: &mut ValidationState<'_, 'py>,
+    ) -> ValResult<Py<PyAny>> {
+        (**self).validate(py, input, state)
+    }
+
+    fn default_value<'py>(
+        &self,
+        py: Python<'py>,
+        outer_loc: Option<impl Into<LocItem>>,
+        state: &mut ValidationState<'_, 'py>,
+    ) -> ValResult<Option<Py<PyAny>>> {
+        (**self).default_value(py, outer_loc, state)
+    }
+
+    fn validate_assignment<'py>(
+        &self,
+        py: Python<'py>,
+        obj: &Bound<'py, PyAny>,
+        field_name: &PyBackedStr,
+        field_value: &Bound<'py, PyAny>,
+        state: &mut ValidationState<'_, 'py>,
+    ) -> ValResult<Py<PyAny>> {
+        (**self).validate_assignment(py, obj, field_name, field_value, state)
+    }
+
+    fn get_name(&self) -> &str {
+        (**self).get_name()
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    /// `CombinedValidator` is instantiated once per node of every schema, so its size is multiplied
+    /// across every model in an application. Rarely-used variants which are much larger than the rest
+    /// are boxed to keep this down — if this assertion fails, box the offending variant rather than
+    /// raising the limit.
+    #[test]
+    fn combined_validator_size() {
+        assert!(
+            std::mem::size_of::<CombinedValidator>() <= 144,
+            "CombinedValidator grew to {} bytes",
+            std::mem::size_of::<CombinedValidator>()
+        );
+    }
 }

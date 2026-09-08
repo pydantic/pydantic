@@ -1193,6 +1193,54 @@ def test_can_resolve_forward_refs_in_parent_frame_after_class_definition():
     Model.model_rebuild()
 
 
+@pytest.mark.xfail(
+    reason='Due to backwards compatibility reasons, the actual Main model resolves from the wrong module.'
+)
+def test_does_not_pollute_other_module_model_name(create_module) -> None:
+    @create_module
+    def module_1():
+        from pydantic import BaseModel
+
+        class Sub(BaseModel):
+            m: 'Main | None' = None
+
+        class Main(BaseModel):
+            # An annotation that shouldn't resolve, which should lead
+            # to module_2.Main to be incomplete:
+            x: 'Never'
+
+    module_2 = create_module(
+        f"""
+from pydantic import BaseModel
+
+
+from {module_1.__name__} import Sub
+
+class Main(BaseModel):        # resolved for Sub via the first_type-on-stack hack
+    sub: Sub
+        """
+    )
+
+    assert not module_2.Main.__pydantic_complete__
+
+
+def test_nested_incomplete_model_completed_during_referencing_model_definition() -> None:
+    def inner():
+        class Foo(BaseModel):
+            a: 'Bar | None' = None
+
+        class Bar(BaseModel):
+            b: Foo
+
+        return Foo, Bar
+
+    # Rebound names: after `inner()` returns, 'Bar' is not resolvable
+    # in any namespace, so `Bar` must have been completed eagerly:
+    Model1, Model2 = inner()
+    assert Model2.__pydantic_complete__ is True
+    assert Model2(b={'a': None}).b.a is None
+
+
 def test_uses_correct_global_ns_for_type_defined_in_separate_module(create_module):
     @create_module
     def module_1():

@@ -338,7 +338,7 @@ impl BuildValidator for TaggedUnionValidator {
         let key = intern!(py, "from_attributes");
         let from_attributes = schema_or_config(schema, config, key, key)?.unwrap_or(true);
 
-        Ok(CombinedValidator::TaggedUnion(Self {
+        Ok(CombinedValidator::TaggedUnion(Box::new(Self {
             discriminator: Box::new(discriminator),
             lookup,
             from_attributes,
@@ -346,7 +346,7 @@ impl BuildValidator for TaggedUnionValidator {
             tags_repr,
             discriminator_repr,
             name: format!("{}[{descr}]", Self::EXPECTED_TYPE),
-        })
+        }))
         .into())
     }
 }

@@ -374,9 +374,10 @@ class TypeAdapter(Generic[T]):
     ) -> T:
         """Validate a Python object against the model.
 
-        !!! tip "Logfire integration"
-            Instrumentation of validation errors are supported by [Logfire](../integrations/logfire.md).
-            See [Troubleshooting validation errors](../errors/troubleshooting.md) for more details.
+        A [`ValidationError`][pydantic_core.ValidationError] reports the rejected locations and values.
+        If you record validations with [Logfire](../integrations/logfire.md), the complete object and trace
+        context are retained alongside the error — `TypeAdapter` validations are captured the same way as
+        model validations (see [Troubleshooting validation errors](../errors/troubleshooting.md)).
 
         Args:
             object: The Python object to validate against the model.
@@ -434,9 +435,10 @@ class TypeAdapter(Generic[T]):
 
         Validate a JSON string or bytes against the model.
 
-        !!! tip "Logfire integration"
-            Instrumentation of validation errors are supported by [Logfire](../integrations/logfire.md).
-            See [Troubleshooting validation errors](../errors/troubleshooting.md) for more details.
+        JSON validated this way often comes from an external source, where a
+        [`ValidationError`][pydantic_core.ValidationError] can be the first sign that the source changed
+        shape. [Logfire](../integrations/logfire.md) retains the complete document and trace context
+        alongside the errors — see [Troubleshooting validation errors](../errors/troubleshooting.md).
 
         Args:
             data: The JSON data to validate against the model.
@@ -700,7 +702,10 @@ class TypeAdapter(Generic[T]):
         if isinstance(self.core_schema, _mock_val_ser.MockCoreSchema):
             self.core_schema.rebuild()
             assert not isinstance(self.core_schema, _mock_val_ser.MockCoreSchema), 'this is a bug! please report it'
-        return schema_generator_instance.generate(self.core_schema, mode=mode)
+        # The configuration provided to the type adapter (if any) is not part of the core schema,
+        # so we need to explicitly make it available to the JSON Schema generator:
+        with schema_generator_instance._config_wrapper_stack.push(self._config):
+            return schema_generator_instance.generate(self.core_schema, mode=mode)
 
     @staticmethod
     def json_schemas(

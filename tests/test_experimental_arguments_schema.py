@@ -186,3 +186,19 @@ def test_multiple_references() -> None:
     args, kwargs = val.validate_python({'a': {}, 'b': {}})
     assert args == ({}, {})
     assert kwargs == {}
+
+
+def test_populate_by_name() -> None:
+    """https://github.com/pydantic/pydantic/issues/13687"""
+
+    def func(a: Annotated[int, Field(alias='b')]) -> None: ...
+
+    arguments_schema = generate_arguments_schema(
+        func=func,
+        schema_type='arguments-v3',
+        config={'populate_by_name': True},
+    )
+    val = SchemaValidator(arguments_schema)
+    args, kwargs = val.validate_python({'a': 1})
+    assert args == (1,)
+    assert kwargs == {}

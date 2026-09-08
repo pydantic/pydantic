@@ -156,6 +156,7 @@ def complete_dataclass(
             init=original_init,
             fields=cls.__pydantic_fields__,  # type: ignore
             validate_by_name=config_wrapper.validate_by_name,
+            validate_by_alias=config_wrapper.validate_by_alias,
             extra=config_wrapper.extra,
             is_dataclass=True,
         ),

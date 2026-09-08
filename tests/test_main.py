@@ -401,6 +401,31 @@ def test_reassign_instance_method_with_extra_allow():
     assert 'not_extra_func' in m.__dict__
 
 
+def test_set_class_attribute_set_to_none_with_extra_allow():
+    class Mixin:
+        # Plain class attributes, not Pydantic fields. `None` is a legitimate value here.
+        a = None
+        b = 'b'
+
+    class Model(Mixin, BaseModel):
+        model_config = ConfigDict(extra='allow')
+
+    m = Model()
+
+    # `b` exists on the class, so the assignment shadows it on the instance:
+    m.b = 'set'
+    assert m.b == 'set'
+    assert m.__dict__ == {'b': 'set'}
+    assert m.model_extra == {}
+
+    # `a` exists on the class as well and must behave the same, even though it is `None`
+    # (otherwise the class attribute keeps shadowing the assigned value on reads):
+    m.a = 'set'
+    assert m.a == 'set'
+    assert m.__dict__ == {'a': 'set', 'b': 'set'}
+    assert m.model_extra == {}
+
+
 def test_extra_ignored():
     class Model(BaseModel):
         model_config = ConfigDict(extra='ignore')
@@ -3507,6 +3532,25 @@ def test_extra_generic_class() -> None:
     assert Mint(extra_value='1').model_extra == {'extra_value': 1}
 
 
+def test_extra_generic_class_subclass() -> None:
+    """https://github.com/pydantic/pydantic/issues/13465"""
+
+    T = TypeVar('T')
+
+    class Model(BaseModel, Generic[T], extra='allow'):
+        __pydantic_extra__: dict[str, T]
+
+    class Sub(Model[int]):
+        pass
+
+    assert Sub.model_json_schema()['additionalProperties'] == {'type': 'integer'}
+
+    with pytest.raises(ValidationError):
+        Sub(extra_value='not_an_int')
+
+    assert Sub(extra_value='1').model_extra == {'extra_value': 1}
+
+
 def test_super_getattr_extra():
     class Model(BaseModel):
         model_config = {'extra': 'allow'}
@@ -3645,21 +3689,23 @@ help_result_string = pydoc.render_doc(Model)
 
 def test_cannot_use_leading_underscore_field_names():
     with pytest.raises(
-        NameError, match="Fields must not use names with leading underscores; e.g., use 'x' instead of '_x'"
+        PydanticUserError, match="Fields must not use names with leading underscores; e.g., use 'x' instead of '_x'"
     ):
 
         class Model1(BaseModel):
             _x: int = Field(alias='x')
 
     with pytest.raises(
-        NameError, match="Fields must not use names with leading underscores; e.g., use 'x__' instead of '__x__'"
+        PydanticUserError,
+        match="Fields must not use names with leading underscores; e.g., use 'x__' instead of '__x__'",
     ):
 
         class Model2(BaseModel):
             __x__: int = Field()
 
     with pytest.raises(
-        NameError, match="Fields must not use names with leading underscores; e.g., use 'my_field' instead of '___'"
+        PydanticUserError,
+        match="Fields must not use names with leading underscores; e.g., use 'my_field' instead of '___'",
     ):
 
         class Model3(BaseModel):

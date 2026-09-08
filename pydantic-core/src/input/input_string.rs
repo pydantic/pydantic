@@ -177,6 +177,13 @@ impl<'py> Input<'py> for StringMapping<'py> {
         }
     }
 
+    fn strict_frozendict(&self) -> ValMatch<StringMappingDict<'py>> {
+        match self {
+            Self::String(_) => Err(ValError::new(ErrorTypeDefaults::FrozenDictType, self)),
+            Self::Mapping(d) => Ok(ValidationMatch::strict(StringMappingDict(d.clone()))),
+        }
+    }
+
     type List<'a>
         = Never
     where

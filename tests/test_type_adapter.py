@@ -487,6 +487,41 @@ def test_validate_strings_dict(strict):
     }
 
 
+@pytest.mark.parametrize('strict', [True, False])
+def test_validate_strings_model(strict):
+    class Model(BaseModel):
+        field_a: int
+        field_b: date
+
+    assert TypeAdapter(Model).validate_strings({'field_a': '1', 'field_b': '2017-01-01'}, strict=strict) == Model(
+        field_a=1, field_b=date(2017, 1, 1)
+    )
+
+
+@pytest.mark.parametrize('strict', [True, False])
+def test_validate_strings_dataclass(strict):
+    @dataclass
+    class MyDataclass:
+        field_a: int
+        field_b: date
+
+    assert TypeAdapter(MyDataclass).validate_strings(
+        {'field_a': '1', 'field_b': '2017-01-01'}, strict=strict
+    ) == MyDataclass(field_a=1, field_b=date(2017, 1, 1))
+
+
+@pytest.mark.parametrize('strict', [True, False])
+def test_validate_strings_typed_dict(strict):
+    class MyTypedDict(TypedDict):
+        field_a: int
+        field_b: date
+
+    assert TypeAdapter(MyTypedDict).validate_strings({'field_a': '1', 'field_b': '2017-01-01'}, strict=strict) == {
+        'field_a': 1,
+        'field_b': date(2017, 1, 1),
+    }
+
+
 def test_annotated_type_disallows_config() -> None:
     class Model(BaseModel):
         x: int
@@ -518,6 +553,12 @@ def test_ta_config_with_annotated_type() -> None:
     assert TypeAdapter(Annotated[list[TestSerializer], ...]).dump_python([result], mode='json') == [
         {'some_bytes': 'qg=='}
     ]
+
+
+def test_ta_config_used_for_json_schema() -> None:
+    """https://github.com/pydantic/pydantic/issues/13675"""
+    ta = TypeAdapter(list[bytes], config=ConfigDict(ser_json_bytes='base64'))
+    assert ta.json_schema() == {'type': 'array', 'items': {'type': 'string', 'format': 'base64url'}}
 
 
 def defer_build_test_models(config: ConfigDict) -> list[Any]:
@@ -674,3 +715,51 @@ def test_validate_strings_with_incorrect_configuration():
 
     with pytest.raises(PydanticUserError, check=lambda e: e.code == 'validate-by-alias-and-name-false'):
         ta.validate_strings(1, by_alias=False, by_name=False)
+
+
+@pytest.mark.parametrize(
+    'input_value',
+    [
+        pytest.param('[1, 2, 3]', id='[1, 2, 3]_str'),
+        pytest.param(b'[1, 2, 3]', id='[1, 2, 3]_bytes'),
+        pytest.param(bytearray(b'[1, 2, 3]'), id='[1, 2, 3]_bytearray'),
+    ],
+)
+def test_validate_json_input_types(input_value):
+    ta = TypeAdapter(list[int])
+
+    assert ta.validate_json(input_value) == [1, 2, 3]
+
+
+def test_validate_json_input_type_invalid():
+    ta = TypeAdapter(list[int])
+
+    with pytest.raises(ValidationError, match=r'JSON input should be string, bytes or bytearray \[type=json_type,'):
+        ta.validate_json([])
+
+
+def test_validate_json_invalid_json():
+    ta = TypeAdapter(bool)
+
+    with pytest.raises(ValidationError) as exc_info:
+        ta.validate_json('"foobar')
+    assert exc_info.value.errors(include_url=False) == [
+        {
+            'type': 'json_invalid',
+            'loc': (),
+            'msg': 'Invalid JSON: EOF while parsing a string at line 1 column 7',
+            'input': '"foobar',
+            'ctx': {'error': 'EOF while parsing a string at line 1 column 7'},
+        }
+    ]
+    with pytest.raises(ValidationError) as exc_info:
+        ta.validate_json('[1,\n2,\n3,]')
+    assert exc_info.value.errors(include_url=False) == [
+        {
+            'type': 'json_invalid',
+            'loc': (),
+            'msg': 'Invalid JSON: trailing comma at line 3 column 3',
+            'input': '[1,\n2,\n3,]',
+            'ctx': {'error': 'trailing comma at line 3 column 3'},
+        }
+    ]

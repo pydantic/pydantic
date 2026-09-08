@@ -1104,3 +1104,37 @@ def test_typeddict_core_schema_no_cls_extra_config_with_extas_schema() -> None:
         'properties': {},
         'type': 'object',
     }
+
+
+def test_typeddict_validate_json_duplicate_keys() -> None:
+    class Data(TypedDict):
+        field_a: str
+        field_b: int
+
+    ta = TypeAdapter(Data)
+
+    # language=json
+    input_str = '{"field_a": "abc", "field_b": 1}'
+    assert ta.validate_json(input_str) == {'field_a': 'abc', 'field_b': 1}
+    # the last value wins, like with Python:
+    # language=json
+    input_str = '{"field_a": "a", "field_a": "b", "field_b": 1}'
+    assert ta.validate_json(input_str) == {'field_a': 'b', 'field_b': 1}
+
+
+def test_typeddict_validate_json_error_loc() -> None:
+    class Data(TypedDict):
+        field_a: list[int]
+
+    ta = TypeAdapter(Data)
+
+    with pytest.raises(ValidationError) as exc_info:
+        ta.validate_json('{"field_a": [1, 2, "wrong"]}')
+    assert exc_info.value.errors(include_url=False) == [
+        {
+            'type': 'int_parsing',
+            'loc': ('field_a', 2),
+            'msg': 'Input should be a valid integer, unable to parse string as an integer',
+            'input': 'wrong',
+        }
+    ]

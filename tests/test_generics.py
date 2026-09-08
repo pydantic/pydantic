@@ -2366,6 +2366,7 @@ def test_parse_generic_json():
     }
 
 
+@pytest.mark.skipif(sys.version_info >= (3, 15), reason="memray doesn't yet support Python 3.15")
 def memray_limit_memory(limit):
     if '--memray' in sys.argv:
         return pytest.mark.limit_memory(limit)
@@ -3271,3 +3272,17 @@ def test_slots_forwarded_from_generic_class() -> None:
         with pytest.raises(TypeError):
             # As per https://docs.python.org/3/reference/datamodel.html#slots:
             weakref.ref(BaseInt())
+
+
+def test_generics_parameterization_not_hashable() -> None:
+    class NoHash:
+        __hash__ = None
+
+    T = TypeVar('T')
+
+    class Model(BaseModel, Generic[T]):
+        f: T
+
+    Mint = Model[Annotated[int, NoHash()]]
+
+    assert Mint(f='1').f == 1

@@ -50,7 +50,7 @@ IMMUTABLE_NON_COLLECTIONS_TYPES: set[type[Any]] = {
     CodeType,
     # note: including ModuleType will differ from behaviour of deepcopy by not producing error.
     # It might be not a good idea in general, but considering that this function used only internally
-    # against default values of fields, this will allow to actually have a field with module as default value
+    # against default values of fields, this will allow one to actually have a field with module as default value
     ModuleType,
     NotImplemented.__class__,
     Ellipsis.__class__,
@@ -171,7 +171,7 @@ def unique_list(
 class ValueItems(_repr.Representation):
     """Class for more convenient calculation of excluded or included fields on values."""
 
-    __slots__ = ('_items', '_type')
+    __slots__ = ('_items',)
 
     def __init__(self, value: Any, items: AbstractSetIntStr | MappingIntStrAny) -> None:
         items = self._coerce_items(items)
@@ -322,7 +322,7 @@ else:
         def value(self) -> Any:
             return self.get_value()
 
-        def __get__(self, instance: Any, owner: type[Any]) -> None:
+        def __get__(self, instance: Any, owner: type[Any]) -> Any:
             if instance is None:
                 return self.value
             raise AttributeError(f'{self.name!r} attribute of {owner.__name__!r} is class-only')
@@ -379,7 +379,7 @@ def get_first_not_none(a: Any, b: Any) -> Any:
 class SafeGetItemProxy:
     """Wrapper redirecting `__getitem__` to `get` with a sentinel value as default
 
-    This makes is safe to use in `operator.itemgetter` when some keys may be missing
+    This makes it safe to use in `operator.itemgetter` when some keys may be missing
     """
 
     wrapped: Mapping[str, Any]
