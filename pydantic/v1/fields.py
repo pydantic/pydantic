@@ -536,10 +536,11 @@ class ModelField(Representation):
 
     def prepare(self) -> None:
         """
-        Prepare the field but inspecting self.default, self.type_ etc.
+        Prepare the field by inspecting self.default, self.type_ etc.
 
-        Note: this method is **not** idempotent (because _type_analysis is not idempotent),
-        e.g. calling it multiple times may modify the field and configure it incorrectly.
+        Note: this method is **not** idempotent (because _type_analysis and _set_default_and_type
+        are not idempotent), e.g. calling it multiple times may modify the field and configure it
+        incorrectly.
         """
         self._set_default_and_type()
         if self.type_.__class__ is ForwardRef or self.type_.__class__ is DeferredType:
