@@ -1541,7 +1541,8 @@ Standard library type: [`re.Pattern`][] (deprecated alias: [`typing.Pattern`][])
 In [Python mode](../concepts/serialization.md#python-mode), [`Pattern`][re.Pattern] instances are
 serialized as is.
 
-In [JSON mode](../concepts/serialization.md#json-mode), they are serialized as strings.
+In [JSON mode](../concepts/serialization.md#json-mode), they are serialized as strings (note that flags
+are currently *not* preserved).
 
 <!-- old anchor added for backwards compatibility -->
 <!-- markdownlint-disable-next-line no-empty-links -->

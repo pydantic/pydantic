@@ -1339,3 +1339,13 @@ def test_pickle_validate_call_with_basemodel() -> None:
 
     assert unpickled == {1: _PickleTestModel(number=1.0)}
     assert unpickled[1].number == 1.0
+
+
+def test_validate_call_self_parameter() -> None:
+    """https://github.com/pydantic/pydantic/issues/13771"""
+
+    @validate_call
+    def func(self: int):
+        return self
+
+    assert func(self=1) == 1

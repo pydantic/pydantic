@@ -946,6 +946,7 @@ class StringSchema(TypedDict, total=False):
     strip_whitespace: bool
     to_lower: bool
     to_upper: bool
+    ascii_only: bool
     regex_engine: Literal['rust-regex', 'python-re']  # default: 'rust-regex'
     strict: bool
     coerce_numbers_to_str: bool
@@ -962,6 +963,7 @@ def str_schema(
     strip_whitespace: bool | None = None,
     to_lower: bool | None = None,
     to_upper: bool | None = None,
+    ascii_only: bool | None = None,
     regex_engine: Literal['rust-regex', 'python-re'] | None = None,
     strict: bool | None = None,
     coerce_numbers_to_str: bool | None = None,
@@ -987,6 +989,7 @@ def str_schema(
         strip_whitespace: Whether to strip whitespace from the value
         to_lower: Whether to convert the value to lowercase
         to_upper: Whether to convert the value to uppercase
+        ascii_only: Whether the value must contain only ASCII characters
         regex_engine: The regex engine to use for pattern validation. Default is 'rust-regex'.
             - `rust-regex` uses the [`regex`](https://docs.rs/regex) Rust
               crate, which is non-backtracking and therefore more DDoS
@@ -1007,6 +1010,7 @@ def str_schema(
         strip_whitespace=strip_whitespace,
         to_lower=to_lower,
         to_upper=to_upper,
+        ascii_only=ascii_only,
         regex_engine=regex_engine,
         strict=strict,
         coerce_numbers_to_str=coerce_numbers_to_str,
