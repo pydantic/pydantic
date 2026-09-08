@@ -796,6 +796,9 @@ jobs:
 
       - name: Run typechecking integration tests (Pyright)
         run: make test-typechecking-pyright
+        env:
+          # Until we get https://github.com/RobertCraigie/pyright-python/pull/365:
+          PYRIGHT_PYTHON_FORCE_VERSION: '1.1.413'
 
       - name: Run typechecking integration tests (Mypy)
         run: make test-typechecking-mypy
