@@ -48,7 +48,7 @@ struct Parameter {
     kwarg_key: Option<Py<PyString>>,
     validator: Arc<CombinedValidator>,
     // lookup keys, only populated for keyword or positional_or_keyword parameters
-    lookup_path_collection: Option<FieldLookupPaths>,
+    lookup_paths: Option<FieldLookupPaths>,
 }
 
 #[derive(Debug)]
@@ -102,7 +102,7 @@ impl BuildValidator for ArgumentsValidator {
                 had_keyword_only = true;
             }
 
-            let (lookup_path_collection, kwarg_key) = if matches!(mode, "keyword_only" | "positional_or_keyword") {
+            let (lookup_paths, kwarg_key) = if matches!(mode, "keyword_only" | "positional_or_keyword") {
                 let validation_alias = arg.get_as(intern!(py, "alias"))?;
                 (
                     Some(FieldLookupPaths::new(validation_alias, name.clone())?),
@@ -140,7 +140,7 @@ impl BuildValidator for ArgumentsValidator {
                 name,
                 kwarg_key,
                 validator,
-                lookup_path_collection,
+                lookup_paths,
             });
         }
 
@@ -160,8 +160,7 @@ impl BuildValidator for ArgumentsValidator {
             );
         }
 
-        let lookup =
-            LookupTree::from_optional_fields(&parameters, |parameter| parameter.lookup_path_collection.as_ref());
+        let lookup = LookupTree::from_optional_fields(&parameters, |parameter| parameter.lookup_paths.as_ref());
         Ok(CombinedValidator::Arguments(Self {
             parameters,
             lookup,
@@ -229,8 +228,8 @@ impl Validator for ArgumentsValidator {
             }
             let mut kw_value = None;
             if let Some(prepared) = &mut prepared
-                && let Some(lookup_path_collection) = &parameter.lookup_path_collection
-                && let Some((lookup_path, value)) = prepared.lookup(index, lookup_path_collection)?
+                && let Some(lookup_paths) = &parameter.lookup_paths
+                && let Some((lookup_path, value)) = prepared.lookup(index, lookup_paths)?
             {
                 kw_value = Some((lookup_path, value));
             }
@@ -275,13 +274,13 @@ impl Validator for ArgumentsValidator {
                         } else {
                             output_args.push(value);
                         }
-                    } else if let Some(lookup_path_collection) = &parameter.lookup_path_collection {
+                    } else if let Some(lookup_paths) = &parameter.lookup_paths {
                         let error_type = if parameter.positional {
                             ErrorTypeDefaults::MissingArgument
                         } else {
                             ErrorTypeDefaults::MissingKeywordOnlyArgument
                         };
-                        let error_loc = lookup_path_collection.error_loc(lookup_type, self.loc_by_alias);
+                        let error_loc = lookup_paths.error_loc(lookup_type, self.loc_by_alias);
                         errors.push(ValLineError::new_with_full_loc(error_type, input, error_loc));
                     } else {
                         errors.push(ValLineError::new_with_loc(

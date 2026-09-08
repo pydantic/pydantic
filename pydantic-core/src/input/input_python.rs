@@ -871,10 +871,6 @@ impl<'py> KeywordArgs<'py> for PyKwargs<'py> {
     where
         Self: 'a;
 
-    fn len(&self) -> usize {
-        self.0.len()
-    }
-
     fn get_item<'k>(&self, key: &LookupPath) -> ValResult<Option<Self::Item<'_>>> {
         key.py_get_dict_item(&self.0).map_err(Into::into)
     }

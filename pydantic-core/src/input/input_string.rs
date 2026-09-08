@@ -306,10 +306,6 @@ impl<'py> KeywordArgs<'py> for StringMappingDict<'py> {
     where
         Self: 'a;
 
-    fn len(&self) -> usize {
-        self.0.len()
-    }
-
     fn get_item(&self, key: &LookupPath) -> ValResult<Option<Self::Item<'_>>> {
         key.py_get_string_mapping_item(&self.0)
     }

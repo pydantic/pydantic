@@ -727,9 +727,6 @@ impl<'py, 'data> KeywordArgs<'py> for JsonObject<'data> {
     where
         Self: 'a;
 
-    fn len(&self) -> usize {
-        Vec::len(self)
-    }
     fn get_item<'k>(&self, key: &LookupPath) -> ValResult<Option<Self::Item<'_>>> {
         key.json_get(self)
     }

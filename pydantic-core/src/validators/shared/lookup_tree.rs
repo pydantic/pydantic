@@ -129,7 +129,7 @@ impl<'a, 'data> JsonFieldResults<'a, 'data> {
 
 /// When resolving data for a field, aliases are preferred over names, and earlier aliases are preferred over later ones.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub struct LookupFieldPriority {
+struct LookupFieldPriority {
     /// The type of lookups that will match this lookup
     lookup_type: LookupType,
     /// The index of this alias within the `AliasChoices` for the field
@@ -138,7 +138,7 @@ pub struct LookupFieldPriority {
 
 impl LookupFieldPriority {
     /// Returns `true` if `self` has higher priority than `other`, i.e. data from this lookup should be used over data from `other`.
-    pub fn is_higher_priority_than(&self, other: &Self) -> bool {
+    fn is_higher_priority_than(&self, other: &Self) -> bool {
         if self.lookup_type == LookupType::Name {
             // name lookups are never higher priority than other lookups
             return false;
@@ -154,21 +154,21 @@ impl LookupFieldPriority {
 
 /// Represents a location in the lookup tree which corresponds to data for a specific field.
 #[derive(Debug, Clone, Copy)]
-pub struct LookupFieldInfo {
+struct LookupFieldInfo {
     /// The field which this lookup will populate.
-    pub field_index: usize,
+    field_index: usize,
     /// Information about whether this data should be preferred over other possible matches for the same field.
-    pub lookup_priority: LookupFieldPriority,
+    lookup_priority: LookupFieldPriority,
 }
 
 impl LookupFieldInfo {
     /// Whether this lookup should be used for the given lookup type (i.e. when validating by_name / by_alias)
-    pub fn matches_lookup(&self, lookup_type: LookupType) -> bool {
+    fn matches_lookup(&self, lookup_type: LookupType) -> bool {
         self.lookup_priority.lookup_type.matches(lookup_type)
     }
 
     /// The alias index for this lookup, if it is an alias lookup, or `None` if it is a name lookup.
-    pub fn alias_index(&self) -> Option<usize> {
+    fn alias_index(&self) -> Option<usize> {
         if self.lookup_priority.lookup_type == LookupType::Alias {
             Some(self.lookup_priority.alias_index)
         } else {
@@ -179,15 +179,15 @@ impl LookupFieldInfo {
 
 /// Represents a point in the lookup tree, containing exact matches plus possible nested lookups.
 #[derive(Debug, Default)]
-pub struct LookupTreeNode {
+struct LookupTreeNode {
     index: usize,
     /// All fields which wanted _exactly_ this key, typically this is just a single entry
     fields: SmallVec<[LookupFieldInfo; 1]>,
     /// For nested lookups by name, e.g. `['foo', 'bar']`, typically empty
-    pub map: AHashMap<PathItemString, LookupTreeNode>,
+    map: AHashMap<PathItemString, LookupTreeNode>,
     /// For nested lookups by integer index, e.g. `['foo', 0]`, typically empty.
     /// Uses i128 to accommodate both usize and negative isize path items.
-    pub list: AHashMap<i128, LookupTreeNode>,
+    list: AHashMap<i128, LookupTreeNode>,
 }
 
 impl LookupTreeNode {

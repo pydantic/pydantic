@@ -236,7 +236,6 @@ pub trait KeywordArgs<'py> {
     type Item<'a>: BorrowInput<'py>
     where
         Self: 'a;
-    fn len(&self) -> usize;
     fn get_item(&self, key: &LookupPath) -> ValResult<Option<Self::Item<'_>>>;
     fn prepare_fields<'a>(
         &'a self,
@@ -403,9 +402,7 @@ impl<'py> KeywordArgs<'py> for Never {
         = Bound<'py, PyAny>
     where
         Self: 'a;
-    fn len(&self) -> usize {
-        unreachable!()
-    }
+
     fn get_item<'k>(&self, _key: &LookupPath) -> ValResult<Option<Self::Item<'_>>> {
         unreachable!()
     }

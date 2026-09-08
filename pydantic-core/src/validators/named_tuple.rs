@@ -21,7 +21,7 @@ use super::{BuildValidator, CombinedValidator, DefinitionsBuilder, ValidationSta
 #[derive(Debug)]
 struct NamedTupleField {
     name: PyBackedStr,
-    lookup_path_collection: FieldLookupPaths,
+    lookup_paths: FieldLookupPaths,
     validator: Arc<CombinedValidator>,
 }
 
@@ -75,16 +75,16 @@ impl BuildValidator for NamedTupleValidator {
             }
 
             let validation_alias = field.get_as(intern!(py, "validation_alias"))?;
-            let lookup_path_collection = FieldLookupPaths::new(validation_alias, field_name.clone())?;
+            let lookup_paths = FieldLookupPaths::new(validation_alias, field_name.clone())?;
 
             fields.push(NamedTupleField {
                 name: field_name,
-                lookup_path_collection,
+                lookup_paths,
                 validator,
             });
         }
 
-        let lookup = LookupTree::from_fields(&fields, |field| &field.lookup_path_collection);
+        let lookup = LookupTree::from_fields(&fields, |field| &field.lookup_paths);
         Ok(CombinedValidator::NamedTuple(Self {
             class: class.into(),
             fields,
@@ -193,7 +193,7 @@ impl NamedTupleValidator {
 
         let mut prepared = dict.prepare_fields(&self.lookup, lookup_type, ExtraBehavior::Forbid);
         for (index, field) in self.fields.iter().enumerate() {
-            if let Some((lookup_path, value)) = prepared.lookup(index, &field.lookup_path_collection)? {
+            if let Some((lookup_path, value)) = prepared.lookup(index, &field.lookup_paths)? {
                 let state = &mut state.scoped_set_field_name(Some(field.name.as_py_str().bind(py).clone()));
 
                 match field.validator.validate(py, value.borrow_input(), state) {
@@ -213,7 +213,7 @@ impl NamedTupleValidator {
             match field.validator.default_value(py, Some(field.name.clone()), state) {
                 Ok(Some(value)) => output.push(value),
                 Ok(None) => {
-                    let error_loc = field.lookup_path_collection.error_loc(lookup_type, self.loc_by_alias);
+                    let error_loc = field.lookup_paths.error_loc(lookup_type, self.loc_by_alias);
                     errors.push(ValLineError::new_with_full_loc(
                         ErrorTypeDefaults::Missing,
                         input,

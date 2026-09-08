@@ -54,7 +54,7 @@ impl FromStr for ParameterMode {
 struct Parameter {
     name: PyBackedStr,
     mode: ParameterMode,
-    lookup_path_collection: FieldLookupPaths,
+    lookup_paths: FieldLookupPaths,
     validator: Arc<CombinedValidator>,
 }
 
@@ -184,12 +184,12 @@ impl BuildValidator for ArgumentsV3Validator {
             }
 
             let validation_alias = arg.get_as(intern!(py, "alias"))?;
-            let lookup_path_collection = FieldLookupPaths::new(validation_alias, name.clone())?;
+            let lookup_paths = FieldLookupPaths::new(validation_alias, name.clone())?;
 
             parameters.push(Parameter {
                 name,
                 mode,
-                lookup_path_collection,
+                lookup_paths,
                 validator,
             });
         }
@@ -204,7 +204,7 @@ impl BuildValidator for ArgumentsV3Validator {
             })
             .count();
 
-        let lookup = LookupTree::from_fields(&parameters, |parameter| &parameter.lookup_path_collection);
+        let lookup = LookupTree::from_fields(&parameters, |parameter| &parameter.lookup_paths);
         Ok(CombinedValidator::ArgumentsV3(Self {
             parameters,
             lookup,
@@ -249,7 +249,7 @@ impl ArgumentsV3Validator {
         let mut prepared = mapping.prepare_fields(&self.lookup, lookup_type, extra_behavior);
         for (index, parameter) in self.parameters.iter().enumerate() {
             // A value is present in the mapping:
-            if let Some((lookup_path, dict_value)) = prepared.lookup(index, &parameter.lookup_path_collection)? {
+            if let Some((lookup_path, dict_value)) = prepared.lookup(index, &parameter.lookup_paths)? {
                 match parameter.mode {
                     ParameterMode::PositionalOnly | ParameterMode::PositionalOrKeyword => {
                         match parameter.validator.validate(py, dict_value.borrow_input(), state) {
@@ -393,9 +393,7 @@ impl ArgumentsV3Validator {
                                 ParameterMode::KeywordOnly => ErrorTypeDefaults::MissingKeywordOnlyArgument,
                                 _ => unreachable!(),
                             };
-                            let error_loc = parameter
-                                .lookup_path_collection
-                                .error_loc(lookup_type, self.loc_by_alias);
+                            let error_loc = parameter.lookup_paths.error_loc(lookup_type, self.loc_by_alias);
                             errors.push(ValLineError::new_with_full_loc(error_type, original_input, error_loc));
                         }
                     }
@@ -520,7 +518,7 @@ impl ArgumentsV3Validator {
                     parameter.mode,
                     ParameterMode::PositionalOrKeyword | ParameterMode::KeywordOnly
                 )
-                && let Some((lookup_path, value)) = prepared.lookup(field_index, &parameter.lookup_path_collection)?
+                && let Some((lookup_path, value)) = prepared.lookup(field_index, &parameter.lookup_paths)?
             {
                 kw_value = Some((lookup_path, value));
             }
@@ -576,9 +574,7 @@ impl ArgumentsV3Validator {
                         if parameter.mode == ParameterMode::PositionalOnly {
                             errors.push(ValLineError::new_with_loc(error_type, original_input, index));
                         } else {
-                            let error_loc = parameter
-                                .lookup_path_collection
-                                .error_loc(lookup_type, self.loc_by_alias);
+                            let error_loc = parameter.lookup_paths.error_loc(lookup_type, self.loc_by_alias);
                             errors.push(ValLineError::new_with_full_loc(error_type, original_input, error_loc));
                         }
                     }

@@ -31,7 +31,7 @@ struct Field {
     name: PyBackedStr,
     init: bool,
     init_only: bool,
-    lookup_path_collection: FieldLookupPaths,
+    lookup_paths: FieldLookupPaths,
     validator: Arc<CombinedValidator>,
     frozen: bool,
 }
@@ -99,12 +99,12 @@ impl BuildValidator for DataclassArgsValidator {
             }
 
             let validation_alias = field.get_as(intern!(py, "validation_alias"))?;
-            let lookup_path_collection = FieldLookupPaths::new(validation_alias, name.clone())?;
+            let lookup_paths = FieldLookupPaths::new(validation_alias, name.clone())?;
 
             fields.push(Field {
                 kw_only,
                 name,
-                lookup_path_collection,
+                lookup_paths,
                 validator,
                 init: field.get_as(intern!(py, "init"))?.unwrap_or(true),
                 init_only: field.get_as(intern!(py, "init_only"))?.unwrap_or(false),
@@ -120,8 +120,7 @@ impl BuildValidator for DataclassArgsValidator {
         let dataclass_name: String = schema.get_as_req(intern!(py, "dataclass_name"))?;
         let validator_name = format!("dataclass-args[{dataclass_name}]");
 
-        let lookup =
-            LookupTree::from_optional_fields(&fields, |field| field.init.then_some(&field.lookup_path_collection));
+        let lookup = LookupTree::from_optional_fields(&fields, |field| field.init.then_some(&field.lookup_paths));
         Ok(CombinedValidator::DataclassArgs(Self {
             fields,
             lookup,
@@ -215,7 +214,7 @@ impl Validator for DataclassArgsValidator {
 
             let mut kw_value = None;
             if let Some(prepared) = &mut prepared
-                && let Some((lookup_path, value)) = prepared.lookup(index, &field.lookup_path_collection)?
+                && let Some((lookup_path, value)) = prepared.lookup(index, &field.lookup_paths)?
             {
                 kw_value = Some((lookup_path, value));
             }
@@ -270,7 +269,7 @@ impl Validator for DataclassArgsValidator {
                         Ok(None) => {
                             state.has_field_error = true;
                             let error_type = ErrorTypeDefaults::Missing;
-                            let error_loc = field.lookup_path_collection.error_loc(lookup_type, self.loc_by_alias);
+                            let error_loc = field.lookup_paths.error_loc(lookup_type, self.loc_by_alias);
                             // This means there was no default value
                             errors.push(ValLineError::new_with_full_loc(error_type, input, error_loc));
                         }

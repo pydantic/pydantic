@@ -21,7 +21,7 @@ use super::{BuildValidator, CombinedValidator, DefinitionsBuilder, ValidationSta
 #[derive(Debug)]
 struct Field {
     name: PyBackedStr,
-    lookup_path_collection: FieldLookupPaths,
+    lookup_paths: FieldLookupPaths,
     validator: Arc<CombinedValidator>,
     frozen: bool,
 }
@@ -88,17 +88,17 @@ impl BuildValidator for ModelFieldsValidator {
             };
 
             let validation_alias = field_info.get_as(intern!(py, "validation_alias"))?;
-            let lookup_path_collection = FieldLookupPaths::new(validation_alias, name.clone())?;
+            let lookup_paths = FieldLookupPaths::new(validation_alias, name.clone())?;
 
             fields.push(Field {
                 name,
-                lookup_path_collection,
+                lookup_paths,
                 validator,
                 frozen: field_info.get_as::<bool>(intern!(py, "frozen"))?.unwrap_or(false),
             });
         }
 
-        let lookup = LookupTree::from_fields(&fields, |field| &field.lookup_path_collection);
+        let lookup = LookupTree::from_fields(&fields, |field| &field.lookup_paths);
 
         Ok(CombinedValidator::ModelFields(Self {
             fields,
@@ -296,7 +296,7 @@ impl ModelFieldsValidator {
             for (index, field) in self.fields.iter().enumerate() {
                 let state = &mut state.scoped_set_field_name(Some(field.name.as_py_str().bind(py).clone()));
 
-                if let Some(lookup_result) = prepared.lookup(index, &field.lookup_path_collection).transpose() {
+                if let Some(lookup_result) = prepared.lookup(index, &field.lookup_paths).transpose() {
                     let (lookup_path, value) = match lookup_result {
                         Ok(value) => value,
                         Err(ValError::LineErrors(line_errors)) => {
@@ -341,7 +341,7 @@ impl ModelFieldsValidator {
                         // There was no default value
                         state.has_field_error = true;
                         let error_type = ErrorTypeDefaults::Missing;
-                        let error_loc = field.lookup_path_collection.error_loc(lookup_type, self.loc_by_alias);
+                        let error_loc = field.lookup_paths.error_loc(lookup_type, self.loc_by_alias);
                         errors.push(ValLineError::new_with_full_loc(error_type, input, error_loc));
                     }
                     Err(ValError::Omit) => {}
