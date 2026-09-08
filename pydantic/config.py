@@ -633,12 +633,28 @@ class ConfigDict(TypedDict, total=False):
     /// version-added | v2.9
     ///
 
-    The encoding of JSON serialized bytes to decode. Defaults to `'utf8'`.
+    The encoding to assume when decoding a string into [`bytes`][]. Defaults to `'utf8'`.
     Set equal to `ser_json_bytes` to get back an equal value after serialization round trip.
 
-    - `'utf8'` will deserialize UTF-8 strings to bytes.
-    - `'base64'` will deserialize URL safe base64 strings to bytes.
-    - `'hex'` will deserialize hexadecimal strings to bytes.
+    - `'utf8'` will decode UTF-8 strings to bytes.
+    - `'base64'` will decode URL safe base64 strings to bytes.
+    - `'hex'` will decode hexadecimal strings to bytes.
+
+    Despite the name, this applies in Python mode as well as JSON mode: any [`str`][] input to a
+    `bytes` field is decoded this way. [`bytes`][] and [`bytearray`][] inputs are used as is.
+
+    ```python
+    from pydantic import TypeAdapter
+
+    ta = TypeAdapter(bytes, config={'val_json_bytes': 'base64'})
+
+    print(ta.validate_json('"YWJj"'))
+    #> b'abc'
+    print(ta.validate_python('YWJj'))
+    #> b'abc'
+    print(ta.validate_python(b'YWJj'))
+    #> b'YWJj'
+    ```
     """
 
     ser_json_inf_nan: Literal['null', 'constants', 'strings']

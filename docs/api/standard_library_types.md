@@ -130,7 +130,8 @@ See also: [`ByteSize`][pydantic.types.ByteSize].
 <h3>Validation</h3>
 
 * [`bytes`][] instances are validated as is.
-* Strings and [`bytearray`][] instances are converted as bytes, following the [`val_json_bytes`][pydantic.ConfigDict.val_json_bytes] configuration value
+* [`bytearray`][] instances are converted to bytes as is.
+* Strings are decoded following the [`val_json_bytes`][pydantic.ConfigDict.val_json_bytes] configuration value
   (despite its name, it applies to both Python and JSON modes).
 
 <h3>Constraints</h3>
