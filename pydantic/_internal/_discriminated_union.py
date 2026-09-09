@@ -124,6 +124,11 @@ class _ApplyInferredDiscriminator:
         # to the possible presence of other wrapper schemas such as DefinitionsSchema, WithDefaultSchema, etc.
         self._is_nullable = False
 
+        # `_should_allow_missing` and `_is_allowing_missing` play the same role as `_should_be_nullable`
+        # and `_is_nullable`, for the `MISSING` sentinel (represented by the 'missing-sentinel' wrapper schema).
+        self._should_allow_missing = False
+        self._is_allowing_missing = False
+
         # `_choices_to_handle` serves as a stack of choices to add to the tagged union. Initially, choices
         # from the union in the wrapped schema will be appended to this list, and the recursive choice-handling
         # algorithm may add more choices to this stack as (nested) unions are encountered.
@@ -163,6 +168,8 @@ class _ApplyInferredDiscriminator:
         schema = self._apply_to_root(schema)
         if self._should_be_nullable and not self._is_nullable:
             schema = core_schema.nullable_schema(schema)
+        if self._should_allow_missing and not self._is_allowing_missing:
+            schema = core_schema.missing_sentinel_schema(schema)
         self._used = True
         return schema
 
@@ -177,6 +184,13 @@ class _ApplyInferredDiscriminator:
             nullable_wrapper = schema.copy()
             nullable_wrapper['schema'] = wrapped
             return nullable_wrapper
+
+        if schema['type'] == 'missing-sentinel' and 'schema' in schema:
+            self._is_allowing_missing = True
+            wrapped = self._apply_to_root(schema['schema'])
+            missing_sentinel_wrapper = schema.copy()
+            missing_sentinel_wrapper['schema'] = wrapped
+            return missing_sentinel_wrapper
 
         if schema['type'] == 'definitions':
             wrapped = self._apply_to_root(schema['schema'])
@@ -255,6 +269,10 @@ class _ApplyInferredDiscriminator:
         elif choice['type'] == 'nullable':
             self._should_be_nullable = True
             self._handle_choice(choice['schema'])  # unwrap the nullable schema
+        elif choice['type'] == 'missing-sentinel':
+            self._should_allow_missing = True
+            if (inner_schema := choice.get('schema')) is not None:
+                self._handle_choice(inner_schema)  # unwrap the missing-sentinel schema
         elif choice['type'] == 'union':
             # Reverse the choices list before extending the stack so that they get handled in the order they occur
             choices_schemas = [v[0] if isinstance(v, tuple) else v for v in choice['choices'][::-1]]
@@ -341,6 +359,10 @@ class _ApplyInferredDiscriminator:
         elif choice['type'] == 'nullable':
             self._should_be_nullable = True
             return self._infer_discriminator_values_for_choice(choice['schema'], source_name=None)
+
+        elif choice['type'] == 'missing-sentinel' and (inner_schema := choice.get('schema')) is not None:
+            self._should_allow_missing = True
+            return self._infer_discriminator_values_for_choice(inner_schema, source_name=None)
 
         elif choice['type'] == 'model':
             return self._infer_discriminator_values_for_choice(choice['schema'], source_name=choice['cls'].__name__)

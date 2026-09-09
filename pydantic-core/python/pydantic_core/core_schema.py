@@ -1442,18 +1442,40 @@ def enum_schema(
 
 class MissingSentinelSchema(TypedDict, total=False):
     type: Required[Literal['missing-sentinel']]
+    schema: CoreSchema
     metadata: dict[str, Any]
     serialization: SerSchema
 
 
 def missing_sentinel_schema(
+    schema: CoreSchema | None = None,
+    *,
     metadata: dict[str, Any] | None = None,
     serialization: SerSchema | None = None,
 ) -> MissingSentinelSchema:
-    """Returns a schema for the `MISSING` sentinel."""
+    """
+    Returns a schema that matches the `MISSING` sentinel, or, if provided, the wrapped schema, e.g.:
+
+    ```py
+    from pydantic_core import MISSING, SchemaValidator, core_schema
+
+    schema = core_schema.missing_sentinel_schema(core_schema.int_schema())
+    v = SchemaValidator(schema)
+    assert v.validate_python(MISSING) is MISSING
+    assert v.validate_python(1) == 1
+    ```
+
+    If no schema is provided, only the `MISSING` sentinel is a valid input.
+
+    Args:
+        schema: The schema to wrap
+        metadata: Any other information you want to include with the schema, not used by pydantic-core
+        serialization: Custom serialization schema
+    """
 
     return _dict_not_none(
         type='missing-sentinel',
+        schema=schema,
         metadata=metadata,
         serialization=serialization,
     )

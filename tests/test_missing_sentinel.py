@@ -1,12 +1,12 @@
 import pickle
-from typing import Annotated
+from typing import Annotated, Literal, Union
 
 import pytest
 import typing_extensions
 from annotated_types import Ge
 from pydantic_core import MISSING, PydanticSerializationUnexpectedValue
 
-from pydantic import BaseModel, TypeAdapter, ValidationError
+from pydantic import BaseModel, Field, TypeAdapter, ValidationError
 
 
 def test_missing_sentinel_model() -> None:
@@ -146,3 +146,104 @@ def test_missing_sentinel_child_fields() -> None:
     result = TypeAdapter(Container).dump_python(container)
 
     assert result == {'item': {'parent_field': 'p'}}
+
+
+def test_missing_sentinel_validation_error_not_mentioned() -> None:
+    class Model(BaseModel):
+        f1: int | MISSING = MISSING
+        f2: int | None | MISSING = MISSING
+        f3: int | str | MISSING = MISSING
+
+    with pytest.raises(ValidationError) as exc_info:
+        Model(f1='not_an_int', f2='not_an_int', f3=[])
+
+    assert exc_info.value.errors(include_url=False) == [
+        {
+            'type': 'int_parsing',
+            'loc': ('f1',),
+            'msg': 'Input should be a valid integer, unable to parse string as an integer',
+            'input': 'not_an_int',
+        },
+        {
+            'type': 'int_parsing',
+            'loc': ('f2',),
+            'msg': 'Input should be a valid integer, unable to parse string as an integer',
+            'input': 'not_an_int',
+        },
+        {
+            'type': 'int_type',
+            'loc': ('f3', 'int'),
+            'msg': 'Input should be a valid integer',
+            'input': [],
+        },
+        {
+            'type': 'string_type',
+            'loc': ('f3', 'str'),
+            'msg': 'Input should be a valid string',
+            'input': [],
+        },
+    ]
+
+
+def test_missing_sentinel_discriminated_union() -> None:
+    class Cat(BaseModel):
+        kind: Literal['cat']
+
+    class Dog(BaseModel):
+        kind: Literal['dog']
+
+    class Model(BaseModel):
+        pet1: Annotated[Cat | Dog | MISSING, Field(discriminator='kind')] = MISSING
+        pet2: Annotated[Cat | Dog | None | MISSING, Field(discriminator='kind')] = MISSING
+        pet3: Annotated[Union[Cat | MISSING, Dog], Field(discriminator='kind')] = MISSING  # noqa: UP007
+
+    m = Model(pet1={'kind': 'cat'}, pet2=None, pet3={'kind': 'dog'})
+    assert isinstance(m.pet1, Cat)
+    assert m.pet2 is None
+    assert isinstance(m.pet3, Dog)
+
+    m = Model(pet1=MISSING, pet2=MISSING, pet3=MISSING)
+    assert m.model_dump() == {}
+
+    with pytest.raises(ValidationError) as exc_info:
+        Model(pet1={'kind': 'fish'})
+
+    assert exc_info.value.errors(include_url=False) == [
+        {
+            'type': 'union_tag_invalid',
+            'loc': ('pet1',),
+            'msg': "Input tag 'fish' found using 'kind' does not match any of the expected tags: 'cat', 'dog'",
+            'input': {'kind': 'fish'},
+            'ctx': {'discriminator': "'kind'", 'tag': 'fish', 'expected_tags': "'cat', 'dog'"},
+        },
+    ]
+
+    json_schema = Model.model_json_schema()
+    tagged_union_json_schema = {
+        'discriminator': {'mapping': {'cat': '#/$defs/Cat', 'dog': '#/$defs/Dog'}, 'propertyName': 'kind'},
+        'oneOf': [{'$ref': '#/$defs/Cat'}, {'$ref': '#/$defs/Dog'}],
+    }
+    assert json_schema['properties'] == {
+        'pet1': {**tagged_union_json_schema, 'title': 'Pet1'},
+        'pet2': {'anyOf': [tagged_union_json_schema, {'type': 'null'}], 'title': 'Pet2'},
+        'pet3': {**tagged_union_json_schema, 'title': 'Pet3'},
+    }
+
+
+def test_missing_sentinel_nested_type() -> None:
+    ta = TypeAdapter(list[int | MISSING])
+
+    assert ta.validate_python([1, MISSING]) == [1, MISSING]
+    assert ta.dump_python([1, MISSING]) == [1, MISSING]
+
+    with pytest.raises(ValidationError) as exc_info:
+        ta.validate_python([1, 'not_an_int'])
+
+    assert exc_info.value.errors(include_url=False) == [
+        {
+            'type': 'int_parsing',
+            'loc': (1,),
+            'msg': 'Input should be a valid integer, unable to parse string as an integer',
+            'input': 'not_an_int',
+        },
+    ]

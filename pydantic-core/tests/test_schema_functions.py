@@ -88,6 +88,11 @@ all_schema_functions = [
     ),
     (core_schema.literal_schema, args(['a', 'b']), {'type': 'literal', 'expected': ['a', 'b']}),
     (core_schema.missing_sentinel_schema, args(), {'type': 'missing-sentinel'}),
+    (
+        core_schema.missing_sentinel_schema,
+        args({'type': 'int'}),
+        {'type': 'missing-sentinel', 'schema': {'type': 'int'}},
+    ),
     (core_schema.ellipsis_schema, args(), {'type': 'ellipsis'}),
     (
         core_schema.enum_schema,
