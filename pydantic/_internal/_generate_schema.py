@@ -236,6 +236,9 @@ def apply_each_item_validators(
     if schema['type'] == 'nullable':
         schema['schema'] = apply_each_item_validators(schema['schema'], each_item_validators)
         return schema
+    elif schema['type'] == 'missing-sentinel' and 'schema' in schema:
+        schema['schema'] = apply_each_item_validators(schema['schema'], each_item_validators)
+        return schema
     elif schema['type'] == 'tuple':
         if (variadic_item_index := schema.get('variadic_item_index')) is not None:
             schema['items_schema'][variadic_item_index] = apply_validators(
@@ -1322,13 +1325,20 @@ class GenerateSchema:
         args = self._get_args_resolving_forward_refs(union_type, required=True)
         choices: list[CoreSchema] = []
         nullable = False
+        allow_missing = False
         for arg in args:
             if arg is None or arg is NoneType:
                 nullable = True
+            elif arg is MISSING:
+                allow_missing = True
             else:
                 choices.append(self.generate_schema(arg))
 
-        if len(choices) == 1:
+        if not choices:
+            # Only `None` and `MISSING` were present in the union (e.g. `None | MISSING`):
+            s = core_schema.none_schema()
+            nullable = False
+        elif len(choices) == 1:
             s = choices[0]
         else:
             choices_with_tags: list[CoreSchema | tuple[CoreSchema, str]] = []
@@ -1342,6 +1352,8 @@ class GenerateSchema:
 
         if nullable:
             s = core_schema.nullable_schema(s)
+        if allow_missing:
+            s = core_schema.missing_sentinel_schema(s)
         return s
 
     def _type_alias_type_schema(self, obj: TypeAliasType) -> CoreSchema:
@@ -2330,47 +2342,12 @@ class GenerateSchema:
                 schema['schema'] = inner
             return schema
 
-        if schema['type'] == 'union' and any(
-            choice['type'] == 'missing-sentinel' for choice in core_schema.iter_union_choices(schema)
-        ):
-            # Same behavior as for nullable schemas. This is a bit gross, but we have to support the same pattern
-            filtered_choices = [
-                choice
-                for choice in schema['choices']
-                if (choice[0] if isinstance(choice, tuple) else choice)['type'] != 'missing-sentinel'
-            ]
-            if len(filtered_choices) >= 2:
-                # e.g. `Annotated[int | str | MISSING, Constraint(...)]`. We apply `Constraint(...)` to `int | str`,
-                # and create a new union semantically equivalent to `Annotated[int | str, Constraint(...)] | MISSING`:
-                filtered_union = core_schema.union_schema(filtered_choices)
-                filtered_union = self._apply_single_annotation(filtered_union, metadata)
-                new_union = schema.copy()
-                new_union['choices'] = [
-                    filtered_union,
-                    next(
-                        choice
-                        for choice in schema['choices']
-                        if (choice[0] if isinstance(choice, tuple) else choice)['type'] == 'missing-sentinel'
-                    ),
-                ]
-                return new_union
-            elif len(filtered_choices) == 1:
-                # e.g. `Annotated[int | MISSING, Constraint(...)]`. We apply `Constraint(...)` to `int`, and reconstruct
-                # a new union preserving the order.
-                inner = filtered_choices[0][0] if isinstance(filtered_choices[0], tuple) else filtered_choices[0]
-                inner = self._apply_single_annotation(inner, metadata)
-
-                # Create a new union schema, preserving the order of the union:
-                new_union = schema.copy()
-                new_union['choices'] = [
-                    (inner, choice[1])
-                    if isinstance(choice, tuple) and choice[0]['type'] != 'missing-sentinel'
-                    else inner
-                    if not isinstance(choice, tuple) and choice['type'] != 'missing-sentinel'
-                    else choice
-                    for choice in schema['choices']
-                ]
-                return new_union
+        if schema['type'] == 'missing-sentinel' and (inner := schema.get('schema')) is not None:
+            # Same behavior as for nullable schemas: metadata is automatically applied to the inner schema
+            inner = self._apply_single_annotation(inner, metadata)
+            if inner:
+                schema['schema'] = inner
+            return schema
 
         original_schema = schema
         ref = schema.get('ref')
