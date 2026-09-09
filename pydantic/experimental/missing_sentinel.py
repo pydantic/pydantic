@@ -25,4 +25,5 @@ def __getattr__(name: str) -> Any:
         from pydantic_core import MISSING
 
         return MISSING
-    raise AttributeError(f'module {__name__!r} has no attribute {name!r}')
+    else:  # pragma: no cover
+        raise AttributeError(f'module {__name__!r} has no attribute {name!r}')
