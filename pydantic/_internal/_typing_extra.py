@@ -335,12 +335,10 @@ def try_eval_type(
         A two-tuple containing the possibly evaluated type and a boolean indicating
             whether the evaluation succeeded or not.
     """
-    value = _type_convert(value)
-
     try:
         return eval_type(value, globalns, localns), True
     except NameError:
-        return value, False
+        return _type_convert(value), False
 
 
 def eval_type(
@@ -363,6 +361,16 @@ def eval_type(
     value = _type_convert(value)
     try:
         return _eval_type(value, globalns, localns, type_params)
+    except ImportError as e:
+        # Starting in Python 3.15, resolving a lazy import during evaluation can fail, typically because of a
+        # circular import between modules (an `ImportError` can also happen without lazy imports but this is
+        # way less likely). Report it as a `NameError` so that callers treat the annotation as not resolvable
+        # yet, exactly an undefined forward reference.
+        if sys.version_info >= (3, 12):
+            name = e.name_from if e.name_from is not None else e.name
+        else:
+            name = e.name
+        raise NameError(f'Unable to resolve the import of {name!r}: {e}', name=name) from e
     except TypeError as e:
         if 'Unable to evaluate type annotation' in str(e):
             raise

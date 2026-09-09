@@ -1,12 +1,46 @@
-Forward annotations (wrapped in quotes) or using the `from __future__ import annotations` [future statement]
-(as introduced in [PEP563](https://www.python.org/dev/peps/pep-0563/)) are supported:
+## Python 3.14 and greater
+
+Since Python 3.14, Python does not *eagerly* evaluate annotations anymore, meaning you can reference objects
+that are not yet defined when the annotation is specified:
+
+```python {requires="3.14" lint="skip"}
+from typing import Any
+
+from pydantic import BaseModel
+
+
+def outer():
+    def inner():
+        class Model(BaseModel):
+            ann: List[Dict[Any, int]]
+
+        Dict = dict
+
+        return Model
+
+    List = list
+
+    Model = inner()
+
+    return Model
+
+
+Model = outer()
+
+Model(ann=[{'key': '1'}])
+#> Model(ann=[{'key': 1}])
+```
+
+## Python 3.13 and lower
+
+For Python versions prior to 3.14, References to objects that are not yet defined need to be defined as forward
+annotations (wrapped in quotes), or by using the `from __future__ import annotations` [future statement]
+(as introduced in [PEP563](https://www.python.org/dev/peps/pep-0563/)):
 
 ```python
 from __future__ import annotations
 
 from pydantic import BaseModel
-
-MyInt = int
 
 
 class Model(BaseModel):
@@ -15,12 +49,12 @@ class Model(BaseModel):
     # a: 'MyInt'
 
 
+MyInt = int
+
+
 print(Model(a='1'))
 #> a=1
 ```
-
-As shown in the following sections, forward annotations are useful when you want to reference
-a type that is not yet defined in your code.
 
 The internal logic to resolve forward annotations is described in detail in [this section](../internals/resolving_annotations.md).
 
@@ -28,206 +62,114 @@ The internal logic to resolve forward annotations is described in detail in [thi
 
 Models with self-referencing fields are also supported. These annotations will be resolved during model creation.
 
-Within the model, you can either add the `from __future__ import annotations` import or wrap the annotation
-in a string:
+=== "Python 3.10 and above"
 
-```python
-from pydantic import BaseModel
-
-
-class Foo(BaseModel):
-    a: int = 123
-    sibling: 'Foo | None' = None
+    ```python
+    from pydantic import BaseModel
 
 
-print(Foo())
-#> a=123 sibling=None
-print(Foo(sibling={'a': '321'}))
-#> a=123 sibling=Foo(a=321, sibling=None)
-```
-
-### Cyclic references
-
-When working with self-referencing recursive models, it is possible that you might encounter cyclic references
-in validation inputs. For example, this can happen when validating ORM instances with back-references from
-attributes.
-
-Rather than raising a [`RecursionError`][] while attempting to validate data with cyclic references, Pydantic is able
-to detect the cyclic reference and raise an appropriate [`ValidationError`][pydantic_core.ValidationError]:
-
-```python
-from pydantic import BaseModel, ValidationError
+    class Foo(BaseModel):
+        a: int = 123
+        sibling: 'Foo | None' = None  # (1)!
 
 
-class ModelA(BaseModel):
-    b: 'ModelB | None' = None
+    print(Foo())
+    #> a=123 sibling=None
+    print(Foo(sibling={'a': '321'}))
+    #> a=123 sibling=Foo(a=321, sibling=None)
+    ```
+
+    1. Python processes annotations when the `Foo` model is being defined (so it isn't actually fully defined yet). As such,
+       the `Foo` annotation cannot be resolved, and need to be defined as a forward annotation.
+
+=== "Python 3.14 and above"
+
+    ```python {requires="3.14" lint="skip"}
+    from pydantic import BaseModel
 
 
-class ModelB(BaseModel):
-    a: ModelA | None = None
+    class Foo(BaseModel):
+        a: int = 123
+        sibling: Foo | None = None
 
 
-cyclic_data = {}
-cyclic_data['a'] = {'b': cyclic_data}
-print(cyclic_data)
-#> {'a': {'b': {...}}}
+    print(Foo())
+    #> a=123 sibling=None
+    print(Foo(sibling={'a': '321'}))
+    #> a=123 sibling=Foo(a=321, sibling=None)
+    ```
 
-try:
-    ModelB.model_validate(cyclic_data)
-except ValidationError as exc:
-    print(exc)
-    """
-    1 validation error for ModelB
-    a.b
-      Recursion error - cyclic reference detected [type=recursion_loop, input_value={'a': {'b': {...}}}, input_type=dict]
-    """
-```
+## Cyclic imports
 
-Because this error is raised without actually exceeding the maximum recursion depth, you can catch and
-handle the raised [`ValidationError`][pydantic_core.ValidationError] without needing to worry about the limited
-remaining recursion depth:
+When models referencing each other are defined in separate modules, importing one model from the other
+module results in a cyclic import: each module needs the other one to be fully imported first.
 
-```python
-from __future__ import annotations
+=== "Python 3.15 and above"
 
-from collections.abc import Generator
-from contextlib import contextmanager
-from dataclasses import field
+    Python 3.15 introduced [lazy imports](https://docs.python.org/3.15/reference/simple_stmts.html#lazy)
+    where the `lazy` keyword defers the actual import until the imported name is first accessed. Lazy
+    imports are supported in Pydantic, and can be used to break the cycle:
 
-from pydantic import BaseModel, ValidationError, field_validator
+    ```python {title="a.py" requires="3.15" test="skip" lint="skip"}
+    lazy from .b import B
+
+    from pydantic import BaseModel
 
 
-def is_recursion_validation_error(exc: ValidationError) -> bool:
-    errors = exc.errors()
-    return len(errors) == 1 and errors[0]['type'] == 'recursion_loop'
+    class A(BaseModel):
+        b: B | None = None
+    ```
+
+    ```python {title="b.py" requires="3.15" test="skip" lint="skip"}
+    lazy from .a import A
+
+    from pydantic import BaseModel
 
 
-@contextmanager
-def suppress_recursion_validation_error() -> Generator[None]:
-    try:
-        yield
-    except ValidationError as exc:
-        if not is_recursion_validation_error(exc):
-            raise exc
+    class B(BaseModel):
+        a: A | None = None
+    ```
+
+=== "Python 3.14 and lower"
+
+    For earlier versions, the recommended approach is to only import one of the models in an
+    [`if TYPE_CHECKING:`][typing.TYPE_CHECKING] block, and use a forward annotation to reference it:
+
+    ```python {title="a.py" test="skip"}
+    from typing import TYPE_CHECKING
+
+    from pydantic import BaseModel
+
+    if TYPE_CHECKING:
+        from .b import B
 
 
-class Node(BaseModel):
-    id: int
-    children: list[Node] = field(default_factory=list)
+    class A(BaseModel):
+        b: 'B | None' = None
+    ```
 
-    @field_validator('children', mode='wrap')
-    @classmethod
-    def drop_cyclic_references(cls, children, h):
-        try:
-            return h(children)
-        except ValidationError as exc:
-            if not (
-                is_recursion_validation_error(exc)
-                and isinstance(children, list)
-            ):
-                raise exc
+    ```python {title="b.py" test="skip"}
+    from pydantic import BaseModel
 
-            value_without_cyclic_refs = []
-            for child in children:
-                with suppress_recursion_validation_error():
-                    value_without_cyclic_refs.extend(h([child]))
-            return h(value_without_cyclic_refs)
+    from .a import A
 
 
-# Create data with cyclic references representing the graph 1 -> 2 -> 3 -> 1
-node_data = {'id': 1, 'children': [{'id': 2, 'children': [{'id': 3}]}]}
-node_data['children'][0]['children'][0]['children'] = [node_data]
+    class B(BaseModel):
+        a: A | None = None
+    ```
 
-print(Node.model_validate(node_data))
-#> id=1 children=[Node(id=2, children=[Node(id=3, children=[])])]
-```
+    Because `B` isn't available at runtime in `a.py`, the `A` model is left incomplete. In a parent module
+    (for instance the package's `__init__.py`), import both models and call
+    [`model_rebuild()`][pydantic.BaseModel.model_rebuild] on the incomplete one. As `B` is in scope
+    of the calling module, the forward annotation can be resolved:
 
-Similarly, if Pydantic encounters a recursive reference during *serialization*, rather than waiting
-for the maximum recursion depth to be exceeded, a [`ValueError`][] is raised immediately:
+    ```python {title="__init__.py" test="skip"}
+    from .a import A
+    from .b import B
 
-```python
-from pydantic import TypeAdapter
+    __all__ = ('A', 'B')
 
-# Create data with cyclic references representing the graph 1 -> 2 -> 3 -> 1
-node_data = {'id': 1, 'children': [{'id': 2, 'children': [{'id': 3}]}]}
-node_data['children'][0]['children'][0]['children'] = [node_data]
-
-try:
-    # Try serializing the circular reference as JSON
-    TypeAdapter(dict).dump_json(node_data)
-except ValueError as exc:
-    print(exc)
-    """
-    Error serializing to JSON: ValueError: Circular reference detected (id repeated)
-    """
-```
-
-This can also be handled if desired:
-
-```python
-from dataclasses import field
-from typing import Any
-
-from pydantic import (
-    SerializerFunctionWrapHandler,
-    TypeAdapter,
-    field_serializer,
-)
-from pydantic.dataclasses import dataclass
-
-
-@dataclass
-class NodeReference:
-    id: int
-
-
-@dataclass
-class Node(NodeReference):
-    children: list['Node'] = field(default_factory=list)
-
-    @field_serializer('children', mode='wrap')
-    def serialize(
-        self, children: list['Node'], handler: SerializerFunctionWrapHandler
-    ) -> Any:
-        """
-        Serialize a list of nodes, handling circular references by excluding the children.
-        """
-        try:
-            return handler(children)
-        except ValueError as exc:
-            if not str(exc).startswith('Circular reference'):
-                raise exc
-
-            result = []
-            for node in children:
-                try:
-                    serialized = handler([node])
-                except ValueError as exc:
-                    if not str(exc).startswith('Circular reference'):
-                        raise exc
-                    result.append({'id': node.id})
-                else:
-                    result.append(serialized)
-            return result
-
-
-# Create a cyclic graph:
-nodes = [Node(id=1), Node(id=2), Node(id=3)]
-nodes[0].children.append(nodes[1])
-nodes[1].children.append(nodes[2])
-nodes[2].children.append(nodes[0])
-
-print(nodes[0])
-#> Node(id=1, children=[Node(id=2, children=[Node(id=3, children=[...])])])
-
-# Serialize the cyclic graph:
-print(TypeAdapter(Node).dump_python(nodes[0]))
-"""
-{
-    'id': 1,
-    'children': [{'id': 2, 'children': [{'id': 3, 'children': [{'id': 1}]}]}],
-}
-"""
-```
+    A.model_rebuild()
+    ```
 
 [future statement]: https://docs.python.org/3/reference/simple_stmts.html#future
