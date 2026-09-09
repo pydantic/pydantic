@@ -1191,7 +1191,7 @@ missing_sentinel_schema(
 
 ```
 
-Generates a JSON schema that matches the `MISSING` sentinel value.
+Generates a JSON schema that matches a schema that allows the `MISSING` sentinel value.
 
 Parameters:
 
@@ -1205,7 +1205,7 @@ Source code in `pydantic/json_schema.py`
 
 ```python
 def missing_sentinel_schema(self, schema: core_schema.MissingSentinelSchema) -> JsonSchemaValue:
-    """Generates a JSON schema that matches the `MISSING` sentinel value.
+    """Generates a JSON schema that matches a schema that allows the `MISSING` sentinel value.
 
     Args:
         schema: The core schema.
@@ -1213,7 +1213,10 @@ def missing_sentinel_schema(self, schema: core_schema.MissingSentinelSchema) -> 
     Returns:
         The generated JSON schema.
     """
-    raise PydanticOmit
+    inner_schema = schema.get('schema')
+    if inner_schema is None:
+        raise PydanticOmit
+    return self.generate_inner(inner_schema)
 
 ```
 
@@ -3787,6 +3790,8 @@ def field_title_should_be_set(self, schema: CoreSchemaOrField) -> bool:
             return False
         if schema['type'] in {'default', 'nullable', 'definitions'}:
             return self.field_title_should_be_set(schema['schema'])  # type: ignore[typeddict-item]
+        if schema['type'] == 'missing-sentinel' and (inner_schema := schema.get('schema')) is not None:
+            return self.field_title_should_be_set(inner_schema)
         if _core_utils.is_function_with_inner_schema(schema):
             return self.field_title_should_be_set(schema['schema'])
         if schema['type'] == 'definition-ref':
