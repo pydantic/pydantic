@@ -14,11 +14,10 @@ from typing import (
     TypeVar,
     cast,
     final,
-    overload,
 )
 
 from pydantic_core import CoreSchema, SchemaSerializer, SchemaValidator, Some
-from typing_extensions import ParamSpec, is_typeddict
+from typing_extensions import ParamSpec, TypeForm, is_typeddict
 
 from pydantic.errors import PydanticUserError
 from pydantic.main import BaseModel, IncEx
@@ -105,16 +104,6 @@ class TypeAdapter(Generic[T]):
         serializer: The schema serializer for the type.
         pydantic_complete: Whether the core schema for the type is successfully built.
 
-    ??? tip "Compatibility with `mypy`"
-        Depending on the type used, `mypy` might raise an error when instantiating a `TypeAdapter`. As a workaround, you can explicitly
-        annotate your variable:
-
-        ```py
-        from pydantic import TypeAdapter
-
-        ta: TypeAdapter[str | int] = TypeAdapter(str | int)  # type: ignore[arg-type]
-        ```
-
     ??? info "Namespace management nuances and implementation details"
 
         Here, we collect some notes on namespace management, and subtle differences from `BaseModel`:
@@ -168,32 +157,9 @@ class TypeAdapter(Generic[T]):
     serializer: SchemaSerializer
     pydantic_complete: bool
 
-    @overload
     def __init__(
         self,
-        type: type[T],
-        *,
-        config: ConfigDict | None = ...,
-        _parent_depth: int = ...,
-        module: str | None = ...,
-    ) -> None: ...
-
-    # This second overload is for unsupported special forms (such as Annotated, Union, etc.)
-    # Currently there is no way to type this correctly
-    # See https://github.com/python/typing/pull/1618
-    @overload
-    def __init__(
-        self,
-        type: Any,
-        *,
-        config: ConfigDict | None = ...,
-        _parent_depth: int = ...,
-        module: str | None = ...,
-    ) -> None: ...
-
-    def __init__(
-        self,
-        type: Any,
+        type: TypeForm[T],
         *,
         config: ConfigDict | None = None,
         _parent_depth: int = 2,

@@ -11,7 +11,7 @@ from re import Pattern
 from typing import TYPE_CHECKING, Any, TypeVar, cast
 
 from pydantic_core import PydanticUndefined
-from typing_extensions import TypeIs, get_args, get_origin  # noqa: UP035 (for `get_args` and `get_origin`)
+from typing_extensions import TypeForm, TypeIs, get_args, get_origin  # noqa: UP035 (for `get_args` and `get_origin`)
 from typing_inspection import typing_objects
 from typing_inspection.introspection import AnnotationSource
 
@@ -44,8 +44,7 @@ class PydanticMetadata(Representation):
 
 @dataclasses.dataclass(slots=True, kw_only=True)
 class PydanticExtraInfo:
-    # TODO: make use of PEP 747:
-    annotation: Any
+    annotation: TypeForm[Any]
     complete: bool
 
 

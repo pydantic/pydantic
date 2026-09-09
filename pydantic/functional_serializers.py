@@ -9,6 +9,7 @@ from typing import TYPE_CHECKING, Annotated, Any, Literal, TypeAlias, TypeVar, o
 
 from pydantic_core import PydanticUndefined, core_schema
 from pydantic_core.core_schema import SerializationInfo, SerializerFunctionWrapHandler, WhenUsed
+from typing_extensions import TypeForm
 
 from . import PydanticUndefinedAnnotation
 from ._internal import _decorators
@@ -48,7 +49,7 @@ class PlainSerializer:
     """
 
     func: core_schema.SerializerFunction
-    return_type: Any = PydanticUndefined
+    return_type: TypeForm[Any] = PydanticUndefined  # pyright: ignore[reportAssignmentType]
     when_used: WhenUsed = 'always'
 
     def __get_pydantic_core_schema__(self, source_type: Any, handler: GetCoreSchemaHandler) -> core_schema.CoreSchema:
@@ -142,7 +143,7 @@ class WrapSerializer:
     """
 
     func: core_schema.WrapSerializerFunction
-    return_type: Any = PydanticUndefined
+    return_type: TypeForm[Any] = PydanticUndefined  # pyright: ignore[reportAssignmentType]
     when_used: WhenUsed = 'always'
 
     def __get_pydantic_core_schema__(self, source_type: Any, handler: GetCoreSchemaHandler) -> core_schema.CoreSchema:
@@ -202,7 +203,7 @@ def field_serializer(
     /,
     *fields: str,
     mode: Literal['wrap'],
-    return_type: Any = ...,
+    return_type: TypeForm[Any] = ...,
     when_used: WhenUsed = ...,
     check_fields: bool | None = ...,
 ) -> Callable[[_FieldWrapSerializerT], _FieldWrapSerializerT]: ...
@@ -214,7 +215,7 @@ def field_serializer(
     /,
     *fields: str,
     mode: Literal['plain'] = ...,
-    return_type: Any = ...,
+    return_type: TypeForm[Any] = ...,
     when_used: WhenUsed = ...,
     check_fields: bool | None = ...,
 ) -> Callable[[_FieldPlainSerializerT], _FieldPlainSerializerT]: ...
@@ -225,8 +226,7 @@ def field_serializer(  # noqa: D417
     /,
     *fields: str,
     mode: Literal['plain', 'wrap'] = 'plain',
-    # TODO PEP 747 (grep for 'return_type' on the whole code base):
-    return_type: Any = PydanticUndefined,
+    return_type: TypeForm[Any] = PydanticUndefined,  # pyright: ignore[reportArgumentType]
     when_used: WhenUsed = 'always',
     check_fields: bool | None = None,
 ) -> (
@@ -339,7 +339,7 @@ def model_serializer(f: _ModelPlainSerializerT, /) -> _ModelPlainSerializerT: ..
 
 @overload
 def model_serializer(
-    *, mode: Literal['wrap'], when_used: WhenUsed = 'always', return_type: Any = ...
+    *, mode: Literal['wrap'], when_used: WhenUsed = 'always', return_type: TypeForm[Any] = ...
 ) -> Callable[[_ModelWrapSerializerT], _ModelWrapSerializerT]: ...
 
 
@@ -348,17 +348,17 @@ def model_serializer(
     *,
     mode: Literal['plain'] = ...,
     when_used: WhenUsed = 'always',
-    return_type: Any = ...,
+    return_type: TypeForm[Any] = ...,
 ) -> Callable[[_ModelPlainSerializerT], _ModelPlainSerializerT]: ...
 
 
-def model_serializer(
+def model_serializer(  # pyright: ignore[reportInconsistentOverload]
     f: _ModelPlainSerializerT | _ModelWrapSerializerT | None = None,
     /,
     *,
     mode: Literal['plain', 'wrap'] = 'plain',
     when_used: WhenUsed = 'always',
-    return_type: Any = PydanticUndefined,
+    return_type: TypeForm[Any] = PydanticUndefined,  # pyright: ignore[reportArgumentType]
 ) -> (
     _ModelPlainSerializerT
     | Callable[[_ModelWrapSerializerT], _ModelWrapSerializerT]
