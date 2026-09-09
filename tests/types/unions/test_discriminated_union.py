@@ -2604,3 +2604,54 @@ def test_union_tags_in_errors():
             'type': 'dict_type',
         },
     ]
+
+
+def test_discriminated_union_none_alias() -> None:
+    # Related issue: https://github.com/pydantic/pydantic/issues/13781
+    class Cat(BaseModel):
+        kind: Literal['cat']
+
+    class Dog(BaseModel):
+        kind: Literal['dog']
+
+    NoneAlias = TypeAliasType('NoneAlias', None)
+
+    class Model(BaseModel):
+        pet: Annotated[NoneAlias | Cat | Dog, Field(discriminator='kind')] = None
+
+    m1 = Model(pet={'kind': 'cat'})
+    assert isinstance(m1.pet, Cat)
+    assert m1.pet.kind == 'cat'
+
+    m2 = Model(pet={'kind': 'dog'})
+    assert isinstance(m2.pet, Dog)
+    assert m2.pet.kind == 'dog'
+
+    m3 = Model(pet=None)
+    assert m3.pet is None
+
+    m4 = Model()
+    assert m4.pet is None
+
+    with pytest.raises(ValidationError) as exc_info:
+        Model(pet={'kind': 'bird'})
+
+    assert exc_info.value.errors(include_url=False) == [
+        {
+            'type': 'union_tag_invalid',
+            'loc': ('pet',),
+            'msg': "Input tag 'bird' found using 'kind' does not match any of the expected tags: 'cat', 'dog'",
+            'input': {'kind': 'bird'},
+            'ctx': {'discriminator': "'kind'", 'tag': 'bird', 'expected_tags': "'cat', 'dog'"},
+        }
+    ]
+
+    ChainedNoneAlias = TypeAliasType('ChainedNoneAlias', NoneAlias)
+
+    class ChainedModel(BaseModel):
+        pet: Annotated[ChainedNoneAlias | Cat | Dog, Field(discriminator='kind')] = None
+
+    m_chained = ChainedModel(pet=None)
+    assert m_chained.pet is None
+    m_chained_cat = ChainedModel(pet={'kind': 'cat'})
+    assert isinstance(m_chained_cat.pet, Cat)

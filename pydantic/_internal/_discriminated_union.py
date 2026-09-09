@@ -259,8 +259,27 @@ class _ApplyInferredDiscriminator:
         * Updating the _tagged_union_choices mapping that will ultimately be used to build the TaggedUnionSchema.
         """
         if choice['type'] == 'definition-ref':
-            if choice['schema_ref'] not in self.definitions:
-                raise MissingDefinitionForUnionRef(choice['schema_ref'])
+            schema_ref = choice['schema_ref']
+            if schema_ref not in self.definitions:
+                raise MissingDefinitionForUnionRef(schema_ref)
+            target = self.definitions[schema_ref]
+            while target['type'] == 'definition-ref':
+                schema_ref = target['schema_ref']
+                if schema_ref not in self.definitions:
+                    raise MissingDefinitionForUnionRef(schema_ref)
+                target = self.definitions[schema_ref]
+            if target['type'] == 'none':
+                self._should_be_nullable = True
+                return
+            elif target['type'] == 'nullable':
+                self._should_be_nullable = True
+                self._handle_choice(target['schema'])
+                return
+            elif target['type'] == 'missing-sentinel':
+                self._should_allow_missing = True
+                if (inner_schema := target.get('schema')) is not None:
+                    self._handle_choice(inner_schema)
+                return
 
         if choice['type'] == 'none':
             self._should_be_nullable = True
