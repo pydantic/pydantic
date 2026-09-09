@@ -146,26 +146,48 @@ class MultiHostHost(_TypedDict):
 
 
 MISSING = Sentinel('MISSING')
-"""A singleton indicating a field value was not provided during validation.
+"""
+/// version-added | v2.11
+///
 
-This singleton can be used a default value, as an alternative to `None` when it has
-an explicit meaning. During serialization, any field with `MISSING` as a value is excluded
-from the output.
+/// version-changed | v2.14
+The `MISSING` sentinel is no longer experimental.
+///
 
-Example:
-    ```python
-    from pydantic import BaseModel
+The `MISSING` sentinel is a singleton indicating a field value was not provided during validation.
 
-    from pydantic_core import MISSING
+This singleton can be used as a default value, as an alternative to `None` when it has an explicit
+meaning. During serialization, any field with `MISSING` as a value is excluded from the output.
+
+At runtime, the `MISSING` sentinel is implemented as a [`sentinel`](https://docs.python.org/3.15/library/functions.html#sentinel) instance.
+
+```python
+from pydantic import MISSING, BaseModel
 
 
-    class Configuration(BaseModel):
-        timeout: int | None | MISSING = MISSING
+class Configuration(BaseModel):
+    timeout: int | None | MISSING = MISSING
 
 
-    # configuration defaults, stored somewhere else:
-    defaults = {'timeout': 200}
+# configuration defaults, stored somewhere else:
+defaults = {'timeout': 200}
 
-    conf = Configuration.model_validate({...})
-    timeout = conf.timeout if timeout.timeout is not MISSING else defaults['timeout']
+conf = Configuration()
+
+# `timeout` is excluded from the serialization output:
+conf.model_dump()
+# {}
+
+# The `MISSING` value doesn't appear in the JSON Schema:
+Configuration.model_json_schema()['properties']['timeout']
+#> {'anyOf': [{'type': 'integer'}, {'type': 'null'}], 'title': 'Timeout'}
+
+
+# `is` can be used to discriminate between the sentinel and other values:
+timeout = conf.timeout if conf.timeout is not MISSING else defaults['timeout']
+```
+
+!!! note
+    When [applying constraints](./fields.md#field-constraints) to a union containing the `MISSING` sentinel,
+    such constraints are automatically applied to the remaining type(s) of the union.
 """

@@ -4,9 +4,9 @@ from typing import Annotated, Literal, Union
 import pytest
 import typing_extensions
 from annotated_types import Ge
-from pydantic_core import MISSING, PydanticSerializationUnexpectedValue
+from pydantic_core import PydanticSerializationUnexpectedValue
 
-from pydantic import BaseModel, Field, TypeAdapter, ValidationError
+from pydantic import MISSING, BaseModel, Field, PydanticDeprecatedSince214, TypeAdapter, ValidationError
 
 
 def test_missing_sentinel_model() -> None:
@@ -53,11 +53,6 @@ class ModelPickle(BaseModel):
     f: int | MISSING = MISSING
 
 
-@pytest.mark.xfail(
-    # Unreleased typing-extensions has the final sentinel implementation with pickle support:
-    condition=not hasattr(typing_extensions, 'sentinel'),
-    reason="PEP 661 sentinels aren't picklable yet in the experimental typing-extensions implementation",
-)
 def test_missing_sentinel_pickle() -> None:
     m = ModelPickle()
     m_reconstructed = pickle.loads(pickle.dumps(m))
@@ -285,3 +280,10 @@ def test_missing_sentinel_nested_type() -> None:
             'input': 'not_an_int',
         },
     ]
+
+
+def test_missing_sentinel_experimental_import_deprecated() -> None:
+    import pydantic.experimental.missing_sentinel as experimental_module
+
+    with pytest.warns(PydanticDeprecatedSince214, match='The `MISSING` sentinel is no longer experimental'):
+        assert experimental_module.MISSING is MISSING
