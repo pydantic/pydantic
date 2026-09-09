@@ -1326,7 +1326,7 @@ The code released in v2.9.0 is practically identical to that of v2.9.0b2.
 * Allow `WithJsonSchema` to inject `$ref`s w/ `http` or `https` links by @dAIsySHEng1 in [#9863](https://github.com/pydantic/pydantic/pull/9863)
 * Allow validators to customize validation JSON schema by @Viicos in [#10094](https://github.com/pydantic/pydantic/pull/10094)
 * Support parametrized `PathLike` types by @nix010 in [#9764](https://github.com/pydantic/pydantic/pull/9764)
-* Add tagged union serializer that attempts to use `str` or `callable` discriminators to select the correct serializer by @sydney-runkle in in [pydantic/pydantic-core#1397](https://github.com/pydantic/pydantic-core/pull/1397)
+* Add tagged union serializer that attempts to use `str` or `callable` discriminators to select the correct serializer by @sydney-runkle in [pydantic/pydantic-core#1397](https://github.com/pydantic/pydantic-core/pull/1397)
 
 #### Changes
 
@@ -1414,7 +1414,7 @@ The code released in v2.9.0 is practically identical to that of v2.9.0b2.
 * Fix `field_serializer` with computed field when using `*` by @nix010 in [pydantic/pydantic-core#1349](https://github.com/pydantic/pydantic-core/pull/1349)
 * Try each option in `Union` serializer before inference by @sydney-runkle in [pydantic/pydantic-core#1398](https://github.com/pydantic/pydantic-core/pull/1398)
 * Fix `float` serialization behavior in `strict` mode by @sydney-runkle in [pydantic/pydantic-core#1400](https://github.com/pydantic/pydantic-core/pull/1400)
-* Introduce `exactness` into Decimal validation logic to improve union validation behavior by @sydney-runkle in in [pydantic/pydantic-core#1405](https://github.com/pydantic/pydantic-core/pull/1405)
+* Introduce `exactness` into Decimal validation logic to improve union validation behavior by @sydney-runkle in [pydantic/pydantic-core#1405](https://github.com/pydantic/pydantic-core/pull/1405)
 * Fix new warnings assertions to use `pytest.warns()` by @mgorny in [#10241](https://github.com/pydantic/pydantic/pull/10241)
 * Fix a crash when cleaning the namespace in `ModelMetaclass` by @Viicos in [#10242](https://github.com/pydantic/pydantic/pull/10242)
 * Fix parent namespace issue with model rebuilds by @sydney-runkle in [#10257](https://github.com/pydantic/pydantic/pull/10257)
@@ -1769,8 +1769,8 @@ The code released in v2.7.0 is practically identical to that of v2.7.0b1.
 * `enum` validator improvements by @samuelcolvin in [#9045](https://github.com/pydantic/pydantic/pull/9045)
 * Move `enum` validation and serialization to Rust by @samuelcolvin in [#9064](https://github.com/pydantic/pydantic/pull/9064)
 * Improve schema generation for nested dataclasses by @sydney-runkle in [#9114](https://github.com/pydantic/pydantic/pull/9114)
-* Fast path for ASCII python string creation in JSON by @samuelcolvin in in [pydantic/jiter#72](https://github.com/pydantic/jiter/pull/72)
-* SIMD integer and string JSON parsing on `aarch64`(**Note:** SIMD on x86 will be implemented in a future release) by @samuelcolvin in in [pydantic/jiter#65](https://github.com/pydantic/jiter/pull/65)
+* Fast path for ASCII python string creation in JSON by @samuelcolvin in [pydantic/jiter#72](https://github.com/pydantic/jiter/pull/72)
+* SIMD integer and string JSON parsing on `aarch64`(**Note:** SIMD on x86 will be implemented in a future release) by @samuelcolvin in [pydantic/jiter#65](https://github.com/pydantic/jiter/pull/65)
 * Support JSON `Cow<str>` from `jiter` by @davidhewitt in [pydantic/pydantic-core#1231](https://github.com/pydantic/pydantic-core/pull/1231)
 * MAJOR performance improvement: update to PyO3 0.21 final by @davidhewitt in [pydantic/pydantic-core#1248](https://github.com/pydantic/pydantic-core/pull/1248)
 * cache Python strings by @samuelcolvin in [pydantic/pydantic-core#1240](https://github.com/pydantic/pydantic-core/pull/1240)
