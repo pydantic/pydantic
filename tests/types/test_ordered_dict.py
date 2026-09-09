@@ -1,10 +1,11 @@
 import collections
 import typing
 from collections import OrderedDict
+from typing import Annotated
 
 import pytest
 
-from pydantic import TypeAdapter, ValidationError
+from pydantic import Field, TypeAdapter, ValidationError
 
 
 def test_ordered_dict():
@@ -59,6 +60,17 @@ def test_ordered_dict_from_ordered_dict_typed():
     assert ta.json_schema() == {
         'type': 'object',
         'additionalProperties': {'type': 'integer'},
+    }
+
+
+def test_ordered_dict_json_schema_with_length_constraints() -> None:
+    ta = TypeAdapter(Annotated[OrderedDict[str, int], Field(min_length=1, max_length=3)])
+
+    assert ta.json_schema() == {
+        'type': 'object',
+        'additionalProperties': {'type': 'integer'},
+        'minProperties': 1,
+        'maxProperties': 3,
     }
 
 
