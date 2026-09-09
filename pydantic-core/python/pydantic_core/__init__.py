@@ -180,7 +180,7 @@ conf.model_dump()
 
 # The `MISSING` value doesn't appear in the JSON Schema:
 Configuration.model_json_schema()['properties']['timeout']
-#> {'anyOf': [{'type': 'integer'}, {'type': 'null'}], 'title': 'Timeout'}}
+#> {'anyOf': [{'type': 'integer'}, {'type': 'null'}], 'title': 'Timeout'}
 
 
 # `is` can be used to discriminate between the sentinel and other values:

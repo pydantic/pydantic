@@ -3330,7 +3330,7 @@ It can be applied to:
   Using it on a required key is not allowed, as it would make the key effectively optional.
 
 ```python
-from typing import NotRequired, TypedDict
+from typing_extensions import NotRequired, TypedDict
 
 from pydantic import BaseModel, OnErrorOmit
 
