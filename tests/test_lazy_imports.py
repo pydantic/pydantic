@@ -114,6 +114,9 @@ def test_lazy_import_circular_dataclasses(import_lazy_modules) -> None:
     assert isinstance(b.a, mod_a.A)
 
 
+@pytest.mark.xfail(
+    reason='Waiting for https://github.com/python/cpython/pull/156940 to be released in the final 3.15 release.'
+)
 def test_lazy_import_missing_module(create_module) -> None:
     module = create_module(
         textwrap.dedent("""
@@ -143,6 +146,9 @@ def test_lazy_import_missing_module(create_module) -> None:
         module.Model(x=1)
 
 
+@pytest.mark.xfail(
+    reason='Waiting for https://github.com/python/cpython/pull/156940 to be released in the final 3.15 release.'
+)
 def test_lazy_import_missing_name(create_module) -> None:
     module = create_module(
         textwrap.dedent("""
