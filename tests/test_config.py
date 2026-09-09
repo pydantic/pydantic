@@ -1000,4 +1000,62 @@ def test_dynamic_default() -> None:
     class Model(BaseModel):
         model_config = ConfigDict(validate_by_alias=False)
 
-    assert Model.model_config == {'validate_by_alias': False, 'validate_by_name': True}
+        a: int = Field(alias='A')
+
+    # model_config holds the configuration as given. A value pydantic derives from it
+    # cannot be stored alongside: subclass config is merged over the parent's, so the
+    # derived value would outrank an explicit setting made by a subclass.
+    assert Model.model_config == {'validate_by_alias': False}
+
+    # The derived validate_by_name=True is still what makes this model usable at all.
+    assert Model(a=1).a == 1
+    with pytest.raises(ValidationError):
+        Model.model_validate({'A': 1})
+
+
+def test_derived_alias_config_is_not_inherited_as_explicit() -> None:
+    class Parent(BaseModel):
+        model_config = ConfigDict(populate_by_name=True)
+
+    class Child(Parent):
+        model_config = ConfigDict(populate_by_name=False)
+
+        a: int = Field(alias='A')
+
+    class Standalone(BaseModel):
+        model_config = ConfigDict(populate_by_name=False)
+
+        a: int = Field(alias='A')
+
+    assert Child.model_config == {'populate_by_name': False}
+
+    # Child and Standalone declare the same configuration and the same field, so they
+    # have to validate the same way.
+    for model in (Child, Standalone):
+        assert model.model_validate({'A': 1}).a == 1
+        with pytest.raises(ValidationError):
+            model.model_validate({'a': 1})
+
+
+def test_config_argument_is_not_mutated() -> None:
+    config = ConfigDict(populate_by_name=True)
+    TypeAdapter(int, config=config)
+    assert config == {'populate_by_name': True}
+
+    config = ConfigDict(populate_by_name=True)
+
+    @validate_call(config=config)
+    def func(a: int) -> int:
+        return a
+
+    func(1)
+    assert config == {'populate_by_name': True}
+
+    config = ConfigDict(populate_by_name=True)
+
+    @pydantic_dataclass(config=config)
+    class Dc:
+        a: int
+
+    Dc(a=1)
+    assert config == {'populate_by_name': True}
