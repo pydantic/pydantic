@@ -23,6 +23,11 @@ from pydantic import BaseModel
 from pydantic._internal._generate_schema import GenerateSchema
 from pydantic.json_schema import GenerateJsonSchema
 
+try:
+    is_free_threaded = not sys._is_gil_enabled()
+except AttributeError:
+    is_free_threaded = False
+
 
 def pytest_addoption(parser: pytest.Parser):
     parser.addoption('--test-mypy', action='store_true', help='run mypy tests')
