@@ -711,16 +711,12 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
 
             cls.__pydantic_complete__ = False
 
-            for attr in ('__pydantic_core_schema__', '__pydantic_validator__', '__pydantic_serializer__'):
-                if attr in cls.__dict__ and not isinstance(
-                    getattr(cls, attr), (_mock_val_ser.MockCoreSchema, _mock_val_ser.MockValSer)
-                ):
-                    # Deleting the validator/serializer is necessary as otherwise they can get reused in
-                    # pydantic-core. Same applies for the core schema that can be reused in schema generation.
-                    # We do so only if they aren't mock instances, otherwise concurrent reads of these attributes
-                    # — performed without holding the rebuild lock (e.g. when instantiating the model) — can
-                    # resolve them from the parent class.
-                    delattr(cls, attr)
+            if already_complete:
+                # The existing validator/serializer must not be reused in pydantic-core, and the core schema
+                # must not be reused in schema generation. If the model is already complete (i.e. `force=True`),
+                # we set back mocks for the model (we could also delete the complete core schema/validator/serializer,
+                # but this isn't thread-safe).
+                _mock_val_ser.set_model_mocks(cls)
 
             if _types_namespace is not None:
                 rebuild_ns = _types_namespace

@@ -535,7 +535,12 @@ def _decorator_infos_for_class(
     res = DecoratorInfos()
     to_replace: list[tuple[str, Any]] = []
 
-    for var_name, var_value in vars(typ).items():
+    # Iterate on the vars with a copy to avoid changes in dictionary size during iteration.
+    # This can happen if a concurrent thread has Pydantic processing the same `typ` (e.g. two
+    # concurrent threads doing `TypeAdapter(SomeClassType)`), and such thread reads annotations
+    # for the first time during the iteration here in the other thread (since 3.14, reading annotations
+    # can set attributes such as `__annotations_cache__` or `__annotate_func__` to the type).
+    for var_name, var_value in vars(typ).copy().items():
         if isinstance(var_value, PydanticDescriptorProxy):
             info = var_value.decorator_info
             if isinstance(info, ValidatorDecoratorInfo):
