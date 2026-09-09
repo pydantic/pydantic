@@ -1,8 +1,9 @@
 from collections import Counter
+from typing import Annotated
 
 import pytest
 
-from pydantic import TypeAdapter, ValidationError
+from pydantic import Field, TypeAdapter, ValidationError
 
 
 def test_typing_coercion_counter():
@@ -28,3 +29,14 @@ def test_typing_counter_value_validation():
             'input': 'a',
         }
     ]
+
+
+def test_typing_counter_json_schema_with_length_constraints() -> None:
+    ta = TypeAdapter(Annotated[Counter[str], Field(min_length=1, max_length=3)])
+
+    assert ta.json_schema() == {
+        'type': 'object',
+        'additionalProperties': {'type': 'integer'},
+        'minProperties': 1,
+        'maxProperties': 3,
+    }
