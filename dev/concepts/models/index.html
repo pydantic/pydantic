@@ -971,6 +971,23 @@ to help you monitor and understand your
     </span>
   </a>
   
+    <nav class="md-nav" aria-label="Nested models">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#cyclic-references" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Cyclic references
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
 </li>
       
         <li class="md-nav__item">
@@ -3348,6 +3365,34 @@ to help you monitor and understand your
   
   
     <li class="md-nav__item">
+      <a href="../../examples/cyclic_references/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Cyclic references
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../examples/pydantic_ai/" class="md-nav__link">
         
   
@@ -4229,6 +4274,23 @@ to help you monitor and understand your
     </span>
   </a>
   
+    <nav class="md-nav" aria-label="Nested models">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#cyclic-references" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Cyclic references
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
 </li>
       
         <li class="md-nav__item">
@@ -4795,8 +4857,78 @@ that will override the <code>extra</code> configuration value of the model for t
 <span class="sd">}</span>
 <span class="sd">&quot;&quot;&quot;</span>
 </code></pre></div>
-<p>Self-referencing models are supported. For more details, see  the documentation related to
-<a href="../forward_annotations/#self-referencing-or-recursive-models">forward annotations</a>.</p>
+<h3 id="cyclic-references">Cyclic references<a class="headerlink" href="#cyclic-references" title="Permanent link">&para;</a></h3>
+<p>When working with self-referencing recursive models, it is possible that you might encounter cyclic references
+in validation inputs. For example, this can happen when validating ORM instances with back-references from
+attributes.</p>
+<p>Rather than raising a <a class="autorefs autorefs-external" href="https://docs.python.org/3/library/exceptions.html#RecursionError"><code>RecursionError</code></a> while attempting to validate data with cyclic references, Pydantic is able
+to detect the cyclic reference and raise an appropriate <a class="autorefs autorefs-internal" href="../../api/pydantic_core/#pydantic_core.ValidationError"><code>ValidationError</code></a>:</p>
+<div class="tabbed-set tabbed-alternate" data-tabs="1:2"><input checked="checked" id="__tabbed_1_1" name="__tabbed_1" type="radio" /><input id="__tabbed_1_2" name="__tabbed_1" type="radio" /><div class="tabbed-labels"><label for="__tabbed_1_1">Python 3.10 and above</label><label for="__tabbed_1_2">Python 3.14 and above</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
+<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">pydantic</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ValidationError</span>
+
+
+<span class="k">class</span><span class="w"> </span><span class="nc">ModelA</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="n">b</span><span class="p">:</span> <span class="s1">&#39;ModelB | None&#39;</span> <span class="o">=</span> <span class="kc">None</span>  <span class="c1"># (1)!</span>
+
+
+<span class="k">class</span><span class="w"> </span><span class="nc">ModelB</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="n">a</span><span class="p">:</span> <span class="n">ModelA</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+
+
+<span class="n">cyclic_data</span> <span class="o">=</span> <span class="p">{}</span>
+<span class="n">cyclic_data</span><span class="p">[</span><span class="s1">&#39;a&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;b&#39;</span><span class="p">:</span> <span class="n">cyclic_data</span><span class="p">}</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">cyclic_data</span><span class="p">)</span>
+<span class="c1">#&gt; {&#39;a&#39;: {&#39;b&#39;: {...}}}</span>
+
+<span class="k">try</span><span class="p">:</span>
+    <span class="n">ModelB</span><span class="o">.</span><span class="n">model_validate</span><span class="p">(</span><span class="n">cyclic_data</span><span class="p">)</span>
+<span class="k">except</span> <span class="n">ValidationError</span> <span class="k">as</span> <span class="n">exc</span><span class="p">:</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">exc</span><span class="p">)</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    1 validation error for ModelB</span>
+<span class="sd">    a.b</span>
+<span class="sd">      Recursion error - cyclic reference detected [type=recursion_loop, input_value={&#39;a&#39;: {&#39;b&#39;: {...}}}, input_type=dict]</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+</code></pre></div>
+<ol>
+<li>As <code>ModelB</code> is not yet defined, a <a href="../forward_annotations/">forward annotation</a> needs to be used.</li>
+</ol>
+</div>
+<div class="tabbed-block">
+<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">pydantic</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ValidationError</span>
+
+
+<span class="k">class</span><span class="w"> </span><span class="nc">ModelA</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="n">b</span><span class="p">:</span> <span class="n">ModelB</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+
+
+<span class="k">class</span><span class="w"> </span><span class="nc">ModelB</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="n">a</span><span class="p">:</span> <span class="n">ModelA</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+
+
+<span class="n">cyclic_data</span> <span class="o">=</span> <span class="p">{}</span>
+<span class="n">cyclic_data</span><span class="p">[</span><span class="s1">&#39;a&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;b&#39;</span><span class="p">:</span> <span class="n">cyclic_data</span><span class="p">}</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">cyclic_data</span><span class="p">)</span>
+<span class="c1">#&gt; {&#39;a&#39;: {&#39;b&#39;: {...}}}</span>
+
+<span class="k">try</span><span class="p">:</span>
+    <span class="n">ModelB</span><span class="o">.</span><span class="n">model_validate</span><span class="p">(</span><span class="n">cyclic_data</span><span class="p">)</span>
+<span class="k">except</span> <span class="n">ValidationError</span> <span class="k">as</span> <span class="n">exc</span><span class="p">:</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">exc</span><span class="p">)</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    1 validation error for ModelB</span>
+<span class="sd">    a.b</span>
+<span class="sd">      Recursion error - cyclic reference detected [type=recursion_loop, input_value={&#39;a&#39;: {&#39;b&#39;: {...}}}, input_type=dict]</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+</code></pre></div>
+</div>
+</div>
+</div>
+<p>See also: the <a href="../../examples/cyclic_references/">cyclic references example</a>, showing how to handle such
+cyclic references during validation and serialization, and the <a href="../forward_annotations/#cyclic-imports">cyclic imports</a>
+section, for models referencing each other from separate modules.</p>
 <h2 id="rebuilding-model-schema">Rebuilding model schema<a class="headerlink" href="#rebuilding-model-schema" title="Permanent link">&para;</a></h2>
 <p>When you define a model class in your code, Pydantic will analyze the body of the class to collect a variety of information
 required to perform validation and serialization, gathered in a core schema. Notably, the model's type annotations are evaluated to
@@ -5146,7 +5278,7 @@ for more details).</p>
 <p>Here is an example using a generic Pydantic model to create an easily-reused HTTP response payload wrapper:</p>
 <!-- TODO: tabs should be auto-generated if using Ruff (https://github.com/pydantic/pydantic/issues/10083) -->
 
-<div class="tabbed-set tabbed-alternate" data-tabs="1:2"><input checked="checked" id="__tabbed_1_1" name="__tabbed_1" type="radio" /><input id="__tabbed_1_2" name="__tabbed_1" type="radio" /><div class="tabbed-labels"><label for="__tabbed_1_1">Python 3.10 and above</label><label for="__tabbed_1_2">Python 3.12 and above (new syntax)</label></div>
+<div class="tabbed-set tabbed-alternate" data-tabs="2:2"><input checked="checked" id="__tabbed_2_1" name="__tabbed_2" type="radio" /><input id="__tabbed_2_2" name="__tabbed_2" type="radio" /><div class="tabbed-labels"><label for="__tabbed_2_1">Python 3.10 and above</label><label for="__tabbed_2_2">Python 3.12 and above (new syntax)</label></div>
 <div class="tabbed-content">
 <div class="tabbed-block">
 <div class="language-python highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Generic</span><span class="p">,</span> <span class="n">TypeVar</span>
@@ -5608,7 +5740,7 @@ types like <a class="autorefs autorefs-external" href="https://docs.python.org/3
 or a default value (as per <a href="https://peps.python.org/pep-0696/">PEP 696</a>) is being used, then the default type or constraints
 will be used for both validation and serialization if the type variable is not parametrized. You can override this behavior
 using <a href="../serialization/#serializeasany-annotation"><code>SerializeAsAny</code></a>:</p>
-<div class="tabbed-set tabbed-alternate" data-tabs="2:2"><input checked="checked" id="__tabbed_2_1" name="__tabbed_2" type="radio" /><input id="__tabbed_2_2" name="__tabbed_2" type="radio" /><div class="tabbed-labels"><label for="__tabbed_2_1">Python 3.9 and above</label><label for="__tabbed_2_2">Python 3.13 and above</label></div>
+<div class="tabbed-set tabbed-alternate" data-tabs="3:2"><input checked="checked" id="__tabbed_3_1" name="__tabbed_3" type="radio" /><input id="__tabbed_3_2" name="__tabbed_3" type="radio" /><div class="tabbed-labels"><label for="__tabbed_3_1">Python 3.9 and above</label><label for="__tabbed_3_2">Python 3.13 and above</label></div>
 <div class="tabbed-content">
 <div class="tabbed-block">
 <div class="language-python highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Generic</span>

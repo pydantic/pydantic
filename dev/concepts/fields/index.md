@@ -416,7 +416,7 @@ The available constraints for each type (and the way they affect the JSON Schema
 
 Note
 
-When adding constraints to a union type, if a member of the union is `None` or the [`MISSING` sentinel](../experimental/#missing-sentinel), the constraints will be automatically applied to the remaining type(s) of the union:
+When adding constraints to a union type, if a member of the union is `None` or the [`MISSING` sentinel](../types/#missing-sentinel), the constraints will be automatically applied to the remaining type(s) of the union:
 
 ```python
 from typing import Annotated

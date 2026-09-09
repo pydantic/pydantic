@@ -16,7 +16,7 @@
         <link rel="prev" href="../custom_validators/">
       
       
-        <link rel="next" href="../pydantic_ai/">
+        <link rel="next" href="../cyclic_references/">
       
       
         
@@ -2979,6 +2979,34 @@ to help you monitor and understand your
   
   
     <li class="md-nav__item">
+      <a href="../cyclic_references/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Cyclic references
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../pydantic_ai/" class="md-nav__link">
         
   
@@ -4026,7 +4054,7 @@ using the <a class="autorefs autorefs-internal" href="../../api/fields/#pydantic
 <p>However, note that static type checkers <em>won't</em> be able to understand that all fields are now optional.</p>
 </li>
 <li>
-<p>The experimental <a href="../../concepts/experimental/#missing-sentinel"><code>MISSING</code> sentinel</a> can be used as an alternative to <code>None</code>
+<p>The <a href="../../concepts/types/#missing-sentinel"><code>MISSING</code> sentinel</a> can be used as an alternative to <code>None</code>
   for the default values. Simply replace <code>None</code> by <code>MISSING</code> in the new annotation and default value.</p>
 </li>
 <li>

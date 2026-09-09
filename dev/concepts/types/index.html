@@ -99,7 +99,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#custom-types" class="md-skip">
+        <a href="#utility-types" class="md-skip">
           Skip to content
         </a>
       
@@ -1023,6 +1023,67 @@ to help you monitor and understand your
       Page contents
     </label>
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#utility-types" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Utility types
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Utility types">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#onerroromit" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        OnErrorOmit
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#failfast" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        FailFast
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#missing-sentinel" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        MISSING sentinel
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#pydantic_core.MISSING" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        MISSING
+      
+    </span>
+  </a>
+  
+</li>
       
         <li class="md-nav__item">
   <a href="#custom-types" class="md-nav__link">
@@ -3216,6 +3277,34 @@ to help you monitor and understand your
   
   
     <li class="md-nav__item">
+      <a href="../../examples/cyclic_references/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Cyclic references
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../examples/pydantic_ai/" class="md-nav__link">
         
   
@@ -4039,6 +4128,67 @@ to help you monitor and understand your
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
+  <a href="#utility-types" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Utility types
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Utility types">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#onerroromit" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        OnErrorOmit
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#failfast" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        FailFast
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#missing-sentinel" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        MISSING sentinel
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#pydantic_core.MISSING" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        MISSING
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#custom-types" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -4274,8 +4424,101 @@ Strictness and constraints <em>can't</em> be applied on them.</p>
 the supported types: the allowed values, the possible validation constraints, and whether <a href="../strict_mode/">strictness</a>
 can be configured.</p>
 <p>See also the <a href="../conversion_table/">conversion table</a> for a summary of the allowed values for each type.</p>
-<p>This page will go over defining your own custom types.</p>
-<h2 id="custom-types">Custom Types<a class="headerlink" href="#custom-types" title="Permanent link">&para;</a></h2>
+<h2 id="utility-types">Utility types<a class="headerlink" href="#utility-types" title="Permanent link">&para;</a></h2>
+<p>Pydantic provides a number of utility types/annotations, useful to customize the validation/serialization behavior.</p>
+<h3 id="onerroromit"><code>OnErrorOmit</code><a class="headerlink" href="#onerroromit" title="Permanent link">&para;</a></h3>
+<div style="border-left: .15rem solid rgb(79, 196, 100); padding: 0 .5rem;">
+<p><span style="font-style: italic; color: rgb(79, 196, 100);">Added in v2.6.</span></p>
+</div>
+<p>By default, when an item of a collection (such as a list, a dictionary or a <a class="autorefs autorefs-external" href="https://docs.python.org/3/library/typing.html#typing.TypedDict"><code>TypedDict</code></a>)
+fails validation, a <a class="autorefs autorefs-internal" href="../../api/pydantic_core/#pydantic_core.ValidationError"><code>ValidationError</code></a> is raised and the whole collection is
+discarded. The <a class="autorefs autorefs-internal" href="../../api/types/#pydantic.types.OnErrorOmit"><code>OnErrorOmit</code></a> annotation changes this behavior: any item failing
+validation is silently omitted from the result, and the valid ones are kept.</p>
+<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">pydantic</span><span class="w"> </span><span class="kn">import</span> <span class="n">OnErrorOmit</span><span class="p">,</span> <span class="n">TypeAdapter</span>
+
+<span class="n">ta</span> <span class="o">=</span> <span class="n">TypeAdapter</span><span class="p">(</span><span class="nb">list</span><span class="p">[</span><span class="n">OnErrorOmit</span><span class="p">[</span><span class="nb">int</span><span class="p">]])</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="n">ta</span><span class="o">.</span><span class="n">validate_python</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="s1">&#39;a&#39;</span><span class="p">,</span> <span class="mi">3</span><span class="p">]))</span>
+<span class="c1">#&gt; [1, 2, 3]</span>
+</code></pre></div>
+<p>See the <a class="autorefs autorefs-internal" href="../../api/types/#pydantic.types.OnErrorOmit">API documentation</a> for more details on where it can be applied.</p>
+<h3 id="failfast"><code>FailFast</code><a class="headerlink" href="#failfast" title="Permanent link">&para;</a></h3>
+<div style="border-left: .15rem solid rgb(79, 196, 100); padding: 0 .5rem;">
+<p><span style="font-style: italic; color: rgb(79, 196, 100);">Added in v2.8.</span></p>
+</div>
+<p>By default, when validating a collection, Pydantic validates every item and reports all the errors
+at once. The <a class="autorefs autorefs-internal" href="../../api/types/#pydantic.types.FailFast"><code>FailFast</code></a> annotation can be applied to a collection type
+(such as a <a class="autorefs autorefs-external" href="https://docs.python.org/3/glossary.html#term-list"><code>list</code></a>, a <a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#tuple"><code>tuple</code></a>, a <a class="autorefs autorefs-external" href="https://docs.python.org/3/reference/expressions.html#set"><code>set</code></a> or a <a class="autorefs autorefs-external" href="https://docs.python.org/3/reference/expressions.html#dict"><code>dict</code></a>) to stop as soon as an item fails validation.
+This makes validation faster, with the caveat that you get less information about the errors.</p>
+<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Annotated</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">pydantic</span><span class="w"> </span><span class="kn">import</span> <span class="n">FailFast</span><span class="p">,</span> <span class="n">TypeAdapter</span><span class="p">,</span> <span class="n">ValidationError</span>
+
+<span class="n">ta</span> <span class="o">=</span> <span class="n">TypeAdapter</span><span class="p">(</span><span class="n">Annotated</span><span class="p">[</span><span class="nb">list</span><span class="p">[</span><span class="nb">int</span><span class="p">],</span> <span class="n">FailFast</span><span class="p">()])</span>
+
+<span class="k">try</span><span class="p">:</span>
+    <span class="n">ta</span><span class="o">.</span><span class="n">validate_python</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span> <span class="s1">&#39;a&#39;</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="s1">&#39;b&#39;</span><span class="p">])</span>
+<span class="k">except</span> <span class="n">ValidationError</span> <span class="k">as</span> <span class="n">exc</span><span class="p">:</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">exc</span><span class="p">)</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    1 validation error for list[int]</span>
+<span class="sd">    1</span>
+<span class="sd">      Input should be a valid integer, unable to parse string as an integer [type=int_parsing, input_value=&#39;a&#39;, input_type=str]</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+</code></pre></div>
+<h3 id="missing-sentinel"><code>MISSING</code> sentinel<a class="headerlink" href="#missing-sentinel" title="Permanent link">&para;</a></h3>
+
+
+<div class="doc doc-object doc-attribute">
+
+
+
+
+<a id="pydantic_core.MISSING"></a>
+    <div class="doc doc-contents first">
+
+        <div style="border-left: .15rem solid rgb(79, 196, 100); padding: 0 .5rem;">
+<p><span style="font-style: italic; color: rgb(79, 196, 100);">Added in v2.11.</span></p>
+</div>
+<div style="border-left: .15rem solid rgb(244, 227, 76); padding: 0 .5rem;">
+<p><span style="font-style: italic; color: rgb(244, 227, 76);">Changed in v2.14: </span><span>The <code>MISSING</code> sentinel is no longer experimental.</span></p>
+</div>
+<p>The <code>MISSING</code> sentinel is a singleton indicating a field value was not provided during validation.</p>
+<p>This singleton can be used as a default value, as an alternative to <code>None</code> when it has an explicit
+meaning. During serialization, any field with <code>MISSING</code> as a value is excluded from the output.</p>
+<p>At runtime, the <code>MISSING</code> sentinel is implemented as a <a href="https://docs.python.org/3.15/library/functions.html#sentinel"><code>sentinel</code></a> instance.</p>
+<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">pydantic</span><span class="w"> </span><span class="kn">import</span> <span class="n">MISSING</span><span class="p">,</span> <span class="n">BaseModel</span>
+
+
+<span class="k">class</span><span class="w"> </span><span class="nc">Configuration</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="n">timeout</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">|</span> <span class="n">MISSING</span> <span class="o">=</span> <span class="n">MISSING</span>
+
+
+<span class="c1"># configuration defaults, stored somewhere else:</span>
+<span class="n">defaults</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;timeout&#39;</span><span class="p">:</span> <span class="mi">200</span><span class="p">}</span>
+
+<span class="n">conf</span> <span class="o">=</span> <span class="n">Configuration</span><span class="p">()</span>
+
+<span class="c1"># `timeout` is excluded from the serialization output:</span>
+<span class="n">conf</span><span class="o">.</span><span class="n">model_dump</span><span class="p">()</span>
+<span class="c1"># {}</span>
+
+<span class="c1"># The `MISSING` value doesn&#39;t appear in the JSON Schema:</span>
+<span class="n">Configuration</span><span class="o">.</span><span class="n">model_json_schema</span><span class="p">()[</span><span class="s1">&#39;properties&#39;</span><span class="p">][</span><span class="s1">&#39;timeout&#39;</span><span class="p">]</span>
+<span class="c1">#&gt; {&#39;anyOf&#39;: [{&#39;type&#39;: &#39;integer&#39;}, {&#39;type&#39;: &#39;null&#39;}], &#39;title&#39;: &#39;Timeout&#39;}</span>
+
+
+<span class="c1"># `is` can be used to discriminate between the sentinel and other values:</span>
+<span class="n">timeout</span> <span class="o">=</span> <span class="n">conf</span><span class="o">.</span><span class="n">timeout</span> <span class="k">if</span> <span class="n">conf</span><span class="o">.</span><span class="n">timeout</span> <span class="ow">is</span> <span class="ow">not</span> <span class="n">MISSING</span> <span class="k">else</span> <span class="n">defaults</span><span class="p">[</span><span class="s1">&#39;timeout&#39;</span><span class="p">]</span>
+</code></pre></div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>When <a href="../fields/#field-constraints">applying constraints</a> to a union containing the <code>MISSING</code> sentinel,
+such constraints are automatically applied to the remaining type(s) of the union.</p>
+</div>
+    </div>
+
+</div><h2 id="custom-types">Custom Types<a class="headerlink" href="#custom-types" title="Permanent link">&para;</a></h2>
 <p>There are several ways to define your custom types.</p>
 <h3 id="using-the-annotated-pattern">Using the annotated pattern<a class="headerlink" href="#using-the-annotated-pattern" title="Permanent link">&para;</a></h3>
 <p>The <a href="../fields/#the-annotated-pattern">annotated pattern</a> can be used to make types reusable across your code base.

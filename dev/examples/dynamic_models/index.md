@@ -138,6 +138,6 @@ A couple notes on the implementation:
 
   However, note that static type checkers *won't* be able to understand that all fields are now optional.
 
-- The experimental [`MISSING` sentinel](../../concepts/experimental/#missing-sentinel) can be used as an alternative to `None` for the default values. Simply replace `None` by `MISSING` in the new annotation and default value.
+- The [`MISSING` sentinel](../../concepts/types/#missing-sentinel) can be used as an alternative to `None` for the default values. Simply replace `None` by `MISSING` in the new annotation and default value.
 
 - You might be tempted to make a copy of the original FieldInfo instances, add a default and/or perform other mutations, to then reuse it as Annotated metadata. While this may work in some cases, it is **not** a supported pattern, and could break or be deprecated at any point. We strongly encourage using the pattern from this example instead.

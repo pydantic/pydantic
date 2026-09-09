@@ -277,6 +277,10 @@
          <lastmod>2026-09-09</lastmod>
     </url>
     <url>
+         <loc>https://docs.pydantic.dev/latest/examples/cyclic_references/</loc>
+         <lastmod>2026-09-09</lastmod>
+    </url>
+    <url>
          <loc>https://docs.pydantic.dev/latest/examples/dynamic_models/</loc>
          <lastmod>2026-09-09</lastmod>
     </url>

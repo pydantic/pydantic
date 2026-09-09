@@ -2971,6 +2971,34 @@ to help you monitor and understand your
   
   
     <li class="md-nav__item">
+      <a href="../../examples/cyclic_references/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Cyclic references
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../examples/pydantic_ai/" class="md-nav__link">
         
   
@@ -7492,10 +7520,8 @@ any of the fields:</p>
     <span class="c1">#&gt; &#39;missing_positional_only_argument&#39;</span>
 </code></pre></div>
 <h2 id="missing_sentinel_error"><code>missing_sentinel_error</code><a class="headerlink" href="#missing_sentinel_error" title="Permanent link">&para;</a></h2>
-<p>This error is raised when the experimental <code>MISSING</code> sentinel is the only value allowed, and wasn't
-provided during validation:</p>
-<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">pydantic</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ValidationError</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">pydantic.experimental.missing_sentinel</span><span class="w"> </span><span class="kn">import</span> <span class="n">MISSING</span>
+<p>This error is raised when the <code>MISSING</code> sentinel is the only value allowed, and wasn't provided during validation:</p>
+<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">pydantic</span><span class="w"> </span><span class="kn">import</span> <span class="n">MISSING</span><span class="p">,</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ValidationError</span>
 
 
 <span class="k">class</span><span class="w"> </span><span class="nc">Model</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>

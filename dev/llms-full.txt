@@ -1674,51 +1674,6 @@ print(args, kwargs)
 
 ```
 
-## `MISSING` sentinel
-
-The `MISSING` sentinel is a singleton indicating a field value was not provided during validation.
-
-This singleton can be used as a default value, as an alternative to `None` when it has an explicit meaning. During serialization, any field with `MISSING` as a value is excluded from the output.
-
-```python
-from pydantic import BaseModel
-from pydantic.experimental.missing_sentinel import MISSING
-
-
-class Configuration(BaseModel):
-    timeout: int | None | MISSING = MISSING
-
-
-# configuration defaults, stored somewhere else:
-defaults = {'timeout': 200}
-
-conf = Configuration()
-
-# `timeout` is excluded from the serialization output:
-conf.model_dump()
-# {}
-
-# The `MISSING` value doesn't appear in the JSON Schema:
-Configuration.model_json_schema()['properties']['timeout']
-#> {'anyOf': [{'type': 'integer'}, {'type': 'null'}], 'title': 'Timeout'}}
-
-
-# `is` can be used to discriminate between the sentinel and other values:
-timeout = conf.timeout if conf.timeout is not MISSING else defaults['timeout']
-
-```
-
-This feature is marked as experimental because it relies on the draft [PEP 661](https://peps.python.org/pep-0661/), introducing sentinels in the standard library.
-
-As such, the following limitations currently apply:
-
-- Static type checking of sentinels is only supported with Pyright [1.1.402](https://github.com/microsoft/pyright/releases/tag/1.1.402) or greater, and the `enableExperimentalFeatures` type evaluation setting should be enabled.
-- Pickling of models containing `MISSING` as a value is not supported.
-
-Note
-
-When [applying constraints](../fields/#field-constraints) to a union containing the `MISSING` sentinel, such constraints are automatically applied to the remaining type(s) of the union.
-
 API Documentation
 
 pydantic.fields.Field
@@ -2137,7 +2092,7 @@ The available constraints for each type (and the way they affect the JSON Schema
 
 Note
 
-When adding constraints to a union type, if a member of the union is `None` or the [`MISSING` sentinel](../experimental/#missing-sentinel), the constraints will be automatically applied to the remaining type(s) of the union:
+When adding constraints to a union type, if a member of the union is `None` or the [`MISSING` sentinel](../types/#missing-sentinel), the constraints will be automatically applied to the remaining type(s) of the union:
 
 ```python
 from typing import Annotated
@@ -2578,14 +2533,18 @@ class Box(BaseModel):
 
 ```
 
-Forward annotations (wrapped in quotes) or using the `from __future__ import annotations` [future statement](https://docs.python.org/3/reference/simple_stmts.html#future) (as introduced in [PEP563](https://www.python.org/dev/peps/pep-0563/)) are supported:
+## Python 3.14 and greater
+
+Since Python 3.14, Python does not *eagerly* evaluate annotations anymore, meaning you can reference objects that are not yet defined when the annotation is specified:
+
+## Python 3.13 and lower
+
+For Python versions prior to 3.14, References to objects that are not yet defined need to be defined as forward annotations (wrapped in quotes), or by using the `from __future__ import annotations` [future statement](https://docs.python.org/3/reference/simple_stmts.html#future) (as introduced in [PEP563](https://www.python.org/dev/peps/pep-0563/)):
 
 ```python
 from __future__ import annotations
 
 from pydantic import BaseModel
-
-MyInt = int
 
 
 class Model(BaseModel):
@@ -2594,12 +2553,13 @@ class Model(BaseModel):
     # a: 'MyInt'
 
 
+MyInt = int
+
+
 print(Model(a='1'))
 #> a=1
 
 ```
-
-As shown in the following sections, forward annotations are useful when you want to reference a type that is not yet defined in your code.
 
 The internal logic to resolve forward annotations is described in detail in [this section](../../internals/resolving_annotations/).
 
@@ -2607,15 +2567,13 @@ The internal logic to resolve forward annotations is described in detail in [thi
 
 Models with self-referencing fields are also supported. These annotations will be resolved during model creation.
 
-Within the model, you can either add the `from __future__ import annotations` import or wrap the annotation in a string:
-
 ```python
 from pydantic import BaseModel
 
 
 class Foo(BaseModel):
     a: int = 123
-    sibling: 'Foo | None' = None
+    sibling: 'Foo | None' = None  # (1)!
 
 
 print(Foo())
@@ -2625,185 +2583,98 @@ print(Foo(sibling={'a': '321'}))
 
 ```
 
-### Cyclic references
-
-When working with self-referencing recursive models, it is possible that you might encounter cyclic references in validation inputs. For example, this can happen when validating ORM instances with back-references from attributes.
-
-Rather than raising a RecursionError while attempting to validate data with cyclic references, Pydantic is able to detect the cyclic reference and raise an appropriate ValidationError:
+1. Python processes annotations when the `Foo` model is being defined (so it isn't actually fully defined yet). As such, the `Foo` annotation cannot be resolved, and need to be defined as a forward annotation.
 
 ```python
-from pydantic import BaseModel, ValidationError
+from pydantic import BaseModel
 
 
-class ModelA(BaseModel):
-    b: 'ModelB | None' = None
+class Foo(BaseModel):
+    a: int = 123
+    sibling: Foo | None = None
 
 
-class ModelB(BaseModel):
-    a: ModelA | None = None
-
-
-cyclic_data = {}
-cyclic_data['a'] = {'b': cyclic_data}
-print(cyclic_data)
-#> {'a': {'b': {...}}}
-
-try:
-    ModelB.model_validate(cyclic_data)
-except ValidationError as exc:
-    print(exc)
-    """
-    1 validation error for ModelB
-    a.b
-      Recursion error - cyclic reference detected [type=recursion_loop, input_value={'a': {'b': {...}}}, input_type=dict]
-    """
+print(Foo())
+#> a=123 sibling=None
+print(Foo(sibling={'a': '321'}))
+#> a=123 sibling=Foo(a=321, sibling=None)
 
 ```
 
-Because this error is raised without actually exceeding the maximum recursion depth, you can catch and handle the raised ValidationError without needing to worry about the limited remaining recursion depth:
+## Cyclic imports
+
+When models referencing each other are defined in separate modules, importing one model from the other module results in a cyclic import: each module needs the other one to be fully imported first.
+
+Python 3.15 introduced [lazy imports](https://docs.python.org/3.15/reference/simple_stmts.html#lazy) where the `lazy` keyword defers the actual import until the imported name is first accessed. Lazy imports are supported in Pydantic, and can be used to break the cycle:
+
+a.py
 
 ```python
-from __future__ import annotations
+lazy from .b import B
 
-from collections.abc import Generator
-from contextlib import contextmanager
-from dataclasses import field
-
-from pydantic import BaseModel, ValidationError, field_validator
+from pydantic import BaseModel
 
 
-def is_recursion_validation_error(exc: ValidationError) -> bool:
-    errors = exc.errors()
-    return len(errors) == 1 and errors[0]['type'] == 'recursion_loop'
-
-
-@contextmanager
-def suppress_recursion_validation_error() -> Generator[None]:
-    try:
-        yield
-    except ValidationError as exc:
-        if not is_recursion_validation_error(exc):
-            raise exc
-
-
-class Node(BaseModel):
-    id: int
-    children: list[Node] = field(default_factory=list)
-
-    @field_validator('children', mode='wrap')
-    @classmethod
-    def drop_cyclic_references(cls, children, h):
-        try:
-            return h(children)
-        except ValidationError as exc:
-            if not (
-                is_recursion_validation_error(exc)
-                and isinstance(children, list)
-            ):
-                raise exc
-
-            value_without_cyclic_refs = []
-            for child in children:
-                with suppress_recursion_validation_error():
-                    value_without_cyclic_refs.extend(h([child]))
-            return h(value_without_cyclic_refs)
-
-
-# Create data with cyclic references representing the graph 1 -> 2 -> 3 -> 1
-node_data = {'id': 1, 'children': [{'id': 2, 'children': [{'id': 3}]}]}
-node_data['children'][0]['children'][0]['children'] = [node_data]
-
-print(Node.model_validate(node_data))
-#> id=1 children=[Node(id=2, children=[Node(id=3, children=[])])]
+class A(BaseModel):
+    b: B | None = None
 
 ```
 
-Similarly, if Pydantic encounters a recursive reference during *serialization*, rather than waiting for the maximum recursion depth to be exceeded, a ValueError is raised immediately:
+b.py
 
 ```python
-from pydantic import TypeAdapter
+lazy from .a import A
 
-# Create data with cyclic references representing the graph 1 -> 2 -> 3 -> 1
-node_data = {'id': 1, 'children': [{'id': 2, 'children': [{'id': 3}]}]}
-node_data['children'][0]['children'][0]['children'] = [node_data]
+from pydantic import BaseModel
 
-try:
-    # Try serializing the circular reference as JSON
-    TypeAdapter(dict).dump_json(node_data)
-except ValueError as exc:
-    print(exc)
-    """
-    Error serializing to JSON: ValueError: Circular reference detected (id repeated)
-    """
+
+class B(BaseModel):
+    a: A | None = None
 
 ```
 
-This can also be handled if desired:
+For earlier versions, the recommended approach is to only import one of the models in an if TYPE_CHECKING: block, and use a forward annotation to reference it:
+
+a.py
 
 ```python
-from dataclasses import field
-from typing import Any
+from typing import TYPE_CHECKING
 
-from pydantic import (
-    SerializerFunctionWrapHandler,
-    TypeAdapter,
-    field_serializer,
-)
-from pydantic.dataclasses import dataclass
+from pydantic import BaseModel
+
+if TYPE_CHECKING:
+    from .b import B
 
 
-@dataclass
-class NodeReference:
-    id: int
+class A(BaseModel):
+    b: 'B | None' = None
+
+```
+
+b.py
+
+```python
+from pydantic import BaseModel
+
+from .a import A
 
 
-@dataclass
-class Node(NodeReference):
-    children: list['Node'] = field(default_factory=list)
+class B(BaseModel):
+    a: A | None = None
 
-    @field_serializer('children', mode='wrap')
-    def serialize(
-        self, children: list['Node'], handler: SerializerFunctionWrapHandler
-    ) -> Any:
-        """
-        Serialize a list of nodes, handling circular references by excluding the children.
-        """
-        try:
-            return handler(children)
-        except ValueError as exc:
-            if not str(exc).startswith('Circular reference'):
-                raise exc
+```
 
-            result = []
-            for node in children:
-                try:
-                    serialized = handler([node])
-                except ValueError as exc:
-                    if not str(exc).startswith('Circular reference'):
-                        raise exc
-                    result.append({'id': node.id})
-                else:
-                    result.append(serialized)
-            return result
+Because `B` isn't available at runtime in `a.py`, the `A` model is left incomplete. In a parent module (for instance the package's `__init__.py`), import both models and call model_rebuild() on the incomplete one. As `B` is in scope of the calling module, the forward annotation can be resolved:
 
+__init__.py
 
-# Create a cyclic graph:
-nodes = [Node(id=1), Node(id=2), Node(id=3)]
-nodes[0].children.append(nodes[1])
-nodes[1].children.append(nodes[2])
-nodes[2].children.append(nodes[0])
+```python
+from .a import A
+from .b import B
 
-print(nodes[0])
-#> Node(id=1, children=[Node(id=2, children=[Node(id=3, children=[...])])])
+__all__ = ('A', 'B')
 
-# Serialize the cyclic graph:
-print(TypeAdapter(Node).dump_python(nodes[0]))
-"""
-{
-    'id': 1,
-    'children': [{'id': 2, 'children': [{'id': 3, 'children': [{'id': 1}]}]}],
-}
-"""
+A.model_rebuild()
 
 ```
 
@@ -4679,7 +4550,73 @@ print(m.model_dump())
 
 ```
 
-Self-referencing models are supported. For more details, see the documentation related to [forward annotations](../forward_annotations/#self-referencing-or-recursive-models).
+### Cyclic references
+
+When working with self-referencing recursive models, it is possible that you might encounter cyclic references in validation inputs. For example, this can happen when validating ORM instances with back-references from attributes.
+
+Rather than raising a RecursionError while attempting to validate data with cyclic references, Pydantic is able to detect the cyclic reference and raise an appropriate ValidationError:
+
+```python
+from pydantic import BaseModel, ValidationError
+
+
+class ModelA(BaseModel):
+    b: 'ModelB | None' = None  # (1)!
+
+
+class ModelB(BaseModel):
+    a: ModelA | None = None
+
+
+cyclic_data = {}
+cyclic_data['a'] = {'b': cyclic_data}
+print(cyclic_data)
+#> {'a': {'b': {...}}}
+
+try:
+    ModelB.model_validate(cyclic_data)
+except ValidationError as exc:
+    print(exc)
+    """
+    1 validation error for ModelB
+    a.b
+      Recursion error - cyclic reference detected [type=recursion_loop, input_value={'a': {'b': {...}}}, input_type=dict]
+    """
+
+```
+
+1. As `ModelB` is not yet defined, a [forward annotation](../forward_annotations/) needs to be used.
+
+```python
+from pydantic import BaseModel, ValidationError
+
+
+class ModelA(BaseModel):
+    b: ModelB | None = None
+
+
+class ModelB(BaseModel):
+    a: ModelA | None = None
+
+
+cyclic_data = {}
+cyclic_data['a'] = {'b': cyclic_data}
+print(cyclic_data)
+#> {'a': {'b': {...}}}
+
+try:
+    ModelB.model_validate(cyclic_data)
+except ValidationError as exc:
+    print(exc)
+    """
+    1 validation error for ModelB
+    a.b
+      Recursion error - cyclic reference detected [type=recursion_loop, input_value={'a': {'b': {...}}}, input_type=dict]
+    """
+
+```
+
+See also: the [cyclic references example](../../examples/cyclic_references/), showing how to handle such cyclic references during validation and serialization, and the [cyclic imports](../forward_annotations/#cyclic-imports) section, for models referencing each other from separate modules.
 
 ## Rebuilding model schema
 
@@ -10794,7 +10731,7 @@ When using the [serialization methods](#serializing-data), it is possible to exc
 
   Tip
 
-  The experimental [`MISSING` sentinel](../experimental/#missing-sentinel) can be used as an alternative to `exclude_unset`. Any field with `MISSING` as a value is automatically excluded from the serialization output.
+  The [`MISSING` sentinel](../types/#missing-sentinel) can be used as an alternative to `exclude_unset`. Any field with `MISSING` as a value is automatically excluded from the serialization output.
 
 API Documentation
 
@@ -11100,7 +11037,95 @@ The [built-in and standard library types](../../api/standard_library_types/) doc
 
 See also the [conversion table](../conversion_table/) for a summary of the allowed values for each type.
 
-This page will go over defining your own custom types.
+## Utility types
+
+Pydantic provides a number of utility types/annotations, useful to customize the validation/serialization behavior.
+
+### `OnErrorOmit`
+
+Added in v2.6.
+
+By default, when an item of a collection (such as a list, a dictionary or a TypedDict) fails validation, a ValidationError is raised and the whole collection is discarded. The OnErrorOmit annotation changes this behavior: any item failing validation is silently omitted from the result, and the valid ones are kept.
+
+```python
+from pydantic import OnErrorOmit, TypeAdapter
+
+ta = TypeAdapter(list[OnErrorOmit[int]])
+
+print(ta.validate_python([1, 2, 'a', 3]))
+#> [1, 2, 3]
+
+```
+
+See the API documentation for more details on where it can be applied.
+
+### `FailFast`
+
+Added in v2.8.
+
+By default, when validating a collection, Pydantic validates every item and reports all the errors at once. The FailFast annotation can be applied to a collection type (such as a list, a tuple, a set or a dict) to stop as soon as an item fails validation. This makes validation faster, with the caveat that you get less information about the errors.
+
+```python
+from typing import Annotated
+
+from pydantic import FailFast, TypeAdapter, ValidationError
+
+ta = TypeAdapter(Annotated[list[int], FailFast()])
+
+try:
+    ta.validate_python([1, 'a', 2, 'b'])
+except ValidationError as exc:
+    print(exc)
+    """
+    1 validation error for list[int]
+    1
+      Input should be a valid integer, unable to parse string as an integer [type=int_parsing, input_value='a', input_type=str]
+    """
+
+```
+
+### `MISSING` sentinel
+
+Added in v2.11.
+
+Changed in v2.14: The `MISSING` sentinel is no longer experimental.
+
+The `MISSING` sentinel is a singleton indicating a field value was not provided during validation.
+
+This singleton can be used as a default value, as an alternative to `None` when it has an explicit meaning. During serialization, any field with `MISSING` as a value is excluded from the output.
+
+At runtime, the `MISSING` sentinel is implemented as a [`sentinel`](https://docs.python.org/3.15/library/functions.html#sentinel) instance.
+
+```python
+from pydantic import MISSING, BaseModel
+
+
+class Configuration(BaseModel):
+    timeout: int | None | MISSING = MISSING
+
+
+# configuration defaults, stored somewhere else:
+defaults = {'timeout': 200}
+
+conf = Configuration()
+
+# `timeout` is excluded from the serialization output:
+conf.model_dump()
+# {}
+
+# The `MISSING` value doesn't appear in the JSON Schema:
+Configuration.model_json_schema()['properties']['timeout']
+#> {'anyOf': [{'type': 'integer'}, {'type': 'null'}], 'title': 'Timeout'}
+
+
+# `is` can be used to discriminate between the sentinel and other values:
+timeout = conf.timeout if conf.timeout is not MISSING else defaults['timeout']
+
+```
+
+Note
+
+When [applying constraints](../fields/#field-constraints) to a union containing the `MISSING` sentinel, such constraints are automatically applied to the remaining type(s) of the union.
 
 ## Custom Types
 
@@ -20437,7 +20462,7 @@ Field(
 Field(
     *,
     default_factory: (
-        Callable[[], _T] | Callable[[dict[str, Any]], _T]
+        Callable[[], _T" optional hover>_T] | Callable[[dict[str, Any]], _T]
     ),
     alias: str | None = _Unset,
     alias_priority: int | None = _Unset,
@@ -44227,7 +44252,50 @@ OnErrorOmit = Annotated[T, _OnErrorOmit]
 
 ```
 
-When used as an item in a list, the key type in a dict, optional values of a TypedDict, etc. this annotation omits the item from the iteration if there is any error validating it. That is, instead of a ValidationError being propagated up and the entire iterable being discarded any invalid items are discarded and the valid ones are returned.
+Discard the invalid items of a collection instead of failing validation.
+
+Added in v2.6.
+
+By default, when an item of a collection (such as a list, a dictionary or a TypedDict) fails validation, a ValidationError is raised and the whole collection is discarded. This annotation changes this behavior: any item failing validation is silently omitted from the result, and the valid ones are kept.
+
+It can be applied to:
+
+- the item type of an iterable (e.g. `list[OnErrorOmit[int]]`, `tuple[OnErrorOmit[int], ...]`).
+- the key and/or value types of a mapping (e.g. `dict[OnErrorOmit[int], str]`). If either the key or the value of an entry fails validation, the whole entry is omitted.
+- the value type of a not required TypedDict key. Using it on a required key is not allowed, as it would make the key effectively optional.
+
+```python
+from typing_extensions import NotRequired, TypedDict
+
+from pydantic import BaseModel, OnErrorOmit
+
+OmittableInt = OnErrorOmit[int]
+
+class Settings(TypedDict):
+    timeout: NotRequired[OmittableInt]
+
+class Model(BaseModel):
+    ids: list[OmittableInt]
+    scores: dict[str, OnErrorOmit[float]]
+    settings: Settings
+
+model = Model(
+    ids=[1, 2, 'a', 3],
+    scores={'a': 1.5, 'b': 'invalid'},
+    settings={'timeout': 'invalid'},
+)
+print(model)
+#> ids=[1, 2, 3] scores={'a': 1.5} settings={}
+
+```
+
+Note
+
+The omitted items are discarded silently: no error is reported and there is no way to know which items were invalid. If you need to keep track of them, use a [wrap validator](../../concepts/validators/#field-wrap-validator) instead.
+
+Warning
+
+`OnErrorOmit` is only meaningful when the annotated type is part of a collection. Using it on a top-level type (e.g. `TypeAdapter(OnErrorOmit[int])`) or on a model field is not supported.
 
 ### Strict
 
@@ -47518,11 +47586,13 @@ Context to use in custom errors.
 
 Bases: `PydanticMetadata`, `BaseMetadata`
 
-A `FailFast` annotation can be used to specify that validation should stop at the first error.
+Stop validating a collection at the first invalid item, instead of collecting the errors of every item.
 
-This can be useful when you want to validate a large amount of data and you only need to know if it's valid or not.
+Added in v2.8.
 
-You might want to enable this setting if you want to validate your data faster (basically, if you use this, validation will be more performant with the caveat that you get less information).
+By default, when validating a collection, Pydantic validates every item and reports all the errors at once. This annotation can be applied to a collection type (such as a list, a tuple, a set or a dict) to stop as soon as an item fails validation.
+
+This can be useful when you want to validate a large amount of data and you only need to know if it's valid or not: validation will be faster, with the caveat that you get less information about the errors.
 
 ```python
 from typing import Annotated
@@ -47550,12 +47620,17 @@ Source code in `pydantic/types.py`
 ````python
 @_dataclasses.dataclass
 class FailFast(_fields.PydanticMetadata, BaseMetadata):
-    """A `FailFast` annotation can be used to specify that validation should stop at the first error.
+    """Stop validating a collection at the first invalid item, instead of collecting the errors of every item.
 
-    This can be useful when you want to validate a large amount of data and you only need to know if it's valid or not.
+    /// version-added | v2.8
+    ///
 
-    You might want to enable this setting if you want to validate your data faster (basically, if you use this,
-    validation will be more performant with the caveat that you get less information).
+    By default, when validating a collection, Pydantic validates every item and reports all the errors
+    at once. This annotation can be applied to a collection type (such as a [`list`][], a [`tuple`][],
+    a [`set`][] or a [`dict`][]) to stop as soon as an item fails validation.
+
+    This can be useful when you want to validate a large amount of data and you only need to know if it's valid or not:
+    validation will be faster, with the caveat that you get less information about the errors.
 
     ```python
     from typing import Annotated
@@ -52539,11 +52614,10 @@ except ValidationError as exc:
 
 ## `missing_sentinel_error`
 
-This error is raised when the experimental `MISSING` sentinel is the only value allowed, and wasn't provided during validation:
+This error is raised when the `MISSING` sentinel is the only value allowed, and wasn't provided during validation:
 
 ```python
-from pydantic import BaseModel, ValidationError
-from pydantic.experimental.missing_sentinel import MISSING
+from pydantic import MISSING, BaseModel, ValidationError
 
 
 class Model(BaseModel):
@@ -53840,6 +53914,157 @@ More details about validation context can be found in the [validators documentat
 
 The messages you write in these `raise ValueError(...)` calls are worth crafting: they're what you'll read when the rule eventually rejects real data. They also carry through to tooling that consumes the structured errors: [Logfire's explanations of failed validations](../../errors/troubleshooting/), for example, include the messages from your custom validators.
 
+As described in the [cyclic references](../../concepts/models/#cyclic-references) section, Pydantic detects cyclic references in validation inputs and raises a ValidationError with the `recursion_loop` error type, rather than a RecursionError. The same applies during serialization, where a ValueError is raised.
+
+This example shows how these errors can be caught in validators and serializers to drop the cyclic references and still produce a result.
+
+Because this ValidationError is raised without actually exceeding the maximum recursion depth, you can catch and handle it without needing to worry about the limited remaining recursion depth:
+
+```python
+from __future__ import annotations
+
+from collections.abc import Generator
+from contextlib import contextmanager
+from dataclasses import field
+
+from pydantic import BaseModel, ValidationError, field_validator
+
+
+def is_recursion_validation_error(exc: ValidationError) -> bool:
+    errors = exc.errors()
+    return len(errors) == 1 and errors[0]['type'] == 'recursion_loop'
+
+
+@contextmanager
+def suppress_recursion_validation_error() -> Generator[None]:
+    try:
+        yield
+    except ValidationError as exc:
+        if not is_recursion_validation_error(exc):
+            raise exc
+
+
+class Node(BaseModel):
+    id: int
+    children: list[Node] = field(default_factory=list)
+
+    @field_validator('children', mode='wrap')
+    @classmethod
+    def drop_cyclic_references(cls, children, h):
+        try:
+            return h(children)
+        except ValidationError as exc:
+            if not (
+                is_recursion_validation_error(exc)
+                and isinstance(children, list)
+            ):
+                raise exc
+
+            value_without_cyclic_refs = []
+            for child in children:
+                with suppress_recursion_validation_error():
+                    value_without_cyclic_refs.extend(h([child]))
+            return h(value_without_cyclic_refs)
+
+
+# Create data with cyclic references representing the graph 1 -> 2 -> 3 -> 1
+node_data = {'id': 1, 'children': [{'id': 2, 'children': [{'id': 3}]}]}
+node_data['children'][0]['children'][0]['children'] = [node_data]
+
+print(Node.model_validate(node_data))
+#> id=1 children=[Node(id=2, children=[Node(id=3, children=[])])]
+
+```
+
+Similarly, if Pydantic encounters a recursive reference during *serialization*, rather than waiting for the maximum recursion depth to be exceeded, a ValueError is raised immediately:
+
+```python
+from pydantic import TypeAdapter
+
+# Create data with cyclic references representing the graph 1 -> 2 -> 3 -> 1
+node_data = {'id': 1, 'children': [{'id': 2, 'children': [{'id': 3}]}]}
+node_data['children'][0]['children'][0]['children'] = [node_data]
+
+try:
+    # Try serializing the circular reference as JSON
+    TypeAdapter(dict).dump_json(node_data)
+except ValueError as exc:
+    print(exc)
+    """
+    Error serializing to JSON: ValueError: Circular reference detected (id repeated)
+    """
+
+```
+
+This can also be handled if desired:
+
+```python
+from dataclasses import field
+from typing import Any
+
+from pydantic import (
+    SerializerFunctionWrapHandler,
+    TypeAdapter,
+    field_serializer,
+)
+from pydantic.dataclasses import dataclass
+
+
+@dataclass
+class NodeReference:
+    id: int
+
+
+@dataclass
+class Node(NodeReference):
+    children: list['Node'] = field(default_factory=list)
+
+    @field_serializer('children', mode='wrap')
+    def serialize(
+        self, children: list['Node'], handler: SerializerFunctionWrapHandler
+    ) -> Any:
+        """
+        Serialize a list of nodes, handling circular references by excluding the children.
+        """
+        try:
+            return handler(children)
+        except ValueError as exc:
+            if not str(exc).startswith('Circular reference'):
+                raise exc
+
+            result = []
+            for node in children:
+                try:
+                    serialized = handler([node])
+                except ValueError as exc:
+                    if not str(exc).startswith('Circular reference'):
+                        raise exc
+                    result.append({'id': node.id})
+                else:
+                    result.append(serialized)
+            return result
+
+
+# Create a cyclic graph:
+nodes = [Node(id=1), Node(id=2), Node(id=3)]
+nodes[0].children.append(nodes[1])
+nodes[1].children.append(nodes[2])
+nodes[2].children.append(nodes[0])
+
+print(nodes[0])
+#> Node(id=1, children=[Node(id=2, children=[Node(id=3, children=[...])])])
+
+# Serialize the cyclic graph:
+print(TypeAdapter(Node).dump_python(nodes[0]))
+"""
+{
+    'id': 1,
+    'children': [{'id': 2, 'children': [{'id': 3, 'children': [{'id': 1}]}]}],
+}
+"""
+
+```
+
 Models can be [created dynamically](../../concepts/models/#dynamic-model-creation) using the create_model() factory function.
 
 In this example, we will show how to dynamically derive a model from an existing one, making every field optional. To achieve this, we will make use of the model_fields model class attribute, and derive new annotations from the field definitions to be passed to the create_model() factory. Of course, this example can apply to any use case where you need to derive a new model from another (remove default values, add aliases, etc).
@@ -53980,7 +54205,7 @@ A couple notes on the implementation:
 
   However, note that static type checkers *won't* be able to understand that all fields are now optional.
 
-- The experimental [`MISSING` sentinel](../../concepts/experimental/#missing-sentinel) can be used as an alternative to `None` for the default values. Simply replace `None` by `MISSING` in the new annotation and default value.
+- The [`MISSING` sentinel](../../concepts/types/#missing-sentinel) can be used as an alternative to `None` for the default values. Simply replace `None` by `MISSING` in the new annotation and default value.
 
 - You might be tempted to make a copy of the original FieldInfo instances, add a default and/or perform other mutations, to then reuse it as Annotated metadata. While this may work in some cases, it is **not** a supported pattern, and could break or be deprecated at any point. We strongly encourage using the pattern from this example instead.
 

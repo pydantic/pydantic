@@ -854,4 +854,4 @@ When using the [serialization methods](#serializing-data), it is possible to exc
 
   Tip
 
-  The experimental [`MISSING` sentinel](../experimental/#missing-sentinel) can be used as an alternative to `exclude_unset`. Any field with `MISSING` as a value is automatically excluded from the serialization output.
+  The [`MISSING` sentinel](../types/#missing-sentinel) can be used as an alternative to `exclude_unset`. Any field with `MISSING` as a value is automatically excluded from the serialization output.

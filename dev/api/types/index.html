@@ -4089,6 +4089,34 @@ to help you monitor and understand your
   
   
     <li class="md-nav__item">
+      <a href="../../examples/cyclic_references/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Cyclic references
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../examples/pydantic_ai/" class="md-nav__link">
         
   
@@ -7355,10 +7383,55 @@ and what kind of errors to expect when input data is not json serializable.</p>
 
     <div class="doc doc-contents ">
 
-        <p>When used as an item in a list, the key type in a dict, optional values of a TypedDict, etc.
-this annotation omits the item from the iteration if there is any error validating it.
-That is, instead of a <a class="autorefs autorefs-internal" href="../pydantic_core/#pydantic_core.ValidationError"><code>ValidationError</code></a> being propagated up and the entire iterable being discarded
-any invalid items are discarded and the valid ones are returned.</p>
+        <p>Discard the invalid items of a collection instead of failing validation.</p>
+<div style="border-left: .15rem solid rgb(79, 196, 100); padding: 0 .5rem;">
+<p><span style="font-style: italic; color: rgb(79, 196, 100);">Added in v2.6.</span></p>
+</div>
+<p>By default, when an item of a collection (such as a list, a dictionary or a <a class="autorefs autorefs-external" href="https://docs.python.org/3/library/typing.html#typing.TypedDict"><code>TypedDict</code></a>)
+fails validation, a <a class="autorefs autorefs-internal" href="../pydantic_core/#pydantic_core.ValidationError"><code>ValidationError</code></a> is raised and the whole collection is
+discarded. This annotation changes this behavior: any item failing validation is silently omitted from the
+result, and the valid ones are kept.</p>
+<p>It can be applied to:</p>
+<ul>
+<li>the item type of an iterable (e.g. <code>list[OnErrorOmit[int]]</code>, <code>tuple[OnErrorOmit[int], ...]</code>).</li>
+<li>the key and/or value types of a mapping (e.g. <code>dict[OnErrorOmit[int], str]</code>). If either the key or the value of
+  an entry fails validation, the whole entry is omitted.</li>
+<li>the value type of a <a class="autorefs autorefs-external" href="https://docs.python.org/3/library/typing.html#typing.NotRequired"><em>not required</em></a> <a class="autorefs autorefs-external" href="https://docs.python.org/3/library/typing.html#typing.TypedDict"><code>TypedDict</code></a> key.
+  Using it on a required key is not allowed, as it would make the key effectively optional.</li>
+</ul>
+<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">typing_extensions</span><span class="w"> </span><span class="kn">import</span> <span class="n">NotRequired</span><span class="p">,</span> <span class="n">TypedDict</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">pydantic</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">OnErrorOmit</span>
+
+<span class="n">OmittableInt</span> <span class="o">=</span> <span class="n">OnErrorOmit</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span>
+
+<span class="k">class</span><span class="w"> </span><span class="nc">Settings</span><span class="p">(</span><span class="n">TypedDict</span><span class="p">):</span>
+    <span class="n">timeout</span><span class="p">:</span> <span class="n">NotRequired</span><span class="p">[</span><span class="n">OmittableInt</span><span class="p">]</span>
+
+<span class="k">class</span><span class="w"> </span><span class="nc">Model</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="n">ids</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">OmittableInt</span><span class="p">]</span>
+    <span class="n">scores</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">OnErrorOmit</span><span class="p">[</span><span class="nb">float</span><span class="p">]]</span>
+    <span class="n">settings</span><span class="p">:</span> <span class="n">Settings</span>
+
+<span class="n">model</span> <span class="o">=</span> <span class="n">Model</span><span class="p">(</span>
+    <span class="n">ids</span><span class="o">=</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="s1">&#39;a&#39;</span><span class="p">,</span> <span class="mi">3</span><span class="p">],</span>
+    <span class="n">scores</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;a&#39;</span><span class="p">:</span> <span class="mf">1.5</span><span class="p">,</span> <span class="s1">&#39;b&#39;</span><span class="p">:</span> <span class="s1">&#39;invalid&#39;</span><span class="p">},</span>
+    <span class="n">settings</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;timeout&#39;</span><span class="p">:</span> <span class="s1">&#39;invalid&#39;</span><span class="p">},</span>
+<span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">model</span><span class="p">)</span>
+<span class="c1">#&gt; ids=[1, 2, 3] scores={&#39;a&#39;: 1.5} settings={}</span>
+</code></pre></div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>The omitted items are discarded silently: no error is reported and there is no way to know
+which items were invalid. If you need to keep track of them, use a
+<a href="../../concepts/validators/#field-wrap-validator">wrap validator</a> instead.</p>
+</div>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p><code>OnErrorOmit</code> is only meaningful when the annotated type is part of a collection.
+Using it on a top-level type (e.g. <code>TypeAdapter(OnErrorOmit[int])</code>) or on a model field is not supported.</p>
+</div>
     </div>
 
 </div>
@@ -14495,10 +14568,15 @@ validation errors.</p>
               Bases: <code><span title="pydantic._internal._fields.PydanticMetadata">PydanticMetadata</span></code>, <code><span title="annotated_types.BaseMetadata">BaseMetadata</span></code></p>
 
 
-        <p>A <code>FailFast</code> annotation can be used to specify that validation should stop at the first error.</p>
-<p>This can be useful when you want to validate a large amount of data and you only need to know if it's valid or not.</p>
-<p>You might want to enable this setting if you want to validate your data faster (basically, if you use this,
-validation will be more performant with the caveat that you get less information).</p>
+        <p>Stop validating a collection at the first invalid item, instead of collecting the errors of every item.</p>
+<div style="border-left: .15rem solid rgb(79, 196, 100); padding: 0 .5rem;">
+<p><span style="font-style: italic; color: rgb(79, 196, 100);">Added in v2.8.</span></p>
+</div>
+<p>By default, when validating a collection, Pydantic validates every item and reports all the errors
+at once. This annotation can be applied to a collection type (such as a <a class="autorefs autorefs-external" href="https://docs.python.org/3/glossary.html#term-list"><code>list</code></a>, a <a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#tuple"><code>tuple</code></a>,
+a <a class="autorefs autorefs-external" href="https://docs.python.org/3/reference/expressions.html#set"><code>set</code></a> or a <a class="autorefs autorefs-external" href="https://docs.python.org/3/reference/expressions.html#dict"><code>dict</code></a>) to stop as soon as an item fails validation.</p>
+<p>This can be useful when you want to validate a large amount of data and you only need to know if it's valid or not:
+validation will be faster, with the caveat that you get less information about the errors.</p>
 <div class="language-python highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Annotated</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">pydantic</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">FailFast</span><span class="p">,</span> <span class="n">ValidationError</span>
@@ -14525,44 +14603,54 @@ validation will be more performant with the caveat that you get less information
 
               <details class="quote">
                 <summary>Source code in <code>pydantic/types.py</code></summary>
-                <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">3322</span>
-<span class="normal">3323</span>
-<span class="normal">3324</span>
-<span class="normal">3325</span>
-<span class="normal">3326</span>
-<span class="normal">3327</span>
-<span class="normal">3328</span>
-<span class="normal">3329</span>
-<span class="normal">3330</span>
-<span class="normal">3331</span>
-<span class="normal">3332</span>
-<span class="normal">3333</span>
-<span class="normal">3334</span>
-<span class="normal">3335</span>
-<span class="normal">3336</span>
-<span class="normal">3337</span>
-<span class="normal">3338</span>
-<span class="normal">3339</span>
-<span class="normal">3340</span>
-<span class="normal">3341</span>
-<span class="normal">3342</span>
-<span class="normal">3343</span>
-<span class="normal">3344</span>
-<span class="normal">3345</span>
-<span class="normal">3346</span>
-<span class="normal">3347</span>
-<span class="normal">3348</span>
-<span class="normal">3349</span>
-<span class="normal">3350</span>
-<span class="normal">3351</span>
-<span class="normal">3352</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@_dataclasses</span><span class="o">.</span><span class="n">dataclass</span>
+                <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">3367</span>
+<span class="normal">3368</span>
+<span class="normal">3369</span>
+<span class="normal">3370</span>
+<span class="normal">3371</span>
+<span class="normal">3372</span>
+<span class="normal">3373</span>
+<span class="normal">3374</span>
+<span class="normal">3375</span>
+<span class="normal">3376</span>
+<span class="normal">3377</span>
+<span class="normal">3378</span>
+<span class="normal">3379</span>
+<span class="normal">3380</span>
+<span class="normal">3381</span>
+<span class="normal">3382</span>
+<span class="normal">3383</span>
+<span class="normal">3384</span>
+<span class="normal">3385</span>
+<span class="normal">3386</span>
+<span class="normal">3387</span>
+<span class="normal">3388</span>
+<span class="normal">3389</span>
+<span class="normal">3390</span>
+<span class="normal">3391</span>
+<span class="normal">3392</span>
+<span class="normal">3393</span>
+<span class="normal">3394</span>
+<span class="normal">3395</span>
+<span class="normal">3396</span>
+<span class="normal">3397</span>
+<span class="normal">3398</span>
+<span class="normal">3399</span>
+<span class="normal">3400</span>
+<span class="normal">3401</span>
+<span class="normal">3402</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@_dataclasses</span><span class="o">.</span><span class="n">dataclass</span>
 <span class="k">class</span><span class="w"> </span><span class="nc">FailFast</span><span class="p">(</span><span class="n">_fields</span><span class="o">.</span><span class="n">PydanticMetadata</span><span class="p">,</span> <span class="n">BaseMetadata</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;A `FailFast` annotation can be used to specify that validation should stop at the first error.</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Stop validating a collection at the first invalid item, instead of collecting the errors of every item.</span>
 
-<span class="sd">    This can be useful when you want to validate a large amount of data and you only need to know if it&#39;s valid or not.</span>
+<span class="sd">    /// version-added | v2.8</span>
+<span class="sd">    ///</span>
 
-<span class="sd">    You might want to enable this setting if you want to validate your data faster (basically, if you use this,</span>
-<span class="sd">    validation will be more performant with the caveat that you get less information).</span>
+<span class="sd">    By default, when validating a collection, Pydantic validates every item and reports all the errors</span>
+<span class="sd">    at once. This annotation can be applied to a collection type (such as a [`list`][], a [`tuple`][],</span>
+<span class="sd">    a [`set`][] or a [`dict`][]) to stop as soon as an item fails validation.</span>
+
+<span class="sd">    This can be useful when you want to validate a large amount of data and you only need to know if it&#39;s valid or not:</span>
+<span class="sd">    validation will be faster, with the caveat that you get less information about the errors.</span>
 
 <span class="sd">    ```python</span>
 <span class="sd">    from typing import Annotated</span>

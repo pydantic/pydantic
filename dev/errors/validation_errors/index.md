@@ -1551,11 +1551,10 @@ except ValidationError as exc:
 
 ## `missing_sentinel_error`
 
-This error is raised when the experimental `MISSING` sentinel is the only value allowed, and wasn't provided during validation:
+This error is raised when the `MISSING` sentinel is the only value allowed, and wasn't provided during validation:
 
 ```python
-from pydantic import BaseModel, ValidationError
-from pydantic.experimental.missing_sentinel import MISSING
+from pydantic import MISSING, BaseModel, ValidationError
 
 
 class Model(BaseModel):
