@@ -13,7 +13,7 @@ def hook_1(v: int | str): ...
 
 
 ValidateAs(int | str, hook_1)
-ValidateAs(Annotated[float, ...], hook_1)  # type: ignore[arg-type]  # pyright: ignore[reportArgumentType]
+ValidateAs(Annotated[float, ...], hook_1)  # type: ignore[arg-type]  # pyright: ignore[reportArgumentType]  # pyrefly: ignore[bad-argument-type]
 
 
 field_serializer('a', return_type=int | str)

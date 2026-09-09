@@ -6,6 +6,15 @@ reportUnnecessaryTypeIgnoreComment = true
 reportDeprecated = true
 reportUnusedExpression = false
 
+[tool.pyrefly]
+search-path = ['../..']
+python-version = '3.10'
+enabled-ignores = ['pyrefly']
+
+[tool.pyrefly.errors]
+deprecated = 'error'
+unused-ignore = 'error'
+
 [tool.mypy]
 python_version = '3.10'
 disable_error_code = ['empty-body']

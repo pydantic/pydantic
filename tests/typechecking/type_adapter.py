@@ -10,9 +10,9 @@ assert_type(ta1, TypeAdapter[int])
 
 assert_type(ta1.validate_python('1'), int)
 ta1.dump_python(1)
-ta1.dump_python('1')  # type: ignore[arg-type]  # pyright: ignore[reportArgumentType]
+ta1.dump_python('1')  # type: ignore[arg-type]  # pyright: ignore[reportArgumentType]  # pyrefly: ignore[bad-argument-type]
 ta1.dump_json(1)
-ta1.dump_json('1')  # type: ignore[arg-type]  # pyright: ignore[reportArgumentType]
+ta1.dump_json('1')  # type: ignore[arg-type]  # pyright: ignore[reportArgumentType]  # pyrefly: ignore[bad-argument-type]
 
 # The following use cases are for ensuring `TypeForm` works as expected:
 
@@ -32,7 +32,7 @@ ta5 = TypeAdapter(Union[int, str])  # noqa: UP007
 assert_type(ta5, TypeAdapter[int | str])
 assert_type(ta5.validate_python(...), int | str)
 
-# Mypy doesn't support sentinels mixed with TypeForm:
-ta6 = TypeAdapter(MISSING)  # type: ignore[arg-type, var-annotated]
-assert_type(ta6, TypeAdapter[MISSING])  # type: ignore[assert-type, valid-type]
-assert_type(ta6.validate_python(...), MISSING)  # type: ignore[assert-type, valid-type]
+# Mypy and Pyrefly don't support sentinels mixed with TypeForm (https://github.com/facebook/pyrefly/issues/4865):
+ta6 = TypeAdapter(MISSING)  # type: ignore[arg-type, var-annotated]  # pyrefly: ignore[bad-argument-type]
+assert_type(ta6, TypeAdapter[MISSING])  # type: ignore[assert-type, valid-type]  # pyrefly: ignore[assert-type]
+assert_type(ta6.validate_python(...), MISSING)  # type: ignore[assert-type, valid-type]  # pyrefly: ignore[assert-type]
