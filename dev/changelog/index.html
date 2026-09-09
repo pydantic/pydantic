@@ -16335,7 +16335,7 @@ This is an early alpha release, meant to collect early feedback from users havin
 <li>Allow <code>WithJsonSchema</code> to inject <code>$ref</code>s w/ <code>http</code> or <code>https</code> links by <a href="https://github.com/dAIsySHEng1">@dAIsySHEng1</a> in <a href="https://github.com/pydantic/pydantic/pull/9863">#9863</a></li>
 <li>Allow validators to customize validation JSON schema by <a href="https://github.com/Viicos">@Viicos</a> in <a href="https://github.com/pydantic/pydantic/pull/10094">#10094</a></li>
 <li>Support parametrized <code>PathLike</code> types by <a href="https://github.com/nix010">@nix010</a> in <a href="https://github.com/pydantic/pydantic/pull/9764">#9764</a></li>
-<li>Add tagged union serializer that attempts to use <code>str</code> or <code>callable</code> discriminators to select the correct serializer by <a href="https://github.com/sydney-runkle">@sydney-runkle</a> in in <a href="https://github.com/pydantic/pydantic-core/pull/1397">pydantic/pydantic-core#1397</a></li>
+<li>Add tagged union serializer that attempts to use <code>str</code> or <code>callable</code> discriminators to select the correct serializer by <a href="https://github.com/sydney-runkle">@sydney-runkle</a> in <a href="https://github.com/pydantic/pydantic-core/pull/1397">pydantic/pydantic-core#1397</a></li>
 </ul>
 <h4 id="changes_11">Changes<a class="headerlink" href="#changes_11" title="Permanent link">&para;</a></h4>
 <ul>
@@ -16425,7 +16425,7 @@ This is an early alpha release, meant to collect early feedback from users havin
 <li>Fix <code>field_serializer</code> with computed field when using <code>*</code> by <a href="https://github.com/nix010">@nix010</a> in <a href="https://github.com/pydantic/pydantic-core/pull/1349">pydantic/pydantic-core#1349</a></li>
 <li>Try each option in <code>Union</code> serializer before inference by <a href="https://github.com/sydney-runkle">@sydney-runkle</a> in <a href="https://github.com/pydantic/pydantic-core/pull/1398">pydantic/pydantic-core#1398</a></li>
 <li>Fix <code>float</code> serialization behavior in <code>strict</code> mode by <a href="https://github.com/sydney-runkle">@sydney-runkle</a> in <a href="https://github.com/pydantic/pydantic-core/pull/1400">pydantic/pydantic-core#1400</a></li>
-<li>Introduce <code>exactness</code> into Decimal validation logic to improve union validation behavior by <a href="https://github.com/sydney-runkle">@sydney-runkle</a> in in <a href="https://github.com/pydantic/pydantic-core/pull/1405">pydantic/pydantic-core#1405</a></li>
+<li>Introduce <code>exactness</code> into Decimal validation logic to improve union validation behavior by <a href="https://github.com/sydney-runkle">@sydney-runkle</a> in <a href="https://github.com/pydantic/pydantic-core/pull/1405">pydantic/pydantic-core#1405</a></li>
 <li>Fix new warnings assertions to use <code>pytest.warns()</code> by <a href="https://github.com/mgorny">@mgorny</a> in <a href="https://github.com/pydantic/pydantic/pull/10241">#10241</a></li>
 <li>Fix a crash when cleaning the namespace in <code>ModelMetaclass</code> by <a href="https://github.com/Viicos">@Viicos</a> in <a href="https://github.com/pydantic/pydantic/pull/10242">#10242</a></li>
 <li>Fix parent namespace issue with model rebuilds by <a href="https://github.com/sydney-runkle">@sydney-runkle</a> in <a href="https://github.com/pydantic/pydantic/pull/10257">#10257</a></li>
@@ -16746,8 +16746,8 @@ is desired, you can switch to <code>left-to-right</code> mode and change the ord
 <li><code>enum</code> validator improvements by <a href="https://github.com/samuelcolvin">@samuelcolvin</a> in <a href="https://github.com/pydantic/pydantic/pull/9045">#9045</a></li>
 <li>Move <code>enum</code> validation and serialization to Rust by <a href="https://github.com/samuelcolvin">@samuelcolvin</a> in <a href="https://github.com/pydantic/pydantic/pull/9064">#9064</a></li>
 <li>Improve schema generation for nested dataclasses by <a href="https://github.com/sydney-runkle">@sydney-runkle</a> in <a href="https://github.com/pydantic/pydantic/pull/9114">#9114</a></li>
-<li>Fast path for ASCII python string creation in JSON by <a href="https://github.com/samuelcolvin">@samuelcolvin</a> in in <a href="https://github.com/pydantic/jiter/pull/72">pydantic/jiter#72</a></li>
-<li>SIMD integer and string JSON parsing on <code>aarch64</code>(<strong>Note:</strong> SIMD on x86 will be implemented in a future release) by <a href="https://github.com/samuelcolvin">@samuelcolvin</a> in in <a href="https://github.com/pydantic/jiter/pull/65">pydantic/jiter#65</a></li>
+<li>Fast path for ASCII python string creation in JSON by <a href="https://github.com/samuelcolvin">@samuelcolvin</a> in <a href="https://github.com/pydantic/jiter/pull/72">pydantic/jiter#72</a></li>
+<li>SIMD integer and string JSON parsing on <code>aarch64</code>(<strong>Note:</strong> SIMD on x86 will be implemented in a future release) by <a href="https://github.com/samuelcolvin">@samuelcolvin</a> in <a href="https://github.com/pydantic/jiter/pull/65">pydantic/jiter#65</a></li>
 <li>Support JSON <code>Cow&lt;str&gt;</code> from <code>jiter</code> by <a href="https://github.com/davidhewitt">@davidhewitt</a> in <a href="https://github.com/pydantic/pydantic-core/pull/1231">pydantic/pydantic-core#1231</a></li>
 <li>MAJOR performance improvement: update to PyO3 0.21 final by <a href="https://github.com/davidhewitt">@davidhewitt</a> in <a href="https://github.com/pydantic/pydantic-core/pull/1248">pydantic/pydantic-core#1248</a></li>
 <li>cache Python strings by <a href="https://github.com/samuelcolvin">@samuelcolvin</a> in <a href="https://github.com/pydantic/pydantic-core/pull/1240">pydantic/pydantic-core#1240</a></li>
