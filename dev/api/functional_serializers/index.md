@@ -109,7 +109,7 @@ A model serializer method in `wrap` mode.
 ```python
 PlainSerializer(
     func: SerializerFunction,
-    return_type: Any = PydanticUndefined,
+    return_type: TypeForm[Any] = PydanticUndefined,
     when_used: WhenUsed = "always",
 )
 
@@ -139,14 +139,14 @@ print(student.model_dump())
 
 Attributes:
 
-| Name | Type | Description | | --- | --- | --- | | `func` | `SerializerFunction` | The serializer function. | | `return_type` | `Any` | The return type for the function. If omitted it will be inferred from the type annotation. | | `when_used` | `WhenUsed` | Determines when this serializer should be used. Accepts a string with values 'always', 'unless-none', 'json', and 'json-unless-none'. Defaults to 'always'. |
+| Name | Type | Description | | --- | --- | --- | | `func` | `SerializerFunction` | The serializer function. | | `return_type` | `TypeForm[Any]` | The return type for the function. If omitted it will be inferred from the type annotation. | | `when_used` | `WhenUsed` | Determines when this serializer should be used. Accepts a string with values 'always', 'unless-none', 'json', and 'json-unless-none'. Defaults to 'always'. |
 
 ## WrapSerializer
 
 ```python
 WrapSerializer(
     func: WrapSerializerFunction,
-    return_type: Any = PydanticUndefined,
+    return_type: TypeForm[Any] = PydanticUndefined,
     when_used: WhenUsed = "always",
 )
 
@@ -200,7 +200,7 @@ print(event.model_dump_json())
 
 Attributes:
 
-| Name | Type | Description | | --- | --- | --- | | `func` | `WrapSerializerFunction` | The serializer function to be wrapped. | | `return_type` | `Any` | The return type for the function. If omitted it will be inferred from the type annotation. | | `when_used` | `WhenUsed` | Determines when this serializer should be used. Accepts a string with values 'always', 'unless-none', 'json', and 'json-unless-none'. Defaults to 'always'. |
+| Name | Type | Description | | --- | --- | --- | | `func` | `WrapSerializerFunction` | The serializer function to be wrapped. | | `return_type` | `TypeForm[Any]` | The return type for the function. If omitted it will be inferred from the type annotation. | | `when_used` | `WhenUsed` | Determines when this serializer should be used. Accepts a string with values 'always', 'unless-none', 'json', and 'json-unless-none'. Defaults to 'always'. |
 
 ## SerializeAsAny
 
@@ -221,7 +221,7 @@ field_serializer(
     /,
     *fields: str,
     mode: Literal["wrap"],
-    return_type: Any = ...,
+    return_type: TypeForm[Any] = ...,
     when_used: WhenUsed = ...,
     check_fields: bool | None = ...,
 ) -> Callable[
@@ -236,7 +236,7 @@ field_serializer(
     /,
     *fields: str,
     mode: Literal["plain"] = ...,
-    return_type: Any = ...,
+    return_type: TypeForm[Any] = ...,
     when_used: WhenUsed = ...,
     check_fields: bool | None = ...,
 ) -> Callable[
@@ -251,7 +251,7 @@ field_serializer(
     /,
     *fields: str,
     mode: Literal["plain", "wrap"] = "plain",
-    return_type: Any = PydanticUndefined,
+    return_type: TypeForm[Any] = PydanticUndefined,
     when_used: WhenUsed = "always",
     check_fields: bool | None = None,
 ) -> (
@@ -295,7 +295,7 @@ Four signatures are supported for the decorated serializer:
 
 Parameters:
 
-| Name | Type | Description | Default | | --- | --- | --- | --- | | `*fields` | `str` | The field names the serializer should apply to. | `()` | | `mode` | `Literal['plain', 'wrap']` | The serialization mode. plain means the function will be called instead of the default serialization logic, wrap means the function will be called with an argument to optionally call the default serialization logic. | `'plain'` | | `return_type` | `Any` | Optional return type for the function, if omitted it will be inferred from the type annotation. | `PydanticUndefined` | | `when_used` | `WhenUsed` | Determines the serializer will be used for serialization. | `'always'` | | `check_fields` | `bool | None` | Whether to check that the fields actually exist on the model. | `None` |
+| Name | Type | Description | Default | | --- | --- | --- | --- | | `*fields` | `str` | The field names the serializer should apply to. | `()` | | `mode` | `Literal['plain', 'wrap']` | The serialization mode. plain means the function will be called instead of the default serialization logic, wrap means the function will be called with an argument to optionally call the default serialization logic. | `'plain'` | | `return_type` | `TypeForm[Any]` | Optional return type for the function, if omitted it will be inferred from the type annotation. | `PydanticUndefined` | | `when_used` | `WhenUsed` | Determines the serializer will be used for serialization. | `'always'` | | `check_fields` | `bool | None` | Whether to check that the fields actually exist on the model. | `None` |
 
 Raises:
 
@@ -309,8 +309,7 @@ def field_serializer(  # noqa: D417
     /,
     *fields: str,
     mode: Literal['plain', 'wrap'] = 'plain',
-    # TODO PEP 747 (grep for 'return_type' on the whole code base):
-    return_type: Any = PydanticUndefined,
+    return_type: TypeForm[Any] = PydanticUndefined,  # pyright: ignore[reportArgumentType]
     when_used: WhenUsed = 'always',
     check_fields: bool | None = None,
 ) -> (
@@ -405,7 +404,7 @@ model_serializer(
     *,
     mode: Literal["wrap"],
     when_used: WhenUsed = "always",
-    return_type: Any = ...
+    return_type: TypeForm[Any] = ...
 ) -> Callable[
     [_ModelWrapSerializerT], _ModelWrapSerializerT
 ]
@@ -417,7 +416,7 @@ model_serializer(
     *,
     mode: Literal["plain"] = ...,
     when_used: WhenUsed = "always",
-    return_type: Any = ...
+    return_type: TypeForm[Any] = ...
 ) -> Callable[
     [_ModelPlainSerializerT], _ModelPlainSerializerT
 ]
@@ -435,7 +434,7 @@ model_serializer(
     *,
     mode: Literal["plain", "wrap"] = "plain",
     when_used: WhenUsed = "always",
-    return_type: Any = PydanticUndefined,
+    return_type: TypeForm[Any] = PydanticUndefined,
 ) -> (
     _ModelPlainSerializerT
     | Callable[
@@ -490,7 +489,7 @@ And two other signatures for `mode='wrap'`:
 
 Parameters:
 
-| Name | Type | Description | Default | | --- | --- | --- | --- | | `f` | `_ModelPlainSerializerT | _ModelWrapSerializerT | None` | The function to be decorated. | `None` | | `mode` | `Literal['plain', 'wrap']` | The serialization mode. 'plain' means the function will be called instead of the default serialization logic 'wrap' means the function will be called with an argument to optionally call the default serialization logic. | `'plain'` | | `when_used` | `WhenUsed` | Determines when this serializer should be used. | `'always'` | | `return_type` | `Any` | The return type for the function. If omitted it will be inferred from the type annotation. | `PydanticUndefined` |
+| Name | Type | Description | Default | | --- | --- | --- | --- | | `f` | `_ModelPlainSerializerT | _ModelWrapSerializerT | None` | The function to be decorated. | `None` | | `mode` | `Literal['plain', 'wrap']` | The serialization mode. 'plain' means the function will be called instead of the default serialization logic 'wrap' means the function will be called with an argument to optionally call the default serialization logic. | `'plain'` | | `when_used` | `WhenUsed` | Determines when this serializer should be used. | `'always'` | | `return_type` | `TypeForm[Any]` | The return type for the function. If omitted it will be inferred from the type annotation. | `PydanticUndefined` |
 
 Returns:
 
@@ -499,13 +498,13 @@ Returns:
 Source code in `pydantic/functional_serializers.py`
 
 ````python
-def model_serializer(
+def model_serializer(  # pyright: ignore[reportInconsistentOverload]
     f: _ModelPlainSerializerT | _ModelWrapSerializerT | None = None,
     /,
     *,
     mode: Literal['plain', 'wrap'] = 'plain',
     when_used: WhenUsed = 'always',
-    return_type: Any = PydanticUndefined,
+    return_type: TypeForm[Any] = PydanticUndefined,  # pyright: ignore[reportArgumentType]
 ) -> (
     _ModelPlainSerializerT
     | Callable[[_ModelWrapSerializerT], _ModelWrapSerializerT]

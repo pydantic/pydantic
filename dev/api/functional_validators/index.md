@@ -330,7 +330,7 @@ Because this converts the validation schema to `any_schema`, subsequent annotati
 
 ```python
 ValidateAs(
-    from_type: type[_FromTypeT],
+    from_type: TypeForm[_FromTypeT],
     /,
     instantiation_hook: Callable[[_FromTypeT], Any],
 )
@@ -341,7 +341,7 @@ A helper class to validate a custom type from a type that is natively supported 
 
 Parameters:
 
-| Name | Type | Description | Default | | --- | --- | --- | --- | | `from_type` | `type[_FromTypeT]` | The type natively supported by Pydantic to use to perform validation. | *required* | | `instantiation_hook` | `Callable[[_FromTypeT], Any]` | A callable taking the validated type as an argument, and returning the populated custom type. | *required* |
+| Name | Type | Description | Default | | --- | --- | --- | --- | | `from_type` | `TypeForm[_FromTypeT]` | The type natively supported by Pydantic to use to perform validation. | *required* | | `instantiation_hook` | `Callable[[_FromTypeT], Any]` | A callable taking the validated type as an argument, and returning the populated custom type. | *required* |
 
 Example
 
@@ -373,7 +373,7 @@ print(ta.validate_python({'a': 1}))
 Source code in `pydantic/functional_validators.py`
 
 ```python
-def __init__(self, from_type: type[_FromTypeT], /, instantiation_hook: Callable[[_FromTypeT], Any]) -> None:
+def __init__(self, from_type: TypeForm[_FromTypeT], /, instantiation_hook: Callable[[_FromTypeT], Any]) -> None:
     self.from_type = from_type
     self.instantiation_hook = instantiation_hook
 

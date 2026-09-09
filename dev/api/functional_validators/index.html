@@ -5360,7 +5360,7 @@ annotation applied to a type.</p>
 
 <a href="#pydantic.functional_validators.ValidateAs" class="headerlink" title="Permanent link">&para;</a></h2>
 <div class="language-python doc-signature highlight"><pre><span></span><code><span class="nf">ValidateAs</span><span class="p">(</span>
-    <span class="n">from_type</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/glossary.html#term-type">type</a></span><span class="p">[</span><span class="n"><span title="pydantic.functional_validators._FromTypeT">_FromTypeT</span></span><span class="p">],</span>
+    <span class="n">from_type</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" title="typing_extensions.TypeForm" href="https://typing-extensions.readthedocs.io/en/latest/index.html#typing_extensions.TypeForm">TypeForm</a></span><span class="p">[</span><span class="n"><span title="pydantic.functional_validators._FromTypeT">_FromTypeT</span></span><span class="p">],</span>
     <span class="o">/</span><span class="p">,</span>
     <span class="n">instantiation_hook</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" title="collections.abc.Callable" href="https://docs.python.org/3/library/collections.abc.html#collections.abc.Callable">Callable</a></span><span class="p">[[</span><span class="n"><span title="pydantic.functional_validators._FromTypeT">_FromTypeT</span></span><span class="p">],</span> <span class="n"><a class="autorefs autorefs-external" title="typing.Any" href="https://docs.python.org/3/library/typing.html#typing.Any">Any</a></span><span class="p">],</span>
 <span class="p">)</span>
@@ -5388,7 +5388,7 @@ annotation applied to a type.</p>
                 <code>from_type</code>
             </td>
             <td>
-                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/glossary.html#term-type">type</a>[<span title="pydantic.functional_validators._FromTypeT">_FromTypeT</span>]</code>
+                  <code><a class="autorefs autorefs-external" title="typing_extensions.TypeForm" href="https://typing-extensions.readthedocs.io/en/latest/index.html#typing_extensions.TypeForm">TypeForm</a>[<span title="pydantic.functional_validators._FromTypeT">_FromTypeT</span>]</code>
             </td>
             <td>
               <div class="doc-md-description">
@@ -5452,9 +5452,9 @@ the populated custom type.</p>
 
                   <details class="quote">
                     <summary>Source code in <code>pydantic/functional_validators.py</code></summary>
-                    <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">896</span>
-<span class="normal">897</span>
-<span class="normal">898</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">from_type</span><span class="p">:</span> <span class="nb">type</span><span class="p">[</span><span class="n">_FromTypeT</span><span class="p">],</span> <span class="o">/</span><span class="p">,</span> <span class="n">instantiation_hook</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[[</span><span class="n">_FromTypeT</span><span class="p">],</span> <span class="n">Any</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+                    <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">895</span>
+<span class="normal">896</span>
+<span class="normal">897</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">from_type</span><span class="p">:</span> <span class="n">TypeForm</span><span class="p">[</span><span class="n">_FromTypeT</span><span class="p">],</span> <span class="o">/</span><span class="p">,</span> <span class="n">instantiation_hook</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[[</span><span class="n">_FromTypeT</span><span class="p">],</span> <span class="n">Any</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
     <span class="bp">self</span><span class="o">.</span><span class="n">from_type</span> <span class="o">=</span> <span class="n">from_type</span>
     <span class="bp">self</span><span class="o">.</span><span class="n">instantiation_hook</span> <span class="o">=</span> <span class="n">instantiation_hook</span>
 </code></pre></div></td></tr></table></div>

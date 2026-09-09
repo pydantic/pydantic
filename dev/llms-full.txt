@@ -14785,7 +14785,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
         )
 
     @classmethod
-    def model_parametrized_name(cls, params: tuple[type[Any], ...]) -> str:
+    def model_parametrized_name(cls, params: tuple[TypeForm[Any], ...]) -> str:
         """Compute the class name for parametrizations of generic classes.
 
         This method can be overridden to achieve a custom naming scheme for generic BaseModels.
@@ -15111,7 +15111,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
         """
 
     def __class_getitem__(
-        cls, typevar_values: type[Any] | tuple[type[Any], ...]
+        cls, typevar_values: TypeForm[Any] | tuple[TypeForm[Any], ...]
     ) -> type[BaseModel] | _forward_ref.PydanticRecursiveRef:
         cached = _generics.get_cached_generic_type_early(cls, typevar_values)
         if cached is not None:
@@ -16546,7 +16546,7 @@ def model_json_schema(
 
 ```python
 model_parametrized_name(
-    params: tuple[type[Any], ...],
+    params: tuple[TypeForm[Any], ...],
 ) -> str
 
 ```
@@ -16557,7 +16557,7 @@ This method can be overridden to achieve a custom naming scheme for generic Base
 
 Parameters:
 
-| Name | Type | Description | Default | | --- | --- | --- | --- | | `params` | `tuple[type[Any], ...]` | Tuple of types of the class. Given a generic class Model with 2 type variables and a concrete model Model[str, int], the value (str, int) would be passed to params. | *required* |
+| Name | Type | Description | Default | | --- | --- | --- | --- | | `params` | `tuple[TypeForm[Any], ...]` | Tuple of types of the class. Given a generic class Model with 2 type variables and a concrete model Model[str, int], the value (str, int) would be passed to params. | *required* |
 
 Returns:
 
@@ -16571,7 +16571,7 @@ Source code in `pydantic/main.py`
 
 ```python
 @classmethod
-def model_parametrized_name(cls, params: tuple[type[Any], ...]) -> str:
+def model_parametrized_name(cls, params: tuple[TypeForm[Any], ...]) -> str:
     """Compute the class name for parametrizations of generic classes.
 
     This method can be overridden to achieve a custom naming scheme for generic BaseModels.
@@ -16985,7 +16985,9 @@ create_model(
     ) = None,
     __cls_kwargs__: dict[str, Any] | None = None,
     __qualname__: str | None = None,
-    **field_definitions: Any | tuple[Any, Any],
+    **field_definitions: (
+        TypeForm[Any] | tuple[TypeForm[Any], Any]
+    ),
 ) -> type[BaseModel]
 
 ```
@@ -17004,7 +17006,9 @@ create_model(
     ) = None,
     __cls_kwargs__: dict[str, Any] | None = None,
     __qualname__: str | None = None,
-    **field_definitions: Any | tuple[Any, Any],
+    **field_definitions: (
+        TypeForm[Any] | tuple[TypeForm[Any], Any]
+    ),
 ) -> type[ModelT]
 
 ```
@@ -17025,7 +17029,9 @@ create_model(
     ) = None,
     __cls_kwargs__: dict[str, Any] | None = None,
     __qualname__: str | None = None,
-    **field_definitions: Any | tuple[Any, Any],
+    **field_definitions: (
+        TypeForm[Any] | tuple[TypeForm[Any], Any]
+    ),
 ) -> type[ModelT]
 
 ```
@@ -17044,7 +17050,7 @@ See [Security implications of introspecting annotations](https://docs.python.org
 
 Parameters:
 
-| Name | Type | Description | Default | | --- | --- | --- | --- | | `model_name` | `str` | The name of the newly created model. | *required* | | `__config__` | `ConfigDict | None` | The configuration of the new model. | `None` | | `__doc__` | `str | None` | The docstring of the new model. | `None` | | `__base__` | `type[ModelT] | tuple[type[ModelT], ...] | None` | The base class or classes for the new model. | `None` | | `__module__` | `str | None` | The name of the module that the model belongs to; if None, the value is taken from sys.\_getframe(1) | `None` | | `__validators__` | `dict[str, Callable[..., Any]] | None` | A dictionary of methods that validate fields. The keys are the names of the validation methods to be added to the model, and the values are the validation methods themselves. You can read more about functional validators here. | `None` | | `__cls_kwargs__` | `dict[str, Any] | None` | A dictionary of keyword arguments for class creation, such as metaclass. | `None` | | `__qualname__` | `str | None` | The qualified name of the newly created model. | `None` | | `**field_definitions` | `Any | tuple[Any, Any]` | Field definitions of the new model. Either: a single element, representing the type annotation of the field. a two-tuple, the first element being the type and the second element the assigned value (either a default or the Field() function). | `{}` |
+| Name | Type | Description | Default | | --- | --- | --- | --- | | `model_name` | `str` | The name of the newly created model. | *required* | | `__config__` | `ConfigDict | None` | The configuration of the new model. | `None` | | `__doc__` | `str | None` | The docstring of the new model. | `None` | | `__base__` | `type[ModelT] | tuple[type[ModelT], ...] | None` | The base class or classes for the new model. | `None` | | `__module__` | `str | None` | The name of the module that the model belongs to; if None, the value is taken from sys.\_getframe(1) | `None` | | `__validators__` | `dict[str, Callable[..., Any]] | None` | A dictionary of methods that validate fields. The keys are the names of the validation methods to be added to the model, and the values are the validation methods themselves. You can read more about functional validators here. | `None` | | `__cls_kwargs__` | `dict[str, Any] | None` | A dictionary of keyword arguments for class creation, such as metaclass. | `None` | | `__qualname__` | `str | None` | The qualified name of the newly created model. | `None` | | `**field_definitions` | `TypeForm[Any] | tuple[TypeForm[Any], Any]` | Field definitions of the new model. Either: a single element, representing the type annotation of the field. a two-tuple, the first element being the type and the second element the assigned value (either a default or the Field() function). | `{}` |
 
 Returns:
 
@@ -17068,8 +17074,7 @@ def create_model(  # noqa: C901
     __validators__: dict[str, Callable[..., Any]] | None = None,
     __cls_kwargs__: dict[str, Any] | None = None,
     __qualname__: str | None = None,
-    # TODO PEP 747: replace `Any` by the TypeForm:
-    **field_definitions: Any | tuple[Any, Any],
+    **field_definitions: TypeForm[Any] | tuple[TypeForm[Any], Any],
 ) -> type[ModelT]:
     """!!! abstract "Usage Documentation"
         [Dynamic Model Creation](../concepts/models.md#dynamic-model-creation)
@@ -19472,7 +19477,7 @@ def transform(
 
 ```python
 validate_as(
-    tp: type[_NewOutT], *, strict: bool = False
+    tp: TypeForm[_NewOutT], *, strict: bool = False
 ) -> _Pipeline[_InT, _NewOutT]
 
 ```
@@ -19486,14 +19491,7 @@ validate_as(
 
 ```python
 validate_as(
-    tp: Any, *, strict: bool = ...
-) -> _Pipeline[_InT, Any]
-
-```
-
-```python
-validate_as(
-    tp: type[_NewOutT] | EllipsisType | Any,
+    tp: TypeForm[_NewOutT] | EllipsisType,
     *,
     strict: bool = False
 ) -> _Pipeline[_InT, Any]
@@ -19509,7 +19507,7 @@ Types are parsed in Pydantic's `lax` mode by default, but you can enable `strict
 Source code in `pydantic/experimental/pipeline.py`
 
 ```python
-def validate_as(self, tp: type[_NewOutT] | EllipsisType | Any, *, strict: bool = False) -> _Pipeline[_InT, Any]:  # type: ignore
+def validate_as(self, tp: TypeForm[_NewOutT] | EllipsisType, *, strict: bool = False) -> _Pipeline[_InT, Any]:  # type: ignore
     """Validate / parse the input into a new type.
 
     If no type is provided, the type of the field is used.
@@ -20866,7 +20864,7 @@ def Field(  # noqa: C901
 ```python
 FieldInfo(
     *,
-    annotation: type[Any] | None = _Unset,
+    annotation: TypeForm[Any] | None = _Unset,
     default: Any = _Unset,
     default_factory: (
         Callable[[], Any]
@@ -20934,7 +20932,7 @@ If you need to derive a new model from another one and are willing to alter `Fie
 
 Attributes:
 
-| Name | Type | Description | | --- | --- | --- | | `annotation` | `type[Any] | None` | The type annotation of the field. | | `default` | `Any` | The default value of the field. | | `default_factory` | `Callable[[], Any] | Callable[[dict[str, Any]], Any] | None` | A callable to generate the default value. The callable can either take 0 arguments (in which case it is called as is) or a single argument containing the already validated data. | | `alias` | `str | None` | The alias name of the field. | | `alias_priority` | `int | None` | The priority of the field's alias. | | `validation_alias` | `str | AliasPath | AliasChoices | None` | The validation alias of the field. | | `serialization_alias` | `str | None` | The serialization alias of the field. | | `title` | `str | None` | The title of the field. | | `field_title_generator` | `Callable[[str, FieldInfo], str] | None` | A callable that takes a field's name and info and returns title for it. | | `description` | `str | None` | The description of the field. | | `examples` | `list[Any] | None` | List of examples of the field. | | `exclude` | `bool | None` | Whether to exclude the field from the model serialization. | | `exclude_if` | `Callable[[Any], bool] | None` | A callable that determines whether to exclude a field during serialization based on its value. | | `discriminator` | `str | Discriminator | None` | Field name or Discriminator for discriminating the type in a tagged union. | | `deprecated` | `Deprecated | str | bool | None` | A deprecation message, an instance of warnings.deprecated or the typing_extensions.deprecated backport, or a boolean. If True, a default deprecation message will be emitted when accessing the field. | | `json_schema_extra` | `JsonDict | Callable[[JsonDict], None] | None` | A dict or callable to provide extra JSON schema properties. | | `frozen` | `bool | None` | Whether the field is frozen. | | `validate_default` | `bool | None` | Whether to validate the default value of the field. | | `repr` | `bool` | Whether to include the field in representation of the model. | | `init` | `bool | None` | Whether the field should be included in the constructor of the dataclass. | | `init_var` | `bool | None` | Whether the field should only be included in the constructor of the dataclass, and not stored. | | `kw_only` | `bool | None` | Whether the field should be a keyword-only argument in the constructor of the dataclass. | | `metadata` | `list[Any]` | The metadata list. Contains all the data that isn't expressed as direct FieldInfo attributes, including: Type-specific constraints, such as gt or min_length (these are converted to metadata classes such as annotated_types.Gt). Any other arbitrary object used within Annotated metadata (e.g. custom types handlers or any object not recognized by Pydantic). |
+| Name | Type | Description | | --- | --- | --- | | `annotation` | `TypeForm[Any] | None` | The type annotation of the field. | | `default` | `Any` | The default value of the field. | | `default_factory` | `Callable[[], Any] | Callable[[dict[str, Any]], Any] | None` | A callable to generate the default value. The callable can either take 0 arguments (in which case it is called as is) or a single argument containing the already validated data. | | `alias` | `str | None` | The alias name of the field. | | `alias_priority` | `int | None` | The priority of the field's alias. | | `validation_alias` | `str | AliasPath | AliasChoices | None` | The validation alias of the field. | | `serialization_alias` | `str | None` | The serialization alias of the field. | | `title` | `str | None` | The title of the field. | | `field_title_generator` | `Callable[[str, FieldInfo], str] | None` | A callable that takes a field's name and info and returns title for it. | | `description` | `str | None` | The description of the field. | | `examples` | `list[Any] | None` | List of examples of the field. | | `exclude` | `bool | None` | Whether to exclude the field from the model serialization. | | `exclude_if` | `Callable[[Any], bool] | None` | A callable that determines whether to exclude a field during serialization based on its value. | | `discriminator` | `str | Discriminator | None` | Field name or Discriminator for discriminating the type in a tagged union. | | `deprecated` | `Deprecated | str | bool | None` | A deprecation message, an instance of warnings.deprecated or the typing_extensions.deprecated backport, or a boolean. If True, a default deprecation message will be emitted when accessing the field. | | `json_schema_extra` | `JsonDict | Callable[[JsonDict], None] | None` | A dict or callable to provide extra JSON schema properties. | | `frozen` | `bool | None` | Whether the field is frozen. | | `validate_default` | `bool | None` | Whether to validate the default value of the field. | | `repr` | `bool` | Whether to include the field in representation of the model. | | `init` | `bool | None` | Whether the field should be included in the constructor of the dataclass. | | `init_var` | `bool | None` | Whether the field should only be included in the constructor of the dataclass, and not stored. | | `kw_only` | `bool | None` | Whether the field should be a keyword-only argument in the constructor of the dataclass. | | `metadata` | `list[Any]` | The metadata list. Contains all the data that isn't expressed as direct FieldInfo attributes, including: Type-specific constraints, such as gt or min_length (these are converted to metadata classes such as annotated_types.Gt). Any other arbitrary object used within Annotated metadata (e.g. custom types handlers or any object not recognized by Pydantic). |
 
 See the signature of `pydantic.fields.Field` for more details about the expected arguments. Unknown keyword arguments are accepted (and ignored) for backwards compatibility.
 
@@ -20944,7 +20942,7 @@ Source code in `pydantic/fields.py`
 def __init__(
     self,
     *,
-    annotation: type[Any] | None = _Unset,
+    annotation: TypeForm[Any] | None = _Unset,
     default: Any = _Unset,
     default_factory: Callable[[], Any] | Callable[[dict[str, Any]], Any] | None = _Unset,
     alias: str | None = _Unset,
@@ -22142,7 +22140,7 @@ A model serializer method in `wrap` mode.
 ```python
 PlainSerializer(
     func: SerializerFunction,
-    return_type: Any = PydanticUndefined,
+    return_type: TypeForm[Any] = PydanticUndefined,
     when_used: WhenUsed = "always",
 )
 
@@ -22172,14 +22170,14 @@ print(student.model_dump())
 
 Attributes:
 
-| Name | Type | Description | | --- | --- | --- | | `func` | `SerializerFunction` | The serializer function. | | `return_type` | `Any` | The return type for the function. If omitted it will be inferred from the type annotation. | | `when_used` | `WhenUsed` | Determines when this serializer should be used. Accepts a string with values 'always', 'unless-none', 'json', and 'json-unless-none'. Defaults to 'always'. |
+| Name | Type | Description | | --- | --- | --- | | `func` | `SerializerFunction` | The serializer function. | | `return_type` | `TypeForm[Any]` | The return type for the function. If omitted it will be inferred from the type annotation. | | `when_used` | `WhenUsed` | Determines when this serializer should be used. Accepts a string with values 'always', 'unless-none', 'json', and 'json-unless-none'. Defaults to 'always'. |
 
 ## WrapSerializer
 
 ```python
 WrapSerializer(
     func: WrapSerializerFunction,
-    return_type: Any = PydanticUndefined,
+    return_type: TypeForm[Any] = PydanticUndefined,
     when_used: WhenUsed = "always",
 )
 
@@ -22233,7 +22231,7 @@ print(event.model_dump_json())
 
 Attributes:
 
-| Name | Type | Description | | --- | --- | --- | | `func` | `WrapSerializerFunction` | The serializer function to be wrapped. | | `return_type` | `Any` | The return type for the function. If omitted it will be inferred from the type annotation. | | `when_used` | `WhenUsed` | Determines when this serializer should be used. Accepts a string with values 'always', 'unless-none', 'json', and 'json-unless-none'. Defaults to 'always'. |
+| Name | Type | Description | | --- | --- | --- | | `func` | `WrapSerializerFunction` | The serializer function to be wrapped. | | `return_type` | `TypeForm[Any]` | The return type for the function. If omitted it will be inferred from the type annotation. | | `when_used` | `WhenUsed` | Determines when this serializer should be used. Accepts a string with values 'always', 'unless-none', 'json', and 'json-unless-none'. Defaults to 'always'. |
 
 ## SerializeAsAny
 
@@ -22254,7 +22252,7 @@ field_serializer(
     /,
     *fields: str,
     mode: Literal["wrap"],
-    return_type: Any = ...,
+    return_type: TypeForm[Any] = ...,
     when_used: WhenUsed = ...,
     check_fields: bool | None = ...,
 ) -> Callable[
@@ -22269,7 +22267,7 @@ field_serializer(
     /,
     *fields: str,
     mode: Literal["plain"] = ...,
-    return_type: Any = ...,
+    return_type: TypeForm[Any] = ...,
     when_used: WhenUsed = ...,
     check_fields: bool | None = ...,
 ) -> Callable[
@@ -22284,7 +22282,7 @@ field_serializer(
     /,
     *fields: str,
     mode: Literal["plain", "wrap"] = "plain",
-    return_type: Any = PydanticUndefined,
+    return_type: TypeForm[Any] = PydanticUndefined,
     when_used: WhenUsed = "always",
     check_fields: bool | None = None,
 ) -> (
@@ -22328,7 +22326,7 @@ Four signatures are supported for the decorated serializer:
 
 Parameters:
 
-| Name | Type | Description | Default | | --- | --- | --- | --- | | `*fields` | `str` | The field names the serializer should apply to. | `()` | | `mode` | `Literal['plain', 'wrap']` | The serialization mode. plain means the function will be called instead of the default serialization logic, wrap means the function will be called with an argument to optionally call the default serialization logic. | `'plain'` | | `return_type` | `Any` | Optional return type for the function, if omitted it will be inferred from the type annotation. | `PydanticUndefined` | | `when_used` | `WhenUsed` | Determines the serializer will be used for serialization. | `'always'` | | `check_fields` | `bool | None` | Whether to check that the fields actually exist on the model. | `None` |
+| Name | Type | Description | Default | | --- | --- | --- | --- | | `*fields` | `str` | The field names the serializer should apply to. | `()` | | `mode` | `Literal['plain', 'wrap']` | The serialization mode. plain means the function will be called instead of the default serialization logic, wrap means the function will be called with an argument to optionally call the default serialization logic. | `'plain'` | | `return_type` | `TypeForm[Any]` | Optional return type for the function, if omitted it will be inferred from the type annotation. | `PydanticUndefined` | | `when_used` | `WhenUsed` | Determines the serializer will be used for serialization. | `'always'` | | `check_fields` | `bool | None` | Whether to check that the fields actually exist on the model. | `None` |
 
 Raises:
 
@@ -22342,8 +22340,7 @@ def field_serializer(  # noqa: D417
     /,
     *fields: str,
     mode: Literal['plain', 'wrap'] = 'plain',
-    # TODO PEP 747 (grep for 'return_type' on the whole code base):
-    return_type: Any = PydanticUndefined,
+    return_type: TypeForm[Any] = PydanticUndefined,  # pyright: ignore[reportArgumentType]
     when_used: WhenUsed = 'always',
     check_fields: bool | None = None,
 ) -> (
@@ -22438,7 +22435,7 @@ model_serializer(
     *,
     mode: Literal["wrap"],
     when_used: WhenUsed = "always",
-    return_type: Any = ...
+    return_type: TypeForm[Any] = ...
 ) -> Callable[
     [_ModelWrapSerializerT], _ModelWrapSerializerT
 ]
@@ -22450,7 +22447,7 @@ model_serializer(
     *,
     mode: Literal["plain"] = ...,
     when_used: WhenUsed = "always",
-    return_type: Any = ...
+    return_type: TypeForm[Any] = ...
 ) -> Callable[
     [_ModelPlainSerializerT], _ModelPlainSerializerT
 ]
@@ -22468,7 +22465,7 @@ model_serializer(
     *,
     mode: Literal["plain", "wrap"] = "plain",
     when_used: WhenUsed = "always",
-    return_type: Any = PydanticUndefined,
+    return_type: TypeForm[Any] = PydanticUndefined,
 ) -> (
     _ModelPlainSerializerT
     | Callable[
@@ -22523,7 +22520,7 @@ And two other signatures for `mode='wrap'`:
 
 Parameters:
 
-| Name | Type | Description | Default | | --- | --- | --- | --- | | `f` | `_ModelPlainSerializerT | _ModelWrapSerializerT | None` | The function to be decorated. | `None` | | `mode` | `Literal['plain', 'wrap']` | The serialization mode. 'plain' means the function will be called instead of the default serialization logic 'wrap' means the function will be called with an argument to optionally call the default serialization logic. | `'plain'` | | `when_used` | `WhenUsed` | Determines when this serializer should be used. | `'always'` | | `return_type` | `Any` | The return type for the function. If omitted it will be inferred from the type annotation. | `PydanticUndefined` |
+| Name | Type | Description | Default | | --- | --- | --- | --- | | `f` | `_ModelPlainSerializerT | _ModelWrapSerializerT | None` | The function to be decorated. | `None` | | `mode` | `Literal['plain', 'wrap']` | The serialization mode. 'plain' means the function will be called instead of the default serialization logic 'wrap' means the function will be called with an argument to optionally call the default serialization logic. | `'plain'` | | `when_used` | `WhenUsed` | Determines when this serializer should be used. | `'always'` | | `return_type` | `TypeForm[Any]` | The return type for the function. If omitted it will be inferred from the type annotation. | `PydanticUndefined` |
 
 Returns:
 
@@ -22532,13 +22529,13 @@ Returns:
 Source code in `pydantic/functional_serializers.py`
 
 ````python
-def model_serializer(
+def model_serializer(  # pyright: ignore[reportInconsistentOverload]
     f: _ModelPlainSerializerT | _ModelWrapSerializerT | None = None,
     /,
     *,
     mode: Literal['plain', 'wrap'] = 'plain',
     when_used: WhenUsed = 'always',
-    return_type: Any = PydanticUndefined,
+    return_type: TypeForm[Any] = PydanticUndefined,  # pyright: ignore[reportArgumentType]
 ) -> (
     _ModelPlainSerializerT
     | Callable[[_ModelWrapSerializerT], _ModelWrapSerializerT]
@@ -22939,7 +22936,7 @@ Because this converts the validation schema to `any_schema`, subsequent annotati
 
 ```python
 ValidateAs(
-    from_type: type[_FromTypeT],
+    from_type: TypeForm[_FromTypeT],
     /,
     instantiation_hook: Callable[[_FromTypeT], Any],
 )
@@ -22950,7 +22947,7 @@ A helper class to validate a custom type from a type that is natively supported 
 
 Parameters:
 
-| Name | Type | Description | Default | | --- | --- | --- | --- | | `from_type` | `type[_FromTypeT]` | The type natively supported by Pydantic to use to perform validation. | *required* | | `instantiation_hook` | `Callable[[_FromTypeT], Any]` | A callable taking the validated type as an argument, and returning the populated custom type. | *required* |
+| Name | Type | Description | Default | | --- | --- | --- | --- | | `from_type` | `TypeForm[_FromTypeT]` | The type natively supported by Pydantic to use to perform validation. | *required* | | `instantiation_hook` | `Callable[[_FromTypeT], Any]` | A callable taking the validated type as an argument, and returning the populated custom type. | *required* |
 
 Example
 
@@ -22982,7 +22979,7 @@ print(ta.validate_python({'a': 1}))
 Source code in `pydantic/functional_validators.py`
 
 ```python
-def __init__(self, from_type: type[_FromTypeT], /, instantiation_hook: Callable[[_FromTypeT], Any]) -> None:
+def __init__(self, from_type: TypeForm[_FromTypeT], /, instantiation_hook: Callable[[_FromTypeT], Any]) -> None:
     self.from_type = from_type
     self.instantiation_hook = instantiation_hook
 
@@ -42310,22 +42307,11 @@ A `TypeAdapter` instance exposes some of the functionality from `BaseModel` inst
 
 Parameters:
 
-| Name | Type | Description | Default | | --- | --- | --- | --- | | `type` | `Any` | The type associated with the TypeAdapter. | *required* | | `config` | `ConfigDict | None` | Configuration for the TypeAdapter, should be a dictionary conforming to ConfigDict. Note You cannot provide a configuration when instantiating a TypeAdapter if the type you're using has its own config that cannot be overridden (ex: BaseModel, TypedDict, and dataclass). A type-adapter-config-unused error will be raised in this case. | `None` | | `_parent_depth` | `int` | Depth at which to search for the parent frame. This frame is used when resolving forward annotations during schema building, by looking for the globals and locals of this frame. Defaults to 2, which will result in the frame where the TypeAdapter was instantiated. Note This parameter is named with an underscore to suggest its private nature and discourage use. It may be deprecated in a minor version, so we only recommend using it if you're comfortable with potential change in behavior/support. It's default value is 2 because internally, the TypeAdapter class makes another call to fetch the frame. | `2` | | `module` | `str | None` | The module that passes to plugin if provided. | `None` |
+| Name | Type | Description | Default | | --- | --- | --- | --- | | `type` | `TypeForm[T]` | The type associated with the TypeAdapter. | *required* | | `config` | `ConfigDict | None` | Configuration for the TypeAdapter, should be a dictionary conforming to ConfigDict. Note You cannot provide a configuration when instantiating a TypeAdapter if the type you're using has its own config that cannot be overridden (ex: BaseModel, TypedDict, and dataclass). A type-adapter-config-unused error will be raised in this case. | `None` | | `_parent_depth` | `int` | Depth at which to search for the parent frame. This frame is used when resolving forward annotations during schema building, by looking for the globals and locals of this frame. Defaults to 2, which will result in the frame where the TypeAdapter was instantiated. Note This parameter is named with an underscore to suggest its private nature and discourage use. It may be deprecated in a minor version, so we only recommend using it if you're comfortable with potential change in behavior/support. It's default value is 2 because internally, the TypeAdapter class makes another call to fetch the frame. | `2` | | `module` | `str | None` | The module that passes to plugin if provided. | `None` |
 
 Attributes:
 
 | Name | Type | Description | | --- | --- | --- | | `core_schema` | `CoreSchema` | The core schema for the type. | | `validator` | `SchemaValidator | PluggableSchemaValidator` | The schema validator for the type. | | `serializer` | `SchemaSerializer` | The schema serializer for the type. | | `pydantic_complete` | `bool` | Whether the core schema for the type is successfully built. |
-
-Compatibility with `mypy`
-
-Depending on the type used, `mypy` might raise an error when instantiating a `TypeAdapter`. As a workaround, you can explicitly annotate your variable:
-
-```py
-from pydantic import TypeAdapter
-
-ta: TypeAdapter[str | int] = TypeAdapter(str | int)  # type: ignore[arg-type]
-
-```
 
 Namespace management nuances and implementation details
 
@@ -42371,7 +42357,7 @@ Source code in `pydantic/type_adapter.py`
 ```python
 def __init__(
     self,
-    type: Any,
+    type: TypeForm[T],
     *,
     config: ConfigDict | None = None,
     _parent_depth: int = 2,

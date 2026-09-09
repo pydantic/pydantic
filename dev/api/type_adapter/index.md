@@ -12,22 +12,11 @@ A `TypeAdapter` instance exposes some of the functionality from `BaseModel` inst
 
 Parameters:
 
-| Name | Type | Description | Default | | --- | --- | --- | --- | | `type` | `Any` | The type associated with the TypeAdapter. | *required* | | `config` | `ConfigDict | None` | Configuration for the TypeAdapter, should be a dictionary conforming to ConfigDict. Note You cannot provide a configuration when instantiating a TypeAdapter if the type you're using has its own config that cannot be overridden (ex: BaseModel, TypedDict, and dataclass). A type-adapter-config-unused error will be raised in this case. | `None` | | `_parent_depth` | `int` | Depth at which to search for the parent frame. This frame is used when resolving forward annotations during schema building, by looking for the globals and locals of this frame. Defaults to 2, which will result in the frame where the TypeAdapter was instantiated. Note This parameter is named with an underscore to suggest its private nature and discourage use. It may be deprecated in a minor version, so we only recommend using it if you're comfortable with potential change in behavior/support. It's default value is 2 because internally, the TypeAdapter class makes another call to fetch the frame. | `2` | | `module` | `str | None` | The module that passes to plugin if provided. | `None` |
+| Name | Type | Description | Default | | --- | --- | --- | --- | | `type` | `TypeForm[T]` | The type associated with the TypeAdapter. | *required* | | `config` | `ConfigDict | None` | Configuration for the TypeAdapter, should be a dictionary conforming to ConfigDict. Note You cannot provide a configuration when instantiating a TypeAdapter if the type you're using has its own config that cannot be overridden (ex: BaseModel, TypedDict, and dataclass). A type-adapter-config-unused error will be raised in this case. | `None` | | `_parent_depth` | `int` | Depth at which to search for the parent frame. This frame is used when resolving forward annotations during schema building, by looking for the globals and locals of this frame. Defaults to 2, which will result in the frame where the TypeAdapter was instantiated. Note This parameter is named with an underscore to suggest its private nature and discourage use. It may be deprecated in a minor version, so we only recommend using it if you're comfortable with potential change in behavior/support. It's default value is 2 because internally, the TypeAdapter class makes another call to fetch the frame. | `2` | | `module` | `str | None` | The module that passes to plugin if provided. | `None` |
 
 Attributes:
 
 | Name | Type | Description | | --- | --- | --- | | `core_schema` | `CoreSchema` | The core schema for the type. | | `validator` | `SchemaValidator | PluggableSchemaValidator` | The schema validator for the type. | | `serializer` | `SchemaSerializer` | The schema serializer for the type. | | `pydantic_complete` | `bool` | Whether the core schema for the type is successfully built. |
-
-Compatibility with `mypy`
-
-Depending on the type used, `mypy` might raise an error when instantiating a `TypeAdapter`. As a workaround, you can explicitly annotate your variable:
-
-```py
-from pydantic import TypeAdapter
-
-ta: TypeAdapter[str | int] = TypeAdapter(str | int)  # type: ignore[arg-type]
-
-```
 
 Namespace management nuances and implementation details
 
@@ -73,7 +62,7 @@ Source code in `pydantic/type_adapter.py`
 ```python
 def __init__(
     self,
-    type: Any,
+    type: TypeForm[T],
     *,
     config: ConfigDict | None = None,
     _parent_depth: int = 2,
