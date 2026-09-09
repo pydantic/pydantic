@@ -5191,17 +5191,49 @@ Pydantic provides the <a class="autorefs autorefs-internal" href="../types/#pyda
 <tr>
 <td><code>max_digits</code></td>
 <td>The maximum number of decimal digits allowed. The zero before the decimal point and trailing zeros are not counted.</td>
-<td><a href="https://json-schema.org/understanding-json-schema/reference/string#regexp"><code>pattern</code></a> keyword, to describe the string pattern</td>
+<td>N/A (see below)</td>
 </tr>
 <tr>
 <td><code>decimal_places</code></td>
 <td>The maximum number of decimal places allowed. Trailing zeros are not counted.</td>
-<td><a href="https://json-schema.org/understanding-json-schema/reference/string#regexp"><code>pattern</code></a> keyword, to describe the string pattern</td>
+<td>N/A (see below)</td>
 </tr>
 </tbody>
 </table>
-<p>Note that the JSON Schema <a href="https://json-schema.org/understanding-json-schema/reference/string#regexp"><code>pattern</code></a> keyword will be specified
-in the JSON Schema to describe the string pattern in all cases (and can vary if <code>max_digits</code> and/or <code>decimal_places</code> is specified).</p>
+<div style="border-left: .15rem solid rgb(244, 227, 76); padding: 0 .5rem;">
+<p><span style="font-style: italic; color: rgb(244, 227, 76);">Changed in v2.12: </span><span>The JSON Schema includes a <a href="https://json-schema.org/understanding-json-schema/reference/string#regexp"><code>pattern</code></a> matching the <code>max_digits</code>
+and <code>decimal_places</code> constraints.</span></p>
+</div>
+<div style="border-left: .15rem solid rgb(244, 227, 76); padding: 0 .5rem;">
+<p><span style="font-style: italic; color: rgb(244, 227, 76);">Changed in v2.14: </span><span>The JSON Schema no longer includes a <a href="https://json-schema.org/understanding-json-schema/reference/string#regexp"><code>pattern</code></a> by default,
+as the generated pattern can cause issues for downstream consumers due to its complexity.</span><div class="language-python highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">decimal</span><span class="w"> </span><span class="kn">import</span> <span class="n">Decimal</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Annotated</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">pydantic</span><span class="w"> </span><span class="kn">import</span> <span class="n">Field</span><span class="p">,</span> <span class="n">TypeAdapter</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pydantic.json_schema</span><span class="w"> </span><span class="kn">import</span> <span class="n">GenerateJsonSchema</span>
+
+
+<span class="k">class</span><span class="w"> </span><span class="nc">MyGenerateJsonSchema</span><span class="p">(</span><span class="n">GenerateJsonSchema</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_decimal_pattern</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">schema</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">build_decimal_pattern</span><span class="p">(</span><span class="n">schema</span><span class="p">)</span>
+
+
+<span class="n">ta</span> <span class="o">=</span> <span class="n">TypeAdapter</span><span class="p">(</span><span class="n">Annotated</span><span class="p">[</span><span class="n">Decimal</span><span class="p">,</span> <span class="n">Field</span><span class="p">(</span><span class="n">max_digits</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span> <span class="n">decimal_places</span><span class="o">=</span><span class="mi">2</span><span class="p">)])</span>
+<span class="nb">print</span><span class="p">(</span>
+    <span class="n">ta</span><span class="o">.</span><span class="n">json_schema</span><span class="p">(</span><span class="n">schema_generator</span><span class="o">=</span><span class="n">MyGenerateJsonSchema</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s1">&#39;serialization&#39;</span><span class="p">)</span>
+<span class="p">)</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">{</span>
+<span class="sd">    &#39;pattern&#39;: &#39;^-?(?:(?:0|[1-9][0-9]{0,2})(?:\\.[0-9]{1,2}0*)?|0E[+-][1-9][0-9]*|[1-9](?:\\.[0-9]+)?E\\+[1-2])$&#39;,</span>
+<span class="sd">    &#39;type&#39;: &#39;string&#39;,</span>
+<span class="sd">}</span>
+<span class="sd">&quot;&quot;&quot;</span>
+</code></pre></div>
+<p>The generated pattern also no longer uses lookahead assertions, and takes exponents and <code>allow_inf_nan</code> into account.</p>
+</p>
+<p>The pattern can be included by subclassing <a class="autorefs autorefs-internal" href="../json_schema/#pydantic.json_schema.GenerateJsonSchema"><code>GenerateJsonSchema</code></a> and overriding the
+<a class="autorefs autorefs-internal" href="../json_schema/#pydantic.json_schema.GenerateJsonSchema.get_decimal_pattern"><code>get_decimal_pattern()</code></a> method:</p>
+</div>
 <p>These constraints can be provided using the <a class="autorefs autorefs-internal" href="../fields/#pydantic.fields.Field"><code>Field()</code></a> function.
 The <code>Le</code>, <code>Ge</code>, <code>Lt</code>, <code>Gt</code> and <code>MultipleOf</code> metadata types from the <a href="https://github.com/annotated-types/annotated-types"><code>annotated-types</code></a>
 library and the <a class="autorefs autorefs-internal" href="../types/#pydantic.types.AllowInfNan"><code>AllowInfNan</code></a> type can also be used.</p>

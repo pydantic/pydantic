@@ -3295,13 +3295,7 @@ print(Model.model_json_schema(mode='validation'))
 {
     'properties': {
         'a': {
-            'anyOf': [
-                {'type': 'number'},
-                {
-                    'pattern': '^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$',
-                    'type': 'string',
-                },
-            ],
+            'anyOf': [{'type': 'number'}, {'type': 'string'}],
             'default': '12.34',
             'title': 'A',
         }
@@ -3314,14 +3308,7 @@ print(Model.model_json_schema(mode='validation'))
 print(Model.model_json_schema(mode='serialization'))
 """
 {
-    'properties': {
-        'a': {
-            'default': '12.34',
-            'pattern': '^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$',
-            'title': 'A',
-            'type': 'string',
-        }
-    },
+    'properties': {'a': {'default': '12.34', 'title': 'A', 'type': 'string'}},
     'title': 'Model',
     'type': 'object',
 }
@@ -24217,49 +24204,11 @@ def decimal_schema(self, schema: core_schema.DecimalSchema) -> JsonSchemaValue:
     Returns:
         The generated JSON schema.
     """
-
-    def get_decimal_pattern(schema: core_schema.DecimalSchema) -> str:
-        max_digits = schema.get('max_digits')
-        decimal_places = schema.get('decimal_places')
-
-        pattern = (
-            r'^(?!^[-+.]*$)[+-]?0*'  # check it is not empty string and not one or sequence of ".+-" characters.
-        )
-
-        # Case 1: Both max_digits and decimal_places are set
-        if max_digits is not None and decimal_places is not None:
-            integer_places = max(0, max_digits - decimal_places)
-            pattern += (
-                rf'(?:'
-                rf'\d{{0,{integer_places}}}'
-                rf'|'
-                rf'(?=[\d.]{{1,{max_digits + 1}}}0*$)'
-                rf'\d{{0,{integer_places}}}\.\d{{0,{decimal_places}}}0*$'
-                rf')'
-            )
-
-        # Case 2: Only max_digits is set
-        elif max_digits is not None and decimal_places is None:
-            pattern += (
-                rf'(?:'
-                rf'\d{{0,{max_digits}}}'
-                rf'|'
-                rf'(?=[\d.]{{1,{max_digits + 1}}}0*$)'
-                rf'\d*\.\d*0*$'
-                rf')'
-            )
-
-        # Case 3: Only decimal_places is set
-        elif max_digits is None and decimal_places is not None:
-            pattern += rf'\d*\.?\d{{0,{decimal_places}}}0*$'
-
-        # Case 4: Both are None (no restrictions)
-        else:
-            pattern += r'\d*\.?\d*$'  # look for arbitrary integer or decimal
-
-        return pattern
-
-    json_schema = self.str_schema(core_schema.str_schema(pattern=get_decimal_pattern(schema)))
+    str_schema = core_schema.str_schema()
+    pattern = self.get_decimal_pattern(schema)
+    if pattern is not None:
+        str_schema['pattern'] = pattern
+    json_schema = self.str_schema(str_schema)
     if self.mode == 'validation':
         multiple_of = schema.get('multiple_of')
         le = schema.get('le')
@@ -24282,6 +24231,125 @@ def decimal_schema(self, schema: core_schema.DecimalSchema) -> JsonSchemaValue:
             ],
         }
     return json_schema
+
+```
+
+### get_decimal_pattern
+
+```python
+get_decimal_pattern(schema: DecimalSchema) -> str | None
+
+```
+
+Get the regular expression pattern to apply to the string representation of a decimal.
+
+By default, no pattern is applied (`None` is returned). Subclasses can override this method to return a custom pattern, or build_decimal_pattern() can be used to get a pattern reflecting the `max_digits` and `decimal_places` constraints:
+
+```python
+from pydantic.json_schema import GenerateJsonSchema
+
+class MyGenerateJsonSchema(GenerateJsonSchema):
+    def get_decimal_pattern(self, schema):
+        return self.build_decimal_pattern(schema)
+
+```
+
+Parameters:
+
+| Name | Type | Description | Default | | --- | --- | --- | --- | | `schema` | `DecimalSchema` | The core schema. | *required* |
+
+Returns:
+
+| Type | Description | | --- | --- | | `str | None` | The regular expression pattern, or None if no pattern should be applied. |
+
+Source code in `pydantic/json_schema.py`
+
+````python
+def get_decimal_pattern(self, schema: core_schema.DecimalSchema) -> str | None:
+    """Get the regular expression pattern to apply to the string representation of a decimal.
+
+    By default, no pattern is applied (`None` is returned). Subclasses can override this method
+    to return a custom pattern, or [`build_decimal_pattern()`][pydantic.json_schema.GenerateJsonSchema.build_decimal_pattern]
+    can be used to get a pattern reflecting the `max_digits` and `decimal_places` constraints:
+
+    ```python
+    from pydantic.json_schema import GenerateJsonSchema
+
+    class MyGenerateJsonSchema(GenerateJsonSchema):
+        def get_decimal_pattern(self, schema):
+            return self.build_decimal_pattern(schema)
+    ```
+
+    Args:
+        schema: The core schema.
+
+    Returns:
+        The regular expression pattern, or `None` if no pattern should be applied.
+    """
+    return None
+
+````
+
+### build_decimal_pattern
+
+```python
+build_decimal_pattern(schema: DecimalSchema) -> str
+
+```
+
+Build a regular expression pattern for the string representation of a decimal.
+
+The pattern takes into account the `max_digits` and `decimal_places` constraints, and the current mode:
+
+- In `'validation'` mode, the pattern accepts the string syntax understood by the Decimal constructor. The `max_digits` and `decimal_places` constraints are only reflected for strings *without* an exponent: strings using an exponent are accepted as long as they are syntactically valid, as the constraints can't be expressed with a regular expression in this case.
+- In `'serialization'` mode, the pattern exactly describes the strings produced by pydantic (i.e. by `str(decimal)`) for decimals satisfying the constraints, including the ones using scientific notation (e.g. `'1E-7'`, `'1.5E+3'`).
+
+In both modes, trailing zeros in the decimal part are not counted (e.g. `'1.10'` is accepted with `decimal_places=1`), consistent with the validation behavior. If `allow_inf_nan` is enabled (on the core schema or in the configuration), the string representations of infinity and NaN are also accepted.
+
+Parameters:
+
+| Name | Type | Description | Default | | --- | --- | --- | --- | | `schema` | `DecimalSchema` | The core schema. | *required* |
+
+Returns:
+
+| Type | Description | | --- | --- | | `str` | The regular expression pattern. |
+
+Source code in `pydantic/json_schema.py`
+
+```python
+def build_decimal_pattern(self, schema: core_schema.DecimalSchema) -> str:
+    """Build a regular expression pattern for the string representation of a decimal.
+
+    The pattern takes into account the `max_digits` and `decimal_places` constraints, and the current
+    mode:
+
+    - In `'validation'` mode, the pattern accepts the string syntax understood by the [`Decimal`][decimal.Decimal]
+      constructor. The `max_digits` and `decimal_places` constraints are only reflected for strings
+      *without* an exponent: strings using an exponent are accepted as long as they are syntactically valid,
+      as the constraints can't be expressed with a regular expression in this case.
+    - In `'serialization'` mode, the pattern exactly describes the strings produced by pydantic
+      (i.e. by `str(decimal)`) for decimals satisfying the constraints,
+      including the ones using scientific notation (e.g. `'1E-7'`, `'1.5E+3'`).
+
+    In both modes, trailing zeros in the decimal part are not counted (e.g. `'1.10'` is accepted with
+    `decimal_places=1`), consistent with the validation behavior. If `allow_inf_nan` is enabled (on the
+    core schema or in the configuration), the string representations of infinity and NaN are also accepted.
+
+    Args:
+        schema: The core schema.
+
+    Returns:
+        The regular expression pattern.
+    """
+    max_digits = schema.get('max_digits')
+    decimal_places = schema.get('decimal_places')
+    allow_inf_nan = schema.get('allow_inf_nan')
+    if allow_inf_nan is None:
+        allow_inf_nan = self._config.config_dict.get('allow_inf_nan', False)
+    if self.mode == 'validation':
+        return _decimal_validation_pattern(max_digits, decimal_places, allow_inf_nan)
+    else:
+        return _decimal_serialization_pattern(max_digits, decimal_places, allow_inf_nan)
 
 ```
 
@@ -41213,9 +41281,41 @@ Standard library type: decimal.Decimal.
 
 Decimals support the following constraints (numbers must be coercible to decimals):
 
-| Constraint | Description | JSON Schema | | --- | --- | --- | | `le` | The value must be less than or equal to this number | [`maximum`](https://json-schema.org/understanding-json-schema/reference/numeric#range) keyword | | `ge` | The value must be greater than or equal to this number | [`minimum`](https://json-schema.org/understanding-json-schema/reference/numeric#range) keyword | | `lt` | The value must be strictly less than this number | [`exclusiveMaximum`](https://json-schema.org/understanding-json-schema/reference/numeric#range) keyword | | `gt` | The value must be strictly greater than this number | [`exclusiveMinimum`](https://json-schema.org/understanding-json-schema/reference/numeric#range) keyword | | `multiple_of` | The value must be a multiple of this number | [`multipleOf`](https://json-schema.org/understanding-json-schema/reference/numeric#multiples) keyword | | `allow_inf_nan` | Whether to allow NaN (not-a-number) and infinite values | N/A | | `max_digits` | The maximum number of decimal digits allowed. The zero before the decimal point and trailing zeros are not counted. | [`pattern`](https://json-schema.org/understanding-json-schema/reference/string#regexp) keyword, to describe the string pattern | | `decimal_places` | The maximum number of decimal places allowed. Trailing zeros are not counted. | [`pattern`](https://json-schema.org/understanding-json-schema/reference/string#regexp) keyword, to describe the string pattern |
+| Constraint | Description | JSON Schema | | --- | --- | --- | | `le` | The value must be less than or equal to this number | [`maximum`](https://json-schema.org/understanding-json-schema/reference/numeric#range) keyword | | `ge` | The value must be greater than or equal to this number | [`minimum`](https://json-schema.org/understanding-json-schema/reference/numeric#range) keyword | | `lt` | The value must be strictly less than this number | [`exclusiveMaximum`](https://json-schema.org/understanding-json-schema/reference/numeric#range) keyword | | `gt` | The value must be strictly greater than this number | [`exclusiveMinimum`](https://json-schema.org/understanding-json-schema/reference/numeric#range) keyword | | `multiple_of` | The value must be a multiple of this number | [`multipleOf`](https://json-schema.org/understanding-json-schema/reference/numeric#multiples) keyword | | `allow_inf_nan` | Whether to allow NaN (not-a-number) and infinite values | N/A | | `max_digits` | The maximum number of decimal digits allowed. The zero before the decimal point and trailing zeros are not counted. | N/A (see below) | | `decimal_places` | The maximum number of decimal places allowed. Trailing zeros are not counted. | N/A (see below) |
 
-Note that the JSON Schema [`pattern`](https://json-schema.org/understanding-json-schema/reference/string#regexp) keyword will be specified in the JSON Schema to describe the string pattern in all cases (and can vary if `max_digits` and/or `decimal_places` is specified).
+Changed in v2.12: The JSON Schema includes a [`pattern`](https://json-schema.org/understanding-json-schema/reference/string#regexp) matching the `max_digits` and `decimal_places` constraints.
+
+Changed in v2.14: The JSON Schema no longer includes a [`pattern`](https://json-schema.org/understanding-json-schema/reference/string#regexp) by default, as the generated pattern can cause issues for downstream consumers due to its complexity.
+
+```python
+from decimal import Decimal
+from typing import Annotated
+
+from pydantic import Field, TypeAdapter
+from pydantic.json_schema import GenerateJsonSchema
+
+
+class MyGenerateJsonSchema(GenerateJsonSchema):
+    def get_decimal_pattern(self, schema):
+        return self.build_decimal_pattern(schema)
+
+
+ta = TypeAdapter(Annotated[Decimal, Field(max_digits=5, decimal_places=2)])
+print(
+    ta.json_schema(schema_generator=MyGenerateJsonSchema, mode='serialization')
+)
+"""
+{
+    'pattern': '^-?(?:(?:0|[1-9][0-9]{0,2})(?:\\.[0-9]{1,2}0*)?|0E[+-][1-9][0-9]*|[1-9](?:\\.[0-9]+)?E\\+[1-2])$',
+    'type': 'string',
+}
+"""
+
+```
+
+The generated pattern also no longer uses lookahead assertions, and takes exponents and `allow_inf_nan` into account.
+
+The pattern can be included by subclassing GenerateJsonSchema and overriding the get_decimal_pattern() method:
 
 These constraints can be provided using the Field() function. The `Le`, `Ge`, `Lt`, `Gt` and `MultipleOf` metadata types from the [`annotated-types`](https://github.com/annotated-types/annotated-types) library and the AllowInfNan type can also be used.
 
