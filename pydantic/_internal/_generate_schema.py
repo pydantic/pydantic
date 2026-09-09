@@ -1356,7 +1356,11 @@ class GenerateSchema:
             else:
                 choices.append(self.generate_schema(arg))
 
-        if len(choices) == 1:
+        if not choices:
+            # Only `None` and `MISSING` were present in the union (e.g. `None | MISSING`):
+            s = core_schema.none_schema()
+            nullable = False
+        elif len(choices) == 1:
             s = choices[0]
         else:
             choices_with_tags: list[CoreSchema | tuple[CoreSchema, str]] = []

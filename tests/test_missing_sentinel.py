@@ -192,17 +192,27 @@ def test_missing_sentinel_discriminated_union() -> None:
     class Dog(BaseModel):
         kind: Literal['dog']
 
+    MissingCat = typing_extensions.TypeAliasType('MissingCat', Cat | MISSING)
+
     class Model(BaseModel):
         pet1: Annotated[Cat | Dog | MISSING, Field(discriminator='kind')] = MISSING
         pet2: Annotated[Cat | Dog | None | MISSING, Field(discriminator='kind')] = MISSING
-        pet3: Annotated[Union[Cat | MISSING, Dog], Field(discriminator='kind')] = MISSING  # noqa: UP007
+        # The inner `Annotated` form prevents the union from being flattened, so that the
+        # 'missing-sentinel' schema is a choice of the outer union:
+        pet3: Annotated[
+            Union[Annotated[Cat | MISSING, Field(title='Cat')], Dog],  # noqa: UP007
+            Field(discriminator='kind'),
+        ] = MISSING
+        # The 'missing-sentinel' schema is referenced through a 'definition-ref' schema:
+        pet4: Annotated[Union[MissingCat, Dog], Field(discriminator='kind')] = MISSING  # noqa: UP007
 
-    m = Model(pet1={'kind': 'cat'}, pet2=None, pet3={'kind': 'dog'})
+    m = Model(pet1={'kind': 'cat'}, pet2=None, pet3={'kind': 'dog'}, pet4={'kind': 'cat'})
     assert isinstance(m.pet1, Cat)
     assert m.pet2 is None
     assert isinstance(m.pet3, Dog)
+    assert isinstance(m.pet4, Cat)
 
-    m = Model(pet1=MISSING, pet2=MISSING, pet3=MISSING)
+    m = Model(pet1=MISSING, pet2=MISSING, pet3=MISSING, pet4=MISSING)
     assert m.model_dump() == {}
 
     with pytest.raises(ValidationError) as exc_info:
@@ -227,7 +237,36 @@ def test_missing_sentinel_discriminated_union() -> None:
         'pet1': {**tagged_union_json_schema, 'title': 'Pet1'},
         'pet2': {'anyOf': [tagged_union_json_schema, {'type': 'null'}], 'title': 'Pet2'},
         'pet3': {**tagged_union_json_schema, 'title': 'Pet3'},
+        'pet4': {
+            'discriminator': {'mapping': {'cat': '#/$defs/MissingCat', 'dog': '#/$defs/Dog'}, 'propertyName': 'kind'},
+            'oneOf': [{'$ref': '#/$defs/MissingCat'}, {'$ref': '#/$defs/Dog'}],
+            'title': 'Pet4',
+        },
     }
+
+
+def test_missing_sentinel_none_union() -> None:
+    class Model(BaseModel):
+        f: None | MISSING = MISSING
+
+    assert Model(f=None).f is None
+    assert Model(f=MISSING).f is MISSING
+    assert Model().model_dump() == {}
+    assert Model(f=None).model_dump() == {'f': None}
+
+    with pytest.raises(ValidationError) as exc_info:
+        Model(f=1)
+
+    assert exc_info.value.errors(include_url=False) == [
+        {
+            'type': 'none_required',
+            'loc': ('f',),
+            'msg': 'Input should be None',
+            'input': 1,
+        },
+    ]
+
+    assert Model.model_json_schema()['properties']['f'] == {'title': 'F', 'type': 'null'}
 
 
 def test_missing_sentinel_nested_type() -> None:
