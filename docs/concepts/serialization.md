@@ -966,5 +966,5 @@ using the following parameters:
     ```
 
     !!! tip
-        The experimental [`MISSING` sentinel](./experimental.md#missing-sentinel) can be used as an alternative to `exclude_unset`.
+        The [`MISSING` sentinel](./types.md#missing-sentinel) can be used as an alternative to `exclude_unset`.
         Any field with `MISSING` as a value is automatically excluded from the serialization output.

@@ -38,7 +38,7 @@ classifiers = [
     'Operating System :: MacOS',
     'Typing :: Typed',
 ]
-dependencies = ['typing-extensions>=4.14.1']
+dependencies = ['typing-extensions>=4.16.0']
 dynamic = ['readme', 'version']
 
 [project.urls]
