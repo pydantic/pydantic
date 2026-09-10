@@ -196,7 +196,7 @@ class ConfigWrapper:
         Returns:
             A `CoreConfig` object created from config.
         """
-        config = self.config_dict
+        config = self.config_dict.copy()
 
         if not config:
             # Fast path for the common case of an empty (default) config:
