@@ -625,6 +625,11 @@ pub(crate) fn to_json_bytes<'py>(
 }
 
 /// Common interface for doing serialization
+use super::infer::{serialize_unknown, unknown_type_error};
+use crate::serializers::errors::SERIALIZATION_ERR_MARKER;
+use crate::tools::safe_repr;
+use serde::ser::Error as _;
+
 pub(crate) trait DoSerialize {
     type Ok;
     type Error: From<PyErr>;
@@ -639,6 +644,17 @@ pub(crate) trait DoSerialize {
     fn serialize_fallback<'py>(
         self,
         name: &str,
+        value: &Bound<'py, PyAny>,
+        state: &mut SerializationState<'py>,
+    ) -> Result<Self::Ok, Self::Error>;
+
+    /// Fallback for when a value looked like it should use a custom serializer
+    /// (e.g. had a `__pydantic_serializer__` attribute) but that turned out not
+    /// to actually be a `SchemaSerializer` - e.g. dynamic mock objects like
+    /// `unittest.mock.call` whose `__getattr__` never raises `AttributeError`.
+    /// Falls through to the same handling as `ObType::Unknown`.
+    fn serialize_unknown_fallback<'py>(
+        self,
         value: &Bound<'py, PyAny>,
         state: &mut SerializationState<'py>,
     ) -> Result<Self::Ok, Self::Error>;
@@ -709,6 +725,21 @@ impl<'s> DoSerialize for SerializeToPython<'s> {
     ) -> PyResult<Py<PyAny>> {
         state.warn_fallback_py(name, value)?;
         infer_to_python(value, state)
+    }
+
+    fn serialize_unknown_fallback<'py>(
+        self,
+        value: &Bound<'py, PyAny>,
+        state: &mut SerializationState<'py>,
+    ) -> PyResult<Py<PyAny>> {
+        if let Some(fallback) = &state.extra.fallback {
+            let next_value = fallback.call1((value,))?;
+            infer_to_python(&next_value, state)
+        } else if state.extra.serialize_unknown {
+            serialize_unknown(value).into_py_any(value.py())
+        } else {
+            Err(unknown_type_error(value))
+        }
     }
 
     fn serialize_str(self, value: &Bound<'_, PyString>) -> Result<Py<PyAny>, PyErr> {
@@ -790,6 +821,28 @@ impl<S: Serializer> DoSerialize for SerializeToJson<S> {
     ) -> Result<S::Ok, WrappedSerError<S::Error>> {
         state.warn_fallback_ser::<S>(name, value).map_err(WrappedSerError)?;
         infer_serialize(value, self.serializer, state).map_err(WrappedSerError)
+    }
+
+    fn serialize_unknown_fallback<'py>(
+        self,
+        value: &Bound<'py, PyAny>,
+        state: &mut SerializationState<'py>,
+    ) -> Result<S::Ok, WrappedSerError<S::Error>> {
+        if let Some(fallback) = &state.extra.fallback {
+            let next_value = fallback.call1((value,)).map_err(WrappedSerError::from)?;
+            infer_serialize(&next_value, self.serializer, state).map_err(WrappedSerError)
+        } else if state.extra.serialize_unknown {
+            self.serializer
+                .serialize_str(&serialize_unknown(value))
+                .map_err(WrappedSerError)
+        } else {
+            let msg = format!(
+                "{}Unable to serialize unknown type: {}",
+                SERIALIZATION_ERR_MARKER,
+                safe_repr(&value.get_type()),
+            );
+            Err(WrappedSerError(S::Error::custom(msg)))
+        }
     }
 
     fn serialize_str(self, value: &Bound<'_, PyString>) -> Result<S::Ok, WrappedSerError<S::Error>> {

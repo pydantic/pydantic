@@ -510,14 +510,14 @@ pub(crate) fn infer_serialize_known<'py, S: Serializer>(
     }
 }
 
-fn unknown_type_error(value: &Bound<'_, PyAny>) -> PyErr {
+pub(crate) fn unknown_type_error(value: &Bound<'_, PyAny>) -> PyErr {
     PydanticSerializationError::new_err(format!(
         "Unable to serialize unknown type: {}",
         safe_repr(&value.get_type())
     ))
 }
 
-fn serialize_unknown<'py>(value: &Bound<'py, PyAny>) -> Cow<'py, str> {
+pub(crate) fn serialize_unknown<'py>(value: &Bound<'py, PyAny>) -> Cow<'py, str> {
     if let Ok(s) = value.str() {
         s.to_string_lossy().into_owned().into()
     } else if let Ok(name) = value.get_type().qualname() {
@@ -656,7 +656,12 @@ fn serialize_pydantic_serializable<'py, S: DoSerialize>(
 ) -> Result<S::Ok, S::Error> {
     let py = value.py();
     let py_serializer = value.getattr(intern!(py, "__pydantic_serializer__"))?;
-    call_pydantic_serializer(py_serializer.cast().map_err(Into::into)?, value, state, do_serialize)
+    match py_serializer.cast::<SchemaSerializer>() {
+        Ok(serializer) => call_pydantic_serializer(serializer, value, state, do_serialize),
+        // Attribute existed (e.g. via a `__getattr__` override that never raises
+        // `AttributeError`, like `unittest.mock.call`) but wasn't actually a SchemaSerializer.
+        Err(_) => do_serialize.serialize_unknown_fallback(value, state),
+    }
 }
 
 pub(crate) fn call_pydantic_serializer<'py, S: DoSerialize>(
