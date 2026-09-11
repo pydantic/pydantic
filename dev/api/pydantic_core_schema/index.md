@@ -1770,6 +1770,35 @@ enum_schema(
     members: list[Any],
     *,
     sub_type: Literal["str", "int", "float"] | None = None,
+    missing: Callable[[Any], Any] | None,
+    strict: bool | None = None,
+    ref: str | None = None,
+    metadata: dict[str, Any] | None = None,
+    serialization: SerSchema | None = None
+) -> EnumSchema
+
+```
+
+```python
+enum_schema(
+    cls: Any,
+    members: list[Any],
+    *,
+    sub_type: Literal["str", "int", "float"] | None = None,
+    strict: bool | None = None,
+    ref: str | None = None,
+    metadata: dict[str, Any] | None = None,
+    serialization: SerSchema | None = None
+) -> EnumSchema
+
+```
+
+```python
+enum_schema(
+    cls: Any,
+    members: list[Any],
+    *,
+    sub_type: Literal["str", "int", "float"] | None = None,
     missing: Callable[[Any], Any] | None = None,
     strict: bool | None = None,
     ref: str | None = None,
@@ -1798,7 +1827,7 @@ assert v.validate_python(2) is Color.GREEN
 
 Parameters:
 
-| Name | Type | Description | Default | | --- | --- | --- | --- | | `cls` | `Any` | The enum class | *required* | | `members` | `list[Any]` | The members of the enum, generally list(MyEnum.__members__.values()) | *required* | | `sub_type` | `Literal['str', 'int', 'float'] | None` | The type of the enum, either 'str' or 'int' or None for plain enums | `None` | | `missing` | `Callable[[Any], Any] | None` | A function to use when the value is not found in the enum, from _missing_ | `None` | | `strict` | `bool | None` | Whether to use strict mode, defaults to False | `None` | | `ref` | `str | None` | optional unique identifier of the schema, used to reference the schema in other places | `None` | | `metadata` | `dict[str, Any] | None` | Any other information you want to include with the schema, not used by pydantic-core | `None` | | `serialization` | `SerSchema | None` | Custom serialization schema | `None` |
+| Name | Type | Description | Default | | --- | --- | --- | --- | | `cls` | `Any` | The enum class | *required* | | `members` | `list[Any]` | The members of the enum, generally list(MyEnum.__members__.values()) | *required* | | `sub_type` | `Literal['str', 'int', 'float'] | None` | The type of the enum, either 'str' or 'int' or None for plain enums | `None` | | `missing` | `Callable[[Any], Any] | None` | Deprecated and no longer used, the _missing_ hook of the enum class is now called by the enum validator | `None` | | `strict` | `bool | None` | Whether to use strict mode, defaults to False | `None` | | `ref` | `str | None` | optional unique identifier of the schema, used to reference the schema in other places | `None` | | `metadata` | `dict[str, Any] | None` | Any other information you want to include with the schema, not used by pydantic-core | `None` | | `serialization` | `SerSchema | None` | Custom serialization schema | `None` |
 
 Source code in `pydantic_core/core_schema.py`
 
@@ -1835,12 +1864,19 @@ def enum_schema(
         cls: The enum class
         members: The members of the enum, generally `list(MyEnum.__members__.values())`
         sub_type: The type of the enum, either 'str' or 'int' or None for plain enums
-        missing: A function to use when the value is not found in the enum, from `_missing_`
+        missing: Deprecated and no longer used, the `_missing_` hook of the enum class is now called by the enum validator
         strict: Whether to use strict mode, defaults to False
         ref: optional unique identifier of the schema, used to reference the schema in other places
         metadata: Any other information you want to include with the schema, not used by pydantic-core
         serialization: Custom serialization schema
     """
+    if missing is not None:
+        warnings.warn(
+            'The `missing` argument on `enum_schema()` is deprecated and no longer used.',
+            DeprecationWarning,
+            stacklevel=2,
+        )
+
     return _dict_not_none(
         type='enum',
         cls=cls,
@@ -3116,6 +3152,33 @@ with_info_before_validator_function(
     function: WithInfoValidatorFunction,
     schema: CoreSchema,
     *,
+    field_name: str | None,
+    ref: str | None = None,
+    json_schema_input_schema: CoreSchema | None = None,
+    metadata: dict[str, Any] | None = None,
+    serialization: SerSchema | None = None
+) -> BeforeValidatorFunctionSchema
+
+```
+
+```python
+with_info_before_validator_function(
+    function: WithInfoValidatorFunction,
+    schema: CoreSchema,
+    *,
+    ref: str | None = None,
+    json_schema_input_schema: CoreSchema | None = None,
+    metadata: dict[str, Any] | None = None,
+    serialization: SerSchema | None = None
+) -> BeforeValidatorFunctionSchema
+
+```
+
+```python
+with_info_before_validator_function(
+    function: WithInfoValidatorFunction,
+    schema: CoreSchema,
+    *,
     field_name: str | None = None,
     ref: str | None = None,
     json_schema_input_schema: CoreSchema | None = None,
@@ -3295,6 +3358,31 @@ def no_info_after_validator_function(
 ````
 
 ## with_info_after_validator_function
+
+```python
+with_info_after_validator_function(
+    function: WithInfoValidatorFunction,
+    schema: CoreSchema,
+    *,
+    field_name: str | None,
+    ref: str | None = None,
+    metadata: dict[str, Any] | None = None,
+    serialization: SerSchema | None = None
+) -> AfterValidatorFunctionSchema
+
+```
+
+```python
+with_info_after_validator_function(
+    function: WithInfoValidatorFunction,
+    schema: CoreSchema,
+    *,
+    ref: str | None = None,
+    metadata: dict[str, Any] | None = None,
+    serialization: SerSchema | None = None
+) -> AfterValidatorFunctionSchema
+
+```
 
 ```python
 with_info_after_validator_function(
@@ -3490,6 +3578,33 @@ with_info_wrap_validator_function(
     function: WithInfoWrapValidatorFunction,
     schema: CoreSchema,
     *,
+    field_name: str | None,
+    json_schema_input_schema: CoreSchema | None = None,
+    ref: str | None = None,
+    metadata: dict[str, Any] | None = None,
+    serialization: SerSchema | None = None
+) -> WrapValidatorFunctionSchema
+
+```
+
+```python
+with_info_wrap_validator_function(
+    function: WithInfoWrapValidatorFunction,
+    schema: CoreSchema,
+    *,
+    json_schema_input_schema: CoreSchema | None = None,
+    ref: str | None = None,
+    metadata: dict[str, Any] | None = None,
+    serialization: SerSchema | None = None
+) -> WrapValidatorFunctionSchema
+
+```
+
+```python
+with_info_wrap_validator_function(
+    function: WithInfoWrapValidatorFunction,
+    schema: CoreSchema,
+    *,
     field_name: str | None = None,
     json_schema_input_schema: CoreSchema | None = None,
     ref: str | None = None,
@@ -3664,6 +3779,31 @@ def no_info_plain_validator_function(
 ````
 
 ## with_info_plain_validator_function
+
+```python
+with_info_plain_validator_function(
+    function: WithInfoValidatorFunction,
+    *,
+    field_name: str | None,
+    ref: str | None = None,
+    json_schema_input_schema: CoreSchema | None = None,
+    metadata: dict[str, Any] | None = None,
+    serialization: SerSchema | None = None
+) -> PlainValidatorFunctionSchema
+
+```
+
+```python
+with_info_plain_validator_function(
+    function: WithInfoValidatorFunction,
+    *,
+    ref: str | None = None,
+    json_schema_input_schema: CoreSchema | None = None,
+    metadata: dict[str, Any] | None = None,
+    serialization: SerSchema | None = None
+) -> PlainValidatorFunctionSchema
+
+```
 
 ```python
 with_info_plain_validator_function(
