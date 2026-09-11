@@ -1228,6 +1228,61 @@ except ValidationError as e:
     """
 ```
 
+### Ordered dictionaries
+
+Standard library type: [`collections.OrderedDict`][] (deprecated alias: [`typing.OrderedDict`][]).
+
+<h4>Validation</h4>
+
+* [`OrderedDict`][collections.OrderedDict] instances are accepted as is.
+* [`dict`][] and [mappings][mapping] instances are accepted and coerced to an [`OrderedDict`][collections.OrderedDict].
+* If generic parameters for keys and values are provided, the appropriate validation is applied.
+
+<h4>Constraints</h4>
+
+As with [dictionaries](#dictionaries), ordered dictionaries support the following constraints:
+
+| Constraint   | Description                                       | JSON Schema                                                                                    |
+|--------------|---------------------------------------------------|------------------------------------------------------------------------------------------------|
+| `min_length` | The dictionary must have at least this many items | [`minItems`](https://json-schema.org/understanding-json-schema/reference/array#length) keyword |
+| `max_length` | The dictionary must have at most this many items  | [`maxItems`](https://json-schema.org/understanding-json-schema/reference/array#length) keyword |
+
+These constraints can be provided using the [`Field()`][pydantic.Field] function.
+The `MinLen` and `MaxLen` metadata types from the [`annotated-types`](https://github.com/annotated-types/annotated-types)
+library can also be used.
+
+<h4>Strictness</h4>
+
+In [strict mode](../concepts/strict_mode.md), only [`OrderedDict`][collections.OrderedDict] instances are valid. Strict mode does *not* apply to the keys and values of the ordered dictionaries.
+The strict constraint must be applied to the parameter types for this to work.
+
+<h4>Example</h4>
+
+```python {requires="3.12"}
+from collections import OrderedDict
+
+from pydantic import BaseModel, ValidationError
+
+
+class Model(BaseModel):
+    x: OrderedDict[str, int]
+
+
+m = Model(x={'foo': 1})
+print(m.model_dump())
+#> {'x': OrderedDict({'foo': 1})}
+
+try:
+    Model(x='test')
+except ValidationError as e:
+    print(e)
+    """
+    1 validation error for Model
+    x
+      Input should be a valid OrderedDict [type=ordered_dict_type, input_value='test', input_type=str]
+    """
+```
+
 <!-- old anchor added for backwards compatibility -->
 <!-- markdownlint-disable-next-line no-empty-links -->
 [](){#typeddict}

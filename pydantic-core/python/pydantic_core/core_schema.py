@@ -260,6 +260,7 @@ ExpectedSerializationTypes: TypeAlias = Literal[
     'generator',
     'dict',
     'frozendict',
+    'ordered-dict',
     'datetime',
     'date',
     'time',
@@ -2245,6 +2246,73 @@ def frozendict_schema(
     """
     return _dict_not_none(
         type='frozendict',
+        keys_schema=keys_schema,
+        values_schema=values_schema,
+        min_length=min_length,
+        max_length=max_length,
+        fail_fast=fail_fast,
+        strict=strict,
+        ref=ref,
+        metadata=metadata,
+        serialization=serialization,
+    )
+
+
+class OrderedDictSchema(TypedDict, total=False):
+    type: Required[Literal['ordered-dict']]
+    keys_schema: CoreSchema  # default: AnySchema
+    values_schema: CoreSchema  # default: AnySchema
+    min_length: int
+    max_length: int
+    fail_fast: bool
+    strict: bool
+    ref: str
+    metadata: dict[str, Any]
+    serialization: IncExDictOrElseSerSchema
+
+
+def ordered_dict_schema(
+    keys_schema: CoreSchema | None = None,
+    values_schema: CoreSchema | None = None,
+    *,
+    min_length: int | None = None,
+    max_length: int | None = None,
+    fail_fast: bool | None = None,
+    strict: bool | None = None,
+    ref: str | None = None,
+    metadata: dict[str, Any] | None = None,
+    serialization: SerSchema | None = None,
+) -> OrderedDictSchema:
+    """
+    Returns a schema that matches a [`collections.OrderedDict`][] value, e.g.:
+
+    ```py
+    from collections import OrderedDict
+
+    from pydantic_core import SchemaValidator, core_schema
+
+    schema = core_schema.ordered_dict_schema(
+        keys_schema=core_schema.str_schema(), values_schema=core_schema.int_schema()
+    )
+    v = SchemaValidator(schema)
+    assert v.validate_python({'a': '1', 'b': 2}) == OrderedDict({'a': 1, 'b': 2})
+    ```
+
+    In lax mode, any mapping is accepted and converted to an `OrderedDict`.
+
+    Args:
+        keys_schema: The value must be an `OrderedDict` with keys that match this schema
+        values_schema: The value must be an `OrderedDict` with values that match this schema
+        min_length: The value must be an `OrderedDict` with at least this many items
+        max_length: The value must be an `OrderedDict` with at most this many items
+        fail_fast: Stop validation on the first error
+        strict: The value must be an `OrderedDict` instance
+        ref: optional unique identifier of the schema, used to reference the schema in other places
+        metadata: Any other information you want to include with the schema, not used by pydantic-core
+        serialization: Custom serialization schema
+    """
+    return _dict_not_none(
+        type='ordered-dict',
         keys_schema=keys_schema,
         values_schema=values_schema,
         min_length=min_length,
@@ -4498,6 +4566,7 @@ if not MYPY:
         | GeneratorSchema
         | DictSchema
         | FrozenDictSchema
+        | OrderedDictSchema
         | AfterValidatorFunctionSchema
         | BeforeValidatorFunctionSchema
         | WrapValidatorFunctionSchema
@@ -4562,6 +4631,7 @@ CoreSchemaType: TypeAlias = Literal[
     'generator',
     'dict',
     'frozendict',
+    'ordered-dict',
     'function-after',
     'function-before',
     'function-wrap',
@@ -4638,6 +4708,7 @@ ErrorType: TypeAlias = Literal[
     'enum',
     'dict_type',
     'frozen_dict_type',
+    'ordered_dict_type',
     'mapping_type',
     'list_type',
     'deque_type',

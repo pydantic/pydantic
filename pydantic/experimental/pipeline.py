@@ -479,7 +479,7 @@ def _apply_transform(
 _ORDERING_SCHEMA_TYPES = frozenset({'int', 'float', 'decimal', 'fraction', 'date', 'time', 'datetime', 'timedelta'})
 # Core schema types with native support for the `min_length`/`max_length` constraints:
 _LENGTH_SCHEMA_TYPES = frozenset(
-    {'str', 'bytes', 'list', 'tuple', 'set', 'frozenset', 'dict', 'frozendict', 'generator'}
+    {'str', 'bytes', 'list', 'tuple', 'set', 'frozenset', 'dict', 'frozendict', 'ordered-dict', 'generator'}
 )
 
 

@@ -4,7 +4,7 @@ import json
 import platform
 import re
 import sys
-from collections import deque, namedtuple
+from collections import OrderedDict, deque, namedtuple
 from datetime import date, datetime, time, timedelta, timezone
 from decimal import Decimal
 from enum import Enum
@@ -438,6 +438,7 @@ def test_base64():
         (lambda: frozenset([1, 2, 3]), {}, b'[1,2,3]'),
         (lambda: deque([1, 2, 3]), {}, b'[1,2,3]'),
         (lambda: deque([1, 2, 3], maxlen=5), {}, b'[1,2,3]'),
+        (lambda: OrderedDict([('a', 1), ('b', 2)]), {}, b'{"a":1,"b":2}'),
         (lambda: (v for v in range(4)), {}, b'[0,1,2,3]'),
         (lambda: iter([0, 1, 2, 3]), {}, b'[0,1,2,3]'),
         (lambda: iter((0, 1, 2, 3)), {}, b'[0,1,2,3]'),
@@ -809,3 +810,37 @@ def test_deque_subclass(any_serializer):
     assert output == deque([1, 2])
     assert type(output) is deque
     assert any_serializer.to_json(MyDeque([1, 2])) == b'[1,2]'
+
+
+def test_ordered_dict(any_serializer) -> None:
+    d = OrderedDict([('a', 1), ('b', 2), ('c', 3)])
+    # the `dict` C API doesn't account for reorderings, make sure we don't use it:
+    d.move_to_end('a')
+    output = any_serializer.to_python(d)
+
+    assert output == d
+    assert list(output) == ['b', 'c', 'a']
+    assert type(output) is OrderedDict
+    assert output is not d
+    assert any_serializer.to_python(d, mode='json') == {'b': 2, 'c': 3, 'a': 1}
+    assert any_serializer.to_json(d) == b'{"b":2,"c":3,"a":1}'
+    assert to_jsonable_python(d) == {'b': 2, 'c': 3, 'a': 1}
+
+    # key-based include/exclude, like dicts:
+    assert any_serializer.to_python(d, include={'a', 'b'}) == OrderedDict([('b', 2), ('a', 1)])
+    assert any_serializer.to_python(d, exclude={'a'}, mode='json') == {'b': 2, 'c': 3}
+    assert any_serializer.to_json(d, exclude={'b'}) == b'{"c":3,"a":1}'
+
+    # nested values are inferred as well:
+    assert any_serializer.to_json(OrderedDict(m=MyModel(a=1, b='b'))) == b'{"m":{"a":1,"b":"b"}}'
+
+
+def test_ordered_dict_subclass(any_serializer) -> None:
+    class MyOrderedDict(OrderedDict):
+        pass
+
+    output = any_serializer.to_python(MyOrderedDict([('a', 1)]))
+
+    assert output == OrderedDict([('a', 1)])
+    assert type(output) is OrderedDict
+    assert any_serializer.to_json(MyOrderedDict([('a', 1)])) == b'{"a":1}'
