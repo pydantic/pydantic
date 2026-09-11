@@ -19,7 +19,7 @@ from unittest.mock import MagicMock
 import pytest
 from dirty_equals import HasRepr, IsInstance
 from pydantic_core import core_schema
-from typing_extensions import TypeAliasType, TypedDict
+from typing_extensions import NotRequired, TypeAliasType, TypedDict
 
 from pydantic import (
     BaseModel,
@@ -2948,7 +2948,6 @@ def test_plain_validator_plain_serializer_single_ser_call() -> None:
     assert ser_count == 1
 
 
-@pytest.mark.xfail(reason='https://github.com/pydantic/pydantic/issues/10428')
 def test_plain_validator_with_filter_dict_schema() -> None:
     class MyDict:
         @classmethod
@@ -2981,6 +2980,21 @@ def test_plain_validator_with_unsupported_type() -> None:
     model = type_adapter.validate_python('abcdefg')
     assert isinstance(model, UnsupportedClass)
     assert isinstance(type_adapter.dump_python(model), UnsupportedClass)
+
+
+def test_plain_validator_with_schema_generation_error() -> None:
+    @dataclass
+    class ClassWithInvalidAnnotations:
+        a: 'Unknown' = 1  # noqa: F821
+        b: NotRequired[int] = 1
+
+    class Model(BaseModel):
+        f: Annotated[ClassWithInvalidAnnotations, PlainValidator(lambda _: ClassWithInvalidAnnotations())]
+
+    m = Model(f='abcdefg')
+    assert isinstance(m.f, ClassWithInvalidAnnotations)
+    # No serialization schema is set, so serialization is inferred:
+    assert m.model_dump() == {'f': {'a': 1, 'b': 1}}
 
 
 def test_validator_with_default_values() -> None:
