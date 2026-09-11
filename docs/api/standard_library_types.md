@@ -79,8 +79,9 @@ Strings support the following constraints:
 | `strip_whitespace` | Whether to remove leading and trailing whitespace | N/A                                                                                                                                           |
 | `to_upper`         | Whether to convert the string to uppercase        | N/A                                                                                                                                           |
 | `to_lower`         | Whether to convert the string to lowercase        | N/A                                                                                                                                           |
+| `ascii_only`       | Whether to allow only ASCII characters            | N/A                                                                                                                                           |
 
-These constraints can be provided using the [`StringConstraints`][pydantic.types.StringConstraints] metadata type, or using the [`Field()`][pydantic.Field] function (except for `strip_whitespace`, `to_upper` and `to_lower`).
+These constraints can be provided using the [`StringConstraints`][pydantic.types.StringConstraints] metadata type, or using the [`Field()`][pydantic.Field] function (except for `strip_whitespace`, `to_upper`, `to_lower` and `ascii_only`).
 
 The [`annotated-types`](https://github.com/annotated-types/annotated-types) library also provides the `MinLen`, `MaxLen` and `Len` metadata types, as well
 as the `LowerCase`, `UpperCase`, `IsDigit` and `IsAscii` predicates (must be parameterized with `str`, e.g. `LowerCase[str]`).
@@ -219,7 +220,7 @@ Built-in type: [`float`][].
 
 * Floats are validated as-is.
 * String and bytes are attempted to be converted to floats and validated as-is.
-  (see the [Rust implementation](https://doc.rust-lang.org/src/core/num/dec2flt/mod.rs.html) for details).
+  (see the [Rust implementation](https://doc.rust-lang.org/src/core/num/float_parse.rs.html) for details).
 * If the input has a [`__float__()`][object.__float__] method, it will be called to convert the input into
   a float. If `__float__()` is not defined, it falls back to [`__index__()`][object.__index__]. This includes
   (but not limited to) the [`Decimal`][decimal.Decimal] and [`Fraction`][fractions.Fraction] types.
@@ -299,11 +300,48 @@ Decimals support the following constraints (numbers must be coercible to decimal
 | `gt`             | The value must be strictly greater than this number                                                                 | [`exclusiveMinimum`](https://json-schema.org/understanding-json-schema/reference/numeric#range) keyword                        |
 | `multiple_of`    | The value must be a multiple of this number                                                                         | [`multipleOf`](https://json-schema.org/understanding-json-schema/reference/numeric#multiples) keyword                          |
 | `allow_inf_nan`  | Whether to allow NaN (not-a-number) and infinite values                                                             | N/A                                                                                                                            |
-| `max_digits`     | The maximum number of decimal digits allowed. The zero before the decimal point and trailing zeros are not counted. | [`pattern`](https://json-schema.org/understanding-json-schema/reference/string#regexp) keyword, to describe the string pattern |
-| `decimal_places` | The maximum number of decimal places allowed. Trailing zeros are not counted.                                       | [`pattern`](https://json-schema.org/understanding-json-schema/reference/string#regexp) keyword, to describe the string pattern |
+| `max_digits`     | The maximum number of decimal digits allowed. The zero before the decimal point and trailing zeros are not counted. | N/A (see below)                                                                                                           |
+| `decimal_places` | The maximum number of decimal places allowed. Trailing zeros are not counted.                                       | N/A (see below)                                                                                                           |
 
-Note that the JSON Schema [`pattern`](https://json-schema.org/understanding-json-schema/reference/string#regexp) keyword will be specified
-in the JSON Schema to describe the string pattern in all cases (and can vary if `max_digits` and/or `decimal_places` is specified).
+/// version-changed | v2.12
+The JSON Schema includes a [`pattern`](https://json-schema.org/understanding-json-schema/reference/string#regexp) matching the `max_digits`
+and `decimal_places` constraints.
+///
+
+/// version-changed | v2.14
+The JSON Schema no longer includes a [`pattern`](https://json-schema.org/understanding-json-schema/reference/string#regexp) by default,
+as the generated pattern can cause issues for downstream consumers due to its complexity.
+
+The pattern can be included by subclassing [`GenerateJsonSchema`][pydantic.json_schema.GenerateJsonSchema] and overriding the
+[`get_decimal_pattern()`][pydantic.json_schema.GenerateJsonSchema.get_decimal_pattern] method:
+
+```python
+from decimal import Decimal
+from typing import Annotated
+
+from pydantic import Field, TypeAdapter
+from pydantic.json_schema import GenerateJsonSchema
+
+
+class MyGenerateJsonSchema(GenerateJsonSchema):
+    def get_decimal_pattern(self, schema):
+        return self.build_decimal_pattern(schema)
+
+
+ta = TypeAdapter(Annotated[Decimal, Field(max_digits=5, decimal_places=2)])
+print(
+    ta.json_schema(schema_generator=MyGenerateJsonSchema, mode='serialization')
+)
+"""
+{
+    'pattern': '^-?(?:(?:0|[1-9][0-9]{0,2})(?:\\.[0-9]{1,2}0*)?|0E[+-][1-9][0-9]*|[1-9](?:\\.[0-9]+)?E\\+[1-2])$',
+    'type': 'string',
+}
+"""
+```
+
+The generated pattern also no longer uses lookahead assertions, and takes exponents and `allow_inf_nan` into account.
+///
 
 These constraints can be provided using the [`Field()`][pydantic.Field] function.
 The `Le`, `Ge`, `Lt`, `Gt` and `MultipleOf` metadata types from the [`annotated-types`](https://github.com/annotated-types/annotated-types)
@@ -422,7 +460,7 @@ Standard library type: [`datetime.datetime`][].
 * Strings and bytes are validated in two ways:
     * Strings complying to the [RFC 3339](https://datatracker.ietf.org/doc/html/rfc3339) format (both datetime and date).
       See the [speedate](https://docs.rs/speedate/) documentation for more details.
-    * Unix timestamps, both as seconds or milliseconds sinch the [epoch](https://en.wikipedia.org/wiki/Unix_time).
+    * Unix timestamps, both as seconds or milliseconds since the [epoch](https://en.wikipedia.org/wiki/Unix_time).
       See the [`val_temporal_unit`][pydantic.ConfigDict.val_temporal_unit] configuration value for more details.
 * Integers and floats (or types that can be coerced as integers or floats) are validated as unix timestamps, following the
   same semantics as strings.
@@ -505,7 +543,7 @@ Standard library type: [`datetime.date`][].
 * Strings and bytes are validated in two ways:
     * Strings complying to the [RFC 3339](https://datatracker.ietf.org/doc/html/rfc3339) date format.
       See the [speedate](https://docs.rs/speedate/) documentation for more details.
-    * Unix timestamps, both as seconds or milliseconds sinch the [epoch](https://en.wikipedia.org/wiki/Unix_time).
+    * Unix timestamps, both as seconds or milliseconds since the [epoch](https://en.wikipedia.org/wiki/Unix_time).
       See the [`val_temporal_unit`][pydantic.ConfigDict.val_temporal_unit] configuration value for more details.
 * If the validation fails, the input can be [validated as a datetime](#datetimes) (including as numbers),
   provided that the time component is 0 and that it is naive.
@@ -798,14 +836,12 @@ The strict constraint must be applied to the parameter type for this to work.
 <h4>Example</h4>
 
 ```python
-from typing import Optional
-
 from pydantic import BaseModel, Field
 
 
 class Model(BaseModel):
-    simple_list: Optional[list[object]] = None
-    list_of_ints: Optional[list[int]] = Field(default=None, strict=True)
+    simple_list: list[object] | None = None
+    list_of_ints: list[int] | None = Field(default=None, strict=True)
 
 
 print(Model(simple_list=('1', '2', '3')).simple_list)
@@ -854,14 +890,12 @@ The strict constraint must be applied to the parameter types for this to work.
 <h4>Example</h4>
 
 ```python
-from typing import Optional
-
 from pydantic import BaseModel
 
 
 class Model(BaseModel):
-    simple_tuple: Optional[tuple] = None
-    tuple_of_different_types: Optional[tuple[int, float, bool]] = None
+    simple_tuple: tuple | None = None
+    tuple_of_different_types: tuple[int, float, bool] | None = None
 
 
 print(Model(simple_tuple=[1, 2, 3, 4]).simple_tuple)
@@ -883,6 +917,7 @@ Standard library type: [`typing.NamedTuple`][] (and types created by the [`colle
 
 * Allows [`tuple`][] and [`list`][] instances. Validate each item according to the field definition.
 * Allows [`dict`][] instances. Keys must match the named tuple field names, and values are validated according to the field definition.
+* Allows instances of the named tuple class (fields are revalidated).
 
 <h4>Serialization</h4>
 
@@ -949,14 +984,12 @@ they are serialized as arrays.
 <h4>Example</h4>
 
 ```python
-from typing import Optional
-
 from pydantic import BaseModel
 
 
 class Model(BaseModel):
-    simple_set: Optional[set] = None
-    set_of_ints: Optional[frozenset[int]] = None
+    simple_set: set | None = None
+    set_of_ints: frozenset[int] | None = None
 
 
 print(Model(simple_set=['1', '2', '3']).simple_set)
@@ -975,7 +1008,9 @@ Standard library type: [`collections.deque`][] (deprecated alias: [`typing.Deque
 
 <h4>Validation</h4>
 
-Values are first validated as a [list](#lists), and then passed to the [`deque`][collections.deque] constructor.
+Any iterable (except strings, bytes and mappings) is accepted and converted to a [`deque`][collections.deque],
+with each item validated against the parameter type. If the input is already a `deque` instance, its
+[`maxlen`][collections.deque.maxlen] attribute is preserved.
 
 <h4>Constraints</h4>
 
@@ -1033,7 +1068,7 @@ Any [`collections.abc.Sequence`][] instance (expect strings and bytes) is accept
 constructor, and then converted back to the original input type.
 
 !!! warning "Strings aren't treated as sequences"
-    While strings are technically valid sequence instances, this is frequently not intended as is a common source of bugs.
+    While strings are technically valid sequence instances, this is frequently not intended, and is a common source of bugs.
 
     As a result, Pydantic will *not* accept strings and bytes for the [`Sequence`][collections.abc.Sequence] type (see example below).
 
@@ -1133,6 +1168,63 @@ except ValidationError as e:
     1 validation error for Model
     x
       Input should be a valid dictionary [type=dict_type, input_value='test', input_type=str]
+    """
+```
+
+### Frozen dictionaries
+
+Built-in type: `frozendict`.
+
+/// version-added | v2.14
+The `frozendict` type, new in Python 3.15, is supported by Pydantic.
+///
+
+<h4>Validation</h4>
+
+* `frozendict` instances are accepted as is.
+* [`dict`][] and [mappings][mapping] instances are accepted and coerced to a `frozendict`.
+* If generic parameters for keys and values are provided, the appropriate validation is applied.
+
+<h4>Constraints</h4>
+
+As with [dictionaries](#dictionaries), frozen dictionaries support the following constraints:
+
+| Constraint   | Description                                       | JSON Schema                                                                                    |
+|--------------|---------------------------------------------------|------------------------------------------------------------------------------------------------|
+| `min_length` | The dictionary must have at least this many items | [`minItems`](https://json-schema.org/understanding-json-schema/reference/array#length) keyword |
+| `max_length` | The dictionary must have at most this many items  | [`maxItems`](https://json-schema.org/understanding-json-schema/reference/array#length) keyword |
+
+These constraints can be provided using the [`Field()`][pydantic.Field] function.
+The `MinLen` and `MaxLen` metadata types from the [`annotated-types`](https://github.com/annotated-types/annotated-types)
+library can also be used.
+
+<h4>Strictness</h4>
+
+In [strict mode](../concepts/strict_mode.md), only `frozendict` instances are valid. Strict mode does *not* apply to the keys and values of the frozen dictionaries.
+The strict constraint must be applied to the parameter types for this to work.
+
+<h4>Example</h4>
+
+```python {requires="3.15" lint="skip"}
+from pydantic import BaseModel, ValidationError
+
+
+class Model(BaseModel):
+    x: frozendict[str, int]
+
+
+m = Model(x={'foo': 1})
+print(m.model_dump())
+#> {'x': frozendict({'foo': 1})}
+
+try:
+    Model(x='test')
+except ValidationError as e:
+    print(e)
+    """
+    1 validation error for Model
+    x
+      Input should be a valid frozendict [type=frozen_dict_type, input_value='test', input_type=str]
     """
 ```
 
@@ -1242,7 +1334,7 @@ Pydantic only validates that the input is a [callable][] (using the [`callable()
 It does *not* validate the number of parameters or their type, nor the type of the return value.
 
 ```python
-from typing import Callable
+from collections.abc import Callable
 
 from pydantic import BaseModel
 
@@ -1486,7 +1578,8 @@ Standard library type: [`re.Pattern`][] (deprecated alias: [`typing.Pattern`][])
 In [Python mode](../concepts/serialization.md#python-mode), [`Pattern`][re.Pattern] instances are
 serialized as is.
 
-In [JSON mode](../concepts/serialization.md#json-mode), they are serialized as strings.
+In [JSON mode](../concepts/serialization.md#json-mode), they are serialized as strings (note that flags
+are currently *not* preserved).
 
 <!-- old anchor added for backwards compatibility -->
 <!-- markdownlint-disable-next-line no-empty-links -->
@@ -1499,6 +1592,7 @@ Standard library types:
 * [`pathlib.Path`][].
 * [`pathlib.PurePath`][].
 * [`pathlib.PosixPath`][].
+* [`pathlib.WindowsPath`][].
 * [`pathlib.PurePosixPath`][].
 * [`pathlib.PureWindowsPath`][].
 * [`os.PathLike`][] (must be parameterized with [`str`][], [`bytes`][] or [`Any`][typing.Any]).

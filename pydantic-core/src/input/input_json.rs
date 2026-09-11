@@ -13,6 +13,7 @@ use crate::input::return_enums::EitherComplex;
 use crate::lookup_key::LookupPath;
 use crate::validators::complex::string_to_complex;
 use crate::validators::decimal::create_decimal;
+use crate::validators::fraction::create_fraction;
 use crate::validators::{TemporalUnitMode, ValBytesMode};
 
 use super::datetime::{
@@ -207,6 +208,18 @@ impl<'py, 'data> Input<'py> for JsonValue<'data> {
         }
     }
 
+    fn validate_fraction(&self, _strict: bool, py: Python<'py>) -> ValMatch<Bound<'py, PyAny>> {
+        match self {
+            JsonValue::Float(f) => {
+                create_fraction(&PyString::new(py, &f.to_string()), self).map(ValidationMatch::strict)
+            }
+            JsonValue::Str(..) | JsonValue::Int(..) | JsonValue::BigInt(..) => {
+                create_fraction(&self.into_pyobject(py)?, self).map(ValidationMatch::strict)
+            }
+            _ => Err(ValError::new(ErrorTypeDefaults::FractionType, self)),
+        }
+    }
+
     type Dict<'a>
         = &'a JsonObject<'data>
     where
@@ -223,6 +236,13 @@ impl<'py, 'data> Input<'py> for JsonValue<'data> {
         self.validate_dict(false)
     }
 
+    fn strict_frozendict(&self) -> ValMatch<Self::Dict<'_>> {
+        match self {
+            JsonValue::Object(dict) => Ok(ValidationMatch::strict(dict)),
+            _ => Err(ValError::new(ErrorTypeDefaults::FrozenDictType, self)),
+        }
+    }
+
     type List<'a>
         = &'a JsonArray<'data>
     where
@@ -232,6 +252,14 @@ impl<'py, 'data> Input<'py> for JsonValue<'data> {
         match self {
             JsonValue::Array(a) => Ok(ValidationMatch::exact(a)),
             _ => Err(ValError::new(ErrorTypeDefaults::ListType, self)),
+        }
+    }
+
+    fn validate_deque(&self, _strict: bool) -> ValMatch<(&JsonArray<'data>, Option<usize>)> {
+        // we allow a list here since otherwise it would be impossible to create a deque from JSON
+        match self {
+            JsonValue::Array(a) => Ok(ValidationMatch::strict((a, None))),
+            _ => Err(ValError::new(ErrorTypeDefaults::DequeType, self)),
         }
     }
 
@@ -462,6 +490,10 @@ impl<'py> Input<'py> for str {
         create_decimal(self.into_pyobject(py)?.as_any(), self).map(ValidationMatch::lax)
     }
 
+    fn validate_fraction(&self, _strict: bool, py: Python<'py>) -> ValMatch<Bound<'py, PyAny>> {
+        create_fraction(self.into_pyobject(py)?.as_any(), self).map(ValidationMatch::lax)
+    }
+
     type Dict<'a> = Never;
 
     #[cfg_attr(has_coverage_attribute, coverage(off))]
@@ -469,10 +501,20 @@ impl<'py> Input<'py> for str {
         Err(ValError::new(ErrorTypeDefaults::DictType, self))
     }
 
+    #[cfg_attr(has_coverage_attribute, coverage(off))]
+    fn strict_frozendict(&self) -> ValMatch<Never> {
+        Err(ValError::new(ErrorTypeDefaults::FrozenDictType, self))
+    }
+
     type List<'a> = Never;
 
     fn validate_list(&self, _strict: bool) -> ValMatch<Never> {
         Err(ValError::new(ErrorTypeDefaults::ListType, self))
+    }
+
+    #[cfg_attr(has_coverage_attribute, coverage(off))]
+    fn validate_deque(&self, _strict: bool) -> ValMatch<(Never, Option<usize>)> {
+        Err(ValError::new(ErrorTypeDefaults::DequeType, self))
     }
 
     type Tuple<'a> = Never;

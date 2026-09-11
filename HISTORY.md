@@ -2,6 +2,317 @@
 <!-- markdownlint-disable descriptive-link-text -->
 <!-- markdownlint-disable-next-line first-line-heading -->
 
+## v2.14.0b2 (2026-09-09)
+
+[GitHub release](https://github.com/pydantic/pydantic/releases/tag/v2.14.0b2)
+
+### What's Changed
+
+This pre-release adds full support for Python 3.15 specific features, such as support for [`frozendict`](https://docs.python.org/3.15/library/stdtypes.html#frozendict),
+making use of [`TypeForm`](https://docs.python.org/3.15/library/typing.html#typing.TypeForm) and stabilizing the
+[`MISSING` sentinel](https://pydantic.dev/docs/validation/latest/concepts/types/#missing-sentinel) type.
+
+#### New Features
+
+* Allow any `CoreSchema` to be used as serialization by @Viicos in [#13680](https://github.com/pydantic/pydantic/pull/13680)
+* Add support for [`frozendict`](https://docs.python.org/3.15/library/stdtypes.html#frozendict) type by @Viicos in [#13634](https://github.com/pydantic/pydantic/pull/13634)
+* Allow `dict`, `frozendict` and `frozenset` as `defaultdict` default factories by @Viicos in [#13623](https://github.com/pydantic/pydantic/pull/13623)
+* Add support for [`TypeForm`](https://docs.python.org/3.15/library/typing.html#typing.TypeForm) by @Viicos in [#13459](https://github.com/pydantic/pydantic/pull/13459).
+
+  This adds support for static type checking where a type form is expected. For instance, type adapters:
+
+    ```python
+    from pydantic import TypeAdapter
+
+    ta = TypeAdapter(int | str)
+    assert_type(ta.validate_python(1), int | str)
+    ```
+
+* Add support for lazy imports by @Viicos in [#13776](https://github.com/pydantic/pydantic/pull/13776)
+* Stabilize `MISSING` sentinel by @Viicos in [#13782](https://github.com/pydantic/pydantic/pull/13782).
+
+  The [`MISSING` sentinel](https://pydantic.dev/docs/validation/dev/concepts/types/#missing-sentinel) is no longer experimental, and can be imported
+  as `from pydantic import MISSING`.
+
+#### Changes
+
+* Take `ser_json_temporal` into account when generating JSON Schema by @shashiKundur1 in [#13665](https://github.com/pydantic/pydantic/pull/13665)
+* Use the field name in `__signature__` when `validate_by_alias` is`False` by @jaideeppyne in [#13730](https://github.com/pydantic/pydantic/pull/13730)
+* Add a `deque` core schema by @Viicos in [#13757](https://github.com/pydantic/pydantic/pull/13757)
+* Do not mention `MISSING` as a valid value in validation errors by @Viicos in [#13779](https://github.com/pydantic/pydantic/pull/13779)
+* Refactor `Decimal` JSON Schema `pattern` constraint by @Viicos in [#13672](https://github.com/pydantic/pydantic/pull/13672)
+
+#### Performance
+
+* Refactor type references logic by @Viicos in [#13643](https://github.com/pydantic/pydantic/pull/13643)
+* Improve performance of `GenerateSchema.generate_schema()` dispatching by @Viicos in [#13614](https://github.com/pydantic/pydantic/pull/13614)
+* Move schema gathering logic to `pydantic-core` by @Viicos in [#13725](https://github.com/pydantic/pydantic/pull/13725)
+* Improve performance of `FieldInfo` construction by @Viicos in [#13726](https://github.com/pydantic/pydantic/pull/13726)
+
+#### Fixes
+
+* Fix support for callable discriminators with PEP 695 type aliases by @Viicos in [#13604](https://github.com/pydantic/pydantic/pull/13604)
+* Preserve `re.Pattern` instance for compiled patterns in the experimental pipeline by @soma0212 in [#13611](https://github.com/pydantic/pydantic/pull/13611)
+* Fix missing GC traversal on some `pydantic-core` struct fields by @Viicos in [#13624](https://github.com/pydantic/pydantic/pull/13624)
+* Fix missing GC traversal in `pydantic-core` for `GeneralFieldsSerializer` by @Viicos in [#13629](https://github.com/pydantic/pydantic/pull/13629)
+* Fix JSON schema discriminator mapping keys for `bool` discriminators by @remi-fongaufier in [#13632](https://github.com/pydantic/pydantic/pull/13632)
+* Fix application of other constraints in the pipeline API by @Viicos in [#13659](https://github.com/pydantic/pydantic/pull/13659)
+* Support bare `None` annotation for discriminated unions by @Viicos in [#13667](https://github.com/pydantic/pydantic/pull/13667)
+* Respect runtime alias validation configuration when wrap validators are present by @Viicos in [#13668](https://github.com/pydantic/pydantic/pull/13668)
+* Exclude computed fields with `exclude_if` from JSON Schema required fields by @Bishwas-py in [#13563](https://github.com/pydantic/pydantic/pull/13563)
+* Use config of `TypeAdapter` in JSON Schema generation by @Viicos in [#13676](https://github.com/pydantic/pydantic/pull/13676)
+* Support `populate_by_name` in `@validate_call` by @Viicos in [#13691](https://github.com/pydantic/pydantic/pull/13691)
+* Allow `None` to serialize against secret fields by @Viicos in [#13699](https://github.com/pydantic/pydantic/pull/13699)
+* Do not drop include/exclude if serializer wasn't called by @Viicos in [#13702](https://github.com/pydantic/pydantic/pull/13702)
+* Don't apply serialization temporal formats to validation JSON schemas by @MLuc24 in [#13711](https://github.com/pydantic/pydantic/pull/13711)
+* Reflect `str_min_length` and `str_max_length` config in the JSON schema by @MLuc24 in [#13714](https://github.com/pydantic/pydantic/pull/13714)
+* Treat a class attribute set to `None` as existing when assigning with `extra='allow'` by @Kropiunig in [#13718](https://github.com/pydantic/pydantic/pull/13718)
+* Use the field name in validation JSON schemas when `validate_by_alias` is `False` by @MLuc24 in [#13717](https://github.com/pydantic/pydantic/pull/13717)
+* Do not rely on normalization to validate decimals by @Viicos in [#13742](https://github.com/pydantic/pydantic/pull/13742)
+* Handle any exception when trying to compute JSON Schema default by @Viicos in [#13741](https://github.com/pydantic/pydantic/pull/13741)
+* Fix Mypy plugin crash with import cycle by @Viicos in [#13767](https://github.com/pydantic/pydantic/pull/13767)
+* Fix supported constraints for types of `datetime` module by @Viicos in [#13768](https://github.com/pydantic/pydantic/pull/13768)
+* Fix inconsistencies between constraints and core schemas allowed values by @Viicos in [#13772](https://github.com/pydantic/pydantic/pull/13772)
+* Allow `self` to be used as a parameter with `@validate_call` by @Viicos in [#13773](https://github.com/pydantic/pydantic/pull/13773)
+* Fix race conditions in freethreaded build by @Viicos in [#13785](https://github.com/pydantic/pydantic/pull/13785)
+
+### New Contributors
+
+* @soma0212 made their first contribution in [#13611](https://github.com/pydantic/pydantic/pull/13611)
+* @remi-fongaufier made their first contribution in [#13632](https://github.com/pydantic/pydantic/pull/13632)
+* @shashiKundur1 made their first contribution in [#13665](https://github.com/pydantic/pydantic/pull/13665)
+* @MLuc24 made their first contribution in [#13711](https://github.com/pydantic/pydantic/pull/13711)
+* @jaideeppyne made their first contribution in [#13730](https://github.com/pydantic/pydantic/pull/13730)
+
+## v2.14.0b1 (2026-08-06)
+
+[GitHub release](https://github.com/pydantic/pydantic/releases/tag/v2.14.0b1)
+
+### What's Changed
+
+This is the first beta release of the 2.14 version, providing some new features and performance improvements for model builds.
+
+This release is the first to provide initial support for Python 3.15, although not all 3.15 specific features are supported yet.
+
+#### Packaging
+
+* Add agent skills by @Viicos in [#13193](https://github.com/pydantic/pydantic/pull/13193)
+
+#### New Features
+
+* Add support for `EllipsisType` by @Viicos in [#13484](https://github.com/pydantic/pydantic/pull/13484)
+* Add initial support for Python 3.15 by @Viicos in [#13587](https://github.com/pydantic/pydantic/pull/13587)
+
+#### Changes
+
+* Populate `__slots__` from generic class during parameterization by @Viicos in [#13243](https://github.com/pydantic/pydantic/pull/13243)
+* Avoid using explicit `Any` in the Mypy plugin by @Viicos in [#13196](https://github.com/pydantic/pydantic/pull/13196)
+* Support `Fraction` type in `pydantic-core` by @Viicos in [#13339](https://github.com/pydantic/pydantic/pull/13339)
+* Use constant-time comparison for `SecretStr` and `SecretBytes` types by @Viicos in [#13518](https://github.com/pydantic/pydantic/pull/13518)
+* Fix application of constraints in pipeline API by @Viicos in [#13516](https://github.com/pydantic/pydantic/pull/13516)
+* Optimize type lookup logic in core schema generation by @Viicos in [#13573](https://github.com/pydantic/pydantic/pull/13573)
+* Add a `named-tuple` core schema by @Viicos in [#13505](https://github.com/pydantic/pydantic/pull/13505)
+* Raise explicit `TypeError` on invalid `index_key` serialization wrap handler by @Viicos in [#13506](https://github.com/pydantic/pydantic/pull/13506)
+
+#### Performance
+
+* Cache `ModelPrivateAttr.default_factory_takes_validated_data` property by @Viicos in [#13390](https://github.com/pydantic/pydantic/pull/13390)
+* Introduce micro-optimizations for model class building by @dmontagu in [#13540](https://github.com/pydantic/pydantic/pull/13540)
+* Try `Format.VALUE` before `FORWARDREF` when evaluating annotations in `ModelMetaclass` by @Viicos in [#13584](https://github.com/pydantic/pydantic/pull/13584)
+* Optimize type lookup logic in core schema generation by @Viicos in [#13573](https://github.com/pydantic/pydantic/pull/13573)
+* Avoid exponential core schema traversal in `gather_schemas_for_cleaning()` by @dmontagu in [#13523](https://github.com/pydantic/pydantic/pull/13523)
+
+#### Fixes
+
+* Validate falsy `AliasGenerator` outputs by @jiyujie2006 in [#13248](https://github.com/pydantic/pydantic/pull/13248)
+* Do not resolve recursive `'definitions-ref'` schemas in schema cleaning by @Viicos in [#13276](https://github.com/pydantic/pydantic/pull/13276)
+* Fix missing `max_length` check on lazy iteration validation by @davidhewitt in [#13278](https://github.com/pydantic/pydantic/pull/13278)
+* Handle missing errors with default factories taking validated data by @Viicos in [#13291](https://github.com/pydantic/pydantic/pull/13291)
+* Recognise `WindowsPath` as a schema type by @davidhewitt in [#13326](https://github.com/pydantic/pydantic/pull/13326)
+* Fix application of nested operators in pipeline API by @Viicos in [#13363](https://github.com/pydantic/pydantic/pull/13363)
+* Fix type variable substitution in `__pydantic_extra__` by @Viicos in [#13391](https://github.com/pydantic/pydantic/pull/13391)
+* Fix `json_schema_extra` dict being dropped when a callable follows it in `Annotated` by @Srivatsa03 in [#13374](https://github.com/pydantic/pydantic/pull/13374)
+* Skip `RootModel.__init__()` in Mypy plugin by @Viicos in [#13441](https://github.com/pydantic/pydantic/pull/13441)
+* Defer placeholders in Mypy plugin by @Viicos in [#13442](https://github.com/pydantic/pydantic/pull/13442)
+* Do not ignore timezone offset when using `'seconds'/'milliseconds'` `temporal_mode` by @Viicos in [#13436](https://github.com/pydantic/pydantic/pull/13436)
+* Make model rebuilding logic thread safe by @Viicos in [#13438](https://github.com/pydantic/pydantic/pull/13438)
+* Fix `Interval` zero bounds silently dropped in pipeline API by @pctablet505 in [#13452](https://github.com/pydantic/pydantic/pull/13452)
+* Sync `RootModel.model_dump()` signature with its parent by @Viicos in [#13456](https://github.com/pydantic/pydantic/pull/13456)
+* Return `NotImplemented` from URL ordering comparisons with foreign types by @chinesepowered in [#13495](https://github.com/pydantic/pydantic/pull/13495)
+* Don't error on unhashable generic arguments on generic Pydantic models by @Viicos in [#13515](https://github.com/pydantic/pydantic/pull/13515)
+* Fix population of `SerializationInfo.exclude_computed_fields` by @Viicos in [#13560](https://github.com/pydantic/pydantic/pull/13560)
+* Fix serialization of `ValidateAs` by @Viicos in [#13487](https://github.com/pydantic/pydantic/pull/13487)
+* Allow reuse of validators when plugins are set by @Viicos in [#13535](https://github.com/pydantic/pydantic/pull/13535)
+* Avoid double-wrapping polymorphism trampoline for model serializers by @davidhewitt in [#13552](https://github.com/pydantic/pydantic/pull/13552)
+* Add `AllowInfNan` type to the field metadata gathering by @mberdyshev in [#13586](https://github.com/pydantic/pydantic/pull/13586)
+
+### New Contributors
+
+* @jiyujie2006 made their first contribution in [#13248](https://github.com/pydantic/pydantic/pull/13248)
+* @pctablet505 made their first contribution in [#13452](https://github.com/pydantic/pydantic/pull/13452)
+* @LuShadowX made their first contribution in [#13503](https://github.com/pydantic/pydantic/pull/13503)
+* @mberdyshev made their first contribution in [#13586](https://github.com/pydantic/pydantic/pull/13586)
+
+## v2.14.0a1 (2026-05-22)
+
+[GitHub release](https://github.com/pydantic/pydantic/releases/tag/v2.14.0a1)
+
+### What's Changed
+
+#### Packaging
+
+* Add PyEmscripten platform tag support by @Viicos, @greateggsgreg and @sinaatalay in [#13199](https://github.com/pydantic/pydantic/pull/13199):
+  `pydantic-core` now has a 3.14 wheel published with the [`pyemscripten_2026_0` platform tag](https://pyodide.org/en/latest/development/abi/314.html).
+  Note that this wheel can only be used with [Pyodide 314.0](https://github.com/pyodide/pyodide/issues/6233) and greater, still in development.
+  It is recommended to wait for the final 314.0 release (and for Pydantic to publish a new wheel in a future 2.14 release).
+
+#### Changes
+
+* Accept `None` in `MultiHostUrl.build()`'s `hosts` parameter by @Viicos in [#13068](https://github.com/pydantic/pydantic/pull/13068)
+* Drop support for Python 3.9 by @Viicos in [#13070](https://github.com/pydantic/pydantic/pull/13070)
+* Remove support for `eval_type_backport()` by @Viicos in [#13133](https://github.com/pydantic/pydantic/pull/13133)
+* Only deepcopy non-updated fields in `model_copy()` by @connorcarpenter15 in [#13087](https://github.com/pydantic/pydantic/pull/13087)
+
+#### Fixes
+
+* Add Mypy plugin workaround for dynamic models defined in functions by @ilevkivskyi in [#13177](https://github.com/pydantic/pydantic/pull/13177)
+* Fallback to `create_model()` overload definition when `__base__` is set to a type variable in the Mypy plugin by @cyphercodes in [#13146](https://github.com/pydantic/pydantic/pull/13146)
+
+### New Contributors
+
+* @ilevkivskyi made their first contribution in [#13177](https://github.com/pydantic/pydantic/pull/13177)
+* @cyphercodes made their first contribution in [#13146](https://github.com/pydantic/pydantic/pull/13146)
+* @connorcarpenter15 made their first contribution in [#13087](https://github.com/pydantic/pydantic/pull/13087)
+
+## v2.13.4 (2026-05-06)
+
+[GitHub release](https://github.com/pydantic/pydantic/releases/tag/v2.13.4)
+
+### What's Changed
+
+#### Packaging
+
+* Bump libc from 0.2.155 to 0.2.185 by @Viicos in [#13109](https://github.com/pydantic/pydantic/pull/13109)
+* Adapt `pydantic-core` linker flags on macOS by @washingtoneg and @Viicos in [#13147](https://github.com/pydantic/pydantic/pull/13147)
+
+#### Fixes
+
+* Preserve `RootModel` core metadata by @Viicos in [#13129](https://github.com/pydantic/pydantic/pull/13129)
+
+## v2.13.3 (2026-04-20)
+
+[GitHub release](https://github.com/pydantic/pydantic/releases/tag/v2.13.3)
+
+### What's Changed
+
+#### Fixes
+
+* Handle `AttributeError` subclasses with `from_attributes` by @Viicos in [#13096](https://github.com/pydantic/pydantic/pull/13096)
+
+## v2.13.2 (2026-04-17)
+
+[GitHub release](https://github.com/pydantic/pydantic/releases/tag/v2.13.2)
+
+### What's Changed
+
+#### Fixes
+
+* Fix `ValidationInfo.field_name` missing with `model_validate_json()` by @Viicos in [#13084](https://github.com/pydantic/pydantic/pull/13084)
+
+## v2.13.1 (2026-04-15)
+
+[GitHub release](https://github.com/pydantic/pydantic/releases/tag/v2.13.1)
+
+### What's Changed
+
+#### Fixes
+
+* Fix `ValidationInfo.data` missing with `model_validate_json()` by @davidhewitt in [#13079](https://github.com/pydantic/pydantic/pull/13079)
+
+## v2.13.0 (2026-04-13)
+
+[GitHub release](https://github.com/pydantic/pydantic/releases/tag/v2.13.0)
+
+The highlights of the v2.13 release are available in the [blog post](https://pydantic.dev/articles/pydantic-v2-13-release).
+Several minor changes (considered non-breaking changes according to our [versioning policy](https://pydantic.dev/docs/validation/2.13/get-started/version-policy/#pydantic-v2))
+are also included in this release. Make sure to look into them before upgrading.
+
+This release contains the updated `pydantic.v1` namespace, matching version 1.10.26 which includes support for Python 3.14.
+
+### What's Changed
+
+See the beta releases for all changes sinces 2.12.
+
+#### New Features
+
+* Allow default factories of private attributes to take validated model data by @Viicos in [#13013](https://github.com/pydantic/pydantic/pull/13013)
+
+#### Changes
+
+* Warn when serializing fixed length tuples with too few items by @arvindsaripalli in [#13016](https://github.com/pydantic/pydantic/pull/13016)
+
+#### Fixes
+
+* Change type of `Any` when synthesizing `_build_sources` for  `BaseSettings.__init__()` signature in the mypy plugin by @Viicos in [#13049](https://github.com/pydantic/pydantic/pull/13049)
+* Fix model equality when using runtime `extra` configuration by @Viicos in [#13062](https://github.com/pydantic/pydantic/pull/13062)
+
+#### Packaging
+
+* Add zizmor for GitHub Actions workflow linting by @Viicos in [#13039](https://github.com/pydantic/pydantic/pull/13039)
+* Update jiter to v0.14.0 to fix a segmentation fault on musl Linux by @Viicos in [#13064](https://github.com/pydantic/pydantic/pull/13064)
+
+### New Contributors
+
+* @arvindsaripalli made their first contribution in [#13016](https://github.com/pydantic/pydantic/pull/13016)
+
+## v2.13.0b3 (2026-03-31)
+
+[GitHub release](https://github.com/pydantic/pydantic/releases/tag/v2.13.0b3)
+
+### What's Changed
+
+#### New Features
+
+* Add `ascii_only` option to `StringConstraints` by @ai-man-codes in [#12907](https://github.com/pydantic/pydantic/pull/12907)
+* Support `exclude_if` in computed fields by @andresliszt in [#12748](https://github.com/pydantic/pydantic/pull/12748)
+* Push down constraints in unions involving `MISSING` sentinel by @Viicos in [#12908](https://github.com/pydantic/pydantic/pull/12908)
+
+#### Changes
+
+* Track extra fields set after init in `model_fields_set` by @navalprakhar in [#12817](https://github.com/pydantic/pydantic/pull/12817)
+* Do not include annotations that are not part of named tuple fields by @galuszkak in [#12951](https://github.com/pydantic/pydantic/pull/12951)
+* No longer fall back to trying all union members when the variant selected by discriminator fails to serialize by @navalprakhar in [#12825](https://github.com/pydantic/pydantic/pull/12825)
+
+#### Fixes
+
+* Support discriminator metadata outside union type alias by @Viicos in [#12785](https://github.com/pydantic/pydantic/pull/12785)
+* Respect `extras_schema` when only `extra_fields_behavior` is set on the config in JSON Schema generation for typed dictionaries by @Viicos in [#12810](https://github.com/pydantic/pydantic/pull/12810)
+* Ensure `__pydantic_private__` is set in `model_construct()` with user-defined `model_post_init()` by @nightcityblade in [#12816](https://github.com/pydantic/pydantic/pull/12816)
+* Handle all schema generation errors in `InstanceOf` by @Viicos in [#12705](https://github.com/pydantic/pydantic/pull/12705)
+* Allow dynamic models created with `create_model()` to be used as annotations in the Mypy plugin by @Br1an67 in [#12879](https://github.com/pydantic/pydantic/pull/12879)
+* Check for `PlaceholderNode` in Mypy plugin by @Viicos in [#12929](https://github.com/pydantic/pydantic/pull/12929)
+* Try other branches in smart union in case of omit errors by @mikeedjones in [#12758](https://github.com/pydantic/pydantic/pull/12758)
+* Patch unset attributes with `MISSING` during model serialization with `exclude_unset` by @davidhewitt in [#12905](https://github.com/pydantic/pydantic/pull/12905)
+* Ensure custom `__init__()` is called when using `model_validate_strings()` by @siewcapital in [#12897](https://github.com/pydantic/pydantic/pull/12897)
+
+#### Packaging
+
+* Add riscv64 build target for manylinux by @boosterl in [#12723](https://github.com/pydantic/pydantic/pull/12723)
+
+### New Contributors
+
+* @kelsonbrito50 made their first contribution in [#12860](https://github.com/pydantic/pydantic/pull/12860)
+* @boosterl made their first contribution in [#12723](https://github.com/pydantic/pydantic/pull/12723)
+* @adityagiri3600 made their first contribution in [#12868](https://github.com/pydantic/pydantic/pull/12868)
+* @navalprakhar made their first contribution in [#12817](https://github.com/pydantic/pydantic/pull/12817)
+* @Br1an67 made their first contribution in [#12879](https://github.com/pydantic/pydantic/pull/12879)
+* @rmorshea made their first contribution in [#12910](https://github.com/pydantic/pydantic/pull/12910)
+* @N3XT3R1337 made their first contribution in [#12922](https://github.com/pydantic/pydantic/pull/12922)
+* @ai-man-codes made their first contribution in [#12907](https://github.com/pydantic/pydantic/pull/12907)
+* @Yume05-dev made their first contribution in [#12953](https://github.com/pydantic/pydantic/pull/12953)
+* @galuszkak made their first contribution in [#12951](https://github.com/pydantic/pydantic/pull/12951)
+* @siewcapital made their first contribution in [#12897](https://github.com/pydantic/pydantic/pull/12897)
+
 ## v2.13.0b2 (2026-02-24)
 
 [GitHub release](https://github.com/pydantic/pydantic/releases/tag/v2.13.0b2)
@@ -33,12 +344,6 @@ Notable changes include:
 * The [`pydantic-core`](https://github.com/pydantic/pydantic-core/) repository was merged inside the main `pydantic` one.
 
 ### What's Changed
-
-#### Packaging
-
-* Bump Rust url dependency from 2.5.4 to 2.5.7 in `pydantic-core` by @dependabot[bot] in [#12508](https://github.com/pydantic/pydantic/pull/12508)
-* Bump Rust minimum version to 1.88, use edition 2024 by @davidhewitt and @Viicos in [#12551](https://github.com/pydantic/pydantic/pull/12551) and [#12752](https://github.com/pydantic/pydantic/pull/12752)
-* Bump PyO3 to 0.28, jiter to 0.13 by @davidhewitt in [#12767](https://github.com/pydantic/pydantic/pull/12767)
 
 #### New Features
 
@@ -92,6 +397,12 @@ Notable changes include:
 * Fix serializing complex numbers with negative zero imaginary part by @lhnwrk in [#12770](https://github.com/pydantic/pydantic/pull/12770)
 * Preserve custom docstrings on stdlib dataclasses in JSON schema by @nightcityblade in [#12815](https://github.com/pydantic/pydantic/pull/12815)
 
+#### Packaging
+
+* Bump Rust url dependency from 2.5.4 to 2.5.7 in `pydantic-core` by @dependabot[bot] in [#12508](https://github.com/pydantic/pydantic/pull/12508)
+* Bump Rust minimum version to 1.88, use edition 2024 by @davidhewitt and @Viicos in [#12551](https://github.com/pydantic/pydantic/pull/12551) and [#12752](https://github.com/pydantic/pydantic/pull/12752)
+* Bump PyO3 to 0.28, jiter to 0.13 by @davidhewitt in [#12767](https://github.com/pydantic/pydantic/pull/12767)
+
 ### New Contributors
 
 * @marwan-alloreview made their first contribution in [#12494](https://github.com/pydantic/pydantic/pull/12494)
@@ -121,7 +432,7 @@ the remaining unexpected changes to the *serialize as any* behavior.
 [GitHub release](https://github.com/pydantic/pydantic/releases/tag/v2.12.4)
 
 This is the fourth 2.12 patch release, fixing more regressions, and reverting a change in the `build()` method
-of the [`AnyUrl` and Dsn types](https://docs.pydantic.dev/latest/api/networks/).
+of the [`AnyUrl` and Dsn types](https://pydantic.dev/docs/validation/latest/api/pydantic/networks/).
 
 This patch release also fixes an issue with the serialization of IP address types, when `serialize_as_any` is used. The next patch release
 will try to address the remaining issues with *serialize as any* behavior by introducing a new *polymorphic serialization* feature, that
@@ -133,7 +444,7 @@ should be used in most cases in place of *serialize as any*.
 
 * Exclude fields with `exclude_if` from JSON Schema required fields by @Viicos in [#12430](https://github.com/pydantic/pydantic/pull/12430)
 * Revert URL percent-encoding of credentials in the `build()` method
-  of the [`AnyUrl` and Dsn types](https://docs.pydantic.dev/latest/api/networks/) by @davidhewitt in
+  of the [`AnyUrl` and Dsn types](https://pydantic.dev/docs/validation/latest/api/pydantic/networks/) by @davidhewitt in
   [pydantic-core#1833](https://github.com/pydantic/pydantic-core/pull/1833).
 
     This was initially considered as a bugfix, but caused regressions and as such was fully reverted. The next release will include
@@ -158,14 +469,14 @@ should be used in most cases in place of *serialize as any*.
 ### What's Changed
 
 This is the third 2.12 patch release, fixing issues related to the `FieldInfo` class, and reverting a change to the supported
-[*after* model validator](https://docs.pydantic.dev/latest/concepts/validators/#model-validators) function signatures.
+[*after* model validator](https://pydantic.dev/docs/validation/latest/concepts/validators/#model-validators) function signatures.
 
 * Raise a warning when an invalid after model validator function signature is raised by @Viicos in [#12414](https://github.com/pydantic/pydantic/pull/12414).
   Starting in 2.12.0, using class methods for *after* model validators raised an error, but the error wasn't raised concistently. We decided
   to emit a deprecation warning instead.
-* Add [`FieldInfo.asdict()`](https://docs.pydantic.dev/latest/api/fields/#pydantic.fields.FieldInfo.asdict) method, improve documentation around `FieldInfo` by @Viicos in [#12411](https://github.com/pydantic/pydantic/pull/12411).
+* Add [`FieldInfo.asdict()`](https://pydantic.dev/docs/validation/latest/api/pydantic/fields/#pydantic.fields.FieldInfo.asdict) method, improve documentation around `FieldInfo` by @Viicos in [#12411](https://github.com/pydantic/pydantic/pull/12411).
   This also add back support for mutations on `FieldInfo` classes, that are reused as `Annotated` metadata. **However**, note that this is still
-  *not* a supported pattern. Instead, please refer to the [added example](https://docs.pydantic.dev/latest/examples/dynamic_models/) in the documentation.
+  *not* a supported pattern. Instead, please refer to the [added example](https://pydantic.dev/docs/validation/latest/examples/dynamic_models/) in the documentation.
 
 The [blog post](https://pydantic.dev/articles/pydantic-v2-12-release#changes) section on changes was also updated to document the changes related to `serialize_as_any`.
 
@@ -207,19 +518,15 @@ This is the first 2.12 patch release, addressing most (but not all yet) regressi
 
 [GitHub release](https://github.com/pydantic/pydantic/releases/tag/v2.12.0)
 
-### What's Changed
-
 This is the final 2.12 release. It features the work of 20 external contributors and provides useful new features, along with initial Python 3.14 support.
-Several minor changes (considered non-breaking changes according to our [versioning policy](https://docs.pydantic.dev/2.12/version-policy/#pydantic-v2))
+Several minor changes (considered non-breaking changes according to our [versioning policy](https://pydantic.dev/docs/validation/2.12/get-started/version-policy/#pydantic-v2))
 are also included in this release. Make sure to look into them before upgrading.
 
 **Note that Pydantic V1 is not compatible with Python 3.14 and greater**.
 
-Changes (see the alpha and beta releases for additional changes since 2.11):
+### What's Changed
 
-#### Packaging
-
-* Update V1 copy to v1.10.24 by @Viicos in [#12338](https://github.com/pydantic/pydantic/pull/12338)
+See the beta releases for all changes sinces 2.11.
 
 #### New Features
 
@@ -239,6 +546,10 @@ Changes (see the alpha and beta releases for additional changes since 2.11):
 * Use `Any` as context annotation in plugin API by @Viicos in [#12341](https://github.com/pydantic/pydantic/pull/12341)
 * Use proper `stacklevel` in warnings when possible by @Viicos in [#12342](https://github.com/pydantic/pydantic/pull/12342)
 
+#### Packaging
+
+* Update V1 copy to v1.10.24 by @Viicos in [#12338](https://github.com/pydantic/pydantic/pull/12338)
+
 ### New Contributors
 
 * @anvilpete made their first contribution in [#12233](https://github.com/pydantic/pydantic/pull/12233)
@@ -253,10 +564,6 @@ Changes (see the alpha and beta releases for additional changes since 2.11):
 This is the first beta release of the upcoming 2.12 release.
 
 ### What's Changed
-
-#### Packaging
-
-* Bump `pydantic-core` to v2.40.1 by @Viicos in [#12314](https://github.com/pydantic/pydantic/pull/12314)
 
 #### New Features
 
@@ -282,6 +589,10 @@ This is the first beta release of the upcoming 2.12 release.
 * Respect custom title in functions JSON Schema by @Viicos in [#11892](https://github.com/pydantic/pydantic/pull/11892)
 * Fix `ImportString` JSON serialization for objects with a `name` attribute by @chr1sj0nes in [#12219](https://github.com/pydantic/pydantic/pull/12219)
 * Do not error on fields overridden by methods in the mypy plugin by @Viicos in [#12290](https://github.com/pydantic/pydantic/pull/12290)
+
+#### Packaging
+
+* Bump `pydantic-core` to v2.40.1 by @Viicos in [#12314](https://github.com/pydantic/pydantic/pull/12314)
 
 ### New Contributors
 
@@ -435,10 +746,6 @@ This is the first alpha release of the upcoming 2.12 release, which adds initial
 
 ### What's Changed
 
-#### Packaging
-
-* Bump `mkdocs-llmstxt` to v0.2.0 by @Viicos in [#11725](https://github.com/pydantic/pydantic/pull/11725)
-
 #### Changes
 
 * Allow config and bases to be specified together in `create_model()` by @Viicos in [#11714](https://github.com/pydantic/pydantic/pull/11714).
@@ -454,19 +761,23 @@ This is the first alpha release of the upcoming 2.12 release, which adds initial
 * Fix issue with recursive generic models by @Viicos in [#11775](https://github.com/pydantic/pydantic/pull/11775)
 * Traverse `function-before` schemas during schema gathering by @Viicos in [#11801](https://github.com/pydantic/pydantic/pull/11801)
 
+#### Packaging
+
+* Bump `mkdocs-llmstxt` to v0.2.0 by @Viicos in [#11725](https://github.com/pydantic/pydantic/pull/11725)
+
 ## v2.11.3 (2025-04-08)
 
 [GitHub release](https://github.com/pydantic/pydantic/releases/tag/v2.11.3)
 
 ### What's Changed
 
-#### Packaging
-
-* Update V1 copy to v1.10.21 by @Viicos in [#11706](https://github.com/pydantic/pydantic/pull/11706)
-
 #### Fixes
 
 * Preserve field description when rebuilding model fields by @Viicos in [#11698](https://github.com/pydantic/pydantic/pull/11698)
+
+#### Packaging
+
+* Update V1 copy to v1.10.21 by @Viicos in [#11706](https://github.com/pydantic/pydantic/pull/11706)
 
 ## v2.11.2 (2025-04-03)
 
@@ -503,10 +814,6 @@ This is the first alpha release of the upcoming 2.12 release, which adds initial
 Pydantic v2.11 is a version strongly focused on build time performance of Pydantic models (and core schema generation in general).
 See the [blog post](https://pydantic.dev/articles/pydantic-v2-11-release) for more details.
 
-#### Packaging
-
-* Bump `pydantic-core` to v2.33.0 by @Viicos in [#11631](https://github.com/pydantic/pydantic/pull/11631)
-
 #### New Features
 
 * Add `encoded_string()` method to the URL types by @YassinNouh21 in [#11580](https://github.com/pydantic/pydantic/pull/11580)
@@ -522,6 +829,10 @@ See the [blog post](https://pydantic.dev/articles/pydantic-v2-11-release) for mo
 * Preserve other steps when using the ellipsis in the pipeline API by @Viicos in [#11626](https://github.com/pydantic/pydantic/pull/11626)
 * Fix deferred discriminator application logic by @Viicos in [#11591](https://github.com/pydantic/pydantic/pull/11591)
 
+#### Packaging
+
+* Bump `pydantic-core` to v2.33.0 by @Viicos in [#11631](https://github.com/pydantic/pydantic/pull/11631)
+
 ### New Contributors
 
 * @cmenon12 made their first contribution in [#11562](https://github.com/pydantic/pydantic/pull/11562)
@@ -533,10 +844,6 @@ See the [blog post](https://pydantic.dev/articles/pydantic-v2-11-release) for mo
 
 ### What's Changed
 
-#### Packaging
-
-* Bump `pydantic-core` to v2.32.0 by @Viicos in [#11567](https://github.com/pydantic/pydantic/pull/11567)
-
 #### New Features
 
 * Add experimental support for free threading by @Viicos in [#11516](https://github.com/pydantic/pydantic/pull/11516)
@@ -544,6 +851,10 @@ See the [blog post](https://pydantic.dev/articles/pydantic-v2-11-release) for mo
 #### Fixes
 
 * Fix `NotRequired` qualifier not taken into account in stringified annotation by @Viicos in [#11559](https://github.com/pydantic/pydantic/pull/11559)
+
+#### Packaging
+
+* Bump `pydantic-core` to v2.32.0 by @Viicos in [#11567](https://github.com/pydantic/pydantic/pull/11567)
 
 ### New Contributors
 
@@ -554,13 +865,6 @@ See the [blog post](https://pydantic.dev/articles/pydantic-v2-11-release) for mo
 [GitHub release](https://github.com/pydantic/pydantic/releases/tag/v2.11.0b1)
 
 ### What's Changed
-
-#### Packaging
-
-* Add a `check_pydantic_core_version()` function by @Viicos in https://github.com/pydantic/pydantic/pull/11324
-* Remove `greenlet` development dependency by @Viicos in https://github.com/pydantic/pydantic/pull/11351
-* Use the `typing-inspection` library by @Viicos in https://github.com/pydantic/pydantic/pull/11479
-* Bump `pydantic-core` to `v2.31.1` by @sydney-runkle in https://github.com/pydantic/pydantic/pull/11526
 
 #### New Features
 
@@ -637,6 +941,13 @@ See the [blog post](https://pydantic.dev/articles/pydantic-v2-11-release) for mo
 * Fix `ValueError` on year zero by @davidhewitt in https://github.com/pydantic/pydantic-core/pull/1583
 * `dataclass` `InitVar` shouldn't be required on serialization by @sydney-runkle in https://github.com/pydantic/pydantic-core/pull/1602
 
+#### Packaging
+
+* Add a `check_pydantic_core_version()` function by @Viicos in https://github.com/pydantic/pydantic/pull/11324
+* Remove `greenlet` development dependency by @Viicos in https://github.com/pydantic/pydantic/pull/11351
+* Use the `typing-inspection` library by @Viicos in https://github.com/pydantic/pydantic/pull/11479
+* Bump `pydantic-core` to `v2.31.1` by @sydney-runkle in https://github.com/pydantic/pydantic/pull/11526
+
 ## New Contributors
 
 * @FyZzyss made their first contribution in https://github.com/pydantic/pydantic/pull/10789
@@ -670,12 +981,6 @@ See the [blog post](https://pydantic.dev/articles/pydantic-v2-11-release) for mo
 Pydantic v2.11 is a version strongly focused on build time performance of Pydantic models (and core schema generation in general).
 This is another early alpha release, meant to collect early feedback from users having issues with core schema builds.
 
-#### Packaging
-
-* Bump `ruff` from 0.9.2 to 0.9.5 by @Viicos in [#11407](https://github.com/pydantic/pydantic/pull/11407)
-* Bump `pydantic-core` to v2.29.0 by @mikeedjones in [#11402](https://github.com/pydantic/pydantic/pull/11402)
-* Use locally-built rust with symbols & pgo by @davidhewitt in [#11403](https://github.com/pydantic/pydantic/pull/11403)
-
 #### Performance
 
 * Create a single dictionary when creating a `CoreConfig` instance by @sydney-runkle in [#11384](https://github.com/pydantic/pydantic/pull/11384)
@@ -688,6 +993,12 @@ This is another early alpha release, meant to collect early feedback from users 
 * Always include `additionalProperties: True` for arbitrary dictionary schemas by @austinyu in [#11392](https://github.com/pydantic/pydantic/pull/11392)
 * Expose `fallback` parameter in serialization methods by @Viicos in [#11398](https://github.com/pydantic/pydantic/pull/11398)
 * Fix path serialization behavior by @sydney-runkle in [#11416](https://github.com/pydantic/pydantic/pull/11416)
+
+#### Packaging
+
+* Bump `ruff` from 0.9.2 to 0.9.5 by @Viicos in [#11407](https://github.com/pydantic/pydantic/pull/11407)
+* Bump `pydantic-core` to v2.29.0 by @mikeedjones in [#11402](https://github.com/pydantic/pydantic/pull/11402)
+* Use locally-built rust with symbols & pgo by @davidhewitt in [#11403](https://github.com/pydantic/pydantic/pull/11403)
 
 ### New Contributors
 
@@ -706,17 +1017,6 @@ This is another early alpha release, meant to collect early feedback from users 
 
 Pydantic v2.11 is a version strongly focused on build time performance of Pydantic models (and core schema generation in general).
 This is an early alpha release, meant to collect early feedback from users having issues with core schema builds.
-
-#### Packaging
-
-* Bump dawidd6/action-download-artifact from 6 to 7 by @dependabot in [#11018](https://github.com/pydantic/pydantic/pull/11018)
-* Re-enable memray related tests on Python 3.12+ by @Viicos in [#11191](https://github.com/pydantic/pydantic/pull/11191)
-* Bump astral-sh/setup-uv to 5 by @dependabot in [#11205](https://github.com/pydantic/pydantic/pull/11205)
-* Bump `ruff` to v0.9.0 by @sydney-runkle in [#11254](https://github.com/pydantic/pydantic/pull/11254)
-* Regular `uv.lock` deps update by @sydney-runkle in [#11333](https://github.com/pydantic/pydantic/pull/11333)
-* Add a `check_pydantic_core_version()` function by @Viicos in [#11324](https://github.com/pydantic/pydantic/pull/11324)
-* Remove `greenlet` development dependency by @Viicos in [#11351](https://github.com/pydantic/pydantic/pull/11351)
-* Bump `pydantic-core` to v2.28.0 by @Viicos in [#11364](https://github.com/pydantic/pydantic/pull/11364)
 
 #### New Features
 
@@ -783,6 +1083,17 @@ This is an early alpha release, meant to collect early feedback from users havin
 * Coerce decimal constraints to `Decimal` instances by @Viicos in [#11350](https://github.com/pydantic/pydantic/pull/11350)
 * Fix `ValueError` on year zero by @davidhewitt in [pydantic-core#1583](https://github.com/pydantic/pydantic-core/pull/1583)
 
+#### Packaging
+
+* Bump dawidd6/action-download-artifact from 6 to 7 by @dependabot in [#11018](https://github.com/pydantic/pydantic/pull/11018)
+* Re-enable memray related tests on Python 3.12+ by @Viicos in [#11191](https://github.com/pydantic/pydantic/pull/11191)
+* Bump astral-sh/setup-uv to 5 by @dependabot in [#11205](https://github.com/pydantic/pydantic/pull/11205)
+* Bump `ruff` to v0.9.0 by @sydney-runkle in [#11254](https://github.com/pydantic/pydantic/pull/11254)
+* Regular `uv.lock` deps update by @sydney-runkle in [#11333](https://github.com/pydantic/pydantic/pull/11333)
+* Add a `check_pydantic_core_version()` function by @Viicos in [#11324](https://github.com/pydantic/pydantic/pull/11324)
+* Remove `greenlet` development dependency by @Viicos in [#11351](https://github.com/pydantic/pydantic/pull/11351)
+* Bump `pydantic-core` to v2.28.0 by @Viicos in [#11364](https://github.com/pydantic/pydantic/pull/11364)
+
 ### New Contributors
 
 * @FyZzyss made their first contribution in [#10789](https://github.com/pydantic/pydantic/pull/10789)
@@ -826,10 +1137,6 @@ This is an early alpha release, meant to collect early feedback from users havin
 
 ### What's Changed
 
-#### Packaging
-
-* Bump `pydantic-core` to v2.27.2 by @davidhewitt in [#11138](https://github.com/pydantic/pydantic/pull/11138)
-
 #### Fixes
 
 * Fix for comparison of `AnyUrl` objects by @alexprabhat99 in [#11082](https://github.com/pydantic/pydantic/pull/11082)
@@ -845,6 +1152,10 @@ This is an early alpha release, meant to collect early feedback from users havin
 * @felixxm made their first contribution in [#11077](https://github.com/pydantic/pydantic/pull/11077)
 * @alexprabhat99 made their first contribution in [#11082](https://github.com/pydantic/pydantic/pull/11082)
 * @Kharianne made their first contribution in [#11111](https://github.com/pydantic/pydantic/pull/11111)
+
+#### Packaging
+
+* Bump `pydantic-core` to v2.27.2 by @davidhewitt in [#11138](https://github.com/pydantic/pydantic/pull/11138)
 
 ## v2.10.3 (2024-12-03)
 
@@ -882,10 +1193,6 @@ This is an early alpha release, meant to collect early feedback from users havin
 
 ### What's Changed
 
-#### Packaging
-
-* Bump `pydantic-core` version to `v2.27.1` by @sydney-runkle in [#10938](https://github.com/pydantic/pydantic/pull/10938)
-
 #### Fixes
 
 * Use the correct frame when instantiating a parametrized `TypeAdapter` by @Viicos in [#10893](https://github.com/pydantic/pydantic/pull/10893)
@@ -898,6 +1205,10 @@ This is an early alpha release, meant to collect early feedback from users havin
 * Fix JSON schema title when specified as `''` by @sydney-runkle in [#10936](https://github.com/pydantic/pydantic/pull/10936)
 * Fix `python` mode serialization for `complex` inference by @sydney-runkle in [pydantic-core#1549](https://github.com/pydantic/pydantic-core/pull/1549)
 
+#### Packaging
+
+* Bump `pydantic-core` version to `v2.27.1` by @sydney-runkle in [#10938](https://github.com/pydantic/pydantic/pull/10938)
+
 ### New Contributors
 
 ## v2.10.0 (2024-11-20)
@@ -909,11 +1220,6 @@ The code released in v2.10.0 is practically identical to that of v2.10.0b2.
 See the [v2.10 release blog post](https://pydantic.dev/articles/pydantic-v2-10-release) for the highlights!
 
 ### What's Changed
-
-#### Packaging
-
-* Bump `pydantic-core` to `v2.27.0` by @sydney-runkle in [#10825](https://github.com/pydantic/pydantic/pull/10825)
-* Replaced pdm with uv by @frfahim in [#10727](https://github.com/pydantic/pydantic/pull/10727)
 
 #### New Features
 
@@ -959,6 +1265,11 @@ See the [v2.10 release blog post](https://pydantic.dev/articles/pydantic-v2-10-r
 * Refactor namespace logic for annotations evaluation by @Viicos in [#10530](https://github.com/pydantic/pydantic/pull/10530)
 * Improve email regexp on edge cases by @AlekseyLobanov in [#10601](https://github.com/pydantic/pydantic/pull/10601)
 * `CoreMetadata` refactor with an emphasis on documentation, schema build time performance, and reducing complexity by @sydney-runkle in [#10675](https://github.com/pydantic/pydantic/pull/10675)
+
+#### Packaging
+
+* Bump `pydantic-core` to `v2.27.0` by @sydney-runkle in [#10825](https://github.com/pydantic/pydantic/pull/10825)
+* Replaced pdm with uv by @frfahim in [#10727](https://github.com/pydantic/pydantic/pull/10727)
 
 #### Fixes
 
@@ -1087,14 +1398,6 @@ The code released in v2.9.0 is practically identical to that of v2.9.0b2.
 
 ### What's Changed
 
-#### Packaging
-
-* Bump `ruff` to `v0.5.0` and `pyright` to `v1.1.369` by @sydney-runkle in [#9801](https://github.com/pydantic/pydantic/pull/9801)
-* Bump `pydantic-extra-types` to `v2.9.0` by @sydney-runkle in [#9832](https://github.com/pydantic/pydantic/pull/9832)
-* Support compatibility with `pdm v2.18.1` by @Viicos in [#10138](https://github.com/pydantic/pydantic/pull/10138)
-* Bump `v1` version stub to `v1.10.18` by @sydney-runkle in [#10214](https://github.com/pydantic/pydantic/pull/10214)
-* Bump `pydantic-core` to `v2.23.2` by @sydney-runkle in [#10311](https://github.com/pydantic/pydantic/pull/10311)
-
 #### New Features
 
 * Add support for `ZoneInfo` by @Youssefares in [#9896](https://github.com/pydantic/pydantic/pull/9896)
@@ -1105,12 +1408,12 @@ The code released in v2.9.0 is practically identical to that of v2.9.0b2.
 * Allow `WithJsonSchema` to inject `$ref`s w/ `http` or `https` links by @dAIsySHEng1 in [#9863](https://github.com/pydantic/pydantic/pull/9863)
 * Allow validators to customize validation JSON schema by @Viicos in [#10094](https://github.com/pydantic/pydantic/pull/10094)
 * Support parametrized `PathLike` types by @nix010 in [#9764](https://github.com/pydantic/pydantic/pull/9764)
-* Add tagged union serializer that attempts to use `str` or `callable` discriminators to select the correct serializer by @sydney-runkle in in [pydantic/pydantic-core#1397](https://github.com/pydantic/pydantic-core/pull/1397)
+* Add tagged union serializer that attempts to use `str` or `callable` discriminators to select the correct serializer by @sydney-runkle in [pydantic/pydantic-core#1397](https://github.com/pydantic/pydantic-core/pull/1397)
 
 #### Changes
 
 * Breaking Change: Merge `dict` type `json_schema_extra` by @sydney-runkle in [#9792](https://github.com/pydantic/pydantic/pull/9792)
-    * For more info (how to replicate old behavior) on this change, see [here](https://docs.pydantic.dev/dev/concepts/json_schema/#merging-json_schema_extra)
+    * For more info (how to replicate old behavior) on this change, see [here](https://pydantic.dev/docs/validation/dev/concepts/json_schema/#merging-json_schema_extra)
 * Refactor annotation injection for known (often generic) types by @sydney-runkle in [#9979](https://github.com/pydantic/pydantic/pull/9979)
 * Move annotation compatibility errors to validation phase by @sydney-runkle in [#9999](https://github.com/pydantic/pydantic/pull/9999)
 * Improve runtime errors for string constraints like `pattern` for incompatible types by @sydney-runkle in [#10158](https://github.com/pydantic/pydantic/pull/10158)
@@ -1193,7 +1496,7 @@ The code released in v2.9.0 is practically identical to that of v2.9.0b2.
 * Fix `field_serializer` with computed field when using `*` by @nix010 in [pydantic/pydantic-core#1349](https://github.com/pydantic/pydantic-core/pull/1349)
 * Try each option in `Union` serializer before inference by @sydney-runkle in [pydantic/pydantic-core#1398](https://github.com/pydantic/pydantic-core/pull/1398)
 * Fix `float` serialization behavior in `strict` mode by @sydney-runkle in [pydantic/pydantic-core#1400](https://github.com/pydantic/pydantic-core/pull/1400)
-* Introduce `exactness` into Decimal validation logic to improve union validation behavior by @sydney-runkle in in [pydantic/pydantic-core#1405](https://github.com/pydantic/pydantic-core/pull/1405)
+* Introduce `exactness` into Decimal validation logic to improve union validation behavior by @sydney-runkle in [pydantic/pydantic-core#1405](https://github.com/pydantic/pydantic-core/pull/1405)
 * Fix new warnings assertions to use `pytest.warns()` by @mgorny in [#10241](https://github.com/pydantic/pydantic/pull/10241)
 * Fix a crash when cleaning the namespace in `ModelMetaclass` by @Viicos in [#10242](https://github.com/pydantic/pydantic/pull/10242)
 * Fix parent namespace issue with model rebuilds by @sydney-runkle in [#10257](https://github.com/pydantic/pydantic/pull/10257)
@@ -1203,6 +1506,14 @@ The code released in v2.9.0 is practically identical to that of v2.9.0b2.
 * Support signature for wrap validators without `info` by @sydney-runkle in [#10277](https://github.com/pydantic/pydantic/pull/10277)
 * Ensure `__pydantic_complete__` is set when rebuilding `dataclasses` by @Viicos in [#10291](https://github.com/pydantic/pydantic/pull/10291)
 * Respect `schema_generator` config value in `TypeAdapter` by @sydney-runkle in [#10300](https://github.com/pydantic/pydantic/pull/10300)
+
+#### Packaging
+
+* Bump `ruff` to `v0.5.0` and `pyright` to `v1.1.369` by @sydney-runkle in [#9801](https://github.com/pydantic/pydantic/pull/9801)
+* Bump `pydantic-extra-types` to `v2.9.0` by @sydney-runkle in [#9832](https://github.com/pydantic/pydantic/pull/9832)
+* Support compatibility with `pdm v2.18.1` by @Viicos in [#10138](https://github.com/pydantic/pydantic/pull/10138)
+* Bump `v1` version stub to `v1.10.18` by @sydney-runkle in [#10214](https://github.com/pydantic/pydantic/pull/10214)
+* Bump `pydantic-core` to `v2.23.2` by @sydney-runkle in [#10311](https://github.com/pydantic/pydantic/pull/10311)
 
 ### New Contributors
 
@@ -1309,7 +1620,7 @@ The code released in v2.8.0 is functionally identical to that of v2.8.0b1.
 * Support serialization of some serializable defaults in JSON schema by @sydney-runkle in [#9624](https://github.com/pydantic/pydantic/pull/9624)
 * Relax type specification for `__validators__` values in `create_model` by @sydney-runkle in [#9697](https://github.com/pydantic/pydantic/pull/9697)
 * **Breaking Change:** Improve `smart` union matching logic by @sydney-runkle in [pydantic/pydantic-core#1322](https://github.com/pydantic/pydantic-core/pull/1322)
-You can read more about our `smart` union matching logic [here](https://docs.pydantic.dev/dev/concepts/unions/#smart-mode). In some cases, if the old behavior
+You can read more about our `smart` union matching logic [here](https://pydantic.dev/docs/validation/dev/concepts/unions/#smart-mode). In some cases, if the old behavior
 is desired, you can switch to `left-to-right` mode and change the order of your `Union` members.
 
 #### Performance
@@ -1540,8 +1851,8 @@ The code released in v2.7.0 is practically identical to that of v2.7.0b1.
 * `enum` validator improvements by @samuelcolvin in [#9045](https://github.com/pydantic/pydantic/pull/9045)
 * Move `enum` validation and serialization to Rust by @samuelcolvin in [#9064](https://github.com/pydantic/pydantic/pull/9064)
 * Improve schema generation for nested dataclasses by @sydney-runkle in [#9114](https://github.com/pydantic/pydantic/pull/9114)
-* Fast path for ASCII python string creation in JSON by @samuelcolvin in in [pydantic/jiter#72](https://github.com/pydantic/jiter/pull/72)
-* SIMD integer and string JSON parsing on `aarch64`(**Note:** SIMD on x86 will be implemented in a future release) by @samuelcolvin in in [pydantic/jiter#65](https://github.com/pydantic/jiter/pull/65)
+* Fast path for ASCII python string creation in JSON by @samuelcolvin in [pydantic/jiter#72](https://github.com/pydantic/jiter/pull/72)
+* SIMD integer and string JSON parsing on `aarch64`(**Note:** SIMD on x86 will be implemented in a future release) by @samuelcolvin in [pydantic/jiter#65](https://github.com/pydantic/jiter/pull/65)
 * Support JSON `Cow<str>` from `jiter` by @davidhewitt in [pydantic/pydantic-core#1231](https://github.com/pydantic/pydantic-core/pull/1231)
 * MAJOR performance improvement: update to PyO3 0.21 final by @davidhewitt in [pydantic/pydantic-core#1248](https://github.com/pydantic/pydantic-core/pull/1248)
 * cache Python strings by @samuelcolvin in [pydantic/pydantic-core#1240](https://github.com/pydantic/pydantic-core/pull/1240)
@@ -2360,7 +2671,7 @@ See the full changelog [here](https://github.com/pydantic/pydantic/releases/tag/
 
 Pydantic V2 is here! :tada:
 
-See [this post](https://docs.pydantic.dev/2.0/blog/pydantic-v2-final/) for more details.
+See [this post](https://pydantic.dev/articles/pydantic-v2-final) for more details.
 
 ## v2.0b3 (2023-06-16)
 
@@ -2402,7 +2713,7 @@ See the full changelog [here](https://github.com/pydantic/pydantic/releases/tag/
 
 First pre-release of Pydantic V2!
 
-See [this post](https://docs.pydantic.dev/blog/pydantic-v2-alpha/) for more details.
+See [this post](https://pydantic.dev/articles/pydantic-v2-alpha) for more details.
 
 ## v1.10.24 (2025-09-25)
 
@@ -2714,10 +3025,10 @@ for their kind support.
 ### Highlights
 
 * add Python 3.10 support, [#2885](https://github.com/pydantic/pydantic/pull/2885) by @PrettyWood
-* [Discriminated unions](https://docs.pydantic.dev/usage/types/#discriminated-unions-aka-tagged-unions), [#619](https://github.com/pydantic/pydantic/pull/619) by @PrettyWood
-* [`Config.smart_union` for better union logic](https://docs.pydantic.dev/usage/model_config/#smart-union), [#2092](https://github.com/pydantic/pydantic/pull/2092) by @PrettyWood
+* [Discriminated unions](https://pydantic.dev/docs/validation/1.10/usage/types/#discriminated-unions-aka-tagged-unions), [#619](https://github.com/pydantic/pydantic/pull/619) by @PrettyWood
+* [`Config.smart_union` for better union logic](https://pydantic.dev/docs/validation/1.10/usage/model_config/#smart-union), [#2092](https://github.com/pydantic/pydantic/pull/2092) by @PrettyWood
 * Binaries for Macos M1 CPUs, [#3498](https://github.com/pydantic/pydantic/pull/3498) by @samuelcolvin
-* Complex types can be set via [nested environment variables](https://docs.pydantic.dev/usage/settings/#parsing-environment-variable-values), e.g. `foo___bar`, [#3159](https://github.com/pydantic/pydantic/pull/3159) by @Air-Mark
+* Complex types can be set via [nested environment variables](https://pydantic.dev/docs/validation/1.10/usage/settings/#parsing-environment-variable-values), e.g. `foo___bar`, [#3159](https://github.com/pydantic/pydantic/pull/3159) by @Air-Mark
 * add a dark mode to *pydantic* documentation, [#2913](https://github.com/pydantic/pydantic/pull/2913) by @gbdlin
 * Add support for autocomplete in VS Code via `__dataclass_transform__`, [#2721](https://github.com/pydantic/pydantic/pull/2721) by @tiangolo
 * Add "exclude" as a field parameter so that it can be configured using model config, [#660](https://github.com/pydantic/pydantic/pull/660) by @daviskirk
@@ -2748,7 +3059,7 @@ for their kind support.
   `pydantic.fields.ModelField`) to `__modify_schema__()` if present, [#3434](https://github.com/pydantic/pydantic/pull/3434) by @jasujm
 * Fix issue when pydantic fail to parse `typing.ClassVar` string type annotation, [#3401](https://github.com/pydantic/pydantic/pull/3401) by @uriyyo
 * Mention Python >= 3.9.2 as an alternative to `typing_extensions.TypedDict`, [#3374](https://github.com/pydantic/pydantic/pull/3374) by @BvB93
-* Changed the validator method name in the [Custom Errors example](https://docs.pydantic.dev/usage/models/#custom-errors)
+* Changed the validator method name in the [Custom Errors example](https://pydantic.dev/docs/validation/1.10/usage/models/#custom-errors)
   to more accurately describe what the validator is doing; changed from `name_must_contain_space` to `value_must_equal_bar`, [#3327](https://github.com/pydantic/pydantic/pull/3327) by @michaelrios28
 * Add `AmqpDsn` class, [#3254](https://github.com/pydantic/pydantic/pull/3254) by @kludex
 * Always use `Enum` value as default in generated JSON schema, [#3190](https://github.com/pydantic/pydantic/pull/3190) by @joaommartins
@@ -2770,7 +3081,7 @@ for their kind support.
   just as when sourced from environment variables, [#2917](https://github.com/pydantic/pydantic/pull/2917) by @davidmreed
 * add a dark mode to *pydantic* documentation, [#2913](https://github.com/pydantic/pydantic/pull/2913) by @gbdlin
 * Make `pydantic-mypy` plugin compatible with `pyproject.toml` configuration, consistent with `mypy` changes.
-  See the [doc](https://docs.pydantic.dev/mypy_plugin/#configuring-the-plugin) for more information, [#2908](https://github.com/pydantic/pydantic/pull/2908) by @jrwalk
+  See the [doc](https://pydantic.dev/docs/validation/1.10/extras/mypy_plugin/) for more information, [#2908](https://github.com/pydantic/pydantic/pull/2908) by @jrwalk
 * add Python 3.10 support, [#2885](https://github.com/pydantic/pydantic/pull/2885) by @PrettyWood
 * Correctly parse generic models with `Json[T]`, [#2860](https://github.com/pydantic/pydantic/pull/2860) by @geekingfrog
 * Update contrib docs re: Python version to use for building docs, [#2856](https://github.com/pydantic/pydantic/pull/2856) by @paxcodes
@@ -2815,7 +3126,7 @@ for their kind support.
 * Support generating schema for `Generic` fields with subtypes, [#2375](https://github.com/pydantic/pydantic/pull/2375) by @maximberg
 * fix(encoder): serialize `NameEmail` to str, [#2341](https://github.com/pydantic/pydantic/pull/2341) by @alecgerona
 * add `Config.smart_union` to prevent coercion in `Union` if possible, see
- [the doc](https://docs.pydantic.dev/usage/model_config/#smart-union) for more information, [#2092](https://github.com/pydantic/pydantic/pull/2092) by @PrettyWood
+ [the doc](https://pydantic.dev/docs/validation/1.10/usage/model_config/#smart-union) for more information, [#2092](https://github.com/pydantic/pydantic/pull/2092) by @PrettyWood
 * Add ability to use `typing.Counter` as a model field type, [#2060](https://github.com/pydantic/pydantic/pull/2060) by @uriyyo
 * Add parameterised subclasses to `__bases__` when constructing new parameterised classes, so that `A <: B => A[int] <: B[int]`, [#2007](https://github.com/pydantic/pydantic/pull/2007) by @diabolo-dan
 * Create `FileUrl` type that allows URLs that conform to [RFC 8089](https://tools.ietf.org/html/rfc8089#section-2).
@@ -2865,10 +3176,10 @@ for their kind support.
 
 ### Highlights
 
-* [Hypothesis plugin](https://docs.pydantic.dev/hypothesis_plugin/) for testing, [#2097](https://github.com/pydantic/pydantic/pull/2097) by @Zac-HD
-* support for [`NamedTuple` and `TypedDict`](https://docs.pydantic.dev/usage/types/#annotated-types), [#2216](https://github.com/pydantic/pydantic/pull/2216) by @PrettyWood
-* Support [`Annotated` hints on model fields](https://docs.pydantic.dev/usage/schema/#typingannotated-fields), [#2147](https://github.com/pydantic/pydantic/pull/2147) by @JacobHayes
-* [`frozen` parameter on `Config`](https://docs.pydantic.dev/usage/model_config/) to allow models to be hashed, [#1880](https://github.com/pydantic/pydantic/pull/1880) by @rhuille
+* [Hypothesis plugin](https://pydantic.dev/docs/validation/1.10/extras/hypothesis_plugin/) for testing, [#2097](https://github.com/pydantic/pydantic/pull/2097) by @Zac-HD
+* support for [`NamedTuple` and `TypedDict`](https://pydantic.dev/docs/validation/1.10/usage/types/#annotated-types), [#2216](https://github.com/pydantic/pydantic/pull/2216) by @PrettyWood
+* Support [`Annotated` hints on model fields](https://pydantic.dev/docs/validation/1.10/usage/schema/#typingannotated-fields), [#2147](https://github.com/pydantic/pydantic/pull/2147) by @JacobHayes
+* [`frozen` parameter on `Config`](https://pydantic.dev/docs/validation/1.10/usage/model_config/) to allow models to be hashed, [#1880](https://github.com/pydantic/pydantic/pull/1880) by @rhuille
 
 ### Changes
 
@@ -2925,7 +3236,7 @@ for their kind support.
   to validate parameters without actually calling the function, [#2127](https://github.com/pydantic/pydantic/pull/2127) by @PrettyWood
 * Add the ability to customize settings sources (add / disable / change priority order), [#2107](https://github.com/pydantic/pydantic/pull/2107) by @kozlek
 * Fix mypy complaints about most custom *pydantic* types, [#2098](https://github.com/pydantic/pydantic/pull/2098) by @PrettyWood
-* Add a [Hypothesis](https://hypothesis.readthedocs.io/) plugin for easier [property-based testing](https://increment.com/testing/in-praise-of-property-based-testing/) with Pydantic's custom types - [usage details here](https://docs.pydantic.dev/hypothesis_plugin/), [#2097](https://github.com/pydantic/pydantic/pull/2097) by @Zac-HD
+* Add a [Hypothesis](https://hypothesis.readthedocs.io/) plugin for easier [property-based testing](https://increment.com/testing/in-praise-of-property-based-testing/) with Pydantic's custom types - [usage details here](https://pydantic.dev/docs/validation/1.10/extras/hypothesis_plugin/), [#2097](https://github.com/pydantic/pydantic/pull/2097) by @Zac-HD
 * add validator for `None`, `NoneType` or `Literal[None]`, [#2095](https://github.com/pydantic/pydantic/pull/2095) by @PrettyWood
 * Handle properly fields of type `Callable` with a default value, [#2094](https://github.com/pydantic/pydantic/pull/2094) by @PrettyWood
 * Updated `create_model` return type annotation to return type which inherits from `__base__` argument, [#2071](https://github.com/pydantic/pydantic/pull/2071) by @uriyyo
@@ -2995,9 +3306,9 @@ for their kind support.
 ### Highlights
 
 * Python 3.9 support, thanks @PrettyWood
-* [Private model attributes](https://docs.pydantic.dev/usage/models/#private-model-attributes), thanks @Bobronium
-* ["secrets files" support in `BaseSettings`](https://docs.pydantic.dev/usage/settings/#secret-support), thanks @mdgilene
-* [convert stdlib dataclasses to pydantic dataclasses and use stdlib dataclasses in models](https://docs.pydantic.dev/usage/dataclasses/#stdlib-dataclasses-and-pydantic-dataclasses), thanks @PrettyWood
+* [Private model attributes](https://pydantic.dev/docs/validation/1.10/usage/models/#private-model-attributes), thanks @Bobronium
+* ["secrets files" support in `BaseSettings`](https://pydantic.dev/docs/validation/1.10/usage/settings/#secret-support), thanks @mdgilene
+* [convert stdlib dataclasses to pydantic dataclasses and use stdlib dataclasses in models](https://pydantic.dev/docs/validation/1.10/usage/dataclasses/#stdlib-dataclasses-and-pydantic-dataclasses), thanks @PrettyWood
 
 ### Changes
 
@@ -3140,7 +3451,7 @@ Thank you to pydantic's sponsors: @matin, @tiangolo, @chdsbd, @jorgecarleitao, a
 
 * **Breaking Change:** alias precedence logic changed so aliases on a field always take priority over
   an alias from `alias_generator` to avoid buggy/unexpected behaviour,
-  see [here](https://docs.pydantic.dev/usage/model_config/#alias-precedence) for details, [#1178](https://github.com/pydantic/pydantic/pull/1178) by @samuelcolvin
+  see [here](https://pydantic.dev/docs/validation/1.10/usage/model_config/#alias-precedence) for details, [#1178](https://github.com/pydantic/pydantic/pull/1178) by @samuelcolvin
 * Add support for unicode and punycode in TLDs, [#1182](https://github.com/pydantic/pydantic/pull/1182) by @jamescurtin
 * Fix `cls` argument in validators during assignment, [#1172](https://github.com/pydantic/pydantic/pull/1172) by @samuelcolvin
 * completing Luhn algorithm for `PaymentCardNumber`, [#1166](https://github.com/pydantic/pydantic/pull/1166) by @cuencandres
@@ -3182,7 +3493,7 @@ Thank you to pydantic's sponsors: @matin, @tiangolo, @chdsbd, @jorgecarleitao, a
 
 * **Possible Breaking Change:** Add support for required `Optional` with `name: Optional[AnyType] = Field(...)`
   and refactor `ModelField` creation to preserve `required` parameter value, [#1031](https://github.com/pydantic/pydantic/pull/1031) by @tiangolo;
-  see [here](https://docs.pydantic.dev/usage/models/#required-optional-fields) for details
+  see [here](https://pydantic.dev/docs/validation/1.10/usage/models/#required-optional-fields) for details
 * Add benchmarks for `cattrs`, [#513](https://github.com/pydantic/pydantic/pull/513) by @sebastianmika
 * Add `exclude_none` option to `dict()` and friends, [#587](https://github.com/pydantic/pydantic/pull/587) by @niknetniko
 * Add benchmarks for `valideer`, [#670](https://github.com/pydantic/pydantic/pull/670) by @gsakkis

@@ -2,12 +2,13 @@
 
 from __future__ import annotations as _annotations
 
+from collections.abc import Callable
 from functools import partial, partialmethod
 from types import FunctionType
-from typing import TYPE_CHECKING, Any, Callable, Literal, TypeVar, Union, overload
+from typing import TYPE_CHECKING, Any, Literal, TypeAlias, TypeVar, Union, overload
 from warnings import warn
 
-from typing_extensions import Protocol, TypeAlias, deprecated
+from typing_extensions import Protocol, deprecated
 
 from .._internal import _decorators, _decorators_v1
 from ..errors import PydanticUserError
@@ -55,7 +56,7 @@ if TYPE_CHECKING:
         _decorators_v1.V1RootValidatorFunction,
     ]
 
-    _PartialClsOrStaticMethod: TypeAlias = Union[classmethod[Any, Any, Any], staticmethod[Any, Any], partialmethod[Any]]
+    _PartialClsOrStaticMethod: TypeAlias = classmethod[Any, Any, Any] | staticmethod[Any, Any] | partialmethod[Any]
 
     # Allow both a V1 (assumed pre=False) or V2 (assumed mode='after') validator
     # We lie to type checkers and say we return the same thing we get

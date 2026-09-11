@@ -23,6 +23,8 @@ pub struct EnumSerializer {
     serializer: Option<Arc<CombinedSerializer>>,
 }
 
+impl_py_gc_traverse!(EnumSerializer { class, serializer });
+
 impl BuildSerializer for EnumSerializer {
     const EXPECTED_TYPE: &'static str = "enum";
 
@@ -47,8 +49,6 @@ impl BuildSerializer for EnumSerializer {
         .into())
     }
 }
-
-impl_py_gc_traverse!(EnumSerializer { serializer });
 
 impl TypeSerializer for EnumSerializer {
     fn to_python<'py>(&self, value: &Bound<'py, PyAny>, state: &mut SerializationState<'py>) -> PyResult<Py<PyAny>> {

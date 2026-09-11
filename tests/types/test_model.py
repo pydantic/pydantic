@@ -1,13 +1,17 @@
-from typing import Union
-
 import pytest
 
-from pydantic import BaseModel, ConfigDict, SerializationInfo, TypeAdapter, model_serializer
+from pydantic import (
+    BaseModel,
+    ConfigDict,
+    SerializationInfo,
+    TypeAdapter,
+    model_serializer,
+)
 
 
 @pytest.mark.parametrize('config', [True, False, None])
 @pytest.mark.parametrize('runtime', [True, False, None])
-def test_polymorphic_serialization(config: Union[bool, None], runtime: Union[bool, None]) -> None:
+def test_polymorphic_serialization(config: bool | None, runtime: bool | None) -> None:
     class ModelA(BaseModel):
         if config is not None:
             model_config = ConfigDict(polymorphic_serialization=config)

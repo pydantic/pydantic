@@ -176,8 +176,8 @@ impl Validator for TypedDictValidator {
         };
 
         {
-            let state = &mut state.rebind_extra(|extra| extra.data = Some(output_dict.clone()));
-            let state = &mut state.scoped_set(|state| &mut state.has_field_error, false);
+            let state = &mut state.scoped_set_data(Some(output_dict.clone()));
+            let state = &mut state.scoped_clear_field_error();
 
             let mut fields_set_count: usize = 0;
 
@@ -254,6 +254,7 @@ impl Validator for TypedDictValidator {
                     }
                     Ok(None) => {
                         // This means there was no default value
+                        state.has_field_error = true;
                         if field.required {
                             let error_type = ErrorTypeDefaults::Missing;
                             let error_loc = field.lookup_path_collection.error_loc(lookup_type, self.loc_by_alias);

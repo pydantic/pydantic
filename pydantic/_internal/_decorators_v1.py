@@ -3,7 +3,7 @@
 from __future__ import annotations as _annotations
 
 from inspect import Parameter, signature
-from typing import Any, Union, cast
+from typing import Any, TypeAlias, cast
 
 from pydantic_core import core_schema
 from typing_extensions import Protocol
@@ -42,9 +42,9 @@ class V1ValidatorWithValuesAndKwargs(Protocol):
     def __call__(self, __value: Any, values: dict[str, Any], **kwargs: Any) -> Any: ...
 
 
-V1Validator = Union[
-    V1ValidatorWithValues, V1ValidatorWithValuesKwOnly, V1ValidatorWithKwargs, V1ValidatorWithValuesAndKwargs
-]
+V1Validator: TypeAlias = (
+    V1ValidatorWithValues | V1ValidatorWithValuesKwOnly | V1ValidatorWithKwargs | V1ValidatorWithValuesAndKwargs
+)
 
 
 def can_be_keyword(param: Parameter) -> bool:

@@ -14,11 +14,10 @@ from typing import (
     TypeVar,
     cast,
     final,
-    overload,
 )
 
 from pydantic_core import CoreSchema, SchemaSerializer, SchemaValidator, Some
-from typing_extensions import ParamSpec, is_typeddict
+from typing_extensions import ParamSpec, TypeForm, is_typeddict
 
 from pydantic.errors import PydanticUserError
 from pydantic.main import BaseModel, IncEx
@@ -105,18 +104,6 @@ class TypeAdapter(Generic[T]):
         serializer: The schema serializer for the type.
         pydantic_complete: Whether the core schema for the type is successfully built.
 
-    ??? tip "Compatibility with `mypy`"
-        Depending on the type used, `mypy` might raise an error when instantiating a `TypeAdapter`. As a workaround, you can explicitly
-        annotate your variable:
-
-        ```py
-        from typing import Union
-
-        from pydantic import TypeAdapter
-
-        ta: TypeAdapter[Union[str, int]] = TypeAdapter(Union[str, int])  # type: ignore[arg-type]
-        ```
-
     ??? info "Namespace management nuances and implementation details"
 
         Here, we collect some notes on namespace management, and subtle differences from `BaseModel`:
@@ -170,32 +157,9 @@ class TypeAdapter(Generic[T]):
     serializer: SchemaSerializer
     pydantic_complete: bool
 
-    @overload
     def __init__(
         self,
-        type: type[T],
-        *,
-        config: ConfigDict | None = ...,
-        _parent_depth: int = ...,
-        module: str | None = ...,
-    ) -> None: ...
-
-    # This second overload is for unsupported special forms (such as Annotated, Union, etc.)
-    # Currently there is no way to type this correctly
-    # See https://github.com/python/typing/pull/1618
-    @overload
-    def __init__(
-        self,
-        type: Any,
-        *,
-        config: ConfigDict | None = ...,
-        _parent_depth: int = ...,
-        module: str | None = ...,
-    ) -> None: ...
-
-    def __init__(
-        self,
-        type: Any,
+        type: TypeForm[T],
         *,
         config: ConfigDict | None = None,
         _parent_depth: int = 2,
@@ -410,6 +374,11 @@ class TypeAdapter(Generic[T]):
     ) -> T:
         """Validate a Python object against the model.
 
+        A [`ValidationError`][pydantic_core.ValidationError] reports the rejected locations and values.
+        If you record validations with [Logfire](../integrations/logfire.md), the complete object and trace
+        context are retained alongside the error — `TypeAdapter` validations are captured the same way as
+        model validations (see [Troubleshooting validation errors](../errors/troubleshooting.md)).
+
         Args:
             object: The Python object to validate against the model.
             strict: Whether to strictly check types.
@@ -465,6 +434,11 @@ class TypeAdapter(Generic[T]):
             [JSON Parsing](../concepts/json.md#json-parsing)
 
         Validate a JSON string or bytes against the model.
+
+        JSON validated this way often comes from an external source, where a
+        [`ValidationError`][pydantic_core.ValidationError] can be the first sign that the source changed
+        shape. [Logfire](../integrations/logfire.md) retains the complete document and trace context
+        alongside the errors — see [Troubleshooting validation errors](../errors/troubleshooting.md).
 
         Args:
             data: The JSON data to validate against the model.
@@ -718,8 +692,6 @@ class TypeAdapter(Generic[T]):
             schema_generator: To override the logic used to generate the JSON schema, as a subclass of
                 `GenerateJsonSchema` with your desired modifications
             mode: The mode in which to generate the schema.
-            schema_generator: The generator class used for creating the schema.
-            mode: The mode to use for schema generation.
 
         Returns:
             The JSON schema for the model as a dictionary.
@@ -730,7 +702,10 @@ class TypeAdapter(Generic[T]):
         if isinstance(self.core_schema, _mock_val_ser.MockCoreSchema):
             self.core_schema.rebuild()
             assert not isinstance(self.core_schema, _mock_val_ser.MockCoreSchema), 'this is a bug! please report it'
-        return schema_generator_instance.generate(self.core_schema, mode=mode)
+        # The configuration provided to the type adapter (if any) is not part of the core schema,
+        # so we need to explicitly make it available to the JSON Schema generator:
+        with schema_generator_instance._config_wrapper_stack.push(self._config):
+            return schema_generator_instance.generate(self.core_schema, mode=mode)
 
     @staticmethod
     def json_schemas(

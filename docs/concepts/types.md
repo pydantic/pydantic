@@ -14,7 +14,64 @@ can be configured.
 
 See also the [conversion table](../concepts/conversion_table.md) for a summary of the allowed values for each type.
 
-This page will go over defining your own custom types.
+## Utility types
+
+Pydantic provides a number of utility types/annotations, useful to customize the validation/serialization behavior.
+
+### `OnErrorOmit`
+
+/// version-added | v2.6
+///
+
+By default, when an item of a collection (such as a list, a dictionary or a [`TypedDict`][typing.TypedDict])
+fails validation, a [`ValidationError`][pydantic_core.ValidationError] is raised and the whole collection is
+discarded. The [`OnErrorOmit`][pydantic.types.OnErrorOmit] annotation changes this behavior: any item failing
+validation is silently omitted from the result, and the valid ones are kept.
+
+```python
+from pydantic import OnErrorOmit, TypeAdapter
+
+ta = TypeAdapter(list[OnErrorOmit[int]])
+
+print(ta.validate_python([1, 2, 'a', 3]))
+#> [1, 2, 3]
+```
+
+See the [API documentation][pydantic.types.OnErrorOmit] for more details on where it can be applied.
+
+### `FailFast`
+
+/// version-added | v2.8
+///
+
+By default, when validating a collection, Pydantic validates every item and reports all the errors
+at once. The [`FailFast`][pydantic.types.FailFast] annotation can be applied to a collection type
+(such as a [`list`][], a [`tuple`][], a [`set`][] or a [`dict`][]) to stop as soon as an item fails validation.
+This makes validation faster, with the caveat that you get less information about the errors.
+
+```python
+from typing import Annotated
+
+from pydantic import FailFast, TypeAdapter, ValidationError
+
+ta = TypeAdapter(Annotated[list[int], FailFast()])
+
+try:
+    ta.validate_python([1, 'a', 2, 'b'])
+except ValidationError as exc:
+    print(exc)
+    """
+    1 validation error for list[int]
+    1
+      Input should be a valid integer, unable to parse string as an integer [type=int_parsing, input_value='a', input_type=str]
+    """
+```
+
+### `MISSING` sentinel
+
+::: pydantic_core.MISSING
+    options:
+        show_root_heading: false
 
 ## Custom Types
 
@@ -161,7 +218,7 @@ two reasons:
 By leveraging the new [`type` statement](https://typing.readthedocs.io/en/latest/spec/aliases.html#type-statement)
 (introduced in [PEP 695](https://peps.python.org/pep-0695/)), you can define aliases as follows:
 
-=== "Python 3.9 and above"
+=== "Python 3.10 and above"
 
     ```python
     from typing import Annotated
@@ -251,7 +308,7 @@ By leveraging the new [`type` statement](https://typing.readthedocs.io/en/latest
     Pydantic will *not* understand field-specific metadata inside named aliases. That is, metadata such as
     `alias`, `default`, `deprecated`, *cannot* be used:
 
-    === "Python 3.9 and above"
+    === "Python 3.10 and above"
 
         ```python {test="skip"}
         from typing import Annotated
@@ -290,7 +347,7 @@ By leveraging the new [`type` statement](https://typing.readthedocs.io/en/latest
 !!! note
     As with implicit type aliases, [type variables][typing.TypeVar] can also be used inside the generic alias:
 
-    === "Python 3.9 and above"
+    === "Python 3.10 and above"
 
         ```python
         from typing import Annotated, TypeVar
@@ -326,18 +383,16 @@ Named type aliases should be used whenever you need to define recursive type ali
 
 For instance, here is an example definition of a JSON type:
 
-=== "Python 3.9 and above"
+=== "Python 3.10 and above"
 
     ```python
-    from typing import Union
-
     from typing_extensions import TypeAliasType
 
     from pydantic import TypeAdapter
 
     Json = TypeAliasType(
         'Json',
-        'Union[dict[str, Json], list[Json], str, int, float, bool, None]',  # (1)!
+        'dict[str, Json] | list[Json] | str | int | float | bool | None',  # (1)!
     )
 
     ta = TypeAdapter(Json)
@@ -460,8 +515,9 @@ Often you'll want to parametrize your custom type by more than just generic type
 For example, if you were to implement `pydantic.AfterValidator` (see [Adding validation and serialization](#adding-validation-and-serialization)) yourself, you'd do something similar to the following:
 
 ```python
+from collections.abc import Callable
 from dataclasses import dataclass
-from typing import Annotated, Any, Callable
+from typing import Annotated, Any
 
 from pydantic_core import CoreSchema, core_schema
 
@@ -688,10 +744,9 @@ This is less important for custom types, but crucial for annotated metadata that
 
 ```python
 from dataclasses import dataclass
-from typing import Any, Generic, TypeVar
+from typing import Any, Generic, TypeVar, get_args, get_origin
 
 from pydantic_core import CoreSchema, core_schema
-from typing_extensions import get_args, get_origin
 
 from pydantic import (
     BaseModel,
@@ -835,10 +890,9 @@ The same idea can be applied to create generic container types, like a custom `S
 
 ```python
 from collections.abc import Sequence
-from typing import Any, TypeVar
+from typing import Any, TypeVar, get_args
 
 from pydantic_core import ValidationError, core_schema
-from typing_extensions import get_args
 
 from pydantic import BaseModel, GetCoreSchemaHandler
 

@@ -19,7 +19,6 @@ from pydantic_core import SchemaSerializer, core_schema
         (complex(float('inf'), 2), 'inf+2j'),
         (complex(float('nan'), 2), 'NaN+2j'),
         (complex(2, float('nan')), '2+NaNj'),
-        (complex(2, float('-nan')), '2+NaNj'),
     ],
 )
 def test_complex_json(value, expected):

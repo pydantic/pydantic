@@ -1,7 +1,7 @@
 use std::cell::RefCell;
 use std::iter::Peekable;
 use std::str::Chars;
-use std::sync::Arc;
+use std::sync::{Arc, LazyLock};
 
 use pyo3::intern;
 use pyo3::prelude::*;
@@ -11,7 +11,6 @@ use ahash::AHashSet;
 use pyo3::IntoPyObjectExt;
 use url::{ParseError, SyntaxViolation, Url};
 
-use crate::build_tools::LazyLock;
 use crate::build_tools::schema_or_config;
 use crate::build_tools::{is_strict, py_schema_err};
 use crate::errors::{ErrorType, ErrorTypeDefaults, ValError, ValResult};
@@ -42,7 +41,7 @@ pub struct UrlValidator {
 }
 
 static SIMPLE_URL_VALIDATOR: LazyLock<Arc<CombinedValidator>> = LazyLock::new(|| {
-    Arc::new(CombinedValidator::Url(UrlValidator {
+    Arc::new(CombinedValidator::Url(Box::new(UrlValidator {
         strict: false,
         max_length: None,
         allowed_schemes: None,
@@ -52,11 +51,11 @@ static SIMPLE_URL_VALIDATOR: LazyLock<Arc<CombinedValidator>> = LazyLock::new(||
         default_path: None,
         name: "url".to_string(),
         preserve_empty_path: false,
-    }))
+    })))
 });
 
 static SIMPLE_URL_VALIDATOR_STRICT: LazyLock<Arc<CombinedValidator>> = LazyLock::new(|| {
-    Arc::new(CombinedValidator::Url(UrlValidator {
+    Arc::new(CombinedValidator::Url(Box::new(UrlValidator {
         strict: true,
         max_length: None,
         allowed_schemes: None,
@@ -66,11 +65,11 @@ static SIMPLE_URL_VALIDATOR_STRICT: LazyLock<Arc<CombinedValidator>> = LazyLock:
         default_path: None,
         name: "url".to_string(),
         preserve_empty_path: false,
-    }))
+    })))
 });
 
 static SIMPLE_URL_VALIDATOR_PRESERVE_EMPTY_PATH: LazyLock<Arc<CombinedValidator>> = LazyLock::new(|| {
-    Arc::new(CombinedValidator::Url(UrlValidator {
+    Arc::new(CombinedValidator::Url(Box::new(UrlValidator {
         strict: false,
         max_length: None,
         allowed_schemes: None,
@@ -80,11 +79,11 @@ static SIMPLE_URL_VALIDATOR_PRESERVE_EMPTY_PATH: LazyLock<Arc<CombinedValidator>
         default_path: None,
         name: "url".to_string(),
         preserve_empty_path: true,
-    }))
+    })))
 });
 
 static SIMPLE_URL_VALIDATOR_STRICT_PRESERVE_EMPTY_PATH: LazyLock<Arc<CombinedValidator>> = LazyLock::new(|| {
-    Arc::new(CombinedValidator::Url(UrlValidator {
+    Arc::new(CombinedValidator::Url(Box::new(UrlValidator {
         strict: true,
         max_length: None,
         allowed_schemes: None,
@@ -94,7 +93,7 @@ static SIMPLE_URL_VALIDATOR_STRICT_PRESERVE_EMPTY_PATH: LazyLock<Arc<CombinedVal
         default_path: None,
         name: "url".to_string(),
         preserve_empty_path: true,
-    }))
+    })))
 });
 
 fn get_preserve_empty_path(schema: &Bound<'_, PyDict>, config: Option<&Bound<'_, PyDict>>) -> PyResult<bool> {
@@ -140,7 +139,7 @@ impl BuildValidator for UrlValidator {
             return Ok(UrlValidator::get_simple(validator.strict, validator.preserve_empty_path).clone());
         }
 
-        Ok(CombinedValidator::Url(validator).into())
+        Ok(CombinedValidator::Url(Box::new(validator)).into())
     }
 }
 
@@ -296,7 +295,7 @@ pub struct MultiHostUrlValidator {
 }
 
 static SIMPLE_MULTI_HOST_URL_VALIDATOR: LazyLock<Arc<CombinedValidator>> = LazyLock::new(|| {
-    Arc::new(CombinedValidator::MultiHostUrl(MultiHostUrlValidator {
+    Arc::new(CombinedValidator::MultiHostUrl(Box::new(MultiHostUrlValidator {
         strict: false,
         max_length: None,
         allowed_schemes: None,
@@ -306,11 +305,11 @@ static SIMPLE_MULTI_HOST_URL_VALIDATOR: LazyLock<Arc<CombinedValidator>> = LazyL
         default_path: None,
         name: "multi-host-url".to_string(),
         preserve_empty_path: false,
-    }))
+    })))
 });
 
 static SIMPLE_MULTI_HOST_URL_VALIDATOR_STRICT: LazyLock<Arc<CombinedValidator>> = LazyLock::new(|| {
-    Arc::new(CombinedValidator::MultiHostUrl(MultiHostUrlValidator {
+    Arc::new(CombinedValidator::MultiHostUrl(Box::new(MultiHostUrlValidator {
         strict: true,
         max_length: None,
         allowed_schemes: None,
@@ -320,11 +319,11 @@ static SIMPLE_MULTI_HOST_URL_VALIDATOR_STRICT: LazyLock<Arc<CombinedValidator>> 
         default_path: None,
         name: "multi-host-url".to_string(),
         preserve_empty_path: false,
-    }))
+    })))
 });
 
 static SIMPLE_MULTI_HOST_URL_VALIDATOR_PRESERVE_EMPTY_PATH: LazyLock<Arc<CombinedValidator>> = LazyLock::new(|| {
-    Arc::new(CombinedValidator::MultiHostUrl(MultiHostUrlValidator {
+    Arc::new(CombinedValidator::MultiHostUrl(Box::new(MultiHostUrlValidator {
         strict: false,
         max_length: None,
         allowed_schemes: None,
@@ -334,12 +333,12 @@ static SIMPLE_MULTI_HOST_URL_VALIDATOR_PRESERVE_EMPTY_PATH: LazyLock<Arc<Combine
         default_path: None,
         name: "multi-host-url".to_string(),
         preserve_empty_path: true,
-    }))
+    })))
 });
 
 static SIMPLE_MULTI_HOST_URL_VALIDATOR_STRICT_PRESERVE_EMPTY_PATH: LazyLock<Arc<CombinedValidator>> =
     LazyLock::new(|| {
-        Arc::new(CombinedValidator::MultiHostUrl(MultiHostUrlValidator {
+        Arc::new(CombinedValidator::MultiHostUrl(Box::new(MultiHostUrlValidator {
             strict: true,
             max_length: None,
             allowed_schemes: None,
@@ -349,7 +348,7 @@ static SIMPLE_MULTI_HOST_URL_VALIDATOR_STRICT_PRESERVE_EMPTY_PATH: LazyLock<Arc<
             default_path: None,
             name: "multi-host-url".to_string(),
             preserve_empty_path: true,
-        }))
+        })))
     });
 
 impl BuildValidator for MultiHostUrlValidator {
@@ -391,7 +390,7 @@ impl BuildValidator for MultiHostUrlValidator {
             return Ok(MultiHostUrlValidator::get_simple(validator.strict, validator.preserve_empty_path).clone());
         }
 
-        Ok(CombinedValidator::MultiHostUrl(validator).into())
+        Ok(CombinedValidator::MultiHostUrl(Box::new(validator)).into())
     }
 }
 

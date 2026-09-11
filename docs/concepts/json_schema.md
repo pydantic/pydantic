@@ -44,7 +44,7 @@ Here's an example of generating JSON schema from a `BaseModel`:
 ```python {output="json"}
 import json
 from enum import Enum
-from typing import Annotated, Union
+from typing import Annotated
 
 from pydantic import BaseModel, Field
 from pydantic.config import ConfigDict
@@ -52,7 +52,7 @@ from pydantic.config import ConfigDict
 
 class FooBar(BaseModel):
     count: int
-    size: Union[float, None] = None
+    size: float | None = None
 
 
 class Gender(str, Enum):
@@ -70,7 +70,7 @@ class MainModel(BaseModel):
     model_config = ConfigDict(title='Main')
 
     foo_bar: FooBar
-    gender: Annotated[Union[Gender, None], Field(alias='Gender')] = None
+    gender: Annotated[Gender | None, Field(alias='Gender')] = None
     snap: int = Field(
         default=42,
         title='The Snap',
@@ -177,7 +177,6 @@ and [`TypeAdapter`s][pydantic.type_adapter.TypeAdapter], as shown in this exampl
 
 ```python {output="json"}
 import json
-from typing import Union
 
 from pydantic import BaseModel, TypeAdapter
 
@@ -192,7 +191,7 @@ class Dog(BaseModel):
     breed: str
 
 
-ta = TypeAdapter(Union[Cat, Dog])
+ta = TypeAdapter(Cat | Dog)
 ta_schema = ta.json_schema()
 print(json.dumps(ta_schema, indent=2))
 """
@@ -276,13 +275,7 @@ print(Model.model_json_schema(mode='validation'))
 {
     'properties': {
         'a': {
-            'anyOf': [
-                {'type': 'number'},
-                {
-                    'pattern': '^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$',
-                    'type': 'string',
-                },
-            ],
+            'anyOf': [{'type': 'number'}, {'type': 'string'}],
             'default': '12.34',
             'title': 'A',
         }
@@ -295,14 +288,7 @@ print(Model.model_json_schema(mode='validation'))
 print(Model.model_json_schema(mode='serialization'))
 """
 {
-    'properties': {
-        'a': {
-            'default': '12.34',
-            'pattern': '^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$',
-            'title': 'A',
-            'type': 'string',
-        }
-    },
+    'properties': {'a': {'default': '12.34', 'title': 'A', 'type': 'string'}},
     'title': 'Model',
     'type': 'object',
 }
@@ -549,9 +535,7 @@ for more details.
 
 ```python
 import json
-from typing import Annotated
-
-from typing_extensions import TypeAlias
+from typing import Annotated, TypeAlias
 
 from pydantic import Field, TypeAdapter
 
@@ -578,18 +562,16 @@ print(json.dumps(ta.json_schema(), indent=2))
 
 ### `WithJsonSchema` annotation
 
-??? api "API Documentation"
-    [`pydantic.json_schema.WithJsonSchema`][pydantic.json_schema.WithJsonSchema]<br>
-
 !!! tip
     Using [`WithJsonSchema`][pydantic.json_schema.WithJsonSchema] is preferred over
-    [implementing `__get_pydantic_json_schema__`](#implementing_get_pydantic_json_schema) for custom types,
+    [implementing `__get_pydantic_json_schema__()`](#implementing_get_pydantic_json_schema) for custom types,
     as it's more simple and less error-prone.
 
-The [`WithJsonSchema`][pydantic.json_schema.WithJsonSchema] annotation can be used to override the generated (base)
-JSON schema for a given type without the need to implement `__get_pydantic_core_schema__`
-or `__get_pydantic_json_schema__` on the type itself. Note that this overrides the whole JSON Schema generation process
-for the field (in the following example, the `'type'` also needs to be provided).
+An annotation used to override the JSON Schema for a type.
+
+This is useful when you want to set a JSON Schema for a type that don't produce any JSON Schemas by default
+(e.g. [`Callable`][collections.abc.Callable]). Note that this overrides the whole generated JSON Schema
+for the type (in the following example, the `'type'` also needs to be provided).
 
 ```python {output="json"}
 import json
@@ -629,6 +611,8 @@ print(json.dumps(Model.model_json_schema(), indent=2))
 }
 """
 ```
+
+See the [API documentation][pydantic.json_schema.WithJsonSchema] for more details.
 
 !!! note
     You might be tempted to use the [`WithJsonSchema`][pydantic.json_schema.WithJsonSchema] annotation
@@ -1199,7 +1183,7 @@ print(MyModel.model_json_schema(schema_generator=MyGenerateJsonSchema))
 Below is an approach you can use to exclude any fields from the schema that don't have valid json schemas:
 
 ```python
-from typing import Callable
+from collections.abc import Callable
 
 from pydantic_core import PydanticOmit, core_schema
 
@@ -1250,7 +1234,6 @@ uses a no-op `sort` method to disable sorting entirely, which is reflected in th
 
 ```python
 import json
-from typing import Optional
 
 from pydantic import BaseModel, Field
 from pydantic.json_schema import GenerateJsonSchema, JsonSchemaValue
@@ -1258,7 +1241,7 @@ from pydantic.json_schema import GenerateJsonSchema, JsonSchemaValue
 
 class MyGenerateJsonSchema(GenerateJsonSchema):
     def sort(
-        self, value: JsonSchemaValue, parent_key: Optional[str] = None
+        self, value: JsonSchemaValue, parent_key: str | None = None
     ) -> JsonSchemaValue:
         """No-op, we don't want to sort schema values at all."""
         return value

@@ -451,10 +451,10 @@ def test_parse_durations(TimedeltaModel, value, result):
 )
 def test_model_type_errors(field, value, error_message):
     class Model(BaseModel):
-        dt: datetime = None
-        d: date = None
-        t: time = None
-        td: timedelta = None
+        dt: datetime | None = None
+        d: date | None = None
+        t: time | None = None
+        td: timedelta | None = None
 
     with pytest.raises(ValidationError) as exc_info:
         Model(**{field: value})
@@ -463,13 +463,13 @@ def test_model_type_errors(field, value, error_message):
     assert error['msg'] == error_message
 
 
-@pytest.mark.parametrize('field', ['dt', 'd', 't', 'dt'])
+@pytest.mark.parametrize('field', ['dt', 'd', 't'])
 def test_unicode_decode_error(field):
     class Model(BaseModel):
-        dt: datetime = None
-        d: date = None
-        t: time = None
-        td: timedelta = None
+        dt: datetime | None = None
+        d: date | None = None
+        t: time | None = None
+        td: timedelta | None = None
 
     with pytest.raises(ValidationError) as exc_info:
         Model(**{field: b'\x81\x81\x81\x81\x81\x81\x81\x81'})

@@ -69,7 +69,7 @@ class KwargsBadExtraModel(BaseModel, extra=1):
 class BadConfig1(BaseModel):
     model_config = ConfigDict(from_attributes={})  # type: ignore[typeddict-item]
 # MYPY: error: Invalid value for "Config.from_attributes"  [pydantic-config]
-# MYPY: note: Error code "pydantic-config" not covered by "type: ignore" comment
+# MYPY: note: Error code "pydantic-config" not covered by "type: ignore[typeddict-item]" comment
 
 
 class KwargsBadConfig1(BaseModel, from_attributes={}):
@@ -80,7 +80,7 @@ class KwargsBadConfig1(BaseModel, from_attributes={}):
 class BadConfig2(BaseModel):
     model_config = ConfigDict(from_attributes=list)  # type: ignore[typeddict-item]
 # MYPY: error: Invalid value for "Config.from_attributes"  [pydantic-config]
-# MYPY: note: Error code "pydantic-config" not covered by "type: ignore" comment
+# MYPY: note: Error code "pydantic-config" not covered by "type: ignore[typeddict-item]" comment
 
 
 class KwargsBadConfig2(BaseModel, from_attributes=list):
@@ -126,7 +126,7 @@ DefaultTestingModel()
 
 class UndefinedAnnotationModel(BaseModel):
     undefined: Undefined  # noqa F821
-# MYPY: error: Name "Undefined" is not defined  [name-defined]
+# MYPY: error: Name "Undefined" is not defined; did you mean "undefined"?  [name-defined]
 
 
 UndefinedAnnotationModel()

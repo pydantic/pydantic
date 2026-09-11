@@ -5,7 +5,6 @@ use ahash::AHashMap;
 use jiter::{JsonArray, JsonValue};
 use smallvec::SmallVec;
 
-use crate::errors::LocItem;
 use crate::lookup_key::{LookupPath, LookupPathCollection, LookupType, PathItem, PathItemString};
 
 /// A tree of paths for lookups when trying to find fields from input.
@@ -68,7 +67,7 @@ impl LookupTree {
         json_value: &'a JsonValue<'j>,
     ) -> LookupMatchesIter<'a, 'j> {
         let node = self.inner.get(root_key);
-        LookupMatchesIter::new(root_key, node, json_value)
+        LookupMatchesIter::new(node, json_value)
     }
 }
 
@@ -110,6 +109,15 @@ impl LookupFieldInfo {
     /// Whether this lookup should be used for the given lookup type (i.e. when validating by_name / by_alias)
     pub fn matches_lookup(&self, lookup_type: LookupType) -> bool {
         self.lookup_priority.lookup_type.matches(lookup_type)
+    }
+
+    /// The alias index for this lookup, if it is an alias lookup, or `None` if it is a name lookup.
+    pub fn alias_index(&self) -> Option<usize> {
+        if self.lookup_priority.lookup_type == LookupType::Alias {
+            Some(self.lookup_priority.alias_index)
+        } else {
+            None
+        }
     }
 }
 
@@ -182,27 +190,14 @@ fn add_path_to_map(map: &mut AHashMap<PathItemString, LookupTreeNode>, path: &Lo
 /// This isn't a typical `Iterator` because `next_match` returns data which borrows from the iterator itself,
 /// not yet supported by Rust's `Iterator` trait.
 pub struct LookupMatchesIter<'a, 'j> {
-    stack: LookupMatchesStack<'a, 'j>,
+    stack: SmallVec<[NestedFrame<'a, 'j>; 1]>,
 }
-
-/// Current stack of the `LookupMatches` iterator
-pub struct LookupMatchesStack<'a, 'j>(
-    // uses SmallVec to avoid allocating if there are no `AliasPath` lookups
-    SmallVec<[NestedFrame<'a, 'j>; 1]>,
-);
 
 /// State of the iterator at a given depth in the lookup tree
 struct NestedFrame<'a, 'j> {
     json_value: &'a JsonValue<'j>,
-    lookup_path: LookupPathItem<'a>,
     node: &'a LookupTreeNode,
     state: FrameState<'a, 'j>,
-}
-
-#[derive(Clone, Copy)]
-enum LookupPathItem<'a> {
-    Key(&'a str),
-    Index(i64),
 }
 
 enum FrameState<'a, 'j> {
@@ -223,11 +218,10 @@ enum FrameState<'a, 'j> {
 }
 
 impl<'a, 'j> LookupMatchesIter<'a, 'j> {
-    fn new(root_key: &'a str, node: Option<&'a LookupTreeNode>, json_value: &'a JsonValue<'j>) -> Self {
+    fn new(node: Option<&'a LookupTreeNode>, json_value: &'a JsonValue<'j>) -> Self {
         let stack = if let Some(node) = node {
             SmallVec::from_buf([NestedFrame {
                 json_value,
-                lookup_path: LookupPathItem::Key(root_key),
                 node,
                 state: FrameState::Fields {
                     fields: node.fields.iter(),
@@ -237,18 +231,20 @@ impl<'a, 'j> LookupMatchesIter<'a, 'j> {
             SmallVec::new()
         };
 
-        Self {
-            stack: LookupMatchesStack(stack),
-        }
+        Self { stack }
     }
+}
 
-    pub fn next_match(&mut self) -> Option<(&'_ LookupFieldInfo, &'_ JsonValue<'j>, &'_ LookupMatchesStack<'a, 'j>)> {
-        'top_level: while let Some(frame) = self.stack.0.last_mut() {
+impl<'a, 'j> Iterator for LookupMatchesIter<'a, 'j> {
+    type Item = (&'a LookupFieldInfo, &'a JsonValue<'j>);
+
+    fn next(&mut self) -> Option<Self::Item> {
+        'top_level: while let Some(frame) = self.stack.last_mut() {
             // Initialize exploration state if needed
             match &mut frame.state {
                 FrameState::Fields { fields } => {
                     if let Some(field_info) = fields.next() {
-                        return Some((field_info, frame.json_value, &self.stack));
+                        return Some((field_info, frame.json_value));
                     }
 
                     // no more fields, possibly explore nested structures if there are complex aliases
@@ -263,7 +259,7 @@ impl<'a, 'j> LookupMatchesIter<'a, 'j> {
                             };
                         }
                         _ => {
-                            self.stack.0.pop();
+                            self.stack.pop();
                         }
                     }
                 }
@@ -272,18 +268,17 @@ impl<'a, 'j> LookupMatchesIter<'a, 'j> {
                         let nested_node = frame.node.map.get(key.as_ref())?;
                         Some(NestedFrame {
                             json_value: value,
-                            lookup_path: LookupPathItem::Key(key.as_ref()),
                             node: nested_node,
                             state: FrameState::Fields {
                                 fields: nested_node.fields.iter(),
                             },
                         })
                     }) {
-                        self.stack.0.push(next_frame);
+                        self.stack.push(next_frame);
                         continue 'top_level;
                     }
 
-                    self.stack.0.pop();
+                    self.stack.pop();
                 }
                 FrameState::NestedArray { json_array, iter } => {
                     if let Some(next_frame) = iter.by_ref().find_map(|(list_item, nested_node)| {
@@ -296,31 +291,20 @@ impl<'a, 'j> LookupMatchesIter<'a, 'j> {
                         let value = json_array.get(index as usize)?;
                         Some(NestedFrame {
                             json_value: value,
-                            lookup_path: LookupPathItem::Index(*list_item),
                             node: nested_node,
                             state: FrameState::Fields {
                                 fields: nested_node.fields.iter(),
                             },
                         })
                     }) {
-                        self.stack.0.push(next_frame);
+                        self.stack.push(next_frame);
                         continue 'top_level;
                     }
 
-                    self.stack.0.pop();
+                    self.stack.pop();
                 }
             }
         }
         None
-    }
-}
-
-impl LookupMatchesStack<'_, '_> {
-    /// Iterate the location items representing the path taken to reach the current match
-    pub fn iter_loc_items(&self) -> impl DoubleEndedIterator<Item = LocItem> + use<'_> {
-        self.0.iter().map(|frame| match frame.lookup_path {
-            LookupPathItem::Key(s) => s.into(),
-            LookupPathItem::Index(i) => i.into(),
-        })
     }
 }

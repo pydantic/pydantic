@@ -2,7 +2,7 @@
 use std::marker::PhantomData;
 use std::sync::Arc;
 
-use pyo3::exceptions::PyTypeError;
+use pyo3::exceptions::PyValueError;
 use pyo3::intern;
 use pyo3::prelude::*;
 use pyo3::types::{PyDict, PyFloat, PyInt, PyList, PyString, PyType};
@@ -10,7 +10,7 @@ use pyo3::types::{PyDict, PyFloat, PyInt, PyList, PyString, PyType};
 use crate::build_tools::{is_strict, py_schema_err};
 use crate::errors::{ErrorType, ValError, ValResult};
 use crate::input::{Input, InputType};
-use crate::tools::{SchemaDict, safe_repr};
+use crate::tools::SchemaDict;
 use crate::validators::literal::expected_repr;
 
 use super::is_instance::class_repr;
@@ -46,7 +46,7 @@ impl BuildValidator for BuildEnumValidator {
         let class: Bound<PyType> = schema.get_as_req(intern!(py, "cls"))?;
         let class_repr = class_repr(schema, &class)?;
 
-        let lookup = LiteralLookup::new(py, expected.into_iter())?;
+        let lookup = Box::new(LiteralLookup::new(py, expected.into_iter())?);
 
         macro_rules! build {
             ($vv:ty, $name_prefix:literal) => {
@@ -54,7 +54,6 @@ impl BuildValidator for BuildEnumValidator {
                     phantom: PhantomData::<$vv>,
                     class: class.clone().into(),
                     lookup,
-                    missing: schema.get_as(intern!(py, "missing"))?,
                     expected_repr,
                     strict: is_strict(schema, config)?,
                     class_repr: class_repr.clone(),
@@ -87,8 +86,7 @@ pub trait EnumValidateValue: std::fmt::Debug + Clone + Send + Sync {
 pub struct EnumValidator<T: EnumValidateValue> {
     phantom: PhantomData<T>,
     class: Py<PyType>,
-    lookup: LiteralLookup<Py<PyAny>>,
-    missing: Option<Py<PyAny>>,
+    lookup: Box<LiteralLookup<Py<PyAny>>>,
     expected_repr: String,
     strict: bool,
     class_repr: String,
@@ -122,42 +120,23 @@ impl<T: EnumValidateValue> Validator for EnumValidator<T> {
 
         if let Some(v) = T::validate_value(py, input, &self.lookup, strict)? {
             return Ok(v);
-        } else if let Ok(res) = class.as_unbound().call1(py, (input.as_python(),)) {
-            return Ok(res);
-        } else if let Some(ref missing) = self.missing {
-            let enum_value = missing.bind(py).call1((input.to_object(py)?,)).map_err(|_| {
-                ValError::new(
-                    ErrorType::Enum {
-                        expected: self.expected_repr.clone(),
-                        context: None,
-                    },
-                    input,
-                )
-            })?;
-            // check enum_value is an instance of the class like
-            // https://github.com/python/cpython/blob/v3.12.2/Lib/enum.py#L1148
-            if enum_value.is_instance(class)? {
-                return Ok(enum_value.into());
-            } else if !enum_value.is(py.None()) {
-                let type_error = PyTypeError::new_err(format!(
-                    "error in {}._missing_: returned {} instead of None or a valid member",
-                    class
-                        .name()
-                        .and_then(|name| name.extract::<String>())
-                        .unwrap_or_else(|_| "<Unknown>".into()),
-                    safe_repr(&enum_value)
-                ));
-                return Err(type_error.into());
-            }
         }
 
-        Err(ValError::new(
-            ErrorType::Enum {
-                expected: self.expected_repr.clone(),
-                context: None,
-            },
-            input,
-        ))
+        // Fall back to calling the enum class (it handles calling `_missing_()` and such).
+        // A `ValueError` means the value is not a valid member. Any other exception is propagated
+        // as is (e.g. a `TypeError` if `_missing_()` returns something else than an enum value,
+        // meaning the `_missing_()` definition is invalid):
+        match class.call1((input.to_object(py)?,)) {
+            Ok(res) => Ok(res.unbind()),
+            Err(err) if err.is_instance_of::<PyValueError>(py) => Err(ValError::new(
+                ErrorType::Enum {
+                    expected: self.expected_repr.clone(),
+                    context: None,
+                },
+                input,
+            )),
+            Err(err) => Err(err.into()),
+        }
     }
 
     fn get_name(&self) -> &str {
@@ -168,7 +147,7 @@ impl<T: EnumValidateValue> Validator for EnumValidator<T> {
 #[derive(Debug, Clone)]
 pub struct PlainEnumValidator;
 
-impl_py_gc_traverse!(EnumValidator<PlainEnumValidator> { class, missing });
+impl_py_gc_traverse!(EnumValidator<PlainEnumValidator> { class, lookup });
 
 impl EnumValidateValue for PlainEnumValidator {
     fn validate_value<'py, I: Input<'py> + ?Sized>(
@@ -200,7 +179,7 @@ impl EnumValidateValue for PlainEnumValidator {
 #[derive(Debug, Clone)]
 pub struct IntEnumValidator;
 
-impl_py_gc_traverse!(EnumValidator<IntEnumValidator> { class, missing });
+impl_py_gc_traverse!(EnumValidator<IntEnumValidator> { class, lookup });
 
 impl EnumValidateValue for IntEnumValidator {
     fn validate_value<'py, I: Input<'py> + ?Sized>(
@@ -216,7 +195,7 @@ impl EnumValidateValue for IntEnumValidator {
 #[derive(Debug, Clone)]
 pub struct StrEnumValidator;
 
-impl_py_gc_traverse!(EnumValidator<StrEnumValidator> { class, missing });
+impl_py_gc_traverse!(EnumValidator<StrEnumValidator> { class, lookup });
 
 impl EnumValidateValue for StrEnumValidator {
     fn validate_value<'py, I: Input<'py> + ?Sized>(
@@ -232,7 +211,7 @@ impl EnumValidateValue for StrEnumValidator {
 #[derive(Debug, Clone)]
 pub struct FloatEnumValidator;
 
-impl_py_gc_traverse!(EnumValidator<FloatEnumValidator> { class, missing });
+impl_py_gc_traverse!(EnumValidator<FloatEnumValidator> { class, lookup });
 
 impl EnumValidateValue for FloatEnumValidator {
     fn validate_value<'py, I: Input<'py> + ?Sized>(

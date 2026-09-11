@@ -3,7 +3,7 @@ import re
 import sys
 from decimal import Decimal
 from numbers import Number
-from typing import Any, Union
+from typing import Any
 
 import pytest
 
@@ -35,10 +35,10 @@ def test_str(py_and_json: PyAndJson, input_value, expected):
 @pytest.mark.parametrize(
     'input_value,expected',
     [
-        ('foobar', 'foobar'),
+        pytest.param('foobar', 'foobar', id='foobar_str-foobar_str'),
         ('🐈 Hello \ud800World', '🐈 Hello \ud800World'),
-        (b'foobar', 'foobar'),
-        (bytearray(b'foobar'), 'foobar'),
+        pytest.param(b'foobar', 'foobar', id='foobar_bytes-foobar_str'),
+        pytest.param(bytearray(b'foobar'), 'foobar', id='foobar_bytearray-foobar_str'),
         (
             b'\x81',
             Err('Input should be a valid string, unable to parse raw data as a unicode string [type=string_unicode'),
@@ -154,7 +154,7 @@ def test_unicode_error():
         pytest.param('а' * 25, 32, None, id='a lot of `а`s'),
     ],
 )
-def test_str_constrained(data: str, max_length: int, error: Union[re.Pattern, None]):
+def test_str_constrained(data: str, max_length: int, error: re.Pattern | None):
     v = SchemaValidator(core_schema.str_schema(max_length=max_length))
     if error is None:
         assert v.validate_python(data) == data
@@ -348,9 +348,6 @@ def test_coerce_numbers_to_str_from_json(number: str, expected_str: str) -> None
 
 
 @pytest.mark.parametrize('mode', (None, 'schema', 'config'))
-@pytest.mark.xfail(
-    platform.python_implementation() == 'PyPy' and sys.version_info[:2] == (3, 11), reason='pypy 3.11 type formatting'
-)
 def test_backtracking_regex_rust_unsupported(mode) -> None:
     pattern = r'r(#*)".*?"\1'
 

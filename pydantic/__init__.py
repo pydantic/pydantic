@@ -58,11 +58,12 @@ if TYPE_CHECKING:
         PydanticDeprecatedSince210,
         PydanticDeprecatedSince211,
         PydanticDeprecatedSince212,
+        PydanticDeprecatedSince214,
         PydanticDeprecationWarning,
         PydanticExperimentalWarning,
     )
 
-    # this encourages pycharm to import `ValidationError` from here, not pydantic_core
+    MISSING = pydantic_core.MISSING
     ValidationError = pydantic_core.ValidationError
     from .deprecated.class_validators import root_validator, validator
     from .deprecated.config import BaseConfig, Extra
@@ -230,12 +231,14 @@ __all__ = (
     'PydanticDeprecatedSince210',
     'PydanticDeprecatedSince211',
     'PydanticDeprecatedSince212',
+    'PydanticDeprecatedSince214',
     'PydanticDeprecationWarning',
     'PydanticExperimentalWarning',
     # annotated handlers
     'GetCoreSchemaHandler',
     'GetJsonSchemaHandler',
     # pydantic_core
+    'MISSING',
     'ValidationError',
     'ValidationInfo',
     'SerializationInfo',
@@ -393,12 +396,14 @@ _dynamic_imports: 'dict[str, tuple[str, str]]' = {
     'PydanticDeprecatedSince210': (__spec__.parent, '.warnings'),
     'PydanticDeprecatedSince211': (__spec__.parent, '.warnings'),
     'PydanticDeprecatedSince212': (__spec__.parent, '.warnings'),
+    'PydanticDeprecatedSince214': (__spec__.parent, '.warnings'),
     'PydanticDeprecationWarning': (__spec__.parent, '.warnings'),
     'PydanticExperimentalWarning': (__spec__.parent, '.warnings'),
     # annotated handlers
     'GetCoreSchemaHandler': (__spec__.parent, '.annotated_handlers'),
     'GetJsonSchemaHandler': (__spec__.parent, '.annotated_handlers'),
     # pydantic_core stuff
+    'MISSING': ('pydantic_core', '.'),
     'ValidationError': ('pydantic_core', '.'),
     'ValidationInfo': ('pydantic_core', '.core_schema'),
     'SerializationInfo': ('pydantic_core', '.core_schema'),

@@ -30,25 +30,25 @@ STR_CONSTRAINTS = {
     'to_upper',
     'pattern',
     'coerce_numbers_to_str',
+    'ascii_only',
 }
 BYTES_CONSTRAINTS = {*LENGTH_CONSTRAINTS, *STRICT}
 
 LIST_CONSTRAINTS = {*LENGTH_CONSTRAINTS, *STRICT, *FAIL_FAST}
 TUPLE_CONSTRAINTS = {*LENGTH_CONSTRAINTS, *STRICT, *FAIL_FAST}
 SET_CONSTRAINTS = {*LENGTH_CONSTRAINTS, *STRICT, *FAIL_FAST}
-DICT_CONSTRAINTS = {*LENGTH_CONSTRAINTS, *STRICT}
-GENERATOR_CONSTRAINTS = {*LENGTH_CONSTRAINTS, *STRICT}
+DICT_CONSTRAINTS = {*LENGTH_CONSTRAINTS, *STRICT, *FAIL_FAST}
+GENERATOR_CONSTRAINTS = LENGTH_CONSTRAINTS
 SEQUENCE_CONSTRAINTS = {*LENGTH_CONSTRAINTS, *FAIL_FAST}
 
 FLOAT_CONSTRAINTS = {*NUMERIC_CONSTRAINTS, *ALLOW_INF_NAN, *STRICT}
 DECIMAL_CONSTRAINTS = {'max_digits', 'decimal_places', *FLOAT_CONSTRAINTS}
-INT_CONSTRAINTS = {*NUMERIC_CONSTRAINTS, *ALLOW_INF_NAN, *STRICT}
+FRACTION_CONSTRAINTS = {*INEQUALITY, *STRICT}
+INT_CONSTRAINTS = {*NUMERIC_CONSTRAINTS, *STRICT}
 BOOL_CONSTRAINTS = STRICT
 UUID_CONSTRAINTS = STRICT
 
-DATE_TIME_CONSTRAINTS = {*NUMERIC_CONSTRAINTS, *STRICT}
-TIMEDELTA_CONSTRAINTS = {*NUMERIC_CONSTRAINTS, *STRICT}
-TIME_CONSTRAINTS = {*NUMERIC_CONSTRAINTS, *STRICT}
+DATE_TIME_CONSTRAINTS = {*INEQUALITY, *STRICT}
 LAX_OR_STRICT_CONSTRAINTS = STRICT
 ENUM_CONSTRAINTS = STRICT
 COMPLEX_CONSTRAINTS = STRICT
@@ -61,27 +61,23 @@ URL_CONSTRAINTS = {
     'default_host',
     'default_port',
     'default_path',
+    *STRICT,
 }
-
-TEXT_SCHEMA_TYPES = ('str', 'bytes', 'url', 'multi-host-url')
-SEQUENCE_SCHEMA_TYPES = ('list', 'tuple', 'set', 'frozenset', 'generator', *TEXT_SCHEMA_TYPES)
-NUMERIC_SCHEMA_TYPES = ('float', 'int', 'date', 'time', 'timedelta', 'datetime')
 
 CONSTRAINTS_TO_ALLOWED_SCHEMAS: dict[str, set[str]] = defaultdict(set)
 
 constraint_schema_pairings: list[tuple[set[str], tuple[str, ...]]] = [
-    (STR_CONSTRAINTS, TEXT_SCHEMA_TYPES),
+    (STR_CONSTRAINTS, ('str',)),
     (BYTES_CONSTRAINTS, ('bytes',)),
-    (LIST_CONSTRAINTS, ('list',)),
+    (LIST_CONSTRAINTS, ('list', 'deque')),
     (TUPLE_CONSTRAINTS, ('tuple',)),
     (SET_CONSTRAINTS, ('set', 'frozenset')),
-    (DICT_CONSTRAINTS, ('dict',)),
+    (DICT_CONSTRAINTS, ('dict', 'frozendict')),
     (GENERATOR_CONSTRAINTS, ('generator',)),
     (FLOAT_CONSTRAINTS, ('float',)),
     (INT_CONSTRAINTS, ('int',)),
     (DATE_TIME_CONSTRAINTS, ('date', 'time', 'datetime', 'timedelta')),
-    # TODO: this is a bit redundant, we could probably avoid some of these
-    (STRICT, (*TEXT_SCHEMA_TYPES, *SEQUENCE_SCHEMA_TYPES, *NUMERIC_SCHEMA_TYPES, 'typed-dict', 'model')),
+    (STRICT, ('typed-dict', 'model')),
     (UNION_CONSTRAINTS, ('union',)),
     (URL_CONSTRAINTS, ('url', 'multi-host-url')),
     (BOOL_CONSTRAINTS, ('bool',)),
@@ -90,6 +86,7 @@ constraint_schema_pairings: list[tuple[set[str], tuple[str, ...]]] = [
     (ENUM_CONSTRAINTS, ('enum',)),
     (DECIMAL_CONSTRAINTS, ('decimal',)),
     (COMPLEX_CONSTRAINTS, ('complex',)),
+    (FRACTION_CONSTRAINTS, ('fraction',)),
 ]
 
 for constraints, schemas in constraint_schema_pairings:
@@ -199,6 +196,7 @@ def apply_known_metadata(annotation: Any, schema: CoreSchema) -> CoreSchema | No
         'to_lower',
         'to_upper',
         'coerce_numbers_to_str',
+        'ascii_only',
     }
     chain_schema_steps: list[CoreSchema] = []
 

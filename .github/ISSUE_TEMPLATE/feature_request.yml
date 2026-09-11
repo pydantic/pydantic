@@ -18,7 +18,7 @@ body:
       options:
         - label: I have searched Google & GitHub for similar requests and couldn't find anything
           required: true
-        - label: I have read and followed [the docs](https://docs.pydantic.dev) and still think this feature is missing
+        - label: I have read and followed [the docs](https://pydantic.dev/docs/validation/latest/get-started/) and still think this feature is missing
           required: true
 
   - type: textarea
@@ -42,14 +42,14 @@ body:
       description: Which of the following parts of pydantic does this feature affect?
       # keep this lis in sync with bug.yml
       options:
-        - label: '[Compatibility between releases](https://docs.pydantic.dev/changelog/)'
-        - label: '[Data validation/parsing](https://docs.pydantic.dev/concepts/models/#basic-model-usage)'
-        - label: '[Data serialization](https://docs.pydantic.dev/concepts/serialization/) - `.model_dump()` and `.model_dump_json()`'
-        - label: '[JSON Schema](https://docs.pydantic.dev/concepts/json_schema/)'
-        - label: '[Dataclasses](https://docs.pydantic.dev/concepts/dataclasses/)'
-        - label: '[Model Config](https://docs.pydantic.dev/concepts/config/)'
-        - label: '[Field Types](https://docs.pydantic.dev/api/types/) - adding or changing a particular data type'
-        - label: '[Function validation decorator](https://docs.pydantic.dev/concepts/validation_decorator/)'
-        - label: '[Generic Models](https://docs.pydantic.dev/concepts/models/#generic-models)'
-        - label: '[Other Model behaviour](https://docs.pydantic.dev/concepts/models/) - `model_construct()`, pickling, private attributes, ORM mode'
-        - label: '[Plugins](https://docs.pydantic.dev/) and integration with other tools - mypy, FastAPI, python-devtools, Hypothesis, VS Code, PyCharm, etc.'
+        - label: '[Compatibility between releases](https://pydantic.dev/docs/validation/latest/get-started/changelog/)'
+        - label: '[Data validation/parsing](https://pydantic.dev/docs/validation/latest/concepts/models/#basic-model-usage)'
+        - label: '[Data serialization](https://pydantic.dev/docs/validation/latest/concepts/serialization/) - `.model_dump()` and `.model_dump_json()`'
+        - label: '[JSON Schema](https://pydantic.dev/docs/validation/latest/concepts/json_schema/)'
+        - label: '[Dataclasses](https://pydantic.dev/docs/validation/latest/concepts/dataclasses/)'
+        - label: '[Model Config](https://pydantic.dev/docs/validation/latest/concepts/config/)'
+        - label: '[Field Types](https://pydantic.dev/docs/validation/latest/api/pydantic/types/) - adding or changing a particular data type'
+        - label: '[Function validation decorator](https://pydantic.dev/docs/validation/latest/concepts/validation_decorator/)'
+        - label: '[Generic Models](https://pydantic.dev/docs/validation/latest/concepts/models/#generic-models)'
+        - label: '[Other Model behaviour](https://pydantic.dev/docs/validation/latest/concepts/models/) - `model_construct()`, pickling, private attributes, ORM mode'
+        - label: '[Plugins](https://pydantic.dev/docs/validation/latest/integrations/dev-tools/mypy/) and integration with other tools - mypy, FastAPI, python-devtools, Hypothesis, VS Code, PyCharm, etc.'

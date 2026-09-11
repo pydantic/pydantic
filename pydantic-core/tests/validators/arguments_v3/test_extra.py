@@ -1,4 +1,4 @@
-from typing import Any, Union
+from typing import Any
 
 import pytest
 
@@ -27,7 +27,7 @@ from ...conftest import PyAndJson
 def test_extra_forbid(
     py_and_json: PyAndJson,
     schema_extra_behavior: dict[str, Any],
-    validate_fn_extra_kw: Union[cs.ExtraBehavior, None],
+    validate_fn_extra_kw: cs.ExtraBehavior | None,
     input_value,
     err_type,
 ) -> None:

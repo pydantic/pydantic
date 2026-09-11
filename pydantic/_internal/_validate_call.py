@@ -2,9 +2,9 @@ from __future__ import annotations as _annotations
 
 import functools
 import inspect
-from collections.abc import Awaitable
+from collections.abc import Awaitable, Callable
 from functools import partial
-from typing import Any, Callable
+from typing import Any
 
 import pydantic_core
 
@@ -130,7 +130,7 @@ class ValidateCallWrapper:
 
         self.__pydantic_complete__ = True
 
-    def __call__(self, *args: Any, **kwargs: Any) -> Any:
+    def __call__(self, /, *args: Any, **kwargs: Any) -> Any:
         if not self.__pydantic_complete__:
             self._create_validators()
 

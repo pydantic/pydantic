@@ -1,14 +1,14 @@
 import datetime as dt
-import sys
-from collections.abc import Iterator
+from collections.abc import Callable, Iterator
 from dataclasses import dataclass
 from decimal import Decimal
-from typing import Annotated, Any, Callable, Generic, Optional, TypeVar
+from typing import Annotated, Any, Generic, TypeVar
 
 import pytest
 import pytz
 from annotated_types import BaseMetadata, GroupedMetadata, Gt, Lt, Not, Predicate
 from pydantic_core import CoreSchema, PydanticUndefined, core_schema
+from typing_extensions import Sentinel
 
 from pydantic import (
     BaseModel,
@@ -23,87 +23,91 @@ from pydantic.errors import PydanticSchemaGenerationError
 from pydantic.fields import PrivateAttr
 from pydantic.functional_validators import AfterValidator
 
-NO_VALUE = object()
+NO_DEFAULT = Sentinel('NO_DEFAULT')
 
 
-@pytest.mark.thread_unsafe(
-    reason=(
-        'The `FieldInfo.from_annotated_attribute()` implementation directly mutates the assigned value, '
-        'if it is a `Field()`. https://github.com/pydantic/pydantic/issues/11122 tracks this issue'
-    )
-)
 @pytest.mark.parametrize(
-    'hint_fn,value,expected_repr',
+    'type_expr,value,expected_repr',
     [
-        (
-            lambda: Annotated[int, Gt(0)],
+        pytest.param(
+            Annotated[int, Gt(0)],
             5,
             'FieldInfo(annotation=int, required=False, default=5, metadata=[Gt(gt=0)])',
+            id='Annotated[int, Gt(0)]-5',
         ),
-        (
-            lambda: Annotated[int, Field(gt=0)],
+        pytest.param(
+            Annotated[int, Field(gt=0)],
             5,
             'FieldInfo(annotation=int, required=False, default=5, metadata=[Gt(gt=0)])',
+            id='Annotated[int, Field(gt=0)]-5',
         ),
-        (
-            lambda: int,
+        pytest.param(
+            int,
             Field(5, gt=0),
             'FieldInfo(annotation=int, required=False, default=5, metadata=[Gt(gt=0)])',
+            id='int-Field(5, gt=0)',
         ),
-        (
-            lambda: int,
+        pytest.param(
+            int,
             Field(default_factory=lambda: 5, gt=0),
             'FieldInfo(annotation=int, required=False, default_factory=<lambda>, metadata=[Gt(gt=0)])',
+            id='int-Field(default_factory=lambda: 5, gt=0)',
         ),
-        (
-            lambda: Annotated[int, Lt(2)],
+        pytest.param(
+            Annotated[int, Lt(2)],
             Field(5, gt=0),
             'FieldInfo(annotation=int, required=False, default=5, metadata=[Gt(gt=0), Lt(lt=2)])',
+            id='Annotated[int, Lt(2)]-Field(5, gt=0)',
         ),
-        (
-            lambda: Annotated[int, Gt(0)],
-            NO_VALUE,
+        pytest.param(
+            Annotated[int, Gt(0)],
+            NO_DEFAULT,
             'FieldInfo(annotation=int, required=True, metadata=[Gt(gt=0)])',
+            id='Annotated[int, Gt(0)]-NO_VALUE',
         ),
-        (
-            lambda: Annotated[int, Gt(0)],
+        pytest.param(
+            Annotated[int, Gt(0)],
             Field(),
             'FieldInfo(annotation=int, required=True, metadata=[Gt(gt=0)])',
+            id='Annotated[int, Gt(0)]-Field()',
         ),
-        (
-            lambda: int,
+        pytest.param(
+            int,
             Field(gt=0),
             'FieldInfo(annotation=int, required=True, metadata=[Gt(gt=0)])',
+            id='int-Field(gt=0)',
         ),
-        (
-            lambda: Annotated[int, Gt(0)],
+        pytest.param(
+            Annotated[int, Gt(0)],
             PydanticUndefined,
             'FieldInfo(annotation=int, required=True, metadata=[Gt(gt=0)])',
+            id='Annotated[int, Gt(0)]-PydanticUndefined',
         ),
-        (
-            lambda: Annotated[int, Field(gt=0), Lt(2)],
+        pytest.param(
+            Annotated[int, Field(gt=0), Lt(2)],
             5,
             'FieldInfo(annotation=int, required=False, default=5, metadata=[Gt(gt=0), Lt(lt=2)])',
+            id='Annotated[int, Field(gt=0), Lt(2)]-5',
         ),
-        (
-            lambda: Annotated[int, Field(alias='foobar')],
+        pytest.param(
+            Annotated[int, Field(alias='foobar')],
             PydanticUndefined,
             "FieldInfo(annotation=int, required=True, alias='foobar', alias_priority=2)",
+            id="Annotated[int, Field(alias='foobar')]-PydanticUndefined",
         ),
     ],
 )
-def test_annotated(hint_fn, value, expected_repr):
-    hint = hint_fn()
+def test_annotated(type_expr, value, expected_repr):
 
-    if value is NO_VALUE:
+    if value is NO_DEFAULT:
 
         class M(BaseModel):
-            x: hint
+            x: type_expr
 
     else:
 
         class M(BaseModel):
-            x: hint = value
+            x: type_expr = value
 
     assert repr(M.model_fields['x']) == expected_repr
 
@@ -121,25 +125,25 @@ def test_annotated_allows_unknown(metadata):
 
 @pytest.mark.thread_unsafe(reason='`pytest.raises()` is thread unsafe')
 @pytest.mark.parametrize(
-    ['hint_fn', 'value', 'empty_init_ctx'],
+    ['type_expr', 'value', 'empty_init_ctx'],
     [
-        (
-            lambda: int,
+        pytest.param(
+            int,
             PydanticUndefined,
             pytest.raises(ValueError, match=r'Field required \[type=missing,'),
+            id='int-PydanticUndefined',
         ),
-        (
-            lambda: Annotated[int, Field()],
+        pytest.param(
+            Annotated[int, Field()],
             PydanticUndefined,
             pytest.raises(ValueError, match=r'Field required \[type=missing,'),
+            id='Annotated[int, Field()]-PydanticUndefined',
         ),
     ],
 )
-def test_annotated_instance_exceptions(hint_fn, value, empty_init_ctx):
-    hint = hint_fn()
-
+def test_annotated_instance_exceptions(type_expr, value, empty_init_ctx):
     class M(BaseModel):
-        x: hint = value
+        x: type_expr = value
 
     with empty_init_ctx:
         assert M().x == 5
@@ -168,7 +172,6 @@ def test_config_field_info():
     }
 
 
-@pytest.mark.skipif(sys.version_info < (3, 10), reason='repr different on older versions')
 def test_annotated_alias() -> None:
     # https://github.com/pydantic/pydantic/issues/2971
 
@@ -499,7 +502,7 @@ def test_tzinfo_validator_example_pattern() -> None:
 
     @dataclass(frozen=True)
     class MyDatetimeValidator:
-        tz_constraint: Optional[str] = None
+        tz_constraint: str | None = None
 
         def tz_constraint_validator(
             self,
@@ -620,18 +623,42 @@ def test_compatible_metadata_raises_correct_validation_error() -> None:
         ta.validate_python('def')
 
 
-def test_decimal_constraints_after_annotation() -> None:
-    DecimalAnnotation = Annotated[Decimal, BeforeValidator(lambda v: v), Field(max_digits=10, decimal_places=4)]
+@pytest.mark.parametrize(
+    ['field_kwargs', 'input_value', 'error_type'],
+    [
+        ({'max_digits': 10, 'decimal_places': 4}, '123.4567', None),
+        ({'max_digits': 10, 'decimal_places': 4}, '123.45678', 'decimal_max_places'),
+        ({'max_digits': 10, 'decimal_places': 4}, '12345678.901', 'decimal_max_digits'),
+        # Trailing zeros should not count towards the constraints:
+        ({'max_digits': 3}, '1.00', None),
+        ({'max_digits': 3}, '100.00', None),
+        ({'decimal_places': 1}, '1.00', None),
+        ({'decimal_places': 0}, '0.000', None),
+        ({'max_digits': 1, 'decimal_places': 0}, '0.000', None),
+        ({'max_digits': 1, 'decimal_places': 0}, '0E+5', None),
+        ({'max_digits': 3, 'decimal_places': 1}, '10.10', None),
+        ({'max_digits': 3, 'decimal_places': 1}, '1000.0', 'decimal_max_digits'),
+        ({'max_digits': 3, 'decimal_places': 1}, '1.150', 'decimal_max_places'),
+        # Values with more significant digits than the precision of the (default) decimal context
+        # must not be rounded when counting digits and decimal places:
+        ({'max_digits': 29}, '1234567890123456789012345678.91', 'decimal_max_digits'),
+        ({'max_digits': 30}, '1234567890123456789012345678.91', None),
+        ({'decimal_places': 30}, '0.1234567890123456789012345678901', 'decimal_max_places'),
+        ({'decimal_places': 31}, '0.1234567890123456789012345678901', None),
+        ({'max_digits': 30, 'decimal_places': 1}, '1234567890123456789012345678.91', 'decimal_max_places'),
+        ({'max_digits': 30, 'decimal_places': 2}, '1234567890123456789012345678.91', None),
+    ],
+)
+def test_decimal_constraints_after_annotation(
+    field_kwargs: dict[str, Any], input_value: str, error_type: str | None
+) -> None:
+    DecimalAnnotation = Annotated[Decimal, BeforeValidator(lambda v: v), Field(**field_kwargs)]
 
     ta = TypeAdapter(DecimalAnnotation)
-    assert ta.validate_python(Decimal('123.4567')) == Decimal('123.4567')
 
-    with pytest.raises(ValidationError) as e:
-        ta.validate_python(Decimal('123.45678'))
-
-    assert e.value.errors()[0]['type'] == 'decimal_max_places'
-
-    with pytest.raises(ValidationError) as e:
-        ta.validate_python(Decimal('12345678.901'))
-
-    assert e.value.errors()[0]['type'] == 'decimal_max_digits'
+    if error_type is None:
+        assert ta.validate_python(Decimal(input_value)) == Decimal(input_value)
+    else:
+        with pytest.raises(ValidationError) as exc_info:
+            ta.validate_python(Decimal(input_value))
+        assert exc_info.value.errors()[0]['type'] == error_type

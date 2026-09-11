@@ -2,7 +2,7 @@
 Benchmarks for nested / recursive schemas using definitions.
 """
 
-from typing import Callable
+from collections.abc import Callable
 
 from pydantic_core import SchemaValidator
 

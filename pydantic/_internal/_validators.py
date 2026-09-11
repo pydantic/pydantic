@@ -8,17 +8,17 @@ from __future__ import annotations as _annotations
 import collections.abc
 import math
 import re
+import sys
 import typing
-from collections.abc import Sequence
+from collections.abc import Callable, Sequence
 from decimal import Decimal
-from fractions import Fraction
 from ipaddress import IPv4Address, IPv4Interface, IPv4Network, IPv6Address, IPv6Interface, IPv6Network
-from typing import Any, Callable, TypeVar, Union, cast
+from typing import Any, TypeAlias, TypeVar, cast
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 import typing_extensions
 from pydantic_core import PydanticCustomError, PydanticKnownError, core_schema
-from typing_extensions import get_args, get_origin
+from typing_extensions import get_args, get_origin  # noqa: UP035
 from typing_inspection import typing_objects
 
 from pydantic._internal._import_utils import import_cached_field_info
@@ -78,7 +78,7 @@ def import_string(value: Any) -> Any:
 
 def _import_string_logic(dotted_path: str) -> Any:
     """Inspired by uvicorn — dotted paths should include a colon before the final item if that item is not a module.
-    (This is necessary to distinguish between a submodule and an attribute when there is a conflict.).
+    (This is necessary to distinguish between a submodule and an attribute when there is a conflict.)
 
     If the dotted path does not include a colon and the final item is not a valid module, importing as an attribute
     rather than a submodule will be attempted automatically.
@@ -246,16 +246,6 @@ def ip_v6_interface_validator(input_value: Any, /) -> IPv6Interface:
         raise PydanticCustomError('ip_v6_interface', 'Input is not a valid IPv6 interface')
 
 
-def fraction_validator(input_value: Any, /) -> Fraction:
-    if isinstance(input_value, Fraction):
-        return input_value
-
-    try:
-        return Fraction(input_value)
-    except ValueError:
-        raise PydanticCustomError('fraction_parsing', 'Input is not a valid fraction')
-
-
 def forbid_inf_nan_check(x: Any) -> Any:
     if not math.isfinite(x):
         raise PydanticKnownError('finite_number')
@@ -340,20 +330,31 @@ def max_length_validator(x: Any, max_length: Any) -> Any:
         raise TypeError(f"Unable to apply constraint 'max_length' to supplied value {x}")
 
 
-def _extract_decimal_digits_info(decimal: Decimal) -> tuple[int, int]:
-    """Compute the total number of digits and decimal places for a given [`Decimal`][decimal.Decimal] instance.
+def _count_digits(num_digits: int, exponent: int) -> tuple[int, int]:
+    if exponent >= 0:
+        # A positive exponent adds that many trailing zeros
+        # Ex: digit_tuple=(1, 2, 3), exponent=2 -> 12300 -> 0 decimal places, 5 digits
+        return 0, num_digits + exponent
+    else:
+        # If the absolute value of the negative exponent is larger than the
+        # number of digits, then it's the same as the number of digits,
+        # because it'll consume all the digits in digit_tuple and then
+        # add abs(exponent) - len(digit_tuple) leading zeros after the decimal point.
+        # Ex: digit_tuple=(1, 2, 3), exponent=-2 -> 1.23 -> 2 decimal places, 3 digits
+        # Ex: digit_tuple=(1, 2, 3), exponent=-4 -> 0.0123 -> 4 decimal places, 4 digits
+        decimal_places = abs(exponent)
+        return decimal_places, max(num_digits, decimal_places)
 
-    This function handles both normalized and non-normalized Decimal instances.
-    Example: Decimal('1.230') -> 4 digits, 3 decimal places
 
-    Args:
-        decimal (Decimal): The decimal number to analyze.
+def _extract_decimal_digits_info(decimal: Decimal) -> tuple[tuple[int, int], tuple[int, int]]:
+    """Compute the number of decimal places and total digits for a given [`Decimal`][decimal.Decimal] instance.
 
-    Returns:
-        tuple[int, int]: A tuple containing the number of decimal places and total digits.
+    Returns a tuple of two `(decimal_places, num_digits)` pairs: the first one for the decimal as is,
+    the second one for its normalized form (i.e. with trailing zeros stripped).
+    Example: `Decimal('1.230')` returns `((3, 4), (2, 3))`.
 
-    Though this could be divided into two separate functions, the logic is easier to follow if we couple the computation
-    of the number of decimals and digits together.
+    Trailing zeros are stripped by hand rather than by calling [`Decimal.normalize()`][decimal.Decimal.normalize],
+    as the latter also rounds the value to the precision of the current decimal context.
     """
     try:
         decimal_tuple = decimal.as_tuple()
@@ -361,32 +362,30 @@ def _extract_decimal_digits_info(decimal: Decimal) -> tuple[int, int]:
         assert isinstance(decimal_tuple.exponent, int)
 
         exponent = decimal_tuple.exponent
-        num_digits = len(decimal_tuple.digits)
+        digits = decimal_tuple.digits
+        num_digits = len(digits)
 
-        if exponent >= 0:
-            # A positive exponent adds that many trailing zeros
-            # Ex: digit_tuple=(1, 2, 3), exponent=2 -> 12300 -> 0 decimal places, 5 digits
-            num_digits += exponent
-            decimal_places = 0
+        trailing_zeros = 0
+        for digit in reversed(digits):
+            if digit != 0:
+                break
+            trailing_zeros += 1
+
+        if trailing_zeros == num_digits:
+            # All digits are zero: `Decimal.normalize()` canonicalizes any zero to `0E0`.
+            normalized = (0, 1)
         else:
-            # If the absolute value of the negative exponent is larger than the
-            # number of digits, then it's the same as the number of digits,
-            # because it'll consume all the digits in digit_tuple and then
-            # add abs(exponent) - len(digit_tuple) leading zeros after the decimal point.
-            # Ex: digit_tuple=(1, 2, 3), exponent=-2 -> 1.23 -> 2 decimal places, 3 digits
-            # Ex: digit_tuple=(1, 2, 3), exponent=-4 -> 0.0123 -> 4 decimal places, 4 digits
-            decimal_places = abs(exponent)
-            num_digits = max(num_digits, decimal_places)
+            # Each stripped trailing zero is compensated by incrementing the exponent.
+            normalized = _count_digits(num_digits - trailing_zeros, exponent + trailing_zeros)
 
-        return decimal_places, num_digits
+        return _count_digits(num_digits, exponent), normalized
     except (AssertionError, AttributeError):
         raise TypeError(f'Unable to extract decimal digits info from supplied value {decimal}')
 
 
 def max_digits_validator(x: Any, max_digits: Any) -> Any:
     try:
-        _, num_digits = _extract_decimal_digits_info(x)
-        _, normalized_num_digits = _extract_decimal_digits_info(x.normalize())
+        (_, num_digits), (_, normalized_num_digits) = _extract_decimal_digits_info(x)
         if (num_digits > max_digits) and (normalized_num_digits > max_digits):
             raise PydanticKnownError(
                 'decimal_max_digits',
@@ -399,21 +398,15 @@ def max_digits_validator(x: Any, max_digits: Any) -> Any:
 
 def decimal_places_validator(x: Any, decimal_places: Any) -> Any:
     try:
-        decimal_places_, _ = _extract_decimal_digits_info(x)
-        if decimal_places_ > decimal_places:
-            normalized_decimal_places, _ = _extract_decimal_digits_info(x.normalize())
-            if normalized_decimal_places > decimal_places:
-                raise PydanticKnownError(
-                    'decimal_max_places',
-                    {'decimal_places': decimal_places},
-                )
+        (decimal_places_, _), (normalized_decimal_places, _) = _extract_decimal_digits_info(x)
+        if (decimal_places_ > decimal_places) and (normalized_decimal_places > decimal_places):
+            raise PydanticKnownError(
+                'decimal_max_places',
+                {'decimal_places': decimal_places},
+            )
         return x
     except TypeError:
         raise TypeError(f"Unable to apply constraint 'decimal_places' to supplied value {x}")
-
-
-def deque_validator(input_value: Any, handler: core_schema.ValidatorFunctionWrapHandler) -> collections.deque[Any]:
-    return collections.deque(handler(input_value), maxlen=getattr(input_value, 'maxlen', None))
 
 
 def defaultdict_validator(
@@ -426,31 +419,35 @@ def defaultdict_validator(
         return collections.defaultdict(default_default_factory, handler(input_value))
 
 
+_defaultdict_allowed_default_types: dict[type[Any], type[Any]] = {
+    float: float,
+    int: int,
+    str: str,
+    bool: bool,
+    tuple: tuple,
+    collections.abc.Sequence: tuple,
+    collections.abc.MutableSequence: list,
+    list: list,
+    set: set,
+    collections.abc.MutableSet: set,
+    frozenset: frozenset,
+    collections.abc.Set: frozenset,
+    dict: dict,
+    collections.abc.Mapping: dict,
+    collections.abc.MutableMapping: dict,
+}
+
+if sys.version_info >= (3, 15):
+    _defaultdict_allowed_default_types[collections.abc.Mapping] = frozendict  # noqa: F821
+    _defaultdict_allowed_default_types[frozendict] = frozendict  # noqa: F821
+
+
 def get_defaultdict_default_default_factory(values_source_type: Any) -> Callable[[], Any]:
     FieldInfo = import_cached_field_info()
 
     values_type_origin = get_origin(values_source_type)
 
     def infer_default() -> Callable[[], Any]:
-        allowed_default_types: dict[Any, Any] = {
-            tuple: tuple,
-            collections.abc.Sequence: tuple,
-            collections.abc.MutableSequence: list,
-            list: list,
-            typing.Sequence: list,
-            set: set,
-            typing.MutableSet: set,
-            collections.abc.MutableSet: set,
-            collections.abc.Set: frozenset,
-            typing.MutableMapping: dict,
-            typing.Mapping: dict,
-            collections.abc.Mapping: dict,
-            collections.abc.MutableMapping: dict,
-            float: float,
-            int: int,
-            str: str,
-            bool: bool,
-        }
         values_type = values_type_origin or values_source_type
         instructions = 'set using `DefaultDict[..., Annotated[..., Field(default_factory=...)]]`'
         if typing_objects.is_typevar(values_type):
@@ -462,15 +459,15 @@ def get_defaultdict_default_default_factory(values_source_type: Any) -> Callable
                 )
 
             return type_var_default_factory
-        elif values_type not in allowed_default_types:
+        elif values_type not in _defaultdict_allowed_default_types:
             # a somewhat subjective set of types that have reasonable default values
-            allowed_msg = ', '.join([t.__name__ for t in set(allowed_default_types.values())])
+            allowed_msg = ', '.join([t.__name__ for t in _defaultdict_allowed_default_types.keys()])
             raise PydanticSchemaGenerationError(
-                f'Unable to infer a default factory for keys of type {values_source_type}.'
+                f'Unable to infer a default factory for values of type {values_source_type}.'
                 f' Only {allowed_msg} are supported, other types require an explicit default factory'
                 ' ' + instructions
             )
-        return allowed_default_types[values_type]
+        return _defaultdict_allowed_default_types[values_type]
 
     # Assume Annotated[..., Field(...)]
     if typing_objects.is_annotated(values_type_origin):
@@ -506,7 +503,7 @@ NUMERIC_VALIDATOR_LOOKUP: dict[str, Callable] = {
     'decimal_places': decimal_places_validator,
 }
 
-IpType = Union[IPv4Address, IPv6Address, IPv4Network, IPv6Network, IPv4Interface, IPv6Interface]
+IpType: TypeAlias = IPv4Address | IPv6Address | IPv4Network | IPv6Network | IPv4Interface | IPv6Interface
 
 IP_VALIDATOR_LOOKUP: dict[type[IpType], Callable] = {
     IPv4Address: ip_v4_address_validator,

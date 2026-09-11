@@ -12,9 +12,19 @@ from typing import Any
 
 import pytest
 from pydantic_core import core_schema
-from pytest_examples import CodeExample, EvalExample, find_examples
 
 from pydantic.errors import PydanticErrorCodes
+
+if sys.platform != 'emscripten' and platform.python_implementation() != 'PyPy':
+    import time_machine
+    from pytest_examples import CodeExample, EvalExample, find_examples
+else:
+    # pytest_examples and time_machine are not installed on emscripten
+    CodeExample = EvalExample = time_machine = None
+
+    def find_examples(*args, **kwargs):
+        return []
+
 
 INDEX_MAIN = None
 DOCS_ROOT = Path(__file__).parent.parent / 'docs'
@@ -64,15 +74,9 @@ class GroupModuleGlobals:
 group_globals = GroupModuleGlobals()
 
 
-class MockedDatetime(datetime):
-    @classmethod
-    def now(cls, *args, tz=None, **kwargs):
-        return datetime(2032, 1, 2, 3, 4, 5, 6, tzinfo=tz)
-
-
 skip_reason = skip_docs_tests()
 LINE_LENGTH = 80
-TARGET_VERSION = 'py39'
+TARGET_VERSION = 'py310'
 
 
 def print_callback(print_statement: str) -> str:
@@ -133,7 +137,6 @@ def run_example(example: CodeExample, eval_example: EvalExample, mocker: Any) ->
     group_name = prefix_settings.get('group')
     d = group_globals.get(group_name)
 
-    mocker.patch('datetime.datetime', MockedDatetime)
     mocker.patch('random.randint', return_value=3)
 
     xfail = None
@@ -143,12 +146,14 @@ def run_example(example: CodeExample, eval_example: EvalExample, mocker: Any) ->
     rewrite_assertions = prefix_settings.get('rewrite_assert', 'true') == 'true'
 
     try:
-        if test_settings == 'no-print-intercept':
-            d2 = eval_example.run(example, module_globals=d, rewrite_assertions=rewrite_assertions)
-        elif eval_example.update_examples:
-            d2 = eval_example.run_print_update(example, module_globals=d, rewrite_assertions=rewrite_assertions)
-        else:
-            d2 = eval_example.run_print_check(example, module_globals=d, rewrite_assertions=rewrite_assertions)
+        # Freeze the local wall-clock time so examples calling `datetime.now()` are deterministic:
+        with time_machine.travel(datetime(2032, 1, 2, 3, 4, 5, 6).astimezone(), tick=False):
+            if test_settings == 'no-print-intercept':
+                d2 = eval_example.run(example, module_globals=d, rewrite_assertions=rewrite_assertions)
+            elif eval_example.update_examples:
+                d2 = eval_example.run_print_update(example, module_globals=d, rewrite_assertions=rewrite_assertions)
+            else:
+                d2 = eval_example.run_print_check(example, module_globals=d, rewrite_assertions=rewrite_assertions)
     except BaseException as e:  # run_print_check raises a BaseException
         if xfail:
             pytest.xfail(f'{xfail}, {type(e).__name__}: {e}')
@@ -162,7 +167,7 @@ def run_example(example: CodeExample, eval_example: EvalExample, mocker: Any) ->
 @pytest.mark.thread_unsafe
 @pytest.mark.filterwarnings('ignore:(parse_obj_as|schema_json_of|schema_of) is deprecated.*:DeprecationWarning')
 @pytest.mark.skipif(bool(skip_reason), reason=skip_reason or 'not skipping')
-@pytest.mark.parametrize('example', find_examples(str(SOURCES_ROOT), skip=sys.platform == 'win32'), ids=str)
+@pytest.mark.parametrize('example', list(find_examples(str(SOURCES_ROOT), skip=sys.platform == 'win32')), ids=str)
 def test_docstrings_examples(example: CodeExample, eval_example: EvalExample, tmp_path: Path, mocker):
     if str(example.path).startswith(str(SOURCES_ROOT / 'v1')):
         pytest.skip('skip v1 examples')
@@ -186,7 +191,7 @@ def set_cwd():
 @pytest.mark.thread_unsafe
 @pytest.mark.filterwarnings('ignore:(parse_obj_as|schema_json_of|schema_of) is deprecated.*:DeprecationWarning')
 @pytest.mark.skipif(bool(skip_reason), reason=skip_reason or 'not skipping')
-@pytest.mark.parametrize('example', find_examples(str(DOCS_ROOT), skip=sys.platform == 'win32'), ids=str)
+@pytest.mark.parametrize('example', list(find_examples(str(DOCS_ROOT), skip=sys.platform == 'win32')), ids=str)
 def test_docs_examples(example: CodeExample, eval_example: EvalExample, tmp_path: Path, mocker):
     global INDEX_MAIN
     if example.path.name == 'index.md':
@@ -206,7 +211,7 @@ def test_docs_examples(example: CodeExample, eval_example: EvalExample, tmp_path
 @pytest.mark.skipif(bool(skip_reason), reason=skip_reason or 'not skipping')
 @pytest.mark.skipif(sys.version_info >= (3, 13), reason='python-devtools does not yet support python 3.13')
 @pytest.mark.parametrize(
-    'example', find_examples(str(DOCS_ROOT / 'integrations/devtools.md'), skip=sys.platform == 'win32'), ids=str
+    'example', list(find_examples(str(DOCS_ROOT / 'integrations/devtools.md'), skip=sys.platform == 'win32')), ids=str
 )
 def test_docs_devtools_example(example: CodeExample, eval_example: EvalExample, tmp_path: Path):
     from ansi2html import Ansi2HTMLConverter

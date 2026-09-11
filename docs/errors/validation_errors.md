@@ -1,28 +1,27 @@
 Pydantic attempts to provide useful validation errors. Below are details on common validation errors users
 may encounter when working with pydantic, together with some suggestions on how to fix them.
 
+The entries below explain what each error type means. To see the rejected values and surrounding trace
+when one occurs in a live service, [Logfire](troubleshooting.md) can record failed validations with their
+structured errors. See [Troubleshooting Validation Errors](troubleshooting.md) for setup and
+sensitive-data considerations.
+
 ## `arguments_type`
 
 This error is raised when an object that would be passed as arguments to a function during validation is not
-a `tuple`, `list`, or `dict`. Because `NamedTuple` uses function calls in its implementation, that is one way to
-produce this error:
+a `tuple`, `list`, or `dict`:
 
 ```python
-from typing import NamedTuple
-
-from pydantic import BaseModel, ValidationError
+from pydantic import TypeAdapter, ValidationError
 
 
-class MyNamedTuple(NamedTuple):
-    x: int
+def func(x: int) -> None: ...
 
 
-class MyModel(BaseModel):
-    field: MyNamedTuple
-
+ta = TypeAdapter(func)
 
 try:
-    MyModel.model_validate({'field': 'invalid'})
+    ta.validate_python('invalid')
 except ValidationError as exc:
     print(repr(exc.errors()[0]['type']))
     #> 'arguments_type'
@@ -177,10 +176,11 @@ This error is also raised for strict fields when the input value is not an insta
 
 ## `callable_type`
 
-This error is raised when the input value is not valid as a `Callable`:
+This error is raised when the input value is not valid as a callable:
 
 ```python
-from typing import Any, Callable
+from collections.abc import Callable
+from typing import Any
 
 from pydantic import BaseModel, ImportString, ValidationError
 
@@ -700,6 +700,27 @@ except ValidationError as exc:
     #> 'default_factory_not_called'
 ```
 
+## `deque_type`
+
+This error is raised when the input value's type is not valid for a [`deque`][collections.deque] field:
+
+```python
+from collections import deque
+
+from pydantic import BaseModel, ValidationError
+
+
+class Model(BaseModel):
+    x: deque[int]
+
+
+try:
+    Model(x=1)
+except ValidationError as exc:
+    print(repr(exc.errors()[0]['type']))
+    #> 'deque_type'
+```
+
 ## `dict_type`
 
 This error is raised when the input value's type is not `dict` for a `dict` field:
@@ -717,6 +738,27 @@ try:
 except ValidationError as exc:
     print(repr(exc.errors()[0]['type']))
     #> 'dict_type'
+```
+
+## `ellipsis_error`
+
+This error is raised when the input isn't the [`Ellipsis`][] literal:
+
+```python
+from types import EllipsisType
+
+from pydantic import BaseModel, ValidationError
+
+
+class Model(BaseModel):
+    e: EllipsisType
+
+
+try:
+    Model(e=1)
+except ValidationError as exc:
+    print(repr(exc.errors()[0]['type']))
+    #> 'ellipsis_error'
 ```
 
 ## `enum`
@@ -823,6 +865,67 @@ try:
 except ValidationError as exc:
     print(repr(exc.errors()[0]['type']))
     #> 'float_type'
+```
+
+## `fraction_parsing`
+
+This error is raised when the value provided for an input that could not be parsed as a fraction:
+
+```python
+from fractions import Fraction
+
+from pydantic import BaseModel, ValidationError
+
+
+class Model(BaseModel):
+    x: Fraction
+
+
+try:
+    Model(x='invalid')
+except ValidationError as exc:
+    print(repr(exc.errors()[0]['type']))
+    #> 'fraction_parsing'
+```
+
+## `fraction_type`
+
+This error is raised when the value provided for a [`Fraction`][fractions.Fraction] is of the wrong type:
+
+```python
+from fractions import Fraction
+
+from pydantic import BaseModel, ValidationError
+
+
+class Model(BaseModel):
+    x: Fraction
+
+
+try:
+    Model.model_validate_json('{"x": [1, 2]}')
+except ValidationError as exc:
+    print(repr(exc.errors()[0]['type']))
+    #> 'fraction_type'
+```
+
+## `frozen_dict_type`
+
+This error is raised when the input value's type is not valid for a `frozendict` field:
+
+```python {requires="3.15" lint="skip"}
+from pydantic import BaseModel, ValidationError
+
+
+class Model(BaseModel):
+    x: frozendict
+
+
+try:
+    model = Model(x='test')
+except ValidationError as exc:
+    print(repr(exc.errors()[0]['type']))
+    #> 'frozen_dict_type'
 ```
 
 ## `frozen_field`
@@ -1411,12 +1514,10 @@ except ValidationError as exc:
 
 ## `missing_sentinel_error`
 
-This error is raised when the experimental `MISSING` sentinel is the only value allowed, and wasn't
-provided during validation:
+This error is raised when the `MISSING` sentinel is the only value allowed, and wasn't provided during validation:
 
 ```python
-from pydantic import BaseModel, ValidationError
-from pydantic.experimental.missing_sentinel import MISSING
+from pydantic import MISSING, BaseModel, ValidationError
 
 
 class Model(BaseModel):
@@ -1534,6 +1635,32 @@ except ValidationError as exc:
     #> 'multiple_of'
 ```
 
+## `named_tuple_type`
+
+This error is raised when the input value is not valid for a named tuple field:
+
+```python
+from typing import NamedTuple
+
+from pydantic import BaseModel, ValidationError
+
+
+class Point(NamedTuple):
+    x: int
+    y: int
+
+
+class Model(BaseModel):
+    p: Point
+
+
+try:
+    Model(p='invalid')
+except ValidationError as exc:
+    print(repr(exc.errors()[0]['type']))
+    #> 'named_tuple_type'
+```
+
 ## `needs_python_object`
 
 This type of error is raised when validation is attempted from a format that cannot be converted to a Python object.
@@ -1603,13 +1730,11 @@ except ValidationError as exc:
     For example, the following would yield the `none_required` validation error since the field `int` is set to a default value of `None` and has the exact same name as its type, which causes problems with validation.
 
     ```python {test="skip"}
-    from typing import Optional
-
     from pydantic import BaseModel
 
 
     class M1(BaseModel):
-        int: Optional[int] = None
+        int: int | None = None
 
 
     m = M1(int=123)  # errors
@@ -1678,6 +1803,27 @@ try:
 except ValidationError as exc:
     print(repr(exc.errors()[0]['type']))
     #> 'set_type'
+```
+
+## `string_not_ascii`
+
+This error is raised when the input string contains non-ASCII characters:
+
+```python
+from typing import Annotated
+
+from pydantic import BaseModel, StringConstraints, ValidationError
+
+
+class Model(BaseModel):
+    v: Annotated[str, StringConstraints(ascii_only=True)]
+
+
+try:
+    Model(v='caf\u00e9')
+except ValidationError as exc:
+    print(repr(exc.errors()[0]['type']))
+    #> 'string_not_ascii'
 ```
 
 ## `string_pattern_mismatch`
@@ -2059,7 +2205,7 @@ except ValidationError as exc:
 This error is raised when the input's discriminator is not one of the expected values:
 
 ```python
-from typing import Literal, Union
+from typing import Literal
 
 from pydantic import BaseModel, Field, ValidationError
 
@@ -2073,7 +2219,7 @@ class WhiteCat(BaseModel):
 
 
 class Model(BaseModel):
-    cat: Union[BlackCat, WhiteCat] = Field(discriminator='pet_type')
+    cat: BlackCat | WhiteCat = Field(discriminator='pet_type')
 
 
 try:
@@ -2088,7 +2234,7 @@ except ValidationError as exc:
 This error is raised when it is not possible to extract a discriminator value from the input:
 
 ```python
-from typing import Literal, Union
+from typing import Literal
 
 from pydantic import BaseModel, Field, ValidationError
 
@@ -2102,7 +2248,7 @@ class WhiteCat(BaseModel):
 
 
 class Model(BaseModel):
-    cat: Union[BlackCat, WhiteCat] = Field(discriminator='pet_type')
+    cat: BlackCat | WhiteCat = Field(discriminator='pet_type')
 
 
 try:

@@ -7,11 +7,13 @@ use pyo3::prelude::*;
 use pyo3::sync::PyOnceLock;
 use pyo3::sync::critical_section::with_critical_section;
 use pyo3::types::PyComplex;
-use pyo3::types::{PyByteArray, PyBytes, PyDict, PyFrozenSet, PyIterator, PyList, PySet, PyString, PyTuple};
+use pyo3::types::{PyByteArray, PyBytes, PyDict, PyFrozenSet, PyIterator, PyList, PyMapping, PySet, PyString, PyTuple};
 
 use pyo3::IntoPyObjectExt;
 use serde::ser::{Error, Serialize, SerializeSeq, Serializer};
 
+use crate::common::deque::{deque_maxlen, new_deque};
+use crate::common::frozendict::get_frozendict_type;
 use crate::input::{EitherTimedelta, Int};
 use crate::serializers::SerializationState;
 use crate::serializers::errors::unwrap_ser_error;
@@ -79,12 +81,17 @@ pub(crate) fn infer_to_python_known<'py>(
     macro_rules! serialize_seq_filter {
         ($t:ty) => {{
             let py_seq = value.cast::<$t>()?;
-            let mut items = Vec::with_capacity(py_seq.len());
+            serialize_seq_filter!(@iter py_seq.len(), py_seq.iter().map(PyResult::Ok))
+        }};
+        // `$iter` must yield `PyResult<Bound<PyAny>>` items
+        (@iter $len:expr, $iter:expr) => {{
+            let len = $len;
+            let mut items = Vec::with_capacity(len);
             let filter = AnyFilter::new();
-            let len = value.len().ok();
 
-            for (index, element) in py_seq.iter().enumerate() {
-                if let Some(next_include_exclude) = filter.index_filter(index, state, len)? {
+            for (index, element) in $iter.enumerate() {
+                let element: Bound<'_, PyAny> = element?;
+                if let Some(next_include_exclude) = filter.index_filter(index, state, Some(len))? {
                     let state = &mut state.scoped_include_exclude(next_include_exclude);
                     items.push(infer_to_python(&element, state)?);
                 }
@@ -112,7 +119,7 @@ pub(crate) fn infer_to_python_known<'py>(
                 }
                 v.into_py_any(py)?
             }
-            ObType::Decimal => value.to_string().into_py_any(py)?,
+            ObType::Decimal | ObType::Fraction => value.to_string().into_py_any(py)?,
             ObType::StrSubclass => PyString::new(py, value.cast::<PyString>()?.to_str()?).into(),
             ObType::Bytes => state
                 .config
@@ -146,9 +153,17 @@ pub(crate) fn infer_to_python_known<'py>(
                 let elements = serialize_seq!(PyFrozenSet);
                 PyList::new(py, elements)?.into()
             }
+            ObType::Deque => {
+                let elements = serialize_seq_filter!(@iter value.len()?, value.try_iter()?);
+                PyList::new(py, elements)?.into()
+            }
             ObType::Dict => {
                 let dict = value.cast::<PyDict>()?;
                 serialize_pairs(dict.iter().map(Ok), state, serialize_to_python(py))?
+            }
+            ObType::Frozendict => {
+                let mapping = value.cast::<PyMapping>()?;
+                serialize_pairs(mapping_pairs(mapping)?, state, serialize_to_python(py))?
             }
             ObType::Datetime => {
                 let datetime = state.config.temporal_mode.datetime_to_json(value.py(), value.cast()?)?;
@@ -232,9 +247,18 @@ pub(crate) fn infer_to_python_known<'py>(
                 let elements = serialize_seq!(PyFrozenSet);
                 PyFrozenSet::new(py, &elements)?.into()
             }
+            ObType::Deque => {
+                let elements = serialize_seq_filter!(@iter value.len()?, value.try_iter()?);
+                new_deque(py, PyList::new(py, elements)?, deque_maxlen(value)?)?
+            }
             ObType::Dict => {
                 let dict = value.cast::<PyDict>()?;
                 serialize_pairs(dict.iter().map(Ok), state, serialize_to_python(py))?
+            }
+            ObType::Frozendict => {
+                let mapping = value.cast::<PyMapping>()?;
+                let new_dict = serialize_pairs(mapping_pairs(mapping)?, state, serialize_to_python(py))?;
+                get_frozendict_type(py)?.call1((new_dict,))?.unbind()
             }
             ObType::PydanticSerializable => serialize_pydantic_serializable(value, state, serialize_to_python(py))?,
             ObType::Dataclass => infer_serialize_dataclass(value, state, serialize_to_python(py))?,
@@ -251,6 +275,7 @@ pub(crate) fn infer_to_python_known<'py>(
                 let v = value.cast::<PyComplex>()?;
                 v.into_py_any(py)?
             }
+            ObType::Fraction => value.to_string().into_py_any(py)?,
             ObType::Unknown => {
                 if let Some(fallback) = &state.extra.fallback {
                     let next_value = fallback.call1((value,))?;
@@ -339,15 +364,23 @@ pub(crate) fn infer_serialize_known<'py, S: Serializer>(
     macro_rules! serialize_seq_filter {
         ($t:ty) => {{
             let py_seq = value.cast::<$t>().map_err(py_err_se_err)?;
-            let mut seq = serializer.serialize_seq(Some(py_seq.len()))?;
+            serialize_seq_filter!(@iter py_seq.len(), py_seq.iter().map(PyResult::Ok))
+        }};
+        // `$iter` must yield `PyResult<Bound<PyAny>>` items
+        (@iter $len:expr, $iter:expr) => {{
+            let len = $len;
+            let mut seq = serializer.serialize_seq(Some(len))?;
             let filter = AnyFilter::new();
-            let len = value.len().ok();
 
-            for (index, element) in py_seq.iter().enumerate() {
-                if let Some(next_include_exclude) = filter.index_filter(index, state, len).map_err(py_err_se_err)? {
+            for (index, element) in $iter.enumerate() {
+                let element: Bound<'_, PyAny> = element.map_err(py_err_se_err)?;
+                if let Some(next_include_exclude) = filter
+                    .index_filter(index, state, Some(len))
+                    .map_err(py_err_se_err)?
+                {
                     let state = &mut state.scoped_include_exclude(next_include_exclude);
                     let item_serializer = SerializeInfer::new(&element, state);
-                    seq.serialize_element(&item_serializer)?
+                    seq.serialize_element(&item_serializer)?;
                 }
             }
             seq.end()
@@ -367,7 +400,7 @@ pub(crate) fn infer_serialize_known<'py, S: Serializer>(
             let v = value.extract::<f64>().map_err(py_err_se_err)?;
             type_serializers::float::serialize_f64(v, serializer, state.config.inf_nan_mode)
         }
-        ObType::Decimal => value.to_string().serialize(serializer),
+        ObType::Decimal | ObType::Fraction => value.to_string().serialize(serializer),
         ObType::Str | ObType::StrSubclass => {
             let py_str = value.cast::<PyString>().map_err(py_err_se_err)?;
             serialize_to_json(serializer)
@@ -393,10 +426,19 @@ pub(crate) fn infer_serialize_known<'py, S: Serializer>(
             let dict = value.cast::<PyDict>().map_err(py_err_se_err)?;
             serialize_pairs(dict.iter().map(Ok), state, serialize_to_json(serializer)).map_err(unwrap_ser_error)
         }
+        ObType::Frozendict => {
+            let mapping = value.cast::<PyMapping>().map_err(py_err_se_err)?;
+            let pairs = mapping_pairs(mapping).map_err(py_err_se_err)?;
+            serialize_pairs(pairs, state, serialize_to_json(serializer)).map_err(unwrap_ser_error)
+        }
         ObType::List => serialize_seq_filter!(PyList),
         ObType::Tuple => serialize_seq_filter!(PyTuple),
         ObType::Set => serialize_seq!(PySet),
         ObType::Frozenset => serialize_seq!(PyFrozenSet),
+        ObType::Deque => serialize_seq_filter!(
+            @iter value.len().map_err(py_err_se_err)?,
+            value.try_iter().map_err(py_err_se_err)?
+        ),
         ObType::Datetime => {
             let py_datetime = value.cast().map_err(py_err_se_err)?;
             state.config.temporal_mode.datetime_serialize(py_datetime, serializer)
@@ -509,7 +551,7 @@ pub(crate) fn infer_json_key_known<'a, 'py>(
                 super::type_serializers::simple::to_str_json_key(key)
             }
         }
-        ObType::Decimal => Ok(Cow::Owned(key.to_string())),
+        ObType::Decimal | ObType::Fraction => Ok(Cow::Owned(key.to_string())),
         ObType::Bool => super::type_serializers::simple::bool_json_key(key),
         ObType::Str | ObType::StrSubclass => key.cast::<PyString>()?.to_cow(),
         ObType::Bytes => state
@@ -556,7 +598,13 @@ pub(crate) fn infer_json_key_known<'a, 'py>(
             }
             Ok(Cow::Owned(key_build.finish()))
         }
-        ObType::List | ObType::Set | ObType::Frozenset | ObType::Dict | ObType::Generator => {
+        ObType::List
+        | ObType::Set
+        | ObType::Frozenset
+        | ObType::Deque
+        | ObType::Dict
+        | ObType::Frozendict
+        | ObType::Generator => {
             py_err!(PyTypeError; "`{ob_type}` not valid as object key")
         }
         ObType::Dataclass | ObType::PydanticSerializable => {
@@ -662,6 +710,14 @@ fn get_field_marker(py: Python<'_>) -> PyResult<&Bound<'_, PyAny>> {
     static DC_FIELD_MARKER: PyOnceLock<Py<PyAny>> = PyOnceLock::new();
 
     DC_FIELD_MARKER.import(py, "dataclasses", "_FIELD")
+}
+
+// TODO: remove when https://github.com/PyO3/pyo3/pull/6174 gets released, and iterate
+// directly over `PyFrozenDict` in the `ObType::Frozendict` arms, like `ObType::Dict` does:
+fn mapping_pairs<'py>(
+    mapping: &Bound<'py, PyMapping>,
+) -> PyResult<impl Iterator<Item = PyResult<(Bound<'py, PyAny>, Bound<'py, PyAny>)>>> {
+    Ok(mapping.items()?.into_iter().map(|item| item.extract()))
 }
 
 fn serialize_pairs<'py, S: DoSerialize>(

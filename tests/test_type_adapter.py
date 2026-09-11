@@ -1,11 +1,11 @@
 import json
 from dataclasses import dataclass
 from datetime import date, datetime
-from typing import Annotated, Any, ForwardRef, Generic, NamedTuple, Optional, TypeVar, Union
+from typing import Annotated, Any, ForwardRef, Generic, NamedTuple, TypeAlias, TypeVar, Union
 
 import pytest
 from pydantic_core import ValidationError
-from typing_extensions import TypeAlias, TypedDict
+from typing_extensions import TypedDict
 
 from pydantic import BaseModel, Field, TypeAdapter, ValidationInfo, create_model, field_validator
 from pydantic._internal import _mock_val_ser
@@ -51,8 +51,8 @@ class SomeNamedTuple(NamedTuple):
         (tuple[str, int], ('1', 1), ('1', 1)),
         (tuple[str, ...], ('1',), ('1',)),
         (dict[str, int], {'foo': 123}, {'foo': 123}),
-        (Union[int, str], 1, 1),
-        (Union[int, str], '2', '2'),
+        (Union[int, str], 1, 1),  # noqa: UP007
+        (Union[int, str], '2', '2'),  # noqa: UP007
         (GenericPydanticModel[int], {'x': [[1]]}, GenericPydanticModel[int](x=[[1]])),
         (GenericPydanticModel[int], {'x': [['1']]}, GenericPydanticModel[int](x=[[1]])),
         (NestedList[int], [[1]], [[1]]),
@@ -181,7 +181,7 @@ def test_top_level_fwd_ref(defer_build: bool, method: str, generate_schema_calls
         assert schemas[(FwdRef, 'validation')]['type'] == 'object'
 
 
-MyUnion: TypeAlias = 'Union[str, int]'
+MyUnion: TypeAlias = 'str | int'
 
 
 def test_type_alias():
@@ -487,6 +487,41 @@ def test_validate_strings_dict(strict):
     }
 
 
+@pytest.mark.parametrize('strict', [True, False])
+def test_validate_strings_model(strict):
+    class Model(BaseModel):
+        field_a: int
+        field_b: date
+
+    assert TypeAdapter(Model).validate_strings({'field_a': '1', 'field_b': '2017-01-01'}, strict=strict) == Model(
+        field_a=1, field_b=date(2017, 1, 1)
+    )
+
+
+@pytest.mark.parametrize('strict', [True, False])
+def test_validate_strings_dataclass(strict):
+    @dataclass
+    class MyDataclass:
+        field_a: int
+        field_b: date
+
+    assert TypeAdapter(MyDataclass).validate_strings(
+        {'field_a': '1', 'field_b': '2017-01-01'}, strict=strict
+    ) == MyDataclass(field_a=1, field_b=date(2017, 1, 1))
+
+
+@pytest.mark.parametrize('strict', [True, False])
+def test_validate_strings_typed_dict(strict):
+    class MyTypedDict(TypedDict):
+        field_a: int
+        field_b: date
+
+    assert TypeAdapter(MyTypedDict).validate_strings({'field_a': '1', 'field_b': '2017-01-01'}, strict=strict) == {
+        'field_a': 1,
+        'field_b': date(2017, 1, 1),
+    }
+
+
 def test_annotated_type_disallows_config() -> None:
     class Model(BaseModel):
         x: int
@@ -520,32 +555,10 @@ def test_ta_config_with_annotated_type() -> None:
     ]
 
 
-def test_eval_type_backport():
-    v = TypeAdapter('list[int | str]').validate_python
-    assert v([1, '2']) == [1, '2']
-    with pytest.raises(ValidationError) as exc_info:
-        v([{'not a str or int'}])
-    # insert_assert(exc_info.value.errors(include_url=False))
-    assert exc_info.value.errors(include_url=False) == [
-        {
-            'type': 'int_type',
-            'loc': (0, 'int'),
-            'msg': 'Input should be a valid integer',
-            'input': {'not a str or int'},
-        },
-        {
-            'type': 'string_type',
-            'loc': (0, 'str'),
-            'msg': 'Input should be a valid string',
-            'input': {'not a str or int'},
-        },
-    ]
-    with pytest.raises(ValidationError) as exc_info:
-        v('not a list')
-    # insert_assert(exc_info.value.errors(include_url=False))
-    assert exc_info.value.errors(include_url=False) == [
-        {'type': 'list_type', 'loc': (), 'msg': 'Input should be a valid list', 'input': 'not a list'}
-    ]
+def test_ta_config_used_for_json_schema() -> None:
+    """https://github.com/pydantic/pydantic/issues/13675"""
+    ta = TypeAdapter(list[bytes], config=ConfigDict(ser_json_bytes='base64'))
+    assert ta.json_schema() == {'type': 'array', 'items': {'type': 'string', 'format': 'base64url'}}
 
 
 def defer_build_test_models(config: ConfigDict) -> list[Any]:
@@ -554,7 +567,7 @@ def defer_build_test_models(config: ConfigDict) -> list[Any]:
         x: int
 
     class SubModel(Model):
-        y: Optional[int] = None
+        y: int | None = None
 
     @pydantic_dataclass(config=config)
     class DataClassModel:
@@ -562,7 +575,7 @@ def defer_build_test_models(config: ConfigDict) -> list[Any]:
 
     @pydantic_dataclass
     class SubDataClassModel(DataClassModel):
-        y: Optional[int] = None
+        y: int | None = None
 
     class TypedDictModel(TypedDict):
         __pydantic_config__ = config  # type: ignore
@@ -686,25 +699,67 @@ def test_correct_frame_used_parametrized(create_module) -> None:
 def test_validate_python_with_incorrect_configuration():
     ta = TypeAdapter(int)
 
-    with pytest.raises(PydanticUserError) as exc_info:
+    with pytest.raises(PydanticUserError, check=lambda e: e.code == 'validate-by-alias-and-name-false'):
         ta.validate_python(1, by_alias=False, by_name=False)
-
-    assert exc_info.value.code == 'validate-by-alias-and-name-false'
 
 
 def test_validate_json_with_incorrect_configuration():
     ta = TypeAdapter(int)
 
-    with pytest.raises(PydanticUserError) as exc_info:
+    with pytest.raises(PydanticUserError, check=lambda e: e.code == 'validate-by-alias-and-name-false'):
         ta.validate_json(1, by_alias=False, by_name=False)
-
-    assert exc_info.value.code == 'validate-by-alias-and-name-false'
 
 
 def test_validate_strings_with_incorrect_configuration():
     ta = TypeAdapter(int)
 
-    with pytest.raises(PydanticUserError) as exc_info:
+    with pytest.raises(PydanticUserError, check=lambda e: e.code == 'validate-by-alias-and-name-false'):
         ta.validate_strings(1, by_alias=False, by_name=False)
 
-    assert exc_info.value.code == 'validate-by-alias-and-name-false'
+
+@pytest.mark.parametrize(
+    'input_value',
+    [
+        pytest.param('[1, 2, 3]', id='[1, 2, 3]_str'),
+        pytest.param(b'[1, 2, 3]', id='[1, 2, 3]_bytes'),
+        pytest.param(bytearray(b'[1, 2, 3]'), id='[1, 2, 3]_bytearray'),
+    ],
+)
+def test_validate_json_input_types(input_value):
+    ta = TypeAdapter(list[int])
+
+    assert ta.validate_json(input_value) == [1, 2, 3]
+
+
+def test_validate_json_input_type_invalid():
+    ta = TypeAdapter(list[int])
+
+    with pytest.raises(ValidationError, match=r'JSON input should be string, bytes or bytearray \[type=json_type,'):
+        ta.validate_json([])
+
+
+def test_validate_json_invalid_json():
+    ta = TypeAdapter(bool)
+
+    with pytest.raises(ValidationError) as exc_info:
+        ta.validate_json('"foobar')
+    assert exc_info.value.errors(include_url=False) == [
+        {
+            'type': 'json_invalid',
+            'loc': (),
+            'msg': 'Invalid JSON: EOF while parsing a string at line 1 column 7',
+            'input': '"foobar',
+            'ctx': {'error': 'EOF while parsing a string at line 1 column 7'},
+        }
+    ]
+    with pytest.raises(ValidationError) as exc_info:
+        ta.validate_json('[1,\n2,\n3,]')
+    assert exc_info.value.errors(include_url=False) == [
+        {
+            'type': 'json_invalid',
+            'loc': (),
+            'msg': 'Invalid JSON: trailing comma at line 3 column 3',
+            'input': '[1,\n2,\n3,]',
+            'ctx': {'error': 'trailing comma at line 3 column 3'},
+        }
+    ]

@@ -20,8 +20,12 @@ install: .uv
 rebuild-lockfiles: .uv
 	uv lock --upgrade
 
+.PHONY: .rust  # Check that Rust is installed
+.rust:
+	@rustup --version || echo 'Please install Rust: https://rust-lang.org/tools/install/'
+
 .PHONY: format  ## Auto-format python source files
-format: .uv
+format: .uv .rust
 	uv run ruff check --fix $(sources)
 	uv run ruff format $(sources)
 	cargo fmt --manifest-path pydantic-core/Cargo.toml
@@ -64,7 +68,7 @@ test-typechecking-mypy: .uv
 
 .PHONY: test-typechecking-pyrefly  ## Typechecking integration tests (Pyrefly).
 test-typechecking-pyrefly: .uv
-	uv run bash -c 'cd tests/typechecking && pyrefly --version && pyrefly check'
+	uv run bash -c 'cd tests/typechecking && pyrefly --version && pyrefly check --config pyproject.toml'
 
 .PHONY: test  ## Run all tests, skipping the type-checker integration tests
 test: .uv

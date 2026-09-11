@@ -1,5 +1,6 @@
+from collections.abc import Callable
 from datetime import datetime
-from typing import Any, Callable, TypeVar, Union
+from typing import Any, TypeVar, Union
 
 from faker import Faker
 

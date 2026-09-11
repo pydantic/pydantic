@@ -51,7 +51,7 @@ and IDEs (like [PyCharm](https://www.jetbrains.com/pycharm/) and [VSCode](https:
 
 ## Performance
 
-Pydantic's core validation logic is implemented in a separate package ([`pydantic-core`](https://github.com/pydantic/pydantic-core)),
+Pydantic's core validation logic is implemented in a separate package ([`pydantic-core`](https://pypi.org/project/pydantic-core)),
 where validation for most types is implemented in Rust.
 
 As a result, Pydantic is among the fastest data validation libraries for Python.
@@ -121,7 +121,7 @@ As a result, Pydantic is among the fastest data validation libraries for Python.
 Unlike other performance-centric libraries written in compiled languages, Pydantic also has excellent support for customizing validation via [functional validators](#customisation).
 
 !!! tip "Learn more"
-    Samuel Colvin's [talk at PyCon 2023](https://youtu.be/pWZw7hYoRVU) explains how [`pydantic-core`](https://github.com/pydantic/pydantic-core)
+    Samuel Colvin's [talk at PyCon 2023](https://youtu.be/pWZw7hYoRVU) explains how [`pydantic-core`](https://pypi.org/project/pydantic-core)
     works and how it integrates with Pydantic.
 
 ## Serialization
@@ -383,6 +383,9 @@ Some notable libraries that depend on Pydantic:
 {{ libraries }}
 
 More libraries using Pydantic can be found at [`Kludex/awesome-pydantic`](https://github.com/Kludex/awesome-pydantic).
+
+The team behind Pydantic also builds [Pydantic Logfire](integrations/logfire.md), an observability
+platform with a native Pydantic integration for tracing and debugging validation in production.
 
 ## Organisations using Pydantic {#using-pydantic}
 

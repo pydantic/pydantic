@@ -1,13 +1,14 @@
 import datetime
 import warnings
 from collections import deque
+from collections.abc import Callable
 from decimal import Decimal
 from enum import Enum
 from ipaddress import IPv4Address, IPv4Interface, IPv4Network, IPv6Address, IPv6Interface, IPv6Network
 from pathlib import Path
 from re import Pattern
 from types import GeneratorType
-from typing import TYPE_CHECKING, Any, Callable, Union
+from typing import TYPE_CHECKING, Any
 from uuid import UUID
 
 from typing_extensions import deprecated
@@ -26,11 +27,11 @@ if not TYPE_CHECKING:
 __all__ = 'pydantic_encoder', 'custom_pydantic_encoder', 'timedelta_isoformat'
 
 
-def isoformat(o: Union[datetime.date, datetime.time]) -> str:
+def isoformat(o: datetime.date | datetime.time) -> str:
     return o.isoformat()
 
 
-def decimal_encoder(dec_value: Decimal) -> Union[int, float]:
+def decimal_encoder(dec_value: Decimal) -> int | float:
     """Encodes a Decimal as int of there's no exponent, otherwise float.
 
     This is useful when we use ConstrainedDecimal to represent Numeric(x,0)

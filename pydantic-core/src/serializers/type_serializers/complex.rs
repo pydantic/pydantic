@@ -1,10 +1,9 @@
 use std::borrow::Cow;
-use std::sync::Arc;
+use std::sync::{Arc, LazyLock};
 
 use pyo3::types::{PyComplex, PyDict};
 use pyo3::{IntoPyObjectExt, prelude::*};
 
-use crate::build_tools::LazyLock;
 use crate::definitions::DefinitionsBuilder;
 use crate::serializers::SerializationState;
 

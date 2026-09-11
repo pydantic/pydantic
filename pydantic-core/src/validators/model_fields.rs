@@ -22,7 +22,7 @@ use crate::lookup_key::LookupPathCollection;
 use crate::lookup_key::LookupType;
 use crate::tools::SchemaDict;
 use crate::tools::new_py_string;
-use crate::validators::shared::lookup_tree::LookupFieldPriority;
+use crate::validators::shared::lookup_tree::LookupFieldInfo;
 use crate::validators::shared::lookup_tree::LookupTree;
 
 use super::{BuildValidator, CombinedValidator, DefinitionsBuilder, ValidationState, Validator, build_validator};
@@ -181,7 +181,6 @@ impl Validator for ModelFieldsValidator {
             };
             self.validate_by_get_item(py, input, dict, state)?
         };
-        state.add_fields_set(fields_set.len());
 
         // if we have extra=allow, but we didn't create a dict because we were validating
         // from attributes, set it now so __pydantic_extra__ is always a dict if extra=allow
@@ -230,7 +229,7 @@ impl Validator for ModelFieldsValidator {
         }
 
         let new_data = {
-            let state = &mut state.rebind_extra(move |extra| extra.data = Some(data_dict));
+            let state = &mut state.scoped_set_data(Some(data_dict));
 
             if let Some(field) = self.fields.iter().find(|f| &*f.name == field_name) {
                 if field.frozen {
@@ -330,8 +329,8 @@ impl ModelFieldsValidator {
         };
 
         {
-            let state = &mut state.rebind_extra(|extra| extra.data = Some(model_dict.clone()));
-            let state = &mut state.scoped_set(|state| &mut state.has_field_error, false);
+            let state = &mut state.scoped_set_data(Some(model_dict.clone()));
+            let state = &mut state.scoped_clear_field_error();
 
             for (field_idx, field) in self.fields.iter().enumerate() {
                 let state = &mut state.scoped_set_field_name(Some(field.name.as_py_str().bind(py).clone()));
@@ -389,6 +388,7 @@ impl ModelFieldsValidator {
                     }
                     Ok(None) => {
                         // There was no default value
+                        state.has_field_error = true;
                         let error_type = ErrorTypeDefaults::Missing;
                         let error_loc = field.lookup_path_collection.error_loc(lookup_type, self.loc_by_alias);
                         errors.push(ValLineError::new_with_full_loc(error_type, input, error_loc));
@@ -567,18 +567,21 @@ impl ModelFieldsValidator {
 
         let model_dict = PyDict::new(py);
         let mut model_extra_dict_op: Option<Bound<PyDict>> = None;
-        let mut field_results: Vec<Option<(ValResult<Py<PyAny>>, LookupFieldPriority)>> =
+        let mut field_results: Vec<Option<(LookupFieldInfo, &JsonValue)>> =
             (0..self.fields.len()).map(|_| None).collect();
         let mut errors: Vec<ValLineError> = Vec::new();
         let mut fields_set_bitset = FixedBitSet::with_capacity(self.fields.len());
+        let mut fields_set_count: usize = 0;
         let mut extra_fields_set_vec = None;
+
+        let state = &mut state.scoped_set_data(Some(model_dict.clone()));
+        let state = &mut state.scoped_clear_field_error();
 
         let model_extra_dict = PyDict::new(py);
         for (key, value) in &**json_object {
             let mut handled = false;
             let key = key.as_ref();
-            let mut matches = self.lookup.iter_matches(key, value);
-            while let Some((field_info, field_value, lookup_path)) = matches.next_match() {
+            for (field_info, field_value) in self.lookup.iter_matches(key, value) {
                 handled = true;
 
                 if !field_info.matches_lookup(lookup_type) {
@@ -588,37 +591,15 @@ impl ModelFieldsValidator {
                 let field_result = &mut field_results[field_info.field_index];
 
                 // later results are preferred unless the existing result has come from a higher priority alias
-                if let Some((_, existing_lookup_priority)) = &field_result
-                    && existing_lookup_priority.is_higher_priority_than(&field_info.lookup_priority)
+                if let Some((existing_field_info, _)) = &field_result
+                    && existing_field_info
+                        .lookup_priority
+                        .is_higher_priority_than(&field_info.lookup_priority)
                 {
                     continue;
                 }
 
-                let field = &self.fields[field_info.field_index];
-
-                let result = field.validator.validate(py, field_value, state).map_err(|e| match e {
-                    ValError::LineErrors(line_errors) => {
-                        // for line errors, apply the actual lookup path used
-                        ValError::LineErrors(
-                            line_errors
-                                .into_iter()
-                                .map(|mut err| {
-                                    if self.loc_by_alias {
-                                        for loc in lookup_path.iter_loc_items().rev() {
-                                            err = err.with_outer_location(loc);
-                                        }
-                                    } else {
-                                        err = err.with_outer_location(field.name.clone());
-                                    }
-                                    err
-                                })
-                                .collect(),
-                        )
-                    }
-                    other => other,
-                });
-
-                *field_result = Some((result, field_info.lookup_priority));
+                *field_result = Some((*field_info, field_value));
             }
 
             if handled {
@@ -664,15 +645,33 @@ impl ModelFieldsValidator {
         // dict, and try to set defaults for any missing fields
 
         for ((field_idx, field), field_result) in std::iter::zip(self.fields.iter().enumerate(), field_results) {
-            let field_value = if let Some((validation_result, _)) = field_result {
-                match validation_result {
+            let state = &mut state.scoped_set_field_name(Some(field.name.as_py_str().bind(py).clone()));
+
+            let field_value = if let Some((field_info, field_json_value)) = field_result {
+                match field.validator.validate(py, field_json_value, state) {
                     Ok(value) => {
                         fields_set_bitset.insert(field_idx);
+                        fields_set_count += 1;
                         value
                     }
                     Err(ValError::Omit) => continue,
                     Err(ValError::LineErrors(line_errors)) => {
-                        errors.extend(line_errors);
+                        state.has_field_error = true;
+                        // for line errors, apply the actual lookup path used
+                        errors.extend(line_errors.into_iter().map(|mut err| {
+                            if self.loc_by_alias
+                                && let Some(alias_index) = field_info.alias_index()
+                            {
+                                err = field.lookup_path_collection.by_alias[alias_index].apply_error_loc(
+                                    err,
+                                    self.loc_by_alias,
+                                    &field.name,
+                                );
+                            } else {
+                                err = err.with_outer_location(field.name.clone());
+                            }
+                            err
+                        }));
                         continue;
                     }
                     Err(err) => return Err(err),
@@ -689,6 +688,7 @@ impl ModelFieldsValidator {
                     }
                     Err(ValError::Omit) => continue,
                     Err(ValError::LineErrors(line_errors)) => {
+                        state.has_field_error = true;
                         for err in line_errors {
                             // Note: this will always use the field name even if there is an alias
                             // However, we don't mind so much because this error can only happen if the
@@ -713,6 +713,7 @@ impl ModelFieldsValidator {
             return Err(ValError::LineErrors(errors));
         }
 
+        state.add_fields_set(fields_set_count);
         Ok((
             model_dict,
             model_extra_dict_op,

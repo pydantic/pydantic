@@ -19,7 +19,7 @@ import os
 import re
 import warnings
 from collections import Counter, defaultdict
-from collections.abc import Hashable, Iterable, Sequence
+from collections.abc import Callable, Hashable, Iterable, Sequence
 from copy import deepcopy
 from enum import Enum
 from re import Pattern
@@ -27,11 +27,10 @@ from typing import (
     TYPE_CHECKING,
     Annotated,
     Any,
-    Callable,
     Literal,
     NewType,
+    TypeAlias,
     TypeVar,
-    Union,
     cast,
     overload,
 )
@@ -39,7 +38,7 @@ from typing import (
 import pydantic_core
 from pydantic_core import MISSING, CoreSchema, PydanticOmit, core_schema, to_jsonable_python
 from pydantic_core.core_schema import ComputedField
-from typing_extensions import TypeAlias, assert_never, deprecated, final
+from typing_extensions import assert_never, deprecated, final
 from typing_inspection.introspection import get_literal_values
 
 from pydantic.warnings import PydanticDeprecatedSince26, PydanticDeprecatedSince29
@@ -49,14 +48,13 @@ from ._internal import (
     _core_metadata,
     _core_utils,
     _decorators,
-    _internal_dataclass,
     _mock_val_ser,
     _schema_generation_shared,
     _typing_extra,
 )
 from .annotated_handlers import GetJsonSchemaHandler
 from .config import JsonDict, JsonValue
-from .errors import PydanticInvalidForJsonSchema, PydanticSchemaGenerationError, PydanticUserError
+from .errors import PydanticInvalidForJsonSchema, PydanticUserError
 
 if TYPE_CHECKING:
     from . import ConfigDict
@@ -136,7 +134,7 @@ JsonSchemaKeyT = TypeVar('JsonSchemaKeyT', bound=Hashable)
 _PRIMITIVE_JSON_SCHEMA_TYPES = ('string', 'boolean', 'null', 'integer', 'number')
 
 
-@dataclasses.dataclass(**_internal_dataclass.slots_true)
+@dataclasses.dataclass(slots=True)
 class _DefinitionsRemapping:
     defs_remapping: dict[DefsRef, DefsRef]
     json_remapping: dict[JsonRef, JsonRef]
@@ -685,6 +683,37 @@ class GenerateJsonSchema:
         json_schema = {k: v for k, v in json_schema.items() if v not in {math.inf, -math.inf}}
         return json_schema
 
+    def fraction_schema(self, schema: core_schema.FractionSchema) -> JsonSchemaValue:
+        """Generates a JSON schema that matches a fraction value.
+
+        Args:
+            schema: The core schema.
+
+        Returns:
+            The generated JSON schema.
+
+        """
+        json_schema: JsonSchemaValue = {'type': 'string', 'format': 'fraction'}
+        if self.mode == 'validation':
+            le = schema.get('le')
+            ge = schema.get('ge')
+            lt = schema.get('lt')
+            gt = schema.get('gt')
+            json_schema = {
+                'anyOf': [
+                    self.float_schema(
+                        core_schema.float_schema(
+                            le=None if le is None else float(le),
+                            ge=None if ge is None else float(ge),
+                            lt=None if lt is None else float(lt),
+                            gt=None if gt is None else float(gt),
+                        )
+                    ),
+                    json_schema,
+                ],
+            }
+        return json_schema
+
     def decimal_schema(self, schema: core_schema.DecimalSchema) -> JsonSchemaValue:
         """Generates a JSON schema that matches a decimal value.
 
@@ -694,49 +723,11 @@ class GenerateJsonSchema:
         Returns:
             The generated JSON schema.
         """
-
-        def get_decimal_pattern(schema: core_schema.DecimalSchema) -> str:
-            max_digits = schema.get('max_digits')
-            decimal_places = schema.get('decimal_places')
-
-            pattern = (
-                r'^(?!^[-+.]*$)[+-]?0*'  # check it is not empty string and not one or sequence of ".+-" characters.
-            )
-
-            # Case 1: Both max_digits and decimal_places are set
-            if max_digits is not None and decimal_places is not None:
-                integer_places = max(0, max_digits - decimal_places)
-                pattern += (
-                    rf'(?:'
-                    rf'\d{{0,{integer_places}}}'
-                    rf'|'
-                    rf'(?=[\d.]{{1,{max_digits + 1}}}0*$)'
-                    rf'\d{{0,{integer_places}}}\.\d{{0,{decimal_places}}}0*$'
-                    rf')'
-                )
-
-            # Case 2: Only max_digits is set
-            elif max_digits is not None and decimal_places is None:
-                pattern += (
-                    rf'(?:'
-                    rf'\d{{0,{max_digits}}}'
-                    rf'|'
-                    rf'(?=[\d.]{{1,{max_digits + 1}}}0*$)'
-                    rf'\d*\.\d*0*$'
-                    rf')'
-                )
-
-            # Case 3: Only decimal_places is set
-            elif max_digits is None and decimal_places is not None:
-                pattern += rf'\d*\.?\d{{0,{decimal_places}}}0*$'
-
-            # Case 4: Both are None (no restrictions)
-            else:
-                pattern += r'\d*\.?\d*$'  # look for arbitrary integer or decimal
-
-            return pattern
-
-        json_schema = self.str_schema(core_schema.str_schema(pattern=get_decimal_pattern(schema)))
+        str_schema = core_schema.str_schema()
+        pattern = self.get_decimal_pattern(schema)
+        if pattern is not None:
+            str_schema['pattern'] = pattern
+        json_schema = self.str_schema(str_schema)
         if self.mode == 'validation':
             multiple_of = schema.get('multiple_of')
             le = schema.get('le')
@@ -760,6 +751,63 @@ class GenerateJsonSchema:
             }
         return json_schema
 
+    def get_decimal_pattern(self, schema: core_schema.DecimalSchema) -> str | None:
+        """Get the regular expression pattern to apply to the string representation of a decimal.
+
+        By default, no pattern is applied (`None` is returned). Subclasses can override this method
+        to return a custom pattern, or [`build_decimal_pattern()`][pydantic.json_schema.GenerateJsonSchema.build_decimal_pattern]
+        can be used to get a pattern reflecting the `max_digits` and `decimal_places` constraints:
+
+        ```python
+        from pydantic.json_schema import GenerateJsonSchema
+
+        class MyGenerateJsonSchema(GenerateJsonSchema):
+            def get_decimal_pattern(self, schema):
+                return self.build_decimal_pattern(schema)
+        ```
+
+        Args:
+            schema: The core schema.
+
+        Returns:
+            The regular expression pattern, or `None` if no pattern should be applied.
+        """
+        return None
+
+    def build_decimal_pattern(self, schema: core_schema.DecimalSchema) -> str:
+        """Build a regular expression pattern for the string representation of a decimal.
+
+        The pattern takes into account the `max_digits` and `decimal_places` constraints, and the current
+        mode:
+
+        - In `'validation'` mode, the pattern accepts the string syntax understood by the [`Decimal`][decimal.Decimal]
+          constructor. The `max_digits` and `decimal_places` constraints are only reflected for strings
+          *without* an exponent: strings using an exponent are accepted as long as they are syntactically valid,
+          as the constraints can't be expressed with a regular expression in this case.
+        - In `'serialization'` mode, the pattern exactly describes the strings produced by pydantic
+          (i.e. by `str(decimal)`) for decimals satisfying the constraints,
+          including the ones using scientific notation (e.g. `'1E-7'`, `'1.5E+3'`).
+
+        In both modes, trailing zeros in the decimal part are not counted (e.g. `'1.10'` is accepted with
+        `decimal_places=1`), consistent with the validation behavior. If `allow_inf_nan` is enabled (on the
+        core schema or in the configuration), the string representations of infinity and NaN are also accepted.
+
+        Args:
+            schema: The core schema.
+
+        Returns:
+            The regular expression pattern.
+        """
+        max_digits = schema.get('max_digits')
+        decimal_places = schema.get('decimal_places')
+        allow_inf_nan = schema.get('allow_inf_nan')
+        if allow_inf_nan is None:
+            allow_inf_nan = self._config.config_dict.get('allow_inf_nan', False)
+        if self.mode == 'validation':
+            return _decimal_validation_pattern(max_digits, decimal_places, allow_inf_nan)
+        else:
+            return _decimal_serialization_pattern(max_digits, decimal_places, allow_inf_nan)
+
     def str_schema(self, schema: core_schema.StringSchema) -> JsonSchemaValue:
         """Generates a JSON schema that matches a string value.
 
@@ -769,8 +817,12 @@ class GenerateJsonSchema:
         Returns:
             The generated JSON schema.
         """
-        json_schema = {'type': 'string'}
+        json_schema: JsonSchemaValue = {'type': 'string'}
         self.update_with_validations(json_schema, schema, self.ValidationsMapping.string)
+        if 'minLength' not in json_schema and self._config.str_min_length:
+            json_schema['minLength'] = self._config.str_min_length
+        if 'maxLength' not in json_schema and self._config.str_max_length is not None:
+            json_schema['maxLength'] = self._config.str_max_length
         if isinstance(json_schema.get('pattern'), Pattern):
             # TODO: should we add regex flags to the pattern?
             json_schema['pattern'] = json_schema.get('pattern').pattern  # type: ignore
@@ -798,7 +850,7 @@ class GenerateJsonSchema:
         Returns:
             The generated JSON schema.
         """
-        return {'type': 'string', 'format': 'date'}
+        return self._common_temporal_schema('date', self._config.ser_json_temporal)
 
     def time_schema(self, schema: core_schema.TimeSchema) -> JsonSchemaValue:
         """Generates a JSON schema that matches a time value.
@@ -809,7 +861,7 @@ class GenerateJsonSchema:
         Returns:
             The generated JSON schema.
         """
-        return {'type': 'string', 'format': 'time'}
+        return self._common_temporal_schema('time', self._config.ser_json_temporal)
 
     def datetime_schema(self, schema: core_schema.DatetimeSchema) -> JsonSchemaValue:
         """Generates a JSON schema that matches a datetime value.
@@ -820,7 +872,7 @@ class GenerateJsonSchema:
         Returns:
             The generated JSON schema.
         """
-        return {'type': 'string', 'format': 'date-time'}
+        return self._common_temporal_schema('date-time', self._config.ser_json_temporal)
 
     def timedelta_schema(self, schema: core_schema.TimedeltaSchema) -> JsonSchemaValue:
         """Generates a JSON schema that matches a timedelta value.
@@ -831,9 +883,21 @@ class GenerateJsonSchema:
         Returns:
             The generated JSON schema.
         """
-        if self._config.ser_json_timedelta == 'float':
+        if 'ser_json_temporal' in self._config.config_dict:
+            temporal_format = self._config.ser_json_temporal
+        else:
+            # `ser_json_temporal` supersedes `ser_json_timedelta`, which only applies when the former isn't
+            # explicitly set.
+            temporal_format = 'seconds' if self._config.ser_json_timedelta == 'float' else 'iso8601'
+        return self._common_temporal_schema('duration', temporal_format)
+
+    def _common_temporal_schema(
+        self, format: str, temporal_format: Literal['iso8601', 'seconds', 'milliseconds']
+    ) -> JsonSchemaValue:
+        if self.mode == 'serialization' and temporal_format != 'iso8601':
+            # Both `'seconds'` and `'milliseconds'` serialize to a number:
             return {'type': 'number'}
-        return {'type': 'string', 'format': 'duration'}
+        return {'type': 'string', 'format': format}
 
     def literal_schema(self, schema: core_schema.LiteralSchema) -> JsonSchemaValue:
         """Generates a JSON schema that matches a literal value.
@@ -868,7 +932,7 @@ class GenerateJsonSchema:
         return result
 
     def missing_sentinel_schema(self, schema: core_schema.MissingSentinelSchema) -> JsonSchemaValue:
-        """Generates a JSON schema that matches the `MISSING` sentinel value.
+        """Generates a JSON schema that matches a schema that allows the `MISSING` sentinel value.
 
         Args:
             schema: The core schema.
@@ -876,7 +940,23 @@ class GenerateJsonSchema:
         Returns:
             The generated JSON schema.
         """
-        raise PydanticOmit
+        inner_schema = schema.get('schema')
+        if inner_schema is None:
+            raise PydanticOmit
+        return self.generate_inner(inner_schema)
+
+    def ellipsis_schema(self, schema: core_schema.EllipsisSchema) -> JsonSchemaValue:
+        """Handles JSON schema generation for a core schema that checks if a value is the [`Ellipsis`][] literal.
+
+        Unless overridden in a subclass, this raises an error.
+
+        Args:
+            schema: The core schema.
+
+        Returns:
+            The generated JSON schema.
+        """
+        return self.handle_invalid_for_json_schema(schema, 'core_schema.EllipsisSchema')
 
     def enum_schema(self, schema: core_schema.EnumSchema) -> JsonSchemaValue:
         """Generates a JSON schema that matches an Enum value.
@@ -956,6 +1036,20 @@ class GenerateJsonSchema:
 
     def list_schema(self, schema: core_schema.ListSchema) -> JsonSchemaValue:
         """Returns a schema that matches a list schema.
+
+        Args:
+            schema: The core schema.
+
+        Returns:
+            The generated JSON schema.
+        """
+        items_schema = {} if 'items_schema' not in schema else self.generate_inner(schema['items_schema'])
+        json_schema = {'type': 'array', 'items': items_schema}
+        self.update_with_validations(json_schema, schema, self.ValidationsMapping.array)
+        return json_schema
+
+    def deque_schema(self, schema: core_schema.DequeSchema) -> JsonSchemaValue:
+        """Returns a schema that matches a deque schema.
 
         Args:
             schema: The core schema.
@@ -1076,6 +1170,20 @@ class GenerateJsonSchema:
         Returns:
             The generated JSON schema.
         """
+        return self._common_dict_schema(schema)
+
+    def frozendict_schema(self, schema: core_schema.FrozenDictSchema) -> JsonSchemaValue:
+        """Generates a JSON schema that matches a frozendict schema.
+
+        Args:
+            schema: The core schema.
+
+        Returns:
+            The generated JSON schema.
+        """
+        return self._common_dict_schema(schema)
+
+    def _common_dict_schema(self, schema: core_schema.DictSchema | core_schema.FrozenDictSchema) -> JsonSchemaValue:
         json_schema: JsonSchemaValue = {'type': 'object'}
 
         keys_schema = self.generate_inner(schema['keys_schema']).copy() if 'keys_schema' in schema else {}
@@ -1276,13 +1384,10 @@ class GenerateJsonSchema:
         """
         generated: list[JsonSchemaValue] = []
 
-        choices = schema['choices']
-        for choice in choices:
-            # choice will be a tuple if an explicit label was provided
-            choice_schema = choice[0] if isinstance(choice, tuple) else choice
+        for choice in core_schema.iter_union_choices(schema):
             try:
-                generated.append(self.generate_inner(choice_schema))
-            except PydanticOmit:
+                generated.append(self.generate_inner(choice))
+            except PydanticOmit:  # noqa: PERF203
                 continue
             except PydanticInvalidForJsonSchema as exc:
                 self.emit_warning('skipped-choice', exc.message)
@@ -1341,6 +1446,12 @@ class GenerateJsonSchema:
         for k, v in schema['choices'].items():
             if isinstance(k, Enum):
                 k = k.value
+            elif isinstance(k, bool):
+                # Use the JSON representation so that the discriminator mapping
+                # can be matched against the serialized payload value
+                k = 'true' if k else 'false'
+            elif k is None:
+                k = 'null'
             try:
                 # Use str(k) since keys must be strings for json; while not technically correct,
                 # it's the closest that can be represented in valid JSON
@@ -1512,7 +1623,9 @@ class GenerateJsonSchema:
     def _name_required_computed_fields(
         computed_fields: list[ComputedField],
     ) -> list[tuple[str, bool, core_schema.ComputedField]]:
-        return [(field['property_name'], True, field) for field in computed_fields]
+        return [
+            (field['property_name'], field.get('serialization_exclude_if') is None, field) for field in computed_fields
+        ]
 
     def _named_required_fields_schema(
         self, named_required_fields: Sequence[tuple[str, bool, CoreSchemaField]]
@@ -1543,7 +1656,7 @@ class GenerateJsonSchema:
         if field['type'] == 'computed-field':
             alias: Any = field.get('alias', name)
         elif self.mode == 'validation':
-            alias = field.get('validation_alias', name)
+            alias = name if not self._config.validate_by_alias else field.get('validation_alias', name)
         else:
             alias = field.get('serialization_alias', name)
         if isinstance(alias, str):
@@ -1639,7 +1752,6 @@ class GenerateJsonSchema:
         """
         from ._internal._dataclasses import is_stdlib_dataclass
         from .main import BaseModel
-        from .root_model import RootModel
 
         if (config_title := config.get('title')) is not None:
             json_schema.setdefault('title', config_title)
@@ -1667,8 +1779,6 @@ class GenerateJsonSchema:
 
         if docstring:
             json_schema.setdefault('description', inspect.cleandoc(docstring))
-        elif issubclass(cls, RootModel) and (root_description := cls.__pydantic_fields__['root'].description):
-            json_schema.setdefault('description', root_description)
 
         extra = config.get('extra')
         if 'additionalProperties' not in json_schema:  # This check is particularly important for `typed_dict_schema()`
@@ -1836,6 +1946,55 @@ class GenerateJsonSchema:
             json_schema = self.generate_inner(schema['schema']).copy()
 
         self._update_class_schema(json_schema, cls, config)
+
+        return json_schema
+
+    def named_tuple_field_schema(self, schema: core_schema.NamedTupleField) -> JsonSchemaValue:
+        """Generates a JSON schema that matches a schema that defines a named tuple field.
+
+        Args:
+            schema: The core schema.
+
+        Returns:
+            The generated JSON schema.
+        """
+        return self.generate_inner(schema['schema'])
+
+    def named_tuple_schema(self, schema: core_schema.NamedTupleSchema) -> JsonSchemaValue:
+        """Generates a JSON schema that matches a schema that defines a named tuple.
+
+        Args:
+            schema: The core schema.
+
+        Returns:
+            The generated JSON schema.
+        """
+        prefix_items: list[JsonSchemaValue] = []
+        min_items = 0
+
+        for field in schema['fields']:
+            name = field['name']
+            if self.by_alias:
+                alias = field.get('validation_alias')
+                if isinstance(alias, str):
+                    name = alias
+
+            field_schema = self.generate_inner(field['schema']).copy()
+            if 'title' not in field_schema and self.field_title_should_be_set(field['schema']):
+                field_schema['title'] = self.get_title_from_name(name)
+            prefix_items.append(field_schema)
+
+            if field['schema']['type'] != 'default':
+                # This assumes that if the field has a default value,
+                # the inner schema must be of type WithDefaultSchema.
+                min_items += 1
+
+        json_schema: JsonSchemaValue = {'type': 'array'}
+        if prefix_items:
+            json_schema['prefixItems'] = prefix_items
+        if min_items:
+            json_schema['minItems'] = min_items
+        json_schema['maxItems'] = len(prefix_items)
 
         return json_schema
 
@@ -2132,18 +2291,18 @@ class GenerateJsonSchema:
         Returns:
             The generated JSON schema.
         """
-        schema_type = schema['type']
-        if schema_type == 'function-plain' or schema_type == 'function-wrap':
-            # PlainSerializerFunctionSerSchema or WrapSerializerFunctionSerSchema
-            return_schema = schema.get('return_schema')
-            if return_schema is not None:
-                return self.generate_inner(return_schema)
-        elif schema_type == 'format' or schema_type == 'to-string':
-            # FormatSerSchema or ToStringSerSchema
-            return self.str_schema(core_schema.str_schema())
-        elif schema['type'] == 'model':
-            # ModelSerSchema
-            return self.generate_inner(schema['schema'])
+        match schema:
+            case {'type': 'function-plain' | 'function-wrap'}:
+                # PlainSerializerFunctionSerSchema or WrapSerializerFunctionSerSchema
+                return_schema = schema.get('return_schema')
+                if return_schema is not None:
+                    return self.generate_inner(return_schema)
+            case {'type': 'format' | 'to-string'}:
+                # FormatSerSchema or ToStringSerSchema
+                return self.str_schema(core_schema.str_schema())
+            case {'type': 'model'}:
+                # ModelSerSchema
+                return self.generate_inner(schema['schema'])
         return None
 
     def complex_schema(self, schema: core_schema.ComplexSchema) -> JsonSchemaValue:
@@ -2199,6 +2358,8 @@ class GenerateJsonSchema:
                 return False
             if schema['type'] in {'default', 'nullable', 'definitions'}:
                 return self.field_title_should_be_set(schema['schema'])  # type: ignore[typeddict-item]
+            if schema['type'] == 'missing-sentinel' and (inner_schema := schema.get('schema')) is not None:
+                return self.field_title_should_be_set(inner_schema)
             if _core_utils.is_function_with_inner_schema(schema):
                 return self.field_title_should_be_set(schema['schema'])
             if schema['type'] == 'definition-ref':
@@ -2357,12 +2518,14 @@ class GenerateJsonSchema:
                     dft, by_alias=self.by_alias, mode='json'
                 )
             )
-        except PydanticSchemaGenerationError:
-            raise pydantic_core.PydanticSerializationError(f'Unable to encode default value {dft}')
-
-        return pydantic_core.to_jsonable_python(
-            default, timedelta_mode=config.ser_json_timedelta, bytes_mode=config.ser_json_bytes, by_alias=self.by_alias
-        )
+            return pydantic_core.to_jsonable_python(
+                default,
+                timedelta_mode=config.ser_json_timedelta,
+                bytes_mode=config.ser_json_bytes,
+                by_alias=self.by_alias,
+            )
+        except Exception as e:
+            raise pydantic_core.PydanticSerializationError(f'Unable to encode default value {dft}') from e
 
     def update_with_validations(
         self, json_schema: JsonSchemaValue, core_schema: CoreSchema, mapping: dict[str, str]
@@ -2629,13 +2792,151 @@ def models_json_schema(
 # ##### End JSON Schema Generation Functions #####
 
 
-_HashableJsonValue: TypeAlias = Union[
-    int, float, str, bool, None, tuple['_HashableJsonValue', ...], tuple[tuple[str, '_HashableJsonValue'], ...]
-]
+# Decimal JSON Schema pattern utilities.
+# Note: while we could use `\d` to represent digits (`Decimal` objects allow Unicode decimal digits), we use [0-9] instead:
+# - to reduce complexity (`\d` expands to a large set, and with `max_digits`/`decimal_places` constraints set, it can blow
+#   the compile limit on some engines).
+# - [0-9] is a portable pattern (e.g. `\d` is equivalent to `[0-9]` in ECMA (https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Regular_expressions/Character_class_escape#d)
+#   while it allows any Unicode decimal digit in Python.
+
+
+def _repeat(atom: str, min_count: int, max_count: int) -> str:
+    """Build a regex repetition of `atom` between `min_count` and `max_count` times (inclusive), using the shortest quantifier."""
+    if min_count > max_count or max_count == 0:
+        return ''
+    if min_count == max_count:
+        return atom if min_count == 1 else f'{atom}{{{min_count}}}'
+    if (min_count, max_count) == (0, 1):
+        return f'{atom}?'
+    return f'{atom}{{{min_count},{max_count}}}'
+
+
+def _int_range_pattern(max_value: int) -> str:
+    """Build a regex matching the integers between 1 and `max_value` (inclusive), without leading zeros."""
+    digits = str(max_value)
+    length = len(digits)
+    alts: list[str] = [f'[1-9]{_repeat("[0-9]", k - 1, k - 1)}' for k in range(1, length)]
+    for i, char in enumerate(digits):
+        d = int(char)
+        low = 1 if i == 0 else 0
+        high = d if i == length - 1 else d - 1
+        if high >= low:
+            char_class = str(low) if low == high else f'[{low}-{high}]'
+            alts.append(f'{digits[:i]}{char_class}{_repeat("[0-9]", length - i - 1, length - i - 1)}')
+    return alts[0] if len(alts) == 1 else f'(?:{"|".join(alts)})'
+
+
+def _decimal_validation_pattern(max_digits: int | None, decimal_places: int | None, allow_inf_nan: bool) -> str:
+    """Build the decimal pattern for the `'validation'` mode."""
+
+    number = r'(?:[0-9]+\.?[0-9]*|\.[0-9]+)'  # e.g. 1, 1., .5
+    exponent = r'[eE][+-]?[0-9]+'  # e.g. e5, E5, e-7
+    # e.g. Infinity, inf, NaN, sNaN, NaN123 (case-insensitive). Spelled out explicitly, as inline flags
+    # aren't supported by all regular expression engines:
+    non_finite = r'|[iI][nN][fF](?:[iI][nN][iI][tT][yY])?|[sS]?[nN][aA][nN][0-9]*' if allow_inf_nan else ''
+    if max_digits is None and decimal_places is None:
+        return rf'^[+-]?(?:{number}(?:{exponent})?{non_finite})$'
+
+    alts: list[str] = []
+    if max_digits is not None and decimal_places is not None:
+        # If `decimal_places > max_digits`, no whole digits are allowed and `max_digits` bounds the decimal places:
+        whole = max(0, max_digits - decimal_places)
+        places = min(max_digits, decimal_places)
+        int_part = f'0*{_repeat("[0-9]", 1, whole)}' if whole else '0+'
+        opt_int_part = f'0*{_repeat("[0-9]", 0, whole)}'
+        opt_frac_part = rf'\.{_repeat("[0-9]", 0, places)}0*'
+        frac_part = rf'\.{_repeat("[0-9]", 1, places)}0*' if places else r'\.0+'
+        alts += [f'{int_part}(?:{opt_frac_part})?', f'{opt_int_part}{frac_part}']
+    elif max_digits is not None:
+        # The whole part and decimal part must have at most `max_digits` digits in total,
+        # so we enumerate the possible widths of the whole part:
+        int_part = f'0*{_repeat("[0-9]", 1, max_digits)}' if max_digits else '0+'
+        alts.append(rf'{int_part}(?:\.0*)?')
+        alts += [
+            rf'0*{_repeat("[0-9]", whole, whole)}\.{_repeat("[0-9]", 1, max_digits - whole)}0*'
+            for whole in range(max_digits)
+        ] or [r'0*\.0+']
+    else:
+        assert decimal_places is not None
+        opt_frac_part = rf'\.{_repeat("[0-9]", 0, decimal_places)}0*'
+        frac_part = rf'\.{_repeat("[0-9]", 1, decimal_places)}0*' if decimal_places else r'\.0+'
+        alts += [f'[0-9]+(?:{opt_frac_part})?', f'[0-9]*{frac_part}']
+
+    alts.append(f'{number}{exponent}')
+    return rf'^[+-]?(?:{"|".join(alts)}{non_finite})$'
+
+
+def _decimal_serialization_pattern(max_digits: int | None, decimal_places: int | None, allow_inf_nan: bool) -> str:
+    """Build the decimal pattern for the `'serialization'` mode.
+
+    Decimals are serialized using `str()`, producing either:
+
+    - The plain notation (`'123.45'`), when the exponent is lower than or equal to 0 and the adjusted
+      exponent is greater than or equal to -6.
+    - The scientific notation otherwise (`'1E+3'`, `'1.5E-7'`, `'0E-10'`), with a single digit before
+      the optional decimal point and an always signed exponent.
+
+    Trailing zeros of the decimal part are preserved by `str()`, but aren't counted by the validation logic.
+    """
+
+    def frac_part(places: int) -> str:
+        return rf'\.{_repeat("[0-9]", 1, places)}0*' if places else r'\.0+'
+
+    alts: list[str] = []
+
+    # Plain notation:
+    if max_digits is not None and decimal_places is not None:
+        whole = max(0, max_digits - decimal_places)
+        places = min(max_digits, decimal_places)
+        int_part = f'(?:0|[1-9]{_repeat("[0-9]", 0, whole - 1)})' if whole else '0'
+        alts.append(f'{int_part}(?:{frac_part(places)})?')
+    elif max_digits is not None:
+        # The whole part and decimal part must have at most `max_digits` digits in total,
+        # so we enumerate the possible widths of the whole part:
+        alts.append(rf'0(?:\.{_repeat("[0-9]", 1, max_digits)}0*)?')
+        alts += [
+            f'[1-9]{_repeat("[0-9]", whole - 1, whole - 1)}(?:{frac_part(max_digits - whole)})?'
+            for whole in range(1, max_digits + 1)
+        ]
+    elif decimal_places is not None:
+        alts.append(f'(?:0|[1-9][0-9]*)(?:{frac_part(decimal_places)})?')
+    else:
+        alts.append(r'(?:0|[1-9][0-9]*)(?:\.[0-9]+)?')
+
+    # Zero with an exponent (e.g. `'0E-10'`), which normalizes to zero and thus satisfies any constraint:
+    alts.append(r'0E[+-][1-9][0-9]*')
+
+    # Scientific notation with a positive exponent `k` (e.g. `'1.5E+3'`): the value has `k + 1` whole digits
+    # and no decimal places:
+    if max_digits is None:
+        alts.append(r'[1-9](?:\.[0-9]+)?E\+[1-9][0-9]*')
+    else:
+        max_exponent = max_digits - (decimal_places or 0) - 1
+        if max_exponent >= 1:
+            alts.append(rf'[1-9](?:\.[0-9]+)?E\+{_int_range_pattern(max_exponent)}')
+
+    # Scientific notation with a negative exponent `k` (`k >= 7`, e.g. `'1.5E-7'`): the value has no whole digits,
+    # and `k` + (the number of significant decimal digits of the coefficient) decimal places:
+    if max_digits is None and decimal_places is None:
+        alts.append(r'[1-9](?:\.[0-9]+)?E-[1-9][0-9]*')
+    else:
+        max_places = min(c for c in (max_digits, decimal_places) if c is not None)
+        alts += [f'[1-9](?:{frac_part(max_places - k)})?E-{k}' for k in range(7, max_places + 1)]
+
+    if allow_inf_nan:
+        # `str()` produces `'Infinity'`, `'NaN'` and `'sNaN'` (with an optional payload):
+        alts += ['Infinity', 's?NaN[0-9]*']
+
+    return rf'^-?(?:{"|".join(alts)})$'
 
 
 def _deduplicate_schemas(schemas: Iterable[JsonDict]) -> list[JsonDict]:
     return list({_make_json_hashable(schema): schema for schema in schemas}.values())
+
+
+_HashableJsonValue: TypeAlias = (
+    int | float | str | bool | None | tuple['_HashableJsonValue', ...] | tuple[tuple[str, '_HashableJsonValue'], ...]
+)
 
 
 def _make_json_hashable(value: JsonValue) -> _HashableJsonValue:
@@ -2647,20 +2948,63 @@ def _make_json_hashable(value: JsonValue) -> _HashableJsonValue:
         return value
 
 
-@dataclasses.dataclass(**_internal_dataclass.slots_true)
+@dataclasses.dataclass(slots=True)
 class WithJsonSchema:
     """!!! abstract "Usage Documentation"
         [`WithJsonSchema` Annotation](../concepts/json_schema.md#withjsonschema-annotation)
 
-    Add this as an annotation on a field to override the (base) JSON schema that would be generated for that field.
-    This provides a way to set a JSON schema for types that would otherwise raise errors when producing a JSON schema,
-    such as Callable, or types that have an is-instance core schema, without needing to go so far as creating a
-    custom subclass of pydantic.json_schema.GenerateJsonSchema.
-    Note that any _modifications_ to the schema that would normally be made (such as setting the title for model fields)
-    will still be performed.
+    An annotation used to override the JSON Schema for a type.
 
-    If `mode` is set this will only apply to that schema generation mode, allowing you
-    to set different json schemas for validation and serialization.
+    This is useful when you want to set a JSON Schema for a type that don't produce any JSON Schemas by default
+    (e.g. [`Callable`][collections.abc.Callable]).
+
+    If `mode` is set this will only apply to that schema generation mode, allowing you to set different JSON Schemas for validation and serialization.
+
+    !!! note
+        If the `WithJsonSchema` annotation is coupled with the [`Field()`][pydantic.Field] function, the behavior overriding will vary depending on the location:
+
+        * If the [`Annotated`][typing.Annotated] metadata is specified at the "top-level" field, `Field()` metadata arguments
+          (excluding [constraints](../concepts/fields.md#field-constraints)) such as `title` and `description` will be applied on
+          top of the `WithJsonSchema`, no matter the order:
+
+            ```python
+            from typing import Annotated
+
+            from pydantic import BaseModel, Field, WithJsonSchema
+
+            class Model(BaseModel):
+                field: Annotated[
+                    int,
+                    Field(title='My Field'),
+                    WithJsonSchema({'type': 'integer', 'extra': 'data'}),
+                ]
+
+            Model.model_json_schema()['properties']['field']
+            #> {'type': 'integer', 'extra': 'data', 'title': 'My Field'}
+            ```
+
+        * If the [`Annotated`][typing.Annotated] metadata is specified on a specific inner type, `WithJsonSchema` will unconditionally
+          override the JSON Schema:
+
+            ```python
+            from typing import Annotated
+
+            from pydantic import BaseModel, Field, WithJsonSchema
+
+            class Model(BaseModel):
+                field: list[
+                    Annotated[
+                        int,
+                        Field(title='My Field'),
+                        WithJsonSchema({'type': 'integer', 'extra': 'data'}),
+                    ]
+                ]
+
+            Model.model_json_schema()['properties']['field']
+            #> {'items': {'extra': 'data', 'type': 'integer'}, 'title': 'Field', 'type': 'array'}
+            ```
+
+        See also the documentation about [the annotated pattern](../concepts/fields.md#the-annotated-pattern).
     """
 
     json_schema: JsonSchemaValue | None
@@ -2669,8 +3013,7 @@ class WithJsonSchema:
     def __get_pydantic_json_schema__(
         self, core_schema: core_schema.CoreSchema, handler: GetJsonSchemaHandler
     ) -> JsonSchemaValue:
-        mode = self.mode or handler.mode
-        if mode != handler.mode:
+        if self.mode is not None and self.mode != handler.mode:
             return handler(core_schema)
         if self.json_schema is None:
             # This exception is handled in pydantic.json_schema.GenerateJsonSchema._named_required_fields_schema
@@ -2679,7 +3022,7 @@ class WithJsonSchema:
             return self.json_schema.copy()
 
     def __hash__(self) -> int:
-        return hash(type(self.mode))
+        return hash(self.mode)
 
 
 class Examples:
@@ -2753,7 +3096,7 @@ class Examples:
         return json_schema
 
     def __hash__(self) -> int:
-        return hash(type(self.mode))
+        return hash(self.mode)
 
 
 def _get_all_json_refs(item: Any) -> set[JsonRef]:
@@ -2790,7 +3133,7 @@ if TYPE_CHECKING:
     SkipJsonSchema = Annotated[AnyType, ...]
 else:
 
-    @dataclasses.dataclass(**_internal_dataclass.slots_true)
+    @dataclasses.dataclass(slots=True)
     class SkipJsonSchema:
         """!!! abstract "Usage Documentation"
             [`SkipJsonSchema` Annotation](../concepts/json_schema.md#skipjsonschema-annotation)
@@ -2800,15 +3143,14 @@ else:
         Example:
             ```python
             from pprint import pprint
-            from typing import Union
 
             from pydantic import BaseModel
             from pydantic.json_schema import SkipJsonSchema
 
             class Model(BaseModel):
-                a: Union[int, None] = None  # (1)!
-                b: Union[int, SkipJsonSchema[None]] = None  # (2)!
-                c: SkipJsonSchema[Union[int, None]] = None  # (3)!
+                a: int | None = None  # (1)!
+                b: int | SkipJsonSchema[None] = None  # (2)!
+                c: SkipJsonSchema[int | None] = None  # (3)!
 
             pprint(Model.model_json_schema())
             '''
@@ -2870,6 +3212,6 @@ def _get_ser_schema_for_default_value(schema: CoreSchema) -> core_schema.PlainSe
         and ser_schema['type'] == 'function-plain'
         and not ser_schema.get('info_arg')
     ):
-        return ser_schema
+        return cast('core_schema.PlainSerializerFunctionSerSchema', ser_schema)
     if _core_utils.is_function_with_inner_schema(schema):
         return _get_ser_schema_for_default_value(schema['schema'])

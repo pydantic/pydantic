@@ -1,25 +1,33 @@
 import dataclasses
 import re
+import sys
 import typing
-from typing import Optional, Union
 
 import pytest
 import typing_extensions
-from typing_extensions import NamedTuple, TypedDict
+from typing_extensions import NamedTuple, TypedDict, TypeForm
 
 from pydantic import BaseModel, Field, PydanticUserError, TypeAdapter, ValidationError, computed_field, validate_call
 
-self_types = [typing_extensions.Self]
-if hasattr(typing, 'Self'):
+self_types: list[TypeForm] = []
+ids: list[str] = []
+if sys.version_info >= (3, 11):
     self_types.append(typing.Self)
+    ids.append('typing-self')
+    if typing.Self is not typing_extensions.Self:
+        self_types.append(typing_extensions.Self)
+        ids.append('typing-extensions-self')
+else:
+    self_types.append(typing_extensions.Self)
+    ids.append('typing-extensions-self')
 
-pytestmark = pytest.mark.parametrize('Self', self_types)
+pytestmark = pytest.mark.parametrize('Self', self_types, ids=ids)
 
 
 def test_recursive_model(Self):
     class SelfRef(BaseModel):
         data: int
-        ref: typing.Optional[Self] = None
+        ref: Self | None = None
 
     assert SelfRef(data=1, ref={'data': 2}).model_dump() == {'data': 1, 'ref': {'data': 2, 'ref': None}}
 
@@ -27,7 +35,7 @@ def test_recursive_model(Self):
 def test_recursive_model_invalid(Self):
     class SelfRef(BaseModel):
         data: int
-        ref: typing.Optional[Self] = None
+        ref: Self | None = None
 
     with pytest.raises(
         ValidationError,
@@ -83,7 +91,7 @@ def test_recursive_model_with_subclass_override(Self):
 
     class SubSelfRef(SelfRef):
         y: int
-        ref: Optional[Union[SelfRef, Self]] = None
+        ref: SelfRef | Self | None = None
 
     assert SubSelfRef(x=1, ref=SubSelfRef(x=3, y=4), y=2).model_dump() == {
         'x': 1,
@@ -109,7 +117,7 @@ def test_self_type_with_field(Self):
 def test_self_type_json_schema(Self):
     class SelfRef(BaseModel):
         x: int
-        refs: Optional[list[Self]] = []
+        refs: list[Self] | None = []
 
     assert SelfRef.model_json_schema() == {
         '$defs': {

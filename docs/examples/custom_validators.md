@@ -15,7 +15,7 @@ We use `__get_pydantic_core_schema__` in the validator to customize the schema o
 import datetime as dt
 from dataclasses import dataclass
 from pprint import pprint
-from typing import Annotated, Any, Callable, Optional
+from typing import Annotated, Any
 
 import pytz
 from pydantic_core import CoreSchema, core_schema
@@ -25,17 +25,18 @@ from pydantic import (
     PydanticUserError,
     TypeAdapter,
     ValidationError,
+    ValidatorFunctionWrapHandler,
 )
 
 
 @dataclass(frozen=True)
 class MyDatetimeValidator:
-    tz_constraint: Optional[str] = None
+    tz_constraint: str | None = None
 
     def tz_constraint_validator(
         self,
         value: dt.datetime,
-        handler: Callable,  # (1)!
+        handler: ValidatorFunctionWrapHandler,  # (1)!
     ):
         """Validate tz_constraint and tz_info."""
         # handle naive datetimes
@@ -89,7 +90,7 @@ except ValidationError as ve:
     'loc': (),
     'msg': 'Assertion failed, Invalid tzinfo: Europe/London, expected: America/Los_Angeles',
     'type': 'assertion_error',
-    'url': 'https://errors.pydantic.dev/2.8/v/assertion_error'}]
+    'url': 'https://errors.pydantic.dev/2/v/assertion_error'}]
     """
 ```
 
@@ -102,12 +103,17 @@ We can also enforce UTC offset constraints in a similar way.  Assuming we have a
 import datetime as dt
 from dataclasses import dataclass
 from pprint import pprint
-from typing import Annotated, Any, Callable
+from typing import Annotated, Any
 
 import pytz
 from pydantic_core import CoreSchema, core_schema
 
-from pydantic import GetCoreSchemaHandler, TypeAdapter, ValidationError
+from pydantic import (
+    GetCoreSchemaHandler,
+    TypeAdapter,
+    ValidationError,
+    ValidatorFunctionWrapHandler,
+)
 
 
 @dataclass(frozen=True)
@@ -115,7 +121,9 @@ class MyDatetimeValidator:
     lower_bound: int
     upper_bound: int
 
-    def validate_tz_bounds(self, value: dt.datetime, handler: Callable):
+    def validate_tz_bounds(
+        self, value: dt.datetime, handler: ValidatorFunctionWrapHandler
+    ):
         """Validate and test bounds"""
         assert value.utcoffset() is not None, 'UTC offset must exist'
         assert self.lower_bound <= self.upper_bound, 'Invalid bounds'
@@ -162,7 +170,7 @@ except ValidationError as e:
     'loc': (),
     'msg': 'Assertion failed, Value out of bounds',
     'type': 'assertion_error',
-    'url': 'https://errors.pydantic.dev/2.8/v/assertion_error'}]
+    'url': 'https://errors.pydantic.dev/2/v/assertion_error'}]
     """
 ```
 
@@ -218,7 +226,8 @@ except ValidationError as e:
     """
 ```
 
-Alternatively, a custom validator can be used in the nested model class (`User`), with the forbidden passwords data from the parent model being passed in via validation context.
+Alternatively, a custom validator can be used in the nested model class (`User`), with the forbidden passwords data from the parent model being passed in
+via [validation context](../concepts/validators.md#validation-context).
 
 !!! warning
     The ability to mutate the context within a validator adds a lot of power to nested validation, but can also lead to confusing or hard-to-debug code. Use this approach at your own risk!
@@ -276,6 +285,12 @@ except ValidationError as e:
     """
 ```
 
-Note that if the context property is not included in `model_validate`, then `info.context` will be `None` and the forbidden passwords list will not get added to the context in the above implementation. As such, `validate_user_passwords` would not carry out the desired password validation.
+Note that if the context property is not included in [`model_validate()`][pydantic.main.BaseModel.model_validate], then [`context`][pydantic.ValidationInfo.context] will be `None`
+and the forbidden passwords list will not get added to the context in the above implementation. As such, `validate_user_passwords()` would not carry out the desired password validation.
 
 More details about validation context can be found in the [validators documentation](../concepts/validators.md#validation-context).
+
+The messages you write in these `raise ValueError(...)` calls are worth crafting: they're what you'll
+read when the rule eventually rejects real data. They also carry through to tooling that consumes the
+structured errors: [Logfire's explanations of failed validations](../errors/troubleshooting.md), for
+example, include the messages from your custom validators.

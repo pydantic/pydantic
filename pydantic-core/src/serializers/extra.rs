@@ -146,6 +146,10 @@ impl<'py> SerializationState<'py> {
         self.field_name.as_ref()
     }
 
+    pub fn include_exclude(&self) -> IncludeExclude<'py> {
+        self.include_exclude.clone()
+    }
+
     pub fn include(&self) -> Option<&Bound<'py, PyAny>> {
         self.include_exclude.include.as_ref()
     }

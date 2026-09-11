@@ -8,3 +8,5 @@ pydantic_core._pydantic_core.SchemaValidator.validate_strings
 # the `warnings` kwarg for SchemaSerializer functions has custom logic
 pydantic_core._pydantic_core.SchemaSerializer.to_python
 pydantic_core._pydantic_core.SchemaSerializer.to_json
+# pyo3 submodules are only reachable as attributes, not through a dotted import (see https://github.com/PyO3/pyo3/issues/759)
+pydantic_core._pydantic_core._schema_gather
