@@ -1,4 +1,3 @@
-import re
 from enum import Enum, IntEnum
 from typing import Annotated, Any, NamedTuple
 
@@ -157,12 +156,12 @@ def test_enum_missing_default():
         a = 1
 
     ta = TypeAdapter(MyEnum)
-    missing_value = re.search(r'missing: (\w+)', repr(ta.validator)).group(1)
-    assert missing_value == 'None'
 
     assert ta.validate_python(1) is MyEnum.a
     with pytest.raises(ValidationError):
         ta.validate_python(2)
+    with pytest.raises(ValidationError):
+        ta.validate_json('2')
 
 
 def test_enum_missing_custom():
@@ -174,11 +173,59 @@ def test_enum_missing_custom():
             return MyEnum.a
 
     ta = TypeAdapter(MyEnum)
-    missing_value = re.search(r'missing: (\w+)', repr(ta.validator)).group(1)
-    assert missing_value == 'Some'
 
     assert ta.validate_python(1) is MyEnum.a
     assert ta.validate_python(2) is MyEnum.a
+    assert ta.validate_json('2') is MyEnum.a
+
+
+def test_enum_missing_receives_input_value() -> None:
+    """https://github.com/pydantic/pydantic/issues/12960"""
+    seen = []
+
+    class MyEnum(Enum):
+        a = 1
+        b = 2
+
+        @classmethod
+        def _missing_(cls, value):
+            seen.append(value)
+            return cls.b
+
+    ta = TypeAdapter(MyEnum)
+
+    assert ta.validate_python(3) is MyEnum.b
+    assert ta.validate_json('3') is MyEnum.b
+    assert ta.validate_json('3', strict=True) is MyEnum.b
+    assert ta.validate_python('3') is MyEnum.b
+    assert ta.validate_json('"3"') is MyEnum.b
+    assert seen == [3, 3, 3, '3', '3']
+
+
+def test_enum_missing_raises() -> None:
+    class MyEnum(Enum):
+        a = 1
+        b = 2
+
+        @classmethod
+        def _missing_(cls, value):
+            if value == 3:
+                raise ValueError('nope')
+            raise KeyError(value)
+
+    ta = TypeAdapter(MyEnum)
+
+    # `ValueError` is converted to a validation error, as in `Enum.__new__()`:
+    with pytest.raises(ValidationError, match=r'Input should be 1 or 2 \[type=enum, input_value=3, input_type=int\]'):
+        ta.validate_python(3)
+    with pytest.raises(ValidationError, match=r'Input should be 1 or 2 \[type=enum, input_value=3, input_type=int\]'):
+        ta.validate_json('3')
+
+    # other exceptions are propagated:
+    with pytest.raises(KeyError):
+        ta.validate_python(4)
+    with pytest.raises(KeyError):
+        ta.validate_json('4')
 
 
 def test_int_enum_type():

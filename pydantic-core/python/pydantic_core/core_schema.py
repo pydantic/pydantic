@@ -12,7 +12,7 @@ from datetime import date, datetime, time, timedelta
 from decimal import Decimal
 from fractions import Fraction
 from re import Pattern
-from typing import TYPE_CHECKING, Any, Literal, Union
+from typing import TYPE_CHECKING, Any, Literal, Union, overload
 
 from typing_extensions import TypeVar, deprecated
 
@@ -1390,6 +1390,34 @@ class EnumSchema(TypedDict, total=False):
     serialization: SerSchema
 
 
+@overload
+@deprecated('The `missing` argument on `enum_schema()` is deprecated and no longer used.')
+def enum_schema(
+    cls: Any,
+    members: list[Any],
+    *,
+    sub_type: Literal['str', 'int', 'float'] | None = None,
+    missing: Callable[[Any], Any] | None,
+    strict: bool | None = None,
+    ref: str | None = None,
+    metadata: dict[str, Any] | None = None,
+    serialization: SerSchema | None = None,
+) -> EnumSchema: ...
+
+
+@overload
+def enum_schema(
+    cls: Any,
+    members: list[Any],
+    *,
+    sub_type: Literal['str', 'int', 'float'] | None = None,
+    strict: bool | None = None,
+    ref: str | None = None,
+    metadata: dict[str, Any] | None = None,
+    serialization: SerSchema | None = None,
+) -> EnumSchema: ...
+
+
 def enum_schema(
     cls: Any,
     members: list[Any],
@@ -1422,12 +1450,19 @@ def enum_schema(
         cls: The enum class
         members: The members of the enum, generally `list(MyEnum.__members__.values())`
         sub_type: The type of the enum, either 'str' or 'int' or None for plain enums
-        missing: A function to use when the value is not found in the enum, from `_missing_`
+        missing: Deprecated and no longer used, the `_missing_` hook of the enum class is now called by the enum validator
         strict: Whether to use strict mode, defaults to False
         ref: optional unique identifier of the schema, used to reference the schema in other places
         metadata: Any other information you want to include with the schema, not used by pydantic-core
         serialization: Custom serialization schema
     """
+    if missing is not None:
+        warnings.warn(
+            'The `missing` argument on `enum_schema()` is deprecated and no longer used.',
+            DeprecationWarning,
+            stacklevel=2,
+        )
+
     return _dict_not_none(
         type='enum',
         cls=cls,
@@ -2338,6 +2373,35 @@ def no_info_before_validator_function(
     )
 
 
+@overload
+@deprecated(
+    'The `field_name` argument on `with_info_before_validator_function` is deprecated, '
+    'it will be passed to the function through `ValidationState` instead.'
+)
+def with_info_before_validator_function(
+    function: WithInfoValidatorFunction,
+    schema: CoreSchema,
+    *,
+    field_name: str | None,
+    ref: str | None = None,
+    json_schema_input_schema: CoreSchema | None = None,
+    metadata: dict[str, Any] | None = None,
+    serialization: SerSchema | None = None,
+) -> BeforeValidatorFunctionSchema: ...
+
+
+@overload
+def with_info_before_validator_function(
+    function: WithInfoValidatorFunction,
+    schema: CoreSchema,
+    *,
+    ref: str | None = None,
+    json_schema_input_schema: CoreSchema | None = None,
+    metadata: dict[str, Any] | None = None,
+    serialization: SerSchema | None = None,
+) -> BeforeValidatorFunctionSchema: ...
+
+
 def with_info_before_validator_function(
     function: WithInfoValidatorFunction,
     schema: CoreSchema,
@@ -2442,6 +2506,33 @@ def no_info_after_validator_function(
         metadata=metadata,
         serialization=serialization,
     )
+
+
+@overload
+@deprecated(
+    'The `field_name` argument on `with_info_after_validator_function` is deprecated, '
+    'it will be passed to the function through `ValidationState` instead.'
+)
+def with_info_after_validator_function(
+    function: WithInfoValidatorFunction,
+    schema: CoreSchema,
+    *,
+    field_name: str | None,
+    ref: str | None = None,
+    metadata: dict[str, Any] | None = None,
+    serialization: SerSchema | None = None,
+) -> AfterValidatorFunctionSchema: ...
+
+
+@overload
+def with_info_after_validator_function(
+    function: WithInfoValidatorFunction,
+    schema: CoreSchema,
+    *,
+    ref: str | None = None,
+    metadata: dict[str, Any] | None = None,
+    serialization: SerSchema | None = None,
+) -> AfterValidatorFunctionSchema: ...
 
 
 def with_info_after_validator_function(
@@ -2585,6 +2676,35 @@ def no_info_wrap_validator_function(
     )
 
 
+@overload
+@deprecated(
+    'The `field_name` argument on `with_info_wrap_validator_function` is deprecated, '
+    'it will be passed to the function through `ValidationState` instead.'
+)
+def with_info_wrap_validator_function(
+    function: WithInfoWrapValidatorFunction,
+    schema: CoreSchema,
+    *,
+    field_name: str | None,
+    json_schema_input_schema: CoreSchema | None = None,
+    ref: str | None = None,
+    metadata: dict[str, Any] | None = None,
+    serialization: SerSchema | None = None,
+) -> WrapValidatorFunctionSchema: ...
+
+
+@overload
+def with_info_wrap_validator_function(
+    function: WithInfoWrapValidatorFunction,
+    schema: CoreSchema,
+    *,
+    json_schema_input_schema: CoreSchema | None = None,
+    ref: str | None = None,
+    metadata: dict[str, Any] | None = None,
+    serialization: SerSchema | None = None,
+) -> WrapValidatorFunctionSchema: ...
+
+
 def with_info_wrap_validator_function(
     function: WithInfoWrapValidatorFunction,
     schema: CoreSchema,
@@ -2691,6 +2811,33 @@ def no_info_plain_validator_function(
         metadata=metadata,
         serialization=serialization,
     )
+
+
+@overload
+@deprecated(
+    'The `field_name` argument on `with_info_plain_validator_function` is deprecated, '
+    'it will be passed to the function through `ValidationState` instead.'
+)
+def with_info_plain_validator_function(
+    function: WithInfoValidatorFunction,
+    *,
+    field_name: str | None,
+    ref: str | None = None,
+    json_schema_input_schema: CoreSchema | None = None,
+    metadata: dict[str, Any] | None = None,
+    serialization: SerSchema | None = None,
+) -> PlainValidatorFunctionSchema: ...
+
+
+@overload
+def with_info_plain_validator_function(
+    function: WithInfoValidatorFunction,
+    *,
+    ref: str | None = None,
+    json_schema_input_schema: CoreSchema | None = None,
+    metadata: dict[str, Any] | None = None,
+    serialization: SerSchema | None = None,
+) -> PlainValidatorFunctionSchema: ...
 
 
 def with_info_plain_validator_function(
@@ -4733,37 +4880,21 @@ def iter_union_choices(union_schema: UnionSchema) -> Generator[CoreSchema]:
 
 @deprecated('`field_before_validator_function` is deprecated, use `with_info_before_validator_function` instead.')
 def field_before_validator_function(function: WithInfoValidatorFunction, field_name: str, schema: CoreSchema, **kwargs):
-    warnings.warn(
-        '`field_before_validator_function` is deprecated, use `with_info_before_validator_function` instead.',
-        DeprecationWarning,
-    )
     return with_info_before_validator_function(function, schema, field_name=field_name, **kwargs)
 
 
 @deprecated('`general_before_validator_function` is deprecated, use `with_info_before_validator_function` instead.')
 def general_before_validator_function(*args, **kwargs):
-    warnings.warn(
-        '`general_before_validator_function` is deprecated, use `with_info_before_validator_function` instead.',
-        DeprecationWarning,
-    )
     return with_info_before_validator_function(*args, **kwargs)
 
 
 @deprecated('`field_after_validator_function` is deprecated, use `with_info_after_validator_function` instead.')
 def field_after_validator_function(function: WithInfoValidatorFunction, field_name: str, schema: CoreSchema, **kwargs):
-    warnings.warn(
-        '`field_after_validator_function` is deprecated, use `with_info_after_validator_function` instead.',
-        DeprecationWarning,
-    )
     return with_info_after_validator_function(function, schema, field_name=field_name, **kwargs)
 
 
 @deprecated('`general_after_validator_function` is deprecated, use `with_info_after_validator_function` instead.')
 def general_after_validator_function(*args, **kwargs):
-    warnings.warn(
-        '`general_after_validator_function` is deprecated, use `with_info_after_validator_function` instead.',
-        DeprecationWarning,
-    )
     return with_info_after_validator_function(*args, **kwargs)
 
 
@@ -4771,37 +4902,21 @@ def general_after_validator_function(*args, **kwargs):
 def field_wrap_validator_function(
     function: WithInfoWrapValidatorFunction, field_name: str, schema: CoreSchema, **kwargs
 ):
-    warnings.warn(
-        '`field_wrap_validator_function` is deprecated, use `with_info_wrap_validator_function` instead.',
-        DeprecationWarning,
-    )
     return with_info_wrap_validator_function(function, schema, field_name=field_name, **kwargs)
 
 
 @deprecated('`general_wrap_validator_function` is deprecated, use `with_info_wrap_validator_function` instead.')
 def general_wrap_validator_function(*args, **kwargs):
-    warnings.warn(
-        '`general_wrap_validator_function` is deprecated, use `with_info_wrap_validator_function` instead.',
-        DeprecationWarning,
-    )
     return with_info_wrap_validator_function(*args, **kwargs)
 
 
 @deprecated('`field_plain_validator_function` is deprecated, use `with_info_plain_validator_function` instead.')
 def field_plain_validator_function(function: WithInfoValidatorFunction, field_name: str, **kwargs):
-    warnings.warn(
-        '`field_plain_validator_function` is deprecated, use `with_info_plain_validator_function` instead.',
-        DeprecationWarning,
-    )
     return with_info_plain_validator_function(function, field_name=field_name, **kwargs)
 
 
 @deprecated('`general_plain_validator_function` is deprecated, use `with_info_plain_validator_function` instead.')
 def general_plain_validator_function(*args, **kwargs):
-    warnings.warn(
-        '`general_plain_validator_function` is deprecated, use `with_info_plain_validator_function` instead.',
-        DeprecationWarning,
-    )
     return with_info_plain_validator_function(*args, **kwargs)
 
 

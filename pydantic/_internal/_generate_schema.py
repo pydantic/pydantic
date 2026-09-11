@@ -527,13 +527,10 @@ class GenerateSchema:
                 original_schema.update(js_updates)
                 return json_schema
 
-            # we don't want to add the missing to the schema if it's the default one
-            default_missing = getattr(enum_type._missing_, '__func__', None) is Enum._missing_.__func__  # pyright: ignore[reportFunctionMemberAccess]
             enum_schema = core_schema.enum_schema(
                 enum_type,
                 cases,
                 sub_type=sub_type,
-                missing=None if default_missing else enum_type._missing_,
                 ref=enum_ref,
                 metadata={'pydantic_js_functions': [get_json_schema]},
             )
