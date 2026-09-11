@@ -81,6 +81,9 @@ const GUARD_OFFSET: u8 = if cfg!(debug_assertions) {
     } else {
         20
     }
+} else if cfg!(all(windows, not(PyPy), not(Py_3_12))) {
+    // Before 3.12, CPython's eval loop frames are much larger on MSVC.
+    5
 } else {
     0
 };
