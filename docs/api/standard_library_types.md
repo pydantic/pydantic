@@ -1132,10 +1132,10 @@ Built-in type: [`dict`][].
 
 Dictionaries support the following constraints:
 
-| Constraint   | Description                                       | JSON Schema                                                                                    |
-|--------------|---------------------------------------------------|------------------------------------------------------------------------------------------------|
-| `min_length` | The dictionary must have at least this many items | [`minItems`](https://json-schema.org/understanding-json-schema/reference/array#length) keyword |
-| `max_length` | The dictionary must have at most this many items  | [`maxItems`](https://json-schema.org/understanding-json-schema/reference/array#length) keyword |
+| Constraint   | Description                                       | JSON Schema                                                                                        |
+|--------------|---------------------------------------------------|----------------------------------------------------------------------------------------------------|
+| `min_length` | The dictionary must have at least this many items | [`minProperties`](https://json-schema.org/understanding-json-schema/reference/object#size) keyword |
+| `max_length` | The dictionary must have at most this many items  | [`maxProperties`](https://json-schema.org/understanding-json-schema/reference/object#size) keyword |
 
 These constraints can be provided using the [`Field()`][pydantic.Field] function.
 The `MinLen` and `MaxLen` metadata types from the [`annotated-types`](https://github.com/annotated-types/annotated-types)
@@ -1189,10 +1189,10 @@ The `frozendict` type, new in Python 3.15, is supported by Pydantic.
 
 As with [dictionaries](#dictionaries), frozen dictionaries support the following constraints:
 
-| Constraint   | Description                                       | JSON Schema                                                                                    |
-|--------------|---------------------------------------------------|------------------------------------------------------------------------------------------------|
-| `min_length` | The dictionary must have at least this many items | [`minItems`](https://json-schema.org/understanding-json-schema/reference/array#length) keyword |
-| `max_length` | The dictionary must have at most this many items  | [`maxItems`](https://json-schema.org/understanding-json-schema/reference/array#length) keyword |
+| Constraint   | Description                                       | JSON Schema                                                                                        |
+|--------------|---------------------------------------------------|----------------------------------------------------------------------------------------------------|
+| `min_length` | The dictionary must have at least this many items | [`minProperties`](https://json-schema.org/understanding-json-schema/reference/object#size) keyword |
+| `max_length` | The dictionary must have at most this many items  | [`maxProperties`](https://json-schema.org/understanding-json-schema/reference/object#size) keyword |
 
 These constraints can be provided using the [`Field()`][pydantic.Field] function.
 The `MinLen` and `MaxLen` metadata types from the [`annotated-types`](https://github.com/annotated-types/annotated-types)
@@ -1242,10 +1242,10 @@ Standard library type: [`collections.OrderedDict`][] (deprecated alias: [`typing
 
 As with [dictionaries](#dictionaries), ordered dictionaries support the following constraints:
 
-| Constraint   | Description                                       | JSON Schema                                                                                    |
-|--------------|---------------------------------------------------|------------------------------------------------------------------------------------------------|
-| `min_length` | The dictionary must have at least this many items | [`minItems`](https://json-schema.org/understanding-json-schema/reference/array#length) keyword |
-| `max_length` | The dictionary must have at most this many items  | [`maxItems`](https://json-schema.org/understanding-json-schema/reference/array#length) keyword |
+| Constraint   | Description                                       | JSON Schema                                                                                        |
+|--------------|---------------------------------------------------|----------------------------------------------------------------------------------------------------|
+| `min_length` | The dictionary must have at least this many items | [`minProperties`](https://json-schema.org/understanding-json-schema/reference/object#size) keyword |
+| `max_length` | The dictionary must have at most this many items  | [`maxProperties`](https://json-schema.org/understanding-json-schema/reference/object#size) keyword |
 
 These constraints can be provided using the [`Field()`][pydantic.Field] function.
 The `MinLen` and `MaxLen` metadata types from the [`annotated-types`](https://github.com/annotated-types/annotated-types)
