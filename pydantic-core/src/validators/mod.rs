@@ -60,6 +60,7 @@ mod model_fields;
 mod named_tuple;
 mod none;
 mod nullable;
+mod ordered_dict;
 mod prebuilt;
 mod set;
 mod shared;
@@ -607,6 +608,8 @@ fn build_validator_inner(
         dict::DictValidator,
         // frozendicts
         frozendict::FrozenDictValidator,
+        // ordered dicts
+        ordered_dict::OrderedDictValidator,
         // None/null
         none::NoneValidator,
         // functions - before, after, plain & wrap
@@ -780,6 +783,8 @@ pub enum CombinedValidator {
     Dict(dict::DictValidator),
     // frozendicts
     FrozenDict(frozendict::FrozenDictValidator),
+    // ordered dicts
+    OrderedDict(ordered_dict::OrderedDictValidator),
     // None/null
     None(none::NoneValidator),
     // functions

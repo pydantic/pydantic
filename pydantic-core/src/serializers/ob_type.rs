@@ -25,6 +25,7 @@ pub struct ObTypeLookup {
     // TODO: remove when https://github.com/PyO3/pyo3/pull/6174 gets released, and use a
     // `frozendict: usize` field from `PyFrozenDict::type_object_raw()` instead, like `dict`:
     frozendict_object: Option<Py<PyAny>>,
+    ordered_dict_object: Py<PyAny>,
     // other numeric types
     decimal_object: Py<PyAny>,
     fraction_object: Py<PyAny>,
@@ -87,6 +88,12 @@ impl ObTypeLookup {
                 .getattr("frozendict")
                 .ok()
                 .map(Bound::unbind),
+            ordered_dict_object: py
+                .import("collections")
+                .unwrap()
+                .getattr("OrderedDict")
+                .unwrap()
+                .unbind(),
             decimal_object: py.import("decimal").unwrap().getattr("Decimal").unwrap().unbind(),
             fraction_object: py.import("fractions").unwrap().getattr("Fraction").unwrap().unbind(),
             string: PyString::type_object_raw(py) as usize,
@@ -165,6 +172,7 @@ impl ObTypeLookup {
                 .frozendict_object
                 .as_ref()
                 .is_some_and(|t| t.as_ptr() as usize == ob_type),
+            ObType::OrderedDict => self.ordered_dict_object.as_ptr() as usize == ob_type,
             ObType::Decimal => self.decimal_object.as_ptr() as usize == ob_type,
             ObType::Fraction => self.fraction_object.as_ptr() as usize == ob_type,
             ObType::StrSubclass => self.string == ob_type && op_value.is_none(),
@@ -253,6 +261,8 @@ impl ObTypeLookup {
             .is_some_and(|t| t.as_ptr() as usize == ob_type)
         {
             ObType::Frozendict
+        } else if ob_type == self.ordered_dict_object.as_ptr() as usize {
+            ObType::OrderedDict
         } else if ob_type == self.decimal_object.as_ptr() as usize {
             ObType::Decimal
         } else if ob_type == self.fraction_object.as_ptr() as usize {
@@ -345,6 +355,9 @@ impl ObTypeLookup {
             ObType::List
         } else if value.is_instance_of::<PyTuple>() {
             ObType::Tuple
+        } else if value.is_instance(self.ordered_dict_object.bind(py)).unwrap_or(false) {
+            // must come before the `dict` check, as `OrderedDict` is a `dict` subclass
+            ObType::OrderedDict
         } else if value.is_instance_of::<PyDict>() {
             ObType::Dict
         } else if self
@@ -463,6 +476,7 @@ pub enum ObType {
     // mapping types
     Dict,
     Frozendict,
+    OrderedDict,
     // datetime types
     Datetime,
     Date,

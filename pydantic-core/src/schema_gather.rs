@@ -143,7 +143,7 @@ fn collect_child_schemas<'py>(
         "tuple" => {
             children_optional(children, schema, intern!(py, "items_schema"))?;
         }
-        "dict" | "frozendict" => {
+        "dict" | "frozendict" | "ordered-dict" => {
             child_optional(children, schema, intern!(py, "keys_schema"))?;
             child_optional(children, schema, intern!(py, "values_schema"))?;
         }
