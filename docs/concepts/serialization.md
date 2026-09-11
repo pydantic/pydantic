@@ -490,6 +490,50 @@ As with [field serializers](#field-serializers), **two** different types of mode
       #> {'username': 'foo', 'password': 'bar', 'fields': ['username', 'password']}
       ```
 
+Model serializers are **not** inherited. Defining a [`@model_serializer`][pydantic.functional_serializers.model_serializer]
+on a subclass replaces any `@model_serializer` defined on its parent classes, even if the serializer methods have
+different names. This applies to both `'plain'` and `'wrap'` mode serializers.
+
+Consequently, in `'wrap'` mode, the `handler` argument always refers to the *default* serialization logic for the class
+being serialized: it does **not** delegate to a replaced parent's model serializer.
+
+```python
+from pydantic import BaseModel, SerializerFunctionWrapHandler, model_serializer
+
+
+class UserModel(BaseModel):
+    username: str
+    password: str
+
+    @model_serializer(mode='wrap')
+    def serialize_model(
+        self, handler: SerializerFunctionWrapHandler
+    ) -> dict[str, str]:
+        serialized = handler(self)
+        serialized['username'] = 'serialized'
+        return serialized
+
+
+class UserSubModel(UserModel):
+    @model_serializer(mode='wrap')
+    def serialize_submodel(
+        self, handler: SerializerFunctionWrapHandler
+    ) -> dict[str, str]:
+        serialized = handler(self)
+        serialized['password'] = 'serialized'
+        return serialized
+
+
+print(UserModel(username='foo', password='bar').model_dump())
+#> {'username': 'serialized', 'password': 'bar'}
+print(UserSubModel(username='foo', password='bar').model_dump())
+#> {'username': 'foo', 'password': 'serialized'}
+```
+
+Here, only the subclass's own serializer runs: `handler(self)` produces the default serialization
+`{'username': 'foo', 'password': 'bar'}` for `UserSubModel`, which is then transformed by `serialize_submodel` — the
+parent's `serialize_model` is never called.
+
 ## Serialization info
 
 Both the field and model serializers callables (in all modes) can optionally take an extra `info` argument,
