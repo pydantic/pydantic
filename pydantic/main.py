@@ -109,19 +109,21 @@ def _check_frozen(model_cls: type[BaseModel], name: str, value: Any) -> None:
 def _model_field_setattr_handler(model: BaseModel, name: str, val: Any) -> None:
     model.__dict__[name] = val  # pyright: ignore[reportIndexIssue] (https://github.com/microsoft/pyright/issues/11548)
     model.__pydantic_fields_set__.add(name)
-    if (msg := model.__pydantic_fields__[name].deprecation_message) is not None and model.model_config.get(
-        'warn_deprecated', 'get'
-    ) in ('set', 'get_and_set'):
+
+
+def _model_field_setattr_handler_deprecation(model: BaseModel, name: str, val: Any) -> None:
+    _model_field_setattr_handler(model, name, val)
+    if (msg := model.__pydantic_fields__[name].deprecation_message) is not None:
         warnings.warn(msg, DeprecationWarning, stacklevel=3)
 
 
 def _validate_assignment_setattr_handler(model: BaseModel, name: str, val: Any) -> None:
     model.__pydantic_validator__.validate_assignment(model, name, val)  # pyright: ignore[reportAssignmentType]
-    if (
-        (field := model.__pydantic_fields__.get(name)) is not None
-        and (msg := field.deprecation_message) is not None
-        and model.model_config.get('warn_deprecated', 'get') in ('set', 'get_and_set')
-    ):
+
+
+def _validate_assignment_setattr_handler_deprecation(model: BaseModel, name: str, val: Any) -> None:
+    _validate_assignment_setattr_handler(model, name, val)
+    if (field := model.__pydantic_fields__.get(name)) is not None and (msg := field.deprecation_message) is not None:
         warnings.warn(msg, DeprecationWarning, stacklevel=3)
 
 
@@ -140,7 +142,9 @@ _ATTRIBUTE_MISSING = Sentinel('_ATTRIBUTE_MISSING')
 
 _SIMPLE_SETATTR_HANDLERS: Mapping[str, Callable[[BaseModel, str, Any], None]] = {
     'model_field': _model_field_setattr_handler,
+    'model_field_deprecation': _model_field_setattr_handler_deprecation,
     'validate_assignment': _validate_assignment_setattr_handler,
+    'validate_assignment_deprecation': _validate_assignment_setattr_handler_deprecation,
     'private': _private_setattr_handler,
     'cached_property': lambda model, name, val: model.__dict__.__setitem__(name, val),  # pyright: ignore[reportAttributeAccessIssue] (https://github.com/microsoft/pyright/issues/11548)
     'extra_known': lambda model, name, val: _object_setattr(model, name, val),
@@ -1165,7 +1169,11 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
             if isinstance(attr, property):
                 return lambda model, _name, val: attr.__set__(model, val)
             elif cls.model_config.get('validate_assignment'):
-                return _SIMPLE_SETATTR_HANDLERS['validate_assignment']
+                return _SIMPLE_SETATTR_HANDLERS[
+                    'validate_assignment_deprecation'
+                    if cls.model_config.get('warn_deprecated') in ('set', 'get_and_set')
+                    else 'validate_assignment'
+                ]
             elif name not in cls.__pydantic_fields__:
                 if cls.model_config.get('extra') != 'allow':
                     # TODO - matching error
@@ -1179,7 +1187,11 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
                     # attribute _does_ exist, and was not in extra, so update it
                     return _SIMPLE_SETATTR_HANDLERS['extra_known']
             else:
-                return _SIMPLE_SETATTR_HANDLERS['model_field']
+                return _SIMPLE_SETATTR_HANDLERS[
+                    'model_field_deprecation'
+                    if cls.model_config.get('warn_deprecated') in ('set', 'get_and_set')
+                    else 'model_field'
+                ]
 
         def __delattr__(self, item: str) -> Any:
             cls = self.__class__
