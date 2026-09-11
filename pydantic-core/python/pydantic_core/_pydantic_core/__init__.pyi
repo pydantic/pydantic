@@ -1,5 +1,5 @@
 import datetime
-from collections.abc import Callable, Mapping
+from collections.abc import Callable, Mapping, MutableSet
 from typing import Any, Generic, Literal, TypeAlias, TypeVar, final, overload
 
 from _typeshed import SupportsAllComparisons
@@ -1116,3 +1116,8 @@ class TzInfo(datetime.tzinfo):
         More info can be found at [`tzinfo.fromutc`][datetime.tzinfo.fromutc]."""
 
     def __deepcopy__(self, _memo: dict[Any, Any]) -> TzInfo: ...
+
+class ModelFieldsSet(MutableSet[str]):
+    def __len__(self) -> int: ...
+    def contains(self, index: int) -> bool: ...
+    def _add_index(self, index: int) -> None: ...
