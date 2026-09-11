@@ -1,13 +1,36 @@
-from typing import Annotated
+import warnings
+from contextlib import contextmanager
+from typing import Annotated, Literal
 
 import pytest
 from typing_extensions import Self, deprecated
 
-from pydantic import BaseModel, Field, computed_field, field_validator, model_validator
+from pydantic import BaseModel, ConfigDict, Field, computed_field, field_validator, model_validator
 
 
-def test_deprecated_fields():
+@contextmanager
+def error_on_deprecationwarning():
+    with warnings.catch_warnings():
+        warnings.simplefilter('error', DeprecationWarning)
+        yield
+
+
+@pytest.fixture(params=(None, 'get', 'set', 'get_and_set'))
+def mode(request: pytest.FixtureRequest) -> Literal[None, 'get', 'set', 'get_and_set']:
+    return request.param
+
+
+@pytest.fixture
+def config(mode) -> ConfigDict:
+    config = ConfigDict()
+    if mode is not None:
+        config['warn_deprecated'] = mode
+    return config
+
+
+def test_deprecated_fields(mode, config):
     class Model(BaseModel):
+        model_config = config
         a: Annotated[int, Field(deprecated='')]
         b: Annotated[int, Field(deprecated='This is deprecated')]
         c: Annotated[int, Field(deprecated=None)]
@@ -25,17 +48,36 @@ def test_deprecated_fields():
 
     instance = Model(a=1, b=1, c=1)
 
-    with pytest.warns(DeprecationWarning, match='^$'):
+    with pytest.warns(DeprecationWarning, match='^$') if mode != 'set' else error_on_deprecationwarning():
         instance.a
 
-    with pytest.warns(DeprecationWarning, match='^This is deprecated$'):
+    with (
+        pytest.warns(DeprecationWarning, match='^$')
+        if mode in ('set', 'get_and_set')
+        else error_on_deprecationwarning()
+    ):
+        instance.a = 2
+
+    with (
+        pytest.warns(DeprecationWarning, match='^This is deprecated$')
+        if mode != 'set'
+        else error_on_deprecationwarning()
+    ):
         b = instance.b
 
     assert b == 1
 
+    with (
+        pytest.warns(DeprecationWarning, match='^This is deprecated$')
+        if mode in ('set', 'get_and_set')
+        else error_on_deprecationwarning()
+    ):
+        instance.b = 2
 
-def test_deprecated_fields_deprecated_class():
+
+def test_deprecated_fields_deprecated_class(mode, config):
     class Model(BaseModel):
+        model_config = config
         a: Annotated[int, deprecated('')]
         b: Annotated[int, deprecated('This is deprecated')] = 1
         c: Annotated[int, Field(deprecated=deprecated('This is deprecated'))] = 1
@@ -53,16 +95,43 @@ def test_deprecated_fields_deprecated_class():
 
     instance = Model(a=1)
 
-    with pytest.warns(DeprecationWarning, match='^$'):
+    with pytest.warns(DeprecationWarning, match='^$') if mode != 'set' else error_on_deprecationwarning():
         instance.a
-    with pytest.warns(DeprecationWarning, match='^This is deprecated$'):
+    with (
+        pytest.warns(DeprecationWarning, match='^$')
+        if mode in ('set', 'get_and_set')
+        else error_on_deprecationwarning()
+    ):
+        instance.a = 2
+    with (
+        pytest.warns(DeprecationWarning, match='^This is deprecated$')
+        if mode != 'set'
+        else error_on_deprecationwarning()
+    ):
         instance.b
-    with pytest.warns(DeprecationWarning, match='^This is deprecated$'):
+    with (
+        pytest.warns(DeprecationWarning, match='^This is deprecated$')
+        if mode in ('set', 'get_and_set')
+        else error_on_deprecationwarning()
+    ):
+        instance.b = 2
+    with (
+        pytest.warns(DeprecationWarning, match='^This is deprecated$')
+        if mode != 'set'
+        else error_on_deprecationwarning()
+    ):
         instance.c
+    with (
+        pytest.warns(DeprecationWarning, match='^This is deprecated$')
+        if mode in ('set', 'get_and_set')
+        else error_on_deprecationwarning()
+    ):
+        instance.c = 2
 
 
-def test_deprecated_fields_field_validator():
+def test_deprecated_fields_field_validator(mode, config):
     class Model(BaseModel):
+        model_config = config
         x: int = Field(deprecated='x is deprecated')
 
         @field_validator('x')
@@ -72,12 +141,15 @@ def test_deprecated_fields_field_validator():
 
     instance = Model(x=1)
 
-    with pytest.warns(DeprecationWarning):
+    with pytest.warns(DeprecationWarning) if mode != 'set' else error_on_deprecationwarning():
         assert instance.x == 2
+    with pytest.warns(DeprecationWarning) if mode in ('set', 'get_and_set') else error_on_deprecationwarning():
+        instance.x = 3
 
 
-def test_deprecated_fields_model_validator():
+def test_deprecated_fields_model_validator(mode, config):
     class Model(BaseModel):
+        model_config = config
         x: int = Field(deprecated='x is deprecated')
 
         @model_validator(mode='after')
@@ -87,28 +159,34 @@ def test_deprecated_fields_model_validator():
 
     with pytest.warns(DeprecationWarning):
         instance = Model(x=1)
+    with pytest.warns(DeprecationWarning) if mode != 'set' else error_on_deprecationwarning():
         assert instance.x == 2
+    with pytest.warns(DeprecationWarning) if mode in ('set', 'get_and_set') else error_on_deprecationwarning():
+        instance.x = 3
 
 
-def test_deprecated_fields_validate_assignment():
+def test_deprecated_fields_validate_assignment(mode, config):
     class Model(BaseModel):
         x: int = Field(deprecated='x is deprecated')
 
-        model_config = {'validate_assignment': True}
+        model_config = config | {'validate_assignment': True}
 
     instance = Model(x=1)
 
-    with pytest.warns(DeprecationWarning):
+    with pytest.warns(DeprecationWarning) if mode != 'set' else error_on_deprecationwarning():
         assert instance.x == 1
 
-    instance.x = 2
+    with pytest.warns(DeprecationWarning) if mode in ('set', 'get_and_set') else error_on_deprecationwarning():
+        instance.x = 2
 
-    with pytest.warns(DeprecationWarning):
+    with pytest.warns(DeprecationWarning) if mode != 'set' else error_on_deprecationwarning():
         assert instance.x == 2
 
 
-def test_computed_field_deprecated():
+def test_computed_field_deprecated(mode, config):
     class Model(BaseModel):
+        model_config = config
+
         @computed_field
         @property
         @deprecated('This is deprecated')
@@ -158,19 +236,25 @@ def test_computed_field_deprecated():
     # `set_deprecated_descriptors()`):
     with pytest.warns(DeprecationWarning, match=r'^This is deprecated \(this message is the one emitted\)$'):
         instance.p2
-    with pytest.warns(DeprecationWarning, match='^This is deprecated$'):
+    with (
+        pytest.warns(DeprecationWarning, match='^This is deprecated$')
+        if mode != 'set'
+        else error_on_deprecationwarning()
+    ):
         instance.p4
     with pytest.warns(DeprecationWarning, match='^This is deprecated$'):
         instance.p5
 
-    with pytest.warns(DeprecationWarning, match='^$'):
+    with pytest.warns(DeprecationWarning, match='^$') if mode != 'set' else error_on_deprecationwarning():
         p3 = instance.p3
 
     assert p3 == 1
 
 
-def test_computed_field_deprecated_deprecated_class():
+def test_computed_field_deprecated_deprecated_class(mode, config):
     class Model(BaseModel):
+        model_config = config
+
         @computed_field(deprecated=deprecated('This is deprecated'))
         @property
         def p1(self) -> int:
@@ -199,13 +283,21 @@ def test_computed_field_deprecated_deprecated_class():
 
     instance = Model()
 
-    with pytest.warns(DeprecationWarning, match='^This is deprecated$'):
+    with (
+        pytest.warns(DeprecationWarning, match='^This is deprecated$')
+        if mode != 'set'
+        else error_on_deprecationwarning()
+    ):
         p1 = instance.p1
 
-    with pytest.warns(DeprecationWarning, match='^deprecated$'):
+    with pytest.warns(DeprecationWarning, match='^deprecated$') if mode != 'set' else error_on_deprecationwarning():
         p2 = instance.p2
 
-    with pytest.warns(DeprecationWarning, match='^This is a deprecated string$'):
+    with (
+        pytest.warns(DeprecationWarning, match='^This is a deprecated string$')
+        if mode != 'set'
+        else error_on_deprecationwarning()
+    ):
         p3 = instance.p3
 
     assert p1 == 1
@@ -213,8 +305,10 @@ def test_computed_field_deprecated_deprecated_class():
     assert p3 == 3
 
 
-def test_deprecated_with_boolean() -> None:
+def test_deprecated_with_boolean(mode, config) -> None:
     class Model(BaseModel):
+        model_config = config
+
         a: Annotated[int, Field(deprecated=True)]
         b: Annotated[int, Field(deprecated=False)]
 
@@ -230,8 +324,14 @@ def test_deprecated_with_boolean() -> None:
 
     instance = Model(a=1, b=1)
 
-    with pytest.warns(DeprecationWarning, match='deprecated'):
+    with pytest.warns(DeprecationWarning, match='deprecated') if mode != 'set' else error_on_deprecationwarning():
         instance.a
+    with (
+        pytest.warns(DeprecationWarning, match='deprecated')
+        if mode in ('set', 'get_and_set')
+        else error_on_deprecationwarning()
+    ):
+        instance.a = 2
 
 
 def test_computed_field_deprecated_class_access() -> None:
@@ -255,10 +355,12 @@ def test_computed_field_deprecated_subclass() -> None:
         pass
 
 
-def test_deprecated_field_forward_annotation() -> None:
+def test_deprecated_field_forward_annotation(mode, config) -> None:
     """https://github.com/pydantic/pydantic/issues/11390"""
 
     class Model(BaseModel):
+        model_config = config
+
         a: "Annotated[Test, deprecated('test')]" = 2
 
     Test = int
@@ -269,8 +371,14 @@ def test_deprecated_field_forward_annotation() -> None:
 
     m = Model()
 
-    with pytest.warns(DeprecationWarning, match='test'):
+    with pytest.warns(DeprecationWarning, match='test') if mode != 'set' else error_on_deprecationwarning():
         m.a
+    with (
+        pytest.warns(DeprecationWarning, match='test')
+        if mode in ('set', 'get_and_set')
+        else error_on_deprecationwarning()
+    ):
+        m.a = 1
 
 
 def test_deprecated_field_with_assignment() -> None:
