@@ -5,7 +5,7 @@ use pyo3::intern;
 use pyo3::prelude::*;
 use pyo3::types::PyDict;
 
-use crate::definitions::DefinitionsBuilder;
+use crate::definitions::{DefinitionsBuilder, SharedNodeKey};
 use crate::serializers::SerializationState;
 use crate::tools::SchemaDict;
 use crate::validators::DefaultType;
@@ -32,7 +32,21 @@ impl BuildSerializer for WithDefaultSerializer {
         let sub_schema = schema.get_as_req(intern!(py, "schema"))?;
         let serializer = CombinedSerializer::build(&sub_schema, config, definitions)?;
 
-        Ok(Arc::new(Self { default, serializer }.into()))
+        // See `SharedNodeKey`: a `default` node is fully described by the serializer it wraps and
+        // its default (the serializer, unlike the validator, doesn't care about `on_error` etc.).
+        let (default_object, default_kind) = match &default {
+            DefaultType::None => (None, 0),
+            DefaultType::Default(obj) => (Some(obj), 1),
+            DefaultType::DefaultFactory(obj, takes_data) => (Some(obj), 2 | u32::from(*takes_data) << 2),
+        };
+        let key = SharedNodeKey::new(Self::EXPECTED_TYPE, &serializer, default_object, default_kind);
+        if let Some(shared) = definitions.get_shared_node(&key) {
+            return Ok(shared.clone());
+        }
+
+        let result: Arc<CombinedSerializer> = Arc::new(Self { default, serializer }.into());
+        definitions.set_shared_node(key, result.clone());
+        Ok(result)
     }
 }
 

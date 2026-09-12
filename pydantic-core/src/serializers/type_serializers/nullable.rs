@@ -5,7 +5,7 @@ use pyo3::intern;
 use pyo3::prelude::*;
 use pyo3::types::PyDict;
 
-use crate::definitions::DefinitionsBuilder;
+use crate::definitions::{DefinitionsBuilder, SharedNodeKey};
 use crate::serializers::SerializationState;
 use crate::tools::SchemaDict;
 
@@ -25,10 +25,17 @@ impl BuildSerializer for NullableSerializer {
         definitions: &mut DefinitionsBuilder<Arc<CombinedSerializer>>,
     ) -> PyResult<Arc<CombinedSerializer>> {
         let sub_schema = schema.get_as_req(intern!(schema.py(), "schema"))?;
-        Ok(CombinedSerializer::Nullable(Self {
-            serializer: CombinedSerializer::build(&sub_schema, config, definitions)?,
-        })
-        .into())
+        let serializer = CombinedSerializer::build(&sub_schema, config, definitions)?;
+
+        // See `SharedNodeKey`: a `nullable` node is fully described by the serializer it wraps.
+        let key = SharedNodeKey::new(Self::EXPECTED_TYPE, &serializer, None, 0);
+        if let Some(shared) = definitions.get_shared_node(&key) {
+            return Ok(shared.clone());
+        }
+
+        let result: Arc<CombinedSerializer> = CombinedSerializer::Nullable(Self { serializer }).into();
+        definitions.set_shared_node(key, result.clone());
+        Ok(result)
     }
 }
 
