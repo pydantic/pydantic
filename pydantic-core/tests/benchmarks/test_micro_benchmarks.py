@@ -949,6 +949,21 @@ def test_arguments(benchmark):
     benchmark(v.validate_python, ArgsKwargs((1, 'a', 'true'), {'b': 'bb', 'c': 3}))
 
 
+@pytest.mark.parametrize('parameter_count', [10, 100, 500])
+def test_arguments_json_scaling(parameter_count, benchmark):
+    """Benchmark JSON keyword argument lookup as the number of parameters grows."""
+    parameters = [
+        core_schema.arguments_parameter(f'k{i}', core_schema.int_schema(), mode='keyword_only')
+        for i in range(parameter_count)
+    ]
+    validator = SchemaValidator(core_schema.arguments_schema(parameters))
+    json_data = json.dumps({f'k{i}': i for i in range(parameter_count)})
+
+    result = validator.validate_json(json_data)
+    assert result[1][f'k{parameter_count - 1}'] == parameter_count - 1
+    benchmark(validator.validate_json, json_data)
+
+
 @pytest.mark.benchmark(group='defaults')
 def test_with_default(benchmark):
     v = SchemaValidator(
