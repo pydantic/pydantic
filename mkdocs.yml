@@ -92,6 +92,7 @@ nav:
       - Welcome to Pydantic: index.md
       - Why use Pydantic: why.md
       - Help with Pydantic: help_with_pydantic.md
+      - Enterprise Support: enterprise-support.md
       - Installation: install.md
       - Migration Guide: migration.md
       - Version Policy: version-policy.md
