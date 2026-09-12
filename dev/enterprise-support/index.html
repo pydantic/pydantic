@@ -6,35 +6,35 @@
       <meta charset="utf-8">
       <meta name="viewport" content="width=device-width,initial-scale=1">
       
-        <meta name="description" content="Data validation using Python type hints">
+        <meta name="description" content="Get direct support from Pydantic engineers for production incidents, major upgrades, architecture reviews, and performance.">
       
       
       
-        <link rel="canonical" href="https://docs.pydantic.dev/latest/errors/troubleshooting/">
+        <link rel="canonical" href="https://docs.pydantic.dev/latest/enterprise-support/">
       
       
-        <link rel="prev" href="../usage_errors/">
+        <link rel="prev" href="../help_with_pydantic/">
       
       
-        <link rel="next" href="../../integrations/logfire/">
+        <link rel="next" href="../install/">
       
       
         
       
       
-      <link rel="icon" href="../../favicon.png">
+      <link rel="icon" href="../favicon.png">
       <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.7">
     
     
       
-        <title>Troubleshooting with Logfire - Pydantic Validation</title>
+        <title>Enterprise support for Pydantic - Pydantic Validation</title>
       
     
     
-      <link rel="stylesheet" href="../../assets/stylesheets/main.ec1eaa64.min.css">
+      <link rel="stylesheet" href="../assets/stylesheets/main.ec1eaa64.min.css">
       
         
-        <link rel="stylesheet" href="../../assets/stylesheets/palette.ab4e12ef.min.css">
+        <link rel="stylesheet" href="../assets/stylesheets/palette.ab4e12ef.min.css">
       
       
 
@@ -53,13 +53,13 @@
       
     
     
-      <link rel="stylesheet" href="../../assets/_mkdocstrings.css">
+      <link rel="stylesheet" href="../assets/_mkdocstrings.css">
     
-      <link rel="stylesheet" href="../../extra/terminal.css">
+      <link rel="stylesheet" href="../extra/terminal.css">
     
-      <link rel="stylesheet" href="../../extra/tweaks.css">
+      <link rel="stylesheet" href="../extra/tweaks.css">
     
-    <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    <script>__md_scope=new URL("..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
     
       
   
@@ -69,17 +69,17 @@
     
   
 <meta property="og:type" content="website" />
-<meta property="og:title" content="Troubleshooting with Logfire - Pydantic Validation" />
-<meta property="og:description" content="Data validation using Python type hints" />
-<meta property="og:image" content="https://docs.pydantic.dev/latest/assets/images/social/errors/troubleshooting.png" />
+<meta property="og:title" content="Enterprise support for Pydantic - Pydantic Validation" />
+<meta property="og:description" content="Get direct support from Pydantic engineers for production incidents, major upgrades, architecture reviews, and performance." />
+<meta property="og:image" content="https://docs.pydantic.dev/latest/assets/images/social/enterprise-support.png" />
 <meta property="og:image:type" content="image/png" />
 <meta property="og:image:width" content="1200" />
 <meta property="og:image:height" content="630" />
-<meta property="og:url" content="https://docs.pydantic.dev/latest/errors/troubleshooting/" />
+<meta property="og:url" content="https://docs.pydantic.dev/latest/enterprise-support/" />
 <meta property="twitter:card" content="summary_large_image" />
-<meta property="twitter:title" content="Troubleshooting with Logfire - Pydantic Validation" />
-<meta property="twitter:description" content="Data validation using Python type hints" />
-<meta property="twitter:image" content="https://docs.pydantic.dev/latest/assets/images/social/errors/troubleshooting.png" />
+<meta property="twitter:title" content="Enterprise support for Pydantic - Pydantic Validation" />
+<meta property="twitter:description" content="Get direct support from Pydantic engineers for production incidents, major upgrades, architecture reviews, and performance." />
+<meta property="twitter:image" content="https://docs.pydantic.dev/latest/assets/images/social/enterprise-support.png" />
 </head>
   
   
@@ -99,7 +99,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#troubleshooting-validation-errors-with-logfire" class="md-skip">
+        <a href="#where-pydantic-engineers-can-help" class="md-skip">
           Skip to content
         </a>
       
@@ -140,9 +140,9 @@ to help you monitor and understand your
 
 <header class="md-header" data-md-component="header">
   <nav class="md-header__inner md-grid" aria-label="Header">
-    <a href="../.." title="Pydantic Validation" class="md-header__button md-logo" aria-label="Pydantic Validation" data-md-component="logo">
+    <a href=".." title="Pydantic Validation" class="md-header__button md-logo" aria-label="Pydantic Validation" data-md-component="logo">
       
-  <img src="../../logo-white.svg" alt="logo">
+  <img src="../logo-white.svg" alt="logo">
 
     </a>
     <label class="md-header__button md-icon" for="__drawer">
@@ -159,7 +159,7 @@ to help you monitor and understand your
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Troubleshooting with Logfire
+              Enterprise support for Pydantic
             
           </span>
         </div>
@@ -278,11 +278,13 @@ to help you monitor and understand your
   
   
   
+    
+  
   
     
     
-      <li class="md-tabs__item">
-        <a href="../.." class="md-tabs__link">
+      <li class="md-tabs__item md-tabs__item--active">
+        <a href=".." class="md-tabs__link">
           
   
   
@@ -302,7 +304,7 @@ to help you monitor and understand your
     
     
       <li class="md-tabs__item">
-        <a href="../../concepts/models/" class="md-tabs__link">
+        <a href="../concepts/models/" class="md-tabs__link">
           
   
   
@@ -329,7 +331,7 @@ to help you monitor and understand your
     
     
       <li class="md-tabs__item">
-        <a href="../../api/base_model/" class="md-tabs__link">
+        <a href="../api/base_model/" class="md-tabs__link">
           
   
   
@@ -352,7 +354,7 @@ to help you monitor and understand your
     
     
       <li class="md-tabs__item">
-        <a href="../../internals/architecture/" class="md-tabs__link">
+        <a href="../internals/architecture/" class="md-tabs__link">
           
   
   
@@ -372,7 +374,7 @@ to help you monitor and understand your
     
     
       <li class="md-tabs__item">
-        <a href="../../examples/files/" class="md-tabs__link">
+        <a href="../examples/files/" class="md-tabs__link">
           
   
   
@@ -388,13 +390,11 @@ to help you monitor and understand your
   
   
   
-    
-  
   
     
     
-      <li class="md-tabs__item md-tabs__item--active">
-        <a href="../errors/" class="md-tabs__link">
+      <li class="md-tabs__item">
+        <a href="../errors/errors/" class="md-tabs__link">
           
   
   
@@ -414,7 +414,7 @@ to help you monitor and understand your
     
     
       <li class="md-tabs__item">
-        <a href="../../integrations/logfire/" class="md-tabs__link">
+        <a href="../integrations/logfire/" class="md-tabs__link">
           
   
   
@@ -451,7 +451,7 @@ to help you monitor and understand your
   
   
     <li class="md-tabs__item">
-      <a href="../../pydantic_people/" class="md-tabs__link">
+      <a href="../pydantic_people/" class="md-tabs__link">
         
   
   
@@ -486,9 +486,9 @@ to help you monitor and understand your
 
 <nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
   <label class="md-nav__title" for="__drawer">
-    <a href="../.." title="Pydantic Validation" class="md-nav__button md-logo" aria-label="Pydantic Validation" data-md-component="logo">
+    <a href=".." title="Pydantic Validation" class="md-nav__button md-logo" aria-label="Pydantic Validation" data-md-component="logo">
       
-  <img src="../../logo-white.svg" alt="logo">
+  <img src="../logo-white.svg" alt="logo">
 
     </a>
     Pydantic Validation
@@ -512,26 +512,31 @@ to help you monitor and understand your
       
   
   
+    
   
   
+  
     
     
     
     
+      
+        
+        
       
       
         
       
     
     
-    <li class="md-nav__item md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_1" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_1" checked>
         
           
-          <label class="md-nav__link" for="__nav_1" id="__nav_1_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_1" id="__nav_1_label" tabindex="">
             
   
   
@@ -549,7 +554,7 @@ to help you monitor and understand your
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_1_label" aria-expanded="false">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_1_label" aria-expanded="true">
           <label class="md-nav__title" for="__nav_1">
             <span class="md-nav__icon md-icon"></span>
             
@@ -567,7 +572,7 @@ to help you monitor and understand your
   
   
     <li class="md-nav__item">
-      <a href="../.." class="md-nav__link">
+      <a href=".." class="md-nav__link">
         
   
   
@@ -595,7 +600,7 @@ to help you monitor and understand your
   
   
     <li class="md-nav__item">
-      <a href="../../why/" class="md-nav__link">
+      <a href="../why/" class="md-nav__link">
         
   
   
@@ -623,7 +628,7 @@ to help you monitor and understand your
   
   
     <li class="md-nav__item">
-      <a href="../../help_with_pydantic/" class="md-nav__link">
+      <a href="../help_with_pydantic/" class="md-nav__link">
         
   
   
@@ -648,10 +653,35 @@ to help you monitor and understand your
                 
   
   
+    
   
   
-    <li class="md-nav__item">
-      <a href="../../enterprise-support/" class="md-nav__link">
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Enterprise Support
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
         
   
   
@@ -667,6 +697,81 @@ to help you monitor and understand your
   
 
       </a>
+      
+        
+
+  
+
+<nav class="md-nav md-nav--secondary" aria-label="Page contents">
+  
+  
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Page contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#where-pydantic-engineers-can-help" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Where Pydantic engineers can help
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#how-support-works" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        How support works
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#open-source-remains-the-foundation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Open source remains the foundation
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#questions-teams-ask" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Questions teams ask
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#continue-reading" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Continue reading
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
     </li>
   
 
@@ -679,7 +784,7 @@ to help you monitor and understand your
   
   
     <li class="md-nav__item">
-      <a href="../../install/" class="md-nav__link">
+      <a href="../install/" class="md-nav__link">
         
   
   
@@ -707,7 +812,7 @@ to help you monitor and understand your
   
   
     <li class="md-nav__item">
-      <a href="../../migration/" class="md-nav__link">
+      <a href="../migration/" class="md-nav__link">
         
   
   
@@ -735,7 +840,7 @@ to help you monitor and understand your
   
   
     <li class="md-nav__item">
-      <a href="../../version-policy/" class="md-nav__link">
+      <a href="../version-policy/" class="md-nav__link">
         
   
   
@@ -763,7 +868,7 @@ to help you monitor and understand your
   
   
     <li class="md-nav__item">
-      <a href="../../contributing/" class="md-nav__link">
+      <a href="../contributing/" class="md-nav__link">
         
   
   
@@ -791,7 +896,7 @@ to help you monitor and understand your
   
   
     <li class="md-nav__item">
-      <a href="../../changelog/" class="md-nav__link">
+      <a href="../changelog/" class="md-nav__link">
         
   
   
@@ -878,7 +983,7 @@ to help you monitor and understand your
   
   
     <li class="md-nav__item">
-      <a href="../../concepts/models/" class="md-nav__link">
+      <a href="../concepts/models/" class="md-nav__link">
         
   
   
@@ -906,7 +1011,7 @@ to help you monitor and understand your
   
   
     <li class="md-nav__item">
-      <a href="../../concepts/fields/" class="md-nav__link">
+      <a href="../concepts/fields/" class="md-nav__link">
         
   
   
@@ -934,7 +1039,7 @@ to help you monitor and understand your
   
   
     <li class="md-nav__item">
-      <a href="../../concepts/json_schema/" class="md-nav__link">
+      <a href="../concepts/json_schema/" class="md-nav__link">
         
   
   
@@ -962,7 +1067,7 @@ to help you monitor and understand your
   
   
     <li class="md-nav__item">
-      <a href="../../concepts/json/" class="md-nav__link">
+      <a href="../concepts/json/" class="md-nav__link">
         
   
   
@@ -990,7 +1095,7 @@ to help you monitor and understand your
   
   
     <li class="md-nav__item">
-      <a href="../../concepts/types/" class="md-nav__link">
+      <a href="../concepts/types/" class="md-nav__link">
         
   
   
@@ -1018,7 +1123,7 @@ to help you monitor and understand your
   
   
     <li class="md-nav__item">
-      <a href="../../concepts/unions/" class="md-nav__link">
+      <a href="../concepts/unions/" class="md-nav__link">
         
   
   
@@ -1046,7 +1151,7 @@ to help you monitor and understand your
   
   
     <li class="md-nav__item">
-      <a href="../../concepts/alias/" class="md-nav__link">
+      <a href="../concepts/alias/" class="md-nav__link">
         
   
   
@@ -1074,7 +1179,7 @@ to help you monitor and understand your
   
   
     <li class="md-nav__item">
-      <a href="../../concepts/config/" class="md-nav__link">
+      <a href="../concepts/config/" class="md-nav__link">
         
   
   
@@ -1102,7 +1207,7 @@ to help you monitor and understand your
   
   
     <li class="md-nav__item">
-      <a href="../../concepts/serialization/" class="md-nav__link">
+      <a href="../concepts/serialization/" class="md-nav__link">
         
   
   
@@ -1130,7 +1235,7 @@ to help you monitor and understand your
   
   
     <li class="md-nav__item">
-      <a href="../../concepts/validators/" class="md-nav__link">
+      <a href="../concepts/validators/" class="md-nav__link">
         
   
   
@@ -1158,7 +1263,7 @@ to help you monitor and understand your
   
   
     <li class="md-nav__item">
-      <a href="../../concepts/dataclasses/" class="md-nav__link">
+      <a href="../concepts/dataclasses/" class="md-nav__link">
         
   
   
@@ -1186,7 +1291,7 @@ to help you monitor and understand your
   
   
     <li class="md-nav__item">
-      <a href="../../concepts/forward_annotations/" class="md-nav__link">
+      <a href="../concepts/forward_annotations/" class="md-nav__link">
         
   
   
@@ -1214,7 +1319,7 @@ to help you monitor and understand your
   
   
     <li class="md-nav__item">
-      <a href="../../concepts/strict_mode/" class="md-nav__link">
+      <a href="../concepts/strict_mode/" class="md-nav__link">
         
   
   
@@ -1242,7 +1347,7 @@ to help you monitor and understand your
   
   
     <li class="md-nav__item">
-      <a href="../../concepts/type_adapter/" class="md-nav__link">
+      <a href="../concepts/type_adapter/" class="md-nav__link">
         
   
   
@@ -1270,7 +1375,7 @@ to help you monitor and understand your
   
   
     <li class="md-nav__item">
-      <a href="../../concepts/validation_decorator/" class="md-nav__link">
+      <a href="../concepts/validation_decorator/" class="md-nav__link">
         
   
   
@@ -1298,7 +1403,7 @@ to help you monitor and understand your
   
   
     <li class="md-nav__item">
-      <a href="../../concepts/conversion_table/" class="md-nav__link">
+      <a href="../concepts/conversion_table/" class="md-nav__link">
         
   
   
@@ -1326,7 +1431,7 @@ to help you monitor and understand your
   
   
     <li class="md-nav__item">
-      <a href="../../concepts/pydantic_settings/" class="md-nav__link">
+      <a href="../concepts/pydantic_settings/" class="md-nav__link">
         
   
   
@@ -1354,7 +1459,7 @@ to help you monitor and understand your
   
   
     <li class="md-nav__item">
-      <a href="../../concepts/performance/" class="md-nav__link">
+      <a href="../concepts/performance/" class="md-nav__link">
         
   
   
@@ -1382,7 +1487,7 @@ to help you monitor and understand your
   
   
     <li class="md-nav__item">
-      <a href="../../concepts/experimental/" class="md-nav__link">
+      <a href="../concepts/experimental/" class="md-nav__link">
         
   
   
@@ -1521,7 +1626,7 @@ to help you monitor and understand your
   
   
     <li class="md-nav__item">
-      <a href="../../api/base_model/" class="md-nav__link">
+      <a href="../api/base_model/" class="md-nav__link">
         
   
   
@@ -1549,7 +1654,7 @@ to help you monitor and understand your
   
   
     <li class="md-nav__item">
-      <a href="../../api/root_model/" class="md-nav__link">
+      <a href="../api/root_model/" class="md-nav__link">
         
   
   
@@ -1577,7 +1682,7 @@ to help you monitor and understand your
   
   
     <li class="md-nav__item">
-      <a href="../../api/dataclasses/" class="md-nav__link">
+      <a href="../api/dataclasses/" class="md-nav__link">
         
   
   
@@ -1605,7 +1710,7 @@ to help you monitor and understand your
   
   
     <li class="md-nav__item">
-      <a href="../../api/type_adapter/" class="md-nav__link">
+      <a href="../api/type_adapter/" class="md-nav__link">
         
   
   
@@ -1633,7 +1738,7 @@ to help you monitor and understand your
   
   
     <li class="md-nav__item">
-      <a href="../../api/validate_call/" class="md-nav__link">
+      <a href="../api/validate_call/" class="md-nav__link">
         
   
   
@@ -1661,7 +1766,7 @@ to help you monitor and understand your
   
   
     <li class="md-nav__item">
-      <a href="../../api/fields/" class="md-nav__link">
+      <a href="../api/fields/" class="md-nav__link">
         
   
   
@@ -1689,7 +1794,7 @@ to help you monitor and understand your
   
   
     <li class="md-nav__item">
-      <a href="../../api/aliases/" class="md-nav__link">
+      <a href="../api/aliases/" class="md-nav__link">
         
   
   
@@ -1717,7 +1822,7 @@ to help you monitor and understand your
   
   
     <li class="md-nav__item">
-      <a href="../../api/config/" class="md-nav__link">
+      <a href="../api/config/" class="md-nav__link">
         
   
   
@@ -1745,7 +1850,7 @@ to help you monitor and understand your
   
   
     <li class="md-nav__item">
-      <a href="../../api/json_schema/" class="md-nav__link">
+      <a href="../api/json_schema/" class="md-nav__link">
         
   
   
@@ -1773,7 +1878,7 @@ to help you monitor and understand your
   
   
     <li class="md-nav__item">
-      <a href="../../api/errors/" class="md-nav__link">
+      <a href="../api/errors/" class="md-nav__link">
         
   
   
@@ -1801,7 +1906,7 @@ to help you monitor and understand your
   
   
     <li class="md-nav__item">
-      <a href="../../api/functional_validators/" class="md-nav__link">
+      <a href="../api/functional_validators/" class="md-nav__link">
         
   
   
@@ -1829,7 +1934,7 @@ to help you monitor and understand your
   
   
     <li class="md-nav__item">
-      <a href="../../api/functional_serializers/" class="md-nav__link">
+      <a href="../api/functional_serializers/" class="md-nav__link">
         
   
   
@@ -1857,7 +1962,7 @@ to help you monitor and understand your
   
   
     <li class="md-nav__item">
-      <a href="../../api/standard_library_types/" class="md-nav__link">
+      <a href="../api/standard_library_types/" class="md-nav__link">
         
   
   
@@ -1885,7 +1990,7 @@ to help you monitor and understand your
   
   
     <li class="md-nav__item">
-      <a href="../../api/types/" class="md-nav__link">
+      <a href="../api/types/" class="md-nav__link">
         
   
   
@@ -1913,7 +2018,7 @@ to help you monitor and understand your
   
   
     <li class="md-nav__item">
-      <a href="../../api/networks/" class="md-nav__link">
+      <a href="../api/networks/" class="md-nav__link">
         
   
   
@@ -1941,7 +2046,7 @@ to help you monitor and understand your
   
   
     <li class="md-nav__item">
-      <a href="../../api/version/" class="md-nav__link">
+      <a href="../api/version/" class="md-nav__link">
         
   
   
@@ -1969,7 +2074,7 @@ to help you monitor and understand your
   
   
     <li class="md-nav__item">
-      <a href="../../api/annotated_handlers/" class="md-nav__link">
+      <a href="../api/annotated_handlers/" class="md-nav__link">
         
   
   
@@ -1997,7 +2102,7 @@ to help you monitor and understand your
   
   
     <li class="md-nav__item">
-      <a href="../../api/experimental/" class="md-nav__link">
+      <a href="../api/experimental/" class="md-nav__link">
         
   
   
@@ -2085,7 +2190,7 @@ to help you monitor and understand your
   
   
     <li class="md-nav__item">
-      <a href="../../api/pydantic_core/" class="md-nav__link">
+      <a href="../api/pydantic_core/" class="md-nav__link">
         
   
   
@@ -2113,7 +2218,7 @@ to help you monitor and understand your
   
   
     <li class="md-nav__item">
-      <a href="../../api/pydantic_core_schema/" class="md-nav__link">
+      <a href="../api/pydantic_core_schema/" class="md-nav__link">
         
   
   
@@ -2149,7 +2254,7 @@ to help you monitor and understand your
   
   
     <li class="md-nav__item">
-      <a href="../../api/pydantic_settings/" class="md-nav__link">
+      <a href="../api/pydantic_settings/" class="md-nav__link">
         
   
   
@@ -2229,7 +2334,7 @@ to help you monitor and understand your
   
   
     <li class="md-nav__item">
-      <a href="../../api/pydantic_extra_types_color/" class="md-nav__link">
+      <a href="../api/pydantic_extra_types_color/" class="md-nav__link">
         
   
   
@@ -2257,7 +2362,7 @@ to help you monitor and understand your
   
   
     <li class="md-nav__item">
-      <a href="../../api/pydantic_extra_types_country/" class="md-nav__link">
+      <a href="../api/pydantic_extra_types_country/" class="md-nav__link">
         
   
   
@@ -2285,7 +2390,7 @@ to help you monitor and understand your
   
   
     <li class="md-nav__item">
-      <a href="../../api/pydantic_extra_types_payment/" class="md-nav__link">
+      <a href="../api/pydantic_extra_types_payment/" class="md-nav__link">
         
   
   
@@ -2313,7 +2418,7 @@ to help you monitor and understand your
   
   
     <li class="md-nav__item">
-      <a href="../../api/pydantic_extra_types_phone_numbers/" class="md-nav__link">
+      <a href="../api/pydantic_extra_types_phone_numbers/" class="md-nav__link">
         
   
   
@@ -2341,7 +2446,7 @@ to help you monitor and understand your
   
   
     <li class="md-nav__item">
-      <a href="../../api/pydantic_extra_types_routing_numbers/" class="md-nav__link">
+      <a href="../api/pydantic_extra_types_routing_numbers/" class="md-nav__link">
         
   
   
@@ -2369,7 +2474,7 @@ to help you monitor and understand your
   
   
     <li class="md-nav__item">
-      <a href="../../api/pydantic_extra_types_coordinate/" class="md-nav__link">
+      <a href="../api/pydantic_extra_types_coordinate/" class="md-nav__link">
         
   
   
@@ -2397,7 +2502,7 @@ to help you monitor and understand your
   
   
     <li class="md-nav__item">
-      <a href="../../api/pydantic_extra_types_mac_address/" class="md-nav__link">
+      <a href="../api/pydantic_extra_types_mac_address/" class="md-nav__link">
         
   
   
@@ -2425,7 +2530,7 @@ to help you monitor and understand your
   
   
     <li class="md-nav__item">
-      <a href="../../api/pydantic_extra_types_isbn/" class="md-nav__link">
+      <a href="../api/pydantic_extra_types_isbn/" class="md-nav__link">
         
   
   
@@ -2453,7 +2558,7 @@ to help you monitor and understand your
   
   
     <li class="md-nav__item">
-      <a href="../../api/pydantic_extra_types_pendulum_dt/" class="md-nav__link">
+      <a href="../api/pydantic_extra_types_pendulum_dt/" class="md-nav__link">
         
   
   
@@ -2481,7 +2586,7 @@ to help you monitor and understand your
   
   
     <li class="md-nav__item">
-      <a href="../../api/pydantic_extra_types_currency_code/" class="md-nav__link">
+      <a href="../api/pydantic_extra_types_currency_code/" class="md-nav__link">
         
   
   
@@ -2509,7 +2614,7 @@ to help you monitor and understand your
   
   
     <li class="md-nav__item">
-      <a href="../../api/pydantic_extra_types_language_code/" class="md-nav__link">
+      <a href="../api/pydantic_extra_types_language_code/" class="md-nav__link">
         
   
   
@@ -2537,7 +2642,7 @@ to help you monitor and understand your
   
   
     <li class="md-nav__item">
-      <a href="../../api/pydantic_extra_types_script_code/" class="md-nav__link">
+      <a href="../api/pydantic_extra_types_script_code/" class="md-nav__link">
         
   
   
@@ -2565,7 +2670,7 @@ to help you monitor and understand your
   
   
     <li class="md-nav__item">
-      <a href="../../api/pydantic_extra_types_semantic_version/" class="md-nav__link">
+      <a href="../api/pydantic_extra_types_semantic_version/" class="md-nav__link">
         
   
   
@@ -2593,7 +2698,7 @@ to help you monitor and understand your
   
   
     <li class="md-nav__item">
-      <a href="../../api/pydantic_extra_types_timezone_name/" class="md-nav__link">
+      <a href="../api/pydantic_extra_types_timezone_name/" class="md-nav__link">
         
   
   
@@ -2621,7 +2726,7 @@ to help you monitor and understand your
   
   
     <li class="md-nav__item">
-      <a href="../../api/pydantic_extra_types_ulid/" class="md-nav__link">
+      <a href="../api/pydantic_extra_types_ulid/" class="md-nav__link">
         
   
   
@@ -2716,7 +2821,7 @@ to help you monitor and understand your
   
   
     <li class="md-nav__item">
-      <a href="../../internals/architecture/" class="md-nav__link">
+      <a href="../internals/architecture/" class="md-nav__link">
         
   
   
@@ -2744,7 +2849,7 @@ to help you monitor and understand your
   
   
     <li class="md-nav__item">
-      <a href="../../internals/resolving_annotations/" class="md-nav__link">
+      <a href="../internals/resolving_annotations/" class="md-nav__link">
         
   
   
@@ -2831,7 +2936,7 @@ to help you monitor and understand your
   
   
     <li class="md-nav__item">
-      <a href="../../examples/files/" class="md-nav__link">
+      <a href="../examples/files/" class="md-nav__link">
         
   
   
@@ -2859,7 +2964,7 @@ to help you monitor and understand your
   
   
     <li class="md-nav__item">
-      <a href="../../examples/requests/" class="md-nav__link">
+      <a href="../examples/requests/" class="md-nav__link">
         
   
   
@@ -2887,7 +2992,7 @@ to help you monitor and understand your
   
   
     <li class="md-nav__item">
-      <a href="../../examples/queues/" class="md-nav__link">
+      <a href="../examples/queues/" class="md-nav__link">
         
   
   
@@ -2915,7 +3020,7 @@ to help you monitor and understand your
   
   
     <li class="md-nav__item">
-      <a href="../../examples/orms/" class="md-nav__link">
+      <a href="../examples/orms/" class="md-nav__link">
         
   
   
@@ -2943,7 +3048,7 @@ to help you monitor and understand your
   
   
     <li class="md-nav__item">
-      <a href="../../examples/custom_validators/" class="md-nav__link">
+      <a href="../examples/custom_validators/" class="md-nav__link">
         
   
   
@@ -2971,7 +3076,7 @@ to help you monitor and understand your
   
   
     <li class="md-nav__item">
-      <a href="../../examples/dynamic_models/" class="md-nav__link">
+      <a href="../examples/dynamic_models/" class="md-nav__link">
         
   
   
@@ -2999,7 +3104,7 @@ to help you monitor and understand your
   
   
     <li class="md-nav__item">
-      <a href="../../examples/cyclic_references/" class="md-nav__link">
+      <a href="../examples/cyclic_references/" class="md-nav__link">
         
   
   
@@ -3027,7 +3132,7 @@ to help you monitor and understand your
   
   
     <li class="md-nav__item">
-      <a href="../../examples/pydantic_ai/" class="md-nav__link">
+      <a href="../examples/pydantic_ai/" class="md-nav__link">
         
   
   
@@ -3059,31 +3164,26 @@ to help you monitor and understand your
       
   
   
-    
   
   
-  
     
     
     
     
-      
-        
-        
       
       
         
       
     
     
-    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--nested">
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6" checked>
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6" >
         
           
-          <label class="md-nav__link" for="__nav_6" id="__nav_6_label" tabindex="">
+          <label class="md-nav__link" for="__nav_6" id="__nav_6_label" tabindex="0">
             
   
   
@@ -3101,7 +3201,7 @@ to help you monitor and understand your
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_6_label" aria-expanded="true">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_6_label" aria-expanded="false">
           <label class="md-nav__title" for="__nav_6">
             <span class="md-nav__icon md-icon"></span>
             
@@ -3119,7 +3219,7 @@ to help you monitor and understand your
   
   
     <li class="md-nav__item">
-      <a href="../errors/" class="md-nav__link">
+      <a href="../errors/errors/" class="md-nav__link">
         
   
   
@@ -3147,7 +3247,7 @@ to help you monitor and understand your
   
   
     <li class="md-nav__item">
-      <a href="../validation_errors/" class="md-nav__link">
+      <a href="../errors/validation_errors/" class="md-nav__link">
         
   
   
@@ -3175,7 +3275,7 @@ to help you monitor and understand your
   
   
     <li class="md-nav__item">
-      <a href="../usage_errors/" class="md-nav__link">
+      <a href="../errors/usage_errors/" class="md-nav__link">
         
   
   
@@ -3200,37 +3300,10 @@ to help you monitor and understand your
                 
   
   
-    
   
   
-  
-    <li class="md-nav__item md-nav__item--active">
-      
-      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
-      
-      
-        
-      
-      
-        <label class="md-nav__link md-nav__link--active" for="__toc">
-          
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Troubleshooting with Logfire
-  
-
-    
-  </span>
-  
-  
-
-          <span class="md-nav__icon md-icon"></span>
-        </label>
-      
-      <a href="./" class="md-nav__link md-nav__link--active">
+    <li class="md-nav__item">
+      <a href="../errors/troubleshooting/" class="md-nav__link">
         
   
   
@@ -3246,83 +3319,6 @@ to help you monitor and understand your
   
 
       </a>
-      
-        
-
-  
-
-<nav class="md-nav md-nav--secondary" aria-label="Page contents">
-  
-  
-  
-    
-  
-  
-    <label class="md-nav__title" for="__toc">
-      <span class="md-nav__icon md-icon"></span>
-      Page contents
-    </label>
-    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
-      
-        <li class="md-nav__item">
-  <a href="#record-a-production-failure" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Record a production failure
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#read-the-structured-error" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Read the structured error
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#see-whether-the-failure-is-recurring" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        See whether the failure is recurring
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#have-logfire-explain-the-error" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Have Logfire explain the error
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#next-steps" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Next steps
-      
-    </span>
-  </a>
-  
-</li>
-      
-    </ul>
-  
-</nav>
-      
     </li>
   
 
@@ -3394,7 +3390,7 @@ to help you monitor and understand your
   
   
     <li class="md-nav__item">
-      <a href="../../integrations/logfire/" class="md-nav__link">
+      <a href="../integrations/logfire/" class="md-nav__link">
         
   
   
@@ -3422,7 +3418,7 @@ to help you monitor and understand your
   
   
     <li class="md-nav__item">
-      <a href="../../integrations/llms/" class="md-nav__link">
+      <a href="../integrations/llms/" class="md-nav__link">
         
   
   
@@ -3502,7 +3498,7 @@ to help you monitor and understand your
   
   
     <li class="md-nav__item">
-      <a href="../../integrations/mypy/" class="md-nav__link">
+      <a href="../integrations/mypy/" class="md-nav__link">
         
   
   
@@ -3530,7 +3526,7 @@ to help you monitor and understand your
   
   
     <li class="md-nav__item">
-      <a href="../../integrations/pyrefly/" class="md-nav__link">
+      <a href="../integrations/pyrefly/" class="md-nav__link">
         
   
   
@@ -3558,7 +3554,7 @@ to help you monitor and understand your
   
   
     <li class="md-nav__item">
-      <a href="../../integrations/pycharm/" class="md-nav__link">
+      <a href="../integrations/pycharm/" class="md-nav__link">
         
   
   
@@ -3586,7 +3582,7 @@ to help you monitor and understand your
   
   
     <li class="md-nav__item">
-      <a href="../../integrations/hypothesis/" class="md-nav__link">
+      <a href="../integrations/hypothesis/" class="md-nav__link">
         
   
   
@@ -3614,7 +3610,7 @@ to help you monitor and understand your
   
   
     <li class="md-nav__item">
-      <a href="../../integrations/visual_studio_code/" class="md-nav__link">
+      <a href="../integrations/visual_studio_code/" class="md-nav__link">
         
   
   
@@ -3642,7 +3638,7 @@ to help you monitor and understand your
   
   
     <li class="md-nav__item">
-      <a href="../../integrations/datamodel_code_generator/" class="md-nav__link">
+      <a href="../integrations/datamodel_code_generator/" class="md-nav__link">
         
   
   
@@ -3670,7 +3666,7 @@ to help you monitor and understand your
   
   
     <li class="md-nav__item">
-      <a href="../../integrations/devtools/" class="md-nav__link">
+      <a href="../integrations/devtools/" class="md-nav__link">
         
   
   
@@ -3698,7 +3694,7 @@ to help you monitor and understand your
   
   
     <li class="md-nav__item">
-      <a href="../../integrations/rich/" class="md-nav__link">
+      <a href="../integrations/rich/" class="md-nav__link">
         
   
   
@@ -3726,7 +3722,7 @@ to help you monitor and understand your
   
   
     <li class="md-nav__item">
-      <a href="../../integrations/linting/" class="md-nav__link">
+      <a href="../integrations/linting/" class="md-nav__link">
         
   
   
@@ -3754,7 +3750,7 @@ to help you monitor and understand your
   
   
     <li class="md-nav__item">
-      <a href="../../integrations/documentation/" class="md-nav__link">
+      <a href="../integrations/documentation/" class="md-nav__link">
         
   
   
@@ -3842,7 +3838,7 @@ to help you monitor and understand your
   
   
     <li class="md-nav__item">
-      <a href="../../integrations/aws_lambda/" class="md-nav__link">
+      <a href="../integrations/aws_lambda/" class="md-nav__link">
         
   
   
@@ -3912,7 +3908,7 @@ to help you monitor and understand your
   
   
     <li class="md-nav__item">
-      <a href="../../pydantic_people/" class="md-nav__link">
+      <a href="../pydantic_people/" class="md-nav__link">
         
   
   
@@ -3951,8 +3947,6 @@ to help you monitor and understand your
   
   
   
-    
-  
   
     <label class="md-nav__title" for="__toc">
       <span class="md-nav__icon md-icon"></span>
@@ -3961,10 +3955,10 @@ to help you monitor and understand your
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#record-a-production-failure" class="md-nav__link">
+  <a href="#where-pydantic-engineers-can-help" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Record a production failure
+        Where Pydantic engineers can help
       
     </span>
   </a>
@@ -3972,10 +3966,10 @@ to help you monitor and understand your
 </li>
       
         <li class="md-nav__item">
-  <a href="#read-the-structured-error" class="md-nav__link">
+  <a href="#how-support-works" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Read the structured error
+        How support works
       
     </span>
   </a>
@@ -3983,10 +3977,10 @@ to help you monitor and understand your
 </li>
       
         <li class="md-nav__item">
-  <a href="#see-whether-the-failure-is-recurring" class="md-nav__link">
+  <a href="#open-source-remains-the-foundation" class="md-nav__link">
     <span class="md-ellipsis">
       
-        See whether the failure is recurring
+        Open source remains the foundation
       
     </span>
   </a>
@@ -3994,10 +3988,10 @@ to help you monitor and understand your
 </li>
       
         <li class="md-nav__item">
-  <a href="#have-logfire-explain-the-error" class="md-nav__link">
+  <a href="#questions-teams-ask" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Have Logfire explain the error
+        Questions teams ask
       
     </span>
   </a>
@@ -4005,10 +3999,10 @@ to help you monitor and understand your
 </li>
       
         <li class="md-nav__item">
-  <a href="#next-steps" class="md-nav__link">
+  <a href="#continue-reading" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Next steps
+        Continue reading
       
     </span>
   </a>
@@ -4042,116 +4036,61 @@ to help you monitor and understand your
   
 
 
-<h1 id="troubleshooting-validation-errors-with-logfire">Troubleshooting Validation Errors with Logfire<a class="headerlink" href="#troubleshooting-validation-errors-with-logfire" title="Permanent link">&para;</a></h1>
-<p>When a <a class="autorefs autorefs-internal" href="../../api/pydantic_core/#pydantic_core.ValidationError"><code>ValidationError</code></a> is raised, the message tells you <em>what</em> went
-wrong: which field, which rule, and the value that triggered it. In production, the hard part is
-usually everything the message <em>can't</em> show you: where that data came from, how
-often it happens, and what else your application was doing at the time. By the time you read the log,
-the payload that failed is often already gone.</p>
-<h2 id="record-a-production-failure">Record a production failure<a class="headerlink" href="#record-a-production-failure" title="Permanent link">&para;</a></h2>
-<p>You need a <a href="https://logfire.pydantic.dev/login">free Logfire account</a> and a project. From your project
-directory, install the SDK and sign in:</p>
-<div class="language-bash highlight"><pre><span></span><code>pip<span class="w"> </span>install<span class="w"> </span>logfire
-logfire<span class="w"> </span>auth
-</code></pre></div>
-<p>Then instrument your application before defining or importing the models you want to monitor:</p>
-<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">datetime</span><span class="w"> </span><span class="kn">import</span> <span class="n">date</span>
+  <h1>Enterprise Support</h1>
 
-<span class="kn">import</span><span class="w"> </span><span class="nn">logfire</span>
-
-<span class="kn">from</span><span class="w"> </span><span class="nn">pydantic</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseModel</span>
-
-<span class="n">logfire</span><span class="o">.</span><span class="n">configure</span><span class="p">()</span>
-<span class="n">logfire</span><span class="o">.</span><span class="n">instrument_pydantic</span><span class="p">(</span><span class="n">record</span><span class="o">=</span><span class="s1">&#39;failure&#39;</span><span class="p">)</span>  <span class="c1"># (1)!</span>
-
-
-<span class="k">class</span><span class="w"> </span><span class="nc">User</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
-    <span class="n">name</span><span class="p">:</span> <span class="nb">str</span>
-    <span class="n">country_code</span><span class="p">:</span> <span class="nb">str</span>
-    <span class="n">dob</span><span class="p">:</span> <span class="n">date</span>
-
-
-<span class="n">User</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;Anne&#39;</span><span class="p">,</span> <span class="n">country_code</span><span class="o">=</span><span class="s1">&#39;USA&#39;</span><span class="p">,</span> <span class="n">dob</span><span class="o">=</span><span class="s1">&#39;not-a-date&#39;</span><span class="p">)</span>  <span class="c1"># (2)!</span>
-</code></pre></div>
+<p>Pydantic often sits between untrusted data and the rest of a production system. When that boundary is critical, a public issue tracker is not the escalation path you want during an incident or a major upgrade.</p>
+<p>Enterprise plans include direct access to Pydantic engineers, 24/7 priority support, setup assistance, and an SLA matched to your operating model.</p>
+<p><EnterpriseSupportCta
+  product="validation"
+  href="https://pydantic.dev/contact"
+  label="Discuss enterprise support"
+/></p>
+<p><EnterpriseSupportPlan product="validation" /></p>
+<h2 id="where-pydantic-engineers-can-help">Where Pydantic engineers can help<a class="headerlink" href="#where-pydantic-engineers-can-help" title="Permanent link">&para;</a></h2>
+<p>Use the public documentation, issue tracker, and community channels for ordinary questions. Enterprise support covers production incidents, major upgrades, and architecture or performance reviews.</p>
+<p><EnterpriseSupportAreas product="validation" /></p>
+<h2 id="how-support-works">How support works<a class="headerlink" href="#how-support-works" title="Permanent link">&para;</a></h2>
+<p><Steps></p>
 <ol>
-<li><code>record='failure'</code> creates an individual warning record only when validation fails, while still
-   collecting metrics for every validation.</li>
-<li>Run the example and choose or create a Logfire project when prompted. The invalid date produces a
-   warning in Logfire's Live view.</li>
+<li><strong>Agree the support boundary</strong></li>
 </ol>
-<p>Once instrumented, each failed validation shows up in the Live view, recorded with:</p>
+<p>Define the packages, release lines, environments, contacts, and initial response targets covered by your agreement.</p>
+<ol>
+<li><strong>Prepare useful context</strong></li>
+</ol>
+<p>Map where Pydantic sits in critical paths and decide how to capture a reproducible example, relevant configuration, and recent changes.</p>
+<ol>
+<li><strong>Escalate directly</strong></li>
+</ol>
+<p>Bring production-impacting issues to Pydantic engineers, who work with your team to isolate the behavior and determine the next action.</p>
+<p></Steps></p>
+<h2 id="open-source-remains-the-foundation">Open source remains the foundation<a class="headerlink" href="#open-source-remains-the-foundation" title="Permanent link">&para;</a></h2>
+<p>Pydantic's license, documentation, releases, issue tracker, and community support remain open to everyone. Enterprise support adds a direct escalation path and contractual commitments for teams that depend on Pydantic in production.</p>
+<h2 id="questions-teams-ask">Questions teams ask<a class="headerlink" href="#questions-teams-ask" title="Permanent link">&para;</a></h2>
+<p><Collapsible title="Is this the same as Logfire support?"></p>
+<p>No. This page describes support for the Pydantic validation library. Logfire is a separate product with its own commercial plans and support.</p>
+<p></Collapsible></p>
+<p><Collapsible title="What can Pydantic engineers help investigate?"></p>
+<p>We work with your engineers to reproduce the issue, isolate Pydantic behavior, explain the relevant implementation details, and determine the next action. Your team retains ownership of the surrounding application and infrastructure.</p>
+<p></Collapsible></p>
+<p><Collapsible title="Can we agree specific versions and initial response targets?"></p>
+<p>Yes. Supported versions, severity levels, initial response targets, and other commitments are defined in your commercial agreement. <a href="https://pydantic.dev/contact">Contact us</a> to discuss your requirements.</p>
+<p></Collapsible></p>
+<h2 id="continue-reading">Continue reading<a class="headerlink" href="#continue-reading" title="Permanent link">&para;</a></h2>
 <ul>
-<li><strong>Its rejected values</strong>: the values included in Pydantic's structured errors, so you can inspect
-  what failed without parsing the rendered exception string.</li>
-<li><strong>Its context</strong>: a warning attached to the surrounding request, task, or trace, so you can follow
-  bad data back to its source.</li>
-<li><strong>A queryable history</strong>: every failure is stored, so you can ask "which field fails most often?"
-  or "did this error spike after the last deploy?" in SQL.</li>
-<li><strong>No extra logging code</strong>: one <code>logfire.instrument_pydantic()</code> call covers all your models; you don't
-  wrap each validation attempt in a <code>try</code>/<code>except</code>.</li>
+<li>Review the <a href="../version-policy/">Pydantic version policy</a>.</li>
+<li>Plan an upgrade with the <a href="../migration/">migration guide</a>.</li>
+<li>Use the <a href="../help_with_pydantic/">community help channels</a> for questions that do not require a commercial support relationship.</li>
 </ul>
-<p>To see where a rejected value came from, instrument the part of the application that feeds the model
-as well. Logfire's <a href="https://pydantic.dev/docs/logfire/integrations/">framework and library integrations</a>
-put the failed-validation record inside the active request, task, or job trace. You can then follow the
-same trace across the caller, model validation, database work, and response instead of reconstructing
-the path from separate logs.</p>
-<div class="admonition warning">
-<p class="admonition-title">Review validation data before exporting it</p>
-<p>Failed-validation records contain the rejected values from Pydantic's structured errors. The
-Logfire SDK <a href="https://pydantic.dev/docs/logfire/instrument/scrubbing/">scrubs common sensitive values</a>
-before export, but Logfire stores every rejected value under the key <code>input</code> inside the serialized
-<code>errors</code> attribute, separately from its field path. If those values can contain secrets or personal
-data, pass <code>scrubbing=logfire.ScrubbingOptions(extra_patterns=[r'(?:^input$|"input"\s*:)'])</code> to
-<code>logfire.configure()</code>. The two alternatives tell the scrubber to inspect serialized validation
-errors and redact every value whose exact key is <code>input</code>; neither refers to your model's field
-names. Alternatively, use <code>record='metrics'</code> so individual failures are not exported.</p>
-</div>
-<p><img alt="A failed Pydantic validation recorded in the Logfire live view" src="../../img/logfire-validation-live-view.png" /></p>
-<h2 id="read-the-structured-error">Read the structured error<a class="headerlink" href="#read-the-structured-error" title="Permanent link">&para;</a></h2>
-<p>Beyond the plain-language explanation, each failed validation record shows the raw structured
-<a class="autorefs autorefs-internal" href="../../api/pydantic_core/#pydantic_core.ValidationError.errors"><code>errors()</code></a> list: the field path (<code>loc</code>), the machine-readable
-<code>type</code>, and the offending value included with that error. You can see which field failed and with what
-value without parsing the rendered message string by hand.</p>
-<p><img alt="A Pydantic validation failure in the Logfire live view, with the structured errors captured on the record" src="../../img/logfire-validation-error-trace.png" /></p>
-<h2 id="see-whether-the-failure-is-recurring">See whether the failure is recurring<a class="headerlink" href="#see-whether-the-failure-is-recurring" title="Permanent link">&para;</a></h2>
-<p>A single record tells you about one failure. The metrics collected by <code>record='failure'</code> show whether
-validation failures are increasing without storing a successful input each time. Filter the Live view
-by <code>schema_name</code>, or query the structured <code>errors</code> field to find the models, fields, and error types
-that fail most often.</p>
-<p>Once you know which failures matter, you don't have to keep watching for them. Logfire
-<a href="https://pydantic.dev/docs/logfire/observe/alerts/">alerts</a> run a SQL query on a schedule and
-notify you (for example, in Slack) when it matches. A rule like "validation failures for this model
-crossed a threshold" means the next occurrence finds you instead of a user reporting it.</p>
-<h2 id="have-logfire-explain-the-error">Have Logfire explain the error<a class="headerlink" href="#have-logfire-explain-the-error" title="Permanent link">&para;</a></h2>
-<p>Logfire can explain a failed validation span in plain language, reading the structured errors and,
-for each field, telling you what was expected and what it received, including messages from your own
-<a href="../../concepts/validators/#raising-validation-errors">custom validators</a>. This early-access feature
-currently requires <strong>Pydantic validation suggestions</strong> to be enabled in Logfire and
-<code>record='all'</code>, so the failure is captured as a validation span rather than a warning record. You get
-to the fix without memorising every <a href="../validation_errors/">error code</a>.</p>
-<figure>
-  <img alt="Logfire explaining a Pydantic validation error" src="../../img/logfire-validation-error-explained.png" width="500" />
-</figure>
-<p>If you debug with an AI coding agent, the <a href="https://pydantic.dev/docs/logfire/guides/mcp-server/">Logfire MCP server</a>
-lets the agent query your telemetry directly, including the structured errors and surrounding trace,
-so it can investigate against your real data instead of guessing.</p>
-<h2 id="next-steps">Next steps<a class="headerlink" href="#next-steps" title="Permanent link">&para;</a></h2>
-<ul>
-<li><a href="../../integrations/logfire/">Pydantic Logfire integration</a>: choose what to record and add the
-  surrounding application trace.</li>
-<li><a href="https://pydantic.dev/docs/logfire/instrument/scrubbing/">Scrubbing</a>: review and redact sensitive
-  validation data before export.</li>
-<li><a href="https://pydantic.dev/docs/logfire/observe/alerts/">Alerts</a>: get notified when failures cross a
-  threshold.</li>
-</ul>
-<p>For a reference of the individual error types you may encounter, see
-<a href="../validation_errors/">Validation Errors</a> and <a href="../usage_errors/">Usage Errors</a>.</p>
 
 
 
 
 
 
+
+  
+  
 
 
 
@@ -4262,22 +4201,22 @@ so it can investigate against your real data instead of guessing.</p>
     
       
       
-      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": ["content.tabs.link", "content.code.annotate", "content.code.copy", "announce.dismiss", "navigation.tabs", "navigation.instant", "navigation.instant.prefetch", "navigation.instant.preview", "navigation.instant.progress", "navigation.path", "navigation.sections", "navigation.top", "navigation.tracking", "search.suggest", "toc.follow"], "search": "../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"provider": "mike"}}</script>
+      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": ["content.tabs.link", "content.code.annotate", "content.code.copy", "announce.dismiss", "navigation.tabs", "navigation.instant", "navigation.instant.prefetch", "navigation.instant.preview", "navigation.instant.progress", "navigation.path", "navigation.sections", "navigation.top", "navigation.tracking", "search.suggest", "toc.follow"], "search": "../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"provider": "mike"}}</script>
     
     
-      <script src="../../assets/javascripts/bundle.d7400e89.min.js"></script>
+      <script src="../assets/javascripts/bundle.d7400e89.min.js"></script>
       
         <script src="https://cdn.jsdelivr.net/npm/algoliasearch@5.20.0/dist/lite/builds/browser.umd.js"></script>
       
         <script src="https://cdn.jsdelivr.net/npm/instantsearch.js@4.77.3/dist/instantsearch.production.min.js"></script>
       
-        <script src="../../extra/algolia.js"></script>
+        <script src="../extra/algolia.js"></script>
       
-        <script src="../../extra/feedback.js"></script>
+        <script src="../extra/feedback.js"></script>
       
-        <script src="../../extra/fluff.js"></script>
+        <script src="../extra/fluff.js"></script>
       
-        <script src="../../extra/mathjax.js"></script>
+        <script src="../extra/mathjax.js"></script>
       
         <script src="https://samuelcolvin.github.io/mkdocs-run-code/run_code_main.js"></script>
       
