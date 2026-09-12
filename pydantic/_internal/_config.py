@@ -209,6 +209,13 @@ class ConfigWrapper:
                 stacklevel=2,
             )
 
+        # The backwards-compatibility patches below write derived values back into
+        # `config`, which is the very same mapping the caller handed us: a model's own
+        # `model_config`, or the `ConfigDict` passed to `TypeAdapter`/`validate_call`/
+        # `@dataclass`. Derive them on a copy instead, so a value pydantic worked out
+        # cannot later be read back as one the user set.
+        config = cast(ConfigDict, dict(config))
+
         if (populate_by_name := config.get('populate_by_name')) is not None:
             # We include this patch for backwards compatibility purposes, but this config setting will be deprecated in v3.0, and likely removed in v4.0.
             # Thus, the above warning and this patch can be removed then as well.
