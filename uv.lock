@@ -2884,15 +2884,15 @@ wheels = [
 
 [[package]]
 name = "pyodide-lock"
-version = "0.2.0"
+version = "0.2.1"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "attrs" },
     { name = "cattrs" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/73/d6/95f7d6edb66c7f99be3a573c130b7318c02a676acea8a9fcee9c71bf1724/pyodide_lock-0.2.0.tar.gz", hash = "sha256:eb85eac9266a4bbff34c31158337b89f4d27305d93eb8908ca3ec324d2c278ef", size = 55127, upload-time = "2026-07-24T08:27:57.259Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/86/e1/72874a2efee51666c634d3eb3d04e5b297af3e54333f2febd7cd4e80d8ae/pyodide_lock-0.2.1.tar.gz", hash = "sha256:a2a60f7e87d97391be887cb00050382c192bb5a86451b1dbd44abe7272e674c3", size = 55145, upload-time = "2026-08-27T03:54:42.176Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/10/32/f9f5f2a80c48f666d1c5bfbda301247242edb9fd98dde7d1007b614f6dea/pyodide_lock-0.2.0-py3-none-any.whl", hash = "sha256:462679d58c0d542ca830c832b7fe2ad5c7d00982d86a9d00d2ef93b36c2624d8", size = 16048, upload-time = "2026-07-24T08:27:56.38Z" },
+    { url = "https://files.pythonhosted.org/packages/d3/4a/bd0bfb7aabdada073774b4c7203069de4ba5cc515a92e489d3014c6a14d2/pyodide_lock-0.2.1-py3-none-any.whl", hash = "sha256:5181ec109ab230d0539884b29b45ddb736e5df79d9378e68a2ccd41574346879", size = 16062, upload-time = "2026-08-27T03:54:41.07Z" },
 ]
 
 [[package]]
