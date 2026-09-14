@@ -8,6 +8,7 @@ from typing import TYPE_CHECKING, Any, Generic, Literal, TypeVar
 
 from pydantic_core import PydanticUndefined
 from typing_extensions import Self, dataclass_transform
+from typing_inspection import typing_objects
 
 from . import PydanticUserError
 from ._internal import _model_construction, _repr
@@ -29,6 +30,13 @@ else:
 __all__ = ('RootModel',)
 
 RootModelRootType = TypeVar('RootModelRootType')
+
+
+def _resolve_root_annotation(annotation: Any) -> Any:
+    """Unwrap PEP 695 / `TypeAliasType` aliases so `type SomeStr = str` compares equal to `str`."""
+    while typing_objects.is_typealiastype(annotation):
+        annotation = annotation.__value__
+    return annotation
 
 
 class RootModel(BaseModel, Generic[RootModelRootType], metaclass=_RootModelMetaclass):
@@ -178,9 +186,13 @@ class RootModel(BaseModel, Generic[RootModelRootType], metaclass=_RootModelMetac
     def __eq__(self, other: Any) -> bool:
         if not isinstance(other, RootModel):
             return NotImplemented
-        return self.__pydantic_fields__['root'].annotation == other.__pydantic_fields__[
-            'root'
-        ].annotation and super().__eq__(other)
+        # Compare resolved root annotations so type aliases of the same type are equal
+        # (`RootModel[str] == RootModel[SomeStr]`), while distinct types stay unequal
+        # (`RootModel[int] != RootModel[float]`). See https://github.com/pydantic/pydantic/issues/10544
+        # and https://github.com/pydantic/pydantic/pull/5948#discussion_r1211799941.
+        return _resolve_root_annotation(self.__pydantic_fields__['root'].annotation) == _resolve_root_annotation(
+            other.__pydantic_fields__['root'].annotation
+        ) and super().__eq__(other)
 
     def __repr_args__(self) -> _repr.ReprArgs:
         yield 'root', self.root

@@ -1,6 +1,7 @@
 import importlib.util
 import inspect
 import pickle
+import sys
 import typing
 from datetime import date, datetime
 from typing import Annotated, Any, Generic, Literal, TypeVar
@@ -8,6 +9,7 @@ from typing import Annotated, Any, Generic, Literal, TypeVar
 import pytest
 from pydantic_core import CoreSchema
 from pydantic_core.core_schema import SerializerFunctionWrapHandler
+from typing_extensions import TypeAliasType
 
 from pydantic import (
     Base64Str,
@@ -311,12 +313,65 @@ def test_root_model_literal():
 def test_root_model_equality():
     assert RootModel[int](42) == RootModel[int](42)
     assert RootModel[int](42) != RootModel[int](7)
+    # Distinct parametrizations stay unequal even when Python values compare equal.
     assert RootModel[int](42) != RootModel[float](42)
+    assert RootModel[int](42) != RootModel[float](42.1)
+    assert RootModel[int](42) != RootModel[str]('42')
+    assert RootModel[int](42) != 42
     assert RootModel[int](42) == RootModel[int].model_construct(42)
+    assert RootModel[Any](1) != RootModel[int](1)
+
+
+def test_root_model_equality_type_alias():
+    SomeStr = TypeAliasType('SomeStr', str)
+    OtherStr = TypeAliasType('OtherStr', str)
+    NestedStr = TypeAliasType('NestedStr', SomeStr)
+
+    assert RootModel[str]('a') == RootModel[SomeStr]('a')
+    assert RootModel[SomeStr]('a') == RootModel[OtherStr]('a')
+    assert RootModel[str]('a') == RootModel[NestedStr]('a')
+    assert RootModel[str]('a') != RootModel[SomeStr]('b')
+    SomeInt = TypeAliasType('SomeInt', int)
+    assert RootModel[str]('a') != RootModel[SomeInt](1)
+
+
+@pytest.mark.skipif(sys.version_info < (3, 12), reason='PEP 695 type statement requires Python 3.12+')
+def test_root_model_equality_pep695_type_alias(create_module):
+    module = create_module(
+        """
+from pydantic import RootModel
+
+type SomeStr = str
+type NestedStr = SomeStr
+
+assert RootModel[str]('a') == RootModel[SomeStr]('a')
+assert RootModel[str]('a') == RootModel[NestedStr]('a')
+assert RootModel[str]('a') != RootModel[SomeStr]('b')
+"""
+    )
+    assert module is not None
+
+
+def test_root_model_equality_generic_subclass():
+    T = TypeVar('T')
+
+    class MyRoot(RootModel[T]):
+        pass
+
+    SomeInt = TypeAliasType('SomeInt', int)
+
+    assert MyRoot[int](1) == MyRoot[int](1)
+    assert MyRoot[int](1) == MyRoot[SomeInt](1)
+    assert MyRoot[int](1) != MyRoot[Any](1)
+    assert MyRoot[int](1) != MyRoot[int](2)
+    # Different generic origins are not equal, matching BaseModel.
+    assert MyRoot[int](1) != RootModel[int](1)
 
 
 def test_root_model_with_private_attrs_equality():
-    class Model(RootModel[int]):
+    T = TypeVar('T')
+
+    class Model(RootModel[T]):
         _private_attr: str = PrivateAttr(default='abc')
 
     m = Model(42)
@@ -324,6 +379,31 @@ def test_root_model_with_private_attrs_equality():
 
     m._private_attr = 'xyz'
     assert m != Model(42)
+
+    SomeInt = TypeAliasType('SomeInt', int)
+    assert Model[int](42) == Model[SomeInt](42)
+
+    m2 = Model[int](42)
+    m2._private_attr = 'xyz'
+    assert m2 != Model[SomeInt](42)
+
+
+def test_root_model_frozen_hash_matches_equality():
+    """Frozen RootModels that compare equal (including resolved aliases) must share a hash."""
+    T = TypeVar('T')
+
+    class FrozenRoot(RootModel[T]):
+        model_config = ConfigDict(frozen=True)
+
+    SomeInt = TypeAliasType('SomeInt', int)
+    a = FrozenRoot[int](1)
+    b = FrozenRoot[SomeInt](1)
+    assert a == b
+    assert hash(a) == hash(b)
+
+    assert FrozenRoot[int](1) != FrozenRoot[float](1)
+    assert FrozenRoot[int](1) != FrozenRoot[Any](1)
+    assert FrozenRoot[int](1) != FrozenRoot[int](2)
 
 
 def test_root_model_nested_equality():
