@@ -1,5 +1,35 @@
 The networks module contains types for common network-related fields.
 
+Added in v2.12: By default, validation of URL types add a trailing slash if no path is present:
+
+The url_preserve_empty_path config option can be used to control this behavior:
+
+```python
+from pydantic import AnyUrl, BaseModel, ConfigDict
+
+class Model(BaseModel):
+    model_config = ConfigDict(url_preserve_empty_path=True)
+
+    url: AnyUrl
+
+m = Model(url='https://example.com')
+print(m.url)
+#> https://example.com
+
+```
+
+```python
+from pydantic import AnyUrl, BaseModel
+
+class Model(BaseModel):
+    url: AnyUrl
+
+m = Model(url='https://example.com')
+print(m.url)
+#> https://example.com/
+
+```
+
 ## MAX_EMAIL_LENGTH
 
 ```python
