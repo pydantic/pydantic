@@ -4441,8 +4441,8 @@ to help you monitor and understand your
   <h1>Types</h1>
 
 <p>Pydantic uses types to define how validation and serialization should be performed.
-<a href="../../api/standard_library_types/">Built-in and standard library types</a> (such as <a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#int"><code>int</code></a>,
-<a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str"><code>str</code></a>, <a class="autorefs autorefs-external" href="https://docs.python.org/3/library/datetime.html#datetime.date"><code>date</code></a>) can be used as is. <a href="../strict_mode/">Strictness</a>
+<a href="../../api/standard_library_types/">Built-in and standard library types</a> (such as <a class="autorefs autorefs-external" href="https://docs.python.org/3/builtins/functions.html#int"><code>int</code></a>,
+<a class="autorefs autorefs-external" href="https://docs.python.org/3/builtins/stdtypes.html#str"><code>str</code></a>, <a class="autorefs autorefs-external" href="https://docs.python.org/3/library/datetime.html#datetime.date"><code>date</code></a>) can be used as is. <a href="../strict_mode/">Strictness</a>
 can be controlled and constraints can be applied on them.</p>
 <p>On top of these, Pydantic provides extra types, either <a href="../../api/types/">directly in the library</a>
 (e.g. <a class="autorefs autorefs-internal" href="../../api/types/#pydantic.types.SecretStr"><code>SecretStr</code></a>) or in the <a href="https://github.com/pydantic/pydantic-extra-types"><code>pydantic-extra-types</code></a>
@@ -4476,7 +4476,7 @@ validation is silently omitted from the result, and the valid ones are kept.</p>
 </div>
 <p>By default, when validating a collection, Pydantic validates every item and reports all the errors
 at once. The <a class="autorefs autorefs-internal" href="../../api/types/#pydantic.types.FailFast"><code>FailFast</code></a> annotation can be applied to a collection type
-(such as a <a class="autorefs autorefs-external" href="https://docs.python.org/3/glossary.html#term-list"><code>list</code></a>, a <a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#tuple"><code>tuple</code></a>, a <a class="autorefs autorefs-external" href="https://docs.python.org/3/reference/expressions.html#set"><code>set</code></a> or a <a class="autorefs autorefs-external" href="https://docs.python.org/3/reference/expressions.html#dict"><code>dict</code></a>) to stop as soon as an item fails validation.
+(such as a <a class="autorefs autorefs-external" href="https://docs.python.org/3/glossary.html#term-list"><code>list</code></a>, a <a class="autorefs autorefs-external" href="https://docs.python.org/3/builtins/stdtypes.html#tuple"><code>tuple</code></a>, a <a class="autorefs autorefs-external" href="https://docs.python.org/3/reference/expressions.html#set"><code>set</code></a> or a <a class="autorefs autorefs-external" href="https://docs.python.org/3/reference/expressions.html#dict"><code>dict</code></a>) to stop as soon as an item fails validation.
 This makes validation faster, with the caveat that you get less information about the errors.</p>
 <div class="language-python highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Annotated</span>
 

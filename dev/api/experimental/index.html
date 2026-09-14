@@ -4820,7 +4820,7 @@ to help you monitor and understand your
   </span>
 
 <a href="#pydantic.experimental.pipeline._Pipeline" class="headerlink" title="Permanent link">&para;</a></h2>
-<div class="language-python doc-signature highlight"><pre><span></span><code><span class="nf">_Pipeline</span><span class="p">(</span><span class="n">_steps</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#tuple">tuple</a></span><span class="p">[</span><span class="n"><span title="pydantic.experimental.pipeline._Step">_Step</span></span><span class="p">,</span> <span class="o">...</span><span class="p">])</span>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span class="nf">_Pipeline</span><span class="p">(</span><span class="n">_steps</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/builtins/stdtypes.html#tuple">tuple</a></span><span class="p">[</span><span class="n"><span title="pydantic.experimental.pipeline._Step">_Step</span></span><span class="p">,</span> <span class="o">...</span><span class="p">])</span>
 </code></pre></div>
 
     <div class="doc doc-contents ">
@@ -4904,16 +4904,16 @@ That is, the transformation is applied to after the value is parsed to the field
 <a href="#pydantic.experimental.pipeline._Pipeline.validate_as" class="headerlink" title="Permanent link">&para;</a></h3>
           <div class="doc-overloads">
 <div class="language-python doc-signature highlight"><pre><span></span><code><span class="nf">validate_as</span><span class="p">(</span>
-    <span class="n">tp</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" title="typing_extensions.TypeForm" href="https://typing-extensions.readthedocs.io/en/latest/index.html#typing_extensions.TypeForm">TypeForm</a></span><span class="p">[</span><span class="n"><span title="pydantic.experimental.pipeline._NewOutT">_NewOutT</span></span><span class="p">],</span> <span class="o">*</span><span class="p">,</span> <span class="n">strict</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a></span> <span class="o">=</span> <span class="kc">False</span>
+    <span class="n">tp</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" title="typing_extensions.TypeForm" href="https://typing-extensions.readthedocs.io/en/latest/index.html#typing_extensions.TypeForm">TypeForm</a></span><span class="p">[</span><span class="n"><span title="pydantic.experimental.pipeline._NewOutT">_NewOutT</span></span><span class="p">],</span> <span class="o">*</span><span class="p">,</span> <span class="n">strict</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/builtins/functions.html#bool">bool</a></span> <span class="o">=</span> <span class="kc">False</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><a class="autorefs autorefs-internal" title="pydantic.experimental.pipeline._Pipeline" href="#pydantic.experimental.pipeline._Pipeline">_Pipeline</a></span><span class="p">[</span><span class="n"><span title="pydantic.experimental.pipeline._InT">_InT</span></span><span class="p">,</span> <span class="n"><span title="pydantic.experimental.pipeline._NewOutT">_NewOutT</span></span><span class="p">]</span>
 </code></pre></div><div class="language-python doc-signature highlight"><pre><span></span><code><span class="nf">validate_as</span><span class="p">(</span>
-    <span class="n">tp</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" title="types.EllipsisType" href="https://docs.python.org/3/library/types.html#types.EllipsisType">EllipsisType</a></span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">strict</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a></span> <span class="o">=</span> <span class="kc">False</span>
+    <span class="n">tp</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" title="types.EllipsisType" href="https://docs.python.org/3/library/types.html#types.EllipsisType">EllipsisType</a></span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">strict</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/builtins/functions.html#bool">bool</a></span> <span class="o">=</span> <span class="kc">False</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><a class="autorefs autorefs-internal" title="pydantic.experimental.pipeline._Pipeline" href="#pydantic.experimental.pipeline._Pipeline">_Pipeline</a></span><span class="p">[</span><span class="n"><span title="pydantic.experimental.pipeline._InT">_InT</span></span><span class="p">,</span> <span class="n"><a class="autorefs autorefs-external" title="typing.Any" href="https://docs.python.org/3/library/typing.html#typing.Any">Any</a></span><span class="p">]</span>
 </code></pre></div>          </div>
 <div class="language-python doc-signature highlight"><pre><span></span><code><span class="nf">validate_as</span><span class="p">(</span>
     <span class="n">tp</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" title="typing_extensions.TypeForm" href="https://typing-extensions.readthedocs.io/en/latest/index.html#typing_extensions.TypeForm">TypeForm</a></span><span class="p">[</span><span class="n"><span title="pydantic.experimental.pipeline._NewOutT">_NewOutT</span></span><span class="p">]</span> <span class="o">|</span> <span class="n"><a class="autorefs autorefs-external" title="types.EllipsisType" href="https://docs.python.org/3/library/types.html#types.EllipsisType">EllipsisType</a></span><span class="p">,</span>
     <span class="o">*</span><span class="p">,</span>
-    <span class="n">strict</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a></span> <span class="o">=</span> <span class="kc">False</span>
+    <span class="n">strict</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/builtins/functions.html#bool">bool</a></span> <span class="o">=</span> <span class="kc">False</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><a class="autorefs autorefs-internal" title="pydantic.experimental.pipeline._Pipeline" href="#pydantic.experimental.pipeline._Pipeline">_Pipeline</a></span><span class="p">[</span><span class="n"><span title="pydantic.experimental.pipeline._InT">_InT</span></span><span class="p">,</span> <span class="n"><a class="autorefs autorefs-external" title="typing.Any" href="https://docs.python.org/3/library/typing.html#typing.Any">Any</a></span><span class="p">]</span>
 </code></pre></div>
 
@@ -5022,7 +5022,7 @@ is fully defined.</p>
 </code></pre></div><div class="language-python doc-signature highlight"><pre><span></span><code><span class="nf">constrain</span><span class="p">(</span><span class="n">constraint</span><span class="p">:</span> <span class="n"><span title="pydantic.experimental.pipeline._In">_In</span></span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><a class="autorefs autorefs-internal" title="pydantic.experimental.pipeline._Pipeline" href="#pydantic.experimental.pipeline._Pipeline">_Pipeline</a></span><span class="p">[</span><span class="n"><span title="pydantic.experimental.pipeline._InT">_InT</span></span><span class="p">,</span> <span class="n"><span title="pydantic.experimental.pipeline._OutT">_OutT</span></span><span class="p">]</span>
 </code></pre></div><div class="language-python doc-signature highlight"><pre><span></span><code><span class="nf">constrain</span><span class="p">(</span><span class="n">constraint</span><span class="p">:</span> <span class="n"><span title="pydantic.experimental.pipeline._NotIn">_NotIn</span></span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><a class="autorefs autorefs-internal" title="pydantic.experimental.pipeline._Pipeline" href="#pydantic.experimental.pipeline._Pipeline">_Pipeline</a></span><span class="p">[</span><span class="n"><span title="pydantic.experimental.pipeline._InT">_InT</span></span><span class="p">,</span> <span class="n"><span title="pydantic.experimental.pipeline._OutT">_OutT</span></span><span class="p">]</span>
 </code></pre></div><div class="language-python doc-signature highlight"><pre><span></span><code><span class="nf">constrain</span><span class="p">(</span>
-    <span class="n">constraint</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" title="re.Pattern" href="https://docs.python.org/3/library/re.html#re.Pattern">Pattern</a></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span><span class="p">],</span>
+    <span class="n">constraint</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" title="re.Pattern" href="https://docs.python.org/3/library/re.html#re.Pattern">Pattern</a></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/builtins/stdtypes.html#str">str</a></span><span class="p">],</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><a class="autorefs autorefs-internal" title="pydantic.experimental.pipeline._Pipeline" href="#pydantic.experimental.pipeline._Pipeline">_Pipeline</a></span><span class="p">[</span><span class="n"><span title="pydantic.experimental.pipeline._InT">_InT</span></span><span class="p">,</span> <span class="n"><span title="pydantic.experimental.pipeline._NewOutT">_NewOutT</span></span><span class="p">]</span>
 </code></pre></div>          </div>
 <div class="language-python doc-signature highlight"><pre><span></span><code><span class="nf">constrain</span><span class="p">(</span><span class="n">constraint</span><span class="p">:</span> <span class="n"><span title="pydantic.experimental.pipeline._ConstraintAnnotation">_ConstraintAnnotation</span></span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><a class="autorefs autorefs-external" title="typing.Any" href="https://docs.python.org/3/library/typing.html#typing.Any">Any</a></span>
@@ -5069,7 +5069,7 @@ so you don't need to call this directly.</p>
 
 <a href="#pydantic.experimental.pipeline._Pipeline.predicate" class="headerlink" title="Permanent link">&para;</a></h3>
 <div class="language-python doc-signature highlight"><pre><span></span><code><span class="nf">predicate</span><span class="p">(</span>
-    <span class="n">func</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" title="collections.abc.Callable" href="https://docs.python.org/3/library/collections.abc.html#collections.abc.Callable">Callable</a></span><span class="p">[[</span><span class="n"><span title="pydantic.experimental.pipeline._NewOutT">_NewOutT</span></span><span class="p">],</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a></span><span class="p">],</span>
+    <span class="n">func</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" title="collections.abc.Callable" href="https://docs.python.org/3/library/collections.abc.html#collections.abc.Callable">Callable</a></span><span class="p">[[</span><span class="n"><span title="pydantic.experimental.pipeline._NewOutT">_NewOutT</span></span><span class="p">],</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/builtins/functions.html#bool">bool</a></span><span class="p">],</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><a class="autorefs autorefs-internal" title="pydantic.experimental.pipeline._Pipeline" href="#pydantic.experimental.pipeline._Pipeline">_Pipeline</a></span><span class="p">[</span><span class="n"><span title="pydantic.experimental.pipeline._InT">_InT</span></span><span class="p">,</span> <span class="n"><span title="pydantic.experimental.pipeline._NewOutT">_NewOutT</span></span><span class="p">]</span>
 </code></pre></div>
 
@@ -5211,7 +5211,7 @@ so you don't need to call this directly.</p>
 
 <a href="#pydantic.experimental.pipeline._Pipeline.len" class="headerlink" title="Permanent link">&para;</a></h3>
 <div class="language-python doc-signature highlight"><pre><span></span><code><span class="nb">len</span><span class="p">(</span>
-    <span class="nf">min_len</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#int">int</a></span><span class="p">,</span> <span class="n">max_len</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#int">int</a></span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="nf">min_len</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/builtins/functions.html#int">int</a></span><span class="p">,</span> <span class="n">max_len</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/builtins/functions.html#int">int</a></span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><a class="autorefs autorefs-internal" title="pydantic.experimental.pipeline._Pipeline" href="#pydantic.experimental.pipeline._Pipeline">_Pipeline</a></span><span class="p">[</span><span class="n"><span title="pydantic.experimental.pipeline._InT">_InT</span></span><span class="p">,</span> <span class="n"><span title="pydantic.experimental.pipeline._NewOutLen">_NewOutLen</span></span><span class="p">]</span>
 </code></pre></div>
 
@@ -5596,12 +5596,12 @@ unconditionally sets <a class="autorefs autorefs-external" href="https://docs.py
 
 
 <a href="#pydantic.experimental.pipeline._Pipeline.str_lower" class="headerlink" title="Permanent link">&para;</a></h3>
-<div class="language-python doc-signature highlight"><pre><span></span><code><span class="nf">str_lower</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="n"><a class="autorefs autorefs-internal" title="pydantic.experimental.pipeline._Pipeline" href="#pydantic.experimental.pipeline._Pipeline">_Pipeline</a></span><span class="p">[</span><span class="n"><span title="pydantic.experimental.pipeline._InT">_InT</span></span><span class="p">,</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span><span class="p">]</span>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span class="nf">str_lower</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="n"><a class="autorefs autorefs-internal" title="pydantic.experimental.pipeline._Pipeline" href="#pydantic.experimental.pipeline._Pipeline">_Pipeline</a></span><span class="p">[</span><span class="n"><span title="pydantic.experimental.pipeline._InT">_InT</span></span><span class="p">,</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/builtins/stdtypes.html#str">str</a></span><span class="p">]</span>
 </code></pre></div>
 
     <div class="doc doc-contents ">
 
-        <p>Transform a string value to <a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str.lower">lowercase</a>.</p>
+        <p>Transform a string value to <a class="autorefs autorefs-external" href="https://docs.python.org/3/builtins/stdtypes.html#str.lower">lowercase</a>.</p>
 
             <details class="quote">
               <summary>Source code in <code>pydantic/experimental/pipeline.py</code></summary>
@@ -5624,12 +5624,12 @@ unconditionally sets <a class="autorefs autorefs-external" href="https://docs.py
 
 
 <a href="#pydantic.experimental.pipeline._Pipeline.str_upper" class="headerlink" title="Permanent link">&para;</a></h3>
-<div class="language-python doc-signature highlight"><pre><span></span><code><span class="nf">str_upper</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="n"><a class="autorefs autorefs-internal" title="pydantic.experimental.pipeline._Pipeline" href="#pydantic.experimental.pipeline._Pipeline">_Pipeline</a></span><span class="p">[</span><span class="n"><span title="pydantic.experimental.pipeline._InT">_InT</span></span><span class="p">,</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span><span class="p">]</span>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span class="nf">str_upper</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="n"><a class="autorefs autorefs-internal" title="pydantic.experimental.pipeline._Pipeline" href="#pydantic.experimental.pipeline._Pipeline">_Pipeline</a></span><span class="p">[</span><span class="n"><span title="pydantic.experimental.pipeline._InT">_InT</span></span><span class="p">,</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/builtins/stdtypes.html#str">str</a></span><span class="p">]</span>
 </code></pre></div>
 
     <div class="doc doc-contents ">
 
-        <p>Transform a string value to <a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str.upper">uppercase</a>.</p>
+        <p>Transform a string value to <a class="autorefs autorefs-external" href="https://docs.python.org/3/builtins/stdtypes.html#str.upper">uppercase</a>.</p>
 
             <details class="quote">
               <summary>Source code in <code>pydantic/experimental/pipeline.py</code></summary>
@@ -5652,12 +5652,12 @@ unconditionally sets <a class="autorefs autorefs-external" href="https://docs.py
 
 
 <a href="#pydantic.experimental.pipeline._Pipeline.str_title" class="headerlink" title="Permanent link">&para;</a></h3>
-<div class="language-python doc-signature highlight"><pre><span></span><code><span class="nf">str_title</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="n"><a class="autorefs autorefs-internal" title="pydantic.experimental.pipeline._Pipeline" href="#pydantic.experimental.pipeline._Pipeline">_Pipeline</a></span><span class="p">[</span><span class="n"><span title="pydantic.experimental.pipeline._InT">_InT</span></span><span class="p">,</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span><span class="p">]</span>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span class="nf">str_title</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="n"><a class="autorefs autorefs-internal" title="pydantic.experimental.pipeline._Pipeline" href="#pydantic.experimental.pipeline._Pipeline">_Pipeline</a></span><span class="p">[</span><span class="n"><span title="pydantic.experimental.pipeline._InT">_InT</span></span><span class="p">,</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/builtins/stdtypes.html#str">str</a></span><span class="p">]</span>
 </code></pre></div>
 
     <div class="doc doc-contents ">
 
-        <p>Transform a string value to <a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str.title">title case</a>.</p>
+        <p>Transform a string value to <a class="autorefs autorefs-external" href="https://docs.python.org/3/builtins/stdtypes.html#str.title">title case</a>.</p>
 
             <details class="quote">
               <summary>Source code in <code>pydantic/experimental/pipeline.py</code></summary>
@@ -5680,7 +5680,7 @@ unconditionally sets <a class="autorefs autorefs-external" href="https://docs.py
 
 
 <a href="#pydantic.experimental.pipeline._Pipeline.str_strip" class="headerlink" title="Permanent link">&para;</a></h3>
-<div class="language-python doc-signature highlight"><pre><span></span><code><span class="nf">str_strip</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="n"><a class="autorefs autorefs-internal" title="pydantic.experimental.pipeline._Pipeline" href="#pydantic.experimental.pipeline._Pipeline">_Pipeline</a></span><span class="p">[</span><span class="n"><span title="pydantic.experimental.pipeline._InT">_InT</span></span><span class="p">,</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span><span class="p">]</span>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span class="nf">str_strip</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="n"><a class="autorefs autorefs-internal" title="pydantic.experimental.pipeline._Pipeline" href="#pydantic.experimental.pipeline._Pipeline">_Pipeline</a></span><span class="p">[</span><span class="n"><span title="pydantic.experimental.pipeline._InT">_InT</span></span><span class="p">,</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/builtins/stdtypes.html#str">str</a></span><span class="p">]</span>
 </code></pre></div>
 
     <div class="doc doc-contents ">
@@ -5708,7 +5708,7 @@ unconditionally sets <a class="autorefs autorefs-external" href="https://docs.py
 
 
 <a href="#pydantic.experimental.pipeline._Pipeline.str_pattern" class="headerlink" title="Permanent link">&para;</a></h3>
-<div class="language-python doc-signature highlight"><pre><span></span><code><span class="nf">str_pattern</span><span class="p">(</span><span class="n">pattern</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><a class="autorefs autorefs-internal" title="pydantic.experimental.pipeline._Pipeline" href="#pydantic.experimental.pipeline._Pipeline">_Pipeline</a></span><span class="p">[</span><span class="n"><span title="pydantic.experimental.pipeline._InT">_InT</span></span><span class="p">,</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span><span class="p">]</span>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span class="nf">str_pattern</span><span class="p">(</span><span class="n">pattern</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/builtins/stdtypes.html#str">str</a></span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><a class="autorefs autorefs-internal" title="pydantic.experimental.pipeline._Pipeline" href="#pydantic.experimental.pipeline._Pipeline">_Pipeline</a></span><span class="p">[</span><span class="n"><span title="pydantic.experimental.pipeline._InT">_InT</span></span><span class="p">,</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/builtins/stdtypes.html#str">str</a></span><span class="p">]</span>
 </code></pre></div>
 
     <div class="doc doc-contents ">
@@ -5732,7 +5732,7 @@ unconditionally sets <a class="autorefs autorefs-external" href="https://docs.py
                 <code>pattern</code>
             </td>
             <td>
-                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></code>
+                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/builtins/stdtypes.html#str">str</a></code>
             </td>
             <td>
               <div class="doc-md-description">
@@ -5775,7 +5775,7 @@ unconditionally sets <a class="autorefs autorefs-external" href="https://docs.py
 
 
 <a href="#pydantic.experimental.pipeline._Pipeline.str_contains" class="headerlink" title="Permanent link">&para;</a></h3>
-<div class="language-python doc-signature highlight"><pre><span></span><code><span class="nf">str_contains</span><span class="p">(</span><span class="n">substring</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><a class="autorefs autorefs-internal" title="pydantic.experimental.pipeline._Pipeline" href="#pydantic.experimental.pipeline._Pipeline">_Pipeline</a></span><span class="p">[</span><span class="n"><span title="pydantic.experimental.pipeline._InT">_InT</span></span><span class="p">,</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span><span class="p">]</span>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span class="nf">str_contains</span><span class="p">(</span><span class="n">substring</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/builtins/stdtypes.html#str">str</a></span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><a class="autorefs autorefs-internal" title="pydantic.experimental.pipeline._Pipeline" href="#pydantic.experimental.pipeline._Pipeline">_Pipeline</a></span><span class="p">[</span><span class="n"><span title="pydantic.experimental.pipeline._InT">_InT</span></span><span class="p">,</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/builtins/stdtypes.html#str">str</a></span><span class="p">]</span>
 </code></pre></div>
 
     <div class="doc doc-contents ">
@@ -5799,7 +5799,7 @@ unconditionally sets <a class="autorefs autorefs-external" href="https://docs.py
                 <code>substring</code>
             </td>
             <td>
-                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></code>
+                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/builtins/stdtypes.html#str">str</a></code>
             </td>
             <td>
               <div class="doc-md-description">
@@ -5842,7 +5842,7 @@ unconditionally sets <a class="autorefs autorefs-external" href="https://docs.py
 
 
 <a href="#pydantic.experimental.pipeline._Pipeline.str_starts_with" class="headerlink" title="Permanent link">&para;</a></h3>
-<div class="language-python doc-signature highlight"><pre><span></span><code><span class="nf">str_starts_with</span><span class="p">(</span><span class="n">prefix</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><a class="autorefs autorefs-internal" title="pydantic.experimental.pipeline._Pipeline" href="#pydantic.experimental.pipeline._Pipeline">_Pipeline</a></span><span class="p">[</span><span class="n"><span title="pydantic.experimental.pipeline._InT">_InT</span></span><span class="p">,</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span><span class="p">]</span>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span class="nf">str_starts_with</span><span class="p">(</span><span class="n">prefix</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/builtins/stdtypes.html#str">str</a></span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><a class="autorefs autorefs-internal" title="pydantic.experimental.pipeline._Pipeline" href="#pydantic.experimental.pipeline._Pipeline">_Pipeline</a></span><span class="p">[</span><span class="n"><span title="pydantic.experimental.pipeline._InT">_InT</span></span><span class="p">,</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/builtins/stdtypes.html#str">str</a></span><span class="p">]</span>
 </code></pre></div>
 
     <div class="doc doc-contents ">
@@ -5866,7 +5866,7 @@ unconditionally sets <a class="autorefs autorefs-external" href="https://docs.py
                 <code>prefix</code>
             </td>
             <td>
-                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></code>
+                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/builtins/stdtypes.html#str">str</a></code>
             </td>
             <td>
               <div class="doc-md-description">
@@ -5909,7 +5909,7 @@ unconditionally sets <a class="autorefs autorefs-external" href="https://docs.py
 
 
 <a href="#pydantic.experimental.pipeline._Pipeline.str_ends_with" class="headerlink" title="Permanent link">&para;</a></h3>
-<div class="language-python doc-signature highlight"><pre><span></span><code><span class="nf">str_ends_with</span><span class="p">(</span><span class="n">suffix</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><a class="autorefs autorefs-internal" title="pydantic.experimental.pipeline._Pipeline" href="#pydantic.experimental.pipeline._Pipeline">_Pipeline</a></span><span class="p">[</span><span class="n"><span title="pydantic.experimental.pipeline._InT">_InT</span></span><span class="p">,</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span><span class="p">]</span>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span class="nf">str_ends_with</span><span class="p">(</span><span class="n">suffix</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/builtins/stdtypes.html#str">str</a></span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><a class="autorefs autorefs-internal" title="pydantic.experimental.pipeline._Pipeline" href="#pydantic.experimental.pipeline._Pipeline">_Pipeline</a></span><span class="p">[</span><span class="n"><span title="pydantic.experimental.pipeline._InT">_InT</span></span><span class="p">,</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/builtins/stdtypes.html#str">str</a></span><span class="p">]</span>
 </code></pre></div>
 
     <div class="doc doc-contents ">
@@ -5933,7 +5933,7 @@ unconditionally sets <a class="autorefs autorefs-external" href="https://docs.py
                 <code>suffix</code>
             </td>
             <td>
-                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></code>
+                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/builtins/stdtypes.html#str">str</a></code>
             </td>
             <td>
               <div class="doc-md-description">
@@ -6086,7 +6086,7 @@ unconditionally sets <a class="autorefs autorefs-external" href="https://docs.py
         <span class="s2">&quot;arguments&quot;</span><span class="p">,</span> <span class="s2">&quot;arguments-v3&quot;</span>
     <span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;arguments-v3&quot;</span><span class="p">,</span>
     <span class="n">parameters_callback</span><span class="p">:</span> <span class="p">(</span>
-        <span class="n"><a class="autorefs autorefs-external" title="collections.abc.Callable" href="https://docs.python.org/3/library/collections.abc.html#collections.abc.Callable">Callable</a></span><span class="p">[[</span><span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#int">int</a></span><span class="p">,</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span><span class="p">,</span> <span class="n"><a class="autorefs autorefs-external" title="typing.Any" href="https://docs.python.org/3/library/typing.html#typing.Any">Any</a></span><span class="p">],</span> <span class="n"><a class="autorefs autorefs-external" title="typing.Literal" href="https://docs.python.org/3/library/typing.html#typing.Literal">Literal</a></span><span class="p">[</span><span class="s2">&quot;skip&quot;</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span><span class="p">]</span>
+        <span class="n"><a class="autorefs autorefs-external" title="collections.abc.Callable" href="https://docs.python.org/3/library/collections.abc.html#collections.abc.Callable">Callable</a></span><span class="p">[[</span><span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/builtins/functions.html#int">int</a></span><span class="p">,</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/builtins/stdtypes.html#str">str</a></span><span class="p">,</span> <span class="n"><a class="autorefs autorefs-external" title="typing.Any" href="https://docs.python.org/3/library/typing.html#typing.Any">Any</a></span><span class="p">],</span> <span class="n"><a class="autorefs autorefs-external" title="typing.Literal" href="https://docs.python.org/3/library/typing.html#typing.Literal">Literal</a></span><span class="p">[</span><span class="s2">&quot;skip&quot;</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span><span class="p">]</span>
         <span class="o">|</span> <span class="kc">None</span>
     <span class="p">)</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">config</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-internal" title="pydantic.ConfigDict" href="../config/#pydantic.config.ConfigDict">ConfigDict</a></span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
@@ -6146,7 +6146,7 @@ unconditionally sets <a class="autorefs autorefs-external" href="https://docs.py
                 <code>parameters_callback</code>
             </td>
             <td>
-                  <code><a class="autorefs autorefs-external" title="collections.abc.Callable" href="https://docs.python.org/3/library/collections.abc.html#collections.abc.Callable">Callable</a>[[<a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#int">int</a>, <a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a>, <a class="autorefs autorefs-external" title="typing.Any" href="https://docs.python.org/3/library/typing.html#typing.Any">Any</a>], <a class="autorefs autorefs-external" title="typing.Literal" href="https://docs.python.org/3/library/typing.html#typing.Literal">Literal</a>[&#39;skip&#39;] | None] | None</code>
+                  <code><a class="autorefs autorefs-external" title="collections.abc.Callable" href="https://docs.python.org/3/library/collections.abc.html#collections.abc.Callable">Callable</a>[[<a class="autorefs autorefs-external" href="https://docs.python.org/3/builtins/functions.html#int">int</a>, <a class="autorefs autorefs-external" href="https://docs.python.org/3/builtins/stdtypes.html#str">str</a>, <a class="autorefs autorefs-external" title="typing.Any" href="https://docs.python.org/3/library/typing.html#typing.Any">Any</a>], <a class="autorefs autorefs-external" title="typing.Literal" href="https://docs.python.org/3/library/typing.html#typing.Literal">Literal</a>[&#39;skip&#39;] | None] | None</code>
             </td>
             <td>
               <div class="doc-md-description">

@@ -4272,7 +4272,7 @@ and ensure the integrity of your data.</p>
 <a href="#raising-validation-errors">raising validation errors</a>) and make changes to the validated value (coercion or mutation).</p>
 <p><strong>Four</strong> different types of validators can be used. They can all be defined using the
 <a href="../fields/#the-annotated-pattern">annotated pattern</a> or using the
-<a class="autorefs autorefs-internal" href="../../api/functional_validators/#pydantic.functional_validators.field_validator"><code>@field_validator</code></a> decorator, applied on a <a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#classmethod">class method</a>:</p>
+<a class="autorefs autorefs-internal" href="../../api/functional_validators/#pydantic.functional_validators.field_validator"><code>@field_validator</code></a> decorator, applied on a <a class="autorefs autorefs-external" href="https://docs.python.org/3/builtins/functions.html#classmethod">class method</a>:</p>
 <ul>
 <li>
 <p id="field-after-validator"><strong><em>After</em> validators</strong>: run after Pydantic's internal validation. They are generally more type safe and thus easier to implement.</p>
@@ -4782,8 +4782,8 @@ decorator.</p>
 <h2 id="raising-validation-errors">Raising validation errors<a class="headerlink" href="#raising-validation-errors" title="Permanent link">&para;</a></h2>
 <p>To raise a validation error, three types of exceptions can be used:</p>
 <ul>
-<li><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/exceptions.html#ValueError"><code>ValueError</code></a>: this is the most common exception raised inside validators.</li>
-<li><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/exceptions.html#AssertionError"><code>AssertionError</code></a>: using the <a class="autorefs autorefs-external" href="https://docs.python.org/3/reference/simple_stmts.html#assert">assert</a> statement also works, but be aware that these statements
+<li><a class="autorefs autorefs-external" href="https://docs.python.org/3/builtins/exceptions.html#ValueError"><code>ValueError</code></a>: this is the most common exception raised inside validators.</li>
+<li><a class="autorefs autorefs-external" href="https://docs.python.org/3/builtins/exceptions.html#AssertionError"><code>AssertionError</code></a>: using the <a class="autorefs autorefs-external" href="https://docs.python.org/3/reference/simple_stmts.html#assert">assert</a> statement also works, but be aware that these statements
   are skipped when Python is run with the <a class="autorefs autorefs-external" href="https://docs.python.org/3/using/cmdline.html#cmdoption-O">-O</a> optimization flag.</li>
 <li>
 <p><a class="autorefs autorefs-internal" href="../../api/pydantic_core/#pydantic_core.PydanticCustomError"><code>PydanticCustomError</code></a>: a bit more verbose, but provides extra flexibility:</p>

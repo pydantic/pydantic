@@ -3988,7 +3988,7 @@ to help you monitor and understand your
 <div class="admonition note">
 <p class="admonition-title">Note</p>
 <p>Validation code should not raise the <a class="autorefs autorefs-internal" href="../../api/pydantic_core/#pydantic_core.ValidationError"><code>ValidationError</code></a> itself,
-but rather raise a <a class="autorefs autorefs-external" href="https://docs.python.org/3/library/exceptions.html#ValueError"><code>ValueError</code></a> or a <a class="autorefs autorefs-external" href="https://docs.python.org/3/library/exceptions.html#AssertionError"><code>AssertionError</code></a> (or subclass thereof) which will
+but rather raise a <a class="autorefs autorefs-external" href="https://docs.python.org/3/builtins/exceptions.html#ValueError"><code>ValueError</code></a> or a <a class="autorefs autorefs-external" href="https://docs.python.org/3/builtins/exceptions.html#AssertionError"><code>AssertionError</code></a> (or subclass thereof) which will
 be caught and used to populate the final <a class="autorefs autorefs-internal" href="../../api/pydantic_core/#pydantic_core.ValidationError"><code>ValidationError</code></a>.</p>
 <p>For more details, refer to the <a href="../../concepts/validators/#raising-validation-errors">dedicated section</a>
 of the validators documentation.</p>

@@ -4543,7 +4543,7 @@ This might be useful when a particular function is costly/time consuming.</p>
 <h3 id="validation-exception">Validation exception<a class="headerlink" href="#validation-exception" title="Permanent link">&para;</a></h3>
 <p>Currently upon validation failure, a standard Pydantic <a class="autorefs autorefs-internal" href="../../api/pydantic_core/#pydantic_core.ValidationError"><code>ValidationError</code></a> is raised
 (see <a href="../models/#error-handling">model error handling</a> for details). This is also true for missing required arguments,
-where Python normally raises a <a class="autorefs autorefs-external" href="https://docs.python.org/3/library/exceptions.html#TypeError"><code>TypeError</code></a>.</p>
+where Python normally raises a <a class="autorefs autorefs-external" href="https://docs.python.org/3/builtins/exceptions.html#TypeError"><code>TypeError</code></a>.</p>
 <p>The error identifies the argument and value that were rejected. If you also need those details in the
 surrounding trace context, <a href="../../errors/troubleshooting/">Logfire</a> can record them when a decorated
 call fails.</p>

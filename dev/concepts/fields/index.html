@@ -4389,7 +4389,7 @@ annotated attribute:</p>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
 <p>Even though <code>name</code> is assigned a value, it is still required and has no default value. If you want
-to emphasize on the fact that a value must be provided, you can use the <a class="autorefs autorefs-external" href="https://docs.python.org/3/library/constants.html#Ellipsis">ellipsis</a>:</p>
+to emphasize on the fact that a value must be provided, you can use the <a class="autorefs autorefs-external" href="https://docs.python.org/3/builtins/constants.html#Ellipsis">ellipsis</a>:</p>
 <div class="language-python highlight"><pre><span></span><code><span class="k">class</span><span class="w"> </span><span class="nc">Model</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
     <span class="n">name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="o">...</span><span class="p">,</span> <span class="n">frozen</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 </code></pre></div>
@@ -5085,7 +5085,7 @@ arguments to the <code>deprecated</code> decorator. This might land in a future 
 <div style="border-left: .15rem solid rgb(79, 196, 100); padding: 0 .5rem;">
 <p><span style="font-style: italic; color: rgb(79, 196, 100);">Added in v2.13: </span><span>Computed fields can be conditionally excluded from the serialization output by using the <code>exclude_if</code> parameter of the decorator.</span></p>
 </div>
-<p>The <a class="autorefs autorefs-internal" href="../../api/fields/#pydantic.fields.computed_field"><code>@computed_field</code></a> decorator can be used to include <a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#property">properties</a> (or
+<p>The <a class="autorefs autorefs-internal" href="../../api/fields/#pydantic.fields.computed_field"><code>@computed_field</code></a> decorator can be used to include <a class="autorefs autorefs-external" href="https://docs.python.org/3/builtins/functions.html#property">properties</a> (or
 <a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functools.html#functools.cached_property">cached properties</a>) when serializing a model or dataclass.
 The property will also be included in the JSON Schema (in serialization mode).</p>
 <div class="admonition note">
@@ -5127,7 +5127,7 @@ are expensive to be computed (and thus, are cached if using <a class="autorefs a
 </code></pre></div>
 <ol>
 <li>If not specified, <a class="autorefs autorefs-internal" href="../../api/fields/#pydantic.fields.computed_field"><code>@computed_field</code></a> will implicitly convert the method
-   to a <a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#property"><code>@property</code></a>. However, it is preferable to explicitly use the <a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#property"><code>@property</code></a> decorator
+   to a <a class="autorefs autorefs-external" href="https://docs.python.org/3/builtins/functions.html#property"><code>@property</code></a>. However, it is preferable to explicitly use the <a class="autorefs autorefs-external" href="https://docs.python.org/3/builtins/functions.html#property"><code>@property</code></a> decorator
    for type checking purposes.</li>
 </ol>
 <p>Here's an example using the <a class="autorefs autorefs-internal" href="../../api/base_model/#pydantic.BaseModel.model_dump"><code>model_dump()</code></a> method with a computed field:</p>

@@ -4205,7 +4205,7 @@ They provide a similar functionality to stdlib dataclasses with the addition of 
 <span class="c1">#&gt; Foo(f=&#39;not_an_int&#39;)</span>
 </code></pre></div>
 <ol>
-<li>Unlike <a href="../models/#generic-models">generic Pydantic models</a>, <code>Foo[int]</code> is a <a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#types-genericalias">generic alias</a> and not a proper type object.
+<li>Unlike <a href="../models/#generic-models">generic Pydantic models</a>, <code>Foo[int]</code> is a <a class="autorefs autorefs-external" href="https://docs.python.org/3/builtins/stdtypes.html#types-genericalias">generic alias</a> and not a proper type object.
    As such, Pydantic currently treats <code>Foo[int]</code> the same as <code>Foo[Any]</code>,
    without performing validation for <code>f</code>.</li>
 </ol>
@@ -4223,7 +4223,7 @@ They provide a similar functionality to stdlib dataclasses with the addition of 
 <span class="c1">#&gt; Foo(f=&#39;not_an_int&#39;)</span>
 </code></pre></div>
 <ol>
-<li>Unlike <a href="../models/#generic-models">generic Pydantic models</a>, <code>Foo[int]</code> is a <a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#types-genericalias">generic alias</a> and not a proper type object.
+<li>Unlike <a href="../models/#generic-models">generic Pydantic models</a>, <code>Foo[int]</code> is a <a class="autorefs autorefs-external" href="https://docs.python.org/3/builtins/stdtypes.html#types-genericalias">generic alias</a> and not a proper type object.
    As such, Pydantic currently performs no validation.</li>
 </ol>
 </div>

@@ -4078,7 +4078,7 @@ posed some challenges, and there is still some noticeable scar tissue in the cod
 <a href="https://peps.python.org/pep-0649/">PEP 649</a> (introduced in Python 3.14) will greatly simplify the process, especially when it comes to dealing with locals
 of a function.</p>
 <p>To evaluate forward references, Pydantic roughly follows the same logic as described in the documentation of the
-<a class="autorefs autorefs-external" href="https://docs.python.org/3/library/typing.html#typing.get_type_hints"><code>typing.get_type_hints()</code></a> function. That is, the built-in <a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#eval"><code>eval()</code></a> function is used
+<a class="autorefs autorefs-external" href="https://docs.python.org/3/library/typing.html#typing.get_type_hints"><code>typing.get_type_hints()</code></a> function. That is, the built-in <a class="autorefs autorefs-external" href="https://docs.python.org/3/builtins/functions.html#eval"><code>eval()</code></a> function is used
 by passing the forward reference, a global, and a local namespace. The namespace fetching logic is defined in the
 sections below.</p>
 <h2 id="resolving-annotations-at-class-definition">Resolving annotations at class definition<a class="headerlink" href="#resolving-annotations-at-class-definition" title="Permanent link">&para;</a></h2>
@@ -4117,7 +4117,7 @@ following logic is applied:</p>
 <li>Fetch the <code>__annotations__</code> key from the current base class' <code>__dict__</code>, if present. For <code>Base</code>, this will be
    <code>{'f1': 'MyType'}</code>.</li>
 <li>Iterate over the <code>__annotations__</code> items and try to evaluate the annotation <sup id="fnref:1"><a class="footnote-ref" href="#fn:1">1</a></sup> using a custom wrapper around
-   the built-in <a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#eval"><code>eval()</code></a> function. This function takes two <code>globals</code> and <code>locals</code> arguments:<ul>
+   the built-in <a class="autorefs autorefs-external" href="https://docs.python.org/3/builtins/functions.html#eval"><code>eval()</code></a> function. This function takes two <code>globals</code> and <code>locals</code> arguments:<ul>
 <li>The current module's <code>__dict__</code> is naturally used as <code>globals</code>. For <code>Base</code>, this will be
    <code>sys.modules['module1'].__dict__</code>.</li>
 <li>For the <code>locals</code> argument, Pydantic will try to resolve symbols in the following namespaces, sorted by highest priority:<ul>
@@ -4146,19 +4146,19 @@ following logic is applied:</p>
 <tbody>
 <tr>
 <td><code>f1</code></td>
-<td><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#int"><code>int</code></a></td>
+<td><a class="autorefs autorefs-external" href="https://docs.python.org/3/builtins/functions.html#int"><code>int</code></a></td>
 </tr>
 <tr>
 <td><code>f2</code></td>
-<td><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str"><code>str</code></a></td>
+<td><a class="autorefs autorefs-external" href="https://docs.python.org/3/builtins/stdtypes.html#str"><code>str</code></a></td>
 </tr>
 <tr>
 <td><code>f3</code></td>
-<td><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool"><code>bool</code></a></td>
+<td><a class="autorefs autorefs-external" href="https://docs.python.org/3/builtins/functions.html#bool"><code>bool</code></a></td>
 </tr>
 <tr>
 <td><code>f4</code></td>
-<td><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#bytes"><code>bytes</code></a></td>
+<td><a class="autorefs autorefs-external" href="https://docs.python.org/3/builtins/stdtypes.html#bytes"><code>bytes</code></a></td>
 </tr>
 <tr>
 <td><code>f5</code></td>

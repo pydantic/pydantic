@@ -3880,7 +3880,7 @@ to help you monitor and understand your
 
 <p>As described in the <a href="../../concepts/models/#cyclic-references">cyclic references</a> section, Pydantic detects cyclic
 references in validation inputs and raises a <a class="autorefs autorefs-internal" href="../../api/pydantic_core/#pydantic_core.ValidationError"><code>ValidationError</code></a> with the <code>recursion_loop</code>
-error type, rather than a <a class="autorefs autorefs-external" href="https://docs.python.org/3/library/exceptions.html#RecursionError"><code>RecursionError</code></a>. The same applies during serialization, where a <a class="autorefs autorefs-external" href="https://docs.python.org/3/library/exceptions.html#ValueError"><code>ValueError</code></a> is raised.</p>
+error type, rather than a <a class="autorefs autorefs-external" href="https://docs.python.org/3/builtins/exceptions.html#RecursionError"><code>RecursionError</code></a>. The same applies during serialization, where a <a class="autorefs autorefs-external" href="https://docs.python.org/3/builtins/exceptions.html#ValueError"><code>ValueError</code></a> is raised.</p>
 <p>This example shows how these errors can be caught in validators and serializers to drop the cyclic references
 and still produce a result.</p>
 <p>Because this <a class="autorefs autorefs-internal" href="../../api/pydantic_core/#pydantic_core.ValidationError"><code>ValidationError</code></a> is raised without actually exceeding the maximum
@@ -3939,7 +3939,7 @@ recursion depth, you can catch and handle it without needing to worry about the 
 <span class="c1">#&gt; id=1 children=[Node(id=2, children=[Node(id=3, children=[])])]</span>
 </code></pre></div>
 <p>Similarly, if Pydantic encounters a recursive reference during <em>serialization</em>, rather than waiting
-for the maximum recursion depth to be exceeded, a <a class="autorefs autorefs-external" href="https://docs.python.org/3/library/exceptions.html#ValueError"><code>ValueError</code></a> is raised immediately:</p>
+for the maximum recursion depth to be exceeded, a <a class="autorefs autorefs-external" href="https://docs.python.org/3/builtins/exceptions.html#ValueError"><code>ValueError</code></a> is raised immediately:</p>
 <div class="language-python highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">pydantic</span><span class="w"> </span><span class="kn">import</span> <span class="n">TypeAdapter</span>
 
 <span class="c1"># Create data with cyclic references representing the graph 1 -&gt; 2 -&gt; 3 -&gt; 1</span>
