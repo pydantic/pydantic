@@ -1196,9 +1196,9 @@ class ConfigDict(TypedDict, total=False):
 
         url: AnyUrl
 
-    m = Model(url='http://example.com')
+    m = Model(url='https://example.com')
     print(m.url)
-    #> http://example.com
+    #> https://example.com
     ```
 
     /// version-added | v2.12
