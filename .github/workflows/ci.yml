@@ -251,6 +251,7 @@ jobs:
           # For 3.13, pyodide recommends nightly-2025-02-01 (1.86.0), which is below our MSRV — trying to use newer nightly releases
           # fails when building.
           - python-version: '3.14'
+            pyodide-version: '314.0.7'
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -263,6 +264,10 @@ jobs:
 
       - run: uv sync --only-group pyodide-build
 
+      - run: uv run pyodide xbuildenv install ${{ matrix.pyodide-version }}
+        env:
+          UV_NO_SYNC: '1'
+
       - name: Get pyodide config
         id: pyodide-config
         run: |
@@ -270,6 +275,8 @@ jobs:
           echo "emscripten-version=$(uv run pyodide config get emscripten_version)" >> "$GITHUB_OUTPUT"
           echo "pyodide-abi-version=$(uv run pyodide config get pyodide_abi_version)" >> "$GITHUB_OUTPUT"
           echo "rustflags=$(uv run pyodide config get rustflags)" >> "$GITHUB_OUTPUT"
+        env:
+          UV_NO_SYNC: '1'
 
       - uses: emscripten-core/setup-emsdk@4528d102f7230f0e7b276855c01ea1159be0e984 # v16
         with:
