@@ -1,11 +1,11 @@
 ---
 title: Enterprise support for Pydantic
-description: Get direct support from Pydantic engineers for production incidents, major upgrades, architecture reviews, and performance.
+description: Get direct support from Pydantic engineers for production incidents, major upgrades, architecture reviews, performance, and security response.
 ---
 
 Pydantic often sits between untrusted data and the rest of a production system. When that boundary is critical, a public issue tracker is not the escalation path you want during an incident or a major upgrade.
 
-Enterprise plans include direct access to Pydantic engineers, 24/7 priority support, setup assistance, and an SLA matched to your operating model.
+Enterprise plans include direct access to Pydantic engineers, 24/7 priority support, setup assistance, and an SLA matched to your operating model. Your agreement can also define how we coordinate when a vulnerability affects a covered release line.
 
 <EnterpriseSupportCta
   product="validation"
@@ -17,7 +17,7 @@ Enterprise plans include direct access to Pydantic engineers, 24/7 priority supp
 
 ## Where Pydantic engineers can help
 
-Use the public documentation, issue tracker, and community channels for ordinary questions. Enterprise support covers production incidents, major upgrades, and architecture or performance reviews.
+Use the public documentation, issue tracker, and community channels for ordinary questions. Enterprise support covers production incidents, major upgrades, architecture or performance reviews, and coordinated vulnerability response.
 
 <EnterpriseSupportAreas product="validation" />
 
@@ -27,7 +27,7 @@ Use the public documentation, issue tracker, and community channels for ordinary
 
 1. **Agree the support boundary**
 
-   Define the packages, release lines, environments, contacts, and initial response targets covered by your agreement.
+   Define the packages, release lines, environments, operational and security contacts, and initial response targets covered by your agreement.
 
 2. **Prepare useful context**
 
@@ -35,7 +35,7 @@ Use the public documentation, issue tracker, and community channels for ordinary
 
 3. **Escalate directly**
 
-   Bring production-impacting issues to Pydantic engineers, who work with your team to isolate the behavior and determine the next action.
+   Bring production-impacting issues or suspected vulnerabilities to Pydantic engineers through the agreed private channel. We work with your team to isolate the behavior and determine the next action.
 
 </Steps>
 
@@ -60,6 +60,12 @@ We work with your engineers to reproduce the issue, isolate Pydantic behavior, e
 <Collapsible title="Can we agree specific versions and initial response targets?">
 
 Yes. Supported versions, severity levels, initial response targets, and other commitments are defined in your commercial agreement. [Contact us](https://pydantic.dev/contact) to discuss your requirements.
+
+</Collapsible>
+
+<Collapsible title="How are security vulnerabilities handled?">
+
+Anyone can report a suspected vulnerability privately through Pydantic's [security reporting process](https://github.com/pydantic/pydantic/security/policy). For confirmed issues affecting covered release lines, enterprise support adds named security contacts and coordinated work on impact assessment, mitigations, patched releases, and disclosure. Advisories and CVEs are published where appropriate; notification and response commitments are defined in your agreement.
 
 </Collapsible>
 
