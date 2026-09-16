@@ -233,7 +233,7 @@ class Model(BaseModel):
 
 
 try:
-    Model(num=False)
+    Model(num='not a complex number')
 except ValidationError as exc:
     print(repr(exc.errors()[0]['type']))
     #> 'complex_type'
