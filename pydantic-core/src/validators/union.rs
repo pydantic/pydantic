@@ -4,7 +4,7 @@ use std::sync::Arc;
 
 use crate::py_gc::PyGcTraverse;
 use pyo3::prelude::*;
-use pyo3::types::{PyDict, PyList, PyString, PyTuple};
+use pyo3::types::{PyDict, PyIterator, PyList, PyString, PyTuple};
 use pyo3::{PyTraverseError, PyVisit, intern};
 use smallvec::SmallVec;
 
@@ -12,7 +12,7 @@ use crate::build_tools::py_schema_err;
 use crate::build_tools::schema_or_config;
 use crate::common::union::{Discriminator, SMALL_UNION_THRESHOLD};
 use crate::errors::{ErrorType, ToErrorValue, ValError, ValLineError, ValResult};
-use crate::input::{BorrowInput, Input, ValidatedDict};
+use crate::input::{BorrowInput, Input, TeeIterable, ValidatedDict};
 use crate::tools::SchemaDict;
 
 use super::custom_error::CustomError;
@@ -224,6 +224,19 @@ impl Validator for UnionValidator {
         input: &(impl Input<'py> + ?Sized),
         state: &mut ValidationState<'_, 'py>,
     ) -> ValResult<Py<PyAny>> {
+        // If the input is a one-shot iterator (e.g. a generator), each union member
+        // tried during validation would consume it. Wrap it so that members can
+        // re-iterate the items already pulled (see
+        // https://github.com/pydantic/pydantic/issues/8699):
+        if let Some(obj) = input.as_python()
+            && let Ok(iter) = obj.cast::<PyIterator>()
+        {
+            let input = Bound::new(py, TeeIterable::new(iter.clone().unbind()))?.into_any();
+            return match self.mode {
+                UnionMode::Smart => self.validate_smart(py, &input, state),
+                UnionMode::LeftToRight => self.validate_left_to_right(py, &input, state),
+            };
+        }
         match self.mode {
             UnionMode::Smart => self.validate_smart(py, input, state),
             UnionMode::LeftToRight => self.validate_left_to_right(py, input, state),

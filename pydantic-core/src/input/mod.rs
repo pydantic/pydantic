@@ -9,6 +9,7 @@ mod input_python;
 mod input_string;
 mod return_enums;
 mod shared;
+mod tee_iterator;
 
 pub use datetime::TzInfo;
 pub(crate) use datetime::{
@@ -25,6 +26,7 @@ pub(crate) use return_enums::{
     EitherBytes, EitherFloat, EitherInt, EitherString, GenericIterator, Int, MaxLengthCheck, ValidationMatch,
     no_validator_iter_to_vec, py_string_str, validate_iter_to_set, validate_iter_to_vec,
 };
+pub(crate) use tee_iterator::TeeIterable;
 
 // Defined here as it's not exported by pyo3
 pub fn py_error_on_minusone(py: Python<'_>, result: c_int) -> PyResult<()> {

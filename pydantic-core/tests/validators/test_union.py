@@ -1424,3 +1424,97 @@ def test_smart_union_wrap_validator_should_not_change_nested_model_field_counts(
     assert isinstance(m, RootModel)
     assert isinstance(m.ab, ModelA)
     assert m.ab.sub.x == 'y'
+
+
+def test_union_with_generator_input() -> None:
+    # see https://github.com/pydantic/pydantic/issues/8699
+    def gen():
+        yield from range(3)
+
+    # first member matches, generator is only iterated once:
+    validator = SchemaValidator(core_schema.union_schema([core_schema.list_schema(), core_schema.str_schema()]))
+    assert validator.validate_python(gen()) == [0, 1, 2]
+
+    # first member fails, the generator must be re-iterable for the second:
+    validator = SchemaValidator(
+        core_schema.union_schema(
+            [
+                core_schema.list_schema(core_schema.str_schema()),
+                core_schema.list_schema(core_schema.int_schema()),
+            ]
+        )
+    )
+    assert validator.validate_python(gen()) == [0, 1, 2]
+
+
+def test_union_with_generator_input_left_to_right() -> None:
+    def gen():
+        yield from range(3)
+
+    validator = SchemaValidator(
+        core_schema.union_schema(
+            [
+                core_schema.list_schema(core_schema.str_schema()),
+                core_schema.list_schema(core_schema.int_schema()),
+            ],
+            mode='left_to_right',
+        )
+    )
+    assert validator.validate_python(gen()) == [0, 1, 2]
+
+
+def test_union_with_iterator_input() -> None:
+    # `iter()` of a concrete container is also a one-shot iterator:
+    validator = SchemaValidator(
+        core_schema.union_schema(
+            [
+                core_schema.list_schema(core_schema.str_schema()),
+                core_schema.list_schema(core_schema.int_schema()),
+            ]
+        )
+    )
+    assert validator.validate_python(iter([0, 1, 2])) == [0, 1, 2]
+
+
+def test_union_with_generator_input_set_member() -> None:
+    def gen():
+        yield from range(3)
+
+    validator = SchemaValidator(
+        core_schema.union_schema(
+            [
+                core_schema.set_schema(core_schema.str_schema()),
+                core_schema.set_schema(core_schema.int_schema()),
+            ]
+        )
+    )
+    assert validator.validate_python(gen()) == {0, 1, 2}
+
+
+def test_union_with_generator_input_lazy_member() -> None:
+    # `generator` members validate lazily; the returned iterator
+    # must still yield the items consumed by the failed member:
+    def gen():
+        yield from range(3)
+
+    validator = SchemaValidator(
+        core_schema.union_schema(
+            [
+                core_schema.list_schema(core_schema.str_schema()),
+                core_schema.generator_schema(core_schema.int_schema()),
+            ]
+        )
+    )
+    assert list(validator.validate_python(gen())) == [0, 1, 2]
+
+
+def test_union_with_generator_input_errors() -> None:
+    def gen():
+        yield from range(3)
+
+    validator = SchemaValidator(
+        core_schema.union_schema([core_schema.list_schema(core_schema.str_schema()), core_schema.dict_schema()])
+    )
+    with pytest.raises(ValidationError) as exc_info:
+        validator.validate_python(gen())
+    assert exc_info.value.error_count() == 4
