@@ -303,7 +303,6 @@ all_errors = [
         {'field_type': 'Foobar', 'max_length': 42, 'actual_length': 50},
     ),
     ('string_type', 'Input should be a valid string', None),
-    ('string_sub_type', 'Input should be a string, not an instance of a subclass of str', None),
     ('string_unicode', 'Input should be a valid string, unable to parse raw data as a unicode string', None),
     ('string_pattern_mismatch', "String should match pattern 'foo'", {'pattern': 'foo'}),
     ('string_not_ascii', 'String should contain only ASCII characters', None),
