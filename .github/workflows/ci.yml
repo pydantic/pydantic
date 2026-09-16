@@ -520,7 +520,8 @@ jobs:
       fail-fast: false
       matrix:
         python-version:
-          - '3.13'
+          - '3.14'
+          - '3.14+debug'
           - 'pypy3.11'
 
     steps:
