@@ -4107,17 +4107,6 @@ to help you monitor and understand your
 </li>
       
         <li class="md-nav__item">
-  <a href="#string_sub_type" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        string_sub_type
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
   <a href="#string_too_long" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -6001,17 +5990,6 @@ to help you monitor and understand your
 </li>
       
         <li class="md-nav__item">
-  <a href="#string_sub_type" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        string_sub_type
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
   <a href="#string_too_long" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -6514,7 +6492,7 @@ it does not follow the <a href="https://docs.python.org/3/library/functions.html
 
 
 <span class="k">try</span><span class="p">:</span>
-    <span class="n">Model</span><span class="p">(</span><span class="n">num</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+    <span class="n">Model</span><span class="p">(</span><span class="n">num</span><span class="o">=</span><span class="s1">&#39;not a complex number&#39;</span><span class="p">)</span>
 <span class="k">except</span> <span class="n">ValidationError</span> <span class="k">as</span> <span class="n">exc</span><span class="p">:</span>
     <span class="nb">print</span><span class="p">(</span><span class="nb">repr</span><span class="p">(</span><span class="n">exc</span><span class="o">.</span><span class="n">errors</span><span class="p">()[</span><span class="mi">0</span><span class="p">][</span><span class="s1">&#39;type&#39;</span><span class="p">]))</span>
     <span class="c1">#&gt; &#39;complex_type&#39;</span>
@@ -7821,27 +7799,6 @@ that is not an existing field:</p>
 <span class="k">except</span> <span class="n">ValidationError</span> <span class="k">as</span> <span class="n">exc</span><span class="p">:</span>
     <span class="nb">print</span><span class="p">(</span><span class="nb">repr</span><span class="p">(</span><span class="n">exc</span><span class="o">.</span><span class="n">errors</span><span class="p">()[</span><span class="mi">0</span><span class="p">][</span><span class="s1">&#39;type&#39;</span><span class="p">]))</span>
     <span class="c1">#&gt; &#39;string_pattern_mismatch&#39;</span>
-</code></pre></div>
-<h2 id="string_sub_type"><code>string_sub_type</code><a class="headerlink" href="#string_sub_type" title="Permanent link">&para;</a></h2>
-<p>This error is raised when the value is an instance of a strict subtype of <code>str</code> when the field is strict:</p>
-<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">enum</span><span class="w"> </span><span class="kn">import</span> <span class="n">Enum</span>
-
-<span class="kn">from</span><span class="w"> </span><span class="nn">pydantic</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">Field</span><span class="p">,</span> <span class="n">ValidationError</span>
-
-
-<span class="k">class</span><span class="w"> </span><span class="nc">MyEnum</span><span class="p">(</span><span class="nb">str</span><span class="p">,</span> <span class="n">Enum</span><span class="p">):</span>
-    <span class="n">foo</span> <span class="o">=</span> <span class="s1">&#39;foo&#39;</span>
-
-
-<span class="k">class</span><span class="w"> </span><span class="nc">Model</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
-    <span class="n">x</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="n">strict</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-
-
-<span class="k">try</span><span class="p">:</span>
-    <span class="n">Model</span><span class="p">(</span><span class="n">x</span><span class="o">=</span><span class="n">MyEnum</span><span class="o">.</span><span class="n">foo</span><span class="p">)</span>
-<span class="k">except</span> <span class="n">ValidationError</span> <span class="k">as</span> <span class="n">exc</span><span class="p">:</span>
-    <span class="nb">print</span><span class="p">(</span><span class="nb">repr</span><span class="p">(</span><span class="n">exc</span><span class="o">.</span><span class="n">errors</span><span class="p">()[</span><span class="mi">0</span><span class="p">][</span><span class="s1">&#39;type&#39;</span><span class="p">]))</span>
-    <span class="c1">#&gt; &#39;string_sub_type&#39;</span>
 </code></pre></div>
 <h2 id="string_too_long"><code>string_too_long</code><a class="headerlink" href="#string_too_long" title="Permanent link">&para;</a></h2>
 <p>This error is raised when the input value is a string whose length is greater than the field's <code>max_length</code> constraint:</p>

@@ -343,7 +343,7 @@ class MyModel(BaseModel):
 ta = TypeAdapter(MyModel)
 try:
     v = ta.validate_json(
-        '{"a": 1, "b": ["12345", "12', experimental_allow_partial=True
+        '{"a": 1, "b": ["12345", "12"', experimental_allow_partial=True
     )
 except ValidationError as e:
     print(e)

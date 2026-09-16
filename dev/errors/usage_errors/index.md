@@ -641,11 +641,13 @@ type C = B
 This error is raised when Pydantic fails to generate a JSON schema for some `CoreSchema`.
 
 ```python
-from pydantic import BaseModel, ImportString, PydanticUserError
+from collections.abc import Callable
+
+from pydantic import BaseModel, PydanticUserError
 
 
 class Model(BaseModel):
-    a: ImportString
+    a: Callable[..., object]
 
 
 try:

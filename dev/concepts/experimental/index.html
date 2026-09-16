@@ -4583,7 +4583,7 @@ For example, if you're validating against the following model:</p>
 <span class="n">ta</span> <span class="o">=</span> <span class="n">TypeAdapter</span><span class="p">(</span><span class="n">MyModel</span><span class="p">)</span>
 <span class="k">try</span><span class="p">:</span>
     <span class="n">v</span> <span class="o">=</span> <span class="n">ta</span><span class="o">.</span><span class="n">validate_json</span><span class="p">(</span>
-        <span class="s1">&#39;{&quot;a&quot;: 1, &quot;b&quot;: [&quot;12345&quot;, &quot;12&#39;</span><span class="p">,</span> <span class="n">experimental_allow_partial</span><span class="o">=</span><span class="kc">True</span>
+        <span class="s1">&#39;{&quot;a&quot;: 1, &quot;b&quot;: [&quot;12345&quot;, &quot;12&quot;&#39;</span><span class="p">,</span> <span class="n">experimental_allow_partial</span><span class="o">=</span><span class="kc">True</span>
     <span class="p">)</span>
 <span class="k">except</span> <span class="n">ValidationError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
     <span class="nb">print</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>

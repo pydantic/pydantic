@@ -25863,13 +25863,13 @@ models and also when you want to define validators separately from the main sche
 
             <details class="quote">
               <summary>Source code in <code>pydantic_core/core_schema.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">4867</span>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">4866</span>
+<span class="normal">4867</span>
 <span class="normal">4868</span>
 <span class="normal">4869</span>
 <span class="normal">4870</span>
 <span class="normal">4871</span>
-<span class="normal">4872</span>
-<span class="normal">4873</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">iter_union_choices</span><span class="p">(</span><span class="n">union_schema</span><span class="p">:</span> <span class="n">UnionSchema</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Generator</span><span class="p">[</span><span class="n">CoreSchema</span><span class="p">]:</span>
+<span class="normal">4872</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">iter_union_choices</span><span class="p">(</span><span class="n">union_schema</span><span class="p">:</span> <span class="n">UnionSchema</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Generator</span><span class="p">[</span><span class="n">CoreSchema</span><span class="p">]:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Iterate over the choices of a `&#39;union&#39;` schema.&quot;&quot;&quot;</span>
     <span class="k">for</span> <span class="n">choice</span> <span class="ow">in</span> <span class="n">union_schema</span><span class="p">[</span><span class="s1">&#39;choices&#39;</span><span class="p">]:</span>
         <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">choice</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">):</span>
