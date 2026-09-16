@@ -1,5 +1,6 @@
 import json
 import operator
+from copy import deepcopy
 from typing import Annotated, Any
 
 import pytest
@@ -1304,3 +1305,60 @@ def test_multi_url_build_hosts_with_none_values() -> None:
     )
     assert str(url) == 'mongodb://user:pass@host-1.com:27017,host-2.com:27017/db?replicaSet=xxx&authSource=admin'
     assert url.hosts() == hosts
+
+
+def test_any_url_methods() -> None:
+    url = AnyUrl('https://£££.com/path?a=b#f')
+
+    assert url.unicode_host() == '£££.com'
+    assert url.query_params() == [('a', 'b')]
+    assert deepcopy(url) == url
+
+    assert str(AnyUrl.build(scheme='https', host='example.com')) == 'https://example.com/'
+
+
+def test_url_validate_from_other_url_instance() -> None:
+    # `_BaseUrl` instances of a different type are converted to `str` before validation:
+    url = TypeAdapter(HttpUrl).validate_python(AnyUrl('https://example.com'))
+    assert isinstance(url, HttpUrl)
+
+
+def test_multi_host_url_methods() -> None:
+    dsn = PostgresDsn('postgresql://user@host.com:5432/db?x=1#frag')
+
+    assert dsn.query == 'x=1'
+    assert dsn.query_params() == [('x', '1')]
+    assert dsn.fragment == 'frag'
+    assert dsn.unicode_string() == 'postgresql://user@host.com:5432/db?x=1#frag'
+    assert deepcopy(dsn) == dsn
+
+
+def test_multi_host_url_validate_from_instances() -> None:
+    ta = TypeAdapter(PostgresDsn)
+    dsn = PostgresDsn('postgresql://user@host.com:5432/db')
+
+    assert ta.validate_python(dsn) is dsn
+
+    # `_BaseMultiHostUrl` instances of a different type are converted to `str` before validation:
+    with pytest.raises(ValidationError, match='url_scheme'):
+        ta.validate_python(MongoDsn('mongodb://user@host.com:27017/db'))
+
+
+def test_multi_host_url_serialization() -> None:
+    ta = TypeAdapter(PostgresDsn)
+    dsn = PostgresDsn('postgresql://user@host.com:5432/db')
+
+    assert ta.dump_python(dsn) is dsn
+    assert ta.dump_json(dsn) == b'"postgresql://user@host.com:5432/db"'
+
+    with pytest.warns(UserWarning, match='serialized value may not be as expected'):
+        ta.dump_python('postgresql://user@host.com:5432/db')
+
+
+def test_multi_host_url_json_schema() -> None:
+    assert TypeAdapter(PostgresDsn).json_schema() == {'format': 'multi-host-uri', 'minLength': 1, 'type': 'string'}
+
+
+def test_dsn_host_property() -> None:
+    assert CockroachDsn('cockroachdb://user@host.com:26257/db').host == 'host.com'
+    assert SnowflakeDsn('snowflake://user@host.snowflakecomputing.com/db').host == 'host.snowflakecomputing.com'

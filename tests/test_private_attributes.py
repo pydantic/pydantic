@@ -661,3 +661,16 @@ def test_private_attribute_from_annotated_metadata_set_name() -> None:
 
     assert set_name_calls == [(Model, '_priv')]
     assert Model()._priv == 1
+
+
+def test_private_attribute_shadowed_by_classvar() -> None:
+    # When a `ClassVar` of a subclass shadows a private attribute of a parent class,
+    # the private attribute is removed and its default is set on the subclass instead:
+    class Model(BaseModel):
+        _priv: int = PrivateAttr(default=1)
+
+    class Sub(Model):
+        _priv: ClassVar[int] = 2
+
+    assert Sub.__private_attributes__ == {}
+    assert Sub._priv == 1

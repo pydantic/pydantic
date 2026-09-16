@@ -8,6 +8,7 @@ from typing import Annotated, Generic, TypeVar, Union
 
 import pytest
 from pydantic_core import PydanticCustomError, PydanticUndefined
+from typing_extensions import TypeAliasType
 
 from pydantic import BaseModel
 from pydantic._internal import _repr
@@ -82,6 +83,15 @@ class LoggedVar(Generic[T]):
 )
 def test_display_as_type(value, expected):
     assert _repr.display_as_type(value) == expected
+
+
+def test_display_as_type_generic_type_alias() -> None:
+    # Generic `TypeAliasType` instances (which unpack to `types.GenericAlias` when
+    # parametrized) don't have a `__qualname__`, so a fallback is used:
+    T = TypeVar('T')
+    Alias = TypeAliasType('Alias', list[T], type_params=(T,))
+
+    assert _repr.display_as_type(Alias[int]) == 'Alias[int]'
 
 
 def test_lenient_issubclass():

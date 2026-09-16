@@ -669,6 +669,21 @@ def test_defer_build_raise_errors() -> None:
     assert not isinstance(ta.core_schema, _mock_val_ser.MockCoreSchema)
 
 
+def test_rebuild_not_required() -> None:
+    ta = TypeAdapter(int)
+    assert ta.rebuild() is None
+
+
+def test_rebuild_with_explicit_types_namespace() -> None:
+    ta = TypeAdapter(int)
+    assert ta.rebuild(force=True, _types_namespace={}) is True
+
+
+def test_rebuild_without_parent_namespace() -> None:
+    ta = TypeAdapter(int)
+    assert ta.rebuild(force=True, _parent_namespace_depth=0) is True
+
+
 @dataclass
 class SimpleDataclass:
     x: int

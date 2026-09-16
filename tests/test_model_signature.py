@@ -113,6 +113,15 @@ def test_use_field_name():
     assert _equals(str(signature(Foo)), '(*, foo: str) -> None')
 
 
+def test_use_validation_alias_when_alias_is_not_an_identifier():
+    class Foo(BaseModel):
+        foo: str = Field(alias='this is invalid', validation_alias='valid_identifier')
+
+        model_config = ConfigDict(validate_by_name=True)
+
+    assert _equals(str(signature(Foo)), '(*, valid_identifier: str) -> None')
+
+
 def test_does_not_use_reserved_word():
     class Foo(BaseModel):
         from_: str = Field(alias='from')

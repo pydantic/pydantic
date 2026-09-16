@@ -36,6 +36,7 @@ from pydantic import (
     Field,
     GetCoreSchemaHandler,
     PrivateAttr,
+    PydanticDeprecatedSince20,
     PydanticDeprecatedSince211,
     PydanticSchemaGenerationError,
     PydanticUndefinedAnnotation,
@@ -2746,6 +2747,36 @@ def test_model_equality_private_attrs(InnerEqualityModel):
     m3_equal = m.model_copy()
     m3_equal._iz = 1
     assert m3 == m3_equal
+
+
+def test_model_equality_missing_field_keys() -> None:
+    # The deprecated `copy()` method can produce a `__dict__` that is missing
+    # field keys, in which case `__eq__` falls back to a slower proxy-based
+    # comparison:
+    class Model(BaseModel):
+        a: int
+        b: int = 2
+
+    m = Model(a=1)
+    with pytest.warns(PydanticDeprecatedSince20, match='The `copy` method is deprecated'):
+        incomplete = m.copy(exclude={'a'}, update={'junk': 'x'})
+
+    assert m != incomplete
+    assert incomplete != m
+
+
+def test_model_construct_post_init_only_updates_private_attributes() -> None:
+    class Model(BaseModel):
+        _p: int = PrivateAttr(default=0)
+
+        def model_post_init(self, context: Any, /) -> None:
+            self._p = 99
+
+    m = Model.model_construct(not_private='x', _p=5)
+
+    # The 'not_private' item was ignored, while the '_p' value overrode
+    # the one set during `model_post_init`:
+    assert m.__pydantic_private__ == {'_p': 5}
 
 
 def test_model_copy_extra():

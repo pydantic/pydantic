@@ -67,6 +67,15 @@ def test_root_model_error():
             __root__: str
 
 
+def test_root_model_assignment_error():
+    with pytest.raises(
+        PydanticUserError, match="To define root models, use `pydantic.RootModel` rather than a field called '__root__'"
+    ):
+
+        class MyModel(BaseModel):
+            __root__ = 'x'
+
+
 def test_model_validate_root():
     class MyModel(BaseModel):
         root: str

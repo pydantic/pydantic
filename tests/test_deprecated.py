@@ -836,3 +836,36 @@ def test_deprecated_payment():
         match='The `PaymentCardNumber` class is deprecated, use `pydantic_extra_types` instead.',
     ):
         PaymentCardNumber('4242424242424242')
+
+
+def test_base_model_get_pydantic_core_schema_super_call() -> None:
+    with pytest.warns(
+        PydanticDeprecatedSince211, match='The `__get_pydantic_core_schema__` method of the `BaseModel` class'
+    ):
+
+        class Model(BaseModel):
+            @classmethod
+            def __get_pydantic_core_schema__(cls, source: type[BaseModel], handler: GetCoreSchemaHandler) -> CoreSchema:
+                return super().__get_pydantic_core_schema__(source, handler)
+
+    assert Model().model_dump() == {}
+
+    # When the core schema is already built, it is returned directly:
+    with pytest.warns(PydanticDeprecatedSince211):
+        assert Model.__get_pydantic_core_schema__(Model, None) is Model.__pydantic_core_schema__  # pyright: ignore[reportArgumentType]
+
+
+@pytest.mark.filterwarnings('ignore:Pydantic V1 style `@root_validator` validators are deprecated.*:DeprecationWarning')
+def test_v1_root_validator_on_dataclass() -> None:
+    from pydantic.dataclasses import dataclass
+
+    @dataclass
+    class MyDataclass:
+        a: int
+
+        @root_validator(pre=False, skip_on_failure=True)
+        def double_a(cls, values):
+            values['a'] = values['a'] * 2
+            return values
+
+    assert MyDataclass(a=3).a == 6

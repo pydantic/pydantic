@@ -3362,3 +3362,26 @@ def test_polymorphic_serialization_with_model_serializer(config: bool, runtime: 
     else:
         assert serializer.to_python(ClassB(a=123, b='test'), **kwargs) == 'ClassA'
         assert serializer.to_json(ClassB(a=123, b='test'), **kwargs) == b'"ClassA"'
+
+
+def test_is_pydantic_dataclass_with_non_type() -> None:
+    # Objects without a `__dict__` raise an `AttributeError`, handled by the function:
+    assert not is_pydantic_dataclass('x')
+
+
+def test_rebuild_dataclass_force() -> None:
+    @pydantic.dataclasses.dataclass
+    class MyDataClass:
+        x: str
+
+    assert rebuild_dataclass(MyDataClass, force=True) is True
+    assert MyDataClass.__pydantic_complete__
+
+
+def test_dataclass_decorator_on_dynamic_class() -> None:
+    # Classes created without a class statement (e.g. via `type()`) may not have
+    # a `__firstlineno__` attribute:
+    cls = pydantic.dataclasses.dataclass(type('Dynamic', (), {'__annotations__': {'x': int}}))
+
+    assert is_pydantic_dataclass(cls)
+    assert cls(x='1').x == 1
