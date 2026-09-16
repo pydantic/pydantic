@@ -4776,7 +4776,6 @@ ErrorType: TypeAlias = Literal[
     'iterable_type',
     'iteration_error',
     'string_type',
-    'string_sub_type',
     'string_unicode',
     'string_too_short',
     'string_too_long',

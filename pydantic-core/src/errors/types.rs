@@ -247,7 +247,6 @@ error_types! {
     // ---------------------
     // string errors
     StringType {},
-    StringSubType {},
     StringUnicode {},
     StringTooShort {
         min_length: {ctx_type: usize, ctx_fn: field_from_context},
@@ -533,7 +532,6 @@ impl ErrorType {
             Self::IterableType { .. } => "Input should be iterable",
             Self::IterationError { .. } => "Error iterating over object, error: {error}",
             Self::StringType { .. } => "Input should be a valid string",
-            Self::StringSubType { .. } => "Input should be a string, not an instance of a subclass of str",
             Self::StringUnicode { .. } => {
                 "Input should be a valid string, unable to parse raw data as a unicode string"
             }
