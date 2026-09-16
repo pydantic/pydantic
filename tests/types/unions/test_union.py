@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from enum import IntEnum
+from enum import Enum, IntEnum
 from typing import Annotated, Any, ClassVar, Literal
 from uuid import UUID
 
@@ -12,6 +12,7 @@ from pydantic import (
     ConfigDict,
     Field,
     Strict,
+    StringConstraints,
     TypeAdapter,
     ValidationError,
     model_validator,
@@ -293,6 +294,28 @@ def test_union_respects_local_strict() -> None:
 
     m = Model(a=[1, 2])
     assert m.a == (1, 2)
+
+
+def test_union_respects_local_strict_for_enum() -> None:
+    """https://github.com/pydantic/pydantic/issues/10546"""
+
+    class MyEnum(str, Enum):
+        a = 'a'
+        b = 'b'
+
+    MyLooseEnum = Annotated[MyEnum, Field(strict=False)]
+    MyPattern = Annotated[str, StringConstraints(pattern=r'^\w\d$')]
+
+    class Model(BaseModel):
+        model_config = ConfigDict(strict=True)
+
+        value: MyLooseEnum | MyPattern
+
+    assert Model(value='a').value is MyEnum.a
+    assert Model(value='a1').value == 'a1'
+
+    with pytest.raises(ValidationError):
+        Model(value='invalid')
 
 
 def test_union_abc() -> None:
