@@ -1,10 +1,168 @@
+import re
+import sys
 from collections import deque
+from dataclasses import dataclass
 
 import dirty_equals
 import pytest
 from dirty_equals import IsOneOf
+from typing_extensions import Unpack
 
 from pydantic import TypeAdapter, ValidationError
+
+
+@dataclass
+class Err:
+    message: str
+    exception_type: type[BaseException] = ValidationError
+
+
+@pytest.mark.parametrize(
+    ('input', 'expected'),
+    [
+        ((1,), (1,)),
+        ([1, 'a'], (1, 'a')),
+        ((1, 'a', 'b'), (1, 'a', 'b')),
+        ([1, 'a', 'b', 'c'], (1, 'a', 'b', 'c')),
+        (
+            ('a', 'b'),
+            Err(
+                "1 validation error for tuple[int, str, ...]\n0\n  Input should be a valid integer, unable to parse string as an integer [type=int_parsing, input_value='a', input_type=str]"
+            ),
+        ),
+    ],
+)
+def test_tuple_prefix_variadic(input, expected):
+    adapter = TypeAdapter(tuple[int, Unpack[tuple[str, ...]]])
+
+    if isinstance(expected, Err):
+        with pytest.raises(expected.exception_type, match=re.escape(expected.message)):
+            adapter.validate_python(input)
+    else:
+        assert adapter.validate_python(input) == expected
+
+
+@pytest.mark.parametrize(
+    ('input', 'expected'),
+    [
+        ((), Err('type=missing')),
+        ((1,), Err('type=missing')),
+        ((1, 2), (1, 2)),
+        ([1, 'a', 2], (1, 'a', 2)),
+        ((1, 'a', 'b', 2), (1, 'a', 'b', 2)),
+        ([1, 'a', 'b', 'c', 2], (1, 'a', 'b', 'c', 2)),
+        (
+            ('a', 'b'),
+            Err('2 validation errors for tuple[int, str, ..., int]'),
+        ),
+    ],
+)
+def test_tuple_prefix_variadic_suffix(input, expected):
+    adapter = TypeAdapter(tuple[int, Unpack[tuple[str, ...]], int])
+
+    if isinstance(expected, Err):
+        with pytest.raises(ValidationError, match=re.escape(expected.message)):
+            adapter.validate_python(input)
+    else:
+        assert adapter.validate_python(input) == expected
+
+
+def test_tuple_finite_unpack():
+    adapter = TypeAdapter(tuple[Unpack[tuple[int, str]], bool])
+
+    assert adapter.validate_python(['1', '2', 1]) == (1, '2', True)
+
+
+def test_tuple_unpack_serialization():
+    adapter = TypeAdapter(tuple[int, Unpack[tuple[str, ...]], bool])
+    value = (1, 'a', 'b', True)
+
+    assert adapter.dump_python(value) == value
+    assert adapter.dump_python(value, mode='json') == [1, 'a', 'b', True]
+    assert adapter.dump_json(value) == b'[1,"a","b",true]'
+
+
+@pytest.mark.skipif(sys.version_info < (3, 11), reason='Starred tuple syntax requires Python 3.11')
+def test_tuple_starred_unpack(create_module):
+    create_module(
+        """\
+from pydantic import TypeAdapter
+
+adapter = TypeAdapter(tuple[int, *tuple[str, ...], bool])
+assert adapter.validate_python(['1', '2', 1]) == (1, '2', True)
+"""
+    )
+
+
+@pytest.mark.parametrize(
+    ('input', 'expected'),
+    [
+        (tuple[...], Err('Variable tuples must only have one type before the ellipsis', TypeError)),
+        (tuple[int, str, ...], Err('Variable tuples must only have one type before the ellipsis', TypeError)),
+        (
+            tuple[int, Unpack[tuple[str, ...]], Unpack[tuple[str, ...]]],
+            Err('More than one variadic Unpack in a type is not allowed', TypeError),
+        ),
+        (
+            tuple[int, ..., Unpack[tuple[str, ...]]],
+            Err('Cannot have a variadic Unpack and an ellipsis in the same tuple type', TypeError),
+        ),
+        (
+            tuple[int, Unpack[tuple[int, str, ...]]],
+            Err('Variable tuples must only have one type before the ellipsis', TypeError),
+        ),
+        # ellipsis in wrong position
+        (
+            tuple[..., int],
+            Err('Variable tuples must end with an ellipsis', TypeError),
+        ),
+        (
+            tuple[int, Unpack[tuple[..., int]]],
+            Err('Variable tuples must end with an ellipsis', TypeError),
+        ),
+        # invalid unpack type
+        (
+            tuple[int, Unpack[int]],
+            Err("Unpacked type `<class 'int'>` is not a tuple", TypeError),
+        ),
+    ],
+)
+def test_tuple_invalid_forms(input, expected):
+    with pytest.raises(expected.exception_type, match=re.escape(expected.message)):
+        TypeAdapter(input)
+
+
+# repeats of the above with the input as a string to to test *tuple[str, ...] syntax, can
+# remove the stringification and merge with the above when Python 3.10 support dropped
+@pytest.mark.skipif(sys.version_info < (3, 11), reason='Starred tuple syntax requires Python 3.11')
+@pytest.mark.parametrize(
+    ('input', 'expected'),
+    [
+        (
+            'tuple[int, *tuple[str, ...], *tuple[str, ...]]',
+            Err('More than one variadic Unpack in a type is not allowed', TypeError),
+        ),
+        (
+            'tuple[int, ..., *tuple[str, ...]]',
+            Err('Cannot have a variadic Unpack and an ellipsis in the same tuple type', TypeError),
+        ),
+        (
+            'tuple[int, *tuple[int, str, ...]]',
+            Err('Variable tuples must only have one type before the ellipsis', TypeError),
+        ),
+        ('tuple[int, *tuple[..., int]]', Err('Variable tuples must end with an ellipsis', TypeError)),
+        ('tuple[*list[int]]', Err('Expected tuple type for `*` unpacking, got `*list[int]`', TypeError)),
+    ],
+)
+def test_tuple_starred_invalid_forms(create_module, input, expected):
+    with pytest.raises(expected.exception_type, match=re.escape(expected.message)):
+        create_module(
+            # language=Python
+            f"""\
+from pydantic import TypeAdapter
+TypeAdapter({input})
+"""
+        )
 
 
 @pytest.mark.parametrize(
