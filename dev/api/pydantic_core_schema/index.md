@@ -3058,6 +3058,103 @@ def frozendict_schema(
 
 ````
 
+## ordered_dict_schema
+
+```python
+ordered_dict_schema(
+    keys_schema: CoreSchema | None = None,
+    values_schema: CoreSchema | None = None,
+    *,
+    min_length: int | None = None,
+    max_length: int | None = None,
+    fail_fast: bool | None = None,
+    strict: bool | None = None,
+    ref: str | None = None,
+    metadata: dict[str, Any] | None = None,
+    serialization: SerSchema | None = None
+) -> OrderedDictSchema
+
+```
+
+Returns a schema that matches a collections.OrderedDict value, e.g.:
+
+```py
+from collections import OrderedDict
+
+from pydantic_core import SchemaValidator, core_schema
+
+schema = core_schema.ordered_dict_schema(
+    keys_schema=core_schema.str_schema(), values_schema=core_schema.int_schema()
+)
+v = SchemaValidator(schema)
+assert v.validate_python({'a': '1', 'b': 2}) == OrderedDict({'a': 1, 'b': 2})
+
+```
+
+In lax mode, any mapping is accepted and converted to an `OrderedDict`.
+
+Parameters:
+
+| Name | Type | Description | Default | | --- | --- | --- | --- | | `keys_schema` | `CoreSchema | None` | The value must be an OrderedDict with keys that match this schema | `None` | | `values_schema` | `CoreSchema | None` | The value must be an OrderedDict with values that match this schema | `None` | | `min_length` | `int | None` | The value must be an OrderedDict with at least this many items | `None` | | `max_length` | `int | None` | The value must be an OrderedDict with at most this many items | `None` | | `fail_fast` | `bool | None` | Stop validation on the first error | `None` | | `strict` | `bool | None` | The value must be an OrderedDict instance | `None` | | `ref` | `str | None` | optional unique identifier of the schema, used to reference the schema in other places | `None` | | `metadata` | `dict[str, Any] | None` | Any other information you want to include with the schema, not used by pydantic-core | `None` | | `serialization` | `SerSchema | None` | Custom serialization schema | `None` |
+
+Source code in `pydantic_core/core_schema.py`
+
+````python
+def ordered_dict_schema(
+    keys_schema: CoreSchema | None = None,
+    values_schema: CoreSchema | None = None,
+    *,
+    min_length: int | None = None,
+    max_length: int | None = None,
+    fail_fast: bool | None = None,
+    strict: bool | None = None,
+    ref: str | None = None,
+    metadata: dict[str, Any] | None = None,
+    serialization: SerSchema | None = None,
+) -> OrderedDictSchema:
+    """
+    Returns a schema that matches a [`collections.OrderedDict`][] value, e.g.:
+
+    ```py
+    from collections import OrderedDict
+
+    from pydantic_core import SchemaValidator, core_schema
+
+    schema = core_schema.ordered_dict_schema(
+        keys_schema=core_schema.str_schema(), values_schema=core_schema.int_schema()
+    )
+    v = SchemaValidator(schema)
+    assert v.validate_python({'a': '1', 'b': 2}) == OrderedDict({'a': 1, 'b': 2})
+    ```
+
+    In lax mode, any mapping is accepted and converted to an `OrderedDict`.
+
+    Args:
+        keys_schema: The value must be an `OrderedDict` with keys that match this schema
+        values_schema: The value must be an `OrderedDict` with values that match this schema
+        min_length: The value must be an `OrderedDict` with at least this many items
+        max_length: The value must be an `OrderedDict` with at most this many items
+        fail_fast: Stop validation on the first error
+        strict: The value must be an `OrderedDict` instance
+        ref: optional unique identifier of the schema, used to reference the schema in other places
+        metadata: Any other information you want to include with the schema, not used by pydantic-core
+        serialization: Custom serialization schema
+    """
+    return _dict_not_none(
+        type='ordered-dict',
+        keys_schema=keys_schema,
+        values_schema=values_schema,
+        min_length=min_length,
+        max_length=max_length,
+        fail_fast=fail_fast,
+        strict=strict,
+        ref=ref,
+        metadata=metadata,
+        serialization=serialization,
+    )
+
+````
+
 ## no_info_before_validator_function
 
 ```python

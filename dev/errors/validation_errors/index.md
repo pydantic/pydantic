@@ -1785,6 +1785,28 @@ m = M1(int=123)  # errors
 
 ```
 
+## `ordered_dict_type`
+
+This error is raised when the input value's type is not valid for an OrderedDict field:
+
+```python
+from collections import OrderedDict
+
+from pydantic import BaseModel, ValidationError
+
+
+class Model(BaseModel):
+    x: OrderedDict[str, int]
+
+
+try:
+    Model(x='test')
+except ValidationError as exc:
+    print(repr(exc.errors()[0]['type']))
+    #> 'ordered_dict_type'
+
+```
+
 ## `recursion_loop`
 
 This error is raised when a cyclic reference is detected:
