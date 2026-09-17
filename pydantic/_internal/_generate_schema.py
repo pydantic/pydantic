@@ -387,7 +387,7 @@ class GenerateSchema:
         collections.abc.MutableMapping: lambda self, obj: self._mapping_schema(obj, Any, Any),
         collections.OrderedDict: lambda self, obj: self._ordered_dict_schema(Any, Any),
         collections.defaultdict: lambda self, obj: self._mapping_schema(obj, Any, Any),
-        collections.Counter: lambda self, obj: self._mapping_schema(obj, Any, int),
+        collections.Counter: lambda self, obj: self._counter_schema(Any),
         collections.abc.Callable: lambda self, obj: core_schema.callable_schema(),
         collections.abc.Hashable: lambda self, obj: self._hashable_schema(),
         IPv4Address: lambda self, obj: self._ip_schema(obj),
@@ -428,9 +428,7 @@ class GenerateSchema:
         collections.defaultdict: lambda self, obj: self._mapping_schema(
             collections.defaultdict, *self._get_first_two_args_or_any(obj)
         ),
-        collections.Counter: lambda self, obj: self._mapping_schema(
-            collections.Counter, self._get_first_arg_or_any(obj), int
-        ),
+        collections.Counter: lambda self, obj: self._counter_schema(self._get_first_arg_or_any(obj)),
         os.PathLike: lambda self, obj: self._path_schema(os.PathLike, self._get_first_arg_or_any(obj)),
         pathlib.Path: lambda self, obj: self._path_schema(pathlib.Path, self._get_first_arg_or_any(obj)),
         pathlib.PurePath: lambda self, obj: self._path_schema(pathlib.PurePath, self._get_first_arg_or_any(obj)),
@@ -486,6 +484,9 @@ class GenerateSchema:
 
     def _ordered_dict_schema(self, keys_type: Any, values_type: Any) -> CoreSchema:
         return core_schema.ordered_dict_schema(self.generate_schema(keys_type), self.generate_schema(values_type))
+
+    def _counter_schema(self, keys_type: Any) -> CoreSchema:
+        return core_schema.counter_schema(self.generate_schema(keys_type), core_schema.int_schema())
 
     def _set_schema(self, items_type: Any) -> CoreSchema:
         return core_schema.set_schema(self.generate_schema(items_type))

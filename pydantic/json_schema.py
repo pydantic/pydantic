@@ -1194,8 +1194,23 @@ class GenerateJsonSchema:
         """
         return self._common_dict_schema(schema)
 
+    def counter_schema(self, schema: core_schema.CounterSchema) -> JsonSchemaValue:
+        """Generates a JSON schema that matches a `Counter` schema.
+
+        Args:
+            schema: The core schema.
+
+        Returns:
+            The generated JSON schema.
+        """
+        return self._common_dict_schema(schema)
+
     def _common_dict_schema(
-        self, schema: core_schema.DictSchema | core_schema.FrozenDictSchema | core_schema.OrderedDictSchema
+        self,
+        schema: core_schema.DictSchema
+        | core_schema.FrozenDictSchema
+        | core_schema.OrderedDictSchema
+        | core_schema.CounterSchema,
     ) -> JsonSchemaValue:
         json_schema: JsonSchemaValue = {'type': 'object'}
 

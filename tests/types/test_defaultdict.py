@@ -1,5 +1,5 @@
 import sys
-from collections import OrderedDict, defaultdict
+from collections import Counter, OrderedDict, defaultdict
 from typing import Annotated, Any, TypeVar
 
 import pytest
@@ -45,6 +45,7 @@ defaultdict_types_params = [
     (frozenset, frozenset()),
     (dict, {}),
     (OrderedDict, OrderedDict()),
+    (Counter, Counter()),
 ]
 
 if sys.version_info >= (3, 15):

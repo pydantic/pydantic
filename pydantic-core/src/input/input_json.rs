@@ -251,6 +251,14 @@ impl<'py, 'data> Input<'py> for JsonValue<'data> {
         }
     }
 
+    fn strict_counter(&self) -> ValMatch<Self::Dict<'_>> {
+        // we allow an object here since otherwise it would be impossible to create a Counter from JSON
+        match self {
+            JsonValue::Object(dict) => Ok(ValidationMatch::strict(dict)),
+            _ => Err(ValError::new(ErrorTypeDefaults::CounterType, self)),
+        }
+    }
+
     type List<'a>
         = &'a JsonArray<'data>
     where
@@ -517,6 +525,11 @@ impl<'py> Input<'py> for str {
     #[cfg_attr(has_coverage_attribute, coverage(off))]
     fn strict_ordered_dict(&self) -> ValMatch<Never> {
         Err(ValError::new(ErrorTypeDefaults::OrderedDictType, self))
+    }
+
+    #[cfg_attr(has_coverage_attribute, coverage(off))]
+    fn strict_counter(&self) -> ValMatch<Never> {
+        Err(ValError::new(ErrorTypeDefaults::CounterType, self))
     }
 
     type List<'a> = Never;

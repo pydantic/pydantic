@@ -30,6 +30,7 @@ mod callable;
 mod chain;
 pub(crate) mod complex;
 mod config;
+mod counter;
 mod custom_error;
 mod dataclass;
 mod date;
@@ -610,6 +611,8 @@ fn build_validator_inner(
         frozendict::FrozenDictValidator,
         // ordered dicts
         ordered_dict::OrderedDictValidator,
+        // counters
+        counter::CounterValidator,
         // None/null
         none::NoneValidator,
         // functions - before, after, plain & wrap
@@ -785,6 +788,8 @@ pub enum CombinedValidator {
     FrozenDict(frozendict::FrozenDictValidator),
     // ordered dicts
     OrderedDict(ordered_dict::OrderedDictValidator),
+    // counters
+    Counter(counter::CounterValidator),
     // None/null
     None(none::NoneValidator),
     // functions

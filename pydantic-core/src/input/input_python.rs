@@ -14,6 +14,7 @@ use pyo3::PyTypeInfo;
 use speedate::MicrosecondsPrecisionOverflowBehavior;
 
 use crate::ArgsKwargs;
+use crate::common::counter::get_counter_type;
 use crate::common::deque::{deque_maxlen, get_deque_type};
 use crate::common::frozendict::get_frozendict_type;
 use crate::common::ordered_dict::get_ordered_dict_type;
@@ -484,6 +485,28 @@ impl<'py> Input<'py> for Bound<'py, PyAny> {
             Ok(ValidationMatch::lax(GenericPyMapping::Mapping(mapping)))
         } else {
             Err(ValError::new(ErrorTypeDefaults::OrderedDictType, self))
+        }
+    }
+
+    fn strict_counter<'a>(&'a self) -> ValMatch<GenericPyMapping<'a, 'py>> {
+        if self.is_instance(get_counter_type(self.py())?)? {
+            // A `Counter` is a `dict` subclass and (unlike `OrderedDict`) can safely be
+            // iterated over using the `dict` C API:
+            Ok(ValidationMatch::exact(GenericPyMapping::Dict(self.cast::<PyDict>()?)))
+        } else {
+            Err(ValError::new(ErrorTypeDefaults::CounterType, self))
+        }
+    }
+
+    fn lax_counter<'a>(&'a self) -> ValMatch<GenericPyMapping<'a, 'py>> {
+        if self.is_instance(get_counter_type(self.py())?)? {
+            Ok(ValidationMatch::exact(GenericPyMapping::Dict(self.cast::<PyDict>()?)))
+        } else if let Ok(dict) = self.cast_exact::<PyDict>() {
+            Ok(ValidationMatch::lax(GenericPyMapping::Dict(dict)))
+        } else if let Ok(mapping) = self.cast::<PyMapping>() {
+            Ok(ValidationMatch::lax(GenericPyMapping::Mapping(mapping)))
+        } else {
+            Err(ValError::new(ErrorTypeDefaults::CounterType, self))
         }
     }
 

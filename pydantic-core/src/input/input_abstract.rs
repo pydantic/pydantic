@@ -161,6 +161,19 @@ pub(crate) trait Input<'py>: fmt::Debug {
         self.strict_ordered_dict()
     }
 
+    fn validate_counter(&self, strict: bool) -> ValMatch<Self::Dict<'_>> {
+        if strict {
+            self.strict_counter()
+        } else {
+            self.lax_counter()
+        }
+    }
+    fn strict_counter(&self) -> ValMatch<Self::Dict<'_>>;
+    #[cfg_attr(has_coverage_attribute, coverage(off))]
+    fn lax_counter(&self) -> ValMatch<Self::Dict<'_>> {
+        self.strict_counter()
+    }
+
     fn validate_model_fields(&self, strict: bool, _from_attributes: bool) -> ValResult<Self::Dict<'_>> {
         self.validate_dict(strict)
     }

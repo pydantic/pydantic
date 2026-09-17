@@ -313,6 +313,7 @@ all_errors = [
     ('dict_type', 'Input should be a valid dictionary', None),
     ('frozen_dict_type', 'Input should be a valid frozendict', None),
     ('ordered_dict_type', 'Input should be a valid OrderedDict', None),
+    ('counter_type', 'Input should be a valid Counter', None),
     ('mapping_type', 'Input should be a valid mapping, error: foobar', {'error': 'foobar'}),
     ('iterable_type', 'Input should be iterable', None),
     ('iteration_error', 'Error iterating over object, error: foobar', {'error': 'foobar'}),
