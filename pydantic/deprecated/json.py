@@ -32,10 +32,10 @@ def isoformat(o: datetime.date | datetime.time) -> str:
 
 
 def decimal_encoder(dec_value: Decimal) -> int | float:
-    """Encodes a Decimal as int of there's no exponent, otherwise float.
+    """Encodes a Decimal as an int if there's no exponent, otherwise float.
 
     This is useful when we use ConstrainedDecimal to represent Numeric(x,0)
-    where a integer (but not int typed) is used. Encoding this as a float
+    where an integer (but not int typed) is used. Encoding this as a float
     results in failed round-tripping between encode and parse.
     Our Id type is a prime example of this.
 
