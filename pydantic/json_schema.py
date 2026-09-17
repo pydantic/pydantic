@@ -1183,7 +1183,20 @@ class GenerateJsonSchema:
         """
         return self._common_dict_schema(schema)
 
-    def _common_dict_schema(self, schema: core_schema.DictSchema | core_schema.FrozenDictSchema) -> JsonSchemaValue:
+    def ordered_dict_schema(self, schema: core_schema.OrderedDictSchema) -> JsonSchemaValue:
+        """Generates a JSON schema that matches an `OrderedDict` schema.
+
+        Args:
+            schema: The core schema.
+
+        Returns:
+            The generated JSON schema.
+        """
+        return self._common_dict_schema(schema)
+
+    def _common_dict_schema(
+        self, schema: core_schema.DictSchema | core_schema.FrozenDictSchema | core_schema.OrderedDictSchema
+    ) -> JsonSchemaValue:
         json_schema: JsonSchemaValue = {'type': 'object'}
 
         keys_schema = self.generate_inner(schema['keys_schema']).copy() if 'keys_schema' in schema else {}

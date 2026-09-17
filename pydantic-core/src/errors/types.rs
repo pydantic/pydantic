@@ -267,6 +267,7 @@ error_types! {
     // dict errors
     DictType {},
     FrozenDictType {},
+    OrderedDictType {},
     MappingType {
         error: {ctx_type: Cow<'static, str>, ctx_fn: cow_field_from_context<String, _>},
     },
@@ -542,6 +543,7 @@ impl ErrorType {
             Self::Enum { .. } => "Input should be {expected}",
             Self::DictType { .. } => "Input should be a valid dictionary",
             Self::FrozenDictType { .. } => "Input should be a valid frozendict",
+            Self::OrderedDictType { .. } => "Input should be a valid OrderedDict",
             Self::MappingType { .. } => "Input should be a valid mapping, error: {error}",
             Self::ListType { .. } => "Input should be a valid list",
             Self::DequeType { .. } => "Input should be a valid deque",
@@ -645,6 +647,7 @@ impl ErrorType {
             | Self::ModelAttributesType { .. }
             | Self::DictType { .. }
             | Self::FrozenDictType { .. }
+            | Self::OrderedDictType { .. }
             | Self::DataclassType { .. } => "Input should be an object",
             Self::NamedTupleType { .. } => "Input should be an array or an object",
             Self::TimeDeltaType { .. } => "Input should be a valid duration",

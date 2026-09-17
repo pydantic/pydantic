@@ -16,7 +16,6 @@ from ipaddress import IPv4Address, IPv4Interface, IPv4Network, IPv6Address, IPv6
 from typing import Any, TypeAlias, TypeVar, cast
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
-import typing_extensions
 from pydantic_core import PydanticCustomError, PydanticKnownError, core_schema
 from typing_extensions import get_args, get_origin  # noqa: UP035
 from typing_inspection import typing_objects
@@ -435,6 +434,7 @@ _defaultdict_allowed_default_types: dict[type[Any], type[Any]] = {
     dict: dict,
     collections.abc.Mapping: dict,
     collections.abc.MutableMapping: dict,
+    collections.OrderedDict: collections.OrderedDict,
 }
 
 if sys.version_info >= (3, 15):
@@ -517,9 +517,6 @@ IP_VALIDATOR_LOOKUP: dict[type[IpType], Callable] = {
 MAPPING_ORIGIN_MAP: dict[Any, Any] = {
     typing.DefaultDict: collections.defaultdict,  # noqa: UP006
     collections.defaultdict: collections.defaultdict,
-    typing.OrderedDict: collections.OrderedDict,  # noqa: UP006
-    collections.OrderedDict: collections.OrderedDict,
-    typing_extensions.OrderedDict: collections.OrderedDict,
     typing.Counter: collections.Counter,
     collections.Counter: collections.Counter,
     # this doesn't handle subclasses of these

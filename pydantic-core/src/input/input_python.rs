@@ -16,6 +16,7 @@ use speedate::MicrosecondsPrecisionOverflowBehavior;
 use crate::ArgsKwargs;
 use crate::common::deque::{deque_maxlen, get_deque_type};
 use crate::common::frozendict::get_frozendict_type;
+use crate::common::ordered_dict::get_ordered_dict_type;
 use crate::errors::{ErrorType, ErrorTypeDefaults, InputValue, LocItem, ValError, ValResult};
 use crate::lookup_key::LookupPath;
 use crate::tools::safe_repr;
@@ -457,6 +458,32 @@ impl<'py> Input<'py> for Bound<'py, PyAny> {
             Ok(ValidationMatch::lax(GenericPyMapping::Mapping(mapping)))
         } else {
             Err(ValError::new(ErrorTypeDefaults::FrozenDictType, self))
+        }
+    }
+
+    fn strict_ordered_dict<'a>(&'a self) -> ValMatch<GenericPyMapping<'a, 'py>> {
+        if self.is_instance(get_ordered_dict_type(self.py())?)? {
+            // An `OrderedDict` is a `dict` subclass, but it is iterated over using the mapping protocol
+            // as the `dict` C API does not account for reorderings (e.g. `move_to_end()`):
+            Ok(ValidationMatch::exact(GenericPyMapping::Mapping(
+                self.cast::<PyMapping>()?,
+            )))
+        } else {
+            Err(ValError::new(ErrorTypeDefaults::OrderedDictType, self))
+        }
+    }
+
+    fn lax_ordered_dict<'a>(&'a self) -> ValMatch<GenericPyMapping<'a, 'py>> {
+        if self.is_instance(get_ordered_dict_type(self.py())?)? {
+            Ok(ValidationMatch::exact(GenericPyMapping::Mapping(
+                self.cast::<PyMapping>()?,
+            )))
+        } else if let Ok(dict) = self.cast_exact::<PyDict>() {
+            Ok(ValidationMatch::lax(GenericPyMapping::Dict(dict)))
+        } else if let Ok(mapping) = self.cast::<PyMapping>() {
+            Ok(ValidationMatch::lax(GenericPyMapping::Mapping(mapping)))
+        } else {
+            Err(ValError::new(ErrorTypeDefaults::OrderedDictType, self))
         }
     }
 
