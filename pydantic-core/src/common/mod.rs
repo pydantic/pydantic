@@ -1,3 +1,4 @@
+pub(crate) mod counter;
 pub(crate) mod deque;
 pub(crate) mod frozendict;
 pub(crate) mod missing_sentinel;

@@ -141,6 +141,7 @@ combined_serializer! {
         Dict: super::type_serializers::dict::DictSerializer;
         FrozenDict: super::type_serializers::frozendict::FrozenDictSerializer;
         OrderedDict: super::type_serializers::ordered_dict::OrderedDictSerializer;
+        Counter: super::type_serializers::counter::CounterSerializer;
         Model: super::type_serializers::model::ModelSerializer;
         Dataclass: super::type_serializers::dataclass::DataclassSerializer;
         Url: super::type_serializers::url::UrlSerializer;
@@ -384,6 +385,7 @@ impl PyGcTraverse for CombinedSerializer {
             CombinedSerializer::Dict(inner) => inner.py_gc_traverse(visit),
             CombinedSerializer::FrozenDict(inner) => inner.py_gc_traverse(visit),
             CombinedSerializer::OrderedDict(inner) => inner.py_gc_traverse(visit),
+            CombinedSerializer::Counter(inner) => inner.py_gc_traverse(visit),
             CombinedSerializer::Model(inner) => inner.py_gc_traverse(visit),
             CombinedSerializer::Dataclass(inner) => inner.py_gc_traverse(visit),
             CombinedSerializer::Url(inner) => inner.py_gc_traverse(visit),

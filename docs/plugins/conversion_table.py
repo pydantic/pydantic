@@ -2,7 +2,7 @@ from __future__ import annotations as _annotations
 
 import collections
 import typing
-from collections import OrderedDict, deque
+from collections import Counter, OrderedDict, deque
 from collections.abc import Callable, Iterable, Mapping, Sequence
 from dataclasses import dataclass
 from datetime import date, datetime, time, timedelta
@@ -663,6 +663,35 @@ table_rows: list[Row] = [
         condition='Must implement the mapping interface and have an `items()` method.',
         valid_examples=[],
         core_schemas=[core_schema.OrderedDictSchema],
+    ),
+    Row(
+        Counter,
+        Counter,
+        strict=True,
+        python_input=True,
+        core_schemas=[core_schema.CounterSchema],
+    ),
+    Row(
+        Counter,
+        'Object',
+        strict=True,
+        json_input=True,
+        valid_examples=['{"v": {"a": 1, "b": 2}}'],
+        core_schemas=[core_schema.CounterSchema],
+    ),
+    Row(
+        Counter,
+        dict,
+        python_input=True,
+        core_schemas=[core_schema.CounterSchema],
+    ),
+    Row(
+        Counter,
+        Mapping,
+        python_input=True,
+        condition='Must implement the mapping interface and have an `items()` method.',
+        valid_examples=[],
+        core_schemas=[core_schema.CounterSchema],
     ),
     Row(
         TypedDict,
