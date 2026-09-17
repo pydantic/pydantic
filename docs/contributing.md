@@ -196,7 +196,7 @@ def bar(self, baz: int) -> str:
     return 'bar'
 ```
 
-You may include example code in docstrings. This code should be complete, self-contained, and runnable. Docstring examples are tested, so make sure they are correct and complete. See [`BeforeValidator`][pydantic.functional_validators.AfterValidator] for an example.
+You may include example code in docstrings. This code should be complete, self-contained, and runnable. Docstring examples are tested, so make sure they are correct and complete. See [`AfterValidator`][pydantic.functional_validators.AfterValidator] for an example.
 
 !!! note "Class and instance attributes"
     Class attributes should be documented in the class docstring.
