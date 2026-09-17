@@ -1018,6 +1018,56 @@ except ValidationError as e:
 
 ```
 
+### Counters
+
+Standard library type: collections.Counter (deprecated alias: typing.Counter).
+
+#### Validation
+
+- Counter instances are accepted as is.
+- dict and mappings instances are accepted and coerced to a Counter.
+- If a generic parameter for keys is provided, the appropriate validation is applied. Values are always validated as [integers](#integers).
+
+#### Constraints
+
+As with [dictionaries](#dictionaries), counters support the following constraints:
+
+| Constraint | Description | JSON Schema | | --- | --- | --- | | `min_length` | The counter must have at least this many items | [`minProperties`](https://json-schema.org/understanding-json-schema/reference/object#size) keyword | | `max_length` | The counter must have at most this many items | [`maxProperties`](https://json-schema.org/understanding-json-schema/reference/object#size) keyword |
+
+These constraints can be provided using the Field() function. The `MinLen` and `MaxLen` metadata types from the [`annotated-types`](https://github.com/annotated-types/annotated-types) library can also be used.
+
+#### Strictness
+
+In [strict mode](../../concepts/strict_mode/), only Counter instances are valid. Strict mode does *not* apply to the keys and values of the counters. The strict constraint must be applied to the parameter types for this to work.
+
+#### Example
+
+```python
+from collections import Counter
+
+from pydantic import BaseModel, ValidationError
+
+
+class Model(BaseModel):
+    x: Counter[str]
+
+
+m = Model(x={'foo': '1'})
+print(m.model_dump())
+#> {'x': Counter({'foo': 1})}
+
+try:
+    Model(x='test')
+except ValidationError as e:
+    print(e)
+    """
+    1 validation error for Model
+    x
+      Input should be a valid Counter [type=counter_type, input_value='test', input_type=str]
+    """
+
+```
+
 ### Typed dictionaries
 
 Standard library type: typing.TypedDict (see also: the [typing specification](https://typing.python.org/en/latest/spec/typeddict.html)).

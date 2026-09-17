@@ -3326,6 +3326,17 @@ to help you monitor and understand your
 </li>
       
         <li class="md-nav__item">
+  <a href="#counter_type" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        counter_type
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#dataclass_exact_type" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -5220,6 +5231,17 @@ to help you monitor and understand your
 </li>
       
         <li class="md-nav__item">
+  <a href="#counter_type" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        counter_type
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#dataclass_exact_type" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -6518,6 +6540,23 @@ it does not follow the <a href="https://docs.python.org/3/library/functions.html
 <span class="k">except</span> <span class="n">ValidationError</span> <span class="k">as</span> <span class="n">exc</span><span class="p">:</span>
     <span class="nb">print</span><span class="p">(</span><span class="nb">repr</span><span class="p">(</span><span class="n">exc</span><span class="o">.</span><span class="n">errors</span><span class="p">()[</span><span class="mi">0</span><span class="p">][</span><span class="s1">&#39;type&#39;</span><span class="p">]))</span>
     <span class="c1">#&gt; &#39;complex_type&#39;</span>
+</code></pre></div>
+<h2 id="counter_type"><code>counter_type</code><a class="headerlink" href="#counter_type" title="Permanent link">&para;</a></h2>
+<p>This error is raised when the input value's type is not valid for a <a class="autorefs autorefs-external" href="https://docs.python.org/3/library/collections.html#collections.Counter"><code>Counter</code></a> field:</p>
+<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">collections</span><span class="w"> </span><span class="kn">import</span> <span class="n">Counter</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">pydantic</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ValidationError</span>
+
+
+<span class="k">class</span><span class="w"> </span><span class="nc">Model</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="n">x</span><span class="p">:</span> <span class="n">Counter</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span>
+
+
+<span class="k">try</span><span class="p">:</span>
+    <span class="n">Model</span><span class="p">(</span><span class="n">x</span><span class="o">=</span><span class="s1">&#39;test&#39;</span><span class="p">)</span>
+<span class="k">except</span> <span class="n">ValidationError</span> <span class="k">as</span> <span class="n">exc</span><span class="p">:</span>
+    <span class="nb">print</span><span class="p">(</span><span class="nb">repr</span><span class="p">(</span><span class="n">exc</span><span class="o">.</span><span class="n">errors</span><span class="p">()[</span><span class="mi">0</span><span class="p">][</span><span class="s1">&#39;type&#39;</span><span class="p">]))</span>
+    <span class="c1">#&gt; &#39;counter_type&#39;</span>
 </code></pre></div>
 <h2 id="dataclass_exact_type"><code>dataclass_exact_type</code><a class="headerlink" href="#dataclass_exact_type" title="Permanent link">&para;</a></h2>
 <p>This error is raised when validating a dataclass with <code>strict=True</code> and the input is not an instance of the dataclass:</p>

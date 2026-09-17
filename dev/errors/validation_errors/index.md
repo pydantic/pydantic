@@ -243,6 +243,28 @@ except ValidationError as exc:
 
 ```
 
+## `counter_type`
+
+This error is raised when the input value's type is not valid for a Counter field:
+
+```python
+from collections import Counter
+
+from pydantic import BaseModel, ValidationError
+
+
+class Model(BaseModel):
+    x: Counter[str]
+
+
+try:
+    Model(x='test')
+except ValidationError as exc:
+    print(repr(exc.errors()[0]['type']))
+    #> 'counter_type'
+
+```
+
 ## `dataclass_exact_type`
 
 This error is raised when validating a dataclass with `strict=True` and the input is not an instance of the dataclass:

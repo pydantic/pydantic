@@ -1904,6 +1904,39 @@ def ordered_dict_schema(self, schema: core_schema.OrderedDictSchema) -> JsonSche
 
 ```
 
+### counter_schema
+
+```python
+counter_schema(schema: CounterSchema) -> JsonSchemaValue
+
+```
+
+Generates a JSON schema that matches a `Counter` schema.
+
+Parameters:
+
+| Name | Type | Description | Default | | --- | --- | --- | --- | | `schema` | `CounterSchema` | The core schema. | *required* |
+
+Returns:
+
+| Type | Description | | --- | --- | | `JsonSchemaValue` | The generated JSON schema. |
+
+Source code in `pydantic/json_schema.py`
+
+```python
+def counter_schema(self, schema: core_schema.CounterSchema) -> JsonSchemaValue:
+    """Generates a JSON schema that matches a `Counter` schema.
+
+    Args:
+        schema: The core schema.
+
+    Returns:
+        The generated JSON schema.
+    """
+    return self._common_dict_schema(schema)
+
+```
+
 ### function_before_schema
 
 ```python

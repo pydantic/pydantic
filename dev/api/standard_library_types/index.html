@@ -2237,6 +2237,17 @@ to help you monitor and understand your
 </li>
         
           <li class="md-nav__item">
+  <a href="#counters" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Counters
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#typed-dictionaries" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -4659,6 +4670,17 @@ to help you monitor and understand your
 </li>
         
           <li class="md-nav__item">
+  <a href="#counters" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Counters
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#typed-dictionaries" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -6332,6 +6354,71 @@ The strict constraint must be applied to the parameter types for this to work.</
 <span class="sd">    1 validation error for Model</span>
 <span class="sd">    x</span>
 <span class="sd">      Input should be a valid OrderedDict [type=ordered_dict_type, input_value=&#39;test&#39;, input_type=str]</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+</code></pre></div>
+<h3 id="counters">Counters<a class="headerlink" href="#counters" title="Permanent link">&para;</a></h3>
+<p>Standard library type: <a class="autorefs autorefs-external" href="https://docs.python.org/3/library/collections.html#collections.Counter"><code>collections.Counter</code></a> (deprecated alias: <a class="autorefs autorefs-external" href="https://docs.python.org/3/library/typing.html#typing.Counter"><code>typing.Counter</code></a>).</p>
+<h4>Validation</h4>
+
+<ul>
+<li><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/collections.html#collections.Counter"><code>Counter</code></a> instances are accepted as is.</li>
+<li><a class="autorefs autorefs-external" href="https://docs.python.org/3/reference/expressions.html#dict"><code>dict</code></a> and <a class="autorefs autorefs-external" href="https://docs.python.org/3/glossary.html#term-mapping">mappings</a> instances are accepted and coerced to a <a class="autorefs autorefs-external" href="https://docs.python.org/3/library/collections.html#collections.Counter"><code>Counter</code></a>.</li>
+<li>If a generic parameter for keys is provided, the appropriate validation is applied. Values are always validated as <a href="#integers">integers</a>.</li>
+</ul>
+<h4>Constraints</h4>
+
+<p>As with <a href="#dictionaries">dictionaries</a>, counters support the following constraints:</p>
+<table>
+<thead>
+<tr>
+<th>Constraint</th>
+<th>Description</th>
+<th>JSON Schema</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>min_length</code></td>
+<td>The counter must have at least this many items</td>
+<td><a href="https://json-schema.org/understanding-json-schema/reference/object#size"><code>minProperties</code></a> keyword</td>
+</tr>
+<tr>
+<td><code>max_length</code></td>
+<td>The counter must have at most this many items</td>
+<td><a href="https://json-schema.org/understanding-json-schema/reference/object#size"><code>maxProperties</code></a> keyword</td>
+</tr>
+</tbody>
+</table>
+<p>These constraints can be provided using the <a class="autorefs autorefs-internal" href="../fields/#pydantic.fields.Field"><code>Field()</code></a> function.
+The <code>MinLen</code> and <code>MaxLen</code> metadata types from the <a href="https://github.com/annotated-types/annotated-types"><code>annotated-types</code></a>
+library can also be used.</p>
+<h4>Strictness</h4>
+
+<p>In <a href="../../concepts/strict_mode/">strict mode</a>, only <a class="autorefs autorefs-external" href="https://docs.python.org/3/library/collections.html#collections.Counter"><code>Counter</code></a> instances are valid. Strict mode does <em>not</em> apply to the keys and values of the counters.
+The strict constraint must be applied to the parameter types for this to work.</p>
+<h4>Example</h4>
+
+<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">collections</span><span class="w"> </span><span class="kn">import</span> <span class="n">Counter</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">pydantic</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ValidationError</span>
+
+
+<span class="k">class</span><span class="w"> </span><span class="nc">Model</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="n">x</span><span class="p">:</span> <span class="n">Counter</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span>
+
+
+<span class="n">m</span> <span class="o">=</span> <span class="n">Model</span><span class="p">(</span><span class="n">x</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;foo&#39;</span><span class="p">:</span> <span class="s1">&#39;1&#39;</span><span class="p">})</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">m</span><span class="o">.</span><span class="n">model_dump</span><span class="p">())</span>
+<span class="c1">#&gt; {&#39;x&#39;: Counter({&#39;foo&#39;: 1})}</span>
+
+<span class="k">try</span><span class="p">:</span>
+    <span class="n">Model</span><span class="p">(</span><span class="n">x</span><span class="o">=</span><span class="s1">&#39;test&#39;</span><span class="p">)</span>
+<span class="k">except</span> <span class="n">ValidationError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    1 validation error for Model</span>
+<span class="sd">    x</span>
+<span class="sd">      Input should be a valid Counter [type=counter_type, input_value=&#39;test&#39;, input_type=str]</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 </code></pre></div>
 <!-- old anchor added for backwards compatibility -->

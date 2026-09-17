@@ -3155,6 +3155,103 @@ def ordered_dict_schema(
 
 ````
 
+## counter_schema
+
+```python
+counter_schema(
+    keys_schema: CoreSchema | None = None,
+    values_schema: CoreSchema | None = None,
+    *,
+    min_length: int | None = None,
+    max_length: int | None = None,
+    fail_fast: bool | None = None,
+    strict: bool | None = None,
+    ref: str | None = None,
+    metadata: dict[str, Any] | None = None,
+    serialization: SerSchema | None = None
+) -> CounterSchema
+
+```
+
+Returns a schema that matches a collections.Counter value, e.g.:
+
+```py
+from collections import Counter
+
+from pydantic_core import SchemaValidator, core_schema
+
+schema = core_schema.counter_schema(
+    keys_schema=core_schema.str_schema(), values_schema=core_schema.int_schema()
+)
+v = SchemaValidator(schema)
+assert v.validate_python({'a': '1', 'b': 2}) == Counter({'a': 1, 'b': 2})
+
+```
+
+In lax mode, any mapping is accepted and converted to a `Counter`.
+
+Parameters:
+
+| Name | Type | Description | Default | | --- | --- | --- | --- | | `keys_schema` | `CoreSchema | None` | The value must be a Counter with keys that match this schema | `None` | | `values_schema` | `CoreSchema | None` | The value must be a Counter with values that match this schema | `None` | | `min_length` | `int | None` | The value must be a Counter with at least this many items | `None` | | `max_length` | `int | None` | The value must be a Counter with at most this many items | `None` | | `fail_fast` | `bool | None` | Stop validation on the first error | `None` | | `strict` | `bool | None` | The value must be a Counter instance | `None` | | `ref` | `str | None` | optional unique identifier of the schema, used to reference the schema in other places | `None` | | `metadata` | `dict[str, Any] | None` | Any other information you want to include with the schema, not used by pydantic-core | `None` | | `serialization` | `SerSchema | None` | Custom serialization schema | `None` |
+
+Source code in `pydantic_core/core_schema.py`
+
+````python
+def counter_schema(
+    keys_schema: CoreSchema | None = None,
+    values_schema: CoreSchema | None = None,
+    *,
+    min_length: int | None = None,
+    max_length: int | None = None,
+    fail_fast: bool | None = None,
+    strict: bool | None = None,
+    ref: str | None = None,
+    metadata: dict[str, Any] | None = None,
+    serialization: SerSchema | None = None,
+) -> CounterSchema:
+    """
+    Returns a schema that matches a [`collections.Counter`][] value, e.g.:
+
+    ```py
+    from collections import Counter
+
+    from pydantic_core import SchemaValidator, core_schema
+
+    schema = core_schema.counter_schema(
+        keys_schema=core_schema.str_schema(), values_schema=core_schema.int_schema()
+    )
+    v = SchemaValidator(schema)
+    assert v.validate_python({'a': '1', 'b': 2}) == Counter({'a': 1, 'b': 2})
+    ```
+
+    In lax mode, any mapping is accepted and converted to a `Counter`.
+
+    Args:
+        keys_schema: The value must be a `Counter` with keys that match this schema
+        values_schema: The value must be a `Counter` with values that match this schema
+        min_length: The value must be a `Counter` with at least this many items
+        max_length: The value must be a `Counter` with at most this many items
+        fail_fast: Stop validation on the first error
+        strict: The value must be a `Counter` instance
+        ref: optional unique identifier of the schema, used to reference the schema in other places
+        metadata: Any other information you want to include with the schema, not used by pydantic-core
+        serialization: Custom serialization schema
+    """
+    return _dict_not_none(
+        type='counter',
+        keys_schema=keys_schema,
+        values_schema=values_schema,
+        min_length=min_length,
+        max_length=max_length,
+        fail_fast=fail_fast,
+        strict=strict,
+        ref=ref,
+        metadata=metadata,
+        serialization=serialization,
+    )
+
+````
+
 ## no_info_before_validator_function
 
 ```python
