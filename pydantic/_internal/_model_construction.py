@@ -644,7 +644,8 @@ def complete_model_class(
     # of the properties are evaluated and the `ComputedFieldInfo` are recreated:
     cls.__pydantic_computed_fields__ = {k: v.info for k, v in cls.__pydantic_decorators__.computed_fields.items()}
 
-    set_deprecated_descriptors(cls)
+    if config_wrapper.warn_deprecated in ('get', 'get_and_set'):
+        set_deprecated_descriptors(cls)
 
     cls.__pydantic_core_schema__ = schema
 

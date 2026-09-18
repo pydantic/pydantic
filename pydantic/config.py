@@ -1210,6 +1210,16 @@ class ConfigDict(TypedDict, total=False):
     Whether to use polymorphic serialization for subclasses of the model or Pydantic dataclass. Defaults to `False`.
     """
 
+    warn_deprecated: Literal['get', 'set', 'get_and_set', None]
+    """
+    How to handle fields marked as deprecated.
+
+    - `'get'`: A `DeprecationWarning` is emitted when accessing the field.
+    - `'set'`: A `DeprecationWarning` is emitted when assigning to the field.
+    - `'get_and_set'`: A `DeprecationWarning` is emitted both when accessing and assigning to the field.
+    - `None`: The deprecation is ignored and no warning is emitted.
+"""
+
 
 _TypeT = TypeVar('_TypeT', bound=type)
 
