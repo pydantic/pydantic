@@ -1000,4 +1000,57 @@ def test_dynamic_default() -> None:
     class Model(BaseModel):
         model_config = ConfigDict(validate_by_alias=False)
 
-    assert Model.model_config == {'validate_by_alias': False, 'validate_by_name': True}
+        a: int = Field(alias='A')
+
+    # `validate_by_name` is implicitly set to `True`:
+    assert Model(a=1).a == 1
+    with pytest.raises(ValidationError):
+        Model.model_validate({'A': 1})
+
+
+def test_derived_alias_config_not_inherited() -> None:
+    """https://github.com/pydantic/pydantic/issues/13786"""
+
+    class Parent(BaseModel):
+        model_config = ConfigDict(populate_by_name=True)
+
+    class Child(Parent):
+        model_config = ConfigDict(populate_by_name=False)
+
+        a: int = Field(alias='A')
+
+    # The `validate_by_name` value derived from the parent's `populate_by_name`
+    # must not take precedence over the child's explicit `populate_by_name`:
+    assert Child.model_validate({'A': 1}).a == 1
+    with pytest.raises(ValidationError):
+        Child.model_validate({'a': 1})
+
+
+def test_config_not_mutated() -> None:
+    config = ConfigDict(populate_by_name=True)
+
+    class Model(BaseModel):
+        model_config = config
+
+    assert Model.model_config == {'populate_by_name': True}
+
+    config = ConfigDict(populate_by_name=True)
+    TypeAdapter(int, config=config)
+    assert config == {'populate_by_name': True}
+
+    config = ConfigDict(populate_by_name=True)
+
+    @pydantic_dataclass(config=config)
+    class Dc:
+        a: int
+
+    assert config == {'populate_by_name': True}
+
+    config = ConfigDict(populate_by_name=True)
+
+    @validate_call(config=config)
+    def func(a: int) -> int:
+        return a
+
+    func(1)
+    assert config == {'populate_by_name': True}

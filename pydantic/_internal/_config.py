@@ -209,6 +209,9 @@ class ConfigWrapper:
                 stacklevel=2,
             )
 
+        # Avoid mutating the model's config:
+        config = self.config_dict.copy()
+
         if (populate_by_name := config.get('populate_by_name')) is not None:
             # We include this patch for backwards compatibility purposes, but this config setting will be deprecated in v3.0, and likely removed in v4.0.
             # Thus, the above warning and this patch can be removed then as well.
