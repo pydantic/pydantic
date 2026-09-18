@@ -1,5 +1,4 @@
-"""Plugin interface for Pydantic plugins, and related types.
-"""
+"""Plugin interface for Pydantic plugins, and related types."""
 
 from __future__ import annotations
 
