@@ -12,6 +12,7 @@ use super::{BuildValidator, CombinedValidator, DefinitionsBuilder, ValidationSta
 use crate::PydanticUndefinedType;
 use crate::build_tools::py_schema_err;
 use crate::build_tools::schema_or_config_same;
+use crate::definitions::SharedNodeKey;
 use crate::errors::{ErrorTypeDefaults, LocItem, ValError, ValResult};
 use crate::input::Input;
 use crate::py_gc::PyGcTraverse;
@@ -79,7 +80,7 @@ impl PyGcTraverse for DefaultType {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Copy)]
 enum OnError {
     Raise,
     Omit,
@@ -134,18 +135,38 @@ impl BuildValidator for WithDefaultValidator {
             false
         };
 
+        let validate_default = schema_or_config_same(schema, config, intern!(py, "validate_default"))?.unwrap_or(false);
+
+        // A `default` node is fully described by the validator it wraps, the default itself, and these
+        // few flags, so any other `default` node with the same ones in this build is interchangeable
+        // with this one. `default_factory` is identified by the factory object, which is not called
+        // during the build, so nodes sharing a factory object stay equivalent:
+        let (default_object, default_kind) = match &default {
+            DefaultType::None => (None, 0),
+            DefaultType::Default(obj) => (Some(obj), 1),
+            DefaultType::DefaultFactory(obj, takes_data) => (Some(obj), 2 | u32::from(*takes_data) << 2),
+        };
+        let flags =
+            default_kind | (on_error as u32) << 3 | u32::from(validate_default) << 5 | u32::from(copy_default) << 6;
+        let key = SharedNodeKey::new(Self::EXPECTED_TYPE, &validator, default_object, flags);
+        if let Some(shared) = definitions.get_shared_node(&key) {
+            return Ok(shared.clone());
+        }
+
         let name = format!("{}[{}]", Self::EXPECTED_TYPE, validator.get_name());
 
-        Ok(CombinedValidator::WithDefault(Self {
+        let result: Arc<CombinedValidator> = CombinedValidator::WithDefault(Self {
             default,
             on_error,
             validator,
-            validate_default: schema_or_config_same(schema, config, intern!(py, "validate_default"))?.unwrap_or(false),
+            validate_default,
             copy_default,
             name,
             undefined: PydanticUndefinedType::get(py).clone_ref(schema.py()).into_any(),
         })
-        .into())
+        .into();
+        definitions.set_shared_node(key, result.clone());
+        Ok(result)
     }
 }
 
