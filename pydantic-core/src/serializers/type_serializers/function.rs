@@ -433,10 +433,10 @@ pub(crate) struct SerializationCallable {
     filter: AnyFilter,
 }
 
-impl_py_gc_traverse!(SerializationCallable {
-    serializer,
-    extra_owned
-});
+// `serializer` is intentionally not traversed: it is an `Arc` clone of a subtree owned (and
+// traversed) by the `SchemaSerializer`. Visiting it here as well would report twice for a single reference,
+// which corrupts the GC's refcount logic.
+impl_py_gc_traverse!(SerializationCallable { extra_owned });
 
 impl SerializationCallable {
     pub fn new(serializer: &Arc<CombinedSerializer>, state: &SerializationState<'_>) -> Self {
@@ -446,7 +446,10 @@ impl SerializationCallable {
             filter: AnyFilter::new(),
         }
     }
+}
 
+#[pymethods]
+impl SerializationCallable {
     fn __traverse__(&self, visit: PyVisit<'_>) -> Result<(), PyTraverseError> {
         self.py_gc_traverse(&visit)
     }
@@ -456,10 +459,7 @@ impl SerializationCallable {
         self.extra_owned.fallback = None;
         self.extra_owned.context = None;
     }
-}
 
-#[pymethods]
-impl SerializationCallable {
     #[pyo3(signature = (value, index_key=None))]
     fn __call__(
         &mut self,
@@ -589,7 +589,10 @@ impl SerializationInfo {
             })
         }
     }
+}
 
+#[pymethods]
+impl SerializationInfo {
     fn __traverse__(&self, visit: PyVisit<'_>) -> Result<(), PyTraverseError> {
         self.py_gc_traverse(&visit)
     }
@@ -599,10 +602,7 @@ impl SerializationInfo {
         self.exclude = None;
         self.context = None;
     }
-}
 
-#[pymethods]
-impl SerializationInfo {
     fn mode_is_json(&self) -> bool {
         self._mode.is_json()
     }
