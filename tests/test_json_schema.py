@@ -148,8 +148,11 @@ def test_validate_by_alias_false_uses_the_field_name():
         my_field: str = Field(alias='myAlias')
 
     assert list(Model.model_json_schema()['properties']) == ['my_field']
-    # Serialization is governed by `serialize_by_alias`, which this leaves alone:
-    assert list(Model.model_json_schema(mode='serialization')['properties']) == ['myAlias']
+    # `validate_by_alias` leaves `serialize_by_alias` alone; it stays at its own
+    # default (False), which the serialization schema must match, just as
+    # `model_dump()` does:
+    assert list(Model.model_json_schema(mode='serialization')['properties']) == ['my_field']
+    assert list(Model(my_field='x').model_dump()) == ['my_field']
 
     @pydantic.dataclasses.dataclass(config=ConfigDict(validate_by_alias=False, validate_by_name=True))
     class Dataclass:
@@ -173,6 +176,35 @@ def test_validate_by_alias_false_is_scoped_to_its_own_model():
     assert list(json_schema['$defs']['Inner']['properties']) == ['inner_field']
 
     assert Outer.model_validate({'outerAlias': 'x', 'inner': {'inner_field': 'y'}}).outer_field == 'x'
+
+
+def test_serialization_schema_matches_dump_by_default():
+    """The serialization-mode JSON schema's property keys must match what
+    `model_dump()` actually emits by default (`serialize_by_alias=False`),
+    for plain fields and computed fields alike. Regression for #13754, where
+    the serialization schema always used the alias regardless of
+    `serialize_by_alias`, contradicting `model_dump()` on the same model.
+    """
+
+    class Model(BaseModel):
+        my_field: str = Field(serialization_alias='myAlias')
+
+        @pydantic.computed_field(alias='computedAlias')
+        @property
+        def computed(self) -> str:
+            return 'v'
+
+    m = Model(my_field='foo')
+    assert list(m.model_dump()) == ['my_field', 'computed']
+    assert list(Model.model_json_schema(mode='serialization')['properties']) == ['my_field', 'computed']
+
+    # With `serialize_by_alias=True`, both agree on the aliased names instead:
+    class AliasedModel(Model):
+        model_config = ConfigDict(serialize_by_alias=True)
+
+    am = AliasedModel(my_field='foo')
+    assert list(am.model_dump(by_alias=True)) == ['myAlias', 'computedAlias']
+    assert list(AliasedModel.model_json_schema(mode='serialization')['properties']) == ['myAlias', 'computedAlias']
 
 
 def test_ref_template():
@@ -3387,6 +3419,8 @@ def test_mode_name_causes_no_conflict():
         'title': 'Model',
         'type': 'object',
     }
+    # `serialize_by_alias` defaults to False, so -- like `model_dump()` on this
+    # same model -- the serialization schema uses the field name, not the alias:
     assert Model.model_json_schema(mode='serialization') == {
         '$defs': {
             'Organization': {'properties': {}, 'title': 'Organization', 'type': 'object'},
@@ -3394,11 +3428,11 @@ def test_mode_name_causes_no_conflict():
             'OrganizationOutput': {'properties': {}, 'title': 'OrganizationOutput', 'type': 'object'},
         },
         'properties': {
-            'x_serialization': {'$ref': '#/$defs/Organization'},
+            'x': {'$ref': '#/$defs/Organization'},
             'y': {'$ref': '#/$defs/OrganizationInput'},
             'z': {'$ref': '#/$defs/OrganizationOutput'},
         },
-        'required': ['x_serialization', 'y', 'z'],
+        'required': ['x', 'y', 'z'],
         'title': 'Model',
         'type': 'object',
     }
