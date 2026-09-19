@@ -32,9 +32,7 @@ from typing import Callable, Dict, Type, Union, cast, overload
 
 import hypothesis.strategies as st
 
-import pydantic
-import pydantic.color
-import pydantic.types
+import pydantic.v1 as pydantic
 from pydantic.v1.utils import lenient_issubclass
 
 # FilePath and DirectoryPath are explicitly unsupported, as we'd have to create
