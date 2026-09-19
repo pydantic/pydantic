@@ -1,5 +1,5 @@
 import re
-from typing import Annotated, Generic, TypeVar
+from typing import Annotated, Any, Generic, TypeVar
 
 import pytest
 
@@ -13,6 +13,7 @@ from pydantic import (
     ValidationError,
     create_model,
     field_validator,
+    model_validator,
     validator,
 )
 
@@ -411,3 +412,31 @@ def test_create_model_qualname() -> None:
     FooModel = create_model('FooModel', __qualname__='test_create_model_qualname.FooModel')
     assert FooModel.__name__ == 'FooModel'
     assert FooModel.__qualname__ == 'test_create_model_qualname.FooModel'
+
+
+def test_create_model_validators_model_validator() -> None:
+    def validate_data(data: Any) -> Any:
+        if isinstance(data, dict) and 'val' in data:
+            data = data.copy()
+            data['val'] = data['val'] * 2
+        return data
+
+    v = model_validator(mode='before')(validate_data)
+    MyModel = create_model('MyModel', val=(int, ...), __validators__={'v': v})
+    inst: Any = MyModel(val=5)
+    assert inst.val == 10
+
+
+def test_create_model_validators_field_validator() -> None:
+    def validate_val(cls: Any, v: int) -> int:
+        if v < 0:
+            raise ValueError('must be positive')
+        return v * 3
+
+    v = field_validator('val')(validate_val)
+    MyModel = create_model('MyModel', val=(int, ...), __validators__={'v': v})
+    inst: Any = MyModel(val=4)
+    assert inst.val == 12
+
+    with pytest.raises(ValidationError):
+        MyModel(val=-1)
