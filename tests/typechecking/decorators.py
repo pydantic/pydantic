@@ -14,6 +14,7 @@ from pydantic import (
     SerializationInfo,
     SerializerFunctionWrapHandler,
     ValidationInfo,
+    create_model,
     field_serializer,
     field_validator,
     model_serializer,
@@ -308,3 +309,20 @@ class WrapFieldSerializer(BaseModel):
     def valid_info(
         self, value: Any, handler: SerializerFunctionWrapHandler, info: FieldSerializationInfo[int]
     ) -> Any: ...
+
+
+def dynamic_validate_func(value: Any) -> Any: ...
+
+
+dynamic_model_validator = model_validator(mode='before')(dynamic_validate_func)
+dynamic_field_validator = field_validator('a')(dynamic_validate_func)
+
+DynamicModelWithValidators = create_model(
+    'DynamicModelWithValidators',
+    a=(int, ...),
+    __validators__={
+        'model_val': dynamic_model_validator,
+        'field_val': dynamic_field_validator,
+    },
+)
+assert_type(DynamicModelWithValidators, type[BaseModel])
