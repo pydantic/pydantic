@@ -1805,6 +1805,69 @@ def test_callable_discriminated_union_with_missing_tag() -> None:
             ]
 
 
+def test_callable_discriminated_union_with_multiple_tags() -> None:
+    class Cat(BaseModel):
+        pet_type: Literal['cat']
+        meows: int
+
+    class Lizard(BaseModel):
+        pet_type: Literal['reptile', 'lizard']
+        scales: bool
+
+    def get_pet_discriminator_value(v: Any) -> str | None:
+        if isinstance(v, dict):
+            return v.get('pet_type')
+        return getattr(v, 'pet_type', None)
+
+    class Model(BaseModel):
+        pet: Annotated[
+            Annotated[Cat, Tag('cat')] | Annotated[Lizard, Tag('reptile'), Tag('lizard')],
+            Discriminator(get_pet_discriminator_value),
+        ]
+
+    assert Model.model_validate({'pet': {'pet_type': 'cat', 'meows': 3}}).pet == Cat(pet_type='cat', meows=3)
+    assert Model.model_validate({'pet': {'pet_type': 'lizard', 'scales': True}}).pet == Lizard(
+        pet_type='lizard', scales=True
+    )
+    assert Model.model_validate({'pet': {'pet_type': 'reptile', 'scales': True}}).pet == Lizard(
+        pet_type='reptile', scales=True
+    )
+    assert Model(pet=Lizard(pet_type='reptile', scales=False)).pet.pet_type == 'reptile'
+
+    with pytest.raises(ValidationError) as exc_info:
+        Model.model_validate({'pet': {'pet_type': 'dog'}})
+    assert exc_info.value.errors(include_url=False) == [
+        {
+            'ctx': {
+                'discriminator': 'get_pet_discriminator_value()',
+                'expected_tags': "'cat', 'reptile', 'lizard'",
+                'tag': 'dog',
+            },
+            'input': {'pet_type': 'dog'},
+            'loc': ('pet',),
+            'msg': "Input tag 'dog' found using get_pet_discriminator_value() does not "
+            "match any of the expected tags: 'cat', 'reptile', 'lizard'",
+            'type': 'union_tag_invalid',
+        }
+    ]
+
+
+def test_callable_discriminated_union_with_duplicate_tag() -> None:
+    def model_x_discriminator(v):
+        if isinstance(v, str):
+            return 'str'
+        if isinstance(v, (dict, BaseModel)):
+            return 'model'
+
+    with pytest.raises(PydanticUserError, check=lambda e: e.code == 'callable-discriminator-duplicate-tag'):
+
+        class DiscriminatedModel(BaseModel):
+            x: Annotated[
+                Annotated[str, Tag('str')] | Annotated['DiscriminatedModel', Tag('str')],
+                Discriminator(model_x_discriminator),
+            ]
+
+
 @pytest.mark.xfail(
     reason='Issue not yet fixed, see: https://github.com/pydantic/pydantic/issues/8271. At the moment, JSON schema gen warns with a PydanticJsonSchemaWarning.'
 )

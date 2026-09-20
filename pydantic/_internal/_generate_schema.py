@@ -1342,9 +1342,9 @@ class GenerateSchema:
         else:
             choices_with_tags: list[CoreSchema | tuple[CoreSchema, str]] = []
             for choice in choices:
-                tag = cast(CoreMetadata, choice.get('metadata', {})).get('pydantic_internal_union_tag_key')
-                if tag is not None:
-                    choices_with_tags.append((choice, tag))
+                tags = cast(CoreMetadata, choice.get('metadata', {})).get('pydantic_internal_union_tag_keys')
+                if tags:
+                    choices_with_tags.extend((choice, tag) for tag in tags)
                 else:
                     choices_with_tags.append(choice)
             s = core_schema.union_schema(choices_with_tags)

@@ -481,6 +481,42 @@ except PydanticUserError as exc_info:
     assert exc_info.code == 'callable-discriminator-no-tag'
 ```
 
+## Callable discriminator case with duplicate tag {#callable-discriminator-duplicate-tag}
+
+This error is raised when a union that uses a callable `Discriminator` assigns the same [`Tag`][pydantic.types.Tag]
+to more than one distinct union case.
+
+Each tag must map to a single choice so the discriminator can select which member to validate against.
+You can attach multiple `Tag`s to the *same* case (for example, to accept both `'reptile'` and `'lizard'`
+for one model), but two different cases cannot share a tag.
+
+```python
+from typing import Annotated
+
+from pydantic import BaseModel, Discriminator, PydanticUserError, Tag
+
+
+def model_x_discriminator(v):
+    if isinstance(v, str):
+        return 'str'
+    if isinstance(v, (dict, BaseModel)):
+        return 'model'
+
+
+# `'str'` tag is assigned to both union choices
+try:
+
+    class DiscriminatedModel(BaseModel):
+        x: Annotated[
+            Annotated[str, Tag('str')]
+            | Annotated['DiscriminatedModel', Tag('str')],
+            Discriminator(model_x_discriminator),
+        ]
+
+except PydanticUserError as exc_info:
+    assert exc_info.code == 'callable-discriminator-duplicate-tag'
+```
+
 ## `TypedDict` version {#typed-dict-version}
 
 This error is raised when you use [typing.TypedDict][]

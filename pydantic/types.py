@@ -2999,9 +2999,13 @@ class Tag:
     ```
 
     !!! note
-        You must specify a `Tag` for every case in a `Tag` that is associated with a
+        You must specify a `Tag` for every case in a union that is associated with a
         callable `Discriminator`. Failing to do so will result in a `PydanticUserError` with code
         [`callable-discriminator-no-tag`](../errors/usage_errors.md#callable-discriminator-no-tag).
+
+        You may attach multiple `Tag`s to a single union case. Assigning the same `Tag` to
+        different cases will result in a `PydanticUserError` with code
+        [`callable-discriminator-duplicate-tag`](../errors/usage_errors.md#callable-discriminator-duplicate-tag).
 
     See the [Discriminated Unions] concepts docs for more details on how to use `Tag`s.
 
@@ -3013,7 +3017,8 @@ class Tag:
     def __get_pydantic_core_schema__(self, source_type: Any, handler: GetCoreSchemaHandler) -> CoreSchema:
         schema = handler(source_type)
         metadata = cast('CoreMetadata', schema.setdefault('metadata', {}))
-        metadata['pydantic_internal_union_tag_key'] = self.tag
+        tags = metadata.setdefault('pydantic_internal_union_tag_keys', [])
+        tags.append(self.tag)
         return schema
 
 
@@ -3153,13 +3158,17 @@ class Discriminator:
 
         tagged_union_choices = {}
         for choice in original_schema['choices']:
-            tag = None
+            # dict keys used for ordering
+            tags: dict[str, None] = {}
             if isinstance(choice, tuple):
                 choice, tag = choice
+                tags[tag] = None
             metadata = cast('CoreMetadata | None', choice.get('metadata'))
             if metadata is not None:
-                tag = metadata.get('pydantic_internal_union_tag_key') or tag
-            if tag is None:
+                for tag in metadata.get('pydantic_internal_union_tag_keys', ()):
+                    tags[tag] = None
+
+            if not tags:
                 if choice['type'] == 'definition-ref':
                     # If choice was built from a PEP 695 type alias, try to resolve the def:
                     resolved_choice = _resolve_ref(choice)
@@ -3167,14 +3176,21 @@ class Discriminator:
                         choice = resolved_choice
                         metadata = cast('CoreMetadata | None', choice.get('metadata'))
                         if metadata is not None:
-                            tag = metadata.get('pydantic_internal_union_tag_key')
+                            for tag in metadata.get('pydantic_internal_union_tag_keys', ()):
+                                tags[tag] = None
 
-                if tag is None:
+                if not tags:
                     raise PydanticUserError(
                         f'`Tag` not provided for choice {choice} used with `Discriminator`',
                         code='callable-discriminator-no-tag',
                     )
-            tagged_union_choices[tag] = choice
+            for tag in tags:
+                if tag in tagged_union_choices and tagged_union_choices[tag] != choice:
+                    raise PydanticUserError(
+                        f'Tag {tag!r} is assigned to multiple union choices used with `Discriminator`',
+                        code='callable-discriminator-duplicate-tag',
+                    )
+                tagged_union_choices[tag] = choice
 
         # Have to do these verbose checks to ensure falsy values ('' and {}) don't get ignored
         custom_error_type = self.custom_error_type

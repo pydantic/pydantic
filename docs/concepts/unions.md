@@ -312,6 +312,13 @@ ThanksgivingDinner(dessert=PumpkinPie(time_to_cook=40, num_ingredients=6, fillin
 """
 ```
 
+A single union case may have multiple [`Tag`][pydantic.types.Tag]s. This is useful when several
+discriminator return values should map to the same type, similar to `Literal['reptile', 'lizard']`
+with a [string discriminator](#discriminated-unions-with-string-discriminators).
+The same `Tag` cannot be reused on different cases; doing so raises a
+[`callable-discriminator-duplicate-tag`](../errors/usage_errors.md#callable-discriminator-duplicate-tag)
+error.
+
 `Discriminator`s can also be used to validate union types with combinations of models and primitive types.
 
 For example:
