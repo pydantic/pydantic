@@ -10,7 +10,7 @@ from dataclasses import dataclass, field
 from functools import cached_property, partial, partialmethod
 from inspect import Parameter, Signature, isdatadescriptor, ismethoddescriptor
 from itertools import islice
-from typing import TYPE_CHECKING, Any, ClassVar, Generic, Literal, TypeAlias, TypeVar
+from typing import TYPE_CHECKING, Any, ClassVar, Generic, Literal, TypeAlias, TypeGuard, TypeVar, overload
 
 from pydantic_core import PydanticUndefined, PydanticUndefinedType, core_schema
 from typing_extensions import Self, TypeForm, is_typeddict
@@ -580,12 +580,40 @@ def _decorator_infos_for_class(
     return res, to_replace
 
 
+@overload
+def inspect_validator(
+    validator: Any,
+    *,
+    mode: Literal['wrap'],
+    type: Literal['field', 'model'],
+) -> TypeGuard[core_schema.WithInfoWrapValidatorFunction]: ...
+
+
+@overload
+def inspect_validator(
+    validator: Any,
+    *,
+    mode: Literal['before', 'after', 'plain'],
+    type: Literal['field', 'model'],
+) -> TypeGuard[core_schema.WithInfoValidatorFunction]: ...
+
+
+@overload
+def inspect_validator(
+    validator: Callable[..., Any], *, mode: FieldValidatorModes, type: Literal['field', 'model']
+) -> bool: ...
+
+
 def inspect_validator(
     validator: Callable[..., Any], *, mode: FieldValidatorModes, type: Literal['field', 'model']
 ) -> bool:
     """Look at a field or model validator function and determine whether it takes an info argument.
 
     An error is raised if the function has an invalid signature.
+
+    When `mode` is a specific literal, a true result narrows `validator` to the
+    with-info callable for that mode. Wrap and non-wrap signatures differ, so
+    those modes are separate overloads.
 
     Args:
         validator: The validator function to inspect.
