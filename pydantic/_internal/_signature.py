@@ -123,6 +123,10 @@ def _generate_signature_parameters(  # noqa: C901 (ignore complexity, could use 
             if field_name in merged_params or param_name in merged_params:
                 continue
 
+            # Default is included. Only an explicit init=False drops the argument.
+            if field.init is False:
+                continue
+
             if not is_valid_identifier(param_name):
                 if allow_names and is_valid_identifier(field_name):
                     param_name = field_name

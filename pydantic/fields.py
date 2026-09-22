@@ -131,7 +131,8 @@ class FieldInfo(_repr.Representation):
         frozen: Whether the field is frozen.
         validate_default: Whether to validate the default value of the field.
         repr: Whether to include the field in representation of the model.
-        init: Whether the field should be included in the constructor of the dataclass.
+        init: Whether the field should be included in the constructor. Defaults to included.
+            `init=False` omits it from `__init__` and still allows assignment after creation.
         init_var: Whether the field should _only_ be included in the constructor of the dataclass, and not stored.
         kw_only: Whether the field should be a keyword-only argument in the constructor of the dataclass.
         metadata: The metadata list. Contains all the data that isn't expressed as direct `FieldInfo` attributes, including:
@@ -1398,8 +1399,10 @@ def Field(  # noqa: C901
         validate_default: If `True`, apply validation to the default value every time you create an instance.
             Otherwise, for performance reasons, the default value of the field is trusted and not validated.
         repr: A boolean indicating whether to include the field in the `__repr__` output.
-        init: Whether the field should be included in the constructor of the dataclass.
-            (Only applies to dataclasses.)
+        init: Whether the field should be included in the constructor.
+            Defaults to `True`. `init=False` omits the field from `__init__` on both
+            models and dataclasses. The field still needs a default or `default_factory`,
+            and it can be assigned after the instance is created.
         init_var: Whether the field should _only_ be included in the constructor of the dataclass.
             (Only applies to dataclasses.)
         kw_only: Whether the field should be a keyword-only argument in the constructor of the dataclass.

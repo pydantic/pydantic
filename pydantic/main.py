@@ -277,6 +277,15 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
         """
         # `__tracebackhide__` tells pytest and some other tools to omit this function from tracebacks
         __tracebackhide__ = True
+        for name, field in self.__class__.__pydantic_fields__.items():
+            if field.init is not False:
+                continue
+            keys = [name]
+            if isinstance(field.alias, str):
+                keys.append(field.alias)
+            for key in keys:
+                if key in data:
+                    raise TypeError(f'{self.__class__.__name__}() got an unexpected keyword argument {key!r}')
         validated_self = self.__pydantic_validator__.validate_python(data, self_instance=self)
         if self is not validated_self:
             warnings.warn(
