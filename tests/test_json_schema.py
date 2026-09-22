@@ -910,6 +910,47 @@ def test_date_types_ser_json_temporal_matches_serialized_output(ser_json_tempora
             assert isinstance(value, float)
 
 
+@pytest.mark.parametrize('ser_json_temporal', ['seconds', 'milliseconds'])
+def test_temporal_default_matches_validation_schema_type(ser_json_temporal):
+    """The validation schema declares temporal types as ISO 8601 strings, so the
+    default must be encoded the same way even when serialization uses numbers.
+
+    https://github.com/pydantic/pydantic/issues/13840
+    """
+
+    class Model(BaseModel):
+        model_config = ConfigDict(ser_json_temporal=ser_json_temporal)
+
+        dt: datetime = datetime(2024, 1, 2, 3, 4, 5)
+
+    validation_prop = Model.model_json_schema(mode='validation')['properties']['dt']
+    assert validation_prop['type'] == 'string'
+    assert validation_prop['default'] == '2024-01-02T03:04:05'
+
+    # Serialization mode keeps the numeric default, which matches its own declared type
+    expected_default = 1704164645.0 if ser_json_temporal == 'seconds' else 1704164645000.0
+    serialization_prop = Model.model_json_schema(mode='serialization')['properties']['dt']
+    assert serialization_prop['type'] == 'number'
+    assert serialization_prop['default'] == expected_default
+
+
+def test_timedelta_default_matches_validation_schema_type():
+    """https://github.com/pydantic/pydantic/issues/13840"""
+
+    class Model(BaseModel):
+        model_config = ConfigDict(ser_json_timedelta='float')
+
+        td: timedelta = timedelta(seconds=90)
+
+    validation_prop = Model.model_json_schema(mode='validation')['properties']['td']
+    assert validation_prop['type'] == 'string'
+    assert validation_prop['default'] == 'PT1M30S'
+
+    serialization_prop = Model.model_json_schema(mode='serialization')['properties']['td']
+    assert serialization_prop['type'] == 'number'
+    assert serialization_prop['default'] == 90.0
+
+
 @pytest.mark.parametrize(
     'config,expected_schema',
     [
