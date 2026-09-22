@@ -2796,7 +2796,7 @@ def test_dataclass_with_extra_ignore():
 def test_dataclass_with_extra_forbid():
     @pydantic.dataclasses.dataclass
     class Model:
-        __pydantic_config__ = ConfigDict(extra='ignore')
+        __pydantic_config__ = ConfigDict(extra='forbid')
         a: str
 
     assert TypeAdapter(Model).json_schema() == {
@@ -2804,7 +2804,90 @@ def test_dataclass_with_extra_forbid():
         'type': 'object',
         'properties': {'a': {'title': 'A', 'type': 'string'}},
         'required': ['a'],
+        'additionalProperties': False,
     }
+
+
+def test_stdlib_dataclass_json_schema_uses_propagated_extra_from_model():
+    """https://github.com/pydantic/pydantic/issues/13845
+
+    Configuration is propagated to a stdlib dataclass without its own config, and validation uses
+    it (https://github.com/pydantic/pydantic/pull/10928) — so the JSON schema has to say so too.
+    """
+
+    @dataclasses.dataclass
+    class Line:
+        qty: int
+
+    class Order(BaseModel):
+        model_config = ConfigDict(extra='forbid')
+        line: Line
+
+    with pytest.raises(ValidationError, match='unexpected_keyword_argument|Unexpected keyword argument'):
+        Order.model_validate({'line': {'qty': 1, 'typo': 2}})
+
+    assert Order.model_json_schema()['$defs']['Line'] == {
+        'title': 'Line',
+        'type': 'object',
+        'properties': {'qty': {'title': 'Qty', 'type': 'integer'}},
+        'required': ['qty'],
+        'additionalProperties': False,
+    }
+
+
+def test_stdlib_dataclass_json_schema_uses_propagated_extra_from_type_adapter():
+    """The same, when the config comes from a ``TypeAdapter`` around a container: it exists only in
+    the core schema, which is what validation is built from."""
+
+    @dataclasses.dataclass
+    class Line:
+        qty: int
+
+    adapter = TypeAdapter(list[Line], config=ConfigDict(extra='forbid'))
+
+    with pytest.raises(ValidationError):
+        adapter.validate_python([{'qty': 1, 'typo': 2}])
+
+    assert adapter.json_schema()['$defs']['Line']['additionalProperties'] is False
+
+
+def test_stdlib_dataclass_json_schema_own_extra_wins_over_propagated():
+    @dataclasses.dataclass
+    class Line:
+        __pydantic_config__ = ConfigDict(extra='allow')
+        qty: int
+
+    class Order(BaseModel):
+        model_config = ConfigDict(extra='forbid')
+        line: Line
+
+    assert Order.model_json_schema()['$defs']['Line']['additionalProperties'] is True
+
+
+def test_stdlib_dataclass_json_schema_without_extra_anywhere():
+    @dataclasses.dataclass
+    class Line:
+        qty: int
+
+    class Order(BaseModel):
+        line: Line
+
+    assert 'additionalProperties' not in Order.model_json_schema()['$defs']['Line']
+
+
+def test_pydantic_dataclass_json_schema_keeps_its_own_config_boundary():
+    """Pydantic dataclasses do not inherit their parent's config, in validation or here."""
+
+    @pydantic.dataclasses.dataclass
+    class Line:
+        qty: int
+
+    class Order(BaseModel):
+        model_config = ConfigDict(extra='forbid')
+        line: Line
+
+    Order.model_validate({'line': {'qty': 1, 'typo': 2}})  # not forbidden: its own boundary
+    assert 'additionalProperties' not in Order.model_json_schema()['$defs']['Line']
 
 
 def test_typeddict_with_extra_allow():

@@ -1973,6 +1973,13 @@ class GenerateJsonSchema:
         with self._config_wrapper_stack.push(config):
             json_schema = self.generate_inner(schema['schema']).copy()
 
+        # A stdlib dataclass without its own `extra` is validated with the config propagated from
+        # its parent (see https://github.com/pydantic/pydantic/pull/10928), which the core schema
+        # records; use the same one here, so the JSON Schema describes what validation enforces:
+        if 'extra' not in config and (core_config := schema.get('config')) is not None:
+            if (extra := core_config.get('extra_fields_behavior')) is not None:
+                config = cast('ConfigDict', {**config, 'extra': extra})
+
         self._update_class_schema(json_schema, cls, config)
 
         return json_schema
