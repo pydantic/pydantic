@@ -148,8 +148,8 @@ def test_validate_by_alias_false_uses_the_field_name():
         my_field: str = Field(alias='myAlias')
 
     assert list(Model.model_json_schema()['properties']) == ['my_field']
-    # Serialization is governed by `serialize_by_alias`, which this leaves alone:
-    assert list(Model.model_json_schema(mode='serialization')['properties']) == ['myAlias']
+    # serialize_by_alias defaults to False, so the serialization schema also uses the field name:
+    assert list(Model.model_json_schema(mode='serialization')['properties']) == ['my_field']
 
     @pydantic.dataclasses.dataclass(config=ConfigDict(validate_by_alias=False, validate_by_name=True))
     class Dataclass:
@@ -157,6 +157,34 @@ def test_validate_by_alias_false_uses_the_field_name():
 
     adapter = TypeAdapter(Dataclass)
     assert list(adapter.json_schema()['properties']) == ['my_field']
+
+
+def test_serialization_schema_respects_serialize_by_alias():
+    """model_json_schema(mode='serialization') must honour serialize_by_alias.
+
+    When serialize_by_alias=False (the default since v2.11), model_dump() returns
+    field names rather than aliases.  The serialization JSON schema must agree,
+    otherwise the schema contradicts the actual serialization output.
+
+    Regression test for https://github.com/pydantic/pydantic/issues/13754.
+    """
+
+    class ModelDefault(BaseModel):
+        my_field: str = Field(serialization_alias='myAlias')
+
+    # Default (serialize_by_alias=False): schema and model_dump() both use the field name.
+    schema = ModelDefault.model_json_schema(mode='serialization')
+    assert list(schema['properties']) == ['my_field']
+    assert ModelDefault(my_field='x').model_dump() == {'my_field': 'x'}
+
+    class ModelWithAlias(BaseModel):
+        model_config = ConfigDict(serialize_by_alias=True)
+        my_field: str = Field(serialization_alias='myAlias')
+
+    # When serialize_by_alias=True: both schema and model_dump() use the alias.
+    schema = ModelWithAlias.model_json_schema(mode='serialization')
+    assert list(schema['properties']) == ['myAlias']
+    assert ModelWithAlias(my_field='x').model_dump() == {'myAlias': 'x'}
 
 
 def test_validate_by_alias_false_is_scoped_to_its_own_model():

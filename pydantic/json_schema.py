@@ -1686,7 +1686,7 @@ class GenerateJsonSchema:
         elif self.mode == 'validation':
             alias = name if not self._config.validate_by_alias else field.get('validation_alias', name)
         else:
-            alias = field.get('serialization_alias', name)
+            alias = name if not self._config.serialize_by_alias else field.get('serialization_alias', name)
         if isinstance(alias, str):
             name = alias
         elif isinstance(alias, list):
