@@ -2435,7 +2435,7 @@ class ByteSize(int):
     ```
     """
 
-    byte_sizes = {
+    byte_sizes: dict[str, float] = {
         'b': 1,
         'kb': 10**3,
         'mb': 10**6,
@@ -2505,7 +2505,10 @@ class ByteSize(int):
         except KeyError:
             raise PydanticCustomError('byte_size_unit', 'could not interpret byte unit: {unit}', {'unit': unit})
 
-        return cls(int(float(scalar) * unit_mult))
+        try:
+            return cls(int(float(scalar) * unit_mult))
+        except OverflowError:
+            raise PydanticCustomError('byte_size', 'could not parse value and unit from byte string')
 
     def human_readable(self, decimal: bool = False, separator: str = '') -> str:
         """Converts a byte size to a human readable string.

@@ -1126,7 +1126,7 @@ print(User().model_dump())
 
 ### Variadic named options
 
-List fields are repeated options by default (`--param a --param b`). Wrap a collection field in `CliVariadicArg` to accept remaining values after a single option (`--param a b c`).
+Collection fields are repeated options by default (`--param a --param b`). This covers any `Sequence`, `Set`, or `Mapping` type, including subclasses such as `tuple`, `frozenset`, `deque`, and `OrderedDict`. `str`, `bytes`, and `bytearray` are sequences too, but they take a single value. Wrap a collection field in `CliVariadicArg` to accept remaining values after a single option (`--param a b c`).
 
 Repeating the option **replaces** the previous values (`--param a b --param c` becomes `['c']`), which is the opposite of `action=append`. `nargs='*'` is greedy: it consumes values until the next option flag, so a following subcommand name can be swallowed.
 
@@ -2256,7 +2256,7 @@ docker service create --name pydantic-with-secrets --secret my_secret_data pydan
 
 The default secrets implementation, `SecretsSettingsSource`, has behaviour that is not always desired or sufficient. For example, the default implementation does not support secret fields in nested submodels.
 
-`NestedSecretsSettingsSource` can be used as a drop-in replacement to `SecretsSettingsSource` to adjust the default behaviour. All differences are summarized in the table below.
+`NestedSecretsSettingsSource` can be used as a drop-in replacement to `SecretsSettingsSource` to adjust the default behaviour. It is opt-in: you have to configure it explicitly via the `settings_customise_sources` hook (see the examples below), otherwise `BaseSettings` keeps using the default `SecretsSettingsSource`. All differences are summarized in the table below.
 
 | `SecretsSettingsSource` | `NestedSecretsSettingsSource` | | --- | --- | | Secret fields must belong to a top level model. | Secrets can be fields of nested models. | | Secret files can be placed in `secrets_dir`s only. | Secret files can be placed in subdirectories for nested models. | | Secret files discovery is based on the same configuration options that are used by `EnvSettingsSource`: `case_sensitive`, `env_nested_delimiter`, `env_prefix`. | Default options are respected, but can be overridden with `secrets_case_sensitive`, `secrets_nested_delimiter`, `secrets_prefix`. | | When `secrets_dir` is missing on the file system, a warning is generated. | Use `secrets_dir_missing` options to choose whether to issue warning, raise error, or silently ignore. |
 
@@ -2444,6 +2444,10 @@ class Settings(BaseSettings):
 ```
 
 ### Configuration Options
+
+Note
+
+Apart from `secrets_dir`, which is shared with `SecretsSettingsSource`, all of the options below are read only by `NestedSecretsSettingsSource`. They have no effect unless you add that source to your settings sources via the `settings_customise_sources` hook, as shown in the examples above — the default `SecretsSettingsSource` ignores them. Setting one of them without configuring the source raises a `UserWarning` telling you it will be ignored.
 
 #### secrets_dir
 

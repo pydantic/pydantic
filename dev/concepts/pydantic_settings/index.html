@@ -6875,9 +6875,11 @@ is customised</a>:</p>
 <span class="c1">#&gt; {&#39;first_name&#39;: &#39;John&#39;, &#39;last_name&#39;: &#39;Doe&#39;}</span>
 </code></pre></div>
 <h3 id="variadic-named-options">Variadic named options<a class="headerlink" href="#variadic-named-options" title="Permanent link">&para;</a></h3>
-<p>List fields are repeated options by default (<code>--param a --param b</code>). Wrap a collection
-field in <code>CliVariadicArg</code> to accept remaining values after a single option
-(<code>--param a b c</code>).</p>
+<p>Collection fields are repeated options by default (<code>--param a --param b</code>). This covers any
+<code>Sequence</code>, <code>Set</code>, or <code>Mapping</code> type, including subclasses such as <code>tuple</code>, <code>frozenset</code>,
+<code>deque</code>, and <code>OrderedDict</code>. <code>str</code>, <code>bytes</code>, and <code>bytearray</code> are sequences too, but they take
+a single value. Wrap a collection field in <code>CliVariadicArg</code> to accept remaining values after
+a single option (<code>--param a b c</code>).</p>
 <p>Repeating the option <strong>replaces</strong> the previous values (<code>--param a b --param c</code> becomes
 <code>['c']</code>), which is the opposite of <code>action=append</code>. <code>nargs='*'</code> is greedy: it consumes
 values until the next option flag, so a following subcommand name can be swallowed.</p>
@@ -7889,6 +7891,8 @@ as the target mount point. If you want to use a different location, change <code
 <p>The default secrets implementation, <code>SecretsSettingsSource</code>, has behaviour that is not always desired or sufficient.
 For example, the default implementation does not support secret fields in nested submodels.</p>
 <p><code>NestedSecretsSettingsSource</code> can be used as a drop-in replacement to <code>SecretsSettingsSource</code> to adjust the default behaviour.
+It is opt-in: you have to configure it explicitly via the <code>settings_customise_sources</code> hook (see the examples below),
+otherwise <code>BaseSettings</code> keeps using the default <code>SecretsSettingsSource</code>.
 All differences are summarized in the table below.</p>
 <table>
 <thead>
@@ -8079,6 +8083,14 @@ Value for <code>Settings.db.user</code> can be passed in env variable <code>MY_D
         <span class="p">)</span>
 </code></pre></div></p>
 <h3 id="configuration-options">Configuration Options<a class="headerlink" href="#configuration-options" title="Permanent link">&para;</a></h3>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Apart from <code>secrets_dir</code>, which is shared with <code>SecretsSettingsSource</code>, all of the options below are read
+only by <code>NestedSecretsSettingsSource</code>. They have no effect unless you add that source to your settings
+sources via the <code>settings_customise_sources</code> hook, as shown in the examples above — the default
+<code>SecretsSettingsSource</code> ignores them. Setting one of them without configuring the source raises a
+<code>UserWarning</code> telling you it will be ignored.</p>
+</div>
 <h4 id="secrets_dir">secrets_dir<a class="headerlink" href="#secrets_dir" title="Permanent link">&para;</a></h4>
 <p>Path to secrets directory, same as <code>SecretsSettingsSource.secrets_dir</code>. If <code>list</code>, the last match wins.
 If <code>secrets_dir</code> is passed in both source constructor and model config, values are not merged (constructor wins).</p>
