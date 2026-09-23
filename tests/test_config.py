@@ -529,14 +529,17 @@ def test_config_wrapper_match():
     }
     config_dict_annotations = [(k, str(v)) for k, v in get_type_hints(ConfigDict, localns=localns).items()]
     config_dict_annotations.sort()
-    # remove config
+    # remove the config mappings themselves
     config_wrapper_annotations = [
-        (k, str(v)) for k, v in get_type_hints(ConfigWrapper, localns=localns).items() if k != 'config_dict'
+        (k, str(v))
+        for k, v in get_type_hints(ConfigWrapper, localns=localns).items()
+        if k not in ('config_dict', 'effective_config')
     ]
     config_wrapper_annotations.sort()
 
     assert config_dict_annotations == config_wrapper_annotations, (
-        'ConfigDict and ConfigWrapper must have the same annotations (except ConfigWrapper.config_dict)'
+        'ConfigDict and ConfigWrapper must have the same annotations '
+        '(except ConfigWrapper.config_dict and ConfigWrapper.effective_config)'
     )
 
 
@@ -971,10 +974,17 @@ def test_empty_config_with_annotations():
 def test_generate_schema_deprecation_warning() -> None:
     with pytest.warns(
         PydanticDeprecatedSince210, match='The `schema_generator` setting has been deprecated since v2.10.'
-    ):
+    ) as all_warnings:
 
         class Model(BaseModel):
             model_config = ConfigDict(schema_generator=GenerateSchema)
+
+            a: int
+
+    # The notice is emitted once per config, not once per core config build:
+    assert len(all_warnings) == 1
+    # The setting no longer has any effect:
+    assert Model(a=1).a == 1
 
 
 def test_populate_by_name_still_effective() -> None:
@@ -994,6 +1004,26 @@ def test_user_error_on_alias_settings() -> None:
 
         class Model(BaseModel):
             model_config = ConfigDict(validate_by_alias=False, validate_by_name=False)
+
+
+def test_user_error_on_alias_settings_is_eager() -> None:
+    # The configuration is invalid on its own, so the error doesn't wait for the
+    # core schema to be built:
+    with pytest.raises(
+        PydanticUserError, match='At least one of `validate_by_alias` or `validate_by_name` must be set to True.'
+    ):
+
+        class Deferred(BaseModel):
+            model_config = ConfigDict(validate_by_alias=False, validate_by_name=False, defer_build=True)
+
+    with pytest.raises(
+        PydanticUserError, match='At least one of `validate_by_alias` or `validate_by_name` must be set to True.'
+    ):
+
+        class Unresolved(BaseModel):
+            model_config = ConfigDict(validate_by_alias=False, validate_by_name=False)
+
+            a: 'Unknown'  # noqa: F821
 
 
 def test_dynamic_default() -> None:

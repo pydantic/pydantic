@@ -62,9 +62,23 @@ _config_dict_to_core_config_key: dict[str, str] = {
 class ConfigWrapper:
     """Internal wrapper for Config which exposes ConfigDict items as attributes."""
 
-    __slots__ = ('config_dict',)
+    __slots__ = ('config_dict', 'effective_config')
 
     config_dict: ConfigDict
+    """The configuration as declared by the user.
+
+    This is the mapping exposed as the `model_config` attribute of models (and the
+    `__pydantic_config__` attribute of dataclasses), and the one merged with the
+    configuration of the bases when subclassing. As such, it must never be mutated.
+    """
+
+    effective_config: ConfigDict
+    """The configuration actually in effect, with the deprecated settings applied.
+
+    This is what every consumer of the configuration should read (both the attribute
+    access on this wrapper and `core_config()` do), as `config_dict` alone does not
+    account for the deprecated settings (see `_build_effective_config()`).
+    """
 
     # all annotations are copied directly from ConfigDict, and should be kept up to date, a test will fail if they
     # stop matching
@@ -128,6 +142,7 @@ class ConfigWrapper:
             self.config_dict = prepare_config(config)
         else:
             self.config_dict = cast(ConfigDict, config)
+        self.effective_config = _build_effective_config(self.config_dict)
 
     @classmethod
     def for_model(
@@ -178,7 +193,7 @@ class ConfigWrapper:
 
         def __getattr__(self, name: str) -> Any:
             try:
-                return self.config_dict[name]
+                return self.effective_config[name]
             except KeyError:
                 try:
                     return config_defaults[name]
@@ -196,39 +211,11 @@ class ConfigWrapper:
         Returns:
             A `CoreConfig` object created from config.
         """
-        config = self.config_dict
+        config = self.effective_config
 
         if not config:
             # Fast path for the common case of an empty (default) config:
             return core_schema.CoreConfig(title=title) if title else core_schema.CoreConfig()
-
-        if config.get('schema_generator') is not None:
-            warnings.warn(
-                'The `schema_generator` setting has been deprecated since v2.10. This setting no longer has any effect.',
-                PydanticDeprecatedSince210,
-                stacklevel=2,
-            )
-
-        # Avoid mutating the model's config:
-        config = self.config_dict.copy()
-
-        if (populate_by_name := config.get('populate_by_name')) is not None:
-            # We include this patch for backwards compatibility purposes, but this config setting will be deprecated in v3.0, and likely removed in v4.0.
-            # Thus, the above warning and this patch can be removed then as well.
-            if config.get('validate_by_name') is None:
-                config['validate_by_alias'] = True
-                config['validate_by_name'] = populate_by_name
-
-        # We dynamically patch validate_by_name to be True if validate_by_alias is set to False
-        # and validate_by_name is not explicitly set.
-        if config.get('validate_by_alias') is False and config.get('validate_by_name') is None:
-            config['validate_by_name'] = True
-
-        if (not config.get('validate_by_alias', True)) and (not config.get('validate_by_name', False)):
-            raise PydanticUserError(
-                'At least one of `validate_by_alias` or `validate_by_name` must be set to True.',
-                code='validate-by-alias-and-name-false',
-            )
 
         core_config_values: dict[str, Any] = {}
         for k, v in config.items():
@@ -324,6 +311,27 @@ config_defaults = ConfigDict(
 )
 
 
+def _build_effective_config(config: ConfigDict) -> ConfigDict:
+    """Build the configuration in effect from the configuration as declared.
+
+    Raises:
+        PydanticUserError: If validation can happen by neither alias nor name.
+    """
+    if config.get('validate_by_name') is None:
+        if (populate_by_name := config.get('populate_by_name')) is not None:
+            config = cast(ConfigDict, {**config, 'validate_by_alias': True, 'validate_by_name': populate_by_name})
+        elif config.get('validate_by_alias') is False:
+            config = cast(ConfigDict, {**config, 'validate_by_name': True})
+
+    if (not config.get('validate_by_alias', True)) and (not config.get('validate_by_name', False)):
+        raise PydanticUserError(
+            'At least one of `validate_by_alias` or `validate_by_name` must be set to True.',
+            code='validate-by-alias-and-name-false',
+        )
+
+    return config
+
+
 def prepare_config(config: ConfigDict | dict[str, Any] | type[Any] | None) -> ConfigDict:
     """Create a `ConfigDict` instance from an existing dict, a class (e.g. old class-based config) or None.
 
@@ -339,6 +347,10 @@ def prepare_config(config: ConfigDict | dict[str, Any] | type[Any] | None) -> Co
     if not isinstance(config, dict):
         warnings.warn(DEPRECATION_MESSAGE, PydanticDeprecatedSince20, stacklevel=4)
         config = {k: getattr(config, k) for k in dir(config) if not k.startswith('__')}
+    else:
+        # Copy, so that the `ConfigWrapper` owns its configuration and can never
+        # mutate the mapping provided by the user:
+        config = config.copy()
 
     config_dict = cast(ConfigDict, config)
     check_deprecated(config_dict)
@@ -380,6 +392,12 @@ def check_deprecated(config_dict: ConfigDict) -> None:
     Args:
         config_dict: The input config.
     """
+    if config_dict.get('schema_generator') is not None:
+        warnings.warn(
+            'The `schema_generator` setting has been deprecated since v2.10. This setting no longer has any effect.',
+            PydanticDeprecatedSince210,
+        )
+
     deprecated_removed_keys = V2_REMOVED_KEYS & config_dict.keys()
     deprecated_renamed_keys = V2_RENAMED_KEYS.keys() & config_dict.keys()
     if deprecated_removed_keys or deprecated_renamed_keys:
