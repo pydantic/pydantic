@@ -59,6 +59,11 @@ print(user.id)
 #> 123
 ```
 
+If `friends` is omitted, Pydantic deep-copies this unhashable default for each
+`User` instance, so different instances do not share the same list. See the
+[mutable default values documentation](https://pydantic.dev/docs/validation/latest/concepts/fields/#mutable-default-values)
+for details.
+
 ## Contributing
 
 For guidance on setting up a development environment and how to make a
