@@ -13,6 +13,7 @@ from pydantic import (
     ValidationError,
     create_model,
     field_validator,
+    model_validator,
     validator,
 )
 
@@ -411,3 +412,22 @@ def test_create_model_qualname() -> None:
     FooModel = create_model('FooModel', __qualname__='test_create_model_qualname.FooModel')
     assert FooModel.__name__ == 'FooModel'
     assert FooModel.__qualname__ == 'test_create_model_qualname.FooModel'
+
+
+def test_create_model_model_validator_in_validators() -> None:
+    """model_validator() returns PydanticDescriptorProxy, not Callable.
+
+    Passing it via __validators__ must not produce a type-checker error.
+    Regression test for https://github.com/pydantic/pydantic/issues/13834.
+    """
+
+    @model_validator(mode='after')
+    def check_positive(self: 'FooModel') -> 'FooModel':
+        if self.value <= 0:
+            raise ValueError('value must be positive')
+        return self
+
+    FooModel = create_model('FooModel', value=(int, ...), __validators__={'check_positive': check_positive})
+    assert FooModel(value=1).value == 1
+    with pytest.raises(ValidationError):
+        FooModel(value=-1)
