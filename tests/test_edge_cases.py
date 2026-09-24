@@ -3218,3 +3218,53 @@ def test_get_pydantic_core_schema_instance() -> None:
 
     ta = TypeAdapter(SchemaProvider())
     assert ta.validate_python('1') == 1
+
+
+def test_model_type_stack_popped_after_schema_generation_error() -> None:
+    """https://github.com/pydantic/pydantic/issues/13857"""
+
+    class Unsupported:
+        pass
+
+    class Bad(TypedDict):
+        x: Unsupported
+
+    class Fallback:
+        @classmethod
+        def __get_pydantic_core_schema__(cls, source: Any, handler: GetCoreSchemaHandler) -> CoreSchema:
+            try:
+                return handler.generate_schema(Bad)
+            except PydanticSchemaGenerationError:
+                return core_schema.any_schema()
+
+    class Model(BaseModel):
+        a: Fallback
+        child: Self | None = None
+
+    m = Model.model_validate({'a': 1, 'child': {'a': 2}})
+    assert isinstance(m.child, Model)
+
+
+def test_field_name_stack_popped_after_schema_generation_error() -> None:
+    """https://github.com/pydantic/pydantic/issues/13857"""
+
+    class Unsupported:
+        pass
+
+    class Bad(TypedDict):
+        x: Unsupported
+
+    field_names: list[str | None] = []
+
+    class Fallback:
+        @classmethod
+        def __get_pydantic_core_schema__(cls, source: Any, handler: GetCoreSchemaHandler) -> CoreSchema:
+            try:
+                handler.generate_schema(Bad)
+            except PydanticSchemaGenerationError:
+                pass
+            field_names.append(handler.field_name)
+            return core_schema.any_schema()
+
+    TypeAdapter(Fallback)
+    assert field_names == [None]
