@@ -2,7 +2,7 @@ import copy
 from typing import Annotated, Any, Final, Generic, TypeVar
 
 import pytest
-from annotated_types import Gt
+from annotated_types import Gt, MultipleOf
 from pydantic_core import PydanticUndefined
 from typing_extensions import TypeAliasType
 
@@ -473,3 +473,19 @@ def test_default_factory_without_validated_data_unsupported() -> None:
 )
 def test_privateattr_repr(private_attr: ModelPrivateAttr, result: str) -> None:
     assert repr(private_attr) == result
+
+
+@pytest.mark.parametrize('multiple_of', [0, 0.0, -1, -5.5])
+def test_field_multiple_of_zero_or_negative(multiple_of: Any) -> None:
+    with pytest.raises(PydanticUserError, match='`multiple_of` must be greater than 0'):
+        Field(multiple_of=multiple_of)
+
+    with pytest.raises(PydanticUserError, match='`multiple_of` must be greater than 0'):
+
+        class M(BaseModel):
+            n: int = Field(multiple_of=multiple_of)
+
+    with pytest.raises(PydanticUserError, match='`multiple_of` must be greater than 0'):
+
+        class M2(BaseModel):
+            n: Annotated[int, MultipleOf(multiple_of)]

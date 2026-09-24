@@ -427,6 +427,11 @@ class FieldInfo(_repr.Representation):
         if le is not _Unset:
             metadata_kwargs['le'] = le
         if multiple_of is not _Unset:
+            try:
+                if multiple_of <= 0:
+                    raise PydanticUserError('`multiple_of` must be greater than 0', code=None)
+            except TypeError:
+                pass
             metadata_kwargs['multiple_of'] = multiple_of
         if min_length is not _Unset:
             metadata_kwargs['min_length'] = min_length

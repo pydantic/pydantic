@@ -205,6 +205,15 @@ def apply_known_metadata(annotation: Any, schema: CoreSchema) -> CoreSchema | No
             raise ValueError(f'Unknown constraint {constraint}')
         allowed_schemas = CONSTRAINTS_TO_ALLOWED_SCHEMAS[constraint]
 
+        if constraint == 'multiple_of':
+            try:
+                if value <= 0:
+                    from ..errors import PydanticUserError
+
+                    raise PydanticUserError('`multiple_of` must be greater than 0', code=None)
+            except TypeError:
+                pass
+
         # if it becomes necessary to handle more than one constraint
         # in this recursive case with function-after or function-wrap, we should refactor
         # this is a bit challenging because we sometimes want to apply constraints to the inner schema,

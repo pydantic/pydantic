@@ -557,6 +557,13 @@ def _apply_constraint(  # noqa: C901
             s = _check_func(check_len, predicate_err, s)
     elif isinstance(constraint, annotated_types.MultipleOf):
         multiple_of = constraint.multiple_of
+        try:
+            if multiple_of <= 0:
+                from ..errors import PydanticUserError
+
+                raise PydanticUserError('`multiple_of` must be greater than 0', code=None)
+        except TypeError:
+            pass
         if s and s['type'] in {'int', 'float', 'decimal'}:
             s = s.copy()
             s['multiple_of'] = multiple_of  # pyright: ignore[reportGeneralTypeIssues]
