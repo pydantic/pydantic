@@ -149,7 +149,7 @@ While the namespace fetching logic is trying to be as accurate as possible, we s
 
     ```python {test="skip" lint="skip"}
     def func():
-        A = int
+        A = list[int]
 
         class Model(BaseModel):
             f: 'A | Forward'
