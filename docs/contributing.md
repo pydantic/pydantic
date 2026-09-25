@@ -110,6 +110,10 @@ make
 # You can run `make help` to see more options.
 ```
 
+The `pydantic-core` test suite is located in `tests/pydantic-core`, as a symlink. For it to work, you may need to
+enable the [`core.symlinks`](https://git-scm.com/docs/git-config#Documentation/git-config.txt-coresymlinks) Git
+option.
+
 ### Build documentation
 
 If you've made any changes to the documentation (including changes to function signatures, class definitions, or docstrings that will appear in the API documentation), make sure it builds successfully.
