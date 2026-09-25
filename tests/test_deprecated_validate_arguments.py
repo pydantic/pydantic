@@ -314,6 +314,18 @@ def test_config_title():
     assert foo.model.model_json_schema()['title'] == 'Testing'
 
 
+def test_config_not_mutated():
+    config = dict(title='Testing')
+
+    @validate_arguments(config=config)
+    def foo(a: int):
+        return a
+
+    assert foo(1) == 1
+    # `extra='forbid'` is set internally, but shouldn't leak into the provided config:
+    assert config == {'title': 'Testing'}
+
+
 def test_config_title_cls():
     class Config:
         title = 'Testing'
