@@ -22,6 +22,7 @@ pub struct TimeDeltaValidator {
 
 #[derive(Debug, Clone)]
 struct TimedeltaConstraints {
+    multiple_of: Option<Duration>,
     le: Option<Duration>,
     lt: Option<Duration>,
     ge: Option<Duration>,
@@ -40,6 +41,10 @@ fn get_constraint(schema: &Bound<'_, PyDict>, key: &Bound<'_, PyString>) -> PyRe
     }
 }
 
+fn total_microseconds(duration: &Duration) -> i128 {
+    i128::from(duration.signed_total_seconds()) * 1_000_000 + i128::from(duration.signed_microseconds())
+}
+
 impl BuildValidator for TimeDeltaValidator {
     const EXPECTED_TYPE: &'static str = "timedelta";
 
@@ -49,7 +54,14 @@ impl BuildValidator for TimeDeltaValidator {
         _definitions: &mut DefinitionsBuilder<Arc<CombinedValidator>>,
     ) -> PyResult<Arc<CombinedValidator>> {
         let py = schema.py();
+        let multiple_of = get_constraint(schema, intern!(py, "multiple_of"))?;
+        if let Some(ref m) = multiple_of
+            && total_microseconds(m) <= 0
+        {
+            return Err(PyValueError::new_err("'multiple_of' must be greater than 0"));
+        }
         let constraints = TimedeltaConstraints {
+            multiple_of,
             le: get_constraint(schema, intern!(py, "le"))?,
             lt: get_constraint(schema, intern!(py, "lt"))?,
             ge: get_constraint(schema, intern!(py, "ge"))?,
@@ -58,7 +70,8 @@ impl BuildValidator for TimeDeltaValidator {
 
         Ok(CombinedValidator::Timedelta(Self {
             strict: is_strict(schema, config)?,
-            constraints: (constraints.le.is_some()
+            constraints: (constraints.multiple_of.is_some()
+                || constraints.le.is_some()
                 || constraints.lt.is_some()
                 || constraints.ge.is_some()
                 || constraints.gt.is_some())
@@ -84,6 +97,18 @@ impl Validator for TimeDeltaValidator {
         let py_timedelta = timedelta.clone().into_pyobject(py)?;
         if let Some(constraints) = &self.constraints {
             let raw_timedelta = timedelta.to_duration()?;
+
+            if let Some(multiple_of) = &constraints.multiple_of
+                && total_microseconds(&raw_timedelta) % total_microseconds(multiple_of) != 0
+            {
+                return Err(ValError::new(
+                    ErrorType::MultipleOf {
+                        context: None,
+                        multiple_of: pydelta_to_human_readable(duration_as_pytimedelta(py, multiple_of)?).into(),
+                    },
+                    py_timedelta.as_any(),
+                ));
+            }
 
             macro_rules! check_constraint {
                 ($constraint:ident, $error:ident) => {

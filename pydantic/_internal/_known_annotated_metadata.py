@@ -49,6 +49,7 @@ BOOL_CONSTRAINTS = STRICT
 UUID_CONSTRAINTS = STRICT
 
 DATE_TIME_CONSTRAINTS = {*INEQUALITY, *STRICT}
+TIMEDELTA_CONSTRAINTS = {*NUMERIC_CONSTRAINTS, *STRICT}
 LAX_OR_STRICT_CONSTRAINTS = STRICT
 ENUM_CONSTRAINTS = STRICT
 COMPLEX_CONSTRAINTS = STRICT
@@ -76,7 +77,8 @@ constraint_schema_pairings: list[tuple[set[str], tuple[str, ...]]] = [
     (GENERATOR_CONSTRAINTS, ('generator',)),
     (FLOAT_CONSTRAINTS, ('float',)),
     (INT_CONSTRAINTS, ('int',)),
-    (DATE_TIME_CONSTRAINTS, ('date', 'time', 'datetime', 'timedelta')),
+    (DATE_TIME_CONSTRAINTS, ('date', 'time', 'datetime')),
+    (TIMEDELTA_CONSTRAINTS, ('timedelta',)),
     (STRICT, ('typed-dict', 'model')),
     (UNION_CONSTRAINTS, ('union',)),
     (URL_CONSTRAINTS, ('url', 'multi-host-url')),

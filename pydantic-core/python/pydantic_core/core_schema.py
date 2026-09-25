@@ -1290,6 +1290,7 @@ def datetime_schema(
 class TimedeltaSchema(TypedDict, total=False):
     type: Required[Literal['timedelta']]
     strict: bool
+    multiple_of: timedelta
     le: timedelta
     ge: timedelta
     lt: timedelta
@@ -1303,6 +1304,7 @@ class TimedeltaSchema(TypedDict, total=False):
 def timedelta_schema(
     *,
     strict: bool | None = None,
+    multiple_of: timedelta | None = None,
     le: timedelta | None = None,
     ge: timedelta | None = None,
     lt: timedelta | None = None,
@@ -1326,6 +1328,7 @@ def timedelta_schema(
 
     Args:
         strict: Whether the value should be a timedelta or a value that can be converted to a timedelta
+        multiple_of: The value must be a multiple of this timedelta
         le: The value must be less than or equal to this timedelta
         ge: The value must be greater than or equal to this timedelta
         lt: The value must be strictly less than this timedelta
@@ -1338,6 +1341,7 @@ def timedelta_schema(
     return _dict_not_none(
         type='timedelta',
         strict=strict,
+        multiple_of=multiple_of,
         le=le,
         ge=ge,
         lt=lt,
