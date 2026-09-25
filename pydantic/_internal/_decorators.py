@@ -570,7 +570,7 @@ def _decorator_infos_for_class(
             else:
                 from ..fields import ComputedFieldInfo
 
-                isinstance(var_value, ComputedFieldInfo)
+                assert isinstance(info, ComputedFieldInfo)
                 res.computed_fields[var_name] = Decorator.build(
                     typ, cls_ref=cls_ref(), cls_var_name=var_name, shim=None, info=info
                 )
