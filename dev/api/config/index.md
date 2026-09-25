@@ -944,7 +944,7 @@ schema_generator: type[GenerateSchema] | None
 
 The `GenerateSchema` class to use during core schema generation.
 
-Deprecated in v2.10: The `GenerateSchema` class is private and highly subject to change.
+Deprecated in v2.10: The `GenerateSchema` class is private and highly subject to change. This setting no longer has any effect.
 
 ### json_schema_serialization_defaults_required
 

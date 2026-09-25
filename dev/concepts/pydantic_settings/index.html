@@ -1438,6 +1438,28 @@ to help you monitor and understand your
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
+  <a href="#unknown-environment-variables" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Unknown environment variables
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#environment-variable-prefix-targets" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Environment variable prefix targets
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#case-sensitivity" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -4893,6 +4915,28 @@ to help you monitor and understand your
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
+  <a href="#unknown-environment-variables" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Unknown environment variables
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#environment-variable-prefix-targets" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Environment variable prefix targets
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#case-sensitivity" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -6051,6 +6095,70 @@ and lets you opt each nesting level into both spellings independently:</p>
 <span class="k">del</span> <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">[</span><span class="s1">&#39;SUB_VAR1&#39;</span><span class="p">]</span>
 </code></pre></div>
 </div>
+<h3 id="unknown-environment-variables">Unknown environment variables<a class="headerlink" href="#unknown-environment-variables" title="Permanent link">&para;</a></h3>
+<p>Environment variables that do not match a settings field or its alias are ignored, even if they start
+with <code>env_prefix</code> and <code>extra='forbid'</code> is set. The <code>extra</code> setting validates inputs passed to the model;
+it does not check every name in <code>os.environ</code>. A misspelled field name can therefore leave a default
+value in use without raising an error:</p>
+<div class="language-py highlight"><pre><span></span><code><span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">pydantic_settings</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseSettings</span><span class="p">,</span> <span class="n">SettingsConfigDict</span>
+
+
+<span class="k">class</span><span class="w"> </span><span class="nc">Settings</span><span class="p">(</span><span class="n">BaseSettings</span><span class="p">):</span>
+    <span class="n">model_config</span> <span class="o">=</span> <span class="n">SettingsConfigDict</span><span class="p">(</span><span class="n">env_prefix</span><span class="o">=</span><span class="s1">&#39;APP_&#39;</span><span class="p">,</span> <span class="n">extra</span><span class="o">=</span><span class="s1">&#39;forbid&#39;</span><span class="p">)</span>
+    <span class="n">port</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">5432</span>
+
+
+<span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">[</span><span class="s1">&#39;APP_PRT&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;6543&#39;</span>  <span class="c1"># (1)!</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">Settings</span><span class="p">()</span><span class="o">.</span><span class="n">port</span><span class="p">)</span>
+<span class="c1">#&gt; 5432</span>
+<span class="k">del</span> <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">[</span><span class="s1">&#39;APP_PRT&#39;</span><span class="p">]</span>
+</code></pre></div>
+<ol>
+<li>Misspelled, so it matches no field and is dropped before validation runs.</li>
+</ol>
+<p>The same applies to nested models: an incorrect <code>env_nested_delimiter</code> keeps the variable from matching
+a field. Once a variable <em>does</em> match a known field's nested prefix, however, its contents are passed to
+that field for validation, so an unknown key inside a nested model can raise a <code>ValidationError</code> if that
+nested model has <code>extra='forbid'</code>:</p>
+<div class="language-py highlight"><pre><span></span><code><span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">pydantic</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ConfigDict</span><span class="p">,</span> <span class="n">ValidationError</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">pydantic_settings</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseSettings</span><span class="p">,</span> <span class="n">SettingsConfigDict</span>
+
+
+<span class="k">class</span><span class="w"> </span><span class="nc">Database</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="n">model_config</span> <span class="o">=</span> <span class="n">ConfigDict</span><span class="p">(</span><span class="n">extra</span><span class="o">=</span><span class="s1">&#39;forbid&#39;</span><span class="p">)</span>
+    <span class="n">port</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">5432</span>
+
+
+<span class="k">class</span><span class="w"> </span><span class="nc">Settings</span><span class="p">(</span><span class="n">BaseSettings</span><span class="p">):</span>
+    <span class="n">model_config</span> <span class="o">=</span> <span class="n">SettingsConfigDict</span><span class="p">(</span>
+        <span class="n">env_prefix</span><span class="o">=</span><span class="s1">&#39;APP_&#39;</span><span class="p">,</span> <span class="n">env_nested_delimiter</span><span class="o">=</span><span class="s1">&#39;__&#39;</span><span class="p">,</span> <span class="n">extra</span><span class="o">=</span><span class="s1">&#39;forbid&#39;</span>
+    <span class="p">)</span>
+    <span class="n">database</span><span class="p">:</span> <span class="n">Database</span> <span class="o">=</span> <span class="n">Database</span><span class="p">()</span>
+
+
+<span class="c1"># A single underscore does not match the database field&#39;s nested prefix.</span>
+<span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">[</span><span class="s1">&#39;APP_DATABASE_PORT&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;6543&#39;</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">Settings</span><span class="p">()</span><span class="o">.</span><span class="n">database</span><span class="o">.</span><span class="n">port</span><span class="p">)</span>
+<span class="c1">#&gt; 5432</span>
+<span class="k">del</span> <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">[</span><span class="s1">&#39;APP_DATABASE_PORT&#39;</span><span class="p">]</span>
+
+<span class="c1"># The nested prefix matches, so the unknown key reaches Database&#39;s validation.</span>
+<span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">[</span><span class="s1">&#39;APP_DATABASE__PRT&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;6543&#39;</span>
+<span class="k">try</span><span class="p">:</span>
+    <span class="n">Settings</span><span class="p">()</span>
+<span class="k">except</span> <span class="n">ValidationError</span> <span class="k">as</span> <span class="n">exc</span><span class="p">:</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">exc</span><span class="o">.</span><span class="n">errors</span><span class="p">()[</span><span class="mi">0</span><span class="p">][</span><span class="s1">&#39;type&#39;</span><span class="p">])</span>
+    <span class="c1">#&gt; extra_forbidden</span>
+<span class="k">del</span> <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">[</span><span class="s1">&#39;APP_DATABASE__PRT&#39;</span><span class="p">]</span>
+</code></pre></div>
+<p>For extra variables loaded from <code>.env</code> files and the effect of <code>dotenv_filtering</code>, see
+<a href="#dotenv-env-support">Dotenv (.env) support</a>.</p>
+<h3 id="environment-variable-prefix-targets">Environment variable prefix targets<a class="headerlink" href="#environment-variable-prefix-targets" title="Permanent link">&para;</a></h3>
 <p>To apply <code>env_prefix</code> not only to variable names but also to aliases, set <code>env_prefix_target='all'</code>.
 To apply <code>env_prefix</code> only to aliases and not to variable names, set <code>env_prefix_target='alias'</code>.
 To apply <code>env_prefix</code> only to variable names (the default behavior), set <code>env_prefix_target='variable'</code>.</p>
@@ -6248,8 +6356,9 @@ collects values for sub model fields separately, and you may get unexpected resu
 </div>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
-<p>The <code>env_nested_delimiter</code> option applies only to variables that point to declared fields.
-If a variable points to an unknown field no conversion will take place.</p>
+<p>The <code>env_nested_delimiter</code> option applies to variables that match a declared top-level field's
+name or alias. Unknown keys within that field's nested value are still subject to the nested
+model's validation. See <a href="#unknown-environment-variables">Unknown environment variables</a>.</p>
 </div>
 <p>As an example, given the following environment variables:
 <div class="language-bash highlight"><pre><span></span><code><span class="c1"># your environment</span>

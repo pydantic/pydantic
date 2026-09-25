@@ -241,6 +241,73 @@ del os.environ['SUB_VAR1']
 
 ```
 
+### Unknown environment variables
+
+Environment variables that do not match a settings field or its alias are ignored, even if they start with `env_prefix` and `extra='forbid'` is set. The `extra` setting validates inputs passed to the model; it does not check every name in `os.environ`. A misspelled field name can therefore leave a default value in use without raising an error:
+
+```py
+import os
+
+from pydantic_settings import BaseSettings, SettingsConfigDict
+
+
+class Settings(BaseSettings):
+    model_config = SettingsConfigDict(env_prefix='APP_', extra='forbid')
+    port: int = 5432
+
+
+os.environ['APP_PRT'] = '6543'  # (1)!
+print(Settings().port)
+#> 5432
+del os.environ['APP_PRT']
+
+```
+
+1. Misspelled, so it matches no field and is dropped before validation runs.
+
+The same applies to nested models: an incorrect `env_nested_delimiter` keeps the variable from matching a field. Once a variable *does* match a known field's nested prefix, however, its contents are passed to that field for validation, so an unknown key inside a nested model can raise a `ValidationError` if that nested model has `extra='forbid'`:
+
+```py
+import os
+
+from pydantic import BaseModel, ConfigDict, ValidationError
+
+from pydantic_settings import BaseSettings, SettingsConfigDict
+
+
+class Database(BaseModel):
+    model_config = ConfigDict(extra='forbid')
+    port: int = 5432
+
+
+class Settings(BaseSettings):
+    model_config = SettingsConfigDict(
+        env_prefix='APP_', env_nested_delimiter='__', extra='forbid'
+    )
+    database: Database = Database()
+
+
+# A single underscore does not match the database field's nested prefix.
+os.environ['APP_DATABASE_PORT'] = '6543'
+print(Settings().database.port)
+#> 5432
+del os.environ['APP_DATABASE_PORT']
+
+# The nested prefix matches, so the unknown key reaches Database's validation.
+os.environ['APP_DATABASE__PRT'] = '6543'
+try:
+    Settings()
+except ValidationError as exc:
+    print(exc.errors()[0]['type'])
+    #> extra_forbidden
+del os.environ['APP_DATABASE__PRT']
+
+```
+
+For extra variables loaded from `.env` files and the effect of `dotenv_filtering`, see [Dotenv (.env) support](#dotenv-env-support).
+
+### Environment variable prefix targets
+
 To apply `env_prefix` not only to variable names but also to aliases, set `env_prefix_target='all'`. To apply `env_prefix` only to aliases and not to variable names, set `env_prefix_target='alias'`. To apply `env_prefix` only to variable names (the default behavior), set `env_prefix_target='variable'`.
 
 ```py
@@ -439,7 +506,7 @@ Sub model has to inherit from `pydantic.BaseModel`, Otherwise `pydantic-settings
 
 Note
 
-The `env_nested_delimiter` option applies only to variables that point to declared fields. If a variable points to an unknown field no conversion will take place.
+The `env_nested_delimiter` option applies to variables that match a declared top-level field's name or alias. Unknown keys within that field's nested value are still subject to the nested model's validation. See [Unknown environment variables](#unknown-environment-variables).
 
 As an example, given the following environment variables:
 
