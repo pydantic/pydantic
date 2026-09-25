@@ -6,6 +6,7 @@ from typing import Annotated
 import annotated_types
 import pytest
 from dirty_equals import HasRepr, IsFloatNan
+from pydantic_core import SchemaError
 
 from pydantic import (
     AllowInfNan,
@@ -239,6 +240,14 @@ def test_number_multiple_of_float_invalid(value):
             'ctx': {'multiple_of': 0.1},
         }
     ]
+
+
+@pytest.mark.parametrize('multiple_of', [0.0, -0.0, -0.1, math.nan])
+def test_number_multiple_of_float_not_positive(multiple_of: float) -> None:
+    """https://github.com/pydantic/pydantic/issues/13860"""
+
+    with pytest.raises(SchemaError, match="'multiple_of' must be greater than 0"):
+        TypeAdapter(Annotated[float, annotated_types.MultipleOf(multiple_of)])
 
 
 @pytest.mark.parametrize(

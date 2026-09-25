@@ -4,6 +4,7 @@ from typing import Annotated
 
 import annotated_types
 import pytest
+from pydantic_core import SchemaError
 
 from pydantic import (
     BaseModel,
@@ -281,6 +282,14 @@ def test_number_multiple_of_int_invalid(value):
             'ctx': {'multiple_of': 5},
         }
     ]
+
+
+@pytest.mark.parametrize('multiple_of', [0, -5, -(2**64)])
+def test_number_multiple_of_int_not_positive(multiple_of: int) -> None:
+    """https://github.com/pydantic/pydantic/issues/13860"""
+
+    with pytest.raises(SchemaError, match="'multiple_of' must be greater than 0"):
+        TypeAdapter(Annotated[int, annotated_types.MultipleOf(multiple_of)])
 
 
 # A number well outside of i64 range
