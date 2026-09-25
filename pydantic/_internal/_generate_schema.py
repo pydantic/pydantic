@@ -2910,8 +2910,10 @@ class _FieldNameStack:
     @contextmanager
     def push(self, field_name: str) -> Iterator[None]:
         self._stack.append(field_name)
-        yield
-        self._stack.pop()
+        try:
+            yield
+        finally:
+            self._stack.pop()
 
     def get(self) -> str | None:
         if self._stack:
@@ -2929,8 +2931,10 @@ class _ModelTypeStack:
     @contextmanager
     def push(self, type_obj: type) -> Iterator[None]:
         self._stack.append(type_obj)
-        yield
-        self._stack.pop()
+        try:
+            yield
+        finally:
+            self._stack.pop()
 
     def get(self) -> type | None:
         if self._stack:
