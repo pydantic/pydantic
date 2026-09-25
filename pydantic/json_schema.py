@@ -503,11 +503,12 @@ class GenerateJsonSchema:
                 json_schema = self.ser_schema(ser_schema)
 
                 # It might be that the 'serialization'` is skipped depending on `when_used`.
-                # This is only relevant for `nullable` schemas though, so we special case here.
+                # This is only relevant for `nullable` schemas though (possibly wrapped, e.g. when
+                # using a field serializer on a field with a default value), so we special case here.
                 if (
                     json_schema is not None
                     and ser_schema.get('when_used') in ('unless-none', 'json-unless-none')
-                    and schema_or_field['type'] == 'nullable'
+                    and _is_nullable_schema(schema_or_field)
                 ):
                     json_schema = self.get_union_of_schemas([{'type': 'null'}, json_schema])
             if json_schema is None:
@@ -3243,3 +3244,10 @@ def _get_ser_schema_for_default_value(schema: CoreSchema) -> core_schema.PlainSe
         return cast('core_schema.PlainSerializerFunctionSerSchema', ser_schema)
     if _core_utils.is_function_with_inner_schema(schema):
         return _get_ser_schema_for_default_value(schema['schema'])
+
+
+def _is_nullable_schema(schema: CoreSchemaOrField) -> bool:
+    """Whether the schema is a `'nullable'` schema, possibly wrapped in default and validator function schemas."""
+    if schema['type'] == 'default' or _core_utils.is_function_with_inner_schema(schema):
+        return _is_nullable_schema(schema['schema'])
+    return schema['type'] == 'nullable'
