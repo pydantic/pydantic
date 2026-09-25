@@ -669,3 +669,93 @@ def test_model_construct_with_alias_choices_and_path() -> None:
     assert MyModel.model_construct(a='a_value').a == 'a_value'
     assert MyModel.model_construct(aaa='a_value').a == 'a_value'
     assert MyModel.model_construct(AAA={'aaa': 'a_value'}).a == 'a_value'
+
+
+class _AliasPathAllowExtraModel(BaseModel):
+    model_config = ConfigDict(extra='allow')
+    x: int
+    a: int = Field(validation_alias=AliasPath('a', 'b'))
+
+
+class _MultiSegmentAliasPathModel(BaseModel):
+    model_config = ConfigDict(extra='allow')
+    v: str = Field(validation_alias=AliasPath('a', 'b', 'c'))
+
+
+class _SequenceAliasPathModel(BaseModel):
+    model_config = ConfigDict(extra='allow')
+    item: str = Field(validation_alias=AliasPath('items', 1))
+
+
+class _AliasChoicesPathModel(BaseModel):
+    model_config = ConfigDict(extra='allow')
+    field: int = Field(validation_alias=AliasChoices('direct', AliasPath('path', 'sub')))
+
+
+class _SharedRootAliasPathModel(BaseModel):
+    model_config = ConfigDict(extra='allow')
+    f1: int = Field(validation_alias=AliasPath('shared', 'x'))
+    f2: int = Field(validation_alias=AliasPath('shared', 'y'))
+
+
+class _UnmatchedAliasPathModel(BaseModel):
+    model_config = ConfigDict(extra='allow')
+    f: int = Field(default=0, validation_alias=AliasPath('nested', 'key'))
+
+
+@pytest.mark.parametrize(
+    'model_cls, data, expected_fields, expected_extra',
+    [
+        (
+            _AliasPathAllowExtraModel,
+            {'x': 1, 'a': {'b': 10}, 'extra_k': 99},
+            {'x': 1, 'a': 10},
+            {'extra_k': 99},
+        ),
+        (
+            _MultiSegmentAliasPathModel,
+            {'a': {'b': {'c': 'nested_val'}}, 'extra_k': 42},
+            {'v': 'nested_val'},
+            {'extra_k': 42},
+        ),
+        (
+            _SequenceAliasPathModel,
+            {'items': ['first', 'second'], 'other': 'keep'},
+            {'item': 'second'},
+            {'other': 'keep'},
+        ),
+        (
+            _AliasChoicesPathModel,
+            {'path': {'sub': 77}, 'extra_k': 1},
+            {'field': 77},
+            {'extra_k': 1},
+        ),
+        (
+            _SharedRootAliasPathModel,
+            {'shared': {'x': 1, 'y': 2}, 'extra_k': 3},
+            {'f1': 1, 'f2': 2},
+            {'extra_k': 3},
+        ),
+        (
+            _UnmatchedAliasPathModel,
+            {'nested': {'unrelated': 123}, 'extra_k': 456},
+            {'f': 0},
+            {'nested': {'unrelated': 123}, 'extra_k': 456},
+        ),
+    ],
+)
+def test_model_construct_alias_path_extra_allow(
+    model_cls: type[BaseModel],
+    data: dict[str, Any],
+    expected_fields: dict[str, Any],
+    expected_extra: dict[str, Any],
+) -> None:
+    data_copy = {k: v for k, v in data.items()}
+    c = model_cls.model_construct(**data)
+    assert data == data_copy, 'Caller input dictionary must not be mutated'
+    for k, v in expected_fields.items():
+        assert getattr(c, k) == v
+    assert c.model_extra == expected_extra
+
+    m = model_cls.model_validate(data)
+    assert c.model_extra == m.model_extra
