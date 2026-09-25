@@ -97,7 +97,7 @@ def extract_docstrings_from_cls(cls: type[Any], use_inspect: bool = False) -> di
         # making it way more robust.
         try:
             source, _ = inspect.getsourcelines(cls)
-        except OSError:  # pragma: no cover
+        except (OSError, TypeError):  # pragma: no cover
             return {}
     else:
         # TODO remove this implementation when we drop support for Python 3.12:
