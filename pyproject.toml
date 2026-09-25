@@ -91,7 +91,7 @@ docs = [
     'mkdocs',
     'mkdocs-exclude',
     'mkdocs-llmstxt',
-    'mkdocs-material[imaging]',
+    'mkdocs-material',
     'mkdocs-redirects',
     'mkdocstrings-python',
     'tomli',
