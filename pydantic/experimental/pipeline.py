@@ -452,13 +452,21 @@ def _apply_parse(
         return cs.chain_schema([s, handler(tp)]) if s else handler(tp)
 
 
+# Keys that pydantic-core evaluates *after* the `strip_whitespace`/`to_lower`/`to_upper`
+# transformations of a `str` schema. If one of them is already set, folding a transform step
+# into that same schema would run the transformation too early, i.e. out of pipeline order.
+_STR_ORDER_SENSITIVE_KEYS = frozenset(
+    {'pattern', 'min_length', 'max_length', 'strip_whitespace', 'to_lower', 'to_upper'}
+)
+
+
 def _apply_transform(
     s: cs.CoreSchema | None, func: Callable[[Any], Any], handler: GetCoreSchemaHandler
 ) -> cs.CoreSchema:
     if s is None:
         return cs.no_info_plain_validator_function(func)
 
-    if s['type'] == 'str':
+    if s['type'] == 'str' and not _STR_ORDER_SENSITIVE_KEYS & s.keys():
         if func is str.strip:
             s = s.copy()
             s['strip_whitespace'] = True
