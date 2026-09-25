@@ -222,7 +222,6 @@ hooks:
   - 'docs/plugins/algolia.py'
 
 plugins:
-  - social
   - mike:
       alias_type: symlink
       canonical_version: latest
