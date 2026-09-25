@@ -996,6 +996,7 @@ def decimal_schema(
 ```python
 fraction_schema(
     *,
+    multiple_of: Fraction | None = None,
     le: Fraction | None = None,
     ge: Fraction | None = None,
     lt: Fraction | None = None,
@@ -1022,13 +1023,14 @@ assert v.validate_python('1/2') == Fraction(1, 2)
 
 Parameters:
 
-| Name | Type | Description | Default | | --- | --- | --- | --- | | `le` | `Fraction | None` | The value must be less than or equal to this number | `None` | | `ge` | `Fraction | None` | The value must be greater than or equal to this number | `None` | | `lt` | `Fraction | None` | The value must be strictly less than this number | `None` | | `gt` | `Fraction | None` | The value must be strictly greater than this number | `None` | | `strict` | `bool | None` | Whether the value should be a Fraction or a value that can be converted to a Fraction | `None` | | `ref` | `str | None` | optional unique identifier of the schema, used to reference the schema in other places | `None` | | `metadata` | `dict[str, Any] | None` | Any other information you want to include with the schema, not used by pydantic-core | `None` | | `serialization` | `SerSchema | None` | Custom serialization schema | `None` |
+| Name | Type | Description | Default | | --- | --- | --- | --- | | `multiple_of` | `Fraction | None` | The value must be a multiple of this number | `None` | | `le` | `Fraction | None` | The value must be less than or equal to this number | `None` | | `ge` | `Fraction | None` | The value must be greater than or equal to this number | `None` | | `lt` | `Fraction | None` | The value must be strictly less than this number | `None` | | `gt` | `Fraction | None` | The value must be strictly greater than this number | `None` | | `strict` | `bool | None` | Whether the value should be a Fraction or a value that can be converted to a Fraction | `None` | | `ref` | `str | None` | optional unique identifier of the schema, used to reference the schema in other places | `None` | | `metadata` | `dict[str, Any] | None` | Any other information you want to include with the schema, not used by pydantic-core | `None` | | `serialization` | `SerSchema | None` | Custom serialization schema | `None` |
 
 Source code in `pydantic_core/core_schema.py`
 
 ````python
 def fraction_schema(
     *,
+    multiple_of: Fraction | None = None,
     le: Fraction | None = None,
     ge: Fraction | None = None,
     lt: Fraction | None = None,
@@ -1051,6 +1053,7 @@ def fraction_schema(
     ```
 
     Args:
+        multiple_of: The value must be a multiple of this number
         le: The value must be less than or equal to this number
         ge: The value must be greater than or equal to this number
         lt: The value must be strictly less than this number
@@ -1062,6 +1065,7 @@ def fraction_schema(
     """
     return _dict_not_none(
         type='fraction',
+        multiple_of=multiple_of,
         gt=gt,
         ge=ge,
         lt=lt,
@@ -1620,6 +1624,7 @@ def datetime_schema(
 timedelta_schema(
     *,
     strict: bool | None = None,
+    multiple_of: timedelta | None = None,
     le: timedelta | None = None,
     ge: timedelta | None = None,
     lt: timedelta | None = None,
@@ -1648,7 +1653,7 @@ assert v.validate_python(timedelta(hours=12)) == timedelta(hours=12)
 
 Parameters:
 
-| Name | Type | Description | Default | | --- | --- | --- | --- | | `strict` | `bool | None` | Whether the value should be a timedelta or a value that can be converted to a timedelta | `None` | | `le` | `timedelta | None` | The value must be less than or equal to this timedelta | `None` | | `ge` | `timedelta | None` | The value must be greater than or equal to this timedelta | `None` | | `lt` | `timedelta | None` | The value must be strictly less than this timedelta | `None` | | `gt` | `timedelta | None` | The value must be strictly greater than this timedelta | `None` | | `microseconds_precision` | `Literal['truncate', 'error']` | The behavior when seconds have more than 6 digits or microseconds is too large | `'truncate'` | | `ref` | `str | None` | optional unique identifier of the schema, used to reference the schema in other places | `None` | | `metadata` | `dict[str, Any] | None` | Any other information you want to include with the schema, not used by pydantic-core | `None` | | `serialization` | `SerSchema | None` | Custom serialization schema | `None` |
+| Name | Type | Description | Default | | --- | --- | --- | --- | | `strict` | `bool | None` | Whether the value should be a timedelta or a value that can be converted to a timedelta | `None` | | `multiple_of` | `timedelta | None` | The value must be a multiple of this timedelta | `None` | | `le` | `timedelta | None` | The value must be less than or equal to this timedelta | `None` | | `ge` | `timedelta | None` | The value must be greater than or equal to this timedelta | `None` | | `lt` | `timedelta | None` | The value must be strictly less than this timedelta | `None` | | `gt` | `timedelta | None` | The value must be strictly greater than this timedelta | `None` | | `microseconds_precision` | `Literal['truncate', 'error']` | The behavior when seconds have more than 6 digits or microseconds is too large | `'truncate'` | | `ref` | `str | None` | optional unique identifier of the schema, used to reference the schema in other places | `None` | | `metadata` | `dict[str, Any] | None` | Any other information you want to include with the schema, not used by pydantic-core | `None` | | `serialization` | `SerSchema | None` | Custom serialization schema | `None` |
 
 Source code in `pydantic_core/core_schema.py`
 
@@ -1656,6 +1661,7 @@ Source code in `pydantic_core/core_schema.py`
 def timedelta_schema(
     *,
     strict: bool | None = None,
+    multiple_of: timedelta | None = None,
     le: timedelta | None = None,
     ge: timedelta | None = None,
     lt: timedelta | None = None,
@@ -1679,6 +1685,7 @@ def timedelta_schema(
 
     Args:
         strict: Whether the value should be a timedelta or a value that can be converted to a timedelta
+        multiple_of: The value must be a multiple of this timedelta
         le: The value must be less than or equal to this timedelta
         ge: The value must be greater than or equal to this timedelta
         lt: The value must be strictly less than this timedelta
@@ -1691,6 +1698,7 @@ def timedelta_schema(
     return _dict_not_none(
         type='timedelta',
         strict=strict,
+        multiple_of=multiple_of,
         le=le,
         ge=ge,
         lt=lt,
