@@ -67,20 +67,7 @@
 
     
     
-  
-<meta property="og:type" content="website" />
-<meta property="og:title" content="Contributing - Pydantic Validation" />
-<meta property="og:description" content="Data validation using Python type hints" />
-<meta property="og:image" content="https://docs.pydantic.dev/latest/assets/images/social/contributing.png" />
-<meta property="og:image:type" content="image/png" />
-<meta property="og:image:width" content="1200" />
-<meta property="og:image:height" content="630" />
-<meta property="og:url" content="https://docs.pydantic.dev/latest/contributing/" />
-<meta property="twitter:card" content="summary_large_image" />
-<meta property="twitter:title" content="Contributing - Pydantic Validation" />
-<meta property="twitter:description" content="Data validation using Python type hints" />
-<meta property="twitter:image" content="https://docs.pydantic.dev/latest/assets/images/social/contributing.png" />
-</head>
+  </head>
   
   
     
@@ -4478,6 +4465,9 @@ make
 <span class="c1"># which you might want to use, but generally just `make` should be all you need.</span>
 <span class="c1"># You can run `make help` to see more options.</span>
 </code></pre></div>
+<p>The <code>pydantic-core</code> test suite is located in <code>tests/pydantic-core</code>, as a symlink. For it to work, you may need to
+enable the <a href="https://git-scm.com/docs/git-config#Documentation/git-config.txt-coresymlinks"><code>core.symlinks</code></a> Git
+option.</p>
 <h3 id="build-documentation">Build documentation<a class="headerlink" href="#build-documentation" title="Permanent link">&para;</a></h3>
 <p>If you've made any changes to the documentation (including changes to function signatures, class definitions, or docstrings that will appear in the API documentation), make sure it builds successfully.</p>
 <p>We use <code>mkdocs-material[imaging]</code> to support social previews (see the <a href="https://squidfunk.github.io/mkdocs-material/plugins/requirements/image-processing/">plugin documentation</a>).</p>
