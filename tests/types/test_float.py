@@ -242,11 +242,11 @@ def test_number_multiple_of_float_invalid(value):
     ]
 
 
-@pytest.mark.parametrize('multiple_of', [0.0, -0.0, -0.1, math.nan])
-def test_number_multiple_of_float_not_positive(multiple_of: float) -> None:
+@pytest.mark.parametrize('multiple_of', [0.0, -0.0, -0.1, math.nan, math.inf, -math.inf])
+def test_number_multiple_of_float_invalid_constraint(multiple_of: float) -> None:
     """https://github.com/pydantic/pydantic/issues/13860"""
 
-    with pytest.raises(SchemaError, match="'multiple_of' must be greater than 0"):
+    with pytest.raises(SchemaError, match="'multiple_of' must be a finite number greater than 0"):
         TypeAdapter(Annotated[float, annotated_types.MultipleOf(multiple_of)])
 
 

@@ -102,7 +102,9 @@ impl ConstrainedIntValidator {
         if let Some(ref m) = multiple_of
             && m <= &Int::I64(0)
         {
-            return Err(PyValueError::new_err("'multiple_of' must be greater than 0"));
+            return Err(PyValueError::new_err(
+                "'multiple_of' must be a finite number greater than 0",
+            ));
         }
         Ok(CombinedValidator::ConstrainedInt(Box::new(Self {
             strict: is_strict(schema, config)?,

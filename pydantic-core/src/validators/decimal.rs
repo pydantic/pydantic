@@ -79,11 +79,13 @@ impl BuildValidator for DecimalValidator {
         }
 
         let multiple_of = validate_as_decimal(py, schema, intern!(py, "multiple_of"))?;
-        // Comparing a NaN decimal raises `InvalidOperation`, treat it as invalid as well:
+        // `is_finite()` is checked first, as comparing a NaN decimal raises `InvalidOperation`:
         if let Some(ref m) = multiple_of
-            && !m.bind(py).gt(0).unwrap_or(false)
+            && !(m.bind(py).call_method0(intern!(py, "is_finite"))?.is_truthy()? && m.bind(py).gt(0)?)
         {
-            return Err(PyValueError::new_err("'multiple_of' must be greater than 0"));
+            return Err(PyValueError::new_err(
+                "'multiple_of' must be a finite number greater than 0",
+            ));
         }
 
         Ok(CombinedValidator::Decimal(Self {

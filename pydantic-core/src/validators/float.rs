@@ -186,9 +186,11 @@ impl BuildValidator for ConstrainedFloatValidator {
         let py = schema.py();
         let multiple_of: Option<f64> = schema.get_as(intern!(py, "multiple_of"))?;
         if let Some(m) = multiple_of
-            && (m <= 0.0 || m.is_nan())
+            && (!m.is_finite() || m <= 0.0)
         {
-            return Err(PyValueError::new_err("'multiple_of' must be greater than 0"));
+            return Err(PyValueError::new_err(
+                "'multiple_of' must be a finite number greater than 0",
+            ));
         }
         Ok(CombinedValidator::ConstrainedFloat(Self {
             strict: is_strict(schema, config)?,

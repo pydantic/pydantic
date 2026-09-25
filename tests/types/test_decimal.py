@@ -374,9 +374,12 @@ def test_decimal_invalid():
         TypeAdapter(Annotated[Decimal, Field(allow_inf_nan=True, max_digits=4)])
 
 
-@pytest.mark.parametrize('multiple_of', [Decimal('0'), Decimal('-0'), Decimal('-0.1'), Decimal('NaN')])
-def test_decimal_multiple_of_not_positive(multiple_of: Decimal) -> None:
+@pytest.mark.parametrize(
+    'multiple_of',
+    [Decimal('0'), Decimal('-0'), Decimal('-0.1'), Decimal('NaN'), Decimal('Infinity'), Decimal('-Infinity')],
+)
+def test_decimal_multiple_of_invalid_constraint(multiple_of: Decimal) -> None:
     """https://github.com/pydantic/pydantic/issues/13860"""
 
-    with pytest.raises(SchemaError, match="'multiple_of' must be greater than 0"):
+    with pytest.raises(SchemaError, match="'multiple_of' must be a finite number greater than 0"):
         TypeAdapter(Annotated[Decimal, Field(multiple_of=multiple_of)])
