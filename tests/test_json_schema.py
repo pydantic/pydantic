@@ -7621,3 +7621,23 @@ def test_nested_model_deduplication() -> None:
     assert 'Level1' in definitions
     assert 'Level1-Input' not in definitions
     assert 'Level1-Output' not in definitions
+
+
+def test_dataclass_json_schema_inherits_extra_config() -> None:
+    """https://github.com/pydantic/pydantic/issues/13845"""
+    import dataclasses
+
+    @dataclasses.dataclass
+    class Line:
+        qty: int
+
+    class Order(BaseModel):
+        model_config = ConfigDict(extra='forbid')
+        line: Line
+
+    schema = Order.model_json_schema()
+    assert schema.get('additionalProperties') is False
+    assert schema['$defs']['Line'].get('additionalProperties') is False
+
+    adapter = TypeAdapter(list[Line], config=ConfigDict(extra='forbid'))
+    assert adapter.json_schema()['$defs']['Line'].get('additionalProperties') is False

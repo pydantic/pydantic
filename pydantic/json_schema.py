@@ -1968,12 +1968,14 @@ class GenerateJsonSchema:
         """
 
         cls = schema['cls']
-        config = cast('ConfigDict', getattr(cls, '__pydantic_config__', {}))
+        config = cast('ConfigDict | None', getattr(cls, '__pydantic_config__', None))
 
         with self._config_wrapper_stack.push(config):
             json_schema = self.generate_inner(schema['schema']).copy()
 
-        self._update_class_schema(json_schema, cls, config)
+        self._update_class_schema(
+            json_schema, cls, config if config is not None else self._config_wrapper_stack.tail.config_dict
+        )
 
         return json_schema
 
