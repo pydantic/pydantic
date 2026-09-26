@@ -70,6 +70,13 @@ CASES: dict[str, tuple[dict, bool, list[str]]] = {
             '{"i": 1.5, "s": "x", "b": true, "f": 1.5}',
             '{"i": 99999999999999999999999, "s": "x", "b": true, "f": 1.5}',
             '{"i": 1, "s": "x", "b": true, "f": 1e400}',
+            '{"i": 1, "s": "x", "b": true, "f": -1e400}',
+            # a float field decoded by the float decoder still has to agree with the ordinary
+            # path on an integer literal, including one too big for i64
+            '{"i": 1, "s": "x", "b": true, "f": 99999999999999999999999}',
+            '{"i": 1, "s": "x", "b": true, "f": -99999999999999999999999}',
+            '{"i": 1, "s": "x", "b": true, "f": 0}',
+            '{"i": 1, "s": "x", "b": true, "f": -0}',
             '{"i": 1, "s": null, "b": true, "f": 1.5}',
             '{"i": 1, "b": true, "f": 1.5}',
             '{"i": 1, "s": "x", "b": true, "f": 1.5, "unknown": [1, 2]}',

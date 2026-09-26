@@ -642,7 +642,18 @@ fn take_peeked<'j, 'py>(
             let b = jiter.known_bool(peek)?;
             Taken::Ready(pyo3::types::PyBool::new(py, b).to_owned().into_any())
         }
-        (Fast::Int | Fast::Float, _) if scalar => {
+        (Fast::Float, _) if scalar => {
+            // an int literal is a valid float under both strict and lax, and this is the same
+            // conversion the float validator would do, so the decoder can hand back either
+            let f = jiter.known_float(peek)?;
+            if f.is_finite() {
+                Taken::Ready(f.into_pyobject(py)?.into_any())
+            } else {
+                // the ordinary path reports what a non-finite float means for this field
+                Taken::Raw(JsonValue::Float(f))
+            }
+        }
+        (Fast::Int, _) if scalar => {
             let number = jiter.known_number(peek)?;
             match (fast, number) {
                 (Fast::Int, jiter::NumberAny::Int(jiter::NumberInt::Int(i))) => {
