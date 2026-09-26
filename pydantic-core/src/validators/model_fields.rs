@@ -363,6 +363,11 @@ impl ContainerPlan<'_> {
     }
 }
 
+/// How many fields a model can have before its slots go to the heap. A model is read once per
+/// object, so the allocation is per object, not per document; the array sits in a stack frame
+/// that recurses only as deep as the plan allows.
+const SLOTS_ON_STACK: usize = 16;
+
 /// One model's plan.
 pub(crate) struct ModelPlan<'v> {
     fields: Vec<FieldPlan<'v>>,
@@ -965,7 +970,10 @@ impl ModelFieldsValidator {
         let validate_by_alias = state.validate_by_alias_or(self.validate_by_alias);
         let validate_by_name = state.validate_by_name_or(self.validate_by_name);
         let lookup_type = LookupType::from_bools(validate_by_alias, validate_by_name)?;
-        let mut slots: Vec<Option<Taken<'j, 'py>>> = (0..self.fields.len()).map(|_| None).collect();
+        // on the stack for all but the widest models: this is allocated once per object read,
+        // and it was half of everything the streaming path allocated
+        let mut slots: SmallVec<[Option<Taken<'j, 'py>>; SLOTS_ON_STACK]> =
+            (0..self.fields.len()).map(|_| None).collect();
 
         if plan.names_only {
             let mut key = jiter.known_object()?;
@@ -1036,7 +1044,8 @@ impl ModelFieldsValidator {
         state: &mut ValidationState<'_, 'py>,
     ) -> Result<bool, StreamStop> {
         // which lookup filled each slot, so that an alias can outrank a name that came later
-        let mut held: Vec<Option<LookupFieldPriority>> = vec![None; self.fields.len()];
+        let mut held: SmallVec<[Option<LookupFieldPriority>; SLOTS_ON_STACK]> =
+            smallvec::smallvec![None; self.fields.len()];
         let mut key = jiter.known_object()?;
         while let Some(k) = key {
             // a single key can only feed one field here: the value is read once and cannot be
