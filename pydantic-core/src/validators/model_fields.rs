@@ -577,11 +577,9 @@ impl ModelFieldsValidator {
 
                 let field_result = &mut field_results[field_info.field_index];
 
-                // later results are preferred unless the existing result has come from a higher priority alias
-                if let Some((existing_field_info, _)) = &field_result
-                    && existing_field_info
-                        .lookup_priority
-                        .is_higher_priority_than(&field_info.lookup_priority)
+                if !field_info
+                    .lookup_priority
+                    .replaces(field_result.as_ref().map(|(info, _)| info.lookup_priority))
                 {
                     continue;
                 }

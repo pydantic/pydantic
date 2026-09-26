@@ -81,6 +81,12 @@ pub struct LookupFieldPriority {
 }
 
 impl LookupFieldPriority {
+    /// Whether data found through this lookup should replace what a previous lookup already put
+    /// in the field. Later data wins unless what is there came from a higher priority alias.
+    pub fn replaces(&self, existing: Option<Self>) -> bool {
+        !existing.is_some_and(|existing| existing.is_higher_priority_than(self))
+    }
+
     /// Returns `true` if `self` has higher priority than `other`, i.e. data from this lookup should be used over data from `other`.
     pub fn is_higher_priority_than(&self, other: &Self) -> bool {
         if self.lookup_type == LookupType::Name {
