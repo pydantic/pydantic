@@ -507,6 +507,32 @@ impl SchemaValidator {
                 by_name,
             )
         {
+            // Under `stream-verify` the same document is validated the ordinary way too and the
+            // results compared, so a divergence fails loudly instead of being returned. Only a
+            // streamed success is checked, which is the whole risk surface: the fast path has no
+            // error-construction code, so it can only produce a value or decline.
+            #[cfg(feature = "stream-verify")]
+            if let Ok(streamed) = &result {
+                let tree = jiter::JsonValue::parse_with_config(json_data, true, allow_partial)
+                    .map_err(|e| json::map_json_err(input, e, json_data))
+                    .and_then(|json_value| {
+                        #[allow(clippy::used_underscore_items)]
+                        self._validate(
+                            py,
+                            &json_value,
+                            InputType::Json,
+                            strict,
+                            extra_behavior,
+                            None,
+                            context,
+                            self_instance,
+                            allow_partial,
+                            by_alias,
+                            by_name,
+                        )
+                    });
+                crate::stream_verify::compare(py, streamed, tree)?;
+            }
             return result;
         }
         let json_value = jiter::JsonValue::parse_with_config(json_data, true, allow_partial)
