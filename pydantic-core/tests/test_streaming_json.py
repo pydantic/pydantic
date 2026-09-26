@@ -59,7 +59,7 @@ BOOL = core_schema.bool_schema()
 ADDRESS = _model('Address', {'street': STR, 'city': STR})
 
 # name -> (schema, should the plan take it, documents)
-CASES: dict[str, tuple[dict, bool, list[str]]] = {
+CASES: dict[str, tuple[dict, bool, list[str | bytes]]] = {
     'scalars': (
         _model('Scalars', {'i': INT, 's': STR, 'b': BOOL, 'f': FLOAT}),
         True,
@@ -196,6 +196,21 @@ CASES: dict[str, tuple[dict, bool, list[str]]] = {
             '[]',
         ],
     ),
+    # the ordinary path decodes every string in the document, so it rejects invalid utf-8 even
+    # in a field the model ignores; the cursor skips those values without decoding them
+    'bad_utf8_in_ignored_fields': (
+        _model('Kept', {'kept': STR}),
+        True,
+        [
+            b'{"kept": "ok", "ignored": "\xff"}',
+            b'{"kept": "ok", "ignored": ["\xff"]}',
+            b'{"kept": "ok", "ignored": {"k": "\xff"}}',
+            b'{"kept": "ok", "ignored": [[{"deep": "\xff"}]]}',
+            b'{"kept": "\xff"}',
+            b'{"kept": "ok", "\xff": 1}',
+            b'{"kept": "ok", "ignored": "fine"}',
+        ],
+    ),
     # the root list's own length bound: the fast path builds the list itself, so it has to be
     # the one to check it
     'constrained_root_list': (
@@ -257,7 +272,7 @@ def _child(case: str, in_array: bool = False) -> None:
         # every well-formed document for this case, as one array, which is a different entry point
         schema, _, _ = CASES[case]
         validator = SchemaValidator(core_schema.list_schema(items_schema=schema))
-        docs = ['[' + ', '.join(d for d in docs if d.startswith('{')) + ']']
+        docs = ['[' + ', '.join(d for d in docs if isinstance(d, str) and d.startswith('{')) + ']']
 
     out = {'accepted': validator._stream_plan_accepted, 'results': []}
     for doc in docs:

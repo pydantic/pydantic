@@ -596,6 +596,22 @@ fn take_dict<'j, 'py>(
     }
 }
 
+/// Skip a value the model has no use for, checking that the bytes it spans are utf-8.
+///
+/// The ordinary path decodes every string in the document, so it rejects invalid utf-8 anywhere,
+/// including inside a field the model ignores; skipped bytes are the only json the cursor
+/// consumes without decoding. Outside strings json is ascii, so asking whether the span is utf-8
+/// is exactly asking whether the strings inside it are, and a span that is not hands the
+/// document to the ordinary path, which says where and why.
+fn skip_unused(jiter: &mut Jiter<'_>) -> Result<(), StreamStop> {
+    let start = jiter.current_index();
+    jiter.next_skip()?;
+    if std::str::from_utf8(jiter.slice_to_current(start)).is_err() {
+        return Err(StreamStop::Cursor);
+    }
+    Ok(())
+}
+
 /// The value just consumed, read again from its own bytes, so that the field's own validator
 /// sees exactly what the ordinary path would have seen.
 fn reread<'j>(jiter: &Jiter<'j>, start: usize) -> Result<JsonValue<'j>, StreamStop> {
@@ -998,7 +1014,7 @@ impl ModelFieldsValidator {
                 match found {
                     Some(index) => slots[index] = Some(take_fast(py, jiter, &plan.fields[index], state)?),
                     None if plan.forbid_extra => return Ok(None),
-                    None => jiter.next_skip()?,
+                    None => skip_unused(jiter)?,
                 }
                 key = jiter.next_key()?;
             }
@@ -1083,11 +1099,11 @@ impl ModelFieldsValidator {
                         held[index] = Some(info.lookup_priority);
                         slots[index] = Some(take_fast(py, jiter, &plan.fields[index], state)?);
                     } else {
-                        jiter.next_skip()?;
+                        skip_unused(jiter)?;
                     }
                 }
                 None if plan.forbid_extra => return Ok(false),
-                None => jiter.next_skip()?,
+                None => skip_unused(jiter)?,
             }
             key = jiter.next_key()?;
         }
