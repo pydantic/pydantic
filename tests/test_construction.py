@@ -669,3 +669,32 @@ def test_model_construct_with_alias_choices_and_path() -> None:
     assert MyModel.model_construct(a='a_value').a == 'a_value'
     assert MyModel.model_construct(aaa='a_value').a == 'a_value'
     assert MyModel.model_construct(AAA={'aaa': 'a_value'}).a == 'a_value'
+
+
+def test_model_construct_with_alias_path_extra_allow() -> None:
+    class Outer(BaseModel):
+        model_config = ConfigDict(extra='allow')
+
+        x: int
+        a: str = Field(validation_alias=AliasPath('a', 'b'))
+
+    data = {'x': 1, 'a': {'b': 'hello'}, 'c': 9}
+    m = Outer.model_construct(**data)
+    assert m.x == 1
+    assert m.a == 'hello'
+    assert m.model_extra == {'c': 9}
+    assert m.model_dump() == {'x': 1, 'a': 'hello', 'c': 9}
+
+
+def test_model_construct_with_multiple_alias_paths_shared_root_extra_allow() -> None:
+    class Outer(BaseModel):
+        model_config = ConfigDict(extra='allow')
+
+        f1: int = Field(validation_alias=AliasPath('nested', 'k1'))
+        f2: int = Field(validation_alias=AliasPath('nested', 'k2'))
+
+    data = {'nested': {'k1': 10, 'k2': 20}, 'other': 99}
+    m = Outer.model_construct(**data)
+    assert m.f1 == 10
+    assert m.f2 == 20
+    assert m.model_extra == {'other': 99}

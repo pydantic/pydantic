@@ -356,6 +356,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
         m = cls.__new__(cls)
         fields_values: dict[str, Any] = {}
         fields_set = set()
+        consumed_alias_path_roots: set[str] = set()
 
         for name, field in cls.__pydantic_fields__.items():
             if field.alias is not None and field.alias in values:
@@ -379,6 +380,8 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
                         if value is not PydanticUndefined:
                             fields_values[name] = value
                             fields_set.add(name)
+                            if alias.path and isinstance(alias.path[0], str):
+                                consumed_alias_path_roots.add(alias.path[0])
                             break
 
             if name not in fields_set:
@@ -387,6 +390,11 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
                     fields_set.add(name)
                 elif not field.is_required():
                     fields_values[name] = field.get_default(call_default_factory=True, validated_data=fields_values)
+
+        for root_key in consumed_alias_path_roots:
+            if root_key in values:
+                values.pop(root_key)
+
         if _fields_set is None:
             _fields_set = fields_set
 
