@@ -11,7 +11,7 @@ from abc import ABCMeta
 from collections.abc import Callable, MutableMapping
 from functools import cache, partial, wraps
 from types import FunctionType, NoneType
-from typing import TYPE_CHECKING, Any, ForwardRef, Generic, Literal, NoReturn, TypeVar, cast
+from typing import TYPE_CHECKING, Any, Generic, Literal, NoReturn, TypeVar, cast
 
 from pydantic_core import PydanticUndefined, SchemaSerializer
 from typing_extensions import (
@@ -445,12 +445,6 @@ def inspect_namespace(  # noqa C901
     for var_name, value in namespace.items():
         if var_name == 'model_config' or var_name == '__pydantic_extra__':
             continue
-        elif type(value) in _simple_default_types and var_name in raw_annotations and is_valid_field_name(var_name):
-            # Fast path: an annotated field with a simple default value. No branch below can
-            # match it (its type rules out every `isinstance` check, and the annotation rules
-            # out the "non-annotated attribute" errors), except possibly the `ignored_names`
-            # tracking — which is only consulted for private attribute names:
-            continue
         elif var_name.startswith('__') and not isinstance(value, (ModelPrivateAttr, FieldInfo)):
             # Fast path: a dunder attribute (e.g. `__module__`, `__qualname__`, `__doc__`).
             # `ModelPrivateAttr`/`FieldInfo` values are excluded as they are reported as errors
@@ -466,6 +460,20 @@ def inspect_namespace(  # noqa C901
             continue
         elif isinstance(value, all_ignored_types) or value.__class__.__module__ == 'functools':
             ignored_names.add(var_name)
+            continue
+        elif type(value) in _simple_default_types and is_valid_field_name(var_name):
+            # Fast path: a plain immutable default under an ordinary field name. Its exact type
+            # rules out `ModelPrivateAttr` and `FieldInfo`, and the name rules out the dunder and
+            # sunder branches, so the only outcome left is the field-candidate one below:
+            if var_name not in base_class_vars:
+                field_candidates.append(var_name)
+            continue
+        elif type(value) in _simple_default_types and is_valid_field_name(var_name):
+            # Fast path: a plain immutable default under an ordinary field name. Its exact type
+            # rules out `ModelPrivateAttr` and `FieldInfo`, and the name rules out the dunder and
+            # sunder branches, so the only outcome left is the field-candidate one below:
+            if var_name not in base_class_vars:
+                field_candidates.append(var_name)
             continue
         elif isinstance(value, ModelPrivateAttr):
             if var_name.startswith('__'):
