@@ -114,8 +114,9 @@ from ._import_utils import import_cached_base_model, import_cached_field_info
 from ._mock_val_ser import MockCoreSchema
 from ._namespace_utils import NamespacesTuple, NsResolver
 from ._schema_cache import (
-    IMMUTABLE_DEFAULT_TYPE_IDS,
+    MAX_KEY_VALUE_SIZE,
     encode_metadata_item,
+    is_cacheable_default,
 )
 from ._schema_cache import (
     NOT_PURE as _NOT_PURE,
@@ -1315,17 +1316,24 @@ class GenerateSchema:
         title = field_info.title
         description = field_info.description
         frozen = field_info.frozen
+        # The string values below go into the cache key as they are, so an unbounded one would
+        # be retained until the cache resets - and being unique to its field, it would never
+        # have been reused anyway. The length test rides along with the type test that was
+        # already here, so it costs nothing for the usual `None`:
+        _limit = MAX_KEY_VALUE_SIZE
         if not (
-            (alias is None or type(alias) is str)
-            and (validation_alias is None or type(validation_alias) is str)
-            and (serialization_alias is None or type(serialization_alias) is str)
-            and (title is None or type(title) is str)
-            and (description is None or type(description) is str)
+            (alias is None or (type(alias) is str and len(alias) <= _limit))
+            and (validation_alias is None or (type(validation_alias) is str and len(validation_alias) <= _limit))
+            and (
+                serialization_alias is None or (type(serialization_alias) is str and len(serialization_alias) <= _limit)
+            )
+            and (title is None or (type(title) is str and len(title) <= _limit))
+            and (description is None or (type(description) is str and len(description) <= _limit))
             and (frozen is None or frozen is False or frozen is True)
         ):
             return None
         default = field_info.default
-        if default is not PydanticUndefined and id(type(default)) not in IMMUTABLE_DEFAULT_TYPE_IDS:
+        if default is not PydanticUndefined and not is_cacheable_default(default):
             return None
         if self._config_wrapper.config_dict.get('json_encoders'):
             return None
