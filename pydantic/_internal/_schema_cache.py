@@ -344,6 +344,11 @@ def pure_annotation_cache_key(tp: Any, /) -> Any:
         arg_keys = ['union']
     elif id(origin) in _PURE_CONTAINER_ORIGIN_IDS:
         arg_keys = [origin]
+        if not hasattr(tp, '__args__'):
+            # An unparameterized alias (`typing.Tuple`) and one parameterized with nothing
+            # (`typing.Tuple[()]`, the empty tuple) both have an empty `get_args()`, but only
+            # the first is variadic, so they must not share an entry:
+            arg_keys.append('unparameterized')
     elif typing_objects.is_literal(origin):
         arg_keys = ['literal']
         for arg in get_args(tp):
