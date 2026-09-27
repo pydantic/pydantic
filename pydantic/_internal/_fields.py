@@ -26,9 +26,9 @@ from ._import_utils import import_cached_base_model, import_cached_field_info
 from ._namespace_utils import NsResolver
 from ._repr import Representation
 from ._schema_cache import (
-    IMMUTABLE_DEFAULT_TYPE_IDS,
     NOT_PURE,
     field_info_template_cache,
+    is_cacheable_default,
     pure_annotation_cache_key,
 )
 from ._schema_cache import store as _store_in_cache
@@ -288,7 +288,7 @@ def _field_info_from_template(ann_type: Any, default: Any, evaluated: bool) -> F
     every time (see the `_schema_cache` module docstring), so the (rather involved) creation
     process can be skipped by copying a cached instance.
     """
-    if not evaluated or (default is not PydanticUndefined and id(type(default)) not in IMMUTABLE_DEFAULT_TYPE_IDS):
+    if not evaluated or (default is not PydanticUndefined and not is_cacheable_default(default)):
         return None
     try:
         annotation_key = pure_annotation_cache_key(ann_type)
@@ -320,7 +320,7 @@ def _field_info_from_template(ann_type: Any, default: Any, evaluated: bool) -> F
 
 def _store_field_info_template(ann_type: Any, default: Any, field_info: FieldInfo) -> None:
     """Store a pristine copy of a just-created `FieldInfo` as a template, if eligible."""
-    if default is not PydanticUndefined and id(type(default)) not in IMMUTABLE_DEFAULT_TYPE_IDS:
+    if default is not PydanticUndefined and not is_cacheable_default(default):
         return
     try:
         annotation_key = pure_annotation_cache_key(ann_type)

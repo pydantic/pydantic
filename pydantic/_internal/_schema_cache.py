@@ -99,6 +99,37 @@ _PURE_CONTAINER_ORIGIN_IDS = _ids(_PURE_CONTAINER_ORIGINS)
 _PURE_LITERAL_VALUE_TYPE_IDS = _ids(_PURE_LITERAL_VALUE_TYPES)
 IMMUTABLE_DEFAULT_TYPE_IDS = _ids(IMMUTABLE_DEFAULT_TYPES)
 
+# The largest `str`/`bytes` value allowed to take part in a cache key. The entry-count limit
+# below bounds how many entries a cache holds, not how large they are, and a key is retained
+# until its cache is reset - so without this, eight models with a distinct one-megabyte
+# `Literal` value, assigned default or metadata string retain eight megabytes. A value this
+# large is unique to its field in practice and so would never have been reused anyway:
+MAX_KEY_VALUE_SIZE = 1024
+
+
+def _value_fits_in_key(value: Any, /) -> bool:
+    """Whether a value is small enough to be worth retaining for the life of a cache entry.
+
+    `int` counts too: python integers are unbounded, and a default of `10 ** 1_000_000` is
+    over 400 KB.
+    """
+    value_type = type(value)
+    if value_type is str or value_type is bytes:
+        return len(value) <= MAX_KEY_VALUE_SIZE
+    if value_type is int:
+        return value.bit_length() <= MAX_KEY_VALUE_SIZE * 8
+    return True
+
+
+def is_cacheable_default(default: Any, /) -> bool:
+    """Whether an assigned default value may take part in a cache key.
+
+    Immutable builtin types only (see `IMMUTABLE_DEFAULT_TYPES`), and small enough to retain.
+    Callers check for `PydanticUndefined` (no default at all) separately.
+    """
+    return id(type(default)) in IMMUTABLE_DEFAULT_TYPE_IDS and _value_fits_in_key(default)
+
+
 # Returned by `pure_annotation_cache_key()` for annotations that aren't pure. A dedicated sentinel
 # is required as `None` is itself a valid (and pure) annotation, and so a valid cache key:
 NOT_PURE: Any = object()
@@ -146,6 +177,9 @@ def _encode_metadata_value(value: Any) -> Any | None:
         return None
     if value_type is float:
         return (float, repr(value), value)
+    if not _value_fits_in_key(value):
+        # retained until the cache resets, and unique to its field in practice
+        return None
     return (value_type, value)
 
 
@@ -344,10 +378,15 @@ def pure_annotation_cache_key(tp: Any, /) -> Any:
         arg_keys = ['union']
     elif id(origin) in _PURE_CONTAINER_ORIGIN_IDS:
         arg_keys = [origin]
+        if not hasattr(tp, '__args__'):
+            # An unparameterized alias (`typing.Tuple`) and one parameterized with nothing
+            # (`typing.Tuple[()]`, the empty tuple) both have an empty `get_args()`, but only
+            # the first is variadic, so they must not share an entry:
+            arg_keys.append('unparameterized')
     elif typing_objects.is_literal(origin):
         arg_keys = ['literal']
         for arg in get_args(tp):
-            if id(type(arg)) not in _PURE_LITERAL_VALUE_TYPE_IDS:
+            if id(type(arg)) not in _PURE_LITERAL_VALUE_TYPE_IDS or not _value_fits_in_key(arg):
                 return NOT_PURE
             # The type is included to discriminate between equal values of different
             # types (e.g. `Literal[1]` and `Literal[True]`):

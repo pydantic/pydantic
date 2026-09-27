@@ -231,3 +231,18 @@ def pytest_itemcollected(item: Item) -> None:
     fixtures: tuple[str, ...] = getattr(item, 'fixturenames', ())
     if any(fixture in fixtures for fixture in _thread_unsafe_fixtures):
         item.add_marker('thread_unsafe')
+
+
+# Checking mode for the schema caches, off unless `PYDANTIC_VERIFY_SCHEMA_CACHE` is set. See
+# `_schema_cache_verification.py`: every field schema built during the run is also built with
+# the caches emptied, and the two compared.
+from tests._schema_cache_verification import ENABLED as _checking_schema_caches  # noqa: E402
+from tests._schema_cache_verification import install as _install_schema_cache_checks  # noqa: E402
+from tests._schema_cache_verification import report as _schema_cache_check_report  # noqa: E402
+
+if _checking_schema_caches:
+    _install_schema_cache_checks()
+
+    def pytest_terminal_summary(terminalreporter) -> None:  # noqa: ANN001
+        for _line in _schema_cache_check_report().split(chr(10)):
+            terminalreporter.write_line(_line)
