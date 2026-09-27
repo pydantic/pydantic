@@ -438,10 +438,6 @@ impl ValidatorCallable {
     fn __str__(&self) -> String {
         self.__repr__()
     }
-
-    fn __traverse__(&self, visit: PyVisit) -> Result<(), PyTraverseError> {
-        self.validator.py_gc_traverse(&visit)
-    }
 }
 
 #[pyclass(module = "pydantic_core._pydantic_core")]

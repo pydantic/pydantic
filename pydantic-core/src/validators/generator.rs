@@ -209,7 +209,10 @@ impl ValidatorIterator {
 
     fn __traverse__(&self, visit: PyVisit<'_>) -> Result<(), PyTraverseError> {
         self.iterator.py_gc_traverse(&visit)?;
-        self.validator.py_gc_traverse(&visit)?;
+        // Don't traverse self.validator (InternalValidator) —
+        // its Arc<CombinedValidator> is already traversed by the parent
+        // GeneratorValidator's impl_py_gc_traverse!. Traversing it here
+        // would double-visit the validator tree and corrupt refcounts.
         Ok(())
     }
 }
