@@ -1968,11 +1968,21 @@ class GenerateJsonSchema:
         """
 
         cls = schema['cls']
-        config = cast('ConfigDict', getattr(cls, '__pydantic_config__', {}))
-
-        with self._config_wrapper_stack.push(config):
+        # Use None when the class has no own config so that push() is a no-op
+        # and generate_inner() inherits the parent's effective config (e.g.
+        # extra='forbid').  An empty-dict fallback would silently override the
+        # parent's config, causing stdlib dataclass fields to miss
+        # additionalProperties:false even when the enclosing model forbids
+        # extra fields.  Mirrors the same fix already applied in
+        # _generate_schema.py (see PR #10928).
+        own_config = getattr(cls, '__pydantic_config__', None)
+        with self._config_wrapper_stack.push(own_config):
             json_schema = self.generate_inner(schema['schema']).copy()
 
+        config = cast(
+            'ConfigDict',
+            own_config if own_config is not None else self._config_wrapper_stack.tail.config_dict,
+        )
         self._update_class_schema(json_schema, cls, config)
 
         return json_schema
