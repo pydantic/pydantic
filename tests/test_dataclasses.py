@@ -3006,6 +3006,27 @@ def test_init_false_with_default(input_data, extra, expected, field_constructor)
         assert dataclasses.asdict(MyDataclass(**input_data)) == expected
 
 
+@pytest.mark.parametrize(
+    'field_constructor',
+    [pydantic.Field, dataclasses.field],
+)
+def test_init_false_reflected_in_dataclass_metadata(field_constructor):
+    # https://github.com/pydantic/pydantic/issues/13833
+    @pydantic.dataclasses.dataclass(config=ConfigDict(extra='forbid'))
+    class Example:
+        derived: int = field_constructor(default=1, init=False)
+        value: int = 0
+
+    fields = {f.name: f.init for f in dataclasses.fields(Example)}
+    assert fields == {'derived': False, 'value': True}
+    assert Example.__match_args__ == ('value',)
+
+    # dataclasses.replace() must not feed the excluded field back into __init__:
+    replaced = dataclasses.replace(Example(value=2), value=3)
+    assert replaced == Example(value=3)
+    assert replaced.derived == 1
+
+
 def test_disallow_extra_allow_and_init_false() -> None:
     with pytest.raises(PydanticUserError, match='This combination is not allowed.'):
 

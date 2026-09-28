@@ -216,6 +216,11 @@ def as_dataclass_field(pydantic_field: FieldInfo) -> dataclasses.Field[Any]:
     if pydantic_field.kw_only is not None:
         field_args['kw_only'] = pydantic_field.kw_only
 
+    # Field(init=False) must stay out of __init__ and __match_args__ (and must
+    # not be passed back to the constructor by dataclasses.replace()):
+    if pydantic_field.init is not None:
+        field_args['init'] = pydantic_field.init
+
     # Needed as the stdlib dataclass modules generates `__repr__()` during class construction:
     if pydantic_field.repr is not True:
         field_args['repr'] = pydantic_field.repr
