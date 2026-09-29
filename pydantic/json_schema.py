@@ -372,6 +372,16 @@ class GenerateJsonSchema:
         Raises:
             PydanticUserError: Raised if the JSON schema generator has already been used to generate a JSON schema.
         """
+        return self._generate_definitions([(key, mode, schema, None) for key, mode, schema in inputs])
+
+    def _generate_definitions(
+        self, inputs: Sequence[tuple[JsonSchemaKeyT, JsonSchemaMode, core_schema.CoreSchema, ConfigDict | None]]
+    ) -> tuple[dict[tuple[JsonSchemaKeyT, JsonSchemaMode], JsonSchemaValue], dict[DefsRef, JsonSchemaValue]]:
+        """Same as `generate_definitions()`, but with an additional config for each input.
+
+        This config is used for core schemas that don't carry their own config (e.g. the core schema
+        of a type adapter).
+        """
         if self._used:
             raise PydanticUserError(
                 'This JSON schema generator has already been used to generate a JSON schema. '
@@ -379,16 +389,18 @@ class GenerateJsonSchema:
                 code='json-schema-already-used',
             )
 
-        for _, mode, schema in inputs:
+        for _, mode, schema, config in inputs:
             self._mode = mode
-            self.generate_inner(schema)
+            with self._config_wrapper_stack.push(config):
+                self.generate_inner(schema)
 
         definitions_remapping = self._build_definitions_remapping()
 
         json_schemas_map: dict[tuple[JsonSchemaKeyT, JsonSchemaMode], DefsRef] = {}
-        for key, mode, schema in inputs:
+        for key, mode, schema, config in inputs:
             self._mode = mode
-            json_schema = self.generate_inner(schema)
+            with self._config_wrapper_stack.push(config):
+                json_schema = self.generate_inner(schema)
             json_schemas_map[(key, mode)] = definitions_remapping.remap_json_schema(json_schema)
 
         json_schema = {'$defs': self.definitions}
