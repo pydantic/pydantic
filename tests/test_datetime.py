@@ -1,9 +1,11 @@
+import json
 import re
 from datetime import date, datetime, time, timedelta, timezone
-from typing import Annotated
+from typing import Annotated, Any
 
 import pytest
 from dirty_equals import HasRepr
+from pydantic_core import to_jsonable_python
 
 from pydantic import (
     AwareDatetime,
@@ -809,3 +811,54 @@ def test_config_time(t: date, expected_to_json, mode):
 
     assert instance == t
     assert ta.dump_json(instance) == expected_to_json
+
+
+TEMPORAL_VALUES = {
+    'datetime': datetime(2024, 1, 1),
+    'date': date(2024, 1, 1),
+    'time': time(1),
+    'timedelta': timedelta(seconds=1),
+    datetime(2024, 1, 1): 'datetime_key',
+    timedelta(seconds=1): 'timedelta_key',
+}
+
+
+@pytest.mark.parametrize(
+    ['config', 'expected'],
+    [
+        (
+            {'ser_json_timedelta': 'float'},
+            {
+                'datetime': '2024-01-01T00:00:00',
+                'date': '2024-01-01',
+                'time': '01:00:00',
+                'timedelta': 1.0,
+                '2024-01-01T00:00:00': 'datetime_key',
+                '1': 'timedelta_key',
+            },
+        ),
+        (
+            {'ser_json_temporal': 'milliseconds', 'ser_json_timedelta': 'float'},
+            {
+                'datetime': 1704067200000.0,
+                'date': 1704067200000.0,
+                'time': 3600000.0,
+                'timedelta': 1000.0,
+                '1704067200000': 'datetime_key',
+                '1000': 'timedelta_key',
+            },
+        ),
+    ],
+)
+def test_ser_json_timedelta_only_applies_to_timedelta_inference(config, expected) -> None:
+    """`ser_json_timedelta` should only apply to timedeltas when serializing unknown types (by inference)."""
+    ta = TypeAdapter(Any, config=config)
+
+    assert ta.dump_python(TEMPORAL_VALUES, mode='json') == expected
+    assert json.loads(ta.dump_json(TEMPORAL_VALUES)) == expected
+
+    temporal_mode = config.get('ser_json_temporal', 'iso8601')
+    assert (
+        to_jsonable_python(TEMPORAL_VALUES, timedelta_mode=config['ser_json_timedelta'], temporal_mode=temporal_mode)
+        == expected
+    )

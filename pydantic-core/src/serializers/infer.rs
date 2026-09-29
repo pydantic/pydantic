@@ -181,7 +181,10 @@ pub(crate) fn infer_to_python_known<'py>(
             }
             ObType::Timedelta => {
                 let either_delta = EitherTimedelta::try_from(value)?;
-                state.config.temporal_mode.timedelta_to_json(value.py(), either_delta)?
+                state
+                    .config
+                    .timedelta_mode
+                    .timedelta_to_json(value.py(), either_delta)?
             }
             ObType::Url
             | ObType::MultiHostUrl
@@ -465,7 +468,10 @@ pub(crate) fn infer_serialize_known<'py, S: Serializer>(
         }
         ObType::Timedelta => {
             let either_delta = EitherTimedelta::try_from(value).map_err(py_err_se_err)?;
-            state.config.temporal_mode.timedelta_serialize(either_delta, serializer)
+            state
+                .config
+                .timedelta_mode
+                .timedelta_serialize(either_delta, serializer)
         }
         ObType::Url
         | ObType::MultiHostUrl
@@ -591,7 +597,7 @@ pub(crate) fn infer_json_key_known<'a, 'py>(
         }
         ObType::Timedelta => {
             let either_delta = EitherTimedelta::try_from(key)?;
-            state.config.temporal_mode.timedelta_json_key(&either_delta)
+            state.config.timedelta_mode.timedelta_json_key(&either_delta)
         }
         ObType::Url
         | ObType::MultiHostUrl
