@@ -212,13 +212,18 @@ def as_dataclass_field(pydantic_field: FieldInfo) -> dataclasses.Field[Any]:
     if sys.version_info >= (3, 14) and pydantic_field.description is not None:
         field_args['doc'] = pydantic_field.description
 
-    # Needed as the stdlib dataclass module processes kw_only in a specific way during class construction:
+    # Needed as the stdlib dataclass module processes `kw_only` in a specific way during class construction:
     if pydantic_field.kw_only is not None:
         field_args['kw_only'] = pydantic_field.kw_only
 
     # Needed as the stdlib dataclass modules generates `__repr__()` during class construction:
     if pydantic_field.repr is not True:
         field_args['repr'] = pydantic_field.repr
+
+    # Needed as the stdlib dataclass module uses `init` during class construction (e.g. to generate `__match_args__`),
+    # and `dataclasses.replace()` relies on it:
+    if pydantic_field.init is False:
+        field_args['init'] = False
 
     return dataclasses.field(**field_args)
 
@@ -233,7 +238,7 @@ def patch_base_fields(cls: type[Any]) -> Generator[None]:
     When creating a Pydantic dataclass, it is possible to inherit from stdlib dataclasses, where
     the Pydantic `Field()` function is used. To create this Pydantic dataclass, we first apply
     the stdlib `@dataclass` decorator on it. During the construction of the stdlib dataclass,
-    the `kw_only` and `repr` field arguments need to be understood by the stdlib *during* the
+    the `kw_only`, `repr` and `init` field arguments need to be understood by the stdlib *during* the
     dataclass construction. To do so, we temporarily patch the fields dictionary of the affected
     bases.
 
@@ -290,7 +295,12 @@ def patch_base_fields(cls: type[Any]) -> Generator[None]:
             for field_name, field in dc_fields.items()
             if isinstance(field.default, FieldInfo)
             # Only do the patching if one of the affected attributes is set:
-            and (field.default.description is not None or field.default.kw_only or field.default.repr is not True)
+            and (
+                field.default.description is not None
+                or field.default.kw_only is not None
+                or field.default.repr is not True
+                or field.default.init is False
+            )
         }
         if dc_fields_with_pydantic_field_defaults:
             original_fields_list.append((dc_fields, dc_fields_with_pydantic_field_defaults))
@@ -301,10 +311,12 @@ def patch_base_fields(cls: type[Any]) -> Generator[None]:
                 new_dc_field = copy.copy(field)
                 # For base fields, no need to set `doc` from `FieldInfo.description`, this is only relevant
                 # for the class under construction and handled in `as_dataclass_field()`.
-                if default.kw_only:
-                    new_dc_field.kw_only = True
+                if default.kw_only is not None:
+                    new_dc_field.kw_only = default.kw_only
                 if default.repr is not True:
                     new_dc_field.repr = default.repr
+                if default.init is False:
+                    new_dc_field.init = False
                 dc_fields[field_name] = new_dc_field
 
     try:
