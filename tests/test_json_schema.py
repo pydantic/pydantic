@@ -56,6 +56,7 @@ from pydantic import (
     computed_field,
     field_serializer,
     field_validator,
+    with_config,
 )
 from pydantic.color import Color
 from pydantic.config import ConfigDict
@@ -2079,6 +2080,49 @@ def test_typeddict_default_bytes(ser_json_bytes: Literal['base64', 'utf8'], prop
         'title': 'MyTypedDict',
         'type': 'object',
     }
+
+
+def test_stdlib_types_config_propagation() -> None:
+    """Configuration is propagated to stdlib dataclasses and typed dictionaries, unless they have their own config."""
+
+    @dataclasses.dataclass
+    class DCWithoutConfig:
+        name: str
+
+    @dataclasses.dataclass
+    @with_config(str_to_lower=True)
+    class DCWithConfig:
+        name: str
+
+    class TDWithoutConfig(TypedDict):
+        name: str
+
+    @with_config(str_to_lower=True)
+    class TDWithConfig(TypedDict):
+        name: str
+
+    class Parent(BaseModel):
+        model_config = ConfigDict(str_max_length=5, title='ParentTitle')
+
+        dc_1: DCWithoutConfig
+        dc_2: DCWithConfig
+        td_1: TDWithoutConfig
+        td_2: TDWithConfig
+
+    defs = Parent.model_json_schema()['$defs']
+    for name in ('DCWithoutConfig', 'TDWithoutConfig'):
+        assert defs[name]['title'] == name
+        assert defs[name]['properties']['name'] == {'maxLength': 5, 'title': 'Name', 'type': 'string'}
+    for name in ('DCWithConfig', 'TDWithConfig'):
+        assert defs[name]['title'] == name
+        assert defs[name]['properties']['name'] == {'title': 'Name', 'type': 'string'}
+
+    # Consistent with validation:
+    with pytest.raises(ValidationError):
+        Parent(dc_1={'name': 'long name'}, dc_2={'name': 'x'}, td_1={'name': 'x'}, td_2={'name': 'x'})
+    with pytest.raises(ValidationError):
+        Parent(dc_1={'name': 'x'}, dc_2={'name': 'x'}, td_1={'name': 'long name'}, td_2={'name': 'x'})
+    Parent(dc_1={'name': 'x'}, dc_2={'name': 'long name'}, td_1={'name': 'x'}, td_2={'name': 'long name'})
 
 
 def test_str_length_config() -> None:
