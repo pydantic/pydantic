@@ -6570,7 +6570,8 @@ and <a class="autorefs autorefs-internal" href="../networks/#pydantic.networks.I
 <h3>Strictness</h3>
 
 <p>In <a href="../../concepts/strict_mode/">strict mode</a>, only the address types are accepted.
-In JSON mode, strict mode has no effect.</p>
+In JSON mode, only strings are accepted in strict mode, while integers are also accepted in lax mode
+(e.g. <code>3232235521</code> is validated as <code>IPv4Address('192.168.0.1')</code>).</p>
 <h3>Serialization</h3>
 
 <p>In <a href="../../concepts/serialization/#python-mode">Python mode</a>, IP addresses are serialized as is. In <a href="../../concepts/serialization/#json-mode">JSON mode</a>,

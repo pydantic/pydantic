@@ -1226,7 +1226,7 @@ See also: the IPvAnyAddress, IPvAnyInterface and IPvAnyNetwork Pydantic types.
 
 ### Strictness
 
-In [strict mode](../../concepts/strict_mode/), only the address types are accepted. In JSON mode, strict mode has no effect.
+In [strict mode](../../concepts/strict_mode/), only the address types are accepted. In JSON mode, only strings are accepted in strict mode, while integers are also accepted in lax mode (e.g. `3232235521` is validated as `IPv4Address('192.168.0.1')`).
 
 ### Serialization
 
