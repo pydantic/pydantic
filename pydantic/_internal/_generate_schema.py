@@ -585,7 +585,10 @@ class GenerateSchema:
             return str(ip)
 
         return core_schema.lax_or_strict_schema(
-            lax_schema=core_schema.no_info_plain_validator_function(IP_VALIDATOR_LOOKUP[tp]),
+            lax_schema=core_schema.json_or_python_schema(
+                json_schema=core_schema.no_info_after_validator_function(tp, core_schema.str_schema()),
+                python_schema=core_schema.no_info_plain_validator_function(IP_VALIDATOR_LOOKUP[tp]),
+            ),
             strict_schema=core_schema.json_or_python_schema(
                 json_schema=core_schema.no_info_after_validator_function(tp, core_schema.str_schema()),
                 python_schema=core_schema.is_instance_schema(tp),

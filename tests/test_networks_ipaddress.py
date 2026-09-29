@@ -4,7 +4,7 @@ from typing import Any
 
 import pytest
 
-from pydantic import BaseModel, IPvAnyAddress, IPvAnyInterface, IPvAnyNetwork, ValidationError
+from pydantic import BaseModel, IPvAnyAddress, IPvAnyInterface, IPvAnyNetwork, TypeAdapter, ValidationError
 from pydantic.config import ConfigDict
 
 
@@ -73,6 +73,33 @@ def test_ipv4address_success(value):
         ipv4: IPv4Address
 
     assert Model(ipv4=value).ipv4 == IPv4Address(value)
+
+
+@pytest.mark.parametrize(
+    'tp,python_value,json_value,json_format',
+    [
+        (IPv4Address, 3_232_235_521, '192.168.0.1', 'ipv4'),
+        (IPv6Address, 4_294_967_297, '::1:0:1', 'ipv6'),
+        (IPv4Interface, 3_232_235_521, '192.168.0.1/32', 'ipv4interface'),
+        (IPv6Interface, 4_294_967_297, '::1:0:1/128', 'ipv6interface'),
+        (IPv4Network, 3_232_235_521, '192.168.0.1/32', 'ipv4network'),
+        (IPv6Network, 4_294_967_297, '::1:0:1/128', 'ipv6network'),
+    ],
+)
+def test_ip_json_lax_only_accepts_strings(tp, python_value, json_value, json_format):
+    adapter = TypeAdapter(tp)
+
+    assert adapter.validate_python(python_value) == tp(python_value)
+    assert adapter.validate_python(json_value) == tp(json_value)
+    with pytest.raises(ValidationError):
+        adapter.validate_python(python_value, strict=True)
+    assert adapter.validate_json(json.dumps(json_value)) == tp(json_value)
+    assert adapter.validate_json(json.dumps(json_value), strict=True) == tp(json_value)
+    with pytest.raises(ValidationError):
+        adapter.validate_json(str(python_value))
+    with pytest.raises(ValidationError):
+        adapter.validate_json(str(python_value), strict=True)
+    assert adapter.json_schema() == {'type': 'string', 'format': json_format}
 
 
 @pytest.mark.parametrize(
