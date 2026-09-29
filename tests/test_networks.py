@@ -1036,6 +1036,29 @@ def test_name_email():
 
 
 @pytest.mark.skipif(not email_validator, reason='email_validator not installed')
+@pytest.mark.parametrize(
+    'value',
+    [
+        'John\r\n Doe <john@example.com>',
+        'John\r\nDoe <john@example.com>',
+        'John\nDoe <john@example.com>',
+        'John\rDoe <john@example.com>',
+        '"John\r\nDoe" <john@example.com>',
+        'John Doe <john@example.com>\r\n',
+    ],
+)
+def test_name_email_rejects_cr_lf(value: str) -> None:
+
+    ta = TypeAdapter(NameEmail)
+
+    with pytest.raises(ValidationError) as exc_info:
+        ta.validate_python(value)
+    assert exc_info.value.errors()[0]['msg'] == (
+        'value is not a valid email address: Carriage return and line feed characters are not allowed'
+    )
+
+
+@pytest.mark.skipif(not email_validator, reason='email_validator not installed')
 def test_name_email_serialization():
     class Model(BaseModel):
         email: NameEmail
