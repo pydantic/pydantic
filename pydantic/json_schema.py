@@ -2550,20 +2550,19 @@ class GenerateJsonSchema:
         """
         from .type_adapter import TypeAdapter, _type_has_config
 
-        config = self._config
-        try:
-            default = (
-                dft
-                if _type_has_config(type(dft))
-                else TypeAdapter(type(dft), config=config.config_dict).dump_python(
-                    dft, by_alias=self.by_alias, mode='json'
-                )
+        config = self._config.config_dict
+        if self.mode == 'validation' and ('ser_json_temporal' in config or 'ser_json_timedelta' in config):
+            # Temporal serialization formats aren't applied to validation JSON Schemas (see `_common_temporal_schema()`),
+            # so they shouldn't be applied to the default either:
+            config = cast(
+                'ConfigDict',
+                {k: v for k, v in config.items() if k not in ('ser_json_temporal', 'ser_json_timedelta')},
             )
-            return pydantic_core.to_jsonable_python(
-                default,
-                timedelta_mode=config.ser_json_timedelta,
-                bytes_mode=config.ser_json_bytes,
-                by_alias=self.by_alias,
+        try:
+            # Types with their own config (e.g. models) can't be used with a config, so we serialize "as Any",
+            # which will serialize using their own serializer.
+            return TypeAdapter(Any if _type_has_config(type(dft)) else type(dft), config=config).dump_python(
+                dft, by_alias=self.by_alias, mode='json'
             )
         except Exception as e:
             raise pydantic_core.PydanticSerializationError(f'Unable to encode default value {dft}') from e

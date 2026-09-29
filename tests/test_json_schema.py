@@ -1980,6 +1980,77 @@ def test_model_default_timedelta(ser_json_timedelta: Literal['float', 'iso8601']
 
 
 @pytest.mark.parametrize(
+    'config',
+    [
+        ConfigDict(ser_json_timedelta='float'),
+        ConfigDict(ser_json_temporal='seconds'),
+        ConfigDict(ser_json_temporal='milliseconds'),
+    ],
+)
+def test_model_default_temporal_validation_mode(config: ConfigDict) -> None:
+    """Temporal serialization formats aren't applied to validation JSON Schemas, including defaults."""
+
+    class Model(BaseModel):
+        model_config = config
+
+        duration: timedelta = timedelta(minutes=5)
+        dt: datetime = datetime(2020, 1, 1)
+
+    properties = Model.model_json_schema(mode='validation')['properties']
+    assert properties['duration'] == {'default': 'PT5M', 'format': 'duration', 'title': 'Duration', 'type': 'string'}
+    assert properties['dt'] == {
+        'default': '2020-01-01T00:00:00',
+        'format': 'date-time',
+        'title': 'Dt',
+        'type': 'string',
+    }
+
+
+@pytest.mark.xfail(
+    reason=(
+        'Model instances used as defaults are encoded using their own serializer, '
+        'and the temporal serialization format of the model config cannot be overridden.'
+    ),
+)
+def test_model_instance_default_temporal_validation_mode() -> None:
+    class Inner(BaseModel):
+        model_config = ConfigDict(ser_json_temporal='seconds')
+
+        duration: timedelta = timedelta(minutes=5)
+
+    class Model(BaseModel):
+        inner: Inner = Inner()
+
+    assert Model.model_json_schema(mode='validation')['properties']['inner']['default'] == {'duration': 'PT5M'}
+
+
+def test_stdlib_dataclass_default_uses_config() -> None:
+    """Stdlib dataclasses don't have their own config, so the enclosing one is used to encode them."""
+
+    @dataclasses.dataclass
+    class DC:
+        duration: timedelta = timedelta(minutes=5)
+        data: bytes = b'\xff'
+
+    class Model(BaseModel):
+        model_config = ConfigDict(ser_json_temporal='milliseconds', ser_json_bytes='base64')
+
+        dc: DC = DC()
+
+    ser_schema = Model.model_json_schema(mode='serialization')
+    assert ser_schema['properties']['dc']['default'] == {'duration': 300000.0, 'data': '_w=='}
+    assert ser_schema['properties']['dc']['default'] == Model().model_dump(mode='json')['dc']
+    assert ser_schema['$defs']['DC']['properties'] == {
+        'duration': {'default': 300000.0, 'title': 'Duration', 'type': 'number'},
+        'data': {'default': '_w==', 'format': 'base64url', 'title': 'Data', 'type': 'string'},
+    }
+
+    val_schema = Model.model_json_schema(mode='validation')
+    assert val_schema['properties']['dc']['default'] == {'duration': 'PT5M', 'data': '_w=='}
+    assert val_schema['$defs']['DC']['title'] == 'DC'
+
+
+@pytest.mark.parametrize(
     'ser_json_bytes,properties',
     [
         ('base64', {'data': {'default': 'Zm9vYmFy', 'format': 'base64url', 'title': 'Data', 'type': 'string'}}),
