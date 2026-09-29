@@ -1489,7 +1489,8 @@ and [`IPvAnyNetwork`][pydantic.networks.IPvAnyNetwork] Pydantic types.
 <h3>Strictness</h3>
 
 In [strict mode](../concepts/strict_mode.md), only the address types are accepted.
-In JSON mode, strict mode has no effect.
+In JSON mode, only strings are accepted in strict mode, while integers are also accepted in lax mode
+(e.g. `3232235521` is validated as `IPv4Address('192.168.0.1')`).
 
 <h3>Serialization</h3>
 
