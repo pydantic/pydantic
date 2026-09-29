@@ -1637,7 +1637,7 @@ class GenerateJsonSchema:
         if cls is not None:
             # `_update_class_schema()` will not override
             # `additionalProperties` if already present:
-            self._update_class_schema(json_schema, cls, config)
+            self._update_class_schema(json_schema, cls, config or {})
         elif 'additionalProperties' not in json_schema:
             extra = schema.get('config', {}).get('extra_fields_behavior')
             if extra == 'forbid':
@@ -1968,12 +1968,13 @@ class GenerateJsonSchema:
         """
 
         cls = schema['cls']
-        config = cast('ConfigDict', getattr(cls, '__pydantic_config__', {}))
+        # If (stdlib) dataclass doesn't have config, the parent's config is used (as during core schema generation):
+        config = cast('ConfigDict | None', getattr(cls, '__pydantic_config__', None))
 
         with self._config_wrapper_stack.push(config):
             json_schema = self.generate_inner(schema['schema']).copy()
 
-        self._update_class_schema(json_schema, cls, config)
+        self._update_class_schema(json_schema, cls, config or {})
 
         return json_schema
 
@@ -3221,13 +3222,15 @@ else:
             return hash(type(self))
 
 
-def _get_typed_dict_config(cls: type[Any] | None) -> ConfigDict:
+def _get_typed_dict_config(cls: type[Any] | None) -> ConfigDict | None:
+    # If typed dictionary doesn't have config, the parent's config is used (as during core schema generation),
+    # hence a default of `None`:
     if cls is not None:
         try:
             return _decorators.get_attribute_from_bases(cls, '__pydantic_config__')
         except AttributeError:
             pass
-    return {}
+    return None
 
 
 def _get_ser_schema_for_default_value(schema: CoreSchema) -> core_schema.PlainSerializerFunctionSerSchema | None:
