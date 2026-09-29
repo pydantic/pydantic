@@ -59,7 +59,7 @@ from pydantic import (
     with_config,
 )
 from pydantic.color import Color
-from pydantic.config import ConfigDict
+from pydantic.config import ConfigDict, ExtraValues
 from pydantic.dataclasses import dataclass
 from pydantic.errors import PydanticInvalidForJsonSchema
 from pydantic.json_schema import (
@@ -2196,6 +2196,57 @@ def test_stdlib_types_config_propagation() -> None:
     Parent(dc_1={'name': 'x'}, dc_2={'name': 'long name'}, td_1={'name': 'x'}, td_2={'name': 'long name'})
 
 
+@pytest.mark.parametrize(
+    ['extra', 'additional_properties'],
+    [('forbid', False), ('allow', True), ('ignore', None)],
+)
+def test_stdlib_dataclass_extra_config_propagation(extra: ExtraValues, additional_properties: bool | None) -> None:
+    """https://github.com/pydantic/pydantic/issues/13845"""
+
+    @dataclasses.dataclass
+    class DCWithoutConfig:
+        a: int
+
+    @dataclasses.dataclass
+    @with_config(str_to_lower=True)
+    class DCWithConfig:
+        a: int
+
+    @dataclasses.dataclass
+    @with_config(extra='allow')
+    class DCWithExtraConfig:
+        a: int
+
+    @pydantic.dataclasses.dataclass
+    class PydanticDC:
+        a: int
+
+    class Model(BaseModel):
+        model_config = ConfigDict(extra=extra)
+
+        dc_1: DCWithoutConfig
+        dc_2: DCWithConfig
+        dc_3: DCWithExtraConfig
+        dc_4: PydanticDC
+
+    defs = Model.model_json_schema()['$defs']
+    assert defs['DCWithoutConfig'].get('additionalProperties') == additional_properties
+    assert 'additionalProperties' not in defs['DCWithConfig']
+    assert defs['DCWithExtraConfig']['additionalProperties'] is True
+    assert 'additionalProperties' not in defs['PydanticDC']
+
+    ta = TypeAdapter(list[DCWithoutConfig], config=ConfigDict(extra=extra))
+    assert ta.json_schema()['$defs']['DCWithoutConfig'].get('additionalProperties') == additional_properties
+
+    # Consistent with validation:
+    if extra == 'forbid':
+        with pytest.raises(ValidationError):
+            Model(dc_1={'a': 1, 'b': 2}, dc_2={'a': 1}, dc_3={'a': 1}, dc_4={'a': 1})
+        with pytest.raises(ValidationError):
+            ta.validate_python([{'a': 1, 'b': 2}])
+    Model(dc_1={'a': 1}, dc_2={'a': 1, 'b': 2}, dc_3={'a': 1, 'b': 2}, dc_4={'a': 1, 'b': 2})
+
+
 def test_str_length_config() -> None:
     class Model(BaseModel):
         model_config = ConfigDict(str_min_length=3, str_max_length=5)
@@ -2911,7 +2962,7 @@ def test_dataclass_with_extra_ignore():
 def test_dataclass_with_extra_forbid():
     @pydantic.dataclasses.dataclass
     class Model:
-        __pydantic_config__ = ConfigDict(extra='ignore')
+        __pydantic_config__ = ConfigDict(extra='forbid')
         a: str
 
     assert TypeAdapter(Model).json_schema() == {
@@ -2919,6 +2970,7 @@ def test_dataclass_with_extra_forbid():
         'type': 'object',
         'properties': {'a': {'title': 'A', 'type': 'string'}},
         'required': ['a'],
+        'additionalProperties': False,
     }
 
 

@@ -1986,7 +1986,13 @@ class GenerateJsonSchema:
         with self._config_wrapper_stack.push(config):
             json_schema = self.generate_inner(schema['schema']).copy()
 
-        self._update_class_schema(json_schema, cls, config or {})
+        # Only the parent's `extra` config value is relevant to the class schema. It is propagated
+        # to the core config (and used for validation), so we reuse it:
+        class_config = config or {}
+        if 'extra' not in class_config and (extra := schema.get('config', {}).get('extra_fields_behavior')) is not None:
+            class_config = cast('ConfigDict', {**class_config, 'extra': extra})
+
+        self._update_class_schema(json_schema, cls, class_config)
 
         return json_schema
 
