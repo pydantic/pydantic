@@ -6650,7 +6650,18 @@ and the normalized email.</p>
 <span class="normal">1400</span>
 <span class="normal">1401</span>
 <span class="normal">1402</span>
-<span class="normal">1403</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">validate_email</span><span class="p">(</span><span class="n">value</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]:</span>
+<span class="normal">1403</span>
+<span class="normal">1404</span>
+<span class="normal">1405</span>
+<span class="normal">1406</span>
+<span class="normal">1407</span>
+<span class="normal">1408</span>
+<span class="normal">1409</span>
+<span class="normal">1410</span>
+<span class="normal">1411</span>
+<span class="normal">1412</span>
+<span class="normal">1413</span>
+<span class="normal">1414</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">validate_email</span><span class="p">(</span><span class="n">value</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Email address validation using [email-validator](https://pypi.org/project/email-validator/).</span>
 
 <span class="sd">    Returns:</span>
@@ -6675,6 +6686,17 @@ and the normalized email.</p>
             <span class="s1">&#39;value_error&#39;</span><span class="p">,</span>
             <span class="s1">&#39;value is not a valid email address: </span><span class="si">{reason}</span><span class="s1">&#39;</span><span class="p">,</span>
             <span class="p">{</span><span class="s1">&#39;reason&#39;</span><span class="p">:</span> <span class="sa">f</span><span class="s1">&#39;Length must not exceed </span><span class="si">{</span><span class="n">MAX_EMAIL_LENGTH</span><span class="si">}</span><span class="s1"> characters&#39;</span><span class="p">},</span>
+        <span class="p">)</span>
+
+    <span class="c1"># Carriage returns and line feeds are only allowed in a header field body as part of &quot;folding&quot;</span>
+    <span class="c1"># (a CRLF immediately followed by whitespace), which is unfolded before the value is parsed</span>
+    <span class="c1"># (see https://www.rfc-editor.org/info/rfc5322/#section-2.2). A `NameEmail` is a standalone value</span>
+    <span class="c1"># rather than a folded header line, so any CR or LF is rejected.</span>
+    <span class="k">if</span> <span class="s1">&#39;</span><span class="se">\r</span><span class="s1">&#39;</span> <span class="ow">in</span> <span class="n">value</span> <span class="ow">or</span> <span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&#39;</span> <span class="ow">in</span> <span class="n">value</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="n">PydanticCustomError</span><span class="p">(</span>
+            <span class="s1">&#39;value_error&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;value is not a valid email address: </span><span class="si">{reason}</span><span class="s1">&#39;</span><span class="p">,</span>
+            <span class="p">{</span><span class="s1">&#39;reason&#39;</span><span class="p">:</span> <span class="s1">&#39;Carriage return and line feed characters are not allowed&#39;</span><span class="p">},</span>
         <span class="p">)</span>
 
     <span class="n">m</span> <span class="o">=</span> <span class="n">pretty_email_regex</span><span class="o">.</span><span class="n">fullmatch</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>

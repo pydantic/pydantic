@@ -4748,11 +4748,11 @@ new attributes after instantiation.</p>
             <span class="n">frozen_</span> <span class="o">=</span> <span class="n">config_wrapper</span><span class="o">.</span><span class="n">frozen</span> <span class="ow">or</span> <span class="kc">False</span>
 
         <span class="c1"># Make Pydantic&#39;s `Field()` function compatible with stdlib dataclasses. As we&#39;ll decorate</span>
-        <span class="c1"># `cls` with the stdlib `@dataclass` decorator first, there are two attributes, `kw_only` and</span>
-        <span class="c1"># `repr` that need to be understood *during* the stdlib creation. We do so in two steps:</span>
+        <span class="c1"># `cls` with the stdlib `@dataclass` decorator first, some attributes (`kw_only`, `repr`, `init`)</span>
+        <span class="c1"># need to be understood *during* the stdlib creation. We do so in two steps:</span>
 
-        <span class="c1"># 1. On the decorated class, wrap `Field()` assignment with `dataclass.field()`, with the</span>
-        <span class="c1"># two attributes set (done in `as_dataclass_field()`)</span>
+        <span class="c1"># 1. On the decorated class, wrap `Field()` assignment with `dataclass.field()`, with these</span>
+        <span class="c1"># attributes set (done in `as_dataclass_field()`)</span>
         <span class="n">cls_anns</span> <span class="o">=</span> <span class="n">_typing_extra</span><span class="o">.</span><span class="n">safe_get_annotations</span><span class="p">(</span><span class="bp">cls</span><span class="p">)</span>
         <span class="k">for</span> <span class="n">field_name</span> <span class="ow">in</span> <span class="n">cls_anns</span><span class="p">:</span>
             <span class="c1"># We should look for assignments in `__dict__` instead, but for now we follow</span>

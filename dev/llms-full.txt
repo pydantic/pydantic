@@ -19070,11 +19070,11 @@ def dataclass(
             frozen_ = config_wrapper.frozen or False
 
         # Make Pydantic's `Field()` function compatible with stdlib dataclasses. As we'll decorate
-        # `cls` with the stdlib `@dataclass` decorator first, there are two attributes, `kw_only` and
-        # `repr` that need to be understood *during* the stdlib creation. We do so in two steps:
+        # `cls` with the stdlib `@dataclass` decorator first, some attributes (`kw_only`, `repr`, `init`)
+        # need to be understood *during* the stdlib creation. We do so in two steps:
 
-        # 1. On the decorated class, wrap `Field()` assignment with `dataclass.field()`, with the
-        # two attributes set (done in `as_dataclass_field()`)
+        # 1. On the decorated class, wrap `Field()` assignment with `dataclass.field()`, with these
+        # attributes set (done in `as_dataclass_field()`)
         cls_anns = _typing_extra.safe_get_annotations(cls)
         for field_name in cls_anns:
             # We should look for assignments in `__dict__` instead, but for now we follow
@@ -28994,6 +28994,17 @@ def validate_email(value: str) -> tuple[str, str]:
             'value_error',
             'value is not a valid email address: {reason}',
             {'reason': f'Length must not exceed {MAX_EMAIL_LENGTH} characters'},
+        )
+
+    # Carriage returns and line feeds are only allowed in a header field body as part of "folding"
+    # (a CRLF immediately followed by whitespace), which is unfolded before the value is parsed
+    # (see https://www.rfc-editor.org/info/rfc5322/#section-2.2). A `NameEmail` is a standalone value
+    # rather than a folded header line, so any CR or LF is rejected.
+    if '\r' in value or '\n' in value:
+        raise PydanticCustomError(
+            'value_error',
+            'value is not a valid email address: {reason}',
+            {'reason': 'Carriage return and line feed characters are not allowed'},
         )
 
     m = pretty_email_regex.fullmatch(value)

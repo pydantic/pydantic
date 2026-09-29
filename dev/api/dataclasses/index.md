@@ -208,11 +208,11 @@ def dataclass(
             frozen_ = config_wrapper.frozen or False
 
         # Make Pydantic's `Field()` function compatible with stdlib dataclasses. As we'll decorate
-        # `cls` with the stdlib `@dataclass` decorator first, there are two attributes, `kw_only` and
-        # `repr` that need to be understood *during* the stdlib creation. We do so in two steps:
+        # `cls` with the stdlib `@dataclass` decorator first, some attributes (`kw_only`, `repr`, `init`)
+        # need to be understood *during* the stdlib creation. We do so in two steps:
 
-        # 1. On the decorated class, wrap `Field()` assignment with `dataclass.field()`, with the
-        # two attributes set (done in `as_dataclass_field()`)
+        # 1. On the decorated class, wrap `Field()` assignment with `dataclass.field()`, with these
+        # attributes set (done in `as_dataclass_field()`)
         cls_anns = _typing_extra.safe_get_annotations(cls)
         for field_name in cls_anns:
             # We should look for assignments in `__dict__` instead, but for now we follow
