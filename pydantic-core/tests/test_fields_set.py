@@ -471,7 +471,7 @@ def test_serialization_exclude_unset() -> None:
     assert s.to_json(m, exclude_unset=True) == b'{"b":2,"x":10}'
 
     m.__pydantic_fields_set__ = ['a']
-    with pytest.raises(TypeError, match="failed to extract enum FieldsSet \\('ModelFieldsSet | Set'\\)"):
+    with pytest.raises(TypeError, match='must be a `ModelFieldsSet` or `set` instance, got list'):
         s.to_python(m, exclude_unset=True)
 
 
@@ -496,7 +496,7 @@ def test_validate_assignment_unsupported_fields_set() -> None:
     v = make_validator()
     m = v.validate_python({'a': 1})
     m.__pydantic_fields_set__ = ['a']
-    with pytest.raises(TypeError, match="failed to extract enum FieldsSet \\('ModelFieldsSet | Set'\\)"):
+    with pytest.raises(TypeError, match='must be a `ModelFieldsSet` or `set` instance, got list'):
         v.validate_assignment(m, 'b', 4)
 
 

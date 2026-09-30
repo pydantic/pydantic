@@ -616,10 +616,28 @@ impl ModelFieldsSet {
 
 /// The `__pydantic_fields_set__` attribute of a model instance, which is usually a [`ModelFieldsSet`]
 /// but can also be a plain `set` (e.g. when the instance was created using `model_construct()`).
-#[derive(FromPyObject)]
 pub enum FieldsSet<'py> {
     ModelFieldsSet(Bound<'py, ModelFieldsSet>),
     Set(Bound<'py, PySet>),
+}
+
+// Implemented manually rather than derived to avoid the performance cost when a variant fails to extract
+// (see https://github.com/PyO3/pyo3/discussions/2968).
+impl<'py> FromPyObject<'_, 'py> for FieldsSet<'py> {
+    type Error = PyErr;
+
+    fn extract(obj: Borrowed<'_, 'py, PyAny>) -> PyResult<Self> {
+        if let Ok(fields_set) = obj.cast::<ModelFieldsSet>() {
+            Ok(Self::ModelFieldsSet(fields_set.to_owned()))
+        } else if let Ok(set) = obj.cast::<PySet>() {
+            Ok(Self::Set(set.to_owned()))
+        } else {
+            Err(PyTypeError::new_err(format!(
+                "`__pydantic_fields_set__` must be a `ModelFieldsSet` or `set` instance, got {}",
+                obj.get_type().qualname()?
+            )))
+        }
+    }
 }
 
 impl FieldsSet<'_> {
