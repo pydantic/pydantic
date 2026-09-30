@@ -3484,6 +3484,17 @@ to help you monitor and understand your
 </li>
       
         <li class="md-nav__item">
+  <a href="#create-model-namespace" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        create_model namespace
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#validator-instance-method" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -4729,6 +4740,17 @@ to help you monitor and understand your
 </li>
       
         <li class="md-nav__item">
+  <a href="#create-model-namespace" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        create_model namespace
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#validator-instance-method" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -5654,6 +5676,28 @@ Pydantic V2.</p>
     <span class="k">assert</span> <span class="n">exc_info</span><span class="o">.</span><span class="n">code</span> <span class="o">==</span> <span class="s1">&#39;create-model-field-definitions&#39;</span>
 </code></pre></div>
 <p>The fields definition syntax can be found in the <a href="../../concepts/models/#dynamic-model-creation">dynamic model creation</a> documentation.</p>
+<h2 id="create-model-namespace"><code>create_model</code> namespace<a class="headerlink" href="#create-model-namespace" title="Permanent link">&para;</a></h2>
+<p>This error is raised when a key of the <code>__namespace__</code> argument of <a class="autorefs autorefs-internal" href="../../api/base_model/#pydantic.create_model"><code>create_model()</code></a>
+clashes with a field name:</p>
+<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">pydantic</span><span class="w"> </span><span class="kn">import</span> <span class="n">PydanticUserError</span><span class="p">,</span> <span class="n">create_model</span>
+
+<span class="k">try</span><span class="p">:</span>
+    <span class="n">create_model</span><span class="p">(</span><span class="s1">&#39;FooModel&#39;</span><span class="p">,</span> <span class="n">foo</span><span class="o">=</span><span class="nb">int</span><span class="p">,</span> <span class="n">__namespace__</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;foo&#39;</span><span class="p">:</span> <span class="mi">1</span><span class="p">})</span>
+<span class="k">except</span> <span class="n">PydanticUserError</span> <span class="k">as</span> <span class="n">exc_info</span><span class="p">:</span>
+    <span class="k">assert</span> <span class="n">exc_info</span><span class="o">.</span><span class="n">code</span> <span class="o">==</span> <span class="s1">&#39;create-model-namespace&#39;</span>
+</code></pre></div>
+<p>It is also raised when a key of the <code>__namespace__</code> argument is an attribute that has a dedicated argument
+(<code>__annotations__</code>, <code>__module__</code>, <code>__qualname__</code>, <code>__doc__</code> and <code>model_config</code>):</p>
+<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">pydantic</span><span class="w"> </span><span class="kn">import</span> <span class="n">ConfigDict</span><span class="p">,</span> <span class="n">PydanticUserError</span><span class="p">,</span> <span class="n">create_model</span>
+
+<span class="k">try</span><span class="p">:</span>
+    <span class="n">create_model</span><span class="p">(</span>
+        <span class="s1">&#39;FooModel&#39;</span><span class="p">,</span> <span class="n">__namespace__</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;model_config&#39;</span><span class="p">:</span> <span class="n">ConfigDict</span><span class="p">(</span><span class="n">strict</span><span class="o">=</span><span class="kc">True</span><span class="p">)}</span>
+    <span class="p">)</span>
+<span class="k">except</span> <span class="n">PydanticUserError</span> <span class="k">as</span> <span class="n">exc_info</span><span class="p">:</span>
+    <span class="k">assert</span> <span class="n">exc_info</span><span class="o">.</span><span class="n">code</span> <span class="o">==</span> <span class="s1">&#39;create-model-namespace&#39;</span>
+</code></pre></div>
+<p>Use the <code>__config__</code> argument instead.</p>
 <h2 id="validator-instance-method">Validator on instance method<a class="headerlink" href="#validator-instance-method" title="Permanent link">&para;</a></h2>
 <p>This error is raised when you apply a validator on an instance method.</p>
 <div class="language-python highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">pydantic</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">PydanticUserError</span><span class="p">,</span> <span class="n">field_validator</span>

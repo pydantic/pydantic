@@ -5940,42 +5940,59 @@ This includes extending a base model with extra fields.</p>
 <span class="nb">print</span><span class="p">(</span><span class="n">BarModel</span><span class="o">.</span><span class="n">model_fields</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
 <span class="c1">#&gt; dict_keys([&#39;foo&#39;, &#39;bar&#39;, &#39;apple&#39;, &#39;banana&#39;])</span>
 </code></pre></div>
-<p>You can also add validators by passing a dictionary to the <code>__validators__</code> argument.</p>
-<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">pydantic</span><span class="w"> </span><span class="kn">import</span> <span class="n">ValidationError</span><span class="p">,</span> <span class="n">create_model</span><span class="p">,</span> <span class="n">field_validator</span>
+<p>Attributes such as <a href="../validators/">validators</a>, methods or <a href="../fields/#the-computed_field-decorator">computed fields</a>
+can be added to the class namespace using the <code>__namespace__</code> argument:</p>
+<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">pydantic</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+    <span class="n">ValidationError</span><span class="p">,</span>
+    <span class="n">computed_field</span><span class="p">,</span>
+    <span class="n">create_model</span><span class="p">,</span>
+    <span class="n">field_validator</span><span class="p">,</span>
+<span class="p">)</span>
 
 
-<span class="k">def</span><span class="w"> </span><span class="nf">alphanum</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">v</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">alphanum</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">v</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
     <span class="k">assert</span> <span class="n">v</span><span class="o">.</span><span class="n">isalnum</span><span class="p">(),</span> <span class="s1">&#39;must be alphanumeric&#39;</span>
     <span class="k">return</span> <span class="n">v</span>
 
 
-<span class="n">validators</span> <span class="o">=</span> <span class="p">{</span>
-    <span class="s1">&#39;username_validator&#39;</span><span class="p">:</span> <span class="n">field_validator</span><span class="p">(</span><span class="s1">&#39;username&#39;</span><span class="p">)(</span><span class="n">alphanum</span><span class="p">)</span>  <span class="c1"># (1)!</span>
-<span class="p">}</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">full_name</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+    <span class="k">return</span> <span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">first_name</span><span class="si">}</span><span class="s1"> </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">last_name</span><span class="si">}</span><span class="s1">&#39;</span>
+
 
 <span class="n">UserModel</span> <span class="o">=</span> <span class="n">create_model</span><span class="p">(</span>
-    <span class="s1">&#39;UserModel&#39;</span><span class="p">,</span> <span class="n">username</span><span class="o">=</span><span class="p">(</span><span class="nb">str</span><span class="p">,</span> <span class="o">...</span><span class="p">),</span> <span class="n">__validators__</span><span class="o">=</span><span class="n">validators</span>
+    <span class="s1">&#39;UserModel&#39;</span><span class="p">,</span>
+    <span class="n">first_name</span><span class="o">=</span><span class="nb">str</span><span class="p">,</span>
+    <span class="n">last_name</span><span class="o">=</span><span class="nb">str</span><span class="p">,</span>
+    <span class="n">__namespace__</span><span class="o">=</span><span class="p">{</span>  <span class="c1"># (1)!</span>
+        <span class="s1">&#39;check_alphanum&#39;</span><span class="p">:</span> <span class="n">field_validator</span><span class="p">(</span><span class="s1">&#39;first_name&#39;</span><span class="p">,</span> <span class="s1">&#39;last_name&#39;</span><span class="p">)(</span><span class="n">alphanum</span><span class="p">),</span>
+        <span class="s1">&#39;full_name&#39;</span><span class="p">:</span> <span class="n">computed_field</span><span class="p">(</span><span class="nb">property</span><span class="p">(</span><span class="n">full_name</span><span class="p">)),</span>
+    <span class="p">},</span>
 <span class="p">)</span>
 
-<span class="n">user</span> <span class="o">=</span> <span class="n">UserModel</span><span class="p">(</span><span class="n">username</span><span class="o">=</span><span class="s1">&#39;scolvin&#39;</span><span class="p">)</span>
-<span class="nb">print</span><span class="p">(</span><span class="n">user</span><span class="p">)</span>
-<span class="c1">#&gt; username=&#39;scolvin&#39;</span>
+<span class="n">user</span> <span class="o">=</span> <span class="n">UserModel</span><span class="p">(</span><span class="n">first_name</span><span class="o">=</span><span class="s1">&#39;John&#39;</span><span class="p">,</span> <span class="n">last_name</span><span class="o">=</span><span class="s1">&#39;Doe&#39;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">user</span><span class="o">.</span><span class="n">model_dump</span><span class="p">())</span>
+<span class="c1">#&gt; {&#39;first_name&#39;: &#39;John&#39;, &#39;last_name&#39;: &#39;Doe&#39;, &#39;full_name&#39;: &#39;John Doe&#39;}</span>
 
 <span class="k">try</span><span class="p">:</span>
-    <span class="n">UserModel</span><span class="p">(</span><span class="n">username</span><span class="o">=</span><span class="s1">&#39;scolvi%n&#39;</span><span class="p">)</span>
+    <span class="n">UserModel</span><span class="p">(</span><span class="n">first_name</span><span class="o">=</span><span class="s1">&#39;J%hn&#39;</span><span class="p">,</span> <span class="n">last_name</span><span class="o">=</span><span class="s1">&#39;Doe&#39;</span><span class="p">)</span>
 <span class="k">except</span> <span class="n">ValidationError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
     <span class="nb">print</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    1 validation error for UserModel</span>
-<span class="sd">    username</span>
-<span class="sd">      Assertion failed, must be alphanumeric [type=assertion_error, input_value=&#39;scolvi%n&#39;, input_type=str]</span>
+<span class="sd">    first_name</span>
+<span class="sd">      Assertion failed, must be alphanumeric [type=assertion_error, input_value=&#39;J%hn&#39;, input_type=str]</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 </code></pre></div>
 <ol>
-<li>Make sure that the validators names do not clash with any of the field names as
+<li>The keys of the namespace must not clash with any of the field names as
    internally, Pydantic gathers all members into a namespace and mimics the normal
    creation of a class using the <a href="https://docs.python.org/3/library/types.html#dynamic-type-creation"><code>types</code> module utilities</a>.</li>
 </ol>
+<div style="border-left: .15rem solid rgb(79, 196, 100); padding: 0 .5rem;">
+<p><span style="font-style: italic; color: rgb(79, 196, 100);">Added in v2.14: </span><span>The <code>__namespace__</code> argument. Unlike <code>__validators__</code>, it isn't restricted to validators and can be used
+to provide any attribute to the class namespace (such as computed fields, properties or methods).
+It is now recommended to use <code>__namespace__</code> instead of <code>__validators__</code>, which will be deprecated in v3.</span></p>
+</div>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
 <p>To pickle a dynamically created model:</p>
