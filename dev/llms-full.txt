@@ -11157,7 +11157,7 @@ except ValidationError as exc:
 
 ### `MISSING` sentinel
 
-Added in v2.11.
+Added in v2.12.
 
 Changed in v2.14: The `MISSING` sentinel is no longer experimental.
 
