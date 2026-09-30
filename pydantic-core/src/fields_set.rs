@@ -1,5 +1,6 @@
 //! Implementation of `ModelFieldsSet`, the set used to track the fields explicitly set on a model instance.
 
+use std::ops::Deref;
 use std::sync::Arc;
 
 use pyo3::exceptions::{PyKeyError, PyTypeError};
@@ -43,6 +44,26 @@ impl BitSet {
 
     fn clear(&mut self) {
         self.0.iter_mut().for_each(|block| *block = 0);
+    }
+}
+
+/// The names of the fields of a model, in definition order.
+#[derive(Debug)]
+// The slice is boxed so that `Arc<FieldNames>` is a thin pointer, keeping the size of
+// `ModelFieldsValidator` (and thus of `CombinedValidator`) small:
+pub struct FieldNames(Box<[PyBackedStr]>);
+
+impl Deref for FieldNames {
+    type Target = [PyBackedStr];
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+
+impl FromIterator<PyBackedStr> for FieldNames {
+    fn from_iter<I: IntoIterator<Item = PyBackedStr>>(iter: I) -> Self {
+        Self(iter.into_iter().collect())
     }
 }
 
@@ -125,14 +146,14 @@ fn snapshot_if_self<'py>(slf: &Bound<'py, ModelFieldsSet>, other: &Bound<'py, Py
 #[pyclass(module = "pydantic_core._pydantic_core")]
 #[derive(Debug)]
 pub struct ModelFieldsSet {
-    field_names: Arc<[PyBackedStr]>,
+    field_names: Arc<FieldNames>,
     bits: BitSet,
     extra: Option<Py<PySet>>,
 }
 
 impl ModelFieldsSet {
     /// Creates an empty set, for a model with the provided field names.
-    pub fn empty(field_names: Arc<[PyBackedStr]>) -> Self {
+    pub fn empty(field_names: Arc<FieldNames>) -> Self {
         Self {
             bits: BitSet::with_len(field_names.len()),
             field_names,
@@ -329,14 +350,14 @@ impl ModelFieldsSet {
         iterable: Option<&Bound<'_, PyAny>>,
         field_names: Option<&Bound<'_, PyAny>>,
     ) -> PyResult<Self> {
-        let field_names: Arc<[PyBackedStr]> = match field_names {
+        let field_names: FieldNames = match field_names {
             Some(field_names) => field_names
                 .try_iter()?
                 .map(|name| name?.extract::<PyBackedStr>())
                 .collect::<PyResult<_>>()?,
-            None => Arc::new([]),
+            None => FieldNames::from_iter([]),
         };
-        let mut set = Self::empty(field_names);
+        let mut set = Self::empty(Arc::new(field_names));
         if let Some(iterable) = iterable {
             set.update_with(py, iterable)?;
         }
@@ -658,7 +679,7 @@ impl FieldsSet<'_> {
 
 #[pyclass(module = "pydantic_core._pydantic_core")]
 struct ModelFieldsSetIterator {
-    field_names: Arc<[PyBackedStr]>,
+    field_names: Arc<FieldNames>,
     bits: BitSet,
     next_index: usize,
     extra: Option<Py<PyIterator>>,

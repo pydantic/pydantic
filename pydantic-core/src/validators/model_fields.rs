@@ -14,7 +14,7 @@ use crate::build_tools::py_schema_err;
 use crate::build_tools::{ExtraBehavior, is_strict, schema_or_config_same};
 use crate::errors::LocItem;
 use crate::errors::{ErrorType, ErrorTypeDefaults, ValError, ValLineError, ValResult};
-use crate::fields_set::ModelFieldsSet;
+use crate::fields_set::{FieldNames, ModelFieldsSet};
 use crate::input::ConsumeIterator;
 use crate::input::{BorrowInput, Input, ValidatedDict, ValidationMatch};
 use crate::lookup_key::LookupType;
@@ -40,7 +40,7 @@ impl_py_gc_traverse!(Field { validator });
 pub struct ModelFieldsValidator {
     fields: Vec<Field>,
     /// The field names, shared with every `ModelFieldsSet` created by this validator.
-    field_names: Arc<[PyBackedStr]>,
+    field_names: Arc<FieldNames>,
     /// Whether an extra key can be equal to a field name (when a field has a validation alias,
     /// or when extra keys are validated), in which case adding it to the fields set requires
     /// a check against the field names.
@@ -115,7 +115,7 @@ impl BuildValidator for ModelFieldsValidator {
         }
 
         let lookup = LookupTree::from_fields(&fields, |field| &field.lookup_path_collection);
-        let field_names: Arc<[PyBackedStr]> = fields.iter().map(|field| field.name.clone()).collect();
+        let field_names = Arc::new(fields.iter().map(|field| field.name.clone()).collect::<FieldNames>());
         let extra_keys_may_be_field_names = has_validation_alias || extras_keys_validator.is_some();
 
         Ok(CombinedValidator::ModelFields(Self {
