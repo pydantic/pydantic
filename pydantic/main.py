@@ -1762,6 +1762,15 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
 
 ModelT = TypeVar('ModelT', bound=BaseModel)
 
+_CREATE_MODEL_RESERVED_NAMESPACE_KEYS: dict[str, str] = {
+    '__annotations__': 'field definitions',
+    '__module__': 'the `__module__` argument',
+    '__qualname__': 'the `__qualname__` argument',
+    '__doc__': 'the `__doc__` argument',
+    'model_config': 'the `__config__` argument',
+}
+"""Keys that can't be provided in the `__namespace__` argument of `create_model()`, mapped to the argument to use instead."""
+
 
 @overload
 def create_model(
@@ -1773,6 +1782,7 @@ def create_model(
     __base__: None = None,
     __module__: str = __name__,
     __validators__: dict[str, Callable[..., Any]] | None = None,
+    __namespace__: dict[str, Any] | None = None,
     __cls_kwargs__: dict[str, Any] | None = None,
     __qualname__: str | None = None,
     **field_definitions: TypeForm[Any] | tuple[TypeForm[Any], Any],
@@ -1789,6 +1799,7 @@ def create_model(
     __base__: type[ModelT] | tuple[type[ModelT], ...],
     __module__: str = __name__,
     __validators__: dict[str, Callable[..., Any]] | None = None,
+    __namespace__: dict[str, Any] | None = None,
     __cls_kwargs__: dict[str, Any] | None = None,
     __qualname__: str | None = None,
     **field_definitions: TypeForm[Any] | tuple[TypeForm[Any], Any],
@@ -1804,6 +1815,7 @@ def create_model(  # noqa: C901
     __base__: type[ModelT] | tuple[type[ModelT], ...] | None = None,
     __module__: str | None = None,
     __validators__: dict[str, Callable[..., Any]] | None = None,
+    __namespace__: dict[str, Any] | None = None,
     __cls_kwargs__: dict[str, Any] | None = None,
     __qualname__: str | None = None,
     **field_definitions: TypeForm[Any] | tuple[TypeForm[Any], Any],
@@ -1829,6 +1841,20 @@ def create_model(  # noqa: C901
         __validators__: A dictionary of methods that validate fields. The keys are the names of the validation methods to
             be added to the model, and the values are the validation methods themselves. You can read more about functional
             validators [here](../concepts/validators.md#field-validators).
+
+            /// version-changed | v2.14
+            It is now recommended to use the `__namespace__` argument, which isn't restricted to validators.
+            `__validators__` will be deprecated in v3.
+            ///
+        __namespace__: A dictionary of attributes to add to the class namespace of the new model, such as
+            [validators](../concepts/validators.md), methods or [computed fields][pydantic.computed_field].
+            Keys take precedence over the ones from `__validators__`, and must not clash with any of the field names
+            or with the attributes that have a dedicated argument (`__annotations__`, `__module__`, `__qualname__`,
+            `__doc__` and `model_config`).
+
+            /// version-added | v2.14
+            This argument replaces `__validators__`, which will be deprecated in v3.
+            ///
         __cls_kwargs__: A dictionary of keyword arguments for class creation, such as `metaclass`.
         __qualname__: The qualified name of the newly created model.
         **field_definitions: Field definitions of the new model. Either:
@@ -1841,7 +1867,8 @@ def create_model(  # noqa: C901
         The new [model][pydantic.BaseModel].
 
     Raises:
-        PydanticUserError: If `__base__` and `__config__` are both passed.
+        PydanticUserError: If `__base__` and `__config__` are both passed,
+            or if a key of `__namespace__` clashes with a field name or with an attribute that has a dedicated argument.
     """
     if __base__ is None:
         __base__ = (cast('type[ModelT]', BaseModel),)
@@ -1867,6 +1894,19 @@ def create_model(  # noqa: C901
         else:
             annotations[f_name] = f_def
 
+    if __namespace__:
+        if clashing_names := field_definitions.keys() & __namespace__.keys():
+            raise PydanticUserError(
+                f'Field name(s) {", ".join(map(repr, sorted(clashing_names)))} clash with keys of the `__namespace__` argument.',
+                code='create-model-namespace',
+            )
+        for key, argument in _CREATE_MODEL_RESERVED_NAMESPACE_KEYS.items():
+            if key in __namespace__:
+                raise PydanticUserError(
+                    f'{key!r} is not allowed as a key of the `__namespace__` argument, use {argument} instead.',
+                    code='create-model-namespace',
+                )
+
     if __module__ is None:
         f = sys._getframe(1)
         __module__ = f.f_globals['__name__']
@@ -1878,6 +1918,8 @@ def create_model(  # noqa: C901
         namespace['__qualname__'] = __qualname__
     if __validators__:
         namespace.update(__validators__)
+    if __namespace__:
+        namespace.update(__namespace__)
     namespace.update(fields)
     if __config__:
         namespace['model_config'] = __config__
