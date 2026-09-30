@@ -147,7 +147,7 @@ class MultiHostHost(_TypedDict):
 
 MISSING = Sentinel('MISSING')
 """
-/// version-added | v2.11
+/// version-added | v2.12
 ///
 
 /// version-changed | v2.14
