@@ -49704,27 +49704,8 @@ While the namespace fetching logic is trying to be as accurate as possible, we s
 
 - The locals of the current class (`cls.__dict__`) may include irrelevant entries, most of them being dunder attributes. This means that the following annotation: `f: '__doc__'` will successfully (and unexpectedly) be resolved.
 - When the `Model` class is being created inside a function, we keep a copy of the locals of the frame. This copy only includes the symbols defined in the locals when `Model` is being defined, meaning `InnerType2` won't be included (and will **not be** if doing a model rebuild at a later point!).
-  - To avoid memory leaks, we use weak references to the locals of the function, meaning some forward references might not resolve outside the function (1).
+  - To avoid memory leaks, we use weak references to the locals of the function, meaning some forward references might not resolve outside the function[2](#fn:2).
   - Locals of the function are only taken into account for Pydantic models, but this pattern does not apply to dataclasses, typed dictionaries or named tuples.
-
-1. Here is an example:
-
-   ```python
-   def func():
-       A = int
-
-       class Model(BaseModel):
-           f: 'A | Forward'
-
-       return Model
-
-
-   Model = func()
-
-   Model.model_rebuild(_types_namespace={'Forward': str})
-   # pydantic.errors.PydanticUndefinedAnnotation: name 'A' is not defined
-
-   ```
 
 For backwards compatibility reasons, and to be able to support valid use cases without having to rebuild models, the namespace logic described above is a bit different when it comes to core schema generation. Taking the following example:
 
@@ -49812,6 +49793,27 @@ This *rebuild namespace* will be merged with the model's parent namespace (if it
 ______________________________________________________________________
 
 1. This is done unconditionally, as forward annotations can be only present *as part* of a type hint (e.g. `Optional['int']`), as dictated by the [typing specification](https://typing.readthedocs.io/en/latest/spec/annotations.html#string-annotations). [↩](#fnref:1 "Jump back to footnote 1 in the text")
+
+1. Here is an example:
+
+   ```python
+   def func():
+       A = list[int]
+
+       class Model(BaseModel):
+           f: 'A | Forward'
+
+       return Model
+
+
+   Model = func()
+
+   Model.model_rebuild(_types_namespace={'Forward': str})
+   # pydantic.errors.PydanticUndefinedAnnotation: name 'A' is not defined
+
+   ```
+
+   [↩](#fnref:2 "Jump back to footnote 2 in the text")
 # Optional
 
 Pydantic will raise a ValidationError whenever it finds an error in the data it's validating.

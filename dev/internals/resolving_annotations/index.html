@@ -4155,7 +4155,6 @@ following logic is applied:</p>
 </table>
 <h3 id="limitations-and-backwards-compatibility-concerns">Limitations and backwards compatibility concerns<a class="headerlink" href="#limitations-and-backwards-compatibility-concerns" title="Permanent link">&para;</a></h3>
 <p>While the namespace fetching logic is trying to be as accurate as possible, we still face some limitations:</p>
-<div class="annotate">
 <ul>
 <li>The locals of the current class (<code>cls.__dict__</code>) may include irrelevant entries, most of them being dunder attributes.
   This means that the following annotation: <code>f: '__doc__'</code> will successfully (and unexpectedly) be resolved.</li>
@@ -4163,32 +4162,12 @@ following logic is applied:</p>
   This copy only includes the symbols defined in the locals when <code>Model</code> is being defined, meaning <code>InnerType2</code> won't be included
   (and will <strong>not be</strong> if doing a model rebuild at a later point!).<ul>
 <li>To avoid memory leaks, we use <a class="autorefs autorefs-external" href="https://docs.python.org/3/library/weakref.html#module-weakref">weak references</a> to the locals of the function, meaning some forward references might
-not resolve outside the function (1).</li>
+not resolve outside the function<sup id="fnref:2"><a class="footnote-ref" href="#fn:2">2</a></sup>.</li>
 <li>Locals of the function are only taken into account for Pydantic models, but this pattern does not apply to dataclasses, typed
 dictionaries or named tuples.</li>
 </ul>
 </li>
 </ul>
-</div>
-<ol>
-<li>
-<p>Here is an example:</p>
-<div class="language-python highlight"><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">func</span><span class="p">():</span>
-    <span class="n">A</span> <span class="o">=</span> <span class="nb">int</span>
-
-    <span class="k">class</span><span class="w"> </span><span class="nc">Model</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
-        <span class="n">f</span><span class="p">:</span> <span class="s1">&#39;A | Forward&#39;</span>
-
-    <span class="k">return</span> <span class="n">Model</span>
-
-
-<span class="n">Model</span> <span class="o">=</span> <span class="n">func</span><span class="p">()</span>
-
-<span class="n">Model</span><span class="o">.</span><span class="n">model_rebuild</span><span class="p">(</span><span class="n">_types_namespace</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;Forward&#39;</span><span class="p">:</span> <span class="nb">str</span><span class="p">})</span>
-<span class="c1"># pydantic.errors.PydanticUndefinedAnnotation: name &#39;A&#39; is not defined</span>
-</code></pre></div>
-</li>
-</ol>
 <p id="backwards-compatibility-logic">For backwards compatibility reasons, and to be able to support valid use cases without having to rebuild models,
 the namespace logic described above is a bit different when it comes to core schema generation.
 Taking the following example:</p>
@@ -4273,6 +4252,23 @@ generation process. This can be seen by inspecting the <code>__pydantic_core_sch
 <li id="fn:1">
 <p>This is done unconditionally, as forward annotations can be only present <em>as part</em> of a type hint (e.g. <code>Optional['int']</code>), as dictated by
   the <a href="https://typing.readthedocs.io/en/latest/spec/annotations.html#string-annotations">typing specification</a>.&#160;<a class="footnote-backref" href="#fnref:1" title="Jump back to footnote 1 in the text">&#8617;</a></p>
+</li>
+<li id="fn:2">
+<p>Here is an example:</p>
+<p><div class="language-python highlight"><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">func</span><span class="p">():</span>
+    <span class="n">A</span> <span class="o">=</span> <span class="nb">list</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span>
+
+    <span class="k">class</span><span class="w"> </span><span class="nc">Model</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+        <span class="n">f</span><span class="p">:</span> <span class="s1">&#39;A | Forward&#39;</span>
+
+    <span class="k">return</span> <span class="n">Model</span>
+
+
+<span class="n">Model</span> <span class="o">=</span> <span class="n">func</span><span class="p">()</span>
+
+<span class="n">Model</span><span class="o">.</span><span class="n">model_rebuild</span><span class="p">(</span><span class="n">_types_namespace</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;Forward&#39;</span><span class="p">:</span> <span class="nb">str</span><span class="p">})</span>
+<span class="c1"># pydantic.errors.PydanticUndefinedAnnotation: name &#39;A&#39; is not defined</span>
+</code></pre></div>&#160;<a class="footnote-backref" href="#fnref:2" title="Jump back to footnote 2 in the text">&#8617;</a></p>
 </li>
 </ol>
 </div>
