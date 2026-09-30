@@ -627,6 +627,43 @@ See the [API documentation][pydantic.json_schema.WithJsonSchema] for more detail
 The [`SkipJsonSchema`][pydantic.json_schema.SkipJsonSchema] annotation can be used to skip an included field (or part of a field's specifications)
 from the generated JSON schema. See the API docs for more details.
 
+For example, `SkipJsonSchema[None]` removes the `None` branch from a union's JSON schema. The type is still used at runtime,
+so Pydantic continues to accept `None` for `b` below. `SkipJsonSchema` does not omit values during serialization; use
+[`Field(exclude_if=...)`][pydantic.fields.Field] or `model_dump(exclude_none=True)` for that.
+
+```python
+from pydantic import BaseModel
+from pydantic.json_schema import SkipJsonSchema
+
+
+class Model(BaseModel):
+    a: int | None = None
+    b: int | SkipJsonSchema[None] = None
+    c: SkipJsonSchema[int | None] = None
+
+
+print(Model.model_json_schema())
+"""
+{
+    'properties': {
+        'a': {
+            'anyOf': [{'type': 'integer'}, {'type': 'null'}],
+            'default': None,
+            'title': 'A',
+        },
+        'b': {'default': None, 'title': 'B', 'type': 'integer'},
+    },
+    'title': 'Model',
+    'type': 'object',
+}
+"""
+print(Model(b=None).model_dump())
+#> {'a': None, 'b': None, 'c': None}
+```
+
+The schema for `b` keeps its `default: null` metadata while omitting the `null` type. The schema omits `c` entirely because
+`SkipJsonSchema` wraps its full type.
+
 ### Implementing `__get_pydantic_core_schema__` <a name="implementing_get_pydantic_core_schema"></a>
 
 Custom types (used as `field_name: TheType` or `field_name: Annotated[TheType, ...]`) as well as `Annotated` metadata
