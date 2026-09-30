@@ -6921,6 +6921,9 @@ def test_model_ser_schema() -> None:
     class NotAModel:
         """A class."""
 
+        # Unrelated to Pydantic, should be ignored:
+        model_config = None
+
     class WithModelSerSchema:
         @classmethod
         def __get_pydantic_core_schema__(cls, source: Any, handler: GetCoreSchemaHandler) -> CoreSchema:

@@ -48,6 +48,7 @@ from ._internal import (
     _core_metadata,
     _core_utils,
     _decorators,
+    _import_utils,
     _mock_val_ser,
     _schema_generation_shared,
     _typing_extra,
@@ -1672,11 +1673,14 @@ class GenerateJsonSchema:
         Returns:
             The generated JSON schema.
         """
+        BaseModel = _import_utils.import_cached_base_model()
+
         # We do not use schema['model'].model_json_schema() here
         # because it could lead to inconsistent refs handling, etc.
-        cls = cast('type[BaseModel]', schema['cls'])
-        # `cls` might not be a model in the case of a `ModelSerSchema`, hence the `getattr()`:
-        config = cast('ConfigDict', getattr(cls, 'model_config', {}))
+        cls = schema['cls']
+        # A `ModelSerSchema` can have any class as `cls`, in which case a `model_config`
+        # attribute (if it even exists) is unrelated to Pydantic:
+        config: ConfigDict = cls.model_config if issubclass(cls, BaseModel) else {}
 
         with self._config_wrapper_stack.push(config):
             json_schema = self.generate_inner(schema['schema'])
