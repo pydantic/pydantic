@@ -1131,6 +1131,40 @@ def test_secret_str_min_max_length():
     assert Foobar(password=value).password.get_secret_value() == value
 
 
+def test_secret_str_string_constraints() -> None:
+    class Foobar(BaseModel):
+        password: Annotated[
+            SecretStr,
+            StringConstraints(
+                strip_whitespace=True,
+                to_lower=True,
+                min_length=6,
+                max_length=10,
+                pattern=r'[A-Z]+',
+                ascii_only=True,
+            ),
+        ]
+
+    value = Foobar(password='  SECRET  ').password
+    assert value.get_secret_value() == 'secret'
+    assert repr(value) == "SecretStr('**********')"
+    assert Foobar(password='  SECRET  ').model_dump_json() == '{"password":"**********"}'
+
+    password_schema = Foobar.model_json_schema()['properties']['password']
+    assert password_schema == {
+        'format': 'password',
+        'maxLength': 10,
+        'minLength': 6,
+        'pattern': '[A-Z]+',
+        'title': 'Password',
+        'type': 'string',
+        'writeOnly': True,
+    }
+
+    with pytest.raises(ValidationError):
+        Foobar(password='  café  ')
+
+
 def test_secretbytes_json():
     class Foobar(BaseModel):
         password: SecretBytes

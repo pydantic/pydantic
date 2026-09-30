@@ -22,6 +22,17 @@ INEQUALITY = {'le', 'ge', 'lt', 'gt'}
 NUMERIC_CONSTRAINTS = {'multiple_of', *INEQUALITY}
 ALLOW_INF_NAN = {'allow_inf_nan'}
 
+SECRET_FIELD_METADATA_KEY = 'pydantic_internal_secret_field'
+
+CHAIN_SCHEMA_CONSTRAINTS = {
+    'pattern',
+    'strip_whitespace',
+    'to_lower',
+    'to_upper',
+    'coerce_numbers_to_str',
+    'ascii_only',
+}
+
 STR_CONSTRAINTS = {
     *LENGTH_CONSTRAINTS,
     *STRICT,
@@ -192,14 +203,14 @@ def apply_known_metadata(annotation: Any, schema: CoreSchema) -> CoreSchema | No
     schema_update, other_metadata = collect_known_metadata([annotation])
     schema_type = schema['type']
 
-    chain_schema_constraints: set[str] = {
-        'pattern',
-        'strip_whitespace',
-        'to_lower',
-        'to_upper',
-        'coerce_numbers_to_str',
-        'ascii_only',
-    }
+    secret_field_type = _get_secret_field_type(schema)
+    if (
+        secret_field_type is not None
+        and any(constraint in CHAIN_SCHEMA_CONSTRAINTS for constraint in schema_update)
+        and all(secret_field_type in CONSTRAINTS_TO_ALLOWED_SCHEMAS[constraint] for constraint in schema_update)
+    ):
+        return _apply_metadata_to_secret_field(annotation, schema)
+
     chain_schema_steps: list[CoreSchema] = []
 
     for constraint, value in schema_update.items():
@@ -224,7 +235,7 @@ def apply_known_metadata(annotation: Any, schema: CoreSchema) -> CoreSchema | No
             continue
 
         #  else, apply a function after validator to the schema to enforce the corresponding constraint
-        if constraint in chain_schema_constraints:
+        if constraint in CHAIN_SCHEMA_CONSTRAINTS:
 
             def _apply_constraint_with_incompatibility_info(
                 value: Any, handler: cs.ValidatorFunctionWrapHandler
@@ -333,6 +344,59 @@ def apply_known_metadata(annotation: Any, schema: CoreSchema) -> CoreSchema | No
     if chain_schema_steps:
         chain_schema_steps = [schema] + chain_schema_steps
         return cs.chain_schema(chain_schema_steps)
+
+    return schema
+
+
+def _apply_metadata_to_secret_field(annotation: Any, schema: CoreSchema) -> CoreSchema:
+    """Apply metadata to the value inside a secret field schema."""
+    if schema['type'] != 'lax-or-strict':
+        schema_type = schema['type']
+        if schema_type in {'function-before', 'function-after', 'function-wrap'}:
+            schema['schema'] = _apply_metadata_to_secret_field(annotation, schema['schema'])  # type: ignore  # schema is a function schema
+        elif schema_type == 'chain':
+            schema['steps'] = [
+                _apply_metadata_to_secret_field(annotation, step)
+                for step in schema['steps']  # type: ignore  # schema is a chain schema
+            ]
+        return schema
+
+    for key in ('lax_schema', 'strict_schema'):
+        schema[key] = _apply_metadata_to_secret_field_branch(annotation, schema[key])  # type: ignore  # schema is a lax-or-strict schema
+    return schema
+
+
+def _get_secret_field_type(schema: CoreSchema) -> str | None:
+    secret_field_type = schema.get('metadata', {}).get(SECRET_FIELD_METADATA_KEY)
+    if secret_field_type is not None:
+        return secret_field_type
+
+    schema_type = schema['type']
+    if schema_type in {'function-before', 'function-after', 'function-wrap'}:
+        return _get_secret_field_type(schema['schema'])  # type: ignore  # schema is a function schema
+    if schema_type == 'chain':
+        for step in schema['steps']:  # type: ignore  # schema is a chain schema
+            if (secret_field_type := _get_secret_field_type(step)) is not None:
+                return secret_field_type
+
+    return None
+
+
+def _apply_metadata_to_secret_field_branch(annotation: Any, schema: CoreSchema) -> CoreSchema:
+    schema_type = schema['type']
+
+    if schema_type == 'json-or-python':
+        schema['json_schema'] = _apply_metadata_to_secret_field_branch(annotation, schema['json_schema'])  # type: ignore  # schema is a json-or-python schema
+        schema['python_schema'] = _apply_metadata_to_secret_field_branch(annotation, schema['python_schema'])  # type: ignore  # schema is a json-or-python schema
+    elif schema_type == 'function-after':
+        inner_schema = apply_known_metadata(annotation, schema['schema'])  # type: ignore  # schema is a function-after schema
+        if inner_schema is not None:
+            schema['schema'] = inner_schema  # type: ignore  # schema is a function-after schema
+    elif schema_type == 'union':
+        schema['choices'] = [  # type: ignore  # schema is a union schema
+            choice if choice['type'] == 'is-instance' else _apply_metadata_to_secret_field_branch(annotation, choice)
+            for choice in schema['choices']  # type: ignore  # schema is a union schema
+        ]
 
     return schema
 

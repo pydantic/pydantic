@@ -1767,8 +1767,14 @@ class _SecretField(_SecretBase[SecretType]):
 
     @classmethod
     def __get_pydantic_core_schema__(cls, source: type[Any], handler: GetCoreSchemaHandler) -> core_schema.CoreSchema:
-        def get_json_schema(_core_schema: core_schema.CoreSchema, handler: GetJsonSchemaHandler) -> JsonSchemaValue:
-            json_schema = handler(cls._inner_schema)
+        def get_json_schema(secret_schema: core_schema.CoreSchema, handler: GetJsonSchemaHandler) -> JsonSchemaValue:
+            inner_schema = cls._inner_schema
+            if secret_schema['type'] == 'lax-or-strict':
+                json_schema = secret_schema['lax_schema']['json_schema']  # type: ignore  # schema is a lax-or-strict schema
+                if json_schema['type'] == 'function-after':
+                    inner_schema = json_schema['schema']  # type: ignore  # schema is a function-after schema
+
+            json_schema = handler(inner_schema)
             _utils.update_not_none(
                 json_schema,
                 type='string',
@@ -1802,7 +1808,10 @@ class _SecretField(_SecretBase[SecretType]):
         return core_schema.lax_or_strict_schema(
             lax_schema=get_secret_schema(strict=False),
             strict_schema=get_secret_schema(strict=True),
-            metadata={'pydantic_js_functions': [get_json_schema]},
+            metadata={
+                'pydantic_js_functions': [get_json_schema],
+                'pydantic_internal_secret_field': cls._inner_schema['type'],
+            },
         )
 
     __pydantic_serializer__ = SchemaSerializer(

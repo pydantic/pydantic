@@ -21,6 +21,7 @@ class CoreMetadata(TypedDict, total=False):
             custom validation function. Only applies to before, plain, and wrap validators.
         pydantic_js_updates: key / value pair updates to apply to the JSON schema for a type.
         pydantic_js_extra: WIP, either key/value pair updates to apply to the JSON schema, or a custom callable.
+        pydantic_internal_secret_field: The inner schema type used by a secret field.
         pydantic_internal_union_tag_key: Used internally by the `Tag` metadata to specify the tag used for a discriminated union.
         pydantic_internal_union_discriminator: Used internally to specify the discriminator value for a discriminated union
             when the discriminator was applied to a `'definition-ref'` schema, and that reference was missing at the time
@@ -40,6 +41,7 @@ class CoreMetadata(TypedDict, total=False):
     pydantic_js_prefer_positional_arguments: bool
     pydantic_js_updates: JsonDict
     pydantic_js_extra: JsonDict | JsonSchemaExtraCallable
+    pydantic_internal_secret_field: str
     pydantic_internal_union_tag_key: str
     pydantic_internal_union_discriminator: str
 
