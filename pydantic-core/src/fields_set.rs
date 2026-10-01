@@ -123,6 +123,8 @@ fn as_set_like<'py>(other: &Bound<'py, PyAny>) -> PyResult<Bound<'py, PyAny>> {
 /// Returns `other`, unless it is `slf`, in which case a snapshot of it as a plain `set` is returned.
 ///
 /// This is used by mutating methods to avoid a borrow conflict when a set is updated from itself.
+/// Note that these methods must also not hold a mutable borrow of `slf` while iterating over an
+/// arbitrary iterable, as the iterable may call back into the set (e.g. a generator calling `add()`).
 /// See also: <https://docs.rs/pyo3/latest/pyo3/pycell/index.html#dealing-with-possibly-overlapping-mutable-references>.
 fn snapshot_if_self<'py>(slf: &Bound<'py, ModelFieldsSet>, other: &Bound<'py, PyAny>) -> PyResult<Bound<'py, PyAny>> {
     if other.is(slf) {
@@ -467,7 +469,9 @@ impl ModelFieldsSet {
         let py = slf.py();
         for other in others {
             let other = snapshot_if_self(slf, &other)?;
-            slf.borrow_mut().update_with(py, &other)?;
+            for element in other.try_iter()? {
+                slf.borrow_mut().insert_value(py, &element?)?;
+            }
         }
         Ok(())
     }
@@ -476,7 +480,8 @@ impl ModelFieldsSet {
     fn intersection_update(slf: &Bound<'_, Self>, others: &Bound<'_, PyTuple>) -> PyResult<()> {
         let py = slf.py();
         for other in others {
-            let other = snapshot_if_self(slf, &other)?;
+            // Materialize the iterable before borrowing:
+            let other = as_set_like(&snapshot_if_self(slf, &other)?)?;
             slf.borrow_mut().intersection_update_with(py, &other)?;
         }
         Ok(())
@@ -487,13 +492,16 @@ impl ModelFieldsSet {
         let py = slf.py();
         for other in others {
             let other = snapshot_if_self(slf, &other)?;
-            slf.borrow_mut().difference_update_with(py, &other)?;
+            for element in other.try_iter()? {
+                slf.borrow_mut().discard_value(py, &element?)?;
+            }
         }
         Ok(())
     }
 
     fn symmetric_difference_update(slf: &Bound<'_, Self>, other: &Bound<'_, PyAny>) -> PyResult<()> {
-        let other = snapshot_if_self(slf, other)?;
+        // Materialize the iterable before borrowing:
+        let other = as_set_like(&snapshot_if_self(slf, other)?)?;
         slf.borrow_mut().symmetric_difference_update_with(slf.py(), &other)
     }
 

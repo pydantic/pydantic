@@ -429,6 +429,35 @@ def test_inplace_operators(fields_set: ModelFieldsSet) -> None:
             fields_set ^= other
 
 
+@pytest.mark.parametrize(
+    ['method', 'expected'],
+    [
+        ('update', {'a', 'b', 'c', 'x', 'y'}),
+        ('difference_update', {'a', 'c', 'x', 'y'}),
+        ('intersection_update', set()),
+        ('symmetric_difference_update', {'a', 'b', 'c', 'x', 'y'}),
+    ],
+)
+def test_update_from_reentrant_iterable(fields_set: ModelFieldsSet, method: str, expected: set[str]) -> None:
+    """Like `set`, the iterable passed to a mutating method can call back into the set while being consumed."""
+
+    def gen():
+        fields_set.add('y')
+        yield 'b'
+
+    getattr(fields_set, method)(gen())
+    assert fields_set == expected
+    # The same holds for a plain set:
+    plain = {'a', 'c', 'x'}
+
+    def plain_gen():
+        plain.add('y')
+        yield 'b'
+
+    getattr(plain, method)(plain_gen())
+    assert plain == expected
+
+
 def test_iteration_snapshot(fields_set: ModelFieldsSet) -> None:
     iterator = iter(fields_set)
     assert next(iterator) == 'a'
