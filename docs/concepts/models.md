@@ -738,7 +738,7 @@ print(anna_model)
 ??? api "API Documentation"
     [`pydantic.main.BaseModel.model_copy`][pydantic.main.BaseModel.model_copy]<br>
 
-The [`model_copy()`][pydantic.BaseModel.model_copy] method allows models to be duplicated (with optional updates),
+The [`model_copy()`][pydantic.BaseModel.model_copy] method allows models to be duplicated (with optional updates that *aren't* validated),
 which is particularly useful when working with frozen models.
 
 ```python
