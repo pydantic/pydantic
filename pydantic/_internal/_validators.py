@@ -488,7 +488,7 @@ def validate_str_is_valid_iana_tz(value: Any, /) -> ZoneInfo:
         return value
     try:
         return ZoneInfo(value)
-    except (ZoneInfoNotFoundError, ValueError, TypeError):
+    except (ZoneInfoNotFoundError, ValueError, TypeError, OSError):
         raise PydanticCustomError('zoneinfo_str', 'invalid timezone: {value}', {'value': value})
 
 
