@@ -488,7 +488,13 @@ def validate_str_is_valid_iana_tz(value: Any, /) -> ZoneInfo:
         return value
     try:
         return ZoneInfo(value)
-    except (ZoneInfoNotFoundError, ValueError, TypeError):
+    except (ZoneInfoNotFoundError, ValueError, TypeError, OSError):
+        # `OSError` covers filesystem-level failures when `value` is not a file
+        # in the zoneinfo database: tzdata *directory* names such as 'America'
+        # (`IsADirectoryError` on POSIX / `PermissionError` on Windows for
+        # Python < 3.13, see CPython gh-85702) and over-long keys
+        # (`ENAMETOOLONG` / `EINVAL`). All of these are invalid timezones,
+        # not I/O problems the caller can act on.
         raise PydanticCustomError('zoneinfo_str', 'invalid timezone: {value}', {'value': value})
 
 

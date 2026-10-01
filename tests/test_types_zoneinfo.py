@@ -42,6 +42,39 @@ def test_zoneinfo_parsing_fails_for_invalid_iana_tz_strs():
     ]
 
 
+@pytest.mark.parametrize(
+    'tz',
+    [
+        pytest.param('America', id='tzdata-directory'),
+        pytest.param('Etc', id='tzdata-directory-Etc'),
+        pytest.param('a' * 300, id='over-long-key'),
+    ],
+)
+def test_zoneinfo_parsing_fails_for_os_errors(tz):
+    """https://github.com/pydantic/pydantic/issues/13908.
+
+    These inputs fail inside `ZoneInfo(...)` with an `OSError` subclass rather
+    than `ZoneInfoNotFoundError`: tzdata *directory* names raise
+    `IsADirectoryError` on POSIX / `PermissionError` on Windows for Python < 3.13
+    (CPython gh-85702 fixed this only in 3.13), and over-long keys raise
+    `ENAMETOOLONG` / `EINVAL`. They must surface as `ValidationError`, just
+    like unknown zones, so user-supplied timezones can't crash e.g. a web API
+    with an unhandled exception.
+    """
+    with pytest.raises(ValidationError) as ex_info:
+        ZoneInfoModel(tz=tz)
+
+    assert ex_info.value.errors() == [
+        {
+            'type': 'zoneinfo_str',
+            'loc': ('tz',),
+            'msg': f'invalid timezone: {tz}',
+            'input': tz,
+            'ctx': {'value': tz},
+        }
+    ]
+
+
 def test_zoneinfo_json_schema():
     assert ZoneInfoModel.model_json_schema() == {
         'type': 'object',
