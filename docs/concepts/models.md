@@ -738,12 +738,8 @@ print(anna_model)
 ??? api "API Documentation"
     [`pydantic.main.BaseModel.model_copy`][pydantic.main.BaseModel.model_copy]<br>
 
-The [`model_copy()`][pydantic.BaseModel.model_copy] method allows models to be duplicated (with optional updates),
+The [`model_copy()`][pydantic.BaseModel.model_copy] method allows models to be duplicated (with optional updates that *aren't* validated),
 which is particularly useful when working with frozen models.
-
-!!! warning
-    Values passed to `update` are not validated, even when `deep=True`. Only use this argument with trusted data.
-    Updates are not applied recursively: a dictionary passed for a nested model field remains a dictionary.
 
 ```python
 from pydantic import BaseModel
@@ -763,9 +759,6 @@ m = FooBarModel(banana=3.14, foo='hello', bar={'whatever': 123})
 
 print(m.model_copy(update={'banana': 0}))
 #> banana=0 foo='hello' bar=BarModel(whatever=123)
-
-print(m.model_copy(update={'bar': {'whatever': 456}}))
-#> banana=3.14 foo='hello' bar={'whatever': 456}
 
 # normal copy gives the same object reference for bar:
 print(id(m.bar) == id(m.model_copy().bar))
