@@ -4932,7 +4932,7 @@ API Documentation
 
 pydantic.main.BaseModel.model_copy
 
-The model_copy() method allows models to be duplicated (with optional updates), which is particularly useful when working with frozen models.
+The model_copy() method allows models to be duplicated (with optional updates that *aren't* validated), which is particularly useful when working with frozen models.
 
 ```python
 from pydantic import BaseModel
