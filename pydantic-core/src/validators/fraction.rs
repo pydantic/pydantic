@@ -47,6 +47,7 @@ fn validate_as_fraction(
 #[derive(Debug, Clone)]
 pub struct FractionValidator {
     strict: bool,
+    multiple_of: Option<Py<PyAny>>,
     le: Option<Py<PyAny>>,
     lt: Option<Py<PyAny>>,
     ge: Option<Py<PyAny>>,
@@ -62,8 +63,16 @@ impl BuildValidator for FractionValidator {
     ) -> PyResult<Arc<CombinedValidator>> {
         let py = schema.py();
 
+        let multiple_of = validate_as_fraction(py, schema, intern!(py, "multiple_of"))?;
+        if let Some(ref m) = multiple_of
+            && !m.bind(py).gt(0)?
+        {
+            return Err(PyValueError::new_err("'multiple_of' must be greater than 0"));
+        }
+
         Ok(CombinedValidator::Fraction(Self {
             strict: is_strict(schema, config)?,
+            multiple_of,
             le: validate_as_fraction(py, schema, intern!(py, "le"))?,
             lt: validate_as_fraction(py, schema, intern!(py, "lt"))?,
             ge: validate_as_fraction(py, schema, intern!(py, "ge"))?,
@@ -73,7 +82,13 @@ impl BuildValidator for FractionValidator {
     }
 }
 
-impl_py_gc_traverse!(FractionValidator { le, lt, ge, gt });
+impl_py_gc_traverse!(FractionValidator {
+    multiple_of,
+    le,
+    lt,
+    ge,
+    gt
+});
 
 impl Validator for FractionValidator {
     fn validate<'py>(
@@ -83,6 +98,18 @@ impl Validator for FractionValidator {
         state: &mut ValidationState<'_, 'py>,
     ) -> ValResult<Py<PyAny>> {
         let fraction = input.validate_fraction(state.strict_or(self.strict), py)?.unpack(state);
+
+        if let Some(multiple_of) = &self.multiple_of
+            && !fraction.rem(multiple_of)?.eq(0)?
+        {
+            return Err(ValError::new(
+                ErrorType::MultipleOf {
+                    multiple_of: Number::String(multiple_of.to_string()),
+                    context: Some([("multiple_of", multiple_of)].into_py_dict(py)?.into()),
+                },
+                input,
+            ));
+        }
 
         if let Some(le) = &self.le
             && !fraction.le(le)?

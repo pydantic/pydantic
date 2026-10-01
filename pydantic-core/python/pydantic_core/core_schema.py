@@ -260,6 +260,8 @@ ExpectedSerializationTypes: TypeAlias = Literal[
     'generator',
     'dict',
     'frozendict',
+    'ordered-dict',
+    'counter',
     'datetime',
     'date',
     'time',
@@ -840,6 +842,7 @@ def decimal_schema(
 
 class FractionSchema(TypedDict, total=False):
     type: Required[Literal['fraction']]
+    multiple_of: Fraction
     le: Fraction
     ge: Fraction
     lt: Fraction
@@ -852,6 +855,7 @@ class FractionSchema(TypedDict, total=False):
 
 def fraction_schema(
     *,
+    multiple_of: Fraction | None = None,
     le: Fraction | None = None,
     ge: Fraction | None = None,
     lt: Fraction | None = None,
@@ -874,6 +878,7 @@ def fraction_schema(
     ```
 
     Args:
+        multiple_of: The value must be a multiple of this number
         le: The value must be less than or equal to this number
         ge: The value must be greater than or equal to this number
         lt: The value must be strictly less than this number
@@ -885,6 +890,7 @@ def fraction_schema(
     """
     return _dict_not_none(
         type='fraction',
+        multiple_of=multiple_of,
         gt=gt,
         ge=ge,
         lt=lt,
@@ -1284,6 +1290,7 @@ def datetime_schema(
 class TimedeltaSchema(TypedDict, total=False):
     type: Required[Literal['timedelta']]
     strict: bool
+    multiple_of: timedelta
     le: timedelta
     ge: timedelta
     lt: timedelta
@@ -1297,6 +1304,7 @@ class TimedeltaSchema(TypedDict, total=False):
 def timedelta_schema(
     *,
     strict: bool | None = None,
+    multiple_of: timedelta | None = None,
     le: timedelta | None = None,
     ge: timedelta | None = None,
     lt: timedelta | None = None,
@@ -1320,6 +1328,7 @@ def timedelta_schema(
 
     Args:
         strict: Whether the value should be a timedelta or a value that can be converted to a timedelta
+        multiple_of: The value must be a multiple of this timedelta
         le: The value must be less than or equal to this timedelta
         ge: The value must be greater than or equal to this timedelta
         lt: The value must be strictly less than this timedelta
@@ -1332,6 +1341,7 @@ def timedelta_schema(
     return _dict_not_none(
         type='timedelta',
         strict=strict,
+        multiple_of=multiple_of,
         le=le,
         ge=ge,
         lt=lt,
@@ -2280,6 +2290,140 @@ def frozendict_schema(
     """
     return _dict_not_none(
         type='frozendict',
+        keys_schema=keys_schema,
+        values_schema=values_schema,
+        min_length=min_length,
+        max_length=max_length,
+        fail_fast=fail_fast,
+        strict=strict,
+        ref=ref,
+        metadata=metadata,
+        serialization=serialization,
+    )
+
+
+class OrderedDictSchema(TypedDict, total=False):
+    type: Required[Literal['ordered-dict']]
+    keys_schema: CoreSchema  # default: AnySchema
+    values_schema: CoreSchema  # default: AnySchema
+    min_length: int
+    max_length: int
+    fail_fast: bool
+    strict: bool
+    ref: str
+    metadata: dict[str, Any]
+    serialization: IncExDictOrElseSerSchema
+
+
+def ordered_dict_schema(
+    keys_schema: CoreSchema | None = None,
+    values_schema: CoreSchema | None = None,
+    *,
+    min_length: int | None = None,
+    max_length: int | None = None,
+    fail_fast: bool | None = None,
+    strict: bool | None = None,
+    ref: str | None = None,
+    metadata: dict[str, Any] | None = None,
+    serialization: SerSchema | None = None,
+) -> OrderedDictSchema:
+    """
+    Returns a schema that matches a [`collections.OrderedDict`][] value, e.g.:
+
+    ```py
+    from collections import OrderedDict
+
+    from pydantic_core import SchemaValidator, core_schema
+
+    schema = core_schema.ordered_dict_schema(
+        keys_schema=core_schema.str_schema(), values_schema=core_schema.int_schema()
+    )
+    v = SchemaValidator(schema)
+    assert v.validate_python({'a': '1', 'b': 2}) == OrderedDict({'a': 1, 'b': 2})
+    ```
+
+    In lax mode, any mapping is accepted and converted to an `OrderedDict`.
+
+    Args:
+        keys_schema: The value must be an `OrderedDict` with keys that match this schema
+        values_schema: The value must be an `OrderedDict` with values that match this schema
+        min_length: The value must be an `OrderedDict` with at least this many items
+        max_length: The value must be an `OrderedDict` with at most this many items
+        fail_fast: Stop validation on the first error
+        strict: The value must be an `OrderedDict` instance
+        ref: optional unique identifier of the schema, used to reference the schema in other places
+        metadata: Any other information you want to include with the schema, not used by pydantic-core
+        serialization: Custom serialization schema
+    """
+    return _dict_not_none(
+        type='ordered-dict',
+        keys_schema=keys_schema,
+        values_schema=values_schema,
+        min_length=min_length,
+        max_length=max_length,
+        fail_fast=fail_fast,
+        strict=strict,
+        ref=ref,
+        metadata=metadata,
+        serialization=serialization,
+    )
+
+
+class CounterSchema(TypedDict, total=False):
+    type: Required[Literal['counter']]
+    keys_schema: CoreSchema  # default: AnySchema
+    values_schema: CoreSchema  # default: AnySchema
+    min_length: int
+    max_length: int
+    fail_fast: bool
+    strict: bool
+    ref: str
+    metadata: dict[str, Any]
+    serialization: IncExDictOrElseSerSchema
+
+
+def counter_schema(
+    keys_schema: CoreSchema | None = None,
+    values_schema: CoreSchema | None = None,
+    *,
+    min_length: int | None = None,
+    max_length: int | None = None,
+    fail_fast: bool | None = None,
+    strict: bool | None = None,
+    ref: str | None = None,
+    metadata: dict[str, Any] | None = None,
+    serialization: SerSchema | None = None,
+) -> CounterSchema:
+    """
+    Returns a schema that matches a [`collections.Counter`][] value, e.g.:
+
+    ```py
+    from collections import Counter
+
+    from pydantic_core import SchemaValidator, core_schema
+
+    schema = core_schema.counter_schema(
+        keys_schema=core_schema.str_schema(), values_schema=core_schema.int_schema()
+    )
+    v = SchemaValidator(schema)
+    assert v.validate_python({'a': '1', 'b': 2}) == Counter({'a': 1, 'b': 2})
+    ```
+
+    In lax mode, any mapping is accepted and converted to a `Counter`.
+
+    Args:
+        keys_schema: The value must be a `Counter` with keys that match this schema
+        values_schema: The value must be a `Counter` with values that match this schema
+        min_length: The value must be a `Counter` with at least this many items
+        max_length: The value must be a `Counter` with at most this many items
+        fail_fast: Stop validation on the first error
+        strict: The value must be a `Counter` instance
+        ref: optional unique identifier of the schema, used to reference the schema in other places
+        metadata: Any other information you want to include with the schema, not used by pydantic-core
+        serialization: Custom serialization schema
+    """
+    return _dict_not_none(
+        type='counter',
         keys_schema=keys_schema,
         values_schema=values_schema,
         min_length=min_length,
@@ -4645,6 +4789,8 @@ if not MYPY:
         | GeneratorSchema
         | DictSchema
         | FrozenDictSchema
+        | OrderedDictSchema
+        | CounterSchema
         | AfterValidatorFunctionSchema
         | BeforeValidatorFunctionSchema
         | WrapValidatorFunctionSchema
@@ -4709,6 +4855,8 @@ CoreSchemaType: TypeAlias = Literal[
     'generator',
     'dict',
     'frozendict',
+    'ordered-dict',
+    'counter',
     'function-after',
     'function-before',
     'function-wrap',
@@ -4776,7 +4924,6 @@ ErrorType: TypeAlias = Literal[
     'iterable_type',
     'iteration_error',
     'string_type',
-    'string_sub_type',
     'string_unicode',
     'string_too_short',
     'string_too_long',
@@ -4785,6 +4932,8 @@ ErrorType: TypeAlias = Literal[
     'enum',
     'dict_type',
     'frozen_dict_type',
+    'ordered_dict_type',
+    'counter_type',
     'mapping_type',
     'list_type',
     'deque_type',

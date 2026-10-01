@@ -133,6 +133,18 @@ all_schema_functions = [
         args({'type': 'str'}, {'type': 'int'}),
         {'type': 'frozendict', 'keys_schema': {'type': 'str'}, 'values_schema': {'type': 'int'}},
     ),
+    (core_schema.ordered_dict_schema, args(), {'type': 'ordered-dict'}),
+    (
+        core_schema.ordered_dict_schema,
+        args({'type': 'str'}, {'type': 'int'}),
+        {'type': 'ordered-dict', 'keys_schema': {'type': 'str'}, 'values_schema': {'type': 'int'}},
+    ),
+    (core_schema.counter_schema, args(), {'type': 'counter'}),
+    (
+        core_schema.counter_schema,
+        args({'type': 'str'}, {'type': 'int'}),
+        {'type': 'counter', 'keys_schema': {'type': 'str'}, 'values_schema': {'type': 'int'}},
+    ),
     (
         core_schema.with_info_before_validator_function,
         args(val_function, {'type': 'int'}),

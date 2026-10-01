@@ -30,6 +30,7 @@ mod callable;
 mod chain;
 pub(crate) mod complex;
 mod config;
+mod counter;
 mod custom_error;
 mod dataclass;
 mod date;
@@ -60,6 +61,7 @@ mod model_fields;
 mod named_tuple;
 mod none;
 mod nullable;
+mod ordered_dict;
 mod prebuilt;
 mod set;
 mod shared;
@@ -607,6 +609,10 @@ fn build_validator_inner(
         dict::DictValidator,
         // frozendicts
         frozendict::FrozenDictValidator,
+        // ordered dicts
+        ordered_dict::OrderedDictValidator,
+        // counters
+        counter::CounterValidator,
         // None/null
         none::NoneValidator,
         // functions - before, after, plain & wrap
@@ -780,6 +786,10 @@ pub enum CombinedValidator {
     Dict(dict::DictValidator),
     // frozendicts
     FrozenDict(frozendict::FrozenDictValidator),
+    // ordered dicts
+    OrderedDict(ordered_dict::OrderedDictValidator),
+    // counters
+    Counter(counter::CounterValidator),
     // None/null
     None(none::NoneValidator),
     // functions

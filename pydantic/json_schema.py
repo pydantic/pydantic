@@ -372,6 +372,16 @@ class GenerateJsonSchema:
         Raises:
             PydanticUserError: Raised if the JSON schema generator has already been used to generate a JSON schema.
         """
+        return self._generate_definitions([(key, mode, schema, None) for key, mode, schema in inputs])
+
+    def _generate_definitions(
+        self, inputs: Sequence[tuple[JsonSchemaKeyT, JsonSchemaMode, core_schema.CoreSchema, ConfigDict | None]]
+    ) -> tuple[dict[tuple[JsonSchemaKeyT, JsonSchemaMode], JsonSchemaValue], dict[DefsRef, JsonSchemaValue]]:
+        """Same as `generate_definitions()`, but with an additional config for each input.
+
+        This config is used for core schemas that don't carry their own config (e.g. the core schema
+        of a type adapter).
+        """
         if self._used:
             raise PydanticUserError(
                 'This JSON schema generator has already been used to generate a JSON schema. '
@@ -379,16 +389,18 @@ class GenerateJsonSchema:
                 code='json-schema-already-used',
             )
 
-        for _, mode, schema in inputs:
+        for _, mode, schema, config in inputs:
             self._mode = mode
-            self.generate_inner(schema)
+            with self._config_wrapper_stack.push(config):
+                self.generate_inner(schema)
 
         definitions_remapping = self._build_definitions_remapping()
 
         json_schemas_map: dict[tuple[JsonSchemaKeyT, JsonSchemaMode], DefsRef] = {}
-        for key, mode, schema in inputs:
+        for key, mode, schema, config in inputs:
             self._mode = mode
-            json_schema = self.generate_inner(schema)
+            with self._config_wrapper_stack.push(config):
+                json_schema = self.generate_inner(schema)
             json_schemas_map[(key, mode)] = definitions_remapping.remap_json_schema(json_schema)
 
         json_schema = {'$defs': self.definitions}
@@ -1183,7 +1195,35 @@ class GenerateJsonSchema:
         """
         return self._common_dict_schema(schema)
 
-    def _common_dict_schema(self, schema: core_schema.DictSchema | core_schema.FrozenDictSchema) -> JsonSchemaValue:
+    def ordered_dict_schema(self, schema: core_schema.OrderedDictSchema) -> JsonSchemaValue:
+        """Generates a JSON schema that matches an `OrderedDict` schema.
+
+        Args:
+            schema: The core schema.
+
+        Returns:
+            The generated JSON schema.
+        """
+        return self._common_dict_schema(schema)
+
+    def counter_schema(self, schema: core_schema.CounterSchema) -> JsonSchemaValue:
+        """Generates a JSON schema that matches a `Counter` schema.
+
+        Args:
+            schema: The core schema.
+
+        Returns:
+            The generated JSON schema.
+        """
+        return self._common_dict_schema(schema)
+
+    def _common_dict_schema(
+        self,
+        schema: core_schema.DictSchema
+        | core_schema.FrozenDictSchema
+        | core_schema.OrderedDictSchema
+        | core_schema.CounterSchema,
+    ) -> JsonSchemaValue:
         json_schema: JsonSchemaValue = {'type': 'object'}
 
         keys_schema = self.generate_inner(schema['keys_schema']).copy() if 'keys_schema' in schema else {}
@@ -1609,7 +1649,7 @@ class GenerateJsonSchema:
         if cls is not None:
             # `_update_class_schema()` will not override
             # `additionalProperties` if already present:
-            self._update_class_schema(json_schema, cls, config)
+            self._update_class_schema(json_schema, cls, config or {})
         elif 'additionalProperties' not in json_schema:
             extra = schema.get('config', {}).get('extra_fields_behavior')
             if extra == 'forbid':
@@ -1940,12 +1980,19 @@ class GenerateJsonSchema:
         """
 
         cls = schema['cls']
-        config = cast('ConfigDict', getattr(cls, '__pydantic_config__', {}))
+        # If (stdlib) dataclass doesn't have config, the parent's config is used (as during core schema generation):
+        config = cast('ConfigDict | None', getattr(cls, '__pydantic_config__', None))
 
         with self._config_wrapper_stack.push(config):
             json_schema = self.generate_inner(schema['schema']).copy()
 
-        self._update_class_schema(json_schema, cls, config)
+        # Only the parent's `extra` config value is relevant to the class schema. It is propagated
+        # to the core config (and used for validation), so we reuse it:
+        class_config = config or {}
+        if 'extra' not in class_config and (extra := schema.get('config', {}).get('extra_fields_behavior')) is not None:
+            class_config = cast('ConfigDict', {**class_config, 'extra': extra})
+
+        self._update_class_schema(json_schema, cls, class_config)
 
         return json_schema
 
@@ -2509,20 +2556,19 @@ class GenerateJsonSchema:
         """
         from .type_adapter import TypeAdapter, _type_has_config
 
-        config = self._config
-        try:
-            default = (
-                dft
-                if _type_has_config(type(dft))
-                else TypeAdapter(type(dft), config=config.config_dict).dump_python(
-                    dft, by_alias=self.by_alias, mode='json'
-                )
+        config = self._config.config_dict
+        if self.mode == 'validation' and ('ser_json_temporal' in config or 'ser_json_timedelta' in config):
+            # Temporal serialization formats aren't applied to validation JSON Schemas (see `_common_temporal_schema()`),
+            # so they shouldn't be applied to the default either:
+            config = cast(
+                'ConfigDict',
+                {k: v for k, v in config.items() if k not in ('ser_json_temporal', 'ser_json_timedelta')},
             )
-            return pydantic_core.to_jsonable_python(
-                default,
-                timedelta_mode=config.ser_json_timedelta,
-                bytes_mode=config.ser_json_bytes,
-                by_alias=self.by_alias,
+        try:
+            # Types with their own config (e.g. models) can't be used with a config, so we serialize "as Any",
+            # which will serialize using their own serializer.
+            return TypeAdapter(Any if _type_has_config(type(dft)) else type(dft), config=config).dump_python(
+                dft, by_alias=self.by_alias, mode='json'
             )
         except Exception as e:
             raise pydantic_core.PydanticSerializationError(f'Unable to encode default value {dft}') from e
@@ -3193,13 +3239,15 @@ else:
             return hash(type(self))
 
 
-def _get_typed_dict_config(cls: type[Any] | None) -> ConfigDict:
+def _get_typed_dict_config(cls: type[Any] | None) -> ConfigDict | None:
+    # If typed dictionary doesn't have config, the parent's config is used (as during core schema generation),
+    # hence a default of `None`:
     if cls is not None:
         try:
             return _decorators.get_attribute_from_bases(cls, '__pydantic_config__')
         except AttributeError:
             pass
-    return {}
+    return None
 
 
 def _get_ser_schema_for_default_value(schema: CoreSchema) -> core_schema.PlainSerializerFunctionSerSchema | None:

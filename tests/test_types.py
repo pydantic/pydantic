@@ -1331,6 +1331,9 @@ def test_bytesize_raises():
         }
     ]
 
+    with pytest.raises(ValidationError, match='parse value') as exc_info:
+        Model(size='1' * 310 + 'KB')
+
     with pytest.raises(ValidationError, match='byte unit') as exc_info:
         Model(size='1LiB')
     assert exc_info.value.errors(include_url=False) == [

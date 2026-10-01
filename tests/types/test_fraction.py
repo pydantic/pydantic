@@ -4,6 +4,7 @@ from typing import Annotated
 
 import annotated_types
 import pytest
+from pydantic_core import SchemaError
 
 from pydantic import Field, TypeAdapter, ValidationError
 
@@ -190,6 +191,9 @@ def test_fraction_dump_json(input_value, expected):
         (annotated_types.Lt(1), '1/3', Fraction(1, 3)),
         (annotated_types.Le(1), 1, Fraction(1)),
         (annotated_types.Le(1), '1/3', Fraction(1, 3)),
+        (annotated_types.MultipleOf(Fraction(1, 3)), '2/3', Fraction(2, 3)),
+        (annotated_types.MultipleOf(Fraction(1, 3)), -1, Fraction(-1)),
+        (annotated_types.MultipleOf(Fraction(1, 3)), 0, Fraction(0)),
         # float bound
         (annotated_types.Gt(0.5), 1, Fraction(1)),
     ],
@@ -208,6 +212,8 @@ def test_fraction_constraints(constraint, input_value, expected):
         (annotated_types.Lt(1), 1),
         (annotated_types.Lt(1), 2),
         (annotated_types.Le(1), 2),
+        (annotated_types.MultipleOf(Fraction(1, 3)), '1/2'),
+        (annotated_types.MultipleOf(Fraction(1, 3)), 0.5),
         # float bound
         (annotated_types.Gt(0.5), '1/3'),
     ],
@@ -216,6 +222,33 @@ def test_fraction_constraints_error(constraint, input_value):
     ta = TypeAdapter(Annotated[Fraction, constraint])
     with pytest.raises(ValidationError):
         ta.validate_python(input_value)
+
+
+def test_fraction_multiple_of_error() -> None:
+    """https://github.com/pydantic/pydantic/issues/13868"""
+
+    ta = TypeAdapter(Annotated[Fraction, Field(multiple_of=Fraction(1, 3))])
+
+    with pytest.raises(ValidationError) as exc_info:
+        ta.validate_python(Fraction(1, 2))
+    # insert_assert(exc_info.value.errors(include_url=False))
+    assert exc_info.value.errors(include_url=False) == [
+        {
+            'type': 'multiple_of',
+            'loc': (),
+            'msg': 'Input should be a multiple of 1/3',
+            'input': Fraction(1, 2),
+            'ctx': {'multiple_of': Fraction(1, 3)},
+        }
+    ]
+
+
+@pytest.mark.parametrize('multiple_of', [0, Fraction(0), Fraction(-1, 3)])
+def test_fraction_multiple_of_invalid_constraint(multiple_of: Fraction) -> None:
+    """https://github.com/pydantic/pydantic/issues/13868"""
+
+    with pytest.raises(SchemaError, match="'multiple_of' must be greater than 0"):
+        TypeAdapter(Annotated[Fraction, Field(multiple_of=multiple_of)])
 
 
 def test_fraction_json_schema():

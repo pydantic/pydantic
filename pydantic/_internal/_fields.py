@@ -25,7 +25,7 @@ from ._docs_extraction import extract_docstrings_from_cls
 from ._import_utils import import_cached_base_model, import_cached_field_info
 from ._namespace_utils import NsResolver
 from ._repr import Representation
-from ._utils import can_be_positional, get_first_not_none
+from ._utils import can_be_positional, get_first_not_none, smart_deepcopy
 
 if TYPE_CHECKING:
     from annotated_types import BaseMetadata
@@ -866,8 +866,6 @@ def resolve_default_value(
     call_default_factory: bool = False,
 ) -> Any:
     """Resolve the default value using either a static default or a default_factory."""
-    from ._utils import smart_deepcopy
-
     if default_factory is None:
         return smart_deepcopy(default)
     if call_default_factory:

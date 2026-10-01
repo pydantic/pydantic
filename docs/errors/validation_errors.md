@@ -233,10 +233,31 @@ class Model(BaseModel):
 
 
 try:
-    Model(num=False)
+    Model(num='not a complex number')
 except ValidationError as exc:
     print(repr(exc.errors()[0]['type']))
     #> 'complex_type'
+```
+
+## `counter_type`
+
+This error is raised when the input value's type is not valid for a [`Counter`][collections.Counter] field:
+
+```python
+from collections import Counter
+
+from pydantic import BaseModel, ValidationError
+
+
+class Model(BaseModel):
+    x: Counter[str]
+
+
+try:
+    Model(x='test')
+except ValidationError as exc:
+    print(repr(exc.errors()[0]['type']))
+    #> 'counter_type'
 ```
 
 ## `dataclass_exact_type`
@@ -1740,6 +1761,27 @@ except ValidationError as exc:
     m = M1(int=123)  # errors
     ```
 
+## `ordered_dict_type`
+
+This error is raised when the input value's type is not valid for an [`OrderedDict`][collections.OrderedDict] field:
+
+```python
+from collections import OrderedDict
+
+from pydantic import BaseModel, ValidationError
+
+
+class Model(BaseModel):
+    x: OrderedDict[str, int]
+
+
+try:
+    Model(x='test')
+except ValidationError as exc:
+    print(repr(exc.errors()[0]['type']))
+    #> 'ordered_dict_type'
+```
+
 ## `recursion_loop`
 
 This error is raised when a cyclic reference is detected:
@@ -1843,31 +1885,6 @@ try:
 except ValidationError as exc:
     print(repr(exc.errors()[0]['type']))
     #> 'string_pattern_mismatch'
-```
-
-## `string_sub_type`
-
-This error is raised when the value is an instance of a strict subtype of `str` when the field is strict:
-
-```python
-from enum import Enum
-
-from pydantic import BaseModel, Field, ValidationError
-
-
-class MyEnum(str, Enum):
-    foo = 'foo'
-
-
-class Model(BaseModel):
-    x: str = Field(strict=True)
-
-
-try:
-    Model(x=MyEnum.foo)
-except ValidationError as exc:
-    print(repr(exc.errors()[0]['type']))
-    #> 'string_sub_type'
 ```
 
 ## `string_too_long`

@@ -816,7 +816,8 @@ class ConfigDict(TypedDict, total=False):
     The `GenerateSchema` class to use during core schema generation.
 
     /// version-deprecated | v2.10
-    The `GenerateSchema` class is private and highly subject to change.
+    The `GenerateSchema` class is private and highly subject to change. This setting
+    no longer has any effect.
     ///
     """
 
@@ -1196,9 +1197,9 @@ class ConfigDict(TypedDict, total=False):
 
         url: AnyUrl
 
-    m = Model(url='http://example.com')
+    m = Model(url='https://example.com')
     print(m.url)
-    #> http://example.com
+    #> https://example.com
     ```
 
     /// version-added | v2.12

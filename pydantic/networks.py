@@ -1,4 +1,36 @@
-"""The networks module contains types for common network-related fields."""
+"""The networks module contains types for common network-related fields.
+
+/// version-added | v2.12
+By default, validation of URL types add a trailing slash if no path is present:
+
+```python
+from pydantic import AnyUrl, BaseModel
+
+class Model(BaseModel):
+    url: AnyUrl
+
+m = Model(url='https://example.com')
+print(m.url)
+#> https://example.com/
+```
+
+The [`url_preserve_empty_path`][pydantic.ConfigDict.url_preserve_empty_path] config option can be used
+to control this behavior:
+
+```python
+from pydantic import AnyUrl, BaseModel, ConfigDict
+
+class Model(BaseModel):
+    model_config = ConfigDict(url_preserve_empty_path=True)
+
+    url: AnyUrl
+
+m = Model(url='https://example.com')
+print(m.url)
+#> https://example.com
+```
+///
+"""
 
 from __future__ import annotations as _annotations
 
@@ -1348,6 +1380,17 @@ def validate_email(value: str) -> tuple[str, str]:
             'value_error',
             'value is not a valid email address: {reason}',
             {'reason': f'Length must not exceed {MAX_EMAIL_LENGTH} characters'},
+        )
+
+    # Carriage returns and line feeds are only allowed in a header field body as part of "folding"
+    # (a CRLF immediately followed by whitespace), which is unfolded before the value is parsed
+    # (see https://www.rfc-editor.org/info/rfc5322/#section-2.2). A `NameEmail` is a standalone value
+    # rather than a folded header line, so any CR or LF is rejected.
+    if '\r' in value or '\n' in value:
+        raise PydanticCustomError(
+            'value_error',
+            'value is not a valid email address: {reason}',
+            {'reason': 'Carriage return and line feed characters are not allowed'},
         )
 
     m = pretty_email_regex.fullmatch(value)

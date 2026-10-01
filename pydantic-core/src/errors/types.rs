@@ -247,7 +247,6 @@ error_types! {
     // ---------------------
     // string errors
     StringType {},
-    StringSubType {},
     StringUnicode {},
     StringTooShort {
         min_length: {ctx_type: usize, ctx_fn: field_from_context},
@@ -268,6 +267,8 @@ error_types! {
     // dict errors
     DictType {},
     FrozenDictType {},
+    OrderedDictType {},
+    CounterType {},
     MappingType {
         error: {ctx_type: Cow<'static, str>, ctx_fn: cow_field_from_context<String, _>},
     },
@@ -533,7 +534,6 @@ impl ErrorType {
             Self::IterableType { .. } => "Input should be iterable",
             Self::IterationError { .. } => "Error iterating over object, error: {error}",
             Self::StringType { .. } => "Input should be a valid string",
-            Self::StringSubType { .. } => "Input should be a string, not an instance of a subclass of str",
             Self::StringUnicode { .. } => {
                 "Input should be a valid string, unable to parse raw data as a unicode string"
             }
@@ -544,6 +544,8 @@ impl ErrorType {
             Self::Enum { .. } => "Input should be {expected}",
             Self::DictType { .. } => "Input should be a valid dictionary",
             Self::FrozenDictType { .. } => "Input should be a valid frozendict",
+            Self::OrderedDictType { .. } => "Input should be a valid OrderedDict",
+            Self::CounterType { .. } => "Input should be a valid Counter",
             Self::MappingType { .. } => "Input should be a valid mapping, error: {error}",
             Self::ListType { .. } => "Input should be a valid list",
             Self::DequeType { .. } => "Input should be a valid deque",
@@ -647,6 +649,8 @@ impl ErrorType {
             | Self::ModelAttributesType { .. }
             | Self::DictType { .. }
             | Self::FrozenDictType { .. }
+            | Self::OrderedDictType { .. }
+            | Self::CounterType { .. }
             | Self::DataclassType { .. } => "Input should be an object",
             Self::NamedTupleType { .. } => "Input should be an array or an object",
             Self::TimeDeltaType { .. } => "Input should be a valid duration",
