@@ -847,7 +847,7 @@ jobs:
 
       - name: Run Django Ninja tests
         # `test_all_fields` expects the `Decimal` JSON Schema `pattern`, which is no longer emitted by default since 2.14:
-        run: pytest tests/ --deselect tests/test_orm_schemas.py::test_all_fields
+        run: pytest tests/ -k 'not test_all_fields'
 
   test-fastdepends:
     name: Test FastDepends (main branch) on Python ${{ matrix.python-version }}
