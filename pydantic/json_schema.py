@@ -48,6 +48,7 @@ from ._internal import (
     _core_metadata,
     _core_utils,
     _decorators,
+    _import_utils,
     _mock_val_ser,
     _schema_generation_shared,
     _typing_extra,
@@ -1766,10 +1767,14 @@ class GenerateJsonSchema:
         Returns:
             The generated JSON schema.
         """
+        BaseModel = _import_utils.import_cached_base_model()
+
         # We do not use schema['model'].model_json_schema() here
         # because it could lead to inconsistent refs handling, etc.
-        cls = cast('type[BaseModel]', schema['cls'])
-        config = cls.model_config
+        cls = schema['cls']
+        # A `ModelSerSchema` can have any class as `cls`, in which case a `model_config`
+        # attribute (if it even exists) is unrelated to Pydantic:
+        config: ConfigDict = cls.model_config if issubclass(cls, BaseModel) else {}
 
         with self._config_wrapper_stack.push(config):
             json_schema = self.generate_inner(schema['schema'])
@@ -2344,13 +2349,21 @@ class GenerateJsonSchema:
                 return_schema = schema.get('return_schema')
                 if return_schema is not None:
                     return self.generate_inner(return_schema)
+                return None
             case {'type': 'format' | 'to-string'}:
                 # FormatSerSchema or ToStringSerSchema
                 return self.str_schema(core_schema.str_schema())
-            case {'type': 'model'}:
-                # ModelSerSchema
-                return self.generate_inner(schema['schema'])
-        return None
+            case {'type': 'include-exclude-sequence' | 'include-exclude-dict'}:
+                # IncExSeqSerSchema or IncExDictSerSchema, no impact on the JSON Schema
+                return None
+            case {'type': 'any'}:
+                # An `'any'` serialization schema doesn't provide any information about the serialized value,
+                # so use the main schema instead, which is a more precise description in practice.
+                return None
+            case _:
+                # An arbitrary core schema (this includes `SimpleSerSchema` and `ModelSerSchema`, which are
+                # subsets of the corresponding core schemas, hence the cast):
+                return self.generate_inner(cast('CoreSchema', schema))
 
     def complex_schema(self, schema: core_schema.ComplexSchema) -> JsonSchemaValue:
         """Generates a JSON schema that matches a complex number.
