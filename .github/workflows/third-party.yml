@@ -338,7 +338,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python-version: ['3.10', '3.11', '3.12', '3.13']
+        python-version: ['3.14']
     services:
       postgres:
         image: postgres:15.1-bullseye
@@ -406,9 +406,9 @@ jobs:
       - name: 📬 Setup Node.js environment for server/emails
         uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
-          node-version-file: server/emails/.node-version
+          node-version-file: .nvmrc
           cache: 'pnpm'
-          cache-dependency-path: 'clients/pnpm-lock.yaml'
+          cache-dependency-path: 'server/emails/pnpm-lock.yaml'
 
       - name: 📬 Build server/emails
         working-directory: server/emails
@@ -434,7 +434,6 @@ jobs:
           uv sync --no-progress --dev
           uv pip uninstall pydantic
           uv pip install --no-config -e ./../pydantic-latest
-          uv run --no-sync task generate_dev_jwks
 
       - name: List installed dependencies
         working-directory: ./server
@@ -847,7 +846,8 @@ jobs:
         run: pip list
 
       - name: Run Django Ninja tests
-        run: pytest tests/
+        # `test_all_fields` expects the `Decimal` JSON Schema `pattern`, which is no longer emitted by default since 2.14:
+        run: pytest tests/ -k 'not test_all_fields'
 
   test-fastdepends:
     name: Test FastDepends (main branch) on Python ${{ matrix.python-version }}
