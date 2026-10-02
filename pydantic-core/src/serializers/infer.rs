@@ -27,7 +27,7 @@ use crate::serializers::shared::serialize_to_python;
 use crate::serializers::type_serializers;
 use crate::serializers::type_serializers::any::AnySerializer;
 use crate::serializers::type_serializers::format::serialize_via_str;
-use crate::tools::{py_err, safe_repr};
+use crate::tools::{py_err, py_get_attrs, safe_repr};
 
 use super::SchemaSerializer;
 use super::config::InfNanMode;
@@ -660,10 +660,33 @@ pub(crate) fn infer_json_key_known<'a, 'py>(
     }
 }
 
-pub(crate) fn get_pydantic_serializer<'py>(value: &Bound<'py, PyAny>) -> PyResult<Bound<'py, SchemaSerializer>> {
+/// Get the `SchemaSerializer` stored as `__pydantic_serializer__` on `value`'s type, or `None`
+/// if there's no such attribute (e.g. for stdlib dataclasses).
+///
+/// If the type isn't fully built yet, pydantic stores a placeholder (`MockValSer`) that rebuilds the
+/// type lazily when one of its attributes is accessed from Python. Casting it from Rust bypasses that
+/// mechanism, so we explicitly call its `rebuild()` method, which rebuilds the whole type and either
+/// returns the built serializer or raises a meaningful error.
+pub(crate) fn get_pydantic_serializer<'py>(
+    value: &Bound<'py, PyAny>,
+) -> PyResult<Option<Bound<'py, SchemaSerializer>>> {
     let py = value.py();
-    let py_serializer = value.getattr(intern!(py, "__pydantic_serializer__"))?;
-    py_serializer.cast_into_exact().map_err(Into::into)
+    let Some(py_serializer) = py_get_attrs(value, intern!(py, "__pydantic_serializer__"))? else {
+        return Ok(None);
+    };
+    if let Ok(serializer) = py_serializer.cast_exact::<SchemaSerializer>() {
+        return Ok(Some(serializer.clone()));
+    }
+    if py_serializer.hasattr(intern!(py, "rebuild"))? {
+        // The call stack is unrelated to where the type was defined, so don't use a parent frame namespace:
+        let kwargs = PyDict::new(py);
+        kwargs.set_item(intern!(py, "parent_namespace_depth"), 0)?;
+        let rebuilt = py_serializer.call_method(intern!(py, "rebuild"), (), Some(&kwargs))?;
+        if !rebuilt.is_none() {
+            return Ok(Some(rebuilt.cast_into_exact()?));
+        }
+    }
+    Ok(Some(py_serializer.cast_into_exact()?))
 }
 
 /// Serialize `value` as if it had a `__pydantic_serializer__` attribute
@@ -674,9 +697,11 @@ fn serialize_pydantic_serializable<'py, S: DoSerialize>(
     state: &mut SerializationState<'py>,
     do_serialize: S,
 ) -> Result<S::Ok, S::Error> {
-    let py = value.py();
-    let py_serializer = value.getattr(intern!(py, "__pydantic_serializer__"))?;
-    call_pydantic_serializer(py_serializer.cast().map_err(Into::into)?, value, state, do_serialize)
+    match get_pydantic_serializer(value)? {
+        Some(serializer) => call_pydantic_serializer(&serializer, value, state, do_serialize),
+        // `ObType::PydanticSerializable` was inferred from the attribute being present
+        None => Err(unknown_type_error(value).into()),
+    }
 }
 
 pub(crate) fn call_pydantic_serializer<'py, S: DoSerialize>(

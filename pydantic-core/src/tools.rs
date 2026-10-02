@@ -3,7 +3,7 @@ use core::fmt;
 use hashbrown::HashTable;
 use pyo3::PyTraverseError;
 use pyo3::PyVisit;
-use pyo3::exceptions::PyKeyError;
+use pyo3::exceptions::{PyAttributeError, PyKeyError};
 use pyo3::intern;
 use pyo3::prelude::*;
 use pyo3::types::{PyDict, PyMapping, PyString};
@@ -200,6 +200,23 @@ pub fn mapping_get<'py>(
     mapping
         .call_method1(intern!(mapping.py(), "get"), (key, undefined))
         .map(|value| if value.is(undefined) { None } else { Some(value) })
+}
+
+// TODO replace with `PyAnyMethods::getattr_opt` once https://github.com/PyO3/pyo3/pull/5985 is merged:
+pub(crate) fn py_get_attrs<'py, N>(obj: &Bound<'py, PyAny>, attr_name: N) -> PyResult<Option<Bound<'py, PyAny>>>
+where
+    N: IntoPyObject<'py, Target = PyString>,
+{
+    match obj.getattr(attr_name) {
+        Ok(attr) => Ok(Some(attr)),
+        Err(err) => {
+            if err.get_type(obj.py()).is_subclass_of::<PyAttributeError>()? {
+                Ok(None)
+            } else {
+                Err(err)
+            }
+        }
+    }
 }
 
 /// A hash table which uses (hashable) Python objects as keys

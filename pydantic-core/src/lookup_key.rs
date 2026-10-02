@@ -3,7 +3,7 @@ use std::convert::Infallible;
 use std::fmt;
 
 use pyo3::IntoPyObjectExt;
-use pyo3::exceptions::{PyAttributeError, PyTypeError, PyValueError};
+use pyo3::exceptions::{PyTypeError, PyValueError};
 use pyo3::prelude::*;
 use pyo3::pybacked::PyBackedStr;
 use pyo3::types::{PyDict, PyList, PyMapping, PyString};
@@ -14,7 +14,7 @@ use smallvec::SmallVec;
 use crate::build_tools::py_schema_err;
 use crate::errors::{ErrorType, LocItem, Location, ValError, ValLineError, ValResult, py_err_string};
 use crate::input::StringMapping;
-use crate::tools::{mapping_get, py_err};
+use crate::tools::{mapping_get, py_err, py_get_attrs};
 
 /// The possible choices for an alias value in Python
 #[derive(FromPyObject)]
@@ -452,22 +452,5 @@ impl LookupType {
 
     pub fn matches(self, other: LookupType) -> bool {
         (self as u8 & other as u8) != 0
-    }
-}
-
-// TODO replace with `PyAnyMethods::getattr_opt` once https://github.com/PyO3/pyo3/pull/5985 is merged:
-fn py_get_attrs<'py, N>(obj: &Bound<'py, PyAny>, attr_name: N) -> PyResult<Option<Bound<'py, PyAny>>>
-where
-    N: IntoPyObject<'py, Target = PyString>,
-{
-    match obj.getattr(attr_name) {
-        Ok(attr) => Ok(Some(attr)),
-        Err(err) => {
-            if err.get_type(obj.py()).is_subclass_of::<PyAttributeError>()? {
-                Ok(None)
-            } else {
-                Err(err)
-            }
-        }
     }
 }
