@@ -462,7 +462,7 @@ def test_enum_int_validation_should_fail_for_plain_type_without_eq_checking():
         v.validate_python(MyClass(1))
 
 
-def support_custom_new_method() -> None:
+def test_support_custom_new_method() -> None:
     """Demonstrates support for custom new methods, as well as conceptually, multi-value enums without dependency on a 3rd party lib for testing."""
 
     class Animal(Enum):
