@@ -50,6 +50,9 @@ impl<K: PyGcTraverse, T: PyGcTraverse> PyGcTraverse for AHashMap<K, T> {
     }
 }
 
+// NOTE: an `Arc` must only be traversed by its unique owner. If a clone of the `Arc` is held by another
+// Python object, that object must not traverse it, otherwise the objects inside are reported twice for
+// a single reference.
 impl<T: PyGcTraverse> PyGcTraverse for Arc<T> {
     fn py_gc_traverse(&self, visit: &PyVisit<'_>) -> Result<(), PyTraverseError> {
         T::py_gc_traverse(self, visit)
