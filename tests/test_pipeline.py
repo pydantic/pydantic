@@ -662,3 +662,24 @@ def test_validate_as_ellipsis_preserves_other_steps() -> None:
     ta = TypeAdapter[float](Annotated[float, validate_as(str).transform(lambda v: v.split()[0]).validate_as(...)])
 
     assert ta.validate_python('12 ab') == 12.0
+
+
+def test_transform_after_constraint_is_not_reordered() -> None:
+    """`str_strip()` must run after the `len()` constraint that precedes it in the pipeline."""
+    ta = TypeAdapter[str](Annotated[str, validate_as(str).len(3).str_strip()])
+    assert ta.validate_python('  ab  ') == 'ab'
+
+
+def test_consecutive_string_transforms_are_both_applied() -> None:
+    """`str_lower()` followed by `str_upper()` must end up uppercase."""
+    ta = TypeAdapter[str](Annotated[str, validate_as(str).str_lower().str_upper()])
+    assert ta.validate_python('AbC') == 'ABC'
+
+
+def test_transform_before_constraint_still_folds_into_the_str_schema() -> None:
+    """The fast path stays in place when nothing precedes the transform."""
+    ta = TypeAdapter[str](Annotated[str, validate_as(str).str_strip().len(3)])
+    assert ta.core_schema == {'type': 'str', 'strip_whitespace': True, 'min_length': 3}
+    assert ta.validate_python('  abc  ') == 'abc'
+    with pytest.raises(ValidationError):
+        ta.validate_python('  ab  ')
