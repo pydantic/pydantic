@@ -67,7 +67,7 @@ def test_func_type() -> None:
         validate_call([])
 
 
-def validate_bare_none() -> None:
+def test_validate_bare_none() -> None:
     @validate_call
     def func(f: None):
         return f
