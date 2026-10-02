@@ -1731,3 +1731,37 @@ def test_string_annotation_union_type() -> None:
 
     assert typing_objects.is_union(get_origin(annotation))
     assert get_args(annotation)[0] is Main
+
+
+def test_serialization_inference_rebuilds_incomplete_model(create_module) -> None:
+    """https://github.com/pydantic/pydantic/issues/7713"""
+
+    # Necessary to have classes defined at module level for forward ref
+    # to resolve when rebuilding model from pydantic-core:
+    @create_module
+    def module():
+        from typing import Optional
+
+        from pydantic import BaseModel
+
+        class B(BaseModel):
+            a: Optional['A'] = None
+
+        class A(BaseModel):
+            b: B
+
+    a = module.A.model_validate({'b': {}})
+    assert module.B.__pydantic_complete__ is False
+
+    assert TypeAdapter(Any).dump_python(a.b) == {'a': None}
+    assert module.B.__pydantic_complete__ is True
+    assert a.model_dump(serialize_as_any=True) == {'b': {'a': None}}
+
+
+def test_serialization_inference_unbuildable_model() -> None:
+    class Model(BaseModel):
+        x: 'Undefined'  # noqa: F821
+
+    m = Model.model_construct(x=1)
+    with pytest.raises(PydanticUserError, match='`Model` is not fully defined; you should define `Undefined`'):
+        TypeAdapter(Any).dump_python(m)
