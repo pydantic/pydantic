@@ -662,3 +662,42 @@ def test_validate_as_ellipsis_preserves_other_steps() -> None:
     ta = TypeAdapter[float](Annotated[float, validate_as(str).transform(lambda v: v.split()[0]).validate_as(...)])
 
     assert ta.validate_python('12 ab') == 12.0
+
+
+@pytest.mark.parametrize(
+    'pipeline, valid, invalid',
+    [
+        (validate_as(int).gt(5).gt(3), 6, 4),
+        (validate_as(int).gt(3).gt(5), 6, 4),
+        (validate_as(int).ge(5).ge(3), 5, 4),
+        (validate_as(int).lt(10).lt(100), 9, 50),
+        (validate_as(int).le(10).le(100), 10, 50),
+        (validate_as(int).multiple_of(2).multiple_of(3), 6, 3),
+        (validate_as(str).len(0, 3).len(1, 10), 'abc', 'abcdef'),
+        (validate_as(str).len(5).len(1), 'abcde', 'ab'),
+        (validate_as(list[int]).len(0, 2).len(0, 5), [1, 2], [1, 2, 3]),
+    ],
+)
+def test_repeated_constraint_keeps_previous_constraint(pipeline: _Pipeline[Any, Any], valid: Any, invalid: Any) -> None:
+    """A constraint applied a second time must not override the first one."""
+    ta = TypeAdapter[Any](Annotated[Any, pipeline])
+    assert ta.validate_python(valid) == valid
+    with pytest.raises(ValidationError):
+        ta.validate_python(invalid)
+
+
+def test_repeated_tz_constraint_keeps_previous_constraint() -> None:
+    ta = TypeAdapter[datetime.datetime](
+        Annotated[datetime.datetime, validate_as(datetime.datetime).datetime_tz_aware().datetime_tz_naive()]
+    )
+    with pytest.raises(ValidationError):
+        ta.validate_python(datetime.datetime(2020, 1, 1))
+    with pytest.raises(ValidationError):
+        ta.validate_python(datetime.datetime(2020, 1, 1, tzinfo=datetime.timezone.utc))
+
+
+def test_constraint_on_constrained_type_keeps_type_constraint() -> None:
+    ta = TypeAdapter[int](Annotated[int, validate_as(Annotated[int, Interval(le=10)]).le(100)])
+    assert ta.validate_python(10) == 10
+    with pytest.raises(ValidationError):
+        ta.validate_python(50)

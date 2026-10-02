@@ -6,12 +6,12 @@ import datetime
 import operator
 import re
 from collections import deque
-from collections.abc import Callable, Container
+from collections.abc import Callable, Collection, Container
 from dataclasses import dataclass
 from functools import cached_property, partial
 from re import Pattern
 from types import EllipsisType
-from typing import TYPE_CHECKING, Annotated, Any, Generic, Protocol, TypeAlias, TypeVar, overload
+from typing import TYPE_CHECKING, Annotated, Any, Generic, Protocol, TypeAlias, TypeGuard, TypeVar, overload
 
 import annotated_types
 from typing_extensions import TypeForm
@@ -483,6 +483,15 @@ _LENGTH_SCHEMA_TYPES = frozenset(
 )
 
 
+def _can_set_natively(s: cs.CoreSchema | None, schema_types: Collection[str], *keys: str) -> TypeGuard[cs.CoreSchema]:
+    """Whether the constraint `keys` can be set on the core schema `s` directly.
+
+    This is the case if the schema type natively supports them, and if they are not already set
+    by a previous step (in which case setting them again would override the previous constraint).
+    """
+    return s is not None and s['type'] in schema_types and not any(key in s for key in keys)
+
+
 def _apply_constraint(  # noqa: C901
     s: cs.CoreSchema | None, constraint: _ConstraintAnnotation
 ) -> cs.CoreSchema:
@@ -491,7 +500,7 @@ def _apply_constraint(  # noqa: C901
     # when building the validator from the core schema:
     if isinstance(constraint, annotated_types.Gt):
         gt = constraint.gt
-        if s and s['type'] in _ORDERING_SCHEMA_TYPES:
+        if _can_set_natively(s, _ORDERING_SCHEMA_TYPES, 'gt'):
             s = s.copy()
             s['gt'] = gt  # pyright: ignore[reportGeneralTypeIssues]
         else:
@@ -502,7 +511,7 @@ def _apply_constraint(  # noqa: C901
             s = _check_func(check_gt, f'> {gt}', s)
     elif isinstance(constraint, annotated_types.Ge):
         ge = constraint.ge
-        if s and s['type'] in _ORDERING_SCHEMA_TYPES:
+        if _can_set_natively(s, _ORDERING_SCHEMA_TYPES, 'ge'):
             s = s.copy()
             s['ge'] = ge  # pyright: ignore[reportGeneralTypeIssues]
         else:
@@ -513,7 +522,7 @@ def _apply_constraint(  # noqa: C901
             s = _check_func(check_ge, f'>= {ge}', s)
     elif isinstance(constraint, annotated_types.Lt):
         lt = constraint.lt
-        if s and s['type'] in _ORDERING_SCHEMA_TYPES:
+        if _can_set_natively(s, _ORDERING_SCHEMA_TYPES, 'lt'):
             s = s.copy()
             s['lt'] = lt  # pyright: ignore[reportGeneralTypeIssues]
         else:
@@ -524,7 +533,7 @@ def _apply_constraint(  # noqa: C901
             s = _check_func(check_lt, f'< {lt}', s)
     elif isinstance(constraint, annotated_types.Le):
         le = constraint.le
-        if s and s['type'] in _ORDERING_SCHEMA_TYPES:
+        if _can_set_natively(s, _ORDERING_SCHEMA_TYPES, 'le'):
             s = s.copy()
             s['le'] = le  # pyright: ignore[reportGeneralTypeIssues]
         else:
@@ -537,7 +546,13 @@ def _apply_constraint(  # noqa: C901
         min_len = constraint.min_length
         max_len = constraint.max_length
 
-        if s and s['type'] in _LENGTH_SCHEMA_TYPES:
+        len_keys: list[str] = []
+        if min_len != 0:
+            len_keys.append('min_length')
+        if max_len is not None:
+            len_keys.append('max_length')
+
+        if _can_set_natively(s, _LENGTH_SCHEMA_TYPES, *len_keys):
             s = s.copy()
             if min_len != 0:
                 s['min_length'] = min_len  # pyright: ignore[reportGeneralTypeIssues]
@@ -557,7 +572,7 @@ def _apply_constraint(  # noqa: C901
             s = _check_func(check_len, predicate_err, s)
     elif isinstance(constraint, annotated_types.MultipleOf):
         multiple_of = constraint.multiple_of
-        if s and s['type'] in {'int', 'float', 'decimal'}:
+        if _can_set_natively(s, {'int', 'float', 'decimal'}, 'multiple_of'):
             s = s.copy()
             s['multiple_of'] = multiple_of  # pyright: ignore[reportGeneralTypeIssues]
         else:
@@ -570,7 +585,7 @@ def _apply_constraint(  # noqa: C901
         tz = constraint.tz
 
         if tz is ...:
-            if s and s['type'] == 'datetime':
+            if s and s['type'] == 'datetime' and 'tz_constraint' not in s:
                 s = s.copy()
                 s['tz_constraint'] = 'aware'
             else:
@@ -581,7 +596,7 @@ def _apply_constraint(  # noqa: C901
 
                 s = _check_func(check_tz_aware, 'timezone aware', s)
         elif tz is None:
-            if s and s['type'] == 'datetime':
+            if s and s['type'] == 'datetime' and 'tz_constraint' not in s:
                 s = s.copy()
                 s['tz_constraint'] = 'naive'
             else:
