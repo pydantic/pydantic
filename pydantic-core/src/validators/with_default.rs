@@ -151,6 +151,15 @@ impl BuildValidator for WithDefaultValidator {
 
 impl_py_gc_traverse!(WithDefaultValidator { default, validator });
 
+impl WithDefaultValidator {
+    /// The validator a present value goes through. A value taken without running the validator
+    /// cannot error, so `on_error` never comes into it; an absent field still goes through
+    /// `default_value` as before.
+    pub(crate) fn stream_inner(&self) -> &CombinedValidator {
+        &self.validator
+    }
+}
+
 impl Validator for WithDefaultValidator {
     fn validate<'py>(
         &self,

@@ -24,6 +24,8 @@ mod lookup_key;
 mod recursion_guard;
 mod schema_gather;
 mod serializers;
+#[cfg(feature = "stream-verify")]
+mod stream_verify;
 mod tools;
 mod url;
 mod validators;
