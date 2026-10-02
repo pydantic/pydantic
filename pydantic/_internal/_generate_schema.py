@@ -1483,8 +1483,33 @@ class GenerateSchema:
                 extras_schema: CoreSchema | None = None  # For 'allow', equivalent to `Any` - no validation performed.
 
                 # `__closed__` is `None` when not specified (equivalent to `False`):
-                is_closed = bool(getattr(typed_dict_cls, '__closed__', False))
+                is_closed = getattr(typed_dict_cls, '__closed__', None)
                 extra_items = getattr(typed_dict_cls, '__extra_items__', typing_extensions.NoExtraItems)
+
+                # Walk `__orig_bases__` to find inherited `__closed__` and `__extra_items__`
+                # from parent TypedDicts (PEP 728 inheritance):
+                if is_closed is None or typing_objects.is_noextraitems(extra_items):
+                    for base in getattr(typed_dict_cls, '__orig_bases__', ()):
+                        if is_closed is None:
+                            base_closed = getattr(base, '__closed__', None)
+                            if base_closed is not None:
+                                is_closed = base_closed
+                        if typing_objects.is_noextraitems(extra_items):
+                            base_extra_items = getattr(base, '__extra_items__', typing_extensions.NoExtraItems)
+                            if not typing_objects.is_noextraitems(base_extra_items):
+                                extra_items = base_extra_items
+
+                is_closed = bool(is_closed)
+
+                # Handle `extra_items=Never` as equivalent to `closed=True` (PEP 728):
+                if typing_objects.is_never(extra_items):
+                    is_closed = True
+                    extra_items = typing_extensions.NoExtraItems
+
+                # Unwrap `ReadOnly[]` from `extra_items`:
+                if typing_extensions.get_origin(extra_items) is typing_extensions.ReadOnly:
+                    extra_items = typing_extensions.get_args(extra_items)[0]
+
                 if is_closed:
                     extra_behavior = 'forbid'
                     extras_schema = None

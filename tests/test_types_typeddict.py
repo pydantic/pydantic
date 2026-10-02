@@ -4,7 +4,7 @@ Tests for TypedDict
 
 import sys
 import typing
-from typing import Annotated, Any, Generic, Optional, TypeVar
+from typing import Annotated, Any, Generic, Never, Optional, TypeVar
 
 import pytest
 import typing_extensions
@@ -1051,6 +1051,106 @@ def test_typeddict_extraitems_generic() -> None:
         ta.validate_python({'f': 1, 'extra': 1})
 
     assert exc.value.errors()[0]['loc'] == ('extra',)
+
+
+def test_typeddict_extra_items_inherited() -> None:
+    class Parent(TypedDict, extra_items=int):
+        f: int
+
+    class Child(Parent):
+        g: str
+
+    ta = TypeAdapter(Child)
+
+    assert ta.validate_python({'f': 1, 'g': 'a', 'extra': 42}) == {'f': 1, 'g': 'a', 'extra': 42}
+
+    with pytest.raises(ValidationError) as exc:
+        ta.validate_python({'f': 1, 'g': 'a', 'extra': 'not an int'})
+
+    assert exc.value.errors()[0]['loc'] == ('extra',)
+
+    assert ta.json_schema() == {
+        'additionalProperties': {'type': 'integer'},
+        'properties': {
+            'f': {'title': 'F', 'type': 'integer'},
+            'g': {'title': 'G', 'type': 'string'},
+        },
+        'required': ['f', 'g'],
+        'title': 'Child',
+        'type': 'object',
+    }
+
+
+def test_typeddict_closed_inherited() -> None:
+    class Parent(TypedDict, closed=True):
+        f: int
+
+    class Child(Parent):
+        g: str
+
+    ta = TypeAdapter(Child)
+
+    assert ta.validate_python({'f': 1, 'g': 'a'}) == {'f': 1, 'g': 'a'}
+
+    with pytest.raises(ValidationError) as exc:
+        ta.validate_python({'f': 1, 'g': 'a', 'extra': 1})
+
+    assert exc.value.errors()[0]['type'] == 'extra_forbidden'
+
+    assert ta.json_schema() == {
+        'additionalProperties': False,
+        'properties': {
+            'f': {'title': 'F', 'type': 'integer'},
+            'g': {'title': 'G', 'type': 'string'},
+        },
+        'required': ['f', 'g'],
+        'title': 'Child',
+        'type': 'object',
+    }
+
+
+def test_typeddict_extra_items_never() -> None:
+    class TD(TypedDict, extra_items=Never):
+        f: int
+
+    ta = TypeAdapter(TD)
+
+    assert ta.validate_python({'f': 1}) == {'f': 1}
+
+    with pytest.raises(ValidationError) as exc:
+        ta.validate_python({'f': 1, 'extra': 1})
+
+    assert exc.value.errors()[0]['type'] == 'extra_forbidden'
+
+    assert ta.json_schema() == {
+        'additionalProperties': False,
+        'properties': {'f': {'title': 'F', 'type': 'integer'}},
+        'required': ['f'],
+        'title': 'TD',
+        'type': 'object',
+    }
+
+
+def test_typeddict_extra_items_readonly() -> None:
+    class TD(TypedDict, extra_items=ReadOnly[int]):
+        f: int
+
+    ta = TypeAdapter(TD)
+
+    assert ta.validate_python({'f': 1, 'extra': 42}) == {'f': 1, 'extra': 42}
+
+    with pytest.raises(ValidationError) as exc:
+        ta.validate_python({'f': 1, 'extra': 'not an int'})
+
+    assert exc.value.errors()[0]['loc'] == ('extra',)
+
+    assert ta.json_schema() == {
+        'additionalProperties': {'type': 'integer'},
+        'properties': {'f': {'title': 'F', 'type': 'integer'}},
+        'required': ['f'],
+        'title': 'TD',
+        'type': 'object',
+    }
 
 
 def test_typeddict_incompatible_extra_config_warning() -> None:
