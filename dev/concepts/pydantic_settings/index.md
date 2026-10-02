@@ -1068,6 +1068,8 @@ CLI argument parsing of lists supports intermixing of any of the below three sty
 - Argparse style `--field 1 --field 2`
 - Lazy style `--field=1,2`
 
+Use the JSON style `--field='[]'` to pass an empty list. Empty arrays contribute no items when mixed with other list arguments.
+
 ```py
 import sys
 
@@ -1089,6 +1091,14 @@ print(Settings().model_dump())
 sys.argv = ['example.py', '--my_list', '1,2']
 print(Settings().model_dump())
 #> {'my_list': [1, 2]}
+
+sys.argv = ['example.py', '--my_list', '[]']
+print(Settings().model_dump())
+#> {'my_list': []}
+
+sys.argv = ['example.py', '--my_list', '[]', '--my_list', '3']
+print(Settings().model_dump())
+#> {'my_list': [3]}
 
 ```
 
@@ -2541,6 +2551,8 @@ If multiple `secrets_dir` passed, the limit applies to each directory independen
 #### secrets_case_sensitive
 
 Same as `case_sensitive`, but works for secrets only. If not specified, defaults to `case_sensitive`.
+
+Unlike `case_sensitive` for environment variables, this option is honored on every platform. `os.environ` is case-insensitive on Windows, so `EnvSettingsSource` falls back to case-insensitive matching there; secrets are files and keep their case, so no such fallback applies.
 
 #### secrets_nested_delimiter
 

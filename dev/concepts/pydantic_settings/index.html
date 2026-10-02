@@ -6864,6 +6864,7 @@ is customised</a>:</p>
 <li>Argparse style <code>--field 1 --field 2</code></li>
 <li>Lazy style <code>--field=1,2</code></li>
 </ul>
+<p>Use the JSON style <code>--field='[]'</code> to pass an empty list. Empty arrays contribute no items when mixed with other list arguments.</p>
 <div class="language-py highlight"><pre><span></span><code><span class="kn">import</span><span class="w"> </span><span class="nn">sys</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">pydantic_settings</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseSettings</span>
@@ -6884,6 +6885,14 @@ is customised</a>:</p>
 <span class="n">sys</span><span class="o">.</span><span class="n">argv</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;example.py&#39;</span><span class="p">,</span> <span class="s1">&#39;--my_list&#39;</span><span class="p">,</span> <span class="s1">&#39;1,2&#39;</span><span class="p">]</span>
 <span class="nb">print</span><span class="p">(</span><span class="n">Settings</span><span class="p">()</span><span class="o">.</span><span class="n">model_dump</span><span class="p">())</span>
 <span class="c1">#&gt; {&#39;my_list&#39;: [1, 2]}</span>
+
+<span class="n">sys</span><span class="o">.</span><span class="n">argv</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;example.py&#39;</span><span class="p">,</span> <span class="s1">&#39;--my_list&#39;</span><span class="p">,</span> <span class="s1">&#39;[]&#39;</span><span class="p">]</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">Settings</span><span class="p">()</span><span class="o">.</span><span class="n">model_dump</span><span class="p">())</span>
+<span class="c1">#&gt; {&#39;my_list&#39;: []}</span>
+
+<span class="n">sys</span><span class="o">.</span><span class="n">argv</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;example.py&#39;</span><span class="p">,</span> <span class="s1">&#39;--my_list&#39;</span><span class="p">,</span> <span class="s1">&#39;[]&#39;</span><span class="p">,</span> <span class="s1">&#39;--my_list&#39;</span><span class="p">,</span> <span class="s1">&#39;3&#39;</span><span class="p">]</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">Settings</span><span class="p">()</span><span class="o">.</span><span class="n">model_dump</span><span class="p">())</span>
+<span class="c1">#&gt; {&#39;my_list&#39;: [3]}</span>
 </code></pre></div>
 <h4 id="dictionaries">Dictionaries<a class="headerlink" href="#dictionaries" title="Permanent link">&para;</a></h4>
 <p>CLI argument parsing of dictionaries supports intermixing of any of the below two styles:</p>
@@ -8208,6 +8217,10 @@ a large file under <code>secrets_dir</code>.</p>
 <p>If multiple <code>secrets_dir</code> passed, the limit applies to each directory independently.</p>
 <h4 id="secrets_case_sensitive">secrets_case_sensitive<a class="headerlink" href="#secrets_case_sensitive" title="Permanent link">&para;</a></h4>
 <p>Same as <code>case_sensitive</code>, but works for secrets only. If not specified, defaults to <code>case_sensitive</code>.</p>
+<p>Unlike <code>case_sensitive</code> for environment variables, this option is honored on every platform.
+<code>os.environ</code> is case-insensitive on Windows, so <code>EnvSettingsSource</code> falls back to
+case-insensitive matching there; secrets are files and keep their case, so no such fallback
+applies.</p>
 <h4 id="secrets_nested_delimiter">secrets_nested_delimiter<a class="headerlink" href="#secrets_nested_delimiter" title="Permanent link">&para;</a></h4>
 <p>Same as <code>env_nested_delimiter</code>, but works for secrets only. If not specified, defaults to <code>env_nested_delimiter</code>.
 This option is used to implement <em>nested secrets directory</em> layout and allows you to do even nasty things
