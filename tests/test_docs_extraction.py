@@ -323,7 +323,6 @@ def test_stdlib_docs_extraction_duplicate_class():
     assert ta.json_schema()['properties']['a']['description'] == 'A docs'
 
 
-@pytest.mark.xfail(reason='Current implementation does not take inheritance into account.')
 def test_stdlib_docs_extraction_inheritance():
     @dataclass
     @with_config({'use_attribute_docstrings': True})
@@ -346,6 +345,76 @@ def test_stdlib_docs_extraction_inheritance():
         },
         'required': ['a', 'b'],
         'title': 'MyStdlibDataclass',
+        'type': 'object',
+    }
+
+
+def test_pydantic_dataclass_docs_extraction_inheritance():
+    @pydantic_dataclass(config=ConfigDict(use_attribute_docstrings=True))
+    class Base:
+        a: int
+        """A docs"""
+
+    @pydantic_dataclass(config=ConfigDict(use_attribute_docstrings=True))
+    class MyPydanticDataclass(Base):
+        b: int
+        """B docs"""
+
+    ta = TypeAdapter(MyPydanticDataclass)
+
+    assert ta.json_schema() == {
+        'properties': {
+            'a': {'title': 'A', 'type': 'integer', 'description': 'A docs'},
+            'b': {'title': 'B', 'type': 'integer', 'description': 'B docs'},
+        },
+        'required': ['a', 'b'],
+        'title': 'MyPydanticDataclass',
+        'type': 'object',
+    }
+
+
+def test_typeddict_docs_extraction_inheritance():
+    @with_config(ConfigDict(use_attribute_docstrings=True))
+    class Parent(TypedDict):
+        a: int
+        """Doc for a."""
+
+    @with_config(ConfigDict(use_attribute_docstrings=True))
+    class Child(Parent):
+        b: int
+        """Doc for b."""
+
+    assert TypeAdapter(Child).json_schema() == {
+        'properties': {
+            'a': {'title': 'A', 'type': 'integer', 'description': 'Doc for a.'},
+            'b': {'title': 'B', 'type': 'integer', 'description': 'Doc for b.'},
+        },
+        'required': ['a', 'b'],
+        'title': 'Child',
+        'type': 'object',
+    }
+
+
+def test_typeddict_docs_extraction_override():
+    @with_config(ConfigDict(use_attribute_docstrings=True))
+    class Parent(TypedDict):
+        a: int
+        """Doc for a on parent."""
+
+    @with_config(ConfigDict(use_attribute_docstrings=True))
+    class Child(Parent):
+        a: int
+        """Doc for a on child."""
+        b: int
+        """Doc for b."""
+
+    assert TypeAdapter(Child).json_schema() == {
+        'properties': {
+            'a': {'title': 'A', 'type': 'integer', 'description': 'Doc for a on child.'},
+            'b': {'title': 'B', 'type': 'integer', 'description': 'Doc for b.'},
+        },
+        'required': ['a', 'b'],
+        'title': 'Child',
         'type': 'object',
     }
 
