@@ -22,14 +22,6 @@ from typing import (
     TypeVar,
 )
 
-if TYPE_CHECKING:
-    import cloudpickle
-else:
-    try:
-        import cloudpickle
-    except ImportError:
-        cloudpickle = None
-
 import pytest
 from dirty_equals import HasRepr, IsStr
 from pydantic_core import CoreSchema, core_schema
@@ -73,6 +65,22 @@ from pydantic._internal._generics import (
     replace_types,
 )
 from pydantic.warnings import GenericBeforeBaseModelWarning
+
+IS_PYPY = sys.implementation.name == 'pypy' and sys.version_info >= (3, 11)
+
+if TYPE_CHECKING:
+    import cloudpickle
+else:
+    # cloudpickle is broken on PyPy (https://github.com/cloudpipe/cloudpickle/issues/592):
+    # importing it raises `AttributeError`, not `ImportError`, so the guard below
+    # cannot catch it and the import must be avoided outright.
+    if not IS_PYPY:
+        try:
+            import cloudpickle
+        except ImportError:
+            cloudpickle = None
+    else:
+        cloudpickle = None
 
 
 def test_generic_name():
@@ -1037,7 +1045,10 @@ def test_generic_model_from_function_pickle_fail(create_module):
     sys.platform == 'emscripten' or platform.python_implementation() == 'PyPy',
     reason='no subprocesses on emscripten and PyPy pickle issue',
 )
-@pytest.mark.skipif(cloudpickle is None, reason='cloudpickle not installed')
+@pytest.mark.skipif(
+    cloudpickle is None,
+    reason='cloudpickle not installed, or tests are running with PyPy (https://github.com/cloudpipe/cloudpickle/issues/592).',
+)
 def test_generic_model_pickle_different_module(tmp_path) -> None:
     """https://github.com/pydantic/pydantic/issues/9390#issuecomment-4561654742
 
