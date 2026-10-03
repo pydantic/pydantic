@@ -112,7 +112,7 @@ class RootModel(BaseModel, Generic[RootModelRootType], metaclass=_RootModelMetac
         cls = type(self)
         m = cls.__new__(cls)
         _object_setattr(m, '__dict__', deepcopy(self.__dict__, memo=memo))
-        # This next line doesn't need a deepcopy because __pydantic_fields_set__ is a set[str],
+        # This next line doesn't need a deepcopy because __pydantic_fields_set__ only contains strings,
         # and attempting a deepcopy would be marginally slower.
         _object_setattr(m, '__pydantic_fields_set__', copy(self.__pydantic_fields_set__))
         return m

@@ -27,7 +27,7 @@ from typing import (
 from uuid import UUID, uuid4
 
 import pytest
-from pydantic_core import CoreSchema, PydanticUndefined, core_schema
+from pydantic_core import CoreSchema, ModelFieldsSet, PydanticUndefined, core_schema
 
 from pydantic import (
     AfterValidator,
@@ -3930,3 +3930,71 @@ def test_replace() -> None:
 
     m = Model(x=1, y=2)
     assert replace(m, x=3) == Model(x=3, y=2)
+
+
+def test_model_fields_set_type() -> None:
+    import pickle
+    from collections.abc import MutableSet
+    from copy import copy
+
+    class Model(BaseModel):
+        model_config = ConfigDict(extra='allow')
+
+        a: int = 1
+        b: int = 2
+
+    m = Model(a=1, c=3)
+    fields_set = m.model_fields_set
+    assert fields_set is m.__pydantic_fields_set__
+    assert isinstance(fields_set, ModelFieldsSet)
+    assert isinstance(fields_set, MutableSet)
+    assert fields_set == {'a', 'c'}
+    assert {'a', 'c'} == fields_set
+    assert repr(fields_set) == "{'a', 'c'}"
+    assert m.model_dump(exclude_unset=True) == {'a': 1, 'c': 3}
+
+    m.b = 3
+    assert fields_set == {'a', 'b', 'c'}
+    assert m.model_dump(exclude_unset=True) == {'a': 1, 'b': 3, 'c': 3}
+
+    copied = m.model_copy(update={'d': 4})
+    assert isinstance(copied.model_fields_set, ModelFieldsSet)
+    assert copied.model_fields_set == {'a', 'b', 'c', 'd'}
+    assert m.model_fields_set == {'a', 'b', 'c'}
+
+    unpickled = Model.__new__(Model)
+    unpickled.__setstate__(pickle.loads(pickle.dumps(m.__getstate__())))
+    for copied in (copy(m), deepcopy(m), unpickled):
+        assert isinstance(copied.model_fields_set, ModelFieldsSet)
+        assert copied.model_fields_set == {'a', 'b', 'c'}
+        assert copied.__pydantic_fields_set__ is not m.__pydantic_fields_set__
+
+    assert Model.model_validate(m).model_fields_set == {'a', 'b', 'c'}
+    assert Model.model_validate_json(m.model_dump_json(exclude_unset=True)).model_fields_set == {'a', 'b', 'c'}
+
+
+def test_model_fields_set_plain_set() -> None:
+    """A plain `set` can be used as `__pydantic_fields_set__` (e.g. when using `model_construct()`)."""
+    import pickle
+
+    class Model(BaseModel):
+        a: int = 1
+        b: int = 2
+
+    m = Model.model_construct(a=1)
+    assert m.model_fields_set == {'a'}
+    assert type(m.model_fields_set) is set
+    assert m.model_dump(exclude_unset=True) == {'a': 1}
+    m.b = 3
+    assert m.model_fields_set == {'a', 'b'}
+    assert m.model_dump(exclude_unset=True) == {'a': 1, 'b': 3}
+    assert m.model_copy(update={'a': 2}).model_fields_set == {'a', 'b'}
+    unpickled = Model.__new__(Model)
+    unpickled.__setstate__(pickle.loads(pickle.dumps(m.__getstate__())))
+    assert unpickled.model_fields_set == {'a', 'b'}
+
+    m = Model(a=1)
+    object.__setattr__(m, '__pydantic_fields_set__', {'b'})
+    assert m.model_dump(exclude_unset=True) == {'b': 2}
+    m.a = 2
+    assert m.model_fields_set == {'a', 'b'}

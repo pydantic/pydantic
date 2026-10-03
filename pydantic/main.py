@@ -11,7 +11,7 @@ import sys
 import threading
 import types
 import warnings
-from collections.abc import Generator, Mapping
+from collections.abc import Generator, Mapping, MutableSet
 from copy import copy, deepcopy
 from functools import cached_property
 from typing import (
@@ -241,7 +241,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
     __pydantic_extra__: Dict[str, Any] | None = _model_construction.NoInitField(init=False)  # noqa: UP006
     """A dictionary containing extra values, if [`extra`][pydantic.config.ConfigDict.extra] is set to `'allow'`."""
 
-    __pydantic_fields_set__: set[str] = _model_construction.NoInitField(init=False)
+    __pydantic_fields_set__: MutableSet[str] = _model_construction.NoInitField(init=False)
     """The names of fields explicitly set during instantiation."""
 
     __pydantic_private__: Dict[str, Any] | None = _model_construction.NoInitField(init=False)  # noqa: UP006
@@ -321,7 +321,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
         return self.__pydantic_extra__
 
     @property
-    def model_fields_set(self) -> set[str]:
+    def model_fields_set(self) -> MutableSet[str]:
         """Returns the set of fields that have been explicitly set on this model instance.
 
         Returns:
@@ -465,7 +465,8 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
             else:
                 copied.__dict__.update(update)  # pyright: ignore[reportAttributeAccessIssue] (https://github.com/microsoft/pyright/issues/11548)
 
-            copied.__pydantic_fields_set__.update(update.keys())
+            for name in update:
+                copied.__pydantic_fields_set__.add(name)
 
         return copied
 
@@ -1056,7 +1057,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
         m = cls.__new__(cls)
         _object_setattr(m, '__dict__', deepcopy(self.__dict__, memo=memo))
         _object_setattr(m, '__pydantic_extra__', deepcopy(self.__pydantic_extra__, memo=memo))
-        # This next line doesn't need a deepcopy because __pydantic_fields_set__ is a set[str],
+        # This next line doesn't need a deepcopy because __pydantic_fields_set__ only contains strings,
         # and attempting a deepcopy would be marginally slower.
         _object_setattr(m, '__pydantic_fields_set__', copy(self.__pydantic_fields_set__))
 
@@ -1374,7 +1375,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
         'The `__fields_set__` attribute is deprecated, use `model_fields_set` instead.',
         category=None,
     )
-    def __fields_set__(self) -> set[str]:
+    def __fields_set__(self) -> MutableSet[str]:
         warnings.warn(
             'The `__fields_set__` attribute is deprecated, use `model_fields_set` instead.',
             category=PydanticDeprecatedSince20,
@@ -1631,11 +1632,10 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
                 if k in self.__pydantic_extra__:  # k must have come from extra
                     extra[k] = values.pop(k)
 
+        fields_set = copy(self.__pydantic_fields_set__)
         # new `__pydantic_fields_set__` can have unset optional fields with a set value in `update` kwarg
         if update:
-            fields_set = self.__pydantic_fields_set__ | update.keys()
-        else:
-            fields_set = set(self.__pydantic_fields_set__)
+            fields_set |= update.keys()
 
         # removing excluded fields from `__pydantic_fields_set__`
         if exclude:
