@@ -1302,8 +1302,7 @@ def test_plain_serializer_builtin_function() -> None:
     assert MyModel(x=-1).model_dump() == {'x': 1}
 
 
-@pytest.mark.xfail(reason='Waiting for union serialization fixes via https://github.com/pydantic/pydantic/issues/9688.')
-def smart_union_serialization() -> None:
+def test_smart_union_serialization() -> None:
     """Initially reported via https://github.com/pydantic/pydantic/issues/9417, effectively a round tripping problem with type consistency."""
 
     class FloatThenInt(BaseModel):
