@@ -11,6 +11,7 @@ from collections.abc import Callable, Iterable, Mapping, Sequence
 from enum import Enum, IntEnum
 from textwrap import dedent
 from typing import (
+    TYPE_CHECKING,
     Annotated,
     Any,
     ClassVar,
@@ -20,6 +21,14 @@ from typing import (
     Optional,
     TypeVar,
 )
+
+if TYPE_CHECKING:
+    import cloudpickle
+else:
+    try:
+        import cloudpickle
+    except ImportError:
+        cloudpickle = None
 
 import pytest
 from dirty_equals import HasRepr, IsStr
@@ -1022,10 +1031,13 @@ def test_generic_model_from_function_pickle_fail(create_module):
             pickle.dumps(original)
 
 
+# `cloudpickle` is in the optional `testing-extra` dependency group, so the
+# subprocesses below may not be able to import it.
 @pytest.mark.skipif(
     sys.platform == 'emscripten' or platform.python_implementation() == 'PyPy',
     reason='no subprocesses on emscripten and PyPy pickle issue',
 )
+@pytest.mark.skipif(cloudpickle is None, reason='cloudpickle not installed')
 def test_generic_model_pickle_different_module(tmp_path) -> None:
     """https://github.com/pydantic/pydantic/issues/9390#issuecomment-4561654742
 
@@ -1069,6 +1081,7 @@ def test_generic_model_pickle_different_module(tmp_path) -> None:
         timeout=30,
     )
 
+    assert creator.returncode == 0, creator.stderr
     payload = creator.stdout.splitlines()[0]
 
     loader_code = dedent(
