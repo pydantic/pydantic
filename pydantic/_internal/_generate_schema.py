@@ -1436,13 +1436,12 @@ class GenerateSchema:
                 decorators = DecoratorInfos.build(typed_dict_cls, replace_wrapped_methods=False)
                 decorators.update_from_config(self._config_wrapper)
 
+                field_docstrings: dict[str, str] | None = None
                 if self._config_wrapper.use_attribute_docstrings:
-                    field_docstrings: dict[str, str] = {}
+                    field_docstrings = {}
                     for base in reversed(mro(typed_dict_cls)):
                         if isinstance(base, type) and typing_extensions.is_typeddict(base):
                             field_docstrings.update(extract_docstrings_from_cls(base, use_inspect=True))
-                else:
-                    field_docstrings = None
 
                 try:
                     annotations = _typing_extra.get_cls_type_hints(typed_dict_cls, ns_resolver=self._ns_resolver)
