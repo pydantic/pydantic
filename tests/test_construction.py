@@ -669,3 +669,41 @@ def test_model_construct_with_alias_choices_and_path() -> None:
     assert MyModel.model_construct(a='a_value').a == 'a_value'
     assert MyModel.model_construct(aaa='a_value').a == 'a_value'
     assert MyModel.model_construct(AAA={'aaa': 'a_value'}).a == 'a_value'
+
+
+def test_model_construct_with_alias_path_and_extra_allow() -> None:
+    """https://github.com/pydantic/pydantic/issues/13869
+
+    `model_construct` should not leak `AliasPath` keys into `model_extra`,
+    for parity with `model_validate`.
+    """
+
+    class MyModel(BaseModel):
+        model_config = ConfigDict(extra='allow')
+
+        x: int
+        a: int = Field(validation_alias=AliasPath('a', 'b'))
+
+    data = {'x': 1, 'a': {'b': 1}, 'c': 9}
+
+    validated = MyModel.model_validate(data)
+    assert validated.model_extra == {'c': 9}
+
+    constructed = MyModel.model_construct(**data)
+    assert constructed.a == 1
+    assert constructed.model_extra == {'c': 9}
+    assert constructed.model_dump() == {'x': 1, 'a': 1, 'c': 9}
+    # the caller's data is not mutated
+    assert data == {'x': 1, 'a': {'b': 1}, 'c': 9}
+
+
+def test_model_construct_with_alias_path_shared_root() -> None:
+    class MyModel(BaseModel):
+        model_config = ConfigDict(extra='allow')
+
+        b: int = Field(validation_alias=AliasPath('a', 'b'))
+        c: int = Field(validation_alias=AliasPath('a', 'c'))
+
+    constructed = MyModel.model_construct(a={'b': 1, 'c': 2}, z=0)
+    assert (constructed.b, constructed.c) == (1, 2)
+    assert constructed.model_extra == {'z': 0}

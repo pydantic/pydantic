@@ -356,6 +356,11 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
         m = cls.__new__(cls)
         fields_values: dict[str, Any] = {}
         fields_set = set()
+        # `AliasPath` lookups consume their root key, mirroring how `str`
+        # aliases are popped from `values` above. Roots are removed after
+        # every field has read `values` so fields sharing a path root all
+        # resolve, matching `model_validate` behavior.
+        alias_path_roots: set[str | int] = set()
 
         for name, field in cls.__pydantic_fields__.items():
             if field.alias is not None and field.alias in values:
@@ -379,6 +384,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
                         if value is not PydanticUndefined:
                             fields_values[name] = value
                             fields_set.add(name)
+                            alias_path_roots.add(alias.path[0])
                             break
 
             if name not in fields_set:
@@ -389,6 +395,9 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
                     fields_values[name] = field.get_default(call_default_factory=True, validated_data=fields_values)
         if _fields_set is None:
             _fields_set = fields_set
+
+        for root in alias_path_roots:
+            values.pop(root, None)
 
         _extra: dict[str, Any] | None = values if cls.model_config.get('extra') == 'allow' else None
         _object_setattr(m, '__dict__', fields_values)
