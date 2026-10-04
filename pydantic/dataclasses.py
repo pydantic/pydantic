@@ -231,7 +231,13 @@ def dataclass(
                 elif isinstance(attr, functools.cached_property):
                     instance.__dict__.__setitem__(name, value)
                 else:
-                    inst_cls.__pydantic_validator__.validate_assignment(instance, name, value)
+                    try:
+                        inst_cls.__pydantic_validator__.validate_assignment(instance, name, value)
+                    except AttributeError:
+                        if name in inst_cls.__pydantic_fields__:
+                            object.__setattr__(instance, name, value)
+                        else:
+                            raise
 
             cls.__setattr__ = validated_setattr.__get__(None, cls)  # type: ignore
 

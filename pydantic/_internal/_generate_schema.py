@@ -1937,11 +1937,11 @@ class GenerateSchema:
                 if decorators is None:
                     decorators = DecoratorInfos.build(dataclass, replace_wrapped_methods=False)
                     decorators.update_from_config(self._config_wrapper)
-                # Move kw_only=False args to the start of the list, as this is how vanilla dataclasses work.
+                # Move init=True & kw_only=False args to the start of the list, as this is how vanilla dataclasses work.
                 # Note that when kw_only is missing or None, it is treated as equivalent to kw_only=True
                 args = sorted(
                     (self._generate_dc_field_schema(k, v, decorators) for k, v in fields.items()),
-                    key=lambda a: a.get('kw_only') is not False,
+                    key=lambda a: (a.get('init') is False, a.get('kw_only') is not False),
                 )
                 has_post_init = hasattr(dataclass, '__post_init__')
                 has_slots = hasattr(dataclass, '__slots__')

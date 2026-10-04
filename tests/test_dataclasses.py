@@ -132,6 +132,32 @@ def test_validate_assignment():
     assert d.a == 7
 
 
+def test_validate_assignment_non_init_field():
+    @pydantic.dataclasses.dataclass(config=ConfigDict(validate_assignment=True))
+    class MyDataclass:
+        x: int = dataclasses.field(init=False)
+
+        def __post_init__(self):
+            self.x = 0
+
+    d = MyDataclass()
+    assert d.x == 0
+
+    d.x = '10'
+    assert d.x == 10
+
+    with pytest.raises(ValidationError) as exc_info:
+        d.x = 'invalid'
+    assert exc_info.value.errors(include_url=False) == [
+        {
+            'type': 'int_parsing',
+            'loc': ('x',),
+            'msg': 'Input should be a valid integer, unable to parse string as an integer',
+            'input': 'invalid',
+        }
+    ]
+
+
 def test_validate_assignment_error():
     @pydantic.dataclasses.dataclass(config=ConfigDict(validate_assignment=True))
     class MyDataclass:
