@@ -1312,9 +1312,13 @@ def test_smart_union_serialization() -> None:
         value: int | float | str = Field(union_mode='smart')
 
     float_then_int = FloatThenInt(value=100)
+    assert type(float_then_int.value) is int
+    assert type(float_then_int.model_dump()['value']) is int
     assert type(json.loads(float_then_int.model_dump_json())['value']) is int
 
     int_then_float = IntThenFloat(value=100)
+    assert type(int_then_float.value) is int
+    assert type(int_then_float.model_dump()['value']) is int
     assert type(json.loads(int_then_float.model_dump_json())['value']) is int
 
 
