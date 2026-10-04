@@ -1385,3 +1385,105 @@ def test_model_from_defaultdict():
             'input': defaultdict(int),
         }
     ]
+
+
+def test_model_fields_no_tuple_round_trip():
+    # https://github.com/pydantic/pydantic/issues/13927
+    # When the inner validator of a `model` schema is a bare `model-fields` validator,
+    # the model is constructed from the validated components directly instead of going
+    # through a Python `(dict, extra, fields_set)` tuple. Results must be identical.
+    class MyModel:
+        __slots__ = '__dict__', '__pydantic_extra__', '__pydantic_fields_set__', '__pydantic_private__'
+
+    v = SchemaValidator(
+        core_schema.model_schema(
+            MyModel,
+            core_schema.model_fields_schema(
+                {
+                    'field_a': core_schema.model_field(core_schema.str_schema()),
+                    'field_b': core_schema.model_field(core_schema.int_schema()),
+                },
+                extra_behavior='allow',
+            ),
+        )
+    )
+
+    m = v.validate_python({'field_a': 'test', 'field_b': 12, 'extra_field': 'extra'})
+    assert isinstance(m, MyModel)
+    assert m.__dict__ == {'field_a': 'test', 'field_b': 12}
+    assert m.__pydantic_extra__ == {'extra_field': 'extra'}
+    assert m.__pydantic_fields_set__ == {'field_a', 'field_b', 'extra_field'}
+
+    # JSON input goes through the same path
+    m = v.validate_json('{"field_a": "test", "field_b": 12}')
+    assert m.__dict__ == {'field_a': 'test', 'field_b': 12}
+    assert m.__pydantic_extra__ == {}
+    assert m.__pydantic_fields_set__ == {'field_a', 'field_b'}
+
+    # revalidating an instance with revalidate=never returns it unchanged
+    m2 = v.validate_python(m)
+    assert m2 is m
+
+    # revalidate=always exercises validate_construct with an existing fields set
+    v_reval = SchemaValidator(
+        core_schema.model_schema(
+            MyModel,
+            core_schema.model_fields_schema(
+                {
+                    'field_a': core_schema.model_field(core_schema.str_schema()),
+                    'field_b': core_schema.model_field(core_schema.int_schema()),
+                },
+                extra_behavior='allow',
+            ),
+            config=core_schema.CoreConfig(revalidate_instances='always'),
+        )
+    )
+    m_with_extra = v.validate_python({'field_a': 'test', 'field_b': 12, 'extra_field': 'extra'})
+    m3 = v_reval.validate_python(m_with_extra)
+    assert m3 is not m_with_extra
+    assert m3.__dict__ == {'field_a': 'test', 'field_b': 12}
+    assert m3.__pydantic_extra__ == {'extra_field': 'extra'}
+    assert m3.__pydantic_fields_set__ == {'field_a', 'field_b', 'extra_field'}
+
+    # errors are unchanged
+    with pytest.raises(ValidationError) as exc_info:
+        v.validate_python({'field_a': 'test'})
+    assert exc_info.value.errors(include_url=False) == [
+        {'type': 'missing', 'loc': ('field_b',), 'msg': 'Field required', 'input': {'field_a': 'test'}}
+    ]
+
+
+def test_model_fields_no_tuple_round_trip_nested():
+    # nested models also take the direct path for each level
+    class Inner:
+        __slots__ = '__dict__', '__pydantic_extra__', '__pydantic_fields_set__', '__pydantic_private__'
+
+    class Outer:
+        __slots__ = '__dict__', '__pydantic_extra__', '__pydantic_fields_set__', '__pydantic_private__'
+
+    inner_schema = core_schema.model_schema(
+        Inner, core_schema.model_fields_schema({'x': core_schema.model_field(core_schema.int_schema())})
+    )
+    v = SchemaValidator(
+        core_schema.model_schema(
+            Outer,
+            core_schema.model_fields_schema({'inner': core_schema.model_field(inner_schema)}),
+        )
+    )
+
+    m = v.validate_python({'inner': {'x': 1}})
+    assert isinstance(m.inner, Inner)
+    assert m.inner.__dict__ == {'x': 1}
+    assert m.__dict__['inner'] is m.inner
+    assert m.__pydantic_fields_set__ == {'inner'}
+
+
+def test_model_fields_standalone_still_returns_tuple():
+    # a standalone `model-fields` schema (not wrapped in `model`) keeps the
+    # `(dict, extra, fields_set)` tuple contract
+    v = SchemaValidator(
+        core_schema.model_fields_schema(
+            {'field_a': core_schema.model_field(core_schema.str_schema())}, extra_behavior='allow'
+        )
+    )
+    assert v.validate_python({'field_a': 'a', 'b': 1}) == ({'field_a': 'a'}, {'b': 1}, {'field_a', 'b'})

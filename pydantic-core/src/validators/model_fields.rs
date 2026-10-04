@@ -136,57 +136,8 @@ impl Validator for ModelFieldsValidator {
         input: &(impl Input<'py> + ?Sized),
         state: &mut ValidationState<'_, 'py>,
     ) -> ValResult<Py<PyAny>> {
-        // this validator does not yet support partial validation, disable it to avoid incorrect results
-        state.allow_partial = false.into();
-
-        let strict = state.strict_or(self.strict);
-        let extra_behavior = state.extra_behavior_or(self.extra_behavior);
-        let from_attributes = state.extra().from_attributes.unwrap_or(self.from_attributes);
-
-        let (model_dict, mut model_extra_dict_op, fields_set) = if let Some(json_input) = input.as_json() {
-            let JsonValue::Object(json_object) = json_input else {
-                return Err(ValError::new(
-                    ErrorType::ModelType {
-                        context: None,
-                        class_name: self.model_name.clone(),
-                    },
-                    input,
-                ));
-            };
-            self.validate_json_by_iteration(py, json_input, json_object, state)?
-        } else {
-            // we convert the DictType error to a ModelType error
-            let dict = match input.validate_model_fields(strict, from_attributes) {
-                Ok(d) => d,
-                Err(ValError::LineErrors(errors)) => {
-                    let errors: Vec<ValLineError> = errors
-                        .into_iter()
-                        .map(|e| match e.error_type {
-                            ErrorType::DictType { .. } => {
-                                let mut e = e;
-                                e.error_type = ErrorType::ModelType {
-                                    class_name: self.model_name.clone(),
-                                    context: None,
-                                };
-                                e
-                            }
-                            _ => e,
-                        })
-                        .collect();
-                    return Err(ValError::LineErrors(errors));
-                }
-                Err(err) => return Err(err),
-            };
-            self.validate_by_get_item(py, input, dict, state)?
-        };
-
-        // if we have extra=allow, but we didn't create a dict because we were validating
-        // from attributes, set it now so __pydantic_extra__ is always a dict if extra=allow
-        if matches!(extra_behavior, ExtraBehavior::Allow) && model_extra_dict_op.is_none() {
-            model_extra_dict_op = Some(PyDict::new(py));
-        }
-
-        Ok((model_dict, model_extra_dict_op, fields_set).into_py_any(py)?)
+        let (model_dict, model_extra, fields_set) = self.validate_fields(py, input, state)?;
+        Ok((model_dict, model_extra, fields_set).into_py_any(py)?)
     }
 
     fn validate_assignment<'py>(
@@ -296,9 +247,74 @@ impl Validator for ModelFieldsValidator {
     }
 }
 
-type ValidatedModelFields<'py> = (Bound<'py, PyDict>, Option<Bound<'py, PyDict>>, Bound<'py, PySet>);
+pub(crate) type ValidatedModelFields<'py> = (Bound<'py, PyDict>, Option<Bound<'py, PyDict>>, Bound<'py, PySet>);
 
 impl ModelFieldsValidator {
+    /// Validates the model's fields, returning the components directly instead of
+    /// packing them into a Python tuple.
+    ///
+    /// `ModelValidator` calls this when its inner validator is a bare `ModelFields`
+    /// validator, avoiding a Python tuple allocation and extraction per model instance.
+    /// Wrapped validators (e.g. function-before/wrap) and standalone `model-fields`
+    /// schemas keep going through `Validator::validate`, which preserves the tuple contract.
+    pub fn validate_fields<'py>(
+        &self,
+        py: Python<'py>,
+        input: &(impl Input<'py> + ?Sized),
+        state: &mut ValidationState<'_, 'py>,
+    ) -> ValResult<ValidatedModelFields<'py>> {
+        // this validator does not yet support partial validation, disable it to avoid incorrect results
+        state.allow_partial = false.into();
+
+        let strict = state.strict_or(self.strict);
+        let extra_behavior = state.extra_behavior_or(self.extra_behavior);
+        let from_attributes = state.extra().from_attributes.unwrap_or(self.from_attributes);
+
+        let (model_dict, mut model_extra_dict_op, fields_set) = if let Some(json_input) = input.as_json() {
+            let JsonValue::Object(json_object) = json_input else {
+                return Err(ValError::new(
+                    ErrorType::ModelType {
+                        context: None,
+                        class_name: self.model_name.clone(),
+                    },
+                    input,
+                ));
+            };
+            self.validate_json_by_iteration(py, json_input, json_object, state)?
+        } else {
+            // we convert the DictType error to a ModelType error
+            let dict = match input.validate_model_fields(strict, from_attributes) {
+                Ok(d) => d,
+                Err(ValError::LineErrors(errors)) => {
+                    let errors: Vec<ValLineError> = errors
+                        .into_iter()
+                        .map(|e| match e.error_type {
+                            ErrorType::DictType { .. } => {
+                                let mut e = e;
+                                e.error_type = ErrorType::ModelType {
+                                    class_name: self.model_name.clone(),
+                                    context: None,
+                                };
+                                e
+                            }
+                            _ => e,
+                        })
+                        .collect();
+                    return Err(ValError::LineErrors(errors));
+                }
+                Err(err) => return Err(err),
+            };
+            self.validate_by_get_item(py, input, dict, state)?
+        };
+
+        // if we have extra=allow, but we didn't create a dict because we were validating
+        // from attributes, set it now so __pydantic_extra__ is always a dict if extra=allow
+        if matches!(extra_behavior, ExtraBehavior::Allow) && model_extra_dict_op.is_none() {
+            model_extra_dict_op = Some(PyDict::new(py));
+        }
+
+        Ok((model_dict, model_extra_dict_op, fields_set))
+    }
     fn validate_by_get_item<'py>(
         &self,
         py: Python<'py>,

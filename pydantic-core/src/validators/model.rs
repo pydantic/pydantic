@@ -245,6 +245,32 @@ impl Validator for ModelValidator {
 }
 
 impl ModelValidator {
+    /// Validates against the inner validator, returning the model's `(dict, extra, fields_set)`
+    /// components.
+    ///
+    /// When the inner validator is a bare `ModelFields` validator, its fields are validated
+    /// directly via `validate_fields`, avoiding a Python tuple allocation and extraction per
+    /// model instance. Wrapped validators (e.g. function-before/wrap) and standalone
+    /// `model-fields` schemas keep the tuple contract through `Validator::validate`.
+    fn validate_inner_fields<'py>(
+        &self,
+        py: Python<'py>,
+        input: &(impl Input<'py> + ?Sized),
+        state: &mut ValidationState<'_, 'py>,
+    ) -> ValResult<(Bound<'py, PyAny>, Bound<'py, PyAny>, Bound<'py, PyAny>)> {
+        if let CombinedValidator::ModelFields(inner) = self.validator.as_ref() {
+            let (model_dict, model_extra, fields_set) = inner.validate_fields(py, input, state)?;
+            Ok((
+                model_dict.into_any(),
+                model_extra.map_or_else(|| py.None().into_bound(py).into_any(), Bound::into_any),
+                fields_set.into_any(),
+            ))
+        } else {
+            let output = self.validator.validate(py, input, state)?;
+            Ok(output.extract(py)?)
+        }
+    }
+
     /// here we just call the inner validator, then set attributes on `self_instance`
     fn validate_init<'py>(
         &self,
@@ -270,10 +296,7 @@ impl ModelValidator {
             force_setattr(py, self_instance, intern!(py, DUNDER_FIELDS_SET_KEY), &fields_set)?;
             force_setattr(py, self_instance, root_field, &output)?;
         } else {
-            let output = self.validator.validate(py, input, state)?;
-
-            let (model_dict, model_extra, fields_set): (Bound<PyAny>, Bound<PyAny>, Bound<PyAny>) =
-                output.extract(py)?;
+            let (model_dict, model_extra, fields_set) = self.validate_inner_fields(py, input, state)?;
             set_model_attrs(self_instance, &model_dict, &model_extra, &fields_set)?;
         }
         self.call_post_init(py, self_instance.clone(), input, state.extra())
@@ -316,11 +339,9 @@ impl ModelValidator {
             force_setattr(py, &instance, intern!(py, DUNDER_FIELDS_SET_KEY), &fields_set)?;
             force_setattr(py, &instance, root_field, output)?;
         } else {
-            let output = self.validator.validate(py, input, state)?;
+            let (model_dict, model_extra, val_fields_set) = self.validate_inner_fields(py, input, state)?;
             instance = create_class(self.class.bind(py))?;
 
-            let (model_dict, model_extra, val_fields_set): (Bound<PyAny>, Bound<PyAny>, Bound<PyAny>) =
-                output.extract(py)?;
             let fields_set = existing_fields_set.unwrap_or(&val_fields_set);
             set_model_attrs(&instance, &model_dict, &model_extra, fields_set)?;
         }
