@@ -150,10 +150,11 @@ def _check_protected_namespaces(
 
 
 def _update_fields_from_docstrings(cls: type[Any], fields: dict[str, FieldInfo], use_inspect: bool = False) -> None:
+    BaseModel = import_cached_base_model()
     mro_classes = getattr(cls, '__mro__', (cls,))
     fields_docs: dict[str, str] = {}
     for base in reversed(mro_classes):
-        if base is object:
+        if base is object or base is BaseModel:
             continue
         fields_docs.update(extract_docstrings_from_cls(base, use_inspect=use_inspect or (base is not cls)))
     for ann_name, field_info in fields.items():

@@ -395,6 +395,7 @@ def test_typeddict_docs_extraction_inheritance():
     }
 
 
+# Pins existing override behavior (child docstring overrides parent) rather than the inheritance fix itself:
 def test_typeddict_docs_extraction_override():
     @with_config(ConfigDict(use_attribute_docstrings=True))
     class Parent(TypedDict):

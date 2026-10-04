@@ -6,6 +6,7 @@ import ast
 import inspect
 import sys
 import textwrap
+from functools import lru_cache
 from typing import Any
 
 
@@ -79,6 +80,7 @@ def _extract_source_from_frame(cls: type[Any]) -> list[str] | None:
         frame = frame.f_back
 
 
+@lru_cache(maxsize=1024)
 def extract_docstrings_from_cls(cls: type[Any], use_inspect: bool = False) -> dict[str, str]:
     """Map model attributes and their corresponding docstring.
 
@@ -110,4 +112,4 @@ def extract_docstrings_from_cls(cls: type[Any], use_inspect: bool = False) -> di
 
     visitor = DocstringVisitor()
     visitor.visit(ast.parse(dedent_source))
-    return visitor.attrs
+    return visitor.attrs.copy()
