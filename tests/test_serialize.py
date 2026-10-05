@@ -1302,8 +1302,7 @@ def test_plain_serializer_builtin_function() -> None:
     assert MyModel(x=-1).model_dump() == {'x': 1}
 
 
-@pytest.mark.xfail(reason='Waiting for union serialization fixes via https://github.com/pydantic/pydantic/issues/9688.')
-def smart_union_serialization() -> None:
+def test_smart_union_serialization() -> None:
     """Initially reported via https://github.com/pydantic/pydantic/issues/9417, effectively a round tripping problem with type consistency."""
 
     class FloatThenInt(BaseModel):
@@ -1313,9 +1312,13 @@ def smart_union_serialization() -> None:
         value: int | float | str = Field(union_mode='smart')
 
     float_then_int = FloatThenInt(value=100)
+    assert type(float_then_int.value) is int
+    assert type(float_then_int.model_dump()['value']) is int
     assert type(json.loads(float_then_int.model_dump_json())['value']) is int
 
     int_then_float = IntThenFloat(value=100)
+    assert type(int_then_float.value) is int
+    assert type(int_then_float.model_dump()['value']) is int
     assert type(json.loads(int_then_float.model_dump_json())['value']) is int
 
 
