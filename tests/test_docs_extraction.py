@@ -501,3 +501,22 @@ def test_exec_cant_be_parsed():
 
     exec(source, globals(), locals_dict)
     assert locals_dict['MyModel'].model_fields['a'].description is None
+
+
+def test_docstring_cache_does_not_leak_classes():
+    import gc
+    import weakref
+
+    class Base(BaseModel):
+        model_config = ConfigDict(use_attribute_docstrings=True)
+        a: int = 0
+        """A docs"""
+
+    refs = []
+    for i in range(10):
+        M = type(f'M{i}', (Base,), {'__annotations__': {'b': int}, 'b': 0})
+        refs.append(weakref.ref(M))
+        del M
+
+    gc.collect()
+    assert sum(r() is not None for r in refs) == 0

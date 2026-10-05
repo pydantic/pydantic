@@ -6,7 +6,7 @@ import ast
 import inspect
 import sys
 import textwrap
-from functools import lru_cache
+import weakref
 from typing import Any
 
 
@@ -80,7 +80,9 @@ def _extract_source_from_frame(cls: type[Any]) -> list[str] | None:
         frame = frame.f_back
 
 
-@lru_cache(maxsize=1024)
+_DOCSTRING_CACHE: weakref.WeakKeyDictionary[type[Any], dict[str, str]] = weakref.WeakKeyDictionary()
+
+
 def extract_docstrings_from_cls(cls: type[Any], use_inspect: bool = False) -> dict[str, str]:
     """Map model attributes and their corresponding docstring.
 
@@ -92,6 +94,11 @@ def extract_docstrings_from_cls(cls: type[Any], use_inspect: bool = False) -> di
     Returns:
         A mapping containing attribute names and their corresponding docstring.
     """
+    try:
+        return _DOCSTRING_CACHE[cls].copy()
+    except (KeyError, TypeError):
+        pass
+
     if use_inspect or sys.version_info >= (3, 13):
         # On Python < 3.13, `inspect.getsourcelines()` might not work as expected
         # if two classes have the same name in the same source file.
@@ -100,16 +107,24 @@ def extract_docstrings_from_cls(cls: type[Any], use_inspect: bool = False) -> di
         try:
             source, _ = inspect.getsourcelines(cls)
         except (OSError, TypeError):  # pragma: no cover
-            return {}
+            source = None
     else:
         # TODO remove this implementation when we drop support for Python 3.12:
         source = _extract_source_from_frame(cls)
 
     if not source:
+        try:
+            _DOCSTRING_CACHE[cls] = {}
+        except TypeError:
+            pass
         return {}
 
     dedent_source = _dedent_source_lines(source)
 
     visitor = DocstringVisitor()
     visitor.visit(ast.parse(dedent_source))
+    try:
+        _DOCSTRING_CACHE[cls] = visitor.attrs
+    except TypeError:
+        pass
     return visitor.attrs.copy()
