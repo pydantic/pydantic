@@ -1,3 +1,4 @@
+import platform
 import sys
 import textwrap
 from dataclasses import dataclass, field
@@ -503,6 +504,8 @@ def test_exec_cant_be_parsed():
     assert locals_dict['MyModel'].model_fields['a'].description is None
 
 
+@pytest.mark.skipif(platform.python_implementation() == 'PyPy', reason='PyPy GC does not immediately collect weakrefs')
+@pytest.mark.skipif(platform.python_implementation() == 'GraalVM', reason='Cannot reliably trigger GC on GraalPy')
 def test_docstring_cache_does_not_leak_classes():
     import gc
     import weakref
