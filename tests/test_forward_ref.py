@@ -1759,9 +1759,16 @@ def test_serialization_inference_rebuilds_incomplete_model(create_module) -> Non
 
 
 def test_serialization_inference_unbuildable_model() -> None:
+    """When rebuilt from pydantic-core, the caller's frame namespace should not be used to resolve annotations."""
+
     class Model(BaseModel):
         x: 'Undefined'  # noqa: F821
 
+    def serialize(m: Model) -> Any:
+        Undefined = int  # noqa: F841
+        return TypeAdapter(Any).dump_python(m)
+
     m = Model.model_construct(x=1)
     with pytest.raises(PydanticUserError, match='`Model` is not fully defined; you should define `Undefined`'):
-        TypeAdapter(Any).dump_python(m)
+        serialize(m)
+    assert Model.__pydantic_complete__ is False
