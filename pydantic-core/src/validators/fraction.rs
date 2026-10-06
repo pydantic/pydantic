@@ -3,7 +3,7 @@ use std::sync::Arc;
 use pyo3::exceptions::{PyOverflowError, PyTypeError, PyValueError, PyZeroDivisionError};
 use pyo3::intern;
 use pyo3::sync::PyOnceLock;
-use pyo3::types::{IntoPyDict, PyDict, PyString, PyType};
+use pyo3::types::{IntoPyDict, PyDict, PyInt, PyString, PyType};
 use pyo3::{PyTypeInfo, prelude::*};
 
 use crate::build_tools::is_strict;
@@ -164,8 +164,47 @@ impl Validator for FractionValidator {
     }
 }
 
+/// Maximum absolute value of the exponent accepted in string inputs (e.g. `'1e4300'`).
+///
+/// `Fraction` computes `10**exp` for exponent notation, producing an integer with `|exp| + 1`
+/// decimal digits, which can be very expensive and lead to DoS. Cap it so the result is
+/// no larger than what we accept for `int` inputs.
+const MAX_FRACTION_EXPONENT: u64 = 4300;
+
+
+/// Whether the string uses exponent notation with an exponent larger than `MAX_FRACTION_EXPONENT`.
+fn exponent_too_large(s: &Bound<'_, PyString>) -> bool {
+    // Based on https://github.com/python/cpython/blob/v3.14.8/Lib/fractions.py#L257-L283:
+
+    // A string that isn't valid UTF-8 is rejected by `Fraction` anyway.
+    let Ok(str) = s.to_str() else {
+        return false;
+    };
+    // In a valid `Fraction` string, `e`/`E` can only appear as the exponent marker.
+    let Some(pos) = str.rfind(['e', 'E']) else {
+        return false;
+    };
+    let py = s.py();
+    // `Fraction` parses the exponent with `int()`:
+    let Ok(exp) = PyString::new(py, &str[pos + 1..])
+        .call_method0(intern!(py, "strip"))
+        .and_then(|exp| PyInt::type_object(py).call1((exp,)))
+    else {
+        // Not a valid exponent, `Fraction` will reject the string itself.
+        return false;
+    };
+    // Not fitting in an `i64` means it's way above the limit.
+    exp.extract::<i64>()
+        .map_or(true, |exp| exp.unsigned_abs() > MAX_FRACTION_EXPONENT)
+}
+
 pub(crate) fn create_fraction<'py>(arg: &Bound<'py, PyAny>, input: impl ToErrorValue) -> ValResult<Bound<'py, PyAny>> {
     let py = arg.py();
+    if let Ok(s) = arg.cast::<PyString>()
+        && exponent_too_large(s)
+    {
+        return Err(ValError::new(ErrorTypeDefaults::FractionParsing, input));
+    }
     get_fraction_type(py)
         .call1((arg,))
         .map_err(|e| handle_fraction_new_error(input, e))
