@@ -122,6 +122,24 @@ def test_decimal_three_tuple_constructor(py_and_json: PyAndJson, input_value, ex
 
 
 @pytest.mark.parametrize(
+    'input_value',
+    [
+        (2, (1,), 0),  # `ValueError`: invalid sign
+        (0, (10,), 0),  # `ValueError`: invalid digit
+        (0, (1,), 'x'),  # `ValueError`: invalid special exponent
+        (0, (1,), 1.5),  # `ValueError`: non-integer exponent
+        (0, (1,), 10**30),  # `OverflowError`: exponent doesn't fit in a `Py_ssize_t`
+        (0, (1,), -(10**30)),
+    ],
+    ids=repr,
+)
+def test_decimal_three_tuple_constructor_invalid(py_and_json: PyAndJson, input_value):
+    v = py_and_json(cs.decimal_schema())
+    with pytest.raises(ValidationError, check=lambda v: v.errors()[0]['type'] == 'decimal_type'):
+        v.validate_test(input_value)
+
+
+@pytest.mark.parametrize(
     'input_value,expected',
     [
         (Decimal(0), Decimal(0)),
@@ -268,6 +286,20 @@ def test_decimal_multiple_of(py_and_json: PyAndJson, multiple_of: float, input_v
         output = v.validate_test(input_value)
         assert output == Decimal(str(input_value))
         assert isinstance(output, Decimal)
+
+
+@pytest.mark.parametrize(
+    ['multiple_of', 'input_value'],
+    [
+        ('3', '1e30'),  # `InvalidOperation`: integral part of the quotient exceeds the context precision
+        ('0.01', '9' * 1000),
+        ('0.01', '1e999999'),  # `Overflow`: exponent of the quotient exceeds `Emax`
+    ],
+)
+def test_decimal_multiple_of_quotient_out_of_context(py_and_json: PyAndJson, multiple_of: str, input_value: str):
+    v = py_and_json(cs.decimal_schema(multiple_of=Decimal(multiple_of)))
+    with pytest.raises(ValidationError, check=lambda e: e.errors()[0]['type'] == 'multiple_of'):
+        v.validate_test(input_value)
 
 
 def test_union_decimal_py():
