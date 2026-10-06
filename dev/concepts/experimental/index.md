@@ -60,7 +60,7 @@ class User(BaseModel):
         datetime,
         validate_as(int)
         .transform(lambda x: x / 1_000_000)
-        .validate_as(...),  # (8)!
+        .validate_as(...),  # (7)!
     ]
 
 ```
