@@ -356,12 +356,15 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
         m = cls.__new__(cls)
         fields_values: dict[str, Any] = {}
         fields_set = set()
-        matched_alias_path_roots: set[str] | None = None
+        matched_keys: set[str] | None = None
 
         for name, field in cls.__pydantic_fields__.items():
             if field.alias is not None and field.alias in values:
-                fields_values[name] = values.pop(field.alias)
+                fields_values[name] = values[field.alias]
                 fields_set.add(name)
+                if matched_keys is None:
+                    matched_keys = set()
+                matched_keys.add(field.alias)
 
             if (name not in fields_set) and (field.validation_alias is not None):
                 validation_aliases: list[str | AliasPath] = (
@@ -372,8 +375,11 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
 
                 for alias in validation_aliases:
                     if isinstance(alias, str) and alias in values:
-                        fields_values[name] = values.pop(alias)
+                        fields_values[name] = values[alias]
                         fields_set.add(name)
+                        if matched_keys is None:
+                            matched_keys = set()
+                        matched_keys.add(alias)
                         break
                     elif isinstance(alias, AliasPath):
                         value = alias.search_dict_for_path(values)
@@ -382,23 +388,26 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
                             fields_set.add(name)
                             root = alias.path[0]
                             if isinstance(root, str):
-                                if matched_alias_path_roots is None:
-                                    matched_alias_path_roots = set()
-                                matched_alias_path_roots.add(root)
+                                if matched_keys is None:
+                                    matched_keys = set()
+                                matched_keys.add(root)
                             break
 
             if name not in fields_set:
                 if name in values:
-                    fields_values[name] = values.pop(name)
+                    fields_values[name] = values[name]
                     fields_set.add(name)
+                    if matched_keys is None:
+                        matched_keys = set()
+                    matched_keys.add(name)
                 elif not field.is_required():
                     fields_values[name] = field.get_default(call_default_factory=True, validated_data=fields_values)
         if _fields_set is None:
             _fields_set = fields_set
 
-        if matched_alias_path_roots is not None:
-            for root in matched_alias_path_roots:
-                values.pop(root, None)
+        if matched_keys is not None:
+            for k in matched_keys:
+                values.pop(k, None)
 
         _extra: dict[str, Any] | None = values if cls.model_config.get('extra') == 'allow' else None
         _object_setattr(m, '__dict__', fields_values)

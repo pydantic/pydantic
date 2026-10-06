@@ -726,6 +726,18 @@ class _UnmatchedAliasPathModel(BaseModel):
     f: int = Field(default=0, validation_alias=AliasPath('nested', 'key'))
 
 
+class _SharedFieldBeforeAliasPathModel(BaseModel):
+    model_config = ConfigDict(extra='allow')
+    shared: dict[str, Any]
+    value: int = Field(validation_alias=AliasPath('shared', 'x'))
+
+
+class _AliasPathBeforeSharedFieldModel(BaseModel):
+    model_config = ConfigDict(extra='allow')
+    value: int = Field(validation_alias=AliasPath('shared', 'x'))
+    shared: dict[str, Any]
+
+
 @pytest.mark.parametrize(
     'model_cls, data, expected_fields, expected_extra',
     [
@@ -764,6 +776,18 @@ class _UnmatchedAliasPathModel(BaseModel):
             {'nested': {'unrelated': 123}, 'extra_k': 456},
             {'f': 0},
             {'nested': {'unrelated': 123}, 'extra_k': 456},
+        ),
+        (
+            _SharedFieldBeforeAliasPathModel,
+            {'shared': {'x': 7}, 'extra_k': 99},
+            {'shared': {'x': 7}, 'value': 7},
+            {'extra_k': 99},
+        ),
+        (
+            _AliasPathBeforeSharedFieldModel,
+            {'shared': {'x': 7}, 'extra_k': 99},
+            {'shared': {'x': 7}, 'value': 7},
+            {'extra_k': 99},
         ),
     ],
 )
