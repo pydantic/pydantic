@@ -17,6 +17,7 @@ use crate::PydanticSerializationUnexpectedValue;
 use crate::common::missing_sentinel::get_missing_sentinel_object;
 use crate::definitions::DefinitionsBuilder;
 use crate::serializers::SerializationState;
+use crate::serializers::errors::py_err_se_err;
 use crate::tools::SchemaDict;
 
 use super::{BuildSerializer, CombinedSerializer, TypeSerializer};
@@ -47,7 +48,7 @@ impl_py_gc_traverse!(MissingSentinelSerializer { serializer });
 
 impl TypeSerializer for MissingSentinelSerializer {
     fn to_python<'py>(&self, value: &Bound<'py, PyAny>, state: &mut SerializationState<'py>) -> PyResult<Py<PyAny>> {
-        let missing_sentinel = get_missing_sentinel_object(value.py());
+        let missing_sentinel = get_missing_sentinel_object(value.py())?;
 
         if value.is(missing_sentinel) {
             return Ok(missing_sentinel.to_owned().into());
@@ -67,7 +68,7 @@ impl TypeSerializer for MissingSentinelSerializer {
         key: &'a Bound<'py, PyAny>,
         state: &mut SerializationState<'py>,
     ) -> PyResult<Cow<'a, str>> {
-        let missing_sentinel = get_missing_sentinel_object(key.py());
+        let missing_sentinel = get_missing_sentinel_object(key.py())?;
 
         match &self.serializer {
             Some(serializer) if !key.is(missing_sentinel) => serializer.json_key(key, state),
@@ -81,7 +82,7 @@ impl TypeSerializer for MissingSentinelSerializer {
         serializer: S,
         state: &mut SerializationState<'py>,
     ) -> Result<S::Ok, S::Error> {
-        let missing_sentinel = get_missing_sentinel_object(value.py());
+        let missing_sentinel = get_missing_sentinel_object(value.py()).map_err(py_err_se_err)?;
 
         match &self.serializer {
             Some(inner_serializer) if !value.is(missing_sentinel) => {

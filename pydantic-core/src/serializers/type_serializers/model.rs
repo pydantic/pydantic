@@ -233,7 +233,10 @@ impl ModelSerializer {
 
             for key in attrs.keys() {
                 if !fields_set.contains(&key)? {
-                    let missing_sentinel = missing_sentinel.get_or_insert_with(|| get_missing_sentinel_object(py));
+                    let missing_sentinel = match &missing_sentinel {
+                        Some(missing_sentinel) => missing_sentinel,
+                        None => missing_sentinel.insert(get_missing_sentinel_object(py)?),
+                    };
                     let new_attrs = match &new_attrs {
                         Some(new_attrs) => new_attrs,
                         None => new_attrs.insert(attrs.copy()?),
