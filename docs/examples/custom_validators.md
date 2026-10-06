@@ -39,9 +39,10 @@ class MyDatetimeValidator:
         handler: ValidatorFunctionWrapHandler,  # (1)!
     ):
         """Validate tz_constraint and tz_info."""
+        result = handler(value)  # (2)!
+
         # handle naive datetimes
         if self.tz_constraint is None:
-            result = handler(value)
             assert (
                 result.tzinfo is None
             ), 'tz_constraint is None, but provided value is tz-aware.'
@@ -53,7 +54,6 @@ class MyDatetimeValidator:
                 f'Invalid tz_constraint: {self.tz_constraint}',
                 code='unevaluable-type-annotation',
             )
-        result = handler(value)  # (2)!
         assert self.tz_constraint == str(
             result.tzinfo
         ), f'Invalid tzinfo: {str(result.tzinfo)}, expected: {self.tz_constraint}'
