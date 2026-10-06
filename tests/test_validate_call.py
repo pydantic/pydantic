@@ -10,7 +10,7 @@ from typing import Annotated, Any, Generic, Literal, TypeVar
 
 import pytest
 from pydantic_core import ArgsKwargs
-from typing_extensions import Required, TypedDict, Unpack
+from typing_extensions import NotRequired, Required, TypedDict, Unpack
 
 from pydantic import (
     AfterValidator,
@@ -706,6 +706,26 @@ def test_json_schema():
         'additionalProperties': False,
         'properties': {'A': {'title': 'A', 'type': 'integer'}},
         'required': ['A'],
+        'type': 'object',
+    }
+
+
+def test_json_schema_unpacked_typed_dict_kwargs() -> None:
+    class Options(TypedDict):
+        timeout: int
+        label: NotRequired[str]
+
+    @validate_call
+    def run(name: str = 'job', **kwargs: Unpack[Options]):
+        return name, kwargs
+
+    assert TypeAdapter(run).json_schema() == {
+        'properties': {
+            'name': {'default': 'job', 'title': 'Name', 'type': 'string'},
+            'timeout': {'title': 'Timeout', 'type': 'integer'},
+            'label': {'title': 'Label', 'type': 'string'},
+        },
+        'required': ['timeout'],
         'type': 'object',
     }
 
