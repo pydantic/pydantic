@@ -30,7 +30,7 @@ class AlgoliaRecord(TypedDict):
 
 records: list[AlgoliaRecord] = []
 records_ta = TypeAdapter(list[AlgoliaRecord])
-# these values should match docs/javascripts/search-worker.js.
+# these values should match docs/extra/algolia.js.
 ALGOLIA_APP_ID = 'KPPUDTIAVX'
 ALGOLIA_INDEX_NAME = 'pydantic-docs'
 
