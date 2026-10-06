@@ -187,7 +187,7 @@ impl GeneralFieldsSerializer {
         let py = model.py();
         let mut map = do_serialize.serialize_map()?;
         let mut used_req_fields: usize = 0;
-        let missing_sentinel = get_missing_sentinel_object(py);
+        let missing_sentinel = get_missing_sentinel_object(py)?;
 
         let extras_serializer = self
             .extra_serializer

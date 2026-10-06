@@ -16,16 +16,8 @@ use super::{BuildValidator, CombinedValidator, DefinitionsBuilder, ValidationSta
 
 static FRACTION_TYPE: PyOnceLock<Py<PyType>> = PyOnceLock::new();
 
-pub fn get_fraction_type(py: Python<'_>) -> &Bound<'_, PyType> {
-    FRACTION_TYPE
-        .get_or_init(py, || {
-            py.import("fractions")
-                .and_then(|fraction_module| fraction_module.getattr("Fraction"))
-                .unwrap()
-                .extract()
-                .unwrap()
-        })
-        .bind(py)
+pub fn get_fraction_type(py: Python<'_>) -> PyResult<&Bound<'_, PyType>> {
+    FRACTION_TYPE.import(py, "fractions", "Fraction")
 }
 
 fn validate_as_fraction(
@@ -166,7 +158,7 @@ impl Validator for FractionValidator {
 
 pub(crate) fn create_fraction<'py>(arg: &Bound<'py, PyAny>, input: impl ToErrorValue) -> ValResult<Bound<'py, PyAny>> {
     let py = arg.py();
-    get_fraction_type(py)
+    get_fraction_type(py)?
         .call1((arg,))
         .map_err(|e| handle_fraction_new_error(input, e))
 }

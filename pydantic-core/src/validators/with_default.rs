@@ -19,10 +19,6 @@ use crate::tools::SchemaDict;
 
 static COPY_DEEPCOPY: PyOnceLock<Py<PyAny>> = PyOnceLock::new();
 
-fn get_deepcopy(py: Python) -> PyResult<Py<PyAny>> {
-    Ok(py.import("copy")?.getattr("deepcopy")?.unbind())
-}
-
 #[derive(Debug, Clone)]
 pub enum DefaultType {
     None,
@@ -196,8 +192,8 @@ impl Validator for WithDefaultValidator {
         match self.default.default_value(py, state.data.as_ref())? {
             Some(stored_dft) => {
                 let dft: Py<PyAny> = if self.copy_default {
-                    let deepcopy_func = COPY_DEEPCOPY.get_or_init(py, || get_deepcopy(py).unwrap());
-                    deepcopy_func.call1(py, (&stored_dft,))?
+                    let deepcopy_func = COPY_DEEPCOPY.import(py, "copy", "deepcopy")?;
+                    deepcopy_func.call1((&stored_dft,))?.unbind()
                 } else {
                     stored_dft
                 };

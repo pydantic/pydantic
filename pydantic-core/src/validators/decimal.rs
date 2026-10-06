@@ -18,30 +18,14 @@ use super::{BuildValidator, CombinedValidator, DefinitionsBuilder, ValidationSta
 
 static DECIMAL_TYPE: PyOnceLock<Py<PyType>> = PyOnceLock::new();
 
-pub fn get_decimal_type(py: Python<'_>) -> &Bound<'_, PyType> {
-    DECIMAL_TYPE
-        .get_or_init(py, || {
-            py.import("decimal")
-                .and_then(|decimal_module| decimal_module.getattr("Decimal"))
-                .unwrap()
-                .extract()
-                .unwrap()
-        })
-        .bind(py)
+pub fn get_decimal_type(py: Python<'_>) -> PyResult<&Bound<'_, PyType>> {
+    DECIMAL_TYPE.import(py, "decimal", "Decimal")
 }
 
 static DECIMAL_EXCEPTION_TYPE: PyOnceLock<Py<PyType>> = PyOnceLock::new();
 
-fn get_decimal_exception_type(py: Python<'_>) -> &Bound<'_, PyType> {
-    DECIMAL_EXCEPTION_TYPE
-        .get_or_init(py, || {
-            py.import("decimal")
-                .and_then(|decimal_module| decimal_module.getattr("DecimalException"))
-                .unwrap()
-                .extract()
-                .unwrap()
-        })
-        .bind(py)
+fn get_decimal_exception_type(py: Python<'_>) -> PyResult<&Bound<'_, PyType>> {
+    DECIMAL_EXCEPTION_TYPE.import(py, "decimal", "DecimalException")
 }
 
 fn validate_as_decimal(
@@ -271,7 +255,7 @@ impl Validator for DecimalValidator {
             let is_multiple = match decimal.div(multiple_of).and_then(|quotient| quotient.rem(1)) {
                 Ok(fraction) => fraction.eq(0u8.into_pyobject(py)?)?,
                 // The quotient can't be computed in the current decimal context:
-                Err(err) if err.matches(py, get_decimal_exception_type(py)).unwrap_or(false) => false,
+                Err(err) if err.matches(py, get_decimal_exception_type(py)?).unwrap_or(false) => false,
                 Err(err) => return Err(err.into()),
             };
             if !is_multiple {
@@ -351,13 +335,17 @@ impl Validator for DecimalValidator {
 
 pub(crate) fn create_decimal<'py>(arg: &Bound<'py, PyAny>, input: impl ToErrorValue) -> ValResult<Bound<'py, PyAny>> {
     let py = arg.py();
-    get_decimal_type(py)
+    get_decimal_type(py)?
         .call1((arg,))
         .map_err(|e| handle_decimal_new_error(py, input, e))
 }
 
 fn handle_decimal_new_error(py: Python<'_>, input: impl ToErrorValue, error: PyErr) -> ValError {
-    if error.matches(py, get_decimal_exception_type(py)).unwrap_or(false) {
+    let decimal_exception = match get_decimal_exception_type(py) {
+        Ok(decimal_exception) => decimal_exception,
+        Err(e) => return ValError::InternalErr(e),
+    };
+    if error.matches(py, decimal_exception).unwrap_or(false) {
         ValError::new(ErrorTypeDefaults::DecimalParsing, input)
     } else if error.matches(py, PyTypeError::type_object(py)).unwrap_or(false) {
         ValError::new(ErrorTypeDefaults::DecimalType, input)
