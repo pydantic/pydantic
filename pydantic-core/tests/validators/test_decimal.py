@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import math
+import platform
 import re
 import subprocess
 import sys
@@ -121,6 +122,11 @@ def test_decimal_three_tuple_constructor(py_and_json: PyAndJson, input_value, ex
     assert isinstance(output, Decimal)
 
 
+skip_pypy_unbounded_exponent = pytest.mark.skipif(
+    platform.python_implementation() == 'PyPy', reason='Decimal exponents are unbounded on PyPy'
+)
+
+
 @pytest.mark.parametrize(
     'input_value',
     [
@@ -128,8 +134,9 @@ def test_decimal_three_tuple_constructor(py_and_json: PyAndJson, input_value, ex
         (0, (10,), 0),  # `ValueError`: invalid digit
         (0, (1,), 'x'),  # `ValueError`: invalid special exponent
         (0, (1,), 1.5),  # `ValueError`: non-integer exponent
-        (0, (1,), 10**30),  # `OverflowError`: exponent doesn't fit in a `Py_ssize_t`
-        (0, (1,), -(10**30)),
+        # `OverflowError`: exponent doesn't fit in a `Py_ssize_t`
+        pytest.param((0, (1,), 10**30), marks=skip_pypy_unbounded_exponent),
+        pytest.param((0, (1,), -(10**30)), marks=skip_pypy_unbounded_exponent),
     ],
     ids=repr,
 )
