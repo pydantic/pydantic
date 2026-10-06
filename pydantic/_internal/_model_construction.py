@@ -2,6 +2,7 @@
 
 from __future__ import annotations as _annotations
 
+import inspect
 import operator
 import sys
 import typing
@@ -129,6 +130,29 @@ class ModelMetaclass(ABCMeta):
             namespace['model_config'] = config_wrapper.config_dict
             namespace['__class_vars__'] = class_vars
             namespace['__private_attributes__'] = {**base_private_attributes, **private_attributes}
+
+            # Extract kwargs that __pydantic_init_subclass__ handles by name so they don't
+            # reach object.__init_subclass__() and raise TypeError.
+            # Config keys were already stripped by ConfigWrapper.for_model() above.
+            # See: https://github.com/pydantic/pydantic/issues/13300
+            _pydantic_init_subclass_kwargs: dict[str, Any] = {}
+            if kwargs:
+                _pis_fn = namespace.get('__pydantic_init_subclass__') or next(
+                    (getattr(b, '__pydantic_init_subclass__', None) for b in bases if '__pydantic_init_subclass__' in vars(b)),
+                    None,
+                )
+                if _pis_fn is not None:
+                    try:
+                        sig = inspect.signature(_pis_fn)
+                        named_params = {
+                            k for k, p in sig.parameters.items()
+                            if p.kind in (inspect.Parameter.POSITIONAL_OR_KEYWORD, inspect.Parameter.KEYWORD_ONLY)
+                        }
+                        for k in list(kwargs):
+                            if k in named_params:
+                                _pydantic_init_subclass_kwargs[k] = kwargs.pop(k)
+                    except (ValueError, TypeError):
+                        pass
 
             cls = cast('type[BaseModel]', super().__new__(mcs, cls_name, bases, namespace, **kwargs))
             BaseModel_ = import_cached_base_model()
@@ -264,7 +288,7 @@ class ModelMetaclass(ABCMeta):
             # using super(cls, cls) on the next line ensures we only call the parent class's __pydantic_init_subclass__
             # I believe the `type: ignore` is only necessary because mypy doesn't realize that this code branch is
             # only hit for _proper_ subclasses of BaseModel
-            super(cls, cls).__pydantic_init_subclass__(**kwargs)  # type: ignore[misc]
+            super(cls, cls).__pydantic_init_subclass__(**kwargs, **_pydantic_init_subclass_kwargs)  # type: ignore[misc]
             return cls
         else:
             # These are instance variables, but have been assigned to `NoInitField` to trick the type checker.

@@ -3773,6 +3773,31 @@ def test_shadow_attribute() -> None:
     assert getattr(Three, 'foo', None) == ' edited! edited!'
 
 
+def test_pydantic_init_subclass_with_named_kwargs() -> None:
+    """Regression test for https://github.com/pydantic/pydantic/issues/13300
+
+    __pydantic_init_subclass__ with explicitly named kwargs should not require
+    a matching __init_subclass__ to prevent object.__init_subclass__ from raising TypeError.
+    """
+    registered: dict[str, str | None] = {}
+
+    class Event(BaseModel):
+        e_type: str
+
+        @classmethod
+        def __pydantic_init_subclass__(cls, event_type: str | None = None, **kwargs: Any) -> None:
+            super().__pydantic_init_subclass__(**kwargs)
+            registered[cls.__name__] = event_type
+
+    class CreatedEvent(Event, event_type='created'):
+        pass
+
+    class DeletedEvent(Event, event_type='deleted'):
+        pass
+
+    assert registered == {'CreatedEvent': 'created', 'DeletedEvent': 'deleted'}
+
+
 def test_shadow_attribute_warn_for_redefined_fields() -> None:
     """https://github.com/pydantic/pydantic/issues/9107"""
 
