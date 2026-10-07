@@ -209,3 +209,25 @@ def test_serialize_as_any_annotation_with_incorrect_list_el_type() -> None:
     # notably, the warning is not raised when using the SerializeAsAny annotation
     ta = TypeAdapter(SerializeAsAny[list[int]])
     assert ta.dump_python(['a', 'b', 'c']) == ['a', 'b', 'c']
+
+
+@pytest.mark.parametrize('kwargs', [{'serialize_as_any': True}, {'polymorphic_serialization': True}])
+def test_serialize_as_any_deferred_subclass(kwargs) -> None:
+    """https://github.com/pydantic/pydantic/issues/13647"""
+
+    class Base(BaseModel):
+        x: int = 1
+
+    class Sub(Base):
+        model_config = ConfigDict(defer_build=True)
+        y: int = 2
+
+    class Model(BaseModel):
+        b: Base
+
+    # `model_construct()` currently doesn't trigger a rebuild of `Sub`:
+    m = Model(b=Sub.model_construct(x=1, y=2))
+    assert Sub.__pydantic_complete__ is False
+
+    assert m.model_dump(**kwargs) == {'b': {'x': 1, 'y': 2}}
+    assert Sub.__pydantic_complete__ is True

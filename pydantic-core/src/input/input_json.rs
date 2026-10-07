@@ -202,7 +202,9 @@ impl<'py, 'data> Input<'py> for JsonValue<'data> {
                 create_decimal(&self.into_pyobject(py)?, self).map(ValidationMatch::strict)
             }
             JsonValue::Array(array) if !strict && ValidatedTuple::len(&array) == Some(3) => {
-                create_decimal(&self.into_pyobject(py)?, self).map(ValidationMatch::lax)
+                create_decimal(&self.into_pyobject(py)?, self)
+                    .map(ValidationMatch::lax)
+                    .map_err(|_| ValError::new(ErrorTypeDefaults::DecimalType, self))
             }
             _ => Err(ValError::new(ErrorTypeDefaults::DecimalType, self)),
         }
