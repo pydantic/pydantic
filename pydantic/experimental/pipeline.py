@@ -464,6 +464,11 @@ _STR_ORDER_SENSITIVE_KEYS = frozenset(
 _STR_CASE_KEYS = frozenset({'to_lower', 'to_upper'})
 
 
+def _str_check_schema(**constraints: Any) -> cs.CoreSchema:
+    """A `str` schema that only checks: the explicit `False`s keep the config's string transforms out of it."""
+    return cs.str_schema(**constraints, strip_whitespace=False, to_lower=False, to_upper=False)
+
+
 def _apply_transform(
     s: cs.CoreSchema | None, func: Callable[[Any], Any], handler: GetCoreSchemaHandler
 ) -> cs.CoreSchema:
@@ -550,7 +555,7 @@ def _apply_constraint(  # noqa: C901
         max_len = constraint.max_length
 
         if s and s['type'] == 'str' and _STR_CASE_KEYS & s.keys():
-            s = cs.chain_schema([s, cs.str_schema(min_length=min_len or None, max_length=max_len)])
+            s = cs.chain_schema([s, _str_check_schema(min_length=min_len or None, max_length=max_len)])
         elif s and s['type'] in _LENGTH_SCHEMA_TYPES:
             s = s.copy()
             if min_len != 0:
@@ -665,7 +670,7 @@ def _apply_constraint(  # noqa: C901
     else:
         assert isinstance(constraint, Pattern)
         if s and s['type'] == 'str' and _STR_CASE_KEYS & s.keys():
-            s = cs.chain_schema([s, cs.str_schema(pattern=constraint)])
+            s = cs.chain_schema([s, _str_check_schema(pattern=constraint)])
         elif s and s['type'] == 'str':
             s = s.copy()
             s['pattern'] = constraint

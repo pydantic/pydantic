@@ -13,7 +13,7 @@ import pytest
 import pytz
 from annotated_types import Interval, Len
 
-from pydantic import TypeAdapter, ValidationError
+from pydantic import ConfigDict, TypeAdapter, ValidationError
 from pydantic.experimental.pipeline import _Pipeline, transform, validate_as  # pyright: ignore[reportPrivateUsage]
 
 
@@ -694,6 +694,19 @@ def test_max_length_after_case_transform_rejects_the_longer_result() -> None:
     ta = TypeAdapter[str](Annotated[str, validate_as(str).str_lower().len(0, 1)])
     with pytest.raises(ValidationError, match='string_too_long'):
         ta.validate_python('\u0130')
+
+
+@pytest.mark.parametrize(
+    'pipeline, value',
+    [
+        (validate_as(str).str_lower().str_pattern('^[a-z]+$'), 'abc'),
+        (validate_as(str).str_lower().len(0, 1), 'a'),
+    ],
+)
+def test_constraint_after_case_transform_ignores_config_transforms(pipeline: Any, value: str) -> None:
+    """The extra `str` schema only checks, so `str_to_upper` from the config cannot run after the check."""
+    ta = TypeAdapter[str](Annotated[str, pipeline], config=ConfigDict(str_to_upper=True))
+    assert ta.validate_python(value) == value
 
 
 def test_transform_before_constraint_still_folds_into_the_str_schema() -> None:
