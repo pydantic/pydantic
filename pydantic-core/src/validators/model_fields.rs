@@ -331,6 +331,9 @@ impl ModelFieldsValidator {
             let state = &mut state.scoped_clear_field_error();
 
             for field in &self.fields {
+                if state.errors_discarded && !errors.is_empty() {
+                    break;
+                }
                 let state = &mut state.scoped_set_field_name(Some(field.name.as_py_str().bind(py).clone()));
 
                 if let Some((lookup_path, lookup_result)) = field
@@ -630,6 +633,9 @@ impl ModelFieldsValidator {
         // dict, and try to set defaults for any missing fields
 
         for (field, field_result) in std::iter::zip(&self.fields, field_results) {
+            if state.errors_discarded && !errors.is_empty() {
+                break;
+            }
             let state = &mut state.scoped_set_field_name(Some(field.name.as_py_str().bind(py).clone()));
 
             let field_value = if let Some((field_info, field_json_value)) = field_result {
