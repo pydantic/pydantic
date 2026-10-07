@@ -8,10 +8,9 @@ use pyo3::types::{PyDict, PyType};
 use crate::build_tools::py_schema_err;
 use crate::build_tools::{ExtraBehavior, is_strict, schema_or_config};
 use crate::errors::LocItem;
-use crate::errors::{ErrorTypeDefaults, ValError, ValLineError, ValResult};
+use crate::errors::{ErrorTypeDefaults, ValError, ValLineError, ValResult, ValidationError};
 use crate::input::BorrowInput;
-use crate::input::ValidationMatch;
-use crate::input::{Input, PreparedFieldResults, ValidatedDict};
+use crate::input::{ExtraField, Input, PreparedFieldResults, ValidatedDict};
 use crate::lookup_key::FieldLookupPaths;
 use crate::lookup_key::LookupType;
 use crate::tools::SchemaDict;
@@ -263,23 +262,20 @@ impl Validator for TypedDictValidator {
             state.add_fields_set(fields_set_count);
         }
 
-        prepared.for_each_extra(|raw_key, value| {
-            let either_str = match raw_key
-                .borrow_input()
-                .validate_str(true, false)
-                .map(ValidationMatch::into_inner)
-            {
-                Ok(k) => k,
+        prepared.for_each_extra(|extra| {
+            let ExtraField {
+                raw_key,
+                key_str: either_str,
+                value,
+            } = match extra {
+                Ok(extra) => extra,
                 Err(ValError::LineErrors(line_errors)) => {
-                    for err in line_errors {
-                        errors.push(
-                            err.with_outer_location(raw_key.clone())
-                                .with_type(ErrorTypeDefaults::InvalidKey),
-                        );
-                    }
+                    errors.extend(line_errors);
                     return Ok(());
                 }
-                Err(err) => return Err(err),
+                Err(ValError::InternalErr(err)) => return Err(err),
+                Err(ValError::Omit) => return Ok(()),
+                Err(ValError::UseDefault) => return Err(ValidationError::use_default_error()),
             };
             let value = value.borrow_input();
             // Unknown / extra field
@@ -311,7 +307,9 @@ impl Validator for TypedDictValidator {
                                     }
                                 }
                             }
-                            Err(err) => return Err(err),
+                            Err(ValError::InternalErr(err)) => return Err(err),
+                            Err(ValError::Omit) => return Ok(()),
+                            Err(ValError::UseDefault) => return Err(ValidationError::use_default_error()),
                         }
                     } else {
                         output_dict.set_item(py_key, value.to_object(py)?)?;

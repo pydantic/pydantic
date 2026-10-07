@@ -17,6 +17,7 @@ use crate::ArgsKwargs;
 use crate::build_tools::ExtraBehavior;
 use crate::common::frozendict::get_frozendict_type;
 use crate::errors::{ErrorType, ErrorTypeDefaults, InputValue, LocItem, ValError, ValResult};
+use crate::input::return_enums::iterate_mapping_items;
 use crate::lookup_key::{FieldLookupPaths, LookupPath, LookupType};
 use crate::tools::safe_repr;
 use crate::validators::Exactness;
@@ -43,7 +44,7 @@ use super::datetime::{
 use super::input_abstract::ValMatch;
 use super::prepared::{DictExtras, LazyFieldResults, PreparedFieldResults};
 use super::return_enums::EitherComplex;
-use super::return_enums::{ValidationMatch, iterate_attributes, iterate_mapping_items};
+use super::return_enums::{ValidationMatch, iterate_attributes};
 use super::shared::{
     decimal_as_int, float_as_int, fraction_as_int, get_enum_meta_object, int_as_bool, str_as_bool, str_as_float,
     str_as_int,

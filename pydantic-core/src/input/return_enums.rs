@@ -290,35 +290,20 @@ pub(crate) fn no_validator_iter_to_vec<'py>(
 
 pub(crate) fn iterate_mapping_items<'a, 'py>(
     mapping: &'a Bound<'py, PyMapping>,
-) -> ValResult<impl Iterator<Item = ValResult<(Bound<'py, PyAny>, Bound<'py, PyAny>)>> + 'a> {
-    let py = mapping.py();
+) -> PyResult<impl Iterator<Item = ValResult<(Bound<'py, PyAny>, Bound<'py, PyAny>)>> + 'a> {
     let input = mapping.as_any();
-    let iterator = mapping
-        .items()
-        .map_err(|e| mapping_err(e, py, input))?
-        .iter()
-        .map(move |item| {
-            item.extract().map_err(|_| {
-                ValError::new(
-                    ErrorType::MappingType {
-                        error: MAPPING_TUPLE_ERROR.into(),
-                        context: None,
-                    },
-                    input,
-                )
-            })
-        });
+    let iterator = mapping.items()?.iter().map(move |item| {
+        item.extract().map_err(|_| {
+            ValError::new(
+                ErrorType::MappingType {
+                    error: MAPPING_TUPLE_ERROR.into(),
+                    context: None,
+                },
+                input,
+            )
+        })
+    });
     Ok(iterator)
-}
-
-fn mapping_err<'py>(err: PyErr, py: Python<'py>, input: &'py (impl Input<'py> + ?Sized)) -> ValError {
-    ValError::new(
-        ErrorType::MappingType {
-            error: py_err_string(py, err).into(),
-            context: None,
-        },
-        input,
-    )
 }
 
 const MAPPING_TUPLE_ERROR: &str = "Mapping items must be tuples of (key, value) pairs";

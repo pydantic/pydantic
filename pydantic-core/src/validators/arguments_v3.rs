@@ -11,10 +11,10 @@ use pyo3::IntoPyObjectExt;
 
 use crate::build_tools::py_schema_err;
 use crate::build_tools::{ExtraBehavior, schema_or_config_same};
-use crate::errors::{ErrorTypeDefaults, ValError, ValLineError, ValResult};
+use crate::errors::{ErrorTypeDefaults, ValError, ValLineError, ValResult, ValidationError};
 use crate::input::{
-    Arguments, BorrowInput, Input, KeywordArgs, PositionalArgs, PreparedFieldResults, ValidatedDict, ValidatedTuple,
-    ValidationMatch,
+    Arguments, BorrowInput, ExtraField, Input, KeywordArgs, PositionalArgs, PreparedFieldResults, ValidatedDict,
+    ValidatedTuple, ValidationMatch,
 };
 use crate::lookup_key::FieldLookupPaths;
 use crate::lookup_key::LookupType;
@@ -419,20 +419,17 @@ impl ArgumentsV3Validator {
             }
         }
 
-        prepared.for_each_extra(|raw_key, value| {
-            match raw_key.borrow_input().validate_str(true, false) {
-                Ok(_) => {}
+        prepared.for_each_extra(|extra| {
+            let ExtraField { raw_key, value, .. } = match extra {
+                Ok(extra) => extra,
                 Err(ValError::LineErrors(line_errors)) => {
-                    for err in line_errors {
-                        errors.push(
-                            err.with_outer_location(raw_key.clone())
-                                .with_type(ErrorTypeDefaults::InvalidKey),
-                        );
-                    }
+                    errors.extend(line_errors);
                     return Ok(());
                 }
-                Err(err) => return Err(err),
-            }
+                Err(ValError::InternalErr(err)) => return Err(err),
+                Err(ValError::Omit) => return Ok(()),
+                Err(ValError::UseDefault) => return Err(ValidationError::use_default_error()),
+            };
 
             let value = value.borrow_input();
 
@@ -611,23 +608,20 @@ impl ArgumentsV3Validator {
 
         // if there are kwargs check any that haven't been processed yet
         if let Some(prepared) = prepared {
-            prepared.for_each_extra(|raw_key, value| {
-                let either_str = match raw_key
-                    .borrow_input()
-                    .validate_str(true, false)
-                    .map(ValidationMatch::into_inner)
-                {
-                    Ok(k) => k,
+            prepared.for_each_extra(|extra| {
+                let ExtraField {
+                    raw_key,
+                    key_str: either_str,
+                    value,
+                } = match extra {
+                    Ok(extra) => extra,
                     Err(ValError::LineErrors(line_errors)) => {
-                        for err in line_errors {
-                            errors.push(
-                                err.with_outer_location(raw_key.clone())
-                                    .with_type(ErrorTypeDefaults::InvalidKey),
-                            );
-                        }
+                        errors.extend(line_errors);
                         return Ok(());
                     }
-                    Err(err) => return Err(err),
+                    Err(ValError::InternalErr(err)) => return Err(err),
+                    Err(ValError::Omit) => return Ok(()),
+                    Err(ValError::UseDefault) => return Err(ValidationError::use_default_error()),
                 };
                 let maybe_var_kwargs_parameter = self.parameters.iter().find(|p| {
                     matches!(
@@ -659,7 +653,9 @@ impl ArgumentsV3Validator {
                                             errors.push(err.with_outer_location(raw_key.clone()));
                                         }
                                     }
-                                    Err(err) => return Err(err),
+                                    Err(ValError::InternalErr(err)) => return Err(err),
+                                    Err(ValError::Omit) => return Ok(()),
+                                    Err(ValError::UseDefault) => return Err(ValidationError::use_default_error()),
                                 }
                             }
                             ParameterMode::VarKwargsUnpackedTypedDict => {

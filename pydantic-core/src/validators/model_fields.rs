@@ -9,8 +9,8 @@ use pyo3::types::{PyDict, PySet, PyString, PyType};
 
 use crate::build_tools::py_schema_err;
 use crate::build_tools::{ExtraBehavior, is_strict, schema_or_config_same};
-use crate::errors::{ErrorType, ErrorTypeDefaults, ValError, ValLineError, ValResult};
-use crate::input::{BorrowInput, Input, PreparedFieldResults, ValidatedDict, ValidationMatch};
+use crate::errors::{ErrorType, ErrorTypeDefaults, ValError, ValLineError, ValResult, ValidationError};
+use crate::input::{BorrowInput, ExtraField, Input, PreparedFieldResults, ValidatedDict};
 use crate::lookup_key::FieldLookupPaths;
 use crate::lookup_key::LookupType;
 use crate::tools::SchemaDict;
@@ -119,7 +119,8 @@ impl BuildValidator for ModelFieldsValidator {
 
 impl_py_gc_traverse!(ModelFieldsValidator {
     fields,
-    extras_validator
+    extras_validator,
+    extras_keys_validator
 });
 
 impl Validator for ModelFieldsValidator {
@@ -361,23 +362,20 @@ impl ModelFieldsValidator {
         }
 
         let model_extra_dict_op = (extra_behavior == ExtraBehavior::Allow).then(|| PyDict::new(py));
-        prepared.for_each_extra(|raw_key, value| {
-            let either_str = match raw_key
-                .borrow_input()
-                .validate_str(true, false)
-                .map(ValidationMatch::into_inner)
-            {
-                Ok(k) => k,
+        prepared.for_each_extra(|extra| {
+            let ExtraField {
+                raw_key,
+                key_str: either_str,
+                value,
+            } = match extra {
+                Ok(extra) => extra,
                 Err(ValError::LineErrors(line_errors)) => {
-                    for err in line_errors {
-                        errors.push(
-                            err.with_outer_location(raw_key.clone())
-                                .with_type(ErrorTypeDefaults::InvalidKey),
-                        );
-                    }
+                    errors.extend(line_errors);
                     return Ok(());
                 }
-                Err(err) => return Err(err),
+                Err(ValError::InternalErr(err)) => return Err(err),
+                Err(ValError::Omit) => return Ok(()),
+                Err(ValError::UseDefault) => return Err(ValidationError::use_default_error()),
             };
             let value = value.borrow_input();
             // Unknown / extra field
@@ -401,7 +399,9 @@ impl ModelFieldsValidator {
                                 }
                                 return Ok(());
                             }
-                            Err(err) => return Err(err),
+                            Err(ValError::InternalErr(err)) => return Err(err),
+                            Err(ValError::Omit) => return Ok(()),
+                            Err(ValError::UseDefault) => return Err(ValidationError::use_default_error()),
                         },
                         None => either_str.as_py_string(py, state.cache_str()),
                     };
@@ -417,7 +417,9 @@ impl ModelFieldsValidator {
                                     errors.push(err.with_outer_location(raw_key.clone()));
                                 }
                             }
-                            Err(err) => return Err(err),
+                            Err(ValError::InternalErr(err)) => return Err(err),
+                            Err(ValError::Omit) => return Ok(()),
+                            Err(ValError::UseDefault) => return Err(ValidationError::use_default_error()),
                         }
                     } else {
                         model_extra_dict.set_item(&py_key, value.to_object(py)?)?;

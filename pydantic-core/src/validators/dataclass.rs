@@ -10,9 +10,9 @@ use pyo3::IntoPyObjectExt;
 
 use crate::build_tools::py_schema_err;
 use crate::build_tools::{ExtraBehavior, is_strict, schema_or_config_same};
-use crate::errors::{ErrorType, ErrorTypeDefaults, ValError, ValLineError, ValResult};
+use crate::errors::{ErrorType, ErrorTypeDefaults, ValError, ValLineError, ValResult, ValidationError};
 use crate::input::{
-    Arguments, BorrowInput, Input, InputType, KeywordArgs, PositionalArgs, PreparedFieldResults, ValidationMatch,
+    Arguments, BorrowInput, ExtraField, Input, InputType, KeywordArgs, PositionalArgs, PreparedFieldResults,
     input_as_python_instance,
 };
 use crate::lookup_key::FieldLookupPaths;
@@ -140,7 +140,10 @@ impl BuildValidator for DataclassArgsValidator {
 
 impl_py_gc_traverse!(Field { validator });
 
-impl_py_gc_traverse!(DataclassArgsValidator { fields });
+impl_py_gc_traverse!(DataclassArgsValidator {
+    fields,
+    extras_validator
+});
 
 impl Validator for DataclassArgsValidator {
     fn validate<'py>(
@@ -303,55 +306,53 @@ impl Validator for DataclassArgsValidator {
         }
         // if there are kwargs check any that haven't been processed yet
         if let Some(prepared) = prepared {
-            prepared.for_each_extra(|raw_key, value| {
-                match raw_key
-                    .borrow_input()
-                    .validate_str(true, false)
-                    .map(ValidationMatch::into_inner)
-                {
-                    Ok(either_str) => {
-                        // Unknown / extra field
-                        match extra_behavior {
-                            ExtraBehavior::Forbid => {
-                                errors.push(ValLineError::new_with_loc(
-                                    ErrorTypeDefaults::UnexpectedKeywordArgument,
-                                    value,
-                                    raw_key.clone(),
-                                ));
-                            }
-                            ExtraBehavior::Ignore => {}
-                            ExtraBehavior::Allow => {
-                                if let Some(ref validator) = self.extras_validator {
-                                    match validator.validate(py, value.borrow_input(), state) {
-                                        Ok(value) => {
-                                            output_dict
-                                                .set_item(either_str.as_py_string(py, state.cache_str()), value)?;
-                                        }
-                                        Err(ValError::LineErrors(line_errors)) => {
-                                            for err in line_errors {
-                                                errors.push(err.with_outer_location(raw_key.clone()));
-                                            }
-                                        }
-                                        Err(err) => return Err(err),
-                                    }
-                                } else {
-                                    output_dict.set_item(
-                                        either_str.as_py_string(py, state.cache_str()),
-                                        value.borrow_input().to_object(py)?,
-                                    )?;
-                                }
-                            }
-                        }
-                    }
+            prepared.for_each_extra(|extra| {
+                let ExtraField {
+                    raw_key,
+                    key_str: either_str,
+                    value,
+                } = match extra {
+                    Ok(extra) => extra,
                     Err(ValError::LineErrors(line_errors)) => {
-                        for err in line_errors {
-                            errors.push(
-                                err.with_outer_location(raw_key.clone())
-                                    .with_type(ErrorTypeDefaults::InvalidKey),
-                            );
+                        errors.extend(line_errors);
+                        return Ok(());
+                    }
+                    Err(ValError::InternalErr(err)) => return Err(err),
+                    Err(ValError::Omit) => return Ok(()),
+                    Err(ValError::UseDefault) => return Err(ValidationError::use_default_error()),
+                };
+                // Unknown / extra field
+                match extra_behavior {
+                    ExtraBehavior::Forbid => {
+                        errors.push(ValLineError::new_with_loc(
+                            ErrorTypeDefaults::UnexpectedKeywordArgument,
+                            value,
+                            raw_key.clone(),
+                        ));
+                    }
+                    ExtraBehavior::Ignore => {}
+                    ExtraBehavior::Allow => {
+                        if let Some(ref validator) = self.extras_validator {
+                            match validator.validate(py, value.borrow_input(), state) {
+                                Ok(value) => {
+                                    output_dict.set_item(either_str.as_py_string(py, state.cache_str()), value)?;
+                                }
+                                Err(ValError::LineErrors(line_errors)) => {
+                                    for err in line_errors {
+                                        errors.push(err.with_outer_location(raw_key.clone()));
+                                    }
+                                }
+                                Err(ValError::InternalErr(err)) => return Err(err),
+                                Err(ValError::Omit) => return Ok(()),
+                                Err(ValError::UseDefault) => return Err(ValidationError::use_default_error()),
+                            }
+                        } else {
+                            output_dict.set_item(
+                                either_str.as_py_string(py, state.cache_str()),
+                                value.borrow_input().to_object(py)?,
+                            )?;
                         }
                     }
-                    Err(err) => return Err(err),
                 }
                 Ok(())
             })?;

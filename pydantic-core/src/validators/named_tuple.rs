@@ -6,9 +6,12 @@ use pyo3::pybacked::PyBackedStr;
 use pyo3::types::{PyDict, PyList, PyTuple, PyType};
 
 use crate::build_tools::{ExtraBehavior, py_schema_err};
-use crate::errors::{ErrorType, ErrorTypeDefaults, LocItem, ValError, ValLineError, ValResult, py_err_string};
+use crate::errors::{
+    ErrorType, ErrorTypeDefaults, LocItem, ValError, ValLineError, ValResult, ValidationError, py_err_string,
+};
 use crate::input::{
-    BorrowInput, ConsumeIterator, Input, PreparedFieldResults, ValidatedDict, ValidatedTuple, input_as_python_instance,
+    BorrowInput, ConsumeIterator, ExtraField, Input, PreparedFieldResults, ValidatedDict, ValidatedTuple,
+    input_as_python_instance,
 };
 use crate::lookup_key::{FieldLookupPaths, LookupType};
 use crate::tools::SchemaDict;
@@ -230,20 +233,17 @@ impl NamedTupleValidator {
             }
         }
 
-        prepared.for_each_extra(|raw_key, value| {
-            match raw_key.borrow_input().validate_str(true, false) {
-                Ok(_) => {}
+        prepared.for_each_extra(|extra| {
+            let ExtraField { raw_key, value, .. } = match extra {
+                Ok(extra) => extra,
                 Err(ValError::LineErrors(line_errors)) => {
-                    for err in line_errors {
-                        errors.push(
-                            err.with_outer_location(raw_key.clone())
-                                .with_type(ErrorTypeDefaults::InvalidKey),
-                        );
-                    }
+                    errors.extend(line_errors);
                     return Ok(());
                 }
-                Err(err) => return Err(err),
-            }
+                Err(ValError::InternalErr(err)) => return Err(err),
+                Err(ValError::Omit) => return Ok(()),
+                Err(ValError::UseDefault) => return Err(ValidationError::use_default_error()),
+            };
             // Named tuples cannot hold extra fields, so extra keys are always forbidden:
             errors.push(ValLineError::new_with_loc(
                 ErrorTypeDefaults::ExtraForbidden,

@@ -243,9 +243,10 @@ pub trait KeywordArgs<'py> {
         lookup_type: LookupType,
         extra_behavior: ExtraBehavior,
     ) -> impl PreparedFieldResults<'a, 'py, Key = Self::Key<'a>, Item = Self::Item<'a>> {
-        // Keyword argument keys must be validated even when extra values are ignored.
         LazyFieldResults::new(
             move |paths: &'a FieldLookupPaths| paths.try_lookup(lookup_type, |path| self.get_item(path)),
+            // Keyword argument keys must be validated even when extra values are ignored, so
+            // we always pass `Extras` here.
             Some(KwargsExtras(self)),
             extra_behavior,
         )
@@ -270,12 +271,16 @@ pub(crate) trait ValidatedDict<'py> {
     where
         Self: 'a;
     fn get_item(&self, key: &LookupPath) -> ValResult<Option<Self::Item<'_>>>;
+    /// Processes the input against an input `_tree`; for JSON this can iterate the JSON input
+    /// and buffer the values for optimized lookup
     fn prepare_fields<'a>(
         &'a self,
         _tree: &LookupTree,
         lookup_type: LookupType,
         extra_behavior: ExtraBehavior,
     ) -> impl PreparedFieldResults<'a, 'py, Key = Self::Key<'a>, Item = Self::Item<'a>> {
+        // Default implementation just delegates to attempting lookup by `Self::get_item` and doesn't
+        // buffer any results.
         LazyFieldResults::new(
             move |paths: &'a FieldLookupPaths| paths.try_lookup(lookup_type, |path| self.get_item(path)),
             (extra_behavior != ExtraBehavior::Ignore).then_some(DictExtras(self)),

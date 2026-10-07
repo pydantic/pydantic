@@ -152,18 +152,8 @@ def test_mapping_error():
             return 1
 
     v = SchemaValidator(cs.dict_schema(keys_schema=cs.int_schema(), values_schema=cs.int_schema()))
-    with pytest.raises(ValidationError) as exc_info:
+    with pytest.raises(RuntimeError, match='intentional error'):
         v.validate_python(BadMapping())
-
-    assert exc_info.value.errors(include_url=False) == [
-        {
-            'type': 'mapping_type',
-            'loc': (),
-            'msg': 'Input should be a valid mapping, error: RuntimeError: intentional error',
-            'input': HasRepr(IsStr(regex='.+BadMapping object at.+')),
-            'ctx': {'error': 'RuntimeError: intentional error'},
-        }
-    ]
 
 
 @pytest.mark.parametrize('mapping_items', [[(1,)], ['foobar'], [(1, 2, 3)], 'not list'])

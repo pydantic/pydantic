@@ -26,8 +26,9 @@ use super::input_abstract::{ConsumeIterator, Never, ValMatch};
 use super::return_enums::ValidationMatch;
 use super::shared::{float_as_int, int_as_bool, str_as_bool, str_as_float, str_as_int};
 use super::{
-    Arguments, BorrowInput, EitherBytes, EitherFloat, EitherInt, EitherString, EitherTimedelta, GenericIterator, Input,
-    KeywordArgs, PositionalArgs, PreparedFieldResults, ValidatedDict, ValidatedList, ValidatedSet, ValidatedTuple,
+    Arguments, BorrowInput, EitherBytes, EitherFloat, EitherInt, EitherString, EitherTimedelta, ExtraField,
+    GenericIterator, Input, KeywordArgs, PositionalArgs, PreparedFieldResults, ValidatedDict, ValidatedList,
+    ValidatedSet, ValidatedTuple,
 };
 
 impl<'py, 'data> Input<'py> for JsonValue<'data> {
@@ -623,7 +624,7 @@ impl<'py, 'data> ValidatedDict<'py> for &'_ JsonObject<'data> {
     }
 }
 
-impl<'a, 'data> PreparedFieldResults<'a, '_> for JsonFieldResults<'a, 'data> {
+impl<'a, 'py, 'data> PreparedFieldResults<'a, 'py> for JsonFieldResults<'a, 'data> {
     type Key = &'a str;
     type Item = &'a JsonValue<'data>;
 
@@ -631,8 +632,17 @@ impl<'a, 'data> PreparedFieldResults<'a, '_> for JsonFieldResults<'a, 'data> {
         JsonFieldResults::lookup(self, index, paths)
     }
 
-    fn for_each_extra(self, mut f: impl FnMut(Self::Key, Self::Item) -> ValResult<()>) -> ValResult<()> {
-        self.extras.into_iter().try_for_each(|(key, value)| f(key, value))
+    fn for_each_extra(
+        self,
+        mut f: impl FnMut(ValResult<ExtraField<'a, 'py, Self::Key, Self::Item>>) -> PyResult<()>,
+    ) -> PyResult<()> {
+        self.extras.into_iter().try_for_each(|(raw_key, value)| {
+            f(Ok(ExtraField {
+                raw_key,
+                key_str: raw_key.into(),
+                value,
+            }))
+        })
     }
 }
 
