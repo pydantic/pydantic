@@ -676,6 +676,26 @@ def test_consecutive_string_transforms_are_both_applied() -> None:
     assert ta.validate_python('AbC') == 'ABC'
 
 
+@pytest.mark.parametrize(
+    'pipeline,value,expected',
+    [
+        (validate_as(str).str_lower().len(2), '\u0130', 'i\u0307'),
+        (validate_as(str).str_upper().len(2), 'ß', 'SS'),
+        (validate_as(str).str_lower().str_pattern('^[a-z]+$'), 'ABC', 'abc'),
+        (validate_as(str).str_upper().str_pattern('^[A-Z]+$'), 'abc', 'ABC'),
+    ],
+)
+def test_constraint_after_case_transform_sees_the_transformed_value(pipeline: Any, value: str, expected: str) -> None:
+    """pydantic-core checks length and pattern before `to_lower`/`to_upper`, so they must not be folded together."""
+    assert TypeAdapter[str](Annotated[str, pipeline]).validate_python(value) == expected
+
+
+def test_max_length_after_case_transform_rejects_the_longer_result() -> None:
+    ta = TypeAdapter[str](Annotated[str, validate_as(str).str_lower().len(0, 1)])
+    with pytest.raises(ValidationError, match='string_too_long'):
+        ta.validate_python('\u0130')
+
+
 def test_transform_before_constraint_still_folds_into_the_str_schema() -> None:
     """The fast path stays in place when nothing precedes the transform."""
     ta = TypeAdapter[str](Annotated[str, validate_as(str).str_strip().len(3)])

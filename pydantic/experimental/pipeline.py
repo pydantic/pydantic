@@ -452,12 +452,16 @@ def _apply_parse(
         return cs.chain_schema([s, handler(tp)]) if s else handler(tp)
 
 
-# Keys that pydantic-core evaluates *after* the `strip_whitespace`/`to_lower`/`to_upper`
-# transformations of a `str` schema. If one of them is already set, folding a transform step
-# into that same schema would run the transformation too early, i.e. out of pipeline order.
+# A `str` core schema has a fixed order: pydantic-core runs `strip_whitespace`, then
+# `min_length`/`max_length`, then `pattern`, then `to_lower`/`to_upper`, and keeps one slot for
+# each. Once any of these keys is set, folding another step into the same schema can reorder or
+# drop it, so the step is added after the schema instead.
 _STR_ORDER_SENSITIVE_KEYS = frozenset(
     {'pattern', 'min_length', 'max_length', 'strip_whitespace', 'to_lower', 'to_upper'}
 )
+# The case transforms run after the length and pattern checks, so a constraint that follows them
+# in the pipeline cannot be folded into the same `str` schema.
+_STR_CASE_KEYS = frozenset({'to_lower', 'to_upper'})
 
 
 def _apply_transform(
@@ -545,7 +549,9 @@ def _apply_constraint(  # noqa: C901
         min_len = constraint.min_length
         max_len = constraint.max_length
 
-        if s and s['type'] in _LENGTH_SCHEMA_TYPES:
+        if s and s['type'] == 'str' and _STR_CASE_KEYS & s.keys():
+            s = cs.chain_schema([s, cs.str_schema(min_length=min_len or None, max_length=max_len)])
+        elif s and s['type'] in _LENGTH_SCHEMA_TYPES:
             s = s.copy()
             if min_len != 0:
                 s['min_length'] = min_len  # pyright: ignore[reportGeneralTypeIssues]
@@ -658,7 +664,9 @@ def _apply_constraint(  # noqa: C901
         s = _check_func(check_not_in, f'not in {values}', s)
     else:
         assert isinstance(constraint, Pattern)
-        if s and s['type'] == 'str':
+        if s and s['type'] == 'str' and _STR_CASE_KEYS & s.keys():
+            s = cs.chain_schema([s, cs.str_schema(pattern=constraint)])
+        elif s and s['type'] == 'str':
             s = s.copy()
             s['pattern'] = constraint
         else:
