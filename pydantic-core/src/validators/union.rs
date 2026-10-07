@@ -109,6 +109,7 @@ impl UnionValidator {
         let old_exactness = state.exactness;
         let old_fields_set_count = state.fields_set_count;
         let old_errors_discarded = state.errors_discarded;
+        let allow_partial = state.allow_partial;
 
         let mut errors = MaybeErrors::new(self.custom_error.as_ref());
         let mut should_omit = false;
@@ -120,6 +121,8 @@ impl UnionValidator {
             state.fields_set_count = None;
             // once a member has succeeded, errors from later members are never reported
             state.errors_discarded = old_errors_discarded || best_match.is_some();
+            // validators may leave `allow_partial` changed (e.g. disabled), so each member starts from the original value
+            state.allow_partial = allow_partial;
             let result = choice.validate(py, input, state);
             match result {
                 Ok(new_success) => match (state.exactness, state.fields_set_count) {
@@ -206,8 +209,11 @@ impl UnionValidator {
         state: &mut ValidationState<'_, 'py>,
     ) -> ValResult<Py<PyAny>> {
         let mut errors = MaybeErrors::new(self.custom_error.as_ref());
+        let allow_partial = state.allow_partial;
 
         for (validator, label) in &self.choices {
+            // validators may leave `allow_partial` changed (e.g. disabled), so each member starts from the original value
+            state.allow_partial = allow_partial;
             match validator.validate(py, input, state) {
                 Err(ValError::LineErrors(lines)) => errors.push(validator, label.as_deref(), lines),
                 otherwise => return otherwise,

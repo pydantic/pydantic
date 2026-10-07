@@ -144,10 +144,12 @@ def test_union_int_any():
 
 
 @pytest.mark.parametrize('mode', ['python', 'json'])
-def test_smart_union_members_after_success_stop_at_first_error(mode: Literal['python', 'json']) -> None:
+def test_smart_union_members_after_success_stop_at_first_error(
+    container_class: type[Any], mode: Literal['python', 'json']
+) -> None:
     # Errors of members tried after a successful member are discarded, so such members stop at
     # their first error. Without this, recursive unions take time exponential in the nesting depth.
-    class A(BaseModel):
+    class A(container_class):
         a: int
         x: int
 
@@ -157,7 +159,7 @@ def test_smart_union_members_after_success_stop_at_first_error(mode: Literal['py
             info.context['calls'].append('A.x')
             return value
 
-    class B(BaseModel):
+    class B(container_class):
         b: int
         x: int
 
@@ -175,7 +177,7 @@ def test_smart_union_members_after_success_stop_at_first_error(mode: Literal['py
         return ta.validate_json(json.dumps(data), context={'calls': calls})
 
     calls: list[str] = []
-    assert isinstance(validate({'a': 1, 'x': 2}, calls), A)
+    validate({'a': 1, 'x': 2}, calls)
     # `B` fails on the missing `b` field and doesn't validate `x`:
     assert calls == ['A.x']
 

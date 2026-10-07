@@ -181,6 +181,9 @@ impl Validator for DataclassArgsValidator {
 
         // go through fields getting the value from args or kwargs and validating it
         for (index, field) in self.fields.iter().enumerate() {
+            if state.errors_discarded && !errors.is_empty() {
+                break;
+            }
             if !field.init {
                 match field.validator.default_value(py, Some(field.name.clone()), state) {
                     Ok(Some(value)) => {
