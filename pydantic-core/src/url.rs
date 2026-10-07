@@ -407,7 +407,8 @@ impl PyMultiHostUrl {
 
             for url in extra_urls {
                 let str = unicode_url(url.as_str(), url);
-                extra_hosts.push_str(&str[host_offset..str.len() - sub]);
+                // extra urls don't necessarily have the same scheme as the main one (see `parse_multihost_url()`):
+                extra_hosts.push_str(&str[url.scheme().len() + 3..str.len() - sub]);
                 extra_hosts.push(',');
             }
 
@@ -433,7 +434,8 @@ impl PyMultiHostUrl {
 
             for url in extra_urls {
                 let str = url.as_str();
-                extra_hosts.push_str(&str[host_offset..str.len() - sub]);
+                // extra urls don't necessarily have the same scheme as the main one (see `parse_multihost_url()`):
+                extra_hosts.push_str(&str[url.scheme().len() + 3..str.len() - sub]);
                 extra_hosts.push(',');
             }
 
