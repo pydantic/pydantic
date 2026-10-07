@@ -16,6 +16,7 @@ use crate::PydanticUndefinedType;
 use crate::build_tools::py_schema_err;
 use crate::build_tools::schema_or_config_same;
 use crate::errors::{ErrorType, ErrorTypeDefaults, ValError, ValResult};
+use crate::fields_set::FieldsSet;
 use crate::input::{Input, input_as_python_instance, py_error_on_minusone};
 use crate::tools::{ROOT_FIELD, SchemaDict, py_err, root_field_py_str};
 
@@ -228,9 +229,9 @@ impl Validator for ModelValidator {
         ) = output.extract(py)?;
 
         if let Ok(fields_set) = model.getattr(intern!(py, DUNDER_FIELDS_SET_KEY)) {
-            let fields_set = fields_set.cast::<PySet>()?;
+            let fields_set: FieldsSet<'_> = fields_set.extract()?;
             for field_name in validated_fields_set {
-                fields_set.add(field_name)?;
+                fields_set.add(&field_name)?;
             }
         }
 
