@@ -163,7 +163,6 @@ impl Validator for FractionValidator {
 /// no larger than what we accept for `int` inputs.
 const MAX_FRACTION_EXPONENT: u64 = 4300;
 
-
 /// Whether the string uses exponent notation with an exponent larger than `MAX_FRACTION_EXPONENT`.
 fn exponent_too_large(s: &Bound<'_, PyString>) -> bool {
     // Based on https://github.com/python/cpython/blob/v3.14.8/Lib/fractions.py#L257-L283:
