@@ -2,7 +2,7 @@
 <!-- markdownlint-disable descriptive-link-text -->
 <!-- markdownlint-disable-next-line first-line-heading -->
 
-## v2.14.0 (2026-10-07)
+## v2.14.0 (2026-10-08)
 
 [GitHub release](https://github.com/pydantic/pydantic/releases/tag/v2.14.0)
 
@@ -34,7 +34,6 @@ This release drops support for Python 3.9 and adds support for Python 3.15.
 * Require `multiple_of` constraints to be positive by @Viicos in [#13862](https://github.com/pydantic/pydantic/pull/13862)
 * Always pop field name and model type stacks during schema generation by @saquibjawedbit in [#13859](https://github.com/pydantic/pydantic/pull/13859)
 * Handle `TypeError` gracefully during docstring extraction by @Viicos in [#13874](https://github.com/pydantic/pydantic/pull/13874)
-* Respect config in `TypeAdapter.json_schemas()` by @Viicos in [#13890](https://github.com/pydantic/pydantic/pull/13890)
 * Fix config propagation of stdlib dataclasses and `TypedDict`s in JSON Schema by @Viicos in [#13891](https://github.com/pydantic/pydantic/pull/13891)
 * Don't apply `ser_json_timedelta` to all datetime types in serialization inference by @Viicos in [#13892](https://github.com/pydantic/pydantic/pull/13892)
 * Encode JSON Schema defaults with a consistent configuration by @Viicos in [#13893](https://github.com/pydantic/pydantic/pull/13893)
