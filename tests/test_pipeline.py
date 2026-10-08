@@ -701,3 +701,35 @@ def test_constraint_on_constrained_type_keeps_type_constraint() -> None:
     assert ta.validate_python(10) == 10
     with pytest.raises(ValidationError):
         ta.validate_python(50)
+
+
+@pytest.mark.parametrize(
+    'pipeline, expected_schema',
+    [
+        (validate_as(int).le(10).le(5), {'type': 'integer', 'maximum': 5}),
+        (validate_as(int).le(5).le(10), {'type': 'integer', 'maximum': 5}),
+        (validate_as(int).lt(10).lt(5), {'type': 'integer', 'exclusiveMaximum': 5}),
+        (validate_as(int).gt(3).gt(5), {'type': 'integer', 'exclusiveMinimum': 5}),
+        (validate_as(int).ge(5).ge(3), {'type': 'integer', 'minimum': 5}),
+        (validate_as(str).len(0, 5).len(0, 3), {'type': 'string', 'maxLength': 3}),
+        (validate_as(str).len(1, 10).len(3, 5), {'type': 'string', 'minLength': 3, 'maxLength': 5}),
+        (validate_as(Annotated[int, Interval(le=10)]).le(100), {'type': 'integer', 'maximum': 10}),
+    ],
+)
+def test_repeated_bound_json_schema_uses_tighter_bound(pipeline: _Pipeline[Any, Any], expected_schema: Any) -> None:
+    """A repeated bound is merged natively, so the JSON schema advertises the bound that is enforced."""
+    assert TypeAdapter[Any](Annotated[Any, pipeline]).json_schema() == expected_schema
+
+
+def test_merge_native_bounds_falls_back_for_incomparable_values() -> None:
+    """A bound that can't be compared with the one already set is left to a Python check."""
+    from pydantic_core import core_schema as cs
+
+    from pydantic.experimental.pipeline import _merge_native_bounds  # pyright: ignore[reportPrivateUsage]
+
+    schema = cs.datetime_schema(gt=datetime.datetime(2020, 1, 1))
+    assert _merge_native_bounds(schema, {'datetime'}, {'gt': (datetime.date(2021, 1, 1), max)}) is None
+    assert _merge_native_bounds(schema, {'int'}, {'gt': (1, max)}) is None
+    merged = _merge_native_bounds(schema, {'datetime'}, {'gt': (datetime.datetime(2021, 1, 1), max)})
+    assert merged is not None
+    assert merged['gt'] == datetime.datetime(2021, 1, 1)  # pyright: ignore[reportGeneralTypeIssues]

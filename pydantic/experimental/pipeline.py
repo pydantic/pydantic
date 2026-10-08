@@ -11,7 +11,7 @@ from dataclasses import dataclass
 from functools import cached_property, partial
 from re import Pattern
 from types import EllipsisType
-from typing import TYPE_CHECKING, Annotated, Any, Generic, Protocol, TypeAlias, TypeGuard, TypeVar, overload
+from typing import TYPE_CHECKING, Annotated, Any, Generic, Protocol, TypeAlias, TypeGuard, TypeVar, cast, overload
 
 import annotated_types
 from typing_extensions import TypeForm
@@ -492,6 +492,32 @@ def _can_set_natively(s: cs.CoreSchema | None, schema_types: Collection[str], *k
     return s is not None and s['type'] in schema_types and not any(key in s for key in keys)
 
 
+def _merge_native_bounds(
+    s: cs.CoreSchema | None, schema_types: Collection[str], bounds: dict[str, tuple[Any, Callable[[Any, Any], Any]]]
+) -> cs.CoreSchema | None:
+    """Return a copy of `s` with each bound in `bounds` set natively, or `None` if that isn't possible.
+
+    `bounds` maps a core schema key to its new value and to `pick`, which chooses the tighter of two values
+    (`min` for an upper bound, `max` for a lower bound). A key that a previous step already set keeps the
+    tighter of the two values instead of being overridden, so the core schema, and the JSON schema generated
+    from it, enforce both constraints.
+
+    `None` is returned if the schema type doesn't support the bounds natively, or if an existing value can't
+    be compared with the new one; the caller then falls back to a Python check.
+    """
+    if s is None or s['type'] not in schema_types:
+        return None
+    merged: dict[str, Any] = dict(s)
+    for key, (value, pick) in bounds.items():
+        if key in merged:
+            try:
+                value = pick(merged[key], value)
+            except TypeError:
+                return None
+        merged[key] = value
+    return cast(cs.CoreSchema, merged)
+
+
 def _apply_constraint(  # noqa: C901
     s: cs.CoreSchema | None, constraint: _ConstraintAnnotation
 ) -> cs.CoreSchema:
@@ -500,9 +526,8 @@ def _apply_constraint(  # noqa: C901
     # when building the validator from the core schema:
     if isinstance(constraint, annotated_types.Gt):
         gt = constraint.gt
-        if _can_set_natively(s, _ORDERING_SCHEMA_TYPES, 'gt'):
-            s = s.copy()
-            s['gt'] = gt  # pyright: ignore[reportGeneralTypeIssues]
+        if (merged := _merge_native_bounds(s, _ORDERING_SCHEMA_TYPES, {'gt': (gt, max)})) is not None:
+            s = merged
         else:
 
             def check_gt(v: Any) -> bool:
@@ -511,9 +536,8 @@ def _apply_constraint(  # noqa: C901
             s = _check_func(check_gt, f'> {gt}', s)
     elif isinstance(constraint, annotated_types.Ge):
         ge = constraint.ge
-        if _can_set_natively(s, _ORDERING_SCHEMA_TYPES, 'ge'):
-            s = s.copy()
-            s['ge'] = ge  # pyright: ignore[reportGeneralTypeIssues]
+        if (merged := _merge_native_bounds(s, _ORDERING_SCHEMA_TYPES, {'ge': (ge, max)})) is not None:
+            s = merged
         else:
 
             def check_ge(v: Any) -> bool:
@@ -522,9 +546,8 @@ def _apply_constraint(  # noqa: C901
             s = _check_func(check_ge, f'>= {ge}', s)
     elif isinstance(constraint, annotated_types.Lt):
         lt = constraint.lt
-        if _can_set_natively(s, _ORDERING_SCHEMA_TYPES, 'lt'):
-            s = s.copy()
-            s['lt'] = lt  # pyright: ignore[reportGeneralTypeIssues]
+        if (merged := _merge_native_bounds(s, _ORDERING_SCHEMA_TYPES, {'lt': (lt, min)})) is not None:
+            s = merged
         else:
 
             def check_lt(v: Any) -> bool:
@@ -533,9 +556,8 @@ def _apply_constraint(  # noqa: C901
             s = _check_func(check_lt, f'< {lt}', s)
     elif isinstance(constraint, annotated_types.Le):
         le = constraint.le
-        if _can_set_natively(s, _ORDERING_SCHEMA_TYPES, 'le'):
-            s = s.copy()
-            s['le'] = le  # pyright: ignore[reportGeneralTypeIssues]
+        if (merged := _merge_native_bounds(s, _ORDERING_SCHEMA_TYPES, {'le': (le, min)})) is not None:
+            s = merged
         else:
 
             def check_le(v: Any) -> bool:
@@ -546,18 +568,14 @@ def _apply_constraint(  # noqa: C901
         min_len = constraint.min_length
         max_len = constraint.max_length
 
-        len_keys: list[str] = []
+        len_bounds: dict[str, tuple[Any, Callable[[Any, Any], Any]]] = {}
         if min_len != 0:
-            len_keys.append('min_length')
+            len_bounds['min_length'] = (min_len, max)
         if max_len is not None:
-            len_keys.append('max_length')
+            len_bounds['max_length'] = (max_len, min)
 
-        if _can_set_natively(s, _LENGTH_SCHEMA_TYPES, *len_keys):
-            s = s.copy()
-            if min_len != 0:
-                s['min_length'] = min_len  # pyright: ignore[reportGeneralTypeIssues]
-            if max_len is not None:
-                s['max_length'] = max_len  # pyright: ignore[reportGeneralTypeIssues]
+        if (merged := _merge_native_bounds(s, _LENGTH_SCHEMA_TYPES, len_bounds)) is not None:
+            s = merged
         else:
 
             def check_len(v: Any) -> bool:
