@@ -1,3 +1,4 @@
+import platform
 import re
 from copy import deepcopy
 
@@ -735,7 +736,9 @@ def test_multi_host_url_ok_2(py_and_json: PyAndJson):
     ]
 
 
-@pytest.mark.timeout(5)
+@pytest.mark.timeout(
+    20 if platform.python_implementation() == 'PyPy' else 5  # PyPy is ~3-5x slower, even in linear time
+)
 @pytest.mark.parametrize(
     ['prefix', 'expected_prefix', 'expected_suffix', 'expected_port'],
     [
