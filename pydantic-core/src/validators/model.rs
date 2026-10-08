@@ -64,6 +64,20 @@ pub struct ModelValidator {
     name: String,
 }
 
+impl ModelValidator {
+    /// Prototype support for the streaming json path: the shapes it can handle, and the pieces it
+    /// needs to build an instance itself.
+    pub(crate) fn stream_parts(&self) -> Option<(&Py<PyType>, &Arc<CombinedValidator>)> {
+        if self.custom_init || self.root_model || self.post_init.is_some() || self.frozen {
+            return None;
+        }
+        if !matches!(self.revalidate, Revalidate::Never) {
+            return None;
+        }
+        Some((&self.class, &self.validator))
+    }
+}
+
 impl BuildValidator for ModelValidator {
     const EXPECTED_TYPE: &'static str = "model";
 
@@ -345,7 +359,7 @@ impl ModelValidator {
 
 /// based on the following but with the second argument of new_func set to an empty tuple as required
 /// https://github.com/PyO3/pyo3/blob/d2caa056e9aacc46374139ef491d112cb8af1a25/src/pyclass_init.rs#L35-L77
-pub(super) fn create_class<'py>(class: &Bound<'py, PyType>) -> PyResult<Bound<'py, PyAny>> {
+pub(crate) fn create_class<'py>(class: &Bound<'py, PyType>) -> PyResult<Bound<'py, PyAny>> {
     let py = class.py();
     let args = PyTuple::empty(py);
     let raw_type = class.as_type_ptr();
@@ -364,7 +378,7 @@ pub(super) fn create_class<'py>(class: &Bound<'py, PyType>) -> PyResult<Bound<'p
     }
 }
 
-fn set_model_attrs(
+pub(crate) fn set_model_attrs(
     instance: &Bound<'_, PyAny>,
     model_dict: &Bound<'_, PyAny>,
     model_extra: &Bound<'_, PyAny>,
