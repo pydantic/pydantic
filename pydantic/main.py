@@ -621,11 +621,12 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
             union_format: The format to use when combining schemas from unions together. Can be one of:
 
                 - `'any_of'`: Use the [`anyOf`](https://json-schema.org/understanding-json-schema/reference/combining#anyOf)
-                keyword to combine schemas (the default).
+                  keyword to combine schemas (the default).
                 - `'primitive_type_array'`: Use the [`type`](https://json-schema.org/understanding-json-schema/reference/type)
-                keyword as an array of strings, containing each type of the combination. If any of the schemas is not a primitive
-                type (`string`, `boolean`, `null`, `integer` or `number`) or contains constraints/metadata, falls back to
-                `any_of`.
+                  keyword as an array of strings, containing each type of the combination. If any of the schemas is not a primitive
+                  type (`string`, `boolean`, `null`, `integer` or `number`) or contains constraints/metadata, falls back to
+                  `any_of`.
+
             schema_generator: To override the logic used to generate the JSON schema, as a subclass of
                 `GenerateJsonSchema` with your desired modifications
             mode: The mode in which to generate the schema.
