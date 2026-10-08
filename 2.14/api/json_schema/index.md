@@ -270,7 +270,29 @@ def generate_definitions(
     Raises:
         PydanticUserError: Raised if the JSON schema generator has already been used to generate a JSON schema.
     """
-    return self._generate_definitions([(key, mode, schema, None) for key, mode, schema in inputs])
+    if self._used:
+        raise PydanticUserError(
+            'This JSON schema generator has already been used to generate a JSON schema. '
+            f'You must create a new instance of {type(self).__name__} to generate a new JSON schema.',
+            code='json-schema-already-used',
+        )
+
+    for _, mode, schema in inputs:
+        self._mode = mode
+        self.generate_inner(schema)
+
+    definitions_remapping = self._build_definitions_remapping()
+
+    json_schemas_map: dict[tuple[JsonSchemaKeyT, JsonSchemaMode], DefsRef] = {}
+    for key, mode, schema in inputs:
+        self._mode = mode
+        json_schema = self.generate_inner(schema)
+        json_schemas_map[(key, mode)] = definitions_remapping.remap_json_schema(json_schema)
+
+    json_schema = {'$defs': self.definitions}
+    json_schema = definitions_remapping.remap_json_schema(json_schema)
+    self._used = True
+    return json_schemas_map, self.sort(json_schema['$defs'])  # type: ignore
 
 ```
 
