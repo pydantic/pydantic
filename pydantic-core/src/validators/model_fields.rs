@@ -180,8 +180,8 @@ impl Validator for ModelFieldsValidator {
             self.validate_by_get_item(py, input, dict, state)?
         };
 
-        // if we have extra=allow, but we didn't create a dict because we were validating
-        // from attributes, set it now so __pydantic_extra__ is always a dict if extra=allow
+        // if we have extra=allow, but we didn't create a dict (e.g. because we were validating
+        // from attributes or there were no extra keys), set it now so __pydantic_extra__ is always a dict if extra=allow
         if matches!(extra_behavior, ExtraBehavior::Allow) && model_extra_dict_op.is_none() {
             model_extra_dict_op = Some(PyDict::new(py));
         }
@@ -564,7 +564,6 @@ impl ModelFieldsValidator {
         let state = &mut state.scoped_set_data(Some(model_dict.clone()));
         let state = &mut state.scoped_clear_field_error();
 
-        let model_extra_dict = PyDict::new(py);
         for (key, value) in &**json_object {
             let mut handled = false;
             let key = key.as_ref();
@@ -604,6 +603,7 @@ impl ModelFieldsValidator {
                 }
                 ExtraBehavior::Ignore => {}
                 ExtraBehavior::Allow => {
+                    let model_extra_dict = model_extra_dict_op.get_or_insert_with(|| PyDict::new(py));
                     let py_key: Bound<'_, PyString> = new_py_string(py, key, state.cache_str());
                     if let Some(validator) = &self.extras_validator {
                         match validator.validate(py, value, state) {
@@ -688,10 +688,6 @@ impl ModelFieldsValidator {
             };
 
             model_dict.set_item(&field.name, field_value)?;
-        }
-
-        if matches!(extra_behavior, ExtraBehavior::Allow) {
-            model_extra_dict_op = Some(model_extra_dict);
         }
 
         if !errors.is_empty() {
