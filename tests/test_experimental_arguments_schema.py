@@ -97,6 +97,34 @@ def test_arguments_v3_kwargs_uniform() -> None:
     assert kwargs == {'extra': 1}
 
 
+class _Options(TypedDict):
+    b: int
+
+
+def _var_args(a: int = 1, *args: int) -> None: ...
+
+
+def _var_kwargs_uniform(a: int = 1, **kwargs: int) -> None: ...
+
+
+def _var_kwargs_unpacked_typed_dict(a: int = 1, **kwargs: Unpack[_Options]) -> None: ...
+
+
+@pytest.mark.parametrize(
+    ['func', 'input', 'expected'],
+    [
+        (_var_args, {'args': [2, 3]}, ((1, 2, 3), {})),
+        (_var_kwargs_uniform, {'kwargs': {'b': 2}}, ((1,), {'b': 2})),
+        (_var_kwargs_unpacked_typed_dict, {'kwargs': {'b': 2}}, ((1,), {'b': 2})),
+    ],
+)
+def test_arguments_v3_variadic_after_default(func: Any, input: Any, expected: Any) -> None:
+    arguments_schema = generate_arguments_schema(func=func, schema_type='arguments-v3')
+    val = SchemaValidator(arguments_schema)
+
+    assert val.validate_python(input) == expected
+
+
 def test_unpacked_typed_dict_kwargs_invalid_type() -> None:
     def func(**kwargs: Unpack[int]): ...
 
