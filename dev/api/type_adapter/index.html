@@ -7262,9 +7262,7 @@ type (<code>string</code>, <code>boolean</code>, <code>null</code>, <code>intege
 <span class="normal">773</span>
 <span class="normal">774</span>
 <span class="normal">775</span>
-<span class="normal">776</span>
-<span class="normal">777</span>
-<span class="normal">778</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@staticmethod</span>
+<span class="normal">776</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@staticmethod</span>
 <span class="k">def</span><span class="w"> </span><span class="nf">json_schemas</span><span class="p">(</span>
     <span class="n">inputs</span><span class="p">:</span> <span class="n">Iterable</span><span class="p">[</span><span class="nb">tuple</span><span class="p">[</span><span class="n">JsonSchemaKeyT</span><span class="p">,</span> <span class="n">JsonSchemaMode</span><span class="p">,</span> <span class="n">TypeAdapter</span><span class="p">[</span><span class="n">Any</span><span class="p">]]],</span>
     <span class="o">/</span><span class="p">,</span>
@@ -7318,11 +7316,9 @@ type (<code>string</code>, <code>boolean</code>, <code>null</code>, <code>intege
             <span class="k">assert</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">adapter</span><span class="o">.</span><span class="n">core_schema</span><span class="p">,</span> <span class="n">_mock_val_ser</span><span class="o">.</span><span class="n">MockCoreSchema</span><span class="p">),</span> <span class="p">(</span>
                 <span class="s1">&#39;this is a bug! please report it&#39;</span>
             <span class="p">)</span>
-        <span class="c1"># The configuration provided to the type adapter (if any) is not part of the core schema,</span>
-        <span class="c1"># so we need to explicitly make it available to the JSON Schema generator:</span>
-        <span class="n">inputs_</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">key</span><span class="p">,</span> <span class="n">mode</span><span class="p">,</span> <span class="n">adapter</span><span class="o">.</span><span class="n">core_schema</span><span class="p">,</span> <span class="n">adapter</span><span class="o">.</span><span class="n">_config</span><span class="p">))</span>
+        <span class="n">inputs_</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">key</span><span class="p">,</span> <span class="n">mode</span><span class="p">,</span> <span class="n">adapter</span><span class="o">.</span><span class="n">core_schema</span><span class="p">))</span>
 
-    <span class="n">json_schemas_map</span><span class="p">,</span> <span class="n">definitions</span> <span class="o">=</span> <span class="n">schema_generator_instance</span><span class="o">.</span><span class="n">_generate_definitions</span><span class="p">(</span><span class="n">inputs_</span><span class="p">)</span>
+    <span class="n">json_schemas_map</span><span class="p">,</span> <span class="n">definitions</span> <span class="o">=</span> <span class="n">schema_generator_instance</span><span class="o">.</span><span class="n">generate_definitions</span><span class="p">(</span><span class="n">inputs_</span><span class="p">)</span>
 
     <span class="n">json_schema</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
     <span class="k">if</span> <span class="n">definitions</span><span class="p">:</span>
