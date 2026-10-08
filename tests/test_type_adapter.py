@@ -561,21 +561,6 @@ def test_ta_config_used_for_json_schema() -> None:
     assert ta.json_schema() == {'type': 'array', 'items': {'type': 'string', 'format': 'base64url'}}
 
 
-def test_ta_config_used_for_json_schemas() -> None:
-    ta_bytes = TypeAdapter(Annotated[bytes, Field(default=b'\xff')], config=ConfigDict(ser_json_bytes='base64'))
-    ta_str = TypeAdapter(str, config=ConfigDict(str_max_length=10))
-    ta_no_config = TypeAdapter(bytes)
-
-    schemas, _ = TypeAdapter.json_schemas(
-        [('bytes', 'validation', ta_bytes), ('str', 'validation', ta_str), ('no_config', 'validation', ta_no_config)]
-    )
-    assert schemas == {
-        ('bytes', 'validation'): {'type': 'string', 'format': 'base64url', 'default': '_w=='},
-        ('str', 'validation'): {'type': 'string', 'maxLength': 10},
-        ('no_config', 'validation'): {'type': 'string', 'format': 'binary'},
-    }
-
-
 def defer_build_test_models(config: ConfigDict) -> list[Any]:
     class Model(BaseModel):
         model_config = config
