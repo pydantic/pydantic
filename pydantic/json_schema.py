@@ -2058,7 +2058,11 @@ class GenerateJsonSchema:
 
         keyword_possible = not p_only_arguments and not var_args_schema
         if keyword_possible:
-            return self.kw_arguments_schema(kw_or_p_arguments + kw_only_arguments, var_kwargs_schema)
+            return self.kw_arguments_schema(
+                kw_or_p_arguments + kw_only_arguments,
+                var_kwargs_schema,
+                var_kwargs_mode=schema.get('var_kwargs_mode') or 'uniform',
+            )
 
         if not prefer_positional:
             positional_possible = not kw_only_arguments and not var_kwargs_schema
@@ -2070,12 +2074,18 @@ class GenerateJsonSchema:
         )
 
     def kw_arguments_schema(
-        self, arguments: list[core_schema.ArgumentsParameter], var_kwargs_schema: CoreSchema | None
+        self,
+        arguments: list[core_schema.ArgumentsParameter],
+        var_kwargs_schema: CoreSchema | None,
+        *,
+        var_kwargs_mode: core_schema.VarKwargsMode = 'uniform',
     ) -> JsonSchemaValue:
         """Generates a JSON schema that matches a schema that defines a function's keyword arguments.
 
         Args:
             arguments: The core schema.
+            var_kwargs_schema: The core schema of the variadic keyword arguments, if any.
+            var_kwargs_mode: How the variadic keyword arguments are validated.
 
         Returns:
             The generated JSON schema.
@@ -2099,12 +2109,23 @@ class GenerateJsonSchema:
         if required:
             json_schema['required'] = required
 
-        if var_kwargs_schema:
+        if var_kwargs_schema is None:
+            json_schema['additionalProperties'] = False
+        elif var_kwargs_mode == 'unpacked-typed-dict':
+            # The validator validates the extra keyword arguments against the typed dictionary,
+            # so its properties are merged with the arguments ones (overlapping names are rejected
+            # at schema generation time). The typed dictionary also controls extra keyword arguments.
+            typed_dict_json_schema = self.resolve_ref_schema(self.generate_inner(var_kwargs_schema))
+            properties.update(typed_dict_json_schema.get('properties', {}))
+            required.extend(typed_dict_json_schema.get('required', []))
+            if required:
+                json_schema['required'] = required
+            if 'additionalProperties' in typed_dict_json_schema:
+                json_schema['additionalProperties'] = typed_dict_json_schema['additionalProperties']
+        else:
             additional_properties_schema = self.generate_inner(var_kwargs_schema)
             if additional_properties_schema:
                 json_schema['additionalProperties'] = additional_properties_schema
-        else:
-            json_schema['additionalProperties'] = False
         return json_schema
 
     def p_arguments_schema(
@@ -2193,7 +2214,7 @@ class GenerateJsonSchema:
             properties[name] = argument_schema
 
             if (
-                (mode == 'var_kwargs_unpacked_typed_dict' and 'required' in argument_schema)
+                (mode == 'var_kwargs_unpacked_typed_dict' and 'required' in self.resolve_ref_schema(argument_schema))
                 or mode not in {'var_args', 'var_kwargs_uniform', 'var_kwargs_unpacked_typed_dict'}
                 and argument['schema']['type'] != 'default'
             ):

@@ -31,7 +31,7 @@ from annotated_types import Interval
 from dirty_equals import HasRepr
 from pydantic_core import CoreSchema, SchemaValidator, core_schema, to_jsonable_python
 from pydantic_core.core_schema import ValidatorFunctionWrapHandler
-from typing_extensions import TypeAliasType, TypedDict, deprecated
+from typing_extensions import NotRequired, TypeAliasType, TypedDict, Unpack, deprecated
 
 import pydantic
 from pydantic import (
@@ -62,6 +62,7 @@ from pydantic.color import Color
 from pydantic.config import ConfigDict, ExtraValues
 from pydantic.dataclasses import dataclass
 from pydantic.errors import PydanticInvalidForJsonSchema
+from pydantic.experimental.arguments_schema import generate_arguments_schema
 from pydantic.json_schema import (
     DEFAULT_REF_TEMPLATE,
     Examples,
@@ -7297,12 +7298,58 @@ AnnBool = Annotated[
 
 
 def test_with_json_schema_doesnt_share_schema() -> None:
-    # See https://github.com/pydantic/pydantic/issues/11013
+    """https://github.com/pydantic/pydantic/issues/11013"""
+
     class Model(BaseModel):
         field1: AnnBool = Field(default=False)
         field2: AnnBool | None = Field(default=None)
 
     assert Model.model_json_schema()['properties']['field2']['anyOf'][0] == dict()
+
+
+def test_json_schema_arguments_var_kwargs_unpacked_typed_dict() -> None:
+    """https://github.com/pydantic/pydantic/issues/13938"""
+
+    class Options(TypedDict):
+        timeout: int
+        label: NotRequired[str]
+
+    def func(name: str = 'job', **kwargs: Unpack[Options]) -> None: ...
+
+    assert TypeAdapter(func).json_schema() == {
+        'type': 'object',
+        'properties': {
+            'name': {'default': 'job', 'title': 'Name', 'type': 'string'},
+            'timeout': {'title': 'Timeout', 'type': 'integer'},
+            'label': {'title': 'Label', 'type': 'string'},
+        },
+        'required': ['timeout'],
+    }
+
+
+def test_json_schema_arguments_var_kwargs_unpacked_typed_dict_extra_items() -> None:
+    class Closed(TypedDict, closed=True):
+        a: int
+
+    class ExtraItems(TypedDict, extra_items=int):
+        a: int
+
+    def closed(**kwargs: Unpack[Closed]) -> None: ...
+
+    def extra_items(**kwargs: Unpack[ExtraItems]) -> None: ...
+
+    assert TypeAdapter(closed).json_schema() == {
+        'type': 'object',
+        'properties': {'a': {'title': 'A', 'type': 'integer'}},
+        'required': ['a'],
+        'additionalProperties': False,
+    }
+    assert TypeAdapter(extra_items).json_schema() == {
+        'type': 'object',
+        'properties': {'a': {'title': 'A', 'type': 'integer'}},
+        'required': ['a'],
+        'additionalProperties': {'type': 'integer'},
+    }
 
 
 def test_json_schema_arguments_v3() -> None:
@@ -7387,6 +7434,23 @@ def test_json_schema_arguments_v3_var_kwargs_unpacked_typed_dict_not_required() 
             },
         },
     }
+
+
+@pytest.mark.parametrize(
+    ['total', 'required'],
+    [(True, ['name', 'kwargs']), (False, ['name'])],
+)
+def test_json_schema_arguments_v3_var_kwargs_unpacked_typed_dict_ref(total: bool, required: list[str]) -> None:
+    class Options(TypedDict, total=total):
+        timeout: int
+
+    def func(name: str, **kwargs: Unpack[Options]) -> None: ...
+
+    schema = generate_arguments_schema(func, schema_type='arguments-v3')
+    json_schema = GenerateJsonSchema().generate(schema)
+
+    assert json_schema['properties']['kwargs'] == {'$ref': '#/$defs/Options', 'title': 'Kwargs'}
+    assert json_schema['required'] == required
 
 
 def test_json_schema_arguments_v3_aliases() -> None:
