@@ -208,8 +208,12 @@ def _type_convert(arg: Any) -> Any:
         return NoneType
     if isinstance(arg, str):
         # Like `typing.get_type_hints()`, assume the arg can be in any context,
-        # hence the proper `is_argument` and `is_class` args:
-        return ForwardRef(arg, is_argument=False, is_class=True)
+        # hence the proper `is_argument` and `is_class` args. `is_class` is only
+        # available on newer interpreters, so fall back without it (#13957):
+        try:
+            return ForwardRef(arg, is_argument=False, is_class=True)
+        except TypeError:
+            return ForwardRef(arg, is_argument=False)
     return arg
 
 

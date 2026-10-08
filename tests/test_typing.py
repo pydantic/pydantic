@@ -6,6 +6,7 @@ import pytest
 from pydantic import BaseModel, Field  # noqa: F401
 from pydantic._internal._typing_extra import (
     NoneType,
+    _type_convert,
     get_function_type_hints,
     is_classvar_annotation,
     is_namedtuple,
@@ -102,3 +103,17 @@ def test_exotic_localns() -> None:
         foo: __foo_annotation__
 
     assert Model.model_fields['foo'].annotation == str
+
+
+def test_type_convert_without_is_class_support(monkeypatch: pytest.MonkeyPatch) -> None:
+    """`ForwardRef` has no `is_class` argument on older interpreters (#13957)."""
+    real_forward_ref = ForwardRef
+
+    def forward_ref_without_is_class(arg, is_argument=True, module=None, **kwargs):
+        if 'is_class' in kwargs:
+            raise TypeError("ForwardRef.__init__() got an unexpected keyword argument 'is_class'")
+        return real_forward_ref(arg, is_argument=is_argument, module=module)
+
+    monkeypatch.setattr('pydantic._internal._typing_extra.ForwardRef', forward_ref_without_is_class)
+
+    assert _type_convert('int') == real_forward_ref('int')
