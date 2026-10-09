@@ -49,6 +49,11 @@ jobs:
   core-build-sdist:
     runs-on: ubuntu-latest
     name: core / Build sdist
+    permissions:
+      contents: read
+      # Required to attest build provenance, verified by the release job:
+      id-token: write
+      attestations: write
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -62,6 +67,10 @@ jobs:
           command: sdist
           args: --out dist
           rust-toolchain: stable
+      - uses: actions/attest@1e69f48acb82d1966a394da916b4c1698aa569d6 # v4.2.2
+        if: startsWith(github.ref, 'refs/tags/')
+        with:
+          subject-path: pydantic-core/dist/*
       - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: pydantic_core_pypi_files_sdist
@@ -71,6 +80,11 @@ jobs:
     name: core / Build on ${{ matrix.os }} (${{ matrix.target }} - ${{ matrix.interpreter || 'all' }}${{ matrix.os == 'linux' && format(' - {0}', matrix.manylinux == 'auto' && 'manylinux' || matrix.manylinux) || '' }})
     # only run on push to main, if a full build was requested or on release:
     if: startsWith(github.ref, 'refs/tags/') || github.ref == 'refs/heads/main' || contains(github.event.pull_request.labels.*.name, 'full build')
+    permissions:
+      contents: read
+      # Required to attest build provenance, verified by the release job:
+      id-token: write
+      attestations: write
     strategy:
       fail-fast: false
       matrix:
@@ -178,6 +192,11 @@ jobs:
 
       - run: uv run --no-sync twine check --strict pydantic-core/dist/*
 
+      - uses: actions/attest@1e69f48acb82d1966a394da916b4c1698aa569d6 # v4.2.2
+        if: startsWith(github.ref, 'refs/tags/')
+        with:
+          subject-path: pydantic-core/dist/*
+
       - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: pydantic_core_pypi_files_${{ matrix.os }}_${{ matrix.target }}_${{ matrix.interpreter || 'all' }}_${{ matrix.manylinux }}
@@ -187,6 +206,11 @@ jobs:
     name: core / Build PGO-optimized on ${{ matrix.platform.os }} / ${{ matrix.interpreter }}
     # only run on push to main, if a full build was requested or on release:
     if: startsWith(github.ref, 'refs/tags/') || github.ref == 'refs/heads/main' || contains(github.event.pull_request.labels.*.name, 'full build')
+    permissions:
+      contents: read
+      # Required to attest build provenance, verified by the release job:
+      id-token: write
+      attestations: write
     strategy:
       fail-fast: false
       matrix:
@@ -234,6 +258,11 @@ jobs:
       - run: ${{ (startsWith(matrix.platform.os, 'windows') && 'dir') || 'ls -lh' }} dist/
         working-directory: pydantic-core
 
+      - uses: actions/attest@1e69f48acb82d1966a394da916b4c1698aa569d6 # v4.2.2
+        if: startsWith(github.ref, 'refs/tags/')
+        with:
+          subject-path: pydantic-core/dist/*
+
       - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: pydantic_core_pypi_files_${{ matrix.platform.os }}_${{ matrix.interpreter }}
@@ -242,6 +271,11 @@ jobs:
   core-build-pyemscripten:
     name: core / Build PyEmscripten (${{ matrix.python-version }})
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      # Required to attest build provenance, verified by the release job:
+      id-token: write
+      attestations: write
     strategy:
       fail-fast: false
       matrix:
@@ -299,6 +333,11 @@ jobs:
       - run: ls -lh dist/
         working-directory: pydantic-core
 
+      - uses: actions/attest@1e69f48acb82d1966a394da916b4c1698aa569d6 # v4.2.2
+        if: startsWith(github.ref, 'refs/tags/')
+        with:
+          subject-path: pydantic-core/dist/*
+
       - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: pydantic_core_pypi_files_pyemscripten_${{ matrix.python-version }}
@@ -353,6 +392,17 @@ jobs:
           merge-multiple: true
           path: dist
 
+      # The workspace is mounted in the container, so the installer can be verified on the host:
+      - name: Get uv installer
+        run: |
+          curl -LsSf https://astral.sh/uv/install.sh -o uv-installer.sh
+          gh attestation verify uv-installer.sh \
+            --repo astral-sh/uv \
+            --signer-workflow astral-sh/uv/.github/workflows/release.yml \
+            --deny-self-hosted-runners
+        env:
+          GH_TOKEN: ${{ github.token }}
+
       - uses: uraimo/run-on-arch-action@460cb8e6d9f726a588fc9b5e681c8a6cab09ae41 # v3.2.0
         name: Install and test
         with:
@@ -377,7 +427,7 @@ jobs:
           # and then sync the parent workspace:
           run: |
             set -x
-            curl -LsSf https://astral.sh/uv/install.sh | sh
+            sh uv-installer.sh
             source $HOME/.local/bin/env
             uv sync --directory pydantic-core --group testing-extra --no-install-package pydantic-core
             uv sync --group testing-extra --no-install-package pydantic-core --no-install-package pytest-memray --no-install-package memray --no-install-package pytest-codspeed --no-install-package cffi --no-install-package time-machine --inexact
@@ -636,6 +686,11 @@ jobs:
   build-pydantic:
     runs-on: ubuntu-latest
     if: startsWith(github.ref, 'refs/tags/')
+    permissions:
+      contents: read
+      # Required to attest build provenance, verified by the release job:
+      id-token: write
+      attestations: write
     outputs:
       pydantic-version: ${{ steps.check-tag.outputs.VERSION }}
 
@@ -660,6 +715,10 @@ jobs:
         run: uv run --no-sync python -m build --installer uv
 
       - run: ls -lh dist/
+
+      - uses: actions/attest@1e69f48acb82d1966a394da916b4c1698aa569d6 # v4.2.2
+        with:
+          subject-path: dist/*
 
       - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
@@ -943,7 +1002,8 @@ jobs:
       - uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7 # v10.2.0
         with:
           python-version: ${{ matrix.python-version }}
-          enable-cache: true # zizmor: ignore[cache-poisoning] -- Job does not produce release artifacts and does not have sensitive permissions
+          # Installs `typing-extensions` from its `main` branch, so don't write to (nor read from) the shared cache:
+          enable-cache: false
 
       - name: Install dependencies
         run: uv sync --all-packages --group testing-extra --all-extras
@@ -999,6 +1059,7 @@ jobs:
 
     permissions:
       id-token: write
+      attestations: read
 
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -1040,6 +1101,20 @@ jobs:
           merge-multiple: true
           path: pydantic-core-dist
 
+      - name: Verify pydantic-core dist artifacts provenance
+        if: steps.check-pypi.outputs.already_published != 'true'
+        run: |
+          for f in pydantic-core-dist/*; do
+            gh attestation verify "$f" \
+              --repo "$GITHUB_REPOSITORY" \
+              --signer-workflow "$GITHUB_REPOSITORY/.github/workflows/ci.yml" \
+              --source-ref "$GITHUB_REF" \
+              --source-digest "$GITHUB_SHA" \
+              --deny-self-hosted-runners
+          done
+        env:
+          GH_TOKEN: ${{ github.token }}
+
       - name: Test pydantic-core wheels integrity
         if: steps.check-pypi.outputs.already_published != 'true'
         run: |
@@ -1059,6 +1134,7 @@ jobs:
     permissions:
       id-token: write
       contents: write
+      attestations: read
 
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -1076,6 +1152,19 @@ jobs:
         with:
           name: pydantic_pypi_files
           path: pydantic-dist
+
+      - name: Verify pydantic dist artifacts provenance
+        run: |
+          for f in pydantic-dist/*; do
+            gh attestation verify "$f" \
+              --repo "$GITHUB_REPOSITORY" \
+              --signer-workflow "$GITHUB_REPOSITORY/.github/workflows/ci.yml" \
+              --source-ref "$GITHUB_REF" \
+              --source-digest "$GITHUB_SHA" \
+              --deny-self-hosted-runners
+          done
+        env:
+          GH_TOKEN: ${{ github.token }}
 
       - name: Test pydantic artifacts integrity
         run: |

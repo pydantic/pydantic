@@ -18,6 +18,20 @@ outputs:
 runs:
   using: composite
   steps:
+    # The working directory is mounted in the maturin container, so the installer can be verified on the host:
+    - name: Get uv installer
+      if: runner.os == 'Linux'
+      working-directory: ${{ inputs.working-directory }}
+      run: |
+        curl -LsSf https://astral.sh/uv/install.sh -o uv-installer.sh
+        gh attestation verify uv-installer.sh \
+          --repo astral-sh/uv \
+          --signer-workflow astral-sh/uv/.github/workflows/release.yml \
+          --deny-self-hosted-runners
+      shell: bash
+      env:
+        GH_TOKEN: ${{ github.token }}
+
     - name: Build PGO-optimized wheel
       uses: PyO3/maturin-action@04ac600d27cdf7a9a280dadf7147097c42b757ad # v1.50.1
       with:
@@ -25,7 +39,7 @@ runs:
         manylinux: auto
         # `uv` is needed for the maturin `pgo-command` to use it
         before-script-linux: |
-          curl -LsSf https://astral.sh/uv/install.sh | env UV_UNMANAGED_INSTALL=/usr/local/bin sh
+          env UV_UNMANAGED_INSTALL=/usr/local/bin sh uv-installer.sh
         args: >
           --release
           --pgo
