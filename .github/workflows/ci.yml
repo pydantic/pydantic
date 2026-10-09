@@ -392,6 +392,17 @@ jobs:
           merge-multiple: true
           path: dist
 
+      # The workspace is mounted in the container, so the installer can be verified on the host:
+      - name: Get uv installer
+        run: |
+          curl -LsSf https://astral.sh/uv/install.sh -o uv-installer.sh
+          gh attestation verify uv-installer.sh \
+            --repo astral-sh/uv \
+            --signer-workflow astral-sh/uv/.github/workflows/release.yml \
+            --deny-self-hosted-runners
+        env:
+          GH_TOKEN: ${{ github.token }}
+
       - uses: uraimo/run-on-arch-action@460cb8e6d9f726a588fc9b5e681c8a6cab09ae41 # v3.2.0
         name: Install and test
         with:
@@ -416,7 +427,7 @@ jobs:
           # and then sync the parent workspace:
           run: |
             set -x
-            curl -LsSf https://astral.sh/uv/install.sh | sh
+            sh uv-installer.sh
             source $HOME/.local/bin/env
             uv sync --directory pydantic-core --group testing-extra --no-install-package pydantic-core
             uv sync --group testing-extra --no-install-package pydantic-core --no-install-package pytest-memray --no-install-package memray --no-install-package pytest-codspeed --no-install-package cffi --no-install-package time-machine --inexact
@@ -991,7 +1002,8 @@ jobs:
       - uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7 # v10.2.0
         with:
           python-version: ${{ matrix.python-version }}
-          enable-cache: true # zizmor: ignore[cache-poisoning] -- Job does not produce release artifacts and does not have sensitive permissions
+          # Installs `typing-extensions` from its `main` branch, so don't write to (nor read from) the shared cache:
+          enable-cache: false
 
       - name: Install dependencies
         run: uv sync --all-packages --group testing-extra --all-extras

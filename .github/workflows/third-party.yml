@@ -1,4 +1,4 @@
-# This workflow is a daily cron job, inspired by:
+# This workflow runs on pull requests labeled with `third-party-tests`, inspired by:
 # https://github.com/python/typing_extensions/blob/main/.github/workflows/third_party.yml.
 # Running the tests of various third-party libraries that use Pydantic. This helps us spot regressions early, and helps
 # flag when third-party libraries are making incorrect assumptions that might cause them to break when we cut a new release.
@@ -13,12 +13,8 @@
 name: Third party tests
 
 on:
-  schedule:
-    - cron: '0 12 * * *' # Daily at midnight UTC
   pull_request:
     branches: [main]
-  # Can be manually triggered from the Actions tab, if needed:
-  workflow_dispatch:
 
 permissions:
   contents: read
@@ -36,11 +32,7 @@ concurrency:
 jobs:
   test-fastapi:
     name: Test FastAPI (main branch) on Python ${{ matrix.python-version }}
-    # If 'schedule' was the trigger, don't run it on contributors' forks
-    if: |
-      github.event_name == 'workflow_dispatch' ||
-      (github.event_name == 'schedule' && github.repository == 'pydantic/pydantic') ||
-      (github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'third-party-tests'))
+    if: contains(github.event.pull_request.labels.*.name, 'third-party-tests')
 
     runs-on: ubuntu-latest
     strategy:
@@ -78,11 +70,7 @@ jobs:
 
   test-sqlmodel:
     name: Test SQLModel (main branch) on Python ${{ matrix.python-version }}
-    # If 'schedule' was the trigger, don't run it on contributors' forks
-    if: |
-      github.event_name == 'workflow_dispatch' ||
-      (github.event_name == 'schedule' && github.repository == 'pydantic/pydantic') ||
-      (github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'third-party-tests'))
+    if: contains(github.event.pull_request.labels.*.name, 'third-party-tests')
 
     runs-on: ubuntu-latest
     strategy:
@@ -122,11 +110,7 @@ jobs:
 
   test-beanie:
     name: Test Beanie (main branch) on Python ${{ matrix.python-version }}
-    # If 'schedule' was the trigger, don't run it on contributors' forks
-    if: |
-      github.event_name == 'workflow_dispatch' ||
-      (github.event_name == 'schedule' && github.repository == 'pydantic/pydantic') ||
-      (github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'third-party-tests'))
+    if: contains(github.event.pull_request.labels.*.name, 'third-party-tests')
 
     runs-on: ubuntu-latest
     strategy:
@@ -171,11 +155,7 @@ jobs:
 
   test-openapi-python-client:
     name: Test openapi-python-client (main branch) on Python ${{ matrix.python-version }}
-    # If 'schedule' was the trigger, don't run it on contributors' forks
-    if: |
-      github.event_name == 'workflow_dispatch' ||
-      (github.event_name == 'schedule' && github.repository == 'pydantic/pydantic') ||
-      (github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'third-party-tests'))
+    if: contains(github.event.pull_request.labels.*.name, 'third-party-tests')
 
     runs-on: ubuntu-latest
     strategy:
@@ -217,11 +197,7 @@ jobs:
 
   test-pandera:
     name: Test Pandera (main branch) on Python ${{ matrix.python-version }}
-    # If 'schedule' was the trigger, don't run it on contributors' forks
-    if: |
-      github.event_name == 'workflow_dispatch' ||
-      (github.event_name == 'schedule' && github.repository == 'pydantic/pydantic') ||
-      (github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'third-party-tests'))
+    if: contains(github.event.pull_request.labels.*.name, 'third-party-tests')
 
     runs-on: ubuntu-latest
     strategy:
@@ -268,11 +244,7 @@ jobs:
 
   test-odmantic:
     name: Test ODMantic (main branch) on Python ${{ matrix.python-version }}
-    # If 'schedule' was the trigger, don't run it on contributors' forks
-    if: |
-      github.event_name == 'workflow_dispatch' ||
-      (github.event_name == 'schedule' && github.repository == 'pydantic/pydantic') ||
-      (github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'third-party-tests'))
+    if: contains(github.event.pull_request.labels.*.name, 'third-party-tests')
 
     runs-on: ubuntu-latest
     strategy:
@@ -325,11 +297,7 @@ jobs:
 
   test-polar:
     name: Test Polar (main branch) on Python ${{ matrix.python-version }}
-    # If 'schedule' was the trigger, don't run it on contributors' forks
-    if: |
-      github.event_name == 'workflow_dispatch' ||
-      (github.event_name == 'schedule' && github.repository == 'pydantic/pydantic') ||
-      (github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'third-party-tests'))
+    if: contains(github.event.pull_request.labels.*.name, 'third-party-tests')
     env:
       POLAR_ENV: testing
       POLAR_EMAIL_RENDERER_BINARY_PATH: ${{ github.workspace }}/server/emails/bin/react-email-pkg
@@ -453,11 +421,7 @@ jobs:
 
   test-bentoml:
     name: Test BentoML (main branch) on Python ${{ matrix.python-version }}
-    # If 'schedule' was the trigger, don't run it on contributors' forks
-    if: |
-      github.event_name == 'workflow_dispatch' ||
-      (github.event_name == 'schedule' && github.repository == 'pydantic/pydantic') ||
-      (github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'third-party-tests'))
+    if: contains(github.event.pull_request.labels.*.name, 'third-party-tests')
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -502,11 +466,7 @@ jobs:
 
   test-semantic-kernel:
     name: Test Semantic Kernel (main branch) on Python ${{ matrix.python-version }}
-    # If 'schedule' was the trigger, don't run it on contributors' forks
-    if: |
-      github.event_name == 'workflow_dispatch' ||
-      (github.event_name == 'schedule' && github.repository == 'pydantic/pydantic') ||
-      (github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'third-party-tests'))
+    if: contains(github.event.pull_request.labels.*.name, 'third-party-tests')
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -549,11 +509,7 @@ jobs:
 
   test-langchain:
     name: Test LangChain (main branch) on Python ${{ matrix.python-version }}
-    # If 'schedule' was the trigger, don't run it on contributors' forks
-    if: |
-      github.event_name == 'workflow_dispatch' ||
-      (github.event_name == 'schedule' && github.repository == 'pydantic/pydantic') ||
-      (github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'third-party-tests'))
+    if: contains(github.event.pull_request.labels.*.name, 'third-party-tests')
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -613,11 +569,7 @@ jobs:
 
   test-dify:
     name: Test Dify (main branch) on Python ${{ matrix.python-version }}
-    # If 'schedule' was the trigger, don't run it on contributors' forks
-    if: |
-      github.event_name == 'workflow_dispatch' ||
-      (github.event_name == 'schedule' && github.repository == 'pydantic/pydantic') ||
-      (github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'third-party-tests'))
+    if: contains(github.event.pull_request.labels.*.name, 'third-party-tests')
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -658,11 +610,7 @@ jobs:
 
   test-cadwyn:
     name: Test Cadwyn (main branch) on Python ${{ matrix.python-version }}
-    # If 'schedule' was the trigger, don't run it on contributors' forks
-    if: |
-      github.event_name == 'workflow_dispatch' ||
-      (github.event_name == 'schedule' && github.repository == 'pydantic/pydantic') ||
-      (github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'third-party-tests'))
+    if: contains(github.event.pull_request.labels.*.name, 'third-party-tests')
 
     runs-on: ubuntu-latest
     strategy:
@@ -700,11 +648,7 @@ jobs:
 
   test-pydantic-xml:
     name: Test pydantic-xml (main branch) on Python ${{ matrix.python-version }}
-    # If 'schedule' was the trigger, don't run it on contributors' forks
-    if: |
-      github.event_name == 'workflow_dispatch' ||
-      (github.event_name == 'schedule' && github.repository == 'pydantic/pydantic') ||
-      (github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'third-party-tests'))
+    if: contains(github.event.pull_request.labels.*.name, 'third-party-tests')
 
     runs-on: ubuntu-latest
     strategy:
@@ -744,10 +688,7 @@ jobs:
 
   test-redis-om:
     name: Test Redis OM Python (main branch) on Python ${{ matrix.python-version }}
-    if: |
-      github.event_name == 'workflow_dispatch' ||
-      (github.event_name == 'schedule' && github.repository == 'pydantic/pydantic') ||
-      (github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'third-party-tests'))
+    if: contains(github.event.pull_request.labels.*.name, 'third-party-tests')
 
     runs-on: ubuntu-latest
     strategy:
@@ -809,10 +750,7 @@ jobs:
 
   test-django-ninja:
     name: Test Django Ninja (main branch) on Python ${{ matrix.python-version }}
-    if: |
-      github.event_name == 'workflow_dispatch' ||
-      (github.event_name == 'schedule' && github.repository == 'pydantic/pydantic') ||
-      (github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'third-party-tests'))
+    if: contains(github.event.pull_request.labels.*.name, 'third-party-tests')
 
     runs-on: ubuntu-latest
     strategy:
@@ -851,10 +789,7 @@ jobs:
 
   test-fastdepends:
     name: Test FastDepends (main branch) on Python ${{ matrix.python-version }}
-    if: |
-      github.event_name == 'workflow_dispatch' ||
-      (github.event_name == 'schedule' && github.repository == 'pydantic/pydantic') ||
-      (github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'third-party-tests'))
+    if: contains(github.event.pull_request.labels.*.name, 'third-party-tests')
 
     runs-on: ubuntu-latest
     strategy:
@@ -893,10 +828,7 @@ jobs:
 
   test-mcp-python-sdk:
     name: Test MCP Python SDK (main branch) on Python ${{ matrix.python-version }}
-    if: |
-      github.event_name == 'workflow_dispatch' ||
-      (github.event_name == 'schedule' && github.repository == 'pydantic/pydantic') ||
-      (github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'third-party-tests'))
+    if: contains(github.event.pull_request.labels.*.name, 'third-party-tests')
 
     runs-on: ubuntu-latest
     strategy:
@@ -942,10 +874,7 @@ jobs:
 
   test-fastmcp:
     name: Test FastMCP (main branch) on Python ${{ matrix.python-version }}
-    if: |
-      github.event_name == 'workflow_dispatch' ||
-      (github.event_name == 'schedule' && github.repository == 'pydantic/pydantic') ||
-      (github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'third-party-tests'))
+    if: contains(github.event.pull_request.labels.*.name, 'third-party-tests')
 
     runs-on: ubuntu-latest
     strategy:
@@ -991,64 +920,3 @@ jobs:
             --durations=50 \
             -m "not integration and not client_process and not subprocess_heavy and not conformance" \
             tests/
-
-  create-issue-on-failure:
-    name: Create an issue if tests failed
-    runs-on: ubuntu-latest
-    needs:
-      - test-fastapi
-      - test-sqlmodel
-      - test-beanie
-      - test-openapi-python-client
-      - test-pandera
-      - test-odmantic
-      - test-polar
-      - test-bentoml
-      - test-semantic-kernel
-      - test-langchain
-      - test-dify
-      - test-cadwyn
-      - test-pydantic-xml
-      - test-redis-om
-      - test-django-ninja
-      - test-fastdepends
-      - test-mcp-python-sdk
-      - test-fastmcp
-    # Issue report disabled for now due to flakiness:
-    if: |
-      always() &&
-      false &&
-      github.repository == 'pydantic/pydantic' &&
-      github.event_name == 'schedule' &&
-      (
-        needs.test-fastapi.result == 'failure' ||
-        needs.test-sqlmodel.result == 'failure' ||
-        needs.test-beanie.result == 'failure' ||
-        needs.test-openapi-python-client.result == 'failure' ||
-        needs.test-pandera.result == 'failure' ||
-        needs.test-odmantic.result == 'failure' ||
-        needs.test-polar.result == 'failure' ||
-        needs.test-semantic-kernel.result == 'failure' ||
-        needs.test-bentoml.result == 'failure' ||
-        needs.test-langchain.result == 'failure' ||
-        needs.test-dify.result == 'failure' ||
-        needs.test-cadwyn.result == 'failure' ||
-        needs.test-pydantic-xml.result == 'failure' ||
-        needs.test-redis-om.result == 'failure' ||
-        needs.test-django-ninja.result == 'failure' ||
-        needs.test-fastdepends.result == 'failure' ||
-        needs.test-mcp-python-sdk.result == 'failure' ||
-        needs.test-fastmcp.result == 'failure'
-      )
-    permissions:
-      issues: write
-    steps:
-      - uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
-        with:
-          script: |
-            await github.rest.issues.create({
-              owner: 'pydantic',
-              repo: 'pydantic',
-              title: `Third-party tests failed on ${new Date().toDateString()}`,
-              body: 'Run listed here: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}',
-            })
