@@ -2115,6 +2115,8 @@ class GenerateJsonSchema:
             # The validator validates the extra keyword arguments against the typed dictionary,
             # so its properties are merged with the arguments ones (overlapping names are rejected
             # at schema generation time). The typed dictionary also controls extra keyword arguments.
+            # Note: in theory, `resolve_ref_schema()` could fail, but in practice this can't happen
+            # as the TypedDict's definition is generated before the arguments schema.
             typed_dict_json_schema = self.resolve_ref_schema(self.generate_inner(var_kwargs_schema))
             properties.update(typed_dict_json_schema.get('properties', {}))
             required.extend(typed_dict_json_schema.get('required', []))
