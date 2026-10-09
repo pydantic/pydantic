@@ -102,3 +102,24 @@ def test_exotic_localns() -> None:
         foo: __foo_annotation__
 
     assert Model.model_fields['foo'].annotation == str
+
+
+def test_type_convert_python_3_10_0(monkeypatch: pytest.MonkeyPatch) -> None:
+    from typing import Any
+
+    from pydantic._internal import _typing_extra
+
+    calls: list[tuple[str, bool, dict[str, Any]]] = []
+
+    def mock_forward_ref(arg: str, is_argument: bool = True, **kwargs: Any) -> ForwardRef:
+        if 'is_class' in kwargs:
+            raise TypeError("ForwardRef.__init__() got an unexpected keyword argument 'is_class'")
+        calls.append((arg, is_argument, kwargs))
+        return ForwardRef(arg)
+
+    monkeypatch.setattr(_typing_extra.sys, 'version_info', (3, 10, 0, 'final', 0))
+    monkeypatch.setattr(_typing_extra, 'ForwardRef', mock_forward_ref)
+
+    ref = _typing_extra._type_convert('int')
+    assert isinstance(ref, ForwardRef)
+    assert calls == [('int', False, {})]

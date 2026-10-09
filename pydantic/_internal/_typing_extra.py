@@ -209,7 +209,9 @@ def _type_convert(arg: Any) -> Any:
     if isinstance(arg, str):
         # Like `typing.get_type_hints()`, assume the arg can be in any context,
         # hence the proper `is_argument` and `is_class` args:
-        return ForwardRef(arg, is_argument=False, is_class=True)
+        if sys.version_info >= (3, 10, 1):
+            return ForwardRef(arg, is_argument=False, is_class=True)
+        return ForwardRef(arg, is_argument=False)
     return arg
 
 
