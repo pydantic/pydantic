@@ -1413,6 +1413,17 @@ to help you monitor and understand your
 </li>
       
         <li class="md-nav__item">
+  <a href="#runtime-validation-arguments" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Runtime validation arguments
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#environment-variable-names" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -4890,6 +4901,17 @@ to help you monitor and understand your
 </li>
       
         <li class="md-nav__item">
+  <a href="#runtime-validation-arguments" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Runtime validation arguments
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#environment-variable-names" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -5982,6 +6004,39 @@ or on field level by <code>Field(validate_default=False)</code>:</p>
 <span class="c1">#&gt; foo=&#39;test&#39;</span>
 </code></pre></div>
 <p>Check the <a href="../fields/#validate-default-values">validation of default values</a> for more information.</p>
+<h2 id="runtime-validation-arguments">Runtime validation arguments<a class="headerlink" href="#runtime-validation-arguments" title="Permanent link">&para;</a></h2>
+<p><code>BaseSettings</code> defines a custom <code>__init__</code> to load values from settings sources, so <code>model_validate()</code>,
+<code>model_validate_json()</code> and <code>model_validate_strings()</code> build the instance by calling that <code>__init__</code>.
+As a consequence:</p>
+<ul>
+<li>Settings sources are still applied, so values from environment variables, dotenv files, etc. are loaded
+  just as when calling <code>Settings()</code>.</li>
+<li>Runtime validation arguments such as <code>extra</code>, <code>strict</code> and <code>context</code> are <strong>not</strong> applied. Validation uses
+  the behaviour from <code>model_config</code> instead (for example, the default <code>extra='forbid'</code>).</li>
+</ul>
+<p>If you need different behaviour, set it in <code>model_config</code> or prepare the input data before validating.
+For example, to build a parent settings class from an instance of a subclass, keep only the parent's fields:</p>
+<div class="language-py highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">pydantic_settings</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseSettings</span>
+
+
+<span class="k">class</span><span class="w"> </span><span class="nc">BaseAppSettings</span><span class="p">(</span><span class="n">BaseSettings</span><span class="p">):</span>
+    <span class="n">name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;app&#39;</span>
+
+
+<span class="k">class</span><span class="w"> </span><span class="nc">AppSettings</span><span class="p">(</span><span class="n">BaseAppSettings</span><span class="p">):</span>
+    <span class="n">debug</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span>
+
+
+<span class="n">settings</span> <span class="o">=</span> <span class="n">AppSettings</span><span class="p">(</span><span class="n">debug</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+<span class="c1"># `extra=&#39;ignore&#39;` is not applied here, so `debug` is rejected as an extra input:</span>
+<span class="c1"># BaseAppSettings.model_validate(settings.model_dump(), extra=&#39;ignore&#39;)</span>
+
+<span class="n">fields</span> <span class="o">=</span> <span class="n">BaseAppSettings</span><span class="o">.</span><span class="n">model_fields</span>
+<span class="n">data</span> <span class="o">=</span> <span class="p">{</span><span class="n">k</span><span class="p">:</span> <span class="n">v</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">settings</span><span class="o">.</span><span class="n">model_dump</span><span class="p">()</span><span class="o">.</span><span class="n">items</span><span class="p">()</span> <span class="k">if</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">fields</span><span class="p">}</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">BaseAppSettings</span><span class="o">.</span><span class="n">model_validate</span><span class="p">(</span><span class="n">data</span><span class="p">))</span>
+<span class="c1">#&gt; name=&#39;app&#39;</span>
+</code></pre></div>
 <h2 id="environment-variable-names">Environment variable names<a class="headerlink" href="#environment-variable-names" title="Permanent link">&para;</a></h2>
 <p>By default, the environment variable name is the same as the field name.</p>
 <p>You can change the prefix for all environment variables by setting the <code>env_prefix</code> config setting,

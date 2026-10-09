@@ -139,6 +139,39 @@ print(Settings1())
 
 Check the [validation of default values](../fields/#validate-default-values) for more information.
 
+## Runtime validation arguments
+
+`BaseSettings` defines a custom `__init__` to load values from settings sources, so `model_validate()`, `model_validate_json()` and `model_validate_strings()` build the instance by calling that `__init__`. As a consequence:
+
+- Settings sources are still applied, so values from environment variables, dotenv files, etc. are loaded just as when calling `Settings()`.
+- Runtime validation arguments such as `extra`, `strict` and `context` are **not** applied. Validation uses the behaviour from `model_config` instead (for example, the default `extra='forbid'`).
+
+If you need different behaviour, set it in `model_config` or prepare the input data before validating. For example, to build a parent settings class from an instance of a subclass, keep only the parent's fields:
+
+```py
+from pydantic_settings import BaseSettings
+
+
+class BaseAppSettings(BaseSettings):
+    name: str = 'app'
+
+
+class AppSettings(BaseAppSettings):
+    debug: bool = False
+
+
+settings = AppSettings(debug=True)
+
+# `extra='ignore'` is not applied here, so `debug` is rejected as an extra input:
+# BaseAppSettings.model_validate(settings.model_dump(), extra='ignore')
+
+fields = BaseAppSettings.model_fields
+data = {k: v for k, v in settings.model_dump().items() if k in fields}
+print(BaseAppSettings.model_validate(data))
+#> name='app'
+
+```
+
 ## Environment variable names
 
 By default, the environment variable name is the same as the field name.
