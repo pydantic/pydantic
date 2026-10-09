@@ -98,6 +98,7 @@ from ._decorators import (
     inspect_field_serializer,
     inspect_model_serializer,
     inspect_validator,
+    mro,
 )
 from ._docs_extraction import extract_docstrings_from_cls
 from ._fields import (
@@ -315,6 +316,33 @@ GENERATE_SCHEMA_ERRORS = (
     PydanticUndefinedAnnotation,
 )
 """Errors raised during core schema generation. This does *not* include `InvalidSchemaError`, which is raised during schema cleaning."""
+
+
+def _get_typed_dict_extra_items(typed_dict_cls: type[Any]) -> tuple[bool, Any]:
+    """Return whether the TypedDict class is closed, and the type of its extra items (as per PEP 728).
+
+    The `__closed__` and `__extra_items__` attributes only reflect the arguments passed to the class itself,
+    so the first class in the (virtual) MRO explicitly specifying one of them is used.
+    `extra_items=Never` is normalized to `closed=True`, and the `ReadOnly` qualifier is stripped.
+    """
+    for base in mro(typed_dict_cls):
+        # `__closed__` is `None` when not specified:
+        closed = base.__dict__.get('__closed__')
+        extra_items = base.__dict__.get('__extra_items__', typing_extensions.NoExtraItems)
+        if closed is not None or not typing_objects.is_noextraitems(extra_items):
+            break
+    else:
+        return False, typing_extensions.NoExtraItems
+
+    if closed is not None:
+        # `closed` and `extra_items` can't be used together:
+        return closed, typing_extensions.NoExtraItems
+
+    if typing_objects.is_readonly(get_origin(extra_items)):
+        extra_items = get_args(extra_items)[0]
+    if typing_objects.is_never(extra_items):
+        return True, typing_extensions.NoExtraItems
+    return False, extra_items
 
 
 class InvalidSchemaError(Exception):
@@ -1482,9 +1510,7 @@ class GenerateSchema:
                 extra_behavior: core_schema.ExtraBehavior = 'ignore'
                 extras_schema: CoreSchema | None = None  # For 'allow', equivalent to `Any` - no validation performed.
 
-                # `__closed__` is `None` when not specified (equivalent to `False`):
-                is_closed = bool(getattr(typed_dict_cls, '__closed__', False))
-                extra_items = getattr(typed_dict_cls, '__extra_items__', typing_extensions.NoExtraItems)
+                is_closed, extra_items = _get_typed_dict_extra_items(typed_dict_cls)
                 if is_closed:
                     extra_behavior = 'forbid'
                     extras_schema = None
