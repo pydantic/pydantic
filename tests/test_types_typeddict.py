@@ -1116,7 +1116,18 @@ def test_typeddict_extraitems_readonly() -> None:
     class TD(TypedDict, extra_items=ReadOnly[int]):
         f: int
 
-    assert TypeAdapter(TD).validate_python({'f': 1, 'extra': '1'}) == {'f': 1, 'extra': 1}
+    with pytest.warns(UserWarning, match="Extra items on TypedDict class 'TD' are using the `ReadOnly` qualifier"):
+        ta = TypeAdapter(TD)
+
+    assert ta.validate_python({'f': 1, 'extra': '1'}) == {'f': 1, 'extra': 1}
+
+
+def test_typeddict_extraitems_readonly_never() -> None:
+    class TD(TypedDict, extra_items=ReadOnly[Never]):
+        f: int
+
+    # No `ReadOnly` warning, as no extra items are allowed:
+    assert TypeAdapter(TD).json_schema()['additionalProperties'] is False
 
 
 def test_typeddict_incompatible_extra_config_warning() -> None:

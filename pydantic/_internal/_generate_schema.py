@@ -318,8 +318,9 @@ GENERATE_SCHEMA_ERRORS = (
 """Errors raised during core schema generation. This does *not* include `InvalidSchemaError`, which is raised during schema cleaning."""
 
 
-def _get_typed_dict_extra_items(typed_dict_cls: type[Any]) -> tuple[bool, Any]:
-    """Return whether the TypedDict class is closed, and the type of its extra items (as per PEP 728).
+def _get_typed_dict_extra_items(typed_dict_cls: type[Any]) -> tuple[bool, Any, bool]:
+    """Return whether the TypedDict class is closed, the type of its extra items and whether
+    they are read-only (as per PEP 728).
 
     The `__closed__` and `__extra_items__` attributes only reflect the arguments passed to the class itself,
     so the first class in the (virtual) MRO explicitly specifying one of them is used.
@@ -332,17 +333,20 @@ def _get_typed_dict_extra_items(typed_dict_cls: type[Any]) -> tuple[bool, Any]:
         if closed is not None or not typing_objects.is_noextraitems(extra_items):
             break
     else:
-        return False, typing_extensions.NoExtraItems
+        return False, typing_extensions.NoExtraItems, False
 
     if closed is not None:
         # `closed` and `extra_items` can't be used together:
-        return closed, typing_extensions.NoExtraItems
+        return closed, typing_extensions.NoExtraItems, False
 
-    if typing_objects.is_readonly(get_origin(extra_items)):
+    readonly = typing_objects.is_readonly(get_origin(extra_items))
+    if readonly:
         extra_items = get_args(extra_items)[0]
+    # TODO: `Never` wrapped in a type alias (e.g. `type NoExtras = Never`) or in `Annotated` isn't detected here,
+    # and fails during schema generation. Unwrapping should only apply to this check (to preserve alias handling).
     if typing_objects.is_never(extra_items):
-        return True, typing_extensions.NoExtraItems
-    return False, extra_items
+        return True, typing_extensions.NoExtraItems, False
+    return False, extra_items, readonly
 
 
 class InvalidSchemaError(Exception):
@@ -1510,13 +1514,20 @@ class GenerateSchema:
                 extra_behavior: core_schema.ExtraBehavior = 'ignore'
                 extras_schema: CoreSchema | None = None  # For 'allow', equivalent to `Any` - no validation performed.
 
-                is_closed, extra_items = _get_typed_dict_extra_items(typed_dict_cls)
+                is_closed, extra_items, extra_items_readonly = _get_typed_dict_extra_items(typed_dict_cls)
                 if is_closed:
                     extra_behavior = 'forbid'
                     extras_schema = None
                 elif not typing_objects.is_noextraitems(extra_items):
                     extra_behavior = 'allow'
                     extras_schema = self.generate_schema(replace_types(extra_items, typevars_map))
+
+                if extra_items_readonly:
+                    warnings.warn(
+                        f'Extra items on TypedDict class {typed_dict_cls.__name__!r} are using the `ReadOnly` qualifier. '
+                        'Pydantic will not protect items from any mutation on dictionary instances.',
+                        UserWarning,
+                    )
 
                 if (config_extra := self._config_wrapper.extra) in ('allow', 'forbid'):
                     if is_closed and config_extra == 'allow':
