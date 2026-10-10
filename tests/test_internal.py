@@ -320,16 +320,20 @@ def _wrap_identity(v: Any, handler: Any) -> Any:
             cs.no_info_after_validator_function(_identity, cs.int_schema()),
             cs.no_info_after_validator_function(_identity, cs.int_schema()),
         ),
-        # The `'serialization'` schema of a plain/wrap function schema takes precedence:
+        # The `'serialization'` schema of a plain function schema takes precedence:
         (
             cs.no_info_plain_validator_function(_identity, serialization=cs.simple_ser_schema('str')),
             cs.simple_ser_schema('str'),
         ),
+        # A wrap function schema with a `'serialization'` schema is retyped as a `'function-after'`
+        # schema, so that the ser. schema can still rely on the schema it is attached to:
         (
             cs.no_info_wrap_validator_function(
                 _wrap_identity, cs.int_schema(), serialization=cs.simple_ser_schema('str')
             ),
-            cs.simple_ser_schema('str'),
+            cs.no_info_after_validator_function(
+                _wrap_identity, cs.int_schema(), serialization=cs.simple_ser_schema('str')
+            ),
         ),
         # Otherwise, plain function schemas are serialized as `'any'`, wrap function schemas using the inner schema:
         (cs.no_info_plain_validator_function(_identity), cs.any_schema()),
