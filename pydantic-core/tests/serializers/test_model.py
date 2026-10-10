@@ -1179,6 +1179,29 @@ def test_extra_custom_serializer():
     assert s.to_python(m) == {'extra': 'extra bam!'}
 
 
+def test_extra_serialization_exclude_if():
+    class Model:
+        __slots__ = ('__pydantic_extra__', '__dict__')
+        __pydantic_extra__: dict[str, str]
+
+    schema = core_schema.model_schema(
+        Model,
+        core_schema.model_fields_schema(
+            {},
+            extra_behavior='allow',
+            extras_schema=core_schema.str_schema(),
+            extras_serialization_exclude_if=lambda x: x == 'extra-exclude',
+        ),
+        extra_behavior='allow',
+    )
+    s = SchemaSerializer(schema)
+
+    m = Model()
+    m.__pydantic_extra__ = {'extra': 'extra', 'extra-exclude': 'extra-exclude'}
+
+    assert s.to_python(m) == {'extra': 'extra'}
+
+
 def test_no_warn_on_exclude() -> None:
     with warnings.catch_warnings():
         warnings.simplefilter('error')
