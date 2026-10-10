@@ -395,14 +395,25 @@ def max_digits_validator(x: Any, max_digits: Any) -> Any:
         raise TypeError(f"Unable to apply constraint 'max_digits' to supplied value {x}")
 
 
-def decimal_places_validator(x: Any, decimal_places: Any) -> Any:
+def decimal_places_validator(x: Any, decimal_places: Any, max_digits: Any = None) -> Any:
     try:
-        (decimal_places_, _), (normalized_decimal_places, _) = _extract_decimal_digits_info(x)
+        (decimal_places_, num_digits), (normalized_decimal_places, normalized_num_digits) = (
+            _extract_decimal_digits_info(x)
+        )
         if (decimal_places_ > decimal_places) and (normalized_decimal_places > decimal_places):
             raise PydanticKnownError(
                 'decimal_max_places',
                 {'decimal_places': decimal_places},
             )
+        if max_digits is not None:
+            max_whole_digits = max(max_digits - decimal_places, 0)
+            if (num_digits - decimal_places_ > max_whole_digits) and (
+                normalized_num_digits - normalized_decimal_places > max_whole_digits
+            ):
+                raise PydanticKnownError(
+                    'decimal_whole_digits',
+                    {'whole_digits': max_whole_digits},
+                )
         return x
     except TypeError:
         raise TypeError(f"Unable to apply constraint 'decimal_places' to supplied value {x}")
