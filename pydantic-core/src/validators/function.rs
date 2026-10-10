@@ -550,7 +550,10 @@ impl ValidationInfo {
             mode: extra.input_type,
         }
     }
+}
 
+#[pymethods]
+impl ValidationInfo {
     fn __traverse__(&self, visit: PyVisit<'_>) -> Result<(), PyTraverseError> {
         self.py_gc_traverse(&visit)
     }
@@ -558,10 +561,7 @@ impl ValidationInfo {
     fn __clear__(&mut self) {
         self.context = None;
     }
-}
 
-#[pymethods]
-impl ValidationInfo {
     fn __repr__(&self, py: Python) -> PyResult<String> {
         let context = match self.context {
             Some(ref context) => safe_repr(context.bind(py)).to_string(),

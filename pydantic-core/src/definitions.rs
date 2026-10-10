@@ -109,15 +109,6 @@ impl<T: Debug> Debug for Definition<T> {
     }
 }
 
-impl<T: PyGcTraverse> PyGcTraverse for DefinitionRef<T> {
-    fn py_gc_traverse(&self, visit: &PyVisit<'_>) -> Result<(), PyTraverseError> {
-        if let Some(value) = self.value.upgrade().as_ref().and_then(|v| v.get()) {
-            value.py_gc_traverse(visit)?;
-        }
-        Ok(())
-    }
-}
-
 impl<T: PyGcTraverse> PyGcTraverse for Definitions<T> {
     fn py_gc_traverse(&self, visit: &PyVisit<'_>) -> Result<(), PyTraverseError> {
         for value in self.0.values() {

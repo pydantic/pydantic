@@ -139,11 +139,10 @@ pub(crate) struct SerializationIterator {
     filter: SchemaFilter<usize>,
 }
 
-impl_py_gc_traverse!(SerializationIterator {
-    iterator,
-    item_serializer,
-    extra_owned,
-});
+// `item_serializer` is intentionally not traversed: it is an `Arc` clone of a subtree owned (and
+// traversed) by the `SchemaSerializer`. Visiting it here as well would report twice for a single reference,
+// which corrupts the GC's refcount logic.
+impl_py_gc_traverse!(SerializationIterator { iterator, extra_owned });
 
 impl SerializationIterator {
     pub fn new(
@@ -160,7 +159,10 @@ impl SerializationIterator {
             filter,
         }
     }
+}
 
+#[pymethods]
+impl SerializationIterator {
     fn __traverse__(&self, visit: PyVisit<'_>) -> Result<(), PyTraverseError> {
         self.py_gc_traverse(&visit)
     }
@@ -170,10 +172,7 @@ impl SerializationIterator {
         self.extra_owned.fallback = None;
         self.extra_owned.context = None;
     }
-}
 
-#[pymethods]
-impl SerializationIterator {
     fn __iter__(slf: PyRef<'_, Self>) -> PyRef<'_, Self> {
         slf
     }

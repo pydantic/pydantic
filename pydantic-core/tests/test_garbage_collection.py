@@ -1,3 +1,4 @@
+import gc
 import platform
 from collections.abc import Iterable
 from enum import Enum
@@ -196,3 +197,71 @@ def test_gc_field_exclude_if() -> None:
         del MyModel
 
     assert_gc(lambda: len(cache) == 0)
+
+
+def test_wrap_validator_handler_does_not_traverse_shared_validator_tree() -> None:
+    """https://github.com/pydantic/pydantic/issues/13817"""
+
+    class Model:
+        __slots__ = '__dict__', '__pydantic_fields_set__', '__pydantic_extra__', '__pydantic_private__'
+
+    handlers = []
+
+    def wrap(value, handler):
+        handlers.append(handler)
+        return handler(value)
+
+    v = SchemaValidator(
+        core_schema.no_info_wrap_validator_function(
+            wrap,
+            core_schema.model_schema(
+                Model,
+                core_schema.model_fields_schema({'x': core_schema.model_field(core_schema.int_schema())}),
+            ),
+        )
+    )
+    v.validate_python({'x': 1})
+    (handler,) = handlers
+
+    # the `SchemaValidator` owns the validator tree and reports the model class to the GC:
+    assert any(r is Model for r in gc.get_referents(v))
+    # the handler shares that same tree, so it must not report it a second time:
+    assert not any(r is Model for r in gc.get_referents(handler))
+
+
+def test_wrap_serializer_handler_does_not_traverse_shared_serializer_tree() -> None:
+    """https://github.com/pydantic/pydantic/issues/13817"""
+
+    def field_serializer(value):
+        return value
+
+    inner = core_schema.typed_dict_schema(
+        {
+            'x': core_schema.typed_dict_field(
+                core_schema.int_schema(serialization=core_schema.plain_serializer_function_ser_schema(field_serializer))
+            )
+        }
+    )
+
+    handlers = []
+
+    def wrap(value, handler):
+        handlers.append(handler)
+        return handler(value)
+
+    s = SchemaSerializer(
+        core_schema.any_schema(serialization=core_schema.wrap_serializer_function_ser_schema(wrap, schema=inner))
+    )
+    s.to_python({'x': 1})
+    (handler,) = handlers
+    assert gc.is_tracked(handler)
+
+    # the `SchemaSerializer` owns the serializer tree and reports the function to the GC:
+    assert any(r is field_serializer for r in gc.get_referents(s))
+    # the handler shares that same tree, so it must not report it a second time:
+    assert not any(r is field_serializer for r in gc.get_referents(handler))
+
+    s = SchemaSerializer(core_schema.generator_schema(inner))
+    iterator = s.to_python(iter([{'x': 1}]))
+    assert gc.is_tracked(iterator)
+    assert not any(r is field_serializer for r in gc.get_referents(iterator))
