@@ -280,7 +280,19 @@ def render_pydantic_settings(markdown: str, page: Page) -> str | None:
     if page.file.src_uri != 'concepts/pydantic_settings.md':
         return None
 
-    req = requests.get('https://raw.githubusercontent.com/pydantic/pydantic-settings/main/docs/index.md')
+    # Use the docs from the latest release, so unreleased features on `main` don't show up in the docs:
+    # (the release page redirects to the latest tag, which avoids the GitHub API's anonymous rate limit on CI)
+    ref = 'main'
+    release_req = requests.head('https://github.com/pydantic/pydantic-settings/releases/latest', allow_redirects=False)
+    if release_req.is_redirect and '/releases/tag/' in (location := release_req.headers['Location']):
+        ref = location.rsplit('/', 1)[-1]
+    else:
+        logger.warning(
+            'Got HTTP status %d when trying to fetch the latest `pydantic-settings` release, falling back to `main`',
+            release_req.status_code,
+        )
+
+    req = requests.get(f'https://raw.githubusercontent.com/pydantic/pydantic-settings/{ref}/docs/index.md')
     if req.status_code != 200:
         logger.warning(
             'Got HTTP status %d when trying to fetch content of the `pydantic-settings` docs', req.status_code
