@@ -56,6 +56,7 @@ _config_dict_to_core_config_key: dict[str, str] = {
     'serialize_by_alias': 'serialize_by_alias',
     'url_preserve_empty_path': 'url_preserve_empty_path',
     'polymorphic_serialization': 'polymorphic_serialization',
+    'warn_deprecated': 'warn_deprecated',
 }
 
 
@@ -136,6 +137,7 @@ class ConfigWrapper:
     serialize_by_alias: bool
     url_preserve_empty_path: bool
     polymorphic_serialization: bool
+    warn_deprecated: Literal['get', 'set', 'get_and_set', None]
 
     def __init__(self, config: ConfigDict | dict[str, Any] | type[Any] | None, *, check: bool = True):
         if check:
@@ -308,6 +310,7 @@ config_defaults = ConfigDict(
     serialize_by_alias=False,
     url_preserve_empty_path=False,
     polymorphic_serialization=False,
+    warn_deprecated='get',
 )
 
 
