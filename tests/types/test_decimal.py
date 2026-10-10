@@ -4,7 +4,7 @@ from typing import Annotated
 import pytest
 from pydantic_core import SchemaError
 
-from pydantic import AllowInfNan, BaseModel, Field, TypeAdapter, ValidationError
+from pydantic import AfterValidator, AllowInfNan, BaseModel, Field, TypeAdapter, ValidationError
 
 pos_int_values = 'Inf', '+Inf', 'Infinity', '+Infinity'
 neg_int_values = '-Inf', '-Infinity'
@@ -343,6 +343,34 @@ def test_decimal_validation(mode, type_args, value, result):
         # assert exc_info.value.json().startswith('[')
     else:
         assert Model(foo=value).foo == result
+
+
+@pytest.mark.parametrize(
+    ['value', 'result'],
+    [
+        (Decimal('1.23'), Decimal('1.23')),
+        (Decimal('12.3'), 'decimal_whole_digits'),
+        (Decimal('0.123'), 'decimal_max_places'),
+        (Decimal('1234'), 'decimal_max_digits'),
+    ],
+)
+def test_decimal_constraints_python_validators(value: Decimal, result: Decimal | str) -> None:
+    """https://github.com/pydantic/pydantic/issues/13965"""
+
+    ta = TypeAdapter(Annotated[Decimal, AfterValidator(lambda v: v), Field(max_digits=3, decimal_places=2)])
+    core_ta = TypeAdapter(Annotated[Decimal, Field(max_digits=3, decimal_places=2)])
+
+    if isinstance(result, Decimal):
+        assert ta.validate_python(value) == result
+    else:
+        with pytest.raises(ValidationError) as exc_info:
+            ta.validate_python(value)
+        with pytest.raises(ValidationError) as core_exc_info:
+            core_ta.validate_python(value)
+
+        errors = exc_info.value.errors(include_url=False)
+        assert errors[0]['type'] == result
+        assert errors == core_exc_info.value.errors(include_url=False)
 
 
 @pytest.mark.parametrize(

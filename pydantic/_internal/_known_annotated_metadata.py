@@ -264,8 +264,12 @@ def apply_known_metadata(annotation: Any, schema: CoreSchema) -> CoreSchema | No
             else:
                 js_constraint_key = constraint
 
+            validator_kwargs = {constraint: value}
+            if constraint == 'decimal_places' and schema_update.get('max_digits') is not None:
+                # The whole digits limit depends on both constraints, and is checked alongside `decimal_places`:
+                validator_kwargs['max_digits'] = schema_update['max_digits']
             schema = cs.no_info_after_validator_function(
-                partial(NUMERIC_VALIDATOR_LOOKUP[constraint], **{constraint: value}), schema
+                partial(NUMERIC_VALIDATOR_LOOKUP[constraint], **validator_kwargs), schema
             )
             metadata = schema.get('metadata', {})
             if (existing_json_schema_updates := metadata.get('pydantic_js_updates')) is not None:
