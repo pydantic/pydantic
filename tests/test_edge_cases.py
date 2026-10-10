@@ -1,5 +1,6 @@
 import functools
 import importlib.util
+import json
 import re
 import sys
 import typing
@@ -43,6 +44,7 @@ from pydantic import (
     RootModel,
     TypeAdapter,
     ValidationError,
+    ValidationInfo,
     constr,
     create_model,
     errors,
@@ -139,6 +141,52 @@ def test_union_int_any():
 
     m = Model(v=None)
     assert m.v is None
+
+
+@pytest.mark.parametrize('mode', ['python', 'json'])
+def test_smart_union_members_after_success_stop_at_first_error(
+    container_class: type[Any], mode: Literal['python', 'json']
+) -> None:
+    # Errors of members tried after a successful member are discarded, so such members stop at
+    # their first error. Without this, recursive unions take time exponential in the nesting depth.
+    class A(container_class):
+        a: int
+        x: int
+
+        @field_validator('x')
+        @classmethod
+        def record_x(cls, value: int, info: ValidationInfo) -> int:
+            info.context['calls'].append('A.x')
+            return value
+
+    class B(container_class):
+        b: int
+        x: int
+
+        @field_validator('x')
+        @classmethod
+        def record_x(cls, value: int, info: ValidationInfo) -> int:
+            info.context['calls'].append('B.x')
+            return value
+
+    ta = TypeAdapter(A | B)
+
+    def validate(data: dict[str, int], calls: list[str]) -> Any:
+        if mode == 'python':
+            return ta.validate_python(data, context={'calls': calls})
+        return ta.validate_json(json.dumps(data), context={'calls': calls})
+
+    calls: list[str] = []
+    validate({'a': 1, 'x': 2}, calls)
+    # `B` fails on the missing `b` field and doesn't validate `x`:
+    assert calls == ['A.x']
+
+    # When no member has succeeded yet, all errors are still collected:
+    calls = []
+    with pytest.raises(ValidationError) as exc_info:
+        validate({'x': 2}, calls)
+    assert calls == ['A.x', 'B.x']
+    assert [e['loc'] for e in exc_info.value.errors()] == [('A', 'a'), ('B', 'b')]
 
 
 def test_typed_list():

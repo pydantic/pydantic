@@ -182,6 +182,9 @@ impl Validator for TypedDictValidator {
             let mut fields_set_count: usize = 0;
 
             for field in &self.fields {
+                if state.errors_discarded && !errors.is_empty() {
+                    break;
+                }
                 if let Some((lookup_path, lookup_result)) = field
                     .lookup_path_collection
                     .lookup_paths(lookup_type)
