@@ -161,8 +161,6 @@ class PydanticInvalidForJsonSchema(PydanticUserError):
 
 
 class PydanticForbiddenQualifier(PydanticUserError):
-    """An error raised if a forbidden type qualifier is found in a type annotation."""
-
     _qualifier_repr_map: ClassVar[dict[Qualifier, str]] = {
         'required': 'typing.Required',
         'not_required': 'typing.NotRequired',
@@ -173,9 +171,11 @@ class PydanticForbiddenQualifier(PydanticUserError):
     }
 
     def __init__(self, qualifier: Qualifier, annotation: Any) -> None:
+
+        qualifier_str = self._qualifier_repr_map.get(qualifier, str(qualifier))
         super().__init__(
             message=(
-                f'The annotation {_repr.display_as_type(annotation)!r} contains the {self._qualifier_repr_map[qualifier]!r} '
+                f'The annotation {_repr.display_as_type(annotation)!r} contains the {qualifier_str!r} '
                 f'type qualifier, which is invalid in the context it is defined.'
             ),
             code=None,
