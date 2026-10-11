@@ -6546,6 +6546,55 @@ def test_json_schema_mode_override():
     assert SerializationModel.model_json_schema(mode='validation') == Model.model_json_schema(mode='serialization')
 
 
+@pytest.mark.parametrize('reverse', [False, True])
+def test_json_schema_mode_override_nested_cache_key(reverse: bool) -> None:
+    """https://github.com/pydantic/pydantic/issues/13971"""
+
+    class Inner(BaseModel):
+        a: int = 0
+
+        @computed_field
+        @property
+        def c(self) -> int:
+            return 1
+
+    class Outer(BaseModel):
+        model_config = ConfigDict(json_schema_mode_override='validation')
+
+        inner: Inner
+
+    inputs: list[tuple[type[BaseModel], JsonSchemaMode]] = [(Outer, 'serialization'), (Inner, 'validation')]
+    if reverse:
+        inputs.reverse()
+
+    mapping, schema = models_json_schema(inputs)
+
+    assert mapping[(Inner, 'validation')] == {'$ref': '#/$defs/Inner-Input'}
+    assert schema['$defs']['Inner-Input'] == Inner.model_json_schema(mode='validation')
+    # `Inner` doesn't set `json_schema_mode_override`, so it uses the mode the generation was requested with:
+    assert schema['$defs']['Outer']['properties']['inner'] == {'$ref': '#/$defs/Inner-Output'}
+    assert schema['$defs']['Inner-Output'] == Inner.model_json_schema(mode='serialization')
+
+
+def test_json_schema_mode_override_typed_dict_computed_fields() -> None:
+    class TD(TypedDict):
+        __pydantic_config__ = ConfigDict(json_schema_mode_override='validation')  # pyright: ignore[reportGeneralTypeIssues]
+
+        a: int
+
+    td_schema = TypeAdapter(TD).core_schema
+    assert td_schema['type'] == 'typed-dict'
+    # Computed fields can't be defined on typed dictionaries, add one manually:
+    td_schema['computed_fields'] = [core_schema.computed_field('c', return_schema=core_schema.int_schema())]
+
+    assert GenerateJsonSchema().generate(td_schema, mode='serialization') == {
+        'properties': {'a': {'title': 'A', 'type': 'integer'}},
+        'required': ['a'],
+        'title': 'TD',
+        'type': 'object',
+    }
+
+
 def test_models_json_schema_generics() -> None:
     class G(BaseModel, Generic[T]):
         foo: T
