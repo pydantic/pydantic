@@ -709,8 +709,10 @@ pub fn bytes_as_timedelta<'py>(
 pub fn int_as_duration(input: impl ToErrorValue, total_seconds: i64) -> ValResult<Duration> {
     let positive = total_seconds >= 0;
     let total_seconds = total_seconds.unsigned_abs();
-    // we can safely unwrap here since we've guaranteed seconds and microseconds can't cause overflow
-    let days = (total_seconds / 86400) as u32;
+    // The number of days can exceed `u32::MAX` (and casting would silently wrap it):
+    let Ok(days) = u32::try_from(total_seconds / 86400) else {
+        return Err(map_timedelta_err(input, ParseError::DurationDaysTooLarge));
+    };
     let seconds = (total_seconds % 86400) as u32;
     Duration::new(positive, days, seconds, 0).map_err(|err| map_timedelta_err(input, err))
 }
