@@ -203,7 +203,7 @@ markers = [
 
 [tool.uv]
 default-groups = ['dev']
-required-version = '>=0.8.4'
+required-version = '>=0.13.0'
 
 [tool.uv.sources]
 pydantic-core = { workspace = true }
