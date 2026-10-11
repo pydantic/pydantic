@@ -21,6 +21,7 @@ from typing_extensions import get_args, get_origin  # noqa: UP035
 from typing_inspection import typing_objects
 
 from pydantic._internal._import_utils import import_cached_field_info
+from pydantic._internal._typing_extra import is_namedtuple
 from pydantic.errors import PydanticSchemaGenerationError
 
 
@@ -59,6 +60,8 @@ def sequence_validator(
         return v_list
     elif value_type is tuple:
         return tuple(v_list)
+    elif is_namedtuple(value_type):
+        return value_type(*v_list)
     else:
         # best guess at how to re-create the original type, more custom construction logic might be required
         return value_type(v_list)  # type: ignore[call-arg]
