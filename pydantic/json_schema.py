@@ -445,7 +445,7 @@ class GenerateJsonSchema:
         self._used = True
         return self.sort(json_schema)
 
-    def generate_inner(self, schema: CoreSchemaOrField) -> JsonSchemaValue:  # noqa: C901
+    def generate_inner(self, schema: CoreSchemaOrField) -> JsonSchemaValue:
         """Generates a JSON schema for a given core schema.
 
         Args:
@@ -453,8 +453,16 @@ class GenerateJsonSchema:
 
         Returns:
             The generated JSON schema.
+        """
+        if schema['type'] in ('model', 'dataclass', 'typed-dict'):
+            # The class config (and in particular `json_schema_mode_override`) must be pushed *before*
+            # the definitions cache lookup, so that the JSON Schema is cached under the mode it was generated with:
+            with self._config_wrapper_stack.push(_get_class_config(schema)):  # pyright: ignore[reportArgumentType]
+                return self._generate_inner(schema)
+        return self._generate_inner(schema)
 
-        TODO: the nested function definitions here seem like bad practice, I'd like to unpack these
+    def _generate_inner(self, schema: CoreSchemaOrField) -> JsonSchemaValue:  # noqa: C901
+        """TODO: the nested function definitions here seem like bad practice, I'd like to unpack these
         in a future PR. It'd be great if we could shorten the call stack a bit for JSON schema generation,
         and I think there's potential for that here.
         """
@@ -1614,7 +1622,7 @@ class GenerateJsonSchema:
         if self.mode == 'serialization':
             named_required_fields.extend(self._name_required_computed_fields(schema.get('computed_fields', [])))
         cls = schema.get('cls')
-        config = _get_typed_dict_config(cls)
+        config = _get_class_config(schema)
         with self._config_wrapper_stack.push(config):
             json_schema = self._named_required_fields_schema(named_required_fields)
 
@@ -1968,8 +1976,7 @@ class GenerateJsonSchema:
         """
 
         cls = schema['cls']
-        # If (stdlib) dataclass doesn't have config, the parent's config is used (as during core schema generation):
-        config = cast('ConfigDict | None', getattr(cls, '__pydantic_config__', None))
+        config = _get_class_config(schema)
 
         with self._config_wrapper_stack.push(config):
             json_schema = self.generate_inner(schema['schema']).copy()
@@ -3227,10 +3234,17 @@ else:
             return hash(type(self))
 
 
-def _get_typed_dict_config(cls: type[Any] | None) -> ConfigDict | None:
-    # If typed dictionary doesn't have config, the parent's config is used (as during core schema generation),
-    # hence a default of `None`:
-    if cls is not None:
+def _get_class_config(
+    schema: core_schema.ModelSchema | core_schema.DataclassSchema | core_schema.TypedDictSchema,
+) -> ConfigDict | None:
+    """Get the config of the class a model, dataclass or typed dictionary schema was built from."""
+    if schema['type'] == 'model':
+        return cast('type[BaseModel]', schema['cls']).model_config
+    # If a (stdlib) dataclass or typed dictionary doesn't have config, the parent's config is used
+    # (as during core schema generation), hence a default of `None`:
+    if schema['type'] == 'dataclass':
+        return getattr(schema['cls'], '__pydantic_config__', None)
+    if (cls := schema.get('cls')) is not None:
         try:
             return _decorators.get_attribute_from_bases(cls, '__pydantic_config__')
         except AttributeError:
