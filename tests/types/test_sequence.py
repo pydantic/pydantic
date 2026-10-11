@@ -1,4 +1,4 @@
-from collections import deque
+from collections import deque, namedtuple
 from collections.abc import Sequence
 from typing import Any
 
@@ -201,3 +201,17 @@ def test_sequence_with_nested_type(sequence_type: type) -> None:
 
     models = sequence_type([Model(a=1), Model(a=2)])
     assert ta.dump_python(ta.validate_python(models)) == sequence_type([{'a': 1}, {'a': 2}])
+
+
+def test_sequence_named_tuple() -> None:
+    """https://github.com/pydantic/pydantic/issues/13976"""
+
+    Point = namedtuple('Point', ['x', 'y'])
+
+    ta = TypeAdapter(Sequence[int])
+
+    assert ta.validate_python(Point(1, 2)) == Point(1, 2)
+    assert ta.validate_python(Point('1', '2')) == Point(1, 2)
+
+    assert ta.dump_python(Point(1, 2)) == Point(1, 2)
+    assert ta.dump_json(Point(1, 2)) == b'[1,2]'
