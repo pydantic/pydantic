@@ -4,16 +4,16 @@ The "Strict" column contains checkmarks for type conversions that are allowed wh
 [Strict Mode](strict_mode.md).
 
 === "All"
-{{ conversion_table_all }}
+    {{ conversion_table_all }}
 
 === "JSON"
-{{ conversion_table_json }}
+    {{ conversion_table_json }}
 
 === "JSON - Strict"
-{{ conversion_table_json_strict }}
+    {{ conversion_table_json_strict }}
 
 === "Python"
-{{ conversion_table_python }}
+    {{ conversion_table_python }}
 
 === "Python - Strict"
-{{ conversion_table_python_strict }}
+    {{ conversion_table_python_strict }}
