@@ -3,7 +3,7 @@ use std::sync::Arc;
 use pyo3::exceptions::{PyTypeError, PyValueError};
 use pyo3::intern;
 use pyo3::sync::PyOnceLock;
-use pyo3::types::{IntoPyDict, PyDict, PyString, PyTuple, PyType};
+use pyo3::types::{IntoPyDict, PyDict, PyInt, PyString, PyTuple, PyType};
 use pyo3::{PyTypeInfo, prelude::*};
 
 use crate::build_tools::{is_strict, schema_or_config_same};
@@ -41,6 +41,91 @@ fn validate_as_decimal(
             ))),
         },
         None => Ok(None),
+    }
+}
+
+/// Splits a `Decimal` into its exact integer coefficient and exponent, i.e. `value == int * 10**exp`.
+/// Returns `None` for NaN and Infinity, whose `as_tuple()` exponent is a string.
+fn decimal_int_parts<'py>(
+    py: Python<'py>,
+    decimal: &Bound<'py, PyAny>,
+) -> PyResult<Option<(Bound<'py, PyAny>, i64, usize)>> {
+    let (_, digits, exponent): (Bound<'_, PyAny>, Bound<'_, PyTuple>, Bound<'_, PyAny>) =
+        decimal.call_method0(intern!(py, "as_tuple"))?.extract()?;
+    let Ok(exponent) = exponent.extract::<i64>() else {
+        return Ok(None);
+    };
+    // The sign is irrelevant for divisibility, only the digits matter:
+    let mut digit_string = String::with_capacity(digits.len());
+    for digit in &digits {
+        digit_string.push((b'0' + digit.extract::<u8>()?) as char);
+    }
+    let int = PyInt::type_object(py).call1((digit_string,))?.into_any();
+    Ok(Some((int, exponent, digits.len())))
+}
+
+/// `base**exp` as a Python int, via the two-argument builtin `pow`.
+fn int_pow(py: Python<'_>, base: i64, exp: i64) -> PyResult<Bound<'_, PyAny>> {
+    py.import(intern!(py, "builtins"))?
+        .getattr(intern!(py, "pow"))?
+        .call1((base, exp))
+}
+
+/// `base**exp % modulus` as a Python int, via the three-argument builtin `pow`
+/// (modular exponentiation, cheap even for huge exponents).
+fn int_pow_mod<'py>(
+    py: Python<'py>,
+    base: i64,
+    exp: i64,
+    modulus: &Bound<'py, PyAny>,
+) -> PyResult<Bound<'py, PyAny>> {
+    py.import(intern!(py, "builtins"))?
+        .getattr(intern!(py, "pow"))?
+        .call1((base, exp, modulus))
+}
+
+/// Whether `decimal` is an exact multiple of `multiple_of`.
+///
+/// `multiple_of` is guaranteed to be finite and greater than zero (checked when the validator
+/// is built). The check is performed on the integer coefficients of the two decimals, so it is
+/// exact for values of any magnitude and never depends on the ambient decimal context precision
+/// (unlike `(decimal / multiple_of) % 1`, which rounds large quotients and raises
+/// `DivisionImpossible` when the integral quotient needs more digits than the context allows).
+/// See https://github.com/pydantic/pydantic/issues/13970
+fn is_exact_multiple_of(
+    py: Python<'_>,
+    decimal: &Bound<'_, PyAny>,
+    multiple_of: &Bound<'_, PyAny>,
+) -> PyResult<bool> {
+    let zero = 0u8.into_pyobject(py)?;
+    let (Some((x, x_exp, x_len)), Some((y, y_exp, _))) = (
+        decimal_int_parts(py, decimal)?,
+        decimal_int_parts(py, multiple_of)?,
+    ) else {
+        // NaN and Infinity are never a multiple of anything
+        // (`multiple_of` itself can't be non-finite; checked at build time)
+        return Ok(false);
+    };
+    if x_exp >= y_exp {
+        // decimal / multiple_of = X * 10**(x_exp - y_exp) / Y, an integer iff
+        // Y divides X * 10**(x_exp - y_exp); the modular `pow` keeps this cheap
+        // even when the exponent is huge.
+        let pow10 = int_pow_mod(py, 10, x_exp - y_exp, &y)?;
+        Ok(x.rem(&y)?.mul(pow10)?.rem(&y)?.eq(&zero)?)
+    } else if x.eq(&zero)? {
+        // zero is a multiple of everything
+        Ok(true)
+    } else {
+        // decimal / multiple_of = X / (Y * 10**(y_exp - x_exp)), an integer iff
+        // Y * 10**(y_exp - x_exp) divides X. If 10**(y_exp - x_exp) > |X| the
+        // divisor is larger than |X| and can't divide it.
+        let shift = y_exp - x_exp;
+        if shift as u64 >= x_len as u64 {
+            Ok(false)
+        } else {
+            let divisor = y.mul(int_pow(py, 10, shift)?)?;
+            Ok(x.rem(&divisor)?.eq(&zero)?)
+        }
     }
 }
 
@@ -251,14 +336,10 @@ impl Validator for DecimalValidator {
         }
 
         if let Some(multiple_of) = &self.multiple_of {
-            // fraction = (decimal / multiple_of) % 1
-            let is_multiple = match decimal.div(multiple_of).and_then(|quotient| quotient.rem(1)) {
-                Ok(fraction) => fraction.eq(0u8.into_pyobject(py)?)?,
-                // The quotient can't be computed in the current decimal context:
-                Err(err) if err.matches(py, get_decimal_exception_type(py)?).unwrap_or(false) => false,
-                Err(err) => return Err(err.into()),
-            };
-            if !is_multiple {
+            // `decimal` is a multiple of `multiple_of` iff the exact quotient is an integer;
+            // checked via the integer coefficients so the result never depends on the
+            // ambient decimal context precision (see `is_exact_multiple_of`).
+            if !is_exact_multiple_of(py, &decimal, multiple_of.bind(py))? {
                 return Err(ValError::new(
                     ErrorType::MultipleOf {
                         multiple_of: multiple_of.to_string().into(),

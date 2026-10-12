@@ -298,12 +298,31 @@ def test_decimal_multiple_of(py_and_json: PyAndJson, multiple_of: float, input_v
 @pytest.mark.parametrize(
     ['multiple_of', 'input_value'],
     [
-        ('3', '1e30'),  # `InvalidOperation`: integral part of the quotient exceeds the context precision
+        # exact multiples whose quotient doesn't fit the default 28-digit decimal context;
+        # the check is exact and must not depend on the ambient context (pydantic/pydantic#13970)
+        ('2', '1e30'),
+        ('2', '1' + '0' * 100),
+        ('2', '12345678901234567890123456788'),
         ('0.01', '9' * 1000),
-        ('0.01', '1e999999'),  # `Overflow`: exponent of the quotient exceeds `Emax`
+        ('0.01', '1e999999'),
+        ('3', '9' * 999),
     ],
 )
-def test_decimal_multiple_of_quotient_out_of_context(py_and_json: PyAndJson, multiple_of: str, input_value: str):
+def test_decimal_multiple_of_large_exact_multiple(py_and_json: PyAndJson, multiple_of: str, input_value: str):
+    v = py_and_json(cs.decimal_schema(multiple_of=Decimal(multiple_of)))
+    assert v.validate_test(input_value) == Decimal(input_value)
+
+
+@pytest.mark.parametrize(
+    ['multiple_of', 'input_value'],
+    [
+        # not exact multiples; still rejected now that the check is exact (pydantic/pydantic#13970)
+        ('3', '1e30'),
+        ('7', '1' + '0' * 100),
+        ('2', '12345678901234567890123456789'),
+    ],
+)
+def test_decimal_multiple_of_large_not_multiple(py_and_json: PyAndJson, multiple_of: str, input_value: str):
     v = py_and_json(cs.decimal_schema(multiple_of=Decimal(multiple_of)))
     with pytest.raises(ValidationError, check=lambda e: e.errors()[0]['type'] == 'multiple_of'):
         v.validate_test(input_value)
