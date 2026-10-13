@@ -17,8 +17,8 @@ Define how data should be in pure, canonical Python 3.10+; validate it with Pyda
 
 ## Pydantic Logfire :fire:
 
-We've launched Pydantic Logfire to help you monitor your applications.
-[Learn more](https://pydantic.dev/logfire/?utm_source=pydantic_validation)
+Logfire is an observability and evaluation platform for AI applications and agents. Debug and trace agent execution, evaluate AI outputs, and manage model interactions through an integrated AI gateway.
+Explore [⁠Logfire’s AI observability and evaluation platform](https://pydantic.dev/logfire).
 
 ## Pydantic V1.10 vs. V2
 
