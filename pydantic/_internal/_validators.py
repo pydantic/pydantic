@@ -16,9 +16,16 @@ from ipaddress import IPv4Address, IPv4Interface, IPv4Network, IPv6Address, IPv6
 from typing import Any, TypeAlias, TypeVar, cast
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
+from pydantic_core import MultiHostUrl as _CoreMultiHostUrl
 from pydantic_core import PydanticCustomError, PydanticKnownError, core_schema
+from pydantic_core import Url as _CoreUrl
 from typing_extensions import get_args, get_origin  # noqa: UP035
 from typing_inspection import typing_objects
+
+if not hasattr(_CoreUrl, '__len__'):
+    _CoreUrl.__len__ = lambda self: len(str(self))  # type: ignore[method-assign]
+if not hasattr(_CoreMultiHostUrl, '__len__'):
+    _CoreMultiHostUrl.__len__ = lambda self: len(str(self))  # type: ignore[method-assign]
 
 from pydantic._internal._import_utils import import_cached_field_info
 from pydantic._internal._typing_extra import is_namedtuple
@@ -309,11 +316,21 @@ def multiple_of_validator(x: Any, multiple_of: Any) -> Any:
         raise TypeError(f"Unable to apply constraint 'multiple_of' to supplied value {x}")
 
 
+def _get_length(x: Any) -> int:
+    try:
+        return len(x)
+    except TypeError:
+        if isinstance(x, (_CoreUrl, _CoreMultiHostUrl)):
+            return len(str(x))
+        raise
+
+
 def min_length_validator(x: Any, min_length: Any) -> Any:
     try:
-        if not (len(x) >= min_length):
+        actual_len = _get_length(x)
+        if not (actual_len >= min_length):
             raise PydanticKnownError(
-                'too_short', {'field_type': 'Value', 'min_length': min_length, 'actual_length': len(x)}
+                'too_short', {'field_type': 'Value', 'min_length': min_length, 'actual_length': actual_len}
             )
         return x
     except TypeError:
@@ -322,10 +339,11 @@ def min_length_validator(x: Any, min_length: Any) -> Any:
 
 def max_length_validator(x: Any, max_length: Any) -> Any:
     try:
-        if len(x) > max_length:
+        actual_len = _get_length(x)
+        if actual_len > max_length:
             raise PydanticKnownError(
                 'too_long',
-                {'field_type': 'Value', 'max_length': max_length, 'actual_length': len(x)},
+                {'field_type': 'Value', 'max_length': max_length, 'actual_length': actual_len},
             )
         return x
     except TypeError:

@@ -53,6 +53,11 @@ from pydantic_core import MultiHostUrl as _CoreMultiHostUrl
 from pydantic_core import Url as _CoreUrl
 from typing_extensions import Self
 
+if not hasattr(_CoreUrl, '__len__'):
+    _CoreUrl.__len__ = lambda self: len(str(self))  # type: ignore[method-assign]
+if not hasattr(_CoreMultiHostUrl, '__len__'):
+    _CoreMultiHostUrl.__len__ = lambda self: len(str(self))  # type: ignore[method-assign]
+
 from pydantic.errors import PydanticUserError
 
 from ._internal import _repr, _schema_generation_shared

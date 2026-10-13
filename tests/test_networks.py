@@ -3,7 +3,7 @@ import operator
 from typing import Annotated, Any
 
 import pytest
-from pydantic_core import MultiHostHost, PydanticCustomError, PydanticSerializationError, Url
+from pydantic_core import MultiHostHost, MultiHostUrl, PydanticCustomError, PydanticSerializationError, Url
 
 from pydantic import (
     AfterValidator,
@@ -28,6 +28,7 @@ from pydantic import (
     RedisDsn,
     SnowflakeDsn,
     Strict,
+    StringConstraints,
     TypeAdapter,
     UrlConstraints,
     ValidationError,
@@ -1275,6 +1276,77 @@ def test_max_length_base_multi_host() -> None:
 
     with pytest.raises(ValidationError, match=r'Value should have at most 45 items after validation'):
         Model(postgres='postgres://user:pass@localhost:5432/foobarbazfoo')
+
+
+def test_url_field_min_and_max_length() -> None:
+    class Model(BaseModel):
+        url: Annotated[Url, Field(min_length=1, max_length=255)]
+
+    m1 = Model(url='https://example.com/auth')
+    assert m1.url == Url('https://example.com/auth')
+    assert len(m1.url) == len('https://example.com/auth')
+
+    m2 = Model(url=Url('https://example.com/auth'))
+    assert m2.url == Url('https://example.com/auth')
+    assert len(m2.url) == len('https://example.com/auth')
+
+    with pytest.raises(ValidationError, match=r'Value should have at least 30 items after validation'):
+
+        class ShortModel(BaseModel):
+            url: Annotated[Url, Field(min_length=30)]
+
+        ShortModel(url='https://example.com/auth')
+
+    with pytest.raises(ValidationError, match=r'Value should have at least 30 items after validation'):
+        ShortModel(url=Url('https://example.com/auth'))
+
+
+def test_multi_host_url_field_min_and_max_length() -> None:
+    class Model(BaseModel):
+        dsn: Annotated[MultiHostUrl, Field(min_length=10, max_length=100)]
+
+    expected = 'postgres://user:pass@localhost:5432/foobar'
+    m1 = Model(dsn=expected)
+    assert m1.dsn == MultiHostUrl(expected)
+    assert len(m1.dsn) == len(expected)
+
+    m2 = Model(dsn=MultiHostUrl(expected))
+    assert m2.dsn == MultiHostUrl(expected)
+    assert len(m2.dsn) == len(expected)
+
+    with pytest.raises(ValidationError, match=r'Value should have at least 50 items after validation'):
+
+        class ShortModel(BaseModel):
+            dsn: Annotated[MultiHostUrl, Field(min_length=50)]
+
+        ShortModel(dsn=expected)
+
+    with pytest.raises(ValidationError, match=r'Value should have at least 50 items after validation'):
+        ShortModel(dsn=MultiHostUrl(expected))
+
+
+def test_url_string_constraints() -> None:
+    class Model(BaseModel):
+        url: Annotated[Url, StringConstraints(min_length=5, max_length=50)]
+
+    m = Model(url='https://example.com/auth')
+    assert m.url == Url('https://example.com/auth')
+    assert len(m.url) == len('https://example.com/auth')
+
+    with pytest.raises(ValidationError, match=r'Value should have at least 30 items after validation'):
+
+        class ShortModel(BaseModel):
+            url: Annotated[Url, StringConstraints(min_length=30)]
+
+        ShortModel(url='https://example.com/auth')
+
+
+def test_core_url_len() -> None:
+    url = Url('https://example.com/auth')
+    assert len(url) == len('https://example.com/auth')
+
+    multi_url = MultiHostUrl('postgres://user:pass@localhost:5432/foobar')
+    assert len(multi_url) == len('postgres://user:pass@localhost:5432/foobar')
 
 
 def test_unexpected_ser() -> None:

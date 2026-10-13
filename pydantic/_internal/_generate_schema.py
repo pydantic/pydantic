@@ -50,6 +50,12 @@ from pydantic_core import (
     core_schema,
     to_jsonable_python,
 )
+
+if not hasattr(Url, '__len__'):
+    Url.__len__ = lambda self: len(str(self))  # type: ignore[method-assign]
+if not hasattr(MultiHostUrl, '__len__'):
+    MultiHostUrl.__len__ = lambda self: len(str(self))  # type: ignore[method-assign]
+
 from typing_extensions import (  # noqa: UP035 (for `get_args` and `get_origin`)
     TypeAliasType,
     get_args,
