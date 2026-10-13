@@ -12,7 +12,7 @@ use ahash::AHashMap;
 
 use crate::build_tools::{py_schema_err, py_schema_error_type};
 use crate::errors::{ErrorType, ValError, ValResult};
-use crate::input::{Input, ValidationMatch};
+use crate::input::{EitherInt, Input, ValidationMatch};
 use crate::py_gc::PyGcTraverse;
 use crate::tools::SchemaDict;
 
@@ -140,6 +140,15 @@ impl<T: Debug> LiteralLookup<T> {
                 }
             }
         }
+        // JSON object keys are always strings, so `{Status.OK: ...}` gets dumped as `{"200": ...}` and
+        // none of the lookups above will ever match it. Parse the key back the same way `dict[int, ...]`
+        // does. This goes after the `str` lookup on purpose: with `Literal[1, '1']`, a `"1"` key should
+        // still pick the string.
+        if input.is_json_key()
+            && let Some(id) = self.json_key_lookup(py, input)?
+        {
+            return Ok(Some((input, &self.values[id])));
+        }
         // cache py_input if needed, since we might need it for multiple lookups
         let py_input = OnceCell::new();
         let get_py_input = || match py_input.get() {
@@ -178,6 +187,38 @@ impl<T: Debug> LiteralLookup<T> {
         {
             let id: usize = v.extract().unwrap();
             return Ok(Some((input, &self.values[id])));
+        }
+        Ok(None)
+    }
+
+    /// Finds the non-string value a JSON object key stands for, e.g. `"200"` -> `200`, `"0.5"` -> `0.5`.
+    fn json_key_lookup<'py, I: Input<'py> + ?Sized>(&self, py: Python<'py>, input: &I) -> PyResult<Option<usize>> {
+        let py_dict = self.expected_py_dict.as_ref().map(|d| d.bind(py));
+        // Swallow lookup errors here, same as `validate` does: a miss just falls through to the
+        // regular literal error.
+        let py_dict_lookup = |key: Bound<'py, PyAny>| match py_dict.map(|d| d.get_item(key)) {
+            Some(Ok(Some(id))) => id.extract().map(Some),
+            _ => Ok(None),
+        };
+
+        if let Ok(int) = input.validate_int(false).map(ValidationMatch::into_inner) {
+            match int {
+                EitherInt::I64(int) => {
+                    if let Some(id) = self.expected_int.as_ref().and_then(|ints| ints.get(&int)) {
+                        return Ok(Some(*id));
+                    }
+                    // Could still be a float member like `ONE = 1.0`, keep going.
+                    if let Some(id) = py_dict_lookup(int.into_pyobject(py)?.into_any())? {
+                        return Ok(Some(id));
+                    }
+                }
+                // Anything that doesn't fit in an i64 lives in `expected_py_dict`.
+                EitherInt::BigInt(big) => return py_dict_lookup(big.into_pyobject(py)?.into_any()),
+                EitherInt::U64(_) | EitherInt::Py(_) => {}
+            }
+        }
+        if let Ok(float) = input.validate_float(false).map(ValidationMatch::into_inner) {
+            return py_dict_lookup(float.as_f64().into_pyobject(py)?.into_any());
         }
         Ok(None)
     }

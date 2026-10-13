@@ -506,3 +506,77 @@ def test_strict_enum_wrap_json() -> None:
 
     assert v.validate_python(Animal.CAT) == Animal.CAT
     assert v.validate_json('"dog"') == Animal.DOG
+
+
+def enum_dict_validator(enum_cls, sub_type=None, **config):
+    members = list(enum_cls.__members__.values())
+    return SchemaValidator(
+        core_schema.dict_schema(
+            core_schema.enum_schema(enum_cls, members, sub_type=sub_type), core_schema.int_schema()
+        ),
+        config=config or None,
+    )
+
+
+# https://github.com/pydantic/pydantic/issues/13988
+@pytest.mark.parametrize('strict', [False, True])
+def test_plain_enum_int_values_as_json_keys(strict: bool):
+    class Status(Enum):
+        OK = 200
+        NOT_FOUND = 404
+
+    v = enum_dict_validator(Status, strict=strict)
+    assert v.validate_json('{"200": 3, "404": 1}') == {Status.OK: 3, Status.NOT_FOUND: 1}
+
+
+@pytest.mark.parametrize('strict', [False, True])
+def test_plain_enum_float_values_as_json_keys(strict: bool):
+    class Ratio(Enum):
+        HALF = 0.5
+        ONE = 1.0
+
+    v = enum_dict_validator(Ratio, strict=strict)
+    assert v.validate_json('{"0.5": 1, "1.0": 2}') == {Ratio.HALF: 1, Ratio.ONE: 2}
+
+
+def test_plain_enum_mixed_values_as_json_keys():
+    class Mixed(Enum):
+        A = 1
+        B = 'b'
+
+    assert enum_dict_validator(Mixed).validate_json('{"1": 1, "b": 2}') == {Mixed.A: 1, Mixed.B: 2}
+
+
+def test_plain_enum_big_int_values_as_json_keys():
+    class Big(Enum):
+        HUGE = 2**70
+
+    assert enum_dict_validator(Big).validate_json(f'{{"{2**70}": 1}}') == {Big.HUGE: 1}
+
+
+@pytest.mark.parametrize('key', ['3', 'a', '0.25', '99999999999999999999999'])
+def test_plain_enum_json_keys_still_reject_bad_input(key: str):
+    class Status(Enum):
+        OK = 200
+        HALF = 0.5
+
+    with pytest.raises(ValidationError) as exc_info:
+        enum_dict_validator(Status).validate_json(f'{{"{key}": 1}}')
+    assert [e['type'] for e in exc_info.value.errors()] == ['enum']
+
+
+def test_plain_enum_json_string_values_are_not_parsed():
+    # Only keys get the special treatment. A plain JSON string is still just a string.
+    class Status(Enum):
+        OK = 200
+
+    v = SchemaValidator(core_schema.enum_schema(Status, list(Status.__members__.values())))
+    with pytest.raises(ValidationError, match='type=enum'):
+        v.validate_json('"200"')
+
+
+def test_int_enum_json_keys_unchanged():
+    class Status(IntEnum):
+        OK = 200
+
+    assert enum_dict_validator(Status, sub_type='int').validate_json('{"200": 1}') == {Status.OK: 1}

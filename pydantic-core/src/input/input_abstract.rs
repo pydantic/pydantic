@@ -78,6 +78,12 @@ pub(crate) trait Input<'py>: fmt::Debug {
         None
     }
 
+    /// `true` for JSON object keys. Those are always strings, even when they really stand for
+    /// something else, like the `"1"` in `{"1": ...}` for a `dict[int, ...]`.
+    fn is_json_key(&self) -> bool {
+        false
+    }
+
     fn as_kwargs(&self, py: Python<'py>) -> Option<Bound<'py, PyDict>>;
 
     type Arguments<'a>: Arguments<'py>

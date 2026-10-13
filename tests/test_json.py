@@ -10,7 +10,7 @@ from enum import Enum
 from ipaddress import IPv4Address, IPv4Interface, IPv4Network, IPv6Address, IPv6Interface, IPv6Network
 from pathlib import Path
 from re import Pattern
-from typing import Annotated, Any, Optional, Union
+from typing import Annotated, Any, Literal, Optional, Union
 from uuid import UUID
 
 import pytest
@@ -26,6 +26,7 @@ from pydantic import (
     PlainSerializer,
     RootModel,
     TypeAdapter,
+    ValidationError,
 )
 from pydantic._internal._config import ConfigWrapper
 from pydantic._internal._generate_schema import GenerateSchema
@@ -586,3 +587,35 @@ def test_json_ensure_ascii() -> None:
         f: str
 
     assert Model(f='à').model_dump_json(ensure_ascii=True) == '{"f":"\\u00e0"}'
+
+
+# https://github.com/pydantic/pydantic/issues/13988
+@pytest.mark.parametrize('strict', [False, True])
+def test_non_str_enum_and_literal_dict_keys_json_round_trip(strict: bool) -> None:
+    class Status(Enum):
+        OK = 200
+        NOT_FOUND = 404
+
+    class Ratio(Enum):
+        HALF = 0.5
+
+    class Report(BaseModel):
+        counts: dict[Status, int]
+        ratios: dict[Ratio, int]
+        levels: dict[Literal[1, 2], str]
+
+    r = Report(counts={Status.OK: 3, Status.NOT_FOUND: 1}, ratios={Ratio.HALF: 1}, levels={2: 'high'})
+    dumped = r.model_dump_json()
+    assert dumped == '{"counts":{"200":3,"404":1},"ratios":{"0.5":1},"levels":{"2":"high"}}'
+    assert Report.model_validate_json(dumped, strict=strict) == r
+
+
+def test_non_str_enum_and_literal_json_values_unchanged() -> None:
+    class Status(Enum):
+        OK = 200
+
+    # Only dict keys are affected, a plain JSON string still doesn't match a non-string member.
+    with pytest.raises(ValidationError):
+        TypeAdapter(Status).validate_json('"200"')
+    with pytest.raises(ValidationError):
+        TypeAdapter(Literal[1]).validate_json('"1"')

@@ -440,6 +440,10 @@ impl<'py> Input<'py> for str {
         InputValue::Json(JsonValue::Str(self.to_owned().into()))
     }
 
+    fn is_json_key(&self) -> bool {
+        true
+    }
+
     fn as_kwargs(&self, _py: Python<'py>) -> Option<Bound<'py, PyDict>> {
         None
     }

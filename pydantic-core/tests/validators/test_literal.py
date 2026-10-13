@@ -403,3 +403,39 @@ def test_enum_for_str() -> None:
     for val in [val_enum, val_str]:
         assert val.validate_python('a') == 'a'
         assert val.validate_python(S.a) == 'a'
+
+
+def literal_dict_validator(expected: list[Any], **config: Any) -> SchemaValidator:
+    return SchemaValidator(
+        core_schema.dict_schema(core_schema.literal_schema(expected), core_schema.int_schema()), config=config or None
+    )
+
+
+# https://github.com/pydantic/pydantic/issues/13988
+@pytest.mark.parametrize('strict', [False, True])
+def test_int_literal_as_json_keys(strict: bool):
+    v = literal_dict_validator([1, 2, -5, 2**70], strict=strict)
+    assert v.validate_json(f'{{"1": 1, "2": 2, "-5": 3, "{2**70}": 4}}') == {1: 1, 2: 2, -5: 3, 2**70: 4}
+
+
+@pytest.mark.parametrize('key', ['3', 'a', '1.5', '99999999999999999999999'])
+def test_int_literal_json_keys_still_reject_bad_input(key: str):
+    with pytest.raises(ValidationError) as exc_info:
+        literal_dict_validator([1, 2]).validate_json(f'{{"{key}": 1}}')
+    assert [e['type'] for e in exc_info.value.errors()] == ['literal_error']
+
+
+def test_int_literal_json_string_values_are_not_parsed():
+    # Only keys get the special treatment, `"1"` as a regular JSON value is still a string.
+    with pytest.raises(ValidationError, match='type=literal_error'):
+        SchemaValidator(core_schema.literal_schema([1, 2])).validate_json('"1"')
+    # And nothing changes on the python side either.
+    with pytest.raises(ValidationError, match='type=literal_error'):
+        literal_dict_validator([1, 2]).validate_python({'1': 1})
+
+
+def test_int_and_str_literal_json_keys():
+    # `1` and `'1'` both end up as the `"1"` key, so the string has to win.
+    v = literal_dict_validator([1, '1', 2])
+    assert v.validate_json('{"1": 1, "2": 2}') == {'1': 1, 2: 2}
+    assert v.validate_python({1: 1}) == {1: 1}
