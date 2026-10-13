@@ -647,6 +647,18 @@ def test_root_model_shallow_copy() -> None:
     assert copied.root == [1, 2, 3, 4]
 
 
+def test_root_model_shallow_copy_private_attributes() -> None:
+    class Root(RootModel[int]):
+        _tag: str = PrivateAttr(default='original')
+
+    original = Root(1)
+    copied = original.model_copy(deep=False)
+
+    copied._tag = 'copy'
+    assert original._tag == 'original'
+    assert copied._tag == 'copy'
+
+
 def test_root_model_deep_copy() -> None:
     class NestedListRootModel(RootModel[list[list[int]]]):
         pass
