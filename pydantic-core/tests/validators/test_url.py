@@ -1316,6 +1316,17 @@ def test_url_bool() -> None:
     assert bool(Url('http://example.com')) is True
 
 
+@pytest.mark.parametrize(
+    ('url_type', 'url'),
+    [
+        (Url, 'https://example.com/path'),
+        (MultiHostUrl, 'https://example.com,example.org/path'),
+    ],
+)
+def test_url_length(url_type: type[Url] | type[MultiHostUrl], url: str) -> None:
+    assert len(url_type(url)) == len(url)
+
+
 def test_url_hash() -> None:
     data: dict[Url, int] = {}
 

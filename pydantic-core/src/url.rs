@@ -214,6 +214,10 @@ impl PyUrl {
         true // an empty string is not a valid URL
     }
 
+    fn __len__(&self, py: Python<'_>) -> usize {
+        self.serialized(py).len()
+    }
+
     #[pyo3(signature = (_memo, /))]
     pub fn __deepcopy__(&self, py: Python, _memo: Bound<'_, PyAny>) -> PyResult<Py<PyAny>> {
         self.clone().into_py_any(py)
@@ -469,6 +473,10 @@ impl PyMultiHostUrl {
 
     fn __bool__(&self) -> bool {
         true // an empty string is not a valid URL
+    }
+
+    fn __len__(&self, py: Python<'_>) -> usize {
+        self.__str__(py).len()
     }
 
     pub fn __deepcopy__(&self, py: Python, _memo: &Bound<'_, PyDict>) -> PyResult<Py<PyAny>> {
