@@ -560,6 +560,7 @@ impl ValidationInfo {
 
     fn __clear__(&mut self) {
         self.context = None;
+        self.data = None;
     }
 
     fn __repr__(&self, py: Python) -> PyResult<String> {
