@@ -1,6 +1,7 @@
 import gc
 import itertools
 import json
+import pickle
 import platform
 import re
 import subprocess
@@ -1037,6 +1038,54 @@ def test_generic_model_from_function_pickle_fail(create_module):
         original = get_generic(Model)(value=Model(a='24'))
         with pytest.raises(pickle.PicklingError):
             pickle.dumps(original)
+
+
+def test_generic_model_parametrized_in_other_module_pickle(create_module) -> None:
+    """https://github.com/pydantic/pydantic/issues/13991"""
+
+    @create_module
+    def module_1():
+        from typing import Generic, TypeVar
+
+        from pydantic import BaseModel
+
+        T = TypeVar('T')
+
+        class Page(BaseModel, Generic[T]):
+            items: list[T]
+
+        class Response(BaseModel, Generic[T]):
+            result: T
+
+    module_2 = create_module(
+        f"""
+from pydantic import BaseModel
+
+from {module_1.__name__} import Page, Response
+
+class Item(BaseModel):
+    name: str
+
+ItemResponse = Response[Page[Item]]
+        """
+    )
+
+    ItemResponse = module_2.ItemResponse
+    ItemPage = ItemResponse.model_fields['result'].annotation
+
+    assert ItemResponse.__module__ == ItemPage.__module__ == module_2.__name__
+    assert getattr(module_2, ItemResponse.__qualname__) is ItemResponse
+    assert getattr(module_2, ItemPage.__qualname__) is ItemPage
+    # The module where the generic classes are defined shouldn't be polluted:
+    assert not hasattr(module_1, ItemResponse.__qualname__)
+    assert not hasattr(module_1, ItemPage.__qualname__)
+
+    original = ItemResponse(result={'items': [{'name': 'a'}]})
+    loaded = pickle.loads(pickle.dumps(original))
+    assert type(loaded) is ItemResponse
+    assert type(loaded.result) is ItemPage
+    assert type(loaded.result.items[0]) is module_2.Item
+    assert loaded == original
 
 
 # `cloudpickle` is in the optional `testing-extra` dependency group, so the
