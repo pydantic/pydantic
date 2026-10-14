@@ -1211,6 +1211,36 @@ BarInt = Bar[int]
     assert module_2.BarInt.model_fields['f'].annotation is int
 
 
+def test_resolve_forward_ref_type_argument_in_parametrizing_module(create_module):
+
+    @create_module
+    def module_1():
+        from typing import Generic, TypeVar
+
+        from pydantic import BaseModel
+
+        T = TypeVar('T')
+
+        class Bar(BaseModel, Generic[T]):
+            t: T
+
+    module_2 = create_module(
+        f"""
+from {module_1.__name__} import Bar
+
+BarA = Bar['A']
+
+A = int
+        """
+    )
+
+    assert not module_2.BarA.__pydantic_complete__
+
+    # `'A'` is evaluated in `module_2`, the module where `Bar` got parametrized:
+    assert module_2.BarA(t='1').t == 1
+    assert module_2.BarA.model_fields['t'].annotation is int
+
+
 @pytest.mark.xfail(
     reason='We should keep a reference to the parent frame, not `f_locals`. '
     "It's probably only reasonable to support this in Python 3.14 with PEP 649."
