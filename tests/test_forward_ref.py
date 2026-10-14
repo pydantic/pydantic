@@ -1145,10 +1145,10 @@ def test_lazy_local_namespace_len() -> None:
 
 
 @pytest.mark.xfail(
-    reason='While `get_cls_type_hints` uses the correct module ns for each base, `collect_model_fields` '
+    reason='While `get_cls_type_hints()` uses the correct module ns for each base, `collect_model_fields()` '
     'will still use the `FieldInfo` instances from each base (see the `parent_fields_lookup` logic). '
     'This means that `f` is still a forward ref in `Foo.model_fields`, and it gets evaluated in '
-    '`GenerateSchema._model_schema`, where only the module of `Foo` is considered.'
+    '`GenerateSchema._model_schema()`, where only the module of `Foo` is considered.'
 )
 def test_uses_the_correct_globals_to_resolve_model_forward_refs(create_module):
     @create_module
@@ -1172,6 +1172,73 @@ class Foo(Bar):
     )
 
     assert module_2.Foo.model_fields['f'].annotation is int
+
+
+@pytest.mark.xfail(
+    reason='Same as `test_uses_the_correct_globals_to_resolve_model_forward_refs()`. As the generic model is '
+    'parametrized in `module_2`, the `__module__` of the parametrized class is `module_2` and so `f` is '
+    'evaluated in this module when rebuilding.'
+)
+def test_uses_the_correct_globals_to_resolve_parametrized_generic_model_forward_refs(create_module):
+    @create_module
+    def module_1():
+        from typing import Generic, TypeVar
+
+        from pydantic import BaseModel
+
+        T = TypeVar('T')
+
+        class Bar(BaseModel, Generic[T]):
+            t: T
+            f: 'A'
+
+    module_2 = create_module(
+        f"""
+from {module_1.__name__} import Bar
+
+A = str
+
+BarInt = Bar[int]
+        """
+    )
+
+    # Simulates `A` being defined later in `module_1`, after `Bar` got parametrized
+    # (e.g. if `module_1` imports `module_2` before defining `A`):
+    exec('A = int', module_1.__dict__)
+
+    module_2.BarInt.model_rebuild()
+
+    assert module_2.BarInt.model_fields['f'].annotation is int
+
+
+def test_resolve_forward_ref_type_argument_in_parametrizing_module(create_module):
+
+    @create_module
+    def module_1():
+        from typing import Generic, TypeVar
+
+        from pydantic import BaseModel
+
+        T = TypeVar('T')
+
+        class Bar(BaseModel, Generic[T]):
+            t: T
+
+    module_2 = create_module(
+        f"""
+from {module_1.__name__} import Bar
+
+BarA = Bar['A']
+
+A = int
+        """
+    )
+
+    assert not module_2.BarA.__pydantic_complete__
+
+    # `'A'` is evaluated in `module_2`, the module where `Bar` got parametrized:
+    assert module_2.BarA(t='1').t == 1
+    assert module_2.BarA.model_fields['t'].annotation is int
 
 
 @pytest.mark.xfail(
