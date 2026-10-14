@@ -116,10 +116,10 @@ pub(crate) fn infer_to_python_known<'py>(
             }
             ObType::Float | ObType::FloatSubclass => {
                 let v = value.extract::<f64>()?;
-                if (v.is_nan() || v.is_infinite()) && state.config.inf_nan_mode == InfNanMode::Null {
-                    return Ok(py.None());
+                match type_serializers::float::inf_nan_to_python(py, v, state.config.inf_nan_mode) {
+                    Some(v) => v,
+                    None => v.into_py_any(py)?,
                 }
-                v.into_py_any(py)?
             }
             ObType::Decimal | ObType::Fraction => value.to_string().into_py_any(py)?,
             ObType::StrSubclass => PyString::new(py, value.cast::<PyString>()?.to_str()?).into(),
