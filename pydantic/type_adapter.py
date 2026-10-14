@@ -670,7 +670,7 @@ class TypeAdapter(Generic[T]):
     def json_schema(
         self,
         *,
-        by_alias: bool = True,
+        by_alias: bool | None = None,
         ref_template: str = DEFAULT_REF_TEMPLATE,
         union_format: Literal['any_of', 'primitive_type_array'] = 'any_of',
         schema_generator: type[GenerateJsonSchema] = GenerateJsonSchema,
@@ -712,7 +712,7 @@ class TypeAdapter(Generic[T]):
         inputs: Iterable[tuple[JsonSchemaKeyT, JsonSchemaMode, TypeAdapter[Any]]],
         /,
         *,
-        by_alias: bool = True,
+        by_alias: bool | None = None,
         title: str | None = None,
         description: str | None = None,
         ref_template: str = DEFAULT_REF_TEMPLATE,

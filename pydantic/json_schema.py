@@ -270,11 +270,13 @@ class GenerateJsonSchema:
 
     def __init__(
         self,
-        by_alias: bool = True,
+        by_alias: bool | None = None,
         ref_template: str = DEFAULT_REF_TEMPLATE,
         union_format: Literal['any_of', 'primitive_type_array'] = 'any_of',
     ) -> None:
-        self.by_alias = by_alias
+        # `None` means "not explicitly set": aliases are used, unless disabled by the config (e.g. `validate_by_alias`)
+        self._by_alias = by_alias
+        self.by_alias = by_alias is not False
         self.ref_template = ref_template
         self.union_format: Literal['any_of', 'primitive_type_array'] = union_format
 
@@ -1692,7 +1694,8 @@ class GenerateJsonSchema:
         if field['type'] == 'computed-field':
             alias: Any = field.get('alias', name)
         elif self.mode == 'validation':
-            alias = name if not self._config.validate_by_alias else field.get('validation_alias', name)
+            use_alias = self._config.validate_by_alias if self._by_alias is None else self._by_alias
+            alias = field.get('validation_alias', name) if use_alias else name
         else:
             alias = field.get('serialization_alias', name)
         if isinstance(alias, str):
@@ -2727,7 +2730,7 @@ class GenerateJsonSchema:
 
 def model_json_schema(
     cls: type[BaseModel] | type[PydanticDataclass],
-    by_alias: bool = True,
+    by_alias: bool | None = None,
     ref_template: str = DEFAULT_REF_TEMPLATE,
     union_format: Literal['any_of', 'primitive_type_array'] = 'any_of',
     schema_generator: type[GenerateJsonSchema] = GenerateJsonSchema,
@@ -2776,7 +2779,7 @@ def model_json_schema(
 def models_json_schema(
     models: Sequence[tuple[type[BaseModel] | type[PydanticDataclass], JsonSchemaMode]],
     *,
-    by_alias: bool = True,
+    by_alias: bool | None = None,
     title: str | None = None,
     description: str | None = None,
     ref_template: str = DEFAULT_REF_TEMPLATE,
