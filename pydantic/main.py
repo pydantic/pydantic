@@ -606,7 +606,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
     @classmethod
     def model_json_schema(
         cls,
-        by_alias: bool = True,
+        by_alias: bool | None = None,
         ref_template: str = DEFAULT_REF_TEMPLATE,
         schema_generator: type[GenerateJsonSchema] = GenerateJsonSchema,
         mode: JsonSchemaMode = 'validation',
@@ -616,7 +616,9 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
         """Generates a JSON schema for a model class.
 
         Args:
-            by_alias: Whether to use attribute aliases or not.
+            by_alias: Whether to use field aliases as keys in the generated JSON Schema. If `None` (the default),
+                aliases are used unless disabled by the configuration (i.e. `validate_by_alias=False` for validation
+                schemas). An explicit value takes precedence over the configuration.
             ref_template: The reference template.
             union_format: The format to use when combining schemas from unions together. Can be one of:
 

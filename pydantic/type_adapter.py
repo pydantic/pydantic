@@ -670,7 +670,7 @@ class TypeAdapter(Generic[T]):
     def json_schema(
         self,
         *,
-        by_alias: bool = True,
+        by_alias: bool | None = None,
         ref_template: str = DEFAULT_REF_TEMPLATE,
         union_format: Literal['any_of', 'primitive_type_array'] = 'any_of',
         schema_generator: type[GenerateJsonSchema] = GenerateJsonSchema,
@@ -679,7 +679,9 @@ class TypeAdapter(Generic[T]):
         """Generate a JSON schema for the adapted type.
 
         Args:
-            by_alias: Whether to use alias names for field names.
+            by_alias: Whether to use field aliases as keys in the generated JSON Schema. If `None` (the default),
+                aliases are used unless disabled by the configuration (i.e. `validate_by_alias=False` for validation
+                schemas). An explicit value takes precedence over the configuration.
             ref_template: The format string used for generating $ref strings.
             union_format: The format to use when combining schemas from unions together. Can be one of:
 
@@ -712,7 +714,7 @@ class TypeAdapter(Generic[T]):
         inputs: Iterable[tuple[JsonSchemaKeyT, JsonSchemaMode, TypeAdapter[Any]]],
         /,
         *,
-        by_alias: bool = True,
+        by_alias: bool | None = None,
         title: str | None = None,
         description: str | None = None,
         ref_template: str = DEFAULT_REF_TEMPLATE,
@@ -725,7 +727,9 @@ class TypeAdapter(Generic[T]):
             inputs: Inputs to schema generation. The first two items will form the keys of the (first)
                 output mapping; the type adapters will provide the core schemas that get converted into
                 definitions in the output JSON schema.
-            by_alias: Whether to use alias names.
+            by_alias: Whether to use field aliases as keys in the generated JSON Schema. If `None` (the default),
+                aliases are used unless disabled by the configuration (i.e. `validate_by_alias=False` for validation
+                schemas). An explicit value takes precedence over the configuration.
             title: The title for the schema.
             description: The description for the schema.
             ref_template: The format string used for generating $ref strings.
