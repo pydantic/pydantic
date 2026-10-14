@@ -2209,6 +2209,15 @@ def test_json_value_roundtrip() -> None:
     assert round_trip_value is True, round_trip_value
 
 
+def test_json_value_inf_nan_serialization() -> None:
+    # `JsonValue` is serialized using inference, which respects `ser_json_inf_nan` in Python JSON mode:
+    adapter = TypeAdapter(JsonValue)
+    value = {'a': [1.5, float('inf'), float('nan')]}
+
+    assert adapter.dump_python(value, mode='json') == {'a': [1.5, None, None]}
+    assert adapter.dump_json(value) == b'{"a":[1.5,null,null]}'
+
+
 def test_on_error_omit() -> None:
     OmittableInt = OnErrorOmit[int]
 
