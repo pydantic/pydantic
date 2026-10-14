@@ -199,6 +199,7 @@ def test_gc_field_exclude_if() -> None:
     assert_gc(lambda: len(cache) == 0)
 
 
+@pytest.mark.skipif(platform.python_implementation() == 'PyPy', reason='https://github.com/pypy/pypy/issues/3898')
 def test_wrap_validator_handler_does_not_traverse_shared_validator_tree() -> None:
     """https://github.com/pydantic/pydantic/issues/13817"""
 
@@ -229,6 +230,10 @@ def test_wrap_validator_handler_does_not_traverse_shared_validator_tree() -> Non
     assert not any(r is Model for r in gc.get_referents(handler))
 
 
+@pytest.mark.skipif(
+    platform.python_implementation() == 'PyPy',
+    reason='https://github.com/pypy/pypy/issues/3898 + gc.is_tracked() unavailable',
+)
 def test_wrap_serializer_handler_does_not_traverse_shared_serializer_tree() -> None:
     """https://github.com/pydantic/pydantic/issues/13817"""
 
