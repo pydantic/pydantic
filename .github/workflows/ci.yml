@@ -64,6 +64,8 @@ jobs:
       - uses: PyO3/maturin-action@e83996d129638aa358a18fbd1dfb82f0b0fb5d3b # v1.51.0
         with:
           working-directory: pydantic-core
+          # Keep in sync with `build-system.requires` in `pydantic-core/pyproject.toml`:
+          maturin-version: v1.15.0
           command: sdist
           args: --out dist
           rust-toolchain: stable
@@ -181,9 +183,11 @@ jobs:
         uses: PyO3/maturin-action@e83996d129638aa358a18fbd1dfb82f0b0fb5d3b # v1.51.0
         with:
           working-directory: pydantic-core
+          # Keep in sync with `build-system.requires` in `pydantic-core/pyproject.toml`:
+          maturin-version: v1.15.0
           target: ${{ matrix.target }}
           manylinux: ${{ matrix.manylinux }}
-          args: --release --out dist --interpreter ${{ matrix.interpreter || '3.10 3.11 3.12 3.13 3.14 3.14t 3.15 3.15t pypy3.11' }}
+          args: --release --locked --out dist --interpreter ${{ matrix.interpreter || '3.10 3.11 3.12 3.13 3.14 3.14t 3.15 3.15t pypy3.11' }}
           rust-toolchain: stable
           docker-options: -e CI
 
@@ -325,8 +329,10 @@ jobs:
           MATURIN_PYEMSCRIPTEN_PLATFORM_VERSION: ${{ steps.pyodide-config.outputs.pyodide-abi-version }}
         with:
           working-directory: pydantic-core
+          # Keep in sync with `build-system.requires` in `pydantic-core/pyproject.toml`:
+          maturin-version: v1.15.0
           target: wasm32-unknown-emscripten
-          args: --release --out dist --interpreter ${{ matrix.python-version }}
+          args: --release --locked --out dist --interpreter ${{ matrix.python-version }}
           sccache: ${{ !startsWith(github.ref, 'refs/tags/') }} # zizmor: ignore[cache-poisoning]
           rust-toolchain: ${{ steps.pyodide-config.outputs.rust-toolchain }}
 
@@ -712,7 +718,8 @@ jobs:
           version_file_path: pydantic/version.py
 
       - name: Build pydantic library
-        run: uv run --no-sync python -m build --installer uv
+        # Regenerate build constraints with `make build-constraints`:
+        run: uv run --no-sync python -m build --installer uv --dependency-constraints-txt .github/build-constraints.txt
 
       - run: ls -lh dist/
 
