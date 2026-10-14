@@ -176,6 +176,51 @@ def test_validate_by_alias_false_is_scoped_to_its_own_model():
     assert Outer.model_validate({'outerAlias': 'x', 'inner': {'inner_field': 'y'}}).outer_field == 'x'
 
 
+def test_explicit_by_alias_overrides_validate_by_alias() -> None:
+    """https://github.com/pydantic/pydantic/issues/13993"""
+
+    class Inner(BaseModel):
+        model_config = ConfigDict(validate_by_alias=False, validate_by_name=True)
+        inner_field: str = Field(alias='innerAlias')
+
+    class Model(BaseModel):
+        model_config = ConfigDict(validate_by_alias=False, validate_by_name=True)
+        with_alias: str = Field(alias='withAlias')
+        with_validation_alias: str = Field(validation_alias='withValidationAlias')
+        inner: Inner
+
+    json_schema = Model.model_json_schema(by_alias=True)
+    assert list(json_schema['properties']) == ['withAlias', 'withValidationAlias', 'inner']
+    assert list(json_schema['$defs']['Inner']['properties']) == ['innerAlias']
+    assert list(TypeAdapter(Model).json_schema(by_alias=True)['properties']) == [
+        'withAlias',
+        'withValidationAlias',
+        'inner',
+    ]
+
+    # Consistent with the `by_alias` validation runtime setting:
+    Model.model_validate(
+        {'withAlias': 'a', 'withValidationAlias': 'b', 'inner': {'innerAlias': 'c'}},
+        by_alias=True,
+        by_name=False,
+    )
+
+    assert list(Model.model_json_schema(by_alias=False)['properties']) == [
+        'with_alias',
+        'with_validation_alias',
+        'inner',
+    ]
+
+
+def test_explicit_by_alias_false_overrides_validate_by_alias() -> None:
+    class Model(BaseModel):
+        model_config = ConfigDict(validate_by_alias=True, validate_by_name=True)
+        my_field: str = Field(alias='myAlias')
+
+    assert list(Model.model_json_schema()['properties']) == ['myAlias']
+    assert list(Model.model_json_schema(by_alias=False)['properties']) == ['my_field']
+
+
 def test_ref_template():
     class KeyLimePie(BaseModel):
         x: str = None
