@@ -33,15 +33,18 @@ runs:
         GH_TOKEN: ${{ github.token }}
 
     - name: Build PGO-optimized wheel
-      uses: PyO3/maturin-action@04ac600d27cdf7a9a280dadf7147097c42b757ad # v1.50.1
+      uses: PyO3/maturin-action@e83996d129638aa358a18fbd1dfb82f0b0fb5d3b # v1.51.0
       with:
         working-directory: ${{ inputs.working-directory }}
+        # Keep in sync with `build-system.requires` in `pydantic-core/pyproject.toml`:
+        maturin-version: v1.15.0
         manylinux: auto
         # `uv` is needed for the maturin `pgo-command` to use it
         before-script-linux: |
           env UV_UNMANAGED_INSTALL=/usr/local/bin sh uv-installer.sh
         args: >
           --release
+          --locked
           --pgo
           --out dist
           --interpreter ${{ inputs.interpreter }}

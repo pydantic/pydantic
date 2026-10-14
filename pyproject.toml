@@ -129,7 +129,7 @@ typechecking = [
     'pydantic-settings',
 ]
 build = [
-    'build',
+    'build>=1.6',
     'twine',
 ]
 pyodide-build = [
@@ -146,7 +146,8 @@ all = [
   { include-group = 'testing-extra' },
   { include-group = 'typechecking' },
   { include-group = 'build' },
-  { include-group = 'pyodide-build' },
+  # `pyodide-build` conflicts with `build` (see `tool.uv.conflicts`).
+  # { include-group = 'pyodide-build' },
 ]
 
 [tool.hatch.version]
@@ -204,6 +205,10 @@ markers = [
 [tool.uv]
 default-groups = ['dev']
 required-version = '>=0.13.0'
+# `pyodide-build` requires `build<1.6`:
+conflicts = [
+    [{ group = 'build' }, { group = 'pyodide-build' }],
+]
 
 [tool.uv.sources]
 pydantic-core = { workspace = true }
