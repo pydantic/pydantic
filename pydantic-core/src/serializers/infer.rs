@@ -27,7 +27,7 @@ use crate::serializers::shared::serialize_to_python;
 use crate::serializers::type_serializers;
 use crate::serializers::type_serializers::any::AnySerializer;
 use crate::serializers::type_serializers::format::serialize_via_str;
-use crate::tools::{py_err, py_get_attrs, safe_repr};
+use crate::tools::{py_err, safe_repr};
 
 use super::SchemaSerializer;
 use super::config::InfNanMode;
@@ -675,7 +675,7 @@ pub(crate) fn get_pydantic_serializer<'py>(
     value: &Bound<'py, PyAny>,
 ) -> PyResult<Option<Bound<'py, SchemaSerializer>>> {
     let py = value.py();
-    let Some(py_serializer) = py_get_attrs(value, intern!(py, "__pydantic_serializer__"))? else {
+    let Some(py_serializer) = value.getattr_opt(intern!(py, "__pydantic_serializer__"))? else {
         return Ok(None);
     };
     if let Ok(serializer) = py_serializer.cast_exact::<SchemaSerializer>() {
