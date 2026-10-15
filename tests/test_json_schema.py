@@ -29,7 +29,7 @@ from uuid import UUID
 import pytest
 from annotated_types import Interval
 from dirty_equals import HasRepr
-from pydantic_core import CoreSchema, SchemaValidator, core_schema, to_jsonable_python
+from pydantic_core import CoreSchema, SchemaSerializer, SchemaValidator, core_schema, to_jsonable_python
 from pydantic_core.core_schema import ValidatorFunctionWrapHandler
 from typing_extensions import TypeAliasType, TypedDict, deprecated
 
@@ -7085,6 +7085,70 @@ def test_plain_serializer_does_not_apply_with_unless_none() -> None:
         },
         'title': 'Model',
         'type': 'object',
+    }
+
+
+def test_unless_none_serializer_on_wrapped_nullable_schema() -> None:
+    """Test that `null` is kept when a serializer with `when_used` set to `'unless-none'` or `'json-unless-none'`
+    is applied on a schema wrapping the `nullable` schema (e.g. a default or validator schema)."""
+
+    class Model(BaseModel):
+        with_default: Decimal | None = None
+        with_validator: Decimal | None
+        annotated_with_validator: Annotated[
+            Decimal | None,
+            AfterValidator(lambda v: v),
+            PlainSerializer(float, return_type=float, when_used='json-unless-none'),
+        ]
+
+        @field_validator('with_validator')
+        @classmethod
+        def validate_with_validator(cls, v: Decimal | None) -> Decimal | None:
+            return v
+
+        @field_serializer('with_default', 'with_validator', when_used='unless-none')
+        def serialize_decimal(self, v: Decimal) -> float:
+            return float(v)
+
+    properties = Model.model_json_schema(mode='serialization')['properties']
+
+    assert properties['with_default']['anyOf'] == [{'type': 'null'}, {'type': 'number'}]
+    assert properties['with_validator']['anyOf'] == [{'type': 'null'}, {'type': 'number'}]
+    assert properties['annotated_with_validator']['anyOf'] == [{'type': 'null'}, {'type': 'number'}]
+
+    assert Model(with_validator=None, annotated_with_validator=None).model_dump(mode='json') == {
+        'with_default': None,
+        'with_validator': None,
+        'annotated_with_validator': None,
+    }
+
+
+@pytest.mark.parametrize(
+    'wrap',
+    [
+        pytest.param(
+            lambda s, ser: core_schema.chain_schema([core_schema.any_schema(), s], serialization=ser), id='chain'
+        ),
+        pytest.param(lambda s, ser: core_schema.lax_or_strict_schema(s, s, serialization=ser), id='lax-or-strict'),
+        pytest.param(lambda s, ser: core_schema.json_or_python_schema(s, s, serialization=ser), id='json-or-python'),
+    ],
+)
+@pytest.mark.parametrize('when_used', ['unless-none', 'json-unless-none'])
+def test_unless_none_serializer_on_nullable_schema_in_wrapper(wrap: Any, when_used: str) -> None:
+    """Test that `null` is kept when a serializer with `when_used` set to `'unless-none'` or `'json-unless-none'`
+    is applied on a schema wrapping the `nullable` schema in the branch used for serialization."""
+    ser = core_schema.plain_serializer_function_ser_schema(
+        str, return_schema=core_schema.str_schema(), when_used=when_used
+    )
+    schema = wrap(core_schema.nullable_schema(core_schema.int_schema()), ser)
+
+    assert SchemaValidator(schema).validate_python(None) is None
+    serializer = SchemaSerializer(schema)
+    assert serializer.to_python(None, mode='json') is None
+    assert serializer.to_python(1, mode='json') == '1'
+
+    assert GenerateJsonSchema().generate(schema, mode='serialization') == {
+        'anyOf': [{'type': 'null'}, {'type': 'string'}]
     }
 
 
