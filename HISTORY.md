@@ -61,7 +61,7 @@ making use of [`TypeForm`](https://docs.python.org/3.15/library/typing.html#typi
 
 #### New Features
 
-* Allow any `CoreSchema` to be used as serialization by @Viicos in [#13680](https://github.com/pydantic/pydantic/pull/13680)
+* Allow any `CoreSchema` to be used as serialization by @Viicos in [#13680](https://github.com/pydantic/pydantic/pull/13680)
 * Add support for [`frozendict`](https://docs.python.org/3.15/library/stdtypes.html#frozendict) type by @Viicos in [#13634](https://github.com/pydantic/pydantic/pull/13634)
 * Allow `dict`, `frozendict` and `frozenset` as `defaultdict` default factories by @Viicos in [#13623](https://github.com/pydantic/pydantic/pull/13623)
 * Add support for [`TypeForm`](https://docs.python.org/3.15/library/typing.html#typing.TypeForm) by @Viicos in [#13459](https://github.com/pydantic/pydantic/pull/13459).
@@ -86,7 +86,7 @@ making use of [`TypeForm`](https://docs.python.org/3.15/library/typing.html#typi
 * Take `ser_json_temporal` into account when generating JSON Schema by @shashiKundur1 in [#13665](https://github.com/pydantic/pydantic/pull/13665)
 * Use the field name in `__signature__` when `validate_by_alias` is`False` by @jaideeppyne in [#13730](https://github.com/pydantic/pydantic/pull/13730)
 * Add a `deque` core schema by @Viicos in [#13757](https://github.com/pydantic/pydantic/pull/13757)
-* Do not mention `MISSING` as a valid value in validation errors by @Viicos in [#13779](https://github.com/pydantic/pydantic/pull/13779)
+* Do not mention `MISSING` as a valid value in validation errors by @Viicos in [#13779](https://github.com/pydantic/pydantic/pull/13779)
 * Refactor `Decimal` JSON Schema `pattern` constraint by @Viicos in [#13672](https://github.com/pydantic/pydantic/pull/13672)
 
 #### Performance

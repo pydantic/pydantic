@@ -1238,7 +1238,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
                 if not (
                     self_type is other_type
                     and getattr(self, '__pydantic_private__', None) == getattr(other, '__pydantic_private__', None)
-                    # We need to assume `None` and `{}` are equivalent, because extra behavior
+                    # We need to assume `None` and `{}` are equivalent, because extra behavior
                     # can be controlled at validation time:
                     and (self.__pydantic_extra__ or {}) == (other.__pydantic_extra__ or {})
                 ):
