@@ -306,13 +306,8 @@ impl<'a, 'py> HashTableSearcher<'a, 'py> {
 }
 
 fn hash_object(value: &Bound<'_, PyAny>) -> PyResult<u64> {
-    let hash_value = cast_unsigned(value.hash()?).try_into()?;
+    let hash_value = value.hash()?.cast_unsigned().try_into()?;
     Ok(hash_value)
-}
-
-// TODO: replace with isize::cast_unsigned on MSRV 1.87
-fn cast_unsigned(x: isize) -> usize {
-    x as usize
 }
 
 impl<T: PyGcTraverse> PyGcTraverse for PyHashTableEntry<T> {
